@@ -61,7 +61,9 @@ public abstract class ChatCommand
             {
                 Execute(player, paramsArr);
             }
-            catch (Exception e) when (e is ArgumentException or JavaNumberFormatException)
+            // Java parity: catch (IllegalArgumentException e). The port throws exactly ArgumentException for it; .NET's own
+            // ArgumentOutOfRangeException/ArgumentNullException (indexers, null args) stand in for Java's IndexOutOfBounds/NPE and must reach the log.
+            catch (Exception e) when (e.GetType() == typeof(ArgumentException) || e is JavaNumberFormatException)
             {
                 SendInfo(player, ToErrorMessage(e));
             }

@@ -2,7 +2,9 @@ using System.Runtime.CompilerServices;
 using System.Globalization;
 using System.Reflection;
 using Aion.Commons.Nio;
+using Aion.GameServer.Model.Account;
 using Aion.GameServer.Model.GameObjects.Players;
+using Aion.GameServer.Model.GameObjects.State;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Utils.ChatHandlers;
@@ -257,6 +259,46 @@ public sealed class ChatCommandExceptionParityTests
 	}
 
 	[Fact]
+	public void Run_LogsDotNetIndexOutOfRangeInsteadOfShowingIt()
+	{
+		// Java parity: "//megaphone 0 ..." calls colors.get(-1), whose IndexOutOfBoundsException is logged by run() and answered with
+		// "<Error while executing command>". The .NET List indexer throws ArgumentOutOfRangeException, which derives from ArgumentException.
+		var colors = new List<int> { 0xFF0000 };
+		var command = new ThrowingCommand(() => _ = colors[-1]);
+
+		Assert.False(command.Run(NamedPlayer()));
+		Assert.Null(command.LastErrorMessage);
+	}
+
+	[Fact]
+	public void Run_LogsDotNetNullArgumentInsteadOfShowingIt()
+	{
+		var command = new ThrowingCommand(() => ArgumentNullException.ThrowIfNull((object?)null));
+
+		Assert.False(command.Run(NamedPlayer()));
+		Assert.Null(command.LastErrorMessage);
+	}
+
+	[Fact]
+	public void Run_ShowsExperienceTableLevelErrorLikeJavaIllegalArgumentException()
+	{
+		var table = new Aion.GameServer.Dataholders.PlayerExperienceTable(new long[] { 0, 100 });
+		var command = new ThrowingCommand(() => table.GetStartExpForLevel(3));
+
+		Assert.True(command.Run(OfflinePlayer()));
+		Assert.Equal("The given level is higher than possible max", command.LastErrorMessage);
+	}
+
+	[Fact]
+	public void Run_ShowsInvalidEnumConstantMessage()
+	{
+		var command = new ThrowingCommand(() => ThrowingCommand.ParseEnumNameValue<CreatureState>("bogus"));
+
+		Assert.True(command.Run(OfflinePlayer()));
+		Assert.StartsWith("Invalid creature state.\nPossible values:\n", command.LastErrorMessage);
+	}
+
+	[Fact]
 	public void CommandHandlers_DoNotBypassJavaPrimitiveParsers()
 	{
 		string root = FindRepositoryRoot();
@@ -375,6 +417,17 @@ public sealed class ChatCommandExceptionParityTests
 	private static Player OfflinePlayer()
 	{
 		return (Player)RuntimeHelpers.GetUninitializedObject(typeof(Player));
+	}
+
+	/// <summary>An offline player whose GetName() works, as run()'s error log line reads it.</summary>
+	private static Player NamedPlayer()
+	{
+		var common = new PlayerCommonData(1);
+		common.SetName("Admin");
+		Player player = OfflinePlayer();
+		typeof(Player).GetField("playerAccountData", BindingFlags.Instance | BindingFlags.NonPublic)!
+			.SetValue(player, new PlayerAccountData(common, new PlayerAppearance()));
+		return player;
 	}
 
 	private enum NumericEnum

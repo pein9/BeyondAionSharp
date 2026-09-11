@@ -16,8 +16,8 @@ public sealed class PlayerExperienceTable
 
 	public long GetStartExpForLevel(int level)
 	{
-		if (level < 0 || level > MaxLevel)
-			throw new ArgumentOutOfRangeException(nameof(level), "The given level is outside the experience table.");
+		if (level > MaxLevel)
+			throw new ArgumentException("The given level is higher than possible max");
 
 		return level == 0 ? 0 : Experience[level - 1];
 	}
