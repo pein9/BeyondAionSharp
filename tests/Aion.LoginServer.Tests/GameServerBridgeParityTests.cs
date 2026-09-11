@@ -494,7 +494,7 @@ public sealed class GameServerBridgeParityTests
 	{
 		var buffer = new byte[length];
 		var offset = 0;
-		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+		using var timeout = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		while (offset < length)
 		{
 			var read = await stream.ReadAsync(buffer.AsMemory(offset, length - offset), timeout.Token);

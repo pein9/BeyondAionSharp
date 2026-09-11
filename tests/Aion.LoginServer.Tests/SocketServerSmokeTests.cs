@@ -1070,7 +1070,7 @@ public sealed class SocketServerSmokeTests
 	{
 		var buffer = new byte[length];
 		var offset = 0;
-		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+		using var timeout = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		while (offset < length)
 		{
 			var read = await stream.ReadAsync(buffer.AsMemory(offset, length - offset), timeout.Token);
@@ -1085,21 +1085,21 @@ public sealed class SocketServerSmokeTests
 	internal static async Task AssertClientClosedAsync(NetworkStream stream)
 	{
 		var buffer = new byte[1];
-		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+		using var timeout = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		var read = await stream.ReadAsync(buffer, timeout.Token);
 		Assert.Equal(0, read);
 	}
 
 	internal static async Task AssertTaskCompletedAsync(Task task)
 	{
-		var completed = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(2)));
+		var completed = await Task.WhenAny(task, Task.Delay(LoopbackSocketTimeouts.Expected));
 		Assert.Same(task, completed);
 		await task;
 	}
 
 	private static async Task AssertActiveConnectionsAsync(Func<int> getActiveConnections, int expected)
 	{
-		var deadline = DateTime.UtcNow.AddSeconds(2);
+		var deadline = DateTime.UtcNow + LoopbackSocketTimeouts.Expected;
 		while (DateTime.UtcNow < deadline)
 		{
 			if (getActiveConnections() == expected)

@@ -12,6 +12,7 @@ using GameLoginServer = Aion.GameServer.Network.LoginServer.LoginServer;
 
 namespace Aion.GameServer.Tests;
 
+[Collection("LoopbackSockets")]
 public sealed class LoginServerInboundProtocolTests
 {
 	[Fact]
@@ -375,7 +376,7 @@ public sealed class LoginServerInboundProtocolTests
 	{
 		var buffer = new byte[length];
 		var offset = 0;
-		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+		using var timeout = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		while (offset < length)
 		{
 			var read = await stream.ReadAsync(buffer.AsMemory(offset, length - offset), timeout.Token);
@@ -409,7 +410,7 @@ public sealed class LoginServerInboundProtocolTests
 
 		public Task WaitForExpectedPacketsAsync()
 		{
-			return _completed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			return _completed.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 		}
 	}
 
@@ -441,7 +442,7 @@ public sealed class LoginServerInboundProtocolTests
 
 		public Task<byte[]> ReadAccountListFrameAsync()
 		{
-			return _accountListFrame.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			return _accountListFrame.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 		}
 
 		private async Task RunAsync()

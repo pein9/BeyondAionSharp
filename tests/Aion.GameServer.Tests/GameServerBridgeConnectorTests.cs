@@ -14,6 +14,7 @@ using GameLoginServer = Aion.GameServer.Network.LoginServer.LoginServer;
 
 namespace Aion.GameServer.Tests;
 
+[Collection("LoopbackSockets")]
 public sealed class GameServerBridgeConnectorTests
 {
 	[Fact]
@@ -239,7 +240,7 @@ public sealed class GameServerBridgeConnectorTests
 
 	private static async Task WaitUntilAsync(Func<bool> condition)
 	{
-		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+		using var timeout = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		while (!condition())
 		{
 			await Task.Delay(20, timeout.Token);
@@ -261,7 +262,7 @@ public sealed class GameServerBridgeConnectorTests
 	{
 		var buffer = new byte[length];
 		var offset = 0;
-		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+		using var timeout = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		while (offset < length)
 		{
 			var read = await stream.ReadAsync(buffer.AsMemory(offset, length - offset), timeout.Token);
@@ -301,7 +302,7 @@ public sealed class GameServerBridgeConnectorTests
 
 		public Task<byte[]> ReadClientFrameAsync()
 		{
-			return _clientFrame.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			return _clientFrame.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 		}
 
 		private async Task AcceptAndRespondAsync()
@@ -358,12 +359,12 @@ public sealed class GameServerBridgeConnectorTests
 
 		public Task<byte[]> ReadAccountAuthFrameAsync()
 		{
-			return _accountAuthFrame.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			return _accountAuthFrame.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 		}
 
 		public Task<byte[]> ReadAccountListFrameAsync()
 		{
-			return _accountListFrame.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			return _accountListFrame.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 		}
 
 		private async Task AcceptAndRespondAsync()
@@ -426,12 +427,12 @@ public sealed class GameServerBridgeConnectorTests
 
 		public Task<byte[]> ReadCharacterCountFrameAsync()
 		{
-			return _characterCountFrame.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			return _characterCountFrame.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 		}
 
 		public Task<byte[]> ReadAccountListFrameAsync()
 		{
-			return _accountListFrame.Task.WaitAsync(TimeSpan.FromSeconds(5));
+			return _accountListFrame.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 		}
 
 		private async Task AcceptAndRespondAsync()

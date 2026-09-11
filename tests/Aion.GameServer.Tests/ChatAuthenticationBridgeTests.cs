@@ -253,7 +253,7 @@ public sealed class ChatAuthenticationBridgeTests
 
 	private static async Task WaitUntilAsync(Func<bool> condition)
 	{
-		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+		using var timeout = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		while (!condition())
 			await Task.Delay(20, timeout.Token);
 	}
@@ -352,17 +352,17 @@ public sealed class ChatAuthenticationBridgeTests
 			return Task.FromResult(new MockChatBridgeServer(listener));
 		}
 
-		public Task<byte[]> ReadInitialAuthFrameAsync() => _initialAuthFrame.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		public Task<byte[]> ReadInitialAuthFrameAsync() => _initialAuthFrame.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 
 		public async Task<byte[]> ReadClientFrameAsync()
 		{
-			await _acceptTask.WaitAsync(TimeSpan.FromSeconds(5));
+			await _acceptTask.WaitAsync(LoopbackSocketTimeouts.Expected);
 			return await ReadFrameAsync(_stream!);
 		}
 
 		public async Task SendPlayerAuthResponseAsync(int playerId, byte[] token)
 		{
-			await _acceptTask.WaitAsync(TimeSpan.FromSeconds(5));
+			await _acceptTask.WaitAsync(LoopbackSocketTimeouts.Expected);
 			using var payload = new PacketBuffer();
 			payload.WriteC(0x01);
 			payload.WriteD(playerId);
@@ -421,7 +421,7 @@ public sealed class ChatAuthenticationBridgeTests
 	{
 		var result = new byte[length];
 		var offset = 0;
-		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+		using var timeout = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		while (offset < length)
 		{
 			var read = await stream.ReadAsync(result.AsMemory(offset, length - offset), timeout.Token);

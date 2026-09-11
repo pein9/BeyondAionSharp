@@ -67,7 +67,7 @@ public sealed class LoginServerHostedServiceTests
 			playerTransferScheduler,
 			NullLogger<LoginServerHostedService>.Instance);
 
-		using var startupTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+		using var startupTimeout = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		var startTask = hosted.StartAsync(startupTimeout.Token);
 		await gameServersRepository.WaitUntilCalledAsync();
 		Assert.False(startTask.IsCompleted);
@@ -106,7 +106,7 @@ public sealed class LoginServerHostedServiceTests
 
 	private static async Task AssertActiveConnectionsAsync(Func<int> getActiveConnections, int expected)
 	{
-		var deadline = DateTime.UtcNow.AddSeconds(2);
+		var deadline = DateTime.UtcNow + LoopbackSocketTimeouts.Expected;
 		while (DateTime.UtcNow < deadline)
 		{
 			if (getActiveConnections() == expected)
@@ -119,7 +119,7 @@ public sealed class LoginServerHostedServiceTests
 	private static async Task AssertEventuallyClosedAsync(NetworkStream stream)
 	{
 		var buffer = new byte[256];
-		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+		using var timeout = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		while (true)
 		{
 			try

@@ -287,7 +287,7 @@ public class ChatConnectionSmokeTests
 
 	private static async Task<byte[]> ReadExactAsync(NetworkStream stream, int length)
 	{
-		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+		using var cts = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		var buffer = new byte[length];
 		var offset = 0;
 		while (offset < length)
@@ -364,7 +364,7 @@ public class ChatConnectionSmokeTests
 
 		public Task WaitForConnectionCloseAsync()
 		{
-			return _connectionTask.WaitAsync(TimeSpan.FromSeconds(5));
+			return _connectionTask.WaitAsync(LoopbackSocketTimeouts.Expected);
 		}
 
 		public static async Task<SocketHarness> ConnectAsync(Func<TcpClient, Aion.Commons.Network.Server.BaseClientConnection> connectionFactory)

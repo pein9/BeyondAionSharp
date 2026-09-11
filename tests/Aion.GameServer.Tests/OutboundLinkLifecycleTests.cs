@@ -18,6 +18,7 @@ using GameLoginServer = Aion.GameServer.Network.LoginServer.LoginServer;
 
 namespace Aion.GameServer.Tests;
 
+[Collection("LoopbackSockets")]
 public sealed class OutboundLinkLifecycleTests
 {
 	private static readonly OutboundLinkRetryDelays FastRetries = new(
@@ -50,7 +51,7 @@ public sealed class OutboundLinkLifecycleTests
 		server.DropFirstSession();
 
 		await Assert.ThrowsAsync<IOException>(async () =>
-			await pendingAuth.WaitAsync(TimeSpan.FromSeconds(5)));
+			await pendingAuth.WaitAsync(LoopbackSocketTimeouts.Expected));
 		var secondSnapshot = await server.ReadSecondAccountListAsync();
 		await dispatcher.WaitForExpectedPacketsAsync();
 		await WaitUntilAsync(() => connector.IsAuthed);
@@ -134,7 +135,7 @@ public sealed class OutboundLinkLifecycleTests
 		await server.ReadAccountListAsync();
 		await WaitUntilAsync(() => login.IsAuthed);
 
-		using var stopTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+		using var stopTimeout = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		await hosted.StopAsync(stopTimeout.Token);
 		Assert.Equal(Aion.GameServer.Network.LoginServer.LoginServerState.Disconnected, login.State);
 		await Assert.ThrowsAsync<InvalidOperationException>(() => login.StartAsync());
@@ -306,7 +307,7 @@ public sealed class OutboundLinkLifecycleTests
 
 	private static async Task WaitUntilAsync(Func<bool> condition)
 	{
-		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+		using var timeout = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		while (!condition())
 			await Task.Delay(10, timeout.Token);
 	}
@@ -325,7 +326,7 @@ public sealed class OutboundLinkLifecycleTests
 	{
 		var result = new byte[length];
 		var offset = 0;
-		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+		using var timeout = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		while (offset < length)
 		{
 			var read = await stream.ReadAsync(result.AsMemory(offset, length - offset), timeout.Token);
@@ -421,7 +422,7 @@ public sealed class OutboundLinkLifecycleTests
 				_completed.TrySetResult();
 		}
 
-		public Task WaitForExpectedPacketsAsync() => _completed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		public Task WaitForExpectedPacketsAsync() => _completed.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 	}
 
 	private sealed class TwoSessionLoginServer : IAsyncDisposable
@@ -453,9 +454,9 @@ public sealed class OutboundLinkLifecycleTests
 			return Task.FromResult(new TwoSessionLoginServer(listener));
 		}
 
-		public Task<byte[]> ReadFirstAccountListAsync() => _firstAccountList.Task.WaitAsync(TimeSpan.FromSeconds(5));
-		public Task<byte[]> ReadFirstAccountAuthAsync() => _firstAccountAuth.Task.WaitAsync(TimeSpan.FromSeconds(5));
-		public Task<byte[]> ReadSecondAccountListAsync() => _secondAccountList.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		public Task<byte[]> ReadFirstAccountListAsync() => _firstAccountList.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
+		public Task<byte[]> ReadFirstAccountAuthAsync() => _firstAccountAuth.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
+		public Task<byte[]> ReadSecondAccountListAsync() => _secondAccountList.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 		public void DropFirstSession() => _dropFirst.TrySetResult();
 
 		private async Task RunAsync()
@@ -527,7 +528,7 @@ public sealed class OutboundLinkLifecycleTests
 		}
 
 		public void DropFirstSession() => _dropFirst.TrySetResult();
-		public Task WaitForSecondAuthAsync() => _secondAuth.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		public Task WaitForSecondAuthAsync() => _secondAuth.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 		public void AuthenticateSecondSession() => _authenticateSecond.TrySetResult();
 
 		private async Task RunAsync()
@@ -588,7 +589,7 @@ public sealed class OutboundLinkLifecycleTests
 			return Task.FromResult(new HoldingLoginServer(listener));
 		}
 
-		public Task<byte[]> ReadAccountListAsync() => _accountList.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		public Task<byte[]> ReadAccountListAsync() => _accountList.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 
 		private async Task RunAsync()
 		{
@@ -634,7 +635,7 @@ public sealed class OutboundLinkLifecycleTests
 			return Task.FromResult(new PacketIsolationLoginServer(listener));
 		}
 
-		public Task<byte[]> ReadPongAsync() => _pong.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		public Task<byte[]> ReadPongAsync() => _pong.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 
 		private async Task RunAsync()
 		{
@@ -691,9 +692,9 @@ public sealed class OutboundLinkLifecycleTests
 			return Task.FromResult(new GatedLoginServer(listener));
 		}
 
-		public Task WaitForAuthRequestAsync() => _authRequest.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		public Task WaitForAuthRequestAsync() => _authRequest.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 		public void AllowAuthentication() => _allowAuthentication.TrySetResult();
-		public Task<byte[]> ReadAccountListAsync() => _accountList.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		public Task<byte[]> ReadAccountListAsync() => _accountList.Task.WaitAsync(LoopbackSocketTimeouts.Expected);
 
 		private async Task RunAsync()
 		{

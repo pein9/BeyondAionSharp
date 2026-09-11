@@ -100,7 +100,7 @@ public class HostedSocketServerSmokeTests
 
 	private static async Task<IPEndPoint> WaitForEndpointAsync(Func<IPEndPoint?> getEndpoint)
 	{
-		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+		using var cts = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		while (!cts.IsCancellationRequested)
 		{
 			var endpoint = getEndpoint();
@@ -128,7 +128,7 @@ public class HostedSocketServerSmokeTests
 
 	private static async Task<byte[]> ReadExactAsync(NetworkStream stream, int length)
 	{
-		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+		using var cts = new CancellationTokenSource(LoopbackSocketTimeouts.Expected);
 		var buffer = new byte[length];
 		var offset = 0;
 		while (offset < length)
