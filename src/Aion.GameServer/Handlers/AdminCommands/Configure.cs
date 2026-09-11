@@ -139,21 +139,10 @@ public class Configure : AdminCommand
         return values;
     }
 
+    // Java parity: String.valueOf(value), with arrays through Arrays.toString — JavaString.ValueOf covers both.
     private string GetFieldValue(FieldInfo field)
     {
-        object value = field.GetValue(null);
-        if (value != null && value.GetType().IsArray)
-        {
-            var arr = (Array)value;
-            var parts = new List<string>(arr.Length);
-            for (int i = 0; i < arr.Length; i++)
-            {
-                object element = arr.GetValue(i);
-                parts.Add(element == null ? "null" : element.ToString());
-            }
-            value = "[" + string.Join(", ", parts) + "]";
-        }
-        return value == null ? "null" : value.ToString();
+        return JavaString.ValueOf(field.GetValue(null));
     }
 
     private static List<FieldInfo> FindStaticFields(Type cls, Func<FieldInfo, bool> filter)

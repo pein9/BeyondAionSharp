@@ -54,7 +54,7 @@ public class DropInfo : AdminCommand
                         float finalChance = dropModifiers.CalculateDropChance(drop.GetChance(), dropGroup.IsUseLevelBasedChanceReduction());
                         if (!showAll && finalChance <= 0)
                             continue;
-                        info += "\n\t" + ChatUtil.Item(drop.GetItemId()) + "\tBase chance: " + drop.GetChance() + "%, effective: " + finalChance + "%";
+                        info += "\n\t" + ChatUtil.Item(drop.GetItemId()) + "\tBase chance: " + JavaString.ValueOf(drop.GetChance()) + "%, effective: " + JavaString.ValueOf(finalChance) + "%";
                         counts[0]++;
                     }
                 }
@@ -101,13 +101,13 @@ public class DropInfo : AdminCommand
                     info += "\n" + dropGroupPrefix + " drop group: \"" + rule.GetRuleName() + "\", max drops: " + rule.GetMaxDropRule();
                     if (rule.GetMemberLimit() != 1)
                         info += ", member limit: " + rule.GetMemberLimit();
-                    info += "\n\tBase chance: " + rule.GetChance() + "%, effective: " + chance + "%";
+                    info += "\n\tBase chance: " + JavaString.ValueOf(rule.GetChance()) + "%, effective: " + JavaString.ValueOf(chance) + "%";
                     counts[1]++;
                     foreach (GlobalDropItem item in drops)
                     {
                         info += "\n\t" + ChatUtil.Item(item.GetId());
                         if (item.GetChance() != 100f)
-                            info += "\tSub chance: " + item.GetChance() + "%";
+                            info += "\tSub chance: " + JavaString.ValueOf(item.GetChance()) + "%";
                         counts[0]++;
                     }
                 }

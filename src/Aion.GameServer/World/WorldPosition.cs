@@ -1,3 +1,4 @@
+using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -133,9 +134,11 @@ public sealed class WorldPosition
 
     // Java parity: toString()
     public override string ToString() =>
-        "WorldPosition [mapId=" + _mapId + ", x=" + _x + ", y=" + _y + ", z=" + _z + ", heading=" + _heading + ", isSpawned=" + _isSpawned + "]";
+        "WorldPosition [mapId=" + _mapId + ", x=" + JavaString.ValueOf(_x) + ", y=" + JavaString.ValueOf(_y) + ", z=" + JavaString.ValueOf(_z)
+        + ", heading=" + JavaString.ValueOf(_heading) + ", isSpawned=" + JavaString.ValueOf(_isSpawned) + "]";
 
     // Java parity: toCoordString()
     public string ToCoordString() =>
-        "Map ID: " + _mapId + ", Instance ID: " + GetInstanceId() + ", X: " + _x + ", Y: " + _y + ", Z: " + _z + ", Heading: " + _heading;
+        "Map ID: " + _mapId + ", Instance ID: " + GetInstanceId() + ", X: " + JavaString.ValueOf(_x) + ", Y: " + JavaString.ValueOf(_y)
+        + ", Z: " + JavaString.ValueOf(_z) + ", Heading: " + JavaString.ValueOf(_heading);
 }

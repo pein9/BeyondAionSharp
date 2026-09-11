@@ -1,4 +1,5 @@
 using System;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.GeoEngine.Math;
 
@@ -486,7 +487,7 @@ public sealed class Vector3f
 
     public override string ToString()
     {
-        return "(" + X + ", " + Y + ", " + Z + ")";
+        return "(" + JavaString.ValueOf(X) + ", " + JavaString.ValueOf(Y) + ", " + JavaString.ValueOf(Z) + ")";
     }
 
     public float GetX()

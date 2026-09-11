@@ -102,8 +102,8 @@ public class SpawnUpdate : AdminCommand
         else
             PacketSendUtility.SendPacket(admin, new SM_GATHERABLE_INFO(target));
         SendInfo(admin,
-            "Updated " + target.GetType().Name + "'s coordinates to\nX:" + tPos.GetX() + " Y:" + tPos.GetY() + " Z:" + tPos.GetZ() + " H:"
-                + tPos.GetHeading() + ".");
+            "Updated " + target.GetType().Name + "'s coordinates to\nX:" + JavaString.ValueOf(tPos.GetX()) + " Y:" + JavaString.ValueOf(tPos.GetY()) + " Z:"
+                + JavaString.ValueOf(tPos.GetZ()) + " H:" + JavaString.ValueOf(tPos.GetHeading()) + ".");
 
         if (!DataManager.SPAWNS_DATA.SaveSpawn(target, false))
             SendInfo(admin, "Could not save spawn. Maybe it's a special or temporary spawn (siege, base, invasion, ...) which cannot be altered.");

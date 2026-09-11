@@ -4,6 +4,7 @@ using System.Linq;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Templates.Zone;
+using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.ChatHandlers;
 using Aion.GameServer.World.Zone;
 
@@ -49,12 +50,12 @@ public class Zone : AdminCommand
             foreach (ZoneInstance zone in zones)
             {
                 SendInfo(admin, zone.GetAreaTemplate().GetZoneName().Name);
-                SendInfo(admin, "Fly: " + zone.CanFly() + "; Glide: " + zone.CanGlide());
-                SendInfo(admin, "Ride: " + zone.CanRide() + "; Fly-ride: " + zone.CanFlyRide());
-                SendInfo(admin, "Kisk: " + zone.CanPutKisk() + "; Recall: " + zone.CanRecall());
-                SendInfo(admin, "Same race duels: " + zone.IsSameRaceDuelsAllowed() + "; Other race duels: " + zone.IsOtherRaceDuelsAllowed());
-                SendInfo(admin, "PvP: " + zone.IsPvpAllowed());
-                SendInfo(admin, "canReturnBattle: " + zone.CanReturnToBattle());
+                SendInfo(admin, "Fly: " + JavaString.ValueOf(zone.CanFly()) + "; Glide: " + JavaString.ValueOf(zone.CanGlide()));
+                SendInfo(admin, "Ride: " + JavaString.ValueOf(zone.CanRide()) + "; Fly-ride: " + JavaString.ValueOf(zone.CanFlyRide()));
+                SendInfo(admin, "Kisk: " + JavaString.ValueOf(zone.CanPutKisk()) + "; Recall: " + JavaString.ValueOf(zone.CanRecall()));
+                SendInfo(admin, "Same race duels: " + JavaString.ValueOf(zone.IsSameRaceDuelsAllowed()) + "; Other race duels: " + JavaString.ValueOf(zone.IsOtherRaceDuelsAllowed()));
+                SendInfo(admin, "PvP: " + JavaString.ValueOf(zone.IsPvpAllowed()));
+                SendInfo(admin, "canReturnBattle: " + JavaString.ValueOf(zone.CanReturnToBattle()));
             }
         }
     }

@@ -52,7 +52,7 @@ public class Info : AdminCommand
                         SendInfo(admin,
                             "\t" + (i == 0 ? "Mentor" : "Daily") + " faction: " + DataManager.NPC_FACTIONS_DATA.GetNpcFactionById(faction.GetId()).GetL10n()
                                 + ", current quest state: " + faction.GetState().ToString() + (faction.GetState().Equals(ENpcFactionQuestState.COMPLETE) ? (
-                                ", next after: " + ((faction.GetTime() - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000) / 3600f) + " h.") : ""));
+                                ", next after: " + JavaString.ValueOf((faction.GetTime() - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000) / 3600f) + " h.") : ""));
                     }
                 }
                 SendInfo(admin, "\tPanesterra faction: " + (player.GetPanesterraFaction()?.ToString() ?? "null"));
@@ -69,10 +69,10 @@ public class Info : AdminCommand
                             + ", Accuracy: " + pgs.GetAccuracy().GetCurrent()
                             + ", Knowledge: " + pgs.GetKnowledge().GetCurrent()
                             + ", Will: " + pgs.GetWill().GetCurrent()
-                            + "\n\tCast Time Boost: " + (pgs.GetStat(StatEnum.BOOST_CASTING_TIME, 1000).GetCurrent() * 0.1f - 100) + "%"
-                            + "\n\tBase Attack Speed " + pgs.GetAttackSpeed().GetBase() * 0.001f
-                            + "\n\tCurrent Attack Speed: " + pgs.GetAttackSpeed().GetCurrent() * 0.001f
-                            + "\n\tMovement Speed: " + pgs.GetMovementSpeedFloat()
+                            + "\n\tCast Time Boost: " + JavaString.ValueOf(pgs.GetStat(StatEnum.BOOST_CASTING_TIME, 1000).GetCurrent() * 0.1f - 100) + "%"
+                            + "\n\tBase Attack Speed " + JavaString.ValueOf(pgs.GetAttackSpeed().GetBase() * 0.001f)
+                            + "\n\tCurrent Attack Speed: " + JavaString.ValueOf(pgs.GetAttackSpeed().GetCurrent() * 0.001f)
+                            + "\n\tMovement Speed: " + JavaString.ValueOf(pgs.GetMovementSpeedFloat())
                             + "\n\t-------------Offence-------------"
                             + "\n\tMagic Boost: " + pgs.GetMBoost().GetCurrent()
                             + "\n\tM. Accuracy: " + pgs.GetMAccuracy().GetCurrent()
@@ -109,12 +109,12 @@ public class Info : AdminCommand
                             + "\n\t\tDark Defense: " + pgs.GetElementalDefenseFor(SkillElement.DARK)
                             + "\n\t\tLight Defense: " + pgs.GetElementalDefenseFor(SkillElement.LIGHT)
                             + "\n\t-------------PvP Stats-------------"
-                            + "\n\tPvP attack: " + pgs.GetStat(StatEnum.PVP_ATTACK_RATIO, 0).GetCurrent() * 0.1f + "%"
-                            + "\n\tPvP p. attack: " + pgs.GetStat(StatEnum.PVP_ATTACK_RATIO_PHYSICAL, 0).GetCurrent() * 0.1f + "%"
-                            + "\n\tPvP m. attack: " + pgs.GetStat(StatEnum.PVP_ATTACK_RATIO_MAGICAL, 0).GetCurrent() * 0.1f + "%"
-                            + "\n\tPvP defend: " + pgs.GetStat(StatEnum.PVP_DEFEND_RATIO, 0).GetCurrent() * 0.1f + "%"
-                            + "\n\tPvP p. defend: " + pgs.GetStat(StatEnum.PVP_DEFEND_RATIO_PHYSICAL, 0).GetCurrent() * 0.1f + "%"
-                            + "\n\tPvP m. defend: " + pgs.GetStat(StatEnum.PVP_DEFEND_RATIO_MAGICAL, 0).GetCurrent() * 0.1f + "%");
+                            + "\n\tPvP attack: " + JavaString.ValueOf(pgs.GetStat(StatEnum.PVP_ATTACK_RATIO, 0).GetCurrent() * 0.1f) + "%"
+                            + "\n\tPvP p. attack: " + JavaString.ValueOf(pgs.GetStat(StatEnum.PVP_ATTACK_RATIO_PHYSICAL, 0).GetCurrent() * 0.1f) + "%"
+                            + "\n\tPvP m. attack: " + JavaString.ValueOf(pgs.GetStat(StatEnum.PVP_ATTACK_RATIO_MAGICAL, 0).GetCurrent() * 0.1f) + "%"
+                            + "\n\tPvP defend: " + JavaString.ValueOf(pgs.GetStat(StatEnum.PVP_DEFEND_RATIO, 0).GetCurrent() * 0.1f) + "%"
+                            + "\n\tPvP p. defend: " + JavaString.ValueOf(pgs.GetStat(StatEnum.PVP_DEFEND_RATIO_PHYSICAL, 0).GetCurrent() * 0.1f) + "%"
+                            + "\n\tPvP m. defend: " + JavaString.ValueOf(pgs.GetStat(StatEnum.PVP_DEFEND_RATIO_MAGICAL, 0).GetCurrent() * 0.1f) + "%");
             }
             else if (creature is Npc npc)
             {
@@ -129,18 +129,18 @@ public class Info : AdminCommand
                     "[Sense range]\n\tRadius: " + npc.GetAggroRange()
                             + "\n\tShort-Radius: " + npc.GetShortAggroRange()
                             + "\n\tAngle: " + npc.GetAggroAngle()
-                            + "\n\tSide: " + npc.GetObjectTemplate().GetBoundRadius().GetSide() + ", Front: " + npc.GetObjectTemplate().GetBoundRadius().GetFront() + ", Upper: " + npc.GetObjectTemplate().GetBoundRadius().GetUpper()
-                            + "\n\tDirectional bound: " + PositionUtil.GetDirectionalBound(npc, admin, true)
-                            + "\n\tDistance: " + (npc.GetAggroRange() + PositionUtil.GetDirectionalBound(npc, admin, true)));
-                SendInfo(admin, "[Spawn info]\n\tStaticId: " + npc.GetSpawn().GetStaticId() + ", DistToSpawn: " + npc.GetDistanceToSpawnLocation() + "m");
+                            + "\n\tSide: " + JavaString.ValueOf(npc.GetObjectTemplate().GetBoundRadius().GetSide()) + ", Front: " + JavaString.ValueOf(npc.GetObjectTemplate().GetBoundRadius().GetFront()) + ", Upper: " + JavaString.ValueOf(npc.GetObjectTemplate().GetBoundRadius().GetUpper())
+                            + "\n\tDirectional bound: " + JavaString.ValueOf(PositionUtil.GetDirectionalBound(npc, admin, true))
+                            + "\n\tDistance: " + JavaString.ValueOf(npc.GetAggroRange() + PositionUtil.GetDirectionalBound(npc, admin, true)));
+                SendInfo(admin, "[Spawn info]\n\tStaticId: " + npc.GetSpawn().GetStaticId() + ", DistToSpawn: " + JavaString.ValueOf(npc.GetDistanceToSpawnLocation()) + "m");
                 if (npc.IsPathWalker())
                 {
                     SendInfo(admin, "\tRouteId: " + npc.GetSpawn().GetWalkerId());
                     if (npc.GetWalkerGroup() != null)
                     {
                         ClusteredNpc snpc = npc.GetWalkerGroup().GetClusterData(npc);
-                        SendInfo(admin, "\tWalkerGroupType: " + npc.GetWalkerGroup().GetWalkType() + ", XDelta: " + snpc.GetXDelta() + ", YDelta: "
-                            + snpc.GetYDelta() + ", Index: " + snpc.GetWalkerIndex());
+                        SendInfo(admin, "\tWalkerGroupType: " + npc.GetWalkerGroup().GetWalkType() + ", XDelta: " + JavaString.ValueOf(snpc.GetXDelta()) + ", YDelta: "
+                            + JavaString.ValueOf(snpc.GetYDelta()) + ", Index: " + snpc.GetWalkerIndex());
                     }
                 }
                 else if (npc.IsRandomWalker())
@@ -150,8 +150,8 @@ public class Info : AdminCommand
             }
             SendInfo(admin, CreateZoneInfo(creature));
             SendInfo(admin, "[Tribe]\n\tRace: " + creature.GetRace() + ", Tribe: " + creature.GetTribe() + ", TribeBase: " + creature.GetBaseTribe());
-            SendInfo(admin, "[Your relation]\n\tisEnemy: " + admin.IsEnemy(creature) + ", canAttack: " + PlayerRestrictions.CanAttack(admin, target));
-            SendInfo(admin, "[Targets relation]\n\tisEnemy: " + creature.IsEnemy(admin)
+            SendInfo(admin, "[Your relation]\n\tisEnemy: " + JavaString.ValueOf(admin.IsEnemy(creature)) + ", canAttack: " + JavaString.ValueOf(PlayerRestrictions.CanAttack(admin, target)));
+            SendInfo(admin, "[Targets relation]\n\tisEnemy: " + JavaString.ValueOf(creature.IsEnemy(admin))
                 + (creature is Npc ? ", Hostility: " + ((Npc)creature).GetType_(admin) : ""));
             SendInfo(admin, "[Life stats]\n\tHP: " + creature.GetLifeStats().GetCurrentHp() + " / " + creature.GetLifeStats().GetMaxHp()
                     + "\n\tMP: " + creature.GetLifeStats().GetCurrentMp() + " / " + creature.GetLifeStats().GetMaxMp());
@@ -171,7 +171,7 @@ public class Info : AdminCommand
         sb.Append("\n\t" + creature.GetPosition().ToCoordString());
         sb.Append("\n\tFortress Location ID: " + (fortress == null ? "-" : fortress.GetLocationId().ToString()));
         sb.Append("\n\tTown ID: " + (townId == 0 ? "-" : townId.ToString()));
-        sb.Append("\n\tPvP: " + creature.IsInsidePvPZone());
+        sb.Append("\n\tPvP: " + JavaString.ValueOf(creature.IsInsidePvPZone()));
         return sb.ToString();
     }
 

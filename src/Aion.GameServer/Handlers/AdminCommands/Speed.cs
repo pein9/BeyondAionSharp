@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using System.Globalization;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Stats.Calc;
 using Aion.GameServer.Model.Stats.Calc.Functions;
 using Aion.GameServer.Model.Stats.Container;
+using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.ChatHandlers;
 
 namespace Aion.GameServer.Handlers.AdminCommands;
@@ -40,13 +40,6 @@ public class Speed : AdminCommand, IStatOwner
         int speed = (int)(parameter * 1000);
         List<IStatFunction> functions = new List<IStatFunction> { new Stat.CommandStatFunction(StatEnum.SPEED, speed), new Stat.CommandStatFunction(StatEnum.FLY_SPEED, speed) };
         admin.GetGameStats().AddEffect(this, functions);
-        SendInfo(admin, "Your speed is now fixed at " + JavaFloatString(parameter) + ".");
-    }
-
-    // Java parity: "" + float (Float.toString) for the accepted 0-100 range: shortest round-trip digits with at least one fraction digit.
-    private static string JavaFloatString(float value)
-    {
-        string s = value.ToString("R", CultureInfo.InvariantCulture);
-        return s.Contains('.') || s.Contains('E') ? s : s + ".0";
+        SendInfo(admin, "Your speed is now fixed at " + JavaString.ValueOf(parameter) + ".");
     }
 }

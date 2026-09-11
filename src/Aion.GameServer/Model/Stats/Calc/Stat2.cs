@@ -1,5 +1,6 @@
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Stats.Container;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model.Stats.Calc;
 
@@ -100,5 +101,5 @@ public abstract class Stat2
     public Creature GetOwner() => _owner;
 
     // Java parity: toString()
-    public override string ToString() => "[" + Stat + " base=" + BaseField + ", bonus=" + BonusField + "]";
+    public override string ToString() => "[" + Stat + " base=" + JavaString.ValueOf(BaseField) + ", bonus=" + JavaString.ValueOf(BonusField) + "]";
 }

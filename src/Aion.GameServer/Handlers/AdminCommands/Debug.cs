@@ -46,8 +46,7 @@ public class Debug : AdminCommand
             string message = "Connected players (" + connectedPlayers.Count + "):";
             foreach (Player player in connectedPlayers)
             {
-                // Java parity: boolean concatenation prints lowercase "true"/"false".
-                string details = player.GetPosition().ToCoordString() + ", spawned: " + (player.IsSpawned() ? "true" : "false");
+                string details = player.GetPosition().ToCoordString() + ", spawned: " + JavaString.ValueOf(player.IsSpawned());
                 if (!player.IsInWorld())
                 {
                     details += ", " + ChatUtil.Color("not in world", Color.Red);

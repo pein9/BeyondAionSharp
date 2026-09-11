@@ -45,7 +45,8 @@ public class MoveTo : AdminCommand
         if (pos != null)
         {
             pos.SetH(admin.GetHeading());
-            DoMoveTo(admin, pos, "Teleported to " + WorldName(pos.GetMapId()) + "\nX:" + pos.GetX() + " Y:" + pos.GetY() + " Z:" + pos.GetZ());
+            DoMoveTo(admin, pos, "Teleported to " + WorldName(pos.GetMapId()) + "\nX:" + JavaString.ValueOf(pos.GetX()) + " Y:" + JavaString.ValueOf(pos.GetY())
+                + " Z:" + JavaString.ValueOf(pos.GetZ()));
             return;
         }
         else if (paramsArr.Length > 1 || paramsArr[0].StartsWith("[pos:"))

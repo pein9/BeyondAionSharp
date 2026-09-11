@@ -43,17 +43,17 @@ public class Ai : AdminCommand
         if (paramsArr[0].Equals("createlog", StringComparison.OrdinalIgnoreCase))
         {
             AIConfig.ONCREATE_DEBUG = !AIConfig.ONCREATE_DEBUG;
-            SendInfo(admin, "New createlog value: " + AIConfig.ONCREATE_DEBUG);
+            SendInfo(admin, "New createlog value: " + JavaString.ValueOf(AIConfig.ONCREATE_DEBUG));
         }
         else if (paramsArr[0].Equals("eventlog", StringComparison.OrdinalIgnoreCase))
         {
             AIConfig.EVENT_DEBUG = !AIConfig.EVENT_DEBUG;
-            SendInfo(admin, "New eventlog value: " + AIConfig.EVENT_DEBUG);
+            SendInfo(admin, "New eventlog value: " + JavaString.ValueOf(AIConfig.EVENT_DEBUG));
         }
         else if (paramsArr[0].Equals("movelog", StringComparison.OrdinalIgnoreCase))
         {
             AIConfig.MOVE_DEBUG = !AIConfig.MOVE_DEBUG;
-            SendInfo(admin, "New movelog value: " + AIConfig.MOVE_DEBUG);
+            SendInfo(admin, "New movelog value: " + JavaString.ValueOf(AIConfig.MOVE_DEBUG));
         }
         else if (paramsArr[0].Equals("marker", StringComparison.OrdinalIgnoreCase))
         {
@@ -78,7 +78,7 @@ public class Ai : AdminCommand
             {
                 bool oldValue = npc.GetAi().IsLogging();
                 npc.GetAi().SetLogging(!oldValue);
-                SendInfo(admin, "New log value: " + !oldValue);
+                SendInfo(admin, "New log value: " + JavaString.ValueOf(!oldValue));
             }
             else if (paramsArr[0].Equals("events", StringComparison.OrdinalIgnoreCase))
             {

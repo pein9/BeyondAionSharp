@@ -58,7 +58,7 @@ public class Collide : AdminCommand
             SendInfo(admin, "From target towards you:");
         }
 
-        SendInfo(admin, "Target: X=" + x + "; Y=" + y + "; Z=" + z);
+        SendInfo(admin, "Target: X=" + JavaString.ValueOf(x) + "; Y=" + JavaString.ValueOf(y) + "; Z=" + JavaString.ValueOf(z));
 
         CollisionResults results = GeoService.GetInstance().GetCollisions(target, targetX, targetY, targetZ, intentions, null);
         CollisionResult closest = results.GetClosestCollision();
@@ -78,7 +78,7 @@ public class Collide : AdminCommand
         if (isMe)
         {
             SendInfo(admin, "From you towards your target:");
-            SendInfo(admin, "Admin: X=" + admin.GetX() + "; Y=" + admin.GetY() + "; Z=" + admin.GetZ());
+            SendInfo(admin, "Admin: X=" + JavaString.ValueOf(admin.GetX()) + "; Y=" + JavaString.ValueOf(admin.GetY()) + "; Z=" + JavaString.ValueOf(admin.GetZ()));
 
             results = GeoService.GetInstance().GetCollisions(admin, target.GetX(), target.GetY(),
                 target.GetZ() + target.GetObjectTemplate().GetBoundRadius().GetUpper() / 2, intentions, null);
@@ -143,7 +143,7 @@ public class Collide : AdminCommand
                 count++;
             }
         }
-        description += "-----------------------\nClosest: " + closestId + ". Distance: " + closestOpposite.GetDistance();
+        description += "-----------------------\nClosest: " + closestId + ". Distance: " + JavaString.ValueOf(closestOpposite.GetDistance());
         SendInfo(admin, description);
     }
 }
