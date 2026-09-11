@@ -338,7 +338,6 @@ public sealed class ChatCommandExceptionParityTests
 			"Handlers/ConsoleCommands/Classup.cs",
 			"Handlers/AdminCommands/Auction.cs",
 			"Handlers/AdminCommands/BaseCommand.cs",
-			"Handlers/AdminCommands/AlterNpc.cs",
 			"Handlers/AdminCommands/Quest.cs",
 			"Handlers/AdminCommands/Set.cs",
 			"Handlers/AdminCommands/Stat.cs",
