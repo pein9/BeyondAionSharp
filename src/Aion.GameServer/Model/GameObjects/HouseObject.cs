@@ -117,7 +117,8 @@ public abstract class HouseObject : VisibleObject, IExpirable, IPersistable
         return (PlaceableHouseObject) base.GetObjectTemplate();
     }
 
-    public new float GetX()
+    // Java parity: the position getters are overridable (SpawnNpc.DummyHouseObject reads them from its world position instead).
+    public new virtual float GetX()
     {
         return x;
     }
@@ -133,7 +134,7 @@ public abstract class HouseObject : VisibleObject, IExpirable, IPersistable
         }
     }
 
-    public new float GetY()
+    public new virtual float GetY()
     {
         return y;
     }
@@ -149,7 +150,7 @@ public abstract class HouseObject : VisibleObject, IExpirable, IPersistable
         }
     }
 
-    public new float GetZ()
+    public new virtual float GetZ()
     {
         return z;
     }
@@ -165,7 +166,7 @@ public abstract class HouseObject : VisibleObject, IExpirable, IPersistable
         }
     }
 
-    public new sbyte GetHeading()
+    public new virtual sbyte GetHeading()
     {
         return heading;
     }

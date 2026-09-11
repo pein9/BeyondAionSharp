@@ -90,22 +90,22 @@ public class SpawnNpc : AdminCommand
         {
         }
 
-        public new float GetX()
+        public override float GetX()
         {
             return GetPosition().GetX();
         }
 
-        public new float GetY()
+        public override float GetY()
         {
             return GetPosition().GetY();
         }
 
-        public new float GetZ()
+        public override float GetZ()
         {
             return GetPosition().GetZ();
         }
 
-        public new sbyte GetHeading()
+        public override sbyte GetHeading()
         {
             return (sbyte)GetPosition().GetHeading();
         }
