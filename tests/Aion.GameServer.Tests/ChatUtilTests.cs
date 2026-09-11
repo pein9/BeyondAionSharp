@@ -110,10 +110,19 @@ public sealed class ChatUtilTests
 	[Fact]
 	public void Color_WhiteProducesOnesForAllComponents()
 	{
-		// r=255, g=255, b=255 → all = 1.0 → "1." format
+		// Java 25: DecimalFormat(".##") formats 1.0 as "1.0", not "1." or "1"
 		var result = ChatUtil.Color("text", 255, 255, 255);
 
-		Assert.Contains("[color:text;", result);
+		Assert.Equal("[color:text;1.0 1.0 1.0]", result);
+	}
+
+	[Fact]
+	public void Color_FormatsComponentsLikeJavaDecimalFormat()
+	{
+		// Java 25: ChatUtil.color("text", 0, 128, 175) — no leading zero, one or two fraction digits
+		var result = ChatUtil.Color("text", 0, 128, 175);
+
+		Assert.Equal("[color:text;.0 .5 .69]", result);
 	}
 
 	[Fact]

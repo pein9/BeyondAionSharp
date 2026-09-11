@@ -34,9 +34,8 @@ public static class ChatUtil
 	public static string Color(string message, int r, int g, int b)
 	{
 		// Java parity: utils/ChatUtil.color(String, int, int, int).
-		// Java uses DecimalFormat(".##") which shows up to 2 decimal places,
-		// with no leading zero for values < 1 (e.g. 0.5 → ".5", 1.0 → "1.").
-		// C# approximation: format as up to 2 decimal places, strip leading "0" if < 1.
+		// Java uses DecimalFormat(".##"), which shows one or two decimal places
+		// with no leading zero (e.g. 0 → ".0", 0.5 → ".5", 1.0 → "1.0").
 		var rf = FormatColorComponent(r / 255f);
 		var gf = FormatColorComponent(g / 255f);
 		var bf = FormatColorComponent(b / 255f);
@@ -397,9 +396,8 @@ public static class ChatUtil
 
 	private static string FormatColorComponent(float value)
 	{
-		// Java DecimalFormat(".##"): up to 2 decimal places, no leading zero for values < 1.
-		// e.g. 0.502 → ".5", 1.0 → "1.", 0.0 → "0." (Java shows "0." for exact zero)
-		var formatted = value.ToString(".##", System.Globalization.CultureInfo.InvariantCulture);
-		return formatted == string.Empty ? "0." : formatted;
+		// Java DecimalFormat.applyPattern(".##") gives a pattern without a zero digit one, so it formats like ".0#":
+		// e.g. 0.0 → ".0", 0.502 → ".5", 1.0 → "1.0". Matches Java 25 for every component value 0-255.
+		return value.ToString(".0#", System.Globalization.CultureInfo.InvariantCulture);
 	}
 }
