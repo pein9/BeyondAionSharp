@@ -5,7 +5,6 @@ using Aion.GameServer.Model.Stats.Calc;
 using Aion.GameServer.Model.Stats.Calc.Functions;
 using Aion.GameServer.Model.Stats.Container;
 using Aion.GameServer.Utils.ChatHandlers;
-using Aion.GameServer.Utils.Stats;
 
 namespace Aion.GameServer.Handlers.AdminCommands;
 
@@ -25,53 +24,28 @@ public class Speed : AdminCommand, IStatOwner
             SendInfo(admin);
             return;
         }
-
-        float parameter = 0;
-        if (!TryParseFloat(paramsArr[0], out parameter))
-        {
-            SendInfo(admin, (string)null); // default info for NumberFormatException
-            return;
-        }
+        float parameter = JavaNumberParser.ParseFloat(paramsArr[0]);
         if (parameter < 0 || parameter > 100)
         {
             SendInfo(admin, "Speed must be between 0 and 100.");
             return;
         }
-
         admin.GetGameStats().EndEffect(this);
         if (parameter == 0)
         {
-            SendInfo(admin, "Your standard speed has been recovered.");
+            SendInfo(admin, "Your regular speed has been restored.");
             return;
         }
-
-        List<IStatFunction> functions = new List<IStatFunction>();
-        functions.Add(new SpeedFunction(StatEnum.SPEED, parameter));
-        functions.Add(new SpeedFunction(StatEnum.FLY_SPEED, parameter));
+        int speed = (int)(parameter * 1000);
+        List<IStatFunction> functions = new List<IStatFunction> { new Stat.CommandStatFunction(StatEnum.SPEED, speed), new Stat.CommandStatFunction(StatEnum.FLY_SPEED, speed) };
         admin.GetGameStats().AddEffect(this, functions);
-        SendInfo(admin, "Your speed is now fixed at " + parameter);
+        SendInfo(admin, "Your speed is now fixed at " + JavaFloatString(parameter) + ".");
     }
 
-    private class SpeedFunction : StatFunction
+    // Java parity: "" + float (Float.toString) for the accepted 0-100 range: shortest round-trip digits with at least one fraction digit.
+    private static string JavaFloatString(float value)
     {
-        private int speed;
-
-        public SpeedFunction(StatEnum stat, float speed)
-        {
-            this.Stat = stat;
-            this.speed = (int)(speed * 1000);
-        }
-
-        public override void Apply(Stat2 otherStat, params CalculationType[] calculationTypes)
-        {
-            otherStat.SetBase(speed);
-            otherStat.SetBaseRate(1);
-            otherStat.SetBonus(0);
-        }
-
-        public override int GetPriority()
-        {
-            return 120;
-        }
+        string s = value.ToString("R", CultureInfo.InvariantCulture);
+        return s.Contains('.') || s.Contains('E') ? s : s + ".0";
     }
 }

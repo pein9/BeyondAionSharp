@@ -1,13 +1,17 @@
+using System;
+using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Stats.Calc;
+using Aion.GameServer.Model.Templates;
+using Aion.GameServer.Model.Templates.Items;
 
 namespace Aion.GameServer.Model.Items;
 
 /// <summary>
 /// A stone socketed into an item (manastone/godstone/etc.).
-/// Java parity: model/items/ItemStone (implements StatOwner, Persistable).
+/// Java parity: model/items/ItemStone (implements StatOwner, Persistable, L10n).
 /// </summary>
-public class ItemStone : IStatOwner, IPersistable
+public class ItemStone : IStatOwner, IPersistable, IL10n
 {
     private readonly int _itemObjId;
     private readonly int _itemId;
@@ -29,10 +33,15 @@ public class ItemStone : IStatOwner, IPersistable
         _itemId = itemId;
         _slot = slot;
         _persistentState = persistentState;
+        // Java parity: Objects.requireNonNull(getItemTemplate(), () -> "Invalid item ID: " + itemId)
+        if (GetItemTemplate() == null)
+            throw new ArgumentNullException(null, "Invalid item ID: " + itemId);
     }
 
     public int GetItemObjId() => _itemObjId;
     public int GetItemId() => _itemId;
+
+    public ItemTemplate GetItemTemplate() => DataManager.ITEM_DATA.GetItemTemplate(_itemId);
     public int GetSlot() => _slot;
 
     public void SetSlot(int slot)
@@ -64,4 +73,10 @@ public class ItemStone : IStatOwner, IPersistable
                 break;
         }
     }
+
+    // Java parity: L10n::getL10nId()
+    public int GetL10nId() => GetItemTemplate().GetL10nId();
+
+    // Java parity: L10n default getL10n(), declared here so callers keep the template's non-null string type like Item.GetL10n().
+    public string GetL10n() => GetItemTemplate().GetL10n()!;
 }

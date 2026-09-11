@@ -164,7 +164,7 @@ public class Stat : AdminCommand
             return;
         ApplyStatFunction(target, new CommandStatFunction(stat.Value, value));
         string targetInfo = admin.Equals(target) ? "Your " : target.GetName() + "'s ";
-        SendInfo(admin, targetInfo + stat.Value.ToString().ToLowerInvariant() + " is now set to " + value + ".");
+        SendInfo(admin, targetInfo + ChatUtil.Color(stat.Value.ToString(), System.Drawing.Color.White) + " is now set to " + value + ".");
     }
 
     private void ApplyStatFunction(Creature creature, StatFunction statFunction)
@@ -246,11 +246,11 @@ public class Stat : AdminCommand
             info += ", type: " + Type;
             info += ", owner: " + (Owner == null ? "none" : Owner.GetType().Name);
             if (Owner is Effect effect)
-                info += " (skill ID " + effect.GetSkillId() + ": " + effect.GetSkillName() + ")";
-            else if (Owner is Item item)
-                info += " (" + item.Name + ")";
+                info += " (skill ID " + effect.GetSkillId() + ": " + effect.GetSkillTemplate().GetL10n() + ")";
             else if (Owner is EnchantEffect enchantEffect)
                 info += " (" + enchantEffect.GetItemSlot() + ")";
+            else if (Owner is Aion.GameServer.Model.Templates.IL10n l10n)
+                info += " (" + l10n.GetL10n() + ")";
             return info;
         }
 

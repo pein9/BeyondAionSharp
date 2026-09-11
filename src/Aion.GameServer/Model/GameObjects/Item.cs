@@ -8,7 +8,7 @@ namespace Aion.GameServer.Model.GameObjects;
 /// Java parity: model/gameobjects/Item extends AionObject implements Expirable, StatOwner, Persistable.
 /// Ported as partial classes (959L). Part 1: fields, constructors, charge-info, core accessors.
 /// </summary>
-public partial class Item : AionObject, Aion.GameServer.Model.IExpirable, Aion.GameServer.Model.Stats.Calc.IStatOwner, IPersistable
+public partial class Item : AionObject, Aion.GameServer.Model.IExpirable, Aion.GameServer.Model.Stats.Calc.IStatOwner, IPersistable, Aion.GameServer.Model.Templates.IL10n
 {
     public const int MAX_BASIC_STONES = 6;
     private long itemCount = 1;

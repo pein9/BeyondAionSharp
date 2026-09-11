@@ -780,10 +780,10 @@ public sealed class GoldenWorldPacketFixtureTests
     ///   (a) socketedManastones: item.GetItemStones() carries two ManaStones (slot 0 + slot 2, distinct itemIds). The
     ///       ENCHANT_INFO writer's CreateManastoneMap builds a slot-&gt;stone map; the Item.MAX_BASIC_STONES (6) loop writes
     ///       stone.GetItemId() at the populated slots and 0 elsewhere. ManaStone(itemObjId, itemId, slot, NEW) ctor reads
-    ///       DataManager.ITEM_DATA.GetItemTemplate(itemId) (empty holder -> null, tolerated) -> only the ItemStone scalars
+    ///       DataManager.ITEM_DATA.GetItemTemplate(itemId) (bare seeded template, no modifiers) -> only the ItemStone scalars
     ///       (slot/itemId) are read by the writer.
     ///   (b) godStone: item.SetGodStone(new GodStone(item, 0, godStoneId, null, NEW)) -> GetGodStoneId() == godStoneId. The
-    ///       GodStone ctor takes godstoneInfo directly (null OK; the writer only reads GetItemId()), DataManager-free.
+    ///       GodStone ctor takes godstoneInfo directly (null OK; the writer only reads GetItemId()); its ItemStone base needs the seeded template.
     ///   (c) manastonesAndGodStone: BOTH branches populated on one item.
     /// All other ENCHANT_INFO/SLOTS_WEAPON/PREMIUM_OPTION/GENERAL_INFO reads are identical to the weapon seam (no idian/
     /// dye/tempering/fusion). Built IDENTICALLY to the Java oracle side; Java is the oracle.
@@ -819,8 +819,8 @@ public sealed class GoldenWorldPacketFixtureTests
     /// <summary>
     /// Build a 1H-sword Item (same base as BuildEquippableWeapon) and POPULATE the ENCHANT_INFO sub-objects: optional
     /// socketed manastones at slots 0/2 (via GetItemStones().Add(new ManaStone(..))) and/or a godstone (via
-    /// SetGodStone(new GodStone(..))). The ManaStone ctor reads DataManager.ITEM_DATA.GetItemTemplate(itemId) (empty
-    /// holder -> null, tolerated); the GodStone ctor takes godstoneInfo directly (null OK). Mirrors the Java side exactly.
+    /// SetGodStone(new GodStone(..))). The ItemStone ctor requires a template for each stone id, so BuildStoneItemData seeds
+    /// bare ones; the GodStone ctor takes godstoneInfo directly (null OK). Mirrors the Java side exactly.
     /// </summary>
     private static Item BuildSubObjectWeapon(int objectId, bool withManastones, bool withGodStone)
     {
@@ -1399,9 +1399,10 @@ public sealed class GoldenWorldPacketFixtureTests
         // SM_INVENTORY_UPDATE_ITEM seam: ITEM_CLEAN_UP with an empty (non-null) cleanup list -> GENERAL_INFO's
         // HasAccountOrLegionWhStorabilityDisabled streams an empty list -> false (mirrors the Java empty-bplist seam).
         SetAutoProperty(staticData, nameof(StaticData.ItemRestrictionCleanupDataDh), BuildItemCleanupData());
-        // SM_INVENTORY_ADD_ITEM_SUBOBJECT seam: empty (non-null) ItemData so the ManaStone ctor's
-        // DataManager.ITEM_DATA.GetItemTemplate(itemId) returns null gracefully (mirrors the Java empty ItemData seam).
-        SetAutoProperty(staticData, nameof(StaticData.ItemDataDh), new ItemData());
+        // SM_INVENTORY_ADD_ITEM_SUBOBJECT seam: ItemData holding only bare templates for the socketed stone ids, because the
+        // ItemStone ctor rejects ids without a template (upstream 490c7a0ca). The bare templates carry no modifiers, so the
+        // ManaStone ctor still leaves its modifiers null and the writer reads only the stone ids and slots, as before.
+        SetAutoProperty(staticData, nameof(StaticData.ItemDataDh), BuildStoneItemData());
 
         var dmCtor = typeof(DataManager).GetConstructor(
             BindingFlags.Instance | BindingFlags.NonPublic, binder: null, new[] { typeof(StaticData) }, modifiers: null)!;
@@ -1413,6 +1414,21 @@ public sealed class GoldenWorldPacketFixtureTests
         // is overwritten with a pinned value, so its value is irrelevant).
         try { _ = IDFactory.GetInstance(); }
         catch (InvalidOperationException) { IDFactory.RegisterInstance(new IDFactory()); }
+    }
+
+    /// <summary>ItemData with bare templates for the stone ids the SUBOBJECT seam sockets, and nothing else.</summary>
+    private static ItemData BuildStoneItemData()
+    {
+        var itemData = new ItemData();
+        var items = (Dictionary<int, ItemTemplate>)typeof(ItemData)
+            .GetField("items", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(itemData)!;
+        foreach (int stoneItemId in new[] { EqMsSlot0ItemId, EqMsSlot2ItemId, EqGsItemId })
+        {
+            var stoneTemplate = new ItemTemplate();
+            stoneTemplate.itemId = stoneItemId;
+            items[stoneItemId] = stoneTemplate;
+        }
+        return itemData;
     }
 
     /// <summary>Build a WorldMapsData with exactly one regular and one instance template (structurally == Java side).</summary>

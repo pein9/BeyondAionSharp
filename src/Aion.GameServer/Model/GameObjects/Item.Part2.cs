@@ -263,6 +263,12 @@ public partial class Item
         return itemTemplate.GetTemplateId();
     }
 
+    // Java parity: L10n::getL10nId(). Java drops its own getL10n() for the L10n default method, which resolves to the same string.
+    public int GetL10nId()
+    {
+        return itemTemplate.GetL10nId();
+    }
+
     public string GetL10n()
     {
         return itemTemplate.GetL10n();

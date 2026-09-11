@@ -242,8 +242,7 @@ public abstract class CreatureController : VisibleObjectController
             return;
 
         Aion.GameServer.Model.Templates.Items.GodstoneInfo godstoneInfo = godStone.GetGodstoneInfo();
-        Aion.GameServer.Model.Templates.Items.ItemTemplate template = DataManager.ITEM_DATA.GetItemTemplate(godStone.GetItemId());
-        Skill skill = Aion.GameServer.SkillEngine.SkillEngine.GetInstance().GetSkill(attacker, godstoneInfo.GetSkillId(), godstoneInfo.GetSkillLevel(), GetOwner(), template);
+        Skill skill = Aion.GameServer.SkillEngine.SkillEngine.GetInstance().GetSkill(attacker, godstoneInfo.GetSkillId(), godstoneInfo.GetSkillLevel(), GetOwner(), godStone.GetItemTemplate());
         skill.SetFirstTargetRangeCheck(false);
         if (!skill.CanUseSkill(Aion.GameServer.SkillEngine.Properties.Properties.CastState.CAST_START))
             return;
@@ -258,8 +257,7 @@ public abstract class CreatureController : VisibleObjectController
             if (godStone.GetActivatedCount() > godstoneInfo.GetNonBreakCount() && Rnd.Get(1, 1000) <= godstoneInfo.GetBreakProb())
             {
                 weapon.SetGodStone(null);
-                PacketSendUtility.SendPacket(attacker,
-                    SM_SYSTEM_MESSAGE.STR_MSG_BREAK_PROC(weapon.GetL10n(), DataManager.ITEM_DATA.GetItemTemplate(godStone.GetItemId()).GetL10n()));
+                PacketSendUtility.SendPacket(attacker, SM_SYSTEM_MESSAGE.STR_MSG_BREAK_PROC(weapon.GetL10n(), godStone.GetL10n()));
                 Aion.GameServer.Services.Items.ItemPacketService.UpdateItemAfterInfoChange(attacker, weapon);
             }
         }
