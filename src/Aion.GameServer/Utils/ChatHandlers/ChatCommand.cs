@@ -50,7 +50,7 @@ public abstract class ChatCommand
     {
         if (paramsArr.Length == 1 && "help".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
         {
-            SendMessagePackets(player, "Command: " + ChatUtil.Color(GetAliasWithPrefix(), Color.White) + "\n\t"
+            SendInfo(player, "Command: " + ChatUtil.Color(GetAliasWithPrefix(), Color.White) + "\n\t"
                 + (GetDescription().Length == 0 ? "No description available." : GetDescription()) + "\n" + GetSyntaxInfo());
             return true;
         }
@@ -254,7 +254,8 @@ public abstract class ChatCommand
         {
             sb.Append(GetSyntaxInfo());
         }
-        SendMessagePackets(player, sb.ToString());
+        foreach (string part in ChatUtil.Split(sb.ToString()))
+            PacketSendUtility.SendMessage(player, part);
     }
 
     protected static string Join(string[] paramsArr, int startIndex)
@@ -275,59 +276,4 @@ public abstract class ChatCommand
         return visibleObject.GetName();
     }
 
-    /// <summary>Sends the formatted input message with as little packets as possible.</summary>
-    private static void SendMessagePackets(Player player, string message)
-    {
-        int lineLimit = 15; // length limit check alone is not safe if you send chat links (they can exceeded the display limit on client side)
-        string[] lines = message.Split('\n');
-        if (message.Length <= SM_MESSAGE.MESSAGE_SIZE_LIMIT && lines.Length <= lineLimit)
-        {
-            PacketSendUtility.SendMessage(player, message);
-        }
-        else
-        {
-            StringBuilder sb = new StringBuilder(lines[0]);
-            for (int i = 1; i < lines.Length; i++)
-            {
-                if (i % lineLimit == 0 || sb.Length + 1 + lines[i].Length > SM_MESSAGE.MESSAGE_SIZE_LIMIT) // current length + newLine char + next line length
-                {
-                    SendSafe(player, sb.ToString());
-                    sb.Length = 0;
-                }
-                else
-                {
-                    sb.Append('\n');
-                }
-                sb.Append(lines[i]);
-            }
-            SendSafe(player, sb.ToString());
-        }
-    }
-
-    /// <summary>Divides up the (single line) message if necessary and sends multiple packets to stay within the character limit per line.</summary>
-    private static void SendSafe(Player player, string msg)
-    {
-        if (msg.Length > SM_MESSAGE.MESSAGE_SIZE_LIMIT)
-        {
-            int splitIndex = FindSplitIndex(msg, ',', ']', ' ') + 1;
-            PacketSendUtility.SendMessage(player, msg.Substring(0, splitIndex));
-            SendSafe(player, msg.Substring(splitIndex));
-        }
-        else
-        {
-            PacketSendUtility.SendMessage(player, msg);
-        }
-    }
-
-    private static int FindSplitIndex(string msg, params char[] splitChars)
-    {
-        int searchStartIndex = Math.Min(msg.Length / 2, SM_MESSAGE.MESSAGE_SIZE_LIMIT / 2);
-        foreach (char splitChar in splitChars)
-        {
-            int splitIndex = msg.IndexOf(splitChar, searchStartIndex);
-            if (splitIndex > -1 && splitIndex <= SM_MESSAGE.MESSAGE_SIZE_LIMIT)
-                return splitIndex;
-        }
-        return SM_MESSAGE.MESSAGE_SIZE_LIMIT;
-    }
 }

@@ -324,6 +324,86 @@ public static class ChatUtil
 	/// <summary>
 	/// The string padded to the given width for display in chat.
 	/// </summary>
+	/// <summary>
+	/// Java parity: utils/ChatUtil.split(String). Splits a chat message into parts that fit within the client's 1022 character display limit.
+	/// It makes a best-effort estimate to account for links and l10n identifiers, which often expand into longer rendered text on the client side.
+	/// Splitting occurs at a newline or space, if present, to avoid breaking links or words.
+	/// </summary>
+	public static List<string> Split(string chatMessage)
+	{
+		if (chatMessage.Length <= Aion.GameServer.Network.Aion.ServerPackets.SM_MESSAGE.MESSAGE_SIZE_LIMIT / 2)
+			return new List<string> { chatMessage };
+		List<string> parts = new List<string>();
+		for (int start = 0, length = chatMessage.Length; start < length;)
+		{
+			int splitIndex = FindSplitIndex(chatMessage, start, length);
+			parts.Add(chatMessage.Substring(start, splitIndex - start));
+			start = splitIndex;
+			if (start < length)
+			{
+				char splitChar = chatMessage[start];
+				if (splitChar == ' ' || splitChar == '\n')
+					start++;
+			}
+		}
+		return parts;
+	}
+
+	private static int FindSplitIndex(string chatMessage, int startIndex, int endIndex)
+	{
+		int estimatedDisplayLength = 0;
+		int lastNewLineIndex = -1;
+		int lastSpaceIndex = -1;
+		for (int i = startIndex; i < endIndex; i++)
+		{
+			int lengthToAdd = 1;
+			switch (chatMessage[i])
+			{
+				case '\n':
+					lastNewLineIndex = i;
+					break;
+				case ' ':
+					lastSpaceIndex = i;
+					break;
+				case '$': // check for l10n ID
+					if (i + 2 < endIndex && (chatMessage[i + 1] & 1) == 1)
+					{
+						i += 2;
+						lengthToAdd += 15; // conservative estimate for the character count of a resolved localized string on the client side
+					}
+					break;
+				case '[': // check for any link type, such as [quest:1006], [item:182400001], etc.
+					// Java Character.isLowerCase also accepts the few Other_Lowercase code points; link names are ASCII, so char.IsLower is equivalent here.
+					if (i + 3 < endIndex && char.IsLower(chatMessage[i + 1]))
+					{
+						int searchEnd = Math.Min(i + 40, endIndex); // Java String.indexOf(ch, beginIndex, endIndex)
+						int linkEndIndex = chatMessage.IndexOf(']', i + 2, searchEnd - (i + 2));
+						if (linkEndIndex == -1)
+							break;
+						int colonIndex = chatMessage.IndexOf(':', i + 2, linkEndIndex - (i + 2));
+						if (colonIndex == -1)
+							break;
+						int linkLength = linkEndIndex - i;
+						i += linkLength;
+						lengthToAdd += 30; // conservative estimate for the character count of a rendered chat link on the client side
+					}
+					break;
+			}
+			estimatedDisplayLength += lengthToAdd;
+			if (estimatedDisplayLength >= Aion.GameServer.Network.Aion.ServerPackets.SM_MESSAGE.MESSAGE_SIZE_LIMIT)
+			{
+				if (i == startIndex)
+					break;
+				if (lastNewLineIndex != -1)
+					return lastNewLineIndex;
+				if (lastSpaceIndex != -1)
+					return lastSpaceIndex;
+				return i;
+			}
+		}
+		return endIndex;
+	}
+
 	public static string LeftPad(long number, int width)
 	{
 		string num = number.ToString();
