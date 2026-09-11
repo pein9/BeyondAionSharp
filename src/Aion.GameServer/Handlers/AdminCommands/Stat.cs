@@ -247,7 +247,7 @@ public class Stat : AdminCommand
             info += ", owner: " + (Owner == null ? "none" : Owner.GetType().Name);
             if (Owner is Effect effect)
                 info += " (skill ID " + effect.GetSkillId() + ": " + effect.GetSkillTemplate().GetL10n() + ")";
-            else if (Owner is EnchantEffect enchantEffect)
+            else if (Owner is EnchantEffect enchantEffect && enchantEffect.GetItemSlot() != default) // Java null: slot is only set for attack stats
                 info += " (" + enchantEffect.GetItemSlot() + ")";
             else if (Owner is Aion.GameServer.Model.Templates.IL10n l10n)
                 info += " (" + l10n.GetL10n() + ")";
