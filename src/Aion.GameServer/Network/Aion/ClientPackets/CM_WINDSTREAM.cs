@@ -39,21 +39,24 @@ public class CM_WINDSTREAM : AionClientPacket
         Player player = GetConnection().GetActivePlayer();
         switch (state)
         {
-            case 0: // ?
-                player.UnsetPlayerMode(PlayerMode.RIDE);
-                break;
-            case 1: // entering windstream
+            case 0: // entering windstream
                 if (player.IsUsingFlightTransporterOrWindstream() || !player.IsFlying())
                     return;
+                player.UnsetPlayerMode(PlayerMode.RIDE);
                 player.SetFlightPath(new FlightPath(FlightPath.Type.WINDSTREAM, teleportId, distance));
                 player.UnsetState(CreatureState.ACTIVE);
                 player.UnsetState(CreatureState.GLIDING);
                 player.SetState(CreatureState.FLYING);
                 player.UnsetFlyState(FlyState.GLIDING);
                 player.SetFlyState(FlyState.FLYING);
-                PacketSendUtility.BroadcastPacket(player, new SM_EMOTION(player, EmotionType.WINDSTREAM, teleportId, distance), true);
                 player.GetLifeStats().TriggerFpRestore();
-                global::Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnEnterWindStream(new QuestEnv(null, player, 0), teleportId);
+                break;
+            case 1: // after entering windstream
+                if (player.IsUsingFlightPath(FlightPath.Type.WINDSTREAM))
+                {
+                    PacketSendUtility.BroadcastPacket(player, new SM_EMOTION(player, EmotionType.WINDSTREAM, teleportId, distance), true);
+                    global::Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnEnterWindStream(new QuestEnv(null, player, 0), teleportId);
+                }
                 return; // don't send SM_WINDSTREAM
             case 2: // leaving windstream (gliding)
             case 3: // leaving windstream

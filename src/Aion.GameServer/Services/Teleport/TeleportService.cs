@@ -202,6 +202,11 @@ public class TeleportService
         player.GetController().CancelCurrentSkill(null);
         player.SetTarget(null);
         player.UnsetPlayerMode(PlayerMode.RIDE);
+        if (player.IsUsingFlightTransporterOrWindstream())
+        {
+            player.SetFlightPath(null);
+            player.GetFlyController().EndFly(false);
+        }
     }
 
     private static void SpawnOnSameMap(Player player)
