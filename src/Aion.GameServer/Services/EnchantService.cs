@@ -178,7 +178,7 @@ public class EnchantService
 
         int maxEnchant = targetItem.GetItemTemplate().GetMaxEnchantLevel(); // max enchant level from item_templates
         maxEnchant += targetItem.GetEnchantBonus();
-        if (targetItem.GetEnchantLevel() < 20)
+        if (targetItem.GetEnchantLevel() < maxEnchant)
         {
             float chance = Rnd.Chance(); // crit modifier
             if (chance < 5)
