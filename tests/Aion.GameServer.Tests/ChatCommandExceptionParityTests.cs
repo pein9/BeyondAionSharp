@@ -290,12 +290,14 @@ public sealed class ChatCommandExceptionParityTests
 	}
 
 	[Fact]
-	public void Run_ShowsInvalidEnumConstantMessage()
+	public void Run_ShowsInvalidEnumConstantMessageWithValuesInJavaDeclarationOrder()
 	{
 		var command = new ThrowingCommand(() => ThrowingCommand.ParseEnumNameValue<CreatureState>("bogus"));
 
 		Assert.True(command.Run(OfflinePlayer()));
-		Assert.StartsWith("Invalid creature state.\nPossible values:\n", command.LastErrorMessage);
+		Assert.Equal("Invalid creature state.\nPossible values:\n"
+			+ "ACTIVE, FLYING, RESTING, FLOATING_CORPSE, UNK, WEAPON_EQUIPPED, WALK_MODE, POWERSHARD, TREATMENT, GLIDING, CHAIR, DEAD, PRIVATE_SHOP, LOOTING",
+			command.LastErrorMessage);
 	}
 
 	[Fact]

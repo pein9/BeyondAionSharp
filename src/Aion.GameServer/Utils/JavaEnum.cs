@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace Aion.GameServer.Utils;
 
 /// <summary>
@@ -34,5 +36,23 @@ internal static class JavaEnum
 
         result = default;
         return false;
+    }
+
+    /// <summary>
+    /// Java <c>values()</c> semantics: the constants in declaration order. <see cref="Enum.GetValues{TEnum}"/> sorts them by
+    /// underlying value instead, which differs for enums with explicit, non-sequential values.
+    /// </summary>
+    internal static TEnum[] Values<TEnum>() where TEnum : struct, Enum => Array.ConvertAll(Values(typeof(TEnum)), value => (TEnum)value);
+
+    /// <summary>Non-generic <see cref="Values{TEnum}"/>, for Java <c>Class.getEnumConstants()</c>.</summary>
+    internal static object[] Values(Type enumType)
+    {
+        if (!enumType.IsEnum)
+            throw new ArgumentException("Type provided must be an Enum.", nameof(enumType));
+
+        return enumType.GetFields(BindingFlags.Public | BindingFlags.Static)
+            .OrderBy(field => field.MetadataToken) // GetFields guarantees no order; field metadata rows follow declaration order
+            .Select(field => field.GetValue(null)!)
+            .ToArray();
     }
 }

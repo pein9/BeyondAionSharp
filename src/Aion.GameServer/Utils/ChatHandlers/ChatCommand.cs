@@ -221,7 +221,7 @@ public abstract class ChatCommand
             try
             {
                 Type enumClass = Type.GetType(string.Join(".", enumParts.Take(enumParts.Length - 1)));
-                string values = string.Join(", ", Enum.GetValues(enumClass).Cast<object>().Select(v => v.ToString()));
+                string values = string.Join(", ", JavaEnum.Values(enumClass).Select(v => v.ToString()));
                 msg += "\nPossible values:\n" + values;
             }
             catch (Exception ex)

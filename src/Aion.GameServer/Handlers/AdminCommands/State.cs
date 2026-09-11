@@ -44,7 +44,7 @@ public class State : AdminCommand
         }
         else if ("list".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
         {
-            SendInfo(admin, "Known states:\n\t" + string.Join("\n\t", Enum.GetValues<CreatureState>().Select(c => c.ToString() + " (" + c.GetId() + ')')));
+            SendInfo(admin, "Known states:\n\t" + string.Join("\n\t", JavaEnum.Values<CreatureState>().Select(c => c.ToString() + " (" + c.GetId() + ')')));
         }
         else
         {
@@ -110,7 +110,7 @@ public class State : AdminCommand
 
     private string FindStateName(int creatureStateId, string defaultName)
     {
-        foreach (CreatureState s in Enum.GetValues<CreatureState>())
+        foreach (CreatureState s in JavaEnum.Values<CreatureState>())
         {
             if (s.GetId() == creatureStateId)
                 return s.ToString();

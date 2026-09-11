@@ -5,6 +5,7 @@ using Aion.GameServer.Controllers.Attack;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players.Npcfaction;
+using Aion.GameServer.Model.GameObjects.State;
 using Aion.GameServer.Model.Templates.Housing;
 using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.QuestEngine.Model;
@@ -126,6 +127,23 @@ public sealed class JavaEnumBoundaryParityTests
         Assert.Throws<ArgumentException>(() => JavaEnum.ValueOf<SignetEnum>("SIGNET1,SIGNET2"));
         Assert.Throws<ArgumentException>(() => JavaEnum.ValueOf<SignetEnum>("signet2"));
         Assert.Throws<ArgumentException>(() => JavaEnum.ValueOf<SignetEnum>("UNDEFINED"));
+    }
+
+    [Fact]
+    public void Values_ListsConstantsInJavaDeclarationOrder()
+    {
+        // Java CreatureState.values() ends with the multibit states, although CHAIR (6) and DEAD (7) sort below FLOATING_CORPSE (8) by value.
+        CreatureState[] javaOrder =
+        [
+            CreatureState.ACTIVE, CreatureState.FLYING, CreatureState.RESTING, CreatureState.FLOATING_CORPSE, CreatureState.UNK,
+            CreatureState.WEAPON_EQUIPPED, CreatureState.WALK_MODE, CreatureState.POWERSHARD, CreatureState.TREATMENT, CreatureState.GLIDING,
+            CreatureState.CHAIR, CreatureState.DEAD, CreatureState.PRIVATE_SHOP, CreatureState.LOOTING,
+        ];
+
+        Assert.Equal(javaOrder, JavaEnum.Values<CreatureState>());
+        Assert.Equal(javaOrder.Cast<object>(), JavaEnum.Values(typeof(CreatureState)));
+        Assert.NotEqual(javaOrder, Enum.GetValues<CreatureState>());
+        Assert.Throws<ArgumentException>(() => JavaEnum.Values(typeof(string)));
     }
 
     [Fact]
