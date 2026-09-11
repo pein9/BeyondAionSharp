@@ -9,23 +9,20 @@ namespace Aion.GameServer.Model.Stats.Calc;
 /// </summary>
 public abstract class Stat2
 {
-    protected float BonusRate;
-    protected float BaseRateField = 1f;
+    protected readonly StatEnum Stat;
+    private readonly Creature _owner;
     protected float BaseField;
+    protected float BaseRateField = 1f;
     protected float BonusField;
+    protected float BonusRate = 1f;
     protected float FixedBonusRate;
     protected float FinalRate = 1f;
-    private readonly Creature _owner;
-    protected readonly StatEnum Stat;
 
-    protected Stat2(StatEnum stat, float @base, Creature owner) : this(stat, @base, owner, 1) { }
-
-    protected Stat2(StatEnum stat, float @base, Creature owner, float bonusRate)
+    protected Stat2(StatEnum stat, float @base, Creature owner)
     {
         Stat = stat;
-        BaseField = @base;
         _owner = owner;
-        BonusRate = bonusRate;
+        BaseField = @base;
     }
 
     // Java parity: getStat()

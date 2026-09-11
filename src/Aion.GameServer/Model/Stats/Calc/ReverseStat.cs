@@ -11,8 +11,6 @@ public class ReverseStat : Stat2
 {
     public ReverseStat(StatEnum stat, float @base, Creature owner) : base(stat, @base, owner) { }
 
-    public ReverseStat(StatEnum stat, float @base, Creature owner, float bonusRate) : base(stat, @base, owner, bonusRate) { }
-
     // Java parity: addToBase(float)
     public override void AddToBase(float @base)
     {
@@ -22,7 +20,7 @@ public class ReverseStat : Stat2
     }
 
     // Java parity: addToBonus(float)
-    public override void AddToBonus(float bonus) => BonusField -= BonusRate * bonus;
+    public override void AddToBonus(float bonus) => BonusField -= bonus;
 
     // Java parity: calculatePercent(int)
     public override float CalculatePercent(int delta)
