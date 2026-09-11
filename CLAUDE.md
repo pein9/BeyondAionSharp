@@ -65,7 +65,15 @@ when it lives elsewhere.
 ```bash
 dotnet build AionServer.slnx
 dotnet test  AionServer.slnx        # golden/parity suite + unit tests
+pwsh -NoProfile -File scripts/ci/check-warning-baseline.ps1   # run before every commit
 ```
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push to `main` and every pull request. It
+rebuilds everything and **fails if the compiler warning count rises above
+`scripts/ci/warning-baseline.json`**, then runs all tests and the structural-fidelity check.
+`dotnet build` and `dotnet test` succeed with new warnings, so only the baseline script catches them
+locally; skipping it is what turned most red CI runs red. Fix new warnings rather than raising the
+baseline (`-UpdateBaseline` is only for recording reviewed reductions).
 
 For upstream fixes, port one Java commit at a time and include an
 `Upstream-Java-SHA` trailer. Never merge or cherry-pick Java history into `main`.
