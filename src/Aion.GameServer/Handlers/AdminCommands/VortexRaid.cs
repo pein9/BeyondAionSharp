@@ -33,17 +33,15 @@ public class VortexRaid : AdminCommand
             SendInfo(player, "Invalid location.");
             return;
         }
-        string locationName = Aion.GameServer.World.World.GetInstance().GetWorldMap(mapId).GetName();
-
         if ("start".Equals(paramsArr[0], System.StringComparison.OrdinalIgnoreCase))
         {
             if (VortexService.GetInstance().IsInvasionInProgress(loc.GetId()))
             {
-                SendInfo(player, locationName + " is already under siege.");
+                SendInfo(player, WorldName(mapId) + " is already under siege.");
             }
             else
             {
-                SendInfo(player, locationName + " raid started.");
+                SendInfo(player, WorldName(mapId) + " raid started.");
                 VortexService.GetInstance().StartInvasion(loc.GetId());
             }
         }
@@ -51,11 +49,11 @@ public class VortexRaid : AdminCommand
         {
             if (!VortexService.GetInstance().IsInvasionInProgress(loc.GetId()))
             {
-                SendInfo(player, locationName + " is not under siege.");
+                SendInfo(player, WorldName(mapId) + " is not under siege.");
             }
             else
             {
-                SendInfo(player, locationName + " raid stopped.");
+                SendInfo(player, WorldName(mapId) + " raid stopped.");
                 VortexService.GetInstance().StopInvasion(loc.GetId());
             }
         }

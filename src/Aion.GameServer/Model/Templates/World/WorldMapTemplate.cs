@@ -7,11 +7,12 @@ namespace Aion.GameServer.Model.Templates.World;
 /// <summary>Java parity: model/templates/world/WorldMapTemplate.</summary>
 [XmlRoot("map")]
 [XmlType("WorldMapTemplate")]
-public class WorldMapTemplate
+public class WorldMapTemplate : IL10n
 {
-    [XmlAttribute("name")]       public string Name   { get; set; } = "";
-    [XmlAttribute("cName")]      public string CName  { get; set; } = "";
     [XmlAttribute("id")]         public int    MapId  { get; set; }
+    [XmlAttribute("cName")]      public string CName  { get; set; } = null!; // Java: required
+    [XmlAttribute("name")]       public string? Name  { get; set; }
+    [XmlAttribute("name_id")]    public int    NameId { get; set; }
     [XmlAttribute("twin_count")] public int    TwinCount          { get; set; }
     [XmlAttribute("beginner_twin_count")] public int BeginnerTwinCount { get; set; }
     [XmlAttribute("max_user")]   public int    MaxUser            { get; set; }
@@ -67,8 +68,11 @@ public class WorldMapTemplate
     };
 
     // ── getters ──────────────────────────────────────────────────────────────
-    public string GetName()           => Name;
     public string GetCName()          => CName;
+    // Java parity: getName() falls back to the client name when no display name is set.
+    public string GetName()           => Name ?? CName;
+    // Java parity: L10n::getL10nId()
+    public int    GetL10nId()         => NameId;
     public int    GetMapId()          => MapId;
     public bool   IsPrison()          => Prison;
     public bool   IsInstance()        => Instance;

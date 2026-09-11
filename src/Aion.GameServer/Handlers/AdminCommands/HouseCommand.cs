@@ -22,8 +22,7 @@ public class HouseCommand : AdminCommand
 {
     public HouseCommand()
         : base("house", "House teleport and ownership management.", """
-            list - Shows all maps with houses.
-            list <map> - Shows all house addresses for the given map.
+            list - Shows house addresses for each map.
             tp <address> - Teleports you to the house with the given address.
             own <address> - Gives ownership of given house to your target.
             revoke <address> - Revokes ownership of given house.
@@ -34,46 +33,26 @@ public class HouseCommand : AdminCommand
 
     public override void Execute(Player admin, params string[] paramsArr)
     {
-        if (paramsArr.Length == 0)
+        if (paramsArr.Length >= 1 && "list".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
         {
-            SendInfo(admin);
-            return;
+            ListHouses(admin);
         }
-
-        House house = null;
-        if (paramsArr.Length >= 2)
+        else if (paramsArr.Length >= 2 && "own".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
         {
-            int address = ParseInt(paramsArr[1]);
-            house = HousingService.GetInstance().GetHouseByAddress(address);
+            AcquireHouse(admin, GetHouse(paramsArr[1]));
         }
-        if (house == null && !"list".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
+        else if (paramsArr.Length >= 2 && "revoke".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
         {
-            SendInfo(admin, "Invalid address.");
-            return;
+            RevokeOwnership(admin, GetHouse(paramsArr[1]));
         }
-        if ("list".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
+        else if (paramsArr.Length >= 2 && "tp".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
         {
-            if (paramsArr.Length == 1)
-                ListMapsWithHouses(admin);
-            else
-                ListHouses(admin, WorldMapTypeExtensions.Of(paramsArr[1]));
+            House house = GetHouse(paramsArr[1]);
+            TeleportService.TeleportTo(admin, house.GetWorldMapInstance(), house.GetX(), house.GetY(), house.GetZ(), (byte)house.GetTeleportHeading());
         }
-        else if ("own".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
+        else if (paramsArr.Length >= 2 && "reloadscripts".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
         {
-            AcquireHouse(admin, house);
-        }
-        else if ("revoke".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
-        {
-            RevokeOwnership(admin, house);
-        }
-        else if ("tp".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
-        {
-            TeleportService.TeleportTo(admin, house.GetPosition().GetWorldMapInstance(), house.GetX(), house.GetY(), house.GetZ(),
-                (byte) house.GetTeleportHeading(), TeleportAnimation.NONE);
-        }
-        else if ("reloadscripts".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
-        {
-            ReloadPlayerScripts(admin, house);
+            ReloadPlayerScripts(admin, GetHouse(paramsArr[1]));
         }
         else
         {
@@ -81,32 +60,19 @@ public class HouseCommand : AdminCommand
         }
     }
 
-    private void ListMapsWithHouses(Player admin)
+    private void ListHouses(Player admin)
     {
-        string maps = string.Join("\n\t", HousingService.GetInstance().GetCustomHouses()
-            .Select(house => WorldMapTypeExtensions.GetWorld(house.GetAddress().GetMapId()))
-            .Distinct().OrderBy(worldMapType => worldMapType)
-            .Select(worldMapType => ChatUtil.Color(CapitalizeFully(worldMapType.ToString()), Color.White)));
-        SendInfo(admin, "Maps with houses:\n\t" + maps + "\nType " + ChatUtil.Color(GetAliasWithPrefix() + " list mapname", Color.White)
-            + " to show all houses for that map.");
-    }
-
-    private void ListHouses(Player admin, WorldMapType? worldMapType)
-    {
-        if (worldMapType == null)
+        // Java: groupingBy(address.mapId, TreeMap::new, toList()) - maps in ascending ID order, houses in encounter order.
+        foreach (IGrouping<int, House> houses in HousingService.GetInstance().GetCustomHouses().GroupBy(house => house.GetAddress().GetMapId()).OrderBy(g => g.Key))
         {
-            SendInfo(admin, "Invalid map name.");
-            return;
+            SendInfo(admin, "House addresses in " + WorldName(houses.Key) + ":");
+            foreach (KeyValuePair<HouseType, List<House>> entry in GroupByType(houses.ToList()))
+            {
+                string houseTypeName = entry.Key.ToString();
+                houseTypeName = houseTypeName[0] + houseTypeName.Substring(1).ToLowerInvariant();
+                SendInfo(admin, "\t" + houseTypeName + ": " + FormatAddresses(entry.Value));
+            }
         }
-        Dictionary<HouseType, List<House>> housesByType = GetHousesByType(worldMapType.Value.GetId());
-        if (housesByType.Count == 0)
-        {
-            SendInfo(admin, "There are no houses in " + CapitalizeFully(worldMapType.ToString()));
-            return;
-        }
-        SendInfo(admin, "Houses in " + CapitalizeFully(worldMapType.ToString()) + ":");
-        foreach (KeyValuePair<HouseType, List<House>> entry in housesByType)
-            SendInfo(admin, CapitalizeFully(entry.Key.ToString()) + ":\n\t" + FormatAddresses(entry.Value));
     }
 
     private string FormatAddresses(List<House> houses)
@@ -135,11 +101,10 @@ public class HouseCommand : AdminCommand
         return addresses;
     }
 
-    private Dictionary<HouseType, List<House>> GetHousesByType(int mapId)
+    private Dictionary<HouseType, List<House>> GroupByType(List<House> houses)
     {
-        // Java parity: comparator = comparing(houseType.id).reversed().thenComparing(address.id)
-        List<House> sorted = HousingService.GetInstance().GetCustomHouses()
-            .Where(house => house.GetAddress().GetMapId() == mapId)
+        // Java parity: comparator = comparing(houseType.id).reversed().thenComparing(address.id), grouped into a LinkedHashMap
+        List<House> sorted = houses
             .OrderByDescending(house => house.GetHouseType().GetId())
             .ThenBy(house => house.GetAddress().GetId())
             .ToList();
@@ -154,6 +119,14 @@ public class HouseCommand : AdminCommand
             list.Add(house);
         }
         return result;
+    }
+
+    private House GetHouse(string param)
+    {
+        int address = ParseInt(param);
+        // Java: Objects.requireNonNull(house, "Invalid address.") throws a NullPointerException, which the command framework logs instead of
+        // showing it to the player (it is not an IllegalArgumentException), so this must not be an ArgumentException either.
+        return HousingService.GetInstance().GetHouseByAddress(address) ?? throw new NullReferenceException("Invalid address.");
     }
 
     private void AcquireHouse(Player admin, House house)
@@ -205,29 +178,5 @@ public class HouseCommand : AdminCommand
         house.ReloadPlayerScripts();
         butler.GetKnownList().ForEachPlayer(house.SendScripts);
         SendInfo(admin, "Script reload successful");
-    }
-
-    // Java parity: org.apache.commons.lang3.text.WordUtils.capitalizeFully(String).
-    private static string CapitalizeFully(string str)
-    {
-        if (string.IsNullOrEmpty(str))
-            return str;
-        str = str.ToLower();
-        char[] buffer = str.ToCharArray();
-        bool capitalizeNext = true;
-        for (int i = 0; i < buffer.Length; i++)
-        {
-            char ch = buffer[i];
-            if (char.IsWhiteSpace(ch))
-            {
-                capitalizeNext = true;
-            }
-            else if (capitalizeNext)
-            {
-                buffer[i] = char.ToUpper(ch);
-                capitalizeNext = false;
-            }
-        }
-        return new string(buffer);
     }
 }

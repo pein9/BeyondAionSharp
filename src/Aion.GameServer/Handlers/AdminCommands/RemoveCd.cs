@@ -60,19 +60,18 @@ public class RemoveCd : AdminCommand
                 {
                     target.GetPortalCooldownList().RemovePortalCooldown(worldId);
                     target.GetPortalCooldownList().SendEntryInfo(worldId);
-                    string worldName = World.World.GetInstance().GetWorldMap(worldId).GetName().Replace('_', ' ');
                     if (target.Equals(admin))
                     {
-                        SendInfo(admin, "Your instance cooldown for " + worldName + " was removed.");
+                        SendInfo(admin, "Your instance cooldown for " + WorldName(worldId) + " was removed.");
                     }
                     else
                     {
-                        SendInfo(admin, "You have removed the instance cooldown for " + worldName + " of " + Name(target) + '.');
-                        SendInfo(target, Name(admin) + " removed your instance cooldown for " + worldName);
+                        SendInfo(admin, "You have removed the instance cooldown for " + WorldName(worldId) + " of " + Name(target) + '.');
+                        SendInfo(target, Name(admin) + " removed your instance cooldown for " + WorldName(worldId) + ".");
                     }
                 }
                 else
-                    SendInfo(admin, (target.Equals(admin) ? "You have" : Name(target) + " has") + " no cooldown on given instance.");
+                    SendInfo(admin, (target.Equals(admin) ? "You have" : Name(target) + " has") + " no cooldown on " + WorldName(worldId) + ".");
             }
         }
         else

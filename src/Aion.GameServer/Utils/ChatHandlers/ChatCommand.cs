@@ -276,4 +276,13 @@ public abstract class ChatCommand
         return visibleObject.GetName();
     }
 
+    /// <summary>The name of the world to be displayed in chat. If available, returns its localized name.</summary>
+    protected static string WorldName(int worldId)
+    {
+        Aion.GameServer.Model.Templates.World.WorldMapTemplate template = Aion.GameServer.Dataholders.DataManager.WORLD_MAPS_DATA.GetTemplate(worldId);
+        if (template == null)
+            return worldId.ToString();
+        return template.GetL10nId() != 0 ? template.GetL10n()! : template.GetName();
+    }
+
 }

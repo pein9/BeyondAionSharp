@@ -62,7 +62,7 @@ public class SiegeCommand : AdminCommand
             for (int i = 0; i < siegeLocations.Count; i++)
             {
                 SiegeLocation loc = siegeLocations[i];
-                string worldName = DataManager.WORLD_MAPS_DATA.GetTemplate(loc.GetTemplate().GetWorldId()).GetName();
+                string worldName = WorldName(loc.GetTemplate().GetWorldId());
                 string name = loc.GetTemplate().GetL10nId() == 0 ? loc.GetType_().ToString() : loc.GetTemplate().GetL10n();
                 string message = name + " (ID: " + loc.GetLocationId() + ") in " + worldName + " belongs to " + loc.GetRace();
                 int secondsLeft = SiegeService.GetInstance().GetRemainingSiegeTimeInSeconds(loc.GetLocationId());

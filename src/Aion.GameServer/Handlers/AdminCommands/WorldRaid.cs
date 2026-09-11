@@ -98,19 +98,10 @@ public class WorldRaid : AdminCommand
             return sb.ToString();
         }
 
-        Dictionary<string, List<WorldRaidLocation>> locationsByMapId = locations.GroupBy(worldRaidLocation =>
+        // Java: groupingBy(WorldRaidLocation::getMapId, LinkedHashMap::new, toList()) keeps first-encounter order; LINQ GroupBy does too.
+        foreach (IGrouping<int, WorldRaidLocation> locationsForMap in locations.GroupBy(worldRaidLocation => worldRaidLocation.GetMapId()))
         {
-            WorldMapTemplate mapTemplate = DataManager.WORLD_MAPS_DATA.GetTemplate(worldRaidLocation.GetMapId());
-            if (mapTemplate == null || mapTemplate.GetName().Length == 0)
-                return worldRaidLocation.GetMapId().ToString();
-            return mapTemplate.GetName();
-        }).ToDictionary(g => g.Key, g => g.ToList());
-
-        foreach (string mapName in locationsByMapId.Keys.OrderBy(k => k, StringComparer.Ordinal))
-        {
-            if (!locationsByMapId.TryGetValue(mapName, out List<WorldRaidLocation> locationsForMap) || locationsForMap == null)
-                continue;
-            sb.Append("\n\t").Append(ChatUtil.Color(mapName, System.Drawing.Color.White)).Append(" - ");
+            sb.Append("\n\t").Append(ChatUtil.Color(WorldName(locationsForMap.Key), System.Drawing.Color.White)).Append(" - ");
             sb.Append(string.Join(", ", locationsForMap.Select(CreatePositionString)));
         }
         return sb.ToString();

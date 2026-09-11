@@ -52,7 +52,7 @@ public class GoTo : AdminCommand
                 {
                     msg.Append(" Possible matches:");
                     foreach (KeyValuePair<string, Location> e in matches)
-                        msg.Append("\n\t- ").Append(ChatUtil.Color(e.Key, Color.White)).Append(" (").Append(GetName(e.Value.mapType)).Append(")");
+                        msg.Append("\n\t- ").Append(ChatUtil.Color(e.Key, Color.White)).Append(" (").Append(WorldName(e.Value.mapType.GetId())).Append(")");
                 }
                 SendInfo(player, msg.ToString());
             }
@@ -114,59 +114,25 @@ public class GoTo : AdminCommand
             if (!list.Contains(e.Value))
                 list.Add(e.Value);
         }
-        System.Text.StringBuilder sb = new System.Text.StringBuilder();
-        if (locsByWorld.Count == 1)
-            sb.Append("Locations for ");
-        else
-            sb.Append("List of locations per map:\n");
+        System.Text.StringBuilder sb = new System.Text.StringBuilder("Available locations:");
         foreach (KeyValuePair<WorldMapType, List<Location>> entry in locsByWorld)
             AppendLocationsForMap(sb, entry.Key, entry.Value);
+        sb.Append("\nType " + ChatUtil.Color(GetAliasWithPrefix() + " <location name>", Color.White) + " to teleport to a location. Location names can be abbreviated.");
         SendInfo(player, sb.ToString());
     }
 
     private void AppendLocationsForMap(System.Text.StringBuilder sb, WorldMapType worldMapType, ICollection<Location> locs)
     {
-        sb.Append(GetName(worldMapType)).Append(':');
-        if (locs.Count > 1)
-            sb.Append('\n');
+        sb.Append('\n').Append(WorldName(worldMapType.GetId())).Append(':');
         foreach (Location loc in locs)
         {
+            if (locs.Count > 1)
+                sb.Append('\n');
             sb.Append('\t');
             if (locs.Count > 1)
                 sb.Append("- ");
             AppendLocNames(sb, loc.identifiers);
-            sb.Append('\n');
         }
-    }
-
-    private string GetName(WorldMapType worldMapType)
-    {
-        return CapitalizeFully(worldMapType.ToString().Replace('_', ' '));
-    }
-
-    // Java parity: org.apache.commons.lang3.text.WordUtils.capitalizeFully(String) -
-    // lowercases the whole string, then capitalizes the first letter of each whitespace-delimited word.
-    private static string CapitalizeFully(string str)
-    {
-        if (string.IsNullOrEmpty(str))
-            return str;
-        str = str.ToLower();
-        char[] buffer = str.ToCharArray();
-        bool capitalizeNext = true;
-        for (int i = 0; i < buffer.Length; i++)
-        {
-            char ch = buffer[i];
-            if (char.IsWhiteSpace(ch))
-            {
-                capitalizeNext = true;
-            }
-            else if (capitalizeNext)
-            {
-                buffer[i] = char.ToUpper(ch);
-                capitalizeNext = false;
-            }
-        }
-        return new string(buffer);
     }
 
     private void AppendLocNames(System.Text.StringBuilder sb, List<string> locNames)
@@ -175,7 +141,7 @@ public class GoTo : AdminCommand
         {
             sb.Append(ChatUtil.Color(locNames[i++], Color.White));
             if (i != locNames.Count)
-                sb.Append(" // ");
+                sb.Append(" / ");
         }
     }
 
