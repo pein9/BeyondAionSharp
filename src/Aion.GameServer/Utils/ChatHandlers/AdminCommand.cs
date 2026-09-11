@@ -14,12 +14,17 @@ public abstract class AdminCommand : ChatCommand
 
     // only for backwards compatibility TODO: remove when all commands are updated
     public AdminCommand(string alias)
-        : this(alias, "")
+        : this(alias, "", "")
     {
     }
 
     public AdminCommand(string alias, string description)
-        : base(PREFIX, alias, description)
+        : this(alias, description, "")
+    {
+    }
+
+    public AdminCommand(string alias, string description, string syntaxInfo)
+        : base(PREFIX, alias, description, syntaxInfo)
     {
     }
 

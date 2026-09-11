@@ -18,9 +18,10 @@ namespace Aion.GameServer.Handlers.PlayerCommands;
 public class Decompose : PlayerCommand
 {
     public Decompose()
-        : base("decompose", "Opens decomposable items.")
+        : base("decompose", "Opens decomposable items.", """
+            <item> [count] - Decomposes the specified item (default: all, optional: number of items to decompose).
+            """)
     {
-        SetSyntaxInfo("<item> [count] - Decomposes the specified item (default: all, optional: number of items to decompose).");
     }
 
     public override void Execute(Player player, params string[] paramsArr)

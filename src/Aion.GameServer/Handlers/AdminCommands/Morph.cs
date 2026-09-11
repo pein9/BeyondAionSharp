@@ -1,5 +1,7 @@
-using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects.Players;
+using Aion.GameServer.Model.Templates.Npc;
+using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.ChatHandlers;
 
@@ -9,55 +11,50 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Morph : AdminCommand
 {
     public Morph()
-        : base("morph", "Morphs a player into any npc.")
+        : base("morph", "Morphs a player into any NPC.", """
+             - morphs you into the NPC you are targeting.
+            <id> - Morphs your target into the specified NPC (0 to cancel).
+            """)
     {
-        SetSyntaxInfo(
-            " - morphs you into the npc you are targeting.",
-            "<id> - Morphs your target into the specified npc (0 to cancel)."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
     {
-        if (paramsArr.Length == 0 && !(admin.GetTarget() is Npc))
-        {
-            SendInfo(admin);
-            return;
-        }
-
         Player target = admin.GetTarget() is Player p ? p : admin;
-        int npcId;
-
-        if (paramsArr.Length == 0 && admin.GetTarget() is Npc npc)
+        NpcTemplate npcTemplate;
+        if (paramsArr.Length == 0)
         {
-            npcId = npc.GetNpcId();
-        }
-        else
-        {
-            if (!TryParseInt(paramsArr[0], out npcId))
+            if (admin.GetTarget() == null || admin.Equals(admin.GetTarget()))
             {
                 SendInfo(admin);
                 return;
             }
-        }
-
-        if (npcId < 0 || npcId > 0 && npcId < 200000)
-        {
-            SendInfo(admin, "Invalid ID.");
-            return;
-        }
-
-        target.GetTransformModel().Apply(npcId);
-
-        if (npcId == 0)
-        {
-            SendInfo(admin, "Cancelled" + (target.Equals(admin) ? "" : " " + target.GetName() + "'s") + " morph.");
+            if (admin.GetTarget().GetObjectTemplate() is not NpcTemplate t)
+            {
+                PacketSendUtility.SendPacket(admin, SM_SYSTEM_MESSAGE.STR_INVALID_TARGET());
+                return;
+            }
+            npcTemplate = t;
         }
         else
         {
-            SendInfo(admin, "You morphed" + (target.Equals(admin) ? "" : " " + target.GetName()) + " into " + ChatUtil.Path(npcId, true) + ".");
-            if (!target.Equals(admin))
-                SendInfo(target, ChatUtil.Name(admin) + " morphed you into an npc form.");
+            int modelId = ParseInt(paramsArr[0]);
+            if (modelId == 0)
+            {
+                target.GetTransformModel().Apply(0);
+                SendInfo(admin, "Cancelled" + (target.Equals(admin) ? "" : " " + Name(target) + "'s") + " morph.");
+                return;
+            }
+            npcTemplate = DataManager.NPC_DATA.GetNpcTemplate(modelId);
+            if (npcTemplate == null)
+            {
+                SendInfo(admin, "Invalid ID.");
+                return;
+            }
         }
+        target.GetTransformModel().Apply(npcTemplate.GetTemplateId());
+        SendInfo(admin, "You morphed" + (target.Equals(admin) ? "" : " " + Name(target)) + " into " + npcTemplate.GetL10n() + ".");
+        if (!target.Equals(admin))
+            SendInfo(target, Name(admin) + " morphed you into " + npcTemplate.GetL10n() + ".");
     }
 }

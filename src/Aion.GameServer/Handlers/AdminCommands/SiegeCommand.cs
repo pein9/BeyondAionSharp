@@ -16,15 +16,14 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class SiegeCommand : AdminCommand
 {
     public SiegeCommand()
-        : base("siege", "Controls sieges and artifacts.")
+        : base("siege", "Controls sieges and artifacts.", """
+            locations - Shows info about all locations.
+            start <location ID> - Starts the siege at the given location.
+            stop <location ID> - Stops the siege at the given location.
+            capture <location ID> [elyos|asmodians|balaur|legionName|legionId] - Captures the fortress at given location.
+            assault <location ID> [delaySec] - Starts an assault at the given location.
+            """)
     {
-        SetSyntaxInfo(
-            "locations - Shows info about all locations.",
-            "start <locationId> - Starts the siege at the given location.",
-            "stop <locationId> - Stops the siege at the given location.",
-            "capture <locationId> [elyos|asmodians|balaur|legionName|legionId] - Captures the fortress at given location.",
-            "assault <locationId> [delaySec] - Starts an assault at the given location."
-        );
     }
 
     public override void Execute(Player player, params string[] paramsArr)
@@ -162,12 +161,12 @@ public class SiegeCommand : AdminCommand
     {
         SiegeLocation location = paramsArr.Length < 2 ? null : SiegeService.GetInstance().GetSiegeLocation(ParseInt(paramsArr[1]));
         if (location == null)
-            throw new ArgumentException("Invalid locationId.");
+            throw new ArgumentException("Invalid location ID.");
         return location;
     }
 
     private static object GetLocationName(SiegeLocation loc)
     {
-        return loc.GetTemplate().GetL10nId() == 0 ? loc.GetType_().ToString() + " " + loc.GetLocationId() : loc.GetTemplate().GetL10n();
+        return loc.GetTemplate().GetL10n() == null ? loc.GetType_() + " " + loc.GetLocationId() : loc.GetTemplate().GetL10n();
     }
 }

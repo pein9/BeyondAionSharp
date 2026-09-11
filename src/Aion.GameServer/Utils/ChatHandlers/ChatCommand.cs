@@ -6,7 +6,9 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Administration;
+using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
+using Aion.GameServer.Model.Templates;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Utils;
 
@@ -19,13 +21,29 @@ public abstract class ChatCommand
     private readonly string prefix;
     private readonly string alias;
     private readonly string description;
-    private string syntaxInfo;
+    private readonly string syntaxInfo;
 
-    public ChatCommand(string prefix, string alias, string description)
+    /// <summary>Initializes a chat command.</summary>
+    /// <param name="prefix">command prefix</param>
+    /// <param name="alias">command identifier</param>
+    /// <param name="description">short command description</param>
+    /// <param name="syntaxInfo">
+    /// The command parameter info. It is used to generate the syntax info in <see cref="SendInfo(Player, string[])"/>.
+    /// When following the parameter convention, parameters will be highlighted in white. You can pass a multi-line raw string literal if your
+    /// command supports multiple syntax variants, for example:
+    /// <code>
+    /// - Short description for no parameter.
+    /// &lt;param1&gt; &lt;param2&gt; [optionalParam3] - Short parameter description (two mandatory parameters, third one is optional).
+    /// param1 &lt;param2&gt; - Short parameter description (first one is a non-variable word).
+    /// Some other help text.
+    /// </code>
+    /// </param>
+    public ChatCommand(string prefix, string alias, string description, string syntaxInfo)
     {
         this.prefix = prefix;
         this.alias = alias;
         this.description = description;
+        this.syntaxInfo = ParseSyntaxInfo(syntaxInfo);
     }
 
     public bool Run(Player player, params string[] paramsArr)
@@ -82,26 +100,23 @@ public abstract class ChatCommand
         return prefix + alias;
     }
 
-    protected void SetSyntaxInfo(params string[] lines)
-    {
-        this.syntaxInfo = ParseSyntaxInfo(lines);
-    }
-
     public virtual string GetSyntaxInfo()
     {
-        if (syntaxInfo == null) // init default info if handler did not set any syntax info
-            SetSyntaxInfo();
         return syntaxInfo;
     }
 
-    private string ParseSyntaxInfo(params string[] lines)
+    private string ParseSyntaxInfo(string syntaxInfo)
     {
         StringBuilder sb = new StringBuilder();
         sb.Append("Syntax:");
-        if (lines.Length > 0)
+        if (string.IsNullOrWhiteSpace(syntaxInfo))
+        {
+            sb.Append("\n\tNo syntax info available.");
+        }
+        else
         {
             bool containsSquareBrackets = false;
-            foreach (string info in lines)
+            foreach (string info in SplitLines(syntaxInfo))
             {
                 string[] split = info.Split(new[] { " - " }, 2, StringSplitOptions.None);
                 if (split.Length == 2)
@@ -121,11 +136,20 @@ public abstract class ChatCommand
             if (containsSquareBrackets)
                 sb.Append("\nNote: Parameters enclosed in square brackets are optional.");
         }
-        else
-        {
-            sb.Append("\n\tNo syntax info available.");
-        }
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Java parity: syntaxInfo.split("\n"). Java drops trailing empty strings, and Java text blocks normalize line terminators to \n,
+    /// whereas a C# raw string literal keeps the source file's CRLF.
+    /// </summary>
+    private static string[] SplitLines(string text)
+    {
+        string[] lines = text.Replace("\r\n", "\n").Split('\n');
+        int count = lines.Length;
+        while (count > 0 && lines[count - 1].Length == 0)
+            count--;
+        return count == lines.Length ? lines : lines[..count];
     }
 
     public byte GetLevel()
@@ -149,6 +173,8 @@ public abstract class ChatCommand
     protected static int ParseInt(string value) => JavaNumberParser.ParseInt(value);
 
     protected static int ParseInt(string value, int radix) => JavaNumberParser.ParseInt(value, radix);
+
+    protected static int ParseInt(string value, int beginIndex, int endIndex, int radix) => JavaNumberParser.ParseInt(value, beginIndex, endIndex, radix);
 
     protected static long ParseLong(string value) => JavaNumberParser.ParseLong(value);
 
@@ -229,6 +255,24 @@ public abstract class ChatCommand
             sb.Append(GetSyntaxInfo());
         }
         SendMessagePackets(player, sb.ToString());
+    }
+
+    protected static string Join(string[] paramsArr, int startIndex)
+    {
+        return string.Join(" ", paramsArr.Skip(startIndex));
+    }
+
+    /// <summary>
+    /// The name of the object to be displayed in chat. If the object is a player, a clickable name will be returned. Otherwise, it's a localized
+    /// name if available.
+    /// </summary>
+    protected static string Name(VisibleObject visibleObject)
+    {
+        if (visibleObject is Player player)
+            return ChatUtil.CharName(player);
+        if (visibleObject.GetObjectTemplate() is IL10n l10n)
+            return l10n.GetL10n()!;
+        return visibleObject.GetName();
     }
 
     /// <summary>Sends the formatted input message with as little packets as possible.</summary>

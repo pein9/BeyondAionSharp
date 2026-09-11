@@ -8,14 +8,14 @@ namespace Aion.GameServer.Handlers.ConsoleCommands;
 public class Attrbonus : ConsoleCommand
 {
     public Attrbonus()
-        : base("attrbonus", "Modifies your stats.")
+        : base("attrbonus", "Modifies your stats.", """
+            list - Lists all stats.
+            <stat> - Shows active stat functions for the given stat.
+            <stat> <value> - Sets the given stat to the given value.
+            cancel - Cancels all active stat overrides.
+            Stat parameters accept lowercase and abbreviated formats, such as flytime or flyt instead of FLY_TIME.
+            """)
     {
-        SetSyntaxInfo(
-            "list - Lists all stats.",
-            "<stat> - Shows active stat functions for the given stat.",
-            "<stat> <value> - Sets the given stat to the given value.",
-            "cancel - Cancels all active stat overrides.",
-            "Stat parameters accept lowercase and abbreviated formats, such as flytime or flyt instead of FLY_TIME.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

@@ -11,9 +11,10 @@ namespace Aion.GameServer.Handlers.ConsoleCommands;
 public class Deletecquest : ConsoleCommand
 {
     public Deletecquest()
-        : base("deletecquest", "Deletes a quest from the players quest list.")
+        : base("deletecquest", "Deletes a quest from a player's quest list.", """
+            <quest link|ID> - Deletes the quest from your target's quest list (defaults to your character, if no player is targeted).
+            """)
     {
-        SetSyntaxInfo("<quest link|ID> - Deletes the quest from your target's quest list (defaults to your character, if no player is targeted).");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

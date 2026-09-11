@@ -8,9 +8,10 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class AddExp : AdminCommand
 {
     public AddExp()
-        : base("addexp", "Increases/decreases a players experience points.")
+        : base("addexp", "Increases/decreases a players experience points.", """
+            <exp> - The experience points to add (may be negative).
+            """)
     {
-        SetSyntaxInfo("<exp> - The experience points to add (may be negative).");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -20,21 +21,10 @@ public class AddExp : AdminCommand
             SendInfo(admin);
             return;
         }
-
-        Player target = admin;
-
-        if (admin.GetTarget() is Player p)
-            target = p;
-
-        long exp;
-        if (!TryParseLong(paramsArr[0], out exp))
-        {
-            SendInfo(admin, "Invalid <exp> (must be a number)");
-            return;
-        }
-
+        Player target = admin.GetTarget() is Player p ? p : admin;
+        long exp = ParseLong(paramsArr[0]);
         long resultExp = Math.Max(0, target.GetCommonData().GetExp() + exp);
         target.GetCommonData().SetExp(resultExp);
-        SendInfo(admin, "You added " + exp + " exp points to " + target.GetName() + ".");
+        SendInfo(admin, "You added " + exp + " exp points to " + Name(target) + ".");
     }
 }

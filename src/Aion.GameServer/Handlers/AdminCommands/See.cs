@@ -10,7 +10,7 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class See : AdminCommand
 {
     public See()
-        : base("see", "Lets you see hidden npcs and players.")
+        : base("see", "Lets you see hidden NPCs and players.")
     {
     }
 

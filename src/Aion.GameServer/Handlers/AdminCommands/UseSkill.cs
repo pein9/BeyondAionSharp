@@ -14,11 +14,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class UseSkill : AdminCommand
 {
     public UseSkill()
-        : base("useskill", "Use (or let a target use) any skill, even those not in skill list.")
+        : base("useskill", "Use (or let a target use) any skill, even those not in skill list.", """
+            <id> [lvl] [f] - Uses the skill with the specified skill level on your target (f = force use).
+            <me|self|target> <id> [lvl] [f] - Lets your target use the skill on you, itself or its target (f = force use).
+            """)
     {
-        SetSyntaxInfo(
-            "<id> [lvl] [f] - Uses the skill with the specified skill level on your target (f = force use).",
-            "<me|self|target> <id> [lvl] [f] - Lets your target use the skill on you, itself or its target (f = force use).");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -47,7 +47,7 @@ public class UseSkill : AdminCommand
             SkillTemplate template = DataManager.SKILL_DATA.GetSkillTemplate(ParseInt(paramsArr[i++]));
             if (template != null)
             {
-                int skillLevel = paramsArr.Length > i && IsNumber(paramsArr[i]) ? ParseInt(paramsArr[i++]) : template.GetLvl();
+                int skillLevel = paramsArr.Length > i && !paramsArr[i].Equals("f") ? ParseInt(paramsArr[i++]) : template.GetLvl();
                 bool forceUse = paramsArr.Length > i && paramsArr[i].Equals("f");
                 if (DoUseSkill(admin, template, skillLevel, targetMode, forceUse))
                     SendInfo(admin, "Used skill: " + template.GetL10n());
@@ -56,12 +56,12 @@ public class UseSkill : AdminCommand
             }
             else
             {
-                SendInfo(admin, "Invalid skill id.");
+                SendInfo(admin, "Invalid skill ID.");
             }
         }
         catch (FormatException)
         {
-            SendInfo(admin, "Invalid skill id or level.");
+            SendInfo(admin, "Invalid skill ID or level.");
         }
     }
 
@@ -106,7 +106,4 @@ public class UseSkill : AdminCommand
                 return null;
         }
     }
-
-    // Java parity: NumberUtils.isNumber delegates to Commons Lang 3.20 isCreatable.
-    private static bool IsNumber(string str) => IsCreatableNumber(str);
 }

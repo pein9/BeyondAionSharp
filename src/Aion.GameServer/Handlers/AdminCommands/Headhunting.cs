@@ -35,33 +35,33 @@ public class Headhunting : AdminCommand
     private SortedDictionary<Race, SortedDictionary<PlayerClass, List<Headhunter>>> results;
 
     public Headhunting()
-        : base("headhunting")
+        : base("headhunting", "Manages seasonal headhunting event.", """
+            analyze - Analyzes the season.
+            show <rewards|results> - Shows the registered rewards or analyzed results.
+            clear - Clears the analyzed results.
+            addKills <player ID> <kills> - Adds headhunting kills for the specified player.
+            finalize <true|false> - Finalizes the season (clears all references) and rewards all participants if requested.
+            """)
     {
-        SetSyntaxInfo(
-            "<analyze> - Analyzes the season.",
-            "<show> <rewards|results> - Shows the registered rewards or analyzed results",
-            "<clear> - Clears the analayzed results",
-            "<addKills> <playerId> <kills> - Add headhunting kills of specified player.",
-            "<finalize> <true|false> - Finalizes the season (clears all references) and rewards all participants if requested"
-        );
-
         // Initialize seasonal headhunting rewards
-        rewards[1] = new List<RewardItem>();
-        rewards[2] = new List<RewardItem>();
-        rewards[3] = new List<RewardItem>();
-
-        rewards[1].Add(new RewardItem(164002276, 5)); // Eternal War Battle Scroll
-        rewards[1].Add(new RewardItem(188950017, 3)); // Special Courier Pass (Abyss Eternal/Lv. 61-65)
-        rewards[1].Add(new RewardItem(186000051, 15)); // Major Ancient Crown
-
-        rewards[2].Add(new RewardItem(164002276, 3)); // Eternal War Battle Scroll
-        rewards[2].Add(new RewardItem(188950017, 3)); // Special Courier Pass (Abyss Eternal/Lv. 61-65)
-        rewards[2].Add(new RewardItem(186000051, 10)); // Major Ancient Crown
-
-        rewards[3].Add(new RewardItem(164002276, 1)); // Eternal War Battle Scroll
-        rewards[3].Add(new RewardItem(188950017, 2)); // Special Courier Pass (Abyss Eternal/Lv. 61-65)
-        rewards[3].Add(new RewardItem(186000051, 5)); // Major Ancient Crown
-
+        rewards[1] = new List<RewardItem>
+        {
+            new RewardItem(164002276, 5), // Eternal War Battle Scroll
+            new RewardItem(188950017, 3), // Special Courier Pass (Abyss Eternal/Lv. 61-65)
+            new RewardItem(186000051, 15) // Major Ancient Crown
+        };
+        rewards[2] = new List<RewardItem>
+        {
+            new RewardItem(164002276, 3), // Eternal War Battle Scroll
+            new RewardItem(188950017, 3), // Special Courier Pass (Abyss Eternal/Lv. 61-65)
+            new RewardItem(186000051, 10) // Major Ancient Crown
+        };
+        rewards[3] = new List<RewardItem>
+        {
+            new RewardItem(164002276, 1), // Eternal War Battle Scroll
+            new RewardItem(188950017, 2), // Special Courier Pass (Abyss Eternal/Lv. 61-65)
+            new RewardItem(186000051, 5) // Major Ancient Crown
+        };
         consolationRewards.Add(new RewardItem(186000051, 1)); // Major Ancient Crown
     }
 
@@ -81,7 +81,6 @@ public class Headhunting : AdminCommand
             case "clear":
                 if (results != null)
                 {
-                    results.Clear();
                     results = null;
                     SendInfo(admin, "Results successfully cleared.");
                 }
@@ -100,10 +99,7 @@ public class Headhunting : AdminCommand
                     SendInfo(admin);
                     return;
                 }
-                if (TryParseInt(paramsArr[1], out int playerId) && TryParseInt(paramsArr[2], out int kills))
-                    AddKills(admin, playerId, kills);
-                else
-                    SendInfo(admin, "playerId and kills should be numbers.");
+                AddKills(admin, ParseInt(paramsArr[1]), ParseInt(paramsArr[2]));
                 break;
             case "finalize":
                 if (paramsArr.Length < 2)
@@ -221,10 +217,9 @@ public class Headhunting : AdminCommand
         }
         StringBuilder builder = new StringBuilder();
         builder.Append("<hr><center>Rewards</center><br><hr>");
-        foreach (int rank in rewards.Keys)
+        foreach ((int rank, List<RewardItem> items) in rewards)
         {
             builder.Append("<br><br><br>Rank: ").Append(rank).Append("<br>");
-            List<RewardItem> items = rewards[rank];
             foreach (RewardItem item in items)
                 builder.Append("<br>").Append(item.GetCount()).Append("x ").Append(DataManager.ITEM_DATA.GetItemTemplate(item.GetId()).GetName());
         }
@@ -260,22 +255,13 @@ public class Headhunting : AdminCommand
                         continue;
 
                     string name = PlayerService.GetPlayerName(hunter.GetHunterId());
-                    string rank;
-                    switch (pos)
+                    string rank = pos switch
                     {
-                        case 0:
-                            rank = "1st";
-                            break;
-                        case 1:
-                            rank = "2nd";
-                            break;
-                        case 2:
-                            rank = "3rd";
-                            break;
-                        default:
-                            rank = "consolation";
-                            break;
-                    }
+                        0 => "1st",
+                        1 => "2nd",
+                        2 => "3rd",
+                        _ => "consolation"
+                    };
                     foreach (RewardItem item in items)
                     {
                         if (SystemMailService.SendMail("Headhunting Corp", name, "Rewards",
@@ -323,7 +309,6 @@ public class Headhunting : AdminCommand
 
         PvpService.GetInstance().FinalizeHeadhuntingSeason();
         HeadhuntingDAO.ClearTables();
-        results.Clear();
         results = null;
         SendInfo(admin, "Successfully cleared all references for this season and finished archiving.");
     }

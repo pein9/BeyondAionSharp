@@ -14,13 +14,13 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Add : AdminCommand
 {
     public Add()
-        : base("add", "Adds Kinah or items to a player's inventory.")
+        : base("add", "Adds Kinah or items to a player's inventory.", """
+            kinah <amount> - Adds the specified amount of Kinah to your inventory.
+            <item link|ID> [count] - Adds the specified item(s) to your inventory.
+            <player> kinah <amount> - Adds the specified amount of Kinah to the player's inventory.
+            <player> <item link|ID> [count] - Adds the specified item(s) to the player's inventory.
+            """)
     {
-        SetSyntaxInfo(
-            "kinah <amount> - Adds the specified amount of Kinah to your inventory.",
-            "<item link|ID> [count] - Adds the specified item(s) to your inventory.",
-            "<player> kinah <amount> - Adds the specified amount of Kinah to the player's inventory.",
-            "<player> <item link|ID> [count] - Adds the specified item(s) to the player's inventory.");
     }
 
     public override void Execute(Player player, params string[] paramsArr)
@@ -70,13 +70,13 @@ public class Add : AdminCommand
         {
             if (player != receiver)
             {
-                SendInfo(player, "You gave " + itemCount + " x [item:" + itemId + "] to " + receiver.GetName() + ".");
-                SendInfo(receiver, "You received " + itemCount + " x [item:" + itemId + "] from " + player.GetName() + ".");
+                SendInfo(player, "You gave " + itemCount + " x " + ChatUtil.Item(itemId) + " to " + Name(receiver) + ".");
+                SendInfo(receiver, "You received " + itemCount + " x " + ChatUtil.Item(itemId) + " from " + Name(player) + ".");
             }
         }
         else
         {
-            SendInfo(player, "Item couldn't be added");
+            SendInfo(player, "Item couldn't be added.");
         }
     }
 }

@@ -13,12 +13,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class MapCommand : AdminCommand
 {
     public MapCommand()
-        : base("map", "Offers different functions for the current map instance.")
+        : base("map", "Offers different functions for the current map instance.", """
+            freeze - Freezes all NPCs on this map instance.
+            unfreeze - Unfreezes all NPCs on this map instance.
+            """)
     {
-        SetSyntaxInfo(
-            "freeze - Freezes all NPCs on this map instance.",
-            "unfreeze - Unfreezes all NPCs on this map instance."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

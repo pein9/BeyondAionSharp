@@ -11,9 +11,10 @@ namespace Aion.GameServer.Handlers.ConsoleCommands;
 public class Leveldown : ConsoleCommand
 {
     public Leveldown()
-        : base("leveldown", "Levels a player down.")
+        : base("leveldown", "Levels a player down.", """
+            <value> - Levels your target down by the specified number of levels (defaults to your character, if no player is targeted).
+            """)
     {
-        SetSyntaxInfo("<value> - Levels your target down by the specified number of levels (defaults to your character, if no player is targeted).");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -23,24 +24,14 @@ public class Leveldown : ConsoleCommand
             SendInfo(admin);
             return;
         }
-
         Player player = admin.GetTarget() is Player target ? target : admin;
-
-        // Java parity: try { newLevel = getLevel() - parseInt(...) } catch (NumberFormatException) { ... }
-        if (!TryParseInt(paramsArr[0], out int delta))
-        {
-            SendInfo(admin, "Please specify the number of levels to subtract.");
-            return;
-        }
-        int newLevel = player.GetLevel() - delta;
-
+        int newLevel = player.GetLevel() - ParseInt(paramsArr[0]);
         if (newLevel < 1 || newLevel > GSConfig.PLAYER_MAX_LEVEL)
         {
             SendInfo(admin, "Invalid level.");
             return;
         }
-
         player.GetCommonData().SetLevel(newLevel);
-        SendInfo(admin, "Set " + player.GetName() + "'s level to " + player.GetLevel());
+        SendInfo(admin, "Set " + Name(player) + "'s level to " + player.GetLevel());
     }
 }

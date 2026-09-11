@@ -50,15 +50,10 @@ public static class ChatUtil
 	}
 
 	// Java parity: utils/ChatUtil.name(Player) — see Name(String).
-	public static string Name(Aion.GameServer.Model.GameObjects.Players.Player player)
+	/// <summary>Java parity: utils/ChatUtil.charName(Player). A clickable character name for system chat types.</summary>
+	public static string CharName(Aion.GameServer.Model.GameObjects.Players.Player player)
 	{
-		return Name(player.GetName(true));
-	}
-
-	public static string Name(string name)
-	{
-		// Java parity: utils/ChatUtil.name(String). Returns a clickable character name link.
-		return $"[charname:{name};1 1 1]";
+		return $"[charname:{player.GetName(true)};1 1 1]"; // the 3 parameters are color values, but the client doesn't render them
 	}
 
 	// Java parity: utils/ChatUtil.item(int).

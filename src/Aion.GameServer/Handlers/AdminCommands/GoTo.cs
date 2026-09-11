@@ -20,11 +20,11 @@ public class GoTo : AdminCommand
     private readonly Dictionary<string, Location> locations = new Dictionary<string, Location>();
 
     public GoTo()
-        : base("goto", "Teleports you to regions by name.")
+        : base("goto", "Teleports you to regions by name.", """
+             - Shows a list of locations to teleport to.
+            <location name> - Teleports you to the given location.
+            """)
     {
-        SetSyntaxInfo(
-            " - Shows a list of locations to teleport to.",
-            "<location name> - Teleports you to the given location.");
         AddLocations();
     }
 

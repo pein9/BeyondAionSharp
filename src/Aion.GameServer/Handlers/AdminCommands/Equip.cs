@@ -18,13 +18,13 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Equip : AdminCommand
 {
     public Equip()
-        : base("equip", "Enchants all equipped items.")
+        : base("equip", "Enchants all equipped items.", """
+            socket <manastone link|ID> [limit] [player] - Sockets the manastone in all equipped items of your target or the given player.
+            unsocket [player] - Removes manastones from all equipped items of your target or the given player.
+            enchant <0-255> [player] - Enchants all equipped items of your target or the given player.
+            temper <0-255> [player] - Tempers all equipped items of your target or the given player.
+            """)
     {
-        SetSyntaxInfo(
-            "socket <manastone link|ID> [limit] [player] - Sockets the manastone in all equipped items of your target or the given player.",
-            "unsocket [player] - Removes manastones from all equipped items of your target or the given player.",
-            "enchant <0-255> [player] - Enchant all equipped items of your target or the given player.",
-            "temper <0-255> [player] - Temper all equipped items of your target or the given player.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -49,12 +49,12 @@ public class Equip : AdminCommand
         }
         else if ("enchant".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase) && paramsArr.Length >= 2)
         {
-            int enchant = Math.Max(0, Math.Min(255, ParseInt(paramsArr[1])));
+            int enchant = Math.Clamp(ParseInt(paramsArr[1]), 0, 255);
             Enchant(admin, player, enchant);
         }
         else if ("temper".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase) && paramsArr.Length >= 2)
         {
-            int temperingLevel = Math.Max(0, Math.Min(255, ParseInt(paramsArr[1])));
+            int temperingLevel = Math.Clamp(ParseInt(paramsArr[1]), 0, 255);
             Temper(admin, player, temperingLevel);
         }
         else
@@ -99,11 +99,11 @@ public class Equip : AdminCommand
         if (maxSocketed == 0)
             SendInfo(admin, "There are no free slots on any equipped items.");
         else if (player == admin)
-            SendInfo(player, maxSocketed + "x " + ChatUtil.Item(manastoneId) + " were added to free slots on all equipped items");
+            SendInfo(player, maxSocketed + "x " + ChatUtil.Item(manastoneId) + " were added to free slots on all equipped items.");
         else
         {
-            SendInfo(admin, maxSocketed + "x " + ChatUtil.Item(manastoneId) + " were added to free slots on all equipped items of player " + player.GetName());
-            SendInfo(player, admin.GetName(true) + " added " + count + "x " + ChatUtil.Item(manastoneId) + " to free slots on all your equipped items");
+            SendInfo(admin, maxSocketed + "x " + ChatUtil.Item(manastoneId) + " were added to free slots on all equipped items of " + Name(player) + ".");
+            SendInfo(player, Name(admin) + " added " + count + "x " + ChatUtil.Item(manastoneId) + " to free slots on all your equipped items.");
         }
     }
 
@@ -124,8 +124,8 @@ public class Equip : AdminCommand
             SendInfo(player, "Removed manastones from all equipped items.");
         else
         {
-            SendInfo(admin, "Removed manastones from all equipped items of player " + player.GetName() + ".");
-            SendInfo(player, admin.GetName(true) + " removed all manastones from all your equipped items.");
+            SendInfo(admin, "Removed manastones from all equipped items of " + Name(player) + ".");
+            SendInfo(player, Name(admin) + " removed all manastones from all your equipped items.");
         }
     }
 
@@ -145,8 +145,8 @@ public class Equip : AdminCommand
             SendInfo(player, "Enchanted all equipped items to +" + enchant + ".");
         else
         {
-            SendInfo(admin, "Enchanted all equipped items of player " + player.GetName() + " to +" + enchant + ".");
-            SendInfo(player, admin.GetName(true) + " enchanted all your equipped items to +" + enchant + ".");
+            SendInfo(admin, "Enchanted all equipped items of " + Name(player) + " to +" + enchant + ".");
+            SendInfo(player, Name(admin) + " enchanted all your equipped items to +" + enchant + ".");
         }
     }
 
@@ -162,8 +162,8 @@ public class Equip : AdminCommand
             SendInfo(player, "Tempered all equipped items to +" + temperingLevel + ".");
         else
         {
-            SendInfo(admin, "Tempered all equipped items of player " + player.GetName() + " to +" + temperingLevel + ".");
-            SendInfo(player, admin.GetName(true) + " tempered all your equipped items to +" + temperingLevel + ".");
+            SendInfo(admin, "Tempered all equipped items of " + Name(player) + " to +" + temperingLevel + ".");
+            SendInfo(player, Name(admin) + " tempered all your equipped items to +" + temperingLevel + ".");
         }
     }
 }

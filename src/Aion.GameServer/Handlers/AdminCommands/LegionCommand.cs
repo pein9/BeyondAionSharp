@@ -14,18 +14,17 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class LegionCommand : AdminCommand
 {
     public LegionCommand()
-        : base("legion", "Modifies a legion.")
+        : base("legion", "Modifies a legion.", """
+            info <legion name> - List legion members.
+            add <legion name> <player name> - Adds the player to the legion.
+            kick <player name> - Kicks the player from their legion.
+            disband <legion name> - Disbands the legion.
+            rename <legion name> <new name> - Changes the legion's name.
+            setbg <player name> - Appoints the player as brigade general of their legion.
+            setlevel <legion name> <level> - Changes the legion's level.
+            setpoints <legion name> <points> - Changes the legion's contributing points.
+            """)
     {
-        SetSyntaxInfo(
-            "info <legion name> - List legion members.",
-            "add <legion name> <player name> - Adds the player to the legion.",
-            "kick <player name> - Kicks the player from their legion.",
-            "disband <legion name> - Disbands the legion.",
-            "rename <legion name> <new name> - Changes the legion's name.",
-            "setbg <player name> - Appoints the player as brigade general of their legion.",
-            "setlevel <legion name> <level> - Changes the legion's level.",
-            "setpoints <legion name> <points> - Changes the legion's contributing points."
-        );
     }
 
     public override void Execute(Player player, params string[] paramsArr)
@@ -101,9 +100,9 @@ public class LegionCommand : AdminCommand
             else if (target.GetLegionMember().IsBrigadeGeneral())
                 PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_GUILD_BANISH_CAN_BANISH_MASTER());
             else if (LegionService.GetInstance().LeaveLegion(target, true))
-                SendInfo(player, target.GetName() + " was kicked from the legion.");
+                SendInfo(player, Name(target) + " was kicked from the legion.");
             else
-                SendInfo(player, target.GetName() + " could not be kicked from the legion.");
+                SendInfo(player, Name(target) + " could not be kicked from the legion.");
         }
         else if (paramsArr[0].Equals("add", StringComparison.OrdinalIgnoreCase) && paramsArr.Length >= 3)
         {
@@ -114,7 +113,7 @@ public class LegionCommand : AdminCommand
             else if (target.IsLegionMember())
                 PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_GUILD_INVITE_HE_IS_OTHER_GUILD_MEMBER(target.GetName()));
             else if (LegionService.GetInstance().AddToLegion(legion, target, player))
-                SendInfo(player, target.GetName() + " was added to " + legion.GetName());
+                SendInfo(player, Name(target) + " was added to " + legion.GetName());
         }
         else if (paramsArr[0].Equals("setbg", StringComparison.OrdinalIgnoreCase))
         {
@@ -144,8 +143,7 @@ public class LegionCommand : AdminCommand
 
     private Legion GetLegion(string name)
     {
-        if (name.Contains("_"))
-            name = name.Replace("_", " ");
+        name = name.Replace('_', ' ');
         Legion legion = LegionService.GetInstance().GetLegion(name.ToLower());
         if (legion == null)
         {

@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -14,49 +13,51 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Heal : AdminCommand
 {
     public Heal()
-        : base("heal", "Restores HP, MP, DP, flight time and energy of repose.")
+        : base("heal", "Restores HP, MP, DP, flight time and energy of repose.", """
+             - Heals your target's HP, MP and removes soul sickness.
+            dp - Heals your target's DP.
+            fp - Heals your target's flight time.
+            repose - Heals your target's energy of repose.
+            <number> - Heals your target's HP by given amount.
+            <number%> - Heals your target's HP by given percentage.
+            """)
     {
-        SetSyntaxInfo(
-            " - Heals your targets HP, MP and removes soul sickness.",
-            "<dp> - Heals your targets DP.",
-            "<fp> - Heals your targets flight time.",
-            "<repose> - Heals your targets energy of repose.",
-            "<number> - Heals your targets HP by given amount.",
-            "<number%> - Heals your targets HP by given percentage.");
     }
 
     public override void Execute(Player player, params string[] paramsArr)
     {
         VisibleObject target = player.GetTarget();
-        if (!(target is Creature))
+        if (target == null)
+        {
+            SendInfo(player);
+            return;
+        }
+        if (!(target is Creature creature))
         {
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_INVALID_TARGET());
             return;
         }
-
-        Creature creature = (Creature)target;
-
         if (paramsArr.Length == 0)
         {
             creature.GetLifeStats().IncreaseHp(TYPE.HP, creature.GetLifeStats().GetMaxHp());
             creature.GetLifeStats().IncreaseMp(TYPE.HEAL_MP, creature.GetLifeStats().GetMaxMp(), 0, LOG.MPHEAL);
             creature.GetEffectController().RemoveByDispelSlotType(DispelSlotType.SPECIAL2);
             if (!player.Equals(creature))
-                SendInfo(player, creature.GetName() + " has been refreshed.");
+                SendInfo(player, Name(creature) + " has been refreshed.");
         }
         else if (paramsArr[0].Equals("dp", System.StringComparison.OrdinalIgnoreCase) && creature is Player)
         {
             Player targetPlayer = (Player)creature;
             targetPlayer.GetCommonData().SetDp(targetPlayer.GetGameStats().GetMaxDp().GetCurrent());
             if (!player.Equals(creature))
-                SendInfo(player, targetPlayer.GetName() + "'s DP have been fully refreshed.");
+                SendInfo(player, Name(targetPlayer) + "'s DP have been fully refreshed.");
         }
         else if (paramsArr[0].Equals("fp", System.StringComparison.OrdinalIgnoreCase) && creature is Player)
         {
             Player targetPlayer = (Player)creature;
             targetPlayer.GetLifeStats().SetCurrentFp(targetPlayer.GetLifeStats().GetMaxFp());
             if (!player.Equals(creature))
-                SendInfo(player, targetPlayer.GetName() + "'s flight time has been fully refreshed.");
+                SendInfo(player, Name(targetPlayer) + "'s flight time has been fully refreshed.");
         }
         else if (paramsArr[0].Equals("repose", System.StringComparison.OrdinalIgnoreCase) && creature is Player)
         {
@@ -66,34 +67,21 @@ public class Heal : AdminCommand
             PacketSendUtility.SendPacket(targetPlayer,
                 new SM_STATUPDATE_EXP(pcd.GetExpShown(), pcd.GetExpRecoverable(), pcd.GetExpNeed(), pcd.GetCurrentReposeEnergy(), pcd.GetMaxReposeEnergy()));
             if (!player.Equals(creature))
-                SendInfo(player, targetPlayer.GetName() + "'s Energy of Repose has been fully refreshed.");
+                SendInfo(player, Name(targetPlayer) + "'s Energy of Repose has been fully refreshed.");
         }
         else
         {
-            try
+            int value;
+            if (paramsArr[0].EndsWith('%'))
             {
-                Match result = Regex.Match(paramsArr[0], "(.+)%");
-                int value;
-
-                if (result.Success)
-                {
-                    int hpPercent = ParseInt(result.Groups[1].Value);
-
-                    if (hpPercent < 100)
-                        value = (int)(hpPercent / 100f * creature.GetLifeStats().GetMaxHp());
-                    else
-                        value = creature.GetLifeStats().GetMaxHp();
-                }
-                else
-                    value = ParseInt(paramsArr[0]);
-                creature.GetLifeStats().IncreaseHp(TYPE.HP, value);
-                if (!player.Equals(creature))
-                    SendInfo(player, creature.GetName() + " has been healed by " + value + " health points!");
+                int hpPercent = ParseInt(paramsArr[0], 0, paramsArr[0].Length - 1, 10);
+                value = Math.Clamp((int)(hpPercent / 100f * creature.GetLifeStats().GetMaxHp()), 0, creature.GetLifeStats().GetMaxHp());
             }
-            catch (System.Exception)
-            {
-                SendInfo(player);
-            }
+            else
+                value = ParseInt(paramsArr[0]);
+            creature.GetLifeStats().IncreaseHp(TYPE.HP, value);
+            if (!player.Equals(creature))
+                SendInfo(player, Name(creature) + " has been healed by " + value + " health points.");
         }
     }
 }

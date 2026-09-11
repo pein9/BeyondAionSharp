@@ -21,16 +21,15 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Quest : AdminCommand
 {
     public Quest()
-        : base("quest", "Handles quest states of your target.")
+        : base("quest", "Handles quest states of your target.", """
+            [player] <quest> <reset|start|delete> - Resets/starts/deletes the specified quest.
+            [player] <quest> status - Shows the quest status of the specified quest.
+            [player] <quest> set <status> <var> [varNum] - Sets the specified quest state (default: apply var to all varNums, optional: set var to varNum [0-5]).
+            [player] <quest> setflags <flags> - Sets the specified quest flags.
+            [player] <quest> dialog <page ID> - Sends the dialog page with the given page ID.
+            Note: If no player parameter is given, your current target will be taken (defaults to your character, if no player is targeted).
+            """)
     {
-        SetSyntaxInfo(
-            "[player] <quest> <reset|start|delete> - Resets/starts/deletes the specified quest.",
-            "[player] <quest> <status> - Shows the quest status of the specified quest.",
-            "[player] <quest> <set> <status> <var> [varNum] - Sets the specified quest state (default: apply var to all varNums, optional: set var to varNum [0-5]).",
-            "[player] <quest> <setflags> <flags> - Sets the specified quest flags.",
-            "[player] <quest> <dialog> <dialog_page_id> - Sends the dialog page with the given page ID.",
-            "Note: If no player parameter is given, your current target will be taken (defaults to your character, if no player is targeted)."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -46,20 +45,18 @@ public class Quest : AdminCommand
         int questId = ChatUtil.GetQuestId(paramsArr[index]);
         if (questId == 0)
         {
-            target = World.World.GetInstance().GetPlayer(Util.ConvertName(paramsArr[index]));
-
-            if (target == null || !target.IsOnline())
+            string playerName = Util.ConvertName(paramsArr[index]);
+            target = World.World.GetInstance().GetPlayer(playerName);
+            if (target == null)
             {
-                PacketSendUtility.SendPacket(admin, SM_SYSTEM_MESSAGE.STR_MSG_ASK_PCINFO_LOGOFF());
+                PacketSendUtility.SendPacket(admin, SM_SYSTEM_MESSAGE.STR_NO_SUCH_USER(playerName));
                 return;
             }
-
             if (++index >= paramsArr.Length)
             {
                 SendInfo(admin);
                 return;
             }
-
             questId = ChatUtil.GetQuestId(paramsArr[index]);
         }
         else
@@ -96,89 +93,30 @@ public class Quest : AdminCommand
         {
             ShowQuestStatus(admin, target, questId);
         }
-        else if (paramsArr[index].Equals("set", StringComparison.OrdinalIgnoreCase))
+        else if (paramsArr[index].Equals("set", StringComparison.OrdinalIgnoreCase) && paramsArr.Length > index + 2)
         {
-            QuestStatus status;
-            int var;
+            QuestStatus status = ParseEnumName<QuestStatus>(paramsArr[++index].ToUpperInvariant());
+            int var = ParseInt(paramsArr[++index]);
             int varNum = -1;
-
-            try
-            {
-                status = ParseEnumName<QuestStatus>(paramsArr[++index].ToUpper());
-            }
-            catch (ArgumentException)
-            {
-                SendInfo(admin, "<status> is one of " + "[" + string.Join(", ", Enum.GetNames(typeof(QuestStatus))) + "]");
-                return;
-            }
-            catch (IndexOutOfRangeException)
-            {
-                SendInfo(admin);
-                return;
-            }
-
-            try
-            {
-                var = ParseInt(paramsArr[++index]);
-            }
-            catch (FormatException)
-            {
-                SendInfo(admin, "<var> must be an int value.");
-                return;
-            }
-            catch (IndexOutOfRangeException)
-            {
-                SendInfo(admin);
-                return;
-            }
-
             if (++index < paramsArr.Length)
             { // optional
-                try
+                varNum = ParseInt(paramsArr[index]);
+                if (varNum < 0 || varNum > 5)
                 {
-                    varNum = ParseInt(paramsArr[index]);
-                    if (varNum < 0 || varNum > 5)
-                        throw new ArgumentException();
-                }
-                catch (Exception e) when (e is ArgumentException || e is FormatException)
-                { // also catches NumberFormatException
-                    SendInfo(admin, "[varNum] must be an int value from 0 to 5.");
+                    SendInfo(admin, "[varNum] must be between 0 and 5.");
                     return;
                 }
             }
-
             SetQuestStatus(admin, target, questId, status, var, varNum);
         }
-        else if (paramsArr[index].Equals("setflags", StringComparison.OrdinalIgnoreCase))
+        else if (paramsArr[index].Equals("setflags", StringComparison.OrdinalIgnoreCase) && paramsArr.Length > index + 1)
         {
-            int flags;
-
-            try
-            {
-                flags = ParseInt(paramsArr[++index]);
-            }
-            catch (Exception e) when (e is IndexOutOfRangeException || e is FormatException)
-            {
-                SendInfo(admin, "<flags> must be an int value.");
-                return;
-            }
-
+            int flags = ParseInt(paramsArr[++index]);
             SetQuestFlags(admin, target, questId, flags);
         }
-        else if (paramsArr[index].Equals("dialog", StringComparison.OrdinalIgnoreCase))
+        else if (paramsArr[index].Equals("dialog", StringComparison.OrdinalIgnoreCase) && paramsArr.Length > index + 1)
         {
-            int dialogPageId;
-
-            try
-            {
-                dialogPageId = ParseInt(paramsArr[++index]);
-            }
-            catch (Exception e) when (e is IndexOutOfRangeException || e is FormatException)
-            {
-                SendInfo(admin, "<dialog_page_id> must be an int value.");
-                return;
-            }
-
+            int dialogPageId = ParseInt(paramsArr[++index]);
             SendQuestDialog(admin, questId, dialogPageId);
         }
         else
@@ -197,14 +135,14 @@ public class Quest : AdminCommand
         }
         if (qs.GetQuestVars().GetQuestVars() == 0 && qs.GetRewardGroup() == null)
         {
-            SendInfo(admin, "Player " + target.GetName() + "'s quest is already at the beginning.");
+            SendInfo(admin, Name(target) + "'s quest is already at the beginning.");
             return;
         }
         qs.SetStatus(QuestStatus.START);
         qs.SetQuestVar(0);
         qs.SetRewardGroup(null);
         PacketSendUtility.SendPacket(target, new SM_QUEST_ACTION(SM_QUEST_ACTION.ActionType.UPDATE, qs));
-        SendInfo(admin, "Reset " + ChatUtil.Quest(questId) + " for player " + target.GetName() + ".");
+        SendInfo(admin, "Reset " + ChatUtil.Quest(questId) + " for " + Name(target) + ".");
     }
 
     private void StartQuest(Player admin, Player target, int questId)
@@ -217,7 +155,7 @@ public class Quest : AdminCommand
         }
         else if (QuestService.StartQuest(new QuestEnv(null, target, questId)))
         {
-            SendInfo(admin, "Started " + ChatUtil.Quest(questId) + " for player " + target.GetName() + ".");
+            SendInfo(admin, "Started " + ChatUtil.Quest(questId) + " for " + Name(target) + ".");
             return;
         }
         QuestState qs = target.GetQuestStateList().GetQuestState(questId);
@@ -261,7 +199,7 @@ public class Quest : AdminCommand
         NpcFaction faction = target.GetNpcFactions().GetActiveNpcFaction(false);
         if (faction == null || faction.GetId() != factionId)
         {
-            SendInfo(admin, "Player " + target.GetName() + " is not registered to the organization for this quest.");
+            SendInfo(admin, Name(target) + " is not registered to the organization for this quest.");
             return;
         }
         foreach (QuestTemplate template in DataManager.QUEST_DATA.GetQuestsByNpcFaction(faction.GetId(), target))
@@ -279,7 +217,7 @@ public class Quest : AdminCommand
                 faction.SetTime(faction.GetTime() + 100);
                 // send the daily quest to player
                 target.GetNpcFactions().SendDailyQuest();
-                SendInfo(admin, "Started npc faction quest " + ChatUtil.Quest(questId) + " for player " + target.GetName() + ".");
+                SendInfo(admin, "Started NPC faction quest " + ChatUtil.Quest(questId) + " for " + Name(target) + ".");
                 return;
             }
         }
@@ -296,7 +234,7 @@ public class Quest : AdminCommand
         QuestState qs = target.GetQuestStateList().DeleteQuest(questId);
         if (qs == null)
         {
-            SendInfo(admin, target.GetName() + " does not have that quest.");
+            SendInfo(admin, Name(target) + " does not have that quest.");
             return;
         }
         if (qs.GetStatus() == QuestStatus.COMPLETE)
@@ -305,7 +243,7 @@ public class Quest : AdminCommand
             PacketSendUtility.SendPacket(target, new SM_QUEST_ACTION(SM_QUEST_ACTION.ActionType.ABANDON, qs));
         target.GetController().UpdateNearbyQuests();
         if (!admin.Equals(target))
-            SendInfo(admin, "Deleted " + ChatUtil.Quest(questId) + " for player " + target.GetName() + ".");
+            SendInfo(admin, "Deleted " + ChatUtil.Quest(questId) + " for " + Name(target) + ".");
     }
 
     private void ShowQuestStatus(Player admin, Player target, int questId)
@@ -316,7 +254,7 @@ public class Quest : AdminCommand
             return;
         }
         QuestState qs = target.GetQuestStateList().GetQuestState(questId);
-        System.Text.StringBuilder sb = new System.Text.StringBuilder("Player: " + target.GetName() + ", quest: " + ChatUtil.Quest(questId) + "\n\tQuest status: ");
+        System.Text.StringBuilder sb = new System.Text.StringBuilder("Player: " + Name(target) + ", quest: " + ChatUtil.Quest(questId) + "\n\tQuest status: ");
         if (qs == null)
         {
             sb.Append("NULL");
@@ -373,7 +311,7 @@ public class Quest : AdminCommand
         else
             PacketSendUtility.SendPacket(target, new SM_QUEST_ACTION(actionType, qs));
         target.GetController().UpdateNearbyQuests();
-        SendInfo(admin, "Set quest status of " + ChatUtil.Quest(questId) + " for player " + target.GetName() + ".");
+        SendInfo(admin, "Set quest status of " + ChatUtil.Quest(questId) + " for " + Name(target) + ".");
     }
 
     private void SetQuestFlags(Player admin, Player target, int questId, int flags)
@@ -391,7 +329,7 @@ public class Quest : AdminCommand
         }
         qs.SetFlags(flags);
         PacketSendUtility.SendPacket(target, new SM_QUEST_ACTION(SM_QUEST_ACTION.ActionType.UPDATE, qs));
-        SendInfo(admin, "Set " + target.GetName() + "'s quest flags to " + flags + ".");
+        SendInfo(admin, "Set " + Name(target) + "'s quest flags to " + flags + ".");
     }
 
     private void SendQuestDialog(Player admin, int questId, int dialogPageId)

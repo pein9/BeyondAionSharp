@@ -18,11 +18,11 @@ public class Id : PlayerCommand
     private const char ITEM_ICON = (char)0xE054;
 
     public Id()
-        : base("id", "Shows item/quest/npc IDs.")
+        : base("id", "Shows item/quest/NPC IDs.", """
+             - Shows the ID of the selected object.
+            <item|quest> - Shows the ID of the specified item or quest.
+            """)
     {
-        SetSyntaxInfo(
-            " - Shows the ID of the selected object.",
-            "<item|quest> - Shows the ID of the specified item or quest.");
     }
 
     public override void Execute(Player player, params string[] paramsArr)
@@ -86,16 +86,12 @@ public class Id : PlayerCommand
 
     private char GetQuestIcon(QuestTemplate template)
     {
-        switch (template.GetCategory())
+        return template.GetCategory() switch
         {
-            case QuestCategory.EVENT:
-                return (char)0xE039; // pink
-            case QuestCategory.MISSION:
-                return (char)0xE037; // golden
-            case QuestCategory.IMPORTANT:
-            case QuestCategory.SIGNIFICANT:
-                return (char)0xE03F; // dark blue
-        }
-        return (char)0xE034; // light blue
+            QuestCategory.EVENT => (char)0xE039, // pink
+            QuestCategory.MISSION => (char)0xE037, // golden
+            QuestCategory.IMPORTANT or QuestCategory.SIGNIFICANT => (char)0xE03F, // dark blue
+            _ => (char)0xE034, // light blue
+        };
     }
 }

@@ -14,15 +14,14 @@ public class Access : AdminCommand
     private readonly Dictionary<int, sbyte> oldAccessLevels = new();
 
     public Access()
-        : base("access", "Chat command and access level management.")
+        : base("access", "Chat command and access level management.", """
+            add <player name> <command name> - Grants the player access to the given chat command.
+            remove <player name> <command name> - Removes the player's access to the given chat command.
+            removeall <player name> - Removes all granted accesses.
+            level <number> - Temporarily sets your accesslevel to a given lower value (for test purposes).
+            level reset - Resets your accesslevel to the original value.
+            """)
     {
-        SetSyntaxInfo(
-            "<add> <player name> <command name> - Grants the player access to the given chat command.",
-            "<remove> <player name> <command name> - Removes the player's access to the given chat command.",
-            "<removeall> <player name> - Removes all granted accesses.",
-            "<level> <number> - Temporarily sets your accesslevel to a given lower value (for test purposes).",
-            "<level> <reset> - Resets your accesslevel to the original value."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -88,8 +87,8 @@ public class Access : AdminCommand
                 }
                 else
                 {
-                    sbyte level = TryParseSByte(paramsArr[1], out sbyte parsed) ? parsed : (sbyte)-1;
-                    if (level == -1 || level > maxLevel)
+                    sbyte level = unchecked((sbyte)ParseByte(paramsArr[1]));
+                    if (level < 0 || level > maxLevel)
                     {
                         SendInfo(admin, "Invalid access level.");
                         return;

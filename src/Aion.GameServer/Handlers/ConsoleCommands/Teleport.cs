@@ -12,9 +12,10 @@ namespace Aion.GameServer.Handlers.ConsoleCommands;
 public class Teleport : ConsoleCommand
 {
     public Teleport()
-        : base("teleport", "Moves you to any location.")
+        : base("teleport", "Moves you to any location.", """
+            [mapCName] <x> <y> <z> - Moves you to the specified coordinates on the given map (default: current map).
+            """)
     {
-        SetSyntaxInfo("[mapCName] <x> <y> <z> - Moves you to the specified coordinates on the given map (default: current map).");
     }
 
     public override void Execute(Player player, params string[] paramsArr)

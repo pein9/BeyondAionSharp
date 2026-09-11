@@ -16,12 +16,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Collide : AdminCommand
 {
     public Collide()
-        : base("collide", "Geo debugging tool.")
+        : base("collide", "Geo debugging tool.", """
+             - Lists collisions between your target and the ground.
+            me - Lists collisions between you and your target.
+            """)
     {
-        SetSyntaxInfo(
-            " - Lists collisions between your target and the ground.",
-            "me - Lists collisions between you and your target."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

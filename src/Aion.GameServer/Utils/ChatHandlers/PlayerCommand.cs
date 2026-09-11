@@ -9,7 +9,12 @@ public abstract class PlayerCommand : ChatCommand
     public const string PREFIX = ".";
 
     public PlayerCommand(string alias, string description)
-        : base(PREFIX, alias, description)
+        : this(alias, description, "")
+    {
+    }
+
+    public PlayerCommand(string alias, string description, string syntaxInfo)
+        : base(PREFIX, alias, description, syntaxInfo)
     {
     }
 

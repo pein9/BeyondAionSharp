@@ -8,9 +8,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Whisper : AdminCommand
 {
     public Whisper()
-        : base("whisper", "Enables/disables incoming whispers.")
+        : base("whisper", "Enables/disables incoming whispers.", """
+            on - Allows whispers from others.
+            off - Blocks whispers from others, except from GMs.
+            """)
     {
-        SetSyntaxInfo("<on|off> - Enable or disable whispers from others (GMs can always whisper you).");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

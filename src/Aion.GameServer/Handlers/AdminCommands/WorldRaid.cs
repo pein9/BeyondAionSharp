@@ -17,13 +17,13 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class WorldRaid : AdminCommand
 {
     public WorldRaid()
-        : base("worldraid", "Starts/stops the Beritra Invasion event.")
+        : base("worldraid", "Starts/stops the Beritra Invasion event.", """
+            list - Shows all available world raid locations.
+            active - Shows all active world raid locations.
+            start <location ID> - Starts the world raid for the given location.
+            stop <location ID> - Stops the world raid for the given location.
+            """)
     {
-        SetSyntaxInfo(
-            "list - Shows all available world raid locations",
-            "active - Shows all active world raid locations",
-            "start <location_id> - Starts the world raid for the given location",
-            "stop <location_id> - Stops the world raid for the given location");
     }
 
     public override void Execute(Player player, params string[] paramsArr)
@@ -49,19 +49,17 @@ public class WorldRaid : AdminCommand
         }
         else
         {
-            if (paramsArr.Length < 2 || !IsNumber(paramsArr[1]))
+            if (paramsArr.Length < 2)
             {
                 SendInfo(player);
                 return;
             }
-
-            int locationId = TryParseInt(paramsArr[1], out var r) ? r : 0;
+            int locationId = ParseInt(paramsArr[1]);
             if (!WorldRaidService.GetInstance().IsValidWorldRaidLocation(locationId))
             {
                 SendInfo(player, "Invalid world raid location: " + locationId);
                 return;
             }
-
             if ("start".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
             {
                 if (WorldRaidService.GetInstance().IsWorldRaidInProgress(locationId))
@@ -122,7 +120,4 @@ public class WorldRaid : AdminCommand
     {
         return ChatUtil.Position(location.GetLocationId().ToString(), location.GetMapId(), location.GetX(), location.GetY(), location.GetZ());
     }
-
-    // Java parity: NumberUtils.isNumber delegates to Commons Lang 3.20 isCreatable.
-    private static bool IsNumber(string str) => IsCreatableNumber(str);
 }

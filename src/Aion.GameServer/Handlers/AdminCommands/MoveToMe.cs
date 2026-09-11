@@ -11,11 +11,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class MoveToMe : AdminCommand
 {
     public MoveToMe()
-        : base("movetome", "Teleports a player (optional his team) to the user.")
+        : base("movetome", "Teleports a player (optional his team) to the user.", """
+            <name> - Teleports only the player.
+            <name> <(g)rp|(a)lli> - Teleports either the players group or his alliance including him.
+            """)
     {
-        SetSyntaxInfo(
-            "<name> - Teleports only the player.",
-            "<name> <(g)rp|(a)lli> - Teleports either the players group or his alliance including him.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -34,18 +34,13 @@ public class MoveToMe : AdminCommand
         }
         if (paramsArr.Length >= 2)
         {
-            if (!playerToMove.IsInTeam())
-            {
-                SendInfo(admin, "The player does not belong to a team.");
-                return;
-            }
             TemporaryPlayerTeam teamToMove;
             switch (paramsArr[1].ToLower())
             {
                 case "g":
                 case "grp":
                 case "group":
-                    teamToMove = playerToMove.GetPlayerGroup();
+                    teamToMove = playerToMove.GetCurrentGroup();
                     break;
                 case "a":
                 case "alli":
@@ -58,7 +53,7 @@ public class MoveToMe : AdminCommand
             }
             if (teamToMove == null)
             {
-                SendInfo(admin, playerToMove.GetName() + " currently has no team.");
+                SendInfo(admin, Name(playerToMove) + " currently has no team.");
                 return;
             }
             foreach (Player p in teamToMove.GetOnlineMembers())
@@ -73,7 +68,7 @@ public class MoveToMe : AdminCommand
     private void TeleportPlayer(Player playerToMove, Player admin)
     {
         TeleportService.TeleportTo(playerToMove, admin.GetPosition());
-        SendInfo(admin, "Teleported " + playerToMove.GetName() + " to your location.");
-        SendInfo(playerToMove, "You have been teleported by " + admin.GetName() + ".");
+        SendInfo(admin, "Teleported " + Name(playerToMove) + " to your location.");
+        SendInfo(playerToMove, "You have been teleported by " + Name(admin) + ".");
     }
 }

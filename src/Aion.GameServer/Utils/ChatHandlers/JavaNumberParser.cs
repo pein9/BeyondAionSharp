@@ -21,6 +21,57 @@ internal static class JavaNumberParser
         return (int)parsed;
     }
 
+    /// <summary>
+    /// Java parity: Integer.parseInt(CharSequence, int beginIndex, int endIndex, int radix). Parses the range [beginIndex, endIndex) without
+    /// taking a substring, and reports a malformed range the way Java does ("Error at index N in: ...") rather than as "For input string".
+    /// </summary>
+    internal static int ParseInt(string value, int beginIndex, int endIndex, int radix)
+    {
+        if (value is null)
+            throw new NullReferenceException(); // Java: Objects.requireNonNull(s)
+        if (beginIndex < 0 || beginIndex > endIndex || endIndex > value.Length) // Java: Objects.checkFromToIndex -> IndexOutOfBoundsException
+            throw new IndexOutOfRangeException($"Range [{beginIndex}, {endIndex}) out of bounds for length {value.Length}");
+        if (radix < 2)
+            throw new JavaNumberFormatException($"radix {radix} less than Character.MIN_RADIX");
+        if (radix > 36)
+            throw new JavaNumberFormatException($"radix {radix} greater than Character.MAX_RADIX");
+        if (beginIndex == endIndex)
+            throw Invalid("", radix);
+
+        bool negative = false;
+        int i = beginIndex;
+        int limit = -int.MaxValue;
+        char firstChar = value[i];
+        if (firstChar < '0') // possible leading "+" or "-"
+        {
+            if (firstChar == '-')
+            {
+                negative = true;
+                limit = int.MinValue;
+            }
+            else if (firstChar != '+')
+            {
+                throw InvalidAt(value, beginIndex, endIndex, i);
+            }
+            if (++i == endIndex) // cannot have lone "+" or "-"
+                throw InvalidAt(value, beginIndex, endIndex, i);
+        }
+        int multiplyLimit = limit / radix;
+        int result = 0;
+        for (; i < endIndex; i++)
+        {
+            // Accumulating negatively avoids surprises near MAX_VALUE
+            int digit = Digit(value[i], radix);
+            if (digit < 0 || result < multiplyLimit)
+                throw InvalidAt(value, beginIndex, endIndex, i);
+            result *= radix;
+            if (result < limit + digit)
+                throw InvalidAt(value, beginIndex, endIndex, i);
+            result -= digit;
+        }
+        return negative ? result : -result;
+    }
+
     internal static long ParseLong(string value)
     {
         return ParseLong(value, 10);
@@ -719,6 +770,12 @@ internal static class JavaNumberParser
         return new JavaNumberFormatException(value is null
             ? "Cannot parse null string"
             : $"For input string: \"{value}\"" + (radix == 10 ? "" : $" under radix {radix}"));
+    }
+
+    // Java parity: NumberFormatException.forCharSequence(s, beginIndex, endIndex, errorIndex)
+    private static JavaNumberFormatException InvalidAt(string value, int beginIndex, int endIndex, int errorIndex)
+    {
+        return new JavaNumberFormatException($"Error at index {errorIndex - beginIndex} in: \"{value.Substring(beginIndex, endIndex - beginIndex)}\"");
     }
 }
 

@@ -12,11 +12,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Delete : AdminCommand
 {
     public Delete()
-        : base("delete", "Removes a spawn from world.")
+        : base("delete", "Removes a spawn from world.", """
+             - Deletes the object you are targeting.
+            <range> - Deletes all objects around you in given radius in meters.
+            """)
     {
-        SetSyntaxInfo(
-            " - Deletes the object you are targeting.",
-            "<range> - Deletes all objects around you in given radius in meters.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

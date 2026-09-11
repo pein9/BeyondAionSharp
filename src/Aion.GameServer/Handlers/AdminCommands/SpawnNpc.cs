@@ -16,12 +16,12 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class SpawnNpc : AdminCommand
 {
     public SpawnNpc()
-        : base("spawn", "Spawns npcs and gatherables.")
+        : base("spawn", "Spawns NPCs and gatherables.", """
+            <ID> - Spawns a temporary object with the specified template ID.
+            <ID> <static ID> [respawn time] - Spawns an object with the specified ID and static ID (default: temporary spawn, optional: respawn time in seconds).
+            <item link|ID> - Spawns the house object from given item link or ID.
+            """)
     {
-        SetSyntaxInfo(
-            "<id> - Spawns a temporary object with the specified template ID.",
-            "<id> <static id> [respawn time] - Spawns an object with the specified ID and static ID (default: temporary spawn, optional: respawn time in seconds).",
-            "<item link|ID> - Spawns the house object from given item link or ID.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -45,7 +45,7 @@ public class SpawnNpc : AdminCommand
 
         if (DataManager.NPC_DATA.GetNpcTemplate(npcId) == null && DataManager.GATHERABLE_DATA.GetGatherableTemplate(npcId) == null)
         {
-            SendInfo(admin, "Invalid npc ID.");
+            SendInfo(admin, "Invalid NPC ID.");
             return;
         }
         if (staticId < 0)

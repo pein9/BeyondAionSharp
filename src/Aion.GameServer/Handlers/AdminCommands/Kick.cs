@@ -9,12 +9,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Kick : AdminCommand
 {
     public Kick()
-        : base("kick", "Disconnects players from the server.")
+        : base("kick", "Disconnects players from the server.", """
+            <name> - Disconnects the player with the specified name.
+            ALL - Disconnects everyone (parameter must be typed in uppercase, for safety).
+            """)
     {
-        SetSyntaxInfo(
-            "<name> - Disconnects the player with the specified name.",
-            "<ALL> - Disconnects everyone (parameter must be typed in uppercase, for safety)."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

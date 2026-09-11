@@ -12,13 +12,12 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Time : AdminCommand
 {
     public Time()
-        : base("time", "Changes the game time.")
+        : base("time", "Changes the game time.", """
+            <dawn|day|dusk|night> - Sets the specified day time.
+            <0-23> - Sets the specified hour.
+            <0-23> <0-59> - Sets the specified hour and minute.
+            """)
     {
-        SetSyntaxInfo(
-            "<dawn|day|dusk|night> - Sets the specified day time.",
-            "<0-23> - Sets the specified hour.",
-            "<0-23> <0-59> - Sets the specified hour and minute."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -48,22 +47,20 @@ public class Time : AdminCommand
         }
         else
         {
-            try
+            hour = ParseInt(paramsArr[0]);
+            if (hour < 0 || hour > 23)
             {
-                hour = ParseInt(paramsArr[0]);
-                if (hour < 0 || hour > 23)
-                    throw new ArgumentException("A day has only 24 hours!\nMin value: 0 - Max value: 23");
-                if (paramsArr.Length == 2)
-                {
-                    minute = ParseInt(paramsArr[1]);
-                    if (minute < 0 || minute > 59)
-                        throw new ArgumentException("An hour has only 60 minutes!\nMin value: 0 - Max value: 59");
-                }
-            }
-            catch (Exception e)
-            {
-                SendInfo(admin, e.GetType() == typeof(ArgumentException) ? e.Message : null); // default info for NumberFormatException
+                SendInfo(admin, "Hour must be between 0 and 23.");
                 return;
+            }
+            if (paramsArr.Length == 2)
+            {
+                minute = ParseInt(paramsArr[1]);
+                if (minute < 0 || minute > 59)
+                {
+                    SendInfo(admin, "Minute must be between 0 and 59.");
+                    return;
+                }
             }
         }
 

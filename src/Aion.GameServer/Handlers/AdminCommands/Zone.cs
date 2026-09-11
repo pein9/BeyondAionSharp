@@ -13,12 +13,12 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Zone : AdminCommand
 {
     public Zone()
-        : base("zone")
+        : base("zone", "Shows zone information.", """
+             - Shows info about your target's current zone(s).
+            <zone name> - Shows info about your target's current zone(s), filtered by the given zone name.
+            refresh - Refreshes your zones.
+            """)
     {
-        SetSyntaxInfo(
-            "[zone name] - Shows info about your target's current zone(s) (default: all zones, optional: filtered by given zone name).",
-            "<refresh> - Refreshes your zones."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -38,14 +38,14 @@ public class Zone : AdminCommand
         List<ZoneInstance> zones = FindZones(target, zoneNameParam);
         string zoneTypes = string.Join(", ", ((ZoneType[])Enum.GetValues(typeof(ZoneType))).Where(target.IsInsideZoneType).Select(zt => zt.ToString()));
         if (!string.IsNullOrEmpty(zoneTypes))
-            SendInfo(admin, target.GetName() + "'s zone types: " + zoneTypes);
+            SendInfo(admin, Name(target) + "'s zone types: " + zoneTypes);
         if (zones.Count == 0)
         {
-            SendInfo(admin, target.GetName() + " is not in " + (zoneNameParam == null ? "any zone" : zoneNameParam) + '.');
+            SendInfo(admin, Name(target) + " is not in " + (zoneNameParam == null ? "any zone" : zoneNameParam) + '.');
         }
         else
         {
-            SendInfo(admin, target.GetName() + "'s " + (zones.Count == 1 ? "zone" : "zones") + ':');
+            SendInfo(admin, Name(target) + "'s " + (zones.Count == 1 ? "zone" : "zones") + ':');
             foreach (ZoneInstance zone in zones)
             {
                 SendInfo(admin, zone.GetAreaTemplate().GetZoneName().Name);

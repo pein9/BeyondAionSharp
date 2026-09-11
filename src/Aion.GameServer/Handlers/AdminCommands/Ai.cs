@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -19,19 +18,18 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Ai : AdminCommand
 {
     public Ai()
-        : base("ai", "Modifies and shows AI details.")
+        : base("ai", "Modifies and shows AI details.", """
+            info - Show AI info for your target.
+            set <aiName> - Changes the AI of your target.
+            state <stateName> [substateName] - Changes the AI state.
+            event <eventName> - Fires the AI event for the given name.
+            event2 <eventName> <creatureObjId> - Fires the creature AI event for the given name and creature.
+            events - Shows last AI events for your target.
+            log - Toggles AI logging for your target on and off.
+            <createlog|eventlog|movelog> - Toggles logging on and off.
+            marker [text] - Prints a marker with the optional text in log.
+            """)
     {
-        SetSyntaxInfo(
-            "<info> - Show AI info for your target.",
-            "<set> <aiName> - Changes the AI of your target.",
-            "<state> <stateName> [substateName] - Changes the AI state.",
-            "<event> <eventName> - Fires the AI event for the given name.",
-            "<event2> <eventName> <creatureObjId> - Fires the creature AI event for the given name and creature.",
-            "<events> - Shows last AI events for your target.",
-            "<log> - Toggles AI logging for your target on and off.",
-            "<createlog|eventlog|movelog> - Toggles logging on and off.",
-            "<marker> [text] - Prints a marker with the optional text in log."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -60,20 +58,17 @@ public class Ai : AdminCommand
         else if (paramsArr[0].Equals("marker", StringComparison.OrdinalIgnoreCase))
         {
             if (paramsArr.Length > 1)
-                NullLoggerFactory.Instance.CreateLogger(typeof(AILogger).FullName).LogInformation("[AI] marker: " + string.Join(" ", paramsArr, 1, paramsArr.Length - 1));
+                NullLoggerFactory.Instance.CreateLogger(typeof(AILogger).FullName).LogInformation("[AI] marker: " + Join(paramsArr, 1));
             else
                 NullLoggerFactory.Instance.CreateLogger(typeof(AILogger).FullName).LogInformation("[AI] marker");
         }
         else
         {
-            VisibleObject target = admin.GetTarget();
-            if (target == null || !(target is Creature))
+            if (admin.GetTarget() is not Creature npc || npc is Player)
             {
                 PacketSendUtility.SendPacket(admin, SM_SYSTEM_MESSAGE.STR_INVALID_TARGET());
                 return;
             }
-            Creature npc = (Creature) target;
-
             if (paramsArr[0].Equals("info", StringComparison.OrdinalIgnoreCase))
             {
                 SendInfo(admin,
@@ -106,41 +101,27 @@ public class Ai : AdminCommand
                 if (paramsArr[0].Equals("set", StringComparison.OrdinalIgnoreCase))
                 {
                     string aiName = param1;
+                    AbstractAI newAi = AIEngine.GetInstance().NewAI(aiName, npc);
                     try
                     {
-                        AbstractAI newAi = AIEngine.GetInstance().NewAI(aiName, npc);
-                        try
-                        {
-                            FieldInfo aiField = npc.GetType().BaseType.GetField("ai", BindingFlags.NonPublic | BindingFlags.Instance);
-                            World.World.GetInstance().Despawn(npc, ObjectDeleteAnimation.NONE);
-                            aiField.SetValue(npc, newAi);
-                            World.World.GetInstance().Spawn(npc); // properly init AI states
-                        }
-                        catch (Exception e) when (e is FieldAccessException || e is MemberAccessException)
-                        {
-                            NullLoggerFactory.Instance.CreateLogger(typeof(Ai).FullName).LogError(e, "");
-                        }
-                        if (npc.GetAi() == newAi)
-                            SendInfo(admin, "Npc now has AI " + newAi.GetType().Name);
-                        else
-                            SendInfo(admin, "Error changing AI (see logs)");
+                        // Java parity: getDeclaredField throws NoSuchFieldException; C# GetField returns null instead.
+                        FieldInfo aiField = npc.GetType().BaseType.GetField("ai", BindingFlags.NonPublic | BindingFlags.Instance)
+                            ?? throw new MissingFieldException(npc.GetType().BaseType.FullName, "ai");
+                        World.World.GetInstance().Despawn(npc, ObjectDeleteAnimation.NONE);
+                        aiField.SetValue(npc, newAi);
+                        World.World.GetInstance().Spawn(npc); // properly init AI states
+                        SendInfo(admin, "Npc now has AI " + newAi.GetType().Name);
                     }
-                    catch (ArgumentException e)
+                    catch (Exception e) when (e is FieldAccessException || e is MemberAccessException)
                     {
-                        SendInfo(admin, e.Message);
+                        NullLoggerFactory.Instance.CreateLogger(typeof(Ai).FullName).LogError(e, "");
+                        SendInfo(admin, "Error changing AI (see logs)");
                     }
                 }
                 else if (paramsArr[0].Equals("event", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (Enum.GetNames(typeof(AiEventType)).Contains(param1.ToUpper()))
-                    {
-                        AiEventType eventType = Enum.Parse<AiEventType>(param1.ToUpper());
-                        npc.GetAi().OnGeneralEvent(eventType);
-                    }
-                    else
-                    {
-                        SendInfo(admin, "Found no event with that name");
-                    }
+                    AiEventType eventType = ParseEnumName<AiEventType>(param1.ToUpperInvariant());
+                    npc.GetAi().OnGeneralEvent(eventType);
                 }
                 else if (paramsArr[0].Equals("event2", StringComparison.OrdinalIgnoreCase))
                 {
@@ -149,38 +130,18 @@ public class Ai : AdminCommand
                         SendInfo(admin, "Please provide a valid creature object ID");
                     else
                     {
-                        if (Enum.GetNames(typeof(AiEventType)).Contains(param1.ToUpper()))
-                        {
-                            AiEventType eventType = Enum.Parse<AiEventType>(param1.ToUpper());
-                            npc.GetAi().OnCreatureEvent(eventType, creature);
-                        }
-                        else
-                        {
-                            SendInfo(admin, "Found no event with that name");
-                        }
+                        AiEventType eventType = ParseEnumName<AiEventType>(param1.ToUpperInvariant());
+                        npc.GetAi().OnCreatureEvent(eventType, creature);
                     }
                 }
                 else if (paramsArr[0].Equals("state", StringComparison.OrdinalIgnoreCase))
                 {
-                    AIState? state = null;
-                    try
+                    AIState state = ParseEnumName<AIState>(param1.ToUpperInvariant());
+                    npc.GetAi().SetStateIfNot(state);
+                    if (paramsArr.Length > 2)
                     {
-                        // Java parity: AIState.valueOf(name) — matches enum constant name only (throws on unknown name).
-                        if (!Enum.GetNames(typeof(AIState)).Contains(param1.ToUpper()))
-                            throw new ArgumentException();
-                        state = Enum.Parse<AIState>(param1.ToUpper());
-                        npc.GetAi().SetStateIfNot(state.Value);
-                        if (paramsArr.Length > 2)
-                        {
-                            if (!Enum.GetNames(typeof(AISubState)).Contains(paramsArr[2]))
-                                throw new ArgumentException();
-                            AISubState substate = Enum.Parse<AISubState>(paramsArr[2]);
-                            npc.GetAi().SetSubStateIfNot(substate);
-                        }
-                    }
-                    catch (ArgumentException)
-                    {
-                        SendInfo(admin, "Found no " + (state == null ? "state" : "substate") + " with that name");
+                        AISubState substate = ParseEnumName<AISubState>(paramsArr[2]);
+                        npc.GetAi().SetSubStateIfNot(substate);
                     }
                 }
             }

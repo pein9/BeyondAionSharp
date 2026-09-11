@@ -15,14 +15,14 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class State : AdminCommand
 {
     public State()
-        : base("state", "Views and adjusts your target's creature states.")
+        : base("state", "Views and adjusts your target's creature states.", """
+             - Shows your target's creature states.
+            <state> - Sets given creature state(s) by name or ID, replacing existing states.
+            add <state> - Sets given creature state(s) by name or ID.
+            remove <state> - Removes given creature state(s) by name or ID. Use -1 to remove all states.
+            list - Shows possible state names and ID. Add ID values together to add or remove multiple states at once.
+            """)
     {
-        SetSyntaxInfo(
-            " - Shows your target's creature states.",
-            "<state> - Sets given creature state(s) by name or ID, replacing existing states.",
-            "add <state> - Sets given creature state(s) by name or ID.",
-            "remove <state> - Removes given creature state(s) by name or ID. Use -1 to remove all states.",
-            "list - Shows possible state names and ID. Add ID values together to add or remove multiple states at once.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -38,10 +38,9 @@ public class State : AdminCommand
             PacketSendUtility.SendPacket(admin, SM_SYSTEM_MESSAGE.STR_INVALID_TARGET());
             return;
         }
-
         if (paramsArr.Length == 0)
         {
-            SendInfo(admin, creature.GetName() + "'s state: " + GetStateDescription(creature.GetState()) + "\nSee " + ChatUtil.Color(GetAliasWithPrefix() + " help", Color.White) + " for more options.");
+            SendInfo(admin, Name(creature) + "'s state: " + GetStateDescription(creature.GetState()) + "\nSee " + ChatUtil.Color(GetAliasWithPrefix() + " help", Color.White) + " for more options.");
         }
         else if ("list".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
         {
@@ -90,7 +89,7 @@ public class State : AdminCommand
             }
             ThreadPoolManager.GetInstance().Schedule(_ => { admin.SetTarget(target); return System.Threading.Tasks.ValueTask.CompletedTask; }, 200L);
 
-            SendInfo(admin, creature.GetName() + "'s state changed to " + GetStateDescription(creature.GetState()));
+            SendInfo(admin, Name(creature) + "'s state changed to " + GetStateDescription(creature.GetState()));
         }
     }
 

@@ -1,3 +1,8 @@
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using Aion.GameServer.Configs.Administration;
+using Aion.GameServer.Model.Account;
+using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Tests;
@@ -21,12 +26,22 @@ public sealed class ChatUtilTests
 		Assert.Null(ChatUtil.L10n(0));
 	}
 
-	// --- Name ---
+	// --- CharName ---
 
 	[Fact]
-	public void Name_ProducesClickableCharNameLink()
+	public void CharName_ProducesClickableCharNameLink()
 	{
-		var result = ChatUtil.Name("Daeva");
+		// Java parity: ChatUtil.charName(Player) formats player.getName(true). An access level 0 account never gets a
+		// name tag, but Player.GetName(true) still reads AdminConfig.NAME_TAGS, so only default it when nothing loaded it.
+		AdminConfig.NAME_TAGS ??= [];
+		var common = new PlayerCommonData(1);
+		common.SetName("Daeva");
+		var player = (Player)RuntimeHelpers.GetUninitializedObject(typeof(Player));
+		typeof(Player).GetField("playerAccountData", BindingFlags.Instance | BindingFlags.NonPublic)!
+			.SetValue(player, new PlayerAccountData(common, new PlayerAppearance()));
+		typeof(Player).GetField("playerAccount", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(player, new Account(2));
+
+		var result = ChatUtil.CharName(player);
 
 		Assert.Equal("[charname:Daeva;1 1 1]", result);
 	}

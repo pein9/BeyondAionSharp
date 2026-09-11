@@ -12,12 +12,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Grant : AdminCommand
 {
     public Grant()
-        : base("grant", "Grants/revokes account permissions.")
+        : base("grant", "Grants/revokes account permissions.", """
+            a <level> [name] - Grants the specified access level (default: target's account, optional: specified character's account). 0 will remove the account's access level.
+            m <level> [name] - Grants the specified membership level (default: target's account, optional: specified character's account). 0 will remove the account's membership level.
+            """)
     {
-        SetSyntaxInfo(
-            "<a> <level> [name] - Grants the specified access level (default: target's account, optional: specified character's account). 0 will remove the account's access level.",
-            "<m> <level> [name] - Grants the specified membership level (default: target's account, optional: specified character's account). 0 will remove the account's membership level."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

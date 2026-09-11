@@ -8,11 +8,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Ahserion : AdminCommand
 {
     public Ahserion()
-        : base("ahserion", "Starts/stops Ahserions Flight.")
+        : base("ahserion", "Starts/stops Ahserion's Flight.", """
+            start - Starts Ahserion's Flight.
+            stop - Stops Ahserion's Flight.
+            """)
     {
-        SetSyntaxInfo(
-            "<start> - Starts Ahserions Flight.",
-            "<stop> - Stops Ahserions Flight.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

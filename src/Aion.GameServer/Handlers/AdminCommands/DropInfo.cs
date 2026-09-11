@@ -17,9 +17,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class DropInfo : AdminCommand
 {
     public DropInfo()
-        : base("dropinfo", "Shows drop information of your target.")
+        : base("dropinfo", "Shows drop information of your target.", """
+             - Lists drops of the selected NPC for your level range.
+            all - Lists all drops of the selected NPC.
+            """)
     {
-        SetSyntaxInfo("[all] - Lists drops of the selected npc (default: only drops for your level range, optional: all possible drops).");
     }
 
     public override void Execute(Player player, params string[] paramsArr)
@@ -38,7 +40,7 @@ public class DropInfo : AdminCommand
         dropModifiers.SetMaxDropsPerGroup(int.MaxValue);
 
         int[] counts = { 0, 0 };
-        string info = "[" + npc.GetObjectTemplate().GetL10n() + "'s drops]";
+        string info = "[" + Name(npc) + "'s drops]";
         if (npcDrop != null)
         {
             foreach (DropGroup dropGroup in npcDrop.GetDropGroup())

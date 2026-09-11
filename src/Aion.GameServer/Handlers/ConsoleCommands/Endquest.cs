@@ -13,9 +13,10 @@ namespace Aion.GameServer.Handlers.ConsoleCommands;
 public class Endquest : ConsoleCommand
 {
     public Endquest()
-        : base("endquest", "Completes a quest.")
+        : base("endquest", "Completes a quest.", """
+            <quest> - Completes the specified quest of your target, without giving rewards (defaults to your character, if no player is targeted).
+            """)
     {
-        SetSyntaxInfo("<quest> - Completes the specified quest of your target, without giving rewards (defaults to your character, if no player is targeted).");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

@@ -8,13 +8,12 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Enemy : AdminCommand
 {
     public Enemy()
-        : base("enemy", "Modifies your enmity towards others.")
+        : base("enemy", "Modifies your enmity towards others.", """
+            all [players|npcs] - Sets your enmity (default: you're everyone's enemy, optional: you're an enemy to any player, or any NPC).
+            none [players|npcs] - Disables your enmity (default: you're nobody's enemy, optional: you're not an enemy to any player, or any NPC).
+            cancel - Resets your enmity to the default.
+            """)
     {
-        SetSyntaxInfo(
-            "all [players|npcs] - Sets your enmity (default: you're everyone's enemy, optional: you're an enemy to any player, or any NPC).",
-            "none [players|npcs] - Disables your enmity (default: you're nobody's enemy, optional: you're not an enemy to any player, or any NPC).",
-            "cancel - Resets your enmity to the default."
-        );
     }
 
     public override void Execute(Player player, params string[] paramsArr)

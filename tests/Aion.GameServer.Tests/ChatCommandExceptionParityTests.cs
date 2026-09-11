@@ -388,7 +388,7 @@ public sealed class ChatCommandExceptionParityTests
 		private readonly Action _action;
 
 		public ThrowingCommand(Action action)
-			: base("//", "throw", "")
+			: base("//", "throw", "", "")
 		{
 			_action = action;
 		}

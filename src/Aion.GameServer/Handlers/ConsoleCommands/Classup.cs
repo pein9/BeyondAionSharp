@@ -13,9 +13,10 @@ namespace Aion.GameServer.Handlers.ConsoleCommands;
 public class Classup : ConsoleCommand
 {
     public Classup()
-        : base("classup", "Promotes a players class.")
+        : base("classup", "Promotes a player's class.", """
+            <class> - Promotes your target's class to the one specified (defaults to your character, if no player is targeted).
+            """)
     {
-        SetSyntaxInfo("<class> - Promotes your target's class to the one specified (defaults to your character, if no player is targeted).");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -25,27 +26,8 @@ public class Classup : ConsoleCommand
             SendInfo(admin);
             return;
         }
-
         Player player = admin.GetTarget() is Player target ? target : admin;
-
-        string newClass = paramsArr[0];
-
-        if (newClass.Equals("fighter", StringComparison.OrdinalIgnoreCase))
-            newClass = "GLADIATOR";
-        else if (newClass.Equals("knight", StringComparison.OrdinalIgnoreCase))
-            newClass = "TEMPLAR";
-        else if (newClass.Equals("wizard", StringComparison.OrdinalIgnoreCase))
-            newClass = "SORCERER";
-        else if (newClass.Equals("elementalist", StringComparison.OrdinalIgnoreCase))
-            newClass = "SPIRIT_MASTER";
-
-        // Java parity: PlayerClass.valueOf(newClass.toUpperCase()); if (playerClass.isStartingClass()) throw new IllegalArgumentException();
-        if (!TryParseEnumName(newClass.ToUpper(), out PlayerClass playerClass) || playerClass.IsStartingClass())
-        {
-            SendInfo(admin, "Invalid player class.");
-            return;
-        }
-
+        PlayerClass playerClass = Changeclass.ParsePlayerClass(paramsArr[0]);
         ClassChangeService.SetClass(player, playerClass, false, true);
         SendInfo(admin, "You have promoted " + player.GetName() + "'s class to " + playerClass.ToString().ToLower() + ".");
     }

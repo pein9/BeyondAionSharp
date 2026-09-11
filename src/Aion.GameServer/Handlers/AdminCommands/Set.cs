@@ -13,16 +13,15 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Set : AdminCommand
 {
     public Set()
-        : base("set", "Changes various player attributes.")
+        : base("set", "Changes various player attributes.", """
+            class <value> - Sets the class of the selected player.
+            level <value> - Sets the level of the selected player.
+            exp <value> - Sets the experience points of the selected player.
+            ap <value> - Sets the abyss points of the selected player.
+            gp <value> - Sets the glory points of the selected player.
+            Note: Any actions default to your character, if no player is targeted.
+            """)
     {
-        SetSyntaxInfo(
-            "class <value> - Sets the class of the selected player.",
-            "level <value> - Sets the level of the selected player.",
-            "exp <value> - Sets the experience points of the selected player.",
-            "ap <value> - Sets the abyss points of the selected player.",
-            "gp <value> - Sets the glory points of the selected player.",
-            "Note: Any actions default to your character, if no player is targeted."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -43,7 +42,7 @@ public class Set : AdminCommand
         {
             int level = Math.Min(GSConfig.PLAYER_MAX_LEVEL, ParseInt(paramsArr[1]));
             target.GetCommonData().SetLevel(level);
-            SendInfo(admin, "Set " + target.GetName() + " level to " + target.GetLevel());
+            SendInfo(admin, "Set " + Name(target) + "'s level to " + target.GetLevel());
         }
         else if (paramsArr[0].Equals("exp"))
         {
@@ -57,7 +56,7 @@ public class Set : AdminCommand
             Aion.GameServer.Services.Abyss.AbyssPointsService.AddAp(target, ap - target.GetAbyssRank().GetAp());
             if (target != admin)
             {
-                SendInfo(admin, "Set " + target.GetName() + "'s abyss points to " + target.GetAbyssRank().GetAp() + ".");
+                SendInfo(admin, "Set " + Name(target) + "'s abyss points to " + target.GetAbyssRank().GetAp() + ".");
                 SendInfo(target, "Admin set your abyss points to " + target.GetAbyssRank().GetAp() + ".");
             }
         }
@@ -67,7 +66,7 @@ public class Set : AdminCommand
             Aion.GameServer.Services.Abyss.GloryPointsService.AddGp(target.GetObjectId(), gp - target.GetAbyssRank().GetCurrentGP());
             if (target != admin)
             {
-                SendInfo(admin, "Set " + target.GetName() + "'s glory points to " + target.GetAbyssRank().GetCurrentGP() + ".");
+                SendInfo(admin, "Set " + Name(target) + "'s glory points to " + target.GetAbyssRank().GetCurrentGP() + ".");
                 SendInfo(target, "Admin set your glory points to " + target.GetAbyssRank().GetCurrentGP() + ".");
             }
         }

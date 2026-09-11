@@ -18,9 +18,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Dye : AdminCommand
 {
     public Dye()
-        : base("dye", "Dyes a players visible equipment.")
+        : base("dye", "Dyes a player's visible equipment.", """
+            <color> - Dyes the selected player's equipment in the specified color (can be dye item link/ID, color name or color HEX code).
+            0 - Removes all dyes from the selected player's equipment.
+            """)
     {
-        SetSyntaxInfo("<color> - Dyes the selected player in the specified color (can be dye item link/ID, color name or color HEX code). 0 removes all dyeing.");
     }
 
     public override void Execute(Player player, params string[] paramsArr)
@@ -99,12 +101,12 @@ public class Dye : AdminCommand
         target.GetEquipment().SetPersistentState(Aion.GameServer.Model.GameObjects.IPersistable.PersistentState.UPDATE_REQUIRED);
 
         if (itemColor == null)
-            SendInfo(player, "Removed dyeing from " + target.GetName() + "'s visible equipment.");
+            SendInfo(player, "Removed dyeing from " + Name(target) + "'s visible equipment.");
         else
-            SendInfo(player, "Dyed " + target.GetName() + " (color: " + colorText + ")");
+            SendInfo(player, "Dyed " + Name(target) + " (color: " + colorText + ")");
 
         if (!target.Equals(player))
-            SendInfo(target, player.GetName() + " has changed the color of your visible equipment to: " + colorText);
+            SendInfo(target, Name(player) + " has changed the color of your visible equipment to: " + colorText);
     }
 
     // Java parity: ((Color) Class.forName("java.awt.Color").getField(NAME).get(null)).getRGB()

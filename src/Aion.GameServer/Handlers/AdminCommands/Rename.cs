@@ -15,11 +15,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Rename : AdminCommand
 {
     public Rename()
-        : base("rename", "Changes a player's name.")
+        : base("rename", "Changes a player's name.", """
+            <new name> - Renames your target.
+            <player name> <new name> [f] - Renames the given player (f = force rename, ignoring reserved names).
+            """)
     {
-        SetSyntaxInfo(
-            "<new name> - Renames your target.",
-            "<player name> <new name> [f] - Renames the given player (f = force rename, ignoring reserved names).");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

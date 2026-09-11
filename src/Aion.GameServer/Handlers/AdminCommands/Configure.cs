@@ -16,14 +16,13 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Configure : AdminCommand
 {
     public Configure()
-        : base("configure", "Shows/changes config settings.")
+        : base("configure", "Shows/changes config settings.", """
+            list - Shows all available configuration categories.
+            <category> - Shows all available properties of the specified configuration.
+            <category> <property> - Shows the properties active value.
+            <category> <property> <value> - Changes the properties value to the new value.
+            """)
     {
-        SetSyntaxInfo(
-            "<list> - Shows all available configuration categories.",
-            "<category> - Shows all available properties of the specified configuration.",
-            "<category> <property> - Shows the properties active value.",
-            "<category> <property> <value> - Changes the properties value to the new value."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -88,7 +87,7 @@ public class Configure : AdminCommand
                 string value = GetFieldValue(field);
                 if (paramsArr.Length > 2)
                 {
-                    string newValue = string.Join(" ", paramsArr.Skip(2));
+                    string newValue = Join(paramsArr, 2);
                     try
                     {
                         if (field.IsDefined(typeof(PropertiesAttribute), inherit: true))

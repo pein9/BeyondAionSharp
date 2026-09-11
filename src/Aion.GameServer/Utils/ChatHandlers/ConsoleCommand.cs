@@ -14,12 +14,19 @@ public abstract class ConsoleCommand : ChatCommand
 
     // only for backwards compatibility TODO: remove when all commands are updated
     public ConsoleCommand(string alias)
-        : this(alias, "")
+        : this(alias, "", "")
     {
     }
 
     public ConsoleCommand(string alias, string description)
-        : base(PREFIX, alias, description)
+        : this(alias, description, "")
+    {
+    }
+
+    /// <summary>Creates a new console command for use with the GM Panel (Shift + F1) or in macros if the console has been activated via
+    /// <c>\con_disable_console 0</c> from the command tab of the GM Panel.</summary>
+    public ConsoleCommand(string alias, string description, string syntaxInfo)
+        : base(PREFIX, alias, description, syntaxInfo)
     {
     }
 

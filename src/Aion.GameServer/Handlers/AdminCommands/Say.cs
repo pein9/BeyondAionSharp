@@ -12,9 +12,10 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Say : AdminCommand
 {
     public Say()
-        : base("say", "Lets your target say a message.")
+        : base("say", "Lets your target say a message.", """
+            <message> - Sends the message as your target (NPC only).
+            """)
     {
-        SetSyntaxInfo("<message> - Sends the message as your target (npc only).");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

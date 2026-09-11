@@ -1,6 +1,6 @@
+using System.Collections.Generic;
 using System.Text;
 using Aion.GameServer.Model.GameObjects.Players;
-using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Audit;
 using Aion.GameServer.Utils.ChatHandlers;
 
@@ -16,24 +16,18 @@ public class GmList : PlayerCommand
 
     public override void Execute(Player player, params string[] paramsArr)
     {
-        StringBuilder sb = new StringBuilder();
-        int count = 0;
-
-        foreach (Player gm in GMService.GetInstance().GetOnlineStaffMembers())
-        {
-            FriendList.Status status = gm.GetFriendList().GetStatus();
-            if (!gm.IsInCustomState(CustomPlayerState.NO_WHISPERS_MODE) && status != FriendList.Status.OFFLINE)
-            {
-                sb.Append("\n\t" + ChatUtil.Name(gm) + " (" + status.ToString().ToLower() + ")");
-                count++;
-            }
-        }
-
-        if (count == 0)
+        List<Player> availableStaffMembers = GMService.GetInstance().GetAvailableStaffMembers();
+        if (availableStaffMembers.Count == 0)
         {
             SendInfo(player, "There is no GM online.");
             return;
         }
-        SendInfo(player, "GMs online (" + count + "):" + sb.ToString());
+        StringBuilder sb = new StringBuilder("GMs online (" + availableStaffMembers.Count + "):");
+        foreach (Player gm in availableStaffMembers)
+        {
+            FriendList.Status status = gm.GetFriendList().GetStatus();
+            sb.Append("\n\t").Append(Name(gm)).Append(" (").Append(status.ToString().ToLowerInvariant()).Append(")");
+        }
+        SendInfo(player, sb.ToString());
     }
 }

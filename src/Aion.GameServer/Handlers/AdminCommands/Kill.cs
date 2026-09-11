@@ -12,12 +12,12 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Kill : AdminCommand
 {
     public Kill()
-        : base("kill", "Kills the specified NPC(s) or player.")
+        : base("kill", "Kills the specified NPC(s) or player.", """
+             - kills your target (can be NPC or player)
+            all [neutral|enemy|npcId] - kills all NPCs in the surrounding area (default: all, optional: only neutral/hostile NPCs/specific NPC)
+            <range (in meters)> [neutral|enemy|npcId] - kills NPCs in the specified radius around you (default: all, optional: only neutral/hostile NPCs/specific NPC)
+            """)
     {
-        SetSyntaxInfo(
-            " - kills your target (can be NPC or player)",
-            "all [neutral|enemy|npcId] - kills all NPCs in the surrounding area (default: all, optional: only neutral/hostile NPCs/specific NPC)",
-            "<range (in meters)> [neutral|enemy|npcId] - kills NPCs in the specified radius around you (default: all, optional: only neutral/hostile NPCs/specific NPC)");
     }
 
     public override void Execute(Player player, params string[] paramsArr)
@@ -38,7 +38,7 @@ public class Kill : AdminCommand
                 if (target is Npc)
                     targetInfo += ChatUtil.Path(target, true);
                 else
-                    targetInfo += ChatUtil.Capitalize(target.Name);
+                    targetInfo += Name(target);
                 if (DoKill(player, creature))
                     SendInfo(player, "Killed " + targetInfo);
                 else

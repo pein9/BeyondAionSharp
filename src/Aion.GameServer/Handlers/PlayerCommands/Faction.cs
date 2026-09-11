@@ -14,10 +14,10 @@ namespace Aion.GameServer.Handlers.PlayerCommands;
 public class Faction : PlayerCommand
 {
     public Faction()
-        : base("faction", "Faction chat.")
+        : base("faction", "Faction chat.", $"""
+            <message> - Sends the message to all players of your faction{(CustomConfig.FACTION_USE_PRICE > 0 ? " for " + CustomConfig.FACTION_USE_PRICE + " Kinah" : "")}.
+            """)
     {
-        string priceInfo = CustomConfig.FACTION_USE_PRICE > 0 ? " Price: " + CustomConfig.FACTION_USE_PRICE + " Kinah." : "";
-        SetSyntaxInfo("<message> - Sends the message to all players of your faction." + priceInfo);
     }
 
     public override void Execute(Player player, params string[] paramsArr)

@@ -11,11 +11,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class VortexRaid : AdminCommand
 {
     public VortexRaid()
-        : base("vortexraid", "Starts/stops a raid in Theobomos or Brusthonin.")
+        : base("vortexraid", "Starts/stops a raid in Theobomos or Brusthonin.", """
+            start <Theobomos|Brusthonin> - Starts the raid at the given location.
+            stop <Theobomos|Brusthonin> - Stops the raid at the given location.
+            """)
     {
-        SetSyntaxInfo(
-            "start <Theobomos|Brusthonin> - Starts the raid at the given location.",
-            "stop <Theobomos|Brusthonin> - Stops the raid at the given location.");
     }
 
     public override void Execute(Player player, params string[] paramsArr)

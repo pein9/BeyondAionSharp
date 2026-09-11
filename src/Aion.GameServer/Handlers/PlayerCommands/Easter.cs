@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Services.Items;
@@ -13,38 +14,43 @@ public class Easter : PlayerCommand
 {
     private static readonly ILogger log = NullLogger.Instance;
     private static readonly int neededItem = 186000175;
-    private static readonly int[][] rewards =
-    {
-        new[] { 25, 0 }, new[] { 50, 186000147 }, new[] { 50, 186000055 }, new[] { 75, 166020000 }, new[] { 75, 188053609 }, new[] { 75, 166200013 },
-        new[] { 75, 188053113 }, new[] { 100, 188053295 }, new[] { 100, 166030005 }, new[] { 300, 188053702 },
-    };
-
-    private static readonly int[][] randomItems =
-    {
-        new[] { 10, 162002030 }, // [Event] Premium Restoration Serum
-        new[] { 50, 186000237 }, // Ancient Coin
-        new[] { 3, 162000137 }, // Sublime Life Serum
-        new[] { 3, 162000139 }, // Sublime Mana Serum
-        new[] { 5, 186000146 }, // Guestpetal
-        new[] { 1, 188054198 }, // Greater Scroll Bundle
-        new[] { 10, 164000126 }, // Major Strike Resist Scroll
-        new[] { 10, 164000130 }, // Major Spell Resist Scroll
-    };
+    private static readonly IReadOnlyList<Reward> rewards =
+    [
+        new Reward(50, 186000147, 2), // Mithril Medal
+        new Reward(50, 186000055, 3), // Major Ancient Goblet
+        new Reward(75, 166020000, 5), // Omega Enchantment Stone
+        new Reward(75, 188053609, 3), // [Event] Level 60 Composite Manastone Bundle
+        new Reward(75, 166200013, 1), // Enduring Mythic Weapon Tuning Scroll
+        new Reward(75, 188053113, 3), // Ahserion's Flight Ancient Manastone Bundle
+        new Reward(100, 188053295, 1), // Empyrean Plume Chest
+        new Reward(100, 166030005, 5), // Tempering Solution
+        new Reward(300, 188053702, 1) // Vasharti's Equipment Box
+    ];
+    private static readonly IReadOnlyList<Reward> randomRewards =
+    [
+        new Reward(25, 162002030, 10), // [Event] Premium Restoration Serum
+        new Reward(25, 186000237, 50), // Ancient Coin
+        new Reward(25, 162000137, 3), // Sublime Life Serum
+        new Reward(25, 162000139, 3), // Sublime Mana Serum
+        new Reward(25, 186000146, 5), // Guestpetal
+        new Reward(25, 188054198, 1), // Greater Scroll Bundle
+        new Reward(25, 164000126, 10), // Major Strike Resist Scroll
+        new Reward(25, 164000130, 10) // Major Spell Resist Scroll
+    ];
 
     public Easter()
-        : base("easter", "Exchanges " + ChatUtil.Item(186000175) + " for prizes.")
+        : base("easter", "Exchanges " + ChatUtil.Item(186000175) + " for prizes.", BuildSyntaxInfo())
     {
-        SetSyntaxInfo("Type in .easter <id> to get your reward:",
-            "[1] - (" + rewards[0][0] + " eggs) Random item",
-            "[2] - (" + rewards[1][0] + " eggs) " + " 2x " + ChatUtil.Item(rewards[1][1]),
-            "[3] - (" + rewards[2][0] + " eggs) " + " 3x " + ChatUtil.Item(rewards[2][1]),
-            "[4] - (" + rewards[3][0] + " eggs) " + " 5x " + ChatUtil.Item(rewards[3][1]),
-            "[5] - (" + rewards[4][0] + " eggs) " + " 3x " + ChatUtil.Item(rewards[4][1]),
-            "[6] - (" + rewards[5][0] + " eggs) " + ChatUtil.Item(rewards[5][1]),
-            "[7] - (" + rewards[6][0] + " eggs) " + " 3x " + ChatUtil.Item(rewards[6][1]),
-            "[8] - (" + rewards[7][0] + " eggs) " + ChatUtil.Item(rewards[7][1]),
-            "[9] - (" + rewards[8][0] + " eggs) " + " 5x " + ChatUtil.Item(rewards[8][1]),
-            "[10] - (" + rewards[9][0] + " eggs) " + ChatUtil.Item(rewards[9][1]));
+    }
+
+    private static string BuildSyntaxInfo()
+    {
+        string syntaxInfo = "Type in .easter <ID> to get your reward:";
+        int i = 1;
+        syntaxInfo += "\n[" + i++ + "] - (" + randomRewards[0].RequiredEggs + " eggs) Random item";
+        foreach (Reward r in rewards)
+            syntaxInfo += "\n[" + i++ + "] - (" + r.RequiredEggs + " eggs) " + r.ItemCount + "x " + ChatUtil.Item(r.ItemId);
+        return syntaxInfo;
     }
 
     public override void Execute(Player player, params string[] paramsArr)
@@ -54,58 +60,24 @@ public class Easter : PlayerCommand
             SendInfo(player);
             return;
         }
-
-        // Java parity: try { rewardIndex = parseInt - 1; ... } catch (IllegalArgumentException e) { sendInfo(player, e instanceof NumberFormatException ? "Invalid prize." : e.getMessage()); }
-        // Reproduced as explicit branches with identical outcomes (non-numeric -> "Invalid prize."; out-of-range -> syntax info; insufficient -> "You need ..." message).
-        if (!TryParseInt(paramsArr[0], out int parsed))
+        int rewardIndex = ParseInt(paramsArr[0]) - 1;
+        if (rewardIndex < 0 || rewardIndex >= rewards.Count + 1)
         {
-            SendInfo(player, "Invalid prize.");
+            SendInfo(player, "Invalid reward ID.");
             return;
         }
-
-        int rewardIndex = parsed - 1;
-        if (rewardIndex < 0 || rewardIndex >= rewards.Length)
-        {
-            SendInfo(player);
-            return;
-        }
-
-        int cost = rewards[rewardIndex][0];
+        Reward reward = rewardIndex == 0 ? Rnd.Get(randomRewards)! : rewards[rewardIndex - 1];
+        int cost = reward.RequiredEggs;
         if (player.GetInventory().GetItemCountByItemId(neededItem) < cost || !player.GetInventory().DecreaseByItemId(neededItem, cost))
         {
             SendInfo(player, "You need " + cost + " " + ChatUtil.Item(neededItem) + " for this.");
             return;
         }
-
-        int count = 1;
-        int itemId = rewards[rewardIndex][1];
-        if (itemId == 0)
-        {
-            int rndIndex = Rnd.NextInt(randomItems.Length);
-            count = randomItems[rndIndex][0];
-            itemId = randomItems[rndIndex][1];
-        }
-        switch (itemId)
-        {
-            case 186000147: // Mithril Medal
-                count = 2;
-                break;
-            case 186000055: // Major Ancient Goblet
-            case 188053113: // Ahserion's Flight Ancient Manastone Bundle
-            case 188053609: // [Event] Level 60 Composite Manastone Bundle
-                count = 3;
-                break;
-            case 166020000: // Omega Enchantment Stone
-            case 166030005: // Tempering Solution
-                count = 5;
-                break;
-        }
-
-        long notAddedCount = ItemService.AddItem(player, itemId, count, true,
+        long notAddedCount = ItemService.AddItem(player, reward.ItemId, reward.ItemCount, true,
             new ItemService.ItemUpdatePredicate(ItemPacketService.ItemAddType.DECOMPOSABLE, ItemPacketService.ItemUpdateType.INC_CASH_ITEM));
         if (notAddedCount > 0)
-        {
-            log.LogWarning("[Easter Event] " + notAddedCount + "/" + count + " of " + itemId + " could not be added.");
-        }
+            log.LogWarning("[Easter Event] " + notAddedCount + "/" + reward.ItemCount + " of " + reward.ItemId + " could not be added.");
     }
+
+    private record Reward(int RequiredEggs, int ItemId, long ItemCount);
 }

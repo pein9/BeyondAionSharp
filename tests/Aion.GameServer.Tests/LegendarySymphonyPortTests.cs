@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Xml.Linq;
 using Aion.GameServer.Handlers.PlayerCommands;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Tests;
 
@@ -42,8 +43,9 @@ public sealed class LegendarySymphonyPortTests
     {
         string syntax = new Symphony().GetSyntaxInfo();
 
-        Assert.Contains("[4] - (40 copies): 1x [item:188052388]", syntax);
-        Assert.Contains("[15] - (250 copies): 1x [item:187000090]", syntax);
+        // Upstream 87e2e61a5 dropped the brackets, so the syntax parser now treats the reward number as a highlighted parameter.
+        Assert.Contains(ChatUtil.Color("4", System.Drawing.Color.White) + " - (40 copies): 1x [item:188052388]", syntax);
+        Assert.Contains(ChatUtil.Color("15", System.Drawing.Color.White) + " - (250 copies): 1x [item:187000090]", syntax);
     }
 
     [Fact]

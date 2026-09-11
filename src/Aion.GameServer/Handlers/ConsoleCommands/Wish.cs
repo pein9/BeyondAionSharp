@@ -22,12 +22,12 @@ namespace Aion.GameServer.Handlers.ConsoleCommands;
 public class Wish : ConsoleCommand
 {
     public Wish()
-        : base("wish", "Spawns npcs and adds items.")
+        : base("wish", "Spawns NPCs and adds items.", """
+            <npc name> - Spawns the specified NPC on your targets position.
+            <count> <item name> - Adds the specified item to your target.
+            <item name> <enchant> - Adds the specified item with the enchant level to your target.
+            """)
     {
-        SetSyntaxInfo(
-            "<npc name> - Spawns the specified npc on your targets position.",
-            "<count> <item name> - Adds the specified item to your target.",
-            "<item name> <enchant> - Adds the specified item with the enchant level to your target.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -44,7 +44,7 @@ public class Wish : ConsoleCommand
             int npcId = FindNpcId(npcName);
             if (npcId == 0)
             {
-                SendInfo(admin, "There is no npc with that name.");
+                SendInfo(admin, "There is no NPC with that name.");
                 return;
             }
             SpawnTemplate spawn = global::Aion.GameServer.SpawnEngine.SpawnEngine.NewSpawn(admin.GetWorldId(), npcId, admin.GetX(), admin.GetY(), admin.GetZ(),
@@ -52,12 +52,10 @@ public class Wish : ConsoleCommand
             VisibleObject visibleObject = global::Aion.GameServer.SpawnEngine.SpawnEngine.SpawnObject(spawn, admin.GetInstanceId());
             if (visibleObject == null)
             {
-                SendInfo(admin, "Spawn id " + npcId + " was not found!");
+                SendInfo(admin, "Could not spawn npc with ID " + npcId + ".");
                 return;
             }
-
-            string objectName = visibleObject.GetObjectTemplate().GetName();
-            SendInfo(admin, objectName + " spawned");
+            SendInfo(admin, "Spawned " + Name(visibleObject) + ".");
         }
         else
         { // add item
@@ -116,12 +114,12 @@ public class Wish : ConsoleCommand
 
             if (addedCount <= 0)
             {
-                SendInfo(admin, "Item couldn't be added");
+                SendInfo(admin, "Item couldn't be added.");
             }
             else if (!admin.Equals(target))
             {
-                SendInfo(admin, "You gave " + addedCount + " " + Aion.GameServer.Utils.ChatUtil.Item(itemId) + " to " + target.GetName() + ".");
-                SendInfo(target, "You received " + addedCount + " " + Aion.GameServer.Utils.ChatUtil.Item(itemId) + " from " + admin.GetName() + ".");
+                SendInfo(admin, "You gave " + addedCount + " " + Aion.GameServer.Utils.ChatUtil.Item(itemId) + " to " + Name(target) + ".");
+                SendInfo(target, "You received " + addedCount + " " + Aion.GameServer.Utils.ChatUtil.Item(itemId) + " from " + Name(admin) + ".");
             }
         }
     }

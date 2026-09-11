@@ -17,18 +17,17 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Auction : AdminCommand
 {
     public Auction()
-        : base("auction", "Adds or removes houses to/from auction.")
+        : base("auction", "Adds or removes houses to/from auction.", """
+            <address> [starting price] - Auctions the given house.
+            <zone> <house type> <count> [starting price] - Auctions free houses of given type that are in the specified zone.
+            <asmo|ely> <house type> <count> [starting price] - Auctions free asmodian or elysean houses of given type.
+            end <address|zone> - Ends the auction for given house(s), transferring ownership to the highest bidder.
+            cancel <address|zone> - Cancels the auction for given house(s).
+            Zone: Zone name from zones xml files
+            House type: house, mansion, estate, palace
+            If no starting price is given, default will be taken from templates.
+            """)
     {
-        SetSyntaxInfo(
-            "<address> [starting price] - Auctions the given house.",
-            "<zone> <house type> <count> [starting price] - Auctions free houses of given type that are in the specified zone.",
-            "asmo|ely <house type> <count> [starting price] - Auctions free asmodian or elysean houses of given type.",
-            "end <address|zone> - Ends the auction for given house(s), transferring ownership to the highest bidder.",
-            "cancel <address|zone> - Cancels the auction for given house(s).",
-            "Zone: Zone name from zones xml files",
-            "House type: house, mansion, estate, palace",
-            "If no starting price is given, default will be taken from templates."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

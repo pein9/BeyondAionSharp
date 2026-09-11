@@ -15,17 +15,15 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 /// <summary>Java parity: data/handlers/admincommands/Megaphone (ginho1, Neon). Sends a message to the global faction chat (client must be started with -megaphone).</summary>
 public class Megaphone : AdminCommand
 {
-    private readonly List<MegaphoneChatColor> colors;
+    private static readonly List<MegaphoneChatColor> colors = CollectColors();
 
     public Megaphone()
-        : base("megaphone", "Sends a message to the global faction chat (client must be started with -megaphone to show the megaphone chat window).")
+        : base("megaphone", "Sends a message to the global faction chat (client must be started with -megaphone to show the megaphone chat window).", $"""
+            <none|elyos|asmo> <name> <message> - Sends the message with given sender name and faction prefix.
+            <color ID> <none|elyos|asmo> <name> <message> - Sends the message in the color of given color ID.
+            Color IDs: {ColorIds()}
+            """)
     {
-        colors = CollectColors();
-
-        SetSyntaxInfo(
-            "<none|elyos|asmo> <name> <message> - Sends the message with given sender name and faction prefix.",
-            "<color ID> <none|elyos|asmo> <name> <message> - Sends the message in the color of given color ID.",
-            "Color IDs: " + ColorIds());
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -58,12 +56,11 @@ public class Megaphone : AdminCommand
             return;
         }
         string sender = paramsArr[i++];
-        string message = string.Join(" ", paramsArr.Skip(i));
-
+        string message = Join(paramsArr, i);
         PacketSendUtility.BroadcastToWorld(new SM_MEGAPHONE(factionLabel, sender, message, megaphoneItemId));
     }
 
-    private List<MegaphoneChatColor> CollectColors()
+    private static List<MegaphoneChatColor> CollectColors()
     {
         List<MegaphoneChatColor> colors = new List<MegaphoneChatColor>();
         foreach (ItemTemplate itemTemplate in DataManager.ITEM_DATA.GetItemTemplates())
@@ -81,7 +78,7 @@ public class Megaphone : AdminCommand
         return colors;
     }
 
-    private string ColorIds()
+    private static string ColorIds()
     {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < colors.Count; i++)
@@ -93,15 +90,5 @@ public class Megaphone : AdminCommand
         return sb.ToString();
     }
 
-    private class MegaphoneChatColor
-    {
-        public readonly int MegaphoneItemId;
-        public readonly int Color;
-
-        public MegaphoneChatColor(int megaphoneItemId, int color)
-        {
-            this.MegaphoneItemId = megaphoneItemId;
-            this.Color = color;
-        }
-    }
+    private record MegaphoneChatColor(int MegaphoneItemId, int Color);
 }

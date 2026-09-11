@@ -21,16 +21,15 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class HouseCommand : AdminCommand
 {
     public HouseCommand()
-        : base("house", "House teleport and ownership management.")
+        : base("house", "House teleport and ownership management.", """
+            list - Shows all maps with houses.
+            list <map> - Shows all house addresses for the given map.
+            tp <address> - Teleports you to the house with the given address.
+            own <address> - Gives ownership of given house to your target.
+            revoke <address> - Revokes ownership of given house.
+            reloadscripts <address> - Reloads all scripts for the given house.
+            """)
     {
-        SetSyntaxInfo(
-            "list - Shows all maps with houses.",
-            "list <map> - Shows all house addresses for the given map.",
-            "tp <address> - Teleports you to the house with the given address.",
-            "own <address> - Gives ownership of given house to your target.",
-            "revoke <address> - Revokes ownership of given house.",
-            "reloadscripts <address> - Reloads all scripts for the given house."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -44,7 +43,7 @@ public class HouseCommand : AdminCommand
         House house = null;
         if (paramsArr.Length >= 2)
         {
-            int address = ToInt(paramsArr[1]);
+            int address = ParseInt(paramsArr[1]);
             house = HousingService.GetInstance().GetHouseByAddress(address);
         }
         if (house == null && !"list".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
@@ -168,19 +167,19 @@ public class HouseCommand : AdminCommand
 
         if (house.GetOwnerId() == target.GetObjectId())
         {
-            SendInfo(admin, target.GetName() + " already owns that house.");
+            SendInfo(admin, Name(target) + " already owns that house.");
             return;
         }
         if (target.GetHouses().Count >= 2)
         {
-            SendInfo(admin, target.GetName() + " must sell his old house which is currently in grace time first!");
+            SendInfo(admin, Name(target) + " must sell his old house which is currently in grace time first!");
             return;
         }
         House studio = HousingService.GetInstance().GetPlayerStudio(target.GetObjectId());
         if (studio != null)
             HousingService.GetInstance().ChangeOwner(studio, 0);
         HousingService.GetInstance().ChangeOwner(house, target.GetObjectId());
-        SendInfo(admin, "House " + house.GetName() + " is now owned by " + target.GetName());
+        SendInfo(admin, "House " + house.GetName() + " is now owned by " + Name(target));
     }
 
     private void RevokeOwnership(Player admin, House house)
@@ -206,12 +205,6 @@ public class HouseCommand : AdminCommand
         house.ReloadPlayerScripts();
         butler.GetKnownList().ForEachPlayer(house.SendScripts);
         SendInfo(admin, "Script reload successful");
-    }
-
-    // Java parity: org.apache.commons.lang3.math.NumberUtils.toInt(String) — returns 0 if not parseable.
-    private static int ToInt(string str)
-    {
-        return TryParseInt(str, out int result) ? result : 0;
     }
 
     // Java parity: org.apache.commons.lang3.text.WordUtils.capitalizeFully(String).

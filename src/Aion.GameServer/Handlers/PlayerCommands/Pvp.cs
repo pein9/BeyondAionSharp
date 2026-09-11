@@ -9,9 +9,12 @@ namespace Aion.GameServer.Handlers.PlayerCommands;
 public class Pvp : PlayerCommand
 {
     public Pvp()
-        : base("pvp", "Join the custom PvP-Map where you can fight against the opposing faction.")
+        : base("pvp", "Join the custom PvP-Map where you can fight against the opposing faction.", """
+            join - Joins the PvP-Map.
+            leave - Leaves the PvP-Map.
+            info - Shows how many players are on the PvP-Map.
+            """)
     {
-        SetSyntaxInfo("<join | leave | info> - Join the PvP-Map by typing .pvp join.\nYou can leave the PvP-Map by typing .pvp leave.\nType .pvp info to see how many players are on the PvP-Map.");
     }
 
     public override void Execute(Player player, params string[] paramsArr)
@@ -20,25 +23,22 @@ public class Pvp : PlayerCommand
         {
             SendInfo(player);
         }
-        else if (paramsArr.Length >= 1)
+        else if (paramsArr[0].Equals("join", StringComparison.OrdinalIgnoreCase))
         {
-            if (paramsArr[0].Equals("join", StringComparison.OrdinalIgnoreCase))
-            {
-                PvpMapService.GetInstance().JoinMap(player);
-            }
-            else if (paramsArr[0].Equals("leave", StringComparison.OrdinalIgnoreCase))
-            {
-                PvpMapService.GetInstance().LeaveMap(player);
-            }
-            else if (paramsArr[0].Equals("info", StringComparison.OrdinalIgnoreCase))
-            {
-                int size = PvpMapService.GetInstance().GetParticipantsSize();
-                SendInfo(player, "There " + (size == 1 ? "is" : "are") + " currently " + (size == 0 ? "no" : size.ToString()) + " player" + (size != 1 ? "s" : "") + " on the map.");
-            }
-            else
-            {
-                SendInfo(player);
-            }
+            PvpMapService.GetInstance().JoinMap(player);
+        }
+        else if (paramsArr[0].Equals("leave", StringComparison.OrdinalIgnoreCase))
+        {
+            PvpMapService.GetInstance().LeaveMap(player);
+        }
+        else if (paramsArr[0].Equals("info", StringComparison.OrdinalIgnoreCase))
+        {
+            int size = PvpMapService.GetInstance().GetParticipantsSize();
+            SendInfo(player, "There " + (size == 1 ? "is" : "are") + " currently " + (size == 0 ? "no" : size.ToString()) + " player" + (size != 1 ? "s" : "") + " on the map.");
+        }
+        else
+        {
+            SendInfo(player);
         }
     }
 }

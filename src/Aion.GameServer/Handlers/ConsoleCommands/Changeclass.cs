@@ -13,9 +13,10 @@ namespace Aion.GameServer.Handlers.ConsoleCommands;
 public class Changeclass : ConsoleCommand
 {
     public Changeclass()
-        : base("changeclass", "Changes a players class.")
+        : base("changeclass", "Changes a player's class.", """
+            <class> - Changes your target's class to the one specified (defaults to your character, if no player is targeted).
+            """)
     {
-        SetSyntaxInfo("<class> - Changes your target's class to the one specified (defaults to your character, if no player is targeted).");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -25,28 +26,22 @@ public class Changeclass : ConsoleCommand
             SendInfo(admin);
             return;
         }
-
         Player player = admin.GetTarget() is Player target ? target : admin;
-
-        string newClass = paramsArr[0];
-
-        if (newClass.Equals("fighter", StringComparison.OrdinalIgnoreCase))
-            newClass = "GLADIATOR";
-        else if (newClass.Equals("knight", StringComparison.OrdinalIgnoreCase))
-            newClass = "TEMPLAR";
-        else if (newClass.Equals("wizard", StringComparison.OrdinalIgnoreCase))
-            newClass = "SORCERER";
-        else if (newClass.Equals("elementalist", StringComparison.OrdinalIgnoreCase))
-            newClass = "SPIRIT_MASTER";
-
-        // Java parity: PlayerClass.valueOf(newClass.toUpperCase()) throws IllegalArgumentException on invalid.
-        if (!TryParseEnumName(newClass.ToUpper(), out PlayerClass playerClass))
-        {
-            SendInfo(admin, "Invalid player class.");
-            return;
-        }
-
+        PlayerClass playerClass = ParsePlayerClass(paramsArr[0]);
         ClassChangeService.SetClass(player, playerClass, false, true);
         SendInfo(admin, "You have changed " + player.GetName() + "'s class to " + playerClass.ToString().ToLower() + ".");
+    }
+
+    /// <remarks>Java parity: <c>protected static</c> in Java, called by the same-package Classup command. C# <c>protected</c> would hide it from Classup, so it is <c>internal</c>.</remarks>
+    internal static PlayerClass ParsePlayerClass(string param)
+    {
+        return param.ToUpperInvariant() switch
+        {
+            "FIGHTER" => PlayerClass.GLADIATOR,
+            "KNIGHT" => PlayerClass.TEMPLAR,
+            "WIZARD" => PlayerClass.SORCERER,
+            "ELEMENTALIST" => PlayerClass.SPIRIT_MASTER,
+            var newClass => ParseEnumName<PlayerClass>(newClass),
+        };
     }
 }

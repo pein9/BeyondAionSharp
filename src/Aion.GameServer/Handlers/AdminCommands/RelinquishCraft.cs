@@ -11,11 +11,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class RelinquishCraft : AdminCommand
 {
     public RelinquishCraft()
-        : base("relinquishcraft", "Removes a players crafting expert or master status.")
+        : base("relinquishcraft", "Removes a players crafting expert or master status.", """
+            <skill ID> <expert|master> - Removes your target's master or expert status for the given crafting skill. Affects your own character if no player is targeted.
+            <name> <skill ID> <expert|master> - Removes the player's master or expert status for the given crafting skill.
+            """)
     {
-        SetSyntaxInfo(
-            "<skillId> <expert|master> - Removes your target's master or expert status for the given crafting skill. Affects your own character if no player is targeted.",
-            "<name> <skillId> <expert|master> - Removes the player's master or expert status for the given crafting skill.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -43,7 +43,7 @@ public class RelinquishCraft : AdminCommand
             target = admin.GetTarget() is Player p ? p : admin;
         }
 
-        Profession? profession = ProfessionExtensions.GetBySkillId(TryParseInt(paramsArr[i++], out int skillId) ? skillId : 0);
+        Profession? profession = ProfessionExtensions.GetBySkillId(ParseInt(paramsArr[i++]));
         if (profession == null || !profession.Value.IsCrafting())
         {
             SendInfo(admin, "Invalid skill ID.");
@@ -55,14 +55,14 @@ public class RelinquishCraft : AdminCommand
             if (RelinquishCraftStatus.RelinquishExpertStatus(target, profession.Value, 0))
                 SendInfo(admin, "Successfully removed expert status for " + profession.Value);
             else
-                SendInfo(admin, target.GetName() + " doesn't have " + profession.Value + " on expert.");
+                SendInfo(admin, Name(target) + " doesn't have " + profession.Value + " on expert.");
         }
         else if ("master".Equals(paramsArr[i], System.StringComparison.OrdinalIgnoreCase))
         {
             if (RelinquishCraftStatus.RelinquishMasterStatus(target, profession.Value, 0))
                 SendInfo(admin, "Successfully removed master status for " + profession.Value);
             else
-                SendInfo(admin, target.GetName() + " doesn't have " + profession.Value + " on master.");
+                SendInfo(admin, Name(target) + " doesn't have " + profession.Value + " on master.");
         }
         else
             SendInfo(admin);

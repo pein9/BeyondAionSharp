@@ -15,6 +15,7 @@ using Aion.GameServer.Services;
 using Aion.GameServer.SpawnEngine;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.ChatHandlers;
+using Aion.GameServer.Utils.Extensions;
 using Aion.GameServer.Utils.Stats;
 
 namespace Aion.GameServer.Handlers.AdminCommands;
@@ -23,26 +24,38 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Info : AdminCommand
 {
     public Info()
-        : base("info", "Shows information about your target.")
+        : base("info", "Shows information about your target.", """
+             - Shows information about your target (defaults to your character, if no player is targeted).
+            """)
     {
-        SetSyntaxInfo(" - Shows information about your target (defaults to your character, if no player is targeted).");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
     {
         VisibleObject target = admin.GetTarget() == null ? admin : admin.GetTarget();
 
-        SendInfo(admin, "[Info about " + target.GetType().Name + "]\n\tName: " + target.GetName() + ", ObjectId: " + target.GetObjectId()
-            + "\n\tTemplateId: " + target.GetObjectTemplate().GetTemplateId());
-
+        SendInfo(admin,
+            "[Info about " + target.GetType().Name + "]\n\tName: " + Name(target) + ", ID: " + target.GetObjectTemplate().GetTemplateId()
+                + ", ObjectId: " + target.GetObjectId());
         if (target is Creature creature)
         {
             if (creature is Player player)
             {
                 Aion.GameServer.Model.GameObjects.Pet pet = player.GetPet();
-                SendInfo(admin, (pet != null ? "Pet Id: " + pet.GetObjectTemplate().GetTemplateId() + ", ObjectId: " + pet.GetObjectId() + "\n\t" : "")
-                    + "Town ID: " + TownService.GetInstance().GetTownResidence(player));
-                SendInfo(admin, "Current Panesterra Faction: " + player.GetPanesterraFaction());
+                SendInfo(admin, (pet != null ? "\tPet: " + Name(pet) + ", ID: " + pet.GetObjectTemplate().GetTemplateId() + ", ObjectId: " + pet.GetObjectId()
+                    : "") + "\n\tTown ID: " + TownService.GetInstance().GetTownResidence(player));
+                for (int i = 0; i < 2; i++)
+                {
+                    NpcFaction faction = player.GetNpcFactions().GetActiveNpcFaction(i == 0);
+                    if (faction != null)
+                    {
+                        SendInfo(admin,
+                            "\t" + (i == 0 ? "Mentor" : "Daily") + " faction: " + DataManager.NPC_FACTIONS_DATA.GetNpcFactionById(faction.GetId()).GetL10n()
+                                + ", current quest state: " + faction.GetState().ToString() + (faction.GetState().Equals(ENpcFactionQuestState.COMPLETE) ? (
+                                ", next after: " + ((faction.GetTime() - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000) / 3600f) + " h.") : ""));
+                    }
+                }
+                SendInfo(admin, "\tPanesterra faction: " + (player.GetPanesterraFaction()?.ToString() ?? "null"));
                 PlayerGameStats pgs = player.GetGameStats();
                 SendInfo(admin,
                     "[Stats]"
@@ -102,29 +115,16 @@ public class Info : AdminCommand
                             + "\n\tPvP defend: " + pgs.GetStat(StatEnum.PVP_DEFEND_RATIO, 0).GetCurrent() * 0.1f + "%"
                             + "\n\tPvP p. defend: " + pgs.GetStat(StatEnum.PVP_DEFEND_RATIO_PHYSICAL, 0).GetCurrent() * 0.1f + "%"
                             + "\n\tPvP m. defend: " + pgs.GetStat(StatEnum.PVP_DEFEND_RATIO_MAGICAL, 0).GetCurrent() * 0.1f + "%");
-
-                for (int i = 0; i < 2; i++)
-                {
-                    NpcFaction faction = player.GetNpcFactions().GetActiveNpcFaction(i == 0);
-                    if (faction != null)
-                    {
-                        SendInfo(admin,
-                            player.GetName() + " have join to " + (i == 0 ? "mentor" : "daily") + " faction: " + DataManager.NPC_FACTIONS_DATA.GetNpcFactionById(faction.GetId()).GetName()
-                                    + "\n\tCurrent quest state: " + faction.GetState().ToString()
-                                    + (faction.GetState().Equals(ENpcFactionQuestState.COMPLETE) ? ("\n\tNext after: " + ((faction.GetTime() - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000) / 3600f) + " h.") : ""));
-                    }
-                }
             }
             else if (creature is Npc npc)
             {
                 SendInfo(admin, "[Template info]\n\tRating: " + npc.GetRating() + ", Rank: " + npc.GetRank()
                         + "\n\tTemplateType: " + npc.GetNpcTemplateType() + ", AbyssType: " + npc.GetAbyssNpcType()
                         + "\n\tRelative XP reward: " + StatFunctions.CalculateExperienceReward(admin.GetLevel(), npc));
-                if (npc is SiegeNpc)
-                    SendInfo(admin, "[Siege info]\n\tSiegeId: " + ((SiegeNpc)npc).GetSiegeId() + ", SiegeRace: " + ((SiegeNpc)npc).GetSiegeRace());
+                if (npc is SiegeNpc siegeNpc)
+                    SendInfo(admin, "[Siege info]\n\tSiegeId: " + siegeNpc.GetSiegeId() + ", SiegeRace: " + siegeNpc.GetSiegeRace());
                 SendInfo(admin,
-                    "[AI info]\n\tAI: " + npc.GetAi().GetName()
-                            + "\n\tState: " + npc.GetAi().GetState() + ", SubState: " + npc.GetAi().GetSubState());
+                    "[AI info]\n\tAI: " + npc.GetAi().GetName() + "\n\tState: " + npc.GetAi().GetState() + ", SubState: " + npc.GetAi().GetSubState());
                 SendInfo(admin,
                     "[Sense range]\n\tRadius: " + npc.GetAggroRange()
                             + "\n\tShort-Radius: " + npc.GetShortAggroRange()
@@ -181,15 +181,15 @@ public class Info : AdminCommand
         int aDmg = 0, eDmg = 0, tDmg = 0;
         foreach (AggroInfo ai in creature.GetAggroList().Stream())
         {
-            string name = ai.GetAttacker().GetName();
             Creature master = ai.GetAttacker().GetMaster();
+            string name = Name(master);
+            if (!master.Equals(ai.GetAttacker()))
+                name += "'s " + Name(ai.GetAttacker());
             Interlocked.Add(ref tDmg, ai.GetDamage());
             if (master.GetRace() == Race.ASMODIANS)
                 Interlocked.Add(ref aDmg, ai.GetDamage());
             else if (master.GetRace() == Race.ELYOS)
                 Interlocked.Add(ref eDmg, ai.GetDamage());
-            if (!master.Equals(ai.GetAttacker()))
-                name = master.GetName() + "'s " + ai.GetAttacker().GetObjectTemplate().GetL10n();
             sb.Append("\n\tName: " + name + ", Dmg: " + ai.GetDamage() + ", Hate: " + ai.GetHate());
         }
         if (tDmg > 0)

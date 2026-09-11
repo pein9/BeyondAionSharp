@@ -16,12 +16,12 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class SpawnUpdate : AdminCommand
 {
     public SpawnUpdate()
-        : base("spawnu", "Updates spawn data.")
+        : base("spawnu", "Updates spawn data.", """
+            <x|y|z|h> [value] - Update X, Y, or Z coordinate or the heading of the selected NPC/gatherable (default: takes your current position, optional: the specified value).
+            <xyz|xyzh> - Update position or position and heading of the selected NPC/gatherable to your own one.
+            w [walker_id] - Set walker data of the selected NPC (default: remove walker data, optional: set NPC's walker ID).
+            """)
     {
-        SetSyntaxInfo(
-            "<x|y|z|h> [value] - Update X, Y, or Z coordinate or the heading of the selected npc/gatherable (default: takes your current position, optional: the specified value).",
-            "<xyz|xyzh> - Update position or position and heading of the selected npc/gatherable to your own one.",
-            "<w> [walker_id] - Set walker data of the selected npc (default: remove walker data, optional: set walker id to npc).");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -140,9 +140,9 @@ public class SpawnUpdate : AdminCommand
             PacketSendUtility.SendPacket(admin, new SM_DELETE(target));
             PacketSendUtility.SendPacket(admin, new SM_NPC_INFO(target, admin));
             if (walkerId == null)
-                SendInfo(admin, "Removed npcs walker_id " + oldId + " for " + target.GetNpcId() + ".");
+                SendInfo(admin, "Removed walker_id " + oldId + " for NPC " + target.GetNpcId() + ".");
             else
-                SendInfo(admin, "Updated npcs walker_id from " + oldId + " to " + walkerId + ".");
+                SendInfo(admin, "Updated walker_id from " + oldId + " to " + walkerId + " for NPC " + target.GetNpcId() + ".");
             if (!DataManager.SPAWNS_DATA.SaveSpawn(target, false))
                 SendInfo(admin, "Could not save spawn.");
         }

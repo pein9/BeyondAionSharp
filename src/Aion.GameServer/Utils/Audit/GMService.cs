@@ -38,6 +38,11 @@ public class GMService
         return staffMembers.Values;
     }
 
+    public List<Aion.GameServer.Model.GameObjects.Players.Player> GetAvailableStaffMembers()
+    {
+        return GetOnlineStaffMembers().Where(IsAvailable).ToList();
+    }
+
     public void OnPlayerLogin(Aion.GameServer.Model.GameObjects.Players.Player player)
     {
         if (player.IsStaff())
@@ -56,14 +61,18 @@ public class GMService
 
     public bool IsAnnounceable(Aion.GameServer.Model.GameObjects.Players.Player player)
     {
-        return player.IsOnline() && player.IsStaff() && !player.IsInCustomState(CustomPlayerState.NO_WHISPERS_MODE)
-            && player.GetFriendList().GetStatus() != FriendList.Status.OFFLINE
+        return player.IsOnline() && player.IsStaff() && IsAvailable(player)
             && (AdminConfig.ANNOUNCE_LEVELS.Contains(player.GetAccount().GetAccessLevel().ToString()) || AdminConfig.ANNOUNCE_LEVELS.Contains("*"));
+    }
+
+    private bool IsAvailable(Aion.GameServer.Model.GameObjects.Players.Player player)
+    {
+        return !player.IsInCustomState(CustomPlayerState.NO_WHISPERS_MODE) && player.GetFriendList().GetStatus() != FriendList.Status.OFFLINE;
     }
 
     private void BroadcastConnectionStatus(Aion.GameServer.Model.GameObjects.Players.Player gm, bool connected)
     {
-        string name = Aion.GameServer.Utils.ChatUtil.Name(gm);
+        string name = Aion.GameServer.Utils.ChatUtil.CharName(gm);
         Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE sysMsg = connected
             ? Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_NOTIFY_LOGIN_BUDDY(name)
             : Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_NOTIFY_LOGOFF_BUDDY(name);

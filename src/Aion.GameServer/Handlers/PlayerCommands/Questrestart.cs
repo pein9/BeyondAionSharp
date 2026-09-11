@@ -10,9 +10,10 @@ namespace Aion.GameServer.Handlers.PlayerCommands;
 public class Questrestart : PlayerCommand
 {
     public Questrestart()
-        : base("questrestart", "Restarts a bugged Quest.")
+        : base("questrestart", "Restarts a quest.", """
+            <quest link|ID> - Restarts the specified quest.
+            """)
     {
-        SetSyntaxInfo("<quest link|ID> - Restarts the specified quest.");
     }
 
     public override void Execute(Player player, params string[] paramsArr)

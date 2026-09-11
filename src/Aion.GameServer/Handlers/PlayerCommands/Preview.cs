@@ -28,15 +28,14 @@ public class Preview : PlayerCommand
     private const int PREVIEW_TIME_SECONDS = 10;
 
     public Preview()
-        : base("preview", "Previews equipment and emotion cards.")
+        : base("preview", "Previews equipment and emotion cards.", """
+            <emotion card item> - Previews the emotion.
+            <color> - Previews your equipped items in the specified color (dye item, color name or color HEX code).
+            <item(s)> [color] - Previews the specified equipment on your character (default: standard item color, optional: dye item, color name or color HEX code).
+            Multiple items can be separated by commas or spaces.
+            If a single item is given and it's a part of an item set, you will get a preview of the whole item set.
+            """)
     {
-        SetSyntaxInfo(
-            "<emotion card item> - Previews the emotion.",
-            "<color> - Previews your equipped items in the specified color (dye item, color name or color HEX code).",
-            "<item(s)> [color] - Previews the specified equipment on your character (default: standard item color, optional: dye item, color name or color HEX code).",
-            "Multiple items can be separated by commas or spaces.",
-            "If a single item is given and it's a part of an item set, you will get a preview of the whole item set."
-        );
     }
 
     public override void Execute(Player player, params string[] paramsArr)

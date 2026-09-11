@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -5,7 +6,6 @@ using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Skill;
-using Aion.GameServer.Model.Team.Group;
 using Aion.GameServer.Model.Team.Legion;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Utils;
@@ -17,9 +17,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class PlayerInfo : AdminCommand
 {
     public PlayerInfo()
-        : base("playerinfo", "Shows information about a player.")
+        : base("playerinfo", "Shows information about a player.", """
+            <player name> - Shows basic information about the given player.
+            <player name> <item|party|skills|legion|ap|chars|knownlist> - Shows extended information about the given player.
+            """)
     {
-        SetSyntaxInfo("<player name> <loc|item|group|skills|legion|ap|chars|knownlist>");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -39,80 +41,77 @@ public class PlayerInfo : AdminCommand
         }
 
         SendInfo(admin,
-            "\n[Info about " + target.GetName() + "]\n-common: lv" + target.GetLevel() + "(" + target.GetCommonData().GetExpShown() + " xp), "
-                + target.GetRace() + ", " + target.GetPlayerClass() + "\n-ip: " + target.GetClientConnection().GetIP() + "\n" + "-account name: "
-                + target.GetClientConnection().GetAccount().GetName() + "\n");
+            "[Info about " + Name(target) + "]\n- Common: lv" + target.GetLevel() + " (" + target.GetCommonData().GetExpShown() + " xp), "
+                + target.GetRace() + ", " + target.GetPlayerClass() + "\n- IP: " + target.GetClientConnection().GetIP() + "\n" + "- Account name: "
+                + target.GetAccount().GetName() + "\n- " + ChatUtil.Position("Location", target.GetPosition()) + ": " + target.GetPosition().ToCoordString());
 
         if (paramsArr.Length < 2)
             return;
 
-        if (paramsArr[1].Equals("item"))
+        if (paramsArr[1].Equals("item", StringComparison.OrdinalIgnoreCase))
         {
-            StringBuilder strbld = new StringBuilder("-items in inventory:");
+            StringBuilder strbld = new StringBuilder("- Items in inventory:");
             AppendItems(strbld, target.GetInventory().GetItemsWithKinah());
-            strbld.Append("-equipped items:");
+            strbld.Append("\n- Equipped items:");
             AppendItems(strbld, target.GetEquipment().GetEquippedItems());
-            strbld.Append("-items in warehouse:");
+            strbld.Append("\n- Items in warehouse:");
             AppendItems(strbld, target.GetWarehouse().GetItemsWithKinah());
             SendInfo(admin, strbld.ToString());
         }
-        else if (paramsArr[1].Equals("group"))
+        else if (paramsArr[1].Equals("party", StringComparison.OrdinalIgnoreCase))
         {
-            StringBuilder strbld = new StringBuilder("-group info:\n\tLeader: ");
-
-            PlayerGroup group = target.GetPlayerGroup();
-            if (group == null)
-                SendInfo(admin, "-group info: no group");
+            StringBuilder sb = new StringBuilder("- Party: ");
+            var team = target.GetCurrentTeam();
+            if (team == null)
+            {
+                sb.Append("none");
+            }
             else
             {
-                strbld.Append(group.GetLeader().GetName() + "\n\tMembers:\n");
-                group.ForEach(player => strbld.Append("\t\t" + player.GetName() + "\n"));
-                SendInfo(admin, strbld.ToString());
+                sb.Append(team.GetType().Name.Replace("Player", ""));
+                sb.Append("\n\tLeader: ").Append(Name(team.GetLeaderObject())).Append("\n\tMembers:\n");
+                team.ForEach(player => sb.Append("\t").Append(Name(player)).Append("\n"));
             }
+            SendInfo(admin, sb.ToString());
         }
-        else if (paramsArr[1].Equals("skills"))
+        else if (paramsArr[1].Equals("skills", StringComparison.OrdinalIgnoreCase))
         {
-            StringBuilder strbld = new StringBuilder("-list of skills:\n");
+            StringBuilder sb = new StringBuilder("- Skills:");
             foreach (PlayerSkillEntry skill in target.GetSkillList().GetAllSkills())
-                strbld.Append("\tlevel " + skill.GetSkillLevel() + " of " + DataManager.SKILL_DATA.GetSkillTemplate(skill.GetSkillId()).GetName() + "\n");
-            SendInfo(admin, strbld.ToString());
+                sb.Append("\n\tlevel " + skill.GetSkillLevel() + " of " + DataManager.SKILL_DATA.GetSkillTemplate(skill.GetSkillId()).GetL10n());
+            SendInfo(admin, sb.ToString());
         }
-        else if (paramsArr[1].Equals("loc"))
-        {
-            string chatLink = ChatUtil.Position(target.GetName(), target.GetPosition());
-            SendInfo(admin, "- " + chatLink + "'s location:\n\t" + target.GetPosition().ToCoordString());
-        }
-        else if (paramsArr[1].Equals("legion"))
+        else if (paramsArr[1].Equals("legion", StringComparison.OrdinalIgnoreCase))
         {
             Legion legion = target.GetLegion();
             if (legion == null)
-                SendInfo(admin, "-legion info: no legion");
+                SendInfo(admin, "- Legion: none");
             else
             {
-                StringBuilder strbld = new StringBuilder();
-                strbld.Append("-legion info:\n\tname: " + legion.GetName() + ", level: " + legion.GetLegionLevel() + "\n\tmembers(online):\n");
+                StringBuilder sb = new StringBuilder("- Legion: \"" + legion.GetName() + "\", level: " + legion.GetLegionLevel());
+                sb.Append("\n\t").Append(legion.GetMembers().Count).Append(" members:");
                 foreach (LegionMember lm in legion.GetMembers())
-                    strbld.Append("\t\t" + lm.GetName() + "(" + (lm.IsOnline() ? "online" : "offline") + ")" + lm.GetRank().ToString() + "\n");
-                SendInfo(admin, strbld.ToString());
+                    sb.Append("\n\t").Append(lm.GetName()).Append(" - ").Append(lm.GetRank()).Append(lm.IsOnline() ? " (online)" : "");
+                SendInfo(admin, sb.ToString());
             }
         }
-        else if (paramsArr[1].Equals("ap"))
+        else if (paramsArr[1].Equals("ap", StringComparison.OrdinalIgnoreCase))
         {
-            SendInfo(admin, "AP info about " + target.GetName());
-            SendInfo(admin, "Total AP = " + target.GetAbyssRank().GetAp());
-            SendInfo(admin, "Total Kills = " + target.GetAbyssRank().GetAllKill());
-            SendInfo(admin, "Today Kills = " + target.GetAbyssRank().GetDailyKill());
-            SendInfo(admin, "Today AP = " + target.GetAbyssRank().GetDailyAP());
+            SendInfo(admin, "- AP info:");
+            SendInfo(admin, "\tTotal AP = " + target.GetAbyssRank().GetAp());
+            SendInfo(admin, "\tTotal Kills = " + target.GetAbyssRank().GetAllKill());
+            SendInfo(admin, "\tToday Kills = " + target.GetAbyssRank().GetDailyKill());
+            SendInfo(admin, "\tToday AP = " + target.GetAbyssRank().GetDailyAP());
         }
-        else if (paramsArr[1].Equals("chars"))
+        else if (paramsArr[1].Equals("chars", StringComparison.OrdinalIgnoreCase))
         {
-            SendInfo(admin, "Others characters of " + target.GetName() + " (" + target.GetClientConnection().GetAccount().Size() + ") :");
-            foreach (var d in target.GetClientConnection().GetAccount())
-                SendInfo(admin, d.GetPlayerCommonData().GetName());
+            SendInfo(admin, "- Characters (" + target.GetAccount().Size() + "):");
+            foreach (var d in target.GetAccount())
+                SendInfo(admin, "\t" + d.GetPlayerCommonData().GetName());
         }
-        else if (paramsArr[1].Equals("knownlist"))
+        else if (paramsArr[1].Equals("knownlist", StringComparison.OrdinalIgnoreCase))
         {
-            SendInfo(admin, "KnownList of " + target.GetName() + string.Concat(target.GetKnownList().Stream().Select(o => "\n\t" + o)));
+            SendInfo(admin, "- KnownList:" + string.Concat(target.GetKnownList().Stream().Select(o => "\n\t" + o)));
         }
         else
         {
@@ -126,6 +125,7 @@ public class PlayerInfo : AdminCommand
             strbld.Append("\nnone");
         else
             foreach (Item item in items)
-                strbld.Append("\n\t" + item.GetItemCount() + "x " + ChatUtil.Item(item.GetItemId()));
+                strbld.Append("\n").Append(ChatUtil.LeftPad(item.GetItemCount(), 4)).Append("x ")
+                    .Append(ChatUtil.Item(item.GetItemId()));
     }
 }

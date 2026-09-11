@@ -12,12 +12,12 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Weather : AdminCommand
 {
     public Weather()
-        : base("weather", "Shows/changes the weather.")
+        : base("weather", "Shows/changes the weather.", """
+            <info> - Shows info for the weather in the current zone.
+            <next> - Triggers a natural weather change on this map.
+            <set> <code> - Changes the weather on this map, according to the weather code between 0 (default) and 12.
+            """)
     {
-        SetSyntaxInfo(
-            "<info> - Shows info for the weather in the current zone.",
-            "<next> - Triggers a natural weather change on this map.",
-            "<set> <code> - Changes the weather on this map, according to the weather code between 0 (default) and 12.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

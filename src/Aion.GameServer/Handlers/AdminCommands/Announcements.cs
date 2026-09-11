@@ -4,7 +4,6 @@ using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Services;
 using Aion.GameServer.Utils.ChatHandlers;
-using Aion.GameServer.Utils.Xml;
 
 namespace Aion.GameServer.Handlers.AdminCommands;
 
@@ -12,14 +11,13 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Announcements : AdminCommand
 {
     public Announcements()
-        : base("announcements", "Manages automatic announcements.")
+        : base("announcements", "Manages automatic announcements.", """
+            list - Shows all announcements including their ID.
+            reload - Reloads all announcements from DB.
+            add <elyos|asmodians|all> <chatType> <delay> <message> - Adds the specified message (delay is in seconds, chatType can be system, white, orange, shout or yellow).
+            delete <id> - Deletes the announcement with the specified ID.
+            """)
     {
-        SetSyntaxInfo(
-            "<list> - Shows all announcements including their ID.",
-            "<reload> - Reloads all announcements from DB.",
-            "<add> <elyos|asmodians|all> <chatType> <delay> <message> - Adds the specified message (delay is in seconds, chatType can be system, white, orange, shout or yellow).",
-            "<delete> <id> - Deletes the announcement with the specified ID."
-        );
     }
 
     public override void Execute(Player player, params string[] paramsArr)
@@ -29,7 +27,6 @@ public class Announcements : AdminCommand
             SendInfo(player);
             return;
         }
-
         if (paramsArr[0].Equals("list"))
         {
             ICollection<Announcement> announcements = AnnouncementService.GetInstance().GetAnnouncements();
@@ -63,42 +60,30 @@ public class Announcements : AdminCommand
                 SendInfo(player);
                 return;
             }
-
             string faction = paramsArr[1].ToUpper();
             if (!new[] { "ELYOS", "ASMODIANS", "ALL" }.Contains(faction))
             {
                 SendInfo(player, "Please specify a valid faction parameter.");
                 return;
             }
-
             string chatType = paramsArr[2].ToUpper();
             if (!new[] { "SYSTEM", "WHITE", "ORANGE", "SHOUT", "YELLOW" }.Contains(chatType))
             {
                 SendInfo(player, "Please specify a valid chat type parameter.");
                 return;
             }
-
-            int delay;
-            // Java: NumberFormatException -> "Delay must be specified in seconds.";
-            // IllegalArgumentException (delay < 300) -> "Delay must be at least 300s (5 minutes)."
-            if (!TryParseInt(paramsArr[3], out delay))
-            {
-                SendInfo(player, "Delay must be specified in seconds.");
-                return;
-            }
+            int delay = ParseInt(paramsArr[3]);
             if (delay < 300)
             {
                 SendInfo(player, "Delay must be at least 300s (5 minutes).");
                 return;
             }
-
-            string message = StringEscapeUtils.UnescapeJava(string.Join(' ', paramsArr.Skip(4)));
+            string message = Join(paramsArr, 4).Replace("\\n", "\n").Replace("\\t", "\t");
             if (message.Length == 0)
             {
                 SendInfo(player, "The message cannot be empty.");
                 return;
             }
-
             if (AnnouncementService.GetInstance().AddAnnouncement(message, faction, chatType, delay))
                 SendInfo(player, "The announcement has been created successfully");
             else
@@ -111,15 +96,7 @@ public class Announcements : AdminCommand
                 SendInfo(player, "Please specify the ID of the announcement to delete.");
                 return;
             }
-
-            int id;
-
-            if (!TryParseInt(paramsArr[1], out id))
-            {
-                SendInfo(player, "Illegal announcement ID.");
-                return;
-            }
-
+            int id = ParseInt(paramsArr[1]);
             // Delete the announcement from the database
             if (AnnouncementService.GetInstance().DelAnnouncement(id))
                 SendInfo(player, "The announcement has been deleted successfully.");

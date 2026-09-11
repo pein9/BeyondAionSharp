@@ -137,5 +137,5 @@ public sealed class WorldPosition
 
     // Java parity: toCoordString()
     public string ToCoordString() =>
-        "Map ID: " + _mapId + ", Instance ID: " + GetInstanceId() + "\nX: " + _x + ", Y: " + _y + ", Z: " + _z + ", Heading: " + _heading;
+        "Map ID: " + _mapId + ", Instance ID: " + GetInstanceId() + ", X: " + _x + ", Y: " + _y + ", Z: " + _z + ", Heading: " + _heading;
 }

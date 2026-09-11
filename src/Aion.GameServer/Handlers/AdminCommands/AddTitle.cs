@@ -1,5 +1,4 @@
 using Aion.GameServer.Dataholders;
-using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Templates;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -13,9 +12,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class AddTitle : AdminCommand
 {
     public AddTitle()
-        : base("addtitle", "Adds titles to players.")
+        : base("addtitle", "Adds titles to players.", """
+            <title ID> - Adds the title to your target (defaults to your character, if no player is targeted).
+            <title ID> <player> - Adds the title to the specified player.
+            """)
     {
-        SetSyntaxInfo("<titleId> [playerName] - Adds the title to your target or the specified player.");
     }
 
     public override void Execute(Player player, params string[] paramsArr)
@@ -26,14 +27,14 @@ public class AddTitle : AdminCommand
             return;
         }
 
-        TitleTemplate titleTemplate = DataManager.TITLE_DATA.GetTitleTemplate(TryParseInt(paramsArr[0], out int titleIdParam) ? titleIdParam : 0);
+        TitleTemplate titleTemplate = DataManager.TITLE_DATA.GetTitleTemplate(ParseInt(paramsArr[0]));
         if (titleTemplate == null)
         {
-            SendInfo(player, "Invalid title id.");
+            SendInfo(player, "Invalid title ID.");
             return;
         }
 
-        Player target = null;
+        Player target;
         if (paramsArr.Length == 2)
         {
             string playerName = Util.ConvertName(paramsArr[1]);
@@ -46,29 +47,20 @@ public class AddTitle : AdminCommand
         }
         else
         {
-            VisibleObject creature = player.GetTarget();
-            if (player.GetTarget() is Player)
-            {
-                target = (Player)creature;
-            }
-
-            if (target == null)
-            {
-                target = player;
-            }
+            target = player.GetTarget() is Player playerTarget ? playerTarget : player;
         }
 
         if (!target.GetTitleList().AddTitle(titleTemplate.GetTitleId(), false, 0))
         {
             if (!target.Equals(player))
-                SendInfo(player, "Couldn't add title \"" + titleTemplate.GetL10n() + "\" to " + target);
+                SendInfo(player, "Couldn't add title \"" + titleTemplate.GetL10n() + "\" to " + Name(target));
         }
         else
         {
             if (!target.Equals(player))
             {
-                SendInfo(player, "Added title \"" + titleTemplate.GetL10n() + "\" to " + target);
-                SendInfo(target, player.GetName(true) + " gave you the title \"" + titleTemplate.GetL10n() + "\"");
+                SendInfo(player, "Added title \"" + titleTemplate.GetL10n() + "\" to " + Name(target));
+                SendInfo(target, Name(player) + " gave you the title \"" + titleTemplate.GetL10n() + "\"");
             }
         }
     }

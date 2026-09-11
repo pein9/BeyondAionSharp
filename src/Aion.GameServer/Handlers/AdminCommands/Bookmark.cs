@@ -8,12 +8,12 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Bookmark : AdminCommand
 {
     public Bookmark()
-        : base("bookmark", "Manages teleport bookmarks.")
+        : base("bookmark", "Manages teleport bookmarks.", """
+            del <name> - Deletes the bookmark with the specified name.
+            deleteAll - Deletes all bookmarks.
+            Note: Press Shift+G and click the "Bookmark" button to add or use your teleport bookmarks.
+            """)
     {
-        SetSyntaxInfo(
-            "del <name> - Deletes the bookmark with the specified name.",
-            "deleteAll - Deletes all bookmarks.",
-            "Note: Press Shift+G and click the \"Bookmark\" button to add or use your teleport bookmarks.");
     }
 
     protected override string GetAliasForLevel()

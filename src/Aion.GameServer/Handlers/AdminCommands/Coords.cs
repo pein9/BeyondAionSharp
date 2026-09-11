@@ -1,6 +1,5 @@
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
-using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.ChatHandlers;
 
 namespace Aion.GameServer.Handlers.AdminCommands;
@@ -9,13 +8,13 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Coords : AdminCommand
 {
     public Coords()
-        : base("coords", "Shows the targets current coordinates.")
+        : base("coords", "Shows the target's current coordinates.")
     {
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
     {
         VisibleObject target = admin.GetTarget() == null ? admin : admin.GetTarget();
-        SendInfo(admin, ChatUtil.Capitalize(target.Name) + "'s position:\n" + target.GetPosition().ToCoordString());
+        SendInfo(admin, Name(target) + "'s position:\n" + target.GetPosition().ToCoordString().Replace(", X:", "\nX:"));
     }
 }

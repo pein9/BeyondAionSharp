@@ -11,15 +11,14 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Instance : AdminCommand
 {
     public Instance()
-        : base("instance", "Activates or deactivates registration for pvp instances.")
+        : base("instance", "Activates or deactivates registration for pvp instances.", """
+            <open|close> dredgion - Opens/closes the registration for Dredgion (6vs6)
+            <open|close> id - Opens/closes the registration for Idgel Dome (6vs6)
+            <open|close> eob - Opens/closes the registration for Engulfed Ophidan Bridge (6vs6)
+            <open|close> kb - Opens/closes the registration for Kamar Battlefield (12vs12)
+            <open|close> iww - Opens/closes the registration for Iron Wall Warfront (24vs24)
+            """)
     {
-        SetSyntaxInfo(
-            "<open|close> dredgion - Opens/closes the registration for Dredgion (6vs6)",
-            "<open|close> id - Opens/closes the registration for Idgel Dome (6vs6)",
-            "<open|close> eob - Opens/closes the registration for Engulfed Ophidan Bridge (6vs6)",
-            "<open|close> kb - Opens/closes the registration for Kamar Battlefield (12vs12)",
-            "<open|close> iww - Opens/closes the registration for Iron Wall Warfront (24vs24)"
-        );
     }
 
     public override void Execute(Player player, params string[] paramsArr)

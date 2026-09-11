@@ -29,12 +29,12 @@ public class FixPath : AdminCommand
     private static bool oldInvul = false;
 
     public FixPath()
-        : base("fixpath", "Fixes Z-coordinates for npc walk routes using your client (not internal geo data).")
+        : base("fixpath", "Fixes Z-coordinates for NPC walk routes using your client (not internal geo data).", """
+            [z-offset] - Gathers new Z-coordinates for the route of your target (default: uses old Z values as a base, optional: adds the offset to old values).
+            <route ID> [z-offset] - Gathers new Z-coordinates for the specified route (default: uses old Z values as a base, optional: adds the offset to old values).
+            cancel - Cancels route fixing.
+            """)
     {
-        SetSyntaxInfo(
-            "[z-offset] - Gathers new Z-coordinates for the route of your target (default: uses old Z values as a base, optional: adds the offset to old values).",
-            "<route id> [z-offset] - Gathers new Z-coordinates for the specified route (default: uses old Z values as a base, optional: adds the offset to old values).",
-            "<cancel> - Cancels route fixing.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -70,13 +70,7 @@ public class FixPath : AdminCommand
         if (paramsArr.Length > 0 && (t = DataManager.WALKER_DATA.GetWalkerTemplate(paramsArr[0])) != null)
         {
             if (paramsArr.Length > 1)
-            {
-                if (!TryParseFloat(paramsArr[1], out zOffset))
-                {
-                    SendInfo(admin, "Invalid Z offset.");
-                    return;
-                }
-            }
+                zOffset = ParseFloat(paramsArr[1]);
             map = admin.GetWorldId();
             SendInfo(admin, "Make sure you are on the correct map. If not use <cancel>!");
         }
@@ -85,19 +79,13 @@ public class FixPath : AdminCommand
             if (admin.GetTarget() is Npc targetNpc)
             {
                 if (paramsArr.Length > 0)
-                {
-                    if (!TryParseFloat(paramsArr[0], out zOffset))
-                    {
-                        SendInfo(admin, "Invalid Z offset.");
-                        return;
-                    }
-                }
+                    zOffset = ParseFloat(paramsArr[0]);
                 map = targetNpc.GetWorldId();
                 t = DataManager.WALKER_DATA.GetWalkerTemplate(targetNpc.GetSpawn().GetWalkerId());
             }
             if (t == null)
             {
-                SendInfo(admin, "Couldn't find route id.");
+                SendInfo(admin, "Couldn't find route ID.");
                 return;
             }
         }

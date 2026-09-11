@@ -1,7 +1,8 @@
 using System;
+using System.Collections.Generic;
 using Aion.GameServer.Model.GameObjects.Players;
+using Aion.GameServer.Model.Rift;
 using Aion.GameServer.Services;
-using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.ChatHandlers;
 
 namespace Aion.GameServer.Handlers.AdminCommands;
@@ -9,87 +10,47 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 /// <summary>Java parity: data/handlers/admincommands/Rift.</summary>
 public class Rift : AdminCommand
 {
-    private const string COMMAND_OPEN = "open";
-    private const string COMMAND_CLOSE = "close";
-
     public Rift()
-        : base("rift")
+        : base("rift", "Opens or closes rifts in the world.", """
+            list - Lists all rift locations.
+            open <location ID|world ID> [g] - Opens the rifts at the given location. If g is specified and spawns are defined, guards will spawn.
+            close <location ID|world ID> - Closes the rifts at the given location.
+            """)
     {
     }
 
     public override void Execute(Player player, params string[] paramsArr)
     {
-        if (paramsArr.Length == 0)
+        if (paramsArr.Length > 0 && "list".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
         {
-            ShowHelp(player);
-            return;
+            SendInfo(player, "Rift locations:");
+            foreach (KeyValuePair<int, RiftLocation> entry in RiftService.GetInstance().GetRiftLocations())
+                SendInfo(player, "ID: " + entry.Key + ", world ID: " + entry.Value.GetWorldId() + (entry.Value.IsOpened() ? " (open)" : ""));
         }
-
-        if (COMMAND_CLOSE.Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase) || COMMAND_OPEN.Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
+        else if (paramsArr.Length > 1 && "open".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
         {
-            HandleRift(player, paramsArr);
+            int id = ParseId(paramsArr[1]);
+            bool guards = paramsArr.Length > 2 && paramsArr[2].Equals("g", StringComparison.OrdinalIgnoreCase);
+            bool result = RiftService.GetInstance().OpenRifts(id, guards);
+            SendInfo(player, result ? "Opened rifts at location " + id + "." : "Rifts are already open.");
         }
-    }
-
-    protected void HandleRift(Player player, params string[] paramsArr)
-    {
-        if (paramsArr.Length < 2 || !IsDigits(paramsArr[1]))
+        else if (paramsArr.Length > 1 && "close".Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
         {
-            ShowHelp(player);
-            return;
+            int id = ParseId(paramsArr[1]);
+            bool result = RiftService.GetInstance().CloseRifts(ParseId(paramsArr[1]));
+            SendInfo(player, result ? "Closed rifts at location " + id + "." : "Rifts were already closed.");
         }
-
-        int id = TryParseInt(paramsArr[1], out var r) ? r : 0;
-        bool result;
-        if (!IsValidId(player, id))
+        else
         {
-            ShowHelp(player);
-            return;
-        }
-
-        if (COMMAND_OPEN.Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
-        {
-            bool guards = paramsArr.Length > 2 && ParseBoolean(paramsArr[2]);
-            result = RiftService.GetInstance().OpenRifts(id, guards);
-            PacketSendUtility.SendMessage(player, result ? "Rifts is opened!" : "Rifts was already opened");
-        }
-        else if (COMMAND_CLOSE.Equals(paramsArr[0], StringComparison.OrdinalIgnoreCase))
-        {
-            result = RiftService.GetInstance().CloseRifts(id);
-            PacketSendUtility.SendMessage(player, result ? "Rifts is closed!" : "Rifts was already closed");
+            SendInfo(player);
         }
     }
 
-    protected bool IsValidId(Player player, int id)
+    private int ParseId(string idParam)
     {
+        int id = ParseInt(idParam);
         if (!RiftService.GetInstance().IsValidId(id))
-        {
-            PacketSendUtility.SendMessage(player, "Id " + id + " is invalid");
-            return false;
-        }
-
-        return true;
-    }
-
-    protected void ShowHelp(Player player)
-    {
-        PacketSendUtility.SendMessage(player, "AdminCommand //rift open|close <Id|worldId> (open with boolean for guards)");
-    }
-
-    // Java parity: org.apache.commons.lang3.math.NumberUtils.isDigits(String) — true if non-empty and all ASCII digits.
-    private static bool IsDigits(string str)
-    {
-        if (string.IsNullOrEmpty(str))
-            return false;
-        foreach (char c in str)
-            if (!char.IsDigit(c))
-                return false;
-        return true;
-    }
-
-    // Java parity: java.lang.Boolean.parseBoolean(String) — true iff string equals "true" ignoring case.
-    private static bool ParseBoolean(string s)
-    {
-        return "true".Equals(s, StringComparison.OrdinalIgnoreCase);
+            throw new ArgumentException("Invalid rift world ID or location ID.");
+        return id;
     }
 }

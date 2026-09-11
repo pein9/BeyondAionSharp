@@ -9,9 +9,10 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Ranking : AdminCommand
 {
     public Ranking()
-        : base("ranking", "Abyss rank control.")
+        : base("ranking", "Abyss rank control.", """
+            update - Runs the daily Abyss rank update task.
+            """)
     {
-        SetSyntaxInfo("<update> - Runs the daily Abyss rank update task.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

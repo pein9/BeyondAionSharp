@@ -14,22 +14,21 @@ using Aion.GameServer.World;
 
 namespace Aion.GameServer.Handlers.AdminCommands;
 
-/// <summary>Java parity: data/handlers/admincommands/Event (Nathan, Estrayl, Neon). Manages event functions and player event-states.</summary>
+/// <summary>Java parity: data/handlers/admincommands/Event (Nathan, Estrayl, Neon). Manages event functions and player event states.</summary>
 public class Event : AdminCommand
 {
     public Event()
-        : base("event", "Manages event functions and player event-states.")
+        : base("event", "Manages event functions and player event states.", """
+            setStatus [name] - Disables AP gain/loss for the given player and sets him to event state.
+            setGroupStatus [name] - Gets and sets the group of the given player to event state and disables AP gain/loss for them.
+            setEnemy <cancel|team|ffa> [name] - Sets the specific state (cancel: normal, team: everyone outside the players team is an enemy, ffa: everyone is an enemy).
+            pvpSpawn [asmo|elyos] - Sets a resurrection point for the given race.
+            clearInstance - Clears the whole instance you have created.
+            announce <text> - Sends a yellow message for all players in event state.
+            list - Lists all players in event state.
+            removeAll - Removes all players from event state.
+            """)
     {
-        SetSyntaxInfo(
-            "<setStatus> [name] - Disables ap gain/loss for the given player and sets him to event state.",
-            "<setGroupStatus> [name] - Gets and sets the group of the given player to event state and disables ap gain/loss for them.",
-            "<setEnemy> <cancel|team|ffa> [name] - Sets the specific state (cancel: normal, team: everyone outside the players team is an enemy, ffa: everyone is an enemy).",
-            "<pvpSpawn> [asmo|elyos] - Sets a resurrection point for the given race.",
-            "<clearInstance> - Clears the whole instance you have created.",
-            "<announce> <text> - Sends a yellow message for all players in event state.",
-            "<list> - Lists all players in event state.",
-            "<removeAll> - Removes all players from event state."
-        );
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -64,7 +63,7 @@ public class Event : AdminCommand
         else if (paramsArr[0].Equals("announce", StringComparison.OrdinalIgnoreCase))
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append(ChatUtil.Name(admin)).Append(':');
+            sb.Append(Name(admin)).Append(':');
             for (int i = 1; i < paramsArr.Length; i++)
                 sb.Append(" ").Append(paramsArr[i]);
 
@@ -78,7 +77,7 @@ public class Event : AdminCommand
         {
             StringBuilder sb = new StringBuilder("Players in event state:");
             foreach (Player p in World.World.GetInstance().GetAllPlayers().Where(p => p.IsInCustomState(CustomPlayerState.EVENT_MODE)))
-                sb.Append("\n\t").Append(ChatUtil.Name(p));
+                sb.Append("\n\t").Append(Name(p));
             SendInfo(admin, sb.ToString());
         }
         else if (paramsArr[0].Equals("removeAll", StringComparison.OrdinalIgnoreCase))
@@ -114,7 +113,7 @@ public class Event : AdminCommand
                 return;
             if (!player.IsInCustomState(CustomPlayerState.EVENT_MODE))
             {
-                SendInfo(admin, player.GetName() + " is not in event state");
+                SendInfo(admin, Name(player) + " is not in event state");
                 return;
             }
             bool ffaTeamMode = false;
@@ -143,7 +142,7 @@ public class Event : AdminCommand
             }
             player.SetInFfaTeamMode(ffaTeamMode);
             player.GetController().OnChangedPlayerAttributes();
-            SendInfo(admin, ChatUtil.Name(player) + " is " + msg);
+            SendInfo(admin, Name(player) + " is " + msg);
             PacketSendUtility.SendMessage(player, "You are " + msg, ChatType.BRIGHT_YELLOW_CENTER);
         }
         else
@@ -207,13 +206,13 @@ public class Event : AdminCommand
             player.UnsetCustomState(CustomPlayerState.ENEMY_OF_ALL_PLAYERS);
             player.SetInFfaTeamMode(false);
             player.GetController().OnChangedPlayerAttributes();
-            SendInfo(admin, ChatUtil.Name(player) + " was removed from event state.");
+            SendInfo(admin, Name(player) + " was removed from event state.");
             PacketSendUtility.SendMessage(player, "You were removed from event state!", ChatType.BRIGHT_YELLOW_CENTER);
         }
         else if (!onlyRemove)
         {
             player.SetCustomState(CustomPlayerState.EVENT_MODE);
-            SendInfo(admin, ChatUtil.Name(player) + " was set in event state.");
+            SendInfo(admin, Name(player) + " was set in event state.");
             PacketSendUtility.SendMessage(player,
                 "You are in event state now. Please notice that you are not allowed to leave the event without removal of this state!",
                 ChatType.BRIGHT_YELLOW_CENTER);

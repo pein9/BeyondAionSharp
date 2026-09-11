@@ -10,12 +10,11 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Movie : AdminCommand
 {
     public Movie()
-        : base("movie")
+        : base("movie", "Plays movies/cutscenes.", """
+            <cutscene ID> - Plays the given cutscene (correct rendering depends on your current map).
+            m <movie ID> - Plays the given movie cutscene.
+            """)
     {
-        SetSyntaxInfo(
-            "<cutsceneId> - Plays the given cutscene (correct rendering depends on your current map)",
-            "m <movieId> - Plays the given movie cutscene"
-        );
     }
 
     public override void Execute(Player player, params string[] paramsArr)

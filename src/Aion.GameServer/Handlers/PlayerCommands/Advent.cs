@@ -11,11 +11,12 @@ namespace Aion.GameServer.Handlers.PlayerCommands;
 public class Advent : PlayerCommand
 {
     public Advent()
-        : base("advent", "Gets your advent reward for today.")
+        : base("advent", "Gets your advent reward for today.", $"""
+            show - Shows today's reward.
+            get - Gets your reward for today on this character.
+            {ChatUtil.Color("ATTENTION:", Color.Pink)} Only one character per account can receive this reward!
+            """)
     {
-        SetSyntaxInfo(
-            "show - Shows today's reward.",
-            "get - Gets your reward for today on this character.\n" + ChatUtil.Color("ATTENTION:", Color.Pink) + " Only one character per account can receive this reward!");
     }
 
     public override void Execute(Player player, params string[] paramsArr)

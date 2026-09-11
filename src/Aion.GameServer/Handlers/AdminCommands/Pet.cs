@@ -13,12 +13,12 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Pet : AdminCommand
 {
     public Pet()
-        : base("pet", "Adds or removes a pet.")
+        : base("pet", "Adds or removes a pet.", """
+            list - Lists all available Pet IDs.
+            add <pet ID> <name> - Adds the pet with the specified ID and names it.
+            del <pet ID> - Deletes the pet with the specified ID.
+            """)
     {
-        SetSyntaxInfo(
-            "<list> - Lists all available Pet IDs.",
-            "<add> <pet id> <name> - Adds the pet with the specified ID and names it.",
-            "<del> <pet id> - Deletes the pet with the specified ID.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -39,7 +39,7 @@ public class Pet : AdminCommand
                 sb.Append('\n');
                 sb.Append(template.GetTemplateId());
                 sb.Append(" - ");
-                sb.Append(ChatUtil.Color(ChatUtil.Capitalize(template.GetName()), Color.White));
+                sb.Append(ChatUtil.Color(template.GetL10n()!, Color.White));
                 sb.Append("\n\tFunctions: ");
                 var iter = template.GetPetFunctions().GetEnumerator();
                 bool hasNext = iter.MoveNext();
@@ -47,26 +47,19 @@ public class Pet : AdminCommand
                 {
                     PetFunction current = iter.Current;
                     hasNext = iter.MoveNext();
-                    sb.Append(current.GetPetFunctionType() + (hasNext ? ", " : ""));
+                    sb.Append(current.GetPetFunctionType()).Append(hasNext ? ", " : "");
                 }
             }
             SendInfo(admin, sb.ToString());
         }
         else
         {
-            int petId;
-
-            if (paramsArr.Length < 2)
+            int petId = ParseInt(paramsArr[1]);
+            if (DataManager.PET_DATA.GetPetTemplate(petId) == null)
             {
-                SendInfo(admin, "You must specify the pet ID.");
+                SendInfo(admin, "Invalid pet ID.");
                 return;
             }
-            if (!TryParseInt(paramsArr[1], out petId) || DataManager.PET_DATA.GetPetTemplate(petId) == null)
-            {
-                SendInfo(admin, "Pet ID is invalid.");
-                return;
-            }
-
             if (action.Equals("add", System.StringComparison.OrdinalIgnoreCase))
             {
                 if (paramsArr.Length != 3)

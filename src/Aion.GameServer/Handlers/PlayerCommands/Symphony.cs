@@ -34,9 +34,8 @@ public class Symphony : PlayerCommand
     };
 
     public Symphony()
-        : base("symphony", "Exchanges " + ChatUtil.Item(REQUIRED_ITEM_ID) + " for prizes.")
+        : base("symphony", "Exchanges " + ChatUtil.Item(REQUIRED_ITEM_ID) + " for prizes.", BuildSyntaxInfo())
     {
-        SetSyntaxInfo(BuildSyntaxInfo());
     }
 
     public override void Execute(Player player, params string[] paramsArr)
@@ -46,33 +45,20 @@ public class Symphony : PlayerCommand
             SendInfo(player);
             return;
         }
-
-        // Java parity: try { rewardIndex = parseInt - 1; ... } catch (IllegalArgumentException e) { sendInfo(player, e instanceof NumberFormatException ? "Invalid prize." : e.getMessage()); }
-        // The Java exception-as-control-flow is reproduced as explicit branches with identical outcomes:
-        // - non-numeric -> "Invalid prize."; out-of-range index -> null message -> syntax info; insufficient items -> the "You need ..." message.
-        if (!TryParseInt(paramsArr[0], out int parsed))
+        int rewardIndex = ParseInt(paramsArr[0]) - 1;
+        if (rewardIndex < 0 || rewardIndex >= REWARDS.Length)
         {
             SendInfo(player, "Invalid prize.");
             return;
         }
-
-        int rewardIndex = parsed - 1;
-        if (rewardIndex < 0 || rewardIndex >= REWARDS.Length)
-        {
-            SendInfo(player);
-            return;
-        }
-
         int cost = REWARDS[rewardIndex][0];
         if (player.GetInventory().GetItemCountByItemId(REQUIRED_ITEM_ID) < cost || !player.GetInventory().DecreaseByItemId(REQUIRED_ITEM_ID, cost))
         {
-            SendInfo(player, "You need " + cost + " " + ChatUtil.Item(REQUIRED_ITEM_ID) + " to buy this.");
+            SendInfo(player, $"You need {cost} {ChatUtil.Item(REQUIRED_ITEM_ID)} to buy this.");
             return;
         }
-
         int itemId = REWARDS[rewardIndex][1];
         int itemCount = REWARDS[rewardIndex][2];
-
         long notAddedCount = ItemService.AddItem(player, itemId, itemCount, true,
             new ItemService.ItemUpdatePredicate(ItemPacketService.ItemAddType.DECOMPOSABLE, ItemPacketService.ItemUpdateType.INC_CASH_ITEM));
         if (notAddedCount > 0)
@@ -88,7 +74,7 @@ public class Symphony : PlayerCommand
         for (int i = 0; i < REWARDS.Length; i++)
         {
             int[] reward = REWARDS[i];
-            builder.Append('[').Append(i + 1).Append("] - (").Append(reward[0]).Append(" copies): ")
+            builder.Append(i + 1).Append(" - (").Append(reward[0]).Append(" copies): ")
                 .Append(reward[2]).Append("x ").Append(ChatUtil.Item(reward[1])).Append('\n');
         }
         return builder.ToString();

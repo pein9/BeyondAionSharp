@@ -20,12 +20,12 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Debug : AdminCommand
 {
     public Debug()
-        : base("debug", "Helps fixing runtime problems.")
+        : base("debug", "Helps fixing runtime problems.", """
+            connections - Displays all connected game clients.
+            connectedPlayers - Displays information about connected players.
+            dcBuggedPlayers - Disconnects and attempts to save bugged players.
+            """)
     {
-        SetSyntaxInfo(
-            "<connections> - Displays all connected game clients.",
-            "<connectedPlayers> - Displays information about connected players.",
-            "<dcBuggedPlayers> - Disconnects and attempts to save bugged players.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -35,79 +35,68 @@ public class Debug : AdminCommand
             SendInfo(admin);
             return;
         }
-
         if ("connections".Equals(paramsArr[0], System.StringComparison.OrdinalIgnoreCase))
         {
-            List<AionConnection> connections = FindAionConnections(admin);
-            if (connections != null)
-            {
-                SendInfo(admin, "Online clients:\n\t" + string.Join("\n\t", connections.Select(c => c.ToString())));
-            }
+            List<AionConnection> connections = FindAionConnections();
+            SendInfo(admin, "Online clients:\n\t" + string.Join("\n\t", connections.Select(c => c.ToString())));
         }
         else if ("connectedPlayers".Equals(paramsArr[0], System.StringComparison.OrdinalIgnoreCase))
         {
-            List<Player> connectedPlayers = FindConnectedPlayers(admin);
-            if (connectedPlayers != null)
+            List<Player> connectedPlayers = FindConnectedPlayers();
+            string message = "Connected players (" + connectedPlayers.Count + "):";
+            foreach (Player player in connectedPlayers)
             {
-                string message = "Connected players (" + connectedPlayers.Count + "):";
-                foreach (Player player in connectedPlayers)
+                // Java parity: boolean concatenation prints lowercase "true"/"false".
+                string details = player.GetPosition().ToCoordString() + ", spawned: " + (player.IsSpawned() ? "true" : "false");
+                if (!player.IsInWorld())
                 {
-                    string details = "position: " + player.GetPosition().ToCoordString() + ", spawned: " + player.IsSpawned();
-                    if (!player.IsInWorld())
-                    {
-                        details += ", " + ChatUtil.Color("not in world", Color.Red);
-                    }
-                    message += "\n\t" + player.GetName() + " [" + details + "]";
+                    details += ", " + ChatUtil.Color("not in world", Color.Red);
                 }
-                SendInfo(admin, message);
+                message += "\n\t" + Name(player) + " - " + ChatUtil.Position("Location", player.GetPosition()) + ": " + details;
             }
+            SendInfo(admin, message);
         }
         else if ("dcBuggedPlayers".Equals(paramsArr[0], System.StringComparison.OrdinalIgnoreCase))
         {
-            List<Player> buggedPlayers = FindConnectedPlayers(admin).Where(p => !p.IsInWorld()).ToList();
-            if (buggedPlayers != null)
+            List<Player> buggedPlayers = FindConnectedPlayers().Where(p => !p.IsInWorld()).ToList();
+            if (buggedPlayers.Count == 0)
             {
-                if (buggedPlayers.Count == 0)
+                SendInfo(admin, "No bugged players found.");
+            }
+            else
+            {
+                foreach (Player player in buggedPlayers)
                 {
-                    SendInfo(admin, "No bugged players found.");
+                    player.GetController().CancelAllTasks(); // ensure to cancel item update task etc
+                    player.GetCommonData().SetOnline(false);
+                    PlayerService.StorePlayer(player);
+                    player.GetClientConnection().SetActivePlayer(null);
+                    player.GetClientConnection().Close();
+                    player.SetClientConnection(null);
                 }
-                else
-                {
-                    foreach (Player player in buggedPlayers)
-                    {
-                        player.GetController().CancelAllTasks(); // ensure to cancel item update task etc
-                        player.GetCommonData().SetOnline(false);
-                        PlayerService.StorePlayer(player);
-                        player.GetClientConnection().SetActivePlayer(null);
-                        player.GetClientConnection().Close();
-                        player.SetClientConnection(null);
-                    }
-                    // Java parity: "...\n" + buggedPlayers (List<Player>.toString() = "[elem1, elem2]").
-                    SendInfo(admin, "Saved most data and disconnected the following players:\n[" + string.Join(", ", buggedPlayers.Select(p => p.ToString())) + "]");
-                }
+                // Java parity: "...\n" + buggedPlayers (List<Player>.toString() = "[elem1, elem2]").
+                SendInfo(admin, "Saved most data and disconnected the following players:\n[" + string.Join(", ", buggedPlayers.Select(p => p.ToString())) + "]");
             }
         }
-    }
-
-    private List<Player> FindConnectedPlayers(Player admin)
-    {
-        List<AionConnection> connections = FindAionConnections(admin);
-        if (connections != null)
+        else
         {
-            return connections.Select(c => c.GetActivePlayer()).Where(p => p != null)
-                .OrderBy(p => p.GetName(), System.StringComparer.Ordinal).ToList();
+            SendInfo(admin);
         }
-        return null;
     }
 
-    private List<AionConnection> FindAionConnections(Player admin)
+    private List<Player> FindConnectedPlayers()
+    {
+        List<AionConnection> connections = FindAionConnections();
+        return connections.Select(c => c.GetActivePlayer()).Where(p => p != null).OrderBy(p => p.GetName(), System.StringComparer.Ordinal).ToList();
+    }
+
+    private List<AionConnection> FindAionConnections()
     {
         NioServer nioServer = NioServer.GetRegisteredInstance();
+        // Java parity: a failed reflective lookup of GameServer.nioServer throws IllegalArgumentException(e.toString()),
+        // which the framework reports to the admin; the C# equivalent failure is a missing registered instance.
         if (nioServer == null)
-        {
-            SendInfo(admin, "NioServer is not running.");
-            return null;
-        }
+            throw new System.ArgumentException("NioServer is not running.");
         return nioServer.GetAllConnections().OfType<AionConnection>().ToList();
     }
 }

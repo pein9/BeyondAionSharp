@@ -20,9 +20,10 @@ public class Send : AdminCommand
     private const string SCHEMAFILE = FOLDER + "packets.xsd";
 
     public Send()
-        : base("send", "Sends custom packets.")
+        : base("send", "Sends custom packets.", """
+            <file> - Sends packets to your client, based on the ./data/packets/<file>.xml template.
+            """)
     {
-        SetSyntaxInfo("<file> - Sends packets to your client, based on the ./data/packets/<file>.xml template.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

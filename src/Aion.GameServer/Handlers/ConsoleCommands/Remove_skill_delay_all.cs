@@ -7,9 +7,11 @@ namespace Aion.GameServer.Handlers.ConsoleCommands;
 public class Remove_skill_delay_all : ConsoleCommand
 {
     public Remove_skill_delay_all()
-        : base("remove_skill_delay_all", "Enables/disables zero cooldown mode for all skills.")
+        : base("remove_skill_delay_all", "Enables/disables your skill cooldowns.", """
+            1 - Enables your skill cooldowns.
+            0 - Disables your skill cooldowns.
+            """)
     {
-        SetSyntaxInfo("<1|0> - Enable or disable skill cooldowns.");
     }
 
     public override void Execute(Player player, params string[] paramsArr)

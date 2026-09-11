@@ -12,9 +12,10 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Speed : AdminCommand, IStatOwner
 {
     public Speed()
-        : base("speed", "Sets your speed.")
+        : base("speed", "Sets your speed.", """
+            <0-100> - Set your speed to the specified value (0 to reset).
+            """)
     {
-        SetSyntaxInfo("<0-100> - Set your speed to the specified value (0 to reset).");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)

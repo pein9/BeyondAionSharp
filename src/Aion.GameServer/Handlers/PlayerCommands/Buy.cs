@@ -18,12 +18,11 @@ public class Buy : PlayerCommand
     private static readonly Dictionary<int, Dictionary<string, int>> rewards = new();
 
     public Buy()
-        : base("buy", "Exchange your " + ChatUtil.Item(CustomInstanceService.REWARD_COIN_ID) + " for various rewards.")
+        : base("buy", "Exchanges your " + ChatUtil.Item(CustomInstanceService.REWARD_COIN_ID) + " for various rewards.", """
+             - Shows all rewards.
+            <item link|ID> - Buys the respective item.
+            """)
     {
-        SetSyntaxInfo(
-            " - Shows all buyable rewards.",
-            "<item link|ID> - Buys the respective item."
-        );
         InitRewards();
     }
 

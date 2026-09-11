@@ -9,11 +9,11 @@ namespace Aion.GameServer.Handlers.PlayerCommands;
 public class Lock : PlayerCommand
 {
     public Lock()
-        : base("lock", "Enables/disables blocking logins from other computers.")
+        : base("lock", "Enables/disables blocking logins from other computers.", """
+            enable - Allows login from only this computer.
+            disable - Allows login from any computer.
+            """)
     {
-        SetSyntaxInfo(
-            "<enable> - Allows login from only this computer.",
-            "<disable> - Allows login from any computer.");
     }
 
     public override void Execute(Player player, params string[] paramsArr)

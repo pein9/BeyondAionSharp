@@ -12,15 +12,14 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class BaseCommand : AdminCommand
 {
     public BaseCommand()
-        : base("base", "Lists bases or changes their state.")
+        : base("base", "Lists bases or changes their state.", """
+            list - Lists all available base locations with their respective occupier.
+            start <id> - Activates the specified base.
+            stop <id> - Deactivates the specified base.
+            capture <id> <occupier> - Captures the specified base with the specified new occupier.
+            assault <id> - Spawns attacker NPCs for the specified base if available.
+            """)
     {
-        SetSyntaxInfo(
-            "list - Lists all available base locations with their respective occupier.",
-            "start <id> - Activates the specified base.",
-            "stop <id> - Deactivates the specified base.",
-            "capture <id> <occupier> - Captures the specified base with the specified new occupier.",
-            "assault <id> - Spawns attacker NPCs for the specified base if available."
-        );
     }
 
     public override void Execute(Player player, params string[] paramsArr)

@@ -11,9 +11,10 @@ namespace Aion.GameServer.Handlers.ConsoleCommands;
 public class Clearusercoolt : ConsoleCommand
 {
     public Clearusercoolt()
-        : base("clearusercoolt", "Clears cooldowns for instances.")
+        : base("clearusercoolt", "Removes cooldowns for a player.", """
+            <player> - Removes the instance cooldowns of the given player.
+            """)
     {
-        SetSyntaxInfo("<player> - Removes the instance cooldowns of the given player.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -38,7 +39,7 @@ public class Clearusercoolt : ConsoleCommand
     {
         if (player.GetPortalCooldownList().GetPortalCoolDowns() == null)
         {
-            PacketSendUtility.SendMessage(admin, (player.Equals(admin) ? "You have" : player.GetName() + " has") + " no instance cooldowns to remove.");
+            PacketSendUtility.SendMessage(admin, (player.Equals(admin) ? "You have" : Name(player) + " has") + " no instance cooldowns to remove.");
             return;
         }
 
@@ -53,8 +54,8 @@ public class Clearusercoolt : ConsoleCommand
         }
         else
         {
-            PacketSendUtility.SendMessage(admin, "You have removed instance cooldowns of " + player.GetName() + '.');
-            PacketSendUtility.SendMessage(player, admin.GetName(true) + " removed your instance cooldowns.");
+            PacketSendUtility.SendMessage(admin, "You have removed instance cooldowns of " + Name(player) + '.');
+            PacketSendUtility.SendMessage(player, Name(admin) + " removed your instance cooldowns.");
         }
     }
 }

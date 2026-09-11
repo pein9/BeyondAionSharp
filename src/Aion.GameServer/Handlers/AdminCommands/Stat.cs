@@ -21,15 +21,15 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 public class Stat : AdminCommand
 {
     public Stat()
-        : base("stat", "Shows and modifies any stats.")
+        : base("stat", "Shows and modifies any stats.", """
+            list - Lists all stats.
+            <stat> - Shows your target's active stat functions for the given stat.
+            <stat> <value> - Sets your target's stat to the given value.
+            abs <stat set ID> - Applies fixed stats of the given stats_set ID from absolute_stats.xml to your target.
+            cancel - Cancels all active stat overrides for your target.
+            Stat parameters accept lowercase and abbreviated formats, such as flytime or flyt instead of FLY_TIME.
+            """)
     {
-        SetSyntaxInfo(
-            "list - Lists all stats.",
-            "<stat> - Shows your target's active stat functions for the given stat.",
-            "<stat> <value> - Sets your target's stat to the given value.",
-            "abs <stat set ID> - Applies fixed stats of the given stats_set ID from absolute_stats.xml to your target.",
-            "cancel - Cancels all active stat overrides for your target.",
-            "Stat parameters accept lowercase and abbreviated formats, such as flytime or flyt instead of FLY_TIME.");
     }
 
     public override void Execute(Player admin, params string[] paramsArr)
@@ -73,7 +73,7 @@ public class Stat : AdminCommand
             }
             foreach (StatFunction m in template.GetModifiers())
                 ApplyStatFunction(creature, m);
-            SendInfo(admin, "Applied absolute stats to " + creature.GetName() + ".");
+            SendInfo(admin, "Applied absolute stats to " + Name(creature) + ".");
         }
         else
         {
@@ -126,7 +126,7 @@ public class Stat : AdminCommand
     private void ShowActiveStatFunctions(Player admin, Creature target, StatEnum stat)
     {
         List<IStatFunction> stats = target.GetGameStats().GetStatsSorted(stat);
-        string targetInfo = admin.Equals(target) ? "You currently have " : target.GetName() + " currently has ";
+        string targetInfo = admin.Equals(target) ? "You currently have " : Name(target) + " currently has ";
         string statName = ChatUtil.Color(stat.ToString(), System.Drawing.Color.White);
         if (stats.Count == 0)
         {
@@ -163,7 +163,7 @@ public class Stat : AdminCommand
         if (stat == null)
             return;
         ApplyStatFunction(target, new CommandStatFunction(stat.Value, value));
-        string targetInfo = admin.Equals(target) ? "Your " : target.GetName() + "'s ";
+        string targetInfo = admin.Equals(target) ? "Your " : Name(target) + "'s ";
         SendInfo(admin, targetInfo + ChatUtil.Color(stat.Value.ToString(), System.Drawing.Color.White) + " is now set to " + value + ".");
     }
 
@@ -177,7 +177,7 @@ public class Stat : AdminCommand
     public void CancelStatOverrides(Player admin, Creature target)
     {
         CommandStatOwner.ForEach(owner => target.GetGameStats().EndEffect(owner));
-        string targetInfo = admin.Equals(target) ? "Your" : target.GetName() + "'s";
+        string targetInfo = admin.Equals(target) ? "Your" : Name(target) + "'s";
         SendInfo(admin, targetInfo + " stat overrides have been canceled.");
     }
 
