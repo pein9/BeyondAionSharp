@@ -1,4 +1,3 @@
-using System.Drawing;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.ChatHandlers;
@@ -20,6 +19,6 @@ public class Teleportation : AdminCommand
         else
             admin.SetCustomState(CustomPlayerState.TELEPORTATION_MODE);
         SendInfo(admin, "Teleportation mode is now " + (admin.IsInCustomState(CustomPlayerState.TELEPORTATION_MODE)
-            ? ChatUtil.Color("active", Color.Green) : ChatUtil.Color("inactive", Color.Red)) + ".");
+            ? ChatUtil.Color("active", AwtColor.GREEN) : ChatUtil.Color("inactive", AwtColor.RED)) + ".");
     }
 }

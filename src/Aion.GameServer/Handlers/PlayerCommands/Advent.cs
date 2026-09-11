@@ -1,4 +1,3 @@
-using System.Drawing;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Services.Reward;
@@ -14,7 +13,7 @@ public class Advent : PlayerCommand
         : base("advent", "Gets your advent reward for today.", $"""
             show - Shows today's reward.
             get - Gets your reward for today on this character.
-            {ChatUtil.Color("ATTENTION:", Color.Pink)} Only one character per account can receive this reward!
+            {ChatUtil.Color("ATTENTION:", AwtColor.PINK)} Only one character per account can receive this reward!
             """)
     {
     }

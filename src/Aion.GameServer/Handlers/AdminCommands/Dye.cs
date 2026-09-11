@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Reflection;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -14,7 +13,7 @@ using Aion.GameServer.Utils.ChatHandlers;
 
 namespace Aion.GameServer.Handlers.AdminCommands;
 
-/// <summary>Java parity: data/handlers/admincommands/Dye (loleron, Neon). Java reflection java.awt.Color.getField -> System.Drawing.Color named property (uppercase), getRGB() -> ToArgb().</summary>
+/// <summary>Java parity: data/handlers/admincommands/Dye (loleron, Neon). Java reflection java.awt.Color.getField -> AwtColor.TryGetByFieldName (uppercase), getRGB() -> ToArgb().</summary>
 public class Dye : AdminCommand
 {
     public Dye()
@@ -53,12 +52,12 @@ public class Dye : AdminCommand
             {
                 try
                 {
-                    try
+                    // try to get color by name
+                    if (AwtColor.TryGetByFieldName(colorParam.ToUpper(), out Color namedColor))
                     {
-                        // try to get color by name
-                        itemColor = GetAwtColorByName(colorParam.ToUpper());
+                        itemColor = namedColor.ToArgb();
                     }
-                    catch (Exception)
+                    else
                     {
                         // try to get color by hex code
                         if (colorParam.Length <= 8)
@@ -107,16 +106,5 @@ public class Dye : AdminCommand
 
         if (!target.Equals(player))
             SendInfo(target, Name(player) + " has changed the color of your visible equipment to: " + colorText);
-    }
-
-    // Java parity: ((Color) Class.forName("java.awt.Color").getField(NAME).get(null)).getRGB()
-    private static int GetAwtColorByName(string name)
-    {
-        PropertyInfo property = typeof(Color).GetProperty(name, BindingFlags.Public | BindingFlags.Static | BindingFlags.IgnoreCase);
-        if (property == null || property.PropertyType != typeof(Color))
-            throw new MissingFieldException("java.awt.Color", name);
-        if (property.GetValue(null) is not Color color)
-            throw new MissingFieldException("java.awt.Color", name);
-        return color.ToArgb();
     }
 }

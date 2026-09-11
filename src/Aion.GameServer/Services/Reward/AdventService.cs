@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Drawing;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Dataholders;
@@ -16,7 +15,7 @@ using Aion.GameServer.Utils.Time;
 
 namespace Aion.GameServer.Services.Reward;
 
-/// <summary>Java parity: services/reward/AdventService (Nathan, Estrayl, Neon, Sykra) — Solorius advent calendar. Singleton; rewards map (computeIfAbsent→TryGetValue); LocalDate→DateOnly (ServerTime.now().toLocalDate→DateOnly.FromDateTime); Month.DECEMBER→12; java.awt.Color.PINK→System.Drawing.Color.Pink; streams map/filter/count→LINQ; iterator hasNext trailing-comma→index test; AdventDAO/ChatProcessor/ChatUtil red-tolerated.</summary>
+/// <summary>Java parity: services/reward/AdventService (Nathan, Estrayl, Neon, Sykra) — Solorius advent calendar. Singleton; rewards map (computeIfAbsent→TryGetValue); LocalDate→DateOnly (ServerTime.now().toLocalDate→DateOnly.FromDateTime); Month.DECEMBER→12; java.awt.Color.PINK→AwtColor.PINK; streams map/filter/count→LINQ; iterator hasNext trailing-comma→index test; AdventDAO/ChatProcessor/ChatUtil red-tolerated.</summary>
 public class AdventService
 {
     private static readonly AdventService instance = new AdventService();
@@ -81,7 +80,7 @@ public class AdventService
             return;
         PacketSendUtility.SendMessage(player,
             "You can open your advent calendar door for today!" + "\nType in .advent to redeem todays reward on this character.\n"
-                + ChatUtil.Color("ATTENTION:", Color.Pink) + " Only one character per account can receive this reward!");
+                + ChatUtil.Color("ATTENTION:", AwtColor.PINK) + " Only one character per account can receive this reward!");
     }
 
     public bool IsAdventSeason()

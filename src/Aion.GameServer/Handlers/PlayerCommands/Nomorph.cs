@@ -1,4 +1,3 @@
-using System.Drawing;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.ChatHandlers;
@@ -24,6 +23,6 @@ public class Nomorph : PlayerCommand
             player.GetTransformModel().SetEventModelId(player.GetObjectTemplate().GetTemplateId());
         }
         player.GetTransformModel().UpdateVisually();
-        SendInfo(player, "Transformation appearance is now " + (player.GetTransformModel().GetEventModelId() == player.GetObjectTemplate().GetTemplateId() ? ChatUtil.Color("inactive", Color.Red) : ChatUtil.Color("active", Color.Green)) + ".");
+        SendInfo(player, "Transformation appearance is now " + (player.GetTransformModel().GetEventModelId() == player.GetObjectTemplate().GetTemplateId() ? ChatUtil.Color("inactive", AwtColor.RED) : ChatUtil.Color("active", AwtColor.GREEN)) + ".");
     }
 }

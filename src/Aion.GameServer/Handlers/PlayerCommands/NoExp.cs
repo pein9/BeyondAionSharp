@@ -1,4 +1,3 @@
-using System.Drawing;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.ChatHandlers;
@@ -18,6 +17,6 @@ public class NoExp : PlayerCommand
         PlayerCommonData pcd = player.GetCommonData();
 
         pcd.SetNoExp(!pcd.GetNoExp());
-        SendInfo(player, "Experience rewards are now " + (pcd.GetNoExp() ? ChatUtil.Color("inactive", Color.Red) : ChatUtil.Color("active", Color.Green)) + ".");
+        SendInfo(player, "Experience rewards are now " + (pcd.GetNoExp() ? ChatUtil.Color("inactive", AwtColor.RED) : ChatUtil.Color("active", AwtColor.GREEN)) + ".");
     }
 }

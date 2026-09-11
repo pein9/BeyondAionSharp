@@ -8,6 +8,7 @@ using Aion.Commons.Configuration;
 using Aion.Commons.Configuration.Transformers;
 using Aion.GameServer.Configs;
 using Aion.GameServer.Model.GameObjects.Players;
+using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.ChatHandlers;
 
 namespace Aion.GameServer.Handlers.AdminCommands;
@@ -120,9 +121,7 @@ public class Configure : AdminCommand
         Dictionary<string, string> values = new();
         if (value.StartsWith("{") && value.EndsWith("}"))
             value = value.Substring(1, value.Length - 2);
-        string[] entries = value.Contains(",")
-            ? System.Text.RegularExpressions.Regex.Split(value, " *, *")
-            : System.Text.RegularExpressions.Regex.Split(value, " +");
+        string[] entries = value.Contains(",") ? JavaPattern.Split(value, " *, *") : JavaPattern.Split(value, " +");
         try
         {
             foreach (string entry in entries)

@@ -133,4 +133,51 @@ public sealed class ChatUtilTests
 		Assert.StartsWith("[color:hello;", result);
 		Assert.EndsWith("]", result);
 	}
+
+	// --- java.awt.Color constants (AwtColor) ---
+
+	[Fact]
+	public void Color_AwtGreenMatchesJavaEncoding()
+	{
+		// Java 25: ChatUtil.color("active", java.awt.Color.GREEN). System.Drawing.Color.Green is (0,128,0) and gives ".0 .5 .0".
+		Assert.Equal("[color:active;.0 1.0 .0]", ChatUtil.Color("active", AwtColor.GREEN));
+	}
+
+	[Fact]
+	public void Color_AwtPinkMatchesJavaEncoding()
+	{
+		// Java 25: ChatUtil.color("ATTENTION:", java.awt.Color.PINK). System.Drawing.Color.Pink is (255,192,203) and gives "1.0 .75 .8".
+		Assert.Equal("[color:ATTENTION:;1.0 .69 .69]", ChatUtil.Color("ATTENTION:", AwtColor.PINK));
+	}
+
+	[Theory]
+	// Java 25: ((Color) Color.class.getField(name).get(null)).getRGB() for every constant
+	[InlineData("WHITE", -1)]
+	[InlineData("LIGHT_GRAY", -4144960)]
+	[InlineData("GRAY", -8355712)]
+	[InlineData("DARK_GRAY", -12566464)]
+	[InlineData("BLACK", -16777216)]
+	[InlineData("RED", -65536)]
+	[InlineData("PINK", -20561)]
+	[InlineData("ORANGE", -14336)]
+	[InlineData("YELLOW", -256)]
+	[InlineData("GREEN", -16711936)]
+	[InlineData("MAGENTA", -65281)]
+	[InlineData("CYAN", -16711681)]
+	[InlineData("BLUE", -16776961)]
+	public void AwtColor_NameLookupMatchesJavaGetRgb(string fieldName, int javaRgb)
+	{
+		Assert.True(AwtColor.TryGetByFieldName(fieldName, out var color));
+		Assert.Equal(javaRgb, color.ToArgb());
+	}
+
+	[Theory]
+	[InlineData("gold")]
+	[InlineData("GOLD")] // a System.Drawing name, not a java.awt.Color field
+	[InlineData("LIGHTGRAY")] // System.Drawing spelling; Java's field is LIGHT_GRAY
+	[InlineData("OPAQUE")] // a Transparency int field: Java's cast to Color fails and it falls back to hex parsing
+	public void AwtColor_NameLookupRejectsNamesThatAreNotAwtColorConstants(string fieldName)
+	{
+		Assert.False(AwtColor.TryGetByFieldName(fieldName, out _));
+	}
 }

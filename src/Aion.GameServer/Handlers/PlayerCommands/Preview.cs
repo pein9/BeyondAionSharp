@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
-using System.Reflection;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
@@ -187,7 +186,7 @@ public class Preview : PlayerCommand
         List<ItemParam> itemParams = new List<ItemParam>();
         foreach (string param in paramsArr)
         {
-            string[] ids = System.Text.RegularExpressions.Regex.Split(param, @",|(?<=[^,])(?=\[)|(?<=[\]])(?=[^\[])"); // split on comma and between item tags (square brackets)
+            string[] ids = JavaPattern.Split(param, @",|(?<=[^,])(?=\[)|(?<=[\]])(?=[^\[])"); // split on comma and between item tags (square brackets)
             foreach (string id in ids)
             {
                 itemParams.Add(new ItemParam(id, DataManager.ITEM_DATA.GetItemTemplate(ChatUtil.GetItemId(id))));
@@ -290,42 +289,25 @@ public class Preview : PlayerCommand
                 return ItemTemplate.GetActions().GetDyeAction().GetColor();
             }
             string colorParam = Input;
+            // try to get color by name
+            if (AwtColor.TryGetByFieldName(colorParam.ToUpper(), out Color color))
+                return color.ToArgb();
+            // try to get color by hex code
+            if (colorParam.Length <= 8)
+            {
+                if (colorParam.StartsWith("#"))
+                    colorParam = colorParam.Substring(1);
+                else if (colorParam.StartsWith("0x") || colorParam.StartsWith("0X"))
+                    colorParam = colorParam.Substring(2);
+            }
             try
             {
-                // try to get color by name
-                PropertyInfo field = typeof(Color).GetProperty(ToTitleCaseColorName(colorParam), BindingFlags.Public | BindingFlags.Static);
-                if (field != null && field.PropertyType == typeof(Color) && field.GetValue(null) is Color color)
-                    return color.ToArgb();
-                throw new MissingFieldException();
+                return JavaNumberParser.ParseInt(colorParam, 16);
             }
             catch (Exception)
             {
-                // try to get color by hex code
-                if (colorParam.Length <= 8)
-                {
-                    if (colorParam.StartsWith("#"))
-                        colorParam = colorParam.Substring(1);
-                    else if (colorParam.StartsWith("0x") || colorParam.StartsWith("0X"))
-                        colorParam = colorParam.Substring(2);
-                }
-                try
-                {
-                    return JavaNumberParser.ParseInt(colorParam, 16);
-                }
-                catch (Exception)
-                {
-                    return null;
-                }
+                return null;
             }
-        }
-
-        // Java parity: Color.class.getField(name.toUpperCase()) — java.awt.Color exposes static fields like RED/BLUE.
-        // System.Drawing.Color exposes named colors as PascalCase static properties, so map UPPERCASE input to the property name.
-        private static string ToTitleCaseColorName(string name)
-        {
-            if (string.IsNullOrEmpty(name))
-                return name;
-            return char.ToUpper(name[0]) + name.Substring(1).ToLowerInvariant();
         }
     }
 }

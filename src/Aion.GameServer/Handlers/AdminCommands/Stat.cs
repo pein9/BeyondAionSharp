@@ -127,7 +127,7 @@ public class Stat : AdminCommand
     {
         List<IStatFunction> stats = target.GetGameStats().GetStatsSorted(stat);
         string targetInfo = admin.Equals(target) ? "You currently have " : Name(target) + " currently has ";
-        string statName = ChatUtil.Color(stat.ToString(), System.Drawing.Color.White);
+        string statName = ChatUtil.Color(stat.ToString(), AwtColor.WHITE);
         if (stats.Count == 0)
         {
             SendInfo(admin, targetInfo + "no active " + statName + " functions.");
@@ -164,7 +164,7 @@ public class Stat : AdminCommand
             return;
         ApplyStatFunction(target, new CommandStatFunction(stat.Value, value));
         string targetInfo = admin.Equals(target) ? "Your " : Name(target) + "'s ";
-        SendInfo(admin, targetInfo + ChatUtil.Color(stat.Value.ToString(), System.Drawing.Color.White) + " is now set to " + value + ".");
+        SendInfo(admin, targetInfo + ChatUtil.Color(stat.Value.ToString(), AwtColor.WHITE) + " is now set to " + value + ".");
     }
 
     private void ApplyStatFunction(Creature creature, StatFunction statFunction)
@@ -232,13 +232,13 @@ public class Stat : AdminCommand
             string info = IsOverrideFunction() ? "=" + Value : Value >= 0 ? "+" + Value : "" + Value;
             if (Type.Equals(nameof(CommandStatFunction)))
             {
-                info = ChatUtil.Color(info, System.Drawing.Color.Cyan);
+                info = ChatUtil.Color(info, AwtColor.CYAN);
             }
             else
             {
                 if (Type.Equals(nameof(StatRateFunction)))
                     info += "%";
-                info = ChatUtil.Color(info, Value < 0 ? System.Drawing.Color.Red : Bonus ? System.Drawing.Color.Green : System.Drawing.Color.White);
+                info = ChatUtil.Color(info, Value < 0 ? AwtColor.RED : Bonus ? AwtColor.GREEN : AwtColor.WHITE);
                 if (Bonus)
                     info += " bonus";
             }

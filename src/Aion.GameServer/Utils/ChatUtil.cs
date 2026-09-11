@@ -17,7 +17,7 @@ public static class ChatUtil
 	public static string Color(string message, System.Drawing.Color? color)
 	{
 		// Java parity: utils/ChatUtil.color(String, java.awt.Color). null defaults to WHITE.
-		System.Drawing.Color c = color ?? System.Drawing.Color.White;
+		System.Drawing.Color c = color ?? AwtColor.WHITE;
 		return Color(message, c.R, c.G, c.B);
 	}
 
