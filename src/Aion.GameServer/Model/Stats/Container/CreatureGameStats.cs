@@ -116,18 +116,22 @@ public abstract class CreatureGameStats
     public float GetPositiveStat(StatEnum statEnum, float baseValue)
     {
         Stat2 stat = GetStat(statEnum, baseValue);
-        float value = stat.GetCurrent();
-        return value > 0 ? value : 0;
+        return Math.Max(0, stat.GetCurrent());
     }
 
     public int GetPositiveReverseStat(StatEnum statEnum, int baseValue)
     {
         Stat2 stat = GetReverseStat(statEnum, baseValue);
-        int value = stat.GetCurrent();
-        return value > 0 ? value : 0;
+        return Math.Max(0, stat.GetCurrent());
     }
 
-    public virtual Stat2 GetStat(StatEnum statEnum, float baseValue, params CalculationType[] calculationTypes)
+    // Java parity: public final getStat(StatEnum, float)
+    public Stat2 GetStat(StatEnum statEnum, float baseValue)
+    {
+        return GetStat(statEnum, baseValue, NoCalculationTypes);
+    }
+
+    protected virtual Stat2 GetStat(StatEnum statEnum, float baseValue, ISet<CalculationType> calculationTypes)
     {
         Stat2 stat = new AdditionStat(statEnum, baseValue, owner);
         return ApplyStatFunctions(statEnum, stat, calculationTypes);
@@ -136,10 +140,10 @@ public abstract class CreatureGameStats
     public Stat2 GetReverseStat(StatEnum statEnum, float baseValue)
     {
         Stat2 stat = new ReverseStat(statEnum, baseValue, owner);
-        return ApplyStatFunctions(statEnum, stat);
+        return ApplyStatFunctions(statEnum, stat, NoCalculationTypes);
     }
 
-    public virtual Stat2 ApplyStatFunctions(StatEnum statEnum, Stat2 stat, params CalculationType[] calculationTypes)
+    public virtual Stat2 ApplyStatFunctions(StatEnum statEnum, Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         foreach (IStatFunction func in GetStatsSorted(statEnum))
         {
@@ -147,8 +151,8 @@ public abstract class CreatureGameStats
             {
                 if ((statEnum == StatEnum.PHYSICAL_ATTACK || statEnum == StatEnum.MAGICAL_ATTACK) && func.GetOwner() is Aion.GameServer.Model.Enchants.EnchantEffect ef)
                 {
-                    if (ef.GetItemSlot() == Aion.GameServer.Model.Items.ItemSlot.MAIN_HAND && Array.IndexOf(calculationTypes, CalculationType.MAIN_HAND) >= 0
-                        || ef.GetItemSlot() == Aion.GameServer.Model.Items.ItemSlot.SUB_HAND && Array.IndexOf(calculationTypes, CalculationType.OFF_HAND) >= 0)
+                    if (ef.GetItemSlot() == Aion.GameServer.Model.Items.ItemSlot.MAIN_HAND && calculationTypes.Contains(CalculationType.MAIN_HAND)
+                        || ef.GetItemSlot() == Aion.GameServer.Model.Items.ItemSlot.SUB_HAND && calculationTypes.Contains(CalculationType.OFF_HAND))
                     {
                         func.Apply(stat, calculationTypes);
                     }
@@ -170,7 +174,7 @@ public abstract class CreatureGameStats
             if (func.IsBonus() && func.Validate(stat) && (func.GetOwner() is Item || func.GetOwner() is Aion.GameServer.Model.Items.ManaStone
                 || func.GetOwner() is Aion.GameServer.Model.Templates.Itemset.ItemSetTemplate || func.GetOwner() is Aion.GameServer.Model.Items.RandomBonusEffect))
             {
-                func.Apply(stat);
+                func.Apply(stat, NoCalculationTypes);
             }
         }
         return stat;
@@ -258,7 +262,13 @@ public abstract class CreatureGameStats
         return GetStat(StatEnum.MAGICAL_CRITICAL_RESIST, GetStatsTemplate().GetSpellResist());
     }
 
-    public virtual Stat2 GetMainHandPAttack(params CalculationType[] calculationTypes)
+    // Java parity: public final getMainHandPAttack(CalculationType...)
+    public Stat2 GetMainHandPAttack(params CalculationType[] calculationTypes)
+    {
+        return GetMainHandPAttack(ToSet(calculationTypes));
+    }
+
+    public virtual Stat2 GetMainHandPAttack(ISet<CalculationType> calculationTypes)
     {
         return GetStat(StatEnum.PHYSICAL_ATTACK, GetStatsTemplate().GetAttack(), calculationTypes);
     }
@@ -273,7 +283,13 @@ public abstract class CreatureGameStats
         return GetStat(StatEnum.PHYSICAL_ACCURACY, GetStatsTemplate().GetAccuracy());
     }
 
-    public virtual Stat2 GetMainHandMAttack(params CalculationType[] calculationTypes)
+    // Java parity: public final getMainHandMAttack(CalculationType...)
+    public Stat2 GetMainHandMAttack(params CalculationType[] calculationTypes)
+    {
+        return GetMainHandMAttack(ToSet(calculationTypes));
+    }
+
+    public virtual Stat2 GetMainHandMAttack(ISet<CalculationType> calculationTypes)
     {
         return GetStat(StatEnum.MAGICAL_ATTACK, GetStatsTemplate().GetMagicalAttack(), calculationTypes);
     }
@@ -436,6 +452,27 @@ public abstract class CreatureGameStats
                 owner.GetLifeStats().SetCurrentMp(Math.Min(JRound(owner.GetLifeStats().GetCurrentMp() * percent), currentMaxMp));
             }
         }
+    }
+
+    // Java parity: Collections.emptySet() (immutable, shared)
+    private static readonly ISet<CalculationType> NoCalculationTypes = System.Collections.Immutable.ImmutableHashSet<CalculationType>.Empty;
+
+    protected static ISet<CalculationType> ToSet(CalculationType[] calculationTypes)
+    {
+        return calculationTypes.Length == 0 ? NoCalculationTypes : new HashSet<CalculationType>(calculationTypes);
+    }
+
+    /// <summary>
+    /// Java parity: copyWith(Set, CalculationType) = EnumSet.copyOf(types) plus the given type. Java's EnumSet.copyOf throws
+    /// IllegalArgumentException for an empty collection that is not an EnumSet, which is exactly what toSet returns for no arguments, so
+    /// upstream 538b33d07 breaks no-argument calls like getOffHandPAttack() (//info) and getMainHandMAttack() (custom instance boss). This port
+    /// copies the empty set instead of reproducing that exception.
+    /// </summary>
+    protected static HashSet<CalculationType> CopyWith(ISet<CalculationType> types, CalculationType type)
+    {
+        HashSet<CalculationType> calculationTypes = new HashSet<CalculationType>(types);
+        calculationTypes.Add(type);
+        return calculationTypes;
     }
 }
 

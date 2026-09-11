@@ -45,7 +45,7 @@ public class StatArmorMasteryFunction : StatRateFunction
         };
     }
 
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         base.Apply(stat, calculationTypes);
         if (fixedBonus != 0 && equipmentFactor != 0)

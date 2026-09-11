@@ -76,7 +76,7 @@ public sealed class InstanceScalerPortTests
             var owner = (Npc)RuntimeHelpers.GetUninitializedObject(typeof(Npc));
             var stat = new AdditionStat(StatEnum.MAXHP, 100, owner);
             stat.SetBonus(40);
-            functions[0].Apply(stat);
+            functions[0].Apply(stat, new HashSet<Aion.GameServer.Utils.Stats.CalculationType>());
             Assert.Equal(70, stat.GetCurrent());
         }
         finally
@@ -111,7 +111,7 @@ public sealed class InstanceScalerPortTests
             var hpFunction = Assert.Single(scaling.StatFunctions, function => function.GetName() == StatEnum.MAXHP);
             var owner = (Npc)RuntimeHelpers.GetUninitializedObject(typeof(Npc));
             var stat = new AdditionStat(StatEnum.MAXHP, 120, owner);
-            hpFunction.Apply(stat);
+            hpFunction.Apply(stat, new HashSet<Aion.GameServer.Utils.Stats.CalculationType>());
             Assert.Equal(90, stat.GetCurrent()); // 4/6 players, hp scale factor 0.75 -> multiplier 0.75
         }
         finally

@@ -14,7 +14,7 @@ public class HomingGameStats : SummonedObjectGameStats
     {
     }
 
-    public override Stat2 GetStat(StatEnum statEnum, float baseValue, params CalculationType[] calculationTypes)
+    protected override Stat2 GetStat(StatEnum statEnum, float baseValue, ISet<CalculationType> calculationTypes)
     {
         Stat2 stat = base.GetStat(statEnum, baseValue, calculationTypes);
         if (owner.GetMaster() == null)
@@ -28,7 +28,7 @@ public class HomingGameStats : SummonedObjectGameStats
         return stat;
     }
 
-    public override Stat2 GetMainHandMAttack(params CalculationType[] calculationTypes)
+    public override Stat2 GetMainHandMAttack(ISet<CalculationType> calculationTypes)
     {
         Homing homing = (Homing)owner;
         int power = GetStatsTemplate().GetMagicalAttack();

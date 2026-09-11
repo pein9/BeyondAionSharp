@@ -37,7 +37,7 @@ public class SummonGameStats : CreatureGameStats<Summon>
         owner.GetGameStats().UpdateStatInfo();
     }
 
-    public override Stat2 GetStat(StatEnum statEnum, float baseValue, params CalculationType[] calculationTypes)
+    protected override Stat2 GetStat(StatEnum statEnum, float baseValue, ISet<CalculationType> calculationTypes)
     {
         Stat2 stat = base.GetStat(statEnum, baseValue, calculationTypes);
         if (owner.GetMaster() == null)

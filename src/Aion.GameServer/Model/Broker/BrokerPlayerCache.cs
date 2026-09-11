@@ -6,22 +6,25 @@ namespace Aion.GameServer.Model.Broker;
 /// <summary>Java parity: model/broker/BrokerPlayerCache (ATracer). Plain per-player broker search cache. Java signed byte→sbyte; BrokerItem red-tolerated.</summary>
 public class BrokerPlayerCache
 {
-    private BrokerItem[] brokerListCache = new BrokerItem[0];
+    private List<BrokerItem> brokerListCache = new List<BrokerItem>();
     private int brokerMaskCache;
     private sbyte brokerSoftTypeCache;
     private int brokerStartPageCache;
     private List<int> itemList = new();
 
-    /// <returns>the brokerListCache</returns>
-    public BrokerItem[] GetBrokerListCache()
+    public List<BrokerItem> GetBrokerListCache()
     {
         return brokerListCache;
     }
 
-    /// <param name="brokerListCache">the brokerListCache to set</param>
-    public void SetBrokerListCache(BrokerItem[] brokerListCache)
+    public void SetBrokerListCache(List<BrokerItem> brokerListCache)
     {
         this.brokerListCache = brokerListCache;
+    }
+
+    public void RemoveFromCache(BrokerItem item)
+    {
+        brokerListCache = brokerListCache.Where(i => !i.Equals(item)).ToList();
     }
 
     /// <returns>the brokerMaskCache</returns>

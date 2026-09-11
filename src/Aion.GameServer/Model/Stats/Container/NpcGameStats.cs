@@ -46,7 +46,7 @@ public class NpcGameStats : CreatureGameStats<Npc>
         return owner.GetObjectTemplate().GetStatsTemplate();
     }
 
-    public override Stat2 ApplyStatFunctions(StatEnum statEnum, Stat2 stat, params CalculationType[] calculationTypes)
+    public override Stat2 ApplyStatFunctions(StatEnum statEnum, Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         Stat2 s = base.ApplyStatFunctions(statEnum, stat, calculationTypes);
         owner.GetAi().ModifyOwnerStat(s);

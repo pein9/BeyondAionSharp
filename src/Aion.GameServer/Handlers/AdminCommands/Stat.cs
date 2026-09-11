@@ -188,7 +188,7 @@ public class Stat : AdminCommand
         {
         }
 
-        public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+        public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
         {
             stat.SetBonusRate(1f);
             stat.SetFinalRate(1f);

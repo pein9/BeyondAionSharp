@@ -286,9 +286,9 @@ public abstract class CreatureController : VisibleObjectController
         Aion.GameServer.Model.Animations.AttackTypeAnimation attackTypeAnimation = Aion.GameServer.Model.Animations.AttackTypeAnimation.MELEE;
         List<AttackResult> attackResult;
 
-        CalculationType[] calculationTypes = new CalculationType[] { CalculationType.APPLY_POWER_SHARD_DAMAGE, CalculationType.REMOVE_POWER_SHARD };
+        ISet<CalculationType> calculationTypes = new HashSet<CalculationType> { CalculationType.APPLY_POWER_SHARD_DAMAGE, CalculationType.REMOVE_POWER_SHARD };
         if (GetOwner() is Player p && p.GetEquipment().IsDualWeaponEquipped())
-            calculationTypes = ArrAdd(calculationTypes, CalculationType.DUAL_WIELD);
+            calculationTypes.Add(CalculationType.DUAL_WIELD);
         if (GetOwner().GetAttackType() == Aion.GameServer.Model.Templates.Items.ItemAttackType.PHYSICAL)
             attackResult = AttackUtil.CalculatePhysAttackResult(GetOwner(), target, calculationTypes);
         else
@@ -554,15 +554,6 @@ public abstract class CreatureController : VisibleObjectController
         CancelTask(Aion.GameServer.Model.TaskId.DECAY);
         GetOwner().GetMoveController().AbortMove();
         GetOwner().GetAggroList().Clear();
-    }
-
-    // Java parity: org.apache.commons.lang3.ArrayUtils.add
-    private static CalculationType[] ArrAdd(CalculationType[] a, CalculationType v)
-    {
-        CalculationType[] r = new CalculationType[a.Length + 1];
-        Array.Copy(a, r, a.Length);
-        r[a.Length] = v;
-        return r;
     }
 
     private sealed class DelayedOnAttack

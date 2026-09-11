@@ -94,22 +94,22 @@ public class BrokerService
 
     public void ShowRequestedItems(Player player, int clientMask, byte sortType, int startPage, List<int> itemList)
     {
-        BrokerItem[] searchItems = null;
+        List<BrokerItem> searchItems;
         int playerBrokerMaskCache = GetPlayerMask(player);
         BrokerItemMask brokerMaskById = BrokerItemMaskExtensions.GetBrokerMaskById(clientMask);
-        bool isChidrenMask = brokerMaskById.IsChildrenMask(playerBrokerMaskCache);
+        bool isChildrenMask = brokerMaskById.IsChildrenMask(playerBrokerMaskCache);
         if (itemList != null && clientMask == 0)
         {
             ConcurrentDictionary<int, BrokerItem> brokerItems = GetRaceBrokerItems(player.GetRace());
             if (brokerItems == null)
                 return;
-            searchItems = brokerItems.Values.ToArray();
+            searchItems = brokerItems.Values.ToList();
         }
-        else if ((GetFilteredItems(player).Length == 0 || !isChidrenMask) && clientMask != 0)
+        else if (clientMask != 0 && (GetFilteredItems(player).Count == 0 || !isChildrenMask))
         {
             searchItems = GetItemsByMask(player, clientMask, false);
         }
-        else if (isChidrenMask)
+        else if (isChildrenMask)
         {
             searchItems = GetItemsByMask(player, clientMask, true);
         }
@@ -131,15 +131,14 @@ public class BrokerService
                     itemsFound.Add(item);
             }
             GetPlayerCache(player).SetSearchItemsList(itemList);
-            searchItems = itemsFound.ToArray();
-            GetPlayerCache(player).SetBrokerListCache(searchItems);
+            GetPlayerCache(player).SetBrokerListCache(itemsFound);
+            searchItems = itemsFound;
         }
         else
             GetPlayerCache(player).SetSearchItemsList(null);
 
-        SortBrokerItems(searchItems, sortType);
-        int totalSearchItemsCount = searchItems.Length;
-        searchItems = GetRequestedPage(searchItems, startPage);
+        int totalSearchItemsCount = searchItems.Count;
+        searchItems = GetRequestedPage(searchItems, startPage, sortType);
 
         foreach (BrokerItem bi in searchItems)
         {
@@ -154,8 +153,6 @@ public class BrokerService
 
     public long GetAveragePrice(Race race, int itemId)
     {
-        BrokerItem[] searchItems = null;
-
         ConcurrentDictionary<int, BrokerItem> brokerItems = GetRaceBrokerItems(race);
         if (brokerItems == null)
             return 0;
@@ -163,9 +160,7 @@ public class BrokerService
         long average = 0, sum = 0;
         int counter = 0;
 
-        searchItems = brokerItems.Values.ToArray();
-
-        foreach (BrokerItem item in searchItems)
+        foreach (BrokerItem item in brokerItems.Values)
         {
             if (itemId == item.GetItemId())
             {
@@ -177,7 +172,7 @@ public class BrokerService
         return average;
     }
 
-    private BrokerItem[] GetItemsByMask(Player player, int clientMask, bool cached)
+    private List<BrokerItem> GetItemsByMask(Player player, int clientMask, bool cached)
     {
         List<BrokerItem> searchItems = new List<BrokerItem>();
 
@@ -185,11 +180,7 @@ public class BrokerService
 
         if (cached)
         {
-            BrokerItem[] brokerItems = GetFilteredItems(player);
-            if (brokerItems == null)
-                return null;
-
-            foreach (BrokerItem item in brokerItems)
+            foreach (BrokerItem item in GetFilteredItems(player))
             {
                 if (item == null || item.GetItem() == null)
                     continue;
@@ -217,29 +208,20 @@ public class BrokerService
             }
         }
 
-        BrokerItem[] items = searchItems.ToArray();
-        GetPlayerCache(player).SetBrokerListCache(items);
+        GetPlayerCache(player).SetBrokerListCache(searchItems);
         GetPlayerCache(player).SetBrokerMaskCache(clientMask);
 
-        return items;
+        return searchItems;
     }
 
-    private void SortBrokerItems(BrokerItem[] brokerItems, byte sortType)
+    private List<BrokerItem> GetRequestedPage(List<BrokerItem> brokerItems, int startPage, byte sortType)
     {
-        Array.Sort(brokerItems, BrokerItem.GetComparatoryByType((sbyte)sortType));
-    }
-
-    private BrokerItem[] GetRequestedPage(BrokerItem[] brokerItems, int startPage)
-    {
-        List<BrokerItem> page = new List<BrokerItem>();
-        int startingElement = startPage * 9;
-
-        for (int i = startingElement, limit = 0; i < brokerItems.Length && limit < 45; i++, limit++)
-        {
-            page.Add(brokerItems[i]);
-        }
-
-        return page.ToArray();
+        // Java: stream().sorted(comparator).skip(startPage * 9L).limit(36) - a stable sort of a copy (the cache keeps its order);
+        // Stream.skip rejects a negative count with IllegalArgumentException.
+        long skip = startPage * 9L;
+        if (skip < 0)
+            throw new ArgumentException(skip.ToString());
+        return brokerItems.OrderBy(item => item, BrokerItem.GetComparatoryByType((sbyte)sortType)).Skip((int)Math.Min(skip, int.MaxValue)).Take(36).ToList();
     }
 
     private ConcurrentDictionary<int, BrokerItem> GetRaceBrokerItems(Race race)
@@ -270,7 +252,6 @@ public class BrokerService
 
     public void BuyBrokerItem(Player player, int itemUniqueId, long itemCount)
     {
-        bool isEmptyCache = GetFilteredItems(player).Length == 0;
         Race playerRace = player.GetRace();
 
         if (!PlayerRestrictions.CanTrade(player))
@@ -332,14 +313,7 @@ public class BrokerService
 
             PutToSettled(playerRace, buyingItem, true);
 
-            if (!isEmptyCache)
-            {
-                // ArrayUtils.removeElement → List.Remove (removes first occurrence)
-                List<BrokerItem> tmpCache = new List<BrokerItem>(GetFilteredItems(player));
-                tmpCache.Remove(buyingItem);
-                BrokerItem[] newCache = tmpCache.ToArray();
-                GetPlayerCache(player).SetBrokerListCache(newCache);
-            }
+            GetPlayerCache(player).RemoveFromCache(buyingItem);
 
             player.GetInventory().DecreaseKinah(price);
             // unpack
@@ -525,7 +499,7 @@ public class BrokerService
                 registeredItems.Add(item);
         }
 
-        PacketSendUtility.SendPacket(player, new SM_BROKER_SERVICE(registeredItems.ToArray()));
+        PacketSendUtility.SendPacket(player, new SM_BROKER_SERVICE(registeredItems));
     }
 
     public bool HasRegisteredItems(Player player)
@@ -763,7 +737,7 @@ public class BrokerService
         return GetPlayerCache(player).GetBrokerMaskCache();
     }
 
-    private BrokerItem[] GetFilteredItems(Player player)
+    private List<BrokerItem> GetFilteredItems(Player player)
     {
         return GetPlayerCache(player).GetBrokerListCache();
     }

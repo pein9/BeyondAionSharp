@@ -6,7 +6,7 @@ namespace Aion.GameServer.Model.Broker.Filter;
 /// <summary>Java parity: model/broker/filter/BrokerContainsExtraFilter (ATracer).</summary>
 public class BrokerContainsExtraFilter : BrokerFilter
 {
-    private int[] masks;
+    private readonly int[] masks;
 
     public BrokerContainsExtraFilter(params int[] masks)
     {
@@ -15,6 +15,7 @@ public class BrokerContainsExtraFilter : BrokerFilter
 
     public override bool Accept(ItemTemplate template)
     {
-        return masks.Contains(template.GetTemplateId() / 10000);
+        int mask = template.GetTemplateId() / 10000;
+        return masks.Any(i => i == mask);
     }
 }

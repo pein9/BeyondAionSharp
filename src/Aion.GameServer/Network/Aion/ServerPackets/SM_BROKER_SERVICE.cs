@@ -42,8 +42,8 @@ public class SM_BROKER_SERVICE : AionServerPacket
         }
     }
 
-    private BrokerPacketType type;
-    private BrokerItem[] brokerItems;
+    private readonly BrokerPacketType type;
+    private List<BrokerItem> brokerItems;
     private int itemsCount;
     private int startPage;
     private int message;
@@ -55,7 +55,7 @@ public class SM_BROKER_SERVICE : AionServerPacket
     public SM_BROKER_SERVICE(BrokerItem brokerItem, int message, int itemsCount)
     {
         this.type = BrokerPacketType.REGISTER_ITEM;
-        this.brokerItems = new BrokerItem[] { brokerItem };
+        this.brokerItems = new List<BrokerItem> { brokerItem };
         this.message = message;
         this.itemsCount = itemsCount;
     }
@@ -66,7 +66,7 @@ public class SM_BROKER_SERVICE : AionServerPacket
         this.message = message;
     }
 
-    public SM_BROKER_SERVICE(BrokerItem[] brokerItems)
+    public SM_BROKER_SERVICE(List<BrokerItem> brokerItems)
     {
         this.type = BrokerPacketType.REGISTERED_ITEMS;
         this.brokerItems = brokerItems;
@@ -77,11 +77,11 @@ public class SM_BROKER_SERVICE : AionServerPacket
         this.type = BrokerPacketType.SETTLED_ITEMS;
         this.totalItemCount = totalItemCount;
         this.pageIndex = pageIndex;
-        this.brokerItems = brokerItems.ToArray();
+        this.brokerItems = brokerItems;
         this.settledKinah = settledKinah;
     }
 
-    public SM_BROKER_SERVICE(BrokerItem[] brokerItems, int itemsCount, int startPage)
+    public SM_BROKER_SERVICE(List<BrokerItem> brokerItems, int itemsCount, int startPage)
     {
         this.type = BrokerPacketType.SEARCHED_ITEMS;
         this.brokerItems = brokerItems;
@@ -144,15 +144,10 @@ public class SM_BROKER_SERVICE : AionServerPacket
         WriteD(itemsCount);
         WriteC(0);
         WriteH(startPage);
-        WriteH(brokerItems.Length > 36 ? 36 : brokerItems.Length);
-        int counter = 0;
+        WriteH(brokerItems.Count);
         foreach (BrokerItem item in brokerItems)
         {
-            if (counter < 36)
-            {
-                WriteItemInfo(item);
-                counter++;
-            }
+            WriteItemInfo(item);
         }
     }
 
@@ -160,7 +155,7 @@ public class SM_BROKER_SERVICE : AionServerPacket
     {
         WriteC(type.GetId());
         WriteD(0x00);
-        WriteH(brokerItems.Length); // you can register a max of 15 items, so 0x0F
+        WriteH(brokerItems.Count); // you can register a max of 15 items, so 0x0F
         foreach (BrokerItem brokerItem in brokerItems)
         {
             WriteRegisteredItemInfo(brokerItem);
@@ -207,7 +202,7 @@ public class SM_BROKER_SERVICE : AionServerPacket
         WriteD(totalItemCount); // total item count to determine total page count
         WriteH(pageIndex); // zero-based index of the currently selected page
         WriteC(0); // 1 clears the list (no items must be sent)
-        WriteH(brokerItems.Length); // items sent in this packet (client will request items of unsent pages when needed)
+        WriteH(brokerItems.Count); // items sent in this packet (client will request items of unsent pages when needed)
         foreach (BrokerItem settledItem in brokerItems)
         {
             WriteD(settledItem.GetItemId());

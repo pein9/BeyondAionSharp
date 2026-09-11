@@ -19,7 +19,7 @@ namespace Aion.GameServer.Tests;
 /// and asserts the C# <see cref="StatFunctions"/> methods that take live <see cref="Creature"/>s return values
 /// identical to real Java. Each fixture case carries a fully-specified creature spec (level, race, pvpTarget,
 /// and an explicit StatEnum->value map). Both sides build a deterministic <see cref="HarnessCreature"/> whose
-/// <see cref="HarnessStats.GetStat(StatEnum, float, CalculationType[])"/> resolves each StatEnum to the fixed
+/// <see cref="HarnessStats.GetStat(StatEnum, float, ISet{CalculationType})"/> resolves each StatEnum to the fixed
 /// fixture value (defaulting to the base the formula passes in), so the entire combat math is bit-reproducible.
 /// Java is the single source of truth.
 ///
@@ -183,7 +183,7 @@ public sealed class GoldenCombatFormulaFixtureTests
         }
 
         // The single seam: resolve a fixed value per StatEnum (else use the base the formula passed in).
-        public override Stat2 GetStat(StatEnum statEnum, float baseValue, params CalculationType[] calculationTypes)
+        protected override Stat2 GetStat(StatEnum statEnum, float baseValue, ISet<CalculationType> calculationTypes)
         {
             float resolved = _statMap.TryGetValue(statEnum, out int v) ? v : baseValue;
             return new AdditionStat(statEnum, resolved, owner);

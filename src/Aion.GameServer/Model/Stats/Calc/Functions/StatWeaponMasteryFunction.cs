@@ -18,7 +18,7 @@ public class StatWeaponMasteryFunction : StatRateFunction
         this.itemGroup = itemGroup;
     }
 
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         Player player = (Player)stat.GetOwner();
         ItemGroup? mainWeapon = player.GetEquipment().GetMainHandWeaponType();
@@ -42,7 +42,7 @@ public class StatWeaponMasteryFunction : StatRateFunction
         }
     }
 
-    private void ApplyTo(Stat2 stat, params CalculationType[] calculationTypes)
+    private void ApplyTo(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         if (IsBonus())
         {

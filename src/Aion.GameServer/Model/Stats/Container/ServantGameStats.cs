@@ -16,7 +16,7 @@ public class ServantGameStats : SummonedObjectGameStats
     {
     }
 
-    public override Stat2 GetStat(StatEnum statEnum, float baseValue, params CalculationType[] calculationTypes)
+    protected override Stat2 GetStat(StatEnum statEnum, float baseValue, ISet<CalculationType> calculationTypes)
     {
         return base.GetStat(statEnum, statEnum == StatEnum.HEAL_BOOST ? fixedHealBoost : baseValue, calculationTypes);
     }

@@ -25,7 +25,7 @@ public interface IStatFunction : IComparable<IStatFunction>
     bool Validate(Stat2 stat);
 
     // Java parity: apply(Stat2, CalculationType...)
-    void Apply(Stat2 stat, params CalculationType[] calculationTypes);
+    void Apply(Stat2 stat, ISet<CalculationType> calculationTypes);
 
     // Java parity: getOwner()
     IStatOwner? GetOwner();

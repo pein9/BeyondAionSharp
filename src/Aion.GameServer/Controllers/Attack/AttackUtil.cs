@@ -28,7 +28,7 @@ public class AttackUtil
     /// <summary>
     /// Calculates physical attack status + main/off-hand damage, applies stat modifiers, amplifies by hit count.
     /// </summary>
-    public static List<AttackResult> CalculatePhysAttackResult(Creature attacker, Creature attacked, params CalculationType[] calculationTypes)
+    public static List<AttackResult> CalculatePhysAttackResult(Creature attacker, Creature attacked, ISet<CalculationType> calculationTypes)
     {
         AttackStatus attackStatus = CalculatePhysicalStatus(attacker, attacked, true, 0, 100, false, false);
         List<AttackResult> attackResultList = StatFunctions.CalculateAttackDamage(attacker, SkillElement.NONE, attackStatus, calculationTypes);
@@ -268,9 +268,9 @@ public class AttackUtil
         HitType ht = HitType.PHHIT;
         List<AttackResult> weaponAttack = new List<AttackResult>();
         float damage = 0;
-        CalculationType[] calculationTypes = new CalculationType[] { CalculationType.SKILL };
+        ISet<CalculationType> calculationTypes = new HashSet<CalculationType> { CalculationType.SKILL };
         if (effector is Player p && p.GetEquipment().IsDualWeaponEquipped())
-            calculationTypes = ArrayAdd(calculationTypes, CalculationType.DUAL_WIELD);
+            calculationTypes.Add(CalculationType.DUAL_WIELD);
         if (!useTemplateDmg)
         {
             if (effector is SummonedObject && !(effector is Servant))
@@ -288,26 +288,21 @@ public class AttackUtil
                         baseAttack = effector.GetGameStats().GetMainHandMAttack(calculationTypes).GetBase();
                         if (baseAttack == 0 && effector.GetAttackType() == ItemAttackType.PHYSICAL)
                         { // dirty fix for staffs and maces -.-
-                            calculationTypes = ArrayAdd(calculationTypes, CalculationType.APPLY_POWER_SHARD_DAMAGE);
+                            calculationTypes.Add(CalculationType.APPLY_POWER_SHARD_DAMAGE);
                             if (element == SkillElement.NONE)
                             { // fix for magical skills which actually inflict physical damage
-                                calculationTypes = ArrayAdd(calculationTypes, CalculationType.REMOVE_POWER_SHARD);
                                 weaponAttack = StatFunctions.CalculateAttackDamage(effect.GetEffector(), SkillElement.NONE, status, calculationTypes);
-                                calculationTypes = ArrayRemoveElement(calculationTypes, CalculationType.REMOVE_POWER_SHARD); // remove to prevent power shards being removed again in baseAttack calculation
                             }
-                            else
-                            {
-                                calculationTypes = ArrayAdd(calculationTypes, CalculationType.REMOVE_POWER_SHARD);
-                            }
+                            calculationTypes.Add(CalculationType.REMOVE_POWER_SHARD);
                             baseAttack = effector.GetGameStats().GetMainHandPAttack(calculationTypes).GetBase();
                         }
                         break;
                     default:
                         if (element == SkillElement.NONE)
                         {
-                            calculationTypes = ArrayAdd(calculationTypes, CalculationType.APPLY_POWER_SHARD_DAMAGE);
+                            calculationTypes.Add(CalculationType.APPLY_POWER_SHARD_DAMAGE);
                             baseAttack = effector.GetGameStats().GetMainHandPAttack(calculationTypes).GetBase();
-                            calculationTypes = ArrayAdd(calculationTypes, CalculationType.REMOVE_POWER_SHARD);
+                            calculationTypes.Add(CalculationType.REMOVE_POWER_SHARD);
                             weaponAttack = StatFunctions.CalculateAttackDamage(effect.GetEffector(), SkillElement.NONE, status, calculationTypes);
                         }
                         else
@@ -518,7 +513,7 @@ public class AttackUtil
     /// <summary>
     /// Calculates magical attack status + damage, applies stat modifiers, amplifies by hit count.
     /// </summary>
-    public static List<AttackResult> CalculateMagAttackResult(Creature attacker, Creature attacked, SkillElement element, params CalculationType[] calculationTypes)
+    public static List<AttackResult> CalculateMagAttackResult(Creature attacker, Creature attacked, SkillElement element, ISet<CalculationType> calculationTypes)
     {
         AttackStatus attackStatus = CalculateMagicalStatus(attacker, attacked, 100, false, true);
         List<AttackResult> attackResultList = StatFunctions.CalculateAttackDamage(attacker, element, attackStatus, calculationTypes);
@@ -676,26 +671,5 @@ public class AttackUtil
             }
         }
         return null;
-    }
-
-    // org.apache.commons.lang3.ArrayUtils.add -> append element to a new array
-    private static T[] ArrayAdd<T>(T[] array, T element)
-    {
-        T[] result = new T[array.Length + 1];
-        Array.Copy(array, result, array.Length);
-        result[array.Length] = element;
-        return result;
-    }
-
-    // org.apache.commons.lang3.ArrayUtils.removeElement -> remove first occurrence into a new array (clone if absent)
-    private static T[] ArrayRemoveElement<T>(T[] array, T element)
-    {
-        int idx = Array.IndexOf(array, element);
-        if (idx < 0)
-            return (T[])array.Clone();
-        T[] result = new T[array.Length - 1];
-        Array.Copy(array, 0, result, 0, idx);
-        Array.Copy(array, idx + 1, result, idx, array.Length - idx - 1);
-        return result;
     }
 }

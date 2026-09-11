@@ -103,7 +103,7 @@ public static class ChatUtil
 
 		System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(input, "^(" + validationPattern + ")(?:[^0-9][^\\[]*\\]?$|$)");
 		if (m.Success)
-			return JavaNumberParser.TryParseInt(m.Groups[1].Value, out int result) ? result : 0;
+			return JavaNumberParser.ParseInt(m.Groups[1].Value);
 
 		return 0;
 	}
@@ -129,7 +129,7 @@ public static class ChatUtil
 	{
 		string name = template.GetL10n();
 		if (name == null)
-			name = Capitalize(template.GetName());
+			name = template.GetName();
 		if (withIdInName)
 			name = name + " | " + template.GetTemplateId();
 		return Path(name, template.GetTemplateId());
@@ -185,19 +185,22 @@ public static class ChatUtil
 		int endIndex = posLink.IndexOf("]");
 		if (startIndex < 0 || startIndex >= endIndex)
 			return null;
-		string[] posStr = System.Text.RegularExpressions.Regex.Split(posLink.Substring(startIndex, endIndex - startIndex).Trim(), "\\s+")
+		// Upstream 538b33d07 parses the tokens strictly and strips the language flag only when the first token is exactly "0" or "1", but it
+		// still starts the substring at the ';' (so the first token is ";0" and every link fails with NumberFormatException, verified against
+		// Java 25). The old lenient toInt(";0") == 0 is what used to strip the flag. This port starts after the ';' to keep that intent working.
+		string[] posStr = System.Text.RegularExpressions.Regex.Split(posLink.Substring(startIndex + 1, endIndex - startIndex - 1).Trim(), "\\s+")
 			.Where(s => s.Length > 0).ToArray();
-		if (ToInt(posStr[0]) <= 1) // if present, strip ely/asmo language restriction flag (0 = ely only, 1 = asmo only)
+		if (posStr.Length > 0 && (posStr[0] == "0" || posStr[0] == "1")) // if present, strip ely/asmo language restriction flag (0 = ely only, 1 = asmo only)
 			posStr = posStr.Skip(1).ToArray();
 
 		if (posStr.Length < 3)
 			return null;
 
-		int mapAndInstanceId = ToInt(posStr[0]);
-		float x = ToFloat(posStr[1]);
-		float y = ToFloat(posStr[2]);
-		float z = posStr.Length > 3 ? ToFloat(posStr[3]) : 0; // client always creates position links with z = 0
-		int layer = posStr.Length > 4 ? ToInt(posStr[4]) : 0;
+		int mapAndInstanceId = JavaNumberParser.ParseInt(posStr[0]);
+		float x = JavaNumberParser.ParseFloat(posStr[1]);
+		float y = JavaNumberParser.ParseFloat(posStr[2]);
+		float z = posStr.Length > 3 ? JavaNumberParser.ParseFloat(posStr[3]) : 0; // client always creates position links with z = 0
+		int layer = posStr.Length > 4 ? JavaNumberParser.ParseInt(posStr[4]) : 0;
 		int? zSearchOffset = null;
 		if (layer > 0 && z == 0 && mapAndInstanceId == 400010000) // abyss
 		{
@@ -217,18 +220,6 @@ public static class ChatUtil
 		}
 
 		return ParsedCoordsToWorldPosition(mapAndInstanceId, x, y, z == 0 ? (float?)null : z, zSearchOffset);
-	}
-
-	// Java parity: org.apache.commons.lang3.math.NumberUtils.toInt(String).
-	private static int ToInt(string s)
-	{
-		return JavaNumberParser.TryParseInt(s, out int result) ? result : 0;
-	}
-
-	// Java parity: org.apache.commons.lang3.math.NumberUtils.toFloat(String).
-	private static float ToFloat(string s)
-	{
-		return JavaNumberParser.TryParseFloat(s, out float result) ? result : 0f;
 	}
 
 	// Java parity: utils/ChatUtil.parsedCoordsToWorldPosition(int, float, float, Float, Integer).
@@ -256,14 +247,6 @@ public static class ChatUtil
 			z = geoZ;
 
 		return z == null ? null : Aion.GameServer.World.World.GetInstance().CreatePosition(mapId, x, y, z.Value, (byte)0, instanceId);
-	}
-
-	// Java parity: org.apache.commons.lang3.StringUtils.capitalize — capitalizes the first character.
-	public static string Capitalize(string str)
-	{
-		if (string.IsNullOrEmpty(str))
-			return str;
-		return char.ToUpper(str[0]) + str.Substring(1);
 	}
 
 	private const char AsmoNamePrefix = '';

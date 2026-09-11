@@ -52,7 +52,7 @@ public class StaticDoorTemplate : VisibleObjectTemplate
 
     public override string GetName()
     {
-        return "door";
+        return "Door";
     }
 
     public override int GetL10nId()

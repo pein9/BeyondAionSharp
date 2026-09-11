@@ -267,7 +267,7 @@ public class StatFunctions
     }
 
     public static List<AttackResult> CalculateAttackDamage(Creature attacker,
-        SkillElement element, AttackStatus status, params CalculationType[] calculationTypes)
+        SkillElement element, AttackStatus status, ISet<CalculationType> calculationTypes)
     {
         List<AttackResult> attackResultList = new List<AttackResult>();
         if (AttackStatusExtensions.GetBaseStatus(status) == AttackStatus.DODGE || AttackStatusExtensions.GetBaseStatus(status) == AttackStatus.RESIST)
@@ -306,7 +306,7 @@ public class StatFunctions
                 {
                     float mainHandDamage = mainHandAttack.GetExactCurrent();
                     float offHandDamage = offHandAttack.GetExactCurrent();
-                    if (Array.IndexOf(calculationTypes, CalculationType.SKILL) >= 0)
+                    if (calculationTypes.Contains(CalculationType.SKILL))
                     { // 80% of damage is added on retail
                         if (offWeaponStats != null)
                         {

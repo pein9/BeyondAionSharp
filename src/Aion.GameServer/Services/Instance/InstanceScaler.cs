@@ -169,7 +169,7 @@ public sealed class InstanceScaler : IStatOwner
             this.rate = rate;
         }
 
-        public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+        public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
         {
             stat.SetBaseRate(stat.GetBaseRate() * rate);
             stat.SetBonusRate(stat.GetBonusRate() * rate);

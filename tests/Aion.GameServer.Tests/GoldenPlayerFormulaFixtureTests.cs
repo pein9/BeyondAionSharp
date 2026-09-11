@@ -218,7 +218,7 @@ public sealed class GoldenPlayerFormulaFixtureTests
             _statMap = statMap;
         }
 
-        public override Stat2 GetStat(StatEnum statEnum, float baseValue, params CalculationType[] calculationTypes)
+        protected override Stat2 GetStat(StatEnum statEnum, float baseValue, ISet<CalculationType> calculationTypes)
         {
             float resolved = _statMap.TryGetValue(statEnum, out int v) ? v : baseValue;
             return new AdditionStat(statEnum, resolved, owner);

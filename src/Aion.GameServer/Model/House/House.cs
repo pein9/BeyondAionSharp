@@ -24,7 +24,7 @@ namespace Aion.GameServer.Model.House;
 /// Java parity: model/house/House (Rolandas). extends VisibleObject implements Persistable→IPersistable.
 /// getName()→override Name property; java.sql.Timestamp→DateTimeOffset?; EnumMap→Dictionary; synchronized→lock;
 /// signed byte→sbyte; @SuppressWarnings(fallthrough) setPersistentState→explicit `goto default`; apache
-/// DateUtils.round(DAY_OF_MONTH)→RoundToDay helper (>=12:00 rounds up); TimeUnit.DAYS.toMillis(14)→14L*86400000;
+/// TimeUnit.DAYS.toMillis(14)→14L*86400000;
 /// currentTimeMillis/getTime→UtcNow/ToUnixTimeMilliseconds. Most housing deps (HouseController/HouseAddress/Building/
 /// HousingLand/Sale/HouseType/PlayerScripts/DAOs/GeoService/AuctionEndTask) red-tolerated.
 /// </summary>
@@ -202,20 +202,8 @@ public class House : VisibleObject, IPersistable
 
     public void SetNextPay(DateTimeOffset? nextPay)
     {
-        DateTimeOffset? result = null;
-        if (nextPay != null) // round to midnight
-        {
-            result = RoundToDay(nextPay.Value);
-        }
-        this.nextPay = result;
+        this.nextPay = nextPay;
         SetPersistentState(IPersistable.PersistentState.UPDATE_REQUIRED);
-    }
-
-    /// <summary>Apache DateUtils.round(date, Calendar.DAY_OF_MONTH) parity: rounds to nearest midnight (&gt;=12:00 rounds up).</summary>
-    private static DateTimeOffset RoundToDay(DateTimeOffset date)
-    {
-        DateTimeOffset dayStart = new(date.Year, date.Month, date.Day, 0, 0, 0, date.Offset);
-        return date.TimeOfDay.TotalHours >= 12 ? dayStart.AddDays(1) : dayStart;
     }
 
     public HouseBids GetBids()

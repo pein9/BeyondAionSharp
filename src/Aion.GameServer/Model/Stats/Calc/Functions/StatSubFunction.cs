@@ -6,7 +6,7 @@ namespace Aion.GameServer.Model.Stats.Calc.Functions;
 public class StatSubFunction : StatFunction
 {
     // Java parity: apply(Stat2, CalculationType...)
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         if (IsBonus())
             stat.AddToBonus(-GetValue());

@@ -55,7 +55,7 @@ public class StatFunction : IStatFunction
     internal bool Validate(Stat2 stat, IStatFunction statFunction) => _conditions == null || _conditions.Validate(stat, statFunction);
 
     // Java parity: apply(Stat2, CalculationType...)
-    public virtual void Apply(Stat2 stat, params CalculationType[] calculationTypes) { }
+    public virtual void Apply(Stat2 stat, ISet<CalculationType> calculationTypes) { }
 
     // Java parity: toString()
     public override string ToString() => "stat=" + Stat + ", bonus=" + _bonus + ", value=" + Value + ", priority=" + GetPriority();

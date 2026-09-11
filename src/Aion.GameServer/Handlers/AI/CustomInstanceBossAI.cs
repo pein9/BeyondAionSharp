@@ -288,7 +288,7 @@ public class CustomInstanceBossAI : GeneralNpcAI
         functions.Add(new StatSetFunction(StatEnum.WILL, pgs.GetWill().GetCurrent()));
         functions.Add(new StatSetFunction(StatEnum.ATTACK_SPEED, pgs.GetAttackSpeed().GetCurrent()));
         // Work-around for not considered dual wield stats for NPCs
-        int pAtk = pgs.GetMainHandPAttack().GetCurrent();
+        int pAtk = pgs.GetMainHandPAttack(CalculationType.DISPLAY).GetCurrent();
         if (player.GetEquipment().GetOffHandWeapon() != null)
             pAtk += pgs.GetOffHandPAttack(CalculationType.DISPLAY).GetCurrent() / 2;
         functions.Add(new StatSetFunction(StatEnum.PHYSICAL_ATTACK, pAtk));

@@ -40,7 +40,7 @@ public class StatFunctionProxy : IStatFunction
     public bool Validate(Stat2 stat) => ((StatFunction)_proxiedFunction).Validate(stat, this);
 
     // Java parity: apply(Stat2, CalculationType...)
-    public void Apply(Stat2 stat, params CalculationType[] calculationTypes) => _proxiedFunction.Apply(stat, calculationTypes);
+    public void Apply(Stat2 stat, ISet<CalculationType> calculationTypes) => _proxiedFunction.Apply(stat, calculationTypes);
 
     // Java parity: hasConditions()
     public bool HasConditions() => _proxiedFunction.HasConditions();

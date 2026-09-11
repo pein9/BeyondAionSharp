@@ -35,28 +35,6 @@ public class PlayerGameStats : CreatureGameStats<Player>
     // Java parity helper: Math.round(float) = floor(x+0.5).
     private static int JRound(float a) => (int)Math.Floor(a + 0.5f);
 
-    // Java parity: org.apache.commons.lang3.ArrayUtils.add / contains / removeElement.
-    private static CalculationType[] ArrAdd(CalculationType[] a, CalculationType v)
-    {
-        CalculationType[] r = new CalculationType[a.Length + 1];
-        Array.Copy(a, r, a.Length);
-        r[a.Length] = v;
-        return r;
-    }
-
-    private static bool ArrContains(CalculationType[] a, CalculationType v) => Array.IndexOf(a, v) >= 0;
-
-    private static CalculationType[] ArrRemove(CalculationType[] a, CalculationType v)
-    {
-        int idx = Array.IndexOf(a, v);
-        if (idx < 0)
-            return a;
-        CalculationType[] r = new CalculationType[a.Length - 1];
-        Array.Copy(a, 0, r, 0, idx);
-        Array.Copy(a, idx + 1, r, idx, a.Length - idx - 1);
-        return r;
-    }
-
     protected override void OnStatsChange(Effect effect)
     {
         base.OnStatsChange(effect);
@@ -182,9 +160,8 @@ public class PlayerGameStats : CreatureGameStats<Player>
         return GetStat(StatEnum.PARRY, baseV);
     }
 
-    public override Stat2 GetMainHandPAttack(params CalculationType[] calculationTypes)
+    public override Stat2 GetMainHandPAttack(ISet<CalculationType> calculationTypes)
     {
-        calculationTypes = ArrAdd(calculationTypes, CalculationType.MAIN_HAND);
         float baseV = GetStatsTemplate().GetAttack();
         Equipment equipment = owner.GetEquipment();
         Item mainHandWeapon = equipment.GetMainHandWeapon();
@@ -192,7 +169,7 @@ public class PlayerGameStats : CreatureGameStats<Player>
         {
             if (mainHandWeapon.GetItemTemplate().GetAttackType().IsMagical())
                 return new AdditionStat(StatEnum.PHYSICAL_ATTACK, 0, owner);
-            if (ArrContains(calculationTypes, CalculationType.DISPLAY))
+            if (calculationTypes.Contains(CalculationType.DISPLAY))
             {
                 baseV = mainHandWeapon.GetItemTemplate().GetWeaponStats().GetMeanDamage();
             }
@@ -201,25 +178,29 @@ public class PlayerGameStats : CreatureGameStats<Player>
                 baseV = Rnd.Get(mainHandWeapon.GetItemTemplate().GetWeaponStats().GetMinDamage(),
                     mainHandWeapon.GetItemTemplate().GetWeaponStats().GetMaxDamage());
             }
-            if (ArrContains(calculationTypes, CalculationType.APPLY_POWER_SHARD_DAMAGE))
+            if (calculationTypes.Contains(CalculationType.APPLY_POWER_SHARD_DAMAGE))
             {
-                baseV += GetPowerShardDamage(true, ArrContains(calculationTypes, CalculationType.REMOVE_POWER_SHARD));
+                baseV += GetPowerShardDamage(true, calculationTypes.Contains(CalculationType.REMOVE_POWER_SHARD));
             }
         }
-        Stat2 stat = GetStat(StatEnum.PHYSICAL_ATTACK, baseV, calculationTypes);
-        calculationTypes = ArrRemove(calculationTypes, CalculationType.MAIN_HAND);
+        Stat2 stat = GetStat(StatEnum.PHYSICAL_ATTACK, baseV, CopyWith(calculationTypes, CalculationType.MAIN_HAND));
         return ApplyStatFunctions(StatEnum.MAIN_HAND_POWER, stat, calculationTypes);
     }
 
+    // Java parity: public final getOffHandPAttack(CalculationType...)
     public Stat2 GetOffHandPAttack(params CalculationType[] calculationTypes)
+    {
+        return GetOffHandPAttack(ToSet(calculationTypes));
+    }
+
+    public Stat2 GetOffHandPAttack(ISet<CalculationType> calculationTypes)
     {
         Equipment equipment = owner.GetEquipment();
         Item offHandWeapon = equipment.GetOffHandWeapon();
         if (offHandWeapon != null && !offHandWeapon.Equals(equipment.GetMainHandWeapon()) && offHandWeapon.GetItemTemplate().IsWeapon())
         {
-            calculationTypes = ArrAdd(calculationTypes, CalculationType.OFF_HAND);
             float baseV;
-            if (ArrContains(calculationTypes, CalculationType.DISPLAY))
+            if (calculationTypes.Contains(CalculationType.DISPLAY))
             {
                 baseV = offHandWeapon.GetItemTemplate().GetWeaponStats().GetMeanDamage();
             }
@@ -228,23 +209,21 @@ public class PlayerGameStats : CreatureGameStats<Player>
                 baseV = Rnd.Get(offHandWeapon.GetItemTemplate().GetWeaponStats().GetMinDamage(),
                     offHandWeapon.GetItemTemplate().GetWeaponStats().GetMaxDamage());
             }
-            if (ArrContains(calculationTypes, CalculationType.APPLY_POWER_SHARD_DAMAGE))
-                baseV += GetPowerShardDamage(false, ArrContains(calculationTypes, CalculationType.REMOVE_POWER_SHARD));
-            Stat2 stat = GetStat(StatEnum.PHYSICAL_ATTACK, baseV, calculationTypes);
-            if (ArrContains(calculationTypes, CalculationType.DISPLAY))
+            if (calculationTypes.Contains(CalculationType.APPLY_POWER_SHARD_DAMAGE))
+                baseV += GetPowerShardDamage(false, calculationTypes.Contains(CalculationType.REMOVE_POWER_SHARD));
+            Stat2 stat = GetStat(StatEnum.PHYSICAL_ATTACK, baseV, CopyWith(calculationTypes, CalculationType.OFF_HAND));
+            if (calculationTypes.Contains(CalculationType.DISPLAY))
             {
                 stat.SetBaseRate(stat.GetBaseRate() * GetOffHandDamageRatio());
                 stat.SetBonusRate(stat.GetBonusRate() * GetOffHandDamageRatio());
             }
-            calculationTypes = ArrRemove(calculationTypes, CalculationType.OFF_HAND);
             return ApplyStatFunctions(StatEnum.OFF_HAND_POWER, stat, calculationTypes);
         }
         return new AdditionStat(StatEnum.PHYSICAL_ATTACK, 0, owner);
     }
 
-    public override Stat2 GetMainHandMAttack(params CalculationType[] calculationTypes)
+    public override Stat2 GetMainHandMAttack(ISet<CalculationType> calculationTypes)
     {
-        calculationTypes = ArrAdd(calculationTypes, CalculationType.MAIN_HAND);
         float baseV = GetStatsTemplate().GetMagicalAttack();
         Equipment equipment = owner.GetEquipment();
         Item mainHandWeapon = equipment.GetMainHandWeapon();
@@ -253,31 +232,34 @@ public class PlayerGameStats : CreatureGameStats<Player>
             if (!mainHandWeapon.GetItemTemplate().GetAttackType().IsMagical())
                 return new AdditionStat(StatEnum.MAGICAL_ATTACK, 0, owner);
             baseV = mainHandWeapon.GetItemTemplate().GetWeaponStats().GetMeanDamage();
-            if (ArrContains(calculationTypes, CalculationType.APPLY_POWER_SHARD_DAMAGE))
-                baseV += GetPowerShardDamage(true, ArrContains(calculationTypes, CalculationType.REMOVE_POWER_SHARD));
+            if (calculationTypes.Contains(CalculationType.APPLY_POWER_SHARD_DAMAGE))
+                baseV += GetPowerShardDamage(true, calculationTypes.Contains(CalculationType.REMOVE_POWER_SHARD));
         }
-        Stat2 stat = GetStat(StatEnum.MAGICAL_ATTACK, baseV, calculationTypes);
-        calculationTypes = ArrRemove(calculationTypes, CalculationType.MAIN_HAND);
+        Stat2 stat = GetStat(StatEnum.MAGICAL_ATTACK, baseV, CopyWith(calculationTypes, CalculationType.MAIN_HAND));
         return ApplyStatFunctions(StatEnum.MAIN_HAND_POWER, stat, calculationTypes);
     }
 
+    // Java parity: public final getOffHandMAttack(CalculationType...)
     public Stat2 GetOffHandMAttack(params CalculationType[] calculationTypes)
+    {
+        return GetOffHandMAttack(ToSet(calculationTypes));
+    }
+
+    public Stat2 GetOffHandMAttack(ISet<CalculationType> calculationTypes)
     {
         Equipment equipment = owner.GetEquipment();
         Item offHandWeapon = equipment.GetOffHandWeapon();
         if (offHandWeapon != null && !offHandWeapon.Equals(equipment.GetMainHandWeapon()) && offHandWeapon.GetItemTemplate().IsWeapon())
         {
-            calculationTypes = ArrAdd(calculationTypes, CalculationType.OFF_HAND);
             float baseV = offHandWeapon.GetItemTemplate().GetWeaponStats().GetMeanDamage();
-            if (ArrContains(calculationTypes, CalculationType.APPLY_POWER_SHARD_DAMAGE))
-                baseV += GetPowerShardDamage(false, ArrContains(calculationTypes, CalculationType.REMOVE_POWER_SHARD));
-            Stat2 stat = GetStat(StatEnum.MAGICAL_ATTACK, baseV, calculationTypes);
-            if (ArrContains(calculationTypes, CalculationType.DISPLAY))
+            if (calculationTypes.Contains(CalculationType.APPLY_POWER_SHARD_DAMAGE))
+                baseV += GetPowerShardDamage(false, calculationTypes.Contains(CalculationType.REMOVE_POWER_SHARD));
+            Stat2 stat = GetStat(StatEnum.MAGICAL_ATTACK, baseV, CopyWith(calculationTypes, CalculationType.OFF_HAND));
+            if (calculationTypes.Contains(CalculationType.DISPLAY))
             {
                 stat.SetBaseRate(stat.GetBaseRate() * GetOffHandDamageRatio());
                 stat.SetBonusRate(stat.GetBonusRate() * GetOffHandDamageRatio());
             }
-            calculationTypes = ArrRemove(calculationTypes, CalculationType.OFF_HAND);
             return ApplyStatFunctions(StatEnum.OFF_HAND_POWER, stat, calculationTypes);
         }
         return new AdditionStat(StatEnum.MAGICAL_ATTACK, 0, owner);

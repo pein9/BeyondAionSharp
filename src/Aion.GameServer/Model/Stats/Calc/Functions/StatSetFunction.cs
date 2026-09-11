@@ -11,7 +11,7 @@ public class StatSetFunction : StatFunction
     public StatSetFunction(StatEnum name, int value) : base(name, value, false) { }
 
     // Java parity: apply(Stat2, CalculationType...)
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         if (IsBonus())
             stat.SetBonus(GetValue());

@@ -56,7 +56,7 @@ internal class PhysicalAttackFunction : StatFunction
         Stat = StatEnum.PHYSICAL_ATTACK;
     }
 
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         if (stat.GetOwner() is Player player)
         {
@@ -92,7 +92,7 @@ internal class MaxHpFunction : StatFunction
         Stat = StatEnum.MAXHP;
     }
 
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         if (stat.GetOwner() is Player player)
             stat.AddToBase(player.GetGameStats().GetHealthDependentAdditionalHp());
@@ -111,7 +111,7 @@ internal class MaxMpFunction : StatFunction
         Stat = StatEnum.MAXMP;
     }
 
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         if (stat.GetOwner() is Player player)
             stat.AddToBase(player.GetGameStats().GetWillDependentAdditionalMp());
@@ -130,7 +130,7 @@ internal class MagicalAttackFunction : StatFunction
         Stat = StatEnum.MAGICAL_ATTACK;
     }
 
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         float knowledge = stat.GetOwner().GetGameStats().GetKnowledge().GetCurrent();
         stat.SetBaseRate(knowledge * 0.01f);
@@ -149,7 +149,7 @@ internal class PDefFunction : StatFunction
         Stat = StatEnum.PHYSICAL_DEFENSE;
     }
 
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         if (stat.GetOwner().IsInFlyingState())
             stat.SetFinalRate(0.6f);
@@ -163,7 +163,7 @@ internal class BlockFunction : StatFunction
         Stat = StatEnum.BLOCK;
     }
 
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         if (stat.GetOwner() is Player player)
             stat.AddToBase(player.GetGameStats().GetAgilityDependentAdditionalBaseBlock());
@@ -177,7 +177,7 @@ internal class ParryFunction : StatFunction
         Stat = StatEnum.PARRY;
     }
 
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         if (stat.GetOwner() is Player player)
             stat.AddToBase(player.GetGameStats().GetAgilityDependentAdditionalBaseParry());
@@ -191,7 +191,7 @@ internal class EvasionFunction : StatFunction
         Stat = StatEnum.EVASION;
     }
 
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         if (stat.GetOwner() is Player player)
             stat.AddToBase(player.GetGameStats().GetAgilityDependentAdditionalBaseEvasion());
@@ -205,7 +205,7 @@ internal class PhysicalCriticalFunction : StatFunction
         Stat = StatEnum.PHYSICAL_CRITICAL;
     }
 
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         if (stat.GetOwner() is Player player)
             stat.AddToBase(player.GetGameStats().GetAccuracyDependentAdditionalBasePhysicalCritical());
@@ -219,7 +219,7 @@ internal class PhysicalAccuracyFunction : StatFunction
         Stat = StatEnum.PHYSICAL_ACCURACY;
     }
 
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         if (stat.GetOwner() is Player player)
             stat.AddToBase(player.GetGameStats().GetAccuracyDependentAdditionalBasePhysicalAccuracy());
@@ -249,7 +249,7 @@ internal class PvEAttackRatioFunction : StatFunction
         Stat = StatEnum.PVE_ATTACK_RATIO;
     }
 
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         WorldMapTemplate template = DataManager.WORLD_MAPS_DATA.GetTemplate(stat.GetOwner().GetWorldId());
         stat.AddToBonus(template.GetPvEAttackRatio());
@@ -263,7 +263,7 @@ internal class PvEDefendRatioFunction : StatFunction
         Stat = StatEnum.PVE_DEFEND_RATIO;
     }
 
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         WorldMapTemplate template = DataManager.WORLD_MAPS_DATA.GetTemplate(stat.GetOwner().GetWorldId());
         stat.AddToBonus(template.GetPvEDefendRatio());
@@ -280,7 +280,7 @@ internal class PvPAttackRatioFunction : DuplicateStatFunction
 
 internal class DuplicateStatFunction : StatFunction
 {
-    public override void Apply(Stat2 stat, params CalculationType[] calculationTypes)
+    public override void Apply(Stat2 stat, ISet<CalculationType> calculationTypes)
     {
         Item mainWeapon = ((Player)stat.GetOwner()).GetEquipment().GetMainHandWeapon();
         Item offWeapon = ((Player)stat.GetOwner()).GetEquipment().GetOffHandWeapon();
