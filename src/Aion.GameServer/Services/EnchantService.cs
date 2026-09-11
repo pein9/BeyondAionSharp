@@ -255,7 +255,10 @@ public class EnchantService
         int oldBuffId = item.GetBuffSkill();
         int newBuffId = 0;
         if (enchantLevel >= 20)
-            newBuffId = GetEquipBuff(item);
+        {
+            // The breakthrough skill is granted once at +20 and retained through subsequent enchantments.
+            newBuffId = oldBuffId != 0 ? oldBuffId : GetEquipBuff(item);
+        }
         if (newBuffId != oldBuffId)
         {
             item.SetBuffSkill(newBuffId);
@@ -266,10 +269,18 @@ public class EnchantService
                 if (newBuffId != 0)
                     SkillLearnService.LearnTemporarySkill(player, newBuffId, 1);
             }
+            if (newBuffId != 0)
+            {
+                string skillName = DataManager.SKILL_DATA.GetSkillTemplate(newBuffId).GetL10n();
+                PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_EXCEED_SKILL_ENCHANT(item.GetL10n(), enchantLevel, skillName));
+                if (!item.IsEquipped())
+                    PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_SKILL_ABLE_EQUIPED(item.GetL10n(), skillName));
+            }
+            else
+            {
+                PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_EXCEED_SKILL_DELETE(item.GetL10n()));
+            }
         }
-        if (newBuffId != 0)
-            PacketSendUtility.SendPacket(player,
-                Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_EXCEED_SKILL_ENCHANT(item.GetL10n(), enchantLevel, DataManager.SKILL_DATA.GetSkillTemplate(newBuffId).GetL10n()));
         if (item.GetEnchantEffect() != null)
         {
             item.GetEnchantEffect().EndEffect(player);

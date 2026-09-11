@@ -24105,6 +24105,18 @@ public sealed class SM_SYSTEM_MESSAGE : AionServerPacket
         return new SM_SYSTEM_MESSAGE(1402662, value0, num1, value2);
     }
 
+    /* %0 has failed enchantment and the added skill has been lost. */
+    public static SM_SYSTEM_MESSAGE STR_MSG_EXCEED_SKILL_DELETE(string value0)
+    {
+        return new SM_SYSTEM_MESSAGE(1402663, value0);
+    }
+
+    /* You must equip %0 to use %1. */
+    public static SM_SYSTEM_MESSAGE STR_MSG_SKILL_ABLE_EQUIPED(string value0, string value1)
+    {
+        return new SM_SYSTEM_MESSAGE(1402664, value0, value1);
+    }
+
     /* The price of the entered item exceeds the maximum amount of Kinah. */
     public static SM_SYSTEM_MESSAGE STR_MSG_LIMITED_VENDOR_CANT_OVER_GOLD()
     {
