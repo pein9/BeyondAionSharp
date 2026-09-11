@@ -27,8 +27,8 @@ public static class RatesConfig
     public static float[] ENCHANTMENT_STONE_BASE_CHANCES = { 65.0f, 65.0f };
 
     /// <summary>Key: gameserver.rates.enchantment_stone.amplified_chances</summary>
-    [Property(key: "gameserver.rates.enchantment_stone.amplified_chances", defaultValue: "50.0, 50.0")]
-    public static float[] ENCHANTMENT_STONE_AMPLIFIED_CHANCES = { 50.0f, 50.0f };
+    [Property(key: "gameserver.rates.enchantment_stone.amplified_chances", defaultValue: "61.0, 61.0")]
+    public static float[] ENCHANTMENT_STONE_AMPLIFIED_CHANCES = { 61.0f, 61.0f };
 
     /// <summary>Key: gameserver.rates.tampering_chances</summary>
     [Property(key: "gameserver.rates.tampering_chances", defaultValue: "65.0, 65.0")]

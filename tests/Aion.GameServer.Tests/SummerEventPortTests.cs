@@ -36,7 +36,7 @@ public sealed class SummerEventPortTests
             new[]
             {
                 "gameserver.rates.enchantment_stone.base_chances = 73",
-                "gameserver.rates.enchantment_stone.amplified_chances = 55"
+                "gameserver.rates.enchantment_stone.amplified_chances = 65"
             },
             properties);
     }

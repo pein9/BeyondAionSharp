@@ -41,7 +41,7 @@ public class GameServerOptionsTests
 		Assert.Contains(10000002, options.Administration.OperationalItemIds);
 		Assert.Equal([75f, 75f], options.Rates.ManastoneChances);
 		Assert.Equal([65f, 65f], options.Rates.EnchantmentStoneBaseChances);
-		Assert.Equal([50f, 50f], options.Rates.EnchantmentStoneAmplifiedChances);
+		Assert.Equal([61f, 61f], options.Rates.EnchantmentStoneAmplifiedChances);
 		Assert.Equal([1f, 2f], options.Rates.ApPvpGainRates);
 		Assert.Equal([1f, 1f], options.Rates.ApPvpLossRates);
 		Assert.Equal([1f, 2f], options.Rates.ApPveRates);
