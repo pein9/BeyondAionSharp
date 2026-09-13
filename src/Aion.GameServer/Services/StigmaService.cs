@@ -151,10 +151,9 @@ public class StigmaService
             {
                 if (skill.IsLinkedStigmaSkill())
                 {
-                    SkillTemplate skillTemplate = DataManager.SKILL_DATA.GetSkillTemplate(skill.GetSkillId());
                     if (stack == null)
-                        stack = skillTemplate.GetStack();
-                    if (string.Equals(skillTemplate.GetStack(), stack, StringComparison.OrdinalIgnoreCase))
+                        stack = skill.GetSkillTemplate().GetStack();
+                    if (string.Equals(skill.GetSkillTemplate().GetStack(), stack, StringComparison.OrdinalIgnoreCase))
                         linkedStigmaSkills.Add(skill);
                     if (string.Equals(stack, "NONE", StringComparison.OrdinalIgnoreCase))
                         break;
@@ -170,12 +169,12 @@ public class StigmaService
                 SkillLearnService.RemoveSkill(player, skillEntry.GetSkillId());
                 if (i == 0)
                 {
-                    firstSkillL10n = DataManager.SKILL_DATA.GetSkillTemplate(skillEntry.GetSkillId()).GetL10n();
+                    firstSkillL10n = skillEntry.GetSkillTemplate().GetL10n();
                     skillLevel = skillEntry.GetSkillLevel();
                 }
                 else if (i == 1)
                 {
-                    secondSkillL10n = DataManager.SKILL_DATA.GetSkillTemplate(skillEntry.GetSkillId()).GetL10n();
+                    secondSkillL10n = skillEntry.GetSkillTemplate().GetL10n();
                 }
             }
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_STIGMA_DELETE_HIDDEN_SKILL(firstSkillL10n, skillLevel, secondSkillL10n));

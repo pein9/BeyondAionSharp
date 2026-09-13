@@ -78,7 +78,7 @@ public class PlayerInfo : AdminCommand
         {
             StringBuilder sb = new StringBuilder("- Skills:");
             foreach (PlayerSkillEntry skill in target.GetSkillList().GetAllSkills())
-                sb.Append("\n\tlevel " + skill.GetSkillLevel() + " of " + DataManager.SKILL_DATA.GetSkillTemplate(skill.GetSkillId()).GetL10n());
+                sb.Append("\n\tlevel " + skill.GetSkillLevel() + " of " + skill.GetSkillTemplate().GetL10n());
             SendInfo(admin, sb.ToString());
         }
         else if (paramsArr[1].Equals("legion", StringComparison.OrdinalIgnoreCase))

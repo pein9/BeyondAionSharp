@@ -93,15 +93,6 @@ public class NpcSkillTemplate
         return spawn;
     }
 
-    public SkillTemplate GetSkillTemplate()
-    {
-        if (id <= 0)
-        {
-            return null;
-        }
-        return DataManager.SKILL_DATA.GetSkillTemplate(id);
-    }
-
     public int GetNextSkillTime()
     {
         return nextSkillTime;

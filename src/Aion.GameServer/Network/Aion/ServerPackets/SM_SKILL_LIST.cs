@@ -28,7 +28,7 @@ public class SM_SKILL_LIST : AionServerPacket
     {
         this.skillList = new List<PlayerSkillEntry> { skill };
         this.messageId = messageId;
-        this.skillNameL10n = DataManager.SKILL_DATA.GetSkillTemplate(skill.GetSkillId()).GetL10n();
+        this.skillNameL10n = skill.GetSkillTemplate().GetL10n();
         this.skillLvl = skill.GetSkillLevel().ToString();
     }
 

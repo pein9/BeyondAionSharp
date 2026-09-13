@@ -26,4 +26,9 @@ public abstract class SkillEntry
     {
         this.skillLevel = skillLevel;
     }
+
+    public Aion.GameServer.SkillEngine.Model.SkillTemplate GetSkillTemplate()
+    {
+        return Aion.GameServer.Dataholders.DataManager.SKILL_DATA.GetSkillTemplate(skillId);
+    }
 }

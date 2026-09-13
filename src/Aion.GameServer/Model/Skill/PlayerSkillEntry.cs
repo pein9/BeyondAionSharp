@@ -16,7 +16,7 @@ public class PlayerSkillEntry : SkillEntry, IPersistable
     {
         List<Aion.GameServer.SkillEngine.Model.SkillLearnTemplate> learnTemplates = Aion.GameServer.Dataholders.DataManager.SKILL_TREE_DATA.GetTemplatesForSkill(skillId, player.GetPlayerClass(), player.GetRace());
         if (learnTemplates.Count == 0)
-            skillType = Aion.GameServer.Dataholders.DataManager.SKILL_DATA.GetSkillTemplate(skillId).GetStigmaType() == Aion.GameServer.SkillEngine.Model.StigmaType.NONE ? 0 : 1; // no way to tell if linked stigma
+            skillType = GetSkillTemplate().GetStigmaType() == Aion.GameServer.SkillEngine.Model.StigmaType.NONE ? 0 : 1; // no way to tell if linked stigma
         else
         {
             foreach (Aion.GameServer.SkillEngine.Model.SkillLearnTemplate template in learnTemplates)

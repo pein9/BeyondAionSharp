@@ -79,16 +79,9 @@ public class ServantNpcAI : GeneralNpcAI
                 AIActions.DeleteOwner(this);
                 CancelTask();
             }
-            else
+            else if (!Aion.GameServer.Ai.Manager.SkillAttackManager.CantUseSkill(skill, GetOwner()))
             {
-                SkillTemplate template = skill.GetTemplate().GetSkillTemplate();
-                if ((template.GetType_() != SkillType.MAGICAL || !GetOwner().GetEffectController().IsAbnormalSet(AbnormalState.SILENCE))
-                    && (template.GetType_() != SkillType.PHYSICAL || !GetOwner().GetEffectController().IsAbnormalSet(AbnormalState.BIND))
-                    && (!GetOwner().GetEffectController().IsInAnyAbnormalState(AbnormalState.CANT_ATTACK_STATE))
-                    && (!GetOwner().IsTransformed() || !GetOwner().GetTransformModel().CantUseSkills()))
-                {
-                    SkillEngine.SkillEngine.GetInstance().GetSkill(GetOwner(), skill.GetSkillId(), skill.GetSkillLevel(), GetOwner().GetTarget()).UseSkill();
-                }
+                SkillEngine.SkillEngine.GetInstance().GetSkill(GetOwner(), skill.GetSkillId(), skill.GetSkillLevel(), GetOwner().GetTarget()).UseSkill();
             }
             return ValueTask.CompletedTask;
         }, System.TimeSpan.FromMilliseconds(startDelay), System.TimeSpan.FromMilliseconds(durationFinal));

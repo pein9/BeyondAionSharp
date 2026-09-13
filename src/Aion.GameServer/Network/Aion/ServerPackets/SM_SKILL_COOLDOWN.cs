@@ -24,8 +24,7 @@ public class SM_SKILL_COOLDOWN : AionServerPacket
     {
         foreach (PlayerSkillEntry skill in player.GetSkillList().GetAllSkills())
         {
-            int cooldownId = DataManager.SKILL_DATA.GetSkillTemplate(skill.GetSkillId()).GetCooldownId();
-            if (cooldownExpirationMillisByCooldownId.TryGetValue(cooldownId, out long cooldownExpirationMillis))
+            if (cooldownExpirationMillisByCooldownId.TryGetValue(skill.GetSkillTemplate().GetCooldownId(), out long cooldownExpirationMillis))
                 cooldowns.Add(new Cooldown(skill.GetSkillId(), cooldownExpirationMillis));
         }
         // The game plays the same icon cooldown animation for all skills that share a cooldownId and the last entry per cooldownId wins, so we sort by

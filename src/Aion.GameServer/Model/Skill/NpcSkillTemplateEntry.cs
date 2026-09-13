@@ -85,10 +85,6 @@ public class NpcSkillTemplateEntry : NpcSkillEntry
 
     public override bool ConditionReady(Creature creature)
     {
-        if (creature == null || creature.IsDead() || creature.GetLifeStats().IsAboutToDie())
-        {
-            return false;
-        }
         NpcSkillConditionTemplate condTemp = GetConditionTemplate();
         if (condTemp == null)
             return true;
@@ -110,11 +106,11 @@ public class NpcSkillTemplateEntry : NpcSkillEntry
             NpcSkillCondition.TARGET_IS_NPC => curTarget is Npc,
             NpcSkillCondition.TARGET_IS_MAGICAL_CLASS => curTarget is Player player1 && !player1.GetPlayerClass().IsPhysicalClass(),
             NpcSkillCondition.TARGET_IS_PHYSICAL_CLASS => curTarget is Player player2 && player2.GetPlayerClass().IsPhysicalClass(),
-            NpcSkillCondition.TARGET_HAS_CARVED_SIGNET => HasCarvedSignet(curTarget, template.GetSkillTemplate(), 0),
-            NpcSkillCondition.TARGET_HAS_CARVED_SIGNET_LEVEL_II => HasCarvedSignet(curTarget, template.GetSkillTemplate(), 1),
-            NpcSkillCondition.TARGET_HAS_CARVED_SIGNET_LEVEL_III => HasCarvedSignet(curTarget, template.GetSkillTemplate(), 2),
-            NpcSkillCondition.TARGET_HAS_CARVED_SIGNET_LEVEL_IV => HasCarvedSignet(curTarget, template.GetSkillTemplate(), 3),
-            NpcSkillCondition.TARGET_HAS_CARVED_SIGNET_LEVEL_V => HasCarvedSignet(curTarget, template.GetSkillTemplate(), 4),
+            NpcSkillCondition.TARGET_HAS_CARVED_SIGNET => HasCarvedSignet(curTarget, GetSkillTemplate(), 0),
+            NpcSkillCondition.TARGET_HAS_CARVED_SIGNET_LEVEL_II => HasCarvedSignet(curTarget, GetSkillTemplate(), 1),
+            NpcSkillCondition.TARGET_HAS_CARVED_SIGNET_LEVEL_III => HasCarvedSignet(curTarget, GetSkillTemplate(), 2),
+            NpcSkillCondition.TARGET_HAS_CARVED_SIGNET_LEVEL_IV => HasCarvedSignet(curTarget, GetSkillTemplate(), 3),
+            NpcSkillCondition.TARGET_HAS_CARVED_SIGNET_LEVEL_V => HasCarvedSignet(curTarget, GetSkillTemplate(), 4),
             NpcSkillCondition.NPC_IS_ALIVE => creature.GetWorldMapInstance().GetNpcs(condTemp.GetNpcId()).Any(npc => !npc.IsDead()),
             NpcSkillCondition.TARGET_IS_IN_RANGE => PositionUtil.IsInRange(creature, curTarget, condTemp.GetRange(), false),
             _ => false,

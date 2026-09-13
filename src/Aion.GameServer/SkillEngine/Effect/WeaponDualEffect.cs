@@ -39,7 +39,7 @@ public class WeaponDualEffect : BufEffect
         { // fallback for enterWorld
             foreach (PlayerSkillEntry skillEntry in player.GetSkillList().GetAllSkills())
             {
-                Effects effects = DataManager.SKILL_DATA.GetSkillTemplate(skillEntry.GetSkillId()).GetEffects();
+                Effects effects = skillEntry.GetSkillTemplate().GetEffects();
                 if (effects != null && effects.HasAnyEffectType(EffectType.WEAPONDUAL))
                     return true;
             }

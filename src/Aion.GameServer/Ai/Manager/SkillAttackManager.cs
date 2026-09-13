@@ -75,15 +75,12 @@ public class SkillAttackManager
             npcAI.OnGeneralEvent(AiEventType.TargetToofar);
             return;
         }
-        SkillTemplate template = DataManager.SKILL_DATA.GetSkillTemplate(skill.GetSkillId());
+        SkillTemplate template = skill.GetSkillTemplate();
         if (npcAI.IsLogging())
         {
             AILogger.Info(npcAI, "Using skill " + skill.GetSkillId() + " level: " + skill.GetSkillLevel() + " duration: " + template.GetDuration());
         }
-        if ((template.GetType_() == SkillType.MAGICAL && owner.GetEffectController().IsAbnormalSet(AbnormalState.SILENCE))
-            || (template.GetType_() == SkillType.PHYSICAL && owner.GetEffectController().IsAbnormalSet(AbnormalState.BIND))
-            || (owner.GetEffectController().IsInAnyAbnormalState(AbnormalState.CANT_ATTACK_STATE))
-            || (owner.IsTransformed() && owner.GetTransformModel().CantUseSkills()))
+        if (CantUseSkill(skill, owner))
         {
             AfterUseSkill(npcAI);
         }
@@ -126,6 +123,14 @@ public class SkillAttackManager
                 AfterUseSkill(npcAI);
             }
         }
+    }
+
+    public static bool CantUseSkill(NpcSkillEntry skill, Creature owner)
+    {
+        return owner.IsTransformed() && owner.GetTransformModel().CantUseSkills()
+            || owner.GetEffectController().IsInAnyAbnormalState(AbnormalState.CANT_ATTACK_STATE)
+            || owner.GetEffectController().IsAbnormalSet(AbnormalState.SILENCE) && skill.GetSkillTemplate().GetType_() == SkillType.MAGICAL
+            || owner.GetEffectController().IsAbnormalSet(AbnormalState.BIND) && skill.GetSkillTemplate().GetType_() == SkillType.PHYSICAL;
     }
 
     public static void AfterUseSkill(NpcAI npcAI)
@@ -209,6 +214,7 @@ public class SkillAttackManager
         return null;
     }
 
+    // TODO if the NPC can see its target, it should move towards it instead of skipping the skill
     private static NpcSkillEntry GetNpcSkillEntryIfNotTooFarAway(Npc owner, NpcSkillEntry entry)
     {
         if (TargetTooFar(owner, entry))
@@ -222,31 +228,20 @@ public class SkillAttackManager
     // check for bind/silence/fear/stun etc debuffs on npc
     private static bool IsReady(Npc owner, NpcSkillEntry entry)
     {
-        if (entry.IsReady(owner.GetLifeStats().GetHpPercentage(), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - owner.GetGameStats().GetFightStartingTime()))
-        {
-            if (entry.ConditionReady(owner))
-            {
-                SkillTemplate template = DataManager.SKILL_DATA.GetSkillTemplate(entry.GetSkillId());
-                if ((template.GetType_() == SkillType.MAGICAL && owner.GetEffectController().IsAbnormalSet(AbnormalState.SILENCE))
-                    || (template.GetType_() == SkillType.PHYSICAL && owner.GetEffectController().IsAbnormalSet(AbnormalState.BIND))
-                    || (owner.GetEffectController().IsInAnyAbnormalState(AbnormalState.CANT_ATTACK_STATE))
-                    || (owner.IsTransformed() && owner.GetTransformModel().CantUseSkills()))
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
+        // Java 893c69346: the cheap state checks run first and conditionReady() last, because HELP_FRIEND conditions retarget the NPC and must not
+        // do so for a skill that is skipped anyway (that retarget restarted the auto-attack loop and recursed endlessly).
+        if (owner.IsDead() || owner.GetLifeStats().IsAboutToDie())
+            return false;
+        if (CantUseSkill(entry, owner))
+            return false;
+        if (!entry.IsReady(owner.GetLifeStats().GetHpPercentage(), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - owner.GetGameStats().GetFightStartingTime()))
+            return false;
+        return entry.ConditionReady(owner);
     }
 
     private static bool TargetTooFar(Npc owner, NpcSkillEntry entry)
     {
-        SkillTemplate template = DataManager.SKILL_DATA.GetSkillTemplate(entry.GetSkillId());
-        Properties prop = template.GetProperties();
+        Properties prop = entry.GetSkillTemplate().GetProperties();
         if (prop.GetFirstTarget() != FirstTargetAttribute.ME && entry.GetTemplate().GetTarget() != NpcSkillTargetAttribute.NONE
             && entry.GetTemplate().GetTarget() != NpcSkillTargetAttribute.MOST_HATED && entry.GetTemplate().GetTarget() != NpcSkillTargetAttribute.ME)
         {
