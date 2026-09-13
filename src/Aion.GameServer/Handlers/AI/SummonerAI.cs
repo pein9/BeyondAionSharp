@@ -96,6 +96,7 @@ public class SummonerAI : AggressiveNpcAI
 
             if (hpPercentage <= percent.GetPercent())
             {
+                spawnedPercent = percent.GetPercent();
                 int skill = percent.GetSkillId();
                 if (skill != 0)
                     AIActions.UseSkill(this, skill);
@@ -113,7 +114,6 @@ public class SummonerAI : AggressiveNpcAI
                         ThreadPoolManager.GetInstance().Schedule(_ => { SpawnHelpers(sg); return System.Threading.Tasks.ValueTask.CompletedTask; }, (long)summonGroup.GetSchedule());
                     }
                 }
-                spawnedPercent = percent.GetPercent();
             }
         }
     }
