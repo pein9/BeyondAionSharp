@@ -43,7 +43,7 @@ public class Info : AdminCommand
             {
                 Aion.GameServer.Model.GameObjects.Pet pet = player.GetPet();
                 SendInfo(admin, (pet != null ? "\tPet: " + Name(pet) + ", ID: " + pet.GetObjectTemplate().GetTemplateId() + ", ObjectId: " + pet.GetObjectId()
-                    : "") + "\n\tTown ID: " + TownService.GetInstance().GetTownResidence(player));
+                    + "\n" : "") + "\tTown ID: " + TownService.GetInstance().GetTownResidence(player));
                 for (int i = 0; i < 2; i++)
                 {
                     NpcFaction faction = player.GetNpcFactions().GetActiveNpcFaction(i == 0);
