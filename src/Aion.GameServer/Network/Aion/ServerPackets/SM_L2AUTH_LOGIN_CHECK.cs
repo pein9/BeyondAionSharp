@@ -1,81 +1,67 @@
-using System;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.Templates.World;
 using Aion.GameServer.Network.Aion;
 
 namespace Aion.GameServer.Network.Aion.ServerPackets;
 
-/// <summary>Java parity: network/aion/serverpackets/SM_L2AUTH_LOGIN_CHECK (-Nemesiss-). Login auth result + world-map list. hex2Byte->Hex2Byte (Convert.ToInt32(s,16)); Integer.parseInt(substring(2i,2i+2),16)->Convert.ToInt32(Substring(2i,2),16). DataManager/WorldMapTemplate red-tolerated.</summary>
+/// <summary>Java parity: network/aion/serverpackets/SM_L2AUTH_LOGIN_CHECK (-Nemesiss-). Login auth result, server index tables and the world-map list.</summary>
 public class SM_L2AUTH_LOGIN_CHECK : AionServerPacket
 {
+    private static readonly byte[] serverIdByIndex = new byte[128];
+    private static readonly byte[] serverIndexById = new byte[64];
+
+    static SM_L2AUTH_LOGIN_CHECK()
+    {
+        // retail data, don't question it
+        for (byte i = 1; i <= 60; i++)
+        {
+            serverIdByIndex[i] = i;
+            serverIndexById[i] = i;
+        }
+        serverIdByIndex[66] = 61;
+        serverIndexById[61] = 66;
+    }
+
     /// <summary>
     /// True if client is authed.
     /// </summary>
     private readonly bool ok;
     private readonly string accountName;
-    private static byte[] standardData;
-    private static byte[] fastTrackData;
 
-    static SM_L2AUTH_LOGIN_CHECK()
-    {
-        standardData = Hex2Byte("00000000000000010101020202030303040404050505060606070707080808090"
-            + "9090A0A0A0B0B0B0C0C0C0D0D0D0E0E0E0F0F0F10101011111112121213131314" + "14141515151616161717171818181919191A1A1A1B1B1B1C1C1C1D1D1D1E1E1E"
-            + "1F1F1F2020202121212222222323232424242525252626262727272828282929" + "292A2A2A2B2B2B2C2C2C2D2D2D2E2E2E2F2F2F30303031313132323233333334"
-            + "34343535353636363737373838383939393A3A3A3B3B3B3C3C3C000000000000" + "000000000000000000423D3D0000000000000000000000000000000000000000"
-            + "0000000000000000000000000000000000000000000000000000000000000000" + "0000000000000000000000000000000000000000000000000000000000000000"
-            + "0000000000000000000000000000000000000000000000000000000000000000" + "0000000000000000000000000000000000000000000000000000000000000000"
-            + "0000000000000000000000000000000000000000000000000000000000000000" + "0000000000000101010202020303030404040505050606060707070808080909"
-            + "090A0A0A0B0B0B0C0C0C0D0D0D0E0E0E0F0F0F10101011111112121213131314" + "14141515151616161717171818181919191A1A1A1B1B1B1C1C1C1D1D1D1E1E1E"
-            + "1F1F1F2020202121212222222323232424242525252626262727272828282929" + "292A2A2A2B2B2B2C2C2C2D2D2D2E2E2E2F2F2F30303031313132323233333334"
-            + "34343535353636363737373838383939393A3A3A3B3B3B3C3C3C423D3D000000" + "000000");
-
-        fastTrackData = Hex2Byte("00010101000000010101020202030303040404050505060606070707080808090"
-            + "9090A0A0A0B0B0B0C0C0C0D0D0D0E0E0E0F0F0F101010111111121212131313" + "1414141515151616161717171818181919191A1A1A1B1B1B1C1C1C1D1D1D1E1"
-            + "E1E1F1F1F202020212121222222232323242424252525262626272727282828" + "2929292A2A2A2B2B2B2C2C2C2D2D2D2E2E2E2F2F2F303030313131323232000"
-            + "000000000000000000000000000000000000000000000000000000000000000" + "000000000000000000000000423D3D000000000000000000000000000000000"
-            + "000000000000000000000000000000000000000000000000000000000000000" + "000000000000000000000000000000000000000000000000000000000000000"
-            + "000000000000000000000000000000000000000000000000000000000000000" + "000000000000000000000000000000000000000000000000000000000000000"
-            + "000000000000000000000000000000000000000000000000000000000000000" + "000000000000000000000000010101020202030303040404050505060606070"
-            + "7070808080909090A0A0A0B0B0B0C0C0C0D0D0D0E0E0E0F0F0F101010111111" + "1212121313131414141515151616161717171818181919191A1A1A1B1B1B1C1"
-            + "C1C1D1D1D1E1E1E1F1F1F202020212121222222232323242424252525262626" + "2727272828282929292A2A2A2B2B2B2C2C2C2D2D2D2E2E2E2F2F2F303030313"
-            + "131323232000000000000000000000000000000000000000000000000000000" + "000000423D3D000000000000");
-    }
-
-    /// <summary>
-    /// Constructs new <c>SM_L2AUTH_LOGIN_CHECK</c> packet
-    /// </summary>
     public SM_L2AUTH_LOGIN_CHECK(bool ok, string accountName)
     {
         this.ok = ok;
         this.accountName = accountName;
     }
 
-    // Java parity (writeImpl audited 1:1 vs game-server/.../SM_L2AUTH_LOGIN_CHECK.java): 2026-06-17
-    // writeD(ok?0:1) + writeB(standardData hex-literal, byte-identical) + writeH(DataManager.WORLD_MAPS_DATA.size()) live
-    // holder iteration (per-map writeD(mapId) + writeH(isInstance?0:twinCount)) + writeS(accountName) -> TIER 2 audit.
+    // Java parity (upstream c5a0f34c0): the generated server tables are byte-identical to the former 580 byte standardData literal.
     protected override void WriteImpl(AionConnection con)
     {
         WriteD(ok ? 0x00 : 0x01);
-        WriteB(standardData);
+        WriteC(0); // server ID override (added in 4.7)
+        WriteC(0); // 1 on Fast-Track Server: makes the client send C_REQUEST_DIRECT_ENTER_WORLD
+        WriteC(0); // 1 on Fast-Track Server: displays the origin server's name above the minimap and as system message
+        WriteC(0); // 1 on Fast-Track Server
+        for (int i = 0; i < serverIdByIndex.Length; i++)
+        {
+            byte serverId = serverIdByIndex[i];
+            WriteC(serverId == 0 ? 0 : i);
+            WriteC(serverId);
+            WriteC(serverId);
+        }
+        for (int serverId = 0; serverId < serverIndexById.Length; serverId++)
+        {
+            byte i = serverIndexById[serverId];
+            WriteC(i);
+            WriteC(i == 0 ? 0 : serverId);
+            WriteC(i == 0 ? 0 : serverId);
+        }
         WriteH(DataManager.WORLD_MAPS_DATA.Size());
         foreach (WorldMapTemplate template in DataManager.WORLD_MAPS_DATA)
         {
             WriteD(template.GetMapId());
-            if (template.IsInstance())
-                WriteH(0);
-            else
-                WriteH(template.GetTwinCount()); // for FastTrack it is getBeginnerTwinCount()
+            WriteH(template.IsInstance() ? 0 : template.GetTwinCount()); // for Fast-Track Server it's getBeginnerTwinCount()
         }
         WriteS(accountName);
-    }
-
-    private static byte[] Hex2Byte(string str)
-    {
-        byte[] bytes = new byte[str.Length / 2];
-        for (int i = 0; i < bytes.Length; i++)
-        {
-            bytes[i] = (byte)Convert.ToInt32(str.Substring(2 * i, 2), 16);
-        }
-        return bytes;
     }
 }
