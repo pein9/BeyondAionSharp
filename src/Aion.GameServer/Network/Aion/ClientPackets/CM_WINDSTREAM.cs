@@ -40,7 +40,7 @@ public class CM_WINDSTREAM : AionClientPacket
         switch (state)
         {
             case 0: // entering windstream
-                if (player.IsUsingFlightTransporterOrWindstream() || !player.IsFlying())
+                if (player.IsUsingFlightTransporterOrWindstream())
                     return;
                 player.UnsetPlayerMode(PlayerMode.RIDE);
                 player.SetFlightPath(new FlightPath(FlightPath.Type.WINDSTREAM, teleportId, distance));

@@ -37,6 +37,7 @@ public class PlayerRestrictions
         if (player.IsUsingFlightTransporterOrWindstream())
         {
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_SKILL_CANT_CAST(ActionState.PATH_FLYING.GetL10n()));
+            AuditLogger.Log(player, "tried to attack " + player.GetTarget() + " while using " + player.GetFlightPath().GetType_());
             return false;
         }
         return true;
@@ -250,7 +251,10 @@ public class PlayerRestrictions
             return false;
         }
 
-        if (!player.IsSpawned() || target == null || !CheckFly(player) || player.GetLifeStats().IsAboutToDie() || player.IsDead())
+        if (!player.IsSpawned() || player.GetLifeStats().IsAboutToDie() || player.IsDead())
+            return false;
+
+        if (!CheckFly(player))
             return false;
 
         if (target is Player targetPlayer && targetPlayer.IsUsingFlightTransporterOrWindstream())
@@ -263,15 +267,7 @@ public class PlayerRestrictions
             return false;
         }
 
-        if (!(target is Creature))
-        {
-            PacketSendUtility.SendPacket(player, SM_ATTACK_RESPONSE.STOP_INVALID_TARGET(player.GetGameStats().GetAttackCounter()));
-            return false;
-        }
-
-        Creature creature = (Creature)target;
-
-        if (creature.IsDead() || creature.GetLifeStats().IsAboutToDie())
+        if (!(target is Creature creature) || creature.IsDead() || creature.GetLifeStats().IsAboutToDie())
         {
             PacketSendUtility.SendPacket(player, SM_ATTACK_RESPONSE.STOP_INVALID_TARGET(player.GetGameStats().GetAttackCounter()));
             return false;

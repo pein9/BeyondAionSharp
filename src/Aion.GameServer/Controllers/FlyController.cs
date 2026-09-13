@@ -111,7 +111,8 @@ public class FlyController
     {
         if (player.IsInGlidingState() || !player.CanPerformMove())
             return false;
-
+        if (player.IsUsingFlightTransporterOrWindstream())
+            return false;
         if (!CanGlide(player))
             return false;
         if (player.GetFlyState() == 0)
