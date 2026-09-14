@@ -180,14 +180,11 @@ public static class ChatUtil
 		if (posLink == null || !posLink.StartsWith("[pos:"))
 			return null;
 
-		int startIndex = posLink.IndexOf(";");
+		int startIndex = posLink.IndexOf(";") + 1;
 		int endIndex = posLink.IndexOf("]");
-		if (startIndex < 0 || startIndex >= endIndex)
+		if (startIndex <= 0 || startIndex >= endIndex)
 			return null;
-		// Upstream 538b33d07 parses the tokens strictly and strips the language flag only when the first token is exactly "0" or "1", but it
-		// still starts the substring at the ';' (so the first token is ";0" and every link fails with NumberFormatException, verified against
-		// Java 25). The old lenient toInt(";0") == 0 is what used to strip the flag. This port starts after the ';' to keep that intent working.
-		string[] posStr = System.Text.RegularExpressions.Regex.Split(posLink.Substring(startIndex + 1, endIndex - startIndex - 1).Trim(), "\\s+")
+		string[] posStr = System.Text.RegularExpressions.Regex.Split(posLink.Substring(startIndex, endIndex - startIndex).Trim(), "\\s+")
 			.Where(s => s.Length > 0).ToArray();
 		if (posStr.Length > 0 && (posStr[0] == "0" || posStr[0] == "1")) // if present, strip ely/asmo language restriction flag (0 = ely only, 1 = asmo only)
 			posStr = posStr.Skip(1).ToArray();
