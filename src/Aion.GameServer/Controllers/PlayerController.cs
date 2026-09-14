@@ -27,6 +27,7 @@ public class PlayerController : CreatureController<Player>
     private static readonly ILogger log = NullLogger.Instance;
     private long lastAttackMillis = 0;
     private long lastAttackedMillis = 0;
+    private long lastAutoAttackMillis = 0;
     private StanceObserver stanceObserver;
 
     private static long CurrentTimeMillis() => Aion.GameServer.Utils.SystemClock.CurrentMillis();
@@ -415,12 +416,13 @@ public class PlayerController : CreatureController<Player>
 
         int attackSpeed = gameStats.GetAttackSpeed().GetCurrent();
 
-        long milis = CurrentTimeMillis();
-        if (milis - lastAttackMillis + 300 < attackSpeed)
+        long now = CurrentTimeMillis();
+        if (now - lastAutoAttackMillis + 300 < attackSpeed)
         {
             PacketSendUtility.SendPacket(GetOwner(), SM_ATTACK_RESPONSE.STOP_WITHOUT_MESSAGE(gameStats.GetAttackCounter()));
             return;
         }
+        lastAutoAttackMillis = now;
         EnterCombat(true);
 
         base.AttackTarget(target, time, true);
