@@ -1,3 +1,5 @@
+using Aion.GameServer.Controllers.Attack;
+
 namespace Aion.GameServer.SkillEngine.Model;
 
 /// <summary>
@@ -11,6 +13,7 @@ public class EffectReserved : IComparable<EffectReserved>
     private readonly ResourceType _type;
     private readonly bool _isDamage = true;
     private readonly bool _send = true;
+    private readonly AttackStatus _attackStatus = AttackStatus.NORMALHIT;
 
     // Java parity: nested enum EffectReserved.ResourceType
     public enum ResourceType
@@ -22,6 +25,11 @@ public class EffectReserved : IComparable<EffectReserved>
     }
 
     public EffectReserved(int position, int value, ResourceType type, bool isDamage) : this(position, value, type, isDamage, true) { }
+
+    public EffectReserved(int position, int value, ResourceType type, bool isDamage, bool send, AttackStatus attackStatus) : this(position, value, type, isDamage, send)
+    {
+        _attackStatus = attackStatus;
+    }
 
     public EffectReserved(int position, int value, ResourceType type, bool isDamage, bool send)
     {
@@ -41,6 +49,9 @@ public class EffectReserved : IComparable<EffectReserved>
     public ResourceType GetType_() => _type;
     public bool IsDamage() => _isDamage;
     public bool IsSend() => _send;
+
+    /// <summary>The attack status of this position, NORMALHIT for values which cannot crit (like drained mp).</summary>
+    public AttackStatus GetAttackStatus() => _attackStatus;
 
     // Java parity: compareTo(EffectReserved) — by position, then hashCode tiebreak.
     public int CompareTo(EffectReserved? o)

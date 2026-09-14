@@ -37,16 +37,14 @@ public sealed class GmBookmarkPortTests
     }
 
     [Fact]
-    public void DatabaseMigrationUsesPlayerScopedCompositeKey()
+    public void DatabaseSchemaUsesPlayerScopedCompositeKey()
     {
+        // update.sql only holds the changes since the latest schema baseline, so upstream 51d7a19cb replaced this migration there.
         string schema = File.ReadAllText(RepoFile("game-server", "sql", "aion_gs.sql"));
-        string update = File.ReadAllText(RepoFile("game-server", "sql", "update.sql"));
 
         Assert.Contains("`name` varchar(27) NOT NULL", schema);
         Assert.Contains("PRIMARY KEY (`player_id`, `name`)", schema);
-        Assert.Contains("CHANGE COLUMN `char_id` `player_id` INT NOT NULL FIRST", update);
-        Assert.Contains("ADD PRIMARY KEY (`player_id`, `name`)", update);
-        Assert.Contains("FOREIGN KEY (`player_id`) REFERENCES `players` (`id`) ON DELETE CASCADE ON UPDATE CASCADE", update);
+        Assert.Contains("CONSTRAINT `bookmark_ibfk_1` FOREIGN KEY (`player_id`) REFERENCES `players` (`id`) ON DELETE CASCADE ON UPDATE CASCADE", schema);
     }
 
     private static string Constant(string name)

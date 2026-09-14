@@ -58,7 +58,7 @@ public abstract class AbstractHealEffect : EffectTemplate, HealEffectTemplate
 
     public virtual bool AllowHpHealBoost(Effect effect)
     {
-        return !percent;
+        return effect.GetSkillTemplate().IsApplyHealBoostBonus();
     }
 
     public virtual bool AllowHpHealSkillDeboost(Effect effect)

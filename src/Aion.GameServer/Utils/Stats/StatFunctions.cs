@@ -368,20 +368,24 @@ public class StatFunctions
     }
 
     public static float CalculateMagicalSkillDamage(Creature effector, Creature target, float baseDamage, int bonus, EffectTemplate template,
-        bool useMagicBoost, bool useKnowledge)
+        bool useMagicBoost, bool useKnowledge, bool useBoostSpellAttack)
     {
         float damage = baseDamage;
-        if (!(template is NoReduceSpellATKInstantEffect))
+        var sgs = effector.GetGameStats();
+        var tgs = target.GetGameStats();
+        int magicBoost = 0;
+
+        if (useMagicBoost)
         {
-            var sgs = effector.GetGameStats();
-            var tgs = target.GetGameStats();
-            float magicBoost = useMagicBoost ? sgs.GetMBoost().GetCurrent() : 0;
-            magicBoost -= effector is Trap ? 0 : tgs.GetMBResist().GetCurrent();
+            magicBoost = sgs.GetMBoost().GetCurrent();
+            magicBoost -= tgs.GetMBResist().GetCurrent();
             magicBoost = (int)Math.Max(0, Limit(StatEnum.BOOST_MAGICAL_SKILL, magicBoost));
-            float knowledge = useKnowledge ? sgs.GetKnowledge().GetCurrent() : 100; // this line might be wrong now
-            damage *= (1 + (magicBoost / (knowledge * 10)));
-            damage = sgs.GetStat(StatEnum.BOOST_SPELL_ATTACK, (int)damage).GetCurrent();
         }
+        int knowledge = useKnowledge ? sgs.GetKnowledge().GetCurrent() : 100;
+        damage *= (magicBoost / 1000f) + (knowledge / 100f);
+
+        if (useBoostSpellAttack)
+            damage = sgs.GetStat(StatEnum.BOOST_SPELL_ATTACK, (int)damage).GetCurrent();
 
         // add bonus damage
         damage += bonus;
@@ -406,9 +410,9 @@ public class StatFunctions
     }
 
     /// <summary>Calculates MAGICAL CRITICAL chance.</summary>
-    public static bool CalculateMagicalCriticalRate(Creature attacker, Creature attacked, int criticalProb, bool applyMcrit)
+    public static bool CalculateMagicalCriticalRate(Creature attacker, Creature attacked, int criticalProb)
     {
-        if (attacker is Servant || attacker is Homing || !applyMcrit)
+        if (attacker is Servant || attacker is Homing)
             return false;
 
         float critical = attacker.GetGameStats().GetMCritical().GetCurrent() - attacked.GetGameStats().GetMCR().GetCurrent();

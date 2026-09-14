@@ -56,7 +56,7 @@ public class MotionData
         if (times == null)
             return 0f;
         int motionSpeed = skill.GetSkillTemplate().GetMotion().GetSpeed() * 10;
-        float attackRate = GetAttackRate(player);
+        float attackRate = player.GetGameStats().GetAttackSpeedRate();
         float motionSpeedRate = player.IsHitTimeBoosted() ? Math.Min(attackRate, CalculateCastSpeedRate(player.GetHitTimeBoostCastSpeed())) : attackRate;
         return (player.IsInRobotMode() ? times.GetAnimationLength() : times.GetMinTime()) * motionSpeed * motionSpeedRate;
     }
@@ -71,17 +71,11 @@ public class MotionData
         if (times == null)
             return null;
         int motionSpeed = skill.GetSkillTemplate().GetMotion().GetSpeed() * 10;
-        float attackRate = GetAttackRate(player);
+        float attackRate = player.GetGameStats().GetAttackSpeedRate();
         float motionSpeedRate = skill.AllowAnimationBoostByCastSpeed() ? Math.Min(attackRate, CalculateCastSpeedRate(skill.GetCastSpeedForAnimationBoostAndChargeSkills())) : attackRate;
         int animationLastHitMillis = (int)(times.GetMaxTime() * motionSpeed * motionSpeedRate);
         int animationFullDurationMillis = (int)(times.GetAnimationLength() * motionSpeed * motionSpeedRate);
         return new AnimationTimes(animationLastHitMillis, animationFullDurationMillis);
-    }
-
-    private float GetAttackRate(Player player)
-    {
-        Stat2 attackSpeedStat = player.GetGameStats().GetAttackSpeed();
-        return attackSpeedStat.GetCurrent() / (float)attackSpeedStat.GetBase();
     }
 
     private float CalculateCastSpeedRate(float castSpeedForAnimationBoost)

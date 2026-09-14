@@ -106,6 +106,9 @@ public abstract class EffectTemplate
     [XmlAttribute("preeffect_prob")]
     public int PreEffectProb = 100;
 
+    [XmlAttribute("critprobmod1")]
+    public int CritProbMod1 = 0;
+
     [XmlAttribute("critprobmod2")]
     public int CritProbMod2 = 100;
 
@@ -160,8 +163,6 @@ public abstract class EffectTemplate
 
     internal void SetNoResist(bool noResist) => NoResist = noResist;
 
-    public virtual int GetCritProbMod2() => CritProbMod2;
-
     public int GetCritAddDmg1() => CritAddDmg1;
 
     public int GetCritAddDmg2() => CritAddDmg2;
@@ -204,6 +205,11 @@ public abstract class EffectTemplate
         return CritAddDmg2 + CritAddDmg1 * effect.GetSkillLevel();
     }
 
+    public int CalculateCritProbMod(Aion.GameServer.SkillEngine.Model.Effect effect)
+    {
+        return CritProbMod2 + CritProbMod1 * effect.GetSkillLevel();
+    }
+
     /// <summary>Calculate effect result.</summary>
     public virtual void Calculate(Aion.GameServer.SkillEngine.Model.Effect effect)
     {
@@ -228,22 +234,30 @@ public abstract class EffectTemplate
             return false;
         }
 
-        if (!effect.IsForcedEffect())
+        bool isForcedEffect = effect.IsForcedEffect();
+        if (!isForcedEffect && (!ValidateEffectConditions(effect) || !ValidatePreEffects(effect)))
         {
-            if (!ValidateEffectConditions(effect))
-                return false;
-            if (!ValidatePreEffects(effect))
-                return false;
-            if (IsDodgedOrResisted(effect, statEnum))
-            {
-                if (GetPosition() != 1 && !(effect.EffectInPos(1) is DamageEffect))
-                    effect.GetSuccessEffects().Clear();
-                return false;
-            }
+            effect.ResetMagicalCritical(); // a filtered out effect breaks the chain, so the next position rolls its own critical
+            return false;
+        }
+        ResolveMagicalCritical(effect);
+        if (!isForcedEffect && IsDodgedOrResisted(effect, statEnum))
+        {
+            if (GetPosition() != 1 && !(effect.EffectInPos(1) is DamageEffect))
+                effect.GetSuccessEffects().Clear();
+            return false;
         }
         AddSuccessEffect(effect, spellStatus);
         CalculateDamage(effect);
         return true;
+    }
+
+    /// <summary>
+    /// Rolls or takes over the magical critical for this effect position. Called before the resist check, so even resisted effects can decide the
+    /// critical of the following positions.
+    /// </summary>
+    protected virtual void ResolveMagicalCritical(Aion.GameServer.SkillEngine.Model.Effect effect)
+    {
     }
 
     private bool ValidateEffectConditions(Aion.GameServer.SkillEngine.Model.Effect effect)
@@ -342,7 +356,7 @@ public abstract class EffectTemplate
             level = effect.GetSignetBurstedCount();
             accBoost = short.MaxValue; // sub effects cannot be resisted by magic resist in case of signet bursts
         }
-        Aion.GameServer.SkillEngine.Model.Effect newEffect = new Aion.GameServer.SkillEngine.Model.Effect(effect.GetEffector(), effect.GetOriginalEffected(), template, level, null, effect.GetForceType(), true);
+        Aion.GameServer.SkillEngine.Model.Effect newEffect = new Aion.GameServer.SkillEngine.Model.Effect(effect.GetEffector(), effect.GetOriginalEffected(), template, level, null, effect.GetForceType(), true, null);
         newEffect.SetShieldDefense(effect.GetShieldDefense());
         newEffect.SetAccModBoost(accBoost);
         newEffect.Initialize();

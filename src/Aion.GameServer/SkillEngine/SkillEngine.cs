@@ -175,7 +175,8 @@ public class SkillEngine
         return skillTemplate;
     }
 
-    public Effect CreateCriticalEffect(Player attacker, Creature target, int skillId)
+    /// <summary>Returns the stumble which procs on a critical hit, null if it cannot proc for the given skill or was dodged/resisted.</summary>
+    public Effect CreateCriticalProcEffect(Player attacker, Creature target, int skillId)
     {
         if (target.GetEffectController().IsUnderNormalShield())
             return null;
@@ -213,7 +214,7 @@ public class SkillEngine
         SkillTemplate skillTemplate2 = CheckAndGetSkillTemplate(id);
         if (skillTemplate2 != null)
         {
-            Effect ef = new Effect(attacker, target, skillTemplate2, skillTemplate2.GetLvl(), null, null, true);
+            Effect ef = new Effect(attacker, target, skillTemplate2, skillTemplate2.GetLvl(), null, null, true, null);
             ef.Initialize();
             return ef;
         }

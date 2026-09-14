@@ -9,8 +9,10 @@ public class ChargeSkillEntry
     [XmlElement("skill")] public List<ChargedSkill>? Skills { get; set; }
     [XmlAttribute("id")] public int Id { get; set; }
     [XmlAttribute("min_time")] public int MinTime { get; set; }
+    [XmlAttribute("charge_time_bonus_type")] public SkillType ChargeTimeBonusType { get; set; }
 
     public List<ChargedSkill>? GetSkills() => Skills;
     public int GetMinTime() => MinTime;
     public int GetId() => Id;
+    public SkillType GetChargeTimeBonusType() => ChargeTimeBonusType;
 }

@@ -27,4 +27,14 @@ public class ProcAtkInstantEffect : DamageEffect
         else
             return base.CalculateBaseValue(effect);
     }
+
+    public override bool ShouldUseBoostSpellAttackEffects()
+    {
+        return false;
+    }
+
+    public override bool ShouldUseOneTimeBoostSkillAttack()
+    {
+        return false;
+    }
 }

@@ -45,6 +45,9 @@ public class Effect : IStatOwner
     private SpellStatus spellStatus = SpellStatus.NONE;
     private DashStatus dashStatus = DashStatus.NONE;
     private AttackStatus attackStatus = AttackStatus.NORMALHIT;
+    private readonly bool[] magicalCriticals = new bool[4];
+    private bool magicalCriticalRolled;
+    private bool magicalCritical;
 
     /// <summary>shield effects related</summary>
     private int shieldDefense;
@@ -97,7 +100,7 @@ public class Effect : IStatOwner
 
     // Whether this effect is a sub effect of another effect
     private bool isSubEffect = false;
-    private bool applyCriticalEffect = false;
+    private bool applyCriticalProcEffect = false;
     private readonly AtomicBoolean allowGodstoneActivation = new AtomicBoolean();
 
     public Effect(Skill skill, Creature effected)
@@ -115,7 +118,15 @@ public class Effect : IStatOwner
     {
     }
 
-    public Effect(Creature effector, Creature effected, SkillTemplate skillTemplate, int skillLevel, int? duration, ForceType forceType, bool isSubEffect)
+    /// <summary>
+    /// If duration is null, it will be calculated upon execution, else the forced value will be used.
+    /// </summary>
+    public Effect(Creature effector, Creature effected, SkillTemplate skillTemplate, int skillLevel, int? duration, ForceType forceType)
+        : this(effector, effected, skillTemplate, skillLevel, duration, forceType, false, null)
+    {
+    }
+
+    public Effect(Creature effector, Creature effected, SkillTemplate skillTemplate, int skillLevel, int? duration, ForceType forceType, bool isSubEffect, ISet<int>? magicalCriticalPositions)
     {
         this.effector = effector;
         this.effected = effected;
@@ -125,21 +136,8 @@ public class Effect : IStatOwner
         this.forceType = forceType;
         this.isSubEffect = isSubEffect;
         this.power = skillTemplate.GetReqDispelCount();
-    }
-
-    /// <summary>
-    /// If duration is null, it will be calculated upon execution, else the forced value will be used.
-    /// </summary>
-    public Effect(Creature effector, Creature effected, SkillTemplate skillTemplate, int skillLevel, int? duration, ForceType forceType)
-    {
-        this.effector = effector;
-        this.effected = effected;
-        this.skillTemplate = skillTemplate;
-        this.skillLevel = skillLevel;
-        this.duration = duration;
-        this.forceType = forceType;
-
-        this.power = skillTemplate.GetReqDispelCount();
+        if (magicalCriticalPositions != null)
+            SetMagicalCriticals(magicalCriticalPositions);
     }
 
     public void SetWorldPosition(int worldId, int instanceId, float x, float y, float z)
@@ -269,6 +267,49 @@ public class Effect : IStatOwner
         this.attackStatus = attackStatus;
     }
 
+    public bool IsMagicalCritical(int position)
+    {
+        return magicalCriticals[position - 1];
+    }
+
+    /// <summary>
+    /// Rolls the magical critical for the given effect position, or takes over the one an earlier position already rolled, since a cast only rolls once
+    /// per target.
+    /// </summary>
+    public void RollMagicalCritical(int position, int criticalProb)
+    {
+        if (!magicalCriticalRolled)
+        {
+            magicalCritical = StatFunctions.CalculateMagicalCriticalRate(effector, effected, criticalProb);
+            magicalCriticalRolled = true;
+        }
+        ReuseMagicalCritical(position);
+    }
+
+    /// <summary>Takes over the magical critical of an earlier effect position without rolling one.</summary>
+    public void ReuseMagicalCritical(int position)
+    {
+        magicalCriticals[position - 1] = magicalCritical;
+    }
+
+    /// <summary>An effect which got filtered out breaks the chain, so the next effect position rolls its own magical critical again.</summary>
+    public void ResetMagicalCritical()
+    {
+        magicalCritical = false;
+        magicalCriticalRolled = false;
+    }
+
+    private void SetMagicalCriticals(ISet<int> positions)
+    {
+        magicalCritical = false;
+        magicalCriticalRolled = true;
+        for (int i = 0; i < magicalCriticals.Length; i++)
+        {
+            magicalCriticals[i] = positions.Contains(i);
+            magicalCritical |= magicalCriticals[i];
+        }
+    }
+
     public List<EffectTemplate> GetEffectTemplates()
     {
         return skillTemplate.GetEffects().GetEffects();
@@ -364,8 +405,8 @@ public class Effect : IStatOwner
                     toSend.Add(er);
             }
         }
-        if (toSend.Count == 0)
-            return new HashSet<EffectReserved> { new EffectReserved(0, 0, EffectReserved.ResourceType.HP, true) };
+        if (toSend.Count == 0) // effects without a sent value (like damage over time) can still show their attack status
+            return new HashSet<EffectReserved> { new EffectReserved(0, 0, EffectReserved.ResourceType.HP, true, true, attackStatus) };
         return toSend;
     }
 
@@ -554,14 +595,14 @@ public class Effect : IStatOwner
             }
             if (effector is Player p && GetAttackStatus() == AttackStatus.CRITICAL && GetSubEffect() == null && !IsPeriodic() && Rnd.Chance() < 10)
             {
-                Effect criticalEffect = Aion.GameServer.SkillEngine.SkillEngine.GetInstance().CreateCriticalEffect(p, GetEffected(), skillTemplate.GetSkillId());
-                if (criticalEffect != null && criticalEffect.GetEffectResult() != EffectResult.DODGE && criticalEffect.GetEffectResult() != EffectResult.RESIST)
+                Effect criticalProcEffect = Aion.GameServer.SkillEngine.SkillEngine.GetInstance().CreateCriticalProcEffect(p, GetEffected(), skillTemplate.GetSkillId());
+                if (criticalProcEffect != null && criticalProcEffect.GetEffectResult() != EffectResult.DODGE && criticalProcEffect.GetEffectResult() != EffectResult.RESIST)
                 {
-                    applyCriticalEffect = true;
-                    SetSpellStatus(criticalEffect.GetSpellStatus());
-                    SetSubEffect(criticalEffect);
-                    SetSubEffectType(criticalEffect.GetSubEffectType());
-                    SetTargetLoc(criticalEffect.GetTargetX(), criticalEffect.GetTargetY(), criticalEffect.GetTargetZ());
+                    applyCriticalProcEffect = true;
+                    SetSpellStatus(criticalProcEffect.GetSpellStatus());
+                    SetSubEffect(criticalProcEffect);
+                    SetSubEffectType(criticalProcEffect.GetSubEffectType());
+                    SetTargetLoc(criticalProcEffect.GetTargetX(), criticalProcEffect.GetTargetY(), criticalProcEffect.GetTargetZ());
                 }
             }
         }
@@ -644,7 +685,7 @@ public class Effect : IStatOwner
                     break;
                 template.StartSubEffect(this);
             }
-            if (applyCriticalEffect && subEffect != null)
+            if (applyCriticalProcEffect && subEffect != null)
                 subEffect.ApplyEffect();
             if (effected != null)
                 effected.GetAi().OnEffectApplied(this);

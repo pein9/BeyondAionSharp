@@ -60,15 +60,6 @@ public sealed class LegendarySymphonyPortTests
         Assert.Equal("2026-06-07T23:59:59", (string?)events["Legendary Symphony Drop"].Attribute("end"));
     }
 
-    [Fact]
-    public void DatabaseCleanupTargetsSymphonyAssemblyItems()
-    {
-        string sql = File.ReadAllText(RepoFile("game-server", "sql", "update.sql"));
-
-        Assert.Contains("DB changes since f2f77fe (15.05.2026)", sql);
-        Assert.Contains("DELETE FROM inventory WHERE item_id IN (182007170, 188100252, 188100253, 188100254, 188100255, 188100256);", sql);
-    }
-
     private static string RepoFile(params string[] parts)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

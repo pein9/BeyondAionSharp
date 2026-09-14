@@ -8,7 +8,7 @@ using SM_ATTACK_STATUS = Aion.GameServer.Network.Aion.ServerPackets.SmAttackStat
 
 namespace Aion.GameServer.SkillEngine.Effects;
 
-/// <summary>Java parity: skillengine/effect/DamageEffect (ATracer) abstract : EffectTemplate. @XmlAttribute fields→[XmlAttribute]; nested SmAttackStatus.TYPE/LOG qualified; int*=float (lossy compound) preserved. Inherited position/Hoptype/Element/change/CalculateBaseValue + EffectTemplate/AttackUtil red-tolerated.</summary>
+/// <summary>Java parity: skillengine/effect/DamageEffect (ATracer) abstract : EffectTemplate. @XmlAttribute fields→[XmlAttribute]; nested SmAttackStatus.TYPE/LOG qualified; Inherited position/Hoptype/Element/change/CalculateBaseValue + EffectTemplate/AttackUtil red-tolerated.</summary>
 [XmlType("DamageEffect")]
 public abstract class DamageEffect : EffectTemplate
 {
@@ -35,12 +35,15 @@ public abstract class DamageEffect : EffectTemplate
         effect.GetEffected().GetController().OnAttack(effect, type, effect.GetReserveds(this.Position).GetValue(), true, log, Hoptype);
     }
 
+    protected override void ResolveMagicalCritical(Effect effect)
+    {
+        if (Element != SkillElement.NONE && effect.GetSkillTemplate().IsApplyMagicalCritical())
+            effect.RollMagicalCritical(Position, CalculateCritProbMod(effect));
+    }
+
     public override void CalculateDamage(Effect effect)
     {
         int valueWithDelta = CalculateBaseValue(effect);
-        if (Element != SkillElement.NONE)
-            valueWithDelta = (int)(valueWithDelta * (effect.GetEffector().GetGameStats().GetKnowledge().GetCurrent() / 100f));
-
         AttackUtil.CalculateSkillResult(effect, valueWithDelta, this, false);
     }
 
@@ -60,6 +63,26 @@ public abstract class DamageEffect : EffectTemplate
     /// Specific DamageEffect implementations may override this to exclude themselves from movement-based damage adjustments.
     /// </summary>
     public virtual bool ShouldApplyAttackerMovementModifier()
+    {
+        return true;
+    }
+
+    public virtual bool ShouldApplyMagicalSkillBoostBonus(Effect effect)
+    {
+        return effect.GetSkillTemplate().IsApplyMagicalSkillBoostBonus();
+    }
+
+    public virtual bool ShouldUseKnowledge()
+    {
+        return true;
+    }
+
+    public virtual bool ShouldUseBoostSpellAttackEffects()
+    {
+        return true;
+    }
+
+    public virtual bool ShouldUseOneTimeBoostSkillAttack()
     {
         return true;
     }

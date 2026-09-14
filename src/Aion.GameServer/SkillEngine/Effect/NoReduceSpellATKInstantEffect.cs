@@ -13,6 +13,11 @@ public class NoReduceSpellATKInstantEffect : DamageEffect
     [XmlAttribute("max_damage")]
     public int max_damage;
 
+    protected override void ResolveMagicalCritical(Effect effect)
+    {
+        effect.ReuseMagicalCritical(Position); // shows an already rolled critical, but never multiplies the damage
+    }
+
     public override void CalculateDamage(Effect effect)
     {
         int valueWithDelta = CalculateBaseValue(effect);
@@ -29,6 +34,26 @@ public class NoReduceSpellATKInstantEffect : DamageEffect
     }
 
     public override bool ShouldApplyAttackerMovementModifier()
+    {
+        return false;
+    }
+
+    public override bool ShouldApplyMagicalSkillBoostBonus(Effect effect)
+    {
+        return false;
+    }
+
+    public override bool ShouldUseKnowledge()
+    {
+        return false;
+    }
+
+    public override bool ShouldUseBoostSpellAttackEffects()
+    {
+        return false;
+    }
+
+    public override bool ShouldUseOneTimeBoostSkillAttack()
     {
         return false;
     }

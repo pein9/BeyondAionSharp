@@ -9,7 +9,7 @@ using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.SkillEngine.Effects;
 
-/// <summary>Java parity: skillengine/effect/SignetBurstEffect (ATracer, kecimis) : DamageEffect. @XmlAttribute signetlvl/signet; @XmlAttribute(name="add_effect_prob_multi"); calculateDamage: base value, Element!=NONE→*knowledge/100f (lossy int*=float preserved); SIGNET_DATA_TEMPLATES.getSignetData(SignetEnum.valueOf(signet)→JavaEnum.ValueOf, signetLvl=min(signetlvl, stacked skill level)); *damageMultiplier, effectProb*=multi; setSignetBurstedCount(signetLvl); AttackUtil.calculateSkillResult; setLaunchSubEffect(Rnd.chance<effectProb); endEffect. calculate: base.Calculate(effect,null,null) false→endEffect. SignetData/SignetEnum red-tolerated.</summary>
+/// <summary>Java parity: skillengine/effect/SignetBurstEffect (ATracer, kecimis) : DamageEffect. @XmlAttribute signetlvl/signet; @XmlAttribute(name="add_effect_prob_multi"); calculateDamage: base value, SIGNET_DATA_TEMPLATES.getSignetData(SignetEnum.valueOf(signet)→JavaEnum.ValueOf, signetLvl=min(signetlvl, stacked skill level)); *damageMultiplier, effectProb*=multi; setSignetBurstedCount(signetLvl); AttackUtil.calculateSkillResult; setLaunchSubEffect(Rnd.chance<effectProb); endEffect. calculate: base.Calculate(effect,null,null) false→endEffect. SignetData/SignetEnum red-tolerated.</summary>
 [XmlType("SignetBurstEffect")]
 public class SignetBurstEffect : DamageEffect
 {
@@ -24,8 +24,6 @@ public class SignetBurstEffect : DamageEffect
     {
         Effect signetEffect = effect.GetEffected().GetEffectController().GetAbnormalEffect(signet);
         int valueWithDelta = CalculateBaseValue(effect);
-        if (Element != SkillElement.NONE)
-            valueWithDelta = (int)(valueWithDelta * (effect.GetEffector().GetGameStats().GetKnowledge().GetCurrent() / 100f));
 
         int effectProb = 0;
         int signetLvl = Math.Min(signetlvl, signetEffect == null ? 0 : signetEffect.GetSkillLevel());
@@ -62,5 +60,15 @@ public class SignetBurstEffect : DamageEffect
     public string GetSignet()
     {
         return signet;
+    }
+
+    public override bool ShouldUseBoostSpellAttackEffects()
+    {
+        return false;
+    }
+
+    public override bool ShouldUseOneTimeBoostSkillAttack()
+    {
+        return false;
     }
 }

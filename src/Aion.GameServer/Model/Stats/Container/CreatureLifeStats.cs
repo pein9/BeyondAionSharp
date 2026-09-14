@@ -84,6 +84,11 @@ public abstract class CreatureLifeStats
     /// </summary>
     public int ReduceHp(TYPE type, int value, int skillId, LOG? log, Creature attacker)
     {
+        return ReduceHp(type, value, skillId, log, attacker, false);
+    }
+
+    public int ReduceHp(TYPE type, int value, int skillId, LOG? log, Creature attacker, bool criticalHit)
+    {
         if (attacker == null)
             throw new ArgumentNullException(nameof(attacker));
         if (GetOwner().IsInvulnerable())
@@ -109,7 +114,7 @@ public abstract class CreatureLifeStats
         }
 
         if (newHp != previousHp || skillId != 0)
-            SendAttackStatusPacketUpdate(type, previousHp - newHp, skillId, log);
+            SendAttackStatusPacketUpdate(type, previousHp - newHp, skillId, log, criticalHit);
         if (newHp != previousHp)
             OnHpChanged(previousHp, newHp, attacker);
         return newHp;
@@ -140,8 +145,13 @@ public abstract class CreatureLifeStats
 
     protected void SendAttackStatusPacketUpdate(TYPE type, int value, int skillId, LOG? log)
     {
+        SendAttackStatusPacketUpdate(type, value, skillId, log, false);
+    }
+
+    protected void SendAttackStatusPacketUpdate(TYPE type, int value, int skillId, LOG? log, bool criticalHit)
+    {
         if (type != null)
-            PacketSendUtility.BroadcastToSightedPlayers(owner, new SM_ATTACK_STATUS(owner, type, skillId, value, log!.Value), true);
+            PacketSendUtility.BroadcastToSightedPlayers(owner, new SM_ATTACK_STATUS(owner, type, skillId, value, log!.Value, criticalHit), true);
     }
 
     /// <summary>Called whenever caller wants to restore the creature's HP. Returns currentHp.</summary>

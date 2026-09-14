@@ -91,8 +91,16 @@ public sealed class StatCapUtilTests
     [Fact]
     public void UnregisteredStatsRemainUnlimited()
     {
-        Assert.Equal(int.MinValue, StatCapUtil.GetLowerCap(StatEnum.ATTACK_SPEED, nonPlayer));
-        Assert.Equal(int.MaxValue, StatCapUtil.GetUpperCap(StatEnum.ATTACK_SPEED, nonPlayer));
+        Assert.Equal(int.MinValue, StatCapUtil.GetLowerCap(StatEnum.BOOST_HATE, nonPlayer));
+        Assert.Equal(int.MaxValue, StatCapUtil.GetUpperCap(StatEnum.BOOST_HATE, nonPlayer));
+        Assert.Equal(int.MaxValue, StatCapUtil.GetDifferenceLimit(StatEnum.BOOST_HATE));
+    }
+
+    [Fact]
+    public void AttackSpeedIsCappedBetweenHalfASecondAndTenSeconds()
+    {
+        Assert.Equal(500, StatCapUtil.GetLowerCap(StatEnum.ATTACK_SPEED, nonPlayer));
+        Assert.Equal(10000, StatCapUtil.GetUpperCap(StatEnum.ATTACK_SPEED, nonPlayer));
         Assert.Equal(int.MaxValue, StatCapUtil.GetDifferenceLimit(StatEnum.ATTACK_SPEED));
     }
 

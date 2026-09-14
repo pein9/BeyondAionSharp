@@ -126,9 +126,9 @@ public class SummonGameStats : CreatureGameStats<Summon>
         return owner.GetObjectTemplate().GetStatsTemplate();
     }
 
-    public override Stat2 GetAttackSpeed()
+    public override int GetBaseAttackSpeed()
     {
-        return GetStat(StatEnum.ATTACK_SPEED, owner.GetObjectTemplate().GetAttackSpeed());
+        return owner.GetObjectTemplate().GetAttackSpeed();
     }
 
     public override Stat2 GetMovementSpeed()

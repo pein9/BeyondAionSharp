@@ -28,7 +28,7 @@ public abstract class HealOverTimeEffect : AbstractOverTimeEffect, HealEffectTem
 
     public void StartEffect(Effect effect, HealType healType)
     {
-        effect.SetReserveds(new EffectReserved(Position, ((HealEffectTemplate)this).CalculateHealValue(effect, healType), EffectReservedResourceTypeExtensions.Of(healType), false, false), true);
+        effect.SetReserveds(new EffectReserved(Position, ((HealEffectTemplate)this).CalculateSnapshotHealValue(effect, healType), EffectReservedResourceTypeExtensions.Of(healType), false, false), true);
         base.StartEffect(effect, null);
     }
 
@@ -40,13 +40,10 @@ public abstract class HealOverTimeEffect : AbstractOverTimeEffect, HealEffectTem
         int maxCurValue = GetMaxStatValue(effect);
         int possibleHealValue = effect.GetReserveds(Position).GetValue();
 
-        if (healType == HealType.HP && effect.GetItemTemplate() == null)
-            possibleHealValue = effected.GetGameStats().GetStat(StatEnum.HEAL_SKILL_DEBOOST, possibleHealValue).GetCurrent();
+        if (healType == HealType.HP)
+            possibleHealValue = ((HealEffectTemplate)this).ApplyHealDeboost(effect, possibleHealValue);
 
         int healValue = Math.Min(maxCurValue - currentValue, possibleHealValue);
-
-        if (healValue <= 0)
-            return;
 
         switch (healType)
         {
@@ -72,12 +69,12 @@ public abstract class HealOverTimeEffect : AbstractOverTimeEffect, HealEffectTem
 
     public bool AllowHpHealBoost(Effect effect)
     {
-        return !percent && effect.GetItemTemplate() == null;
+        return effect.GetSkillTemplate().IsApplyHealBoostBonus();
     }
 
     public bool AllowHpHealSkillDeboost(Effect effect)
     {
-        return false; // calculated in onPeriodicAction instead
+        return effect.GetSkillTemplate().IsApplyHealBoostBonus();
     }
 
     public int CalculateBaseHealValue(Effect effect)

@@ -15,11 +15,16 @@ public class SpellAtkDrainEffect : AbstractOverTimeEffect
     [XmlAttribute("mp_percent")]
     public int mpPercent;
 
+    protected override void ResolveMagicalCritical(Effect effect)
+    {
+        effect.RollMagicalCritical(Position, CalculateCritProbMod(effect)); // periodic damage ignores the apply_magical_critical flag
+    }
+
     public override void OnPeriodicAction(Effect effect)
     {
         int valueWithDelta = CalculateBaseValue(effect);
-        int damage = AttackUtil.CalculateMagicalOverTimeSkillResult(effect, valueWithDelta, this, true);
-        effect.GetEffected().GetController().OnAttack(effect, SmAttackStatus.TYPE.DAMAGE, damage, true, SmAttackStatus.LOG.SPELLATKDRAIN, Hoptype);
+        int damage = AttackUtil.CalculateMagicalOverTimeSkillResult(effect, valueWithDelta, this, effect.GetSkillTemplate().IsApplyMagicalSkillBoostBonus());
+        effect.GetEffected().GetController().OnAttack(effect, SmAttackStatus.TYPE.DAMAGE, damage, true, SmAttackStatus.LOG.SPELLATKDRAIN, Hoptype, effect.IsMagicalCritical(Position));
         effect.GetEffector().GetObserveController().NotifyAttackObservers(effect.GetEffected(), effect.GetSkillId());
 
         // Drain (heal) portion of damage inflicted

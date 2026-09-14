@@ -253,14 +253,13 @@ public class AttackUtil
         ActionModifier modifier = template.GetActionModifiers(effect);
         SkillElement element = template.GetElement();
         int randomDamageType = template is SkillAttackInstantEffect skillAttackInstantEffect ? skillAttackInstantEffect.GetRnddmg() : 0;
-        bool useTemplateDmg = IsUseTemplateDmg(effect, template);
+        bool useTemplateDmg = template is NoReduceSpellATKInstantEffect;
         bool send = !(template is DelayedSpellAttackInstantEffect) && !(template is ProcAtkInstantEffect);
-        bool shouldIncreaseByOneTimeBoost = !(template is ProcAtkInstantEffect);
 
         AttackStatus status = element switch
         {
-            SkillElement.NONE => CalculatePhysicalStatus(effector, effected, template, effect.GetSkillLevel()),
-            _ => CalculateMagicalStatus(effector, effected, template.GetCritProbMod2(), true, effect.GetSkillTemplate().IsMcritApplied()),
+            SkillElement.NONE => CalculatePhysicalStatus(effector, effected, template, effect),
+            _ => effect.IsMagicalCritical(template.GetPosition()) ? AttackStatus.CRITICAL : AttackStatus.NORMALHIT,
         };
 
         int baseAttack = 0;
@@ -348,13 +347,15 @@ public class AttackUtil
             float damageMultiplier;
             if (isPhysical)
             {
-                damageMultiplier = effector.GetObserveController().GetBasePhysicalDamageMultiplier(true);
+                damageMultiplier = template.ShouldUseOneTimeBoostSkillAttack() ? effector.GetObserveController().GetBasePhysicalDamageMultiplier(true) : 1f;
                 damage += bonus;
             }
             else
             {
-                damageMultiplier = shouldIncreaseByOneTimeBoost ? effector.GetObserveController().GetBaseMagicalDamageMultiplier() : 1f;
-                damage = StatFunctions.CalculateMagicalSkillDamage(effector, effected, damage, (int)bonus, template, true, true);
+                bool applyMagicalSkillBoostBonus = template.ShouldApplyMagicalSkillBoostBonus(effect);
+                damageMultiplier = template.ShouldUseOneTimeBoostSkillAttack() ? effector.GetObserveController().GetBaseMagicalDamageMultiplier() : 1f;
+                damage = StatFunctions.CalculateMagicalSkillDamage(effector, effected, damage, (int)bonus, template, applyMagicalSkillBoostBonus,
+                    template.ShouldUseKnowledge(), template.ShouldUseBoostSpellAttackEffects());
             }
             if (template.ShouldApplyAttackerMovementModifier())
             {
@@ -366,7 +367,7 @@ public class AttackUtil
         if (randomDamageType > 0)
             damage = RandomizeDamage(randomDamageType, damage);
 
-        if (status.IsCritical())
+        if (status.IsCritical() && !useTemplateDmg)
         {
             int critAddDmg = template.CalculateCritAddDmg(effect);
             StatEnum stat = element == SkillElement.NONE ? StatEnum.PHYSICAL_CRITICAL_DAMAGE_REDUCE : StatEnum.MAGICAL_CRITICAL_DAMAGE_REDUCE;
@@ -408,42 +409,6 @@ public class AttackUtil
             damage = effected.GetAi().ModifyDamage(effector, damage, effect);
         }
         CalculateEffectResult(effect, effected, (int)damage, status, ht, ignoreShield, template.GetPosition(), send);
-    }
-
-    private static bool IsUseTemplateDmg(Effect effect, EffectTemplate template)
-    {
-        if (template is NoReduceSpellATKInstantEffect)
-            return true;
-        if (template is ProcAtkInstantEffect && effect.GetSkillTemplate().IsProvoked() || effect.GetStack().StartsWith("IDEVENT"))
-        { // proc effects of skills like 8583
-            // TODO: find pattern or extract <apply_magical_skill_boost_bonus> and <apply_magical_critical> from server files. What about missing ones?
-            switch (effect.GetStack().ToLower())
-            {
-                case "nwi_delayspell_dd_proca_tal":
-                case "ngu_vritra_delayspell_dd_proca_tal":
-                case "sgfi_procts_air":
-                case "ab1_artifact_hellfire":
-                case "ldf4b_c3_artifact_tiamat_delayatk":
-                case "ldf4b_t4_artifact_crystal_dd":
-                case "ldf4b_t3_artifact_fury_dd":
-                case "ldf4b_t2_artifact_gravity_openaerial":
-                case "ldf4b_t2_artifact_gravity_dd":
-                case "ldf4b_t1_artifact_crack_stumble_mpatk":
-                case "ldf4b_t1_artifact_crack_dd":
-                case "idtiamat_tahabata_adddmgtobleed":
-                case "kn_turnaggressiveeffect":
-                case "tiamatdown_tiamatagent_bomb":
-                case "idtiamat_thor_procatk":
-                case "idyun_vasharti_refdmg_red":
-                case "idyun_vasharti_refdmg_blue":
-                case "ldf4b_d3_buff_poison_proc":
-                case "ldf4b_tatar_procatk":
-                case "idforest_wave_trico_proclight":
-                case "idevent01_areadot":
-                    return true;
-            }
-        }
-        return false;
     }
 
     private static float RandomizeDamage(int randomDamageType, float damage)
@@ -505,7 +470,7 @@ public class AttackUtil
             effect.SetProtectorId(attackResult.GetProtectorId());
             effect.SetShieldDefense(attackResult.GetShieldType());
         }
-        effect.SetReserveds(new EffectReserved(position, attackResult.GetDamage(), ResourceType.HP, true, send), false);
+        effect.SetReserveds(new EffectReserved(position, attackResult.GetDamage(), ResourceType.HP, true, send, attackResult.GetAttackStatus()), false);
         effect.SetAttackStatus(attackResult.GetAttackStatus());
         effect.SetLaunchSubEffect(attackResult.IsLaunchSubEffect());
     }
@@ -515,7 +480,7 @@ public class AttackUtil
     /// </summary>
     public static List<AttackResult> CalculateMagAttackResult(Creature attacker, Creature attacked, SkillElement element, ISet<CalculationType> calculationTypes)
     {
-        AttackStatus attackStatus = CalculateMagicalStatus(attacker, attacked, 100, false, true);
+        AttackStatus attackStatus = CalculateMagicalStatus(attacker, attacked, 100, false);
         List<AttackResult> attackResultList = StatFunctions.CalculateAttackDamage(attacker, element, attackStatus, calculationTypes);
         AdjustDamageByStatModifiers(attacker, attacked, attackStatus, attackResultList, element);
         AmplifyDamageByAdditionalHitCount(attacker, attackStatus, attackResultList);
@@ -537,13 +502,10 @@ public class AttackUtil
         else
         {
             float damageMultiplier = effector.GetObserveController().GetBaseMagicalDamageMultiplier();
-            damage = StatFunctions.CalculateMagicalSkillDamage(effector, effected, skillDamage, 0, template, useMagicBoost, false);
+            damage = StatFunctions.CalculateMagicalSkillDamage(effector, effected, skillDamage, 0, template, useMagicBoost, false, false);
             damage = damage * damageMultiplier;
 
-            AttackStatus status = effect.GetAttackStatus();
-            // calculate attack status only if it has not been forced already
-            if (status == AttackStatus.NORMALHIT && template.GetPosition() == 1)
-                status = CalculateMagicalStatus(effector, effected, template.GetCritProbMod2(), true, effect.GetSkillTemplate().IsMcritApplied());
+            AttackStatus status = effect.IsMagicalCritical(template.GetPosition()) ? AttackStatus.CRITICAL : AttackStatus.NORMALHIT;
             if (status == AttackStatus.CRITICAL)
             {
                 int critAddDmg = template.CalculateCritAddDmg(effect);
@@ -562,11 +524,11 @@ public class AttackUtil
         return (int)damage;
     }
 
-    private static AttackStatus CalculatePhysicalStatus(Creature attacker, Creature attacked, EffectTemplate template, int skillLevel)
+    private static AttackStatus CalculatePhysicalStatus(Creature attacker, Creature attacked, EffectTemplate template, Effect effect)
     {
-        int accMod = template.GetAccMod2() + template.GetAccMod1() * skillLevel;
+        int accMod = template.GetAccMod2() + template.GetAccMod1() * effect.GetSkillLevel();
         bool cannotMiss = template is SkillAttackInstantEffect skillAttackInstantEffect && skillAttackInstantEffect.IsCannotmiss();
-        return CalculatePhysicalStatus(attacker, attacked, true, accMod, template.GetCritProbMod2(), true, cannotMiss);
+        return CalculatePhysicalStatus(attacker, attacked, true, accMod, template.CalculateCritProbMod(effect), true, cannotMiss);
     }
 
     private static AttackStatus CalculatePhysicalStatus(Creature attacker, Creature attacked, bool isMainHand, int accMod, int criticalProb,
@@ -606,7 +568,7 @@ public class AttackUtil
     /// <summary>
     /// Every +100 delta of (MR - MA) = +10% to resist; if the difference is 1000 = 100% resist
     /// </summary>
-    public static AttackStatus CalculateMagicalStatus(Creature attacker, Creature attacked, int criticalProb, bool isSkill, bool applyMcrit)
+    public static AttackStatus CalculateMagicalStatus(Creature attacker, Creature attacked, int criticalProb, bool isSkill)
     {
         if (!isSkill)
         {
@@ -614,7 +576,7 @@ public class AttackUtil
                 return AttackStatus.RESIST;
         }
 
-        if (StatFunctions.CalculateMagicalCriticalRate(attacker, attacked, criticalProb, applyMcrit))
+        if (StatFunctions.CalculateMagicalCriticalRate(attacker, attacked, criticalProb))
         {
             return AttackStatus.CRITICAL;
         }

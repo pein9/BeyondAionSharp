@@ -86,12 +86,10 @@ public class PlayerGameStats : CreatureGameStats<Player>
         return GetStat(StatEnum.FLY_TIME, CustomConfig.BASE_FLYTIME);
     }
 
-    public override Stat2 GetAttackSpeed()
+    public override int GetBaseAttackSpeed()
     {
         int baseV = 1500;
-        Equipment equipment = owner.GetEquipment();
-        Item mainHandWeapon = equipment.GetMainHandWeapon();
-
+        Item mainHandWeapon = owner.GetEquipment().GetMainHandWeapon();
         if (mainHandWeapon != null)
         {
             baseV = mainHandWeapon.GetItemTemplate().GetWeaponStats().GetAttackSpeed();
@@ -101,7 +99,7 @@ public class PlayerGameStats : CreatureGameStats<Player>
             if (offWeapon != null)
                 baseV += offWeapon.GetItemTemplate().GetWeaponStats().GetAttackSpeed() / 4;
         }
-        return GetStat(StatEnum.ATTACK_SPEED, baseV);
+        return baseV;
     }
 
     public override Stat2 GetMovementSpeed()

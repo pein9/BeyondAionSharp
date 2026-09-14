@@ -12,6 +12,11 @@ namespace Aion.GameServer.SkillEngine.Effects;
 [XmlType("PoisonEffect")]
 public class PoisonEffect : AbstractOverTimeEffect
 {
+    protected override void ResolveMagicalCritical(Effect effect)
+    {
+        effect.RollMagicalCritical(Position, CalculateCritProbMod(effect)); // periodic damage ignores the apply_magical_critical flag
+    }
+
     public override void Calculate(Effect effect)
     {
         base.Calculate(effect, StatEnum.POISON_RESISTANCE, null);
@@ -33,7 +38,8 @@ public class PoisonEffect : AbstractOverTimeEffect
     public override void OnPeriodicAction(Effect effect)
     {
         Creature effected = effect.GetEffected();
-        effected.GetController().OnAttack(effect, SmAttackStatus.TYPE.DAMAGE, effect.GetReserveds(Position).GetValue(), false, SmAttackStatus.LOG.POISON, Hoptype);
+        effected.GetController().OnAttack(effect, SmAttackStatus.TYPE.DAMAGE, effect.GetReserveds(Position).GetValue(), false, SmAttackStatus.LOG.POISON, Hoptype,
+            effect.IsMagicalCritical(Position));
         effected.GetObserveController().NotifyDotAttackedObservers(effect.GetEffector(), effect);
     }
 }

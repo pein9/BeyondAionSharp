@@ -5,7 +5,7 @@ using Aion.GameServer.SkillEngine.Model;
 
 namespace Aion.GameServer.SkillEngine.Effects;
 
-/// <summary>Java parity: skillengine/effect/DispelBuffCounterAtkEffect : DamageEffect. @XmlAttribute dpower/power/hitvalue/hitdelta; @XmlAttribute(name="dispel_level"); getCritProbMod2→0 (cannot crit, base virtual via converge); applyEffect→dispelBuffCounterAtkEffect; calculateDamage: count=base, finalPower, calculateBuffsOrEffectorDebuffsToRemove, valueWithDelta formula, calculateSkillResult; shouldApplyAttackerMovementModifier→false; endEffect→resetDesignatedDispelEffect+super. AttackUtil/Creature red-tolerated.</summary>
+/// <summary>Java parity: skillengine/effect/DispelBuffCounterAtkEffect : DamageEffect. @XmlAttribute dpower/power/hitvalue/hitdelta; @XmlAttribute(name="dispel_level"); resolveMagicalCritical no-op (never crits); knowledge/boost-spell-attack/one-time-boost off; applyEffect→dispelBuffCounterAtkEffect; calculateDamage: count=base, finalPower, calculateBuffsOrEffectorDebuffsToRemove, valueWithDelta formula, calculateSkillResult; shouldApplyAttackerMovementModifier→false; endEffect→resetDesignatedDispelEffect+super. AttackUtil/Creature red-tolerated.</summary>
 [XmlType("DispelBuffCounterAtkEffect")]
 public class DispelBuffCounterAtkEffect : DamageEffect
 {
@@ -20,9 +20,9 @@ public class DispelBuffCounterAtkEffect : DamageEffect
     [XmlAttribute("dispel_level")]
     public int dispelLevel;
 
-    public override int GetCritProbMod2()
+    protected override void ResolveMagicalCritical(Effect effect)
     {
-        return 0; // critProbMod2 is 100 by default but this effect type cannot crit
+        // this effect type deals its damage without the magical attack calculation, so it never crits and never decides the critical of other effects
     }
 
     public override void ApplyEffect(Effect effect)
@@ -51,5 +51,20 @@ public class DispelBuffCounterAtkEffect : DamageEffect
     {
         effect.GetEffected().GetEffectController().ResetDesignatedDispelEffect(effect);
         base.EndEffect(effect);
+    }
+
+    public override bool ShouldUseKnowledge()
+    {
+        return false;
+    }
+
+    public override bool ShouldUseBoostSpellAttackEffects()
+    {
+        return false;
+    }
+
+    public override bool ShouldUseOneTimeBoostSkillAttack()
+    {
+        return false;
     }
 }

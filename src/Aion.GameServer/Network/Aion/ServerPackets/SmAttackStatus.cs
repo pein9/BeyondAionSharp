@@ -17,11 +17,20 @@ public sealed class SmAttackStatus : AionServerPacket
 {
     public const int PacketOpCode = 5;
 
+    private const int CRITICAL_DISPLAY_CODE = 12;
+
     private readonly Creature creature;
     private readonly TYPE type;
     private readonly int skillId;
     private readonly int value;
     private readonly int logId;
+    private readonly bool criticalHit;
+
+    public SmAttackStatus(Creature creature, TYPE type, int skillId, int value, LOG log, bool criticalHit)
+        : this(creature, type, skillId, value, log)
+    {
+        this.criticalHit = criticalHit;
+    }
 
     public SmAttackStatus(Creature creature, TYPE type, int skillId, int value, LOG log)
         : base(PacketOpCode)
@@ -73,7 +82,8 @@ public sealed class SmAttackStatus : AionServerPacket
         WriteC(type.GetValue());
         WriteC(hpOrMp);
         WriteH(skillId);
-        WriteH(logId);
+        WriteC(logId);
+        WriteC(criticalHit ? CRITICAL_DISPLAY_CODE : 0);
     }
 
     /// <summary>Java parity: SmAttackStatus.TYPE (class-enum; constants may share ids).</summary>

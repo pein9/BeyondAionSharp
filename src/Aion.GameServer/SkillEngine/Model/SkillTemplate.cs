@@ -100,6 +100,18 @@ public class SkillTemplate : L10n
     [XmlAttribute("req_dispel_count")]
     public int reqDispelCount;
 
+    [XmlAttribute("apply_magical_skill_boost_bonus")]
+    public bool applyMagicalSkillBoostBonus;
+
+    [XmlAttribute("apply_magical_critical")]
+    public bool applyMagicalCritical;
+
+    [XmlAttribute("apply_heal_boost_bonus")]
+    public bool applyHealBoostBonus;
+
+    [XmlAttribute("apply_casting_time_bonus")]
+    public bool applyCastingTimeBonus;
+
     [XmlAttribute("activation")]
     public ActivationAttribute activationAttribute;
 
@@ -172,9 +184,6 @@ public class SkillTemplate : L10n
     [XmlAttribute("stigma")]
     public StigmaType stigmaType = StigmaType.NONE;
 
-    [XmlAttribute("applymcrit")]
-    public bool applyMcrit = true;
-
     [XmlAttribute("hostile_type")]
     public HostileType hostileType = HostileType.NONE;
 
@@ -226,6 +235,14 @@ public class SkillTemplate : L10n
 
     public int GetReqDispelCount() => reqDispelCount;
 
+    public bool IsApplyMagicalSkillBoostBonus() => applyMagicalSkillBoostBonus;
+
+    public bool IsApplyMagicalCritical() => applyMagicalCritical;
+
+    public bool IsApplyHealBoostBonus() => applyHealBoostBonus;
+
+    public bool IsApplyCastingTimeBonus() => applyCastingTimeBonus;
+
     public int GetDuration() => duration;
 
     public int GetToggleTimer() => toggleTimer;
@@ -268,17 +285,6 @@ public class SkillTemplate : L10n
     public int GetCancelRate() => cancelRate;
 
     public bool IsStance() => stance;
-
-    public bool IsCastDurationAffectedByCastSpeed()
-    {
-        if (IsDeityAvatar())
-            return false;
-        if (HasAnyEffect(EffectType.SLEEP, EffectType.FEAR, EffectType.RETURN, EffectType.ESCAPE))
-            return false; // sleep and fear skills are no longer affected by cast speed since 1.5.0.5
-        if (GetActions() != null && GetActions()!.GetActions().Any(action => action is ItemUseAction)) // e.g. Herb Treatment
-            return false;
-        return true;
-    }
 
     public bool HasAnyEffect(params EffectType[] effectTypes)
     {
@@ -408,8 +414,6 @@ public class SkillTemplate : L10n
     public Conditions? GetEndConditions() => endconditions;
 
     public SkillCategory GetSkillCategory() => skillCategory;
-
-    public bool IsMcritApplied() => applyMcrit;
 
     public HostileType GetHostileType() => hostileType;
 }

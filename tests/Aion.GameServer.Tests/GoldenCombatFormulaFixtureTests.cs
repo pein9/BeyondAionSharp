@@ -94,7 +94,8 @@ public sealed class GoldenCombatFormulaFixtureTests
             inputs.GetProperty("bonus").GetInt32(),
             new HarnessEffect(ParseElement(inputs.GetProperty("element").GetString()!)),
             inputs.GetProperty("useMagicBoost").GetBoolean(),
-            inputs.GetProperty("useKnowledge").GetBoolean()),
+            inputs.GetProperty("useKnowledge").GetBoolean(),
+            inputs.GetProperty("useBoostSpellAttack").GetBoolean()),
         _ => throw new NotSupportedException($"No C# float dispatch registered for combat formula {formula}"),
     };
 
@@ -191,6 +192,7 @@ public sealed class GoldenCombatFormulaFixtureTests
 
         public override StatsTemplate GetStatsTemplate() => new StatsTemplate();
         public override Stat2 GetAttackSpeed() => new AdditionStat(StatEnum.ATTACK_SPEED, 1000, owner);
+        public override int GetBaseAttackSpeed() => 1000;
         public override Stat2 GetMovementSpeed() => new AdditionStat(StatEnum.SPEED, 6000, owner);
         public override Stat2 GetAttackRange() => new AdditionStat(StatEnum.ATTACK_RANGE, 1500, owner);
         public override Stat2 GetHpRegenRate() => new AdditionStat(StatEnum.REGEN_HP, 1, owner);

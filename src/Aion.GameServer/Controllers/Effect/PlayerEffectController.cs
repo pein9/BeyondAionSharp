@@ -102,7 +102,7 @@ public class PlayerEffectController : EffectController
         return effect.GetTargetSlot() == SkillTargetSlot.DEBUFF && effect.GetEffector() is Player player && !GetOwner().Equals(player) && !GetOwner().IsEnemy(player);
     }
 
-    public void AddSavedEffect(int skillId, int skillLvl, int remainingTime, long endTime, ForceType forceType)
+    public void AddSavedEffect(int skillId, int skillLvl, int remainingTime, long endTime, ForceType forceType, ISet<int> magicalCriticalPositions)
     {
         if (EventService.GetInstance().IsInactiveEventForceType(forceType))
             return;
@@ -118,7 +118,7 @@ public class PlayerEffectController : EffectController
                 remainingTime = (int)(endTime - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         }
 
-        Effect effect = new Effect(GetOwner(), GetOwner(), template, skillLvl, remainingTime, forceType);
+        Effect effect = new Effect(GetOwner(), GetOwner(), template, skillLvl, remainingTime, forceType, false, magicalCriticalPositions);
         Put(effect);
         effect.AddAllEffectToSucess();
         effect.StartEffect();

@@ -24,6 +24,7 @@ public class StatCapUtil
         Register(StatEnum.MAXMP, creature => creature is Player ? 1 : 0, UnlimitedUpper);
         Register(StatEnum.SPEED, 0, creature => creature is Player player && !player.IsStaff() ? 12000 : int.MaxValue);
         Register(StatEnum.FLY_SPEED, 0, creature => creature is Player player && !player.IsStaff() ? 16000 : int.MaxValue);
+        Register(StatEnum.ATTACK_SPEED, 500, 10000);
         Register(StatEnum.HEAL_BOOST, -1000, 1000);
         Register(StatEnum.EVASION, 0, UnlimitedUpper, 300);
         Register(StatEnum.PARRY, 0, UnlimitedUpper, 400);
@@ -81,16 +82,9 @@ public class StatCapUtil
         int lowerCap = GetLowerCap(stat.GetStat(), creature);
         int upperCap = GetUpperCap(stat.GetStat(), creature);
 
-        if (stat.GetStat() == StatEnum.ATTACK_SPEED)
-        {
-            int @base = stat.GetBase() / 2;
-            if (stat.GetBonus() > 0 && @base < stat.GetBonus())
-                stat.SetBonus(@base);
-            else if (stat.GetBonus() < 0 && @base < -stat.GetBonus())
-                stat.SetBonus(-@base);
-        }
-
-        Calculate(stat, lowerCap, upperCap);
+        ApplyCap(stat, lowerCap, upperCap);
+        if (stat.GetStat() == StatEnum.ATTACK_SPEED) // attack delay is first capped to [500, 10000] ms and then to [base * 0.5, base * 2]
+            ApplyCap(stat, (int)(stat.GetBase() * 0.5f), stat.GetBase() * 2);
     }
 
     public static int GetLowerCap(StatEnum stat, Creature creature)
@@ -117,7 +111,8 @@ public class StatCapUtil
         return GetRule(stat).DiffLimit;
     }
 
-    private static void Calculate(Stat2 stat2, int lowerCap, int upperCap)
+    // Java cap(Stat2, int, int); C# cannot give a method the name of the nested Cap record.
+    private static void ApplyCap(Stat2 stat2, int lowerCap, int upperCap)
     {
         float exactCurrent = stat2.GetExactCurrent();
         if (exactCurrent > upperCap)

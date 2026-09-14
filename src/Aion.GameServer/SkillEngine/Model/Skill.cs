@@ -347,8 +347,7 @@ public class Skill
         }
         else if (skillTemplate.IsCharge())
         {
-            bool isChargeTimeFixed = UpdateChargeBaseCastDuration();
-            castDuration = isChargeTimeFixed ? baseCastDuration : CalculateChargeCastDuration();
+            castDuration = CalculateChargeCastDuration();
             castSpeedForAnimationBoostAndChargeSkills = (float)castDuration / baseCastDuration;
         }
         else
@@ -358,36 +357,29 @@ public class Skill
         }
     }
 
-    private bool UpdateChargeBaseCastDuration()
+    private int CalculateChargeCastDuration()
     {
+        SkillType chargeTimeBonusType = SkillType.NONE;
         // cast/attack speed can affect charge time since 4.8
-        bool isChargeTimeFixed = !IsCastDurationAffectedByCastSpeed(); // fear and sleep charge skills are excluded, just like with regular casts
         SkillChargeCondition chargeCondition = skillTemplate.GetSkillChargeCondition();
         if (chargeCondition != null)
         {
             int maxCastDuration = 0;
             ChargeSkillEntry skillCharge = DataManager.SKILL_CHARGE_DATA.GetChargedSkillEntry(chargeCondition.GetValue());
+            chargeTimeBonusType = skillCharge.GetChargeTimeBonusType();
             foreach (ChargedSkill chargedSkill in skillCharge.GetSkills())
             {
-                if (!isChargeTimeFixed && !DataManager.SKILL_DATA.GetSkillTemplate(chargedSkill.GetId()).IsCastDurationAffectedByCastSpeed())
-                    isChargeTimeFixed = true;
                 maxCastDuration += chargedSkill.GetTime();
             }
             baseCastDuration = maxCastDuration;
         }
-        return isChargeTimeFixed;
-    }
-
-    private int CalculateChargeCastDuration()
-    {
-        bool isPhysicalClass = effector is Player player
-            && (player.GetPlayerClass().IsPhysicalClass() || player.GetPlayerClass() == PlayerClass.RIDER || player.GetPlayerClass() == PlayerClass.GUNNER);
-        int castDuration;
-        if (isPhysicalClass) // TODO check if attack speed should also affect magical classes
-            castDuration = (int)effector.GetGameStats().GetPositiveStat(StatEnum.ATTACK_SPEED, baseCastDuration);
-        else
-            castDuration = CalculateMagicalCastDuration();
-        return Math.Max(castDuration, (int)(baseCastDuration * 0.25f));
+        float speedRatio = chargeTimeBonusType switch
+        {
+            SkillType.PHYSICAL => effector.GetGameStats().GetAttackSpeedRate(),
+            SkillType.MAGICAL => IsCastDurationAffectedByCastSpeed() ? (float)CalculateMagicalCastDuration() / baseCastDuration : 1f,
+            _ => 1f,
+        };
+        return (int)(baseCastDuration * (1 - (1 - speedRatio) / 2)); // charge skills are only affected by half of the speed bonus
     }
 
     private int CalculateCastDuration()
@@ -397,7 +389,7 @@ public class Skill
         // 2nd+ time of multicast-skill activation
         if (GetMultiCastCount() > 0)
             return 0;
-        if (skillTemplate.GetTypeValue() != SkillType.MAGICAL || !IsCastDurationAffectedByCastSpeed())
+        if (!IsCastDurationAffectedByCastSpeed())
             return baseCastDuration;
         return CalculateMagicalCastDuration();
     }
@@ -1097,12 +1089,12 @@ public class Skill
     /// <summary>The game client allows to boost the animation time of a skill via cast speed.</summary>
     public bool AllowAnimationBoostByCastSpeed()
     {
-        return IsMagical();
+        return skillTemplate.IsApplyCastingTimeBonus();
     }
 
     private bool IsCastDurationAffectedByCastSpeed()
     {
-        return skillMethod == SkillMethod.CAST && skillTemplate.IsCastDurationAffectedByCastSpeed();
+        return skillMethod == SkillMethod.CAST && skillTemplate.IsApplyCastingTimeBonus();
     }
 
     public void SetChainCategory(string chainCategory)
@@ -1149,10 +1141,5 @@ public class Skill
     public void SetHate(int hate)
     {
         this.hate = hate;
-    }
-
-    private bool IsMagical()
-    {
-        return skillTemplate.GetTypeValue() == SkillType.MAGICAL && skillTemplate.GetSubType() != SkillSubType.NONE;
     }
 }

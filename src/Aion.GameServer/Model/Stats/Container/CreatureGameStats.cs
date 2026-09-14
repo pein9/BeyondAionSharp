@@ -330,7 +330,17 @@ public abstract class CreatureGameStats
         return GetStat(statEnum, baseValue);
     }
 
-    public abstract Stat2 GetAttackSpeed();
+    public virtual Stat2 GetAttackSpeed()
+    {
+        return GetStat(StatEnum.ATTACK_SPEED, GetBaseAttackSpeed());
+    }
+
+    public abstract int GetBaseAttackSpeed();
+
+    public float GetAttackSpeedRate()
+    {
+        return (float)GetAttackSpeed().GetCurrent() / GetBaseAttackSpeed();
+    }
 
     public abstract Stat2 GetMovementSpeed();
 

@@ -53,9 +53,9 @@ public class NpcGameStats : CreatureGameStats<Npc>
         return s;
     }
 
-    public override Stat2 GetAttackSpeed()
+    public override int GetBaseAttackSpeed()
     {
-        return GetStat(StatEnum.ATTACK_SPEED, owner.GetObjectTemplate().GetAttackSpeed());
+        return owner.GetObjectTemplate().GetAttackSpeed();
     }
 
     public override Stat2 GetMovementSpeed()

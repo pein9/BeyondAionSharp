@@ -20,8 +20,6 @@ public class DelayedSpellAttackInstantEffect : DamageEffect
     public override void ApplyEffect(Effect effect)
     {
         int valueWithDelta = CalculateBaseValue(effect);
-        if (Element != SkillElement.NONE)
-            valueWithDelta *= effect.GetEffector().GetGameStats().GetKnowledge().GetCurrent() / 100;
 
         AttackUtil.CalculateSkillResult(effect, valueWithDelta, this, true); // ignores shields on retail
         int finalPosition = this.Position;

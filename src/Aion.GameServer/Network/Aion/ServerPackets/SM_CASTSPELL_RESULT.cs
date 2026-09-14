@@ -172,7 +172,7 @@ public class SM_CASTSPELL_RESULT : AionServerPacket
             {
                 WriteC(er.GetType_().GetValue());// HP - 0 , MP - 1, FP - 2, DP - 3?
                 WriteD(er.GetValueToSend());
-                WriteC(effect.GetAttackStatus().GetId());
+                WriteC(er.GetAttackStatus().GetId());
                 bool isCounter = effect.GetAttackStatus().IsCounterSkill();
                 if (effect.GetEffectResult() == EffectResult.RESIST)
                     isCounter = true;

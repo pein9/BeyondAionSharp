@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.GameObjects.Players;
+using Aion.GameServer.SkillEngine.Effects;
 using Aion.GameServer.SkillEngine.Model;
 using ForceType = Aion.GameServer.SkillEngine.Model.Effect.ForceType;
 
@@ -22,9 +23,9 @@ public class PlayerEffectsDAO
 {
     private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PlayerEffectsDAO));
 
-    public const string INSERT_QUERY = "INSERT INTO `player_effects` (`player_id`, `skill_id`, `skill_lvl`, `remaining_time`, `end_time`, `force_type`) VALUES (?,?,?,?,?,?)";
+    public const string INSERT_QUERY = "INSERT INTO `player_effects` (`player_id`, `skill_id`, `skill_lvl`, `remaining_time`, `end_time`, `force_type`, `magical_criticals`) VALUES (?,?,?,?,?,?,?)";
     public const string DELETE_QUERY = "DELETE FROM `player_effects` WHERE `player_id`=?";
-    public const string SELECT_QUERY = "SELECT `skill_id`, `skill_lvl`, `remaining_time`, `end_time`,`force_type` FROM `player_effects` WHERE `player_id`=?";
+    public const string SELECT_QUERY = "SELECT `skill_id`, `skill_lvl`, `remaining_time`, `end_time`, `force_type`, `magical_criticals` FROM `player_effects` WHERE `player_id`=?";
 
     private static readonly Func<Effect, bool> insertableEffectsPredicate = effect => effect.CanSaveOnLogout() && effect.GetRemainingTimeMillis() > 28000;
 
@@ -59,9 +60,8 @@ public class PlayerEffectsDAO
                 int ftOrd = rset.GetOrdinal("force_type");
                 string forceTypeStr = rset.IsDBNull(ftOrd) ? null : rset.GetString(ftOrd);
                 ForceType forceType = forceTypeStr == null ? null : ForceType.GetInstance(forceTypeStr);
-
-                if (remainingTime > 0)
-                    player.GetEffectController().AddSavedEffect(skillId, skillLvl, remainingTime, endTime, forceType);
+                ISet<int> magicalCriticalPositions = DecodeMagicalCriticalPositions(rset.GetInt32(rset.GetOrdinal("magical_criticals")));
+                player.GetEffectController().AddSavedEffect(skillId, skillLvl, remainingTime, endTime, forceType, magicalCriticalPositions);
             }
         }
     }
@@ -92,6 +92,7 @@ public class PlayerEffectsDAO
                 ps.Parameters.Add(new MySqlParameter { Value = (int)effect.GetRemainingTimeMillis() });
                 ps.Parameters.Add(new MySqlParameter { Value = effect.GetEndTime() });
                 ps.Parameters.Add(new MySqlParameter { Value = (object)effect.GetForceType()?.GetName() ?? DBNull.Value });
+                ps.Parameters.Add(new MySqlParameter { Value = EncodeMagicalCriticalPositions(effect) });
                 batch.BatchCommands.Add(ps);
             }
 
@@ -102,6 +103,25 @@ public class PlayerEffectsDAO
         {
             log.LogError(e, "Exception while saving effects of player " + player.GetObjectId());
         }
+    }
+
+    /// <summary>Magical criticals are stored as one bit per effect position, bit 0 being position 1.</summary>
+    private static int EncodeMagicalCriticalPositions(Effect effect)
+    {
+        int bits = 0;
+        foreach (EffectTemplate template in effect.GetEffectTemplates())
+            if (effect.IsMagicalCritical(template.GetPosition()))
+                bits |= 1 << template.GetPosition() - 1;
+        return bits;
+    }
+
+    private static ISet<int> DecodeMagicalCriticalPositions(int bits)
+    {
+        ISet<int> positions = new HashSet<int>();
+        for (int position = 1; bits != 0; position++, bits >>= 1)
+            if ((bits & 1) != 0)
+                positions.Add(position);
+        return positions;
     }
 
     private static void DeletePlayerEffects(Player player)

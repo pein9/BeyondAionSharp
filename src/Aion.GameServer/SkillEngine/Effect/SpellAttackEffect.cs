@@ -7,14 +7,19 @@ using SM_ATTACK_STATUS = Aion.GameServer.Network.Aion.ServerPackets.SmAttackStat
 
 namespace Aion.GameServer.SkillEngine.Effects;
 
-/// <summary>Java parity: skillengine/effect/SpellAttackEffect (kecimis) : AbstractOverTimeEffect. DoT magical damage; useMagicBoost excludes skill 21110. Inherited Position/Hoptype/CalculateBaseValue + AttackUtil/EffectReserved/SM_ATTACK_STATUS red-tolerated.</summary>
+/// <summary>Java parity: skillengine/effect/SpellAttackEffect (kecimis) : AbstractOverTimeEffect. DoT magical damage; magic boost follows the skill's apply_magical_skill_boost_bonus. Inherited Position/Hoptype/CalculateBaseValue + AttackUtil/EffectReserved/SM_ATTACK_STATUS red-tolerated.</summary>
 [XmlType("SpellAttackEffect")]
 public class SpellAttackEffect : AbstractOverTimeEffect
 {
+    protected override void ResolveMagicalCritical(Effect effect)
+    {
+        effect.RollMagicalCritical(Position, CalculateCritProbMod(effect)); // periodic damage ignores the apply_magical_critical flag
+    }
+
     public override void StartEffect(Effect effect)
     {
         int valueWithDelta = CalculateBaseValue(effect);
-        int finalDamage = AttackUtil.CalculateMagicalOverTimeSkillResult(effect, valueWithDelta, this, UseMagicBoost(effect));
+        int finalDamage = AttackUtil.CalculateMagicalOverTimeSkillResult(effect, valueWithDelta, this, effect.GetSkillTemplate().IsApplyMagicalSkillBoostBonus());
         effect.SetReserveds(new EffectReserved(Position, finalDamage, EffectReserved.ResourceType.HP, true, false), true);
         base.StartEffect(effect);
     }
@@ -22,13 +27,8 @@ public class SpellAttackEffect : AbstractOverTimeEffect
     public override void OnPeriodicAction(Effect effect)
     {
         Creature effected = effect.GetEffected();
-        effected.GetController().OnAttack(effect, SmAttackStatus.TYPE.DAMAGE, effect.GetReserveds(Position).GetValue(), false, SmAttackStatus.LOG.SPELLATK, Hoptype);
+        effected.GetController().OnAttack(effect, SmAttackStatus.TYPE.DAMAGE, effect.GetReserveds(Position).GetValue(), false, SmAttackStatus.LOG.SPELLATK, Hoptype,
+            effect.IsMagicalCritical(Position));
         effected.GetObserveController().NotifyDotAttackedObservers(effect.GetEffector(), effect);
-    }
-
-    /// <summary>Retail templates exclude apply_*_boost for some skills; if parsing succeeds, this can be removed.</summary>
-    private bool UseMagicBoost(Effect effect)
-    {
-        return effect.GetSkillId() != 21110; // Shugo Venom
     }
 }

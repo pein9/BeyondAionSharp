@@ -144,23 +144,39 @@ public abstract class CreatureController : VisibleObjectController
         OnAttack(creature, null, TYPE.REGULAR, damage, true, LOG.REGULAR, attackStatus, HopType.DAMAGE);
     }
 
-    public void OnAttack(Creature creature, int damage, AttackStatus attackStatus, Effect criticalEffect)
+    public void OnAttack(Creature creature, int damage, AttackStatus attackStatus, Effect criticalProcEffect)
     {
-        OnAttack(creature, null, TYPE.REGULAR, damage, true, LOG.REGULAR, attackStatus, HopType.DAMAGE, criticalEffect);
+        OnAttack(creature, null, TYPE.REGULAR, damage, true, LOG.REGULAR, attackStatus, HopType.DAMAGE, criticalProcEffect, false);
     }
 
     public void OnAttack(Effect effect, TYPE type, int damage, bool notifyAttack, LOG logId, HopType? hopType)
     {
-        OnAttack(effect.GetEffector(), effect, type, damage, notifyAttack, logId, effect.GetAttackStatus(), hopType, null);
+        OnAttack(effect, type, damage, notifyAttack, logId, hopType, false);
+    }
+
+    /// <summary>
+    /// Perform tasks when Creature was attacked by a periodic effect. Its critical hits are only visible in the attack status packet, since the cast
+    /// result was already sent when the effect started.
+    /// </summary>
+    public void OnAttack(Effect effect, TYPE type, int damage, bool notifyAttack, LOG logId, HopType? hopType, bool criticalHit)
+    {
+        OnAttack(effect.GetEffector(), effect, type, damage, notifyAttack, logId, effect.GetAttackStatus(), hopType, null, criticalHit);
     }
 
     public virtual void OnAttack(Creature attacker, Effect effect, TYPE type, int damage, bool notifyAttack, LOG logId, AttackStatus? status, HopType? hopType)
     {
-        OnAttack(attacker, effect, type, damage, notifyAttack, logId, status, hopType, null);
+        OnAttack(attacker, effect, type, damage, notifyAttack, logId, status, hopType, null, false);
     }
 
     /// <summary>Perform tasks when Creature was attacked.</summary>
-    private void OnAttack(Creature attacker, Effect effect, TYPE type, int damage, bool notifyAttack, LOG logId, AttackStatus? status, HopType? hopType, Effect criticalEffect)
+    /// <remarks>
+    /// attacker: creature the damage is credited to, which is not always the effector (reflected and protected damage).
+    /// effect: effect which dealt the damage, null for auto attacks.
+    /// notifyAttack: whether the hit may interrupt casts and notify attack observers.
+    /// criticalProcEffect: stumble which procced from an earlier critical hit and is applied on top of this damage, null if none procced.
+    /// criticalHit: whether the attack status packet must mark this damage as a critical hit.
+    /// </remarks>
+    private void OnAttack(Creature attacker, Effect effect, TYPE type, int damage, bool notifyAttack, LOG logId, AttackStatus? status, HopType? hopType, Effect criticalProcEffect, bool criticalHit)
     {
         if (!GetOwner().IsSpawned())
             return;
@@ -211,14 +227,14 @@ public abstract class CreatureController : VisibleObjectController
         // Retail's on_see_friend_attacked and on_friend_spelled, which aionemu has no events for.
         // Beside the fan-out above because it walks the same list; see Ai/FriendCombatNotice.
         Aion.GameServer.Ai.FriendCombatNotice.Raise(GetOwner(), attacker, effect != null);
-        GetOwner().GetLifeStats().ReduceHp(type, damage, effect == null ? 0 : effect.GetSkillId(), logId, attacker);
+        GetOwner().GetLifeStats().ReduceHp(type, damage, effect == null ? 0 : effect.GetSkillId(), logId, attacker, criticalHit);
         GetOwner().IncrementAttackedCount();
 
         if (!GetOwner().IsDead() && attacker is Player player)
         {
-            if (criticalEffect != null)
+            if (criticalProcEffect != null)
             {
-                criticalEffect.ApplyEffect();
+                criticalProcEffect.ApplyEffect();
             }
             if ((effect == null || effect.TryActivateGodstone()) && status != AttackStatus.DODGE && status != AttackStatus.RESIST)
                 CalculateGodStoneEffects(player);
@@ -311,15 +327,15 @@ public abstract class CreatureController : VisibleObjectController
         }
 
         AttackStatus firstAttackStatus = AttackStatusExtensions.GetBaseStatus(attackResult[0].GetAttackStatus());
-        Effect criticalEffect = null;
+        Effect criticalProcEffect = null;
         if (GetOwner() is Player player && firstAttackStatus == AttackStatus.CRITICAL && Rnd.Chance() < 10)
         {
-            criticalEffect = Aion.GameServer.SkillEngine.SkillEngine.GetInstance().CreateCriticalEffect(player, target, 0);
-            if (criticalEffect != null && (criticalEffect.GetEffectResult() == EffectResult.DODGE || criticalEffect.GetEffectResult() == EffectResult.RESIST))
-                criticalEffect = null;
+            criticalProcEffect = Aion.GameServer.SkillEngine.SkillEngine.GetInstance().CreateCriticalProcEffect(player, target, 0);
+            if (criticalProcEffect != null && (criticalProcEffect.GetEffectResult() == EffectResult.DODGE || criticalProcEffect.GetEffectResult() == EffectResult.RESIST))
+                criticalProcEffect = null;
         }
         PacketSendUtility.BroadcastPacketAndReceive(GetOwner(),
-            new SM_ATTACK(GetOwner(), target, GetOwner().GetGameStats().GetAttackCounter(), time, attackTypeAnimation, attackHandAnimation, attackResult, criticalEffect),
+            new SM_ATTACK(GetOwner(), target, GetOwner().GetGameStats().GetAttackCounter(), time, attackTypeAnimation, attackHandAnimation, attackResult, criticalProcEffect),
             Aion.GameServer.Ai.Event.AiEventType.CreatureNeedsHelp);
 
         GetOwner().GetGameStats().IncreaseAttackCounter();
@@ -329,9 +345,9 @@ public abstract class CreatureController : VisibleObjectController
         }
 
         if (time == 0)
-            target.GetController().OnAttack(GetOwner(), damage, firstAttackStatus, criticalEffect);
+            target.GetController().OnAttack(GetOwner(), damage, firstAttackStatus, criticalProcEffect);
         else
-            ThreadPoolManager.GetInstance().Schedule(_ => { new DelayedOnAttack(target, GetOwner(), damage, firstAttackStatus, criticalEffect).Run(); return System.Threading.Tasks.ValueTask.CompletedTask; }, TimeSpan.FromMilliseconds(time));
+            ThreadPoolManager.GetInstance().Schedule(_ => { new DelayedOnAttack(target, GetOwner(), damage, firstAttackStatus, criticalProcEffect).Run(); return System.Threading.Tasks.ValueTask.CompletedTask; }, TimeSpan.FromMilliseconds(time));
     }
 
     /// <summary>Handle dialog select: GetOwner() is the target/dialog sender; the given player clicked the dialog.</summary>
@@ -562,23 +578,23 @@ public abstract class CreatureController : VisibleObjectController
         private Creature creature;
         private int finalDamage;
         private AttackStatus attackStatus;
-        private Effect criticalEffect;
+        private Effect criticalProcEffect;
 
-        public DelayedOnAttack(Creature target, Creature creature, int finalDamage, AttackStatus attackStatus, Effect criticalEffect)
+        public DelayedOnAttack(Creature target, Creature creature, int finalDamage, AttackStatus attackStatus, Effect criticalProcEffect)
         {
             this.target = target;
             this.creature = creature;
             this.finalDamage = finalDamage;
             this.attackStatus = attackStatus;
-            this.criticalEffect = criticalEffect;
+            this.criticalProcEffect = criticalProcEffect;
         }
 
         public void Run()
         {
-            target.GetController().OnAttack(creature, finalDamage, attackStatus, criticalEffect);
+            target.GetController().OnAttack(creature, finalDamage, attackStatus, criticalProcEffect);
             target = null;
             creature = null;
-            criticalEffect = null;
+            criticalProcEffect = null;
         }
     }
 }
