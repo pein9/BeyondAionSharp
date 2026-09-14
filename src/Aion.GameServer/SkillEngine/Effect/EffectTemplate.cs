@@ -282,7 +282,14 @@ public abstract class EffectTemplate
 
     protected virtual bool IsDodgedOrResisted(Aion.GameServer.SkillEngine.Model.Effect effect, StatEnum? statEnum)
     {
-        return !IsNoResist() && (!CheckEffectResistRate(effect, statEnum) || !CheckDodgeOrResistRate(effect));
+        if (effect.IsSubEffect())
+        {
+            return !CheckEffectResistRate(effect, statEnum) || (!IsNoResist() && !CheckDodgeOrResistRate(effect));
+        }
+        else
+        {
+            return !IsNoResist() && (!CheckEffectResistRate(effect, statEnum) || !CheckDodgeOrResistRate(effect));
+        }
     }
 
     /// <returns>true = no dodge/resist, false = dodged/resisted</returns>

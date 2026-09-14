@@ -39,6 +39,18 @@ public sealed class RetailNoResistTests
     }
 
     [Fact]
+    public void NoResistOnlySkipsTheEffectResistRateOfMainEffects()
+    {
+        // upstream c22ed33b8: sub effects like Stumble still check their effect resistance, noresist only skips their dodge/resist roll
+        var root = new RootEffect { NoResist = true };
+        Effect main = CreateRuntimeEffect(root, ActivationAttribute.ACTIVE);
+        var sub = new Effect(null!, null!, main.GetSkillTemplate(), 1, null, null!, true, null);
+
+        Assert.False(IsDodgedOrResisted(root, main, StatEnum.ROOT_RESISTANCE));
+        Assert.True(IsDodgedOrResisted(root, sub, StatEnum.ROOT_RESISTANCE)); // no effected creature, so the effect resist rate fails
+    }
+
+    [Fact]
     public void CannotMissSkillAttackReportsNoResist()
     {
         var effect = new SkillAttackInstantEffect { cannotmiss = true };
