@@ -178,6 +178,7 @@ public partial class Equipment
     {
         item.SetEquipped(false);
         item.SetEquipmentSlot(0);
+        item.SetRankLimitExpireTime(0);
         SetPersistentState(IPersistable.PersistentState.UPDATE_REQUIRED);
         owner.GetInventory().Put(item);
     }

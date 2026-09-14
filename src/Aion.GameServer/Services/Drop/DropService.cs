@@ -125,6 +125,7 @@ public class DropService
 
         PacketSendUtility.SendPacket(player, new SM_LOOT_ITEMLIST(dropNpc, dropItems, player));
         PacketSendUtility.SendPacket(player, new SM_LOOT_STATUS(npcObjectId, Status.OPEN_DROP_LIST));
+        player.GetController().CancelUseItem();
         player.UnsetState(CreatureState.ACTIVE);
         player.SetState(CreatureState.LOOTING);
         player.SetLootingNpcOid(npcObjectId);

@@ -140,18 +140,24 @@ public class GatheringTask : AbstractCraftTask
         return new GathererObserver(this);
     }
 
-    // Java parity: anonymous ActionObserver(ObserverType.ALL) in createGathererObserver().
+    // Java parity: anonymous ActionObserver in createGathererObserver().
     private sealed class GathererObserver : ActionObserver
     {
         private readonly GatheringTask task;
 
         public GathererObserver(GatheringTask task)
-            : base(ObserverType.ALL)
+            : base(ObserverType.STARTSKILLCAST, ObserverType.ITEMUSE, ObserverType.ATTACK, ObserverType.ATTACKED, ObserverType.MOVE, ObserverType.DOT_ATTACKED,
+                ObserverType.DEATH)
         {
             this.task = task;
         }
 
         public override void StartSkillCast(Skill skill)
+        {
+            task.Abort();
+        }
+
+        public override void Itemused(Item item)
         {
             task.Abort();
         }
@@ -172,6 +178,11 @@ public class GatheringTask : AbstractCraftTask
         }
 
         public override void Dotattacked(Creature creature, Effect dotEffect)
+        {
+            task.Abort();
+        }
+
+        public override void Died(Creature lastAttacker)
         {
             task.Abort();
         }

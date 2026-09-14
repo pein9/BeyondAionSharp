@@ -20,6 +20,7 @@ using Aion.GameServer.Utils.Audit;
 using Aion.GameServer.World.Zone;
 using ForceType = Aion.GameServer.SkillEngine.Model.Effect.ForceType;
 using ItemUpdateType = Aion.GameServer.Services.Items.ItemPacketService.ItemUpdateType;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Services.ToyPet;
 
@@ -183,7 +184,7 @@ public class PetService
                 if (itemAction is SkillUseAction)
                 {
                     PacketSendUtility.BroadcastPacket(player,
-                        new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), player.GetObjectId(), useItem.GetObjectId(), useItem.GetItemId(), 0, 1, 1, 1, 0, 15360),
+                        new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), player.GetObjectId(), useItem.GetObjectId(), useItem.GetItemId(), 0, ItemUseAnimation.USE_SUCCESS, true),
                         true);
                     Aion.GameServer.SkillEngine.SkillEngine.GetInstance().ApplyEffectDirectly(((SkillUseAction)itemAction).GetSkillId(), ((SkillUseAction)itemAction).GetLevel(), player,
                         player, null, ForceType.DEFAULT);

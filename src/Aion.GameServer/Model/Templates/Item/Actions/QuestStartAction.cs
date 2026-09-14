@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
 
@@ -26,10 +27,10 @@ public class QuestStartAction : AbstractItemAction
             return;
         }
         Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), castingDelay, 0, 1), true);
+            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), castingDelay, ItemUseAnimation.USE_START), true);
         var observer = new QuestStartUseObserver(player, parentItem);
 
-        player.GetObserveController().Attach(observer);
+        player.GetObserveController().AddObserver(observer);
         player.GetController().AddTask(Aion.GameServer.Model.TaskId.ITEM_USE, Aion.GameServer.Utils.ThreadPoolManager.GetInstance().Schedule(ct =>
         {
             player.GetObserveController().RemoveObserver(observer);
@@ -45,17 +46,18 @@ public class QuestStartAction : AbstractItemAction
         private readonly Item parentItem;
 
         public QuestStartUseObserver(Aion.GameServer.Model.GameObjects.Players.Player player, Item parentItem)
+            : base(player)
         {
             this.player = player;
             this.parentItem = parentItem;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             player.GetController().CancelTask(Aion.GameServer.Model.TaskId.ITEM_USE);
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_ITEM_CANCELED());
             Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), 0, 2, 0), true);
+                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), 0, ItemUseAnimation.USE_CANCEL), true);
         }
     }
 

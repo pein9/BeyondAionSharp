@@ -4,6 +4,7 @@ using System.Xml.Serialization;
 using Aion.GameServer.Controllers.Observer;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
 
@@ -48,18 +49,18 @@ public class TuningAction : AbstractItemAction
         int tuningScrollItemId = parentItem.GetItemId();
         int tuningScrollObjectId = parentItem.GetObjectId();
         Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), tuningScrollObjectId, tuningScrollItemId, 5000, 12, 0), true);
+            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), tuningScrollObjectId, tuningScrollItemId, 5000, ItemUseAnimation.REIDENTIFY_START), true);
         ItemUseObserver observer = new TuneUseObserver(player, parentItem, targetItem, tuningScrollItemId, tuningScrollObjectId);
-        player.GetObserveController().Attach(observer);
+        player.GetObserveController().AddObserver(observer);
         player.GetController().AddTask(Aion.GameServer.Model.TaskId.ITEM_USE, Aion.GameServer.Utils.ThreadPoolManager.GetInstance().Schedule(ct =>
         {
             player.GetObserveController().RemoveObserver(observer);
             if (player.GetInventory().GetItemByObjId(targetItem.GetObjectId()) == null || !CanAct(player, parentItem, targetItem))
             {
-                Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), tuningScrollObjectId, tuningScrollItemId, 0, 14, 0), true);
+                Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), tuningScrollObjectId, tuningScrollItemId, 0, ItemUseAnimation.REIDENTIFY_CANCEL), true);
                 return ValueTask.CompletedTask;
             }
-            Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), tuningScrollObjectId, tuningScrollItemId, 0, 13, 0), true);
+            Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), tuningScrollObjectId, tuningScrollItemId, 0, ItemUseAnimation.REIDENTIFY_SUCCESS), true);
             if (!player.GetInventory().DecreaseByObjectId(tuningScrollObjectId, 1))
                 return ValueTask.CompletedTask;
             player.StartCooldown(parentItem);
@@ -101,6 +102,7 @@ public class TuningAction : AbstractItemAction
         private readonly int tuningScrollObjectId;
 
         public TuneUseObserver(Aion.GameServer.Model.GameObjects.Players.Player player, Item parentItem, Item targetItem, int tuningScrollItemId, int tuningScrollObjectId)
+            : base(player)
         {
             this.player = player;
             this.parentItem = parentItem;
@@ -109,12 +111,11 @@ public class TuningAction : AbstractItemAction
             this.tuningScrollObjectId = tuningScrollObjectId;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             player.GetController().CancelTask(Aion.GameServer.Model.TaskId.ITEM_USE);
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_ITEM_REIDENTIFY_CANCELED(targetItem.GetL10n()));
-            Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), tuningScrollObjectId, tuningScrollItemId, 0, 14, 0), true);
-            player.GetObserveController().RemoveObserver(this);
+            Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), tuningScrollObjectId, tuningScrollItemId, 0, ItemUseAnimation.REIDENTIFY_CANCEL), true);
         }
     }
 }

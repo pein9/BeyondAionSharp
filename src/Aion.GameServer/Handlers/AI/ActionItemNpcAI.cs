@@ -92,12 +92,13 @@ public class ActionItemNpcAI : NpcAI
         private readonly Player player;
 
         public ActionItemUseObserver(ActionItemNpcAI ai, Player player)
+            : base(player)
         {
             this.ai = ai;
             this.player = player;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             player.GetController().CancelTask(TaskId.ACTION_ITEM_NPC);
             PacketSendUtility.BroadcastPacket(player, new SM_EMOTION(player, EmotionType.END_QUESTLOOT, 0, ai.GetObjectId()), true);
@@ -106,7 +107,6 @@ public class ActionItemNpcAI : NpcAI
             {
                 ai.observers.Remove(this);
             }
-            player.GetObserveController().RemoveObserver(this);
         }
     }
 }

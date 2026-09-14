@@ -1,5 +1,6 @@
 using System.Xml.Serialization;
 using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
 
@@ -20,7 +21,7 @@ public class FireworksUseAction : AbstractItemAction
             player.GetInventory().DecreaseByObjectId(parentItem.GetObjectId(), 1);
 
         Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_USE_ITEM(parentItem.GetL10n()));
-        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), 0, 1, 0), true);
+        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), 0, ItemUseAnimation.USE_SUCCESS), true);
         player.StartCooldown(parentItem);
     }
 }

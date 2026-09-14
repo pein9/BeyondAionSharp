@@ -28,7 +28,7 @@ public class VocolithAI : GeneralNpcAI
         {
             ItemUseObserver observer = new VocolithItemUseObserver(this, player);
             int delay = 1500;
-            player.GetObserveController().Attach(observer);
+            player.GetObserveController().AddObserver(observer);
             PacketSendUtility.SendPacket(player, new SM_USE_OBJECT(player.GetObjectId(), GetObjectId(), delay, 1));
             PacketSendUtility.BroadcastPacket(player, new SM_EMOTION(player, EmotionType.START_QUESTLOOT, 0, GetObjectId()), true);
             player.GetController().AddTask(TaskId.ACTION_ITEM_NPC, ThreadPoolManager.GetInstance().Schedule(ct =>
@@ -48,17 +48,17 @@ public class VocolithAI : GeneralNpcAI
         private readonly Player _player;
 
         public VocolithItemUseObserver(VocolithAI ai, Player player)
+            : base(player)
         {
             _ai = ai;
             _player = player;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             _player.GetController().CancelTask(TaskId.ACTION_ITEM_NPC);
             PacketSendUtility.BroadcastPacket(_player, new SM_EMOTION(_player, EmotionType.END_QUESTLOOT, 0, _ai.GetObjectId()), true);
             PacketSendUtility.SendPacket(_player, new SM_USE_OBJECT(_player.GetObjectId(), _ai.GetObjectId(), 0, 2));
-            _player.GetObserveController().RemoveObserver(this);
         }
     }
 

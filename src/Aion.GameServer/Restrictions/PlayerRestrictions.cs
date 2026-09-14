@@ -366,13 +366,6 @@ public class PlayerRestrictions
             return false;
         }
 
-        // Checked before the "no actions" fallback below so a race mismatch reports correctly even without one
-        if (item.GetItemTemplate().GetRace() != Race.PC_ALL && item.GetItemTemplate().GetRace() != player.GetRace())
-        {
-            PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_CANNOT_USE_ITEM_INVALID_RACE());
-            return false;
-        }
-
         ItemActions itemActions = item.GetItemTemplate().GetActions();
         if (itemActions == null || itemActions.GetItemActions().Count == 0)
         {
@@ -383,11 +376,14 @@ public class PlayerRestrictions
             }
         }
 
-        ItemUseLimits limits = item.GetItemTemplate().GetUseLimits();
-        if (limits.GetGenderPermitted() != null && limits.GetGenderPermitted() != player.GetGender())
+        if (item.GetItemTemplate().HasAreaRestriction())
         {
-            PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_CANNOT_USE_ITEM_INVALID_GENDER());
-            return false;
+            ZoneName restriction = item.GetItemTemplate().GetUseArea();
+            if (!player.IsInsideItemUseZone(restriction))
+            {
+                PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_CANNOT_USE_ITEM_INVALID_LOCATION());
+                return false;
+            }
         }
 
         if (!item.GetItemTemplate().IsClassSpecific(player.GetCommonData().GetPlayerClass()))
@@ -410,27 +406,29 @@ public class PlayerRestrictions
             return false;
         }
 
-        if (item.GetItemTemplate().HasAreaRestriction())
+        if (item.GetItemTemplate().GetRace() != Race.PC_ALL && item.GetItemTemplate().GetRace() != player.GetRace())
         {
-            ZoneName restriction = item.GetItemTemplate().GetUseArea();
-            if (!player.IsInsideItemUseZone(restriction))
-            {
-                PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_SKILL_CAN_NOT_USE_ITEM_IN_CURRENT_POSITION());
-                return false;
-            }
+            PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_CANNOT_USE_ITEM_INVALID_RACE());
+            return false;
+        }
+
+        ItemUseLimits limits = item.GetItemTemplate().GetUseLimits();
+        if (limits.GetGenderPermitted() != null && limits.GetGenderPermitted() != player.GetGender())
+        {
+            PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_CANNOT_USE_ITEM_INVALID_GENDER());
+            return false;
         }
 
         if (item.GetItemTemplate().GetActivationRace() != null)
         {
-            // TODO: check retail messages
-            if (!(player.GetTarget() is Creature))
+            if (!(player.GetTarget() is Creature target))
             {
                 PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_ITEM_CANT_FIND_VALID_TARGET());
                 return false;
             }
-            if (((Creature)player.GetTarget()).GetRace() != item.GetItemTemplate().GetActivationRace())
+            if (target.GetRace() != item.GetItemTemplate().GetActivationRace())
             {
-                PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_SKILL_CANT_CAST_TO_CURRENT_TARGET());
+                PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_WRONG_TARGET_RACE(item.GetL10n()));
                 return false;
             }
         }

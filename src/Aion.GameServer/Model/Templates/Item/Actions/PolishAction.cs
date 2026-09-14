@@ -4,6 +4,7 @@ using System.Xml.Serialization;
 using Aion.GameServer.Controllers.Observer;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
 
@@ -31,9 +32,9 @@ public class PolishAction : AbstractItemAction
     public override void Act(Aion.GameServer.Model.GameObjects.Players.Player player, Item parentItem, Item targetItem, params object[] @params)
     {
         Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 5000, 0, 0), true);
+            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 5000, ItemUseAnimation.USE_START), true);
         ItemUseObserver observer = new PolishUseObserver(player, parentItem, targetItem);
-        player.GetObserveController().Attach(observer);
+        player.GetObserveController().AddObserver(observer);
         player.GetController().AddTask(Aion.GameServer.Model.TaskId.ITEM_USE, Aion.GameServer.Utils.ThreadPoolManager.GetInstance().Schedule(ct =>
         {
             player.GetObserveController().RemoveObserver(observer);
@@ -42,12 +43,12 @@ public class PolishAction : AbstractItemAction
             {
                 Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_ENCHANT_ITEM_NO_TARGET_ITEM());
                 Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-                    new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, 2, 0), true);
+                    new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, ItemUseAnimation.USE_FAIL), true);
                 return ValueTask.CompletedTask;
             }
 
             Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, 1, 1), true);
+                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, ItemUseAnimation.USE_SUCCESS), true);
             if (!player.GetInventory().DecreaseByObjectId(parentItem.GetObjectId(), 1))
             {
                 return ValueTask.CompletedTask;
@@ -87,19 +88,19 @@ public class PolishAction : AbstractItemAction
         private readonly Item targetItem;
 
         public PolishUseObserver(Aion.GameServer.Model.GameObjects.Players.Player player, Item parentItem, Item targetItem)
+            : base(player)
         {
             this.player = player;
             this.parentItem = parentItem;
             this.targetItem = targetItem;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             player.GetController().CancelTask(Aion.GameServer.Model.TaskId.ITEM_USE);
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_POLISH_CANCELED(targetItem.GetL10n()));
             Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, 2, 0), true);
-            player.GetObserveController().RemoveObserver(this);
+                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, ItemUseAnimation.USE_CANCEL), true);
         }
     }
 

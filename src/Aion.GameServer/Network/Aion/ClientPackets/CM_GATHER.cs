@@ -28,6 +28,8 @@ public class CM_GATHER : AionClientPacket
     protected override void RunImpl()
     {
         Player player = GetConnection().GetActivePlayer();
+        player.GetController().CancelUseItem(); // including the stop action
+        player.GetController().CancelCurrentSkill(null);
         switch (actionId)
         {
             case -1:

@@ -82,7 +82,7 @@ public class ObserveController
             for (int i = 0; i < observers.Count;)
             {
                 ActionObserver observer = observers[i];
-                if (observer.GetObserverType().MatchesObserver(type))
+                if (observer.Matches(type))
                 {
                     if (notifiable.Count == 0)
                         notifiable = new List<ActionObserver>();
@@ -235,8 +235,8 @@ public class ObserveController
         itemUseObservers.Reverse();
         foreach (ItemUseObserver itemUseObserver in itemUseObservers)
         {
-            itemUseObserver.OnRemoved();
             itemUseObserver.Abort();
+            itemUseObserver.OnRemoved();
         }
     }
 

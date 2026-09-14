@@ -1,6 +1,10 @@
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Text;
 using System.Xml.Serialization;
+using Aion.GameServer.Model.Templates.Items.Enums;
+using Aion.GameServer.SkillEngine.Effects;
 using Aion.GameServer.SkillEngine.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -20,11 +24,20 @@ public class SkillData
     [XmlIgnore] private readonly Dictionary<string, List<SkillTemplate>> skillTemplatesByGroup = new();
     [XmlIgnore] private readonly Dictionary<string, List<SkillTemplate>> skillTemplatesByStack = new();
 
+    [XmlIgnore] private readonly Dictionary<ItemGroup, ISet<int>> masterySkillsByWeapon = new();
+    [XmlIgnore] private readonly Dictionary<ItemSubType, ISet<int>> masterySkillsByArmor = new();
+    [XmlIgnore] private readonly ISet<int> shieldMasterySkills = new HashSet<int>();
+
+    private static readonly ISet<int> NoSkills = ImmutableHashSet<int>.Empty;
+
     public void AfterUnmarshal(object parent)
     {
         skillTemplateById.Clear();
         skillTemplatesByGroup.Clear();
         skillTemplatesByStack.Clear();
+        masterySkillsByWeapon.Clear();
+        masterySkillsByArmor.Clear();
+        shieldMasterySkills.Clear();
         foreach (SkillTemplate skillTemplate in skillTemplates)
         {
             // Java parity: JAXB fires Effects.afterUnmarshal (building the effectTypes set) per <effects>
@@ -51,8 +64,52 @@ public class SkillData
                 }
                 stackList.Add(skillTemplate);
             }
+            if (skillTemplate.GetEffects()?.GetEffects() != null)
+                IndexMasterySkills(skillId, skillTemplate.GetEffects().GetEffects());
         }
         skillTemplates = null;
+    }
+
+    private void IndexMasterySkills(int skillId, List<EffectTemplate> effects)
+    {
+        foreach (EffectTemplate effect in effects)
+        {
+            switch (effect)
+            {
+                case WeaponMasteryEffect e:
+                    if (e.GetItemGroup() == null)
+                        throw new ArgumentException("Weapon mastery effect of skill " + skillId + " has no weapon attribute");
+                    AddMasterySkill(masterySkillsByWeapon, e.GetItemGroup()!.Value, skillId);
+                    break;
+                case ArmorMasteryEffect e:
+                    if (e.GetArmorType() == null)
+                        throw new ArgumentException("Armor mastery effect of skill " + skillId + " has no armor attribute");
+                    AddMasterySkill(masterySkillsByArmor, e.GetArmorType()!.Value, skillId);
+                    break;
+                case ShieldMasteryEffect:
+                    shieldMasterySkills.Add(skillId);
+                    break;
+            }
+        }
+    }
+
+    private static void AddMasterySkill<TKey>(Dictionary<TKey, ISet<int>> skillsByKey, TKey key, int skillId) where TKey : notnull
+    {
+        if (!skillsByKey.TryGetValue(key, out ISet<int>? skills))
+            skillsByKey[key] = skills = new HashSet<int>();
+        skills.Add(skillId);
+    }
+
+    /// <summary>The skills that allow equipping items of this group, empty if the group needs no mastery skill.</summary>
+    public ISet<int> GetMasterySkills(ItemGroup? itemGroup)
+    {
+        if (itemGroup == null || !itemGroup.Value.RequiresMastery())
+            return NoSkills;
+        if (itemGroup == ItemGroup.SHIELD)
+            return shieldMasterySkills;
+        if (itemGroup.Value.GetEquipType() == EquipType.WEAPON)
+            return masterySkillsByWeapon.TryGetValue(itemGroup.Value, out ISet<int>? weaponSkills) ? weaponSkills : NoSkills;
+        return masterySkillsByArmor.TryGetValue(itemGroup.Value.GetItemSubType(), out ISet<int>? armorSkills) ? armorSkills : NoSkills;
     }
 
     public SkillTemplate GetSkillTemplate(int skillId)

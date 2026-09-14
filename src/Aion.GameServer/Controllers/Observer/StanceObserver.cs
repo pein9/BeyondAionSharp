@@ -15,7 +15,7 @@ public class StanceObserver : ActionObserver
     private readonly int _stanceSkillId;
 
     public StanceObserver(Player player, int stanceSkillId)
-        : base(ObserverType.ALL)
+        : base(ObserverType.STARTSKILLCAST, ObserverType.ITEMUSE, ObserverType.ABNORMALSETTED)
     {
         _player = player;
         _stanceSkillId = stanceSkillId;

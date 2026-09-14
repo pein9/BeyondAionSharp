@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
 
@@ -45,9 +46,9 @@ public class AnimationAddAction : AbstractItemAction
         }
         var observer = new AnimationAddObserver(player, parentItem);
 
-        player.GetObserveController().Attach(observer);
+        player.GetObserveController().AddObserver(observer);
         Aion.GameServer.Utils.PacketSendUtility.SendPacket(player,
-            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), castingDelay, 0, 0));
+            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), castingDelay, ItemUseAnimation.USE_START));
         player.GetController().AddTask(Aion.GameServer.Model.TaskId.ITEM_USE, Aion.GameServer.Utils.ThreadPoolManager.GetInstance().Schedule(ct =>
         {
             player.GetObserveController().RemoveObserver(observer);
@@ -63,18 +64,18 @@ public class AnimationAddAction : AbstractItemAction
         private readonly Item parentItem;
 
         public AnimationAddObserver(Aion.GameServer.Model.GameObjects.Players.Player player, Item parentItem)
+            : base(player)
         {
             this.player = player;
             this.parentItem = parentItem;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             player.GetController().CancelTask(Aion.GameServer.Model.TaskId.ITEM_USE);
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_ITEM_CANCELED());
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(player,
-                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), 0, 3, 0));
-            player.GetObserveController().RemoveObserver(this);
+                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), 0, ItemUseAnimation.USE_CANCEL));
         }
     }
 
@@ -95,7 +96,7 @@ public class AnimationAddAction : AbstractItemAction
             AddMotion(player, shop.Value);
         Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_USE_ITEM(parentItem.GetL10n()));
         Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player,
-            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, 1, 0));
+            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, ItemUseAnimation.USE_SUCCESS));
         Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_MOTION(player.GetObjectId(), player.GetMotions().GetActiveMotions()), false);
     }
 

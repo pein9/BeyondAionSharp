@@ -19,6 +19,8 @@ public enum ActionState
     FLY_LOOTING, // looting
     CURRENT_STATUS, // in your current status
     COMBAT, // in combat
+    MOVING, // moving
+    USING_SKILL, // using a skill
     GLIDING, // gliding
     POLYMORPH, // Transformation Mode
 }
@@ -43,6 +45,8 @@ public static class ActionStateExtensions
             case ActionState.FLY_LOOTING: return 1400063;
             case ActionState.CURRENT_STATUS: return 1400064;
             case ActionState.COMBAT: return 1400079;
+            case ActionState.MOVING: return 1400080;
+            case ActionState.USING_SKILL: return 1400081;
             case ActionState.GLIDING: return 1400082;
             case ActionState.POLYMORPH: return 1401212;
             default: throw new System.ArgumentOutOfRangeException(nameof(self), self, null);

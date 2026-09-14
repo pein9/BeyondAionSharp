@@ -7,6 +7,7 @@ using Aion.GameServer.QuestEngine.Handlers;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services;
 using Aion.GameServer.Utils;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Handlers.Quest;
 
@@ -39,10 +40,10 @@ public class _4082GatheringtheHerbPouches : AbstractQuestHandler
         if (qs.GetQuestVarById(0) != 0)
             return HandlerResult.FAILED;
 
-        PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 3000, 0, 0), true);
+        PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 3000, ItemUseAnimation.USE_START), true);
         ThreadPoolManager.GetInstance().Schedule(ct =>
         {
-            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 0, 1, 0), true);
+            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 0, ItemUseAnimation.USE_SUCCESS), true);
             return ValueTask.CompletedTask;
         }, 3000L);
         return HandlerResult.SUCCESS;

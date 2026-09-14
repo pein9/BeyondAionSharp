@@ -8,6 +8,7 @@ using Aion.GameServer.Model.Actions;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.State;
 using Aion.GameServer.SkillEngine.Effects;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
 
@@ -64,9 +65,9 @@ public class RideAction : AbstractItemAction
         else
         {
             Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), castingDelay, 0, 0), true);
+                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), castingDelay, ItemUseAnimation.USE_START), true);
             ItemUseObserver observer = new RideUseObserver(player, parentItem);
-            player.GetObserveController().Attach(observer);
+            player.GetObserveController().AddObserver(observer);
             player.GetController().AddTask(TaskId.ITEM_USE, Aion.GameServer.Utils.ThreadPoolManager.GetInstance().Schedule(ct =>
             {
                 player.GetObserveController().RemoveObserver(observer);
@@ -81,7 +82,7 @@ public class RideAction : AbstractItemAction
         if (!CanAct(player, parentItem, null))
         {
             Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, 3, 0), true);
+                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, ItemUseAnimation.USE_CANCEL), true);
             return;
         }
         player.StartCooldown(parentItem);
@@ -109,7 +110,7 @@ public class RideAction : AbstractItemAction
         Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_EMOTION(player, EmotionType.CHANGE_SPEED, 0, 0), true);
         Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_EMOTION(player, EmotionType.RIDE, 0, GetRideInfo().GetNpcId()), true);
         Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, 1, 1), true);
+            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, ItemUseAnimation.USE_SUCCESS), true);
         Aion.GameServer.QuestEngine.QuestEngine.GetInstance().RideAction(new Aion.GameServer.QuestEngine.Model.QuestEnv(null, player, 0), itemTemplate.GetTemplateId());
     }
 
@@ -125,18 +126,18 @@ public class RideAction : AbstractItemAction
         private readonly Item parentItem;
 
         public RideUseObserver(Aion.GameServer.Model.GameObjects.Players.Player player, Item parentItem)
+            : base(player)
         {
             this.player = player;
             this.parentItem = parentItem;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             player.GetController().CancelTask(Aion.GameServer.Model.TaskId.ITEM_USE);
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_ITEM_CANCELED());
             Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, 3, 0), true);
-            player.GetObserveController().RemoveObserver(this);
+                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, ItemUseAnimation.USE_CANCEL), true);
         }
     }
 

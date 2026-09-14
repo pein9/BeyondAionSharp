@@ -21867,6 +21867,18 @@ public sealed class SM_SYSTEM_MESSAGE : AionServerPacket
         return new SM_SYSTEM_MESSAGE(1401324, kinah);
     }
 
+    /* Level %0 and above may use %1. */
+    public static SM_SYSTEM_MESSAGE STR_MSG_CANT_USE_ITEM_TOO_LOW_RANK(string value0, string value1)
+    {
+        return new SM_SYSTEM_MESSAGE(1401325, value0, value1);
+    }
+
+    /* Level %0 and below may use %1. */
+    public static SM_SYSTEM_MESSAGE STR_MSG_CANT_USE_ITEM_TOO_HIGH_RANK(string value0, string value1)
+    {
+        return new SM_SYSTEM_MESSAGE(1401326, value0, value1);
+    }
+
     /* %0 disappears in 10 minutes because your Abyss Rank changed. */
     public static SM_SYSTEM_MESSAGE STR_MSG_UNEQUIP_RANKITEM_TIMER_10M(string value0)
     {

@@ -6,6 +6,7 @@ using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.QuestEngine.Handlers;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Utils;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Handlers.Quest;
 
@@ -100,10 +101,10 @@ public class _25023SproutingDevelopments : AbstractQuestHandler
             return HandlerResult.UNKNOWN;
 
         int itemObjId = item.GetObjectId();
-        PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 1000, 0, 0), true);
+        PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 1000, ItemUseAnimation.USE_START), true);
         ThreadPoolManager.GetInstance().Schedule(ct =>
         {
-            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 0, 1, 0), true);
+            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 0, ItemUseAnimation.USE_SUCCESS), true);
             int var = qs.GetQuestVarById(0);
             if (var == 2)
             {

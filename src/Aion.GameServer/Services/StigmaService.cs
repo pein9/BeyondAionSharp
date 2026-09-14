@@ -422,14 +422,14 @@ public class StigmaService
         int parentItemId = stigma.GetItemId();
         int parentObjectId = stigma.GetObjectId();
         PacketSendUtility.BroadcastPacket(player,
-            new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentObjectId, chargeStone.GetObjectId(), parentItemId, 5000, 0, 0), true);
+            new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentObjectId, chargeStone.GetObjectId(), parentItemId, 5000, ItemUseAnimation.USE_START), true);
         ItemUseObserver observer = new ChargeStigmaObserver(player, stigma, chargeStone, parentObjectId, parentItemId);
-        player.GetObserveController().Attach(observer);
+        player.GetObserveController().AddObserver(observer);
         player.GetController().AddTask(TaskId.ITEM_USE, ThreadPoolManager.GetInstance().Schedule(ct =>
         {
             player.GetObserveController().RemoveObserver(observer);
             PacketSendUtility.BroadcastPacket(player,
-                new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentObjectId, parentItemId, 0, isSuccess ? 1 : 2, 1), true);
+                new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentObjectId, parentItemId, 0, isSuccess ? ItemUseAnimation.USE_SUCCESS : ItemUseAnimation.USE_FAIL), true);
             if (!player.GetInventory().DecreaseByObjectId(chargeStone.GetObjectId(), 1, ItemPacketService.ItemUpdateType.DEC_STIGMA_USE))
                 return ValueTask.CompletedTask;
             if (!isSuccess)
@@ -472,6 +472,7 @@ public class StigmaService
         private readonly int parentItemId;
 
         public ChargeStigmaObserver(Player player, Item stigma, Item chargeStone, int parentObjectId, int parentItemId)
+            : base(player)
         {
             this.player = player;
             this.stigma = stigma;
@@ -480,13 +481,12 @@ public class StigmaService
             this.parentItemId = parentItemId;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             player.GetController().CancelTask(Aion.GameServer.Model.TaskId.ITEM_USE);
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_ITEM_CANCELED());
             PacketSendUtility.BroadcastPacket(player,
-                new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentObjectId, chargeStone.GetObjectId(), parentItemId, 0, 2, 0), true);
-            player.GetObserveController().RemoveObserver(this);
+                new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentObjectId, chargeStone.GetObjectId(), parentItemId, 0, ItemUseAnimation.USE_CANCEL), true);
         }
     }
 

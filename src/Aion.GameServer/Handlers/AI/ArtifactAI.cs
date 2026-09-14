@@ -104,7 +104,7 @@ public class ArtifactAI : NpcAI
         PacketSendUtility.BroadcastPacket(player, new SM_EMOTION(player, EmotionType.START_QUESTLOOT, 0, GetObjectId()), true);
 
         ItemUseObserver observer = new ArtifactItemUseObserver(this, player, loc, skillTemplate);
-        player.GetObserveController().Attach(observer);
+        player.GetObserveController().AddObserver(observer);
         player.GetController().AddTask(TaskId.ACTION_ITEM_NPC, ThreadPoolManager.GetInstance().Schedule(_ =>
         {
             player.GetObserveController().RemoveObserver(observer);
@@ -183,6 +183,7 @@ public class ArtifactAI : NpcAI
         private readonly SkillTemplate skillTemplate;
 
         public ArtifactItemUseObserver(ArtifactAI ai, Player player, ArtifactLocation loc, SkillTemplate skillTemplate)
+            : base(player)
         {
             this.ai = ai;
             this.player = player;
@@ -190,19 +191,14 @@ public class ArtifactAI : NpcAI
             this.skillTemplate = skillTemplate;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             player.GetController().CancelTask(TaskId.ACTION_ITEM_NPC);
             PacketSendUtility.BroadcastPacket(player, new SM_EMOTION(player, EmotionType.END_QUESTLOOT, 0, ai.GetObjectId()), true);
             PacketSendUtility.SendPacket(player, new SM_USE_OBJECT(player.GetObjectId(), ai.GetObjectId(), 10000, 0));
-            SM_SYSTEM_MESSAGE message = SM_SYSTEM_MESSAGE.STR_ARTIFACT_CANCELED(loc.GetRace().GetL10n(), skillTemplate.GetL10n());
             loc.SetStatus(ArtifactStatus.IDLE);
-            SM_ABYSS_ARTIFACT_INFO3 artifactInfo = new SM_ABYSS_ARTIFACT_INFO3(loc.GetLocationId());
-            ai.GetOwner().GetPosition().GetWorldMapInstance().ForEachPlayer(p =>
-            {
-                PacketSendUtility.SendPacket(p, message);
-                PacketSendUtility.SendPacket(p, artifactInfo);
-            });
+            PacketSendUtility.BroadcastToMap(ai.GetOwner(), SM_SYSTEM_MESSAGE.STR_ARTIFACT_CANCELED(loc.GetRace().GetL10n(), skillTemplate.GetL10n()));
+            PacketSendUtility.BroadcastToMap(ai.GetOwner(), new SM_ABYSS_ARTIFACT_INFO3(loc.GetLocationId()));
         }
     }
 

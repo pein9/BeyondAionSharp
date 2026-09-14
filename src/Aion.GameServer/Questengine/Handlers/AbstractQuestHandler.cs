@@ -22,6 +22,7 @@ using Aion.GameServer.SpawnEngine;
 using Aion.GameServer.Utils;
 using Aion.GameServer.World;
 using Aion.GameServer.World.Zone;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.QuestEngine.Handlers;
 
@@ -1123,10 +1124,10 @@ public abstract class AbstractQuestHandler
 
         if (qs.GetQuestVarById(varNum) == step)
         {
-            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.ObjectId, objectId, itemId, 3000, 0, 0), true);
+            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.ObjectId, objectId, itemId, 3000, ItemUseAnimation.USE_START), true);
             ThreadPoolManager.GetInstance().Schedule(ct =>
             {
-                PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.ObjectId, objectId, itemId, 0, 1, 0), true);
+                PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.ObjectId, objectId, itemId, 0, ItemUseAnimation.USE_SUCCESS), true);
                 RemoveQuestItem(env, itemId, 1);
 
                 if (addItemId != 0 && addItemCount != 0)

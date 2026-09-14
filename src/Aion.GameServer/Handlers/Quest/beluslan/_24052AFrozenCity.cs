@@ -7,6 +7,7 @@ using Aion.GameServer.QuestEngine.Handlers;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Utils;
 using Aion.GameServer.World.Zone;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Handlers.Quest
 {
@@ -107,10 +108,10 @@ namespace Aion.GameServer.Handlers.Quest
                 || id != 182215380 && qs.GetQuestVarById(0) == 3)
                 return HandlerResult.UNKNOWN;
 
-            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 2000, 0, 0), true);
+            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 2000, ItemUseAnimation.USE_START), true);
             ThreadPoolManager.GetInstance().Schedule(ct =>
             {
-                PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 0, 1, 0), true);
+                PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 0, ItemUseAnimation.USE_SUCCESS), true);
                 if (qs.GetQuestVarById(0) == 1)
                 {
                     PlayQuestMovie(env, 243);

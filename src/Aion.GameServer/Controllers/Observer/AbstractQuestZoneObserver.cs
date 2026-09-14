@@ -19,7 +19,7 @@ public abstract class AbstractQuestZoneObserver : ActionObserver
     protected int stepCount;
     private int isRunning;
 
-    public AbstractQuestZoneObserver(Player player, ZoneTemplate zoneTemplate) : base(ObserverType.ALL)
+    public AbstractQuestZoneObserver(Player player, ZoneTemplate zoneTemplate, params ObserverType[] observerTypes) : base(ObserverType.MOVE, observerTypes)
     {
         this.player = player;
         this.startPos = new Vector3f(player.GetX(), player.GetY(), player.GetZ());

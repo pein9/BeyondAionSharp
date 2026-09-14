@@ -7,6 +7,7 @@ using Aion.GameServer.QuestEngine.Handlers;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Utils;
 using Aion.GameServer.World.Zone;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Handlers.Quest;
 
@@ -39,10 +40,10 @@ public class _2393TheLoveOfAFather : AbstractQuestHandler
         QuestState qs = player.GetQuestStateList().GetQuestState(questId);
         if (qs == null)
             return HandlerResult.UNKNOWN;
-        PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 3000, 0, 0), true);
+        PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 3000, ItemUseAnimation.USE_START), true);
         ThreadPoolManager.GetInstance().Schedule(ct =>
         {
-            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 0, 1, 0), true);
+            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 0, ItemUseAnimation.USE_SUCCESS), true);
             player.GetInventory().DecreaseByObjectId(itemObjId, 1);
             GiveQuestItem(env, 182204163, 1);
             qs.SetStatus(QuestStatus.REWARD);

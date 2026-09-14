@@ -1,6 +1,7 @@
 using System.Xml.Serialization;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Templates.Items.Enums;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
 
@@ -99,7 +100,7 @@ public class PackAction : AbstractItemAction
         int parentItemId = parentItem.GetItemId();
         int parentObjectId = parentItem.GetObjectId();
         int packCount = targetItem.GetPackCount();
-        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentObjectId, parentItemId, 0, 1, 1), true);
+        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentObjectId, parentItemId, 0, ItemUseAnimation.USE_SUCCESS), true);
         if (!player.GetInventory().DecreaseByObjectId(parentObjectId, 1))
         {
             return;

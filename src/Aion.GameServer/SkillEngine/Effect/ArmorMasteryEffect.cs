@@ -15,6 +15,12 @@ public class ArmorMasteryEffect : BufEffect
     [XmlAttribute("armor")]
     public ItemSubType armorType;
 
+    // set by XmlSerializer when the attribute is present, standing in for the null JAXB leaves when it is missing
+    [XmlIgnore]
+    public bool armorTypeSpecified;
+
+    public ItemSubType? GetArmorType() => armorTypeSpecified ? armorType : null;
+
     public override void StartEffect(Effect effect)
     {
         if (change == null)

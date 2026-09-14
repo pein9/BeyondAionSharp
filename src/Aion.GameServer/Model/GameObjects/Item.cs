@@ -32,6 +32,7 @@ public partial class Item : AionObject, Aion.GameServer.Model.IExpirable, Aion.G
     private int enchantLevel;
     private int enchantBonus;
     private int expireTime = 0;
+    private int rankLimitExpireTime = 0;
     private int temporaryExchangeTime = 0;
     private long repurchasePrice;
     private int activationCount = 0;
@@ -77,7 +78,7 @@ public partial class Item : AionObject, Aion.GameServer.Model.IExpirable, Aion.G
     public Item(int objId, int itemId, long itemCount, int? itemColor, int colorExpires, string itemCreator, int expireTime, int activationCount,
         bool isEquipped, bool isSoulBound, long equipmentSlot, int itemLocation, int enchant, int enchantBonus, int itemSkin, int fusionedItem,
         int optionalSockets, int fusionedItemOptionalSockets, int charge, int tuneCount, int statBonusId, int fusionedItemStatBonusId, int tempering,
-        int packCount, bool isAmplified, int buffSkill, int rndPlumeBonusValue)
+        int packCount, bool isAmplified, int buffSkill, int rndPlumeBonusValue, int rankLimitExpireTime)
         : base(objId)
     {
         this.itemTemplate = DataManager.ITEM_DATA.GetItemTemplate(itemId) ?? throw new ArgumentNullException(nameof(itemId), "Missing template for item " + itemId);
@@ -107,6 +108,7 @@ public partial class Item : AionObject, Aion.GameServer.Model.IExpirable, Aion.G
         this.isAmplified = isAmplified;
         this.buffSkill = buffSkill;
         this.rndPlumeBonusValue = rndPlumeBonusValue;
+        this.rankLimitExpireTime = rankLimitExpireTime;
         if (itemTemplate.GetStatBonusSetId() != 0 && statBonusId > 0)
         {
             SetBonusStats(statBonusId, false);

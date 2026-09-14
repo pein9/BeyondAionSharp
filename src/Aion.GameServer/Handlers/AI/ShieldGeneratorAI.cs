@@ -98,7 +98,7 @@ public abstract class ShieldGeneratorAI : GeneralNpcAI
     private void HandleCharging(Player player)
     {
         ChargeObserver observer = new ChargeObserver(this, player);
-        player.GetObserveController().Attach(observer);
+        player.GetObserveController().AddObserver(observer);
         PacketSendUtility.SendPacket(player, new SM_USE_OBJECT(player.GetObjectId(), GetObjectId(), 20000, 1));
         PacketSendUtility.BroadcastPacket(player, new SM_EMOTION(player, EmotionType.START_QUESTLOOT, 0, GetObjectId()), true);
         Shout(GetChargeMsg());
@@ -122,17 +122,17 @@ public abstract class ShieldGeneratorAI : GeneralNpcAI
         private readonly Player player;
 
         public ChargeObserver(ShieldGeneratorAI ai, Player player)
+            : base(player)
         {
             this.ai = ai;
             this.player = player;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             player.GetController().CancelTask(TaskId.ACTION_ITEM_NPC);
             PacketSendUtility.BroadcastPacket(player, new SM_EMOTION(player, EmotionType.END_QUESTLOOT, 0, ai.GetObjectId()), true);
             PacketSendUtility.SendPacket(player, new SM_USE_OBJECT(player.GetObjectId(), ai.GetObjectId(), 0, 2));
-            player.GetObserveController().RemoveObserver(this);
             ai.isUnderCharge.Set(false);
         }
     }

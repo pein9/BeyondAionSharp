@@ -137,6 +137,7 @@ public class Decompose : PlayerCommand
             private readonly DecomposeTask task;
 
             public DecomposeObserver(DecomposeTask task)
+                : base(task.player)
             {
                 this.task = task;
             }
@@ -147,7 +148,7 @@ public class Decompose : PlayerCommand
                     Abort();
             }
 
-            public override void Abort()
+            protected override void OnAbort()
             {
                 task.Abort();
             }

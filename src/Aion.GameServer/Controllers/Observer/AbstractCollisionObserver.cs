@@ -22,13 +22,13 @@ public abstract class AbstractCollisionObserver : ActionObserver
     private readonly CheckType checkType;
     private AtomicBoolean isRunning = new AtomicBoolean();
 
-    public AbstractCollisionObserver(Creature creature, Spatial geometry, sbyte intentions, CheckType checkType)
-        : base(ObserverType.MOVE_OR_DIE)
+    public AbstractCollisionObserver(Creature creature, Spatial geometry, sbyte intentions, CheckType checkType, params ObserverType[] observerTypes)
+        : base(ObserverType.MOVE, observerTypes)
     {
         this.creature = creature;
         this.geometry = geometry;
         WorldPosition lastPos;
-        if (creature is Player && (lastPos = ((Player) creature).GetMoveController().GetLastPositionFromClient()) != null)
+        if (creature is Player player && (lastPos = player.GetMoveController().GetLastPositionFromClient()) != null)
             this.oldPos = new Vector3f(lastPos.GetX(), lastPos.GetY(), lastPos.GetZ());
         else
             this.oldPos = new Vector3f(creature.GetX(), creature.GetY(), creature.GetZ());

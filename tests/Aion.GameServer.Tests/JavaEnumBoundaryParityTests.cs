@@ -137,7 +137,7 @@ public sealed class JavaEnumBoundaryParityTests
         [
             CreatureState.ACTIVE, CreatureState.FLYING, CreatureState.RESTING, CreatureState.FLOATING_CORPSE, CreatureState.UNK,
             CreatureState.WEAPON_EQUIPPED, CreatureState.WALK_MODE, CreatureState.POWERSHARD, CreatureState.TREATMENT, CreatureState.GLIDING,
-            CreatureState.CHAIR, CreatureState.DEAD, CreatureState.PRIVATE_SHOP, CreatureState.LOOTING,
+            CreatureState.CHAIR, CreatureState.DEAD, CreatureState.PRIVATE_SHOP, CreatureState.LOOTING, CreatureState.ANY_STANCE,
         ];
 
         Assert.Equal(javaOrder, JavaEnum.Values<CreatureState>());

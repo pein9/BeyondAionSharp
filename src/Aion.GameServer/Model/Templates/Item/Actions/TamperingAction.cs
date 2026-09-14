@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Controllers.Observer;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Templates.Items.Enums;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
 
@@ -27,9 +28,9 @@ public class TamperingAction : AbstractItemAction
     {
         int parentItemId = parentItem.GetItemId();
         int parntObjectId = parentItem.GetObjectId();
-        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItemId, 5000, 0, 0), true);
+        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItemId, 5000, ItemUseAnimation.USE_START), true);
         ItemUseObserver observer = new TamperUseObserver(player, parentItem, targetItem, parentItemId, parntObjectId);
-        player.GetObserveController().Attach(observer);
+        player.GetObserveController().AddObserver(observer);
         player.GetController().AddTask(Aion.GameServer.Model.TaskId.ITEM_USE, Aion.GameServer.Utils.ThreadPoolManager.GetInstance().Schedule(ct =>
         {
             player.GetObserveController().RemoveObserver(observer);
@@ -37,20 +38,20 @@ public class TamperingAction : AbstractItemAction
             if (player.GetInventory().GetItemByObjId(targetItem.GetObjectId()) == null && !targetItem.IsEquipped())
             {
                 Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_ENCHANT_ITEM_NO_TARGET_ITEM());
-                Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parntObjectId, parentItemId, 0, 2, 0));
+                Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parntObjectId, parentItemId, 0, ItemUseAnimation.USE_FAIL));
                 return ValueTask.CompletedTask;
             }
 
             int maxTemp = targetItem.GetItemTemplate().GetMaxTampering();
             if (targetItem.GetTempering() >= maxTemp)
             {
-                Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parntObjectId, parentItemId, 0, 2, 0));
+                Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parntObjectId, parentItemId, 0, ItemUseAnimation.USE_FAIL));
                 return ValueTask.CompletedTask;
             }
 
             if (!player.GetInventory().DecreaseByObjectId(parntObjectId, 1))
             {
-                Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parntObjectId, parentItemId, 0, 2, 0));
+                Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parntObjectId, parentItemId, 0, ItemUseAnimation.USE_FAIL));
                 return ValueTask.CompletedTask;
             }
             player.StartCooldown(parentItem);
@@ -61,7 +62,7 @@ public class TamperingAction : AbstractItemAction
                 {
                     SetTemperingLevel(targetItem, player, targetItem.GetTempering() + 1);
                     Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_ITEM_AUTHORIZE_SUCCEEDED(targetItem.GetL10n(), targetItem.GetTempering()));
-                    Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parntObjectId, parentItemId, 0, 1, 0));
+                    Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parntObjectId, parentItemId, 0, ItemUseAnimation.USE_SUCCESS));
 
                     if (Aion.GameServer.Configs.Main.CustomConfig.ENABLE_ENCHANT_ANNOUNCE && targetItem.GetTempering() == 10)
                     {
@@ -79,7 +80,7 @@ public class TamperingAction : AbstractItemAction
                     if (targetItem.GetItemTemplate().GetItemGroup() == ItemGroup.PLUME)
                     {
                         Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_ITEM_AUTHORIZE_FAILED_TSHIRT(targetItem.GetL10n()));
-                        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parntObjectId, parentItemId, 0, 2, 0));
+                        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parntObjectId, parentItemId, 0, ItemUseAnimation.USE_FAIL));
                         if (targetItem.IsEquipped())
                             player.GetEquipment().DecreaseEquippedItemCount(targetItem.GetObjectId(), 1);
                         else
@@ -88,7 +89,7 @@ public class TamperingAction : AbstractItemAction
                     else
                     {
                         Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_ITEM_AUTHORIZE_FAILED(targetItem.GetL10n()));
-                        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parntObjectId, parentItemId, 0, 2, 0));
+                        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parntObjectId, parentItemId, 0, ItemUseAnimation.USE_FAIL));
                     }
 
                     if (Aion.GameServer.Configs.Main.LoggingConfig.LOG_TAMPERING)
@@ -151,6 +152,7 @@ public class TamperingAction : AbstractItemAction
         private readonly int parntObjectId;
 
         public TamperUseObserver(Aion.GameServer.Model.GameObjects.Players.Player player, Item parentItem, Item targetItem, int parentItemId, int parntObjectId)
+            : base(player)
         {
             this.player = player;
             this.parentItem = parentItem;
@@ -159,13 +161,12 @@ public class TamperingAction : AbstractItemAction
             this.parntObjectId = parntObjectId;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             player.GetController().CancelTask(Aion.GameServer.Model.TaskId.ITEM_USE);
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_ITEM_AUTHORIZE_CANCEL(targetItem.GetL10n()));
             Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player,
-                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parntObjectId, parentItemId, 0, 3, 0));
-            player.GetObserveController().RemoveObserver(this);
+                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parntObjectId, parentItemId, 0, ItemUseAnimation.USE_CANCEL));
         }
     }
 }

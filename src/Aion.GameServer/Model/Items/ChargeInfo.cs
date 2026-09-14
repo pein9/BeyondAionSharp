@@ -16,7 +16,7 @@ public class ChargeInfo : ActionObserver
     private int chargePoints;
     private int playerId;
 
-    public ChargeInfo(int chargePoints, Item item) : base(ObserverType.DOT_ATTACK_DEFEND)
+    public ChargeInfo(int chargePoints, Item item) : base(ObserverType.DOT_ATTACKED, ObserverType.ATTACKED, ObserverType.ATTACK)
     {
         this.chargePoints = chargePoints;
         this.item = item;

@@ -15,6 +15,9 @@ namespace Aion.GameServer.Model.GameObjects.Players;
 public partial class Equipment : IPersistable
 {
     private static readonly ILogger log = NullLogger.Instance;
+    private const int RANK_LIMIT_GRACE_SECONDS = 600;
+    private const int RANK_LIMIT_WARNING_SECONDS = 60;
+    private int lastRankLimitCheck;
 
     // Java parity: synchronizedSortedMap(TreeMap) — slot mask -> item; explicit locks guard compound ops.
     private readonly SortedDictionary<long, Item> equipment = new SortedDictionary<long, Item>();
@@ -42,14 +45,38 @@ public partial class Equipment : IPersistable
         if (itemTemplate.IsTwoHandWeapon()) // client only sends main+sub slot when equipping via right click / double click
             slot = ItemSlot.MAIN_OR_SUB.GetSlotIdMask();
         else if (itemTemplate.IsOneHandWeapon() && !Aion.GameServer.SkillEngine.Effects.WeaponDualEffect.HasDualWieldEffect(owner))
-            slot = ItemSlot.MAIN_HAND.GetSlotIdMask();
+            slot = ItemSlot.MAIN_HAND.GetSlotIdMask(); // without the skill an off hand request is silently moved to the main hand, no message is sent
+
+        int rank = owner.GetAbyssRank().GetRank().GetId();
+        Aion.GameServer.Model.Templates.Items.ItemUseLimits unmetRankLimits = FindUnmetRankLimits(item, rank);
+        if (unmetRankLimits != null)
+        {
+            if (unmetRankLimits.GetMinRank() > rank)
+                Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_CANT_USE_ITEM_TOO_LOW_RANK(
+                    Aion.GameServer.Utils.Stats.AbyssRankEnumExtensions.GetRankL10n(owner.GetRace(), unmetRankLimits.GetMinRank()), item.GetL10n()));
+            else
+                Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_CANT_USE_ITEM_TOO_HIGH_RANK(
+                    Aion.GameServer.Utils.Stats.AbyssRankEnumExtensions.GetRankL10n(owner.GetRace(), unmetRankLimits.GetMaxRank()), item.GetL10n()));
+            return null;
+        }
+
+        if (!CheckAvailableEquipSkills(item))
+        {
+            if (itemTemplate.GetItemGroup() == Aion.GameServer.Model.Templates.Items.Enums.ItemGroup.SHIELD)
+                Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_SKILL_NO_SHIELD_MASTERY_SKILL());
+            else if (itemTemplate.IsWeapon())
+                Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_SKILL_NO_WEAPON_MASTERY_SKILL());
+            else
+                Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_SKILL_NO_ARMOR_MASTERY_SKILL());
+            return null;
+        }
 
         if (!itemTemplate.IsClassSpecific(owner.GetPlayerClass()))
         {
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_CANNOT_USE_ITEM_INVALID_CLASS());
             return null;
         }
-        // don't allow to wear items of not allowed level
+
         int requiredLevel = itemTemplate.GetRequiredLevel(owner.GetPlayerClass());
         if (requiredLevel == -1 || requiredLevel > owner.GetLevel())
         {
@@ -77,20 +104,11 @@ public partial class Equipment : IPersistable
             return null;
         }
 
-        if (!VerifyRankLimits(item))
-        {
-            Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_CANNOT_USE_ITEM_INVALID_RANK(Aion.GameServer.Utils.Stats.AbyssRankEnumExtensions.GetRankL10n(owner.GetRace(), limits.GetMinRank())));
-            return null;
-        }
-
         if (!CheckInventorySlots(slot))
         {
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_UI_INVENTORY_FULL());
             return null;
         }
-
-        if (!CheckAvailableEquipSkills(item))
-            return null;
 
         ItemSlot[] targetSlots = ItemSlotExtensions.GetSlotsFor(slot);
         if (targetSlots.Length == 0)
@@ -173,6 +191,7 @@ public partial class Equipment : IPersistable
                 equipment[slot.GetSlotIdMask()] = item;
             item.SetEquipped(true);
             item.SetEquipmentSlot(itemSlotToEquip);
+            item.SetRankLimitExpireTime(0); // the rank was verified before equipping, so a deadline left over from an earlier one is stale
             Aion.GameServer.Services.Items.ItemPacketService.UpdateItemAfterEquip(owner, item);
 
             // update stats
@@ -242,7 +261,7 @@ public partial class Equipment : IPersistable
                 Item ohWeapon = GetEquip(ItemSlot.SUB_HAND.GetSlotIdMask());
                 if (ohWeapon != null && ohWeapon.GetItemTemplate().IsWeapon())
                 {
-                    if (owner.GetInventory().GetFreeSlots() < 2)
+                    if (checkFullInventory && owner.GetInventory().GetFreeSlots() < 2)
                     {
                         return null;
                     }
@@ -285,6 +304,7 @@ public partial class Equipment : IPersistable
             updateStats = true;
             item.SetEquipped(false);
             item.SetEquipmentSlot(0);
+            item.SetRankLimitExpireTime(0);
             owner.GetInventory().Put(item);
             SetPersistentState(IPersistable.PersistentState.UPDATE_REQUIRED);
             NotifyItemUnequip(item);
@@ -312,17 +332,17 @@ public partial class Equipment : IPersistable
 
     private bool CheckAvailableEquipSkills(Item item)
     {
-        int[] requiredSkills = item.GetItemTemplate().GetRequiredSkills();
-        if (requiredSkills.Length == 0) // if no skills required - validate as true
+        ISet<int> masterySkills = Aion.GameServer.Dataholders.DataManager.SKILL_DATA.GetMasterySkills(item.GetItemTemplate().GetItemGroup());
+        if (masterySkills.Count == 0)
             return true;
 
-        foreach (int skill in requiredSkills)
+        foreach (int skillId in masterySkills)
         {
-            if (owner.GetSkillList().IsSkillPresent(skill))
+            if (owner.GetSkillList().IsSkillPresent(skillId))
                 return true;
         }
 
-        return false; // FIXME leather skill allows you to wear leather. You don't need cloth skill too!
+        return false;
     }
 
     public Item GetEquippedItemByObjId(int itemObjId)

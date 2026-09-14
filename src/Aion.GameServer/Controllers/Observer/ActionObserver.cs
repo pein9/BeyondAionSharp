@@ -10,13 +10,17 @@ namespace Aion.GameServer.Controllers.Observer;
 /// </summary>
 public class ActionObserver
 {
+    private readonly ISet<ObserverType> _observerTypes;
     private bool _oneTimeUse;
 
-    private readonly ObserverType _observerType;
-
-    public ActionObserver(ObserverType observerType)
+    public ActionObserver(ObserverType firstType, params ObserverType[] otherTypes)
     {
-        _observerType = observerType;
+        _observerTypes = new HashSet<ObserverType>(otherTypes) { firstType };
+    }
+
+    public bool Matches(ObserverType observerType)
+    {
+        return _observerTypes.Contains(observerType);
     }
 
     public void MakeOneTimeUse()
@@ -34,11 +38,6 @@ public class ActionObserver
     /// </summary>
     public virtual void OnRemoved()
     {
-    }
-
-    public ObserverType GetObserverType()
-    {
-        return _observerType;
     }
 
     public virtual void Moved()

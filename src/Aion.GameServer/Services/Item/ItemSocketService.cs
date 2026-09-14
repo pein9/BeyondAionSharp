@@ -197,17 +197,17 @@ public class ItemSocketService
 
         ItemUseObserver observer = new GodstoneUseObserver(player, weapon, stoneId, itemTemplate.GetTemplateId());
 
-        player.GetObserveController().Attach(observer);
+        player.GetObserveController().AddObserver(observer);
 
         PacketSendUtility.BroadcastPacketAndReceive(player,
-            new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), stoneId, itemTemplate.GetTemplateId(), 2000, 0, 0));
+            new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), stoneId, itemTemplate.GetTemplateId(), 2000, ItemUseAnimation.USE_START));
 
         player.GetController().AddTask(TaskId.ITEM_USE, ThreadPoolManager.GetInstance().Schedule(ct =>
         {
             player.GetObserveController().RemoveObserver(observer);
 
             PacketSendUtility.BroadcastPacketAndReceive(player,
-                new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), stoneId, itemTemplate.GetTemplateId(), 0, 1, 0));
+                new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), stoneId, itemTemplate.GetTemplateId(), 0, ItemUseAnimation.USE_SUCCESS));
 
             if (!player.GetInventory().DecreaseByObjectId(stoneId, 1))
                 return ValueTask.CompletedTask;
@@ -228,6 +228,7 @@ public class ItemSocketService
         private readonly int godstoneTemplateId;
 
         public GodstoneUseObserver(Player player, Item weapon, int stoneId, int godstoneTemplateId)
+            : base(player)
         {
             this.player = player;
             this.weapon = weapon;
@@ -235,13 +236,12 @@ public class ItemSocketService
             this.godstoneTemplateId = godstoneTemplateId;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
-            player.GetObserveController().RemoveObserver(this);
             player.GetController().CancelTask(TaskId.ITEM_USE);
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_GIVE_PROC_CANCEL(weapon.GetL10n()));
             PacketSendUtility.BroadcastPacketAndReceive(player,
-                new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), stoneId, godstoneTemplateId, 0, 3, 0));
+                new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), stoneId, godstoneTemplateId, 0, ItemUseAnimation.USE_CANCEL));
         }
     }
 }

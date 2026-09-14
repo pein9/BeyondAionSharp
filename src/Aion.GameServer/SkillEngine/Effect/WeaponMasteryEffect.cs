@@ -14,6 +14,12 @@ public class WeaponMasteryEffect : BufEffect
     [XmlAttribute("weapon")]
     public ItemGroup itemGroup;
 
+    // set by XmlSerializer when the attribute is present, standing in for the null JAXB leaves when it is missing
+    [XmlIgnore]
+    public bool itemGroupSpecified;
+
+    public ItemGroup? GetItemGroup() => itemGroupSpecified ? itemGroup : null;
+
     public override void StartEffect(Effect effect)
     {
         if (change == null)

@@ -21,6 +21,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using CastState = Aion.GameServer.SkillEngine.Properties.Properties.CastState;
 using Aion.GameServer.Utils.Audit;
 using Aion.GameServer.Model.Skill;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.SkillEngine.Model;
 
@@ -384,8 +385,8 @@ public class Skill
 
     private int CalculateCastDuration()
     {
-        if (GetItemTemplate() != null)
-            return GetItemTemplate().GetCastingDelay();
+        if (itemTemplate != null)
+            return itemTemplate.IsCombatActivated() ? baseCastDuration : itemTemplate.GetCastingDelay();
         // 2nd+ time of multicast-skill activation
         if (GetMultiCastCount() > 0)
             return 0;
@@ -557,7 +558,7 @@ public class Skill
         else if (skillMethod == SkillMethod.ITEM && castDuration > 0)
         {
             PacketSendUtility.BroadcastPacketAndReceive(effector, new SM_ITEM_USAGE_ANIMATION(effector.GetObjectId(), firstTarget.GetObjectId(),
-                itemObjectId, itemTemplate.GetTemplateId(), castDuration, 0, 0));
+                itemObjectId, itemTemplate.GetTemplateId(), castDuration, ItemUseAnimation.USE_START));
         }
 
         if (firstTarget != null && !firstTarget.Equals(effector) && !skillTemplate.HasResurrectEffect() && (castDuration > 0)
@@ -820,7 +821,7 @@ public class Skill
         if (itemTemplate != null && !itemTemplate.IsCombatActivated())
         {
             PacketSendUtility.BroadcastPacketAndReceive(effector,
-                new SM_ITEM_USAGE_ANIMATION(effector.GetObjectId(), firstTarget.GetObjectId(), itemObjectId, itemTemplate.GetTemplateId(), 0, 1, 0));
+                new SM_ITEM_USAGE_ANIMATION(effector.GetObjectId(), firstTarget.GetObjectId(), itemObjectId, itemTemplate.GetTemplateId(), 0, ItemUseAnimation.USE_SUCCESS));
         }
         else
         {

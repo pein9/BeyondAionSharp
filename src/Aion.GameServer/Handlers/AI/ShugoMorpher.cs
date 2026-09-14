@@ -33,10 +33,9 @@ public class ShugoMorpher : GeneralNpcAI
         if (DialogService.IsInteractionAllowed(player, GetOwner()) && started.CompareAndSet(false, true))
         {
             const int delay = 1000;
-            ItemUseObserver obs = null;
-            obs = new MorpherItemUseObserver(this, player, () => obs);
+            ItemUseObserver obs = new MorpherItemUseObserver(this, player);
 
-            player.GetObserveController().Attach(obs);
+            player.GetObserveController().AddObserver(obs);
             PacketSendUtility.SendPacket(player, new SM_USE_OBJECT(player.GetObjectId(), GetObjectId(), delay, 1));
             PacketSendUtility.BroadcastPacket(player, new SM_EMOTION(player, EmotionType.START_QUESTLOOT, 0, GetObjectId()), true);
             player.GetController().AddTask(TaskId.ACTION_ITEM_NPC, ThreadPoolManager.GetInstance().Schedule(ct =>
@@ -54,19 +53,17 @@ public class ShugoMorpher : GeneralNpcAI
     {
         private readonly ShugoMorpher _ai;
         private readonly Player _player;
-        private readonly System.Func<ItemUseObserver> _self;
 
-        public MorpherItemUseObserver(ShugoMorpher ai, Player player, System.Func<ItemUseObserver> self)
+        public MorpherItemUseObserver(ShugoMorpher ai, Player player)
+            : base(player)
         {
             _ai = ai;
             _player = player;
-            _self = self;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             _ai.started.Set(false);
-            _player.GetObserveController().RemoveObserver(_self());
             _player.GetController().CancelTask(TaskId.ACTION_ITEM_NPC);
             PacketSendUtility.BroadcastPacket(_player, new SM_EMOTION(_player, EmotionType.END_QUESTLOOT, 0, _ai.GetObjectId()), true);
             PacketSendUtility.SendPacket(_player, new SM_USE_OBJECT(_player.GetObjectId(), _ai.GetObjectId(), 0, 2));

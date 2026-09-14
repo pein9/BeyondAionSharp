@@ -7,22 +7,32 @@
     {
       "name": "simple",
       "inputs": {"ctor":"player_itemObj_itemId","playerObjId":820001,"itemObjId":830001,"itemId":162000001},
-      "payloadHex": "21830C0021830C0031AA0C0081ECA709000000000100000101000000"
+      "payloadHex": "21830C0021830C0031AA0C0081ECA709000000000100010000000000"
     },
     {
-      "name": "withUnk3",
-      "inputs": {"ctor":"player_itemObj_itemId_time_end_unk","playerObjId":820002,"itemObjId":830002,"itemId":162000002,"time":0,"end":1,"unk3":7},
-      "payloadHex": "22830C0022830C0032AA0C0082ECA709000000000100000107000000"
+      "name": "useStart",
+      "inputs": {"ctor":"player_itemObj_itemId_castTime_animation","playerObjId":820002,"itemObjId":830002,"itemId":162000002,"castTime":3000,"animation":"USE_START"},
+      "payloadHex": "22830C0022830C0032AA0C0082ECA709B80B00000000010000000000"
+    },
+    {
+      "name": "soulBindStart",
+      "inputs": {"ctor":"player_itemObj_itemId_castTime_animation","playerObjId":820005,"itemObjId":830005,"itemId":162000005,"castTime":5000,"animation":"SOUL_BIND_START"},
+      "payloadHex": "25830C0025830C0035AA0C0085ECA709881300000400010000000000"
     },
     {
       "name": "withTarget",
-      "inputs": {"ctor":"player_target_itemObj_itemId_time_end_unk","playerObjId":820003,"targetObjId":840003,"itemObjId":830003,"itemId":162000003,"time":0,"end":2,"unk3":1},
-      "payloadHex": "23830C0043D10C0033AA0C0083ECA709000000000200000101000000"
+      "inputs": {"ctor":"player_target_itemObj_itemId_castTime_animation","playerObjId":820003,"targetObjId":840003,"itemObjId":830003,"itemId":162000003,"castTime":0,"animation":"USE_CANCEL"},
+      "payloadHex": "23830C0043D10C0033AA0C0083ECA709000000000300010000000000"
     },
     {
-      "name": "full",
-      "inputs": {"ctor":"full","playerObjId":820004,"targetObjId":840004,"itemObjId":830004,"itemId":162000004,"time":0,"end":1,"unk":2,"unk1":3,"unk2":4,"unk3":5},
-      "payloadHex": "24830C0044D10C0034AA0C0084ECA709000000000102030405000000"
+      "name": "reidentifySuccess",
+      "inputs": {"ctor":"player_target_itemObj_itemId_castTime_animation","playerObjId":820006,"targetObjId":840006,"itemObjId":830006,"itemId":162000006,"castTime":0,"animation":"REIDENTIFY_SUCCESS"},
+      "payloadHex": "26830C0046D10C0036AA0C0086ECA709000000000D00010000000000"
+    },
+    {
+      "name": "suppressed",
+      "inputs": {"ctor":"full","playerObjId":820004,"targetObjId":820004,"itemObjId":830004,"itemId":162000004,"castTime":0,"animation":"USE_SUCCESS","suppressAnimation":true},
+      "payloadHex": "24830C0024830C0034AA0C0084ECA709000000000101010000000000"
     }
   ]
 }

@@ -7,6 +7,7 @@ using Aion.GameServer.QuestEngine.Handlers;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services;
 using Aion.GameServer.Utils;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Handlers.Quest
 {
@@ -104,10 +105,10 @@ namespace Aion.GameServer.Handlers.Quest
 
             if (id != 182206728)
                 return HandlerResult.UNKNOWN;
-            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 1000, 0, 0), true);
+            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 1000, ItemUseAnimation.USE_START), true);
             ThreadPoolManager.GetInstance().Schedule(ct =>
             {
-                PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 0, 1, 0), true);
+                PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 0, ItemUseAnimation.USE_SUCCESS), true);
                 RemoveQuestItem(env, 182206728, 1);
                 qs.SetStatus(QuestStatus.REWARD);
                 UpdateQuestStatus(env);

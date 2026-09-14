@@ -6,6 +6,7 @@ using Aion.GameServer.QuestEngine.Handlers;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services;
 using Aion.GameServer.Utils;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Handlers.Quest;
 
@@ -77,7 +78,7 @@ public class _11046BoxPickedUpInTheForest : AbstractQuestHandler
 
         if (id != 182206745)
             return HandlerResult.UNKNOWN;
-        PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 20, 1, 0), true);
+        PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 20, ItemUseAnimation.USE_SUCCESS), true);
         if (qs == null || qs.IsStartable())
             SendQuestDialog(env, 4);
         return HandlerResult.SUCCESS;

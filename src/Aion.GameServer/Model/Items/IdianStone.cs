@@ -42,7 +42,7 @@ public class IdianStone : ItemStone
         private readonly IdianStone outer;
         private readonly Aion.GameServer.Model.GameObjects.Players.Player player;
 
-        public IdianActionObserver(IdianStone outer, Aion.GameServer.Model.GameObjects.Players.Player player) : base(ObserverType.DOT_ATTACK_DEFEND)
+        public IdianActionObserver(IdianStone outer, Aion.GameServer.Model.GameObjects.Players.Player player) : base(ObserverType.DOT_ATTACKED, ObserverType.ATTACKED, ObserverType.ATTACK)
         {
             this.outer = outer;
             this.player = player;

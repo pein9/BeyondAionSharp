@@ -8,6 +8,7 @@ using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services;
 using Aion.GameServer.Services.Teleport;
 using Aion.GameServer.Utils;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Handlers.Quest
 {
@@ -205,7 +206,7 @@ namespace Aion.GameServer.Handlers.Quest
             if (qs == null)
                 return HandlerResult.FAILED;
 
-            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 1, 1, 0), true);
+            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), itemObjId, id, 1, ItemUseAnimation.USE_SUCCESS), true);
             RemoveQuestItem(env, 182215351, 1);
             qs.SetQuestVarById(0, qs.GetQuestVarById(0) + 1);
             UpdateQuestStatus(env);

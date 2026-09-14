@@ -20,13 +20,13 @@ public class ItemActionService
     public static void IdentifyItem(Player player, Item item)
     {
         int itemId = item.GetItemId();
-        PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), item.GetObjectId(), itemId, 5000, 9, 0), true);
+        PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), item.GetObjectId(), itemId, 5000, ItemUseAnimation.IDENTIFY_START), true);
         ItemUseObserver observer = new IdentifyItemObserver(player, item, itemId);
-        player.GetObserveController().Attach(observer);
+        player.GetObserveController().AddObserver(observer);
         player.GetController().AddTask(TaskId.ITEM_USE, ThreadPoolManager.GetInstance().Schedule(ct =>
         {
             player.GetObserveController().RemoveObserver(observer);
-            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), item.GetObjectId(), itemId, 0, 10, 0), true);
+            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), item.GetObjectId(), itemId, 0, ItemUseAnimation.IDENTIFY_SUCCESS), true);
             item.SetOptionalSockets(Rnd.Get(0, item.GetItemTemplate().GetOptionSlotBonus()));
             item.SetBonusStats(TuningAction.GetRandomStatBonusIdFor(item), true);
             item.SetEnchantBonus(Rnd.Get(0, item.GetItemTemplate().GetMaxEnchantBonus()));
@@ -61,18 +61,18 @@ public class ItemActionService
         private readonly int itemId;
 
         public IdentifyItemObserver(Player player, Item item, int itemId)
+            : base(player)
         {
             this.player = player;
             this.item = item;
             this.itemId = itemId;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             player.GetController().CancelTask(Aion.GameServer.Model.TaskId.ITEM_USE);
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_ITEM_IDENTIFY_CANCELED(item.GetL10n()));
-            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), item.GetObjectId(), itemId, 0, 11, 0), true);
-            player.GetObserveController().RemoveObserver(this);
+            PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), item.GetObjectId(), itemId, 0, ItemUseAnimation.IDENTIFY_CANCEL), true);
         }
     }
 }

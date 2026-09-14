@@ -186,11 +186,6 @@ public partial class ItemTemplate
         return itemGroup;
     }
 
-    public int[] GetRequiredSkills()
-    {
-        return itemGroup.GetRequiredSkills();
-    }
-
     public string GetTemperingName()
     {
         return temperingName;

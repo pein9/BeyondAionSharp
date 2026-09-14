@@ -296,7 +296,7 @@ public sealed class ChatCommandExceptionParityTests
 
 		Assert.True(command.Run(OfflinePlayer()));
 		Assert.Equal("Invalid creature state.\nPossible values:\n"
-			+ "ACTIVE, FLYING, RESTING, FLOATING_CORPSE, UNK, WEAPON_EQUIPPED, WALK_MODE, POWERSHARD, TREATMENT, GLIDING, CHAIR, DEAD, PRIVATE_SHOP, LOOTING",
+			+ "ACTIVE, FLYING, RESTING, FLOATING_CORPSE, UNK, WEAPON_EQUIPPED, WALK_MODE, POWERSHARD, TREATMENT, GLIDING, CHAIR, DEAD, PRIVATE_SHOP, LOOTING, ANY_STANCE",
 			command.LastErrorMessage);
 	}
 

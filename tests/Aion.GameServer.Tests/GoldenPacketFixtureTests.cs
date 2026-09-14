@@ -789,7 +789,7 @@ public sealed class GoldenPacketFixtureTests
 		};
 	}
 
-	// SM_ITEM_USAGE_ANIMATION: select the ctor matching the Java generator (time==0 paths only).
+	// SM_ITEM_USAGE_ANIMATION: select the ctor named by the Java fixture case.
 	// Faithful SM_ITEM_USAGE_ANIMATION : AionServerPacket (captured via WriteImpl path).
 	private static SM_ITEM_USAGE_ANIMATION ReconstructItemUsageAnimation(JsonElement inputs)
 	{
@@ -798,16 +798,19 @@ public sealed class GoldenPacketFixtureTests
 		{
 			case "player_itemObj_itemId":
 				return new SM_ITEM_USAGE_ANIMATION(inputs.GetProperty("playerObjId").GetInt32(), inputs.GetProperty("itemObjId").GetInt32(), inputs.GetProperty("itemId").GetInt32());
-			case "player_itemObj_itemId_time_end_unk":
-				return new SM_ITEM_USAGE_ANIMATION(inputs.GetProperty("playerObjId").GetInt32(), inputs.GetProperty("itemObjId").GetInt32(), inputs.GetProperty("itemId").GetInt32(), inputs.GetProperty("time").GetInt32(), inputs.GetProperty("end").GetInt32(), inputs.GetProperty("unk3").GetInt32());
-			case "player_target_itemObj_itemId_time_end_unk":
-				return new SM_ITEM_USAGE_ANIMATION(inputs.GetProperty("playerObjId").GetInt32(), inputs.GetProperty("targetObjId").GetInt32(), inputs.GetProperty("itemObjId").GetInt32(), inputs.GetProperty("itemId").GetInt32(), inputs.GetProperty("time").GetInt32(), inputs.GetProperty("end").GetInt32(), inputs.GetProperty("unk3").GetInt32());
+			case "player_itemObj_itemId_castTime_animation":
+				return new SM_ITEM_USAGE_ANIMATION(inputs.GetProperty("playerObjId").GetInt32(), inputs.GetProperty("itemObjId").GetInt32(), inputs.GetProperty("itemId").GetInt32(), inputs.GetProperty("castTime").GetInt32(), ItemUsageAnimationStage(inputs));
+			case "player_target_itemObj_itemId_castTime_animation":
+				return new SM_ITEM_USAGE_ANIMATION(inputs.GetProperty("playerObjId").GetInt32(), inputs.GetProperty("targetObjId").GetInt32(), inputs.GetProperty("itemObjId").GetInt32(), inputs.GetProperty("itemId").GetInt32(), inputs.GetProperty("castTime").GetInt32(), ItemUsageAnimationStage(inputs));
 			case "full":
-				return new SM_ITEM_USAGE_ANIMATION(inputs.GetProperty("playerObjId").GetInt32(), inputs.GetProperty("targetObjId").GetInt32(), inputs.GetProperty("itemObjId").GetInt32(), inputs.GetProperty("itemId").GetInt32(), inputs.GetProperty("time").GetInt32(), inputs.GetProperty("end").GetInt32(), inputs.GetProperty("unk").GetInt32(), inputs.GetProperty("unk1").GetInt32(), inputs.GetProperty("unk2").GetInt32(), inputs.GetProperty("unk3").GetInt32());
+				return new SM_ITEM_USAGE_ANIMATION(inputs.GetProperty("playerObjId").GetInt32(), inputs.GetProperty("targetObjId").GetInt32(), inputs.GetProperty("itemObjId").GetInt32(), inputs.GetProperty("itemId").GetInt32(), inputs.GetProperty("castTime").GetInt32(), ItemUsageAnimationStage(inputs), inputs.GetProperty("suppressAnimation").GetBoolean());
 			default:
 				throw new NotSupportedException($"No SM_ITEM_USAGE_ANIMATION ctor for {ctor}");
 		}
 	}
+
+	private static Aion.GameServer.Model.Items.ItemUseAnimation ItemUsageAnimationStage(JsonElement inputs) =>
+		Enum.Parse<Aion.GameServer.Model.Items.ItemUseAnimation>(inputs.GetProperty("animation").GetString()!);
 
 	// SM_ATTACK_STATUS: the faithful (Creature, TYPE, skillId, value[, LOG]) ctor — exercises the same
 	// getHpPercentage()/getMpPercentage() harness path Java reads. The deterministic HarnessCreature/HarnessLifeStats

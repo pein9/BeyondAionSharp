@@ -215,7 +215,7 @@ public class PvpMapHandler : GeneralInstanceHandler
     {
         ActionObserver observer = GetAllObserver(p);
         PacketSendUtility.BroadcastPacket(p, new SM_BIND_POINT_TELEPORT(1, p.GetObjectId(), 1, 0), true);
-        p.GetObserveController().Attach(observer);
+        p.GetObserveController().AddObserver(observer);
 
         p.GetController().AddTask(TaskId.SKILL_USE, ThreadPoolManager.GetInstance().Schedule(ct =>
         {
@@ -256,11 +256,12 @@ public class PvpMapHandler : GeneralInstanceHandler
         private readonly Player p;
 
         public PvpMapTeleportObserver(Player p)
+            : base(p)
         {
             this.p = p;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             BindPointTeleportService.CancelTeleport(p, 1);
         }

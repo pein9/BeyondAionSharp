@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Aion.GameServer.Controllers.Observer;
 using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
 
@@ -63,9 +64,9 @@ public class ChargeAction : AbstractItemAction
             return;
         }
         Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), castingDelay, 0, 0), true);
+            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), castingDelay, ItemUseAnimation.USE_START), true);
         ItemUseObserver observer = new ChargeUseObserver(player, parentItem, chargeWay);
-        player.GetObserveController().Attach(observer);
+        player.GetObserveController().AddObserver(observer);
         player.GetController().AddTask(Aion.GameServer.Model.TaskId.ITEM_USE, Aion.GameServer.Utils.ThreadPoolManager.GetInstance().Schedule(ct =>
         {
             player.GetObserveController().RemoveObserver(observer);
@@ -80,11 +81,11 @@ public class ChargeAction : AbstractItemAction
         {
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_ENCHANT_ITEM_NO_TARGET_ITEM());
             Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, 2, 0), true);
+                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, ItemUseAnimation.USE_FAIL), true);
             return;
         }
         Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, 1, 0), true);
+            new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, ItemUseAnimation.USE_SUCCESS), true);
         ICollection<Item> conditioningItems = GetConditioningItems(player, parentItem, targetItem);
         if (conditioningItems.Count == 0)
             return;
@@ -106,13 +107,14 @@ public class ChargeAction : AbstractItemAction
         private readonly int chargeWay;
 
         public ChargeUseObserver(Aion.GameServer.Model.GameObjects.Players.Player player, Item parentItem, int chargeWay)
+            : base(player)
         {
             this.player = player;
             this.parentItem = parentItem;
             this.chargeWay = chargeWay;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             player.GetController().CancelTask(Aion.GameServer.Model.TaskId.ITEM_USE);
             if (chargeWay == 1)
@@ -120,8 +122,7 @@ public class ChargeAction : AbstractItemAction
             else
                 Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_MSG_ITEM_CHARGE2_CANCELED());
             Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
-                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, 1, 0), true);
-            player.GetObserveController().RemoveObserver(this);
+                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemId(), 0, ItemUseAnimation.USE_CANCEL), true);
         }
     }
 }

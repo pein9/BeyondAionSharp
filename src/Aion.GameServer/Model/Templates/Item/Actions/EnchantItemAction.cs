@@ -4,6 +4,7 @@ using System.Xml.Serialization;
 using Aion.GameServer.Controllers.Observer;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Templates.Items.Enums;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
 
@@ -78,13 +79,13 @@ public class EnchantItemAction : AbstractItemAction
         int enchantDurationMillis = isEnchantmentStone ? 4000 : 2000;
 
         var observer = new EnchantItemUseObserver(player, parentItem, targetItem, isEnchantmentStone);
-        player.GetObserveController().Attach(observer);
+        player.GetObserveController().AddObserver(observer);
 
         // Current enchant level
         int currentEnchant = targetItem.GetEnchantLevel();
         bool isSuccess = IsSuccess(player, parentItem, targetItem, supplementItem, targetWeapon);
         // Item template
-        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), targetItem.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), enchantDurationMillis, 0, 0, 1, 0, 0));
+        Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), targetItem.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), enchantDurationMillis, ItemUseAnimation.USE_START));
 
         player.GetController().AddTask(Aion.GameServer.Model.TaskId.ITEM_USE, Aion.GameServer.Utils.ThreadPoolManager.GetInstance().Schedule(ct =>
         {
@@ -93,7 +94,7 @@ public class EnchantItemAction : AbstractItemAction
             if (player.GetInventory().GetItemByObjId(targetItem.GetObjectId()) == null && !targetItem.IsEquipped())
             {
                 Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_ENCHANT_ITEM_NO_TARGET_ITEM());
-                Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), 0, 2, 0));
+                Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), 0, ItemUseAnimation.USE_FAIL));
                 return ValueTask.CompletedTask;
             }
 
@@ -103,7 +104,7 @@ public class EnchantItemAction : AbstractItemAction
             else // Manastone
                 Aion.GameServer.Services.EnchantService.SocketManastoneAct(player, parentItem, targetItem, supplementItem, targetWeapon, isSuccess);
 
-            Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), 0, isSuccess ? 1 : 2, 0));
+            Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), 0, isSuccess ? ItemUseAnimation.USE_SUCCESS : ItemUseAnimation.USE_FAIL));
             if (Aion.GameServer.Configs.Main.CustomConfig.ENABLE_ENCHANT_ANNOUNCE)
             {
                 if (isEnchantmentStone && isSuccess && (targetItem.GetEnchantLevel() == 15 || targetItem.GetEnchantLevel() == 20))
@@ -204,6 +205,7 @@ public class EnchantItemAction : AbstractItemAction
         private readonly bool isEnchantmentStone;
 
         public EnchantItemUseObserver(Aion.GameServer.Model.GameObjects.Players.Player player, Item parentItem, Item targetItem, bool isEnchantmentStone)
+            : base(player)
         {
             this.player = player;
             this.parentItem = parentItem;
@@ -211,13 +213,12 @@ public class EnchantItemAction : AbstractItemAction
             this.isEnchantmentStone = isEnchantmentStone;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             player.GetController().CancelTask(Aion.GameServer.Model.TaskId.ITEM_USE);
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, isEnchantmentStone ? Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_ENCHANT_ITEM_CANCELED(targetItem.GetL10n()) : Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_GIVE_ITEM_OPTION_CANCELED(targetItem.GetL10n()));
             Aion.GameServer.Utils.PacketSendUtility.BroadcastPacketAndReceive(player,
-                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), 0, 3, 0));
-            player.GetObserveController().RemoveObserver(this);
+                new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), parentItem.GetItemTemplate().GetTemplateId(), 0, ItemUseAnimation.USE_CANCEL));
         }
     }
 }

@@ -1,16 +1,24 @@
+using Aion.GameServer.Utils;
 using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.SkillEngine.Effects;
 using Aion.GameServer.SkillEngine.Model;
+using static Aion.GameServer.Controllers.Observer.ObserverType;
 
 namespace Aion.GameServer.Controllers.Observer;
 
 /// <summary>
-/// Java parity: controllers/observer/ItemUseObserver (MrPoke).
+/// Java parity: controllers/observer/ItemUseObserver (MrPoke). Aborting removes the observer from the observed player once and then runs
+/// <see cref="OnAbort"/>.
 /// </summary>
 public abstract class ItemUseObserver : ActionObserver
 {
-    protected ItemUseObserver()
-        : base(ObserverType.ALL)
+    private readonly Player observed;
+    private readonly AtomicBoolean aborted = new AtomicBoolean();
+
+    protected ItemUseObserver(Player observed)
+        : base(ATTACK, ATTACKED, DEATH, DOT_ATTACKED, EQUIP, UNEQUIP, MOVE, STARTSKILLCAST, ENDSKILLCAST, SIT, ITEMUSE, ABNORMALSETTED, BOOSTSKILLCOST)
     {
+        this.observed = observed;
     }
 
     public sealed override void Attack(Creature creature, int skillId)
@@ -68,10 +76,25 @@ public abstract class ItemUseObserver : ActionObserver
         Abort();
     }
 
+    public override void Abnormalsetted(AbnormalState state)
+    {
+        if ((state.GetId() & AbnormalState.CANCEL_ITEM_USE.GetId()) != 0)
+            Abort();
+    }
+
     public override void BoostSkillCost(Skill skill)
     {
         Abort();
     }
 
-    public abstract void Abort();
+    public void Abort()
+    {
+        if (aborted.CompareAndSet(false, true))
+        {
+            observed.GetObserveController().RemoveObserver(this);
+            OnAbort();
+        }
+    }
+
+    protected abstract void OnAbort();
 }

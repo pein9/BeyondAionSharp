@@ -59,7 +59,7 @@ public class SiegeDrill : NpcAI
         {
             ItemUseObserver observer = new SiegeDrillObserver(this, player);
 
-            player.GetObserveController().Attach(observer);
+            player.GetObserveController().AddObserver(observer);
             PacketSendUtility.SendPacket(player, new SM_USE_OBJECT(player.GetObjectId(), GetObjectId(), GetTalkDelay(), startBarAnimation));
             PacketSendUtility.BroadcastPacket(player, new SM_EMOTION(player, EmotionType.START_QUESTLOOT, 0, GetObjectId()), true);
             player.GetController().AddTask(TaskId.ACTION_ITEM_NPC, ThreadPoolManager.GetInstance().Schedule(ct =>
@@ -122,17 +122,17 @@ public class SiegeDrill : NpcAI
         private readonly Player player;
 
         public SiegeDrillObserver(SiegeDrill ai, Player player)
+            : base(player)
         {
             this.ai = ai;
             this.player = player;
         }
 
-        public override void Abort()
+        protected override void OnAbort()
         {
             player.GetController().CancelTask(TaskId.ACTION_ITEM_NPC);
             PacketSendUtility.BroadcastPacket(player, new SM_EMOTION(player, EmotionType.END_QUESTLOOT, 0, ai.GetObjectId()), true);
             PacketSendUtility.SendPacket(player, new SM_USE_OBJECT(player.GetObjectId(), ai.GetObjectId(), 0, ai.cancelBarAnimation));
-            player.GetObserveController().RemoveObserver(this);
         }
     }
 }

@@ -84,6 +84,18 @@ public partial class Item
         return expireTime;
     }
 
+    /// <summary>Seconds since the epoch at which this item is taken off because its owner no longer has the abyss rank for it, 0 if it is not on notice.</summary>
+    public int GetRankLimitExpireTime()
+    {
+        return rankLimitExpireTime;
+    }
+
+    public void SetRankLimitExpireTime(int rankLimitExpireTime)
+    {
+        this.rankLimitExpireTime = rankLimitExpireTime;
+        SetPersistentState(IPersistable.PersistentState.UPDATE_REQUIRED);
+    }
+
     /// <summary>Returns the temporaryExchangeTime.</summary>
     public int GetTemporaryExchangeTime()
     {
@@ -105,8 +117,9 @@ public partial class Item
 
     public void OnExpire(Aion.GameServer.Model.GameObjects.Players.Player player)
     {
-        if (IsEquipped())
-            player.GetEquipment().UnEquipItem(GetObjectId());
+        if (IsEquipped() && player.GetEquipment().UnEquipItem(GetObjectId(), false) != null)
+            Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
+                new Aion.GameServer.Network.Aion.ServerPackets.SM_UPDATE_PLAYER_APPEARANCE(player.GetObjectId(), player.GetEquipment().GetEquippedForAppearance()), true);
 
         foreach (Aion.GameServer.Model.Items.Storage.StorageType i in Aion.GameServer.Model.Items.Storage.StorageType.Values())
         {

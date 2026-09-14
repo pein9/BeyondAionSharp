@@ -26,7 +26,7 @@ public abstract class AbstractMaterialSkillActor : AbstractCollisionObserver
     protected volatile bool isTouched = false;
 
     public AbstractMaterialSkillActor(Creature creature, Spatial geometry, sbyte intentions, CheckType checkType, TaskId taskId, List<MaterialSkill> skills)
-        : base(creature, geometry, intentions, checkType)
+        : base(creature, geometry, intentions, checkType, ObserverType.DEATH)
     {
         this.taskId = taskId;
         this.skills = skills;

@@ -17,6 +17,7 @@ using TYPE = Aion.GameServer.Network.Aion.ServerPackets.SmAttackStatus.TYPE;
 using LOG = Aion.GameServer.Network.Aion.ServerPackets.SmAttackStatus.LOG;
 using Aion.GameServer.Utils.Audit;
 using Aion.GameServer.World;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Controllers;
 
@@ -538,7 +539,7 @@ public class PlayerController : CreatureController<Player>
         {
             PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_ITEM_CANCELED());
             PacketSendUtility.BroadcastPacket(player, new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), castingSkill.GetFirstTarget().GetObjectId(),
-                castingSkill.GetItemObjectId(), castingSkill.GetItemTemplate().GetTemplateId(), 0, 3, 0), true);
+                castingSkill.GetItemObjectId(), castingSkill.GetItemTemplate().GetTemplateId(), 0, ItemUseAnimation.USE_CANCEL), true);
         }
 
         if (lastAttacker is Player && !lastAttacker.Equals(GetOwner()))
