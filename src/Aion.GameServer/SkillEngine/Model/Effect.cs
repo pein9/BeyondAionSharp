@@ -305,7 +305,8 @@ public class Effect : IStatOwner
         magicalCriticalRolled = true;
         for (int i = 0; i < magicalCriticals.Length; i++)
         {
-            magicalCriticals[i] = positions.Contains(i);
+            int position = i + 1;
+            magicalCriticals[i] = positions.Contains(position);
             magicalCritical |= magicalCriticals[i];
         }
     }

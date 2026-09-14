@@ -1,5 +1,6 @@
 using System.Reflection;
 using Aion.GameServer.Dao;
+using Aion.GameServer.SkillEngine.Model;
 
 namespace Aion.GameServer.Tests;
 
@@ -36,6 +37,18 @@ public sealed class PlayerEffectsMagicalCriticalsPortTests
         var positions = Assert.IsAssignableFrom<ISet<int>>(decode.Invoke(null, new object[] { bits }));
 
         Assert.Equal(expectedPositions, positions.OrderBy(p => p));
+    }
+
+    [Fact]
+    public void RestoredPositionsMarkTheSameEffectPositions()
+    {
+        // upstream 626e1c55e: position n is stored at index n - 1
+        var effect = new Effect(null!, null!, new SkillTemplate(), 1, null, null!, false, new HashSet<int> { 1, 3 });
+
+        Assert.True(effect.IsMagicalCritical(1));
+        Assert.False(effect.IsMagicalCritical(2));
+        Assert.True(effect.IsMagicalCritical(3));
+        Assert.False(effect.IsMagicalCritical(4));
     }
 
     private static string RepoFile(params string[] parts)
