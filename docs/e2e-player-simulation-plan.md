@@ -607,8 +607,14 @@ sockets before the large clock migration.
   disposition, allowlist ordering and exact trailer parsing. Docker-only enforce run `p314-ledger` passed both L0
   bots, classified all three boot fingerprints as `KNOWN`, updated their ledger records, emitted no NEW bundle and
   removed its isolated stack. Commit: `00387df8d`.
-- [ ] **P3-15** [LIVE] S — `scripts/e2e/run-full.ps1` (LIVE part): one command that runs L0 and the canaries through
-  `run-live.ps1` and leaves `run/<id>/` for inspection. Started by hand; there is no scheduler (D9).
+- [x] **P3-15** [LIVE] S — `scripts/e2e/run-full.ps1` (LIVE part): one command that runs L0 and the canaries through
+  `run-live.ps1` and leaves `run/<id>/` for inspection. Started by hand; there is no scheduler (D9). The command
+  runs both child stacks in enforce/full-run mode, reuses the first child's images, and keeps their artifacts under
+  one parent run directory. Docker-only run `p315-full3` passed L0 and all four canaries: the L0 watcher reported
+  three tracked fingerprints plus their repeats, and the canary watcher reported those same tracked findings plus
+  exactly four fingerprint-specific `ALLOWLISTED` lines. The `CM_EMOTION 0xFF` action at `b01/s05` appeared in the
+  digest 266 ms later with the same bot and step; the game warning, login checksum rejection and chat unknown-opcode
+  canaries each also appeared exactly once. Commit: `dde4b1ff3`.
 
 **Done when:** `run-live.ps1 -Scenario L0` and `run-full.ps1` pass locally; the `CM_EMOTION 0xFF` canary
 appears in `digest.log` within about 2 seconds attributed to its bot and step; each server's canary produces

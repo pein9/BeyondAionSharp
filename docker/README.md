@@ -91,6 +91,13 @@ stops the servers gracefully, collects artifacts, and removes only its exact Com
 `-SkipImageBuild` only when the images already contain the code under test. Add `-Keep` to leave that project
 running for inspection; remove it afterward with the exact project name printed by the runner.
 
+The Phase 3 Full tier runs L0 and then the watcher canaries in fresh isolated stacks, both in enforce mode, and
+keeps their artifacts together under `run/<id>/`:
+
+```powershell
+pwsh -NoProfile -File scripts/e2e/run-full.ps1 -Run r0917-full
+```
+
 While a run is active, follow its digest from another PowerShell terminal:
 
 ```powershell

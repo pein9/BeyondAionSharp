@@ -352,6 +352,7 @@ public static class ProblemWatcher
 				if (count <= allowlistEntry.MaxCount)
 				{
 					suppressedProblems++;
+					WriteProblemLine(problem, "ALLOWLISTED", allowlistEntry.Tracking, fixedIn: null);
 					return;
 				}
 			}
@@ -382,10 +383,15 @@ public static class ProblemWatcher
 					break;
 			}
 
+			WriteProblemLine(problem, disposition, ledgerEntry?.Tracking, ledgerEntry?.FixedIn);
+		}
+
+		private void WriteProblemLine(WatchProblem problem, string disposition, string? tracking, string? fixedIn)
+		{
 			var details = new StringBuilder();
-			if (ledgerEntry?.Tracking is { Length: > 0 } tracking)
+			if (!string.IsNullOrEmpty(tracking))
 				details.Append(" tracking=").Append(tracking);
-			if (ledgerEntry?.FixedIn is { Length: > 0 } fixedIn)
+			if (!string.IsNullOrEmpty(fixedIn))
 				details.Append(" fixedIn=").Append(fixedIn);
 			if (problem.Bot != null)
 				details.Append(" bot=").Append(problem.Bot);

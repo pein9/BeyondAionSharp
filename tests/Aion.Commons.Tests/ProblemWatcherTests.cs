@@ -48,7 +48,7 @@ public sealed class ProblemWatcherTests
 		var exitCode = await ProblemWatcher.RunAsync(run.Options());
 
 		Assert.Equal(0, exitCode);
-		Assert.Equal(string.Empty, run.ReadDigest());
+		Assert.Contains("ALLOWLISTED ERROR gs fp=1234abcd tracking=TEST-1", run.ReadDigest(), StringComparison.Ordinal);
 		using var summary = JsonDocument.Parse(File.ReadAllText(run.SummaryPath));
 		Assert.Equal(1, summary.RootElement.GetProperty("suppressed").GetInt32());
 	}

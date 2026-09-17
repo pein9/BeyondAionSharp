@@ -24,6 +24,8 @@ param(
 
 	[switch]$PacketTap,
 
+	[switch]$FullRun,
+
 	[switch]$Keep,
 
 	[switch]$SkipImageBuild,
@@ -225,7 +227,8 @@ try {
 		$watcherArguments = @(
 			'run', '--project', 'tools/Aion.LogWatch', '--no-build', '--',
 			'--run', $Run, '--run-dir', $runPath, '--project', $projectName,
-			'--compose-file', $composeFilePath, '--mode', $WatcherMode, '--stop-file', $stopFile
+			'--compose-file', $composeFilePath, '--mode', $WatcherMode, '--stop-file', $stopFile,
+			'--full-run', $FullRun.IsPresent.ToString().ToLowerInvariant()
 		)
 		$watcherProcess = Start-Process -FilePath 'dotnet' -ArgumentList $watcherArguments -WorkingDirectory $repoRoot `
 			-RedirectStandardOutput $watcherStdout -RedirectStandardError $watcherStderr -WindowStyle Hidden -PassThru
