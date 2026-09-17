@@ -229,6 +229,7 @@ public class ServerPacketsOpcodes
         AddPacketOpcode(250, typeof(SM_ALLIANCE_READY_CHECK));
         AddPacketOpcode(252, typeof(SM_PRICES));
         AddPacketOpcode(253, typeof(SM_TRADELIST));
+        AddPacketOpcode(254, typeof(SM_INVINCIBLE_TIME));
         AddPacketOpcode(255, typeof(SM_RECONNECT_KEY));
         AddPacketOpcode(256, typeof(SM_HOUSE_BIDS));
         AddPacketOpcode(259, typeof(SM_RECEIVE_BIDS));

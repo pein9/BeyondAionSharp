@@ -25,6 +25,7 @@ namespace Aion.GameServer.Controllers;
 public class PlayerController : CreatureController<Player>
 {
     private static readonly ILogger log = NullLogger.Instance;
+    private const int PROTECTION_TIME = 60000;
     private long lastAttackMillis = 0;
     private long lastAttackedMillis = 0;
     private long lastAutoAttackMillis = 0;
@@ -640,8 +641,9 @@ public class PlayerController : CreatureController<Player>
             AttackUtil.CancelCastOn(GetOwner());
             AttackUtil.RemoveTargetFrom(GetOwner());
             PacketSendUtility.BroadcastToSightedPlayers(GetOwner(), new SM_PLAYER_STATE(GetOwner()), true);
-            AddTask(Aion.GameServer.Model.TaskId.PROTECTION_ACTIVE, ThreadPoolManager.GetInstance().Schedule(_ => { StopProtectionActiveTask(); return System.Threading.Tasks.ValueTask.CompletedTask; }, TimeSpan.FromMilliseconds(60000)));
         }
+        PacketSendUtility.SendPacket(GetOwner(), new SM_INVINCIBLE_TIME(PROTECTION_TIME));
+        AddTask(Aion.GameServer.Model.TaskId.PROTECTION_ACTIVE, ThreadPoolManager.GetInstance().Schedule(_ => { StopProtectionActiveTask(); return System.Threading.Tasks.ValueTask.CompletedTask; }, TimeSpan.FromMilliseconds(PROTECTION_TIME)));
     }
 
     /// <summary>Stops protection-active task after first move or use skill.</summary>
@@ -653,6 +655,7 @@ public class PlayerController : CreatureController<Player>
         {
             player.UnsetVisualState(CreatureVisualState.BLINKING);
             PacketSendUtility.BroadcastToSightedPlayers(player, new SM_PLAYER_STATE(player), true);
+            PacketSendUtility.SendPacket(player, new SM_INVINCIBLE_TIME(0));
             NotifyAIOnMove();
         }
     }
