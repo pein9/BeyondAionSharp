@@ -471,7 +471,7 @@ sockets before the large clock migration.
     insertion-ordered set semantics (Java `LinkedHashSet`); today it is O(n²) per tick for `MovementNotifyTask`
     and `ZoneUpdateService`. The replacement couples a hash set with a first-insertion list; focused tests pin
     order, uniqueness, clearing and hash-scale lookup work across 10,000 tasks. Commit: `a7590ae18`.
-- [ ] **P3-02** [LIVE] M — Isolated bot stack (D13): `docker/docker-compose.bots.yml`, run as
+- [x] **P3-02** [LIVE] M — Isolated bot stack (D13): `docker/docker-compose.bots.yml`, run as
   `docker compose -p aion-bots-<run>`. It builds the same Dockerfiles as `docker/docker-compose.yml` but tags the
   images `aion-bots-*`, sets no `container_name`, runs MySQL on tmpfs, publishes non-default host ports (admin API
   on `127.0.0.1` only), mounts `docker/bots/overlay/` read-only (P3-00) and bind-mounts per-run log directories.
@@ -482,6 +482,10 @@ sockets before the large clock migration.
   protector off (bot connections arrive from the docker gateway, not 127.0.0.1); login/logout announcements
   off; admin HTTP API on with a token; `AION_LOG_JSONL_DIR` per run; custom XP/drop events off. Everything else,
   security checks included, stays at production defaults (D6). Depends on P3-00.
+  The isolated compose contract and a disposable `aion-bots-p302` full-stack boot verified bot-only image and
+  container names, tmpfs schema initialization, non-default ports, loopback-only admin access, read-only overlay
+  precedence, per-run text/JSONL logs, the default-rate soak overlay and no interaction with the maintainer's
+  containers or `aion_aion-mysql-data` volume. Commit: `7eb2f0f29`.
 - [ ] **P3-03** [LIVE] S — Seeds: the `gameservers` row; a director account with access level 9. Subject accounts
   are auto-created at level 0 with names that encode run and bot (`b01r0917`), which is how server log scopes
   join to bot traces without extra traffic.
@@ -509,8 +513,8 @@ sockets before the large clock migration.
   infrastructure, and fidelity cleanup must not delete them.
 - [ ] **P3-08** [LIVE] S — `scripts/live/run-live.ps1`: `docker compose -p aion-bots-<run> up -d --build` (P3-02) →
   wait ready (P3-04) → bots → watcher → collect container logs into `run/<id>/` → `down -v` on the bots project
-  only (`-Keep` leaves it running for inspection). Runs go under `$AION_E2E_RUN_ROOT` (default `run/`, added to
-  `.gitignore`); keep the last 20 local runs; `events.jsonl` and the packet tap roll at 200 MB and are gzipped
+  only (`-Keep` leaves it running for inspection). Runs go under `$AION_E2E_RUN_ROOT` (default `run/`, ignored
+  since P3-02); keep the last 20 local runs; `events.jsonl` and the packet tap roll at 200 MB and are gzipped
   at run end; `problems.jsonl`, `digest.log` and `report.*` never roll.
 - [ ] **P3-09** [LIVE] S — Scenario **L0 walking skeleton**: login → game auth → create Elyos warrior → enter
   world → `CM_CHAT_AUTH` → `SM_CHAT_INIT` → chat-server auth → join the region channel → a second bot receives a

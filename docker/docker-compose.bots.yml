@@ -1,0 +1,131 @@
+name: aion-bots
+
+# Isolated LIVE-test stack. Always supply a unique project name, for example:
+#   docker compose -f docker/docker-compose.bots.yml -p aion-bots-r0917 up -d --build
+# AION_E2E_RUN_DIR must point at that run's artifact directory. The default overlay is deterministic;
+# set AION_BOT_OVERLAY_DIR=./bots/overlay-soak to retain production gather/craft failure rates.
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${AION_BOT_DB_PASSWORD:-aion-bots}
+      MYSQL_ROOT_HOST: "%"
+    tmpfs:
+      - /var/lib/mysql:size=1g,mode=1777
+    volumes:
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+      - ../login-server/sql:/sql/login:ro
+      - ../game-server/sql:/sql/game:ro
+      - ../chat-server/sql:/sql/chat:ro
+    healthcheck:
+      test: ["CMD", "mysql", "-h127.0.0.1", "-uroot", "-p${AION_BOT_DB_PASSWORD:-aion-bots}", "-e", "SELECT 1 FROM aion_ls.gameservers LIMIT 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 60s
+    restart: unless-stopped
+
+  loginserver:
+    image: aion-bots-loginserver:local
+    build:
+      context: ..
+      dockerfile: docker/loginserver/Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: ${AION_BOT_DB_PASSWORD:-aion-bots}
+      AION_CONFIG_OVERLAY_DIR: /app/config-overlay
+      AION_LOG_JSONL_DIR: /app/login-server/log
+    ports:
+      - "${AION_BOT_LOGIN_PORT:-12106}:2106"
+    volumes:
+      - type: bind
+        source: ${AION_BOT_OVERLAY_DIR:-./bots/overlay}
+        target: /app/config-overlay
+        read_only: true
+      - type: bind
+        source: ${AION_E2E_RUN_DIR:?Set AION_E2E_RUN_DIR to the current run directory}/logs/ls
+        target: /app/login-server/log
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  chatserver:
+    image: aion-bots-chatserver:local
+    build:
+      context: ..
+      dockerfile: docker/chatserver/Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+      loginserver:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: ${AION_BOT_DB_PASSWORD:-aion-bots}
+      SERVER_HOST: ${AION_BOT_SERVER_HOST:-127.0.0.1}
+      CHAT_CLIENT_PORT: ${AION_BOT_CHAT_PORT:-11241}
+      AION_CONFIG_OVERLAY_DIR: /app/config-overlay
+      AION_LOG_JSONL_DIR: /app/chat-server/log
+    ports:
+      - "${AION_BOT_CHAT_PORT:-11241}:10241"
+    volumes:
+      - type: bind
+        source: ${AION_BOT_OVERLAY_DIR:-./bots/overlay}
+        target: /app/config-overlay
+        read_only: true
+      - type: bind
+        source: ${AION_E2E_RUN_DIR:?Set AION_E2E_RUN_DIR to the current run directory}/logs/cs
+        target: /app/chat-server/log
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  gameserver:
+    image: aion-bots-gameserver:local
+    build:
+      context: ..
+      dockerfile: docker/gameserver/Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+      chatserver:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: ${AION_BOT_DB_PASSWORD:-aion-bots}
+      SERVER_HOST: ${AION_BOT_SERVER_HOST:-127.0.0.1}
+      GAME_CLIENT_PORT: ${AION_BOT_GAME_PORT:-17777}
+      LOGIN_ADDRESS: loginserver:9014
+      CHAT_ADDRESS: chatserver:9021
+      RESPAWN_TIME_MULTIPLIER: "1.0"
+      AION_CONFIG_OVERLAY_DIR: /app/config-overlay
+      AION_LOG_JSONL_DIR: /app/game-server/log
+      GAMESERVER_ADMIN_API_ENABLED: "true"
+      GAMESERVER_ADMIN_API_PORT: "7780"
+      GAMESERVER_ADMIN_API_TOKEN: ${AION_BOT_ADMIN_TOKEN:-aion-bots-local-token}
+    ports:
+      - "${AION_BOT_GAME_PORT:-17777}:7777"
+      - "127.0.0.1:${AION_BOT_ADMIN_PORT:-17780}:7780"
+    volumes:
+      - type: bind
+        source: ${AION_BOT_OVERLAY_DIR:-./bots/overlay}
+        target: /app/config-overlay
+        read_only: true
+      - type: bind
+        source: ${AION_E2E_RUN_DIR:?Set AION_E2E_RUN_DIR to the current run directory}/logs/gs
+        target: /app/game-server/log
+    restart: unless-stopped
+    stop_grace_period: 90s
