@@ -255,6 +255,12 @@ public class AionConnection : AConnection<AionServerPacket>
     {
         connectionAliveChecker?.Stop();
 
+        if (IsServerShuttingDownSoon())
+        {
+            SafeLogout();
+            return;
+        }
+
         if (!IsSocketless)
             global::Aion.GameServer.Network.LoginServer.LoginServer.GetInstance().OnDisconnect(this);
 
@@ -274,6 +280,8 @@ public class AionConnection : AConnection<AionServerPacket>
 
         log.LogInformation("Client disconnected:" + msg);
     }
+
+    protected virtual bool IsServerShuttingDownSoon() => GameServer.IsShuttingDownSoon();
 
     protected virtual void ResetPlayerPositionAfterDisconnect(Player player) =>
         player.GetMoveController().ResetToLastPositionFromClient();

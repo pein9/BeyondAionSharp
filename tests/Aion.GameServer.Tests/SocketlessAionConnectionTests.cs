@@ -66,6 +66,28 @@ public sealed class SocketlessAionConnectionTests
 		Assert.True(connection.IsBaseQueueEmpty);
 	}
 
+	[Fact]
+	public void AbruptDropDuringFinalShutdownSecondsLogsOutImmediately()
+	{
+		var connection = new RecordingSocketlessConnection { ServerShuttingDownSoon = true };
+		var player = AttachPlayer(connection);
+		var calls = new List<(Player Player, bool Delayed)>();
+		using var capture = PlayerLeaveWorldService.CaptureForCurrentContext((captured, delayed) =>
+		{
+			calls.Add((captured, delayed));
+			captured.SetClientConnection(null!);
+			connection.SetActivePlayer(null!);
+		});
+
+		connection.Disconnect(new FailingExecutor());
+
+		var call = Assert.Single(calls);
+		Assert.Same(player, call.Player);
+		Assert.False(call.Delayed);
+		Assert.Null(connection.GetActivePlayer());
+		Assert.True(connection.IsClosed());
+	}
+
 	private static Player AttachPlayer(AionConnection connection)
 	{
 		var account = new Account(1200);
@@ -99,6 +121,7 @@ public sealed class SocketlessAionConnectionTests
 		public List<AionServerPacket> SentPackets { get; } = [];
 		public int DisconnectThreadId { get; private set; }
 		public bool IsBaseQueueEmpty => baseQueue.Count == 0;
+		public bool ServerShuttingDownSoon { get; init; }
 
 		protected override Queue<AionServerPacket> GetSendMsgQueue() => baseQueue;
 
@@ -115,6 +138,8 @@ public sealed class SocketlessAionConnectionTests
 		protected override void ResetPlayerPositionAfterDisconnect(Player player)
 		{
 		}
+
+		protected override bool IsServerShuttingDownSoon() => ServerShuttingDownSoon;
 
 		protected override void OnDisconnect()
 		{

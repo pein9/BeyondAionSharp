@@ -463,8 +463,10 @@ sockets before the large clock migration.
   - [x] Make `SocketChannel` read/write return 0 on `WouldBlock` as `java.nio` does, instead of throwing
     `IOException` and disconnecting. A deterministic slow-reader loopback test fills the nonblocking send
     window, observes zero progress and then verifies a distinct 1 MB burst byte-for-byte. Commit: `516e799ad`.
-  - Add Java's `if (GameServer.isShuttingDownSoon()) { safeLogout(); return; }` to
-    `AionConnection.OnDisconnect` (`AionConnection.java:240-243`).
+  - [x] Add Java's `if (GameServer.isShuttingDownSoon()) { safeLogout(); return; }` to
+    `AionConnection.OnDisconnect` (`AionConnection.java:240-243`). A socketless regression test verifies that
+    a final-countdown disconnect leaves the world synchronously rather than scheduling delayed cleanup. Commit:
+    `7a56e31a5`.
   - Replace the `List` + `Contains` dedupe in `AbstractFIFOPeriodicTaskManager.cs:14,39-40` with
     insertion-ordered set semantics (Java `LinkedHashSet`); today it is O(n²) per tick for `MovementNotifyTask`
     and `ZoneUpdateService`.
