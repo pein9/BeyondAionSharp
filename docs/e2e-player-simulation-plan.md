@@ -253,7 +253,7 @@ failures loud, and gets the test suite to a trustworthy green.
   thread), in the login `LoginClientConnection` and in the chat client handler. `ThreadPoolManager` opens a
   `timer` scope around every scheduled body with schedule time and kind. Scope values are strings, never
   live objects.
-- [ ] **P1-08** [BOTH] M — JSON-lines logger provider (`src/Aion.Commons/Logging/JsonLinesLoggerProvider.cs`),
+- [x] **P1-08** [BOTH] M — JSON-lines logger provider (`src/Aion.Commons/Logging/JsonLinesLoggerProvider.cs`), (`45753994c`)
   enabled by `AION_LOG_JSONL_DIR`. One JSON object per line with a fixed key order (§5), scopes included,
   flushed on Warning+. Writes `<srv>.events.jsonl` (everything) and `<srv>.problems.jsonl` (Warning+).
 - [ ] **P1-09** [BOTH] S — Log fingerprints (`LogFingerprint.cs`): hash of exception type, normalized message

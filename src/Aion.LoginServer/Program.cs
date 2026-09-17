@@ -55,6 +55,9 @@ var builder = Host.CreateDefaultBuilder(args)
 			logging.ClearProviders();
 			logging.AddConsole();
 			logging.AddProvider(new AionFileLoggerProvider(ResolveJavaModuleLogDirectory("login-server")));
+			var jsonLinesDirectory = Environment.GetEnvironmentVariable("AION_LOG_JSONL_DIR");
+			if (!string.IsNullOrWhiteSpace(jsonLinesDirectory))
+				logging.AddProvider(new JsonLinesLoggerProvider(jsonLinesDirectory, "ls"));
 			if (hostContext.HostingEnvironment.IsDevelopment())
 			{
 				logging.AddDebug();
