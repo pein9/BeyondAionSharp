@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Aion.GameServer.Configs;
 using Aion.GameServer.Data;
 using Aion.GameServer.Model;
 using Aion.GameServer.Utils;
@@ -26,6 +27,7 @@ public sealed class GameServerBootstrapService : IHostedService
 	private readonly ThreadPoolManager _threadPoolManager;
 	private readonly GameServerRuntimeContext _runtimeContext;
 	private readonly ILogger<GameServerBootstrapService> _logger;
+	private readonly GameServerConfigLoadOptions _configLoadOptions;
 	private bool _started;
 	private bool _gameTimeConsumersWired;
 
@@ -39,7 +41,8 @@ public sealed class GameServerBootstrapService : IHostedService
 		ThreadPoolManager threadPoolManager,
 		GameServerRuntimeContext runtimeContext,
 		ILogger<GameServerBootstrapService> logger,
-		IPlayerOnlineStateRepository? playerOnlineStateRepository = null)
+		IPlayerOnlineStateRepository? playerOnlineStateRepository = null,
+		GameServerConfigLoadOptions? configLoadOptions = null)
 	{
 		_staticDataLoader = staticDataLoader;
 		_playerOnlineStateRepository = playerOnlineStateRepository ?? new NoOpPlayerOnlineStateRepository();
@@ -51,6 +54,7 @@ public sealed class GameServerBootstrapService : IHostedService
 		_threadPoolManager = threadPoolManager;
 		_runtimeContext = runtimeContext;
 		_logger = logger;
+		_configLoadOptions = configLoadOptions ?? GameServerConfigLoadOptions.Default;
 	}
 
 	public bool IsStarted => _started;
@@ -60,6 +64,10 @@ public sealed class GameServerBootstrapService : IHostedService
 		// Java parity: GameServer.main startup order through IDFactory, DataManager, engines, World, GameTime.
 		var stopwatch = Stopwatch.StartNew();
 		_logger.LogInformation("Starting game-server bootstrap");
+
+		// Java GameServer.initUtilityServicesAndConfig loads Config before the database cleanup, used-id query and
+		// DataManager. EventService contributes no overrides yet: activeEvents is empty until EventService.Start().
+		Aion.GameServer.Configs.Config.Load(_configLoadOptions);
 
 		// Java parity: the game server runs with its working directory at game-server/, so many subsystems use
 		// relative paths ("./config/schedule/*.xml", "./data/handlers/instance", HTMLCache "./data/static_data/HTML").
@@ -144,14 +152,6 @@ public sealed class GameServerBootstrapService : IHostedService
 		// VortexService.initVortexLocations()/WorldRaidService/RiftService.initRifts() all resolve a live
 		// CronService.getInstance(). Guard the once-only init so a re-entrant boot (test host running StartAsync
 		// repeatedly in one process) doesn't throw "already initialized".
-		// Java parity: GameServer.main calls Config.load() early (initUtilityServicesAndConfig) so every [Property]
-		// holder reflects config/*.properties + mygs.properties overrides + active-event overrides. Without this the
-		// migrated holders run on bare field-initializer defaults — e.g. CommandsConfig.ACCESS_LEVELS is empty and
-		// ChatProcessor.RegisterCommand -> ChatCommand.GetLevel() throws "Missing access level". Run here: after
-		// DataManager+World are registered above (Config.Load -> EventService.GetActiveEventConfigProperties touches
-		// EVENT_DATA) and before CronService (TIME_ZONE_ID) + the engines (ChatProcessor needs ACCESS_LEVELS).
-		Aion.GameServer.Configs.Config.Load();
-
 		if (Aion.GameServer.Services.Cron.CronService.GetInstance() == null)
 			Aion.GameServer.Services.Cron.CronService.InitSingleton(
 				typeof(Aion.GameServer.Utils.Cron.ThreadPoolManagerRunnableRunner),

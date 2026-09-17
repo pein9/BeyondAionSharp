@@ -500,6 +500,48 @@ public sealed class GameServerConfigPropertyOverrideTests
         Assert.Equal("99", merged.GetProperty("gameserver.character.reentry.time"));
     }
 
+    [Fact]
+    public void ExplicitConfigRootIsIsolatedAndPostLoadOverrideRunsLast()
+    {
+        var configRoot = Path.Combine(Path.GetTempPath(), $"aion-isolated-config-{Guid.NewGuid():N}");
+        int previousCountryCode = GSConfig.SERVER_COUNTRY_CODE;
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(configRoot, "administration"));
+            Directory.CreateDirectory(Path.Combine(configRoot, "main"));
+            Directory.CreateDirectory(Path.Combine(configRoot, "network"));
+            File.WriteAllText(
+                Path.Combine(configRoot, "main", "isolated.properties"),
+                "gameserver.country.code = 41");
+            File.WriteAllText(
+                Path.Combine(configRoot, "mygs.properties"),
+                "gameserver.country.code = 42");
+            bool hookRan = false;
+
+            Config.Load(
+                new GameServerConfigLoadOptions
+                {
+                    ConfigRoot = configRoot,
+                    PostLoadOverride = () =>
+                    {
+                        Assert.Equal(42, GSConfig.SERVER_COUNTRY_CODE);
+                        GSConfig.SERVER_COUNTRY_CODE = 43;
+                        hookRan = true;
+                    },
+                },
+                typeof(GSConfig));
+
+            Assert.True(hookRan);
+            Assert.Equal(43, GSConfig.SERVER_COUNTRY_CODE);
+        }
+        finally
+        {
+            GSConfig.SERVER_COUNTRY_CODE = previousCountryCode;
+            if (Directory.Exists(configRoot))
+                Directory.Delete(configRoot, recursive: true);
+        }
+    }
+
     private static string? FindRepoRoot(string startDirectory)
     {
         var directory = new DirectoryInfo(startDirectory);

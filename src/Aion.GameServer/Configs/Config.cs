@@ -112,7 +112,14 @@ public static class Config
     /// <summary>Load configs of the given classes or all (the migrated set) if allowedConfigs is empty.</summary>
     public static void Load(params Type[] allowedConfigs)
     {
-        JavaProperties properties = LoadProperties();
+        Load(GameServerConfigLoadOptions.Default, allowedConfigs);
+    }
+
+    /// <summary>Load from a host-selected config root, then apply its post-load overrides.</summary>
+    public static void Load(GameServerConfigLoadOptions options, params Type[] allowedConfigs)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        JavaProperties properties = LoadProperties(options.ConfigRoot);
 
         // Java parity (Config.load line 49): properties.putAll(EventService.getInstance().getActiveEventConfigProperties()).
         // Active events' inline <config_properties> override the loaded base config (operator/.properties values), with
@@ -130,25 +137,35 @@ public static class Config
         // Only reflect over the [Property]-migrated holders; unmigrated requested holders keep initializer defaults.
         IEnumerable<Type> requested = processAllConfigs ? MigratedConfigs : allowedConfigs;
         object[] targets = requested.Where(MigratedConfigs.Contains).Cast<object>().ToArray();
-        if (targets.Length == 0)
-            return;
-        ISet<string> unusedProperties = ConfigurableProcessor.Process(properties, targets);
-        _ = unusedProperties; // Java logs unknown keys here; deferred (most keys belong to unmigrated holders).
+        if (targets.Length != 0)
+        {
+            ISet<string> unusedProperties = ConfigurableProcessor.Process(properties, targets);
+            _ = unusedProperties; // Java logs unknown keys here; deferred (most keys belong to unmigrated holders).
+        }
+        options.PostLoadOverride?.Invoke();
     }
 
     /// <summary>Java parity: loadProperties() — cascade config/{administration,main,network}/* then mygs.properties.</summary>
-    private static JavaProperties LoadProperties()
+    private static JavaProperties LoadProperties(string? configRootOverride)
     {
         // Resolve the real game-server/config tree by walking up from the exe output dir (mirrors
         // GameServerOptions.FindRepoRoot), so the [Property] config loads regardless of working directory.
         // Falls back to the DefaultsFolders relative paths (Java runtime convention: CWD = game-server).
-        string? configRoot = null;
-        var dir = new System.IO.DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null)
+        string? configRoot = string.IsNullOrWhiteSpace(configRootOverride)
+            ? null
+            : System.IO.Path.GetFullPath(configRootOverride);
+        if (configRoot != null && !System.IO.Directory.Exists(configRoot))
+            throw new System.IO.DirectoryNotFoundException($"Game-server config root does not exist: {configRoot}");
+
+        if (configRoot == null)
         {
-            var candidate = System.IO.Path.Combine(dir.FullName, "game-server", "config");
-            if (System.IO.Directory.Exists(candidate)) { configRoot = candidate; break; }
-            dir = dir.Parent;
+            var dir = new System.IO.DirectoryInfo(AppContext.BaseDirectory);
+            while (dir != null)
+            {
+                var candidate = System.IO.Path.Combine(dir.FullName, "game-server", "config");
+                if (System.IO.Directory.Exists(candidate)) { configRoot = candidate; break; }
+                dir = dir.Parent;
+            }
         }
 
         var defaults = new JavaProperties();
