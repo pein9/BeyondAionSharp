@@ -12,6 +12,7 @@ using Aion.LoginServer.Network.Crypto;
 using Aion.LoginServer.Network.GameServer;
 using Aion.LoginServer.Network.GameServer.ServerPackets;
 using Aion.LoginServer.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.LoginServer.Tests;
@@ -665,8 +666,9 @@ public sealed class SocketServerSmokeTests
 		var registry = new GameServerRegistry();
 		var gameServer = new GameServerInfo(1, "127.0.0.1", "secret");
 		registry.RegisterKnownServer(gameServer);
+		var logger = new MessageRecordingLogger<GameServerSocketServer>();
 		var server = new GameServerSocketServer(
-			NullLogger<GameServerSocketServer>.Instance,
+			logger,
 			new LoginServerOptions
 			{
 				GameServerEndPoint = new IPEndPoint(IPAddress.Loopback, port),
@@ -690,6 +692,7 @@ public sealed class SocketServerSmokeTests
 
 		Assert.Equal(new byte[] { 0x05, 0x00, 0x00, 0x00, 0x01 }, frame);
 		Assert.True(gameServer.IsOnline);
+		Assert.Contains("Gameserver #1 is now online", logger.Messages);
 
 		await server.StopAsync(TimeSpan.FromSeconds(1));
 		await AssertClientClosedAsync(client.GetStream());
@@ -1188,6 +1191,27 @@ public sealed class SocketServerSmokeTests
 	private static InvalidOperationException NotUsed()
 	{
 		return new InvalidOperationException("Dependency should not be reached by socket smoke tests.");
+	}
+
+	private sealed class MessageRecordingLogger<T> : ILogger<T>
+	{
+		private readonly System.Collections.Concurrent.ConcurrentQueue<string> _messages = new();
+
+		public IReadOnlyCollection<string> Messages => _messages.ToArray();
+
+		public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+		public bool IsEnabled(LogLevel logLevel) => true;
+
+		public void Log<TState>(
+			LogLevel logLevel,
+			EventId eventId,
+			TState state,
+			Exception? exception,
+			Func<TState, Exception?, string> formatter)
+		{
+			_messages.Enqueue(formatter(state, exception));
+		}
 	}
 
 	private sealed class NoopGameServerSession : IGameServerSession

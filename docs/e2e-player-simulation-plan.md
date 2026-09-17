@@ -494,10 +494,15 @@ sockets before the large clock migration.
   accounts to access level 0, and the compose contract pins the seed, hash and overlay settings. A fresh
   tmpfs-backed MySQL 8.4 container verified the registration, director row and account-time row. Commit:
   `f99a15085`.
-- [ ] **P3-04** [LIVE] S — Readiness: port Java's `Game server started in N seconds` line (`GameServer.java:186`).
+- [x] **P3-04** [LIVE] S — Readiness: port Java's `Game server started in N seconds` line (`GameServer.java:186`).
   The bots project is ready when its ports answer, that line has been logged, the login server has logged that
   game server 1 registered, and the schema tables exist (P0-04). The compose file's login and chat healthchecks
-  are 15-second pacing timers, not readiness checks.
+  are 15-second pacing timers, not readiness checks. `scripts/live/wait-ready.ps1` now gates the four published
+  ports, the Java startup and registration log lines, seven schema anchor tables, both post-migration game
+  columns, and the absence of the obsolete login column/table. Its MySQL query runs only inside the isolated
+  compose container. A rebuilt four-service `aion-bots-p304` stack passed the gate in 7.7 seconds after game
+  service launch (`Game server started in 15 seconds.`), then was removed with its tmpfs database. Commit:
+  `2390c1461`.
 - [ ] **P3-05** [LIVE] M — TCP transport and `tools/Aion.LiveBots`: per-bot async loop, ping scheduler,
   reconnect, manifest-driven scenario selection (P5-12 defines the manifest; until then a simple list), per-bot
   traces, non-zero exit on failure. Every step has a real-time timeout; a timeout, automatic reconnect or
@@ -1068,7 +1073,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 9 | `OnDisconnect` lacks the shutdown-soon immediate logout | `AionConnection.java:240-243` | Resolved by P3-01 (`7a56e31a5`) |
 | 10 | `ThreadPoolManager._scheduledTasks` never pruned (C#-only leak) | n/a | Resolved by P3-01 (`172bea01e`) |
 | 11 | `AbstractFIFOPeriodicTaskManager` dedupes with `List.Contains` (O(n²) per tick) | `LinkedHashSet` (`AbstractFIFOPeriodicTaskManager.java:18,39`) | Resolved by P3-01 (`a7590ae18`) |
-| 12 | Server never logs "Game server started in N seconds" | `GameServer.java:186` | P3-04 |
+| 12 | Server never logs "Game server started in N seconds" | `GameServer.java:186` | Resolved by P3-04 (`2390c1461`) |
 | 13 | Mixed `SystemClock`/wall-clock comparisons (C#-only; harmless in production) | one clock throughout | P4-01 |
 | 14 | `SpawnGroup` picks a random spot with `Random.Shared` (same distribution; unreachable by the seed) | `SpawnGroup.java:166` `Rnd.get(list)` | P4-05 |
 | 15 | Game-hour consumers, weather check and `SM_GAME_TIME` broadcast unwired | `GameTime.java:150-154`, `GameTimeService.java:54-56` | P4-09 |

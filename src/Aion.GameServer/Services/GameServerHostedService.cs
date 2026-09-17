@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -36,6 +37,9 @@ public sealed class GameServerHostedService : IHostedService
 		// (Java reaches this via reflection on the static GameServer.nioServer field).
 		NioServer.RegisterInstance(_nioServer);
 		_nioServer.Connect(new ThreadPoolExecutor());
+		var processStartSeconds = new DateTimeOffset(Process.GetCurrentProcess().StartTime.ToUniversalTime()).ToUnixTimeSeconds();
+		var elapsedSeconds = Math.Max(0, DateTimeOffset.UtcNow.ToUnixTimeSeconds() - processStartSeconds);
+		_logger.LogInformation("Game server started in {ElapsedSeconds} seconds.", elapsedSeconds);
 		return Task.CompletedTask;
 	}
 
