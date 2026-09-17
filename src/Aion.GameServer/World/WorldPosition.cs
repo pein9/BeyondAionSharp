@@ -1,6 +1,5 @@
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.World;
 
@@ -17,7 +16,7 @@ namespace Aion.GameServer.World;
 /// </remarks>
 public sealed class WorldPosition
 {
-    private static readonly ILogger Log = NullLogger.Instance;
+    private static readonly ILogger Log = AionLog.For(nameof(WorldPosition));
 
     private readonly int _mapId;
     private MapRegion? _mapRegion;

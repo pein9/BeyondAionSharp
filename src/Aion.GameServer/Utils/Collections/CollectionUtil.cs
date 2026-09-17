@@ -1,12 +1,11 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Utils.Collections;
 
 /// <summary>Java parity: utils/collections/CollectionUtil — safe for-each with error logging.</summary>
 public static class CollectionUtil
 {
-    private static readonly ILogger Log = NullLoggerFactory.Instance.CreateLogger(nameof(CollectionUtil));
+    private static readonly ILogger Log = AionLog.For(nameof(CollectionUtil));
 
     /// <summary>Java parity: forEach(Iterable, Consumer) — iterates without propagating per-element exceptions.</summary>
     public static void ForEach<T>(IEnumerable<T> iterable, Action<T> consumer) =>

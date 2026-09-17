@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Team;
@@ -85,7 +84,7 @@ public class Invasion : DimensionalVortex<VortexLocation>
         }
         else if (participants.Count > 1)
         { // should never happen
-            NullLoggerFactory.Instance.CreateLogger(nameof(Invasion)).LogWarning("Couldn't add " + player + " to " + (isInvader ? "invaders" : "defenders")
+            AionLog.For(nameof(Invasion)).LogWarning("Couldn't add " + player + " to " + (isInvader ? "invaders" : "defenders")
                 + " (alliance not initialized). Current participants: " + participants.Count);
             return;
         }

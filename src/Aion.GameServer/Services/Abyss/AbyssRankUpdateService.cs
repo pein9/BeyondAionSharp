@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Model;
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Services.Abyss;
 /// <summary>Java parity: services/abyss/AbyssRankUpdateService (ATracer, Neon). scheduleUpdate (cron rank update + daily GP loss), performUpdate (online doUpdate+store, compute min GP rank/quota limit, update ranking lists, quota ranks per race, reload cache), updateQuotaRanksForRace (iterate ranks high->low assigning quota), selectAndUpdateQuotaRank (iterator.remove->RemoveAt), updateToNoQuotaRank, updateRankTo, updateDailyGpLoss. method-ref::->method group (red-tolerated Runnable); ThreadPoolManager.schedule(Runnable,ms)->Schedule(ct-lambda); streams min/max->LINQ OrderBy/DefaultIfEmpty; Map.forEach->foreach; currentTimeMillis->UtcNow. AbyssRankEnum/AbyssRankDAO records red-tolerated.</summary>
 public class AbyssRankUpdateService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(AbyssRankUpdateService));
+    private static readonly ILogger log = AionLog.For(nameof(AbyssRankUpdateService));
 
     private AbyssRankUpdateService()
     {

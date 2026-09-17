@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.Actions;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -84,7 +83,7 @@ public class CM_WINDSTREAM : AionClientPacket
                     new SM_EMOTION(player, state == 7 ? EmotionType.WINDSTREAM_START_BOOST : EmotionType.WINDSTREAM_END_BOOST), true);
                 break;
             default:
-                NullLoggerFactory.Instance.CreateLogger(nameof(CM_WINDSTREAM)).LogWarning("Unknown Windstream state #" + state + " was sent from " + player.GetPosition());
+                AionLog.For(nameof(CM_WINDSTREAM)).LogWarning("Unknown Windstream state #" + state + " was sent from " + player.GetPosition());
                 return;
         }
         PacketSendUtility.SendPacket(player, new SM_WINDSTREAM(state, 1));

@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.Commons.Lang;
 using Aion.Commons.Nio;
 using Aion.Commons.Nio.Channels;
@@ -31,7 +30,7 @@ namespace Aion.GameServer.Network.Aion;
 /// </summary>
 public class AionConnection : AConnection<AionServerPacket>
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(AionConnection));
+    private static readonly ILogger log = AionLog.For(nameof(AionConnection));
 
     private static readonly PacketProcessor<AionConnection> packetProcessor = new PacketProcessor<AionConnection>(
         NetworkConfig.PACKET_PROCESSOR_MIN_THREADS, NetworkConfig.PACKET_PROCESSOR_MAX_THREADS,

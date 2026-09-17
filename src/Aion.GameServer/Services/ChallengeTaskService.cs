@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Dataholders;
@@ -26,7 +25,7 @@ namespace Aion.GameServer.Services;
 /// </summary>
 public class ChallengeTaskService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(ChallengeTaskService));
+    private static readonly ILogger log = AionLog.For(nameof(ChallengeTaskService));
 
     private readonly ConcurrentDictionary<int, Dictionary<int, int>> taskAcceptTownIds;
     private readonly ConcurrentDictionary<int, Dictionary<int, ChallengeTask>> cityTasks;

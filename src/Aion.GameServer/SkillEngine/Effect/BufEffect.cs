@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Xml.Serialization;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Stats.Calc.Functions;
 using Aion.GameServer.Model.Stats.Container;
@@ -52,7 +51,7 @@ public abstract class BufEffect : EffectTemplate
         {
             if (changeItem.GetStat() == null)
             {
-                NullLoggerFactory.Instance.CreateLogger(nameof(BufEffect)).LogWarning("Skill stat has wrong name for skillid: " + skillId);
+                AionLog.For(nameof(BufEffect)).LogWarning("Skill stat has wrong name for skillid: " + skillId);
                 continue;
             }
 

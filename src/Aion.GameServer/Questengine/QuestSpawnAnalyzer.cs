@@ -11,14 +11,13 @@ using Aion.GameServer.Model.Templates.Quest;
 using Aion.GameServer.QuestEngine.Handlers;
 using Aion.GameServer.QuestEngine.Handlers.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.QuestEngine;
 
 /// <summary>Java parity: questEngine/QuestSpawnAnalyzer. Streams→LINQ; Map&lt;Set&lt;Integer&gt;,List&lt;Integer&gt;&gt;→Dictionary with HashSet&lt;int&gt;.CreateSetComparer() for value-semantics keys; computeIfAbsent→TryGetValue+init; Files.walk→Directory.EnumerateFiles recursive; DataManager/config dirs red-tolerated.</summary>
 public class QuestSpawnAnalyzer
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(QuestSpawnAnalyzer));
 
     private QuestSpawnAnalyzer()
     {

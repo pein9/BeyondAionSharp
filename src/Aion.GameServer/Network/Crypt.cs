@@ -3,14 +3,13 @@ using Aion.Commons.Nio;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Network;
 
 /// <summary>Crypt will encrypt server packet and decrypt client packet. Java parity: network/Crypt (hack99, kao, -Nemesiss-). int hex literals wrap as int → unchecked((int)0x...); IllegalStateException→InvalidOperationException.</summary>
 public class Crypt
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(Crypt));
 
     /// <summary>Second byte of server packet must be equal to this.</summary>
     public const byte staticServerPacketCode = 0x44;

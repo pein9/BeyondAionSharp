@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Ai;
 using Aion.GameServer.Ai.Manager;
 using Aion.GameServer.Dataholders;
@@ -207,7 +206,7 @@ public class AhserionRaid
         if (winner == null || winner.IsEliminated())
         {
             // something went wrong, remove all players from the map
-            NullLoggerFactory.Instance.CreateLogger(nameof(AhserionRaid)).LogWarning("Ahserion got killed but winnerTeam is missing or eliminated. Skipping rewards.");
+            AionLog.For(nameof(AhserionRaid)).LogWarning("Ahserion got killed but winnerTeam is missing or eliminated. Skipping rewards.");
             Stop();
             return;
         }

@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 
@@ -13,7 +12,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class PlayerPasskeyDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PlayerPasskeyDAO));
+    private static readonly ILogger log = AionLog.For(nameof(PlayerPasskeyDAO));
 
     public const string INSERT_QUERY = "INSERT INTO `player_passkey` (`account_id`, `passkey`) VALUES (?,?)";
     public const string UPDATE_QUERY = "UPDATE `player_passkey` SET `passkey`=? WHERE `account_id`=? AND `passkey`=?";

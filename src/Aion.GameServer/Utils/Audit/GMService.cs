@@ -8,14 +8,13 @@ using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.SkillEngine.Model;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Utils.Audit;
 
 /// <summary>Java parity: utils/audit/GMService (MrPoke, Neon).</summary>
 public class GMService
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(GMService));
 
     public static GMService GetInstance()
     {

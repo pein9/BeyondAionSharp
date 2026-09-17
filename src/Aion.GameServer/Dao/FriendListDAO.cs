@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -18,7 +17,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class FriendListDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(FriendListDAO));
+    private static readonly ILogger log = AionLog.For(nameof(FriendListDAO));
 
     public const string LOAD_QUERY = "SELECT * FROM `friends` WHERE `player`=?";
     public const string ADD_QUERY = "INSERT INTO `friends` (`player`,`friend`) VALUES (?, ?)";

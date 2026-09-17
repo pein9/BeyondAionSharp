@@ -1,12 +1,11 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.QuestEngine.Model;
 
 /// <summary>Java parity: questEngine/model/QuestVars (MrPoke).</summary>
 public class QuestVars
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(QuestVars));
 
     private readonly int[] questVars = new int[6];
 

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model;
@@ -68,7 +67,7 @@ public class AnnouncementsDAO
         }
         catch (Exception e)
         {
-            NullLoggerFactory.Instance.CreateLogger(nameof(AnnouncementsDAO)).LogError(e, "");
+            AionLog.For(nameof(AnnouncementsDAO)).LogError(e, "");
             return -1;
         }
     }

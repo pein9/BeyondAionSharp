@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Configs.Main;
@@ -24,7 +23,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class PlayerDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PlayerDAO));
+    private static readonly ILogger log = AionLog.For(nameof(PlayerDAO));
 
     public static bool IsNameUsed(string name)
     {

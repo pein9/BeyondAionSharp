@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Network.Packet;
 
 namespace Aion.GameServer.Network.Aion;
@@ -13,7 +12,7 @@ namespace Aion.GameServer.Network.Aion;
 /// </summary>
 public abstract class AionClientPacket : BaseClientPacket<AionConnection>
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(AionClientPacket));
+    private static readonly ILogger log = AionLog.For(nameof(AionClientPacket));
 
     private readonly ISet<AionConnection.State> validStates;
 

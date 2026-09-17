@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Ai;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
@@ -16,7 +15,7 @@ namespace Aion.GameServer.Handlers.AI;
 [AIName("legion_dominion_invasion_rift_open")]
 public class LegionDominionInvasionRiftOpenAI : GeneralNpcAI
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(LegionDominionInvasionRiftOpenAI));
 
     public LegionDominionInvasionRiftOpenAI(Npc owner) : base(owner)
     {

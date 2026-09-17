@@ -29,6 +29,9 @@ public static class AionLog
 		return new ForwardingLogger(category);
 	}
 
+	/// <summary>Creates a typed logger using the Java-style simple class name as its category.</summary>
+	public static ILogger<T> For<T>() => new ForwardingLogger<T>(For(typeof(T).Name));
+
 	/// <summary>Sets the process-wide factory used outside a scoped override.</summary>
 	public static void SetFactory(ILoggerFactory factory)
 	{
@@ -80,6 +83,20 @@ public static class AionLog
 				exception,
 				(s, e) => formatter(s.OriginalState, e));
 		}
+	}
+
+	private sealed class ForwardingLogger<T>(ILogger inner) : ILogger<T>
+	{
+		public IDisposable? BeginScope<TState>(TState state) where TState : notnull => inner.BeginScope(state);
+
+		public bool IsEnabled(LogLevel logLevel) => inner.IsEnabled(logLevel);
+
+		public void Log<TState>(
+			LogLevel logLevel,
+			EventId eventId,
+			TState state,
+			Exception? exception,
+			Func<TState, Exception?, string> formatter) => inner.Log(logLevel, eventId, state, exception, formatter);
 	}
 
 	[MethodImpl(MethodImplOptions.NoInlining)]

@@ -4,14 +4,13 @@ using System.IO;
 using System.Text;
 using Aion.GameServer.Configs.Main;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Cache;
 
 /// <summary>Java parity: cache/HTMLCache (Layane, nbali, savormix, hex1r0, lord_rex).</summary>
 public sealed class HTMLCache
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(HTMLCache));
 
     // Java parity: FileFilter accepting directories or *.xhtml files.
     private static bool HtmlFilter(string file)

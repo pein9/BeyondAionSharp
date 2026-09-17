@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.House;
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class HouseBidsDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(HouseBidsDAO));
+    private static readonly ILogger log = AionLog.For(nameof(HouseBidsDAO));
 
     public const string LOAD_QUERY = "SELECT b.*, IF(b.player_id = p.id, 1, 0) playerExists, CAST(FLOOR(UNIX_TIMESTAMP(b.bid_time) * 1000) AS SIGNED) AS bid_time_epoch_millis FROM `house_bids` b LEFT JOIN `players` p ON p.id = b.player_id ORDER BY `bid`, `bid_time`";
     public const string INSERT_QUERY = "INSERT INTO `house_bids` (`player_id`, `house_id`, `bid`, `bid_time`) VALUES (?, ?, ?, FROM_UNIXTIME(? / 1000.0))";

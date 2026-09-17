@@ -12,7 +12,6 @@ using Aion.GameServer.SkillEngine.Model;
 using Aion.GameServer.Utils;
 using Aion.GameServer.World.Geo;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using TYPE = Aion.GameServer.Network.Aion.ServerPackets.SmAttackStatus.TYPE;
 using LOG = Aion.GameServer.Network.Aion.ServerPackets.SmAttackStatus.LOG;
 using Aion.GameServer.Utils.Audit;
@@ -24,7 +23,7 @@ namespace Aion.GameServer.Controllers;
 /// <summary>Java parity: controllers/PlayerController extends CreatureController&lt;Player&gt;.</summary>
 public class PlayerController : CreatureController<Player>
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(PlayerController));
     private const int PROTECTION_TIME = 60000;
     private long lastAttackMillis = 0;
     private long lastAttackedMillis = 0;

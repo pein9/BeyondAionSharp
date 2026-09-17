@@ -6,7 +6,6 @@ using Aion.GameServer.SkillEngine;
 using Aion.GameServer.SkillEngine.Model;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Handlers.AI;
 
@@ -14,7 +13,7 @@ namespace Aion.GameServer.Handlers.AI;
 [AIName("useSkillAndDie")]
 public class UseSkillAndDieAI : NpcAI
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(UseSkillAndDieAI));
 
     private volatile bool canDie = true;
 

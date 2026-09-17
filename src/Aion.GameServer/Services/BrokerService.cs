@@ -4,7 +4,6 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Model;
@@ -32,7 +31,7 @@ public class BrokerService
     private ConcurrentDictionary<int, BrokerItem> elyosSettledItems = new ConcurrentDictionary<int, BrokerItem>();
     private ConcurrentDictionary<int, BrokerItem> asmodianBrokerItems = new ConcurrentDictionary<int, BrokerItem>();
     private ConcurrentDictionary<int, BrokerItem> asmodianSettledItems = new ConcurrentDictionary<int, BrokerItem>();
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("EXCHANGE_LOG");
+    private static readonly ILogger log = AionLog.For("EXCHANGE_LOG");
     private const int DELAY_BROKER_SAVE = 6000;
     private const int DELAY_BROKER_CHECK = 60000;
     private BrokerPeriodicTaskManager saveManager;
@@ -271,7 +270,7 @@ public class BrokerService
 
             if (buyingItem.IsSold() || buyingItem.IsCanceled())
             {
-                NullLoggerFactory.Instance.CreateLogger(nameof(BrokerService)).LogWarning(
+                AionLog.For(nameof(BrokerService)).LogWarning(
                     "Player {Name} tried to buy the following item[id={ItemId}, objId={ObjId}, sellerId={SellerId}, sellerName={SellerName}, sold={Sold}, canceled={Canceled}, settled={Settled}, expireTime={ExpireTime}] which is already sold or canceled",
                     player.GetName(), buyingItem.GetItemId(), buyingItem.GetItemUniqueId(), buyingItem.GetSellerId(),
                     PlayerService.GetPlayerName(buyingItem.GetSellerId()), buyingItem.IsSold(), buyingItem.IsCanceled(), buyingItem.IsSettled(),

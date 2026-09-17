@@ -16,7 +16,6 @@ using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Stats;
 using Aion.GameServer.World.Geo;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using TYPE = Aion.GameServer.Network.Aion.ServerPackets.SmAttackStatus.TYPE;
 using LOG = Aion.GameServer.Network.Aion.ServerPackets.SmAttackStatus.LOG;
 using Aion.GameServer.Utils.Audit;
@@ -29,7 +28,7 @@ namespace Aion.GameServer.Controllers;
 /// </summary>
 public abstract class CreatureController : VisibleObjectController
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(CreatureController));
     private volatile Aion.GameServer.Controllers.Observer.TerrainZoneCollisionMaterialActor actor;
     private readonly ConcurrentDictionary<int, ScheduledTask> tasks = new ConcurrentDictionary<int, ScheduledTask>();
 

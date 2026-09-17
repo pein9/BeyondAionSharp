@@ -2,14 +2,13 @@ using Aion.GameServer.Configs.Administration;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Utils.Audit;
 
 /// <summary>Java parity: utils/audit/AuditLogger (MrPoke, Neon).</summary>
 public class AuditLogger
 {
-    private static readonly ILogger log = NullLogger.Instance; // Java logger name: "AUDIT_LOG"
+    private static readonly ILogger log = AionLog.For("AUDIT_LOG"); // Java logger name: "AUDIT_LOG"
 
     /// <summary>
     /// Logs message, if audit log is enabled. Notifies permitted online staff members.

@@ -1,7 +1,6 @@
 using System;
 using Aion.Commons.Nio;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using JMath = System.Math;
 
 namespace Aion.GameServer.GeoEngine.Math;
@@ -13,7 +12,7 @@ namespace Aion.GameServer.GeoEngine.Math;
 /// </summary>
 public sealed class Matrix4f
 {
-    private static readonly ILogger logger = NullLoggerFactory.Instance.CreateLogger(nameof(Matrix4f));
+    private static readonly ILogger logger = AionLog.For(nameof(Matrix4f));
 
     public float m00, m01, m02, m03;
     public float m10, m11, m12, m13;

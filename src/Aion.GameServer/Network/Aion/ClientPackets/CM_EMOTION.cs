@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.Actions;
 using Aion.GameServer.Model.GameObjects;
@@ -20,7 +19,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 public class CM_EMOTION : AionClientPacket
 {
     /// <summary>Logger</summary>
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CM_EMOTION));
+    private static readonly ILogger log = AionLog.For(nameof(CM_EMOTION));
     /// <summary>Emotion number</summary>
     private EmotionType emotionType;
     /// <summary>Emotion number</summary>

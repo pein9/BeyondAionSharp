@@ -2,7 +2,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Controllers.Attack;
 using Aion.GameServer.Model;
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/DuelService (Simple, Sphinx, xTz). ConcurrentHashMap&lt;Integer,Integer&gt;→ConcurrentDictionary&lt;int,int&gt; (get→TryGetValue/int?, remove→TryRemove); Future&lt;?&gt;→ScheduledTask (cancel(false)→Cancel()); anonymous RequestResponseHandler subclasses→nested DuelRequestHandler/DuelWithdrawHandler; schedule(...,5,MINUTES)→Schedule(TimeSpan.FromMinutes(5)); stream/map/filter/forEach→LINQ. SM_* packets/RequestResponseHandler red-tolerated.</summary>
 public class DuelService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(DuelService));
+    private static readonly ILogger log = AionLog.For(nameof(DuelService));
     private readonly ConcurrentDictionary<int, int> duels = new ConcurrentDictionary<int, int>();
     private readonly ConcurrentDictionary<int, ScheduledTask> drawTasks = new ConcurrentDictionary<int, ScheduledTask>();
 

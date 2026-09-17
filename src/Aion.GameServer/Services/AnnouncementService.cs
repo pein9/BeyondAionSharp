@@ -7,7 +7,6 @@ using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Services;
 
@@ -17,7 +16,7 @@ namespace Aion.GameServer.Services;
 /// </summary>
 public class AnnouncementService
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(AnnouncementService));
     private readonly ConcurrentDictionary<int, ScheduledTask> delays = new ConcurrentDictionary<int, ScheduledTask>();
     private readonly ConcurrentDictionary<int, Announcement> announcements = new ConcurrentDictionary<int, Announcement>();
 

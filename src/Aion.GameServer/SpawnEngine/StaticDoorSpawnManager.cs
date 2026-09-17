@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Controllers;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
@@ -14,7 +13,7 @@ namespace Aion.GameServer.SpawnEngine;
 /// <summary>Java parity: spawnengine/StaticDoorSpawnManager (MrPoke). slf4j logger→ILogger; log.info→LogInformation. SpawnEngine/StaticObjectController/StaticDoor/GeoService/DataManager red-tolerated.</summary>
 public class StaticDoorSpawnManager
 {
-    private static readonly ILogger Log = NullLoggerFactory.Instance.CreateLogger(nameof(StaticDoorSpawnManager));
+    private static readonly ILogger Log = AionLog.For(nameof(StaticDoorSpawnManager));
 
     public static void SpawnTemplate(WorldMapInstance instance)
     {

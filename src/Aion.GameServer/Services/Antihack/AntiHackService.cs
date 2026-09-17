@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Controllers.Movement;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -16,7 +15,7 @@ namespace Aion.GameServer.Services.Antihack;
 /// <summary>Java parity: services/antihack/AntiHackService (Source). canMove anti-cheat checks: abnormal-state move, speed hack (position/absolute/no-mask vectors vs movement speed + counters), teleport hack; punish (audit log + move-back / disconnect per SecurityConfig.PUNISH), moveBack, checkAionBin (aion.bin size validation). Math.rint->Math.Round (round-half-to-even); currentTimeMillis->UtcNow.ToUnixTimeMilliseconds; public hack-counter fields keep Java names. MovementMask/AbnormalState/SM_ packets red-tolerated.</summary>
 public class AntiHackService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(AntiHackService));
+    private static readonly ILogger log = AionLog.For(nameof(AntiHackService));
 
     public static bool CanMove(Player player, float x, float y, float z, byte type)
     {

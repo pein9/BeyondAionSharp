@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Ai;
 using Aion.GameServer.Ai.Manager;
 using Aion.GameServer.Model.GameObjects;
@@ -15,7 +14,7 @@ namespace Aion.GameServer.SpawnEngine;
 /// <summary>Java parity: spawnengine/WalkerGroup (vlog, Rolandas). Comparator.comparing(walkerIndex, nullsLast(natural)).reversed()→OrderBy with custom Comparer (negated nulls-last); IntStream.of(rows).sum()→rows.Sum(); mapToDouble.sum→Sum; Math.signum→Math.Sign; synchronized(members)→lock(members); Integer== (small cached indices)→int? value-equality (faithful runtime behavior); slf4j→ILogger. AI/Npc/Point2D/WalkManager/RouteStep red-tolerated.</summary>
 public class WalkerGroup
 {
-    private static readonly ILogger Log = NullLoggerFactory.Instance.CreateLogger(nameof(WalkerGroup));
+    private static readonly ILogger Log = AionLog.For(nameof(WalkerGroup));
 
     private List<ClusteredNpc> members;
     private WalkerGroupType type;

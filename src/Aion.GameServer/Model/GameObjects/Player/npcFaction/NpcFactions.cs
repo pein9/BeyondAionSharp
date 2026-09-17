@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects;
 
 namespace Aion.GameServer.Model.GameObjects.Players.Npcfaction;
@@ -9,7 +8,7 @@ namespace Aion.GameServer.Model.GameObjects.Players.Npcfaction;
 /// <summary>Java parity: model/gameobjects/player/npcFaction/NpcFactions.</summary>
 public class NpcFactions
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(NpcFactions));
 
     private readonly Player owner;
 

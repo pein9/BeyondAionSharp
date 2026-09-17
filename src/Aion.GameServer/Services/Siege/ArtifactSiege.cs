@@ -1,6 +1,5 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Model;
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Services.Siege;
 /// <summary>Java parity: services/siege/ArtifactSiege (SoulKeeper) extends Siege&lt;ArtifactLocation&gt;. Endless artifact siege: onSiegeStart (boss init, initial delay, balaur assault), onSiegeFinish (despawn, onCapture if boss killed, respawn peace, persist, restart), onCapture (winner race/legion + system messages). getWinnerLegionId Integer->int? (??0); keySet().iterator().next()->Keys.First(); forEachPlayer lambda; AP control no-op. ArtifactLocation/Legion/SM_ red-tolerated.</summary>
 public class ArtifactSiege : Siege<ArtifactLocation>
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(ArtifactSiege));
+    private static readonly ILogger log = AionLog.For(nameof(ArtifactSiege));
 
     public ArtifactSiege(ArtifactLocation siegeLocation)
         : base(siegeLocation)

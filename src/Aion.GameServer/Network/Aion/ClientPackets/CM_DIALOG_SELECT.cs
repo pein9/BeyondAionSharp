@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Administration;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
@@ -60,7 +59,7 @@ public class CM_DIALOG_SELECT : AionClientPacket
         }
         if (dialogActionName == null)
         {
-            NullLoggerFactory.Instance.CreateLogger(nameof(CM_DIALOG_SELECT))
+            AionLog.For(nameof(CM_DIALOG_SELECT))
                 .LogWarning("Received unknown dialog action id " + dialogActionId + " (quest " + questId + ") from " + player);
             return;
         }

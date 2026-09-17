@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -15,7 +14,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_READ_EXPRESS_MAIL (antness, Guapo). Closes postman (0) or summons it on icon click (1) with express/blackcloud unread + cooldown handling. VisibleObjectSpawner/ThreadPoolManager/LetterType red-tolerated.</summary>
 public class CM_READ_EXPRESS_MAIL : AionClientPacket
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CM_READ_EXPRESS_MAIL));
+    private static readonly ILogger log = AionLog.For(nameof(CM_READ_EXPRESS_MAIL));
     private byte action;
 
     public CM_READ_EXPRESS_MAIL(int opcode, ISet<State> validStates)

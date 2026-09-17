@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -16,7 +15,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class PlayerTitleListDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PlayerTitleListDAO));
+    private static readonly ILogger log = AionLog.For(nameof(PlayerTitleListDAO));
 
     private const string LOAD_QUERY = "SELECT `title_id`, `remaining` FROM `player_titles` WHERE `player_id`=?";
     private const string INSERT_QUERY = "INSERT INTO `player_titles`(`player_id`,`title_id`, `remaining`) VALUES (?,?,?)";

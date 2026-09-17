@@ -62,6 +62,27 @@ public sealed class AionLogTests
 		Assert.Equal("flow two", Assert.Single(secondProvider.Entries).Message);
 	}
 
+	[Fact]
+	public void TypedLoggerUsesSimpleTypeNameAndRemainsLateBound()
+	{
+		AionLog.SetFactory(NullLoggerFactory.Instance);
+		var logger = AionLog.For<AionLogTests>();
+		using var provider = new RecordingProvider();
+		using var factory = CreateFactory(provider);
+
+		try
+		{
+			AionLog.SetFactory(factory);
+			logger.LogInformation("typed");
+
+			Assert.Equal(nameof(AionLogTests), Assert.Single(provider.Entries).Category);
+		}
+		finally
+		{
+			AionLog.SetFactory(NullLoggerFactory.Instance);
+		}
+	}
+
 	private static ILoggerFactory CreateFactory(ILoggerProvider provider) => LoggerFactory.Create(builder =>
 	{
 		builder.ClearProviders();

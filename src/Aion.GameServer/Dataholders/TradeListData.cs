@@ -5,7 +5,6 @@ using Aion.GameServer.Model;
 using Aion.GameServer.Model.Templates.Npc;
 using Aion.GameServer.Model.Templates.Tradelist;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Dataholders;
 
@@ -13,7 +12,7 @@ namespace Aion.GameServer.Dataholders;
 [XmlRoot("npc_trade_list")]
 public class TradeListData
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(TradeListData));
 
     [XmlElement("tradelist_template")] public List<TradeListTemplate> tlist;
     [XmlElement("trade_in_list_template")] public List<TradeListTemplate> tInlist;

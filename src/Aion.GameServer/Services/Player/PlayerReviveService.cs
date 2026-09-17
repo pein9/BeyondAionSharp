@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Administration;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
@@ -82,7 +81,7 @@ public class PlayerReviveService
             rebirthResurrectPercent = player.GetRebirthEffect().GetResurrectPercent();
             if (rebirthResurrectPercent <= 0)
             {
-                NullLoggerFactory.Instance.CreateLogger(nameof(PlayerReviveService)).LogWarning("Rebirth effect missing percent.");
+                AionLog.For(nameof(PlayerReviveService)).LogWarning("Rebirth effect missing percent.");
                 rebirthResurrectPercent = 5;
             }
         }

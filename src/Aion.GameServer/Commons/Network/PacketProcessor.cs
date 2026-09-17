@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.Commons.Concurrent;
 using Aion.Commons.Lang;
 using Aion.GameServer.Commons.Network.Packet;
@@ -17,7 +16,7 @@ namespace Aion.GameServer.Commons.Network;
 /// </summary>
 public class PacketProcessor<T> where T : AConnection
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("PacketProcessor");
+    private static readonly ILogger log = AionLog.For("PacketProcessor");
 
     private readonly int threadSpawnThreshold;
     private readonly int threadKillThreshold;

@@ -13,14 +13,13 @@ using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Services.Items;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Services;
 
 /// <summary>Java parity: services/SurveyService (KID).</summary>
 public class SurveyService
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(SurveyService));
     // Java parity: LinkedHashMap (insertion-ordered) — Dictionary preserves insertion order until removal.
     private readonly Dictionary<int, SurveyItem> activeItems = new Dictionary<int, SurveyItem>();
 

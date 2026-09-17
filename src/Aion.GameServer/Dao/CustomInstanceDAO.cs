@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Custom.Instance;
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class CustomInstanceDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CustomInstanceDAO));
+    private static readonly ILogger log = AionLog.For(nameof(CustomInstanceDAO));
 
     private const string SELECT_QUERY = "SELECT *, CAST(FLOOR(UNIX_TIMESTAMP(`last_entry`) * 1000) AS SIGNED) AS `last_entry_epoch_millis` FROM `custom_instance` WHERE ? = player_id";
     private const string UPDATE_QUERY = "REPLACE INTO `custom_instance` (`player_id`, `rank`, `last_entry`, `max_rank`, `dps`) VALUES (?,?,FROM_UNIXTIME(? / 1000.0),?,?)";

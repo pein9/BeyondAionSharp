@@ -67,6 +67,7 @@ when it lives elsewhere.
 dotnet build AionServer.slnx
 dotnet test  AionServer.slnx        # golden/parity suite + unit tests
 pwsh -NoProfile -File scripts/ci/check-warning-baseline.ps1   # run before every commit
+pwsh -NoProfile -File scripts/ci/check-null-loggers.ps1       # prevent silent source loggers
 python scripts/parity/check_fidelity.py                        # structural-fidelity check
 ```
 

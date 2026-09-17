@@ -8,7 +8,6 @@ using Aion.GameServer.Model.Templates;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using ItemUpdateType = Aion.GameServer.Services.Items.ItemPacketService.ItemUpdateType;
 
 namespace Aion.GameServer.Services;
@@ -16,7 +15,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/CubeExpandService (ATracer, Simple, Luzien).</summary>
 public class CubeExpandService
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(CubeExpandService));
 
     /// <summary>Shows Question window and expands on positive response.</summary>
     public static void ExpandCube(Player player, Npc npc)

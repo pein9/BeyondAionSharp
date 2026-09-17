@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Items.Storage;
@@ -15,7 +14,7 @@ namespace Aion.GameServer.Services.Items;
 /// <summary>Java parity: services/item/ItemSplitService (ATracer). splitItem (split part of a stack into another slot/storage incl. kinah move, restriction checks, new-item creation or merge), mergeStacks, moveKinah (cube&lt;->account-warehouse with checksum), updateKinahCount. static-import ItemPacketService->using static; nested ItemUpdateType alias; String.format->string.Format; switch-on-StorageType->switch w/ block scopes. IStorage/SM_/LegionService red-tolerated.</summary>
 public class ItemSplitService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(ItemSplitService));
+    private static readonly ILogger log = AionLog.For(nameof(ItemSplitService));
 
     /// <summary>
     /// Move part of stack into different slot

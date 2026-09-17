@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Configs.Schedule;
 using Aion.GameServer.Dataholders;
@@ -16,7 +15,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/WorldRaidService (Whoop, Sykra). World-raid schedule/lifecycle. Map→Dictionary/ConcurrentDictionary; Collections.emptyMap→empty Dictionary; Map.get→GetValueOrDefault, remove→TryRemove; synchronized(this)→lock(this); stream map/collect→Select/ToList; nested forEach→nested foreach; currentTimeMillis→UtcNow. CronService/WorldRaid/WorldRaidRunnable/WorldRaidSchedules red-tolerated.</summary>
 public class WorldRaidService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(WorldRaidService));
+    private static readonly ILogger log = AionLog.For(nameof(WorldRaidService));
     private static readonly WorldRaidService instance = new WorldRaidService();
 
     private Dictionary<int, WorldRaidLocation> raidLocationsById;

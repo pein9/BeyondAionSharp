@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -18,7 +17,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class PlayerPetsDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PlayerPetsDAO));
+    private static readonly ILogger log = AionLog.For(nameof(PlayerPetsDAO));
 
     public static void SaveFeedStatus(int petObjectId, int hungryLevel, int feedProgress, long reuseTime)
     {

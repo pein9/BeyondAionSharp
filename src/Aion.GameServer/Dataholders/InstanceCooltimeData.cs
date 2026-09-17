@@ -9,7 +9,6 @@ using Aion.GameServer.Model.Templates;
 using Aion.GameServer.Services.Instance;
 using Aion.GameServer.Utils.Time;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Dataholders;
 
@@ -17,7 +16,7 @@ namespace Aion.GameServer.Dataholders;
 [XmlRoot("instance_cooltimes")]
 public class InstanceCooltimeData
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(InstanceCooltimeData));
 
     [XmlElement("instance_cooltime")] public List<InstanceCooltime> instanceCooltime;
 

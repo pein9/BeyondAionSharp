@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
@@ -12,7 +11,7 @@ namespace Aion.GameServer.Network.Aion.ServerPackets;
 /// <summary>Java parity: network/aion/serverpackets/SM_MESSAGE (-Nemesiss-, Sweetkr, Neon). Chat/system message packet (sender id/name/race filter, type, shout coords); truncates over hardcap. Converges SystemMailService/MailService/PlayerEnterWorldService. instanceof->is; getName(true)/isSysMsg()/getId()->PascalCase; substring->Substring. ChatType/AbnormalState red-tolerated.</summary>
 public class SM_MESSAGE : AionServerPacket
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(SM_MESSAGE));
+    private static readonly ILogger log = AionLog.For(nameof(SM_MESSAGE));
 
     /// <summary>Client can't handle more than 4000 chars in one packet (4001+ disables chat processing).</summary>
     public const int MESSAGE_SIZE_HARDCAP = 4000;

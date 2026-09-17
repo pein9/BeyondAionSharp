@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer;
 using Aion.GameServer.Cache;
 using Aion.GameServer.Configs.Administration;
@@ -58,7 +57,7 @@ namespace Aion.GameServer.Services.Players;
 /// <summary>Java parity: services/player/PlayerEnterWorldService (ATracer, Neon). Full enter-world handshake: validation (account/pcd, online/reentry, ban, passkey, dupe), multi-client gate, then the retail login packet sequence (skills/quests/titles/UI/items/warehouse/abyss/legion/group/mail/housing/etc.), energy-of-repose, passive skill activation, fortress/vortex zone relocation, expirable registration, periodic save tasks. ConcurrentLinkedQueue<Integer> dedupe gate -> ConcurrentDictionary<int,byte> set (ContainsKey/TryAdd/TryRemove); stream findAny.map.orElse->LINQ; Timestamp->DateTimeOffset (getTime->ToUnixTimeMilliseconds); Throwable->Exception; IllegalState->InvalidOperation; Math.round->(long)Floor(x+0.5); lossy long*=float->explicit cast; static-import enum->using static; nested aliases. Named Runnable tasks GeneralUpdateTask/ItemUpdateTask -> classes w/ Run(). Many service/DAO/packet/SplitList types red-tolerated.</summary>
 public sealed class PlayerEnterWorldService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("GAMECONNECTION_LOG");
+    private static readonly ILogger log = AionLog.For("GAMECONNECTION_LOG");
     private static readonly string VERSION_INFO = "Server " + GameServer.versionInfo.GetBuildInfo(GSConfig.TIME_ZONE_ID);
     private static readonly ConcurrentDictionary<int, byte> enteringWorld = new ConcurrentDictionary<int, byte>(); // Java ConcurrentLinkedQueue used as a concurrent set
 
@@ -520,7 +519,7 @@ public sealed class PlayerEnterWorldService
 /// <summary>Java parity: services/player/GeneralUpdateTask (package-private, implements Runnable). Periodic save of abyss rank, skills, quests, player and houses.</summary>
 internal class GeneralUpdateTask : Runnable
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(GeneralUpdateTask));
+    private static readonly ILogger log = AionLog.For(nameof(GeneralUpdateTask));
     private readonly int playerId;
 
     internal GeneralUpdateTask(int playerId)
@@ -553,7 +552,7 @@ internal class GeneralUpdateTask : Runnable
 /// <summary>Java parity: services/player/ItemUpdateTask (package-private, implements Runnable). Periodic save of inventory items and their stones.</summary>
 internal class ItemUpdateTask : Runnable
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(ItemUpdateTask));
+    private static readonly ILogger log = AionLog.For(nameof(ItemUpdateTask));
     private readonly int playerId;
 
     internal ItemUpdateTask(int playerId)

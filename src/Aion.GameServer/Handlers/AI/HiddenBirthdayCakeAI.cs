@@ -11,7 +11,6 @@ using Aion.GameServer.Model.GameObjects.State;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Handlers.AI;
 
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Handlers.AI;
 [AIName("hidden_cake")]
 public class HiddenBirthdayCakeAI : ChestAI
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(HiddenBirthdayCakeAI));
     private static readonly AtomicInteger collectedCakes = new AtomicInteger();
     private static readonly int JEST_SPAWN_CHANCE = 25;
     private static readonly int[] JEST_SPAWN_IDS = { 210341, 214732, 210595 };

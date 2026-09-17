@@ -12,7 +12,6 @@ using Aion.GameServer.Services.Items;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Time;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Model.GameObjects;
 
@@ -26,7 +25,7 @@ namespace Aion.GameServer.Model.GameObjects;
 /// </summary>
 public class UseableItemObject : UseableHouseObject<HousingUseableItem>
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(UseableItemObject));
 
     private volatile bool mustGiveLastReward = false;
     private readonly UseDataWriter entryWriter;

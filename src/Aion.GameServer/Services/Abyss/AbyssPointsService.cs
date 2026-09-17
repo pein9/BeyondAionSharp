@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -12,7 +11,7 @@ namespace Aion.GameServer.Services.Abyss;
 /// <summary>Java parity: services/abyss/AbyssPointsService (ATracer). Adds abyss points (with big-AP warning + siege hook), broadcasts gain/use system message, legion contribution, and onRankChanged (rank packet, broadcast update, rank-limit item check, skill refresh). Integer newRankingListPosition->int?. SiegeService/Legion/SM_ packets red-tolerated.</summary>
 public class AbyssPointsService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(AbyssPointsService));
+    private static readonly ILogger log = AionLog.For(nameof(AbyssPointsService));
 
     public static void AddAp(Player player, VisibleObject obj, int value)
     {

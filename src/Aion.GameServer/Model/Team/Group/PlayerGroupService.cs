@@ -12,7 +12,6 @@ using Aion.GameServer.Restrictions;
 using Aion.GameServer.Services.Findgroup;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.Team.Alliance.Events;
 
 namespace Aion.GameServer.Model.Team.Group;
@@ -20,7 +19,7 @@ namespace Aion.GameServer.Model.Team.Group;
 /// <summary>Java parity: model/team/group/PlayerGroupService (ATracer). Static. ConcurrentHashMap→ConcurrentDictionary; AtomicBoolean.compareAndSet(false,true)→Interlocked.CompareExchange(ref int,1,0)==0; Objects.requireNonNull→ArgumentNullException; Runnable OfflinePlayerChecker→nested class w/ Run; forEachTeamMember lambda→ForEachTeamMember; .equals→.Equals. PlayerGroup/event classes/PlayerRestrictions/FindGroupService/TimeUtil/ThreadPoolManager red-tolerated.</summary>
 public class PlayerGroupService
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(PlayerGroupService));
 
     private static readonly ConcurrentDictionary<int, PlayerGroup> groups = new();
     private static int offlineCheckStarted;

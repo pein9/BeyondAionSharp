@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.LegionDominion;
@@ -17,7 +16,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class LegionDominionDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(LegionDominionDAO));
+    private static readonly ILogger log = AionLog.For(nameof(LegionDominionDAO));
 
     private const string UPDATE_LOC = "UPDATE legion_dominion_locations SET legion_id=?, occupied_date=FROM_UNIXTIME(? / 1000.0) WHERE id=?";
     private const string LOAD1 = "SELECT *, CAST(FLOOR(UNIX_TIMESTAMP(`occupied_date`) * 1000) AS SIGNED) AS `occupied_date_epoch_millis` FROM `legion_dominion_locations`";

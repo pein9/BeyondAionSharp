@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -16,7 +15,7 @@ namespace Aion.GameServer.Services.Items;
 /// <summary>Java parity: services/item/ItemMoveService (ATracer). moveItem (same-storage reslot or cross-storage move w/ restriction/trade/shutdown checks, stackable merge, full-storage handling, WH history), moveInSameStorage, switchItemsInStorages (swap two items between storages). static-import ItemPacketService.*->using static; nested ItemDeleteType alias; GameServer.isShuttingDownSoon red-tolerated. IStorage/SM_/LegionService red-tolerated.</summary>
 public class ItemMoveService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(ItemMoveService));
+    private static readonly ILogger log = AionLog.For(nameof(ItemMoveService));
 
     public static void MoveItem(Player player, int itemObjId, byte sourceStorageType, byte destinationStorageType, short slot)
     {

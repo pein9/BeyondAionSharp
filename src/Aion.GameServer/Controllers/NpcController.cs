@@ -11,7 +11,6 @@ using Aion.GameServer.SkillEngine.Model;
 using Aion.GameServer.Services.Instance;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using TYPE = Aion.GameServer.Network.Aion.ServerPackets.SmAttackStatus.TYPE;
 using LOG = Aion.GameServer.Network.Aion.ServerPackets.SmAttackStatus.LOG;
 using Aion.GameServer.Utils.Stats;
@@ -24,7 +23,7 @@ namespace Aion.GameServer.Controllers;
 /// </summary>
 public class NpcController : CreatureController<Npc>
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(NpcController));
 
     public override void See(VisibleObject @object)
     {

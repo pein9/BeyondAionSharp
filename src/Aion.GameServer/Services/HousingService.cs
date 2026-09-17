@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Dataholders;
@@ -23,7 +22,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/HousingService (Rolandas, Neon). House/studio ownership + spawning. ConcurrentHashMap(copy-ctor from DAO map)→ConcurrentDictionary; IntStream.of(int[]).boxed().toSet→new HashSet<int>(arr); Stream.concat→Concat; mapToInt.distinct→Select.Distinct; sorted(comparing)→OrderBy; Map.get→GetValueOrDefault, values().remove(v)→find-key+TryRemove; synchronized(house)→lock(house); new Timestamp(currentTimeMillis())→DateTimeOffset.FromUnixTimeMilliseconds(UtcNow…); getTime→ToUnixTimeMilliseconds; PersistentState→IPersistable.PersistentState; Collections.singletonList→List initializer. House/templates/DAO/SM_* red-tolerated.</summary>
 public class HousingService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(HousingService));
+    private static readonly ILogger log = AionLog.For(nameof(HousingService));
     // Contains all houses by their addresses
     private readonly ConcurrentDictionary<int, House> customHouses;
     private readonly ConcurrentDictionary<int, House> studios;

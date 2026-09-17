@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -17,7 +16,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class CraftCooldownsDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CraftCooldownsDAO));
+    private static readonly ILogger log = AionLog.For(nameof(CraftCooldownsDAO));
 
     public const string INSERT_QUERY = "INSERT INTO `craft_cooldowns` (`player_id`, `delay_id`, `reuse_time`) VALUES (?,?,?)";
     public const string DELETE_QUERY = "DELETE FROM `craft_cooldowns` WHERE `player_id`=?";

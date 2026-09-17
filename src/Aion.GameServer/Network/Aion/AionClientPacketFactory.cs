@@ -4,7 +4,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Network;
 using Aion.GameServer.Network.Aion.ClientPackets;
 using Aion.GameServer.Commons.Utils;
@@ -22,7 +21,7 @@ namespace Aion.GameServer.Network.Aion;
 /// </summary>
 public static class AionClientPacketFactory
 {
-	private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(AionClientPacketFactory));
+	private static readonly ILogger log = AionLog.For(nameof(AionClientPacketFactory));
 	private static readonly PacketInfo[] packets = new PacketInfo[250];
 
 	static AionClientPacketFactory()

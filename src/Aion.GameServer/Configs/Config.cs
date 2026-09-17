@@ -7,7 +7,6 @@ using Aion.GameServer.Configs.Administration;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Configs.Network;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Configs;
 
@@ -27,7 +26,7 @@ namespace Aion.GameServer.Configs;
 /// </summary>
 public static class Config
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(Config));
+    private static readonly ILogger log = AionLog.For(nameof(Config));
 
     /// <summary>
     /// Java parity: GameServer.main registers the CronExpressionTransformer into PropertyTransformers before any

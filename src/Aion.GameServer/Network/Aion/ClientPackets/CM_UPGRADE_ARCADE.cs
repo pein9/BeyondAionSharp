@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion;
@@ -52,7 +51,7 @@ public class CM_UPGRADE_ARCADE : AionClientPacket
                 UpgradeArcadeService.GetInstance().ShowRewardList(player);
                 break;
             default:
-                NullLoggerFactory.Instance.CreateLogger(nameof(CM_UPGRADE_ARCADE)).LogWarning("Unhandled arcade action " + action);
+                AionLog.For(nameof(CM_UPGRADE_ARCADE)).LogWarning("Unhandled arcade action " + action);
                 break;
         }
     }

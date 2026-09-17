@@ -2,7 +2,6 @@ using System;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model.Stats.Container;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Model.GameObjects.Players;
 
@@ -12,7 +11,7 @@ namespace Aion.GameServer.Model.GameObjects.Players;
 /// </summary>
 public abstract class Rates
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(Rates));
 
     private readonly string _name;
 

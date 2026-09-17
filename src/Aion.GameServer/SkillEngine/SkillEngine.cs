@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -22,7 +21,7 @@ namespace Aion.GameServer.SkillEngine;
 /// </summary>
 public class SkillEngine
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(SkillEngine));
+    private static readonly ILogger log = AionLog.For(nameof(SkillEngine));
     private static readonly SkillEngine skillEngine = new SkillEngine();
 
     /// <summary>should not be instantiated directly</summary>

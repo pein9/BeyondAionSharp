@@ -6,7 +6,6 @@ using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model;
 
 namespace Aion.GameServer.QuestEngine.Handlers.Template;
@@ -14,7 +13,7 @@ namespace Aion.GameServer.QuestEngine.Handlers.Template;
 /// <summary>Java parity: questEngine/handlers/template/ItemOrders (Altaress, Bobobear, Pad). super.onDialogEvent→base.OnDialogEvent; HandlerResult.fromBoolean→FromBoolean; DataManager/QuestService/PacketSendUtility/SM_SYSTEM_MESSAGE red-tolerated.</summary>
 public class ItemOrders : AbstractTemplateQuestHandler
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(ItemOrders));
 
     private int startItemId;
     private readonly int talkNpcId1;

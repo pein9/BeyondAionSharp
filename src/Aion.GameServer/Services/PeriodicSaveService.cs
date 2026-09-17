@@ -7,7 +7,6 @@ using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Team.Legion;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Services;
 
@@ -18,7 +17,7 @@ namespace Aion.GameServer.Services;
 /// </summary>
 public class PeriodicSaveService
 {
-	private static readonly ILogger Log = NullLoggerFactory.Instance.CreateLogger(nameof(PeriodicSaveService));
+	private static readonly ILogger Log = AionLog.For(nameof(PeriodicSaveService));
 
 	private readonly List<PeriodicSaveTask> _tasks;
 

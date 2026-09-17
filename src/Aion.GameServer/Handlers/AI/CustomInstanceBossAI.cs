@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Ai;
 using Aion.GameServer.Custom.Instance;
 using Aion.GameServer.Custom.Instance.Neuralnetwork;
@@ -34,7 +33,7 @@ namespace Aion.GameServer.Handlers.AI;
 [AIName("custom_instance_boss")]
 public class CustomInstanceBossAI : GeneralNpcAI
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(CustomInstanceBossAI));
     private PlayerModel model;
     private ScheduledTask skillTask, castTimeout;
     private int previousSkill, rank;

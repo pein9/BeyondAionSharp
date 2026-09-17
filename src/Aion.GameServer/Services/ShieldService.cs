@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Controllers.Observer;
 using Aion.GameServer.Dataholders;
@@ -18,7 +17,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/ShieldService (xavier, Rolandas, SVDNESS). Map.of/Set.of→Dictionary/HashSet; ConcurrentHashMap→ConcurrentDictionary; computeIfAbsent→GetOrAdd; Map.get→GetValueOrDefault, Map.remove→TryRemove; List.remove(idx)→RemoveAt; instanceof BoundingBox bb→is; switch-arrows→switch; stream().anyMatch→Any; slf4j parameterized warn→LogWarning. ShieldObserver/Spatial/BoundingBox/Vector3f red-tolerated.</summary>
 public class ShieldService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(ShieldService));
+    private static readonly ILogger log = AionLog.For(nameof(ShieldService));
     private static readonly Dictionary<int, ISet<string>> IGNORED_SHIELDS_BY_MAP_ID = new Dictionary<int, ISet<string>>
     {
         { 310100000, new HashSet<string> { "BU_AB_CASTLESHIELD_SAMJUNG_03C_TYPE2_487543" } }, // Azoturan Fortress

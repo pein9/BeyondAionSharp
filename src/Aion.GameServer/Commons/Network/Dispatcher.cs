@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.Commons.Concurrent;
 using Aion.Commons.Nio;
 using Aion.Commons.Nio.Channels;
@@ -17,7 +16,7 @@ namespace Aion.GameServer.Commons.Network;
 /// </summary>
 public abstract class Dispatcher
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(Dispatcher));
+    private static readonly ILogger log = AionLog.For(nameof(Dispatcher));
 
     private readonly Executor dcExecutor;
     protected internal Selector selector;

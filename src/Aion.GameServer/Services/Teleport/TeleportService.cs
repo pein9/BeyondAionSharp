@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
@@ -32,7 +31,7 @@ namespace Aion.GameServer.Services.Teleport;
 /// <summary>Java parity: services/teleport/TeleportService (xTz, Neon) — all-static teleport hub. Many teleportTo overloads, flight/instant sendLoc, dead/prison/npc/bind/instance-exit/event/scroll/channel teleports, obelisk/kisk bind packets. Idioms: double[] eventPos statics; FutureTask&lt;Void&gt;(spawnTask,null)→FutureTask&lt;object&gt; (concurrency shim red-tolerated); anonymous RequestResponseHandler→nested TeleportRequestHandler; SpawnTask nested (accesses outer private statics); Math.toRadians→*PI/180; Float.isNaN→float.IsNaN; byte-heading bit math preserved; HiPass effect lambda; .equals→==. World/Instance/DAO/packets red-tolerated.</summary>
 public class TeleportService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(TeleportService));
+    private static readonly ILogger log = AionLog.For(nameof(TeleportService));
     private static double[] eventPosAsmodians;
     private static double[] eventPosElyos;
 

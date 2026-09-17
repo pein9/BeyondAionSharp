@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Services.Items;
 /// <summary>Java parity: services/item/ItemPurificationService (Ranastic, Estrayl). isPurificationAllowed (validate template/result/identify/enchant/AP/kinah/materials), decreaseMaterials (consume materials + AP + kinah + base item), upgradeItem (build result item carrying over sockets/creator/tune/enchant/amplify/fusion/stones/godstone/tempering/soulbound/bonus stats/color). Map.get->GetValueOrDefault; Math.max/min->Math.Max/Min. PurificationResult/RequiredMaterial/templates/SM_ red-tolerated.</summary>
 public class ItemPurificationService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(ItemPurificationService));
+    private static readonly ILogger log = AionLog.For(nameof(ItemPurificationService));
 
     public static bool IsPurificationAllowed(Player player, Item baseItem, int resultItemId)
     {

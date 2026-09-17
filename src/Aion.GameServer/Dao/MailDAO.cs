@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.GameObjects;
@@ -20,7 +19,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class MailDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(MailDAO));
+    private static readonly ILogger log = AionLog.For(nameof(MailDAO));
 
     public static Mailbox LoadPlayerMailbox(Player player)
     {

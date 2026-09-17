@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.Commons.Lang;
 using Aion.Commons.Nio;
 using Aion.GameServer.Commons.Network;
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Commons.Network.Packet;
 /// </summary>
 public abstract class BaseClientPacket<T> : BasePacket, Runnable where T : AConnection
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("BaseClientPacket");
+    private static readonly ILogger log = AionLog.For("BaseClientPacket");
     private static readonly ConcurrentDictionary<int, bool> partiallyReadPackets = new ConcurrentDictionary<int, bool>();
 
     private T client = default!;

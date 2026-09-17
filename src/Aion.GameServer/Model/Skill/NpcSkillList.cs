@@ -5,14 +5,13 @@ using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Templates.Npcskill;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Model.Skill;
 
 /// <summary>Java parity: model/skill/NpcSkillList (ATracer, Yeats, Neon). Collections.emptyList→new List; iterator+remove→backward-index removal; prios.sort(reverseOrder)→OrderByDescending; mapToInt.toArray→ToArray. DataManager/NpcSkillTemplate(s)/Rnd red-tolerated.</summary>
 public class NpcSkillList
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(NpcSkillList));
 
     private List<NpcSkillEntry> skills;
     private int[] priorities;

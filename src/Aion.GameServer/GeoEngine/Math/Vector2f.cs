@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.GeoEngine.Math;
 
@@ -11,7 +10,7 @@ namespace Aion.GameServer.GeoEngine.Math;
 /// </summary>
 public sealed class Vector2f
 {
-    private static readonly ILogger Logger = NullLogger.Instance;
+    private static readonly ILogger Logger = AionLog.For(nameof(Vector2f));
 
     public static readonly Vector2f ZERO = new(0f, 0f);
     public static readonly Vector2f UNIT_XY = new(1f, 1f);

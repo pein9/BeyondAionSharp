@@ -3,7 +3,6 @@ using Aion.GameServer.Model;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Configs.Schedule;
@@ -30,7 +29,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/SiegeService (SoulKeeper, Source, Neon, Estrayl) — 3.0 siege. Singleton; "SIEGE_LOG" logger; activeSieges ConcurrentDictionary; Map&lt;Integer,Siege&lt;? extends SiegeLocation&gt;&gt;→Siege&lt;SiegeLocation&gt; (wildcard erasure to invariance bound); AtomicBoolean isInitialized.compareAndSet; Collections.emptyMap→new Dictionary; Date→DateTimeOffset, currentTimeMillis→UtcNow.ToUnixTimeMilliseconds; synchronized→lock(this); forEachPlayer→ForEachPlayer; streams→LINQ; map.compute→TryGetValue; anonymous Consumer→lambda; Byte.parseByte→byte.Parse; NumberFormat/UnsupportedOperation→Format/NotSupported. CronExpression/Quartz/Siege subclasses/DAO red-tolerated.</summary>
 public class SiegeService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("SIEGE_LOG");
+    private static readonly ILogger log = AionLog.For("SIEGE_LOG");
 
     /// <summary>We should broadcast fortress status every hour. Actually only an influence packet must be sent, but that doesn't matter.</summary>
     private static readonly CronExpression SIEGE_LOCATION_STATUS_BROADCAST_SCHEDULE = CronExpressions.GetOrCreate("0 0 * ? * *");

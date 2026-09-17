@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Commons.Utils;
@@ -27,7 +26,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class InventoryDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(InventoryDAO));
+    private static readonly ILogger log = AionLog.For(nameof(InventoryDAO));
 
     public const string SELECT_QUERY = "SELECT * FROM `inventory` WHERE `item_owner`=? AND `item_location`=?";
     public const string SELECT_ALL_QUERY = "SELECT * FROM `inventory` WHERE `item_location`=?";

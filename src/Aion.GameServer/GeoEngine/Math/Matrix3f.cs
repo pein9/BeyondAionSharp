@@ -2,7 +2,6 @@ using System;
 using System.Text;
 using Aion.Commons.Nio;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using JMath = System.Math;
 
 namespace Aion.GameServer.GeoEngine.Math;
@@ -14,7 +13,7 @@ namespace Aion.GameServer.GeoEngine.Math;
 /// </summary>
 public sealed class Matrix3f
 {
-    private static readonly ILogger logger = NullLogger.Instance;
+    private static readonly ILogger logger = AionLog.For(nameof(Matrix3f));
 
     internal float m00, m01, m02;
     internal float m10, m11, m12;

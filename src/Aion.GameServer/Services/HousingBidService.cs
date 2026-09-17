@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Model;
@@ -23,7 +22,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/HousingBidService (Rolandas, Neon). House auction bids. **DayOfWeek.getValue() (ISO Mon=1..Sun=7) → C# conversion (Sunday?7:(int)DayOfWeek)**; HouseBids.bid()→DoBid() (prior method/Bid-class collision rename); ConcurrentHashMap→ConcurrentDictionary (putIfAbsent→!TryAdd, get→GetValueOrDefault, remove(k,v)→TryRemove(KVP), remove(k)→TryRemove(out)); stream filter/findAny→Where/FirstOrDefault, anyMatch→Any, reduce(maxBy(comparing))→MaxBy; Persistable.PersistentState→IPersistable.PersistentState; ZonedDateTime→DateTimeOffset; currentTimeMillis→UtcNow.ToUnixTimeMilliseconds; Integer.parseInt→int.Parse; switch(HouseType). HouseBids/Bid converged; House/AuctionResult/MailFormatter/AuctionEndTask/DAO red-tolerated.</summary>
 public class HousingBidService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("HOUSE_AUCTION_LOG");
+    private static readonly ILogger log = AionLog.For("HOUSE_AUCTION_LOG");
     private static readonly HousingBidService instance = new HousingBidService();
     private readonly ConcurrentDictionary<int, HouseBids> bids = new ConcurrentDictionary<int, HouseBids>();
 

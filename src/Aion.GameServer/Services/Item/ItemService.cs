@@ -7,7 +7,6 @@ using Aion.GameServer.Model.Items.Storage;
 using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.Model.Templates.Items.Enums;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using ItemAddType = Aion.GameServer.Services.Items.ItemPacketService.ItemAddType;
 using ItemUpdateType = Aion.GameServer.Services.Items.ItemPacketService.ItemUpdateType;
 
@@ -16,7 +15,7 @@ namespace Aion.GameServer.Services.Items;
 /// <summary>Java parity: services/item/ItemService (KID).</summary>
 public class ItemService
 {
-    private static readonly ILogger log = NullLogger.Instance; // Java logger name: "ITEM_LOG"
+    private static readonly ILogger log = AionLog.For("ITEM_LOG"); // Java logger name: "ITEM_LOG"
 
     public static readonly ItemUpdatePredicate DEFAULT_UPDATE_PREDICATE = new ItemUpdatePredicate(ItemAddType.ITEM_COLLECT,
         ItemUpdateType.INC_ITEM_COLLECT);

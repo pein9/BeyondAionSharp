@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.Commons.Concurrent;
 using Aion.Commons.Nio.Channels;
 
@@ -10,7 +9,7 @@ namespace Aion.GameServer.Commons.Network;
 /// <summary>Java parity: commons/network/NioServer (-Nemesiss-). Handles connections on the configured addresses.</summary>
 public class NioServer
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(NioServer));
+    private static readonly ILogger log = AionLog.For(nameof(NioServer));
 
     private readonly List<SelectionKey> serverChannelKeys = new List<SelectionKey>();
     private Dispatcher acceptDispatcher = null!;

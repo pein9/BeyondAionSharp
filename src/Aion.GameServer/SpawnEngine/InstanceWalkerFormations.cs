@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
@@ -11,7 +10,7 @@ namespace Aion.GameServer.SpawnEngine;
 /// <summary>Java parity: spawnengine/InstanceWalkerFormations (Rolandas). slf4j logger→ILogger (warn→LogWarning); HashMap→Dictionary (Map.get→GetValueOrDefault, put→indexer); synchronized→lock(this); stream groupingBy→GroupBy.ToDictionary; filter/collect→Where/ToList; List.add(bool)→Add+return true; Rnd.get→Rnd.Get. ClusteredNpc/WalkerGroup/DataManager red-tolerated.</summary>
 public class InstanceWalkerFormations
 {
-    private static readonly ILogger Log = NullLoggerFactory.Instance.CreateLogger(nameof(InstanceWalkerFormations));
+    private static readonly ILogger Log = AionLog.For(nameof(InstanceWalkerFormations));
 
     private Dictionary<string, List<ClusteredNpc>> groupedSpawnObjects;
     private Dictionary<string, WalkerGroup> walkFormations;

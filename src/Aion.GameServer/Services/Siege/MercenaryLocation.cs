@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Services.Siege;
 /// <summary>Java parity: services/siege/MercenaryLocation (Whoop). A purchasable mercenary spawn zone tied to a fortress siege: spawn (despawn old, spawn from MercenaryZone, announce), despawnCurrentMercs, isRequestValid (cooldown + &lt;50% alive), getSpawnZone (resolve merc zone by siege/race/zone id). currentTimeMillis->UtcNow; Race.getRaceByString(siegeRace.name())->GetRaceByString(ToString()); instanceof Npc->is Npc; forEachPlayer lambda. MercenaryZone/SiegeMercenaryZone/SpawnEngine red-tolerated.</summary>
 public class MercenaryLocation
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(MercenaryLocation));
+    private static readonly ILogger log = AionLog.For(nameof(MercenaryLocation));
     private List<VisibleObject> spawnedMercs = new List<VisibleObject>();
     private MercenaryZone spawns; // TODO: Change this to SpawnGroup
     private SiegeMercenaryZone smz;

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.GeoEngine.Models;
 
 namespace Aion.GameServer.GeoEngine;
@@ -13,7 +12,7 @@ namespace Aion.GameServer.GeoEngine;
 /// </summary>
 public static class GeoWorldLoader
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(GeoWorldLoader));
+    private static readonly ILogger log = AionLog.For(nameof(GeoWorldLoader));
 
     // Java parity: GeoWorldLoader.load(Collection<GeoMap>).
     public static void Load(ICollection<GeoMap> maps)

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
@@ -23,7 +22,7 @@ namespace Aion.GameServer.Services.Reward;
 /// <summary>Java parity: services/reward/WebRewardService (KID, Neon). "WEB_REWARDS_LOG" logger; singleton; sendAvailableRewards loops unreceived rewards (sendRewardItem mail or executeRewardAction), stores received; nested MaxLevelReward (CopyOnWriteArraySet→ConcurrentDictionary-as-set pendingAscension, ascension-quest flow, daeva max-level gear via two PlayerClass switch blocks). add→TryAdd, remove→TryRemove, contains→ContainsKey; instanceof Npc npc→is; currentTimeMillis→UtcNow.ToUnixTimeMilliseconds; ChatUtil.l10n→L10n. RewardServiceDAO/QuestState/TeleportService red-tolerated.</summary>
 public class WebRewardService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("WEB_REWARDS_LOG");
+    private static readonly ILogger log = AionLog.For("WEB_REWARDS_LOG");
     private static WebRewardService instance = new WebRewardService();
 
     public static WebRewardService GetInstance()

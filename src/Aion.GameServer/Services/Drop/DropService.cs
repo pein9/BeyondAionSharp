@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
@@ -30,7 +29,7 @@ namespace Aion.GameServer.Services.Drop;
 /// <summary>Java parity: services/drop/DropService (ATracer, xTz). Singleton; loot lifecycle — scheduleFreeForAll (240s), unregisterDrop, requestDropList/closeDropList, canDistribute/canAutoLoot, requestDropItem (kinah equal-split, team distribution roll/bid/misc, winning actions), distributeEqually, resend/announce. Idioms: schedule(lambda,240000)->async delegate; map.get/remove->GetValueOrDefault/TryRemove; synchronized(dropItems)->lock; instanceof Npc npc->is; streams->LINQ; ScheduledFuture+getDelay(MILLISECONDS) / TimeUnit red-tolerated; broadcastPacket predicate lambdas; nested TempTradeDropPredicate:ItemUpdatePredicate; currentTimeMillis->UtcNow.ToUnixTimeMilliseconds; switch-arrow dist 2/3. DropNpc/LootGroupRules/DAO red-tolerated.</summary>
 public class DropService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(DropService));
+    private static readonly ILogger log = AionLog.For(nameof(DropService));
 
     public static DropService GetInstance()
     {

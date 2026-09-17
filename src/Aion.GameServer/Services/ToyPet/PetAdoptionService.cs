@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Templates.Items;
@@ -14,7 +13,7 @@ namespace Aion.GameServer.Services.ToyPet;
 /// <summary>Java parity: services/toypet/PetAdoptionService (ATracer). Adopt/add/surrender pets (with validation). DataManager/ExpireTimerTask/IDFactory/SM_PET red-tolerated.</summary>
 public class PetAdoptionService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PetAdoptionService));
+    private static readonly ILogger log = AionLog.For(nameof(PetAdoptionService));
 
     /// <summary>Create a pet for player (with validation).</summary>
     public static void AdoptPet(Player player, int eggObjId, int petId, string name, int decorationId)

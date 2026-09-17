@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.Commons.Scripting.ClassListener;
 
 namespace Aion.GameServer.Ai;
@@ -12,7 +11,7 @@ namespace Aion.GameServer.Ai;
 /// </summary>
 public class AIHandlerClassListener : ClassListener
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(AIHandlerClassListener));
+    private static readonly ILogger log = AionLog.For(nameof(AIHandlerClassListener));
 
     public void PostLoad(Type[] classes)
     {

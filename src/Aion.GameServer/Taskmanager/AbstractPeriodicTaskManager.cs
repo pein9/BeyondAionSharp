@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Taskmanager;
 
@@ -12,7 +11,7 @@ namespace Aion.GameServer.Taskmanager;
 /// </summary>
 public abstract class AbstractPeriodicTaskManager
 {
-    protected static readonly ILogger log = NullLogger.Instance;
+    protected static readonly ILogger log = AionLog.For(nameof(AbstractPeriodicTaskManager));
 
     public AbstractPeriodicTaskManager(int period)
     {

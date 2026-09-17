@@ -4,7 +4,6 @@ using System.Xml.Serialization;
 using Aion.GameServer.Model.Templates.Itemgroups;
 using Aion.GameServer.Model.Templates.Pet;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Dataholders;
 
@@ -12,7 +11,7 @@ namespace Aion.GameServer.Dataholders;
 [XmlRoot("item_groups")]
 public class ItemGroupsData
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(ItemGroupsData));
 
     [XmlElement("craft_materials")] public CraftItemGroup craftMaterials;
     [XmlElement("craft_shop")] public CraftItemGroup craftShop;

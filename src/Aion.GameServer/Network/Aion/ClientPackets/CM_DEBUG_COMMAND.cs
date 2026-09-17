@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Network.Aion;
 using State = global::Aion.GameServer.Network.Aion.AionConnection.State;
 
@@ -19,6 +18,6 @@ public class CM_DEBUG_COMMAND : AbstractGmCommandPacket
 
     protected override void RunImpl()
     {
-        NullLoggerFactory.Instance.CreateLogger("ADMINAUDIT_LOG").LogInformation(GetConnection().GetActivePlayer() + " sent debug command ////" + command);
+        AionLog.For("ADMINAUDIT_LOG").LogInformation(GetConnection().GetActivePlayer() + " sent debug command ////" + command);
     }
 }

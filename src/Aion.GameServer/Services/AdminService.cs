@@ -6,15 +6,14 @@ using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Services;
 
 /// <summary>Java parity: services/AdminService (KID).</summary>
 public class AdminService
 {
-    private static readonly ILogger itemLog = NullLogger.Instance; // Java logger "GMITEMRESTRICTION"
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger itemLog = AionLog.For("GMITEMRESTRICTION"); // Java logger "GMITEMRESTRICTION"
+    private static readonly ILogger log = AionLog.For(nameof(AdminService));
     private List<int> list;
     private static AdminService instance = new AdminService();
 

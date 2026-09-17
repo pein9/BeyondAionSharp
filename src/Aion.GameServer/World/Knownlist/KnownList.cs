@@ -3,7 +3,6 @@ using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Collections;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.World.Knownlist;
 
@@ -120,7 +119,7 @@ public class KnownList
         catch (Exception e) { Log(e); }
     }
 
-    private static void Log(Exception e) => Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance.LogError(e, "");
+    private static void Log(Exception e) => AionLog.For(nameof(KnownList)).LogError(e, "");
 
     // Java parity: forgetObjectsOrUpdateVisibility() — private
     private void ForgetObjectsOrUpdateVisibility()

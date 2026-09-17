@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.Matchers;
@@ -24,7 +23,7 @@ namespace Aion.GameServer.Services.Cron;
 /// </summary>
 public sealed class CronService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CronService));
+    private static readonly ILogger log = AionLog.For(nameof(CronService));
 
     private static readonly object initLock = new object();
     private static CronService instance;

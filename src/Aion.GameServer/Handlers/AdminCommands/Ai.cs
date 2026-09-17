@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Ai;
 using Aion.GameServer.Ai.Event;
 using Aion.GameServer.Configs.Main;
@@ -58,9 +57,9 @@ public class Ai : AdminCommand
         else if (paramsArr[0].Equals("marker", StringComparison.OrdinalIgnoreCase))
         {
             if (paramsArr.Length > 1)
-                NullLoggerFactory.Instance.CreateLogger(typeof(AILogger).FullName).LogInformation("[AI] marker: " + Join(paramsArr, 1));
+                AionLog.For(typeof(AILogger).FullName).LogInformation("[AI] marker: " + Join(paramsArr, 1));
             else
-                NullLoggerFactory.Instance.CreateLogger(typeof(AILogger).FullName).LogInformation("[AI] marker");
+                AionLog.For(typeof(AILogger).FullName).LogInformation("[AI] marker");
         }
         else
         {
@@ -114,7 +113,7 @@ public class Ai : AdminCommand
                     }
                     catch (Exception e) when (e is FieldAccessException || e is MemberAccessException)
                     {
-                        NullLoggerFactory.Instance.CreateLogger(typeof(Ai).FullName).LogError(e, "");
+                        AionLog.For(typeof(Ai).FullName).LogError(e, "");
                         SendInfo(admin, "Error changing AI (see logs)");
                     }
                 }

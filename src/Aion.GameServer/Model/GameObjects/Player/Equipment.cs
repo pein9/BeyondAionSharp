@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.State;
 using Aion.GameServer.Model.Items;
@@ -14,7 +13,7 @@ namespace Aion.GameServer.Model.GameObjects.Players;
 /// </summary>
 public partial class Equipment : IPersistable
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(Equipment));
     private const int RANK_LIMIT_GRACE_SECONDS = 600;
     private const int RANK_LIMIT_WARNING_SECONDS = 60;
     private int lastRankLimitCheck;

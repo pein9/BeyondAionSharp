@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Instance;
@@ -26,7 +25,7 @@ namespace Aion.GameServer.Services.Instance;
 /// <summary>Java parity: services/instance/InstanceService (ATracer) — instance lifecycle/registration. getNextAvailableInstance overloads (Function&lt;WorldMapInstance,IInstanceHandler&gt;->Func, method-group supplier InstanceEngine.GetInstance().GetNewInstanceHandler, event spawn streams->LINQ), destroyInstance, register/get/personal/house instance, login/logout/enter/leave instance+zone hooks, rates. scheduleAtFixedRate EmptyInstanceCheckerTask->nested+async delegate; GeneralTeam&lt;?,?&gt;->GeneralTeam; currentTimeMillis->UtcNow.ToUnixTimeMilliseconds; UnsupportedOperation->NotSupported; NullPointer->NullReference; instanceof Player->is. World/WorldMapInstance/IInstanceHandler/DAO red-tolerated.</summary>
 public class InstanceService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(InstanceService));
+    private static readonly ILogger log = AionLog.For(nameof(InstanceService));
 
     public static WorldMapInstance GetNextAvailableInstance(int worldId, int ownerId, byte difficultyId, Func<WorldMapInstance, IInstanceHandler> instanceHandlerSupplier, int maxPlayers, bool autoDestroy)
     {

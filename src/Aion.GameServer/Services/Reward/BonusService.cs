@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -75,7 +74,7 @@ public class BonusService
             case BonusType.NONE:
                 break;
             default:
-                NullLoggerFactory.Instance.CreateLogger(nameof(BonusService)).LogWarning("Bonus of type " + type + " is not implemented");
+                AionLog.For(nameof(BonusService)).LogWarning("Bonus of type " + type + " is not implemented");
                 break;
         }
         return new List<BonusItemGroup>();

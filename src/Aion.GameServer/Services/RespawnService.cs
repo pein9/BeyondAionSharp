@@ -8,7 +8,6 @@ using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Templates.Spawns;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Services;
 
@@ -18,7 +17,7 @@ public class RespawnService
     public const int IMMEDIATE_DECAY = 2 * 1000;
     public const int WITH_DROP_DECAY = 5 * 60 * 1000;
     private static readonly ConcurrentDictionary<int, RespawnTask> pendingRespawns = new ConcurrentDictionary<int, RespawnTask>();
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(RespawnService));
 
     /// <summary>Schedules decay (despawn) of the npc with the default delay time. Replaces an existing decay task.</summary>
     public static ScheduledTask ScheduleDecayTask(Npc npc)

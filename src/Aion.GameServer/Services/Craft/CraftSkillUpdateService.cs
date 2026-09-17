@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model.Craft;
 using Aion.GameServer.Model.GameObjects;
@@ -15,7 +14,7 @@ namespace Aion.GameServer.Services.Craft;
 /// <summary>Java parity: services/craft/CraftSkillUpdateService (MrPoke, sphinx, Imaginary, Pad). Singleton; professionByNpc HashMap→Dictionary (npcId→Profession); learnSkill (level/profession/cost gating, anonymous RequestResponseHandler→nested LearnSkillResponseHandler capturing price/skillId/skillLevel), expert/master craft-skill counters (Profession.values()→Values()), can-learn-more checks. map.put→indexer/get→GetValueOrDefault; Integer price→int?; ItemUpdateType alias. Profession/PlayerSkillList/RequestResponseHandler red-tolerated.</summary>
 public class CraftSkillUpdateService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CraftSkillUpdateService));
+    private static readonly ILogger log = AionLog.For(nameof(CraftSkillUpdateService));
 
     private static readonly Dictionary<int, Profession> professionByNpc = new Dictionary<int, Profession>();
 

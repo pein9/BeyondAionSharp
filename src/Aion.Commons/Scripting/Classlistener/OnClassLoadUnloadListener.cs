@@ -3,7 +3,6 @@ using System.IO;
 using System.Reflection;
 using Aion.Commons.Scripting.Metadata;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.Commons.Scripting.ClassListener;
 
@@ -16,7 +15,7 @@ namespace Aion.Commons.Scripting.ClassListener;
 /// </summary>
 public class OnClassLoadUnloadListener : ClassListener
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(OnClassLoadUnloadListener));
 
     public void PostLoad(Type[] classes)
     {

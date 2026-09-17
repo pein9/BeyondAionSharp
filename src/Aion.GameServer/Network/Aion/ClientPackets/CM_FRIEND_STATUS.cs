@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -12,7 +11,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_FRIEND_STATUS (Ben). Received when a user changes their buddylist status. FriendList.Status/SM_FRIEND_STATUS red-tolerated.</summary>
 public class CM_FRIEND_STATUS : AionClientPacket
 {
-    private readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CM_FRIEND_STATUS));
+    private readonly ILogger log = AionLog.For(nameof(CM_FRIEND_STATUS));
     // The users new status
     private byte status;
 

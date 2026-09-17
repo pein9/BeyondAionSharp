@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.Actions;
 using Aion.GameServer.Model.GameObjects;
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/PrivateStoreService (Simple). Player private-shop create/sell/close. Array foreach; Collection.toArray(new T[size])→.ToArray(); Map.values()→.Values, size()→Count, isEmpty()→Count==0; slf4j→ILogger; index-as-itemId quirk preserved. PrivateStore/TradeList/TradePSItem/SM_*/ItemService red-tolerated.</summary>
 public class PrivateStoreService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("EXCHANGE_LOG");
+    private static readonly ILogger log = AionLog.For("EXCHANGE_LOG");
 
     public static void CreateStoreWithItems(Player player, TradePSItem[] tradePSItems)
     {

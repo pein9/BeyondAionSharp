@@ -23,7 +23,7 @@ public sealed class LimitedItemTradeSchedulerService : GameEngine
 		_runtimeContext = runtimeContext;
 		_threadPoolManager = threadPoolManager;
 		_options = options ?? new GameServerOptions();
-		_logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<LimitedItemTradeSchedulerService>.Instance;
+		_logger = logger ?? AionLog.For<LimitedItemTradeSchedulerService>();
 		_clock = clock;
 	}
 

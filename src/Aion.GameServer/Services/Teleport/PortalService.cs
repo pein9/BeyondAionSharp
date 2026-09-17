@@ -1,7 +1,6 @@
 using Aion.GameServer.Utils.Stats;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Administration;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
@@ -28,7 +27,7 @@ namespace Aion.GameServer.Services.Teleport;
 /// <summary>Java parity: services/teleport/PortalService (ATracer, xTz) — instance portal entry. Static port (maxPlayers solo/group/alliance/league registration switch), requirement checks (mentor/race/rank/title/quests/playerSize/level/items), transfer w/ cooltime. GeneralTeam&lt;?,?&gt;→GeneralTeam (wildcard erase to base); DialogPage.X.id()→Id(); streams none; getQuestVarById; getPlayersInside().size()→Count. InstanceService/WorldMapInstance/PortalPath/DAO red-tolerated.</summary>
 public class PortalService
 {
-    private static ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PortalService));
+    private static ILogger log = AionLog.For(nameof(PortalService));
 
     public static void Port(PortalPath portalPath, Player player, Npc npc)
     {

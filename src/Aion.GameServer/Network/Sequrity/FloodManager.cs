@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Network.Sequrity;
 
@@ -127,7 +126,7 @@ public sealed class FloodManager
         return r2;
     }
 
-    public readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(FloodManager));
+    public readonly ILogger log = AionLog.For(nameof(FloodManager));
 
     private static readonly long ZERO = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - 86400000;
 

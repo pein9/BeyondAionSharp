@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -15,7 +14,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_SUMMON_EMOTION (ATracer). Summon/mercenary emotion (fly/land/jump/attack-mode) broadcast. EmotionType ported PascalCase (EmotionTypes.FromId). SM_EMOTION/CreatureState red-tolerated.</summary>
 public class CM_SUMMON_EMOTION : AionClientPacket
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CM_SUMMON_EMOTION));
+    private static readonly ILogger log = AionLog.For(nameof(CM_SUMMON_EMOTION));
 
     private int objId;
     private int emotionTypeId;

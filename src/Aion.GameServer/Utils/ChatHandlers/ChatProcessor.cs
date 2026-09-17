@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.Commons.Scripting;
 using Aion.GameServer.Configs;
 using Aion.GameServer.Configs.Administration;
@@ -20,7 +19,7 @@ public class ChatProcessor : GameEngine
     public string Name => GetType().Name;
     public System.Threading.Tasks.ValueTask InitAsync(System.Threading.CancellationToken cancellationToken) { Init(); return System.Threading.Tasks.ValueTask.CompletedTask; }
     public System.Threading.Tasks.ValueTask ShutdownAsync(System.Threading.CancellationToken cancellationToken) => System.Threading.Tasks.ValueTask.CompletedTask;
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(ChatProcessor));
+    private static readonly ILogger log = AionLog.For(nameof(ChatProcessor));
     private readonly Dictionary<string, ChatCommand> commandHandlers = new Dictionary<string, ChatCommand>();
 
     private ChatProcessor()

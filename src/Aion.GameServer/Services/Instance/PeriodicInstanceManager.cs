@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model.Autogroup;
@@ -20,7 +19,7 @@ namespace Aion.GameServer.Services.Instance;
 /// <summary>Java parity: services/instance/PeriodicInstanceManager (ViAl, Sykra, Estrayl). Singleton; schedules periodic instance registrations (dredgion/kamar/ophidan/iron-wall/idgel) via CronService; openRegistration/closeRegistration (synchronized→lock), broadcastRegistrationUpdate (level-range filter), checkAndSendOpenRegistrations, handleRequest. using static AutoGroupConfig; HashSet/HashMap→HashSet/Dictionary; Future→ScheduledTask (isDone→IsDone, cancel→Cancel); schedule(lambda, cronExpr) / schedule(lambda, period*60000)→async delegate; forEachPlayer. CronExpression/AutoGroupType/SM_AUTO_GROUP red-tolerated.</summary>
 public class PeriodicInstanceManager
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PeriodicInstanceManager));
+    private static readonly ILogger log = AionLog.For(nameof(PeriodicInstanceManager));
     private static readonly PeriodicInstanceManager INSTANCE = new PeriodicInstanceManager();
     private readonly HashSet<int> openedRegistrations = new HashSet<int>();
     private readonly Dictionary<int, ScheduledTask> registrationCloseTasksByMaskId = new Dictionary<int, ScheduledTask>();

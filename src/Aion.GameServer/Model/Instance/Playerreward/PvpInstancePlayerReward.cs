@@ -3,14 +3,13 @@ using Aion.GameServer.Utils;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Model.Instance.Playerreward;
 
 /// <summary>Java parity: model/instance/playerreward/PvpInstancePlayerReward.</summary>
 public class PvpInstancePlayerReward : InstancePlayerReward
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(PvpInstancePlayerReward));
 
     private readonly Race race;
     private readonly AtomicInteger capturedZones = new AtomicInteger();

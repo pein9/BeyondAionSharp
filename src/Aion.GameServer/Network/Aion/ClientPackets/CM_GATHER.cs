@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion;
@@ -40,7 +39,7 @@ public class CM_GATHER : AionClientPacket
                 StartGathering(player); // 128 is sent when using /attack chat command
                 break;
             default:
-                NullLoggerFactory.Instance.CreateLogger(GetType().Name).LogWarning("Unhandled gathering action ID {ActionId} (sent by {Player} at {Position})", actionId, player, player.GetPosition());
+                AionLog.For(GetType().Name).LogWarning("Unhandled gathering action ID {ActionId} (sent by {Player} at {Position})", actionId, player, player.GetPosition());
                 break;
         }
     }

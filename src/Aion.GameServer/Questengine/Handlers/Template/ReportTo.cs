@@ -4,7 +4,6 @@ using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Templates.Quest;
 using Aion.GameServer.QuestEngine.Model;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model;
 
 namespace Aion.GameServer.QuestEngine.Handlers.Template;
@@ -12,7 +11,7 @@ namespace Aion.GameServer.QuestEngine.Handlers.Template;
 /// <summary>Java parity: questEngine/handlers/template/ReportTo (MrPoke, Rolandas, Pad). Set.addAll→UnionWith; Set.equals→SetEquals; isEmpty→Count==0; super.onDialogEvent→base; DataManager red-tolerated.</summary>
 public class ReportTo : AbstractTemplateQuestHandler
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(ReportTo));
 
     private readonly HashSet<int> startNpcIds = new();
     private readonly HashSet<int> endNpcIds = new();

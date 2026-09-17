@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Siege;
@@ -22,7 +21,7 @@ namespace Aion.GameServer.SpawnEngine;
 /// </summary>
 public class SpawnEngine
 {
-    private static readonly ILogger Log = NullLoggerFactory.Instance.CreateLogger(nameof(SpawnEngine));
+    private static readonly ILogger Log = AionLog.For(nameof(SpawnEngine));
 
     public static VisibleObject SpawnObject(SpawnTemplate spawn, int instanceIndex)
     {

@@ -4,14 +4,13 @@ using Aion.GameServer.Services.Items;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.ChatHandlers;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Handlers.PlayerCommands;
 
 /// <summary>Java parity: data/handlers/playercommands/Symphony (Pad). Exchanges a required collection item for prizes.</summary>
 public class Symphony : PlayerCommand
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(Symphony));
     private const int REQUIRED_ITEM_ID = 182007170;
     private static readonly int[][] REWARDS =
     {

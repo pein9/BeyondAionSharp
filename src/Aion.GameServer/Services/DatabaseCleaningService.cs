@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Configs.Main;
@@ -21,7 +20,7 @@ namespace Aion.GameServer.Services;
 /// </summary>
 public class DatabaseCleaningService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(DatabaseCleaningService));
+    private static readonly ILogger log = AionLog.For(nameof(DatabaseCleaningService));
 
     private DatabaseCleaningService()
     {

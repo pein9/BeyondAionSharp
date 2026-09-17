@@ -5,14 +5,13 @@ using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ClientPackets;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Services;
 
 /// <summary>Java parity: services/DebugService (ATracer).</summary>
 public class DebugService
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(DebugService));
 
     private const int ANALYZE_PLAYERS_INTERVAL = 30 * 60 * 1000;
 

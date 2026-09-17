@@ -2,14 +2,13 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Aion.GameServer.Model;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Model.GameObjects;
 
 /// <summary>Java parity: model/gameobjects/Kisk (Sarynth, nrg). extends SummonedObject&lt;Player&gt;.</summary>
 public class Kisk : SummonedObject<Aion.GameServer.Model.GameObjects.Players.Player>
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(Kisk));
 
     private const long KISK_LIFETIME_IN_SEC = 2L * 60 * 60; // TimeUnit.HOURS.toSeconds(2)
     private readonly int legionId;

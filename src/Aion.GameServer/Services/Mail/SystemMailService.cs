@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Dataholders;
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Services.Mail;
 /// <summary>Java parity: services/mail/SystemMailService (xTz). Singleton-style static; sendMail (validate item template/name lengths, mailbox capacity, build attached item in MAILBOX storage, store Letter+item, log), updateRecipientMailbox (offline counter vs online packet refresh, postman/express handling). Timestamp(currentTimeMillis)->DateTimeOffset.FromUnixTimeMilliseconds(UtcNow...); substring->Substring; named logger SYSMAIL_LOG. Letter/Mailbox/DAO red-tolerated.</summary>
 public class SystemMailService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("SYSMAIL_LOG");
+    private static readonly ILogger log = AionLog.For("SYSMAIL_LOG");
 
     private SystemMailService()
     {

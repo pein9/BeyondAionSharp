@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Services;
@@ -10,7 +9,7 @@ namespace Aion.GameServer.Utils.ChatHandlers;
 public abstract class ConsoleCommand : ChatCommand
 {
     public const string PREFIX = "";
-    internal static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("ADMINAUDIT_LOG");
+    internal static readonly ILogger log = AionLog.For("ADMINAUDIT_LOG");
 
     // only for backwards compatibility TODO: remove when all commands are updated
     public ConsoleCommand(string alias)

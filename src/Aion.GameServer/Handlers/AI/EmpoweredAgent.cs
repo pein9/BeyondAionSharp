@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Ai;
 using Aion.GameServer.Ai.Manager;
@@ -167,7 +166,7 @@ public class EmpoweredAgent : AbstractSiegeProtectorAI, HpPhases.PhaseHandler
     {
         if (flagNpc != null)
         {
-            NullLogger.Instance.LogWarning(new Exception(), "Tried to spawn flag for empowered agent {NpcId} twice!", GetNpcId());
+            AionLog.For(nameof(EmpoweredAgent)).LogWarning(new Exception(), "Tried to spawn flag for empowered agent {NpcId} twice!", GetNpcId());
             return;
         }
         int flagNpcId = GetNpcId() switch

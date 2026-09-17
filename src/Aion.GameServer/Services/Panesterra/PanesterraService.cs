@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.Base;
@@ -24,7 +23,7 @@ namespace Aion.GameServer.Services.Panesterra;
 /// <summary>Java parity: services/panesterra/PanesterraService (Estrayl). Panesterra fortress siege + Ahserion raid orchestration: prepare/start/stopFortressSiege (base state transitions, advance corridors), createTeams/removeTeams per faction, start/stopAhserionRaid, onEnterPanesterra (faction assignment/teleport), team queries, teleportToStart/EventLocation, revive. Singleton; ConcurrentHashMap->ConcurrentDictionary; static-import enum->using static; switch-arrow->switch statement; switch-expression w/ null-case->switch+default; Stream.of/anyMatch/map/findFirst.orElse->LINQ; getType()->GetType_(); getByFortressId->PanesterraFactionExtensions; Rnd.nextBoolean->NextBoolean. Base/Siege/WorldMapType/SpawnEngine/PanesterraTeam red-tolerated.</summary>
 public class PanesterraService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("SIEGE_LOG");
+    private static readonly ILogger log = AionLog.For("SIEGE_LOG");
 
     private readonly ConcurrentDictionary<PanesterraFaction, PanesterraTeam> activeFactionTeams = new ConcurrentDictionary<PanesterraFaction, PanesterraTeam>();
 

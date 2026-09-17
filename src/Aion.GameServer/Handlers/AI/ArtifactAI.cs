@@ -20,7 +20,6 @@ using Aion.GameServer.SkillEngine.Model;
 using Aion.GameServer.SkillEngine.Properties;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Handlers.AI;
 
@@ -28,7 +27,7 @@ namespace Aion.GameServer.Handlers.AI;
 [AIName("artifact")]
 public class ArtifactAI : NpcAI
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(ArtifactAI));
 
     public ArtifactAI(Npc owner)
         : base(owner)

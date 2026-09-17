@@ -13,7 +13,6 @@ using Aion.GameServer.Services.Items;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.IdFactory;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Services;
 
@@ -23,7 +22,7 @@ namespace Aion.GameServer.Services;
 /// </summary>
 public class HTMLService
 {
-    private static readonly ILogger log = NullLogger.Instance; // Java logger "ITEM_HTML_LOG"
+    private static readonly ILogger log = AionLog.For("ITEM_HTML_LOG"); // Java logger "ITEM_HTML_LOG"
 
     private const int SHORT_MAX_VALUE = 32767; // Java Short.MAX_VALUE
 

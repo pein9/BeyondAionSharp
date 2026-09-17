@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Ai;
 using Aion.GameServer.Ai.Handler;
 using Aion.GameServer.Ai.Manager;
@@ -26,7 +25,7 @@ namespace Aion.GameServer.Controllers.Movement;
 /// <summary>Java parity: controllers/movement/NpcMoveController (ATracer) : CreatureMoveController&lt;Npc&gt;. NPC movement/geo-pathing. Matches the movement subsystem's PascalCase convention: inherited Started(AtomicBoolean.CompareAndSet/Get/Set), Owner, Heading, MovementMaskField, TargetDestX/Y/Z, LastMoveUpdate, MOVE_CHECK_OFFSET; SM_MOVE→SmMove; MovementMask.*→PascalCase consts; AILogger.moveinfo→Moveinfo. instanceof Creature→is; LinkedList getLast/removeLast→Last.Value+RemoveLast; synchronized→lock(this); Math.toRadians→*Math.PI/180; currentTimeMillis→UtcNow.ToUnixTimeMilliseconds; final override→sealed override. AI/WalkManager/WalkerGroup(green)/GeoService red-tolerated.</summary>
 public class NpcMoveController : CreatureMoveController<Npc>
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(NpcMoveController));
+    private static readonly ILogger log = AionLog.For(nameof(NpcMoveController));
     private const float MOVE_OFFSET = 0.05f;
     private const int MAX_GEO_POINT_DISTANCE = 5;
 

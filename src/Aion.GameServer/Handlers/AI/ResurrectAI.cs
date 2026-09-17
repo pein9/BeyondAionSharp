@@ -12,7 +12,6 @@ using Aion.GameServer.Services.Teleport;
 using Aion.GameServer.Utils;
 using Aion.GameServer.World;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Handlers.AI;
 
@@ -20,7 +19,7 @@ namespace Aion.GameServer.Handlers.AI;
 [AIName("resurrect")]
 public class ResurrectAI : NpcAI
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(ResurrectAI));
 
     public ResurrectAI(Npc owner)
         : base(owner)

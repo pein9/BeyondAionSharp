@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 
@@ -14,7 +13,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class OldNamesDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(OldNamesDAO));
+    private static readonly ILogger log = AionLog.For(nameof(OldNamesDAO));
 
     public static bool IsNameReserved(string oldName, string newName, int nameReservationDurationDays)
     {

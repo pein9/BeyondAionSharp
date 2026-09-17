@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -29,7 +28,7 @@ namespace Aion.GameServer.Services.Siege;
 /// </summary>
 public abstract class Siege
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("SIEGE_LOG");
+    private static readonly ILogger log = AionLog.For("SIEGE_LOG");
     private readonly AtomicBoolean finished = new AtomicBoolean();
     private readonly SiegeCounter siegeCounter = new SiegeCounter();
     private readonly SiegeLocation siegeLocation;

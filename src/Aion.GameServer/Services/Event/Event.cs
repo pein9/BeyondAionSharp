@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Configs;
 using Aion.GameServer.Dataholders;
@@ -34,7 +33,7 @@ namespace Aion.GameServer.Services.Event;
 /// <summary>Java parity: services/event/Event (Neon). One active event instance: spawns, inventory-drop task, surveys, buffs (EventBuffHandler), quest start/maintain, hooks. AtomicBoolean started; Future->ScheduledTask inventoryDropTask; List&lt;Runnable&gt; onEventEndTasks; Java int[] count capture-hack->C# mutable captured local; synchronized(this)->lock; scheduleAtFixedRate->async delegate; forEachPlayer/forEachObject lambdas; TemporaryPlayerTeam&lt;? extends TeamMember&lt;Player&gt;&gt;-><ITeamMember<Player>>; ServerTime.atDate(...).toLocalDateTime->.DateTime; isAfter->>; ActionType/ItemAddType/ItemUpdateType/ItemUpdatePredicate/ForceType aliases. EventTemplate/EventBuffHandler/Spawn/DAO red-tolerated.</summary>
 public class Event
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(Event));
+    private static readonly ILogger log = AionLog.For(nameof(Event));
     private const string EFFECT_FORCE_TYPE_PREFIX = "[EVENT] ";
 
     private readonly EventTemplate eventTemplate;

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.GameObjects;
@@ -21,7 +20,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class LegionDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(LegionDAO));
+    private static readonly ILogger log = AionLog.For(nameof(LegionDAO));
 
     private const string INSERT_LEGION_QUERY = "INSERT INTO legions(id, `name`) VALUES (?, ?)";
     private const string SELECT_LEGION_QUERY1 = "SELECT * FROM legions WHERE id=?";

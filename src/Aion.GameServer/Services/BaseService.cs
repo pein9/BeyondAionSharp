@@ -7,14 +7,13 @@ using Aion.GameServer.Model.Base;
 using Aion.GameServer.Model.Templates.Base;
 using Aion.GameServer.Services.Panesterra;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Services;
 
 /// <summary>Java parity: services/BaseService (Source, Estrayl).</summary>
 public class BaseService
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(BaseService));
     private static readonly BaseService INSTANCE = new BaseService();
     private readonly ConcurrentDictionary<int, Base> activeBases = new ConcurrentDictionary<int, Base>();
     private readonly Dictionary<int, BaseLocation> allBaseLocations = new Dictionary<int, BaseLocation>();

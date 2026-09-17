@@ -5,14 +5,13 @@ using Aion.GameServer.Services.Items;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.ChatHandlers;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Handlers.PlayerCommands;
 
 /// <summary>Java parity: data/handlers/playercommands/Easter (Neon, Estrayl, Farlon). Exchanges event eggs for prizes.</summary>
 public class Easter : PlayerCommand
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(Easter));
     private static readonly int neededItem = 186000175;
     private static readonly IReadOnlyList<Reward> rewards =
     [

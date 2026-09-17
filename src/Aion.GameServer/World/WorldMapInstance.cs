@@ -4,7 +4,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Instance.Handlers;
 using Aion.GameServer.Model.GameObjects;
@@ -29,7 +28,7 @@ namespace Aion.GameServer.World;
 /// </summary>
 public abstract class WorldMapInstance : IEnumerable<VisibleObject>
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(WorldMapInstance));
+    private static readonly ILogger log = AionLog.For(nameof(WorldMapInstance));
     public static readonly int regionSize = WorldConfig.WORLD_REGION_SIZE; // Java static final; C# static readonly (target isn't a compile-time const)
 
     private readonly WorldMap parent;

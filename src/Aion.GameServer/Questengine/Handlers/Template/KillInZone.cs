@@ -6,7 +6,6 @@ using Aion.GameServer.Model.Templates.Zone;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model;
 
 namespace Aion.GameServer.QuestEngine.Handlers.Template;
@@ -14,7 +13,7 @@ namespace Aion.GameServer.QuestEngine.Handlers.Template;
 /// <summary>Java parity: questEngine/handlers/template/KillInZone (Cheatkiller, Majka, Pad). Set.addAll→UnionWith; Set.equals→SetEquals; isEmpty→Count==0; super.onDialogEvent→base; DataManager.ZONE_DATA.zoneList→ZoneList; DataManager/QuestService red-tolerated.</summary>
 public class KillInZone : AbstractTemplateQuestHandler
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(KillInZone));
 
     private readonly HashSet<int> startNpcIds = new();
     private readonly HashSet<int> endNpcIds = new();

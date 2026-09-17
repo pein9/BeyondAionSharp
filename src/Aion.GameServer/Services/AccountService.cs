@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Model;
@@ -18,7 +17,7 @@ namespace Aion.GameServer.Services;
 /// </summary>
 public class AccountService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(AccountService));
+    private static readonly ILogger log = AionLog.For(nameof(AccountService));
 
     public static Account GetAccount(int accountId, string accountName, long creationDate, AccountTime accountTime, sbyte accessLevel, sbyte membership,
         string allowedHddSerial)

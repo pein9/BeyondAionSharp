@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 
@@ -7,7 +6,7 @@ namespace Aion.GameServer.Dao;
 
 public class BookmarkDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(BookmarkDAO));
+    private static readonly ILogger log = AionLog.For(nameof(BookmarkDAO));
 
     private const string LOAD_QUERY = "SELECT * FROM `bookmark` where player_id= ?";
     private const string STORE_QUERY = "REPLACE INTO `bookmark` (player_id, name, world_id, x, y, z) VALUES (?, ?, ?, ?, ?, ?)";

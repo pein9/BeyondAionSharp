@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.Commons.Concurrent;
 using Aion.Commons.Configs;
 using Aion.Commons.Lang;
@@ -14,7 +13,7 @@ namespace Aion.GameServer.Commons.Utils.Concurrent;
 /// </summary>
 public class ExecuteWrapper : Executor
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(ExecuteWrapper));
+    private static readonly ILogger log = AionLog.For(nameof(ExecuteWrapper));
 
     private readonly long expectedMaxExecutionTimeMillis;
 

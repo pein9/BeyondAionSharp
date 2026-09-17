@@ -14,7 +14,6 @@ using Aion.GameServer.Model.Skill;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services.Transfers;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Network.LoginServer.ServerPackets;
 
@@ -23,7 +22,7 @@ namespace Aion.GameServer.Network.LoginServer.ServerPackets;
 /// </summary>
 public sealed class SM_PTRANSFER_CONTROL : LoginServerPacket
 {
-    private static readonly ILogger Log = NullLogger.Instance;
+    private static readonly ILogger Log = AionLog.For(nameof(SM_PTRANSFER_CONTROL));
 
     private const byte OpCode = 0x0D;
 

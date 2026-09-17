@@ -4,7 +4,6 @@ using Aion.GameServer.Dao;
 using Aion.GameServer.Services.Cron;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Quartz;
 
 namespace Aion.GameServer.Taskmanager;
@@ -20,7 +19,7 @@ public abstract class AbstractCronTask : Aion.Commons.Lang.Runnable
 {
     protected static readonly long? SERVER_STOP_MILLIS = ServerVariablesDAO.LoadLong("serverLastRun");
     private static readonly SemaphoreSlim semaphore = new(1, 1);
-    protected readonly ILogger log = NullLogger.Instance;
+    protected ILogger log { get; }
     private readonly CronExpression cronExpression;
     private DateTimeOffset lastPlannedRunBeforeServerStart;
     private DateTimeOffset? lastRun;
@@ -28,6 +27,7 @@ public abstract class AbstractCronTask : Aion.Commons.Lang.Runnable
 
     public AbstractCronTask(CronExpression cronExpression)
     {
+        log = AionLog.For(GetType().Name);
         this.cronExpression = cronExpression;
         if (this.cronExpression == null)
         {

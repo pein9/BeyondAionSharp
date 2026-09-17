@@ -5,7 +5,6 @@ using Aion.GameServer.Model.Geometry;
 using Aion.GameServer.Model.Templates.Zone;
 using Aion.GameServer.Utils.Xml;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Dataholders;
 
@@ -14,7 +13,7 @@ namespace Aion.GameServer.Dataholders;
 [XmlRoot("zones")]
 public class ZoneData
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(ZoneData));
 
     [XmlElement("zone")]
     public List<ZoneTemplate> zoneList;

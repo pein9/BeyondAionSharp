@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Commons.Utils;
 
@@ -14,7 +13,7 @@ namespace Aion.GameServer.Commons.Utils;
 /// </summary>
 public static class Rnd
 {
-    private static readonly ILogger Log = NullLogger.Instance;
+    private static readonly ILogger Log = AionLog.For(nameof(Rnd));
 
     // not thread-safe in Java; here each thread gets its own seeded generator (parity intent: per-thread isolation)
     private static readonly ThreadLocal<Random> RndLocal = new(() => new Random());

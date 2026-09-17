@@ -2,14 +2,13 @@ using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.Flyring;
 using Aion.GameServer.Model.Templates.Flyring;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Services;
 
 /// <summary>Java parity: services/FlyRingService (xavier).</summary>
 public class FlyRingService
 {
-    private readonly ILogger log = NullLogger.Instance;
+    private readonly ILogger log = AionLog.For(nameof(FlyRingService));
 
     private static class SingletonHolder
     {

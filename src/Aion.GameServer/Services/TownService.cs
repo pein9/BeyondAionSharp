@@ -12,14 +12,13 @@ using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Utils;
 using Aion.GameServer.World.Zone;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Services;
 
 /// <summary>Java parity: services/TownService (ViAl).</summary>
 public class TownService
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(TownService));
     private Dictionary<int, Town> elyosTowns;
     private Dictionary<int, Town> asmosTowns;
 

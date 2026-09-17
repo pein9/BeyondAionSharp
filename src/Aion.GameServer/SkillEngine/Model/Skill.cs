@@ -17,7 +17,6 @@ using Aion.GameServer.SkillEngine.Effects;
 using Aion.GameServer.SkillEngine.Properties;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using CastState = Aion.GameServer.SkillEngine.Properties.Properties.CastState;
 using Aion.GameServer.Utils.Audit;
 using Aion.GameServer.Model.Skill;
@@ -30,7 +29,7 @@ namespace Aion.GameServer.SkillEngine.Model;
 /// </summary>
 public class Skill
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(Skill));
 
     private readonly List<Creature> effectedList;
     private Creature firstTarget;

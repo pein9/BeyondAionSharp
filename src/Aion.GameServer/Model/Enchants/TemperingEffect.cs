@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Stats.Container;
@@ -10,7 +9,7 @@ namespace Aion.GameServer.Model.Enchants;
 /// <summary>Java parity: model/enchants/TemperingEffect implements StatOwner.</summary>
 public class TemperingEffect : Aion.GameServer.Model.Stats.Calc.IStatOwner
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(TemperingEffect));
 
     private TemperingEffect(Aion.GameServer.Model.GameObjects.Players.Player player, List<Aion.GameServer.Model.Stats.Calc.Functions.IStatFunction> functions)
     {

@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Ai.Event;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Controllers;
@@ -36,7 +35,7 @@ namespace Aion.GameServer.SpawnEngine;
 /// <summary>Java parity: spawnengine/VisibleObjectSpawner (ATracer). Object-spawn factory methods. slf4j parameterized log.error("...{}", x)→ILogger LogError("...{Name}", x); log.error(msg, ex)→LogError(ex, msg); Math.toRadians→*Math.PI/180; protected static→internal static (package access from SpawnEngine). Most controllers/models red-tolerated.</summary>
 public class VisibleObjectSpawner
 {
-    private static readonly ILogger Log = NullLoggerFactory.Instance.CreateLogger(nameof(VisibleObjectSpawner));
+    private static readonly ILogger Log = AionLog.For(nameof(VisibleObjectSpawner));
 
     internal static VisibleObject SpawnNpc(SpawnTemplate spawn, int instanceIndex)
     {

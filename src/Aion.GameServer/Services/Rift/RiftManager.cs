@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Controllers;
 using Aion.GameServer.Controllers.Effects;
 using Aion.GameServer.Dataholders;
@@ -18,7 +17,7 @@ namespace Aion.GameServer.Services.Rift;
 /// <summary>Java parity: services/rift/RiftManager (Source). Singleton; static riftsPerWorld (ConcurrentDictionary&lt;int,List&lt;Npc&gt;&gt;) and riftGroups (ConcurrentDictionary&lt;string,SpawnTemplate&gt;); addRiftSpawnTemplate, spawnRift/spawnVortex (RiftEnum lookup), spawnInstance (build Npc, store/position/spawn), addSpawnedRift/getSpawnedRifts/removeSpawnedRift. ConcurrentHashMap->ConcurrentDictionary; CopyOnWriteArrayList semantics restored via copy-on-write (add/remove publish a fresh List so concurrent RiftInformer iterators never see an in-place mutation — a plain List threw "Collection was modified"); computeIfAbsent->AddOrUpdate; Collections.emptyList->new List; rift.name()->RiftEnum.Name(). RVController/SpawnTemplate/VortexLocation/RiftLocation red-tolerated.</summary>
 public class RiftManager
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(RiftManager));
+    private static readonly ILogger log = AionLog.For(nameof(RiftManager));
     private static readonly ConcurrentDictionary<int, List<Npc>> riftsPerWorld = new ConcurrentDictionary<int, List<Npc>>();
     private static readonly ConcurrentDictionary<string, SpawnTemplate> riftGroups = new ConcurrentDictionary<string, SpawnTemplate>();
 

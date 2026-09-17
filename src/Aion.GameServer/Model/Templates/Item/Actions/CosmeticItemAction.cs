@@ -1,6 +1,5 @@
 using System.Xml.Serialization;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 
@@ -10,7 +9,7 @@ namespace Aion.GameServer.Model.Templates.Items.Actions;
 [XmlType("CosmeticItemAction")]
 public class CosmeticItemAction : AbstractItemAction
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(CosmeticItemAction));
 
     [XmlAttribute("name")] public string cosmeticName;
 

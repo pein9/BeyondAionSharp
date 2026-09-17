@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
@@ -27,7 +26,7 @@ namespace Aion.GameServer.Services.ToyPet;
 /// <summary>Java parity: services/toypet/PetService (M@xx, IlBuono, xTz, Rolandas). Pet rename/feed/doping/loot/sell logic. PetFunctionType SCREAMING; PetSpecialFunction/EmotionType/PetHungryLevel PascalCase. TimeUnit.SECONDS delays converted to millis. Pet templates/SkillEngine/TradeService red-tolerated.</summary>
 public class PetService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PetService));
+    private static readonly ILogger log = AionLog.For(nameof(PetService));
 
     public static PetService GetInstance()
     {

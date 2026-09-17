@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -15,7 +14,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_SUMMON_CASTSPELL (ATracer, KID). Summon/mercenary skill cast w/ pet vs mercenary handling + skill-order validation. SkillOrder/DataManager.PET_SKILL_DATA red-tolerated.</summary>
 public class CM_SUMMON_CASTSPELL : AionClientPacket
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CM_SUMMON_CASTSPELL));
+    private static readonly ILogger log = AionLog.For(nameof(CM_SUMMON_CASTSPELL));
     private int summonObjId;
     private int targetObjId;
     private int skillId;

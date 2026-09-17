@@ -4,7 +4,6 @@ using Aion.GameServer.GeoEngine.Bounding;
 using Aion.GameServer.GeoEngine.Collision;
 using Aion.GameServer.GeoEngine.Math;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.GeoEngine.Scene;
 
@@ -15,7 +14,7 @@ namespace Aion.GameServer.GeoEngine.Scene;
 /// </summary>
 public class Node : Spatial
 {
-    private static readonly ILogger logger = NullLogger.Instance;
+    private static readonly ILogger logger = AionLog.For(nameof(Node));
 
     /// <summary>This node's children.</summary>
     protected List<Spatial> children = new List<Spatial>(1);

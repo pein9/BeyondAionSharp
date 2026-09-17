@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Dataholders;
@@ -22,7 +21,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class ChallengeTasksDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(ChallengeTasksDAO));
+    private static readonly ILogger log = AionLog.For(nameof(ChallengeTasksDAO));
 
     private const string SELECT_QUERY = "SELECT *, CAST(FLOOR(UNIX_TIMESTAMP(`complete_time`) * 1000) AS SIGNED) AS `complete_time_epoch_millis` FROM `challenge_tasks` WHERE `owner_id` = ? AND `owner_type` = ?";
     private const string INSERT_QUERY = "INSERT INTO `challenge_tasks` (`task_id`, `quest_id`, `owner_id`, `owner_type`, `complete_count`, `complete_time`) VALUES (?, ?, ?, ?, ?, FROM_UNIXTIME(? / 1000.0));";

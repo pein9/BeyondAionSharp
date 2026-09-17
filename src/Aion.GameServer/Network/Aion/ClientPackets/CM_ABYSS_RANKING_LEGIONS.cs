@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion;
@@ -14,7 +13,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_ABYSS_RANKING_LEGIONS (SheppeR). Requests the abyss legion ranking for a race. AbyssRank.AbyssRankUpdateType aliased; AionClientPacket base red-tolerated.</summary>
 public class CM_ABYSS_RANKING_LEGIONS : AionClientPacket
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CM_ABYSS_RANKING_LEGIONS));
+    private static readonly ILogger log = AionLog.For(nameof(CM_ABYSS_RANKING_LEGIONS));
 
     private byte raceId;
 

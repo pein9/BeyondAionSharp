@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -15,7 +14,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/WarehouseService (Simple, Luzien). Warehouse expansion + info packets. Integer price→int?; anonymous RequestResponseHandler&lt;Npc&gt;→nested ExpandResponseHandler (captures price); StorageType.X.getId()→GetId(); List.subList(from,to)→GetRange(from, to-from); enum.equals→==; String.valueOf→ToString. Item/Storage/templates/SM_* red-tolerated.</summary>
 public class WarehouseService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(WarehouseService));
+    private static readonly ILogger log = AionLog.For(nameof(WarehouseService));
     private const int MAX_EXPAND = 11;
 
     /// <summary>Shows Question window and expands on positive response.</summary>

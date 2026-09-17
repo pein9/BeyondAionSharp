@@ -12,7 +12,6 @@ using Aion.GameServer.Services;
 using Aion.GameServer.Utils;
 using Aion.GameServer.World.Zone;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model;
 
 namespace Aion.GameServer.QuestEngine.Handlers.Template;
@@ -20,7 +19,7 @@ namespace Aion.GameServer.QuestEngine.Handlers.Template;
 /// <summary>Java parity: questEngine/handlers/template/MonsterHunt (MrPoke, vlog, Bobobear, Pad, Majka). Set.addAll→UnionWith; isEmpty→Count==0; ZoneName.get(s).name().equalsIgnoreCase→Name comparison; bit-packed quest vars preserved; DataManager/QuestService/RiftService/VortexService red-tolerated.</summary>
 public class MonsterHunt : AbstractTemplateQuestHandler
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(MonsterHunt));
 
     private readonly HashSet<int> startNpcIds = new();
     private readonly HashSet<int> endNpcIds = new();

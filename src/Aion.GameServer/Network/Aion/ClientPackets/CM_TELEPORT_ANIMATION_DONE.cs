@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion;
@@ -39,7 +38,7 @@ public class CM_TELEPORT_ANIMATION_DONE : AionClientPacket
             }
             catch (Exception e)
             {
-                NullLoggerFactory.Instance.CreateLogger(nameof(CM_TELEPORT_ANIMATION_DONE)).LogError(e.InnerException, "");
+                AionLog.For(nameof(CM_TELEPORT_ANIMATION_DONE)).LogError(e.InnerException, "");
                 if (!player.IsSpawned())
                 {
                     PacketSendUtility.SendPacket(player, new SM_PLAYER_INFO(player));

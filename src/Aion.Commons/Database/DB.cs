@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 
 namespace Aion.Commons.Database
@@ -15,7 +14,7 @@ namespace Aion.Commons.Database
     /// </summary>
     public sealed class DB
     {
-        private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(DB));
+        private static readonly ILogger log = AionLog.For(nameof(DB));
 
         /// <summary>Prevent instantiation</summary>
         private DB()

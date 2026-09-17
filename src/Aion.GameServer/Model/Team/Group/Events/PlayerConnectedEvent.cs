@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Team.Common.Events;
 using Aion.GameServer.Model.Team.Common.Legacy;
@@ -15,7 +14,7 @@ namespace Aion.GameServer.Model.Team.Group.Events;
 /// </summary>
 public class PlayerConnectedEvent : AlwaysTrueTeamEvent
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PlayerConnectedEvent));
+    private static readonly ILogger log = AionLog.For(nameof(PlayerConnectedEvent));
     private readonly PlayerGroup group;
     private readonly Player player;
 

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Custom.Instance.Neuralnetwork;
@@ -20,7 +19,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class CustomInstancePlayerModelEntryDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CustomInstancePlayerModelEntryDAO));
+    private static readonly ILogger log = AionLog.For(nameof(CustomInstancePlayerModelEntryDAO));
 
     private const string SELECT_QUERY = "SELECT *, CAST(FLOOR(UNIX_TIMESTAMP(`timestamp`) * 1000) AS SIGNED) AS `timestamp_epoch_millis` FROM `custom_instance_records` WHERE ? = player_id";
     private const string INSERT_QUERY = "INSERT INTO `custom_instance_records` ( `player_id`, `timestamp`, `skill_id`, `player_class_id`, `player_hp_percentage`,"

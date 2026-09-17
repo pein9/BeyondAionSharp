@@ -16,7 +16,6 @@ using Aion.GameServer.Services;
 using Aion.GameServer.Services.Siege;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Handlers.AI;
 
@@ -24,7 +23,7 @@ namespace Aion.GameServer.Handlers.AI;
 [AIName("siege_gaterepair")]
 public class GateRepairAI : NpcAI
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(GateRepairAI));
     private long nextActivationTime = 0;
 
     public GateRepairAI(Npc owner)

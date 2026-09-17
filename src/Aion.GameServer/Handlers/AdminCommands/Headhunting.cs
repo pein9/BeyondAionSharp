@@ -14,7 +14,6 @@ using Aion.GameServer.Services.Mail;
 using Aion.GameServer.Services.Players;
 using Aion.GameServer.Utils.ChatHandlers;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Handlers.AdminCommands;
 
@@ -25,7 +24,7 @@ namespace Aion.GameServer.Handlers.AdminCommands;
 /// </summary>
 public class Headhunting : AdminCommand
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(Headhunting));
 
     /// <summary>Contains the rewards for different rankings (key value).</summary>
     private readonly SortedDictionary<int, List<RewardItem>> rewards = new();

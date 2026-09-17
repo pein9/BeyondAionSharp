@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Aion.GameServer.Commons.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Schedule;
 
 namespace Aion.GameServer.Services.Worldraid;
@@ -10,7 +9,7 @@ namespace Aion.GameServer.Services.Worldraid;
 /// <summary>Java parity: services/worldraid/WorldRaidRunnable. Java Runnable→plain class+Run(); stream filter/collect→Where/ToList.</summary>
 public class WorldRaidRunnable : Aion.Commons.Lang.Runnable
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(WorldRaidRunnable));
 
     private readonly WorldRaidSchedules.WorldRaidSchedule worldRaidSchedule;
 

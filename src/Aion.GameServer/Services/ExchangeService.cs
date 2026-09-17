@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Model.GameObjects;
@@ -21,7 +20,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/ExchangeService (ATracer). Player-to-player trade. ConcurrentHashMap→ConcurrentDictionary (get→GetValueOrDefault, put→indexer, remove→TryRemove out-param); Map.get→GetValueOrDefault; Arrays.asList→List initializer; Player...→params Player[]; nested ItemPacketService.* types preserved; slf4j→ILogger. Exchange/ExchangeItem ported; Item/Storage/SM_*/DAO red-tolerated.</summary>
 public class ExchangeService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("EXCHANGE_LOG");
+    private static readonly ILogger log = AionLog.For("EXCHANGE_LOG");
 
     private readonly ConcurrentDictionary<int, Exchange> exchanges = new ConcurrentDictionary<int, Exchange>();
 

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Controllers.Observer;
@@ -20,7 +19,7 @@ namespace Aion.GameServer.Services.Worldraid;
 /// <summary>Java parity: services/worldraid/WorldRaid (Whoop, Sykra). A single world-raid instance: timed preparation sequence (flag@0, vortex@10, markers@25, spawn-msg@29, random boss@30 via fixed-rate task), boss death observer -> stop raid, 1h boss despawn timer, spawn/despawn helpers, broadcast. AtomicBoolean start/finish gates; anonymous stateful Runnable (progress) -> nested PreparationRunnable capturing outer; Future->ScheduledTask; scheduleAtFixedRate(Runnable,0,60000) faithful; schedule(...,1,HOURS)->Schedule(ct-lambda, TimeSpan.FromHours(1)); DeathObserver lambda. SpawnEngine/WorldRaidService/templates red-tolerated.</summary>
 public class WorldRaid
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(WorldRaid));
+    private static readonly ILogger log = AionLog.For(nameof(WorldRaid));
 
     private readonly WorldRaidLocation raidLocation;
     private readonly bool useSpecialSpawnMsg;

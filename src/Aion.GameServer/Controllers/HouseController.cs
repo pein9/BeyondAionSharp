@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.Animations;
 using Aion.GameServer.Model.GameObjects;
@@ -22,7 +21,7 @@ namespace Aion.GameServer.Controllers;
 /// <summary>Java parity: controllers/HouseController (Rolandas, Neon) : VisibleObjectController&lt;House&gt;. **HouseObject&lt;?&gt;→HouseObject&lt;PlaceableHouseObject&gt;** (matches ported HouseRegistry.GetSpawnedObjects bound). instanceof Player→is Player; enum SpawnType ==; ZoneName.get→ZoneName.Get (class); Math.toRadians→*Math.PI/180; byte compound arithmetic (h-=30); Integer exitMapId→int?. House/HouseObject/SpawnEngine red-tolerated/converged.</summary>
 public class HouseController : VisibleObjectController<House>
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(HouseController));
+    private static readonly ILogger log = AionLog.For(nameof(HouseController));
 
     public override void See(VisibleObject obj)
     {

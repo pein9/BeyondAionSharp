@@ -17,14 +17,13 @@ using Aion.GameServer.Services;
 using Aion.GameServer.Services.Findgroup;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Model.Team.Alliance;
 
 /// <summary>Java parity: model/team/alliance/PlayerAllianceService (ATracer). Static alliance lifecycle. ConcurrentHashMap→ConcurrentDictionary; AtomicBoolean.compareAndSet→Interlocked.CompareExchange(ref int,1,0)==0; Objects.requireNonNull→ArgumentNullException; Runnable OfflinePlayerAllianceChecker→nested class w/ Run; forEachTeamMember lambda; TeamKinahDistributionEvent<>→explicit generic. PlayerAlliance/event classes/VortexService/FindGroupService/PlayerRestrictions red-tolerated.</summary>
 public class PlayerAllianceService
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(PlayerAllianceService));
     private static readonly ConcurrentDictionary<int, PlayerAlliance> alliances = new();
     private static int offlineCheckStarted;
 

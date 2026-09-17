@@ -12,7 +12,6 @@ using Aion.GameServer.Services.Drop;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Audit;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Handlers.AI;
 
@@ -20,7 +19,7 @@ namespace Aion.GameServer.Handlers.AI;
 [AIName("chest")]
 public class ChestAI : ActionItemNpcAI
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(ChestAI));
     private ChestTemplate chestTemplate;
 
     public ChestAI(Npc owner)

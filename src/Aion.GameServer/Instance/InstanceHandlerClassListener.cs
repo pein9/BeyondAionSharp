@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.Commons.Scripting.ClassListener;
 using Aion.GameServer.Instance.Handlers;
 
@@ -9,7 +8,7 @@ namespace Aion.GameServer.Instance;
 /// <summary>Java parity: instance/InstanceHandlerClassListener (ATracer) implements ClassListener. Class&lt;?&gt;[]→Type[]; getName()→FullName; isAssignableFrom→typeof(IInstanceHandler).IsAssignableFrom; Modifier.isAbstract/isInterface/isPublic→Type.IsAbstract/IsInterface/IsPublic; log.isDebugEnabled→IsEnabled(LogLevel.Debug).</summary>
 public class InstanceHandlerClassListener : ClassListener
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(InstanceHandlerClassListener));
+    private static readonly ILogger log = AionLog.For(nameof(InstanceHandlerClassListener));
 
     public void PostLoad(Type[] classes)
     {

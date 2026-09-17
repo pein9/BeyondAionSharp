@@ -7,14 +7,13 @@ using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Templates.Curingzones;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Services;
 
 /// <summary>Java parity: services/CuringZoneService (xTz).</summary>
 public class CuringZoneService
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(CuringZoneService));
     private List<CuringObject> curingObjects = new List<CuringObject>();
 
     private CuringZoneService()

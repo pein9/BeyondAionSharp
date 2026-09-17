@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.GameObjects;
@@ -20,7 +19,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class HousesDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(HousesDAO));
+    private static readonly ILogger log = AionLog.For(nameof(HousesDAO));
 
     private const string SELECT_HOUSES_QUERY = "SELECT *, CAST(FLOOR(UNIX_TIMESTAMP(`acquire_time`) * 1000) AS SIGNED) AS `acquire_time_epoch_millis`, CAST(FLOOR(UNIX_TIMESTAMP(`next_pay`) * 1000) AS SIGNED) AS `next_pay_epoch_millis` FROM houses WHERE address <> 2001 AND address <> 3001";
     private const string SELECT_STUDIOS_QUERY = "SELECT *, CAST(FLOOR(UNIX_TIMESTAMP(`acquire_time`) * 1000) AS SIGNED) AS `acquire_time_epoch_millis`, CAST(FLOOR(UNIX_TIMESTAMP(`next_pay`) * 1000) AS SIGNED) AS `next_pay_epoch_millis` FROM houses WHERE address = 2001 OR address = 3001";

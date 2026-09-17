@@ -2,14 +2,13 @@ using System;
 using Aion.Commons.Scripting.ClassListener;
 using Aion.GameServer.World.Zone;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.World.Zone.Handler;
 
 /// <summary>Java parity: world/zone/handler/ZoneHandlerClassListener (MrPoke) : ClassListener. Class&lt;?&gt;[]→Type[]; IZoneHandler.class.isAssignableFrom→typeof(IZoneHandler).IsAssignableFrom; Modifier.isAbstract/isInterface/isPublic→IsAbstract/IsInterface/IsPublic; getName→FullName. ZoneService red-tolerated (logger uses InstanceHandlerClassListener.class per Java).</summary>
 public class ZoneHandlerClassListener : ClassListener
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(Aion.GameServer.Instance.InstanceHandlerClassListener));
 
     public void PostLoad(Type[] classes)
     {

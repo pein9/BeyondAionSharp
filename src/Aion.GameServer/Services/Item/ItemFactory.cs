@@ -2,14 +2,13 @@ using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Templates.Items;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Services.Items;
 
 /// <summary>Java parity: services/item/ItemFactory (ATracer).</summary>
 public class ItemFactory
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(ItemFactory));
 
     public static Item NewItem(int itemId)
     {

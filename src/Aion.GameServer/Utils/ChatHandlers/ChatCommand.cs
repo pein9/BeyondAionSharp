@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Administration;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -17,7 +16,7 @@ namespace Aion.GameServer.Utils.ChatHandlers;
 /// <summary>Java parity: utils/chathandlers/ChatCommand (KID, Neon). Base for player/console/admin chat commands. java.awt.Color preserved; Java reflection (Class.forName/getEnumConstants) -> Type.GetType/Enum.GetValues (best-effort). CommandsConfig/ChatUtil red-tolerated.</summary>
 public abstract class ChatCommand
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(ChatCommand));
+    private static readonly ILogger log = AionLog.For(nameof(ChatCommand));
     private readonly string prefix;
     private readonly string alias;
     private readonly string description;

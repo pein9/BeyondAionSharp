@@ -9,7 +9,6 @@ using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Templates.Items;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
@@ -18,7 +17,7 @@ namespace Aion.GameServer.Model.Templates.Items.Actions;
 [XmlType("DecomposeAction")]
 public class DecomposeAction : AbstractItemAction
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(DecomposeAction));
     private static readonly Dictionary<Race, int[]> chunkEarth = new();
     private static readonly Dictionary<Race, int[]> chunkSand = new();
     private static readonly Dictionary<Race, int[]> premiumOphidanRecipe = new();

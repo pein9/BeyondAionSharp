@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class PlayerCooldownsDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PlayerCooldownsDAO));
+    private static readonly ILogger log = AionLog.For(nameof(PlayerCooldownsDAO));
 
     public const string INSERT_QUERY = "INSERT INTO `player_cooldowns` (`player_id`, `cooldown_id`, `reuse_delay`) VALUES (?,?,?)";
     public const string DELETE_QUERY = "DELETE FROM `player_cooldowns` WHERE `player_id`=?";

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -16,8 +15,8 @@ namespace Aion.GameServer.Services.Transfers;
 /// <summary>Java parity: services/transfers/PlayerTransferService (KID). Singleton; cross-server character transfer. startTransfer (validation: account ownership, no legion, offline, reuse cooldown, kinah cap, no broker items; then send SM_PTRANSFER_CONTROL info packets), cloneCharacter (name dedupe, slot check, CMT_CHARACTER_INFORMATION.readInfo, name-change ticket, last-transfer-time), onOk/onError, put/getTransfer. LinkedHashMap/HashMap->Dictionary; map.remove->Remove(out); currentTimeMillis->DateTimeOffset.UtcNow.ToUnixTimeMilliseconds; split(",")->Split(','); REUSE_HOURS*3600000 int-overflow parity preserved. CMT_CHARACTER_INFORMATION/SM_PTRANSFER_CONTROL/DAO red-tolerated.</summary>
 public class PlayerTransferService
 {
-    private readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PlayerTransferService));
-    private readonly ILogger textLog = NullLoggerFactory.Instance.CreateLogger("PLAYERTRANSFER");
+    private readonly ILogger log = AionLog.For(nameof(PlayerTransferService));
+    private readonly ILogger textLog = AionLog.For("PLAYERTRANSFER");
 
     private static readonly PlayerTransferService instance = new PlayerTransferService();
 

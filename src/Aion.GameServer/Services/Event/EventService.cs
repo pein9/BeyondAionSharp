@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Dataholders;
@@ -25,7 +24,7 @@ namespace Aion.GameServer.Services.Event;
 /// <summary>Java parity: services/event/EventService (Rolandas, Neon). Singleton; volatile active-events/drop-rules/quests/force-types/theme state; start/stop (CronService 5-min check), checkActiveEvents (diff old vs new via SetEquals, start/stop events, theme update), event hooks (login/team/map/pve/pvp-kill), collectActiveEvents/collectQuestIds/collectDropRules, getActiveEventConfigProperties (nullsFirst by startDate). Quartz JobDetail red-tolerated; Collections.empty*->new; TemporaryPlayerTeam<? extends ITeamMember<Player>>-><ITeamMember<Player>>; streams->LINQ; Set.equals->SetEquals; Objects::nonNull->!=null; ServerTime.now->DateTimeOffset/.DateTime; Properties red-tolerated. EventTemplate/Event/DAO red-tolerated.</summary>
 public class EventService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(EventService));
+    private static readonly ILogger log = AionLog.For(nameof(EventService));
 
     private volatile IJobDetail checkTask = null;
     private volatile HashSet<Event> activeEvents = new HashSet<Event>();

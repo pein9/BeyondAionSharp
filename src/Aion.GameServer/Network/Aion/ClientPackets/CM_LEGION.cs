@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Team.Legion;
 using Aion.GameServer.Network.Aion;
@@ -107,7 +106,7 @@ public class CM_LEGION : AionClientPacket
                 legionDominionId = ReadD();
                 break;
             default:
-                NullLoggerFactory.Instance.CreateLogger(nameof(CM_LEGION)).LogWarning("Unknown Legion exOpcode 0x" + exOpcode.ToString("X", CultureInfo.InvariantCulture));
+                AionLog.For(nameof(CM_LEGION)).LogWarning("Unknown Legion exOpcode 0x" + exOpcode.ToString("X", CultureInfo.InvariantCulture));
                 break;
         }
     }

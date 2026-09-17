@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.Commons.Scripting.ClassListener;
 
 namespace Aion.GameServer.QuestEngine.Handlers;
@@ -8,7 +7,7 @@ namespace Aion.GameServer.QuestEngine.Handlers;
 /// <summary>Java parity: questEngine/handlers/QuestHandlerLoader (MrPoke) implements ClassListener. On postLoad, instantiates and registers every valid (public, concrete) AbstractQuestHandler subclass; on preUnload clears the Aion.GameServer.QuestEngine.QuestEngine. Reflection: Class[]->Type[], getName->FullName, isAssignableFrom->IsAssignableFrom, getDeclaredConstructor().newInstance()->Activator.CreateInstance, Modifier.isX->Type.IsX; RuntimeException->Exception; isDebugEnabled->IsEnabled(LogLevel.Debug). ClassListener/AbstractQuestHandler red-tolerated.</summary>
 public class QuestHandlerLoader : ClassListener
 {
-    private static readonly ILogger logger = NullLoggerFactory.Instance.CreateLogger(nameof(QuestHandlerLoader));
+    private static readonly ILogger logger = AionLog.For(nameof(QuestHandlerLoader));
 
     public QuestHandlerLoader()
     {

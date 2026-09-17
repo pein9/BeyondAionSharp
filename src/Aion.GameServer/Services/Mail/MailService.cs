@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Model.GameObjects;
@@ -30,7 +29,7 @@ namespace Aion.GameServer.Services.Mail;
 /// <summary>Java parity: services/mail/MailService (kosyachok). Static; sendMail (trading/length/blackcloud guards, recipient validation, commission/price math with quality rate, attached-item handling incl. disposition unpack + count split, kinah debit, store, mailbox update), validateRecipient, getQualityPriceRate, readMail, getAttachments (item/kinah by type), deleteMail, onPlayerLogin, sendMailList (stream filter/sort -> LINQ, SplitList paging). Timestamp(currentTimeMillis)->DateTimeOffset.FromUnixTimeMilliseconds(UtcNow...); Comparator.comparing(...).reversed()->OrderByDescending; Collections.singletonList->new List; named logger MAIL_LOG. Many model/DAO/SplitList types red-tolerated.</summary>
 public class MailService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("MAIL_LOG");
+    private static readonly ILogger log = AionLog.For("MAIL_LOG");
 
     private MailService()
     {

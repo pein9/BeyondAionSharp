@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Controllers.Attack;
@@ -33,7 +32,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/PvpService (Sarynth, Estrayl). PvP kill reward distribution. **TemporaryPlayerTeam&lt;?&gt;/&lt;? extends TeamMember&lt;Player&gt;&gt;→TemporaryPlayerTeam&lt;TeamMember&lt;Player&gt;&gt;** (codebase invariance bound); putIfAbsent→lock+TryGetValue; instanceof X x→is X x; Math.round(float)→(int)Math.Floor(+0.5f); removeIf→RemoveAll; stream/map/collect→LINQ; PersistentState→IPersistable.PersistentState; enum.name()→ToString(); equalsIgnoreCase→OrdinalIgnoreCase; currentTimeMillis→UtcNow. Many services/SM_*/DAO red-tolerated.</summary>
 public class PvpService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("KILL_LOG");
+    private static readonly ILogger log = AionLog.For("KILL_LOG");
     private readonly List<KillBountyTemplate> killBounties;
     private readonly IDictionary<int, Headhunter> headhunters;
 

@@ -9,7 +9,6 @@ using Aion.GameServer.Model.Templates.Spawns.Riftspawns;
 using Aion.GameServer.Model.Templates.Spawns.Siegespawns;
 using Aion.GameServer.Model.Templates.Spawns.Vortexspawns;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Utils.Xml;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
@@ -25,7 +24,7 @@ namespace Aion.GameServer.Dataholders;
 [XmlType(Namespace = "", TypeName = "SpawnsData")]
 public class SpawnsData
 {
-    private static readonly ILogger<SpawnsData> Log = NullLogger<SpawnsData>.Instance;
+    private static readonly ILogger<SpawnsData> Log = AionLog.For<SpawnsData>();
 
     [XmlElement("spawn_map", Type = typeof(SpawnMap))]
     public List<SpawnMap>? Templates { get; set; }

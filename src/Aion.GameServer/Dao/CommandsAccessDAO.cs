@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 
@@ -15,7 +14,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class CommandsAccessDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CommandsAccessDAO));
+    private static readonly ILogger log = AionLog.For(nameof(CommandsAccessDAO));
 
     private const string LOAD_QUERY = "SELECT * FROM commands_access";
     private const string INSERT_QUERY = "INSERT INTO commands_access(player_id, command) VALUES (?,?)";

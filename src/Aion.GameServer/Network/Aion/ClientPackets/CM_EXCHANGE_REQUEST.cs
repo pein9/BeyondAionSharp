@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -16,7 +15,7 @@ public class CM_EXCHANGE_REQUEST : AionClientPacket
 {
     public int? targetObjectId;
 
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CM_EXCHANGE_REQUEST));
+    private static readonly ILogger log = AionLog.For(nameof(CM_EXCHANGE_REQUEST));
 
     public CM_EXCHANGE_REQUEST(int opcode, ISet<State> validStates)
         : base(opcode, validStates)

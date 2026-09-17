@@ -8,7 +8,6 @@ using Aion.GameServer.GeoEngine.Scene;
 using Aion.GameServer.Model.House;
 using Aion.GameServer.World;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.GeoEngine.Models;
 
@@ -17,7 +16,7 @@ namespace Aion.GameServer.GeoEngine.Models;
 /// </summary>
 public class GeoMap : Node
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(GeoMap));
     public const float COLLISION_CHECK_Z_OFFSET = 1;
     private const float COLLISION_BOUND_OFFSET = 0.5f;
     private const int NODE_CHUNK_SIZE = 256;

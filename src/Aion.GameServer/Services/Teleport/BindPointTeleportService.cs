@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -81,7 +80,7 @@ public class BindPointTeleportService
         long price = Math.Max(1, basePrice + distanceCost);
         long priceDifference = Math.Abs(price - priceSentByGameClient);
         if (priceDifference > 1) // only warn about unexpected differences (minimal discrepancies from floating-point calculations can be ignored)
-            NullLoggerFactory.Instance.CreateLogger(nameof(BindPointTeleportService)).LogWarning("Hotspot teleport {Id} prices don't match: {Price} vs. {ClientPrice}", hotspot.GetId(), price, priceSentByGameClient);
+            AionLog.For(nameof(BindPointTeleportService)).LogWarning("Hotspot teleport {Id} prices don't match: {Price} vs. {ClientPrice}", hotspot.GetId(), price, priceSentByGameClient);
         return Math.Max(price, priceSentByGameClient);
     }
 

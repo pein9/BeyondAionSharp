@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Model.Actions;
 using Aion.GameServer.Model.Drop;
@@ -15,7 +14,7 @@ namespace Aion.GameServer.Services.Drop;
 /// <summary>Java parity: services/drop/DropDistributionService (xTz, Sykra). Singleton; handleRollOrBid dispatch (mode 2 roll / 3 bid); roll (Rnd.get max-roll, SM_GROUP_LOOT broadcast, dice msgs), bid (kinah/cap validation, pay msgs), distributeLoot (winner tracking, free-for-all fallback, DropService.requestDropItem/canDistribute). map.get→GetValueOrDefault; synchronized(dropItems)→lock; 0xFFFFFFFF (Java int -1)→unchecked((int)0xFFFFFFFF); getFirst→[0]. DropNpc/DropService/SM_GROUP_LOOT red-tolerated.</summary>
 public class DropDistributionService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(DropDistributionService));
+    private static readonly ILogger log = AionLog.For(nameof(DropDistributionService));
 
     public static DropDistributionService GetInstance()
     {

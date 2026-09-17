@@ -5,14 +5,13 @@ using System.Net.Sockets;
 using System.Text;
 using Aion.Commons.Nio;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Commons.Utils;
 
 /// <summary>Java parity: commons/utils/NetworkUtils (KID, -Nemesiss-). java.net InetAddress→System.Net.IPAddress; String.format %0NX→ToString("XN").</summary>
 public class NetworkUtils
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(NetworkUtils));
 
     /// <summary>The outbound IPv4 address, or null if unavailable.</summary>
     public static IPAddress FindLocalIPv4()

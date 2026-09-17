@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.GameObjects;
@@ -26,7 +25,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class PlayerRegisteredItemsDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PlayerRegisteredItemsDAO));
+    private static readonly ILogger log = AionLog.For(nameof(PlayerRegisteredItemsDAO));
 
     public const string CLEAN_PLAYER_QUERY = "DELETE FROM `player_registered_items` WHERE `player_id` = ?";
     public const string SELECT_QUERY = "SELECT * FROM `player_registered_items` WHERE `player_id`=?";

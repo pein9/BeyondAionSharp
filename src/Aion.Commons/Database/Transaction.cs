@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 
 namespace Aion.Commons.Database
@@ -13,7 +12,7 @@ namespace Aion.Commons.Database
     /// </summary>
     public class Transaction
     {
-        private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(Transaction));
+        private static readonly ILogger log = AionLog.For(nameof(Transaction));
 
         private readonly MySqlConnection connection;
         private readonly MySqlTransaction transaction;

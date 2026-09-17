@@ -10,14 +10,13 @@ using Aion.GameServer.Model.Vortex;
 using Aion.GameServer.Services.Panesterra.Ahserion;
 using Aion.GameServer.SpawnEngine;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Model.Templates.Spawns;
 
 /// <summary>Java parity: model/templates/spawns/SpawnGroup.</summary>
 public class SpawnGroup
 {
-    private static readonly ILogger<SpawnGroup> Log = NullLogger<SpawnGroup>.Instance;
+    private static readonly ILogger<SpawnGroup> Log = AionLog.For<SpawnGroup>();
 
     private readonly int               _worldId;
     private readonly int               _npcId;

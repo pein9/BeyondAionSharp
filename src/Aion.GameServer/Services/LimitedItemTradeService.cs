@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.Limiteditems;
 using Aion.GameServer.Model.Templates.Goods;
@@ -16,7 +15,7 @@ namespace Aion.GameServer.Services;
 /// </summary>
 public class LimitedItemTradeService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(LimitedItemTradeService));
+    private static readonly ILogger log = AionLog.For(nameof(LimitedItemTradeService));
     private readonly Dictionary<int, LimitedTradeNpc> limitedTradeNpcs = new();
 
     public void Start()

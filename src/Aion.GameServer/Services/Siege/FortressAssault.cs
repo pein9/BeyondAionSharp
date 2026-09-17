@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model.GameObjects.Siege;
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Services.Siege;
 /// <summary>Java parity: services/siege/FortressAssault (Luzien, Estrayl) extends Assault&lt;FortressSiege&gt;. Balaur fortress assault: handleAssault (dredgion + wave scheduling), spawnWave (teleport waves @1/10, budgeted computeWave + commander chance), computeWave/addAssaulters (budget spend by spawn stake/cost), difficulty settings from faction balance + influence, onDredgionCommanderKilled (budget drain -> despawn carrier). EnumMap->Dictionary; AssaulterType.values()->Values(); method-ref this::spawnWave->ct-lambda; schedule(...,delay,SECONDS)->TimeSpan.FromSeconds; remove(0)->[0]+RemoveAt(0); stream.filter.collect->LINQ; Math.round(float)->(int)Floor(x+0.5f); switch-on-SiegeRace. AssaultData/Assaulter/Influence red-tolerated.</summary>
 public class FortressAssault : Assault<FortressSiege, FortressLocation>
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("SIEGE_LOG");
+    private static readonly ILogger log = AionLog.For("SIEGE_LOG");
     private readonly List<Assaulter> commanderSpawnList = new List<Assaulter>();
     private readonly AssaultData assaultData;
     private float difficulty, commanderSpawnChance, spawnBudget, startBudget;

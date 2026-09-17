@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Services;
@@ -9,7 +8,7 @@ namespace Aion.GameServer.Utils.ChatHandlers;
 /// <summary>Java parity: utils/chathandlers/AdminCommand (synchro2, Neon). Base for "//" admin commands; GM-audit logged. CommandsAccessService red-tolerated.</summary>
 public abstract class AdminCommand : ChatCommand
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("ADMINAUDIT_LOG");
+    private static readonly ILogger log = AionLog.For("ADMINAUDIT_LOG");
     public const string PREFIX = "//";
 
     // only for backwards compatibility TODO: remove when all commands are updated

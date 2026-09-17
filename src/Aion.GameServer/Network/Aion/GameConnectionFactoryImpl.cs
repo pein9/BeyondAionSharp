@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.Commons.Nio.Channels;
 using Aion.GameServer.Commons.Network;
 using Aion.GameServer.Configs.Network;
@@ -14,7 +13,7 @@ namespace Aion.GameServer.Network.Aion;
 /// </summary>
 public class GameConnectionFactoryImpl : ConnectionFactory
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(GameConnectionFactoryImpl));
+    private static readonly ILogger log = AionLog.For(nameof(GameConnectionFactoryImpl));
     private readonly FloodManager floodAcceptor;
 
     public GameConnectionFactoryImpl()

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.Account;
@@ -21,7 +20,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class AccountPassportsDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(AccountPassportsDAO));
+    private static readonly ILogger log = AionLog.For(nameof(AccountPassportsDAO));
     private const string SELECT_QUERY = "SELECT `passport_id`, `rewarded`, CAST(FLOOR(UNIX_TIMESTAMP(`arrive_date`) * 1000) AS SIGNED) AS `arrive_date_epoch_millis` FROM `account_passports` WHERE `account_id`=?";
     private const string UPDATE_QUERY = "UPDATE `account_passports` SET `rewarded`=? WHERE `account_id`=? AND `passport_id`=? AND `arrive_date`=FROM_UNIXTIME(? / 1000.0)";
     private const string RESET_LAST_STAMPS_QUERY = "UPDATE `account_stamps` SET `last_stamp`=NULL";

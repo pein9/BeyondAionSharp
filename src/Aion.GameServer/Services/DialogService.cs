@@ -1,7 +1,6 @@
 using Aion.GameServer.Utils.Stats;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using static Aion.GameServer.Model.DialogAction;
 using Aion.GameServer.Ai.Event;
 using Aion.GameServer.Configs.Main;
@@ -36,7 +35,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/DialogService (VladimirZ, Neon). NPC dialog action dispatch. `import static DialogAction.*`→`using static` (DialogAction is a class of const int; switch(int) bare-const cases valid); instanceof X x→is X x; switch-expression (SummonOwner) w/ exhaustive enum; anonymous RequestResponseHandler&lt;Npc&gt;→nested RecoveryResponseHandler (captures expLost/price via ctor); DialogPage.X.id()→DialogPage.X.Id() (extension), getByActionId→DialogPageExtensions.GetByActionId; cases declaring locals braced. Many services/SM_*/templates red-tolerated.</summary>
 public class DialogService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(DialogService));
+    private static readonly ILogger log = AionLog.For(nameof(DialogService));
 
     public static void OnCloseDialog(Player player, VisibleObject target)
     {

@@ -7,7 +7,6 @@ using Aion.GameServer.Model.Stats.Container;
 using Aion.GameServer.Model.Templates.Npc;
 using Aion.GameServer.Model.Templates.Stats;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Dataholders;
 
@@ -20,7 +19,7 @@ namespace Aion.GameServer.Dataholders;
 [XmlRoot("npc_templates")]
 public class NpcData
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(NpcData));
 
     [XmlElement("npc_template")]
     public List<NpcTemplate> npcs;

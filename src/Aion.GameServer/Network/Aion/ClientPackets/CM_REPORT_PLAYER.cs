@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -55,7 +54,7 @@ public class CM_REPORT_PLAYER : AionClientPacket
                 SendPacket(SM_SYSTEM_MESSAGE.STR_MSG_ACCUSE_COUNT_INFO(INFINITY));
                 break;
             default:
-                NullLoggerFactory.Instance.CreateLogger(nameof(CM_REPORT_PLAYER)).LogWarning("Unhandled report type " + reportType + " (reported player: " + playerName + ")");
+                AionLog.For(nameof(CM_REPORT_PLAYER)).LogWarning("Unhandled report type " + reportType + " (reported player: " + playerName + ")");
                 break;
         }
     }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
@@ -105,7 +104,7 @@ public class LegionDominionService
                     }
                     else
                     {
-                        NullLoggerFactory.Instance.CreateLogger(nameof(LegionDominionService)).LogWarning(
+                        AionLog.For(nameof(LegionDominionService)).LogWarning(
                             "[Legion dominion] Skipped occupy of location {LocId} for legion [id={Id}, name={Name}] due to disbanding", loc.GetLocationId(),
                             winningLegion.GetLegionId(), winningLegion.GetName());
                     }

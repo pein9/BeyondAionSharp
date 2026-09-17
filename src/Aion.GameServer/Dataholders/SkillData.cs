@@ -7,7 +7,6 @@ using Aion.GameServer.Model.Templates.Items.Enums;
 using Aion.GameServer.SkillEngine.Effects;
 using Aion.GameServer.SkillEngine.Model;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Dataholders;
 
@@ -15,7 +14,7 @@ namespace Aion.GameServer.Dataholders;
 [XmlRoot("skill_data")]
 public class SkillData
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(SkillData));
 
     // Public so XmlSerializer can populate it (JAXB read the private field via @XmlAccessorType(FIELD)).
     [XmlElement("skill_template")] public List<SkillTemplate> skillTemplates;

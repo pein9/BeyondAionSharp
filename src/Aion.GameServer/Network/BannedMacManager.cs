@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Network;
 
@@ -9,7 +8,7 @@ namespace Aion.GameServer.Network;
 public class BannedMacManager
 {
     private static readonly BannedMacManager manager = new BannedMacManager();
-    private readonly ILogger log = NullLogger.Instance;
+    private readonly ILogger log = AionLog.For(nameof(BannedMacManager));
     private readonly Dictionary<string, BannedMacEntry> bannedList = new Dictionary<string, BannedMacEntry>();
 
     public static BannedMacManager GetInstance()

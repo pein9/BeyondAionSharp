@@ -7,7 +7,6 @@ using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Team.Common.Legacy;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Model.Team;
 
@@ -20,7 +19,7 @@ namespace Aion.GameServer.Model.Team;
 /// </summary>
 public abstract class GeneralTeam : AionObject
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(GeneralTeam));
     protected readonly ConcurrentDictionary<int, ITeamMember<AionObject>> members = new();
     private readonly object teamLock = new object();
     private ITeamMember<AionObject> leader;

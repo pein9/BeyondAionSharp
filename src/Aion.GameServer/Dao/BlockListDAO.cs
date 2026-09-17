@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -17,7 +16,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class BlockListDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(BlockListDAO));
+    private static readonly ILogger log = AionLog.For(nameof(BlockListDAO));
 
     public const string LOAD_QUERY = "SELECT blocked_player, reason FROM blocks WHERE player=?";
     public const string ADD_QUERY = "INSERT INTO blocks (player, blocked_player, reason) VALUES (?, ?, ?)";

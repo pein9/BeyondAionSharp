@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.Commons.Scripting;
 using Aion.Commons.Scripting.ClassListener;
 using Aion.GameServer.Configs.Main;
@@ -33,7 +32,7 @@ public sealed class ZoneService : GameEngine
     public string Name => GetType().Name;
     public System.Threading.Tasks.ValueTask InitAsync(System.Threading.CancellationToken cancellationToken) { Init(); return System.Threading.Tasks.ValueTask.CompletedTask; }
     public System.Threading.Tasks.ValueTask ShutdownAsync(System.Threading.CancellationToken cancellationToken) => System.Threading.Tasks.ValueTask.CompletedTask;
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(ZoneService));
+    private static readonly ILogger log = AionLog.For(nameof(ZoneService));
     private readonly Dictionary<ZoneName, Type> zoneHandlers = new Dictionary<ZoneName, Type>();
     private readonly Dictionary<ZoneName, IZoneHandler> collidableHandlers = new Dictionary<ZoneName, IZoneHandler>();
     private readonly Dictionary<int, List<ZoneInfo>> zoneByMapIdMap = DataManager.ZONE_DATA.GetZones();

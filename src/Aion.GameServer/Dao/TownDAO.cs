@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model;
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class TownDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(TownDAO));
+    private static readonly ILogger log = AionLog.For(nameof(TownDAO));
 
     private const string SELECT_QUERY = "SELECT *, CAST(FLOOR(UNIX_TIMESTAMP(`level_up_date`) * 1000) AS SIGNED) AS `level_up_date_epoch_millis` FROM `towns` WHERE `race` = ?";
     private const string INSERT_QUERY = "INSERT INTO `towns`(`id`,`level`,`points`, `race`) VALUES (?,?,?,?)";

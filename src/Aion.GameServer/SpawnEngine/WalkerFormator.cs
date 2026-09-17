@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Templates.Walker;
@@ -11,7 +10,7 @@ namespace Aion.GameServer.SpawnEngine;
 /// </summary>
 public class WalkerFormator
 {
-    private static readonly ILogger Log = NullLoggerFactory.Instance.CreateLogger(nameof(WalkerFormator));
+    private static readonly ILogger Log = AionLog.For(nameof(WalkerFormator));
 
     /// <summary>
     /// If it's the instance first spawn, WalkerFormator verifies and creates groups; OrganizeAndSpawn() must be called after to speed up

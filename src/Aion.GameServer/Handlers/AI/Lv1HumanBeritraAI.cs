@@ -13,7 +13,6 @@ using Aion.GameServer.Model.Templates.Spawns;
 using Aion.GameServer.SkillEngine.Model;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Handlers.AI;
 
@@ -21,7 +20,7 @@ namespace Aion.GameServer.Handlers.AI;
 [AIName("drakenspire_lv1_human_beritra")]
 public class Lv1HumanBeritraAI : AggressiveNoLootNpcAI
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(Lv1HumanBeritraAI));
     protected readonly AtomicBoolean isActivated = new AtomicBoolean();
     private ScheduledTask spawnTask;
     private long fightStartTime;

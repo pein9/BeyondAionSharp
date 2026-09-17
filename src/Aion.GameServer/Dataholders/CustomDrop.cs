@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Xml.Serialization;
 using Aion.GameServer.Model.Drop;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Dataholders;
 
@@ -10,7 +9,7 @@ namespace Aion.GameServer.Dataholders;
 [XmlRoot("custom_drop")]
 public class CustomDrop
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(CustomDrop));
 
     [XmlElement("npc_drop")] public List<NpcDrop> npcDrop;
 

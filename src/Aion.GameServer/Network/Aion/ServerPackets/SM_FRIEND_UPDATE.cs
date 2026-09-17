@@ -7,12 +7,12 @@ using Aion.GameServer.Model;
 
 namespace Aion.GameServer.Network.Aion.ServerPackets;
 
-/// <summary>Java parity: network/aion/serverpackets/SM_FRIEND_UPDATE (Ben, Neon). Updates a player's status entry in a friendlist (name/level/class/gender/map/lastonline/note/status). FriendList.Status nested enum via alias; LoggerFactory -> NullLogger.</summary>
+/// <summary>Java parity: network/aion/serverpackets/SM_FRIEND_UPDATE (Ben, Neon). Updates a player's status entry in a friendlist (name/level/class/gender/map/lastonline/note/status). FriendList.Status nested enum via alias; LoggerFactory -> AionLog.</summary>
 public class SM_FRIEND_UPDATE : AionServerPacket
 {
     private int friendObjId;
 
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(SM_FRIEND_UPDATE));
+    private static readonly ILogger log = AionLog.For(nameof(SM_FRIEND_UPDATE));
 
     public SM_FRIEND_UPDATE(int friendObjId)
     {

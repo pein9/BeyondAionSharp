@@ -8,7 +8,6 @@ using Aion.GameServer.QuestEngine.Handlers.Models;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model;
 
 namespace Aion.GameServer.QuestEngine.Handlers.Template;
@@ -16,7 +15,7 @@ namespace Aion.GameServer.QuestEngine.Handlers.Template;
 /// <summary>Java parity: questEngine/handlers/template/ReportToMany (Hilgert, vlog, Pad, Neon). Set.addAll→UnionWith; isEmpty→Count==0; super.onDialogEvent→base; HandlerResult.fromBoolean→FromBoolean/UNKNOWN; DataManager/QuestService/NpcInfos red-tolerated.</summary>
 public class ReportToMany : AbstractTemplateQuestHandler
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(ReportToMany));
 
     private readonly int startItemId;
     private readonly HashSet<int> startNpcIds = new();

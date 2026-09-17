@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Services.Items;
@@ -11,7 +10,7 @@ namespace Aion.GameServer.Services.ToyPet;
 /// <summary>Java parity: services/toypet/PetMoodService (ATracer). Pet mood interactions (start/interact/request-present). ItemService/SM_PET red-tolerated.</summary>
 public class PetMoodService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PetMoodService));
+    private static readonly ILogger log = AionLog.For(nameof(PetMoodService));
 
     public static void CheckMood(Pet pet, int type, int shuggleEmotion)
     {

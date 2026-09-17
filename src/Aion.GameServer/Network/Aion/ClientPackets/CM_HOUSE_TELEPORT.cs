@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Model.Animations;
 using Aion.GameServer.Model.GameObjects;
@@ -81,7 +80,7 @@ public class CM_HOUSE_TELEPORT : AionClientPacket
                 }
                 break;
             default:
-                NullLoggerFactory.Instance.CreateLogger(GetType().Name).LogWarning("Unhandled house teleport actionId " + actionId);
+                AionLog.For(GetType().Name).LogWarning("Unhandled house teleport actionId " + actionId);
                 return;
         }
 

@@ -50,3 +50,10 @@ Port-Status: ported|direct-data|not-applicable|blocked
 - Do not bundle cleanup, redesign, or adjacent Java commits.
 - Language-neutral XML, SQL, and configuration may be carried directly only after C# loader and model compatibility is verified.
 - A green build alone is insufficient. Require focused regression coverage or a concrete explanation of the validation boundary.
+
+## Mechanical Java-to-C# mappings
+
+| Java | C# | Notes |
+|---|---|---|
+| `LoggerFactory.getLogger(X.class)` | `AionLog.For(nameof(X))` | The returned logger is late-bound: it resolves the current `ILoggerFactory` when each message is written. |
+| `LoggerFactory.getLogger("CATEGORY")` | `AionLog.For("CATEGORY")` | Preserve named Java categories exactly, including dedicated audit and gameplay log channels. |

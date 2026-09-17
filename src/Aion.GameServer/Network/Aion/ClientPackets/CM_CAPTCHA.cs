@@ -15,10 +15,10 @@ using SM_ATTACK_STATUS = global::Aion.GameServer.Network.Aion.ServerPackets.SmAt
 
 namespace Aion.GameServer.Network.Aion.ClientPackets;
 
-/// <summary>Java parity: network/aion/clientpackets/CM_CAPTCHA (Cura). Client captcha answer / extract-status query. Client packet idiom: ReadImpl reads, RunImpl handles; readUC/readS->ReadUC/ReadS; equalsIgnoreCase->StringComparison.OrdinalIgnoreCase; SmAttackStatus.TYPE/LOG aliased; AionConnection.State aliased; LoggerFactory->NullLogger. AionClientPacket base/SM_SYSTEM_MESSAGE red-tolerated.</summary>
+/// <summary>Java parity: network/aion/clientpackets/CM_CAPTCHA (Cura). Client captcha answer / extract-status query. Client packet idiom: ReadImpl reads, RunImpl handles; readUC/readS->ReadUC/ReadS; equalsIgnoreCase->StringComparison.OrdinalIgnoreCase; SmAttackStatus.TYPE/LOG aliased; AionConnection.State aliased; LoggerFactory->AionLog. AionClientPacket base/SM_SYSTEM_MESSAGE red-tolerated.</summary>
 public class CM_CAPTCHA : AionClientPacket
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CM_CAPTCHA));
+    private static readonly ILogger log = AionLog.For(nameof(CM_CAPTCHA));
 
     private int type;
     private int count;

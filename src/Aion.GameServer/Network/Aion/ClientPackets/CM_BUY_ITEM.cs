@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -17,7 +16,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_BUY_ITEM (orz, ATracer, Simple, xTz). Buy/sell/repurchase against private store, shop, abyss/reward shop, or merchant pet. TradeService/PrivateStoreService/RepurchaseService red-tolerated.</summary>
 public class CM_BUY_ITEM : AionClientPacket
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CM_BUY_ITEM));
+    private static readonly ILogger log = AionLog.For(nameof(CM_BUY_ITEM));
     private int sellerObjId;
     private short tradeActionId;
     private int amount;

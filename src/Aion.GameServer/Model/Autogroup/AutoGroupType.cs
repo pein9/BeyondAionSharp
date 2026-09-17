@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.Templates;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Model.Autogroup;
 
@@ -29,7 +28,7 @@ public enum AutoGroupType
 
 public static class AutoGroupTypeExtensions
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(AutoGroupType));
 
     private readonly struct Data
     {

@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -22,7 +21,7 @@ namespace Aion.GameServer.Instance.Handlers;
 /// <summary>Java parity: instance/handlers/GeneralInstanceHandler (ATracer) implements IInstanceHandler. Concrete base of all instance handlers. Methods virtual (Java overridable). slf4j "INSTANCE_LOG"→ILogger named (info/warn→LogInformation/LogWarning, parameterized {}→named placeholders); UnsupportedOperationException→NotSupportedException; getClass()→GetType(); InstanceScore&lt;?&gt;→non-generic InstanceScore. World/Item/Storage/SpawnEngine red-tolerated.</summary>
 public class GeneralInstanceHandler : IInstanceHandler
 {
-    protected static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("INSTANCE_LOG");
+    protected static readonly ILogger log = AionLog.For("INSTANCE_LOG");
     protected readonly WorldMapInstance instance;
     protected readonly int mapId;
 

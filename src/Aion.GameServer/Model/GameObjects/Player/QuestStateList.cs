@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects;
 
 namespace Aion.GameServer.Model.GameObjects.Players;
@@ -9,7 +8,7 @@ namespace Aion.GameServer.Model.GameObjects.Players;
 /// <summary>Java parity: model/gameobjects/player/QuestStateList.</summary>
 public class QuestStateList
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(QuestStateList));
     private readonly SortedDictionary<int, Aion.GameServer.QuestEngine.Model.QuestState> quests = new SortedDictionary<int, Aion.GameServer.QuestEngine.Model.QuestState>();
     private readonly HashSet<int> deletedQuests = new HashSet<int>();
 

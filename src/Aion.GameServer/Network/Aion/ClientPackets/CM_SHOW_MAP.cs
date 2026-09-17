@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Services.ConquerorAndProtectorSystem;
@@ -11,7 +10,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_SHOW_MAP (Lyahim). Map action 0 triggers conqueror/protector intruder scan. ConquerorAndProtectorService red-tolerated.</summary>
 public class CM_SHOW_MAP : AionClientPacket
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CM_SHOW_MAP));
+    private static readonly ILogger log = AionLog.For(nameof(CM_SHOW_MAP));
     private byte action;
 
     public CM_SHOW_MAP(int opcode, ISet<State> validStates)

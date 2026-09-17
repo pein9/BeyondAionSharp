@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Xml.Serialization;
 using Aion.GameServer.Model.Templates.Npcskill;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Dataholders;
 
@@ -10,7 +9,7 @@ namespace Aion.GameServer.Dataholders;
 [XmlRoot("npc_skill_templates")]
 public class NpcSkillData
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(NpcSkillData));
 
     [XmlElement("npc_skills")] public List<NpcSkillTemplates> npcSkills;
 

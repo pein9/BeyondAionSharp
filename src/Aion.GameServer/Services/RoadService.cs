@@ -2,14 +2,13 @@ using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.Road;
 using Aion.GameServer.Model.Templates.Road;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Services;
 
 /// <summary>Java parity: services/RoadService (SheppeR).</summary>
 public class RoadService
 {
-    private readonly ILogger log = NullLogger.Instance;
+    private readonly ILogger log = AionLog.For(nameof(RoadService));
 
     private static class SingletonHolder
     {

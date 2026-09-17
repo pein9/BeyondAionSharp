@@ -17,7 +17,6 @@ using Aion.GameServer.SkillEngine.Effects.Modifier;
 using Aion.GameServer.SkillEngine.Model;
 using Aion.GameServer.Utils.Stats;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.SkillEngine.Effects;
 
@@ -29,7 +28,7 @@ namespace Aion.GameServer.SkillEngine.Effects;
 /// </summary>
 public abstract class EffectTemplate
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(EffectTemplate));
 
     [XmlElement("modifiers")]
     public ActionModifiers? Modifiers;

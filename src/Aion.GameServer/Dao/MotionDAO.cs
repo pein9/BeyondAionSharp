@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -19,7 +18,7 @@ namespace Aion.GameServer.Dao;
 public class MotionDAO
 {
     // Java parity: copy-paste quirk - the Java DAO logs under PlayerEmotionListDAO.class.
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("PlayerEmotionListDAO");
+    private static readonly ILogger log = AionLog.For("PlayerEmotionListDAO");
 
     public const string INSERT_QUERY = "INSERT INTO `player_motions` (`player_id`, `motion_id`, `active`,  `time`) VALUES (?,?,?,?)";
     public const string SELECT_QUERY = "SELECT `motion_id`, `active`, `time` FROM `player_motions` WHERE `player_id`=?";

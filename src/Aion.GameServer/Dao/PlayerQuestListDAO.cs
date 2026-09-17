@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 using Aion.GameServer.Commons.Utils;
@@ -25,7 +24,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class PlayerQuestListDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PlayerQuestListDAO));
+    private static readonly ILogger log = AionLog.For(nameof(PlayerQuestListDAO));
 
     public const string SELECT_QUERY = "SELECT `quest_id`, `status`, `quest_vars`, `flags`, `complete_count`, CAST(FLOOR(UNIX_TIMESTAMP(`next_repeat_time`) * 1000) AS SIGNED) AS `next_repeat_time_epoch_millis`, `reward`, CAST(FLOOR(UNIX_TIMESTAMP(`complete_time`) * 1000) AS SIGNED) AS `complete_time_epoch_millis` FROM `player_quests` WHERE `player_id`=?";
     public const string UPDATE_QUERY = "UPDATE `player_quests` SET `status`=?, `quest_vars`=?, `flags`=?, `complete_count`=?, `next_repeat_time`=FROM_UNIXTIME(? / 1000.0), `reward`=?, `complete_time`=FROM_UNIXTIME(? / 1000.0) WHERE `player_id`=? AND `quest_id`=?";

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 
 namespace Aion.GameServer.Custom.Instance.Neuralnetwork;
@@ -9,7 +8,7 @@ namespace Aion.GameServer.Custom.Instance.Neuralnetwork;
 /// <summary>Java parity: custom/instance/neuralnetwork/PlayerModel (Jo). slf4j "CUSTOM_INSTANCE_LOG"→ILogger named category; Double learnRate/momentum→double? with null defaults; varargs double...→params double[]; forEach(method ref)→List.ForEach(lambda); currentTimeMillis→UtcNow.ToUnixTimeMilliseconds; String.format→string.Format. Rnd red-tolerated.</summary>
 public class PlayerModel
 {
-    private static readonly ILogger Log = NullLoggerFactory.Instance.CreateLogger("CUSTOM_INSTANCE_LOG");
+    private static readonly ILogger Log = AionLog.For("CUSTOM_INSTANCE_LOG");
     private const long MAX_TRAINING_TIME_IN_MS = 180000;
     public bool isReady;
     public double learnRate;

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Dataholders;
 
 namespace Aion.GameServer.Model.GameObjects;
@@ -11,7 +10,7 @@ namespace Aion.GameServer.Model.GameObjects;
 /// </summary>
 public partial class Item
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(Item));
 
     /// <summary>This method should be called ONLY from Storage class.</summary>
     public long IncreaseItemCount(long count)

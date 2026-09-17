@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Team.Alliance;
 using Aion.GameServer.Model.Team.Group;
@@ -16,7 +15,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_INVITE_TO_GROUP (Lyahim, ATracer, Simple, Neon). Invites a player to group (0) / alliance (12) / league (28) with dead/offline/deny guards. PlayerGroupService/PlayerAllianceService/LeagueService red-tolerated.</summary>
 public class CM_INVITE_TO_GROUP : AionClientPacket
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CM_INVITE_TO_GROUP));
+    private static readonly ILogger log = AionLog.For(nameof(CM_INVITE_TO_GROUP));
     private string playerName;
     private int inviteType;
 

@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Dataholders;
@@ -31,7 +30,7 @@ namespace Aion.GameServer.Services.Players;
 /// <summary>Java parity: services/player/PlayerLeaveWorldService (ATracer, Neon). leaveWorldDelayed (schedule disconnect cleanup as DESPAWN task) and leaveWorld (full logout: safe-position fallback, service onLogout hooks, dead->revive, store effects/cooldowns/lifestats, group/alliance/legion logout, release summon/pet/postman, quest onLogout, persist common data + last-online, chat server logout). Future->ScheduledTask; schedule(Runnable,ms)->Schedule(ct-lambda); new Timestamp(currentTimeMillis)->DateTimeOffset.FromUnixTimeMilliseconds(UtcNow...). Many service/DAO/model types red-tolerated.</summary>
 public class PlayerLeaveWorldService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(PlayerLeaveWorldService));
+    private static readonly ILogger log = AionLog.For(nameof(PlayerLeaveWorldService));
 
     /// <summary>
     /// Called when a player loses client connection. NOTICE: must only be called from AionConnection.OnDisconnect().

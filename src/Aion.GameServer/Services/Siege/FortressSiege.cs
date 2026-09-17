@@ -3,7 +3,6 @@ using Aion.GameServer.Model;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
@@ -33,7 +32,7 @@ namespace Aion.GameServer.Services.Siege;
 /// <summary>Java parity: services/siege/FortressSiege (SoulKeeper) extends Siege&lt;FortressLocation&gt;. Full fortress siege lifecycle: onSiegeStart (vulnerable, spawn siege npcs, boss, mercenary zones, balance buffs, faction-troop assault, balaur assault), onSiegeFinish (capture/defend, reward players + legion, outpost update, persist, quest onKill), onCapture/onDefended (race/legion transfer, announce, world buffs), faction-balance adjustment, legion GP + reward distribution. ConcurrentHashMap->ConcurrentDictionary; schedule(Runnable,ms)->Schedule ct-lambda; forEachPlayer lambda; Integer legionId->int?(??0); Math.round->(int/long)Floor(x+0.5f); Math.toRadians->x*PI/180; retainAll->IntersectWith; switch-on-locationId/race; nested FortressLocation.SiegeBuffAction. FortressLocation/Legion/SiegeRace/ItemId red-tolerated.</summary>
 public class FortressSiege : Siege<FortressLocation>
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("SIEGE_LOG");
+    private static readonly ILogger log = AionLog.For("SIEGE_LOG");
     private readonly ConcurrentDictionary<int, MercenaryLocation> activeMercenaryLocs = new ConcurrentDictionary<int, MercenaryLocation>();
     private int oldLegionId;
 

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
@@ -26,7 +25,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/TradeService (ATracer, Rama, Wakizashi, xTz, Neon). NPC buy/sell/tradein. switch enum (TradeNpcType) bare-case→enum-qualified; enum.equals→==; enum.name()→ToString(); Map<Integer,Long>→Dictionary<int,long>; Set.addAll→HashSet.UnionWith; instanceof Npc→is Npc; Math.round(float)→(int)Math.Floor(+0.5f); nested ItemService.ItemUpdatePredicate/ItemPacketService.* preserved. Templates/services/SM_* red-tolerated.</summary>
 public class TradeService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(TradeService));
+    private static readonly ILogger log = AionLog.For(nameof(TradeService));
     private static readonly TradeListData tradeListData = DataManager.TRADE_LIST_DATA;
     private static readonly GoodsListData goodsListData = DataManager.GOODSLIST_DATA;
 

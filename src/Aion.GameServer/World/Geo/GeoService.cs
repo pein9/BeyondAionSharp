@@ -12,7 +12,6 @@ using Aion.GameServer.Model.House;
 using Aion.GameServer.Model.Templates.Npc;
 using Aion.GameServer.Services;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using JMath = System.Math;
 using Aion.GameServer.Utils;
 
@@ -29,7 +28,7 @@ public class GeoService : GameEngine
     public string Name => GetType().Name;
     public System.Threading.Tasks.ValueTask InitAsync(System.Threading.CancellationToken cancellationToken) { Init(); return System.Threading.Tasks.ValueTask.CompletedTask; }
     public System.Threading.Tasks.ValueTask ShutdownAsync(System.Threading.CancellationToken cancellationToken) => System.Threading.Tasks.ValueTask.CompletedTask;
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(GeoService));
 
     private readonly Dictionary<int, GeoMap> geoMaps = new();
 

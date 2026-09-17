@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -93,7 +92,7 @@ public sealed class AbyssSkills
                 return aSkills.skills;
             }
         }
-        NullLoggerFactory.Instance.CreateLogger(nameof(AbyssSkills)).LogWarning("No abyss skills for: " + race + " " + rank);
+        AionLog.For(nameof(AbyssSkills)).LogWarning("No abyss skills for: " + race + " " + rank);
         return new int[0];
     }
 }

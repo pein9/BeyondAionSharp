@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.Actions;
@@ -26,7 +25,7 @@ namespace Aion.GameServer.Services.Craft;
 /// <summary>Java parity: services/craft/CraftService (MrPoke, sphinx, synchro2, Evil_dnk). "CRAFT_LOG" logger; finishCrafting (xp/crit/combo product, anonymous ItemUpdatePredicate->nested CraftedItemPredicate setting weapon/armor creator, craft cooldown), startCrafting (quality interval cap, CraftingTask), checkCraft (target/DP/mode/inventory/recipe/cooldown/skill/component gates), sendCancelCraft, getBonusReqItem. Map<Integer,Long>->Dictionary; int? nullables .Value; int*=float lossy->cast; currentTimeMillis->UtcNow.ToUnixTimeMilliseconds; switch quality/skillId; ItemAddType/ItemUpdateType aliases. CraftingTask/RecipeTemplate/DAO red-tolerated.</summary>
 public class CraftService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("CRAFT_LOG");
+    private static readonly ILogger log = AionLog.For("CRAFT_LOG");
 
     public static void FinishCrafting(Player player, RecipeTemplate recipetemplate, int critCount, int bonus)
     {

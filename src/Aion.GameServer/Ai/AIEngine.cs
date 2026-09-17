@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.Commons.Scripting;
 using Aion.Commons.Scripting.ClassListener;
 using Aion.GameServer.Configs.Main;
@@ -28,7 +27,7 @@ public class AIEngine : GameEngine
     public string Name => GetType().Name;
     public System.Threading.Tasks.ValueTask InitAsync(System.Threading.CancellationToken cancellationToken) { Init(); return System.Threading.Tasks.ValueTask.CompletedTask; }
     public System.Threading.Tasks.ValueTask ShutdownAsync(System.Threading.CancellationToken cancellationToken) => System.Threading.Tasks.ValueTask.CompletedTask;
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(AIEngine));
+    private static readonly ILogger log = AionLog.For(nameof(AIEngine));
     private readonly ScriptManager scriptManager = new ScriptManager();
     private readonly Dictionary<string, Type> aiHandlers = new Dictionary<string, Type>();
 

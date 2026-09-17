@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
@@ -44,7 +43,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/QuestService (Mr. Poke, vlog, bobobear, xTz, Rolandas) — all-static quest lifecycle/reward/drop logic. using static DialogAction (int consts); nested SM_QUEST_ACTION.ActionType / SM_LOOT_STATUS.Status / ItemPacketService.ItemUpdateType via aliases; HashMap questDrop→Dictionary (getOrDefault/computeIfAbsent); Timestamp/ZonedDateTime/LocalTime/DayOfWeek→DateTimeOffset + DayOfWeek-ISO trap helper; now.with(LocalTime.of(9,0))→explicit 09:00; toEpochSecond→ToUnixTimeSeconds; new Timestamp(ms)→FromUnixTimeMilliseconds; Comparator.comparingInt/streams→LINQ OrderBy; anonymous Runnable→async delegate; Future→ScheduledTask; Rnd.chance→Rnd.Chance; instanceof x→is x; log.error(msg,ex)→LogError(ex,msg). QuestTemplate/QuestEngine/DAO/enums red-tolerated.</summary>
 public sealed class QuestService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(QuestService));
+    private static readonly ILogger log = AionLog.For(nameof(QuestService));
     private static Dictionary<int, List<QuestDrop>> questDrop = new Dictionary<int, List<QuestDrop>>();
 
     private static int IsoDayValue(DayOfWeek d) => d == DayOfWeek.Sunday ? 7 : (int)d;

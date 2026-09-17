@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
@@ -20,7 +19,7 @@ namespace Aion.GameServer.Services.Siege;
 /// <summary>Java parity: services/siege/BalaurAssaultService (synchro2, Luzien, Estrayl). Schedules/tracks Balaur assaults on fortresses (1-15 min) and artifacts (3-48 h): onSiegeStart/Finish, calculateFortressAssault (vulnerability/per-map limits/influence chance), startAssault, newAssault (build FortressAssault/ArtifactAssault), spawnDredgion (assembled-npc carrier broadcast). ConcurrentHashMap->ConcurrentDictionary; map.remove(k).call->TryRemove(out)+call; Siege<?>/Siege<? extends SiegeLocation>->Siege; instanceof X x->is X x; getClass().getSimpleName()->GetType().Name; forEach->foreach; IllegalArgument->Argument. FortressAssault/FortressSiege/Influence/AssembledNpc red-tolerated.</summary>
 public class BalaurAssaultService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger("SIEGE_LOG");
+    private static readonly ILogger log = AionLog.For("SIEGE_LOG");
     private readonly ConcurrentDictionary<int, FortressAssault> fortressAssaults = new ConcurrentDictionary<int, FortressAssault>();
     private readonly ConcurrentDictionary<int, ArtifactAssault> artifactAssaults = new ConcurrentDictionary<int, ArtifactAssault>();
 

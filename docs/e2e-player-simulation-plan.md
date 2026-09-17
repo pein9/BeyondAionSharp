@@ -4,7 +4,7 @@
 gather, craft, trade, group, run instances) with no human in the loop, fast enough to run before every commit, and with
 every server error surfaced the moment it happens, attributed to the bot action that caused it.
 
-**Status.** Planning. Nothing below is implemented yet. Written 2026-09-17 against `main` at `488763e0c`;
+**Status.** Implementation in progress. Written 2026-09-17 against `main` at `488763e0c`;
 every claim in §1, §7 and the appendices was re-checked against the code by an independent review pass.
 The maintainer's decisions (§6) were applied the same day: no hosted CI and no schedulers; test runs are
 local scripts. The `docker/` compose stack stays: it is how the emulator is deployed and run, and LIVE bot
@@ -61,7 +61,7 @@ runs use their own isolated compose project.
 
 | # | Finding (verified 2026-09-17) | Why it matters | Evidence |
 |---|---|---|---|
-| B1 | **Most game-server errors go nowhere.** 298 null-logger uses in `src/Aion.GameServer` and `src/Aion.Commons` (252 static fields, the rest instance fields and inline calls): the catch around every client-packet handler, `NpcController.OnDie`, the spawn path, `QuestEngine`, `DB.cs` and 52 of 56 DAOs. Only the ~17 DI-injected loggers (for example `ThreadPoolManager`'s task failure) reach the console, and the game server writes no log file. | Neither mode can watch errors. A green run proves little. | `AionClientPacket.cs:16,26-35`; `Program.cs:132-142` |
+| B1 | **Most game-server errors still go nowhere until the bridge is bound.** P1-02 replaced all 298 source null-loggers with late-bound `AionLog` loggers, but none of the three hosts binds the bridge yet and the game server writes no log file. | Neither mode can watch errors until P1-03. A green run proves little. | `AionLog.cs`; the three `Program.cs` host builders |
 | B2 | **A periodic task dies on its first exception.** The catch in `RunFixedRateAsync` is outside the loop, and the loop is fixed-delay. Java's `RunnableWrapper` logs, keeps the schedule and runs at a fixed rate. | One bad NPC stops all NPC movement for the rest of a LIVE run; a failed gather tick locks that node. | `ThreadPoolManager.cs:143-169` |
 | B3 | **No single clock.** ~393 direct wall-clock code lines in 203 files; `SystemClock` has 5 readers; more than 20 sites compare a `SystemClock` value with a wall-clock one. | With a virtual clock ahead of wall time, casts after the first are rejected (with a fixed past epoch the 350 ms cast gate never fires instead); NPCs do not move; item use delays and other wall-clock cooldowns never expire; effect remaining times freeze. Player skill cooldowns and effect end timers already follow the virtual clock. | Mixed: `CM_CASTSPELL.cs:18,105` vs `Skill.cs:556`; `Skill.cs:472-478` vs `CreatureMoveController.cs:18,78`. Unrouted: `NpcMoveController.cs:266` |
 | B4 | **The virtual scheduler is not ready for a whole server.** It swallows exceptions from one-shot timers (`RunSynchronously` stores them). It stops running timers after 100,000 ticks **within one `Advance`** yet still moves the clock to the target, so the skipped timers run on the next `Advance` and move the clock **backwards** (the nine periodic managers alone tick 18.75/s, so one ~89-minute `Advance` hits the cap). Its handles report `GetDelay` ≤ 0 because `Deferred` stamps creation time. It is not thread-safe, and real threads bypass it (PLINQ in `MoveTaskManager`, the Quartz cron thread, `PacketProcessor`, the `NetFlusher` timer). | Failures vanish in SIM; long advances fire timers late and rewind time; a looted corpse decays immediately in SIM. | `VirtualThreadPool.cs:24,44,63-95`; `ThreadPoolManager.cs:241-246,269-275,290-294`; `DropService.cs:111-115,163` |
@@ -78,7 +78,7 @@ runs use their own isolated compose project.
 
 | Metric | Value | How measured |
 |---|---|---|
-| Null-logger uses (game server + commons) | 298 (252 static fields) | `grep -rhoE "NullLoggerFactory\.Instance\|NullLogger(<[^>]+>)?\.Instance" src/Aion.GameServer src/Aion.Commons \| wc -l` |
+| Null-logger uses (game server + commons, outside `AionLog.cs`) | 0 after P1-02 (298 before) | `pwsh -NoProfile -File scripts/ci/check-null-loggers.ps1` |
 | Direct wall-clock code lines (game server) | ~393 in 203 files; 365 exact `DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()` | `DateTime(Offset)?.(Utc)?Now`, `Environment.TickCount`, `Stopwatch`, comments excluded |
 | `ThreadPoolManager.GetInstance()` call sites | 895 | `grep -rhoE "ThreadPoolManager\.GetInstance\(\)" src` |
 | Registered client opcodes / server opcodes | 186 / 238 (same sets as `upstream/4.8`) | factory tables |
@@ -213,12 +213,12 @@ failures loud, and gets the test suite to a trustworthy green.
   before the host exists); `SetFactory(ILoggerFactory)`; an AsyncLocal override for parallel tests (same
   pattern as `SystemClock`); caller type and member captured for fingerprints. Unit tests: a logger created
   before `SetFactory` still forwards; two parallel flows stay isolated. (`1936446b3`)
-- [ ] **P1-02** [BOTH] M — Codemod every null logger to `AionLog.For(...)`. First record
+- [x] **P1-02** [BOTH] M — Codemod every null logger to `AionLog.For(...)`. First record
   `LoggerFactory.getLogger(X) → AionLog.For(...)` in `docs/upstream-porting.md` and add a ratchet script to the
   pre-commit checks in `CLAUDE.md` that fails on any new `NullLogger`/`NullLoggerFactory` under `src/`. Keep Java logger names as categories
   (`GAMECONNECTION_LOG`, `CRAFT_LOG`, `ITEM_LOG`, ...); `AuditLogger` becomes `AUDIT_LOG`. Done when the
   §1 baseline grep returns 0 outside `AionLog.cs`, the warning baseline holds and the suite is green.
-  Depends on P1-01.
+  Depends on P1-01. (`2f12235a2`)
 - [ ] **P1-03** [LIVE] S — Bind the bridge in all three `Program.cs` files after `Build()`. Add
   `AionFileLoggerProvider` to the game server so `game-server/log/server_{console,warnings,errors}.log` exist,
   plus the per-category files Java's `logback.xml` routes (`craft.log`, `exchange.log`, `mail.log`,

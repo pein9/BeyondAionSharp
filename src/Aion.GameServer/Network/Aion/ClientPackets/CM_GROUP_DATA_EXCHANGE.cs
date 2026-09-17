@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion;
@@ -49,7 +48,7 @@ public class CM_GROUP_DATA_EXCHANGE : AionClientPacket
 
         if (data.Length > MAX_EXCHANGE_DATA_SIZE)
         {
-            NullLoggerFactory.Instance.CreateLogger(nameof(CM_GROUP_DATA_EXCHANGE)).LogError(
+            AionLog.For(nameof(CM_GROUP_DATA_EXCHANGE)).LogError(
                 "Player {Player} exceeded maximum exchange data size (action: {Action}, groupType: {GroupType}, unk2: {Unk2}, bytes send: {Bytes}): \n{Hex}", player, action, groupType, unk2,
                 data.Length, NetworkUtils.ToHex(global::Aion.Commons.Nio.ByteBuffer.Wrap(data)));
             return;

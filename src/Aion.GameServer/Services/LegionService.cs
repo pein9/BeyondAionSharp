@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dao;
 using Aion.GameServer.Model;
@@ -25,7 +24,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/LegionService (Simple, cura, Source, Neon) — load/store legions and members; create/disband/recreate/invite/kick/leave, rank/permission/emblem/announcement/level/warehouse/history flows. Singleton (SingletonHolder); legionsById/legionMemberById ConcurrentDictionary; 5 anonymous RequestResponseHandler subclasses→nested classes (access outer privates); inner LegionRestrictions→nested class; computeIfAbsent no-null-store→TryGetValue+GetOrAdd guard; ByteBuffer emblem chunking→manual index over byte[]; LegionRank.values()[id]→Enum.GetValues cast; switch-expr msgId; currentTimeMillis→UtcNow.ToUnixTimeMilliseconds; new Timestamp→DateTimeOffset.FromUnixTimeMilliseconds; removeIf→RemoveAll; streams→LINQ; Pattern.matcher().matches()→IsMatch. DAO/Legion/packets/RequestResponseHandler red-tolerated.</summary>
 public class LegionService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(LegionService));
+    private static readonly ILogger log = AionLog.For(nameof(LegionService));
     private readonly ConcurrentDictionary<int, Legion> legionsById = new ConcurrentDictionary<int, Legion>();
     private readonly ConcurrentDictionary<int, LegionMember> legionMemberById = new ConcurrentDictionary<int, LegionMember>();
     private const int MAX_LEGION_LEVEL = 8;

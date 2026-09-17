@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Services;
@@ -26,7 +25,7 @@ public class CM_ATREIAN_PASSPORT : AionClientPacket
             if (GetRemainingBytes() < 8)
             {
                 if (count != -1)
-                    NullLoggerFactory.Instance.CreateLogger(nameof(CM_ATREIAN_PASSPORT)).LogWarning("Received invalid passport count " + count + " with only data for " + i
+                    AionLog.For(nameof(CM_ATREIAN_PASSPORT)).LogWarning("Received invalid passport count " + count + " with only data for " + i
                         + " passports from " + GetConnection().GetActivePlayer() + "\nCurrent passport data: " + passports);
                 break;
             }

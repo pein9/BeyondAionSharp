@@ -4,7 +4,6 @@ using System.Xml.Serialization;
 using Aion.GameServer.Model.Templates.Walker;
 using Aion.GameServer.Utils.Xml;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.GameServer.Dataholders;
 
@@ -12,7 +11,7 @@ namespace Aion.GameServer.Dataholders;
 [XmlRoot("npc_walker")]
 public class WalkerData
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(WalkerData));
 
     [XmlElement("walker_template")]
     public List<WalkerTemplate> walkerlist;

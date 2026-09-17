@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects;
 
 namespace Aion.GameServer.Model.Items.Storage;
@@ -12,7 +11,7 @@ namespace Aion.GameServer.Model.Items.Storage;
 /// </summary>
 public abstract class Storage : IStorage
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For("ITEM_LOG");
     private ItemStorage itemStorage;
     private Item kinahItem;
     private StorageType storageType;

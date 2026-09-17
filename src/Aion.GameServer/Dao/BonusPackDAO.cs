@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 
@@ -13,7 +12,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class BonusPackDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(BonusPackDAO));
+    private static readonly ILogger log = AionLog.For(nameof(BonusPackDAO));
 
     private const string UPDATE_QUERY = "REPLACE INTO `bonus_packs` (`account_id`, `receiving_player`) VALUES (?,?)";
     private const string SELECT_QUERY = "SELECT `receiving_player` FROM `bonus_packs` WHERE `account_id`=?";

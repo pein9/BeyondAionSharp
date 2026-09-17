@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using Aion.Commons.Database;
 
@@ -14,7 +13,7 @@ namespace Aion.GameServer.Dao;
 /// </summary>
 public class ServerVariablesDAO
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(ServerVariablesDAO));
+    private static readonly ILogger log = AionLog.For(nameof(ServerVariablesDAO));
 
     public static int? LoadInt(string var)
     {

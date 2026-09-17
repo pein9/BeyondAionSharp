@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Services.Findgroup;
@@ -112,7 +111,7 @@ public class CM_FIND_GROUP : AionClientPacket
                 bannedPlayerId = ReadD();
                 break;
             default:
-                NullLoggerFactory.Instance.CreateLogger(nameof(CM_FIND_GROUP)).LogWarning("Unknown find group action " + action);
+                AionLog.For(nameof(CM_FIND_GROUP)).LogWarning("Unknown find group action " + action);
                 break;
         }
     }

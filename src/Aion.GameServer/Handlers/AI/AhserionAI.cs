@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Ai;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Controllers.Attack;
@@ -24,7 +23,7 @@ namespace Aion.GameServer.Handlers.AI;
 [AIName("ahserion")]
 public class AhserionAI : AggressiveNpcAI
 {
-    private static readonly ILogger log = NullLogger.Instance;
+    private static readonly ILogger log = AionLog.For(nameof(AhserionAI));
 
     public AhserionAI(Npc owner) : base(owner)
     {

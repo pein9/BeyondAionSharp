@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model.Craft;
 using Aion.GameServer.Model.GameObjects;
@@ -15,7 +14,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/craft/CraftSkillUpdateService (MrPoke, sphinx, Imaginary, Pad). Java singleton; Map&lt;Integer,Profession&gt;→Dictionary; getProfessionByNpc null→Profession?; RequestResponseHandler anonymous class→nested subclass; getUpgradeCost Integer→int?.</summary>
 public sealed class CraftSkillUpdateService
 {
-    private static readonly ILogger log = NullLoggerFactory.Instance.CreateLogger(nameof(CraftSkillUpdateService));
+    private static readonly ILogger log = AionLog.For(nameof(CraftSkillUpdateService));
 
     // Java parity: getInstance() singleton.
     public static CraftSkillUpdateService GetInstance() => SingletonHolder.Instance;

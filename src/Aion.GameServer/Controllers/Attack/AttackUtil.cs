@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
@@ -105,7 +104,7 @@ public class AttackUtil
 
         int maxListIndex = Math.Min(attackResultList.Count, 2);
         if (maxListIndex < attackResultList.Count) // should never happen but log just in case
-            NullLoggerFactory.Instance.CreateLogger(nameof(AttackUtil)).LogWarning("attackResultList has more elements than expected (" + attackResultList.Count + ")");
+            AionLog.For(nameof(AttackUtil)).LogWarning("attackResultList has more elements than expected (" + attackResultList.Count + ")");
         for (int i = 0; i < maxListIndex; i++)
         {
             float damageMultiplier = i == 0 ? mainMultiplier : offMultiplier;

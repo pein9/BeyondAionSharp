@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using System.Xml.Serialization;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -34,7 +33,7 @@ public class PetOrderUseUltraSkillEffect : EffectTemplate
         SkillTemplate skillTemplate = DataManager.SKILL_DATA.GetSkillTemplate(petUseSkillId);
         if (skillTemplate == null)
         {
-            NullLoggerFactory.Instance.CreateLogger(nameof(PetOrderUseUltraSkillEffect))
+            AionLog.For(nameof(PetOrderUseUltraSkillEffect))
                 .LogWarning("Couldn't find summon skill template for ID {PetUseSkillId} (summon order skill ID {OrderSkillId})", petUseSkillId, orderSkillId);
             return;
         }
