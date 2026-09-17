@@ -8,11 +8,6 @@ namespace Aion.GameServer.Utils.Time.Gametime;
 /// Java's private enum Month has 12 members each with an int days value and
 /// instance/static methods. Ported as a private static helper class containing
 /// a MonthKind enum plus the same methods (C# enums cannot carry fields or methods).
-///
-/// onHourChange() omits calls to TemporarySpawnEngine.onHourChange() and
-/// WeatherService.checkWeathersTime() — both are upward observer callbacks that
-/// belong to layers not yet ported. Tracked as backlog items to wire once those
-/// services are faithfully ported.
 /// </remarks>
 public class GameTime : ICloneable
 {
@@ -24,6 +19,8 @@ public class GameTime : ICloneable
 
     private int _gameTime;
     private DayTime _dayTime;
+    private readonly Action? _hourChanged;
+    private readonly Action? _clockDayTimeChanged;
 
     // Java parity: private enum Month — in-game calendar with 12 months of 31 days each.
     // C# enums cannot carry fields or instance methods; modelled as a static helper class
@@ -49,11 +46,22 @@ public class GameTime : ICloneable
 
     // Java parity: GameTime(Integer time)
     public GameTime(int? time)
+        : this(time, null, null)
+    {
+    }
+
+    /// <summary>
+    /// Infrastructure seam for Java's upward callbacks to TemporarySpawnEngine and WeatherService. Public clocks
+    /// and clones remain standalone values; GameTimeService supplies the callbacks for its live clock.
+    /// </summary>
+    internal GameTime(int? time, Action? hourChanged, Action? clockDayTimeChanged)
     {
         if (time.HasValue && time.Value < 0)
             throw new ArgumentException("Time must be >= 0", nameof(time));
         _gameTime = time ?? 0;
         _dayTime = CalculateDayTime();
+        _hourChanged = hourChanged;
+        _clockDayTimeChanged = clockDayTimeChanged;
     }
 
     // Java parity: getTime()
@@ -128,15 +136,13 @@ public class GameTime : ICloneable
     // Java parity: getMinute() — 0-59
     public int GetMinute() => _gameTime % MinutesInHour;
 
-    // Java parity: onHourChange(boolean changedByClock)
-    // Upward observer callbacks omitted as backlog:
-    //   TODO-backlog: TemporarySpawnEngine.onHourChange() — wire when TemporarySpawnEngine is ported
-    //   TODO-backlog: WeatherService.getInstance().checkWeathersTime() — wire when WeatherService is ported
-    //   (changedByClock guards the weather call; preserved here for when it's wired)
+    // Java parity: onHourChange(boolean changedByClock). Temporary spawns update first on every hour boundary;
+    // weather updates only when the daytime changed through the natural one-minute clock tick.
     private void OnHourChange(bool changedByClock)
     {
-        SetDayTime(CalculateDayTime());
-        _ = changedByClock; // suppress unused-param warning; used by weather call (backlog)
+        _hourChanged?.Invoke();
+        if (SetDayTime(CalculateDayTime()) && changedByClock)
+            _clockDayTimeChanged?.Invoke();
     }
 
     // Java parity: calculateDayTime()

@@ -27,12 +27,14 @@ public sealed class GameTimeService : GameEngine
 	private readonly TimeSpan _savePeriod;
 	private int _isInitialized;
 	private int _isStarted;
-	private int _gameMinutes;
+	private GameTime _gameTime;
 	private Task? _clockTask;
 	private Task? _saveTask;
 	private Func<AionServerPacket, CancellationToken, Task<int>>? _broadcastToWorld;
 
-	public event Func<int, CancellationToken, ValueTask>? HourChanged;
+	public event Action? HourChanged;
+
+	public event Action? ClockDayTimeChanged;
 
 	public GameTimeService(ILogger<GameTimeService> logger, ThreadPoolManager threadPoolManager)
 		: this(logger, threadPoolManager, null, DefaultTickDelay, DefaultTickPeriod, DefaultSaveDelay, DefaultSavePeriod)
@@ -68,6 +70,7 @@ public sealed class GameTimeService : GameEngine
 		_tickPeriod = tickPeriod;
 		_saveDelay = saveDelay;
 		_savePeriod = savePeriod;
+		_gameTime = CreateGameTime(null);
 		_instance = this; // Java parity: SingletonHolder registers on construction
 	}
 
@@ -75,16 +78,15 @@ public sealed class GameTimeService : GameEngine
 	public static GameTimeService GetInstance() =>
 		_instance ?? throw new InvalidOperationException("GameTimeService has not been initialized yet.");
 
-	// Java parity: GameTimeService.getGameTime() — snapshot of current game-minutes.
-	// Java keeps a mutable GameTime object and advances it via addMinutes; C# stores raw minutes
-	// and wraps on demand. Callers that need current hour/dayTime get an accurate snapshot.
-	public GameTime GetGameTime() => new(GameMinutes);
+	// Java parity: GameTimeService.getGameTime() returns the live mutable clock. The //time command mutates this
+	// object directly, and GameTime's callbacks preserve the temporary-spawn/weather behavior for that mutation.
+	public GameTime GetGameTime() => Volatile.Read(ref _gameTime);
 
 	public string Name => "GameTimeService";
 
 	public bool IsStarted => Volatile.Read(ref _isStarted) != 0;
 
-	public int GameMinutes => Volatile.Read(ref _gameMinutes);
+	public int GameMinutes => GetGameTime().GetTime();
 
 	public void SetWorldBroadcaster(Func<AionServerPacket, CancellationToken, Task<int>> broadcastToWorld)
 	{
@@ -100,8 +102,7 @@ public sealed class GameTimeService : GameEngine
 			var persistedTime = _serverVariablesRepository == null
 				? null
 				: await _serverVariablesRepository.LoadIntAsync(GameTimeVariable, cancellationToken);
-			if (persistedTime.HasValue)
-				Volatile.Write(ref _gameMinutes, persistedTime.Value);
+			Volatile.Write(ref _gameTime, CreateGameTime(persistedTime));
 			_logger.LogInformation("Initialized GameTime");
 		}
 	}
@@ -113,11 +114,10 @@ public sealed class GameTimeService : GameEngine
 			throw new InvalidOperationException("Tried to start game time twice.");
 
 		_clockTask = _threadPoolManager.ScheduleAtFixedRate(
-			async cancellationToken =>
+			_ =>
 			{
-				var gameMinutes = Interlocked.Increment(ref _gameMinutes);
-				if (gameMinutes % 60 == 0)
-					await NotifyHourChangedAsync(gameMinutes, cancellationToken);
+				GetGameTime().AddMinutes(1);
+				return ValueTask.CompletedTask;
 			},
 			_tickDelay,
 			_tickPeriod);
@@ -157,14 +157,8 @@ public sealed class GameTimeService : GameEngine
 		await SaveGameTimeAsync(cancellationToken);
 	}
 
-	private async ValueTask NotifyHourChangedAsync(int gameMinutes, CancellationToken cancellationToken)
-	{
-		// Java parity: utils/time/gametime/GameTime.onHourChange -> TemporarySpawnEngine.onHourChange.
-		var handlers = HourChanged;
-		if (handlers == null)
-			return;
-
-		foreach (var handler in handlers.GetInvocationList().Cast<Func<int, CancellationToken, ValueTask>>())
-			await handler(gameMinutes, cancellationToken);
-	}
+	private GameTime CreateGameTime(int? minutes) => new(
+		minutes,
+		() => HourChanged?.Invoke(),
+		() => ClockDayTimeChanged?.Invoke());
 }

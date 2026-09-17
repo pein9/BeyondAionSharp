@@ -7,6 +7,7 @@ using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Services;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.IdFactory;
+using Aion.GameServer.Utils.Time.Gametime;
 using Microsoft.Extensions.Logging.Abstractions;
 using GameWorld = Aion.GameServer.World.World;
 
@@ -158,6 +159,30 @@ public sealed class GameServerBootstrapTests
 		Assert.True(repository.StoredValues.TryGetValue("time", out var storedTime));
 		Assert.True(int.Parse(storedTime!) >= 42);
 		Assert.NotNull(lastBroadcast);
+	}
+
+	[Fact]
+	public async Task GameTimeServiceReturnsLiveClockAndPreservesJavaHourCallbackOrdering()
+	{
+		await using var threadPoolManager = new ThreadPoolManager(NullLogger<ThreadPoolManager>.Instance);
+		var repository = new TrackingServerVariablesRepository { LoadedInt = 239 }; // 03:59, just before morning
+		var gameTime = new GameTimeService(NullLogger<GameTimeService>.Instance, threadPoolManager, repository);
+		var callbacks = new List<string>();
+		gameTime.HourChanged += () => callbacks.Add("temporary-spawns");
+		gameTime.ClockDayTimeChanged += () => callbacks.Add("weather");
+		await gameTime.InitAsync(CancellationToken.None);
+
+		GameTime liveClock = gameTime.GetGameTime();
+		liveClock.AddMinutes(1);
+
+		Assert.Equal(240, gameTime.GameMinutes);
+		Assert.Same(liveClock, gameTime.GetGameTime());
+		Assert.Equal(["temporary-spawns", "weather"], callbacks);
+
+		callbacks.Clear();
+		liveClock.AddMinutes(300); // admin-style jump to 09:00: spawns refresh, weather does not
+		Assert.Equal(540, gameTime.GameMinutes);
+		Assert.Equal(["temporary-spawns"], callbacks);
 	}
 
 	[Fact]

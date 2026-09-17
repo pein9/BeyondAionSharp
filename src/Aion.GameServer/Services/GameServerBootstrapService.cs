@@ -27,6 +27,7 @@ public sealed class GameServerBootstrapService : IHostedService
 	private readonly GameServerRuntimeContext _runtimeContext;
 	private readonly ILogger<GameServerBootstrapService> _logger;
 	private bool _started;
+	private bool _gameTimeConsumersWired;
 
 	public GameServerBootstrapService(
 		IStaticDataLoader staticDataLoader,
@@ -366,6 +367,21 @@ public sealed class GameServerBootstrapService : IHostedService
 		// weather arrays from MAP_WEATHER_DATA (GetWeather returns null on absent map => guarded skip), seeds the
 		// next weather from the current GameTime. Dep-clean: GameTimeService is already initialized (InitAsync above).
 		Aion.GameServer.Services.WeatherService.GetInstance();
+
+		// Java parity: GameTime.onHourChange (lines 150-154) refreshes temporary spawns on every hour and asks
+		// WeatherService to rotate only when a natural one-minute tick changes daytime. GameTimeService's periodic
+		// save task also broadcasts SM_GAME_TIME through PacketSendUtility (GameTimeService.java:54-56).
+		if (!_gameTimeConsumersWired)
+		{
+			_gameTimeService.HourChanged += Aion.GameServer.SpawnEngine.TemporarySpawnEngine.OnHourChange;
+			_gameTimeService.ClockDayTimeChanged += Aion.GameServer.Services.WeatherService.GetInstance().CheckWeathersTime;
+			_gameTimeService.SetWorldBroadcaster((packet, _) =>
+			{
+				PacketSendUtility.BroadcastToWorld(packet);
+				return Task.FromResult(0);
+			});
+			_gameTimeConsumersWired = true;
+		}
 
 		// BrokerService.getInstance() (GameServer.main:153): ctor InitBrokerService() loads broker items via
 		// BrokerDAO.LoadBroker (DB.Select try/catch-guarded => empty no-DB) into per-race maps, then schedules the

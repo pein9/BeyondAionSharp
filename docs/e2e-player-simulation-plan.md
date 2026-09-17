@@ -721,10 +721,15 @@ Production-neutral: `SystemClock`'s default is the same call Java makes (`System
   execution-context-scoped deterministic `CronService` keeps that test isolated from the process singleton.
   A fault-injection task preserves Java's no-`finally` semaphore behavior and proves the next factory is never
   entered after its startup body throws. Commit: `01b2c8cff`.
-- [ ] **P4-09** [BOTH] S — Parity fix: wire game-hour consumers. `GameTimeService.HourChanged` has no subscribers,
+- [x] **P4-09** [BOTH] S — Parity fix: wire game-hour consumers. `GameTimeService.HourChanged` has no subscribers,
   `TemporarySpawnEngine.OnHourChange` and `WeatherService.CheckWeathersTime` have no callers, and
   `SetWorldBroadcaster` is only called from a test, so day/night spawns, weather changes and the periodic
-  `SM_GAME_TIME` never happen (Java `GameTime.java:150-154`, `GameTimeService.java:54-56`).
+  `SM_GAME_TIME` never happen (Java `GameTime.java:150-154`, `GameTimeService.java:54-56`). `GameTimeService`
+  now owns and returns Java's live mutable `GameTime`, whose callback seam preserves the exact order: refresh
+  temporary spawns at every reached hour boundary, then schedule weather only when a natural one-minute tick
+  changes daytime. Bootstrap wires both consumers once and supplies the production `PacketSendUtility` world
+  broadcaster. The live clock also fixes the adjacent `//time` no-op divergence; a regression test pins live
+  mutation, callback order and the admin-jump weather guard. Commit: `8df3cde9f`.
 - [ ] **P4-10** [BOTH] S — `PatternAi.cs:1374` reads `Environment.TickCount64` while its timer runs on the pool.
   Route it through `SystemClock`, and record the change in `docs/retail-ai-fidelity.md` (retail-AI code).
 
@@ -1191,7 +1196,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 12 | Server never logs "Game server started in N seconds" | `GameServer.java:186` | Resolved by P3-04 (`2390c1461`) |
 | 13 | Mixed `SystemClock`/wall-clock comparisons (C#-only; harmless in production) | one clock throughout | P4-01 |
 | 14 | `SpawnGroup` picks a random spot with `Random.Shared` (same distribution; unreachable by the seed) | `SpawnGroup.java:166` `Rnd.get(list)` | Resolved by P4-05 (`7ccce49bc`) |
-| 15 | Game-hour consumers, weather check and `SM_GAME_TIME` broadcast unwired | `GameTime.java:150-154`, `GameTimeService.java:54-56` | P4-09 |
+| 15 | Game-hour consumers, weather check and `SM_GAME_TIME` broadcast unwired | `GameTime.java:150-154`, `GameTimeService.java:54-56` | Resolved by P4-09 (`8df3cde9f`) |
 | 16 | `Config.Load` runs after static data, world maps and game time are initialized | `GameServer.java:219` | P5-03 |
 | 17 | `SM_MOVE` player/summon branch never taken | `SM_MOVE.java:36` `instanceof PlayableMoveController` | P6-01 |
 | 18 | `QuestSpawnAnalyzer` scans Java source folders and aborts (P1-12 baseline fingerprint `2c206aaf`, count 1) | `QuestSpawnAnalyzer.java:101-110` (Java ships those folders) | P7-01 |
@@ -1204,6 +1209,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 25 | The DB-backed full-boot test pre-registers test AIs before `StartAsync` initializes the real AI engine, and the assembly-wide `SiegeServiceTestInit` can construct the process-global siege singleton against empty fixture data; in isolation this produces duplicate-AI registration before boot or a stale-location NRE in the separately asserted deferred boot tail | n/a (C# test-process defect; production `StartAsync` completed for P0-03 after bypassing the test AI preload) | P1-12 / P5-12 |
 | 26 | Concurrent chat clients can create separate channels for the same identifier, so neither receives the other's message | `ChatChannels.java:52-79` executes the scan/add path on the single NIO read/write dispatcher | Resolved by P3-09 (`efddb7a7b`) |
 | 27 | Character-list equipment loading throws for every visible item without a godstone because the LEFT JOIN's null `godstone_item_id` is read with `GetInt32` | `InventoryDAO.java:97` uses `ResultSet.getInt`, whose SQL-null value is `0` | Resolved by P3-09 (`efddb7a7b`) |
+| 28 | `GameTimeService.GetGameTime` returned a detached snapshot, so the ported `//time` command changed only that temporary object and server time stayed unchanged | `GameTimeService.java:31-33` returns its mutable field; `Time.java:55-69` mutates it directly | Resolved by P4-09 (`8df3cde9f`) |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 
