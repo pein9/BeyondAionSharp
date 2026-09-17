@@ -885,12 +885,22 @@ replays the same seeded trace.
   diagnostics and contract metadata under the guarded run directory on both success and failure. Its Docker-only
   validation run `p514-dev-20260917` passed S0 and L0 in 37.3 s and left no simulation database behind;
   `CLAUDE.md` now requires it before gameplay-change commits. (`ac9ad1078`)
-- [ ] **P5-15** [SIM] S — Add the SIM Full tier (sharded) to `scripts/e2e/run-full.ps1`.
+- [x] **P5-15** [SIM] S — Add the SIM Full tier (sharded) to `scripts/e2e/run-full.ps1`. The combined runner now
+  resolves fixed process keys from the cumulative SIM Full manifest, gives each process its own Docker database,
+  cache, transcript, TRX, console log and run metadata, then runs the existing LIVE L0 and canary legs. The SIM
+  scenario host reads the tier/process/shard contract and checks boot history in the first scenario of every
+  process. L0 also emits its received-packet artifact; the Full run compares normalized per-bot SM multisets with
+  LIVE, excluding login/auth setup, `SM_PONG`, LIVE-only chat setup, unsolicited known-list refreshes and decoded
+  broadcasts about other object ids. Docker-only run `p515-full2-20260917` passed two SIM shards (S0 and L0), LIVE
+  L0, the packet-multiset gate and all canaries, then removed every throwaway database and compose stack.
+  (`898a2d0ab`)
 
 **Done when:** L0's scenario body (boot excluded, boot time recorded in §1) finishes in under 10 s wall time in
 SIM; the multiset of SM types answering the bot's own game-server CMs matches LIVE's, excluding login-server
 packets, `SM_PONG` and broadcasts about other objects; the self-test proves a swallowed error fails the run;
-`run-fast.ps1` passes.
+`run-fast.ps1` passes. **Done 2026-09-17:** P5-13's Docker run measured the combined S0/L0 test body at 1 s;
+P5-11 pins swallowed scheduler and packet-read failures; `p515-fast-regression-20260917` passed the Fast entry
+point; and `p515-full2-20260917/l0-packet-parity.json` recorded the normalized SIM/LIVE SM multiset match.
 
 ### Phase 6 — Movement and combat
 

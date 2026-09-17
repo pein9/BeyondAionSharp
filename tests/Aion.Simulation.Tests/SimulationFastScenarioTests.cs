@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Aion.Bots.Api;
 using Aion.Bots.Protocol;
 using Aion.Bots.Scenarios;
@@ -22,39 +23,48 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 		Aion.GameServer.TestKit.RealStaticData.RepoRoot(), "parity-artifacts", "e2e", "log-allowlist.json");
 
 	[SkippableFact]
-	public async Task FastManifestScenariosRunInFixedOrder()
+	public async Task ManifestScenariosRunInFixedProcessOrder()
 	{
 		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
+		ScenarioTier tier = ReadTier();
+		int shardCount = ReadPositiveInt("AION_SIM_SHARD_COUNT", 1);
+		string processKey = Environment.GetEnvironmentVariable("AION_SIM_PROCESS_KEY") ?? "shard-00";
 		ScenarioManifest manifest = ScenarioManifest.Load(ScenarioManifest.FindDefaultPath());
 		IReadOnlyList<ScenarioExecution> plan = ScenarioIsolationPlanner.Plan(
 			manifest.Scenarios,
 			ScenarioMode.Sim,
-			ScenarioTier.Fast,
-			shardCount: 1,
+			tier,
+			shardCount,
 			_ => TimeSpan.Zero);
+		ScenarioExecution[] processPlan = plan
+			.Where(execution => string.Equals(execution.ProcessKey, processKey, StringComparison.Ordinal))
+			.ToArray();
 
-		Assert.Equal(["S0", "L0"], plan.Select(execution => execution.Scenario.Id));
+		Assert.NotEmpty(processPlan);
+		Assert.Equal(processPlan.OrderBy(execution => execution.Order), processPlan);
 		var driver = new SimulationDriver(fixture.Clock);
-		foreach (ScenarioExecution execution in plan)
+		bool includeHistory = true;
+		foreach (ScenarioExecution execution in processPlan)
 		{
 			await driver.PrepareScenarioAsync(execution);
 			switch (execution.Scenario.Id)
 			{
 				case "S0":
-					await RunS0Async(execution.Scenario);
+					await RunS0Async(execution.Scenario, includeHistory);
 					break;
 				case "L0":
-					await RunL0Async(execution);
+					await RunL0Async(execution, includeHistory);
 					break;
 				default:
-					throw new InvalidOperationException($"Fast SIM scenario '{execution.Scenario.Id}' has no runner.");
+					throw new InvalidOperationException($"SIM scenario '{execution.Scenario.Id}' has no runner.");
 			}
+			includeHistory = false;
 		}
 	}
 
-	private async Task RunS0Async(ScenarioDefinition scenario)
+	private async Task RunS0Async(ScenarioDefinition scenario, bool includeHistory)
 	{
-		using var policy = NewPolicy(scenario.Id, includeHistory: true);
+		using var policy = NewPolicy(scenario.Id, includeHistory);
 		Assert.True(fixture.Bootstrap.IsStarted);
 		Assert.True(fixture.World.IsInitialized);
 		Assert.True(fixture.World.ObjectCount > 0);
@@ -79,9 +89,9 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 		return stream;
 	}
 
-	private async Task RunL0Async(ScenarioExecution execution)
+	private async Task RunL0Async(ScenarioExecution execution, bool includeHistory)
 	{
-		using var policy = NewPolicy(execution.Scenario.Id, includeHistory: false);
+		using var policy = NewPolicy(execution.Scenario.Id, includeHistory);
 		var actors = Enumerable.Range(1, execution.Scenario.Bots)
 			.Select(index => new SimulationL0Actor(fixture, policy, index))
 			.ToArray();
@@ -89,6 +99,7 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 		try
 		{
 			await L0Scenario.RunAsync(actors, execution.Channel, includeChat: false);
+			WriteL0PacketArtifact(actors);
 			TimeSpan elapsed = Stopwatch.GetElapsedTime(started);
 			Assert.True(elapsed < SimulationDriver.DefaultWallTimeBudget,
 				$"L0 scenario body took {elapsed.TotalSeconds:F3}s; budget is {SimulationDriver.DefaultWallTimeBudget.TotalSeconds:F0}s.");
@@ -101,6 +112,21 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 		}
 	}
 
+	private static void WriteL0PacketArtifact(IReadOnlyList<SimulationL0Actor> actors)
+	{
+		string? runDirectory = Environment.GetEnvironmentVariable("AION_E2E_RUN_DIR");
+		if (string.IsNullOrWhiteSpace(runDirectory))
+			return;
+		string path = Path.Combine(Path.GetFullPath(runDirectory), "l0-packets.json");
+		var artifact = actors.Select(actor => new
+		{
+			bot = actor.Bot,
+			characterId = actor.Session.CharacterId,
+			packets = actor.Session.PacketObservations,
+		});
+		File.WriteAllText(path, JsonSerializer.Serialize(artifact, new JsonSerializerOptions { WriteIndented = true }) + "\n");
+	}
+
 	private SimulationLogPolicy NewPolicy(string scenario, bool includeHistory) => new(
 		"sim-fast",
 		scenario,
@@ -109,6 +135,18 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 		captureProvider: fixture.LogCapture,
 		loggerFactory: fixture.LoggerFactory,
 		includeHistory: includeHistory);
+
+	private static ScenarioTier ReadTier() =>
+		Enum.TryParse(Environment.GetEnvironmentVariable("AION_SIM_TIER") ?? nameof(ScenarioTier.Fast),
+			ignoreCase: true,
+			out ScenarioTier tier) && tier is ScenarioTier.Fast or ScenarioTier.Full
+			? tier
+			: throw new InvalidOperationException("AION_SIM_TIER must be Fast or Full.");
+
+	private static int ReadPositiveInt(string name, int defaultValue) =>
+		int.TryParse(Environment.GetEnvironmentVariable(name) ?? defaultValue.ToString(), out int value) && value > 0
+			? value
+			: throw new InvalidOperationException($"{name} must be a positive integer.");
 
 	private sealed class SimulationL0Actor : IL0ScenarioActor, IAsyncDisposable
 	{
@@ -132,7 +170,7 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 			CancellationToken cancellationToken)
 		{
 			string step = $"s{++stepNumber:D2}";
-			Session.BeginStep(step);
+			Session.BeginStep(step, action);
 			using (policy.BeginBotStep(Bot, step))
 				await operation(Session, cancellationToken);
 		}
@@ -154,6 +192,7 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 		private IAsyncEnumerator<DecodedBotServerPacket>? packets;
 		private AionConnection.State state = AionConnection.State.CONNECTED;
 		private string currentStep = "startup";
+		private string currentAction = "startup";
 		private int characterId;
 		private PersistedPosition? expectedPosition;
 
@@ -175,8 +214,14 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 		}
 
 		public List<string> PacketTypes { get; } = [];
+		public List<SimulationPacketObservation> PacketObservations { get; } = [];
+		public int CharacterId => characterId;
 
-		public void BeginStep(string step) => currentStep = step;
+		public void BeginStep(string step, string action)
+		{
+			currentStep = step;
+			currentAction = action;
+		}
 
 		public async Task LoginAndAuthenticateAsync(CancellationToken cancellationToken)
 		{
@@ -371,6 +416,8 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 				throw new EndOfStreamException("Simulation game transport ended before the expected packet.");
 			DecodedBotServerPacket packet = active.Current;
 			PacketTypes.Add(packet.PacketType.Name);
+			int? objectId = packet.Fields.TryGetValue("objectId", out object? value) && value is int id ? id : null;
+			PacketObservations.Add(new SimulationPacketObservation(currentAction, packet.PacketType.Name, objectId));
 			policy.ObservePacket(bot, currentStep, packet);
 			return packet;
 		}
@@ -405,5 +452,7 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 		}
 
 		private sealed record PersistedPosition(int MapId, float X, float Y, float Z);
+
+		public sealed record SimulationPacketObservation(string Action, string Packet, int? ObjectId);
 	}
 }

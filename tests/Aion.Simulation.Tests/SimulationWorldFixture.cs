@@ -135,8 +135,8 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 
 			IReadOnlyDictionary<int, SimulationLoginAccount> accounts = new Dictionary<int, SimulationLoginAccount>
 			{
-				[1] = new("sim-player-1", AccessLevel: 0, Membership: 1),
-				[2] = new("sim-player-2", AccessLevel: 0, Membership: 1),
+				[1] = new("sim-player-1", AccessLevel: 0),
+				[2] = new("sim-player-2", AccessLevel: 0),
 			};
 			services.RemoveAll<LoginServerFacade>();
 			services.AddSingleton(
