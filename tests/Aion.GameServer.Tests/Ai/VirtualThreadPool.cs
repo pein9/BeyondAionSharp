@@ -25,10 +25,12 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 {
 	private const int MaxTicksPerAdvance = 100_000;
 	private static readonly ILogger Log = AionLog.For(nameof(VirtualThreadPool));
-	private readonly List<Entry> _entries = new();
+	private readonly PriorityQueue<Entry, (long DueMillis, long Sequence)> _entries = new();
+	private readonly object _queueGate = new();
 	private readonly List<VirtualThreadPoolFault> _faults = new();
 	private long _nowMillis;
 	private long _sequence;
+	private int _advanceOwnerThreadId;
 
 	public VirtualThreadPool(bool strict = false)
 		: base(NullLogger<ThreadPoolManager>.Instance)
@@ -84,11 +86,15 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 		TimeSpan delay,
 		CancellationToken cancellationToken = default)
 	{
-		// One-shot: the handle IS the body, so running it flips IsDone() exactly like the real pool.
-		long dueMillis = _nowMillis + ToMillis(delay);
-		ScheduledTask handle = Deferred(() => Run(action), ToVirtualTime(dueMillis));
-		_entries.Add(new Entry(dueMillis, null, handle, action, _sequence++));
-		return handle;
+		lock (_queueGate)
+		{
+			AssertOwnerThreadWhileAdvancing();
+			// One-shot: the handle IS the body, so running it flips IsDone() exactly like the real pool.
+			long dueMillis = _nowMillis + ToMillis(delay);
+			ScheduledTask handle = Deferred(() => Run(action), ToVirtualTime(dueMillis));
+			EnqueueLocked(new Entry(dueMillis, null, handle, action, ++_sequence));
+			return handle;
+		}
 	}
 
 	public override ScheduledTask ScheduleAtFixedRateTask(
@@ -97,67 +103,85 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 		TimeSpan period,
 		CancellationToken cancellationToken = default)
 	{
-		// Repeating: the handle's own body stays unrun forever so IsDone() reports false for the life of the
-		// timer (a repeating pool task is never "done"); cancellation is observed through IsCancelled instead.
-		long dueMillis = _nowMillis + ToMillis(initialDelay);
-		ScheduledTask handle = Deferred(() => { }, ToVirtualTime(dueMillis));
-		_entries.Add(new Entry(dueMillis, ToMillis(period), handle, action, _sequence++));
-		return handle;
+		lock (_queueGate)
+		{
+			AssertOwnerThreadWhileAdvancing();
+			// Repeating: the handle's own body stays unrun forever so IsDone() reports false for the life of the
+			// timer (a repeating pool task is never "done"); cancellation is observed through IsCancelled instead.
+			long dueMillis = _nowMillis + ToMillis(initialDelay);
+			ScheduledTask handle = Deferred(() => { }, ToVirtualTime(dueMillis));
+			EnqueueLocked(new Entry(dueMillis, ToMillis(period), handle, action, ++_sequence));
+			return handle;
+		}
 	}
 
 	/// <summary>Runs every timer body due within <paramref name="by"/>, in due order, then parks the clock at the end.</summary>
 	public void Advance(TimeSpan by)
 	{
-		long target = _nowMillis + ToMillis(by);
-		int ticks = 0;
-		while (true)
+		long advanceMillis = ToMillis(by);
+		if (advanceMillis < 0)
+			throw new ArgumentOutOfRangeException(nameof(by), "Virtual time cannot move backwards.");
+
+		int currentThreadId = Environment.CurrentManagedThreadId;
+		lock (_queueGate)
 		{
-			_entries.RemoveAll(e => e.Handle.IsCancelled);
-			Entry? next = null;
-			foreach (Entry candidate in _entries)
+			int ownerThreadId = _advanceOwnerThreadId;
+			if (ownerThreadId != 0)
 			{
-				if (candidate.DueMillis > target)
-					continue;
-				if (next == null || candidate.DueMillis < next.DueMillis
-					|| (candidate.DueMillis == next.DueMillis && candidate.Sequence < next.Sequence))
-					next = candidate;
+				string reason = ownerThreadId == currentThreadId ? "re-entrant" : $"owned by thread {ownerThreadId}";
+				throw new InvalidOperationException($"VirtualThreadPool.Advance is {reason}; thread {currentThreadId} cannot advance it.");
 			}
+			_advanceOwnerThreadId = currentThreadId;
+		}
 
-			if (next == null)
+		try
+		{
+			long target = checked(_nowMillis + advanceMillis);
+			int ticks = 0;
+			while (true)
 			{
-				_nowMillis = target;
-				return;
-			}
-			if (ticks++ >= MaxTicksPerAdvance)
-				throw new InvalidOperationException($"VirtualThreadPool exceeded {MaxTicksPerAdvance} timer ticks while advancing to {target}ms; clock remains at {_nowMillis}ms.");
+				Entry? next = DequeueDue(target);
+				if (next == null)
+				{
+					_nowMillis = target;
+					return;
+				}
+				if (ticks++ >= MaxTicksPerAdvance)
+					throw new InvalidOperationException($"VirtualThreadPool exceeded {MaxTicksPerAdvance} timer ticks while advancing to {target}ms; clock remains at {_nowMillis}ms.");
 
-			_nowMillis = next.DueMillis;
-			if (next.PeriodMillis == null)
-			{
-				_entries.Remove(next);
-				next.Handle.Run();
-				try
+				_nowMillis = next.DueMillis;
+				if (next.PeriodMillis == null)
 				{
-					next.Handle.Get();
+					next.Handle.Run();
+					try
+					{
+						next.Handle.Get();
+					}
+					catch (Exception exception)
+					{
+						RecordFault(ThreadPoolScheduleKind.Once, next.DueMillis, exception);
+					}
 				}
-				catch (Exception exception)
+				else
 				{
-					RecordFault(ThreadPoolScheduleKind.Once, next.DueMillis, exception);
+					next.DueMillis += next.PeriodMillis.Value <= 0 ? 1 : next.PeriodMillis.Value;
+					next.Handle.SetDueTime(ToVirtualTime(next.DueMillis));
+					Enqueue(next);
+					try
+					{
+						Run(next.Action);
+					}
+					catch (Exception exception)
+					{
+						RecordFault(ThreadPoolScheduleKind.FixedRate, _nowMillis, exception);
+					}
 				}
 			}
-			else
-			{
-				next.DueMillis += next.PeriodMillis.Value <= 0 ? 1 : next.PeriodMillis.Value;
-				next.Handle.SetDueTime(ToVirtualTime(next.DueMillis));
-				try
-				{
-					Run(next.Action);
-				}
-				catch (Exception exception)
-				{
-					RecordFault(ThreadPoolScheduleKind.FixedRate, _nowMillis, exception);
-				}
-			}
+		}
+		finally
+		{
+			lock (_queueGate)
+				_advanceOwnerThreadId = 0;
 		}
 	}
 
@@ -166,9 +190,53 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 	{
 		get
 		{
-			_entries.RemoveAll(e => e.Handle.IsCancelled);
-			return _entries.Count;
+			lock (_queueGate)
+			{
+				Entry[] live = _entries.UnorderedItems.Select(item => item.Element).Where(entry => !entry.Handle.IsCancelled).ToArray();
+				if (live.Length != _entries.Count)
+				{
+					_entries.Clear();
+					foreach (Entry entry in live)
+						_entries.Enqueue(entry, (entry.DueMillis, entry.Sequence));
+				}
+				return live.Length;
+			}
 		}
+	}
+
+	private void Enqueue(Entry entry)
+	{
+		lock (_queueGate)
+			EnqueueLocked(entry);
+	}
+
+	private void EnqueueLocked(Entry entry) => _entries.Enqueue(entry, (entry.DueMillis, entry.Sequence));
+
+	private Entry? DequeueDue(long target)
+	{
+		lock (_queueGate)
+		{
+			while (_entries.TryPeek(out Entry? candidate, out _))
+			{
+				if (candidate.Handle.IsCancelled)
+				{
+					_entries.Dequeue();
+					continue;
+				}
+				if (candidate.DueMillis > target)
+					return null;
+				return _entries.Dequeue();
+			}
+			return null;
+		}
+	}
+
+	private void AssertOwnerThreadWhileAdvancing()
+	{
+		int ownerThreadId = Volatile.Read(ref _advanceOwnerThreadId);
+		int currentThreadId = Environment.CurrentManagedThreadId;
+		if (ownerThreadId != 0 && ownerThreadId != currentThreadId)
+			throw new InvalidOperationException($"VirtualThreadPool is advancing on owner thread {ownerThreadId}; thread {currentThreadId} cannot schedule work.");
 	}
 
 	private void Run(Func<CancellationToken, ValueTask> action)

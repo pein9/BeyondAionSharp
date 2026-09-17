@@ -101,6 +101,65 @@ public sealed class VirtualThreadPoolTests
 		}
 	}
 
+	[Fact]
+	public async Task PriorityQueueRunsEqualDeadlinesInInsertionOrderAndRejectsBackwardTime()
+	{
+		var pool = new VirtualThreadPool();
+		var trace = new List<int>();
+		pool.Schedule(() => trace.Add(1), 10);
+		pool.Schedule(() => trace.Add(2), 5);
+		pool.Schedule(() => trace.Add(3), 10);
+
+		pool.Advance(TimeSpan.FromMilliseconds(10));
+
+		Assert.Equal([2, 1, 3], trace);
+		Assert.Throws<ArgumentOutOfRangeException>(() => pool.Advance(TimeSpan.FromMilliseconds(-1)));
+		Assert.Equal(10, pool.NowMillis);
+		await pool.DisposeAsync();
+	}
+
+	[Fact]
+	public async Task ReentrantAdvanceIsRecordedAsAStrictFault()
+	{
+		var pool = new VirtualThreadPool(strict: true);
+		pool.Schedule(() => pool.Advance(TimeSpan.Zero), 0);
+
+		pool.Advance(TimeSpan.Zero);
+
+		VirtualThreadPoolFault fault = Assert.Single(pool.Faults);
+		Assert.Contains("re-entrant", fault.Exception.Message);
+		await Assert.ThrowsAsync<AggregateException>(() => pool.DisposeAsync().AsTask());
+	}
+
+	[Fact]
+	public async Task SchedulingFromAnotherThreadDuringAdvanceIsRejected()
+	{
+		var pool = new VirtualThreadPool();
+		using var entered = new ManualResetEventSlim();
+		using var release = new ManualResetEventSlim();
+		pool.Schedule(
+			() =>
+			{
+				entered.Set();
+				release.Wait();
+			},
+			0);
+
+		Task advance = Task.Run(() => pool.Advance(TimeSpan.Zero));
+		try
+		{
+			Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+			InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => pool.Schedule(() => { }, 0));
+			Assert.Contains("owner thread", exception.Message);
+		}
+		finally
+		{
+			release.Set();
+			await advance;
+		}
+		await pool.DisposeAsync();
+	}
+
 	private sealed class RecordingProvider : ILoggerProvider
 	{
 		public ConcurrentQueue<Entry> Entries { get; } = new();

@@ -915,7 +915,7 @@ public sealed class BossAiHarness : IDisposable
 
 			var staticData = BuildStaticData(_mapId, _worldSize, _walkerRoutes);
 			var dataManager = NewDataManager(staticData);
-			var clock = new VirtualThreadPool();
+			var clock = new VirtualThreadPool(strict: true);
 			var world = new GameWorld(NullLogger<GameWorld>.Instance);
 
 			var harness = new BossAiHarness(_mapId, dataManager, world, clock);
