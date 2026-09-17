@@ -8,9 +8,34 @@ internal sealed record BotStep(
 	string Step,
 	DateTimeOffset Timestamp,
 	string Direction,
-	string Packet);
+	string Packet,
+	string RawLine);
 
-internal sealed record LedgerEntry(string Fingerprint, string Status, string? Tracking, string? FixedIn);
+internal sealed record LedgerEntry(
+	string Fingerprint,
+	string FirstSeenSha,
+	string LastSeenSha,
+	string LastSeenRun,
+	long Count,
+	string Status,
+	string? Tracking,
+	string? FixedIn);
+
+internal sealed record RunProvenance(string GitSha, int Seed, string ConfigProfile)
+{
+	public static RunProvenance Load(string runDirectory)
+	{
+		var path = Path.Combine(runDirectory, "bots-run.json");
+		if (!File.Exists(path))
+			return new RunProvenance("unknown", 0, "unknown");
+		using var document = JsonDocument.Parse(File.ReadAllText(path));
+		var root = document.RootElement;
+		return new RunProvenance(
+			WatchProblem.RequiredString(root, "gitSha"),
+			root.TryGetProperty("seed", out var seed) && seed.TryGetInt32(out var seedValue) ? seedValue : 0,
+			WatchProblem.RequiredString(root, "configProfile"));
+	}
+}
 
 internal sealed record WatchProblem(
 	DateTimeOffset Timestamp,

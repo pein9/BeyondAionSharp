@@ -76,7 +76,7 @@ public static class ProblemWatcher
 	{
 		private readonly WatchOptions options;
 		private readonly LogProblemAllowlist allowlist;
-		private readonly Dictionary<string, LedgerEntry> ledger;
+		private readonly KnownProblemLedger ledger;
 		private readonly Dictionary<string, FileTail> traceTails = new(StringComparer.OrdinalIgnoreCase);
 		private readonly Dictionary<string, FileTail> eventTails = new(StringComparer.OrdinalIgnoreCase);
 		private readonly Dictionary<string, FileTail> problemTails = new(StringComparer.OrdinalIgnoreCase);
@@ -84,6 +84,7 @@ public static class ProblemWatcher
 		private readonly Dictionary<string, List<BotStep>> stepsByAccount = new(StringComparer.Ordinal);
 		private readonly Dictionary<string, int> allowlistCounts = new(StringComparer.Ordinal);
 		private readonly Dictionary<string, int> problemCounts = new(StringComparer.Ordinal);
+		private readonly Dictionary<string, WatchProblem> newProblemSamples = new(StringComparer.Ordinal);
 		private readonly Dictionary<string, DateTimeOffset> lastHeartbeats = new(StringComparer.Ordinal);
 		private readonly HashSet<string> heartbeatAlerts = new(StringComparer.Ordinal);
 		private readonly StreamWriter digest;
@@ -98,7 +99,7 @@ public static class ProblemWatcher
 		{
 			this.options = options;
 			allowlist = LogProblemAllowlist.Load(options.AllowlistPath);
-			ledger = LoadLedger(options.LedgerPath);
+			ledger = KnownProblemLedger.Load(options.LedgerPath);
 			botProblems = new FileTail(Path.Combine(options.RunDirectory, "bot.problems.jsonl"));
 			foreach (var server in Servers)
 			{
@@ -169,6 +170,20 @@ public static class ProblemWatcher
 		public async Task WriteSummaryAsync(CancellationToken cancellationToken)
 		{
 			digest.Dispose();
+			var provenance = RunProvenance.Load(options.RunDirectory);
+			ledger.RecordRun(problemCounts, provenance, options.Run);
+			if (options.FullRun && FailingProblemCount == 0)
+			{
+				await ledger.MarkFixedAfterGreenFullRunAsync(
+					problemCounts.Keys.ToHashSet(StringComparer.Ordinal),
+					provenance.GitSha,
+					cancellationToken);
+			}
+			ledger.Save();
+			var bundleWriter = new ProblemBundleWriter(options.RunDirectory, options.Run, provenance);
+			var allSteps = stepsByAccount.Values.SelectMany(steps => steps).OrderBy(step => step.Timestamp).ToArray();
+			foreach (var sample in newProblemSamples.Values)
+				bundleWriter.Write(JoinStep(sample), allSteps);
 			var summary = new
 			{
 				run = options.Run,
@@ -198,7 +213,8 @@ public static class ProblemWatcher
 				WatchProblem.RequiredString(root, "step"),
 				WatchProblem.ReadTimestamp(root),
 				WatchProblem.RequiredString(root, "dir"),
-				WatchProblem.RequiredString(root, "packet"));
+				WatchProblem.RequiredString(root, "packet"),
+				line);
 			if (!stepsByAccount.TryGetValue(step.Account, out var steps))
 			{
 				steps = [];
@@ -349,7 +365,7 @@ public static class ProblemWatcher
 				return;
 			}
 
-			ledger.TryGetValue(problem.Fingerprint, out var ledgerEntry);
+			ledger.TryGet(problem.Fingerprint, out var ledgerEntry);
 			var disposition = ledgerEntry?.Status switch
 			{
 				"tracked" => "KNOWN",
@@ -360,7 +376,10 @@ public static class ProblemWatcher
 			{
 				case "KNOWN": knownProblems++; break;
 				case "REGRESSED": regressedProblems++; break;
-				default: newProblems++; break;
+				default:
+					newProblems++;
+					newProblemSamples.TryAdd(problem.Fingerprint, problem);
+					break;
 			}
 
 			var details = new StringBuilder();
@@ -412,27 +431,6 @@ public static class ProblemWatcher
 		{
 			var run = WatchProblem.OptionalString(root, "run");
 			return run == null || run == options.Run;
-		}
-
-		private static Dictionary<string, LedgerEntry> LoadLedger(string path)
-		{
-			var entries = new Dictionary<string, LedgerEntry>(StringComparer.Ordinal);
-			if (!File.Exists(path))
-				return entries;
-			using var document = JsonDocument.Parse(File.ReadAllText(path));
-			if (document.RootElement.ValueKind != JsonValueKind.Array)
-				throw new InvalidDataException($"Known-problem ledger '{path}' must contain a JSON array.");
-			foreach (var root in document.RootElement.EnumerateArray())
-			{
-				var entry = new LedgerEntry(
-					WatchProblem.RequiredString(root, "fp"),
-					WatchProblem.RequiredString(root, "status"),
-					WatchProblem.OptionalString(root, "tracking"),
-					WatchProblem.OptionalString(root, "fixedIn"));
-				if (!entries.TryAdd(entry.Fingerprint, entry))
-					throw new InvalidDataException($"Known-problem ledger fingerprint '{entry.Fingerprint}' is duplicated.");
-			}
-			return entries;
 		}
 
 		private static (DateTimeOffset Timestamp, string Text) SplitDockerTimestamp(string line)

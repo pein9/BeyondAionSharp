@@ -595,14 +595,18 @@ sockets before the large clock migration.
   `39050e81` (four normalized missing-door-geometry warnings) remain §7 #22/P9-01. All are tracked bugs, so none
   belongs in the allowlist. All three server heartbeats were present and the isolated Docker stack was removed.
   Commit: `048b55138`.
-- [ ] **P3-14** [LIVE] M — Known-problem ledger and triage. `tools/Aion.LogWatch` maintains
+- [x] **P3-14** [LIVE] M — Known-problem ledger and triage. `tools/Aion.LogWatch` maintains
   `parity-artifacts/e2e/known-problems.json` with `{fp, firstSeenSha, lastSeenSha, lastSeenRun, count, status:
   new|tracked|fixed, tracking}`, where `tracking` is a `docs/Full-Parity-Backlog.md` id or an issue URL.
   `digest.log` prints `NEW` only for fingerprints not in the ledger, `KNOWN` for tracked ones and `REGRESSED` for
   ones marked fixed. For each NEW problem the watcher writes `run/<id>/problems/<fp>/`: full stack, 200 lines of
   server log context, the bot's last 50 trace steps, seed, git SHA, config profile, and a draft backlog entry. A
   fix commit carries a `Fixes-Fingerprint: <fp>` trailer; the next green Full run marks it fixed. Tracked problems
-  do not fail a run; new and regressed ones do.
+  do not fail a run; new and regressed ones do. The ledger is validated and atomically replaced; run occurrences
+  advance its last-seen provenance and cumulative count. Focused tests cover NEW bundle contents, tracked/fixed
+  disposition, allowlist ordering and exact trailer parsing. Docker-only enforce run `p314-ledger` passed both L0
+  bots, classified all three boot fingerprints as `KNOWN`, updated their ledger records, emitted no NEW bundle and
+  removed its isolated stack. Commit: `00387df8d`.
 - [ ] **P3-15** [LIVE] S — `scripts/e2e/run-full.ps1` (LIVE part): one command that runs L0 and the canaries through
   `run-live.ps1` and leaves `run/<id>/` for inspection. Started by hand; there is no scheduler (D9).
 

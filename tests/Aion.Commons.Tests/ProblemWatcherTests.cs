@@ -6,6 +6,19 @@ namespace Aion.Commons.Tests;
 public sealed class ProblemWatcherTests
 {
 	[Fact]
+	public void FixTrailerParserRequiresAnExactTrailerLine()
+	{
+		const string fingerprint = "1234abcd";
+		var log = "1111111111111111111111111111111111111111\u001fNot a trailer Fixes-Fingerprint: 1234abcd\u001e" +
+			"2222222222222222222222222222222222222222\u001fFix the defect\n\nFixes-Fingerprint: 1234abcd\n\u001e";
+
+		Assert.Equal(
+			"2222222222222222222222222222222222222222",
+			KnownProblemLedger.FindFixingCommitInLog(log, fingerprint));
+		Assert.Null(KnownProblemLedger.FindFixingCommitInLog(log, "deadbeef"));
+	}
+
+	[Fact]
 	public async Task ServerProblemJoinsLatestEarlierBotStepAndMarksFixedRateWorkInherited()
 	{
 		using var run = new WatcherRun();
@@ -65,7 +78,7 @@ public sealed class ProblemWatcherTests
 	{
 		using var run = new WatcherRun();
 		run.WriteLedger($$"""
-			[{"fp":"1234abcd","status":"{{status}}","tracking":"TEST-2","fixedIn":"deadbeef"}]
+			[{"fp":"1234abcd","firstSeenSha":"1111111","lastSeenSha":"2222222","lastSeenRun":"older","count":3,"status":"{{status}}","tracking":"TEST-2","fixedIn":"deadbeef"}]
 			""");
 		run.WriteProblem("1234abcd");
 
@@ -73,6 +86,50 @@ public sealed class ProblemWatcherTests
 
 		Assert.Equal(expectedExitCode, exitCode);
 		Assert.Contains($" {expected} ERROR gs fp=1234abcd", run.ReadDigest(), StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public async Task NewProblemUpdatesLedgerAndWritesReproductionBundle()
+	{
+		using var run = new WatcherRun();
+		run.WriteProvenance("abcdef123", seed: 47, profile: "docker-test");
+		var traces = Enumerable.Range(0, 55).Select(index => JsonSerializer.Serialize(new
+		{
+			ts = new DateTimeOffset(2026, 9, 17, 12, 34, 0, TimeSpan.Zero).AddSeconds(index),
+			vt = (long?)null,
+			run = "test",
+			bot = "b01",
+			account = "b01r0917",
+			step = $"s{index:D2}",
+			dir = "action",
+			packet = "Move",
+			fields = new { },
+		}));
+		run.WriteTrace(string.Join('\n', traces));
+		run.WriteServerLog(Enumerable.Range(0, 220)
+			.Select(index => index == 110 ? "Synthetic failure" : $"context {index}"));
+		run.WriteProblem("1234abcd", account: "b01r0917");
+
+		var exitCode = await ProblemWatcher.RunAsync(run.Options());
+
+		Assert.Equal(1, exitCode);
+		using var ledger = JsonDocument.Parse(File.ReadAllText(run.LedgerPath));
+		var entry = Assert.Single(ledger.RootElement.EnumerateArray());
+		Assert.Equal("abcdef123", entry.GetProperty("firstSeenSha").GetString());
+		Assert.Equal("test", entry.GetProperty("lastSeenRun").GetString());
+		Assert.Equal(1, entry.GetProperty("count").GetInt64());
+		Assert.Equal("new", entry.GetProperty("status").GetString());
+
+		var bundle = run.ProblemDirectory("1234abcd");
+		Assert.Contains("Synthetic stack", File.ReadAllText(Path.Combine(bundle, "stack.txt")), StringComparison.Ordinal);
+		var context = File.ReadAllLines(Path.Combine(bundle, "server-context.log"));
+		Assert.Equal(200, context.Length);
+		Assert.Contains("Synthetic failure", context);
+		Assert.Equal(50, File.ReadAllLines(Path.Combine(bundle, "bot-trace.jsonl")).Length);
+		using var metadata = JsonDocument.Parse(File.ReadAllText(Path.Combine(bundle, "metadata.json")));
+		Assert.Equal(47, metadata.RootElement.GetProperty("seed").GetInt32());
+		Assert.Equal("docker-test", metadata.RootElement.GetProperty("configProfile").GetString());
+		Assert.Contains("Tracking: TODO", File.ReadAllText(Path.Combine(bundle, "draft-backlog.md")), StringComparison.Ordinal);
 	}
 
 	[Fact]
@@ -130,6 +187,7 @@ public sealed class ProblemWatcherTests
 		}
 
 		public string SummaryPath => Path.Combine(directory, "logwatch-summary.json");
+		public string LedgerPath => Path.Combine(directory, "ledger.json");
 
 		public WatchOptions Options() => new(
 			"test",
@@ -142,6 +200,7 @@ public sealed class ProblemWatcherTests
 			TimeSpan.Zero,
 			null,
 			DockerEnabled: false,
+			FullRun: false,
 			new HashSet<string>(["STR_SKILL_NOT_READY"], StringComparer.Ordinal));
 
 		public void WriteAllowlist(string json) => File.WriteAllText(Path.Combine(directory, "allowlist.json"), json + "\n");
@@ -149,6 +208,13 @@ public sealed class ProblemWatcherTests
 		public void WriteLedger(string json) => File.WriteAllText(Path.Combine(directory, "ledger.json"), json + "\n");
 
 		public void WriteTrace(string json) => File.WriteAllText(Path.Combine(directory, "bots", "b01.trace.jsonl"), json + "\n");
+
+		public void WriteProvenance(string gitSha, int seed, string profile) => File.WriteAllText(
+			Path.Combine(directory, "bots-run.json"),
+			JsonSerializer.Serialize(new { gitSha, seed, configProfile = profile }) + "\n");
+
+		public void WriteServerLog(IEnumerable<string> lines) => File.WriteAllLines(
+			Path.Combine(directory, "logs", "gs", "server_console.log"), lines);
 
 		public void WriteEvent(string json) => File.WriteAllText(Path.Combine(directory, "logs", "gs", "gs.events.jsonl"), json + "\n");
 
@@ -176,6 +242,8 @@ public sealed class ProblemWatcherTests
 		}
 
 		public string ReadDigest() => File.ReadAllText(Path.Combine(directory, "digest.log"));
+
+		public string ProblemDirectory(string fingerprint) => Path.Combine(directory, "problems", fingerprint);
 
 		public void Dispose()
 		{
