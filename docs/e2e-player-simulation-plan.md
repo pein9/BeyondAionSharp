@@ -581,8 +581,13 @@ sockets before the large clock migration.
   commands, record versus enforce mode before P3-14, PowerShell and Claude Code digest monitoring, exact-project
   cleanup and `-Keep`, image rebuilds, the artifact layout, failure collection and 20-run retention. Commit:
   `5090e6b31`.
-- [ ] **P3-12** [LIVE] S — A 10-second heartbeat Information line in all three servers with connection count,
-  packet-queue depth and armed-timer count (via the `ThreadPoolManager` schedule observer).
+- [x] **P3-12** [LIVE] S — A 10-second heartbeat Information line in all three servers with connection count,
+  packet-queue depth and armed-timer count (via the `ThreadPoolManager` schedule observer). A shared hosted service
+  now emits the structured line immediately and every ten seconds; login and chat aggregate their two socket
+  listeners and correctly report zero for their inline packet/timer paths, while game exposes the faithful packet
+  processor backlog and counts live scheduled tasks through completion-aware schedule observations. Focused tests
+  pin the log contract and one-shot/fixed-rate timer lifecycle. Docker-only L0 run `p312-heartbeat` passed with all
+  three cadences observed and no missed heartbeat. Commit: `af6cb074c`.
 - [ ] **P3-13** [LIVE] S — Record-only login baseline: run L0 with the watcher in record mode and triage every new
   fingerprint as in P1-12. Depends on P3-09.
 - [ ] **P3-14** [LIVE] M — Known-problem ledger and triage. `tools/Aion.LogWatch` maintains

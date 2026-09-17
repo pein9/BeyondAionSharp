@@ -80,6 +80,35 @@ public sealed class ThreadPoolManagerSchedulingTests
 		await WaitUntilAsync(() => pool.ScheduledTaskCount == 0);
 	}
 
+	[Fact]
+	public async Task ScheduleObserverTracksOnlyTasksWhichRemainArmed()
+	{
+		var metrics = new ThreadPoolMetrics();
+		await using var pool = new ThreadPoolManager(
+			NullLogger<ThreadPoolManager>.Instance,
+			metrics.Observe);
+		var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+		var oneShot = pool.Schedule(
+			async _ => await new ValueTask(release.Task),
+			TimeSpan.Zero);
+		await WaitUntilAsync(() => metrics.ArmedTimerCount == 1);
+
+		release.SetResult();
+		await oneShot.Completion.WaitAsync(TimeSpan.FromSeconds(2));
+		await WaitUntilAsync(() => metrics.ArmedTimerCount == 0);
+
+		var fixedRate = pool.ScheduleAtFixedRateTask(
+			_ => ValueTask.CompletedTask,
+			TimeSpan.FromHours(1),
+			TimeSpan.FromHours(1));
+		Assert.Equal(1, metrics.ArmedTimerCount);
+
+		Assert.True(fixedRate.Cancel());
+		await fixedRate.Completion.WaitAsync(TimeSpan.FromSeconds(2));
+		await WaitUntilAsync(() => metrics.ArmedTimerCount == 0);
+	}
+
 	private static async Task WaitUntilAsync(Func<bool> condition)
 	{
 		var timeout = DateTime.UtcNow + TimeSpan.FromSeconds(2);

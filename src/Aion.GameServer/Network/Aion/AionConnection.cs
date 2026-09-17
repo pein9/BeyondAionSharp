@@ -37,6 +37,9 @@ public class AionConnection : AConnection<AionServerPacket>
         NetworkConfig.PACKET_PROCESSOR_THREAD_SPAWN_THRESHOLD, NetworkConfig.PACKET_PROCESSOR_THREAD_KILL_THRESHOLD,
         new ExecuteWrapper(ThreadConfig.MAXIMUM_RUNTIME_IN_MILLISEC_WITHOUT_WARNING)));
 
+    /// <summary>Client packets waiting in the faithful packet processor, without forcing its worker threads to start.</summary>
+    public static int PacketQueueDepth => packetProcessor.IsValueCreated ? packetProcessor.Value.QueueDepth : 0;
+
     /// <summary>Possible states of AionConnection.</summary>
     public enum State
     {

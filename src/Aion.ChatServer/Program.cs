@@ -6,6 +6,7 @@ using Aion.ChatServer.Models.Channels;
 using Aion.ChatServer.Network;
 using Aion.ChatServer.Services;
 using Aion.Commons.Database;
+using Aion.Commons.Diagnostics;
 using Aion.Commons.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,6 +40,12 @@ var builder = Host.CreateDefaultBuilder(args)
 			services.AddSingleton<ClientSocketServer>();
 			services.AddSingleton<GameServerSocketServer>();
 			services.AddHostedService<ChatServerHostedService>();
+			services.AddSingleton<IServerHeartbeatMetrics>(serviceProvider => new DelegateServerHeartbeatMetrics(
+				() => serviceProvider.GetRequiredService<ClientSocketServer>().GetActiveConnections()
+					+ serviceProvider.GetRequiredService<GameServerSocketServer>().GetActiveConnections(),
+				() => 0,
+				() => 0));
+			services.AddHostedService<ServerHeartbeatService>();
 		}
 	)
 	.ConfigureLogging(

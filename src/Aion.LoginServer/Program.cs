@@ -1,5 +1,6 @@
 using Aion.Commons.Configuration;
 using Aion.Commons.Database;
+using Aion.Commons.Diagnostics;
 using Aion.Commons.Logging;
 using Aion.LoginServer.Configuration;
 using Aion.LoginServer.Data;
@@ -47,6 +48,12 @@ var builder = Host.CreateDefaultBuilder(args)
 			services.AddSingleton<LoginClientSocketServer>();
 			services.AddSingleton<GameServerSocketServer>();
 			services.AddHostedService<LoginServerHostedService>();
+			services.AddSingleton<IServerHeartbeatMetrics>(serviceProvider => new DelegateServerHeartbeatMetrics(
+				() => serviceProvider.GetRequiredService<LoginClientSocketServer>().GetActiveConnections()
+					+ serviceProvider.GetRequiredService<GameServerSocketServer>().GetActiveConnections(),
+				() => 0,
+				() => 0));
+			services.AddHostedService<ServerHeartbeatService>();
 		}
 	)
 	.ConfigureLogging(

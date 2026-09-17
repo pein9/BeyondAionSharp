@@ -1,4 +1,6 @@
 using Aion.Commons.Database;
+using Aion.Commons.Diagnostics;
+using Aion.GameServer.Commons.Network;
 using Aion.GameServer.Configuration;
 using Aion.GameServer.Data;
 using Aion.GameServer.Model.GameObjects;
@@ -47,6 +49,9 @@ var builder = Host.CreateDefaultBuilder(args)
 			DatabaseFactory.Initialize(databaseOptions);
 			services.AddSingleton(options);
 			services.AddSingleton(databaseOptions);
+			services.AddSingleton<ThreadPoolMetrics>();
+			services.AddSingleton<Action<ThreadPoolScheduleObservation>>(
+				serviceProvider => serviceProvider.GetRequiredService<ThreadPoolMetrics>().Observe);
 			services.AddSingleton<ThreadPoolManager>();
 			services.AddSingleton<IDFactory>();
 			services.AddSingleton<GameServerRuntimeContext>();
@@ -125,6 +130,11 @@ var builder = Host.CreateDefaultBuilder(args)
 			// boots the faithful NioServer + GameConnectionFactoryImpl directly.
 			services.AddHostedService<GameServerHostedService>();
 			services.AddHostedService<OutboundLinkHostedService>();
+			services.AddSingleton<IServerHeartbeatMetrics>(serviceProvider => new DelegateServerHeartbeatMetrics(
+				() => NioServer.GetRegisteredInstance()?.GetAllConnections().Count ?? 0,
+				() => AionConnection.PacketQueueDepth,
+				() => serviceProvider.GetRequiredService<ThreadPoolMetrics>().ArmedTimerCount));
+			services.AddHostedService<ServerHeartbeatService>();
 			// Admin HTTP endpoint (opt-in via gameserver.admin.api.*) used by the external web portal to send
 			// mail through the live SystemMailService instead of writing to the game DB directly.
 			services.AddHostedService<Aion.GameServer.Services.Admin.AdminHttpService>();

@@ -107,6 +107,16 @@ public class PacketProcessor<T> where T : AConnection
         }
     }
 
+    /// <summary>Number of client packets waiting for an execution slot.</summary>
+    public int QueueDepth
+    {
+        get
+        {
+            lock (lockObj)
+                return packets.Count;
+        }
+    }
+
     /// <summary>First packet available for execution (1 packet/client at a time, in received order). Caller holds the lock.</summary>
     private BaseClientPacket<T> GetFirstAvailable()
     {
