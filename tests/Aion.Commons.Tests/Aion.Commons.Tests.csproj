@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Aion.Commons\Aion.Commons.csproj" />
+    <ProjectReference Include="..\..\tools\Aion.LogWatch\Aion.LogWatch.csproj" />
   </ItemGroup>
 
 </Project>

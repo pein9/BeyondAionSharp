@@ -515,7 +515,7 @@ sockets before the large clock migration.
   directions, graceful EOF and unexpected EOF. Against `aion-bots-p305`, two bots each ran two sequential real
   connect/key/close scenarios (10 trace records apiece, no problems); a forced connect timeout exited 1 with one
   problem joined to `b01`/`s01`. The disposable stack was removed. Commit: `c1b2079ec`.
-- [ ] **P3-06** [LIVE] M — `tools/Aion.LogWatch`: tail `gs/ls/cs.problems.jsonl` from the run's start offset, the
+- [x] **P3-06** [LIVE] M — `tools/Aion.LogWatch`: tail `gs/ls/cs.problems.jsonl` from the run's start offset, the
   bot traces, the bots project's container logs, `docker compose events` (die, oom, restart) and the MySQL
   container's log. Fingerprint and
   consult the allowlist (P1-13) and ledger (P3-14). Join each problem to the latest bot step for the same
@@ -523,7 +523,14 @@ sockets before the large clock migration.
   Also report as problems: server exit, stderr `Unhandled exception.`, a missing heartbeat (P3-12),
   unexpected bot disconnects, and system messages on a scenario's unexpected-refusal list (for example
   `STR_SKILL_NOT_READY` outside C2 and C4). Append one line per problem to `run/<id>/digest.log` (§5). Exit
-  non-zero on anything new or regressed. Depends on P1-08, P1-09, P1-13, P3-12.
+  non-zero on anything new or regressed. Depends on P1-08, P1-09, P1-13, P3-12. Implemented the file and Docker
+  followers, time-correct bot-step join, inherited-timer marker, allowlist count enforcement, optional ledger
+  classification, unexpected-refusal/bot-failure/process/MySQL detection, malformed-input reporting and
+  record/enforce summaries. Missing-heartbeat detection arms only after the server's first heartbeat, so it is
+  ready for the P3-12 producer without treating its current absence as a failure. Focused tests cover NEW/KNOWN/
+  REGRESSED, allowlisting, attribution, refusal, malformed input and heartbeat expiry. A Docker-only validation
+  against `aion-bots-p306` captured the existing boot fingerprints and a forced login-server `die`/`restart`;
+  the disposable stack was removed. Commit: `23e42fb35`.
 - [ ] **P3-07** [LIVE] S — Optional server-side packet tap behind `AION_PACKET_TAP`: register a
   `ServerPacketCaptureObserver` that copies clear frames **synchronously** (the buffer is encrypted in place
   right after the callback) into a bounded channel written as JSONL. Fix the false "Java parity" comments in
