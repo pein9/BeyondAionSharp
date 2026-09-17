@@ -312,8 +312,11 @@ Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 con
   synchronous socketless close/drop cleanup, lazy packet-processor creation and an unarmed alive checker.
   `SocketlessAionConnectionTests` prove `CM_QUIT` and abrupt drop both reach the leave-world boundary on the
   calling thread while close discards earlier queued packets. Commit: `db9605e07`.
-- [ ] **P2-01** [BOTH] S — Create the project (`net10.0`, `TreatWarningsAsErrors`), add it to the solution, and
+- [x] **P2-01** [BOTH] S — Create the project (`net10.0`, `TreatWarningsAsErrors`), add it to the solution, and
   add the `src/` isolation architecture test from Principle 8.
+  Added `tests/Aion.Bots` as a warning-free `net10.0` library and solution project. Architecture tests now
+  reject production project references outside `src/` and bot/simulation namespace declarations under `src/`.
+  Commit: `79610c103`.
 - [ ] **P2-02** [BOTH] S — Client game crypt: key recovery from `SM_KEY`, client-encrypt and server-decrypt with
   per-packet key rotation, opcode encode/decode, the `0x65`/`~opcode` client header and `0x44` server header,
   u16 framing. Lift from `GameCryptTests.cs` and `GamePacketFrameCodec.cs`; test against the live

@@ -6,6 +6,7 @@
     <Project Path="src/Aion.LoginServer/Aion.LoginServer.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Aion.Bots/Aion.Bots.csproj" />
     <Project Path="tests/Aion.ChatServer.Tests/Aion.ChatServer.Tests.csproj" />
     <Project Path="tests/Aion.Commons.Tests/Aion.Commons.Tests.csproj" />
     <Project Path="tests/Aion.GameServer.Tests/Aion.GameServer.Tests.csproj" />
