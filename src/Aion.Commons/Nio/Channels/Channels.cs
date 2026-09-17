@@ -112,9 +112,13 @@ public sealed class SocketChannel : SelectableChannel
         {
             n = socket.Receive(arr, off, rem, SocketFlags.None);
         }
-        catch (SocketException)
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.WouldBlock)
         {
-            throw new System.IO.IOException("socket read failed");
+            return 0;
+        }
+        catch (SocketException ex)
+        {
+            throw new System.IO.IOException("socket read failed", ex);
         }
         if (n == 0)
             return -1; // graceful remote close
@@ -135,9 +139,13 @@ public sealed class SocketChannel : SelectableChannel
         {
             n = socket.Send(arr, off, rem, SocketFlags.None);
         }
-        catch (SocketException)
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.WouldBlock)
         {
-            throw new System.IO.IOException("socket write failed");
+            return 0;
+        }
+        catch (SocketException ex)
+        {
+            throw new System.IO.IOException("socket write failed", ex);
         }
         src.SetPosition(src.Position() + n);
         return n;

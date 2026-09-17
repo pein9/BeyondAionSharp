@@ -460,8 +460,9 @@ sockets before the large clock migration.
     active-task map: synchronous completion continuations remove finished one-shots and cancelled fixed-rate
     loops while shutdown still awaits a snapshot. A 100-task retention test returns the count to zero. Commit:
     `172bea01e`.
-  - Make `SocketChannel` read/write return 0 on `WouldBlock` as `java.nio` does, instead of throwing
-    `IOException` and disconnecting. Add a slow-reader loopback test (1 MB of SM burst).
+  - [x] Make `SocketChannel` read/write return 0 on `WouldBlock` as `java.nio` does, instead of throwing
+    `IOException` and disconnecting. A deterministic slow-reader loopback test fills the nonblocking send
+    window, observes zero progress and then verifies a distinct 1 MB burst byte-for-byte. Commit: `516e799ad`.
   - Add Java's `if (GameServer.isShuttingDownSoon()) { safeLogout(); return; }` to
     `AionConnection.OnDisconnect` (`AionConnection.java:240-243`).
   - Replace the `List` + `Contains` dedupe in `AbstractFIFOPeriodicTaskManager.cs:14,39-40` with
