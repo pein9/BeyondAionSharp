@@ -59,6 +59,7 @@ public sealed class JsonLinesLoggerProvider : ILoggerProvider, ISupportExternalS
 		var scopes = CaptureScopes();
 		var message = formatter(state, exception);
 		var template = GetTemplate(state) ?? message;
+		var fingerprint = LogFingerprint.Create(state, exception, message);
 		var timer = GetTimer(scopes);
 		var line = Serialize(
 			level,
@@ -69,7 +70,8 @@ public sealed class JsonLinesLoggerProvider : ILoggerProvider, ISupportExternalS
 			scopes.GetValueOrDefault("account") ?? scopes.GetValueOrDefault("acct"),
 			scopes.GetValueOrDefault("player"),
 			scopes.GetValueOrDefault("packet") ?? scopes.GetValueOrDefault("opcode"),
-			timer);
+			timer,
+			fingerprint);
 
 		lock (_writeLock)
 		{
@@ -118,7 +120,8 @@ public sealed class JsonLinesLoggerProvider : ILoggerProvider, ISupportExternalS
 		string? account,
 		string? player,
 		string? operation,
-		string? timer)
+		string? timer,
+		LogFingerprintResult fingerprint)
 	{
 		using var stream = new MemoryStream();
 		using (var json = new Utf8JsonWriter(stream))
@@ -134,12 +137,12 @@ public sealed class JsonLinesLoggerProvider : ILoggerProvider, ISupportExternalS
 			json.WriteString("cat", category);
 			json.WriteString("thr", Thread.CurrentThread.Name ?? Environment.CurrentManagedThreadId.ToString(CultureInfo.InvariantCulture));
 			WriteNullableString(json, "timer", timer);
-			json.WriteNull("fp"); // Populated by P1-09 once fingerprints are available.
+			json.WriteString("fp", fingerprint.Value);
 			json.WriteString("tpl", template);
 			json.WriteString("msg", message);
 			WriteNullableString(json, "exType", exception?.GetType().FullName);
 			WriteNullableString(json, "exMsg", exception?.Message);
-			json.WriteNull("frame"); // Populated by P1-09 together with the stable fingerprint location.
+			json.WriteString("frame", fingerprint.Frame);
 			WriteNullableString(json, "stack", exception?.ToString());
 			json.WriteEndObject();
 		}

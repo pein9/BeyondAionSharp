@@ -58,8 +58,8 @@ public sealed class JsonLinesLoggerProviderTests
 			Assert.Equal("Failed packet 39", warning.RootElement.GetProperty("msg").GetString());
 			Assert.Equal(typeof(InvalidOperationException).FullName, warning.RootElement.GetProperty("exType").GetString());
 			Assert.Equal("broken", warning.RootElement.GetProperty("exMsg").GetString());
-			Assert.Equal(JsonValueKind.Null, warning.RootElement.GetProperty("fp").ValueKind);
-			Assert.Equal(JsonValueKind.Null, warning.RootElement.GetProperty("frame").ValueKind);
+			Assert.Matches("^[0-9a-f]{8}$", warning.RootElement.GetProperty("fp").GetString());
+			Assert.Equal("<unknown>", warning.RootElement.GetProperty("frame").GetString());
 			Assert.Equal("INFO", info.RootElement.GetProperty("lvl").GetString());
 		}
 		finally
