@@ -775,12 +775,15 @@ replays the same seeded trace.
   Production loads the same options and calls that extension; it initializes `DatabaseFactory` only after the host
   is built. A descriptor-level regression test pins the complete hosted-service set and proves service registration
   accepts deliberately invalid database options without trying to initialize a pool. (`d1dbac475`)
-- [ ] **P5-03** [BOTH] S — Parity fix, config order: move `Config.Load()` to the top of `StartAsync`, before
+- [x] **P5-03** [BOTH] S — Parity fix, config order: move `Config.Load()` to the top of `StartAsync`, before
   `LoadUsedIdsAsync` and the static-data load (Java `GameServer.java:219`). Today C# merges static data with the
   default `GSConfig.SERVER_COUNTRY_CODE` (`XmlMerger.cs:127`), builds world maps and inits `GameTimeService`
   before config applies. Correct the comment at `GameServerBootstrapService.cs:137-143`: `EventService` has no
   active events before `Start()`, so `Config.Load` does not need `DataManager`. Add a config-root override so
   SIM never reads a developer's gitignored `mygs.properties`, and a post-load override hook.
+  `GameServerBootstrapService` now loads config before stale-online cleanup, used IDs and static data, matching
+  Java's initialization order. Hosts can select an exact isolated config root and apply deterministic overrides
+  after property processing; regression tests pin both ordering and checkout isolation. (`16350158f`)
 - [ ] **P5-04** [BOTH] S — Fix the static-data cache race: `XmlMerger` writes the 150 MB merged cache in place to a
   shared path. Use a per-process cache directory for SIM or write-temp-then-move under a mutex.
 - [ ] **P5-05** [SIM] M — Create `tests/Aion.GameServer.TestKit` with `VirtualThreadPool`, `RealStaticData`,
@@ -1222,7 +1225,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 13 | Mixed `SystemClock`/wall-clock comparisons (C#-only; harmless in production) | one clock throughout | P4-01 |
 | 14 | `SpawnGroup` picks a random spot with `Random.Shared` (same distribution; unreachable by the seed) | `SpawnGroup.java:166` `Rnd.get(list)` | Resolved by P4-05 (`7ccce49bc`) |
 | 15 | Game-hour consumers, weather check and `SM_GAME_TIME` broadcast unwired | `GameTime.java:150-154`, `GameTimeService.java:54-56` | Resolved by P4-09 (`8df3cde9f`) |
-| 16 | `Config.Load` runs after static data, world maps and game time are initialized | `GameServer.java:219` | P5-03 |
+| 16 | `Config.Load` runs after static data, world maps and game time are initialized | `GameServer.java:219` | Resolved by P5-03 (`16350158f`) |
 | 17 | `SM_MOVE` player/summon branch never taken | `SM_MOVE.java:36` `instanceof PlayableMoveController` | P6-01 |
 | 18 | `QuestSpawnAnalyzer` scans Java source folders and aborts (P1-12 baseline fingerprint `2c206aaf`, count 1) | `QuestSpawnAnalyzer.java:101-110` (Java ships those folders) | P7-01 |
 | 19 | `_19638TroublewithTwos` extra dialog branch | `_19638TroublewithTwos.java:48-50` (removed upstream in `1d6a2d8f7`) | P7-11 |

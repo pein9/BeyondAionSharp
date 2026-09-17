@@ -2,6 +2,7 @@ using Aion.Commons.Database;
 using Aion.GameServer.Data;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Dataholders.LoadingUtils;
+using Aion.GameServer.Configs;
 using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Services;
@@ -217,6 +218,10 @@ public sealed class GameServerBootstrapTests
 		var calls = new List<string>();
 		var onlineState = new TrackingPlayerOnlineStateRepository(calls);
 		var usedIds = new TrackingUsedIdRepository([1, 2, 3], calls);
+		var configLoadOptions = new GameServerConfigLoadOptions
+		{
+			PostLoadOverride = () => calls.Add("config"),
+		};
 		var world = new GameWorld(NullLogger<GameWorld>.Instance);
 		var gameTime = new GameTimeService(
 			NullLogger<GameTimeService>.Instance,
@@ -233,13 +238,14 @@ public sealed class GameServerBootstrapTests
 			threadPoolManager,
 			new GameServerRuntimeContext(),
 			NullLogger<GameServerBootstrapService>.Instance,
-			onlineState);
+			onlineState,
+			configLoadOptions);
 
 		await bootstrap.StartAsync(CancellationToken.None);
 
 		Assert.True(usedIds.Loaded);
 		Assert.True(onlineState.Reset);
-		Assert.Equal(["offline", "used-ids"], calls);
+		Assert.Equal(["config", "offline", "used-ids"], calls);
 		Assert.Equal(4, idFactory.GetUsedCount());
 		Assert.Equal(4, idFactory.NextId());
 

@@ -1,6 +1,7 @@
 using Aion.Commons.Configuration;
 using Aion.Commons.Diagnostics;
 using Aion.GameServer.Configuration;
+using Aion.GameServer.Configs;
 using Aion.GameServer.Data;
 using Aion.GameServer.Services;
 using Aion.GameServer.Services.Admin;
@@ -18,9 +19,10 @@ public sealed class GameServerServiceCollectionExtensionsTests
 		// DatabaseFactory.Initialize would reject this port. Registration must only retain the options for the host
 		// lifecycle (or the SIM fixture) to initialize later.
 		var databaseOptions = new DatabaseOptions { Port = -1 };
+		var configLoadOptions = new GameServerConfigLoadOptions { ConfigRoot = "isolated-config" };
 		var services = new ServiceCollection();
 
-		IServiceCollection returned = services.AddGameServer(gameOptions, databaseOptions);
+		IServiceCollection returned = services.AddGameServer(gameOptions, databaseOptions, configLoadOptions);
 
 		Assert.Same(services, returned);
 		Assert.Contains(services, descriptor =>
@@ -29,6 +31,9 @@ public sealed class GameServerServiceCollectionExtensionsTests
 		Assert.Contains(services, descriptor =>
 			descriptor.ServiceType == typeof(DatabaseOptions)
 			&& ReferenceEquals(descriptor.ImplementationInstance, databaseOptions));
+		Assert.Contains(services, descriptor =>
+			descriptor.ServiceType == typeof(GameServerConfigLoadOptions)
+			&& ReferenceEquals(descriptor.ImplementationInstance, configLoadOptions));
 		Assert.Contains(services, descriptor =>
 			descriptor.ServiceType == typeof(IStaticDataLoader)
 			&& descriptor.ImplementationType == typeof(StaticDataService));

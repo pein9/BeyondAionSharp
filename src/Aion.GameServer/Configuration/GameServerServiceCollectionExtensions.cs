@@ -1,6 +1,7 @@
 using Aion.Commons.Configuration;
 using Aion.Commons.Diagnostics;
 using Aion.GameServer.Commons.Network;
+using Aion.GameServer.Configs;
 using Aion.GameServer.Data;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Network.Aion;
@@ -21,7 +22,8 @@ public static class GameServerServiceCollectionExtensions
 	public static IServiceCollection AddGameServer(
 		this IServiceCollection services,
 		GameServerOptions options,
-		DatabaseOptions databaseOptions)
+		DatabaseOptions databaseOptions,
+		GameServerConfigLoadOptions? configLoadOptions = null)
 	{
 		ArgumentNullException.ThrowIfNull(services);
 		ArgumentNullException.ThrowIfNull(options);
@@ -29,6 +31,7 @@ public static class GameServerServiceCollectionExtensions
 
 		services.AddSingleton(options);
 		services.AddSingleton(databaseOptions);
+		services.AddSingleton(configLoadOptions ?? GameServerConfigLoadOptions.Default);
 		services.AddSingleton<ThreadPoolMetrics>();
 		services.AddSingleton<Action<ThreadPoolScheduleObservation>>(
 			serviceProvider => serviceProvider.GetRequiredService<ThreadPoolMetrics>().Observe);
