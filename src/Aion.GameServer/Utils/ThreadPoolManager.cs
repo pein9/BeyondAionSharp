@@ -75,7 +75,13 @@ public class ThreadPoolManager : IAsyncDisposable
 	/// (which starts the body on the pool immediately): scheduling the spawn-in eagerly would push the new-map packets
 	/// before the client is ready, breaking cross-map / instance teleports.
 	/// </summary>
-	public ScheduledTask Deferred(Action body) => new ScheduledTask(new Task(body));
+	public ScheduledTask Deferred(Action body) => Deferred(body, DateTimeOffset.UtcNow);
+
+	public ScheduledTask Deferred(Action body, DateTimeOffset dueTimeUtc) =>
+		new(new Task(body), dueTimeUtc, static () => DateTimeOffset.UtcNow);
+
+	internal ScheduledTask Deferred(Action body, DateTimeOffset dueTimeUtc, Func<DateTimeOffset> utcNow) =>
+		new(new Task(body), dueTimeUtc, utcNow);
 
 	public Task ScheduleAtFixedRate(
 		Func<CancellationToken, ValueTask> action,
@@ -236,7 +242,7 @@ public class ThreadPoolManager : IAsyncDisposable
 		public ValueTask RunAsync(CancellationToken cancellationToken) => action(cancellationToken);
 	}
 
-	public async ValueTask DisposeAsync()
+	public virtual async ValueTask DisposeAsync()
 	{
 		await ShutdownAsync();
 		_shutdownTokenSource.Dispose();
@@ -259,7 +265,8 @@ public sealed class ScheduledTask
 	private readonly CancellationTokenSource _cancellationTokenSource;
 	private int _isComplete;
 
-	private readonly DateTimeOffset _dueTimeUtc;
+	private long _dueTimeUtcTicks;
+	private readonly Func<DateTimeOffset> _utcNow;
 
 	// Non-null only for deferred (run-on-demand) tasks created via ThreadPoolManager.Deferred. For pool-scheduled
 	// tasks this is null and Run() stays a no-op observe marker.
@@ -269,7 +276,8 @@ public sealed class ScheduledTask
 	{
 		Completion = completion;
 		_cancellationTokenSource = cancellationTokenSource;
-		_dueTimeUtc = dueTimeUtc;
+		_dueTimeUtcTicks = dueTimeUtc.UtcDateTime.Ticks;
+		_utcNow = static () => DateTimeOffset.UtcNow;
 		_deferredTask = null;
 		_ = completion.ContinueWith(
 			_ =>
@@ -285,11 +293,17 @@ public sealed class ScheduledTask
 	// Java parity: a stored RunnableFuture (new FutureTask<>(runnable, null)) that has NOT started. Unlike the
 	// pool-scheduled ctor, the body runs only when Run() is invoked; IsDone() stays false until then.
 	internal ScheduledTask(Task deferredTask)
+		: this(deferredTask, DateTimeOffset.UtcNow, static () => DateTimeOffset.UtcNow)
+	{
+	}
+
+	internal ScheduledTask(Task deferredTask, DateTimeOffset dueTimeUtc, Func<DateTimeOffset> utcNow)
 	{
 		_deferredTask = deferredTask;
 		Completion = deferredTask;
 		_cancellationTokenSource = new CancellationTokenSource();
-		_dueTimeUtc = DateTimeOffset.UtcNow;
+		_dueTimeUtcTicks = dueTimeUtc.UtcDateTime.Ticks;
+		_utcNow = utcNow;
 		_ = deferredTask.ContinueWith(
 			_ =>
 			{
@@ -335,9 +349,12 @@ public sealed class ScheduledTask
 	// Java parity: java.util.concurrent.Delayed.getDelay(TimeUnit) — remaining time until the task is due (may be <=0 once past due).
 	public long GetDelay(TimeUnit unit)
 	{
-		TimeSpan remaining = _dueTimeUtc - DateTimeOffset.UtcNow;
+		TimeSpan remaining = TimeSpan.FromTicks(Volatile.Read(ref _dueTimeUtcTicks) - _utcNow().UtcDateTime.Ticks);
 		return unit.Convert(remaining);
 	}
+
+	internal void SetDueTime(DateTimeOffset dueTimeUtc) =>
+		Interlocked.Exchange(ref _dueTimeUtcTicks, dueTimeUtc.UtcDateTime.Ticks);
 
 	public bool Cancel()
 	{

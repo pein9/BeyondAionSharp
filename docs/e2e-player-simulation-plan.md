@@ -262,7 +262,7 @@ failures loud, and gets the test suite to a trustworthy green.
   compiler-generated names normalized (`<>c__DisplayClass#_#`, `<Method>b__#`, `d__#` resolved to the
   enclosing method); without an exception, use the caller captured by `AionLog`. Unit tests on real messages,
   including "adding a lambda above the throwing one leaves the fingerprint unchanged".
-- [ ] **P1-10** [SIM] S — `VirtualThreadPool` first hardening: record one-shot and fixed-rate faults without
+- [x] **P1-10** [SIM] S — `VirtualThreadPool` first hardening: (`614f6f884`) record one-shot and fixed-rate faults without
   aborting `Advance` and report them through `AionLog`; a `Strict` flag (off for existing harness tests, on for
   SIM) fails the owning test on dispose if any were recorded; throw when `MaxTicksPerAdvance` is exhausted
   instead of moving the clock; give handles their virtual due time (a `Deferred(body, dueTime)` overload) so
