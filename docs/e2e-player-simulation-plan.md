@@ -377,8 +377,11 @@ Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 con
   channel requests and channel messages. All four writers round-trip through the production chat packet
   factory, and the existing socket tests now use them for channel join and two-client broadcast. Commit:
   `dc88fe219`.
-- [ ] **P2-08** [BOTH] S — `IBotTransport`: send CM bytes, receive decoded SMs, close, crash (drop without
+- [x] **P2-08** [BOTH] S — `IBotTransport`: send CM bytes, receive decoded SMs, close, crash (drop without
   `CM_QUIT`). Implementations arrive in P3-05 (TCP) and P5-07 (in-process).
+  Defined the async transport boundary for complete framed/encrypted CM bytes, wire-ordered decoded SMs,
+  graceful close and abrupt no-`CM_QUIT` crash. The interface deliberately leaves TCP and in-process behavior
+  to their scheduled phases, and a contract test locks its operation types. Commit: `de005ad0f`.
 - [ ] **P2-09** [BOTH] M — Bot world model built only from decoded SMs: known objects (players, NPCs,
   gatherables, statics), self stats/HP/exp/level/flight time, inventory and kinah, skills and cooldowns, quest
   states, open dialog/question/loot/trade windows, system messages by `STR_` name. Depends on P2-05.
