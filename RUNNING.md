@@ -25,8 +25,6 @@ docker exec aion-gameserver-integration-mysql mysql -uroot -paion -e \
 docker exec -i aion-gameserver-integration-mysql mysql -uroot -paion aion_ls < login-server/sql/aion_ls.sql
 docker exec -i aion-gameserver-integration-mysql mysql -uroot -paion aion_gs < game-server/sql/aion_gs.sql
 docker exec -i aion-gameserver-integration-mysql mysql -uroot -paion aion_cs < chat-server/sql/aion_cs.sql
-docker exec -i aion-gameserver-integration-mysql mysql -uroot -paion aion_ls < login-server/sql/update.sql
-docker exec -i aion-gameserver-integration-mysql mysql -uroot -paion aion_gs < game-server/sql/update.sql
 
 # REQUIRED: authorize the game server to register with the login server
 docker exec -i aion-gameserver-integration-mysql mysql -uroot -paion aion_ls < login-server/sql/seed_gameservers.sql

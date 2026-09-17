@@ -186,11 +186,11 @@ operations and coverage. Phase 11 is group and scheduled content.
   spent in periodic managers (`MoveTaskManager`, `ZoneUpdateService`, AI think) and the number of moving
   creatures. Extrapolate the wall cost of one virtual minute. Put the numbers in §1; they size the Fast tier
   budget. (`fdef20696`)
-- [ ] **P0-04** [BOTH] S — Remove the two `update.sql` steps from `RUNNING.md` (lines 28-29). Verified:
+- [x] **P0-04** [BOTH] S — Remove the two `update.sql` steps from `RUNNING.md` (lines 28-29). Verified:
   `aion_gs.sql` already has both columns `game-server/sql/update.sql` adds, and `aion_ls.sql` lacks the
   `toll` column and `account_rewards` table that `login-server/sql/update.sql` drops, so both fail on a fresh
   database. `docker/mysql/init/00-init.sh` also keeps going after a schema error, so LIVE readiness (P3-04) must
-  verify the tables exist, and `new-sim-db.ps1` (P5-06) must stop on the first SQL error.
+  verify the tables exist, and `new-sim-db.ps1` (P5-06) must stop on the first SQL error. (`f08bf4c5a`)
 - [ ] **P0-05** [BOTH] M — Bring the Java golden-fixture generators to the spec revision (D12 approved). They live
   only on `feature/object-spine-bigbang`, based at `f2f77fefe`, 87 commits behind `lastCompletedJavaCommit`.
   Carry the generator tests onto a branch or worktree of `../aion-server` at `lastCompletedJavaCommit` and
