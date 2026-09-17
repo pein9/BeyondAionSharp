@@ -47,6 +47,8 @@ public sealed class BotServerPacketDecoderTests
 		var addItems = add.Get<List<IReadOnlyDictionary<string, object?>>>("items");
 		Assert.Single(addItems);
 		Assert.Equal(268700001, addItems[0]["objectId"]);
+		Assert.Equal(1L, addItems[0]["itemCount"]);
+		Assert.Equal("Smith", addItems[0]["itemCreator"]);
 		Assert.NotEmpty(Assert.IsType<byte[]>(addItems[0]["blob"]));
 
 		using var updateFixture = LoadFixture("SM_INVENTORY_UPDATE_ITEM.json");
@@ -55,8 +57,30 @@ public sealed class BotServerPacketDecoderTests
 			var update = decoder.Decode(typeof(SM_INVENTORY_UPDATE_ITEM),
 				Convert.FromHexString(fixtureCase.GetProperty("payloadHex").GetString()!));
 			Assert.NotEmpty(update.Get<byte[]>("blob"));
+			Assert.Equal(7L, update.Get<long>("itemCount"));
 			Assert.True(update.Fields.ContainsKey("updateMask"));
 		}
+	}
+
+	[Fact]
+	public void GatherableDecoderDistinguishesGatherablesAndStaticDoors()
+	{
+		using var fixture = LoadFixture("SM_GATHERABLE_INFO.json");
+		var body = Convert.FromHexString(fixture.RootElement.GetProperty("cases")[0].GetProperty("payloadHex").GetString()!);
+
+		var gatherable = decoder.Decode(typeof(SM_GATHERABLE_INFO), body);
+		Assert.False(gatherable.Get<bool>("isStatic"));
+		Assert.Null(gatherable.Fields["open"]);
+
+		body[24] = 0x09;
+		var openDoor = decoder.Decode(typeof(SM_GATHERABLE_INFO), body);
+		Assert.True(openDoor.Get<bool>("isStatic"));
+		Assert.True(openDoor.Get<bool>("open"));
+
+		body[24] = 0x0A;
+		var closedDoor = decoder.Decode(typeof(SM_GATHERABLE_INFO), body);
+		Assert.True(closedDoor.Get<bool>("isStatic"));
+		Assert.False(closedDoor.Get<bool>("open"));
 	}
 
 	[Fact]

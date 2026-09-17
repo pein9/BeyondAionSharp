@@ -172,7 +172,15 @@ public sealed class BotServerPacketDecoder
 		var fields = Fields(
 			("x", r.ReadSingle()), ("y", r.ReadSingle()), ("z", r.ReadSingle()), ("objectId", r.ReadInt32()),
 			("staticId", r.ReadInt32()), ("templateId", r.ReadInt32()));
-		r.Skip(2);
+		var objectState = r.ReadUInt16();
+		fields["objectState"] = objectState;
+		fields["isStatic"] = objectState is 0x09 or 0x0A;
+		fields["open"] = objectState switch
+		{
+			0x09 => true,
+			0x0A => false,
+			_ => null,
+		};
 		fields["heading"] = r.ReadByte();
 		fields["l10nId"] = r.ReadInt32();
 		return fields;
@@ -322,8 +330,10 @@ public sealed class BotServerPacketDecoder
 		var objectId = r.ReadInt32();
 		var description = r.ReadString();
 		var blob = r.ReadLengthPrefixedBlob();
+		var general = DecodeItemGeneralInfo(blob);
 		return Fields(
 			("objectId", objectId), ("desc", description), ("blob", blob),
+			("itemMask", general?.ItemMask), ("itemCount", general?.ItemCount), ("itemCreator", general?.Creator),
 			("updateMask", r.Remaining >= 2 ? r.ReadUInt16() : null));
 	}
 
@@ -541,11 +551,57 @@ public sealed class BotServerPacketDecoder
 		var items = new List<IReadOnlyDictionary<string, object?>>(count);
 		for (var i = 0; i < count; i++)
 		{
+			var objectId = r.ReadInt32();
+			var itemId = r.ReadInt32();
+			var description = r.ReadString();
+			var blob = r.ReadLengthPrefixedBlob();
+			var general = DecodeItemGeneralInfo(blob);
 			items.Add(Fields(
-				("objectId", r.ReadInt32()), ("itemId", r.ReadInt32()), ("desc", r.ReadString()),
-				("blob", r.ReadLengthPrefixedBlob()), ("equipmentSlot", r.ReadUInt16()), ("cloth", r.ReadByte() != 0)));
+				("objectId", objectId), ("itemId", itemId), ("desc", description), ("blob", blob),
+				("itemMask", general?.ItemMask), ("itemCount", general?.ItemCount), ("itemCreator", general?.Creator),
+				("equipmentSlot", r.ReadUInt16()), ("cloth", r.ReadByte() != 0)));
 		}
 		return items;
+	}
+
+	private static ItemGeneralInfo? DecodeItemGeneralInfo(ReadOnlySpan<byte> blob)
+	{
+		var r = new PacketBodyReader(blob);
+		while (r.Remaining > 0)
+		{
+			var entryId = r.ReadByte();
+			if (entryId == 0x00)
+			{
+				var itemMask = r.ReadUInt16();
+				var itemCount = r.ReadInt64();
+				var creator = r.ReadString();
+				r.Skip(21);
+				return new ItemGeneralInfo(itemMask, itemCount, creator);
+			}
+
+			r.Skip(entryId switch
+			{
+				0x01 => 16,
+				0x02 => 20,
+				0x03 => 20,
+				0x04 => 16,
+				0x05 => 8,
+				0x06 => 8,
+				0x07 => 306,
+				0x08 => 4,
+				0x0A => 7,
+				0x0B => 138,
+				0x0D => 16,
+				0x0E => 30,
+				0x0F => 4,
+				0x10 => 3,
+				0x11 => 4,
+				0x12 => 1,
+				0x13 => 32,
+				_ => throw new InvalidDataException($"Unknown item blob entry 0x{entryId:X2}."),
+			});
+		}
+		return null;
 	}
 
 	private static string[] ReadStrings(ref PacketBodyReader r, int count)
@@ -558,6 +614,8 @@ public sealed class BotServerPacketDecoder
 
 	private static Dictionary<string, object?> Fields(params (string Name, object? Value)[] values) =>
 		values.ToDictionary(value => value.Name, value => value.Value, StringComparer.Ordinal);
+
+	private readonly record struct ItemGeneralInfo(ushort ItemMask, long ItemCount, string Creator);
 }
 
 public sealed record DecodedBotServerPacket(Type PacketType, IReadOnlyDictionary<string, object?> Fields)

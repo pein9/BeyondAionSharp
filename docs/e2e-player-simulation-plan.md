@@ -382,9 +382,13 @@ Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 con
   Defined the async transport boundary for complete framed/encrypted CM bytes, wire-ordered decoded SMs,
   graceful close and abrupt no-`CM_QUIT` crash. The interface deliberately leaves TCP and in-process behavior
   to their scheduled phases, and a contract test locks its operation types. Commit: `de005ad0f`.
-- [ ] **P2-09** [BOTH] M — Bot world model built only from decoded SMs: known objects (players, NPCs,
+- [x] **P2-09** [BOTH] M — Bot world model built only from decoded SMs: known objects (players, NPCs,
   gatherables, statics), self stats/HP/exp/level/flight time, inventory and kinah, skills and cooldowns, quest
   states, open dialog/question/loot/trade windows, system messages by `STR_` name. Depends on P2-05.
+  Added a decoded-packet-only client world view covering object discovery/movement/removal, self resources and
+  death state, inventory/kinah, skills/cooldowns, active and completed quests, interaction windows and named
+  system-message history. The decoder now exposes Java's general item-blob count/mask/creator fields and the
+  gatherable/static-door state word, with focused decoder and state-transition tests. Commit: `2ad907db8`.
 - [ ] **P2-10** [BOTH] S — Reflexes: `SM_PLAYER_SPAWN` → `CM_LEVEL_READY`; `SM_TELEPORT_LOC` →
   `CM_TELEPORT_ANIMATION_DONE`; `SM_PLAY_MOVIE` → `CM_PLAY_MOVIE_END` (every new character's first quest plays
   a movie and blocks movement until acked); `SM_DIE` → revive policy; `SM_QUESTION_WINDOW` → answer policy.
