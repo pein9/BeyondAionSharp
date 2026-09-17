@@ -12,6 +12,7 @@
     <Project Path="tests/Aion.GameServer.TestKit/Aion.GameServer.TestKit.csproj" />
     <Project Path="tests/Aion.GameServer.Tests/Aion.GameServer.Tests.csproj" />
     <Project Path="tests/Aion.LoginServer.Tests/Aion.LoginServer.Tests.csproj" />
+    <Project Path="tests/Aion.Simulation.Tests/Aion.Simulation.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Aion.LiveBots/Aion.LiveBots.csproj" />

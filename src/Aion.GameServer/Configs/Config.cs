@@ -27,6 +27,7 @@ namespace Aion.GameServer.Configs;
 public static class Config
 {
     private static readonly ILogger log = AionLog.For(nameof(Config));
+    private static GameServerConfigLoadOptions runtimeLoadOptions = GameServerConfigLoadOptions.Default;
 
     /// <summary>
     /// Java parity: GameServer.main registers the CronExpressionTransformer into PropertyTransformers before any
@@ -112,7 +113,19 @@ public static class Config
     /// <summary>Load configs of the given classes or all (the migrated set) if allowedConfigs is empty.</summary>
     public static void Load(params Type[] allowedConfigs)
     {
-        Load(GameServerConfigLoadOptions.Default, allowedConfigs);
+        Load(Volatile.Read(ref runtimeLoadOptions), allowedConfigs);
+    }
+
+    /// <summary>
+    /// Makes host-specific config inputs apply to Java-shaped <see cref="Load(Type[])"/> calls for the lifetime of
+    /// the returned scope. Java has one config root per game-server process; this bridge lets an embedded host keep
+    /// that same invariant when events or admin commands trigger a later global reload.
+    /// </summary>
+    public static IDisposable UseRuntimeLoadOptions(GameServerConfigLoadOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        GameServerConfigLoadOptions previous = Interlocked.Exchange(ref runtimeLoadOptions, options);
+        return new RuntimeLoadOptionsScope(options, previous);
     }
 
     /// <summary>Load from a host-selected config root, then apply its post-load overrides.</summary>
@@ -189,5 +202,19 @@ public static class Config
         bool processAllConfigs = allowedConfigs.Length == 0;
         object[] targets = (processAllConfigs ? MigratedConfigs : allowedConfigs).Cast<object>().ToArray();
         return ConfigurableProcessor.Process(properties, targets);
+    }
+
+    private sealed class RuntimeLoadOptionsScope(
+        GameServerConfigLoadOptions current,
+        GameServerConfigLoadOptions previous) : IDisposable
+    {
+        private GameServerConfigLoadOptions? _current = current;
+
+        public void Dispose()
+        {
+            GameServerConfigLoadOptions? expected = Interlocked.Exchange(ref _current, null);
+            if (expected != null)
+                Interlocked.CompareExchange(ref runtimeLoadOptions, previous, expected);
+        }
     }
 }

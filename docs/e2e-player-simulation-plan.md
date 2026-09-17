@@ -795,7 +795,7 @@ replays the same seeded trace.
   The reusable TestKit project now owns those three public helpers; `RealStaticData` lets the first caller select
   a process-isolated cache directory. The existing tests consume the project, and the expanded isolation scan
   caught and serialized an unguarded `SecurityConfig` write in `GoldenPacketFixtureTests`. (`8e61d2ac6`)
-- [ ] **P5-06** [SIM] L — `tests/Aion.Simulation.Tests` (its own test process, so the 278 `GoldenDataManager` test
+- [x] **P5-06** [SIM] L — `tests/Aion.Simulation.Tests` (its own test process, so the 278 `GoldenDataManager` test
   classes and the assembly-wide "sieges disabled" module initializer cannot leak in). A collection fixture boots
   **one world per process**:
   - `scripts/sim/new-sim-db.ps1`: start the development MySQL container if it is stopped, create
@@ -810,6 +810,13 @@ replays the same seeded trace.
   - No MySQL available → scenarios report **Skipped**, never Passed.
 
   Depends on P5-01..P5-05, P4-07, P4-08.
+  The dedicated test assembly now owns one collection-fixture world, a strict virtual clock fixed at Wednesday
+  08:59 UTC, an isolated real-static-data cache and config tree, and a bootstrap-only service provider with the
+  NIO/outbound hosted services removed. Its database helper uses only Docker commands to start/create the
+  development MySQL container, imports `aion_gs.sql` without `--force`, creates a per-run schema and drops it on
+  fixture or process exit. The default solution run reports a visible skip unless Docker integration is enabled;
+  an enabled Docker run boots the full world and passes. Runtime config scopes preserve the P5-03 root and hook
+  across Java-shaped event reloads. (`8489e418f`)
 - [ ] **P5-07** [SIM] M — In-process transport: client-encrypted CM bytes → `AionConnection.ProcessData` (decrypt,
   fake-packet check, `lastClientMessageTime`, flood check, `TryCreatePacket`, `Read`) → the P2-00 `ExecutePacket`
   override runs `Run` inline on the sim thread. After every CM and every clock advance, drain the send queue
