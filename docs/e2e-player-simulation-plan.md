@@ -784,8 +784,11 @@ replays the same seeded trace.
   `GameServerBootstrapService` now loads config before stale-online cleanup, used IDs and static data, matching
   Java's initialization order. Hosts can select an exact isolated config root and apply deterministic overrides
   after property processing; regression tests pin both ordering and checkout isolation. (`16350158f`)
-- [ ] **P5-04** [BOTH] S — Fix the static-data cache race: `XmlMerger` writes the 150 MB merged cache in place to a
+- [x] **P5-04** [BOTH] S — Fix the static-data cache race: `XmlMerger` writes the 150 MB merged cache in place to a
   shared path. Use a per-process cache directory for SIM or write-temp-then-move under a mutex.
+  `XmlMerger` now serializes rebuilds across processes by canonical cache path, rechecks freshness while holding
+  the mutex, and atomically publishes complete same-directory cache and metadata temp files. Concurrent-writer and
+  failed-rebuild regressions prove one complete publication and preservation of the last good pair. (`3c93e5a86`)
 - [ ] **P5-05** [SIM] M — Create `tests/Aion.GameServer.TestKit` with `VirtualThreadPool`, `RealStaticData`,
   `TestAiEngine`; update `SingletonIsolationTests` and extend its scan to `IDFactory.RegisterInstance`,
   `SetCaptureObserver` and config-static writes.

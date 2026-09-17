@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using System.Xml;
 using Aion.GameServer.Configs.Main;
 
@@ -36,6 +38,33 @@ public sealed class XmlMerger
 
 	public XmlMergeResult Merge()
 	{
+		using var cacheMutex = new Mutex(initiallyOwned: false, CreateCacheMutexName(_cacheFilePath));
+		var ownsMutex = false;
+		try
+		{
+			try
+			{
+				cacheMutex.WaitOne();
+				ownsMutex = true;
+			}
+			catch (AbandonedMutexException)
+			{
+				// The prior writer died while owning the cache. Its same-directory temporary files were never
+				// published, so the last destination pair is still safe to inspect and rebuild.
+				ownsMutex = true;
+			}
+
+			return MergeUnderLock();
+		}
+		finally
+		{
+			if (ownsMutex)
+				cacheMutex.ReleaseMutex();
+		}
+	}
+
+	private XmlMergeResult MergeUnderLock()
+	{
 		// Java parity: static_data.xml import expansion into cache/static_data.xml.
 		if (!File.Exists(_sourceFilePath))
 			throw new FileNotFoundException($"Source file {_sourceFilePath} not found.", _sourceFilePath);
@@ -53,16 +82,40 @@ public sealed class XmlMerger
 			Indent = false,
 		};
 
-		using (var writer = XmlWriter.Create(_cacheFilePath, settings))
+		var temporarySuffix = $".{Environment.ProcessId}.{Guid.NewGuid():N}.tmp";
+		var temporaryCacheFilePath = _cacheFilePath + temporarySuffix;
+		var temporaryMetadataFilePath = _metadataFilePath + temporarySuffix;
+		try
 		{
-			writer.WriteStartDocument();
-			CopyWithImports(_sourceFilePath, writer, metadata);
-			writer.WriteEndDocument();
+			using (var writer = XmlWriter.Create(temporaryCacheFilePath, settings))
+			{
+				writer.WriteStartDocument();
+				CopyWithImports(_sourceFilePath, writer, metadata);
+				writer.WriteEndDocument();
+			}
+
+			metadata[MetadataCountKey] = importedFiles.Count.ToString(CultureInfo.InvariantCulture);
+			WriteMetadata(temporaryMetadataFilePath, metadata);
+
+			// Both files are complete before either becomes visible. Publishing the cache first is fail-safe: if
+			// the process dies between moves, the old metadata forces the next merger to rebuild the new cache.
+			File.Move(temporaryCacheFilePath, _cacheFilePath, overwrite: true);
+			File.Move(temporaryMetadataFilePath, _metadataFilePath, overwrite: true);
+		}
+		finally
+		{
+			File.Delete(temporaryCacheFilePath);
+			File.Delete(temporaryMetadataFilePath);
 		}
 
-		metadata[MetadataCountKey] = importedFiles.Count.ToString(CultureInfo.InvariantCulture);
-		WriteMetadata(metadata);
 		return new XmlMergeResult(_cacheFilePath, fileWasModified: true, importedFiles);
+	}
+
+	private static string CreateCacheMutexName(string cacheFilePath)
+	{
+		var canonicalPath = Path.GetFullPath(cacheFilePath).ToUpperInvariant();
+		var pathHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonicalPath)));
+		return $"BeyondAionSharp.XmlMerger.{pathHash}";
 	}
 
 	private void CopyWithImports(string sourceFilePath, XmlWriter writer, IDictionary<string, string> metadata)
@@ -249,9 +302,9 @@ public sealed class XmlMerger
 		return metadata;
 	}
 
-	private void WriteMetadata(IReadOnlyDictionary<string, string> metadata)
+	private static void WriteMetadata(string metadataFilePath, IReadOnlyDictionary<string, string> metadata)
 	{
-		using var writer = new StreamWriter(_metadataFilePath);
+		using var writer = new StreamWriter(metadataFilePath);
 		writer.WriteLine("# This file is machine-generated. DO NOT EDIT!");
 		foreach (var entry in metadata.OrderBy(entry => entry.Key, StringComparer.OrdinalIgnoreCase))
 			writer.WriteLine($"{entry.Key}|{entry.Value}");
