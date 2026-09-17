@@ -85,7 +85,10 @@ runs use their own isolated compose project.
 | Quests | 8043 in `quest_data.xml`; 5219 with a handler (4184 XML templates + 1035 C# = Java); 2824 with none | parse `quest_data.xml` and `quest_script_data/*.xml` |
 | Obtainable quests a data-driven planner can run | ~2457 (48%) | excludes level-99 and EVENT quests; classifier to be checked in with `P7-02` |
 | Game-server tests / test run time | 3060 / ~1.5 min | last hosted CI run, 2026-09-17 |
-| Full static-data load, boot, and cost of one virtual minute | **not yet measured** | `P0-03` |
+| Full static-data load | Cold merge + parse **11.30 s**, warm parse **8.29–9.05 s**; test-host peak working set **~515 MiB** | `P0-03`, measured on i7-14700K / 64 GiB / .NET 10.0.301 |
+| Full DB-backed `StartAsync` / `SpawnAll` | **4.00–4.72 s** / **2.04–2.41 s**; **104,308** world objects; **1.57 GiB** test-host working set, **1.74 GiB** peak process tree | `P0-03`, Docker MySQL 8.4 on the same host |
+| Booted-world periodic cost | Over 30 s idle: process CPU **35.9 ms/wall-s**; `MoveTaskManager` **1.331 ms/wall-s** (127 movers at sample end), `ZoneUpdateService` **0.582 ms/wall-s** (8,950 calls), AI think **<0.001 ms/wall-s** | `P0-03`; stopwatch instrumentation was measurement-only and removed |
+| Extrapolated cost of one virtual minute | Named movement/zone/think work **~0.115 wall-s**; whole-process idle CPU upper bound **~2.16 CPU-s** before P5 deterministic-thread cleanup | `P0-03`; use the upper bound for the initial Fast-tier budget |
 
 ---
 
@@ -178,11 +181,11 @@ operations and coverage. Phase 11 is group and scheduled content.
   `4.8` fast-forwarded from `6ffedcd4f` to `lastCompletedJavaCommit` `ce54b7931`; its three stale worktrees and
   two `copilot/*` branches deleted. Keep `4.8` at `lastCompletedJavaCommit` as ports land, because
   `check_fidelity.py` and side-by-side reading use that working tree.
-- [ ] **P0-03** [SIM] S — Measure what SIM will cost: cold and warm `RealStaticData.LoadAsync` time and peak
+- [x] **P0-03** [SIM] S — Measure what SIM will cost: cold and warm `RealStaticData.LoadAsync` time and peak
   memory; `StartAsync` plus `SpawnAll` time and `World` object count; on a booted world, CPU per wall second
   spent in periodic managers (`MoveTaskManager`, `ZoneUpdateService`, AI think) and the number of moving
   creatures. Extrapolate the wall cost of one virtual minute. Put the numbers in §1; they size the Fast tier
-  budget.
+  budget. (`fdef20696`)
 - [ ] **P0-04** [BOTH] S — Remove the two `update.sql` steps from `RUNNING.md` (lines 28-29). Verified:
   `aion_gs.sql` already has both columns `game-server/sql/update.sql` adds, and `aion_ls.sql` lacks the
   `toll` column and `account_rewards` table that `login-server/sql/update.sql` drops, so both fail on a fresh
@@ -970,6 +973,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 22 | `GeoWorldLoader` is a stub | `GeoWorldLoader.java` (285 lines) | P9-01 |
 | 23 | Production boot skips `HousingService`/housing tasks, faction ratio counts, `InitSieges`, `PvpMapService.Init` | `GameServer.java:118-122,130-134,141,175` | Deferred (D7) |
 | 24 | `BossAiHarness.Kill` calls `OnDie` twice (test bug) | n/a | P6-08 |
+| 25 | The DB-backed full-boot test pre-registers test AIs before `StartAsync` initializes the real AI engine, and the assembly-wide `SiegeServiceTestInit` can construct the process-global siege singleton against empty fixture data; in isolation this produces duplicate-AI registration before boot or a stale-location NRE in the separately asserted deferred boot tail | n/a (C# test-process defect; production `StartAsync` completed for P0-03 after bypassing the test AI preload) | P1-12 / P5-12 |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 
