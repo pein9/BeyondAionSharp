@@ -41,6 +41,7 @@ services:
       DB_PASSWORD: ${AION_BOT_DB_PASSWORD:-aion-bots}
       AION_CONFIG_OVERLAY_DIR: /app/config-overlay
       AION_LOG_JSONL_DIR: /app/login-server/log
+      AION_RUN_ID: ${AION_RUN_ID:-}
     ports:
       - "${AION_BOT_LOGIN_PORT:-12106}:2106"
     volumes:
@@ -76,6 +77,7 @@ services:
       CHAT_CLIENT_PORT: ${AION_BOT_CHAT_PORT:-11241}
       AION_CONFIG_OVERLAY_DIR: /app/config-overlay
       AION_LOG_JSONL_DIR: /app/chat-server/log
+      AION_RUN_ID: ${AION_RUN_ID:-}
     ports:
       - "${AION_BOT_CHAT_PORT:-11241}:10241"
     volumes:
@@ -114,6 +116,7 @@ services:
       RESPAWN_TIME_MULTIPLIER: "1.0"
       AION_CONFIG_OVERLAY_DIR: /app/config-overlay
       AION_LOG_JSONL_DIR: /app/game-server/log
+      AION_RUN_ID: ${AION_RUN_ID:-}
       AION_PACKET_TAP: ${AION_PACKET_TAP:-false}
       GAMESERVER_ADMIN_API_ENABLED: "true"
       GAMESERVER_ADMIN_API_PORT: "7780"

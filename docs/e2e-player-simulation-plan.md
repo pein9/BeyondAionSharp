@@ -542,11 +542,18 @@ sockets before the large clock migration.
   connect produced one 11-byte clear `SM_KEY` record in the mounted packet tap; the disposable stack was removed.
   Java `ce54b7931` confirms there is no capture package and `AionServerPacket.write` goes directly from framing to
   encryption. Commit: `1bc7a5d0e`.
-- [ ] **P3-08** [LIVE] S — `scripts/live/run-live.ps1`: `docker compose -p aion-bots-<run> up -d --build` (P3-02) →
+- [x] **P3-08** [LIVE] S — `scripts/live/run-live.ps1`: `docker compose -p aion-bots-<run> up -d --build` (P3-02) →
   wait ready (P3-04) → bots → watcher → collect container logs into `run/<id>/` → `down -v` on the bots project
   only (`-Keep` leaves it running for inspection). Runs go under `$AION_E2E_RUN_ROOT` (default `run/`, ignored
   since P3-02); keep the last 20 local runs; `events.jsonl` and the packet tap roll at 200 MB and are gzipped
-  at run end; `problems.jsonl`, `digest.log` and `report.*` never roll.
+  at run end; `problems.jsonl`, `digest.log` and `report.*` never roll. The runner builds the two local tools,
+  propagates the run id, brings up and checks the isolated Docker/MySQL stack, watches while bots run, stops the
+  watcher before intentional shutdown, gracefully stops the servers, collects all four container logs and Docker
+  events, rolls/gzips only the large streams, removes only its exact Compose project, and retains 20 runs. `-Keep`
+  leaves the project and live packet tap intact; `-WatcherMode record` supports pre-ledger baselines. Docker Desktop's
+  `compose events --until` returns its complete stream with exit 1 plus `EOF`, so the collector accepts only that
+  exact benign terminal pair. A Docker-only `p308-runner2` connect run passed, carried its run id in GS JSONL and the
+  packet tap, produced validated gzip artifacts, and left no containers or volumes. Commit: `297ae87e8`.
 - [ ] **P3-09** [LIVE] S — Scenario **L0 walking skeleton**: login → game auth → create Elyos warrior → enter
   world → `CM_CHAT_AUTH` → `SM_CHAT_INIT` → chat-server auth → join the region channel → a second bot receives a
   channel message → walk 10 m → ping → quit → wait the re-entry time → log in again → character list shows the

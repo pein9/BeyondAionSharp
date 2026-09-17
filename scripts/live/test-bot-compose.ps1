@@ -64,6 +64,7 @@ try {
 		$logMount = $service.volumes | Where-Object { $_.target -like '/app/*-server/log' }
 		Assert-Contract ([IO.Path]::GetFullPath($logMount.source) -eq [IO.Path]::GetFullPath((Join-Path $contractRun "logs/$server"))) "$serviceName log mount is not per-run"
 		Assert-Contract ($service.environment.AION_LOG_JSONL_DIR -eq $logMount.target) "$serviceName JSONL directory is outside its run log mount"
+		Assert-Contract ($service.environment.AION_RUN_ID -eq '') "$serviceName does not accept the run id"
 	}
 
 	$deterministicRates = Get-Content -Raw (Join-Path $repoRoot 'docker/bots/overlay/20-deterministic-rates.properties')
