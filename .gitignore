@@ -16,3 +16,4 @@ chat-server/log/
 game-server/config/mygs.properties
 login-server/config/myls.properties
 chat-server/config/mycs.properties
+docker/.env

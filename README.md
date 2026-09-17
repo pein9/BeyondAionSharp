@@ -22,7 +22,7 @@ The checked-in warning baseline is a ceiling, not an accepted end state. New war
 
 The solution-wide test command includes the normal static-data, cross-server bridge, and deterministic database-boundary suites. Tests that require a separately running MySQL instance remain explicitly environment-gated.
 
-See [RUNNING.md](RUNNING.md) for local startup.
+See [RUNNING.md](RUNNING.md) for local startup and [docker/README.md](docker/README.md) for the container stack.
 
 ## Java reference
 

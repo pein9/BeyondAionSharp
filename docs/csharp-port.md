@@ -41,6 +41,7 @@ Phases 0–6 are done. Phase 7 is complete except the ~40 unported instance hand
 - Binary packet wire formats (opcodes, field order, encoding).
 - XML/static-data shape and validation expectations.
 - The three-process boundary: `login-server`, `game-server`, `chat-server`.
+- Docker-oriented deployment flow.
 
 ## Non-goals (for the parity port)
 

@@ -6,8 +6,8 @@ every server error surfaced the moment it happens, attributed to the bot action 
 
 **Status.** Planning. Nothing below is implemented yet. Written 2026-09-17 against `main` at `488763e0c`;
 every claim in §1, §7 and the appendices was re-checked against the code by an independent review pass.
-The maintainer's decisions (§6) were applied the same day: no hosted CI, no docker server stack, no
-schedulers; everything runs from local scripts, with Docker used only for the development MySQL.
+The maintainer's decisions (§6) were applied the same day: no hosted CI and no schedulers; test runs are
+local scripts. The `docker/` compose stack stays: it is how the emulator is deployed and run.
 
 ## How to use this document
 
@@ -27,8 +27,8 @@ schedulers; everything runs from local scripts, with Docker used only for the de
   `scripts/parity/check_fidelity.py` and anyone reading Java side by side use that working tree.
 - **Do not create branches or worktrees in this repo.** In `../aion-server` they are allowed when a TODO
   genuinely needs one (D12, for example P0-05).
-- **No hosted CI, no docker server stack, no schedulers** (D9). Every run is a local script; Docker is used
-  only for the development MySQL, where runs create and drop their own databases.
+- **No hosted CI, no schedulers** (D9). Every test run is a local script. The `docker/` compose stack is how
+  the emulator is deployed and run; test runs must not disturb it (see D13).
 
 ---
 
@@ -48,7 +48,8 @@ schedulers; everything runs from local scripts, with Docker used only for the de
 | Socketless connection trick | `ChatAuthenticationBridgeTests.QueuedClientConnection`, `OutboundLinkLifecycleTests.RecordingAionConnection` | An `AionConnection` built by reflection over an unconnected socket. Brittle but proves the idea. |
 | Golden server packets | `parity-artifacts/golden/packets/` | 181 Java-generated SM fixtures (364 cases; `payloadHex` is the body only): decoder test vectors. |
 | Packet capture hook | `AionServerPacket.SetCaptureObserver` | Sees every serialized server packet (object and clear bytes). No callers today. C#-only. |
-| Development MySQL | Docker container per `RUNNING.md` (host port 3307); `scripts/start-mixed-mode-db.ps1` | A MySQL 8.4 on which runs may freely create and drop throwaway `aion_*` databases. |
+| Docker deployment | `docker/docker-compose.yml`, `docker/deploy.ps1`, `docker/.env` | MySQL 8.4 plus login, chat and game servers: the maintainer's only way of running the emulator. Test runs never touch its `aion` compose project, `aion_ls`/`aion_gs`/`aion_cs` databases or `aion_aion-mysql-data` volume. |
+| Development MySQL | A MySQL 8.4 in Docker (the stack's `aion-mysql`, or `scripts/start-mixed-mode-db.ps1`) | Runs may freely create and drop their own throwaway databases (`aion_*_bots_<run>`, `aion_gs_sim_<run>_<shard>`). |
 | GM commands | `src/Aion.GameServer/Handlers/AdminCommands` (101) | Fast scenario setup: `//add`, `//set level`, `//moveto`, `//quest`, `//kill`, `//siege`, `//rift`, `//instance`, ... |
 | Account auto-create | `loginserver.accounts.autocreate` (default true) | Bots need no account seeding except GM access levels. |
 | Admin HTTP API | `src/Aion.GameServer/Services/Admin/AdminHttpService.cs` | Token-protected player and storage state; a LIVE assertion oracle. C#-only. |
@@ -140,7 +141,7 @@ flowchart LR
 9. **Ports keep landing during this work.** Before each codemod, record the new mapping in
    `docs/upstream-porting.md` and add a ratchet script to the pre-commit checks in `CLAUDE.md` (next to the
    warning baseline), so ported Java commits cannot reintroduce the old pattern.
-10. **Everything runs locally** (D9). No hosted CI, no docker server stack, no schedulers. The Fast and Full
+10. **Everything runs locally** (D9). No hosted CI, no schedulers. The Fast and Full
     tiers are scripts under `scripts/e2e/`, started by hand or by a Claude Code session.
 
 ### Project layout
@@ -925,7 +926,8 @@ process exits and MySQL errors.
 | D6 | Anti-hack checks in bot runs | Test-only oracle profile | **Declined** 2026-09-17: no anti-cheat checks; bot runs keep production security defaults (P6-04 dropped) |
 | D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Declined for now** 2026-09-17; revisit later (P10-05, P11-05, P11-06 and BA-005 deferred) |
 | D8 | Java reference for this work | Keep local `../aion-server` `4.8` at `lastCompletedJavaCommit` | **Done** 2026-09-17 (`6ffedcd4f` → `ce54b7931`) |
-| D9 | Where runs happen | Local scripts | **Decided** 2026-09-17: no GitHub Actions, no docker server stack, no n8n or other schedulers (all removed from the repo). Docker only hosts the development MySQL, where runs create and drop databases freely |
+| D9 | Where runs happen | Local scripts | **Decided** 2026-09-17: no GitHub Actions, no n8n or other schedulers (both removed from the repo). The `docker/` compose stack stays as the way the emulator is deployed and run. Runs may create and drop databases on a Docker MySQL freely |
+| D13 | How LIVE mode starts the servers | An isolated docker compose project from `docker/` (own project name, ports, databases and volume), so LIVE tests the same images the emulator is deployed with; today P3-02 describes local `dotnet run` processes instead | **Open** |
 | D10 | Randomness in economy scenarios | Deterministic profile (fail chances 0) for pass/fail; separate soak profile with statistical assertions (gather success ≈ 74%, craft ≈ 79% at skill lead 0) | Proposed |
 | D11 | Enable real geodata in production when P9-01 lands (geo defaults to on) | Yes as a parity fix, after P9-03 measures memory | **Approved** 2026-09-17 |
 | D12 | How Java golden fixtures are generated against `lastCompletedJavaCommit` | Bring the generator tests forward onto the spec revision | **Approved** 2026-09-17: branches or worktrees in `../aion-server` are allowed when needed |
