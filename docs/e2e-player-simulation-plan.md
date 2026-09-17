@@ -280,16 +280,23 @@ failures loud, and gets the test suite to a trustworthy green.
   qualifies for the P1-13 allowlist. The run also exposed and fixed incomplete JSONL tails by flushing every
   event record and disposing all three server hosts. `game-server/log/server_errors.log` was written on boot.
   (`c0ec6d07c`)
-- [ ] **P1-13** [BOTH] S — Shared problem allowlist `parity-artifacts/e2e/log-allowlist.json`:
+- [x] **P1-13** [BOTH] S — Shared problem allowlist `parity-artifacts/e2e/log-allowlist.json`:
   `{fp, reason, owner, tracking, modes, servers, maxCount, expires}`. The loader lives beside
   `LogFingerprint` and is used by P3-06 and P5-09. A check rejects entries with no owner or reason, expired
-  entries, and entries that matched nothing in the last Full run. Depends on P1-09.
+  entries, and entries that matched nothing in the last Full run. The checked-in list is deliberately empty:
+  every P1-12 fingerprint is a tracked bug. `LogProblemAllowlist` rejects malformed, ownerless, unexplained,
+  expired, duplicate and stale entries; the solution tests validate both the policy and the checked-in file.
+  `PhaseOneLoggingAcceptanceTests` exercises the scoped throwing-CM path in this phase's acceptance contract.
+  Depends on P1-09. (`2c033e6f9`)
 
 **Done when:** a test runs a CM whose `RunImpl` throws through `AionClientPacket.Run` on a reflection-built
 connection with an account, and asserts exactly one Error record with packet, opcode and account scope through
 `AionLog` and `JsonLinesLoggerProvider`; the game server writes `game-server/log/server_errors.log` on boot; a
 fixed-rate task survives a throw; a throwing one-shot timer is recorded by `VirtualThreadPool` and fails its
 test in `Strict` mode; the solution test run has passed 10 times in a row locally.
+
+Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 consecutive local solution runs
+(102 Commons, 34 Chat + 1 visible skip, 128 Login + 5 visible skips, 3060 Game + 7 visible skips per run).
 
 ### Phase 2 — Bot protocol library (`tests/Aion.Bots`)
 
