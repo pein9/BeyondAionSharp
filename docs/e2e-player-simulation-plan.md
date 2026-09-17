@@ -327,9 +327,13 @@ Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 con
   headers inside u16 frames. Two rotating packets in each direction interoperate with production `Crypt` and
   its live `EncryptionKeyPair`; the three dead production mirrors were deleted and `AionXorCipher` is labeled
   as a legacy non-game helper. Commit: `6c7a9b026`.
-- [ ] **P2-03** [BOTH] S — Generate the bot's opcode and valid-state table by reflecting over
+- [x] **P2-03** [BOTH] S — Generate the bot's opcode and valid-state table by reflecting over
   `AionClientPacketFactory` and `ServerPacketsOpcodes`. A test fails when they drift or when a bot sends a
   packet in a state the table does not allow. This table is authoritative; do not hand-copy opcodes.
+  `GamePacketRegistry` reflects immutable client/server definitions directly from both production tables;
+  typed client encoding checks the reflected valid-state set before touching cipher state, and decoded server
+  packets resolve their production type through the same registry. Tests pin table counts and exact reflected
+  contents and prove invalid-state sends fail before a subsequent valid send. Commit: `10edce609`.
 - [ ] **P2-04** [BOTH] M — CM writers for the packets in Appendix B, plus `CM_EMOTION` (jump, sit, arbitrary type
   byte), `CM_FRIEND_STATUS` (arbitrary status byte), `CM_CHAT_AUTH` and `CM_CHANGE_CHANNEL`. Note
   `CM_L2AUTH_LOGIN_CHECK` is six int32s (24 bytes). Each writer round-trips through `TryCreatePacket` + `Read()`

@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
+using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ServerPackets;
 
 namespace Aion.Bots.Protocol;
@@ -16,6 +17,7 @@ public sealed class GamePacketCodec
 
 	private byte[]? clientKey;
 	private byte[]? serverKey;
+	private readonly GamePacketRegistry registry = GamePacketRegistry.Instance;
 
 	public bool HasKey => clientKey != null;
 
@@ -40,11 +42,13 @@ public sealed class GamePacketCodec
 	}
 
 	/// <summary>Frames and encrypts one client packet, advancing the client key.</summary>
-	public byte[] EncodeClientFrame(int opcode, ReadOnlySpan<byte> body)
+	public byte[] EncodeClientFrame(Type packetType, AionConnection.State state, ReadOnlySpan<byte> body)
 	{
+		var packet = registry.GetClient(packetType);
+		packet.EnsureValid(state);
 		var key = clientKey ?? throw new InvalidOperationException("Recover SM_KEY before sending client packets.");
 		var payload = new byte[checked(HeaderLength + body.Length)];
-		var encodedOpcode = EncodeClientOpcode(opcode);
+		var encodedOpcode = EncodeClientOpcode(packet.Opcode);
 		WriteHeader(payload, encodedOpcode, ClientPacketCode);
 		body.CopyTo(payload.AsSpan(HeaderLength));
 		Encrypt(payload, key);
@@ -72,10 +76,12 @@ public sealed class GamePacketCodec
 	public static int DecodeServerOpcode(ushort opcode) =>
 		(opcode ^ 0xDF) - SM_VERSION_CHECK.INTERNAL_VERSION;
 
-	private static DecodedGamePacket DecodePlainServerPayload(ReadOnlySpan<byte> payload)
+	private DecodedGamePacket DecodePlainServerPayload(ReadOnlySpan<byte> payload)
 	{
 		var encodedOpcode = ValidateHeader(payload, ServerPacketCode);
-		return new DecodedGamePacket(DecodeServerOpcode(encodedOpcode), payload[HeaderLength..].ToArray());
+		var opcode = DecodeServerOpcode(encodedOpcode);
+		var packet = registry.GetServer(opcode);
+		return new DecodedGamePacket(opcode, packet.PacketType, payload[HeaderLength..].ToArray());
 	}
 
 	private static ushort ValidateHeader(ReadOnlySpan<byte> payload, byte packetCode)
@@ -166,4 +172,4 @@ public sealed class GamePacketCodec
 	}
 }
 
-public sealed record DecodedGamePacket(int Opcode, byte[] Body);
+public sealed record DecodedGamePacket(int Opcode, Type PacketType, byte[] Body);

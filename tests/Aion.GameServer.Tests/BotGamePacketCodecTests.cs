@@ -4,6 +4,7 @@ using Aion.Bots.Protocol;
 using Aion.Commons.Nio;
 using Aion.GameServer.Network;
 using Aion.GameServer.Network.Aion;
+using Aion.GameServer.Network.Aion.ClientPackets;
 using Aion.GameServer.Network.Aion.ServerPackets;
 
 namespace Aion.GameServer.Tests;
@@ -29,31 +30,34 @@ public sealed class BotGamePacketCodecTests
 		Assert.Equal(keyOpcode, keyPacket.Opcode);
 		Assert.Equal(baseKey, botCodec.BaseKey);
 
-		foreach (var (opcode, body) in new[]
+		foreach (var (packetType, body) in new[]
 		{
-			(142, new byte[] { 0, 0 }),
-			(99, new byte[] { 1, 2, 3, 4, 5, 6 }),
+			(typeof(SM_PONG), new byte[] { 0, 0 }),
+			(typeof(SM_CHAT_WINDOW), new byte[] { 1, 2, 3, 4, 5, 6 }),
 		})
 		{
+			var opcode = GamePacketRegistry.Instance.GetServer(packetType).Opcode;
 			var serverFrame = CreateServerFrame(opcode, body);
 			EncryptWithLiveCrypt(liveCrypt, serverFrame.AsSpan(2));
 			var decoded = botCodec.DecodeServerFrame(serverFrame);
 			Assert.Equal(opcode, decoded.Opcode);
+			Assert.Equal(packetType, decoded.PacketType);
 			Assert.Equal(body, decoded.Body);
 		}
 
-		foreach (var (opcode, body) in new[]
+		foreach (var (packetType, body) in new[]
 		{
-			(37, new byte[] { 0x89, 0x13, 0, 0, 0 }),
-			(236, new byte[] { 1, 0xaa, 0xbb }),
+			(typeof(CM_USE_ITEM), new byte[] { 0x89, 0x13, 0, 0, 0 }),
+			(typeof(CM_SELECT_DECOMPOSABLE), new byte[] { 1, 0xaa, 0xbb }),
 		})
 		{
-			var clientFrame = botCodec.EncodeClientFrame(opcode, body);
+			var packet = GamePacketRegistry.Instance.GetClient(packetType);
+			var clientFrame = botCodec.EncodeClientFrame(packetType, AionConnection.State.IN_GAME, body);
 			Assert.Equal(clientFrame.Length, BinaryPrimitives.ReadUInt16LittleEndian(clientFrame));
 			var decryptedPayload = clientFrame[2..].ToArray();
 			Assert.True(DecryptWithLiveCrypt(liveCrypt, decryptedPayload));
 			var encodedOpcode = BinaryPrimitives.ReadUInt16LittleEndian(decryptedPayload);
-			Assert.Equal(opcode, Crypt.DecodeClientPacketOpcode(encodedOpcode));
+			Assert.Equal(packet.Opcode, Crypt.DecodeClientPacketOpcode(encodedOpcode));
 			Assert.Equal(GamePacketCodec.ClientPacketCode, decryptedPayload[2]);
 			Assert.Equal(unchecked((ushort)~encodedOpcode), BinaryPrimitives.ReadUInt16LittleEndian(decryptedPayload.AsSpan(3)));
 			Assert.Equal(body, decryptedPayload[5..]);
