@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Aion.Commons.Logging;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
@@ -28,6 +29,7 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 	private readonly PriorityQueue<Entry, (long DueMillis, long Sequence)> _entries = new();
 	private readonly object _queueGate = new();
 	private readonly List<VirtualThreadPoolFault> _faults = new();
+	private readonly Dictionary<(ThreadPoolScheduleKind Kind, string Name), MutableTaskTiming> _taskTimings = new();
 	private long _nowMillis;
 	private long _sequence;
 	private int _advanceOwnerThreadId;
@@ -47,6 +49,45 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 	public bool Strict { get; set; }
 
 	public IReadOnlyList<VirtualThreadPoolFault> Faults => _faults;
+
+	/// <summary>The next live timer deadline, or <see langword="null"/> when no timer is armed.</summary>
+	public long? NextDueMillis
+	{
+		get
+		{
+			lock (_queueGate)
+			{
+				PruneCancelledLocked();
+				return _entries.TryPeek(out _, out (long DueMillis, long Sequence) priority)
+					? priority.DueMillis
+					: null;
+			}
+		}
+	}
+
+	/// <summary>Returns the fixed-rate callbacks using the most wall time, for scenario-budget diagnostics.</summary>
+	public IReadOnlyList<VirtualTaskTiming> GetTopPeriodicTaskTimings(int count = 10)
+	{
+		if (count < 0)
+			throw new ArgumentOutOfRangeException(nameof(count));
+		lock (_queueGate)
+		{
+			return _taskTimings.Values
+				.Where(timing => timing.Kind == ThreadPoolScheduleKind.FixedRate)
+				.OrderByDescending(timing => timing.TotalWallTime)
+				.ThenBy(timing => timing.Name, StringComparer.Ordinal)
+				.Take(count)
+				.Select(timing => timing.Snapshot())
+				.ToArray();
+		}
+	}
+
+	/// <summary>Starts a fresh timing window without changing the virtual timeline or armed timers.</summary>
+	public void ResetTaskTimings()
+	{
+		lock (_queueGate)
+			_taskTimings.Clear();
+	}
 
 	/// <summary>
 	/// Runs one eager singleton constructor and all work it queued for virtual time zero. Both phases use wall
@@ -150,11 +191,12 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 					throw new InvalidOperationException($"VirtualThreadPool exceeded {MaxTicksPerAdvance} timer ticks while advancing to {target}ms; clock remains at {_nowMillis}ms.");
 
 				_nowMillis = next.DueMillis;
+				long wallStart = Stopwatch.GetTimestamp();
 				if (next.PeriodMillis == null)
 				{
-					next.Handle.Run();
 					try
 					{
+						next.Handle.Run();
 						next.Handle.Get();
 					}
 					catch (Exception exception)
@@ -176,6 +218,7 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 						RecordFault(ThreadPoolScheduleKind.FixedRate, _nowMillis, exception);
 					}
 				}
+				RecordTiming(next, Stopwatch.GetElapsedTime(wallStart));
 			}
 		}
 		finally
@@ -192,14 +235,8 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 		{
 			lock (_queueGate)
 			{
-				Entry[] live = _entries.UnorderedItems.Select(item => item.Element).Where(entry => !entry.Handle.IsCancelled).ToArray();
-				if (live.Length != _entries.Count)
-				{
-					_entries.Clear();
-					foreach (Entry entry in live)
-						_entries.Enqueue(entry, (entry.DueMillis, entry.Sequence));
-				}
-				return live.Length;
+				PruneCancelledLocked();
+				return _entries.Count;
 			}
 		}
 	}
@@ -211,6 +248,19 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 	}
 
 	private void EnqueueLocked(Entry entry) => _entries.Enqueue(entry, (entry.DueMillis, entry.Sequence));
+
+	private void PruneCancelledLocked()
+	{
+		Entry[] live = _entries.UnorderedItems
+			.Select(item => item.Element)
+			.Where(entry => !entry.Handle.IsCancelled)
+			.ToArray();
+		if (live.Length == _entries.Count)
+			return;
+		_entries.Clear();
+		foreach (Entry entry in live)
+			_entries.Enqueue(entry, (entry.DueMillis, entry.Sequence));
+	}
 
 	private Entry? DequeueDue(long target)
 	{
@@ -260,6 +310,21 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 			dueMillis);
 	}
 
+	private void RecordTiming(Entry entry, TimeSpan elapsed)
+	{
+		var kind = entry.PeriodMillis == null ? ThreadPoolScheduleKind.Once : ThreadPoolScheduleKind.FixedRate;
+		var key = (kind, entry.Name);
+		lock (_queueGate)
+		{
+			if (!_taskTimings.TryGetValue(key, out MutableTaskTiming? timing))
+			{
+				timing = new MutableTaskTiming(kind, entry.Name);
+				_taskTimings.Add(key, timing);
+			}
+			timing.Add(elapsed);
+		}
+	}
+
 	private static async Task<T> RunBoundedAsync<T>(Func<T> action, string operation, TimeSpan wallTimeTimeout)
 	{
 		try
@@ -297,6 +362,7 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 			Handle = handle;
 			Action = action;
 			Sequence = sequence;
+			Name = Describe(action);
 		}
 
 		public long DueMillis { get; set; }
@@ -308,6 +374,30 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 		public Func<CancellationToken, ValueTask> Action { get; }
 
 		public long Sequence { get; }
+
+		public string Name { get; }
+
+		private static string Describe(Delegate action)
+		{
+			string type = action.Method.DeclaringType?.FullName ?? action.Target?.GetType().FullName ?? "<unknown>";
+			return type + "." + action.Method.Name;
+		}
+	}
+
+	private sealed class MutableTaskTiming(ThreadPoolScheduleKind kind, string name)
+	{
+		public ThreadPoolScheduleKind Kind { get; } = kind;
+		public string Name { get; } = name;
+		public int Invocations { get; private set; }
+		public TimeSpan TotalWallTime { get; private set; }
+
+		public void Add(TimeSpan elapsed)
+		{
+			Invocations++;
+			TotalWallTime += elapsed;
+		}
+
+		public VirtualTaskTiming Snapshot() => new(Kind, Name, Invocations, TotalWallTime);
 	}
 }
 
@@ -315,3 +405,9 @@ public sealed record VirtualThreadPoolFault(
 	ThreadPoolScheduleKind Kind,
 	long DueMillis,
 	Exception Exception);
+
+public sealed record VirtualTaskTiming(
+	ThreadPoolScheduleKind Kind,
+	string Name,
+	int Invocations,
+	TimeSpan TotalWallTime);

@@ -89,6 +89,27 @@ public sealed class InProcessBotTransport : IBotTransport
 		return ValueTask.CompletedTask;
 	}
 
+	/// <summary>Serializes server packets queued by work advanced outside this transport.</summary>
+	public ValueTask DrainAsync(CancellationToken cancellationToken = default)
+	{
+		cancellationToken.ThrowIfCancellationRequested();
+		lock (gate)
+		{
+			ThrowIfClosed();
+			try
+			{
+				DrainServerPackets();
+				CompleteIfDisconnected();
+			}
+			catch (Exception ex)
+			{
+				Fail(ex);
+				throw;
+			}
+		}
+		return ValueTask.CompletedTask;
+	}
+
 	public async IAsyncEnumerable<DecodedBotServerPacket> ReceiveAsync(
 		[EnumeratorCancellation] CancellationToken cancellationToken = default)
 	{

@@ -829,9 +829,15 @@ replays the same seeded trace.
   and unread client bytes; graceful close and crash retain the `IBotTransport` semantics, with crash dropping
   queued output. Tests pin crypt establishment, CM ping/PONG, serializer-side movie state, strict failures and
   abrupt-drop behavior. (`69d16272e`)
-- [ ] **P5-08** [SIM] M — Sim driver: advance to `min(next bot action, next due timer)`; timeouts in virtual
+- [x] **P5-08** [SIM] M — Sim driver: advance to `min(next bot action, next due timer)`; timeouts in virtual
   milliseconds; a wall-time budget per scenario, excluding the once-per-process boot. Fail a scenario whose
   virtual-minute cost exceeds the P0-03 budget and print the top periodic tasks by time.
+  The driver now steps one virtual pool to the next bot/timer deadline, drains every in-process transport after
+  each advance, and reports timeouts in virtual milliseconds. Scenario wall timing starts inside `RunUntilAsync`
+  and resets the pool's callback metrics, excluding the process fixture boot. A 10 s absolute scenario ceiling
+  and the P0-03 2.16 s/virtual-minute ceiling both fail with ranked fixed-rate callback timing. Focused tests pin
+  deadline order, virtual timeout, completion-time budget enforcement and periodic-task diagnostics.
+  (`da0754eb3`)
 - [ ] **P5-09** [SIM] M — Log policy: a capturing provider bound through the AsyncLocal override; scenario context
   `{run, scenario, bot, step}`; fail at scenario end on anything not in the shared allowlist (P1-13) for mode SIM:
   Error/Critical, `VirtualThreadPool` faults, and (opt-in per scenario) protocol Warnings, `AUDIT_LOG` entries and
