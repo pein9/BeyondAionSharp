@@ -1,0 +1,58 @@
+[
+  {
+    "id": "S0",
+    "modes": ["Sim"],
+    "tier": "Fast",
+    "race": "None",
+    "map": 210010000,
+    "channelNeeds": "None",
+    "bots": 0,
+    "virtualDuration": "00:01:00",
+    "consumes": [],
+    "requires": ["Db"],
+    "expectedFail": null,
+    "resetEpoch": false
+  },
+  {
+    "id": "L0",
+    "modes": ["Sim", "Live"],
+    "tier": "Fast",
+    "race": "Elyos",
+    "map": 210010000,
+    "channelNeeds": "Dedicated",
+    "bots": 2,
+    "virtualDuration": "00:01:00",
+    "consumes": [],
+    "requires": ["Db", "Chat"],
+    "expectedFail": null,
+    "resetEpoch": false
+  },
+  {
+    "id": "connect",
+    "modes": ["Live"],
+    "tier": "Full",
+    "race": "None",
+    "map": null,
+    "channelNeeds": "None",
+    "bots": 1,
+    "virtualDuration": "00:00:00",
+    "consumes": [],
+    "requires": [],
+    "expectedFail": null,
+    "resetEpoch": false
+  },
+  {
+    "id": "canaries",
+    "modes": ["Live"],
+    "tier": "Full",
+    "race": "Elyos",
+    "map": 210010000,
+    "channelNeeds": "Dedicated",
+    "bots": 1,
+    "virtualDuration": "00:00:00",
+    "consumes": [],
+    "requires": ["Db", "Chat"],
+    "expectedFail": null,
+    "resetEpoch": false
+  }
+]

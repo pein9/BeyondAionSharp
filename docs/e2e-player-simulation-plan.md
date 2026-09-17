@@ -855,14 +855,20 @@ replays the same seeded trace.
   AI `Spawned` event through the virtual scheduler and drives `CM_MOVE` through its Java-shaped scalar readers; the
   policy reports both the timer fault's complete stack and the swallowed under-read logs. A matching passing probe
   and complete movement body stay clean. (`eeac8cd1f`)
-- [ ] **P5-12** [BOTH] M — Scenario manifest and isolation. Every scenario declares `{id, modes, tier:
+- [x] **P5-12** [BOTH] M — Scenario manifest and isolation. Every scenario declares `{id, modes, tier:
   Fast|Full|Soak, race, map, channelNeeds, bots, virtualDuration, consumes: [npc/gatherable ids],
   requires: [geo, D7, chat, db], expectedFail: reason}`. The SIM xUnit theory source and `tools/Aion.LiveBots`
   both enumerate it, so the SIM and LIVE sets cannot drift. Scenarios on twin maps get their own channel via
   `CM_CHANGE_CHANNEL`; scenarios on maps without twins (capitals) run one at a time. In one SIM process scenarios
   run in a fixed order, and the driver advances past the longest respawn among consumed objects before the next
   starts; scenarios needing the reset epoch get their own process. The Full tier shards the manifest across N
-  processes, each with its own database and cache directory.
+  processes, each with its own database and cache directory. Added the strict shared JSON manifest and loader,
+  cumulative tier/mode enumeration, deterministic process/channel/respawn planning, reset-epoch process boundaries,
+  and per-shard database/cache identities. SIM's theory data and LiveBots now read that same source; LIVE validates
+  mode membership and bot counts, records the resolved definitions, and sends `CM_CHANGE_CHANNEL` for dedicated
+  scenarios. The deterministic Docker profile exposes five ordinary twins with FastTrack disabled. A rebuilt,
+  Docker-only L0 run moved both bots to channel 1 (`worldChannel 210010001`) and completed with no new or regressed
+  log fingerprints. (`503a0c3a6`)
 - [ ] **P5-13** [SIM] S — Scenario **S0 boot smoke** (world up, known NPCs present, zero unallowlisted problems
   after 60 virtual seconds) and **L0** in SIM, using the same script as LIVE (without the chat-server steps, which
   are LIVE-only). Run S0 twice with the same seed and assert identical SM streams. Depends on P5-06..P5-12.

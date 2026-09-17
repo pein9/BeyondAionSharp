@@ -2,11 +2,13 @@ using System.Buffers.Binary;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Aion.Bots.Api;
 using Aion.Bots.Protocol;
 using Aion.Bots.Protocol.Chat;
 using Aion.Bots.Protocol.Login;
 using Aion.Bots.Reflexes;
+using Aion.Bots.Scenarios;
 using Aion.Bots.Tracing;
 using Aion.Bots.Transport;
 using Aion.ChatServer.Network;
@@ -25,9 +27,9 @@ public static class LiveBotRunner
 		Directory.CreateDirectory(Path.Combine(options.OutputDirectory, "bots"));
 		await WriteRunMetadataAsync(options, cancellationToken);
 		await using var problems = new LiveBotProblemWriter(Path.Combine(options.OutputDirectory, "bot.problems.jsonl"));
-		if (options.Scenarios.SequenceEqual(["L0"], StringComparer.Ordinal))
+		if (options.ScenarioDefinitions is [{ Id: "L0" }])
 			return await RunL0Async(options, problems, cancellationToken);
-		if (options.Scenarios.SequenceEqual(["canaries"], StringComparer.Ordinal))
+		if (options.ScenarioDefinitions is [{ Id: "canaries" }])
 			return await RunCanariesAsync(options, problems, cancellationToken);
 
 		var tasks = Enumerable.Range(1, options.BotCount)
@@ -53,6 +55,9 @@ public static class LiveBotRunner
 			await Task.WhenAll(actors.Select(a => a.StepAsync("login-game-auth", a.Session.LoginAndAuthenticateAsync, cancellationToken)));
 			await Task.WhenAll(actors.Select(a => a.StepAsync("create-elyos-warrior", a.Session.CreateCharacterAsync, cancellationToken)));
 			await Task.WhenAll(actors.Select(a => a.StepAsync("enter-world", a.Session.EnterWorldAsync, cancellationToken)));
+			int? channel = PlannedChannel(options, "L0");
+			if (channel != null)
+				await Task.WhenAll(actors.Select(a => a.StepAsync("isolate-channel", token => a.Session.ChangeChannelAsync(channel.Value, token), cancellationToken)));
 			await Task.WhenAll(actors.Select(a => a.StepAsync("chat-auth-and-region-join", a.Session.ConnectChatAsync, cancellationToken)));
 
 			const string message = "L0 channel delivery";
@@ -98,6 +103,9 @@ public static class LiveBotRunner
 			await actor.StepAsync("login-game-auth", actor.Session.LoginAndAuthenticateAsync, cancellationToken);
 			await actor.StepAsync("create-elyos-warrior", actor.Session.CreateCharacterAsync, cancellationToken);
 			await actor.StepAsync("enter-world", actor.Session.EnterWorldAsync, cancellationToken);
+			int? channel = PlannedChannel(options, "canaries");
+			if (channel != null)
+				await actor.StepAsync("isolate-channel", token => actor.Session.ChangeChannelAsync(channel.Value, token), cancellationToken);
 			await actor.StepAsync("gs-friend-status-canary", actor.Session.SendFriendStatusCanaryAsync, cancellationToken);
 			await actor.StepAsync("gs-emotion-canary", actor.Session.SendEmotionCanaryAsync, cancellationToken);
 			await actor.StepAsync("ls-bad-checksum-canary", actor.Session.SendBadLoginChecksumCanaryAsync, cancellationToken);
@@ -129,17 +137,17 @@ public static class LiveBotRunner
 		var stepNumber = 0;
 		try
 		{
-			foreach (var scenario in options.Scenarios)
+			foreach (ScenarioDefinition scenario in options.ScenarioDefinitions)
 			{
 				var step = $"s{++stepNumber:D2}";
-				trace.WriteAction(step, "scenario:start", new Dictionary<string, object?> { ["scenario"] = scenario });
+				trace.WriteAction(step, "scenario:start", new Dictionary<string, object?> { ["scenario"] = scenario.Id });
 				session.BeginStep(step);
 				await RunStepAsync(options, problems, trace, bot, account, step, "connect", cancellationToken,
 					session.ConnectAndReadKeyAsync);
 				step = $"s{++stepNumber:D2}";
 				session.BeginStep(step);
 				await RunStepAsync(options, problems, trace, bot, account, step, "close", cancellationToken, session.CloseAsync);
-				trace.WriteAction(step, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = scenario });
+				trace.WriteAction(step, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = scenario.Id });
 			}
 			return true;
 		}
@@ -187,6 +195,15 @@ public static class LiveBotRunner
 		}
 	}
 
+	private static int? PlannedChannel(LiveBotOptions options, string scenarioId) => ScenarioIsolationPlanner.Plan(
+		options.ScenarioDefinitions,
+		ScenarioMode.Live,
+		ScenarioTier.Soak,
+		shardCount: 1,
+		_ => TimeSpan.Zero)
+		.Single(execution => execution.Scenario.Id == scenarioId)
+		.Channel;
+
 	private static string CharacterName(int index)
 	{
 		var suffix = new string([(char)('a' + ((index - 1) / 26)), (char)('a' + ((index - 1) % 26))]);
@@ -204,6 +221,7 @@ public static class LiveBotRunner
 			timeZone = options.TimeZone,
 			configProfile = options.Profile,
 			scenarios = options.Scenarios,
+			scenarioDefinitions = options.ScenarioDefinitions,
 			bots = options.BotCount,
 			loginEndPoint = options.LoginEndPoint.ToString(),
 			gameEndPoint = options.GameEndPoint.ToString(),
@@ -212,7 +230,12 @@ public static class LiveBotRunner
 			reentrySeconds = options.ReentryDelay.TotalSeconds,
 		};
 		await using var output = File.Create(Path.Combine(options.OutputDirectory, "bots-run.json"));
-		await JsonSerializer.SerializeAsync(output, metadata, new JsonSerializerOptions { WriteIndented = true }, cancellationToken);
+		await JsonSerializer.SerializeAsync(output, metadata, new JsonSerializerOptions
+		{
+			WriteIndented = true,
+			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+			Converters = { new JsonStringEnumConverter(allowIntegerValues: false) },
+		}, cancellationToken);
 	}
 
 	private sealed class L0Actor : IAsyncDisposable
@@ -384,6 +407,17 @@ internal sealed class LiveBotSession : IAsyncDisposable
 		chatChannelId = BinaryPrimitives.ReadInt32LittleEndian(channelResponse.AsSpan(8, 4));
 		if (chatChannelId == 0)
 			throw new InvalidDataException("Chat server returned channel id 0.");
+	}
+
+	public async Task ChangeChannelAsync(int channel, CancellationToken cancellationToken)
+	{
+		if (channel <= 0)
+			throw new ArgumentOutOfRangeException(nameof(channel));
+		await SendGameAsync(api.ChangeChannel(channel), cancellationToken);
+		await WaitForGamePacketAsync(typeof(SM_CHANNEL_INFO), cancellationToken);
+		DecodedBotServerPacket spawn = await WaitForGamePacketAsync(typeof(SM_PLAYER_SPAWN), cancellationToken);
+		expectedPosition = new PersistedPosition(spawn.Get<int>("worldId"), spawn.Get<float>("x"),
+			spawn.Get<float>("y"), spawn.Get<float>("z"));
 	}
 
 	public Task SendChatMessageAsync(string message, CancellationToken cancellationToken)

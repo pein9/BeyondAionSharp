@@ -1,4 +1,5 @@
 using Aion.Bots.Transport;
+using Aion.Bots.Scenarios;
 using Aion.GameServer.TestKit;
 
 namespace Aion.Simulation.Tests;
@@ -38,6 +39,16 @@ public sealed class SimulationDriver
 			throw new ArgumentOutOfRangeException(nameof(delay));
 		long dueMillis = checked(clock.NowMillis + delayMillis);
 		actions.Enqueue(new ScheduledBotAction(bot, action, dueMillis, callback), (dueMillis, ++sequence));
+	}
+
+	/// <summary>Applies the manifest isolation delay before the next scenario starts.</summary>
+	public async ValueTask PrepareScenarioAsync(
+		ScenarioExecution execution,
+		CancellationToken cancellationToken = default)
+	{
+		ArgumentNullException.ThrowIfNull(execution);
+		if (execution.AdvanceBefore > TimeSpan.Zero)
+			await AdvanceAndDrainAsync(checked((long)execution.AdvanceBefore.TotalMilliseconds), cancellationToken);
 	}
 
 	public async Task<SimulationRunResult> RunUntilAsync(

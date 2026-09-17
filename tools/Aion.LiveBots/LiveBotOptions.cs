@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
+using Aion.Bots.Scenarios;
 
 namespace Aion.LiveBots;
 
@@ -14,6 +15,7 @@ public sealed record LiveBotOptions(
 	string AdminToken,
 	int BotCount,
 	IReadOnlyList<string> Scenarios,
+	IReadOnlyList<ScenarioDefinition> ScenarioDefinitions,
 	TimeSpan ConnectTimeout,
 	TimeSpan StepTimeout,
 	int Seed,
@@ -23,7 +25,7 @@ public sealed record LiveBotOptions(
 	TimeSpan ReentryDelay)
 {
 	public const string Usage = "Usage: dotnet run --project tools/Aion.LiveBots -- --run <id> --output <run-dir> " +
-		"[--scenario connect|L0|canaries] [--bots N] [--host 127.0.0.1] [--login-port 12106] " +
+		"[--scenario manifest-id[,manifest-id]] [--bots N] [--host 127.0.0.1] [--login-port 12106] " +
 		"[--game-port 17777] [--chat-port 11241] [--admin-port 17780] [--admin-token TOKEN] " +
 		"[--connect-timeout-seconds 10] [--step-timeout-seconds 15] [--seed N] [--git-sha SHA] " +
 		"[--profile deterministic] [--time-zone ID] [--reentry-seconds 10]";
@@ -54,12 +56,24 @@ public sealed record LiveBotOptions(
 		var seed = Int(values, "seed", 1);
 		var scenarios = Get(values, "scenario", "connect")
 			.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-		if (scenarios.Length == 0 || scenarios.Any(scenario => scenario is not ("connect" or "L0" or "canaries")))
-			throw new ArgumentException("Supported scenarios are 'connect', 'L0' and 'canaries'.");
+		if (scenarios.Length == 0 || scenarios.Distinct(StringComparer.Ordinal).Count() != scenarios.Length)
+			throw new ArgumentException("--scenario must contain one or more distinct manifest ids.");
+		ScenarioManifest manifest = ScenarioManifest.Load(ScenarioManifest.FindDefaultPath());
+		ScenarioDefinition[] scenarioDefinitions;
+		try
+		{
+			scenarioDefinitions = scenarios.Select(manifest.Get).ToArray();
+		}
+		catch (KeyNotFoundException exception)
+		{
+			throw new ArgumentException(exception.Message, "scenario", exception);
+		}
+		ScenarioDefinition? nonLive = scenarioDefinitions.FirstOrDefault(definition => !definition.Modes.Contains(ScenarioMode.Live));
+		if (nonLive != null)
+			throw new ArgumentException($"Scenario '{nonLive.Id}' does not support LIVE mode.", "scenario");
 		if (scenarios.Any(scenario => scenario is "L0" or "canaries") && scenarios.Length != 1)
 			throw new ArgumentException("L0 and canaries are coordinated scenarios and must be run by themselves.");
-		if (scenarios.Contains("L0", StringComparer.Ordinal))
-			bots = Math.Max(2, bots);
+		bots = Math.Max(bots, scenarioDefinitions.Max(definition => definition.Bots));
 		var reentrySeconds = PositiveInt(values, "reentry-seconds", 10, 3600);
 
 		var known = new HashSet<string>(StringComparer.Ordinal)
@@ -82,6 +96,7 @@ public sealed record LiveBotOptions(
 			Get(values, "admin-token", Environment.GetEnvironmentVariable("AION_BOT_ADMIN_TOKEN") ?? "aion-bots-local-token"),
 			bots,
 			scenarios,
+			scenarioDefinitions,
 			TimeSpan.FromSeconds(connectSeconds),
 			TimeSpan.FromSeconds(stepSeconds),
 			seed,
