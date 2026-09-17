@@ -18,4 +18,8 @@
     <Using Include="Aion.Commons.Logging" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Aion.Commons.Tests" />
+  </ItemGroup>
+
 </Project>

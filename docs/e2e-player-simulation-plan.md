@@ -230,9 +230,9 @@ failures loud, and gets the test suite to a trustworthy green.
   Also port `ExecuteWrapper`'s slow-task warning (`MAXIMUM_RUNTIME_IN_MILLISEC_WITHOUT_WARNING`), which Java
   applies to every pooled `schedule`/`scheduleAtFixedRate`/`execute`. Test: a body that throws once still
   runs next period. (`b11a2416a`)
-- [ ] **P1-05** [LIVE] S — Install `AppDomain.UnhandledException` and `TaskScheduler.UnobservedTaskException`
+- [x] **P1-05** [LIVE] S — Install `AppDomain.UnhandledException` and `TaskScheduler.UnobservedTaskException`
   handlers in all three servers, mirroring Java's `UncaughtExceptionHandler` ("Critical Error - Thread ...
-  terminated abnormally").
+  terminated abnormally"). (`90991f317`)
 - [ ] **P1-06** [BOTH] S — Fix sites that lose exception detail:
   - (a) `CM_TELEPORT_ANIMATION_DONE` logs `e.InnerException`, but `ScheduledTask.Get` rethrows the original
     exception unwrapped, so nothing useful is logged. Log `e`, and correct the false "wrapped" comment at

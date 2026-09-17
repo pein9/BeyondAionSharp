@@ -144,6 +144,7 @@ var builder = Host.CreateDefaultBuilder(args)
 
 var host = builder.Build();
 AionLog.SetFactory(host.Services.GetRequiredService<ILoggerFactory>());
+using var processExceptionHandler = AionProcessExceptionHandler.Install();
 
 // Singleton-bridge wiring (see docs/HANDOFF.md "SINGLETON-BRIDGE"): bind DI-created engine
 // services to their Java-style static accessors so per-instance domain objects (Creature,
