@@ -13,11 +13,10 @@ public sealed class SystemMailRepositoryDatabaseIntegrationTests
 {
 	private const int PlayerObjectId = 1001;
 
-	[Fact]
+	[SkippableFact]
 	public async Task StoreSystemMailOperations_WriteLetterItemAndOfflineCounterAgainstJavaSchema_WhenEnabled()
 	{
-		if (Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_INTEGRATION") != "1")
-			return;
+		Skip.IfNot(Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_INTEGRATION") == "1", "Set AION_GAMESERVER_DB_INTEGRATION=1 to run Docker MySQL integration tests.");
 
 		// Java source breadcrumbs: SystemMailService.sendMail, MailDAO.saveLetter, InventoryDAO.insertItems, MailDAO.updateOfflineMailCounter.
 		InitializeDatabaseFactory();
@@ -138,11 +137,10 @@ public sealed class SystemMailRepositoryDatabaseIntegrationTests
 				"SELECT CAST(FLOOR(UNIX_TIMESTAMP(received) * 1000) AS SIGNED) FROM player_web_rewards WHERE entry_id = 7001"));
 	}
 
-	[Fact]
+	[SkippableFact]
 	public async Task StoreSystemMailOperations_LeavesLetterAndCounterUnchangedWhenAttachedItemFails_WhenEnabled()
 	{
-		if (Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_INTEGRATION") != "1")
-			return;
+		Skip.IfNot(Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_INTEGRATION") == "1", "Set AION_GAMESERVER_DB_INTEGRATION=1 to run Docker MySQL integration tests.");
 
 		// Java source breadcrumbs: SystemMailService.sendMail stops before updateRecipientMailbox when InventoryDAO.store returns false.
 		InitializeDatabaseFactory();
@@ -179,11 +177,10 @@ public sealed class SystemMailRepositoryDatabaseIntegrationTests
 		Assert.Equal(4, await ExecuteScalarLongAsync("SELECT mailbox_letters FROM players WHERE id = 1001"));
 	}
 
-	[Fact]
+	[SkippableFact]
 	public async Task StoreSystemMailOperations_DoesNotWriteItemOrCounterWhenLetterFails_WhenEnabled()
 	{
-		if (Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_INTEGRATION") != "1")
-			return;
+		Skip.IfNot(Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_INTEGRATION") == "1", "Set AION_GAMESERVER_DB_INTEGRATION=1 to run Docker MySQL integration tests.");
 
 		// Java source breadcrumbs: SystemMailService.sendMail returns false immediately when MailDAO.storeLetter fails.
 		InitializeDatabaseFactory();

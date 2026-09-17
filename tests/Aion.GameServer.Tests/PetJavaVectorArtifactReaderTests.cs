@@ -1,10 +1,9 @@
 using System.Text.Json;
 using Aion.GameServer.Model.GameObjects;
-using Xunit.Abstractions;
 
 namespace Aion.GameServer.Tests;
 
-public sealed class PetJavaVectorArtifactReaderTests(ITestOutputHelper output)
+public sealed class PetJavaVectorArtifactReaderTests
 {
 	private static readonly JsonSerializerOptions JsonOptions = new()
 	{
@@ -101,7 +100,7 @@ public sealed class PetJavaVectorArtifactReaderTests(ITestOutputHelper output)
 		AssertArtifactPacketSemantics(artifact);
 	}
 
-	[Fact]
+	[SkippableFact]
 	public async Task FindPetJavaArtifacts_IsGuardedUntilGeneratorOutputExists()
 	{
 		var artifactRoot = GetPetArtifactRoot();
@@ -109,11 +108,7 @@ public sealed class PetJavaVectorArtifactReaderTests(ITestOutputHelper output)
 			? Directory.GetFiles(artifactRoot, "*.json").Order(StringComparer.Ordinal).ToArray()
 			: [];
 
-		if (artifacts.Length == 0)
-		{
-			output.WriteLine("Needs Verification: Java known-list pet vector artifacts are not present yet.");
-			return;
-		}
+		Skip.IfNot(artifacts.Length > 0, "Java known-list pet vector artifacts are not present yet.");
 
 		foreach (var artifactPath in artifacts)
 		{

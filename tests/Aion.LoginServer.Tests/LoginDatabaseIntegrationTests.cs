@@ -13,11 +13,10 @@ namespace Aion.LoginServer.Tests;
 
 public class LoginDatabaseIntegrationTests
 {
-	[Fact]
+	[SkippableFact]
 	public async Task TemporalRepositories_PreserveExactEpochsAcrossNonUtcSession_WhenEnabled()
 	{
-		if (Environment.GetEnvironmentVariable("AION_LOGIN_DB_INTEGRATION") != "1")
-			return;
+		Skip.IfNot(Environment.GetEnvironmentVariable("AION_LOGIN_DB_INTEGRATION") == "1", "Set AION_LOGIN_DB_INTEGRATION=1 to run Docker MySQL integration tests.");
 
 		DatabaseFactory.Initialize(
 			new DatabaseOptions
@@ -75,11 +74,10 @@ public class LoginDatabaseIntegrationTests
 				"SELECT CAST(FLOOR(UNIX_TIMESTAMP(date) * 1000) AS SIGNED) FROM account_login_history WHERE account_id=300"));
 	}
 
-	[Fact]
+	[SkippableFact]
 	public async Task AccountRepository_RoundTripsAgainstLoginSchema_WhenEnabled()
 	{
-		if (Environment.GetEnvironmentVariable("AION_LOGIN_DB_INTEGRATION") != "1")
-			return;
+		Skip.IfNot(Environment.GetEnvironmentVariable("AION_LOGIN_DB_INTEGRATION") == "1", "Set AION_LOGIN_DB_INTEGRATION=1 to run Docker MySQL integration tests.");
 
 		DatabaseFactory.Initialize(
 			server: Environment.GetEnvironmentVariable("AION_LOGIN_DB_HOST") ?? "localhost",
@@ -107,11 +105,10 @@ public class LoginDatabaseIntegrationTests
 		Assert.Equal(inserted.PasswordHash, loaded.PasswordHash);
 	}
 
-	[Fact]
+	[SkippableFact]
 	public async Task AccountRepository_InsertMatchesJavaAccountDaoShape_WhenEnabled()
 	{
-		if (Environment.GetEnvironmentVariable("AION_LOGIN_DB_INTEGRATION") != "1")
-			return;
+		Skip.IfNot(Environment.GetEnvironmentVariable("AION_LOGIN_DB_INTEGRATION") == "1", "Set AION_LOGIN_DB_INTEGRATION=1 to run Docker MySQL integration tests.");
 
 		DatabaseFactory.Initialize(
 			server: Environment.GetEnvironmentVariable("AION_LOGIN_DB_HOST") ?? "localhost",
@@ -138,11 +135,10 @@ public class LoginDatabaseIntegrationTests
 		Assert.NotEqual(default, inserted.AccountTime.LastLoginTime);
 	}
 
-	[Fact]
+	[SkippableFact]
 	public async Task AuxiliaryRepositories_RoundTripAgainstLoginSchema_WhenEnabled()
 	{
-		if (Environment.GetEnvironmentVariable("AION_LOGIN_DB_INTEGRATION") != "1")
-			return;
+		Skip.IfNot(Environment.GetEnvironmentVariable("AION_LOGIN_DB_INTEGRATION") == "1", "Set AION_LOGIN_DB_INTEGRATION=1 to run Docker MySQL integration tests.");
 
 		DatabaseFactory.Initialize(
 			server: Environment.GetEnvironmentVariable("AION_LOGIN_DB_HOST") ?? "localhost",
@@ -207,11 +203,10 @@ public class LoginDatabaseIntegrationTests
 		Assert.NotNull(await ExecuteScalarAsync("SELECT time_performed FROM player_transfers WHERE id=200"));
 	}
 
-	[Fact]
+	[SkippableFact]
 	public async Task LoginSocket_RoundTripsEncryptedHandshakeAgainstLoginSchema_WhenEnabled()
 	{
-		if (Environment.GetEnvironmentVariable("AION_LOGIN_DB_INTEGRATION") != "1")
-			return;
+		Skip.IfNot(Environment.GetEnvironmentVariable("AION_LOGIN_DB_INTEGRATION") == "1", "Set AION_LOGIN_DB_INTEGRATION=1 to run Docker MySQL integration tests.");
 
 		DatabaseFactory.Initialize(
 			server: Environment.GetEnvironmentVariable("AION_LOGIN_DB_HOST") ?? "localhost",

@@ -309,7 +309,7 @@ public sealed class GameServerBootstrapTests
 		Assert.True(euterpeSpawned, "known Sanctum NPC 798173 (Euterpe) did not spawn into the world");
 	}
 
-	[Fact]
+	[SkippableFact]
 	public async Task GameServerBootstrap_DbBackedFullBoot_RunsRealStartAsyncAgainstLiveMySql()
 	{
 		// STRONGEST end-to-end validation: boot the FULL GameServerBootstrapService.StartAsync against the LIVE
@@ -325,10 +325,9 @@ public sealed class GameServerBootstrapTests
 		// into a map's multiple twin instances collides on the House objectId (DuplicateAionObjectException) — the
 		// documented Java-latent throw on Heiron(210040000)/Beluslan(220040000) housing twins.
 		//
-		// Env-gated: a no-op unless AION_GAMESERVER_DB_INTEGRATION=1 (so the normal suite stays green; the container
-		// is only present in the integration environment).
-		if (Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_INTEGRATION") != "1")
-			return;
+		// Env-gated: visibly skipped unless AION_GAMESERVER_DB_INTEGRATION=1 (the Docker container is only present
+		// in the integration environment).
+		Skip.IfNot(Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_INTEGRATION") == "1", "Set AION_GAMESERVER_DB_INTEGRATION=1 to run Docker MySQL integration tests.");
 
 		var repoRoot = RealStaticData.RepoRoot();
 

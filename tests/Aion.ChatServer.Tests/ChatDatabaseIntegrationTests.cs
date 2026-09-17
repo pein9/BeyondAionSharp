@@ -6,11 +6,10 @@ namespace Aion.ChatServer.Tests;
 
 public class ChatDatabaseIntegrationTests
 {
-	[Fact]
+	[SkippableFact]
 	public async Task ChatLogRepository_InsertsAgainstJavaChatSchema_WhenEnabled()
 	{
-		if (Environment.GetEnvironmentVariable("AION_CHAT_DB_INTEGRATION") != "1")
-			return;
+		Skip.IfNot(Environment.GetEnvironmentVariable("AION_CHAT_DB_INTEGRATION") == "1", "Set AION_CHAT_DB_INTEGRATION=1 to run Docker MySQL integration tests.");
 
 		DatabaseFactory.Initialize(
 			server: Environment.GetEnvironmentVariable("AION_CHAT_DB_HOST") ?? "localhost",

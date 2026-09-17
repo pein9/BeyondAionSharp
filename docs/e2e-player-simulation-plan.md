@@ -267,7 +267,7 @@ failures loud, and gets the test suite to a trustworthy green.
   SIM) fails the owning test on dispose if any were recorded; throw when `MaxTicksPerAdvance` is exhausted
   instead of moving the clock; give handles their virtual due time (a `Deferred(body, dueTime)` overload) so
   `GetDelay` is right.
-- [ ] **P1-11** [BOTH] S — Replace silent early returns with visible skips: add `Xunit.SkippableFact` and convert
+- [x] **P1-11** [BOTH] S — Replace silent early returns with visible skips: (`91e5c078d`) add `Xunit.SkippableFact` and convert
   the 10 env-gated DB facts and the two artifact-guarded readers (`PetJavaVectorArtifactReaderTests`,
   `PlayerProtectionActiveTaskStopTriggerJavaTraceArtifactReaderTests`) to `[SkippableFact]` + `Skip.IfNot`.
   A move to xUnit v3 is out of scope.

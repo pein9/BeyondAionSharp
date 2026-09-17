@@ -1,9 +1,8 @@
 using System.Text.Json;
-using Xunit.Abstractions;
 
 namespace Aion.GameServer.Tests;
 
-public sealed class PlayerProtectionActiveTaskStopTriggerJavaTraceArtifactReaderTests(ITestOutputHelper output)
+public sealed class PlayerProtectionActiveTaskStopTriggerJavaTraceArtifactReaderTests
 {
 	private static readonly JsonSerializerOptions JsonOptions = new()
 	{
@@ -24,7 +23,7 @@ public sealed class PlayerProtectionActiveTaskStopTriggerJavaTraceArtifactReader
 		Assert.Equal(["packet_enter", "stop_condition_eval", "stop_call_enter", "task_cancel", "visual_mutate", "state_broadcast", "ai_notify_enqueue", "packet_return"], artifact.Traces.Select(trace => trace.Phase));
 	}
 
-	[Fact]
+	[SkippableFact]
 	public async Task FindProtectionStopTriggerJavaArtifacts_IsGuardedUntilGeneratorOutputExists()
 	{
 		var artifactRoot = GetArtifactRoot();
@@ -32,11 +31,7 @@ public sealed class PlayerProtectionActiveTaskStopTriggerJavaTraceArtifactReader
 			? Directory.GetFiles(artifactRoot, "*.json").Order(StringComparer.Ordinal).ToArray()
 			: [];
 
-		if (artifacts.Length == 0)
-		{
-			output.WriteLine("Needs Verification: Java protection stop-trigger trace artifacts are not present yet.");
-			return;
-		}
+		Skip.IfNot(artifacts.Length > 0, "Java protection stop-trigger trace artifacts are not present yet.");
 
 		foreach (var artifactPath in artifacts)
 		{
