@@ -113,6 +113,7 @@ var builder = Host.CreateDefaultBuilder(args)
 			services.AddSingleton<Aion.GameServer.Network.LoginServer.LoginServer>();
 			services.AddSingleton<Aion.GameServer.Network.ChatServer.ChatServer>();
 			services.AddSingleton<IUsedIdRepository, MySqlUsedIdRepository>();
+			services.AddSingleton<IPlayerOnlineStateRepository, PlayerDaoOnlineStateRepository>();
 			services.AddSingleton<IServerVariablesRepository, MySqlServerVariablesRepository>();
 			services.AddSingleton<ICharacterSelectionRepository, MySqlCharacterSelectionRepository>();
 			services.AddSingleton<IMailRepository, MySqlMailRepository>();

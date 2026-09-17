@@ -189,7 +189,9 @@ public sealed class GameServerBootstrapTests
 		using var temp = StaticDataFixture.Create();
 		await using var threadPoolManager = new ThreadPoolManager(NullLogger<ThreadPoolManager>.Instance);
 		var idFactory = new IDFactory();
-		var usedIds = new TrackingUsedIdRepository([1, 2, 3]);
+		var calls = new List<string>();
+		var onlineState = new TrackingPlayerOnlineStateRepository(calls);
+		var usedIds = new TrackingUsedIdRepository([1, 2, 3], calls);
 		var world = new GameWorld(NullLogger<GameWorld>.Instance);
 		var gameTime = new GameTimeService(
 			NullLogger<GameTimeService>.Instance,
@@ -205,11 +207,14 @@ public sealed class GameServerBootstrapTests
 			gameTime,
 			threadPoolManager,
 			new GameServerRuntimeContext(),
-			NullLogger<GameServerBootstrapService>.Instance);
+			NullLogger<GameServerBootstrapService>.Instance,
+			onlineState);
 
 		await bootstrap.StartAsync(CancellationToken.None);
 
 		Assert.True(usedIds.Loaded);
+		Assert.True(onlineState.Reset);
+		Assert.Equal(["offline", "used-ids"], calls);
 		Assert.Equal(4, idFactory.GetUsedCount());
 		Assert.Equal(4, idFactory.NextId());
 
@@ -568,13 +573,27 @@ public sealed class GameServerBootstrapTests
 		}
 	}
 
+	private sealed class TrackingPlayerOnlineStateRepository(List<string> calls) : IPlayerOnlineStateRepository
+	{
+		public bool Reset { get; private set; }
+
+		public ValueTask SetAllPlayersOfflineAsync(CancellationToken cancellationToken = default)
+		{
+			Reset = true;
+			calls.Add("offline");
+			return ValueTask.CompletedTask;
+		}
+	}
+
 	private sealed class TrackingUsedIdRepository : IUsedIdRepository
 	{
 		private readonly IReadOnlyCollection<int> _ids;
+		private readonly List<string>? calls;
 
-		public TrackingUsedIdRepository(IReadOnlyCollection<int> ids)
+		public TrackingUsedIdRepository(IReadOnlyCollection<int> ids, List<string>? calls = null)
 		{
 			_ids = ids;
+			this.calls = calls;
 		}
 
 		public bool Loaded { get; private set; }
@@ -582,6 +601,7 @@ public sealed class GameServerBootstrapTests
 		public Task<IReadOnlyCollection<int>> LoadUsedIdsAsync(CancellationToken cancellationToken = default)
 		{
 			Loaded = true;
+			calls?.Add("used-ids");
 			return Task.FromResult(_ids);
 		}
 	}

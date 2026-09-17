@@ -17,6 +17,7 @@ public sealed class GameServerBootstrapService : IHostedService
 	private static bool _faithfulEnginesInitialized;
 
 	private readonly IStaticDataLoader _staticDataLoader;
+	private readonly IPlayerOnlineStateRepository _playerOnlineStateRepository;
 	private readonly IUsedIdRepository _usedIdRepository;
 	private readonly IDFactory _idFactory;
 	private readonly IEnumerable<GameEngine> _engines;
@@ -36,9 +37,11 @@ public sealed class GameServerBootstrapService : IHostedService
 		GameTimeService gameTimeService,
 		ThreadPoolManager threadPoolManager,
 		GameServerRuntimeContext runtimeContext,
-		ILogger<GameServerBootstrapService> logger)
+		ILogger<GameServerBootstrapService> logger,
+		IPlayerOnlineStateRepository? playerOnlineStateRepository = null)
 	{
 		_staticDataLoader = staticDataLoader;
+		_playerOnlineStateRepository = playerOnlineStateRepository ?? new NoOpPlayerOnlineStateRepository();
 		_usedIdRepository = usedIdRepository;
 		_idFactory = idFactory;
 		_engines = engines;
@@ -82,6 +85,11 @@ public sealed class GameServerBootstrapService : IHostedService
 		// Idempotent (RegisterInstance overwrites) so a re-entrant boot in one process is safe; production also binds
 		// it in Program.cs before host.RunAsync.
 		ThreadPoolManager.RegisterInstance(_threadPoolManager);
+
+		// Java parity: GameServer.initUtilityServicesAndConfig resets stale online flags immediately after the
+		// database is initialized and before IDFactory reads the player table. This makes a restart after SIGKILL
+		// recoverable instead of rejecting every affected character with REENTRY_TIME.
+		await _playerOnlineStateRepository.SetAllPlayersOfflineAsync(cancellationToken);
 
 		var usedIds = await _usedIdRepository.LoadUsedIdsAsync(cancellationToken);
 		_idFactory.LockIds(usedIds);

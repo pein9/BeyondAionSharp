@@ -452,8 +452,10 @@ sockets before the large clock migration.
   verified the unchanged no-mount path and effective ordered overrides for login, chat and game. Commit:
   `9c8b9507e`.
 - [ ] **P3-01** [LIVE] S each — Parity fixes that break restarts and soaks:
-  - Call `PlayerDAO.SetAllPlayersOffline()` at boot (Java `GameServer.java:222`). Without it, a killed server
-    leaves `players.online=1` and every re-login gets `REENTRY_TIME`.
+  - [x] Call `PlayerDAO.SetAllPlayersOffline()` at boot (Java `GameServer.java:222`). Without it, a killed server
+    leaves `players.online=1` and every re-login gets `REENTRY_TIME`. Production now calls the DAO through a
+    DB-independent bootstrap seam before used object IDs load; a focused test pins that ordering. Commit:
+    `1716e128c`.
   - Stop `ThreadPoolManager._scheduledTasks` growing forever (C#-only leak).
   - Make `SocketChannel` read/write return 0 on `WouldBlock` as `java.nio` does, instead of throwing
     `IOException` and disconnecting. Add a slow-reader loopback test (1 MB of SM burst).
