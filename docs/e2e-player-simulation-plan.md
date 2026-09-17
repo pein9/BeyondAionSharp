@@ -412,12 +412,16 @@ Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 con
   target ordering, decoded skill cooldowns, item-template use delays, movement-blocking activities and normal or
   crashed reentry. Client first-hit and post-result last-hit timings load `motion_times.xml` through the production
   `MotionData` XML model and mirror Java's speed/race/gender/weapon formulas. Commit: `c57ff09b6`.
-- [ ] **P2-12** [BOTH] M — Bot API facade (Appendix B maps each call to packets): `Login`, `ListCharacters`,
+- [x] **P2-12** [BOTH] M — Bot API facade (Appendix B maps each call to packets): `Login`, `ListCharacters`,
   `CreateCharacter`, `DeleteCharacter`, `RestoreCharacter`, `EnterWorld`, `ChangeChannel`, `Quit`, `Crash`,
   `MoveTo`, `Jump`, `Fly`, `Land`, `Glide`, `Rest`, `Emote`, `Target`, `Attack`, `Cast`, `SummonCommand`,
   `SummonAttack`, `SummonCast`, `UseItem`, `Equip`, `Loot`, `TalkTo`, `SelectDialog`, `CloseDialog`, `Answer`,
   `Teleport`, `Gather`, `Craft`, `Buy`, `Sell`, `Trade*`, `InviteToGroup`, `Say`, `Whisper`, `Duel`, `Revive`.
   Depends on P2-04, P2-05, P2-11.
+  Added one intent-level facade over the login protocol, game-packet writers, decoded world model, reflexes and
+  timing contract. Its lifecycle, movement, combat, item, dialog, gathering/crafting, economy, trade, social and
+  revive methods expose every planned action name, while observation feeds decoded SMs through state, timing and
+  automatic-response handling. Tests pin every intent name and representative packet mapping. Commit: `d0b27e52f`.
 - [ ] **P2-13** [BOTH] S — Per-bot action trace, JSONL: `{ts, vt, run, bot, account, step, dir, packet, fields}`
   for every action, sent CM and decoded SM; system messages carry the `STR_` name and parameters. This is what
   the watcher joins problems to.
