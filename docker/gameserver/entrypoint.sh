@@ -21,5 +21,17 @@ gameserver.network.chat.address = ${CHAT_ADDRESS:-chatserver:9021}
 gameserver.custom.respawn.time_multiplier = ${RESPAWN_TIME_MULTIPLIER:-1.0}
 EOF
 
+# A bot/test stack may mount read-only overrides here. Files are appended in glob order so the generated
+# deployment values above remain today's defaults when no overlay is present, while overlays win when mounted.
+overlay_dir="${AION_CONFIG_OVERLAY_DIR:-/app/config-overlay}"
+if [ -d "$overlay_dir" ]; then
+    for overlay in "$overlay_dir"/*.properties; do
+        [ -f "$overlay" ] || continue
+        printf '\n# Overlay: %s\n' "$(basename "$overlay")" >> /app/game-server/config/mygs.properties
+        cat "$overlay" >> /app/game-server/config/mygs.properties
+        printf '\n' >> /app/game-server/config/mygs.properties
+    done
+fi
+
 cd /app
 exec dotnet Aion.GameServer.dll

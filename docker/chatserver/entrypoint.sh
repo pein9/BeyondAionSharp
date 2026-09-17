@@ -14,5 +14,17 @@ chatserver.network.client.socket_address = 0.0.0.0:10241
 chatserver.network.gameserver.socket_address = 0.0.0.0:9021
 EOF
 
+# A bot/test stack may mount read-only overrides here. Files are appended in glob order so the generated
+# deployment values above remain today's defaults when no overlay is present, while overlays win when mounted.
+overlay_dir="${AION_CONFIG_OVERLAY_DIR:-/app/config-overlay}"
+if [ -d "$overlay_dir" ]; then
+    for overlay in "$overlay_dir"/*.properties; do
+        [ -f "$overlay" ] || continue
+        printf '\n# Overlay: %s\n' "$(basename "$overlay")" >> /app/chat-server/config/mycs.properties
+        cat "$overlay" >> /app/chat-server/config/mycs.properties
+        printf '\n' >> /app/chat-server/config/mycs.properties
+    done
+fi
+
 cd /app
 exec dotnet Aion.ChatServer.dll

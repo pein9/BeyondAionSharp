@@ -444,9 +444,13 @@ against the in-process login server using the real random key generator.
 The fastest route to "watch server logs and find errors as they happen", and it proves the codec on real
 sockets before the large clock migration.
 
-- [ ] **P3-00** [LIVE] S — Entrypoint overlay: each `docker/*/entrypoint.sh` appends the `*.properties` files from an
+- [x] **P3-00** [LIVE] S — Entrypoint overlay: each `docker/*/entrypoint.sh` appends the `*.properties` files from an
   optional mounted overlay directory after the `my*.properties` it generates, so a bot run can change settings
   without editing the entrypoints. With no overlay mounted, the deployment behaves exactly as today.
+  All three entrypoints now append lexically ordered `*.properties` files from
+  `${AION_CONFIG_OVERLAY_DIR:-/app/config-overlay}` after their generated configuration. Disposable image tests
+  verified the unchanged no-mount path and effective ordered overrides for login, chat and game. Commit:
+  `9c8b9507e`.
 - [ ] **P3-01** [LIVE] S each — Parity fixes that break restarts and soaks:
   - Call `PlayerDAO.SetAllPlayersOffline()` at boot (Java `GameServer.java:222`). Without it, a killed server
     leaves `players.online=1` and every re-login gets `REENTRY_TIME`.

@@ -13,5 +13,17 @@ loginserver.network.client.socket_address = 0.0.0.0:2106
 loginserver.network.gameserver.socket_address = 0.0.0.0:9014
 EOF
 
+# A bot/test stack may mount read-only overrides here. Files are appended in glob order so the generated
+# deployment values above remain today's defaults when no overlay is present, while overlays win when mounted.
+overlay_dir="${AION_CONFIG_OVERLAY_DIR:-/app/config-overlay}"
+if [ -d "$overlay_dir" ]; then
+    for overlay in "$overlay_dir"/*.properties; do
+        [ -f "$overlay" ] || continue
+        printf '\n# Overlay: %s\n' "$(basename "$overlay")" >> /app/login-server/config/myls.properties
+        cat "$overlay" >> /app/login-server/config/myls.properties
+        printf '\n' >> /app/login-server/config/myls.properties
+    done
+fi
+
 cd /app
 exec dotnet Aion.LoginServer.dll
