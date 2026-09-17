@@ -451,7 +451,7 @@ sockets before the large clock migration.
   `${AION_CONFIG_OVERLAY_DIR:-/app/config-overlay}` after their generated configuration. Disposable image tests
   verified the unchanged no-mount path and effective ordered overrides for login, chat and game. Commit:
   `9c8b9507e`.
-- [ ] **P3-01** [LIVE] S each — Parity fixes that break restarts and soaks:
+- [x] **P3-01** [LIVE] S each — Parity fixes that break restarts and soaks:
   - [x] Call `PlayerDAO.SetAllPlayersOffline()` at boot (Java `GameServer.java:222`). Without it, a killed server
     leaves `players.online=1` and every re-login gets `REENTRY_TIME`. Production now calls the DAO through a
     DB-independent bootstrap seam before used object IDs load; a focused test pins that ordering. Commit:
@@ -467,9 +467,10 @@ sockets before the large clock migration.
     `AionConnection.OnDisconnect` (`AionConnection.java:240-243`). A socketless regression test verifies that
     a final-countdown disconnect leaves the world synchronously rather than scheduling delayed cleanup. Commit:
     `7a56e31a5`.
-  - Replace the `List` + `Contains` dedupe in `AbstractFIFOPeriodicTaskManager.cs:14,39-40` with
+  - [x] Replace the `List` + `Contains` dedupe in `AbstractFIFOPeriodicTaskManager.cs:14,39-40` with
     insertion-ordered set semantics (Java `LinkedHashSet`); today it is O(n²) per tick for `MovementNotifyTask`
-    and `ZoneUpdateService`.
+    and `ZoneUpdateService`. The replacement couples a hash set with a first-insertion list; focused tests pin
+    order, uniqueness, clearing and hash-scale lookup work across 10,000 tasks. Commit: `a7590ae18`.
 - [ ] **P3-02** [LIVE] M — Isolated bot stack (D13): `docker/docker-compose.bots.yml`, run as
   `docker compose -p aion-bots-<run>`. It builds the same Dockerfiles as `docker/docker-compose.yml` but tags the
   images `aion-bots-*`, sets no `container_name`, runs MySQL on tmpfs, publishes non-default host ports (admin API
@@ -1053,11 +1054,11 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 4 | `CM_TELEPORT_ANIMATION_DONE` logs a null inner exception | `CM_TELEPORT_ANIMATION_DONE.java:41-43` logs `getCause()` | Resolved by P1-06 (`923f7ea14`) |
 | 5 | `Dispatcher.Parse` drops the hex content from its error | `Dispatcher.java:212` | Resolved by P1-06 (`923f7ea14`) |
 | 6 | Login packet factory swallowed read exceptions and the live connection disabled strict reads entirely; unknown packets were logged without opcode/state/data | `BaseClientPacket.java:89-95`, `AionPacketHandlerFactory.java:111-117` | Resolved by P1-06 (`923f7ea14`) |
-| 7 | `PlayerDAO.SetAllPlayersOffline` never called at boot | `GameServer.java:222` | P3-01 |
-| 8 | `SocketChannel` disconnects on `WouldBlock` | `Dispatcher.java:166,237,264` (java.nio returns 0) | P3-01 |
-| 9 | `OnDisconnect` lacks the shutdown-soon immediate logout | `AionConnection.java:240-243` | P3-01 |
-| 10 | `ThreadPoolManager._scheduledTasks` never pruned (C#-only leak) | n/a | P3-01 |
-| 11 | `AbstractFIFOPeriodicTaskManager` dedupes with `List.Contains` (O(n²) per tick) | `LinkedHashSet` (`AbstractFIFOPeriodicTaskManager.java:18,39`) | P3-01 |
+| 7 | `PlayerDAO.SetAllPlayersOffline` never called at boot | `GameServer.java:222` | Resolved by P3-01 (`1716e128c`) |
+| 8 | `SocketChannel` disconnects on `WouldBlock` | `Dispatcher.java:166,237,264` (java.nio returns 0) | Resolved by P3-01 (`516e799ad`) |
+| 9 | `OnDisconnect` lacks the shutdown-soon immediate logout | `AionConnection.java:240-243` | Resolved by P3-01 (`7a56e31a5`) |
+| 10 | `ThreadPoolManager._scheduledTasks` never pruned (C#-only leak) | n/a | Resolved by P3-01 (`172bea01e`) |
+| 11 | `AbstractFIFOPeriodicTaskManager` dedupes with `List.Contains` (O(n²) per tick) | `LinkedHashSet` (`AbstractFIFOPeriodicTaskManager.java:18,39`) | Resolved by P3-01 (`a7590ae18`) |
 | 12 | Server never logs "Game server started in N seconds" | `GameServer.java:186` | P3-04 |
 | 13 | Mixed `SystemClock`/wall-clock comparisons (C#-only; harmless in production) | one clock throughout | P4-01 |
 | 14 | `SpawnGroup` picks a random spot with `Random.Shared` (same distribution; unreachable by the seed) | `SpawnGroup.java:166` `Rnd.get(list)` | P4-05 |

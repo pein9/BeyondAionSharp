@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
@@ -10,8 +11,7 @@ public abstract class AbstractFIFOPeriodicTaskManager<T> : AbstractPeriodicTaskM
 {
     private const int WARNING_PERIOD_SECONDS = 10;
     private readonly ConcurrentQueue<T> tasks = new();
-    // Java parity: LinkedHashSet (insertion-ordered, unique) — List + Contains-guard preserves both.
-    private readonly List<T> processedTasks = new();
+    private readonly InsertionOrderedSet<T> processedTasks = new();
     private readonly int counterLimit;
     private int counter = 0;
 
@@ -36,8 +36,7 @@ public abstract class AbstractFIFOPeriodicTaskManager<T> : AbstractPeriodicTaskM
             {
                 if (!tasks.TryDequeue(out T task)) // no tasks left
                     break;
-                if (!processedTasks.Contains(task))
-                    processedTasks.Add(task);
+                processedTasks.Add(task);
             }
             foreach (T task in processedTasks)
             {
@@ -66,4 +65,36 @@ public abstract class AbstractFIFOPeriodicTaskManager<T> : AbstractPeriodicTaskM
     protected abstract void CallTask(T task);
 
     protected abstract string GetCalledMethodName();
+}
+
+/// <summary>
+/// Hash-based set membership with deterministic first-insertion iteration order, matching Java's
+/// <c>LinkedHashSet</c> contract without relying on <see cref="HashSet{T}"/> iteration details.
+/// </summary>
+internal sealed class InsertionOrderedSet<T> : IReadOnlyCollection<T>
+{
+    private readonly HashSet<T> set = new();
+    private readonly List<T> ordered = new();
+
+    public int Count => ordered.Count;
+
+    public bool Add(T item)
+    {
+        if (!set.Add(item))
+            return false;
+        ordered.Add(item);
+        return true;
+    }
+
+    public void Clear()
+    {
+        set.Clear();
+        ordered.Clear();
+    }
+
+    public List<T>.Enumerator GetEnumerator() => ordered.GetEnumerator();
+
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
