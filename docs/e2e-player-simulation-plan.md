@@ -7,7 +7,8 @@ every server error surfaced the moment it happens, attributed to the bot action 
 **Status.** Planning. Nothing below is implemented yet. Written 2026-09-17 against `main` at `488763e0c`;
 every claim in §1, §7 and the appendices was re-checked against the code by an independent review pass.
 The maintainer's decisions (§6) were applied the same day: no hosted CI and no schedulers; test runs are
-local scripts. The `docker/` compose stack stays: it is how the emulator is deployed and run.
+local scripts. The `docker/` compose stack stays: it is how the emulator is deployed and run, and LIVE bot
+runs use their own isolated compose project.
 
 ## How to use this document
 
@@ -28,7 +29,7 @@ local scripts. The `docker/` compose stack stays: it is how the emulator is depl
 - **Do not create branches or worktrees in this repo.** In `../aion-server` they are allowed when a TODO
   genuinely needs one (D12, for example P0-05).
 - **No hosted CI, no schedulers** (D9). Every test run is a local script. The `docker/` compose stack is how
-  the emulator is deployed and run; test runs must not disturb it (see D13).
+  the emulator is deployed and run; LIVE test runs use a separate compose project and never disturb it (D13).
 
 ---
 
@@ -48,8 +49,8 @@ local scripts. The `docker/` compose stack stays: it is how the emulator is depl
 | Socketless connection trick | `ChatAuthenticationBridgeTests.QueuedClientConnection`, `OutboundLinkLifecycleTests.RecordingAionConnection` | An `AionConnection` built by reflection over an unconnected socket. Brittle but proves the idea. |
 | Golden server packets | `parity-artifacts/golden/packets/` | 181 Java-generated SM fixtures (364 cases; `payloadHex` is the body only): decoder test vectors. |
 | Packet capture hook | `AionServerPacket.SetCaptureObserver` | Sees every serialized server packet (object and clear bytes). No callers today. C#-only. |
-| Docker deployment | `docker/docker-compose.yml`, `docker/deploy.ps1`, `docker/.env` | MySQL 8.4 plus login, chat and game servers: the maintainer's only way of running the emulator. Test runs never touch its `aion` compose project, `aion_ls`/`aion_gs`/`aion_cs` databases or `aion_aion-mysql-data` volume. |
-| Development MySQL | A MySQL 8.4 in Docker (the stack's `aion-mysql`, or `scripts/start-mixed-mode-db.ps1`) | Runs may freely create and drop their own throwaway databases (`aion_*_bots_<run>`, `aion_gs_sim_<run>_<shard>`). |
+| Docker deployment | `docker/docker-compose.yml`, `docker/deploy.ps1`, `docker/.env` | MySQL 8.4 plus login, chat and game servers: the maintainer's only way of running the emulator. Test runs never touch its `aion` compose project, containers, images, databases or `aion_aion-mysql-data` volume; LIVE runs use their own compose project (P3-02). |
+| Development MySQL | A MySQL 8.4 in Docker (the stack's `aion-mysql`, or `scripts/start-mixed-mode-db.ps1`) | SIM runs may freely create and drop their own throwaway databases (`aion_gs_sim_<run>_<shard>`). |
 | GM commands | `src/Aion.GameServer/Handlers/AdminCommands` (101) | Fast scenario setup: `//add`, `//set level`, `//moveto`, `//quest`, `//kill`, `//siege`, `//rift`, `//instance`, ... |
 | Account auto-create | `loginserver.accounts.autocreate` (default true) | Bots need no account seeding except GM access levels. |
 | Admin HTTP API | `src/Aion.GameServer/Services/Admin/AdminHttpService.cs` | Token-protected player and storage state; a LIVE assertion oracle. C#-only. |
@@ -70,7 +71,7 @@ local scripts. The `docker/` compose stack stays: it is how the emulator is depl
 | B8 | **Geodata is never loaded.** `GeoWorldLoader.Load` is a stub whose only action is a warning sent to a `NullLogger`, although `gameserver.geodata.enable` defaults to true; 230 geo files (158 MiB) are unused. `GetZ` returns NaN; `CanSee` is true within 80 m (false beyond, as in Java); fear, confuse, back-dash and random-move effects never displace; stagger, stumble, pull, dash and move-behind displace the full distance through walls at unchanged Z; NPCs chasing a jumping or flying target freeze. | Line of sight, Z, collision and NPC pathing are untestable in both modes and wrong in production. | `GeoEngine/GeoWorldLoader.cs`; `GeoMap.cs:126-156,217-221` |
 | B9 | **Randomness cannot be seeded.** `Rnd` is a `ThreadLocal<Random>`; ~550 call sites. .NET also randomizes string hashing per process, so string-keyed and concurrent collections enumerate in a different order every run. | SIM runs cannot be replayed; kill and drop counts are not assertable. | `Commons/Utils/Rnd.cs:20` |
 | B10 | **Process-global state.** 93 `GetInstance` singletons (58 never-reset `SingletonHolder`s), a once-only `CronService`, a static `DatabaseFactory`, a static capture observer, and a bootstrap that changes the process CWD. | One world per test process; scenarios need isolation by account, channel and ordering (`P5-12`). | `CronService.cs:41-52`; `GameServerBootstrapService.cs:72` |
-| B11 | **Silent DB tests and flaky real-time tests.** The 10 env-gated DB tests return early and report Passed. 14 of the last 30 runs of the (since removed) hosted CI failed, several on real-time socket and shutdown tests. There is no hosted CI any more (D9), so every run is local. | New failures cannot be told from flakes (`P1-00`), and DB-backed runs need local database scripts (`P3-02`, `P5-06`). | `GameServerBootstrapTests.cs:330`; `ShutdownHookTests.cs` |
+| B11 | **Silent DB tests and flaky real-time tests.** The 10 env-gated DB tests return early and report Passed. 14 of the last 30 runs of the (since removed) hosted CI failed, several on real-time socket and shutdown tests. There is no hosted CI any more (D9), so every run is local. | New failures cannot be told from flakes (`P1-00`), and LIVE needs its own compose project (`P3-02`) and SIM a database script (`P5-06`). | `GameServerBootstrapTests.cs:330`; `ShutdownHookTests.cs` |
 | B12 | **Java reference drift (partly fixed).** Local `../aion-server` `4.8` was 47 commits behind `upstream/4.8`; it was fast-forwarded to `lastCompletedJavaCommit` (`ce54b7931`) on 2026-09-17 and falls behind again as ports land. The Java golden-fixture generators exist only on `feature/object-spine-bigbang`, based 87 commits behind `lastCompletedJavaCommit`. | Side-by-side reading and `check_fidelity.py` compare against a stale tree unless `4.8` is kept in step; new Java fixtures need the generators brought forward (`P0-05`). | `git -C ../aion-server rev-list --count 4.8..upstream/4.8` |
 
 ### Useful baselines (re-measure as phases land)
@@ -98,9 +99,9 @@ flowchart LR
     Codec --> T{IBotTransport}
   end
   T -->|InProcess| SIM["SIM: in-process game server<br/>virtual clock, single sim thread<br/>real ProcessData path, MySQL"]
-  T -->|TCP| LIVE["LIVE: local processes<br/>login + chat + game (dotnet run)<br/>per-run MySQL databases, real time, real crypto"]
+  T -->|TCP| LIVE["LIVE: isolated docker compose project<br/>same images as the deployment<br/>own MySQL, real time, real crypto"]
   SIM --> Cap[Capturing log provider<br/>fail on unallowlisted problems]
-  LIVE --> J[JSONL logs per server<br/>+ process exits + MySQL log] --> W[tools/Aion.LogWatch<br/>fingerprint, ledger, join to bot step] --> D[digest.log + report.md]
+  LIVE --> J[JSONL logs per server<br/>+ docker events + MySQL log] --> W[tools/Aion.LogWatch<br/>fingerprint, ledger, join to bot step] --> D[digest.log + report.md]
   Bots --> BT[Bot action traces JSONL] --> W
 ```
 
@@ -112,14 +113,14 @@ flowchart LR
      real, client-encrypted bytes through the production `ProcessData` path, and every server packet is
      serialized and decoded by the same codec LIVE uses, so every SIM run tests the LIVE codec for free. A
      Fast tier runs before committing gameplay changes; the Full tier runs on demand.
-   - **LIVE** starts the three servers as local processes against throwaway databases. Headless bots speak
-     the real protocol over TCP in real time. All three servers write JSONL logs, and a watcher streams new
+   - **LIVE** runs the same Dockerfiles the emulator is deployed with, as an isolated docker compose project
+     with its own MySQL (D13). Headless bots speak the real protocol over TCP in real time. All three servers write JSONL logs, and a watcher streams new
      problems as they happen. Full tier and soak, both run on demand.
 2. **Fast-forward means deterministic discrete-event stepping, not time dilation.** Dilation breaks the
    `CM_PING` timer-cheat kick, Quartz cron, the other server processes and MySQL's own clock, and it stays
    non-deterministic. SIM jumps to the next bot action or next due timer, whichever is sooner.
-3. **SIM and LIVE use a real MySQL, not fake DAOs.** A throwaway database per run and per shard on the
-   development MySQL container, created and dropped freely. Fake DAOs or SQLite would be an XL rewrite that
+3. **SIM and LIVE use a real MySQL, not fake DAOs.** SIM creates a throwaway database per run and shard on a
+   Docker MySQL; LIVE gets a fresh MySQL inside its compose project. Fake DAOs or SQLite would be an XL rewrite that
    stops testing the real SQL.
 4. **Problems are the primary oracle.** Any Error, swallowed exception, protocol or audit Warning, unexpected
    refusal system message, bot timeout or unexpected disconnect fails the scenario unless its
@@ -153,9 +154,10 @@ flowchart LR
 | `tests/Aion.Simulation.Tests/` | SIM host fixture, log policy, scenario test classes (own test process) | yes; DB scenarios report **Skipped** without MySQL |
 | `tools/Aion.LiveBots/` | LIVE runner console app | yes (build only) |
 | `tools/Aion.LogWatch/` | LIVE log watcher, problem ledger, run report | yes (build only) |
-| `scripts/live/overlay/` | Bot-run config overlay copied into each run's config directory | n/a |
+| `docker/docker-compose.bots.yml` | Isolated LIVE compose project: same Dockerfiles, own images, MySQL, ports and log mounts | n/a |
+| `docker/bots/overlay/` | Bot-run `.properties` overlay mounted read-only into each server (P3-00) | n/a |
 | `parity-artifacts/e2e/` | Shared allowlist, known-problem ledger, flaky ledger, coverage baselines | n/a |
-| `scripts/sim/`, `scripts/live/` | Create and drop run databases; start the servers, bots and watcher locally | n/a |
+| `scripts/sim/`, `scripts/live/` | Create and drop SIM databases; bring the LIVE compose project up and down, run the bots and the watcher | n/a |
 | `scripts/e2e/run-fast.ps1`, `scripts/e2e/run-full.ps1` | Fast tier (before committing gameplay changes); Full tier (on demand) with the run report | n/a |
 | `run/` (gitignored) | Local run output | n/a |
 
@@ -184,8 +186,8 @@ operations and coverage. Phase 11 is group and scheduled content.
 - [ ] **P0-04** [BOTH] S — Remove the two `update.sql` steps from `RUNNING.md` (lines 28-29). Verified:
   `aion_gs.sql` already has both columns `game-server/sql/update.sql` adds, and `aion_ls.sql` lacks the
   `toll` column and `account_rewards` table that `login-server/sql/update.sql` drops, so both fail on a fresh
-  database. Scripts that apply schemas (P3-02, P5-06) must stop on the first SQL error and verify the tables
-  exist.
+  database. `docker/mysql/init/00-init.sh` also keeps going after a schema error, so LIVE readiness (P3-04) must
+  verify the tables exist, and `new-sim-db.ps1` (P5-06) must stop on the first SQL error.
 - [ ] **P0-05** [BOTH] M — Bring the Java golden-fixture generators to the spec revision (D12 approved). They live
   only on `feature/object-spine-bigbang`, based at `f2f77fefe`, 87 commits behind `lastCompletedJavaCommit`.
   Carry the generator tests onto a branch or worktree of `../aion-server` at `lastCompletedJavaCommit` and
@@ -353,9 +355,9 @@ server.
 The fastest route to "watch server logs and find errors as they happen", and it proves the codec on real
 sockets before the large clock migration.
 
-- [ ] **P3-00** [BOTH] S — Config override directory for all three servers (for example `AION_CONFIG_OVERRIDE_DIR`):
-  the `my*.properties` files there replace the gitignored ones in `*/config`, for both the options classes and
-  the static `Config` holders, so a run supplies its own settings without touching the developer's files.
+- [ ] **P3-00** [LIVE] S — Entrypoint overlay: each `docker/*/entrypoint.sh` appends the `*.properties` files from an
+  optional mounted overlay directory after the `my*.properties` it generates, so a bot run can change settings
+  without editing the entrypoints. With no overlay mounted, the deployment behaves exactly as today.
 - [ ] **P3-01** [LIVE] S each — Parity fixes that break restarts and soaks:
   - Call `PlayerDAO.SetAllPlayersOffline()` at boot (Java `GameServer.java:222`). Without it, a killed server
     leaves `players.online=1` and every re-login gets `REENTRY_TIME`.
@@ -367,28 +369,31 @@ sockets before the large clock migration.
   - Replace the `List` + `Contains` dedupe in `AbstractFIFOPeriodicTaskManager.cs:14,39-40` with
     insertion-ordered set semantics (Java `LinkedHashSet`); today it is O(n²) per tick for `MovementNotifyTask`
     and `ZoneUpdateService`.
-- [ ] **P3-02** [LIVE] M — Isolated bot run: create `aion_ls_bots_<run>`, `aion_gs_bots_<run>` and
-  `aion_cs_bots_<run>` on the development MySQL (schemas applied, stop on the first error, `gameservers` row
-  seeded), write a per-run config directory from `scripts/live/overlay/` (run databases, non-default ports,
-  admin API on `127.0.0.1`) and start the three servers as `dotnet run` processes pointed at it. The developer's
-  own databases and `my*.properties` are never touched. Overlay: unknown and ignored packet logging on; domain
-  logs on (`gameserver.log.craft`, `.player.exchange`, `.broker.exchange`, `.kill`, `.mail`, `.item`); gather and
-  craft fail chance 0 (deterministic profile, with a separate default-rates soak profile); captcha off;
-  login-server brute-force protector off; login/logout announcements off; admin HTTP API on with a token;
-  `AION_LOG_JSONL_DIR` per run; custom XP/drop events off. Everything else, security checks included, stays at
-  production defaults (D6). Depends on P3-00.
+- [ ] **P3-02** [LIVE] M — Isolated bot stack (D13): `docker/docker-compose.bots.yml`, run as
+  `docker compose -p aion-bots-<run>`. It builds the same Dockerfiles as `docker/docker-compose.yml` but tags the
+  images `aion-bots-*`, sets no `container_name`, runs MySQL on tmpfs, publishes non-default host ports (admin API
+  on `127.0.0.1` only), mounts `docker/bots/overlay/` read-only (P3-00) and bind-mounts per-run log directories.
+  The maintainer's `aion` project, its containers, `aion-*` images, databases and `aion_aion-mysql-data` volume are
+  never touched. Overlay: unknown and ignored packet logging on; domain logs on (`gameserver.log.craft`,
+  `.player.exchange`, `.broker.exchange`, `.kill`, `.mail`, `.item`); gather and craft fail chance 0
+  (deterministic profile, with a separate default-rates soak profile); captcha off; login-server brute-force
+  protector off (bot connections arrive from the docker gateway, not 127.0.0.1); login/logout announcements
+  off; admin HTTP API on with a token; `AION_LOG_JSONL_DIR` per run; custom XP/drop events off. Everything else,
+  security checks included, stays at production defaults (D6). Depends on P3-00.
 - [ ] **P3-03** [LIVE] S — Seeds: the `gameservers` row; a director account with access level 9. Subject accounts
   are auto-created at level 0 with names that encode run and bot (`b01r0917`), which is how server log scopes
   join to bot traces without extra traffic.
-- [ ] **P3-04** [LIVE] S — Readiness and logs: per-run log directories for all three servers; port Java's
-  `Game server started in N seconds` line (`GameServer.java:186`); readiness requires open ports, that line, the
-  login server logging that game server 1 registered, and a verified schema load (P0-04).
+- [ ] **P3-04** [LIVE] S — Readiness: port Java's `Game server started in N seconds` line (`GameServer.java:186`).
+  The bots project is ready when its ports answer, that line has been logged, the login server has logged that
+  game server 1 registered, and the schema tables exist (P0-04). The compose file's login and chat healthchecks
+  are 15-second pacing timers, not readiness checks.
 - [ ] **P3-05** [LIVE] M — TCP transport and `tools/Aion.LiveBots`: per-bot async loop, ping scheduler,
   reconnect, manifest-driven scenario selection (P5-12 defines the manifest; until then a simple list), per-bot
   traces, non-zero exit on failure. Every step has a real-time timeout; a timeout, automatic reconnect or
   unexpected quit response is a problem record joined to bot and step.
 - [ ] **P3-06** [LIVE] M — `tools/Aion.LogWatch`: tail `gs/ls/cs.problems.jsonl` from the run's start offset, the
-  bot traces, the MySQL container's log (`docker logs`), and each server process's exit code and stderr. Fingerprint and
+  bot traces, the bots project's container logs, `docker compose events` (die, oom, restart) and the MySQL
+  container's log. Fingerprint and
   consult the allowlist (P1-13) and ledger (P3-14). Join each problem to the latest bot step for the same
   account; mark it `inherited` when its `timer` scope is fixed-rate or was scheduled more than 30 s earlier.
   Also report as problems: server exit, stderr `Unhandled exception.`, a missing heartbeat (P3-12),
@@ -400,9 +405,9 @@ sockets before the large clock migration.
   right after the callback) into a bounded channel written as JSONL. Fix the false "Java parity" comments in
   `Capture/ServerPacketCaptureObserver.cs` and `Capture/NoOpServerPacketCaptureObserver.cs`: they are C#-only
   infrastructure, and fidelity cleanup must not delete them.
-- [ ] **P3-08** [LIVE] S — `scripts/live/run-live.ps1`: create the run databases and config (P3-02) → start the three
-  servers → wait ready → bots → watcher → collect → stop the servers → drop the run databases (`-KeepDb` keeps
-  them). Runs go under `$AION_E2E_RUN_ROOT` (default `run/`, added to
+- [ ] **P3-08** [LIVE] S — `scripts/live/run-live.ps1`: `docker compose -p aion-bots-<run> up -d --build` (P3-02) →
+  wait ready (P3-04) → bots → watcher → collect container logs into `run/<id>/` → `down -v` on the bots project
+  only (`-Keep` leaves it running for inspection). Runs go under `$AION_E2E_RUN_ROOT` (default `run/`, added to
   `.gitignore`); keep the last 20 local runs; `events.jsonl` and the packet tap roll at 200 MB and are gzipped
   at run end; `problems.jsonl`, `digest.log` and `report.*` never roll.
 - [ ] **P3-09** [LIVE] S — Scenario **L0 walking skeleton**: login → game auth → create Elyos warrior → enter
@@ -414,7 +419,7 @@ sockets before the large clock migration.
   exactly one `NEW` error line with bot and step (it logs from `ReadImpl`, so it proves the read-path scope);
   a `CM_LOGIN` with a bad checksum produces exactly one `ls` problem; an unknown chat opcode produces exactly one
   `cs` problem; an allowlist entry suppresses each.
-- [ ] **P3-11** [LIVE] S — Document the local loop in `RUNNING.md`: run `scripts/live/run-live.ps1`, then watch `digest.log`
+- [ ] **P3-11** [LIVE] S — Document the local loop in `docker/README.md`: run `scripts/live/run-live.ps1`, then watch `digest.log`
   (§5 has the Claude Code Monitor recipe).
 - [ ] **P3-12** [LIVE] S — A 10-second heartbeat Information line in all three servers with connection count,
   packet-queue depth and armed-timer count (via the `ThreadPoolManager` schedule observer).
@@ -513,8 +518,8 @@ clock-read ratchet has reached its allowlist floor; the same-seed replay test pa
   `LoadUsedIdsAsync` and the static-data load (Java `GameServer.java:219`). Today C# merges static data with the
   default `GSConfig.SERVER_COUNTRY_CODE` (`XmlMerger.cs:127`), builds world maps and inits `GameTimeService`
   before config applies. Correct the comment at `GameServerBootstrapService.cs:137-143`: `EventService` has no
-  active events before `Start()`, so `Config.Load` does not need `DataManager`. Add a post-load override hook;
-  SIM also uses the P3-00 override directory so it never reads a developer's `mygs.properties`.
+  active events before `Start()`, so `Config.Load` does not need `DataManager`. Add a config-root override so
+  SIM never reads a developer's gitignored `mygs.properties`, and a post-load override hook.
 - [ ] **P5-04** [BOTH] S — Fix the static-data cache race: `XmlMerger` writes the 150 MB merged cache in place to a
   shared path. Use a per-process cache directory for SIM or write-temp-then-move under a mutex.
 - [ ] **P5-05** [SIM] M — Create `tests/Aion.GameServer.TestKit` with `VirtualThreadPool`, `RealStaticData`,
@@ -534,7 +539,7 @@ clock-read ratchet has reached its allowlist floor; the same-seed replay test pa
     (it captures holders statically).
   - No MySQL available → scenarios report **Skipped**, never Passed.
 
-  Depends on P5-01..P5-05, P4-07, P4-08, P3-00.
+  Depends on P5-01..P5-05, P4-07, P4-08.
 - [ ] **P5-07** [SIM] M — In-process transport: client-encrypted CM bytes → `AionConnection.ProcessData` (decrypt,
   fake-packet check, `lastClientMessageTime`, flood check, `TryCreatePacket`, `Read`) → the P2-00 `ExecutePacket`
   override runs `Run` inline on the sim thread. After every CM and every clock advance, drain the send queue
@@ -795,8 +800,8 @@ real geodata on in production immediately, because geo is enabled by default; th
 - [ ] **P10-08** [SIM] S — Parameterize `tools/client-extract/run_mutations.py` (hardcoded test project and `Ai.` name
   filter) so seeded regressions prove the scenarios catch them.
 - [ ] **P10-09** [LIVE] L — Turn the open journeys in `docs/Deep-Port-Audit-Remediation-Tracker.md` into LIVE
-  scenarios and tick the tracker as each passes: BA-001 two-GS character transfer (`run-live.ps1` starts a second game
-  server process); BA-002 chat auth success, gagged, timeout/disconnect, duplicate request; BA-003 login-server kick,
+  scenarios and tick the tracker as each passes: BA-001 two-GS character transfer (the bots compose project gets a second
+  game server service); BA-002 chat auth success, gagged, timeout/disconnect, duplicate request; BA-003 login-server kick,
   reconnect key, access grant, account ban, MAC/HDD ban sync, duplicate login; BA-005 in-world siege gate repair
   and assault (deferred with P10-05, D7); BA-006 hardware-ban persistence across a login-server restart.
 - [ ] **P10-10** [BOTH] M — Run report. Every run writes `run/<id>/report.md` and `report.json`:
@@ -901,8 +906,8 @@ notification while the bots keep playing. Without Claude Code: `Get-Content run\
 Beyond Errors, these count as problems: protocol Warnings (unknown opcode or wrong state, and "was not fully read",
 all logged only when `unknown_packets`/`ignored_packets` logging is on); the "Missing D/C/H" read Errors; flood (PFF)
 disconnects; any `AUDIT_LOG` line from a subject; login "Unknown login packet" / "Wrong checksum";
-unexpected-refusal system messages; bot step timeouts and unexpected disconnects; missing heartbeats; server
-process exits and MySQL errors.
+unexpected-refusal system messages; bot step timeouts and unexpected disconnects; missing heartbeats; container
+exits (`docker compose events`) and MySQL errors.
 
 ### From error to fix
 
@@ -927,7 +932,7 @@ process exits and MySQL errors.
 | D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Declined for now** 2026-09-17; revisit later (P10-05, P11-05, P11-06 and BA-005 deferred) |
 | D8 | Java reference for this work | Keep local `../aion-server` `4.8` at `lastCompletedJavaCommit` | **Done** 2026-09-17 (`6ffedcd4f` → `ce54b7931`) |
 | D9 | Where runs happen | Local scripts | **Decided** 2026-09-17: no GitHub Actions, no n8n or other schedulers (both removed from the repo). The `docker/` compose stack stays as the way the emulator is deployed and run. Runs may create and drop databases on a Docker MySQL freely |
-| D13 | How LIVE mode starts the servers | An isolated docker compose project from `docker/` (own project name, ports, databases and volume), so LIVE tests the same images the emulator is deployed with; today P3-02 describes local `dotnet run` processes instead | **Open** |
+| D13 | How LIVE mode starts the servers | An isolated docker compose project built from `docker/` | **Decided** 2026-09-17: LIVE runs as its own compose project (own name, images, ports, MySQL and logs), so it tests the same images the emulator is deployed with (P3-00, P3-02, P3-08) |
 | D10 | Randomness in economy scenarios | Deterministic profile (fail chances 0) for pass/fail; separate soak profile with statistical assertions (gather success ≈ 74%, craft ≈ 79% at skill lead 0) | Proposed |
 | D11 | Enable real geodata in production when P9-01 lands (geo defaults to on) | Yes as a parity fix, after P9-03 measures memory | **Approved** 2026-09-17 |
 | D12 | How Java golden fixtures are generated against `lastCompletedJavaCommit` | Bring the generator tests forward onto the spec revision | **Approved** 2026-09-17: branches or worktrees in `../aion-server` are allowed when needed |
