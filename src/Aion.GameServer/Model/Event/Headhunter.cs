@@ -3,7 +3,7 @@ using Aion.GameServer.Model.GameObjects;
 
 namespace Aion.GameServer.Model.Event;
 
-/// <summary>Java parity: model/event/Headhunter (Estrayl, AION 4.8). implements Comparable+Persistable→IComparable&lt;Headhunter&gt;+IPersistable; PersistentState→IPersistable.PersistentState; currentTimeMillis→DateTimeOffset.UtcNow.ToUnixTimeMilliseconds.</summary>
+/// <summary>Java parity: model/event/Headhunter (Estrayl, AION 4.8). implements Comparable+Persistable→IComparable&lt;Headhunter&gt;+IPersistable; PersistentState→IPersistable.PersistentState; currentTimeMillis→SystemClock.CurrentMillis.</summary>
 public class Headhunter : IComparable<Headhunter>, IPersistable
 {
     private IPersistable.PersistentState state;
@@ -37,7 +37,7 @@ public class Headhunter : IComparable<Headhunter>, IPersistable
     public int IncrementAndGetKills()
     {
         accumulatedKills++;
-        lastUpdate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        lastUpdate = SystemClock.CurrentMillis();
         state = IPersistable.PersistentState.UPDATE_REQUIRED;
         return accumulatedKills;
     }

@@ -41,7 +41,7 @@ public class EncryptionKeyPair
             (byte)((baseKey >> 24) & 0xff), 0xa1, 0x6c, 0x54, 0x87 };
         this.keys[CLIENT] = new byte[this.keys[SERVER].Length];
         Array.Copy(this.keys[SERVER], 0, this.keys[CLIENT], 0, this.keys[SERVER].Length);
-        this.lastUpdate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        this.lastUpdate = SystemClock.CurrentMillis();
     }
 
     /// <returns>the baseKey used to generate the key pair</returns>

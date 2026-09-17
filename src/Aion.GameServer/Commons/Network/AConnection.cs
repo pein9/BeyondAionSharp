@@ -177,7 +177,9 @@ public abstract class AConnection<T> : AConnection where T : BaseServerPacket
             if (pendingCloseUntilMillis != 0 || closed)
                 return;
 
+#pragma warning disable RS0030 // Socket close grace periods remain tied to real network time.
             pendingCloseUntilMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + 2000;
+#pragma warning restore RS0030
             if (closePacket != null || !IsConnected())
                 ClearPendingPackets();
             if (closePacket != null && IsConnected())

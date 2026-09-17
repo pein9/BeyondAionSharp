@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -41,7 +42,8 @@ public class AbyssRankUpdateService
         ThreadPoolManager.GetInstance().Schedule(ct =>
         {
             log.LogInformation("AbyssRankUpdateService: Executing rank update...");
-            long startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
 
             // update and store rank statistics for all online players (offline players update on login)
             Aion.GameServer.World.World.GetInstance().ForEachPlayer(player =>
@@ -67,7 +69,7 @@ public class AbyssRankUpdateService
             // update ranking cache
             AbyssRankingCache.GetInstance().ReloadRankings();
 
-            log.LogInformation("AbyssRankUpdateService: Finished in " + (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startTime) / 1000 + "s");
+            log.LogInformation("AbyssRankUpdateService: Finished in " + (long)stopwatch.Elapsed.TotalSeconds + "s");
             return ValueTask.CompletedTask;
         }, TimeSpan.FromMilliseconds(1000));
     }

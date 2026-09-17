@@ -81,7 +81,7 @@ public class PvpService
     {
         lock (this)
         {
-            Headhunter created = new Headhunter(objId, 0, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), IPersistable.PersistentState.UPDATE_REQUIRED);
+            Headhunter created = new Headhunter(objId, 0, SystemClock.CurrentMillis(), IPersistable.PersistentState.UPDATE_REQUIRED);
             // Java putIfAbsent: returns existing if present, else inserts created and returns it.
             if (headhunters.TryGetValue(objId, out Headhunter existing))
                 return existing;

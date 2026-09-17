@@ -43,7 +43,7 @@ public class SM_CHALLENGE_LIST : AionServerPacket
         switch (action)
         {
             case 2: // send challenge tasks list
-                WriteD((int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000));
+                WriteD((int)(SystemClock.CurrentMillis() / 1000));
                 WriteH(tasks.Count);
                 foreach (ChallengeTask task in tasks)
                 {

@@ -134,7 +134,7 @@ public class AtreianPassportService
                 if (expireMin > 0)
                 {
                     DateTimeOffset deadline = passport.GetArriveDate().AddSeconds(expireMin * 60L);
-                    if (DateTimeOffset.UtcNow > deadline)
+                    if (SystemClock.UtcNow() > deadline)
                     {
                         passport.SetPersistentState(IPersistable.PersistentState.DELETED);
                         ppl.RemovePassport(passport);

@@ -30,7 +30,7 @@ public class RemoveCd : AdminCommand
         {
             if (target.GetSkillCoolDowns() != null)
             {
-                long nowMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                long nowMillis = SystemClock.CurrentMillis();
                 List<int> cooldownIds = target.GetSkillCoolDowns().Where(e => e.Value > nowMillis).Select(e => e.Key).ToList();
                 PacketSendUtility.SendPacket(target, new SM_SKILL_COOLDOWN(target, cooldownIds));
                 target.GetSkillCoolDowns().Clear();

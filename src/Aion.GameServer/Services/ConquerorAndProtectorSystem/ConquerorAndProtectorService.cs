@@ -47,7 +47,7 @@ public class ConquerorAndProtectorService
 
         ThreadPoolManager.GetInstance().ScheduleAtFixedRateTask(ct =>
         {
-            long nowMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long nowMillis = SystemClock.CurrentMillis();
             foreach (KeyValuePair<int, long> cd in intruderScanCooldowns.ToArray())
                 if (nowMillis >= cd.Value)
                     intruderScanCooldowns.TryRemove(cd.Key, out _);
@@ -222,7 +222,7 @@ public class ConquerorAndProtectorService
             return;
         if (GetOrRemoveCooldown(player.GetObjectId()) > 0)
             return;
-        intruderScanCooldowns[player.GetObjectId()] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + 180 * 1000;
+        intruderScanCooldowns[player.GetObjectId()] = SystemClock.CurrentMillis() + 180 * 1000;
         PacketSendUtility.SendPacket(player, new SM_CONQUEROR_PROTECTOR(FindIntruders(player), true));
     }
 
@@ -230,7 +230,7 @@ public class ConquerorAndProtectorService
     {
         if (intruderScanCooldowns.TryGetValue(objectId, out long cd))
         {
-            long remainingMillis = cd - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long remainingMillis = cd - SystemClock.CurrentMillis();
             if (remainingMillis > 0)
             {
                 return (int)(remainingMillis / 1000);

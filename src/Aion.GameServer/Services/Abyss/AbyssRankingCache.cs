@@ -54,7 +54,7 @@ public class AbyssRankingCache
         Dictionary<Race, List<SM_ABYSS_RANKING_PLAYERS>> newPlayerRankListPackets = new Dictionary<Race, List<SM_ABYSS_RANKING_PLAYERS>>();
         Dictionary<Race, SM_ABYSS_RANKING_LEGIONS> newLegionRankListPackets = new Dictionary<Race, SM_ABYSS_RANKING_LEGIONS>();
 
-        int updateTime = (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000);
+        int updateTime = (int)(SystemClock.CurrentMillis() / 1000);
 
         foreach (Race race in races)
         {

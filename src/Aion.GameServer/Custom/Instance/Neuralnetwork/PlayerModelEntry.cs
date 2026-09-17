@@ -37,7 +37,7 @@ public class PlayerModelEntry : IPersistable
     // live constructor
     public PlayerModelEntry(Creature playerOrBoss, int skillID, Creature target)
     {
-        timestamp = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        timestamp = DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis());
 
         this.skillID = skillID;
         playerID = playerOrBoss.GetObjectId();

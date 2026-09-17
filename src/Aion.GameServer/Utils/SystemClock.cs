@@ -49,7 +49,9 @@ public static class SystemClock
     public static long CurrentMillis() =>
         Source.Value?.Invoke()
         ?? Volatile.Read(ref _processSource)?.Invoke()
+#pragma warning disable RS0030 // The clock seam is the single production owner of wall-clock reads.
         ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+#pragma warning restore RS0030
 
     /// <summary>The current UTC instant derived from <see cref="CurrentMillis"/>.</summary>
     public static DateTimeOffset UtcNow() => DateTimeOffset.FromUnixTimeMilliseconds(CurrentMillis());

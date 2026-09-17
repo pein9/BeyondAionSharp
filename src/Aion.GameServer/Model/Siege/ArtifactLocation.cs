@@ -43,7 +43,7 @@ public class ArtifactLocation : SiegeLocation
     public int GetCoolDown()
     {
         long cd = GetTemplate().GetActivation().GetCd();
-        long millisSinceLastActivation = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastArtifactActivation;
+        long millisSinceLastActivation = SystemClock.CurrentMillis() - lastArtifactActivation;
         if (millisSinceLastActivation > cd)
             return 0;
         else

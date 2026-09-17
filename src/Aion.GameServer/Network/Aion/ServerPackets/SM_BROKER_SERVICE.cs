@@ -239,7 +239,7 @@ public class SM_BROKER_SERVICE : AionServerPacket
         WriteQ(brokerItem.GetPrice() * brokerItem.GetItemCount());
         WriteQ(item.GetItemCount());
         WriteQ(item.GetItemCount());
-        int daysLeft = (int)((brokerItem.GetExpireTime().ToUnixTimeMilliseconds() - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 86400000);
+        int daysLeft = (int)((brokerItem.GetExpireTime().ToUnixTimeMilliseconds() - SystemClock.CurrentMillis()) / 86400000);
         WriteC(daysLeft);
 
         EnchantInfoBlobEntry.WriteInfo(GetBuf(), item);

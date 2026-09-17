@@ -47,7 +47,7 @@ public class DebugService
             long lastPing = connection.GetLastPingTime();
             if (lastPing > 0)
             {
-                long pingInterval = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastPing;
+                long pingInterval = SystemClock.CurrentMillis() - lastPing;
                 if (pingInterval - 5000 > CM_PING.CLIENT_PING_INTERVAL)
                     log.LogWarning("[DEBUG SERVICE] Found {Player} with large ping interval: Spawned {Spawned}, PingMS {PingMS}", player, player.IsSpawned(), pingInterval);
             }

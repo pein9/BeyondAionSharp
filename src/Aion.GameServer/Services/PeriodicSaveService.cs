@@ -90,7 +90,7 @@ public class PeriodicSaveService
 
 		public override void Run()
 		{
-			ServerVariablesDAO.Store("serverLastRun", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+			ServerVariablesDAO.Store("serverLastRun", SystemClock.CurrentMillis());
 		}
 	}
 

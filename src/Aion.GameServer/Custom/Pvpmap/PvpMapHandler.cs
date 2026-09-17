@@ -296,9 +296,9 @@ public class PvpMapHandler : GeneralInstanceHandler
                 PacketSendUtility.SendMessage(p, "You cannot enter the PvP-Map in your current state.");
                 return false;
             }
-            else if (joinOrLeaveTime.ContainsKey(p.GetObjectId()) && ((DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - joinOrLeaveTime[p.GetObjectId()]) < 120000))
+            else if (joinOrLeaveTime.ContainsKey(p.GetObjectId()) && ((SystemClock.CurrentMillis() - joinOrLeaveTime[p.GetObjectId()]) < 120000))
             {
-                int timeInSeconds = (int)Math.Ceiling((120000 - (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - joinOrLeaveTime[p.GetObjectId()])) / 1000f);
+                int timeInSeconds = (int)Math.Ceiling((120000 - (SystemClock.CurrentMillis() - joinOrLeaveTime[p.GetObjectId()])) / 1000f);
                 PacketSendUtility.SendMessage(p, "You can reenter the PvP-Map in " + timeInSeconds + " second" + (timeInSeconds > 1 ? "s." : "."));
                 return false;
             }
@@ -327,7 +327,7 @@ public class PvpMapHandler : GeneralInstanceHandler
         lock (this)
         {
             if (!p.IsStaff())
-                joinOrLeaveTime[p.GetObjectId()] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                joinOrLeaveTime[p.GetObjectId()] = SystemClock.CurrentMillis();
         }
     }
 

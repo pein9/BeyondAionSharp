@@ -46,7 +46,9 @@ public static class FastMath
     public const float RAD_TO_DEG = 180.0f / PI;
 
     /// <summary>A precreated random object for random numbers.</summary>
+#pragma warning disable RS0030 // P4-05 replaces this production-default random seed with the shared seed seam.
     public static readonly Random rand = new Random((int)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+#pragma warning restore RS0030
 
     /// <summary>
     /// Returns true if the number is a power of 2 (2,4,8,16...)

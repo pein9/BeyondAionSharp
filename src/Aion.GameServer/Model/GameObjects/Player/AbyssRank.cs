@@ -238,7 +238,7 @@ public class AbyssRank : IPersistable
         }
 
         // Finally, update the the last update
-        lastUpdate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        lastUpdate = SystemClock.CurrentMillis();
 
         if (needUpdate)
             SetPersistentState(IPersistable.PersistentState.UPDATE_REQUIRED);

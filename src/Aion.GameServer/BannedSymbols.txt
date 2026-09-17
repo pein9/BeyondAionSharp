@@ -1,0 +1,7 @@
+# Gameplay time must follow the same clock as scheduled work. Direct wall-clock reads are limited to
+# reviewed infrastructure sites with a narrow RS0030 pragma; use SystemClock everywhere else.
+P:System.DateTimeOffset.UtcNow;Use SystemClock.UtcNow(), CurrentMillis(), or CurrentSeconds().
+P:System.DateTimeOffset.Now;Use SystemClock.UtcNow(), CurrentMillis(), or CurrentSeconds().
+P:System.DateTime.UtcNow;Use SystemClock.UtcNow().UtcDateTime.
+P:System.DateTime.Now;Use SystemClock.UtcNow().LocalDateTime.
+P:System.DateTime.Today;Derive the date from SystemClock.UtcNow().

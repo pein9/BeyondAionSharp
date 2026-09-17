@@ -1165,7 +1165,7 @@ public sealed class AdminHttpService : IHostedService
         await WriteJsonAsync(ctx, 200, new
         {
             ok = true,
-            at = DateTimeOffset.UtcNow,
+            at = SystemClock.UtcNow(),
             service = nameof(AdminHttpService),
             apiVersion = 2,
             onlinePlayerCount,
@@ -1235,7 +1235,7 @@ public sealed class AdminHttpService : IHostedService
         await WriteJsonAsync(ctx, 200, new
         {
             ok = true,
-            at = DateTimeOffset.UtcNow,
+            at = SystemClock.UtcNow(),
             count = players.Count,
             players
         });
@@ -1297,7 +1297,7 @@ public sealed class AdminHttpService : IHostedService
             await WriteJsonAsync(ctx, 200, new
             {
                 ok = true,
-                at = DateTimeOffset.UtcNow,
+                at = SystemClock.UtcNow(),
                 accountId = resolvedAccountId,
                 accountName = resolvedAccountName,
                 loaded = livePlayers.Count > 0,
@@ -1339,7 +1339,7 @@ public sealed class AdminHttpService : IHostedService
             {
                 ok = true,
                 online = false,
-                at = DateTimeOffset.UtcNow,
+                at = SystemClock.UtcNow(),
                 recipientCharacterId = offlineCommon.GetPlayerObjId(),
                 recipientName = offlineCommon.GetName(),
                 lastKnown = OfflinePlayerStatePayload(offlineCommon)
@@ -1372,7 +1372,7 @@ public sealed class AdminHttpService : IHostedService
         {
             ok = true,
             online = true,
-            at = DateTimeOffset.UtcNow,
+            at = SystemClock.UtcNow(),
             recipientCharacterId = common.GetPlayerObjId(),
             recipientName = common.GetName(),
             player = payload
@@ -1404,7 +1404,7 @@ public sealed class AdminHttpService : IHostedService
             {
                 ok = true,
                 online = true,
-                at = DateTimeOffset.UtcNow,
+                at = SystemClock.UtcNow(),
                 recipientCharacterId = common.GetPlayerObjId(),
                 recipientName = common.GetName(),
                 position = PositionSnapshotFor(player, "live"),

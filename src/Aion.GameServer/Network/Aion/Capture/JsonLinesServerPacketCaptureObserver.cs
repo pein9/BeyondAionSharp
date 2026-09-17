@@ -61,7 +61,7 @@ public sealed class JsonLinesServerPacketCaptureObserver : ServerPacketCaptureOb
 			var account = con.GetAccount()?.GetName();
 			var player = con.GetActivePlayer()?.GetName();
 			var captured = new CapturedPacket(
-				DateTimeOffset.UtcNow,
+				RealUtcNow(),
 				account,
 				player,
 				packet.GetType().Name,
@@ -118,12 +118,19 @@ public sealed class JsonLinesServerPacketCaptureObserver : ServerPacketCaptureOb
 			return;
 		var line = JsonSerializer.Serialize(new
 		{
-			ts = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture),
+			ts = RealUtcNow().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture),
 			run,
 			kind = "dropped",
 			count,
 		});
 		await writer.WriteLineAsync(line);
+	}
+
+	private static DateTimeOffset RealUtcNow()
+	{
+#pragma warning disable RS0030 // Capture JSONL timestamps must describe real log emission time.
+		return DateTimeOffset.UtcNow;
+#pragma warning restore RS0030
 	}
 
 	private sealed record CapturedPacket(

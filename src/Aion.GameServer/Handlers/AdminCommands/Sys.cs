@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Commons.Utils.Info;
@@ -48,9 +49,10 @@ public class Sys : AdminCommand
         {
             if (paramsArr.Length > 1 && "gc".Equals(paramsArr[1], StringComparison.OrdinalIgnoreCase))
             {
-                long time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
                 GC.Collect();
-                SendInfo(player, "Garbage collection took " + (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - time) + " ms");
+                SendInfo(player, "Garbage collection took " + stopwatch.ElapsedMilliseconds + " ms");
             }
             SendInfo(player, SystemInfo.GetMemoryInfo());
         }

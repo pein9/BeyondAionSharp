@@ -43,7 +43,7 @@ public class AccountService
         {
             Race race = pad.GetPlayerCommonData().GetRace();
             long deletionTime = pad.GetDeletionDate() == null ? 0 : pad.GetDeletionDate().Value.ToUnixTimeMilliseconds();
-            if (deletionTime != 0 && deletionTime <= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+            if (deletionTime != 0 && deletionTime <= SystemClock.CurrentMillis())
             {
                 account.Remove(pad);
                 account.DecrementCountOf(race);

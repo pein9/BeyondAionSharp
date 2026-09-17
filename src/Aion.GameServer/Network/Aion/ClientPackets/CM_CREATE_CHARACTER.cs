@@ -67,7 +67,7 @@ public class CM_CREATE_CHARACTER : AbstractCharacterEditPacket
         else
         {
             accPlData.SetVisibleItems(player.GetEquipment().GetEquippedForAppearance());
-            accPlData.SetCreationDate(DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
+            accPlData.SetCreationDate(DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis()));
             PlayerService.StoreCreationTime(player.GetObjectId(), accPlData.GetCreationDate().Value);
 
             account.AddPlayerAccountData(accPlData);

@@ -43,7 +43,7 @@ public class BannedMacEntry
 
     public bool IsActive()
     {
-        return timeEnd != null && new DateTimeOffset(timeEnd.Value, TimeSpan.Zero).ToUnixTimeMilliseconds() > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        return timeEnd != null && new DateTimeOffset(timeEnd.Value, TimeSpan.Zero).ToUnixTimeMilliseconds() > SystemClock.CurrentMillis();
     }
 
     public bool IsActiveTill(long time)

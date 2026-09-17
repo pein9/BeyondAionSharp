@@ -139,7 +139,7 @@ public class PetCommonData : IExpirable
 
     public long GetRefeedDelay()
     {
-        long time = refeedTime - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long time = refeedTime - SystemClock.CurrentMillis();
         if (time < 0)
         {
             refeedTime = 0;
@@ -167,8 +167,8 @@ public class PetCommonData : IExpirable
     public int GetMoodPoints(bool forPacket)
     {
         if (startMoodTime == 0)
-            startMoodTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        int points = (int)Math.Floor((DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startMoodTime) / 1000f + 0.5f) + shuggleCounter * 1000;
+            startMoodTime = SystemClock.CurrentMillis();
+        int points = (int)Math.Floor((SystemClock.CurrentMillis() - startMoodTime) / 1000f + 0.5f) + shuggleCounter * 1000;
         if (forPacket && points > 9000)
             return 9000;
         return points;
@@ -188,7 +188,7 @@ public class PetCommonData : IExpirable
     {
         if (GetMoodRemainingTime() > 0)
             return false;
-        this.moodCdStarted = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        this.moodCdStarted = SystemClock.CurrentMillis();
         this.shuggleCounter++;
         return true;
     }
@@ -219,7 +219,7 @@ public class PetCommonData : IExpirable
     public int GetMoodRemainingTime()
     {
         long stop = moodCdStarted + 600000;
-        long remains = stop - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long remains = stop - SystemClock.CurrentMillis();
         if (remains <= 0)
         {
             SetMoodCdStarted(0);
@@ -243,7 +243,7 @@ public class PetCommonData : IExpirable
     public int GetGiftRemainingTime()
     {
         long stop = giftCdStarted + 3600 * 1000;
-        long remains = stop - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long remains = stop - SystemClock.CurrentMillis();
         if (remains <= 0)
         {
             SetGiftCdStarted(0);

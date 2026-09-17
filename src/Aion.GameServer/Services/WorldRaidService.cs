@@ -88,7 +88,7 @@ public class WorldRaidService
             }
             bool sendMessages = true;
             WorldRaidLocation location = raidLocationsById.GetValueOrDefault(locationId);
-            long currentMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long currentMillis = SystemClock.CurrentMillis();
             if (lastMsgDateByMapId.ContainsKey(location.GetMapId()))
             {
                 long lastMsgDateMs = lastMsgDateByMapId[location.GetMapId()];

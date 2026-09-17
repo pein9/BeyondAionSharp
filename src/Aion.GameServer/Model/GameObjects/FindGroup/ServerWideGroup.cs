@@ -57,7 +57,7 @@ public sealed class ServerWideGroup : FindGroupEntry
 
     public void SetLastUpdate()
     {
-        this.lastUpdate = (int)(System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000);
+        this.lastUpdate = (int)(SystemClock.CurrentMillis() / 1000);
     }
 
     public Player GetRecruiter()

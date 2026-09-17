@@ -7,7 +7,7 @@ namespace Aion.GameServer.Model.Assemblednpc;
 public class AssembledNpc
 {
     private List<AssembledNpcPart> assembledPatrs = new List<AssembledNpcPart>();
-    private long spawnTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    private long spawnTime = SystemClock.CurrentMillis();
     private int routeId;
     private int mapId;
 
@@ -35,6 +35,6 @@ public class AssembledNpc
 
     public long GetTimeOnMap()
     {
-        return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - spawnTime;
+        return SystemClock.CurrentMillis() - spawnTime;
     }
 }

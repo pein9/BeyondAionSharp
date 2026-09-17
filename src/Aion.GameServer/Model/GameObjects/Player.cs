@@ -314,7 +314,7 @@ public partial class Player : Creature
     {
         if (gatherRestrictionMillis == 0)
             return 0;
-        int durationSeconds = (int)((gatherRestrictionMillis - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000);
+        int durationSeconds = (int)((gatherRestrictionMillis - SystemClock.CurrentMillis()) / 1000);
         if (durationSeconds < 0)
             gatherRestrictionMillis = durationSeconds = 0;
         return durationSeconds;

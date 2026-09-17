@@ -53,7 +53,7 @@ public class MercenaryLocation
             }
         }
         spawnedMercs.AddRange(mercs);
-        lastSpawn = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        lastSpawn = SystemClock.CurrentMillis();
         SiegeService.GetInstance().GetFortress(siegeId).ForEachPlayer(p => PacketSendUtility.SendPacket(p, new SM_SYSTEM_MESSAGE(smz.GetAnnounceId())));
     }
 
@@ -73,7 +73,7 @@ public class MercenaryLocation
     /// </summary>
     public bool IsRequestValid()
     {
-        return spawns != null && (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastSpawn) > smz.GetCooldown() && !HasEnoughMercsAlive();
+        return spawns != null && (SystemClock.CurrentMillis() - lastSpawn) > smz.GetCooldown() && !HasEnoughMercsAlive();
     }
 
     /// <summary>

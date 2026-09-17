@@ -34,7 +34,7 @@ public abstract class AbstractCronTask : Aion.Commons.Lang.Runnable
             log.LogInformation(GetType().Name + " is deactivated");
             return;
         }
-        this.nextRun = GetNextRunAfter(DateTimeOffset.UtcNow);
+        this.nextRun = GetNextRunAfter(SystemClock.UtcNow());
         this.lastPlannedRunBeforeServerStart = FindLastPlannedRun();
         RunAndScheduleAsyncWithLock();
     }
@@ -76,7 +76,7 @@ public abstract class AbstractCronTask : Aion.Commons.Lang.Runnable
 
     public long GetMillisSinceLastRun()
     {
-        return lastRun == null ? -1 : DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastRun.Value.ToUnixTimeMilliseconds();
+        return lastRun == null ? -1 : SystemClock.CurrentMillis() - lastRun.Value.ToUnixTimeMilliseconds();
     }
 
     /// <returns>Time of the next task start</returns>
@@ -93,14 +93,14 @@ public abstract class AbstractCronTask : Aion.Commons.Lang.Runnable
 
     public long GetMillisUntilNextRun()
     {
-        return nextRun.ToUnixTimeMilliseconds() - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        return nextRun.ToUnixTimeMilliseconds() - SystemClock.CurrentMillis();
     }
 
     protected abstract void ExecuteTask();
 
     public void Run()
     {
-        lastRun = DateTimeOffset.UtcNow;
+        lastRun = SystemClock.UtcNow();
         nextRun = GetNextRunAfter(lastRun.Value);
         ExecuteTask();
     }
@@ -112,7 +112,7 @@ public abstract class AbstractCronTask : Aion.Commons.Lang.Runnable
     private DateTimeOffset FindLastPlannedRun()
     {
         long interval = GetNextRunAfter(nextRun).ToUnixTimeMilliseconds() - nextRun.ToUnixTimeMilliseconds();
-        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long now = SystemClock.CurrentMillis();
         long millis = now;
         DateTimeOffset lastRun;
         do

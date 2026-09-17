@@ -65,7 +65,7 @@ public class LegionDominionService
                 LegionDominionParticipantInfo info = loc.GetParticipantInfo(legion.GetLegionId());
                 if (info != null && info.GetPoints() < points)
                 {
-                    info.SetDate(DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
+                    info.SetDate(DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis()));
                     info.SetPoints(points);
                     info.SetTime((int)(time / 1000));
                     LegionDominionDAO.UpdateInfo(info);
@@ -112,7 +112,7 @@ public class LegionDominionService
             }
 
             loc.SetLegionId(newOccupyingLegionId);
-            loc.SetOccupiedDate(DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
+            loc.SetOccupiedDate(DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis()));
 
             // update all participated legions & store them to db
             foreach (LegionDominionParticipantInfo info in loc.GetParticipantInfo().Values)

@@ -24,7 +24,7 @@ public abstract class AbstractQuestZoneObserver : ActionObserver
         this.player = player;
         this.startPos = new Vector3f(player.GetX(), player.GetY(), player.GetZ());
         this.oldPos = startPos.Clone();
-        this.startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        this.startTime = SystemClock.CurrentMillis();
         this.observedZone = zoneTemplate;
     }
 
@@ -45,7 +45,7 @@ public abstract class AbstractQuestZoneObserver : ActionObserver
                         stepCount++;
                         oldPos = currentPos;
                     }
-                    OnMoved(distance, distanceFromCenter, stepCount, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startTime);
+                    OnMoved(distance, distanceFromCenter, stepCount, SystemClock.CurrentMillis() - startTime);
                 }
                 finally
                 {

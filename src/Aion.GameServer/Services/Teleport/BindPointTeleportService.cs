@@ -115,7 +115,7 @@ public class BindPointTeleportService
 
     private static void AddCooldown(Player player, int locId)
     {
-        long cooldown = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + COOLDOWN_IN_SECONDS * 1000;
+        long cooldown = SystemClock.CurrentMillis() + COOLDOWN_IN_SECONDS * 1000;
         cooldowns[player.GetObjectId()] = new Cooldown(locId, cooldown);
     }
 
@@ -142,7 +142,7 @@ public class BindPointTeleportService
 
         public int GetTimeLeft()
         {
-            int estimated = (int)((cdEnd - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000);
+            int estimated = (int)((cdEnd - SystemClock.CurrentMillis()) / 1000);
             if (estimated > 0)
                 return estimated;
             else

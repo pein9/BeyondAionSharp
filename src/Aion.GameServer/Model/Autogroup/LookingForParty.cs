@@ -12,7 +12,7 @@ public class LookingForParty : IComparable<LookingForParty>
     private readonly Dictionary<int, AGPlayer> members;
     private readonly EntryRequestType ert;
     private readonly Race race;
-    private readonly long registrationTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    private readonly long registrationTime = SystemClock.CurrentMillis();
     private readonly int maskId;
     private long startEnterTime;
     private int leaderObjId;
@@ -88,12 +88,12 @@ public class LookingForParty : IComparable<LookingForParty>
 
     public void SetStartEnterTime()
     {
-        startEnterTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        startEnterTime = SystemClock.CurrentMillis();
     }
 
     public bool IsOnStartEnterTask()
     {
-        return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startEnterTime <= 120000;
+        return SystemClock.CurrentMillis() - startEnterTime <= 120000;
     }
 
     public int CompareTo(LookingForParty lfp)

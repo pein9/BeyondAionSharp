@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -57,7 +58,8 @@ public class DatabaseCleaningService
 
     private static void DeletePlayers(List<PlayerDAO.PlayerAndLegionInfo> players)
     {
-        long startMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
         log.LogInformation("Deleting {Count} characters level <={MaxLevel} from inactive accounts...", players.Count, CleaningConfig.MAX_DELETABLE_CHAR_LEVEL);
         for (int i = 0; i < players.Count; i++)
         {
@@ -65,7 +67,7 @@ public class DatabaseCleaningService
                 Console.Write(string.Format("Progress: {0,4:F1}%\r", i * 100f / players.Count));
             PlayerService.DeletePlayerFromDB(players[i].PlayerId, false);
         }
-        log.LogInformation("Deleted characters and related data from database in {Seconds} seconds", (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startMillis) / 1000);
+        log.LogInformation("Deleted characters and related data from database in {Seconds} seconds", (long)stopwatch.Elapsed.TotalSeconds);
     }
 
     private static List<PlayerDAO.PlayerAndLegionInfo> DeleteEmptyLegions(List<PlayerDAO.PlayerAndLegionInfo> players)
@@ -123,7 +125,8 @@ public class DatabaseCleaningService
     // table names cannot be used as parameters, so unfortunately we have to concat the sql query
     private static void OptimizeDatabaseTables(List<string> tables)
     {
-        long startMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
         log.LogInformation("Optimizing {Count} database tables: {Tables}", tables.Count, string.Join(", ", tables));
         try
         {
@@ -133,7 +136,7 @@ public class DatabaseCleaningService
             using var stmt = con.CreateCommand();
             stmt.CommandText = "OPTIMIZE TABLE " + string.Join(",", tables);
             stmt.ExecuteNonQuery();
-            log.LogInformation("Optimized database tables in {Seconds} seconds", (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startMillis) / 1000);
+            log.LogInformation("Optimized database tables in {Seconds} seconds", (long)stopwatch.Elapsed.TotalSeconds);
         }
         catch (Exception e)
         {

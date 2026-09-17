@@ -66,7 +66,7 @@ public class SummonController : CreatureController<Summon>
         }
 
         int attackSpeed = GetOwner().GetGameStats().GetAttackSpeed().GetCurrent();
-        long now = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long now = SystemClock.CurrentMillis();
         long msSinceLastAttack = now - lastAttackMillis;
         if (msSinceLastAttack < attackSpeed && attackSpeed - msSinceLastAttack > 50) // 50ms tolerance
         {

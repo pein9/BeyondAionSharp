@@ -117,7 +117,7 @@ public class PetService
                 ItemService.AddItem(player, reward.GetItem(), 1);
                 long delay = flavour.GetCooldDown() * 60000;
                 commonData.ScheduleRefeed(delay);
-                long refeedTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + delay;
+                long refeedTime = SystemClock.CurrentMillis() + delay;
                 commonData.SetRefeedTime(refeedTime);
                 PlayerPetsDAO.SetTime(pet.GetObjectId(), refeedTime);
                 progress.Reset();
@@ -170,7 +170,7 @@ public class PetService
                 return;
             }
 
-            long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long now = SystemClock.CurrentMillis();
             long reuseTime = player.GetItemReuseTime(useItem.GetItemTemplate().GetUseLimits().GetDelayId());
             if (reuseTime != 0 && reuseTime > now)
             { // player still has cooldown, schedule re-check

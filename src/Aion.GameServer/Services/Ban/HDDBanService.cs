@@ -5,7 +5,7 @@ using Aion.GameServer.Network.LoginServer.ServerPackets;
 
 namespace Aion.GameServer.Services.Ban;
 
-/// <summary>Java parity: services/ban/HDDBanService (ViAl). java.sql.Timestamp→DateTimeOffset; getTime()→ToUnixTimeMilliseconds; System.currentTimeMillis()→DateTimeOffset.UtcNow.ToUnixTimeMilliseconds.</summary>
+/// <summary>Java parity: services/ban/HDDBanService (ViAl). java.sql.Timestamp→DateTimeOffset; getTime()→ToUnixTimeMilliseconds; System.currentTimeMillis()→SystemClock.CurrentMillis.</summary>
 public class HDDBanService
 {
     /// <summary>HDD serial - ban time.</summary>
@@ -43,7 +43,7 @@ public class HDDBanService
         if (!this.bannedSerials.ContainsKey(serial))
             return false;
         DateTimeOffset banTime = bannedSerials[serial];
-        if (banTime.ToUnixTimeMilliseconds() > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+        if (banTime.ToUnixTimeMilliseconds() > SystemClock.CurrentMillis())
             return true;
         else
             return false;

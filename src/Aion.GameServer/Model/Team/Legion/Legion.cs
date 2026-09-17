@@ -320,7 +320,7 @@ public class Legion : AionObject
             history.Insert(0, entry);
             if (type == LegionHistoryAction.Type.REWARD || type == LegionHistoryAction.Type.WAREHOUSE)
             {
-                long maxMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000 - (365L * 24 * 60 * 60);
+                long maxMillis = SystemClock.CurrentMillis() / 1000 - (365L * 24 * 60 * 60);
                 while (history[history.Count - 1].EpochSeconds < maxMillis)
                 {
                     removedEntries.Add(history[history.Count - 1]);

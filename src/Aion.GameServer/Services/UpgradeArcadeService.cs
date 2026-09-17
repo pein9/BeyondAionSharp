@@ -39,13 +39,13 @@ public class UpgradeArcadeService
         PacketSendUtility.SendPacket(player, new SM_UPGRADE_ARCADE(progress, sessionId));
         if (progress.GetCurrentLevel() > 1)
             PacketSendUtility.SendPacket(player, new SM_UPGRADE_ARCADE(progress));
-        if (progress.GetFrenzyEndTimeMillis() > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+        if (progress.GetFrenzyEndTimeMillis() > SystemClock.CurrentMillis())
             SendRemainingFrenzyModeTime(player, progress);
     }
 
     private void SendRemainingFrenzyModeTime(Player player, ArcadeProgress progress)
     {
-        int remainingFrenzyModeSeconds = (int)((progress.GetFrenzyEndTimeMillis() - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000);
+        int remainingFrenzyModeSeconds = (int)((progress.GetFrenzyEndTimeMillis() - SystemClock.CurrentMillis()) / 1000);
         PacketSendUtility.SendPacket(player, new SM_UPGRADE_ARCADE(Math.Max(0, remainingFrenzyModeSeconds)));
     }
 
@@ -79,7 +79,7 @@ public class UpgradeArcadeService
     public void StartTry(Player player)
     {
         ArcadeProgress progress = GetProgress(player.GetObjectId());
-        long nowMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long nowMillis = SystemClock.CurrentMillis();
         if (nowMillis < progress.GetNextTryTimeMillis())
         {
             AuditLogger.Log(player, "tried to start next arcade try while the button was still greyed out");
@@ -136,7 +136,7 @@ public class UpgradeArcadeService
             progress.SetFrenzyPoints(progress.GetFrenzyPoints() % frenzyModeThreshold);
             int frenzyDurationSeconds = 90;
             long frenzyDurationMillis = frenzyDurationSeconds * 1000;
-            progress.SetFrenzyEndTimeMillis(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + frenzyDurationMillis);
+            progress.SetFrenzyEndTimeMillis(SystemClock.CurrentMillis() + frenzyDurationMillis);
             PacketSendUtility.SendPacket(player, new SM_UPGRADE_ARCADE(frenzyDurationSeconds));
             int playerId = player.GetObjectId();
             ThreadPoolManager.GetInstance().Schedule(ct =>
@@ -185,7 +185,7 @@ public class UpgradeArcadeService
         ArcadeRewards rewards = GetRewardsForLevel(progress.GetCurrentLevel());
         if (rewards == null)
             return;
-        bool isFrenzyActive = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() < progress.GetFrenzyEndTimeMillis();
+        bool isFrenzyActive = SystemClock.CurrentMillis() < progress.GetFrenzyEndTimeMillis();
         foreach (ArcadeRewardItem arcadeTabItem in rewards.GetArcadeRewardItems())
         {
             if (isFrenzyActive)

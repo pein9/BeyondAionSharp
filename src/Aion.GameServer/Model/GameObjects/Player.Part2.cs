@@ -261,7 +261,7 @@ public partial class Player
     {
         if (prisonEndTimeMillis == 0)
             return 0;
-        int durationSeconds = (int)((prisonEndTimeMillis - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000);
+        int durationSeconds = (int)((prisonEndTimeMillis - SystemClock.CurrentMillis()) / 1000);
         if (durationSeconds < 0)
             prisonEndTimeMillis = durationSeconds = 0;
         return durationSeconds;

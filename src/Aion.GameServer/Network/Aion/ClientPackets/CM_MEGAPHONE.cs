@@ -52,7 +52,7 @@ public class CM_MEGAPHONE : AionClientPacket
         {
             int useDelay = item.GetItemTemplate().GetUseLimits().GetDelayTime();
             if (useDelay > 0)
-                player.AddItemCoolDown(item.GetItemTemplate().GetUseLimits().GetDelayId(), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + useDelay, useDelay / 1000);
+                player.AddItemCoolDown(item.GetItemTemplate().GetUseLimits().GetDelayId(), SystemClock.CurrentMillis() + useDelay, useDelay / 1000);
             player.GetObserveController().NotifyItemuseObservers(item);
             megaphoneAction.Act(player, item, null, message);
         }

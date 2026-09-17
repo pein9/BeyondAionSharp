@@ -54,7 +54,7 @@ public class CustomInstanceService
 
     public void OnEnter(Player player)
     {
-        if (!UpdateLastEntry(player.GetObjectId(), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()))
+        if (!UpdateLastEntry(player.GetObjectId(), SystemClock.CurrentMillis()))
         {
             PacketSendUtility.SendMessage(player, "Sorry. Some shugo broke our database, please report this in our bugtracker :(");
             return;
@@ -69,7 +69,7 @@ public class CustomInstanceService
     {
         CustomInstanceRank customInstanceRank = CustomInstanceDAO.LoadPlayerRankObject(playerId);
         if (customInstanceRank == null)
-            customInstanceRank = new CustomInstanceRank(playerId, 0, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), 0, 0);
+            customInstanceRank = new CustomInstanceRank(playerId, 0, SystemClock.CurrentMillis(), 0, 0);
         return customInstanceRank;
     }
 

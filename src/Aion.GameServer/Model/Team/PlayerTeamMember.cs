@@ -32,5 +32,5 @@ public class PlayerTeamMember : ITeamMember<Player>
     public long GetLastOnlineTime() => _lastOnlineTime;
 
     // Java parity: updateLastOnlineTime()
-    public void UpdateLastOnlineTime() => _lastOnlineTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    public void UpdateLastOnlineTime() => _lastOnlineTime = SystemClock.CurrentMillis();
 }

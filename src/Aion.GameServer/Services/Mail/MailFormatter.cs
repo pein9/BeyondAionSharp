@@ -27,7 +27,7 @@ public sealed class MailFormatter
     public static void SendHouseMaintenanceMail(House ownedHouse, string ownerName, long impoundTimeMillis, long kinah)
     {
         string templateName;
-        long daysUntilImpoundment = (impoundTimeMillis - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 86400000L;
+        long daysUntilImpoundment = (impoundTimeMillis - SystemClock.CurrentMillis()) / 86400000L;
         if (daysUntilImpoundment <= 0)
             templateName = "$$HS_OVERDUE_3RD";
         else if (daysUntilImpoundment <= 7)
@@ -114,7 +114,7 @@ public sealed class MailFormatter
             else if ("unk1".Equals(name))
                 return "0";
             else if ("purchasedate".Equals(name))
-                return (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000).ToString();
+                return (SystemClock.CurrentMillis() / 1000).ToString();
             return "";
         }
     }

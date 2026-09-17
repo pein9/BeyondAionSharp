@@ -401,7 +401,7 @@ public class FortressSiege : Siege<FortressLocation>
                 else
                 {
                     nonKinahItems++;
-                    MailFormatter.SendAbyssRewardMail(GetSiegeLocation(), brigadeGeneral, AbyssSiegeLevel.NONE, SiegeResult.PROTECT, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                    MailFormatter.SendAbyssRewardMail(GetSiegeLocation(), brigadeGeneral, AbyssSiegeLevel.NONE, SiegeResult.PROTECT, SystemClock.CurrentMillis(),
                         item.GetItemId(), item.GetItemCount(), 0);
                 }
             }

@@ -3,13 +3,13 @@ using Aion.GameServer.Model.GameObjects.Players;
 
 namespace Aion.GameServer.Model.GameObjects.FindGroup;
 
-/// <summary>Java parity: model/gameobjects/findGroup/GroupApplication. System.currentTimeMillis()/1000→(int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()/1000).</summary>
+/// <summary>Java parity: model/gameobjects/findGroup/GroupApplication. System.currentTimeMillis()/1000→(int)(SystemClock.CurrentMillis()/1000).</summary>
 public sealed class GroupApplication : FindGroupEntry
 {
     private readonly Player player;
     private string message;
     private int groupType, classId, level;
-    private int lastUpdate = (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000);
+    private int lastUpdate = (int)(SystemClock.CurrentMillis() / 1000);
 
     public GroupApplication(Player player, string message, int groupType, int classId, int level)
     {
@@ -72,6 +72,6 @@ public sealed class GroupApplication : FindGroupEntry
 
     public void UpdateLastUpdate()
     {
-        lastUpdate = (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000);
+        lastUpdate = (int)(SystemClock.CurrentMillis() / 1000);
     }
 }

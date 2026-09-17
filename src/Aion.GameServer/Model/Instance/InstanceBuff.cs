@@ -46,7 +46,7 @@ public class InstanceBuff : IStatOwner
                 return ValueTask.CompletedTask;
             }, TimeSpan.FromMilliseconds(time));
         }
-        endTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + time;
+        endTime = SystemClock.CurrentMillis() + time;
         foreach (InstancePenaltyAttr instancePenaltyAttr in instanceBonusAttr.GetPenaltyAttr())
         {
             StatEnum stat = instancePenaltyAttr.GetStat();
@@ -88,7 +88,7 @@ public class InstanceBuff : IStatOwner
 
     public int GetRemainingTime()
     {
-        return (int) Math.Max(0, endTime - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        return (int) Math.Max(0, endTime - SystemClock.CurrentMillis());
     }
 
     private class InstanceBuffTask

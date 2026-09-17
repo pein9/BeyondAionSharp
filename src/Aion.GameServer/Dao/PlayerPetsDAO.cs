@@ -12,7 +12,7 @@ namespace Aion.GameServer.Dao;
 /// positional '?' -> ordered MySqlParameter; executeQuery -> ExecuteReader; getInt/getLong/getString->GetX(GetOrdinal); execute->ExecuteNonQuery;
 /// SQL verbatim. getUsedIDs scrollable ResultSet -> forward-only List&lt;int&gt;+ToArray (scroll flags dropped). PetCommonData despawn/birthday
 /// use DateTime?: Timestamp reads/writes use nullable SQL epoch projections/FROM_UNIXTIME; the null despawn fallback new Timestamp(now)
-/// -> DateTime.UtcNow. PetHungryLevel.fromId->FromId; doping ids CSV split + Integer.parseInt->int.Parse. Pet types fully-qualified to match
+/// -> SystemClock.UtcNow().UtcDateTime. PetHungryLevel.fromId->FromId; doping ids CSV split + Integer.parseInt->int.Parse. Pet types fully-qualified to match
 /// PetCommonData's declared return types (Services.ToyPet / Model.Templates.Pet). FeedProgress/DopingBag null-guards preserved.
 /// </summary>
 public class PlayerPetsDAO
@@ -159,7 +159,7 @@ public class PlayerPetsDAO
                 petCommonData.SetGiftCdStarted(rs.GetInt64(rs.GetOrdinal("gift_cd_started")));
                 DateTime? ts = DatabaseTimestamp.ReadNullableUtcDateTime(rs, "despawn_time_epoch_millis");
                 if (ts == null)
-                    ts = DateTime.UtcNow;
+                    ts = SystemClock.UtcNow().UtcDateTime;
                 petCommonData.SetDespawnTime(ts);
                 pets.Add(petCommonData);
             }

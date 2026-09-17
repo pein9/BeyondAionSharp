@@ -23,7 +23,7 @@ public class PetController : VisibleObjectController<Pet>
             Aion.GameServer.Dao.PlayerPetsDAO.SaveDopingBag(GetOwner().GetObjectId(), commonData.GetDopingBag());
 
         GetOwner().GetMaster().GetController().CancelTask(TaskId.PET_UPDATE);
-        commonData.SetDespawnTime(DateTime.UtcNow);
+        commonData.SetDespawnTime(SystemClock.UtcNow().UtcDateTime);
         Aion.GameServer.Dao.PlayerPetsDAO.SavePetMoodData(commonData);
         GetOwner().GetMaster().SetPet(null);
     }
@@ -41,7 +41,7 @@ public class PetController : VisibleObjectController<Pet>
         public void Run()
         {
             if (startTime == 0)
-                startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                startTime = SystemClock.CurrentMillis();
 
             try
             {
@@ -57,7 +57,7 @@ public class PetController : VisibleObjectController<Pet>
 
                 if (pet.GetCommonData().GetMoodPoints(false) < 9000)
                 {
-                    if (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startTime >= 60 * 1000)
+                    if (SystemClock.CurrentMillis() - startTime >= 60 * 1000)
                     {
                         currentPoints = pet.GetCommonData().GetMoodPoints(false);
                         if (currentPoints == 9000)
@@ -67,7 +67,7 @@ public class PetController : VisibleObjectController<Pet>
 
                         Aion.GameServer.Dao.PlayerPetsDAO.SavePetMoodData(pet.GetCommonData());
                         saved = true;
-                        startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                        startTime = SystemClock.CurrentMillis();
                     }
                 }
 

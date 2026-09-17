@@ -124,7 +124,7 @@ public sealed class CronService
             jdm.Put(RunnableRunner.KEY_RUNNABLE_OBJECT, r);
             jdm.Put(RunnableRunner.KEY_PROPERTY_IS_LONGRUNNING_TASK, longRunning);
 
-            string jobId = "Started at ms" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + "; ns" + System.Diagnostics.Stopwatch.GetTimestamp();
+            string jobId = "Started at ms" + SystemClock.CurrentMillis() + "; ns" + System.Diagnostics.Stopwatch.GetTimestamp();
             JobKey jobKey = new JobKey("JobKey:" + jobId);
             IJobDetail jobDetail = JobBuilder.Create(runnableRunner).UsingJobData(jdm).WithIdentity(jobKey).Build();
             ITrigger trigger = TriggerBuilder.Create()
@@ -247,7 +247,7 @@ public sealed class CronService
 
         try
         {
-            DateTimeOffset now = DateTimeOffset.UtcNow;
+            DateTimeOffset now = SystemClock.UtcNow();
             Dictionary<T, DateTimeOffset> nextFireTimes = new Dictionary<T, DateTimeOffset>(jobs.Count);
             foreach (IJobDetail job in jobs)
             {

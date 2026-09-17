@@ -93,7 +93,7 @@ public class SystemMailService
             finalAttachedKinahCount = attachedKinahCount;
 
         Letter newLetter = new Letter(IDFactory.GetInstance().NextId(), recipientCommonData.GetPlayerObjId(), attachedItem, finalAttachedKinahCount,
-            title, message, sender, DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()).UtcDateTime, true, letterType);
+            title, message, sender, DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis()).UtcDateTime, true, letterType);
 
         if (attachedItem != null)
         {

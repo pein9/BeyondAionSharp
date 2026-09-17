@@ -64,7 +64,9 @@ public class AcceptReadWriteDispatcherImpl : Dispatcher
             return;
         lock (pendingClose)
         {
+#pragma warning disable RS0030 // Selector liveness is real network infrastructure, not simulated game time.
             long nowMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+#pragma warning restore RS0030
             for (int i = pendingClose.Count - 1; i >= 0; i--)
             {
                 AConnection connection = pendingClose[i];

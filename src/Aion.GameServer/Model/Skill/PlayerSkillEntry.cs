@@ -101,7 +101,7 @@ public class PlayerSkillEntry : SkillEntry, IPersistable
 
     public int GetDateLearned()
     {
-        return (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000); // not implemented in DB
+        return (int)(SystemClock.CurrentMillis() / 1000); // not implemented in DB
     }
 
     public int GetSkillType()

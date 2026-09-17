@@ -225,12 +225,12 @@ public class SM_PET : AionServerPacket
                         WriteD(commonData.GetMoodPoints(true));
                         WriteD(shuggleEmotion);
                         commonData.SetLastSentPoints(commonData.GetMoodPoints(true));
-                        commonData.SetMoodCdStarted(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+                        commonData.SetMoodCdStarted(SystemClock.CurrentMillis());
                         break;
                     case 3: // give gift
                         WriteC(subType);
                         WriteD(DataManager.PET_DATA.GetPetTemplate(commonData.GetTemplateId()).GetConditionReward());
-                        commonData.SetGiftCdStarted(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+                        commonData.SetGiftCdStarted(SystemClock.CurrentMillis());
                         break;
                     case 4: // periodic update
                         WriteC(subType);

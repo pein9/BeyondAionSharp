@@ -173,7 +173,7 @@ public class LegionService
     {
         if (legion.IsDisbanding())
         {
-            if ((DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000) > legion.GetDisbandTime())
+            if ((SystemClock.CurrentMillis() / 1000) > legion.GetDisbandTime())
             {
                 DisbandLegion(legion);
                 return true;
@@ -651,7 +651,7 @@ public class LegionService
                 log.LogWarning("Truncated legion announcement sent by " + activePlayer + " (old length: " + message.Length + ")");
                 message = message.Substring(0, 256);
             }
-            announcement = new Legion.Announcement(message, DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()).UtcDateTime);
+            announcement = new Legion.Announcement(message, DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis()).UtcDateTime);
         }
         legion.SetAnnouncement(announcement);
         LegionDAO.SaveAnnouncement(legion.GetLegionId(), announcement);
@@ -1334,7 +1334,7 @@ public class LegionService
         public override void AcceptRequest(Npc requester, Player responder)
         {
             Legion legion = responder.GetLegion();
-            int unixTime = (int)((DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000) + LegionConfig.LEGION_DISBAND_TIME);
+            int unixTime = (int)((SystemClock.CurrentMillis() / 1000) + LegionConfig.LEGION_DISBAND_TIME);
             legion.SetDisbandTime(unixTime);
             outer.UpdateMembersOfDisbandLegion(legion, unixTime);
         }

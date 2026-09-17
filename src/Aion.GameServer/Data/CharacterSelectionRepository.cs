@@ -155,11 +155,11 @@ public sealed class MySqlCharacterSelectionRepository : ICharacterSelectionRepos
 		try
 		{
 			var currentDeletionEpoch = await GetDeletionEpochSecondsAsync(accountId, characterObjectId, cancellationToken);
-			var nowEpoch = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+			var nowEpoch = SystemClock.CurrentSeconds();
 			if (currentDeletionEpoch.HasValue)
 				return currentDeletionEpoch.Value > nowEpoch ? unchecked((int)currentDeletionEpoch.Value) : 0;
 
-			var deletionEpoch = DateTimeOffset.UtcNow.Add(deletionDelay).ToUnixTimeSeconds();
+			var deletionEpoch = SystemClock.UtcNow().Add(deletionDelay).ToUnixTimeSeconds();
 			await using var connection = DatabaseFactory.GetConnection();
 			await connection.OpenAsync(cancellationToken);
 			await using var command = connection.CreateCommand();
@@ -190,7 +190,7 @@ public sealed class MySqlCharacterSelectionRepository : ICharacterSelectionRepos
 			var currentDeletionEpoch = await GetDeletionEpochSecondsAsync(accountId, characterObjectId, cancellationToken);
 			if (!currentDeletionEpoch.HasValue)
 				return true;
-			if (currentDeletionEpoch.Value <= DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+			if (currentDeletionEpoch.Value <= SystemClock.CurrentSeconds())
 				return false;
 
 			await using var connection = DatabaseFactory.GetConnection();

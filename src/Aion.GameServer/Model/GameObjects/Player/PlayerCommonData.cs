@@ -340,7 +340,7 @@ public class PlayerCommonData : Aion.GameServer.Model.GameObjects.CreatureTempla
 
     public bool IsHaveMentorFlag()
     {
-        return mentorFlagTime > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000;
+        return mentorFlagTime > SystemClock.CurrentMillis() / 1000;
     }
 
     public void SetMentorFlagTime(int mentorFlagTime)

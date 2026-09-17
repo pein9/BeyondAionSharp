@@ -69,7 +69,7 @@ public class MultiClientingService
         if (SecurityConfig.MULTI_CLIENTING_IGNORED_MAC_ADDRESSES.Contains(con.GetMacAddress()))
             return null;
         Race oppositeRace = race == Race.ELYOS ? Race.ASMODIANS : Race.ELYOS;
-        long minLastOnlineMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - SecurityConfig.MULTI_CLIENTING_FACTION_SWITCH_COOLDOWN_MINUTES * 60000L;
+        long minLastOnlineMillis = SystemClock.CurrentMillis() - SecurityConfig.MULTI_CLIENTING_FACTION_SWITCH_COOLDOWN_MINUTES * 60000L;
         return sessionsByAccountId.Values
             .Where(s => !s.IsIgnored() && s.WasPlayingOnSameIpOrMac(oppositeRace, minLastOnlineMillis, con))
             .Select(s => (int?)s.accountId)
@@ -119,7 +119,7 @@ public class MultiClientingService
 
         internal bool IsExpired()
         {
-            long minLastOnline = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - SecurityConfig.MULTI_CLIENTING_FACTION_SWITCH_COOLDOWN_MINUTES * 60000L;
+            long minLastOnline = SystemClock.CurrentMillis() - SecurityConfig.MULTI_CLIENTING_FACTION_SWITCH_COOLDOWN_MINUTES * 60000L;
             return !lastCharOnlineTimeMillis.Values.Any(t => t > minLastOnline);
         }
 
@@ -130,7 +130,7 @@ public class MultiClientingService
 
         internal void LeaveWorld(Player player)
         {
-            lastCharOnlineTimeMillis[player.GetRace()] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            lastCharOnlineTimeMillis[player.GetRace()] = SystemClock.CurrentMillis();
         }
 
         internal bool WasPlayingOnSameIpOrMac(Race race, long minLastOnlineMillis, AionConnection con)

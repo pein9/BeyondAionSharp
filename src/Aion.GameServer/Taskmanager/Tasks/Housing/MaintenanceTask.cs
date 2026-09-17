@@ -37,7 +37,7 @@ public class MaintenanceTask : AbstractCronTask
         List<House> housesToMaintain = FindHousesToMaintain();
         log.LogInformation("Executing house maintenance for " + housesToMaintain.Count + " houses");
 
-        DateTimeOffset now = DateTimeOffset.UtcNow;
+        DateTimeOffset now = SystemClock.UtcNow();
         foreach (House house in housesToMaintain)
         {
             if (house.GetNextPay() == null) // the first week is free for newly acquired houses
@@ -59,7 +59,7 @@ public class MaintenanceTask : AbstractCronTask
             string ownerName = house.GetOwnerName();
             long compensationKinah = 0;
             DateTimeOffset impoundDate = CalculateImpoundDate(house.GetNextPay().Value);
-            if (impoundDate.ToUnixTimeMilliseconds() <= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+            if (impoundDate.ToUnixTimeMilliseconds() <= SystemClock.CurrentMillis())
             {
                 PutHouseToAuction(house, pcd);
                 // return 90% of the house cost (https://aion.fandom.com/wiki/Housing)
@@ -73,7 +73,7 @@ public class MaintenanceTask : AbstractCronTask
     private DateTimeOffset CalculateImpoundDate(DateTimeOffset housePaidUntil)
     {
         DateTimeOffset paymentDueDate = housePaidUntil.AddDays(14); // player must pay within two weeks
-        DateTimeOffset impoundDate = DateTimeOffset.UtcNow;
+        DateTimeOffset impoundDate = SystemClock.UtcNow();
         while (impoundDate < paymentDueDate)
         {
             impoundDate = GetNextRunAfter(impoundDate);

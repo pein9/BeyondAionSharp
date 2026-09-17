@@ -2,6 +2,7 @@ using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
+using Aion.GameServer.Model.House;
 using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.SkillEngine.Model;
 using Aion.GameServer.Tests.Ai;
@@ -64,6 +65,26 @@ public sealed class SystemClockTests
 
 			nowMillis += 10_000;
 			Assert.Null(cooldowns.Get(7));
+		}
+		finally
+		{
+			SystemClock.UseSystemClock();
+		}
+	}
+
+	[Fact]
+	public void HousingAndExpirationHelpersUseSystemClock()
+	{
+		long nowMillis = 1_700_000_000_000;
+		SystemClock.UseSource(() => nowMillis);
+		try
+		{
+			var bids = new HouseBids(1, 10_000);
+			Assert.Equal(nowMillis, bids.GetInitialOffer().GetTime());
+			Assert.False(TimeUtil.IsExpired(nowMillis));
+
+			nowMillis++;
+			Assert.True(TimeUtil.IsExpired(nowMillis - 1));
 		}
 		finally
 		{

@@ -33,7 +33,7 @@ public class NpcFactions
         if (faction.GetTime() == -1)
         {
             // used to reset from quest daily command
-            faction.SetTime((int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000));
+            faction.SetTime((int)(SystemClock.CurrentMillis() / 1000));
             timeLimit[type] = faction.GetTime();
         }
         else if (timeLimit[type] < faction.GetTime() && faction.GetState() == ENpcFactionQuestState.COMPLETE)
@@ -223,7 +223,7 @@ public class NpcFactions
         timeLimit[npcFaction.IsMentor() ? 1 : 0] = npcFaction.GetTime();
         if (questTemplate.GetMentorType() == Aion.GameServer.Model.Templates.Quest.QuestMentorType.MENTOR)
         {
-            owner.GetCommonData().SetMentorFlagTime((int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000) + 60 * 60 * 24); // TODO 1 day
+            owner.GetCommonData().SetMentorFlagTime((int)(SystemClock.CurrentMillis() / 1000) + 60 * 60 * 24); // TODO 1 day
             Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(owner, new Aion.GameServer.Network.Aion.ServerPackets.SM_TITLE_INFO(owner, true), false);
             Aion.GameServer.Utils.PacketSendUtility.SendPacket(owner, new Aion.GameServer.Network.Aion.ServerPackets.SM_TITLE_INFO(true));
         }
@@ -236,19 +236,19 @@ public class NpcFactions
             NpcFaction faction = activeNpcFaction[i];
             if (faction == null || !faction.IsActive())
                 continue;
-            if (timeLimit[i] > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000)
+            if (timeLimit[i] > SystemClock.CurrentMillis() / 1000)
                 continue;
             int questId = 0;
             switch (faction.GetState())
             {
                 case ENpcFactionQuestState.COMPLETE:
-                    if (faction.GetTime() > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000)
+                    if (faction.GetTime() > SystemClock.CurrentMillis() / 1000)
                         continue;
                     break;
                 case ENpcFactionQuestState.START:
                     continue;
                 case ENpcFactionQuestState.NOTING:
-                    if (faction.GetTime() > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000)
+                    if (faction.GetTime() > SystemClock.CurrentMillis() / 1000)
                         questId = faction.GetQuestId();
                     break;
             }
@@ -302,6 +302,6 @@ public class NpcFactions
     public bool CanStartQuest(Aion.GameServer.Model.Templates.QuestTemplate template)
     {
         int type = template.IsMentor() ? 1 : 0;
-        return activeNpcFaction[type] != null && timeLimit[type] < DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000;
+        return activeNpcFaction[type] != null && timeLimit[type] < SystemClock.CurrentMillis() / 1000;
     }
 }

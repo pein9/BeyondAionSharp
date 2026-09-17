@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Aion.GameServer.Commons.Utils;
 
@@ -50,7 +51,8 @@ public class PlayerModel
 
     public void Train(List<DataSet> dataSets, int numEpochs)
     {
-        long startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
         isReady = false;
         for (int i = 0; i < numEpochs; i++)
         {
@@ -59,14 +61,14 @@ public class PlayerModel
                 ProcessInput(dataSet.GetValues());
                 ValideToOutput(dataSet.GetTargets());
             }
-            if (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() >= startTime + MAX_TRAINING_TIME_IN_MS)
+            if (stopwatch.ElapsedMilliseconds >= MAX_TRAINING_TIME_IN_MS)
             {
                 numEpochs = i;
                 break;
             }
         }
         isReady = true;
-        long processingTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startTime;
+        long processingTime = stopwatch.ElapsedMilliseconds;
         if (processingTime >= MAX_TRAINING_TIME_IN_MS)
             Log.LogWarning(string.Format("[CI_ROAH] Deep learning exceeded [MAX_TRAINING_TIME_IN_MS={0}] with {1} data sets. Only {2} cycles were processed.",
                 MAX_TRAINING_TIME_IN_MS, dataSets.Count, numEpochs));

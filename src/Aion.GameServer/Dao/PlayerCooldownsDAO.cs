@@ -11,7 +11,7 @@ namespace Aion.GameServer.Dao;
 /// <summary>
 /// Java parity: dao/PlayerCooldownsDAO (@author nrg). JDBC DAO over player_cooldowns. MIXED: load/delete via the commons DB callback
 /// helper (DB.Select(ParamReadStH)/DB.InsertUpdate(IUStH), anonymous->nested), store via DatabaseFactory batch. setInt/setLong->Parameters.Add;
-/// rset.next()/getInt/getLong->Read()/GetInt32/GetInt64(GetOrdinal). System.currentTimeMillis()->DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().
+/// rset.next()/getInt/getLong->Read()/GetInt32/GetInt64(GetOrdinal). System.currentTimeMillis()->SystemClock.CurrentMillis().
 /// values().removeIf(null||reuseTime-now&lt;=28000)->Where+Remove on a dictionary copy (C# Dictionary&lt;int,long&gt; values are non-null
 /// so the null check is moot). setAutoCommit(false)+addBatch/executeBatch+commit->MySqlTransaction+MySqlBatch+Commit. SQL verbatim.
 /// player.SetSkillCoolDown/GetSkillCoolDowns; GetSkillCoolDowns may be null (guarded).
@@ -50,7 +50,7 @@ public class PlayerCooldownsDAO
                 int cooldownId = rset.GetInt32(rset.GetOrdinal("cooldown_id"));
                 long reuseDelay = rset.GetInt64(rset.GetOrdinal("reuse_delay"));
 
-                if (reuseDelay > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+                if (reuseDelay > SystemClock.CurrentMillis())
                     player.SetSkillCoolDown(cooldownId, reuseDelay);
             }
         }
@@ -66,7 +66,7 @@ public class PlayerCooldownsDAO
 
         cooldowns = new Dictionary<int, long>(cooldowns);
         foreach (int key in cooldowns
-            .Where(e => e.Value - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() <= 28000)
+            .Where(e => e.Value - SystemClock.CurrentMillis() <= 28000)
             .Select(e => e.Key).ToList())
         {
             cooldowns.Remove(key);

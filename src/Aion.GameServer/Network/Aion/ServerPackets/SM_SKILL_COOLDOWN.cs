@@ -57,7 +57,7 @@ public class SM_SKILL_COOLDOWN : AionServerPacket
     {
         public int GetRemainingSeconds()
         {
-            return expirationTimeMillis == 0 ? 0 : (int)Math.Max(0, (expirationTimeMillis - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000);
+            return expirationTimeMillis == 0 ? 0 : (int)Math.Max(0, (expirationTimeMillis - SystemClock.CurrentMillis()) / 1000);
         }
 
         public int GetDurationMillis()

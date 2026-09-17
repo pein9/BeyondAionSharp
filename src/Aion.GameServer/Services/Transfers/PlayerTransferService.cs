@@ -12,7 +12,7 @@ using Aion.GameServer.Services.Players;
 
 namespace Aion.GameServer.Services.Transfers;
 
-/// <summary>Java parity: services/transfers/PlayerTransferService (KID). Singleton; cross-server character transfer. startTransfer (validation: account ownership, no legion, offline, reuse cooldown, kinah cap, no broker items; then send SM_PTRANSFER_CONTROL info packets), cloneCharacter (name dedupe, slot check, CMT_CHARACTER_INFORMATION.readInfo, name-change ticket, last-transfer-time), onOk/onError, put/getTransfer. LinkedHashMap/HashMap->Dictionary; map.remove->Remove(out); currentTimeMillis->DateTimeOffset.UtcNow.ToUnixTimeMilliseconds; split(",")->Split(','); REUSE_HOURS*3600000 int-overflow parity preserved. CMT_CHARACTER_INFORMATION/SM_PTRANSFER_CONTROL/DAO red-tolerated.</summary>
+/// <summary>Java parity: services/transfers/PlayerTransferService (KID). Singleton; cross-server character transfer. startTransfer (validation: account ownership, no legion, offline, reuse cooldown, kinah cap, no broker items; then send SM_PTRANSFER_CONTROL info packets), cloneCharacter (name dedupe, slot check, CMT_CHARACTER_INFORMATION.readInfo, name-change ticket, last-transfer-time), onOk/onError, put/getTransfer. LinkedHashMap/HashMap->Dictionary; map.remove->Remove(out); currentTimeMillis->SystemClock.CurrentMillis; split(",")->Split(','); REUSE_HOURS*3600000 int-overflow parity preserved. CMT_CHARACTER_INFORMATION/SM_PTRANSFER_CONTROL/DAO red-tolerated.</summary>
 public class PlayerTransferService
 {
     private readonly ILogger log = AionLog.For(nameof(PlayerTransferService));
@@ -75,7 +75,7 @@ public class PlayerTransferService
         }
 
         if (PlayerTransferConfig.REUSE_HOURS > 0
-            && common.GetLastTransferTime() + PlayerTransferConfig.REUSE_HOURS * 3600000 > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+            && common.GetLastTransferTime() + PlayerTransferConfig.REUSE_HOURS * 3600000 > SystemClock.CurrentMillis())
         {
             log.LogWarning("cannot transfer #" + taskId + " that player so often " + playerId + ".");
             LoginServer.GetInstance().SendPacket(
@@ -164,7 +164,7 @@ public class PlayerTransferService
         {
             if (!transfer.GetName().Equals(cha.GetName()))
                 InventoryDAO.Store(ItemFactory.NewItem(169670001), cha); // [Event] Name Change Ticket
-            PlayerDAO.SetPlayerLastTransferTime(cha.GetObjectId(), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            PlayerDAO.SetPlayerLastTransferTime(cha.GetObjectId(), SystemClock.CurrentMillis());
             LoginServer.GetInstance().SendPacket(new SM_PTRANSFER_CONTROL(SM_PTRANSFER_CONTROL.OK, taskId));
             log.LogInformation("clone successful #" + taskId + " `" + name + "`");
             textLog.LogInformation("taskId:" + taskId + "; [CloneCharacter:Done]");

@@ -28,7 +28,7 @@ public class PetAdoptionService
             return;
 
         int expireTime = template.GetActions().GetAdoptPetAction().GetExpireMinutes() != 0
-            ? (int)((DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000) + template.GetActions().GetAdoptPetAction().GetExpireMinutes() * 60) : 0;
+            ? (int)((SystemClock.CurrentMillis() / 1000) + template.GetActions().GetAdoptPetAction().GetExpireMinutes() * 60) : 0;
 
         AddPet(player, petId, name, decorationId, expireTime);
     }

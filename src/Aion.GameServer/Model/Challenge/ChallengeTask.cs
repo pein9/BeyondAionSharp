@@ -80,7 +80,7 @@ public class ChallengeTask
     {
         lock (this)
         {
-            completeTime = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            completeTime = DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis());
         }
     }
 

@@ -49,7 +49,7 @@ public class PetSpawnService
         }
         else if (petCommonData.GetFeedProgress() != null)
             petCommonData.GetFeedProgress().SetHungryLevel(PetHungryLevel.HUNGRY);
-        if (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - petCommonData.GetDespawnTime().ToUnixTimeMilliseconds() > 10 * 60 * 1000) // reset mood if pet was despawned for > 10 minutes
+        if (SystemClock.CurrentMillis() - petCommonData.GetDespawnTime().ToUnixTimeMilliseconds() > 10 * 60 * 1000) // reset mood if pet was despawned for > 10 minutes
             petCommonData.ClearMoodStatistics();
         player.GetPetList().SetLastUsedPetTemplateId(templateId);
         if (petCommonData.IsLooting())

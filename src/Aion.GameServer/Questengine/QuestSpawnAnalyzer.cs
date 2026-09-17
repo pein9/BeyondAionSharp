@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -26,7 +27,8 @@ public class QuestSpawnAnalyzer
     internal static void Run(ICollection<AbstractQuestHandler> questHandlers, ICollection<QuestNpc> questNpcs, bool ignoreEventQuests)
     {
         log.LogInformation("Analyzing quest handlers (ignoreEventQuests=" + ignoreEventQuests + ")...");
-        long timeMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
         HashSet<int> unobtainableQuests = new();
         HashSet<int> factionIds = new();
         HashSet<int> allSpawns = LoadNpcIdsSpawnedByHandlers();
@@ -59,7 +61,7 @@ public class QuestSpawnAnalyzer
             }
             list.Add(npc.GetNpcId());
         }
-        timeMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - timeMillis;
+        long timeMillis = stopwatch.ElapsedMilliseconds;
         if (missingSpawnsByQuests.Count == 0)
         {
             log.LogInformation("Quest handler analysis finished in {Time} ms without errors", timeMillis);

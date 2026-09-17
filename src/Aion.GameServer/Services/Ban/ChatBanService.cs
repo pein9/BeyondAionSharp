@@ -16,7 +16,7 @@ public class ChatBanService
     public static void BanPlayer(Aion.GameServer.Model.GameObjects.Players.Player player, long durationMillis)
     {
         Aion.GameServer.Network.ChatServer.ChatServer.GetInstance().SendPlayerGagPacket(player.GetObjectId(), durationMillis);
-        chatBans[player.GetObjectId()] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + durationMillis;
+        chatBans[player.GetObjectId()] = SystemClock.CurrentMillis() + durationMillis;
         RegisterUnban(player, durationMillis);
     }
 
@@ -52,7 +52,7 @@ public class ChatBanService
         if (!chatBans.TryGetValue(player.GetObjectId(), out long expireTime))
             return 0;
 
-        long millisLeft = expireTime - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long millisLeft = expireTime - SystemClock.CurrentMillis();
         if (millisLeft <= 0)
         {
             UnbanPlayer(player);

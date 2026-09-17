@@ -192,7 +192,7 @@ public class House : VisibleObject, IPersistable
 
     public bool IsFeePaid()
     {
-        return nextPay == null || nextPay.Value.ToUnixTimeMilliseconds() >= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        return nextPay == null || nextPay.Value.ToUnixTimeMilliseconds() >= SystemClock.CurrentMillis();
     }
 
     public DateTimeOffset? GetNextPay()
@@ -431,7 +431,7 @@ public class House : VisibleObject, IPersistable
         if (IsInactive())
         {
             DateTimeOffset graceEndTime = FindGraceEndTime();
-            return Math.Max(0, (int)((graceEndTime.ToUnixTimeMilliseconds() - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000));
+            return Math.Max(0, (int)((graceEndTime.ToUnixTimeMilliseconds() - SystemClock.CurrentMillis()) / 1000));
         }
         return -1;
     }

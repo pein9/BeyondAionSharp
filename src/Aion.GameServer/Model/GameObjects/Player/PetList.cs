@@ -53,7 +53,7 @@ public class PetList
 
     public PetCommonData AddPet(Player player, int petId, int decorationId, string name, int expireTime)
     {
-        return AddPet(player, petId, decorationId, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), name, expireTime);
+        return AddPet(player, petId, decorationId, SystemClock.CurrentMillis(), name, expireTime);
     }
 
     public PetCommonData AddPet(Player player, int petId, int decorationId, long birthday, string name, int expireTime)
@@ -62,7 +62,7 @@ public class PetList
         petCommonData.SetDecoration(decorationId);
         petCommonData.SetName(name);
         petCommonData.SetBirthday(DateTimeOffset.FromUnixTimeMilliseconds(birthday).UtcDateTime);
-        petCommonData.SetDespawnTime(DateTimeOffset.UtcNow.UtcDateTime);
+        petCommonData.SetDespawnTime(SystemClock.UtcNow().UtcDateTime);
         Aion.GameServer.Dao.PlayerPetsDAO.InsertPlayerPet(player, petCommonData);
         pets[petId] = petCommonData;
         return petCommonData;

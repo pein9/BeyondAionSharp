@@ -96,7 +96,7 @@ public class Town : IPersistable, IL10n
     private void IncreaseLevel()
     {
         this.level++;
-        this.levelUpDate = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()).UtcDateTime;
+        this.levelUpDate = DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis()).UtcDateTime;
         BroadcastUpdate();
         DespawnOldObjects();
         SpawnNewObjects();

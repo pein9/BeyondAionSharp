@@ -33,7 +33,7 @@ public class AutoBan
                 break;
             case 5:
                 player.GetClientConnection().Close();
-                Aion.GameServer.Network.BannedMacManager.GetInstance().BanAddress(player.GetClientConnection().GetMacAddress(), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + time * 60000L, reason);
+                Aion.GameServer.Network.BannedMacManager.GetInstance().BanAddress(player.GetClientConnection().GetMacAddress(), SystemClock.CurrentMillis() + time * 60000L, reason);
                 break;
         }
     }

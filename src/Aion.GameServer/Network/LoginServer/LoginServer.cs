@@ -178,7 +178,7 @@ public sealed class LoginServer : IAsyncDisposable
 		_loggedInAccounts[accountId] = client;
 		_logger.LogInformation("{Account} authed with MAC: {Mac} and HDD serial: {Hdd}", account, client.GetMacAddress(), client.GetHddSerial());
 		client.SendPacket(new SM_L2AUTH_LOGIN_CHECK(true, accountName));
-		SendPacket(new SmAccountConnectionInfo(account.GetId(), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), client.GetIP(), client.GetMacAddress(), client.GetHddSerial()));
+		SendPacket(new SmAccountConnectionInfo(account.GetId(), SystemClock.CurrentMillis(), client.GetIP(), client.GetMacAddress(), client.GetHddSerial()));
 	}
 
 	// Java parity: network/loginserver/LoginServer.validateMacAndHddSerial(AionConnection, String).

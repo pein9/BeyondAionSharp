@@ -80,7 +80,7 @@ public class SiegeService
 
     private void UpdateNextStateUpdateTime()
     {
-        nextStateUpdateTime = SIEGE_LOCATION_STATUS_BROADCAST_SCHEDULE.GetTimeAfter(DateTimeOffset.Now);
+        nextStateUpdateTime = SIEGE_LOCATION_STATUS_BROADCAST_SCHEDULE.GetTimeAfter(SystemClock.UtcNow());
     }
 
     public void InitSieges()
@@ -365,7 +365,7 @@ public class SiegeService
     {
         if (nextStateUpdateTime == null) // null if siege service is deactivated
             return 0;
-        return (int)(nextStateUpdateTime.Value.ToUnixTimeMilliseconds() - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000;
+        return (int)(nextStateUpdateTime.Value.ToUnixTimeMilliseconds() - SystemClock.CurrentMillis()) / 1000;
     }
 
     public int GetRemainingSiegeTimeInSeconds(int siegeLocationId)
@@ -375,7 +375,7 @@ public class SiegeService
             return 0;
 
         long endTime = siege.GetStartTime() / 1000 + siege.GetSiegeLocation().GetSiegeDuration();
-        int secondsLeft = (int)(endTime - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000);
+        int secondsLeft = (int)(endTime - SystemClock.CurrentMillis() / 1000);
 
         return Math.Max(secondsLeft, 0);
     }

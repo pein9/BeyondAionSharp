@@ -47,7 +47,7 @@ public class AuctionEndTask : AbstractCronTask
     {
         ProlongedAuction prolongedAuction = prolongedAuctions.GetValueOrDefault(houseObjectId);
         long auctionEndMillis = prolongedAuction == null ? GetNextRun().ToUnixTimeMilliseconds() : prolongedAuction.auctionEndMillis;
-        return (int)((auctionEndMillis - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000);
+        return (int)((auctionEndMillis - SystemClock.CurrentMillis()) / 1000);
     }
 
     public void OnAuctionEnd(int houseObjectId)
@@ -117,7 +117,7 @@ public class AuctionEndTask : AbstractCronTask
         {
             if (task != null && !task.Cancel(false))
                 return false;
-            auctionEndMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + delayMillis;
+            auctionEndMillis = SystemClock.CurrentMillis() + delayMillis;
             task = ThreadPoolManager.GetInstance().Schedule(ct =>
             {
                 HousingBidService.GetInstance().EndAuction(houseObjectId);

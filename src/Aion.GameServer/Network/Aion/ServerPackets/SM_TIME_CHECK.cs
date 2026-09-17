@@ -11,7 +11,9 @@ public class SM_TIME_CHECK : AionServerPacket
 
     public SM_TIME_CHECK(int nanoTime)
     {
+#pragma warning disable RS0030 // Java sends real process uptime, independent of gameplay time.
         this.serverUpTime = (int)(DateTime.UtcNow - Process.GetCurrentProcess().StartTime.ToUniversalTime()).TotalMilliseconds;
+#pragma warning restore RS0030
         this.nanoTime = nanoTime;
     }
 

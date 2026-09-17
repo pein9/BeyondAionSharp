@@ -49,7 +49,9 @@ public sealed class GameServerHostedService : IHostedService
 			NioServer.RegisterInstance(_nioServer);
 			_nioServer.Connect(new ThreadPoolExecutor());
 			var processStartSeconds = new DateTimeOffset(Process.GetCurrentProcess().StartTime.ToUniversalTime()).ToUnixTimeSeconds();
+#pragma warning disable RS0030 // Startup duration is an operational wall-time measurement.
 			var elapsedSeconds = Math.Max(0, DateTimeOffset.UtcNow.ToUnixTimeSeconds() - processStartSeconds);
+#pragma warning restore RS0030
 			_logger.LogInformation("Game server started in {ElapsedSeconds} seconds.", elapsedSeconds);
 		}
 		catch

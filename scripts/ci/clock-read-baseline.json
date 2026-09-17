@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "sourceRoot": "src/Aion.GameServer",
-  "total": 237,
-  "files": 118,
+  "total": 22,
+  "files": 15,
   "apis": {
-    "DateTimeOffset.UtcNow": 219,
-    "DateTimeOffset.Now": 1,
-    "DateTime.UtcNow": 4,
+    "DateTimeOffset.UtcNow": 8,
+    "DateTimeOffset.Now": 0,
+    "DateTime.UtcNow": 1,
     "DateTime.Now": 0,
     "DateTime.Today": 0,
     "Environment.TickCount64": 3,

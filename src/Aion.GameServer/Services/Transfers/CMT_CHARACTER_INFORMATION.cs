@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Aion.GameServer.Commons.Network.Packet;
 using Aion.GameServer.Configs.Main;
@@ -51,7 +52,8 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
 
     public Player ReadInfo(string name, int targetAccount, string accountName, List<int> rsList, ILogger textLog)
     {
-        long st = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
         PlayerCommonData playerCommonData = new PlayerCommonData(IDFactory.GetInstance().NextId());
         playerCommonData.SetName(name);
         // read common data
@@ -296,7 +298,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
             if (PlayerTransferConfig.ALLOW_PETS)
             {
                 if (bday == 0)
-                    bday = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    bday = SystemClock.CurrentMillis();
 
                 player.GetPetList().AddPet(player, petId, decorationId, bday, petname, expiryTime);
             }
@@ -401,7 +403,7 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
         }
 
         PlayerService.StorePlayer(player);
-        textLog.LogInformation("finished in " + (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - st) + " ms");
+        textLog.LogInformation("finished in " + stopwatch.ElapsedMilliseconds + " ms");
         return player;
     }
 }

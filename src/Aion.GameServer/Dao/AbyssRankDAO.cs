@@ -14,7 +14,7 @@ namespace Aion.GameServer.Dao;
 /// <summary>
 /// Java parity: dao/AbyssRankDAO (@author ATracer, Divinity, nrg). JDBC DAO over abyss_rank + ranking lists. DatabaseFactory-style.
 /// AbyssRankEnumExtensions.GetId/GetGpLossPerDay are extension methods (Utils.Stats); Race/PlayerClass/Gender valueOf->Enum.Parse, toString()->ToString();
-/// System.currentTimeMillis()->DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(); storeAbyssRank switch NEW/UPDATE_REQUIRED->IPersistable.PersistentState.
+/// System.currentTimeMillis()->SystemClock.CurrentMillis(); storeAbyssRank switch NEW/UPDATE_REQUIRED->IPersistable.PersistentState.
 /// updateRankingLists mixes literal addBatch("SET @a=0;") with parameterized addBatch() on one PreparedStatement -> MySqlBatch with literal
 /// MySqlBatchCommands + parameterized MySqlBatchCommands (autocommit, no explicit transaction, as Java). Table-qualified column labels
 /// (a.rank_pos/p.id/l.name) preserved verbatim. Nested Java records -> C# positional records (Java lowercase component names kept).
@@ -76,7 +76,7 @@ public class AbyssRankDAO
             }
             else
             {
-                abyssRank = new AbyssRank(0, 0, 0, 1, 0, 0, 0, 1, 0, 0, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), 0, 0, 0, 0);
+                abyssRank = new AbyssRank(0, 0, 0, 1, 0, 0, 0, 1, 0, 0, SystemClock.CurrentMillis(), 0, 0, 0, 0);
                 abyssRank.SetPersistentState(IPersistable.PersistentState.NEW);
             }
         }

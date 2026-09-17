@@ -44,7 +44,7 @@ public class PunishmentService
                 long duration = delayInMinutes * 60000L;
                 SchedulePrisonTask(player, duration);
                 Aion.GameServer.Services.Ban.ChatBanService.BanPlayer(player, delayInMinutes);
-                player.SetPrisonEndTimeMillis(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + duration);
+                player.SetPrisonEndTimeMillis(SystemClock.CurrentMillis() + duration);
                 Aion.GameServer.Services.Teleport.TeleportService.TeleportToPrison(player);
                 Aion.GameServer.Dao.PlayerPunishmentsDAO.PunishPlayer(player, PunishmentType.PRISON, reason);
                 PacketSendUtility.SendMessage(player, "You have been teleported to prison for a time of " + delayInMinutes
@@ -112,7 +112,7 @@ public class PunishmentService
                 player.SetCaptchaWord(null);
                 player.SetCaptchaImage(null);
             }
-            player.SetGatherRestrictionExpirationTime(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + delay);
+            player.SetGatherRestrictionExpirationTime(SystemClock.CurrentMillis() + delay);
             Aion.GameServer.Dao.PlayerPunishmentsDAO.PunishPlayer(player, PunishmentType.GATHER, "Possible gatherbot");
         }
         else

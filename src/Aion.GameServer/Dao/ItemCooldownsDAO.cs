@@ -13,7 +13,7 @@ namespace Aion.GameServer.Dao;
 /// Java parity: dao/ItemCooldownsDAO (@author ATracer). JDBC DAO over item_cooldowns. MIXED: load/delete use the commons DB callback
 /// helper (DB.Select(ParamReadStH) / DB.InsertUpdate(IUStH)); store uses DatabaseFactory directly with a batch. Anonymous handlers ->
 /// nested classes capturing locals via ctor. Inside handlers: setInt->Parameters.Add; rset.next()/getInt/getLong->Read()/GetInt32/GetInt64.
-/// System.currentTimeMillis()->DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(). store: copy map, values().removeIf(stale-or-null within 30s)
+/// System.currentTimeMillis()->SystemClock.CurrentMillis(). store: copy map, values().removeIf(stale-or-null within 30s)
 /// -> filter+Remove; setAutoCommit(false)+addBatch/executeBatch+commit -> MySqlTransaction+MySqlBatch+Commit. broadCastEffects(null) kept.
 /// </summary>
 public class ItemCooldownsDAO
@@ -52,7 +52,7 @@ public class ItemCooldownsDAO
                 int useDelay = rset.GetInt32(rset.GetOrdinal("use_delay"));
                 long reuseTime = rset.GetInt64(rset.GetOrdinal("reuse_time"));
 
-                if (reuseTime > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+                if (reuseTime > SystemClock.CurrentMillis())
                     player.AddItemCoolDown(delayId, reuseTime, useDelay);
             }
         }
@@ -68,7 +68,7 @@ public class ItemCooldownsDAO
 
         itemCoolDowns = new Dictionary<int, ItemCooldown>(itemCoolDowns);
         foreach (int key in itemCoolDowns
-            .Where(e => e.Value == null || e.Value.GetReuseTime() - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() <= 30000)
+            .Where(e => e.Value == null || e.Value.GetReuseTime() - SystemClock.CurrentMillis() <= 30000)
             .Select(e => e.Key).ToList())
         {
             itemCoolDowns.Remove(key);

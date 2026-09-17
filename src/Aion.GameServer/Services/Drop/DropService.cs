@@ -604,7 +604,7 @@ public class DropService
                 ItemTemplate template = input.GetItemTemplate();
                 if (template.GetTempExchangeTime() != 0)
                 {
-                    input.SetTemporaryExchangeTime((int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000) + (template.GetTempExchangeTime() * 60));
+                    input.SetTemporaryExchangeTime((int)(SystemClock.CurrentMillis() / 1000) + (template.GetTempExchangeTime() * 60));
                     TemporaryTradeTimeTask.GetInstance().AddTask(input, dropNpc.GetAllowedLooters());
                 }
                 return true;

@@ -52,7 +52,7 @@ public class Info : AdminCommand
                         SendInfo(admin,
                             "\t" + (i == 0 ? "Mentor" : "Daily") + " faction: " + DataManager.NPC_FACTIONS_DATA.GetNpcFactionById(faction.GetId()).GetL10n()
                                 + ", current quest state: " + faction.GetState().ToString() + (faction.GetState().Equals(ENpcFactionQuestState.COMPLETE) ? (
-                                ", next after: " + JavaString.ValueOf((faction.GetTime() - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000) / 3600f) + " h.") : ""));
+                                ", next after: " + JavaString.ValueOf((faction.GetTime() - SystemClock.CurrentMillis() / 1000) / 3600f) + " h.") : ""));
                     }
                 }
                 SendInfo(admin, "\tPanesterra faction: " + (player.GetPanesterraFaction()?.ToString() ?? "null"));

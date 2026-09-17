@@ -66,19 +66,19 @@ public class SM_FIND_GROUP : AionServerPacket
         switch (action)
         {
             case 0:
-                ShowRecruitments((List<GroupRecruitment>)entries, (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000));
+                ShowRecruitments((List<GroupRecruitment>)entries, (int)(SystemClock.CurrentMillis() / 1000));
                 break;
             case 1:
                 RemoveRecruitment(idToDelete, serverId, unk1, unk2, unk3);
                 break;
             case 4:
-                ShowApplications((List<GroupApplication>)entries, (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000));
+                ShowApplications((List<GroupApplication>)entries, (int)(SystemClock.CurrentMillis() / 1000));
                 break;
             case 5:
                 RemoveApplication(idToDelete);
                 break;
             case 10:
-                ShowInstanceGroups((List<ServerWideGroup>)entries, (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000));
+                ShowInstanceGroups((List<ServerWideGroup>)entries, (int)(SystemClock.CurrentMillis() / 1000));
                 break;
             case 11:
                 SendInstanceGroupApplicationAsWhisperChatMessage(instanceApplicant);
@@ -87,7 +87,7 @@ public class SM_FIND_GROUP : AionServerPacket
                 RegisterInstanceGroup((List<ServerWideGroup>)entries);
                 break;
             case 16:
-                ShowInstanceGroupMemberInfo((ServerWideGroup)entries[0], (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000));
+                ShowInstanceGroupMemberInfo((ServerWideGroup)entries[0], (int)(SystemClock.CurrentMillis() / 1000));
                 break;
             case 18:
                 ShowEnterButtonInPrepareForEntryWindow((ServerWideGroup)entries[0]); // window must be initialized

@@ -7,6 +7,6 @@ public class TimeUtil
 {
     public static bool IsExpired(long time)
     {
-        return time < DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        return time < SystemClock.CurrentMillis();
     }
 }

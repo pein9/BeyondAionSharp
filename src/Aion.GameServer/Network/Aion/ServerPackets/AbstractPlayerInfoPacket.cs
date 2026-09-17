@@ -164,7 +164,7 @@ public abstract class AbstractPlayerInfoPacket : AionServerPacket
     private CharacterBanInfo GetCharBanInfo(PlayerAccountData playerAccountData, AionConnection con)
     {
         CharacterBanInfo cbi = playerAccountData.GetCharBanInfo();
-        long nowSeconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000;
+        long nowSeconds = SystemClock.CurrentMillis() / 1000;
         if (cbi != null && nowSeconds >= cbi.GetEnd())
             cbi = null;
         if (cbi == null && SecurityConfig.MULTI_CLIENTING_RESTRICTION_MODE == SecurityConfig.MultiClientingRestrictionMode.SAME_FACTION)

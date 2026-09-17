@@ -63,7 +63,7 @@ runs use their own isolated compose project.
 |---|---|---|---|
 | B1 | **Resolved in P1-13.** Logs are captured and fingerprinted, test scopes fail on unallowlisted problems, and the shared allowlist requires an owner, reason and expiry. | A green instrumented run can no longer hide logged problems. | `CapturingLoggerProvider.cs`; `LogProblemFingerprint.cs`; `LogProblemAllowlist.cs` |
 | B2 | **Resolved in P1-04.** Each periodic iteration now runs through the Java-style `ExecuteWrapper`, so failures are logged without killing the schedule; deadlines advance at a fixed rate and pooled work emits Java's slow-task warning. | One bad NPC no longer stops all NPC movement for the rest of a LIVE run. | `ThreadPoolManager.cs`; `ExecuteWrapper.cs` |
-| B3 | **Partly resolved through P4-02.** P4-01 put every identified mixed-clock pair on `SystemClock`; P4-02 added host-wide control and routed server-zone time, scheduled-task due metadata and quest timestamps. The remaining direct gameplay wall-clock reads are inventoried and migrated in P4-03/P4-04. | Virtual combat, movement and the shared time services now advance together; item/effect expiry and other unrouted gameplay clocks still freeze until P4-04. | `SystemClock.cs`; `ServerTime.cs`; `ThreadPoolManager.cs`; `QuestState.cs` |
+| B3 | **Resolved through P4-04.** P4-01 put every identified mixed-clock pair on `SystemClock`; P4-02 added host-wide control and routed server-zone time, scheduled-task due metadata and quest timestamps; P4-03/P4-04 inventoried and migrated the remaining gameplay clocks and made direct `DateTime` wall-clock access an RS0030 error. | Virtual combat, movement, item/effect expiry, services, persistence timestamps and the shared time services now advance together; the 22-read floor is reviewed infrastructure plus the explicitly deferred P4-05/P4-10 sites. | `SystemClock.cs`; `BannedSymbols.txt`; `check-clock-reads.ps1` |
 | B4 | **Partly resolved in P1-10.** The virtual scheduler now surfaces faults, cannot move time backwards, reports virtual delay correctly and has strict disposal, but production real-thread paths still bypass it (PLINQ in `MoveTaskManager`, Quartz, `PacketProcessor`, `NetFlusher`). | Whole-server SIM still needs the remaining deterministic-thread routing in Phase 5. | `VirtualThreadPool.cs`; `ThreadPoolManager.cs`; `MoveTaskManager.cs` |
 | B5 | **Resolved through P2-05.** `Aion.Bots` owns the real client crypt, framing, opcode transforms, all Appendix B CM writers and 45 bot-perception SM decoders. `AionXorCipher` is explicitly marked as an unrelated legacy helper. | Bots can now form actions and perceive the packet bodies needed by their world model. | `tests/Aion.Bots/Protocol/`; `BotGameClientPacketWriterTests.cs`; `BotServerPacketDecoderTests.cs` |
 | B6 | **Resolved in P2-00.** A protected socketless connection path runs packets and disconnect cleanup inline without a selector, dispatcher, alive-check timer or eager packet-processor threads. | SIM can host an in-process game connection and exercise quit/drop cleanup. | `AConnection.cs`; `AionConnection.cs`; `SocketlessAionConnectionTests.cs` |
@@ -79,7 +79,7 @@ runs use their own isolated compose project.
 | Metric | Value | How measured |
 |---|---|---|
 | Null-logger uses (game server + commons, outside `AionLog.cs`) | 0 after P1-02 (298 before) | `pwsh -NoProfile -File scripts/ci/check-null-loggers.ps1` |
-| Direct wall-clock code lines (game server) | ~393 in 203 files; 365 exact `DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()` | `DateTime(Offset)?.(Utc)?Now`, `Environment.TickCount`, `Stopwatch`, comments excluded |
+| Direct wall/monotonic clock reads (game server) | 22 in 15 files after P4-04 (237 in 118 files before slice D): 9 `DateTime*`, 3 `TickCount64`, 10 `Stopwatch` | `scripts/ci/check-clock-reads.ps1`; direct `DateTime*` reads also enforced by RS0030 |
 | `ThreadPoolManager.GetInstance()` call sites | 895 | `grep -rhoE "ThreadPoolManager\.GetInstance\(\)" src` |
 | Registered client opcodes / server opcodes | 186 / 238 (same sets as `upstream/4.8`) | factory tables |
 | Quests | 8043 in `quest_data.xml`; 5219 with a handler (4184 XML templates + 1035 C# = Java); 2824 with none | parse `quest_data.xml` and `quest_script_data/*.xml` |
@@ -650,7 +650,7 @@ Production-neutral: `SystemClock`'s default is the same call Java makes (`System
   in `SystemClock`, `ThreadPoolManager` and infra files. The checked-in per-API baseline starts at 374 direct
   reads across 187 game-server files; both individual API counts and the total may only decrease. P4-04 owns the
   final analyzer switch after its codemod slices reach the infrastructure floor. Commit: `d3091cec7`.
-- [ ] **P4-04** [BOTH] L — Codemod the remaining gameplay reads, one commit per slice:
+- [x] **P4-04** [BOTH] L — Codemod the remaining gameplay reads, one commit per slice:
   - [x] **A** combat: `SkillEngine` (effects, chain and charge skills), `Controllers/Attack`, `Controllers/Effect`,
     cooldowns, item use delay, godstones. All 23 remaining direct reads in this slice now use `SystemClock`;
     the ratchet fell from 374 to 351 reads and a focused test advances chain and cooldown expiry through the
@@ -665,7 +665,13 @@ Production-neutral: `SystemClock`'s default is the same call Java makes (`System
     The 85 direct reads in these content and expiration paths now use `SystemClock`, lowering the ratchet from
     322 to 237 reads. A timed-item test proves both expiration dispatch paths expire a one-minute item after
     `VirtualThreadPool.Advance(61 s)`. Commit: `01148e16b`.
-  - [ ] **D** the rest: services, `AbstractCronTask`, housing tasks, DAO cooldown filters, persistence timestamps.
+  - [x] **D** the rest: services, `AbstractCronTask`, housing tasks, DAO cooldown filters and persistence
+    timestamps. Gameplay/state reads now use `SystemClock`; six operation-duration/watchdog paths use monotonic
+    `Stopwatch`. The direct-read inventory fell from 237 to its reviewed floor of 22 reads across 15 files, and
+    `Microsoft.CodeAnalysis.BannedApiAnalyzers` makes new direct `DateTime` wall-clock access an RS0030 error.
+    The floor retains NIO close/shutdown, process uptime/startup and capture-log timestamps, monotonic duration
+    sources, the P4-05 random seed and the P4-10 `PatternAi` timer. A focused test pins housing registration and
+    expiration helpers to the virtual clock. Commit: `266a83938`.
 
   Leave genuine infrastructure on real time and allowlist it: the NIO shutdown loop, `Stopwatch` durations,
   `PeriodicSaveService` `TickCount64`, logging timestamps. Depends on P4-03.

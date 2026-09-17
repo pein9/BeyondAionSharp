@@ -53,7 +53,7 @@ public class NpcShoutsService
     {
         if (!shoutCooldowns.TryGetValue(npc.GetObjectId(), out long cd))
             return true;
-        return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() >= cd;
+        return SystemClock.CurrentMillis() >= cd;
     }
 
     public void ShoutRandom(Npc sender, Aion.GameServer.Model.GameObjects.Players.Player target, List<NpcShout> shouts, int shoutCooldown)
@@ -95,7 +95,7 @@ public class NpcShoutsService
         if (shoutCooldown <= 0)
             RemoveShoutCooldown(sender);
         else
-            shoutCooldowns[sender.GetObjectId()] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + shoutCooldown * 1000 - 50; // 50ms offset to avoid tight cooldown conflicts
+            shoutCooldowns[sender.GetObjectId()] = SystemClock.CurrentMillis() + shoutCooldown * 1000 - 50; // 50ms offset to avoid tight cooldown conflicts
     }
 
     public static NpcShoutsService GetInstance()

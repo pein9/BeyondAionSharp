@@ -663,7 +663,7 @@ public class BrokerService
 
     private void CheckExpiredItems()
     {
-        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long now = SystemClock.CurrentMillis();
         foreach (Race race in new[] { Race.ASMODIANS, Race.ELYOS })
         {
             ConcurrentDictionary<int, BrokerItem> brokerItems = GetRaceBrokerItems(race);

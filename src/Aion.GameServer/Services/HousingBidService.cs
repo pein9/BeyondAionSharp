@@ -239,7 +239,7 @@ public class HousingBidService
             {
                 HousingService.GetInstance().ChangeOwner(house, 0); // inactive house will also be activated automatically by this
                 result = AuctionResult.GRACE_FAIL;
-                time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                time = SystemClock.CurrentMillis();
                 compensation = (long)(bids.GetInitialOffer().GetKinah() * HousingConfig.AUCTION_GRACE_END_REFUND_PERCENT);
             }
             else
@@ -284,7 +284,7 @@ public class HousingBidService
             HousingService.GetInstance().ChangeOwner(house, buyerPcd.GetPlayerObjId());
 
             AuctionResult result = AuctionResult.WIN_BID;
-            long time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long time = SystemClock.CurrentMillis();
             if (buyerPcd.IsOnline())
                 PacketSendUtility.SendPacket(buyerPcd.GetPlayer(), SM_SYSTEM_MESSAGE.STR_MSG_HOUSING_BID_WIN(house.GetAddress().GetId()));
             if (house.IsInactive()) // buyer has another house
@@ -292,7 +292,7 @@ public class HousingBidService
                 if (buyerPcd.IsOnline())
                     PacketSendUtility.SendPacket(buyerPcd.GetPlayer(), SM_SYSTEM_MESSAGE.STR_MSG_HOUSING_GRACE_START(house.GetAddress().GetId()));
                 result = AuctionResult.GRACE_START;
-                MailFormatter.SendHouseAuctionMail(house, buyerPcd, result, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + house.SecondsUntilGraceEnd() * 1000, 0);
+                MailFormatter.SendHouseAuctionMail(house, buyerPcd, result, SystemClock.CurrentMillis() + house.SecondsUntilGraceEnd() * 1000, 0);
             }
             else
             {
@@ -337,7 +337,7 @@ public class HousingBidService
                     PacketSendUtility.SendPacket(pcd.GetPlayer(),
                         SM_SYSTEM_MESSAGE.STR_MSG_HOUSING_GRACE_FAIL(house.GetAddress().GetId(), oldHouse.GetAddress().GetId()));
                 if (Auction(oldHouse, oldHouse.GetDefaultAuctionPrice()))
-                    MailFormatter.SendHouseAuctionMail(house, pcd, AuctionResult.GRACE_FAIL, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                    MailFormatter.SendHouseAuctionMail(house, pcd, AuctionResult.GRACE_FAIL, SystemClock.CurrentMillis(),
                         (long)(oldHouse.GetDefaultAuctionPrice() * HousingConfig.AUCTION_GRACE_END_REFUND_PERCENT));
             }
         }
@@ -408,14 +408,14 @@ public class HousingBidService
                 PacketSendUtility.SendPacket(pcd.GetPlayer(), SM_SYSTEM_MESSAGE.STR_MSG_HOUSING_AUCTION_FAIL(house.GetAddress().GetId()));
                 PacketSendUtility.SendPacket(pcd.GetPlayer(), new SM_RECEIVE_BIDS(1));
             }
-            MailFormatter.SendHouseAuctionMail(house, pcd, AuctionResult.CANCELED_BID, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), 0);
+            MailFormatter.SendHouseAuctionMail(house, pcd, AuctionResult.CANCELED_BID, SystemClock.CurrentMillis(), 0);
         }
         HouseBids.Bid highestBid = bids.GetHighestBid();
         if (highestBid != bids.GetInitialOffer() && highestBid.GetPlayerObjectId() != 0)
         {
             // return bid price only to the last bidder (previous bidders already get their money back when another player bids more)
             PlayerCommonData pcd = PlayerService.GetOrLoadPlayerCommonData(highestBid.GetPlayerObjectId());
-            MailFormatter.SendHouseAuctionMail(house, pcd, AuctionResult.CANCELED_BID, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), highestBid.GetKinah());
+            MailFormatter.SendHouseAuctionMail(house, pcd, AuctionResult.CANCELED_BID, SystemClock.CurrentMillis(), highestBid.GetKinah());
         }
 
         return true;

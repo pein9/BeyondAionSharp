@@ -6,9 +6,15 @@
 
   <ItemGroup>
     <Using Include="Aion.Commons.Logging" />
+    <Using Include="Aion.GameServer.Utils" />
   </ItemGroup>
 
   <ItemGroup>
+    <AdditionalFiles Include="BannedSymbols.txt" />
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
     <PackageReference Include="Quartz" Version="3.18.1" />
   </ItemGroup>

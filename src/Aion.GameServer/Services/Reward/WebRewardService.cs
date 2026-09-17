@@ -64,7 +64,7 @@ public class WebRewardService
         }
 
         if (rewarded.Count > 0)
-            RewardServiceDAO.StoreReceived(rewarded, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            RewardServiceDAO.StoreReceived(rewarded, SystemClock.CurrentMillis());
     }
 
     private bool SendRewardItem(Player player, RewardEntryItem item)
@@ -85,7 +85,7 @@ public class WebRewardService
         }
 
         return SystemMailService.SendMail("$$CASH_ITEM_MAIL", player.GetName(), item.GetId() + ", " + item.GetCount(),
-            "0, " + (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000) + ",", itemId, itemCount, kinahCount, LetterType.BLACKCLOUD);
+            "0, " + (SystemClock.CurrentMillis() / 1000) + ",", itemId, itemCount, kinahCount, LetterType.BLACKCLOUD);
     }
 
     private bool ExecuteRewardAction(Player player, RewardEntryItem rewardItem)

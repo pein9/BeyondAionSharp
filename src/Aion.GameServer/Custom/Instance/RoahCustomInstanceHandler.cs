@@ -81,7 +81,7 @@ public class RoahCustomInstanceHandler : GeneralInstanceHandler
 
     public override bool OnPassFlyingRing(Player player, string flyingRing)
     {
-        if (flyingRing.Equals("ROAH_WING_1") && Interlocked.CompareExchange(ref startTime, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), 0) == 0)
+        if (flyingRing.Equals("ROAH_WING_1") && Interlocked.CompareExchange(ref startTime, SystemClock.CurrentMillis(), 0) == 0)
         {
             Npc artifact = (Npc)Spawn(CENTER_ARTIFACT_ID, 504.1977f, 481.5051f, 87.2790f, (byte)30);
             if (artifact != null)
@@ -197,7 +197,7 @@ public class RoahCustomInstanceHandler : GeneralInstanceHandler
                     CancelAllTasks();
                     // use pcd for rare cases in which the artifact got destroyed by dots/servants and the player got DC'ed before
                     PlayerCommonData pcd = PlayerService.GetOrLoadPlayerCommonData(playerObjId);
-                    float usedTime = (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - Interlocked.Read(ref startTime)) / 1000f;
+                    float usedTime = (SystemClock.CurrentMillis() - Interlocked.Read(ref startTime)) / 1000f;
                     achievedDps = (int)Math.Floor(npc.GetLifeStats().GetMaxHp() / usedTime + 0.5f);
                     log.LogInformation(string.Format(
                         "[CI_ROAH] Player [id={0}, name={1}, class={2}, rank={3}({4}), isPrebuffed={5}] succeeded in destroying the artifact in {6:F3}s (DPS:{7}).",
@@ -431,7 +431,7 @@ public class RoahCustomInstanceHandler : GeneralInstanceHandler
 
     private int GetElapsedTimeMillis()
     {
-        return (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - Interlocked.Read(ref startTime));
+        return (int)(SystemClock.CurrentMillis() - Interlocked.Read(ref startTime));
     }
 
     public override bool OnReviveEvent(Player player)

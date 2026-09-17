@@ -105,7 +105,7 @@ public class HousingService
             house.ResetDoorState();
             house.SetShowOwnerName(true);
             house.SetSignNotice(null);
-            house.SetAcquiredTime(newOwnerId == 0 ? (DateTimeOffset?)null : DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
+            house.SetAcquiredTime(newOwnerId == 0 ? (DateTimeOffset?)null : DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis()));
             house.SetNextPay(null);
 
             Building defaultBuilding = house.GetLand().GetDefaultBuilding();
@@ -349,7 +349,7 @@ public class HousingService
         House activeHouse = player.GetActiveHouse();
         if (activeHouse != null)
         {
-            if (HousingConfig.ENABLE_HOUSE_PAY && activeHouse.GetNextPay() != null && activeHouse.GetNextPay().Value.ToUnixTimeMilliseconds() <= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+            if (HousingConfig.ENABLE_HOUSE_PAY && activeHouse.GetNextPay() != null && activeHouse.GetNextPay().Value.ToUnixTimeMilliseconds() <= SystemClock.CurrentMillis())
                 PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_HOUSING_OVERDUE());
         }
         else

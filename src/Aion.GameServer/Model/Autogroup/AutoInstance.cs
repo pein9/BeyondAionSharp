@@ -46,7 +46,7 @@ public abstract class AutoInstance : AutoInstanceHandler
     public virtual void OnInstanceCreate(WorldMapInstance instance)
     {
         this.instance = instance;
-        startInstanceTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        startInstanceTime = SystemClock.CurrentMillis();
     }
 
     public virtual AGQuestion AddLookingForParty(LookingForParty lookingForParty)
@@ -85,7 +85,7 @@ public abstract class AutoInstance : AutoInstanceHandler
         if (startInstanceTime == 0)
             return false;
         else if (lfp.GetEntryRequestType() == EntryRequestType.QUICK_GROUP_ENTRY)
-            return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startInstanceTime > agt.GetMaximumJoinTime();
+            return SystemClock.CurrentMillis() - startInstanceTime > agt.GetMaximumJoinTime();
         return true;
     }
 

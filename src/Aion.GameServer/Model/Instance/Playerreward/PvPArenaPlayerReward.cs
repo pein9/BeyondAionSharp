@@ -82,12 +82,12 @@ public class PvPArenaPlayerReward : InstancePlayerReward
 
     public void UpdateLogoutTime()
     {
-        logoutTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        logoutTime = SystemClock.CurrentMillis();
     }
 
     public void UpdateBonusTime()
     {
-        int offlineTime = (int) (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - logoutTime);
+        int offlineTime = (int) (SystemClock.CurrentMillis() - logoutTime);
         timeBonus -= (int) (offlineTime * timeBonusModifier);
     }
 

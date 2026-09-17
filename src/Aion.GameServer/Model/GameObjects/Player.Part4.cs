@@ -276,11 +276,11 @@ public partial class Player
 
     public void SetLastMessageTime()
     {
-        if ((System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastMsgTime) / 1000 < Aion.GameServer.Configs.Main.SecurityConfig.FLOOD_DELAY)
+        if ((SystemClock.CurrentMillis() - lastMsgTime) / 1000 < Aion.GameServer.Configs.Main.SecurityConfig.FLOOD_DELAY)
             floodMsgCount++;
         else
             floodMsgCount = 0;
-        lastMsgTime = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        lastMsgTime = SystemClock.CurrentMillis();
     }
 
     public int FloodMsgCount()

@@ -55,7 +55,7 @@ public abstract class Siege
             }
             else
             {
-                startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                startTime = SystemClock.CurrentMillis();
                 started = true;
             }
         }
@@ -211,7 +211,7 @@ public abstract class Siege
 
             int playerIndex = 0;
             int rewardLevel = 0;
-            long timeMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long timeMillis = SystemClock.CurrentMillis();
             foreach (SiegeReward topGrade in GetSiegeLocation().GetRewards())
             {
                 List<int> rewardedGpPlayers = new List<int>();

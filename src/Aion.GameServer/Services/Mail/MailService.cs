@@ -144,7 +144,7 @@ public class MailService
 
         senderInventory.DecreaseKinah(finalMailKinah);
         Letter newLetter = new Letter(IDFactory.GetInstance().NextId(), recipientCommonData.GetPlayerObjId(), attachedItem, attachedKinah, title, message,
-            sender.GetName(), DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()).UtcDateTime, true, letterType);
+            sender.GetName(), DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis()).UtcDateTime, true, letterType);
 
         // first save attached item for FK consistency
         if (attachedItem != null)
@@ -232,7 +232,7 @@ public class MailService
                     PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MAIL_TAKE_ALL_CANCEL());
                     return;
                 }
-                if (attachedItem.GetExpireTime() != 0 && attachedItem.GetExpireTime() <= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000)
+                if (attachedItem.GetExpireTime() != 0 && attachedItem.GetExpireTime() <= SystemClock.CurrentMillis() / 1000)
                 {
                     attachedItem.SetPersistentState(PersistentState.DELETED);
                     InventoryDAO.Store(attachedItem, player);

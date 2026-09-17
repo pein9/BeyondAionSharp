@@ -10,7 +10,7 @@ namespace Aion.GameServer.Dao;
 /// <summary>
 /// Java parity: dao/PlayerPunishmentsDAO (@author lord_rex, Cura, nrg). JDBC DAO over player_punishments via the commons DB callback
 /// helper. Anonymous ParamReadStH/IUStH -> private nested classes capturing locals via ctor. PunishmentType.valueOf->Enum.Parse,
-/// .toString()->ToString(); System.currentTimeMillis()->DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(); setInt/setLong/setString->
+/// .toString()->ToString(); System.currentTimeMillis()->SystemClock.CurrentMillis(); setInt/setLong/setString->
 /// Parameters.Add; rs.next()/getLong/getString->Read()/GetInt64/GetString(GetOrdinal). getCharBanInfo's Java CharacterBanInfo[1] capture
 /// trick -> nested handler with a Result field. SQL verbatim. These methods are consumed by the reworked PunishmentService.
 /// </summary>
@@ -48,11 +48,11 @@ public class PlayerPunishmentsDAO
                 PunishmentType punishmentType = Enum.Parse<PunishmentType>(rs.GetString(rs.GetOrdinal("punishment_type")));
                 if (punishmentType == PunishmentType.PRISON)
                 {
-                    player.SetPrisonEndTimeMillis(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + rs.GetInt64(rs.GetOrdinal("duration")) * 1000);
+                    player.SetPrisonEndTimeMillis(SystemClock.CurrentMillis() + rs.GetInt64(rs.GetOrdinal("duration")) * 1000);
                 }
                 else if (punishmentType == PunishmentType.GATHER)
                 {
-                    player.SetGatherRestrictionExpirationTime(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + rs.GetInt64(rs.GetOrdinal("duration")) * 1000);
+                    player.SetGatherRestrictionExpirationTime(SystemClock.CurrentMillis() + rs.GetInt64(rs.GetOrdinal("duration")) * 1000);
                 }
             }
         }
@@ -114,7 +114,7 @@ public class PlayerPunishmentsDAO
         {
             ps.Parameters.Add(new MySqlParameter { Value = playerId });
             ps.Parameters.Add(new MySqlParameter { Value = punishmentType.ToString() });
-            ps.Parameters.Add(new MySqlParameter { Value = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000 });
+            ps.Parameters.Add(new MySqlParameter { Value = SystemClock.CurrentMillis() / 1000 });
             ps.Parameters.Add(new MySqlParameter { Value = duration });
             ps.Parameters.Add(new MySqlParameter { Value = reason });
             ps.ExecuteNonQuery();

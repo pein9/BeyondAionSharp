@@ -12,7 +12,7 @@ public sealed class GroupRecruitment : FindGroupEntry
     private readonly AionObject obj;
     private string message;
     private int groupType, classId = -1, level = -1;
-    private int lastUpdate = (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000);
+    private int lastUpdate = (int)(SystemClock.CurrentMillis() / 1000);
 
     public GroupRecruitment(AionObject obj, string message, int groupType)
     {
@@ -109,7 +109,7 @@ public sealed class GroupRecruitment : FindGroupEntry
 
     public void UpdateLastUpdate()
     {
-        lastUpdate = (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000);
+        lastUpdate = (int)(SystemClock.CurrentMillis() / 1000);
     }
 
     public Race? GetRace()

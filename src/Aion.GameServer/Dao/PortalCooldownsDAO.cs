@@ -12,7 +12,7 @@ namespace Aion.GameServer.Dao;
 /// DatabaseFactory-style; positional '?' -> ordered MySqlParameter; executeQuery -> ExecuteReader; rset.getInt/getLong("col") ->
 /// reader.GetInt32/GetInt64(reader.GetOrdinal("col")); execute -> ExecuteNonQuery; SQL verbatim. Map&lt;Integer,PortalCooldown&gt; ->
 /// Dictionary&lt;int,PortalCooldown&gt;; Map.put -> indexer; entrySet() -> foreach KeyValuePair. System.currentTimeMillis() ->
-/// DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(). PortalCooldownList.SetPortalCoolDowns/GetPortalCoolDowns are tolerated red refs
+/// SystemClock.CurrentMillis(). PortalCooldownList.SetPortalCoolDowns/GetPortalCoolDowns are tolerated red refs
 /// (the reworked C# list exposes Add/Remove/Get instead). Load keeps only still-future entries; store = delete-then-reinsert (verbatim).
 /// </summary>
 public class PortalCooldownsDAO
@@ -39,7 +39,7 @@ public class PortalCooldownsDAO
                 int worldId = rset.GetInt32(rset.GetOrdinal("world_id"));
                 long reuseTime = rset.GetInt64(rset.GetOrdinal("reuse_time"));
                 int entryCount = rset.GetInt32(rset.GetOrdinal("entry_count"));
-                if (reuseTime > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+                if (reuseTime > SystemClock.CurrentMillis())
                 {
                     portalCoolDowns[worldId] = new PortalCooldown(worldId, reuseTime, entryCount);
                 }
@@ -66,7 +66,7 @@ public class PortalCooldownsDAO
             long reuseTime = entry.Value.GetReuseTime();
             int entryCount = entry.Value.GetEnterCount();
 
-            if (reuseTime < DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+            if (reuseTime < SystemClock.CurrentMillis())
                 continue;
 
             try

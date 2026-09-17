@@ -225,7 +225,7 @@ public class PvPArenaScore : InstanceScore<PvPArenaPlayerReward>
 
     public int GetTime()
     {
-        long result = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - instanceTime;
+        long result = SystemClock.CurrentMillis() - instanceTime;
         if (IsRewarded())
         {
             return 0;
@@ -277,7 +277,7 @@ public class PvPArenaScore : InstanceScore<PvPArenaPlayerReward>
 
     public void SetInstanceStartTime()
     {
-        this.instanceTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        this.instanceTime = SystemClock.CurrentMillis();
     }
 
     public sbyte GetBuffId()

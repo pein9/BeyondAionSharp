@@ -12,7 +12,7 @@ namespace Aion.GameServer.Dao;
 /// DatabaseFactory-style; positional '?' -> ordered MySqlParameter; executeQuery -> ExecuteReader; rset.getInt/getLong("col") ->
 /// reader.GetInt32/GetInt64(reader.GetOrdinal("col")); execute -> ExecuteNonQuery; SQL verbatim. player.getCraftCooldowns() Cooldowns:
 /// Map.put -> Cooldowns.Put; Map.entrySet() -> foreach over IEnumerable&lt;KeyValuePair&lt;int,long&gt;&gt;. System.currentTimeMillis()
-/// -> DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(). storeCraftCooldowns deletes then re-inserts only still-future entries (verbatim).
+/// -> SystemClock.CurrentMillis(). storeCraftCooldowns deletes then re-inserts only still-future entries (verbatim).
 /// </summary>
 public class CraftCooldownsDAO
 {
@@ -54,7 +54,7 @@ public class CraftCooldownsDAO
             int delayId = entry.Key;
             long reuseTime = entry.Value;
 
-            if (reuseTime < DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+            if (reuseTime < SystemClock.CurrentMillis())
                 continue;
 
             try

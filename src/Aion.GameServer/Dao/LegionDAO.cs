@@ -436,7 +436,7 @@ public class LegionDAO
             con.Open();
             using MySqlCommand stmt = con.CreateCommand();
             stmt.CommandText = INSERT_HISTORY_QUERY;
-            long nowMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long nowMillis = SystemClock.CurrentMillis();
             stmt.Parameters.Add(new MySqlParameter { Value = legionId });
             stmt.Parameters.Add(new MySqlParameter { Value = nowMillis });
             stmt.Parameters.Add(new MySqlParameter { Value = action.ToString() });

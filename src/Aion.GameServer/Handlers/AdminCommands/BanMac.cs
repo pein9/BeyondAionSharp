@@ -65,7 +65,7 @@ public class BanMac : AdminCommand
             }
         }
 
-        BannedMacManager.GetInstance().BanAddress(address, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + time * 60 * 1000,
+        BannedMacManager.GetInstance().BanAddress(address, SystemClock.CurrentMillis() + time * 60 * 1000,
             "author=" + player.GetName() + ", " + player.GetObjectId() + "; target=" + targetName);
     }
 

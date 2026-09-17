@@ -15,7 +15,7 @@ public class HouseBids
     private readonly List<Bid> bids = new();
 
     public HouseBids(int houseObjectId, long initialPrice)
-        : this(houseObjectId, initialPrice, System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+        : this(houseObjectId, initialPrice, SystemClock.CurrentMillis())
     {
     }
 
@@ -40,7 +40,7 @@ public class HouseBids
     /// <returns>Players bid if bidding was successful, meaning he is the highest bidder.</returns>
     public Bid DoBid(Player player, long bidKinah)
     {
-        return DoBid(player.GetObjectId(), bidKinah, System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        return DoBid(player.GetObjectId(), bidKinah, SystemClock.CurrentMillis());
     }
 
     /// <returns>Players bid if bidding was successful, meaning he is the highest bidder.</returns>

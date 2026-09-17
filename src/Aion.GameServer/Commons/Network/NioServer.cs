@@ -98,6 +98,7 @@ public class NioServer
             foreach (AConnection con in activeConnections)
                 con.OnServerClose();
 
+#pragma warning disable RS0030 // Shutdown must time out even when simulated gameplay time is paused.
             long timeout = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + 5000;
             while (IsAnyConnectionClosePending(activeConnections))
             {
@@ -110,6 +111,7 @@ public class NioServer
                     break;
                 }
             }
+#pragma warning restore RS0030
             activeConnections.RemoveWhere(c => c.IsClosed());
         }
     }
