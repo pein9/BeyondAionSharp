@@ -1,6 +1,8 @@
 using System.Text;
 using Aion.Bots.Protocol;
 using Aion.Commons.Logging;
+using Aion.GameServer.Commons.Network.Packet;
+using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.TestKit;
 using Microsoft.Extensions.Logging;
@@ -37,6 +39,7 @@ public sealed class SimulationLogPolicy : IDisposable
 		this.scenario = scenario;
 		this.clock = clock ?? throw new ArgumentNullException(nameof(clock));
 		this.options = options ?? new SimulationLogPolicyOptions();
+		BaseClientPacket<AionConnection>.ResetPartiallyReadPacketWarnings();
 		allowlist = LogProblemAllowlist.Load(allowlistPath);
 		factory = LoggerFactory.Create(builder =>
 		{

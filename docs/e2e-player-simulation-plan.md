@@ -846,8 +846,10 @@ replays the same seeded trace.
   and explicit coverage for unconditional errors/timer faults plus opt-in warnings, audit and refusal messages.
   The B1 evidence had named `CapturingLoggerProvider.cs` before it existed; this TODO added it and corrected that
   stale completion claim. (`acc7ca8c6`)
-- [ ] **P5-10** [SIM] S — Reset hook for `BaseClientPacket`'s once-per-process "not fully read" set, so each
-  scenario sees its own warnings.
+- [x] **P5-10** [SIM] S — Reset hook for `BaseClientPacket`'s once-per-process "not fully read" set, so each
+  scenario sees its own warnings. Added an internal clear hook invoked when a SIM log-policy scope starts; a
+  regression runs the same partially read opcode in two consecutive scenarios and requires both scopes to fail on
+  their own warning while production retains Java's once-per-process suppression. (`6791c731d`)
 - [ ] **P5-11** [SIM] S — Harness self-test: a probe AI that throws in `HandleSpawned`, plus a truncated `CM_MOVE`,
   must **fail** the scenario with full stack text; a non-throwing probe passes.
 - [ ] **P5-12** [BOTH] M — Scenario manifest and isolation. Every scenario declares `{id, modes, tier:

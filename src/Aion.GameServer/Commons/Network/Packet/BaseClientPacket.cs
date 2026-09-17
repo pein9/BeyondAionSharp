@@ -37,6 +37,9 @@ public abstract class BaseClientPacket<T> : BasePacket, Runnable where T : AConn
 
     public void SetConnection(T client) => this.client = client;
 
+    /// <summary>Clears process-wide warning suppression between isolated simulation scenarios.</summary>
+    internal static void ResetPartiallyReadPacketWarnings() => partiallyReadPackets.Clear();
+
     /// <summary>Reads data from the packet buffer. On error the connection is closed.</summary>
     public bool Read()
     {
