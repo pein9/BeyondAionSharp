@@ -186,6 +186,7 @@ public class Auction : AdminCommand
         return housesToRemove;
     }
 
+    // Reviewed in P4-05: Java Collections.shuffle uses its own default Random, not Rnd; admin-only ordering stays independent.
     private static readonly Random Rng = new Random();
 
     // Java parity: Collections.shuffle(List)

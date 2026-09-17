@@ -17,8 +17,29 @@ public static class Rnd
 
     // not thread-safe in Java; here each thread gets its own seeded generator (parity intent: per-thread isolation)
     private static readonly ThreadLocal<Random> RndLocal = new(() => new Random());
+    private static readonly AsyncLocal<SeededRandom?> SeedSource = new();
+    private static SeededRandom? _processSeedSource;
 
-    private static Random Generator => RndLocal.Value!;
+    private static SeededRandom? ActiveSeedSource => SeedSource.Value ?? Volatile.Read(ref _processSeedSource);
+    private static Random Generator => ActiveSeedSource?.Generator ?? RndLocal.Value!;
+
+    /// <summary>The deterministic seed active for this flow, or the process fallback when the flow has none.</summary>
+    public static int? ActiveSeed => ActiveSeedSource?.Seed;
+
+    /// <summary>Failure-report text for deterministic harnesses and scenario runners.</summary>
+    public static string SeedDiagnostic => ActiveSeed is int seed ? $"Rnd seed: {seed}" : "Rnd seed: production default";
+
+    /// <summary>Starts a fresh deterministic sequence in the current execution context. Tests and SIM only.</summary>
+    public static void UseSeed(int seed) => SeedSource.Value = new SeededRandom(seed);
+
+    /// <summary>Clears the execution-context seed and reveals the process seed or production randomness beneath it.</summary>
+    public static void UseProductionRandom() => SeedSource.Value = null;
+
+    /// <summary>Starts a fresh deterministic fallback sequence for work that does not inherit an execution context.</summary>
+    public static void SetProcessSeed(int seed) => Volatile.Write(ref _processSeedSource, new SeededRandom(seed));
+
+    /// <summary>Clears the process-wide deterministic sequence without changing an execution-context seed.</summary>
+    public static void UseProductionRandomProcessWide() => Volatile.Write(ref _processSeedSource, null);
 
     /// <summary>
     /// To compare this chance with a success rate, evaluate "<c>if (Chance() &lt; success rate)</c>" to determine a success or, alternatively
@@ -150,4 +171,79 @@ public static class Rnd
 
     // Java parity: nextBoolean()
     public static bool NextBoolean() => Generator.Next(2) != 0;
+
+    private sealed class SeededRandom
+    {
+        public SeededRandom(int seed)
+        {
+            Seed = seed;
+            Generator = new SynchronizedRandom(seed);
+        }
+
+        public int Seed { get; }
+        public Random Generator { get; }
+    }
+
+    /// <summary>
+    /// A seeded source can flow into multiple tasks. Synchronization preserves <see cref="Random"/>'s state;
+    /// deterministic mode supplies the stable call order separately.
+    /// </summary>
+    private sealed class SynchronizedRandom(int seed) : Random(seed)
+    {
+        private readonly object _gate = new();
+
+        public override int Next()
+        {
+            lock (_gate)
+                return base.Next();
+        }
+
+        public override int Next(int maxValue)
+        {
+            lock (_gate)
+                return base.Next(maxValue);
+        }
+
+        public override int Next(int minValue, int maxValue)
+        {
+            lock (_gate)
+                return base.Next(minValue, maxValue);
+        }
+
+        public override long NextInt64()
+        {
+            lock (_gate)
+                return base.NextInt64();
+        }
+
+        public override long NextInt64(long maxValue)
+        {
+            lock (_gate)
+                return base.NextInt64(maxValue);
+        }
+
+        public override long NextInt64(long minValue, long maxValue)
+        {
+            lock (_gate)
+                return base.NextInt64(minValue, maxValue);
+        }
+
+        public override float NextSingle()
+        {
+            lock (_gate)
+                return base.NextSingle();
+        }
+
+        public override double NextDouble()
+        {
+            lock (_gate)
+                return base.NextDouble();
+        }
+
+        public override void NextBytes(byte[] buffer)
+        {
+            lock (_gate)
+                base.NextBytes(buffer);
+        }
+    }
 }

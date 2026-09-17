@@ -35,6 +35,7 @@ public class CAPTCHAUtil
     /// <summary>Java parity: randomWord(int wordLength).</summary>
     private static string RandomWord(int wordLength)
     {
+        // Reviewed in P4-05: Java uses Math.random(), not Rnd. Keep this independent anti-bot source.
         StringBuilder word = new StringBuilder();
 
         for (int i = 0; i < wordLength; i++)

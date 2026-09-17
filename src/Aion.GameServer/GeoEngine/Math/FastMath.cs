@@ -1,4 +1,5 @@
 using System;
+using Aion.GameServer.Commons.Utils;
 using JMath = System.Math;
 
 namespace Aion.GameServer.GeoEngine.Math;
@@ -44,11 +45,6 @@ public static class FastMath
 
     /// <summary>A value to multiply a radian value by, to convert it to degrees.</summary>
     public const float RAD_TO_DEG = 180.0f / PI;
-
-    /// <summary>A precreated random object for random numbers.</summary>
-#pragma warning disable RS0030 // P4-05 replaces this production-default random seed with the shared seed seam.
-    public static readonly Random rand = new Random((int)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-#pragma warning restore RS0030
 
     /// <summary>
     /// Returns true if the number is a power of 2 (2,4,8,16...)
@@ -438,7 +434,7 @@ public static class FastMath
     /// </summary>
     public static float NextRandomFloat()
     {
-        return rand.NextSingle();
+        return Rnd.NextFloat();
     }
 
     /// <summary>
@@ -451,7 +447,7 @@ public static class FastMath
 
     public static int NextRandomInt()
     {
-        return (int)rand.NextInt64(int.MinValue, (long)int.MaxValue + 1L);
+        return Rnd.NextInt();
     }
 
     /// <summary>

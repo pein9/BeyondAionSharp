@@ -1,3 +1,5 @@
+using Aion.GameServer.Commons.Utils;
+
 namespace Aion.GameServer.Dataholders;
 
 public sealed class ItemRandomBonusTable
@@ -70,7 +72,7 @@ public sealed class ItemRandomBonusTable
 		if (totalChance <= 0)
 			return 0;
 
-		var roll = Math.Clamp(random?.Invoke() ?? Random.Shared.NextDouble(), 0d, 0.999999999999d) * totalChance;
+		var roll = Math.Clamp(random?.Invoke() ?? Rnd.NextDouble(), 0d, 0.999999999999d) * totalChance;
 		var cumulativeChance = 0d;
 		var lastPositiveGroup = 0;
 		for (var i = 0; i < set.ModifierGroups.Count; i++)

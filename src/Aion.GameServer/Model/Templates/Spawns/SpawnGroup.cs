@@ -1,3 +1,4 @@
+using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Model.Base;
 using Aion.GameServer.Model.Siege;
 using Aion.GameServer.Model.Templates.Event;
@@ -153,7 +154,7 @@ public class SpawnGroup
                 Log.LogWarning("All spots are used, could not get random spot for npcId: {NpcId}, worldId: {WorldId}", _npcId, _worldId);
                 return null;
             }
-            var freeSpot = free[Random.Shared.Next(free.Count)]; // Java: Rnd.get(list)
+            var freeSpot = Rnd.Get(free)!;
             occupied.Add(freeSpot);
             return freeSpot;
         }

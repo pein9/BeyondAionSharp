@@ -15,6 +15,7 @@ public sealed class LiveBotPingScheduler
 	public LiveBotPingScheduler(TimeProvider? timeProvider = null, Func<int>? jitterSeconds = null)
 	{
 		this.timeProvider = timeProvider ?? TimeProvider.System;
+		// Reviewed in P4-05: LIVE wall-time jitter is transport noise; tests and deterministic callers inject this delegate.
 		this.jitterSeconds = jitterSeconds ?? (() => Random.Shared.Next(0, MaximumIntervalSeconds - MinimumIntervalSeconds + 1));
 		NextDueAt = this.timeProvider.GetUtcNow() + NextInterval();
 	}
