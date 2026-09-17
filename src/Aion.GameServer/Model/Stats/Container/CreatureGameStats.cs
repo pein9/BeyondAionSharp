@@ -438,16 +438,11 @@ public abstract class CreatureGameStats
         return calculationTypes.Length == 0 ? NoCalculationTypes : new HashSet<CalculationType>(calculationTypes);
     }
 
-    /// <summary>
-    /// Java parity: copyWith(Set, CalculationType) = EnumSet.copyOf(types) plus the given type. Java's EnumSet.copyOf throws
-    /// IllegalArgumentException for an empty collection that is not an EnumSet, which is exactly what toSet returns for no arguments, so
-    /// upstream 538b33d07 breaks no-argument calls like getOffHandPAttack() (//info) and getMainHandMAttack() (custom instance boss). This port
-    /// copies the empty set instead of reproducing that exception.
-    /// </summary>
+    /// <summary>Java parity: copyWith(Set, CalculationType) = EnumSet.of(type) plus all given types.</summary>
     protected static HashSet<CalculationType> CopyWith(ISet<CalculationType> types, CalculationType type)
     {
-        HashSet<CalculationType> calculationTypes = new HashSet<CalculationType>(types);
-        calculationTypes.Add(type);
+        HashSet<CalculationType> calculationTypes = new HashSet<CalculationType> { type };
+        calculationTypes.UnionWith(types);
         return calculationTypes;
     }
 }
