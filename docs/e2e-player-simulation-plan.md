@@ -757,11 +757,17 @@ replays the same seeded trace.
   support across successive worker threads. `BossAiHarness` now enables `Strict` for all 275 files that reference
   it. The full game-server suite passed with 3,186 tests and seven intentional skips; no scheduler faults surfaced,
   so no retail AI backlog or fidelity entry was needed. (`5b40fb9c4`)
-- [ ] **P5-01** [SIM] M — Login-link seam: an interface behind `LoginServer.SendPacket`, `IsAuthed`,
+- [x] **P5-01** [SIM] M — Login-link seam: an interface behind `LoginServer.SendPacket`, `IsAuthed`,
   `GetGameServerCount` and `OnDisconnect`, with a SIM link that answers account auth synchronously via
   `AccountAuthenticationResponse` with per-bot access level. Construct the `ChatServer` singleton too:
   `SM_VERSION_CHECK.WriteImpl` calls `ChatServer.GetInstance()` (so the first handshake packet throws without it)
   and `LeaveWorld` calls it before saving. The MAC address must match `^([0-9A-F]{2}-){5}[0-9A-F]{2}$`.
+  `ILoginServerLink` now sits behind the four Java-shaped facade operations while the production connector remains
+  their default implementation. `SimulationLoginServerLink` is always authenticated, records outbound LS packets,
+  rejects unregistered accounts and invokes the real `AccountAuthenticationResponse` synchronously with each
+  registered bot's access level and membership. Focused tests pin synchronous response ordering, facade delegation,
+  unknown-account rejection, the exact uppercase-hyphen MAC shape and construction of both login and chat singleton
+  bridges without starting either socket transport. (`5c2de8ecb`)
 - [ ] **P5-02** [SIM] S — Extract `Program.cs` composition into a reusable `AddGameServer(...)` extension and move
   `DatabaseFactory.Initialize` out of `ConfigureServices`, so the SIM host cannot drift from production.
 - [ ] **P5-03** [BOTH] S — Parity fix, config order: move `Config.Load()` to the top of `StartAsync`, before

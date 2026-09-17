@@ -16,13 +16,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Aion.GameServer.Network.LoginServer;
 
-public sealed class LoginServer : IAsyncDisposable
+public sealed class LoginServer : IAsyncDisposable, ILoginServerLink
 {
 	private readonly ILogger<LoginServer> _logger;
 	private readonly GameServerOptions _options;
 	private readonly ICharacterSelectionRepository _characterSelectionRepository;
 	private readonly ILoginServerInboundPacketDispatcher _inboundPacketDispatcher;
 	private readonly OutboundLinkRetryDelays _retryDelays;
+	private readonly ILoginServerLink _link;
 	private readonly SemaphoreSlim _sendLock = new(1, 1);
 	private readonly object _lifecycleLock = new();
 	private readonly ConcurrentDictionary<int, TaskCompletionSource<AccountAuthResult>> _pendingAccountAuthRequests = new();
@@ -45,7 +46,16 @@ public sealed class LoginServer : IAsyncDisposable
 		ILogger<LoginServer> logger,
 		GameServerOptions options,
 		ICharacterSelectionRepository? characterSelectionRepository = null)
-		: this(logger, options, characterSelectionRepository, null, null)
+		: this(logger, options, characterSelectionRepository, null, null, null)
+	{
+	}
+
+	public LoginServer(
+		ILogger<LoginServer> logger,
+		GameServerOptions options,
+		ICharacterSelectionRepository? characterSelectionRepository,
+		Func<LoginServer, ILoginServerLink> linkFactory)
+		: this(logger, options, characterSelectionRepository, null, null, linkFactory)
 	{
 	}
 
@@ -54,13 +64,15 @@ public sealed class LoginServer : IAsyncDisposable
 		GameServerOptions options,
 		ICharacterSelectionRepository? characterSelectionRepository,
 		ILoginServerInboundPacketDispatcher? inboundPacketDispatcher,
-		OutboundLinkRetryDelays? retryDelays = null)
+		OutboundLinkRetryDelays? retryDelays = null,
+		Func<LoginServer, ILoginServerLink>? linkFactory = null)
 	{
 		_logger = logger;
 		_options = options;
 		_characterSelectionRepository = characterSelectionRepository ?? new EmptyCharacterSelectionRepository();
 		_inboundPacketDispatcher = inboundPacketDispatcher ?? new RuntimeInboundPacketDispatcher(this);
 		_retryDelays = retryDelays ?? OutboundLinkRetryDelays.JavaDefaults;
+		_link = linkFactory?.Invoke(this) ?? this;
 		_instance = this;
 	}
 
@@ -73,12 +85,17 @@ public sealed class LoginServer : IAsyncDisposable
 	// Java parity: LoginServer.getGameServerCount().
 	public int GetGameServerCount()
 	{
-		return GameServerCount;
+		return _link.GetGameServerCount();
 	}
 
 	// Java parity: LoginServer.sendPacket(LsServerPacket) - fires only when the bridge is up; returns true when sent,
 	// false when down (callers use it as a boolean). The idiomatic async transport is bridged fire-and-forget.
 	public bool SendPacket(LoginServerPacket packet)
+	{
+		return _link.SendPacket(packet);
+	}
+
+	private bool SendPacketCore(LoginServerPacket packet)
 	{
 		ConnectionSession session;
 		lock (_lifecycleLock)
@@ -110,7 +127,7 @@ public sealed class LoginServer : IAsyncDisposable
 
 	public LoginServerState State => _state;
 
-	public bool IsAuthed => _state == LoginServerState.Authed;
+	public bool IsAuthed => _link.IsAuthed;
 
 	public int GameServerCount { get; private set; }
 
@@ -184,7 +201,7 @@ public sealed class LoginServer : IAsyncDisposable
 	// Java parity: network/loginserver/LoginServer.validateMacAndHddSerial(AionConnection, String).
 	private bool ValidateMacAndHddSerial(global::Aion.GameServer.Network.Aion.AionConnection client, string allowedHddSerial)
 	{
-		if (!System.Text.RegularExpressions.Regex.IsMatch(client.GetMacAddress() ?? string.Empty, "^([0-9A-F]{2}-){5}[0-9A-F]{2}$"))
+		if (!IsValidMacAddress(client.GetMacAddress()))
 		{
 			_logger.LogWarning("{Client} sent an invalid MAC address (modified client or hack): {Mac}", client, client.GetMacAddress());
 			return false;
@@ -206,6 +223,9 @@ public sealed class LoginServer : IAsyncDisposable
 		}
 		return true;
 	}
+
+	internal static bool IsValidMacAddress(string? macAddress) =>
+		System.Text.RegularExpressions.Regex.IsMatch(macAddress ?? string.Empty, "^([0-9A-F]{2}-){5}[0-9A-F]{2}$");
 
 	// Java parity: network/loginserver/LoginServer.kickOnlineCharacters(Account).
 	private void KickOnlineCharacters(global::Aion.GameServer.Model.Account.Account account)
@@ -286,6 +306,11 @@ public sealed class LoginServer : IAsyncDisposable
 	// request tied to the closing connection and, when an account was bound, notifies the login server.
 	public void OnDisconnect(global::Aion.GameServer.Network.Aion.AionConnection connection)
 	{
+		_link.OnDisconnect(connection);
+	}
+
+	internal void OnDisconnectCore(global::Aion.GameServer.Network.Aion.AionConnection connection)
+	{
 		// Java parity: loginRequests.values().removeIf(r -> r.connection == connection).
 		foreach (var entry in _loginRequests)
 		{
@@ -323,6 +348,14 @@ public sealed class LoginServer : IAsyncDisposable
 		}
 		return Task.CompletedTask;
 	}
+
+	bool ILoginServerLink.IsAuthed => _state == LoginServerState.Authed;
+
+	int ILoginServerLink.GetGameServerCount() => GameServerCount;
+
+	bool ILoginServerLink.SendPacket(LoginServerPacket packet) => SendPacketCore(packet);
+
+	void ILoginServerLink.OnDisconnect(global::Aion.GameServer.Network.Aion.AionConnection connection) => OnDisconnectCore(connection);
 
 	public Task SendPacketAsync(LoginServerPacket packet, CancellationToken cancellationToken = default)
 	{

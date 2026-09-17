@@ -17,6 +17,8 @@ public sealed class SmAccountAuth : LoginServerPacket
 		_playOk2 = playOk2;
 	}
 
+	public int AccountId => _accountId;
+
 	protected override void WritePayload(PacketBuffer buffer)
 	{
 		// Java parity: gameserver/network/loginserver/serverpackets/SM_ACCOUNT_AUTH.writeImpl.
