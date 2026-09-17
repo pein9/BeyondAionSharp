@@ -39,6 +39,8 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 	/// <summary>Current virtual time, in milliseconds since the harness started.</summary>
 	public long NowMillis => _nowMillis;
 
+	public override bool IsDeterministic => true;
+
 	/// <summary>When enabled, disposing the clock fails if any scheduled body faulted.</summary>
 	public bool Strict { get; set; }
 

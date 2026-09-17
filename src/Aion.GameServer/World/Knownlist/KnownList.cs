@@ -35,7 +35,7 @@ public class KnownList
     {
         lock (this)
         {
-            foreach (KnownObject obj in KnownObjects.Values)
+            foreach (KnownObject obj in OrderedKnownObjects())
             {
                 Del(obj.Get(), ObjectDeleteAnimation.None);
                 obj.Get().GetKnownList().Del(Owner, animation);
@@ -124,7 +124,7 @@ public class KnownList
     // Java parity: forgetObjectsOrUpdateVisibility() — private
     private void ForgetObjectsOrUpdateVisibility()
     {
-        foreach (KnownObject obj in KnownObjects.Values)
+        foreach (KnownObject obj in OrderedKnownObjects())
         {
             if (IsInRange(obj.Get()))
             {
@@ -155,7 +155,7 @@ public class KnownList
         }
         foreach (MapRegion region in position.GetMapRegion()!.GetNeighbours())
         {
-            foreach (VisibleObject newObject in region.GetObjects().Values)
+            foreach (VisibleObject newObject in DeterministicIteration.ByIntKey(region.GetObjects().Values, obj => obj.GetObjectId()))
             {
                 if (!IsAwareOf(newObject))
                     continue;
@@ -185,7 +185,7 @@ public class KnownList
     // Java parity: findObject(Predicate)
     public VisibleObject? FindObject(Predicate<KnownObject> predicate)
     {
-        foreach (KnownObject value in KnownObjects.Values)
+        foreach (KnownObject value in OrderedKnownObjects())
         {
             if (predicate(value))
                 return value.Get();
@@ -203,7 +203,7 @@ public class KnownList
 
     // Java parity: forEach(Consumer)
     public void ForEach(Action<KnownObject> action) =>
-        CollectionUtil.ForEach(KnownObjects.Values, action, () => "KnownList owner: " + Owner);
+        CollectionUtil.ForEach(OrderedKnownObjects(), action, () => "KnownList owner: " + Owner);
 
     // Java parity: forEachObject(Consumer)
     public void ForEachObject(Action<VisibleObject> consumer) => ForEach(obj => consumer(obj.Get()));
@@ -223,7 +223,7 @@ public class KnownList
     });
 
     // Java parity: stream()
-    public IEnumerable<KnownObject> Stream() => KnownObjects.Values;
+    public IEnumerable<KnownObject> Stream() => OrderedKnownObjects();
 
     // Java parity: streamPlayers()
     public IEnumerable<Player> StreamPlayers() =>
@@ -232,4 +232,7 @@ public class KnownList
     // Java parity: streamVisiblePlayers()
     public IEnumerable<Player> StreamVisiblePlayers() =>
         Stream().Where(o => o.IsVisible() && o.Get() is Player).Select(o => (Player)o.Get());
+
+    private IEnumerable<KnownObject> OrderedKnownObjects() =>
+        DeterministicIteration.ByIntKey(KnownObjects.Values, known => known.Get().GetObjectId());
 }

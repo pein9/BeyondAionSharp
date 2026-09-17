@@ -34,26 +34,36 @@ public class MoveTaskManager : AbstractPeriodicTaskManager
 
     protected override void Run()
     {
-        movingCreatures.Values.AsParallel().ForAll(creature =>
+        if (ThreadPoolManager.IsDeterministicMode)
         {
-            if (!creature.IsSpawned()) // can despawn concurrently, while this thread is already running
-            {
-                if (RemoveCreature(creature)) // should have been removed via onDespawn (MoveController#abortMove())
-                    log.LogWarning(creature + " was still in moving creatures list but already despawned");
-                return;
-            }
-            creature.GetMoveController().MoveToDestination();
-            if (creature.GetAi().IsDestinationReached())
-            {
-                RemoveCreature(creature);
-                creature.GetAi().OnGeneralEvent(AiEventType.MoveArrived);
-                Aion.GameServer.World.Zone.ZoneUpdateService.GetInstance().Add(creature);
-            }
-            else
-            {
-                creature.GetAi().OnGeneralEvent(AiEventType.MoveValidate);
-            }
-        });
+            foreach (Creature creature in DeterministicIteration.ByIntKey(movingCreatures.Values, creature => creature.GetObjectId()))
+                Move(creature);
+            return;
+        }
+
+        // Java uses parallelStream(). Its order is deliberately left unspecified outside deterministic SIM.
+        movingCreatures.Values.AsParallel().ForAll(Move);
+    }
+
+    private void Move(Creature creature)
+    {
+        if (!creature.IsSpawned()) // can despawn concurrently, while this thread is already running
+        {
+            if (RemoveCreature(creature)) // should have been removed via onDespawn (MoveController#abortMove())
+                log.LogWarning(creature + " was still in moving creatures list but already despawned");
+            return;
+        }
+        creature.GetMoveController().MoveToDestination();
+        if (creature.GetAi().IsDestinationReached())
+        {
+            RemoveCreature(creature);
+            creature.GetAi().OnGeneralEvent(AiEventType.MoveArrived);
+            Aion.GameServer.World.Zone.ZoneUpdateService.GetInstance().Add(creature);
+        }
+        else
+        {
+            creature.GetAi().OnGeneralEvent(AiEventType.MoveValidate);
+        }
     }
 
     public static MoveTaskManager GetInstance()

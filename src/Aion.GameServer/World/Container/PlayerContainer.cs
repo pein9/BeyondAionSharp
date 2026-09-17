@@ -43,7 +43,7 @@ public class PlayerContainer : IEnumerable<Player>
 
     public IEnumerator<Player> GetEnumerator()
     {
-        return playersById.Values.GetEnumerator();
+        return DeterministicIteration.ByIntKey(playersById.Values, player => player.GetObjectId()).GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -53,7 +53,7 @@ public class PlayerContainer : IEnumerable<Player>
 
     public ICollection<Player> GetAllPlayers()
     {
-        return playersById.Values.Where(p => p != null).ToList(); // ensure there are no null values (due to concurrent object removal)
+        return DeterministicIteration.ByIntKey(playersById.Values.Where(p => p != null), player => player.GetObjectId()).ToList(); // ensure there are no null values (due to concurrent object removal)
     }
 
     public void UpdateCachedPlayerName(string oldName, Player player)

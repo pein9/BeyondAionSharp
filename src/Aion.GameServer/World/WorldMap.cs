@@ -215,7 +215,7 @@ public class WorldMap : IEnumerable<WorldMapInstance>
 
     public IEnumerator<WorldMapInstance> GetEnumerator()
     {
-        return instances.Values.GetEnumerator();
+        return DeterministicIteration.ByIntKey(instances.Values, instance => instance.GetInstanceId()).GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -226,12 +226,12 @@ public class WorldMap : IEnumerable<WorldMapInstance>
     /// <summary>All instance ids of this map</summary>
     public ICollection<int> GetAvailableInstanceIds()
     {
-        return instances.Keys;
+        return ThreadPoolManager.IsDeterministicMode ? instances.Keys.OrderBy(id => id).ToArray() : instances.Keys;
     }
 
     public void ForEachObject(Action<VisibleObject> consumer)
     {
-        foreach (WorldMapInstance instance in instances.Values)
+        foreach (WorldMapInstance instance in DeterministicIteration.ByIntKey(instances.Values, instance => instance.GetInstanceId()))
             instance.ForEachObject(consumer);
     }
 }

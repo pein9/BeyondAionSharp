@@ -123,7 +123,7 @@ public static class NpcMessageBus
         if (region == null)
             yield break;
 
-        foreach (VisibleObject o in region.GetObjects().Values)
+        foreach (VisibleObject o in DeterministicIteration.ByIntKey(region.GetObjects().Values, obj => obj.GetObjectId()))
             yield return o;
     }
 }

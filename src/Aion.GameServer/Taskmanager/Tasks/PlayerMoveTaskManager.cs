@@ -25,7 +25,7 @@ public class PlayerMoveTaskManager : AbstractPeriodicTaskManager
 
     protected override void Run()
     {
-        foreach (Creature player in movingPlayers.Values)
+        foreach (Creature player in DeterministicIteration.ByIntKey(movingPlayers.Values, player => player.GetObjectId()))
         {
             if (player.IsSpawned())
                 player.GetMoveController().MoveToDestination();

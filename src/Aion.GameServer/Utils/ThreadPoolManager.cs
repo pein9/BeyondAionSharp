@@ -40,6 +40,15 @@ public class ThreadPoolManager : IAsyncDisposable
 	public static ThreadPoolManager GetInstance() =>
 		_instance ?? throw new InvalidOperationException("ThreadPoolManager singleton bridge not initialized; call RegisterInstance(...) at startup.");
 
+	/// <summary>
+	/// True only for a simulation scheduler whose execution order and clock are controlled by the caller.
+	/// This is an infrastructure deviation used to make SIM replayable; the production pool remains false.
+	/// </summary>
+	public virtual bool IsDeterministic => false;
+
+	/// <summary>Whether the currently registered pool reports deterministic execution.</summary>
+	public static bool IsDeterministicMode => Volatile.Read(ref _instance)?.IsDeterministic == true;
+
 	/// <summary>Composition-root hook: bind the DI-created instance to the Java-style static accessor.</summary>
 	public static void RegisterInstance(ThreadPoolManager instance) => _instance = instance;
 

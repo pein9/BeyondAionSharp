@@ -323,7 +323,7 @@ public sealed class World
 	// Java parity: forEachObject(Consumer<VisibleObject>).
 	public void ForEachObject(Action<VisibleObject> consumer)
 	{
-		foreach (var obj in _allObjects.Values)
+		foreach (var obj in DeterministicIteration.ByIntKey(_allObjects.Values, obj => obj.GetObjectId()))
 			consumer(obj);
 	}
 }

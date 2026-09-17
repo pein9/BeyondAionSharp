@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace Aion.GameServer.Network.Sequrity;
@@ -17,20 +18,36 @@ public static class NetFlusher
 
     public static void Add(Action runnable, long interval)
     {
+        if (ThreadPoolManager.IsDeterministicMode)
+        {
+            // SIM-only infrastructure deviation: make fixed-rate network maintenance advance with virtual time.
+            ThreadPoolManager.GetInstance().ScheduleAtFixedRateTask(
+                _ => RunSafely(runnable),
+                TimeSpan.FromMilliseconds(interval),
+                TimeSpan.FromMilliseconds(interval));
+            return;
+        }
+
         Timer timer = new Timer(_ =>
         {
-            try
-            {
-                runnable();
-            }
-            catch (Exception e)
-            {
-                log.LogError(e, "Net flusher task failed");
-            }
+            _ = RunSafely(runnable);
         }, null, interval, interval);
         lock (_timers)
         {
             _timers.Add(timer);
         }
+    }
+
+    private static ValueTask RunSafely(Action runnable)
+    {
+        try
+        {
+            runnable();
+        }
+        catch (Exception e)
+        {
+            log.LogError(e, "Net flusher task failed");
+        }
+        return ValueTask.CompletedTask;
     }
 }

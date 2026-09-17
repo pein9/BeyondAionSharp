@@ -160,7 +160,7 @@ public abstract class WorldMapInstance : IEnumerable<VisibleObject>
 
     public List<Player> GetPlayersInside()
     {
-        return new List<Player>(worldMapPlayers.Values);
+        return DeterministicIteration.ByIntKey(worldMapPlayers.Values, player => player.GetObjectId()).ToList();
     }
 
     /// <summary>Gets the player with the given object id in this world map instance, or null.</summary>
@@ -176,7 +176,7 @@ public abstract class WorldMapInstance : IEnumerable<VisibleObject>
 
     public Npc GetNpc(int npcId)
     {
-        foreach (Npc npc in worldMapNpcs.Values)
+        foreach (Npc npc in DeterministicIteration.ByIntKey(worldMapNpcs.Values, npc => npc.GetObjectId()))
         {
             if (npc != null && npc.GetNpcId() == npcId)
                 return npc;
@@ -207,7 +207,8 @@ public abstract class WorldMapInstance : IEnumerable<VisibleObject>
 
     public VisibleObject GetObjectByStaticId(int staticId)
     {
-        return worldMapObjects.Values.FirstOrDefault(o => o != null && o.GetSpawn() != null && o.GetSpawn().GetStaticId() == staticId);
+        return DeterministicIteration.ByIntKey(worldMapObjects.Values, obj => obj.GetObjectId())
+            .FirstOrDefault(o => o != null && o.GetSpawn() != null && o.GetSpawn().GetStaticId() == staticId);
     }
 
     public int GetInstanceId()
@@ -341,7 +342,7 @@ public abstract class WorldMapInstance : IEnumerable<VisibleObject>
 
     public void SetDoorState(int staticId, bool open)
     {
-        foreach (VisibleObject v in worldMapObjects.Values)
+        foreach (VisibleObject v in DeterministicIteration.ByIntKey(worldMapObjects.Values, obj => obj.GetObjectId()))
         {
             if (v is StaticDoor staticDoor && v.GetSpawn().GetStaticId() == staticId)
             {
@@ -354,7 +355,7 @@ public abstract class WorldMapInstance : IEnumerable<VisibleObject>
 
     public IEnumerator<VisibleObject> GetEnumerator()
     {
-        return worldMapObjects.Values.GetEnumerator();
+        return DeterministicIteration.ByIntKey(worldMapObjects.Values, obj => obj.GetObjectId()).GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -364,22 +365,22 @@ public abstract class WorldMapInstance : IEnumerable<VisibleObject>
 
     public void ForEachNpc(Action<Npc> consumer)
     {
-        CollectionUtil.ForEach(worldMapNpcs.Values, consumer);
+        CollectionUtil.ForEach(DeterministicIteration.ByIntKey(worldMapNpcs.Values, npc => npc.GetObjectId()), consumer);
     }
 
     public void ForEachPlayer(Action<Player> consumer)
     {
-        CollectionUtil.ForEach(worldMapPlayers.Values, consumer);
+        CollectionUtil.ForEach(DeterministicIteration.ByIntKey(worldMapPlayers.Values, player => player.GetObjectId()), consumer);
     }
 
     public void ForEachObject(Action<VisibleObject> consumer)
     {
-        CollectionUtil.ForEach(worldMapObjects.Values, consumer);
+        CollectionUtil.ForEach(DeterministicIteration.ByIntKey(worldMapObjects.Values, obj => obj.GetObjectId()), consumer);
     }
 
     public void ForEachDoor(Action<StaticDoor> consumer)
     {
-        CollectionUtil.ForEach(worldMapObjects.Values, o =>
+        CollectionUtil.ForEach(DeterministicIteration.ByIntKey(worldMapObjects.Values, obj => obj.GetObjectId()), o =>
         {
             if (o is StaticDoor staticDoor)
                 consumer(staticDoor);

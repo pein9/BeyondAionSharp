@@ -165,7 +165,7 @@ public class MapRegion
 
     private void NotifyCreatures(AiEventType ev)
     {
-        foreach (VisibleObject visObject in objects.Values)
+        foreach (VisibleObject visObject in DeterministicIteration.ByIntKey(objects.Values, obj => obj.GetObjectId()))
         {
             if (visObject is Creature creature)
                 creature.GetAi().OnGeneralEvent(ev);

@@ -49,7 +49,16 @@ public sealed class ShutdownHook
 		var previousValue = Interlocked.CompareExchange(ref _remainingSeconds, delaySeconds, UnsetDelay);
 		if (previousValue == UnsetDelay)
 		{
-			_shutdownTask = Task.Run(CountdownAndStopAsync);
+			if (ThreadPoolManager.IsDeterministicMode)
+			{
+				// SIM-only infrastructure deviation: countdown ticks are driven by the registered virtual pool.
+				ThreadPoolManager pool = ThreadPoolManager.GetInstance();
+				_shutdownTask = pool.Schedule(ct => DeterministicCountdownTick(pool, ct), TimeSpan.Zero).Completion;
+			}
+			else
+			{
+				_shutdownTask = Task.Run(CountdownAndStopAsync);
+			}
 			return;
 		}
 
@@ -67,5 +76,26 @@ public sealed class ShutdownHook
 		}
 
 		_applicationLifetime.StopApplication();
+	}
+
+	private ValueTask DeterministicCountdownTick(ThreadPoolManager pool, CancellationToken cancellationToken)
+	{
+		if (cancellationToken.IsCancellationRequested)
+			return ValueTask.CompletedTask;
+
+		int remaining = RemainingSeconds;
+		if (remaining <= 0)
+		{
+			_applicationLifetime.StopApplication();
+			return ValueTask.CompletedTask;
+		}
+
+		_logger.LogInformation("Runtime is shutting down in {Seconds} seconds.", remaining);
+		pool.Schedule(_ =>
+		{
+			Interlocked.Decrement(ref _remainingSeconds);
+			return DeterministicCountdownTick(pool, CancellationToken.None);
+		}, _tickInterval);
+		return ValueTask.CompletedTask;
 	}
 }

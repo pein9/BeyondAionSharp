@@ -169,7 +169,7 @@ public class AggroList
 
     public IEnumerable<AggroInfo> Stream()
     {
-        return _aggroList.Values;
+        return DeterministicIteration.ByIntKey(_aggroList.Values, info => info.GetAttacker().GetObjectId());
     }
 
     /// <summary>
@@ -233,7 +233,7 @@ public class AggroList
     /// <returns>list of DamageInfo with npc and player damages</returns>
     public DamageList GetFinalDamageList()
     {
-        return new DamageList(_aggroList.Values, Owner);
+        return new DamageList(Stream(), Owner);
     }
 
     protected virtual bool IsAware(Creature creature)
@@ -250,7 +250,7 @@ public class AggroList
             {
                 _hateReductionTask = ThreadPoolManager.GetInstance().ScheduleAtFixedRateTask(_ =>
                 {
-                    foreach (AggroInfo info in _aggroList.Values)
+                    foreach (AggroInfo info in Stream())
                     {
                         if (info.GetLastInteractionTime() != 0 && SystemClock.CurrentMillis() - info.GetLastInteractionTime() > 5000)
                         {
