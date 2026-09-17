@@ -576,8 +576,11 @@ sockets before the large clock migration.
   matched and suppressed exactly those four through fingerprint-specific LIVE entries with owner, reason,
   tracking, `maxCount: 1` and a 2027-09-17 expiry. A focused watcher test proves a second occurrence exceeds the
   allowance and still fails. Commit: `7b0f1c13d`.
-- [ ] **P3-11** [LIVE] S — Document the local loop in `docker/README.md`: run `scripts/live/run-live.ps1`, then watch `digest.log`
-  (§5 has the Claude Code Monitor recipe).
+- [x] **P3-11** [LIVE] S — Document the local loop in `docker/README.md`: run `scripts/live/run-live.ps1`, then watch `digest.log`
+  (§5 has the Claude Code Monitor recipe). The guide now covers Docker-only database isolation, L0 and canary
+  commands, record versus enforce mode before P3-14, PowerShell and Claude Code digest monitoring, exact-project
+  cleanup and `-Keep`, image rebuilds, the artifact layout, failure collection and 20-run retention. Commit:
+  `5090e6b31`.
 - [ ] **P3-12** [LIVE] S — A 10-second heartbeat Information line in all three servers with connection count,
   packet-queue depth and armed-timer count (via the `ThreadPoolManager` schedule observer).
 - [ ] **P3-13** [LIVE] S — Record-only login baseline: run L0 with the watcher in record mode and triage every new

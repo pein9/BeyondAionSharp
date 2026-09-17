@@ -67,3 +67,47 @@ docker compose (docker/docker-compose.yml)
 ```
 
 See [`SETUP-GUIDE.md`](SETUP-GUIDE.md) for a step-by-step walkthrough and troubleshooting.
+
+## Local LIVE player simulation
+
+The LIVE harness uses a separate Compose project with its own temporary Docker MySQL, server containers, ports
+and logs. It never connects to or installs MySQL on the host. From the repository root, choose a unique lowercase
+run id and start L0:
+
+```powershell
+pwsh -NoProfile -File scripts/live/run-live.ps1 `
+  -Run r0917-l0 `
+  -Scenario L0 `
+  -WatcherMode record
+```
+
+`record` is the baseline mode while the known-problem ledger is being established in P3-14: it records every
+fingerprint without turning known boot findings into a runner failure. Use `-WatcherMode enforce` for routine runs
+once the ledger is in place; NEW and REGRESSED fingerprints then make the command exit non-zero. The dedicated
+watcher probe is `-Scenario canaries`; it deliberately emits one allowlisted problem from each server log path.
+
+The runner builds the local tools and images, waits for all services and schema anchors, runs the bots and watcher,
+stops the servers gracefully, collects artifacts, and removes only its exact Compose project and volumes. Add
+`-SkipImageBuild` only when the images already contain the code under test. Add `-Keep` to leave that project
+running for inspection; remove it afterward with the exact project name printed by the runner.
+
+While a run is active, follow its digest from another PowerShell terminal:
+
+```powershell
+Get-Content run\r0917-l0\digest.log -Wait |
+  Where-Object { $_ -match ' (NEW|REGRESSED) ' }
+```
+
+With Claude Code, start `run-live.ps1` in the background and monitor the same `run/<id>/digest.log`, filtered to
+lines containing ` NEW ` or ` REGRESSED `. Each new problem then arrives while the bots continue. Do not watch only
+the console: `digest.log` joins server findings to bot and step, and coalesces repeat fingerprints.
+
+The retained `run/<id>/` directory contains:
+
+- `digest.log` and `logwatch-summary.json` — watcher classifications and counts.
+- `bots-run.json`, `bots/*.trace.jsonl`, and `bot.problems.jsonl` — provenance, ordered bot traffic, and failures.
+- `logs/gs`, `logs/ls`, and `logs/cs` — structured server events/problems and ordinary server logs.
+- `logs/containers/*.log` and `events.jsonl.gz` — final container logs and Docker lifecycle events.
+
+The script keeps the newest 20 local runs. A failed run still collects these artifacts and tears down its isolated
+stack unless `-Keep` was supplied.
