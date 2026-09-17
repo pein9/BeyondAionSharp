@@ -55,6 +55,9 @@ public sealed class GamePacketCodec
 		return CreateFrame(payload);
 	}
 
+	public byte[] EncodeClientFrame(BotClientPacket packet, AionConnection.State state) =>
+		EncodeClientFrame(packet.PacketType, state, packet.Body);
+
 	/// <summary>Decrypts and validates one server packet, advancing the server key.</summary>
 	public DecodedGamePacket DecodeServerFrame(ReadOnlySpan<byte> frame)
 	{
