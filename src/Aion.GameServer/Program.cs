@@ -145,7 +145,7 @@ var builder = Host.CreateDefaultBuilder(args)
 		}
 	);
 
-var host = builder.Build();
+using var host = builder.Build();
 AionLog.SetFactory(host.Services.GetRequiredService<ILoggerFactory>());
 using var processExceptionHandler = AionProcessExceptionHandler.Install();
 

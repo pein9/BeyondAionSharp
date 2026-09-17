@@ -69,6 +69,29 @@ public sealed class JsonLinesLoggerProviderTests
 		}
 	}
 
+	[Fact]
+	public void FlushesInformationRecordBeforeProviderIsDisposed()
+	{
+		var directory = Path.Combine(Path.GetTempPath(), $"aion-jsonl-{Guid.NewGuid():N}");
+		try
+		{
+			using var provider = new JsonLinesLoggerProvider(directory, "gs", "run-info");
+			var logger = provider.CreateLogger("InfoCategory");
+
+			logger.LogInformation("Complete record {Value}", 17);
+
+			var eventLines = ReadAllLinesWhileWriterIsOpen(Path.Combine(directory, "gs.events.jsonl"));
+			var line = Assert.Single(eventLines);
+			using var document = JsonDocument.Parse(line);
+			Assert.Equal("Complete record 17", document.RootElement.GetProperty("msg").GetString());
+		}
+		finally
+		{
+			if (Directory.Exists(directory))
+				Directory.Delete(directory, recursive: true);
+		}
+	}
+
 	private static string[] ReadAllLinesWhileWriterIsOpen(string path)
 	{
 		using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);

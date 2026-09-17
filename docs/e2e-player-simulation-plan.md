@@ -68,7 +68,7 @@ runs use their own isolated compose project.
 | B5 | **No client codec.** Nothing outside test-private helpers can encrypt a client packet, write a CM or decode an SM. `Aion.Commons/Crypto/AionXorCipher.cs` looks relevant but is not the game cipher. | Bots can neither act nor perceive. | `GameCrypt.cs` (unreferenced), `AionXorCipher.cs:14-16` |
 | B6 | **`AionConnection` needs a real socket.** The base constructor dereferences the socket; `SendPacket`, `Close` and `Disconnect` go through `SelectionKey`/dispatcher; `OnDisconnect` assumes the alive checker exists; type init starts 4 packet-processor threads. | No clean in-process bot connection, including quit and disconnect. | `AConnection.cs:31-42,63-76,123-163`; `AionConnection.cs:36-39,199-201` |
 | B7 | **Persistence is 56 static MySQL DAOs with no seam** (244 public static methods), plus six C#-only `I*Repository` DI interfaces of which only `IUsedIdRepository`, `IServerVariablesRepository` and `ICharacterSelectionRepository` are consumed. Character create, enter world, recipes and mail only work after a DB write succeeds; failures are swallowed. | SIM needs a database; a DB-less SIM silently loses state. | `DatabaseFactory.cs:151-157`; `RecipeList.cs:26,37`; `Program.cs:115-120` |
-| B8 | **Geodata is never loaded.** `GeoWorldLoader.Load` is a stub whose only action is a warning sent to a `NullLogger`, although `gameserver.geodata.enable` defaults to true; 230 geo files (158 MiB) are unused. `GetZ` returns NaN; `CanSee` is true within 80 m (false beyond, as in Java); fear, confuse, back-dash and random-move effects never displace; stagger, stumble, pull, dash and move-behind displace the full distance through walls at unchanged Z; NPCs chasing a jumping or flying target freeze. | Line of sight, Z, collision and NPC pathing are untestable in both modes and wrong in production. | `GeoEngine/GeoWorldLoader.cs`; `GeoMap.cs:126-156,217-221` |
+| B8 | **Geodata is never loaded.** `GeoWorldLoader.Load` is a stub whose only action is a warning through `AionLog`, although `gameserver.geodata.enable` defaults to true; 230 geo files (158 MiB) are unused. `GetZ` returns NaN; `CanSee` is true within 80 m (false beyond, as in Java); fear, confuse, back-dash and random-move effects never displace; stagger, stumble, pull, dash and move-behind displace the full distance through walls at unchanged Z; NPCs chasing a jumping or flying target freeze. | Line of sight, Z, collision and NPC pathing are untestable in both modes and wrong in production. | `GeoEngine/GeoWorldLoader.cs`; `GeoMap.cs:126-156,217-221` |
 | B9 | **Randomness cannot be seeded.** `Rnd` is a `ThreadLocal<Random>`; ~550 call sites. .NET also randomizes string hashing per process, so string-keyed and concurrent collections enumerate in a different order every run. | SIM runs cannot be replayed; kill and drop counts are not assertable. | `Commons/Utils/Rnd.cs:20` |
 | B10 | **Process-global state.** 93 `GetInstance` singletons (58 never-reset `SingletonHolder`s), a once-only `CronService`, a static `DatabaseFactory`, a static capture observer, and a bootstrap that changes the process CWD. | One world per test process; scenarios need isolation by account, channel and ordering (`P5-12`). | `CronService.cs:41-52`; `GameServerBootstrapService.cs:72` |
 | B11 | **Silent DB tests and flaky real-time tests.** The 10 env-gated DB tests return early and report Passed. 14 of the last 30 runs of the (since removed) hosted CI failed, several on real-time socket and shutdown tests. There is no hosted CI any more (D9), so every run is local. | New failures cannot be told from flakes (`P1-00`), and LIVE needs its own compose project (`P3-02`) and SIM a database script (`P5-06`). | `GameServerBootstrapTests.cs:330`; `ShutdownHookTests.cs` |
@@ -271,9 +271,15 @@ failures loud, and gets the test suite to a trustworthy green.
   the 10 env-gated DB facts and the two artifact-guarded readers (`PetJavaVectorArtifactReaderTests`,
   `PlayerProtectionActiveTaskStopTriggerJavaTraceArtifactReaderTests`) to `[SkippableFact]` + `Skip.IfNot`.
   A move to xUnit v3 is out of scope.
-- [ ] **P1-12** [BOTH] M — Record-only boot baseline: boot the game server against a local MySQL with logs on,
+- [x] **P1-12** [BOTH] M — Record-only boot baseline: boot the game server against a local MySQL with logs on,
   no client, idle for 5 minutes. Triage every Warning+ fingerprint as a bug (§7 or a fix) or an allowlist
-  entry (P1-13). Expect a wave; for example `QuestSpawnAnalyzer` throws scanning `*.java` handler folders.
+  entry (P1-13). Completed 2026-09-17 against Docker MySQL 8.4 only: 5.59 minutes from application start
+  through shutdown produced 169 valid event records and six problem records in three fingerprints. `2c206aaf`
+  (one quest-handler source scan error) is §7 #18/P7-01; `f802a125` (one unimplemented geo-loader warning) and
+  `39050e81` (four missing door-geometry warnings normalized across door ids) are §7 #22/P9-01. No fingerprint
+  qualifies for the P1-13 allowlist. The run also exposed and fixed incomplete JSONL tails by flushing every
+  event record and disposing all three server hosts. `game-server/log/server_errors.log` was written on boot.
+  (`c0ec6d07c`)
 - [ ] **P1-13** [BOTH] S — Shared problem allowlist `parity-artifacts/e2e/log-allowlist.json`:
   `{fp, reason, owner, tracking, modes, servers, maxCount, expires}`. The loader lives beside
   `LogFingerprint` and is used by P3-06 and P5-09. A check rejects entries with no owner or reason, expired
@@ -973,11 +979,11 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 15 | Game-hour consumers, weather check and `SM_GAME_TIME` broadcast unwired | `GameTime.java:150-154`, `GameTimeService.java:54-56` | P4-09 |
 | 16 | `Config.Load` runs after static data, world maps and game time are initialized | `GameServer.java:219` | P5-03 |
 | 17 | `SM_MOVE` player/summon branch never taken | `SM_MOVE.java:36` `instanceof PlayableMoveController` | P6-01 |
-| 18 | `QuestSpawnAnalyzer` scans Java source folders and aborts | `QuestSpawnAnalyzer.java:101-110` (Java ships those folders) | P7-01 |
+| 18 | `QuestSpawnAnalyzer` scans Java source folders and aborts (P1-12 baseline fingerprint `2c206aaf`, count 1) | `QuestSpawnAnalyzer.java:101-110` (Java ships those folders) | P7-01 |
 | 19 | `_19638TroublewithTwos` extra dialog branch | `_19638TroublewithTwos.java:48-50` (removed upstream in `1d6a2d8f7`) | P7-11 |
 | 20 | Duplicate `CraftSkillUpdateService`; the unused `Craft` copy returns ordinal 0 instead of null (latent) | `services/craft/CraftSkillUpdateService.java:79-81` | P8-03 |
 | 21 | `InventoryDAO.Store` catch scope too wide | `InventoryDAO.java:232` catches `SQLException` | P8-03 |
-| 22 | `GeoWorldLoader` is a stub | `GeoWorldLoader.java` (285 lines) | P9-01 |
+| 22 | `GeoWorldLoader` is a stub, so boot reports both the loader warning (`f802a125`, count 1) and four normalized missing-door-geometry warnings (`39050e81`, count 4) | `GeoWorldLoader.java` (285 lines); `GeoMap.java:287-301` | P9-01 |
 | 23 | Production boot skips `HousingService`/housing tasks, faction ratio counts, `InitSieges`, `PvpMapService.Init` | `GameServer.java:118-122,130-134,141,175` | Deferred (D7) |
 | 24 | `BossAiHarness.Kill` calls `OnDie` twice (test bug) | n/a | P6-08 |
 | 25 | The DB-backed full-boot test pre-registers test AIs before `StartAsync` initializes the real AI engine, and the assembly-wide `SiegeServiceTestInit` can construct the process-global siege singleton against empty fixture data; in isolation this produces duplicate-AI registration before boot or a stale-location NRE in the separately asserted deferred boot tail | n/a (C# test-process defect; production `StartAsync` completed for P0-03 after bypassing the test AI preload) | P1-12 / P5-12 |

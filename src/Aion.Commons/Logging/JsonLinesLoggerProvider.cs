@@ -78,10 +78,10 @@ public sealed class JsonLinesLoggerProvider : ILoggerProvider, ISupportExternalS
 			if (_disposed)
 				return;
 			_events.WriteLine(line);
+			_events.Flush();
 			if (level >= LogLevel.Warning)
 			{
 				_problems.WriteLine(line);
-				_events.Flush();
 				_problems.Flush();
 			}
 		}
