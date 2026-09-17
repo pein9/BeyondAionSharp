@@ -112,13 +112,59 @@ public sealed class BotServerPacketDecoder
 	private static IReadOnlyDictionary<string, object?> DecodeCharacterList(ReadOnlySpan<byte> body)
 	{
 		var r = new PacketBodyReader(body);
-		return Fields(("playOk2", r.ReadInt32()), ("characterCount", r.ReadByte()));
+		var playOk2 = r.ReadInt32();
+		var characterCount = r.ReadByte();
+		var characters = new List<IReadOnlyDictionary<string, object?>>(characterCount);
+		for (var i = 0; i < characterCount; i++)
+			characters.Add(DecodeCharacterSummary(ref r));
+		return Fields(("playOk2", playOk2), ("characterCount", characterCount), ("characters", characters));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeCreateCharacter(ReadOnlySpan<byte> body)
 	{
 		var r = new PacketBodyReader(body);
-		return Fields(("responseCode", r.ReadInt32()));
+		var responseCode = r.ReadInt32();
+		return responseCode == 0
+			? Fields(("responseCode", responseCode), ("character", DecodeCharacterSummary(ref r)))
+			: Fields(("responseCode", responseCode));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeCharacterSummary(ref PacketBodyReader r)
+	{
+		var objectId = r.ReadInt32();
+		var nameBytes = r.ReadBytes((25 + 1) * sizeof(char));
+		var name = System.Text.Encoding.Unicode.GetString(nameBytes).TrimEnd('\0');
+		var gender = r.ReadInt32();
+		var race = r.ReadInt32();
+		var playerClass = r.ReadInt32();
+		r.Skip(5 * sizeof(int)); // voice and four appearance colours
+		r.Skip(52); // face/body appearance bytes, including the three reserved bytes
+		r.Skip(sizeof(float)); // height
+		var templateId = r.ReadInt32();
+		var mapId = r.ReadInt32();
+		var x = r.ReadSingle();
+		var y = r.ReadSingle();
+		var z = r.ReadSingle();
+		var heading = r.ReadInt32();
+		var level = r.ReadUInt16();
+		r.Skip(sizeof(ushort)); // reserved
+		r.Skip(2 * sizeof(int)); // title and legion id
+		r.Skip((40 + 1) * sizeof(char)); // fixed legion name
+		r.Skip(sizeof(ushort)); // legion membership flag
+		var lastOnlineEpochSeconds = r.ReadInt32();
+		r.Skip(16 * (sizeof(byte) + (3 * sizeof(int)))); // visible equipment
+		r.Skip(6 * sizeof(int) + 68); // client-reserved blocks
+		var deletionTimeSeconds = r.ReadInt32();
+		r.Skip(2 * sizeof(ushort)); // helmet display and reserved
+		r.Skip(4 * sizeof(int)); // mail counters
+		r.Skip(sizeof(long)); // broker proceeds
+		r.Skip(7 * sizeof(int)); // reserved values and character-ban timestamps
+		_ = r.ReadString(); // character-ban reason
+		return Fields(
+			("objectId", objectId), ("name", name), ("gender", gender), ("race", race),
+			("playerClass", playerClass), ("templateId", templateId), ("mapId", mapId),
+			("x", x), ("y", y), ("z", z), ("heading", heading), ("level", level),
+			("lastOnlineEpochSeconds", lastOnlineEpochSeconds), ("deletionTimeSeconds", deletionTimeSeconds));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeEnterWorldCheck(ReadOnlySpan<byte> body)

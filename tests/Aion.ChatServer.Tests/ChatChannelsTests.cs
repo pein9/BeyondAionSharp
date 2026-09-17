@@ -24,6 +24,28 @@ public class ChatChannelsTests
 	}
 
 	[Fact]
+	public async Task GetOrCreate_ConcurrentRequestsReuseOneRegionChannel()
+	{
+		var channels = new ChatChannels(NullLogger<ChatChannels>.Instance);
+		const string identifier = "@\u0001public_ALL\u00011.0.AION.KOR";
+		using var start = new ManualResetEventSlim();
+		var requests = Enumerable.Range(1, 32)
+			.Select(id => Task.Run(() =>
+			{
+				var client = new ChatClient(id, new byte[48], $"account{id}", $"Daeva{id}", Race.Elyos, accessLevel: 0);
+				start.Wait();
+				return channels.GetOrCreate(client, identifier);
+			}))
+			.ToArray();
+
+		start.Set();
+		var results = await Task.WhenAll(requests);
+
+		var channel = Assert.IsType<RegionChannel>(results[0]);
+		Assert.All(results, result => Assert.Same(channel, result));
+	}
+
+	[Fact]
 	public void GetOrCreate_RejectsOtherRaceForNormalAccessClient()
 	{
 		var channels = new ChatChannels(NullLogger<ChatChannels>.Instance);

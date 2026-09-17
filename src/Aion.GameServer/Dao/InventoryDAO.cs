@@ -119,7 +119,10 @@ public class InventoryDAO
                 if (slotType == 0)
                     continue; // skip equipment like rings and secondary weapons, as they are not visible and AbstractPlayerInfoPacket supports only 16 items
                 int itemSkinId = rs.GetInt32(rs.GetOrdinal("item_skin"));
-                int godStoneItemId = rs.GetInt32(rs.GetOrdinal("godstone_item_id"));
+                int godStoneOrd = rs.GetOrdinal("godstone_item_id");
+                // Java ResultSet.getInt returns 0 for SQL NULL. The LEFT JOIN has no row for ordinary
+                // equipment, so preserve that value instead of letting MySqlConnector throw.
+                int godStoneItemId = rs.IsDBNull(godStoneOrd) ? 0 : rs.GetInt32(godStoneOrd);
                 int icOrd = rs.GetOrdinal("item_color");
                 int? itemColor = rs.IsDBNull(icOrd) ? (int?)null : rs.GetInt32(icOrd);
                 items.Add(new PlayerAccountData.VisibleItem((sbyte)slotType, itemSkinId, godStoneItemId, itemColor));

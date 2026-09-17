@@ -84,6 +84,40 @@ public sealed class BotServerPacketDecoderTests
 	}
 
 	[Fact]
+	public void CharacterSelectionDecodersExposeIdentityAndPersistedPosition()
+	{
+		var summary = CreateCharacterSummary(100_001, "Aelivea", 210010000, 121.25f, 132.5f, 144.75f);
+		using var listBody = new MemoryStream();
+		using (var writer = new BinaryWriter(listBody, Encoding.Unicode, leaveOpen: true))
+		{
+			writer.Write(0x11223344);
+			writer.Write((byte)1);
+			writer.Write(summary);
+		}
+
+		var list = decoder.Decode(typeof(SM_CHARACTER_LIST), listBody.ToArray());
+		var characters = list.Get<List<IReadOnlyDictionary<string, object?>>>("characters");
+		var character = Assert.Single(characters);
+		Assert.Equal(100_001, character["objectId"]);
+		Assert.Equal("Aelivea", character["name"]);
+		Assert.Equal(210010000, character["mapId"]);
+		Assert.Equal(121.25f, character["x"]);
+		Assert.Equal(132.5f, character["y"]);
+		Assert.Equal(144.75f, character["z"]);
+
+		using var createBody = new MemoryStream();
+		using (var writer = new BinaryWriter(createBody, Encoding.Unicode, leaveOpen: true))
+		{
+			writer.Write(0);
+			writer.Write(summary);
+		}
+		var create = decoder.Decode(typeof(SM_CREATE_CHARACTER), createBody.ToArray());
+		var created = create.Get<IReadOnlyDictionary<string, object?>>("character");
+		Assert.Equal(100_001, created["objectId"]);
+		Assert.Equal("Aelivea", created["name"]);
+	}
+
+	[Fact]
 	public void SystemMessageNameTableIsCurrentWithTheFactoryCatalog()
 	{
 		var methods = typeof(SM_SYSTEM_MESSAGE).GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
@@ -133,6 +167,49 @@ public sealed class BotServerPacketDecoderTests
 	}
 
 	private static bool IsNumeric(object value) => value is byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal;
+
+	private static byte[] CreateCharacterSummary(int objectId, string name, int mapId, float x, float y, float z)
+	{
+		using var output = new MemoryStream();
+		using var writer = new BinaryWriter(output, Encoding.Unicode, leaveOpen: true);
+		writer.Write(objectId);
+		WriteFixedString(writer, name, 25);
+		writer.Write(0); // gender
+		writer.Write(0); // Elyos
+		writer.Write(0); // warrior
+		for (var i = 0; i < 5; i++) writer.Write(0); // voice and colours
+		writer.Write(new byte[52]);
+		writer.Write(1f);
+		writer.Write(0); // template
+		writer.Write(mapId);
+		writer.Write(x);
+		writer.Write(y);
+		writer.Write(z);
+		writer.Write(32); // heading
+		writer.Write((ushort)1);
+		writer.Write((ushort)0);
+		writer.Write(0); // title
+		writer.Write(0); // legion id
+		WriteFixedString(writer, "", 40);
+		writer.Write((ushort)0);
+		writer.Write(1_700_000_000); // last online
+		writer.Write(new byte[16 * 13]);
+		writer.Write(new byte[(6 * sizeof(int)) + 68]);
+		writer.Write(0); // deletion time
+		writer.Write(new byte[2 * sizeof(ushort)]);
+		writer.Write(new byte[4 * sizeof(int)]);
+		writer.Write(0L); // broker proceeds
+		writer.Write(new byte[7 * sizeof(int)]);
+		writer.Write((ushort)0); // empty ban reason
+		return output.ToArray();
+	}
+
+	private static void WriteFixedString(BinaryWriter writer, string value, int characters)
+	{
+		for (var i = 0; i < characters; i++)
+			writer.Write(i < value.Length ? value[i] : '\0');
+		writer.Write('\0');
+	}
 
 	private static void AssertCaseWithoutTopLevelPrimitive(Type packetType, DecodedBotServerPacket decoded, int comparisons)
 	{

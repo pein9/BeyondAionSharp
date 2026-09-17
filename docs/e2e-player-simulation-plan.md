@@ -554,10 +554,17 @@ sockets before the large clock migration.
   `compose events --until` returns its complete stream with exit 1 plus `EOF`, so the collector accepts only that
   exact benign terminal pair. A Docker-only `p308-runner2` connect run passed, carried its run id in GS JSONL and the
   packet tap, produced validated gzip artifacts, and left no containers or volumes. Commit: `297ae87e8`.
-- [ ] **P3-09** [LIVE] S — Scenario **L0 walking skeleton**: login → game auth → create Elyos warrior → enter
+- [x] **P3-09** [LIVE] S — Scenario **L0 walking skeleton**: login → game auth → create Elyos warrior → enter
   world → `CM_CHAT_AUTH` → `SM_CHAT_INIT` → chat-server auth → join the region channel → a second bot receives a
   channel message → walk 10 m → ping → quit → wait the re-entry time → log in again → character list shows the
-  character, position persisted, `online=0` after quit.
+  character, position persisted, `online=0` after quit. `Aion.LiveBots` now drives the complete coordinated
+  two-player flow, decodes the full create/list character summaries, verifies offline and position state through
+  the admin endpoint and relogin packet, and safely drains an in-flight receive during timeout cleanup. The bot
+  overlay enables and authenticates the real game/chat bridge. The run exposed and fixed two production defects:
+  concurrent chat joins could create duplicate region channels (§7 #26), and a nullable godstone LEFT JOIN aborted
+  character-list equipment loading (§7 #27). Docker-only `p309-l0e` completed both bots with no bot problems and
+  no recurrence of the inventory fingerprint; record-mode logging contained only the already scheduled §7 #18
+  and #22 fingerprints. Commit: `efddb7a7b`.
 - [ ] **P3-10** [LIVE] S — Watcher canaries, one per server (a silent watcher looks identical to a broken one):
   `CM_FRIEND_STATUS` with undefined status 2 produces exactly one Warning; `CM_EMOTION` with type `0xFF` produces
   exactly one `NEW` error line with bot and step (it logs from `ReadImpl`, so it proves the read-path scope);
@@ -1115,6 +1122,8 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 23 | Production boot skips `HousingService`/housing tasks, faction ratio counts, `InitSieges`, `PvpMapService.Init` | `GameServer.java:118-122,130-134,141,175` | Deferred (D7) |
 | 24 | `BossAiHarness.Kill` calls `OnDie` twice (test bug) | n/a | P6-08 |
 | 25 | The DB-backed full-boot test pre-registers test AIs before `StartAsync` initializes the real AI engine, and the assembly-wide `SiegeServiceTestInit` can construct the process-global siege singleton against empty fixture data; in isolation this produces duplicate-AI registration before boot or a stale-location NRE in the separately asserted deferred boot tail | n/a (C# test-process defect; production `StartAsync` completed for P0-03 after bypassing the test AI preload) | P1-12 / P5-12 |
+| 26 | Concurrent chat clients can create separate channels for the same identifier, so neither receives the other's message | `ChatChannels.java:52-79` executes the scan/add path on the single NIO read/write dispatcher | Resolved by P3-09 (`efddb7a7b`) |
+| 27 | Character-list equipment loading throws for every visible item without a godstone because the LEFT JOIN's null `godstone_item_id` is read with `GetInt32` | `InventoryDAO.java:97` uses `ResultSet.getInt`, whose SQL-null value is `0` | Resolved by P3-09 (`efddb7a7b`) |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

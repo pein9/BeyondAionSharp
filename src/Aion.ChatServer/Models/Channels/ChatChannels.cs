@@ -6,6 +6,7 @@ namespace Aion.ChatServer.Models.Channels;
 public sealed class ChatChannels
 {
 	private readonly ConcurrentDictionary<int, Channel> _channels = new();
+	private readonly object _creationLock = new();
 	private readonly ILogger<ChatChannels> _logger;
 
 	public ChatChannels(ILogger<ChatChannels> logger)
@@ -31,17 +32,22 @@ public sealed class ChatChannels
 			return null;
 		}
 
-		foreach (var channel in _channels.Values)
+		// Java handles chat packets on one NIO read/write dispatcher, so its scan followed by add is effectively
+		// serialized. C# runs client handlers concurrently and must preserve that invariant explicitly.
+		lock (_creationLock)
 		{
-			if (channel.Matches(channelType, gameServerId, race, channelMeta))
-				return channel;
+			foreach (var channel in _channels.Values)
+			{
+				if (channel.Matches(channelType, gameServerId, race, channelMeta))
+					return channel;
+			}
+
+			var newChannel = AddChannel(channelType, gameServerId, race, channelMeta);
+			if (newChannel is JobChannel jobChannel && !jobChannel.HasAliases)
+				_logger.LogWarning("{Client} requested channel for unknown class: {Class}", client, channelMeta);
+
+			return newChannel;
 		}
-
-		var newChannel = AddChannel(channelType, gameServerId, race, channelMeta);
-		if (newChannel is JobChannel jobChannel && !jobChannel.HasAliases)
-			_logger.LogWarning("{Client} requested channel for unknown class: {Class}", client, channelMeta);
-
-		return newChannel;
 	}
 
 	public static (ChannelType ChannelType, int GameServerId, Race Race, string ChannelMeta)? ParseIdentifier(string identifier)

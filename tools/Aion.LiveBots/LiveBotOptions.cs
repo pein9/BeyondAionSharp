@@ -7,7 +7,11 @@ namespace Aion.LiveBots;
 public sealed record LiveBotOptions(
 	string Run,
 	string OutputDirectory,
+	IPEndPoint LoginEndPoint,
 	IPEndPoint GameEndPoint,
+	IPEndPoint ChatEndPoint,
+	Uri AdminBaseUri,
+	string AdminToken,
 	int BotCount,
 	IReadOnlyList<string> Scenarios,
 	TimeSpan ConnectTimeout,
@@ -15,12 +19,14 @@ public sealed record LiveBotOptions(
 	int Seed,
 	string GitSha,
 	string Profile,
-	string TimeZone)
+	string TimeZone,
+	TimeSpan ReentryDelay)
 {
 	public const string Usage = "Usage: dotnet run --project tools/Aion.LiveBots -- --run <id> --output <run-dir> " +
-		"[--scenario connect[,connect]] [--bots N] [--host 127.0.0.1] [--game-port 17777] " +
+		"[--scenario connect|L0] [--bots N] [--host 127.0.0.1] [--login-port 12106] " +
+		"[--game-port 17777] [--chat-port 11241] [--admin-port 17780] [--admin-token TOKEN] " +
 		"[--connect-timeout-seconds 10] [--step-timeout-seconds 15] [--seed N] [--git-sha SHA] " +
-		"[--profile deterministic] [--time-zone ID]";
+		"[--profile deterministic] [--time-zone ID] [--reentry-seconds 10]";
 
 	public static LiveBotOptions Parse(string[] args)
 	{
@@ -38,20 +44,29 @@ public sealed record LiveBotOptions(
 			throw new ArgumentException("--run may contain only ASCII letters, digits, '-' and '_'.");
 		var output = Path.GetFullPath(Required(values, "output"));
 		var host = IPAddress.Parse(Get(values, "host", "127.0.0.1"));
-		var port = PositiveInt(values, "game-port", EnvironmentPort("AION_BOT_GAME_PORT", 17777), 65535);
+		var loginPort = PositiveInt(values, "login-port", EnvironmentPort("AION_BOT_LOGIN_PORT", 12106), 65535);
+		var gamePort = PositiveInt(values, "game-port", EnvironmentPort("AION_BOT_GAME_PORT", 17777), 65535);
+		var chatPort = PositiveInt(values, "chat-port", EnvironmentPort("AION_BOT_CHAT_PORT", 11241), 65535);
+		var adminPort = PositiveInt(values, "admin-port", EnvironmentPort("AION_BOT_ADMIN_PORT", 17780), 65535);
 		var bots = PositiveInt(values, "bots", 1, 99);
 		var connectSeconds = PositiveInt(values, "connect-timeout-seconds", 10, 3600);
 		var stepSeconds = PositiveInt(values, "step-timeout-seconds", 15, 3600);
 		var seed = Int(values, "seed", 1);
 		var scenarios = Get(values, "scenario", "connect")
 			.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-		if (scenarios.Length == 0 || scenarios.Any(scenario => scenario != "connect"))
-			throw new ArgumentException("P3-05 supports the simple scenario list containing only 'connect'.");
+		if (scenarios.Length == 0 || scenarios.Any(scenario => scenario is not ("connect" or "L0")))
+			throw new ArgumentException("Supported scenarios are 'connect' and 'L0'.");
+		if (scenarios.Contains("L0", StringComparer.Ordinal) && scenarios.Length != 1)
+			throw new ArgumentException("L0 is a coordinated two-bot scenario and must be run by itself.");
+		if (scenarios.Contains("L0", StringComparer.Ordinal))
+			bots = Math.Max(2, bots);
+		var reentrySeconds = PositiveInt(values, "reentry-seconds", 10, 3600);
 
 		var known = new HashSet<string>(StringComparer.Ordinal)
 		{
-			"run", "output", "host", "game-port", "bots", "scenario", "connect-timeout-seconds",
-			"step-timeout-seconds", "seed", "git-sha", "profile", "time-zone",
+			"run", "output", "host", "login-port", "game-port", "chat-port", "admin-port", "admin-token",
+			"bots", "scenario", "connect-timeout-seconds", "step-timeout-seconds", "reentry-seconds",
+			"seed", "git-sha", "profile", "time-zone",
 		};
 		var unknown = values.Keys.FirstOrDefault(key => !known.Contains(key));
 		if (unknown != null)
@@ -60,7 +75,11 @@ public sealed record LiveBotOptions(
 		return new LiveBotOptions(
 			run,
 			output,
-			new IPEndPoint(host, port),
+			new IPEndPoint(host, loginPort),
+			new IPEndPoint(host, gamePort),
+			new IPEndPoint(host, chatPort),
+			new Uri($"http://{(host.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? $"[{host}]" : host.ToString())}:{adminPort}/"),
+			Get(values, "admin-token", Environment.GetEnvironmentVariable("AION_BOT_ADMIN_TOKEN") ?? "aion-bots-local-token"),
 			bots,
 			scenarios,
 			TimeSpan.FromSeconds(connectSeconds),
@@ -68,7 +87,8 @@ public sealed record LiveBotOptions(
 			seed,
 			Get(values, "git-sha", ResolveGitSha()),
 			Get(values, "profile", "deterministic"),
-			Get(values, "time-zone", TimeZoneInfo.Local.Id));
+			Get(values, "time-zone", TimeZoneInfo.Local.Id),
+			TimeSpan.FromSeconds(reentrySeconds));
 	}
 
 	private static string Required(IReadOnlyDictionary<string, string> values, string name) =>
