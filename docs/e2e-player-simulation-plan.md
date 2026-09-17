@@ -817,12 +817,18 @@ replays the same seeded trace.
   fixture or process exit. The default solution run reports a visible skip unless Docker integration is enabled;
   an enabled Docker run boots the full world and passes. Runtime config scopes preserve the P5-03 root and hook
   across Java-shaped event reloads. (`8489e418f`)
-- [ ] **P5-07** [SIM] M — In-process transport: client-encrypted CM bytes → `AionConnection.ProcessData` (decrypt,
+- [x] **P5-07** [SIM] M — In-process transport: client-encrypted CM bytes → `AionConnection.ProcessData` (decrypt,
   fake-packet check, `lastClientMessageTime`, flood check, `TryCreatePacket`, `Read`) → the P2-00 `ExecutePacket`
   override runs `Run` inline on the sim thread. After every CM and every clock advance, drain the send queue
   through `AionServerPacket.Write` (this **serializes**, which matters because `SM_PLAY_MOVIE.WriteImpl` sets
   player state) and decode with the bot codec. Strict mode fails on an undecodable frame, leftover bytes or a bad
   header. Depends on P2-00, P2-08.
+  `InProcessBotTransport` now consumes complete encrypted client frames through the faithful socketless
+  connection, executes CMs inline, and drains all resulting server packets through `AionServerPacket.Write` into
+  the bot decoder after each CM or injected virtual-clock advance. Its strict path rejects length/header failures
+  and unread client bytes; graceful close and crash retain the `IBotTransport` semantics, with crash dropping
+  queued output. Tests pin crypt establishment, CM ping/PONG, serializer-side movie state, strict failures and
+  abrupt-drop behavior. (`69d16272e`)
 - [ ] **P5-08** [SIM] M — Sim driver: advance to `min(next bot action, next due timer)`; timeouts in virtual
   milliseconds; a wall-time budget per scenario, excluding the once-per-process boot. Fail a scenario whose
   virtual-minute cost exceeds the P0-03 budget and print the top periodic tasks by time.

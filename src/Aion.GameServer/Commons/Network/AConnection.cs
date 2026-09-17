@@ -196,6 +196,8 @@ public abstract class AConnection<T> : AConnection where T : BaseServerPacket
     protected virtual void EnqueuePacket(T packet, bool closing)
     {
         GetSendMsgQueue().Enqueue(packet);
+        if (IsSocketless)
+            return;
         key.InterestOps(closing ? SelectionKey.OP_WRITE : key.InterestOps() | SelectionKey.OP_WRITE);
         if (!closing)
             key.Selector().Wakeup();

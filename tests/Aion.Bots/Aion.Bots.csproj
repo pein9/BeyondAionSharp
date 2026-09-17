@@ -14,4 +14,8 @@
     <ProjectReference Include="..\..\src\Aion.LoginServer\Aion.LoginServer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Aion.GameServer.Tests" />
+  </ItemGroup>
+
 </Project>
