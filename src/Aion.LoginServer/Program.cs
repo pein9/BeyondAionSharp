@@ -63,6 +63,7 @@ var builder = Host.CreateDefaultBuilder(args)
 	);
 
 var host = builder.Build();
+AionLog.SetFactory(host.Services.GetRequiredService<ILoggerFactory>());
 
 var logger = host.Services.GetRequiredService<ILogger<Program>>();
 logger.LogInformation("Aion Login Server starting...");

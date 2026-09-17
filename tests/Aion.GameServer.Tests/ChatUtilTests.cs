@@ -7,6 +7,7 @@ using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Tests;
 
+[Collection("GoldenDataManager")]
 public sealed class ChatUtilTests
 {
 	// --- Existing L10n ---

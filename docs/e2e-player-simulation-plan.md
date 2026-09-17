@@ -61,7 +61,7 @@ runs use their own isolated compose project.
 
 | # | Finding (verified 2026-09-17) | Why it matters | Evidence |
 |---|---|---|---|
-| B1 | **Most game-server errors still go nowhere until the bridge is bound.** P1-02 replaced all 298 source null-loggers with late-bound `AionLog` loggers, but none of the three hosts binds the bridge yet and the game server writes no log file. | Neither mode can watch errors until P1-03. A green run proves little. | `AionLog.cs`; the three `Program.cs` host builders |
+| B1 | **Logs are visible, but do not fail tests yet.** P1-02/P1-03 replaced the 298 source null-loggers, bound the bridge in all three hosts and added the Java-compatible game log files. Capturing/fingerprint policy and triage remain in P1-07 through P1-13. | Until policy enforcement lands, a green run can still hide logged problems. | `AionLog.cs`; `AionFileLoggerProvider.cs`; the three `Program.cs` host builders |
 | B2 | **A periodic task dies on its first exception.** The catch in `RunFixedRateAsync` is outside the loop, and the loop is fixed-delay. Java's `RunnableWrapper` logs, keeps the schedule and runs at a fixed rate. | One bad NPC stops all NPC movement for the rest of a LIVE run; a failed gather tick locks that node. | `ThreadPoolManager.cs:143-169` |
 | B3 | **No single clock.** ~393 direct wall-clock code lines in 203 files; `SystemClock` has 5 readers; more than 20 sites compare a `SystemClock` value with a wall-clock one. | With a virtual clock ahead of wall time, casts after the first are rejected (with a fixed past epoch the 350 ms cast gate never fires instead); NPCs do not move; item use delays and other wall-clock cooldowns never expire; effect remaining times freeze. Player skill cooldowns and effect end timers already follow the virtual clock. | Mixed: `CM_CASTSPELL.cs:18,105` vs `Skill.cs:556`; `Skill.cs:472-478` vs `CreatureMoveController.cs:18,78`. Unrouted: `NpcMoveController.cs:266` |
 | B4 | **The virtual scheduler is not ready for a whole server.** It swallows exceptions from one-shot timers (`RunSynchronously` stores them). It stops running timers after 100,000 ticks **within one `Advance`** yet still moves the clock to the target, so the skipped timers run on the next `Advance` and move the clock **backwards** (the nine periodic managers alone tick 18.75/s, so one ~89-minute `Advance` hits the cap). Its handles report `GetDelay` ≤ 0 because `Deferred` stamps creation time. It is not thread-safe, and real threads bypass it (PLINQ in `MoveTaskManager`, the Quartz cron thread, `PacketProcessor`, the `NetFlusher` timer). | Failures vanish in SIM; long advances fire timers late and rewind time; a looted corpse decays immediately in SIM. | `VirtualThreadPool.cs:24,44,63-95`; `ThreadPoolManager.cs:241-246,269-275,290-294`; `DropService.cs:111-115,163` |
@@ -207,7 +207,9 @@ failures loud, and gets the test suite to a trustworthy green.
   `LoopbackSockets` collection). Done when `dotnet test AionServer.slnx` passes 10 times in a row locally.
   `ShutdownHookTests` now drives the existing delay seam with zero time and awaits a completion signal; the two
   socket classes were already in the non-parallel `LoopbackSockets` collection. Ten consecutive local solution
-  runs passed on 2026-09-17. (`82d810b7a`)
+  runs passed on 2026-09-17. P1-03's later full-suite validation exposed the same class of race around
+  `AdminConfig.NAME_TAGS`; the serialisation ratchet now covers that global too. (`82d810b7a`; follow-up in
+  `25a65f3ac`)
 - [x] **P1-01** [BOTH] S — Static logger bridge, `src/Aion.Commons/Logging/AionLog.cs`: `For(category)` returns
   a forwarding logger that resolves the factory **at call time** (safe in static initializers that run
   before the host exists); `SetFactory(ILoggerFactory)`; an AsyncLocal override for parallel tests (same
@@ -219,10 +221,10 @@ failures loud, and gets the test suite to a trustworthy green.
   (`GAMECONNECTION_LOG`, `CRAFT_LOG`, `ITEM_LOG`, ...); `AuditLogger` becomes `AUDIT_LOG`. Done when the
   §1 baseline grep returns 0 outside `AionLog.cs`, the warning baseline holds and the suite is green.
   Depends on P1-01. (`2f12235a2`)
-- [ ] **P1-03** [LIVE] S — Bind the bridge in all three `Program.cs` files after `Build()`. Add
+- [x] **P1-03** [LIVE] S — Bind the bridge in all three `Program.cs` files after `Build()`. Add
   `AionFileLoggerProvider` to the game server so `game-server/log/server_{console,warnings,errors}.log` exist,
   plus the per-category files Java's `logback.xml` routes (`craft.log`, `exchange.log`, `mail.log`,
-  `kill.log`, `tampering.log`, `item.log`, `adminaudit.log`).
+  `kill.log`, `tampering.log`, `item.log`, `adminaudit.log`). (`25a65f3ac`)
 - [ ] **P1-04** [BOTH] S — Parity fix (B2): in `ThreadPoolManager.RunFixedRateAsync` catch and log **per
   iteration**, keep running, and schedule at a fixed rate (Java `RunnableWrapper(catchAndLogThrowables=true)`).
   Also port `ExecuteWrapper`'s slow-task warning (`MAXIMUM_RUNTIME_IN_MILLISEC_WITHOUT_WARNING`), which Java

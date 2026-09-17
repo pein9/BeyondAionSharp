@@ -134,6 +134,7 @@ var builder = Host.CreateDefaultBuilder(args)
 		{
 			logging.ClearProviders();
 			logging.AddConsole();
+			logging.AddProvider(new AionFileLoggerProvider(ResolveJavaModuleLogDirectory("game-server")));
 			if (hostContext.HostingEnvironment.IsDevelopment())
 			{
 				logging.AddDebug();
@@ -142,6 +143,7 @@ var builder = Host.CreateDefaultBuilder(args)
 	);
 
 var host = builder.Build();
+AionLog.SetFactory(host.Services.GetRequiredService<ILoggerFactory>());
 
 // Singleton-bridge wiring (see docs/HANDOFF.md "SINGLETON-BRIDGE"): bind DI-created engine
 // services to their Java-style static accessors so per-instance domain objects (Creature,
@@ -159,4 +161,17 @@ finally
 {
 	DatabaseFactory.Dispose();
 	logger.LogInformation("Aion Game Server stopped.");
+}
+
+static string ResolveJavaModuleLogDirectory(string moduleName)
+{
+	var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+	while (directory != null)
+	{
+		if (Directory.Exists(Path.Combine(directory.FullName, moduleName, "config")))
+			return Path.Combine(directory.FullName, moduleName, "log");
+		directory = directory.Parent;
+	}
+
+	return Path.Combine(Directory.GetCurrentDirectory(), "log");
 }

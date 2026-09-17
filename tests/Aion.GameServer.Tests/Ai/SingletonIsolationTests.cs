@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 namespace Aion.GameServer.Tests.Ai;
 
 /// <summary>
-/// One structural pin: every test class that swaps a global singleton must be in the single
+/// One structural pin: every test class that mutates shared process-global state must be in the single
 /// serialising collection.
 /// </summary>
 /// <remarks>
@@ -45,8 +45,8 @@ public sealed class SingletonIsolationTests
 		RegexOptions.Compiled);
 
 	/// <summary>What a test file does that makes it unsafe beside another one.</summary>
-	private static readonly Regex SwapsASingleton = new(
-		@"\b(DataManager|GameWorld|ThreadPoolManager)\.(Register|Restore)Instance\s*\(",
+	private static readonly Regex MutatesGlobalState = new(
+		@"\b(?:(DataManager|GameWorld|ThreadPoolManager)\.(Register|Restore)Instance\s*\(|AdminConfig\.NAME_TAGS\s*(?:\?\?=|=))",
 		RegexOptions.Compiled);
 
 	[Fact]
@@ -66,7 +66,7 @@ public sealed class SingletonIsolationTests
 				continue;
 
 			string text = File.ReadAllText(path);
-			if (!SwapsASingleton.IsMatch(text))
+			if (!MutatesGlobalState.IsMatch(text))
 				continue;
 
 			// Both spellings are in use: [Collection("...")] and [Xunit.Collection("...")].
@@ -75,7 +75,7 @@ public sealed class SingletonIsolationTests
 		}
 
 		Assert.True(loose.Count == 0,
-			"these swap DataManager, GameWorld or ThreadPoolManager and are not in the \"" + Serialising
+			"these mutate DataManager, GameWorld, ThreadPoolManager or AdminConfig.NAME_TAGS and are not in the \"" + Serialising
 			+ "\" collection, so they run in parallel with every test that shares those singletons:"
 			+ Environment.NewLine + string.Join(Environment.NewLine, loose.OrderBy(s => s)));
 	}

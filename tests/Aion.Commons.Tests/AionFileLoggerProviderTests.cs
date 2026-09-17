@@ -43,4 +43,58 @@ public sealed class AionFileLoggerProviderTests
 				Directory.Delete(logDirectory, recursive: true);
 		}
 	}
+
+	[Fact]
+	public void FileLogger_RoutesJavaNamedCategoriesWithMatchingAdditivity()
+	{
+		var logDirectory = Path.Combine(Path.GetTempPath(), "aion-file-logger-" + Guid.NewGuid().ToString("N"));
+		try
+		{
+			using var loggerFactory = LoggerFactory.Create(
+				builder =>
+				{
+					builder.ClearProviders();
+					builder.SetMinimumLevel(LogLevel.Trace);
+					builder.AddProvider(new AionFileLoggerProvider(logDirectory));
+				});
+
+			var expectedRoutes = new Dictionary<string, string>
+			{
+				["ADMINAUDIT_LOG"] = "adminaudit.log",
+				["AUDIT_LOG"] = "audit.log",
+				["CHAT_LOG"] = "chat.log",
+				["CRAFT_LOG"] = "craft.log",
+				["EXCHANGE_LOG"] = "exchange.log",
+				["GAMECONNECTION_LOG"] = "gameconnections.log",
+				["EVENT_LOG"] = "event.log",
+				["INSTANCE_LOG"] = "instance.log",
+				["TAMPERING_LOG"] = "tampering.log",
+				["ITEM_LOG"] = "item.log",
+				["ITEM_HTML_LOG"] = "item_htmls.log",
+				["KILL_LOG"] = "kill.log",
+				["MAIL_LOG"] = "mail.log",
+				["SIEGE_LOG"] = "siege.log",
+				["SYSMAIL_LOG"] = "sysmail.log",
+				["WEB_REWARDS_LOG"] = "webrewards.log",
+				["HOUSE_AUCTION_LOG"] = "auction.log",
+				["GMITEMRESTRICTION"] = "gm_item_restriction.log",
+				["PLAYERTRANSFER"] = "playertransfer.log",
+			};
+
+			foreach (var (category, fileName) in expectedRoutes)
+			{
+				loggerFactory.CreateLogger(category).LogInformation("route {Category}", category);
+				Assert.Contains(category, File.ReadAllText(Path.Combine(logDirectory, fileName)));
+			}
+
+			var console = File.ReadAllText(Path.Combine(logDirectory, "server_console.log"));
+			Assert.Contains("EXCHANGE_LOG", console);
+			Assert.DoesNotContain("CRAFT_LOG", console);
+		}
+		finally
+		{
+			if (Directory.Exists(logDirectory))
+				Directory.Delete(logDirectory, recursive: true);
+		}
+	}
 }

@@ -22,6 +22,7 @@ namespace Aion.GameServer.Tests;
 /// instead of the retired flat-snapshot reworked packet. Java pokes private fields via Unsafe;
 /// C# uses reflection field-set (lastUpdate) and SetPosition for the worldId-bearing case.
 /// </summary>
+[Collection("GoldenDataManager")]
 public sealed class SmFindGroupTests
 {
     [Fact]

@@ -6,6 +6,30 @@ namespace Aion.Commons.Logging;
 
 public sealed class AionFileLoggerProvider : ILoggerProvider
 {
+	private static readonly IReadOnlyDictionary<string, CategoryRoute> CategoryRoutes =
+		new Dictionary<string, CategoryRoute>(StringComparer.Ordinal)
+		{
+			["ADMINAUDIT_LOG"] = new("adminaudit.log", Additive: false),
+			["AUDIT_LOG"] = new("audit.log", Additive: true),
+			["CHAT_LOG"] = new("chat.log", Additive: false),
+			["CRAFT_LOG"] = new("craft.log", Additive: false),
+			["EXCHANGE_LOG"] = new("exchange.log", Additive: true),
+			["GAMECONNECTION_LOG"] = new("gameconnections.log", Additive: true),
+			["EVENT_LOG"] = new("event.log", Additive: true),
+			["INSTANCE_LOG"] = new("instance.log", Additive: true),
+			["TAMPERING_LOG"] = new("tampering.log", Additive: true),
+			["ITEM_LOG"] = new("item.log", Additive: false),
+			["ITEM_HTML_LOG"] = new("item_htmls.log", Additive: false),
+			["KILL_LOG"] = new("kill.log", Additive: true),
+			["MAIL_LOG"] = new("mail.log", Additive: true),
+			["SIEGE_LOG"] = new("siege.log", Additive: true),
+			["SYSMAIL_LOG"] = new("sysmail.log", Additive: true),
+			["WEB_REWARDS_LOG"] = new("webrewards.log", Additive: false),
+			["HOUSE_AUCTION_LOG"] = new("auction.log", Additive: true),
+			["GMITEMRESTRICTION"] = new("gm_item_restriction.log", Additive: true),
+			["PLAYERTRANSFER"] = new("playertransfer.log", Additive: true),
+		};
+
 	private readonly string _logDirectory;
 	private readonly object _writeLock = new();
 
@@ -67,9 +91,16 @@ public sealed class AionFileLoggerProvider : ILoggerProvider
 			var timestamp = DateTimeOffset.Now.ToString("yyyy-MM-dd'T'HH:mm:ss,fffzzz", CultureInfo.InvariantCulture);
 			var exceptionText = exception == null ? string.Empty : Environment.NewLine + exception;
 			var consoleLine = $"{timestamp} {FormatLevel(logLevel),-5} [{Environment.CurrentManagedThreadId}] {_categoryName} - {message}{exceptionText}{Environment.NewLine}";
+			var hasCategoryRoute = CategoryRoutes.TryGetValue(_categoryName, out var categoryRoute);
 
 			lock (_writeLock)
 			{
+				if (hasCategoryRoute)
+					Append(categoryRoute.FileName, $"{timestamp} {message}{exceptionText}{Environment.NewLine}");
+
+				if (hasCategoryRoute && !categoryRoute.Additive)
+					return;
+
 				Append("server_console.log", consoleLine);
 
 				if (logLevel == LogLevel.Warning)
@@ -98,6 +129,8 @@ public sealed class AionFileLoggerProvider : ILoggerProvider
 			};
 		}
 	}
+
+	private readonly record struct CategoryRoute(string FileName, bool Additive);
 
 	private sealed class NullScope : IDisposable
 	{
