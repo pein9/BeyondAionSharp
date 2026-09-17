@@ -252,7 +252,7 @@ public class AggroList
                 {
                     foreach (AggroInfo info in _aggroList.Values)
                     {
-                        if (info.GetLastInteractionTime() != 0 && DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - info.GetLastInteractionTime() > 5000)
+                        if (info.GetLastInteractionTime() != 0 && SystemClock.CurrentMillis() - info.GetLastInteractionTime() > 5000)
                         {
                             info.ReduceHate();
                         }

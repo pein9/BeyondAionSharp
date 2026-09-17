@@ -112,10 +112,10 @@ public class PlayerEffectController : EffectController
             return;
         if (CustomConfig.ABYSSXFORM_LOGOUT && template.IsDeityAvatar())
         {
-            if (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() >= endTime)
+            if (SystemClock.CurrentMillis() >= endTime)
                 return;
             else
-                remainingTime = (int)(endTime - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+                remainingTime = (int)(endTime - SystemClock.CurrentMillis());
         }
 
         Effect effect = new Effect(GetOwner(), GetOwner(), template, skillLvl, remainingTime, forceType, false, magicalCriticalPositions);

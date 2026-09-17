@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Stats.Container;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model.Items;
 
@@ -37,7 +38,7 @@ public class GodStone : ItemStone
 
     public bool TryActivate(bool isMainHandWeapon, Creature target)
     {
-        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long now = SystemClock.CurrentMillis();
         if (Aion.GameServer.Configs.Main.CustomConfig.GODSTONE_ACTIVATION_RATE <= 0 || now < Volatile.Read(ref cooldownExpireTimeMillis))
             return false;
         Volatile.Write(ref cooldownExpireTimeMillis, now + Aion.GameServer.Configs.Main.CustomConfig.GODSTONE_EVALUATION_COOLDOWN_MILLIS);

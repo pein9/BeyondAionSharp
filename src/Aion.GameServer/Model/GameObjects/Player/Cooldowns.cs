@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model.GameObjects.Players;
 
@@ -22,7 +23,7 @@ public class Cooldowns : IEnumerable<KeyValuePair<int, long>>
     {
         if (!map.TryGetValue(cooldownId, out long cd))
             return null;
-        if (cd <= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+        if (cd <= SystemClock.CurrentMillis())
         {
             if (((ICollection<KeyValuePair<int, long>>)map).Remove(new KeyValuePair<int, long>(cooldownId, cd)))
                 return null;
@@ -33,7 +34,7 @@ public class Cooldowns : IEnumerable<KeyValuePair<int, long>>
 
     public long? Put(int cooldownId, long reuseTimeMillis)
     {
-        if (reuseTimeMillis <= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+        if (reuseTimeMillis <= SystemClock.CurrentMillis())
             return Remove(cooldownId);
         map[cooldownId] = reuseTimeMillis;
         return reuseTimeMillis;
@@ -54,7 +55,7 @@ public class Cooldowns : IEnumerable<KeyValuePair<int, long>>
     public int RemainingSeconds(int cooldownId)
     {
         long? cd = Get(cooldownId);
-        return cd == null ? 0 : (int)((cd.Value - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000);
+        return cd == null ? 0 : (int)((cd.Value - SystemClock.CurrentMillis()) / 1000);
     }
 
     public int Count => map.Count;

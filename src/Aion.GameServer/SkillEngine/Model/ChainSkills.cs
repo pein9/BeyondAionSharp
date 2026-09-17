@@ -1,3 +1,5 @@
+using Aion.GameServer.Utils;
+
 namespace Aion.GameServer.SkillEngine.Model;
 
 /// <summary>Tracks a creature's current/previous chain skill and expiry. Java parity: skillengine/model/ChainSkills.</summary>
@@ -29,7 +31,7 @@ public class ChainSkills
         }
 
         _chainSkill.IncreaseUseCount();
-        _expireTime = duration == 0 ? 0 : DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + duration;
+        _expireTime = duration == 0 ? 0 : SystemClock.CurrentMillis() + duration;
     }
 
     // Java parity: resetChain()
@@ -44,5 +46,5 @@ public class ChainSkills
     }
 
     // Java parity: isChainExpired()
-    public bool IsChainExpired() => _expireTime > 0 && DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() > _expireTime;
+    public bool IsChainExpired() => _expireTime > 0 && SystemClock.CurrentMillis() > _expireTime;
 }

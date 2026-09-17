@@ -651,14 +651,16 @@ Production-neutral: `SystemClock`'s default is the same call Java makes (`System
   reads across 187 game-server files; both individual API counts and the total may only decrease. P4-04 owns the
   final analyzer switch after its codemod slices reach the infrastructure floor. Commit: `d3091cec7`.
 - [ ] **P4-04** [BOTH] L — Codemod the remaining gameplay reads, one commit per slice:
-  - **A** combat: `SkillEngine` (effects, chain and charge skills), `Controllers/Attack`, `Controllers/Effect`,
-    cooldowns, item use delay, godstones.
-  - **B** movement, connection and lifecycle: `Controllers/Movement/*`, `PositionUtil`, `AntiHackService`,
+  - [x] **A** combat: `SkillEngine` (effects, chain and charge skills), `Controllers/Attack`, `Controllers/Effect`,
+    cooldowns, item use delay, godstones. All 23 remaining direct reads in this slice now use `SystemClock`;
+    the ratchet fell from 374 to 351 reads and a focused test advances chain and cooldown expiry through the
+    virtual clock. Commit: `a2e44a070`.
+  - [ ] **B** movement, connection and lifecycle: `Controllers/Movement/*`, `PositionUtil`, `AntiHackService`,
     `FlyController`, the `AionConnection` idle checker, `CM_PING`, `FloodManager`, `PlayerEnterWorldService` and
     `PlayerLeaveWorldService` (re-entry time), `PlayerService` deletion.
-  - **C** content: `Handlers/Instance/*`, `Handlers/AI/*`, `InstanceService`, `WorldMapInstance`, instance
+  - [ ] **C** content: `Handlers/Instance/*`, `Handlers/AI/*`, `InstanceService`, `WorldMapInstance`, instance
     cooldowns, `Taskmanager/Tasks/*` (item expiry), `Item*`, `RVController`, `CraftService`.
-  - **D** the rest: services, `AbstractCronTask`, housing tasks, DAO cooldown filters, persistence timestamps.
+  - [ ] **D** the rest: services, `AbstractCronTask`, housing tasks, DAO cooldown filters, persistence timestamps.
 
   Leave genuine infrastructure on real time and allowlist it: the NIO shutdown loop, `Stopwatch` durations,
   `PeriodicSaveService` `TickCount64`, logging timestamps. Depends on P4-03.

@@ -193,7 +193,7 @@ public class UseableItemObject : UseableHouseObject<HousingUseableItem>
                         else
                         {
                             SetMustGiveLastReward(true);
-                            SetExpireTime((int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000));
+                            SetExpireTime((int)SystemClock.CurrentSeconds());
                             SetPersistentState(IPersistable.PersistentState.UPDATE_REQUIRED);
                         }
                     }
@@ -230,7 +230,7 @@ public class UseableItemObject : UseableHouseObject<HousingUseableItem>
                     reuseTime = new DateTimeOffset(now.Year, now.Month, now.Day, 23, 59, 59, now.Offset).ToUnixTimeSeconds() * 1000;
                 }
                 else
-                    reuseTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + cd.Value * 1000;
+                    reuseTime = SystemClock.CurrentMillis() + cd.Value * 1000;
                 player.GetHouseObjectCooldowns().Put(GetObjectId(), reuseTime);
             }
             return ValueTask.CompletedTask;

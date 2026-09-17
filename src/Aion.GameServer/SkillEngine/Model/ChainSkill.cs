@@ -1,3 +1,5 @@
+using Aion.GameServer.Utils;
+
 namespace Aion.GameServer.SkillEngine.Model;
 
 /// <summary>One chain-skill category's activation state. Java parity: skillengine/model/ChainSkill.</summary>
@@ -26,7 +28,7 @@ public class ChainSkill
     public void IncreaseUseCount()
     {
         _useCount++;
-        _lastUseTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        _lastUseTime = SystemClock.CurrentMillis();
     }
 
     // Java parity: getLastUseTime() — 0 if never.

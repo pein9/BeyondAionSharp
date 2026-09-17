@@ -22,7 +22,7 @@ using Aion.GameServer.World;
 
 namespace Aion.GameServer.Services.Players;
 
-/// <summary>Java parity: services/player/PlayerReviveService (Jego, xTz). All revive variants: duel/skill/rebirth/bind/kisk/instance/itemSelf revives + the shared revive() (hp/mp restore honoring no-resurrect-penalty, DP/soul-sickness, aggro clear, group/alliance movement update, resurrect emotion) and scheduleReviveAtBase. DimensionalVortex<?> -> <VortexLocation>; method-ref predicate->lambda; forEachPlayer lambda; schedule(Runnable,ms)->Schedule(ct-lambda); currentTimeMillis->UtcNow. Effect/enums/TeleportService/PanesterraService red-tolerated.</summary>
+/// <summary>Java parity: services/player/PlayerReviveService (Jego, xTz). All revive variants: duel/skill/rebirth/bind/kisk/instance/itemSelf revives + the shared revive() (hp/mp restore honoring no-resurrect-penalty, DP/soul-sickness, aggro clear, group/alliance movement update, resurrect emotion) and scheduleReviveAtBase. DimensionalVortex<?> -> <VortexLocation>; method-ref predicate->lambda; forEachPlayer lambda; schedule(Runnable,ms)->Schedule(ct-lambda); currentTimeMillis->SystemClock.CurrentMillis. Effect/enums/TeleportService/PanesterraService red-tolerated.</summary>
 public class PlayerReviveService
 {
     public static void DuelRevive(Player player)
@@ -256,7 +256,7 @@ public class PlayerReviveService
         // Add Cooldown and use item
         ItemUseLimits useLimits = item.GetItemTemplate().GetUseLimits();
         int useDelay = useLimits.GetDelayTime();
-        player.AddItemCoolDown(useLimits.GetDelayId(), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + useDelay, useDelay / 1000);
+        player.AddItemCoolDown(useLimits.GetDelayId(), SystemClock.CurrentMillis() + useDelay, useDelay / 1000);
         player.GetController().CancelUseItem();
         PacketSendUtility.BroadcastPacket(player,
             new SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), item.GetObjectId(), item.GetItemTemplate().GetTemplateId()), true);

@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Aion.GameServer.Configs.Main;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Controllers.Attack;
 
-/// <summary>Java parity: controllers/attack/KillCounter (Neon). ConcurrentHashMap→ConcurrentDictionary; computeIfAbsent→GetOrAdd / TryGetValue+init; synchronized→lock; removeIf→RemoveAll; currentTimeMillis→UtcNow.ToUnixTimeMilliseconds. CustomConfig.PVP_DAY_DURATION red-tolerated.</summary>
+/// <summary>Java parity: controllers/attack/KillCounter (Neon). ConcurrentHashMap→ConcurrentDictionary; computeIfAbsent→GetOrAdd / TryGetValue+init; synchronized→lock; removeIf→RemoveAll; currentTimeMillis→SystemClock.CurrentMillis. CustomConfig.PVP_DAY_DURATION red-tolerated.</summary>
 public class KillCounter
 {
     private static readonly ConcurrentDictionary<int, Dictionary<int, List<long>>> PVP_KILL_LISTS = new();
@@ -17,7 +18,7 @@ public class KillCounter
     /// <returns>The count how many times the killer killed given victim.</returns>
     public static int AddKillFor(int killerId, int victimId)
     {
-        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long now = SystemClock.CurrentMillis();
         long minAge = now - CustomConfig.PVP_DAY_DURATION;
         Dictionary<int, List<long>> killTimesByVictimId = PVP_KILL_LISTS.GetOrAdd(killerId, k => new Dictionary<int, List<long>>());
         lock (killTimesByVictimId)

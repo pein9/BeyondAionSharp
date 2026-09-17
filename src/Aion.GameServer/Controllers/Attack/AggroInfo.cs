@@ -1,4 +1,5 @@
 using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Controllers.Attack;
 
@@ -43,7 +44,7 @@ public class AggroInfo
         _hate = sum > int.MaxValue ? int.MaxValue : (int)sum;
         if (_hate < 1)
             _hate = 1;
-        _lastInteractionTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        _lastInteractionTime = SystemClock.CurrentMillis();
         _hateReduceCount = 1;
     }
 

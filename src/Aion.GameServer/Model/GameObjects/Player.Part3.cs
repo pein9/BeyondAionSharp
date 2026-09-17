@@ -179,7 +179,7 @@ public partial class Player
         if (reuseTime == 0)
             return false;
 
-        if (reuseTime <= System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+        if (reuseTime <= SystemClock.CurrentMillis())
         {
             itemCoolDowns.Remove(limits.GetDelayId(), out _);
             return false;
@@ -193,7 +193,7 @@ public partial class Player
         if (limits == null || limits.GetDelayTime() <= 0)
             return;
 
-        AddItemCoolDown(limits.GetDelayId(), System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + limits.GetDelayTime(), limits.GetDelayTime() / 1000);
+        AddItemCoolDown(limits.GetDelayId(), SystemClock.CurrentMillis() + limits.GetDelayTime(), limits.GetDelayTime() / 1000);
     }
 
     public long GetItemReuseTime(int delayId)

@@ -769,7 +769,7 @@ public class Effect : IStatOwner
             }
             if (duration == 0)
                 return;
-            endTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + duration.Value;
+            endTime = SystemClock.CurrentMillis() + duration.Value;
 
             endTask = ThreadPoolManager.GetInstance().Schedule(_ =>
             {
@@ -861,7 +861,7 @@ public class Effect : IStatOwner
     /// <summary>Time in milliseconds till the effect ends</summary>
     public long GetRemainingTimeMillis()
     {
-        return endTime - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        return endTime - SystemClock.CurrentMillis();
     }
 
     public int GetRemainingTimeToDisplay()

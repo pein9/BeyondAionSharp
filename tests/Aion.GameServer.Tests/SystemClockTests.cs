@@ -1,4 +1,6 @@
 using Aion.GameServer.QuestEngine.Model;
+using Aion.GameServer.Model.GameObjects.Players;
+using Aion.GameServer.SkillEngine.Model;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Time;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -33,6 +35,34 @@ public sealed class SystemClockTests
 		{
 			SystemClock.UseSystemClock();
 			SystemClock.UseSystemClockProcessWide();
+		}
+	}
+
+	[Fact]
+	public void CombatChainsAndCooldownsUseSystemClock()
+	{
+		long nowMillis = 1_700_000_000_000;
+		SystemClock.UseSource(() => nowMillis);
+		try
+		{
+			var chains = new ChainSkills();
+			chains.UpdateChain("test", 1_000);
+			Assert.Equal(nowMillis, chains.GetCurrentChainSkill().GetLastUseTime());
+			Assert.False(chains.IsChainExpired());
+
+			nowMillis += 1_001;
+			Assert.True(chains.IsChainExpired());
+
+			var cooldowns = new Cooldowns();
+			cooldowns.Put(7, nowMillis + 10_000);
+			Assert.Equal(10, cooldowns.RemainingSeconds(7));
+
+			nowMillis += 10_000;
+			Assert.Null(cooldowns.Get(7));
+		}
+		finally
+		{
+			SystemClock.UseSystemClock();
 		}
 	}
 

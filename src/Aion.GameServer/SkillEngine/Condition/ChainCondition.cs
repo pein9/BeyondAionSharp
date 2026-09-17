@@ -2,6 +2,7 @@ using System;
 using System.Xml.Serialization;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.SkillEngine.Model;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.SkillEngine.Condition;
 
@@ -69,7 +70,7 @@ public class ChainCondition : Condition
                 if (currentSkill.GetUseCount() == selfCount) // same skill
                     return true;
                 int maxActiveDuration = time > 0 ? time : env.GetCooldown() * 100; // template cooldown is seconds * 10...
-                if (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() > currentSkill.GetLastUseTime() + maxActiveDuration)
+                if (SystemClock.CurrentMillis() > currentSkill.GetLastUseTime() + maxActiveDuration)
                     return true;
             }
         }

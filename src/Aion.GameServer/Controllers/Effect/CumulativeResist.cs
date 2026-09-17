@@ -1,3 +1,5 @@
+using Aion.GameServer.Utils;
+
 namespace Aion.GameServer.Controllers.Effects;
 
 /// <summary>
@@ -57,5 +59,5 @@ internal sealed class CumulativeResist
     }
 
     // Java parity: System.currentTimeMillis()
-    private static long NowMillis() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    private static long NowMillis() => SystemClock.CurrentMillis();
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model.GameObjects.Players;
 
@@ -23,7 +24,7 @@ public class PortalCooldownList
         if (coolDown == null)
             return false;
 
-        if (coolDown.GetReuseTime() < DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+        if (coolDown.GetReuseTime() < SystemClock.CurrentMillis())
         {
             portalCooldowns.Remove(worldId);
             return false;
@@ -38,7 +39,7 @@ public class PortalCooldownList
             return 0;
         long coolDown = portalCooldowns[worldId].GetReuseTime();
 
-        if (coolDown < DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+        if (coolDown < SystemClock.CurrentMillis())
         {
             portalCooldowns.Remove(worldId);
             return 0;
