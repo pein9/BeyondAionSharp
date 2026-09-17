@@ -10,14 +10,15 @@ public sealed class ShutdownHookTests
 	public async Task ShutdownHook_CountsDownAndStopsApplication()
 	{
 		var lifetime = new FakeApplicationLifetime();
-		var hook = new ShutdownHook(lifetime, NullLogger<ShutdownHook>.Instance, TimeSpan.FromMilliseconds(10));
+		var hook = new ShutdownHook(lifetime, NullLogger<ShutdownHook>.Instance, TimeSpan.Zero);
 
 		hook.InitShutdown(exitCode: 2, delaySeconds: 2);
 
 		Assert.True(hook.IsRunning);
 		Assert.Equal(2, hook.ExitCode);
-		await WaitUntilAsync(() => lifetime.StopCalls == 1);
+		await lifetime.StopRequested.WaitAsync(TimeSpan.FromSeconds(1));
 
+		Assert.Equal(1, lifetime.StopCalls);
 		Assert.Equal(0, hook.RemainingSeconds);
 	}
 
@@ -33,20 +34,12 @@ public sealed class ShutdownHookTests
 		Assert.Equal(0, lifetime.StopCalls);
 	}
 
-	private static async Task WaitUntilAsync(Func<bool> condition)
-	{
-		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-		while (!condition())
-		{
-			await Task.Delay(10, timeout.Token);
-		}
-	}
-
 	private sealed class FakeApplicationLifetime : IHostApplicationLifetime
 	{
 		private readonly CancellationTokenSource _started = new();
 		private readonly CancellationTokenSource _stopping = new();
 		private readonly CancellationTokenSource _stopped = new();
+		private readonly TaskCompletionSource _stopRequested = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
 		public CancellationToken ApplicationStarted => _started.Token;
 
@@ -56,10 +49,13 @@ public sealed class ShutdownHookTests
 
 		public int StopCalls { get; private set; }
 
+		public Task StopRequested => _stopRequested.Task;
+
 		public void StopApplication()
 		{
 			StopCalls++;
 			_stopping.Cancel();
+			_stopRequested.TrySetResult();
 		}
 	}
 }

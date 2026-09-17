@@ -202,9 +202,12 @@ operations and coverage. Phase 11 is group and scheduled content.
 Nothing else is trustworthy until errors are visible. This phase restores Java's logging behaviour, makes
 failures loud, and gets the test suite to a trustworthy green.
 
-- [ ] **P1-00** [BOTH] S — Stabilize the real-time tests behind recent red runs: `ShutdownHookTests`,
+- [x] **P1-00** [BOTH] S — Stabilize the real-time tests behind recent red runs: `ShutdownHookTests`,
   `GameServerBridgeConnectorTests`, `OutboundLinkLifecycleTests` (inject delay sources or move into the
   `LoopbackSockets` collection). Done when `dotnet test AionServer.slnx` passes 10 times in a row locally.
+  `ShutdownHookTests` now drives the existing delay seam with zero time and awaits a completion signal; the two
+  socket classes were already in the non-parallel `LoopbackSockets` collection. Ten consecutive local solution
+  runs passed on 2026-09-17. (`82d810b7a`)
 - [ ] **P1-01** [BOTH] S — Static logger bridge, `src/Aion.Commons/Logging/AionLog.cs`: `For(category)` returns
   a forwarding logger that resolves the factory **at call time** (safe in static initializers that run
   before the host exists); `SetFactory(ILoggerFactory)`; an AsyncLocal override for parallel tests (same
