@@ -32,10 +32,10 @@ public class AionConnection : AConnection<AionServerPacket>
 {
     private static readonly ILogger log = AionLog.For(nameof(AionConnection));
 
-    private static readonly PacketProcessor<AionConnection> packetProcessor = new PacketProcessor<AionConnection>(
+    private static readonly Lazy<PacketProcessor<AionConnection>> packetProcessor = new(() => new PacketProcessor<AionConnection>(
         NetworkConfig.PACKET_PROCESSOR_MIN_THREADS, NetworkConfig.PACKET_PROCESSOR_MAX_THREADS,
         NetworkConfig.PACKET_PROCESSOR_THREAD_SPAWN_THRESHOLD, NetworkConfig.PACKET_PROCESSOR_THREAD_KILL_THRESHOLD,
-        new ExecuteWrapper(ThreadConfig.MAXIMUM_RUNTIME_IN_MILLISEC_WITHOUT_WARNING));
+        new ExecuteWrapper(ThreadConfig.MAXIMUM_RUNTIME_IN_MILLISEC_WITHOUT_WARNING)));
 
     /// <summary>Possible states of AionConnection.</summary>
     public enum State
@@ -68,7 +68,7 @@ public class AionConnection : AConnection<AionServerPacket>
     private string macAddress;
     private string hddSerial;
 
-    private ConnectionAliveChecker connectionAliveChecker;
+    private ConnectionAliveChecker? connectionAliveChecker;
 
     /// <summary>packet flood filter</summary>
     private Dictionary<int, long> pffRequests;
@@ -83,6 +83,15 @@ public class AionConnection : AConnection<AionServerPacket>
         lastClientMessageTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         connectionAliveChecker = new ConnectionAliveChecker(this);
 
+        if (PffConfig.PFF_MODE > 0 && PffConfig.THRESHOLD_MILLIS_BY_PACKET_OPCODE != null)
+            pffRequests = new Dictionary<int, long>();
+    }
+
+    /// <summary>Gameplay-neutral in-process connection that does not arm the client-alive timer.</summary>
+    protected AionConnection(string ip) : base(8192 * 4, 8192 * 4, ip)
+    {
+        state = State.CONNECTED;
+        lastClientMessageTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         if (PffConfig.PFF_MODE > 0 && PffConfig.THRESHOLD_MILLIS_BY_PACKET_OPCODE != null)
             pffRequests = new Dictionary<int, long>();
     }
@@ -157,12 +166,15 @@ public class AionConnection : AConnection<AionServerPacket>
             if (pck.Read())
             {
                 SendPacketInfo(pck);
-                packetProcessor.ExecutePacket(pck);
+                ExecutePacket(pck);
             }
         }
 
         return true;
     }
+
+    /// <summary>Runs a decoded client packet. Socketless transports override this to execute inline.</summary>
+    protected virtual void ExecutePacket(AionClientPacket packet) => packetProcessor.Value.ExecutePacket(packet);
 
     internal IDisposable? BeginLogScope(AionClientPacket packet)
     {
@@ -241,16 +253,17 @@ public class AionConnection : AConnection<AionServerPacket>
 
     protected override void OnDisconnect()
     {
-        connectionAliveChecker.Stop();
+        connectionAliveChecker?.Stop();
 
-        global::Aion.GameServer.Network.LoginServer.LoginServer.GetInstance().OnDisconnect(this);
+        if (!IsSocketless)
+            global::Aion.GameServer.Network.LoginServer.LoginServer.GetInstance().OnDisconnect(this);
 
         string msg = GetAccount() == null ? "" : " " + GetAccount();
         Player player = GetActivePlayer();
         if (player != null)
         {
             msg += " " + player + " (client crash or connection loss)";
-            player.GetMoveController().ResetToLastPositionFromClient();
+            ResetPlayerPositionAfterDisconnect(player);
             long millisSinceLastClientPacket = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastClientMessageTime;
             long delayMs = Math.Max(0, 10000 - millisSinceLastClientPacket);
             PlayerLeaveWorldService.LeaveWorldDelayed(player, delayMs);
@@ -261,6 +274,9 @@ public class AionConnection : AConnection<AionServerPacket>
 
         log.LogInformation("Client disconnected:" + msg);
     }
+
+    protected virtual void ResetPlayerPositionAfterDisconnect(Player player) =>
+        player.GetMoveController().ResetToLastPositionFromClient();
 
     public override void OnServerClose()
     {

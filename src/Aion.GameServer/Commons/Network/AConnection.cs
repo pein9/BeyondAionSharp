@@ -26,6 +26,7 @@ public abstract class AConnection
     public readonly ByteBuffer writeBuffer;
     public readonly ByteBuffer readBuffer;
     private readonly string ip;
+    private readonly bool socketless;
     private bool locked = false;
 
     protected AConnection(SocketChannel sc, Dispatcher d, int rbSize, int wbSize)
@@ -39,6 +40,21 @@ public abstract class AConnection
         readBuffer.Order(ByteOrder.LITTLE_ENDIAN);
 
         this.ip = socketChannel.Socket().GetInetAddress().GetHostAddress();
+    }
+
+    /// <summary>Gameplay-neutral constructor for in-process transports with no socket, dispatcher or selector.</summary>
+    protected AConnection(int rbSize, int wbSize, string ip)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(ip);
+        socketChannel = null!;
+        dispatcher = null!;
+        writeBuffer = ByteBuffer.Allocate(wbSize);
+        writeBuffer.Flip();
+        writeBuffer.Order(ByteOrder.LITTLE_ENDIAN);
+        readBuffer = ByteBuffer.Allocate(rbSize);
+        readBuffer.Order(ByteOrder.LITTLE_ENDIAN);
+        this.ip = ip;
+        socketless = true;
     }
 
     internal void SetKey(SelectionKey key) => this.key = key;
@@ -60,6 +76,12 @@ public abstract class AConnection
             closed = true;
         }
 
+        if (socketless)
+        {
+            OnDisconnect();
+            return;
+        }
+
         key.Cancel();
         try
         {
@@ -73,7 +95,11 @@ public abstract class AConnection
         dcExecutor.Execute(new LambdaRunnable(OnDisconnect));
     }
 
-    public bool IsConnected() => key.IsValid();
+    public bool IsConnected() => IsTransportConnected();
+
+    protected virtual bool IsTransportConnected() => socketless ? !closed : key.IsValid();
+
+    protected bool IsSocketless => socketless;
 
     public bool IsPendingClose() => pendingCloseUntilMillis != 0 && !closed;
 
@@ -119,6 +145,10 @@ public abstract class AConnection<T> : AConnection where T : BaseServerPacket
     {
     }
 
+    protected AConnection(int rbSize, int wbSize, string ip) : base(rbSize, wbSize, ip)
+    {
+    }
+
     /// <summary>Sends the ServerPacket to this client.</summary>
     public void SendPacket(T serverPacket)
     {
@@ -129,9 +159,7 @@ public abstract class AConnection<T> : AConnection where T : BaseServerPacket
 
             if (IsConnected())
             {
-                GetSendMsgQueue().Enqueue(serverPacket);
-                key.InterestOps(key.InterestOps() | SelectionKey.OP_WRITE);
-                key.Selector().Wakeup();
+                EnqueuePacket(serverPacket, closing: false);
             }
             else
             {
@@ -151,18 +179,41 @@ public abstract class AConnection<T> : AConnection where T : BaseServerPacket
 
             pendingCloseUntilMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + 2000;
             if (closePacket != null || !IsConnected())
-                GetSendMsgQueue().Clear();
+                ClearPendingPackets();
             if (closePacket != null && IsConnected())
-            {
-                GetSendMsgQueue().Enqueue(closePacket);
-                key.InterestOps(SelectionKey.OP_WRITE);
-            }
-            dispatcher.CloseConnection(this);
-            key.Selector().Wakeup(); // notify dispatcher
+                EnqueuePacket(closePacket, closing: true);
+            RequestClose();
         }
     }
 
     internal override bool IsSendQueueEmpty() => GetSendMsgQueue().Count == 0;
+
+    protected virtual void ClearPendingPackets() => GetSendMsgQueue().Clear();
+
+    /// <summary>Queues a packet and signals the transport. Socketless subclasses override this to capture packets.</summary>
+    protected virtual void EnqueuePacket(T packet, bool closing)
+    {
+        GetSendMsgQueue().Enqueue(packet);
+        key.InterestOps(closing ? SelectionKey.OP_WRITE : key.InterestOps() | SelectionKey.OP_WRITE);
+        if (!closing)
+            key.Selector().Wakeup();
+    }
+
+    private void RequestClose()
+    {
+        if (IsSocketless)
+        {
+            Disconnect(new InlineExecutor());
+            return;
+        }
+        dispatcher.CloseConnection(this);
+        key.Selector().Wakeup(); // notify dispatcher
+    }
+
+    private sealed class InlineExecutor : Executor
+    {
+        public void Execute(Runnable command) => command.Run();
+    }
 
     protected abstract Queue<T> GetSendMsgQueue();
 }

@@ -300,7 +300,7 @@ Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 con
 
 ### Phase 2 — Bot protocol library (`tests/Aion.Bots`)
 
-- [ ] **P2-00** [BOTH] M — Socketless connection seam (infrastructure; needs D4). A protected `AConnection`
+- [x] **P2-00** [BOTH] M — Socketless connection seam (infrastructure; needs D4). A protected `AConnection`
   constructor without a socket; a protected virtual enqueue hook replacing the `InterestOps`/`Selector.Wakeup`
   calls; `IsConnected`, `Close(T)` and `Disconnect` routed through the seam so a close clears the queue, marks
   the connection closed and runs `OnDisconnect` on the calling thread; `connectionAliveChecker` null-safe in
@@ -308,6 +308,10 @@ Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 con
   `ExecutePacket` so SIM runs packets inline; the static `packetProcessor` made lazy so subclasses do not
   start threads. Add `InternalsVisibleTo` for the new projects. Tests: quit and abrupt drop both reach
   `PlayerLeaveWorldService`.
+  Completed with a selector-free protected transport constructor, virtual packet enqueue/execution hooks,
+  synchronous socketless close/drop cleanup, lazy packet-processor creation and an unarmed alive checker.
+  `SocketlessAionConnectionTests` prove `CM_QUIT` and abrupt drop both reach the leave-world boundary on the
+  calling thread while close discards earlier queued packets. Commit: `db9605e07`.
 - [ ] **P2-01** [BOTH] S — Create the project (`net10.0`, `TreatWarningsAsErrors`), add it to the solution, and
   add the `src/` isolation architecture test from Principle 8.
 - [ ] **P2-02** [BOTH] S — Client game crypt: key recovery from `SM_KEY`, client-encrypt and server-decrypt with

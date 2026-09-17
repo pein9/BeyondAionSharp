@@ -31,12 +31,26 @@ namespace Aion.GameServer.Services.Players;
 public class PlayerLeaveWorldService
 {
     private static readonly ILogger log = AionLog.For(nameof(PlayerLeaveWorldService));
+    private static readonly AsyncLocal<Action<Player, bool>?> ScopedCapture = new();
+
+    internal static IDisposable CaptureForCurrentContext(Action<Player, bool> capture)
+    {
+        ArgumentNullException.ThrowIfNull(capture);
+        var previous = ScopedCapture.Value;
+        ScopedCapture.Value = capture;
+        return new CaptureScope(previous);
+    }
 
     /// <summary>
     /// Called when a player loses client connection. NOTICE: must only be called from AionConnection.OnDisconnect().
     /// </summary>
     public static void LeaveWorldDelayed(Player player, long delayInMillis)
     {
+        if (ScopedCapture.Value is { } capture)
+        {
+            capture(player, true);
+            return;
+        }
         ScheduledTask leaveWorldTask = ThreadPoolManager.GetInstance().Schedule(ct => { LeaveWorld(player); return ValueTask.CompletedTask; }, TimeSpan.FromMilliseconds(delayInMillis));
         player.GetController().AddTask(TaskId.DESPAWN, leaveWorldTask);
     }
@@ -46,6 +60,11 @@ public class PlayerLeaveWorldService
     /// </summary>
     public static void LeaveWorld(Player player)
     {
+        if (ScopedCapture.Value is { } capture)
+        {
+            capture(player, false);
+            return;
+        }
         AionConnection con = player.GetClientConnection();
         player.SetClientConnection(null); // this sets the player semi-offline, PacketSendUtility will not send packets anymore
 
@@ -140,5 +159,16 @@ public class PlayerLeaveWorldService
         PlayerDAO.OnlinePlayer(player, false); // marks that player was fully saved and may enter world again
 
         con.SetActivePlayer(null);
+    }
+
+    private sealed class CaptureScope(Action<Player, bool>? previous) : IDisposable
+    {
+        private int disposed;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref disposed, 1) == 0)
+                ScopedCapture.Value = previous;
+        }
     }
 }
