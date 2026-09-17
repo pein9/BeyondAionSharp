@@ -208,11 +208,11 @@ failures loud, and gets the test suite to a trustworthy green.
   `ShutdownHookTests` now drives the existing delay seam with zero time and awaits a completion signal; the two
   socket classes were already in the non-parallel `LoopbackSockets` collection. Ten consecutive local solution
   runs passed on 2026-09-17. (`82d810b7a`)
-- [ ] **P1-01** [BOTH] S — Static logger bridge, `src/Aion.Commons/Logging/AionLog.cs`: `For(category)` returns
+- [x] **P1-01** [BOTH] S — Static logger bridge, `src/Aion.Commons/Logging/AionLog.cs`: `For(category)` returns
   a forwarding logger that resolves the factory **at call time** (safe in static initializers that run
   before the host exists); `SetFactory(ILoggerFactory)`; an AsyncLocal override for parallel tests (same
   pattern as `SystemClock`); caller type and member captured for fingerprints. Unit tests: a logger created
-  before `SetFactory` still forwards; two parallel flows stay isolated.
+  before `SetFactory` still forwards; two parallel flows stay isolated. (`1936446b3`)
 - [ ] **P1-02** [BOTH] M — Codemod every null logger to `AionLog.For(...)`. First record
   `LoggerFactory.getLogger(X) → AionLog.For(...)` in `docs/upstream-porting.md` and add a ratchet script to the
   pre-commit checks in `CLAUDE.md` that fails on any new `NullLogger`/`NullLoggerFactory` under `src/`. Keep Java logger names as categories
