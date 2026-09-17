@@ -486,9 +486,14 @@ sockets before the large clock migration.
   container names, tmpfs schema initialization, non-default ports, loopback-only admin access, read-only overlay
   precedence, per-run text/JSONL logs, the default-rate soak overlay and no interaction with the maintainer's
   containers or `aion_aion-mysql-data` volume. Commit: `7eb2f0f29`.
-- [ ] **P3-03** [LIVE] S — Seeds: the `gameservers` row; a director account with access level 9. Subject accounts
+- [x] **P3-03** [LIVE] S — Seeds: the `gameservers` row; a director account with access level 9. Subject accounts
   are auto-created at level 0 with names that encode run and bot (`b01r0917`), which is how server log scopes
-  join to bot traces without extra traffic.
+  join to bot traces without extra traffic. The bot compose project mounts its own idempotent MySQL seed after
+  the shared schema initializer, creating game server 1 and `director` / `aion-bots` without changing the
+  maintainer stack. Both bot profiles explicitly enable account auto-creation; the login service test pins new
+  accounts to access level 0, and the compose contract pins the seed, hash and overlay settings. A fresh
+  tmpfs-backed MySQL 8.4 container verified the registration, director row and account-time row. Commit:
+  `f99a15085`.
 - [ ] **P3-04** [LIVE] S — Readiness: port Java's `Game server started in N seconds` line (`GameServer.java:186`).
   The bots project is ready when its ports answer, that line has been logged, the login server has logged that
   game server 1 registered, and the schema tables exist (P0-04). The compose file's login and chat healthchecks

@@ -40,6 +40,10 @@ try {
 	Assert-Contract ($services.chatserver.image -eq 'aion-bots-chatserver:local') 'chat image is not bot-scoped'
 	Assert-Contract ($services.gameserver.image -eq 'aion-bots-gameserver:local') 'game image is not bot-scoped'
 	Assert-Contract ($services.mysql.tmpfs -contains '/var/lib/mysql:size=1g,mode=1777') 'MySQL data is not tmpfs-backed'
+	$initScript = $services.mysql.volumes | Where-Object { $_.target -eq '/docker-entrypoint-initdb.d/00-init.sh' }
+	Assert-Contract ($initScript.read_only -and [IO.Path]::GetFullPath($initScript.source) -eq [IO.Path]::GetFullPath((Join-Path $repoRoot 'docker/mysql/init/00-init.sh'))) 'shared database initializer mount is wrong'
+	$botSeed = $services.mysql.volumes | Where-Object { $_.target -eq '/docker-entrypoint-initdb.d/10-bot-seed.sql' }
+	Assert-Contract ($botSeed.read_only -and [IO.Path]::GetFullPath($botSeed.source) -eq [IO.Path]::GetFullPath((Join-Path $repoRoot 'docker/bots/seed/10-bot-seed.sql'))) 'bot seed mount is wrong'
 
 	$publishedPorts = @($services.loginserver.ports.published) + @($services.chatserver.ports.published) + @($services.gameserver.ports.published)
 	Assert-Contract ($publishedPorts -contains '12106') 'login port 12106 is not published'
@@ -64,10 +68,16 @@ try {
 	$deterministicRates = Get-Content -Raw (Join-Path $repoRoot 'docker/bots/overlay/20-deterministic-rates.properties')
 	Assert-Contract ($deterministicRates -match 'gameserver\.craft\.fail\.chance\s*=\s*0') 'deterministic craft failure chance is not zero'
 	Assert-Contract ($deterministicRates -match 'gameserver\.gather\.fail\.chance\s*=\s*0') 'deterministic gather failure chance is not zero'
+	$deterministicProfile = (Get-ChildItem (Join-Path $repoRoot 'docker/bots/overlay') -Filter '*.properties' | Get-Content -Raw) -join "`n"
+	Assert-Contract ($deterministicProfile -match 'loginserver\.accounts\.autocreate\s*=\s*true') 'deterministic profile does not enable account auto-creation'
 	$soakProfile = (Get-ChildItem (Join-Path $repoRoot 'docker/bots/overlay-soak') -Filter '*.properties' | Get-Content -Raw) -join "`n"
 	Assert-Contract ($soakProfile -notmatch 'gameserver\.(craft|gather)\.fail\.chance') 'soak profile overrides production failure rates'
+	Assert-Contract ($soakProfile -match 'loginserver\.accounts\.autocreate\s*=\s*true') 'soak profile does not enable account auto-creation'
 
-	Write-Host 'Bot compose contract passed: isolated names/images, tmpfs DB, ports, overlays and per-run logs.'
+	$seedSql = Get-Content -Raw (Join-Path $repoRoot 'docker/bots/seed/10-bot-seed.sql')
+	Assert-Contract ($seedSql -match "'director'\s*,\s*'Zd2bHPtGKgR\+5Xk\+9H2ugwisL08='\s*,\s*TRUE\s*,\s*9") 'director credentials or access level changed'
+
+	Write-Host 'Bot compose contract passed: isolated names/images, tmpfs DB, seed, ports, overlays and per-run logs.'
 }
 finally {
 	if ($null -eq $previousRunDirectory) { Remove-Item Env:AION_E2E_RUN_DIR -ErrorAction SilentlyContinue }

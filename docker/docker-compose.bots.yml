@@ -14,7 +14,8 @@ services:
     tmpfs:
       - /var/lib/mysql:size=1g,mode=1777
     volumes:
-      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+      - ./mysql/init/00-init.sh:/docker-entrypoint-initdb.d/00-init.sh:ro
+      - ./bots/seed/10-bot-seed.sql:/docker-entrypoint-initdb.d/10-bot-seed.sql:ro
       - ../login-server/sql:/sql/login:ro
       - ../game-server/sql:/sql/game:ro
       - ../chat-server/sql:/sql/chat:ro
