@@ -9,11 +9,12 @@ dotnet build AionServer.slnx
 dotnet test AionServer.slnx
 ```
 
-CI runs a clean rebuild through the warning ratchet, then runs every test project in the solution and the structural fidelity check:
+There is no hosted CI. Before committing, run a clean rebuild through the warning ratchet, every test project in the solution, the upstream-automation self-test and the structural fidelity check:
 
 ```powershell
 & ./scripts/ci/check-warning-baseline.ps1
 dotnet test AionServer.slnx --no-build --no-restore
+& ./scripts/upstream/test-upstream-automation.ps1
 python scripts/parity/check_fidelity.py
 ```
 
@@ -21,7 +22,7 @@ The checked-in warning baseline is a ceiling, not an accepted end state. New war
 
 The solution-wide test command includes the normal static-data, cross-server bridge, and deterministic database-boundary suites. Tests that require a separately running MySQL instance remain explicitly environment-gated.
 
-See [RUNNING.md](RUNNING.md) for local startup and [docker/README.md](docker/README.md) for the container stack.
+See [RUNNING.md](RUNNING.md) for local startup.
 
 ## Java reference
 

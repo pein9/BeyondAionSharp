@@ -159,8 +159,8 @@ We cannot use a live game client until the port is complete, so we validate agai
   python scripts/parity/check_fidelity.py                  # check (exit 1 on new violations)
   python scripts/parity/check_fidelity.py --update-baseline    # ratchet the floor DOWN after deleting slop
   ```
-  Baseline: `scripts/parity/fidelity-baseline.json` (363 known slop files, 6 god-classes at 2026-06-07). Wired into
-  CI as the `fidelity` job in `.github/workflows/run-tests.yml`. **Rule: only run `--update-baseline` after reducing
+  Baseline: `scripts/parity/fidelity-baseline.json` (363 known slop files, 6 god-classes at 2026-06-07). Run it
+  locally before committing. **Rule: only run `--update-baseline` after reducing
   debt; never hand-add entries to silence a new violation.** Remediation (Phase C) deletes slop, then ratchets.
 
   Still open in the foundation: **formula golden capture** (extend the A2 harness to pure `StatFunctions`-style

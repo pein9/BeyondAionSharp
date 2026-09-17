@@ -836,7 +836,7 @@ public sealed class GameServerAdminApiOptions
 	// portal to deliver mail through the live server (SystemMailService) instead of writing to the DB directly.
 	public bool Enabled { get; init; }
 
-	// HttpListener bind host. "+" listens on all interfaces (fine inside the docker container). Use "localhost"
+	// HttpListener bind host. "+" listens on all interfaces. Use "localhost"
 	// for a local Windows run if you hit a urlacl/permission error binding "+".
 	public string BindHost { get; init; } = "+";
 

@@ -21,13 +21,7 @@ Port merged Java changes in strict `4.8` history order. One upstream Java commit
 6. Review and stage only the intended files, then commit with the generated `commit-message.txt`.
 7. Run `scripts/upstream/verify-port.ps1` before considering the queue item complete.
 
-The detailed commands and n8n setup are in `docs/automation/n8n-upstream-port-workflow.md`.
-
-## Automated workflow
-
-The Docker n8n workflow schedules the same lifecycle without changing its authority model. n8n fetches and scans, then invokes `scripts/upstream/run-next-port.ps1`; that runner locks the queue, generates the exact saved prompt, starts noninteractive Codex CLI, and independently verifies the resulting local commit.
-
-Automation handles at most one merged Java commit per execution. A blocked decision or dirty worktree stops the queue. n8n does not choose commits, call a model directly, update tracker files, or create Git history itself.
+`scripts/upstream/test-upstream-automation.ps1` self-tests these scripts against throwaway repositories; run it after changing any of them.
 
 ## Status rules
 

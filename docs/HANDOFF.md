@@ -64,7 +64,7 @@ Last updated: **2026-06-17** (final-pass audit: backlog A–G done + chat-comman
 ## Current position
 
 - Phase 6, **re-baselined** to the Port Fidelity & Remediation Plan (`docs/Port-Fidelity-Remediation-Plan.md`). Earlier Phase-6 work is behaviorally faithful but structurally slop (plan-service sprawl + a god-class `GameServerConnection.cs`); being re-ported to 1:1 Java fidelity.
-- **Phase A (foundation): DONE except formula golden capture.** Golden packet pipeline proven (Java generator → `parity-artifacts/golden/packets/`; C# `GoldenPacketFixtureTests` asserts byte-for-byte). Structural audit + fidelity guardrail (`scripts/parity/check_fidelity.py`, baseline 363 slop / 6 god-classes, in CI) done. **TODO: formula golden capture not built** (last foundation item).
+- **Phase A (foundation): DONE except formula golden capture.** Golden packet pipeline proven (Java generator → `parity-artifacts/golden/packets/`; C# `GoldenPacketFixtureTests` asserts byte-for-byte). Structural audit + fidelity guardrail (`scripts/parity/check_fidelity.py`, baseline 363 slop / 6 god-classes, run locally) done. **TODO: formula golden capture not built** (last foundation item).
 - Build: `main` is green (nullable warnings only). The **`feature/object-spine-bigbang` branch is RED BY DESIGN** during the core convergence (see RESUME HERE) — that is expected, not a regression.
 - **Active work: the object-spine big-bang core convergence on the branch** (see RESUME HERE + below).
 
