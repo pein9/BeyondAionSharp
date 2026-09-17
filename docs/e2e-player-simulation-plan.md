@@ -62,7 +62,7 @@ runs use their own isolated compose project.
 | # | Finding (verified 2026-09-17) | Why it matters | Evidence |
 |---|---|---|---|
 | B1 | **Logs are visible, but do not fail tests yet.** P1-02/P1-03 replaced the 298 source null-loggers, bound the bridge in all three hosts and added the Java-compatible game log files. Capturing/fingerprint policy and triage remain in P1-07 through P1-13. | Until policy enforcement lands, a green run can still hide logged problems. | `AionLog.cs`; `AionFileLoggerProvider.cs`; the three `Program.cs` host builders |
-| B2 | **A periodic task dies on its first exception.** The catch in `RunFixedRateAsync` is outside the loop, and the loop is fixed-delay. Java's `RunnableWrapper` logs, keeps the schedule and runs at a fixed rate. | One bad NPC stops all NPC movement for the rest of a LIVE run; a failed gather tick locks that node. | `ThreadPoolManager.cs:143-169` |
+| B2 | **Resolved in P1-04.** Each periodic iteration now runs through the Java-style `ExecuteWrapper`, so failures are logged without killing the schedule; deadlines advance at a fixed rate and pooled work emits Java's slow-task warning. | One bad NPC no longer stops all NPC movement for the rest of a LIVE run. | `ThreadPoolManager.cs`; `ExecuteWrapper.cs` |
 | B3 | **No single clock.** ~393 direct wall-clock code lines in 203 files; `SystemClock` has 5 readers; more than 20 sites compare a `SystemClock` value with a wall-clock one. | With a virtual clock ahead of wall time, casts after the first are rejected (with a fixed past epoch the 350 ms cast gate never fires instead); NPCs do not move; item use delays and other wall-clock cooldowns never expire; effect remaining times freeze. Player skill cooldowns and effect end timers already follow the virtual clock. | Mixed: `CM_CASTSPELL.cs:18,105` vs `Skill.cs:556`; `Skill.cs:472-478` vs `CreatureMoveController.cs:18,78`. Unrouted: `NpcMoveController.cs:266` |
 | B4 | **The virtual scheduler is not ready for a whole server.** It swallows exceptions from one-shot timers (`RunSynchronously` stores them). It stops running timers after 100,000 ticks **within one `Advance`** yet still moves the clock to the target, so the skipped timers run on the next `Advance` and move the clock **backwards** (the nine periodic managers alone tick 18.75/s, so one ~89-minute `Advance` hits the cap). Its handles report `GetDelay` ≤ 0 because `Deferred` stamps creation time. It is not thread-safe, and real threads bypass it (PLINQ in `MoveTaskManager`, the Quartz cron thread, `PacketProcessor`, the `NetFlusher` timer). | Failures vanish in SIM; long advances fire timers late and rewind time; a looted corpse decays immediately in SIM. | `VirtualThreadPool.cs:24,44,63-95`; `ThreadPoolManager.cs:241-246,269-275,290-294`; `DropService.cs:111-115,163` |
 | B5 | **No client codec.** Nothing outside test-private helpers can encrypt a client packet, write a CM or decode an SM. `Aion.Commons/Crypto/AionXorCipher.cs` looks relevant but is not the game cipher. | Bots can neither act nor perceive. | `GameCrypt.cs` (unreferenced), `AionXorCipher.cs:14-16` |
@@ -225,11 +225,11 @@ failures loud, and gets the test suite to a trustworthy green.
   `AionFileLoggerProvider` to the game server so `game-server/log/server_{console,warnings,errors}.log` exist,
   plus the per-category files Java's `logback.xml` routes (`craft.log`, `exchange.log`, `mail.log`,
   `kill.log`, `tampering.log`, `item.log`, `adminaudit.log`). (`25a65f3ac`)
-- [ ] **P1-04** [BOTH] S — Parity fix (B2): in `ThreadPoolManager.RunFixedRateAsync` catch and log **per
+- [x] **P1-04** [BOTH] S — Parity fix (B2): in `ThreadPoolManager.RunFixedRateAsync` catch and log **per
   iteration**, keep running, and schedule at a fixed rate (Java `RunnableWrapper(catchAndLogThrowables=true)`).
   Also port `ExecuteWrapper`'s slow-task warning (`MAXIMUM_RUNTIME_IN_MILLISEC_WITHOUT_WARNING`), which Java
   applies to every pooled `schedule`/`scheduleAtFixedRate`/`execute`. Test: a body that throws once still
-  runs next period.
+  runs next period. (`b11a2416a`)
 - [ ] **P1-05** [LIVE] S — Install `AppDomain.UnhandledException` and `TaskScheduler.UnobservedTaskException`
   handlers in all three servers, mirroring Java's `UncaughtExceptionHandler` ("Critical Error - Thread ...
   terminated abnormally").

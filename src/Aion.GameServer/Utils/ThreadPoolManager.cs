@@ -1,4 +1,7 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using Aion.GameServer.Commons.Utils.Concurrent;
+using Aion.GameServer.Configs.Main;
 using Microsoft.Extensions.Logging;
 
 namespace Aion.GameServer.Utils;
@@ -10,8 +13,8 @@ namespace Aion.GameServer.Utils;
 // them is sufficient to intercept all AI scheduling.
 public class ThreadPoolManager : IAsyncDisposable
 {
-	private readonly ILogger<ThreadPoolManager> _logger;
 	private readonly Action<ThreadPoolScheduleObservation>? _scheduleObserver;
+	private readonly long? _maximumRuntimeWithoutWarningOverride;
 	private readonly ConcurrentBag<Task> _scheduledTasks = new();
 	private readonly CancellationTokenSource _shutdownTokenSource = new();
 	private int _isShutdown;
@@ -23,10 +26,12 @@ public class ThreadPoolManager : IAsyncDisposable
 
 	public ThreadPoolManager(
 		ILogger<ThreadPoolManager> logger,
-		Action<ThreadPoolScheduleObservation>? scheduleObserver = null)
+		Action<ThreadPoolScheduleObservation>? scheduleObserver = null,
+		long? maximumRuntimeWithoutWarning = null)
 	{
-		_logger = logger;
+		ArgumentNullException.ThrowIfNull(logger);
 		_scheduleObserver = scheduleObserver;
+		_maximumRuntimeWithoutWarningOverride = maximumRuntimeWithoutWarning;
 	}
 
 	// Java parity: ThreadPoolManager.getInstance().
@@ -42,11 +47,20 @@ public class ThreadPoolManager : IAsyncDisposable
 		CancellationToken cancellationToken = default)
 	{
 		// Java parity: utils/ThreadPoolManager.schedule.
+		return ScheduleCore(action, delay, MaximumRuntimeWithoutWarning, cancellationToken);
+	}
+
+	private ScheduledTask ScheduleCore(
+		Func<CancellationToken, ValueTask> action,
+		TimeSpan delay,
+		long maximumRuntimeWithoutWarning,
+		CancellationToken cancellationToken = default)
+	{
 		if (Volatile.Read(ref _isShutdown) != 0)
 			throw new InvalidOperationException("ThreadPoolManager is shut down.");
 
 		var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_shutdownTokenSource.Token, cancellationToken);
-		var task = Task.Run(() => RunOnceAsync(action, delay, linkedTokenSource.Token), CancellationToken.None);
+		var task = Task.Run(() => RunOnceAsync(action, delay, maximumRuntimeWithoutWarning, linkedTokenSource.Token), CancellationToken.None);
 		_scheduledTasks.Add(task);
 		_scheduleObserver?.Invoke(new ThreadPoolScheduleObservation(ThreadPoolScheduleKind.Once, delay, Period: null));
 		return new ScheduledTask(task, linkedTokenSource, DateTimeOffset.UtcNow + delay);
@@ -78,11 +92,14 @@ public class ThreadPoolManager : IAsyncDisposable
 	public void Execute(Runnable runnable) => Schedule(_ => { runnable.Run(); return ValueTask.CompletedTask; }, TimeSpan.Zero);
 
 	// Java parity: ThreadPoolManager.executeLongRunning(Runnable). The long-running hint is advisory in C#.
-	public void ExecuteLongRunning(Func<CancellationToken, ValueTask> action) => Schedule(action, TimeSpan.Zero);
+	public void ExecuteLongRunning(Func<CancellationToken, ValueTask> action) =>
+		Schedule(new LongRunningAction(action).RunAsync, TimeSpan.Zero);
 
-	public void ExecuteLongRunning(Action action) => Schedule(_ => { action(); return ValueTask.CompletedTask; }, TimeSpan.Zero);
+	public void ExecuteLongRunning(Action action) =>
+		ExecuteLongRunning(_ => { action(); return ValueTask.CompletedTask; });
 
-	public void ExecuteLongRunning(Runnable runnable) => Schedule(_ => { runnable.Run(); return ValueTask.CompletedTask; }, TimeSpan.Zero);
+	public void ExecuteLongRunning(Runnable runnable) =>
+		ExecuteLongRunning(_ => { runnable.Run(); return ValueTask.CompletedTask; });
 
 	public virtual ScheduledTask ScheduleAtFixedRateTask(
 		Func<CancellationToken, ValueTask> action,
@@ -93,9 +110,11 @@ public class ThreadPoolManager : IAsyncDisposable
 		// Java parity: utils/ThreadPoolManager.scheduleAtFixedRate.
 		if (Volatile.Read(ref _isShutdown) != 0)
 			throw new InvalidOperationException("ThreadPoolManager is shut down.");
+		if (period <= TimeSpan.Zero)
+			throw new ArgumentOutOfRangeException(nameof(period), "A fixed-rate period must be positive.");
 
 		var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_shutdownTokenSource.Token, cancellationToken);
-		var task = Task.Run(() => RunFixedRateAsync(action, initialDelay, period, linkedTokenSource), CancellationToken.None);
+		var task = Task.Run(() => RunFixedRateAsync(action, initialDelay, period, MaximumRuntimeWithoutWarning, linkedTokenSource), CancellationToken.None);
 		_scheduledTasks.Add(task);
 		_scheduleObserver?.Invoke(new ThreadPoolScheduleObservation(ThreadPoolScheduleKind.FixedRate, initialDelay, period));
 		return new ScheduledTask(task, linkedTokenSource, DateTimeOffset.UtcNow + initialDelay);
@@ -144,6 +163,7 @@ public class ThreadPoolManager : IAsyncDisposable
 		Func<CancellationToken, ValueTask> action,
 		TimeSpan initialDelay,
 		TimeSpan period,
+		long maximumRuntimeWithoutWarning,
 		CancellationTokenSource linkedTokenSource)
 	{
 		using var _ = linkedTokenSource;
@@ -153,24 +173,29 @@ public class ThreadPoolManager : IAsyncDisposable
 			if (initialDelay > TimeSpan.Zero)
 				await Task.Delay(initialDelay, cancellationToken);
 
+			long periodTimestampTicks = Math.Max(1, (long)Math.Ceiling(period.TotalSeconds * Stopwatch.Frequency));
+			long nextRunTimestamp = Stopwatch.GetTimestamp();
 			while (!cancellationToken.IsCancellationRequested)
 			{
-				await action(cancellationToken);
-				await Task.Delay(period, cancellationToken);
+				await ExecuteWrapper.ExecuteAsync(action, cancellationToken, maximumRuntimeWithoutWarning, catchAndLogThrowables: true);
+				nextRunTimestamp += periodTimestampTicks;
+				long remainingTimestampTicks = nextRunTimestamp - Stopwatch.GetTimestamp();
+				if (remainingTimestampTicks > 0)
+				{
+					var remaining = TimeSpan.FromSeconds((double)remainingTimestampTicks / Stopwatch.Frequency);
+					await Task.Delay(remaining, cancellationToken);
+				}
 			}
 		}
 		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
 		{
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Scheduled game-server task failed");
 		}
 	}
 
 	private async Task RunOnceAsync(
 		Func<CancellationToken, ValueTask> action,
 		TimeSpan delay,
+		long maximumRuntimeWithoutWarning,
 		CancellationToken cancellationToken)
 	{
 		try
@@ -179,15 +204,22 @@ public class ThreadPoolManager : IAsyncDisposable
 				await Task.Delay(delay, cancellationToken);
 
 			if (!cancellationToken.IsCancellationRequested)
-				await action(cancellationToken);
+			{
+				long runtimeLimit = action.Target is LongRunningAction ? long.MaxValue : maximumRuntimeWithoutWarning;
+				await ExecuteWrapper.ExecuteAsync(action, cancellationToken, runtimeLimit, catchAndLogThrowables: true);
+			}
 		}
 		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
 		{
 		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Scheduled game-server task failed");
-		}
+	}
+
+	private long MaximumRuntimeWithoutWarning =>
+		_maximumRuntimeWithoutWarningOverride ?? ThreadConfig.MAXIMUM_RUNTIME_IN_MILLISEC_WITHOUT_WARNING;
+
+	private sealed class LongRunningAction(Func<CancellationToken, ValueTask> action)
+	{
+		public ValueTask RunAsync(CancellationToken cancellationToken) => action(cancellationToken);
 	}
 
 	public async ValueTask DisposeAsync()

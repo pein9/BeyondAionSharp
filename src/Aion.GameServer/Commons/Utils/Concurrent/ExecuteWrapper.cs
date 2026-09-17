@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Aion.Commons.Concurrent;
 using Aion.Commons.Configs;
@@ -41,7 +42,7 @@ public class ExecuteWrapper : Executor
             long durationMillis = durationNanos / 1_000_000L;
             if (durationMillis > expectedMaxExecutionTimeMillis)
             {
-                string name = runnable.GetType().Name;
+                string name = GetExecutionName(runnable.GetType());
                 log.LogWarning(name + " - execution time: " + durationMillis + "ms");
             }
         }
@@ -52,5 +53,44 @@ public class ExecuteWrapper : Executor
             else
                 throw;
         }
+    }
+
+    public static async ValueTask ExecuteAsync(
+        Func<CancellationToken, ValueTask> action,
+        CancellationToken cancellationToken,
+        long expectedMaxExecutionTimeMillis,
+        bool catchAndLogThrowables)
+    {
+        try
+        {
+            long beginTicks = Stopwatch.GetTimestamp();
+            await action(cancellationToken).ConfigureAwait(false);
+            long durationNanos = (long)((Stopwatch.GetTimestamp() - beginTicks) * (1_000_000_000.0 / Stopwatch.Frequency));
+            Type actionType = action.Target?.GetType() ?? action.Method.DeclaringType ?? typeof(ExecuteWrapper);
+
+            if (CommonsConfig.RUNNABLESTATS_ENABLE)
+                RunnableStatsManager.HandleStats(actionType, durationNanos);
+
+            long durationMillis = durationNanos / 1_000_000L;
+            if (durationMillis > expectedMaxExecutionTimeMillis)
+                log.LogWarning(GetExecutionName(actionType) + " - execution time: " + durationMillis + "ms");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception t)
+        {
+            if (catchAndLogThrowables)
+                log.LogError(t, "Exception in a Runnable execution:");
+            else
+                throw;
+        }
+    }
+
+    private static string GetExecutionName(Type type)
+    {
+        bool compilerGenerated = type.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false) || type.Name.Contains('<');
+        return compilerGenerated ? type.FullName ?? type.Name : type.Name;
     }
 }
