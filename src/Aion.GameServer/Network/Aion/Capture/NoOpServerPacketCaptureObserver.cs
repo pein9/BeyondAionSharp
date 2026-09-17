@@ -4,8 +4,8 @@ using Aion.GameServer.Network.Aion;
 namespace Aion.GameServer.Network.Aion.Capture;
 
 /// <summary>
-/// Java parity: network/aion/capture/NoOpServerPacketCaptureObserver (enum singleton INSTANCE) ->
-/// C# singleton class (C# enums can't implement interface methods). No-op observer.
+/// C#-only disabled implementation of the packet-capture instrumentation seam.
+/// The Java 4.8 server has no corresponding observer.
 /// </summary>
 public sealed class NoOpServerPacketCaptureObserver : ServerPacketCaptureObserver
 {

@@ -3,7 +3,10 @@ using Aion.GameServer.Network.Aion;
 
 namespace Aion.GameServer.Network.Aion.Capture;
 
-/// <summary>Java parity: network/aion/capture/ServerPacketCaptureObserver. Observes serialized server packets.</summary>
+/// <summary>
+/// C#-only instrumentation seam for observing serialized server packets before in-place encryption.
+/// The Java 4.8 server has no packet-capture observer.
+/// </summary>
 public interface ServerPacketCaptureObserver
 {
     bool IsEnabled();

@@ -531,11 +531,17 @@ sockets before the large clock migration.
   REGRESSED, allowlisting, attribution, refusal, malformed input and heartbeat expiry. A Docker-only validation
   against `aion-bots-p306` captured the existing boot fingerprints and a forced login-server `die`/`restart`;
   the disposable stack was removed. Commit: `23e42fb35`.
-- [ ] **P3-07** [LIVE] S — Optional server-side packet tap behind `AION_PACKET_TAP`: register a
+- [x] **P3-07** [LIVE] S — Optional server-side packet tap behind `AION_PACKET_TAP`: register a
   `ServerPacketCaptureObserver` that copies clear frames **synchronously** (the buffer is encrypted in place
   right after the callback) into a bounded channel written as JSONL. Fix the false "Java parity" comments in
   `Capture/ServerPacketCaptureObserver.cs` and `Capture/NoOpServerPacketCaptureObserver.cs`: they are C#-only
-  infrastructure, and fidelity cleanup must not delete them.
+  infrastructure, and fidelity cleanup must not delete them. The opt-in observer copies the complete clear frame
+  before returning to the in-place encryptor, queues owned frames without blocking, records bounded-channel drops,
+  flushes on host shutdown and is forwarded by the bots Compose stack. A focused test mutates the source buffer
+  after capture and verifies the JSONL retained the original bytes. With Docker-only `aion-bots-p307`, a real bot
+  connect produced one 11-byte clear `SM_KEY` record in the mounted packet tap; the disposable stack was removed.
+  Java `ce54b7931` confirms there is no capture package and `AionServerPacket.write` goes directly from framing to
+  encryption. Commit: `1bc7a5d0e`.
 - [ ] **P3-08** [LIVE] S — `scripts/live/run-live.ps1`: `docker compose -p aion-bots-<run> up -d --build` (P3-02) →
   wait ready (P3-04) → bots → watcher → collect container logs into `run/<id>/` → `down -v` on the bots project
   only (`-Keep` leaves it running for inspection). Runs go under `$AION_E2E_RUN_ROOT` (default `run/`, ignored

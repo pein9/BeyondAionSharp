@@ -114,6 +114,7 @@ services:
       RESPAWN_TIME_MULTIPLIER: "1.0"
       AION_CONFIG_OVERLAY_DIR: /app/config-overlay
       AION_LOG_JSONL_DIR: /app/game-server/log
+      AION_PACKET_TAP: ${AION_PACKET_TAP:-false}
       GAMESERVER_ADMIN_API_ENABLED: "true"
       GAMESERVER_ADMIN_API_PORT: "7780"
       GAMESERVER_ADMIN_API_TOKEN: ${AION_BOT_ADMIN_TOKEN:-aion-bots-local-token}

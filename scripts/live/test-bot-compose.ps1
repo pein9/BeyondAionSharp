@@ -39,6 +39,7 @@ try {
 	Assert-Contract ($services.loginserver.image -eq 'aion-bots-loginserver:local') 'login image is not bot-scoped'
 	Assert-Contract ($services.chatserver.image -eq 'aion-bots-chatserver:local') 'chat image is not bot-scoped'
 	Assert-Contract ($services.gameserver.image -eq 'aion-bots-gameserver:local') 'game image is not bot-scoped'
+	Assert-Contract ($services.gameserver.environment.AION_PACKET_TAP -eq 'false') 'packet tap is not opt-in'
 	Assert-Contract ($services.mysql.tmpfs -contains '/var/lib/mysql:size=1g,mode=1777') 'MySQL data is not tmpfs-backed'
 	$initScript = $services.mysql.volumes | Where-Object { $_.target -eq '/docker-entrypoint-initdb.d/00-init.sh' }
 	Assert-Contract ($initScript.read_only -and [IO.Path]::GetFullPath($initScript.source) -eq [IO.Path]::GetFullPath((Join-Path $repoRoot 'docker/mysql/init/00-init.sh'))) 'shared database initializer mount is wrong'
