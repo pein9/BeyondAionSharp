@@ -1,6 +1,7 @@
 using System;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.State;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Controllers;
 
@@ -60,12 +61,12 @@ public class FlyController
             return false;
         if (!ignoreFlightCooldown)
         {
-            if (player.GetFlyReuseTime() > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+            if (player.GetFlyReuseTime() > SystemClock.CurrentMillis())
             {
-                Aion.GameServer.Utils.Audit.AuditLogger.Log(player, "possibly using fly cooldown hack. Left cooldown time: " + ((player.GetFlyReuseTime() - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000) + "s");
+                Aion.GameServer.Utils.Audit.AuditLogger.Log(player, "possibly using fly cooldown hack. Left cooldown time: " + ((player.GetFlyReuseTime() - SystemClock.CurrentMillis()) / 1000) + "s");
                 return false;
             }
-            player.SetFlyReuseTime(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + FLY_REUSE_TIME - 100);
+            player.SetFlyReuseTime(SystemClock.CurrentMillis() + FLY_REUSE_TIME - 100);
         }
         player.SetFlyState(FlyState.FLYING);
         player.SetState(CreatureState.FLYING);
@@ -118,11 +119,11 @@ public class FlyController
         if (player.GetFlyState() == 0)
         {
             // fly reuse time only if gliding from walking
-            if (player.GetFlyReuseTime() > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+            if (player.GetFlyReuseTime() > SystemClock.CurrentMillis())
             {
                 return false;
             }
-            player.SetFlyReuseTime(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + FLY_REUSE_TIME);
+            player.SetFlyReuseTime(SystemClock.CurrentMillis() + FLY_REUSE_TIME);
         }
         player.SetFlyState(FlyState.GLIDING);
         player.SetState(CreatureState.GLIDING);

@@ -24,7 +24,7 @@ namespace Aion.GameServer.Network.Aion;
 /// <summary>
 /// Java parity: network/aion/AionConnection (-Nemesiss-). Connection between GameServer and Aion client.
 /// extends AConnection&lt;AionServerPacket&gt;. java.nio -> shim; AtomicReference -> Interlocked/volatile;
-/// synchronized -> lock; currentTimeMillis -> UtcNow.ToUnixTimeMilliseconds; nanoTime -> Stopwatch.
+/// synchronized -> lock; currentTimeMillis -> SystemClock.CurrentMillis; nanoTime -> Stopwatch.
 /// Some collaborators (PacketProcessor, AionClientPacketFactory, ExecuteWrapper, RunnableStatsManager,
 /// GameServer, *Config, ThreadPoolManager async idiom) are not yet ported and are red-tolerated refs.
 /// </summary>
@@ -83,7 +83,7 @@ public class AionConnection : AConnection<AionServerPacket>
         string ip = GetIP();
         log.LogDebug("connection from: " + ip);
 
-        lastClientMessageTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        lastClientMessageTime = SystemClock.CurrentMillis();
         connectionAliveChecker = new ConnectionAliveChecker(this);
 
         if (PffConfig.PFF_MODE > 0 && PffConfig.THRESHOLD_MILLIS_BY_PACKET_OPCODE != null)
@@ -94,7 +94,7 @@ public class AionConnection : AConnection<AionServerPacket>
     protected AionConnection(string ip) : base(8192 * 4, 8192 * 4, ip)
     {
         state = State.CONNECTED;
-        lastClientMessageTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        lastClientMessageTime = SystemClock.CurrentMillis();
         if (PffConfig.PFF_MODE > 0 && PffConfig.THRESHOLD_MILLIS_BY_PACKET_OPCODE != null)
             pffRequests = new Dictionary<int, long>();
     }
@@ -145,7 +145,7 @@ public class AionConnection : AConnection<AionServerPacket>
         if (pck != null)
         {
             using var packetScope = BeginPacketLogScope(pck);
-            lastClientMessageTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            lastClientMessageTime = SystemClock.CurrentMillis();
             if (pffRequests != null)
             {
                 int msBetweenPackets = PffConfig.GetAllowedMillisBetweenPackets(pck);
@@ -273,7 +273,7 @@ public class AionConnection : AConnection<AionServerPacket>
         {
             msg += " " + player + " (client crash or connection loss)";
             ResetPlayerPositionAfterDisconnect(player);
-            long millisSinceLastClientPacket = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastClientMessageTime;
+            long millisSinceLastClientPacket = SystemClock.CurrentMillis() - lastClientMessageTime;
             long delayMs = Math.Max(0, 10000 - millisSinceLastClientPacket);
             PlayerLeaveWorldService.LeaveWorldDelayed(player, delayMs);
         }
@@ -397,7 +397,7 @@ public class AionConnection : AConnection<AionServerPacket>
 
         public void Run()
         {
-            long millisSinceLastClientPacket = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - outer.lastClientMessageTime;
+            long millisSinceLastClientPacket = SystemClock.CurrentMillis() - outer.lastClientMessageTime;
             if (millisSinceLastClientPacket - 5000 > CM_PING.CLIENT_PING_INTERVAL)
             {
                 log.LogInformation("Closing hanged up connection of " + outer + " (last sign of life was " + millisSinceLastClientPacket + "ms ago)");

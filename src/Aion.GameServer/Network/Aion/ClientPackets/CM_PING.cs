@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ServerPackets;
+using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Audit;
 using State = global::Aion.GameServer.Network.Aion.AionConnection.State;
 
@@ -26,7 +27,7 @@ public class CM_PING : AionClientPacket
     protected override void RunImpl()
     {
         long lastPingMillis = GetConnection().GetLastPingTime();
-        long nowMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long nowMillis = SystemClock.CurrentMillis();
         GetConnection().SetLastPingTime(nowMillis);
         SendPacket(new SM_PONG());
 

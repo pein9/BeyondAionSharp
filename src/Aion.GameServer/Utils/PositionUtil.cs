@@ -253,7 +253,7 @@ public static class PositionUtil
         long lastMove = creature.GetMoveController().GetLastMoveUpdate();
         if (lastMove > 0)
         {
-            long msSinceLastMove = Math.Min(1000, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastMove);
+            long msSinceLastMove = Math.Min(1000, SystemClock.CurrentMillis() - lastMove);
             offset += CalculateMaxCoveredDistance(creature, msSinceLastMove);
         }
         return offset;

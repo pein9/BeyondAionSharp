@@ -22,7 +22,7 @@ using Aion.GameServer.World.Geo;
 
 namespace Aion.GameServer.Controllers.Movement;
 
-/// <summary>Java parity: controllers/movement/NpcMoveController (ATracer) : CreatureMoveController&lt;Npc&gt;. NPC movement/geo-pathing. Matches the movement subsystem's PascalCase convention: inherited Started(AtomicBoolean.CompareAndSet/Get/Set), Owner, Heading, MovementMaskField, TargetDestX/Y/Z, LastMoveUpdate, MOVE_CHECK_OFFSET; SM_MOVE→SmMove; MovementMask.*→PascalCase consts; AILogger.moveinfo→Moveinfo. instanceof Creature→is; LinkedList getLast/removeLast→Last.Value+RemoveLast; synchronized→lock(this); Math.toRadians→*Math.PI/180; currentTimeMillis→UtcNow.ToUnixTimeMilliseconds; final override→sealed override. AI/WalkManager/WalkerGroup(green)/GeoService red-tolerated.</summary>
+/// <summary>Java parity: controllers/movement/NpcMoveController (ATracer) : CreatureMoveController&lt;Npc&gt;. NPC movement/geo-pathing. Matches the movement subsystem's PascalCase convention: inherited Started(AtomicBoolean.CompareAndSet/Get/Set), Owner, Heading, MovementMaskField, TargetDestX/Y/Z, LastMoveUpdate, MOVE_CHECK_OFFSET; SM_MOVE→SmMove; MovementMask.*→PascalCase consts; AILogger.moveinfo→Moveinfo. instanceof Creature→is; LinkedList getLast/removeLast→Last.Value+RemoveLast; synchronized→lock(this); Math.toRadians→*Math.PI/180; currentTimeMillis→SystemClock.CurrentMillis; final override→sealed override. AI/WalkManager/WalkerGroup(green)/GeoService red-tolerated.</summary>
 public class NpcMoveController : CreatureMoveController<Npc>
 {
     private static readonly ILogger log = AionLog.For(nameof(NpcMoveController));
@@ -196,7 +196,7 @@ public class NpcMoveController : CreatureMoveController<Npc>
             pointZ = Owner.GetZ();
             Owner.GetGameStats().SetNextGeoZUpdate(0);
         }
-        long nowMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long nowMillis = SystemClock.CurrentMillis();
         if (nowMillis < Owner.GetGameStats().GetNextGeoZUpdate())
             return false;
         float distance2D = (float)PositionUtil.GetDistance(pointX, pointY, targetX, targetY);
@@ -293,7 +293,7 @@ public class NpcMoveController : CreatureMoveController<Npc>
         float newY = (TargetDestY - ownerY) * distFraction + ownerY;
         float newZ = (TargetDestZ - ownerZ) * distFraction + ownerZ;
         if (GeoDataConfig.GEO_NPC_MOVE && GeoDataConfig.GEO_ENABLE && Owner.GetAi().GetSubState() != AISubState.WALK_PATH
-            && Owner.GetAi().GetState() != AIState.RETURNING && Owner.GetGameStats().GetNextGeoZUpdate() < DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+            && Owner.GetAi().GetState() != AIState.RETURNING && Owner.GetGameStats().GetNextGeoZUpdate() < SystemClock.CurrentMillis())
         {
             // fix Z if npc doesn't move to spawn point
             if (Owner.GetSpawn().GetX() != TargetDestX || Owner.GetSpawn().GetY() != TargetDestY || Owner.GetSpawn().GetZ() != TargetDestZ)
@@ -309,7 +309,7 @@ public class NpcMoveController : CreatureMoveController<Npc>
                         pointZ = newZ; // original pointZ is unreachable, override it so isReachedPoint() can return true
                 }
             }
-            Owner.GetGameStats().SetNextGeoZUpdate(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + 1000);
+            Owner.GetGameStats().SetNextGeoZUpdate(SystemClock.CurrentMillis() + 1000);
         }
         if (Owner.GetAi().IsLogging())
         {

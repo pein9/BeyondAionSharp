@@ -18,6 +18,7 @@ using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.Model.Templates.Items.Actions;
 using Aion.GameServer.Services;
 using Aion.GameServer.Services.Items;
+using Aion.GameServer.Utils;
 using Aion.GameServer.World;
 using Aion.GameServer.World.Knownlist;
 using LocationData = Aion.GameServer.Dataholders.PlayerInitialData.LocationData;
@@ -28,7 +29,7 @@ using PersistentState = Aion.GameServer.Model.GameObjects.IPersistable.Persisten
 
 namespace Aion.GameServer.Services.Players;
 
-/// <summary>Java parity: services/player/PlayerService (SoulKeeper, Saelya, Cura). Loads/stores/creates players: isNameUsedOrReserved, storeNewPlayer, storePlayer (all DAO persistence), getPlayer (full load: legion/macros/skills/lists/effects/cooldowns/inventory/warehouse/pet bags/cabinets/equipment stats/punishments/emotions), newPlayer (spawn loc, starting skills + creation items auto-equip, mailbox), getOrLoadPlayerCommonData, cancel/deletePlayer (deletion timer), deletePlayerFromDB, storeCreationTime, add/removeMacro, getPlayerName. Timestamp->DateTimeOffset (getTime->ToUnixTimeMilliseconds, new Timestamp(ms)->FromUnixTimeMilliseconds); currentTimeMillis->UtcNow. Most DAO/model types red-tolerated.</summary>
+/// <summary>Java parity: services/player/PlayerService (SoulKeeper, Saelya, Cura). Loads/stores/creates players: isNameUsedOrReserved, storeNewPlayer, storePlayer (all DAO persistence), getPlayer (full load: legion/macros/skills/lists/effects/cooldowns/inventory/warehouse/pet bags/cabinets/equipment stats/punishments/emotions), newPlayer (spawn loc, starting skills + creation items auto-equip, mailbox), getOrLoadPlayerCommonData, cancel/deletePlayer (deletion timer), deletePlayerFromDB, storeCreationTime, add/removeMacro, getPlayerName. Timestamp->DateTimeOffset (getTime->ToUnixTimeMilliseconds, new Timestamp(ms)->FromUnixTimeMilliseconds); currentTimeMillis->SystemClock.CurrentMillis. Most DAO/model types red-tolerated.</summary>
 public class PlayerService
 {
     /// <summary>
@@ -245,7 +246,7 @@ public class PlayerService
             return true;
         }
 
-        if (accData.GetDeletionDate().Value.ToUnixTimeMilliseconds() > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+        if (accData.GetDeletionDate().Value.ToUnixTimeMilliseconds() > SystemClock.CurrentMillis())
         {
             accData.SetDeletionDate(null);
             StoreDeletionTime(accData);
@@ -264,7 +265,7 @@ public class PlayerService
             return;
         }
 
-        accData.SetDeletionDate(DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + CustomConfig.CHARACTER_DELETION_TIME_MINUTES * 60 * 1000));
+        accData.SetDeletionDate(DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis() + CustomConfig.CHARACTER_DELETION_TIME_MINUTES * 60 * 1000));
         StoreDeletionTime(accData);
     }
 

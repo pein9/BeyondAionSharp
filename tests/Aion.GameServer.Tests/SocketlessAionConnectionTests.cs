@@ -9,11 +9,39 @@ using Aion.GameServer.Network.Aion;
 using Aion.GameServer.Network.Aion.ClientPackets;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Services.Players;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Tests;
 
 public sealed class SocketlessAionConnectionTests
 {
+	[Fact]
+	public void ConnectionAndPingTimestampsUseSystemClock()
+	{
+		long nowMillis = 1_700_000_000_000;
+		SystemClock.UseSource(() => nowMillis);
+		try
+		{
+			var connection = new RecordingSocketlessConnection();
+			Assert.Equal(nowMillis, connection.GetLastClientMessageTime());
+
+			nowMillis += 180_000;
+			var packet = new CM_PING(0, new HashSet<AionConnection.State> { AionConnection.State.CONNECTED });
+			packet.SetConnection(connection);
+			packet.SetBuffer(ByteBuffer.Wrap([0, 0]));
+			Assert.True(packet.Read());
+
+			packet.Run();
+
+			Assert.Equal(nowMillis, connection.GetLastPingTime());
+			Assert.IsType<SM_PONG>(Assert.Single(connection.SentPackets));
+		}
+		finally
+		{
+			SystemClock.UseSystemClock();
+		}
+	}
+
 	[Fact]
 	public void QuitReachesLeaveWorldAndClosesInlineWithOnlyTheClosePacket()
 	{

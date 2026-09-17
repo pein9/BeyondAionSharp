@@ -27,7 +27,7 @@ using LocationData = Aion.GameServer.Dataholders.PlayerInitialData.LocationData;
 
 namespace Aion.GameServer.Services.Players;
 
-/// <summary>Java parity: services/player/PlayerLeaveWorldService (ATracer, Neon). leaveWorldDelayed (schedule disconnect cleanup as DESPAWN task) and leaveWorld (full logout: safe-position fallback, service onLogout hooks, dead->revive, store effects/cooldowns/lifestats, group/alliance/legion logout, release summon/pet/postman, quest onLogout, persist common data + last-online, chat server logout). Future->ScheduledTask; schedule(Runnable,ms)->Schedule(ct-lambda); new Timestamp(currentTimeMillis)->DateTimeOffset.FromUnixTimeMilliseconds(UtcNow...). Many service/DAO/model types red-tolerated.</summary>
+/// <summary>Java parity: services/player/PlayerLeaveWorldService (ATracer, Neon). leaveWorldDelayed (schedule disconnect cleanup as DESPAWN task) and leaveWorld (full logout: safe-position fallback, service onLogout hooks, dead->revive, store effects/cooldowns/lifestats, group/alliance/legion logout, release summon/pet/postman, quest onLogout, persist common data + last-online, chat server logout). Future->ScheduledTask; schedule(Runnable,ms)->Schedule(ct-lambda); new Timestamp(currentTimeMillis)->SystemClock.UtcNow. Many service/DAO/model types red-tolerated.</summary>
 public class PlayerLeaveWorldService
 {
     private static readonly ILogger log = AionLog.For(nameof(PlayerLeaveWorldService));
@@ -135,7 +135,7 @@ public class PlayerLeaveWorldService
             player.GetInteractionTask().Abort();
 
         Aion.GameServer.QuestEngine.QuestEngine.GetInstance().OnLogOut(new QuestEnv(null, player, 0));
-        DateTime lastOnline = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()).UtcDateTime;
+        DateTime lastOnline = SystemClock.UtcNow().UtcDateTime;
         player.GetController().Delete();
         player.GetCommonData().SetOnline(false);
         player.GetCommonData().SetLastOnline(lastOnline);

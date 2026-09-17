@@ -655,9 +655,11 @@ Production-neutral: `SystemClock`'s default is the same call Java makes (`System
     cooldowns, item use delay, godstones. All 23 remaining direct reads in this slice now use `SystemClock`;
     the ratchet fell from 374 to 351 reads and a focused test advances chain and cooldown expiry through the
     virtual clock. Commit: `a2e44a070`.
-  - [ ] **B** movement, connection and lifecycle: `Controllers/Movement/*`, `PositionUtil`, `AntiHackService`,
+  - [x] **B** movement, connection and lifecycle: `Controllers/Movement/*`, `PositionUtil`, `AntiHackService`,
     `FlyController`, the `AionConnection` idle checker, `CM_PING`, `FloodManager`, `PlayerEnterWorldService` and
-    `PlayerLeaveWorldService` (re-entry time), `PlayerService` deletion.
+    `PlayerLeaveWorldService` (re-entry time), `PlayerService` deletion. All 29 direct reads in this slice now
+    use `SystemClock`; the ratchet fell from 351 to 322 reads, and a socketless connection test pins virtual
+    connection and ping timestamps. Commit: `8477dad7f`.
   - [ ] **C** content: `Handlers/Instance/*`, `Handlers/AI/*`, `InstanceService`, `WorldMapInstance`, instance
     cooldowns, `Taskmanager/Tasks/*` (item expiry), `Item*`, `RVController`, `CraftService`.
   - [ ] **D** the rest: services, `AbstractCronTask`, housing tasks, DAO cooldown filters, persistence timestamps.

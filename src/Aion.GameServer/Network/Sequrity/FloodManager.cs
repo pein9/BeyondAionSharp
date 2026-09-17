@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Network.Sequrity;
 
@@ -52,7 +53,7 @@ public sealed class FloodManager
 
         public int GetCurrentTick()
         {
-            return (int)((DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - ZERO) / _owner._tickLength);
+            return (int)((SystemClock.CurrentMillis() - ZERO) / _owner._tickLength);
         }
 
         public bool IsActive()
@@ -128,7 +129,7 @@ public sealed class FloodManager
 
     public readonly ILogger log = AionLog.For(nameof(FloodManager));
 
-    private static readonly long ZERO = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - 86400000;
+    private static readonly long ZERO = SystemClock.CurrentMillis() - 86400000;
 
     private readonly Dictionary<string, LogEntry> _entries = new Dictionary<string, LogEntry>();
     private readonly object _lock = new object();

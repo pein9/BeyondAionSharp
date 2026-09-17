@@ -4,13 +4,14 @@ using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Services.Players;
 using Aion.GameServer.SkillEngine.Model;
+using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Stats;
 using Aion.GameServer.World;
 using SM_ATTACK_STATUS = Aion.GameServer.Network.Aion.ServerPackets.SmAttackStatus;
 
 namespace Aion.GameServer.Controllers.Movement;
 
-/// <summary>Java parity: controllers/movement/PlayerMoveController (ATracer) : PlayableMoveController&lt;Player&gt;. Fall-damage + last-client-position tracking. Nested SmAttackStatus.TYPE/LOG enums qualified; currentTimeMillis→UtcNow.ToUnixTimeMilliseconds; super→base. Base members (Owner/getMovementMask/updateLastMove)/WorldPosition/StatFunctions red-tolerated.</summary>
+/// <summary>Java parity: controllers/movement/PlayerMoveController (ATracer) : PlayableMoveController&lt;Player&gt;. Fall-damage + last-client-position tracking. Nested SmAttackStatus.TYPE/LOG enums qualified; currentTimeMillis→SystemClock.CurrentMillis; super→base. Base members (Owner/getMovementMask/updateLastMove)/WorldPosition/StatFunctions red-tolerated.</summary>
 public class PlayerMoveController : PlayableMoveController<Player>
 {
     private float fallDistance;
@@ -55,7 +56,7 @@ public class PlayerMoveController : PlayableMoveController<Player>
     {
         UpdateLastMove();
         lastMovementMask = GetMovementMask();
-        lastPositionFromClientMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        lastPositionFromClientMillis = SystemClock.CurrentMillis();
         if (lastPositionFromClient == null || lastPositionFromClient.GetMapId() != Owner.GetWorldId())
             lastPositionFromClient = new WorldPosition(Owner.GetWorldId(), Owner.GetX(), Owner.GetY(), Owner.GetZ(), Owner.GetHeading());
         else
@@ -109,11 +110,11 @@ public class PlayerMoveController : PlayableMoveController<Player>
     {
         // delayMillis is required because instant skills (like Power: Emergency Teleport I) are not scheduled with hitTime in endCast
         int delayMillis = skill.IsInstantSkill() ? skill.GetHitTime() : 0;
-        this.lastRandomMoveLocEffectTimeMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + delayMillis;
+        this.lastRandomMoveLocEffectTimeMillis = SystemClock.CurrentMillis() + delayMillis;
     }
 
     public bool HasMovedByRandomMoveLocEffect()
     {
-        return lastRandomMoveLocEffectTimeMillis != 0 && DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastRandomMoveLocEffectTimeMillis < 300;
+        return lastRandomMoveLocEffectTimeMillis != 0 && SystemClock.CurrentMillis() - lastRandomMoveLocEffectTimeMillis < 300;
     }
 }

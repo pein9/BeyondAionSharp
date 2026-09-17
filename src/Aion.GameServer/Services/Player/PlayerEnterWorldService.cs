@@ -114,7 +114,7 @@ public sealed class PlayerEnterWorldService
         CharacterBanInfo cbi = playerAccData.GetCharBanInfo();
         if (cbi != null)
         {
-            if (cbi.GetEnd() >= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000)
+            if (cbi.GetEnd() >= SystemClock.CurrentSeconds())
             {
                 client.SendPacket(new SM_ENTER_WORLD_CHECK(Msg.CONNECTION_ERROR));
                 return;
@@ -136,7 +136,7 @@ public sealed class PlayerEnterWorldService
         }
 
         DateTimeOffset? lastOnline = pcd.GetLastOnline();
-        if (!pcd.IsInEditMode() && lastOnline != null && DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastOnline.Value.ToUnixTimeMilliseconds() < (GSConfig.CHARACTER_REENTRY_TIME * 1000))
+        if (!pcd.IsInEditMode() && lastOnline != null && SystemClock.CurrentMillis() - lastOnline.Value.ToUnixTimeMilliseconds() < (GSConfig.CHARACTER_REENTRY_TIME * 1000))
         {
             client.SendPacket(new SM_ENTER_WORLD_CHECK(Msg.REENTRY_TIME));
             return;
@@ -187,7 +187,7 @@ public sealed class PlayerEnterWorldService
         pcd.SetOnline(true);
         player.GetFriendList().SetStatus(Status.ONLINE, pcd);
         PlayerDAO.OnlinePlayer(player, true);
-        PlayerDAO.StoreLastOnlineTime(player.GetObjectId(), DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()).UtcDateTime);
+        PlayerDAO.StoreLastOnlineTime(player.GetObjectId(), SystemClock.UtcNow().UtcDateTime);
         log.LogInformation("Player " + player.GetName() + " (" + account + ") logged on");
         pcd.SetInEditMode(false);
 
@@ -203,7 +203,7 @@ public sealed class PlayerEnterWorldService
         // Energy of Repose must be calculated before sending SM_STATS_INFO
         if (pcd.GetLastOnline() != null)
         {
-            long secondsOffline = (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - pcd.GetLastOnline().Value.ToUnixTimeMilliseconds()) / 1000;
+            long secondsOffline = (SystemClock.CurrentMillis() - pcd.GetLastOnline().Value.ToUnixTimeMilliseconds()) / 1000;
             if (secondsOffline > 10 * 60) // 10 mins offline = 0 salvation points
                 pcd.ResetSalvationPoints();
 
