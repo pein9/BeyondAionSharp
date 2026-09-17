@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Aion.GameServer\Aion.GameServer.csproj" />
+    <ProjectReference Include="..\..\src\Aion.LoginServer\Aion.LoginServer.csproj" />
   </ItemGroup>
 
 </Project>

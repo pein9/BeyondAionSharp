@@ -253,7 +253,7 @@ public class LoginDatabaseIntegrationTests
 		var serverTask = loginServer.StartAsync();
 
 		using var client = await SocketServerSmokeTests.ConnectWithRetryAsync(port);
-		await SocketServerSmokeTests.CompleteLoginHandshakeAsync(client, keyGenerator, account.Id, account.Name, "secret");
+		await SocketServerSmokeTests.CompleteLoginHandshakeAsync(client, account.Id, account.Name, "secret");
 
 		await loginServer.StopAsync(TimeSpan.FromSeconds(1));
 		await SocketServerSmokeTests.AssertClientClosedAsync(client.GetStream());

@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Aion.Bots\Aion.Bots.csproj" />
     <ProjectReference Include="..\..\src\Aion.LoginServer\Aion.LoginServer.csproj" />
   </ItemGroup>
 

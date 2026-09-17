@@ -361,12 +361,16 @@ Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 con
   fixture-wide test exposed and corrected `SM_NPC_INFO` metadata to its actually serialized live position
   (`7d8cf6ab2`). The generated system-message table covers all 4,115 factories (4,110 unique IDs) and its source
   hash test fails on catalog drift. Commit: `b6cf4242f`.
-- [ ] **P2-06** [LIVE] M — Login client: move the Blowfish, first-packet XOR undo and the existing
+- [x] **P2-06** [LIVE] M — Login client: move the Blowfish, first-packet XOR undo and the existing
   `CM_AUTH_GG`/`CM_LOGIN`/`CM_SERVER_LIST`/`CM_PLAY`/`CM_UPDATE_SESSION` builders out of
   `SocketServerSmokeTests.cs`. Implement `UnscrambleModulus` (inverse of `LoginRsaKeyPair.ScrambleModulus`):
   the tests never needed it because they read the RSA key straight from `FixedLoginKeyGenerator` (fixed
   Blowfish key, random RSA pair) instead of from `SM_INIT`. Test against `LoginClientSocketServer` with the
   real `LoginKeyGenerator`.
+  Added a reusable stateful login codec and all five packet writers to `Aion.Bots`; `SM_INIT` now supplies
+  the session, negotiated Blowfish key and an unscrambled RSA modulus used to encrypt credentials. The main
+  loopback handshake uses the real random `LoginKeyGenerator`, while the inverse transform has a direct
+  generated-key round-trip test and the existing smoke suite exercises every moved writer. Commit: `7d0b1ef3a`.
 - [ ] **P2-07** [LIVE] S — Chat client (`CmChatIni`, `CmPlayerAuth`, channel request and message), lifted from
   `ChatConnectionSmokeTests.cs`, driven by `SM_CHAT_INIT`.
 - [ ] **P2-08** [BOTH] S — `IBotTransport`: send CM bytes, receive decoded SMs, close, crash (drop without
