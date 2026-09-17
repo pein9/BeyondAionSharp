@@ -397,7 +397,7 @@ Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 con
   delegates whose safe defaults make no unsolicited choice. A wall-clock-only LIVE scheduler emits `CM_PING`
   on a validated 180–183 s cadence and never enters the Java server's under-178 s failure window. Commit:
   `74d96cfac`.
-- [ ] **P2-11** [BOTH] M — Client timing contract, one table keyed to the ported Java commit:
+- [x] **P2-11** [BOTH] M — Client timing contract, one table keyed to the ported Java commit:
   - `CM_ATTACK` no faster than weapon attack speed minus 300 ms (`PlayerController.cs:420-426`).
   - `CM_TARGET_SELECT` before `CM_CASTSPELL` (the server uses the current target).
   - Next cast no sooner than 350 ms after cast start, and no sooner than the animation's last hit after
@@ -408,6 +408,10 @@ Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 con
     default), and after a crash also wait out the delayed leave-world (up to 10 s).
   - When `97927c65a` (today only on `upstream/attack-motion-gate`) reaches `upstream/4.8` and is ported,
     update the table in that port commit.
+  Added a stateful timing gate and immutable rule table keyed to `ce54b7931`, covering attack/cast spacing,
+  target ordering, decoded skill cooldowns, item-template use delays, movement-blocking activities and normal or
+  crashed reentry. Client first-hit and post-result last-hit timings load `motion_times.xml` through the production
+  `MotionData` XML model and mirror Java's speed/race/gender/weapon formulas. Commit: `c57ff09b6`.
 - [ ] **P2-12** [BOTH] M — Bot API facade (Appendix B maps each call to packets): `Login`, `ListCharacters`,
   `CreateCharacter`, `DeleteCharacter`, `RestoreCharacter`, `EnterWorld`, `ChangeChannel`, `Quit`, `Crash`,
   `MoveTo`, `Jump`, `Fly`, `Land`, `Glide`, `Rest`, `Emote`, `Target`, `Attack`, `Cast`, `SummonCommand`,
