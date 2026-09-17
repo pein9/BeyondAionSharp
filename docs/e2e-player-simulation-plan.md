@@ -72,7 +72,7 @@ runs use their own isolated compose project.
 | B9 | **Randomness cannot be seeded.** `Rnd` is a `ThreadLocal<Random>`; ~550 call sites. .NET also randomizes string hashing per process, so string-keyed and concurrent collections enumerate in a different order every run. | SIM runs cannot be replayed; kill and drop counts are not assertable. | `Commons/Utils/Rnd.cs:20` |
 | B10 | **Process-global state.** 93 `GetInstance` singletons (58 never-reset `SingletonHolder`s), a once-only `CronService`, a static `DatabaseFactory`, a static capture observer, and a bootstrap that changes the process CWD. | One world per test process; scenarios need isolation by account, channel and ordering (`P5-12`). | `CronService.cs:41-52`; `GameServerBootstrapService.cs:72` |
 | B11 | **Resolved for Phase 1.** Env-gated DB/artifact tests report visible skips, and the real-time shutdown/socket suite passed ten consecutive local solution runs after stabilization. LIVE still needs its isolated compose project (P3-02) and SIM its Docker database script (P5-06). | Missing prerequisites and flakes are now distinguishable from regressions. | `Skip.IfNot`; `ShutdownHookTests.cs`; Phase 1 completion record |
-| B12 | **Java reference drift (partly fixed).** Local `../aion-server` `4.8` was 47 commits behind `upstream/4.8`; it was fast-forwarded to `lastCompletedJavaCommit` (`ce54b7931`) on 2026-09-17 and falls behind again as ports land. The Java golden-fixture generators exist only on `feature/object-spine-bigbang`, based 87 commits behind `lastCompletedJavaCommit`. | Side-by-side reading and `check_fidelity.py` compare against a stale tree unless `4.8` is kept in step; new Java fixtures need the generators brought forward (`P0-05`). | `git -C ../aion-server rev-list --count 4.8..upstream/4.8` |
+| B12 | **Java reference drift partly fixed; fixture-generator drift resolved.** Local `../aion-server` `4.8` was fast-forwarded to `lastCompletedJavaCommit` (`ce54b7931`) on 2026-09-17 and falls behind again as ports land. The eleven Java golden-fixture generators were forward-ported from `feature/object-spine-bigbang` onto that exact revision on ordinary branch `codex/e2e-fixture-generators` (`016bd7624`). | Side-by-side reading and `check_fidelity.py` still require keeping `4.8` at `lastCompletedJavaCommit`; new fixtures can now be generated from the dedicated branch without using the stale feature branch. | `git -C ../aion-server rev-list --count 4.8..upstream/4.8` |
 
 ### Useful baselines (re-measure as phases land)
 
@@ -191,11 +191,14 @@ operations and coverage. Phase 11 is group and scheduled content.
   `toll` column and `account_rewards` table that `login-server/sql/update.sql` drops, so both fail on a fresh
   database. `docker/mysql/init/00-init.sh` also keeps going after a schema error, so LIVE readiness (P3-04) must
   verify the tables exist, and `new-sim-db.ps1` (P5-06) must stop on the first SQL error. (`f08bf4c5a`)
-- [ ] **P0-05** [BOTH] M — Bring the Java golden-fixture generators to the spec revision (D12 approved). They live
+- [x] **P0-05** [BOTH] M — Bring the Java golden-fixture generators to the spec revision (D12 approved). They live
   only on `feature/object-spine-bigbang`, based at `f2f77fefe`, 87 commits behind `lastCompletedJavaCommit`.
   Carry the generator tests onto a branch or worktree of `../aion-server` at `lastCompletedJavaCommit` and
   confirm they reproduce today's fixtures byte for byte before generating new ones. P2-05, P6-01 and P9-02
-  depend on this.
+  depend on this. The eleven generators now live on ordinary Java branch `codex/e2e-fixture-generators`, rooted
+  at exact spec revision `ce54b7931`; their 42 test methods pass and regenerate all 211 packet/formula fixtures
+  with zero Git-canonical byte differences from today's corpus. The harness uses JDBC proxies only—no local or
+  Docker database is required. Java branch commit: `016bd7624`. Commit: `4f22e198c`.
 
 ### Phase 1 — See every server error
 
@@ -347,10 +350,10 @@ Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 con
   are length-prefixed). Test against every golden fixture for a decoded packet (`payloadHex` is body only).
   Packets without fixtures: `SM_CASTSPELL_RESULT`, `SM_DIALOG_WINDOW`, `SM_LOOT_ITEMLIST`, `SM_DIE`,
   `SM_CHARACTER_LIST`, `SM_TRADELIST`, `SM_KEY`, `SM_VERSION_CHECK`, `SM_L2AUTH_LOGIN_CHECK`,
-  `SM_PLAYER_SPAWN`, `SM_PLAY_MOVIE`, `SM_MAIL_SERVICE`, `SM_GROUP_INFO`. Until P0-05 lands, test those against
-  bytes from the audited C# writers and mark them `JavaFixturePending`. Include an `SM_SYSTEM_MESSAGE` decoder
-  with an id → `STR_` name table generated from `SM_SYSTEM_MESSAGE.cs` (4,115 factories); a test fails when it
-  drifts.
+  `SM_PLAYER_SPAWN`, `SM_PLAY_MOVIE`, `SM_MAIL_SERVICE`, `SM_GROUP_INFO`. Generate their Java fixtures from the
+  P0-05 branch before adding their decoder cases; do not use `JavaFixturePending`. Include an
+  `SM_SYSTEM_MESSAGE` decoder with an id → `STR_` name table generated from `SM_SYSTEM_MESSAGE.cs` (4,115
+  factories); a test fails when it drifts.
 - [ ] **P2-06** [LIVE] M — Login client: move the Blowfish, first-packet XOR undo and the existing
   `CM_AUTH_GG`/`CM_LOGIN`/`CM_SERVER_LIST`/`CM_PLAY`/`CM_UPDATE_SESSION` builders out of
   `SocketServerSmokeTests.cs`. Implement `UnscrambleModulus` (inverse of `LoginRsaKeyPair.ScrambleModulus`):
