@@ -28,6 +28,7 @@ public sealed class CronService
     private static readonly ILogger log = AionLog.For(nameof(CronService));
 
     private static readonly object initLock = new object();
+    private static readonly AsyncLocal<CronService?> scopedInstance = new();
     private static CronService instance;
 
     private readonly TimeZoneInfo timeZone;
@@ -39,7 +40,7 @@ public sealed class CronService
 
     public static CronService GetInstance()
     {
-        return instance;
+        return scopedInstance.Value ?? instance;
     }
 
     public static void InitSingleton(Type runnableRunner, TimeZoneInfo timeZone)
@@ -73,7 +74,26 @@ public sealed class CronService
     internal static CronService CreateDeterministic(Type runnableRunner, TimeZoneInfo timeZone) =>
         new(runnableRunner, timeZone);
 
+    /// <summary>
+    /// Gives an isolated in-process harness its own cron service without replacing the process singleton.
+    /// The execution-context scope flows through the virtual pool's bounded construction and drain tasks.
+    /// </summary>
+    internal static IDisposable UseScopedInstance(CronService service)
+    {
+        ArgumentNullException.ThrowIfNull(service);
+        CronService? previous = scopedInstance.Value;
+        scopedInstance.Value = service;
+        return new ScopedInstance(() => scopedInstance.Value = previous);
+    }
+
     internal bool HasQuartzScheduler => scheduler != null;
+
+    private sealed class ScopedInstance(Action restore) : IDisposable
+    {
+        private Action? restoreAction = restore;
+
+        public void Dispose() => Interlocked.Exchange(ref restoreAction, null)?.Invoke();
+    }
 
     public void Shutdown()
     {

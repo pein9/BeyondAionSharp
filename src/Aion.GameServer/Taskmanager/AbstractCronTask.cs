@@ -56,6 +56,16 @@ public abstract class AbstractCronTask : Aion.Commons.Lang.Runnable
         });
     }
 
+    /// <summary>
+    /// Repairs the deliberately Java-faithful initialization semaphore after a fault-injection test. Production
+    /// code must not call this: a startup-body failure is surfaced by the SIM drain and aborts the fixture.
+    /// </summary>
+    internal static void RestoreInitializationSemaphoreForTests()
+    {
+        if (semaphore.CurrentCount == 0)
+            semaphore.Release();
+    }
+
     /// <returns>Default implementation returns true if the server was down when task should have run</returns>
     protected virtual bool ShouldRunOnStart()
     {

@@ -46,6 +46,39 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 
 	public IReadOnlyList<VirtualThreadPoolFault> Faults => _faults;
 
+	/// <summary>
+	/// Runs one eager singleton constructor and all work it queued for virtual time zero. Both phases use wall
+	/// time bounds because an <c>AbstractCronTask</c> constructor can wait forever on Java's shared semaphore,
+	/// while a startup body can block inside the synchronous virtual drain.
+	/// </summary>
+	public async Task<T> InitializeAndDrainAsync<T>(string name, Func<T> factory, TimeSpan wallTimeTimeout)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(name);
+		ArgumentNullException.ThrowIfNull(factory);
+		if (wallTimeTimeout <= TimeSpan.Zero)
+			throw new ArgumentOutOfRangeException(nameof(wallTimeTimeout));
+
+		int firstNewFault = _faults.Count;
+		T value = await RunBoundedAsync(factory, name + " construction", wallTimeTimeout);
+		await RunBoundedAsync(
+			() =>
+			{
+				Advance(TimeSpan.Zero);
+				return true;
+			},
+			name + " zero-delay drain",
+			wallTimeTimeout);
+
+		VirtualThreadPoolFault[] newFaults = _faults.Skip(firstNewFault).ToArray();
+		if (newFaults.Length > 0)
+		{
+			throw new AggregateException(
+				$"{name} initialization recorded {newFaults.Length} virtual scheduled-task fault(s).",
+				newFaults.Select(fault => fault.Exception));
+		}
+		return value;
+	}
+
 	public override ScheduledTask Schedule(
 		Func<CancellationToken, ValueTask> action,
 		TimeSpan delay,
@@ -157,6 +190,18 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 			"Virtual {TimerKind} timer failed at {DueMillis}ms",
 			kind == ThreadPoolScheduleKind.FixedRate ? "fixed-rate" : "one-shot",
 			dueMillis);
+	}
+
+	private static async Task<T> RunBoundedAsync<T>(Func<T> action, string operation, TimeSpan wallTimeTimeout)
+	{
+		try
+		{
+			return await Task.Run(action).WaitAsync(wallTimeTimeout);
+		}
+		catch (TimeoutException exception)
+		{
+			throw new TimeoutException($"{operation} exceeded the {wallTimeTimeout} wall-time limit.", exception);
+		}
 	}
 
 	public override async ValueTask DisposeAsync()
