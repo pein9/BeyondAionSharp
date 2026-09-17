@@ -17,10 +17,12 @@ public sealed class SimulationLogPolicy : IDisposable
 	private readonly VirtualThreadPool clock;
 	private readonly SimulationLogPolicyOptions options;
 	private readonly LogProblemAllowlist allowlist;
-	private readonly CapturingLoggerProvider capture = new();
+	private readonly CapturingLoggerProvider capture;
 	private readonly ILoggerFactory factory;
+	private readonly bool ownsLoggerResources;
 	private readonly IDisposable factoryOverride;
 	private readonly IDisposable? scenarioScope;
+	private readonly int firstCapturedEntry;
 	private readonly int firstFault;
 	private readonly List<SimulationProblem> syntheticProblems = [];
 	private readonly Dictionary<string, Queue<string>> recentPackets = new(StringComparer.Ordinal);
@@ -31,7 +33,10 @@ public sealed class SimulationLogPolicy : IDisposable
 		string scenario,
 		VirtualThreadPool clock,
 		string allowlistPath,
-		SimulationLogPolicyOptions? options = null)
+		SimulationLogPolicyOptions? options = null,
+		CapturingLoggerProvider? captureProvider = null,
+		ILoggerFactory? loggerFactory = null,
+		bool includeHistory = false)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(run);
 		ArgumentException.ThrowIfNullOrWhiteSpace(scenario);
@@ -39,14 +44,19 @@ public sealed class SimulationLogPolicy : IDisposable
 		this.scenario = scenario;
 		this.clock = clock ?? throw new ArgumentNullException(nameof(clock));
 		this.options = options ?? new SimulationLogPolicyOptions();
+		if ((loggerFactory == null) != (captureProvider == null))
+			throw new ArgumentException("An external logger factory and capturing provider must be supplied together.");
 		BaseClientPacket<AionConnection>.ResetPartiallyReadPacketWarnings();
 		allowlist = LogProblemAllowlist.Load(allowlistPath);
-		factory = LoggerFactory.Create(builder =>
+		capture = captureProvider ?? new CapturingLoggerProvider();
+		ownsLoggerResources = loggerFactory == null;
+		factory = loggerFactory ?? LoggerFactory.Create(builder =>
 		{
 			builder.ClearProviders();
 			builder.SetMinimumLevel(LogLevel.Trace);
 			builder.AddProvider(capture);
 		});
+		firstCapturedEntry = includeHistory ? 0 : capture.Entries.Count;
 		factoryOverride = AionLog.OverrideFactory(factory);
 		scenarioScope = factory.CreateLogger("SIM_SCENARIO").BeginScope(new Dictionary<string, object?>
 		{
@@ -128,15 +138,18 @@ public sealed class SimulationLogPolicy : IDisposable
 	{
 		scenarioScope?.Dispose();
 		factoryOverride.Dispose();
-		factory.Dispose();
-		capture.Dispose();
+		if (ownsLoggerResources)
+		{
+			factory.Dispose();
+			capture.Dispose();
+		}
 	}
 
 	private IReadOnlyList<SimulationProblem> CollectProblems()
 	{
 		var problems = new List<SimulationProblem>(syntheticProblems);
 		VirtualThreadPoolFault[] faults = clock.Faults.Skip(firstFault).ToArray();
-		foreach (CapturedLogEntry entry in capture.Entries)
+		foreach (CapturedLogEntry entry in capture.Entries.Skip(firstCapturedEntry))
 		{
 			if (entry.Exception != null && faults.Any(fault => ReferenceEquals(fault.Exception, entry.Exception)))
 				continue; // Report scheduler failures once, below, with their virtual due time.

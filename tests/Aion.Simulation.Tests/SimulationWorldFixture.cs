@@ -7,6 +7,7 @@ using Aion.GameServer.Configuration;
 using Aion.GameServer.Configs;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Configs.Network;
+using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Data;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Network.ChatServer;
@@ -51,6 +52,12 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 
 	public SimulationLoginServerLink LoginLink { get; private set; } = null!;
 
+	public CapturingLoggerProvider LogCapture { get; private set; } = null!;
+
+	public ILoggerFactory LoggerFactory { get; private set; } = null!;
+
+	public int Seed { get; private set; }
+
 	public async Task InitializeAsync()
 	{
 		if (Environment.GetEnvironmentVariable("AION_SIM_DB_INTEGRATION") != "1")
@@ -65,6 +72,13 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 		Directory.CreateDirectory(_scratchDirectory);
 		try
 		{
+			if (!int.TryParse(Environment.GetEnvironmentVariable("AION_SIM_SEED") ?? "1",
+				System.Globalization.NumberStyles.Integer,
+				System.Globalization.CultureInfo.InvariantCulture,
+				out int seed))
+				throw new InvalidOperationException("AION_SIM_SEED must be an integer.");
+			Seed = seed;
+			Rnd.SetProcessSeed(seed);
 			_database = await RunDatabaseScriptAsync("Create");
 			_processExitHandler = (_, _) => DropDatabaseAtProcessExit();
 			AppDomain.CurrentDomain.ProcessExit += _processExitHandler;
@@ -97,13 +111,20 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 					GSConfig.TIME_ZONE_ID = TimeZoneInfo.Utc;
 					NetworkConfig.LOG_UNKNOWN_PACKETS = true;
 					NetworkConfig.LOG_IGNORED_PACKETS = true;
+					WorldConfig.WORLD_MAX_TWINS_USUAL = 5;
+					WorldConfig.WORLD_EMULATE_FASTTRACK = false;
 					ServerTime.Initialize(TimeZoneInfo.Utc);
 				},
 			};
 			_configLoadScope = Config.UseRuntimeLoadOptions(configLoadOptions);
 
 			var services = new ServiceCollection();
-			services.AddLogging();
+			LogCapture = new CapturingLoggerProvider();
+			services.AddLogging(builder =>
+			{
+				builder.SetMinimumLevel(LogLevel.Trace);
+				builder.AddProvider(LogCapture);
+			});
 			services.AddGameServer(new GameServerOptions(), databaseOptions, configLoadOptions);
 			services.RemoveAll<ThreadPoolManager>();
 			services.AddSingleton(Clock);
@@ -114,7 +135,8 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 
 			IReadOnlyDictionary<int, SimulationLoginAccount> accounts = new Dictionary<int, SimulationLoginAccount>
 			{
-				[1] = new("sim-player", AccessLevel: 0, Membership: 1),
+				[1] = new("sim-player-1", AccessLevel: 0, Membership: 1),
+				[2] = new("sim-player-2", AccessLevel: 0, Membership: 1),
 			};
 			services.RemoveAll<LoginServerFacade>();
 			services.AddSingleton(
@@ -125,7 +147,8 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 					owner => LoginLink = new SimulationLoginServerLink(owner, accounts)));
 
 			_services = services.BuildServiceProvider();
-			AionLog.SetFactory(_services.GetRequiredService<ILoggerFactory>());
+			LoggerFactory = _services.GetRequiredService<ILoggerFactory>();
+			AionLog.SetFactory(LoggerFactory);
 			DatabaseFactory.Initialize(databaseOptions);
 			ThreadPoolManager.RegisterInstance(Clock);
 			LoginServer = _services.GetRequiredService<LoginServerFacade>();
@@ -173,6 +196,8 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 		DatabaseFactory.Dispose();
 		SystemClock.UseSystemClockProcessWide();
 		ServerTime.Initialize(TimeZoneInfo.Local);
+		Rnd.UseProductionRandom();
+		Rnd.UseProductionRandomProcessWide();
 		if (_database != null)
 		{
 			await RunDatabaseScriptAsync("Drop", _database.Database);

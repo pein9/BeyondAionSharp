@@ -51,26 +51,8 @@ public static class LiveBotRunner
 		{
 			foreach (var actor in actors)
 				actor.Trace.WriteAction("s00", "scenario:start", new Dictionary<string, object?> { ["scenario"] = "L0" });
-
-			await Task.WhenAll(actors.Select(a => a.StepAsync("login-game-auth", a.Session.LoginAndAuthenticateAsync, cancellationToken)));
-			await Task.WhenAll(actors.Select(a => a.StepAsync("create-elyos-warrior", a.Session.CreateCharacterAsync, cancellationToken)));
-			await Task.WhenAll(actors.Select(a => a.StepAsync("enter-world", a.Session.EnterWorldAsync, cancellationToken)));
 			int? channel = PlannedChannel(options, "L0");
-			if (channel != null)
-				await Task.WhenAll(actors.Select(a => a.StepAsync("isolate-channel", token => a.Session.ChangeChannelAsync(channel.Value, token), cancellationToken)));
-			await Task.WhenAll(actors.Select(a => a.StepAsync("chat-auth-and-region-join", a.Session.ConnectChatAsync, cancellationToken)));
-
-			const string message = "L0 channel delivery";
-			await actors[0].StepAsync("send-region-message", token => actors[0].Session.SendChatMessageAsync(message, token), cancellationToken);
-			await Task.WhenAll(actors.Skip(1).Select(a =>
-				a.StepAsync("receive-region-message", token => a.Session.ReceiveChatMessageAsync(message, token), cancellationToken)));
-
-			await actors[0].StepAsync("walk-10m", actors[0].Session.WalkTenMetersAsync, cancellationToken);
-			await actors[0].StepAsync("ping", actors[0].Session.PingAsync, cancellationToken);
-			await Task.WhenAll(actors.Select(a => a.StepAsync("quit", a.Session.QuitAsync, cancellationToken)));
-			await actors[0].StepAsync("verify-offline", actors[0].Session.VerifyOfflineAsync, cancellationToken);
-			await actors[0].StepAsync("wait-reentry", actors[0].Session.WaitForReentryAsync, cancellationToken);
-			await actors[0].StepAsync("relogin-character-list", actors[0].Session.ReloginAndVerifyPersistenceAsync, cancellationToken);
+			await L0Scenario.RunAsync(actors, channel, includeChat: true, cancellationToken);
 
 			foreach (var actor in actors)
 				actor.Trace.WriteAction(actor.LastStep, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = "L0" });
@@ -238,7 +220,7 @@ public static class LiveBotRunner
 		}, cancellationToken);
 	}
 
-	private sealed class L0Actor : IAsyncDisposable
+	private sealed class L0Actor : IL0ScenarioActor, IAsyncDisposable
 	{
 		private readonly LiveBotOptions options;
 		private readonly LiveBotProblemWriter problems;
@@ -259,6 +241,7 @@ public static class LiveBotRunner
 		public string Account { get; }
 		public BotActionTraceWriter Trace { get; }
 		public LiveBotSession Session { get; }
+		IL0ScenarioSession IL0ScenarioActor.Session => Session;
 		public string LastStep => $"s{stepNumber:D2}";
 
 		public Task StepAsync(string action, Func<CancellationToken, Task> operation, CancellationToken cancellationToken)
@@ -268,6 +251,12 @@ public static class LiveBotRunner
 			return RunStepAsync(options, problems, Trace, Bot, Account, step, action, cancellationToken, operation);
 		}
 
+		Task IL0ScenarioActor.StepAsync(
+			string action,
+			Func<IL0ScenarioSession, CancellationToken, Task> operation,
+			CancellationToken cancellationToken) =>
+			StepAsync(action, token => operation(Session, token), cancellationToken);
+
 		public async ValueTask DisposeAsync()
 		{
 			await Session.DisposeAsync();
@@ -276,7 +265,7 @@ public static class LiveBotRunner
 	}
 }
 
-internal sealed class LiveBotSession : IAsyncDisposable
+internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 {
 	private const string Password = "aion-bots";
 	private const string RegionChannel = "@\u0001public_ALL\u00011.0.AION.KOR";

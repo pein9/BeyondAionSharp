@@ -869,9 +869,15 @@ replays the same seeded trace.
   scenarios. The deterministic Docker profile exposes five ordinary twins with FastTrack disabled. A rebuilt,
   Docker-only L0 run moved both bots to channel 1 (`worldChannel 210010001`) and completed with no new or regressed
   log fingerprints. (`503a0c3a6`)
-- [ ] **P5-13** [SIM] S — Scenario **S0 boot smoke** (world up, known NPCs present, zero unallowlisted problems
+- [x] **P5-13** [SIM] S — Scenario **S0 boot smoke** (world up, known NPCs present, zero unallowlisted problems
   after 60 virtual seconds) and **L0** in SIM, using the same script as LIVE (without the chat-server steps, which
   are LIVE-only). Run S0 twice with the same seed and assert identical SM streams. Depends on P5-06..P5-12.
+  LIVE and SIM now execute one shared intent-level L0 script; the SIM actor drives the production encrypted packet
+  path through authentication, character create, entry, channel isolation, movement, ping, quit persistence,
+  virtual re-entry cooldown and relogin while omitting only the LIVE chat steps. S0 validates the booted world and
+  known Poeta NPC, advances two same-seed 60-second windows and compares their serialized SM type streams under the
+  shared zero-problem policy. The Docker-only integration run passed in 28.6 s including database creation, static
+  data and boot; the combined S0/L0 test body reported 1 s, below the 10 s scenario budget. (`d20447be2`)
 - [ ] **P5-14** [SIM] S — `scripts/e2e/run-fast.ps1`: the Fast manifest tier in SIM, keeping transcripts and logs under
   `run/<id>/` on failure. Once it runs in a few minutes, add it to the pre-commit checks in `CLAUDE.md` for
   gameplay changes.
