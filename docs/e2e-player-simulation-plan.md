@@ -768,8 +768,13 @@ replays the same seeded trace.
   registered bot's access level and membership. Focused tests pin synchronous response ordering, facade delegation,
   unknown-account rejection, the exact uppercase-hyphen MAC shape and construction of both login and chat singleton
   bridges without starting either socket transport. (`5c2de8ecb`)
-- [ ] **P5-02** [SIM] S — Extract `Program.cs` composition into a reusable `AddGameServer(...)` extension and move
+- [x] **P5-02** [SIM] S — Extract `Program.cs` composition into a reusable `AddGameServer(...)` extension and move
   `DatabaseFactory.Initialize` out of `ConfigureServices`, so the SIM host cannot drift from production.
+  `GameServerServiceCollectionExtensions.AddGameServer` now owns the shared production/SIM object graph, including
+  a concrete bootstrap registration that SIM can start without starting the NIO and outbound-link hosted services.
+  Production loads the same options and calls that extension; it initializes `DatabaseFactory` only after the host
+  is built. A descriptor-level regression test pins the complete hosted-service set and proves service registration
+  accepts deliberately invalid database options without trying to initialize a pool. (`d1dbac475`)
 - [ ] **P5-03** [BOTH] S — Parity fix, config order: move `Config.Load()` to the top of `StartAsync`, before
   `LoadUsedIdsAsync` and the static-data load (Java `GameServer.java:219`). Today C# merges static data with the
   default `GSConfig.SERVER_COUNTRY_CODE` (`XmlMerger.cs:127`), builds world maps and inits `GameTimeService`
