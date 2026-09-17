@@ -389,10 +389,14 @@ Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 con
   death state, inventory/kinah, skills/cooldowns, active and completed quests, interaction windows and named
   system-message history. The decoder now exposes Java's general item-blob count/mask/creator fields and the
   gatherable/static-door state word, with focused decoder and state-transition tests. Commit: `2ad907db8`.
-- [ ] **P2-10** [BOTH] S — Reflexes: `SM_PLAYER_SPAWN` → `CM_LEVEL_READY`; `SM_TELEPORT_LOC` →
+- [x] **P2-10** [BOTH] S — Reflexes: `SM_PLAYER_SPAWN` → `CM_LEVEL_READY`; `SM_TELEPORT_LOC` →
   `CM_TELEPORT_ANIMATION_DONE`; `SM_PLAY_MOVIE` → `CM_PLAY_MOVIE_END` (every new character's first quest plays
   a movie and blocks movement until acked); `SM_DIE` → revive policy; `SM_QUESTION_WINDOW` → answer policy.
   LIVE only: `CM_PING` every 180–183 s, never under 178 s (three early pings get the client kicked).
+  Added decoded-SM reflex dispatch for the three mandatory acknowledgements plus explicit death/question policy
+  delegates whose safe defaults make no unsolicited choice. A wall-clock-only LIVE scheduler emits `CM_PING`
+  on a validated 180–183 s cadence and never enters the Java server's under-178 s failure window. Commit:
+  `74d96cfac`.
 - [ ] **P2-11** [BOTH] M — Client timing contract, one table keyed to the ported Java commit:
   - `CM_ATTACK` no faster than weapon attack speed minus 300 ms (`PlayerController.cs:420-426`).
   - `CM_TARGET_SELECT` before `CM_CASTSPELL` (the server uses the current target).
