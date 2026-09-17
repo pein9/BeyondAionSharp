@@ -1,0 +1,1113 @@
+# End-to-end player simulation plan
+
+**Goal.** Test the whole server the way a player uses it (log in, create a character, move, fight, quest,
+gather, craft, trade, group, run instances) with no human in the loop, fast enough to run before every commit, and with
+every server error surfaced the moment it happens, attributed to the bot action that caused it.
+
+**Status.** Planning. Nothing below is implemented yet. Written 2026-09-17 against `main` at `488763e0c`;
+every claim in §1, §7 and the appendices was re-checked against the code by an independent review pass.
+The maintainer's decisions (§6) were applied the same day: no hosted CI, no docker server stack, no
+schedulers; everything runs from local scripts, with Docker used only for the development MySQL.
+
+## How to use this document
+
+- Phases are ordered by dependency. Inside a phase, TODOs run in order unless marked otherwise; explicit
+  `Depends on` lines point across phases.
+- Each TODO has an id (`P3-06`), a mode tag and a size. When one lands, tick the box and append the commit
+  SHA: `- [x] P1-04 ... (a1b2c3d)`.
+- Modes: **[SIM]** means in-process on a virtual clock. **[LIVE]** means real processes, sockets and MySQL in
+  real time. **[BOTH]** means shared code or a fix both need.
+- Sizes: **S** is under a day, **M** is 1–3 days, **L** is 1–2 weeks, **XL** is more.
+- File and line references were correct at `488763e0c`. Re-grep before editing.
+- Record decisions in [§6](#6-decision-log). Java ↔ C# divergences found along the way go in [§7](#7-parity-bugs-found-during-research)
+  and are fixed the normal way: read the Java first, cite it in the commit.
+- **The Java spec for this work is `upstream/4.8` at `lastCompletedJavaCommit`**
+  (`docs/upstream-port-state.json`, currently `ce54b7931`). The local `../aion-server` branch `4.8` was
+  fast-forwarded to it on 2026-09-17 (D8); keep it there as ports advance, because
+  `scripts/parity/check_fidelity.py` and anyone reading Java side by side use that working tree.
+- **Do not create branches or worktrees in this repo.** In `../aion-server` they are allowed when a TODO
+  genuinely needs one (D12, for example P0-05).
+- **No hosted CI, no docker server stack, no schedulers** (D9). Every run is a local script; Docker is used
+  only for the development MySQL, where runs create and drop their own databases.
+
+---
+
+## 1. Where we are today
+
+### What already exists and will be reused
+
+| Asset | Where | What it gives us |
+|---|---|---|
+| Boss AI harness | `tests/Aion.GameServer.Tests/Ai/BossAiHarness.cs` | One-map headless world on real static data and the real spawn path. It is an **NPC-decision** harness: its player has no connection, is invulnerable, has no DB, geo is off and movement is bypassed. |
+| Virtual scheduler | `tests/Aion.GameServer.Tests/Ai/VirtualThreadPool.cs` | Replaces `ThreadPoolManager`; `Advance()` runs due timers synchronously. Needs hardening before a whole server can run on it (`P1-10`, `P5-00`). |
+| Clock hook | `src/Aion.GameServer/Utils/SystemClock.cs` | AsyncLocal-overridable wall clock. Only 5 game-server files read it. |
+| Full in-process boot | `GameServerBootstrapTests.GameServerBootstrap_DbBackedFullBoot_RunsRealStartAsyncAgainstLiveMySql` | Real `StartAsync` against MySQL and real static data. Env-gated (`AION_GAMESERVER_DB_INTEGRATION=1`); runs only when that is set. |
+| Login-server client | `tests/Aion.LoginServer.Tests/SocketServerSmokeTests.cs` | Blowfish frame crypto, first-packet decrypt, `CM_AUTH_GG`/`CM_LOGIN`/`CM_SERVER_LIST`/`CM_PLAY`/`CM_UPDATE_SESSION` builders, full handshake. Test-private. |
+| Game crypt mirrors | `tests/Aion.GameServer.Tests/GameCryptTests.cs` | Client-side encryptor, opcode encoder, server keystream mirror. Test-private. |
+| Chat client builders | `tests/Aion.ChatServer.Tests/Integration/ChatConnectionSmokeTests.cs` | Chat auth, channel join, channel message. |
+| Socketless connection trick | `ChatAuthenticationBridgeTests.QueuedClientConnection`, `OutboundLinkLifecycleTests.RecordingAionConnection` | An `AionConnection` built by reflection over an unconnected socket. Brittle but proves the idea. |
+| Golden server packets | `parity-artifacts/golden/packets/` | 181 Java-generated SM fixtures (364 cases; `payloadHex` is the body only): decoder test vectors. |
+| Packet capture hook | `AionServerPacket.SetCaptureObserver` | Sees every serialized server packet (object and clear bytes). No callers today. C#-only. |
+| Development MySQL | Docker container per `RUNNING.md` (host port 3307); `scripts/start-mixed-mode-db.ps1` | A MySQL 8.4 on which runs may freely create and drop throwaway `aion_*` databases. |
+| GM commands | `src/Aion.GameServer/Handlers/AdminCommands` (101) | Fast scenario setup: `//add`, `//set level`, `//moveto`, `//quest`, `//kill`, `//siege`, `//rift`, `//instance`, ... |
+| Account auto-create | `loginserver.accounts.autocreate` (default true) | Bots need no account seeding except GM access levels. |
+| Admin HTTP API | `src/Aion.GameServer/Services/Admin/AdminHttpService.cs` | Token-protected player and storage state; a LIVE assertion oracle. C#-only. |
+| Twin channels in starter zones | `world_maps.xml` (Poeta, Ishalgen `twin_count=5`), `CM_CHANGE_CHANNEL` | Isolates concurrent scenarios that would otherwise fight over the same mobs and nodes. |
+| Open live journeys | `docs/Deep-Port-Audit-Remediation-Tracker.md` (release gates 1–2) | Five code-complete findings (two-GS transfer, chat auth, login bans, siege, hardware ban) that only a multi-process run can close (`P10-11`). |
+
+### What blocks the goal
+
+| # | Finding (verified 2026-09-17) | Why it matters | Evidence |
+|---|---|---|---|
+| B1 | **Most game-server errors go nowhere.** 298 null-logger uses in `src/Aion.GameServer` and `src/Aion.Commons` (252 static fields, the rest instance fields and inline calls): the catch around every client-packet handler, `NpcController.OnDie`, the spawn path, `QuestEngine`, `DB.cs` and 52 of 56 DAOs. Only the ~17 DI-injected loggers (for example `ThreadPoolManager`'s task failure) reach the console, and the game server writes no log file. | Neither mode can watch errors. A green run proves little. | `AionClientPacket.cs:16,26-35`; `Program.cs:132-142` |
+| B2 | **A periodic task dies on its first exception.** The catch in `RunFixedRateAsync` is outside the loop, and the loop is fixed-delay. Java's `RunnableWrapper` logs, keeps the schedule and runs at a fixed rate. | One bad NPC stops all NPC movement for the rest of a LIVE run; a failed gather tick locks that node. | `ThreadPoolManager.cs:143-169` |
+| B3 | **No single clock.** ~393 direct wall-clock code lines in 203 files; `SystemClock` has 5 readers; more than 20 sites compare a `SystemClock` value with a wall-clock one. | With a virtual clock ahead of wall time, casts after the first are rejected (with a fixed past epoch the 350 ms cast gate never fires instead); NPCs do not move; item use delays and other wall-clock cooldowns never expire; effect remaining times freeze. Player skill cooldowns and effect end timers already follow the virtual clock. | Mixed: `CM_CASTSPELL.cs:18,105` vs `Skill.cs:556`; `Skill.cs:472-478` vs `CreatureMoveController.cs:18,78`. Unrouted: `NpcMoveController.cs:266` |
+| B4 | **The virtual scheduler is not ready for a whole server.** It swallows exceptions from one-shot timers (`RunSynchronously` stores them). It stops running timers after 100,000 ticks **within one `Advance`** yet still moves the clock to the target, so the skipped timers run on the next `Advance` and move the clock **backwards** (the nine periodic managers alone tick 18.75/s, so one ~89-minute `Advance` hits the cap). Its handles report `GetDelay` ≤ 0 because `Deferred` stamps creation time. It is not thread-safe, and real threads bypass it (PLINQ in `MoveTaskManager`, the Quartz cron thread, `PacketProcessor`, the `NetFlusher` timer). | Failures vanish in SIM; long advances fire timers late and rewind time; a looted corpse decays immediately in SIM. | `VirtualThreadPool.cs:24,44,63-95`; `ThreadPoolManager.cs:241-246,269-275,290-294`; `DropService.cs:111-115,163` |
+| B5 | **No client codec.** Nothing outside test-private helpers can encrypt a client packet, write a CM or decode an SM. `Aion.Commons/Crypto/AionXorCipher.cs` looks relevant but is not the game cipher. | Bots can neither act nor perceive. | `GameCrypt.cs` (unreferenced), `AionXorCipher.cs:14-16` |
+| B6 | **`AionConnection` needs a real socket.** The base constructor dereferences the socket; `SendPacket`, `Close` and `Disconnect` go through `SelectionKey`/dispatcher; `OnDisconnect` assumes the alive checker exists; type init starts 4 packet-processor threads. | No clean in-process bot connection, including quit and disconnect. | `AConnection.cs:31-42,63-76,123-163`; `AionConnection.cs:36-39,199-201` |
+| B7 | **Persistence is 56 static MySQL DAOs with no seam** (244 public static methods), plus six C#-only `I*Repository` DI interfaces of which only `IUsedIdRepository`, `IServerVariablesRepository` and `ICharacterSelectionRepository` are consumed. Character create, enter world, recipes and mail only work after a DB write succeeds; failures are swallowed. | SIM needs a database; a DB-less SIM silently loses state. | `DatabaseFactory.cs:151-157`; `RecipeList.cs:26,37`; `Program.cs:115-120` |
+| B8 | **Geodata is never loaded.** `GeoWorldLoader.Load` is a stub whose only action is a warning sent to a `NullLogger`, although `gameserver.geodata.enable` defaults to true; 230 geo files (158 MiB) are unused. `GetZ` returns NaN; `CanSee` is true within 80 m (false beyond, as in Java); fear, confuse, back-dash and random-move effects never displace; stagger, stumble, pull, dash and move-behind displace the full distance through walls at unchanged Z; NPCs chasing a jumping or flying target freeze. | Line of sight, Z, collision and NPC pathing are untestable in both modes and wrong in production. | `GeoEngine/GeoWorldLoader.cs`; `GeoMap.cs:126-156,217-221` |
+| B9 | **Randomness cannot be seeded.** `Rnd` is a `ThreadLocal<Random>`; ~550 call sites. .NET also randomizes string hashing per process, so string-keyed and concurrent collections enumerate in a different order every run. | SIM runs cannot be replayed; kill and drop counts are not assertable. | `Commons/Utils/Rnd.cs:20` |
+| B10 | **Process-global state.** 93 `GetInstance` singletons (58 never-reset `SingletonHolder`s), a once-only `CronService`, a static `DatabaseFactory`, a static capture observer, and a bootstrap that changes the process CWD. | One world per test process; scenarios need isolation by account, channel and ordering (`P5-12`). | `CronService.cs:41-52`; `GameServerBootstrapService.cs:72` |
+| B11 | **Silent DB tests and flaky real-time tests.** The 10 env-gated DB tests return early and report Passed. 14 of the last 30 runs of the (since removed) hosted CI failed, several on real-time socket and shutdown tests. There is no hosted CI any more (D9), so every run is local. | New failures cannot be told from flakes (`P1-00`), and DB-backed runs need local database scripts (`P3-02`, `P5-06`). | `GameServerBootstrapTests.cs:330`; `ShutdownHookTests.cs` |
+| B12 | **Java reference drift (partly fixed).** Local `../aion-server` `4.8` was 47 commits behind `upstream/4.8`; it was fast-forwarded to `lastCompletedJavaCommit` (`ce54b7931`) on 2026-09-17 and falls behind again as ports land. The Java golden-fixture generators exist only on `feature/object-spine-bigbang`, based 87 commits behind `lastCompletedJavaCommit`. | Side-by-side reading and `check_fidelity.py` compare against a stale tree unless `4.8` is kept in step; new Java fixtures need the generators brought forward (`P0-05`). | `git -C ../aion-server rev-list --count 4.8..upstream/4.8` |
+
+### Useful baselines (re-measure as phases land)
+
+| Metric | Value | How measured |
+|---|---|---|
+| Null-logger uses (game server + commons) | 298 (252 static fields) | `grep -rhoE "NullLoggerFactory\.Instance\|NullLogger(<[^>]+>)?\.Instance" src/Aion.GameServer src/Aion.Commons \| wc -l` |
+| Direct wall-clock code lines (game server) | ~393 in 203 files; 365 exact `DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()` | `DateTime(Offset)?.(Utc)?Now`, `Environment.TickCount`, `Stopwatch`, comments excluded |
+| `ThreadPoolManager.GetInstance()` call sites | 895 | `grep -rhoE "ThreadPoolManager\.GetInstance\(\)" src` |
+| Registered client opcodes / server opcodes | 186 / 238 (same sets as `upstream/4.8`) | factory tables |
+| Quests | 8043 in `quest_data.xml`; 5219 with a handler (4184 XML templates + 1035 C# = Java); 2824 with none | parse `quest_data.xml` and `quest_script_data/*.xml` |
+| Obtainable quests a data-driven planner can run | ~2457 (48%) | excludes level-99 and EVENT quests; classifier to be checked in with `P7-02` |
+| Game-server tests / test run time | 3060 / ~1.5 min | last hosted CI run, 2026-09-17 |
+| Full static-data load, boot, and cost of one virtual minute | **not yet measured** | `P0-03` |
+
+---
+
+## 2. Target design
+
+```mermaid
+flowchart LR
+  subgraph Bots["tests/Aion.Bots (one library)"]
+    S[Scenario manifest + scripts] --> API[Bot API + world model + reflexes + timing contract]
+    API --> Codec[Client codec: crypt, CM writers, SM decoders]
+    Codec --> T{IBotTransport}
+  end
+  T -->|InProcess| SIM["SIM: in-process game server<br/>virtual clock, single sim thread<br/>real ProcessData path, MySQL"]
+  T -->|TCP| LIVE["LIVE: local processes<br/>login + chat + game (dotnet run)<br/>per-run MySQL databases, real time, real crypto"]
+  SIM --> Cap[Capturing log provider<br/>fail on unallowlisted problems]
+  LIVE --> J[JSONL logs per server<br/>+ process exits + MySQL log] --> W[tools/Aion.LogWatch<br/>fingerprint, ledger, join to bot step] --> D[digest.log + report.md]
+  Bots --> BT[Bot action traces JSONL] --> W
+```
+
+### Principles
+
+1. **Two modes, one bot library.** Every scenario is declared once in a manifest and written once against
+   `IBotTransport`.
+   - **SIM** runs the game server in-process on a hardened virtual scheduler, on one sim thread. Bots feed
+     real, client-encrypted bytes through the production `ProcessData` path, and every server packet is
+     serialized and decoded by the same codec LIVE uses, so every SIM run tests the LIVE codec for free. A
+     Fast tier runs before committing gameplay changes; the Full tier runs on demand.
+   - **LIVE** starts the three servers as local processes against throwaway databases. Headless bots speak
+     the real protocol over TCP in real time. All three servers write JSONL logs, and a watcher streams new
+     problems as they happen. Full tier and soak, both run on demand.
+2. **Fast-forward means deterministic discrete-event stepping, not time dilation.** Dilation breaks the
+   `CM_PING` timer-cheat kick, Quartz cron, the other server processes and MySQL's own clock, and it stays
+   non-deterministic. SIM jumps to the next bot action or next due timer, whichever is sooner.
+3. **SIM and LIVE use a real MySQL, not fake DAOs.** A throwaway database per run and per shard on the
+   development MySQL container, created and dropped freely. Fake DAOs or SQLite would be an XL rewrite that
+   stops testing the real SQL.
+4. **Problems are the primary oracle.** Any Error, swallowed exception, protocol or audit Warning, unexpected
+   refusal system message, bot timeout or unexpected disconnect fails the scenario unless its
+   **fingerprint** is allowlisted with a reason, an owner and an expiry.
+5. **Bots behave like a real client.** Honest movement speed, the client timing contract, and the acks a
+   real client sends. A server "too early" or audit line is a bot bug until proven otherwise.
+6. **Setup may use GM powers; subjects may not be staff.** A GM *director* account sets state; subject bots
+   are access level 0. Staff accounts auto-run `//invis //invul //enemy none //see` on login and hit 77
+   staff-only branches, so they are never the subject of combat, PvP, trade or chat tests. Per-command
+   `//access` grants do not work in Java either, so power is granted only through account access levels.
+7. **Production changes are either parity fixes or gameplay-neutral seams.** Parity fixes cite
+   `upstream/4.8`. Seams (logging bridge, clock routing, socketless connection, login-link interface, RNG
+   seed, deterministic-mode switches) default to today's behaviour. See D4.
+8. **Bot and scenario code never lives under `src/`.** An architecture test enforces it (no `src/**` project
+   references `tests/` or `tools/`, no `src/` file declares `Aion.Bots` or `Aion.Simulation` namespaces).
+   Seams added under `src/Aion.GameServer` must also avoid the tokens `scripts/parity/check_fidelity.py`
+   bans in new file names (Plan, Bridge, Adapter, Composition, Outcome, Integration, Owner, Policy, Executor,
+   Projection, Snapshot, Preview, Fact). New projects build with zero warnings so the baseline cannot grow.
+9. **Ports keep landing during this work.** Before each codemod, record the new mapping in
+   `docs/upstream-porting.md` and add a ratchet script to the pre-commit checks in `CLAUDE.md` (next to the
+   warning baseline), so ported Java commits cannot reintroduce the old pattern.
+10. **Everything runs locally** (D9). No hosted CI, no docker server stack, no schedulers. The Fast and Full
+    tiers are scripts under `scripts/e2e/`, started by hand or by a Claude Code session.
+
+### Project layout
+
+| Path | Contents | In `AionServer.slnx` |
+|---|---|---|
+| `tests/Aion.Bots/` | Codec, transports, world model, reflexes, timing, navigation, GM facade, scenario manifest and scripts | yes |
+| `tests/Aion.GameServer.TestKit/` | `VirtualThreadPool`, `RealStaticData`, `TestAiEngine`, shared by both test projects | yes |
+| `tests/Aion.Simulation.Tests/` | SIM host fixture, log policy, scenario test classes (own test process) | yes; DB scenarios report **Skipped** without MySQL |
+| `tools/Aion.LiveBots/` | LIVE runner console app | yes (build only) |
+| `tools/Aion.LogWatch/` | LIVE log watcher, problem ledger, run report | yes (build only) |
+| `scripts/live/overlay/` | Bot-run config overlay copied into each run's config directory | n/a |
+| `parity-artifacts/e2e/` | Shared allowlist, known-problem ledger, flaky ledger, coverage baselines | n/a |
+| `scripts/sim/`, `scripts/live/` | Create and drop run databases; start the servers, bots and watcher locally | n/a |
+| `scripts/e2e/run-fast.ps1`, `scripts/e2e/run-full.ps1` | Fast tier (before committing gameplay changes); Full tier (on demand) with the run report | n/a |
+| `run/` (gitignored) | Local run output | n/a |
+
+---
+
+## 3. Phases
+
+Phases 1 → 2 → 3 give a thin LIVE vertical slice with live error watching early. Phases
+4 → 5 build the fast SIM mode. Phases 6–8 add breadth in both modes. Phase 9 is geodata. Phase 10 is scale,
+operations and coverage. Phase 11 is group and scheduled content.
+
+### Phase 0 — Decisions and ground truth
+
+- [x] **P0-01** [BOTH] S — Walk through the decision log (§6) with the maintainer and set each status. Done
+  2026-09-17. If D7 is revisited and approved, move P10-05 into Phase 5 before P5-13 so the SIM baseline is
+  taken on the Java boot shape.
+- [x] **P0-02** [BOTH] S — Settle the Java reference (D8). Done 2026-09-17 in `../aion-server` (no commit here):
+  `4.8` fast-forwarded from `6ffedcd4f` to `lastCompletedJavaCommit` `ce54b7931`; its three stale worktrees and
+  two `copilot/*` branches deleted. Keep `4.8` at `lastCompletedJavaCommit` as ports land, because
+  `check_fidelity.py` and side-by-side reading use that working tree.
+- [ ] **P0-03** [SIM] S — Measure what SIM will cost: cold and warm `RealStaticData.LoadAsync` time and peak
+  memory; `StartAsync` plus `SpawnAll` time and `World` object count; on a booted world, CPU per wall second
+  spent in periodic managers (`MoveTaskManager`, `ZoneUpdateService`, AI think) and the number of moving
+  creatures. Extrapolate the wall cost of one virtual minute. Put the numbers in §1; they size the Fast tier
+  budget.
+- [ ] **P0-04** [BOTH] S — Remove the two `update.sql` steps from `RUNNING.md` (lines 28-29). Verified:
+  `aion_gs.sql` already has both columns `game-server/sql/update.sql` adds, and `aion_ls.sql` lacks the
+  `toll` column and `account_rewards` table that `login-server/sql/update.sql` drops, so both fail on a fresh
+  database. Scripts that apply schemas (P3-02, P5-06) must stop on the first SQL error and verify the tables
+  exist.
+- [ ] **P0-05** [BOTH] M — Bring the Java golden-fixture generators to the spec revision (D12 approved). They live
+  only on `feature/object-spine-bigbang`, based at `f2f77fefe`, 87 commits behind `lastCompletedJavaCommit`.
+  Carry the generator tests onto a branch or worktree of `../aion-server` at `lastCompletedJavaCommit` and
+  confirm they reproduce today's fixtures byte for byte before generating new ones. P2-05, P6-01 and P9-02
+  depend on this.
+
+### Phase 1 — See every server error
+
+Nothing else is trustworthy until errors are visible. This phase restores Java's logging behaviour, makes
+failures loud, and gets the test suite to a trustworthy green.
+
+- [ ] **P1-00** [BOTH] S — Stabilize the real-time tests behind recent red runs: `ShutdownHookTests`,
+  `GameServerBridgeConnectorTests`, `OutboundLinkLifecycleTests` (inject delay sources or move into the
+  `LoopbackSockets` collection). Done when `dotnet test AionServer.slnx` passes 10 times in a row locally.
+- [ ] **P1-01** [BOTH] S — Static logger bridge, `src/Aion.Commons/Logging/AionLog.cs`: `For(category)` returns
+  a forwarding logger that resolves the factory **at call time** (safe in static initializers that run
+  before the host exists); `SetFactory(ILoggerFactory)`; an AsyncLocal override for parallel tests (same
+  pattern as `SystemClock`); caller type and member captured for fingerprints. Unit tests: a logger created
+  before `SetFactory` still forwards; two parallel flows stay isolated.
+- [ ] **P1-02** [BOTH] M — Codemod every null logger to `AionLog.For(...)`. First record
+  `LoggerFactory.getLogger(X) → AionLog.For(...)` in `docs/upstream-porting.md` and add a ratchet script to the
+  pre-commit checks in `CLAUDE.md` that fails on any new `NullLogger`/`NullLoggerFactory` under `src/`. Keep Java logger names as categories
+  (`GAMECONNECTION_LOG`, `CRAFT_LOG`, `ITEM_LOG`, ...); `AuditLogger` becomes `AUDIT_LOG`. Done when the
+  §1 baseline grep returns 0 outside `AionLog.cs`, the warning baseline holds and the suite is green.
+  Depends on P1-01.
+- [ ] **P1-03** [LIVE] S — Bind the bridge in all three `Program.cs` files after `Build()`. Add
+  `AionFileLoggerProvider` to the game server so `game-server/log/server_{console,warnings,errors}.log` exist,
+  plus the per-category files Java's `logback.xml` routes (`craft.log`, `exchange.log`, `mail.log`,
+  `kill.log`, `tampering.log`, `item.log`, `adminaudit.log`).
+- [ ] **P1-04** [BOTH] S — Parity fix (B2): in `ThreadPoolManager.RunFixedRateAsync` catch and log **per
+  iteration**, keep running, and schedule at a fixed rate (Java `RunnableWrapper(catchAndLogThrowables=true)`).
+  Also port `ExecuteWrapper`'s slow-task warning (`MAXIMUM_RUNTIME_IN_MILLISEC_WITHOUT_WARNING`), which Java
+  applies to every pooled `schedule`/`scheduleAtFixedRate`/`execute`. Test: a body that throws once still
+  runs next period.
+- [ ] **P1-05** [LIVE] S — Install `AppDomain.UnhandledException` and `TaskScheduler.UnobservedTaskException`
+  handlers in all three servers, mirroring Java's `UncaughtExceptionHandler` ("Critical Error - Thread ...
+  terminated abnormally").
+- [ ] **P1-06** [BOTH] S — Fix sites that lose exception detail:
+  - (a) `CM_TELEPORT_ANIMATION_DONE` logs `e.InnerException`, but `ScheduledTask.Get` rethrows the original
+    exception unwrapped, so nothing useful is logged. Log `e`, and correct the false "wrapped" comment at
+    `ThreadPoolManager.cs:278-279`.
+  - (b) Parity: `Dispatcher.Parse` drops Java's `, content: <hex>` (`Dispatcher.java:212`).
+  - (c) Parity: the login `AionClientPacketFactory` swallows read exceptions that Java logs as "Reading failed
+    for packet" with a hex dump (`BaseClientPacket.java:89-95`), and `LoginClientConnection` reports parse
+    failures and unknown opcodes alike as "Unknown login packet" without Java's opcode, state and data.
+  - (d) Infrastructure only: `Dispatcher`'s `LogError(e, "")` and `NetFlusher`'s `Console.Error` match Java
+    (`log.error("", e)`, `printStackTrace()`); route them through the bridge with context as documented
+    deviations.
+- [ ] **P1-07** [BOTH] S — Log scopes. In `AionConnection.ProcessData`, open a scope (connection, account,
+  player name and object id) around decrypt, `TryCreatePacket`, the flood check and `pck.Read()`, adding
+  packet class and opcode once the packet exists: read-path errors such as `CM_EMOTION`'s unknown type and
+  "was not fully read" happen there, not in `Run`. Open it again in `AionClientPacket.Run` (packet-processor
+  thread), in the login `LoginClientConnection` and in the chat client handler. `ThreadPoolManager` opens a
+  `timer` scope around every scheduled body with schedule time and kind. Scope values are strings, never
+  live objects.
+- [ ] **P1-08** [BOTH] M — JSON-lines logger provider (`src/Aion.Commons/Logging/JsonLinesLoggerProvider.cs`),
+  enabled by `AION_LOG_JSONL_DIR`. One JSON object per line with a fixed key order (§5), scopes included,
+  flushed on Warning+. Writes `<srv>.events.jsonl` (everything) and `<srv>.problems.jsonl` (Warning+).
+- [ ] **P1-09** [BOTH] S — Log fingerprints (`LogFingerprint.cs`): hash of exception type, normalized message
+  template (object dumps → `<Type>`, digit runs → `#`, hex dumps stripped; 346 Warning/Error calls build
+  messages by concatenation), and a stable code location. For exceptions, use the top in-repo frame with
+  compiler-generated names normalized (`<>c__DisplayClass#_#`, `<Method>b__#`, `d__#` resolved to the
+  enclosing method); without an exception, use the caller captured by `AionLog`. Unit tests on real messages,
+  including "adding a lambda above the throwing one leaves the fingerprint unchanged".
+- [ ] **P1-10** [SIM] S — `VirtualThreadPool` first hardening: record one-shot and fixed-rate faults without
+  aborting `Advance` and report them through `AionLog`; a `Strict` flag (off for existing harness tests, on for
+  SIM) fails the owning test on dispose if any were recorded; throw when `MaxTicksPerAdvance` is exhausted
+  instead of moving the clock; give handles their virtual due time (a `Deferred(body, dueTime)` overload) so
+  `GetDelay` is right.
+- [ ] **P1-11** [BOTH] S — Replace silent early returns with visible skips: add `Xunit.SkippableFact` and convert
+  the 10 env-gated DB facts and the two artifact-guarded readers (`PetJavaVectorArtifactReaderTests`,
+  `PlayerProtectionActiveTaskStopTriggerJavaTraceArtifactReaderTests`) to `[SkippableFact]` + `Skip.IfNot`.
+  A move to xUnit v3 is out of scope.
+- [ ] **P1-12** [BOTH] M — Record-only boot baseline: boot the game server against a local MySQL with logs on,
+  no client, idle for 5 minutes. Triage every Warning+ fingerprint as a bug (§7 or a fix) or an allowlist
+  entry (P1-13). Expect a wave; for example `QuestSpawnAnalyzer` throws scanning `*.java` handler folders.
+- [ ] **P1-13** [BOTH] S — Shared problem allowlist `parity-artifacts/e2e/log-allowlist.json`:
+  `{fp, reason, owner, tracking, modes, servers, maxCount, expires}`. The loader lives beside
+  `LogFingerprint` and is used by P3-06 and P5-09. A check rejects entries with no owner or reason, expired
+  entries, and entries that matched nothing in the last Full run. Depends on P1-09.
+
+**Done when:** a test runs a CM whose `RunImpl` throws through `AionClientPacket.Run` on a reflection-built
+connection with an account, and asserts exactly one Error record with packet, opcode and account scope through
+`AionLog` and `JsonLinesLoggerProvider`; the game server writes `game-server/log/server_errors.log` on boot; a
+fixed-rate task survives a throw; a throwing one-shot timer is recorded by `VirtualThreadPool` and fails its
+test in `Strict` mode; the solution test run has passed 10 times in a row locally.
+
+### Phase 2 — Bot protocol library (`tests/Aion.Bots`)
+
+- [ ] **P2-00** [BOTH] M — Socketless connection seam (infrastructure; needs D4). A protected `AConnection`
+  constructor without a socket; a protected virtual enqueue hook replacing the `InterestOps`/`Selector.Wakeup`
+  calls; `IsConnected`, `Close(T)` and `Disconnect` routed through the seam so a close clears the queue, marks
+  the connection closed and runs `OnDisconnect` on the calling thread; `connectionAliveChecker` null-safe in
+  `OnDisconnect`; an `AionConnection` constructor that does not arm the alive checker; an overridable
+  `ExecutePacket` so SIM runs packets inline; the static `packetProcessor` made lazy so subclasses do not
+  start threads. Add `InternalsVisibleTo` for the new projects. Tests: quit and abrupt drop both reach
+  `PlayerLeaveWorldService`.
+- [ ] **P2-01** [BOTH] S — Create the project (`net10.0`, `TreatWarningsAsErrors`), add it to the solution, and
+  add the `src/` isolation architecture test from Principle 8.
+- [ ] **P2-02** [BOTH] S — Client game crypt: key recovery from `SM_KEY`, client-encrypt and server-decrypt with
+  per-packet key rotation, opcode encode/decode, the `0x65`/`~opcode` client header and `0x44` server header,
+  u16 framing. Lift from `GameCryptTests.cs` and `GamePacketFrameCodec.cs`; test against the live
+  `Crypt`/`EncryptionKeyPair`. Then delete or quarantine the unreferenced
+  `GameCrypt.cs`/`GameEncryptionKeyPair.cs`/`GamePacketFrameCodec.cs` and mark `AionXorCipher` as not the game
+  cipher.
+- [ ] **P2-03** [BOTH] S — Generate the bot's opcode and valid-state table by reflecting over
+  `AionClientPacketFactory` and `ServerPacketsOpcodes`. A test fails when they drift or when a bot sends a
+  packet in a state the table does not allow. This table is authoritative; do not hand-copy opcodes.
+- [ ] **P2-04** [BOTH] M — CM writers for the packets in Appendix B, plus `CM_EMOTION` (jump, sit, arbitrary type
+  byte), `CM_FRIEND_STATUS` (arbitrary status byte), `CM_CHAT_AUTH` and `CM_CHANGE_CHANNEL`. Note
+  `CM_L2AUTH_LOGIN_CHECK` is six int32s (24 bytes). Each writer round-trips through `TryCreatePacket` + `Read()`
+  on a P2-00 connection with zero bytes left over and the expected fields. Depends on P2-00, P2-03.
+- [ ] **P2-05** [BOTH] L — SM decoders for the packets bots perceive (~45; partial decoders are fine, item blobs
+  are length-prefixed). Test against every golden fixture for a decoded packet (`payloadHex` is body only).
+  Packets without fixtures: `SM_CASTSPELL_RESULT`, `SM_DIALOG_WINDOW`, `SM_LOOT_ITEMLIST`, `SM_DIE`,
+  `SM_CHARACTER_LIST`, `SM_TRADELIST`, `SM_KEY`, `SM_VERSION_CHECK`, `SM_L2AUTH_LOGIN_CHECK`,
+  `SM_PLAYER_SPAWN`, `SM_PLAY_MOVIE`, `SM_MAIL_SERVICE`, `SM_GROUP_INFO`. Until P0-05 lands, test those against
+  bytes from the audited C# writers and mark them `JavaFixturePending`. Include an `SM_SYSTEM_MESSAGE` decoder
+  with an id → `STR_` name table generated from `SM_SYSTEM_MESSAGE.cs` (4,115 factories); a test fails when it
+  drifts.
+- [ ] **P2-06** [LIVE] M — Login client: move the Blowfish, first-packet XOR undo and the existing
+  `CM_AUTH_GG`/`CM_LOGIN`/`CM_SERVER_LIST`/`CM_PLAY`/`CM_UPDATE_SESSION` builders out of
+  `SocketServerSmokeTests.cs`. Implement `UnscrambleModulus` (inverse of `LoginRsaKeyPair.ScrambleModulus`):
+  the tests never needed it because they read the RSA key straight from `FixedLoginKeyGenerator` (fixed
+  Blowfish key, random RSA pair) instead of from `SM_INIT`. Test against `LoginClientSocketServer` with the
+  real `LoginKeyGenerator`.
+- [ ] **P2-07** [LIVE] S — Chat client (`CmChatIni`, `CmPlayerAuth`, channel request and message), lifted from
+  `ChatConnectionSmokeTests.cs`, driven by `SM_CHAT_INIT`.
+- [ ] **P2-08** [BOTH] S — `IBotTransport`: send CM bytes, receive decoded SMs, close, crash (drop without
+  `CM_QUIT`). Implementations arrive in P3-05 (TCP) and P5-07 (in-process).
+- [ ] **P2-09** [BOTH] M — Bot world model built only from decoded SMs: known objects (players, NPCs,
+  gatherables, statics), self stats/HP/exp/level/flight time, inventory and kinah, skills and cooldowns, quest
+  states, open dialog/question/loot/trade windows, system messages by `STR_` name. Depends on P2-05.
+- [ ] **P2-10** [BOTH] S — Reflexes: `SM_PLAYER_SPAWN` → `CM_LEVEL_READY`; `SM_TELEPORT_LOC` →
+  `CM_TELEPORT_ANIMATION_DONE`; `SM_PLAY_MOVIE` → `CM_PLAY_MOVIE_END` (every new character's first quest plays
+  a movie and blocks movement until acked); `SM_DIE` → revive policy; `SM_QUESTION_WINDOW` → answer policy.
+  LIVE only: `CM_PING` every 180–183 s, never under 178 s (three early pings get the client kicked).
+- [ ] **P2-11** [BOTH] M — Client timing contract, one table keyed to the ported Java commit:
+  - `CM_ATTACK` no faster than weapon attack speed minus 300 ms (`PlayerController.cs:420-426`).
+  - `CM_TARGET_SELECT` before `CM_CASTSPELL` (the server uses the current target).
+  - Next cast no sooner than 350 ms after cast start, and no sooner than the animation's last hit after
+    `SM_CASTSPELL_RESULT`. Compute `clientHitTime` from `motion_times.xml` via `MotionData`.
+  - Cooldowns from `SM_SKILL_COOLDOWN`; item use delays from item templates.
+  - No `CM_MOVE` while casting, gathering or crafting (all three abort).
+  - No `CM_ENTER_WORLD` within `gameserver.character.reentry.time` of leaving (10 s configured, 20 s code
+    default), and after a crash also wait out the delayed leave-world (up to 10 s).
+  - When `97927c65a` (today only on `upstream/attack-motion-gate`) reaches `upstream/4.8` and is ported,
+    update the table in that port commit.
+- [ ] **P2-12** [BOTH] M — Bot API facade (Appendix B maps each call to packets): `Login`, `ListCharacters`,
+  `CreateCharacter`, `DeleteCharacter`, `RestoreCharacter`, `EnterWorld`, `ChangeChannel`, `Quit`, `Crash`,
+  `MoveTo`, `Jump`, `Fly`, `Land`, `Glide`, `Rest`, `Emote`, `Target`, `Attack`, `Cast`, `SummonCommand`,
+  `SummonAttack`, `SummonCast`, `UseItem`, `Equip`, `Loot`, `TalkTo`, `SelectDialog`, `CloseDialog`, `Answer`,
+  `Teleport`, `Gather`, `Craft`, `Buy`, `Sell`, `Trade*`, `InviteToGroup`, `Say`, `Whisper`, `Duel`, `Revive`.
+  Depends on P2-04, P2-05, P2-11.
+- [ ] **P2-13** [BOTH] S — Per-bot action trace, JSONL: `{ts, vt, run, bot, account, step, dir, packet, fields}`
+  for every action, sent CM and decoded SM; system messages carry the `STR_` name and parameters. This is what
+  the watcher joins problems to.
+
+**Done when:** every golden fixture for a packet the bot decodes decodes to its recorded inputs, every CM writer
+round-trips with no leftover bytes, and the login client completes a handshake against an in-process login
+server.
+
+### Phase 3 — LIVE walking skeleton and live log watching
+
+The fastest route to "watch server logs and find errors as they happen", and it proves the codec on real
+sockets before the large clock migration.
+
+- [ ] **P3-00** [BOTH] S — Config override directory for all three servers (for example `AION_CONFIG_OVERRIDE_DIR`):
+  the `my*.properties` files there replace the gitignored ones in `*/config`, for both the options classes and
+  the static `Config` holders, so a run supplies its own settings without touching the developer's files.
+- [ ] **P3-01** [LIVE] S each — Parity fixes that break restarts and soaks:
+  - Call `PlayerDAO.SetAllPlayersOffline()` at boot (Java `GameServer.java:222`). Without it, a killed server
+    leaves `players.online=1` and every re-login gets `REENTRY_TIME`.
+  - Stop `ThreadPoolManager._scheduledTasks` growing forever (C#-only leak).
+  - Make `SocketChannel` read/write return 0 on `WouldBlock` as `java.nio` does, instead of throwing
+    `IOException` and disconnecting. Add a slow-reader loopback test (1 MB of SM burst).
+  - Add Java's `if (GameServer.isShuttingDownSoon()) { safeLogout(); return; }` to
+    `AionConnection.OnDisconnect` (`AionConnection.java:240-243`).
+  - Replace the `List` + `Contains` dedupe in `AbstractFIFOPeriodicTaskManager.cs:14,39-40` with
+    insertion-ordered set semantics (Java `LinkedHashSet`); today it is O(n²) per tick for `MovementNotifyTask`
+    and `ZoneUpdateService`.
+- [ ] **P3-02** [LIVE] M — Isolated bot run: create `aion_ls_bots_<run>`, `aion_gs_bots_<run>` and
+  `aion_cs_bots_<run>` on the development MySQL (schemas applied, stop on the first error, `gameservers` row
+  seeded), write a per-run config directory from `scripts/live/overlay/` (run databases, non-default ports,
+  admin API on `127.0.0.1`) and start the three servers as `dotnet run` processes pointed at it. The developer's
+  own databases and `my*.properties` are never touched. Overlay: unknown and ignored packet logging on; domain
+  logs on (`gameserver.log.craft`, `.player.exchange`, `.broker.exchange`, `.kill`, `.mail`, `.item`); gather and
+  craft fail chance 0 (deterministic profile, with a separate default-rates soak profile); captcha off;
+  login-server brute-force protector off; login/logout announcements off; admin HTTP API on with a token;
+  `AION_LOG_JSONL_DIR` per run; custom XP/drop events off. Everything else, security checks included, stays at
+  production defaults (D6). Depends on P3-00.
+- [ ] **P3-03** [LIVE] S — Seeds: the `gameservers` row; a director account with access level 9. Subject accounts
+  are auto-created at level 0 with names that encode run and bot (`b01r0917`), which is how server log scopes
+  join to bot traces without extra traffic.
+- [ ] **P3-04** [LIVE] S — Readiness and logs: per-run log directories for all three servers; port Java's
+  `Game server started in N seconds` line (`GameServer.java:186`); readiness requires open ports, that line, the
+  login server logging that game server 1 registered, and a verified schema load (P0-04).
+- [ ] **P3-05** [LIVE] M — TCP transport and `tools/Aion.LiveBots`: per-bot async loop, ping scheduler,
+  reconnect, manifest-driven scenario selection (P5-12 defines the manifest; until then a simple list), per-bot
+  traces, non-zero exit on failure. Every step has a real-time timeout; a timeout, automatic reconnect or
+  unexpected quit response is a problem record joined to bot and step.
+- [ ] **P3-06** [LIVE] M — `tools/Aion.LogWatch`: tail `gs/ls/cs.problems.jsonl` from the run's start offset, the
+  bot traces, the MySQL container's log (`docker logs`), and each server process's exit code and stderr. Fingerprint and
+  consult the allowlist (P1-13) and ledger (P3-14). Join each problem to the latest bot step for the same
+  account; mark it `inherited` when its `timer` scope is fixed-rate or was scheduled more than 30 s earlier.
+  Also report as problems: server exit, stderr `Unhandled exception.`, a missing heartbeat (P3-12),
+  unexpected bot disconnects, and system messages on a scenario's unexpected-refusal list (for example
+  `STR_SKILL_NOT_READY` outside C2 and C4). Append one line per problem to `run/<id>/digest.log` (§5). Exit
+  non-zero on anything new or regressed. Depends on P1-08, P1-09, P1-13, P3-12.
+- [ ] **P3-07** [LIVE] S — Optional server-side packet tap behind `AION_PACKET_TAP`: register a
+  `ServerPacketCaptureObserver` that copies clear frames **synchronously** (the buffer is encrypted in place
+  right after the callback) into a bounded channel written as JSONL. Fix the false "Java parity" comments in
+  `Capture/ServerPacketCaptureObserver.cs` and `Capture/NoOpServerPacketCaptureObserver.cs`: they are C#-only
+  infrastructure, and fidelity cleanup must not delete them.
+- [ ] **P3-08** [LIVE] S — `scripts/live/run-live.ps1`: create the run databases and config (P3-02) → start the three
+  servers → wait ready → bots → watcher → collect → stop the servers → drop the run databases (`-KeepDb` keeps
+  them). Runs go under `$AION_E2E_RUN_ROOT` (default `run/`, added to
+  `.gitignore`); keep the last 20 local runs; `events.jsonl` and the packet tap roll at 200 MB and are gzipped
+  at run end; `problems.jsonl`, `digest.log` and `report.*` never roll.
+- [ ] **P3-09** [LIVE] S — Scenario **L0 walking skeleton**: login → game auth → create Elyos warrior → enter
+  world → `CM_CHAT_AUTH` → `SM_CHAT_INIT` → chat-server auth → join the region channel → a second bot receives a
+  channel message → walk 10 m → ping → quit → wait the re-entry time → log in again → character list shows the
+  character, position persisted, `online=0` after quit.
+- [ ] **P3-10** [LIVE] S — Watcher canaries, one per server (a silent watcher looks identical to a broken one):
+  `CM_FRIEND_STATUS` with undefined status 2 produces exactly one Warning; `CM_EMOTION` with type `0xFF` produces
+  exactly one `NEW` error line with bot and step (it logs from `ReadImpl`, so it proves the read-path scope);
+  a `CM_LOGIN` with a bad checksum produces exactly one `ls` problem; an unknown chat opcode produces exactly one
+  `cs` problem; an allowlist entry suppresses each.
+- [ ] **P3-11** [LIVE] S — Document the local loop in `RUNNING.md`: run `scripts/live/run-live.ps1`, then watch `digest.log`
+  (§5 has the Claude Code Monitor recipe).
+- [ ] **P3-12** [LIVE] S — A 10-second heartbeat Information line in all three servers with connection count,
+  packet-queue depth and armed-timer count (via the `ThreadPoolManager` schedule observer).
+- [ ] **P3-13** [LIVE] S — Record-only login baseline: run L0 with the watcher in record mode and triage every new
+  fingerprint as in P1-12. Depends on P3-09.
+- [ ] **P3-14** [LIVE] M — Known-problem ledger and triage. `tools/Aion.LogWatch` maintains
+  `parity-artifacts/e2e/known-problems.json` with `{fp, firstSeenSha, lastSeenSha, lastSeenRun, count, status:
+  new|tracked|fixed, tracking}`, where `tracking` is a `docs/Full-Parity-Backlog.md` id or an issue URL.
+  `digest.log` prints `NEW` only for fingerprints not in the ledger, `KNOWN` for tracked ones and `REGRESSED` for
+  ones marked fixed. For each NEW problem the watcher writes `run/<id>/problems/<fp>/`: full stack, 200 lines of
+  server log context, the bot's last 50 trace steps, seed, git SHA, config profile, and a draft backlog entry. A
+  fix commit carries a `Fixes-Fingerprint: <fp>` trailer; the next green Full run marks it fixed. Tracked problems
+  do not fail a run; new and regressed ones do.
+- [ ] **P3-15** [LIVE] S — `scripts/e2e/run-full.ps1` (LIVE part): one command that runs L0 and the canaries through
+  `run-live.ps1` and leaves `run/<id>/` for inspection. Started by hand; there is no scheduler (D9).
+
+**Done when:** `run-live.ps1 -Scenario L0` and `run-full.ps1` pass locally; the `CM_EMOTION 0xFF` canary
+appears in `digest.log` within about 2 seconds attributed to its bot and step; each server's canary produces
+exactly one problem.
+
+### Phase 4 — One controllable clock and deterministic time
+
+Production-neutral: `SystemClock`'s default is the same call Java makes (`System.currentTimeMillis()`).
+
+- [ ] **P4-01** [BOTH] S — Fix the mixed-clock pairs first (a C#-only defect of the partial migration):
+  `SimpleAttackManager.cs:36,100`; `SkillAttackManager.cs:157,237`; `NpcSkillTemplateEntry.cs:73,232`;
+  `NpcSkillEntry.cs:35`; `CM_CASTSPELL.cs:18,105`; `CM_USE_CHARGE_SKILL.cs:28`; `ChargeSkill.cs:41`;
+  `CreatureMoveController.cs:18,78`; `Creature.cs:43`; `Player.Part2.cs:338`; `Player.Part3.cs:370,407`;
+  `SummonsService.cs:79`; `SkillCooltimeResetEffect.cs:28,36,37`; `ItemEquipmentListener.cs:45`;
+  `AhserionAI.cs:51,191`; `CustomInstanceBossAI.cs:159,205,230`.
+- [ ] **P4-02** [BOTH] S — Extend `SystemClock` (do not add a new type): `UtcNow()`, `CurrentSeconds()`, and a
+  process-wide override beneath the AsyncLocal one. Route `ServerTime.Now/GetOffset/GetDaylightSavings`
+  (37 callers: quest resets, passports, events, arenas, housing), `ScheduledTask` due time and `GetDelay`, and
+  `QuestState` through it.
+- [ ] **P4-03** [BOTH] S — Stop regressions before the codemod: record
+  `System.currentTimeMillis() → SystemClock.CurrentMillis()` in `docs/upstream-porting.md`; add
+  `scripts/ci/check-clock-reads.ps1` to the pre-commit checks in `CLAUDE.md` as a ratchet (count may only shrink). After P4-04 reaches its floor,
+  switch to `Microsoft.CodeAnalysis.BannedApiAnalyzers` with RS0030 as an error and pragma allowlist entries only
+  in `SystemClock`, `ThreadPoolManager` and infra files.
+- [ ] **P4-04** [BOTH] L — Codemod the remaining gameplay reads, one commit per slice:
+  - **A** combat: `SkillEngine` (effects, chain and charge skills), `Controllers/Attack`, `Controllers/Effect`,
+    cooldowns, item use delay, godstones.
+  - **B** movement, connection and lifecycle: `Controllers/Movement/*`, `PositionUtil`, `AntiHackService`,
+    `FlyController`, the `AionConnection` idle checker, `CM_PING`, `FloodManager`, `PlayerEnterWorldService` and
+    `PlayerLeaveWorldService` (re-entry time), `PlayerService` deletion.
+  - **C** content: `Handlers/Instance/*`, `Handlers/AI/*`, `InstanceService`, `WorldMapInstance`, instance
+    cooldowns, `Taskmanager/Tasks/*` (item expiry), `Item*`, `RVController`, `CraftService`.
+  - **D** the rest: services, `AbstractCronTask`, housing tasks, DAO cooldown filters, persistence timestamps.
+
+  Leave genuine infrastructure on real time and allowlist it: the NIO shutdown loop, `Stopwatch` durations,
+  `PeriodicSaveService` `TickCount64`, logging timestamps. Depends on P4-03.
+- [ ] **P4-05** [BOTH] S — `Rnd` seed seam (AsyncLocal or process-wide; print the seed on failure; production
+  default unchanged). Replace `Random.Shared` in `SpawnGroup.cs:157` with `Rnd` so the seed reaches it (Java
+  uses `Rnd.get(list)`); review the other `new Random`/`Random.Shared` sites.
+- [ ] **P4-06** [SIM] M — Deterministic-mode switches, each a documented infrastructure deviation active only
+  when the registered `ThreadPoolManager` reports deterministic: `MoveTaskManager.Run` sequential in object-id
+  order instead of `AsParallel` (Java's `parallelStream` order is also unspecified); seedable periodic-manager
+  initial delay; `NetFlusher` and `ShutdownHook` countdown scheduled through `ThreadPoolManager`; a rearm hook
+  so `AbstractPeriodicTaskManager` singletons bind to the sim's pool. List gameplay loops that enumerate
+  string-keyed or concurrent collections (12 `ConcurrentDictionary<string, …>`, 309 `ConcurrentDictionary`
+  fields in total); where order affects packets or target choice, sort in deterministic mode or record the
+  scenario as non-replayable. Test: a harness world driven twice with the same seed records identical events (the full S0 replay check is in P5-13).
+- [ ] **P4-07** [SIM] M — Virtual cron path in `CronService`: when the pool is virtual, skip Quartz and arm
+  self-rearming one-shots at `CronExpression.GetTimeAfter(SystemClock now)` in the configured time zone. Keep
+  the public API for its 25 callers (sieges, rifts, vortex, raids, abyss ranking, passports, events).
+- [ ] **P4-08** [SIM] S — `AbstractCronTask` deadlocks on a virtual pool when a second cron singleton is built
+  before `Advance` (a faithful Java structure that only a real pool releases). Construct `AuctionEndTask`,
+  `AuctionAutoFillTask` and `MaintenanceTask` eagerly in SIM, draining zero-delay work between them, each with a
+  wall-time timeout: a body that throws before `semaphore.Release()` (no `finally`, as in Java) must fail the
+  fixture, not hang the next construction.
+- [ ] **P4-09** [BOTH] S — Parity fix: wire game-hour consumers. `GameTimeService.HourChanged` has no subscribers,
+  `TemporarySpawnEngine.OnHourChange` and `WeatherService.CheckWeathersTime` have no callers, and
+  `SetWorldBroadcaster` is only called from a test, so day/night spawns, weather changes and the periodic
+  `SM_GAME_TIME` never happen (Java `GameTime.java:150-154`, `GameTimeService.java:54-56`).
+- [ ] **P4-10** [BOTH] S — `PatternAi.cs:1374` reads `Environment.TickCount64` while its timer runs on the pool.
+  Route it through `SystemClock`, and record the change in `docs/retail-ai-fidelity.md` (retail-AI code).
+
+**Done when:** on a `VirtualThreadPool` an NPC covers speed × virtual seconds; a recast after cooldown is accepted
+and an early recast is rejected; a one-minute timed item (`100000895`) expires after `Advance(61 s)`; the
+clock-read ratchet has reached its allowlist floor; the same-seed replay test passes.
+
+### Phase 5 — SIM host
+
+- [ ] **P5-00** [SIM] M — `VirtualThreadPool` second hardening: priority queue, owner-thread assertion,
+  re-entrancy guard. Then turn `Strict` on for the existing ~276 harness test files and triage what turns red:
+  AI bugs go to `docs/retail-ai-backlog.md`; an entry in `docs/retail-ai-fidelity.md` only when a fix makes a
+  retail-data decision. Depends on P4-06.
+- [ ] **P5-01** [SIM] M — Login-link seam: an interface behind `LoginServer.SendPacket`, `IsAuthed`,
+  `GetGameServerCount` and `OnDisconnect`, with a SIM link that answers account auth synchronously via
+  `AccountAuthenticationResponse` with per-bot access level. Construct the `ChatServer` singleton too:
+  `SM_VERSION_CHECK.WriteImpl` calls `ChatServer.GetInstance()` (so the first handshake packet throws without it)
+  and `LeaveWorld` calls it before saving. The MAC address must match `^([0-9A-F]{2}-){5}[0-9A-F]{2}$`.
+- [ ] **P5-02** [SIM] S — Extract `Program.cs` composition into a reusable `AddGameServer(...)` extension and move
+  `DatabaseFactory.Initialize` out of `ConfigureServices`, so the SIM host cannot drift from production.
+- [ ] **P5-03** [BOTH] S — Parity fix, config order: move `Config.Load()` to the top of `StartAsync`, before
+  `LoadUsedIdsAsync` and the static-data load (Java `GameServer.java:219`). Today C# merges static data with the
+  default `GSConfig.SERVER_COUNTRY_CODE` (`XmlMerger.cs:127`), builds world maps and inits `GameTimeService`
+  before config applies. Correct the comment at `GameServerBootstrapService.cs:137-143`: `EventService` has no
+  active events before `Start()`, so `Config.Load` does not need `DataManager`. Add a post-load override hook;
+  SIM also uses the P3-00 override directory so it never reads a developer's `mygs.properties`.
+- [ ] **P5-04** [BOTH] S — Fix the static-data cache race: `XmlMerger` writes the 150 MB merged cache in place to a
+  shared path. Use a per-process cache directory for SIM or write-temp-then-move under a mutex.
+- [ ] **P5-05** [SIM] M — Create `tests/Aion.GameServer.TestKit` with `VirtualThreadPool`, `RealStaticData`,
+  `TestAiEngine`; update `SingletonIsolationTests` and extend its scan to `IDFactory.RegisterInstance`,
+  `SetCaptureObserver` and config-static writes.
+- [ ] **P5-06** [SIM] L — `tests/Aion.Simulation.Tests` (its own test process, so the 278 `GoldenDataManager` test
+  classes and the assembly-wide "sieges disabled" module initializer cannot leak in). A collection fixture boots
+  **one world per process**:
+  - `scripts/sim/new-sim-db.ps1`: start the development MySQL container if it is stopped, create
+    `aion_gs_sim_<run>_<shard>`, apply the schema (stop on the first error), drop it when the process ends.
+  - `RealStaticData` (own cache directory), `VirtualThreadPool` in `Strict` mode, `SystemClock` at a fixed epoch
+    and time zone (for example a Wednesday 08:59 so daily 09:00 resets and weekly jobs are reachable; only valid
+    after P4-01).
+  - `GameServerBootstrapService.StartAsync` without the NIO and outbound-link hosted services; virtual cron;
+    `GSConfig.ANALYZE_QUESTHANDLERS=false` until P7-01; `gameserver.network.logging.unknown_packets` and
+    `ignored_packets` on via the P5-03 hook; `DataManager` registered before anything touches `TradeService`
+    (it captures holders statically).
+  - No MySQL available → scenarios report **Skipped**, never Passed.
+
+  Depends on P5-01..P5-05, P4-07, P4-08, P3-00.
+- [ ] **P5-07** [SIM] M — In-process transport: client-encrypted CM bytes → `AionConnection.ProcessData` (decrypt,
+  fake-packet check, `lastClientMessageTime`, flood check, `TryCreatePacket`, `Read`) → the P2-00 `ExecutePacket`
+  override runs `Run` inline on the sim thread. After every CM and every clock advance, drain the send queue
+  through `AionServerPacket.Write` (this **serializes**, which matters because `SM_PLAY_MOVIE.WriteImpl` sets
+  player state) and decode with the bot codec. Strict mode fails on an undecodable frame, leftover bytes or a bad
+  header. Depends on P2-00, P2-08.
+- [ ] **P5-08** [SIM] M — Sim driver: advance to `min(next bot action, next due timer)`; timeouts in virtual
+  milliseconds; a wall-time budget per scenario, excluding the once-per-process boot. Fail a scenario whose
+  virtual-minute cost exceeds the P0-03 budget and print the top periodic tasks by time.
+- [ ] **P5-09** [SIM] M — Log policy: a capturing provider bound through the AsyncLocal override; scenario context
+  `{run, scenario, bot, step}`; fail at scenario end on anything not in the shared allowlist (P1-13) for mode SIM:
+  Error/Critical, `VirtualThreadPool` faults, and (opt-in per scenario) protocol Warnings, `AUDIT_LOG` entries and
+  unexpected-refusal system messages. Failure output prints full exception text and the bot's last packets.
+- [ ] **P5-10** [SIM] S — Reset hook for `BaseClientPacket`'s once-per-process "not fully read" set, so each
+  scenario sees its own warnings.
+- [ ] **P5-11** [SIM] S — Harness self-test: a probe AI that throws in `HandleSpawned`, plus a truncated `CM_MOVE`,
+  must **fail** the scenario with full stack text; a non-throwing probe passes.
+- [ ] **P5-12** [BOTH] M — Scenario manifest and isolation. Every scenario declares `{id, modes, tier:
+  Fast|Full|Soak, race, map, channelNeeds, bots, virtualDuration, consumes: [npc/gatherable ids],
+  requires: [geo, D7, chat, db], expectedFail: reason}`. The SIM xUnit theory source and `tools/Aion.LiveBots`
+  both enumerate it, so the SIM and LIVE sets cannot drift. Scenarios on twin maps get their own channel via
+  `CM_CHANGE_CHANNEL`; scenarios on maps without twins (capitals) run one at a time. In one SIM process scenarios
+  run in a fixed order, and the driver advances past the longest respawn among consumed objects before the next
+  starts; scenarios needing the reset epoch get their own process. The Full tier shards the manifest across N
+  processes, each with its own database and cache directory.
+- [ ] **P5-13** [SIM] S — Scenario **S0 boot smoke** (world up, known NPCs present, zero unallowlisted problems
+  after 60 virtual seconds) and **L0** in SIM, using the same script as LIVE (without the chat-server steps, which
+  are LIVE-only). Run S0 twice with the same seed and assert identical SM streams. Depends on P5-06..P5-12.
+- [ ] **P5-14** [SIM] S — `scripts/e2e/run-fast.ps1`: the Fast manifest tier in SIM, keeping transcripts and logs under
+  `run/<id>/` on failure. Once it runs in a few minutes, add it to the pre-commit checks in `CLAUDE.md` for
+  gameplay changes.
+- [ ] **P5-15** [SIM] S — Add the SIM Full tier (sharded) to `scripts/e2e/run-full.ps1`.
+
+**Done when:** L0's scenario body (boot excluded, boot time recorded in §1) finishes in under 10 s wall time in
+SIM; the multiset of SM types answering the bot's own game-server CMs matches LIVE's, excluding login-server
+packets, `SM_PONG` and broadcasts about other objects; the self-test proves a swallowed error fails the run;
+`run-fast.ps1` passes.
+
+### Phase 6 — Movement and combat
+
+- [ ] **P6-00** [BOTH] M — GM facade: SIM calls the same command classes' `Execute()` or the services directly;
+  LIVE uses the director account sending `//...` chat and waiting for the reply. Subjects stay level 0.
+- [ ] **P6-01** [BOTH] S — Parity fix: `SM_MOVE.cs:68` tests `mc is PlayableMoveController<Creature>`, which is never
+  true for players or summons (C# generics are invariant), so observers get the absolute target instead of the
+  movement vector and lose glide and vehicle fields (Java uses `instanceof PlayableMoveController`). Add golden
+  cases for player masks `0xC0`, `0xE0`, glide and vehicle. Java fixtures depend on P0-05.
+- [ ] **P6-02** [BOTH] M — Navigation: per-map waypoint graph from spawn spots, walker route steps, gather spots,
+  portals, bind points and quest NPCs; edges up to 20 m; A*. Z comes from nodes until Phase 9. Take live NPC
+  positions from `SM_NPC_INFO`/`SM_MOVE`, not spawn XML: more than 6,000 NPC templates (5,297 `passive_pattern`,
+  881 `aggressive_pattern`, plus named `PatternAi` subclasses) run retail pattern AI and can move.
+- [ ] **P6-03** [BOTH] M — `BotMover`: realistic `CM_MOVE` streams (start with target, periodic position updates,
+  stop; fall and jump), `CM_MOVE_IN_AIR` for flight, paced at or below speed from `SM_STATS_INFO`.
+- **P6-04** — Dropped: no anti-cheat checks in bot runs (D6).
+- [ ] **P6-05** [BOTH] L — Movement scenarios (ids in Appendix A):
+  - **M1** Ishalgen first steps: prologue movie (quest 2000), walk to Asak, report to Vandar (2101).
+  - **M2** Out-of-region move (Java quirk: one `New MapRegion ... doesn't exist` Warning with stack; the player
+    is despawned and repositioned to bind point or start but not respawned or told; later `CM_MOVE`s are ignored
+    until relog). Allowlist that fingerprint for M2 only with `maxCount 1`.
+  - **M3** Fall damage rules and bind revive to the start location.
+  - **M4** NPC walker route observation near the Ishalgen start; `AIConfig.ACTIVE_NPC_MOVEMENT=false` stops it.
+  - **M5** Teleport statue 730532 via `CM_DIALOG_SELECT` 10000 (Anturoon Crossing) and 10001 (Aldelle Village);
+    teleporter 203679 refuses a level-1 player (`CM_DIALOG_SELECT` 44 → `SM_DIALOG_WINDOW` page 27, NO_RIGHT).
+  - **M6** Fly up, flight-time drain (`SM_FLY_TIME`), land, glide off a ledge, pass a fly ring, ride a windstream.
+  - **M7** Resting regeneration; walk and run toggles.
+- [ ] **P6-06** [BOTH] L — Combat scenarios:
+  - **C1** On a fresh level-1 warrior (only the 1 XP prologue; no quest turn-ins or gathering), kill Sprigg
+    Workers to level 2: exactly 80 XP per kill (raw 343, capped at 20% of the 400 XP level-1 requirement),
+    level 2 on kill 5. Deterministic despite damage rolls.
+  - **C2** Cast cooldown gate: Ferocious Strike rejected until 10 s after the first cast.
+  - **C3** Auto-attack rate gate (regression pin for `985992cdc`): a second swing within 1 s refused, a swing after
+    1400 ms accepted, a skill in between does not reset the gate.
+  - **C4** Mage Flame Bolt timing plus negatives: early recast gives `STR_SKILL_NOT_READY` and an audit line;
+    moving cancels the cast.
+  - **C5** Aggro on sight and leash (Paruru Slowlegs, Poeta).
+  - **C6** Death at level 1 and bind revive: no exp loss at level ≤ 4, 25% HP/MP, soul sickness.
+  - **C7** Potion use delay (30 s).
+  - **C8** Kill, corpse decay (including decay after looting), respawn on schedule.
+  - **C9** NPC keeps chasing after the target jumps. Expected-fail until Phase 9; it pins the geo fix.
+  - **C10** Loot flow: `SM_LOOT_STATUS` → `CM_START_LOOT` → `SM_LOOT_ITEMLIST` → `CM_LOOT_ITEM`.
+  - **C11** One bot per remaining starting class (scout, priest, engineer, artist) casts every autolearned skill
+    once with zero problems.
+  - **C12** Spiritmaster summon: spawn, attack, skill, dismiss, summon death.
+  - **C13** Revive types: a priest resurrects a dead bot (skill), item self-revive, kisk placement and kisk
+    revive, obelisk binding and obelisk revive.
+  - **C14** Death above level 4: exp loss, then recovery at the soul healer.
+  - **C15** Class change at level 9, and learning from a skill book.
+- [ ] **P6-07** [BOTH] S — Deterministic profile disables the "Beyond Aion Server Buffs" custom event (random +100%
+  XP day, drop buff) and bonus-item randomness.
+- [ ] **P6-08** [SIM] S — `BossAiHarness.Kill` runs `OnDie` twice (`ReduceHp` to 0 already calls it); fix it before
+  reusing it for reward or drop assertions.
+
+**Done when:** M1–M7 and C1–C15 pass in the SIM Full tier (C9 expected-fail until Phase 9); C1, C2, C3 and M1 are in
+the Fast tier; C1, M1 and M6 pass in the LIVE Full tier.
+
+### Phase 7 — Questing
+
+The quest engine is one of the most faithful parts of the port (all 1035 Java handlers exist; quest data is
+byte-identical), so bots will mostly find bugs elsewhere through it.
+
+- [ ] **P7-01** [BOTH] S — Parity fix: `QuestSpawnAnalyzer` scans `*.java` under `./data/handlers/*`, which do not
+  exist in C#, so `Directory.EnumerateFiles` throws and the analysis aborts. Scanning C# sources at runtime cannot
+  work either: handlers are compiled, call PascalCase `Spawn(` (the Java regex matches none), and published server builds
+  ship no `src/`. Generate the handler-spawned NPC id set at build time (a checked-in list produced from
+  `Handlers/{Instance,Quest,AI}/**/*.cs`, verified by a test), feed it to the analyzer, log through the bridge, and
+  expose the unreachable-quest list for the planner.
+- [ ] **P7-02** [BOTH] M — Quest plan compiler (tool), with the obtainable-quest classifier checked in:
+  `quest_data.xml` + `quest_script_data/*.xml` + `npc_templates.xml` + spawns + gatherables → per-quest JSON
+  (gates, start trigger, start/end NPCs and positions, steps with item sources, rewards).
+- [ ] **P7-03** [BOTH] M — Template dialog protocol table from `QuestEngine/Handlers/Template/*`: the exact action →
+  page sequences for `report_to`, `monster_hunt`, `item_collecting`, `report_to_many`, `item_order`,
+  `kill_in_world`, `kill_in_zone`, `kill_spawned`, `work_order`, `skill_use`, `report_on_level_up`.
+- [ ] **P7-04** [BOTH] S — Echo-fallback detector: when no handler takes an action, `DialogService` answers
+  `SM_DIALOG_WINDOW` with page = action id. That is the normal next-page path for page-navigation actions
+  (1011–9999 `SELECT*`), but for quest-control actions (31, 1002, 1003–1009, 39, 8–23, 10000+ `SETPRO`/`SET_SUCCEED`)
+  with a non-zero quest id it means the handler rejected or threw. Fail the step only in that case.
+- [ ] **P7-05** [BOTH] M — Scenario **Q1 Poeta chain**: 1000 → 1101 → 1102 → 1103 → 1104 → 1100 (locked at level 2,
+  starts at 3) → 1105 → 1106. Assert the `SM_QUEST_ACTION` status sequence per quest, items consumed, no
+  quest-control echoes. LIVE adds a relog and checks `SM_QUEST_COMPLETED_LIST` and `player_quests` rows.
+- [ ] **P7-06** [BOTH] S — Scenario **Q2 Ishalgen chain**: 2000 → 2101 → 2102 → 2103 → 2104 → 2105 → 2100.
+- [ ] **P7-07** [BOTH] M — Trigger probes (GM-levelled: 1146 needs level 12, 1149 level 14): zone entry (1123),
+  timer expiry after 900 virtual seconds (1146), escort (1149), item-started (1114), level-up start (1100).
+  Anti-exploit negatives: reward action before REWARD status, refuse, `CM_PLAY_MOVIE_END` twice, deleting a
+  `cannot_giveup` quest. Depends on P6-00.
+- [ ] **P7-08** [BOTH] XL — Generic data-driven quest runner for the ~48% of obtainable quests that data fully
+  describes, rolled out zone by zone (starter zones cover about 57–64%). Needs P6-02 graphs per zone and P6-00
+  setup per zone.
+- [ ] **P7-09** [BOTH] XL — The other half (963 obtainable custom C# scripts): a Roslyn extractor over
+  `Handlers/Quest/**` for `Register()` calls and `OnDialogEvent` decision tuples → draft bot scripts; a SIM dialog
+  explorer that learns working action sequences and saves them for LIVE; hand-written scripts for spawn, teleport
+  and instance handlers. First investigate extracting the 4.8 client's quest dialog HTML with
+  `tools/client-extract` as an authoritative page → button → action map.
+- [ ] **P7-10** [BOTH] M — Quest coverage report and checked-in baseline under `parity-artifacts/e2e/`: per zone ×
+  race, obtainable / accepted / completed / echo failures / stuck reasons; "no handler" (503) and "unreachable"
+  reported separately, not as failures. `run-full.ps1` fails when completed drops.
+- [ ] **P7-11** [BOTH] S — Parity fix: `daevanion/_19638TroublewithTwos.cs:58-61` keeps a `USE_OBJECT` branch Java
+  removed (upstream `1d6a2d8f7`).
+- [ ] **P7-12** [SIM] S — Repeatable quests on the virtual clock and a test trigger for the daily 09:00 reset.
+  Depends on P6-00.
+
+**Done when:** Q1 and Q2 pass in the SIM Fast tier and the LIVE Full tier, and the coverage baseline is committed.
+
+### Phase 8 — Gathering, crafting, economy, social, character life
+
+Every economy scenario ends with invariants: kinah and item totals conserved across parties (cross-checked against
+`exchange.log`, `craft.log` and `mail.log` in LIVE), no player left with an interaction task, no gatherable stuck
+"occupied", recipe list consistent with quest state, zero unallowlisted problems.
+
+- [ ] **P8-01** [BOTH] L — Gathering, crafting and vendors:
+  - **E1** Gather Young Aria (Poeta) and Young Azpha (Ishalgen): three harvests, despawn, respawn after 295 s.
+  - **E2** Gather negatives: skill too low, too far, cancel, move-abort, second bot on an occupied node, full cube.
+  - **E3** Vendor buy, sell, repurchase. Compute expected prices from `PricesService` state (influence and taxes
+    change them), never constants.
+  - **E4** Learn Cooking: silent refusal below level 10, 3500 kinah cost, question window 900852, auto-learned
+    recipe.
+  - **E5** Work order 5500 (Elyos, Hestia) / 6500 (Asmodian, Lainita): accept (`QUEST_SELECT` 31, then
+    `QUEST_ACCEPT_1` 1002 with the quest id), receive 4 issued items, craft 3 at the oven (the recipe consumes only
+    the issued item), deliver 3; leftover issued item and work recipe removed. Salt variant: 5501/6501 (Cooking 10,
+    8 issued items, salt 169400096 per craft).
+  - **E6** Two-bot exchange with conservation, plus cancel.
+  - **E7** Mail with item and kinah attachment.
+  - At least one play-through route to a capital (ascension quests 1006/1007) instead of `//moveto`.
+- [ ] **P8-02** [BOTH] L — Social:
+  - **S1** Group invite, whisper (sender level ≥ 10), legion create and invite, duel.
+  - **S2** Cross-race PvP in Reshanta (one account per race), reached by flight, asserting abyss points.
+  - **S3** Friend add, accept, memo and delete; block list; online-status notice on relog.
+  - **S4** Alliance built from two groups (question 70000), leader change, league of two alliances.
+  - **S5** Group loot modes and a roll with three bots on one kill.
+  - **S6** Quest shared into a group, with group kill credit.
+  - **S7** Find-group post, apply and remove; recall to a party member; legion emblem, history and warehouse kinah.
+- [ ] **P8-03** [BOTH] S each — Fixes found in this area:
+  - Two `CraftSkillUpdateService` classes: `DialogService` resolves to the root `Services` copy (already
+    `Profession?`); crafting quest handlers use `Services.Craft`, whose unused `GetProfessionByNpc` returns ordinal
+    0 instead of null. Consolidate into `Services.Craft` (Java's package) with the nullable return.
+  - `InventoryDAO.Store` catches `Exception`; Java catches `SQLException` only.
+  - `WorkOrderRecipeTable` is C#-only with no runtime consumer: delete it or move it to tests.
+  - Not a parity fix: `//access add` per-command grants never take effect in `upstream/4.8` either
+    (`ChatProcessor.java:51,54,119-121` key commands as `//alias`, `AdminCommand.java:39` checks the bare alias).
+    Keep Java's behaviour.
+- [ ] **P8-04** [LIVE] S — After each LIVE economy scenario, compare the bot's inventory model with
+  `/admin/player-storage-state`.
+- [ ] **P8-05** [BOTH] L — Gear progression (add writers, decoders and API calls as needed; rolls pinned by the P4-05
+  seed; invariant: no orphaned manastones):
+  - **G1** Manastone socketing, success and failure; enchantment +1..+N with failure downgrade (`CM_MANASTONE`,
+    `EnchantService`).
+  - **G2** Godstone socketing (`CM_GODSTONE_SOCKET`) and its proc in combat.
+  - **G3** Weapon fusion and break (`CM_FUSION_WEAPONS`, `CM_BREAK_WEAPONS`).
+  - **G4** Equip with the soul-bind question; stigma equip, unequip and stigma skill learning (`StigmaService`).
+  - **G5** Purification, remodel, tuning and conditioning (`CM_ITEM_PURIFICATION`, `CM_ITEM_REMODEL`, `CM_TUNE`,
+    `CM_CHARGE_ITEM`).
+  - **G6** Unwrap, decompose and selection boxes (`CM_UNWRAP_ITEM`, `CM_SELECT_DECOMPOSABLE`); cube expansion.
+- [ ] **P8-06** [BOTH] L — Storage and player markets:
+  - **E8** Character and account warehouse: deposit, withdraw, kinah, expansion (`WarehouseService`).
+  - **E9** Broker: register, search, a second bot buys, settle, cancel, expiry on the virtual clock (`BrokerService`).
+  - **E10** Private store: open, name, a sale to a second bot, close on move (`PrivateStoreService`).
+  - **E11** Trade-in and limited-quantity vendor items (`CM_BUY_TRADE_IN_TRADE`, `LimitedItemTradeService`).
+- [ ] **P8-07** [BOTH] M — Account and character lifecycle:
+  - **L1** One character per race × starting class: create, delete, restore within the grace period, delete for good.
+  - **L2** Appearance edit, title and bonus title, macro create and delete, UI settings; all verified after relog.
+  - **L3** `CM_QUIT` with stayConnected=1 back to character select, then enter a different character.
+  - **L4** Passkey profile on: set, lock out after wrong attempts, reset.
+  - **L5** Pet adopt, summon, feed, dismiss.
+  - **L6** Atreian passport reward on login, with `SystemClock` crossing the daily reset.
+  - **L7** With `CustomConfig` limits on, sell to a vendor until `PlayerLimitService` refuses.
+  - **L8** One event from `static_data/events` enabled on the virtual clock (quest, drop, buff); every player
+    dot-command run once by a level-0 subject.
+- [ ] **P8-08** [SIM] L — Full-tier data sweeps, each with a per-row coverage report and baseline: every gatherable
+  template gathered once (GM teleport, GM-set skill); every recipe crafted once with GM-granted components and
+  level; every trade list bought from and sold to once; every teleporter destination used once; every skill-tree
+  skill learned and cast once per class; every bind point bound and revived at. A row fails on an unallowlisted
+  problem, a quest-control echo or a missing product; a row with no spawn is "unreachable", not a failure.
+
+**Done when:** E1–E11, S1–S5, G1–G6, L1–L8 and the capital play-through pass in the SIM Full tier (E1, E3, E6 in the
+Fast tier); E1, E5, E6, S1 and S2 pass in the LIVE Full tier; P8-08 baselines are committed.
+
+### Phase 9 — Geodata
+
+P9-01 and P9-03 can start any time after Phase 1; P9-02 needs P0-05; P9-04 needs Phases 6–8. Landing P9-01 turns
+real geodata on in production immediately, because geo is enabled by default; that is approved (D11).
+
+- [ ] **P9-01** [BOTH] L — Parity fix (B8): port `GeoWorldLoader` (Java, 285 lines): `models.mesh`, `<mapId>.geo`, PNG
+  heightmaps and material maps, despawnable nodes, material zones (`ZoneService.CreateMaterialZoneTemplate`, zero
+  callers today), parallel collision preload. Add a map-id filter so SIM loads only the maps under test. The 16-bit
+  PNG and mesh readers at `git -C ../ProjectObelisk show bd00c3c:tools/Obelisk.Import/Png16.cs` and `...:GeoReader.cs`
+  (tests under `tests/Obelisk.Sim.Tests/Import/`) are a starting point; they are deleted in that repo's working tree.
+- [ ] **P9-02** [BOTH] M — Java-generated golden geo fixtures: `GetZ` at every Poeta and Ishalgen spawn spot and walker
+  step, `CanSee` pairs, collision rays for both `GetClosestCollision` and `FindMovementCollision`. The ported query
+  code (`GeoMap`, BIH tree, terrain) has zero tests.
+- [ ] **P9-03** [BOTH] S — Measure load time and memory for all maps and for a filtered set.
+- [ ] **P9-04** [BOTH] M — Turn geo on in SIM and LIVE profiles; validate navigation edges with `GetZ` every 2 m plus
+  collision; re-run Phases 6–8; retire C9's expected-fail; add scenarios for fear/knockback displacement against
+  walls.
+
+**Done when:** golden geo queries match Java for the starter zones and C9 passes.
+
+### Phase 10 — Scale, operations, coverage
+
+- [ ] **P10-01** [BOTH] M — Extend `scripts/e2e/run-full.ps1` with the soak and breadth suites.
+- [ ] **P10-02** [LIVE] M — Soak and capacity: 50, 200 and 500 bots across the starter zones (and Reshanta for PvP)
+  for 2 hours. Bots run a seeded "life" policy looping over the manifest scenarios allowed in their zone (quest,
+  gather, craft, vendor, trade, group, duel, relog, crash-disconnect) with random think times. Watch dispatcher write
+  latency (the selector shim does O(connections) work per wakeup), working-set plateau, heartbeat, timer-count growth
+  and flood kicks.
+- [ ] **P10-03** [LIVE] S — Crash and restart: kill the game server mid-session, restart, relog succeeds, delayed save is
+  correct, a second login on the same account kicks the first.
+- [ ] **P10-04** [LIVE] S — Hang detection on top of the P3-12 heartbeat: alert thresholds and diagnostics on a missed
+  beat (Java's `DeadLockDetector` does not port 1:1).
+- [ ] **P10-05** [LIVE] M — **Deferred (D7 declined for now; revisit later).** If approved, restore the Java boot
+  tail the C# production boot skips: `HousingService` and the housing bid/auction/maintenance tasks, faction ratio counts,
+  `SiegeService.InitSieges`, `PvpMapService.Init` (`GameServer.java:118-122,130-134,141,175`). Move the no-DB fixture
+  that shaped today's boot off the production path.
+- [ ] **P10-06** [LIVE] L — Differential Java-vs-C# runs, narrowly: build `../aion-server` `4.8` (kept at
+  `lastCompletedJavaCommit`, P0-02) locally with JDK 25 and Maven; start the Java game server as a local process
+  against its own throwaway databases; run the same bot scripts; compare normalized DB rows and per-request SM opcode multisets for roll-free,
+  non-combat flows (character create, inventory, dialogs, trade, mail). Capture on the bot side so Java needs no
+  patch. Allowlist the sanctioned retail-AI divergences. Do not attempt combat or NPC stream diffs.
+- [ ] **P10-07** [BOTH] M — Real 4.8 client captures (needs a person with a client): `CM_MOVE` masks and cadence, auth
+  packet order, `CM_CRAFT` first byte. Store under `parity-artifacts/` and validate bots against them.
+- [ ] **P10-08** [SIM] S — Parameterize `tools/client-extract/run_mutations.py` (hardcoded test project and `Ai.` name
+  filter) so seeded regressions prove the scenarios catch them.
+- [ ] **P10-09** [LIVE] L — Turn the open journeys in `docs/Deep-Port-Audit-Remediation-Tracker.md` into LIVE
+  scenarios and tick the tracker as each passes: BA-001 two-GS character transfer (`run-live.ps1` starts a second game
+  server process); BA-002 chat auth success, gagged, timeout/disconnect, duplicate request; BA-003 login-server kick,
+  reconnect key, access grant, account ban, MAC/HDD ban sync, duplicate login; BA-005 in-world siege gate repair
+  and assault (deferred with P10-05, D7); BA-006 hardware-ban persistence across a login-server restart.
+- [ ] **P10-10** [BOTH] M — Run report. Every run writes `run/<id>/report.md` and `report.json`:
+  each scenario as passed, failed, skipped or flaky with duration; NEW, KNOWN and REGRESSED fingerprints; coverage
+  deltas; peak heartbeat, memory and timer counts. `run-fast.ps1` and `run-full.ps1` print the summary at the end
+  and point at the P3-14 repro bundle for every NEW fingerprint.
+- [ ] **P10-11** [BOTH] M — Coverage. (a) Packet coverage from bot traces and the P3-07 tap: client opcodes sent out
+  of 186 and server opcodes decoded out of 238. (b) SIM line and branch coverage of `src/Aion.GameServer` with
+  coverlet on `tests/Aion.Simulation.Tests`, per directory (`Services`, `Handlers/Instance`, `Handlers/AI`,
+  `Handlers/AdminCommands`, `Network/Aion/ClientPackets`). (c) A system matrix appended to §1 (system → scenario ids
+  → SIM and LIVE status). Baselines under `parity-artifacts/e2e/`; `run-full.ps1` fails when packet coverage drops.
+- [ ] **P10-12** [LIVE] S — Flake policy: a failed LIVE scenario is rerun once; a pass on rerun is reported FLAKY with
+  both traces and recorded in `parity-artifacts/e2e/flaky.json`; 3 flakes in the last 10 Full runs quarantines the scenario with
+  an owner and an expiry. SIM is never retried: a SIM flake is a determinism bug.
+
+**Done when:** `run-full.ps1` is green on 5 consecutive runs with `report.json` written; the 200-bot soak keeps
+working set and timer count flat for 2 hours; P10-03 and P10-09 pass; every allowlist and flaky entry has an owner
+and an unexpired date.
+
+### Phase 11 — Group and scheduled content
+
+GM commands force scheduled content without waiting for cron (`//siege`, `//rift`, `//vortexraid`, `//worldraid`,
+`//instance`), and SIM's virtual cron (P4-07) covers the schedules themselves.
+
+- [ ] **P11-01** [SIM] M — Instance entry matrix: for each of the 78 instance handlers, a GM-levelled group enters and the
+  handler's create path runs with zero problems; the group leaves via `CM_INSTANCE_LEAVE`; the `instance_cooltimes`
+  entry blocks re-entry, and re-entry succeeds once the cooldown passes on the virtual clock.
+- [ ] **P11-02** [BOTH] L — Full clears of two low-level instances, one per race: boss kill, loot, exit.
+- [ ] **P11-03** [BOTH] M — PvP arena and auto-group queue (`CM_AUTO_GROUP`) with 2–6 bots.
+- [ ] **P11-04** [BOTH] M — Rift open, cross-race entry and close; vortex and world raid start and stop.
+- [ ] **P11-05** [BOTH] L — Siege start, capture and end (deferred with P10-05, D7).
+- [ ] **P11-06** [BOTH] L — Housing: register, bid, acquire, decorate, pay rent, house teleport (deferred with P10-05, D7).
+- [ ] **P11-07** [SIM] S — Flight transporters, teleporters and day/night spawns (after P4-09).
+
+**Done when:** P11-01 passes for all 78 handlers in the SIM Full tier, and P11-02 and P11-04 pass in the LIVE Full tier.
+
+---
+
+## 4. Harness contract
+
+Rules every scenario and fixture follows. Most come from failures recorded in `docs/retail-ai-fidelity.md`, where a
+swallowed exception or a hollow fixture made a mechanic look correctly absent.
+
+1. **A logged or swallowed problem fails the scenario** unless its fingerprint is allowlisted with a reason, an owner
+   and an expiry. Never allowlist a whole category (for example all DB errors).
+2. **Print the whole exception** and the bot's recent packets, not only the assertion line.
+3. **A missing prerequisite is Skipped, never Passed.** No "return if unavailable" helpers.
+4. **Assert the count before iterating**; compare unordered collections as sets.
+5. **Anything with a lifetime is watched across a window**, not sampled at the end (`BossAiHarness.Watch`).
+6. **Setting a position is not moving.** Drive `CM_MOVE` and the notify path.
+7. **Serialize every server packet.** Some packets change state inside `WriteImpl`.
+8. **Register every AI handler a fight can spawn.** A spawn failure is an error, not a missing add.
+9. **Fixtures never shape production boot.** The commented-out `InitSieges` is the cautionary example.
+10. **Re-check any "the harness cannot observe X" claim** before writing it down; earlier ones were wrong.
+11. **Bots are honest clients.** Too-early and audit lines are bot bugs until proven otherwise.
+12. **Subjects of combat, PvP, trade and chat tests are never staff accounts.**
+13. **Every run records** git SHA, seed, virtual epoch and time zone, config profile and scenario list.
+14. **Scenarios declare what world state they consume** (P5-12). Scenarios that consume the same NPC or node never run
+    at the same time, and in SIM the clock advances past the longest respawn before the next one starts.
+
+---
+
+## 5. Watching errors live
+
+### SIM
+
+A failing scenario prints each unallowlisted problem grouped by fingerprint:
+
+```text
+FAIL poeta-chain/Q1  step s14 (bot b01, CM_DIALOG_SELECT quest 1103 action 39)  vt=00:07:12.400
+  ERROR QuestEngine fp=9f3c2a1b "QE: exception in onDialog"
+  System.NullReferenceException: Object reference not set to an instance of an object.
+     at Aion.GameServer.QuestEngine.Handlers.Template.ItemCollecting.OnDialogEvent(...) ...
+  last packets: >CM_SHOW_DIALOG <SM_DIALOG_WINDOW(2375) >CM_DIALOG_SELECT(39) <SM_DIALOG_WINDOW(39)  [quest-control echo]
+```
+
+### LIVE
+
+Every server writes `<srv>.problems.jsonl`, one object per line with keys in this fixed order so anchored regexes
+work:
+
+```json
+{"lvl":"ERROR","ts":"2026-09-17T12:34:56.789Z","srv":"gs","run":"r0917a","acct":"b01r0917","player":"Botone","op":"CM_DIALOG_SELECT","cat":"QuestEngine","thr":"PacketProcessor:0","timer":null,"fp":"9f3c2a1b","tpl":"QE: exception in onDialog","msg":"...","exType":"System.NullReferenceException","exMsg":"...","frame":"Aion.GameServer.QuestEngine.Handlers.Template.ItemCollecting.OnDialogEvent","stack":"...escaped..."}
+```
+
+`tools/Aion.LogWatch` joins those to the bot traces and writes `run/<id>/digest.log`, where every line is new
+information:
+
+```text
+2026-09-17T12:34:56.789Z NEW ERROR gs fp=9f3c2a1b bot=b01 step=s14 op=CM_DIALOG_SELECT cat=QuestEngine | QE: exception in onDialog | NullReferenceException @ ItemCollecting.OnDialogEvent
+2026-09-17T12:35:40.002Z REPEAT gs fp=9f3c2a1b n=12
+2026-09-17T12:36:10.410Z KNOWN WARN gs fp=41c0de77 tracking=FPB-A3 bot=b04 step=s02
+2026-09-17T12:36:58.117Z REGRESSED ERROR gs fp=7a1e0b3c fixedIn=a1b2c3d bot=b02 step=s09
+2026-09-17T12:37:02.500Z NEW PROCESS gs exited code=-532462766 stderr="Unhandled exception."
+2026-09-17T12:37:12.500Z NEW HEARTBEAT gs missed for 20 s
+```
+
+**With Claude Code:** start `scripts/live/run-live.ps1` in the background, then use the Monitor tool on
+`run/<id>/digest.log` filtered to lines containing ` NEW ` or ` REGRESSED `, so each new problem arrives as a
+notification while the bots keep playing. Without Claude Code: `Get-Content run\<id>\digest.log -Wait`.
+
+Beyond Errors, these count as problems: protocol Warnings (unknown opcode or wrong state, and "was not fully read",
+all logged only when `unknown_packets`/`ignored_packets` logging is on); the "Missing D/C/H" read Errors; flood (PFF)
+disconnects; any `AUDIT_LOG` line from a subject; login "Unknown login packet" / "Wrong checksum";
+unexpected-refusal system messages; bot step timeouts and unexpected disconnects; missing heartbeats; server
+process exits and MySQL errors.
+
+### From error to fix
+
+1. The watcher writes a repro bundle for the NEW fingerprint (`run/<id>/problems/<fp>/`) with a draft backlog entry.
+2. Someone triages it: a real bug goes into `docs/Full-Parity-Backlog.md` (or an issue) and the ledger entry becomes
+   `tracked`; a genuine non-bug becomes an allowlist entry with reason, owner and expiry.
+3. The fix commit reads the Java first, as for any parity fix, and carries `Fixes-Fingerprint: <fp>`.
+4. The next green Full run marks the fingerprint `fixed`; if it reappears it is reported `REGRESSED` and fails the run.
+
+---
+
+## 6. Decision log
+
+| ID | Decision | Recommendation | Status |
+|---|---|---|---|
+| D1 | Two modes (SIM, LIVE) sharing one bot library and one scenario manifest | Yes | Proposed |
+| D2 | SIM persistence | Real MySQL (throwaway databases on the development MySQL container), not fake DAOs or SQLite | Proposed |
+| D3 | Meaning of fast-forward | Deterministic discrete-event stepping on a hardened virtual scheduler; no time dilation | Proposed |
+| D4 | Allowed production changes | (a) parity fixes citing `upstream/4.8`; (b) gameplay-neutral seams: logging bridge, `SystemClock` routing, socketless connection, login-link interface, `Rnd` seed, deterministic-mode switches, virtual cron | **Approved** 2026-09-17: (b) counts as infrastructure under CLAUDE.md |
+| D5 | GM usage | Director account (level 9) for setup; subjects at level 0; each system also gets at least one play-through scenario | Proposed |
+| D6 | Anti-hack checks in bot runs | Test-only oracle profile | **Declined** 2026-09-17: no anti-cheat checks; bot runs keep production security defaults (P6-04 dropped) |
+| D7 | Restore the skipped Java boot tail (housing tasks, ratio counts, sieges, PvP map) | Yes, as a parity fix, but it changes live-server behaviour | **Declined for now** 2026-09-17; revisit later (P10-05, P11-05, P11-06 and BA-005 deferred) |
+| D8 | Java reference for this work | Keep local `../aion-server` `4.8` at `lastCompletedJavaCommit` | **Done** 2026-09-17 (`6ffedcd4f` → `ce54b7931`) |
+| D9 | Where runs happen | Local scripts | **Decided** 2026-09-17: no GitHub Actions, no docker server stack, no n8n or other schedulers (all removed from the repo). Docker only hosts the development MySQL, where runs create and drop databases freely |
+| D10 | Randomness in economy scenarios | Deterministic profile (fail chances 0) for pass/fail; separate soak profile with statistical assertions (gather success ≈ 74%, craft ≈ 79% at skill lead 0) | Proposed |
+| D11 | Enable real geodata in production when P9-01 lands (geo defaults to on) | Yes as a parity fix, after P9-03 measures memory | **Approved** 2026-09-17 |
+| D12 | How Java golden fixtures are generated against `lastCompletedJavaCommit` | Bring the generator tests forward onto the spec revision | **Approved** 2026-09-17: branches or worktrees in `../aion-server` are allowed when needed |
+
+---
+
+## 7. Parity bugs found during research
+
+Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing this plan, verified against
+`upstream/4.8`. "Scheduled" points at the TODO that fixes it.
+
+| # | Bug | Java reference | Scheduled |
+|---|---|---|---|
+| 1 | Static and inline loggers are `NullLogger`; nothing they log is visible | slf4j/logback everywhere | P1-01..03 |
+| 2 | Fixed-rate tasks end on their first exception and run fixed-delay; no slow-task warning | `ThreadPoolManager.java:51-63`, `ExecuteWrapper.java:38-42` | P1-04 |
+| 3 | No uncaught-exception handler in any server | `UncaughtExceptionHandler.java` | P1-05 |
+| 4 | `CM_TELEPORT_ANIMATION_DONE` logs a null inner exception | `CM_TELEPORT_ANIMATION_DONE.java:41-43` logs `getCause()` | P1-06 |
+| 5 | `Dispatcher.Parse` drops the hex content from its error | `Dispatcher.java:212` | P1-06 |
+| 6 | Login packet factory swallows read exceptions; unknown packets logged without opcode/state/data | `BaseClientPacket.java:89-95`, `AionPacketHandlerFactory.java:111-117` | P1-06 |
+| 7 | `PlayerDAO.SetAllPlayersOffline` never called at boot | `GameServer.java:222` | P3-01 |
+| 8 | `SocketChannel` disconnects on `WouldBlock` | `Dispatcher.java:166,237,264` (java.nio returns 0) | P3-01 |
+| 9 | `OnDisconnect` lacks the shutdown-soon immediate logout | `AionConnection.java:240-243` | P3-01 |
+| 10 | `ThreadPoolManager._scheduledTasks` never pruned (C#-only leak) | n/a | P3-01 |
+| 11 | `AbstractFIFOPeriodicTaskManager` dedupes with `List.Contains` (O(n²) per tick) | `LinkedHashSet` (`AbstractFIFOPeriodicTaskManager.java:18,39`) | P3-01 |
+| 12 | Server never logs "Game server started in N seconds" | `GameServer.java:186` | P3-04 |
+| 13 | Mixed `SystemClock`/wall-clock comparisons (C#-only; harmless in production) | one clock throughout | P4-01 |
+| 14 | `SpawnGroup` picks a random spot with `Random.Shared` (same distribution; unreachable by the seed) | `SpawnGroup.java:166` `Rnd.get(list)` | P4-05 |
+| 15 | Game-hour consumers, weather check and `SM_GAME_TIME` broadcast unwired | `GameTime.java:150-154`, `GameTimeService.java:54-56` | P4-09 |
+| 16 | `Config.Load` runs after static data, world maps and game time are initialized | `GameServer.java:219` | P5-03 |
+| 17 | `SM_MOVE` player/summon branch never taken | `SM_MOVE.java:36` `instanceof PlayableMoveController` | P6-01 |
+| 18 | `QuestSpawnAnalyzer` scans Java source folders and aborts | `QuestSpawnAnalyzer.java:101-110` (Java ships those folders) | P7-01 |
+| 19 | `_19638TroublewithTwos` extra dialog branch | `_19638TroublewithTwos.java:48-50` (removed upstream in `1d6a2d8f7`) | P7-11 |
+| 20 | Duplicate `CraftSkillUpdateService`; the unused `Craft` copy returns ordinal 0 instead of null (latent) | `services/craft/CraftSkillUpdateService.java:79-81` | P8-03 |
+| 21 | `InventoryDAO.Store` catch scope too wide | `InventoryDAO.java:232` catches `SQLException` | P8-03 |
+| 22 | `GeoWorldLoader` is a stub | `GeoWorldLoader.java` (285 lines) | P9-01 |
+| 23 | Production boot skips `HousingService`/housing tasks, faction ratio counts, `InitSieges`, `PvpMapService.Init` | `GameServer.java:118-122,130-134,141,175` | Deferred (D7) |
+| 24 | `BossAiHarness.Kill` calls `OnDie` twice (test bug) | n/a | P6-08 |
+
+Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
+
+---
+
+## 8. Known limits after all phases
+
+| # | Stays untestable or partial | Covered instead by |
+|---|---|---|
+| 1 | Real-client behaviour: client-side validation, HTML dialogs, rendering, whether the real client accepts each server packet (about 45 of 238 server packets get decoders) | Golden packet suite, P10-07 client captures, a manual client session per release |
+| 2 | Combat numbers and NPC AI against Java (differential runs exclude combat and NPC streams) | Golden formula fixtures and the retail-AI fidelity audits |
+| 3 | Sieges and housing, because the Java boot tail stays skipped (D7 declined for now) | P10-05 if D7 is revisited |
+| 4 | Mass PvP at realistic scale | Not covered; P10-02 soaks starter zones and a small Reshanta PvP set |
+| 5 | Geodata outside the starter zones | Extend P9-02 map by map |
+| 6 | External integrations (web shop token, web rewards, GameGuard, captcha) | Not covered |
+| 7 | Long real-time schedules in LIVE (weekly resets, house auctions, abyss rank updates) | SIM virtual clock and virtual cron (P4-07) |
+| 8 | Retail 5.8 AI content | A boundary by design (CLAUDE.md; `docs/retail-ai-backlog.md` §E) |
+| 9 | Quests with no handler (503) and unreachable quest NPCs | P7-10 "no handler" and "unreachable" columns |
+
+---
+
+## Appendix A — Scenario id reference
+
+Take NPC and object positions from server packets at run time; spawn XML positions are only starting hints.
+
+### Elyos — Poeta (`210010000`)
+
+| What | Id | Position / notes |
+|---|---|---|
+| Character start | — | (1212.9423, 1044.8516, 140.75568) h32 |
+| Elpas (1101 start) | npc 203049 | (1204.29, 1053.18, 138.962) |
+| Mires (1101 end, 1102–1104) | npc 203057 | (1141.0, 1032.0, 128.875) |
+| Polinia (1104 end) | npc 203059 | (825.436, 1241.98, 118.839) |
+| Kalio (1100) | npc 203067 | (820.908, 1241.05, 118.682) |
+| Kales (1105, 1106 start) | npc 203050 | (984.994, 1133.94, 108.563) |
+| Uno (1106 end) | npc 203061 | (847.263, 1256.88, 118.75) |
+| Kerub Grain Sack (1103, item 182200201 ×3) | npc 700105 | (1024.9, 982.62, 129.603) |
+| Striped Kerub (1102) | npc 210133 (L1) / 210134 (L2) | respawn 15 s; 1102 needs 3 kills of either |
+| Juvenile Sparkie (mage target) | npc 210115 | (1234.05, 1042.47, 144.726) |
+| Paruru Slowlegs (aggro on sight) | npc 210673 | (647.912, 891.657, 103.625), L4, respawn 1800 s |
+| Young Aria gatherable | 400601 | (1198.3, 1066.82, 137.2875); gives 152000401; skill 30001 lvl 1; harvest 3 |
+| Minalinerk vendor | npc 798007 | (851.671, 1252.67, 118.833); trade lists 132 and 720; dialog 2 buy, 3 sell |
+| Daines (non-Daeva teleporter) | npc 203194 | (804.924, 1244.6, 118.986) |
+| Quest chain | 1000, 1101, 1102, 1103, 1104, 1100, 1105, 1106 | 1100 locked at level 2, starts at 3 |
+
+### Asmodian — Ishalgen (`220010000`)
+
+| What | Id | Position / notes |
+|---|---|---|
+| Character start | — | (571.0388, 2787.3420, 299.8750) h32 |
+| Asak (2101 start) | npc 203500 | (560.83, 2788.11, 299.062) |
+| Vandar (2101 end, 2102, 2103 start) | npc 203504 | (526.99, 2775.67, 295.751) |
+| Guheitun (2103 end) | npc 203501 | (223.975, 2679.86, 295.25) |
+| Vanar (2104, 2105) | npc 203502 | (220.15, 2678.81, 295.25) |
+| Ulgorn (2100) | npc 203516 | (589.35, 2450.09, 278.375) |
+| Fruit Basket (2104, item 182203104 ×3) | npc 700124 | (135.39, 2643.84, 306.337) |
+| Sprigg Worker (C1, 2102) | npc 210363 | L1, 143 HP, respawn 12 s, does not aggro; 2102 needs 4 kills of 210363 or 210364 |
+| Bucktoothed Snuffler (C3, C9) | npc 210365 | (568.62, 2808.56, 302.85) |
+| Hill Sparkie (2105 quest drop) | npc 210367 | respawn 10 s; drops 182203105 at 100% to the killer while 2105 is START and fewer than 3 are held; 210645/210646/210649 drop it too |
+| Young Azpha gatherable | 400651 | (577.529, 2817.34, 303.613); gives 152000451 |
+| hephe merchant | npc 203514 | (624.51, 2433.91, 280.731) |
+| Teleport statue (M5) | npc 730532 | (859.03, 2215.85, 265.5593); dialog 10000 → Anturoon Crossing (527.04, 2449.68, 281.59), 10001 → Aldelle Village (940.78, 1707.34, 259.67) |
+| Osmar (non-Daeva teleporter, M5 refusal) | npc 203679 | (525.529, 2450.73, 281.593); dialog 44 → page 27 (NO_RIGHT) |
+| Quest chain | 2000, 2101, 2102, 2103, 2104, 2105, 2100 | 2100 locked at level 2, starts at 3 |
+
+### Capitals
+
+| What | Id | Position / notes |
+|---|---|---|
+| Sanctum cooking master Hestia | npc 203784 (`110010000`) | (1848.07, 1543.97, 590.158); learn cost 3500 kinah, level ≥ 10; dialogs 46, 58, 79, 80 |
+| Sanctum salt vendor Luelas | npc 203785 | (1843.47, 1537.81, 590.158); salt 169400096 (for 5501 only) |
+| Sanctum oven | static 150000009, static_id 103 | (1849.788, 1549.137, 590.026) |
+| Elyos cooking work order | quest 5500 | recipe 155004206 (1 × 182290205 → 182290522); issued 182290205 ×4; collect 182290522 ×3 |
+| Pandaemonium cooking master Lainita | npc 204100 (`120010000`) | (1167.16, 1540.53, 214.174) |
+| Pandaemonium salt vendor Daraia | npc 204101 | (1173.63, 1528.79, 214.164); salt for 6501 only |
+| Pandaemonium oven | static 150000009, static_id 111 | (1169.701, 1535.215, 214.105) |
+| Asmodian cooking work order | quest 6500 | recipe 155009206 (1 × 182291205 → 182291522) |
+
+### Skills and items
+
+| What | Id | Notes |
+|---|---|---|
+| Ferocious Strike (warrior) | skill 2864 | level 1 autolearn; cooldown 10 s |
+| Flame Bolt (mage) | skill 1282 | cast 2000 ms; cannot move while casting |
+| Collection (gathering) | skill 30001 | level 1 autolearn |
+| Cooking | skill 40001 | |
+| Kinah | item 182400001 | new characters start with 1000 |
+| Training Sword | item 100000094 | attack speed 1400 ms → minimum swing gap 1100 ms |
+| Minor Life Potion | item 162000002 | use delay 30 s |
+| Bandage | item 169300002 | starter ×20 |
+| 1-minute timed sword | item 100000895 | expiry test (Phase 4 done-when) |
+
+---
+
+## Appendix B — Protocol cheat sheet
+
+Opcode numbers come from the generated table (P2-03), never from this page.
+
+**Login server:** `SM_INIT` (static Blowfish + XOR pass; carries session id, scrambled RSA modulus, Blowfish key) →
+`CM_AUTH_GG` → `SM_AUTH_GG` → `CM_LOGIN` (RSA credential block) → `SM_LOGIN_OK` (account id, loginOk) →
+`CM_SERVER_LIST` → `SM_SERVER_LIST` → `CM_PLAY` → `SM_PLAY_OK` (playOk1, playOk2).
+
+**Game server auth and character select:** `SM_KEY` (unencrypted) → `CM_VERSION_CHECK` → `SM_VERSION_CHECK` →
+`CM_L2AUTH_LOGIN_CHECK` (playOk2, playOk1, account id, loginOk, unk D, unk D; 24 bytes) → `CM_MAC_ADDRESS` (this
+triggers authentication; uppercase dash-separated MAC) → `SM_L2AUTH_LOGIN_CHECK` (state AUTHED) →
+`CM_CHARACTER_LIST` → `SM_CHARACTER_LIST` → `CM_CREATE_CHARACTER` (type 1 opens, type 0 creates) →
+`SM_CREATE_CHARACTER` → `CM_ENTER_WORLD` → burst (`SM_ENTER_WORLD_CHECK`, quest list, skills, inventory,
+`SM_PLAYER_SPAWN`, ...) → `CM_LEVEL_READY` (the player is only spawned here) → `CM_UI_SETTINGS` → `CM_CHAT_AUTH` →
+`SM_CHAT_INIT` → chat-server connection (`CmChatIni`, `CmPlayerAuth` with the token).
+
+**Acks a bot must send:** `CM_LEVEL_READY` after every `SM_PLAYER_SPAWN` (including cross-map teleports);
+`CM_TELEPORT_ANIMATION_DONE` after `SM_TELEPORT_LOC`; `CM_PLAY_MOVIE_END` after `SM_PLAY_MOVIE`; `CM_PING` every
+180–183 s (LIVE); `CM_QUESTION_RESPONSE` for question windows (group 60000, alliance 70000, legion 80001, trade 90001,
+duel 50028, craft learn 900852).
+
+**Bot API → packets:**
+
+| API | Client packets |
+|---|---|
+| `MoveTo` / `Jump` | `CM_MOVE` stream / `CM_EMOTION` jump plus `CM_MOVE` |
+| `Fly` / `Land` / `Glide` / flight path | `CM_EMOTION` FLY/LAND, `CM_MOVE_IN_AIR`, `CM_WINDSTREAM` |
+| `Rest` / `Emote` | `CM_EMOTION` (sit, emotes) |
+| `ChangeChannel` | `CM_CHANGE_CHANNEL` |
+| `Target` / `Attack` / `Cast` | `CM_TARGET_SELECT` / `CM_ATTACK` / `CM_CASTSPELL` (and `CM_USE_CHARGE_SKILL`) |
+| `Summon*` | `CM_SUMMON_COMMAND`, `CM_SUMMON_ATTACK`, `CM_SUMMON_CASTSPELL`, `CM_SUMMON_MOVE` |
+| `UseItem` / `Equip` / item moves | `CM_USE_ITEM` / `CM_EQUIP_ITEM` / `CM_MOVE_ITEM`, `CM_SPLIT_ITEM`, `CM_DELETE_ITEM` |
+| `Loot` | `CM_START_LOOT` (open/close) + `CM_LOOT_ITEM` |
+| `TalkTo` / `SelectDialog` / `CloseDialog` | `CM_SHOW_DIALOG` / `CM_DIALOG_SELECT` (quest select 31, accept 1002, select reward 1009, check items 39, reward 8+i, no reward 23; buy 2, sell 3; teleport list 44; craft learn 46; work orders 58; portal statues 10000+) / `CM_CLOSE_DIALOG` |
+| `Teleport` | `CM_TELEPORT_SELECT` after `CM_DIALOG_SELECT` 44 on a teleport or flight master; portal statues use `CM_DIALOG_SELECT` 10000/10001 instead |
+| `Gather` / `Craft` | `CM_TARGET_SELECT` + `CM_GATHER` (0 start, -1 cancel) / `CM_CRAFT` |
+| `Buy` / `Sell` / repurchase | `CM_BUY_ITEM` (action 13 buy, 1 sell, 2 repurchase) |
+| `Trade*` | `CM_EXCHANGE_REQUEST`, `_ADD_ITEM`, `_ADD_KINAH`, `_LOCK`, `_OK`, `_CANCEL` |
+| `Say` / `Whisper` / GM command | `CM_CHAT_MESSAGE_PUBLIC` / `CM_CHAT_MESSAGE_WHISPER` / `CM_CHAT_MESSAGE_PUBLIC` with `//...` |
+| `InviteToGroup` / `Duel` / legion | `CM_INVITE_TO_GROUP` / `CM_DUEL_REQUEST` / `CM_LEGION` |
+| `Revive` | `CM_REVIVE` (0 = bind point) |
+| `DeleteCharacter` / `RestoreCharacter` | `CM_DELETE_CHARACTER` / `CM_RESTORE_CHARACTER` |
+| `Quit` | `CM_QUIT` (stayConnected 0 closes, 1 returns to character select) |
+| Canaries only | `CM_FRIEND_STATUS` (undefined status), `CM_EMOTION` (undefined type) |
+
+---
+
+## Appendix C — Where this plan came from
+
+Ten read-only studies on 2026-09-17 covered timing and scheduling, boot/DI/database, the client protocol, movement
+and geodata, combat, quests, gathering/crafting/economy, logging, test infrastructure and CI, and the player
+lifecycle and GM tooling. Six independent reviewers then checked §1, §7, the phase claims, the appendices, and the
+plan's completeness and sequencing against the code and `upstream/4.8`; their corrections are folded in, as are the maintainer's decisions. Counts were
+measured with grep at `488763e0c`. When a number here disagrees with the code, the code wins: update this document.

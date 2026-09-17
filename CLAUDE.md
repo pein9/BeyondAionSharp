@@ -59,6 +59,7 @@ when it lives elsewhere.
 | Retail AI data (generated, do not hand-edit) | `game-server/data/static_data/pattern_tables/*.xml`, `.../guard_answers/` |
 | Retail AI extractors and emitters | `tools/client-extract/` — `regen_check.py` runs the whole pipeline |
 | Run / DB / setup guide | `RUNNING.md` |
+| Automated player simulation (bots, SIM/LIVE modes, live log watching) | `docs/e2e-player-simulation-plan.md` — phased plan with TODOs |
 
 ## Build & test (C#)
 
