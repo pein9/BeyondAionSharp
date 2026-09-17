@@ -12,9 +12,9 @@ namespace Aion.GameServer.Tests.Ai;
 /// </summary>
 /// <remarks>
 /// <b>Written because a missing attribute cost three wrong diagnoses.</b> <c>DataManager</c>,
-/// <c>GameWorld</c> and <c>ThreadPoolManager</c> are process-wide singletons with a
-/// <c>RegisterInstance</c> hatch, and several test classes swap them for a fixture and put them back
-/// afterwards. xUnit runs <em>different collections</em> in parallel — a class in a private collection
+/// <c>GameWorld</c>, <c>ThreadPoolManager</c>, <c>IDFactory</c>, the packet capture observer, and config fields
+/// are process-wide mutable state. Several test classes swap them for a fixture and put them back afterwards.
+/// xUnit runs <em>different collections</em> in parallel — a class in a private collection
 /// with <c>DisableParallelization</c> is serialised against itself and against nothing else — so any
 /// two such classes in different collections will occasionally pull the world out from under each
 /// other.
@@ -46,23 +46,23 @@ public sealed class SingletonIsolationTests
 
 	/// <summary>What a test file does that makes it unsafe beside another one.</summary>
 	private static readonly Regex MutatesGlobalState = new(
-		@"\b(?:(DataManager|GameWorld|ThreadPoolManager)\.(Register|Restore)Instance\s*\(|AdminConfig\.NAME_TAGS\s*(?:\?\?=|=))",
+		@"\b(?:(?:DataManager|GameWorld|ThreadPoolManager)\.(?:Register|Restore)Instance\s*\(|IDFactory\.RegisterInstance\s*\(|AionServerPacket\.SetCaptureObserver\s*\(|[A-Za-z][A-Za-z0-9]*Config\.[A-Z][A-Z0-9_]*\s*(?:\?\?=|[-+*/]?=))",
 		RegexOptions.Compiled);
 
 	[Fact]
-	public void EveryTestClassThatSwapsAGlobalSingletonIsInTheSerialisingCollection()
+	public void EveryTestClassThatMutatesProcessGlobalStateIsInTheSerialisingCollection()
 	{
 		var loose = new List<string>();
 
 		foreach (string path in Directory.EnumerateFiles(TestSourceRoot(), "*.cs", SearchOption.AllDirectories))
 		{
-			// The collection definition, the harness and the static-table fixture are the machinery,
+			// The collection definition, harnesses, static-table fixture and assembly-wide siege initializer are machinery,
 			// not users of it. The fixture registers a DataManager for tests that read a table without
-			// building a world; every class that calls it is itself in the collection, which is the
-			// property this test is really about.
+			// building a world; every class that calls it is itself in the collection. The siege initializer runs before
+			// xUnit schedules any collection and holds one fixed value for the lifetime of this test process.
 			string name = Path.GetFileName(path);
 			if (name is "GoldenDataManagerCollection.cs" or "BossAiHarness.cs"
-				or "SingletonIsolationTests.cs" or "StaticTableFixture.cs")
+				or "SingletonIsolationTests.cs" or "StaticTableFixture.cs" or "SiegeServiceTestInit.cs")
 				continue;
 
 			string text = File.ReadAllText(path);
@@ -75,7 +75,7 @@ public sealed class SingletonIsolationTests
 		}
 
 		Assert.True(loose.Count == 0,
-			"these mutate DataManager, GameWorld, ThreadPoolManager or AdminConfig.NAME_TAGS and are not in the \"" + Serialising
+			"these mutate a singleton, packet observer or config static and are not in the \"" + Serialising
 			+ "\" collection, so they run in parallel with every test that shares those singletons:"
 			+ Environment.NewLine + string.Join(Environment.NewLine, loose.OrderBy(s => s)));
 	}

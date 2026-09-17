@@ -2,6 +2,7 @@ using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Network.Sequrity;
 using Aion.GameServer.Services;
 using Aion.GameServer.Taskmanager;
+using Aion.GameServer.TestKit;
 using Aion.GameServer.Tests.Ai;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Hosting;

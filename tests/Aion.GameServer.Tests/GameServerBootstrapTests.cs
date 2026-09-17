@@ -6,6 +6,7 @@ using Aion.GameServer.Configs;
 using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Services;
+using Aion.GameServer.TestKit;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.IdFactory;
 using Aion.GameServer.Utils.Time.Gametime;

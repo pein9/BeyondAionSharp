@@ -1,4 +1,5 @@
 using Aion.GameServer.Taskmanager.Tasks.Housing;
+using Aion.GameServer.TestKit;
 
 namespace Aion.GameServer.Tests.Ai;
 

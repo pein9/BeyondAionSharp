@@ -1,5 +1,6 @@
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.Templates.Housing;
+using Aion.GameServer.TestKit;
 
 namespace Aion.GameServer.Tests;
 

@@ -1,6 +1,6 @@
 using Aion.GameServer.Ai;
 
-namespace Aion.GameServer.Tests;
+namespace Aion.GameServer.TestKit;
 
 /// <summary>
 /// Coordinates the two ways tests populate the process-global <see cref="AIEngine"/> registry.
@@ -33,7 +33,7 @@ namespace Aion.GameServer.Tests;
 /// particular handler therefore cannot lean on the declaration alone.
 /// </para>
 /// </remarks>
-internal static class TestAiEngine
+public static class TestAiEngine
 {
 	private static readonly object Gate = new();
 	private static readonly HashSet<Type> HandRegistered = new();
@@ -51,7 +51,7 @@ internal static class TestAiEngine
 	/// skip is a catch.
 	/// </para>
 	/// </remarks>
-	internal static void Register(IEnumerable<Type> aiHandlerTypes)
+	public static void Register(IEnumerable<Type> aiHandlerTypes)
 	{
 		lock (Gate)
 		{
@@ -74,7 +74,7 @@ internal static class TestAiEngine
 	}
 
 	/// <summary>Binds every <c>[AIName]</c> handler, as the production boot does, at most once per test process.</summary>
-	internal static void EnsureAllRegistered()
+	public static void EnsureAllRegistered()
 	{
 		lock (Gate)
 		{

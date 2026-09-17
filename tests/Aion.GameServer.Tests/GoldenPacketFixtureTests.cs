@@ -24,6 +24,7 @@ namespace Aion.GameServer.Tests;
 ///
 /// To add a packet: capture it in the Java generator, then add a reconstruction case below.
 /// </summary>
+[Collection("GoldenDataManager")]
 public sealed class GoldenPacketFixtureTests
 {
 	// ----- New batch: faithful SM_* packets (AionServerPacket-derived). -----

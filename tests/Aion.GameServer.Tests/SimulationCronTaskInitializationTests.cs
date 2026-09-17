@@ -1,6 +1,7 @@
 using Aion.GameServer.Services.Cron;
 using Aion.GameServer.Taskmanager;
 using Aion.GameServer.Taskmanager.Tasks.Housing;
+using Aion.GameServer.TestKit;
 using Aion.GameServer.Tests.Ai;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Cron;

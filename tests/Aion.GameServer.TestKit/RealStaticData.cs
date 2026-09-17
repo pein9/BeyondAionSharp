@@ -1,6 +1,6 @@
 using Aion.GameServer.Dataholders;
 
-namespace Aion.GameServer.Tests;
+namespace Aion.GameServer.TestKit;
 
 /// <summary>
 /// The real game-server static data, loaded once per test process through the production
@@ -18,9 +18,9 @@ namespace Aion.GameServer.Tests;
 /// reported green. Anything here that cannot find the source data throws instead of skipping.
 /// </para>
 /// <para>
-/// The merged cache lands in the production <c>game-server/cache</c> directory (gitignored): the first run in
-/// a fresh clone pays the ~150 MB merge, later runs reuse it as a real server would, and no test has to know
-/// whether it was the one that built it.
+/// By default the merged cache lands in the production <c>game-server/cache</c> directory (gitignored): the first
+/// run in a fresh clone pays the ~150 MB merge and later runs reuse it as a real server would. A dedicated test
+/// process may instead select an isolated cache directory on its first <see cref="LoadAsync(string?)"/> call.
 /// </para>
 /// <para>
 /// One <see cref="DataManager"/> is shared by every caller. The holders are read-only once loaded (the spawn
@@ -30,15 +30,42 @@ namespace Aion.GameServer.Tests;
 /// <c>DataManagerSingletonGuard</c>.
 /// </para>
 /// </remarks>
-internal static class RealStaticData
+public static class RealStaticData
 {
-	private static readonly Lazy<Task<DataManager>> Loader = new(LoadOnceAsync);
+	private static readonly object Gate = new();
+	private static readonly StringComparer PathComparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+	private static Task<DataManager>? _loader;
+	private static string? _selectedCacheDirectory;
 
 	/// <summary>The real <see cref="DataManager"/>, loaded on first use and shared from then on.</summary>
-	internal static Task<DataManager> LoadAsync() => Loader.Value;
+	/// <remarks>
+	/// The first caller selects the cache directory for this process. A later caller may omit it or select the same
+	/// directory; selecting a different one would hide a test-order bug and is rejected. The simulation test process
+	/// uses its own directory while the legacy game-server tests retain the production-compatible default.
+	/// </remarks>
+	public static Task<DataManager> LoadAsync(string? cacheDirectory = null)
+	{
+		string? normalizedCacheDirectory = string.IsNullOrWhiteSpace(cacheDirectory)
+			? null
+			: Path.GetFullPath(cacheDirectory);
+		lock (Gate)
+		{
+			if (_loader == null)
+			{
+				_selectedCacheDirectory = normalizedCacheDirectory;
+				_loader = LoadOnceAsync(normalizedCacheDirectory);
+			}
+			else if (normalizedCacheDirectory != null && !PathComparer.Equals(_selectedCacheDirectory, normalizedCacheDirectory))
+			{
+				throw new InvalidOperationException(
+					$"RealStaticData is already loading with cache directory '{_selectedCacheDirectory ?? "<default>"}', not '{normalizedCacheDirectory}'.");
+			}
+			return _loader;
+		}
+	}
 
 	/// <summary>The repository root, located by the checked-in static-data entry point it must contain.</summary>
-	internal static string RepoRoot()
+	public static string RepoRoot()
 	{
 		var directory = new DirectoryInfo(AppContext.BaseDirectory);
 		while (directory != null)
@@ -53,7 +80,7 @@ internal static class RealStaticData
 			". That tree is checked in, so this means a broken checkout rather than a data-less one.");
 	}
 
-	private static async Task<DataManager> LoadOnceAsync()
+	private static async Task<DataManager> LoadOnceAsync(string? cacheDirectory)
 	{
 		// Generous: the first run in a fresh clone merges the whole source tree before parsing it. A hang here
 		// should still surface as a failure rather than a test run that never ends.
@@ -63,7 +90,7 @@ internal static class RealStaticData
 		// task); these tests prove the parse.
 		return await DataManager.LoadAsync(
 			RepoRoot(),
-			cacheDirectory: null,
+			cacheDirectory,
 			validateWhenCacheChanges: false,
 			logger: null,
 			cancellationToken: cts.Token);

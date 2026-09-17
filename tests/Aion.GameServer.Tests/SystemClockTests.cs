@@ -5,6 +5,7 @@ using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.House;
 using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.SkillEngine.Model;
+using Aion.GameServer.TestKit;
 using Aion.GameServer.Tests.Ai;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Extensions;

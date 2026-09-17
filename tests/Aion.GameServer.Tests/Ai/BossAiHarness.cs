@@ -18,6 +18,7 @@ using Aion.GameServer.Model.Templates.Npc;
 using Aion.GameServer.Model.Templates.Npcskill;
 using Aion.GameServer.Model.Templates.Walker;
 using Aion.GameServer.Model.Templates.World;
+using Aion.GameServer.TestKit;
 using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging.Abstractions;
 using GameWorld = Aion.GameServer.World.World;

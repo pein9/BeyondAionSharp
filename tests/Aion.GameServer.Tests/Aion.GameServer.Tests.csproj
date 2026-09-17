@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Aion.Bots\Aion.Bots.csproj" />
+    <ProjectReference Include="..\Aion.GameServer.TestKit\Aion.GameServer.TestKit.csproj" />
     <ProjectReference Include="..\..\src\Aion.GameServer\Aion.GameServer.csproj" />
   </ItemGroup>
 

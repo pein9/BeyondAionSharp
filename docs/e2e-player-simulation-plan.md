@@ -789,9 +789,12 @@ replays the same seeded trace.
   `XmlMerger` now serializes rebuilds across processes by canonical cache path, rechecks freshness while holding
   the mutex, and atomically publishes complete same-directory cache and metadata temp files. Concurrent-writer and
   failed-rebuild regressions prove one complete publication and preservation of the last good pair. (`3c93e5a86`)
-- [ ] **P5-05** [SIM] M — Create `tests/Aion.GameServer.TestKit` with `VirtualThreadPool`, `RealStaticData`,
+- [x] **P5-05** [SIM] M — Create `tests/Aion.GameServer.TestKit` with `VirtualThreadPool`, `RealStaticData`,
   `TestAiEngine`; update `SingletonIsolationTests` and extend its scan to `IDFactory.RegisterInstance`,
   `SetCaptureObserver` and config-static writes.
+  The reusable TestKit project now owns those three public helpers; `RealStaticData` lets the first caller select
+  a process-isolated cache directory. The existing tests consume the project, and the expanded isolation scan
+  caught and serialized an unguarded `SecurityConfig` write in `GoldenPacketFixtureTests`. (`8e61d2ac6`)
 - [ ] **P5-06** [SIM] L — `tests/Aion.Simulation.Tests` (its own test process, so the 278 `GoldenDataManager` test
   classes and the assembly-wide "sieges disabled" module initializer cannot leak in). A collection fixture boots
   **one world per process**:

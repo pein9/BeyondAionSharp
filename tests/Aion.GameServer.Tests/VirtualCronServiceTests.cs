@@ -1,5 +1,6 @@
 using Aion.Commons.Lang;
 using Aion.GameServer.Services.Cron;
+using Aion.GameServer.TestKit;
 using Aion.GameServer.Tests.Ai;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Cron;

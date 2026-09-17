@@ -3,7 +3,7 @@ using Aion.GameServer.Utils;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Aion.GameServer.Tests.Ai;
+namespace Aion.GameServer.TestKit;
 
 /// <summary>
 /// A <see cref="ThreadPoolManager"/> whose clock is driven by the test rather than by wall time.
