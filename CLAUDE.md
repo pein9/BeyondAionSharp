@@ -70,6 +70,7 @@ pwsh -NoProfile -File scripts/ci/check-warning-baseline.ps1   # run before every
 pwsh -NoProfile -File scripts/ci/check-null-loggers.ps1       # prevent silent source loggers
 pwsh -NoProfile -File scripts/ci/check-clock-reads.ps1        # direct game clock reads may only shrink
 python scripts/parity/check_fidelity.py                        # structural-fidelity check
+pwsh -NoProfile -File scripts/e2e/run-fast.ps1                 # additionally, before gameplay-change commits (Docker)
 ```
 
 There is no hosted CI: these checks run locally. The baseline script rebuilds everything and **fails if

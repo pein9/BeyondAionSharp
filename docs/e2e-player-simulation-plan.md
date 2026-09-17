@@ -878,9 +878,13 @@ replays the same seeded trace.
   known Poeta NPC, advances two same-seed 60-second windows and compares their serialized SM type streams under the
   shared zero-problem policy. The Docker-only integration run passed in 28.6 s including database creation, static
   data and boot; the combined S0/L0 test body reported 1 s, below the 10 s scenario budget. (`d20447be2`)
-- [ ] **P5-14** [SIM] S — `scripts/e2e/run-fast.ps1`: the Fast manifest tier in SIM, keeping transcripts and logs under
+- [x] **P5-14** [SIM] S — `scripts/e2e/run-fast.ps1`: the Fast manifest tier in SIM, keeping transcripts and logs under
   `run/<id>/` on failure. Once it runs in a few minutes, add it to the pre-commit checks in `CLAUDE.md` for
-  gameplay changes.
+  gameplay changes. The runner validates Docker up front, assigns an isolated SIM run/shard and deterministic
+  seed, invokes the Fast scenario test, and preserves the console log, PowerShell transcript, TRX, Docker
+  diagnostics and contract metadata under the guarded run directory on both success and failure. Its Docker-only
+  validation run `p514-dev-20260917` passed S0 and L0 in 37.3 s and left no simulation database behind;
+  `CLAUDE.md` now requires it before gameplay-change commits. (`ac9ad1078`)
 - [ ] **P5-15** [SIM] S — Add the SIM Full tier (sharded) to `scripts/e2e/run-full.ps1`.
 
 **Done when:** L0's scenario body (boot excluded, boot time recorded in §1) finishes in under 10 s wall time in
