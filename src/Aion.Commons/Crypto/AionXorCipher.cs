@@ -3,9 +3,9 @@ using System;
 namespace Aion.Commons.Crypto
 {
 	/// <summary>
-	/// Aion XOR-based packet cipher.
-	/// Must replicate Java's Crypt behavior exactly for client compatibility.
-	/// Uses little-endian byte ordering and per-packet key rotation.
+	/// Legacy experimental XOR helper. This is not the Aion game packet cipher and must not be used for
+	/// game-client compatibility; the game protocol uses the chained cipher in the game server's
+	/// <c>Crypt</c>/<c>EncryptionKeyPair</c> implementation.
 	/// </summary>
 	public class AionXorCipher
 	{

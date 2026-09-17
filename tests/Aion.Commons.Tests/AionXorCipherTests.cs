@@ -3,8 +3,8 @@ using Aion.Commons.Crypto;
 namespace Aion.Commons.Tests;
 
 /// <summary>
-/// Tests for Aion XOR cipher encryption/decryption.
-/// Validates that C# cipher behavior matches Java exactly.
+/// Tests the retained legacy XOR helper's own behavior. This helper is not the game packet cipher;
+/// game-protocol parity lives in the game server's Crypt/EncryptionKeyPair tests.
 /// </summary>
 public class AionXorCipherParityTests
 {
