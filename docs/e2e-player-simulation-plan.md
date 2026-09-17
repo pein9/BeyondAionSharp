@@ -503,10 +503,18 @@ sockets before the large clock migration.
   compose container. A rebuilt four-service `aion-bots-p304` stack passed the gate in 7.7 seconds after game
   service launch (`Game server started in 15 seconds.`), then was removed with its tmpfs database. Commit:
   `2390c1461`.
-- [ ] **P3-05** [LIVE] M — TCP transport and `tools/Aion.LiveBots`: per-bot async loop, ping scheduler,
+- [x] **P3-05** [LIVE] M — TCP transport and `tools/Aion.LiveBots`: per-bot async loop, ping scheduler,
   reconnect, manifest-driven scenario selection (P5-12 defines the manifest; until then a simple list), per-bot
   traces, non-zero exit on failure. Every step has a real-time timeout; a timeout, automatic reconnect or
-  unexpected quit response is a problem record joined to bot and step.
+  unexpected quit response is a problem record joined to bot and step. `TcpBotTransport` implements the shared
+  contract over a real socket with exact-length u16 framing, the P2 game crypt, one ordered receive loop,
+  decoded-or-raw known server packets, graceful close and RST crash. `Aion.LiveBots` supplies the temporary
+  `connect` scenario list, parallel per-bot loops, 180-183-second in-world ping scheduling, bounded connect and
+  step execution, one recovery attempt after unexpected disconnect, immediate JSONL traces/problems, required
+  run provenance and failure exit codes. Loopback tests cover fragmented reads, key recovery, both encrypted
+  directions, graceful EOF and unexpected EOF. Against `aion-bots-p305`, two bots each ran two sequential real
+  connect/key/close scenarios (10 trace records apiece, no problems); a forced connect timeout exited 1 with one
+  problem joined to `b01`/`s01`. The disposable stack was removed. Commit: `c1b2079ec`.
 - [ ] **P3-06** [LIVE] M — `tools/Aion.LogWatch`: tail `gs/ls/cs.problems.jsonl` from the run's start offset, the
   bot traces, the bots project's container logs, `docker compose events` (die, oom, restart) and the MySQL
   container's log. Fingerprint and

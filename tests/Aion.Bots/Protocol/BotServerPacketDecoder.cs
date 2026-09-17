@@ -62,6 +62,22 @@ public sealed class BotServerPacketDecoder
 
 	public DecodedBotServerPacket Decode(DecodedGamePacket packet) => Decode(packet.PacketType, packet.Body);
 
+	/// <summary>
+	/// Decodes bot-facing packets and preserves known-but-uninteresting server packets as raw bodies so a live
+	/// transport can keep the complete wire stream without pretending the packet is unknown to the server.
+	/// </summary>
+	public DecodedBotServerPacket DecodeOrRaw(DecodedGamePacket packet)
+	{
+		if (Decoders.TryGetValue(packet.PacketType, out var decoder))
+			return new DecodedBotServerPacket(packet.PacketType, decoder(packet.Body));
+		return new DecodedBotServerPacket(
+			packet.PacketType,
+			new Dictionary<string, object?>(StringComparer.Ordinal)
+			{
+				["bodyHex"] = Convert.ToHexString(packet.Body),
+			});
+	}
+
 	public DecodedBotServerPacket Decode(Type packetType, ReadOnlySpan<byte> body)
 	{
 		if (!Decoders.TryGetValue(packetType, out var decoder))

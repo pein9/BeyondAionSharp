@@ -13,6 +13,7 @@
     <Project Path="tests/Aion.LoginServer.Tests/Aion.LoginServer.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/Aion.LiveBots/Aion.LiveBots.csproj" />
     <Project Path="tools/Aion.PortParity/Aion.PortParity.csproj" />
   </Folder>
 </Solution>
