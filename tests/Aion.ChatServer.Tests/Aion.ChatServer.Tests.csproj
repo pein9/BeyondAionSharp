@@ -20,7 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Aion.Bots\Aion.Bots.csproj" />
     <ProjectReference Include="..\..\src\Aion.ChatServer\Aion.ChatServer.csproj" />
+    <ProjectReference Include="..\..\src\Aion.GameServer\Aion.GameServer.csproj" />
   </ItemGroup>
 
 </Project>

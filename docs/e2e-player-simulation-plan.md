@@ -371,8 +371,12 @@ Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 con
   the session, negotiated Blowfish key and an unscrambled RSA modulus used to encrypt credentials. The main
   loopback handshake uses the real random `LoginKeyGenerator`, while the inverse transform has a direct
   generated-key round-trip test and the existing smoke suite exercises every moved writer. Commit: `7d0b1ef3a`.
-- [ ] **P2-07** [LIVE] S — Chat client (`CmChatIni`, `CmPlayerAuth`, channel request and message), lifted from
+- [x] **P2-07** [LIVE] S — Chat client (`CmChatIni`, `CmPlayerAuth`, channel request and message), lifted from
   `ChatConnectionSmokeTests.cs`, driven by `SM_CHAT_INIT`.
+  Added an `SM_CHAT_INIT`-bound chat protocol with framed writers for initialization, player authentication,
+  channel requests and channel messages. All four writers round-trip through the production chat packet
+  factory, and the existing socket tests now use them for channel join and two-client broadcast. Commit:
+  `dc88fe219`.
 - [ ] **P2-08** [BOTH] S — `IBotTransport`: send CM bytes, receive decoded SMs, close, crash (drop without
   `CM_QUIT`). Implementations arrive in P3-05 (TCP) and P5-07 (in-process).
 - [ ] **P2-09** [BOTH] M — Bot world model built only from decoded SMs: known objects (players, NPCs,

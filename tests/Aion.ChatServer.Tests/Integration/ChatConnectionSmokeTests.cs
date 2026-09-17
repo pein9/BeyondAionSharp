@@ -2,6 +2,8 @@ using System.Buffers.Binary;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Aion.Bots.Protocol;
+using Aion.Bots.Protocol.Chat;
 using Aion.ChatServer.Configuration;
 using Aion.ChatServer.Data.Repositories;
 using Aion.ChatServer.Handlers;
@@ -14,6 +16,7 @@ using Aion.ChatServer.Network.Packets;
 using Aion.ChatServer.Network.Packets.GameServer;
 using Aion.ChatServer.Services;
 using Aion.Commons.Network;
+using Aion.GameServer.Network.Aion.ServerPackets;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Aion.ChatServer.Tests.Integration;
@@ -119,16 +122,15 @@ public class ChatConnectionSmokeTests
 				handlerRegistry,
 				options));
 
-		await harness.ClientStream.WriteAsync(ChatPacketFrameCodec.CreateFrame(Packet(w => w.C(ClientPacketFactory.CmChatIni).C(0x40).H(0).D(0).D(0).D(0))));
+		var protocol = CreateProtocol(client);
+		await harness.ClientStream.WriteAsync(protocol.CreateChatInitFrame());
 		Assert.Equal([0x31, 0x40, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00], await ReadPayloadAsync(harness.ClientStream));
 
-		await harness.ClientStream.WriteAsync(ChatPacketFrameCodec.CreateFrame(BuildClientAuthPayload(client)));
+		await harness.ClientStream.WriteAsync(
+			protocol.CreatePlayerAuthFrame(client.ClientId, client.AccountName.ToLowerInvariant(), client.Name, ChannelIdentifier));
 		Assert.Equal([0x02, 0x40, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22, 0x08], await ReadPayloadAsync(harness.ClientStream));
 
-		const string identifier = "@\u0001public_ALL\u00011.0.AION.KOR";
-		await harness.ClientStream.WriteAsync(
-			ChatPacketFrameCodec.CreateFrame(
-				Packet(w => w.C(ClientPacketFactory.CmChannelRequest).C(0x40).H(0).D(77).Bytes(new byte[16]).Utf16LengthBytes(identifier).D(0))));
+		await harness.ClientStream.WriteAsync(protocol.CreateChannelRequestFrame(77, ChannelIdentifier));
 		var channelResponse = await ReadPayloadAsync(harness.ClientStream);
 
 		Assert.Equal(0x11, channelResponse[0]);
@@ -170,13 +172,13 @@ public class ChatConnectionSmokeTests
 				handlerRegistry,
 				options));
 
-		var channelId = await AuthenticateAndJoinAsync(first.ClientStream, firstClient, requestId: 1);
-		var secondChannelId = await AuthenticateAndJoinAsync(second.ClientStream, secondClient, requestId: 2);
+		var firstProtocol = CreateProtocol(firstClient);
+		var secondProtocol = CreateProtocol(secondClient);
+		var channelId = await AuthenticateAndJoinAsync(first.ClientStream, firstClient, firstProtocol, requestId: 1);
+		var secondChannelId = await AuthenticateAndJoinAsync(second.ClientStream, secondClient, secondProtocol, requestId: 2);
 		Assert.Equal(channelId, secondChannelId);
 
-		await first.ClientStream.WriteAsync(
-			ChatPacketFrameCodec.CreateFrame(
-				Packet(w => w.C(ClientPacketFactory.CmChannelMessage).H(0).C(0).D(0).D(0).D(0).D(0).D(channelId).C(0).Utf16LengthBytes("Hello"))));
+		await first.ClientStream.WriteAsync(firstProtocol.CreateChannelMessageFrame(channelId, "Hello"));
 
 		var firstPayload = await ReadPayloadAsync(first.ClientStream);
 		var secondPayload = await ReadPayloadAsync(second.ClientStream);
@@ -214,39 +216,29 @@ public class ChatConnectionSmokeTests
 		await harness.WaitForConnectionCloseAsync();
 	}
 
-	private static async Task<int> AuthenticateAndJoinAsync(NetworkStream stream, ChatClient client, int requestId)
+	private const string ChannelIdentifier = "@\u0001public_ALL\u00011.0.AION.KOR";
+
+	private static async Task<int> AuthenticateAndJoinAsync(
+		NetworkStream stream,
+		ChatClient client,
+		ChatClientProtocol protocol,
+		int requestId)
 	{
-		const string identifier = "@\u0001public_ALL\u00011.0.AION.KOR";
-		await stream.WriteAsync(ChatPacketFrameCodec.CreateFrame(BuildClientAuthPayload(client)));
-		Assert.Equal([0x02, 0x40, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22, 0x08], await ReadPayloadAsync(stream));
 		await stream.WriteAsync(
-			ChatPacketFrameCodec.CreateFrame(
-				Packet(w => w.C(ClientPacketFactory.CmChannelRequest).C(0x40).H(0).D(requestId).Bytes(new byte[16]).Utf16LengthBytes(identifier).D(0))));
+			protocol.CreatePlayerAuthFrame(client.ClientId, client.AccountName.ToLowerInvariant(), client.Name, ChannelIdentifier));
+		Assert.Equal([0x02, 0x40, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22, 0x08], await ReadPayloadAsync(stream));
+		await stream.WriteAsync(protocol.CreateChannelRequestFrame(requestId, ChannelIdentifier));
 		var channelResponse = await ReadPayloadAsync(stream);
 		Assert.Equal(0x11, channelResponse[0]);
 		return BinaryPrimitives.ReadInt32LittleEndian(channelResponse.AsSpan(8, 4));
 	}
 
-	private static byte[] BuildClientAuthPayload(ChatClient client)
+	private static ChatClientProtocol CreateProtocol(ChatClient client)
 	{
-		var identifier = $"{client.Name}@\u0001public_ALL\u00011.0.AION.KOR";
-		return Packet(
-			w => w.C(ClientPacketFactory.CmPlayerAuth)
-				.Utf16Bytes("@")
-				.C(0)
-				.D(1)
-				.Utf16LengthBytes("AION")
-				.D(27)
-				.D(1)
-				.D(0)
-				.D(client.ClientId)
-				.D(0)
-				.D(0)
-				.D(0)
-				.Utf16LengthBytes(identifier)
-				.Utf16LengthBytes(client.AccountName.ToLowerInvariant())
-				.H(client.Token.Length)
-				.Bytes(client.Token));
+		var body = new byte[sizeof(int) + client.Token.Length];
+		BinaryPrimitives.WriteInt32LittleEndian(body, client.Token.Length);
+		client.Token.CopyTo(body, sizeof(int));
+		return ChatClientProtocol.FromChatInit(new BotServerPacketDecoder().Decode(typeof(SM_CHAT_INIT), body));
 	}
 
 	private static string ExtractChannelMessageText(byte[] payload)
@@ -428,12 +420,6 @@ public class ChatConnectionSmokeTests
 		{
 			_bytes.AddRange(Encoding.Unicode.GetBytes(value));
 			return this;
-		}
-
-		public ByteWriter Utf16LengthBytes(string value)
-		{
-			H(value.Length);
-			return Utf16Bytes(value);
 		}
 
 		public ByteWriter S(string value)
