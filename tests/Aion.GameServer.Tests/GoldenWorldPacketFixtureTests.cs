@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Aion.Commons.Nio;
 using Aion.GameServer.Controllers;
+using Aion.GameServer.Controllers.Movement;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.Animations;
@@ -153,6 +154,9 @@ public sealed class GoldenWorldPacketFixtureTests
     private const float NpcInfoY = 1602.25f;
     private const float NpcInfoZ = 250.125f;
     private const byte NpcInfoHeading = 60;
+
+    // SM_MOVE playable-controller seam (== Java generator values).
+    private const int MovePlayerObjectId = 740556;
 
     private static readonly long[] ExpTable = BuildExpTable();
 
@@ -369,29 +373,45 @@ public sealed class GoldenWorldPacketFixtureTests
 
     /// <summary>
     /// SM_MOVE reuses the seam: WriteImpl reads objectId + X/Y/Z/Heading (the un-spawned Npc's WorldPosition == 0,
-    /// identical both sides) + movementMask; NpcMoveController is a plain CreatureMoveController (pmc == null), so the
-    /// POSITION|MANUAL branch writes GetTargetX2/Y2/Z2 (TargetDest* default 0). No glide/vehicle bits set.
+    /// identical both sides) + movementMask. NPC cases cover the plain CreatureMoveController path; player cases cover
+    /// Java's erased PlayableMoveController branch for relative vectors, absolute targets, geyser glide and vehicle data.
     /// </summary>
     [Theory]
     [InlineData("SM_MOVE.json")]
     public void CsharpMoveMatchesJavaGoldenFixture(string fixtureFile)
     {
         using var fixture = LoadFixture(fixtureFile);
-        var npc = BuildRealNpc(NpcInfoObjectId, CreatureType.PEACE);
         foreach (var caseElement in fixture.RootElement.GetProperty("cases").EnumerateArray())
         {
             var caseName = caseElement.GetProperty("name").GetString()!;
             var expectedHex = caseElement.GetProperty("payloadHex").GetString()!;
             var inputs = caseElement.GetProperty("inputs");
-            Assert.Equal(NpcInfoObjectId, inputs.GetProperty("objectId").GetInt32());
             var movementMask = (byte)inputs.GetProperty("movementMask").GetInt32();
+            Creature creature;
+            if (inputs.TryGetProperty("actor", out JsonElement actor) && actor.GetString() == "player")
+            {
+                Assert.Equal(MovePlayerObjectId, inputs.GetProperty("objectId").GetInt32());
+                creature = BuildMovePlayer(inputs);
+            }
+            else
+            {
+                Assert.Equal(NpcInfoObjectId, inputs.GetProperty("objectId").GetInt32());
+                creature = BuildRealNpc(NpcInfoObjectId, CreatureType.PEACE);
+            }
 
-            var actualHex = Convert.ToHexString(CaptureWriteImplPayload(new SM_MOVE(npc, movementMask)));
+            var actualHex = Convert.ToHexString(CaptureWriteImplPayload(new SM_MOVE(creature, movementMask)));
             Assert.True(expectedHex == actualHex,
                 $"SM_MOVE/{caseName}: C# payload diverged from Java golden.\n" +
                 $"  Java : {expectedHex}\n  C#   : {actualHex}\n" +
                 $"  firstDiffByte: {FirstDiffByte(expectedHex, actualHex)}");
         }
+    }
+
+    [Fact]
+    public void PlayableMovementBridgeCoversPlayerAndSummonControllers()
+    {
+        Assert.True(typeof(IPlayableMoveController).IsAssignableFrom(typeof(PlayerMoveController)));
+        Assert.True(typeof(IPlayableMoveController).IsAssignableFrom(typeof(SummonMoveController)));
     }
 
     /// <summary>
@@ -1310,6 +1330,38 @@ public sealed class GoldenWorldPacketFixtureTests
         var idField = typeof(AionObject).GetField("_objectId", BindingFlags.Instance | BindingFlags.NonPublic)
             ?? throw new MissingFieldException(typeof(AionObject).FullName, "_objectId");
         idField.SetValue(player, objectId);
+        return player;
+    }
+
+    private static Player BuildMovePlayer(JsonElement inputs)
+    {
+        int objectId = inputs.GetProperty("objectId").GetInt32();
+        var common = new PlayerCommonData(objectId);
+        common.SetName("MoveHarness");
+        var account = new Aion.GameServer.Model.Account.Account(objectId + 10_000);
+        account.SetName("move-harness");
+        var player = new Player(
+            new Aion.GameServer.Model.Account.PlayerAccountData(common, new PlayerAppearance()), account);
+        player.SetPosition(new WorldPosition(
+            RegularMapId,
+            inputs.GetProperty("x").GetSingle(),
+            inputs.GetProperty("y").GetSingle(),
+            inputs.GetProperty("z").GetSingle(),
+            inputs.GetProperty("heading").GetByte()));
+
+        PlayerMoveController controller = player.GetMoveController();
+        controller.SetNewDirection(
+            inputs.GetProperty("targetX").GetSingle(),
+            inputs.GetProperty("targetY").GetSingle(),
+            inputs.GetProperty("targetZ").GetSingle(),
+            inputs.GetProperty("heading").GetByte());
+        controller.vectorX = inputs.GetProperty("vectorX").GetSingle();
+        controller.vectorY = inputs.GetProperty("vectorY").GetSingle();
+        controller.vectorZ = inputs.GetProperty("vectorZ").GetSingle();
+        controller.glideFlag = inputs.GetProperty("glideFlag").GetByte();
+        controller.geyserLocationId = inputs.GetProperty("geyserLocationId").GetInt32();
+        controller.unk1 = inputs.GetProperty("vehicleUnk1").GetInt32();
+        controller.unk2 = inputs.GetProperty("vehicleUnk2").GetInt32();
         return player;
     }
 

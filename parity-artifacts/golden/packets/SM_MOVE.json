@@ -13,6 +13,26 @@
       "name": "movePositionManualAbsolute",
       "inputs": {"objectId":740555,"movementMask":224},
       "payloadHex": "CB4C0B0000000000000000000000000000E0000000000000000000000000"
+    },
+    {
+      "name": "playerRelativeVectorC0",
+      "inputs": {"actor":"player","objectId":740556,"movementMask":192,"x":10.5,"y":20.25,"z":30.125,"heading":37,"vectorX":1.25,"vectorY":-2.5,"vectorZ":3.75,"targetX":101.5,"targetY":202.25,"targetZ":303.125,"glideFlag":128,"geyserLocationId":17,"vehicleUnk1":287454020,"vehicleUnk2":1432778632},
+      "payloadHex": "CC4C0B00000028410000A2410000F14125C00000A03F000020C000007040"
+    },
+    {
+      "name": "playerAbsoluteTargetE0",
+      "inputs": {"actor":"player","objectId":740556,"movementMask":224,"x":10.5,"y":20.25,"z":30.125,"heading":37,"vectorX":1.25,"vectorY":-2.5,"vectorZ":3.75,"targetX":101.5,"targetY":202.25,"targetZ":303.125,"glideFlag":128,"geyserLocationId":17,"vehicleUnk1":287454020,"vehicleUnk2":1432778632},
+      "payloadHex": "CC4C0B00000028410000A2410000F14125E00000CB4200404A4300909743"
+    },
+    {
+      "name": "playerGeyserGlide",
+      "inputs": {"actor":"player","objectId":740556,"movementMask":196,"x":10.5,"y":20.25,"z":30.125,"heading":37,"vectorX":1.25,"vectorY":-2.5,"vectorZ":3.75,"targetX":101.5,"targetY":202.25,"targetZ":303.125,"glideFlag":128,"geyserLocationId":17,"vehicleUnk1":287454020,"vehicleUnk2":1432778632},
+      "payloadHex": "CC4C0B00000028410000A2410000F14125C40000A03F000020C0000070408011"
+    },
+    {
+      "name": "playerVehicle",
+      "inputs": {"actor":"player","objectId":740556,"movementMask":208,"x":10.5,"y":20.25,"z":30.125,"heading":37,"vectorX":1.25,"vectorY":-2.5,"vectorZ":3.75,"targetX":101.5,"targetY":202.25,"targetZ":303.125,"glideFlag":128,"geyserLocationId":17,"vehicleUnk1":287454020,"vehicleUnk2":1432778632},
+      "payloadHex": "CC4C0B00000028410000A2410000F14125D00000A03F000020C00000704044332211887766550000A03F000020C000007040"
     }
   ]
 }

@@ -5,8 +5,23 @@ using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Controllers.Movement;
 
+/// <summary>
+/// Non-generic view of Java's erased <c>PlayableMoveController&lt;?&gt;</c>. Consumers such as SM_MOVE need the
+/// playable-only wire fields without assuming whether the owner is a Player or Summon.
+/// </summary>
+public interface IPlayableMoveController
+{
+    float VectorX { get; }
+    float VectorY { get; }
+    float VectorZ { get; }
+    byte GlideFlag { get; }
+    int GeyserLocationId { get; }
+    int VehicleUnknown1 { get; }
+    int VehicleUnknown2 { get; }
+}
+
 /// <summary>Java parity: controllers/movement/PlayableMoveController (ATracer) — base class for summon &amp; player move controller.</summary>
-public abstract class PlayableMoveController<T> : CreatureMoveController<T> where T : Creature
+public abstract class PlayableMoveController<T> : CreatureMoveController<T>, IPlayableMoveController where T : Creature
 {
     private bool sendMovePacket = true;
     private MovementModifierDirection movementModifierDirection = MovementModifierDirection.NONE;
@@ -22,6 +37,14 @@ public abstract class PlayableMoveController<T> : CreatureMoveController<T> wher
     public int unk1;
     public int unk2;
     public int geyserLocationId; // locationId from windstreams.xml
+
+    float IPlayableMoveController.VectorX => vectorX;
+    float IPlayableMoveController.VectorY => vectorY;
+    float IPlayableMoveController.VectorZ => vectorZ;
+    byte IPlayableMoveController.GlideFlag => glideFlag;
+    int IPlayableMoveController.GeyserLocationId => geyserLocationId;
+    int IPlayableMoveController.VehicleUnknown1 => unk1;
+    int IPlayableMoveController.VehicleUnknown2 => unk2;
 
     public PlayableMoveController(T owner)
         : base(owner)

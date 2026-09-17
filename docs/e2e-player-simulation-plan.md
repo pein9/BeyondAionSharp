@@ -911,10 +911,14 @@ point; and `p515-full2-20260917/l0-packet-parity.json` recorded the normalized S
   selection plus the real public-chat command and waits for a matching decoded `SM_MESSAGE`. Tests pin both paths,
   reject privileged subjects and validate the message decoder against the existing Java golden fixture; the SIM
   login link now exposes the same access-9 director identity as the Docker LIVE seed. (`734fa9ab5`)
-- [ ] **P6-01** [BOTH] S — Parity fix: `SM_MOVE.cs:68` tests `mc is PlayableMoveController<Creature>`, which is never
+- [x] **P6-01** [BOTH] S — Parity fix: `SM_MOVE.cs:68` tests `mc is PlayableMoveController<Creature>`, which is never
   true for players or summons (C# generics are invariant), so observers get the absolute target instead of the
   movement vector and lose glide and vehicle fields (Java uses `instanceof PlayableMoveController`). Add golden
-  cases for player masks `0xC0`, `0xE0`, glide and vehicle. Java fixtures depend on P0-05.
+  cases for player masks `0xC0`, `0xE0`, glide and vehicle. Java fixtures depend on P0-05. Java's erased wildcard is
+  now represented by `IPlayableMoveController`, implemented by the generic player/summon base, so both concrete
+  controllers reach the playable wire branches. Generator commit `8e4513d63` produced four new Java payloads for
+  relative-vector `0xC0`, absolute-target `0xE0`, geyser glide and vehicle data; the C# golden test reconstructs the
+  same player/controller state and matches every payload byte for byte. (`5ba44084e`)
 - [ ] **P6-02** [BOTH] M — Navigation: per-map waypoint graph from spawn spots, walker route steps, gather spots,
   portals, bind points and quest NPCs; edges up to 20 m; A*. Z comes from nodes until Phase 9. Take live NPC
   positions from `SM_NPC_INFO`/`SM_MOVE`, not spawn XML: more than 6,000 NPC templates (5,297 `passive_pattern`,
@@ -1291,7 +1295,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 14 | `SpawnGroup` picks a random spot with `Random.Shared` (same distribution; unreachable by the seed) | `SpawnGroup.java:166` `Rnd.get(list)` | Resolved by P4-05 (`7ccce49bc`) |
 | 15 | Game-hour consumers, weather check and `SM_GAME_TIME` broadcast unwired | `GameTime.java:150-154`, `GameTimeService.java:54-56` | Resolved by P4-09 (`8df3cde9f`) |
 | 16 | `Config.Load` runs after static data, world maps and game time are initialized | `GameServer.java:219` | Resolved by P5-03 (`16350158f`) |
-| 17 | `SM_MOVE` player/summon branch never taken | `SM_MOVE.java:36` `instanceof PlayableMoveController` | P6-01 |
+| 17 | `SM_MOVE` player/summon branch never taken | `SM_MOVE.java:36` `instanceof PlayableMoveController` | Resolved by P6-01 (`5ba44084e`) |
 | 18 | `QuestSpawnAnalyzer` scans Java source folders and aborts (P1-12 baseline fingerprint `2c206aaf`, count 1) | `QuestSpawnAnalyzer.java:101-110` (Java ships those folders) | P7-01 |
 | 19 | `_19638TroublewithTwos` extra dialog branch | `_19638TroublewithTwos.java:48-50` (removed upstream in `1d6a2d8f7`) | P7-11 |
 | 20 | Duplicate `CraftSkillUpdateService`; the unused `Craft` copy returns ordinal 0 instead of null (latent) | `services/craft/CraftSkillUpdateService.java:79-81` | P8-03 |
