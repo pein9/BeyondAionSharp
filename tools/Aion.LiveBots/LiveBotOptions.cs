@@ -23,7 +23,7 @@ public sealed record LiveBotOptions(
 	TimeSpan ReentryDelay)
 {
 	public const string Usage = "Usage: dotnet run --project tools/Aion.LiveBots -- --run <id> --output <run-dir> " +
-		"[--scenario connect|L0] [--bots N] [--host 127.0.0.1] [--login-port 12106] " +
+		"[--scenario connect|L0|canaries] [--bots N] [--host 127.0.0.1] [--login-port 12106] " +
 		"[--game-port 17777] [--chat-port 11241] [--admin-port 17780] [--admin-token TOKEN] " +
 		"[--connect-timeout-seconds 10] [--step-timeout-seconds 15] [--seed N] [--git-sha SHA] " +
 		"[--profile deterministic] [--time-zone ID] [--reentry-seconds 10]";
@@ -54,10 +54,10 @@ public sealed record LiveBotOptions(
 		var seed = Int(values, "seed", 1);
 		var scenarios = Get(values, "scenario", "connect")
 			.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-		if (scenarios.Length == 0 || scenarios.Any(scenario => scenario is not ("connect" or "L0")))
-			throw new ArgumentException("Supported scenarios are 'connect' and 'L0'.");
-		if (scenarios.Contains("L0", StringComparer.Ordinal) && scenarios.Length != 1)
-			throw new ArgumentException("L0 is a coordinated two-bot scenario and must be run by itself.");
+		if (scenarios.Length == 0 || scenarios.Any(scenario => scenario is not ("connect" or "L0" or "canaries")))
+			throw new ArgumentException("Supported scenarios are 'connect', 'L0' and 'canaries'.");
+		if (scenarios.Any(scenario => scenario is "L0" or "canaries") && scenarios.Length != 1)
+			throw new ArgumentException("L0 and canaries are coordinated scenarios and must be run by themselves.");
 		if (scenarios.Contains("L0", StringComparer.Ordinal))
 			bots = Math.Max(2, bots);
 		var reentrySeconds = PositiveInt(values, "reentry-seconds", 10, 3600);

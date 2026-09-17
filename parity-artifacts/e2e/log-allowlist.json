@@ -1,1 +1,42 @@
-[]
+[
+  {
+    "fp": "834ce942",
+    "reason": "Deliberate CM_FRIEND_STATUS watcher canary; exactly one warning proves the game packet run-path logger is observed.",
+    "owner": "e2e-simulation",
+    "tracking": "P3-10",
+    "modes": ["LIVE"],
+    "servers": ["gs"],
+    "maxCount": 1,
+    "expires": "2027-09-17"
+  },
+  {
+    "fp": "cf736122",
+    "reason": "Deliberate CM_EMOTION watcher canary; exactly one error proves the game packet read-path logger and bot-step join are observed.",
+    "owner": "e2e-simulation",
+    "tracking": "P3-10",
+    "modes": ["LIVE"],
+    "servers": ["gs"],
+    "maxCount": 1,
+    "expires": "2027-09-17"
+  },
+  {
+    "fp": "e4a90da9",
+    "reason": "Deliberately corrupted encrypted login frame; exactly one warning proves the login-server socket logger is observed.",
+    "owner": "e2e-simulation",
+    "tracking": "P3-10",
+    "modes": ["LIVE"],
+    "servers": ["ls"],
+    "maxCount": 1,
+    "expires": "2027-09-17"
+  },
+  {
+    "fp": "fd539a24",
+    "reason": "Deliberate unknown chat opcode; exactly one warning proves the chat-server client logger is observed.",
+    "owner": "e2e-simulation",
+    "tracking": "P3-10",
+    "modes": ["LIVE"],
+    "servers": ["cs"],
+    "maxCount": 1,
+    "expires": "2027-09-17"
+  }
+]

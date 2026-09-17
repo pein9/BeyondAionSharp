@@ -40,6 +40,24 @@ public sealed class ProblemWatcherTests
 		Assert.Equal(1, summary.RootElement.GetProperty("suppressed").GetInt32());
 	}
 
+	[Fact]
+	public async Task LiveAllowlistCountOverrunRemainsAProblem()
+	{
+		using var run = new WatcherRun();
+		run.WriteAllowlist("""
+			[{"fp":"1234abcd","reason":"Synthetic test","owner":"e2e","tracking":"TEST-1","modes":["LIVE"],"servers":["gs"],"maxCount":1,"expires":"2099-12-31"}]
+			""");
+		run.WriteProblem("1234abcd", count: 2);
+
+		var exitCode = await ProblemWatcher.RunAsync(run.Options());
+
+		Assert.Equal(1, exitCode);
+		Assert.Contains("NEW ERROR gs fp=1234abcd", run.ReadDigest(), StringComparison.Ordinal);
+		using var summary = JsonDocument.Parse(File.ReadAllText(run.SummaryPath));
+		Assert.Equal(1, summary.RootElement.GetProperty("suppressed").GetInt32());
+		Assert.Equal(1, summary.RootElement.GetProperty("new").GetInt32());
+	}
+
 	[Theory]
 	[InlineData("tracked", "KNOWN", 0)]
 	[InlineData("fixed", "REGRESSED", 1)]
@@ -134,7 +152,7 @@ public sealed class ProblemWatcherTests
 
 		public void WriteEvent(string json) => File.WriteAllText(Path.Combine(directory, "logs", "gs", "gs.events.jsonl"), json + "\n");
 
-		public void WriteProblem(string fingerprint, string? timer = null, string? account = null)
+		public void WriteProblem(string fingerprint, string? timer = null, string? account = null, int count = 1)
 		{
 			var record = new
 			{
@@ -153,7 +171,8 @@ public sealed class ProblemWatcherTests
 				frame = "Aion.GameServer.QuestEngine.OnDialog",
 				stack = "Synthetic stack",
 			};
-			File.WriteAllText(Path.Combine(directory, "logs", "gs", "gs.problems.jsonl"), JsonSerializer.Serialize(record) + "\n");
+			File.WriteAllLines(Path.Combine(directory, "logs", "gs", "gs.problems.jsonl"),
+				Enumerable.Repeat(JsonSerializer.Serialize(record), count));
 		}
 
 		public string ReadDigest() => File.ReadAllText(Path.Combine(directory, "digest.log"));

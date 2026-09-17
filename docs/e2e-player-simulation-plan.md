@@ -565,11 +565,17 @@ sockets before the large clock migration.
   character-list equipment loading (§7 #27). Docker-only `p309-l0e` completed both bots with no bot problems and
   no recurrence of the inventory fingerprint; record-mode logging contained only the already scheduled §7 #18
   and #22 fingerprints. Commit: `efddb7a7b`.
-- [ ] **P3-10** [LIVE] S — Watcher canaries, one per server (a silent watcher looks identical to a broken one):
+- [x] **P3-10** [LIVE] S — Watcher canaries, one per server (a silent watcher looks identical to a broken one):
   `CM_FRIEND_STATUS` with undefined status 2 produces exactly one Warning; `CM_EMOTION` with type `0xFF` produces
   exactly one `NEW` error line with bot and step (it logs from `ReadImpl`, so it proves the read-path scope);
   a `CM_LOGIN` with a bad checksum produces exactly one `ls` problem; an unknown chat opcode produces exactly one
-  `cs` problem; an allowlist entry suppresses each.
+  `cs` problem; an allowlist entry suppresses each. The coordinated `canaries` LIVE scenario authenticates and
+  enters one player, proves the GS run/read paths at `b01/s04` and `b01/s05`, confirms a corrupted encrypted login
+  frame is rejected by closing the socket, and sends an unknown connected-state chat opcode. Docker-only
+  `p310-canary2` recorded exactly fingerprints `834ce942`, `cf736122`, `e4a90da9` and `fd539a24`; `p310-canary3`
+  matched and suppressed exactly those four through fingerprint-specific LIVE entries with owner, reason,
+  tracking, `maxCount: 1` and a 2027-09-17 expiry. A focused watcher test proves a second occurrence exceeds the
+  allowance and still fails. Commit: `7b0f1c13d`.
 - [ ] **P3-11** [LIVE] S — Document the local loop in `docker/README.md`: run `scripts/live/run-live.ps1`, then watch `digest.log`
   (§5 has the Claude Code Monitor recipe).
 - [ ] **P3-12** [LIVE] S — A 10-second heartbeat Information line in all three servers with connection count,

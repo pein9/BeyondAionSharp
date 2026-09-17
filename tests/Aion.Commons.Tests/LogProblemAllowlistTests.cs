@@ -11,8 +11,15 @@ public sealed class LogProblemAllowlistTests
 	{
 		var allowlist = LogProblemAllowlist.Load(RepoFile("parity-artifacts", "e2e", "log-allowlist.json"), Today);
 
-		Assert.Empty(allowlist.Entries);
-		allowlist.ValidateFullRunMatches([]);
+		Assert.Equal(4, allowlist.Entries.Count);
+		Assert.All(allowlist.Entries, entry =>
+		{
+			Assert.Equal("P3-10", entry.Tracking);
+			Assert.Equal(["LIVE"], entry.Modes);
+			Assert.Equal(1, entry.MaxCount);
+			Assert.Equal(new DateOnly(2027, 9, 17), entry.Expires);
+		});
+		allowlist.ValidateFullRunMatches(allowlist.Entries.Select(entry => entry.Fingerprint));
 	}
 
 	[Theory]

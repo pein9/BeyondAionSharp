@@ -9,6 +9,7 @@ using Aion.Bots.Protocol.Login;
 using Aion.Bots.Reflexes;
 using Aion.Bots.Tracing;
 using Aion.Bots.Transport;
+using Aion.ChatServer.Network;
 using Aion.GameServer.Controllers.Movement;
 using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion;
@@ -26,6 +27,8 @@ public static class LiveBotRunner
 		await using var problems = new LiveBotProblemWriter(Path.Combine(options.OutputDirectory, "bot.problems.jsonl"));
 		if (options.Scenarios.SequenceEqual(["L0"], StringComparer.Ordinal))
 			return await RunL0Async(options, problems, cancellationToken);
+		if (options.Scenarios.SequenceEqual(["canaries"], StringComparer.Ordinal))
+			return await RunCanariesAsync(options, problems, cancellationToken);
 
 		var tasks = Enumerable.Range(1, options.BotCount)
 			.Select(index => RunConnectBotAsync(options, problems, index, cancellationToken))
@@ -82,6 +85,36 @@ public static class LiveBotRunner
 		{
 			foreach (var actor in actors)
 				await actor.DisposeAsync();
+		}
+	}
+
+	private static async Task<int> RunCanariesAsync(LiveBotOptions options, LiveBotProblemWriter problems,
+		CancellationToken cancellationToken)
+	{
+		await using var actor = new L0Actor(options, problems, 1);
+		actor.Trace.WriteAction("s00", "scenario:start", new Dictionary<string, object?> { ["scenario"] = "canaries" });
+		try
+		{
+			await actor.StepAsync("login-game-auth", actor.Session.LoginAndAuthenticateAsync, cancellationToken);
+			await actor.StepAsync("create-elyos-warrior", actor.Session.CreateCharacterAsync, cancellationToken);
+			await actor.StepAsync("enter-world", actor.Session.EnterWorldAsync, cancellationToken);
+			await actor.StepAsync("gs-friend-status-canary", actor.Session.SendFriendStatusCanaryAsync, cancellationToken);
+			await actor.StepAsync("gs-emotion-canary", actor.Session.SendEmotionCanaryAsync, cancellationToken);
+			await actor.StepAsync("ls-bad-checksum-canary", actor.Session.SendBadLoginChecksumCanaryAsync, cancellationToken);
+			await actor.StepAsync("cs-unknown-opcode-canary", actor.Session.SendUnknownChatOpcodeCanaryAsync, cancellationToken);
+			await actor.StepAsync("quit", actor.Session.QuitAsync, cancellationToken);
+			actor.Trace.WriteAction(actor.LastStep, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = "canaries" });
+			Console.WriteLine("LIVE watcher canaries completed.");
+			return 0;
+		}
+		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+		{
+			throw;
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine($"Watcher canaries failed: {ex}");
+			return 1;
 		}
 	}
 
@@ -393,6 +426,43 @@ internal sealed class LiveBotSession : IAsyncDisposable
 	{
 		await SendGameAsync(GameClientPackets.Ping(), cancellationToken);
 		await WaitForGamePacketAsync(typeof(SM_PONG), cancellationToken);
+	}
+
+	public async Task SendFriendStatusCanaryAsync(CancellationToken cancellationToken)
+	{
+		await SendGameAsync(GameClientPackets.FriendStatus(2), cancellationToken);
+		await WaitForGamePacketAsync(typeof(SM_FRIEND_STATUS), cancellationToken);
+	}
+
+	public async Task SendEmotionCanaryAsync(CancellationToken cancellationToken)
+	{
+		// Give the 100 ms watcher poll loop time to ingest this step before the read-path log arrives.
+		await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken);
+		await SendGameAsync(GameClientPackets.Emotion(0xFF), cancellationToken);
+		await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken);
+	}
+
+	public async Task SendBadLoginChecksumCanaryAsync(CancellationToken cancellationToken)
+	{
+		using var client = new TcpClient(options.LoginEndPoint.AddressFamily) { NoDelay = true };
+		await client.ConnectAsync(options.LoginEndPoint.Address, options.LoginEndPoint.Port, cancellationToken);
+		var stream = client.GetStream();
+		var protocol = await LoginClientProtocol.ReadInitAsync(stream, cancellationToken);
+		var frame = protocol.Crypto.CreateAuthGameGuardFrame(protocol.Init.SessionId);
+		frame[^1] ^= 0x01;
+		await stream.WriteAsync(frame, cancellationToken);
+		var closeProbe = new byte[1];
+		if (await stream.ReadAsync(closeProbe, cancellationToken) != 0)
+			throw new InvalidDataException("Login checksum canary was not rejected by closing its connection.");
+	}
+
+	public async Task SendUnknownChatOpcodeCanaryAsync(CancellationToken cancellationToken)
+	{
+		using var client = new TcpClient(options.ChatEndPoint.AddressFamily) { NoDelay = true };
+		await client.ConnectAsync(options.ChatEndPoint.Address, options.ChatEndPoint.Port, cancellationToken);
+		var frame = ChatPacketFrameCodec.CreateFrame([0x7E]);
+		await client.GetStream().WriteAsync(frame, cancellationToken);
+		await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken);
 	}
 
 	public async Task QuitAsync(CancellationToken cancellationToken)
