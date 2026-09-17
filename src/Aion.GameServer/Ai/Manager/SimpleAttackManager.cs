@@ -12,7 +12,7 @@ namespace Aion.GameServer.Ai.Manager;
 /// <summary>
 /// Java parity: ai/manager/SimpleAttackManager (ATracer). Performs/schedules a basic NPC melee attack tick with target validation.
 /// Nested Runnable SimpleCheckedAttackAction -> nested class with Run() via async ThreadPool idiom; currentTimeMillis ->
-/// UtcNow.ToUnixTimeMilliseconds; instanceof+pattern -> is Creature; AiEventType PascalCase; AIState.FIGHT; AggroTarget.MOST_HATED.
+/// SystemClock.CurrentMillis; instanceof+pattern -> is Creature; AiEventType PascalCase; AIState.FIGHT; AggroTarget.MOST_HATED.
 /// GeoService red-tolerated.
 /// </summary>
 public class SimpleAttackManager
@@ -33,7 +33,7 @@ public class SimpleAttackManager
             return;
         }
 
-        npcAI.GetOwner().GetGameStats().SetNextAttackTime(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + delay);
+        npcAI.GetOwner().GetGameStats().SetNextAttackTime(SystemClock.CurrentMillis() + delay);
         if (delay > 0)
         {
             ThreadPoolManager.GetInstance().Schedule(ct => { AttackAction(npcAI); return ValueTask.CompletedTask; }, TimeSpan.FromMilliseconds(delay));
@@ -97,7 +97,7 @@ public class SimpleAttackManager
         else if (!GeoService.GetInstance().CanSee(npc, target))
         { // delete geo check when we've implemented a pathfinding system
             npc.GetController().CancelCurrentSkill(null);
-            if (((DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - npc.GetMoveController().GetLastMoveUpdate()) > 15000)
+            if (((SystemClock.CurrentMillis() - npc.GetMoveController().GetLastMoveUpdate()) > 15000)
                 && npc.GetGameStats().GetLastAttackedTimeDelta() > 15)
             {
                 npcAI.OnGeneralEvent(AiEventType.TargetGiveup);

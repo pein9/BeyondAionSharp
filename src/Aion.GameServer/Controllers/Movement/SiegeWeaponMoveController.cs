@@ -1,5 +1,6 @@
 using System;
 using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Controllers.Movement;
 
@@ -73,7 +74,7 @@ public class SiegeWeaponMoveController : SummonMoveController
         TargetDestZ = targetZ;
 
         float currentSpeed = Owner.GetGameStats().GetMovementSpeedFloat();
-        float futureDistPassed = currentSpeed * (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - LastMoveUpdate) / 1000f;
+        float futureDistPassed = currentSpeed * (SystemClock.CurrentMillis() - LastMoveUpdate) / 1000f;
 
         float dist = (float)Aion.GameServer.Utils.PositionUtil.GetDistance(ownerX, ownerY, ownerZ, targetX, targetY, targetZ);
 

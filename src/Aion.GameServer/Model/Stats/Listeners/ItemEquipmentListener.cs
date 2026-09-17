@@ -42,7 +42,7 @@ public class ItemEquipmentListener
         {
             SkillTemplate buffSkill = DataManager.SKILL_DATA.GetSkillTemplate(item.GetBuffSkill());
             SkillLearnService.LearnTemporarySkill(owner, item.GetBuffSkill(), 1);
-            long currTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long currTime = SystemClock.CurrentMillis();
             long oldCooldown = owner.GetSkillCoolDown(buffSkill.GetCooldownId());
             long newCooldown;
             if (oldCooldown - currTime > 15000) // cd active

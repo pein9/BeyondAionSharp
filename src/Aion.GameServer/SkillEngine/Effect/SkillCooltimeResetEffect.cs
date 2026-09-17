@@ -9,7 +9,7 @@ using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.SkillEngine.Effects;
 
-/// <summary>Java parity: skillengine/effect/SkillCooltimeResetEffect (Rolandas, Luzien) : EffectTemplate. @XmlAttribute(name="first_cd"/"last_cd"); applyEffect: HashMap→Dictionary; for i in firstCd..lastCd: delay=getSkillCoolDown(i)-currentTimeMillis [UtcNow.ToUnixTimeMilliseconds]; skip if &lt;=0; Delta>0→delay-=delay*(Delta/100) else delay-=Value; setSkillCoolDown + collect; non-empty && Player→SM_SKILL_COOLDOWN. red-tolerated.</summary>
+/// <summary>Java parity: skillengine/effect/SkillCooltimeResetEffect (Rolandas, Luzien) : EffectTemplate. @XmlAttribute(name="first_cd"/"last_cd"); applyEffect: HashMap→Dictionary; for i in firstCd..lastCd: delay=getSkillCoolDown(i)-currentTimeMillis [SystemClock.CurrentMillis]; skip if &lt;=0; Delta>0→delay-=delay*(Delta/100) else delay-=Value; setSkillCoolDown + collect; non-empty && Player→SM_SKILL_COOLDOWN. red-tolerated.</summary>
 [XmlType("SkillCooltimeResetEffect")]
 public class SkillCooltimeResetEffect : EffectTemplate
 {
@@ -25,7 +25,7 @@ public class SkillCooltimeResetEffect : EffectTemplate
         Dictionary<int, long> resetSkillCoolDowns = new Dictionary<int, long>();
         for (int i = firstCd; i <= lastCd; i++)
         {
-            long delay = effected.GetSkillCoolDown(i) - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long delay = effected.GetSkillCoolDown(i) - SystemClock.CurrentMillis();
             if (delay <= 0)
                 continue;
             if (Delta > 0) // TODO: Percent of remaining CD or original cd?
@@ -33,8 +33,8 @@ public class SkillCooltimeResetEffect : EffectTemplate
             else
                 delay -= Value;
 
-            effected.SetSkillCoolDown(i, delay + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-            resetSkillCoolDowns[i] = delay + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            effected.SetSkillCoolDown(i, delay + SystemClock.CurrentMillis());
+            resetSkillCoolDowns[i] = delay + SystemClock.CurrentMillis();
         }
         if (resetSkillCoolDowns.Count != 0 && effected is Player player)
         {

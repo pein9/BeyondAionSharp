@@ -15,7 +15,7 @@ public abstract class CreatureMoveController
 
     protected VisibleObject Owner;
     protected byte Heading;
-    protected long LastMoveUpdate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    protected long LastMoveUpdate = SystemClock.CurrentMillis();
     protected bool IsInMoveField;
     protected readonly AtomicBoolean Started = new(false);
 
@@ -75,7 +75,7 @@ public abstract class CreatureMoveController
     }
 
     // Java parity: final updateLastMove()
-    public void UpdateLastMove() => LastMoveUpdate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    public void UpdateLastMove() => LastMoveUpdate = SystemClock.CurrentMillis();
 
     public long GetLastMoveUpdate() => LastMoveUpdate;
     public byte GetMovementMask() => MovementMaskField;

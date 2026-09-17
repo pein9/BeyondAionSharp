@@ -2,6 +2,7 @@ using Aion.GameServer.Dataholders;
 using System;
 using System.Collections.Generic;
 using Aion.GameServer.Model.GameObjects.State;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model.GameObjects.Players;
 
@@ -335,7 +336,7 @@ public partial class Player
     {
         this.flyLocationId = path;
         if (path != null)
-            this.flyStartTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            this.flyStartTime = SystemClock.CurrentMillis();
         else
             this.flyStartTime = 0;
     }

@@ -155,7 +155,7 @@ public class CustomInstanceBossAI : GeneralNpcAI
 
         // remove shock
         if ((GetEffectController().IsInAnyAbnormalState(AbnormalState.ANY_STUN) || GetEffectController().IsAbnormalSet(AbnormalState.OPENAERIAL))
-            && GetOwner().GetSkillCoolDown(1968) <= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+            && GetOwner().GetSkillCoolDown(1968) <= SystemClock.CurrentMillis())
             return 283;
 
         if (GetEffectController().IsInAnyAbnormalState(AbnormalState.CANT_ATTACK_STATE))
@@ -201,7 +201,7 @@ public class CustomInstanceBossAI : GeneralNpcAI
                     || (skillI.GetSkillTemplate().GetType_() == SkillType.MAGICAL && GetEffectController().IsAbnormalSet(AbnormalState.SILENCE))
                     || (skillI.GetSkillTemplate().GetType_() == SkillType.PHYSICAL && GetEffectController().IsAbnormalSet(AbnormalState.BIND))
                     || skillI.GetSkillTemplate().IsCharge() || skillI.IsPointSkill()
-                    || (cdID != -1 && GetOwner().GetSkillCoolDown(cdID) > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()))
+                    || (cdID != -1 && GetOwner().GetSkillCoolDown(cdID) > SystemClock.CurrentMillis()))
                     output[i] = -1d; // -1 = minimum probability
             }
 
@@ -226,7 +226,7 @@ public class CustomInstanceBossAI : GeneralNpcAI
         }
 
         if (skillTemplate.GetCooldown() == 0) // item skills: prevent spamming
-            GetOwner().SetSkillCoolDown(skillTemplate.GetCooldownId(), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + 60000);
+            GetOwner().SetSkillCoolDown(skillTemplate.GetCooldownId(), SystemClock.CurrentMillis() + 60000);
 
         GetEffectController().UnsetAbnormal(AbnormalState.SANCTUARY);
     }

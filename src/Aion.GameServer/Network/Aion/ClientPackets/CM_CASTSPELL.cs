@@ -15,7 +15,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 /// <summary>Java parity: network/aion/clientpackets/CM_CASTSPELL (alexa026, rhys2002). Player casts a skill at object/point/area target; validates death, pet-order, passive, and skill-cooldown timing. DataManager/SkillTemplate/AuditLogger red-tolerated.</summary>
 public class CM_CASTSPELL : AionClientPacket
 {
-    private readonly long receiveTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    private readonly long receiveTime = SystemClock.CurrentMillis();
     private int spellid;
     // 0 - obj id, 1 - point location, 2 - unk, 3 - object not in sight(skill 1606)? 4 - unk
     private int targetType;
@@ -102,7 +102,7 @@ public class CM_CASTSPELL : AionClientPacket
         {
             int lastSkillId = player.GetLastSkill().GetSkillId(); // lastSkill cannot be null, as nextSkillUse is zero on the first cast
             AuditLogger.Log(player, "tried to use skill " + spellid + " " + (player.GetNextSkillUse() - receiveTime) + " ms too early. Previous skill: " + lastSkillId);
-            if (player.GetNextSkillUse() > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+            if (player.GetNextSkillUse() > SystemClock.CurrentMillis())
             {
                 SendPacket(SM_SYSTEM_MESSAGE.STR_SKILL_NOT_READY());
                 return;

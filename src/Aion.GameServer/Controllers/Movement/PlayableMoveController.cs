@@ -1,6 +1,7 @@
 using System;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Stats.Container;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Controllers.Movement;
 
@@ -78,7 +79,7 @@ public abstract class PlayableMoveController<T> : CreatureMoveController<T> wher
             return;
 
         float currentSpeed = Aion.GameServer.Utils.Stats.StatFunctions.AdjustStatByMovementModifier(Owner, StatEnum.SPEED, Owner.GetGameStats().GetMovementSpeedFloat());
-        long msElapsed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - LastMoveUpdate;
+        long msElapsed = SystemClock.CurrentMillis() - LastMoveUpdate;
         float futureXYDistPassed = Math.Min(currentSpeed * msElapsed / 1000f, dist);
         float futureZDistPassed = IsJumping() ? Math.Min(2 * msElapsed / 1000f, dist) : futureXYDistPassed;
 
@@ -125,7 +126,7 @@ public abstract class PlayableMoveController<T> : CreatureMoveController<T> wher
 
     public MovementModifierDirection GetMovementDirection()
     {
-        if (!IsInMove() && DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - LastMoveUpdate > 1000)
+        if (!IsInMove() && SystemClock.CurrentMillis() - LastMoveUpdate > 1000)
             return MovementModifierDirection.NONE;
         return movementModifierDirection;
     }

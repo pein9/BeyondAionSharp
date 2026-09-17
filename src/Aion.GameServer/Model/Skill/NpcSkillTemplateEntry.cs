@@ -20,7 +20,7 @@ namespace Aion.GameServer.Model.Skill;
 /// Java parity: model/skill/NpcSkillTemplateEntry (ATracer, nrg, Yeats). Skill entry which inherits properties
 /// from template (regular npc skills). Java switch-expression on ConjunctionType/NpcSkillCondition→C# switch
 /// expression; instanceof-pattern→is-pattern; Math.toRadians→*Math.PI/180; anonymous Runnable→Schedule(ct=>...);
-/// currentTimeMillis→DateTimeOffset.UtcNow.ToUnixTimeMilliseconds. skillengine/SpawnEngine/GeoService/
+/// currentTimeMillis→SystemClock.CurrentMillis. skillengine/SpawnEngine/GeoService/
 /// TribeRelationService/PositionUtil red-tolerated.
 /// </summary>
 public class NpcSkillTemplateEntry : NpcSkillEntry
@@ -70,7 +70,7 @@ public class NpcSkillTemplateEntry : NpcSkillEntry
 
     public override bool HasCooldown()
     {
-        return template.GetCooldown() > (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastTimeUsed);
+        return template.GetCooldown() > (SystemClock.CurrentMillis() - lastTimeUsed);
     }
 
     public override bool HasPostSpawnCondition()
@@ -229,6 +229,6 @@ public class NpcSkillTemplateEntry : NpcSkillEntry
 
     public override bool CanUseNextChain(Npc owner)
     {
-        return owner != null && (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - owner.GetGameStats().GetLastSkillTime()) < template.GetMaxChainTime();
+        return owner != null && (SystemClock.CurrentMillis() - owner.GetGameStats().GetLastSkillTime()) < template.GetMaxChainTime();
     }
 }

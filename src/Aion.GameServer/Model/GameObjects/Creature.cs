@@ -40,7 +40,7 @@ public abstract class Creature : VisibleObject
     private readonly byte[] zoneTypes = new byte[Enum.GetValues(typeof(Aion.GameServer.Model.Templates.Zone.ZoneType)).Length];
     private int skillNumber;
     private int attackedCount;
-    private long spawnTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    private long spawnTime = CurrentTimeMillis();
 
     private static long CurrentTimeMillis() => Aion.GameServer.Utils.SystemClock.CurrentMillis();
 

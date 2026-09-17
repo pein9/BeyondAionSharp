@@ -154,7 +154,7 @@ public class SkillAttackManager
             return GetNpcSkillEntryIfNotTooFarAway(owner, queuedSkill);
         }
 
-        if (((DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - owner.GetGameStats().GetFightStartingTime()) > owner.GetGameStats().GetInitialSkillDelay())
+        if (((SystemClock.CurrentMillis() - owner.GetGameStats().GetFightStartingTime()) > owner.GetGameStats().GetInitialSkillDelay())
             && owner.GetGameStats().CanUseNextSkill())
         {
             if (queuedSkill != null && IsReady(owner, queuedSkill))
@@ -234,7 +234,7 @@ public class SkillAttackManager
             return false;
         if (CantUseSkill(entry, owner))
             return false;
-        if (!entry.IsReady(owner.GetLifeStats().GetHpPercentage(), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - owner.GetGameStats().GetFightStartingTime()))
+        if (!entry.IsReady(owner.GetLifeStats().GetHpPercentage(), SystemClock.CurrentMillis() - owner.GetGameStats().GetFightStartingTime()))
             return false;
         return entry.ConditionReady(owner);
     }

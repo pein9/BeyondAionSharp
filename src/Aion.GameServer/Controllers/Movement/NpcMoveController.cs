@@ -262,7 +262,7 @@ public class NpcMoveController : CreatureMoveController<Npc>
         }
 
         float currentSpeed = Owner.GetGameStats().GetMovementSpeedFloat();
-        float futureDistPassed = currentSpeed * (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - LastMoveUpdate) / 1000f;
+        float futureDistPassed = currentSpeed * (SystemClock.CurrentMillis() - LastMoveUpdate) / 1000f;
         float dist = (float)PositionUtil.GetDistance(ownerX, ownerY, ownerZ, targetX, targetY, targetZ);
 
         if (Owner.GetAi().IsLogging())

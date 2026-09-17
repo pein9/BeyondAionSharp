@@ -624,12 +624,18 @@ exactly one problem.
 
 Production-neutral: `SystemClock`'s default is the same call Java makes (`System.currentTimeMillis()`).
 
-- [ ] **P4-01** [BOTH] S — Fix the mixed-clock pairs first (a C#-only defect of the partial migration):
+- [x] **P4-01** [BOTH] S — Fix the mixed-clock pairs first (a C#-only defect of the partial migration):
   `SimpleAttackManager.cs:36,100`; `SkillAttackManager.cs:157,237`; `NpcSkillTemplateEntry.cs:73,232`;
   `NpcSkillEntry.cs:35`; `CM_CASTSPELL.cs:18,105`; `CM_USE_CHARGE_SKILL.cs:28`; `ChargeSkill.cs:41`;
-  `CreatureMoveController.cs:18,78`; `Creature.cs:43`; `Player.Part2.cs:338`; `Player.Part3.cs:370,407`;
+  `CreatureMoveController.cs:18,78` and its elapsed-time readers in `NpcMoveController.cs:265`,
+  `PlayableMoveController.cs:81,128`, `SiegeWeaponMoveController.cs:76`; `Creature.cs:43`;
+  `Player.Part2.cs:338`; `Player.Part3.cs:370,407`;
   `SummonsService.cs:79`; `SkillCooltimeResetEffect.cs:28,36,37`; `ItemEquipmentListener.cs:45`;
-  `AhserionAI.cs:51,191`; `CustomInstanceBossAI.cs:159,205,230`.
+  `AhserionAI.cs:51,191`; `CustomInstanceBossAI.cs:159,205,230`. All listed Java sites read
+  `System.currentTimeMillis()`; their C# counterparts now use `SystemClock.CurrentMillis()`. Validation exposed
+  that the movement inventory omitted three elapsed-time readers: leaving those on wall time made a virtual
+  `LastMoveUpdate` produce enormous movement deltas and broke the Yamennes encounter pin, so the inventory and
+  implementation now include them. The isolated regression and full game-server suite pass. Commit: `33ebe056c`.
 - [ ] **P4-02** [BOTH] S — Extend `SystemClock` (do not add a new type): `UtcNow()`, `CurrentSeconds()`, and a
   process-wide override beneath the AsyncLocal one. Route `ServerTime.Now/GetOffset/GetDaylightSavings`
   (37 callers: quest resets, passports, events, arenas, housing), `ScheduledTask` due time and `GetDelay`, and

@@ -76,7 +76,7 @@ public class SummonsService
 
             SkillTemplate summoningSkill = DataManager.SKILL_DATA.GetSkillTemplate(summon.GetSummonedBySkillId());
             if (summoningSkill != null && summoningSkill.GetCooldown() > 0)
-                master.SetSkillCoolDown(summoningSkill.GetCooldownId(), summoningSkill.GetCooldown() * 100 + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+                master.SetSkillCoolDown(summoningSkill.GetCooldownId(), summoningSkill.GetCooldown() * 100 + SystemClock.CurrentMillis());
 
             if (unsummonType == UnsummonType.DISTANCE)
                 PacketSendUtility.SendPacket(master, SM_SYSTEM_MESSAGE.STR_SKILL_SUMMON_UNSUMMON_BY_TOO_DISTANCE());

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Aion.GameServer.Model.GameObjects.State;
 using Aion.GameServer.SkillEngine.Model;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model.GameObjects.Players;
 
@@ -367,7 +368,7 @@ public partial class Player
 
     public bool IsHitTimeBoosted()
     {
-        return IsHitTimeBoosted(System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        return IsHitTimeBoosted(SystemClock.CurrentMillis());
     }
 
     public bool IsHitTimeBoosted(long timeMillis)
@@ -404,7 +405,7 @@ public partial class Player
             case Aion.GameServer.Controllers.Attack.AttackStatus.PARRY:
             case Aion.GameServer.Controllers.Attack.AttackStatus.BLOCK:
             case Aion.GameServer.Controllers.Attack.AttackStatus.RESIST:
-                lastCounterSkill[result] = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                lastCounterSkill[result] = SystemClock.CurrentMillis();
                 break;
         }
     }

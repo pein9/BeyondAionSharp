@@ -1,10 +1,11 @@
 using System;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Templates.Npcskill;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model.Skill;
 
-/// <summary>Java parity: model/skill/NpcSkillEntry (ATracer, nrg, Yeats). Abstract NpcSkillEntry : SkillEntry; setLastTimeUsed→System.currentTimeMillis()→DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(). NpcSkillConditionTemplate/NpcSkillTemplate red-tolerated.</summary>
+/// <summary>Java parity: model/skill/NpcSkillEntry (ATracer, nrg, Yeats). Abstract NpcSkillEntry : SkillEntry; setLastTimeUsed→System.currentTimeMillis()→SystemClock.CurrentMillis(). NpcSkillConditionTemplate/NpcSkillTemplate red-tolerated.</summary>
 public abstract class NpcSkillEntry : SkillEntry
 {
     protected long lastTimeUsed = 0;
@@ -32,7 +33,7 @@ public abstract class NpcSkillEntry : SkillEntry
 
     public void SetLastTimeUsed()
     {
-        this.lastTimeUsed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        this.lastTimeUsed = SystemClock.CurrentMillis();
     }
 
     public abstract int GetPriority();

@@ -47,7 +47,7 @@ public class AhserionAI : AggressiveNpcAI
         switch (st.GetSkillId())
         {
             case 21566: // Thunder Crash
-                if (lv == 55 && System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - GetOwner().GetGameStats().GetFightStartingTime() < 30000)
+                if (lv == 55 && SystemClock.CurrentMillis() - GetOwner().GetGameStats().GetFightStartingTime() < 30000)
                     PacketSendUtility.BroadcastMessage(GetOwner(), 1501157); // _01: Beritra thinks me unready. I shall prove myself in your slaughter!
                 break;
             case 21570: // Death Shriek
@@ -187,7 +187,7 @@ public class AhserionAI : AggressiveNpcAI
 
     private void LogMetrics()
     {
-        long fullFightTime = (System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - GetOwner().GetGameStats().GetFightStartingTime()) / 1000;
+        long fullFightTime = (SystemClock.CurrentMillis() - GetOwner().GetGameStats().GetFightStartingTime()) / 1000;
         string damageDealt = string.Join(", ", GetAggroList().GetFinalDamageList().GetCreatureDamages()
             .OrderByDescending(di => di.GetDamage())
             .Select(ai => string.Format("{0} (ID: {1}, Dmg: {2})", ai.GetAttacker().GetName(), ai.GetAttacker().GetObjectId(), ai.GetDamage())));

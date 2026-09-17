@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion;
 using Aion.GameServer.SkillEngine.Model;
+using Aion.GameServer.Utils;
 using State = global::Aion.GameServer.Network.Aion.AionConnection.State;
 
 namespace Aion.GameServer.Network.Aion.ClientPackets;
@@ -25,7 +26,7 @@ public class CM_USE_CHARGE_SKILL : AionClientPacket
         Skill chargeCastingSkill = player.GetCastingSkill();
         if (chargeCastingSkill == null || !chargeCastingSkill.GetSkillTemplate().IsCharge())
             return;
-        long chargeTimeMillis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - chargeCastingSkill.GetCastStartTime();
+        long chargeTimeMillis = SystemClock.CurrentMillis() - chargeCastingSkill.GetCastStartTime();
         player.GetController().UseChargeSkill(chargeCastingSkill, chargeTimeMillis);
     }
 }
