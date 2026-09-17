@@ -16,8 +16,9 @@ public class ThreadPoolManager : IAsyncDisposable
 	private static readonly ILogger Log = AionLog.For(nameof(ThreadPoolManager));
 	private readonly Action<ThreadPoolScheduleObservation>? _scheduleObserver;
 	private readonly long? _maximumRuntimeWithoutWarningOverride;
-	private readonly ConcurrentBag<Task> _scheduledTasks = new();
+	private readonly ConcurrentDictionary<long, Task> _scheduledTasks = new();
 	private readonly CancellationTokenSource _shutdownTokenSource = new();
+	private long _nextScheduledTaskId;
 	private int _isShutdown;
 
 	// Singleton-bridge slot (see docs/HANDOFF.md "SINGLETON-BRIDGE"): the instance is created via DI;
@@ -63,7 +64,7 @@ public class ThreadPoolManager : IAsyncDisposable
 		var scheduledAt = DateTimeOffset.UtcNow;
 		var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_shutdownTokenSource.Token, cancellationToken);
 		var task = Task.Run(() => RunOnceAsync(action, delay, maximumRuntimeWithoutWarning, scheduledAt, linkedTokenSource.Token), CancellationToken.None);
-		_scheduledTasks.Add(task);
+		TrackScheduledTask(task);
 		_scheduleObserver?.Invoke(new ThreadPoolScheduleObservation(ThreadPoolScheduleKind.Once, delay, Period: null));
 		return new ScheduledTask(task, linkedTokenSource, scheduledAt + delay);
 	}
@@ -124,7 +125,7 @@ public class ThreadPoolManager : IAsyncDisposable
 		var scheduledAt = DateTimeOffset.UtcNow;
 		var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_shutdownTokenSource.Token, cancellationToken);
 		var task = Task.Run(() => RunFixedRateAsync(action, initialDelay, period, MaximumRuntimeWithoutWarning, scheduledAt, linkedTokenSource), CancellationToken.None);
-		_scheduledTasks.Add(task);
+		TrackScheduledTask(task);
 		_scheduleObserver?.Invoke(new ThreadPoolScheduleObservation(ThreadPoolScheduleKind.FixedRate, initialDelay, period));
 		return new ScheduledTask(task, linkedTokenSource, scheduledAt + initialDelay);
 	}
@@ -161,11 +162,26 @@ public class ThreadPoolManager : IAsyncDisposable
 			gracePeriod = TimeSpan.FromSeconds(2);
 
 		_shutdownTokenSource.Cancel();
-		var tasks = _scheduledTasks.ToArray();
+		var tasks = _scheduledTasks.Values.ToArray();
 		if (tasks.Length == 0)
 			return;
 
 		await Task.WhenAny(Task.WhenAll(tasks), Task.Delay(gracePeriod));
+	}
+
+	internal int ScheduledTaskCount => _scheduledTasks.Count;
+
+	private void TrackScheduledTask(Task task)
+	{
+		var id = Interlocked.Increment(ref _nextScheduledTaskId);
+		if (!_scheduledTasks.TryAdd(id, task))
+			throw new InvalidOperationException($"Duplicate scheduled task id {id}.");
+
+		_ = task.ContinueWith(
+			completed => _scheduledTasks.TryRemove(id, out _),
+			CancellationToken.None,
+			TaskContinuationOptions.ExecuteSynchronously,
+			TaskScheduler.Default);
 	}
 
 	private async Task RunFixedRateAsync(

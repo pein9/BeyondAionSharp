@@ -60,6 +60,34 @@ public sealed class ThreadPoolManagerSchedulingTests
 		Assert.Contains("execution time:", warning.Message);
 	}
 
+	[Fact]
+	public async Task CompletedAndCancelledTasksAreRemovedFromShutdownTracking()
+	{
+		await using var pool = new ThreadPoolManager(NullLogger<ThreadPoolManager>.Instance);
+		var oneShots = Enumerable.Range(0, 100)
+			.Select(_ => pool.Schedule(_ => ValueTask.CompletedTask, TimeSpan.Zero))
+			.ToArray();
+		await Task.WhenAll(oneShots.Select(task => task.Completion));
+		await WaitUntilAsync(() => pool.ScheduledTaskCount == 0);
+
+		var fixedRate = pool.ScheduleAtFixedRateTask(
+			_ => ValueTask.CompletedTask,
+			TimeSpan.FromHours(1),
+			TimeSpan.FromHours(1));
+		Assert.Equal(1, pool.ScheduledTaskCount);
+		Assert.True(fixedRate.Cancel());
+		await fixedRate.Completion.WaitAsync(TimeSpan.FromSeconds(2));
+		await WaitUntilAsync(() => pool.ScheduledTaskCount == 0);
+	}
+
+	private static async Task WaitUntilAsync(Func<bool> condition)
+	{
+		var timeout = DateTime.UtcNow + TimeSpan.FromSeconds(2);
+		while (!condition() && DateTime.UtcNow < timeout)
+			await Task.Delay(10);
+		Assert.True(condition());
+	}
+
 	private static ILoggerFactory CreateFactory(ILoggerProvider provider) => LoggerFactory.Create(builder =>
 	{
 		builder.ClearProviders();

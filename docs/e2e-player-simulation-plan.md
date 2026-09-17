@@ -456,7 +456,10 @@ sockets before the large clock migration.
     leaves `players.online=1` and every re-login gets `REENTRY_TIME`. Production now calls the DAO through a
     DB-independent bootstrap seam before used object IDs load; a focused test pins that ordering. Commit:
     `1716e128c`.
-  - Stop `ThreadPoolManager._scheduledTasks` growing forever (C#-only leak).
+  - [x] Stop `ThreadPoolManager._scheduledTasks` growing forever (C#-only leak). The append-only bag is now an
+    active-task map: synchronous completion continuations remove finished one-shots and cancelled fixed-rate
+    loops while shutdown still awaits a snapshot. A 100-task retention test returns the count to zero. Commit:
+    `172bea01e`.
   - Make `SocketChannel` read/write return 0 on `WouldBlock` as `java.nio` does, instead of throwing
     `IOException` and disconnecting. Add a slow-reader loopback test (1 MB of SM burst).
   - Add Java's `if (GameServer.isShuttingDownSoon()) { safeLogout(); return; }` to
