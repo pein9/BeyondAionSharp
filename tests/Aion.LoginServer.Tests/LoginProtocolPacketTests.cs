@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using Aion.Commons.Logging;
 using Aion.Commons.Network;
 using Aion.LoginServer.Model;
 using Aion.LoginServer.Network;
@@ -7,6 +9,7 @@ using Aion.LoginServer.Network.Aion.ServerPackets;
 using Aion.LoginServer.Network.GameServer;
 using Aion.LoginServer.Network.GameServer.ClientPackets;
 using Aion.LoginServer.Network.GameServer.ServerPackets;
+using Microsoft.Extensions.Logging;
 
 namespace Aion.LoginServer.Tests;
 
@@ -52,6 +55,37 @@ public class LoginProtocolPacketTests
 		var packet = AionClientPacketFactory.Create(new PacketBuffer(payload.ToArray()), LoginClientState.Connected);
 
 		Assert.Null(packet);
+	}
+
+	[Fact]
+	public void AionFactory_LogsUnknownAndMalformedPacketsWithWireData()
+	{
+		using var provider = new RecordingProvider();
+		using var factory = LoggerFactory.Create(builder =>
+		{
+			builder.ClearProviders();
+			builder.SetMinimumLevel(LogLevel.Trace);
+			builder.AddProvider(provider);
+		});
+		using var logging = AionLog.OverrideFactory(factory);
+
+		var unknown = AionClientPacketFactory.Create(
+			new PacketBuffer(new byte[] { 0x7F, 0xAA, 0xBB }),
+			LoginClientState.Connected);
+		var malformed = AionClientPacketFactory.Create(
+			new PacketBuffer(new byte[] { 0x07, 0x01, 0x02 }),
+			LoginClientState.Connected);
+
+		Assert.Null(unknown);
+		Assert.Null(malformed);
+		var warning = Assert.Single(provider.Entries, entry => entry.Level == LogLevel.Warning);
+		Assert.Contains("opCode=0x7F", warning.Message);
+		Assert.Contains("state=Connected", warning.Message);
+		Assert.Contains("data=[AA BB]", warning.Message);
+		var error = Assert.Single(provider.Entries, entry => entry.Level == LogLevel.Error);
+		Assert.Contains("Reading failed for packet [007] CmAuthGameGuard", error.Message);
+		Assert.Contains("01 02", error.Message);
+		Assert.IsType<EndOfStreamException>(error.Exception);
 	}
 
 	[Fact]
@@ -554,4 +588,32 @@ public class LoginProtocolPacketTests
 		Assert.Equal(Convert.FromHexString("0C1500000028000000"), okPayload);
 		Assert.Equal(Convert.FromHexString("0C16000000280000006E006F00700065000000"), errorPayload);
 	}
+
+	private sealed class RecordingProvider : ILoggerProvider
+	{
+		public ConcurrentQueue<Entry> Entries { get; } = new();
+
+		public ILogger CreateLogger(string categoryName) => new RecordingLogger(categoryName, Entries);
+
+		public void Dispose()
+		{
+		}
+	}
+
+	private sealed class RecordingLogger(string category, ConcurrentQueue<Entry> entries) : ILogger
+	{
+		public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+		public bool IsEnabled(LogLevel logLevel) => true;
+
+		public void Log<TState>(
+			LogLevel logLevel,
+			EventId eventId,
+			TState state,
+			Exception? exception,
+			Func<TState, Exception?, string> formatter) =>
+			entries.Enqueue(new Entry(category, logLevel, formatter(state, exception), exception));
+	}
+
+	private sealed record Entry(string Category, LogLevel Level, string Message, Exception? Exception);
 }

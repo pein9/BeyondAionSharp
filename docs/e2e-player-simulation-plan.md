@@ -233,14 +233,16 @@ failures loud, and gets the test suite to a trustworthy green.
 - [x] **P1-05** [LIVE] S — Install `AppDomain.UnhandledException` and `TaskScheduler.UnobservedTaskException`
   handlers in all three servers, mirroring Java's `UncaughtExceptionHandler` ("Critical Error - Thread ...
   terminated abnormally"). (`90991f317`)
-- [ ] **P1-06** [BOTH] S — Fix sites that lose exception detail:
+- [x] **P1-06** [BOTH] S — Fix sites that lose exception detail. (`923f7ea14`)
   - (a) `CM_TELEPORT_ANIMATION_DONE` logs `e.InnerException`, but `ScheduledTask.Get` rethrows the original
     exception unwrapped, so nothing useful is logged. Log `e`, and correct the false "wrapped" comment at
     `ThreadPoolManager.cs:278-279`.
   - (b) Parity: `Dispatcher.Parse` drops Java's `, content: <hex>` (`Dispatcher.java:212`).
-  - (c) Parity: the login `AionClientPacketFactory` swallows read exceptions that Java logs as "Reading failed
-    for packet" with a hex dump (`BaseClientPacket.java:89-95`), and `LoginClientConnection` reports parse
-    failures and unknown opcodes alike as "Unknown login packet" without Java's opcode, state and data.
+  - (c) Parity: the login `AionClientPacketFactory` swallowed read exceptions that Java logs as "Reading failed
+    for packet" with a hex dump (`BaseClientPacket.java:89-95`), while the live `LoginClientConnection` also
+    constructed its packet buffer with `strictReads: false`, preventing truncated reads from throwing at all.
+    It then reported parse failures and unknown opcodes alike as "Unknown login packet" without Java's opcode,
+    state and data.
   - (d) Infrastructure only: `Dispatcher`'s `LogError(e, "")` and `NetFlusher`'s `Console.Error` match Java
     (`log.error("", e)`, `printStackTrace()`); route them through the bridge with context as documented
     deviations.
@@ -957,9 +959,9 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 1 | Static and inline loggers are `NullLogger`; nothing they log is visible | slf4j/logback everywhere | P1-01..03 |
 | 2 | Fixed-rate tasks end on their first exception and run fixed-delay; no slow-task warning | `ThreadPoolManager.java:51-63`, `ExecuteWrapper.java:38-42` | P1-04 |
 | 3 | No uncaught-exception handler in any server | `UncaughtExceptionHandler.java` | P1-05 |
-| 4 | `CM_TELEPORT_ANIMATION_DONE` logs a null inner exception | `CM_TELEPORT_ANIMATION_DONE.java:41-43` logs `getCause()` | P1-06 |
-| 5 | `Dispatcher.Parse` drops the hex content from its error | `Dispatcher.java:212` | P1-06 |
-| 6 | Login packet factory swallows read exceptions; unknown packets logged without opcode/state/data | `BaseClientPacket.java:89-95`, `AionPacketHandlerFactory.java:111-117` | P1-06 |
+| 4 | `CM_TELEPORT_ANIMATION_DONE` logs a null inner exception | `CM_TELEPORT_ANIMATION_DONE.java:41-43` logs `getCause()` | Resolved by P1-06 (`923f7ea14`) |
+| 5 | `Dispatcher.Parse` drops the hex content from its error | `Dispatcher.java:212` | Resolved by P1-06 (`923f7ea14`) |
+| 6 | Login packet factory swallowed read exceptions and the live connection disabled strict reads entirely; unknown packets were logged without opcode/state/data | `BaseClientPacket.java:89-95`, `AionPacketHandlerFactory.java:111-117` | Resolved by P1-06 (`923f7ea14`) |
 | 7 | `PlayerDAO.SetAllPlayersOffline` never called at boot | `GameServer.java:222` | P3-01 |
 | 8 | `SocketChannel` disconnects on `WouldBlock` | `Dispatcher.java:166,237,264` (java.nio returns 0) | P3-01 |
 | 9 | `OnDisconnect` lacks the shutdown-soon immediate logout | `AionConnection.java:240-243` | P3-01 |

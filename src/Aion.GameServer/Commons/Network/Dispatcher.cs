@@ -54,7 +54,7 @@ public abstract class Dispatcher
             }
             catch (Exception e)
             {
-                log.LogError(e, "");
+                log.LogError(e, "Dispatcher {DispatcherName} loop failed", thread.Name);
             }
         }
     }
@@ -88,7 +88,7 @@ public abstract class Dispatcher
         }
         catch (Exception e)
         {
-            log.LogError(e, "");
+            log.LogError(e, "Dispatcher {DispatcherName} failed to accept a connection", thread.Name);
         }
     }
 
@@ -158,7 +158,7 @@ public abstract class Dispatcher
         }
         catch (Exception e)
         {
-            log.LogError(e, "Error parsing input from " + con + ", packet size: " + size);
+            log.LogError(e, "Error parsing input from " + con + ", packet size: " + size + ", content: " + NetworkUtils.ToHex(b));
             return false;
         }
     }

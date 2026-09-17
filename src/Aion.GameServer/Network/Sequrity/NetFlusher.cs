@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Aion.GameServer.Network.Sequrity;
 
@@ -11,6 +12,7 @@ namespace Aion.GameServer.Network.Sequrity;
 /// </summary>
 public static class NetFlusher
 {
+    private static readonly ILogger log = AionLog.For(nameof(NetFlusher));
     private static readonly List<Timer> _timers = new();
 
     public static void Add(Action runnable, long interval)
@@ -23,7 +25,7 @@ public static class NetFlusher
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine(e);
+                log.LogError(e, "Net flusher task failed");
             }
         }, null, interval, interval);
         lock (_timers)

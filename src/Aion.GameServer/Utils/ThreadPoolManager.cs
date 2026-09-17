@@ -307,8 +307,8 @@ public sealed class ScheduledTask
 			deferred.RunSynchronously();
 	}
 
-	// Java parity: Future.get() — block until the task completes, surfacing any execution exception
-	// (wrapped, so e.InnerException mirrors ExecutionException.getCause()).
+	// Java parity: Future.get() — block until the task completes, surfacing any execution exception.
+	// GetAwaiter().GetResult() rethrows the original exception rather than Java's ExecutionException wrapper.
 	public void Get()
 	{
 		Completion.GetAwaiter().GetResult();

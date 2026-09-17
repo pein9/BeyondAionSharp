@@ -86,7 +86,7 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 			return null;
 		}
 
-		return new PacketBuffer(payload, strictReads: false);
+		return new PacketBuffer(payload);
 	}
 
 	protected override async Task ProcessPacketAsync(PacketBuffer packet)
@@ -220,7 +220,7 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 				}
 				break;
 			case null:
-				_logger.LogWarning("Unknown login packet from {ClientId} in state {State}", _clientId, _state);
+				// AionClientPacketFactory distinguishes and logs unknown opcodes and packet-read failures with wire data.
 				break;
 			default:
 				_logger.LogDebug("Parsed login packet 0x{Opcode:X2} in state {State}", parsed.OpCode, _state);

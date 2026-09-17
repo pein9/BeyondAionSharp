@@ -13,7 +13,7 @@ namespace Aion.GameServer.Network.Aion.ClientPackets;
 
 /// <summary>
 /// Java parity: network/aion/clientpackets/CM_TELEPORT_ANIMATION_DONE (Rolandas, Neon). Sent when the teleport animation finishes; runs the deferred TELEPORT task now and surfaces any error.
-/// Java RunnableFuture run()/get() + InterruptedException|ExecutionException multi-catch -> ScheduledTask Run()/Get() + single catch with e.InnerException as getCause(); concurrency model adapted. World/SM_PLAYER_INFO red-tolerated.
+/// Java RunnableFuture run()/get() + InterruptedException|ExecutionException multi-catch -> ScheduledTask Run()/Get() + single catch; .NET GetAwaiter().GetResult() rethrows the original exception rather than an ExecutionException wrapper. World/SM_PLAYER_INFO red-tolerated.
 /// </summary>
 public class CM_TELEPORT_ANIMATION_DONE : AionClientPacket
 {
@@ -38,7 +38,7 @@ public class CM_TELEPORT_ANIMATION_DONE : AionClientPacket
             }
             catch (Exception e)
             {
-                AionLog.For(nameof(CM_TELEPORT_ANIMATION_DONE)).LogError(e.InnerException, "");
+                AionLog.For(nameof(CM_TELEPORT_ANIMATION_DONE)).LogError(e, "Teleport spawn task failed");
                 if (!player.IsSpawned())
                 {
                     PacketSendUtility.SendPacket(player, new SM_PLAYER_INFO(player));
