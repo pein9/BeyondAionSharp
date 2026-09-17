@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Xml.Serialization;
 using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
 
@@ -43,7 +44,7 @@ public class EmotionLearnAction : AbstractItemAction
         Aion.GameServer.Utils.PacketSendUtility.BroadcastPacket(player,
             new Aion.GameServer.Network.Aion.ServerPackets.SM_ITEM_USAGE_ANIMATION(player.GetObjectId(), parentItem.GetObjectId(), itemTemplate.GetTemplateId()), true);
 
-        player.GetEmotions().Add(emotionId, minutes == 0 ? 0 : (int)(System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000) + minutes * 60, true);
+        player.GetEmotions().Add(emotionId, minutes == 0 ? 0 : (int)SystemClock.CurrentSeconds() + minutes * 60, true);
         Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE.STR_USE_ITEM(parentItem.GetL10n()));
         player.GetInventory().Delete(parentItem);
     }

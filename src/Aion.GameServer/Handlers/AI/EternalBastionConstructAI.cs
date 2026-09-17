@@ -27,9 +27,9 @@ public class EternalBastionConstructAI : NpcAI
     {
         if (GetNpcId() == 831333 || GetNpcId() == 831335)
         {
-            if (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastMsgTime > 30000)
+            if (SystemClock.CurrentMillis() - lastMsgTime > 30000)
             {
-                lastMsgTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                lastMsgTime = SystemClock.CurrentMillis();
                 BroadcastMsg(GetNpcId() == 831333 ? SM_SYSTEM_MESSAGE.STR_MSG_IDLDF5b_TD_Notice_03() : SM_SYSTEM_MESSAGE.STR_MSG_IDLDF5b_TD_Notice_01());
             }
         }

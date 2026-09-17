@@ -45,12 +45,12 @@ public class TheShugoEmperorsVaultInstance : GeneralInstanceHandler
         SpawnMorphShugos();
         if (timer == null)
         {
-            startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            startTime = SystemClock.CurrentMillis();
             timer = ThreadPoolManager.GetInstance().Schedule(() =>
             {
                 if (Interlocked.CompareExchange(ref started, 1, 0) == 0)
                 {
-                    startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    startTime = SystemClock.CurrentMillis();
                     instanceReward.SetInstanceProgressionType(InstanceProgressionType.START_PROGRESS);
                     SendPacket(null, 0);
                     instance.SetDoorState(430, true);
@@ -68,7 +68,7 @@ public class TheShugoEmperorsVaultInstance : GeneralInstanceHandler
             if (timer != null && !timer.IsDone())
                 timer.Cancel(false);
             instanceReward.SetInstanceProgressionType(InstanceProgressionType.START_PROGRESS);
-            startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            startTime = SystemClock.CurrentMillis();
             SendPacket(null, 0);
             StartInstance();
             if (failTimerTask == null)
@@ -608,7 +608,7 @@ public class TheShugoEmperorsVaultInstance : GeneralInstanceHandler
 
     private int GetTime()
     {
-        long result = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startTime;
+        long result = SystemClock.CurrentMillis() - startTime;
         if (instanceReward.GetInstanceProgressionType().IsPreparing())
         {
             return (int)(60000 - result);

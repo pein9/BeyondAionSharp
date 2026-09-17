@@ -7,6 +7,7 @@ using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Instance;
 using Aion.GameServer.Model.Templates;
 using Aion.GameServer.Services.Instance;
+using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Time;
 using Microsoft.Extensions.Logging;
 
@@ -87,7 +88,7 @@ public class InstanceCooltimeData
                 int minutes = clt.GetEntCoolTime();
                 if (minutes == 0) // unlimited entrance, no need to store
                     return 0;
-                instanceCoolTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + (minutes * 60 * 1000);
+                instanceCoolTime = SystemClock.CurrentMillis() + (minutes * 60 * 1000);
                 break;
             }
             default:
@@ -95,7 +96,7 @@ public class InstanceCooltimeData
                 break;
         }
         if (instanceCooldownRate != 1)
-            instanceCoolTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + ((instanceCoolTime - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / instanceCooldownRate);
+            instanceCoolTime = SystemClock.CurrentMillis() + ((instanceCoolTime - SystemClock.CurrentMillis()) / instanceCooldownRate);
         return instanceCoolTime;
     }
 

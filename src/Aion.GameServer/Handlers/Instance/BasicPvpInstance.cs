@@ -167,7 +167,7 @@ public class BasicPvpInstance : GeneralInstanceHandler
 
     protected virtual int GetTime()
     {
-        int current = (int)(System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startTime);
+        int current = (int)(SystemClock.CurrentMillis() - startTime);
         return instanceScore.GetInstanceProgressionType() switch
         {
             InstanceProgressionType.REINFORCE_MEMBER => 120000 - current,
@@ -181,7 +181,7 @@ public class BasicPvpInstance : GeneralInstanceHandler
     protected virtual void UpdateProgress(InstanceProgressionType progressionType)
     {
         instanceScore.SetInstanceProgressionType(progressionType);
-        startTime = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(); // Reset start time
+        startTime = SystemClock.CurrentMillis(); // Reset start time
         SendPacket(
             new SM_INSTANCE_SCORE(instance.GetMapId(), new PvpInstanceScoreWriter(instanceScore, InstanceScoreType.UPDATE_INSTANCE_PROGRESS), GetTime()));
         SendPacket(new SM_INSTANCE_SCORE(instance.GetMapId(),

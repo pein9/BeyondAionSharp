@@ -5,10 +5,11 @@ using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Templates;
 using Aion.GameServer.Network.Aion;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Network.Aion.ServerPackets;
 
-/// <summary>Java parity: network/aion/serverpackets/SM_INSTANCE_INFO (nrg, Neon). Sends per-player instance cooldown info (reuse time, max/used entries, race hide flag) for the given (or all) instance ids. Converges PlayerEnterWorldService. Integer...->params int[]; Arrays.asList->new List; keySet().toArray->Keys.ToArray; currentTimeMillis->UtcNow. PortalCooldown/InstanceCooltime red-tolerated.</summary>
+/// <summary>Java parity: network/aion/serverpackets/SM_INSTANCE_INFO (nrg, Neon). Sends per-player instance cooldown info (reuse time, max/used entries, race hide flag) for the given (or all) instance ids. Converges PlayerEnterWorldService. Integer...->params int[]; Arrays.asList->new List; keySet().toArray->Keys.ToArray; currentTimeMillis->SystemClock.CurrentMillis. PortalCooldown/InstanceCooltime red-tolerated.</summary>
 public class SM_INSTANCE_INFO : AionServerPacket
 {
     private byte updateType; // 0 = reset+write, 1 = update team info, 2 = add/overwrite without resetting
@@ -45,7 +46,7 @@ public class SM_INSTANCE_INFO : AionServerPacket
                 InstanceCooltime cooltime = DataManager.INSTANCE_COOLTIME_DATA.GetInstanceCooltimeByWorldId(worldId);
                 WriteD(cooltime.GetId());
                 WriteD(0x00);
-                WriteD(cooldown == null ? 0 : (int)(cooldown.GetReuseTime() - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000); // will only be shown from client if entriesUsed == maxEntries
+                WriteD(cooldown == null ? 0 : (int)(cooldown.GetReuseTime() - SystemClock.CurrentMillis()) / 1000); // will only be shown from client if entriesUsed == maxEntries
                 WriteD(cooltime.GetMaxCount()); // max entries
                 WriteD(cooldown == null ? 0 : -cooldown.GetEnterCount()); // entry offset (from max)
                 WriteC(cooltime.GetRace() == activePlayer.GetOppositeRace() ? 0 : 1); // hide flag (1 = show, 0 = hide instance from list)

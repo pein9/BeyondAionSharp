@@ -1,4 +1,5 @@
 using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model;
 
@@ -13,7 +14,7 @@ public interface IExpirable
 
     // Java parity: default secondsUntilExpiration()
     int SecondsUntilExpiration() =>
-        GetExpireTime() == 0 ? 0 : GetExpireTime() - (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000);
+        GetExpireTime() == 0 ? 0 : GetExpireTime() - (int)SystemClock.CurrentSeconds();
 
     // Java parity: default isExpired()
     bool IsExpired() => SecondsUntilExpiration() < 0;

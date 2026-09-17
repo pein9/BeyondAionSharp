@@ -138,7 +138,7 @@ public abstract class WorldMapInstance : IEnumerable<VisibleObject>
         worldMapObjects.TryRemove(obj.GetObjectId(), out _);
         if (obj is Player player)
         {
-            lastPlayerLeaveTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            lastPlayerLeaveTime = SystemClock.CurrentMillis();
             if (GetParent().IsFlightAllowed())
             {
                 player.UnsetInsideZoneType(ZoneType.FLY);

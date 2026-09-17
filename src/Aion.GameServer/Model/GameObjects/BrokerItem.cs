@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Model.Broker;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model.GameObjects;
 
@@ -38,9 +39,9 @@ public class BrokerItem : IComparable<BrokerItem>, IPersistable
         this.isSold = false;
         this.isSettled = false;
         this.splittingAvailable = splittingAvailable;
-        DateTimeOffset exp = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + CustomConfig.BROKER_REGISTRATION_EXPIRATION_DAYS * 24L * 60 * 60 * 1000);
+        DateTimeOffset exp = DateTimeOffset.FromUnixTimeMilliseconds(SystemClock.CurrentMillis() + CustomConfig.BROKER_REGISTRATION_EXPIRATION_DAYS * 24L * 60 * 60 * 1000);
         this.expireTime = DateTimeOffset.FromUnixTimeSeconds(exp.ToUnixTimeSeconds()); // db queries by this timestamp but doesn't store fractional seconds
-        this.settleTime = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        this.settleTime = SystemClock.UtcNow();
         this.state = IPersistable.PersistentState.NEW;
     }
 
@@ -89,7 +90,7 @@ public class BrokerItem : IComparable<BrokerItem>, IPersistable
         // this.item = null;
         this.isSold = true;
         this.isSettled = true;
-        this.settleTime = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        this.settleTime = SystemClock.UtcNow();
     }
 
     public int GetItemId()
@@ -155,7 +156,7 @@ public class BrokerItem : IComparable<BrokerItem>, IPersistable
     public void SetSettled()
     {
         this.isSettled = true;
-        this.settleTime = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        this.settleTime = SystemClock.UtcNow();
     }
 
     public DateTimeOffset GetExpireTime()

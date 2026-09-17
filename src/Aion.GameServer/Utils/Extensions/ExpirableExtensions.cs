@@ -1,4 +1,5 @@
 using Aion.GameServer.Model;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Utils.Extensions;
 
@@ -12,7 +13,7 @@ public static class ExpirableExtensions
 	public static int SecondsUntilExpiration(this IExpirable expirable) =>
 		expirable.GetExpireTime() == 0
 			? 0
-			: expirable.GetExpireTime() - (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000);
+			: expirable.GetExpireTime() - (int)SystemClock.CurrentSeconds();
 
 	public static bool IsExpired(this IExpirable expirable) => expirable.SecondsUntilExpiration() < 0;
 }

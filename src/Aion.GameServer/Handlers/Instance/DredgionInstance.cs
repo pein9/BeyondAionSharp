@@ -69,7 +69,7 @@ public class DredgionInstance : GeneralInstanceHandler
 
     protected virtual void StartInstanceTask()
     {
-        instanceTime = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        instanceTime = SystemClock.CurrentMillis();
         ThreadPoolManager.GetInstance().Schedule(() =>
         {
             OpenFirstDoors();
@@ -309,7 +309,7 @@ public class DredgionInstance : GeneralInstanceHandler
 
     private int GetTime()
     {
-        long result = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - instanceTime;
+        long result = SystemClock.CurrentMillis() - instanceTime;
         if (result < 120000)
         {
             return (int)(120000 - result);

@@ -45,7 +45,7 @@ public class Lv1HumanBeritraAI : AggressiveNoLootNpcAI
         base.HandleCreatureAggro(creature);
         if (isActivated.CompareAndSet(false, true))
         {
-            fightStartTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            fightStartTime = SystemClock.CurrentMillis();
             ApplyBuffs();
             ScheduleNewSealGuardianSpawn();
             HandleFightStarted(); // Only relevant for Lv1 Beritra
@@ -390,7 +390,7 @@ public class Lv1HumanBeritraAI : AggressiveNoLootNpcAI
 
     private void LogMetrics()
     {
-        long fullFightTime = (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - fightStartTime) / 1000;
+        long fullFightTime = (SystemClock.CurrentMillis() - fightStartTime) / 1000;
         string damageDealt = string.Join(", ", GetAggroList().GetFinalDamageList().GetCreatureDamages()
             .OrderByDescending(di => di.GetDamage())
             .Select(ai => string.Format("{0} (ID: {1}, Dmg: {2})", ai.GetAttacker().GetName(), ai.GetAttacker().GetObjectId(), ai.GetDamage())));

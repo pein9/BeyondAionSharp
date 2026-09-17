@@ -1,4 +1,5 @@
 using Aion.GameServer.Utils.Stats;
+using Aion.GameServer.Utils;
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
@@ -106,7 +107,7 @@ public partial class Item
     {
         if (temporaryExchangeTime == 0)
             return 0;
-        return temporaryExchangeTime - (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000);
+        return temporaryExchangeTime - (int)SystemClock.CurrentSeconds();
     }
 
     /// <param name="temporaryExchangeTime">The temporaryExchangeTime to set.</param>

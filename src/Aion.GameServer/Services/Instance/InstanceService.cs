@@ -194,14 +194,14 @@ public class InstanceService
         public EmptyInstanceCheckerTask(WorldMapInstance worldMapInstance)
         {
             this.worldMapInstance = worldMapInstance;
-            this.taskStartTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            this.taskStartTime = SystemClock.CurrentMillis();
         }
 
         private bool CanDestroyInstance()
         {
             if (worldMapInstance.GetPlayersInside().Count != 0)
                 return false;
-            return worldMapInstance.IsPersonal() || IsRegisteredTeamDisbanded() || DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() > CalculateDestroyTime() - 1000;
+            return worldMapInstance.IsPersonal() || IsRegisteredTeamDisbanded() || SystemClock.CurrentMillis() > CalculateDestroyTime() - 1000;
         }
 
         private bool IsRegisteredTeamDisbanded()

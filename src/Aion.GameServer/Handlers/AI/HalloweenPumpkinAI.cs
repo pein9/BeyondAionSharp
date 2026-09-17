@@ -67,13 +67,13 @@ public class HalloweenPumpkinAI : OneDmgAI
         AtomicBoolean canReward = new AtomicBoolean();
         nextRewardMillisByAccountId.AddOrUpdate(player.AccountId, _ =>
         {
-            long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long nowMs = SystemClock.CurrentMillis();
             long nextRewardTime = nowMs + (long)TimeSpan.FromDays(1).TotalMilliseconds;
             canReward.Set(true);
             return nextRewardTime;
         }, (_, nextRewardTime) =>
         {
-            long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long nowMs = SystemClock.CurrentMillis();
             if (nowMs > nextRewardTime)
             {
                 nextRewardTime = nowMs + (long)TimeSpan.FromDays(1).TotalMilliseconds;

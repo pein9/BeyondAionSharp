@@ -34,7 +34,7 @@ public class AsteriaInstance : GeneralInstanceHandler
     {
         if (flyingRing.Equals("ASTERIA_WING_1"))
         {
-            if (Interlocked.CompareExchange(ref startTime, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), 0) == 0)
+            if (Interlocked.CompareExchange(ref startTime, SystemClock.CurrentMillis(), 0) == 0)
             {
                 PacketSendUtility.SendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_INSTANCE_START_IDABRE());
                 PacketSendUtility.SendPacket(player, new SM_QUEST_ACTION(0, 900));
@@ -49,7 +49,7 @@ public class AsteriaInstance : GeneralInstanceHandler
         long start = Volatile.Read(ref startTime);
         if (start > 0)
         {
-            long time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+            long time = SystemClock.CurrentMillis() - start;
             if (time < 900000)
             {
                 PacketSendUtility.SendPacket(player, new SM_QUEST_ACTION(0, 900 - (int)time / 1000));

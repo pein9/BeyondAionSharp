@@ -1,7 +1,12 @@
 using Aion.GameServer.QuestEngine.Model;
+using Aion.GameServer.Model;
+using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
+using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.SkillEngine.Model;
+using Aion.GameServer.Tests.Ai;
 using Aion.GameServer.Utils;
+using Aion.GameServer.Utils.Extensions;
 using Aion.GameServer.Utils.Time;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -59,6 +64,31 @@ public sealed class SystemClockTests
 
 			nowMillis += 10_000;
 			Assert.Null(cooldowns.Get(7));
+		}
+		finally
+		{
+			SystemClock.UseSystemClock();
+		}
+	}
+
+	[Fact]
+	public async Task TimedItemExpiresAfterVirtualTimeAdvances()
+	{
+		const long epochMillis = 1_700_000_000_000;
+		await using var pool = new VirtualThreadPool();
+		SystemClock.UseSource(() => epochMillis + pool.NowMillis);
+		try
+		{
+			var template = new ItemTemplate { expireTime = 1 };
+			var item = new Item(1, template);
+
+			Assert.False(item.IsExpired());
+			Assert.False(((IExpirable)item).IsExpired());
+
+			pool.Advance(TimeSpan.FromSeconds(61));
+
+			Assert.True(item.IsExpired());
+			Assert.True(((IExpirable)item).IsExpired());
 		}
 		finally
 		{

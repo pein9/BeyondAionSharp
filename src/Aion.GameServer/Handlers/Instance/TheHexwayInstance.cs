@@ -62,7 +62,7 @@ public class TheHexwayInstance : GeneralInstanceHandler
     {
         if (flyingRing.Equals("HEXWAY_BONUSCHEST"))
         {
-            if (bonusChestStartMillis.CompareAndSet(0, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()))
+            if (bonusChestStartMillis.CompareAndSet(0, SystemClock.CurrentMillis()))
             {
                 // schedule bonus chest spawn condition change
                 disableBonusChestSpawnTask = ThreadPoolManager.GetInstance().Schedule(_ =>
@@ -96,7 +96,7 @@ public class TheHexwayInstance : GeneralInstanceHandler
             int bossIndex = int.Parse(flyingRing.Substring(12));
             if (bossIndex >= 0 && bossIndex <= 5)
             {
-                if (Interlocked.CompareExchange(ref stageStartMillis[bossIndex], DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), 0) == 0)
+                if (Interlocked.CompareExchange(ref stageStartMillis[bossIndex], SystemClock.CurrentMillis(), 0) == 0)
                 {
                     attackedBossCount.IncrementAndGet();
                     ScheduleBossDespawn(bossIndex, bossTimeLimitsSeconds[bossIndex] * 1000);
@@ -105,7 +105,7 @@ public class TheHexwayInstance : GeneralInstanceHandler
                 if (stageStartTimeMillis > 0)
                 {
                     int bossTimeLimitSeconds = bossTimeLimitsSeconds[bossIndex];
-                    int elapsedTimeMillis = (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - stageStartTimeMillis);
+                    int elapsedTimeMillis = (int)(SystemClock.CurrentMillis() - stageStartTimeMillis);
                     if (elapsedTimeMillis <= bossTimeLimitSeconds * 1000 && scheduledBossDespawnTasks[bossIndex] != null)
                     {
                         // add player to stage mapping
@@ -186,7 +186,7 @@ public class TheHexwayInstance : GeneralInstanceHandler
                             }
                             CancelTimeInformTasks();
                         }
-                        int remainingTimeSeconds = (int)((bonusChestStartMillis.Get() + bonusChestTimeLimitSeconds * 1000 - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000);
+                        int remainingTimeSeconds = (int)((bonusChestStartMillis.Get() + bonusChestTimeLimitSeconds * 1000 - SystemClock.CurrentMillis()) / 1000);
                         if (remainingTimeSeconds > 0)
                             SendTimeStringToPlayers(remainingTimeSeconds);
                         break;

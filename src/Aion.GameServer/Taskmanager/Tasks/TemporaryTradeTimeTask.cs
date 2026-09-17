@@ -41,7 +41,7 @@ public class TemporaryTradeTimeTask : AbstractPeriodicTaskManager
         foreach (KeyValuePair<Item, ICollection<int>> entry in items)
         {
             Item item = entry.Key;
-            int time = item.GetTemporaryExchangeTime() - (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000);
+            int time = item.GetTemporaryExchangeTime() - (int)SystemClock.CurrentSeconds();
             if (time <= 0)
             {
                 foreach (int playerId in entry.Value)

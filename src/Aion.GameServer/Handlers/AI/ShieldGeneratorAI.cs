@@ -51,9 +51,9 @@ public abstract class ShieldGeneratorAI : GeneralNpcAI
     protected override void HandleAttack(Creature creature)
     {
         base.HandleAttack(creature);
-        if (System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastAttackedTime > 10000)
+        if (SystemClock.CurrentMillis() - lastAttackedTime > 10000)
         {
-            lastAttackedTime = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            lastAttackedTime = SystemClock.CurrentMillis();
             Shout(GetAttackMsg());
         }
     }

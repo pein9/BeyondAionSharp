@@ -50,7 +50,7 @@ public class SkillCooltimeResetAI : NpcAI
     protected override void HandleDialogStart(Player player)
     {
         // remove players if they are already 5 mins+ in the map
-        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long now = SystemClock.CurrentMillis();
         foreach (int key in playersInSight.Where(e => now > e.Value + 300000).Select(e => e.Key).ToList())
             playersInSight.Remove(key);
         if (player.GetLifeStats().IsAboutToDie() || player.IsDead())
@@ -81,7 +81,7 @@ public class SkillCooltimeResetAI : NpcAI
             return;
         if (PositionUtil.IsInRange(GetOwner(), player, 8) && GeoService.GetInstance().CanSee(GetOwner(), player))
         {
-            playersInSight[player.GetObjectId()] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            playersInSight[player.GetObjectId()] = SystemClock.CurrentMillis();
             PacketSendUtility.SendPacket(player,
                 new SM_MESSAGE(GetOwner(), string.Format("I can heal you and reset your skill cooldowns for {0:N0} Kinah, yang yang.", PRICE), ChatType.NPC));
         }
@@ -153,7 +153,7 @@ public class SkillCooltimeResetAI : NpcAI
 
     private ISet<int> CollectResettableItemCooldownIds(Player player)
     {
-        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long now = SystemClock.CurrentMillis();
         ISet<int> itemCooldownIds = player.GetItemCoolDowns()
             .Where(e => e.Value.GetUseDelay() <= MAX_ITEM_COOLDOWN_SECONDS && e.Value.GetReuseTime() > now)
             .Select(e => e.Key)
@@ -185,7 +185,7 @@ public class SkillCooltimeResetAI : NpcAI
 
     private ISet<int> CollectResettableSkillCooldownIds(Player player)
     {
-        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long now = SystemClock.CurrentMillis();
         ISet<int> cooldownIds = new HashSet<int>();
         foreach (PlayerSkillEntry skill in player.GetSkillList().GetAllSkills())
         {

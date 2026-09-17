@@ -47,7 +47,7 @@ public class LeftWingChamberInstance : GeneralInstanceHandler
     {
         if (flyingRing.Equals("LEFT_WING_1"))
         {
-            if (Interlocked.CompareExchange(ref startTime, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), 0) == 0)
+            if (Interlocked.CompareExchange(ref startTime, SystemClock.CurrentMillis(), 0) == 0)
             {
                 PacketSendUtility.SendPacket(player, new SM_QUEST_ACTION(0, 900));
                 ThreadPoolManager.GetInstance().Schedule(_ => { DeleteAliveNpcs(700466, 701481, 701486); return ValueTask.CompletedTask; }, 900000L);
@@ -61,7 +61,7 @@ public class LeftWingChamberInstance : GeneralInstanceHandler
         long start = Volatile.Read(ref startTime);
         if (start > 0)
         {
-            long time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+            long time = SystemClock.CurrentMillis() - start;
             if (time < 900000)
             {
                 PacketSendUtility.SendPacket(player, new SM_QUEST_ACTION(0, 900 - (int)time / 1000));

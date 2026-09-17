@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Aion.GameServer.Dataholders;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model.GameObjects;
 
@@ -57,7 +58,7 @@ public partial class Item : AionObject, Aion.GameServer.Model.IExpirable, Aion.G
         this.itemTemplate = itemTemplate;
         this.activationCount = itemTemplate.GetActivationCount();
         if (itemTemplate.GetExpireTime() != 0)
-            expireTime = ((int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000) + itemTemplate.GetExpireTime() * 60) - 1;
+            expireTime = ((int)SystemClock.CurrentSeconds() + itemTemplate.GetExpireTime() * 60) - 1;
         if (itemTemplate.CanTune())
             tuneCount = -1; // not identified yet (bonus stats need to be rolled)
         isAmplified = itemTemplate.GetEnchantType() == 1;
@@ -257,7 +258,7 @@ public partial class Item : AionObject, Aion.GameServer.Model.IExpirable, Aion.G
     {
         if (colorExpireTime == 0)
             return 0;
-        return (int)(colorExpireTime - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000);
+        return (int)(colorExpireTime - SystemClock.CurrentSeconds());
     }
 
     public int GetColorExpireTime()

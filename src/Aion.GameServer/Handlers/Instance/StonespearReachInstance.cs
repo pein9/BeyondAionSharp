@@ -49,10 +49,10 @@ public class StonespearReachInstance : GeneralInstanceHandler
         AddWorldPoints();
         if (timer == null)
         {
-            startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            startTime = SystemClock.CurrentMillis();
             timer = ThreadPoolManager.GetInstance().Schedule(() =>
             {
-                startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                startTime = SystemClock.CurrentMillis();
                 reward.SetInstanceProgressionType(InstanceProgressionType.START_PROGRESS);
                 SendPacket(null, 0);
                 StartInstance();
@@ -275,7 +275,7 @@ public class StonespearReachInstance : GeneralInstanceHandler
                 reward.SetInstanceProgressionType(InstanceProgressionType.END_PROGRESS);
                 reward.SetRank(rank);
                 DespawnAll();
-                long endTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                long endTime = SystemClock.CurrentMillis();
                 SendPacket(null, 0);
                 Reward();
                 LegionDominionService.GetInstance().OnFinishInstance(instanceLegion, reward.GetPoints(), (endTime - startTime.Value));
@@ -744,7 +744,7 @@ public class StonespearReachInstance : GeneralInstanceHandler
 
     private int GetTime()
     {
-        long result = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startTime.Value;
+        long result = SystemClock.CurrentMillis() - startTime.Value;
         if (reward.IsPreparing())
         {
             return (int)(180000 - result);

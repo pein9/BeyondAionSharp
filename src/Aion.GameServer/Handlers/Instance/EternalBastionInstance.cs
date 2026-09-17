@@ -368,13 +368,13 @@ public class EternalBastionInstance : GeneralInstanceHandler
         instanceReward = new NormalScore();
         instanceReward.SetInstanceProgressionType(InstanceProgressionType.PREPARING);
         instanceReward.SetPoints(20000);
-        startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        startTime = SystemClock.CurrentMillis();
         instanceTimerTask = ThreadPoolManager.GetInstance().Schedule(OnStart, START_DELAY);
     }
 
     private void OnStart()
     {
-        startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        startTime = SystemClock.CurrentMillis();
         instanceReward.SetInstanceProgressionType(InstanceProgressionType.START_PROGRESS);
         SendPacket();
         instance.ForEachDoor(door => door.SetOpen(true));
@@ -946,7 +946,7 @@ public class EternalBastionInstance : GeneralInstanceHandler
 
     private int GetTime()
     {
-        int current = (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startTime);
+        int current = (int)(SystemClock.CurrentMillis() - startTime);
         return instanceReward.GetInstanceProgressionType() == InstanceProgressionType.PREPARING ? 180000 - current : Math.Max(1800000 - current, 0);
     }
 

@@ -66,7 +66,7 @@ public class GateRepairAI : NpcAI
 
             if (LoggingConfig.LOG_SIEGE)
                 log.LogInformation("Gate Repair Stone with staticId: " + GetSpawnTemplate().GetStaticId() + " siege: " + GetSpawnTemplate().GetSiegeId() + " activated by " + player + " (race: " + player.GetRace() + ") to heal door with staticId: " + (door.GetSpawn().GetStaticId()) + " by " + healValue);
-            Interlocked.Exchange(ref nextActivationTime, System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + repairData.GetCd());
+            Interlocked.Exchange(ref nextActivationTime, SystemClock.CurrentMillis() + repairData.GetCd());
             PacketSendUtility.BroadcastPacket(GetOwner(), SM_SYSTEM_MESSAGE.STR_MSG_REPAIR_ABYSS_DOOR(player.GetName(), "" + healValue));
             PacketSendUtility.BroadcastPacket(GetOwner(), new SM_ACTION_ANIMATION(GetObjectId(), ActionAnimation.REPAIR_GATE, door.GetObjectId()));
             door.GetLifeStats().IncreaseHp(SmAttackStatus.TYPE.DOOR_REPAIR, healValue);
@@ -80,7 +80,7 @@ public class GateRepairAI : NpcAI
     private int GetCooldown()
     {
         long next = Interlocked.Read(ref nextActivationTime);
-        return next <= 0 ? 0 : (int)System.Math.Max(0, (next - System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 1000);
+        return next <= 0 ? 0 : (int)System.Math.Max(0, (next - SystemClock.CurrentMillis()) / 1000);
     }
 
     private bool CanActivate(Player player, DoorRepairData repairData)

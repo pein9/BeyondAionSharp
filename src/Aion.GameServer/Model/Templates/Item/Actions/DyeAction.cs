@@ -1,6 +1,7 @@
 using System;
 using System.Xml.Serialization;
 using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
 
@@ -61,7 +62,7 @@ public class DyeAction : AbstractItemAction
             return;
         targetItem.SetItemColor(GetColor());
         if (minutes != null)
-            targetItem.SetColorExpireTime((int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000 + minutes.Value * 60));
+            targetItem.SetColorExpireTime((int)(SystemClock.CurrentSeconds() + minutes.Value * 60));
         else
             targetItem.SetColorExpireTime(0);
         if (targetItem.GetItemColor() == null)

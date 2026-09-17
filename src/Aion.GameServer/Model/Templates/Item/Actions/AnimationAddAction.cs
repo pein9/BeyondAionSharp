@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Items;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Model.Templates.Items.Actions;
 
@@ -102,7 +103,7 @@ public class AnimationAddAction : AbstractItemAction
 
     private void AddMotion(Aion.GameServer.Model.GameObjects.Players.Player player, int motionId)
     {
-        Aion.GameServer.Model.GameObjects.Players.Motion.Motion motion = new Aion.GameServer.Model.GameObjects.Players.Motion.Motion(motionId, minutes == null ? 0 : (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000) + minutes.Value * 60, true);
+        Aion.GameServer.Model.GameObjects.Players.Motion.Motion motion = new Aion.GameServer.Model.GameObjects.Players.Motion.Motion(motionId, minutes == null ? 0 : (int)SystemClock.CurrentSeconds() + minutes.Value * 60, true);
         player.GetMotions().Add(motion, true);
         // Java parity: default interface method — C# requires an explicit IExpirable cast (foundational diff).
         Aion.GameServer.Utils.PacketSendUtility.SendPacket(player, new Aion.GameServer.Network.Aion.ServerPackets.SM_MOTION((short)motion.GetId(), ((Aion.GameServer.Model.IExpirable)motion).SecondsUntilExpiration()));

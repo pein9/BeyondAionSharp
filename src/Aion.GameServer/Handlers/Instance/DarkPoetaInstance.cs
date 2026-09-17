@@ -72,7 +72,7 @@ public class DarkPoetaInstance : GeneralInstanceHandler
 
     private int GetTime()
     {
-        int current = (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startTime);
+        int current = (int)(SystemClock.CurrentMillis() - startTime);
         return instanceReward.GetInstanceProgressionType() switch
         {
             InstanceProgressionType.PREPARING => 120000 - current,
@@ -256,7 +256,7 @@ public class DarkPoetaInstance : GeneralInstanceHandler
     private void OnStart(bool manually)
     {
         instanceReward.SetInstanceProgressionType(InstanceProgressionType.START_PROGRESS);
-        startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        startTime = SystemClock.CurrentMillis();
         SendPacket(null, 0);
         if (!manually)
             instance.ForEachDoor(d => d.SetOpen(true));
@@ -288,7 +288,7 @@ public class DarkPoetaInstance : GeneralInstanceHandler
         excludedNpcs.AddRange(new[] { 700439, 700440, 700441, 700442, 700443, 700444, 700445, 700446, 700447, 281178 });
         instanceReward = new DarkPoetaScore();
         instanceReward.SetInstanceProgressionType(InstanceProgressionType.PREPARING);
-        startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        startTime = SystemClock.CurrentMillis();
         instanceTimer = ThreadPoolManager.GetInstance().Schedule(() => OnStart(false), 121000L);
     }
 

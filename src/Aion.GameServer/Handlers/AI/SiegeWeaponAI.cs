@@ -7,6 +7,7 @@ using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Summons;
 using Aion.GameServer.Model.Templates.Npcskill;
 using Aion.GameServer.Services.Summons;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Handlers.AI;
 
@@ -74,9 +75,9 @@ public class SiegeWeaponAI : AITemplate<Summon>
             return;
         if (GetOwner().GetController() is SiegeWeaponController swc && swc.IsValidTarget(creature))
         {
-            if (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastAttackTime > duration + 2000)
+            if (SystemClock.CurrentMillis() - lastAttackTime > duration + 2000)
             {
-                lastAttackTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                lastAttackTime = SystemClock.CurrentMillis();
                 GetOwner().GetController().UseSkill(skill, skillLvl);
             }
         }

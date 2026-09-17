@@ -29,7 +29,7 @@ public class MoriataAI : AggressiveNpcAI
 
     private void ObserveKiting()
     {
-        if ((System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastSkillUse) / 1000 >= 10)
+        if ((SystemClock.CurrentMillis() - lastSkillUse) / 1000 >= 10)
         {
             SkillEngine.SkillEngine.GetInstance().ApplyEffectDirectly(20181, GetOwner(), GetOwner()); // Temporary Speed Buff
             SkillEngine.SkillEngine.GetInstance().ApplyEffectDirectly(21417, GetOwner(), GetOwner()); // Raging Fury
@@ -40,13 +40,13 @@ public class MoriataAI : AggressiveNpcAI
 
     protected override void HandleAttackComplete()
     {
-        lastSkillUse = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        lastSkillUse = SystemClock.CurrentMillis();
         base.HandleAttackComplete();
     }
 
     public override void OnEndUseSkill(SkillTemplate skillTemplate, int skillLevel)
     {
-        lastSkillUse = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        lastSkillUse = SystemClock.CurrentMillis();
     }
 
     private void CancelTask()

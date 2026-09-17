@@ -28,14 +28,14 @@ public class CustomInstanceReianTeleportShouter : GeneralNpcAI
             return;
         }
         if (lastShoutToPlayer.TryGetValue(creature.GetObjectId(), out long last)
-            && System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - last <= 1800000) // only allow 1 shout half an hour
+            && SystemClock.CurrentMillis() - last <= 1800000) // only allow 1 shout half an hour
         {
             return;
         }
 
         if (PositionUtil.IsInRange(GetOwner(), creature, 15) && GeoService.GetInstance().CanSee(GetOwner(), creature))
         {
-            lastShoutToPlayer[creature.GetObjectId()] = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            lastShoutToPlayer[creature.GetObjectId()] = SystemClock.CurrentMillis();
             if (CustomInstanceService.GetInstance().CanEnter(creature.GetObjectId()))
             {
                 PacketSendUtility.SendPacket(player,

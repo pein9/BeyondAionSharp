@@ -3,6 +3,7 @@ using Aion.GameServer.Ai;
 using Aion.GameServer.Custom.Instance;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Handlers.AI;
 
@@ -22,7 +23,7 @@ public class CustomInstanceInfoBoard : GeneralNpcAI
     {
         lock (lastLeaderboardOpenTime)
         {
-            long now = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long now = SystemClock.CurrentMillis();
             if (lastLeaderboardOpenTime.TryGetValue(player.GetObjectId(), out long lastOpenTime) && lastOpenTime + 3000 > now)
                 return; // simple flood protection so we don't have to cache the whole leaderboard
             lastLeaderboardOpenTime[player.GetObjectId()] = now;

@@ -22,7 +22,7 @@ public class HiddenBirthdayCakeAI : ChestAI
     private static readonly AtomicInteger collectedCakes = new AtomicInteger();
     private static readonly int JEST_SPAWN_CHANCE = 25;
     private static readonly int[] JEST_SPAWN_IDS = { 210341, 214732, 210595 };
-    private static long lastLogTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    private static long lastLogTime = SystemClock.CurrentMillis();
     private static volatile int lastCakeCount;
 
     public HiddenBirthdayCakeAI(Npc owner)
@@ -33,7 +33,7 @@ public class HiddenBirthdayCakeAI : ChestAI
     private void LogCollectedCakes(int cakes)
     {
         int deviation = cakes - lastCakeCount;
-        long currentTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long currentTime = SystemClock.CurrentMillis();
         if (currentTime - lastLogTime >= 3600 * 1000)
         { // Only log once every hour
             log.LogInformation("[EVENT] Total cakes collected: {Cakes}; Cakes collected during the last hour: {Deviation}.", cakes, deviation);

@@ -660,8 +660,11 @@ Production-neutral: `SystemClock`'s default is the same call Java makes (`System
     `PlayerLeaveWorldService` (re-entry time), `PlayerService` deletion. All 29 direct reads in this slice now
     use `SystemClock`; the ratchet fell from 351 to 322 reads, and a socketless connection test pins virtual
     connection and ping timestamps. Commit: `8477dad7f`.
-  - [ ] **C** content: `Handlers/Instance/*`, `Handlers/AI/*`, `InstanceService`, `WorldMapInstance`, instance
-    cooldowns, `Taskmanager/Tasks/*` (item expiry), `Item*`, `RVController`, `CraftService`.
+  - [x] **C** content: `Handlers/Instance/*`, `Handlers/AI/*`, `InstanceService`, `WorldMapInstance`, instance
+    cooldowns, `Taskmanager/Tasks/*` (item expiry), `IExpirable`, `Item*`, `RVController`, `CraftService`.
+    The 85 direct reads in these content and expiration paths now use `SystemClock`, lowering the ratchet from
+    322 to 237 reads. A timed-item test proves both expiration dispatch paths expire a one-minute item after
+    `VirtualThreadPool.Advance(61 s)`. Commit: `01148e16b`.
   - [ ] **D** the rest: services, `AbstractCronTask`, housing tasks, DAO cooldown filters, persistence timestamps.
 
   Leave genuine infrastructure on real time and allowlist it: the NIO shutdown loop, `Stopwatch` durations,

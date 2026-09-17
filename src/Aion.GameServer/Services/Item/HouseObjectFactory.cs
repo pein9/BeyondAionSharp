@@ -5,11 +5,12 @@ using Aion.GameServer.Model.House;
 using Aion.GameServer.Model.Templates.Housing;
 using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.Model.Templates.Items.Actions;
+using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.IdFactory;
 
 namespace Aion.GameServer.Services.Items;
 
-/// <summary>Java parity: services/item/HouseObjectFactory (Rolandas). Instantiates the right HouseObject subclass from a placeable-house template (DB load) and transfers an inventory item into a house registry object with expiry. instanceof->is; Objects.requireNonNull->null-check+NullReferenceException; TimeUnit.DAYS.toSeconds->*86400; currentTimeMillis/1000->UtcNow.ToUnixTimeMilliseconds()/1000; HouseObject&lt;?&gt;->HouseObject&lt;PlaceableHouseObject&gt; (invariance bound). Housing templates / object subclasses red-tolerated.</summary>
+/// <summary>Java parity: services/item/HouseObjectFactory (Rolandas). Instantiates the right HouseObject subclass from a placeable-house template (DB load) and transfers an inventory item into a house registry object with expiry. instanceof->is; Objects.requireNonNull->null-check+NullReferenceException; TimeUnit.DAYS.toSeconds->*86400; currentTimeMillis/1000->SystemClock.CurrentSeconds; HouseObject&lt;?&gt;->HouseObject&lt;PlaceableHouseObject&gt; (invariance bound). Housing templates / object subclasses red-tolerated.</summary>
 public sealed class HouseObjectFactory
 {
     /// <summary>
@@ -56,7 +57,7 @@ public sealed class HouseObjectFactory
         int useDays = obj.GetObjectTemplate().GetUseDays();
         if (useDays > 0)
         {
-            int expireEnd = (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000 + useDays * 86400L);
+            int expireEnd = (int)(SystemClock.CurrentSeconds() + useDays * 86400L);
             obj.SetExpireTime(expireEnd);
         }
         return obj;

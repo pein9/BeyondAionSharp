@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using Aion.GameServer.Model;
 using Aion.GameServer.Taskmanager;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.Taskmanager.Tasks;
 
@@ -43,7 +44,7 @@ public class ExpireTimerTask : AbstractPeriodicTaskManager
 
     protected override void Run()
     {
-        int timeNow = (int)(System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000);
+        int timeNow = (int)SystemClock.CurrentSeconds();
         foreach (KeyValuePair<IExpirable, Aion.GameServer.Model.GameObjects.Players.Player> entry in expirables)
         {
             IExpirable expirable = entry.Key;

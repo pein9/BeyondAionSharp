@@ -122,7 +122,7 @@ public class ArtifactAI : NpcAI
                 PacketSendUtility.SendPacket(p, artifactInfoInner);
             });
 
-            loc.SetLastActivation(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            loc.SetLastActivation(SystemClock.CurrentMillis());
             if (loc.GetTemplate().GetRepeatCount() == 1)
                 ThreadPoolManager.GetInstance().Schedule(new ArtifactUseSkill(this, loc, player, skillTemplate), 13000L);
             else

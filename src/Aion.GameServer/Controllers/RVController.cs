@@ -41,7 +41,7 @@ public class RVController : NpcController
         this.maxEntries = riftTemplate.GetEntries();
         this.minLevel = riftTemplate.GetMinLevel();
         this.maxLevel = riftTemplate.GetMaxLevel();
-        this.deSpawnedTime = ((int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000))
+        this.deSpawnedTime = (int)SystemClock.CurrentSeconds()
             + (isVortex ? VortexService.GetInstance().GetDuration() * 3600 : global::Aion.GameServer.Services.RiftService.GetInstance().GetDuration() * 3600);
         this.isInvasion = riftTemplate.IsInvasionRift();
 
@@ -61,7 +61,7 @@ public class RVController : NpcController
         this.maxEntries = riftTemplate.GetEntries();
         this.minLevel = riftTemplate.GetMinLevel();
         this.maxLevel = riftTemplate.GetMaxLevel();
-        this.deSpawnedTime = ((int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000))
+        this.deSpawnedTime = (int)SystemClock.CurrentSeconds()
             + (isVortex ? VortexService.GetInstance().GetDuration() * 3600 : global::Aion.GameServer.Services.RiftService.GetInstance().GetDuration() * 3600);
         this.isInvasion = riftTemplate.IsInvasionRift();
 
@@ -190,7 +190,7 @@ public class RVController : NpcController
 
     public int GetRemainTime()
     {
-        return deSpawnedTime - (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000);
+        return deSpawnedTime - (int)SystemClock.CurrentSeconds();
     }
 
     public bool IsVolatile()
