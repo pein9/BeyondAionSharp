@@ -137,6 +137,7 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			{
 				[1] = new("sim-player-1", AccessLevel: 0),
 				[2] = new("sim-player-2", AccessLevel: 0),
+				[99] = new("director", AccessLevel: 9),
 			};
 			services.RemoveAll<LoginServerFacade>();
 			services.AddSingleton(

@@ -904,8 +904,13 @@ point; and `p515-full2-20260917/l0-packet-parity.json` recorded the normalized S
 
 ### Phase 6 — Movement and combat
 
-- [ ] **P6-00** [BOTH] M — GM facade: SIM calls the same command classes' `Execute()` or the services directly;
-  LIVE uses the director account sending `//...` chat and waiting for the reply. Subjects stay level 0.
+- [x] **P6-00** [BOTH] M — GM facade: SIM calls the same command classes' `Execute()` or the services directly;
+  LIVE uses the director account sending `//...` chat and waiting for the reply. Subjects stay level 0. The shared
+  contract now accepts structured commands and regular-player subjects. SIM resolves the registered handler,
+  validates director access and invokes `Execute()` directly; LIVE only accepts the seeded `director`, sends target
+  selection plus the real public-chat command and waits for a matching decoded `SM_MESSAGE`. Tests pin both paths,
+  reject privileged subjects and validate the message decoder against the existing Java golden fixture; the SIM
+  login link now exposes the same access-9 director identity as the Docker LIVE seed. (`734fa9ab5`)
 - [ ] **P6-01** [BOTH] S — Parity fix: `SM_MOVE.cs:68` tests `mc is PlayableMoveController<Creature>`, which is never
   true for players or summons (C# generics are invariant), so observers get the absolute target instead of the
   movement vector and lose glide and vehicle fields (Java uses `instanceof PlayableMoveController`). Add golden

@@ -29,6 +29,7 @@ public sealed class BotServerPacketDecoder
 			[typeof(SM_DIALOG_WINDOW)] = DecodeDialog,
 			[typeof(SM_QUESTION_WINDOW)] = DecodeQuestion,
 			[typeof(SM_CLOSE_QUESTION_WINDOW)] = DecodeCloseQuestion,
+			[typeof(SM_MESSAGE)] = DecodeMessage,
 			[typeof(SM_SYSTEM_MESSAGE)] = DecodeSystemMessage,
 			[typeof(SM_STATS_INFO)] = DecodeStats,
 			[typeof(SM_STATUPDATE_HP)] = DecodeHp,
@@ -203,6 +204,22 @@ public sealed class BotServerPacketDecoder
 	{
 		var r = new PacketBodyReader(body);
 		return Fields(("token", r.ReadBytes(r.ReadInt32())));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeMessage(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		byte chatType = r.ReadByte();
+		var fields = Fields(
+			("chatType", chatType), ("senderRace", r.ReadByte()), ("senderObjectId", r.ReadInt32()),
+			("senderName", r.ReadString()), ("message", r.ReadString()));
+		if (chatType == (byte)Aion.GameServer.Model.ChatType.SHOUT)
+		{
+			fields["x"] = r.ReadSingle();
+			fields["y"] = r.ReadSingle();
+			fields["z"] = r.ReadSingle();
+		}
+		return fields;
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodePlayerInfo(ReadOnlySpan<byte> body)

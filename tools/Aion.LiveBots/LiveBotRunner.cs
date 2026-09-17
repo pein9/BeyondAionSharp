@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Aion.Bots.Api;
+using Aion.Bots.Gm;
 using Aion.Bots.Protocol;
 using Aion.Bots.Protocol.Chat;
 using Aion.Bots.Protocol.Login;
@@ -307,12 +308,22 @@ internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 		this.bot = bot;
 		this.account = account;
 		this.characterName = characterName;
-		var botNumber = byte.Parse(bot.AsSpan(1), System.Globalization.CultureInfo.InvariantCulture);
+		var botNumber = string.Equals(account, LiveGmFacade.DirectorAccount, StringComparison.Ordinal)
+			? (byte)0xFE
+			: byte.Parse(bot.AsSpan(1), System.Globalization.CultureInfo.InvariantCulture);
 		macAddress = $"02-00-00-00-00-{botNumber:X2}";
 		macBytes = [0x02, 0x00, 0x00, 0x00, 0x00, botNumber];
 	}
 
 	public void BeginStep(string step) => currentStep = step;
+
+	/// <summary>Creates the LIVE setup facade after the seeded director has entered the game.</summary>
+	public IGmFacade CreateGmFacade()
+	{
+		if (state != AionConnection.State.IN_GAME)
+			throw new InvalidOperationException("The director must enter the world before executing GM commands.");
+		return new LiveGmFacade(account, SendGameAsync, ReadNextAsync, api);
+	}
 
 	public async Task ConnectAndReadKeyAsync(CancellationToken cancellationToken)
 	{
