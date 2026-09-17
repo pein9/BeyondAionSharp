@@ -57,3 +57,4 @@ Port-Status: ported|direct-data|not-applicable|blocked
 |---|---|---|
 | `LoggerFactory.getLogger(X.class)` | `AionLog.For(nameof(X))` | The returned logger is late-bound: it resolves the current `ILoggerFactory` when each message is written. |
 | `LoggerFactory.getLogger("CATEGORY")` | `AionLog.For("CATEGORY")` | Preserve named Java categories exactly, including dedicated audit and gameplay log channels. |
+| `System.currentTimeMillis()` | `SystemClock.CurrentMillis()` | Gameplay time must remain on the shared overridable clock; use `SystemClock.UtcNow()` when the C# API requires an instant. |

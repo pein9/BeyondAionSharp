@@ -68,13 +68,15 @@ dotnet build AionServer.slnx
 dotnet test  AionServer.slnx        # golden/parity suite + unit tests
 pwsh -NoProfile -File scripts/ci/check-warning-baseline.ps1   # run before every commit
 pwsh -NoProfile -File scripts/ci/check-null-loggers.ps1       # prevent silent source loggers
+pwsh -NoProfile -File scripts/ci/check-clock-reads.ps1        # direct game clock reads may only shrink
 python scripts/parity/check_fidelity.py                        # structural-fidelity check
 ```
 
 There is no hosted CI: these checks run locally. The baseline script rebuilds everything and **fails if
 the compiler warning count rises above `scripts/ci/warning-baseline.json`**. `dotnet build` and
 `dotnet test` succeed with new warnings, so only the baseline script catches them. Fix new warnings
-rather than raising the baseline (`-UpdateBaseline` is only for recording reviewed reductions).
+rather than raising the baseline (`-UpdateBaseline` is only for recording reviewed reductions). The clock-read
+ratchet follows the same rule while gameplay time is migrated to `SystemClock`.
 
 For upstream fixes, port one Java commit at a time and include an
 `Upstream-Java-SHA` trailer. Never merge or cherry-pick Java history into `main`.

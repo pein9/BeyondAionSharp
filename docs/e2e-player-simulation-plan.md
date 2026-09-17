@@ -643,11 +643,13 @@ Production-neutral: `SystemClock`'s default is the same call Java makes (`System
   unchanged beneath both. Tests pin precedence across a suppressed execution context, UTC/seconds derivation,
   server-zone DST transitions, virtual scheduled-task delays and quest completion timestamps; all 39 `ServerTime`
   callers inherit the seam. Commit: `4cee6341e`.
-- [ ] **P4-03** [BOTH] S — Stop regressions before the codemod: record
+- [x] **P4-03** [BOTH] S — Stop regressions before the codemod: record
   `System.currentTimeMillis() → SystemClock.CurrentMillis()` in `docs/upstream-porting.md`; add
   `scripts/ci/check-clock-reads.ps1` to the pre-commit checks in `CLAUDE.md` as a ratchet (count may only shrink). After P4-04 reaches its floor,
   switch to `Microsoft.CodeAnalysis.BannedApiAnalyzers` with RS0030 as an error and pragma allowlist entries only
-  in `SystemClock`, `ThreadPoolManager` and infra files.
+  in `SystemClock`, `ThreadPoolManager` and infra files. The checked-in per-API baseline starts at 374 direct
+  reads across 187 game-server files; both individual API counts and the total may only decrease. P4-04 owns the
+  final analyzer switch after its codemod slices reach the infrastructure floor. Commit: `d3091cec7`.
 - [ ] **P4-04** [BOTH] L — Codemod the remaining gameplay reads, one commit per slice:
   - **A** combat: `SkillEngine` (effects, chain and charge skills), `Controllers/Attack`, `Controllers/Effect`,
     cooldowns, item use delay, godstones.
