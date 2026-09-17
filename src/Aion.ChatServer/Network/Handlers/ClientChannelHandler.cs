@@ -60,7 +60,15 @@ public sealed class ClientChannelHandler : BaseClientConnection, IChatClientConn
 
 	protected override async Task ProcessPacketAsync(PacketBuffer packet)
 	{
+		using var connectionScope = _logger.BeginScope(CreateConnectionScope());
 		var parsed = ClientPacketFactory.Create(packet, _state);
+		using var packetScope = parsed == null
+			? null
+			: _logger.BeginScope(new Dictionary<string, string>
+			{
+				["packet"] = parsed.GetType().Name,
+				["opcode"] = $"0x{parsed.OpCode:X2}",
+			});
 		switch (parsed)
 		{
 			case CmChatIni:
@@ -87,6 +95,21 @@ public sealed class ClientChannelHandler : BaseClientConnection, IChatClientConn
 				_logger.LogDebug("Parsed chat client packet 0x{Opcode:X2} in state {State}", parsed.OpCode, _state);
 				break;
 		}
+	}
+
+	private Dictionary<string, string> CreateConnectionScope()
+	{
+		var values = new Dictionary<string, string>
+		{
+			["connection"] = _clientId,
+		};
+		if (_chatClient != null)
+		{
+			values["account"] = _chatClient.AccountName;
+			values["player"] = _chatClient.Name;
+			values["playerObjectId"] = _chatClient.ClientId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+		}
+		return values;
 	}
 
 	public async Task SendPacketAsync(AbstractServerPacket packet, CancellationToken cancellationToken = default)

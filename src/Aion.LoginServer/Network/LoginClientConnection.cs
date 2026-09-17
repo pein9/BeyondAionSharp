@@ -91,7 +91,15 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 
 	protected override async Task ProcessPacketAsync(PacketBuffer packet)
 	{
+		using var connectionScope = _logger.BeginScope(CreateConnectionScope());
 		var parsed = AionClientPacketFactory.Create(packet, _state);
+		using var packetScope = parsed == null
+			? null
+			: _logger.BeginScope(new Dictionary<string, string>
+			{
+				["packet"] = parsed.GetType().Name,
+				["opcode"] = $"0x{parsed.OpCode:X2}",
+			});
 		switch (parsed)
 		{
 			case CmUpdateSession updateSession:
@@ -226,6 +234,17 @@ public sealed class LoginClientConnection : BaseClientConnection, ILoginClientSe
 				_logger.LogDebug("Parsed login packet 0x{Opcode:X2} in state {State}", parsed.OpCode, _state);
 				break;
 		}
+	}
+
+	private Dictionary<string, string> CreateConnectionScope()
+	{
+		var values = new Dictionary<string, string>
+		{
+			["connection"] = _clientId,
+		};
+		if (_account != null)
+			values["account"] = _account.Name;
+		return values;
 	}
 
 	private string GetRemoteIp()

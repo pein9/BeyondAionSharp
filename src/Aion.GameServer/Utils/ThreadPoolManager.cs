@@ -13,6 +13,7 @@ namespace Aion.GameServer.Utils;
 // them is sufficient to intercept all AI scheduling.
 public class ThreadPoolManager : IAsyncDisposable
 {
+	private static readonly ILogger Log = AionLog.For(nameof(ThreadPoolManager));
 	private readonly Action<ThreadPoolScheduleObservation>? _scheduleObserver;
 	private readonly long? _maximumRuntimeWithoutWarningOverride;
 	private readonly ConcurrentBag<Task> _scheduledTasks = new();
@@ -59,11 +60,12 @@ public class ThreadPoolManager : IAsyncDisposable
 		if (Volatile.Read(ref _isShutdown) != 0)
 			throw new InvalidOperationException("ThreadPoolManager is shut down.");
 
+		var scheduledAt = DateTimeOffset.UtcNow;
 		var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_shutdownTokenSource.Token, cancellationToken);
-		var task = Task.Run(() => RunOnceAsync(action, delay, maximumRuntimeWithoutWarning, linkedTokenSource.Token), CancellationToken.None);
+		var task = Task.Run(() => RunOnceAsync(action, delay, maximumRuntimeWithoutWarning, scheduledAt, linkedTokenSource.Token), CancellationToken.None);
 		_scheduledTasks.Add(task);
 		_scheduleObserver?.Invoke(new ThreadPoolScheduleObservation(ThreadPoolScheduleKind.Once, delay, Period: null));
-		return new ScheduledTask(task, linkedTokenSource, DateTimeOffset.UtcNow + delay);
+		return new ScheduledTask(task, linkedTokenSource, scheduledAt + delay);
 	}
 
 	/// <summary>
@@ -113,11 +115,12 @@ public class ThreadPoolManager : IAsyncDisposable
 		if (period <= TimeSpan.Zero)
 			throw new ArgumentOutOfRangeException(nameof(period), "A fixed-rate period must be positive.");
 
+		var scheduledAt = DateTimeOffset.UtcNow;
 		var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_shutdownTokenSource.Token, cancellationToken);
-		var task = Task.Run(() => RunFixedRateAsync(action, initialDelay, period, MaximumRuntimeWithoutWarning, linkedTokenSource), CancellationToken.None);
+		var task = Task.Run(() => RunFixedRateAsync(action, initialDelay, period, MaximumRuntimeWithoutWarning, scheduledAt, linkedTokenSource), CancellationToken.None);
 		_scheduledTasks.Add(task);
 		_scheduleObserver?.Invoke(new ThreadPoolScheduleObservation(ThreadPoolScheduleKind.FixedRate, initialDelay, period));
-		return new ScheduledTask(task, linkedTokenSource, DateTimeOffset.UtcNow + initialDelay);
+		return new ScheduledTask(task, linkedTokenSource, scheduledAt + initialDelay);
 	}
 
 	// Java parity: schedule/scheduleAtFixedRate take long millisecond delays (Runnable or async delegate).
@@ -164,6 +167,7 @@ public class ThreadPoolManager : IAsyncDisposable
 		TimeSpan initialDelay,
 		TimeSpan period,
 		long maximumRuntimeWithoutWarning,
+		DateTimeOffset scheduledAt,
 		CancellationTokenSource linkedTokenSource)
 	{
 		using var _ = linkedTokenSource;
@@ -177,6 +181,7 @@ public class ThreadPoolManager : IAsyncDisposable
 			long nextRunTimestamp = Stopwatch.GetTimestamp();
 			while (!cancellationToken.IsCancellationRequested)
 			{
+				using var timerScope = BeginTimerScope(ThreadPoolScheduleKind.FixedRate, scheduledAt);
 				await ExecuteWrapper.ExecuteAsync(action, cancellationToken, maximumRuntimeWithoutWarning, catchAndLogThrowables: true);
 				nextRunTimestamp += periodTimestampTicks;
 				long remainingTimestampTicks = nextRunTimestamp - Stopwatch.GetTimestamp();
@@ -196,6 +201,7 @@ public class ThreadPoolManager : IAsyncDisposable
 		Func<CancellationToken, ValueTask> action,
 		TimeSpan delay,
 		long maximumRuntimeWithoutWarning,
+		DateTimeOffset scheduledAt,
 		CancellationToken cancellationToken)
 	{
 		try
@@ -205,6 +211,7 @@ public class ThreadPoolManager : IAsyncDisposable
 
 			if (!cancellationToken.IsCancellationRequested)
 			{
+				using var timerScope = BeginTimerScope(ThreadPoolScheduleKind.Once, scheduledAt);
 				long runtimeLimit = action.Target is LongRunningAction ? long.MaxValue : maximumRuntimeWithoutWarning;
 				await ExecuteWrapper.ExecuteAsync(action, cancellationToken, runtimeLimit, catchAndLogThrowables: true);
 			}
@@ -213,6 +220,13 @@ public class ThreadPoolManager : IAsyncDisposable
 		{
 		}
 	}
+
+	private static IDisposable? BeginTimerScope(ThreadPoolScheduleKind kind, DateTimeOffset scheduledAt) =>
+		Log.BeginScope(new Dictionary<string, string>
+		{
+			["timer"] = kind == ThreadPoolScheduleKind.FixedRate ? "fixed-rate" : "once",
+			["timerScheduledAt"] = scheduledAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+		});
 
 	private long MaximumRuntimeWithoutWarning =>
 		_maximumRuntimeWithoutWarningOverride ?? ThreadConfig.MAXIMUM_RUNTIME_IN_MILLISEC_WITHOUT_WARNING;

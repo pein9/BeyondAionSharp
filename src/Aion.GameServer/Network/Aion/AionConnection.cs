@@ -106,6 +106,8 @@ public class AionConnection : AConnection<AionServerPacket>
     /// <summary>Called by the Dispatcher with one packet's worth of data to process.</summary>
     protected override bool ProcessData(ByteBuffer data)
     {
+        using var connectionScope = BeginConnectionLogScope();
+
         if (!crypt.IsEnabled()) // skip unprocessable packet (client sends crap upon reconnect before Crypt is initialized)
             return true;
 
@@ -130,6 +132,7 @@ public class AionConnection : AConnection<AionServerPacket>
 
         if (pck != null)
         {
+            using var packetScope = BeginPacketLogScope(pck);
             lastClientMessageTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             if (pffRequests != null)
             {
@@ -159,6 +162,47 @@ public class AionConnection : AConnection<AionServerPacket>
         }
 
         return true;
+    }
+
+    internal IDisposable? BeginLogScope(AionClientPacket packet)
+    {
+        var connectionScope = BeginConnectionLogScope();
+        var packetScope = BeginPacketLogScope(packet);
+        return new CombinedLogScope(packetScope, connectionScope);
+    }
+
+    private IDisposable? BeginConnectionLogScope()
+    {
+        var values = new Dictionary<string, string>
+        {
+            ["connection"] = GetIP(),
+        };
+        var currentAccount = account;
+        if (currentAccount != null)
+            values["account"] = currentAccount.GetName() ?? string.Empty;
+        var currentPlayer = activePlayer;
+        if (currentPlayer != null)
+        {
+            values["player"] = currentPlayer.GetName();
+            values["playerObjectId"] = currentPlayer.GetObjectId().ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+        return log.BeginScope(values);
+    }
+
+    private static IDisposable? BeginPacketLogScope(AionClientPacket packet) =>
+        log.BeginScope(new Dictionary<string, string>
+        {
+            ["packet"] = packet.GetType().Name,
+            ["opcode"] = $"0x{packet.GetOpCode():X3}",
+        });
+
+    private sealed class CombinedLogScope(IDisposable? inner, IDisposable? outer) : IDisposable
+    {
+        public void Dispose()
+        {
+            inner?.Dispose();
+            outer?.Dispose();
+        }
     }
 
     /// <summary>Called by the Dispatcher repeatedly until it returns false.</summary>

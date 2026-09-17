@@ -23,6 +23,7 @@ public abstract class AionClientPacket : BaseClientPacket<AionConnection>
 
     public override void Run()
     {
+        using var scope = GetConnection().BeginLogScope(this);
         try
         {
             if (IsValid()) // run only if the packet is still valid (connection state didn't change, e.g. due to logout)

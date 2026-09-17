@@ -246,7 +246,7 @@ failures loud, and gets the test suite to a trustworthy green.
   - (d) Infrastructure only: `Dispatcher`'s `LogError(e, "")` and `NetFlusher`'s `Console.Error` match Java
     (`log.error("", e)`, `printStackTrace()`); route them through the bridge with context as documented
     deviations.
-- [ ] **P1-07** [BOTH] S — Log scopes. In `AionConnection.ProcessData`, open a scope (connection, account,
+- [x] **P1-07** [BOTH] S — Log scopes. (`f402ba4c0`) In `AionConnection.ProcessData`, open a scope (connection, account,
   player name and object id) around decrypt, `TryCreatePacket`, the flood check and `pck.Read()`, adding
   packet class and opcode once the packet exists: read-path errors such as `CM_EMOTION`'s unknown type and
   "was not fully read" happen there, not in `Run`. Open it again in `AionClientPacket.Run` (packet-processor

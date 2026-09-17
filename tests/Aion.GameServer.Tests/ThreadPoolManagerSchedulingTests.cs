@@ -38,6 +38,8 @@ public sealed class ThreadPoolManagerSchedulingTests
 		var error = Assert.Single(provider.Entries, entry => entry.Level == LogLevel.Error);
 		Assert.Equal(nameof(Aion.GameServer.Commons.Utils.Concurrent.ExecuteWrapper), error.Category);
 		Assert.IsType<InvalidOperationException>(error.Exception);
+		Assert.Equal("fixed-rate", error.Scopes["timer"]);
+		Assert.True(DateTimeOffset.TryParse(error.Scopes["timerScheduledAt"], out _));
 	}
 
 	[Fact]
@@ -65,18 +67,24 @@ public sealed class ThreadPoolManagerSchedulingTests
 		builder.AddProvider(provider);
 	});
 
-	private sealed class RecordingProvider : ILoggerProvider
+	private sealed class RecordingProvider : ILoggerProvider, ISupportExternalScope
 	{
 		public ConcurrentQueue<Entry> Entries { get; } = new();
+		private IExternalScopeProvider _scopeProvider = new LoggerExternalScopeProvider();
 
-		public ILogger CreateLogger(string categoryName) => new RecordingLogger(categoryName, Entries);
+		public ILogger CreateLogger(string categoryName) => new RecordingLogger(categoryName, Entries, () => _scopeProvider);
+
+		public void SetScopeProvider(IExternalScopeProvider scopeProvider) => _scopeProvider = scopeProvider;
 
 		public void Dispose()
 		{
 		}
 	}
 
-	private sealed class RecordingLogger(string category, ConcurrentQueue<Entry> entries) : ILogger
+	private sealed class RecordingLogger(
+		string category,
+		ConcurrentQueue<Entry> entries,
+		Func<IExternalScopeProvider> getScopeProvider) : ILogger
 	{
 		public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
@@ -87,9 +95,27 @@ public sealed class ThreadPoolManagerSchedulingTests
 			EventId eventId,
 			TState state,
 			Exception? exception,
-			Func<TState, Exception?, string> formatter) =>
-			entries.Enqueue(new Entry(category, logLevel, formatter(state, exception), exception));
+			Func<TState, Exception?, string> formatter)
+		{
+			var scopes = new Dictionary<string, string>(StringComparer.Ordinal);
+			getScopeProvider().ForEachScope(
+				(scope, target) =>
+				{
+					if (scope is IEnumerable<KeyValuePair<string, string>> values)
+					{
+						foreach (var value in values)
+							target[value.Key] = value.Value;
+					}
+				},
+				scopes);
+			entries.Enqueue(new Entry(category, logLevel, formatter(state, exception), exception, scopes));
+		}
 	}
 
-	private sealed record Entry(string Category, LogLevel Level, string Message, Exception? Exception);
+	private sealed record Entry(
+		string Category,
+		LogLevel Level,
+		string Message,
+		Exception? Exception,
+		IReadOnlyDictionary<string, string> Scopes);
 }
