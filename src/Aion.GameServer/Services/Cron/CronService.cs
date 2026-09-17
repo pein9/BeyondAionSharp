@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.Matchers;
+using Quartz.Spi;
 using Aion.Commons.Concurrent;
 using Aion.Commons.Lang;
 
@@ -29,8 +31,11 @@ public sealed class CronService
     private static CronService instance;
 
     private readonly TimeZoneInfo timeZone;
-    private readonly IScheduler scheduler;
+    private readonly object schedulerLock = new();
+    private IScheduler? scheduler;
     private readonly Type runnableRunner;
+    private readonly ConcurrentDictionary<JobKey, VirtualCronJob> virtualJobs = new();
+    private long nextVirtualJobId;
 
     public static CronService GetInstance()
     {
@@ -52,20 +57,6 @@ public sealed class CronService
 
     private CronService(Type runnableRunner, TimeZoneInfo timeZone)
     {
-        var properties = new NameValueCollection
-        {
-            ["quartz.threadPool.threadCount"] = "1",
-        };
-
-        try
-        {
-            scheduler = new StdSchedulerFactory(properties).GetScheduler().GetAwaiter().GetResult();
-            scheduler.Start().GetAwaiter().GetResult();
-        }
-        catch (SchedulerException e)
-        {
-            throw new CronServiceException("Failed to initialize CronService", e);
-        }
         if (runnableRunner == null)
         {
             throw new CronServiceException("RunnableRunner class must be defined");
@@ -73,13 +64,29 @@ public sealed class CronService
 
         this.runnableRunner = runnableRunner;
         this.timeZone = timeZone;
+
+        // SIM-only infrastructure deviation: a deterministic pool owns cron time and must not start Quartz.
+        if (!ThreadPoolManager.IsDeterministicMode)
+            EnsureScheduler();
     }
+
+    internal static CronService CreateDeterministic(Type runnableRunner, TimeZoneInfo timeZone) =>
+        new(runnableRunner, timeZone);
+
+    internal bool HasQuartzScheduler => scheduler != null;
 
     public void Shutdown()
     {
+        foreach (VirtualCronJob job in virtualJobs.Values)
+            job.Cancel();
+        virtualJobs.Clear();
+
+        IScheduler? activeScheduler = scheduler;
+        if (activeScheduler == null)
+            return;
         try
         {
-            scheduler.Shutdown(false).GetAwaiter().GetResult();
+            activeScheduler.Shutdown(false).GetAwaiter().GetResult();
         }
         catch (SchedulerException e)
         {
@@ -124,20 +131,81 @@ public sealed class CronService
             jdm.Put(RunnableRunner.KEY_RUNNABLE_OBJECT, r);
             jdm.Put(RunnableRunner.KEY_PROPERTY_IS_LONGRUNNING_TASK, longRunning);
 
-            string jobId = "Started at ms" + SystemClock.CurrentMillis() + "; ns" + System.Diagnostics.Stopwatch.GetTimestamp();
+            bool deterministic = ThreadPoolManager.IsDeterministicMode;
+            string jobId = deterministic
+                ? "VirtualJob:" + Interlocked.Increment(ref nextVirtualJobId)
+                : "Started at ms" + SystemClock.CurrentMillis() + "; ns" + System.Diagnostics.Stopwatch.GetTimestamp();
             JobKey jobKey = new JobKey("JobKey:" + jobId);
             IJobDetail jobDetail = JobBuilder.Create(runnableRunner).UsingJobData(jdm).WithIdentity(jobKey).Build();
+
+            if (deterministic)
+            {
+                CronExpression virtualExpression = new CronExpression(cronExpression.CronExpressionString)
+                {
+                    TimeZone = timeZone,
+                };
+                ITrigger virtualTrigger = TriggerBuilder.Create()
+                    .WithIdentity("Trigger:" + jobId)
+                    .ForJob(jobKey)
+                    .StartAt(SystemClock.UtcNow())
+                    .WithSchedule(CronScheduleBuilder.CronSchedule(virtualExpression.CronExpressionString).InTimeZone(timeZone))
+                    .Build();
+                ((IOperableTrigger)virtualTrigger).ComputeFirstFireTimeUtc(null);
+                var virtualJob = new VirtualCronJob(jobDetail, virtualTrigger, r, runnableRunner, virtualExpression, longRunning);
+                if (!virtualJobs.TryAdd(jobKey, virtualJob))
+                    throw new CronServiceException("Duplicate virtual cron job key " + jobKey);
+                ArmVirtualJob(virtualJob, ThreadPoolManager.GetInstance());
+                return jobDetail;
+            }
+
             ITrigger trigger = TriggerBuilder.Create()
                 .WithSchedule(CronScheduleBuilder.CronSchedule(cronExpression.CronExpressionString).InTimeZone(timeZone))
                 .Build();
 
-            scheduler.ScheduleJob(jobDetail, trigger).GetAwaiter().GetResult();
+            EnsureScheduler().ScheduleJob(jobDetail, trigger).GetAwaiter().GetResult();
             return jobDetail;
         }
         catch (Exception e)
         {
             throw new CronServiceException("Failed to start job", e);
         }
+    }
+
+    private void ArmVirtualJob(VirtualCronJob job, ThreadPoolManager pool)
+    {
+        DateTimeOffset now = SystemClock.UtcNow();
+        DateTimeOffset? nextFireTime = job.Expression.GetTimeAfter(now);
+        if (nextFireTime == null)
+            return;
+
+        TimeSpan delay = nextFireTime.Value - now;
+        if (delay < TimeSpan.Zero)
+            delay = TimeSpan.Zero;
+        job.Arm(nextFireTime.Value, pool.Schedule(ct => FireVirtualJob(job, pool, ct), delay));
+    }
+
+    private ValueTask FireVirtualJob(VirtualCronJob job, ThreadPoolManager pool, CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested || !virtualJobs.TryGetValue(job.Detail.Key, out VirtualCronJob? activeJob)
+            || !ReferenceEquals(activeJob, job) || job.IsCancelled)
+            return ValueTask.CompletedTask;
+
+        try
+        {
+            job.MarkTriggered();
+            var runner = (RunnableRunner?)Activator.CreateInstance(job.RunnerType)
+                ?? throw new CronServiceException("Failed to create RunnableRunner " + job.RunnerType);
+            if (job.LongRunning)
+                runner.ExecuteLongRunningRunnable(job.Runnable);
+            else
+                runner.ExecuteRunnable(job.Runnable);
+        }
+        finally
+        {
+            if (!job.IsCancelled && virtualJobs.TryGetValue(job.Detail.Key, out activeJob) && ReferenceEquals(activeJob, job))
+                ArmVirtualJob(job, pool);
+        }
+        return ValueTask.CompletedTask;
     }
 
     public bool Cancel(IJobDetail jd)
@@ -152,9 +220,19 @@ public sealed class CronService
             throw new CronServiceException("JobDetail should have JobKey");
         }
 
+        if (virtualJobs.TryRemove(jd.Key, out VirtualCronJob? virtualJob))
+        {
+            virtualJob.Cancel();
+            return true;
+        }
+
+        IScheduler? activeScheduler = scheduler;
+        if (activeScheduler == null)
+            return false;
+
         try
         {
-            return scheduler.DeleteJob(jd.Key).GetAwaiter().GetResult();
+            return activeScheduler.DeleteJob(jd.Key).GetAwaiter().GetResult();
         }
         catch (SchedulerException e)
         {
@@ -179,10 +257,18 @@ public sealed class CronService
     {
         try
         {
-            List<IJobDetail> jobs = new List<IJobDetail>();
-            foreach (JobKey jobKey in scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup()).GetAwaiter().GetResult())
+            List<IJobDetail> jobs = virtualJobs.Values
+                .Where(job => ReferenceEquals(job.Runnable, runnable))
+                .OrderBy(job => job.Detail.Key.Name, StringComparer.Ordinal)
+                .Select(job => job.Detail)
+                .ToList();
+            IScheduler? activeScheduler = scheduler;
+            if (activeScheduler == null)
+                return jobs;
+
+            foreach (JobKey jobKey in activeScheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup()).GetAwaiter().GetResult())
             {
-                IJobDetail jobDetail = scheduler.GetJobDetail(jobKey).GetAwaiter().GetResult();
+                IJobDetail jobDetail = activeScheduler.GetJobDetail(jobKey).GetAwaiter().GetResult();
                 if (jobDetail.JobDataMap[RunnableRunner.KEY_RUNNABLE_OBJECT] == (object)runnable)
                     jobs.Add(jobDetail);
             }
@@ -201,9 +287,15 @@ public sealed class CronService
 
     public List<ITrigger> GetJobTriggers(JobKey jk)
     {
+        if (virtualJobs.TryGetValue(jk, out VirtualCronJob? virtualJob))
+            return [virtualJob.Trigger];
+
+        IScheduler? activeScheduler = scheduler;
+        if (activeScheduler == null)
+            return new List<ITrigger>();
         try
         {
-            return scheduler.GetTriggersOfJob(jk).GetAwaiter().GetResult().ToList();
+            return activeScheduler.GetTriggersOfJob(jk).GetAwaiter().GetResult().ToList();
         }
         catch (SchedulerException e)
         {
@@ -216,14 +308,21 @@ public sealed class CronService
         Type runnableType = typeof(T);
         try
         {
-            var keys = scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup()).GetAwaiter().GetResult();
-            if (keys.Count == 0)
-                return new List<IJobDetail>();
+            List<IJobDetail> jobs = virtualJobs.Values
+                .Where(job => runnableType == job.Runnable.GetType()
+                    || withSubTypes && runnableType.IsAssignableFrom(job.Runnable.GetType()))
+                .OrderBy(job => job.Detail.Key.Name, StringComparer.Ordinal)
+                .Select(job => job.Detail)
+                .ToList();
 
-            List<IJobDetail> jobs = new List<IJobDetail>(keys.Count);
+            IScheduler? activeScheduler = scheduler;
+            if (activeScheduler == null)
+                return jobs;
+
+            var keys = activeScheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup()).GetAwaiter().GetResult();
             foreach (JobKey jk in keys)
             {
-                IJobDetail jobDetail = scheduler.GetJobDetail(jk).GetAwaiter().GetResult();
+                IJobDetail jobDetail = activeScheduler.GetJobDetail(jk).GetAwaiter().GetResult();
                 object runnable = jobDetail.JobDataMap[RunnableRunner.KEY_RUNNABLE_OBJECT];
                 if (runnable != null)
                 {
@@ -252,10 +351,20 @@ public sealed class CronService
             foreach (IJobDetail job in jobs)
             {
                 object runnable = job.JobDataMap[RunnableRunner.KEY_RUNNABLE_OBJECT];
-                DateTimeOffset? nextFireTime = scheduler.GetTriggersOfJob(job.Key).GetAwaiter().GetResult()
-                    .Select(t => t.GetNextFireTimeUtc())
-                    .Where(d => d != null && d.Value > now)
-                    .OrderBy(d => d.Value).FirstOrDefault();
+                DateTimeOffset? nextFireTime;
+                if (virtualJobs.TryGetValue(job.Key, out VirtualCronJob? virtualJob))
+                {
+                    nextFireTime = virtualJob.NextFireTimeUtc;
+                }
+                else
+                {
+                    IScheduler activeScheduler = scheduler
+                        ?? throw new CronServiceException("Quartz scheduler is not initialized for job " + job.Key);
+                    nextFireTime = activeScheduler.GetTriggersOfJob(job.Key).GetAwaiter().GetResult()
+                        .Select(t => t.GetNextFireTimeUtc())
+                        .Where(d => d != null && d.Value > now)
+                        .OrderBy(d => d.Value).FirstOrDefault();
+                }
                 if (nextFireTime != null)
                 {
                     T key = (T)runnable;
@@ -268,6 +377,107 @@ public sealed class CronService
         catch (Exception e)
         {
             throw new CronServiceException("Can't get all active job details", e);
+        }
+    }
+
+    private IScheduler EnsureScheduler()
+    {
+        IScheduler? activeScheduler = scheduler;
+        if (activeScheduler != null)
+            return activeScheduler;
+
+        lock (schedulerLock)
+        {
+            if (scheduler != null)
+                return scheduler;
+
+            var properties = new NameValueCollection
+            {
+                ["quartz.threadPool.threadCount"] = "1",
+            };
+            try
+            {
+                scheduler = new StdSchedulerFactory(properties).GetScheduler().GetAwaiter().GetResult();
+                scheduler.Start().GetAwaiter().GetResult();
+                return scheduler;
+            }
+            catch (SchedulerException e)
+            {
+                throw new CronServiceException("Failed to initialize CronService", e);
+            }
+        }
+    }
+
+    private sealed class VirtualCronJob(
+        IJobDetail detail,
+        ITrigger trigger,
+        Runnable runnable,
+        Type runnerType,
+        CronExpression expression,
+        bool longRunning)
+    {
+        private readonly object sync = new();
+        private ScheduledTask? scheduledTask;
+        private bool cancelled;
+        private DateTimeOffset? nextFireTimeUtc;
+
+        public IJobDetail Detail { get; } = detail;
+        public ITrigger Trigger { get; } = trigger;
+        public Runnable Runnable { get; } = runnable;
+        public Type RunnerType { get; } = runnerType;
+        public CronExpression Expression { get; } = expression;
+        public bool LongRunning { get; } = longRunning;
+
+        public bool IsCancelled
+        {
+            get
+            {
+                lock (sync)
+                    return cancelled;
+            }
+        }
+
+        public DateTimeOffset? NextFireTimeUtc
+        {
+            get
+            {
+                lock (sync)
+                    return nextFireTimeUtc;
+            }
+        }
+
+        public void Arm(DateTimeOffset nextFireTime, ScheduledTask task)
+        {
+            lock (sync)
+            {
+                if (cancelled)
+                {
+                    task.Cancel(false);
+                    return;
+                }
+                nextFireTimeUtc = nextFireTime;
+                scheduledTask = task;
+            }
+        }
+
+        public void MarkTriggered()
+        {
+            lock (sync)
+            {
+                ((IOperableTrigger)Trigger).Triggered(null);
+                nextFireTimeUtc = Trigger.GetNextFireTimeUtc();
+            }
+        }
+
+        public void Cancel()
+        {
+            lock (sync)
+            {
+                cancelled = true;
+                nextFireTimeUtc = null;
+                scheduledTask?.Cancel(false);
+                scheduledTask = null;
+            }
         }
     }
 }
