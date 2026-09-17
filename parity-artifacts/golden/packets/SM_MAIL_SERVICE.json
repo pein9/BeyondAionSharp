@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "packet": "SM_MAIL_SERVICE",
+  "opcode": null,
+  "source": "Java",
+  "cases": [
+    {
+      "name": "sendSuccess",
+      "inputs": {"serviceId":1,"messageId":0},
+      "payloadHex": "0100"
+    }
+  ]
+}

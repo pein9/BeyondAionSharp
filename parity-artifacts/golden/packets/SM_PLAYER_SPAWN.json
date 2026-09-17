@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "packet": "SM_PLAYER_SPAWN",
+  "opcode": null,
+  "source": "Java",
+  "cases": [
+    {
+      "name": "poeta",
+      "inputs": {"worldId":210010000,"instanceId":1,"x":125.5,"y":256.25,"z":88.0,"heading":30,"personal":false,"beginner":false},
+      "payloadHex": "907F840C907F840C00000000000000FB42002080430000B0421E000000000000000000000000000000000000"
+    }
+  ]
+}

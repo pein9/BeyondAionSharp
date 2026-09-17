@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "packet": "SM_GROUP_INFO",
+  "opcode": null,
+  "source": "Java",
+  "cases": [
+    {
+      "name": "defaultGroup",
+      "inputs": {"groupId":900100,"leaderId":700001,"mapId":0,"teamType":63,"teamSubType":0},
+      "payloadHex": "04BC0D0061AE0A0000000000010000000000000000000000020000000200000002000000020000000200000002000000003F00000000000000000000000000"
+    }
+  ]
+}

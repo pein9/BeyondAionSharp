@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "packet": "SM_VERSION_CHECK",
+  "opcode": null,
+  "source": "Java",
+  "cases": [
+    {
+      "name": "invalidVersion",
+      "inputs": {"version":0,"answerId":1},
+      "payloadHex": "01"
+    }
+  ]
+}

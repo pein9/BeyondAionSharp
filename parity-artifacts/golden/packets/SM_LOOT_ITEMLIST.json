@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "packet": "SM_LOOT_ITEMLIST",
+  "opcode": null,
+  "source": "Java",
+  "cases": [
+    {
+      "name": "emptyDropList",
+      "inputs": {"targetObjectId":800200,"items":[]},
+      "payloadHex": "C8350C0000"
+    }
+  ]
+}

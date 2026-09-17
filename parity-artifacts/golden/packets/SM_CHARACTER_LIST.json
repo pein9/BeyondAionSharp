@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "packet": "SM_CHARACTER_LIST",
+  "opcode": null,
+  "source": "Java",
+  "cases": [
+    {
+      "name": "emptyAccount",
+      "inputs": {"playOk2":1,"characters":[]},
+      "payloadHex": "0100000000"
+    }
+  ]
+}

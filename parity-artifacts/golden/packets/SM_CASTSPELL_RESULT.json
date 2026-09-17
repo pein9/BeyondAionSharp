@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "packet": "SM_CASTSPELL_RESULT",
+  "opcode": null,
+  "source": "Java",
+  "cases": [
+    {
+      "name": "emptyEffects",
+      "inputs": {"effectorId":700001,"targetId":700002,"skillId":1601,"skillLevel":3,"cooldown":25,"hitTime":450,"chainSuccess":true,"dashStatus":0,"targetType":0},
+      "payloadHex": "61AE0A000062AE0A0041060319000000C201001000000000"
+    }
+  ]
+}

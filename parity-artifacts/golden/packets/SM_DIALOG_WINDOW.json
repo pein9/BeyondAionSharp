@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "packet": "SM_DIALOG_WINDOW",
+  "opcode": null,
+  "source": "Java",
+  "cases": [
+    {
+      "name": "questDialog",
+      "inputs": {"targetObjectId":800100,"dialogPageId":2375,"questId":1103},
+      "payloadHex": "64350C0047094F04000000000000"
+    }
+  ]
+}

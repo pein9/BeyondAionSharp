@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "packet": "SM_DIE",
+  "opcode": null,
+  "source": "Java",
+  "cases": [
+    {
+      "name": "reviveOptions",
+      "inputs": {"allowReviveBySkill":true,"allowReviveByItem":false,"remainingKiskTimeSeconds":321,"allowInstanceRevive":true,"invasion":false},
+      "payloadHex": "0100410100000100"
+    }
+  ]
+}

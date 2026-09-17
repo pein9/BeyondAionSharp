@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "packet": "SM_PLAY_MOVIE",
+  "opcode": null,
+  "source": "Java",
+  "cases": [
+    {
+      "name": "skippableMovie",
+      "inputs": {"isMovie":true,"objectId":700001,"questId":1103,"cutsceneId":2,"canSkip":true},
+      "payloadHex": "0161AE0A004F040000020000000000"
+    }
+  ]
+}

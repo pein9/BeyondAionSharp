@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "packet": "SM_TRADELIST",
+  "opcode": null,
+  "source": "Java",
+  "cases": [
+    {
+      "name": "emptyNormalVendor",
+      "inputs": {"targetObjectId":800300,"tradeNpcType":1,"buyPriceModifier":95,"showBuyTab":true,"showSellTab":false,"tabs":[],"limitedItems":[]},
+      "payloadHex": "2C360C00015F00000064000000010000000000"
+    }
+  ]
+}

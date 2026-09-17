@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "packet": "SM_KEY",
+  "opcode": null,
+  "source": "Java",
+  "cases": [
+    {
+      "name": "seededKey",
+      "inputs": {"randomSeed":4815162342},
+      "payloadHex": "48593D1A"
+    }
+  ]
+}
