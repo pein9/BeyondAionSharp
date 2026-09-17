@@ -25,8 +25,6 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 {
 	private const int MaxTicksPerAdvance = 100_000;
 	private static readonly ILogger Log = AionLog.For(nameof(VirtualThreadPool));
-	private static readonly DateTimeOffset VirtualEpoch = DateTimeOffset.UnixEpoch;
-
 	private readonly List<Entry> _entries = new();
 	private readonly List<VirtualThreadPoolFault> _faults = new();
 	private long _nowMillis;
@@ -53,7 +51,7 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 	{
 		// One-shot: the handle IS the body, so running it flips IsDone() exactly like the real pool.
 		long dueMillis = _nowMillis + ToMillis(delay);
-		ScheduledTask handle = Deferred(() => Run(action), ToVirtualTime(dueMillis), VirtualNow);
+		ScheduledTask handle = Deferred(() => Run(action), ToVirtualTime(dueMillis));
 		_entries.Add(new Entry(dueMillis, null, handle, action, _sequence++));
 		return handle;
 	}
@@ -67,7 +65,7 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 		// Repeating: the handle's own body stays unrun forever so IsDone() reports false for the life of the
 		// timer (a repeating pool task is never "done"); cancellation is observed through IsCancelled instead.
 		long dueMillis = _nowMillis + ToMillis(initialDelay);
-		ScheduledTask handle = Deferred(() => { }, ToVirtualTime(dueMillis), VirtualNow);
+		ScheduledTask handle = Deferred(() => { }, ToVirtualTime(dueMillis));
 		_entries.Add(new Entry(dueMillis, ToMillis(period), handle, action, _sequence++));
 		return handle;
 	}
@@ -172,9 +170,8 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 
 	private static long ToMillis(TimeSpan span) => (long)span.TotalMilliseconds;
 
-	private DateTimeOffset VirtualNow() => ToVirtualTime(_nowMillis);
-
-	private static DateTimeOffset ToVirtualTime(long millis) => VirtualEpoch.AddMilliseconds(millis);
+	private DateTimeOffset ToVirtualTime(long millis) =>
+		SystemClock.UtcNow().AddMilliseconds(millis - _nowMillis);
 
 	private sealed class Entry
 	{

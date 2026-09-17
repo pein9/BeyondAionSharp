@@ -26,7 +26,7 @@ public static class ServerTime
     /// Java parity: ServerTime.now() → ZonedDateTime.now(GSConfig.TIME_ZONE_ID)
     /// </summary>
     public static DateTimeOffset Now() =>
-        TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, _timeZone);
+        TimeZoneInfo.ConvertTime(SystemClock.UtcNow(), _timeZone);
 
     /// <summary>
     /// Java parity: ServerTime.of(LocalDateTime) → ZonedDateTime.of(localDateTime, GSConfig.TIME_ZONE_ID)
@@ -71,7 +71,7 @@ public static class ServerTime
     /// </summary>
     public static int GetDaylightSavings()
     {
-        var now = DateTime.UtcNow;
+        var now = SystemClock.UtcNow();
         var totalOffset = _timeZone.GetUtcOffset(now);
         var standardOffset = _timeZone.BaseUtcOffset;
         return (int)(totalOffset - standardOffset).TotalSeconds;
@@ -82,7 +82,7 @@ public static class ServerTime
     /// Java: GSConfig.TIME_ZONE_ID.getRules().getOffset(Instant.now()).getTotalSeconds()
     /// </summary>
     public static int GetOffset() =>
-        (int)_timeZone.GetUtcOffset(DateTime.UtcNow).TotalSeconds;
+        (int)_timeZone.GetUtcOffset(SystemClock.UtcNow()).TotalSeconds;
 
     /// <summary>
     /// Java parity: ServerTime.getStandardOffset() — standard UTC offset in seconds (excl. DST).

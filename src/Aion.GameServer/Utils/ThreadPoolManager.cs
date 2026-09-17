@@ -61,7 +61,7 @@ public class ThreadPoolManager : IAsyncDisposable
 		if (Volatile.Read(ref _isShutdown) != 0)
 			throw new InvalidOperationException("ThreadPoolManager is shut down.");
 
-		var scheduledAt = DateTimeOffset.UtcNow;
+		var scheduledAt = SystemClock.UtcNow();
 		var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_shutdownTokenSource.Token, cancellationToken);
 		var task = Task.Run(() => RunOnceAsync(action, delay, maximumRuntimeWithoutWarning, scheduledAt, linkedTokenSource.Token), CancellationToken.None);
 		TrackScheduledTask(task);
@@ -76,13 +76,10 @@ public class ThreadPoolManager : IAsyncDisposable
 	/// (which starts the body on the pool immediately): scheduling the spawn-in eagerly would push the new-map packets
 	/// before the client is ready, breaking cross-map / instance teleports.
 	/// </summary>
-	public ScheduledTask Deferred(Action body) => Deferred(body, DateTimeOffset.UtcNow);
+	public ScheduledTask Deferred(Action body) => Deferred(body, SystemClock.UtcNow());
 
 	public ScheduledTask Deferred(Action body, DateTimeOffset dueTimeUtc) =>
-		new(new Task(body), dueTimeUtc, static () => DateTimeOffset.UtcNow);
-
-	internal ScheduledTask Deferred(Action body, DateTimeOffset dueTimeUtc, Func<DateTimeOffset> utcNow) =>
-		new(new Task(body), dueTimeUtc, utcNow);
+		new(new Task(body), dueTimeUtc);
 
 	public Task ScheduleAtFixedRate(
 		Func<CancellationToken, ValueTask> action,
@@ -122,7 +119,7 @@ public class ThreadPoolManager : IAsyncDisposable
 		if (period <= TimeSpan.Zero)
 			throw new ArgumentOutOfRangeException(nameof(period), "A fixed-rate period must be positive.");
 
-		var scheduledAt = DateTimeOffset.UtcNow;
+		var scheduledAt = SystemClock.UtcNow();
 		var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_shutdownTokenSource.Token, cancellationToken);
 		var task = Task.Run(() => RunFixedRateAsync(action, initialDelay, period, MaximumRuntimeWithoutWarning, scheduledAt, linkedTokenSource), CancellationToken.None);
 		TrackScheduledTask(task);
@@ -283,8 +280,6 @@ public sealed class ScheduledTask
 	private int _isComplete;
 
 	private long _dueTimeUtcTicks;
-	private readonly Func<DateTimeOffset> _utcNow;
-
 	// Non-null only for deferred (run-on-demand) tasks created via ThreadPoolManager.Deferred. For pool-scheduled
 	// tasks this is null and Run() stays a no-op observe marker.
 	private readonly Task? _deferredTask;
@@ -294,7 +289,6 @@ public sealed class ScheduledTask
 		Completion = completion;
 		_cancellationTokenSource = cancellationTokenSource;
 		_dueTimeUtcTicks = dueTimeUtc.UtcDateTime.Ticks;
-		_utcNow = static () => DateTimeOffset.UtcNow;
 		_deferredTask = null;
 		_ = completion.ContinueWith(
 			_ =>
@@ -310,17 +304,16 @@ public sealed class ScheduledTask
 	// Java parity: a stored RunnableFuture (new FutureTask<>(runnable, null)) that has NOT started. Unlike the
 	// pool-scheduled ctor, the body runs only when Run() is invoked; IsDone() stays false until then.
 	internal ScheduledTask(Task deferredTask)
-		: this(deferredTask, DateTimeOffset.UtcNow, static () => DateTimeOffset.UtcNow)
+		: this(deferredTask, SystemClock.UtcNow())
 	{
 	}
 
-	internal ScheduledTask(Task deferredTask, DateTimeOffset dueTimeUtc, Func<DateTimeOffset> utcNow)
+	internal ScheduledTask(Task deferredTask, DateTimeOffset dueTimeUtc)
 	{
 		_deferredTask = deferredTask;
 		Completion = deferredTask;
 		_cancellationTokenSource = new CancellationTokenSource();
 		_dueTimeUtcTicks = dueTimeUtc.UtcDateTime.Ticks;
-		_utcNow = utcNow;
 		_ = deferredTask.ContinueWith(
 			_ =>
 			{
@@ -366,7 +359,7 @@ public sealed class ScheduledTask
 	// Java parity: java.util.concurrent.Delayed.getDelay(TimeUnit) — remaining time until the task is due (may be <=0 once past due).
 	public long GetDelay(TimeUnit unit)
 	{
-		TimeSpan remaining = TimeSpan.FromTicks(Volatile.Read(ref _dueTimeUtcTicks) - _utcNow().UtcDateTime.Ticks);
+		TimeSpan remaining = TimeSpan.FromTicks(Volatile.Read(ref _dueTimeUtcTicks) - SystemClock.UtcNow().UtcDateTime.Ticks);
 		return unit.Convert(remaining);
 	}
 

@@ -1,6 +1,7 @@
 using System;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.QuestEngine.Model;
 
@@ -33,7 +34,7 @@ public class QuestState : IPersistable
 
     public QuestState(int questId, QuestStatus status)
         : this(questId, status, 0, 0, status == QuestStatus.COMPLETE ? 1 : 0, null, null,
-            status == QuestStatus.COMPLETE ? DateTime.UtcNow : (DateTime?)null)
+            status == QuestStatus.COMPLETE ? SystemClock.UtcNow().UtcDateTime : (DateTime?)null)
     {
     }
 
@@ -73,7 +74,7 @@ public class QuestState : IPersistable
     {
         if (status == QuestStatus.COMPLETE && this.status != QuestStatus.COMPLETE && updateCompleteCountAndTime)
         {
-            completeTime = DateTime.UtcNow;
+            completeTime = SystemClock.UtcNow().UtcDateTime;
             completeCount++;
         }
         this.status = status;
@@ -136,7 +137,7 @@ public class QuestState : IPersistable
             return false;
         if (template.IsTimeBased() && nextRepeatTime != null)
         {
-            DateTime currentTime = DateTime.UtcNow;
+            DateTime currentTime = SystemClock.UtcNow().UtcDateTime;
             if (currentTime < nextRepeatTime.Value)
                 return false;
         }

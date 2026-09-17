@@ -16,8 +16,8 @@ namespace Aion.GameServer.Utils;
 /// no cooldown ever passes — which is how two attempts to pin a cast cadence came back saying nothing.
 /// </para>
 /// <para>
-/// So the source is a hook. Nothing but the harness sets it, and it sets it to the same clock its
-/// scheduler runs on, which makes engine time and scheduled time the same thing inside a test.
+/// So the source is a hook. Harness/SIM infrastructure sets it to the same clock its scheduler runs on,
+/// which makes engine time and scheduled time the same thing inside a deterministic host.
 /// <para>
 /// Named <c>SystemClock</c> rather than <c>GameTime</c> because this port already has a
 /// <c>Utils.Time.Gametime.GameTime</c>, which is the in-game day and night rather than the wall clock.
@@ -27,7 +27,7 @@ namespace Aion.GameServer.Utils;
 public static class SystemClock
 {
     /// <summary>
-    /// The replacement clock, per execution context rather than per process.
+    /// The highest-priority replacement clock, scoped to the current execution context.
     /// </summary>
     /// <remarks>
     /// <b>A plain static field was tried first and had to be reverted.</b> One test's harness could
@@ -35,18 +35,45 @@ public static class SystemClock
     /// failed about one full-suite run in five while passing every isolated run. <c>AsyncLocal</c> scopes
     /// the override to the flow that set it, so a harness cannot reach outside its own test.
     /// <para>
-    /// Null means "nobody overrode it", which is the production case and every non-harness test.
+    /// Null means "this flow did not override it"; the process-wide source is considered next.
     /// </para>
     /// </remarks>
     private static readonly AsyncLocal<Func<long>?> Source = new();
 
+    /// <summary>
+    /// The host-wide fallback used by deterministic work which does not inherit the caller's execution context.
+    /// </summary>
+    private static Func<long>? _processSource;
+
     /// <summary>Milliseconds since the epoch, as Java's <c>System.currentTimeMillis()</c> reports them.</summary>
     public static long CurrentMillis() =>
-        Source.Value?.Invoke() ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        Source.Value?.Invoke()
+        ?? Volatile.Read(ref _processSource)?.Invoke()
+        ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+    /// <summary>The current UTC instant derived from <see cref="CurrentMillis"/>.</summary>
+    public static DateTimeOffset UtcNow() => DateTimeOffset.FromUnixTimeMilliseconds(CurrentMillis());
+
+    /// <summary>Whole seconds since the epoch, matching Java's millisecond timestamp truncation.</summary>
+    public static long CurrentSeconds() => CurrentMillis() / 1000;
 
     /// <summary>Points the clock at another source, for this execution context. Tests only.</summary>
-    public static void UseSource(Func<long> replacement) => Source.Value = replacement;
+    public static void UseSource(Func<long> replacement)
+    {
+        ArgumentNullException.ThrowIfNull(replacement);
+        Source.Value = replacement;
+    }
 
-    /// <summary>Puts the real clock back for this execution context.</summary>
+    /// <summary>Clears the execution-context override, revealing the process source or real clock beneath it.</summary>
     public static void UseSystemClock() => Source.Value = null;
+
+    /// <summary>Sets the fallback source for the whole process; an execution-context override still wins.</summary>
+    public static void SetProcessSource(Func<long> replacement)
+    {
+        ArgumentNullException.ThrowIfNull(replacement);
+        Volatile.Write(ref _processSource, replacement);
+    }
+
+    /// <summary>Clears the process-wide override without changing any execution-context override.</summary>
+    public static void UseSystemClockProcessWide() => Volatile.Write(ref _processSource, null);
 }

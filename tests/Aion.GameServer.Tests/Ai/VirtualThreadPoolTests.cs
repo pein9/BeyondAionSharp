@@ -77,20 +77,28 @@ public sealed class VirtualThreadPoolTests
 	public async Task HandlesReportDelayAgainstVirtualTime()
 	{
 		var pool = new VirtualThreadPool();
-		var oneShot = pool.Schedule(() => { }, 10_000);
-		var fixedRate = pool.ScheduleAtFixedRateTask(
-			_ => ValueTask.CompletedTask,
-			TimeSpan.FromSeconds(2),
-			TimeSpan.FromSeconds(5));
+		SystemClock.UseSource(() => DateTimeOffset.UnixEpoch.ToUnixTimeMilliseconds() + pool.NowMillis);
+		try
+		{
+			var oneShot = pool.Schedule(() => { }, 10_000);
+			var fixedRate = pool.ScheduleAtFixedRateTask(
+				_ => ValueTask.CompletedTask,
+				TimeSpan.FromSeconds(2),
+				TimeSpan.FromSeconds(5));
 
-		Assert.Equal(10_000, oneShot.GetDelay(TimeUnit.MILLISECONDS));
-		Assert.Equal(2_000, fixedRate.GetDelay(TimeUnit.MILLISECONDS));
-		pool.Advance(TimeSpan.FromSeconds(2));
-		Assert.Equal(8_000, oneShot.GetDelay(TimeUnit.MILLISECONDS));
-		Assert.Equal(5_000, fixedRate.GetDelay(TimeUnit.MILLISECONDS));
+			Assert.Equal(10_000, oneShot.GetDelay(TimeUnit.MILLISECONDS));
+			Assert.Equal(2_000, fixedRate.GetDelay(TimeUnit.MILLISECONDS));
+			pool.Advance(TimeSpan.FromSeconds(2));
+			Assert.Equal(8_000, oneShot.GetDelay(TimeUnit.MILLISECONDS));
+			Assert.Equal(5_000, fixedRate.GetDelay(TimeUnit.MILLISECONDS));
 
-		fixedRate.Cancel();
-		await pool.DisposeAsync();
+			fixedRate.Cancel();
+			await pool.DisposeAsync();
+		}
+		finally
+		{
+			SystemClock.UseSystemClock();
+		}
 	}
 
 	private sealed class RecordingProvider : ILoggerProvider

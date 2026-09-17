@@ -41,7 +41,7 @@ runs use their own isolated compose project.
 |---|---|---|
 | Boss AI harness | `tests/Aion.GameServer.Tests/Ai/BossAiHarness.cs` | One-map headless world on real static data and the real spawn path. It is an **NPC-decision** harness: its player has no connection, is invulnerable, has no DB, geo is off and movement is bypassed. |
 | Virtual scheduler | `tests/Aion.GameServer.Tests/Ai/VirtualThreadPool.cs` | Replaces `ThreadPoolManager`; `Advance()` runs due timers synchronously. Needs hardening before a whole server can run on it (`P1-10`, `P5-00`). |
-| Clock hook | `src/Aion.GameServer/Utils/SystemClock.cs` | AsyncLocal-overridable wall clock. Only 5 game-server files read it. |
+| Clock hook | `src/Aion.GameServer/Utils/SystemClock.cs` | AsyncLocal-over-process-wide overridable wall clock; mixed-clock pairs plus shared server, scheduler and quest time are routed through it. |
 | Full in-process boot | `GameServerBootstrapTests.GameServerBootstrap_DbBackedFullBoot_RunsRealStartAsyncAgainstLiveMySql` | Real `StartAsync` against MySQL and real static data. Env-gated (`AION_GAMESERVER_DB_INTEGRATION=1`); runs only when that is set. |
 | Login-server client | `tests/Aion.LoginServer.Tests/SocketServerSmokeTests.cs` | Blowfish frame crypto, first-packet decrypt, `CM_AUTH_GG`/`CM_LOGIN`/`CM_SERVER_LIST`/`CM_PLAY`/`CM_UPDATE_SESSION` builders, full handshake. Test-private. |
 | Game bot codec | `tests/Aion.Bots/Protocol/GamePacketCodec.cs` | Stateful client encryption/server decryption, both opcode transforms, validated headers and u16 framing; interoperability is pinned against production crypt. |
@@ -63,7 +63,7 @@ runs use their own isolated compose project.
 |---|---|---|---|
 | B1 | **Resolved in P1-13.** Logs are captured and fingerprinted, test scopes fail on unallowlisted problems, and the shared allowlist requires an owner, reason and expiry. | A green instrumented run can no longer hide logged problems. | `CapturingLoggerProvider.cs`; `LogProblemFingerprint.cs`; `LogProblemAllowlist.cs` |
 | B2 | **Resolved in P1-04.** Each periodic iteration now runs through the Java-style `ExecuteWrapper`, so failures are logged without killing the schedule; deadlines advance at a fixed rate and pooled work emits Java's slow-task warning. | One bad NPC no longer stops all NPC movement for the rest of a LIVE run. | `ThreadPoolManager.cs`; `ExecuteWrapper.cs` |
-| B3 | **No single clock.** ~393 direct wall-clock code lines in 203 files; `SystemClock` has 5 readers; more than 20 sites compare a `SystemClock` value with a wall-clock one. | With a virtual clock ahead of wall time, casts after the first are rejected (with a fixed past epoch the 350 ms cast gate never fires instead); NPCs do not move; item use delays and other wall-clock cooldowns never expire; effect remaining times freeze. Player skill cooldowns and effect end timers already follow the virtual clock. | Mixed: `CM_CASTSPELL.cs:18,105` vs `Skill.cs:556`; `Skill.cs:472-478` vs `CreatureMoveController.cs:18,78`. Unrouted: `NpcMoveController.cs:266` |
+| B3 | **Partly resolved through P4-02.** P4-01 put every identified mixed-clock pair on `SystemClock`; P4-02 added host-wide control and routed server-zone time, scheduled-task due metadata and quest timestamps. The remaining direct gameplay wall-clock reads are inventoried and migrated in P4-03/P4-04. | Virtual combat, movement and the shared time services now advance together; item/effect expiry and other unrouted gameplay clocks still freeze until P4-04. | `SystemClock.cs`; `ServerTime.cs`; `ThreadPoolManager.cs`; `QuestState.cs` |
 | B4 | **Partly resolved in P1-10.** The virtual scheduler now surfaces faults, cannot move time backwards, reports virtual delay correctly and has strict disposal, but production real-thread paths still bypass it (PLINQ in `MoveTaskManager`, Quartz, `PacketProcessor`, `NetFlusher`). | Whole-server SIM still needs the remaining deterministic-thread routing in Phase 5. | `VirtualThreadPool.cs`; `ThreadPoolManager.cs`; `MoveTaskManager.cs` |
 | B5 | **Resolved through P2-05.** `Aion.Bots` owns the real client crypt, framing, opcode transforms, all Appendix B CM writers and 45 bot-perception SM decoders. `AionXorCipher` is explicitly marked as an unrelated legacy helper. | Bots can now form actions and perceive the packet bodies needed by their world model. | `tests/Aion.Bots/Protocol/`; `BotGameClientPacketWriterTests.cs`; `BotServerPacketDecoderTests.cs` |
 | B6 | **Resolved in P2-00.** A protected socketless connection path runs packets and disconnect cleanup inline without a selector, dispatcher, alive-check timer or eager packet-processor threads. | SIM can host an in-process game connection and exercise quit/drop cleanup. | `AConnection.cs`; `AionConnection.cs`; `SocketlessAionConnectionTests.cs` |
@@ -636,10 +636,13 @@ Production-neutral: `SystemClock`'s default is the same call Java makes (`System
   that the movement inventory omitted three elapsed-time readers: leaving those on wall time made a virtual
   `LastMoveUpdate` produce enormous movement deltas and broke the Yamennes encounter pin, so the inventory and
   implementation now include them. The isolated regression and full game-server suite pass. Commit: `33ebe056c`.
-- [ ] **P4-02** [BOTH] S — Extend `SystemClock` (do not add a new type): `UtcNow()`, `CurrentSeconds()`, and a
+- [x] **P4-02** [BOTH] S — Extend `SystemClock` (do not add a new type): `UtcNow()`, `CurrentSeconds()`, and a
   process-wide override beneath the AsyncLocal one. Route `ServerTime.Now/GetOffset/GetDaylightSavings`
-  (37 callers: quest resets, passports, events, arenas, housing), `ScheduledTask` due time and `GetDelay`, and
-  `QuestState` through it.
+  (39 current callers: quest resets, passports, events, arenas, housing), `ScheduledTask` due time and `GetDelay`, and
+  `QuestState` through it. Scoped overrides now win over a volatile process-wide fallback, with the real UTC clock
+  unchanged beneath both. Tests pin precedence across a suppressed execution context, UTC/seconds derivation,
+  server-zone DST transitions, virtual scheduled-task delays and quest completion timestamps; all 39 `ServerTime`
+  callers inherit the seam. Commit: `4cee6341e`.
 - [ ] **P4-03** [BOTH] S — Stop regressions before the codemod: record
   `System.currentTimeMillis() → SystemClock.CurrentMillis()` in `docs/upstream-porting.md`; add
   `scripts/ci/check-clock-reads.ps1` to the pre-commit checks in `CLAUDE.md` as a ratchet (count may only shrink). After P4-04 reaches its floor,
