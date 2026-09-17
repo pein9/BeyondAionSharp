@@ -422,13 +422,22 @@ Phase 1 completed 2026-09-17: all acceptance checks above pass, including 10 con
   timing contract. Its lifecycle, movement, combat, item, dialog, gathering/crafting, economy, trade, social and
   revive methods expose every planned action name, while observation feeds decoded SMs through state, timing and
   automatic-response handling. Tests pin every intent name and representative packet mapping. Commit: `d0b27e52f`.
-- [ ] **P2-13** [BOTH] S — Per-bot action trace, JSONL: `{ts, vt, run, bot, account, step, dir, packet, fields}`
+- [x] **P2-13** [BOTH] S — Per-bot action trace, JSONL: `{ts, vt, run, bot, account, step, dir, packet, fields}`
   for every action, sent CM and decoded SM; system messages carry the `STR_` name and parameters. This is what
   the watcher joins problems to.
+  Added a fixed-order, immediately flushed per-bot JSONL writer for action, outgoing (`>`) and incoming (`<`)
+  records. It accepts semantic CM fields with a body-hex fallback, preserves every decoded SM field, requires
+  system-message `STR_` names and parameters, and records nullable virtual elapsed time alongside wall time.
+  Tests pin the schema, values and live-tail visibility. Commit: `167a94879`.
 
 **Done when:** every golden fixture for a packet the bot decodes decodes to its recorded inputs, every CM writer
 round-trips with no leftover bytes, and the login client completes a handshake against an in-process login
 server.
+
+Phase 2 completed 2026-09-17: `BotServerPacketDecoderTests` covers every recorded input in every golden fixture
+for all 45 decoded packet types, `BotGameClientPacketWriterTests` round-trips all Appendix B writers through the
+production packet factory with no unread bytes, and `SocketServerSmokeTests` completes the encrypted handshake
+against the in-process login server using the real random key generator.
 
 ### Phase 3 — LIVE walking skeleton and live log watching
 
