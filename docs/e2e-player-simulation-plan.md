@@ -919,10 +919,15 @@ point; and `p515-full2-20260917/l0-packet-parity.json` recorded the normalized S
   controllers reach the playable wire branches. Generator commit `8e4513d63` produced four new Java payloads for
   relative-vector `0xC0`, absolute-target `0xE0`, geyser glide and vehicle data; the C# golden test reconstructs the
   same player/controller state and matches every payload byte for byte. (`5ba44084e`)
-- [ ] **P6-02** [BOTH] M — Navigation: per-map waypoint graph from spawn spots, walker route steps, gather spots,
+- [x] **P6-02** [BOTH] M — Navigation: per-map waypoint graph from spawn spots, walker route steps, gather spots,
   portals, bind points and quest NPCs; edges up to 20 m; A*. Z comes from nodes until Phase 9. Take live NPC
   positions from `SM_NPC_INFO`/`SM_MOVE`, not spawn XML: more than 6,000 NPC templates (5,297 `passive_pattern`,
-  881 `aggressive_pattern`, plus named `PatternAi` subclasses) run retail pattern AI and can move.
+  881 `aggressive_pattern`, plus named `PatternAi` subclasses) run retail pattern AI and can move. The shared graph
+  factory now consumes the loaded spawn, walker, gatherable, portal and bind-point holders, tags supplied registered
+  quest NPCs, builds spatially indexed per-map edges at the inclusive 20 m limit and routes deterministically with
+  A*. Route positions keep their source Z; live NPC endpoints come only from the bot world model's decoded
+  `SM_NPC_INFO`/`SM_MOVE` state. Unit coverage pins source tagging, edge/map boundaries and packet retargeting, and
+  an integration test builds Ishalgen from the checked-in real static data. (`ae5f69606`)
 - [ ] **P6-03** [BOTH] M — `BotMover`: realistic `CM_MOVE` streams (start with target, periodic position updates,
   stop; fall and jump), `CM_MOVE_IN_AIR` for flight, paced at or below speed from `SM_STATS_INFO`.
 - **P6-04** — Dropped: no anti-cheat checks in bot runs (D6).
