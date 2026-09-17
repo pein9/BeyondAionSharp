@@ -161,6 +161,24 @@ public sealed class PatternAiTests
 	}
 
 	[Fact]
+	public void KeepsAnEarlierPendingTimerWhenALaterArmWouldDelayItInVirtualTime()
+	{
+		var (harness, ai, _, _) = Engaged();
+		using (harness)
+		{
+			ai.ArmTimer(2, 10_000);
+			int arms = ai.TimerArmCount(2);
+
+			harness.Clock.Advance(TimeSpan.FromSeconds(8));
+			ai.ArmTimer(2, 5_000); // due at 13s, so the pending 10s arm must win
+
+			Assert.Equal(arms, ai.TimerArmCount(2));
+			harness.Clock.Advance(TimeSpan.FromSeconds(2));
+			Assert.Equal(1, ai.TimerFireCount(2));
+		}
+	}
+
+	[Fact]
 	public void DespawnsBySpawnIdAndLetsLifetimesExpireOnTheirOwn()
 	{
 		var (harness, ai, boss, _) = Engaged();

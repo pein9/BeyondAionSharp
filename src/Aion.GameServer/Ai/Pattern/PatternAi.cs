@@ -1371,7 +1371,7 @@ public abstract class PatternAi : AggressiveNpcAI, INpcMessageListener
 
         lock (gate)
         {
-            long dueAt = System.Environment.TickCount64 + delayMillis;
+            long dueAt = SystemClock.CurrentMillis() + delayMillis;
             if (timers[index] != null && !timers[index]!.IsDone() && timerDue[index] <= dueAt)
                 return;
             timerDue[index] = dueAt;

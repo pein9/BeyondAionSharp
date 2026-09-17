@@ -63,7 +63,7 @@ runs use their own isolated compose project.
 |---|---|---|---|
 | B1 | **Resolved in P1-13.** Logs are captured and fingerprinted, test scopes fail on unallowlisted problems, and the shared allowlist requires an owner, reason and expiry. | A green instrumented run can no longer hide logged problems. | `CapturingLoggerProvider.cs`; `LogProblemFingerprint.cs`; `LogProblemAllowlist.cs` |
 | B2 | **Resolved in P1-04.** Each periodic iteration now runs through the Java-style `ExecuteWrapper`, so failures are logged without killing the schedule; deadlines advance at a fixed rate and pooled work emits Java's slow-task warning. | One bad NPC no longer stops all NPC movement for the rest of a LIVE run. | `ThreadPoolManager.cs`; `ExecuteWrapper.cs` |
-| B3 | **Resolved through P4-05.** P4-01 put every identified mixed-clock pair on `SystemClock`; P4-02 added host-wide control and routed server-zone time, scheduled-task due metadata and quest timestamps; P4-03/P4-04 inventoried and migrated the remaining gameplay clocks and made direct `DateTime` wall-clock access an RS0030 error. | Virtual combat, movement, item/effect expiry, services, persistence timestamps and the shared time services now advance together; the 21-read floor is reviewed infrastructure plus the explicitly deferred P4-10 site. | `SystemClock.cs`; `BannedSymbols.txt`; `check-clock-reads.ps1` |
+| B3 | **Resolved through P4-10.** P4-01 put every identified mixed-clock pair on `SystemClock`; P4-02 added host-wide control and routed server-zone time, scheduled-task due metadata and quest timestamps; P4-03/P4-04 inventoried and migrated the remaining gameplay clocks and made direct `DateTime` wall-clock access an RS0030 error; P4-10 moved the last deferred retail-AI deadline comparison onto the shared clock. | Virtual combat, movement, item/effect expiry, services, persistence timestamps, shared time services and retail-AI timer ordering now advance together; the 20-read floor is reviewed infrastructure. | `SystemClock.cs`; `BannedSymbols.txt`; `check-clock-reads.ps1` |
 | B4 | **Partly resolved through P4-08.** The virtual scheduler now surfaces faults, cannot move time backwards, reports virtual delay correctly and has strict disposal. Deterministic mode routes movement sequentially, periodic-manager rearming, `NetFlusher`, shutdown countdowns and cron jobs through it; the housing cron singletons now construct under bounded wall time with a zero-delay drain and immediate fault propagation between each one. `PacketProcessor` still bypasses the deterministic path. | Whole-server SIM still needs the remaining deterministic-thread routing in Phase 5. | `VirtualThreadPool.cs`; `ThreadPoolManager.cs`; `MoveTaskManager.cs`; `NetFlusher.cs`; `ShutdownHook.cs`; `CronService.cs`; `SimulationCronTaskInitialization.cs` |
 | B5 | **Resolved through P2-05.** `Aion.Bots` owns the real client crypt, framing, opcode transforms, all Appendix B CM writers and 45 bot-perception SM decoders. `AionXorCipher` is explicitly marked as an unrelated legacy helper. | Bots can now form actions and perceive the packet bodies needed by their world model. | `tests/Aion.Bots/Protocol/`; `BotGameClientPacketWriterTests.cs`; `BotServerPacketDecoderTests.cs` |
 | B6 | **Resolved in P2-00.** A protected socketless connection path runs packets and disconnect cleanup inline without a selector, dispatcher, alive-check timer or eager packet-processor threads. | SIM can host an in-process game connection and exercise quit/drop cleanup. | `AConnection.cs`; `AionConnection.cs`; `SocketlessAionConnectionTests.cs` |
@@ -730,12 +730,21 @@ Production-neutral: `SystemClock`'s default is the same call Java makes (`System
   changes daytime. Bootstrap wires both consumers once and supplies the production `PacketSendUtility` world
   broadcaster. The live clock also fixes the adjacent `//time` no-op divergence; a regression test pins live
   mutation, callback order and the admin-jump weather guard. Commit: `8df3cde9f`.
-- [ ] **P4-10** [BOTH] S — `PatternAi.cs:1374` reads `Environment.TickCount64` while its timer runs on the pool.
+- [x] **P4-10** [BOTH] S — `PatternAi.cs:1374` reads `Environment.TickCount64` while its timer runs on the pool.
   Route it through `SystemClock`, and record the change in `docs/retail-ai-fidelity.md` (retail-AI code).
+  `ArmTimer` now compares pending deadlines in the same `SystemClock` domain that the virtual pool advances;
+  production retains the real-clock default. A regression pin advances eight virtual seconds between a ten-second
+  arm and a five-second re-arm and proves the earlier ten-second deadline still wins. The retail fidelity log
+  records that this is clock alignment, not a change to the measured take-the-shorter rule, and the clock-read
+  baseline fell from 21 reads across 14 files to 20 across 13. Commit: `73cc314f5`.
 
 **Done when:** on a `VirtualThreadPool` an NPC covers speed × virtual seconds; a recast after cooldown is accepted
 and an early recast is rejected; a one-minute timed item (`100000895`) expires after `Advance(61 s)`; the
 clock-read ratchet has reached its allowlist floor; the same-seed replay test passes.
+
+Phase 4 completed 2026-09-17: the virtual movement/cooldown and timed-item checks pass, the direct-clock ratchet
+is at its reviewed 20-read infrastructure floor, and `DeterministicModeTests.SameSeedAndVirtualTimelineReplayTheSameHarnessTrace`
+replays the same seeded trace.
 
 ### Phase 5 — SIM host
 

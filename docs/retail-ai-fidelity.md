@@ -41463,3 +41463,17 @@ handlers a rotation may be started from, and the change added an eighth without 
 judgement about `on_despawn` that nothing here settles, and a pin disagrees. Recorded rather than
 changed: the rule is broader than its stated reason, correcting it is worth exactly one pattern with no
 npcs placed here, and `on_despawn` has to be decided first.
+
+## The shorter-timer rule now reads the scheduler's clock
+
+`PatternAi.ArmTimer` correctly keeps the earlier deadline when a slot is armed twice, but its deadline
+comparison used `Environment.TickCount64` while the timer itself ran on `ThreadPoolManager`. In SIM the
+virtual pool could advance by minutes while that wall clock barely moved. A five-second arm made eight
+virtual seconds after a pending ten-second arm therefore looked earlier and incorrectly replaced it,
+moving the fire from virtual second 10 to second 13.
+
+The deadline now comes from `SystemClock`, the same controllable time domain as the virtual scheduler.
+Production still reads wall time through the default source. A runtime pin arms timer 2 for ten seconds,
+advances eight, attempts a five-second re-arm, and proves the original arm count and ten-second fire are
+preserved. This is infrastructure clock alignment only; the measured retail take-the-shorter semantics
+recorded above are unchanged.
