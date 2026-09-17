@@ -850,8 +850,11 @@ replays the same seeded trace.
   scenario sees its own warnings. Added an internal clear hook invoked when a SIM log-policy scope starts; a
   regression runs the same partially read opcode in two consecutive scenarios and requires both scopes to fail on
   their own warning while production retains Java's once-per-process suppression. (`6791c731d`)
-- [ ] **P5-11** [SIM] S — Harness self-test: a probe AI that throws in `HandleSpawned`, plus a truncated `CM_MOVE`,
-  must **fail** the scenario with full stack text; a non-throwing probe passes.
+- [x] **P5-11** [SIM] S — Harness self-test: a probe AI that throws in `HandleSpawned`, plus a truncated `CM_MOVE`,
+  must **fail** the scenario with full stack text; a non-throwing probe passes. The failure pin dispatches the real
+  AI `Spawned` event through the virtual scheduler and drives `CM_MOVE` through its Java-shaped scalar readers; the
+  policy reports both the timer fault's complete stack and the swallowed under-read logs. A matching passing probe
+  and complete movement body stay clean. (`eeac8cd1f`)
 - [ ] **P5-12** [BOTH] M — Scenario manifest and isolation. Every scenario declares `{id, modes, tier:
   Fast|Full|Soak, race, map, channelNeeds, bots, virtualDuration, consumes: [npc/gatherable ids],
   requires: [geo, D7, chat, db], expectedFail: reason}`. The SIM xUnit theory source and `tools/Aion.LiveBots`
