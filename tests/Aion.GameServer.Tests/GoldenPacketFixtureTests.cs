@@ -918,8 +918,16 @@ public sealed class GoldenPacketFixtureTests
 	// Fixed currentHp/currentMp; maxHp/maxMp resolve through the harness game-stats (StatEnum.MAXHP/MAXMP).
 	internal sealed class PacketHarnessLifeStats : CreatureLifeStats<Creature>
 	{
-		public PacketHarnessLifeStats(Creature owner, int currentHp, int currentMp) : base(owner, currentHp, currentMp)
+		private static readonly System.Reflection.FieldInfo CurrentHpField =
+			typeof(CreatureLifeStats).GetField("currentHp", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+		private static readonly System.Reflection.FieldInfo CurrentMpField =
+			typeof(CreatureLifeStats).GetField("currentMp", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+		// Upstream 840a6a8d4 starts every life stats container at the max stats, so the fixture values are forced afterwards.
+		public PacketHarnessLifeStats(Creature owner, int currentHp, int currentMp) : base(owner)
 		{
+			CurrentHpField.SetValue(this, currentHp);
+			CurrentMpField.SetValue(this, currentMp);
 		}
 	}
 }

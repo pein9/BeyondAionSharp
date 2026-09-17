@@ -6,7 +6,7 @@ namespace Aion.GameServer.Model.Stats.Container;
 public class SummonLifeStats : CreatureLifeStats<Summon>
 {
     public SummonLifeStats(Summon owner)
-        : base(owner, owner.GetGameStats().GetMaxHp().GetCurrent(), owner.GetGameStats().GetMaxMp().GetCurrent())
+        : base(owner)
     {
     }
 

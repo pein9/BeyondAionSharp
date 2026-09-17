@@ -15,18 +15,23 @@ namespace Aion.GameServer.Model.Stats.Container;
 public abstract class CreatureLifeStats
 {
     private int currentHp;
+    private int cachedMaxHp;
     private int currentMp;
+    private int cachedMaxMp;
     private int killingBlow; // for long animation skills that will kill - last damage
     protected readonly Creature owner;
     protected readonly object restoreLock = new object();
     protected ScheduledTask lifeRestoreTask;
 
-    public CreatureLifeStats(Creature owner, int currentHp, int currentMp)
+    public CreatureLifeStats(Creature owner)
     {
         this.owner = owner;
-        this.currentHp = currentHp;
-        this.currentMp = currentMp;
+        currentHp = cachedMaxHp = GetMaxHp();
+        currentMp = cachedMaxMp = GetMaxMp();
     }
+
+    // Java parity helper: Math.round(float) = floor(x+0.5) (C# Math.Round is banker's rounding).
+    private static int JRound(float a) => (int)Math.Floor(a + 0.5f);
 
     public Creature GetOwner()
     {
@@ -133,7 +138,7 @@ public abstract class CreatureLifeStats
                 return 0;
 
             previousMp = currentMp;
-            currentMp = newMp = Math.Min(currentMp, Math.Max(currentMp - value, 0));
+            currentMp = newMp = Math.Clamp(currentMp - value, 0, currentMp);
         }
 
         if (newMp != previousMp || skillId != 0)
@@ -279,8 +284,15 @@ public abstract class CreatureLifeStats
     /// </summary>
     public virtual void SynchronizeWithMaxStats()
     {
-        currentHp = GetMaxHp();
-        currentMp = GetMaxMp();
+        lock (this)
+        {
+            cachedMaxHp = GetMaxHp();
+            cachedMaxMp = GetMaxMp();
+        }
+        if (currentHp != cachedMaxHp)
+            SetCurrentHp(cachedMaxHp);
+        if (currentMp != cachedMaxMp)
+            SetCurrentMp(cachedMaxMp);
     }
 
     /// <summary>
@@ -356,7 +368,13 @@ public abstract class CreatureLifeStats
         lock (this)
         {
             previousHp = currentHp;
-            currentHp = newHp = Math.Max(0, Math.Min(hp, GetMaxHp()));
+            int maxHp = GetMaxHp();
+            currentHp = newHp = Math.Clamp(hp, 0, maxHp);
+            if (previousHp == 0 || newHp == 0)
+            {
+                cachedMaxHp = maxHp;
+                cachedMaxMp = GetMaxMp();
+            }
             if (killingBlow != 0 && (newHp == 0 || newHp > killingBlow))
                 UnsetIsAboutToDie();
         }
@@ -376,7 +394,7 @@ public abstract class CreatureLifeStats
             if (IsDead())
                 return;
             previousMp = currentMp;
-            currentMp = newMp = Math.Max(0, Math.Min(value, GetMaxMp()));
+            currentMp = newMp = Math.Clamp(value, 0, GetMaxMp());
         }
         if (newMp != previousMp)
         {
@@ -390,6 +408,48 @@ public abstract class CreatureLifeStats
     {
         SetCurrentMp((int)((long)GetMaxMp() * mpPercent / 100));
     }
+
+    public void OnStatsChange(Effect effect)
+    {
+        if (IsDead())
+            return;
+        CheckMaxHPChanged(effect == null ? owner : effect.GetEffector());
+        CheckMaxMPChanged();
+    }
+
+    private void CheckMaxHPChanged(Creature effector)
+    {
+        int newHp;
+        lock (this)
+        {
+            newHp = currentHp;
+            int currentMaxHp = GetMaxHp();
+            if (cachedMaxHp != currentMaxHp)
+            {
+                newHp = Math.Max(1, JRound((long)currentHp * currentMaxHp / (float)cachedMaxHp));
+                cachedMaxHp = currentMaxHp;
+            }
+        }
+        if (newHp != currentHp)
+            SetCurrentHp(newHp, effector);
+    }
+
+    private void CheckMaxMPChanged()
+    {
+        int newMp;
+        lock (this)
+        {
+            newMp = currentMp;
+            int currentMaxMp = GetMaxMp();
+            if (cachedMaxMp != currentMaxMp)
+            {
+                newMp = Math.Max(1, JRound((long)currentMp * currentMaxMp / (float)cachedMaxMp));
+                cachedMaxMp = currentMaxMp;
+            }
+        }
+        if (newMp != currentMp)
+            SetCurrentMp(newMp);
+    }
 }
 
 /// <summary>
@@ -399,7 +459,7 @@ public abstract class CreatureLifeStats
 /// </summary>
 public abstract class CreatureLifeStats<T> : CreatureLifeStats where T : Creature
 {
-    public CreatureLifeStats(T owner, int currentHp, int currentMp) : base(owner, currentHp, currentMp)
+    public CreatureLifeStats(T owner) : base(owner)
     {
     }
 

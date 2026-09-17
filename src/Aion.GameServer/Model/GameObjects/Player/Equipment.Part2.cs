@@ -206,7 +206,6 @@ public partial class Equipment
                 }
             }
         }
-        owner.GetLifeStats().SynchronizeWithMaxStats();
     }
 
     public bool IsShieldEquipped()

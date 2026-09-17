@@ -97,7 +97,7 @@ public class NpcGameStats : CreatureGameStats<Npc>
         int divider = 2;
         if (owner.GetAbyssNpcType() != AbyssNpcType.NONE)
             divider = 4; // Abyss type related NPCs restore their health by 25%
-        return GetStat(StatEnum.REGEN_HP, GetStatsTemplate().GetMaxHp() / divider);
+        return GetStat(StatEnum.REGEN_HP, GetMaxHp().GetExactCurrent() / divider);
     }
 
     public override Stat2 GetMpRegenRate()

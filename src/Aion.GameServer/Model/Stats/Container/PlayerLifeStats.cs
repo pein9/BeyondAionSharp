@@ -20,7 +20,7 @@ public class PlayerLifeStats : CreatureLifeStats<Player>
     private ScheduledTask flyReduceTask;
 
     public PlayerLifeStats(Player owner)
-        : base(owner, owner.GetGameStats().GetMaxHp().GetCurrent(), owner.GetGameStats().GetMaxMp().GetCurrent())
+        : base(owner)
     {
         this.currentFp = owner.GetGameStats().GetFlyTime().GetCurrent();
     }
@@ -69,8 +69,6 @@ public class PlayerLifeStats : CreatureLifeStats<Player>
 
         if (owner.IsSpawned())
         {
-            SendHpPacketUpdate();
-            SendMpPacketUpdate();
             SendFpPacketUpdate();
         }
     }

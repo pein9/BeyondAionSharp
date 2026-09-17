@@ -266,7 +266,6 @@ public class VisibleObjectSpawner
             npcTemplate, creator, time);
         summon.SetKnownlist(new CreatureAwareKnownList(summon));
         summon.SetEffectController(new EffectController(summon));
-        summon.GetLifeStats().SynchronizeWithMaxStats();
         summon.SetSummonedBySkillId(skillId);
 
         Aion.GameServer.SpawnEngine.SpawnEngine.BringIntoWorld(summon, spawn, instanceId);

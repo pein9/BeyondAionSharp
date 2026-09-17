@@ -29,15 +29,12 @@ public abstract class CreatureGameStats
     private readonly ConcurrentDictionary<StatEnum, List<IStatFunction>> stats = new ConcurrentDictionary<StatEnum, List<IStatFunction>>();
 
     private int attackCounter = 0;
-    private int cachedMaxHp, cachedMaxMp, cachedSpeed;
+    private int cachedSpeed;
 
     protected CreatureGameStats(Creature owner)
     {
         this.owner = owner;
     }
-
-    // Java parity helper: Math.round(float) = floor(x+0.5) (C# Math.Round is banker's rounding).
-    private static int JRound(float a) => (int)Math.Floor(a + 0.5f);
 
     public int GetAttackCounter()
     {
@@ -430,38 +427,7 @@ public abstract class CreatureGameStats
     /// </summary>
     protected virtual void OnStatsChange(Effect effect)
     {
-        CheckMaxHPChanged(effect);
-        CheckMaxMPChanged(effect);
-    }
-
-    private void CheckMaxHPChanged(Effect effect)
-    {
-        lock (this)
-        {
-            int oldMaxHp = cachedMaxHp != 0 ? cachedMaxHp : GetStatsTemplate().GetMaxHp();
-            int currentMaxHp = cachedMaxHp = GetMaxHp().GetCurrent();
-            if (oldMaxHp != currentMaxHp)
-            {
-                float percent = 1f * currentMaxHp / oldMaxHp;
-                int newHp = Math.Min(JRound(owner.GetLifeStats().GetCurrentHp() * percent), currentMaxHp);
-                Creature effector = effect == null ? owner : effect.GetEffector();
-                owner.GetLifeStats().SetCurrentHp(newHp, effector);
-            }
-        }
-    }
-
-    private void CheckMaxMPChanged(Effect effect)
-    {
-        lock (this)
-        {
-            int oldMaxMp = cachedMaxMp != 0 ? cachedMaxMp : GetStatsTemplate().GetMaxMp();
-            int currentMaxMp = cachedMaxMp = GetMaxMp().GetCurrent();
-            if (oldMaxMp != currentMaxMp)
-            {
-                float percent = 1f * currentMaxMp / oldMaxMp;
-                owner.GetLifeStats().SetCurrentMp(Math.Min(JRound(owner.GetLifeStats().GetCurrentMp() * percent), currentMaxMp));
-            }
-        }
+        owner.GetLifeStats().OnStatsChange(effect);
     }
 
     // Java parity: Collections.emptySet() (immutable, shared)
