@@ -588,8 +588,13 @@ sockets before the large clock migration.
   processor backlog and counts live scheduled tasks through completion-aware schedule observations. Focused tests
   pin the log contract and one-shot/fixed-rate timer lifecycle. Docker-only L0 run `p312-heartbeat` passed with all
   three cadences observed and no missed heartbeat. Commit: `af6cb074c`.
-- [ ] **P3-13** [LIVE] S — Record-only login baseline: run L0 with the watcher in record mode and triage every new
-  fingerprint as in P1-12. Depends on P3-09.
+- [x] **P3-13** [LIVE] S — Record-only login baseline: run L0 with the watcher in record mode and triage every new
+  fingerprint as in P1-12. Depends on P3-09. Docker-only run `p313-baseline` at `6169e0d67` passed both L0 bots
+  and recorded six problem records in the same three fingerprints as the Phase 1 boot baseline: `2c206aaf`
+  (one quest-handler source scan error) remains §7 #18/P7-01; `f802a125` (one deferred geo-loader warning) and
+  `39050e81` (four normalized missing-door-geometry warnings) remain §7 #22/P9-01. All are tracked bugs, so none
+  belongs in the allowlist. All three server heartbeats were present and the isolated Docker stack was removed.
+  Commit: `048b55138`.
 - [ ] **P3-14** [LIVE] M — Known-problem ledger and triage. `tools/Aion.LogWatch` maintains
   `parity-artifacts/e2e/known-problems.json` with `{fp, firstSeenSha, lastSeenSha, lastSeenRun, count, status:
   new|tracked|fixed, tracking}`, where `tracking` is a `docs/Full-Parity-Backlog.md` id or an issue URL.
