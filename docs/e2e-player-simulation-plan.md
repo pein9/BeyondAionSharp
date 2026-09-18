@@ -10,6 +10,12 @@ The maintainer's decisions (§6) were applied the same day: no hosted CI and no 
 local scripts. The `docker/` compose stack stays: it is how the emulator is deployed and run, and LIVE bot
 runs use their own isolated compose project.
 
+**Deferred continuous-play goal.** [Natural Ishalgen Journey](natural-ishalgen-journey.md)
+records the later goal of an ordinary player bot progressing from character creation through implemented
+content without GM assistance, visible alongside human players. Review readiness after Phase 10 and the
+broader game journey after Phase 11. This is additional bot-policy work; completing the scenario phases
+alone does not prove autonomous progression. It does not authorize adding unimplemented quests or content.
+
 ## How to use this document
 
 - Phases are ordered by dependency. Inside a phase, TODOs run in order unless marked otherwise; explicit
@@ -1233,6 +1239,9 @@ real geodata on in production immediately, because geo is enabled by default; th
 working set and timer count flat for 2 hours; P10-03 and P10-09 pass; every allowlist and flaky entry has an owner
 and an unexpired date.
 
+**Follow-up checkpoint:** review [Natural Ishalgen Journey](natural-ishalgen-journey.md#revisit-checklist)
+for readiness and remaining player-policy work. This deferred review does not change Phase 10's done-when.
+
 ### Phase 11 — Group and scheduled content
 
 GM commands force scheduled content without waiting for cron (`//siege`, `//rift`, `//vortexraid`, `//worldraid`,
@@ -1249,6 +1258,9 @@ GM commands force scheduled content without waiting for cron (`//siege`, `//rift
 - [ ] **P11-07** [SIM] S — Flight transporters, teleporters and day/night spawns (after P4-09).
 
 **Done when:** P11-01 passes for all 78 handlers in the SIM Full tier, and P11-02 and P11-04 pass in the LIVE Full tier.
+
+**Follow-up checkpoint:** use the [natural journey design](natural-ishalgen-journey.md) to define the
+broader character-to-endgame milestones and group requirements for implemented content.
 
 ---
 
