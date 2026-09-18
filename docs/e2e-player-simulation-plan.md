@@ -1064,11 +1064,15 @@ byte-identical), so bots will mostly find bugs elsewhere through it.
   `p7-08-q4p-sim-dev-20260918v` and `p7-08-q4i-sim-dev-20260918d` passed; enforced LIVE runs
   `p7-08-q4p-live-dev-20260918i` and `p7-08-q4i-live-dev-20260918d` passed with zero new or regressed fingerprints.
   Needs P6-02 graphs per zone and P6-00 setup per zone. (`7075042f0`)
-- [ ] **P7-09** [BOTH] XL — The 927 obtainable custom C# scripts: a Roslyn extractor over
-  `Handlers/Quest/**` for `Register()` calls and `OnDialogEvent` decision tuples → draft bot scripts; a SIM dialog
-  explorer that learns working action sequences and saves them for LIVE; hand-written scripts for spawn, teleport
-  and instance handlers. First investigate extracting the 4.8 client's quest dialog HTML with
-  `tools/client-extract` as an authoritative page → button → action map.
+- [x] **P7-09** [BOTH] XL — The Roslyn extractor covers all 927 obtainable custom C# handlers with 3,566
+  registrations, 9,950 `OnDialogEvent` decisions and exact call-site evidence for 105 handlers with spawn,
+  teleport or instance operations. Executable hand-written policies define the observable completion signal for
+  each of those three operation kinds. The 4.8 English client map contributes 7,391 actionable pages and 8,554
+  action references for 923 handlers; quests 3219, 3220, 4219 and 4220 have no matching client file. The shared
+  explorer prioritizes client buttons, probes handler candidates through packet ingress, records only accepted
+  steps and refuses partial scripts in LIVE. Q1100 proved the pipeline in Docker-only SIM run
+  `p7-09-q3-explorer-dev-20260918b` and enforced LIVE replay `p7-09-q3-live-dev-20260918a`; Fast run
+  `p7-09-fast-20260918a` also passed. (`e5d1604379`)
 - [ ] **P7-10** [BOTH] M — Quest coverage report and checked-in baseline under `parity-artifacts/e2e/`: per zone ×
   race, obtainable / accepted / completed / echo failures / stuck reasons; "no handler" (440) and "unreachable" (280)
   reported separately, not as failures. `run-full.ps1` fails when completed drops.
@@ -1376,6 +1380,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 30 | `ChatProcessor` used .NET `Regex.Split` with Java's capturing group unchanged; .NET returns captures in the result, turning `set level 9` into `level`, empty, `9` | `ChatProcessor.java:85-90` uses `String.split`, which does not return capture groups | Resolved by P6-05 (`22916f84d`) |
 | 31 | Persistent chat/login game-server links inherited a 30-second C# read timeout and disconnected when idle (LIVE fingerprint `06dfcdde`) | `chat-server/.../GsConnection.java`, `login-server/.../GsConnection.java`, and `AcceptReadWriteDispatcherImpl.java`: selector-driven reads have no idle timeout | Resolved by P6-06 (`3a18ef178`) |
 | 32 | `JAXBUtil.Serialize` returned a string declaring UTF-16 because `XmlWriter` saw a `StringWriter`, but callers wrote that string as UTF-8; a second `SpawnsData.SaveSpawn` could not read the first rewrite | `SpawnsData.java:205-216` writes the serialization with `Files.writeString`; `JAXBUtil.java` configures UTF-8, so its declaration and bytes remain self-consistent | Resolved by P7-07 (`d864b0107`) |
+| 33 | `_2002WheresRae.Register` includes NPCs 790002 and 205020, which makes two existing dialog branches reachable | `_2002WheresRae.java:35-41` omits both NPCs from registration while handling them at lines 90 and 174 | Retained for P7-09 e2e reachability; Java's omission leaves both branches unreachable |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 
@@ -1393,7 +1398,7 @@ Defects Java shares, kept as-is: per-command `//access` grants never take effect
 | 6 | External integrations (web shop token, web rewards, GameGuard, captcha) | Not covered |
 | 7 | Long real-time schedules in LIVE (weekly resets, house auctions, abyss rank updates) | SIM virtual clock and virtual cron (P4-07) |
 | 8 | Retail 5.8 AI content | A boundary by design (CLAUDE.md; `docs/retail-ai-backlog.md` §E) |
-| 9 | Quests with no handler (503) and unreachable quest NPCs | P7-10 "no handler" and "unreachable" columns |
+| 9 | Quests with no handler (440) and unreachable quest NPCs | P7-10 "no handler" and "unreachable" columns |
 
 ---
 

@@ -68,6 +68,27 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.Equal((byte)3, session.Api.World.Quests[1100].Status);
 		Assert.NotNull(player.GetQuestStateList().GetQuestState(1100));
 
+		session.BeginStep("s05b", "learn-custom-quest-dialog-and-save-for-live");
+		await session.SendPacketAsync(session.Api.TalkTo(kalio.GetObjectId()), token);
+		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
+		string repositoryRoot = Aion.GameServer.TestKit.RealStaticData.RepoRoot();
+		QuestDialogKnowledge knowledge = QuestDialogKnowledgeLoader.Load(
+			1100,
+			Path.Combine(repositoryRoot, "parity-artifacts/e2e/custom-quest-handler-drafts.json"),
+			Path.Combine(repositoryRoot, "parity-artifacts/e2e/custom-quest-client-dialogs.json"));
+		QuestDialogLearnedScript learned = await QuestDialogExplorer.ExploreAsync(
+			knowledge,
+			new SimulationQuestDialogExplorerDriver(session, player, 1100),
+			maxAcceptedSteps: 8,
+			token);
+		Assert.True(learned.Complete, learned.StopReason);
+		Assert.Contains(learned.Steps, step => step.ActionId == DialogAction.QUEST_SELECT);
+		Assert.Contains(learned.Steps, step => step.ActionId == DialogAction.SELECTED_QUEST_REWARD1);
+		string learnedRoot = Environment.GetEnvironmentVariable("AION_E2E_RUN_DIR") ?? Path.GetTempPath();
+		string learnedPath = Path.Combine(learnedRoot, "learned-quests", "1100.json");
+		learned.Save(learnedPath);
+		Assert.Equal(1100, QuestDialogLearnedScript.LoadForLive(learnedPath).QuestId);
+
 		player.GetCommonData().SetLevel(7);
 		Npc pernos = FindLivingNpc(player, 790001);
 		await MoveBesideAsync(session, pernos, token);
@@ -148,5 +169,55 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.Equal(12, escortMovie.Get<int>("cutsceneId"));
 		await WaitForQuestStatusAsync(session, 1149, 4, token);
 		policy.AssertClean();
+	}
+
+	private sealed class SimulationQuestDialogExplorerDriver(
+		SimulationL0Session session,
+		Player player,
+		int questId) : IQuestDialogExplorerDriver
+	{
+		public Task<QuestDialogProbeState> CaptureAsync(CancellationToken cancellationToken) =>
+			Task.FromResult(Capture());
+
+		public async Task<QuestDialogProbeResult> ProbeAsync(int actionId, CancellationToken cancellationToken)
+		{
+			QuestDialogProbeState before = Capture();
+			await session.SendPacketAsync(session.Api.SelectDialogExpectRejection(
+				before.TargetObjectId,
+				checked((ushort)actionId),
+				questId: questId), cancellationToken);
+			await session.DrainServerPacketsAsync(cancellationToken);
+			if (session.Api.QuestDialogEchoes.ExpectedRejection != null)
+			{
+				session.Api.QuestDialogEchoes.ConsumeExpectedRejection();
+				return new QuestDialogProbeResult(QuestDialogProbeOutcome.Rejected, Capture());
+			}
+
+			QuestDialogProbeState after = Capture();
+			QuestDialogProbeOutcome outcome = after.QuestStatus == (int)QuestStatus.COMPLETE
+				? QuestDialogProbeOutcome.Completed
+				: after != before
+					? QuestDialogProbeOutcome.Advanced
+					: QuestDialogProbeOutcome.Rejected;
+			return new QuestDialogProbeResult(outcome, after);
+		}
+
+		private QuestDialogProbeState Capture()
+		{
+			BotDialogWindow dialog = session.Api.World.Dialog
+				?? throw new InvalidOperationException($"Quest {questId} explorer has no open dialog.");
+			QuestState state = player.GetQuestStateList().GetQuestState(questId)
+				?? throw new InvalidOperationException($"Quest {questId} explorer has no quest state.");
+			int targetNpcId = session.Api.World.Objects.TryGetValue(dialog.TargetObjectId, out BotKnownObject? target)
+				? target.TemplateId ?? 0
+				: 0;
+			return new QuestDialogProbeState(
+				questId,
+				dialog.TargetObjectId,
+				targetNpcId,
+				dialog.PageId,
+				(int)state.GetStatus(),
+				state.GetQuestVarById(0));
+		}
 	}
 }

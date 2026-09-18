@@ -18,5 +18,6 @@
     <Project Path="tools/Aion.LiveBots/Aion.LiveBots.csproj" />
     <Project Path="tools/Aion.LogWatch/Aion.LogWatch.csproj" />
     <Project Path="tools/Aion.PortParity/Aion.PortParity.csproj" />
+    <Project Path="tools/Aion.QuestPlanExtractor/Aion.QuestPlanExtractor.csproj" />
   </Folder>
 </Solution>

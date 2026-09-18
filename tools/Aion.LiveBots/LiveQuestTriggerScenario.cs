@@ -1,5 +1,6 @@
 using Aion.Bots.Gm;
 using Aion.Bots.Protocol;
+using Aion.Bots.Scenarios;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -79,6 +80,14 @@ public static partial class LiveBotRunner
 				await subject.Session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
 				if (!subject.Session.Api.World.Quests.TryGetValue(1100, out BotQuestState? state) || state.Status != 3)
 					throw new InvalidDataException("The cannot_giveup mission Q1100 was abandoned.");
+			}, cancellationToken);
+
+			await subject.StepAsync("replay-sim-learned-1100", async token =>
+			{
+				string knowledgeRoot = Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!;
+				QuestDialogLearnedScript script = QuestDialogLearnedScript.LoadForLive(
+					Path.Combine(knowledgeRoot, "learned-custom-quests", "1100.json"));
+				await ReplayLearnedQuestDialogAsync(subject.Session, kalio, script, token);
 			}, cancellationToken);
 
 			await director.StepAsync("level-subject-to-seven", token =>
@@ -228,6 +237,41 @@ public static partial class LiveBotRunner
 		{
 			Console.Error.WriteLine($"Q3 failed: {ex}");
 			return 1;
+		}
+	}
+
+	private static async Task ReplayLearnedQuestDialogAsync(
+		LiveBotSession session,
+		int targetObjectId,
+		QuestDialogLearnedScript script,
+		CancellationToken cancellationToken)
+	{
+		for (int index = 0; index < script.Steps.Count; index++)
+		{
+			QuestDialogLearnedStep step = script.Steps[index];
+			if (!session.Api.World.Objects.TryGetValue(targetObjectId, out BotKnownObject? target) ||
+				target.TemplateId != step.TargetNpcId)
+				throw new InvalidDataException($"Learned Q{script.QuestId} step {index + 1} expected NPC {step.TargetNpcId}.");
+			if (!session.Api.World.Quests.TryGetValue(script.QuestId, out BotQuestState? quest) ||
+				quest.Status != step.QuestStatus)
+				throw new InvalidDataException(
+					$"Learned Q{script.QuestId} step {index + 1} expected status {step.QuestStatus}, got {quest?.Status}.");
+
+			await session.SendPacketAsync(session.Api.SelectDialog(
+				targetObjectId, checked((ushort)step.ActionId), questId: script.QuestId), cancellationToken);
+			if (index + 1 < script.Steps.Count)
+			{
+				await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken,
+					packet => packet.Get<int>("targetObjectId") == targetObjectId);
+				await session.WaitForQuestStatusAsync(
+					script.QuestId, checked((byte)script.Steps[index + 1].QuestStatus), cancellationToken);
+			}
+			else
+			{
+				await session.WaitForQuestStatusAsync(script.QuestId, 5, cancellationToken);
+				await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken,
+					packet => packet.Get<int>("targetObjectId") == targetObjectId);
+			}
 		}
 	}
 }

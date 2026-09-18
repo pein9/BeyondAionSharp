@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "questId": 1100,
+  "complete": true,
+  "stopReason": null,
+  "steps": [
+    {
+      "targetNpcId": 203067,
+      "pageId": 10,
+      "questStatus": 3,
+      "questVar": 0,
+      "actionId": 31,
+      "actionName": "QUEST_SELECT"
+    },
+    {
+      "targetNpcId": 203067,
+      "pageId": 10,
+      "questStatus": 4,
+      "questVar": 0,
+      "actionId": 8,
+      "actionName": "SELECTED_QUEST_REWARD1"
+    }
+  ]
+}

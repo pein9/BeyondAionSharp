@@ -3,9 +3,31 @@
 Python tools for reading Aion game-client data, used to source retail behavior
 facts that neither the C# port nor the Java reference carries.
 
-Pure standard library — no dependencies, and no external binaries. (Tools such
-as `AION-Encdec` wrap `pak2zip.exe` / `AIONdisasm.exe`; these scripts implement
-both formats directly, so that toolchain is not needed.)
+Pure standard library — no Python dependencies. The repository implements Aion
+PAK and `0x80` binary XML directly. Quest dialog HTML's separate `0x81` format
+still needs an external decoder for the one-time evidence extraction described
+below; no external executable is vendored or used by build/test/runtime.
+
+## Quest dialog HTML
+
+Quest dialog members are not ordinary HTML after PAK extraction. Files whose
+first byte is `0x81` have a filename-dependent second encoding layer. Keep the
+original `quest_q<ID>.html` name while decoding them. The P7-09 investigation
+used AIONdisasm 1.6.5 from the GPL-3.0
+[AION-Encdec](https://github.com/Iswenzz/AION-Encdec) project as an external,
+disposable research tool.
+
+Once decoded, build the authoritative page -> button action map without keeping
+localized dialog text:
+
+```powershell
+python tools/client-extract/extract_quest_dialog_map.py `
+  run/decoded-dialogs parity-artifacts/e2e/custom-quest-client-dialogs.json `
+  --archive "C:\Program Files (x86)\Beyond Aion\l10n\ENG\Data\Data.pak"
+```
+
+The checked-in map is useful without the external decoder. The script fails
+explicitly on still-encoded `0x81` input.
 
 ## Scripts
 
@@ -14,6 +36,7 @@ both formats directly, so that toolchain is not needed.)
 | `aionpak.py` | Read/extract a `.pak` archive. Every entry is CRC32-verified. |
 | `bxml.py` | Decode the binary XML (magic `0x80`) most `.pak` members contain. |
 | `index_paks.py` | Index every entry name across a client install, reading only archive directories. |
+| `extract_quest_dialog_map.py` | Reduce decoded `0x81` quest HTML to page/button/action topology. |
 | `build_ai_binding.py` | Join the client's per-NPC `ai_name` against an NpcAIPatterns dump to produce the pattern → `npc_id` table. |
 | `audit_missing_adds.py` | Report retail encounter adds our server never spawns. |
 | `audit_missing_ai.py` | Report NPCs we spawn that have a real retail fight and no AI class at all. |

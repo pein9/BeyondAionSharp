@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -14,6 +15,13 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 COMPILER = REPO_ROOT / "scripts/e2e/compile-quest-plans.py"
 CLASSIFIER = REPO_ROOT / "parity-artifacts/e2e/obtainable-quests.json"
+CLIENT_MAP = REPO_ROOT / "parity-artifacts/e2e/custom-quest-client-dialogs.json"
+CLIENT_EXTRACTOR = REPO_ROOT / "tools/client-extract/extract_quest_dialog_map.py"
+
+extractor_spec = importlib.util.spec_from_file_location("extract_quest_dialog_map", CLIENT_EXTRACTOR)
+assert extractor_spec is not None and extractor_spec.loader is not None
+extractor = importlib.util.module_from_spec(extractor_spec)
+extractor_spec.loader.exec_module(extractor)
 
 
 class QuestPlanCompilerTests(unittest.TestCase):
@@ -93,6 +101,34 @@ class QuestPlanCompilerTests(unittest.TestCase):
         by_id = {quest["id"]: quest for quest in classifier["quests"]}
         self.assertEqual("obtainable", by_id[1101]["availability"])
         self.assertEqual("obtainable", by_id[2101]["availability"])
+
+    def test_checked_in_client_dialog_map_covers_custom_quests(self) -> None:
+        dialog_map = json.loads(CLIENT_MAP.read_text(encoding="utf-8"))
+        self.assertEqual(
+            {
+                "expectedCustomQuests": 927,
+                "clientQuestFiles": 923,
+                "missingClientQuestFiles": 4,
+                "pagesWithActions": 7391,
+                "actionReferences": 8554,
+            },
+            dialog_map["counts"],
+        )
+        self.assertEqual([3219, 3220, 4219, 4220], dialog_map["missingQuestIds"])
+        by_id = {quest["questId"]: quest for quest in dialog_map["quests"]}
+        select1 = next(page for page in by_id[1100]["pages"] if page["page"] == "select1")
+        self.assertEqual([["SELECT_QUEST_REWARD"]], [button["actions"] for button in select1["buttons"]])
+
+    def test_client_dialog_extractor_parses_composite_actions_and_rejects_encoded_input(self) -> None:
+        self.assertEqual(
+            ["SELECT2_1", "SETPRO3"],
+            extractor.action_names("PLAYEMOTION_thanks;HACTION_SELECT2_1;HACTION_SETPRO3"),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            encoded = Path(directory) / "quest_q42.html"
+            encoded.write_bytes(b"\x81not-decoded")
+            with self.assertRaisesRegex(ValueError, "0x81-encoded"):
+                extractor.decode_xml(encoded)
 
 
 if __name__ == "__main__":
