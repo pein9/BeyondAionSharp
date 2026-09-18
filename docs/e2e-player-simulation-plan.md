@@ -1005,12 +1005,14 @@ the Fast tier; C1, M1 and M6 pass in the LIVE Full tier.
 The quest engine is one of the most faithful parts of the port (all 1035 Java handlers exist; quest data is
 byte-identical), so bots will mostly find bugs elsewhere through it.
 
-- [ ] **P7-01** [BOTH] S — Parity fix: `QuestSpawnAnalyzer` scans `*.java` under `./data/handlers/*`, which do not
+- [x] **P7-01** [BOTH] S — Parity fix: `QuestSpawnAnalyzer` scans `*.java` under `./data/handlers/*`, which do not
   exist in C#, so `Directory.EnumerateFiles` throws and the analysis aborts. Scanning C# sources at runtime cannot
   work either: handlers are compiled, call PascalCase `Spawn(` (the Java regex matches none), and published server builds
   ship no `src/`. Generate the handler-spawned NPC id set at build time (a checked-in list produced from
   `Handlers/{Instance,Quest,AI}/**/*.cs`, verified by a test), feed it to the analyzer, log through the bridge, and
-  expose the unreachable-quest list for the planner.
+  expose the unreachable-quest list for the planner. The compiled table currently contains 821 IDs; analyzer results
+  expose both administratively unobtainable and missing-spawn-unreachable quest sets. Docker-only Fast run
+  `p701-fast-20260918` passed. (`782f63dae`)
 - [ ] **P7-02** [BOTH] M — Quest plan compiler (tool), with the obtainable-quest classifier checked in:
   `quest_data.xml` + `quest_script_data/*.xml` + `npc_templates.xml` + spawns + gatherables → per-quest JSON
   (gates, start trigger, start/end NPCs and positions, steps with item sources, rewards).
@@ -1329,7 +1331,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 15 | Game-hour consumers, weather check and `SM_GAME_TIME` broadcast unwired | `GameTime.java:150-154`, `GameTimeService.java:54-56` | Resolved by P4-09 (`8df3cde9f`) |
 | 16 | `Config.Load` runs after static data, world maps and game time are initialized | `GameServer.java:219` | Resolved by P5-03 (`16350158f`) |
 | 17 | `SM_MOVE` player/summon branch never taken | `SM_MOVE.java:36` `instanceof PlayableMoveController` | Resolved by P6-01 (`5ba44084e`) |
-| 18 | `QuestSpawnAnalyzer` scans Java source folders and aborts (P1-12 baseline fingerprint `2c206aaf`, count 1) | `QuestSpawnAnalyzer.java:101-110` (Java ships those folders) | P7-01 |
+| 18 | `QuestSpawnAnalyzer` scans Java source folders and aborts (P1-12 baseline fingerprint `2c206aaf`, count 1) | `QuestSpawnAnalyzer.java:101-110` (Java ships those folders) | Resolved by P7-01 (`782f63dae`) |
 | 19 | `_19638TroublewithTwos` extra dialog branch | `_19638TroublewithTwos.java:48-50` (removed upstream in `1d6a2d8f7`) | P7-11 |
 | 20 | Duplicate `CraftSkillUpdateService`; the unused `Craft` copy returns ordinal 0 instead of null (latent) | `services/craft/CraftSkillUpdateService.java:79-81` | P8-03 |
 | 21 | `InventoryDAO.Store` catch scope too wide | `InventoryDAO.java:232` catches `SQLException` | P8-03 |

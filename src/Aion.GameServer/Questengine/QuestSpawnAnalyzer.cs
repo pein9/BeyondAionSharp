@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
-using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.Templates;
 using Aion.GameServer.Model.Templates.Factions;
@@ -15,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Aion.GameServer.QuestEngine;
 
-/// <summary>Java parity: questEngine/QuestSpawnAnalyzer. Streams→LINQ; Map&lt;Set&lt;Integer&gt;,List&lt;Integer&gt;&gt;→Dictionary with HashSet&lt;int&gt;.CreateSetComparer() for value-semantics keys; computeIfAbsent→TryGetValue+init; Files.walk→Directory.EnumerateFiles recursive; DataManager/config dirs red-tolerated.</summary>
+/// <summary>Java parity: questEngine/QuestSpawnAnalyzer. Streams→LINQ; Map&lt;Set&lt;Integer&gt;,List&lt;Integer&gt;&gt;→Dictionary with HashSet&lt;int&gt;.CreateSetComparer() for value-semantics keys; computeIfAbsent→TryGetValue+init. Java's runtime scan of shipped handler sources is replaced by the checked-in C# build artifact <see cref="HandlerSpawnedNpcIds"/>; the structured result is a planner/testing seam. DataManager red-tolerated.</summary>
 public class QuestSpawnAnalyzer
 {
     private static readonly ILogger log = AionLog.For(nameof(QuestSpawnAnalyzer));
@@ -24,7 +21,9 @@ public class QuestSpawnAnalyzer
     {
     }
 
-    internal static void Run(ICollection<AbstractQuestHandler> questHandlers, ICollection<QuestNpc> questNpcs, bool ignoreEventQuests)
+    public static QuestSpawnAnalysisResult LastResult { get; private set; } = QuestSpawnAnalysisResult.Empty;
+
+    internal static QuestSpawnAnalysisResult Run(ICollection<AbstractQuestHandler> questHandlers, ICollection<QuestNpc> questNpcs, bool ignoreEventQuests)
     {
         log.LogInformation("Analyzing quest handlers (ignoreEventQuests=" + ignoreEventQuests + ")...");
         var stopwatch = new Stopwatch();
@@ -62,6 +61,8 @@ public class QuestSpawnAnalyzer
             list.Add(npc.GetNpcId());
         }
         long timeMillis = stopwatch.ElapsedMilliseconds;
+        QuestSpawnAnalysisResult result = QuestSpawnAnalysisResult.Create(unobtainableQuests, missingSpawnsByQuests);
+        LastResult = result;
         if (missingSpawnsByQuests.Count == 0)
         {
             log.LogInformation("Quest handler analysis finished in {Time} ms without errors", timeMillis);
@@ -73,6 +74,7 @@ public class QuestSpawnAnalyzer
                 .OrderBy(s => s, StringComparer.Ordinal));
             log.LogWarning("Quest handler analysis finished in {Time} ms. Found {Count} missing quest npc spawns:{Spawns}", timeMillis, missingSpawnsByQuests.Count, missingSpawns);
         }
+        return result;
     }
 
     private static bool IsUnobtainable(int questId, HashSet<int> unobtainableQuests)
@@ -106,29 +108,35 @@ public class QuestSpawnAnalyzer
 
     public static HashSet<int> LoadNpcIdsSpawnedByHandlers()
     {
-        HashSet<int> npcIds = new();
-        Regex pattern = new(@"\bsp(?:awn)?\([^,\d]*(\d{6})(?: : (\d{6}))?");
-        ParseSpawnNpcIds(new FileInfo(InstanceConfig.HANDLER_DIRECTORY), pattern, npcIds);
-        ParseSpawnNpcIds(new FileInfo(GSConfig.QUEST_HANDLER_DIRECTORY), pattern, npcIds);
-        ParseSpawnNpcIds(new FileInfo(AIConfig.HANDLER_DIRECTORY), pattern, npcIds);
-        return npcIds;
+        return new HashSet<int>(HandlerSpawnedNpcIds.All);
     }
+}
 
-    private static void ParseSpawnNpcIds(FileInfo sourceDir, Regex pattern, HashSet<int> npcIds)
+public sealed record MissingQuestNpcSpawns(IReadOnlyList<int> NpcIds, IReadOnlyList<int> QuestIds);
+
+public sealed record QuestSpawnAnalysisResult(
+    IReadOnlySet<int> UnobtainableQuestIds,
+    IReadOnlySet<int> UnreachableQuestIds,
+    IReadOnlyList<MissingQuestNpcSpawns> MissingSpawns)
+{
+    public static QuestSpawnAnalysisResult Empty { get; } = new(
+        new HashSet<int>(),
+        new HashSet<int>(),
+        Array.Empty<MissingQuestNpcSpawns>());
+
+    internal static QuestSpawnAnalysisResult Create(
+        HashSet<int> unobtainableQuestIds,
+        Dictionary<HashSet<int>, List<int>> missingSpawnsByQuests)
     {
-        foreach (string path in Directory.EnumerateFiles(sourceDir.FullName, "*.java", SearchOption.AllDirectories))
-        {
-            Match matcher = pattern.Match(File.ReadAllText(path));
-            while (matcher.Success)
-            {
-                for (int i = 1; i <= matcher.Groups.Count - 1; i++)
-                {
-                    Group group = matcher.Groups[i];
-                    if (group.Success)
-                        npcIds.Add(int.Parse(group.Value));
-                }
-                matcher = matcher.NextMatch();
-            }
-        }
+        MissingQuestNpcSpawns[] missingSpawns = missingSpawnsByQuests
+            .Select(entry => new MissingQuestNpcSpawns(
+                entry.Value.OrderBy(id => id).ToArray(),
+                entry.Key.OrderBy(id => id).ToArray()))
+            .OrderBy(entry => entry.NpcIds[0])
+            .ToArray();
+        return new QuestSpawnAnalysisResult(
+            new HashSet<int>(unobtainableQuestIds),
+            missingSpawns.SelectMany(entry => entry.QuestIds).ToHashSet(),
+            missingSpawns);
     }
 }
