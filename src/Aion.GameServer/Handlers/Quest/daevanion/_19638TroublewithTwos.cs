@@ -55,14 +55,7 @@ public class _19638TroublewithTwos : AbstractQuestHandler
         {
             if (targetId == npcIds[1])
             {
-                if (dialogActionId == DialogAction.USE_OBJECT)
-                {
-                    return SendQuestDialog(env, 5);
-                }
-                else
-                {
-                    return SendQuestEndDialog(env);
-                }
+                return SendQuestEndDialog(env);
             }
         }
         return false;

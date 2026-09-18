@@ -7,7 +7,7 @@
     "withDialogActions": 917,
     "specialHandlers": 105,
     "registrations": 3566,
-    "decisions": 9950
+    "decisions": 9949
   },
   "quests": [
     {
@@ -182439,8 +182439,7 @@
         }
       ],
       "dialogCandidateActions": [
-        "QUEST_SELECT",
-        "USE_OBJECT"
+        "QUEST_SELECT"
       ],
       "decisions": [
         {
@@ -182484,38 +182483,15 @@
           "questStatuses": [
             "REWARD"
           ],
-          "dialogActions": [
-            "USE_OBJECT"
-          ],
+          "dialogActions": [],
           "conditions": [
             "else !(qs == null || qs.IsStartable())",
             "qs.GetStatus() == QuestStatus.REWARD",
-            "targetId == npcIds[1]",
-            "dialogActionId == DialogAction.USE_OBJECT"
-          ],
-          "resultMethod": "SendQuestDialog",
-          "result": "SendQuestDialog(env, 5)",
-          "line": 60
-        },
-        {
-          "targetNpcIds": [
-            1
-          ],
-          "questStatuses": [
-            "REWARD"
-          ],
-          "dialogActions": [
-            "USE_OBJECT"
-          ],
-          "conditions": [
-            "else !(qs == null || qs.IsStartable())",
-            "qs.GetStatus() == QuestStatus.REWARD",
-            "targetId == npcIds[1]",
-            "else !(dialogActionId == DialogAction.USE_OBJECT)"
+            "targetId == npcIds[1]"
           ],
           "resultMethod": "SendQuestEndDialog",
           "result": "SendQuestEndDialog(env)",
-          "line": 64
+          "line": 58
         },
         {
           "targetNpcIds": [],
@@ -182524,7 +182500,7 @@
           "conditions": [],
           "resultMethod": null,
           "result": "false",
-          "line": 68
+          "line": 61
         }
       ],
       "specialOperations": []

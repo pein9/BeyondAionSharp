@@ -1079,8 +1079,10 @@ byte-identical), so bots will mostly find bugs elsewhere through it.
   the per-zone/race report; Docker-only Full run `p7-10-full-dev-20260918g` passed with 57 SIM and 59 LIVE
   completions, zero echo failures and zero stuck reasons. The checked-in 57-completion floor and separate 440
   no-handler / 280 unreachable populations are enforced. (`8d44f99353`)
-- [ ] **P7-11** [BOTH] S — Parity fix: `daevanion/_19638TroublewithTwos.cs:58-61` keeps a `USE_OBJECT` branch Java
-  removed (upstream `1d6a2d8f7`).
+- [x] **P7-11** [BOTH] S — Parity fix: `daevanion/_19638TroublewithTwos.cs:58-61` keeps a `USE_OBJECT` branch Java
+  removed (upstream `1d6a2d8f7`). The reward-state handler now delegates every Lothas dialog directly to the quest-end
+  path, and the regenerated custom-quest evidence plus explorer test pin the corrected action set. Fast run
+  `p7-11-fast-20260918a` passed. (`482d528e3`)
 - [ ] **P7-12** [SIM] S — Repeatable quests on the virtual clock and a test trigger for the daily 09:00 reset.
   Depends on P6-00.
 

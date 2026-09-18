@@ -14,6 +14,7 @@ public sealed class QuestDialogExplorerTests
 			Path.Combine(root, "parity-artifacts/e2e/custom-quest-handler-drafts.json"),
 			Path.Combine(root, "parity-artifacts/e2e/custom-quest-client-dialogs.json"));
 		QuestDialogKnowledge knowledge = all[1100];
+		QuestDialogKnowledge troubleWithTwos = all[19638];
 
 		Assert.Equal(927, all.Count);
 		Assert.Equal(105, all.Values.Count(entry => entry.SpecialOperations is { Count: > 0 }));
@@ -24,6 +25,7 @@ public sealed class QuestDialogExplorerTests
 		});
 		Assert.Contains(203067, knowledge.RegisteredNpcIds);
 		Assert.Contains(DialogAction.QUEST_SELECT, knowledge.HandlerCandidateActions);
+		Assert.Equal([DialogAction.QUEST_SELECT], troubleWithTwos.HandlerCandidateActions);
 		Assert.Equal(
 			[DialogAction.SELECT_QUEST_REWARD],
 			knowledge.ClientPageActions["select1"]);
