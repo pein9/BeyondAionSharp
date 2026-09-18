@@ -21,6 +21,7 @@ public sealed class BotServerPacketDecoder
 			[typeof(SM_PLAY_MOVIE)] = DecodePlayMovie,
 			[typeof(SM_CHAT_INIT)] = DecodeChatInit,
 			[typeof(SM_PLAYER_INFO)] = DecodePlayerInfo,
+			[typeof(SM_EMOTION)] = DecodeEmotion,
 			[typeof(SM_NPC_INFO)] = DecodeNpcInfo,
 			[typeof(SM_GATHERABLE_INFO)] = DecodeGatherableInfo,
 			[typeof(SM_MOVE)] = DecodeMove,
@@ -234,6 +235,35 @@ public sealed class BotServerPacketDecoder
 		r.Skip(8);
 		fields["heading"] = r.ReadByte();
 		fields["name"] = r.ReadString();
+		r.Skip(3 * sizeof(ushort)); // title, mentor flag, casting skill
+		var legionId = r.ReadInt32();
+		if (legionId == 0)
+			r.Skip(8);
+		else
+		{
+			r.Skip(6); // emblem id, type and ARGB
+			_ = r.ReadString();
+		}
+		r.Skip(sizeof(byte) + sizeof(ushort) + sizeof(byte)); // hp%, dp, reserved
+		var equipmentMask = unchecked((uint)r.ReadInt32());
+		r.Skip(System.Numerics.BitOperations.PopCount(equipmentMask) * 16);
+		r.Skip(4 * sizeof(int) + 51 + 3 * sizeof(float)); // colours, appearance bytes, height/scale/gravity
+		fields["movementSpeed"] = r.ReadSingle();
+		return fields;
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeEmotion(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		var fields = Fields(
+			("senderObjectId", r.ReadInt32()), ("emotionType", r.ReadByte()),
+			("state", r.ReadUInt16()), ("movementSpeed", r.ReadSingle()));
+		if (fields["emotionType"] is byte emotionType && emotionType == (byte)Aion.GameServer.Model.EmotionType.CHANGE_SPEED)
+		{
+			fields["baseAttackSpeed"] = r.ReadUInt16();
+			fields["currentAttackSpeed"] = r.ReadUInt16();
+			fields["reserved"] = r.ReadByte();
+		}
 		return fields;
 	}
 

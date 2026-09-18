@@ -928,8 +928,13 @@ point; and `p515-full2-20260917/l0-packet-parity.json` recorded the normalized S
   A*. Route positions keep their source Z; live NPC endpoints come only from the bot world model's decoded
   `SM_NPC_INFO`/`SM_MOVE` state. Unit coverage pins source tagging, edge/map boundaries and packet retargeting, and
   an integration test builds Ishalgen from the checked-in real static data. (`ae5f69606`)
-- [ ] **P6-03** [BOTH] M — `BotMover`: realistic `CM_MOVE` streams (start with target, periodic position updates,
-  stop; fall and jump), `CM_MOVE_IN_AIR` for flight, paced at or below speed from `SM_STATS_INFO`.
+- [x] **P6-03** [BOTH] M — `BotMover`: realistic `CM_MOVE` streams (start with target, periodic position updates,
+  stop; fall and jump), `CM_MOVE_IN_AIR` for flight, paced at or below speed from `SM_PLAYER_INFO` and
+  `SM_EMOTION` (not `SM_STATS_INFO`, which the Java source shows does not carry movement speed). The mover emits
+  Java-parity target/start, periodic position, and stop frames for ground, jump, and fall movement; produces paced
+  `CM_MOVE_IN_AIR` flight samples; tracks the latest positive server-reported movement speed; and supports injectable
+  LIVE wall-clock or SIM virtual delays. Decoder, world-model, stream-shape, pacing, and execution-order tests cover
+  the contract. (`d7ae04e34`)
 - **P6-04** — Dropped: no anti-cheat checks in bot runs (D6).
 - [ ] **P6-05** [BOTH] L — Movement scenarios (ids in Appendix A):
   - **M1** Ishalgen first steps: prologue movie (quest 2000), walk to Asak, report to Vandar (2101).

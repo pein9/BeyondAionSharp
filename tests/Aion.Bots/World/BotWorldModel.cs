@@ -36,6 +36,7 @@ public sealed class BotWorldModel
 	public ushort MaxDp { get; private set; }
 	public int CurrentFlightTime { get; private set; }
 	public int MaxFlightTime { get; private set; }
+	public float? MovementSpeed { get; private set; }
 	public long CurrentExperience { get; private set; }
 	public long RecoverableExperience { get; private set; }
 	public long ExperienceNeeded { get; private set; }
@@ -57,6 +58,8 @@ public sealed class BotWorldModel
 			ApplyPlayerSpawn(packet);
 		else if (type == typeof(SM_PLAYER_INFO))
 			ApplyPlayerInfo(packet);
+		else if (type == typeof(SM_EMOTION))
+			ApplyEmotion(packet);
 		else if (type == typeof(SM_NPC_INFO))
 			ApplyNpcInfo(packet);
 		else if (type == typeof(SM_GATHERABLE_INFO))
@@ -129,11 +132,27 @@ public sealed class BotWorldModel
 	{
 		var objectId = packet.Get<int>("objectId");
 		var position = ReadPosition(packet.Fields);
+		var movementSpeed = GetNullableStruct<float>(packet.Fields, "movementSpeed");
 		objects[objectId] = new BotKnownObject(objectId, BotKnownObjectKind.Player, position,
 			Name: packet.Get<string>("name"), State: packet.Get<ushort>("state"), Race: packet.Get<byte>("race"),
-			PlayerClass: packet.Get<byte>("playerClass"));
+			PlayerClass: packet.Get<byte>("playerClass"), MovementSpeed: movementSpeed);
 		if (SelfObjectId == objectId)
+		{
 			Position = position;
+			MovementSpeed = movementSpeed;
+		}
+	}
+
+	private void ApplyEmotion(DecodedBotServerPacket packet)
+	{
+		var objectId = packet.Get<int>("senderObjectId");
+		var movementSpeed = packet.Get<float>("movementSpeed");
+		if (movementSpeed <= 0)
+			return; // Some state-only SM_EMOTION constructors have no creature and therefore serialize speed 0.
+		if (objects.TryGetValue(objectId, out var known))
+			objects[objectId] = known with { MovementSpeed = movementSpeed };
+		if (SelfObjectId == objectId)
+			MovementSpeed = movementSpeed;
 	}
 
 	private void ApplyNpcInfo(DecodedBotServerPacket packet)
@@ -174,6 +193,8 @@ public sealed class BotWorldModel
 	private void ApplyStats(DecodedBotServerPacket packet)
 	{
 		SelfObjectId = packet.Get<int>("objectId");
+		if (objects.TryGetValue(SelfObjectId.Value, out var self))
+			MovementSpeed = self.MovementSpeed;
 		Level = packet.Get<ushort>("level");
 		ExperienceNeeded = packet.Get<long>("expNeeded");
 		RecoverableExperience = packet.Get<long>("expRecoverable");
@@ -418,7 +439,8 @@ public readonly record struct BotPosition(float X, float Y, float Z, byte Headin
 
 public sealed record BotKnownObject(int ObjectId, BotKnownObjectKind Kind, BotPosition Position,
 	int? TemplateId = null, int? VisualTemplateId = null, int? StaticId = null, string? Name = null,
-	ushort? State = null, bool? IsOpen = null, byte? Race = null, byte? PlayerClass = null);
+	ushort? State = null, bool? IsOpen = null, byte? Race = null, byte? PlayerClass = null,
+	float? MovementSpeed = null);
 
 public sealed record BotInventoryItem(int ObjectId, int ItemId, string Description, long Count, ushort ItemMask,
 	string Creator, ushort EquipmentSlot, bool Cloth);

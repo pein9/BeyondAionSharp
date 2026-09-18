@@ -1,5 +1,6 @@
 using Aion.Bots.Protocol;
 using Aion.Bots.World;
+using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion.ServerPackets;
 
 namespace Aion.GameServer.Tests;
@@ -12,7 +13,8 @@ public sealed class BotWorldModelTests
 		var world = new BotWorldModel();
 		world.Apply(Packet<SM_PLAYER_INFO>(
 			("x", 1f), ("y", 2f), ("z", 3f), ("heading", (byte)4), ("objectId", 100),
-			("race", (byte)0), ("playerClass", (byte)1), ("state", (ushort)2), ("name", "Daeva")));
+			("race", (byte)0), ("playerClass", (byte)1), ("state", (ushort)2), ("name", "Daeva"),
+			("movementSpeed", 6f)));
 		world.Apply(Packet<SM_NPC_INFO>(
 			("x", 10f), ("y", 20f), ("z", 30f), ("objectId", 200), ("npcId", 700001),
 			("visualNpcId", 700002), ("creatureType", (byte)1)));
@@ -27,6 +29,9 @@ public sealed class BotWorldModelTests
 			("objectId", 100), ("level", (ushort)12), ("expNeeded", 900L), ("expRecoverable", 4L), ("expShown", 500L),
 			("maxHp", 1200), ("currentHp", 1100), ("maxMp", 800), ("currentMp", 700),
 			("maxDp", (ushort)4000), ("dp", (ushort)250), ("maxFp", 60), ("currentFp", 55)));
+		world.Apply(Packet<SM_EMOTION>(
+			("senderObjectId", 100), ("emotionType", (byte)EmotionType.CHANGE_SPEED),
+			("state", (ushort)2), ("movementSpeed", 4.5f)));
 		world.Apply(Packet<SM_PLAYER_SPAWN>(
 			("worldId", 210010000), ("x", 5f), ("y", 6f), ("z", 7f), ("heading", (byte)10)));
 		world.Apply(Packet<SM_MOVE>(
@@ -56,6 +61,8 @@ public sealed class BotWorldModelTests
 		Assert.Equal(1000L, world.ExperienceNeeded);
 		Assert.Equal(40, world.CurrentFlightTime);
 		Assert.Equal(70, world.MaxFlightTime);
+		Assert.Equal(4.5f, world.MovementSpeed);
+		Assert.Equal(4.5f, world.Objects[100].MovementSpeed);
 
 		world.Apply(Packet<SM_DIE>(
 			("allowReviveBySkill", true), ("allowReviveByItem", false), ("remainingKiskTimeSeconds", 30),

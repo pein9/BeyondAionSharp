@@ -12,13 +12,31 @@ public sealed class BotServerPacketDecoderTests
 	private readonly BotServerPacketDecoder decoder = new();
 
 	[Fact]
-	public void DecoderInventoryContainsFortyFiveBotPerceptionPackets()
+	public void DecoderInventoryContainsFortySevenBotPerceptionPackets()
 	{
-		Assert.Equal(46, decoder.PacketTypes.Count);
+		Assert.Equal(47, decoder.PacketTypes.Count);
 		Assert.Contains(typeof(SM_MESSAGE), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_EMOTION), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_SYSTEM_MESSAGE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_PLAYER_SPAWN), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_INVENTORY_ADD_ITEM), decoder.PacketTypes);
+	}
+
+	[Fact]
+	public void MovementSpeedComesFromPlayerInfoAndEmotionRatherThanStatsInfo()
+	{
+		using var playerFixture = LoadFixture("SM_PLAYER_INFO.json");
+		var playerCase = playerFixture.RootElement.GetProperty("cases")[0];
+		var player = decoder.Decode(typeof(SM_PLAYER_INFO),
+			Convert.FromHexString(playerCase.GetProperty("payloadHex").GetString()!));
+		Assert.Equal(6f, player.Get<float>("movementSpeed"));
+
+		using var emotionFixture = LoadFixture("SM_EMOTION.json");
+		var speedCase = emotionFixture.RootElement.GetProperty("cases")[2];
+		var emotion = decoder.Decode(typeof(SM_EMOTION),
+			Convert.FromHexString(speedCase.GetProperty("payloadHex").GetString()!));
+		Assert.Equal(6f, emotion.Get<float>("movementSpeed"));
+		Assert.Equal((ushort)1000, emotion.Get<ushort>("currentAttackSpeed"));
 	}
 
 	[Fact]
