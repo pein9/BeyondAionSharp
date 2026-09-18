@@ -306,13 +306,18 @@ internal sealed partial class LiveBotSession
 			packet => packet.Get<int>("targetObjectId") == npcObjectId &&
 				packet.Get<byte>("status") == (byte)SM_LOOT_STATUS.Status.LOOT_ENABLE);
 		await SendGameAsync(api.Target(npcObjectId), cancellationToken);
-		for (byte attack = 0; attack < 16 && !defeated.IsCompleted; attack++)
+		for (byte attack = 0; attack < 128 && !defeated.IsCompleted; attack++)
 		{
 			if (attack > 0 && attack % 2 == 0)
 				await MoveToNpcAsync(npcObjectId, cancellationToken);
+			TimeSpan delay = api.Timing.TimeUntilAttack(1400);
+			if (delay > TimeSpan.Zero)
+				await Task.Delay(delay + TimeSpan.FromMilliseconds(5), cancellationToken);
 			await SendGameAsync(api.Attack(npcObjectId, 1400, attack), cancellationToken);
 			await Task.WhenAny(defeated, Task.Delay(TimeSpan.FromMilliseconds(1450), cancellationToken));
 		}
+		if (!defeated.IsCompleted)
+			throw new InvalidDataException($"NPC {npcObjectId} survived 128 protocol auto-attacks.");
 		await defeated;
 	}
 

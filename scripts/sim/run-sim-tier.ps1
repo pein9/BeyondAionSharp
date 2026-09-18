@@ -90,6 +90,7 @@ $previousProcessKey = $env:AION_SIM_PROCESS_KEY
 $previousTier = $env:AION_SIM_TIER
 $previousSeed = $env:AION_SIM_SEED
 $previousRunDirectory = $env:AION_E2E_RUN_DIR
+$previousQuestPlanRoot = $env:AION_E2E_QUEST_PLAN_ROOT
 
 function Write-RunMetadata {
 	param([string]$GitSha)
@@ -145,6 +146,18 @@ try {
 		$env:AION_SIM_TIER = $Tier
 		$env:AION_SIM_SEED = $Seed.ToString([Globalization.CultureInfo]::InvariantCulture)
 		$env:AION_E2E_RUN_DIR = $runPath
+		if ($scenarioIds.Contains('Q4P') -or $scenarioIds.Contains('Q4I')) {
+			$questPlanRoot = Join-Path $runPath 'quest-plans'
+			if ($scenarioIds.Contains('Q4P')) {
+				& python scripts/e2e/compile-quest-plans.py --output (Join-Path $questPlanRoot 'Poeta') --runnable-only --zone Poeta
+				if ($LASTEXITCODE -ne 0) { throw 'Poeta quest-plan compilation failed.' }
+			}
+			if ($scenarioIds.Contains('Q4I')) {
+				& python scripts/e2e/compile-quest-plans.py --output (Join-Path $questPlanRoot 'Ishalgen') --runnable-only --zone Ishalgen
+				if ($LASTEXITCODE -ne 0) { throw 'Ishalgen quest-plan compilation failed.' }
+			}
+			$env:AION_E2E_QUEST_PLAN_ROOT = $questPlanRoot
+		}
 		Write-RunMetadata -GitSha $gitSha
 
 		$testArguments = @(
@@ -181,6 +194,7 @@ finally {
 	Restore-Environment 'AION_SIM_TIER' $previousTier
 	Restore-Environment 'AION_SIM_SEED' $previousSeed
 	Restore-Environment 'AION_E2E_RUN_DIR' $previousRunDirectory
+	Restore-Environment 'AION_E2E_QUEST_PLAN_ROOT' $previousQuestPlanRoot
 
 	if ($transcriptStarted) { Stop-Transcript | Out-Null }
 }

@@ -83,7 +83,7 @@ runs use their own isolated compose project.
 | `ThreadPoolManager.GetInstance()` call sites | 895 | `grep -rhoE "ThreadPoolManager\.GetInstance\(\)" src` |
 | Registered client opcodes / server opcodes | 186 / 238 (same sets as `upstream/4.8`) | factory tables |
 | Quests | 8043 in `quest_data.xml`; 5219 with a handler (4184 XML templates + 1035 C# = Java); 2824 with none | parse `quest_data.xml` and `quest_script_data/*.xml` |
-| Obtainable quests a data-driven planner can run | 3,002 (70% of 4,315 obtainable handled quests); another 386 XML-template quests have unresolved collection-item sources, and 927 use custom handlers | `P7-02` checked-in classifier; excludes disabled, unreachable and no-handler quests |
+| Obtainable quests a data-driven planner can run | 2,964 (69% of 4,315 obtainable handled quests); another 424 XML-template quests have unresolved item sources, and 927 use custom handlers | `P7-02` checked-in classifier plus `P7-08` generic-source audit; excludes disabled, unreachable and no-handler quests |
 | Game-server tests / test run time | 3060 / ~1.5 min | last hosted CI run, 2026-09-17 |
 | Full static-data load | Cold merge + parse **11.30 s**, warm parse **8.29–9.05 s**; test-host peak working set **~515 MiB** | `P0-03`, measured on i7-14700K / 64 GiB / .NET 10.0.301 |
 | Full DB-backed `StartAsync` / `SpawnAll` | **4.00–4.72 s** / **2.04–2.41 s**; **104,308** world objects; **1.57 GiB** test-host working set, **1.74 GiB** peak process tree | `P0-03`, Docker MySQL 8.4 on the same host |
@@ -1018,7 +1018,8 @@ byte-identical), so bots will mostly find bugs elsewhere through it.
   (gates, start trigger, start/end NPCs and positions, steps with item sources, rewards). The compiler also folds in
   NPC factions, event/town spawns, custom-handler identity and the P7-01 handler-spawn table. Its drift-tested
   classifier separates 4,315 obtainable, 3,008 disabled, 280 unreachable and 440 enabled/no-handler quests, then
-  identifies 3,002 complete XML-template plans, 386 with unresolved item sources, and 927 custom handlers.
+  identifies 2,964 complete XML-template plans, 424 with unresolved item sources, and 927 custom handlers. P7-08's
+  generic-source audit corrected the original 3,002 / 386 split without changing the obtainable total.
   (`492c4fb06`)
 - [x] **P7-03** [BOTH] M — Template dialog protocol table from `QuestEngine/Handlers/Template/*`: the exact action →
   page sequences for `report_to`, `monster_hunt`, `item_collecting`, `report_to_many`, `item_order`,
@@ -1054,10 +1055,15 @@ byte-identical), so bots will mostly find bugs elsewhere through it.
   LIVE record run `p7-07-q3-live-dev-20260918f` and enforced run `p7-07-q3-live-dev-20260918g` passed with zero new
   or regressed fingerprints. The LIVE escort also exposed and fixed the UTF-16 declaration/UTF-8 file mismatch in
   `JAXBUtil.Serialize` recorded as §7 #32. Depends on P6-00. (`d864b0107`)
-- [ ] **P7-08** [BOTH] XL — Generic data-driven quest runner for the 3,002 obtainable quests whose XML templates
-  and declared item sources fully describe a plan (70% of obtainable handled quests), rolled out zone by zone
-  (starter zones cover about 57–64%). Needs P6-02 graphs per zone and P6-00
-  setup per zone.
+- [x] **P7-08** [BOTH] XL — Generic data-driven quest runner for the 2,964 obtainable quests whose XML templates
+  and declared item sources fully describe a plan (69% of obtainable handled quests), rolled out zone by zone
+  (starter zones cover about 57–64%). The shared compiler/run-book/executor validates every emitted runnable plan,
+  resolves XML-declared item sources and marks 424 generic plans with unresolved sources incomplete. Q4P and Q4I
+  exercise all 25 Poeta and 27 Ishalgen runnable plans through the same SIM/LIVE operation contract, including NPC
+  and item starts, prerequisites, kills, drops, action objects, gathering, reports and rewards. Docker-only SIM runs
+  `p7-08-q4p-sim-dev-20260918v` and `p7-08-q4i-sim-dev-20260918d` passed; enforced LIVE runs
+  `p7-08-q4p-live-dev-20260918i` and `p7-08-q4i-live-dev-20260918d` passed with zero new or regressed fingerprints.
+  Needs P6-02 graphs per zone and P6-00 setup per zone. (`7075042f0`)
 - [ ] **P7-09** [BOTH] XL — The 927 obtainable custom C# scripts: a Roslyn extractor over
   `Handlers/Quest/**` for `Register()` calls and `OnDialogEvent` decision tuples → draft bot scripts; a SIM dialog
   explorer that learns working action sequences and saves them for LIVE; hand-written scripts for spawn, teleport

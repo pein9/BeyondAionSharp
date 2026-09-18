@@ -393,6 +393,34 @@
     "resetEpoch": false
   },
   {
+    "id": "Q4P",
+    "modes": ["Sim", "Live"],
+    "tier": "Full",
+    "race": "Elyos",
+    "map": 210010000,
+    "channelNeeds": "Exclusive",
+    "bots": 1,
+    "virtualDuration": "02:00:00",
+    "consumes": [],
+    "requires": ["Db"],
+    "expectedFail": null,
+    "resetEpoch": false
+  },
+  {
+    "id": "Q4I",
+    "modes": ["Sim", "Live"],
+    "tier": "Full",
+    "race": "Asmodians",
+    "map": 220010000,
+    "channelNeeds": "Exclusive",
+    "bots": 1,
+    "virtualDuration": "02:00:00",
+    "consumes": [],
+    "requires": ["Db"],
+    "expectedFail": null,
+    "resetEpoch": false
+  },
+  {
     "id": "connect",
     "modes": ["Live"],
     "tier": "Full",

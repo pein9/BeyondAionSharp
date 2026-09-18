@@ -28,7 +28,7 @@ public sealed class ScenarioManifestTests
 		Assert.Equal(2, l0.Bots);
 		Assert.Equal(["S0", "L0", "M1", "C1", "C2", "C3", "Q1", "Q2"],
 			manifest.For(ScenarioMode.Sim, ScenarioTier.Fast).Select(scenario => scenario.Id));
-		Assert.Equal(["L0", "M1", "M6", "C1", "Q1", "Q2", "Q3", "connect", "canaries"],
+		Assert.Equal(["L0", "M1", "M6", "C1", "Q1", "Q2", "Q3", "Q4P", "Q4I", "connect", "canaries"],
 			manifest.For(ScenarioMode.Live, ScenarioTier.Full).Select(scenario => scenario.Id));
 	}
 

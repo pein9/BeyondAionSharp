@@ -12,9 +12,9 @@ public sealed class BotServerPacketDecoderTests
 	private readonly BotServerPacketDecoder decoder = new();
 
 	[Fact]
-	public void DecoderInventoryContainsFiftyBotPerceptionPackets()
+	public void DecoderInventoryContainsFiftyOneBotPerceptionPackets()
 	{
-		Assert.Equal(50, decoder.PacketTypes.Count);
+		Assert.Equal(51, decoder.PacketTypes.Count);
 		Assert.Contains(typeof(SM_MESSAGE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_EMOTION), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_SYSTEM_MESSAGE), decoder.PacketTypes);
@@ -23,6 +23,7 @@ public sealed class BotServerPacketDecoderTests
 		Assert.Contains(typeof(SM_WINDSTREAM), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_WINDSTREAM_ANNOUNCE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_ABNORMAL_STATE), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_GATHER_UPDATE), decoder.PacketTypes);
 	}
 
 	[Fact]

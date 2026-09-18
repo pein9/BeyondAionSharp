@@ -97,6 +97,11 @@ public sealed class BotApiTests
 			("code", 60000), ("params", new[] { "Daeva", "", "" }), ("senderId", 20), ("rangeOrCooldownSeconds", 0));
 		AssertPacket<CM_QUESTION_RESPONSE>(Assert.IsType<BotClientPacket>(api.Observe(question)));
 		AssertPacket<CM_QUESTION_RESPONSE>(api.Answer(1));
+
+		api.Gather(10);
+		Assert.Contains(BotBlockingActivity.Gathering, api.Timing.BlockingActivities);
+		api.Observe(Packet<SM_GATHER_UPDATE>(("action", (byte)6)));
+		Assert.DoesNotContain(BotBlockingActivity.Gathering, api.Timing.BlockingActivities);
 	}
 
 	[Fact]

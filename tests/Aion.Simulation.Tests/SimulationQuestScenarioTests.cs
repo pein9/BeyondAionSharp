@@ -163,6 +163,9 @@ public sealed partial class SimulationFastScenarioTests
 		SimulationL0Session session, int objectId, int itemId, CancellationToken token)
 	{
 		await session.SendPacketAsync(session.Api.TalkTo(objectId), token);
+		await session.WaitForPacketAsync(typeof(SM_EMOTION), token,
+			packet => packet.Get<int>("senderObjectId") == session.CharacterId &&
+				packet.Get<byte>("emotionType") == (byte)EmotionType.START_QUESTLOOT);
 		await session.AdvanceAsync(TimeSpan.FromMilliseconds(3001), token);
 		await LootListedItemAndCloseAsync(session, objectId, itemId, token);
 	}

@@ -245,6 +245,8 @@ public sealed class BotApi
 		else if (packet.PacketType == typeof(SM_SKILL_CANCEL) &&
 			(World.SelfObjectId == null || packet.Get<int>("objectId") == World.SelfObjectId))
 			Timing.RecordCastCancelled();
+		else if (packet.PacketType == typeof(SM_GATHER_UPDATE) && packet.Get<byte>("action") >= 5)
+			Timing.SetActivity(BotBlockingActivity.Gathering, false);
 		return Reflexes.RespondTo(packet);
 	}
 }

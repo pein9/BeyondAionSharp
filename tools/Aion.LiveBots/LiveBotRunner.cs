@@ -43,6 +43,10 @@ public static partial class LiveBotRunner
 			return await RunQ2Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "Q3" }])
 			return await RunQ3Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "Q4P" }])
+			return await RunQuestPlanZoneAsync(options, problems, "Poeta", Race.ELYOS, "Aeliveqp", cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "Q4I" }])
+			return await RunQuestPlanZoneAsync(options, problems, "Ishalgen", Race.ASMODIANS, "Asliveqi", cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "M1" }])
 			return await RunM1Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "M6" }])

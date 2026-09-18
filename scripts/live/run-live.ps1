@@ -80,6 +80,7 @@ $dockerDiagnostics = Join-Path $runPath 'docker.stderr.log'
 $previousRunDirectory = $env:AION_E2E_RUN_DIR
 $previousRunId = $env:AION_RUN_ID
 $previousPacketTap = $env:AION_PACKET_TAP
+$previousQuestPlanRoot = $env:AION_E2E_QUEST_PLAN_ROOT
 
 function Invoke-CheckedNative([string]$Command, [string[]]$Arguments, [string]$Description) {
 	& $Command @Arguments
@@ -211,6 +212,16 @@ $failure = $null
 try {
 	Push-Location $repoRoot
 	try {
+		if ($Scenario -contains 'Q4P' -or $Scenario -contains 'Q4I') {
+			$questPlanRoot = Join-Path $runPath 'quest-plans'
+			if ($Scenario -contains 'Q4P') {
+				Invoke-CheckedNative 'python' @('scripts/e2e/compile-quest-plans.py', '--output', (Join-Path $questPlanRoot 'Poeta'), '--runnable-only', '--zone', 'Poeta') 'Poeta quest-plan compilation'
+			}
+			if ($Scenario -contains 'Q4I') {
+				Invoke-CheckedNative 'python' @('scripts/e2e/compile-quest-plans.py', '--output', (Join-Path $questPlanRoot 'Ishalgen'), '--runnable-only', '--zone', 'Ishalgen') 'Ishalgen quest-plan compilation'
+			}
+			$env:AION_E2E_QUEST_PLAN_ROOT = $questPlanRoot
+		}
 		Invoke-CheckedNative 'dotnet' @('build', 'tools/Aion.LiveBots/Aion.LiveBots.csproj', '--nologo') 'Live bot build'
 		Invoke-CheckedNative 'dotnet' @('build', 'tools/Aion.LogWatch/Aion.LogWatch.csproj', '--nologo') 'Log watcher build'
 
@@ -288,6 +299,8 @@ finally {
 	else { $env:AION_RUN_ID = $previousRunId }
 	if ($null -eq $previousPacketTap) { Remove-Item Env:AION_PACKET_TAP -ErrorAction SilentlyContinue }
 	else { $env:AION_PACKET_TAP = $previousPacketTap }
+	if ($null -eq $previousQuestPlanRoot) { Remove-Item Env:AION_E2E_QUEST_PLAN_ROOT -ErrorAction SilentlyContinue }
+	else { $env:AION_E2E_QUEST_PLAN_ROOT = $previousQuestPlanRoot }
 
 	try { Remove-OldRuns }
 	catch { if ($null -eq $failure) { $failure = $_ } }

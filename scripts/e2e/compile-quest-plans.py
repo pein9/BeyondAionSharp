@@ -389,7 +389,7 @@ def normalized_rewards(quest: ET.Element) -> dict[str, Any]:
     return result
 
 
-def item_sources(item_id: int, quest: ET.Element, inputs: Inputs) -> list[dict[str, Any]]:
+def item_sources(item_id: int, quest: ET.Element, handler: Handler | None, inputs: Inputs) -> list[dict[str, Any]]:
     sources: list[dict[str, Any]] = []
     for drop in quest.findall("quest_drop"):
         if int(drop.attrib.get("item_id", "0")) != item_id:
@@ -401,6 +401,15 @@ def item_sources(item_id: int, quest: ET.Element, inputs: Inputs) -> list[dict[s
         source = {"kind": "gatherable", **gatherable}
         source["positions"] = inputs.positions.get(gatherable["gatherableId"], [])
         sources.append(source)
+    if handler is not None and handler.template == "xml_quest" and handler.element is not None:
+        for event in handler.element.findall("on_talk_event"):
+            for npc in event.iter("npc"):
+                if not any(int(give.attrib.get("item_id", "0")) == item_id for give in npc.iter("give_item")):
+                    continue
+                npc_id = int(npc.attrib["id"])
+                source = {"kind": "questObject", "npc": npc_ref(npc_id, inputs)}
+                if source not in sources:
+                    sources.append(source)
     return sources
 
 
@@ -414,7 +423,7 @@ def normalized_steps(quest: ET.Element, handler: Handler | None, end_ids: list[i
     if collect is not None:
         for item in collect.findall("collect_item"):
             item_id = int(item.attrib["item_id"])
-            steps.append({"kind": "collect", **attrs(item), "sources": item_sources(item_id, quest, inputs)})
+            steps.append({"kind": "collect", **attrs(item), "sources": item_sources(item_id, quest, handler, inputs)})
 
     if handler is None or handler.element is None:
         return steps
@@ -492,6 +501,59 @@ def compile_plan(quest_id: int, inputs: Inputs) -> dict[str, Any]:
         "rewards": normalized_rewards(quest),
         "questData": xml_payload(quest),
     }
+
+
+RUNNABLE_TEMPLATES = {
+    "crafting_rewards",
+    "fountain_rewards",
+    "item_collecting",
+    "item_order",
+    "kill_in_world",
+    "kill_in_zone",
+    "kill_spawned",
+    "monster_hunt",
+    "relic_rewards",
+    "report_on_levelup",
+    "report_to",
+    "report_to_many",
+    "skill_use",
+    "work_order",
+    "xml_quest",
+}
+RUNNABLE_START_TRIGGERS = {"automatic", "item", "levelUp", "npc", "world", "zone"}
+RUNNABLE_STEPS = {"collect", "craft", "kill", "killinworld", "killinzone", "killSpawned", "report", "useSkill"}
+
+
+def validate_runnable_plan(plan: dict[str, Any]) -> list[str]:
+    """Return structural defects that would leave the shared runner without an action."""
+    issues: list[str] = []
+    quest_id = plan["quest"]["id"]
+    template = plan["handler"].get("template")
+    if template not in RUNNABLE_TEMPLATES:
+        issues.append(f"Q{quest_id}: unsupported template {template!r}")
+    trigger = plan["startTrigger"]["kind"]
+    if trigger not in RUNNABLE_START_TRIGGERS:
+        issues.append(f"Q{quest_id}: unsupported start trigger {trigger!r}")
+    if trigger == "npc" and not plan["startTrigger"].get("npcs"):
+        issues.append(f"Q{quest_id}: NPC start has no NPC alternatives")
+    if trigger == "item" and not plan["startTrigger"].get("itemId"):
+        issues.append(f"Q{quest_id}: item start has no item id")
+
+    for index, step in enumerate(plan["steps"]):
+        kind = step["kind"]
+        if kind not in RUNNABLE_STEPS:
+            issues.append(f"Q{quest_id}: step {index} has unsupported kind {kind!r}")
+        if kind in {"kill", "killSpawned", "report"} and not step.get("npcs"):
+            issues.append(f"Q{quest_id}: {kind} step {index} has no NPC alternatives")
+        if kind == "collect" and template != "work_order" and not step.get("sources"):
+            issues.append(f"Q{quest_id}: collect step {index} has no declared source")
+        if kind == "craft" and not step.get("recipeId"):
+            issues.append(f"Q{quest_id}: craft step {index} has no recipe id")
+        if kind == "useSkill" and not (step.get("ids") or step.get("skill_ids") or step.get("skill_id")):
+            issues.append(f"Q{quest_id}: skill step {index} has no skill id")
+    if template not in {"fountain_rewards", "relic_rewards"} and not plan["endNpcs"]:
+        issues.append(f"Q{quest_id}: template {template!r} has no reward NPC")
+    return issues
 
 
 def required_npc_groups(quest: ET.Element, handler: Handler | None, gatherables_by_item: dict[int, list[dict[str, Any]]]) -> list[tuple[str, list[int]]]:
@@ -603,11 +665,10 @@ def compile_classifier(inputs: Inputs) -> dict[str, Any]:
         else:
             unresolved_items: list[int] = []
             collect = quest.find("collect_items")
-            if handler.template == "item_collecting" and collect is not None:
-                drop_items = {int(drop.attrib.get("item_id", "0")) for drop in quest.findall("quest_drop")}
+            if handler.template != "work_order" and collect is not None:
                 for item in collect.findall("collect_item"):
                     item_id = int(item.attrib["item_id"])
-                    if item_id not in drop_items and item_id not in inputs.gatherables_by_item:
+                    if not item_sources(item_id, quest, handler, inputs):
                         unresolved_items.append(item_id)
             if unresolved_items:
                 plan_support = "template_incomplete"
@@ -658,21 +719,58 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, help="directory for per-quest JSON plans")
     parser.add_argument("--quest", type=int, action="append", default=[], help="quest id to compile (repeatable; defaults to all)")
+    parser.add_argument("--zone", action="append", default=[], help="limit generated plans to an exact quest zone (repeatable)")
+    parser.add_argument("--runnable-only", action="store_true", help="generate only obtainable template plans")
+    parser.add_argument("--check-runnable", action="store_true", help="validate every obtainable template plan has runnable actions")
     parser.add_argument("--classifier", type=Path, default=DEFAULT_CLASSIFIER, help="availability classifier path")
     classifier = parser.add_mutually_exclusive_group()
     classifier.add_argument("--write-classifier", action="store_true", help="write the availability classifier")
     classifier.add_argument("--check-classifier", action="store_true", help="fail when the checked-in classifier is stale")
     args = parser.parse_args()
-    if args.output is None and not args.write_classifier and not args.check_classifier:
-        parser.error("choose --output, --write-classifier, or --check-classifier")
+    if args.output is None and not args.write_classifier and not args.check_classifier and not args.check_runnable:
+        parser.error("choose --output, --write-classifier, --check-classifier, or --check-runnable")
+    if args.runnable_only and args.output is None:
+        parser.error("--runnable-only requires --output")
+    if args.zone and args.output is None:
+        parser.error("--zone requires --output")
 
     try:
         inputs = load_inputs()
+        classifier_document: dict[str, Any] | None = None
         if args.output is not None:
             quest_ids = sorted(set(args.quest)) if args.quest else sorted(inputs.quests)
+            if args.runnable_only:
+                classifier_document = compile_classifier(inputs)
+                runnable = {
+                    entry["id"]
+                    for entry in classifier_document["quests"]
+                    if entry["availability"] == "obtainable" and entry["planSupport"] == "template"
+                }
+                quest_ids = [quest_id for quest_id in quest_ids if quest_id in runnable]
+            if args.zone:
+                zones = set(args.zone)
+                quest_ids = [quest_id for quest_id in quest_ids if inputs.quests[quest_id].attrib.get("quest_zone") in zones]
             write_plans(args.output, quest_ids, inputs)
+        if args.check_runnable:
+            classifier_document = classifier_document or compile_classifier(inputs)
+            runnable_ids = [
+                entry["id"]
+                for entry in classifier_document["quests"]
+                if entry["availability"] == "obtainable" and entry["planSupport"] == "template"
+            ]
+            runnable_issues = [
+                issue
+                for quest_id in runnable_ids
+                for issue in validate_runnable_plan(compile_plan(quest_id, inputs))
+            ]
+            if runnable_issues:
+                for issue in runnable_issues:
+                    print(issue, file=sys.stderr)
+                print(f"{len(runnable_issues)} runnable quest plan defect(s)", file=sys.stderr)
+                return 1
+            print(f"all {len(runnable_ids)} obtainable template plans have runnable actions")
         if args.write_classifier or args.check_classifier:
-            generated = json_text(compile_classifier(inputs))
+            generated = json_text(classifier_document or compile_classifier(inputs))
             classifier_path = args.classifier.resolve()
             if args.check_classifier:
                 if not classifier_path.exists() or classifier_path.read_text(encoding="utf-8-sig") != generated:

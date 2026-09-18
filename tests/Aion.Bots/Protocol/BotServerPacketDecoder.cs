@@ -24,6 +24,7 @@ public sealed class BotServerPacketDecoder
 			[typeof(SM_EMOTION)] = DecodeEmotion,
 			[typeof(SM_NPC_INFO)] = DecodeNpcInfo,
 			[typeof(SM_GATHERABLE_INFO)] = DecodeGatherableInfo,
+			[typeof(SM_GATHER_UPDATE)] = DecodeGatherUpdate,
 			[typeof(SM_MOVE)] = DecodeMove,
 			[typeof(SM_DELETE)] = DecodeDelete,
 			[typeof(SM_TELEPORT_LOC)] = DecodeTeleport,
@@ -296,6 +297,15 @@ public sealed class BotServerPacketDecoder
 		fields["heading"] = r.ReadByte();
 		fields["l10nId"] = r.ReadInt32();
 		return fields;
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeGatherUpdate(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		return Fields(
+			("skillId", r.ReadUInt16()), ("action", r.ReadByte()), ("itemId", r.ReadInt32()),
+			("success", r.ReadInt32()), ("failure", r.ReadInt32()),
+			("executionSpeed", r.ReadInt32()), ("delay", r.ReadInt32()));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeMove(ReadOnlySpan<byte> body)

@@ -8,8 +8,8 @@
     "no_handler": 440
   },
   "plannerCounts": {
-    "template": 3002,
-    "template_incomplete": 386,
+    "template": 2964,
+    "template_incomplete": 424,
     "custom": 927,
     "none": 2824,
     "unavailable": 904
@@ -8429,8 +8429,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000063,
+            186000064,
+            186000065,
+            186000066
+          ]
+        }
+      ]
     },
     {
       "id": 1834,
@@ -8440,8 +8450,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000059,
+            186000060,
+            186000061,
+            186000062
+          ]
+        }
+      ]
     },
     {
       "id": 1835,
@@ -8451,8 +8471,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000055,
+            186000056,
+            186000057,
+            186000058
+          ]
+        }
+      ]
     },
     {
       "id": 1836,
@@ -8462,8 +8492,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000051,
+            186000052,
+            186000053,
+            186000054
+          ]
+        }
+      ]
     },
     {
       "id": 1837,
@@ -8605,8 +8645,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000055,
+            186000056,
+            186000057,
+            186000058
+          ]
+        }
+      ]
     },
     {
       "id": 1850,
@@ -8616,8 +8666,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000051,
+            186000052,
+            186000053,
+            186000054
+          ]
+        }
+      ]
     },
     {
       "id": 1851,
@@ -18908,8 +18968,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000063,
+            186000064,
+            186000065,
+            186000066
+          ]
+        }
+      ]
     },
     {
       "id": 2835,
@@ -18919,8 +18989,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000059,
+            186000060,
+            186000061,
+            186000062
+          ]
+        }
+      ]
     },
     {
       "id": 2836,
@@ -18930,8 +19010,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000055,
+            186000056,
+            186000057,
+            186000058
+          ]
+        }
+      ]
     },
     {
       "id": 2837,
@@ -18941,8 +19031,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000051,
+            186000052,
+            186000053,
+            186000054
+          ]
+        }
+      ]
     },
     {
       "id": 2838,
@@ -37778,8 +37878,16 @@
       "template": "monster_hunt",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            182206729,
+            182206730
+          ]
+        }
+      ]
     },
     {
       "id": 11036,
@@ -39944,8 +40052,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000063,
+            186000064,
+            186000065,
+            186000066
+          ]
+        }
+      ]
     },
     {
       "id": 11280,
@@ -39955,8 +40073,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000059,
+            186000060,
+            186000061,
+            186000062
+          ]
+        }
+      ]
     },
     {
       "id": 11281,
@@ -39966,8 +40094,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000055,
+            186000056,
+            186000057,
+            186000058
+          ]
+        }
+      ]
     },
     {
       "id": 11282,
@@ -39977,8 +40115,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000051,
+            186000052,
+            186000053,
+            186000054
+          ]
+        }
+      ]
     },
     {
       "id": 11283,
@@ -39988,8 +40136,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000063,
+            186000064,
+            186000065,
+            186000066
+          ]
+        }
+      ]
     },
     {
       "id": 11284,
@@ -39999,8 +40157,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000059,
+            186000060,
+            186000061,
+            186000062
+          ]
+        }
+      ]
     },
     {
       "id": 11285,
@@ -40010,8 +40178,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000055,
+            186000056,
+            186000057,
+            186000058
+          ]
+        }
+      ]
     },
     {
       "id": 11286,
@@ -40021,8 +40199,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000051,
+            186000052,
+            186000053,
+            186000054
+          ]
+        }
+      ]
     },
     {
       "id": 11287,
@@ -40628,8 +40816,15 @@
       "template": "monster_hunt",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            182209505
+          ]
+        }
+      ]
     },
     {
       "id": 11457,
@@ -40661,8 +40856,15 @@
       "template": "monster_hunt",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            182209508
+          ]
+        }
+      ]
     },
     {
       "id": 11460,
@@ -51262,8 +51464,15 @@
       "template": "fountain_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000096
+          ]
+        }
+      ]
     },
     {
       "id": 15210,
@@ -56784,8 +56993,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000055,
+            186000056,
+            186000057,
+            186000058
+          ]
+        }
+      ]
     },
     {
       "id": 18850,
@@ -56795,8 +57014,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000051,
+            186000052,
+            186000053,
+            186000054
+          ]
+        }
+      ]
     },
     {
       "id": 18900,
@@ -62022,8 +62251,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000063,
+            186000064,
+            186000065,
+            186000066
+          ]
+        }
+      ]
     },
     {
       "id": 21282,
@@ -62033,8 +62272,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000059,
+            186000060,
+            186000061,
+            186000062
+          ]
+        }
+      ]
     },
     {
       "id": 21283,
@@ -62044,8 +62293,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000055,
+            186000056,
+            186000057,
+            186000058
+          ]
+        }
+      ]
     },
     {
       "id": 21284,
@@ -62055,8 +62314,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000051,
+            186000052,
+            186000053,
+            186000054
+          ]
+        }
+      ]
     },
     {
       "id": 21285,
@@ -62066,8 +62335,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000063,
+            186000064,
+            186000065,
+            186000066
+          ]
+        }
+      ]
     },
     {
       "id": 21286,
@@ -62077,8 +62356,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000059,
+            186000060,
+            186000061,
+            186000062
+          ]
+        }
+      ]
     },
     {
       "id": 21287,
@@ -62088,8 +62377,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000055,
+            186000056,
+            186000057,
+            186000058
+          ]
+        }
+      ]
     },
     {
       "id": 21288,
@@ -62099,8 +62398,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000051,
+            186000052,
+            186000053,
+            186000054
+          ]
+        }
+      ]
     },
     {
       "id": 21289,
@@ -62648,8 +62957,15 @@
       "template": "monster_hunt",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            182209516
+          ]
+        }
+      ]
     },
     {
       "id": 21457,
@@ -62681,8 +62997,15 @@
       "template": "monster_hunt",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            182209519
+          ]
+        }
+      ]
     },
     {
       "id": 21460,
@@ -71924,8 +72247,15 @@
       "template": "report_to",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            182215751
+          ]
+        }
+      ]
     },
     {
       "id": 25201,
@@ -71979,8 +72309,15 @@
       "template": "fountain_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000096
+          ]
+        }
+      ]
     },
     {
       "id": 25210,
@@ -77531,8 +77868,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000055,
+            186000056,
+            186000057,
+            186000058
+          ]
+        }
+      ]
     },
     {
       "id": 28850,
@@ -77542,8 +77889,18 @@
       "template": "relic_rewards",
       "availability": "obtainable",
       "reasons": [],
-      "planSupport": "template",
-      "planIssues": []
+      "planSupport": "template_incomplete",
+      "planIssues": [
+        {
+          "code": "unresolved-item-source",
+          "itemIds": [
+            186000051,
+            186000052,
+            186000053,
+            186000054
+          ]
+        }
+      ]
     },
     {
       "id": 28900,

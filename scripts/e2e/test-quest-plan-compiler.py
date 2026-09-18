@@ -27,6 +27,7 @@ class QuestPlanCompilerTests(unittest.TestCase):
             "--output",
             str(cls.output),
             "--check-classifier",
+            "--check-runnable",
         ]
         for quest_id in (1100, 1101, 1102, 1103, 1145, 2101):
             command.extend(("--quest", str(quest_id)))
@@ -86,7 +87,7 @@ class QuestPlanCompilerTests(unittest.TestCase):
             classifier["counts"],
         )
         self.assertEqual(
-            {"template": 3002, "template_incomplete": 386, "custom": 927, "none": 2824, "unavailable": 904},
+            {"template": 2964, "template_incomplete": 424, "custom": 927, "none": 2824, "unavailable": 904},
             classifier["plannerCounts"],
         )
         by_id = {quest["id"]: quest for quest in classifier["quests"]}
