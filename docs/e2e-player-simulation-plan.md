@@ -1105,7 +1105,49 @@ Every economy scenario ends with invariants: kinah and item totals conserved acr
 `exchange.log`, `craft.log` and `mail.log` in LIVE), no player left with an interaction task, no gatherable stuck
 "occupied", recipe list consistent with quest state, zero unallowlisted problems.
 
-- [ ] **P8-01** [BOTH] L — Gathering, crafting and vendors:
+- [x] **P8-01** [BOTH] L — Gathering, crafting and vendors. (`56d6eb643`)
+  - Shared E1 gathering/depletion/respawn and E2 refusal/interruption scenarios are implemented.
+    Docker-only SIM runs `p8-e1-sim-dev-20260918e` and `p8-e2-sim-dev-20260918a` passed; refreshed enforced LIVE
+    `p8-e1-live-final-20260918a` passed with both respawns observed at 294.991–294.993 s (SIM pins the exact
+    295,000 ms boundary). Enforced LIVE `p8-e2-live-final-20260918a` and Fast tier
+    `p8-gather-fast-20260918a` also passed. Shared E3 buy/sell/repurchase passed Docker-only SIM
+    `p8-e3-sim-dev-20260918a` (also with changed price/modifier/tax state) and enforced LIVE
+    `p8-e3-live-dev-20260918a`. Shared E4 Cooking refusal/confirmation/fee/auto-recipe passed for both races
+    in SIM `p8-e4-sim-dev-20260918a` and enforced LIVE `p8-e4-live-dev-20260918a`.
+    E5's four work orders pass in SIM (`p8-e5-sim-dev-20260918c`) and enforced LIVE
+    (`p8-e5-live-dev-20260918b`). E6 cancel/commit conservation passes SIM (`p8-e6-sim-dev-20260918c`)
+    and enforced LIVE (`p8-e6-live-dev-20260918b`), including all four exchange audit entries.
+    E7 normal/express mail passes SIM (`p8-e7-sim-dev-20260918c`) and enforced LIVE
+    (`p8-e7-live-dev-20260918b`): partial/full-stack attachments, fee-adjusted conservation,
+    repeat-claim safety, emptied/deleted letters and two mail audit entries. SIM also checks persisted mailbox state.
+    Fast tier `p8-mail-fast-20260918a` passed with E6 included. The shared CAPITAL route completes 1006/1007
+    in SIM (`p8-capital-sim-dev-20260918c`); first LIVE `p8-capital-live-dev-20260918a` completed the journey
+    but correctly failed the watcher on an invalid ceremony reward choice (`0647ba2d`). The bot now chooses
+    the first class weapon and asserts all reward item/kinah deltas. SIM now also fails warnings carrying
+    exceptions without requiring the plain-warning opt-in; previously that reward diagnostic slipped through.
+    Corrected SIM `p8-capital-sim-reward-green-20260918a` and LIVE `p8-capital-live-dev-20260918b` pass:
+    both quests completed, exact rewards received, no recurrence of `0647ba2d` or `ebe67ab3` and no new/regressed
+    watcher problems. After level-nine setup near Pernos,
+    it uses client-paced movement, the quest bottle's advertised use time, quest teleports, the 45-second
+    scripted flight, normal attacks against all five opponents, class selection and the Sanctum ceremony.
+    This is a focused scenario, not the deferred no-GM natural journey; geodata remains Phase 9 work.
+    Latest local gates: solution tests 3,632 passed / 15 prerequisite skips;
+    null-logger, clock, custom-quest-draft, fidelity and quest-plan compiler checks passed.
+    All 35 shared Full SIM scenarios passed together (`p8-economy-full-sim-20260918d`),
+    as did Fast `p8-01-fast-20260918c`. Warning baseline passed at 4,243 unique sites, unchanged.
+    E1/E2 LIVE evidence was refreshed after normal retention removed their original artifacts.
+    Final audit also enabled the protocol-warning and audit-log policy for E1–E7/CAPITAL explicitly (P5-09
+    made these opt-in). Three focused tests pin packet-reader/factory/connection warnings and audit entries;
+    plain startup warnings remain separately classified. All eight log-policy tests and shared Full/Fast runs pass.
+    Full rerun `p8-economy-full-sim-20260918c` exposed C11's assumption that incoming damage never interrupts
+    a cast. C11 now handles only explicit combat cancellations with at most three client casts, still requiring
+    a successful result; timeouts and other refusals remain failures (see §7 #34).
+    Initial LIVE fingerprint `ebe67ab3` was a bot assertion racing the post-gather inventory notification;
+    waiting for the actual inventory packet fixes it, with no server change or allowlist entry.
+    The same fingerprint also exposed E5 sending its next craft before the timer's post-success cleanup;
+    a normal 250 ms client cadence fixes it without retrying refusals or changing the server.
+    E6's audit check now distinguishes exchange-service entries from broker startup messages sharing the category.
+    Java counts canceled gathering attempts toward the three-use depletion limit; E2 explicitly preserves that behavior.
   - **E1** Gather Young Aria (Poeta) and Young Azpha (Ishalgen): three harvests, despawn, respawn after 295 s.
   - **E2** Gather negatives: skill too low, too far, cancel, move-abort, second bot on an occupied node, full cube.
   - **E3** Vendor buy, sell, repurchase. Compute expected prices from `PricesService` state (influence and taxes
@@ -1115,7 +1157,7 @@ Every economy scenario ends with invariants: kinah and item totals conserved acr
   - **E5** Work order 5500 (Elyos, Hestia) / 6500 (Asmodian, Lainita): accept (`QUEST_SELECT` 31, then
     `QUEST_ACCEPT_1` 1002 with the quest id), receive 4 issued items, craft 3 at the oven (the recipe consumes only
     the issued item), deliver 3; leftover issued item and work recipe removed. Salt variant: 5501/6501 (Cooking 10,
-    8 issued items, salt 169400096 per craft).
+    8 issued items, craft/deliver 6, salt 169400096 per craft).
   - **E6** Two-bot exchange with conservation, plus cancel.
   - **E7** Mail with item and kinah attachment.
   - At least one play-through route to a capital (ascension quests 1006/1007) instead of `//moveto`.
@@ -1169,7 +1211,7 @@ Every economy scenario ends with invariants: kinah and item totals conserved acr
   skill learned and cast once per class; every bind point bound and revived at. A row fails on an unallowlisted
   problem, a quest-control echo or a missing product; a row with no spawn is "unreachable", not a failure.
 
-**Done when:** E1–E11, S1–S5, G1–G6, L1–L8 and the capital play-through pass in the SIM Full tier (E1, E3, E6 in the
+**Done when:** E1–E11, S1–S7, G1–G6, L1–L8 and the capital play-through pass in the SIM Full tier (E1, E3, E6 in the
 Fast tier); E1, E5, E6, S1 and S2 pass in the LIVE Full tier; P8-08 baselines are committed.
 
 ### Phase 9 — Geodata
@@ -1403,6 +1445,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 31 | Persistent chat/login game-server links inherited a 30-second C# read timeout and disconnected when idle (LIVE fingerprint `06dfcdde`) | `chat-server/.../GsConnection.java`, `login-server/.../GsConnection.java`, and `AcceptReadWriteDispatcherImpl.java`: selector-driven reads have no idle timeout | Resolved by P6-06 (`3a18ef178`) |
 | 32 | `JAXBUtil.Serialize` returned a string declaring UTF-16 because `XmlWriter` saw a `StringWriter`, but callers wrote that string as UTF-8; a second `SpawnsData.SaveSpawn` could not read the first rewrite | `SpawnsData.java:205-216` writes the serialization with `Files.writeString`; `JAXBUtil.java` configures UTF-8, so its declaration and bytes remain self-consistent | Resolved by P7-07 (`d864b0107`) |
 | 33 | `_2002WheresRae.Register` includes NPCs 790002 and 205020, which makes two existing dialog branches reachable | `_2002WheresRae.java:35-41` omits both NPCs from registration while handling them at lines 90 and 174 | Retained for P7-09 e2e reachability; Java's omission leaves both branches unreachable |
+| 34 | C11's starter-skill test assumed every cast completes despite incoming attacks; a legitimate priest cast interruption caused an intermittent Full SIM failure | `CreatureController.java:219-237` permits damage-driven interruption; `PlayerController.java:518-540` sends skill cancellation and its system message | P8-01 verification: test-only bounded handling of explicit combat cancellations; no gameplay change |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

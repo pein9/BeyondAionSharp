@@ -202,7 +202,7 @@ public sealed class BotApi
 	}
 
 	public BotClientPacket Craft(int targetTemplateId, int recipeId, int targetObjectId,
-		IReadOnlyList<(int ItemId, long Count)> materials, byte craftType = 1, byte unknown = 0)
+		IReadOnlyList<(int ItemId, long Count)> materials, byte craftType = 0, byte unknown = 0)
 	{
 		Timing.SetActivity(BotBlockingActivity.Crafting, true);
 		return GameClientPackets.Craft(unknown, targetTemplateId, recipeId, targetObjectId, craftType, materials);
@@ -220,6 +220,12 @@ public sealed class BotApi
 	public BotClientPacket TradeLock() => GameClientPackets.ExchangeLock();
 	public BotClientPacket TradeAccept() => GameClientPackets.ExchangeOk();
 	public BotClientPacket TradeCancel() => GameClientPackets.ExchangeCancel();
+	public BotClientPacket SendMail(string recipient, string title, string message, int itemObjectId, long itemCount, long kinah, byte letterType = 0) =>
+		GameClientPackets.SendMail(recipient, title, message, itemObjectId, itemCount, kinah, letterType);
+	public BotClientPacket CheckMailList(bool expressOnly = false) => GameClientPackets.CheckMailList(expressOnly);
+	public BotClientPacket ReadMail(int letterId) => GameClientPackets.ReadMail(letterId);
+	public BotClientPacket GetMailAttachment(int letterId, byte attachmentType) => GameClientPackets.GetMailAttachment(letterId, attachmentType);
+	public BotClientPacket DeleteMail(int letterId) => GameClientPackets.DeleteMail(letterId);
 
 	public BotClientPacket InviteToGroup(string playerName, byte inviteType = 0) =>
 		GameClientPackets.InviteToGroup(inviteType, playerName);
@@ -246,6 +252,12 @@ public sealed class BotApi
 			(World.SelfObjectId == null || packet.Get<int>("objectId") == World.SelfObjectId))
 			Timing.RecordCastCancelled();
 		else if (packet.PacketType == typeof(SM_GATHER_UPDATE) && packet.Get<byte>("action") >= 5)
+			Timing.SetActivity(BotBlockingActivity.Gathering, false);
+		else if (packet.PacketType == typeof(SM_CRAFT_UPDATE) && packet.Get<byte>("action") >= 4)
+			Timing.SetActivity(BotBlockingActivity.Crafting, false);
+		else if (packet.PacketType == typeof(SM_SYSTEM_MESSAGE) &&
+			packet.Get<string>("name") is "STR_GATHER_OUT_OF_SKILL_POINT" or
+				"STR_GATHER_TOO_FAR_FROM_GATHER_SOURCE" or "STR_GATHER_INVENTORY_IS_FULL")
 			Timing.SetActivity(BotBlockingActivity.Gathering, false);
 		return Reflexes.RespondTo(packet);
 	}

@@ -11,6 +11,7 @@ public sealed class BotWorldModel
 	private readonly Dictionary<int, BotKnownObject> objects = [];
 	private readonly Dictionary<int, BotInventoryItem> inventory = [];
 	private readonly Dictionary<int, BotSkill> skills = [];
+	private readonly HashSet<int> recipes = [];
 	private readonly Dictionary<int, BotSkillCooldown> cooldowns = [];
 	private readonly Dictionary<int, BotQuestState> quests = [];
 	private readonly Dictionary<int, BotCompletedQuest> completedQuests = [];
@@ -21,6 +22,7 @@ public sealed class BotWorldModel
 	public IReadOnlyDictionary<int, BotKnownObject> Objects => objects;
 	public IReadOnlyDictionary<int, BotInventoryItem> Inventory => inventory;
 	public IReadOnlyDictionary<int, BotSkill> Skills => skills;
+	public IReadOnlySet<int> Recipes => recipes;
 	public IReadOnlyDictionary<int, BotSkillCooldown> Cooldowns => cooldowns;
 	public IReadOnlyDictionary<int, BotQuestState> Quests => quests;
 	public IReadOnlyDictionary<int, BotCompletedQuest> CompletedQuests => completedQuests;
@@ -52,6 +54,7 @@ public sealed class BotWorldModel
 	public BotQuestionWindow? Question { get; private set; }
 	public BotLootWindow? Loot { get; private set; }
 	public BotTradeWindow? Trade { get; private set; }
+	public BotVendorPrices? VendorPrices { get; private set; }
 	public BotQuestShare? PendingQuestShare { get; private set; }
 	public string? ExchangeRequestFrom { get; private set; }
 
@@ -108,6 +111,15 @@ public sealed class BotWorldModel
 			inventory.Remove(packet.Get<int>("itemObjectId"));
 		else if (type == typeof(SM_SKILL_LIST))
 			ApplySkillList(packet);
+		else if (type == typeof(SM_RECIPE_LIST))
+		{
+			recipes.Clear();
+			recipes.UnionWith(packet.Get<int[]>("recipeIds"));
+		}
+		else if (type == typeof(SM_LEARN_RECIPE))
+			recipes.Add(packet.Get<int>("recipeId"));
+		else if (type == typeof(SM_RECIPE_DELETE))
+			recipes.Remove(packet.Get<int>("recipeId"));
 		else if (type == typeof(SM_SKILL_COOLDOWN))
 			ApplySkillCooldowns(packet);
 		else if (type == typeof(SM_QUEST_LIST))
@@ -129,6 +141,9 @@ public sealed class BotWorldModel
 			ApplyLootItems(packet);
 		else if (type == typeof(SM_TRADELIST))
 			ApplyTrade(packet);
+		else if (type == typeof(SM_PRICES))
+			VendorPrices = new BotVendorPrices(packet.Get<byte>("globalPrices"), packet.Get<byte>("globalModifier"),
+				packet.Get<byte>("taxes"));
 		else if (type == typeof(SM_SYSTEM_MESSAGE))
 			ApplySystemMessage(packet);
 		else if (type == typeof(SM_EXCHANGE_REQUEST))
@@ -500,3 +515,17 @@ public sealed record BotTradeWindow(int TargetObjectId, byte NpcType, int BuyPri
 
 public sealed record BotSystemMessage(int MessageId, string? Name, IReadOnlyList<string> Parameters,
 	IReadOnlyList<string> SpecialParameters, int SenderObjectId);
+
+/// <summary>PricesService's live race/influence/tax percentages, as reported in SM_PRICES.</summary>
+public sealed record BotVendorPrices(int GlobalPrices, int GlobalModifier, int Taxes)
+{
+	public long ServicePrice(long basePrice) =>
+		(long)((long)((long)(basePrice * GlobalPrices / 100D) * GlobalModifier / 100D) * Taxes / 100D);
+
+	// Java PricesService.getBuyPrice truncates after EACH percentage, not just the final product.
+	public long BuyPrice(long basePrice, int vendorBuyModifier) =>
+		(long)((long)((long)((long)(basePrice * vendorBuyModifier / 100D) * GlobalPrices / 100D)
+			* GlobalModifier / 100D) * Taxes / 100D);
+
+	public static long SellPrice(long basePrice, int vendorSellModifier) => (long)(basePrice * vendorSellModifier / 100D);
+}

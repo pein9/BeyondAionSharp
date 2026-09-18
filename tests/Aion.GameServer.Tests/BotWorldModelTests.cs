@@ -10,6 +10,34 @@ namespace Aion.GameServer.Tests;
 public sealed class BotWorldModelTests
 {
 	[Fact]
+	public void RecipesTrackSnapshotLearningAndQuestCleanup()
+	{
+		var world = new BotWorldModel();
+		world.Apply(Packet<SM_RECIPE_LIST>(("recipeIds", new[] { 155001381 })));
+		world.Apply(Packet<SM_LEARN_RECIPE>(("recipeId", 155004206)));
+		world.Apply(Packet<SM_LEARN_RECIPE>(("recipeId", 155004206)));
+		Assert.Equal(new[] { 155001381, 155004206 }, world.Recipes.Order());
+		world.Apply(Packet<SM_RECIPE_DELETE>(("recipeId", 155004206)));
+		Assert.Equal(155001381, Assert.Single(world.Recipes));
+		world.BeginWorldReload();
+		Assert.Equal(155001381, Assert.Single(world.Recipes));
+		world.Apply(Packet<SM_RECIPE_LIST>(("recipeIds", Array.Empty<int>())));
+		Assert.Empty(world.Recipes);
+	}
+
+	[Fact]
+	public void VendorPricesUseObservedRatesAndTruncateEachStage()
+	{
+		var world = new BotWorldModel();
+		world.Apply(Packet<SM_PRICES>(("globalPrices", (byte)117), ("globalModifier", (byte)109), ("taxes", (byte)113)));
+		Assert.NotNull(world.VendorPrices);
+		Assert.Equal(178, world.VendorPrices.BuyPrice(101, 123));
+		Assert.Equal(20, BotVendorPrices.SellPrice(101, 20));
+		world.Apply(Packet<SM_PRICES>(("globalPrices", (byte)100), ("globalModifier", (byte)100), ("taxes", (byte)100)));
+		Assert.Equal(124, world.VendorPrices.BuyPrice(101, 123));
+	}
+
+	[Fact]
 	public void BeginWorldReloadClearsTransientVisibleState()
 	{
 		var world = new BotWorldModel();

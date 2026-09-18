@@ -467,19 +467,38 @@ public sealed partial class SimulationFastScenarioTests
 				{
 					TargetObjectId = targetId,
 				};
-				await session.SendPacketAsync(GameClientPackets.CastSpell(cast), token);
 				using var castTimeout = CancellationTokenSource.CreateLinkedTokenSource(token);
 				castTimeout.CancelAfter(TimeSpan.FromSeconds(5));
 				try
 				{
-					if (template.GetDuration() > 0)
+					bool completed = false;
+					for (int attempt = 0; attempt < 3 && !completed; attempt++)
 					{
-						await session.WaitForPacketAsync(typeof(SM_CASTSPELL), castTimeout.Token,
-							packet => packet.Get<ushort>("spellId") == skillId);
-						await session.AdvanceAsync(TimeSpan.FromMilliseconds(template.GetDuration() + 1), token);
+						int firstPacket = session.PacketHistory.Count;
+						await session.SendPacketAsync(GameClientPackets.CastSpell(cast), token);
+						if (template.GetDuration() > 0)
+						{
+							await session.WaitForPacketAsync(typeof(SM_CASTSPELL), castTimeout.Token,
+								packet => packet.Get<ushort>("spellId") == skillId);
+							await session.AdvanceAsync(TimeSpan.FromMilliseconds(template.GetDuration() + 1), token);
+						}
+						var outcome = await session.WaitForPacketAsync(packet =>
+							(packet.PacketType == typeof(SM_CASTSPELL_RESULT) && packet.Get<ushort>("skillId") == skillId) ||
+							(packet.PacketType == typeof(SM_SKILL_CANCEL) && packet.Get<ushort>("skillId") == skillId &&
+								packet.Get<int>("objectId") == player.GetObjectId()), castTimeout.Token);
+						completed = outcome.PacketType == typeof(SM_CASTSPELL_RESULT);
+						if (!completed)
+						{
+							// Java CreatureController.onAttack legitimately interrupts casts. Retry only an observed
+							// combat cancellation, never a timeout/refusal; still require a completed cast within 3 tries.
+							Assert.Contains(session.PacketHistory.Skip(firstPacket), packet => packet.PacketType == typeof(SM_ATTACK));
+							await session.WaitForPacketAsync(typeof(SM_SYSTEM_MESSAGE), castTimeout.Token,
+								packet => packet.Get<string?>("name") == "STR_SKILL_CANCELED");
+							Console.WriteLine($"C11 {entry.Item1} skill {skillId}: combat interruption on attempt {attempt + 1}.");
+							await session.AdvanceAsync(TimeSpan.FromMilliseconds(2_001), token);
+						}
 					}
-					await session.WaitForPacketAsync(typeof(SM_CASTSPELL_RESULT), castTimeout.Token,
-						packet => packet.Get<ushort>("skillId") == skillId);
+					Assert.True(completed, $"{entry.Item1} skill {skillId} did not complete within three combat attempts.");
 				}
 				catch (OperationCanceledException) when (!token.IsCancellationRequested)
 				{

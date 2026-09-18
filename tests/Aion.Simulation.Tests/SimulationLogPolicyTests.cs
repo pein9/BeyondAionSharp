@@ -31,6 +31,22 @@ public sealed class SimulationLogPolicyTests
 	}
 
 	[Fact]
+	public async Task WarningWithExceptionFailsWithoutOptingIntoPlainWarnings()
+	{
+		await using var clock = new VirtualThreadPool(strict: true);
+		using var policy = NewPolicy(clock);
+		using (policy.BeginBotStep("b01", "reward"))
+			AionLog.For("QuestService").LogWarning(new InvalidOperationException("invalid reward index"), "Reward selection failed");
+
+		var error = Assert.Throws<SimulationLogPolicyException>(policy.AssertClean);
+		var problem = Assert.Single(error.Problems);
+		Assert.Equal(LogLevel.Warning, problem.Level);
+		Assert.Equal("b01", problem.Bot);
+		Assert.Equal("reward", problem.Step);
+		Assert.Contains("InvalidOperationException: invalid reward index", error.Message, StringComparison.Ordinal);
+	}
+
+	[Fact]
 	public async Task WarningAuditAndUnexpectedRefusalRequireOptIn()
 	{
 		await using var clock = new VirtualThreadPool(strict: true);
@@ -61,6 +77,36 @@ public sealed class SimulationLogPolicyTests
 		Assert.Contains(error.Problems, problem => problem.Level == LogLevel.Warning);
 		Assert.Contains(error.Problems, problem => problem.Kind == "audit");
 		Assert.Contains(error.Problems, problem => problem.Kind == "unexpected-refusal" && problem.Bot == "b02");
+	}
+
+	[Theory]
+	[InlineData("BaseClientPacket")]
+	[InlineData("AionClientPacketFactory")]
+	[InlineData("AionConnection")]
+	public async Task EconomyPolicySelectsProtocolWarningsAndAuditWithoutPlainStartupWarnings(string category)
+	{
+		await using var clock = new VirtualThreadPool(strict: true);
+		using var policy = NewPolicy(clock, new SimulationLogPolicyOptions
+		{
+			FailOnProtocolWarnings = true,
+			FailOnAuditLog = true,
+		});
+		AionLog.For("GeoWorldLoader").LogWarning("existing startup warning");
+		using (policy.BeginBotStep("b01", "trade"))
+		{
+			AionLog.For(category).LogWarning("malformed protocol");
+			AionLog.For("AUDIT_LOG").LogInformation("invalid client action");
+		}
+
+		var error = Assert.Throws<SimulationLogPolicyException>(policy.AssertClean);
+		Assert.Equal(2, error.Problems.Count);
+		Assert.Contains(error.Problems, problem => problem.Kind == "log" && problem.Level == LogLevel.Warning);
+		Assert.Contains(error.Problems, problem => problem.Kind == "audit");
+		Assert.All(error.Problems, problem =>
+		{
+			Assert.Equal("b01", problem.Bot);
+			Assert.Equal("trade", problem.Step);
+		});
 	}
 
 	[Fact]

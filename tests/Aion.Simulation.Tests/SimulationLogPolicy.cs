@@ -155,7 +155,10 @@ public sealed class SimulationLogPolicy : IDisposable
 			if (entry.Exception != null && faults.Any(fault => ReferenceEquals(fault.Exception, entry.Exception)))
 				continue; // Report scheduler failures once, below, with their virtual due time.
 			bool selected = entry.Level >= LogLevel.Error ||
+				(entry.Level == LogLevel.Warning && entry.Exception != null) ||
 				(options.FailOnWarnings && entry.Level == LogLevel.Warning) ||
+				(options.FailOnProtocolWarnings && entry.Level == LogLevel.Warning &&
+					entry.Category is "BaseClientPacket" or "AionClientPacketFactory" or "AionConnection") ||
 				(options.FailOnAuditLog && entry.Category == "AUDIT_LOG");
 			if (!selected)
 				continue;
@@ -219,6 +222,7 @@ public sealed class SimulationLogPolicy : IDisposable
 public sealed record SimulationLogPolicyOptions
 {
 	public bool FailOnWarnings { get; init; }
+	public bool FailOnProtocolWarnings { get; init; }
 	public bool FailOnAuditLog { get; init; }
 	public IReadOnlySet<string> UnexpectedRefusalSystemMessages { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 }

@@ -25,6 +25,8 @@ public sealed class BotServerPacketDecoder
 			[typeof(SM_NPC_INFO)] = DecodeNpcInfo,
 			[typeof(SM_GATHERABLE_INFO)] = DecodeGatherableInfo,
 			[typeof(SM_GATHER_UPDATE)] = DecodeGatherUpdate,
+			[typeof(SM_CRAFT_UPDATE)] = DecodeCraftUpdate,
+			[typeof(SM_ITEM_USAGE_ANIMATION)] = DecodeItemUsage,
 			[typeof(SM_MOVE)] = DecodeMove,
 			[typeof(SM_DELETE)] = DecodeDelete,
 			[typeof(SM_TELEPORT_LOC)] = DecodeTeleport,
@@ -49,6 +51,9 @@ public sealed class BotServerPacketDecoder
 			[typeof(SM_DELETE_ITEM)] = DecodeDeleteItem,
 			[typeof(SM_CUBE_UPDATE)] = DecodeCubeUpdate,
 			[typeof(SM_SKILL_LIST)] = DecodeSkillList,
+			[typeof(SM_RECIPE_LIST)] = DecodeRecipeList,
+			[typeof(SM_LEARN_RECIPE)] = DecodeLearnRecipe,
+			[typeof(SM_RECIPE_DELETE)] = DecodeRecipeDelete,
 			[typeof(SM_SKILL_COOLDOWN)] = DecodeSkillCooldown,
 			[typeof(SM_CASTSPELL)] = DecodeCastSpell,
 			[typeof(SM_CASTSPELL_RESULT)] = DecodeCastSpellResult,
@@ -59,9 +64,15 @@ public sealed class BotServerPacketDecoder
 			[typeof(SM_LOOT_STATUS)] = DecodeLootStatus,
 			[typeof(SM_LOOT_ITEMLIST)] = DecodeLootItemList,
 			[typeof(SM_TRADELIST)] = DecodeTradeList,
+			[typeof(SM_PRICES)] = DecodePrices,
+			[typeof(SM_SELL_ITEM)] = DecodeSellItem,
+			[typeof(SM_REPURCHASE)] = DecodeRepurchase,
 			[typeof(SM_GROUP_INFO)] = DecodeGroupInfo,
 			[typeof(SM_MAIL_SERVICE)] = DecodeMailService,
 			[typeof(SM_EXCHANGE_REQUEST)] = DecodeExchangeRequest,
+			[typeof(SM_EXCHANGE_CONFIRMATION)] = DecodeExchangeConfirmation,
+			[typeof(SM_EXCHANGE_ADD_KINAH)] = DecodeExchangeKinah,
+			[typeof(SM_EXCHANGE_ADD_ITEM)] = DecodeExchangeItem,
 		}.ToFrozenDictionary();
 
 	public IReadOnlyCollection<Type> PacketTypes => Decoders.Keys;
@@ -89,6 +100,43 @@ public sealed class BotServerPacketDecoder
 		if (!Decoders.TryGetValue(packetType, out var decoder))
 			throw new NotSupportedException($"The bot does not decode {packetType.Name}.");
 		return new DecodedBotServerPacket(packetType, decoder(body));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeItemUsage(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		var fields = Fields(("playerObjId", r.ReadInt32()), ("targetObjId", r.ReadInt32()), ("itemObjId", r.ReadInt32()),
+			("itemId", r.ReadInt32()), ("castTime", r.ReadInt32()), ("animationId", r.ReadByte()), ("suppressAnimation", r.ReadByte() != 0));
+		int count = r.ReadUInt16();
+		r.Skip(checked(count * 4));
+		if (r.Remaining != 0) throw new InvalidDataException("Item-use animation has unexpected trailing bytes.");
+		return fields;
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeRecipeList(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		var ids = new int[r.ReadUInt16()];
+		for (int i = 0; i < ids.Length; i++)
+		{
+			ids[i] = r.ReadInt32();
+			r.Skip(1);
+		}
+		return Fields(("recipeIds", ids));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeLearnRecipe(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		int id = r.ReadInt32();
+		r.Skip(1);
+		return Fields(("recipeId", id));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeRecipeDelete(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		return Fields(("recipeId", r.ReadInt32()));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeKey(ReadOnlySpan<byte> body)
@@ -268,6 +316,8 @@ public sealed class BotServerPacketDecoder
 			fields["currentAttackSpeed"] = r.ReadUInt16();
 			fields["reserved"] = r.ReadByte();
 		}
+		else if ((byte)fields["emotionType"]! == (byte)Aion.GameServer.Model.EmotionType.START_FLYTELEPORT)
+			fields["teleportId"] = r.ReadInt32();
 		return fields;
 	}
 
@@ -314,6 +364,15 @@ public sealed class BotServerPacketDecoder
 		return Fields(
 			("objectId", r.ReadInt32()), ("x", r.ReadSingle()), ("y", r.ReadSingle()), ("z", r.ReadSingle()),
 			("heading", r.ReadByte()), ("movementMask", r.ReadByte()));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeCraftUpdate(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		return Fields(
+			("skillId", r.ReadUInt16()), ("action", r.ReadByte()), ("itemId", r.ReadInt32()),
+			("success", r.ReadInt32()), ("failure", r.ReadInt32()), ("executionSpeed", r.ReadInt32()),
+			("delay", r.ReadInt32()), ("msgId", r.ReadInt32()), ("itemName", r.ReadString()));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeWindstream(ReadOnlySpan<byte> body)
@@ -654,6 +713,45 @@ public sealed class BotServerPacketDecoder
 		return Fields(("targetObjectId", target), ("items", items));
 	}
 
+	private static IReadOnlyDictionary<string, object?> DecodePrices(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		return Fields(("globalPrices", r.ReadByte()), ("globalModifier", r.ReadByte()), ("taxes", r.ReadByte()));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeSellItem(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		int target = r.ReadInt32();
+		byte type = r.ReadByte();
+		int rate = r.ReadInt32();
+		bool buy = r.ReadByte() != 0, sell = r.ReadByte() != 0;
+		int count = r.ReadUInt16();
+		var tabs = new int[count];
+		for (int i = 0; i < count; i++) tabs[i] = r.ReadInt32();
+		return Fields(("targetObjectId", target), ("objectId", target), ("tradeNpcType", type),
+			("buyPriceRate", rate), ("showBuyTab", buy), ("showSellTab", sell), ("tabIds", tabs));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeRepurchase(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		int target = r.ReadInt32();
+		int action = r.ReadInt32();
+		int count = r.ReadUInt16();
+		var items = new List<IReadOnlyDictionary<string, object?>>(count);
+		for (int i = 0; i < count; i++)
+		{
+			int objectId = r.ReadInt32(), itemId = r.ReadInt32();
+			string desc = r.ReadString();
+			byte[] blob = r.ReadLengthPrefixedBlob();
+			ItemGeneralInfo? general = DecodeItemGeneralInfo(blob);
+			items.Add(Fields(("objectId", objectId), ("itemId", itemId), ("desc", desc), ("blob", blob),
+				("itemCount", general?.ItemCount), ("repurchasePrice", r.ReadInt64())));
+		}
+		return Fields(("targetObjectId", target), ("action", action), ("items", items));
+	}
+
 	private static IReadOnlyDictionary<string, object?> DecodeTradeList(ReadOnlySpan<byte> body)
 	{
 		var r = new PacketBodyReader(body);
@@ -690,8 +788,57 @@ public sealed class BotServerPacketDecoder
 		var r = new PacketBodyReader(body);
 		var service = r.ReadByte();
 		var fields = Fields(("serviceId", service));
-		if (service == 1)
-			fields["messageId"] = r.ReadByte();
+		switch (service)
+		{
+			case 0:
+				fields["totalCount"] = r.ReadUInt16(); fields["unreadCount"] = r.ReadUInt16();
+				fields["expressCount"] = r.ReadUInt16(); fields["blackCloudCount"] = r.ReadUInt16();
+				break;
+			case 1:
+				fields["messageId"] = r.ReadByte();
+				break;
+			case 2:
+				fields["recipientId"] = r.ReadInt32(); r.Skip(1);
+				int signedCount = r.ReadInt16();
+				fields["lastPacket"] = signedCount <= 0;
+				var letters = new List<IReadOnlyDictionary<string, object?>>();
+				for (int i = 0; i < Math.Abs(signedCount); i++)
+					letters.Add(Fields(("letterId", r.ReadInt32()), ("sender", r.ReadString()), ("title", r.ReadString()),
+						("isRead", r.ReadByte() != 0), ("itemObjectId", r.ReadInt32()), ("itemId", r.ReadInt32()),
+						("kinah", r.ReadInt64()), ("letterType", r.ReadByte())));
+				fields["letters"] = letters;
+				break;
+			case 3:
+				fields["recipientId"] = r.ReadInt32();
+				fields["packedCounts"] = r.ReadInt32(); fields["specialUnreadCount"] = r.ReadInt32();
+				fields["letterId"] = r.ReadInt32(); r.Skip(4);
+				fields["sender"] = r.ReadString(); fields["title"] = r.ReadString(); fields["message"] = r.ReadString();
+				int itemObjectId = r.ReadInt32();
+				fields["itemObjectId"] = itemObjectId; fields["itemId"] = r.ReadInt32();
+				r.Skip(8);
+				if (itemObjectId != 0)
+				{
+					fields["desc"] = r.ReadString();
+					byte[] blob = r.ReadLengthPrefixedBlob();
+					fields["blob"] = blob; fields["itemCount"] = DecodeItemGeneralInfo(blob)?.ItemCount;
+				}
+				else { r.Skip(4); fields["itemCount"] = 0L; }
+				// Java deliberately writes only 32 bits here (the list above carries the full 64-bit amount).
+				fields["kinah"] = r.ReadInt32(); r.Skip(5);
+				fields["timestampSeconds"] = r.ReadInt32(); fields["letterType"] = r.ReadByte();
+				break;
+			case 5:
+				fields["letterId"] = r.ReadInt32(); fields["attachmentType"] = r.ReadByte(); fields["success"] = r.ReadByte();
+				break;
+			case 6:
+				fields["packedCounts"] = r.ReadInt32(); fields["specialUnreadCount"] = r.ReadInt32();
+				var deleted = new int[r.ReadUInt16()];
+				for (int i = 0; i < deleted.Length; i++) deleted[i] = r.ReadInt32();
+				fields["deletedIds"] = deleted;
+				break;
+			default: throw new InvalidDataException($"Unknown mail service {service}.");
+		}
+		if (r.Remaining != 0) throw new InvalidDataException($"Mail service {service} left {r.Remaining} bytes unread.");
 		return fields;
 	}
 
@@ -717,6 +864,30 @@ public sealed class BotServerPacketDecoder
 				("equipmentSlot", r.ReadUInt16()), ("cloth", r.ReadByte() != 0)));
 		}
 		return items;
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeExchangeConfirmation(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		return Fields(("action", r.ReadByte()));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeExchangeKinah(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		return Fields(("action", r.ReadByte()), ("kinahCount", r.ReadInt64()));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeExchangeItem(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		byte action = r.ReadByte();
+		int itemId = r.ReadInt32(), objectId = r.ReadInt32();
+		string description = r.ReadString();
+		var blob = r.ReadLengthPrefixedBlob();
+		var general = DecodeItemGeneralInfo(blob);
+		return Fields(("action", action), ("itemId", itemId), ("objectId", objectId),
+			("desc", description), ("blob", blob), ("itemCount", general?.ItemCount));
 	}
 
 	private static ItemGeneralInfo? DecodeItemGeneralInfo(ReadOnlySpan<byte> blob)

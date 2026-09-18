@@ -149,6 +149,30 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 				case "Q5":
 					await RunQ5Async(execution.Scenario, includeHistory);
 					break;
+				case "E1":
+					await RunE1Async(execution.Scenario, includeHistory);
+					break;
+				case "E2":
+					await RunE2Async(execution.Scenario, includeHistory);
+					break;
+				case "E3":
+					await RunE3Async(execution.Scenario, includeHistory);
+					break;
+				case "E4":
+					await RunE4Async(execution.Scenario, includeHistory);
+					break;
+				case "E5":
+					await RunE5Async(execution.Scenario, includeHistory);
+					break;
+				case "E6":
+					await RunE6Async(execution.Scenario, includeHistory);
+					break;
+				case "E7":
+					await RunE7Async(execution.Scenario, includeHistory);
+					break;
+				case "CAPITAL":
+					await RunCapitalAsync(execution.Scenario, includeHistory);
+					break;
 				default:
 					throw new InvalidOperationException($"SIM scenario '{execution.Scenario.Id}' has no runner.");
 			}
@@ -612,6 +636,13 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		File.WriteAllText(path, JsonSerializer.Serialize(artifact, new JsonSerializerOptions { WriteIndented = true }) + "\n");
 	}
 
+	private SimulationLogPolicy NewEconomyPolicy(string scenario, bool includeHistory) =>
+		NewPolicy(scenario, includeHistory, new SimulationLogPolicyOptions
+		{
+			FailOnProtocolWarnings = true,
+			FailOnAuditLog = true,
+		});
+
 	private SimulationLogPolicy NewPolicy(string scenario, bool includeHistory,
 		SimulationLogPolicyOptions? options = null) => new(
 		"sim-fast",
@@ -709,6 +740,8 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		public List<SimulationPacketObservation> PacketObservations { get; } = [];
 		public int CharacterId => characterId;
 		public BotApi Api => api;
+		public BotPosition CurrentPosition => currentPosition ?? api.World.Position
+			?? throw new InvalidOperationException("Enter the world before reading the current position.");
 
 		public void BeginStep(string step, string action)
 		{
@@ -788,6 +821,9 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 
 		public Task<DecodedBotServerPacket> WaitForPacketAsync(Type packetType, CancellationToken cancellationToken,
 			Func<DecodedBotServerPacket, bool> predicate) => WaitForAsync(packetType, cancellationToken, predicate);
+
+		public Task<DecodedBotServerPacket> WaitForPacketAsync(Func<DecodedBotServerPacket, bool> predicate,
+			CancellationToken cancellationToken) => WaitForAsync(null, cancellationToken, predicate);
 
 		public Task SendMovementAsync(MovementPacketData movement, CancellationToken cancellationToken) =>
 			SendAsync(api.MoveTo(movement), cancellationToken);
@@ -1048,7 +1084,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		private async Task<DecodedBotServerPacket> WaitForAsync(Type packetType, CancellationToken cancellationToken)
 			=> await WaitForAsync(packetType, cancellationToken, null);
 
-		private async Task<DecodedBotServerPacket> WaitForAsync(Type packetType, CancellationToken cancellationToken,
+		private async Task<DecodedBotServerPacket> WaitForAsync(Type? packetType, CancellationToken cancellationToken,
 			Func<DecodedBotServerPacket, bool>? predicate)
 		{
 			while (true)
@@ -1059,7 +1095,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 					await SendAsync(response, cancellationToken);
 				if (packet.PacketType == typeof(SM_ENTER_WORLD_CHECK) && packet.Get<byte>("msg") != 0)
 					throw new InvalidDataException($"SM_ENTER_WORLD_CHECK refused entry with message {packet.Get<byte>("msg")}.");
-				if (packet.PacketType == packetType && (predicate == null || predicate(packet)))
+				if ((packetType == null || packet.PacketType == packetType) && (predicate == null || predicate(packet)))
 					return packet;
 			}
 		}

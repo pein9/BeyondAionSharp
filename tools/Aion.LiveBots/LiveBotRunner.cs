@@ -43,6 +43,22 @@ public static partial class LiveBotRunner
 			return await RunQ2Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "Q3" }])
 			return await RunQ3Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "E1" }])
+			return await RunGatheringAsync(options, problems, false, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "E2" }])
+			return await RunGatheringAsync(options, problems, true, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "E3" }])
+			return await RunE3Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "E4" }])
+			return await RunE4Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "E5" }])
+			return await RunE5Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "E6" }])
+			return await RunE6Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "E7" }])
+			return await RunE7Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "CAPITAL" }])
+			return await RunCapitalAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "Q4P" }])
 			return await RunQuestPlanZoneAsync(options, problems, "Poeta", Race.ELYOS, "Aeliveqp", cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "Q4I" }])

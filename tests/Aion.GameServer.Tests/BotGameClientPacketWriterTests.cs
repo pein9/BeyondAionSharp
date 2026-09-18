@@ -64,6 +64,7 @@ public sealed class BotGameClientPacketWriterTests
 		yield return C("teleport-done", GameClientPackets.TeleportAnimationDone(), game);
 		yield return C("movie-end", GameClientPackets.PlayMovieEnd(1, 104, 105, 106, true), game, "movieId", 106);
 		yield return C("ping", GameClientPackets.Ping(7), auth);
+		yield return C("time-check", GameClientPackets.TimeCheck(123456), game, "nanoTime", 123456);
 		yield return C("question", GameClientPackets.QuestionResponse(107, 1, 108), game, "questionid", 107);
 		yield return C("move", GameClientPackets.Move(new MovementPacketData(1, 2, 3, 4, allMove,
 			X2: 5, Y2: 6, Z2: 7, GlideFlag: GlideFlag.GEYSER, GeyserLocationId: 8,
@@ -108,6 +109,14 @@ public sealed class BotGameClientPacketWriterTests
 		yield return C("exchange-lock", GameClientPackets.ExchangeLock(), game);
 		yield return C("exchange-ok", GameClientPackets.ExchangeOk(), game);
 		yield return C("exchange-cancel", GameClientPackets.ExchangeCancel(), game);
+		yield return C("mail-send", GameClientPackets.SendMail("Recipient", "Title", "Message", 149, 3, 125), game,
+			new Dictionary<string, object?> { ["recipientName"] = "Recipient", ["title"] = "Title", ["message"] = "Message",
+				["itemObjId"] = 149, ["itemCount"] = 3L, ["kinahCount"] = 125L, ["idLetterType"] = 0 });
+		yield return C("mail-list", GameClientPackets.CheckMailList(true), game, "expressOnly", true);
+		yield return C("mail-read", GameClientPackets.ReadMail(150), game, "mailObjId", 150);
+		yield return C("mail-attachment", GameClientPackets.GetMailAttachment(150, 1), game,
+			new Dictionary<string, object?> { ["mailObjId"] = 150, ["attachmentType"] = (byte)1 });
+		yield return C("mail-delete", GameClientPackets.DeleteMail(150, 151), game, "mailObjIds", new[] { 150, 151 });
 		yield return C("chat-public", GameClientPackets.ChatMessagePublic(0, "hello"), game, "message", "hello");
 		yield return C("chat-whisper", GameClientPackets.ChatMessageWhisper("Target", "hello"), game, "name", "Target");
 		yield return C("group-invite", GameClientPackets.InviteToGroup(0, "Target"), game, "playerName", "Target");

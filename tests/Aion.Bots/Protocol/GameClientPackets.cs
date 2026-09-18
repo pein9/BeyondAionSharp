@@ -72,6 +72,7 @@ public static class GameClientPackets
 	public static BotClientPacket PlayMovieEnd(byte type, int targetObjectId, int questId, int movieId, bool canSkip, byte unknown = 0) =>
 		Create<CM_PLAY_MOVIE_END>(w => { w.C(type); w.D(targetObjectId); w.D(questId); w.D(movieId); w.C(unknown); w.C(canSkip ? 0 : 1); });
 	public static BotClientPacket Ping(short unknown = 0) => Create<CM_PING>(w => w.H(unknown));
+	public static BotClientPacket TimeCheck(int clientMillis) => Create<CM_TIME_CHECK>(w => w.D(clientMillis));
 	public static BotClientPacket QuestionResponse(int questionId, byte response, int senderId, byte unknownByte = 0,
 		short unknownShort1 = 0, int unknownInt = 0, short unknownShort2 = 0) => Create<CM_QUESTION_RESPONSE>(w =>
 	{
@@ -177,6 +178,16 @@ public static class GameClientPackets
 	public static BotClientPacket ExchangeLock() => Empty<CM_EXCHANGE_LOCK>();
 	public static BotClientPacket ExchangeOk() => Empty<CM_EXCHANGE_OK>();
 	public static BotClientPacket ExchangeCancel() => Empty<CM_EXCHANGE_CANCEL>();
+	public static BotClientPacket SendMail(string recipient, string title, string message, int itemObjectId, long itemCount, long kinah, byte letterType = 0) =>
+		Create<CM_SEND_MAIL>(w => { w.S(recipient); w.S(title); w.S(message); w.D(itemObjectId); w.Q(itemCount); w.Q(kinah); w.C(letterType); });
+	public static BotClientPacket CheckMailList(bool expressOnly = false) => Create<CM_CHECK_MAIL_LIST>(w => w.C(expressOnly ? 1 : 0));
+	public static BotClientPacket ReadMail(int letterId) => Create<CM_READ_MAIL>(w => w.D(letterId));
+	public static BotClientPacket GetMailAttachment(int letterId, byte attachmentType) => Create<CM_GET_MAIL_ATTACHMENT>(w => { w.D(letterId); w.C(attachmentType); });
+	public static BotClientPacket DeleteMail(params int[] letterIds) => Create<CM_DELETE_MAIL>(w =>
+	{
+		w.UH(letterIds.Length);
+		foreach (int id in letterIds) { w.D(id); w.C(0); }
+	});
 	public static BotClientPacket ChatMessagePublic(byte type, string message) => Create<CM_CHAT_MESSAGE_PUBLIC>(w => { w.C(type); w.S(message); });
 	public static BotClientPacket ChatMessageWhisper(string name, string message) => Create<CM_CHAT_MESSAGE_WHISPER>(w => { w.S(name); w.S(message); });
 	public static BotClientPacket InviteToGroup(byte inviteType, string playerName) => Create<CM_INVITE_TO_GROUP>(w => { w.C(inviteType); w.S(playerName); });

@@ -12,9 +12,9 @@ public sealed class BotServerPacketDecoderTests
 	private readonly BotServerPacketDecoder decoder = new();
 
 	[Fact]
-	public void DecoderInventoryContainsFiftyOneBotPerceptionPackets()
+	public void DecoderInventoryContainsExpectedBotPerceptionPackets()
 	{
-		Assert.Equal(51, decoder.PacketTypes.Count);
+		Assert.Equal(62, decoder.PacketTypes.Count);
 		Assert.Contains(typeof(SM_MESSAGE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_EMOTION), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_SYSTEM_MESSAGE), decoder.PacketTypes);
@@ -65,6 +65,13 @@ public sealed class BotServerPacketDecoderTests
 	{
 		foreach (var packetType in decoder.PacketTypes.OrderBy(type => type.Name, StringComparer.Ordinal))
 		{
+			if (packetType == typeof(SM_PRICES))
+			{
+				// No existing Java-generated fixture for this connection-dependent packet. Pin its complete,
+				// audited three-byte layout here; SIM E3 also checks the values against the running PricesService.
+				AssertPricesWireContract();
+				continue;
+			}
 			using var fixture = LoadFixture(packetType.Name + ".json");
 			var root = fixture.RootElement;
 			Assert.Equal("Java", root.GetProperty("source").GetString());
@@ -76,6 +83,31 @@ public sealed class BotServerPacketDecoderTests
 				AssertCaseWithoutTopLevelPrimitive(packetType, decoded, comparisons);
 			}
 		}
+	}
+
+	[Fact]
+	public void PricesPacketHasExactlyThreeUnsignedPercentages() => AssertPricesWireContract();
+
+	private void AssertPricesWireContract()
+	{
+		var packet = decoder.Decode(typeof(SM_PRICES), [125, 107, 109]);
+		Assert.Equal((byte)125, packet.Get<byte>("globalPrices"));
+		Assert.Equal((byte)107, packet.Get<byte>("globalModifier"));
+		Assert.Equal((byte)109, packet.Get<byte>("taxes"));
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_PRICES), [125, 107]));
+	}
+
+	[Fact]
+	public void RepurchaseDecoderReadsItemBlobBeforeItsPrice()
+	{
+		using var fixture = LoadFixture("SM_REPURCHASE.json");
+		var entry = fixture.RootElement.GetProperty("cases")[0];
+		var packet = decoder.Decode(typeof(SM_REPURCHASE), Convert.FromHexString(entry.GetProperty("payloadHex").GetString()!));
+		var item = Assert.Single(packet.Get<List<IReadOnlyDictionary<string, object?>>>("items"));
+		Assert.Equal(entry.GetProperty("inputs").GetProperty("objectId").GetInt32(), item["objectId"]);
+		// The fixture's top-level itemCount=1 counts rows; its generator's ITEM_COUNT=7 is the stack size.
+		Assert.Equal(7L, item["itemCount"]);
+		Assert.Equal(entry.GetProperty("inputs").GetProperty("repurchasePrice").GetInt64(), item["repurchasePrice"]);
 	}
 
 	[Fact]
@@ -199,6 +231,10 @@ public sealed class BotServerPacketDecoderTests
 					break;
 				case JsonValueKind.Array when actual is byte[] bytes:
 					Assert.Equal(property.Value.EnumerateArray().Select(value => value.GetByte()), bytes);
+					comparisons++;
+					break;
+				case JsonValueKind.Array when actual is int[] integers:
+					Assert.Equal(property.Value.EnumerateArray().Select(value => value.GetInt32()), integers);
 					comparisons++;
 					break;
 			}

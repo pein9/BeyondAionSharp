@@ -68,6 +68,11 @@ public sealed class BotApiTests
 		AssertPacket<CM_EXCHANGE_LOCK>(api.TradeLock());
 		AssertPacket<CM_EXCHANGE_OK>(api.TradeAccept());
 		AssertPacket<CM_EXCHANGE_CANCEL>(api.TradeCancel());
+		AssertPacket<CM_SEND_MAIL>(api.SendMail("Daeva", "Title", "Message", 41, 2, 100));
+		AssertPacket<CM_CHECK_MAIL_LIST>(api.CheckMailList());
+		AssertPacket<CM_READ_MAIL>(api.ReadMail(42));
+		AssertPacket<CM_GET_MAIL_ATTACHMENT>(api.GetMailAttachment(42, 0));
+		AssertPacket<CM_DELETE_MAIL>(api.DeleteMail(42));
 		AssertPacket<CM_INVITE_TO_GROUP>(api.InviteToGroup("Daeva"));
 		AssertPacket<CM_CHAT_MESSAGE_PUBLIC>(api.Say("hello"));
 		AssertPacket<CM_CHAT_MESSAGE_WHISPER>(api.Whisper("Daeva", "hello"));
@@ -75,6 +80,53 @@ public sealed class BotApiTests
 		AssertPacket<CM_REVIVE>(api.Revive());
 		AssertPacket<CM_QUIT>(api.Quit(stayConnected: false));
 		Assert.Equal(BotConnectionCommand.Crash, new BotApi().Crash());
+	}
+
+	[Theory]
+	[InlineData("STR_GATHER_OUT_OF_SKILL_POINT")]
+	[InlineData("STR_GATHER_TOO_FAR_FROM_GATHER_SOURCE")]
+	[InlineData("STR_GATHER_INVENTORY_IS_FULL")]
+	public void GatheringRefusalReleasesTheClientMovementGate(string message)
+	{
+		var api = new BotApi();
+		api.Gather(10);
+		api.Observe(Packet<SM_SYSTEM_MESSAGE>(("msgId", 0), ("name", message), ("params", Array.Empty<string>()),
+			("specialParams", Array.Empty<string>()), ("senderObjectId", 0)));
+		Assert.DoesNotContain(BotBlockingActivity.Gathering, api.Timing.BlockingActivities);
+		AssertPacket<CM_MOVE>(api.MoveTo(new MovementPacketData(1, 2, 3, 0, 0)));
+	}
+
+	[Fact]
+	public void UnrelatedSystemMessageDoesNotReleaseGathering()
+	{
+		var api = new BotApi();
+		api.Gather(10);
+		api.Observe(Packet<SM_SYSTEM_MESSAGE>(("msgId", 0), ("name", "STR_GET_EXP"), ("params", Array.Empty<string>()),
+			("specialParams", Array.Empty<string>()), ("senderObjectId", 0)));
+		Assert.Contains(BotBlockingActivity.Gathering, api.Timing.BlockingActivities);
+	}
+
+	[Theory]
+	[InlineData(0, true)]
+	[InlineData(1, true)]
+	[InlineData(3, true)]
+	[InlineData(4, false)]
+	[InlineData(5, false)]
+	[InlineData(6, false)]
+	public void CraftingKeepsMovementBlockedUntilATerminalUpdate(byte action, bool blocked)
+	{
+		var api = new BotApi();
+		api.Craft(150000009, 155004206, 123, [(182290205, 1L)]);
+		api.Observe(Packet<SM_CRAFT_UPDATE>(("action", action)));
+		Assert.Equal(blocked, api.Timing.BlockingActivities.Contains(BotBlockingActivity.Crafting));
+	}
+
+	[Fact]
+	public void CraftDefaultsToNormalRatherThanConsumingABooster()
+	{
+		var api = new BotApi();
+		var packet = api.Craft(150000009, 155004206, 123, [(182290205, 1L)]);
+		Assert.Equal((byte)0, packet.Body[15]); // after unk, three ids and material count
 	}
 
 	[Fact]
