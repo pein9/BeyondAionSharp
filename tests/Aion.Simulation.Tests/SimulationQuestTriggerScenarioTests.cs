@@ -169,6 +169,7 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.Equal(12, escortMovie.Get<int>("cutsceneId"));
 		await WaitForQuestStatusAsync(session, 1149, 4, token);
 		policy.AssertClean();
+		QuestCoverageReceipt.SaveFromEnvironment("SIM", scenario.Id, session.Api.World);
 	}
 
 	private sealed class SimulationQuestDialogExplorerDriver(

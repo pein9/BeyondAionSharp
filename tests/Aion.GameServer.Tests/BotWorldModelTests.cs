@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Aion.Bots.Protocol;
+using Aion.Bots.Scenarios;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -144,9 +146,9 @@ public sealed class BotWorldModelTests
 		Assert.Empty(world.Cooldowns);
 
 		world.Apply(Packet<SM_QUEST_LIST>(
-			("quests", Items(Item(("questId", 1001), ("status", (byte)1), ("stepAndFlags", 2), ("completeCount", (byte)0))))));
+			("quests", Items(Item(("questId", 1001), ("status", (byte)3), ("stepAndFlags", 2), ("completeCount", (byte)0))))));
 		world.Apply(Packet<SM_QUEST_ACTION>(
-			("action", (byte)2), ("questId", 1001), ("status", (byte)2), ("stepAndFlags", 3)));
+			("action", (byte)2), ("questId", 1001), ("status", (byte)5), ("stepAndFlags", 3)));
 		world.Apply(Packet<SM_QUEST_ACTION>(("action", (byte)4), ("questId", 1001), ("timer", 60)));
 		Assert.Equal(3, world.Quests[1001].StepAndFlags);
 		Assert.Equal(60, world.Quests[1001].TimerSeconds);
@@ -158,6 +160,8 @@ public sealed class BotWorldModelTests
 			("updateMode", (byte)0),
 			("quests", Items(Item(("questId", 900), ("completeCount", (byte)1), ("nonRepeatable", true))))));
 		Assert.True(world.CompletedQuests[900].NonRepeatable);
+		Assert.Equal([900, 1001], world.AcceptedQuestIds.Order());
+		Assert.Equal([900, 1001], world.CompletedQuestIds.Order());
 		world.Apply(Packet<SM_QUEST_ACTION>(("action", (byte)3), ("questId", 1001)));
 		Assert.Empty(world.Quests);
 	}
@@ -194,6 +198,35 @@ public sealed class BotWorldModelTests
 		Assert.Null(world.Loot);
 		Assert.Null(world.Dialog);
 		Assert.Null(world.Trade);
+	}
+
+	[Fact]
+	public void QuestCoverageReceiptPersistsObservedHistoryAndProblems()
+	{
+		var world = new BotWorldModel();
+		world.Apply(Packet<SM_QUEST_ACTION>(
+			("action", (byte)2), ("questId", 1100), ("status", (byte)3), ("stepAndFlags", 0)));
+		world.Apply(Packet<SM_QUEST_ACTION>(
+			("action", (byte)2), ("questId", 1101), ("status", (byte)5), ("stepAndFlags", 0)));
+		string root = Path.Combine(Path.GetTempPath(), $"quest-coverage-{Guid.NewGuid():N}");
+		try
+		{
+			string path = QuestCoverageReceipt.Save(root, "sim", "q-test", world,
+				[new QuestCoverageProblem(1100, "echo")],
+				[new QuestCoverageProblem(1100, "needs item")]);
+			using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
+			JsonElement receipt = document.RootElement;
+			Assert.Equal("SIM", receipt.GetProperty("mode").GetString());
+			Assert.Equal([1100, 1101], receipt.GetProperty("acceptedQuestIds").EnumerateArray().Select(value => value.GetInt32()));
+			Assert.Equal([1101], receipt.GetProperty("completedQuestIds").EnumerateArray().Select(value => value.GetInt32()));
+			Assert.Equal("echo", receipt.GetProperty("echoFailures")[0].GetProperty("reason").GetString());
+			Assert.Equal("needs item", receipt.GetProperty("stuckReasons")[0].GetProperty("reason").GetString());
+		}
+		finally
+		{
+			if (Directory.Exists(root))
+				Directory.Delete(root, recursive: true);
+		}
 	}
 
 	private static DecodedBotServerPacket Packet<T>(params (string Name, object? Value)[] fields) =>

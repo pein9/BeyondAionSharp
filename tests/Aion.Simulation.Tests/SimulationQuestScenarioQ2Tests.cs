@@ -84,6 +84,7 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.Equal((byte)5, session.Api.World.Quests[questId].Status);
 		AssertQ2QuestStatusTraces(session.PacketHistory);
 		policy.AssertClean();
+		QuestCoverageReceipt.SaveFromEnvironment("SIM", scenario.Id, session.Api.World);
 	}
 
 	private static void AssertQ2QuestStatusTraces(IReadOnlyList<DecodedBotServerPacket> packets)

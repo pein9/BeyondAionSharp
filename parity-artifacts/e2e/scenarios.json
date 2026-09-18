@@ -404,7 +404,7 @@
     "consumes": [],
     "requires": ["Db"],
     "expectedFail": null,
-    "resetEpoch": false
+    "resetEpoch": true
   },
   {
     "id": "Q4I",
@@ -418,7 +418,7 @@
     "consumes": [],
     "requires": ["Db"],
     "expectedFail": null,
-    "resetEpoch": false
+    "resetEpoch": true
   },
   {
     "id": "connect",

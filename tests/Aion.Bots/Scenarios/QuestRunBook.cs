@@ -32,7 +32,8 @@ public sealed record QuestRunOperation(
 	int MapId = 0,
 	IReadOnlyList<int>? SkillIds = null,
 	IReadOnlyList<QuestRunNpc>? Npcs = null,
-	QuestRunSource? Source = null);
+	QuestRunSource? Source = null,
+	IReadOnlyList<QuestRunSource>? Sources = null);
 
 public sealed record QuestRunBook(QuestRunPlan Plan, IReadOnlyList<QuestRunOperation> Operations)
 {
@@ -59,9 +60,14 @@ public sealed record QuestRunBook(QuestRunPlan Plan, IReadOnlyList<QuestRunOpera
 			{
 				if (step.Sources.Count == 0 && plan.Template == "work_order")
 					continue;
-				QuestRunSource source = step.Sources.FirstOrDefault(SourceIsReachable)
+				IReadOnlyList<QuestRunSource> reachableSources = step.Sources.Where(SourceIsReachable).ToArray();
+				QuestRunSource source = reachableSources.FirstOrDefault()
 					?? throw new InvalidDataException($"Q{plan.Id} item {step.ItemId} has no runnable source.");
-				operations.Add(new QuestRunOperation(SourceOperation(source), step.Count, step.ItemId, Source: source));
+				IReadOnlyList<QuestRunSource> sources = reachableSources
+					.Where(candidate => candidate.Kind == source.Kind)
+					.ToArray();
+				operations.Add(new QuestRunOperation(
+					SourceOperation(source), step.Count, step.ItemId, Source: source, Sources: sources));
 				continue;
 			}
 			if (!StepKinds.TryGetValue(step.Kind, out QuestRunOperationKind kind))

@@ -731,9 +731,12 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		IReadOnlySet<int> excludedObjectIds,
 		CancellationToken cancellationToken)
 	{
-		BotKnownObject? known = api.World.Objects.Values.FirstOrDefault(
-			candidate => candidate.Kind == BotKnownObjectKind.Npc && candidate.TemplateId == templateId &&
-				!excludedObjectIds.Contains(candidate.ObjectId));
+		BotPosition position = CurrentPosition;
+		BotKnownObject? known = api.World.Objects.Values
+			.Where(candidate => candidate.Kind == BotKnownObjectKind.Npc && candidate.TemplateId == templateId &&
+				!excludedObjectIds.Contains(candidate.ObjectId))
+			.OrderBy(candidate => DistanceSquared(position, candidate.Position))
+			.FirstOrDefault();
 		if (known != null)
 			return known.ObjectId;
 		DecodedBotServerPacket packet = await WaitForGamePacketAsync(typeof(SM_NPC_INFO), cancellationToken,
@@ -765,9 +768,12 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 	public async Task StartQuestAsync(int npcObjectId, int questId, CancellationToken cancellationToken)
 	{
 		await SendGameAsync(api.TalkTo(npcObjectId), cancellationToken);
-		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
+		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken,
+			packet => packet.Get<int>("targetObjectId") == npcObjectId &&
+				packet.Get<ushort>("dialogPageId") == 10 && packet.Get<int>("questId") == 0);
 		await SendGameAsync(api.SelectDialog(npcObjectId, 31, questId: questId), cancellationToken);
-		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
+		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken,
+			packet => packet.Get<int>("targetObjectId") == npcObjectId && packet.Get<int>("questId") == questId);
 		await SendGameAsync(api.SelectDialog(npcObjectId, 1002, questId: questId), cancellationToken);
 		await WaitForGamePacketAsync(typeof(SM_QUEST_ACTION), cancellationToken,
 			packet => packet.Get<int>("questId") == questId);

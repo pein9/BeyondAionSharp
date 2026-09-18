@@ -97,6 +97,7 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.Equal((byte)5, session.Api.World.Quests[questId].Status);
 		AssertQuestStatusTraces(session.PacketHistory);
 		policy.AssertClean();
+		QuestCoverageReceipt.SaveFromEnvironment("SIM", scenario.Id, session.Api.World);
 	}
 
 	private static async Task StartQuestAsync(
@@ -149,14 +150,25 @@ public sealed partial class SimulationFastScenarioTests
 	private static async Task KillForQuestAsync(
 		SimulationL0Session session, Player player, Npc npc, CancellationToken token)
 	{
-		npc.GetLifeStats().SetCurrentHp(1);
-		await session.SendPacketAsync(session.Api.Target(npc.GetObjectId()), token);
-		await session.SendPacketAsync(
-			session.Api.Attack(npc.GetObjectId(), player.GetGameStats().GetAttackSpeed().GetCurrent()), token);
+		int attackSpeed = player.GetGameStats().GetAttackSpeed().GetCurrent();
+		for (int attempt = 1; attempt <= 8 && !npc.IsDead(); attempt++)
+		{
+			player.GetLifeStats().SetCurrentHp(player.GetLifeStats().GetMaxHp());
+			await session.AdvanceAsync(TimeSpan.FromMilliseconds(attackSpeed + 1), token);
+			await MoveBesideAsync(session, npc, token);
+			npc.GetLifeStats().SetCurrentHp(1);
+			await session.SendPacketAsync(session.Api.Target(npc.GetObjectId()), token);
+			await session.SendPacketAsync(
+				session.Api.Attack(npc.GetObjectId(), attackSpeed), token);
+		}
+		Assert.True(npc.IsDead(),
+			$"NPC {npc.GetNpcId()} ({npc.GetObjectId()}) survived eight 1-HP packet attacks; " +
+			$"player HP={player.GetLifeStats().GetCurrentHp()}/{player.GetLifeStats().GetMaxHp()} " +
+			$"dead={player.IsDead()}; " +
+			$"recent packets: {string.Join(",", session.PacketTypes.TakeLast(12))}.");
 		await session.WaitForPacketAsync(typeof(SM_LOOT_STATUS), token,
 			packet => packet.Get<int>("targetObjectId") == npc.GetObjectId() &&
 				packet.Get<byte>("status") == (byte)SM_LOOT_STATUS.Status.LOOT_ENABLE);
-		Assert.True(npc.IsDead());
 	}
 
 	private static async Task LootActionObjectAsync(

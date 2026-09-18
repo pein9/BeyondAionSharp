@@ -85,6 +85,12 @@ try {
 	# The first child built the same three server images when a rebuild was requested.
 	& $runLive -Run "$Run-canaries" -Scenario 'canaries' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
 		-PacketTap:$PacketTap -SkipImageBuild
+
+	$coverageReport = Join-Path $runRoot 'quest-coverage.json'
+	& python scripts/e2e/report-quest-coverage.py --run-root $runRoot --output $coverageReport
+	if ($LASTEXITCODE -ne 0) {
+		throw "Quest coverage regressed. See $coverageReport"
+	}
 }
 finally {
 	Pop-Location

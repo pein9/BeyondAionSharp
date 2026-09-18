@@ -14,6 +14,8 @@ public sealed class BotWorldModel
 	private readonly Dictionary<int, BotSkillCooldown> cooldowns = [];
 	private readonly Dictionary<int, BotQuestState> quests = [];
 	private readonly Dictionary<int, BotCompletedQuest> completedQuests = [];
+	private readonly HashSet<int> acceptedQuestIds = [];
+	private readonly HashSet<int> completedQuestIds = [];
 	private readonly List<BotSystemMessage> systemMessages = [];
 
 	public IReadOnlyDictionary<int, BotKnownObject> Objects => objects;
@@ -22,6 +24,8 @@ public sealed class BotWorldModel
 	public IReadOnlyDictionary<int, BotSkillCooldown> Cooldowns => cooldowns;
 	public IReadOnlyDictionary<int, BotQuestState> Quests => quests;
 	public IReadOnlyDictionary<int, BotCompletedQuest> CompletedQuests => completedQuests;
+	public IReadOnlySet<int> AcceptedQuestIds => acceptedQuestIds;
+	public IReadOnlySet<int> CompletedQuestIds => completedQuestIds;
 	public IReadOnlyList<BotSystemMessage> SystemMessages => systemMessages;
 
 	public int? SelfObjectId { get; private set; }
@@ -324,7 +328,9 @@ public sealed class BotWorldModel
 		foreach (var entry in packet.Get<List<IReadOnlyDictionary<string, object?>>>("quests"))
 		{
 			var questId = Get<int>(entry, "questId");
-			quests[questId] = new BotQuestState(questId, Get<byte>(entry, "status"),
+			byte status = Get<byte>(entry, "status");
+			TrackQuestStatus(questId, status);
+			quests[questId] = new BotQuestState(questId, status,
 				Get<int>(entry, "stepAndFlags"), Get<byte>(entry, "completeCount"), null);
 		}
 	}
@@ -340,7 +346,9 @@ public sealed class BotWorldModel
 			case 1:
 			case 2:
 				var completeCount = quests.TryGetValue(questId, out var existing) ? existing.CompleteCount : (byte)0;
-				quests[questId] = new BotQuestState(questId, packet.Get<byte>("status"),
+				byte status = packet.Get<byte>("status");
+				TrackQuestStatus(questId, status);
+				quests[questId] = new BotQuestState(questId, status,
 					packet.Get<int>("stepAndFlags"), completeCount, existing?.TimerSeconds);
 				break;
 			case 3:
@@ -363,9 +371,19 @@ public sealed class BotWorldModel
 		foreach (var entry in packet.Get<List<IReadOnlyDictionary<string, object?>>>("quests"))
 		{
 			var questId = Get<int>(entry, "questId");
+			acceptedQuestIds.Add(questId);
+			completedQuestIds.Add(questId);
 			completedQuests[questId] = new BotCompletedQuest(questId, Get<byte>(entry, "completeCount"),
 				Get<bool>(entry, "nonRepeatable"));
 		}
+	}
+
+	private void TrackQuestStatus(int questId, byte status)
+	{
+		if (status is >= 3 and <= 5)
+			acceptedQuestIds.Add(questId);
+		if (status == 5)
+			completedQuestIds.Add(questId);
 	}
 
 	private void ApplyDialog(DecodedBotServerPacket packet)

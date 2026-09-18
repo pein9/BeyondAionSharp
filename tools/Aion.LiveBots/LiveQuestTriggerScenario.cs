@@ -222,6 +222,7 @@ public static partial class LiveBotRunner
 				await subject.Session.WaitForQuestStatusAsync(1149, 4, token);
 			}, cancellationToken);
 
+			QuestCoverageReceipt.SaveFromEnvironment("LIVE", "Q3", subject.Session.Api.World);
 			await subject.StepAsync("quit", subject.Session.QuitAsync, cancellationToken);
 			await director.StepAsync("quit", director.Session.QuitAsync, cancellationToken);
 			subject.Trace.WriteAction(subject.LastStep, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = "Q3" });

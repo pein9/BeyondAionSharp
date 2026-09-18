@@ -80,6 +80,7 @@ public static partial class LiveBotRunner
 					throw new InvalidDataException($"Q{plan.Id} did not finish with COMPLETE status.");
 			}
 
+			QuestCoverageReceipt.SaveFromEnvironment("LIVE", scenarioId, subject.Session.Api.World);
 			await subject.StepAsync("quit", subject.Session.QuitAsync, cancellationToken);
 			await director.StepAsync("quit", director.Session.QuitAsync, cancellationToken);
 			subject.Trace.WriteAction(subject.LastStep, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = scenarioId });
@@ -224,14 +225,16 @@ public static partial class LiveBotRunner
 
 		private async Task CollectAsync(QuestRunPlan plan, QuestRunOperation operation, string action, CancellationToken token)
 		{
-			QuestRunNpc npcPlan = operation.Source?.Npc
-				?? throw new InvalidDataException("Quest-item operation has no NPC source.");
+			IReadOnlyList<QuestRunSource> sources = operation.Sources ??
+				(operation.Source == null ? [] : [operation.Source]);
+			if (sources.Count == 0 || sources.Any(source => source.Npc == null))
+				throw new InvalidDataException("Quest-item operation has no NPC source.");
 			var used = new HashSet<int>();
 			for (int attempts = 0; ItemCount(operation.ItemId) < operation.Count; attempts++)
 			{
 				if (attempts >= operation.Count + 32)
 					throw new InvalidDataException($"Could not collect item {operation.ItemId} after {attempts} attempts.");
-				int ordinal = attempts;
+				(QuestRunNpc npcPlan, int ordinal) = SelectQuestItemNpc(sources, attempts);
 				await subject.StepAsync($"{action}-{attempts + 1}", async cancellation =>
 				{
 					int npc = await MoveToNpcAsync([npcPlan], ordinal, $"{action}-{ordinal + 1}", cancellation, used);
@@ -249,6 +252,22 @@ public static partial class LiveBotRunner
 			}
 			if (ItemCount(operation.ItemId) != operation.Count)
 				throw new InvalidDataException($"Q{plan.Id} collected the wrong count for item {operation.ItemId}.");
+		}
+
+		private static (QuestRunNpc Npc, int Ordinal) SelectQuestItemNpc(
+			IReadOnlyList<QuestRunSource> sources, int attempt)
+		{
+			int ordinal = attempt;
+			foreach (QuestRunSource source in sources)
+			{
+				QuestRunNpc npc = source.Npc!;
+				int capacity = Math.Max(1, npc.Positions.Count);
+				if (ordinal < capacity)
+					return (npc, ordinal);
+				ordinal -= capacity;
+			}
+			QuestRunNpc fallback = sources[^1].Npc!;
+			return (fallback, ordinal % Math.Max(1, fallback.Positions.Count));
 		}
 
 		private async Task GatherAsync(QuestRunOperation operation, string action, CancellationToken token)

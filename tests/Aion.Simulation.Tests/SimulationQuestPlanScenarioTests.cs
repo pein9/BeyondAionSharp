@@ -58,6 +58,7 @@ public sealed partial class SimulationFastScenarioTests
 				$"Bot world did not observe Q{plan.Id} complete.");
 		}
 		policy.AssertClean();
+		QuestCoverageReceipt.SaveFromEnvironment("SIM", scenario.Id, session.Api.World);
 	}
 
 	private static IReadOnlyList<QuestRunPlan> OrderQuestPlans(IReadOnlyList<QuestRunPlan> plans)
@@ -176,10 +177,12 @@ public sealed partial class SimulationFastScenarioTests
 
 		private async Task CollectQuestItemAsync(QuestRunPlan plan, QuestRunOperation operation, CancellationToken token)
 		{
-			QuestRunNpc npcPlan = operation.Source?.Npc
-				?? throw new InvalidDataException("Quest-item operation has no NPC source.");
-			bool actionObject = npcPlan.Id >= 700000;
-			if (actionObject)
+			IReadOnlyList<QuestRunSource> sources = operation.Sources ??
+				(operation.Source == null ? [] : [operation.Source]);
+			if (sources.Count == 0 || sources.Any(source => source.Npc == null))
+				throw new InvalidDataException("Quest-item operation has no NPC source.");
+			bool neutralToNpcs = sources.Any(source => source.Npc!.Id >= 700000);
+			if (neutralToNpcs)
 			{
 				player.SetCustomState(CustomPlayerState.NEUTRAL_TO_ALL_NPCS);
 				player.GetController().OnChangedPlayerAttributes();
@@ -193,9 +196,11 @@ public sealed partial class SimulationFastScenarioTests
 					if (++attempts > operation.Count + 32)
 						throw new InvalidDataException(
 							$"Could not collect item {operation.ItemId} after {attempts - 1} declared-source attempts.");
+					(QuestRunNpc npcPlan, int sourceOrdinal) = SelectQuestItemNpc(sources, attempts - 1);
+					bool actionObject = npcPlan.Id >= 700000;
 					try
 					{
-						Npc npc = await MoveToNpcAsync([npcPlan], token, attempts - 1);
+						Npc npc = await MoveToNpcAsync([npcPlan], token, sourceOrdinal);
 						attemptedObjects.Add(npc.GetObjectId());
 						if (operation.Kind == QuestRunOperationKind.UseQuestObject)
 						{
@@ -228,12 +233,28 @@ public sealed partial class SimulationFastScenarioTests
 			}
 			finally
 			{
-				if (actionObject)
+				if (neutralToNpcs)
 				{
 					player.UnsetCustomState(CustomPlayerState.NEUTRAL_TO_ALL_NPCS);
 					player.GetController().OnChangedPlayerAttributes();
 				}
 			}
+		}
+
+		private static (QuestRunNpc Npc, int Ordinal) SelectQuestItemNpc(
+			IReadOnlyList<QuestRunSource> sources, int attempt)
+		{
+			int ordinal = attempt;
+			foreach (QuestRunSource source in sources)
+			{
+				QuestRunNpc npc = source.Npc!;
+				int capacity = Math.Max(1, npc.Positions.Count);
+				if (ordinal < capacity)
+					return (npc, ordinal);
+				ordinal -= capacity;
+			}
+			QuestRunNpc fallback = sources[^1].Npc!;
+			return (fallback, ordinal % Math.Max(1, fallback.Positions.Count));
 		}
 
 		private static async Task UseQuestObjectAsync(

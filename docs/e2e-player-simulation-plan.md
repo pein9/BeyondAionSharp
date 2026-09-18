@@ -1073,9 +1073,12 @@ byte-identical), so bots will mostly find bugs elsewhere through it.
   steps and refuses partial scripts in LIVE. Q1100 proved the pipeline in Docker-only SIM run
   `p7-09-q3-explorer-dev-20260918b` and enforced LIVE replay `p7-09-q3-live-dev-20260918a`; Fast run
   `p7-09-fast-20260918a` also passed. (`e5d1604379`)
-- [ ] **P7-10** [BOTH] M — Quest coverage report and checked-in baseline under `parity-artifacts/e2e/`: per zone ×
+- [x] **P7-10** [BOTH] M — Quest coverage report and checked-in baseline under `parity-artifacts/e2e/`: per zone ×
   race, obtainable / accepted / completed / echo failures / stuck reasons; "no handler" (440) and "unreachable" (280)
-  reported separately, not as failures. `run-full.ps1` fails when completed drops.
+  reported separately, not as failures. `run-full.ps1` fails when completed drops. SIM/LIVE scenario receipts now feed
+  the per-zone/race report; Docker-only Full run `p7-10-full-dev-20260918g` passed with 57 SIM and 59 LIVE
+  completions, zero echo failures and zero stuck reasons. The checked-in 57-completion floor and separate 440
+  no-handler / 280 unreachable populations are enforced. (`8d44f99353`)
 - [ ] **P7-11** [BOTH] S — Parity fix: `daevanion/_19638TroublewithTwos.cs:58-61` keeps a `USE_OBJECT` branch Java
   removed (upstream `1d6a2d8f7`).
 - [ ] **P7-12** [SIM] S — Repeatable quests on the virtual clock and a test trigger for the daily 09:00 reset.

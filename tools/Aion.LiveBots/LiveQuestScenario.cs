@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Aion.Bots.Protocol;
+using Aion.Bots.Scenarios;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -161,6 +162,7 @@ public static partial class LiveBotRunner
 						throw new InvalidDataException($"SM_QUEST_COMPLETED_LIST omitted Q{questId} after relog.");
 				}
 			}, cancellationToken);
+			QuestCoverageReceipt.SaveFromEnvironment("LIVE", "Q1", actor.Session.Api.World);
 			await actor.StepAsync("final-quit", actor.Session.QuitAsync, cancellationToken);
 
 			actor.Trace.WriteAction(actor.LastStep, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = "Q1" });

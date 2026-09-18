@@ -78,6 +78,39 @@ public sealed class QuestRunPlanTests
 		Assert.Equal(155004206, craft.RecipeId);
 	}
 
+	[Fact]
+	public void QuestDropRunBookKeepsEveryReachableSourceForFallback()
+	{
+		QuestRunPlan plan = Load("""
+			{
+			  "schemaVersion": 1,
+			  "quest": { "id": 1129, "name": "Scouting Timolia Mine", "zone": "Poeta", "race": "ELYOS" },
+			  "gates": { "minimumLevel": 8 },
+			  "handler": { "kind": "template", "template": "item_collecting" },
+			  "startTrigger": { "kind": "npc", "npcs": [
+			    { "id": 203085, "name": "poa", "positions": [], "handlerSpawned": true }
+			  ] },
+			  "startNpcs": [{ "id": 203085, "name": "poa", "positions": [], "handlerSpawned": true }],
+			  "endNpcs": [{ "id": 203067, "name": "kalio", "positions": [], "handlerSpawned": true }],
+			  "steps": [{ "kind": "collect", "count": 5, "item_id": 182200213, "sources": [
+			    { "kind": "questDrop", "chance": 80, "npc": {
+			      "id": 210182, "name": "tursin loudmouth", "positions": [], "handlerSpawned": true
+			    } },
+			    { "kind": "questDrop", "npc": {
+			      "id": 210162, "name": "tursin sentry", "positions": [], "handlerSpawned": true
+			    } }
+			  ] }],
+			  "rewards": { "standard": [], "classSelectable": {} }
+			}
+			""");
+
+		QuestRunOperation collect = Assert.Single(
+			QuestRunBook.Build(plan).Operations,
+			operation => operation.Kind == QuestRunOperationKind.CollectQuestDrop);
+		Assert.Equal(210182, collect.Source?.NpcId);
+		Assert.Equal([210182, 210162], collect.Sources?.Select(source => source.NpcId));
+	}
+
 	private static QuestRunPlan Load(string json)
 	{
 		string path = Path.Combine(Path.GetTempPath(), $"aion-quest-plan-{Guid.NewGuid():N}.json");

@@ -871,9 +871,12 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		public async Task StartQuestAsync(int npcObjectId, int questId, CancellationToken cancellationToken)
 		{
 			await SendAsync(api.TalkTo(npcObjectId), cancellationToken);
-			await WaitForAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
+			await WaitForAsync(typeof(SM_DIALOG_WINDOW), cancellationToken,
+				packet => packet.Get<int>("targetObjectId") == npcObjectId &&
+					packet.Get<ushort>("dialogPageId") == 10 && packet.Get<int>("questId") == 0);
 			await SendAsync(api.SelectDialog(npcObjectId, 31, questId: questId), cancellationToken);
-			await WaitForAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
+			await WaitForAsync(typeof(SM_DIALOG_WINDOW), cancellationToken,
+				packet => packet.Get<int>("targetObjectId") == npcObjectId && packet.Get<int>("questId") == questId);
 			await SendAsync(api.SelectDialog(npcObjectId, 1002, questId: questId), cancellationToken);
 			await WaitForAsync(typeof(SM_QUEST_ACTION), cancellationToken,
 				packet => packet.Get<int>("questId") == questId);

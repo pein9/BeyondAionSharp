@@ -1,4 +1,5 @@
 using Aion.Bots.Protocol;
+using Aion.Bots.Scenarios;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -126,6 +127,7 @@ public static partial class LiveBotRunner
 					throw new InvalidDataException($"Q{questId} was not complete at the end of Q2.");
 			}
 			AssertQ2QuestStatusTraces(actor.Session.PacketHistory);
+			QuestCoverageReceipt.SaveFromEnvironment("LIVE", "Q2", actor.Session.Api.World);
 			await actor.StepAsync("quit", actor.Session.QuitAsync, cancellationToken);
 
 			actor.Trace.WriteAction(actor.LastStep, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = "Q2" });
