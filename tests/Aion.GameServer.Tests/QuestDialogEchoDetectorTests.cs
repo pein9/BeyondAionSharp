@@ -88,6 +88,19 @@ public sealed class QuestDialogEchoDetectorTests
 		Assert.Throws<QuestDialogEchoException>(() => detector.Observe(77, DialogAction.SETPRO1, 1101));
 	}
 
+	[Fact]
+	public void ExplicitNegativeProbeConsumesOneExpectedRejection()
+	{
+		var api = new BotApi();
+		api.SelectDialogExpectRejection(77, DialogAction.SELECTED_QUEST_REWARD1, questId: 1100);
+		api.Observe(Dialog(77, DialogAction.SELECTED_QUEST_REWARD1, 1100));
+
+		Assert.Equal(
+			new PendingQuestDialogAction(77, DialogAction.SELECTED_QUEST_REWARD1, 1100),
+			api.QuestDialogEchoes.ConsumeExpectedRejection());
+		Assert.Throws<InvalidOperationException>(() => api.QuestDialogEchoes.ConsumeExpectedRejection());
+	}
+
 	private static DecodedBotServerPacket Dialog(int targetObjectId, int pageId, int questId) => new(
 		typeof(SM_DIALOG_WINDOW),
 		new Dictionary<string, object?>

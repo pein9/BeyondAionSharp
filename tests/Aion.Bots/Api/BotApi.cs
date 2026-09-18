@@ -170,7 +170,15 @@ public sealed class BotApi
 		return GameClientPackets.DialogSelect(targetObjectId, actionId, rewardIndex, lastPage, questId);
 	}
 
+	public BotClientPacket SelectDialogExpectRejection(int targetObjectId, ushort actionId, ushort rewardIndex = 0,
+		ushort lastPage = 0, int questId = 0)
+	{
+		QuestDialogEchoes.Record(targetObjectId, actionId, questId, expectEcho: true);
+		return GameClientPackets.DialogSelect(targetObjectId, actionId, rewardIndex, lastPage, questId);
+	}
+
 	public BotClientPacket CloseDialog(int targetObjectId) => GameClientPackets.CloseDialog(targetObjectId);
+	public BotClientPacket DeleteQuest(int questId) => GameClientPackets.DeleteQuest(questId);
 
 	public BotClientPacket Answer(byte response)
 	{

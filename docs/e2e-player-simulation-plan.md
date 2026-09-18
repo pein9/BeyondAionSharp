@@ -1045,10 +1045,15 @@ byte-identical), so bots will mostly find bugs elsewhere through it.
   are consumed and consumes the terminal dialog packets so rejected control actions cannot hide. Docker-only SIM
   runs `p7-06-q2-sim-dev-20260918a` and `p7-06-q2-fast-20260918b` passed; enforced LIVE run
   `p7-06-q2-live-dev-20260918a` passed with zero new or regressed fingerprints. (`8d2ce7da2`)
-- [ ] **P7-07** [BOTH] M — Trigger probes (GM-levelled: 1146 needs level 12, 1149 level 14): zone entry (1123),
+- [x] **P7-07** [BOTH] M — Trigger probes (GM-levelled: 1146 needs level 12, 1149 level 14): zone entry (1123),
   timer expiry after 900 virtual seconds (1146), escort (1149), item-started (1114), level-up start (1100).
-  Anti-exploit negatives: reward action before REWARD status, refuse, `CM_PLAY_MOVIE_END` twice, deleting a
-  `cannot_giveup` quest. Depends on P6-00.
+  Anti-exploit negatives cover reward before REWARD status, refusal, a duplicate `CM_PLAY_MOVIE_END`, and deleting
+  a `cannot_giveup` mission. Q3 exercises all triggers in SIM, including the exact 899+2-second virtual timer
+  boundary, and in LIVE arms the 900-second timer then verifies abandon cleanup while the remaining triggers run
+  against the Docker stack. SIM runs `p7-07-q3-sim-dev-20260918h` and `p7-07-fast-20260918a` passed; Docker-only
+  LIVE record run `p7-07-q3-live-dev-20260918f` and enforced run `p7-07-q3-live-dev-20260918g` passed with zero new
+  or regressed fingerprints. The LIVE escort also exposed and fixed the UTF-16 declaration/UTF-8 file mismatch in
+  `JAXBUtil.Serialize` recorded as §7 #32. Depends on P6-00. (`d864b0107`)
 - [ ] **P7-08** [BOTH] XL — Generic data-driven quest runner for the 3,002 obtainable quests whose XML templates
   and declared item sources fully describe a plan (70% of obtainable handled quests), rolled out zone by zone
   (starter zones cover about 57–64%). Needs P6-02 graphs per zone and P6-00
@@ -1364,6 +1369,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 29 | Out-of-region movement warnings omitted Java's attached throwable, so the M2 log fingerprint had no diagnostic stack | `World.java:187,194-195` passes `new Throwable()` to both warnings | Resolved by P6-05 (`22916f84d`) |
 | 30 | `ChatProcessor` used .NET `Regex.Split` with Java's capturing group unchanged; .NET returns captures in the result, turning `set level 9` into `level`, empty, `9` | `ChatProcessor.java:85-90` uses `String.split`, which does not return capture groups | Resolved by P6-05 (`22916f84d`) |
 | 31 | Persistent chat/login game-server links inherited a 30-second C# read timeout and disconnected when idle (LIVE fingerprint `06dfcdde`) | `chat-server/.../GsConnection.java`, `login-server/.../GsConnection.java`, and `AcceptReadWriteDispatcherImpl.java`: selector-driven reads have no idle timeout | Resolved by P6-06 (`3a18ef178`) |
+| 32 | `JAXBUtil.Serialize` returned a string declaring UTF-16 because `XmlWriter` saw a `StringWriter`, but callers wrote that string as UTF-8; a second `SpawnsData.SaveSpawn` could not read the first rewrite | `SpawnsData.java:205-216` writes the serialization with `Files.writeString`; `JAXBUtil.java` configures UTF-8, so its declaration and bytes remain self-consistent | Resolved by P7-07 (`d864b0107`) |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

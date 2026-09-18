@@ -2,7 +2,6 @@ using System.IO;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
-using Aion.GameServer.Utils.Xml;
 
 namespace Aion.GameServer.Utils.Xml;
 
@@ -35,15 +34,15 @@ public static class JAXBUtil
     public static string Serialize(object obj, string? schemaFile)
     {
         var serializer = new XmlSerializer(obj.GetType());
-        var sb = new StringBuilder();
         var settings = new XmlWriterSettings
         {
             Indent = true,                  // JAXB_FORMATTED_OUTPUT = true
             Encoding = new UTF8Encoding(false), // JAXB_ENCODING = UTF-8
         };
-        using (var writer = XmlWriter.Create(sb, settings))
+        using var text = new Utf8StringWriter();
+        using (var writer = XmlWriter.Create(text, settings))
             serializer.Serialize(writer, obj);
-        return sb.ToString();
+        return text.ToString();
     }
 
     // camelCase aliases for call sites transcribed literally from Java.
@@ -51,4 +50,9 @@ public static class JAXBUtil
     public static T deserialize<T>(FileInfo file) => Deserialize<T>(file);
     public static string serialize(object obj) => Serialize(obj);
     public static string serialize(object obj, string? schemaFile) => Serialize(obj, schemaFile);
+
+    private sealed class Utf8StringWriter : StringWriter
+    {
+        public override Encoding Encoding => new UTF8Encoding(false);
+    }
 }

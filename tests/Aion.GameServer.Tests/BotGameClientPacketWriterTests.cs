@@ -92,6 +92,7 @@ public sealed class BotGameClientPacketWriterTests
 		yield return C("move-item", GameClientPackets.MoveItem(127, 0, 1, 2), game, "itemObjId", 127);
 		yield return C("split-item", GameClientPackets.SplitItem(128, 129, 0, 130, 1, 2), game, "itemAmount", 129L);
 		yield return C("delete-item", GameClientPackets.DeleteItem(131), game, "itemObjectId", 131);
+		yield return C("delete-quest", GameClientPackets.DeleteQuest(1098), game, "questId", 1098);
 		yield return C("start-loot", GameClientPackets.StartLoot(132, 1), game, "targetObjectId", 132);
 		yield return C("loot-item", GameClientPackets.LootItem(133, 2), game, "index", 2);
 		yield return C("show-dialog", GameClientPackets.ShowDialog(134), game, "targetObjectId", 134);

@@ -146,6 +146,7 @@ public static class GameClientPackets
 		w.D(sourceItemObjectId); w.Q(amount); w.C(sourceStorageType); w.D(destinationItemObjectId); w.C(destinationStorageType); w.H(slot);
 	});
 	public static BotClientPacket DeleteItem(int itemObjectId) => Create<CM_DELETE_ITEM>(w => w.D(itemObjectId));
+	public static BotClientPacket DeleteQuest(int questId) => Create<CM_DELETE_QUEST>(w => w.D(questId));
 	public static BotClientPacket StartLoot(int targetObjectId, byte action) => Create<CM_START_LOOT>(w => { w.D(targetObjectId); w.C(action); });
 	public static BotClientPacket LootItem(int targetObjectId, byte index) => Create<CM_LOOT_ITEM>(w => { w.D(targetObjectId); w.C(index); });
 	public static BotClientPacket ShowDialog(int targetObjectId) => Create<CM_SHOW_DIALOG>(w => w.D(targetObjectId));

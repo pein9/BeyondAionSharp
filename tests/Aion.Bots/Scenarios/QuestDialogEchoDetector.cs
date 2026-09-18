@@ -26,14 +26,19 @@ public sealed class QuestDialogEchoException : InvalidOperationException
 public sealed class QuestDialogEchoDetector
 {
 	private PendingQuestDialogAction? pending;
+	private bool expectRejection;
+	private PendingQuestDialogAction? expectedRejection;
 
 	public PendingQuestDialogAction? Pending => pending;
+	public PendingQuestDialogAction? ExpectedRejection => expectedRejection;
 
-	public void Record(int targetObjectId, int actionId, int questId)
+	public void Record(int targetObjectId, int actionId, int questId, bool expectEcho = false)
 	{
 		pending = questId != 0 && IsQuestControlAction(actionId)
 			? new PendingQuestDialogAction(targetObjectId, actionId, questId)
 			: null;
+		expectRejection = pending != null && expectEcho;
+		expectedRejection = null;
 	}
 
 	public void Observe(DecodedBotServerPacket packet)
@@ -54,8 +59,25 @@ public sealed class QuestDialogEchoDetector
 			return;
 
 		pending = null;
+		bool wasExpected = expectRejection;
+		expectRejection = false;
 		if (pageId == action.ActionId)
+		{
+			if (wasExpected)
+			{
+				expectedRejection = action;
+				return;
+			}
 			throw new QuestDialogEchoException(action);
+		}
+	}
+
+	public PendingQuestDialogAction ConsumeExpectedRejection()
+	{
+		PendingQuestDialogAction action = expectedRejection
+			?? throw new InvalidOperationException("No expected quest-control rejection was observed.");
+		expectedRejection = null;
+		return action;
 	}
 
 	public static bool IsPageNavigationAction(int actionId) => actionId is >= 1011 and <= 9999;

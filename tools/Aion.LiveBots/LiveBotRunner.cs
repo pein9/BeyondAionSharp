@@ -41,6 +41,8 @@ public static partial class LiveBotRunner
 			return await RunQ1Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "Q2" }])
 			return await RunQ2Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "Q3" }])
+			return await RunQ3Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "M1" }])
 			return await RunM1Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "M6" }])
