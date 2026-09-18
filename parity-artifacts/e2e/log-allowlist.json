@@ -50,5 +50,15 @@
     "scenarios": ["M2"],
     "maxCount": 1,
     "expires": "2027-09-17"
+  },
+  {
+    "fp": "231c488f",
+    "reason": "Java-compatible QuestSpawnAnalyzer startup report for the 80 missing-spawn groups classified and pinned by P7-01/P7-02.",
+    "owner": "e2e-simulation",
+    "tracking": "P7-01/P7-02",
+    "modes": ["LIVE"],
+    "servers": ["gs"],
+    "maxCount": 1,
+    "expires": "2027-09-18"
   }
 ]

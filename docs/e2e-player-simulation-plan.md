@@ -1032,9 +1032,13 @@ byte-identical), so bots will mostly find bugs elsewhere through it.
   with a non-zero quest id it means the handler rejected or threw. Fail the step only in that case. `BotApi`
   now records only that exact quest-control set and correlates the next matching dialog response by target and
   quest, while navigation echoes, zero-quest dialogs and unrelated dialog traffic remain non-failures. (`84f668015`)
-- [ ] **P7-05** [BOTH] M — Scenario **Q1 Poeta chain**: 1000 → 1101 → 1102 → 1103 → 1104 → 1100 (locked at level 2,
+- [x] **P7-05** [BOTH] M — Scenario **Q1 Poeta chain**: 1000 → 1101 → 1102 → 1103 → 1104 → 1100 (locked at level 2,
   starts at 3) → 1105 → 1106. Assert the `SM_QUEST_ACTION` status sequence per quest, items consumed, no
-  quest-control echoes. LIVE adds a relog and checks `SM_QUEST_COMPLETED_LIST` and `player_quests` rows.
+  quest-control echoes. LIVE adds a relog and checks `SM_QUEST_COMPLETED_LIST` and `player_quests` rows. Q1 now
+  drives the honest Poeta combat, action-object and item-loot path in both harnesses; it pins every status trace
+  (including Q1100's level-2 `6` lock), item consumption and terminal dialog response. Docker-only runs
+  `p7-05-q1-sim-20260918l` and `p7-05-q1-live-20260918f` passed, with LIVE verifying all eight persisted quest
+  rows and the completed-list replay after relog. (`a5e88ec91`)
 - [ ] **P7-06** [BOTH] S — Scenario **Q2 Ishalgen chain**: 2000 → 2101 → 2102 → 2103 → 2104 → 2105 → 2100.
 - [ ] **P7-07** [BOTH] M — Trigger probes (GM-levelled: 1146 needs level 12, 1149 level 14): zone entry (1123),
   timer expiry after 900 virtual seconds (1146), escort (1149), item-started (1114), level-up start (1100).

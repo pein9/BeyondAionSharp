@@ -11,7 +11,7 @@ public sealed class LogProblemAllowlistTests
 	{
 		var allowlist = LogProblemAllowlist.Load(RepoFile("parity-artifacts", "e2e", "log-allowlist.json"), Today);
 
-		Assert.Equal(5, allowlist.Entries.Count);
+		Assert.Equal(6, allowlist.Entries.Count);
 		Assert.All(allowlist.Entries.Where(entry => entry.Fingerprint != "cf736122" && entry.Tracking == "P3-10"), entry =>
 		{
 			Assert.Equal("P3-10", entry.Tracking);
@@ -25,6 +25,12 @@ public sealed class LogProblemAllowlistTests
 		Assert.Equal(["M6"], Assert.IsType<string[]>(glide.Scenarios));
 		Assert.Contains("SIM", glide.Modes);
 		Assert.Equal(["SIM"], m2.Modes);
+		LogProblemAllowlistEntry questAnalyzer = allowlist.Entries.Single(entry => entry.Fingerprint == "231c488f");
+		Assert.Equal("P7-01/P7-02", questAnalyzer.Tracking);
+		Assert.Equal(["LIVE"], questAnalyzer.Modes);
+		Assert.Equal(["gs"], questAnalyzer.Servers);
+		Assert.Equal(1, questAnalyzer.MaxCount);
+		Assert.Equal(new DateOnly(2027, 9, 18), questAnalyzer.Expires);
 		allowlist.ValidateFullRunMatches(allowlist.Entries.Select(entry => entry.Fingerprint));
 	}
 

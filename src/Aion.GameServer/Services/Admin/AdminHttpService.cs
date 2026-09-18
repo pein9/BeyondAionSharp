@@ -1342,11 +1342,11 @@ public sealed class AdminHttpService : IHostedService
                 at = SystemClock.UtcNow(),
                 recipientCharacterId = offlineCommon.GetPlayerObjId(),
                 recipientName = offlineCommon.GetName(),
-                lastKnown = OfflinePlayerStatePayload(offlineCommon)
+                lastKnown = OfflinePlayerStatePayload(offlineCommon),
+                quests = AdminPlayerQuestRows.Load(offlineCommon.GetPlayerObjId())
             });
             return;
         }
-
         var common = player.GetCommonData();
         var payload = new
         {

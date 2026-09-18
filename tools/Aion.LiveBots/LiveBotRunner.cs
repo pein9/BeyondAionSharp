@@ -11,6 +11,7 @@ using Aion.Bots.Protocol.Chat;
 using Aion.Bots.Protocol.Login;
 using Aion.Bots.Reflexes;
 using Aion.Bots.Scenarios;
+using Aion.Bots.Timing;
 using Aion.Bots.Tracing;
 using Aion.Bots.Transport;
 using Aion.Bots.World;
@@ -22,7 +23,7 @@ using Aion.GameServer.Network.Aion.ServerPackets;
 
 namespace Aion.LiveBots;
 
-public static class LiveBotRunner
+public static partial class LiveBotRunner
 {
 	public static async Task<int> RunAsync(LiveBotOptions options, CancellationToken cancellationToken = default)
 	{
@@ -36,6 +37,8 @@ public static class LiveBotRunner
 			return await RunCanariesAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "C1" }])
 			return await RunC1Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "Q1" }])
+			return await RunQ1Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "M1" }])
 			return await RunM1Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "M6" }])
@@ -531,7 +534,7 @@ public static class LiveBotRunner
 	}
 }
 
-internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
+internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 {
 	private const string Password = "aion-bots";
 	private const string RegionChannel = "@\u0001public_ALL\u00011.0.AION.KOR";
@@ -564,6 +567,7 @@ internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 	private int characterId;
 	private int chatChannelId;
 	private PersistedPosition? expectedPosition;
+	private DateTimeOffset? persistedLastOnline;
 	private BotPosition? currentPosition;
 	private readonly List<DecodedBotServerPacket> packetHistory = [];
 
@@ -759,6 +763,8 @@ internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 		await SendGameAsync(api.SelectDialog(npcObjectId, 1002, questId: questId), cancellationToken);
 		await WaitForGamePacketAsync(typeof(SM_QUEST_ACTION), cancellationToken,
 			packet => packet.Get<int>("questId") == questId);
+		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken,
+			packet => packet.Get<int>("targetObjectId") == npcObjectId);
 	}
 
 	public async Task FinishQuestAsync(int npcObjectId, int questId, CancellationToken cancellationToken)
@@ -935,13 +941,21 @@ internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 		var lastKnown = root.GetProperty("lastKnown");
 		AssertPersistedPosition(lastKnown.GetProperty("worldId").GetInt32(), lastKnown.GetProperty("x").GetSingle(),
 			lastKnown.GetProperty("y").GetSingle(), lastKnown.GetProperty("z").GetSingle());
+		persistedLastOnline = lastKnown.GetProperty("lastOnline").GetDateTimeOffset();
 	}
 
 	public async Task WaitForReentryAsync(CancellationToken cancellationToken)
 	{
-		var remaining = api.Timing.TimeUntilEnterWorld();
+		TimeSpan remaining = api.Timing.TimeUntilEnterWorld();
+		if (persistedLastOnline is DateTimeOffset lastOnline)
+		{
+			TimeSpan serverRemaining = lastOnline + TimeSpan.FromSeconds(BotTimingContract.ConfiguredReentrySeconds) -
+				DateTimeOffset.UtcNow;
+			if (serverRemaining > remaining)
+				remaining = serverRemaining;
+		}
 		if (remaining > TimeSpan.Zero)
-			await Task.Delay(remaining + TimeSpan.FromMilliseconds(250), cancellationToken);
+			await Task.Delay(remaining + TimeSpan.FromMilliseconds(500), cancellationToken);
 	}
 
 	public async Task ReloginAndVerifyPersistenceAsync(CancellationToken cancellationToken)

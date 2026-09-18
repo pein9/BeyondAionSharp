@@ -131,6 +131,9 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 				case "C15":
 					await RunC15Async(execution.Scenario, includeHistory);
 					break;
+				case "Q1":
+					await RunQ1Async(execution.Scenario, includeHistory);
+					break;
 				default:
 					throw new InvalidOperationException($"SIM scenario '{execution.Scenario.Id}' has no runner.");
 			}
@@ -862,6 +865,8 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			await SendAsync(api.SelectDialog(npcObjectId, 1002, questId: questId), cancellationToken);
 			await WaitForAsync(typeof(SM_QUEST_ACTION), cancellationToken,
 				packet => packet.Get<int>("questId") == questId);
+			await WaitForAsync(typeof(SM_DIALOG_WINDOW), cancellationToken,
+				packet => packet.Get<int>("targetObjectId") == npcObjectId);
 		}
 
 		public async Task FinishQuestAsync(int npcObjectId, int questId, CancellationToken cancellationToken)
