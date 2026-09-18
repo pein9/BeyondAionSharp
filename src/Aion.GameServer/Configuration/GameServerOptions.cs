@@ -199,6 +199,7 @@ public sealed class GameServerOptions
 				CharacterDeletionTimeMinutes = GetIntWithEnvironment(loader, "character.deletion.time.minutes", 5),
 				IgnorePotionsAtFullHealth = GetBoolWithEnvironment(loader, "gameserver.items.ignore_potions_at_full_health", false),
 				EnableStarterKit = GetBoolWithEnvironment(loader, "gameserver.custom.starter_kit.enable", false),
+				EnableRandomQuestBonusRewards = GetBoolWithEnvironment(loader, "gameserver.quest.random_bonus_rewards.enabled", true),
 				PvpMapEnabled = GetBoolWithEnvironment(loader, "gameserver.pvpmap.enable", false),
 				PvpMapApMultiplier = GetFloatWithEnvironment(loader, "gameserver.pvpmap.apmultiplier", 2f),
 				PvpMapPveApMultiplier = GetFloatWithEnvironment(loader, "gameserver.pvpmap.pve.apmultiplier", 1f),
@@ -1068,6 +1069,8 @@ public sealed class GameServerCustomOptions
 	public bool IgnorePotionsAtFullHealth { get; init; }
 
 	public bool EnableStarterKit { get; init; }
+
+	public bool EnableRandomQuestBonusRewards { get; init; } = true;
 
 	public bool PvpMapEnabled { get; init; }
 

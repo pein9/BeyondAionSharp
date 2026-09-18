@@ -70,10 +70,14 @@ try {
 	$deterministicRates = Get-Content -Raw (Join-Path $repoRoot 'docker/bots/overlay/20-deterministic-rates.properties')
 	Assert-Contract ($deterministicRates -match 'gameserver\.craft\.fail\.chance\s*=\s*0') 'deterministic craft failure chance is not zero'
 	Assert-Contract ($deterministicRates -match 'gameserver\.gather\.fail\.chance\s*=\s*0') 'deterministic gather failure chance is not zero'
+	Assert-Contract ($deterministicRates -match 'gameserver\.event\.service\.disabled_events\s*=\s*[^\r\n]*Beyond Aion Server Buffs') 'deterministic profile does not disable Beyond Aion Server Buffs'
+	Assert-Contract ($deterministicRates -match 'gameserver\.quest\.random_bonus_rewards\.enabled\s*=\s*false') 'deterministic profile does not disable random quest bonus rewards'
 	$deterministicProfile = (Get-ChildItem (Join-Path $repoRoot 'docker/bots/overlay') -Filter '*.properties' | Get-Content -Raw) -join "`n"
 	Assert-Contract ($deterministicProfile -match 'loginserver\.accounts\.autocreate\s*=\s*true') 'deterministic profile does not enable account auto-creation'
 	$soakProfile = (Get-ChildItem (Join-Path $repoRoot 'docker/bots/overlay-soak') -Filter '*.properties' | Get-Content -Raw) -join "`n"
 	Assert-Contract ($soakProfile -notmatch 'gameserver\.(craft|gather)\.fail\.chance') 'soak profile overrides production failure rates'
+	Assert-Contract ($soakProfile -notmatch 'gameserver\.event\.service\.disabled_events') 'soak profile disables production events'
+	Assert-Contract ($soakProfile -notmatch 'gameserver\.quest\.random_bonus_rewards\.enabled') 'soak profile overrides random quest bonus rewards'
 	Assert-Contract ($soakProfile -match 'loginserver\.accounts\.autocreate\s*=\s*true') 'soak profile does not enable account auto-creation'
 
 	$seedSql = Get-Content -Raw (Join-Path $repoRoot 'docker/bots/seed/10-bot-seed.sql')

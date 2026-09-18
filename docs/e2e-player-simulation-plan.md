@@ -989,8 +989,10 @@ point; and `p515-full2-20260917/l0-packet-parity.json` recorded the normalized S
   C# imposed a 30-second idle read timeout on persistent game-server links while Java's selector waits
   indefinitely. Docker-only combined run `p606-full-final2-20260917` passed unsharded SIM Full plus LIVE L0, M1,
   M6, C1 and canaries; `p606-fast-final-20260917` passed SIM Fast. (`3a18ef178`)
-- [ ] **P6-07** [BOTH] S — Deterministic profile disables the "Beyond Aion Server Buffs" custom event (random +100%
-  XP day, drop buff) and bonus-item randomness.
+- [x] **P6-07** [BOTH] S — Deterministic profile disables the "Beyond Aion Server Buffs" custom event (random +100%
+  XP day, drop buff) and bonus-item randomness. Production and soak retain Java's event and random quest-bonus
+  behavior; deterministic SIM/LIVE profiles disable both through production-default-on configuration. Docker-only
+  Fast run `p607-fast-20260917` passed. (`43cc2de5c`)
 - [ ] **P6-08** [SIM] S — `BossAiHarness.Kill` runs `OnDie` twice (`ReduceHp` to 0 already calls it); fix it before
   reusing it for reward or drop assertions.
 

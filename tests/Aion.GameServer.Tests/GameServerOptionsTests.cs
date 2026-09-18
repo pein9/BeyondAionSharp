@@ -114,6 +114,7 @@ public class GameServerOptionsTests
 		Assert.Equal(14, options.Custom.TopRankingXformMinRank);
 		Assert.Equal(2f, options.Custom.PvpMapApMultiplier, 0.001f);
 		Assert.Equal(1f, options.Custom.PvpMapPveApMultiplier, 0.001f);
+		Assert.True(options.Custom.EnableRandomQuestBonusRewards);
 		Assert.Empty(options.Custom.DisabledEventNames);
 		Assert.False(options.Custom.CountSummonEffectsForCumulativeResist);
 
@@ -193,6 +194,7 @@ public class GameServerOptionsTests
 				gameserver.network.client.connect_address = ${gameserver.network.client.socket_address}
 				gameserver.topranking.xform.min_rank = COMMANDER
 				gameserver.event.service.disabled_events = Broken Hearts, Ice Festival
+				gameserver.quest.random_bonus_rewards.enabled = false
 				gameserver.rates.ap.pvp.gain = 1.25, 2.25, 3.25
 				gameserver.rates.ap.pvp.loss = 0.75, 1.25
 				gameserver.rates.ap.pve = 1.5, 2.5
@@ -237,6 +239,7 @@ public class GameServerOptionsTests
 			Assert.Contains("Broken Hearts", options.Custom.DisabledEventNames);
 			Assert.Contains("Ice Festival", options.Custom.DisabledEventNames);
 			Assert.DoesNotContain("ice festival", options.Custom.DisabledEventNames); // Java HashSet<String> is case-sensitive.
+			Assert.False(options.Custom.EnableRandomQuestBonusRewards);
 			Assert.Equal([1.25f, 2.25f, 3.25f], options.Rates.ApPvpGainRates);
 			Assert.Equal([0.75f, 1.25f], options.Rates.ApPvpLossRates);
 			Assert.Equal([1.5f, 2.5f], options.Rates.ApPveRates);

@@ -113,6 +113,15 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 					NetworkConfig.LOG_IGNORED_PACKETS = true;
 					WorldConfig.WORLD_MAX_TWINS_USUAL = 5;
 					WorldConfig.WORLD_EMULATE_FASTTRACK = false;
+					EventsConfig.DISABLED_EVENTS = new HashSet<string>(StringComparer.Ordinal)
+					{
+						"Beyond Aion Server Buffs",
+						"Increased XP Rates",
+						"Increased Gathering & Crafting XP Rates",
+						"Increased Drop Rates",
+						"Increased Drop Rates 50%",
+					};
+					CustomConfig.ENABLE_RANDOM_QUEST_BONUS_REWARDS = false;
 					ServerTime.Initialize(TimeZoneInfo.Utc);
 				},
 			};

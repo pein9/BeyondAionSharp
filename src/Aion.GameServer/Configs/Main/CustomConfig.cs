@@ -249,6 +249,14 @@ public static class CustomConfig
     [Property(key: "gameserver.custom.starter_kit.enable", defaultValue: "false")]
     public static bool ENABLE_STARTER_KIT = false;
 
+    /// <summary>
+    /// Enables Java's random quest bonus-item selection. Production keeps this enabled; deterministic test profiles
+    /// disable it so quest rewards do not depend on bonus-group and item chance rolls.
+    /// Key: gameserver.quest.random_bonus_rewards.enabled
+    /// </summary>
+    [Property(key: "gameserver.quest.random_bonus_rewards.enabled", defaultValue: "true")]
+    public static bool ENABLE_RANDOM_QUEST_BONUS_REWARDS = true;
+
     /// <summary>Key: gameserver.pvpmap.enable</summary>
     [Property(key: "gameserver.pvpmap.enable", defaultValue: "false")]
     public static bool PVP_MAP_ENABLED = false;

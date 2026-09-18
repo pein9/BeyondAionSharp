@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -11,7 +12,7 @@ using Aion.GameServer.Model.Templates.Rewards;
 
 namespace Aion.GameServer.Services.Reward;
 
-/// <summary>Java parity: services/reward/BonusService (Rolandas, Pad, Neon). Static; getQuestBonus→Chance.selectElement of random matching group→QuestItems; getMatchingItemsOfRandomGroup loops remaining groups (Chance.selectElement remove=true) filtering by race/quest; getBonusGroups switch BonusType→ITEM_GROUPS_DATA accessor (commented GATHER/BOSS/ENCHANT preserved; MOVIE/NONE break; default inline warn); List&lt;? extends ItemRaceEntry&gt;→List&lt;ItemRaceEntry&gt; (wildcard erase); streams→LINQ; getType→GetType_. Chance/BonusItemGroup/ItemRaceEntry red-tolerated.</summary>
+/// <summary>Java parity: services/reward/BonusService (Rolandas, Pad, Neon). Static; getQuestBonus→Chance.selectElement of random matching group→QuestItems; getMatchingItemsOfRandomGroup loops remaining groups (Chance.selectElement remove=true) filtering by race/quest; getBonusGroups switch BonusType→ITEM_GROUPS_DATA accessor (commented GATHER/BOSS/ENCHANT preserved; MOVIE/NONE break; default inline warn); List&lt;? extends ItemRaceEntry&gt;→List&lt;ItemRaceEntry&gt; (wildcard erase); streams→LINQ; getType→GetType_. The production-default-on config guard is a deterministic-test seam with no Java counterpart. Chance/BonusItemGroup/ItemRaceEntry red-tolerated.</summary>
 public class BonusService
 {
     private BonusService()
@@ -20,6 +21,9 @@ public class BonusService
 
     public static QuestItems GetQuestBonus(Player player, QuestTemplate questTemplate)
     {
+        if (!CustomConfig.ENABLE_RANDOM_QUEST_BONUS_REWARDS)
+            return null;
+
         if (questTemplate.GetBonus() == null)
             return null;
 

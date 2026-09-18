@@ -1,4 +1,6 @@
+using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Configs.Network;
+using Aion.GameServer.Services.Event;
 
 namespace Aion.Simulation.Tests;
 
@@ -18,5 +20,7 @@ public sealed class SimulationWorldSmokeTests(SimulationWorldFixture fixture)
 		Assert.Empty(fixture.Clock.Faults);
 		Assert.True(NetworkConfig.LOG_UNKNOWN_PACKETS);
 		Assert.True(NetworkConfig.LOG_IGNORED_PACKETS);
+		Assert.False(CustomConfig.ENABLE_RANDOM_QUEST_BONUS_REWARDS);
+		Assert.False(EventService.GetInstance().IsEventActive("Beyond Aion Server Buffs"));
 	}
 }
