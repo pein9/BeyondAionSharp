@@ -1083,10 +1083,15 @@ byte-identical), so bots will mostly find bugs elsewhere through it.
   removed (upstream `1d6a2d8f7`). The reward-state handler now delegates every Lothas dialog directly to the quest-end
   path, and the regenerated custom-quest evidence plus explorer test pin the corrected action set. Fast run
   `p7-11-fast-20260918a` passed. (`482d528e3`)
-- [ ] **P7-12** [SIM] S — Repeatable quests on the virtual clock and a test trigger for the daily 09:00 reset.
-  Depends on P6-00.
+- [x] **P7-12** [SIM] S — Repeatable quests on the virtual clock and a test trigger for the daily 09:00 reset.
+  Depends on P6-00. Isolated SIM scenario Q5 finishes the retail daily test quest at Wednesday 08:59, pins its
+  09:00 repeat timestamp and final locked millisecond, then crosses the real virtual cron boundary and requires
+  the daily-reset packet plus renewed eligibility. Docker-only runs `p7-12-q5-sim-dev-20260918a` and
+  `p7-12-fast-20260918a` passed. (`72d69d025`)
 
 **Done when:** Q1 and Q2 pass in the SIM Fast tier and the LIVE Full tier, and the coverage baseline is committed.
+**Done 2026-09-18:** Docker-only Full run `p7-10-full-dev-20260918g` passed both SIM and LIVE quest legs with
+the checked-in completion floor, and the subsequent Fast runs through `p7-12-fast-20260918a` kept Q1 and Q2 green.
 
 ### Phase 8 — Gathering, crafting, economy, social, character life
 

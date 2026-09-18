@@ -421,6 +421,20 @@
     "resetEpoch": true
   },
   {
+    "id": "Q5",
+    "modes": ["Sim"],
+    "tier": "Full",
+    "race": "Elyos",
+    "map": 210010000,
+    "channelNeeds": "None",
+    "bots": 1,
+    "virtualDuration": "00:02:00",
+    "consumes": [],
+    "requires": ["Db"],
+    "expectedFail": null,
+    "resetEpoch": true
+  },
+  {
     "id": "connect",
     "modes": ["Live"],
     "tier": "Full",

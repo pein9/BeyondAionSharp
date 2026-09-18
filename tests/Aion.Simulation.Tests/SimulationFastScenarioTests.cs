@@ -146,6 +146,9 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 				case "Q4I":
 					await RunQuestPlanZoneAsync(execution.Scenario, includeHistory, "Ishalgen", Race.ASMODIANS, 40, "Assimqi");
 					break;
+				case "Q5":
+					await RunQ5Async(execution.Scenario, includeHistory);
+					break;
 				default:
 					throw new InvalidOperationException($"SIM scenario '{execution.Scenario.Id}' has no runner.");
 			}
