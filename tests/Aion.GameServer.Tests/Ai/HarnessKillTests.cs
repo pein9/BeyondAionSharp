@@ -1,3 +1,4 @@
+using Aion.GameServer.Controllers.Observer;
 using Aion.GameServer.Handlers.AI;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -73,5 +74,28 @@ public sealed class HarnessKillTests
 
 		Assert.True(queen.IsDead(), "Kill left the NPC alive");
 		Assert.Equal(0, queen.GetLifeStats().GetCurrentHp());
+	}
+
+	/// <summary>
+	/// <b>Lethal damage dispatches exactly one controller death.</b>
+	/// </summary>
+	/// <remarks>
+	/// Java's <c>CreatureLifeStats.onHpChanged</c> is the sole caller of <c>CreatureController.onDie</c> for
+	/// lethal damage. Calling the controller again in this helper repeats persistent observers and every other
+	/// unguarded death side effect.
+	/// </remarks>
+	[Fact]
+	public void KillingAnNpcNotifiesPersistentDeathObserversOnce()
+	{
+		using BossAiHarness harness = BossAiHarness.For(EmpyreanCrucible).WithWorldSize(2048)
+			.WithAi(typeof(QueenAlukinaAI), typeof(AggressiveNpcAI), typeof(GeneralNpcAI)).Build();
+		Npc queen = harness.Spawn(AlukinaEmp, 400f, 400f, 200f);
+		Player player = harness.SpawnPlayer(404f, 400f, 200f);
+		int deathNotifications = 0;
+		queen.GetObserveController().AddObserver(new DeathObserver(_ => deathNotifications++));
+
+		BossAiHarness.Kill(queen, player);
+
+		Assert.Equal(1, deathNotifications);
 	}
 }

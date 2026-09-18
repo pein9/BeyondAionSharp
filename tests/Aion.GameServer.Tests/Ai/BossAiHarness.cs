@@ -296,8 +296,8 @@ public sealed class BossAiHarness : IDisposable
 	/// Drakan scientists are released by counting two guarding eyes through observers, and a mutation
 	/// deleting their entire route lookup survived because that count could not be driven here.
 	/// <para>
-	/// This drops the NPC to zero and calls <c>OnDie</c>, so the observers, the friend notice and the
-	/// AI event all run in the order the server runs them.
+	/// This drops the NPC to zero; <c>CreatureLifeStats</c> calls <c>OnDie</c>, so the observers, the friend notice
+	/// and the AI event all run in the order the server runs them.
 	/// </para>
 	/// <para>
 	/// <b>It deliberately records no damage, and that is what makes the AI event arrive.</b> This used to
@@ -323,7 +323,6 @@ public sealed class BossAiHarness : IDisposable
 			Aion.GameServer.Network.Aion.ServerPackets.SmAttackStatus.TYPE.DAMAGE,
 			npc.GetLifeStats().GetMaxHp(), 0,
 			Aion.GameServer.Network.Aion.ServerPackets.SmAttackStatus.LOG.REGULAR, killer);
-		npc.GetController().OnDie(killer);
 	}
 
 	/// <summary>

@@ -993,8 +993,9 @@ point; and `p515-full2-20260917/l0-packet-parity.json` recorded the normalized S
   XP day, drop buff) and bonus-item randomness. Production and soak retain Java's event and random quest-bonus
   behavior; deterministic SIM/LIVE profiles disable both through production-default-on configuration. Docker-only
   Fast run `p607-fast-20260917` passed. (`43cc2de5c`)
-- [ ] **P6-08** [SIM] S — `BossAiHarness.Kill` runs `OnDie` twice (`ReduceHp` to 0 already calls it); fix it before
-  reusing it for reward or drop assertions.
+- [x] **P6-08** [SIM] S — `BossAiHarness.Kill` runs `OnDie` twice (`ReduceHp` to 0 already calls it); fix it before
+  reusing it for reward or drop assertions. The helper now relies on Java's lethal-damage dispatch path, with a
+  persistent death-observer regression pin proving one notification. (`b736fad55`)
 
 **Done when:** M1–M7 and C1–C15 pass in the SIM Full tier (C9 expected-fail until Phase 9); C1, C2, C3 and M1 are in
 the Fast tier; C1, M1 and M6 pass in the LIVE Full tier.
@@ -1334,7 +1335,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 21 | `InventoryDAO.Store` catch scope too wide | `InventoryDAO.java:232` catches `SQLException` | P8-03 |
 | 22 | `GeoWorldLoader` is a stub, so boot reports both the loader warning (`f802a125`, count 1) and four normalized missing-door-geometry warnings (`39050e81`, count 4) | `GeoWorldLoader.java` (285 lines); `GeoMap.java:287-301` | P9-01 |
 | 23 | Production boot skips `HousingService`/housing tasks, faction ratio counts, `InitSieges`, `PvpMapService.Init` | `GameServer.java:118-122,130-134,141,175` | Deferred (D7) |
-| 24 | `BossAiHarness.Kill` calls `OnDie` twice (test bug) | n/a | P6-08 |
+| 24 | `BossAiHarness.Kill` calls `OnDie` twice (test bug) | n/a | Resolved by P6-08 (`b736fad55`) |
 | 25 | The DB-backed full-boot test pre-registers test AIs before `StartAsync` initializes the real AI engine, and the assembly-wide `SiegeServiceTestInit` can construct the process-global siege singleton against empty fixture data; in isolation this produces duplicate-AI registration before boot or a stale-location NRE in the separately asserted deferred boot tail | n/a (C# test-process defect; production `StartAsync` completed for P0-03 after bypassing the test AI preload) | P1-12 / P5-12 |
 | 26 | Concurrent chat clients can create separate channels for the same identifier, so neither receives the other's message | `ChatChannels.java:52-79` executes the scan/add path on the single NIO read/write dispatcher | Resolved by P3-09 (`efddb7a7b`) |
 | 27 | Character-list equipment loading throws for every visible item without a godstone because the LEFT JOIN's null `godstone_item_id` is read with `GetInt32` | `InventoryDAO.java:97` uses `ResultSet.getInt`, whose SQL-null value is `0` | Resolved by P3-09 (`efddb7a7b`) |
