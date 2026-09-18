@@ -1020,9 +1020,12 @@ byte-identical), so bots will mostly find bugs elsewhere through it.
   classifier separates 4,315 obtainable, 3,008 disabled, 280 unreachable and 440 enabled/no-handler quests, then
   identifies 3,002 complete XML-template plans, 386 with unresolved item sources, and 927 custom handlers.
   (`492c4fb06`)
-- [ ] **P7-03** [BOTH] M — Template dialog protocol table from `QuestEngine/Handlers/Template/*`: the exact action →
+- [x] **P7-03** [BOTH] M — Template dialog protocol table from `QuestEngine/Handlers/Template/*`: the exact action →
   page sequences for `report_to`, `monster_hunt`, `item_collecting`, `report_to_many`, `item_order`,
-  `kill_in_world`, `kill_in_zone`, `kill_spawned`, `work_order`, `skill_use`, `report_on_level_up`.
+  `kill_in_world`, `kill_in_zone`, `kill_spawned`, `work_order`, `skill_use`, `report_on_levelup`. The checked-in
+  table pins 67 state/target/action transitions plus the shared base/start/end helpers to Java commit
+  `ce54b7931`; its typed bot-side loader validates all action ids against `DialogAction`, the exact template set,
+  reward pages, states, targets and response kinds. (`4d460392a`)
 - [ ] **P7-04** [BOTH] S — Echo-fallback detector: when no handler takes an action, `DialogService` answers
   `SM_DIALOG_WINDOW` with page = action id. That is the normal next-page path for page-navigation actions
   (1011–9999 `SELECT*`), but for quest-control actions (31, 1002, 1003–1009, 39, 8–23, 10000+ `SETPRO`/`SET_SUCCEED`)

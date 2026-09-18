@@ -1,0 +1,820 @@
+{
+  "schemaVersion": 1,
+  "javaCommit": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "actions": {
+    "USE_OBJECT": -1,
+    "SELECTED_QUEST_REWARD1": 8,
+    "SELECTED_QUEST_REWARD2": 9,
+    "SELECTED_QUEST_REWARD3": 10,
+    "SELECTED_QUEST_REWARD4": 11,
+    "SELECTED_QUEST_REWARD5": 12,
+    "SELECTED_QUEST_REWARD6": 13,
+    "SELECTED_QUEST_REWARD7": 14,
+    "SELECTED_QUEST_REWARD8": 15,
+    "SELECTED_QUEST_REWARD9": 16,
+    "SELECTED_QUEST_REWARD10": 17,
+    "SELECTED_QUEST_REWARD11": 18,
+    "SELECTED_QUEST_REWARD12": 19,
+    "SELECTED_QUEST_REWARD13": 20,
+    "SELECTED_QUEST_REWARD14": 21,
+    "SELECTED_QUEST_REWARD15": 22,
+    "SELECTED_QUEST_NOREWARD": 23,
+    "QUEST_ACCEPT": 29,
+    "QUEST_REFUSE": 30,
+    "QUEST_SELECT": 31,
+    "CHECK_USER_HAS_QUEST_ITEM": 39,
+    "COMBINE_TASK": 58,
+    "QUEST_ACCEPT_1": 1002,
+    "QUEST_REFUSE_1": 1003,
+    "QUEST_REFUSE_2": 1004,
+    "QUEST_REFUSE_3": 1005,
+    "QUEST_REFUSE_4": 1006,
+    "ASK_QUEST_ACCEPT": 1007,
+    "FINISH_DIALOG": 1008,
+    "SELECT_QUEST_REWARD": 1009,
+    "SELECT1_1": 1012,
+    "SETPRO1": 10000,
+    "SETPRO2": 10001,
+    "SETPRO3": 10002,
+    "SETPRO4": 10003,
+    "SETPRO5": 10004,
+    "SETPRO6": 10005,
+    "SETPRO7": 10006,
+    "SETPRO8": 10007,
+    "SETPRO9": 10008,
+    "SETPRO10": 10009,
+    "SETPRO11": 10010,
+    "SETPRO12": 10011,
+    "SET_SUCCEED": 10255,
+    "QUEST_ACCEPT_SIMPLE": 20000,
+    "QUEST_REFUSE_SIMPLE": 20001,
+    "CHECK_USER_HAS_QUEST_ITEM_SIMPLE": 20002
+  },
+  "rewardPages": [5, 6, 7, 8, 45, 46, 47, 48, 49, 50],
+  "helpers": {
+    "baseDialog": {
+      "javaSource": "game-server/src/com/aionemu/gameserver/questEngine/handlers/AbstractQuestHandler.java:92-113",
+      "transitions": [
+        {
+          "id": "ask",
+          "states": ["startable"],
+          "target": "registered target",
+          "actions": ["ASK_QUEST_ACCEPT"],
+          "response": { "kind": "page", "page": 4, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "accept-acknowledgement",
+          "states": ["startable"],
+          "target": "registered target",
+          "actions": ["QUEST_ACCEPT_1"],
+          "response": { "kind": "branch", "rule": "target is an NPC", "true": { "kind": "page", "page": 1003, "questId": "current" }, "false": { "kind": "close", "page": 0, "questId": 0 } },
+          "effects": []
+        },
+        {
+          "id": "refuse-first",
+          "states": ["startable"],
+          "target": "registered target",
+          "actions": ["QUEST_REFUSE", "QUEST_REFUSE_SIMPLE", "QUEST_REFUSE_1"],
+          "response": { "kind": "branch", "rule": "target is an NPC", "true": { "kind": "page", "page": 1004, "questId": "current" }, "false": { "kind": "close", "page": 0, "questId": 0 } },
+          "effects": []
+        },
+        {
+          "id": "refuse-second",
+          "states": ["startable"],
+          "target": "registered target",
+          "actions": ["QUEST_REFUSE_2"],
+          "response": { "kind": "branch", "rule": "target is an NPC", "true": { "kind": "page", "page": 1005, "questId": "current" }, "false": { "kind": "close", "page": 0, "questId": 0 } },
+          "effects": []
+        },
+        {
+          "id": "refuse-third",
+          "states": ["startable"],
+          "target": "registered target",
+          "actions": ["QUEST_REFUSE_3"],
+          "response": { "kind": "branch", "rule": "target is an NPC", "true": { "kind": "page", "page": 1006, "questId": "current" }, "false": { "kind": "close", "page": 0, "questId": 0 } },
+          "effects": []
+        },
+        {
+          "id": "refuse-fourth",
+          "states": ["startable"],
+          "target": "registered target",
+          "actions": ["QUEST_REFUSE_4"],
+          "response": { "kind": "branch", "rule": "target is an NPC", "true": { "kind": "page", "page": 1007, "questId": "current" }, "false": { "kind": "close", "page": 0, "questId": 0 } },
+          "effects": []
+        },
+        {
+          "id": "finish",
+          "states": ["startable"],
+          "target": "registered target",
+          "actions": ["FINISH_DIALOG"],
+          "response": { "kind": "handled" },
+          "effects": []
+        }
+      ]
+    },
+    "startDialog": {
+      "javaSource": "game-server/src/com/aionemu/gameserver/questEngine/handlers/AbstractQuestHandler.java:365-399",
+      "transitions": [
+        {
+          "id": "ask",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["ASK_QUEST_ACCEPT"],
+          "response": { "kind": "page", "page": 4, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "accept",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_ACCEPT", "QUEST_ACCEPT_1", "QUEST_ACCEPT_SIMPLE"],
+          "condition": "QuestService.startQuest succeeds",
+          "response": {
+            "kind": "branch",
+            "rule": "non-simple action and target is an NPC",
+            "true": { "kind": "page", "page": 1003, "questId": "current" },
+            "false": { "kind": "close", "page": 0, "questId": 0 }
+          },
+          "effects": ["status=START", "give first work item when declared"]
+        },
+        {
+          "id": "refuse",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_REFUSE_1", "QUEST_REFUSE_2"],
+          "response": { "kind": "page", "page": 1004, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "refuse-simple",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_REFUSE_SIMPLE"],
+          "response": { "kind": "close", "page": 0, "questId": 0 },
+          "effects": []
+        },
+        {
+          "id": "finish",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["FINISH_DIALOG"],
+          "response": { "kind": "selection", "page": 10, "questId": 0 },
+          "effects": []
+        }
+      ]
+    },
+    "endDialog": {
+      "javaSource": "game-server/src/com/aionemu/gameserver/questEngine/handlers/AbstractQuestHandler.java:402-469",
+      "transitions": [
+        {
+          "id": "open-reward",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["USE_OBJECT", "QUEST_SELECT", "SELECT_QUEST_REWARD", "CHECK_USER_HAS_QUEST_ITEM", "CHECK_USER_HAS_QUEST_ITEM_SIMPLE"],
+          "response": { "kind": "page", "pages": [5, 6, 7, 8, 45, 46, 47, 48, 49, 50], "rule": "reward group index", "questId": "current" },
+          "effects": ["validate reward group"]
+        },
+        {
+          "id": "pre-end",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["SET_SUCCEED"],
+          "response": { "kind": "close", "page": 0, "questId": 0 },
+          "effects": []
+        },
+        {
+          "id": "finish-reward",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["SELECTED_QUEST_REWARD1", "SELECTED_QUEST_REWARD2", "SELECTED_QUEST_REWARD3", "SELECTED_QUEST_REWARD4", "SELECTED_QUEST_REWARD5", "SELECTED_QUEST_REWARD6", "SELECTED_QUEST_REWARD7", "SELECTED_QUEST_REWARD8", "SELECTED_QUEST_REWARD9", "SELECTED_QUEST_REWARD10", "SELECTED_QUEST_REWARD11", "SELECTED_QUEST_REWARD12", "SELECTED_QUEST_REWARD13", "SELECTED_QUEST_REWARD14", "SELECTED_QUEST_REWARD15", "SELECTED_QUEST_NOREWARD"],
+          "response": { "kind": "branch", "rule": "another active/new quest at NPC", "true": { "kind": "selection", "page": 10, "questId": 0 }, "false": { "kind": "close", "page": 0, "questId": 0 }, "mayOpenFollowUpQuest": true },
+          "effects": ["finish quest", "possibly dispatch next reward or follow-up quest"]
+        }
+      ]
+    }
+  },
+  "templates": {
+    "report_to": {
+      "javaClass": "ReportTo",
+      "javaSource": "game-server/src/com/aionemu/gameserver/questEngine/handlers/template/ReportTo.java:61-104",
+      "startableDefaultHelper": "baseDialog",
+      "transitions": [
+        {
+          "id": "start-select",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 1011, "dataDrivenPage": 4762, "overrideField": "start_dialog_id", "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "start-control",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_ACCEPT", "QUEST_ACCEPT_1", "QUEST_ACCEPT_SIMPLE"],
+          "response": { "kind": "startDialog" },
+          "effects": []
+        },
+        {
+          "id": "active-select",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 2375, "dataDrivenPage": 10002, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "active-reward",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["SELECT_QUEST_REWARD"],
+          "response": { "kind": "branch", "rule": "declared work item count is present", "true": { "kind": "endDialog" }, "false": { "kind": "selection", "page": 10, "questId": 0 } },
+          "effects": ["remove work item when declared", "var0=1", "status=REWARD on success"]
+        },
+        {
+          "id": "reward",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["*"],
+          "response": { "kind": "endDialog" },
+          "effects": []
+        }
+      ]
+    },
+    "monster_hunt": {
+      "javaClass": "MonsterHunt",
+      "javaSource": "game-server/src/com/aionemu/gameserver/questEngine/handlers/template/MonsterHunt.java:106-167",
+      "startableDefaultHelper": "baseDialog",
+      "transitions": [
+        {
+          "id": "start-select",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 1011, "dataDrivenPage": 4762, "overrideField": "start_dialog_id", "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "start-control",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_ACCEPT", "QUEST_ACCEPT_1", "QUEST_ACCEPT_SIMPLE"],
+          "response": { "kind": "startDialog" },
+          "effects": []
+        },
+        {
+          "id": "active-select",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 1352, "overrideField": "end_dialog_id", "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "active-reward",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["SELECT_QUEST_REWARD"],
+          "condition": "all encoded monster counters reached their end values",
+          "response": { "kind": "page", "page": 5, "questId": "current" },
+          "effects": ["status=REWARD"]
+        },
+        {
+          "id": "reward-full-dialog",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["QUEST_SELECT", "USE_OBJECT"],
+          "condition": "aggro_start_npc_ids is nonempty or quest is data-driven",
+          "response": { "kind": "page", "page": 10002, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "reward",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["*"],
+          "response": { "kind": "endDialog" },
+          "effects": ["SELECT_QUEST_REWARD removes the declared work item when the full-dialog condition holds"]
+        }
+      ]
+    },
+    "item_collecting": {
+      "javaClass": "ItemCollecting",
+      "javaSource": "game-server/src/com/aionemu/gameserver/questEngine/handlers/template/ItemCollecting.java:88-164",
+      "startableDefaultHelper": "baseDialog",
+      "transitions": [
+        {
+          "id": "start-select",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 1011, "dataDrivenPage": 4762, "overrideField": "start_dialog_id", "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "start-setpro1",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["SETPRO1"],
+          "response": { "kind": "close", "page": 0, "questId": 0 },
+          "effects": ["status=START"]
+        },
+        {
+          "id": "start-movie",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["SELECT1_1"],
+          "response": { "kind": "page", "page": 1012, "questId": "current" },
+          "effects": ["play configured movie when nonzero"]
+        },
+        {
+          "id": "start-control",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_ACCEPT", "QUEST_ACCEPT_1", "QUEST_ACCEPT_SIMPLE"],
+          "response": { "kind": "startDialog" },
+          "effects": []
+        },
+        {
+          "id": "next-select",
+          "states": ["start"],
+          "target": "nextNpc when var0=0",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 1352, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "next-setpro1",
+          "states": ["start"],
+          "target": "nextNpc when var0=0",
+          "actions": ["SETPRO1"],
+          "response": { "kind": "close", "page": 0, "questId": 0 },
+          "effects": ["var0=1"]
+        },
+        {
+          "id": "active-select",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 2375, "dataDrivenPage": 1011, "overrideField": "start_dialog_id2", "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "check-items",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["CHECK_USER_HAS_QUEST_ITEM"],
+          "response": { "kind": "branch", "rule": "collect items present", "true": { "kind": "page", "page": 5, "dataDrivenPage": 10000, "overrideField": "check_ok_dialog_id", "questId": "current" }, "false": { "kind": "page", "page": 2716, "dataDrivenPage": 10001, "overrideField": "check_fail_dialog_id", "questId": "current" } },
+          "effects": ["status=REWARD and collected items removed on success"]
+        },
+        {
+          "id": "check-items-simple",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["CHECK_USER_HAS_QUEST_ITEM_SIMPLE"],
+          "response": { "kind": "branch", "rule": "collect items present", "true": { "kind": "page", "page": 5, "questId": "current" }, "false": { "kind": "close", "page": 0, "questId": 0 } },
+          "effects": ["status=REWARD and collected items removed on success"]
+        },
+        {
+          "id": "finish",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["FINISH_DIALOG"],
+          "response": { "kind": "selection", "page": 10, "questId": 0 },
+          "effects": []
+        },
+        {
+          "id": "set-succeed",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["SET_SUCCEED"],
+          "response": { "kind": "close", "page": 0, "questId": 0 },
+          "effects": ["status=REWARD"]
+        },
+        {
+          "id": "setpro-check",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["SETPRO1", "SETPRO2", "SETPRO3", "SETPRO4"],
+          "response": { "kind": "branch", "rule": "collect items present", "successPagesByAction": { "SETPRO1": 5, "SETPRO2": 6, "SETPRO3": 7, "SETPRO4": 8 }, "false": { "kind": "close", "page": 0, "questId": 0 } },
+          "effects": ["status=REWARD and collected items removed on success"]
+        },
+        {
+          "id": "reward",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["*"],
+          "response": { "kind": "endDialog" },
+          "effects": ["remove declared work item when present"]
+        }
+      ]
+    },
+    "report_to_many": {
+      "javaClass": "ReportToMany",
+      "javaSource": "game-server/src/com/aionemu/gameserver/questEngine/handlers/template/ReportToMany.java:78-180",
+      "startableDefaultHelper": "baseDialog",
+      "transitions": [
+        {
+          "id": "item-use",
+          "states": ["startable"],
+          "target": "startItem",
+          "actions": ["USE_OBJECT"],
+          "response": { "kind": "page", "page": 4, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "start-select",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 1011, "dataDrivenPage": 4762, "overrideField": "start_dialog_id", "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "start-control",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_ACCEPT", "QUEST_ACCEPT_1", "QUEST_ACCEPT_SIMPLE"],
+          "response": { "kind": "startDialog" },
+          "effects": []
+        },
+        {
+          "id": "step-select",
+          "states": ["start"],
+          "target": "npcInfos[var0]",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "pageExpression": "last step ? (dataDriven ? 10002 : 2375) : (dataDriven ? 1011 : 1352) + 341 * var0", "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "step-advance",
+          "states": ["start"],
+          "target": "npcInfos[var0]",
+          "actions": ["SETPRO1", "SETPRO2", "SETPRO3", "SETPRO4", "SETPRO5", "SETPRO6", "SETPRO7", "SETPRO8", "SETPRO9", "SETPRO10", "SETPRO11", "SETPRO12"],
+          "response": { "kind": "close", "page": 0, "questId": 0 },
+          "effects": ["var0++", "give work item at old step when declared"]
+        },
+        {
+          "id": "step-reward",
+          "states": ["start"],
+          "target": "npcInfos[var0]",
+          "actions": ["SET_SUCCEED", "SELECT_QUEST_REWARD", "CHECK_USER_HAS_QUEST_ITEM", "CHECK_USER_HAS_QUEST_ITEM_SIMPLE"],
+          "response": { "kind": "branch", "rule": "at final step and all collect/start/work items validate", "true": { "kind": "endDialog" }, "false": { "kind": "selection", "page": 10, "questId": 0 } },
+          "effects": ["SET_SUCCEED increments local step and marks rewardStatusFromRewardNpc=false", "status=REWARD on success"]
+        },
+        {
+          "id": "reward-pre-end",
+          "states": ["reward"],
+          "target": "last npcInfos group",
+          "actions": ["USE_OBJECT"],
+          "condition": "rewardStatusFromRewardNpc=false",
+          "response": { "kind": "page", "page": 2375, "dataDrivenPage": 10002, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "reward",
+          "states": ["reward"],
+          "target": "last npcInfos group",
+          "actions": ["*"],
+          "response": { "kind": "endDialog" },
+          "effects": []
+        }
+      ]
+    },
+    "item_order": {
+      "javaClass": "ItemOrders",
+      "javaSource": "game-server/src/com/aionemu/gameserver/questEngine/handlers/template/ItemOrders.java:58-119",
+      "startableDefaultHelper": "baseDialog",
+      "transitions": [
+        {
+          "id": "item-use",
+          "states": ["startable"],
+          "target": "first quest work item",
+          "actions": ["USE_OBJECT"],
+          "response": { "kind": "page", "page": 4, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "start-accept",
+          "states": ["startable"],
+          "target": "item dialog",
+          "actions": ["QUEST_ACCEPT", "QUEST_ACCEPT_1", "QUEST_ACCEPT_SIMPLE"],
+          "response": { "kind": "close", "page": 0, "questId": 0 },
+          "effects": ["status=START only when start item is still present; otherwise send system message"]
+        },
+        {
+          "id": "talk-select",
+          "states": ["start"],
+          "target": "talkNpc1 or talkNpc2",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 1352, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "talk-advance",
+          "states": ["start"],
+          "target": "talkNpc1 or talkNpc2",
+          "actions": ["SETPRO1"],
+          "response": { "kind": "close", "page": 0, "questId": 0 },
+          "effects": ["var0++", "status=REWARD after the only talk NPC or after talkNpc2"]
+        },
+        {
+          "id": "end-select",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 2375, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "end-reward",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["SELECT_QUEST_REWARD"],
+          "condition": "var0=0",
+          "response": { "kind": "endDialog" },
+          "effects": ["var0=1", "status=REWARD"]
+        },
+        {
+          "id": "reward-use",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["USE_OBJECT"],
+          "response": { "kind": "page", "page": 2375, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "reward",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["*"],
+          "response": { "kind": "endDialog" },
+          "effects": []
+        }
+      ]
+    },
+    "kill_in_world": {
+      "javaClass": "KillInWorld",
+      "javaSource": "game-server/src/com/aionemu/gameserver/questEngine/handlers/template/KillInWorld.java:91-123",
+      "startableDefaultHelper": "baseDialog",
+      "transitions": [
+        {
+          "id": "start-select",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 1011, "dataDrivenPage": 4762, "overrideField": "start_dialog_id", "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "start-control",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_ACCEPT", "QUEST_ACCEPT_1", "QUEST_ACCEPT_SIMPLE"],
+          "response": { "kind": "startDialog" },
+          "effects": []
+        },
+        {
+          "id": "reward-select",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 2375, "dataDrivenPage": 10002, "overrideField": "end_dialog_id", "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "reward",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["*"],
+          "response": { "kind": "endDialog" },
+          "effects": []
+        }
+      ]
+    },
+    "kill_in_zone": {
+      "javaClass": "KillInZone",
+      "javaSource": "game-server/src/com/aionemu/gameserver/questEngine/handlers/template/KillInZone.java:76-103",
+      "startableDefaultHelper": "baseDialog",
+      "transitions": [
+        {
+          "id": "start-select",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 1011, "dataDrivenPage": 4762, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "start-control",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_ACCEPT", "QUEST_ACCEPT_1", "QUEST_ACCEPT_SIMPLE"],
+          "response": { "kind": "startDialog" },
+          "effects": []
+        },
+        {
+          "id": "reward-use-data-driven",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["USE_OBJECT"],
+          "condition": "quest is data-driven",
+          "response": { "kind": "page", "page": 10002, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "reward",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["*"],
+          "response": { "kind": "endDialog" },
+          "effects": []
+        }
+      ]
+    },
+    "kill_spawned": {
+      "javaClass": "KillSpawned",
+      "javaSource": "game-server/src/com/aionemu/gameserver/questEngine/handlers/template/KillSpawned.java:70-120",
+      "transitions": [
+        {
+          "id": "start-select",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 1011, "dataDrivenPage": 4762, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "start-other",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["*"],
+          "condition": "action is not QUEST_SELECT",
+          "response": { "kind": "startDialog" },
+          "effects": []
+        },
+        {
+          "id": "spawn",
+          "states": ["start"],
+          "target": "configured spawner object",
+          "actions": ["USE_OBJECT"],
+          "response": { "kind": "handled" },
+          "effects": ["spawn first configured monster for five minutes at spawner position"]
+        },
+        {
+          "id": "active-select-after-counts",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["QUEST_SELECT"],
+          "condition": "all spawned-monster counters reached end values while status remains START",
+          "response": { "kind": "page", "page": 10002, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "active-reward-after-counts",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["SELECT_QUEST_REWARD"],
+          "condition": "all spawned-monster counters reached end values while status remains START",
+          "response": { "kind": "page", "page": 5, "questId": "current", "guard": "sendQuestDialog rejects reward pages unless status is REWARD" },
+          "effects": []
+        },
+        {
+          "id": "reward",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["*"],
+          "response": { "kind": "endDialog" },
+          "effects": []
+        }
+      ]
+    },
+    "work_order": {
+      "javaClass": "WorkOrders",
+      "javaSource": "game-server/src/com/aionemu/gameserver/questEngine/handlers/template/WorkOrders.java:49-101",
+      "transitions": [
+        {
+          "id": "start-select",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 4, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "start-accept",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_ACCEPT_1"],
+          "condition": "recipe is new and quest starts",
+          "response": { "kind": "close", "page": 0, "questId": 0 },
+          "effects": ["status=START", "give components", "add temporary recipe"]
+        },
+        {
+          "id": "combine-task",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["COMBINE_TASK"],
+          "response": { "kind": "page", "page": 28, "questId": 0 },
+          "effects": []
+        },
+        {
+          "id": "active-select-success",
+          "states": ["start"],
+          "target": "start",
+          "actions": ["QUEST_SELECT"],
+          "condition": "all collect items are present",
+          "response": { "kind": "page", "page": 5, "questId": "current" },
+          "effects": ["status=REWARD", "remove quest work items"]
+        },
+        {
+          "id": "active-select-failure",
+          "states": ["start"],
+          "target": "start",
+          "actions": ["QUEST_SELECT"],
+          "condition": "collect items are missing",
+          "response": { "kind": "selection", "page": 10, "questId": 0 },
+          "effects": []
+        },
+        {
+          "id": "reward-use",
+          "states": ["reward"],
+          "target": "start",
+          "actions": ["USE_OBJECT"],
+          "response": { "kind": "page", "page": 1008, "questId": "current" },
+          "effects": ["remove remaining collect items", "delete temporary recipe", "finish quest before sending page"]
+        },
+        {
+          "id": "reward",
+          "states": ["reward"],
+          "target": "start",
+          "actions": ["*"],
+          "response": { "kind": "endDialog" },
+          "effects": ["remove remaining collect items", "delete temporary recipe"]
+        }
+      ]
+    },
+    "skill_use": {
+      "javaClass": "SkillUse",
+      "javaSource": "game-server/src/com/aionemu/gameserver/questEngine/handlers/template/SkillUse.java:59-94",
+      "transitions": [
+        {
+          "id": "start-select",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 4762, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "start-other",
+          "states": ["startable"],
+          "target": "start",
+          "actions": ["*"],
+          "condition": "action is not QUEST_SELECT",
+          "response": { "kind": "startDialog" },
+          "effects": []
+        },
+        {
+          "id": "active-select",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["QUEST_SELECT"],
+          "response": { "kind": "page", "page": 10002, "questId": "current" },
+          "effects": []
+        },
+        {
+          "id": "active-reward",
+          "states": ["start"],
+          "target": "end",
+          "actions": ["SELECT_QUEST_REWARD"],
+          "response": { "kind": "page", "page": 5, "questId": "current" },
+          "effects": ["status=REWARD"]
+        },
+        {
+          "id": "reward",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["*"],
+          "response": { "kind": "endDialog" },
+          "effects": []
+        }
+      ]
+    },
+    "report_on_levelup": {
+      "javaClass": "ReportOnLevelUp",
+      "javaSource": "game-server/src/com/aionemu/gameserver/questEngine/handlers/template/ReportOnLevelUp.java:39-64",
+      "transitions": [
+        {
+          "id": "reward",
+          "states": ["reward"],
+          "target": "end",
+          "actions": ["*"],
+          "response": { "kind": "endDialog" },
+          "effects": []
+        }
+      ]
+    }
+  }
+}
