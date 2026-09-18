@@ -83,7 +83,7 @@ runs use their own isolated compose project.
 | `ThreadPoolManager.GetInstance()` call sites | 895 | `grep -rhoE "ThreadPoolManager\.GetInstance\(\)" src` |
 | Registered client opcodes / server opcodes | 186 / 238 (same sets as `upstream/4.8`) | factory tables |
 | Quests | 8043 in `quest_data.xml`; 5219 with a handler (4184 XML templates + 1035 C# = Java); 2824 with none | parse `quest_data.xml` and `quest_script_data/*.xml` |
-| Obtainable quests a data-driven planner can run | ~2457 (48%) | excludes level-99 and EVENT quests; classifier to be checked in with `P7-02` |
+| Obtainable quests a data-driven planner can run | 3,002 (70% of 4,315 obtainable handled quests); another 386 XML-template quests have unresolved collection-item sources, and 927 use custom handlers | `P7-02` checked-in classifier; excludes disabled, unreachable and no-handler quests |
 | Game-server tests / test run time | 3060 / ~1.5 min | last hosted CI run, 2026-09-17 |
 | Full static-data load | Cold merge + parse **11.30 s**, warm parse **8.29–9.05 s**; test-host peak working set **~515 MiB** | `P0-03`, measured on i7-14700K / 64 GiB / .NET 10.0.301 |
 | Full DB-backed `StartAsync` / `SpawnAll` | **4.00–4.72 s** / **2.04–2.41 s**; **104,308** world objects; **1.57 GiB** test-host working set, **1.74 GiB** peak process tree | `P0-03`, Docker MySQL 8.4 on the same host |
@@ -1013,9 +1013,13 @@ byte-identical), so bots will mostly find bugs elsewhere through it.
   expose the unreachable-quest list for the planner. The compiled table currently contains 821 IDs; analyzer results
   expose both administratively unobtainable and missing-spawn-unreachable quest sets. Docker-only Fast run
   `p701-fast-20260918` passed. (`782f63dae`)
-- [ ] **P7-02** [BOTH] M — Quest plan compiler (tool), with the obtainable-quest classifier checked in:
+- [x] **P7-02** [BOTH] M — Quest plan compiler (tool), with the obtainable-quest classifier checked in:
   `quest_data.xml` + `quest_script_data/*.xml` + `npc_templates.xml` + spawns + gatherables → per-quest JSON
-  (gates, start trigger, start/end NPCs and positions, steps with item sources, rewards).
+  (gates, start trigger, start/end NPCs and positions, steps with item sources, rewards). The compiler also folds in
+  NPC factions, event/town spawns, custom-handler identity and the P7-01 handler-spawn table. Its drift-tested
+  classifier separates 4,315 obtainable, 3,008 disabled, 280 unreachable and 440 enabled/no-handler quests, then
+  identifies 3,002 complete XML-template plans, 386 with unresolved item sources, and 927 custom handlers.
+  (`492c4fb06`)
 - [ ] **P7-03** [BOTH] M — Template dialog protocol table from `QuestEngine/Handlers/Template/*`: the exact action →
   page sequences for `report_to`, `monster_hunt`, `item_collecting`, `report_to_many`, `item_order`,
   `kill_in_world`, `kill_in_zone`, `kill_spawned`, `work_order`, `skill_use`, `report_on_level_up`.
@@ -1031,16 +1035,17 @@ byte-identical), so bots will mostly find bugs elsewhere through it.
   timer expiry after 900 virtual seconds (1146), escort (1149), item-started (1114), level-up start (1100).
   Anti-exploit negatives: reward action before REWARD status, refuse, `CM_PLAY_MOVIE_END` twice, deleting a
   `cannot_giveup` quest. Depends on P6-00.
-- [ ] **P7-08** [BOTH] XL — Generic data-driven quest runner for the ~48% of obtainable quests that data fully
-  describes, rolled out zone by zone (starter zones cover about 57–64%). Needs P6-02 graphs per zone and P6-00
+- [ ] **P7-08** [BOTH] XL — Generic data-driven quest runner for the 3,002 obtainable quests whose XML templates
+  and declared item sources fully describe a plan (70% of obtainable handled quests), rolled out zone by zone
+  (starter zones cover about 57–64%). Needs P6-02 graphs per zone and P6-00
   setup per zone.
-- [ ] **P7-09** [BOTH] XL — The other half (963 obtainable custom C# scripts): a Roslyn extractor over
+- [ ] **P7-09** [BOTH] XL — The 927 obtainable custom C# scripts: a Roslyn extractor over
   `Handlers/Quest/**` for `Register()` calls and `OnDialogEvent` decision tuples → draft bot scripts; a SIM dialog
   explorer that learns working action sequences and saves them for LIVE; hand-written scripts for spawn, teleport
   and instance handlers. First investigate extracting the 4.8 client's quest dialog HTML with
   `tools/client-extract` as an authoritative page → button → action map.
 - [ ] **P7-10** [BOTH] M — Quest coverage report and checked-in baseline under `parity-artifacts/e2e/`: per zone ×
-  race, obtainable / accepted / completed / echo failures / stuck reasons; "no handler" (503) and "unreachable"
+  race, obtainable / accepted / completed / echo failures / stuck reasons; "no handler" (440) and "unreachable" (280)
   reported separately, not as failures. `run-full.ps1` fails when completed drops.
 - [ ] **P7-11** [BOTH] S — Parity fix: `daevanion/_19638TroublewithTwos.cs:58-61` keeps a `USE_OBJECT` branch Java
   removed (upstream `1d6a2d8f7`).
