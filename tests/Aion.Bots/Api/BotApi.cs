@@ -1,6 +1,7 @@
 using Aion.Bots.Protocol;
 using Aion.Bots.Protocol.Login;
 using Aion.Bots.Reflexes;
+using Aion.Bots.Scenarios;
 using Aion.Bots.Timing;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
@@ -16,17 +17,19 @@ public sealed class BotApi
 	private readonly BotMotionTiming? motionTiming;
 
 	public BotApi(BotWorldModel? world = null, BotTimingContract? timing = null, BotReflexes? reflexes = null,
-		BotMotionTiming? motionTiming = null)
+		BotMotionTiming? motionTiming = null, QuestDialogEchoDetector? questDialogEchoes = null)
 	{
 		World = world ?? new BotWorldModel();
 		Timing = timing ?? new BotTimingContract();
 		Reflexes = reflexes ?? new BotReflexes();
+		QuestDialogEchoes = questDialogEchoes ?? new QuestDialogEchoDetector();
 		this.motionTiming = motionTiming;
 	}
 
 	public BotWorldModel World { get; }
 	public BotTimingContract Timing { get; }
 	public BotReflexes Reflexes { get; }
+	public QuestDialogEchoDetector QuestDialogEchoes { get; }
 
 	public async Task<BotLoginSession> Login(Stream stream, string username, string password,
 		CancellationToken cancellationToken = default)
@@ -161,8 +164,11 @@ public sealed class BotApi
 	public BotClientPacket TalkTo(int targetObjectId) => GameClientPackets.ShowDialog(targetObjectId);
 
 	public BotClientPacket SelectDialog(int targetObjectId, ushort actionId, ushort rewardIndex = 0,
-		ushort lastPage = 0, int questId = 0) =>
-		GameClientPackets.DialogSelect(targetObjectId, actionId, rewardIndex, lastPage, questId);
+		ushort lastPage = 0, int questId = 0)
+	{
+		QuestDialogEchoes.Record(targetObjectId, actionId, questId);
+		return GameClientPackets.DialogSelect(targetObjectId, actionId, rewardIndex, lastPage, questId);
+	}
 
 	public BotClientPacket CloseDialog(int targetObjectId) => GameClientPackets.CloseDialog(targetObjectId);
 
@@ -222,6 +228,7 @@ public sealed class BotApi
 	public BotClientPacket? Observe(DecodedBotServerPacket packet, int animationLastHitMillis = 0)
 	{
 		World.Apply(packet);
+		QuestDialogEchoes.Observe(packet);
 		if (packet.PacketType == typeof(SM_SKILL_COOLDOWN))
 			Timing.ApplySkillCooldowns(packet);
 		else if (packet.PacketType == typeof(SM_CASTSPELL_RESULT) &&

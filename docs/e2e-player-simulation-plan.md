@@ -1026,10 +1026,12 @@ byte-identical), so bots will mostly find bugs elsewhere through it.
   table pins 67 state/target/action transitions plus the shared base/start/end helpers to Java commit
   `ce54b7931`; its typed bot-side loader validates all action ids against `DialogAction`, the exact template set,
   reward pages, states, targets and response kinds. (`4d460392a`)
-- [ ] **P7-04** [BOTH] S — Echo-fallback detector: when no handler takes an action, `DialogService` answers
+- [x] **P7-04** [BOTH] S — Echo-fallback detector: when no handler takes an action, `DialogService` answers
   `SM_DIALOG_WINDOW` with page = action id. That is the normal next-page path for page-navigation actions
   (1011–9999 `SELECT*`), but for quest-control actions (31, 1002, 1003–1009, 39, 8–23, 10000+ `SETPRO`/`SET_SUCCEED`)
-  with a non-zero quest id it means the handler rejected or threw. Fail the step only in that case.
+  with a non-zero quest id it means the handler rejected or threw. Fail the step only in that case. `BotApi`
+  now records only that exact quest-control set and correlates the next matching dialog response by target and
+  quest, while navigation echoes, zero-quest dialogs and unrelated dialog traffic remain non-failures. (`84f668015`)
 - [ ] **P7-05** [BOTH] M — Scenario **Q1 Poeta chain**: 1000 → 1101 → 1102 → 1103 → 1104 → 1100 (locked at level 2,
   starts at 3) → 1105 → 1106. Assert the `SM_QUEST_ACTION` status sequence per quest, items consumed, no
   quest-control echoes. LIVE adds a relog and checks `SM_QUEST_COMPLETED_LIST` and `player_quests` rows.
