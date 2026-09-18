@@ -11,14 +11,20 @@ public sealed class LogProblemAllowlistTests
 	{
 		var allowlist = LogProblemAllowlist.Load(RepoFile("parity-artifacts", "e2e", "log-allowlist.json"), Today);
 
-		Assert.Equal(4, allowlist.Entries.Count);
-		Assert.All(allowlist.Entries, entry =>
+		Assert.Equal(5, allowlist.Entries.Count);
+		Assert.All(allowlist.Entries.Where(entry => entry.Fingerprint != "cf736122" && entry.Tracking == "P3-10"), entry =>
 		{
 			Assert.Equal("P3-10", entry.Tracking);
 			Assert.Equal(["LIVE"], entry.Modes);
 			Assert.Equal(1, entry.MaxCount);
 			Assert.Equal(new DateOnly(2027, 9, 17), entry.Expires);
 		});
+		LogProblemAllowlistEntry m2 = allowlist.Entries.Single(entry => entry.Tracking == "P6-05/M2");
+		Assert.Equal(["M2"], Assert.IsType<string[]>(m2.Scenarios));
+		LogProblemAllowlistEntry glide = allowlist.Entries.Single(entry => entry.Fingerprint == "cf736122");
+		Assert.Equal(["M6"], Assert.IsType<string[]>(glide.Scenarios));
+		Assert.Contains("SIM", glide.Modes);
+		Assert.Equal(["SIM"], m2.Modes);
 		allowlist.ValidateFullRunMatches(allowlist.Entries.Select(entry => entry.Fingerprint));
 	}
 

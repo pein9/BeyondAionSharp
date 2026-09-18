@@ -30,6 +30,9 @@ public sealed record LogProblemAllowlistEntry
 	[JsonRequired]
 	public required string[] Servers { get; init; }
 
+	[JsonPropertyName("scenarios")]
+	public string[]? Scenarios { get; init; }
+
 	[JsonPropertyName("maxCount")]
 	[JsonRequired]
 	public required int MaxCount { get; init; }
@@ -108,6 +111,8 @@ public sealed class LogProblemAllowlist
 				throw new InvalidDataException($"Problem allowlist entry '{entry.Fingerprint}' has no valid modes.");
 			if (entry.Servers == null || entry.Servers.Length == 0 || entry.Servers.Any(string.IsNullOrWhiteSpace))
 				throw new InvalidDataException($"Problem allowlist entry '{entry.Fingerprint}' has no valid servers.");
+			if (entry.Scenarios != null && (entry.Scenarios.Length == 0 || entry.Scenarios.Any(string.IsNullOrWhiteSpace)))
+				throw new InvalidDataException($"Problem allowlist entry '{entry.Fingerprint}' has no valid scenarios.");
 			if (entry.MaxCount <= 0)
 				throw new InvalidDataException($"Problem allowlist entry '{entry.Fingerprint}' must have a positive maxCount.");
 			if (entry.Expires < today)

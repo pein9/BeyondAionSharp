@@ -165,7 +165,8 @@ public sealed class World
 			}
 			else
 			{
-				_logger?.LogWarning("Old MapRegion was null when trying to update position of {Object}", obj);
+				_logger?.LogWarning(new Exception(),
+					"Old MapRegion was null when trying to update position of {Object}", obj);
 			}
 			return;
 		}
@@ -173,7 +174,8 @@ public sealed class World
 		MapRegion? newRegion = oldRegion.GetParent().GetRegion(newX, newY, newZ);
 		if (newRegion == null)
 		{
-			_logger?.LogWarning("New MapRegion for {Object} doesn't exist at coordinates: Map {Map}, X {X}, Y {Y}, Z {Z}",
+			_logger?.LogWarning(new Exception(),
+				"New MapRegion for {Object} doesn't exist at coordinates: Map {Map}, X {X}, Y {Y}, Z {Z}",
 				obj, obj.GetWorldId(), newX, newY, newZ);
 			if (obj is Creature creature)
 				creature.GetMoveController().AbortMove();

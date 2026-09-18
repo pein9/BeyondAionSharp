@@ -61,6 +61,23 @@ public sealed class BotMoverTests
 	}
 
 	[Fact]
+	public void GlideStartsWithEmotionAndUsesTheJavaGlideMasks()
+	{
+		var start = new BotPosition(0, 0, 10, 0);
+		var glide = new BotMover(WorldAt(start, 5))
+			.CreateGlidePlan([new BotPosition(3, 0, 6, 0)], start, 5);
+
+		Assert.Equal(typeof(CM_EMOTION), glide.Frames[0].Packet.PacketType);
+		Assert.Equal((byte)EmotionType.START_GLIDE, glide.Frames[0].Packet.Body[0]);
+		Assert.Equal((byte)(MovementMask.POSITION | MovementMask.MANUAL | MovementMask.ABSOLUTE | MovementMask.GLIDE),
+			glide.Frames[1].Packet.Body[13]);
+		Assert.All(glide.Frames.Where(frame => frame.DelayBefore > TimeSpan.Zero), frame =>
+			Assert.Equal((byte)(MovementMask.POSITION | MovementMask.ABSOLUTE | MovementMask.GLIDE),
+				frame.Packet.Body[13]));
+		Assert.Equal(MovementMask.IMMEDIATE, glide.Frames[^1].Packet.Body[13]);
+	}
+
+	[Fact]
 	public void FlightUsesMoveInAirWithCumulativeDistance()
 	{
 		var plan = new BotMover(WorldAt(new BotPosition(0, 0, 0, 0), 4))

@@ -93,13 +93,15 @@ public class ChatProcessor : GameEngine
         consoleCommand.Process(player, GetParamsFromString(cmdParams));
     }
 
-    private string[] GetParamsFromString(string paramsStr)
+    internal static string[] GetParamsFromString(string paramsStr)
     {
         if (paramsStr == null || paramsStr.Trim().Length == 0)
             return new string[0];
 
         // advanced split to keep item links etc. in one piece (splitting on spaces, but only outside of square brackets)
-        return Regex.Split(paramsStr.Trim(), " +(?=[^\\]]*(\\[|$))");
+        // Java String.split does not return capturing groups. Keep the alternation non-capturing so .NET does not
+        // inject an empty argument between every ordinary command parameter.
+        return Regex.Split(paramsStr.Trim(), " +(?=[^\\]]*(?:\\[|$))");
     }
 
     private ChatCommand GetCommand(string alias)

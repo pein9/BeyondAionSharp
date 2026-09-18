@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Aion.Bots.Api;
 using Aion.Bots.Gm;
+using Aion.Bots.Movement;
 using Aion.Bots.Protocol;
 using Aion.Bots.Protocol.Chat;
 using Aion.Bots.Protocol.Login;
@@ -12,6 +13,7 @@ using Aion.Bots.Reflexes;
 using Aion.Bots.Scenarios;
 using Aion.Bots.Tracing;
 using Aion.Bots.Transport;
+using Aion.Bots.World;
 using Aion.ChatServer.Network;
 using Aion.GameServer.Controllers.Movement;
 using Aion.GameServer.Model;
@@ -32,6 +34,10 @@ public static class LiveBotRunner
 			return await RunL0Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "canaries" }])
 			return await RunCanariesAsync(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "M1" }])
+			return await RunM1Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "M6" }])
+			return await RunM6Async(options, problems, cancellationToken);
 
 		var tasks = Enumerable.Range(1, options.BotCount)
 			.Select(index => RunConnectBotAsync(options, problems, index, cancellationToken))
@@ -40,6 +46,182 @@ public static class LiveBotRunner
 		var failed = results.Count(result => !result);
 		Console.WriteLine($"LIVE bots completed: {results.Length - failed} passed, {failed} failed.");
 		return failed == 0 ? 0 : 1;
+	}
+
+	private static async Task<int> RunM1Async(LiveBotOptions options, LiveBotProblemWriter problems,
+		CancellationToken cancellationToken)
+	{
+		await using var actor = new L0Actor(options, problems, 1, Race.ASMODIANS, characterName: "Asliveaa");
+		actor.Trace.WriteAction("s00", "scenario:start", new Dictionary<string, object?> { ["scenario"] = "M1" });
+		try
+		{
+			await actor.StepAsync("login-game-auth", actor.Session.LoginAndAuthenticateAsync, cancellationToken);
+			await actor.StepAsync("create-asmodian-warrior", actor.Session.CreateCharacterAsync, cancellationToken);
+			await actor.StepAsync("enter-world-and-finish-prologue", async token =>
+			{
+				await actor.Session.EnterWorldAsync(token);
+				await actor.Session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+			}, cancellationToken);
+			int? channel = PlannedChannel(options, "M1");
+			if (channel != null)
+				await actor.StepAsync("isolate-channel", token => actor.Session.ChangeChannelAsync(channel.Value, token), cancellationToken);
+			int asak = await actor.Session.WaitForNpcAsync(203500, cancellationToken);
+			await actor.StepAsync("walk-to-asak", token => actor.Session.MoveToNpcAsync(asak, token), cancellationToken);
+			await actor.StepAsync("accept-quest-2101", token => actor.Session.StartQuestAsync(asak, 2101, token), cancellationToken);
+			int vandar = await actor.Session.WaitForNpcAsync(203504, cancellationToken);
+			await actor.StepAsync("walk-to-vandar", token => actor.Session.MoveToNpcAsync(vandar, token), cancellationToken);
+			await actor.StepAsync("report-to-vandar", token => actor.Session.FinishQuestAsync(vandar, 2101, token), cancellationToken);
+			if (!actor.Session.Api.World.Quests.TryGetValue(2000, out BotQuestState? prologue) || prologue.Status != 5 ||
+				!actor.Session.Api.World.Quests.TryGetValue(2101, out BotQuestState? firstSteps) || firstSteps.Status != 5)
+				throw new InvalidDataException("M1 did not complete quests 2000 and 2101.");
+			await actor.StepAsync("quit", actor.Session.QuitAsync, cancellationToken);
+			actor.Trace.WriteAction(actor.LastStep, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = "M1" });
+			Console.WriteLine("LIVE M1 completed.");
+			return 0;
+		}
+		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+		{
+			throw;
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine($"M1 failed: {ex}");
+			return 1;
+		}
+	}
+
+	private static async Task<int> RunM6Async(LiveBotOptions options, LiveBotProblemWriter problems,
+		CancellationToken cancellationToken)
+	{
+		await using var subject = new L0Actor(options, problems, 1, Race.ASMODIANS, characterName: "Asliveaa");
+		await using var director = new L0Actor(options, problems, 99, Race.ELYOS,
+			bot: "gm", account: LiveGmFacade.DirectorAccount, characterName: "Director");
+		subject.Trace.WriteAction("s00", "scenario:start", new Dictionary<string, object?> { ["scenario"] = "M6" });
+		director.Trace.WriteAction("s00", "scenario:start", new Dictionary<string, object?> { ["scenario"] = "M6-director" });
+		try
+		{
+			foreach (L0Actor actor in new[] { subject, director })
+			{
+				await actor.StepAsync("login-game-auth", actor.Session.LoginAndAuthenticateAsync, cancellationToken);
+				await actor.StepAsync("create-character", actor.Session.CreateCharacterAsync, cancellationToken);
+				await actor.StepAsync("enter-world", actor.Session.EnterWorldAsync, cancellationToken);
+			}
+
+			LiveGmFacade gm = director.Session.CreateLiveGmFacade();
+			var gmSubject = new GmSubject(subject.Session.CharacterId, subject.Session.CharacterName);
+			await director.StepAsync("move-director-to-subject", async token =>
+			{
+				await gm.ExecuteAsync(new GmCommand("moveto", [subject.Session.CharacterName], "Teleported to"), cancellationToken: token);
+				await director.Session.CompleteTeleportAsync(220010000, token);
+			}, cancellationToken);
+			await director.StepAsync("make-subject-daeva", async token =>
+			{
+				await gm.ExecuteAsync(new GmCommand("set", ["level", "9"], "level to 9"), gmSubject, token);
+				await gm.ExecuteVerifiedAsync(
+					new GmCommand("set", ["class", "gladiator"], "replyless class change"),
+					new GmCommand("set", ["level", "9"], "level to 9"), gmSubject, token);
+			}, cancellationToken);
+			await director.StepAsync("observe-subject-daeva-class",
+				token => director.Session.WaitForPlayerClassAsync(subject.Session.CharacterId, PlayerClass.GLADIATOR, token),
+				cancellationToken);
+
+			await MoveSubjectWithDirectorAsync(director, subject, gm, 400010000, 940f, 2695f, 1628.3f,
+				"setup-reshanta-flight", cancellationToken);
+			int initialFlightTime = subject.Session.Api.World.CurrentFlightTime;
+			await subject.StepAsync("fly-up-and-drain-flight-time", async token =>
+			{
+				await subject.Session.SendPacketAsync(subject.Session.Api.Fly(), token);
+				await subject.Session.WaitForPacketAsync(typeof(SM_EMOTION), token,
+					packet => packet.Get<int>("senderObjectId") == subject.Session.CharacterId &&
+						packet.Get<byte>("emotionType") == (byte)EmotionType.FLY);
+				BotPosition start = subject.Session.CurrentPosition;
+				await subject.Session.ExecuteMovementAsync(new BotMover(subject.Session.Api.World)
+					.CreateFlightPlan([start with { Z = start.Z + 10 }]), token);
+				DecodedBotServerPacket drained = await subject.Session.WaitForPacketAsync(typeof(SM_FLY_TIME), token,
+					packet => packet.Get<int>("currentFp") < initialFlightTime);
+				if (drained.Get<int>("currentFp") >= initialFlightTime)
+					throw new InvalidDataException("Flight time did not drain.");
+			}, cancellationToken);
+			await subject.StepAsync("land", async token =>
+			{
+				await subject.Session.SendPacketAsync(subject.Session.Api.Land(), token);
+				await subject.Session.WaitForPacketAsync(typeof(SM_EMOTION), token,
+					packet => packet.Get<int>("senderObjectId") == subject.Session.CharacterId &&
+						packet.Get<byte>("emotionType") == (byte)EmotionType.LAND);
+			}, cancellationToken);
+			await subject.StepAsync("flight-cooldown", token => Task.Delay(TimeSpan.FromSeconds(10), token), cancellationToken);
+
+			var glideStart = new BotPosition(958.03f, 2703.21f, 1634.66f, 0);
+			var glideEnd = new BotPosition(961.23f, 2687.78f, 1621.88f, 0);
+			await MoveSubjectWithDirectorAsync(director, subject, gm, 400010000,
+				glideStart.X, glideStart.Y, glideStart.Z, "setup-ring-ledge", cancellationToken);
+			await subject.StepAsync("glide-through-fly-ring", async token =>
+			{
+				float speed = subject.Session.Api.World.MovementSpeed
+					?? throw new InvalidOperationException("SM_PLAYER_INFO did not provide movement speed.");
+				await subject.Session.ExecuteMovementAsync(new BotMover(subject.Session.Api.World)
+					.CreateGlidePlan([glideEnd], glideStart, speed), token);
+				await subject.Session.WaitForPacketAsync(typeof(SM_ABNORMAL_STATE), token,
+					packet => packet.Get<List<IReadOnlyDictionary<string, object?>>>("effects")
+						.Any(effect => Get<ushort>(effect, "skillId") == 265));
+			}, cancellationToken);
+
+			int announcementStart = subject.Session.PacketHistory.Count;
+			await MoveSubjectWithDirectorAsync(director, subject, gm, 220070000,
+				1888.25f, 2847.27f, 554.99f, "setup-gelkmaros-windstream", cancellationToken);
+			if (!subject.Session.PacketHistory.Skip(announcementStart).Any(packet =>
+				packet.PacketType == typeof(SM_WINDSTREAM_ANNOUNCE) && packet.Get<int>("mapId") == 220070000 &&
+				packet.Get<int>("streamId") == 1))
+				throw new InvalidDataException("Gelkmaros entry did not announce windstream 1.");
+			await subject.StepAsync("ride-windstream", async token =>
+			{
+				await subject.Session.SendPacketAsync(GameClientPackets.Windstream(1, 0, 0), token);
+				await subject.Session.WaitForPacketAsync(typeof(SM_WINDSTREAM), token,
+					packet => packet.Get<int>("state") == 0);
+				await subject.Session.SendPacketAsync(GameClientPackets.Windstream(1, 0, 1), token);
+				await subject.Session.WaitForPacketAsync(typeof(SM_EMOTION), token,
+					packet => packet.Get<int>("senderObjectId") == subject.Session.CharacterId &&
+						packet.Get<byte>("emotionType") == (byte)EmotionType.WINDSTREAM);
+				BotPosition start = subject.Session.CurrentPosition;
+				await subject.Session.ExecuteMovementAsync(new BotMover(subject.Session.Api.World)
+					.CreateFlightPlan([start with { X = start.X + 10 }]), token);
+				await subject.Session.SendPacketAsync(GameClientPackets.Windstream(1, 10, 3), token);
+				await subject.Session.WaitForPacketAsync(typeof(SM_WINDSTREAM), token,
+					packet => packet.Get<int>("state") == 3);
+			}, cancellationToken);
+			await subject.StepAsync("quit", subject.Session.QuitAsync, cancellationToken);
+			await director.StepAsync("quit", director.Session.QuitAsync, cancellationToken);
+			subject.Trace.WriteAction(subject.LastStep, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = "M6" });
+			Console.WriteLine("LIVE M6 completed.");
+			return 0;
+		}
+		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+		{
+			throw;
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine($"M6 failed: {ex}");
+			return 1;
+		}
+	}
+
+	private static async Task MoveSubjectWithDirectorAsync(L0Actor director, L0Actor subject, LiveGmFacade gm,
+		int mapId, float x, float y, float z, string action, CancellationToken cancellationToken)
+	{
+		await director.StepAsync("director-" + action, async token =>
+		{
+			await gm.ExecuteAsync(new GmCommand("moveto",
+				[mapId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+					x.ToString(System.Globalization.CultureInfo.InvariantCulture),
+					y.ToString(System.Globalization.CultureInfo.InvariantCulture),
+					z.ToString(System.Globalization.CultureInfo.InvariantCulture)], "Teleported to"), cancellationToken: token);
+			await director.Session.CompleteTeleportAsync(mapId, token);
+		}, cancellationToken);
+		await director.StepAsync("director-movetome-" + action, token =>
+			gm.ExecuteAsync(new GmCommand("movetome", [subject.Session.CharacterName], "Teleported"), cancellationToken: token),
+			cancellationToken);
+		await subject.StepAsync(action, token => subject.Session.CompleteTeleportAsync(mapId, token), cancellationToken);
 	}
 
 	private static async Task<int> RunL0Async(LiveBotOptions options, LiveBotProblemWriter problems,
@@ -193,6 +375,11 @@ public static class LiveBotRunner
 		return "Aelive" + suffix;
 	}
 
+	private static T Get<T>(IReadOnlyDictionary<string, object?> fields, string name) =>
+		fields.TryGetValue(name, out object? value) && value is T typed
+			? typed
+			: throw new InvalidDataException($"Decoded field '{name}' was missing or was not {typeof(T).Name}.");
+
 	private static async Task WriteRunMetadataAsync(LiveBotOptions options, CancellationToken cancellationToken)
 	{
 		var metadata = new
@@ -227,15 +414,17 @@ public static class LiveBotRunner
 		private readonly LiveBotProblemWriter problems;
 		private int stepNumber;
 
-		public L0Actor(LiveBotOptions options, LiveBotProblemWriter problems, int index)
+		public L0Actor(LiveBotOptions options, LiveBotProblemWriter problems, int index,
+			Race race = Race.ELYOS, string? bot = null, string? account = null, string? characterName = null)
 		{
 			this.options = options;
 			this.problems = problems;
-			Bot = $"b{index:D2}";
-			Account = $"{Bot}r{DateTimeOffset.Now:MMdd}";
+			Bot = bot ?? $"b{index:D2}";
+			Account = account ?? $"{Bot}r{DateTimeOffset.Now:MMdd}";
 			Trace = BotActionTraceWriter.Open(Path.Combine(options.OutputDirectory, "bots", $"{Bot}.trace.jsonl"),
 				options.Run, Bot, Account);
-			Session = new LiveBotSession(options, problems, Trace, Bot, Account, CharacterName(index));
+			Session = new LiveBotSession(options, problems, Trace, Bot, Account,
+				characterName ?? CharacterName(index), race);
 		}
 
 		public string Bot { get; }
@@ -276,6 +465,7 @@ internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 	private readonly string bot;
 	private readonly string account;
 	private readonly string characterName;
+	private readonly Race race;
 	private readonly string macAddress;
 	private readonly byte[] macBytes;
 	private readonly SemaphoreSlim sendLock = new(1, 1);
@@ -298,9 +488,11 @@ internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 	private int characterId;
 	private int chatChannelId;
 	private PersistedPosition? expectedPosition;
+	private BotPosition? currentPosition;
+	private readonly List<DecodedBotServerPacket> packetHistory = [];
 
 	public LiveBotSession(LiveBotOptions options, LiveBotProblemWriter problems, BotActionTraceWriter trace,
-		string bot, string account, string characterName)
+		string bot, string account, string characterName, Race race = Race.ELYOS)
 	{
 		this.options = options;
 		this.problems = problems;
@@ -308,6 +500,7 @@ internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 		this.bot = bot;
 		this.account = account;
 		this.characterName = characterName;
+		this.race = race;
 		var botNumber = string.Equals(account, LiveGmFacade.DirectorAccount, StringComparison.Ordinal)
 			? (byte)0xFE
 			: byte.Parse(bot.AsSpan(1), System.Globalization.CultureInfo.InvariantCulture);
@@ -316,6 +509,12 @@ internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 	}
 
 	public void BeginStep(string step) => currentStep = step;
+	public int CharacterId => characterId;
+	public string CharacterName => characterName;
+	public BotApi Api => api;
+	public BotPosition CurrentPosition => currentPosition ?? api.World.Position
+		?? throw new InvalidOperationException("The bot has not observed its position.");
+	public IReadOnlyList<DecodedBotServerPacket> PacketHistory => packetHistory;
 
 	/// <summary>Creates the LIVE setup facade after the seeded director has entered the game.</summary>
 	public IGmFacade CreateGmFacade()
@@ -324,6 +523,8 @@ internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 			throw new InvalidOperationException("The director must enter the world before executing GM commands.");
 		return new LiveGmFacade(account, SendGameAsync, ReadNextAsync, api);
 	}
+
+	public LiveGmFacade CreateLiveGmFacade() => (LiveGmFacade)CreateGmFacade();
 
 	public async Task ConnectAndReadKeyAsync(CancellationToken cancellationToken)
 	{
@@ -360,7 +561,7 @@ internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 			AccountName = account,
 			CharacterName = characterName,
 			Gender = 0,
-			Race = (int)Race.ELYOS,
+			Race = (int)race,
 			PlayerClass = (int)PlayerClass.WARRIOR,
 			Height = 1,
 		};
@@ -383,6 +584,8 @@ internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 		var spawn = await WaitForGamePacketAsync(typeof(SM_PLAYER_SPAWN), cancellationToken);
 		expectedPosition = new PersistedPosition(spawn.Get<int>("worldId"), spawn.Get<float>("x"),
 			spawn.Get<float>("y"), spawn.Get<float>("z"));
+		currentPosition = new BotPosition(spawn.Get<float>("x"), spawn.Get<float>("y"),
+			spawn.Get<float>("z"), spawn.Get<byte>("heading"));
 		await WaitForGamePacketAsync(typeof(SM_PLAYER_INFO), cancellationToken);
 	}
 
@@ -413,11 +616,132 @@ internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 	{
 		if (channel <= 0)
 			throw new ArgumentOutOfRangeException(nameof(channel));
+		api.World.BeginWorldReload();
 		await SendGameAsync(api.ChangeChannel(channel), cancellationToken);
 		await WaitForGamePacketAsync(typeof(SM_CHANNEL_INFO), cancellationToken);
 		DecodedBotServerPacket spawn = await WaitForGamePacketAsync(typeof(SM_PLAYER_SPAWN), cancellationToken);
 		expectedPosition = new PersistedPosition(spawn.Get<int>("worldId"), spawn.Get<float>("x"),
 			spawn.Get<float>("y"), spawn.Get<float>("z"));
+		currentPosition = new BotPosition(spawn.Get<float>("x"), spawn.Get<float>("y"),
+			spawn.Get<float>("z"), spawn.Get<byte>("heading"));
+	}
+
+	public Task<DecodedBotServerPacket> WaitForPacketAsync(Type packetType, CancellationToken cancellationToken,
+		Func<DecodedBotServerPacket, bool>? predicate = null) =>
+		WaitForGamePacketAsync(packetType, cancellationToken, predicate);
+
+	public Task SendPacketAsync(BotClientPacket packet, CancellationToken cancellationToken) =>
+		SendGameAsync(packet, cancellationToken);
+
+	public async Task<int> WaitForNpcAsync(int templateId, CancellationToken cancellationToken)
+	{
+		BotKnownObject? known = api.World.Objects.Values.FirstOrDefault(
+			candidate => candidate.Kind == BotKnownObjectKind.Npc && candidate.TemplateId == templateId);
+		if (known != null)
+			return known.ObjectId;
+		DecodedBotServerPacket packet = await WaitForGamePacketAsync(typeof(SM_NPC_INFO), cancellationToken,
+			candidate => candidate.Get<int>("npcId") == templateId);
+		return packet.Get<int>("objectId");
+	}
+
+	public async Task MoveToNpcAsync(int objectId, CancellationToken cancellationToken)
+	{
+		if (!api.World.Objects.TryGetValue(objectId, out BotKnownObject? target))
+			throw new InvalidOperationException($"NPC object {objectId} is not in the bot's known list.");
+		BotPosition start = CurrentPosition;
+		float speed = api.World.MovementSpeed
+			?? throw new InvalidOperationException("SM_PLAYER_INFO did not provide movement speed.");
+		await ExecuteMovementAsync(new BotMover(api.World).CreateGroundPlan(SegmentRoute(start, target.Position), start, speed),
+			cancellationToken);
+	}
+
+	public async Task ExecuteMovementAsync(BotMovementPlan plan, CancellationToken cancellationToken)
+	{
+		await BotMover.ExecuteAsync(plan,
+			(packet, token) => new ValueTask(SendGameAsync(packet, token)),
+			(delay, token) => new ValueTask(Task.Delay(delay, token)), cancellationToken);
+		if (plan.Frames.Count > 0)
+			currentPosition = plan.Frames[^1].Position;
+	}
+
+	public async Task StartQuestAsync(int npcObjectId, int questId, CancellationToken cancellationToken)
+	{
+		await SendGameAsync(api.TalkTo(npcObjectId), cancellationToken);
+		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
+		await SendGameAsync(api.SelectDialog(npcObjectId, 31, questId: questId), cancellationToken);
+		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
+		await SendGameAsync(api.SelectDialog(npcObjectId, 1002, questId: questId), cancellationToken);
+		await WaitForGamePacketAsync(typeof(SM_QUEST_ACTION), cancellationToken,
+			packet => packet.Get<int>("questId") == questId);
+	}
+
+	public async Task FinishQuestAsync(int npcObjectId, int questId, CancellationToken cancellationToken)
+	{
+		await SendGameAsync(api.TalkTo(npcObjectId), cancellationToken);
+		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
+		await SendGameAsync(api.SelectDialog(npcObjectId, 31, questId: questId), cancellationToken);
+		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
+		await SendGameAsync(api.SelectDialog(npcObjectId, 1009, questId: questId), cancellationToken);
+		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
+		await SendGameAsync(api.SelectDialog(npcObjectId, 23, questId: questId), cancellationToken);
+		await WaitForGamePacketAsync(typeof(SM_QUEST_ACTION), cancellationToken,
+			packet => packet.Get<int>("questId") == questId && packet.Get<byte>("status") == 5);
+	}
+
+	public async Task WaitForPlayerClassAsync(PlayerClass playerClass, CancellationToken cancellationToken)
+	{
+		await WaitForPlayerClassAsync(characterId, playerClass, cancellationToken);
+	}
+
+	public async Task WaitForPlayerClassAsync(int objectId, PlayerClass playerClass, CancellationToken cancellationToken)
+	{
+		if (api.World.Objects.TryGetValue(objectId, out BotKnownObject? player) &&
+			player.PlayerClass == playerClass.GetClassId())
+			return;
+		await WaitForGamePacketAsync(typeof(SM_PLAYER_INFO), cancellationToken,
+			packet => packet.Get<int>("objectId") == objectId &&
+				packet.Get<byte>("playerClass") == playerClass.GetClassId());
+	}
+
+	public async Task CompleteTeleportAsync(int expectedMapId, CancellationToken cancellationToken)
+	{
+		bool reloadMap = api.World.MapId != expectedMapId;
+		if (reloadMap)
+		{
+			DecodedBotServerPacket spawn = await WaitForGamePacketAsync(typeof(SM_PLAYER_SPAWN), cancellationToken,
+				packet => packet.Get<int>("worldId") == expectedMapId);
+			expectedPosition = new PersistedPosition(expectedMapId, spawn.Get<float>("x"),
+				spawn.Get<float>("y"), spawn.Get<float>("z"));
+			await WaitForGamePacketAsync(typeof(SM_PLAYER_INFO), cancellationToken,
+				packet => packet.Get<int>("objectId") == characterId);
+			await WaitForGamePacketAsync(typeof(SM_CUBE_UPDATE), cancellationToken);
+		}
+		else
+		{
+			await WaitForGamePacketAsync(typeof(SM_CHANNEL_INFO), cancellationToken);
+			await WaitForGamePacketAsync(typeof(SM_PLAYER_INFO), cancellationToken,
+				packet => packet.Get<int>("objectId") == characterId);
+			await WaitForGamePacketAsync(typeof(SM_ABNORMAL_STATE), cancellationToken);
+		}
+		BotPosition position = api.World.Position
+			?? throw new InvalidOperationException("Teleport response did not provide a destination.");
+		currentPosition = position;
+		expectedPosition = new PersistedPosition(expectedMapId, position.X, position.Y, position.Z);
+	}
+
+	private static IReadOnlyList<BotPosition> SegmentRoute(BotPosition start, BotPosition destination)
+	{
+		float distance = MathF.Sqrt(
+			MathF.Pow(destination.X - start.X, 2) + MathF.Pow(destination.Y - start.Y, 2) +
+			MathF.Pow(destination.Z - start.Z, 2));
+		int segments = Math.Max(1, (int)MathF.Ceiling(distance / 15f));
+		return Enumerable.Range(1, segments)
+			.Select(index => new BotPosition(
+				start.X + (destination.X - start.X) * index / segments,
+				start.Y + (destination.Y - start.Y) * index / segments,
+				start.Z + (destination.Z - start.Z) * index / segments,
+				destination.Heading))
+			.ToArray();
 	}
 
 	public Task SendChatMessageAsync(string message, CancellationToken cancellationToken)
@@ -633,6 +957,7 @@ internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 				throw new EndOfStreamException("Game transport ended before the expected packet.");
 			activeMoveNext = null;
 			var packet = packets.Current;
+			packetHistory.Add(packet);
 			trace.WriteReceived(currentStep, packet);
 			if (packet.PacketType == typeof(SM_ENTER_WORLD_CHECK) && packet.Get<byte>("msg") != 0)
 				throw new LiveBotFailureException($"SM_ENTER_WORLD_CHECK refused entry with message {packet.Get<byte>("msg")}.");

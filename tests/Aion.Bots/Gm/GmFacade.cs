@@ -149,7 +149,32 @@ public sealed class LiveGmFacade : IGmFacade
 		if (subject != null)
 			await send(api.Target(subject.ObjectId), cancellationToken);
 		await send(api.Say(command.ChatText), cancellationToken);
+		return await WaitForReplyAsync(command.ExpectedReplyFragment, cancellationToken);
+	}
 
+	/// <summary>
+	/// Executes a command whose Java-parity handler has no reply, then sends a harmless acknowledged command on the
+	/// same ordered connection. The matching reply proves the preceding command completed without weakening LIVE's
+	/// decoded-SM_MESSAGE acknowledgement contract.
+	/// </summary>
+	public async Task<GmCommandResult> ExecuteVerifiedAsync(
+		GmCommand command,
+		GmCommand verification,
+		GmSubject? subject = null,
+		CancellationToken cancellationToken = default)
+	{
+		ArgumentNullException.ThrowIfNull(command);
+		ArgumentNullException.ThrowIfNull(verification);
+		if (subject != null)
+			await send(api.Target(subject.ObjectId), cancellationToken);
+		await send(api.Say(command.ChatText), cancellationToken);
+		await send(api.Say(verification.ChatText), cancellationToken);
+		return await WaitForReplyAsync(verification.ExpectedReplyFragment, cancellationToken);
+	}
+
+	private async Task<GmCommandResult> WaitForReplyAsync(string expectedReplyFragment,
+		CancellationToken cancellationToken)
+	{
 		while (true)
 		{
 			DecodedBotServerPacket packet = await receive(cancellationToken);
@@ -159,7 +184,7 @@ public sealed class LiveGmFacade : IGmFacade
 			if (packet.PacketType != typeof(SM_MESSAGE))
 				continue;
 			string reply = packet.Get<string>("message");
-			if (reply.Contains(command.ExpectedReplyFragment, StringComparison.Ordinal))
+			if (reply.Contains(expectedReplyFragment, StringComparison.Ordinal))
 				return new GmCommandResult(reply);
 		}
 	}

@@ -38,6 +38,9 @@ public sealed class BotServerPacketDecoder
 			[typeof(SM_STATUPDATE_DP)] = DecodeDp,
 			[typeof(SM_STATUPDATE_EXP)] = DecodeExp,
 			[typeof(SM_FLY_TIME)] = DecodeFlyTime,
+			[typeof(SM_ABNORMAL_STATE)] = DecodeAbnormalState,
+			[typeof(SM_WINDSTREAM)] = DecodeWindstream,
+			[typeof(SM_WINDSTREAM_ANNOUNCE)] = DecodeWindstreamAnnounce,
 			[typeof(SM_DIE)] = DecodeDie,
 			[typeof(SM_INVENTORY_INFO)] = DecodeInventoryInfo,
 			[typeof(SM_INVENTORY_ADD_ITEM)] = DecodeInventoryAdd,
@@ -301,6 +304,39 @@ public sealed class BotServerPacketDecoder
 		return Fields(
 			("objectId", r.ReadInt32()), ("x", r.ReadSingle()), ("y", r.ReadSingle()), ("z", r.ReadSingle()),
 			("heading", r.ReadByte()), ("movementMask", r.ReadByte()));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeWindstream(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		int state = r.ReadInt32();
+		byte accepted = r.ReadByte();
+		return Fields(("state", state), ("accepted", accepted), ("unk1", state), ("unk2", accepted));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeAbnormalState(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		int abnormals = r.ReadInt32();
+		r.Skip(2 * sizeof(int));
+		byte slot = r.ReadByte();
+		ushort effectCount = r.ReadUInt16();
+		var effects = new List<IReadOnlyDictionary<string, object?>>(effectCount);
+		for (int index = 0; index < effectCount; index++)
+		{
+			effects.Add(Fields(
+				("effectorId", r.ReadInt32()), ("skillId", r.ReadUInt16()), ("skillLevel", r.ReadByte()),
+				("targetSlot", r.ReadByte()), ("remainingMillis", r.ReadInt32())));
+		}
+		return Fields(("abnormals", abnormals), ("slot", slot), ("effectCount", effectCount), ("effects", effects));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeWindstreamAnnounce(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		int flyPathType = r.ReadInt32();
+		return Fields(("flyPathType", flyPathType), ("bidirectional", flyPathType), ("mapId", r.ReadInt32()),
+			("streamId", r.ReadInt32()), ("state", r.ReadByte()));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeDelete(ReadOnlySpan<byte> body)

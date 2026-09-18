@@ -2,27 +2,27 @@
   {
     "fp": "2c206aaf",
     "firstSeenSha": "6169e0d67",
-    "lastSeenSha": "dde4b1ff3758614694720296ced11467750dd583",
-    "lastSeenRun": "p315-full3-canaries",
-    "count": 6,
+    "lastSeenSha": "c6dcfb56464bdddbcb204a8172b8ac8c8a7ec1a4",
+    "lastSeenRun": "p605-m6c-dev-20260917",
+    "count": 11,
     "status": "tracked",
     "tracking": "P7-01"
   },
   {
     "fp": "39050e81",
     "firstSeenSha": "6169e0d67",
-    "lastSeenSha": "dde4b1ff3758614694720296ced11467750dd583",
-    "lastSeenRun": "p315-full3-canaries",
-    "count": 24,
+    "lastSeenSha": "c6dcfb56464bdddbcb204a8172b8ac8c8a7ec1a4",
+    "lastSeenRun": "p605-m6c-dev-20260917",
+    "count": 44,
     "status": "tracked",
     "tracking": "P9-01"
   },
   {
     "fp": "f802a125",
     "firstSeenSha": "6169e0d67",
-    "lastSeenSha": "dde4b1ff3758614694720296ced11467750dd583",
-    "lastSeenRun": "p315-full3-canaries",
-    "count": 6,
+    "lastSeenSha": "c6dcfb56464bdddbcb204a8172b8ac8c8a7ec1a4",
+    "lastSeenRun": "p605-m6c-dev-20260917",
+    "count": 11,
     "status": "tracked",
     "tracking": "P9-01"
   }

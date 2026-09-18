@@ -91,6 +91,37 @@ public sealed class SimulationLogPolicyTests
 		}
 	}
 
+	[Fact]
+	public async Task SimAllowlistHonorsScenarioScope()
+	{
+		await using var clock = new VirtualThreadPool(strict: true);
+		string path = Path.GetTempFileName();
+		try
+		{
+			string fingerprint;
+			using (var probe = NewPolicy(clock))
+			{
+				AionLog.For("SCOPED_LOG").LogError("scenario-scoped problem");
+				fingerprint = Assert.Single(Assert.Throws<SimulationLogPolicyException>(probe.AssertClean).Problems).Fingerprint;
+			}
+			await File.WriteAllTextAsync(path, $$"""
+				[{"fp":"{{fingerprint}}","reason":"scenario-scoped test issue","owner":"tests","tracking":"P6-05","modes":["SIM"],"servers":["gs"],"scenarios":["M2"],"maxCount":1,"expires":"2099-01-01"}]
+				""");
+			using (var matching = new SimulationLogPolicy("r1", "M2", clock, path))
+			{
+				AionLog.For("SCOPED_LOG").LogError("scenario-scoped problem");
+				matching.AssertClean();
+			}
+			using var different = new SimulationLogPolicy("r1", "M1", clock, path);
+			AionLog.For("SCOPED_LOG").LogError("scenario-scoped problem");
+			Assert.Throws<SimulationLogPolicyException>(different.AssertClean);
+		}
+		finally
+		{
+			File.Delete(path);
+		}
+	}
+
 	private static SimulationLogPolicy NewPolicy(VirtualThreadPool clock, SimulationLogPolicyOptions? options = null) =>
 		new("r1", "S0", clock, Path.Combine(RealStaticData.RepoRoot(), "parity-artifacts", "e2e", "log-allowlist.json"), options);
 }

@@ -284,7 +284,8 @@ failures loud, and gets the test suite to a trustworthy green.
   event record and disposing all three server hosts. `game-server/log/server_errors.log` was written on boot.
   (`c0ec6d07c`)
 - [x] **P1-13** [BOTH] S — Shared problem allowlist `parity-artifacts/e2e/log-allowlist.json`:
-  `{fp, reason, owner, tracking, modes, servers, maxCount, expires}`. The loader lives beside
+  `{fp, reason, owner, tracking, modes, servers, scenarios?, maxCount, expires}`. Optional `scenarios` scopes a
+  SIM entry to exact scenario ids; LIVE keeps its separate per-run process boundary. The loader lives beside
   `LogFingerprint` and is used by P3-06 and P5-09. A check rejects entries with no owner or reason, expired
   entries, and entries that matched nothing in the last Full run. The checked-in list is deliberately empty:
   every P1-12 fingerprint is a tracked bug. `LogProblemAllowlist` rejects malformed, ownerless, unexplained,
@@ -936,7 +937,7 @@ point; and `p515-full2-20260917/l0-packet-parity.json` recorded the normalized S
   LIVE wall-clock or SIM virtual delays. Decoder, world-model, stream-shape, pacing, and execution-order tests cover
   the contract. (`d7ae04e34`)
 - **P6-04** — Dropped: no anti-cheat checks in bot runs (D6).
-- [ ] **P6-05** [BOTH] L — Movement scenarios (ids in Appendix A):
+- [x] **P6-05** [BOTH] L — Movement scenarios (ids in Appendix A):
   - **M1** Ishalgen first steps: prologue movie (quest 2000), walk to Asak, report to Vandar (2101).
   - **M2** Out-of-region move (Java quirk: one `New MapRegion ... doesn't exist` Warning with stack; the player
     is despawned and repositioned to bind point or start but not respawned or told; later `CM_MOVE`s are ignored
@@ -947,6 +948,15 @@ point; and `p515-full2-20260917/l0-packet-parity.json` recorded the normalized S
     teleporter 203679 refuses a level-1 player (`CM_DIALOG_SELECT` 44 → `SM_DIALOG_WINDOW` page 27, NO_RIGHT).
   - **M6** Fly up, flight-time drain (`SM_FLY_TIME`), land, glide off a ledge, pass a fly ring, ride a windstream.
   - **M7** Resting regeneration; walk and run toggles.
+  Implemented M1-M7 in fixed manifest order with real packet ingress, bot-world assertions and scenario-scoped
+  log enforcement. M1 is Fast in SIM and LIVE; M2-M7 are Full, with M6 also LIVE and exclusive. The shared mover
+  now emits ground, jump, fall, flight and glide streams from explicit client positions; the decoder/world model
+  cover windstreams and abnormal-state effects; LIVE M1 completes quests 2000/2101 and LIVE M6 uses the seeded
+  director to validate flight drain, landing, fly-ring skill 265 and windstream entry/exit. M2's exact Java warning
+  is limited to that scenario, and Java's valid-`START_GLIDE` logger quirk is limited to one M6 occurrence. The work
+  also fixed §7 #29/#30, channel-reload object-id invalidation, and the observer-side class-change oracle. Docker-only
+  LIVE runs `p605-m1b-dev-20260917` and `p605-m6c-dev-20260917` passed under enforce mode; the unsharded SIM Full
+  M1-M7 run passed. (`22916f84d`)
 - [ ] **P6-06** [BOTH] L — Combat scenarios:
   - **C1** On a fresh level-1 warrior (only the 1 XP prologue; no quest turn-ins or gathering), kill Sprigg
     Workers to level 2: exactly 80 XP per kill (raw 343, capped at 20% of the 400 XP level-1 requirement),
@@ -1317,6 +1327,8 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 26 | Concurrent chat clients can create separate channels for the same identifier, so neither receives the other's message | `ChatChannels.java:52-79` executes the scan/add path on the single NIO read/write dispatcher | Resolved by P3-09 (`efddb7a7b`) |
 | 27 | Character-list equipment loading throws for every visible item without a godstone because the LEFT JOIN's null `godstone_item_id` is read with `GetInt32` | `InventoryDAO.java:97` uses `ResultSet.getInt`, whose SQL-null value is `0` | Resolved by P3-09 (`efddb7a7b`) |
 | 28 | `GameTimeService.GetGameTime` returned a detached snapshot, so the ported `//time` command changed only that temporary object and server time stayed unchanged | `GameTimeService.java:31-33` returns its mutable field; `Time.java:55-69` mutates it directly | Resolved by P4-09 (`8df3cde9f`) |
+| 29 | Out-of-region movement warnings omitted Java's attached throwable, so the M2 log fingerprint had no diagnostic stack | `World.java:187,194-195` passes `new Throwable()` to both warnings | Resolved by P6-05 (`22916f84d`) |
+| 30 | `ChatProcessor` used .NET `Regex.Split` with Java's capturing group unchanged; .NET returns captures in the result, turning `set level 9` into `level`, empty, `9` | `ChatProcessor.java:85-90` uses `String.split`, which does not return capture groups | Resolved by P6-05 (`22916f84d`) |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

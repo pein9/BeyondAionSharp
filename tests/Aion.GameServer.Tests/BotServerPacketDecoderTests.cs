@@ -12,14 +12,34 @@ public sealed class BotServerPacketDecoderTests
 	private readonly BotServerPacketDecoder decoder = new();
 
 	[Fact]
-	public void DecoderInventoryContainsFortySevenBotPerceptionPackets()
+	public void DecoderInventoryContainsFiftyBotPerceptionPackets()
 	{
-		Assert.Equal(47, decoder.PacketTypes.Count);
+		Assert.Equal(50, decoder.PacketTypes.Count);
 		Assert.Contains(typeof(SM_MESSAGE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_EMOTION), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_SYSTEM_MESSAGE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_PLAYER_SPAWN), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_INVENTORY_ADD_ITEM), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_WINDSTREAM), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_WINDSTREAM_ANNOUNCE), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_ABNORMAL_STATE), decoder.PacketTypes);
+	}
+
+	[Fact]
+	public void WindstreamDecodersExposeStateAndAnnouncementIdentity()
+	{
+		using var stateFixture = LoadFixture("SM_WINDSTREAM.json");
+		var stateCase = stateFixture.RootElement.GetProperty("cases")[0];
+		var state = decoder.Decode(typeof(SM_WINDSTREAM),
+			Convert.FromHexString(stateCase.GetProperty("payloadHex").GetString()!));
+		Assert.Equal(stateCase.GetProperty("inputs").GetProperty("unk1").GetInt32(), state.Get<int>("state"));
+
+		using var announceFixture = LoadFixture("SM_WINDSTREAM_ANNOUNCE.json");
+		var announceCase = announceFixture.RootElement.GetProperty("cases")[0];
+		var announce = decoder.Decode(typeof(SM_WINDSTREAM_ANNOUNCE),
+			Convert.FromHexString(announceCase.GetProperty("payloadHex").GetString()!));
+		Assert.Equal(announceCase.GetProperty("inputs").GetProperty("mapId").GetInt32(), announce.Get<int>("mapId"));
+		Assert.Equal(announceCase.GetProperty("inputs").GetProperty("streamId").GetInt32(), announce.Get<int>("streamId"));
 	}
 
 	[Fact]

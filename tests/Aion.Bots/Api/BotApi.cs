@@ -94,6 +94,9 @@ public sealed class BotApi
 	public BotClientPacket Rest(bool sitting) =>
 		GameClientPackets.Emotion((byte)(sitting ? EmotionType.SIT : EmotionType.STAND));
 
+	public BotClientPacket Walk(bool walking) =>
+		GameClientPackets.Emotion((byte)(walking ? EmotionType.WALK : EmotionType.RUN));
+
 	public BotClientPacket Emote(ushort emotionId, int targetObjectId = 0) =>
 		GameClientPackets.Emotion((byte)EmotionType.EMOTE, emotionId, targetObjectId);
 

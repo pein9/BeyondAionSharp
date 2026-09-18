@@ -99,6 +99,30 @@ public sealed class GmFacadeTests
 		Assert.Contains("director", exception.Message, StringComparison.Ordinal);
 	}
 
+	[Fact]
+	public async Task LiveFacadeCanVerifyAReplylessCommandWithAnOrderedAcknowledgedCommand()
+	{
+		var sent = new List<BotClientPacket>();
+		var received = new Queue<DecodedBotServerPacket>(
+		[
+			new(typeof(SM_KEY), new Dictionary<string, object?> { ["encodedKey"] = 7 }),
+			new(typeof(SM_MESSAGE), new Dictionary<string, object?> { ["message"] = "Set Subject's level to 9" }),
+		]);
+		var facade = new LiveGmFacade(
+			LiveGmFacade.DirectorAccount,
+			(packet, _) => { sent.Add(packet); return Task.CompletedTask; },
+			_ => Task.FromResult(received.Dequeue()));
+
+		GmCommandResult result = await facade.ExecuteVerifiedAsync(
+			new GmCommand("set", ["class", "gladiator"], "unused"),
+			new GmCommand("set", ["level", "9"], "level to 9"),
+			new GmSubject(1001, "Subject"));
+
+		Assert.Contains("level to 9", Assert.IsType<string>(result.Reply), StringComparison.Ordinal);
+		Assert.Equal([typeof(CM_TARGET_SELECT), typeof(CM_CHAT_MESSAGE_PUBLIC), typeof(CM_CHAT_MESSAGE_PUBLIC)],
+			sent.Select(packet => packet.PacketType));
+	}
+
 	private static Player Player(int objectId, string name, sbyte accessLevel)
 	{
 		var common = new PlayerCommonData(objectId);

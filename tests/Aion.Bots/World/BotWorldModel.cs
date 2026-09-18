@@ -51,6 +51,16 @@ public sealed class BotWorldModel
 	public BotQuestShare? PendingQuestShare { get; private set; }
 	public string? ExchangeRequestFrom { get; private set; }
 
+	/// <summary>Forget object ids that become invalid when the server rebuilds the player's visible world.</summary>
+	public void BeginWorldReload()
+	{
+		objects.Clear();
+		Dialog = null;
+		Question = null;
+		Loot = null;
+		Trade = null;
+	}
+
 	public void Apply(DecodedBotServerPacket packet)
 	{
 		var type = packet.PacketType;

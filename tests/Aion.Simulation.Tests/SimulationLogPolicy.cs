@@ -124,7 +124,8 @@ public sealed class SimulationLogPolicy : IDisposable
 			LogProblemAllowlistEntry? entry = allowlist.Entries.FirstOrDefault(candidate =>
 				candidate.Fingerprint == problem.Fingerprint &&
 				candidate.Modes.Contains("SIM", StringComparer.OrdinalIgnoreCase) &&
-				candidate.Servers.Contains(problem.Server, StringComparer.OrdinalIgnoreCase));
+				candidate.Servers.Contains(problem.Server, StringComparer.OrdinalIgnoreCase) &&
+				(candidate.Scenarios == null || candidate.Scenarios.Contains(scenario, StringComparer.Ordinal)));
 			int count = counts.GetValueOrDefault(problem.Fingerprint) + 1;
 			counts[problem.Fingerprint] = count;
 			if (entry == null || count > entry.MaxCount)

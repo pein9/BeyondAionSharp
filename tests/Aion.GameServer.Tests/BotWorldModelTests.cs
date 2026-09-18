@@ -8,6 +8,32 @@ namespace Aion.GameServer.Tests;
 public sealed class BotWorldModelTests
 {
 	[Fact]
+	public void BeginWorldReloadClearsTransientVisibleState()
+	{
+		var world = new BotWorldModel();
+		world.Apply(Packet<SM_NPC_INFO>(
+			("objectId", 200), ("npcId", 203500), ("visualNpcId", 203500),
+			("x", 1f), ("y", 2f), ("z", 3f), ("heading", (byte)4),
+			("creatureType", (byte)38)));
+		world.Apply(Packet<SM_DIALOG_WINDOW>(("targetObjectId", 200), ("dialogPageId", (ushort)1011), ("questId", 2101)));
+		world.Apply(Packet<SM_QUESTION_WINDOW>(
+			("code", 1), ("params", Array.Empty<string>()), ("senderId", 200), ("rangeOrCooldownSeconds", 0)));
+		world.Apply(Packet<SM_LOOT_STATUS>(("targetObjectId", 200), ("status", (byte)2), ("lootEffectId", 0)));
+		world.Apply(Packet<SM_TRADELIST>(
+			("targetObjectId", 200), ("tradeNpcType", (byte)1), ("buyPriceModifier", 100),
+			("showBuyTab", true), ("showSellTab", false), ("tabs", Array.Empty<int>()),
+			("limitedItems", new List<IReadOnlyDictionary<string, object?>>())));
+
+		world.BeginWorldReload();
+
+		Assert.Empty(world.Objects);
+		Assert.Null(world.Dialog);
+		Assert.Null(world.Question);
+		Assert.Null(world.Loot);
+		Assert.Null(world.Trade);
+	}
+
+	[Fact]
 	public void TracksKnownObjectsAndSelfStateFromDecodedPackets()
 	{
 		var world = new BotWorldModel();

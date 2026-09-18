@@ -65,6 +65,11 @@ try {
 		-LiveTraceDirectory (Join-Path $runRoot "$Run-l0/bots") `
 		-OutputPath (Join-Path $runRoot 'l0-packet-parity.json')
 
+	& $runLive -Run "$Run-m1" -Scenario 'M1' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
+		-PacketTap:$PacketTap -SkipImageBuild
+	& $runLive -Run "$Run-m6" -Scenario 'M6' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
+		-PacketTap:$PacketTap -SkipImageBuild
+
 	# The first child built the same three server images when a rebuild was requested.
 	& $runLive -Run "$Run-canaries" -Scenario 'canaries' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
 		-PacketTap:$PacketTap -SkipImageBuild

@@ -13,6 +13,7 @@ public enum BotMovementMode
 	Ground,
 	Jump,
 	Fall,
+	Glide,
 }
 
 public sealed record BotMovementFrame(TimeSpan DelayBefore, BotClientPacket Packet, BotPosition Position);
@@ -34,13 +35,25 @@ public sealed class BotMover
 	}
 
 	public BotMovementPlan CreateGroundPlan(IReadOnlyList<BotPosition> route,
-		TimeSpan? updateInterval = null) => CreateMovePlan(route, BotMovementMode.Ground, updateInterval);
+		TimeSpan? updateInterval = null) => CreateMovePlan(route, BotMovementMode.Ground, updateInterval, null, null);
+
+	public BotMovementPlan CreateGroundPlan(IReadOnlyList<BotPosition> route, BotPosition start, float speed,
+		TimeSpan? updateInterval = null) => CreateMovePlan(route, BotMovementMode.Ground, updateInterval, start, speed);
 
 	public BotMovementPlan CreateJumpPlan(IReadOnlyList<BotPosition> route,
-		TimeSpan? updateInterval = null) => CreateMovePlan(route, BotMovementMode.Jump, updateInterval);
+		TimeSpan? updateInterval = null) => CreateMovePlan(route, BotMovementMode.Jump, updateInterval, null, null);
+
+	public BotMovementPlan CreateJumpPlan(IReadOnlyList<BotPosition> route, BotPosition start, float speed,
+		TimeSpan? updateInterval = null) => CreateMovePlan(route, BotMovementMode.Jump, updateInterval, start, speed);
 
 	public BotMovementPlan CreateFallPlan(IReadOnlyList<BotPosition> route,
-		TimeSpan? updateInterval = null) => CreateMovePlan(route, BotMovementMode.Fall, updateInterval);
+		TimeSpan? updateInterval = null) => CreateMovePlan(route, BotMovementMode.Fall, updateInterval, null, null);
+
+	public BotMovementPlan CreateFallPlan(IReadOnlyList<BotPosition> route, BotPosition start, float speed,
+		TimeSpan? updateInterval = null) => CreateMovePlan(route, BotMovementMode.Fall, updateInterval, start, speed);
+
+	public BotMovementPlan CreateGlidePlan(IReadOnlyList<BotPosition> route, BotPosition start, float speed,
+		TimeSpan? updateInterval = null) => CreateMovePlan(route, BotMovementMode.Glide, updateInterval, start, speed);
 
 	public BotMovementPlan CreateFlightPlan(IReadOnlyList<BotPosition> route,
 		TimeSpan? updateInterval = null)
@@ -84,17 +97,17 @@ public sealed class BotMover
 	}
 
 	private BotMovementPlan CreateMovePlan(IReadOnlyList<BotPosition> route, BotMovementMode mode,
-		TimeSpan? updateInterval)
+		TimeSpan? updateInterval, BotPosition? explicitStart, float? explicitSpeed)
 	{
 		timing.EnsureCanMove();
-		var (start, speed, interval) = Validate(route, updateInterval);
+		var (start, speed, interval) = Validate(route, updateInterval, explicitStart, explicitSpeed);
 		var frames = new List<BotMovementFrame>();
 		var current = start;
 		var duration = TimeSpan.Zero;
 		var distance = 0f;
-		if (mode == BotMovementMode.Jump)
+		if (mode is BotMovementMode.Jump or BotMovementMode.Glide)
 			frames.Add(new BotMovementFrame(TimeSpan.Zero,
-				GameClientPackets.Emotion((byte)EmotionType.JUMP), current));
+				GameClientPackets.Emotion((byte)(mode == BotMovementMode.Jump ? EmotionType.JUMP : EmotionType.START_GLIDE)), current));
 
 		foreach (var destination in route)
 		{
@@ -107,6 +120,7 @@ public sealed class BotMover
 			var periodicMask = mode switch
 			{
 				BotMovementMode.Fall => (byte)(MovementMask.POSITION | MovementMask.ABSOLUTE | MovementMask.FALL),
+				BotMovementMode.Glide => (byte)(MovementMask.POSITION | MovementMask.ABSOLUTE | MovementMask.GLIDE),
 				BotMovementMode.Jump => MovementMask.POSITION,
 				_ => (byte)(MovementMask.POSITION | MovementMask.ABSOLUTE),
 			};
@@ -116,7 +130,7 @@ public sealed class BotMover
 			current = destination with { Heading = heading };
 		}
 
-		if (frames.Count > (mode == BotMovementMode.Jump ? 1 : 0))
+		if (frames.Count > (mode is BotMovementMode.Jump or BotMovementMode.Glide ? 1 : 0))
 			frames.Add(new BotMovementFrame(TimeSpan.Zero,
 				GameClientPackets.Move(new MovementPacketData(current.X, current.Y, current.Z, current.Heading,
 					MovementMask.IMMEDIATE)), current));
@@ -124,12 +138,14 @@ public sealed class BotMover
 	}
 
 	private (BotPosition Start, float Speed, TimeSpan Interval) Validate(IReadOnlyList<BotPosition> route,
-		TimeSpan? updateInterval)
+		TimeSpan? updateInterval, BotPosition? explicitStart = null, float? explicitSpeed = null)
 	{
 		ArgumentNullException.ThrowIfNull(route);
-		if (world.Position is not BotPosition start)
+		if (explicitStart is not BotPosition start && world.Position is not BotPosition)
 			throw new InvalidOperationException("The bot has not observed its position yet.");
-		if (world.MovementSpeed is not float speed || !float.IsFinite(speed) || speed <= 0)
+		start = explicitStart ?? world.Position!.Value;
+		float? selectedSpeed = explicitSpeed ?? world.MovementSpeed;
+		if (selectedSpeed is not float speed || !float.IsFinite(speed) || speed <= 0)
 			throw new InvalidOperationException("The bot has not observed a positive movement speed yet.");
 		var interval = updateInterval ?? DefaultUpdateInterval;
 		if (interval <= TimeSpan.Zero)
@@ -152,6 +168,8 @@ public sealed class BotMover
 		var mask = (byte)(MovementMask.POSITION | MovementMask.MANUAL | MovementMask.ABSOLUTE);
 		if (mode == BotMovementMode.Fall)
 			mask |= MovementMask.FALL;
+		else if (mode == BotMovementMode.Glide)
+			mask |= MovementMask.GLIDE;
 		return new MovementPacketData(start.X, start.Y, start.Z, heading, mask,
 			X2: destination.X, Y2: destination.Y, Z2: destination.Z);
 	}

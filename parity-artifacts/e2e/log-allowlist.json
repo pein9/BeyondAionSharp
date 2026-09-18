@@ -11,11 +11,12 @@
   },
   {
     "fp": "cf736122",
-    "reason": "Deliberate CM_EMOTION watcher canary; exactly one error proves the game packet read-path logger and bot-step join are observed.",
+    "reason": "One exact Java-compatible CM_EMOTION error: the LIVE watcher canary sends an unknown emotion, while M6 sends valid START_GLIDE which Java also logs as unknown.",
     "owner": "e2e-simulation",
-    "tracking": "P3-10",
-    "modes": ["LIVE"],
+    "tracking": "P3-10/P6-05-M6",
+    "modes": ["LIVE", "SIM"],
     "servers": ["gs"],
+    "scenarios": ["M6"],
     "maxCount": 1,
     "expires": "2027-09-17"
   },
@@ -36,6 +37,17 @@
     "tracking": "P3-10",
     "modes": ["LIVE"],
     "servers": ["cs"],
+    "maxCount": 1,
+    "expires": "2027-09-17"
+  },
+  {
+    "fp": "70ed21ed",
+    "reason": "M2 deliberately sends one out-of-region movement update to pin Java's despawn-and-bind-position quirk.",
+    "owner": "e2e-simulation",
+    "tracking": "P6-05/M2",
+    "modes": ["SIM"],
+    "servers": ["gs"],
+    "scenarios": ["M2"],
     "maxCount": 1,
     "expires": "2027-09-17"
   }

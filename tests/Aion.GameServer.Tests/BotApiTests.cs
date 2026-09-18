@@ -30,6 +30,7 @@ public sealed class BotApiTests
 		AssertPacket<CM_EMOTION>(api.Land());
 		Assert.Equal([typeof(CM_EMOTION), typeof(CM_MOVE)], api.Glide(movement).Select(packet => packet.PacketType));
 		AssertPacket<CM_EMOTION>(api.Rest(true));
+		AssertPacket<CM_EMOTION>(api.Walk(true));
 		AssertPacket<CM_EMOTION>(api.Emote(7));
 
 		AssertPacket<CM_TARGET_SELECT>(api.Target(50));
