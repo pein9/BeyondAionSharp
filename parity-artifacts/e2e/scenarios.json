@@ -359,6 +359,24 @@
     "resetEpoch": false
   },
   {
+    "id": "Q2",
+    "modes": ["Sim", "Live"],
+    "tier": "Fast",
+    "race": "Asmodians",
+    "map": 220010000,
+    "channelNeeds": "Dedicated",
+    "bots": 1,
+    "virtualDuration": "00:20:00",
+    "consumes": [
+      { "kind": "Npc", "id": 210363 },
+      { "kind": "Npc", "id": 700124 },
+      { "kind": "Npc", "id": 210367 }
+    ],
+    "requires": ["Db"],
+    "expectedFail": null,
+    "resetEpoch": false
+  },
+  {
     "id": "connect",
     "modes": ["Live"],
     "tier": "Full",

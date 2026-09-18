@@ -1039,7 +1039,12 @@ byte-identical), so bots will mostly find bugs elsewhere through it.
   (including Q1100's level-2 `6` lock), item consumption and terminal dialog response. Docker-only runs
   `p7-05-q1-sim-20260918l` and `p7-05-q1-live-20260918f` passed, with LIVE verifying all eight persisted quest
   rows and the completed-list replay after relog. (`a5e88ec91`)
-- [ ] **P7-06** [BOTH] S — Scenario **Q2 Ishalgen chain**: 2000 → 2101 → 2102 → 2103 → 2104 → 2105 → 2100.
+- [x] **P7-06** [BOTH] S — Scenario **Q2 Ishalgen chain**: 2000 → 2101 → 2102 → 2103 → 2104 → 2105 → 2100.
+  Q2 now drives the Java-defined report, four-kill, report, fruit-basket and Sparkie-drop path in SIM and LIVE,
+  pins every `SM_QUEST_ACTION` trace including Q2100's `[6,3,4,5]` level gate, verifies both quest-item stacks
+  are consumed and consumes the terminal dialog packets so rejected control actions cannot hide. Docker-only SIM
+  runs `p7-06-q2-sim-dev-20260918a` and `p7-06-q2-fast-20260918b` passed; enforced LIVE run
+  `p7-06-q2-live-dev-20260918a` passed with zero new or regressed fingerprints. (`8d2ce7da2`)
 - [ ] **P7-07** [BOTH] M — Trigger probes (GM-levelled: 1146 needs level 12, 1149 level 14): zone entry (1123),
   timer expiry after 900 virtual seconds (1146), escort (1149), item-started (1114), level-up start (1100).
   Anti-exploit negatives: reward action before REWARD status, refuse, `CM_PLAY_MOVIE_END` twice, deleting a

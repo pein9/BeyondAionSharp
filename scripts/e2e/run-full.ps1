@@ -73,6 +73,8 @@ try {
 		-PacketTap:$PacketTap -SkipImageBuild -StepTimeoutSeconds 30
 	& $runLive -Run "$Run-q1" -Scenario 'Q1' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
 		-PacketTap:$PacketTap -SkipImageBuild -StepTimeoutSeconds 120
+	& $runLive -Run "$Run-q2" -Scenario 'Q2' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
+		-PacketTap:$PacketTap -SkipImageBuild -StepTimeoutSeconds 120
 
 	# The first child built the same three server images when a rebuild was requested.
 	& $runLive -Run "$Run-canaries" -Scenario 'canaries' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
