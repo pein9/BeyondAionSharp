@@ -34,6 +34,8 @@ public static class LiveBotRunner
 			return await RunL0Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "canaries" }])
 			return await RunCanariesAsync(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "C1" }])
+			return await RunC1Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "M1" }])
 			return await RunM1Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "M6" }])
@@ -46,6 +48,80 @@ public static class LiveBotRunner
 		var failed = results.Count(result => !result);
 		Console.WriteLine($"LIVE bots completed: {results.Length - failed} passed, {failed} failed.");
 		return failed == 0 ? 0 : 1;
+	}
+
+	private static async Task<int> RunC1Async(LiveBotOptions options, LiveBotProblemWriter problems,
+		CancellationToken cancellationToken)
+	{
+		await using var actor = new L0Actor(options, problems, 1, Race.ASMODIANS, characterName: "Asliveac");
+		actor.Trace.WriteAction("s00", "scenario:start", new Dictionary<string, object?> { ["scenario"] = "C1" });
+		try
+		{
+			await actor.StepAsync("login-game-auth", actor.Session.LoginAndAuthenticateAsync, cancellationToken);
+			await actor.StepAsync("create-asmodian-warrior", actor.Session.CreateCharacterAsync, cancellationToken);
+			await actor.StepAsync("enter-world-and-finish-prologue", async token =>
+			{
+				await actor.Session.EnterWorldAsync(token);
+				await actor.Session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
+				await actor.Session.WaitForPacketAsync(typeof(SM_STATUPDATE_EXP), token,
+					packet => packet.Get<long>("currentExp") == 1);
+			}, cancellationToken);
+			if (actor.Session.Api.World.Level != 1 || actor.Session.Api.World.CurrentExperience != 1)
+				throw new InvalidDataException(
+					$"C1 requires a fresh level-1 character with 1 XP; observed level " +
+					$"{actor.Session.Api.World.Level}, XP {actor.Session.Api.World.CurrentExperience}.");
+
+			int? channel = PlannedChannel(options, "C1");
+			if (channel != null)
+				await actor.StepAsync("isolate-channel", token => actor.Session.ChangeChannelAsync(channel.Value, token), cancellationToken);
+
+			var defeated = new HashSet<int>();
+			for (int kill = 1; kill <= 5; kill++)
+			{
+				int sprigg = await actor.Session.WaitForNpcExceptAsync(210363, defeated, cancellationToken);
+				await actor.StepAsync($"move-to-sprigg-worker-{kill}",
+					token => actor.Session.MoveToNpcAsync(sprigg, token), cancellationToken);
+				await actor.StepAsync($"kill-sprigg-worker-{kill}", async token =>
+				{
+					long expectedExperience = kill == 5 ? 1 : 1 + kill * 80;
+					Task<DecodedBotServerPacket> experience = actor.Session.WaitForPacketAsync(
+						typeof(SM_STATUPDATE_EXP), token,
+						packet => packet.Get<long>("currentExp") == expectedExperience);
+					await Task.Delay(TimeSpan.FromMilliseconds(100), token);
+					await actor.Session.MoveToNpcAsync(sprigg, token);
+					await actor.Session.SendPacketAsync(actor.Session.Api.Target(sprigg), token);
+					for (byte attack = 0; attack < 8 && !experience.IsCompleted; attack++)
+					{
+						if (attack > 0 && attack % 2 == 0)
+							await actor.Session.MoveToNpcAsync(sprigg, token);
+						await actor.Session.SendPacketAsync(actor.Session.Api.Attack(sprigg, 1400, attack), token);
+						await Task.WhenAny(experience, Task.Delay(TimeSpan.FromMilliseconds(1450), token));
+					}
+					DecodedBotServerPacket update = await experience;
+					if (update.Get<long>("currentExp") != expectedExperience)
+						throw new InvalidDataException($"Sprigg kill {kill} did not award exactly 80 XP.");
+				}, cancellationToken);
+				defeated.Add(sprigg);
+			}
+
+			if (actor.Session.Api.World.Level != 2 || actor.Session.Api.World.CurrentExperience != 1)
+				throw new InvalidDataException(
+					$"C1 expected level 2 with 1 shown XP; observed level {actor.Session.Api.World.Level}, " +
+					$"XP {actor.Session.Api.World.CurrentExperience}.");
+			await actor.StepAsync("quit", actor.Session.QuitAsync, cancellationToken);
+			actor.Trace.WriteAction(actor.LastStep, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = "C1" });
+			Console.WriteLine("LIVE C1 completed.");
+			return 0;
+		}
+		catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+		{
+			throw;
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine($"C1 failed: {ex}");
+			return 1;
+		}
 	}
 
 	private static async Task<int> RunM1Async(LiveBotOptions options, LiveBotProblemWriter problems,
@@ -635,12 +711,22 @@ internal sealed class LiveBotSession : IL0ScenarioSession, IAsyncDisposable
 
 	public async Task<int> WaitForNpcAsync(int templateId, CancellationToken cancellationToken)
 	{
+		return await WaitForNpcExceptAsync(templateId, new HashSet<int>(), cancellationToken);
+	}
+
+	public async Task<int> WaitForNpcExceptAsync(
+		int templateId,
+		IReadOnlySet<int> excludedObjectIds,
+		CancellationToken cancellationToken)
+	{
 		BotKnownObject? known = api.World.Objects.Values.FirstOrDefault(
-			candidate => candidate.Kind == BotKnownObjectKind.Npc && candidate.TemplateId == templateId);
+			candidate => candidate.Kind == BotKnownObjectKind.Npc && candidate.TemplateId == templateId &&
+				!excludedObjectIds.Contains(candidate.ObjectId));
 		if (known != null)
 			return known.ObjectId;
 		DecodedBotServerPacket packet = await WaitForGamePacketAsync(typeof(SM_NPC_INFO), cancellationToken,
-			candidate => candidate.Get<int>("npcId") == templateId);
+			candidate => candidate.Get<int>("npcId") == templateId &&
+				!excludedObjectIds.Contains(candidate.Get<int>("objectId")));
 		return packet.Get<int>("objectId");
 	}
 

@@ -957,7 +957,7 @@ point; and `p515-full2-20260917/l0-packet-parity.json` recorded the normalized S
   also fixed §7 #29/#30, channel-reload object-id invalidation, and the observer-side class-change oracle. Docker-only
   LIVE runs `p605-m1b-dev-20260917` and `p605-m6c-dev-20260917` passed under enforce mode; the unsharded SIM Full
   M1-M7 run passed. (`22916f84d`)
-- [ ] **P6-06** [BOTH] L — Combat scenarios:
+- [x] **P6-06** [BOTH] L — Combat scenarios:
   - **C1** On a fresh level-1 warrior (only the 1 XP prologue; no quest turn-ins or gathering), kill Sprigg
     Workers to level 2: exactly 80 XP per kill (raw 343, capped at 20% of the 400 XP level-1 requirement),
     level 2 on kill 5. Deterministic despite damage rolls.
@@ -977,8 +977,18 @@ point; and `p515-full2-20260917/l0-packet-parity.json` recorded the normalized S
   - **C12** Spiritmaster summon: spawn, attack, skill, dismiss, summon death.
   - **C13** Revive types: a priest resurrects a dead bot (skill), item self-revive, kisk placement and kisk
     revive, obelisk binding and obelisk revive.
-  - **C14** Death above level 4: exp loss, then recovery at the soul healer.
+  - **C14** Death at level 6 (Java's first loss level; level 5 is still exempt): exp loss, then recovery at the
+    soul healer.
   - **C15** Class change at level 9, and learning from a skill book.
+  Implemented C1-C15 in manifest order through real client-packet ingress and bot-world assertions. C1-C3 are in
+  Fast; C1 is also LIVE and kills five distinct Sprigg Workers for exactly 80 XP each before reaching level 2;
+  C4-C15 are Full, with C9 retained as the declared expected failure. Coverage includes cast/attack/item gates,
+  aggro/leash, death/revive/recovery paths, corpse/loot/respawn, all remaining starter classes, spirit summons,
+  kisk/obelisk resurrection, class change and skill-book learning. The Java XP-loss table corrected C14 from the
+  plan's original "above level 4" wording to level 6. The longer LIVE combat path also exposed and fixed §7 #31:
+  C# imposed a 30-second idle read timeout on persistent game-server links while Java's selector waits
+  indefinitely. Docker-only combined run `p606-full-final2-20260917` passed unsharded SIM Full plus LIVE L0, M1,
+  M6, C1 and canaries; `p606-fast-final-20260917` passed SIM Fast. (`3a18ef178`)
 - [ ] **P6-07** [BOTH] S — Deterministic profile disables the "Beyond Aion Server Buffs" custom event (random +100%
   XP day, drop buff) and bonus-item randomness.
 - [ ] **P6-08** [SIM] S — `BossAiHarness.Kill` runs `OnDie` twice (`ReduceHp` to 0 already calls it); fix it before
@@ -1329,6 +1339,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 28 | `GameTimeService.GetGameTime` returned a detached snapshot, so the ported `//time` command changed only that temporary object and server time stayed unchanged | `GameTimeService.java:31-33` returns its mutable field; `Time.java:55-69` mutates it directly | Resolved by P4-09 (`8df3cde9f`) |
 | 29 | Out-of-region movement warnings omitted Java's attached throwable, so the M2 log fingerprint had no diagnostic stack | `World.java:187,194-195` passes `new Throwable()` to both warnings | Resolved by P6-05 (`22916f84d`) |
 | 30 | `ChatProcessor` used .NET `Regex.Split` with Java's capturing group unchanged; .NET returns captures in the result, turning `set level 9` into `level`, empty, `9` | `ChatProcessor.java:85-90` uses `String.split`, which does not return capture groups | Resolved by P6-05 (`22916f84d`) |
+| 31 | Persistent chat/login game-server links inherited a 30-second C# read timeout and disconnected when idle (LIVE fingerprint `06dfcdde`) | `chat-server/.../GsConnection.java`, `login-server/.../GsConnection.java`, and `AcceptReadWriteDispatcherImpl.java`: selector-driven reads have no idle timeout | Resolved by P6-06 (`3a18ef178`) |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

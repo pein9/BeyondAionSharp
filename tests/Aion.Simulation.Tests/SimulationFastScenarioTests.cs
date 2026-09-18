@@ -27,7 +27,7 @@ using Aion.GameServer.Utils;
 namespace Aion.Simulation.Tests;
 
 [Collection(SimulationWorldCollection.Name)]
-public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
+public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 {
 	private readonly string allowlistPath = Path.Combine(
 		Aion.GameServer.TestKit.RealStaticData.RepoRoot(), "parity-artifacts", "e2e", "log-allowlist.json");
@@ -85,6 +85,51 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 					break;
 				case "M7":
 					await RunM7Async(execution.Scenario, includeHistory);
+					break;
+				case "C1":
+					await RunC1Async(execution.Scenario, includeHistory);
+					break;
+				case "C2":
+					await RunC2Async(execution.Scenario, includeHistory);
+					break;
+				case "C3":
+					await RunC3Async(execution.Scenario, includeHistory);
+					break;
+				case "C4":
+					await RunC4Async(execution.Scenario, includeHistory);
+					break;
+				case "C5":
+					await RunC5Async(execution.Scenario, includeHistory);
+					break;
+				case "C6":
+					await RunC6Async(execution.Scenario, includeHistory);
+					break;
+				case "C7":
+					await RunC7Async(execution.Scenario, includeHistory);
+					break;
+				case "C8":
+					await RunC8Async(execution.Scenario, includeHistory);
+					break;
+				case "C9":
+					await RunC9Async(execution.Scenario, includeHistory);
+					break;
+				case "C10":
+					await RunC10Async(execution.Scenario, includeHistory);
+					break;
+				case "C11":
+					await RunC11Async(execution.Scenario, includeHistory);
+					break;
+				case "C12":
+					await RunC12Async(execution.Scenario, includeHistory);
+					break;
+				case "C13":
+					await RunC13Async(execution.Scenario, includeHistory);
+					break;
+				case "C14":
+					await RunC14Async(execution.Scenario, includeHistory);
+					break;
+				case "C15":
+					await RunC15Async(execution.Scenario, includeHistory);
 					break;
 				default:
 					throw new InvalidOperationException($"SIM scenario '{execution.Scenario.Id}' has no runner.");
@@ -642,6 +687,7 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 		}
 
 		public List<string> PacketTypes { get; } = [];
+		public List<DecodedBotServerPacket> PacketHistory { get; } = [];
 		public List<SimulationPacketObservation> PacketObservations { get; } = [];
 		public int CharacterId => characterId;
 		public BotApi Api => api;
@@ -673,7 +719,10 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 				throw new InvalidDataException($"Fresh simulation account {accountName} already has a character.");
 		}
 
-		public async Task CreateCharacterAsync(CancellationToken cancellationToken)
+		public Task CreateCharacterAsync(CancellationToken cancellationToken) =>
+			CreateCharacterAsync(cancellationToken, PlayerClass.WARRIOR);
+
+		public async Task CreateCharacterAsync(CancellationToken cancellationToken, PlayerClass playerClass)
 		{
 			await SendAsync(api.CreateCharacter(new CharacterCreationData
 			{
@@ -682,7 +731,7 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 				CharacterName = characterName,
 				Gender = 0,
 				Race = (int)race,
-				PlayerClass = (int)PlayerClass.WARRIOR,
+				PlayerClass = (int)playerClass,
 				Height = 1,
 			}), cancellationToken);
 			DecodedBotServerPacket response = await WaitForAsync(typeof(SM_CREATE_CHARACTER), cancellationToken);
@@ -1000,6 +1049,7 @@ public sealed class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 				throw new EndOfStreamException("Simulation game transport ended before the expected packet.");
 			DecodedBotServerPacket packet = active.Current;
 			PacketTypes.Add(packet.PacketType.Name);
+			PacketHistory.Add(packet);
 			int? objectId = packet.Fields.TryGetValue("objectId", out object? value) && value is int id ? id : null;
 			PacketObservations.Add(new SimulationPacketObservation(currentAction, packet.PacketType.Name, objectId));
 			policy.ObservePacket(bot, currentStep, packet);

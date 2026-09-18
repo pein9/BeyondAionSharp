@@ -178,7 +178,7 @@ public sealed class GsConnection : BaseClientConnection
 		var offset = 0;
 		while (offset < length)
 		{
-			var read = await ReadAsync(buffer, offset, length - offset, TimeSpan.FromSeconds(30));
+			var read = await ReadAsync(buffer, offset, length - offset);
 			if (read == 0)
 				return null;
 			offset += read;

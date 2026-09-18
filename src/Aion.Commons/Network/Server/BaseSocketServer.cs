@@ -193,6 +193,14 @@ namespace Aion.Commons.Network.Server
 		}
 
 		/// <summary>
+		/// Read data from the network stream without an idle timeout.
+		/// </summary>
+		protected async Task<int> ReadAsync(byte[] buffer, int offset, int length)
+		{
+			return await _stream.ReadAsync(buffer.AsMemory(offset, length));
+		}
+
+		/// <summary>
 		/// Read data from the network stream with timeout.
 		/// </summary>
 		protected async Task<int> ReadAsync(byte[] buffer, int offset, int length, TimeSpan timeout)
