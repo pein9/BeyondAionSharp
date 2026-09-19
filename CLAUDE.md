@@ -72,6 +72,7 @@ pwsh -NoProfile -File scripts/ci/check-clock-reads.ps1        # direct game cloc
 pwsh -NoProfile -File scripts/ci/check-custom-quest-drafts.ps1 # Roslyn custom-quest draft drift
 python scripts/parity/check_fidelity.py                        # structural-fidelity check
 python scripts/e2e/test-quest-plan-compiler.py                 # quest plan/classifier drift and contract
+python scripts/e2e/test-data-sweep-report.py                   # exhaustive sweep evidence/baseline contract
 pwsh -NoProfile -File scripts/e2e/run-fast.ps1                 # additionally, before gameplay-change commits (Docker)
 ```
 

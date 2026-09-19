@@ -60,7 +60,9 @@ public class RecipeTemplate : IL10n
 
     public int? GetComboProduct(int num)
     {
-        if (comboproduct == null || comboproduct[num - 1] == null)
+        // XmlSerializer creates an empty list for omitted elements; JAXB leaves it null.
+        // Limited-production recipes ask for combo 1 even when no combo was declared.
+        if (comboproduct == null || comboproduct.Count == 0 || comboproduct[num - 1] == null)
         {
             return null;
         }

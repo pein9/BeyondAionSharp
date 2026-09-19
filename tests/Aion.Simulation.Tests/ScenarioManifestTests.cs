@@ -73,6 +73,76 @@ public sealed class ScenarioManifestTests
 	}
 
 	[Fact]
+	public void GatherSweepIsFullOnlyAndDeclaresTheCompleteSourceInventory()
+	{
+		var scenario = Load().Get("SWEEP-GATHER");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioTier.Full, scenario.Tier); Assert.Equal(ScenarioChannelNeeds.Exclusive, scenario.ChannelNeeds);
+		Assert.Equal(ScenarioRace.Both, scenario.Race); Assert.Equal(2, scenario.Bots);
+		var source = System.Xml.Linq.XDocument.Load(Path.Combine(RealStaticData.RepoRoot(), "game-server/data/static_data/gatherables/gatherable_templates.xml"));
+		int[] ids = source.Root!.Elements("gatherable_template").Select(e => (int)e.Attribute("id")!).Order().ToArray();
+		Assert.NotEmpty(ids);
+		Assert.All(scenario.Consumes, r => Assert.Equal(ScenarioResourceKind.Gatherable, r.Kind));
+		Assert.Equal(ids, scenario.Consumes.Select(r => r.Id).Order());
+	}
+
+	[Fact]
+	public void CraftSweepIsFullOnlyAndIsolatedAcrossBothRaces()
+	{
+		var scenario = Load().Get("SWEEP-CRAFT");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioTier.Full, scenario.Tier); Assert.Equal(ScenarioChannelNeeds.Exclusive, scenario.ChannelNeeds);
+		Assert.Equal(ScenarioRace.Both, scenario.Race); Assert.Equal(2, scenario.Bots);
+		Assert.Contains(ScenarioRequirement.Db, scenario.Requires);
+		// Stations are reusable, recipes/materials are private player state; no shared consumable spawn.
+		Assert.Empty(scenario.Consumes);
+	}
+
+	[Fact]
+	public void BindSweepIsFullOnlyAndIsolatedAcrossBothRaces()
+	{
+		var scenario = Load().Get("SWEEP-BIND");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioTier.Full, scenario.Tier); Assert.Equal(ScenarioChannelNeeds.Exclusive, scenario.ChannelNeeds);
+		Assert.Equal(ScenarioRace.Both, scenario.Race); Assert.Equal(2, scenario.Bots);
+		Assert.Contains(ScenarioRequirement.Db, scenario.Requires);
+		Assert.Empty(scenario.Consumes); // Binding does not consume the shared obelisk.
+	}
+
+	[Fact]
+	public void SkillSweepIsFullOnlyWithOrdinaryRaceSubjectsAndCompleteCaseInventory()
+	{
+		var scenario = Load().Get("SWEEP-SKILL");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioTier.Full, scenario.Tier); Assert.Equal(ScenarioChannelNeeds.Exclusive, scenario.ChannelNeeds);
+		Assert.Equal(ScenarioRace.Both, scenario.Race); Assert.Equal(4, scenario.Bots);
+		Assert.Contains(ScenarioRequirement.Db, scenario.Requires);
+		Assert.Equal([210119, 210365], scenario.Consumes.Select(c => c.Id).Order());
+	}
+
+	[Fact]
+	public void TradeSweepIsFullOnlyAndIsolatedAcrossBothRaces()
+	{
+		var scenario = Load().Get("SWEEP-TRADE");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioTier.Full, scenario.Tier); Assert.Equal(ScenarioChannelNeeds.Exclusive, scenario.ChannelNeeds);
+		Assert.Equal(ScenarioRace.Both, scenario.Race); Assert.Equal(2, scenario.Bots);
+		Assert.Contains(ScenarioRequirement.Db, scenario.Requires);
+		Assert.Empty(scenario.Consumes); // Isolated process owns dynamic vendor state and stock.
+	}
+
+	[Fact]
+	public void TeleportSweepIsFullOnlyAndIsolatedAcrossBothRaces()
+	{
+		var scenario = Load().Get("SWEEP-TELEPORT");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioTier.Full, scenario.Tier); Assert.Equal(ScenarioChannelNeeds.Exclusive, scenario.ChannelNeeds);
+		Assert.Equal(ScenarioRace.Both, scenario.Race); Assert.Equal(2, scenario.Bots);
+		Assert.Contains(ScenarioRequirement.Db, scenario.Requires);
+		Assert.Empty(scenario.Consumes); // Routes are reusable; setup ownership changes are restored per row.
+	}
+
+	[Fact]
 	public async Task IsolationPlanAssignsChannelsProcessBoundariesAndRespawnDrain()
 	{
 		ScenarioDefinition first = Definition("A", ScenarioTier.Fast, ScenarioChannelNeeds.Dedicated, 210010000,

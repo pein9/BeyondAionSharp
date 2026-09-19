@@ -119,6 +119,16 @@ function Write-RunMetadata {
 			@{ L8C = @{ 'gameserver.event.advent_calendar.enable' = $true; easter = 0; faction = 0; lock = 0; questrestart = 0; symphony = 0 } }
 		} elseif ($scenarioIds.Contains('L8')) {
 			@{ L8 = @{ 'gameserver.event.service.disabled_events' = 'Beyond Aion Server Buffs,Increased Gathering & Crafting XP Rates,Increased Drop Rates,Increased Drop Rates 50%' } }
+		} elseif ($scenarioIds.Contains('SWEEP-GATHER')) {
+			@{ 'SWEEP-GATHER' = @{ 'gameserver.gather.fail.chance' = 0 } }
+		} elseif ($scenarioIds.Contains('SWEEP-CRAFT')) {
+			@{ 'SWEEP-CRAFT' = @{ 'gameserver.craft.fail.chance' = 0; setup = 'Per-row components, skill, DP, recipe and empty craft cooldowns; verified products removed after each row' } }
+		} elseif ($scenarioIds.Contains('SWEEP-TELEPORT')) {
+			@{ 'SWEEP-TELEPORT' = @{ setup = 'Ordinary level-65 subjects; funds, route quests, approach positions and temporary shipped siege/base ownership/spawns and Panesterra faction; original ownership, activity and player faction restored per row' } }
+		} elseif ($scenarioIds.Contains('SWEEP-SKILL')) {
+			@{ 'SWEEP-SKILL' = @{ setup = 'Four ordinary race-specific subjects, including same-race party helpers; director class/daeva eligibility/level, skill learning, temporary mastery only for classless skill rows, equipment, consumables, HP/MP/DP, player/dead targets, compatible spirits/robot mode, chain/counter windows and shipped crowd-control effects; independent-row cooldown/effect/summoned-object cleanup; natural combat/respawn waits; normal casts, pet follow-up casts, passive application and gathering/morphing required; profession failure chance set to zero for action execution and restored afterward' } }
+		} elseif ($scenarioIds.Contains('SWEEP-TRADE')) {
+			@{ 'SWEEP-TRADE' = @{ setup = 'Ordinary race-specific subjects; level, legion, kinah/AP/rank, required materials and dialog prerequisites; shipped siege/base spawns, matching Panesterra faction and director game-calendar changes; director clears nearby hostile NPCs when a vendor is fighting, then waits for normal AI return; previous-row supplied inventory/products cleaned between independent catalogs' } }
 		} else { @{} })
 		scenarios = $scenarioIds
 		startedAt = $startedAt.ToString('O')
@@ -209,6 +219,28 @@ finally {
 	Restore-Environment 'AION_E2E_QUEST_PLAN_ROOT' $previousQuestPlanRoot
 
 	if ($transcriptStarted) { Stop-Transcript | Out-Null }
+}
+
+
+foreach ($sweep in @(
+	@{ Scenario = 'SWEEP-GATHER'; Name = 'gatherables' },
+	@{ Scenario = 'SWEEP-CRAFT'; Name = 'recipes' },
+	@{ Scenario = 'SWEEP-BIND'; Name = 'bindpoints' },
+	@{ Scenario = 'SWEEP-TELEPORT'; Name = 'teleporters' },
+	@{ Scenario = 'SWEEP-TRADE'; Name = 'tradelists' },
+	@{ Scenario = 'SWEEP-SKILL'; Name = 'skills' }
+)) {
+	if ($scenarioIds.Contains($sweep.Scenario)) {
+		& python (Join-Path $repoRoot 'scripts/e2e/report-data-sweep.py') `
+			--report (Join-Path $runPath "data-sweeps/$($sweep.Name).json") `
+			--baseline (Join-Path $repoRoot "parity-artifacts/e2e/data-sweeps/$($sweep.Name)-baseline.json")
+		if ($LASTEXITCODE -ne 0) {
+			$status = 'failed'
+			$failureMessage = "$($sweep.Name) data-sweep coverage failed validation or regressed against its baseline."
+			Write-RunMetadata -GitSha $gitSha
+			throw $failureMessage
+		}
+	}
 }
 
 Write-Host "SIM $Tier process $ProcessKey passed. Artifacts: $runPath"

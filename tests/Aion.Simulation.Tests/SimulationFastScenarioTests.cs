@@ -59,6 +59,24 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			await driver.PrepareScenarioAsync(execution);
 			switch (execution.Scenario.Id)
 			{
+				case "SWEEP-SKILL":
+					await RunSkillSweepAsync(execution.Scenario, includeHistory);
+					break;
+				case "SWEEP-TRADE":
+					await RunTradeSweepAsync(execution.Scenario, includeHistory);
+					break;
+				case "SWEEP-TELEPORT":
+					await RunTeleportSweepAsync(execution.Scenario, includeHistory);
+					break;
+				case "SWEEP-BIND":
+					await RunBindSweepAsync(execution.Scenario, includeHistory);
+					break;
+				case "SWEEP-CRAFT":
+					await RunCraftSweepAsync(execution.Scenario, includeHistory);
+					break;
+				case "SWEEP-GATHER":
+					await RunGatherSweepAsync(execution.Scenario, includeHistory);
+					break;
 				case "S0":
 					await RunS0Async(execution.Scenario, includeHistory);
 					break;
@@ -383,9 +401,9 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 	}
 
 	private async Task TeleportForSetupAsync(SimulationL0Session session, Player player, int mapId,
-		float x, float y, float z, CancellationToken token)
+		float x, float y, float z, CancellationToken token, int? targetInstanceId = null)
 	{
-		int instanceId = fixture.World.GetWorldMap(mapId).GetMainWorldMapInstance().GetInstanceId();
+		int instanceId = targetInstanceId ?? fixture.World.GetWorldMap(mapId).GetMainWorldMapInstance().GetInstanceId();
 		bool reloadMap = player.GetWorldId() != mapId || player.GetInstanceId() != instanceId;
 		TeleportService.TeleportTo(player, mapId, instanceId, x, y, z, 0, TeleportAnimation.NONE);
 		await session.DrainServerPacketsAsync(token);

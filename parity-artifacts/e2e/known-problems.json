@@ -1,5 +1,15 @@
 [
   {
+    "fp": "4eb592c5",
+    "firstSeenSha": "cf0b07d287299aa2e3d3b01117e4cb929ebf4a1b",
+    "lastSeenSha": "cf0b07d287299aa2e3d3b01117e4cb929ebf4a1b",
+    "lastSeenRun": "p8-08-craft-sim-20260919a",
+    "count": 78,
+    "status": "fixed",
+    "tracking": "P8-08, plan section 7 #57: absent XML combo products become an empty C# list, so limited-production recipe 155001739 throws before granting its product and leaves its repeating craft timer active. Empty-list parity correction passes the red/green XML regression and all 12,494 recipes on seeds 1/2 (runs d/f), including log gates, teardown and independent XML validation. Final solution, Fast and shared Full SIM pass; no allowlist.",
+    "fixedIn": "4e2430517ab4104af1c8c1c79f5fdb0287469b0d"
+  },
+  {
     "fp": "5a9120cb",
     "firstSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
     "lastSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",

@@ -500,6 +500,11 @@ public class NpcMoveController : CreatureMoveController<Npc>
     {
         lock (this)
         {
+            // E2E-authorized correction to Java ce54b7931 (plan §7 #61): LoseAggro clears
+            // the pursuit target, but MoveToPoint refuses an active non-point movement.
+            // Stop that movement before selecting the return destination, retaining back steps.
+            if (destination != Destination.POINT)
+                AbortMove();
             SpawnTemplate spawn = Owner.GetSpawn();
             Point3D step = null;
             if (lastSteps != null && lastSteps.Count != 0)

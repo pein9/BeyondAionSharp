@@ -13,8 +13,7 @@ namespace Aion.GameServer.Services;
 /// <summary>Java parity: services/SkillLearnService (ATracer, xTz, Neon). Faithful 1:1 re-port (replaces the
 /// reworked plan-based slop). onLearnSkill/learnNewSkills/learnTemporarySkill/autoLearnSkills/learnSkillBook/removeSkill
 /// over the faithful PlayerSkillList + DataManager.SKILL_TREE_DATA(SkillTreeData enum API) + SKILL_DATA. Java
-/// switch(skillLevel) case 1,100,...,500 -> C# pattern; SkillEngine.applyEffectDirectly(skillTemplate,...) maps to the
-/// faithful (skillId,...) overload.</summary>
+/// switch(skillLevel) case 1,100,...,500 -> C# pattern; passive effects retain the actual learned skill level.</summary>
 public static class SkillLearnService
 {
     public static void OnLearnSkill(Player player, int skillId, int skillLevel, bool isNew)
@@ -31,7 +30,7 @@ public static class SkillLearnService
                 SendPacket(player, skill, isNew);
             SkillTemplate skillTemplate = DataManager.SKILL_DATA.GetSkillTemplate(skillId);
             if (skillTemplate.IsPassive())
-                Aion.GameServer.SkillEngine.SkillEngine.GetInstance().ApplyEffectDirectly(skillId, player, player);
+                Aion.GameServer.SkillEngine.SkillEngine.GetInstance().ApplyEffectDirectly(skillTemplate, skillLevel, player, player);
             if (skill.IsProfessionSkill() && (skill.GetSkillLevel() == 399 || skill.GetSkillLevel() == 499))
                 player.GetController().UpdateNearbyQuests();
         }

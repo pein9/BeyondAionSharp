@@ -1583,11 +1583,244 @@ Every economy scenario ends with invariants: kinah and item totals conserved acr
     and all ten quest-plan compiler checks passed. All six LIVE lifecycle receipts above were audited
     for scenario completion and zero new/regressed fingerprints. The previously tracked C2/C6 fixture
     intermittency, invalid pet food (#54), and null-player audit robustness (#53) remain open, not allowlisted.
-- [ ] **P8-08** [SIM] L — Full-tier data sweeps, each with a per-row coverage report and baseline: every gatherable
+- [x] **P8-08** [SIM] L — Full-tier data sweeps (`4e2430517`), each with a per-row coverage report and baseline: every gatherable
   template gathered once (GM teleport, GM-set skill); every recipe crafted once with GM-granted components and
   level; every trade list bought from and sold to once; every teleporter destination used once; every skill-tree
-  skill learned and cast once per class; every bind point bound and revived at. A row fails on an unallowlisted
+  skill learned and executed once per class (cast, passive application, or actual profession action as applicable);
+  every bind point bound and revived at. A row fails on an unallowlisted
   problem, a quest-control echo or a missing product; a row with no spawn is "unreachable", not a failure.
+  Trade catalog roles are explicit: ordinary shops buy/sell, trade-ins exchange their required materials
+  (and accept a player sale only when supported), and purchase-only lists accept player sales. The plan's
+  original wording did not distinguish these roles. Per maintainer decision D14, catalogs whose shipped
+  NPC definition lacks the corresponding trade action are reported as **Inactive**, never as successful
+  transactions or missing-spawn Unreachable; no new vendors/actions are enabled.
+  Independent source inventory identifies 170 such catalogs: 162 shops, three trade-ins and five
+  purchase-only lists. This is content classification, not proof of runtime transactions.
+  Development history below preserves intermediate failures and partial receipts; the final verification
+  record at the end supersedes their then-current pending/uncommitted status.
+  `SWEEP-GATHER` inventories all 756 gatherable templates and declares them as consumed
+  resources in an isolated Full SIM process. Two ordinary race-appropriate subjects use GM-equivalent
+  class/level/skill/position and required-material setup, normal approach/gather packets, and real timers.
+  Each row checks the selected shipped product, exact consumed-input/product quantities, whole inventory
+  against packets and server state, interaction release, and the log gate. Existing instance-only spawns
+  run through normal instance creation; no missing content is fabricated. Independent spawn XML checks
+  prevent declared-but-unspawned content from being labelled unreachable. Run
+  `p8-08-gather-sim-20260919d` and seed-2 run `p8-08-gather-sim-20260919e` pass: 374 gathered, 382 without spawn definitions/runtime spawns, zero
+  failed/pending. The first generated baseline is in `parity-artifacts/e2e/data-sweeps/` (not committed yet).
+  Reports begin with every row pending, preserve failures and recent packets, and are validated against
+  current source IDs and successful parent-run metadata before baseline comparison. The runner rejects
+  missing/duplicate rows, incomplete runs and regressions from passed to unreachable. Seven Python verifier
+  regressions and two report-state tests pass. Gathering's solution/Fast regression checks pass.
+  `SWEEP-CRAFT` now inventories all 12,494 shipped recipes, uses race-appropriate ordinary subjects and
+  existing capital stations (or normal stationless morphing), and verifies normal CM_CRAFT/timer completion,
+  exact whole-inventory input/product deltas, DP, non-stackable gear creator metadata, temporary-recipe deletion and cooldown
+  creation. GM-equivalent per-row setup grants components, recipe, DP and required skill (including the
+  shipped skill-550 quest recipes); prior craft cooldowns are cleared between independent rows, and verified
+  products are removed afterward. This tests each recipe's execution, not acquisition/progression or
+  repeated crafting through a cooldown. Reports checkpoint every 100 rows and immediately on failure;
+  pending rows cannot pass validation. The recipe verifier independently checks products, counts, race,
+  skill and component alternatives against XML. First run exposed §7 #57;
+  its focused regression is red/green and rerun b crafts the affected row before a setup cap error at
+  recipe 155003491. Setup corrected; run `p8-08-craft-sim-20260919c` passes 9,700 rows, including both
+  prior failure points, then catches an incorrect creator-name assertion for stackable power shards.
+  Both C# and Java `ItemService.addStackableItem` deliberately omit the creator predicate; the test now
+  checks it only for non-stackable gear. Full rerun `p8-08-craft-sim-20260919d` passes all 12,494 recipes
+  (zero failed/unreachable/pending) in 10.36 minutes. Its generated baseline passes the independent XML
+  verifier and is enforced by the runner. Seed-2 replay `p8-08-craft-sim-20260919e` passes 11,566 rows,
+  then fails at recipe 155200987 because Docker MySQL receives a shutdown signal at 2026-09-19 17:49:12 UTC
+  (container exits cleanly, not OOM). The log gate retains DB fingerprint `daed9364`; no allowlist or
+  baseline update. The maintainer confirmed an accidental shutdown and restarted Docker MySQL.
+  The interrupted run's disposable `aion_gs_sim_p8_08_craft_sim_20260919e_reset_sweep_craft` database was
+  dropped successfully after recovery. Replacement seed-2 replay `p8-08-craft-sim-20260919f` passes all
+  12,494 recipes, with clean log gating/teardown and independent baseline enforcement (11m39s scenario,
+  12m13s test process). The accidental DB shutdown is not a recipe-content failure.
+  Revalidation after the production fix and teleport sweep passes the unchanged 4,243-site warning
+  baseline and the exact solution test command (4,066 passed, 20 prerequisite skips; logs
+  `run/p8-08-teleport-warning.log` and `run/p8-08-teleport-solution.log`). Docker-backed Fast replay
+  `p8-08-teleport-fast-20260919a` passes. Logger/clock ratchets, fidelity, custom-quest drafts, the
+  quest-plan compiler tests and all 12 sweep-verifier regressions also pass.
+  `SWEEP-BIND` inventories all 129 bind-point templates. Runs `p8-08-bind-sim-20260919c` (seed 1) and
+  `p8-08-bind-sim-20260919d` (seed 2) both pass: 89 bound/revived, 40 without shipped/runtime spawns,
+  zero failed/pending. Ordinary race-appropriate subjects approach each existing obelisk, accept its
+  normal bind question, pay the exact fee, verify fresh SQL coordinates, then die by honest fall movement
+  at least 20 metres away and return using CM_REVIVE. Setup supplies levels, funds and a ledge; it never
+  writes the bound position or directly revives. SQL FLOAT comparisons allow only 0.01 coordinate units
+  for text-protocol rounding; the real 500ms death-notification timer is advanced before asserting SM_DIE.
+  The independently validated baseline is generated under `data-sweeps/`, and the runner enforces it.
+  `SWEEP-TELEPORT` is implemented for all 284 destination templates, including instant travel and timed
+  client flight paths, with ordinary packets, exact service fees, normal acknowledgements and packet/server
+  destination checks. Setup grants route quest requirements and temporarily sets/restores required siege
+  ownership/teleport availability; no security settings or production boot order are changed. Initial runs
+  correctly rejected unspawned siege, Kaldor base and Panesterra base route NPCs rather than calling shipped
+  content unreachable. Per-row setup now uses the real siege/base spawn services, supplies Panesterra faction
+  where required, and restores ownership, activity and subject faction. Aircraft approach uses real ground
+  movement toward the departure side while staying in talk range (the fixed west-side approach was too far
+  from Cygnea flight 295's departure point). Run `p8-08-teleport-sim-20260919e` passes all 284 rows:
+  238 destinations used, 34 without incoming NPC routes and 12 without incoming-NPC spawn definitions;
+  zero failed/pending. The independent verifier checks route membership, endpoints and flight duration,
+  and the generated baseline is enforced by the runner. Seed-2 replay
+  `p8-08-teleport-sim-20260919f` passes with the same 238/46 coverage and baseline enforcement.
+  Twelve verifier regressions cover gathering, recipes, binding and teleport evidence. Trade-list and
+  class-skill sweeps remain; P8-08 and Phase 8 are not complete. No P8-08 commit yet.
+  `SWEEP-TRADE` now inventories all 2,290 catalogs (1,969 shops, 103 trade-ins, 218 purchase-only lists).
+  Ordinary subjects use normal catalog/transaction packets, exact whole-inventory and kinah/AP checks,
+  supplied prerequisites, and shipped dynamic spawns. First run identified §7 #59; inactive content now
+  has the approved separate status. Run c executes 403 catalogs before AP setup recalculates the rank
+  required by vendor 798714; setup now restores that explicit rank prerequisite before each transaction.
+  Run d executes 443 catalogs before reaching a time-window vendor. The sweep now uses the same game-hour
+  change as `//time` and the real temporary-spawn callbacks, keeping the chosen hour in its isolated process.
+  Run e executes 577 catalogs before the fixture incorrectly excludes neutral vendor Varshaka (800370).
+  Neutral vendors are now eligible, with FRIEND/SUPPORT subjects preferred over neutral visitors in
+  guarded faction towns; run f showed why preferring the first merely neutral subject was insufficient.
+  Run g reaches 667 successful catalogs, then Vardn's real combat suppresses his opening dialog (the
+  same `AbstractAI.canHandleEvent` rule in Java). Setup now approaches/wakes the region, clears actual
+  nearby hostile NPCs using GM-kill-equivalent damage when needed, and waits for normal AI return;
+  it does not force an AI state or bypass dialogs. Run i reaches 756 catalogs, including Vardn, before
+  Panesterra faction prerequisites. Per-row faction setup/restoration now covers both siege-spawned
+  and ordinary temple vendors using their shipped tribes; run j had exposed the latter distinction.
+  Run k reaches 1,047 successful catalogs before seasonal vendor 830523 requires a calendar date,
+  not only an hour. Setup now selects a future boundary from its shipped temporary-spawn expression
+  using Aion's twelve 31-day months and invokes real game-time callbacks; five focused calendar cases
+  pass. Run l reaches the purchase-only catalogs; its first sale assertion exposed a test-side
+  `SM_SELL_ITEM` field-name mismatch (`tabIds`, not `tabs`), now corrected without changing the codec.
+  Runs m/n reach 1,252 successful catalogs and expose the inherited return-from-pursuit defect (§7 #61)
+  at Disillon buyer 804454. Its idle/pursuit controller regression is red/green; both return cases and
+  both learned-passive-level cases pass together under the shared singleton-isolation collection.
+  Full run `p8-08-trade-sim-20260919o` passes all 2,290 rows: 1,304 catalogs exercised, 816 without
+  shipped/runtime spawns, 170 inactive and zero failed/pending. It includes the formerly stuck Disillon
+  buyer, passes log gating/teardown, and passes independent XML/action/transaction verification.
+  The generated trade baseline is now enforced by the runner. Seed-2 replay
+  `p8-08-trade-sim-20260919p` passes with identical 1,304/816/170 coverage and independent baseline enforcement.
+  Sixteen Python verifier regressions include
+  independent inactive-action checks, buy/sell role enforcement, product/material membership and rejection
+  of a previously passed catalog regressing to inactive.
+  D14 validation: 83 report/manifest tests and 16 Python verifier tests pass; all four completed-family
+  reports still validate against their baselines. No P8-08 TODO has been marked complete.
+  The skill-sweep inventory contains 5,033 class/race/skill cases across both skill-tree XML
+  files, including global skills for all 17 classes and inherited starting-class skills below level 10.
+  Race-specific entries retain their race; a PC_ALL entry uses one ordinary Elyos subject per class.
+  Four inventory tests cover the complete source count, inheritance, race/class constraints and refusal
+  to omit unknown/missing/duplicate entries. Missing template `lvl` remains the shipped zero default.
+  Wording correction: passives cannot be cast (`CM_CASTSPELL` returns immediately in both implementations);
+  they require learning/passive-application evidence. The 34 gathering and 17 morphing cases use normal
+  gathering/crafting commands, not fabricated cast packets. Active/toggle/charge/maintain skills still
+  require actual casts. Partial runtime receipts are recorded below; no skill baseline exists yet.
+  Skill research also found §7 #60: passive application discarded the learned level. The focused
+  level-1/level-5 regression is red/green after matching Java's explicit-level overload; both cases pass.
+  The independent Python verifier now expands the same complete 5,033-case XML inventory separately
+  from the C# runtime inventory, checks class/race/inheritance/template levels, and requires both observed
+  learning and action-specific evidence (completed cast, correctly levelled passive, or profession product).
+  It rejects unknown routes, duplicate cases and any inactive/unreachable skill exemption. All 20 Python
+  verifier tests pass, including the four new skill-contract tests. This is validation infrastructure,
+  not runtime skill coverage by itself; the complete runtime scenario and baseline are still required.
+  Initial `SWEEP-SKILL` runtime wiring now declares an isolated Full SIM process and ordinary subjects
+  131/132, inventories every case before execution, verifies learning against packets and server state,
+  and routes passive application versus normal cast packets (including charge release). Class/level,
+  weapon/resource/chain prerequisites and previous-row cooldown/effect cleanup are explicit director
+  setup. Passive cases run first, then casts, then professions. It compiles with all 96 targeted
+  inventory/calendar/manifest/report tests passing before its first runtime attempt;
+  gathering/morphing routes now issue normal interaction packets, run real timers, and check shipped
+  products plus exact whole-inventory deltas. They restore their zero-failure-chance setup afterward,
+  but remain unexecuted until the sweep reaches them. Specialized cast prerequisites still need runtime
+  validation and completion. First runs fix fixture assumptions: fresh cooldown maps can be null;
+  independent passive cases need all prior passive conflicts cleared; normal skill entries intentionally
+  serialize level 1 in Java/C# `SkillEntryWriter`, while their server learned level follows the template.
+  The report now records and independently verifies both levels. Run `p8-08-skill-sim-20260919d` executes
+  378 cases before Homeward Bound (295) reveals an object-target packet used for a point-target skill.
+  Point casts now send the subject's coordinates with target type 1. No skill baseline or full coverage
+  is claimed; all failures and unattempted rows remain explicit.
+
+  Further skill replays pass all 376 passive cases. Run `p8-08-skill-sim-20260919f` reaches 401 total
+  successes after supplying/validating consumed bandages, then correctly rejects Remove Shock without
+  its crowd-control prerequisite. Director setup now applies a real shipped effect (stun, aerial hold,
+  stumble, bind or fear as required), checks the abnormal state and removes remaining setup effects
+  afterward; no target-status validation is disabled. Run h reaches 428 cases, run i reaches 503, and
+  run j reaches 642 after adding required counter windows and offhand equipment. Run j exposes a fixture
+  timing error: projectile travel was omitted, allowing the next case to target a dying creature.
+  The bot now includes travel in its hit time, excludes targets already about to die, and clears prior
+  target effects as explicit independent-case setup. Runtime replay is pending. The independent verifier
+  also checks profession skill/level, source/product membership and recipe race/material quantities;
+  all 21 Python regressions pass. Run k passes the projectile case, then the audit correctly rejects
+  a charge release at 100ms. Charge release now follows the shipped minimum and actual cast-speed
+  multiplier; dual-weapon, attack-speed and robot motion profiles are represented explicitly. Run l
+  reaches 918 successes before Bodyguard requires a party target. The sweep now uses four ordinary
+  subjects (two actors and two race-matched helpers), forms parties through normal invite/accept packets,
+  and supplies live player targets or dead targets with normal skill-revive acceptance as needed.
+  Run n reaches 1,064 cases before exhausting currently living starter mobs; the fixture now waits up
+  to 60 virtual seconds for normal respawns instead of fabricating spawns. Run o reaches 1,144 and
+  identifies Stealth's normal out-of-combat delay, now observed. Run `p8-08-skill-sim-20260919p` reaches
+  2,035 passed cases and fails on a global stigma's equipment prerequisite: level/class alone selected
+  a weapon for which Mage lacks mastery. Selection now also requires an already-learned mastery,
+  appropriate race, level ceiling and non-soulbound item; replay is pending. P8-08 remains incomplete
+  and uncommitted, with no skill baseline.
+  Run `p8-08-skill-sim-20260919r` reaches 2,526 passed cases, including the global-stigma mastery setup,
+  before the first Spiritmaster pet-order prerequisite. Compatible spirits are now selected from learned
+  summon skills and shipped pet-order mappings, with normal follow-up CM_SUMMON_CASTSPELL and separate
+  pet cast-completion evidence. Run s passes the first ten Spiritmaster cases, then reveals that the
+  setup selector included stationary servants (a SummonEffect subclass), not only controllable spirits;
+  that distinction is corrected and replay is pending. Setup now sets/asserts level 65 after class/daeva
+  eligibility, including explicit test-only daeva eligibility for starting-class cases. This fixes a
+  fixture ordering error that could cap a helper at level 9; reports record actual subject level and the
+  independent verifier rejects below-source-level subjects. Robot-required skills have explicit Embark
+  setup and robot timing, not a bypassed condition. All 22 verifier tests pass, including pet mapping,
+  compatible summon and actual pet cast evidence. No full skill coverage is claimed.
+  Run t reaches 2,729 successes before a lingering servant from the preceding case kills the next
+  target mid-cast. Independent-row cleanup now deletes only the actor's own summoned traps/servants
+  through their normal controllers. Run `p8-08-skill-sim-20260919u` reaches 3,070 passed cases, including
+  Spiritmaster and Priest, then stops at Cleric's Resurrection Loci: the dead helper still has its
+  setup-teleport protection, which party-area target filtering correctly rejects. Helpers now make a
+  normal four-metre approach to end that protection before death/player-target setup; replay pending.
+  Run v verifies that fix and reaches 3,834 successes; Aethertech's ride_robot-only skills need Embark's
+  implicit Keyblade prerequisite, now selected even without a separate weapon condition. Run w reaches
+  4,611 successes before repeated Gunner weapon swaps exhaust bag space: setup was granting a duplicate
+  on every swap. Setup now reuses matching unequipped inventory weapons (still granting a second weapon
+  when dual wielding needs it). This is fixture isolation/resource management, not a server/content
+  change; replay pending and P8-08 is still unchecked.
+  Run x passes all 4,982 passive/cast cases plus the Warrior's two gathering cases. Morphing succeeds,
+  but its test assertion wrongly expected starting-class DP to decrease; Java and C# deliberately
+  ignore DP changes for starting classes (§7 #63). The fixture now records before/after DP and checks
+  that exact rule, while advanced classes must pay the recipe cost. The independent verifier pins both
+  rules and rejects insufficient pre-craft DP; all 23 Python regressions pass. Full replay is pending.
+  Run y reaches 4,993 successes, including Warrior/Gladiator/Templar morphing, then correctly rejects
+  Scout setup with no DP left after the preceding Templar craft. Class-transition setup now supplies
+  DP before switching from the preceding advanced class, with no class changes during the tested action.
+  Run z changes subsequent timing/RNG use and exposes a legitimate incoming-hit interruption of Priest
+  self-heal 11504 after 2,868 cases. Non-NPC cast cases now relocate to their shipped starting location,
+  move normally to end teleport protection and assert no nearby aggressive NPC. This prevents a previous
+  case's fight contaminating a self/party/player-target case; production damage/cancellation stays enabled.
+  Java `CreatureController.onAttack` at `ce54b7931` confirms the interruption rule (also noted in §7 #34).
+  Complete run `p8-08-skill-sim-20260919aa` passes all 5,033 cases (376 passive, 4,606 cast, 34 gathering,
+  17 morphing), the log gate and teardown. Independent XML validation passes, and the sixth coverage
+  baseline (`skills-baseline.json`) is generated and enforced by the SIM runner. No skill is exempted.
+  Seed-2 replay `p8-08-skill-sim-20260919ab` also passes all 5,033 cases, log gating, teardown and enforced
+  independent baseline comparison. All six families now have complete seed-1 and seed-2 receipts.
+  Final broad regression gates pass: `p8-08-final-full-sim-20260919a` executes all 58 shared scenarios plus
+  five real-DAO regressions, and `p8-08-final-fast-20260919a` passes Fast. Solution: 4,086 passed / 20 explicit
+  prerequisite skips. Warning baseline stays 4,243 after fixing three new nullable warnings in the NPC
+  regression; no baseline increase. Null-loggers, clock-reads, custom-quest drafts, fidelity, all ten
+  quest-plan compiler checks and all 23 data-sweep verifier regressions pass. The existing L6/L8/L8C
+  isolated SIM receipts and Phase 8 LIVE receipts above remain valid; P8-08 adds no LIVE-only behavior.
+  Phase 8's Done-when is satisfied with these six baselines. Phase 9 is next; natural unassisted progression
+  remains deferred to its separate journey document. Implementation receipt: `4e2430517` (before this SHA-only
+  documentation/ledger finalization, following the preceding TODOs' receipt convention).
+
+  Final sweep coverage, independently validated on both seeds:
+
+  | Family | Total | Executed successfully | Unreachable | Inactive |
+  |---|---:|---:|---:|---:|
+  | Gatherables | 756 | 374 | 382 | 0 |
+  | Recipes | 12,494 | 12,494 | 0 | 0 |
+  | Bind points | 129 | 89 | 40 | 0 |
+  | Teleporter destinations | 284 | 238 | 46 | 0 |
+  | Trade catalogs | 2,290 | 1,304 | 816 | 170 |
+  | Class/race skill cases | 5,033 | 5,033 | 0 | 0 |
+  | **Total** | **20,986** | **19,532** | **1,284** | **170** |
+
+  Every family has zero Failed/Pending rows. The six baselines live in `parity-artifacts/e2e/data-sweeps/`;
+  per-row evidence remains under each run's `data-sweeps/` directory. Run a single family with
+  `scripts/sim/run-sim-tier.ps1 -Run <unique-id> -Tier Full -ProcessKey reset-SWEEP-SKILL` (substitute
+  `GATHER`, `CRAFT`, `BIND`, `TELEPORT` or `TRADE`); `scripts/e2e/run-full.ps1` includes all six.
+  These are GM-prepared execution/coverage tests, not a claim of autonomous character progression.
 
 **Done when:** E1–E11, S1–S7, G1–G6, L1–L8 and the capital play-through pass in the SIM Full tier (E1, E3, E6 in the
 Fast tier); E1, E5, E6, S1 and S2 pass in the LIVE Full tier; P8-08 baselines are committed.
@@ -1780,6 +2013,7 @@ exits (`docker compose events`) and MySQL errors.
 | D10 | Randomness in economy scenarios | Deterministic profile (fail chances 0) for pass/fail; separate soak profile with statistical assertions (gather success ≈ 74%, craft ≈ 79% at skill lead 0) | Proposed |
 | D11 | Enable real geodata in production when P9-01 lands (geo defaults to on) | Yes as a parity fix, after P9-03 measures memory | **Approved** 2026-09-17 |
 | D12 | How Java golden fixtures are generated against `lastCompletedJavaCommit` | Bring the generator tests forward onto the spec revision | **Approved** 2026-09-17: branches or worktrees in `../aion-server` are allowed when needed |
+| D14 | Trade catalogs attached to NPCs without their corresponding trade action | Report separately as inactive content, not successful transactions or missing-spawn rows | **Approved** 2026-09-19: do not enable new vendors; independently verify the missing action from shipped NPC data |
 
 ---
 
@@ -1846,6 +2080,20 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 54 | Feeding an item outside the pet's accepted food groups dereferences nullable `foodType.Value` before the intended refusal path | `services/toypet/PetService.java:checkFeeding` and `model/templates/pet/PetFlavour.java:isLovedFood` at `ce54b7931` accept null, return false, then unlock/refuse the item; C# throws before that branch | Discovered during P8-07/L5 protocol research. Open; requires a normal-packet invalid-food regression and parity correction, not an allowlist |
 | 55 | A login before 09:00 prevents the next daily passport reward at 09:00, even though the stamp count increments (inherited defect) | `services/AtreianPassportService.java:getAttendDay` at `ce54b7931` subtracts nine hours, but `model/account/PassportsList.java:hasPassportForDay` compares the unshifted calendar date | L6 SIM `p8-07-l6-sim-20260919b` reproduced stamp 2 with only the prior claimed reward after the real cron callback. E2E-authorized Java divergence: subtract nine hours in C# duplicate detection too. Working-tree fix, midnight/pre-reset/exact-reset/late-day regressions and end-to-end `p8-07-l6-sim-20260919c` pass. No content/date edits or allowlist |
 | 56 | Saving an event with no stored buff rows logs `InvalidOperationException: BatchCommands must contain a command` and returns false after deleting its old rows | `dao/EventDAO.java:storeBuffData` at `ce54b7931` uses JDBC `executeBatch`, which accepts an empty batch; C# `MySqlBatch.ExecuteNonQuery` rejects it | L8 SIM `p8-07-l8-sim-20260919h` completed quest/drop/buff gameplay but failed the log gate with fingerprints `5a9120cb`, `d7538e16`, `2fda1866`, `bd2c0253`. Working-tree parity correction skips only empty batch execution, preserving deletion. Docker regression covers initially empty, nonempty roundtrip, clearing, repeated clearing and unrelated-event preservation. All pass with the event journey in `p8-07-l8-sim-20260919i`; no allowlist |
+
+| 57 | Crafting a limited-production recipe without combo products throws after deleting the recipe and before granting its product; the repeating interaction timer remains active | `model/templates/recipe/RecipeTemplate.java:getComboProduct` and `services/craft/CraftService.java:finishCrafting` at `ce54b7931`: JAXB leaves an absent combo list null, whereas C# XmlSerializer supplies an empty list and the port indexes element zero | P8-08 `SWEEP-CRAFT` run `p8-08-craft-sim-20260919a` reaches recipe `155001739` after 1,738 successful crafts and fails with timer fingerprint `4eb592c5`. XML regression reproduces the empty-list exception. Working-tree parity correction treats only an empty combo list as absent, retaining ordinary one-based combo lookup and out-of-range behavior for populated lists. Full sweep `p8-08-craft-sim-20260919d` crafts all 12,494 recipes and passes the log gate, teardown and independent XML verifier. No allowlist or recipe-content change |
+
+| 58 | Optional flight-path validation indexes paths by teleport destination ID rather than the wire flight/path ID; e.g. Akarios-to-Melponeh destination 13 selects path 13 in Altgard instead of path 5 in Poeta (inherited defect) | `services/teleport/TeleportService.java:teleport` at `ce54b7931` uses `getPathTemplate(location.getLocId())`; `npc_teleporter.xml` encodes that route as flight 5001, and `ai/HiddenTeleportNpcAI.java` encodes wire flights as path ID times 1000 plus 1 | P8-08 teleporter research. Open; `gameserver.security.validation.flypath` defaults to false in both trees and remains unchanged. Sweep flight movement uses the shipped wire-selected path and its full duration; no security override or allowlist |
+
+| 59 | Some shipped NPC catalogs cannot be used: their NPC exposes no corresponding trade action (e.g. Oz, 203081, has goods tab 132 but no BUY action) | `model/gameobjects/Npc.java:canSell` requires both a catalog and BUY support; `data/static_data/npcs/npc_templates.xml` and `npc_trade_list.xml` at `ce54b7931` contain the same mismatch as C# | P8-08 `SWEEP-TRADE` run `p8-08-trade-sim-20260919a` buys and sells through four catalogs, then stops at 203081. Inherited data inconsistency, not a C# parity fix. D14 approves a separate Inactive status backed by independent source-action verification. No new NPC actions/vendors, content changes or allowlist; inactive is never counted as a successful transaction |
+
+| 60 | Learning/upgrading a passive applies the template's level instead of the player's learned level | `services/SkillLearnService.java:onLearnSkill` at `ce54b7931` calls `SkillEngine.applyEffectDirectly(skillTemplate, skillLevel, player, player)`; C# used the ID-only overload, which substitutes `skillTemplate.GetLvl()` | Found during P8-08 skill inventory research. Focused regression with passive 40 passes at learned level 1 but fails at level 5 (actual effect level 1). Correction calls the existing template-and-level overload exactly as Java does. Full skill sweeps aa/ab pass all 376 passive cases and independently verify learned/effect levels. No content change or allowlist |
+
+| 61 | An NPC returning from an active pursuit can remain in RETURNING forever with no target, preventing vendor interaction (inherited defect) | `controllers/movement/NpcMoveController.java:returnToLastStepOrSpawn/moveToPoint`, `controllers/NpcController.java:loseAggro` and `ai/handler/ReturningEventHandler.java:onNotAtHome` at `ce54b7931`: target is cleared, but switching an active TARGET_OBJECT movement to POINT returns false | P8-08 trade runs m/n reach 1,252 successful catalogs then stall at buyer 804454. Diagnostic replay records unchanged coordinates for 30 virtual seconds, movement allowed, speed 6 and no target. Focused controller regression passes an idle return but fails a pursuit return even after 60 seconds. E2E-authorized Java divergence: abort only the old non-point movement before selecting the return destination, retaining back steps. Both focused return cases pass; full trade replays o/p exercise 1,304 catalogs including this buyer with no failed/pending rows and clean log gates. Final solution, Fast and shared Full SIM gates pass. No AI-state forcing, vendor enablement or allowlist |
+
+| 62 | Globally declared stigma skills can require weapons outside a class's learned masteries (inherited data inconsistency) | `data/static_data/skill_tree/skill_tree.xml`, `skills/skill_templates.xml` and `dataholders/SkillTreeData.java:afterUnmarshal/getTemplatesForSkill` at `ce54b7931`: 11504–11507 omit class restrictions and expand to every class; Ferocious Strike 11506 excludes spellbooks, the starting Mage's only weapon mastery | P8-08 skill runs p/q stop after 2,035 successful cases at MAGE:ELYOS:11506. No production/data change: the exhaustive GM-assisted sweep records and temporarily grants a missing mastery only for a demonstrably classless skill-tree entry, then unequips its weapon and removes that mastery. This tests execution, not ordinary character progression. Full aa/ab replays pass all 5,033 cases, including this setup; no inactive/unreachable exemption or allowlist |
+
+| 63 | Starting-class DP cannot change, including when test-granted global morphing consumes a recipe (inherited rule / artificial setup boundary) | `model/gameobjects/player/PlayerCommonData.java:setDp`, `services/craft/CraftService.java:startCrafting` and `data/static_data/skill_tree/craft_skill_tree.xml` at `ce54b7931`: morphing is global at level 10, while `setDp` returns immediately for starting classes | P8-08 skill run x passes 4,984 cases and crafts the Warrior's morph product, then a test-only DP-zero assertion fails. No Java/C# divergence or production change: the GM-assisted class-expansion sweep must retain sufficient director-supplied DP across class setup and assert unchanged DP for starting classes, exact recipe-cost consumption for advanced classes. This does not claim natural pre-ascension morphing. Both rules are independently validated with negative mutation tests; no allowance or action bypass |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 
