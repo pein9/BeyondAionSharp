@@ -74,6 +74,16 @@ public sealed class BotApiTests
 		AssertPacket<CM_GET_MAIL_ATTACHMENT>(api.GetMailAttachment(42, 0));
 		AssertPacket<CM_DELETE_MAIL>(api.DeleteMail(42));
 		AssertPacket<CM_INVITE_TO_GROUP>(api.InviteToGroup("Daeva"));
+		AssertPacket<CM_PLAYER_STATUS_INFO>(api.LeaveGroup());
+		AssertPacket<CM_LEGION>(api.CreateLegion("Botlegion"));
+		AssertPacket<CM_LEGION>(api.InviteToLegion("Daeva"));
+		AssertPacket<CM_SHOW_FRIENDLIST>(api.RequestFriendList());
+		AssertPacket<CM_FRIEND_ADD>(api.AddFriend("Daeva", "Hello"));
+		AssertPacket<CM_FRIEND_DEL>(api.DeleteFriend("Daeva"));
+		AssertPacket<CM_FRIEND_SET_MEMO>(api.SetFriendMemo("Daeva", "Memo"));
+		AssertPacket<CM_BLOCK_ADD>(api.BlockPlayer("Daeva", "Reason"));
+		AssertPacket<CM_BLOCK_DEL>(api.UnblockPlayer("Daeva"));
+		AssertPacket<CM_BLOCK_SET_REASON>(api.SetBlockReason("Daeva", "Revised"));
 		AssertPacket<CM_CHAT_MESSAGE_PUBLIC>(api.Say("hello"));
 		AssertPacket<CM_CHAT_MESSAGE_WHISPER>(api.Whisper("Daeva", "hello"));
 		AssertPacket<CM_DUEL_REQUEST>(api.Duel(50));

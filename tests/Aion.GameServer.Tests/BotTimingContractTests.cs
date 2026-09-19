@@ -102,6 +102,23 @@ public sealed class BotTimingContractTests
 	}
 
 	[Fact]
+	public void ReentryHonorsRoundedPersistedLogoutWithoutShorteningCrashDelay()
+	{
+		var clock = new ManualTimeProvider(DateTimeOffset.UnixEpoch.AddMilliseconds(650));
+		var timing = new BotTimingContract(clock);
+		timing.RecordLeftWorld(crashed: false);
+		var roundedLogout = DateTimeOffset.UnixEpoch.AddSeconds(1);
+		Assert.Equal(TimeSpan.FromMilliseconds(10_350), timing.TimeUntilEnterWorld(roundedLogout));
+		clock.Advance(TimeSpan.FromSeconds(10));
+		Assert.Equal(TimeSpan.Zero, timing.TimeUntilEnterWorld());
+		Assert.Equal(TimeSpan.FromMilliseconds(350), timing.TimeUntilEnterWorld(roundedLogout));
+		clock.Advance(TimeSpan.FromMilliseconds(350));
+		Assert.Equal(TimeSpan.Zero, timing.TimeUntilEnterWorld(roundedLogout));
+		timing.RecordLeftWorld(crashed: true);
+		Assert.Equal(TimeSpan.FromSeconds(20), timing.TimeUntilEnterWorld(clock.GetUtcNow()));
+	}
+
+	[Fact]
 	public void ComputesClientHitAndLastHitTimesFromProductionMotionDataXml()
 	{
 		var motions = BotMotionTiming.Load(Path.Combine(RepoRoot(), "game-server", "data", "static_data", "skills", "motion_times.xml"));

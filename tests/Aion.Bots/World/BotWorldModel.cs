@@ -4,7 +4,7 @@ using Aion.GameServer.Network.Aion.ServerPackets;
 namespace Aion.Bots.World;
 
 /// <summary>A client-side view of the world derived exclusively from decoded server packets.</summary>
-public sealed class BotWorldModel
+public sealed partial class BotWorldModel
 {
 	public const int KinahItemId = 182_400_001;
 
@@ -18,6 +18,8 @@ public sealed class BotWorldModel
 	private readonly HashSet<int> acceptedQuestIds = [];
 	private readonly HashSet<int> completedQuestIds = [];
 	private readonly List<BotSystemMessage> systemMessages = [];
+	private readonly Dictionary<int, byte> lootStatuses = [];
+	public IReadOnlyDictionary<int, byte> LootStatuses => lootStatuses;
 
 	public IReadOnlyDictionary<int, BotKnownObject> Objects => objects;
 	public IReadOnlyDictionary<int, BotInventoryItem> Inventory => inventory;
@@ -62,6 +64,7 @@ public sealed class BotWorldModel
 	public void BeginWorldReload()
 	{
 		objects.Clear();
+		lootStatuses.Clear();
 		Dialog = null;
 		Question = null;
 		Loot = null;
@@ -84,7 +87,10 @@ public sealed class BotWorldModel
 		else if (type == typeof(SM_MOVE))
 			ApplyMove(packet);
 		else if (type == typeof(SM_DELETE))
+		{
 			objects.Remove(packet.Get<int>("objectId"));
+			lootStatuses.Remove(packet.Get<int>("objectId"));
+		}
 		else if (type == typeof(SM_TELEPORT_LOC))
 			ApplyTeleport(packet);
 		else if (type == typeof(SM_STATS_INFO))
@@ -148,6 +154,8 @@ public sealed class BotWorldModel
 			ApplySystemMessage(packet);
 		else if (type == typeof(SM_EXCHANGE_REQUEST))
 			ExchangeRequestFrom = packet.Get<string>("receiver");
+		else
+			ApplySocial(packet);
 	}
 
 	private void ApplyPlayerSpawn(DecodedBotServerPacket packet)
@@ -416,7 +424,9 @@ public sealed class BotWorldModel
 	private void ApplyLootStatus(DecodedBotServerPacket packet)
 	{
 		var status = packet.Get<byte>("status");
-		if (status == 2)
+		lootStatuses[packet.Get<int>("targetObjectId")] = status;
+		// DropService sends the item list before OPEN_DROP_LIST. Preserve that list for this corpse.
+		if (status == 2 && Loot?.TargetObjectId != packet.Get<int>("targetObjectId"))
 			Loot = new BotLootWindow(packet.Get<int>("targetObjectId"), []);
 		else if (status == 3)
 			Loot = null;

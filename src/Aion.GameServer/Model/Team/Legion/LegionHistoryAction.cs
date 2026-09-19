@@ -16,31 +16,36 @@ public sealed class LegionHistoryAction
         WAREHOUSE,
     }
 
-    public static readonly LegionHistoryAction CREATE = new LegionHistoryAction(0, Type.LEGION); // No parameters
-    public static readonly LegionHistoryAction JOIN = new LegionHistoryAction(1, Type.LEGION); // Parameter: name
-    public static readonly LegionHistoryAction KICK = new LegionHistoryAction(2, Type.LEGION); // Parameter: name
-    public static readonly LegionHistoryAction LEVEL_UP = new LegionHistoryAction(3, Type.LEGION); // Parameter: legion level
-    public static readonly LegionHistoryAction APPOINTED = new LegionHistoryAction(4, Type.LEGION); // Parameter: legion level
-    public static readonly LegionHistoryAction EMBLEM_REGISTER = new LegionHistoryAction(5, Type.LEGION); // No parameters
-    public static readonly LegionHistoryAction EMBLEM_MODIFIED = new LegionHistoryAction(6, Type.LEGION); // No parameters
+    public static readonly LegionHistoryAction CREATE = new LegionHistoryAction(nameof(CREATE), 0, Type.LEGION); // No parameters
+    public static readonly LegionHistoryAction JOIN = new LegionHistoryAction(nameof(JOIN), 1, Type.LEGION); // Parameter: name
+    public static readonly LegionHistoryAction KICK = new LegionHistoryAction(nameof(KICK), 2, Type.LEGION); // Parameter: name
+    public static readonly LegionHistoryAction LEVEL_UP = new LegionHistoryAction(nameof(LEVEL_UP), 3, Type.LEGION); // Parameter: legion level
+    public static readonly LegionHistoryAction APPOINTED = new LegionHistoryAction(nameof(APPOINTED), 4, Type.LEGION); // Parameter: legion level
+    public static readonly LegionHistoryAction EMBLEM_REGISTER = new LegionHistoryAction(nameof(EMBLEM_REGISTER), 5, Type.LEGION); // No parameters
+    public static readonly LegionHistoryAction EMBLEM_MODIFIED = new LegionHistoryAction(nameof(EMBLEM_MODIFIED), 6, Type.LEGION); // No parameters
     // 7 to 10 are not used anymore or never implemented
-    public static readonly LegionHistoryAction DEFENSE = new LegionHistoryAction(11, Type.REWARD); // Parameter: name = kinah amount, description = fortress id
-    public static readonly LegionHistoryAction OCCUPATION = new LegionHistoryAction(12, Type.REWARD); // Parameter: name = kinah amount, description = fortress id
-    public static readonly LegionHistoryAction LEGION_RENAME = new LegionHistoryAction(13, Type.LEGION); // Parameter: old name, new name
-    public static readonly LegionHistoryAction CHARACTER_RENAME = new LegionHistoryAction(14, Type.LEGION); // Parameter: old name, new name
-    public static readonly LegionHistoryAction ITEM_DEPOSIT = new LegionHistoryAction(15, Type.WAREHOUSE); // Parameter: name
-    public static readonly LegionHistoryAction ITEM_WITHDRAW = new LegionHistoryAction(16, Type.WAREHOUSE); // Parameter: name
-    public static readonly LegionHistoryAction KINAH_DEPOSIT = new LegionHistoryAction(17, Type.WAREHOUSE); // Parameter: name
-    public static readonly LegionHistoryAction KINAH_WITHDRAW = new LegionHistoryAction(18, Type.WAREHOUSE); // Parameter: name
+    public static readonly LegionHistoryAction DEFENSE = new LegionHistoryAction(nameof(DEFENSE), 11, Type.REWARD); // Parameter: name = kinah amount, description = fortress id
+    public static readonly LegionHistoryAction OCCUPATION = new LegionHistoryAction(nameof(OCCUPATION), 12, Type.REWARD); // Parameter: name = kinah amount, description = fortress id
+    public static readonly LegionHistoryAction LEGION_RENAME = new LegionHistoryAction(nameof(LEGION_RENAME), 13, Type.LEGION); // Parameter: old name, new name
+    public static readonly LegionHistoryAction CHARACTER_RENAME = new LegionHistoryAction(nameof(CHARACTER_RENAME), 14, Type.LEGION); // Parameter: old name, new name
+    public static readonly LegionHistoryAction ITEM_DEPOSIT = new LegionHistoryAction(nameof(ITEM_DEPOSIT), 15, Type.WAREHOUSE); // Parameter: name
+    public static readonly LegionHistoryAction ITEM_WITHDRAW = new LegionHistoryAction(nameof(ITEM_WITHDRAW), 16, Type.WAREHOUSE); // Parameter: name
+    public static readonly LegionHistoryAction KINAH_DEPOSIT = new LegionHistoryAction(nameof(KINAH_DEPOSIT), 17, Type.WAREHOUSE); // Parameter: name
+    public static readonly LegionHistoryAction KINAH_WITHDRAW = new LegionHistoryAction(nameof(KINAH_WITHDRAW), 18, Type.WAREHOUSE); // Parameter: name
 
+    private readonly string name;
     private readonly byte id;
     private readonly Type type;
 
-    private LegionHistoryAction(int id, Type type)
+    private LegionHistoryAction(string name, int id, Type type)
     {
+        this.name = name;
         this.id = (byte)id;
         this.type = type;
     }
+
+    // Java Enum.toString() supplies the constant name persisted by LegionDAO.InsertHistory.
+    public override string ToString() => name;
 
     public byte GetId()
     {

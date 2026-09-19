@@ -14,7 +14,7 @@ public sealed class BotServerPacketDecoderTests
 	[Fact]
 	public void DecoderInventoryContainsExpectedBotPerceptionPackets()
 	{
-		Assert.Equal(62, decoder.PacketTypes.Count);
+		Assert.Equal(83, decoder.PacketTypes.Count);
 		Assert.Contains(typeof(SM_MESSAGE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_EMOTION), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_SYSTEM_MESSAGE), decoder.PacketTypes);
@@ -65,6 +65,9 @@ public sealed class BotServerPacketDecoderTests
 	{
 		foreach (var packetType in decoder.PacketTypes.OrderBy(type => type.Name, StringComparer.Ordinal))
 		{
+			if (BotSocialPacketTests.AssertAuditedWireContract(packetType)) continue;
+			if (BotAlliancePacketTests.AssertAuditedWireContract(packetType)) continue;
+			if (BotExtendedSocialPacketTests.AssertAuditedWireContract(packetType)) continue;
 			if (packetType == typeof(SM_PRICES))
 			{
 				// No existing Java-generated fixture for this connection-dependent packet. Pin its complete,
@@ -87,6 +90,24 @@ public sealed class BotServerPacketDecoderTests
 
 	[Fact]
 	public void PricesPacketHasExactlyThreeUnsignedPercentages() => AssertPricesWireContract();
+
+	[Fact]
+	public void AbyssRankGoldenPacketUpdatesClientRewardAndKillCounters()
+	{
+		using var fixture = LoadFixture("SM_ABYSS_RANK.json");
+		byte[] body = Convert.FromHexString(fixture.RootElement.GetProperty("cases")[0].GetProperty("payloadHex").GetString()!);
+		var world = new Aion.Bots.World.BotWorldModel();
+		world.Apply(decoder.Decode(typeof(SM_ABYSS_RANK), body));
+		Assert.Equal(new Aion.Bots.World.BotAbyssRank(1_000_000, 50_000, 1, 12_345, 1234, 7,
+			new(12, 3000, 400), new(56, 80_000, 9000), new(7, 200, 30)), world.AbyssRank);
+		for (int length = 0; length < body.Length; length++)
+			Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_ABYSS_RANK), body[..length]));
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_ABYSS_RANK), [.. body, 0]));
+		// AP counters are Q fields, not truncated to int even for a rich player.
+		System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(body, 5_000_000_000L);
+		world.Apply(decoder.Decode(typeof(SM_ABYSS_RANK), body));
+		Assert.Equal(5_000_000_000L, world.AbyssRank!.Ap);
+	}
 
 	private void AssertPricesWireContract()
 	{
@@ -296,6 +317,15 @@ public sealed class BotServerPacketDecoderTests
 			Assert.Equal(0x1A3D5948, decoded.Get<int>("encodedKey"));
 			return;
 		}
+		if (packetType == typeof(SM_LEAVE_GROUP_MEMBER))
+		{
+			Assert.Equal(0, decoded.Get<int>("groupId"));
+			Assert.Equal((byte)0, decoded.Get<byte>("reserved"));
+			Assert.Equal(63, decoded.Get<int>("teamType"));
+			Assert.Equal(0, decoded.Get<int>("teamSubType"));
+			Assert.Equal((ushort)0, decoded.Get<ushort>("reserved2"));
+			return;
+		}
 		if (packetType == typeof(SM_SKILL_LIST))
 		{
 			Assert.NotEmpty(decoded.Get<List<IReadOnlyDictionary<string, object?>>>("skills"));
@@ -309,6 +339,11 @@ public sealed class BotServerPacketDecoderTests
 		if (packetType == typeof(SM_QUEST_LIST))
 		{
 			Assert.Empty(decoded.Get<List<IReadOnlyDictionary<string, object?>>>("quests"));
+			return;
+		}
+		if (packetType == typeof(SM_FRIEND_LIST) || packetType == typeof(SM_BLOCK_LIST))
+		{
+			Assert.Empty(decoded.Get<List<IReadOnlyDictionary<string, object?>>>(packetType == typeof(SM_FRIEND_LIST) ? "friends" : "blocks"));
 			return;
 		}
 		if (packetType == typeof(SM_ENTER_WORLD_CHECK))

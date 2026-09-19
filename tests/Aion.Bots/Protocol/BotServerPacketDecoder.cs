@@ -4,7 +4,7 @@ using Aion.GameServer.Network.Aion.ServerPackets;
 namespace Aion.Bots.Protocol;
 
 /// <summary>Partial, bot-facing decoders for the server packets an honest client must perceive.</summary>
-public sealed class BotServerPacketDecoder
+public sealed partial class BotServerPacketDecoder
 {
 	private delegate IReadOnlyDictionary<string, object?> DecodeBody(ReadOnlySpan<byte> body);
 
@@ -68,6 +68,27 @@ public sealed class BotServerPacketDecoder
 			[typeof(SM_SELL_ITEM)] = DecodeSellItem,
 			[typeof(SM_REPURCHASE)] = DecodeRepurchase,
 			[typeof(SM_GROUP_INFO)] = DecodeGroupInfo,
+			[typeof(SM_GROUP_LOOT)] = DecodeGroupLoot,
+			[typeof(SM_GROUP_MEMBER_INFO)] = DecodeGroupMember,
+			[typeof(SM_ALLIANCE_INFO)] = DecodeAllianceInfo,
+			[typeof(SM_ALLIANCE_MEMBER_INFO)] = DecodeAllianceMember,
+			[typeof(SM_LEAVE_GROUP_MEMBER)] = DecodeLeaveGroup,
+			[typeof(SM_DUEL)] = DecodeDuel,
+			[typeof(SM_ABYSS_RANK)] = DecodeAbyssRank,
+			[typeof(SM_FRIEND_LIST)] = DecodeFriendList,
+			[typeof(SM_FRIEND_UPDATE)] = DecodeFriendUpdate,
+			[typeof(SM_FRIEND_NOTIFY)] = DecodeFriendNotify,
+			[typeof(SM_FRIEND_RESPONSE)] = DecodeSocialResponse,
+			[typeof(SM_BLOCK_LIST)] = DecodeBlockList,
+			[typeof(SM_BLOCK_RESPONSE)] = DecodeSocialResponse,
+			[typeof(SM_LEGION_INFO)] = DecodeLegionInfo,
+			[typeof(SM_LEGION_ADD_MEMBER)] = DecodeLegionAddMember,
+			[typeof(SM_LEGION_MEMBERLIST)] = DecodeLegionMembers,
+			[typeof(SM_FIND_GROUP)] = DecodeFindGroup,
+			[typeof(SM_RECALLED_BY_OTHER)] = DecodeRecall,
+			[typeof(SM_LEGION_UPDATE_EMBLEM)] = DecodeLegionEmblem,
+			[typeof(SM_LEGION_HISTORY)] = DecodeLegionHistory,
+			[typeof(SM_LEGION_EDIT)] = DecodeLegionEdit,
 			[typeof(SM_MAIL_SERVICE)] = DecodeMailService,
 			[typeof(SM_EXCHANGE_REQUEST)] = DecodeExchangeRequest,
 			[typeof(SM_EXCHANGE_CONFIRMATION)] = DecodeExchangeConfirmation,
@@ -777,9 +798,12 @@ public sealed class BotServerPacketDecoder
 	{
 		var r = new PacketBodyReader(body);
 		var fields = Fields(("groupId", r.ReadInt32()), ("leaderId", r.ReadInt32()), ("mapId", r.ReadInt32()));
-		r.Skip(8 * 4 + 4 + 1);
+		fields["lootRules"] = ReadAllianceLootRules(ref r);
+		r.Skip(4 + 1);
 		fields["teamType"] = r.ReadInt32();
 		fields["teamSubType"] = r.ReadInt32();
+		fields["messageId"] = r.ReadInt32(); fields["message"] = r.ReadString();
+		RequireSocialEnd(r);
 		return fields;
 	}
 

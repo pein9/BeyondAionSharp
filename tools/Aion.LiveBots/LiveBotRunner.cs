@@ -57,6 +57,20 @@ public static partial class LiveBotRunner
 			return await RunE6Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "E7" }])
 			return await RunE7Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "S1" }])
+			return await RunS1Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "S2" }])
+			return await RunS2Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "S3" }])
+			return await RunS3Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "S4" }])
+			return await RunS4Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "S5" }])
+			return await RunS5Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "S6" }])
+			return await RunS6Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "S7" }])
+			return await RunS7Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "CAPITAL" }])
 			return await RunCapitalAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "Q4P" }])
@@ -657,7 +671,10 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 			throw new InvalidDataException($"Fresh L0 account {account} unexpectedly already has a character.");
 	}
 
-	public async Task CreateCharacterAsync(CancellationToken cancellationToken)
+	public Task CreateCharacterAsync(CancellationToken cancellationToken) =>
+		CreateCharacterAsync(cancellationToken, PlayerClass.WARRIOR);
+
+	public async Task CreateCharacterAsync(CancellationToken cancellationToken, PlayerClass playerClass)
 	{
 		var creation = new CharacterCreationData
 		{
@@ -666,7 +683,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 			CharacterName = characterName,
 			Gender = 0,
 			Race = (int)race,
-			PlayerClass = (int)PlayerClass.WARRIOR,
+			PlayerClass = (int)playerClass,
 			Height = 1,
 		};
 		await SendGameAsync(api.CreateCharacter(creation), cancellationToken);

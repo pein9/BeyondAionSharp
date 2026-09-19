@@ -321,10 +321,11 @@ public class LegionDAO
         {
             preparedStatement.Parameters.Add(new MySqlParameter { Value = legionId });
             preparedStatement.Parameters.Add(new MySqlParameter { Value = legionEmblem.GetEmblemId() });
-            preparedStatement.Parameters.Add(new MySqlParameter { Value = legionEmblem.GetColor_a() });
-            preparedStatement.Parameters.Add(new MySqlParameter { Value = legionEmblem.GetColor_r() });
-            preparedStatement.Parameters.Add(new MySqlParameter { Value = legionEmblem.GetColor_g() });
-            preparedStatement.Parameters.Add(new MySqlParameter { Value = legionEmblem.GetColor_b() });
+            // Java setByte stores signed values in the schema's signed TINYINT color columns.
+            preparedStatement.Parameters.Add(new MySqlParameter { Value = unchecked((sbyte)legionEmblem.GetColor_a()) });
+            preparedStatement.Parameters.Add(new MySqlParameter { Value = unchecked((sbyte)legionEmblem.GetColor_r()) });
+            preparedStatement.Parameters.Add(new MySqlParameter { Value = unchecked((sbyte)legionEmblem.GetColor_g()) });
+            preparedStatement.Parameters.Add(new MySqlParameter { Value = unchecked((sbyte)legionEmblem.GetColor_b()) });
             preparedStatement.Parameters.Add(new MySqlParameter { Value = legionEmblem.GetEmblemType().ToString() });
             preparedStatement.Parameters.Add(new MySqlParameter { Value = legionEmblem.GetCustomEmblemData() });
             preparedStatement.ExecuteNonQuery();
@@ -350,10 +351,10 @@ public class LegionDAO
         public void HandleInsertUpdate(MySqlCommand stmt)
         {
             stmt.Parameters.Add(new MySqlParameter { Value = legionEmblem.GetEmblemId() });
-            stmt.Parameters.Add(new MySqlParameter { Value = legionEmblem.GetColor_a() });
-            stmt.Parameters.Add(new MySqlParameter { Value = legionEmblem.GetColor_r() });
-            stmt.Parameters.Add(new MySqlParameter { Value = legionEmblem.GetColor_g() });
-            stmt.Parameters.Add(new MySqlParameter { Value = legionEmblem.GetColor_b() });
+            stmt.Parameters.Add(new MySqlParameter { Value = unchecked((sbyte)legionEmblem.GetColor_a()) });
+            stmt.Parameters.Add(new MySqlParameter { Value = unchecked((sbyte)legionEmblem.GetColor_r()) });
+            stmt.Parameters.Add(new MySqlParameter { Value = unchecked((sbyte)legionEmblem.GetColor_g()) });
+            stmt.Parameters.Add(new MySqlParameter { Value = unchecked((sbyte)legionEmblem.GetColor_b()) });
             stmt.Parameters.Add(new MySqlParameter { Value = legionEmblem.GetEmblemType().ToString() });
             stmt.Parameters.Add(new MySqlParameter { Value = legionEmblem.GetCustomEmblemData() });
             stmt.Parameters.Add(new MySqlParameter { Value = legionId });
@@ -391,9 +392,11 @@ public class LegionDAO
         {
             while (resultSet.Read())
             {
-                legionEmblem.SetEmblem(resultSet.GetByte(resultSet.GetOrdinal("emblem_id")), resultSet.GetByte(resultSet.GetOrdinal("color_a")), resultSet.GetByte(resultSet.GetOrdinal("color_r")),
-                    resultSet.GetByte(resultSet.GetOrdinal("color_g")), resultSet.GetByte(resultSet.GetOrdinal("color_b")), Enum.Parse<LegionEmblemType>(resultSet.GetString(resultSet.GetOrdinal("emblem_type"))),
-                    resultSet.GetFieldValue<byte[]>(resultSet.GetOrdinal("emblem_data")));
+                // JDBC getByte is signed; getBytes returns null for a default emblem's SQL NULL blob.
+                int dataColumn = resultSet.GetOrdinal("emblem_data");
+                legionEmblem.SetEmblem(resultSet.GetByte(resultSet.GetOrdinal("emblem_id")), resultSet.GetSByte(resultSet.GetOrdinal("color_a")), resultSet.GetSByte(resultSet.GetOrdinal("color_r")),
+                    resultSet.GetSByte(resultSet.GetOrdinal("color_g")), resultSet.GetSByte(resultSet.GetOrdinal("color_b")), Enum.Parse<LegionEmblemType>(resultSet.GetString(resultSet.GetOrdinal("emblem_type"))),
+                    resultSet.IsDBNull(dataColumn) ? null! : resultSet.GetFieldValue<byte[]>(dataColumn));
             }
         }
     }

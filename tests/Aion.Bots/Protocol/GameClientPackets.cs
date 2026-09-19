@@ -148,8 +148,21 @@ public static class GameClientPackets
 	});
 	public static BotClientPacket DeleteItem(int itemObjectId) => Create<CM_DELETE_ITEM>(w => w.D(itemObjectId));
 	public static BotClientPacket DeleteQuest(int questId) => Create<CM_DELETE_QUEST>(w => w.D(questId));
+	public static BotClientPacket ShareQuest(int questId) => Create<CM_QUEST_SHARE>(w => w.D(questId));
 	public static BotClientPacket StartLoot(int targetObjectId, byte action) => Create<CM_START_LOOT>(w => { w.D(targetObjectId); w.C(action); });
 	public static BotClientPacket LootItem(int targetObjectId, byte index) => Create<CM_LOOT_ITEM>(w => { w.D(targetObjectId); w.C(index); });
+	public static BotClientPacket DistributionSettings(int lootRule, int misc, int common, int superior,
+		int heroic, int fabled, int eternal, int mythic, int isLeague = 0) => Create<CM_DISTRIBUTION_SETTINGS>(w =>
+	{
+		w.D(isLeague); w.D(lootRule); w.D(misc); w.D(common); w.D(superior); w.D(heroic);
+		w.D(fabled); w.D(eternal); w.D(mythic); w.D(2);
+	});
+	public static BotClientPacket GroupLoot(int groupId, int index, int itemId, int corpseId, byte distributionMode,
+		bool roll, long bid = 0) => Create<CM_GROUP_LOOT>(w =>
+	{
+		w.D(groupId); w.D(index); w.D(0); w.D(itemId); w.C(0); w.C(0); w.C(0);
+		w.D(corpseId); w.C(distributionMode); w.D(roll ? 1 : 0); w.Q(bid);
+	});
 	public static BotClientPacket ShowDialog(int targetObjectId) => Create<CM_SHOW_DIALOG>(w => w.D(targetObjectId));
 	public static BotClientPacket DialogSelect(int targetObjectId, ushort actionId, ushort rewardIndex, ushort lastPage, int questId, ushort unknown = 0) =>
 		Create<CM_DIALOG_SELECT>(w => { w.D(targetObjectId); w.UH(actionId); w.UH(rewardIndex); w.UH(lastPage); w.D(questId); w.UH(unknown); });
@@ -192,6 +205,37 @@ public static class GameClientPackets
 	public static BotClientPacket ChatMessageWhisper(string name, string message) => Create<CM_CHAT_MESSAGE_WHISPER>(w => { w.S(name); w.S(message); });
 	public static BotClientPacket InviteToGroup(byte inviteType, string playerName) => Create<CM_INVITE_TO_GROUP>(w => { w.C(inviteType); w.S(playerName); });
 	public static BotClientPacket DuelRequest(int objectId) => Create<CM_DUEL_REQUEST>(w => w.D(objectId));
+	public static BotClientPacket FindGroupList(bool applications = false) => Create<CM_FIND_GROUP>(w => w.C(applications ? 4 : 0));
+	public static BotClientPacket FindGroupRecruitment(int playerOrTeamId, string message, byte groupType = 0,
+		bool update = false, byte serverId = 1, byte soloFlag = 16) => Create<CM_FIND_GROUP>(w =>
+	{
+		w.C(update ? 3 : 2); w.D(playerOrTeamId);
+		if (update) { w.C(serverId); w.C(0); w.C(0); w.C(soloFlag); }
+		w.S(message); w.C(groupType);
+	});
+	public static BotClientPacket FindGroupApplication(int playerId, string message, byte playerClass, byte level,
+		byte groupType = 0, bool update = false) => Create<CM_FIND_GROUP>(w =>
+	{
+		w.C(update ? 7 : 6); w.D(playerId); w.S(message); w.C(groupType); w.C(playerClass); w.C(level);
+	});
+	public static BotClientPacket FindGroupRemove(int playerOrTeamId, bool application = false,
+		byte serverId = 1, byte soloFlag = 16) => Create<CM_FIND_GROUP>(w =>
+	{
+		w.C(application ? 5 : 1); w.D(playerOrTeamId);
+		if (!application) { w.C(serverId); w.C(0); w.C(0); w.C(soloFlag); }
+	});
+	public static BotClientPacket RecallAnswer(bool accept) => Create<CM_RECALLED_BY_OTHER_ANSWER>(w => w.C(accept ? 0 : 1));
+	public static BotClientPacket LegionEmblem(int legionId, byte emblemId, byte emblemType,
+		byte alpha, byte red, byte green, byte blue) => Create<CM_LEGION_MODIFY_EMBLEM>(w =>
+	{
+		w.D(legionId); w.C(emblemId); w.C(emblemType); w.C(alpha); w.C(red); w.C(green); w.C(blue);
+	});
+	public static BotClientPacket LegionHistory(int page, byte type) => Create<CM_LEGION_HISTORY>(w => { w.D(page); w.C(type); });
+	public static BotClientPacket LegionWarehouseKinah(long amount, bool deposit) =>
+		Create<CM_LEGION_WH_KINAH>(w => { w.Q(amount); w.C(deposit ? 1 : 0); });
+
+	public static BotClientPacket TeamCommand(byte command, int memberId = 0, int groupId = 0, int secondId = 0) =>
+		Create<CM_PLAYER_STATUS_INFO>(w => { w.C(command); w.D(memberId); w.D(groupId); w.D(secondId); });
 
 	public static BotClientPacket Legion(byte subOpcode, int value = 0, string first = "", string second = "",
 		IReadOnlyList<short>? permissions = null) => Create<CM_LEGION>(w =>
@@ -225,6 +269,13 @@ public static class GameClientPackets
 	public static BotClientPacket RestoreCharacter(int playOk2, int characterObjectId) => Create<CM_RESTORE_CHARACTER>(w => { w.D(playOk2); w.D(characterObjectId); });
 	public static BotClientPacket Quit(bool stayConnected) => Create<CM_QUIT>(w => w.C(stayConnected ? 1 : 0));
 	public static BotClientPacket FriendStatus(byte status) => Create<CM_FRIEND_STATUS>(w => w.C(status));
+	public static BotClientPacket ShowFriendList() => Empty<CM_SHOW_FRIENDLIST>();
+	public static BotClientPacket FriendAdd(string targetName, string message) => Create<CM_FRIEND_ADD>(w => { w.S(targetName); w.S(message); });
+	public static BotClientPacket FriendDelete(string targetName) => Create<CM_FRIEND_DEL>(w => w.S(targetName));
+	public static BotClientPacket FriendMemo(string targetName, string memo) => Create<CM_FRIEND_SET_MEMO>(w => { w.S(targetName); w.S(memo); });
+	public static BotClientPacket BlockAdd(string targetName, string reason) => Create<CM_BLOCK_ADD>(w => { w.S(targetName); w.S(reason); });
+	public static BotClientPacket BlockDelete(string targetName) => Create<CM_BLOCK_DEL>(w => w.S(targetName));
+	public static BotClientPacket BlockReason(string targetName, string reason) => Create<CM_BLOCK_SET_REASON>(w => { w.S(targetName); w.S(reason); });
 
 	private static BotClientPacket Empty<T>() => new(typeof(T), []);
 

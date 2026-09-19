@@ -30,7 +30,7 @@ public sealed class ScenarioManifestTests
 			manifest.For(ScenarioMode.Sim, ScenarioTier.Fast).Select(scenario => scenario.Id));
 		Assert.Equal([ScenarioMode.Sim], manifest.Get("Q5").Modes);
 		Assert.True(manifest.Get("Q5").ResetEpoch);
-		Assert.Equal(["L0", "M1", "M6", "C1", "Q1", "Q2", "Q3", "Q4P", "Q4I", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "CAPITAL", "connect", "canaries"],
+		Assert.Equal(["L0", "M1", "M6", "C1", "Q1", "Q2", "Q3", "Q4P", "Q4I", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "CAPITAL", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "connect", "canaries"],
 			manifest.For(ScenarioMode.Live, ScenarioTier.Full).Select(scenario => scenario.Id));
 	}
 

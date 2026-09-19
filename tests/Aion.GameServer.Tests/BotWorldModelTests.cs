@@ -194,17 +194,22 @@ public sealed class BotWorldModelTests
 		Assert.Empty(world.Quests);
 	}
 
-	[Fact]
-	public void TracksOpenWindowsAndSystemMessagesByStrName()
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public void TracksOpenWindowsAndSystemMessagesByStrName(bool listBeforeOpen)
 	{
 		var world = new BotWorldModel();
 		world.Apply(Packet<SM_DIALOG_WINDOW>(("targetObjectId", 10), ("dialogPageId", (ushort)1011), ("questId", 1001)));
 		world.Apply(Packet<SM_QUESTION_WINDOW>(
 			("code", 6), ("params", new[] { "a", "b", "c" }), ("senderId", 20), ("rangeOrCooldownSeconds", 30)));
-		world.Apply(Packet<SM_LOOT_STATUS>(("targetObjectId", 30), ("status", (byte)2), ("lootEffectId", 0)));
+		if (!listBeforeOpen)
+			world.Apply(Packet<SM_LOOT_STATUS>(("targetObjectId", 30), ("status", (byte)2), ("lootEffectId", 0)));
 		world.Apply(Packet<SM_LOOT_ITEMLIST>(
 			("targetObjectId", 30),
 			("items", Items(Item(("index", (byte)1), ("itemId", 160000001), ("count", 2), ("requiresConfirmation", false))))));
+		if (listBeforeOpen)
+			world.Apply(Packet<SM_LOOT_STATUS>(("targetObjectId", 30), ("status", (byte)2), ("lootEffectId", 0)));
 		world.Apply(Packet<SM_TRADELIST>(
 			("targetObjectId", 40), ("tradeNpcType", (byte)1), ("buyPriceModifier", 100),
 			("showBuyTab", true), ("showSellTab", false), ("tabs", new[] { 100, 101 }),

@@ -1161,14 +1161,124 @@ Every economy scenario ends with invariants: kinah and item totals conserved acr
   - **E6** Two-bot exchange with conservation, plus cancel.
   - **E7** Mail with item and kinah attachment.
   - At least one play-through route to a capital (ascension quests 1006/1007) instead of `//moveto`.
-- [ ] **P8-02** [BOTH] L — Social:
+- [x] **P8-02** [BOTH] L — Social: (`3cb6ef4d4`)
   - **S1** Group invite, whisper (sender level ≥ 10), legion create and invite, duel.
+    Implemented in shared scenario code with SIM/LIVE drivers.
+    SIM `p8-s1-sim-dev-20260918e` and enforced LIVE `p8-s1-live-dev-20260918b` pass, including group cleanup,
+    exact legion fee, reciprocal roster/rank and duel-result assertions; SIM also reloads membership and all
+    three create/join history rows from Docker MySQL. The first LIVE run exposed §7 #35; the corrected image
+    has zero new/regressed watcher problems. Duel casts now derive motion plus projectile hit time from the
+    checked-in client timing data; a zero hit time correctly failed SIM's audit policy before correction.
+    Fast tier `p8-s1-fast-20260918a` passes. Solution tests: 3,651 passed / 15 prerequisite skips; warning baseline
+    unchanged at 4,243. Full shared-world regression `p8-s1-full-sim-20260918a` exposed C11's fragile setup:
+    three legitimate priest cast interruptions exhausted bounded retries. A fixed ranged offset passed twice
+    (`p8-c11-range-full-20260918a/b`) but a third run landed near another aggressive mob and the priest died.
+    Ranged classes now select a clear approach against actual nearby aggressive NPC positions, outside their
+    sight radii with a ten-metre margin, and approach through CM_MOVE. No combat rules or AI are disabled.
+    Revised Full shared-world runs `p8-c11-clear-full-20260918a` and `p8-s2-full-sim-20260918a/b` pass
+    consecutively (the latter two include S2).
   - **S2** Cross-race PvP in Reshanta (one account per race), reached by flight, asserting abyss points.
+    Shared scenario and SIM/LIVE drivers implemented: access-zero level-ten Sorcerers, one account per race,
+    fly about 66 m each to meet in open air, consume ordinary flight time, and fight with timed Flame Bolt
+    packets until actual death. Both clients assert exact +300/-90 AP and daily/weekly/all-time kill counters;
+    SIM additionally checks server position, death, AP, access and absence of duel/group state.
+    `SM_ABYSS_RANK` decoding is pinned to the existing checked-in golden packet, including truncation/trailing
+    bytes and 64-bit AP tests. Isolated SIM `p8-s2-sim-dev-20260918a`, shared Full SIM
+    `p8-s2-full-sim-20260918a/b`, and enforced LIVE `p8-s2-live-dev-20260918a/b` pass; LIVE has zero new/regressed
+    watcher problems, including the final repeat's explicit packet-derived opposite-race checks.
+    Fast `p8-s2-fast-20260918a` passes; solution tests have 3,653 passes and 15 prerequisite skips,
+    warning baseline remains 4,243, and all logger/clock/custom-quest/fidelity/compiler ratchets pass.
+    Setup positions subjects in Reshanta: this proves flight-to-encounter and PvP rewards,
+    not autonomous inter-map travel, ground collision or the deferred natural journey.
   - **S3** Friend add, accept, memo and delete; block list; online-status notice on relog.
+    Shared scenario and SIM/LIVE drivers implemented with level-one access-zero subjects and no GM setup:
+    reciprocal friend requests, independent private memos, logout/login notifications through actual
+    reconnects, bilateral deletion, block/reason editing, block persistence on reconnect, blocked friend-request
+    refusal, and unblock cleanup. SIM compares both in-memory lists and fresh DAO loads with packet state.
+    Seven CM writers and six SM decoders are covered by parser/golden tests plus audited nonempty social-list
+    layouts; reconnect assertions require new list packets, not retained bot state.
+    Isolated SIM `p8-s3-sim-dev-20260918c`, final shared Full SIM `p8-s3-full-sim-20260918c`, and enforced LIVE
+    `p8-s3-live-dev-20260918c` pass; LIVE has zero new/regressed problems. Earlier LIVE attempts a/b caught
+    scenario assumptions, not port divergences: Java's leave path notifies friends before assigning lastOnline,
+    and its enter path notifies before World.storeObject. The immediate notifications remain mandatory;
+    a fresh list after completed logout/entry verifies settled timestamp/status and memo state.
+    Full SIM also exposed MySQL rounding lastOnline forward; the bot's SIM reentry wait now honors the
+    persisted deadline as LIVE already does, with a focused timing regression. No production changes for S3.
+    Fast `p8-s3-fast-20260918a` passes; 128 focused protocol/API/timing tests pass, the warning baseline stays
+    at 4,243 and all logger/clock/custom-quest/fidelity/compiler ratchets pass. Final solution run: 3,668 passed
+    and 15 prerequisite skips.
   - **S4** Alliance built from two groups (question 70000), leader change, league of two alliances.
+    Shared scenario and SIM/LIVE drivers implemented with eight access-zero, level-one characters and no GM
+    setup. Four ordinary two-player groups merge into two four-player alliances, both captains hand off to a
+    member (former captains become vice-captains), then the new captains form a league. Every client asserts
+    exact rosters, captain identities, league positions/member counts and complete league/alliance cleanup;
+    SIM additionally compares the actual server team graph after every step.
+    Two strict SM decoders plus client state and API support cover alliance/league info, online/offline/effects
+    member branches and the shared JOIN/group-change wire id. These packets have audited hand-built wire
+    contracts, not Java-generated fixtures. 144 focused protocol/API/timing tests pass.
+    Isolated SIM `p8-s4-sim-dev-20260918b`, shared Full SIM `p8-s4-full-sim-20260918a` (39 shared scenarios), and
+    enforced LIVE `p8-s4-live-dev-20260918b` pass. LIVE has zero new/regressed problems and an empty bot-problem
+    log. Initial SIM/LIVE attempts used an incorrect scenario roster assumption (group packets include self);
+    corrected without production changes. Warning baseline remains 4,243; all logger/clock/custom-quest/
+    fidelity/compiler ratchets pass. Fast `p8-s4-fast-20260918a` passes; solution tests: 3,685 passed and
+    15 prerequisite skips. Final P8-02 verification is recorded under S7 below.
   - **S5** Group loot modes and a roll with three bots on one kill.
+    Shared SIM/LIVE scenario implemented with three access-zero Asmodian warriors and six ordinary kills of
+    temporary copies of the existing level-two Squzii Ironfist. No NPC stats or drop rules are changed: its
+    existing named-potion rule supplies five Squzii's Carrot Juices per kill. Verify free-for-all (a non-leader
+    loots), three consecutive round-robin owners, leader-only rights, then three rolls on the same corpse.
+    Every client checks the roster/rules, loot rights, roll values/winner and exact inventory deltas; SIM also
+    checks server DropNpc, remaining drops and storage. Observe the completed roll across its 17-second
+    timeout to detect duplicate grants. The shared scenario permits unrelated random drops.
+    This exposed the production group-damage invalid cast (§7 #36), now regression-tested and fixed, plus
+    the bot's item-list-before-open ordering bug (§7 #37). LIVE attempt a found a fractional-millisecond
+    sleep undershoot; the bot now re-checks its attack gate after waking, without relaxing it.
+    Isolated SIM `p8-s5-sim-dev-20260918c` passes; enforced LIVE `p8-s5-live-dev-20260918b` passes with zero
+    new/regressed problems and an empty bot-problem log. Shared Full SIM `p8-s5-full-sim-20260918b` passes
+    all 40 shared scenarios, including the extra-drop case absent from isolated S5. 163 focused tests pass;
+    solution tests: 3,698 passed and 15 prerequisite skips. Warning baseline remains 4,243; logger/clock/
+    custom-quest/fidelity/compiler ratchets and Fast `p8-s5-fast-20260918a` pass. S5 is included in the local
+    Full LIVE runner.
   - **S6** Quest shared into a group, with group kill credit.
+    Shared scenario implemented using existing quest 1112, To Fish in Peace. Two access-zero, level-nine
+    Elyos form a group; only the leader accepts at Feira, sends `CM_QUEST_SHARE`, and the recipient accepts
+    through the actual sharer-targeted dialog packet. The share offer alone must not start the quest.
+    Alternate the sole attacker across five existing brax and five slink temporary spawns. Both clients
+    require exactly one credit per kill, then stable counters after a two-second observation window; SIM
+    checks the actual quest state and that each corpse has precisely one damage contributor. Both players
+    turn in through Feira's ordinary dialogs and receive their own 1,810 kinah and 30 reward items before
+    disbanding. Setup only changes level/location and creates temporary copies of existing NPCs; no quest
+    state, damage, reward or content is supplied by the harness. No production changes for S6.
+    Isolated SIM `p8-s6-sim-dev-20260918a`, shared Full SIM `p8-s6-full-sim-20260918a` (41 shared scenarios),
+    and enforced LIVE `p8-s6-live-dev-20260918a` pass on their first runs. LIVE has zero new/regressed
+    problems and an empty bot-problem log. 84 focused protocol/API tests pass; the solution suite passes
+    with 3,704 tests and 15 prerequisite skips. Warning baseline remains 4,243; logger/clock/custom-quest/
+    fidelity/compiler ratchets and Fast `p8-s6-fast-20260918a` pass. S6 is included in the local Full LIVE
+    runner.
   - **S7** Find-group post, apply and remove; recall to a party member; legion emblem, history and warehouse kinah.
+    Shared scenario and SIM/LIVE drivers implemented with two access-zero level-23 Spiritmasters. Both
+    clients verify posting, updating, listing and removing recruitment/application entries. Application
+    means the actual looking-for-group listing, not an invented application-to-a-recruitment protocol.
+    Form a party, walk apart, cast Summon Group Member with its real reagent and client motion timing,
+    accept the recall, and watch position/reagent/respawn state across the cancelled 30-second timeout.
+    Create a legion, invite the second player, change the emblem including high-bit colors, verify the
+    exact fee and paged history, then deposit 5,000,000,001 and withdraw 3,000,000,001 kinah through the
+    ordinary legion warehouse dialog. Both clients check history and conservation; close/reopen checks
+    the balance. Logout/reconnect requires fresh legion info and history. SIM additionally checks fresh
+    Docker MySQL reads of the emblem (including its NULL custom blob), warehouse balance and history.
+    Director-only setup supplies class/level/funds/reagents, legion level two and the distant warehouse
+    location; this is not an autonomous travel or legion-leveling scenario.
+    Five strict SM decoders cover group finder, recall, emblem, legion edit and paged fixed-width history;
+    CM writers round-trip through production parsers. Audited wire contracts and existing emblem/edit
+    golden fixtures are exercised without running Java. Initial runs corrected scenario assumptions about
+    same-map recall packets and MySQL timestamp rounding; LIVE exposed the real emblem persistence bug
+    in §7 #38, fixed rather than allowlisted. Eight DAO parameter regressions fail before that fix.
+    Enforced LIVE `p8-s7-live-dev-20260918b` passes with zero new/regressed problems and an empty bot-problem
+    log. Full SIM `p8-s7-full-sim-20260918b` passes all 42 shared scenarios, including S7 reconnect/DAO
+    checks and the C6 test stabilization in §7 #39. S1–S7 are included in the local Full LIVE runner.
+    Final P8-02 gates: solution tests 3,752 passed / 15 prerequisite skips; warning inventory unchanged
+    at 4,243; logger/clock/custom-quest/fidelity/compiler ratchets pass. Docker Fast
+    `p8-social-final-fast-20260918a` passes. Run artifacts and command logs are under `run/`.
 - [ ] **P8-03** [BOTH] S each — Fixes found in this area:
   - Two `CraftSkillUpdateService` classes: `DialogService` resolves to the root `Services` copy (already
     `Profession?`); crafting quest handlers use `Services.Craft`, whose unused `GetProfessionByNpc` returns ordinal
@@ -1445,7 +1555,12 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 31 | Persistent chat/login game-server links inherited a 30-second C# read timeout and disconnected when idle (LIVE fingerprint `06dfcdde`) | `chat-server/.../GsConnection.java`, `login-server/.../GsConnection.java`, and `AcceptReadWriteDispatcherImpl.java`: selector-driven reads have no idle timeout | Resolved by P6-06 (`3a18ef178`) |
 | 32 | `JAXBUtil.Serialize` returned a string declaring UTF-16 because `XmlWriter` saw a `StringWriter`, but callers wrote that string as UTF-8; a second `SpawnsData.SaveSpawn` could not read the first rewrite | `SpawnsData.java:205-216` writes the serialization with `Files.writeString`; `JAXBUtil.java` configures UTF-8, so its declaration and bytes remain self-consistent | Resolved by P7-07 (`d864b0107`) |
 | 33 | `_2002WheresRae.Register` includes NPCs 790002 and 205020, which makes two existing dialog branches reachable | `_2002WheresRae.java:35-41` omits both NPCs from registration while handling them at lines 90 and 174 | Retained for P7-09 e2e reachability; Java's omission leaves both branches unreachable |
-| 34 | C11's starter-skill test assumed every cast completes despite incoming attacks; a legitimate priest cast interruption caused an intermittent Full SIM failure | `CreatureController.java:219-237` permits damage-driven interruption; `PlayerController.java:518-540` sends skill cancellation and its system message | P8-01 verification: test-only bounded handling of explicit combat cancellations; no gameplay change |
+| 34 | C11's starter-skill test assumed every cast completes despite incoming attacks; a legitimate priest cast interruption caused an intermittent Full SIM failure | `CreatureController.java:219-237` permits damage-driven interruption; `PlayerController.java:518-540` sends skill cancellation and its system message | P8-01 bounded cancellation retries were insufficient. P8-02 selects a ranged approach clear of every nearby aggressive NPC's sight radius plus margin; revised Full SIM runs above pass. No gameplay change; committed in P8-02 (`3cb6ef4d4`) |
+| 35 | `LegionHistoryAction` was ported as a class-enum without `ToString()`, so `LegionDAO.InsertHistory` wrote its CLR type name instead of `CREATE`/`JOIN` into MySQL's enum column; legion creation partially completed then threw | `model/team/legion/LegionHistoryAction.java:6-24` is a Java enum; `dao/LegionDAO.java:339-353` persists `action.toString()` | P8-02/S1: constant-name strings restored; all 15 names covered by a regression test, Docker SIM/LIVE verified (runs above), committed in P8-02 (`3cb6ef4d4`). Fingerprints `64d63924` and `62221a3f` were not allowlisted |
+| 36 | `TeamDamageList` cast `DamageInfo<Creature>` through `object` to `DamageInfo<Player>`, which always throws for a grouped player in .NET; NPC group reward processing aborted before loot registration | `controllers/attack/TeamDamageList.java:22-29` uses an erased unchecked cast; `DamageList.java:20-30` accumulates the final per-creature damage before grouping | P8-02/S5: copy the already accumulated player damage into a correctly typed entry. Two regressions fail with `InvalidCastException` before the fix and pass afterward; aggregate totals, highest contributor, ties and empty lists covered. Docker SIM/LIVE verified (S5 runs above), committed in P8-02 (`3cb6ef4d4`) |
+| 37 | Bot `ApplyLootStatus(OPEN_DROP_LIST)` discarded the item list that the server had just sent; its old unit fixture only exercised the opposite packet order (C# test-client defect, not a production divergence) | `services/drop/DropService.java:129-130` sends `SM_LOOT_ITEMLIST` before `SM_LOOT_STATUS`; the C# server matches | P8-02/S5: preserve the same corpse's list, test both packet orders, and require the populated loot window in the shared scenario; Docker SIM/LIVE verified (S5 runs above), committed in P8-02 (`3cb6ef4d4`) |
+| 38 | `LegionDAO` bound unsigned C# color bytes into signed `TINYINT` columns, so high-bit emblem colors failed to save at logout; its read path also used unsigned `GetByte` and threw on a default emblem's SQL NULL blob | `dao/LegionDAO.java:262-287` uses signed `setByte` for all four colors; `:306-310` reads signed bytes and nullable `getBytes` | P8-02/S7 LIVE `p8-s7-live-dev-20260918a` caught fingerprint `d580e505` at logout. Signed bindings/reads and nullable blob handling restored; eight parameter regressions fail before the fix. Clean LIVE b plus Full SIM b reconnect and fresh DAO reads verify the fix; not allowlisted |
+| 39 | C6 waited for death after only one normal NPC attack; Full SIM could time out before reaching S7 because a normal attack is not guaranteed to damage its target (test assumption, not a production divergence) | `controllers/CreatureController.java:321-369` calculates normal attack outcomes including DODGE/RESIST before applying damage | P8-02: repeat the existing normal attack at two-second intervals, at most 20 attempts, assert actual death before waiting for the death packet. No combat rules changed; Full SIM `p8-s7-full-sim-20260918b` passes |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

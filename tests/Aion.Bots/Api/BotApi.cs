@@ -162,6 +162,13 @@ public sealed class BotApi
 	}
 
 	public BotClientPacket TalkTo(int targetObjectId) => GameClientPackets.ShowDialog(targetObjectId);
+	public BotClientPacket ShareQuest(int questId) => GameClientPackets.ShareQuest(questId);
+	public BotClientPacket AcceptSharedQuest()
+	{
+		var share = World.PendingQuestShare ?? throw new InvalidOperationException("No quest share was received.");
+		// Shared-quest acceptance targets the other player, not the original NPC or self.
+		return SelectDialog(share.SharerId, DialogAction.QUEST_ACCEPT_SIMPLE, questId: share.QuestId);
+	}
 
 	public BotClientPacket SelectDialog(int targetObjectId, ushort actionId, ushort rewardIndex = 0,
 		ushort lastPage = 0, int questId = 0)
@@ -236,6 +243,47 @@ public sealed class BotApi
 		GameClientPackets.ChatMessageWhisper(playerName, message);
 
 	public BotClientPacket Duel(int targetObjectId) => GameClientPackets.DuelRequest(targetObjectId);
+	public BotClientPacket LeaveGroup() => GameClientPackets.TeamCommand(6);
+	public BotClientPacket InviteToAlliance(string playerName) => GameClientPackets.InviteToGroup(12, playerName);
+	public BotClientPacket SetAllianceLeader(int objectId) => GameClientPackets.TeamCommand(17, objectId);
+	public BotClientPacket LeaveAlliance() => GameClientPackets.TeamCommand(14);
+	public BotClientPacket InviteToLeague(string playerName) => GameClientPackets.InviteToGroup(28, playerName);
+	public BotClientPacket LeaveLeague() => GameClientPackets.TeamCommand(29);
+	public BotClientPacket SetGroupLoot(byte lootRule, int distribution = 0) =>
+		GameClientPackets.DistributionSettings(lootRule, 0, distribution, distribution, distribution, distribution, distribution, distribution);
+	public BotClientPacket RollForLoot(int groupId, int index, int itemId, int corpseId, bool roll = true) =>
+		GameClientPackets.GroupLoot(groupId, index, itemId, corpseId, 2, roll);
+	public BotClientPacket CreateLegion(string name) => GameClientPackets.Legion(0, first: name);
+	public BotClientPacket InviteToLegion(string playerName) => GameClientPackets.Legion(1, first: playerName);
+	public BotClientPacket RequestGroupListings(bool applications = false) => GameClientPackets.FindGroupList(applications);
+	public BotClientPacket PostGroupRecruitment(string message, byte groupType = 0, bool update = false, byte serverId = 1) =>
+		GameClientPackets.FindGroupRecruitment(FindGroupObjectId, message, groupType, update, serverId, FindGroupSoloFlag);
+	public BotClientPacket PostGroupApplication(string message, byte playerClass, byte groupType = 0, bool update = false) =>
+		GameClientPackets.FindGroupApplication(World.SelfObjectId ?? throw new InvalidOperationException("Not in world."),
+			message, playerClass, checked((byte)World.Level), groupType, update);
+	public BotClientPacket RemoveGroupListing(bool application = false, byte serverId = 1) =>
+		GameClientPackets.FindGroupRemove(application ? World.SelfObjectId ?? throw new InvalidOperationException("Not in world.") :
+			FindGroupObjectId, application, serverId, FindGroupSoloFlag);
+	private int FindGroupObjectId => World.AllianceId ?? World.GroupId ?? World.SelfObjectId ?? throw new InvalidOperationException("Not in world.");
+	private byte FindGroupSoloFlag => (byte)(World.AllianceId == null && World.GroupId == null ? 16 : 0);
+	public BotClientPacket AnswerRecall(bool accept)
+	{
+		if (World.RecallRequest == null) throw new InvalidOperationException("No recall request was received.");
+		World.CloseRecallPrompt();
+		return GameClientPackets.RecallAnswer(accept);
+	}
+	public BotClientPacket SetLegionEmblem(int legionId, byte emblemId, byte emblemType, byte alpha, byte red, byte green, byte blue) =>
+		GameClientPackets.LegionEmblem(legionId, emblemId, emblemType, alpha, red, green, blue);
+	public BotClientPacket RequestLegionHistory(int page = 0, byte type = 0) => GameClientPackets.LegionHistory(page, type);
+	public BotClientPacket DepositLegionKinah(long amount) => GameClientPackets.LegionWarehouseKinah(amount, deposit: true);
+	public BotClientPacket WithdrawLegionKinah(long amount) => GameClientPackets.LegionWarehouseKinah(amount, deposit: false);
+	public BotClientPacket RequestFriendList() => GameClientPackets.ShowFriendList();
+	public BotClientPacket AddFriend(string playerName, string message) => GameClientPackets.FriendAdd(playerName, message);
+	public BotClientPacket DeleteFriend(string playerName) => GameClientPackets.FriendDelete(playerName);
+	public BotClientPacket SetFriendMemo(string playerName, string memo) => GameClientPackets.FriendMemo(playerName, memo);
+	public BotClientPacket BlockPlayer(string playerName, string reason) => GameClientPackets.BlockAdd(playerName, reason);
+	public BotClientPacket UnblockPlayer(string playerName) => GameClientPackets.BlockDelete(playerName);
+	public BotClientPacket SetBlockReason(string playerName, string reason) => GameClientPackets.BlockReason(playerName, reason);
 
 	public BotClientPacket Revive(BotReviveType type = BotReviveType.Bind) => GameClientPackets.Revive((byte)type);
 

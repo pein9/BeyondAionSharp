@@ -10,7 +10,7 @@ using Aion.GameServer.Network.Aion.ServerPackets;
 
 namespace Aion.GameServer.Tests;
 
-public sealed class BotGameClientPacketWriterTests
+public sealed partial class BotGameClientPacketWriterTests
 {
 	[Theory]
 	[MemberData(nameof(PacketCases))]
@@ -47,6 +47,7 @@ public sealed class BotGameClientPacketWriterTests
 		var connected = AionConnection.State.CONNECTED;
 		var allMove = (byte)(MovementMask.POSITION | MovementMask.MANUAL | MovementMask.ABSOLUTE | MovementMask.GLIDE | MovementMask.VEHICLE);
 		var appearance = Enumerable.Range(0, CharacterCreationData.AppearanceFeatureLength).Select(i => (byte)i).ToArray();
+		foreach (var row in ExtendedSocialPacketCases(game)) yield return row;
 
 		yield return C("version", GameClientPackets.VersionCheck(207, 9, 65001, 10, 11, 2), connected, "aionClientVersion", 207);
 		yield return C("l2-auth", GameClientPackets.L2AuthLoginCheck(1, 2, 3, 4, 5, 6), connected, "accountId", 3);
@@ -65,6 +66,8 @@ public sealed class BotGameClientPacketWriterTests
 		yield return C("movie-end", GameClientPackets.PlayMovieEnd(1, 104, 105, 106, true), game, "movieId", 106);
 		yield return C("ping", GameClientPackets.Ping(7), auth);
 		yield return C("time-check", GameClientPackets.TimeCheck(123456), game, "nanoTime", 123456);
+		yield return C("team-command", GameClientPackets.TeamCommand(6, 123, 456, 789), game,
+			new Dictionary<string, object?> { ["commandCode"] = 6, ["selectedObjectId"] = 123, ["allianceGroupId"] = 456, ["secondObjectId"] = 789 });
 		yield return C("question", GameClientPackets.QuestionResponse(107, 1, 108), game, "questionid", 107);
 		yield return C("move", GameClientPackets.Move(new MovementPacketData(1, 2, 3, 4, allMove,
 			X2: 5, Y2: 6, Z2: 7, GlideFlag: GlideFlag.GEYSER, GeyserLocationId: 8,
@@ -94,6 +97,9 @@ public sealed class BotGameClientPacketWriterTests
 		yield return C("split-item", GameClientPackets.SplitItem(128, 129, 0, 130, 1, 2), game, "itemAmount", 129L);
 		yield return C("delete-item", GameClientPackets.DeleteItem(131), game, "itemObjectId", 131);
 		yield return C("delete-quest", GameClientPackets.DeleteQuest(1098), game, "questId", 1098);
+		yield return C("share-quest", GameClientPackets.ShareQuest(1112), game, "questId", 1112);
+		yield return C("accept-shared-quest", GameClientPackets.DialogSelect(12345, 20000, 0, 0, 1112), game,
+			new Dictionary<string, object?> { ["targetObjectId"] = 12345, ["dialogActionId"] = 20000, ["questId"] = 1112 });
 		yield return C("start-loot", GameClientPackets.StartLoot(132, 1), game, "targetObjectId", 132);
 		yield return C("loot-item", GameClientPackets.LootItem(133, 2), game, "index", 2);
 		yield return C("show-dialog", GameClientPackets.ShowDialog(134), game, "targetObjectId", 134);
@@ -120,6 +126,18 @@ public sealed class BotGameClientPacketWriterTests
 		yield return C("chat-public", GameClientPackets.ChatMessagePublic(0, "hello"), game, "message", "hello");
 		yield return C("chat-whisper", GameClientPackets.ChatMessageWhisper("Target", "hello"), game, "name", "Target");
 		yield return C("group-invite", GameClientPackets.InviteToGroup(0, "Target"), game, "playerName", "Target");
+		yield return C("distribution-settings", GameClientPackets.DistributionSettings(2, 1, 2, 0, 2, 0, 2, 3, 1), game,
+			new Dictionary<string, object?> { ["isLeague"] = 1, ["lootRule"] = 2, ["misc"] = 1, ["commonItemAbove"] = 2,
+				["superiorItemAbove"] = 0, ["heroicItemAbove"] = 2, ["fabledItemAbove"] = 0, ["ethernalItemAbove"] = 2, ["mythicItemAbove"] = 3, ["unk"] = 2 });
+		yield return C("group-roll", GameClientPackets.GroupLoot(123, 4, 162000031, 456, 2, true), game,
+			new Dictionary<string, object?> { ["groupId"] = 123, ["index"] = 4, ["itemId"] = 162000031, ["npcObjId"] = 456,
+				["distributionMode"] = 2, ["roll"] = 1, ["bid"] = 0L });
+		yield return C("group-bid", GameClientPackets.GroupLoot(123, 4, 162000031, 456, 3, false, 5000000000L), game,
+			new Dictionary<string, object?> { ["distributionMode"] = 3, ["roll"] = 0, ["bid"] = 5000000000L });
+		yield return C("alliance-invite", GameClientPackets.InviteToGroup(12, "Captain"), game,
+			new Dictionary<string, object?> { ["inviteType"] = 12, ["playerName"] = "Captain" });
+		yield return C("league-invite", GameClientPackets.InviteToGroup(28, "Captain"), game,
+			new Dictionary<string, object?> { ["inviteType"] = 28, ["playerName"] = "Captain" });
 		yield return C("duel", GameClientPackets.DuelRequest(148), game, "objectId", 148);
 		yield return C("legion", GameClientPackets.Legion(0x01, first: "Target"), game, "charName", "Target");
 		yield return C("revive", GameClientPackets.Revive(0), game, "reviveId", 0);
@@ -127,6 +145,13 @@ public sealed class BotGameClientPacketWriterTests
 		yield return C("restore-character", GameClientPackets.RestoreCharacter(151, 152), auth, "chaOid", 152);
 		yield return C("quit", GameClientPackets.Quit(true), game, "stayConnected", true);
 		yield return C("friend-status", GameClientPackets.FriendStatus(2), game, "status", (byte)2);
+		yield return C("friend-list", GameClientPackets.ShowFriendList(), game);
+		yield return C("friend-add", GameClientPackets.FriendAdd("Friend", "Hello"), game, new Dictionary<string, object?> { ["targetName"] = "Friend", ["message"] = "Hello" });
+		yield return C("friend-delete", GameClientPackets.FriendDelete("Friend"), game, "targetName", "Friend");
+		yield return C("friend-memo", GameClientPackets.FriendMemo("Friend", "A memo"), game, new Dictionary<string, object?> { ["targetName"] = "Friend", ["memo"] = "A memo" });
+		yield return C("block-add", GameClientPackets.BlockAdd("Friend", "A reason"), game, new Dictionary<string, object?> { ["targetName"] = "Friend", ["reason"] = "A reason" });
+		yield return C("block-delete", GameClientPackets.BlockDelete("Friend"), game, "targetName", "Friend");
+		yield return C("block-reason", GameClientPackets.BlockReason("Friend", "Edited"), game, new Dictionary<string, object?> { ["targetName"] = "Friend", ["reason"] = "Edited" });
 	}
 
 	private static object[] C(string name, BotClientPacket packet, AionConnection.State state,

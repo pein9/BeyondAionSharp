@@ -97,6 +97,20 @@ try {
 		-PacketTap:$PacketTap -SkipImageBuild -StepTimeoutSeconds 60
 	& $runLive -Run "$Run-capital" -Scenario 'CAPITAL' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
 		-PacketTap:$PacketTap -SkipImageBuild -StepTimeoutSeconds 600
+	& $runLive -Run "$Run-s1" -Scenario 'S1' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
+		-PacketTap:$PacketTap -SkipImageBuild -StepTimeoutSeconds 300
+	& $runLive -Run "$Run-s2" -Scenario 'S2' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
+		-PacketTap:$PacketTap -SkipImageBuild -StepTimeoutSeconds 180
+	& $runLive -Run "$Run-s3" -Scenario 'S3' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
+		-PacketTap:$PacketTap -SkipImageBuild -StepTimeoutSeconds 60
+	& $runLive -Run "$Run-s4" -Scenario 'S4' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
+		-PacketTap:$PacketTap -SkipImageBuild -StepTimeoutSeconds 60
+	& $runLive -Run "$Run-s5" -Scenario 'S5' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
+		-PacketTap:$PacketTap -SkipImageBuild -StepTimeoutSeconds 180
+	& $runLive -Run "$Run-s6" -Scenario 'S6' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
+		-PacketTap:$PacketTap -SkipImageBuild -StepTimeoutSeconds 180
+	& $runLive -Run "$Run-s7" -Scenario 'S7' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
+		-PacketTap:$PacketTap -SkipImageBuild -StepTimeoutSeconds 180
 
 	# The first child built the same three server images when a rebuild was requested.
 	& $runLive -Run "$Run-canaries" -Scenario 'canaries' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `

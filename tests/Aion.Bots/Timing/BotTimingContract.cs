@@ -135,7 +135,14 @@ public sealed class BotTimingContract
 		nextEnterWorldAt = timeProvider.GetUtcNow() + reentryDelay + (crashed ? crashLeaveDelay : TimeSpan.Zero);
 	}
 
-	public TimeSpan TimeUntilEnterWorld() => Remaining(nextEnterWorldAt);
+	public TimeSpan TimeUntilEnterWorld(DateTimeOffset? persistedLastOnline = null)
+	{
+		// MySQL's timestamp precision can round logout forward; the server checks the persisted value.
+		var due = nextEnterWorldAt;
+		if (persistedLastOnline is { } lastOnline && lastOnline + reentryDelay > due)
+			due = lastOnline + reentryDelay;
+		return Remaining(due);
+	}
 
 	public void EnsureCanEnterWorld() => EnsureReady(TimeUntilEnterWorld(), "enter world");
 

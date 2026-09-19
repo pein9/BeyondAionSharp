@@ -220,8 +220,13 @@ public sealed partial class SimulationFastScenarioTests
 
 		session.BeginStep("s02", "npc-kills-level-one-player");
 		player.GetLifeStats().SetCurrentHp(1);
-		attacker.GetController().AttackTarget(player, 0, true);
-		await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
+		// A normal attack may dodge/resist; a single attempt does not guarantee the death packet.
+		for (int attempt = 0; attempt < 20 && !player.IsDead(); attempt++)
+		{
+			attacker.GetController().AttackTarget(player, 0, true);
+			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+		}
+		Assert.True(player.IsDead(), $"C6 target survived 20 attacks: hp={player.GetLifeStats().GetCurrentHp()}, protection={player.IsProtectionActive()}.");
 		await session.WaitForPacketAsync(typeof(SM_DIE), token);
 		Assert.True(player.IsDead());
 		Assert.Equal(expBefore, player.GetCommonData().GetExp());
@@ -433,8 +438,32 @@ public sealed partial class SimulationFastScenarioTests
 				policy, entry.AccountId, entry.Name, Race.ELYOS, entry.Item1, token);
 			Player player = fixture.World.GetPlayer(session.CharacterId);
 			Npc target = player.GetPosition().GetWorldMapInstance().GetNpcs(210119)
-				.Where(npc => npc.IsSpawned() && !npc.IsDead()).Skip(4 + classIndex).First();
-			await PlaceBesideNpcAsync(session, player, target, token);
+				.Where(npc => npc.IsSpawned() && !npc.IsDead()).OrderBy(npc => npc.GetObjectId()).Skip(4 + classIndex).First();
+			if (entry.Item1 == PlayerClass.SCOUT)
+				await PlaceBesideNpcAsync(session, player, target, token);
+			else
+			{
+				// C11 proves starter skills, not survival while casting at melee range against a level-six mob.
+				// A fixed offset from one Sparkie can put us inside a neighbouring mob's sight radius. Select a
+				// clear approach from the actual world instead; no AI, damage or interruption rules are disabled.
+				var instanceNpcs = player.GetPosition().GetWorldMapInstance().GetNpcs().Where(npc => npc.IsSpawned() && !npc.IsDead()).ToArray();
+				var aggressive = instanceNpcs.Where(npc => TribeRelationService.IsAggressive(npc, player)).ToArray();
+				Assert.NotEmpty(aggressive);
+				var approach = instanceNpcs.Where(npc => npc.GetNpcId() == 210119)
+					.OrderBy(npc => npc.GetX()).ThenBy(npc => npc.GetY()).ThenBy(npc => npc.GetObjectId())
+					.SelectMany(npc => Enumerable.Range(0, 8).Select(direction =>
+					{
+						double angle = direction * Math.PI / 4;
+						return (Target: npc, Point: new BotPosition(npc.GetX() + 19 * (float)Math.Cos(angle),
+							npc.GetY() + 19 * (float)Math.Sin(angle), npc.GetZ(), 0));
+					}))
+					.First(candidate => aggressive.All(npc =>
+						Math.Pow(npc.GetX() - candidate.Point.X, 2) + Math.Pow(npc.GetY() - candidate.Point.Y, 2) +
+						Math.Pow(npc.GetZ() - candidate.Point.Z, 2) > Math.Pow(npc.GetAggroRange() + 10, 2)));
+				target = approach.Target;
+				await TeleportForSetupAsync(session, player, target.GetWorldId(), approach.Point.X - 0.5f, approach.Point.Y, approach.Point.Z, token);
+				await session.MoveToPositionAsync(approach.Point, token);
+			}
 
 			int[] actualActive = player.GetSkillList().GetAllSkills()
 				.Where(skill => skill.IsNormalSkill() && !skill.GetSkillTemplate().IsPassive())

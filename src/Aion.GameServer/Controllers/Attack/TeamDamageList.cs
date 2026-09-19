@@ -26,7 +26,10 @@ public class TeamDamageList
             if (team != null)
             {
                 creatureOrTeam = team;
-                DamageInfo<Player> memberDamage = (DamageInfo<Player>)(object)damageInfo;
+                // Java's unchecked cast works through type erasure; .NET generic types are invariant.
+                // DamageList is fully accumulated before this grouping, so copy the player's final damage.
+                DamageInfo<Player> memberDamage = new((Player)damageInfo.GetAttacker());
+                memberDamage.AddDamage(damageInfo.GetDamage());
                 mostDamageByTeam.TryGetValue(team, out DamageInfo<Player> other);
                 mostDamageByTeam[team] = other == null || memberDamage.GetDamage() > other.GetDamage() ? memberDamage : other;
             }

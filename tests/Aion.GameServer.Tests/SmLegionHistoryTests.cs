@@ -21,6 +21,24 @@ namespace Aion.GameServer.Tests;
 public sealed class SmLegionHistoryTests
 {
     [Fact]
+    public void AllActionNamesRoundTripThroughTheDatabaseEnumRepresentation()
+    {
+        // Java LegionHistoryAction is an enum; Enum.toString() returns the declared name.
+        // A class-enum without this override wrote its CLR type name into history_type.
+        string[] names = ["CREATE", "JOIN", "KICK", "LEVEL_UP", "APPOINTED", "EMBLEM_REGISTER", "EMBLEM_MODIFIED",
+            "DEFENSE", "OCCUPATION", "LEGION_RENAME", "CHARACTER_RENAME", "ITEM_DEPOSIT", "ITEM_WITHDRAW", "KINAH_DEPOSIT", "KINAH_WITHDRAW"];
+        byte[] ids = [0, 1, 2, 3, 4, 5, 6, 11, 12, 13, 14, 15, 16, 17, 18];
+        var actions = LegionHistoryAction.Values();
+        Assert.Equal(names.Length, actions.Count);
+        for (int i = 0; i < names.Length; i++)
+        {
+            Assert.Equal(names[i], actions[i].ToString());
+            Assert.Equal(ids[i], actions[i].GetId());
+            Assert.Same(actions[i], LegionHistoryAction.ValueOf(actions[i].ToString()));
+        }
+    }
+
+    [Fact]
     public void EmptyHistory_WritesHeaderAndTypeOrdinalOnly()
     {
         // type REWARD => ordinal 1.

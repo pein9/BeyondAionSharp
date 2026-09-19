@@ -6,8 +6,8 @@
     "lastSeenRun": "p8-capital-live-dev-20260918a",
     "count": 1,
     "status": "fixed",
-    "fixedIn": "56d6eb643b023268754d5e031ebb208bc8807e9b",
-    "tracking": "P8-01: CAPITAL ceremony reward choice and exact reward assertions corrected; SIM and LIVE p8-capital-live-dev-20260918b verified. SIM also rejects warnings carrying exceptions."
+    "tracking": "P8-01: CAPITAL ceremony reward choice and exact reward assertions corrected; SIM and LIVE p8-capital-live-dev-20260918b verified. SIM also rejects warnings carrying exceptions.",
+    "fixedIn": "56d6eb643b023268754d5e031ebb208bc8807e9b"
   },
   {
     "fp": "06dfcdde",
@@ -22,9 +22,9 @@
   {
     "fp": "163d223f",
     "firstSeenSha": "b5663f60d7f7630b2ed9cbd80ee0f16d6bc1aeff",
-    "lastSeenSha": "b5663f60d7f7630b2ed9cbd80ee0f16d6bc1aeff",
-    "lastSeenRun": "p606-c1b-dev-20260917",
-    "count": 1,
+    "lastSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
+    "lastSeenRun": "p8-s1-live-dev-20260918a",
+    "count": 2,
     "status": "fixed",
     "tracking": "P6-06",
     "fixedIn": "3a18ef1787605966ecbd586be1d167cd42d40931"
@@ -41,28 +41,58 @@
   {
     "fp": "39050e81",
     "firstSeenSha": "6169e0d67",
-    "lastSeenSha": "1d7f5be259e06d4731e9a3429838a9d5e20aee7f",
-    "lastSeenRun": "p8-e2-live-final-20260918a",
-    "count": 160,
+    "lastSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
+    "lastSeenRun": "p8-s7-live-dev-20260918b",
+    "count": 216,
     "status": "tracked",
     "tracking": "P9-01"
   },
   {
+    "fp": "62221a3f",
+    "firstSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
+    "lastSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
+    "lastSeenRun": "p8-s1-live-dev-20260918a",
+    "count": 1,
+    "status": "fixed",
+    "tracking": "P8-02/S1, plan section 7 #35: null history entry follows LegionHistoryAction.ToString persistence failure. Fixed in working tree and verified by p8-s1-sim-dev-20260918e / p8-s1-live-dev-20260918b; committed in P8-02.",
+    "fixedIn": "3cb6ef4d4b1b53b353451b33ec6f7e1ce81bc1f8"
+  },
+  {
+    "fp": "64d63924",
+    "firstSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
+    "lastSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
+    "lastSeenRun": "p8-s1-live-dev-20260918a",
+    "count": 1,
+    "status": "fixed",
+    "tracking": "P8-02/S1, plan section 7 #35: Java enum constant names restored for legion history_type writes. Fixed in working tree and verified by p8-s1-sim-dev-20260918e / p8-s1-live-dev-20260918b; committed in P8-02.",
+    "fixedIn": "3cb6ef4d4b1b53b353451b33ec6f7e1ce81bc1f8"
+  },
+  {
+    "fp": "d580e505",
+    "firstSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
+    "lastSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
+    "lastSeenRun": "p8-s7-live-dev-20260918a",
+    "count": 1,
+    "status": "fixed",
+    "tracking": "P8-02/S7, plan section 7 #38: signed emblem color bindings/reads and nullable default-emblem blob restored. Eight red/green parameter regressions, fresh Docker DAO reads in p8-s7-full-sim-20260918b, and clean enforced LIVE p8-s7-live-dev-20260918b verify the fix; committed in P8-02.",
+    "fixedIn": "3cb6ef4d4b1b53b353451b33ec6f7e1ce81bc1f8"
+  },
+  {
     "fp": "ebe67ab3",
     "firstSeenSha": "1d7f5be259e06d4731e9a3429838a9d5e20aee7f",
-    "lastSeenSha": "1d7f5be259e06d4731e9a3429838a9d5e20aee7f",
-    "lastSeenRun": "p8-e6-live-dev-20260918a",
-    "count": 4,
+    "lastSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
+    "lastSeenRun": "p8-s5-live-dev-20260918a",
+    "count": 20,
     "status": "fixed",
-    "fixedIn": "56d6eb643b023268754d5e031ebb208bc8807e9b",
-    "tracking": "P8-01: bot inventory notification race, craft cadence and broker/exchange audit scoping corrected and SIM/LIVE verified."
+    "tracking": "P8-01: bot inventory notification race, craft cadence and broker/exchange audit scoping corrected and SIM/LIVE verified. P8-02/S3 a/b reused this generic bot-assertion fingerprint for premature logout timestamp/login status checks; corrected to verify notifications then refresh settled state, with clean LIVE p8-s3-live-dev-20260918c. P8-02/S4 a reused it for a roster assertion omitting self; corrected to require both identities, with clean LIVE p8-s4-live-dev-20260918b. P8-02/S5 a reused it for a fractional-millisecond attack sleep undershoot; re-checking the unrelaxed timing gate after waking passes LIVE p8-s5-live-dev-20260918b. S3/S4/S5 changes committed in P8-02 (3cb6ef4d4).",
+    "fixedIn": "56d6eb643b023268754d5e031ebb208bc8807e9b"
   },
   {
     "fp": "f802a125",
     "firstSeenSha": "6169e0d67",
-    "lastSeenSha": "1d7f5be259e06d4731e9a3429838a9d5e20aee7f",
-    "lastSeenRun": "p8-e2-live-final-20260918a",
-    "count": 40,
+    "lastSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
+    "lastSeenRun": "p8-s7-live-dev-20260918b",
+    "count": 54,
     "status": "tracked",
     "tracking": "P9-01"
   }

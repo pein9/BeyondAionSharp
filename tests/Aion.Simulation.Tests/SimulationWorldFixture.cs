@@ -142,7 +142,7 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			services.AddSingleton<IStaticDataLoader>(new SimulationStaticDataLoader(cacheDirectory));
 			services.RemoveAll<IHostedService>();
 
-			var accounts = Enumerable.Range(1, 60)
+			var accounts = Enumerable.Range(1, 76)
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();

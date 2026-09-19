@@ -170,6 +170,27 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 				case "E7":
 					await RunE7Async(execution.Scenario, includeHistory);
 					break;
+				case "S1":
+					await RunS1Async(execution.Scenario, includeHistory);
+					break;
+				case "S2":
+					await RunS2Async(execution.Scenario, includeHistory);
+					break;
+				case "S3":
+					await RunS3Async(execution.Scenario, includeHistory);
+					break;
+				case "S4":
+					await RunS4Async(execution.Scenario, includeHistory);
+					break;
+				case "S5":
+					await RunS5Async(execution.Scenario, includeHistory);
+					break;
+				case "S6":
+					await RunS6Async(execution.Scenario, includeHistory);
+					break;
+				case "S7":
+					await RunS7Async(execution.Scenario, includeHistory);
+					break;
 				case "CAPITAL":
 					await RunCapitalAsync(execution.Scenario, includeHistory);
 					break;
@@ -1013,7 +1034,10 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		public Task WaitForReentryAsync(CancellationToken cancellationToken)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
-			TimeSpan remaining = api.Timing.TimeUntilEnterWorld();
+			PlayerCommonData persisted = PlayerDAO.LoadPlayerCommonData(characterId)
+				?? throw new InvalidDataException($"Cannot determine persisted reentry deadline for {characterName}.");
+			DateTimeOffset? lastOnline = persisted.GetLastOnline() is DateTime timestamp ? new DateTimeOffset(timestamp) : null;
+			TimeSpan remaining = api.Timing.TimeUntilEnterWorld(lastOnline);
 			if (remaining > TimeSpan.Zero)
 				fixture.Clock.Advance(remaining + TimeSpan.FromMilliseconds(1));
 			return Task.CompletedTask;
