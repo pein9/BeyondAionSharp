@@ -22,11 +22,11 @@
   {
     "fp": "163d223f",
     "firstSeenSha": "b5663f60d7f7630b2ed9cbd80ee0f16d6bc1aeff",
-    "lastSeenSha": "4e3420f225eb78dfb3d92a03adcd37f4838dabd2",
-    "lastSeenRun": "p8-05-g2-live-20260918a",
-    "count": 4,
+    "lastSeenSha": "4d1451adb863f56cab7d4304d34c1c8c27885260",
+    "lastSeenRun": "p8-06-e10-live-20260919a",
+    "count": 6,
     "status": "fixed",
-    "tracking": "P6-06",
+    "tracking": "P6-06. P8-06/E9 b reused this generic timeout fingerprint because one 15-second step included both the seven-second broker-save wait and the mandatory reentry wait. Split persistence into separately bounded steps; LIVE p8-06-e9-live-20260919d passed. E10 a reused it when stale server position produced a zero-distance move, so the peer never received SM_MOVE; use the movement driver\u0027s current position. LIVE p8-06-e10-live-20260919b passed. P8-06 committed (b9c00fd8a).",
     "fixedIn": "3a18ef1787605966ecbd586be1d167cd42d40931"
   },
   {
@@ -51,9 +51,9 @@
   {
     "fp": "39050e81",
     "firstSeenSha": "6169e0d67",
-    "lastSeenSha": "4e3420f225eb78dfb3d92a03adcd37f4838dabd2",
-    "lastSeenRun": "p8-05-g6-live-20260919c",
-    "count": 316,
+    "lastSeenSha": "4d1451adb863f56cab7d4304d34c1c8c27885260",
+    "lastSeenRun": "p8-06-e11-live-20260919c",
+    "count": 360,
     "status": "tracked",
     "tracking": "P9-01"
   },
@@ -90,19 +90,19 @@
   {
     "fp": "ebe67ab3",
     "firstSeenSha": "1d7f5be259e06d4731e9a3429838a9d5e20aee7f",
-    "lastSeenSha": "4e3420f225eb78dfb3d92a03adcd37f4838dabd2",
-    "lastSeenRun": "p8-05-g6-live-20260919b",
-    "count": 24,
+    "lastSeenSha": "4d1451adb863f56cab7d4304d34c1c8c27885260",
+    "lastSeenRun": "p8-06-e11-live-20260919b",
+    "count": 27,
     "status": "fixed",
-    "tracking": "P8-01: bot inventory notification race, craft cadence and broker/exchange audit scoping corrected and SIM/LIVE verified. P8-02/S3 a/b reused this generic bot-assertion fingerprint for premature logout timestamp/login status checks; corrected to verify notifications then refresh settled state, with clean LIVE p8-s3-live-dev-20260918c. P8-02/S4 a reused it for a roster assertion omitting self; corrected to require both identities, with clean LIVE p8-s4-live-dev-20260918b. P8-02/S5 a reused it for a fractional-millisecond attack sleep undershoot; re-checking the unrelaxed timing gate after waking passes LIVE p8-s5-live-dev-20260918b. S3/S4/S5 changes committed in P8-02 (3cb6ef4d4).",
+    "tracking": "P8-01: bot inventory notification race, craft cadence and broker/exchange audit scoping corrected and SIM/LIVE verified. P8-02/S3 a/b reused this generic bot-assertion fingerprint for premature logout timestamp/login status checks; corrected to verify notifications then refresh settled state, with clean LIVE p8-s3-live-dev-20260918c. P8-02/S4 a reused it for a roster assertion omitting self; corrected to require both identities, with clean LIVE p8-s4-live-dev-20260918b. P8-02/S5 a reused it for a fractional-millisecond attack sleep undershoot; re-checking the unrelaxed timing gate after waking passes LIVE p8-s5-live-dev-20260918b. S3/S4/S5 changes committed in P8-02 (3cb6ef4d4). P8-06/E9 a reused it for a new test incorrectly expecting slot zero on broker purchases instead of FIRST_AVAILABLE_SLOT (65535). Corrected expectation; LIVE p8-06-e9-live-20260919d passed. E11 a reused it for duplicate limited-stock initialization (plan section 7 #52); b exposed the bot's incorrect placement of the NPC markup before tax rounding. Removed the duplicate DI startup registration and corrected the bot calculation. Full SIM and LIVE p8-06-e11-*-20260919c pass. P8-06 committed (b9c00fd8a).",
     "fixedIn": "56d6eb643b023268754d5e031ebb208bc8807e9b"
   },
   {
     "fp": "f802a125",
     "firstSeenSha": "6169e0d67",
-    "lastSeenSha": "4e3420f225eb78dfb3d92a03adcd37f4838dabd2",
-    "lastSeenRun": "p8-05-g6-live-20260919c",
-    "count": 79,
+    "lastSeenSha": "4d1451adb863f56cab7d4304d34c1c8c27885260",
+    "lastSeenRun": "p8-06-e11-live-20260919c",
+    "count": 90,
     "status": "tracked",
     "tracking": "P9-01"
   }

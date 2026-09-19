@@ -44,9 +44,8 @@ public static class GameServerServiceCollectionExtensions
 		// Faithful static services remain bootstrapped by GameServerBootstrapService after DataManager is registered.
 		// Only the DI-native periodic engines belong in this reusable graph.
 		services.AddSingleton<PeriodicInstanceRegistrationService>();
-		services.AddSingleton<LimitedItemTradeSchedulerService>();
-		services.AddSingleton<Aion.GameServer.Model.GameEngine>(
-			serviceProvider => serviceProvider.GetRequiredService<LimitedItemTradeSchedulerService>());
+		// LimitedItemTradeService.Start is owned by the post-spawn bootstrap (Java GameServer.java:135,
+		// ce54b7931). Also registering its scheduler as an engine duplicates stock rows and reset jobs.
 		services.AddSingleton<HouseAuctionTimingService>();
 		services.AddSingleton<HouseMaintenanceTimingService>();
 		services.AddSingleton<ShutdownHook>();

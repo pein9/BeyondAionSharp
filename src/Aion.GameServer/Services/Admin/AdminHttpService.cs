@@ -19,6 +19,7 @@ using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Items;
 using Aion.GameServer.Model.Items.Storage;
+using AdminWarehouseSnapshot = Aion.GameServer.Services.Admin.AdminInventory.WarehouseState;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Services;
 using Aion.GameServer.Services.Instance;
@@ -2972,21 +2973,7 @@ public sealed class AdminHttpService : IHostedService
         return SnapshotWarehouse(player);
     }
 
-    private static AdminWarehouseSnapshot SnapshotWarehouse(Player player)
-    {
-        IStorage characterWarehouse = player.GetStorage(StorageType.REGULAR_WAREHOUSE.GetId());
-        IStorage accountWarehouse = player.GetStorage(StorageType.ACCOUNT_WAREHOUSE.GetId());
-        return new AdminWarehouseSnapshot
-        {
-            CharacterWarehouseItemCount = characterWarehouse?.Size() ?? 0,
-            CharacterWarehouseLimit = characterWarehouse?.GetLimit() ?? 0,
-            CharacterWarehouseFreeSlots = characterWarehouse?.GetFreeSlots() ?? 0,
-            AccountWarehouseItemCount = accountWarehouse?.Size() ?? 0,
-            AccountWarehouseLimit = accountWarehouse?.GetLimit() ?? StorageType.ACCOUNT_WAREHOUSE.GetLimit(),
-            AccountWarehouseFreeSlots = accountWarehouse?.GetFreeSlots() ?? 0,
-            AccountWarehouseKinah = accountWarehouse?.GetKinah() ?? 0
-        };
-    }
+    private static AdminWarehouseSnapshot SnapshotWarehouse(Player player) => AdminInventory.ReadWarehouses(player);
 
     private static string NormalizeRequiredText(string? value, string label, int maxLength)
     {
@@ -3324,17 +3311,6 @@ public sealed class AdminHttpService : IHostedService
         public int UnreadBlackCloudCount { get; set; }
     }
 
-
-    private sealed class AdminWarehouseSnapshot
-    {
-        public int CharacterWarehouseItemCount { get; set; }
-        public int CharacterWarehouseLimit { get; set; }
-        public int CharacterWarehouseFreeSlots { get; set; }
-        public int AccountWarehouseItemCount { get; set; }
-        public int AccountWarehouseLimit { get; set; }
-        public int AccountWarehouseFreeSlots { get; set; }
-        public long AccountWarehouseKinah { get; set; }
-    }
 
     private sealed class AdminBroadcastMessageRequest
     {

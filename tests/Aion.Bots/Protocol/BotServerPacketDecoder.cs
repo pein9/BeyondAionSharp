@@ -54,6 +54,13 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_INVENTORY_ADD_ITEM)] = DecodeInventoryAdd,
 			[typeof(SM_INVENTORY_UPDATE_ITEM)] = DecodeInventoryUpdate,
 			[typeof(SM_DELETE_ITEM)] = DecodeDeleteItem,
+			[typeof(SM_WAREHOUSE_INFO)] = DecodeWarehouseInfo,
+			[typeof(SM_WAREHOUSE_ADD_ITEM)] = DecodeWarehouseAdd,
+			[typeof(SM_WAREHOUSE_UPDATE_ITEM)] = DecodeWarehouseUpdate,
+			[typeof(SM_DELETE_WAREHOUSE_ITEM)] = DecodeWarehouseDelete,
+			[typeof(SM_BROKER_SERVICE)] = DecodeBroker,
+			[typeof(SM_PRIVATE_STORE)] = DecodePrivateStore,
+			[typeof(SM_PRIVATE_STORE_NAME)] = DecodePrivateStoreName,
 			[typeof(SM_CUBE_UPDATE)] = DecodeCubeUpdate,
 			[typeof(SM_SKILL_LIST)] = DecodeSkillList,
 			[typeof(SM_SKILL_REMOVE)] = DecodeSkillRemove,
@@ -70,6 +77,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_LOOT_STATUS)] = DecodeLootStatus,
 			[typeof(SM_LOOT_ITEMLIST)] = DecodeLootItemList,
 			[typeof(SM_TRADELIST)] = DecodeTradeList,
+			[typeof(SM_TRADE_IN_LIST)] = DecodeTradeInList,
 			[typeof(SM_PRICES)] = DecodePrices,
 			[typeof(SM_SELL_ITEM)] = DecodeSellItem,
 			[typeof(SM_REPURCHASE)] = DecodeRepurchase,
@@ -860,6 +868,7 @@ public sealed partial class BotServerPacketDecoder
 		for (var i = 0; i < limitedCount; i++)
 			limited.Add(Fields(("itemId", r.ReadInt32()), ("buyCount", r.ReadUInt16()), ("sellLimit", r.ReadUInt16())));
 		fields["limitedItems"] = limited;
+		if (r.Remaining != 0) throw new InvalidDataException("Trailing trade-list bytes.");
 		return fields;
 	}
 

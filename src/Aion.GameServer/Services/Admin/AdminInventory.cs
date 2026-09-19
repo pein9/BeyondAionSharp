@@ -62,6 +62,44 @@ internal static class AdminInventory
         };
     }
 
+    public static IReadOnlyList<ItemState> ReadWarehouse(IStorage storage, bool includeKinah)
+    {
+        var items = includeKinah ? storage.GetItemsWithKinah() : storage.GetItems();
+        return items.OrderBy(item => item.GetObjectId())
+            .Select(item => SnapshotInventoryItem(item) with { Cloth = false }).ToArray();
+    }
+
+    public static WarehouseState ReadWarehouses(Player player)
+    {
+        IStorage characterWarehouse = player.GetStorage(StorageType.REGULAR_WAREHOUSE.GetId());
+        IStorage accountWarehouse = player.GetStorage(StorageType.ACCOUNT_WAREHOUSE.GetId());
+        return new WarehouseState
+        {
+            CharacterWarehouseItemCount = characterWarehouse?.Size() ?? 0,
+            CharacterWarehouseLimit = characterWarehouse?.GetLimit() ?? 0,
+            CharacterWarehouseFreeSlots = characterWarehouse?.GetFreeSlots() ?? 0,
+            AccountWarehouseItemCount = accountWarehouse?.Size() ?? 0,
+            AccountWarehouseLimit = accountWarehouse?.GetLimit() ?? StorageType.ACCOUNT_WAREHOUSE.GetLimit(),
+            AccountWarehouseFreeSlots = accountWarehouse?.GetFreeSlots() ?? 0,
+            AccountWarehouseKinah = accountWarehouse?.GetKinah() ?? 0,
+            CharacterWarehouseItems = characterWarehouse == null ? [] : ReadWarehouse(characterWarehouse, false),
+            AccountWarehouseItems = accountWarehouse == null ? [] : ReadWarehouse(accountWarehouse, true)
+        };
+    }
+
+    public sealed class WarehouseState
+    {
+        public int CharacterWarehouseItemCount { get; set; }
+        public int CharacterWarehouseLimit { get; set; }
+        public int CharacterWarehouseFreeSlots { get; set; }
+        public int AccountWarehouseItemCount { get; set; }
+        public int AccountWarehouseLimit { get; set; }
+        public int AccountWarehouseFreeSlots { get; set; }
+        public long AccountWarehouseKinah { get; set; }
+        public IReadOnlyList<ItemState> CharacterWarehouseItems { get; set; } = [];
+        public IReadOnlyList<ItemState> AccountWarehouseItems { get; set; } = [];
+    }
+
     private static ItemState SnapshotInventoryItem(Item item) => new(
         item.GetObjectId(), item.GetItemId(), item.GetItemTemplate().GetL10n() ?? string.Empty, item.GetItemCount(),
         unchecked((ushort)item.GetItemMask()), item.GetItemCreator(),

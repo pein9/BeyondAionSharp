@@ -83,6 +83,14 @@ public static partial class LiveBotRunner
 			return await RunG5Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "G6" }])
 			return await RunG6Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "E8" }])
+			return await RunE8Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "E9" }])
+			return await RunE9Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "E10" }])
+			return await RunE10Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "E11" }])
+			return await RunE11Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "CAPITAL" }])
 			return await RunCapitalAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "Q4P" }])

@@ -13,6 +13,19 @@ namespace Aion.GameServer.Tests;
 public sealed class GameServerServiceCollectionExtensionsTests
 {
 	[Fact]
+	public async Task LimitedVendorStockIsNotStartedAgainByTheDiEngineCollection()
+	{
+		// GameServerBootstrapService owns the one post-spawn Start, matching GameServer.java:135.
+		// Resolving the production engine list must not add a second stock initializer.
+		var services = new ServiceCollection();
+		services.AddLogging();
+		services.AddGameServer(new GameServerOptions(), new DatabaseOptions());
+		await using var provider = services.BuildServiceProvider();
+		Assert.DoesNotContain(provider.GetServices<Aion.GameServer.Model.GameEngine>(),
+			engine => engine is LimitedItemTradeSchedulerService);
+	}
+
+	[Fact]
 	public void AddGameServerRegistersTheReusableProductionGraphWithoutInitializingDatabaseOptions()
 	{
 		var gameOptions = new GameServerOptions();

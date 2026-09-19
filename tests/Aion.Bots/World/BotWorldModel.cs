@@ -65,11 +65,13 @@ public sealed partial class BotWorldModel
 	public void BeginWorldReload()
 	{
 		objects.Clear();
+		openPrivateStores.Clear(); privateStoreNames.Clear(); privateStoreListings.Clear();
 		lootStatuses.Clear();
 		Dialog = null;
 		Question = null;
 		Loot = null;
 		Trade = null;
+		TradeIn = null;
 	}
 
 	public void Apply(DecodedBotServerPacket packet)
@@ -90,6 +92,7 @@ public sealed partial class BotWorldModel
 		else if (type == typeof(SM_DELETE))
 		{
 			objects.Remove(packet.Get<int>("objectId"));
+			ForgetPrivateStore(packet.Get<int>("objectId"));
 			lootStatuses.Remove(packet.Get<int>("objectId"));
 		}
 		else if (type == typeof(SM_TELEPORT_LOC))
@@ -116,6 +119,15 @@ public sealed partial class BotWorldModel
 			ApplyInventoryUpdate(packet);
 		else if (type == typeof(SM_DELETE_ITEM))
 			inventory.Remove(packet.Get<int>("itemObjectId"));
+		else if (type == typeof(SM_WAREHOUSE_INFO) || type == typeof(SM_WAREHOUSE_ADD_ITEM)
+			|| type == typeof(SM_WAREHOUSE_UPDATE_ITEM) || type == typeof(SM_DELETE_WAREHOUSE_ITEM))
+			ApplyWarehouse(packet);
+		else if (type == typeof(SM_BROKER_SERVICE))
+			ApplyBroker(packet);
+		else if (type == typeof(SM_PRIVATE_STORE))
+			ApplyPrivateStore(packet);
+		else if (type == typeof(SM_PRIVATE_STORE_NAME))
+			privateStoreNames[packet.Get<int>("sellerObjectId")] = packet.Get<string>("name");
 		else if (type == typeof(SM_CUBE_UPDATE) && packet.Get<byte>("action") == 0 && packet.Get<byte>("actionValue") == 0)
 			CubeExpansion = new(packet.Get<byte>("npcExpands"), packet.Get<byte>("questExpands"), packet.Get<byte>("itemExpands"));
 		else if (type == typeof(SM_SKILL_LIST))
@@ -152,6 +164,8 @@ public sealed partial class BotWorldModel
 			ApplyLootItems(packet);
 		else if (type == typeof(SM_TRADELIST))
 			ApplyTrade(packet);
+		else if (type == typeof(SM_TRADE_IN_LIST))
+			ApplyTradeIn(packet);
 		else if (type == typeof(SM_PRICES))
 			VendorPrices = new BotVendorPrices(packet.Get<byte>("globalPrices"), packet.Get<byte>("globalModifier"),
 				packet.Get<byte>("taxes"));
@@ -187,6 +201,7 @@ public sealed partial class BotWorldModel
 
 	private void ApplyEmotion(DecodedBotServerPacket packet)
 	{
+		ApplyPrivateStoreEmotion(packet);
 		var objectId = packet.Get<int>("senderObjectId");
 		var movementSpeed = packet.Get<float>("movementSpeed");
 		if (movementSpeed <= 0)
@@ -432,6 +447,7 @@ public sealed partial class BotWorldModel
 		{
 			Dialog = null;
 			Trade = null;
+			TradeIn = null;
 			return;
 		}
 		Dialog = new BotDialogWindow(packet.Get<int>("targetObjectId"), pageId, packet.Get<int>("questId"));
@@ -555,6 +571,11 @@ public sealed record BotVendorPrices(int GlobalPrices, int GlobalModifier, int T
 	public long BuyPrice(long basePrice, int vendorBuyModifier) =>
 		(long)((long)((long)((long)(basePrice * vendorBuyModifier / 100D) * GlobalPrices / 100D)
 			* GlobalModifier / 100D) * Taxes / 100D);
+
+	// TradeList.calculateBuyListPrice applies the NPC's sell rate AFTER the individually truncated
+	// vendor/global/tax calculations. SM_TRADELIST combines two modifiers for display, not this rounding.
+	public long BuyListPrice(long basePrice, int vendorBuyModifier, int npcSellRate, long count) =>
+		checked(BuyPrice(basePrice, vendorBuyModifier) * count * npcSellRate / 100);
 
 	public static long SellPrice(long basePrice, int vendorSellModifier) => (long)(basePrice * vendorSellModifier / 100D);
 }

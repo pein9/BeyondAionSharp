@@ -1394,11 +1394,67 @@ Every economy scenario ends with invariants: kinah and item totals conserved acr
   - **G5** Purification, remodel, tuning and conditioning (`CM_ITEM_PURIFICATION`, `CM_ITEM_REMODEL`, `CM_TUNE`,
     `CM_CHARGE_ITEM`).
   - **G6** Unwrap, decompose and selection boxes (`CM_UNWRAP_ITEM`, `CM_SELECT_DECOMPOSABLE`); cube expansion.
-- [ ] **P8-06** [BOTH] L — Storage and player markets:
+- [x] **P8-06** [BOTH] L — Storage and player markets: (`b9c00fd8a`)
   - **E8** Character and account warehouse: deposit, withdraw, kinah, expansion (`WarehouseService`).
+    E8 implemented and verified: shared SIM/LIVE `WarehouseScenario`, four warehouse packet decoders,
+    paginated client storage state and a read-only full-item warehouse oracle. The scenario deposits twelve
+    weapons (forcing multiple snapshot pages), withdraws one, splits/partially withdraws an account stack,
+    deposits/withdraws account kinah, declines then pays 1,200 kinah for eight character slots, and checks
+    inventory plus both warehouses across three relogs. Kinah belongs to account storage, not character
+    storage (`ItemSplitService.moveKinah`); a fresh account creates its kinah item on the first deposit.
+    Evidence: Full SIM `p8-06-e8-full-sim-20260919c` (49 shared-process scenarios) and LIVE
+    `p8-06-e8-live-20260919b` passed; LIVE produced six exact storage receipts and no new/regressed log
+    fingerprints. The bot explicitly opens action 26 and observes page 26; action 54 is not the shipped
+    warehouse function. The solution suite passed 3,920 tests with 15 explicit skips; warnings remain 4,243.
   - **E9** Broker: register, search, a second bot buys, settle, cancel, expiry on the virtual clock (`BrokerService`).
-  - **E10** Private store: open, name, a sale to a second bot, close on move (`PrivateStoreService`).
+    E9 implemented and verified: nine normal client writers, strict broker
+    response decoding, packet-derived listing/settlement state, and one shared level-zero seller/buyer
+    scenario. It registers four ore, filters searches, buys one then three, checks exact fees/proceeds
+    and item identities, collects sales, cancels a second listing without refunding the fee, and verifies
+    both inventories across three relogs. SIM additionally scopes the existing registration-days setting
+    to zero, observes the listing before expiry, advances through the real 60-second expiry timer,
+    collects the unsold item, and verifies another relog; normal trades retain the eight-day default.
+    Full SIM `p8-06-e9-full-sim-20260919d` passed all 50 shared-process scenarios plus four Docker-backed
+    queued-save regressions; LIVE `p8-06-e9-live-20260919d` passed with eight exact inventory receipts and
+    no new/regressed server-log fingerprints. This exposed and fixed the inherited ownership bug in §7 #51.
+    Early test-only failures (slot 0 vs 65535 and combining two mandatory waits in one step) were corrected,
+    not allowlisted. Solution checks: 3,936 passed / 19 explicit prerequisite skips; warnings remain 4,243.
+    Fast `p8-06-e9-fast-20260919a`, fidelity, null-loggers, clock-reads, custom-quest drafts and all ten
+    quest-plan compiler checks also passed.
+  - **E10** Private store: open, name, a sale to a second bot, explicitly close before moving and observe
+    both closure and movement from the second bot (`PrivateStoreService`). The original "close on move"
+    shorthand incorrectly implied server-side automatic closure: Java `CM_MOVE` and `PlayerController`
+    have no such path at `ce54b7931`; `CM_PRIVATE_STORE` with zero offers is the normal client close request.
+    Sell-out closes automatically and is also tested. No server movement/shop behavior is changed.
+    E10 implemented and verified: shared two-bot scenario, normal offer/name
+    writers, strict store decoders and packet-derived shop state. It lists four ore from a stack of ten,
+    buys two with exact inventory/kinah assertions, explicitly closes and makes a real peer-observed move,
+    reopens the remaining two, observes automatic sell-out closure, and checks both inventories after relog.
+    Full SIM `p8-06-e10-full-sim-20260919b` passed 51 shared-process scenarios plus four broker DAO regressions;
+    LIVE `p8-06-e10-live-20260919b` passed with six exact inventory receipts and no new/regressed fingerprints.
+    LIVE a exposed a test-only zero-distance move (stale server position); using the movement driver's current
+    position corrected it. Full SIM a failed earlier in C6 with protection already off; per-attack HP
+    diagnostics were added, but b passing does not resolve that intermittent death-fixture failure.
+    E10 solution gate: 3,943 passed / 19 explicit prerequisite skips; warning baseline remains 4,243.
   - **E11** Trade-in and limited-quantity vendor items (`CM_BUY_TRADE_IN_TRADE`, `LimitedItemTradeService`).
+    E11 implemented and verified: Perbano's existing two-insignia recipe buys two medal chests,
+    persists/relogs, then consumes the remaining materials into the same chest stack. Three ordinary buyers
+    visit Abydus: the first hits its one-item limit while stock remains, retains that limit after relog,
+    the second buys the last unit, and the third is refused for exhausted shared stock despite having no
+    prior purchases. Exact inventories/kinah, refusal messages and fresh persistence are checked throughout.
+    The manifest declares consumption of vendor 798426; its stock is restored by its normal cron schedule,
+    not NPC respawn. A later scenario reusing this stock must cross that reset or use an isolated process.
+    Full SIM `p8-06-e11-full-sim-20260919c` passed all 52 shared-process scenarios and four broker DAO cases.
+    Runs a in SIM/LIVE exposed duplicate startup (§7 #52); runs b exposed a bot price-rounding assumption:
+    `TradeList.calculateBuyListPrice` applies the NPC sell rate after the truncated vendor/global/tax price,
+    not within the combined displayed modifier. The corrected client calculation has fractional-rounding
+    and quantity regressions; six startup/data/protocol checks and the added price check pass.
+    LIVE `p8-06-e11-live-20260919c` passed with thirteen exact inventory receipts, only one stock-startup
+    log entry, and no new/regressed fingerprints. No errors or refusals were broadly allowlisted.
+    Final P8-06 gates: solution 3,951 passed / 19 explicit prerequisite skips; warning baseline 4,243;
+    Fast `p8-06-final-fast-20260919a`, fidelity, null-loggers, clock-reads, custom-quest drafts and all ten
+    quest-plan compiler checks passed. C6's separately recorded intermittent death fixture remains open;
+    it passed the final Full run and an isolated seed-2 run, which are not claimed as a flake fix.
 - [ ] **P8-07** [BOTH] M — Account and character lifecycle:
   - **L1** One character per race × starting class: create, delete, restore within the grace period, delete for good.
   - **L2** Appearance edit, title and bonus title, macro create and delete, UI settings; all verified after relog.
@@ -1666,6 +1722,8 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 48 | G2 SIM required missing HP at the initial proc sample, before poison's first tick; the real dummy could already have regenerated normal-attack damage (test timing assumption) | `skillengine/effect/AbstractOverTimeEffect.java:54-55` at `ce54b7931` schedules first tick after checktime + 300ms (2.3s here); the scenario samples the proc at 1.45s | P8-05: Full SIM `p8-05-g5-full-sim-20260919a` fails on that HP sample before G5. Remove this premature assertion; retain live effect-controller presence/absence, all ten negative wire damage notifications, and the expiry/cessation window. No combat or regeneration rules changed |
 | 49 | Unwrapping dirties the item but not its containing cube, so logout skips it and the item becomes wrapped again; inherited Java defect, not a port divergence | `network/aion/clientpackets/CM_UNWRAP_ITEM.java:40-44` dirties only the item; `model/gameobjects/player/Player.java:536-553` collects items only from dirty storages at `ce54b7931`; C# mirrors both | P8-05: Full SIM and LIVE G6 a both wrap/save, unwrap to -1, then reload +1. Mark the cube dirty in the successful unwrap path under the maintainer's E2E divergence allowance; keep the immediate relog regression, with no intervening inventory actions that could mask the defect. Full SIM G6 d and LIVE G6 c pass all three relogs |
 | 50 | C6 teleported beside its attacker but never moved to end teleport protection; bounded normal attacks sometimes all landed during protection (test-fixture defect) | `network/aion/clientpackets/CM_MOVE.java:140-141` at `ce54b7931` ends protection on horizontal movement; C# matches | P8-05: Full SIM G6 b failed before G6 with `hp=10, protection=True` after 20 attacks. Drive a real one-metre CM_MOVE after setup, assert protection ended, then retain ordinary attack/death/revive assertions; no protection or combat rule changes. Full SIM G6 c/d both pass C6 |
+| 51 | Broker queued saves share mutable items: the registration save clears the dirty flag, so a later purchase can skip its owner transfer and the sold item reloads for the seller. A partial purchase also queues the unsold remainder under the buyer instead of the seller. Both defects are inherited from Java | `services/BrokerService.java:260-261,291-293,669-697` captures one player ID per deferred task; `dao/InventoryDAO.java:218-237` filters by dirty state and marks the shared item UPDATED, at `ce54b7931` | P8-06/E9: Full SIM `p8-06-e9-full-sim-20260919b` and LIVE `p8-06-e9-live-20260919c` reproduce seller inventory resurrection after relog. Narrow intentional correction under the maintainer's E2E divergence allowance: queued item-owner writes remain required even if an earlier task saved the item; unsold remainder ownership is separate from the buyer's kinah ownership. Regression covers pre-saved/unsaved items, retained/transferred ownership, kinah ownership and deletion against Docker MySQL. Full SIM c/d and rebuilt LIVE d pass the unchanged inventory assertions; no allowlist |
+| 52 | C# registered `LimitedItemTradeSchedulerService` as a DI engine in addition to the post-spawn bootstrap call, initializing vendor stock twice and scheduling duplicate resets; `SM_TRADELIST` sent two rows for each limited item | `GameServer.java:135` calls `LimitedItemTradeService.start()` once; `services/LimitedItemTradeService.java:34-58` appends stock and schedules every row, at `ce54b7931` | P8-06/E11: Full SIM and LIVE `p8-06-e11-*-20260919a` fail on duplicate stock rows after successful trade-in and relog. The production-DI regression is red before removing the redundant engine registration. Keep the original post-spawn initializer and the strict single-row assertion. The DI regression is green after the fix; Full SIM and LIVE c pass, and LIVE records exactly one initialization |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

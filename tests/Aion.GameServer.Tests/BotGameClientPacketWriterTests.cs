@@ -49,6 +49,13 @@ public sealed partial class BotGameClientPacketWriterTests
 		var appearance = Enumerable.Range(0, CharacterCreationData.AppearanceFeatureLength).Select(i => (byte)i).ToArray();
 		foreach (var row in ExtendedSocialPacketCases(game)) yield return row;
 		foreach (var row in GearPacketCases(game)) yield return row;
+		foreach (var row in BrokerPacketCases(game)) yield return row;
+		yield return C("private-store-close", GameClientPackets.PrivateStore(), game, "tradePSItems", Array.Empty<Aion.GameServer.Model.Trade.TradePSItem>());
+		yield return C("private-store-name", GameClientPackets.PrivateStoreName("Ore – 商店"), game, "name", "Ore – 商店");
+		yield return C("trade-in", GameClientPackets.BuyTradeIn(0x11223344, 0xFE, 162000052, 2, 101, 202), game,
+			new Dictionary<string, object?> { ["sellerObjId"] = 0x11223344, ["mask"] = (byte)0xFE,
+				["itemId"] = 162000052, ["count"] = 2, ["tradeInListCount"] = 2,
+				["tradeInItemObjIds"] = new List<int> { 101, 202 } });
 
 		yield return C("version", GameClientPackets.VersionCheck(207, 9, 65001, 10, 11, 2), connected, "aionClientVersion", 207);
 		yield return C("l2-auth", GameClientPackets.L2AuthLoginCheck(1, 2, 3, 4, 5, 6), connected, "accountId", 3);

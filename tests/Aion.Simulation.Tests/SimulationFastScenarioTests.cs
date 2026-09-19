@@ -209,6 +209,18 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 				case "G6":
 					await RunG6Async(execution.Scenario, includeHistory);
 					break;
+				case "E8":
+					await RunE8Async(execution.Scenario, includeHistory);
+					break;
+				case "E9":
+					await RunE9Async(execution.Scenario, includeHistory);
+					break;
+				case "E10":
+					await RunE10Async(execution.Scenario, includeHistory);
+					break;
+				case "E11":
+					await RunE11Async(execution.Scenario, includeHistory);
+					break;
 				case "CAPITAL":
 					await RunCapitalAsync(execution.Scenario, includeHistory);
 					break;

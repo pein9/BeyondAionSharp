@@ -4,7 +4,7 @@ using Aion.GameServer.Network.Aion.ClientPackets;
 
 namespace Aion.Bots.Protocol;
 
-public static class GameClientPackets
+public static partial class GameClientPackets
 {
 	public static BotClientPacket VersionCheck(ushort clientVersion, ushort npcVersion, int windowsEncoding,
 		int windowsVersion, int windowsSubVersion, byte liteInfo) =>

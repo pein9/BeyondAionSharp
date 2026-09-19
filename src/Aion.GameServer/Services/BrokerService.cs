@@ -295,7 +295,7 @@ public class BrokerService
                 buyingItem.DecreaseItemCount(itemCount);
                 buyingItem.SetPersistentState(PersistentState.UPDATE_REQUIRED);
                 // storing old broker item with rest items to sell
-                BrokerOpSaveTask bost = new BrokerOpSaveTask(buyingItem, buyingItem.GetItem(), player.GetInventory().GetKinahItem(), player.GetObjectId());
+                BrokerOpSaveTask bost = new BrokerOpSaveTask(buyingItem, buyingItem.GetItem(), player.GetInventory().GetKinahItem(), player.GetObjectId(), buyingItem.GetSellerId());
                 saveManager.Add(bost);
                 // creating new broker item which will be settled
                 BrokerItem soldItem = new BrokerItem(ItemFactory.NewItem(buyingItem.GetItemId(), itemCount), buyingItem.GetPrice(), buyingItem.GetSellerId(),
@@ -769,13 +769,15 @@ public class BrokerService
         private Item item;
         private Item kinahItem;
         private int playerId;
+        private int itemOwnerId;
 
-        internal BrokerOpSaveTask(BrokerItem brokerItem, Item item, Item kinahItem, int playerId)
+        internal BrokerOpSaveTask(BrokerItem brokerItem, Item item, Item kinahItem, int playerId, int? itemOwnerId = null)
         {
             this.brokerItem = brokerItem;
             this.item = item;
             this.kinahItem = kinahItem;
             this.playerId = playerId;
+            this.itemOwnerId = itemOwnerId ?? playerId;
         }
 
         public BrokerOpSaveTask(BrokerItem brokerItem)
@@ -788,7 +790,12 @@ public class BrokerService
             // first save item for FK consistency
             if (item != null)
             {
-                InventoryDAO.Store(item, playerId);
+                // Intentional fix of Java ce54b7931's inherited queued-save bug (plan §7):
+                // earlier tasks share this Item and clear its dirty flag, but a later transfer
+                // must still write its owner. Preserve NEW/DELETED/NOACTION semantics.
+                if (item.GetPersistentState() == PersistentState.UPDATED)
+                    item.SetPersistentState(PersistentState.UPDATE_REQUIRED);
+                InventoryDAO.Store(item, itemOwnerId);
                 ItemStoneListDAO.Save(new List<Item> { item });
             }
             if (brokerItem != null)

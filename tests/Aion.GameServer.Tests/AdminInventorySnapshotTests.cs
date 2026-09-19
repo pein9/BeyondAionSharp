@@ -104,6 +104,31 @@ public sealed class AdminInventorySnapshotTests
         Assert.Empty(storage.GetItems()); Assert.Empty(equipment);
     }
 
+    [Fact]
+    public void WarehouseRowsAreReadOnlyScalarCopiesWithKinahOnlyWhenRequested()
+    {
+        var (_, storage, _) = CreateStorageGraph();
+        var read = typeof(AdminHttpService).Assembly.GetType("Aion.GameServer.Services.Admin.AdminInventory")!.GetMethod("ReadWarehouse")!;
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        Assert.Empty(JsonSerializer.SerializeToElement(read.Invoke(null, [storage, true]), options).EnumerateArray());
+        Assert.Null(storage.GetKinahItem());
+        var item = Item(20, 152000102, 3, 4);
+        var money = Item(10, 182400001, 5_000_000_001, -1);
+        storage.OnLoadHandler(item); storage.OnLoadHandler(money);
+        var regular = read.Invoke(null, [storage, false]);
+        var account = read.Invoke(null, [storage, true]);
+        item.SetItemCount(99);
+        var regularRows = JsonSerializer.SerializeToElement(regular, options).EnumerateArray().ToArray();
+        var accountRows = JsonSerializer.SerializeToElement(account, options).EnumerateArray().ToArray();
+        Assert.Equal(3, Assert.Single(regularRows).GetProperty("count").GetInt64());
+        Assert.Equal(2, accountRows.Length);
+        Assert.Equal(5_000_000_001, accountRows[0].GetProperty("count").GetInt64());
+        Assert.Equal(3, accountRows[1].GetProperty("count").GetInt64());
+        Assert.All(accountRows, row => Assert.False(row.GetProperty("cloth").GetBoolean()));
+        Assert.Same(money, storage.GetKinahItem());
+        Assert.Single(storage.GetItems());
+    }
+
     private static (Player, PlayerStorage, SortedDictionary<long, Item>) CreateStorageGraph()
     {
         // Only storage is observed; no server boot, connection, timers or stat-dependent equip action needed.

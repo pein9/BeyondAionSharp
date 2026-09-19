@@ -235,12 +235,15 @@ public sealed partial class SimulationFastScenarioTests
 		session.BeginStep("s02", "npc-kills-level-one-player");
 		player.GetLifeStats().SetCurrentHp(1);
 		// A normal attack may dodge/resist; a single attempt does not guarantee the death packet.
+		var attackSamples = new List<string>();
 		for (int attempt = 0; attempt < 20 && !player.IsDead(); attempt++)
 		{
+			int beforeAttack = player.GetLifeStats().GetCurrentHp();
 			attacker.GetController().AttackTarget(player, 0, true);
+			attackSamples.Add($"{beforeAttack}->{player.GetLifeStats().GetCurrentHp()}");
 			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
 		}
-		Assert.True(player.IsDead(), $"C6 target survived 20 attacks: hp={player.GetLifeStats().GetCurrentHp()}, protection={player.IsProtectionActive()}.");
+		Assert.True(player.IsDead(), $"C6 target survived 20 attacks: hp={player.GetLifeStats().GetCurrentHp()}, protection={player.IsProtectionActive()}, attacks={string.Join(',', attackSamples)}.");
 		await session.WaitForPacketAsync(typeof(SM_DIE), token);
 		Assert.True(player.IsDead());
 		Assert.Equal(expBefore, player.GetCommonData().GetExp());

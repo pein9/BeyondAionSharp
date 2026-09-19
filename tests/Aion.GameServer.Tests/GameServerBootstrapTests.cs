@@ -388,8 +388,7 @@ public sealed class GameServerBootstrapTests
 		DataManager.RegisterInstance(dataManager);
 
 		// Java parity: GameServer.main inits the engines (AIEngine/ZoneService/GeoService/...) before the spawn path.
-		// The bootstrap's _engines DI collection carries only the LimitedItemTradeScheduler GameEngine in production,
-		// so the spawn-critical engines are initialized here exactly as the spawn-backed test does (each spawned Npc
+		// The spawn-critical singleton engines are initialized here exactly as the spawn-backed test does (each spawned Npc
 		// resolves its AI by name via AIEngine.NewAI; Npc OnAfterSpawn reads the per-world geo/zone maps that
 		// GeoService/ZoneService seed). Register the singleton bridges StartAsync's spawn path reads.
 		IDFactory.RegisterInstance(new IDFactory());

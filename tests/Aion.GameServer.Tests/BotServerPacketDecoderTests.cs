@@ -14,7 +14,7 @@ public sealed class BotServerPacketDecoderTests
 	[Fact]
 	public void DecoderInventoryContainsExpectedBotPerceptionPackets()
 	{
-		Assert.Equal(89, decoder.PacketTypes.Count);
+		Assert.Equal(97, decoder.PacketTypes.Count);
 		Assert.Contains(typeof(SM_UNWRAP_ITEM), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_FIRST_SHOW_DECOMPOSABLE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_SECONDARY_SHOW_DECOMPOSABLE), decoder.PacketTypes);
@@ -170,6 +170,9 @@ public sealed class BotServerPacketDecoderTests
 			if (BotSocialPacketTests.AssertAuditedWireContract(packetType)) continue;
 			if (BotAlliancePacketTests.AssertAuditedWireContract(packetType)) continue;
 			if (BotExtendedSocialPacketTests.AssertAuditedWireContract(packetType)) continue;
+			if (BotBrokerPacketTests.AssertAuditedWireContract(packetType)) continue;
+			if (BotPrivateStorePacketTests.AssertAuditedWireContract(packetType)) continue;
+			if (BotTradeInPacketTests.AssertAuditedWireContract(packetType)) continue;
 			if (packetType == typeof(SM_PRICES))
 			{
 				// No existing Java-generated fixture for this connection-dependent packet. Pin its complete,
