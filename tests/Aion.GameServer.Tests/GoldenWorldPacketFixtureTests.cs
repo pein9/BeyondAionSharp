@@ -836,6 +836,20 @@ public sealed class GoldenWorldPacketFixtureTests
         }
     }
 
+    [Fact]
+    public void EnchantInfoRejectsManastoneSlotsThatCollideAfterMutation()
+    {
+        var item = BuildSubObjectWeapon(268700204, withManastones: true, withGodStone: false);
+        Assert.Equal(2, item.GetItemStones().Count);
+        // Both ports store stones in a slot-sorted set. Mutating a stored key does not re-index that set.
+        item.GetItemStones().Single(stone => stone.GetSlot() == 2).SetSlot(0);
+        Assert.Equal(2, item.GetItemStones().Count);
+        Assert.All(item.GetItemStones(), stone => Assert.Equal(0, stone.GetSlot()));
+        // Java EnchantInfoBlobEntry.createManastoneMap uses Collectors.toMap without a merge function.
+        Assert.Throws<ArgumentException>(() => Aion.GameServer.Network.Aion.Iteminfo.EnchantInfoBlobEntry
+            .WriteInfo(ByteBuffer.Allocate(138).Order(ByteOrder.LITTLE_ENDIAN), item));
+    }
+
     /// <summary>
     /// Build a 1H-sword Item (same base as BuildEquippableWeapon) and POPULATE the ENCHANT_INFO sub-objects: optional
     /// socketed manastones at slots 0/2 (via GetItemStones().Add(new ManaStone(..))) and/or a godstone (via

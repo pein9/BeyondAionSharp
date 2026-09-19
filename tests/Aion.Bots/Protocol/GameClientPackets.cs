@@ -139,6 +139,51 @@ public static class GameClientPackets
 	});
 	public static BotClientPacket EquipItem(byte action, long slot, int itemObjectId) =>
 		Create<CM_EQUIP_ITEM>(w => { w.C(action); w.Q(slot); w.D(itemObjectId); });
+	public static BotClientPacket EnchantItem(int targetItemObjectId, int stoneObjectId, int supplementObjectId = 0) =>
+		ApplyItemStone(1, targetItemObjectId, stoneObjectId, supplementObjectId, false);
+	public static BotClientPacket SocketManastone(int targetItemObjectId, int stoneObjectId, bool fusion = false,
+		int supplementObjectId = 0) => ApplyItemStone(2, targetItemObjectId, stoneObjectId, supplementObjectId, fusion);
+	public static BotClientPacket SocketGodstone(int targetItemObjectId, int stoneObjectId) =>
+		ApplyItemStone(4, targetItemObjectId, stoneObjectId, 0, false);
+	public static BotClientPacket FuseWeapons(int npcObjectId, int mainWeaponObjectId, int secondaryWeaponObjectId) =>
+		Create<CM_FUSION_WEAPONS>(w => { w.D(npcObjectId); w.D(mainWeaponObjectId); w.D(secondaryWeaponObjectId); });
+	public static BotClientPacket BreakWeapons(int npcObjectId, int weaponObjectId) =>
+		Create<CM_BREAK_WEAPONS>(w => { w.D(npcObjectId); w.D(weaponObjectId); });
+	public static BotClientPacket UnwrapItem(int itemObjectId) => Create<CM_UNWRAP_ITEM>(w => w.D(itemObjectId));
+	public static BotClientPacket SelectDecomposable(int itemObjectId, byte index) =>
+		Create<CM_SELECT_DECOMPOSABLE>(w => { w.D(itemObjectId); w.D(0); w.C(index); });
+	public static BotClientPacket PurifyItem(int playerObjectId, int itemObjectId, int resultItemId, params int[] materialObjectIds)
+	{
+		ArgumentNullException.ThrowIfNull(materialObjectIds);
+		if (materialObjectIds.Length > 5) throw new ArgumentException("Purification has five material slots.", nameof(materialObjectIds));
+		return Create<CM_ITEM_PURIFICATION>(w =>
+		{
+			w.D(playerObjectId); w.D(itemObjectId); w.D(resultItemId);
+			for (int slot = 0; slot < 5; slot++) w.D(slot < materialObjectIds.Length ? materialObjectIds[slot] : 0);
+		});
+	}
+	public static BotClientPacket RemodelItem(int npcObjectId, int keepItemObjectId, int extractItemObjectId) =>
+		Create<CM_ITEM_REMODEL>(w => { w.D(npcObjectId); w.D(keepItemObjectId); w.D(extractItemObjectId); w.D(0); });
+	public static BotClientPacket TuneItem(int itemObjectId, int scrollObjectId = 0) =>
+		Create<CM_TUNE>(w => { w.D(itemObjectId); w.D(scrollObjectId); });
+	public static BotClientPacket TuneResult(int itemObjectId, bool accepted) =>
+		Create<CM_TUNE_RESULT>(w => { w.D(itemObjectId); w.C(accepted ? (byte)1 : (byte)0); });
+	public static BotClientPacket ChargeItems(int npcObjectId, byte level, params int[] itemObjectIds)
+	{
+		ArgumentNullException.ThrowIfNull(itemObjectIds);
+		ushort count = checked((ushort)itemObjectIds.Length);
+		return Create<CM_CHARGE_ITEM>(w => { w.D(npcObjectId); w.C(level); w.UH(count); foreach (int id in itemObjectIds) w.D(id); });
+	}
+	public static BotClientPacket RemoveManastone(int npcObjectId, int targetItemObjectId, byte slot, bool fusion = false) =>
+		Create<CM_MANASTONE>(w =>
+		{
+			w.C(3); w.C(fusion ? (byte)2 : (byte)1); w.D(targetItemObjectId);
+			w.C(slot); w.C(0); w.H(0); w.D(npcObjectId);
+		});
+	// CM_MANASTONE at Java ce54b7931: insertion/enchantment and removal have different trailing layouts.
+	private static BotClientPacket ApplyItemStone(byte action, int target, int stone, int supplement, bool fusion) =>
+		Create<CM_MANASTONE>(w => { w.C(action); w.C(fusion ? (byte)2 : (byte)1); w.D(target); w.D(stone); w.D(supplement); });
+
 	public static BotClientPacket MoveItem(int itemObjectId, byte source, byte destination, short slot) =>
 		Create<CM_MOVE_ITEM>(w => { w.D(itemObjectId); w.C(source); w.C(destination); w.H(slot); });
 	public static BotClientPacket SplitItem(int sourceItemObjectId, long amount, byte sourceStorageType,

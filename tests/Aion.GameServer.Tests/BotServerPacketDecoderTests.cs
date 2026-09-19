@@ -14,7 +14,13 @@ public sealed class BotServerPacketDecoderTests
 	[Fact]
 	public void DecoderInventoryContainsExpectedBotPerceptionPackets()
 	{
-		Assert.Equal(83, decoder.PacketTypes.Count);
+		Assert.Equal(89, decoder.PacketTypes.Count);
+		Assert.Contains(typeof(SM_UNWRAP_ITEM), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_FIRST_SHOW_DECOMPOSABLE), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_SECONDARY_SHOW_DECOMPOSABLE), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_TUNE_RESULT), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_SKILL_REMOVE), decoder.PacketTypes);
+		Assert.Contains(typeof(SmAttackStatus), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_MESSAGE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_EMOTION), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_SYSTEM_MESSAGE), decoder.PacketTypes);
@@ -24,6 +30,102 @@ public sealed class BotServerPacketDecoderTests
 		Assert.Contains(typeof(SM_WINDSTREAM_ANNOUNCE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_ABNORMAL_STATE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_GATHER_UPDATE), decoder.PacketTypes);
+	}
+
+	[Fact]
+	public void CubeExpansionDecodesAuditedCompleteBodyAndIgnoresOtherStorageAndStigmaUpdates()
+	{
+		// SM_CUBE_UPDATE.writeImpl at ce54b7931: C action, C storage, D item count, C NPC/quest/item expands.
+		byte[] body = Convert.FromHexString("000044332211010203");
+		var world = new Aion.Bots.World.BotWorldModel();
+		var packet = decoder.Decode(typeof(SM_CUBE_UPDATE), body);
+		Assert.Equal(0x11223344, packet.Get<int>("itemsCount"));
+		world.Apply(packet);
+		Assert.Equal(new Aion.Bots.World.BotCubeExpansion(1, 2, 3), world.CubeExpansion);
+		Assert.Equal(81, world.CubeExpansion!.Capacity);
+		body[1] = 1;
+		world.Apply(decoder.Decode(typeof(SM_CUBE_UPDATE), body));
+		world.Apply(decoder.Decode(typeof(SM_CUBE_UPDATE), [6, 4]));
+		Assert.Equal(new Aion.Bots.World.BotCubeExpansion(1, 2, 3), world.CubeExpansion);
+		for (int length = 0; length < body.Length; length++)
+			Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_CUBE_UPDATE), body[..length]));
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_CUBE_UPDATE), [.. body, 0]));
+	}
+
+	[Theory]
+	[InlineData(typeof(SM_FIRST_SHOW_DECOMPOSABLE), 2)]
+	[InlineData(typeof(SM_SECONDARY_SHOW_DECOMPOSABLE), 1)]
+	[InlineData(typeof(SM_UNWRAP_ITEM), 1)]
+	public void UnwrapAndBoxPreviewsMatchGoldenInputsAndRejectMalformedLengths(Type packetType, int caseCount)
+	{
+		using var fixture = LoadFixture(packetType.Name + ".json");
+		Assert.Equal(caseCount, fixture.RootElement.GetProperty("cases").GetArrayLength());
+		foreach (var example in fixture.RootElement.GetProperty("cases").EnumerateArray())
+		{
+			var input = example.GetProperty("inputs");
+			byte[] body = Convert.FromHexString(example.GetProperty("payloadHex").GetString()!);
+			var packet = decoder.Decode(packetType, body);
+			Assert.Equal(input.GetProperty("objectId").GetInt32(), packet.Get<int>("objectId"));
+			if (packetType == typeof(SM_UNWRAP_ITEM))
+				Assert.Equal(input.GetProperty("count").GetByte(), packet.Get<byte>("count"));
+			else
+			{
+				Assert.Equal(0, packet.Get<int>("reserved"));
+				var expected = input.GetProperty("items");
+				var choices = packet.Get<BotDecomposableChoice[]>("choices");
+				Assert.Equal(expected.GetArrayLength(), choices.Length);
+				for (int i = 0; i < choices.Length; i++)
+					Assert.Equal(new BotDecomposableChoice((byte)i, expected[i][0].GetInt32(), expected[i][1].GetInt32(), 0, 0, 0, 1), choices[i]);
+			}
+			var world = new Aion.Bots.World.BotWorldModel();
+			world.Apply(packet);
+			Assert.Empty(world.Inventory); // Receipt/preview is not an inventory update.
+			for (int length = 0; length < body.Length; length++)
+				Assert.Throws<InvalidDataException>(() => decoder.Decode(packetType, body[..length]));
+			Assert.Throws<InvalidDataException>(() => decoder.Decode(packetType, [.. body, 0]));
+		}
+	}
+
+	[Fact]
+	public void TuningPreviewDecodesBothGoldenModesWithoutApplyingThemToInventory()
+	{
+		using var fixture = LoadFixture("SM_TUNE_RESULT.json");
+		Assert.Equal(2, fixture.RootElement.GetProperty("cases").GetArrayLength());
+		foreach (var example in fixture.RootElement.GetProperty("cases").EnumerateArray())
+		{
+			var input = example.GetProperty("inputs");
+			byte[] body = Convert.FromHexString(example.GetProperty("payloadHex").GetString()!);
+			var packet = decoder.Decode(typeof(SM_TUNE_RESULT), body);
+			var enchantment = packet.Get<Aion.Bots.World.BotItemEnchantment>("enchantment");
+			Assert.Equal(input.GetProperty("objectId").GetInt32(), packet.Get<int>("objectId"));
+			Assert.Equal(input.GetProperty("tuningScrollItemId").GetInt32(), packet.Get<int>("tuningScrollItemId"));
+			Assert.Equal(input.GetProperty("statBonusId").GetByte(), packet.Get<byte>("statBonusId"));
+			Assert.Equal(input.GetProperty("optionalSockets").GetByte(), enchantment.OptionalSockets);
+			Assert.Equal(input.GetProperty("enchantBonus").GetByte(), enchantment.EnchantBonus);
+			Assert.Equal(!input.GetProperty("attributeOnly").GetBoolean(), packet.Get<bool>("showManastoneSlots"));
+			Assert.Equal(!input.GetProperty("attributeOnly").GetBoolean(), packet.Get<bool>("tuneCancelPossible"));
+			var world = new Aion.Bots.World.BotWorldModel();
+			world.Apply(packet);
+			Assert.Empty(world.Inventory); // This is a proposal; only the later inventory update commits a choice.
+			for (int length = 0; length < body.Length; length++)
+				Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_TUNE_RESULT), body[..length]));
+			Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_TUNE_RESULT), [.. body, 0]));
+			body[^1] = 2;
+			Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_TUNE_RESULT), body));
+		}
+	}
+
+	[Fact]
+	public void SkillRemovalPreservesUnsignedIdProfessionFlagAndTypeAndRejectsBadLengths()
+	{
+		byte[] body = Convert.FromHexString("FFFFFE03");
+		var packet = decoder.Decode(typeof(SM_SKILL_REMOVE), body);
+		Assert.Equal((ushort)65535, packet.Get<ushort>("skillId"));
+		Assert.Equal((byte)254, packet.Get<byte>("levelOrProfessionFlag"));
+		Assert.Equal((byte)3, packet.Get<byte>("skillType"));
+		for (int length = 0; length < body.Length; length++)
+			Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_SKILL_REMOVE), body[..length]));
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_SKILL_REMOVE), [.. body, 0]));
 	}
 
 	[Fact]
@@ -75,7 +177,7 @@ public sealed class BotServerPacketDecoderTests
 				AssertPricesWireContract();
 				continue;
 			}
-			using var fixture = LoadFixture(packetType.Name + ".json");
+			using var fixture = LoadFixture((packetType == typeof(SmAttackStatus) ? "SM_ATTACK_STATUS" : packetType.Name) + ".json");
 			var root = fixture.RootElement;
 			Assert.Equal("Java", root.GetProperty("source").GetString());
 			foreach (var fixtureCase in root.GetProperty("cases").EnumerateArray())
@@ -90,6 +192,23 @@ public sealed class BotServerPacketDecoderTests
 
 	[Fact]
 	public void PricesPacketHasExactlyThreeUnsignedPercentages() => AssertPricesWireContract();
+
+	[Fact]
+	public void AttackStatusPreservesSignedDamageAndUnsignedSkillAndRejectsBadLengths()
+	{
+		byte[] body = Convert.FromHexString("78563412DAFFFFFF0764FFFF190C");
+		var packet = decoder.Decode(typeof(SmAttackStatus), body);
+		Assert.Equal(0x12345678, packet.Get<int>("objectId"));
+		Assert.Equal(-38, packet.Get<int>("writtenValue"));
+		Assert.Equal((byte)7, packet.Get<byte>("typeId"));
+		Assert.Equal((byte)100, packet.Get<byte>("hpOrMp"));
+		Assert.Equal(ushort.MaxValue, packet.Get<ushort>("skillId"));
+		Assert.Equal((byte)25, packet.Get<byte>("logId"));
+		Assert.Equal((byte)12, packet.Get<byte>("criticalDisplayCode"));
+		for (int length = 0; length < body.Length; length++)
+			Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SmAttackStatus), body.AsSpan(0, length)));
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SmAttackStatus), [.. body, 0]));
+	}
 
 	[Fact]
 	public void AbyssRankGoldenPacketUpdatesClientRewardAndKillCounters()

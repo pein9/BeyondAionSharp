@@ -7,6 +7,8 @@ using Aion.GameServer.Model.Items.Storage;
 using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.Model.Templates.Items.Enums;
 using Aion.GameServer.Services.Admin;
+using Aion.Bots.World;
+using Aion.GameServer.Model.Items;
 
 namespace Aion.GameServer.Tests;
 
@@ -58,6 +60,37 @@ public sealed class AdminInventorySnapshotTests
         var rows = json.GetProperty("items").EnumerateArray().ToArray();
         Assert.Single(rows);
         Assert.Equal(string.Empty, rows[0].GetProperty("description").GetString());
+    }
+
+    [Fact]
+    public void GearReadDoesNotInitializeStoneCollectionsAndCopiesClientVisibleState()
+    {
+        var (player, _, equipment) = CreateStorageGraph();
+        var item = Item(40, 100000094, 1, (1L << 40) | 2);
+        item.GetItemTemplate().itemGroup = ItemGroup.GREATSWORD;
+        item.SetEquipped(true); item.SetSoulBound(true); item.SetEnchantLevel(7);
+        item.SetOptionalSockets(3); item.SetEnchantBonus(4); item.SetTuneCount(-1);
+        item.SetTempering(5); item.SetAmplified(true); item.SetBuffSkill(1234); item.SetPackCount(2);
+        item.SetItemSkinTemplate(new ItemTemplate { itemId = 100000123 });
+        typeof(Item).GetField("conditioningInfo", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(item, new ChargeInfo(543210, item));
+        equipment[item.GetEquipmentSlot()] = item;
+        var snapshot = Snapshot(player);
+        item.SetEnchantLevel(15); item.SetTuneCount(2); item.SetPackCount(0);
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        var row = Assert.Single(JsonSerializer.SerializeToElement(snapshot, options).GetProperty("items").EnumerateArray());
+        var details = row.GetProperty("details").Deserialize<BotItemDetails>(options);
+        Assert.Equal(new BotItemDetails(new(true, 7, 100000123, 255, 255, BotStoneSlots.Empty, 0, 5, true, 1234),
+            new(0, BotStoneSlots.Empty, 0, 0), (1L << 40) | 2, 543210, new(255, 0), 2), details);
+        Assert.Null(typeof(Item).GetField("manaStones", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(item));
+        Assert.Null(typeof(Item).GetField("fusionStones", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(item));
+
+        row = Assert.Single(JsonSerializer.SerializeToElement(Snapshot(player), options).GetProperty("items").EnumerateArray());
+        details = row.GetProperty("details").Deserialize<BotItemDetails>(options);
+        Assert.Equal(new BotItemPremium(0, 2), details!.Premium);
+        Assert.Equal((byte)3, details.Enchantment!.OptionalSockets);
+        Assert.Equal((byte)4, details.Enchantment.EnchantBonus);
+        Assert.Equal((byte)0, details.PackCount);
     }
 
     [Fact]

@@ -113,7 +113,7 @@ public class EnchantInfoBlobEntry : ItemBlobEntry
         {
             Dictionary<int, ManaStone> map = new Dictionary<int, ManaStone>();
             foreach (ManaStone s in item.GetItemStones())
-                map[s.GetSlot()] = s;
+                map.Add(s.GetSlot(), s); // Java Collectors.toMap rejects duplicate slots instead of silently replacing a stone.
             return map;
         }
         return new Dictionary<int, ManaStone>();

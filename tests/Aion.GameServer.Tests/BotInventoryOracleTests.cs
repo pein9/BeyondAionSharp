@@ -11,12 +11,26 @@ public sealed class BotInventoryOracleTests
         new(20, 162000001, "potion", 3, 7, "", 4, false),
         new(10, BotWorldModel.KinahItemId, "kinah", 5_000_000_001, 0, "", 65535, false),
         new(30, 100000001, "weapon", 1, 9, "Crafter", 1, false)
+        {
+            Details = new(new(true, 7, 100000002, 3, 4, new(1, 2, 3, 4, 5, 6), 168000123, 5, true, 1234),
+                new(100000003, new(7, 8, 9, 10, 11, 12), 2, 3), 1L << 40 | 1, 543210, new(4, 2), 3)
+        }
     ];
 
     [Fact]
     public void ExactUnorderedIdentityAndAllModelFieldsMatchWith64BitKinah()
     {
         Verify(Response(Items.Reverse().ToArray()));
+    }
+
+    [Fact]
+    public void CubeCapacityIsIndependentlyComparedWhenObservedOnTheWire()
+    {
+        var response = Response(Items);
+        response["inventory"]!["cubeLimit"] = 36;
+        var json = JsonSerializer.SerializeToElement(response);
+        BotInventoryOracle.Verify(42, Items, 5_000_000_001, json, new(1, 0, 0));
+        Assert.Throws<InvalidDataException>(() => BotInventoryOracle.Verify(42, Items, 5_000_000_001, json, new(0, 0, 0)));
     }
 
     [Theory]
@@ -77,6 +91,43 @@ public sealed class BotInventoryOracleTests
         var error = Assert.Throws<InvalidDataException>(() =>
             BotInventoryOracle.Verify(42, duplicate, 5_000_000_001, response));
         Assert.Contains("Bot inventory contains duplicate object IDs", error.Message);
+    }
+
+    [Fact]
+    public void GearFieldsUseValueEqualityAcrossIndependentlyDeserializedSnapshots()
+    {
+        Verify(Response(Items));
+        Assert.NotSame(Items[2].Details, JsonSerializer.Deserialize<BotInventoryItem>(
+            JsonSerializer.Serialize(Items[2], Options), Options)!.Details);
+    }
+
+    [Theory]
+    [MemberData(nameof(GearMismatches))]
+    public void DetectsEveryObservedGearFieldMismatch(string path, string json)
+    {
+        var response = Response(Items);
+        JsonNode row = response["inventory"]!["items"]![2]!["details"]!;
+        var parts = path.Split('.');
+        foreach (string part in parts[..^1]) row = row[part]!;
+        row[parts[^1]] = JsonNode.Parse(json);
+        Assert.Throws<InvalidDataException>(() => Verify(response));
+    }
+
+    public static IEnumerable<object[]> GearMismatches()
+    {
+        foreach (string field in new[] { "enchantLevel", "skinId", "optionalSockets", "enchantBonus", "godstoneId", "tempering", "buffSkill" })
+            yield return new object[] { "enchantment." + field, "99" };
+        yield return new object[] { "enchantment.soulBound", "false" };
+        yield return new object[] { "enchantment.amplified", "false" };
+        for (int slot = 0; slot < 6; slot++)
+        {
+            yield return new object[] { "enchantment.manastones.slot" + slot, "99" };
+            yield return new object[] { "fusion.manastones.slot" + slot, "99" };
+        }
+        foreach (string field in new[] { "fusion.itemId", "fusion.optionalSockets", "fusion.bonusStatsId", "equippedSlot", "chargePoints", "premium.bonusStatsId", "premium.tuneCount", "packCount" })
+            yield return new object[] { field, "99" };
+        foreach (string field in new[] { "enchantment", "fusion", "premium", "equippedSlot", "chargePoints", "packCount" })
+            yield return new object[] { field, "null" };
     }
 
     [Fact]

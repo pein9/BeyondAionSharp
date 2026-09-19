@@ -1,6 +1,8 @@
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Model.Items.Storage;
+using Aion.GameServer.Model.Items;
+using Aion.GameServer.Model.Templates.Items.Enums;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Utils;
 using Aion.GameServer.Utils.Collections;
@@ -63,7 +65,35 @@ internal static class AdminInventory
     private static ItemState SnapshotInventoryItem(Item item) => new(
         item.GetObjectId(), item.GetItemId(), item.GetItemTemplate().GetL10n() ?? string.Empty, item.GetItemCount(),
         unchecked((ushort)item.GetItemMask()), item.GetItemCreator(),
-        unchecked((ushort)item.GetEquipmentSlot()), item.GetItemTemplate().IsCloth());
+        unchecked((ushort)item.GetEquipmentSlot()), item.GetItemTemplate().IsCloth(), ReadDetails(item));
+
+    private static DetailsState ReadDetails(Item item)
+    {
+        var template = item.GetItemTemplate();
+        bool equipable = template.GetItemGroup().GetValidEquipmentSlots() != 0;
+        bool identified = item.IsIdentified();
+        var enchantment = equipable ? new EnchantmentState(item.IsSoulBound(), unchecked((byte)item.GetEnchantLevel()),
+            item.GetItemSkinTemplate().GetTemplateId(), unchecked((byte)(identified ? item.GetOptionalSockets() : -1)),
+            unchecked((byte)(identified ? item.GetEnchantBonus() : -1)),
+            ReadStones(item.HasManaStones() ? item.GetItemStones() : Array.Empty<ManaStone>()),
+            item.GetGodStoneId(), unchecked((byte)item.GetTempering()), item.IsAmplified(), item.GetBuffSkill()) : null;
+        var fusion = item.HasFusionedItem() || template.IsTwoHandWeapon() ? new FusionState(item.GetFusionedItemId(),
+            ReadStones(item.HasFusionStones() ? item.GetFusionStones() : Array.Empty<ManaStone>()),
+            unchecked((byte)item.GetFusionedItemOptionalSockets()), unchecked((byte)item.GetFusionedItemBonusStatsId())) : null;
+        return new DetailsState(enchantment, fusion, equipable ? (item.IsEquipped() ? item.GetEquipmentSlot() : 0) : null,
+            equipable && item.GetConditioningInfo() != null ? item.GetChargePoints() : null,
+            equipable ? new PremiumState(unchecked((byte)(identified ? item.GetBonusStatsId() : -1)),
+                unchecked((byte)(identified ? item.GetTuneCount() : 0))) : null,
+            unchecked((byte)item.GetPackCount()));
+    }
+
+    private static StoneSlots ReadStones(IEnumerable<ManaStone> stones)
+    {
+        // Do not call Item's lazy collection getters for an empty set during read-only inspection.
+        var slots = stones.ToDictionary(stone => stone.GetSlot(), stone => stone.GetItemId());
+        return new(slots.GetValueOrDefault(0), slots.GetValueOrDefault(1), slots.GetValueOrDefault(2),
+            slots.GetValueOrDefault(3), slots.GetValueOrDefault(4), slots.GetValueOrDefault(5));
+    }
 
     public sealed class InventoryState
     {
@@ -77,6 +107,14 @@ internal static class AdminInventory
     }
 
     public sealed record ItemState(int ObjectId, int ItemId, string Description, long Count,
-        ushort ItemMask, string Creator, ushort EquipmentSlot, bool Cloth);
+        ushort ItemMask, string Creator, ushort EquipmentSlot, bool Cloth, DetailsState Details);
+
+    public sealed record DetailsState(EnchantmentState? Enchantment, FusionState? Fusion, long? EquippedSlot,
+        int? ChargePoints, PremiumState? Premium, byte PackCount);
+    public sealed record EnchantmentState(bool SoulBound, byte EnchantLevel, int SkinId, byte OptionalSockets,
+        byte EnchantBonus, StoneSlots Manastones, int GodstoneId, byte Tempering, bool Amplified, int BuffSkill);
+    public sealed record FusionState(int ItemId, StoneSlots Manastones, byte OptionalSockets, byte BonusStatsId);
+    public sealed record PremiumState(byte BonusStatsId, byte TuneCount);
+    public sealed record StoneSlots(int Slot0, int Slot1, int Slot2, int Slot3, int Slot4, int Slot5);
 
 }

@@ -1324,11 +1324,71 @@ Every economy scenario ends with invariants: kinah and item totals conserved acr
   `p8-04-e3-live-20260918c` verifies the corrected image with its inventory receipt and zero new/regressed
   problems. Logger, clock, custom-quest, fidelity and quest-compiler checks pass. No Java runtime used.
   Future E8–E11 must invoke the same check before logout.
-- [ ] **P8-05** [BOTH] L — Gear progression (add writers, decoders and API calls as needed; rolls pinned by the P4-05
-  seed; invariant: no orphaned manastones):
+- [x] **P8-05** [BOTH] L — Gear progression (add writers, decoders and API calls as needed; rolls pinned by the P4-05
+  seed; invariant: no orphaned manastones): (`76944c344`)
+  Completed: shared client writers cover enchantment, primary/fused manastone insertion/removal
+  and inventory godstone socketing. Six added encrypted production-parser cases and two independent
+  wire/registration contracts pass with the complete writer suite (105 tests). Gear blobs now retain
+  enchantment, primary/fusion sockets, godstones, equipment masks, conditioning, tuning and wrapping;
+  independent storage comparisons include those fields (219 focused tests passed). Foundation checks:
+  warning baseline unchanged, exact solution tests and Full SIM `p8-05-gear-foundation-sim-20260918a`
+  passed; rebuilt LIVE E3 `p8-05-gear-foundation-live-20260918a` passed its exact inventory oracle with
+  zero new/regressed watcher problems. G1's shared body, both runners and manifest entry are implemented
+  with Full SIM `p8-05-g1-full-sim-20260918c` passing all three relogs, fresh DAO comparisons and the
+  no-orphan-stones query. LIVE `p8-05-g1-live-20260918c` also passes the shared G1 body, six exact inventory
+  comparisons across three relogs, and the Docker SQL no-orphan query (36 inventory rows, zero orphan
+  rows); its watcher has zero new/regressed problems. LIVE `p8-05-g1-live-20260918d` also passes and
+  retains all six distinct before/after inventory receipt files. G2 passes Full SIM
+  `p8-05-g2-full-sim-20260919c` and rebuilt LIVE `p8-05-g2-live-20260919b`: real inventory socketing,
+  ordinary equip/attacks, ten poison damage ticks followed by expiry/cessation, and relog persistence.
+  LIVE has two exact inventory receipts, one saved godstone, zero orphan rows and zero new/regressed
+  watcher problems. First attempts exposed the equipment rank binding defect in §7 #44; SIM b also
+  exposed an invalid test expectation that damage remain after the real dummy regenerates (now checked
+  during the active effect and in each wire tick, not after expiry). G3 passes Full SIM
+  `p8-05-g3-full-sim-20260919b` and rebuilt LIVE `p8-05-g3-live-20260919b`: socket two weapons, fuse
+  with the exact fee and transferred stones, relog, break with the primary socket preserved, then
+  relog again. The first runs exposed the inherited persistence defect in §7 #45. The corrected LIVE
+  run retains four inventory receipts and has zero new/regressed watcher problems and zero orphan rows.
+  Current checks: 139 focused API/writer/rank tests, exact solution suite (3,877 passed / 15 prerequisite
+  skips), warning baseline unchanged at 4,243, logger/clock/quest/fidelity checks, and Fast SIM
+  `p8-05-g3-fast-20260919a` pass.
+  G4 now passes rebuilt LIVE `p8-05-g4-live-20260919a` (four distinct inventory receipts across two
+  relogs, zero new/regressed watcher problems and zero orphan rows) and Full SIM
+  `p8-05-g4-full-sim-20260919d`: decline binding without mutation, accept the real five-second use,
+  equip a regular stigma for its exact fee, learn/remove its skill, and persist both outcomes.
+  Initial SIM attempts exposed the prerequisite setup defect in §7 #46; a diagnostic red run c
+  explicitly showed its already-started campaign before the corrected run d passed. SIM a had an
+  earlier C2 final-cast timeout; additional failure diagnostics were added, but its root cause is not
+  yet established (subsequent full runs b/c/d pass C2). G5 client writers/API calls for purification,
+  remodel, tune/result and conditioning pass 165 focused checks; its tuning-result decoder passes
+  both existing golden modes and strict malformed-length/flag checks (22 focused decoder/blob tests).
+  Follow-up checks after the G4 fixture fix and §7 #47's payment-sign correction: warning baseline
+  unchanged at 4,243; exact solution suite 3,891 passed / 15 prerequisite skips; logger, clock,
+  custom-quest, fidelity and quest-compiler checks pass; Fast SIM `p8-05-g4-fast-20260919a` passes.
+  The final focused run adds G5 API identity/selected-NPC and overlapping-action guards: 178 passed,
+  including all three payment-contract cases (red/green logs `p8-05-purification-cost-*.log`).
+  G5's shared body and both runners are now implemented and under verification: identify/enchant a
+  shipped positive-kinah purification recipe's input, purify with exact costs, transfer/restore a skin,
+  reject and accept tuning proposals, charge both conditioning levels and relog three times. Its first
+  Full SIM attempt `p8-05-g5-full-sim-20260919a` stopped earlier at the G2 timing assertion in §7 #48;
+  it is not a G5 pass. Corrected Full SIM `p8-05-g5-full-sim-20260919b` passes G1–G5, including
+  G2's ten damage ticks. LIVE G5 `p8-05-g5-live-20260919b` passes all three relogs with six distinct
+  exact inventory receipts, 39 inventory rows, zero orphan stones and zero new/regressed watcher problems.
+  G6 passes Full SIM `p8-05-g6-full-sim-20260919d` (all 48 shared-process scenarios, including G1–G6)
+  and LIVE `p8-05-g6-live-20260919c`: normal wrapping before unwrap, signed wrap-count persistence,
+  two timed decompositions with stacked rewards, box preview/selection and decline/accept cube expansion
+  with exact payment. LIVE retains six inventory/cube-capacity receipts across three relogs, 38 inventory
+  rows, zero orphan stones and zero new/regressed watcher problems. Initial runs exposed the inherited
+  unwrap persistence defect (§7 #49), C6's protection setup error (§7 #50), and a G6 test assertion that
+  omitted the quote packet's two empty parameter slots; corrected runs cover all three. The final focused
+  protocol/API/oracle and real-data-contract run passes 224 checks. Final gates: solution suite 3,903
+  passed / 15 explicit prerequisite skips; warning inventory unchanged at 4,243; logger, clock, custom-quest,
+  fidelity and quest-compiler checks pass; Docker Fast `p8-05-final-fast-20260919a` passes.
   - **G1** Manastone socketing, success and failure; enchantment +1..+N with failure downgrade (`CM_MANASTONE`,
     `EnchantService`).
-  - **G2** Godstone socketing (`CM_GODSTONE_SOCKET`) and its proc in combat.
+  - **G2** Godstone socketing (`CM_MANASTONE` action 4, with the weapon in inventory) and its proc in combat.
+    Correction: `CM_GODSTONE_SOCKET` is retired in both 4.8 packet factories (Java
+    `AionClientPacketFactory.java:119`, C# `AionClientPacketFactory.cs:120`); no NPC is required.
   - **G3** Weapon fusion and break (`CM_FUSION_WEAPONS`, `CM_BREAK_WEAPONS`).
   - **G4** Equip with the soul-bind question; stigma equip, unequip and stigma skill learning (`StigmaService`).
   - **G5** Purification, remodel, tuning and conditioning (`CM_ITEM_PURIFICATION`, `CM_ITEM_REMODEL`, `CM_TUNE`,
@@ -1596,7 +1656,16 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 38 | `LegionDAO` bound unsigned C# color bytes into signed `TINYINT` columns, so high-bit emblem colors failed to save at logout; its read path also used unsigned `GetByte` and threw on a default emblem's SQL NULL blob | `dao/LegionDAO.java:262-287` uses signed `setByte` for all four colors; `:306-310` reads signed bytes and nullable `getBytes` | P8-02/S7 LIVE `p8-s7-live-dev-20260918a` caught fingerprint `d580e505` at logout. Signed bindings/reads and nullable blob handling restored; eight parameter regressions fail before the fix. Clean LIVE b plus Full SIM b reconnect and fresh DAO reads verify the fix; not allowlisted |
 | 39 | C6 waited for death after only one normal NPC attack; Full SIM could time out before reaching S7 because a normal attack is not guaranteed to damage its target (test assumption, not a production divergence) | `controllers/CreatureController.java:321-369` calculates normal attack outcomes including DODGE/RESIST before applying damage | P8-02: repeat the existing normal attack at two-second intervals, at most 20 attempts, assert actual death before waiting for the death packet. No combat rules changed; Full SIM `p8-s7-full-sim-20260918b` passes |
 | 40 | C#-only `WorkOrderRecipeTable` redundantly parsed work-order XML at startup despite no gameplay consumer; the actual quest path already uses `XMLQuests` | `dataholders/XMLQuests.java:22-40` indexes `WorkOrdersData`; `questEngine/handlers/models/WorkOrdersData.java:36-42` registers the recipe-bearing handler directly | P8-03: table retained only as a test audit helper; remove unused startup construction/property and compare all 574 rows with the production holder |
-| 41 | `EnchantInfoBlobEntry.CreateManastoneMap` silently overwrites duplicate slot keys, masking invalid item state; Java rejects duplicate keys | `network/aion/iteminfo/EnchantInfoBlobEntry.java`, `createManastoneMap`, uses `Collectors.toMap` without a merge function at `ce54b7931`; C# uses dictionary indexer assignment | Latent source-level divergence found while preparing P8-05; add a duplicate-slot regression and match Java's fail-loud behavior with the gear work. No observed LIVE failure and no allowlist entry |
+| 41 | `EnchantInfoBlobEntry.CreateManastoneMap` silently overwrites duplicate slot keys, masking invalid item state; Java rejects duplicate keys | `network/aion/iteminfo/EnchantInfoBlobEntry.java`, `createManastoneMap`, uses `Collectors.toMap` without a merge function at `ce54b7931`; C# used dictionary indexer assignment | P8-05: a regression mutates a stone already in the real slot-sorted collection and proves both colliding entries remain. Red before dictionary `Add`, green afterward; all valid golden packet fixtures remain byte-identical in the 219-test focused run. No observed LIVE failure and no allowlist entry |
+| 42 | Initial G1 bot opened the removal NPC's dialog without selecting that NPC; removal dereferenced a null current target (test-client defect, not a production divergence) | `network/aion/clientpackets/CM_MANASTONE.java:90-93` at `ce54b7931` requires `player.getTarget()` to be the nearby NPC, independently of opening a dialog; C# matches | P8-05: LIVE `p8-05-g1-live-20260918a` caught fingerprint `1e2f5870`; add `CM_TARGET_SELECT` before removal and a bot API guard tested against omitted selection. Full SIM c and LIVE c pass; no server change or allowlist entry |
+| 43 | LIVE `MoveToKnownObjectAsync` updated the client's current position but left its persisted-position expectation at the pre-move location, causing a false logout failure (test-client defect) | `LiveBotRunner.ExecuteMovementAsync` updated only `currentPosition`; `MoveToPositionAsync` separately updated the persistence expectation, while `MoveToNpcAsync` did not | P8-05: G1 LIVE b reached socket success/failure and the exact gear inventory oracle, then failed its first logout because the server correctly saved the five-metre approach. Update both expectations centrally after the last movement frame; LIVE c passes all three relogs |
+| 44 | `Equipment.EquipItem` resolves Abyss rank `GetId()` to the generic enum-ordinal fallback, rejecting unrestricted equipment for starting-rank players and shifting restricted-equipment eligibility by one | Java `model/gameobjects/player/Equipment.java:73` and `utils/stats/AbyssRankEnum.java` at `ce54b7931` use IDs 1–18; C# `Equipment.cs` omitted the `Utils.Stats` import although its rank-recheck partial includes it | P8-05: G2 first SIM and LIVE runs socket successfully but receive `STR_MSG_CANT_USE_ITEM_TOO_LOW_RANK` on equip. Compiled-call regression fails against the generic fallback before adding the import, then passes; all 18 rank IDs and explicit restriction boundaries are pinned. Full SIM c and rebuilt LIVE b pass; no rank grants, item-rule changes or allowlist |
+| 45 | Breaking a persisted fusion deletes its socket stones and announces success, but the old secondary weapon template returns after relog (inherited upstream bug, not a port mismatch) | Java `services/ArmsfusionService.java:breakWeapons`, `model/gameobjects/Item.java:setFusionedItem` and `dao/InventoryDAO.java:store` at `ce54b7931` omit the dirty mark before saving; the DAO only updates changed items. C# faithfully inherited this omission | Intentional narrow deviation under the user's allowance for Java divergence for E2E work: set `UPDATE_REQUIRED` in `BreakWeapons` before `InventoryDAO.Store`, matching the existing fusion path's save discipline. Both G3 first runs (`p8-05-g3-full-sim-20260919a`, `p8-05-g3-live-20260919a`) pass fusion, its first relog and in-memory break, then fail the second relog because the template reappears. Full SIM b and rebuilt LIVE b pass both relogs and no-orphan checks after the fix; no artificial item dirtying from the test and no allowlist |
+| 46 | G4 SIM setup ignored a rejected duplicate quest insertion after class/level setup had already started campaign 1929; the prerequisite remained START and stigma equip was correctly refused (test-fixture defect) | `QuestStateList.AddQuest` returns false for an existing quest; LIVE's `Handlers/AdminCommands/Quest.SetQuestStatus` updates existing state instead | P8-05: SIM c explicitly asserts the duplicate and records START. Update the existing prerequisite, reset its vars/reward group and invoke the same completion hook as the director command. Full SIM d passes both G4 relogs; no gameplay or quest content change |
+| 47 | Purification passes a negative kinah cost to `DecreaseKinah`, whose positive-only guard silently skips payment; inherited Java defect, not a port divergence | `services/item/ItemPurificationService.java`, `decreaseMaterials`, and `model/items/storage/Storage.java`, `decreaseKinah`, at `ce54b7931`; C# mirrors both | P8-05: narrow intentional upstream bug fix under the maintainer's E2E divergence allowance. Service-to-storage regression fails for costs 1,000 and 5,000,000,001 before removing the negation; zero-cost path stays unchanged. Full SIM and LIVE G5 b prove the 1,000-kinah payment, exact inventory delta and fresh persistence after relog |
+| 48 | G2 SIM required missing HP at the initial proc sample, before poison's first tick; the real dummy could already have regenerated normal-attack damage (test timing assumption) | `skillengine/effect/AbstractOverTimeEffect.java:54-55` at `ce54b7931` schedules first tick after checktime + 300ms (2.3s here); the scenario samples the proc at 1.45s | P8-05: Full SIM `p8-05-g5-full-sim-20260919a` fails on that HP sample before G5. Remove this premature assertion; retain live effect-controller presence/absence, all ten negative wire damage notifications, and the expiry/cessation window. No combat or regeneration rules changed |
+| 49 | Unwrapping dirties the item but not its containing cube, so logout skips it and the item becomes wrapped again; inherited Java defect, not a port divergence | `network/aion/clientpackets/CM_UNWRAP_ITEM.java:40-44` dirties only the item; `model/gameobjects/player/Player.java:536-553` collects items only from dirty storages at `ce54b7931`; C# mirrors both | P8-05: Full SIM and LIVE G6 a both wrap/save, unwrap to -1, then reload +1. Mark the cube dirty in the successful unwrap path under the maintainer's E2E divergence allowance; keep the immediate relog regression, with no intervening inventory actions that could mask the defect. Full SIM G6 d and LIVE G6 c pass all three relogs |
+| 50 | C6 teleported beside its attacker but never moved to end teleport protection; bounded normal attacks sometimes all landed during protection (test-fixture defect) | `network/aion/clientpackets/CM_MOVE.java:140-141` at `ce54b7931` ends protection on horizontal movement; C# matches | P8-05: Full SIM G6 b failed before G6 with `hp=10, protection=True` after 20 attacks. Drive a real one-metre CM_MOVE after setup, assert protection ended, then retain ordinary attack/death/revive assertions; no protection or combat rule changes. Full SIM G6 c/d both pass C6 |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

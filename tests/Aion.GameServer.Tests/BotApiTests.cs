@@ -166,6 +166,89 @@ public sealed class BotApiTests
 		Assert.DoesNotContain(BotBlockingActivity.Gathering, api.Timing.BlockingActivities);
 	}
 
+	[Theory]
+	[InlineData((byte)0, true)]
+	[InlineData((byte)1, false)]
+	[InlineData((byte)2, false)]
+	[InlineData((byte)3, false)]
+	[InlineData((byte)4, true)]
+	[InlineData((byte)6, false)]
+	[InlineData((byte)8, false)]
+	[InlineData((byte)9, true)]
+	[InlineData((byte)10, false)]
+	[InlineData((byte)11, false)]
+	[InlineData((byte)12, true)]
+	[InlineData((byte)13, false)]
+	[InlineData((byte)14, false)]
+	public void ItemUseAnimationsGateMovementAndOverlappingGearActions(byte animation, bool blocked)
+	{
+		var api = new BotApi();
+		api.Observe(Packet<SM_STATS_INFO>(("objectId", 100), ("level", (ushort)1), ("expNeeded", 1L),
+			("expRecoverable", 0L), ("expShown", 0L), ("maxHp", 100), ("currentHp", 100), ("maxMp", 100),
+			("currentMp", 100), ("maxDp", (ushort)4000), ("dp", (ushort)0), ("maxFp", 60), ("currentFp", 60)));
+		AssertPacket<CM_MANASTONE>(api.EnchantItem(200, 201));
+		Assert.Throws<InvalidOperationException>(() => api.SocketManastone(200, 202));
+		Assert.Throws<InvalidOperationException>(() => api.RemoveManastone(300, 200, 0));
+		Assert.Throws<InvalidOperationException>(() => api.SocketGodstone(200, 203));
+		Assert.Throws<InvalidOperationException>(() => api.PurifyItem(200, 100001765, 204));
+		Assert.Throws<InvalidOperationException>(() => api.RemodelItem(300, 200, 204));
+		Assert.Throws<InvalidOperationException>(() => api.TuneItem(200, 204));
+		Assert.Throws<InvalidOperationException>(() => api.TuneResult(200, true));
+		Assert.Throws<InvalidOperationException>(() => api.UnwrapItem(200));
+		Assert.Throws<InvalidOperationException>(() => api.SelectDecomposable(200, 1));
+		Assert.Throws<InvalidOperationException>(() => api.ChargeItems(300, 2, 200));
+		Assert.Throws<InvalidOperationException>(() => api.MoveTo(new MovementPacketData(1, 2, 3, 0, 0)));
+		api.Observe(Packet<SM_ITEM_USAGE_ANIMATION>(("playerObjId", 999), ("animationId", (byte)1)));
+		Assert.Contains(BotBlockingActivity.ItemUse, api.Timing.BlockingActivities); // Another player's completion is not ours.
+		api.Observe(Packet<SM_ITEM_USAGE_ANIMATION>(("playerObjId", 100), ("animationId", animation)));
+		Assert.Equal(blocked, api.Timing.BlockingActivities.Contains(BotBlockingActivity.ItemUse));
+		if (!blocked)
+		{
+			AssertPacket<CM_MOVE>(api.MoveTo(new MovementPacketData(1, 2, 3, 0, 0)));
+			Assert.Throws<InvalidOperationException>(() => api.RemoveManastone(300, 200, 0));
+			api.Target(300);
+			AssertPacket<CM_MANASTONE>(api.RemoveManastone(300, 200, 0));
+			AssertPacket<CM_MANASTONE>(api.SocketManastone(200, 202));
+		}
+	}
+
+	[Fact]
+	public void FusionRequiresSelectedOfficerAndAnIdleSubject()
+	{
+		var api = new BotApi();
+		Assert.Throws<InvalidOperationException>(() => api.FuseWeapons(300, 200, 201));
+		Assert.Throws<InvalidOperationException>(() => api.BreakWeapons(300, 200));
+		api.Target(300);
+		AssertPacket<CM_FUSION_WEAPONS>(api.FuseWeapons(300, 200, 201));
+		AssertPacket<CM_BREAK_WEAPONS>(api.BreakWeapons(300, 200));
+		api.SocketManastone(200, 202);
+		Assert.Throws<InvalidOperationException>(() => api.FuseWeapons(300, 200, 201));
+		Assert.Throws<InvalidOperationException>(() => api.BreakWeapons(300, 200));
+	}
+
+	[Fact]
+	public void UpgradeIntentsRequirePlayerIdentityAndTheSelectedConditioner()
+	{
+		var api = new BotApi();
+		Assert.Throws<InvalidOperationException>(() => api.PurifyItem(200, 100001765));
+		api.Observe(Packet<SM_STATS_INFO>(("objectId", 100), ("level", (ushort)65), ("expNeeded", 1L),
+			("expRecoverable", 0L), ("expShown", 0L), ("maxHp", 100), ("currentHp", 100), ("maxMp", 100),
+			("currentMp", 100), ("maxDp", (ushort)4000), ("dp", (ushort)0), ("maxFp", 60), ("currentFp", 60)));
+		var purification = api.PurifyItem(200, 100001765, 201);
+		AssertPacket<CM_ITEM_PURIFICATION>(purification);
+		Assert.Equal(100, System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(purification.Body));
+		AssertPacket<CM_ITEM_REMODEL>(api.RemodelItem(300, 200, 201));
+		Assert.Throws<InvalidOperationException>(() => api.ChargeItems(300, 2, 200));
+		api.Target(301);
+		Assert.Throws<InvalidOperationException>(() => api.ChargeItems(300, 2, 200));
+		api.Target(300);
+		AssertPacket<CM_CHARGE_ITEM>(api.ChargeItems(300, 2, 200));
+		AssertPacket<CM_TUNE>(api.TuneItem(200, 201));
+		Assert.Contains(BotBlockingActivity.ItemUse, api.Timing.BlockingActivities);
+		api.Observe(Packet<SM_ITEM_USAGE_ANIMATION>(("playerObjId", 100), ("animationId", (byte)13)));
+		AssertPacket<CM_TUNE_RESULT>(api.TuneResult(200, true));
+	}
+
 	[Fact]
 	public void FacadeExposesEveryPlannedIntentName()
 	{
@@ -178,6 +261,8 @@ public sealed class BotApiTests
 			"Loot", "TalkTo", "SelectDialog", "CloseDialog", "Answer", "Teleport", "Gather", "Craft", "Buy",
 			"Sell", "TradeRequest", "TradeAddItem", "TradeAddKinah", "TradeLock", "TradeAccept", "TradeCancel",
 			"InviteToGroup", "Say", "Whisper", "Duel", "Revive",
+			"EnchantItem", "SocketManastone", "SocketGodstone", "RemoveManastone", "FuseWeapons", "BreakWeapons",
+			"PurifyItem", "RemodelItem", "TuneItem", "TuneResult", "ChargeItems", "UnwrapItem", "SelectDecomposable",
 		})
 			Assert.Contains(expected, names);
 	}

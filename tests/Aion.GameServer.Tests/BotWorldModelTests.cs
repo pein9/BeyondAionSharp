@@ -166,6 +166,10 @@ public sealed class BotWorldModelTests
 			("skills", Items(Item(("skillId", (ushort)102), ("level", (ushort)1), ("reserved", (byte)0),
 				("professionBarSize", (byte)0), ("flag", 0), ("skillType", (byte)2))))));
 		Assert.Equal(2, world.Skills.Count);
+		world.Apply(Packet<SM_SKILL_REMOVE>(("skillId", (ushort)102), ("levelOrProfessionFlag", (byte)1), ("skillType", (byte)2)));
+		Assert.Equal((ushort)101, Assert.Single(world.Skills).Value.SkillId);
+		world.Apply(Packet<SM_SKILL_REMOVE>(("skillId", (ushort)102), ("levelOrProfessionFlag", (byte)1), ("skillType", (byte)2)));
+		Assert.Single(world.Skills); // Repeated removal does not erase unrelated skills.
 		world.Apply(Packet<SM_SKILL_COOLDOWN>(
 			("cooldowns", Items(Item(("skillId", (ushort)101), ("remainingSeconds", 9), ("durationMillis", 12000))))));
 		Assert.Equal(9, world.Cooldowns[101].RemainingSeconds);

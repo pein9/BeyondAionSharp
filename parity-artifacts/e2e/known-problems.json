@@ -22,12 +22,22 @@
   {
     "fp": "163d223f",
     "firstSeenSha": "b5663f60d7f7630b2ed9cbd80ee0f16d6bc1aeff",
-    "lastSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
-    "lastSeenRun": "p8-s1-live-dev-20260918a",
-    "count": 2,
+    "lastSeenSha": "4e3420f225eb78dfb3d92a03adcd37f4838dabd2",
+    "lastSeenRun": "p8-05-g2-live-20260918a",
+    "count": 4,
     "status": "fixed",
     "tracking": "P6-06",
     "fixedIn": "3a18ef1787605966ecbd586be1d167cd42d40931"
+  },
+  {
+    "fp": "1e2f5870",
+    "firstSeenSha": "4e3420f225eb78dfb3d92a03adcd37f4838dabd2",
+    "lastSeenSha": "4e3420f225eb78dfb3d92a03adcd37f4838dabd2",
+    "lastSeenRun": "p8-05-g1-live-20260918a",
+    "count": 1,
+    "status": "fixed",
+    "tracking": "P8-05; e2e-player-simulation-plan section 7 #42 (bot NPC selection fixed and SIM/LIVE G1 verified)",
+    "fixedIn": "76944c34432d832fbf37cd3af6e958b2ba6d8c10"
   },
   {
     "fp": "2c206aaf",
@@ -41,9 +51,9 @@
   {
     "fp": "39050e81",
     "firstSeenSha": "6169e0d67",
-    "lastSeenSha": "5117b3ad5e9af312c23ed1f913937e66567c085e",
-    "lastSeenRun": "p8-04-e3-live-20260918c",
-    "count": 256,
+    "lastSeenSha": "4e3420f225eb78dfb3d92a03adcd37f4838dabd2",
+    "lastSeenRun": "p8-05-g6-live-20260919c",
+    "count": 316,
     "status": "tracked",
     "tracking": "P9-01"
   },
@@ -80,9 +90,9 @@
   {
     "fp": "ebe67ab3",
     "firstSeenSha": "1d7f5be259e06d4731e9a3429838a9d5e20aee7f",
-    "lastSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
-    "lastSeenRun": "p8-s5-live-dev-20260918a",
-    "count": 20,
+    "lastSeenSha": "4e3420f225eb78dfb3d92a03adcd37f4838dabd2",
+    "lastSeenRun": "p8-05-g6-live-20260919b",
+    "count": 24,
     "status": "fixed",
     "tracking": "P8-01: bot inventory notification race, craft cadence and broker/exchange audit scoping corrected and SIM/LIVE verified. P8-02/S3 a/b reused this generic bot-assertion fingerprint for premature logout timestamp/login status checks; corrected to verify notifications then refresh settled state, with clean LIVE p8-s3-live-dev-20260918c. P8-02/S4 a reused it for a roster assertion omitting self; corrected to require both identities, with clean LIVE p8-s4-live-dev-20260918b. P8-02/S5 a reused it for a fractional-millisecond attack sleep undershoot; re-checking the unrelaxed timing gate after waking passes LIVE p8-s5-live-dev-20260918b. S3/S4/S5 changes committed in P8-02 (3cb6ef4d4).",
     "fixedIn": "56d6eb643b023268754d5e031ebb208bc8807e9b"
@@ -90,9 +100,9 @@
   {
     "fp": "f802a125",
     "firstSeenSha": "6169e0d67",
-    "lastSeenSha": "5117b3ad5e9af312c23ed1f913937e66567c085e",
-    "lastSeenRun": "p8-04-e3-live-20260918c",
-    "count": 64,
+    "lastSeenSha": "4e3420f225eb78dfb3d92a03adcd37f4838dabd2",
+    "lastSeenRun": "p8-05-g6-live-20260919c",
+    "count": 79,
     "status": "tracked",
     "tracking": "P9-01"
   }

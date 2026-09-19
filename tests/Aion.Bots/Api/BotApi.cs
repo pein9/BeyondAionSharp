@@ -152,6 +152,76 @@ public sealed class BotApi
 	public BotClientPacket Equip(byte action, long slot, int itemObjectId) =>
 		GameClientPackets.EquipItem(action, slot, itemObjectId);
 
+	public BotClientPacket EnchantItem(int itemObjectId, int stoneObjectId, int supplementObjectId = 0) =>
+		BeginGearUse(GameClientPackets.EnchantItem(itemObjectId, stoneObjectId, supplementObjectId));
+	public BotClientPacket SocketManastone(int itemObjectId, int stoneObjectId, bool fusion = false, int supplementObjectId = 0) =>
+		BeginGearUse(GameClientPackets.SocketManastone(itemObjectId, stoneObjectId, fusion, supplementObjectId));
+	public BotClientPacket SocketGodstone(int itemObjectId, int stoneObjectId) =>
+		BeginGearUse(GameClientPackets.SocketGodstone(itemObjectId, stoneObjectId));
+	public BotClientPacket UnwrapItem(int itemObjectId)
+	{
+		Timing.EnsureCanMove();
+		return GameClientPackets.UnwrapItem(itemObjectId);
+	}
+	public BotClientPacket SelectDecomposable(int itemObjectId, byte index)
+	{
+		Timing.EnsureCanMove();
+		return GameClientPackets.SelectDecomposable(itemObjectId, index);
+	}
+	public BotClientPacket PurifyItem(int itemObjectId, int resultItemId, params int[] materialObjectIds)
+	{
+		Timing.EnsureCanMove();
+		return GameClientPackets.PurifyItem(World.SelfObjectId ?? throw new InvalidOperationException("Enter the world before purifying an item."),
+			itemObjectId, resultItemId, materialObjectIds);
+	}
+	public BotClientPacket RemodelItem(int npcObjectId, int keepItemObjectId, int extractItemObjectId)
+	{
+		Timing.EnsureCanMove();
+		return GameClientPackets.RemodelItem(npcObjectId, keepItemObjectId, extractItemObjectId);
+	}
+	public BotClientPacket TuneItem(int itemObjectId, int scrollObjectId = 0) =>
+		BeginGearUse(GameClientPackets.TuneItem(itemObjectId, scrollObjectId));
+	public BotClientPacket TuneResult(int itemObjectId, bool accepted)
+	{
+		Timing.EnsureCanMove();
+		return GameClientPackets.TuneResult(itemObjectId, accepted);
+	}
+	public BotClientPacket ChargeItems(int npcObjectId, byte level, params int[] itemObjectIds)
+	{
+		Timing.EnsureCanMove();
+		if (Timing.SelectedTargetId != npcObjectId) throw new InvalidOperationException("Select the conditioning NPC before charging items.");
+		return GameClientPackets.ChargeItems(npcObjectId, level, itemObjectIds);
+	}
+	public BotClientPacket FuseWeapons(int npcObjectId, int mainWeaponObjectId, int secondaryWeaponObjectId)
+	{
+		EnsureArmsfusionTarget(npcObjectId);
+		return GameClientPackets.FuseWeapons(npcObjectId, mainWeaponObjectId, secondaryWeaponObjectId);
+	}
+	public BotClientPacket BreakWeapons(int npcObjectId, int weaponObjectId)
+	{
+		EnsureArmsfusionTarget(npcObjectId);
+		return GameClientPackets.BreakWeapons(npcObjectId, weaponObjectId);
+	}
+	private void EnsureArmsfusionTarget(int npcObjectId)
+	{
+		Timing.EnsureCanMove();
+		if (Timing.SelectedTargetId != npcObjectId)
+			throw new InvalidOperationException("Select the armsfusion officer before fusing or breaking weapons.");
+	}
+	public BotClientPacket RemoveManastone(int npcObjectId, int itemObjectId, byte slot, bool fusion = false)
+	{
+		Timing.EnsureCanMove(); // No outstanding cast, gathering, crafting or item-use operation.
+		if (Timing.SelectedTargetId != npcObjectId)
+			throw new InvalidOperationException("Select the manastone-removal NPC before requesting removal.");
+		return GameClientPackets.RemoveManastone(npcObjectId, itemObjectId, slot, fusion);
+	}
+	private BotClientPacket BeginGearUse(BotClientPacket packet)
+	{
+		Timing.EnsureCanMove();
+		Timing.SetActivity(BotBlockingActivity.ItemUse, true);
+		return packet;
+	}
+
 	public BotClientPacket Loot(int targetObjectId, byte? itemIndex = null, bool close = false)
 	{
 		if (close && itemIndex != null)
@@ -303,6 +373,15 @@ public sealed class BotApi
 			Timing.SetActivity(BotBlockingActivity.Gathering, false);
 		else if (packet.PacketType == typeof(SM_CRAFT_UPDATE) && packet.Get<byte>("action") >= 4)
 			Timing.SetActivity(BotBlockingActivity.Crafting, false);
+		else if (packet.PacketType == typeof(SM_ITEM_USAGE_ANIMATION) && packet.Get<int>("playerObjId") == World.SelfObjectId)
+		{
+			// Java ItemUseAnimation: each family has its own start, success and cancellation stages.
+			byte animation = packet.Get<byte>("animationId");
+			if (animation is 0 or 4 or 9 or 12)
+				Timing.SetActivity(BotBlockingActivity.ItemUse, true);
+			else if (animation is 1 or 2 or 3 or 6 or 8 or 10 or 11 or 13 or 14)
+				Timing.SetActivity(BotBlockingActivity.ItemUse, false);
+		}
 		else if (packet.PacketType == typeof(SM_SYSTEM_MESSAGE) &&
 			packet.Get<string>("name") is "STR_GATHER_OUT_OF_SKILL_POINT" or
 				"STR_GATHER_TOO_FAR_FROM_GATHER_SOURCE" or "STR_GATHER_INVENTORY_IS_FULL")

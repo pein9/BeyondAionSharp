@@ -260,6 +260,18 @@ try {
 		Stop-Watcher
 		if ($botExitCode -ne 0) { throw "Live bots failed with exit code $botExitCode." }
 		if ($watcherExitCode -ne 0) { throw "Log watcher failed with exit code $watcherExitCode." }
+		if (@($Scenario | Where-Object { $_ -match '^G[1-6]$' }).Count -gt 0) {
+			# Independent post-logout persistence invariant, inside this run's Docker DB only.
+			# The bot never reads this data to decide an action or to populate its world model.
+			$gearQuery = 'SELECT JSON_OBJECT(''inventoryRows'', (SELECT COUNT(*) FROM aion_gs.inventory), ''stoneRows'', (SELECT COUNT(*) FROM aion_gs.item_stones), ''orphanRows'', (SELECT COUNT(*) FROM aion_gs.item_stones s LEFT JOIN aion_gs.inventory i ON i.item_unique_id=s.item_unique_id WHERE i.item_unique_id IS NULL))'
+			$gearPassword = if ([string]::IsNullOrWhiteSpace($env:AION_BOT_DB_PASSWORD)) { 'aion-bots' } else { $env:AION_BOT_DB_PASSWORD }
+			$gearResult = (& docker @composeArgs exec -T -e "MYSQL_PWD=$gearPassword" mysql mysql -uroot -Nse $gearQuery | Out-String).Trim()
+			if ($LASTEXITCODE -ne 0) { throw 'Docker gear persistence invariant query failed.' }
+			$gearState = $gearResult | ConvertFrom-Json
+			$gearResult | Set-Content -LiteralPath (Join-Path $runPath 'gear-persistence-oracle.json') -Encoding utf8
+			if ($gearState.inventoryRows -le 0) { throw 'Gear persistence oracle found no saved inventory.' }
+			if ($gearState.orphanRows -ne 0) { throw "Gear persistence oracle found $($gearState.orphanRows) orphaned item-stone rows." }
+		}
 	}
 	finally {
 		Pop-Location

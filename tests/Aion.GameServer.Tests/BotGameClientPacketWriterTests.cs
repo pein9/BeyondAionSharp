@@ -48,6 +48,7 @@ public sealed partial class BotGameClientPacketWriterTests
 		var allMove = (byte)(MovementMask.POSITION | MovementMask.MANUAL | MovementMask.ABSOLUTE | MovementMask.GLIDE | MovementMask.VEHICLE);
 		var appearance = Enumerable.Range(0, CharacterCreationData.AppearanceFeatureLength).Select(i => (byte)i).ToArray();
 		foreach (var row in ExtendedSocialPacketCases(game)) yield return row;
+		foreach (var row in GearPacketCases(game)) yield return row;
 
 		yield return C("version", GameClientPackets.VersionCheck(207, 9, 65001, 10, 11, 2), connected, "aionClientVersion", 207);
 		yield return C("l2-auth", GameClientPackets.L2AuthLoginCheck(1, 2, 3, 4, 5, 6), connected, "accountId", 3);

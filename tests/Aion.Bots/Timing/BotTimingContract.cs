@@ -20,6 +20,7 @@ public sealed class BotTimingContract
 			BotBlockingActivity.Casting,
 			BotBlockingActivity.Gathering,
 			BotBlockingActivity.Crafting,
+			BotBlockingActivity.ItemUse,
 		});
 
 	private readonly TimeProvider timeProvider;
@@ -169,6 +170,7 @@ public enum BotBlockingActivity
 	Casting,
 	Gathering,
 	Crafting,
+	ItemUse,
 }
 
 public sealed record BotTimingRuleSet(string JavaCommit, int AttackGraceMillis, int MinimumCastIntervalMillis,

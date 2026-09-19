@@ -82,8 +82,18 @@ public sealed partial class SimulationFastScenarioTests
 		session.BeginStep("s04", "accept-at-ten-seconds");
 		await session.AdvanceAsync(TimeSpan.FromMilliseconds(10_001), token);
 		await session.SendPacketAsync(GameClientPackets.CastSpell(cast), token);
-		await session.WaitForPacketAsync(typeof(SM_CASTSPELL_RESULT), token,
-			packet => packet.Get<ushort>("skillId") == 2864);
+		try
+		{
+			await session.WaitForPacketAsync(typeof(SM_CASTSPELL_RESULT), token,
+				packet => packet.Get<ushort>("skillId") == 2864);
+		}
+		catch (OperationCanceledException exception)
+		{
+			string packets = string.Join(Environment.NewLine, session.PacketHistory.TakeLast(20).Select(packet =>
+				packet.PacketType.Name + " " + System.Text.Json.JsonSerializer.Serialize(packet.Fields)));
+			throw new InvalidOperationException($"C2 cooldown-expiry cast did not complete. Player dead={player.IsDead()}, target dead={target.IsDead()}; " +
+				$"player=({player.GetX()},{player.GetY()},{player.GetZ()}), target=({target.GetX()},{target.GetY()},{target.GetZ()}). Recent packets:{Environment.NewLine}{packets}", exception);
+		}
 		policy.AssertClean();
 	}
 
@@ -217,6 +227,10 @@ public sealed partial class SimulationFastScenarioTests
 		long expBefore = player.GetCommonData().GetExp();
 		Npc attacker = FindLivingNpc(player, 210363);
 		await PlaceBesideNpcAsync(session, player, attacker, token);
+		// Teleport grants protection. Java CM_MOVE:140-141 ends it on real horizontal movement;
+		// a director position change alone is not a player entering combat.
+		await session.MoveToPositionAsync(new BotPosition(player.GetX() - 1, player.GetY(), player.GetZ(), player.GetHeading()), token);
+		Assert.False(player.IsProtectionActive());
 
 		session.BeginStep("s02", "npc-kills-level-one-player");
 		player.GetLifeStats().SetCurrentHp(1);

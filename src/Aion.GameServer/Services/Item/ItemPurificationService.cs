@@ -91,7 +91,9 @@ public class ItemPurificationService
             AbyssPointsService.AddAp(player, -purificationResult.GetNecessaryAbyssPoints());
 
         if (purificationResult.GetNecessaryKinah() > 0)
-            player.GetInventory().DecreaseKinah(-purificationResult.GetNecessaryKinah());
+            // Intentional upstream bug fix (E2E plan §7 #47): Java ce54b7931 negates this
+            // cost, but Storage ignores nonpositive decreases, making purification free.
+            player.GetInventory().DecreaseKinah(purificationResult.GetNecessaryKinah());
 
         player.GetInventory().DecreaseByObjectId(baseItem.GetObjectId(), 1);
 

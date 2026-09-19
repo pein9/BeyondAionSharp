@@ -26,9 +26,9 @@ internal sealed partial class LiveBotSession
         string evidence = Path.Combine(options.OutputDirectory, "bots", $"{bot}.{currentStep}.inventory-oracle.json");
         await File.WriteAllTextAsync(evidence, JsonSerializer.Serialize(new
         {
-            characterId, clientKinah = kinah, clientItems = items, server = document.RootElement
+            characterId, clientKinah = kinah, clientItems = items, clientCube = Api.World.CubeExpansion, server = document.RootElement
         }, new JsonSerializerOptions { WriteIndented = true }), token);
-        BotInventoryOracle.Verify(characterId, items, kinah, document.RootElement);
+        BotInventoryOracle.Verify(characterId, items, kinah, document.RootElement, Api.World.CubeExpansion);
         trace.WriteAction(currentStep, "inventory:verified", new Dictionary<string, object?>
         {
             ["characterId"] = characterId, ["itemCount"] = items.Length, ["kinah"] = kinah,

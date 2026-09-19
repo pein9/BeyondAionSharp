@@ -51,6 +51,7 @@ public sealed partial class BotWorldModel
 	public bool IsDead { get; private set; }
 	public BotReviveOptions? ReviveOptions { get; private set; }
 	public long Kinah => inventory.Values.Where(item => item.ItemId == KinahItemId).Sum(item => item.Count);
+	public BotCubeExpansion? CubeExpansion { get; private set; }
 
 	public BotDialogWindow? Dialog { get; private set; }
 	public BotQuestionWindow? Question { get; private set; }
@@ -115,8 +116,12 @@ public sealed partial class BotWorldModel
 			ApplyInventoryUpdate(packet);
 		else if (type == typeof(SM_DELETE_ITEM))
 			inventory.Remove(packet.Get<int>("itemObjectId"));
+		else if (type == typeof(SM_CUBE_UPDATE) && packet.Get<byte>("action") == 0 && packet.Get<byte>("actionValue") == 0)
+			CubeExpansion = new(packet.Get<byte>("npcExpands"), packet.Get<byte>("questExpands"), packet.Get<byte>("itemExpands"));
 		else if (type == typeof(SM_SKILL_LIST))
 			ApplySkillList(packet);
+		else if (type == typeof(SM_SKILL_REMOVE))
+			skills.Remove(packet.Get<ushort>("skillId"));
 		else if (type == typeof(SM_RECIPE_LIST))
 		{
 			recipes.Clear();
@@ -302,7 +307,11 @@ public sealed partial class BotWorldModel
 			var objectId = Get<int>(item, "objectId");
 			inventory[objectId] = new BotInventoryItem(objectId, Get<int>(item, "itemId"), Get<string>(item, "desc"),
 				Get<long>(item, "itemCount"), Get<ushort>(item, "itemMask"), Get<string>(item, "itemCreator"),
-				Get<ushort>(item, "equipmentSlot"), Get<bool>(item, "cloth"));
+				Get<ushort>(item, "equipmentSlot"), Get<bool>(item, "cloth"))
+			{
+				Details = item.TryGetValue("details", out var details) && details is BotItemDetails parsed
+					? parsed : BotItemDetails.Empty
+			};
 		}
 	}
 
@@ -311,12 +320,19 @@ public sealed partial class BotWorldModel
 		var objectId = packet.Get<int>("objectId");
 		if (!inventory.TryGetValue(objectId, out var existing))
 			return;
+		var update = packet.Fields.TryGetValue("details", out var value) && value is BotItemDetails parsed ? parsed : existing.Details;
+		bool fullBlob = GetNullableStruct<long>(packet.Fields, "itemCount") != null;
+		// The equip-only blob uses a 64-bit mask. Unequipping resets the server's cube position to zero.
+		ushort slot = update.EquippedSlot is { } equipment && (equipment != 0 || existing.Details.EquippedSlot is > 0)
+			? unchecked((ushort)equipment) : existing.EquipmentSlot;
 		inventory[objectId] = existing with
 		{
 			Description = packet.Get<string>("desc"),
 			Count = GetNullableStruct<long>(packet.Fields, "itemCount") ?? existing.Count,
 			ItemMask = GetNullableStruct<ushort>(packet.Fields, "itemMask") ?? existing.ItemMask,
 			Creator = GetNullableString(packet.Fields, "itemCreator") ?? existing.Creator,
+			EquipmentSlot = slot,
+			Details = fullBlob ? update : existing.Details.Merge(update),
 		};
 	}
 
@@ -496,7 +512,10 @@ public sealed record BotKnownObject(int ObjectId, BotKnownObjectKind Kind, BotPo
 	float? MovementSpeed = null);
 
 public sealed record BotInventoryItem(int ObjectId, int ItemId, string Description, long Count, ushort ItemMask,
-	string Creator, ushort EquipmentSlot, bool Cloth);
+	string Creator, ushort EquipmentSlot, bool Cloth)
+{
+	public BotItemDetails Details { get; init; } = BotItemDetails.Empty;
+}
 
 public sealed record BotSkill(ushort SkillId, ushort Level, byte Reserved, byte ProfessionBarSize, int Flag, byte SkillType);
 

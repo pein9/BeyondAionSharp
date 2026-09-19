@@ -71,6 +71,18 @@ public static partial class LiveBotRunner
 			return await RunS6Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "S7" }])
 			return await RunS7Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "G1" }])
+			return await RunG1Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "G2" }])
+			return await RunG2Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "G3" }])
+			return await RunG3Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "G4" }])
+			return await RunG4Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "G5" }])
+			return await RunG5Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "G6" }])
+			return await RunG6Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "CAPITAL" }])
 			return await RunCapitalAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "Q4P" }])
@@ -795,7 +807,12 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 			(packet, token) => new ValueTask(SendGameAsync(packet, token)),
 			(delay, token) => new ValueTask(Task.Delay(delay, token)), cancellationToken);
 		if (plan.Frames.Count > 0)
-			currentPosition = plan.Frames[^1].Position;
+		{
+			BotPosition position = plan.Frames[^1].Position;
+			currentPosition = position;
+			int mapId = api.World.MapId ?? throw new InvalidOperationException("The bot has not observed its map.");
+			expectedPosition = new PersistedPosition(mapId, position.X, position.Y, position.Z);
+		}
 	}
 
 	public async Task StartQuestAsync(int npcObjectId, int questId, CancellationToken cancellationToken)

@@ -27,6 +27,11 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_GATHER_UPDATE)] = DecodeGatherUpdate,
 			[typeof(SM_CRAFT_UPDATE)] = DecodeCraftUpdate,
 			[typeof(SM_ITEM_USAGE_ANIMATION)] = DecodeItemUsage,
+			[typeof(SM_TUNE_RESULT)] = DecodeTuneResult,
+			[typeof(SM_UNWRAP_ITEM)] = DecodeUnwrapItem,
+			[typeof(SM_FIRST_SHOW_DECOMPOSABLE)] = DecodeDecomposable,
+			[typeof(SM_SECONDARY_SHOW_DECOMPOSABLE)] = DecodeDecomposable,
+			[typeof(SmAttackStatus)] = DecodeAttackStatus,
 			[typeof(SM_MOVE)] = DecodeMove,
 			[typeof(SM_DELETE)] = DecodeDelete,
 			[typeof(SM_TELEPORT_LOC)] = DecodeTeleport,
@@ -51,6 +56,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_DELETE_ITEM)] = DecodeDeleteItem,
 			[typeof(SM_CUBE_UPDATE)] = DecodeCubeUpdate,
 			[typeof(SM_SKILL_LIST)] = DecodeSkillList,
+			[typeof(SM_SKILL_REMOVE)] = DecodeSkillRemove,
 			[typeof(SM_RECIPE_LIST)] = DecodeRecipeList,
 			[typeof(SM_LEARN_RECIPE)] = DecodeLearnRecipe,
 			[typeof(SM_RECIPE_DELETE)] = DecodeRecipeDelete,
@@ -121,6 +127,47 @@ public sealed partial class BotServerPacketDecoder
 		if (!Decoders.TryGetValue(packetType, out var decoder))
 			throw new NotSupportedException($"The bot does not decode {packetType.Name}.");
 		return new DecodedBotServerPacket(packetType, decoder(body));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeUnwrapItem(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		var fields = Fields(("objectId", r.ReadInt32()), ("count", r.ReadByte()));
+		if (r.Remaining != 0) throw new InvalidDataException("Unwrap result has unexpected trailing bytes.");
+		return fields;
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeDecomposable(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		int objectId = r.ReadInt32(), reserved = r.ReadInt32();
+		var choices = new BotDecomposableChoice[r.ReadByte()];
+		for (int i = 0; i < choices.Length; i++)
+			choices[i] = new(r.ReadByte(), r.ReadInt32(), r.ReadInt32(), r.ReadByte(), r.ReadByte(), r.ReadByte(), r.ReadByte());
+		if (r.Remaining != 0) throw new InvalidDataException("Decomposable preview has unexpected trailing bytes.");
+		return Fields(("objectId", objectId), ("reserved", reserved), ("choices", choices));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeTuneResult(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		int objectId = r.ReadInt32(), tuningScrollItemId = r.ReadInt32();
+		byte statBonusId = r.ReadByte();
+		var enchantment = BotItemBlobDecoder.ReadEnchantment(ref r);
+		byte hideManastoneSlots = r.ReadByte(), disableCancel = r.ReadByte();
+		if (r.Remaining != 0 || hideManastoneSlots > 1 || disableCancel > 1)
+			throw new InvalidDataException("Invalid tuning result length or flags.");
+		return Fields(("objectId", objectId), ("tuningScrollItemId", tuningScrollItemId), ("statBonusId", statBonusId),
+			("enchantment", enchantment), ("showManastoneSlots", hideManastoneSlots == 0), ("tuneCancelPossible", disableCancel == 0));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeAttackStatus(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		var fields = Fields(("objectId", r.ReadInt32()), ("writtenValue", r.ReadInt32()), ("typeId", r.ReadByte()),
+			("hpOrMp", r.ReadByte()), ("skillId", r.ReadUInt16()), ("logId", r.ReadByte()), ("criticalDisplayCode", r.ReadByte()));
+		if (r.Remaining != 0) throw new InvalidDataException("Attack status has unexpected trailing bytes.");
+		return fields;
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeItemUsage(ReadOnlySpan<byte> body)
@@ -565,10 +612,14 @@ public sealed partial class BotServerPacketDecoder
 		var objectId = r.ReadInt32();
 		var description = r.ReadString();
 		var blob = r.ReadLengthPrefixedBlob();
-		var general = DecodeItemGeneralInfo(blob);
+		var info = BotItemBlobDecoder.Decode(blob);
+		var general = info.General;
+		// Full blobs always carry GENERAL_INFO; absence of WRAP_INFO in a full blob means zero wraps.
+		var details = general == null ? info.Details : info.Details with { PackCount = info.Details.PackCount ?? 0 };
 		return Fields(
 			("objectId", objectId), ("desc", description), ("blob", blob),
 			("itemMask", general?.ItemMask), ("itemCount", general?.ItemCount), ("itemCreator", general?.Creator),
+			("details", details),
 			("updateMask", r.Remaining >= 2 ? r.ReadUInt16() : null));
 	}
 
@@ -581,7 +632,17 @@ public sealed partial class BotServerPacketDecoder
 	private static IReadOnlyDictionary<string, object?> DecodeCubeUpdate(ReadOnlySpan<byte> body)
 	{
 		var r = new PacketBodyReader(body);
-		return Fields(("action", r.ReadByte()), ("actionValue", r.ReadByte()));
+		byte action = r.ReadByte(), value = r.ReadByte();
+		var fields = Fields(("action", action), ("actionValue", value));
+		if (action == 0)
+		{
+			fields["itemsCount"] = r.ReadInt32();
+			fields["npcExpands"] = r.ReadByte();
+			fields["questExpands"] = r.ReadByte();
+			fields["itemExpands"] = r.ReadByte();
+		}
+		if (r.Remaining != 0) throw new InvalidDataException("Cube update has unexpected trailing bytes.");
+		return fields;
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeSkillList(ReadOnlySpan<byte> body)
@@ -597,6 +658,14 @@ public sealed partial class BotServerPacketDecoder
 				("professionBarSize", r.ReadByte()), ("flag", r.ReadInt32()), ("skillType", r.ReadByte())));
 		}
 		return Fields(("silentUpdate", silent), ("skills", skills), ("messageId", r.ReadInt32()));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeSkillRemove(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		var result = Fields(("skillId", r.ReadUInt16()), ("levelOrProfessionFlag", r.ReadByte()), ("skillType", r.ReadByte()));
+		if (body.Length != 4) throw new InvalidDataException("SM_SKILL_REMOVE must contain exactly four bytes.");
+		return result;
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeSkillCooldown(ReadOnlySpan<byte> body)
@@ -766,7 +835,7 @@ public sealed partial class BotServerPacketDecoder
 			int objectId = r.ReadInt32(), itemId = r.ReadInt32();
 			string desc = r.ReadString();
 			byte[] blob = r.ReadLengthPrefixedBlob();
-			ItemGeneralInfo? general = DecodeItemGeneralInfo(blob);
+			BotItemGeneralInfo? general = DecodeItemGeneralInfo(blob);
 			items.Add(Fields(("objectId", objectId), ("itemId", itemId), ("desc", desc), ("blob", blob),
 				("itemCount", general?.ItemCount), ("repurchasePrice", r.ReadInt64())));
 		}
@@ -881,10 +950,12 @@ public sealed partial class BotServerPacketDecoder
 			var itemId = r.ReadInt32();
 			var description = r.ReadString();
 			var blob = r.ReadLengthPrefixedBlob();
-			var general = DecodeItemGeneralInfo(blob);
+			var info = BotItemBlobDecoder.Decode(blob);
+			var general = info.General;
 			items.Add(Fields(
 				("objectId", objectId), ("itemId", itemId), ("desc", description), ("blob", blob),
 				("itemMask", general?.ItemMask), ("itemCount", general?.ItemCount), ("itemCreator", general?.Creator),
+				("details", info.Details with { PackCount = info.Details.PackCount ?? 0 }),
 				("equipmentSlot", r.ReadUInt16()), ("cloth", r.ReadByte() != 0)));
 		}
 		return items;
@@ -914,45 +985,7 @@ public sealed partial class BotServerPacketDecoder
 			("desc", description), ("blob", blob), ("itemCount", general?.ItemCount));
 	}
 
-	private static ItemGeneralInfo? DecodeItemGeneralInfo(ReadOnlySpan<byte> blob)
-	{
-		var r = new PacketBodyReader(blob);
-		while (r.Remaining > 0)
-		{
-			var entryId = r.ReadByte();
-			if (entryId == 0x00)
-			{
-				var itemMask = r.ReadUInt16();
-				var itemCount = r.ReadInt64();
-				var creator = r.ReadString();
-				r.Skip(21);
-				return new ItemGeneralInfo(itemMask, itemCount, creator);
-			}
-
-			r.Skip(entryId switch
-			{
-				0x01 => 16,
-				0x02 => 20,
-				0x03 => 20,
-				0x04 => 16,
-				0x05 => 8,
-				0x06 => 8,
-				0x07 => 306,
-				0x08 => 4,
-				0x0A => 7,
-				0x0B => 138,
-				0x0D => 16,
-				0x0E => 30,
-				0x0F => 4,
-				0x10 => 3,
-				0x11 => 4,
-				0x12 => 1,
-				0x13 => 32,
-				_ => throw new InvalidDataException($"Unknown item blob entry 0x{entryId:X2}."),
-			});
-		}
-		return null;
-	}
+	private static BotItemGeneralInfo? DecodeItemGeneralInfo(ReadOnlySpan<byte> blob) => BotItemBlobDecoder.Decode(blob).General;
 
 	private static string[] ReadStrings(ref PacketBodyReader r, int count)
 	{
@@ -965,8 +998,10 @@ public sealed partial class BotServerPacketDecoder
 	private static Dictionary<string, object?> Fields(params (string Name, object? Value)[] values) =>
 		values.ToDictionary(value => value.Name, value => value.Value, StringComparer.Ordinal);
 
-	private readonly record struct ItemGeneralInfo(ushort ItemMask, long ItemCount, string Creator);
 }
+
+public sealed record BotDecomposableChoice(byte Index, int ItemId, int MinCount, byte Reserved,
+	byte StatBonus, byte EnchantBonus, byte Flags);
 
 public sealed record DecodedBotServerPacket(Type PacketType, IReadOnlyDictionary<string, object?> Fields)
 {

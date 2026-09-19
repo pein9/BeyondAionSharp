@@ -143,6 +143,9 @@ public class ArmsfusionService
         }
 
         weaponToBreak.SetFusionedItem(null);
+        // Intentional E2E-discovered deviation from Java ce54b7931 (plan §7 #45): without
+        // marking this loaded item dirty, Store skips it and the old fusion returns on relog.
+        weaponToBreak.SetPersistentState(PersistentState.UPDATE_REQUIRED);
         InventoryDAO.Store(weaponToBreak, player);
 
         ItemPacketService.UpdateItemAfterInfoChange(player, weaponToBreak);

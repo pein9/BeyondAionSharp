@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.State;
 using Aion.GameServer.Model.Items;
+using Aion.GameServer.Utils.Stats;
 
 namespace Aion.GameServer.Model.GameObjects.Players;
 

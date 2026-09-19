@@ -39,6 +39,9 @@ public class CM_UNWRAP_ITEM : AionClientPacket
                 SendPacket(new SM_UNWRAP_ITEM(objectId, item.GetPackCount()));
                 item.SetPackCount(item.GetPackCount() * -1);
                 item.SetPersistentState(PersistentState.UPDATE_REQUIRED);
+                // Intentional inherited Java bug fix (ce54b7931, plan §7 #49): Player's dirty-item
+                // collection skips clean storages. Unwrapping changes no stack count to dirty the cube.
+                player.GetInventory().SetPersistentState(PersistentState.UPDATE_REQUIRED);
                 PacketSendUtility.SendPacket(player, new SM_INVENTORY_UPDATE_ITEM(player, item));
             }
         }

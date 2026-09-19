@@ -256,8 +256,6 @@ internal sealed partial class LiveBotSession
 			?? throw new InvalidOperationException("SM_PLAYER_INFO did not provide movement speed.");
 		await ExecuteMovementAsync(new Aion.Bots.Movement.BotMover(api.World)
 			.CreateGroundPlan(SegmentRoute(start, destination), start, speed), cancellationToken);
-		int mapId = api.World.MapId ?? throw new InvalidOperationException("The bot has not observed its map.");
-		expectedPosition = new PersistedPosition(mapId, destination.X, destination.Y, destination.Z);
 	}
 
 	public async Task WaitForQuestStatusAsync(int questId, byte status, CancellationToken cancellationToken)
