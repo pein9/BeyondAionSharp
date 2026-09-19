@@ -39,7 +39,6 @@ public sealed partial class StaticData
 		NpcSkillTable npcSkills,
 		PetSkillTable petSkills,
 		PetDopingTable petDopings,
-		WorkOrderRecipeTable workOrderRecipes,
 		InstanceCooltimeTable instanceCooltimes,
 		InstanceExitTable instanceExits,
 		PortalLocTable portalLocs,
@@ -74,7 +73,6 @@ public sealed partial class StaticData
 		NpcSkills = npcSkills;
 		PetSkills = petSkills;
 		PetDopings = petDopings;
-		WorkOrderRecipes = workOrderRecipes;
 		InstanceCooltimes = instanceCooltimes;
 		InstanceExits = instanceExits;
 		PortalLocs = portalLocs;
@@ -148,8 +146,6 @@ public sealed partial class StaticData
 
 	// Faithful PetFeedData holder — populated from pets/pet_feed.xml at boot (LoadLeafHoldersFromFiles).
 	public PetFeedData PetFeedDataDh { get; private set; } = new();
-
-	public WorkOrderRecipeTable WorkOrderRecipes { get; }
 
 	public InstanceCooltimeTable InstanceCooltimes { get; }
 
@@ -1962,7 +1958,6 @@ public sealed partial class StaticData
 
 		if (experience.Count == 0)
 			experience.AddRange(await LoadExperienceTableFromImportedFilesAsync(importedFiles, cancellationToken));
-		var workOrderRecipes = WorkOrderRecipeTable.LoadFromImportedFiles(importedFiles);
 
 		return new StaticData(
 			cacheFilePath,
@@ -1996,7 +1991,6 @@ public sealed partial class StaticData
 			new NpcSkillTable(npcSkillLists.AsReadOnly()),
 			new PetSkillTable(petSkills.AsReadOnly()),
 			new PetDopingTable(petDopings.AsReadOnly()),
-			workOrderRecipes,
 			new InstanceCooltimeTable(instanceCooltimes.AsReadOnly()),
 			new InstanceExitTable(instanceExits.AsReadOnly()),
 			new PortalLocTable(portalLocs.AsReadOnly()),

@@ -1,8 +1,8 @@
 using System.Xml.Linq;
 
-namespace Aion.GameServer.Dataholders;
+namespace Aion.GameServer.Tests;
 
-public sealed class WorkOrderRecipeTable
+internal sealed class WorkOrderRecipeTable
 {
 	private readonly IReadOnlyDictionary<int, int> _recipeIdsByQuestId;
 
@@ -52,4 +52,4 @@ public sealed class WorkOrderRecipeTable
 	}
 }
 
-public sealed record WorkOrderRecipeSummary(int QuestId, int RecipeId);
+internal sealed record WorkOrderRecipeSummary(int QuestId, int RecipeId);

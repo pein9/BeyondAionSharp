@@ -288,7 +288,7 @@ public class InventoryDAO
             insertResult = InsertItems(con, itemsToInsert, playerId, accountId, legionId);
             updateResult = UpdateItems(con, itemsToUpdate, playerId, accountId, legionId);
         }
-        catch (Exception e)
+        catch (MySqlException e)
         {
             log.LogError(e, "Can't save inventory for player: " + playerId);
         }

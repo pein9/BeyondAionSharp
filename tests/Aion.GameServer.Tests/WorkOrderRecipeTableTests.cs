@@ -1,9 +1,29 @@
 using Aion.GameServer.Dataholders;
+using Aion.GameServer.QuestEngine.Handlers.Models;
+using System.Xml.Serialization;
 
 namespace Aion.GameServer.Tests;
 
 public sealed class WorkOrderRecipeTableTests
 {
+	[Fact]
+	public void ProductionXmlQuestHolderRetainsEveryWorkOrderWithoutAuxiliaryTable()
+	{
+		string path = Path.Combine(FindRepoRoot(), "game-server", "data", "static_data", "quest_script_data", "work_order.xml");
+		using var stream = File.OpenRead(path);
+		var quests = Assert.IsType<XMLQuests>(new XmlSerializer(typeof(XMLQuests)).Deserialize(stream));
+		quests.AfterUnmarshal(null!);
+		var orders = quests.GetAllQuests().OfType<WorkOrdersData>().ToArray();
+		Assert.Equal(574, orders.Length);
+		var audit = WorkOrderRecipeTable.Load(path);
+		Assert.Equal(orders.Length, audit.Count);
+		foreach (var order in orders)
+		{
+			Assert.True(audit.TryGetRecipeId(order.GetId(), out int recipeId));
+			Assert.Equal(recipeId, order.GetRecipeId());
+		}
+	}
+
 	[Fact]
 	public void Load_ReadsWorkOrderRecipeIdsLikeJavaXmlQuests()
 	{

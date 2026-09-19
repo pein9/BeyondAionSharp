@@ -1279,15 +1279,26 @@ Every economy scenario ends with invariants: kinah and item totals conserved acr
     Final P8-02 gates: solution tests 3,752 passed / 15 prerequisite skips; warning inventory unchanged
     at 4,243; logger/clock/custom-quest/fidelity/compiler ratchets pass. Docker Fast
     `p8-social-final-fast-20260918a` passes. Run artifacts and command logs are under `run/`.
-- [ ] **P8-03** [BOTH] S each — Fixes found in this area:
-  - Two `CraftSkillUpdateService` classes: `DialogService` resolves to the root `Services` copy (already
-    `Profession?`); crafting quest handlers use `Services.Craft`, whose unused `GetProfessionByNpc` returns ordinal
-    0 instead of null. Consolidate into `Services.Craft` (Java's package) with the nullable return.
-  - `InventoryDAO.Store` catches `Exception`; Java catches `SQLException` only.
-  - `WorkOrderRecipeTable` is C#-only with no runtime consumer: delete it or move it to tests.
+- [x] **P8-03** [BOTH] S each — Fixes found in this area: (`173d6e415`)
+  - Consolidated the two `CraftSkillUpdateService` classes into `Services.Craft` (Java's package), with
+    nullable `GetProfessionByNpc`. Previously `DialogService` resolved to the root `Services` copy while
+    crafting quest handlers used `Services.Craft`; the latter's unused lookup returned ordinal zero for
+    unmapped NPCs. Existing imports now resolve every caller to the same singleton. Regression tests
+    cover all 36 trainer IDs, unmapped NPCs, dialog refusal and absence of the duplicate type.
+  - `InventoryDAO.Store` now catches `MySqlException`, matching Java's `SQLException` scope. Tests pin
+    the compiled catch type and prove a non-SQL factory failure propagates instead of returning false.
+  - Moved C#-only `WorkOrderRecipeTable` to tests. Correction: it had no gameplay consumer, but was
+    constructed and exposed by `StaticData`; that duplicate startup load/property is now removed.
+    Its existing data-audit tests remain, and all 574 work orders are verified against the production
+    `XMLQuests`/`WorkOrdersData` holder that actually drives work-order quests.
   - Not a parity fix: `//access add` per-command grants never take effect in `upstream/4.8` either
     (`ChatProcessor.java:51,54,119-121` key commands as `//alias`, `AdminCommand.java:39` checks the bare alias).
     Keep Java's behaviour.
+  - Five focused regressions fail before the fixes; all 29 focused tests pass afterward. Full SIM
+    `p8-03-full-sim-20260918a` passes all 42 shared scenarios, including crafting/work orders and
+    inventory persistence; Docker Fast `p8-03-fast-20260918a` passes. Solution tests: 3,776 passed,
+    15 prerequisite skips. Warning inventory remains 4,243; logger/clock/custom-quest/fidelity/compiler
+    checks pass. No quest/content additions and no Java runtime used.
 - [ ] **P8-04** [LIVE] S — After each LIVE economy scenario, compare the bot's inventory model with
   `/admin/player-storage-state`.
 - [ ] **P8-05** [BOTH] L — Gear progression (add writers, decoders and API calls as needed; rolls pinned by the P4-05
@@ -1541,8 +1552,8 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 17 | `SM_MOVE` player/summon branch never taken | `SM_MOVE.java:36` `instanceof PlayableMoveController` | Resolved by P6-01 (`5ba44084e`) |
 | 18 | `QuestSpawnAnalyzer` scans Java source folders and aborts (P1-12 baseline fingerprint `2c206aaf`, count 1) | `QuestSpawnAnalyzer.java:101-110` (Java ships those folders) | Resolved by P7-01 (`782f63dae`) |
 | 19 | `_19638TroublewithTwos` extra dialog branch | `_19638TroublewithTwos.java:48-50` (removed upstream in `1d6a2d8f7`) | P7-11 |
-| 20 | Duplicate `CraftSkillUpdateService`; the unused `Craft` copy returns ordinal 0 instead of null (latent) | `services/craft/CraftSkillUpdateService.java:79-81` | P8-03 |
-| 21 | `InventoryDAO.Store` catch scope too wide | `InventoryDAO.java:232` catches `SQLException` | P8-03 |
+| 20 | Duplicate `CraftSkillUpdateService`; the `Craft` copy's unused profession lookup returns ordinal 0 instead of null (latent) | `services/craft/CraftSkillUpdateService.java:79-81` | P8-03: one canonical `Services.Craft` singleton with nullable lookup; all 36 trainer IDs and unmapped-NPC/dialog behavior tested |
+| 21 | `InventoryDAO.Store` catch scope too wide | `InventoryDAO.java:232` catches `SQLException` | P8-03: narrow to `MySqlException`; red/green tests cover catch type and non-SQL propagation |
 | 22 | `GeoWorldLoader` is a stub, so boot reports both the loader warning (`f802a125`, count 1) and four normalized missing-door-geometry warnings (`39050e81`, count 4) | `GeoWorldLoader.java` (285 lines); `GeoMap.java:287-301` | P9-01 |
 | 23 | Production boot skips `HousingService`/housing tasks, faction ratio counts, `InitSieges`, `PvpMapService.Init` | `GameServer.java:118-122,130-134,141,175` | Deferred (D7) |
 | 24 | `BossAiHarness.Kill` calls `OnDie` twice (test bug) | n/a | Resolved by P6-08 (`b736fad55`) |
@@ -1561,6 +1572,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 37 | Bot `ApplyLootStatus(OPEN_DROP_LIST)` discarded the item list that the server had just sent; its old unit fixture only exercised the opposite packet order (C# test-client defect, not a production divergence) | `services/drop/DropService.java:129-130` sends `SM_LOOT_ITEMLIST` before `SM_LOOT_STATUS`; the C# server matches | P8-02/S5: preserve the same corpse's list, test both packet orders, and require the populated loot window in the shared scenario; Docker SIM/LIVE verified (S5 runs above), committed in P8-02 (`3cb6ef4d4`) |
 | 38 | `LegionDAO` bound unsigned C# color bytes into signed `TINYINT` columns, so high-bit emblem colors failed to save at logout; its read path also used unsigned `GetByte` and threw on a default emblem's SQL NULL blob | `dao/LegionDAO.java:262-287` uses signed `setByte` for all four colors; `:306-310` reads signed bytes and nullable `getBytes` | P8-02/S7 LIVE `p8-s7-live-dev-20260918a` caught fingerprint `d580e505` at logout. Signed bindings/reads and nullable blob handling restored; eight parameter regressions fail before the fix. Clean LIVE b plus Full SIM b reconnect and fresh DAO reads verify the fix; not allowlisted |
 | 39 | C6 waited for death after only one normal NPC attack; Full SIM could time out before reaching S7 because a normal attack is not guaranteed to damage its target (test assumption, not a production divergence) | `controllers/CreatureController.java:321-369` calculates normal attack outcomes including DODGE/RESIST before applying damage | P8-02: repeat the existing normal attack at two-second intervals, at most 20 attempts, assert actual death before waiting for the death packet. No combat rules changed; Full SIM `p8-s7-full-sim-20260918b` passes |
+| 40 | C#-only `WorkOrderRecipeTable` redundantly parsed work-order XML at startup despite no gameplay consumer; the actual quest path already uses `XMLQuests` | `dataholders/XMLQuests.java:22-40` indexes `WorkOrdersData`; `questEngine/handlers/models/WorkOrdersData.java:36-42` registers the recipe-bearing handler directly | P8-03: table retained only as a test audit helper; remove unused startup construction/property and compare all 574 rows with the production holder |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

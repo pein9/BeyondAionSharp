@@ -70,9 +70,10 @@ public class CraftSkillUpdateService
         log.LogInformation("CraftSkillUpdateService: Initialized.");
     }
 
-    public Profession GetProfessionByNpc(Npc npc)
+    public Profession? GetProfessionByNpc(Npc npc)
     {
-        return professionByNpc.GetValueOrDefault(npc.GetNpcId());
+        // Java Map.get returns null for an unmapped trainer, not ordinal-zero ESSENCETAPPING.
+        return professionByNpc.TryGetValue(npc.GetNpcId(), out Profession profession) ? profession : null;
     }
 
     public void LearnSkill(Player player, Npc npc)
