@@ -14,7 +14,7 @@ public sealed class BotServerPacketDecoderTests
 	[Fact]
 	public void DecoderInventoryContainsExpectedBotPerceptionPackets()
 	{
-		Assert.Equal(97, decoder.PacketTypes.Count);
+		Assert.Equal(109, decoder.PacketTypes.Count);
 		Assert.Contains(typeof(SM_UNWRAP_ITEM), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_FIRST_SHOW_DECOMPOSABLE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_SECONDARY_SHOW_DECOMPOSABLE), decoder.PacketTypes);
@@ -30,6 +30,27 @@ public sealed class BotServerPacketDecoderTests
 		Assert.Contains(typeof(SM_WINDSTREAM_ANNOUNCE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_ABNORMAL_STATE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_GATHER_UPDATE), decoder.PacketTypes);
+	}
+
+	[Theory]
+	[InlineData(typeof(SM_DELETE_CHARACTER), 12)]
+	[InlineData(typeof(SM_RESTORE_CHARACTER), 8)]
+	public void CharacterDeletionAndRestorationDecodeBothGoldenOutcomesAndRejectBadLengths(Type packetType, int size)
+	{
+		using var fixture = LoadFixture(packetType.Name + ".json");
+		var cases = fixture.RootElement.GetProperty("cases");
+		Assert.Equal(2, cases.GetArrayLength());
+		for (int i = 0; i < cases.GetArrayLength(); i++)
+		{
+			byte[] body = Convert.FromHexString(cases[i].GetProperty("payloadHex").GetString()!);
+			Assert.Equal(size, body.Length);
+			var packet = decoder.Decode(packetType, body);
+			Assert.Equal(i == 0 ? 0 : 0x10, packet.Get<int>("responseCode"));
+			Assert.Equal(2, AssertPrimitiveInputs(cases[i].GetProperty("inputs"), packet.Fields));
+			for (int length = 0; length < size; length++)
+				Assert.Throws<InvalidDataException>(() => decoder.Decode(packetType, body[..length]));
+			Assert.Throws<InvalidDataException>(() => decoder.Decode(packetType, [.. body, 0]));
+		}
 	}
 
 	[Fact]
@@ -50,6 +71,78 @@ public sealed class BotServerPacketDecoderTests
 		for (int length = 0; length < body.Length; length++)
 			Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_CUBE_UPDATE), body[..length]));
 		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_CUBE_UPDATE), [.. body, 0]));
+	}
+
+	[Theory]
+	[InlineData(typeof(SM_TITLE_INFO), 4)]
+	[InlineData(typeof(SM_MACRO_LIST), 2)]
+	[InlineData(typeof(SM_MACRO_RESULT), 2)]
+	[InlineData(typeof(SM_PLASTIC_SURGERY), 2)]
+	[InlineData(typeof(SM_QUIT_RESPONSE), 2)]
+	[InlineData(typeof(SM_CHARACTER_SELECT), 4)]
+	public void CharacterSettingsPacketsPreserveGoldenFieldsAndRejectMalformedLengths(Type packetType, int count)
+	{
+		using var fixture = LoadFixture(packetType.Name + ".json");
+		var cases = fixture.RootElement.GetProperty("cases");
+		Assert.Equal(count, cases.GetArrayLength());
+		foreach (var example in cases.EnumerateArray())
+		{
+			byte[] body = Convert.FromHexString(example.GetProperty("payloadHex").GetString()!);
+			var packet = decoder.Decode(packetType, body);
+			Assert.True(AssertPrimitiveInputs(example.GetProperty("inputs"), packet.Fields) > 0);
+			if (packetType == typeof(SM_MACRO_LIST))
+			{
+				var rows = example.GetProperty("inputs").GetProperty("macros");
+				var macros = packet.Get<BotMacro[]>("macros");
+				Assert.Equal(rows.GetArrayLength(), macros.Length);
+				for (int i = 0; i < macros.Length; i++) Assert.Equal(new BotMacro(rows[i][0].GetByte(), rows[i][1].GetString()!), macros[i]);
+			}
+			if (packetType == typeof(SM_PLASTIC_SURGERY))
+			{
+				Assert.Equal(example.GetProperty("inputs").GetProperty("objectId").GetInt32(), packet.Get<int>("playerObjId"));
+				Assert.Equal(body[4] == 1, packet.Get<bool>("hasTicket"));
+			}
+			for (int length = 0; length < body.Length; length++)
+				Assert.Throws<InvalidDataException>(() => decoder.Decode(packetType, body[..length]));
+			Assert.Throws<InvalidDataException>(() => decoder.Decode(packetType, [.. body, 0]));
+		}
+	}
+
+	[Fact]
+	public void TitleCatalogPreservesExpirationAndMentorAndUnsetTitleForms()
+	{
+		var catalog = decoder.Decode(typeof(SM_TITLE_INFO), Convert.FromHexString("000002002A000000FFFFFFFF07000000B4000000"));
+		Assert.Equal(new[] { new BotTitle(42, -1), new BotTitle(7, 180) }, catalog.Get<BotTitle[]>("titles"));
+		Assert.Equal(ushort.MaxValue, decoder.Decode(typeof(SM_TITLE_INFO), [1, 255, 255]).Get<ushort>("titleId"));
+		Assert.Equal((ushort)1, decoder.Decode(typeof(SM_TITLE_INFO), [4, 1, 0]).Get<ushort>("titleId"));
+		var broadcast = decoder.Decode(typeof(SM_TITLE_INFO), [5, 12, 0, 0, 0, 1, 0]);
+		Assert.Equal(12, broadcast.Get<int>("playerObjId")); Assert.Equal((ushort)1, broadcast.Get<ushort>("titleId"));
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_TITLE_INFO), [2]));
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_MACRO_LIST), [1, 0, 0, 0, 1, 1, 0]));
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_PLASTIC_SURGERY), [1, 0, 0, 0, 0, 0]));
+	}
+
+	[Fact]
+	public void UiSettingsPreservePayloadAndWirePaddingIncludingTheServersOverlengthForm()
+	{
+		using var fixture = LoadFixture("SM_UI_SETTINGS.json");
+		var cases = fixture.RootElement.GetProperty("cases");
+		Assert.True(cases.GetArrayLength() > 0);
+		foreach (var example in cases.EnumerateArray())
+		{
+			byte[] body = Convert.FromHexString(example.GetProperty("payloadHex").GetString()!);
+			var input = example.GetProperty("inputs");
+			byte[] expected = input.GetProperty("data").EnumerateArray().Select(b => b.GetByte()).ToArray();
+			var decoded = decoder.Decode(typeof(SM_UI_SETTINGS), body);
+			Assert.Equal(input.GetProperty("type").GetByte(), decoded.Get<byte>("type"));
+			Assert.Equal((ushort)0x1C00, decoded.Get<ushort>("declaredSize"));
+			var padded = decoded.Get<byte[]>("paddedData");
+			Assert.Equal(0x1C00, padded.Length); Assert.Equal(expected, padded[..expected.Length]);
+			Assert.All(padded.Skip(expected.Length), b => Assert.Equal((byte)0, b));
+			foreach (int length in new[] { 0, 1, 2, 3, body.Length - 1 })
+				Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_UI_SETTINGS), body[..length]));
+			Assert.Equal((byte)0xA5, decoder.Decode(typeof(SM_UI_SETTINGS), [.. body, 0xA5]).Get<byte[]>("paddedData")[^1]);
+		}
 	}
 
 	[Theory]
@@ -173,6 +266,11 @@ public sealed class BotServerPacketDecoderTests
 			if (BotBrokerPacketTests.AssertAuditedWireContract(packetType)) continue;
 			if (BotPrivateStorePacketTests.AssertAuditedWireContract(packetType)) continue;
 			if (BotTradeInPacketTests.AssertAuditedWireContract(packetType)) continue;
+			if (packetType == typeof(SM_UPDATE_PLAYER_APPEARANCE))
+			{
+				BotPlayerCommandPacketTests.AssertAppearanceWireContract();
+				continue;
+			}
 			if (packetType == typeof(SM_PRICES))
 			{
 				// No existing Java-generated fixture for this connection-dependent packet. Pin its complete,

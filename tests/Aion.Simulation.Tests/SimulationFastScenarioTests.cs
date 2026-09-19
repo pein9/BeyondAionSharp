@@ -65,6 +65,33 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 				case "L0":
 					await RunL0Async(execution, includeHistory);
 					break;
+				case "L1":
+					await RunL1Async(execution.Scenario, includeHistory);
+					break;
+				case "L2":
+					await RunL2Async(execution.Scenario, includeHistory);
+					break;
+				case "L3":
+					await RunL3Async(execution.Scenario, includeHistory);
+					break;
+				case "L4":
+					await RunL4Async(execution.Scenario, includeHistory);
+					break;
+				case "L5":
+					await RunL5Async(execution.Scenario, includeHistory);
+					break;
+				case "L6":
+					await RunL6Async(execution.Scenario, includeHistory);
+					break;
+				case "L7":
+					await RunL7Async(execution.Scenario, includeHistory);
+					break;
+				case "L8C":
+					await RunL8CommandsAsync(execution.Scenario, includeHistory);
+					break;
+				case "L8":
+					await RunL8EventsAsync(execution.Scenario, includeHistory);
+					break;
 				case "M1":
 					await RunM1Async(execution, includeHistory);
 					break;
@@ -754,7 +781,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		private readonly string bot;
 		private readonly int accountId;
 		private readonly string accountName;
-		private readonly string characterName;
+		private string characterName;
 		private readonly string macAddress;
 		private readonly Race race;
 		private readonly BotApi api;
@@ -790,6 +817,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		public List<DecodedBotServerPacket> PacketHistory { get; } = [];
 		public List<SimulationPacketObservation> PacketObservations { get; } = [];
 		public int CharacterId => characterId;
+		public int ConnectionGeneration { get; private set; }
 		public BotApi Api => api;
 		public BotPosition CurrentPosition => currentPosition ?? api.World.Position
 			?? throw new InvalidOperationException("Enter the world before reading the current position.");
@@ -801,6 +829,13 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		}
 
 		public async Task LoginAndAuthenticateAsync(CancellationToken cancellationToken)
+		{
+			var list = await LoginCharacterListAsync(cancellationToken);
+			if (list.Get<byte>("characterCount") != 0)
+				throw new InvalidDataException($"Fresh simulation account {accountName} already has a character.");
+		}
+
+		public async Task<DecodedBotServerPacket> LoginCharacterListAsync(CancellationToken cancellationToken)
 		{
 			await OpenAsync(cancellationToken);
 			RequirePacket(await ReadNextAsync(cancellationToken), typeof(SM_KEY));
@@ -815,22 +850,32 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			if (!auth.Get<bool>("ok"))
 				throw new InvalidDataException("Game-server simulation authentication failed.");
 			state = AionConnection.State.AUTHED;
-			await SendAsync(api.ListCharacters(2000 + accountId), cancellationToken);
-			DecodedBotServerPacket list = await WaitForAsync(typeof(SM_CHARACTER_LIST), cancellationToken);
-			if (list.Get<byte>("characterCount") != 0)
-				throw new InvalidDataException($"Fresh simulation account {accountName} already has a character.");
+			return await ReadCharacterListAsync(cancellationToken);
 		}
+
+		public async Task<DecodedBotServerPacket> ReadCharacterListAsync(CancellationToken cancellationToken)
+		{
+			await SendAsync(api.ListCharacters(2000 + accountId), cancellationToken);
+			return await WaitForAsync(typeof(SM_CHARACTER_LIST), cancellationToken);
+		}
+
+		public Task DeleteCharacterAsync(CancellationToken token) => SendAsync(GameClientPackets.DeleteCharacter(2000 + accountId, characterId), token);
+		public Task RestoreCharacterAsync(CancellationToken token) => SendAsync(GameClientPackets.RestoreCharacter(2000 + accountId, characterId), token);
+		public Task CloseSelectionAsync(CancellationToken token) => CloseAsync(token);
 
 		public Task CreateCharacterAsync(CancellationToken cancellationToken) =>
 			CreateCharacterAsync(cancellationToken, PlayerClass.WARRIOR);
 
-		public async Task CreateCharacterAsync(CancellationToken cancellationToken, PlayerClass playerClass)
+		public Task CreateCharacterAsync(CancellationToken cancellationToken, PlayerClass playerClass) =>
+			CreateCharacterAsync(characterName, playerClass, cancellationToken);
+
+		public async Task CreateCharacterAsync(string name, PlayerClass playerClass, CancellationToken cancellationToken)
 		{
 			await SendAsync(api.CreateCharacter(new CharacterCreationData
 			{
 				AccountId = accountId,
 				AccountName = accountName,
-				CharacterName = characterName,
+				CharacterName = name,
 				Gender = 0,
 				Race = (int)race,
 				PlayerClass = (int)playerClass,
@@ -840,14 +885,42 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			if (response.Get<int>("responseCode") != 0)
 				throw new InvalidDataException($"Character creation failed with response {response.Get<int>("responseCode")}.");
 			IReadOnlyDictionary<string, object?> character = response.Get<IReadOnlyDictionary<string, object?>>("character");
-			characterId = Get<int>(character, "objectId");
-			if (!string.Equals(Get<string>(character, "name"), characterName, StringComparison.Ordinal))
+			if (!string.Equals(Get<string>(character, "name"), name, StringComparison.Ordinal))
 				throw new InvalidDataException("SM_CREATE_CHARACTER returned a different simulation character name.");
+			SelectCharacter(Get<int>(character, "objectId"), name);
+		}
+
+		public void SelectCharacter(int id, string name)
+		{
+			if (state != AionConnection.State.AUTHED) throw new InvalidOperationException("Character selection requires the selection screen.");
+			characterId = id;
+			characterName = name;
+			expectedPosition = null;
+			currentPosition = null;
 		}
 
 		public async Task EnterWorldAsync(CancellationToken cancellationToken)
 		{
 			await SendAsync(api.EnterWorld(characterId), cancellationToken);
+			await CompleteWorldEntryAsync(cancellationToken);
+		}
+
+		public async Task EditAndEnterAsync(CharacterCreationData data, CancellationToken token)
+		{
+			await SendAsync(GameClientPackets.EditCharacter(characterId, data), token);
+			await CompleteWorldEntryAsync(token);
+		}
+
+		public async Task ReturnToSelectionAsync(bool editing, CancellationToken token)
+		{
+			await SendAsync(api.Quit(stayConnected: true), token);
+			var response = await WaitForAsync(typeof(SM_QUIT_RESPONSE), token);
+			if (response.Get<int>("mode") != (editing ? 2 : 1)) throw new InvalidDataException("Unexpected quit destination.");
+			state = AionConnection.State.AUTHED;
+		}
+
+		public async Task CompleteWorldEntryAsync(CancellationToken cancellationToken)
+		{
 			state = AionConnection.State.IN_GAME;
 			DecodedBotServerPacket spawn = await WaitForAsync(typeof(SM_PLAYER_SPAWN), cancellationToken);
 			expectedPosition = Position(spawn);
@@ -1043,6 +1116,13 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			await WaitForAsync(typeof(SM_PONG), cancellationToken);
 		}
 
+		public async Task SynchronizeAsync(CancellationToken token)
+		{
+			int marker = unchecked((int)fixture.Clock.NowMillis);
+			await SendAsync(GameClientPackets.TimeCheck(marker), token);
+			await WaitForAsync(typeof(SM_TIME_CHECK), token);
+		}
+
 		public async Task QuitAsync(CancellationToken cancellationToken)
 		{
 			await SendAsync(api.Quit(stayConnected: false), cancellationToken);
@@ -1075,18 +1155,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 
 		public async Task ReloginAndVerifyPersistenceAsync(CancellationToken cancellationToken)
 		{
-			await OpenAsync(cancellationToken);
-			RequirePacket(await ReadNextAsync(cancellationToken), typeof(SM_KEY));
-			await SendAsync(GameClientPackets.VersionCheck(207, 0, 65001, 10, 0, 2), cancellationToken);
-			await WaitForAsync(typeof(SM_VERSION_CHECK), cancellationToken);
-			await SendAsync(GameClientPackets.L2AuthLoginCheck(2000 + accountId, 1000 + accountId, accountId, 3000 + accountId), cancellationToken);
-			await SendAsync(GameClientPackets.MacAddress(macAddress, $"SIM-{bot.ToUpperInvariant()}"), cancellationToken);
-			DecodedBotServerPacket auth = await WaitForAsync(typeof(SM_L2AUTH_LOGIN_CHECK), cancellationToken);
-			if (!auth.Get<bool>("ok"))
-				throw new InvalidDataException("Game-server simulation reauthentication failed.");
-			state = AionConnection.State.AUTHED;
-			await SendAsync(api.ListCharacters(2000 + accountId), cancellationToken);
-			DecodedBotServerPacket list = await WaitForAsync(typeof(SM_CHARACTER_LIST), cancellationToken);
+			DecodedBotServerPacket list = await LoginCharacterListAsync(cancellationToken);
 			IReadOnlyDictionary<string, object?> character = list
 				.Get<List<IReadOnlyDictionary<string, object?>>>("characters")
 				.SingleOrDefault(entry => string.Equals(Get<string>(entry, "name"), characterName, StringComparison.Ordinal))
@@ -1103,6 +1172,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		{
 			await CloseAsync(CancellationToken.None);
 			transport = new InProcessBotTransport(elapsed => fixture.Clock.Advance(elapsed), ip: $"127.0.0.{accountId}");
+			ConnectionGeneration++;
 			packets = transport.ReceiveAsync(cancellationToken).GetAsyncEnumerator(cancellationToken);
 			state = AionConnection.State.CONNECTED;
 		}

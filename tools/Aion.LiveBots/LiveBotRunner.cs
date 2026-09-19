@@ -33,6 +33,18 @@ public static partial class LiveBotRunner
 		await using var problems = new LiveBotProblemWriter(Path.Combine(options.OutputDirectory, "bot.problems.jsonl"));
 		if (options.ScenarioDefinitions is [{ Id: "L0" }])
 			return await RunL0Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "L1" }])
+			return await RunL1Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "L2" }])
+			return await RunL2Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "L3" }])
+			return await RunL3Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "L4" }])
+			return await RunL4Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "L5" }])
+			return await RunL5Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "L7" }])
+			return await RunL7Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "canaries" }])
 			return await RunCanariesAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "C1" }])
@@ -601,7 +613,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 	private readonly BotActionTraceWriter trace;
 	private readonly string bot;
 	private readonly string account;
-	private readonly string characterName;
+	private string characterName;
 	private readonly Race race;
 	private readonly string macAddress;
 	private readonly byte[] macBytes;
@@ -648,6 +660,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 
 	public void BeginStep(string step) => currentStep = step;
 	public int CharacterId => characterId;
+	public int ConnectionGeneration { get; private set; }
 	public string CharacterName => characterName;
 	public BotApi Api => api;
 	public BotPosition CurrentPosition => currentPosition ?? api.World.Position
@@ -672,8 +685,16 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 
 	public async Task LoginAndAuthenticateAsync(CancellationToken cancellationToken)
 	{
+		var list = await LoginCharacterListAsync(cancellationToken);
+		if (list.Get<byte>("characterCount") != 0)
+			throw new InvalidDataException($"Fresh L0 account {account} unexpectedly already has a character.");
+	}
+
+	public async Task<DecodedBotServerPacket> LoginCharacterListAsync(CancellationToken cancellationToken)
+	{
 		await LoginServerAsync(cancellationToken);
 		await OpenConnectionAsync(cancellationToken);
+		quitExpected = false;
 		AssertPacketType(await ReadNextAsync(cancellationToken), typeof(SM_KEY));
 		await SendGameAsync(GameClientPackets.VersionCheck(207, 0, 65001, 10, 0, 2), cancellationToken);
 		var version = await WaitForGamePacketAsync(typeof(SM_VERSION_CHECK), cancellationToken);
@@ -685,22 +706,31 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		if (!auth.Get<bool>("ok"))
 			throw new InvalidDataException("Game-server authentication failed.");
 		state = AionConnection.State.AUTHED;
-		await SendGameAsync(api.ListCharacters(playOk2), cancellationToken);
-		var list = await WaitForGamePacketAsync(typeof(SM_CHARACTER_LIST), cancellationToken);
-		if (list.Get<byte>("characterCount") != 0)
-			throw new InvalidDataException($"Fresh L0 account {account} unexpectedly already has a character.");
+		return await ReadCharacterListAsync(cancellationToken);
 	}
+
+	public async Task<DecodedBotServerPacket> ReadCharacterListAsync(CancellationToken cancellationToken)
+	{
+		await SendGameAsync(api.ListCharacters(playOk2), cancellationToken);
+		return await WaitForGamePacketAsync(typeof(SM_CHARACTER_LIST), cancellationToken);
+	}
+
+	public Task DeleteCharacterAsync(CancellationToken token) => SendGameAsync(GameClientPackets.DeleteCharacter(playOk2, characterId), token);
+	public Task RestoreCharacterAsync(CancellationToken token) => SendGameAsync(GameClientPackets.RestoreCharacter(playOk2, characterId), token);
 
 	public Task CreateCharacterAsync(CancellationToken cancellationToken) =>
 		CreateCharacterAsync(cancellationToken, PlayerClass.WARRIOR);
 
-	public async Task CreateCharacterAsync(CancellationToken cancellationToken, PlayerClass playerClass)
+	public Task CreateCharacterAsync(CancellationToken cancellationToken, PlayerClass playerClass) =>
+		CreateCharacterAsync(characterName, playerClass, cancellationToken);
+
+	public async Task CreateCharacterAsync(string name, PlayerClass playerClass, CancellationToken cancellationToken)
 	{
 		var creation = new CharacterCreationData
 		{
 			AccountId = accountId,
 			AccountName = account,
-			CharacterName = characterName,
+			CharacterName = name,
 			Gender = 0,
 			Race = (int)race,
 			PlayerClass = (int)playerClass,
@@ -711,9 +741,19 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		if (response.Get<int>("responseCode") != 0)
 			throw new InvalidDataException($"Character creation failed with response {response.Get<int>("responseCode")}.");
 		var character = response.Get<IReadOnlyDictionary<string, object?>>("character");
-		characterId = Get<int>(character, "objectId");
-		if (!string.Equals(Get<string>(character, "name"), characterName, StringComparison.Ordinal))
+		if (!string.Equals(Get<string>(character, "name"), name, StringComparison.Ordinal))
 			throw new InvalidDataException("SM_CREATE_CHARACTER returned a different character name.");
+		SelectCharacter(Get<int>(character, "objectId"), name);
+	}
+
+	public void SelectCharacter(int id, string name)
+	{
+		if (state != AionConnection.State.AUTHED) throw new InvalidOperationException("Character selection requires the selection screen.");
+		characterId = id;
+		characterName = name;
+		expectedPosition = null;
+		currentPosition = null;
+		persistedLastOnline = null;
 	}
 
 	public async Task EnterWorldAsync(CancellationToken cancellationToken)
@@ -721,6 +761,31 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		if (characterId == 0)
 			throw new InvalidOperationException("Create the character before entering the world.");
 		await SendGameAsync(api.EnterWorld(characterId), cancellationToken);
+		await CompleteWorldEntryAsync(cancellationToken);
+	}
+
+	public async Task EditAndEnterAsync(CharacterCreationData data, CancellationToken token)
+	{
+		await SendGameAsync(GameClientPackets.EditCharacter(characterId, data), token);
+		await CompleteWorldEntryAsync(token);
+	}
+
+	public async Task ReturnToSelectionAsync(bool editing, CancellationToken token)
+	{
+		await CloseChatAsync();
+		quitExpected = true;
+		try
+		{
+			await SendGameAsync(api.Quit(stayConnected: true), token);
+			var response = await WaitForGamePacketAsync(typeof(SM_QUIT_RESPONSE), token);
+			if (response.Get<int>("mode") != (editing ? 2 : 1)) throw new InvalidDataException("Unexpected quit destination.");
+			state = AionConnection.State.AUTHED;
+		}
+		finally { quitExpected = false; }
+	}
+
+	public async Task CompleteWorldEntryAsync(CancellationToken cancellationToken)
+	{
 		state = AionConnection.State.IN_GAME;
 		var spawn = await WaitForGamePacketAsync(typeof(SM_PLAYER_SPAWN), cancellationToken);
 		expectedPosition = new PersistedPosition(spawn.Get<int>("worldId"), spawn.Get<float>("x"),
@@ -950,6 +1015,12 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		await WaitForGamePacketAsync(typeof(SM_PONG), cancellationToken);
 	}
 
+	public async Task SynchronizeAsync(CancellationToken token)
+	{
+		await SendGameAsync(GameClientPackets.TimeCheck(unchecked((int)Environment.TickCount64)), token);
+		await WaitForGamePacketAsync(typeof(SM_TIME_CHECK), token);
+	}
+
 	public async Task SendFriendStatusCanaryAsync(CancellationToken cancellationToken)
 	{
 		await SendGameAsync(GameClientPackets.FriendStatus(2), cancellationToken);
@@ -1032,19 +1103,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 
 	public async Task ReloginAndVerifyPersistenceAsync(CancellationToken cancellationToken)
 	{
-		await LoginServerAsync(cancellationToken);
-		await OpenConnectionAsync(cancellationToken);
-		AssertPacketType(await ReadNextAsync(cancellationToken), typeof(SM_KEY));
-		await SendGameAsync(GameClientPackets.VersionCheck(207, 0, 65001, 10, 0, 2), cancellationToken);
-		await WaitForGamePacketAsync(typeof(SM_VERSION_CHECK), cancellationToken);
-		await SendGameAsync(GameClientPackets.L2AuthLoginCheck(playOk2, playOk1, accountId, loginOk), cancellationToken);
-		await SendGameAsync(GameClientPackets.MacAddress(macAddress, $"E2E-{bot.ToUpperInvariant()}"), cancellationToken);
-		var auth = await WaitForGamePacketAsync(typeof(SM_L2AUTH_LOGIN_CHECK), cancellationToken);
-		if (!auth.Get<bool>("ok"))
-			throw new InvalidDataException("Game-server reauthentication failed.");
-		state = AionConnection.State.AUTHED;
-		await SendGameAsync(api.ListCharacters(playOk2), cancellationToken);
-		var list = await WaitForGamePacketAsync(typeof(SM_CHARACTER_LIST), cancellationToken);
+		var list = await LoginCharacterListAsync(cancellationToken);
 		var characters = list.Get<List<IReadOnlyDictionary<string, object?>>>("characters");
 		var character = characters.SingleOrDefault(entry => string.Equals(Get<string>(entry, "name"), characterName, StringComparison.Ordinal))
 			?? throw new InvalidDataException($"Character list did not contain {characterName} after relogin.");
@@ -1176,6 +1235,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		try
 		{
 			transport = await TcpBotTransport.ConnectAsync(options.GameEndPoint, connectTimeout.Token);
+			ConnectionGeneration++;
 		}
 		catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested && connectTimeout.IsCancellationRequested)
 		{

@@ -112,6 +112,13 @@ try {
 	& $runLive -Run "$Run-s7" -Scenario 'S7' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
 		-PacketTap:$PacketTap -SkipImageBuild -StepTimeoutSeconds 180
 
+	# Remaining Phase 8 scenarios each need a fresh stack; L4 also has its own passkey overlay.
+	# L6/L8/L8C are SIM-only historical/seasonal-clock profiles and are selected above.
+	foreach ($scenarioId in @('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'E8', 'E9', 'E10', 'E11', 'L1', 'L2', 'L3', 'L4', 'L5', 'L7')) {
+		& $runLive -Run "$Run-$($scenarioId.ToLowerInvariant())" -Scenario $scenarioId -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
+			-PacketTap:$PacketTap -SkipImageBuild -StepTimeoutSeconds 600
+	}
+
 	# The first child built the same three server images when a rebuild was requested.
 	& $runLive -Run "$Run-canaries" -Scenario 'canaries' -WatcherMode 'enforce' -RunRoot $runRoot -FullRun `
 		-PacketTap:$PacketTap -SkipImageBuild

@@ -105,9 +105,21 @@ function Write-RunMetadata {
 		failure = $script:failureMessage
 		gitSha = $GitSha
 		seed = $Seed
-		virtualEpoch = '2026-09-16T08:59:00.0000000+00:00'
+		virtualEpoch = $(switch ($ProcessKey) {
+			'reset-L6' { '2020-12-16T08:58:00.0000000+00:00' }
+			'reset-L8C' { '2026-12-16T12:00:00.0000000+00:00' }
+			'reset-L8' { '2026-08-09T23:50:00.0000000+00:00' }
+			default { '2026-09-16T08:59:00.0000000+00:00' }
+		})
 		timeZone = 'UTC'
 		configProfile = "sim-$($Tier.ToLowerInvariant())"
+		scenarioConfigOverrides = $(if ($scenarioIds.Contains('L4')) {
+			@{ L4 = @{ 'gameserver.security.passkey.enable' = $true; 'gameserver.security.passkey.wrong.maxcount' = 5 } }
+		} elseif ($scenarioIds.Contains('L8C')) {
+			@{ L8C = @{ 'gameserver.event.advent_calendar.enable' = $true; easter = 0; faction = 0; lock = 0; questrestart = 0; symphony = 0 } }
+		} elseif ($scenarioIds.Contains('L8')) {
+			@{ L8 = @{ 'gameserver.event.service.disabled_events' = 'Beyond Aion Server Buffs,Increased Gathering & Crafting XP Rates,Increased Drop Rates,Increased Drop Rates 50%' } }
+		} else { @{} })
 		scenarios = $scenarioIds
 		startedAt = $startedAt.ToString('O')
 		finishedAt = [DateTimeOffset]::UtcNow.ToString('O')

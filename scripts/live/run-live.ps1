@@ -81,6 +81,8 @@ $previousRunDirectory = $env:AION_E2E_RUN_DIR
 $previousRunId = $env:AION_RUN_ID
 $previousPacketTap = $env:AION_PACKET_TAP
 $previousQuestPlanRoot = $env:AION_E2E_QUEST_PLAN_ROOT
+$previousOverlayDirectory = $env:AION_BOT_OVERLAY_DIR
+$configProfile = 'docker-bots'
 
 function Invoke-CheckedNative([string]$Command, [string[]]$Arguments, [string]$Description) {
 	& $Command @Arguments
@@ -212,6 +214,21 @@ $failure = $null
 try {
 	Push-Location $repoRoot
 	try {
+		if ($Scenario -contains 'L4') {
+			if ($Scenario.Count -ne 1) { throw 'The passkey profile must run L4 in its own isolated stack.' }
+			$profileDirectory = Join-Path $runPath 'config-overlay'
+			New-Item -ItemType Directory -Path $profileDirectory | Out-Null
+			$sourceOverlay = if ([string]::IsNullOrWhiteSpace($previousOverlayDirectory)) {
+				Join-Path $repoRoot 'docker/bots/overlay'
+			} elseif ([IO.Path]::IsPathRooted($previousOverlayDirectory)) { $previousOverlayDirectory }
+			else { Join-Path (Split-Path $composeFilePath -Parent) $previousOverlayDirectory }
+			Get-ChildItem -LiteralPath $sourceOverlay -File | Copy-Item -Destination $profileDirectory
+			Set-Content -LiteralPath (Join-Path $profileDirectory '99-passkey.properties') -Encoding utf8NoBOM -Value @(
+				'gameserver.security.passkey.enable=true', 'gameserver.security.passkey.wrong.maxcount=5'
+			)
+			$env:AION_BOT_OVERLAY_DIR = $profileDirectory
+			$configProfile = 'docker-bots-passkey'
+		}
 		if ($Scenario -contains 'Q4P' -or $Scenario -contains 'Q4I') {
 			$questPlanRoot = Join-Path $runPath 'quest-plans'
 			if ($Scenario -contains 'Q4P') {
@@ -253,7 +270,7 @@ try {
 			'--bots', $Bots.ToString(), '--scenario', ($Scenario -join ','),
 			'--connect-timeout-seconds', $ConnectTimeoutSeconds.ToString(),
 			'--step-timeout-seconds', $StepTimeoutSeconds.ToString(), '--seed', $Seed.ToString(),
-			'--git-sha', $gitSha, '--profile', 'docker-bots', '--time-zone', $timeZone
+			'--git-sha', $gitSha, '--profile', $configProfile, '--time-zone', $timeZone
 		)
 		& dotnet @botArguments
 		$botExitCode = $LASTEXITCODE
@@ -313,6 +330,8 @@ finally {
 	else { $env:AION_PACKET_TAP = $previousPacketTap }
 	if ($null -eq $previousQuestPlanRoot) { Remove-Item Env:AION_E2E_QUEST_PLAN_ROOT -ErrorAction SilentlyContinue }
 	else { $env:AION_E2E_QUEST_PLAN_ROOT = $previousQuestPlanRoot }
+	if ($null -eq $previousOverlayDirectory) { Remove-Item Env:AION_BOT_OVERLAY_DIR -ErrorAction SilentlyContinue }
+	else { $env:AION_BOT_OVERLAY_DIR = $previousOverlayDirectory }
 
 	try { Remove-OldRuns }
 	catch { if ($null -eq $failure) { $failure = $_ } }

@@ -55,9 +55,11 @@ public class PassportsList
 
 	public bool HasPassportForDay(int passportId, DateOnly attendDay)
 	{
+		// E2E-approved correction to the inherited Java calendar-day comparison (§7 #55).
+		// Eligibility resets at 09:00, so a pre-reset arrival belongs to the previous attendance day.
 		return passports
 			.Where(pp => pp.GetId() == passportId)
-			.Select(pp => DateOnly.FromDateTime(ServerTime.AtDate(new DateTimeOffset(pp.GetArriveDate())).DateTime))
+			.Select(pp => DateOnly.FromDateTime(ServerTime.AtDate(new DateTimeOffset(pp.GetArriveDate())).DateTime.AddHours(-9)))
 			.Any(d => d.Equals(attendDay));
 	}
 }

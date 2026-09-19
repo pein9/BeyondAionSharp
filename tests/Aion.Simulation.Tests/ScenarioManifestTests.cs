@@ -30,7 +30,7 @@ public sealed class ScenarioManifestTests
 			manifest.For(ScenarioMode.Sim, ScenarioTier.Fast).Select(scenario => scenario.Id));
 		Assert.Equal([ScenarioMode.Sim], manifest.Get("Q5").Modes);
 		Assert.True(manifest.Get("Q5").ResetEpoch);
-		Assert.Equal(["L0", "M1", "M6", "C1", "Q1", "Q2", "Q3", "Q4P", "Q4I", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "CAPITAL", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "G1", "G2", "G3", "G4", "G5", "G6", "E8", "E9", "E10", "E11", "connect", "canaries"],
+		Assert.Equal(["L0", "M1", "M6", "C1", "Q1", "Q2", "Q3", "Q4P", "Q4I", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "CAPITAL", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "G1", "G2", "G3", "G4", "G5", "G6", "E8", "E9", "E10", "E11", "L1", "L2", "L3", "L4", "L5", "L7", "connect", "canaries"],
 			manifest.For(ScenarioMode.Live, ScenarioTier.Full).Select(scenario => scenario.Id));
 	}
 
@@ -40,6 +40,36 @@ public sealed class ScenarioManifestTests
 	{
 		ScenarioDefinition scenario = Load().Get(scenarioId);
 		Assert.Contains(ScenarioMode.Sim, scenario.Modes);
+	}
+
+	[Fact]
+	public void PassportDailyResetHasAnIsolatedHistoricalEpoch()
+	{
+		var scenario = Load().Get("L6");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(new DateTimeOffset(2020, 12, 16, 8, 58, 0, TimeSpan.Zero), SimulationWorldFixture.EpochForProcess("reset-L6"));
+		Assert.Equal(new DateTimeOffset(2026, 9, 16, 8, 59, 0, TimeSpan.Zero), SimulationWorldFixture.EpochForProcess("shard-00"));
+		Assert.Equal(SimulationWorldFixture.EpochForProcess("shard-00"), SimulationWorldFixture.EpochForProcess("reset-Q5"));
+	}
+
+	[Fact]
+	public void PlayerCommandsHaveAnIsolatedSeasonalProfile()
+	{
+		var scenario = Load().Get("L8C");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(new DateTimeOffset(2026, 12, 16, 12, 0, 0, TimeSpan.Zero), SimulationWorldFixture.EpochForProcess("reset-L8C"));
+		Assert.Equal(16, PlayerCommandScenario.Aliases.Count);
+		Assert.Equal(PlayerCommandScenario.Aliases.Count, PlayerCommandScenario.Aliases.Distinct().Count());
+		Assert.All(PlayerCommandScenario.EnabledCommands, alias => Assert.Contains(alias, PlayerCommandScenario.Aliases));
+	}
+
+	[Fact]
+	public void SummerEventsUseTheirShippedPeriodInAnIsolatedProcess()
+	{
+		var scenario = Load().Get("L8");
+		Assert.True(scenario.ResetEpoch); Assert.Equal([ScenarioMode.Sim], scenario.Modes);
+		Assert.Equal(ScenarioChannelNeeds.Exclusive, scenario.ChannelNeeds);
+		Assert.Equal(new DateTimeOffset(2026, 8, 9, 23, 50, 0, TimeSpan.Zero), SimulationWorldFixture.EpochForProcess("reset-L8"));
 	}
 
 	[Fact]

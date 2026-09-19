@@ -16,6 +16,18 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_L2AUTH_LOGIN_CHECK)] = DecodeLoginCheck,
 			[typeof(SM_CHARACTER_LIST)] = DecodeCharacterList,
 			[typeof(SM_CREATE_CHARACTER)] = DecodeCreateCharacter,
+			[typeof(SM_DELETE_CHARACTER)] = DecodeDeleteCharacter,
+			[typeof(SM_RESTORE_CHARACTER)] = DecodeRestoreCharacter,
+			[typeof(SM_TITLE_INFO)] = DecodeTitleInfo,
+			[typeof(SM_MACRO_LIST)] = DecodeMacroList,
+			[typeof(SM_MACRO_RESULT)] = DecodeMacroResult,
+			[typeof(SM_UI_SETTINGS)] = DecodeUiSettings,
+			[typeof(SM_PLASTIC_SURGERY)] = DecodePlasticSurgery,
+			[typeof(SM_QUIT_RESPONSE)] = DecodeQuitResponse,
+			[typeof(SM_CHARACTER_SELECT)] = DecodeCharacterSelect,
+			[typeof(SM_PET)] = DecodePet,
+			[typeof(SM_ATREIAN_PASSPORT)] = DecodeAtreianPassport,
+			[typeof(SM_UPDATE_PLAYER_APPEARANCE)] = DecodeEquipmentAppearance,
 			[typeof(SM_ENTER_WORLD_CHECK)] = DecodeEnterWorldCheck,
 			[typeof(SM_PLAYER_SPAWN)] = DecodePlayerSpawn,
 			[typeof(SM_PLAY_MOVIE)] = DecodePlayMovie,
@@ -259,6 +271,23 @@ public sealed partial class BotServerPacketDecoder
 			: Fields(("responseCode", responseCode));
 	}
 
+	private static IReadOnlyDictionary<string, object?> DecodeDeleteCharacter(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		var fields = Fields(("responseCode", r.ReadInt32()), ("playerObjId", r.ReadInt32()), ("deletionTime", r.ReadInt32()));
+		if (r.Remaining != 0) throw new InvalidDataException("Character deletion has unexpected trailing bytes.");
+		return fields;
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeRestoreCharacter(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		int responseCode = r.ReadInt32();
+		var fields = Fields(("responseCode", responseCode), ("chaOid", r.ReadInt32()), ("success", responseCode == 0));
+		if (r.Remaining != 0) throw new InvalidDataException("Character restoration has unexpected trailing bytes.");
+		return fields;
+	}
+
 	private static IReadOnlyDictionary<string, object?> DecodeCharacterSummary(ref PacketBodyReader r)
 	{
 		var objectId = r.ReadInt32();
@@ -267,9 +296,8 @@ public sealed partial class BotServerPacketDecoder
 		var gender = r.ReadInt32();
 		var race = r.ReadInt32();
 		var playerClass = r.ReadInt32();
-		r.Skip(5 * sizeof(int)); // voice and four appearance colours
-		r.Skip(52); // face/body appearance bytes, including the three reserved bytes
-		r.Skip(sizeof(float)); // height
+		var appearance = new BotCharacterAppearance(r.ReadInt32(), r.ReadInt32(), r.ReadInt32(), r.ReadInt32(), r.ReadInt32(),
+			Convert.ToHexString(r.ReadBytes(52)), r.ReadSingle());
 		var templateId = r.ReadInt32();
 		var mapId = r.ReadInt32();
 		var x = r.ReadSingle();
@@ -278,7 +306,8 @@ public sealed partial class BotServerPacketDecoder
 		var heading = r.ReadInt32();
 		var level = r.ReadUInt16();
 		r.Skip(sizeof(ushort)); // reserved
-		r.Skip(2 * sizeof(int)); // title and legion id
+		int titleId = r.ReadInt32();
+		r.Skip(sizeof(int)); // legion id
 		r.Skip((40 + 1) * sizeof(char)); // fixed legion name
 		r.Skip(sizeof(ushort)); // legion membership flag
 		var lastOnlineEpochSeconds = r.ReadInt32();
@@ -294,6 +323,7 @@ public sealed partial class BotServerPacketDecoder
 			("objectId", objectId), ("name", name), ("gender", gender), ("race", race),
 			("playerClass", playerClass), ("templateId", templateId), ("mapId", mapId),
 			("x", x), ("y", y), ("z", z), ("heading", heading), ("level", level),
+			("appearance", appearance), ("titleId", titleId),
 			("lastOnlineEpochSeconds", lastOnlineEpochSeconds), ("deletionTimeSeconds", deletionTimeSeconds));
 	}
 
@@ -363,7 +393,8 @@ public sealed partial class BotServerPacketDecoder
 		r.Skip(8);
 		fields["heading"] = r.ReadByte();
 		fields["name"] = r.ReadString();
-		r.Skip(3 * sizeof(ushort)); // title, mentor flag, casting skill
+		fields["titleId"] = r.ReadUInt16();
+		r.Skip(2 * sizeof(ushort)); // mentor flag, casting skill
 		var legionId = r.ReadInt32();
 		if (legionId == 0)
 			r.Skip(8);
@@ -375,7 +406,11 @@ public sealed partial class BotServerPacketDecoder
 		r.Skip(sizeof(byte) + sizeof(ushort) + sizeof(byte)); // hp%, dp, reserved
 		var equipmentMask = unchecked((uint)r.ReadInt32());
 		r.Skip(System.Numerics.BitOperations.PopCount(equipmentMask) * 16);
-		r.Skip(4 * sizeof(int) + 51 + 3 * sizeof(float)); // colours, appearance bytes, height/scale/gravity
+		int skin = r.ReadInt32(), hair = r.ReadInt32(), eye = r.ReadInt32(), lip = r.ReadInt32();
+		byte[] features = r.ReadBytes(50);
+		int voice = r.ReadByte();
+		fields["appearance"] = new BotCharacterAppearance(voice, skin, hair, eye, lip, Convert.ToHexString([.. features, 0, 0]), r.ReadSingle());
+		r.Skip(2 * sizeof(float)); // scale/gravity
 		fields["movementSpeed"] = r.ReadSingle();
 		return fields;
 	}

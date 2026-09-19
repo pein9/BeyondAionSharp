@@ -29,6 +29,15 @@ namespace Aion.Simulation.Tests;
 public sealed class SimulationWorldFixture : IAsyncLifetime
 {
 	private static readonly DateTimeOffset FixedEpoch = new(2026, 9, 16, 8, 59, 0, TimeSpan.Zero);
+	// L6 exercises shipped reward periods without changing their dates or the host clock.
+	public static DateTimeOffset EpochForProcess(string processKey) => processKey switch
+	{
+		"reset-L6" => new DateTimeOffset(2020, 12, 16, 8, 58, 0, TimeSpan.Zero),
+		"reset-L8C" => new DateTimeOffset(2026, 12, 16, 12, 0, 0, TimeSpan.Zero),
+		"reset-L8" => new DateTimeOffset(2026, 8, 9, 23, 50, 0, TimeSpan.Zero),
+		_ => FixedEpoch,
+	};
+	public DateTimeOffset Epoch { get; private set; }
 	private readonly string _repoRoot = RealStaticData.RepoRoot();
 	private ServiceProvider? _services;
 	private IDisposable? _configLoadScope;
@@ -90,7 +99,8 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			string cacheDirectory = Path.Combine(_scratchDirectory, "cache");
 
 			Clock = new VirtualThreadPool(strict: true);
-			SystemClock.SetProcessSource(() => FixedEpoch.ToUnixTimeMilliseconds() + Clock.NowMillis);
+			Epoch = EpochForProcess(Environment.GetEnvironmentVariable("AION_SIM_PROCESS_KEY") ?? "shard-00");
+			SystemClock.SetProcessSource(() => Epoch.ToUnixTimeMilliseconds() + Clock.NowMillis);
 			ServerTime.Initialize(TimeZoneInfo.Utc);
 
 			var databaseOptions = new DatabaseOptions
@@ -122,6 +132,14 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 						"Increased Drop Rates 50%",
 					};
 					CustomConfig.ENABLE_RANDOM_QUEST_BONUS_REWARDS = false;
+					if (Environment.GetEnvironmentVariable("AION_SIM_PROCESS_KEY") == "reset-L8")
+						EventsConfig.DISABLED_EVENTS.Remove("Increased XP Rates");
+					if (Environment.GetEnvironmentVariable("AION_SIM_PROCESS_KEY") == "reset-L8C")
+					{
+						EventsConfig.ENABLE_ADVENT_CALENDAR = true;
+						foreach (string alias in Aion.Bots.Scenarios.PlayerCommandScenario.EnabledCommands)
+							Aion.GameServer.Configs.Administration.CommandsConfig.ACCESS_LEVELS[alias] = 0;
+					}
 					ServerTime.Initialize(TimeZoneInfo.Utc);
 				},
 			};
@@ -142,7 +160,7 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			services.AddSingleton<IStaticDataLoader>(new SimulationStaticDataLoader(cacheDirectory));
 			services.RemoveAll<IHostedService>();
 
-			var accounts = Enumerable.Range(1, 90)
+			var accounts = Enumerable.Range(1, 90).Concat(Enumerable.Range(101, 20))
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();

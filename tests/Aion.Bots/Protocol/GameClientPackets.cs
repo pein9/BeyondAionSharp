@@ -30,10 +30,16 @@ public static partial class GameClientPackets
 
 	public static BotClientPacket CreateCharacter(CharacterCreationData data) => Create<CM_CREATE_CHARACTER>(w =>
 	{
-		if (data.AppearanceFeatures.Length != CharacterCreationData.AppearanceFeatureLength)
-			throw new ArgumentException($"AppearanceFeatures must contain {CharacterCreationData.AppearanceFeatureLength} bytes.", nameof(data));
 		w.D(data.AccountId);
 		w.S(data.AccountName);
+		WriteCharacterAppearance(w, data);
+		w.C(data.Type);
+	});
+
+	private static void WriteCharacterAppearance(PacketBodyWriter w, CharacterCreationData data)
+	{
+		if (data.AppearanceFeatures.Length != CharacterCreationData.AppearanceFeatureLength)
+			throw new ArgumentException($"AppearanceFeatures must contain {CharacterCreationData.AppearanceFeatureLength} bytes.", nameof(data));
 		w.S(data.CharacterName, 25);
 		w.D(data.Gender);
 		w.D(data.Race);
@@ -45,8 +51,7 @@ public static partial class GameClientPackets
 		w.D(data.LipRgb);
 		w.B(data.AppearanceFeatures);
 		w.F(data.Height);
-		w.C(data.Type);
-	});
+	}
 
 	public static BotClientPacket EnterWorld(int objectId) => Create<CM_ENTER_WORLD>(w => w.D(objectId));
 	public static BotClientPacket LevelReady() => Empty<CM_LEVEL_READY>();

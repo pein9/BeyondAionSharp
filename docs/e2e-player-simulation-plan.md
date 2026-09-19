@@ -1455,16 +1455,134 @@ Every economy scenario ends with invariants: kinah and item totals conserved acr
     Fast `p8-06-final-fast-20260919a`, fidelity, null-loggers, clock-reads, custom-quest drafts and all ten
     quest-plan compiler checks passed. C6's separately recorded intermittent death fixture remains open;
     it passed the final Full run and an isolated seed-2 run, which are not claimed as a flake fix.
-- [ ] **P8-07** [BOTH] M — Account and character lifecycle:
+- [x] **P8-07** [BOTH] M — Account and character lifecycle. (`4209e3ea6`)
+  Completion verified 2026-09-19: L1–L8 below are implemented and passing. The incremental notes preserve
+  the red/green history; references to working-tree or pending work below describe those earlier runs.
   - **L1** One character per race × starting class: create, delete, restore within the grace period, delete for good.
+    Implemented in the working tree: one shared SIM/LIVE scenario creates all twelve Elyos/Asmodian ×
+    Warrior/Scout/Mage/Priest/Engineer/Artist combinations through normal packets. It checks identity,
+    class, level and persistence; reconnects with pending deletion; restores and reconnects again; verifies
+    repeated deletion does not extend the deadline; then crosses the unchanged five-minute grace period.
+    Fresh authentication performs normal expired-character cleanup, restoration is refused, and another
+    login plus the DAO/read-only LIVE persistence oracle confirm durable removal. No director is needed.
+    Isolated SIM `p8-07-l1-sim-20260919b` and Full shared-process SIM `p8-07-l1-full-sim-20260919c`
+    passed (53 shared scenarios plus four broker DAO cases). LIVE `p8-07-l1-live-20260919b` passed all
+    twelve subjects with no new/regressed fingerprints. LIVE a exposed a test assumption, not a gameplay
+    divergence: `players.deletion_date` is `TIMESTAMP(0)`, so a reloaded deadline may round one second
+    above the in-memory packet's truncated seconds. Only reload assertions allow that precision difference;
+    SIM now exercises fractional-second deadlines too. P8-07 remains unchecked until all L1–L8 pass.
   - **L2** Appearance edit, title and bonus title, macro create and delete, UI settings; all verified after relog.
+    Implemented in the working tree: shared SIM/LIVE normal title/bonus selection, sparse macro
+    create/update/delete and all three UI-settings blobs. Appearance editing uses existing surgeon
+    Maenia, a setup-granted ticket, normal dialog 61, stay-connected edit-screen quit and CM_CHARACTER_EDIT.
+    Three fresh logins verify persisted appearance, titles, exact macro slots/XML (including an empty
+    clearing page), UI bytes and ticket consumption. SIM also checks the persisted DAO rows.
+    Isolated SIM `p8-07-l2-sim-20260919a` and enforced LIVE `p8-07-l2-live-20260919b` passed;
+    171 focused protocol/scenario checks passed. LIVE a exposed bot-only expected-quit bookkeeping,
+    corrected without changing gameplay or allowlisting the fingerprint. P8-07 remains in progress.
+    Verification of L1 plus this groundwork: 164 focused checks and solution 3,967 passed / 19 explicit
+    prerequisite skips; warning baseline unchanged at 4,243. Full shared SIM rerun
+    `p8-07-l1-full-sim-20260919d` and Fast `p8-07-l1-fast-20260919a` passed with the new decoders enabled;
+    fidelity, null-loggers, clock-reads, custom-quest drafts and quest-plan compiler checks also passed.
   - **L3** `CM_QUIT` with stayConnected=1 back to character select, then enter a different character.
+    Implemented in the working tree: one account creates a Warrior and Priest, enters and walks the
+    first ten meters, returns to selection without disconnecting, verifies saved movement, and enters
+    the second. Fresh entry packets, live/DAO identity and online-state checks, transport-generation
+    counts and exactly one authentication/key handshake rule out a reconnect or stale first-character
+    state. No director/setup mutation. Isolated SIM `p8-07-l3-sim-20260919a` and enforced LIVE
+    `p8-07-l3-live-20260919a` passed; LIVE had no new/regressed fingerprints.
   - **L4** Passkey profile on: set, lock out after wrong attempts, reset.
+    Shared scenario implemented in the working tree: new-passkey window, set and enter; fresh login,
+    failed and successful update, rejection of the old value; another login, four wrong attempts without
+    a ban, fifth-attempt lockout, director `//passkeyreset`, old-value rejection and fresh-login recovery.
+    SIM uses real passkey DAOs and checks the serialized eight-hour IP-ban/unban requests at its simulated
+    login-link boundary; it does not claim to exercise a real login-server ban. LIVE uses an isolated
+    passkey-enabled overlay and additionally requires the server disconnect plus two blocked-IP login
+    refusals before reset. Default profiles and production security settings remain unchanged.
+    Isolated SIM `p8-07-l4-sim-20260919b` passed. LIVE b completed the gameplay sequence but correctly
+    failed the watcher: the bot used rapid heartbeat pings as barriers, exposing the inherited audit
+    defect in §7 #53. L3/L4 now use normal time-sync barriers, preserving the 180-second heartbeat rule.
+    LIVE a also exposed expected-EOF cleanup bookkeeping; the consumed read is no longer awaited twice.
+    Enforced LIVE `p8-07-l4-live-20260919c` passed, with zero new/regressed fingerprints and two explicit
+    `STR_L2AUTH_S_BLOCKED_IP` refusal receipts before reset. Shared-process Full SIM
+    `p8-07-l4-full-sim-20260919a` passed all 56 scenarios plus four broker DAO cases.
+    Current L1–L4 regression receipts: solution 4,011 passed / 19 explicit
+    prerequisite skips; warning baseline unchanged at 4,243; shared-process Full SIM
+    includes the time-sync correction in both L3 and L4. Null-loggers, clock-reads, custom-quest drafts,
+    fidelity, quest-plan compiler and Docker compose contract checks passed. Fast
+    `p8-07-l4-fast-20260919a` failed because C2's target died during its cooldown wait (not an L4 failure).
+    Added immediate target-health/AI/damage-source diagnostics; Fast `p8-07-c2-diagnostic-20260919a`
+    passed. The intermittent C2 fixture interference is still open; this rerun does not prove it fixed.
   - **L5** Pet adopt, summon, feed, dismiss.
+    Shared SIM/LIVE scenario implemented in the working tree using the existing Button-Eye Mookie egg
+    (190000020 / pet 900043) and Thin Fluid (182003659). Setup grants one egg and three food items;
+    the ordinary subject adopts, summons, feeds two through the unchanged 2.5-second server callbacks,
+    dismisses, relogs and resummons. Packet identity/ownership, exact whole-inventory deltas and the
+    fresh-login pet list prove egg consumption and durable feeding progress; SIM additionally checks
+    the real pet DAO and spawned/despawned state. No production changes or new content.
+    Isolated SIM `p8-07-l5-sim-20260919b` and enforced LIVE `p8-07-l5-live-20260919a` passed;
+    LIVE reported zero new/regressed fingerprints. 187 focused protocol checks passed, including
+    production client-parser round trips, existing Java golden packets and malformed pet-body tests.
+    Shared-process Full SIM `p8-07-l5-full-sim-20260919a` passed all 57 scenarios plus four broker DAO
+    cases. Solution: 4,032 passed / 19 explicit prerequisite skips. Warning baseline unchanged at
+    4,243 after a sequential rerun (the first rebuild overlapped the running SIM host and hit file locks).
+    Null-loggers, clock-reads, custom-quest drafts, fidelity and quest-plan compiler checks passed.
+    Fast `p8-07-l5-fast-20260919a` passed with the pet decoder enabled; C2's intermittent issue remains
+    open despite this and the shared Full run passing.
+    Research also identified invalid-food refusal divergence §7 #54, still open.
   - **L6** Atreian passport reward on login, with `SystemClock` crossing the daily reset.
+    Implemented as SIM-only `reset-L6`: the latest shipped daily/cumulative period ends March 1, 2021,
+    and the service derives its global expiry from those, not the longer anniversary periods. The
+    isolated process starts at 2020-12-16 08:58 UTC, recorded in run metadata before any service boots;
+    no new rewards, production date edits, LIVE clock overrides or host-clock changes. Normal login
+    earns existing daily passport 346, normal CM claims its item, and a fresh login cannot duplicate it.
+    The scenario watches 08:59:59.999 and the exact 09:00 cron boundary, claims the next reward, then
+    relogs again and verifies both reward items, claims and stamps against packets and the real DAO.
+    SIM b reproduced inherited attendance-day mismatch §7 #55. With the narrow documented correction,
+    `p8-07-l6-sim-20260919c` passed. 183 focused protocol/attendance checks passed.
   - **L7** With `CustomConfig` limits on, sell to a vendor until `PlayerLimitService` refuses.
-  - **L8** One event from `static_data/events` enabled on the virtual clock (quest, drop, buff); every player
+    Shared scenario implemented in the working tree with default limits enabled and dynamic cap off.
+    Setup grants 64 existing Gold Ingots; normal vendor dialog/sale packets sell 50, request another
+    five but consume/pay for only three, then require the exact daily-cap refusal with 47 kinah left.
+    Whole-inventory/kinah checks plus the SIM server/LIVE storage oracle reject silent loss, and fresh
+    login must retain the same account cap. Isolated SIM `p8-07-l7-sim-20260919a` and enforced LIVE
+    `p8-07-l7-live-20260919a` passed; LIVE reported zero new/regressed fingerprints.
+    Shared Full SIM `p8-07-l7-full-sim-20260919a` passed all 58 shared scenarios plus four broker DAO
+    cases; Fast `p8-07-l7-fast-20260919a` passed. Solution: 4,049 passed / 19 explicit prerequisite
+    skips. Warning baseline remains 4,243; null-loggers, clock-reads, custom-quest drafts, fidelity and
+    all ten quest-plan compiler checks passed.
+  - **L8** Existing events from `static_data/events` enabled on the virtual clock (quest, drop, buff); every player
     dot-command run once by a level-0 subject.
+    Research note: no shipped event combines quests, drops and buffs. Cover quest/drop participation
+    using an existing event and buff activation with an existing buff event; do not invent a combined event.
+    Command half implemented as SIM-only `L8C`, isolated at December 16, 2026. It enables Advent and
+    the five normally disabled player commands only in that process; access remains 0, and production
+    permissions, content and the host clock stay unchanged. All 16 registered commands run through
+    normal chat packets. Assertions cover help/access visibility, GM/PvP information, item IDs, inactive
+    quest-restart refusal, no-exp and appearance toggles, serialized GS-to-LS computer-lock requests,
+    faction-message fee, deletion, Easter/Symphony exchanges, confirmed coin purchase, one-of-two timed
+    decomposition, ten-second equipment preview/restoration, and Advent claim/duplicate denial after relog.
+    Whole-inventory and server-state checks accompany every step. SIM does not claim to prove the login
+    server's computer-lock enforcement. `p8-07-l8c-sim-20260919b` passed with strict equipment-appearance
+    decoding; 30 focused decoder/command-inventory tests passed. Final command rerun
+    `p8-07-l8c-sim-20260919c` also passed.
+    Event half uses the shipped Summer Block Party quest 80352 (Ice Hot), existing NPC Callubriz and
+    two existing hostile Cygnea heroes. Normal quest, attack and corpse-loot packets earn six Ice Blocks
+    and exchange them for the existing reward. Level/class/position and one-hit targets are setup, not
+    autonomous progression. The isolated August 9, 2026 process also receives the shipped XP event buff,
+    watches it remain until midnight and expire at the boundary, then verifies quest/reward persistence
+    and no buff reapplication after relog. No event dates, quests, spawns or rewards were added.
+    Run `p8-07-l8-sim-20260919h` passed gameplay but correctly failed on EventDAO empty-batch errors
+    (§7 #56); the parity correction and a real-Docker DAO regression pass in
+    `p8-07-l8-sim-20260919i`. Passport reset rerun `p8-07-l6-sim-20260919d` also passes.
+    The Full runner now includes the previously omitted G1–G6, E8–E11 and new LIVE lifecycle scenarios;
+    L6/L8/L8C remain explicitly SIM-only. Final shared Full
+    `p8-07-final-full-sim-20260919a` passed all 58 shared scenarios plus five real-DAO regression cases.
+    Fast `p8-07-final-fast-20260919a` passed. Solution: 4,055 passed / 20 explicit prerequisite skips;
+    warning baseline unchanged at 4,243. Null-loggers, clock-reads, custom-quest drafts, structural fidelity
+    and all ten quest-plan compiler checks passed. All six LIVE lifecycle receipts above were audited
+    for scenario completion and zero new/regressed fingerprints. The previously tracked C2/C6 fixture
+    intermittency, invalid pet food (#54), and null-player audit robustness (#53) remain open, not allowlisted.
 - [ ] **P8-08** [SIM] L — Full-tier data sweeps, each with a per-row coverage report and baseline: every gatherable
   template gathered once (GM teleport, GM-set skill); every recipe crafted once with GM-granted components and
   level; every trade list bought from and sold to once; every teleporter destination used once; every skill-tree
@@ -1724,6 +1842,10 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 50 | C6 teleported beside its attacker but never moved to end teleport protection; bounded normal attacks sometimes all landed during protection (test-fixture defect) | `network/aion/clientpackets/CM_MOVE.java:140-141` at `ce54b7931` ends protection on horizontal movement; C# matches | P8-05: Full SIM G6 b failed before G6 with `hp=10, protection=True` after 20 attacks. Drive a real one-metre CM_MOVE after setup, assert protection ended, then retain ordinary attack/death/revive assertions; no protection or combat rule changes. Full SIM G6 c/d both pass C6 |
 | 51 | Broker queued saves share mutable items: the registration save clears the dirty flag, so a later purchase can skip its owner transfer and the sold item reloads for the seller. A partial purchase also queues the unsold remainder under the buyer instead of the seller. Both defects are inherited from Java | `services/BrokerService.java:260-261,291-293,669-697` captures one player ID per deferred task; `dao/InventoryDAO.java:218-237` filters by dirty state and marks the shared item UPDATED, at `ce54b7931` | P8-06/E9: Full SIM `p8-06-e9-full-sim-20260919b` and LIVE `p8-06-e9-live-20260919c` reproduce seller inventory resurrection after relog. Narrow intentional correction under the maintainer's E2E divergence allowance: queued item-owner writes remain required even if an earlier task saved the item; unsold remainder ownership is separate from the buyer's kinah ownership. Regression covers pre-saved/unsaved items, retained/transferred ownership, kinah ownership and deletion against Docker MySQL. Full SIM c/d and rebuilt LIVE d pass the unchanged inventory assertions; no allowlist |
 | 52 | C# registered `LimitedItemTradeSchedulerService` as a DI engine in addition to the post-spawn bootstrap call, initializing vendor stock twice and scheduling duplicate resets; `SM_TRADELIST` sent two rows for each limited item | `GameServer.java:135` calls `LimitedItemTradeService.start()` once; `services/LimitedItemTradeService.java:34-58` appends stock and schedules every row, at `ce54b7931` | P8-06/E11: Full SIM and LIVE `p8-06-e11-*-20260919a` fail on duplicate stock rows after successful trade-in and relog. The production-DI regression is red before removing the redundant engine registration. Keep the original post-spawn initializer and the strict single-row assertion. The DI regression is green after the fix; Full SIM and LIVE c pass, and LIVE records exactly one initialization |
+| 53 | Rapid `CM_PING` at character selection reaches the audit path with no active player; notifying an online director dereferences that null player (inherited defect, not a port mismatch; fp `722b848a`) | `network/aion/clientpackets/CM_PING.java:runImpl`, `utils/audit/AuditLogger.java:log`, and `utils/ChatUtil.java:charName` at `ce54b7931` have the same null-unsafe chain | P8-07/L4 LIVE a/b exposed this because the bot incorrectly used heartbeat pings as synchronization barriers. Correct the client to use `CM_TIME_CHECK`, without disabling or relaxing ping checks. The inherited audit robustness defect remains tracked; no production change or allowlist. LIVE b's successful lockout/reset did not count as a clean run because the watcher caught this error |
+| 54 | Feeding an item outside the pet's accepted food groups dereferences nullable `foodType.Value` before the intended refusal path | `services/toypet/PetService.java:checkFeeding` and `model/templates/pet/PetFlavour.java:isLovedFood` at `ce54b7931` accept null, return false, then unlock/refuse the item; C# throws before that branch | Discovered during P8-07/L5 protocol research. Open; requires a normal-packet invalid-food regression and parity correction, not an allowlist |
+| 55 | A login before 09:00 prevents the next daily passport reward at 09:00, even though the stamp count increments (inherited defect) | `services/AtreianPassportService.java:getAttendDay` at `ce54b7931` subtracts nine hours, but `model/account/PassportsList.java:hasPassportForDay` compares the unshifted calendar date | L6 SIM `p8-07-l6-sim-20260919b` reproduced stamp 2 with only the prior claimed reward after the real cron callback. E2E-authorized Java divergence: subtract nine hours in C# duplicate detection too. Working-tree fix, midnight/pre-reset/exact-reset/late-day regressions and end-to-end `p8-07-l6-sim-20260919c` pass. No content/date edits or allowlist |
+| 56 | Saving an event with no stored buff rows logs `InvalidOperationException: BatchCommands must contain a command` and returns false after deleting its old rows | `dao/EventDAO.java:storeBuffData` at `ce54b7931` uses JDBC `executeBatch`, which accepts an empty batch; C# `MySqlBatch.ExecuteNonQuery` rejects it | L8 SIM `p8-07-l8-sim-20260919h` completed quest/drop/buff gameplay but failed the log gate with fingerprints `5a9120cb`, `d7538e16`, `2fda1866`, `bd2c0253`. Working-tree parity correction skips only empty batch execution, preserving deletion. Docker regression covers initially empty, nonempty roundtrip, clearing, repeated clearing and unrelated-event preservation. All pass with the event journey in `p8-07-l8-sim-20260919i`; no allowlist |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

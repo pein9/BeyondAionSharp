@@ -63,6 +63,10 @@ public sealed partial class SimulationFastScenarioTests
 		Player player = fixture.World.GetPlayer(session.CharacterId);
 		Npc target = fixture.World.GetWorldMap(220010000).GetMainWorldMapInstance().GetNpcs(210365)
 			.First(npc => npc.IsSpawned() && !npc.IsDead());
+		string DescribeTarget() => $"target={target.GetObjectId()}/{target.GetNpcId()}, hp={target.GetLifeStats().GetCurrentHp()}/{target.GetLifeStats().GetMaxHp()}, ai={target.GetAi().GetState()}, " +
+			"damage=[" + string.Join(", ", target.GetAggroList().GetFinalDamageList().GetCreatureDamages().Select(damage =>
+				$"{damage.GetAttacker().GetObjectId()}/{damage.GetAttacker().GetName()}:{damage.GetDamage()}")) + "]";
+		string initialTarget = DescribeTarget();
 		await PlaceBesideNpcAsync(session, player, target, token);
 		await session.SendPacketAsync(session.Api.Target(target.GetObjectId()), token);
 		var cast = new SpellCastData(2864, 1, 0) { TargetObjectId = target.GetObjectId() };
@@ -81,6 +85,7 @@ public sealed partial class SimulationFastScenarioTests
 
 		session.BeginStep("s04", "accept-at-ten-seconds");
 		await session.AdvanceAsync(TimeSpan.FromMilliseconds(10_001), token);
+		Assert.False(target.IsDead(), $"C2 target died while waiting for cooldown. Before: {initialTarget}; after: {DescribeTarget()}");
 		await session.SendPacketAsync(GameClientPackets.CastSpell(cast), token);
 		try
 		{

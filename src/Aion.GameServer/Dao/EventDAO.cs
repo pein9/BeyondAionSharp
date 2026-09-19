@@ -97,7 +97,10 @@ public class EventDAO
                 cmd.Parameters.Add(new MySqlParameter { Value = Serialize(data.GetAllowedBuffDays()) });
                 batch.BatchCommands.Add(cmd);
             }
-            batch.ExecuteNonQuery();
+            // JDBC executeBatch accepts an empty batch; MySqlBatch rejects it. The delete above
+            // must still run when an event no longer has any stored buff state.
+            if (batch.BatchCommands.Count > 0)
+                batch.ExecuteNonQuery();
             return true;
         }
         catch (Exception e)

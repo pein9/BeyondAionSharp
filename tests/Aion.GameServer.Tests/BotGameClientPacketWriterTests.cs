@@ -45,8 +45,29 @@ public sealed partial class BotGameClientPacketWriterTests
 		var game = AionConnection.State.IN_GAME;
 		var auth = AionConnection.State.AUTHED;
 		var connected = AionConnection.State.CONNECTED;
+		yield return C("passport-claim", GameClientPackets.ClaimPassports(new BotPassportClaim(346, 1608109080), new BotPassportClaim(346, 1608109200)), game,
+			"passports", new Dictionary<int, ISet<int>> { [346] = new HashSet<int> { 1608109080, 1608109200 } });
+		yield return C("passport-refresh", GameClientPackets.ClaimPassports(), game, "passports", new Dictionary<int, ISet<int>>());
+		yield return C("pet-adopt", GameClientPackets.AdoptPet(123, 900043, "Mookie", 42), game,
+			new Dictionary<string, object?> { ["action"] = Aion.GameServer.Model.GameObjects.PetAction.Adopt,
+				["eggObjId"] = 123, ["templateId"] = 900043, ["petName"] = "Mookie", ["decorationId"] = 42 });
+		yield return C("pet-summon", GameClientPackets.SummonPet(900043), game,
+			new Dictionary<string, object?> { ["action"] = Aion.GameServer.Model.GameObjects.PetAction.Spawn, ["templateId"] = 900043 });
+		yield return C("pet-dismiss", GameClientPackets.DismissPet(900043), game,
+			new Dictionary<string, object?> { ["action"] = Aion.GameServer.Model.GameObjects.PetAction.Dismiss, ["templateId"] = 900043 });
+		yield return C("pet-feed", GameClientPackets.FeedPet(456, 2), game,
+			new Dictionary<string, object?> { ["action"] = Aion.GameServer.Model.GameObjects.PetAction.Food,
+				["actionType"] = 1, ["objectId"] = 456, ["count"] = 2 });
 		var allMove = (byte)(MovementMask.POSITION | MovementMask.MANUAL | MovementMask.ABSOLUTE | MovementMask.GLIDE | MovementMask.VEHICLE);
 		var appearance = Enumerable.Range(0, CharacterCreationData.AppearanceFeatureLength).Select(i => (byte)i).ToArray();
+		var passkey = System.Text.Encoding.Unicode.GetBytes("123456".PadRight(24, '\0'));
+		var replacement = System.Text.Encoding.Unicode.GetBytes("87654321".PadRight(24, '\0'));
+		yield return C("set-passkey", GameClientPackets.SetCharacterPasskey(passkey), auth,
+			new Dictionary<string, object?> { ["type"] = (short)0, ["passkey"] = "123456".PadRight(24, '\0') });
+		yield return C("update-passkey", GameClientPackets.UpdateCharacterPasskey(passkey, replacement), auth,
+			new Dictionary<string, object?> { ["type"] = (short)2, ["passkey"] = "123456".PadRight(24, '\0'), ["newPasskey"] = "87654321".PadRight(24, '\0') });
+		yield return C("submit-passkey", GameClientPackets.SubmitCharacterPasskey(replacement), auth,
+			new Dictionary<string, object?> { ["type"] = (short)3, ["passkey"] = "87654321".PadRight(24, '\0') });
 		foreach (var row in ExtendedSocialPacketCases(game)) yield return row;
 		foreach (var row in GearPacketCases(game)) yield return row;
 		foreach (var row in BrokerPacketCases(game)) yield return row;
@@ -67,6 +88,17 @@ public sealed partial class BotGameClientPacketWriterTests
 			Voice = 2, SkinRgb = 3, HairRgb = 4, EyeRgb = 5, LipRgb = 6, AppearanceFeatures = appearance, Height = 1.25f,
 		}), auth, new Dictionary<string, object?> { ["characterName"] = "Botone", ["type"] = 0 });
 		yield return C("enter-world", GameClientPackets.EnterWorld(102), auth, "objectId", 102);
+		yield return C("edit-character", GameClientPackets.EditCharacter(102, new CharacterCreationData
+		{
+			CharacterName = "Botone", Gender = 1, Race = 1, PlayerClass = 15, Voice = 2, SkinRgb = 3,
+			HairRgb = 4, EyeRgb = 5, LipRgb = 6, AppearanceFeatures = appearance, Height = 1.25f,
+		}), auth, new Dictionary<string, object?> { ["objectId"] = 102, ["characterName"] = "Botone", ["gender"] = Gender.FEMALE,
+			["race"] = Race.ASMODIANS, ["playerClass"] = PlayerClass.ARTIST });
+		yield return C("display-title", GameClientPackets.SetDisplayTitle(65535), game, "titleId", 65535);
+		yield return C("bonus-title", GameClientPackets.SetBonusTitle(32768), game, "bonusTitleId", 32768);
+		yield return C("create-macro", GameClientPackets.CreateMacro(255, "<macro>商店</macro>"), game,
+			new Dictionary<string, object?> { ["macroPosition"] = 255, ["macroXML"] = "<macro>商店</macro>" });
+		yield return C("delete-macro", GameClientPackets.DeleteMacro(128), game, "macroPosition", 128);
 		yield return C("level-ready", GameClientPackets.LevelReady(), game);
 		yield return C("ui-settings", GameClientPackets.UiSettings(2, [1, 2, 3]), game, "settingsType", (byte)2);
 		yield return C("chat-auth", GameClientPackets.ChatAuth(103, [1, 2, 3, 4, 5, 6]), game);
