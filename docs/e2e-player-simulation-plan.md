@@ -1843,10 +1843,19 @@ real geodata on in production immediately, because geo is enabled by default; th
   Required checks pass: 4,092 solution tests (21 explicit skips), warning baseline 4,243, logger/clock/custom-quest
   ratchets, fidelity, both Python suites and Docker Fast `p9-01-fast-a`. The additional legacy DB boot-tail probe
   is not green; its deferred siege failure remains visible in §7 #65.
-- [ ] **P9-02** [BOTH] M — Java-generated golden geo fixtures: `GetZ` at every Poeta and Ishalgen spawn spot and walker
+- [x] **P9-02** [BOTH] M — Java-generated golden geo fixtures: `GetZ` at every Poeta and Ishalgen spawn spot and walker
   step, `CanSee` pairs, collision rays for both `GetClosestCollision` and `FindMovementCollision`. The ported query
   code (`GeoMap`, BIH tree, terrain) previously had zero tests; P9-01 adds only basic loader/spawn-height smoke
   coverage, not this Java-generated query corpus.
+  Added 29,817 Java-generated queries at spec `ce54b7931`: 13,017 height cases across all 4,339 spawn/walker
+  positions (including referenced walker versions), and 5,600 cases each for visibility, closest collision and
+  movement collision. The C# test independently enumerates coordinates, checks input hashes/counts and compares
+  booleans/NaNs exactly with 1 mm finite-coordinate tolerance. All match; consecutive Java regenerations are
+  byte-identical. [Corpus contract and regeneration](../parity-artifacts/golden/geo/README.md). No query parity
+  fixes or new assets were needed. Ordinary initial event/door/town states only, not exhaustive dynamic states.
+  Java generator commit: `1130933b0`; Java checkout restored to `4.8`/`ce54b7931`. Validation: 4,093 solution tests
+  pass (21 explicit skips), warning baseline 4,243, all mandatory ratchets/fidelity/Python suites, and Docker Fast
+  `p9-02-fast-a` (6/6). Commit: `3b93714d4`.
 - [x] **P9-03** [BOTH] S — Measure load time and memory for all maps and for a filtered set.
   Two fresh processes per profile, including completed collision preload: Poeta/Ishalgen 676–684 ms and
   15.52–15.69 MiB retained managed delta; all maps 2,317–2,407 ms and 455.17–455.18 MiB. All-map loading has no
@@ -1857,6 +1866,10 @@ real geodata on in production immediately, because geo is enabled by default; th
 - [ ] **P9-04** [BOTH] M — Turn geo on in SIM and LIVE profiles; validate navigation edges with `GetZ` every 2 m plus
   collision; re-run Phases 6–8; retire C9's expected-fail; add scenarios for fear/knockback displacement against
   walls.
+  Clarification found during P9-02: SIM copies the production geo-on config and LIVE inherits it too; there was
+  no explicit geo-off profile override. It was the stub that made geo absent. P9-01 therefore activates real
+  loading in those hosts as well as production (Fast already passes with it). P9-04 must pin/verify the enabled
+  profile contract and finish navigation/scenario validation, not claim a nonexistent false-to-true config flip.
 
 **Done when:** golden geo queries match Java for the starter zones and C9 passes.
 
