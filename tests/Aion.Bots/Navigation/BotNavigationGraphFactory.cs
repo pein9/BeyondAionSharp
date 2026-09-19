@@ -5,17 +5,17 @@ namespace Aion.Bots.Navigation;
 
 public static class BotNavigationGraphFactory
 {
-	public static BotNavigationGraph Build(StaticData staticData, IEnumerable<int>? questNpcIds = null)
+	public static BotNavigationGraph Build(StaticData staticData, IEnumerable<int>? questNpcIds = null, BotNavigationGeometry? geometry = null)
 	{
 		ArgumentNullException.ThrowIfNull(staticData);
 		return Build(staticData.WorldMaps2.Select(map => map.GetMapId()), staticData.SpawnsDh,
 			staticData.WalkerDataDh, staticData.GatherableDataDh, staticData.Portal2DataDh,
-			staticData.PortalLocs, staticData.BindPointDataDh, questNpcIds);
+			staticData.PortalLocs, staticData.BindPointDataDh, questNpcIds, geometry);
 	}
 
 	public static BotNavigationGraph Build(IEnumerable<int> mapIds, SpawnsData spawns, WalkerData walkers,
 		GatherableData gatherables, Portal2Data portals, PortalLocTable portalLocations, BindPointData bindPoints,
-		IEnumerable<int>? questNpcIds = null)
+		IEnumerable<int>? questNpcIds = null, BotNavigationGeometry? geometry = null)
 	{
 		ArgumentNullException.ThrowIfNull(mapIds);
 		ArgumentNullException.ThrowIfNull(spawns);
@@ -82,7 +82,7 @@ public static class BotNavigationGraphFactory
 		}
 
 		return new BotNavigationGraph(waypoints.Select((waypoint, id) => new BotWaypoint(id, waypoint.MapId,
-			waypoint.Position, waypoint.Sources, waypoint.TemplateId, waypoint.RouteId)));
+			waypoint.Position, waypoint.Sources, waypoint.TemplateId, waypoint.RouteId)), geometry);
 	}
 
 	private sealed record PendingWaypoint(int MapId, BotPosition Position, BotWaypointSource Sources,

@@ -253,7 +253,7 @@
     "virtualDuration": "00:01:00",
     "consumes": [{ "kind": "Npc", "id": 210365 }],
     "requires": ["Db"],
-    "expectedFail": "P9-04: NPC chase loses the target after a jump while geodata is disabled.",
+    "expectedFail": null,
     "resetEpoch": false
   },
   {
@@ -1758,6 +1758,34 @@
     "requires": [
       "Db"
     ],
+    "expectedFail": null,
+    "resetEpoch": true
+  },
+  {
+    "id": "GEO-FEAR",
+    "modes": ["Sim"],
+    "tier": "Full",
+    "race": "Asmodians",
+    "map": 220010000,
+    "channelNeeds": "Dedicated",
+    "bots": 2,
+    "virtualDuration": "00:05:00",
+    "consumes": [],
+    "requires": ["Db"],
+    "expectedFail": null,
+    "resetEpoch": true
+  },
+  {
+    "id": "GEO-KNOCKBACK",
+    "modes": ["Sim"],
+    "tier": "Full",
+    "race": "Asmodians",
+    "map": 220010000,
+    "channelNeeds": "Dedicated",
+    "bots": 2,
+    "virtualDuration": "00:05:00",
+    "consumes": [],
+    "requires": ["Db"],
     "expectedFail": null,
     "resetEpoch": true
   },

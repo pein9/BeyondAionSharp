@@ -123,6 +123,11 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 					NetworkConfig.LOG_IGNORED_PACKETS = true;
 					WorldConfig.WORLD_MAX_TWINS_USUAL = 5;
 					WorldConfig.WORLD_EMULATE_FASTTRACK = false;
+					GeoDataConfig.GEO_ENABLE = true;
+					GeoDataConfig.CANSEE_ENABLE = true;
+					GeoDataConfig.FEAR_ENABLE = true;
+					GeoDataConfig.GEO_NPC_MOVE = true;
+					GeoDataConfig.GEO_MAP_IDS = "";
 					EventsConfig.DISABLED_EVENTS = new HashSet<string>(StringComparer.Ordinal)
 					{
 						"Beyond Aion Server Buffs",
@@ -160,7 +165,7 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			services.AddSingleton<IStaticDataLoader>(new SimulationStaticDataLoader(cacheDirectory));
 			services.RemoveAll<IHostedService>();
 
-			var accounts = Enumerable.Range(1, 90).Concat(Enumerable.Range(101, 32))
+			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 32))
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();
@@ -186,6 +191,12 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			World = _services.GetRequiredService<GameWorld>();
 			DataManager = _services.GetRequiredService<GameServerRuntimeContext>().DataManager
 				?? throw new InvalidOperationException("Simulation bootstrap did not register static data.");
+			foreach (int mapId in new[] { 210010000, 220010000 })
+			{
+				var geo = Aion.GameServer.World.Geo.GeoService.GetInstance().GetMap(mapId);
+				if (!geo.HasTerrain() || geo.GetEntityCount() == 0)
+					throw new InvalidOperationException($"SIM geo profile did not load terrain and placements for {mapId}.");
+			}
 			IsAvailable = true;
 			SkipReason = string.Empty;
 		}

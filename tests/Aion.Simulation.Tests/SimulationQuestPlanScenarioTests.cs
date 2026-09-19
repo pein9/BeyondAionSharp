@@ -331,17 +331,25 @@ public sealed partial class SimulationFastScenarioTests
 					QuestRunPosition position = source.Positions[attemptedObjects.Count % source.Positions.Count];
 					await owner.TeleportForSetupAsync(session, player, position.MapId,
 						position.X - 1, position.Y, position.Z, token);
-					Gatherable gatherable = player.GetPosition().GetWorldMapInstance().OfType<Gatherable>()
+					var visible = player.GetPosition().GetWorldMapInstance().OfType<Gatherable>()
 						.Where(candidate => candidate.GetObjectTemplate().GetTemplateId() == templateId && candidate.IsSpawned() &&
 							!attemptedObjects.Contains(candidate.GetObjectId()))
 						.OrderBy(candidate => MathF.Pow(candidate.GetX() - player.GetX(), 2) +
 							MathF.Pow(candidate.GetY() - player.GetY(), 2))
-						.First();
+						.ThenBy(candidate => candidate.GetX()).ThenBy(candidate => candidate.GetY()).ThenBy(candidate => candidate.GetZ())
+						.Select(candidate => (Node: candidate, Point: FindVisibleGatherApproach(candidate, player.GetRace())))
+						.First(candidate => candidate.Point != null);
+					Gatherable gatherable = visible.Node;
+					BotPosition approach = visible.Point!.Value;
 					attemptedObjects.Add(gatherable.GetObjectId());
 					BotInventoryItem? existing = session.Api.World.Inventory.Values
 						.SingleOrDefault(entry => entry.ItemId == operation.ItemId);
-					await session.MoveToPositionAsync(
-						new BotPosition(gatherable.GetX() - 1, gatherable.GetY(), gatherable.GetZ(), 0), token);
+					await owner.TeleportForSetupAsync(session, player, gatherable.GetWorldId(),
+						approach.X, approach.Y, approach.Z, token, gatherable.GetInstanceId());
+					await session.MoveToPositionAsync(approach, token);
+					Assert.True(Aion.GameServer.World.Geo.GeoService.GetInstance().CanSee(player, gatherable),
+						$"Gather setup LOS blocked for {templateId}/{gatherable.GetObjectId()} at {gatherable.GetWorldId()} " +
+						$"({gatherable.GetX()}, {gatherable.GetY()}, {gatherable.GetZ()}); player ({player.GetX()}, {player.GetY()}, {player.GetZ()}).");
 					foreach (BotClientPacket packet in session.Api.Gather(gatherable.GetObjectId()))
 						await session.SendPacketAsync(packet, token);
 					DecodedBotServerPacket initial = await session.WaitForPacketAsync(typeof(SM_GATHER_UPDATE), token);

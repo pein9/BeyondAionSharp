@@ -20,6 +20,13 @@ public sealed class ScenarioManifestTests
 	public void CheckedInManifestIsTheSharedModeAndTierSource()
 	{
 		ScenarioManifest manifest = Load();
+		Assert.Null(manifest.Get("C9").ExpectedFail);
+		foreach (string id in new[] { "GEO-FEAR", "GEO-KNOCKBACK" })
+		{
+			Assert.Equal(ScenarioTier.Full, manifest.Get(id).Tier);
+			Assert.Equal(2, manifest.Get(id).Bots);
+			Assert.Null(manifest.Get(id).ExpectedFail);
+		}
 		ScenarioDefinition l0 = manifest.Get("L0");
 
 		Assert.Equal([ScenarioMode.Sim, ScenarioMode.Live], l0.Modes);

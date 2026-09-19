@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using Aion.Bots.Api;
 using Aion.Bots.Gm;
 using Aion.Bots.Movement;
+using Aion.Bots.Navigation;
 using Aion.Bots.Protocol;
 using Aion.Bots.Protocol.Chat;
 using Aion.Bots.Protocol.Login;
@@ -200,6 +201,8 @@ public static partial class LiveBotRunner
 	private static async Task<int> RunM1Async(LiveBotOptions options, LiveBotProblemWriter problems,
 		CancellationToken cancellationToken)
 	{
+		string repoRoot = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../.."));
+		var assets = await BotNavigationAssets.LoadAsync(repoRoot, Path.Combine(options.OutputDirectory, "navigation-cache"), cancellationToken);
 		await using var actor = new L0Actor(options, problems, 1, Race.ASMODIANS, characterName: "Asliveaa");
 		actor.Trace.WriteAction("s00", "scenario:start", new Dictionary<string, object?> { ["scenario"] = "M1" });
 		try
@@ -214,6 +217,7 @@ public static partial class LiveBotRunner
 			int? channel = PlannedChannel(options, "M1");
 			if (channel != null)
 				await actor.StepAsync("isolate-channel", token => actor.Session.ChangeChannelAsync(channel.Value, token), cancellationToken);
+			actor.Session.Navigation = assets.StarterRoute(Race.ASMODIANS, (channel ?? 0) + 1);
 			int asak = await actor.Session.WaitForNpcAsync(203500, cancellationToken);
 			await actor.StepAsync("walk-to-asak", token => actor.Session.MoveToNpcAsync(asak, token), cancellationToken);
 			await actor.StepAsync("accept-quest-2101", token => actor.Session.StartQuestAsync(asak, 2101, token), cancellationToken);
@@ -870,9 +874,19 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		BotPosition start = CurrentPosition;
 		float speed = api.World.MovementSpeed
 			?? throw new InvalidOperationException("SM_PLAYER_INFO did not provide movement speed.");
-		await ExecuteMovementAsync(new BotMover(api.World).CreateGroundPlan(SegmentRoute(start, target.Position), start, speed),
+		IReadOnlyList<BotPosition> route = SegmentRoute(start, target.Position);
+		if (Navigation is { } navigation)
+		{
+			int mapId = api.World.MapId ?? throw new InvalidOperationException("Bot has no observed map.");
+			route = navigation.Graph.FindPath(mapId, start, target.Position);
+			if (route.Count == 0) route = navigation.Geometry.FindLocalPath(mapId, start, target.Position);
+			if (route.Count == 0) throw new InvalidOperationException($"No collision-checked route from {start} to {target.Position}.");
+		}
+		await ExecuteMovementAsync(new BotMover(api.World).CreateGroundPlan(route, start, speed),
 			cancellationToken);
 	}
+
+	public (BotNavigationGraph Graph, BotNavigationGeometry Geometry)? Navigation { get; set; }
 
 	public async Task ExecuteMovementAsync(BotMovementPlan plan, CancellationToken cancellationToken)
 	{

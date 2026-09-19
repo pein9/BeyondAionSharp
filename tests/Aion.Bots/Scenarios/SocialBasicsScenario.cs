@@ -126,7 +126,9 @@ public static class SocialBasicsScenario
 		}, token);
 		await BothStepAsync("duel-request-accept-and-fight", async ct =>
 		{
-			await second.MoveAsync(Registrar with { X = Registrar.X - 3 }, ct);
+			// Step back from the registrar's furniture before dueling; talking range alone does not prove LOS.
+			await first.MoveAsync(Registrar with { X = Registrar.X - 4 }, ct);
+			await second.MoveAsync(Registrar with { X = Registrar.X - 5 }, ct);
 			await BothSyncAsync(ct);
 			await first.SendAsync(first.Api.Duel(second.CharacterId), ct);
 			await second.WaitAsync(typeof(SM_QUESTION_WINDOW), packet => packet.Get<int>("code") == 50028, ct);

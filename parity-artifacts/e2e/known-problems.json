@@ -1,55 +1,5 @@
 [
   {
-    "fp": "4eb592c5",
-    "firstSeenSha": "cf0b07d287299aa2e3d3b01117e4cb929ebf4a1b",
-    "lastSeenSha": "cf0b07d287299aa2e3d3b01117e4cb929ebf4a1b",
-    "lastSeenRun": "p8-08-craft-sim-20260919a",
-    "count": 78,
-    "status": "fixed",
-    "tracking": "P8-08, plan section 7 #57: absent XML combo products become an empty C# list, so limited-production recipe 155001739 throws before granting its product and leaves its repeating craft timer active. Empty-list parity correction passes the red/green XML regression and all 12,494 recipes on seeds 1/2 (runs d/f), including log gates, teardown and independent XML validation. Final solution, Fast and shared Full SIM pass; no allowlist.",
-    "fixedIn": "4e2430517ab4104af1c8c1c79f5fdb0287469b0d"
-  },
-  {
-    "fp": "5a9120cb",
-    "firstSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
-    "lastSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
-    "lastSeenRun": "p8-07-l8-sim-20260919h",
-    "count": 1,
-    "status": "fixed",
-    "tracking": "P8-07/L8; plan section 7 #56. EventDAO empty MySqlBatch for Increased XP Rates. Parity fix preserves deletion and skips empty insertion. Docker DAO regression and clean event run p8-07-l8-sim-20260919i plus shared Full p8-07-final-full-sim-20260919a verified. No allowlist.",
-    "fixedIn": "4209e3ea60cea5ff87286dafb17f5866f40462c2"
-  },
-  {
-    "fp": "d7538e16",
-    "firstSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
-    "lastSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
-    "lastSeenRun": "p8-07-l8-sim-20260919h",
-    "count": 1,
-    "status": "fixed",
-    "tracking": "P8-07/L8; plan section 7 #56. EventDAO empty MySqlBatch for Increased AP Rates. Parity fix preserves deletion and skips empty insertion. Docker DAO regression and clean event run p8-07-l8-sim-20260919i plus shared Full p8-07-final-full-sim-20260919a verified. No allowlist.",
-    "fixedIn": "4209e3ea60cea5ff87286dafb17f5866f40462c2"
-  },
-  {
-    "fp": "2fda1866",
-    "firstSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
-    "lastSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
-    "lastSeenRun": "p8-07-l8-sim-20260919h",
-    "count": 2,
-    "status": "fixed",
-    "tracking": "P8-07/L8; plan section 7 #56. EventDAO empty MySqlBatch for Summer Block Party. Parity fix preserves deletion and skips empty insertion. Docker DAO regression and clean event run p8-07-l8-sim-20260919i plus shared Full p8-07-final-full-sim-20260919a verified. No allowlist.",
-    "fixedIn": "4209e3ea60cea5ff87286dafb17f5866f40462c2"
-  },
-  {
-    "fp": "bd2c0253",
-    "firstSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
-    "lastSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
-    "lastSeenRun": "p8-07-l8-sim-20260919h",
-    "count": 2,
-    "status": "fixed",
-    "tracking": "P8-07/L8; plan section 7 #56. EventDAO empty MySqlBatch for Summer Block Party Parts 1 and 2. Parity fix preserves deletion and skips empty insertion. Docker DAO regression and clean event run p8-07-l8-sim-20260919i plus shared Full p8-07-final-full-sim-20260919a verified. No allowlist.",
-    "fixedIn": "4209e3ea60cea5ff87286dafb17f5866f40462c2"
-  },
-  {
     "fp": "0647ba2d",
     "firstSeenSha": "1d7f5be259e06d4731e9a3429838a9d5e20aee7f",
     "lastSeenSha": "1d7f5be259e06d4731e9a3429838a9d5e20aee7f",
@@ -99,13 +49,44 @@
     "tracking": "P7-01"
   },
   {
+    "fp": "2fda1866",
+    "firstSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
+    "lastSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
+    "lastSeenRun": "p8-07-l8-sim-20260919h",
+    "count": 2,
+    "status": "fixed",
+    "tracking": "P8-07/L8; plan section 7 #56. EventDAO empty MySqlBatch for Summer Block Party. Parity fix preserves deletion and skips empty insertion. Docker DAO regression and clean event run p8-07-l8-sim-20260919i plus shared Full p8-07-final-full-sim-20260919a verified. No allowlist.",
+    "fixedIn": "4209e3ea60cea5ff87286dafb17f5866f40462c2"
+  },
+  {
     "fp": "39050e81",
     "firstSeenSha": "6169e0d67",
     "lastSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
     "lastSeenRun": "p8-07-l7-live-20260919a",
     "count": 400,
-    "status": "tracked",
-    "tracking": "P9-01"
+    "status": "fixed",
+    "tracking": "P9-01 real geometry loading supplies the missing door nodes. P9-04 all-map SIM and 41 enforced LIVE runs complete without this fingerprint; no allowlist.",
+    "fixedIn": "9d445eb63f9d999bf347af7bb00a78fc28088372"
+  },
+  {
+    "fp": "4eb592c5",
+    "firstSeenSha": "cf0b07d287299aa2e3d3b01117e4cb929ebf4a1b",
+    "lastSeenSha": "cf0b07d287299aa2e3d3b01117e4cb929ebf4a1b",
+    "lastSeenRun": "p8-08-craft-sim-20260919a",
+    "count": 78,
+    "status": "fixed",
+    "tracking": "P8-08, plan section 7 #57: absent XML combo products become an empty C# list, so limited-production recipe 155001739 throws before granting its product and leaves its repeating craft timer active. Empty-list parity correction passes the red/green XML regression and all 12,494 recipes on seeds 1/2 (runs d/f), including log gates, teardown and independent XML validation. Final solution, Fast and shared Full SIM pass; no allowlist.",
+    "fixedIn": "4e2430517ab4104af1c8c1c79f5fdb0287469b0d"
+  },
+  {
+    "fp": "5a9120cb",
+    "firstSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
+    "lastSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
+    "lastSeenRun": "p8-07-l8-sim-20260919h",
+    "count": 1,
+    "status": "fixed",
+    "tracking": "P8-07/L8; plan section 7 #56. EventDAO empty MySqlBatch for Increased XP Rates. Parity fix preserves deletion and skips empty insertion. Docker DAO regression and clean event run p8-07-l8-sim-20260919i plus shared Full p8-07-final-full-sim-20260919a verified. No allowlist.",
+    "fixedIn": "4209e3ea60cea5ff87286dafb17f5866f40462c2"
   },
   {
     "fp": "62221a3f",
@@ -147,6 +128,16 @@
     "fixedIn": "4209e3ea60cea5ff87286dafb17f5866f40462c2"
   },
   {
+    "fp": "bd2c0253",
+    "firstSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
+    "lastSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
+    "lastSeenRun": "p8-07-l8-sim-20260919h",
+    "count": 2,
+    "status": "fixed",
+    "tracking": "P8-07/L8; plan section 7 #56. EventDAO empty MySqlBatch for Summer Block Party Parts 1 and 2. Parity fix preserves deletion and skips empty insertion. Docker DAO regression and clean event run p8-07-l8-sim-20260919i plus shared Full p8-07-final-full-sim-20260919a verified. No allowlist.",
+    "fixedIn": "4209e3ea60cea5ff87286dafb17f5866f40462c2"
+  },
+  {
     "fp": "d580e505",
     "firstSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
     "lastSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
@@ -155,6 +146,16 @@
     "status": "fixed",
     "tracking": "P8-02/S7, plan section 7 #38: signed emblem color bindings/reads and nullable default-emblem blob restored. Eight red/green parameter regressions, fresh Docker DAO reads in p8-s7-full-sim-20260918b, and clean enforced LIVE p8-s7-live-dev-20260918b verify the fix; committed in P8-02.",
     "fixedIn": "3cb6ef4d4b1b53b353451b33ec6f7e1ce81bc1f8"
+  },
+  {
+    "fp": "d7538e16",
+    "firstSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
+    "lastSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
+    "lastSeenRun": "p8-07-l8-sim-20260919h",
+    "count": 1,
+    "status": "fixed",
+    "tracking": "P8-07/L8; plan section 7 #56. EventDAO empty MySqlBatch for Increased AP Rates. Parity fix preserves deletion and skips empty insertion. Docker DAO regression and clean event run p8-07-l8-sim-20260919i plus shared Full p8-07-final-full-sim-20260919a verified. No allowlist.",
+    "fixedIn": "4209e3ea60cea5ff87286dafb17f5866f40462c2"
   },
   {
     "fp": "ebe67ab3",
@@ -172,7 +173,8 @@
     "lastSeenSha": "f30f373105970716b1682a07c79c2bb3eca3b4d5",
     "lastSeenRun": "p8-07-l7-live-20260919a",
     "count": 100,
-    "status": "tracked",
-    "tracking": "P9-01"
+    "status": "fixed",
+    "tracking": "P9-01 replaces the GeoWorldLoader stub. P9-04 all-map SIM and 41 enforced LIVE runs complete without this fingerprint; no allowlist.",
+    "fixedIn": "9d445eb63f9d999bf347af7bb00a78fc28088372"
   }
 ]

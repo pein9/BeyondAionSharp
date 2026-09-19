@@ -1,4 +1,6 @@
 using Aion.Bots.Protocol;
+using Aion.Bots.Navigation;
+using Aion.Bots.Movement;
 using Aion.Bots.Reflexes;
 using Aion.Bots.Scenarios;
 using Aion.Bots.World;
@@ -377,8 +379,15 @@ public sealed partial class SimulationFastScenarioTests
 		await session.WaitForPacketAsync(typeof(SM_ATTACK), token);
 		await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
 		Assert.True(snuffler.GetAggroList().IsHating(player));
-		await TeleportForSetupAsync(session, player, snuffler.GetWorldId(),
-			snuffler.GetX() - 10, snuffler.GetY(), snuffler.GetZ(), token);
+		// Teleport despawns the target and clears NPC awareness. Retreat through CM_MOVE instead.
+		var retreatStart = new BotPosition(player.GetX(), player.GetY(), player.GetZ(), player.GetHeading());
+		var geometry = BotNavigationGeometry.ForServerWorld(player.GetInstanceId(), player.GetRace());
+		var retreat = geometry.TraceEdge(player.GetWorldId(), retreatStart,
+			retreatStart with { X = retreatStart.X - 10 });
+		Assert.NotNull(retreat);
+		await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing).CreateGroundPlan(
+			retreat, retreatStart, player.GetGameStats().GetMovementSpeedFloat()), token);
+		Assert.True(snuffler.GetAggroList().IsHating(player), "Retreat lost aggro before the jump.");
 		float chaseStartX = snuffler.GetX();
 		float chaseStartY = snuffler.GetY();
 
@@ -389,14 +398,33 @@ public sealed partial class SimulationFastScenarioTests
 			VectorX: 0.2f, VectorY: 0, VectorZ: 0.8f);
 		foreach (BotClientPacket packet in session.Api.Jump(jump))
 			await session.SendPacketAsync(packet, token);
-		await session.AdvanceAsync(TimeSpan.FromSeconds(3), token);
+		for (int sample = 0; sample < 30; sample++)
+		{
+			await session.AdvanceAsync(TimeSpan.FromMilliseconds(100), token);
+			if (sample == 2)
+			{
+				await session.SendPacketAsync(session.Api.MoveTo(jump with { X = jump.X + 0.1f, Z = jump.Z + 0.8f }), token);
+				Assert.Equal(jump.Z + 0.8f, player.GetZ(), 3);
+			}
+			if (sample == 7)
+			{
+				float landingZ = Aion.GameServer.World.Geo.GeoService.GetInstance().GetZ(player.GetWorldId(),
+					jump.X + 0.2f, jump.Y, jump.Z + 2, jump.Z - 2, player.GetInstanceId());
+				Assert.True(float.IsFinite(landingZ));
+				await session.SendPacketAsync(session.Api.MoveTo(new MovementPacketData(jump.X + 0.2f, jump.Y,
+					landingZ, jump.Heading, MovementMask.IMMEDIATE)), token);
+				Assert.Equal(landingZ, player.GetZ(), 3);
+			}
+			Assert.True(snuffler.GetAggroList().IsHating(player), $"Jump chase lost aggro at sample {sample}.");
+			Assert.Same(player, snuffler.GetTarget());
+		}
 		float chaseDistance = MathF.Sqrt(
 			MathF.Pow(snuffler.GetX() - chaseStartX, 2) + MathF.Pow(snuffler.GetY() - chaseStartY, 2));
 		bool keptChasing = snuffler.GetAggroList().IsHating(player) &&
 			ReferenceEquals(snuffler.GetTarget(), player) && chaseDistance > 0.5f;
 		policy.AssertClean();
-		AssertExpectedFailure(scenario, () => Assert.True(keptChasing,
-			"NPC stopped chasing after a jump while geodata was disabled."));
+		Assert.True(keptChasing,
+			$"NPC stopped chasing after a jump with geo enabled (distance {chaseDistance}, hating {snuffler.GetAggroList().IsHating(player)}).");
 	}
 
 	private async Task RunC10Async(ScenarioDefinition scenario, bool includeHistory)
@@ -479,12 +507,21 @@ public sealed partial class SimulationFastScenarioTests
 						return (Target: npc, Point: new BotPosition(npc.GetX() + 19 * (float)Math.Cos(angle),
 							npc.GetY() + 19 * (float)Math.Sin(angle), npc.GetZ(), 0));
 					}))
+					.Select(candidate => (candidate.Target, Point: candidate.Point with { Z =
+						Aion.GameServer.World.Geo.GeoService.GetInstance().GetZ(candidate.Target.GetWorldId(),
+							candidate.Point.X, candidate.Point.Y, candidate.Point.Z + 2, candidate.Point.Z - 2, player.GetInstanceId()) }))
+					.Where(candidate => float.IsFinite(candidate.Point.Z) &&
+						Aion.GameServer.World.Geo.GeoService.GetInstance().GetMap(candidate.Target.GetWorldId()).CanSee(
+							candidate.Point.X, candidate.Point.Y, candidate.Point.Z + 1.25f,
+							candidate.Target.GetX(), candidate.Target.GetY(), candidate.Target.GetZ() + 1.25f,
+							player.GetInstanceId(), Aion.GameServer.GeoEngine.Collision.IgnoreProperties.Of(player.GetRace())))
 					.First(candidate => aggressive.All(npc =>
 						Math.Pow(npc.GetX() - candidate.Point.X, 2) + Math.Pow(npc.GetY() - candidate.Point.Y, 2) +
 						Math.Pow(npc.GetZ() - candidate.Point.Z, 2) > Math.Pow(npc.GetAggroRange() + 10, 2)));
 				target = approach.Target;
 				await TeleportForSetupAsync(session, player, target.GetWorldId(), approach.Point.X - 0.5f, approach.Point.Y, approach.Point.Z, token);
 				await session.MoveToPositionAsync(approach.Point, token);
+				Assert.True(Aion.GameServer.World.Geo.GeoService.GetInstance().CanSee(player, target), "C11 setup must provide an unobstructed cast, not disable LOS.");
 			}
 
 			int[] actualActive = player.GetSkillList().GetAllSkills()
@@ -913,31 +950,15 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.True(npc.IsDead());
 	}
 
-	private static void AssertExpectedFailure(ScenarioDefinition scenario, Action assertion)
-	{
-		try
-		{
-			assertion();
-		}
-		catch (Xunit.Sdk.XunitException) when (scenario.ExpectedFail != null)
-		{
-			return;
-		}
-
-		if (scenario.ExpectedFail != null)
-			throw new InvalidOperationException(
-				$"Scenario {scenario.Id} unexpectedly passed; remove expectedFail: {scenario.ExpectedFail}");
-	}
-
 	private async Task<SimulationL0Session> EnterCombatWorldAsync(
 		SimulationLogPolicy policy,
 		int accountId,
 		string characterName,
 		Race race,
 		PlayerClass playerClass,
-		CancellationToken token)
+		CancellationToken token, string bot = "b01")
 	{
-		var session = new SimulationL0Session(fixture, policy, "b01", accountId, characterName, race);
+		var session = new SimulationL0Session(fixture, policy, bot, accountId, characterName, race);
 		try
 		{
 			session.BeginStep("s01", $"login-create-{playerClass.ToString().ToLowerInvariant()}-enter");

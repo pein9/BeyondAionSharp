@@ -5,6 +5,7 @@ using Aion.Bots.Scenarios;
 using Aion.Bots.World;
 using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Dataholders;
+using Aion.GameServer.GeoEngine.Collision;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -14,6 +15,7 @@ using Aion.GameServer.Services.Instance;
 using Aion.GameServer.Services.Items;
 using Aion.GameServer.TestKit;
 using Aion.GameServer.World;
+using Aion.GameServer.World.Geo;
 
 namespace Aion.Simulation.Tests;
 
@@ -108,7 +110,16 @@ public sealed partial class SimulationFastScenarioTests
 						return npcs.Select(n => MathF.Pow(n.GetX() - g.GetX(), 2) + MathF.Pow(n.GetY() - g.GetY(), 2) + MathF.Pow(n.GetZ() - g.GetZ(), 2))
 							.DefaultIfEmpty(float.MaxValue).Min();
 					}
-					var node = ordered.FirstOrDefault(g => Safety(g) >= 50 * 50) ?? ordered.MaxBy(Safety)!;
+					// A fixed west-side approach can be inside a rock. Select a visible, in-range
+					// director setup point instead; keep the server's normal gather LOS check enabled.
+					var visible = ordered.OrderBy(g => Safety(g) >= 50 * 50 ? 0 : 1)
+						.ThenBy(g => Safety(g) >= 50 * 50 ? 0 : -Safety(g))
+						.Select(g => (Node: g, Point: FindVisibleGatherApproach(g,
+							fixture.World.GetPlayer(SubjectFor(g.GetWorldId()).CharacterId).GetRace())))
+						.FirstOrDefault(candidate => candidate.Point != null);
+					Assert.NotNull(visible.Node); Assert.NotNull(visible.Point);
+					var node = visible.Node;
+					var approach = visible.Point.Value;
 					session = SubjectFor(node.GetWorldId()); player = fixture.World.GetPlayer(session.CharacterId);
 					session.BeginStep($"gather-{id}", "gather-shipped-template-once");
 					details["race"] = player.GetRace().ToString();
@@ -120,8 +131,10 @@ public sealed partial class SimulationFastScenarioTests
 					Assert.True(player.GetSkillList().GetSkillLevel(template.GetHarvestSkill()) >= template.GetSkillLevel());
 					if (template.GetEraseValue() > 0)
 						Assert.Equal(0, ItemService.AddItem(player, template.GetRequiredItemId(), template.GetEraseValue()));
-					await TeleportForSetupAsync(session, player, node.GetWorldId(), node.GetX() - 5, node.GetY(), node.GetZ(), token, node.GetInstanceId());
-					await session.MoveToPositionAsync(new BotPosition(node.GetX() - 1, node.GetY(), node.GetZ(), 0), token);
+					details["approach"] = FormattableString.Invariant($"{approach.X},{approach.Y},{approach.Z}");
+					await TeleportForSetupAsync(session, player, node.GetWorldId(), approach.X, approach.Y, approach.Z, token, node.GetInstanceId());
+					await session.MoveToPositionAsync(approach, token);
+					Assert.True(GeoService.GetInstance().CanSee(player, node), "Gather sweep setup must have ordinary line of sight.");
 					await session.SynchronizeAsync(token);
 					var before = Totals();
 					int start = session.PacketHistory.Count;
@@ -191,5 +204,22 @@ public sealed partial class SimulationFastScenarioTests
 		Dictionary<int, long> Totals() => session.Api.World.Inventory.Values.GroupBy(i => i.ItemId).ToDictionary(g => g.Key, g => g.Sum(i => i.Count));
 		SimulationL0Session SubjectFor(int map) => map / 10000000 == 22 || map == 710010000 ? asmodian : elyos;
 		static string Id(int value) => value.ToString(CultureInfo.InvariantCulture);
+	}
+
+	// Director setup only, including aerial nodes: this does not claim grounded natural travel.
+	// Java GeoService.canSee uses the target's height and static-id/race ignore properties.
+	private static BotPosition? FindVisibleGatherApproach(Gatherable node, Race race)
+	{
+		float upper = node.GetObjectTemplate().GetBoundRadius().GetUpper();
+		float targetOffset = upper > 2.5f ? upper / 2 : 1.25f;
+		var geo = GeoService.GetInstance().GetMap(node.GetWorldId());
+		for (int direction = 0; direction < 8; direction++)
+		{
+			double angle = Math.PI + direction * Math.PI / 4;
+			var point = new BotPosition(node.GetX() + (float)Math.Cos(angle), node.GetY() + (float)Math.Sin(angle), node.GetZ(), 0);
+			if (geo.CanSee(point.X, point.Y, point.Z + 1.25f, node.GetX(), node.GetY(), node.GetZ() + targetOffset,
+				node.GetInstanceId(), IgnoreProperties.Of(race, node.GetSpawn()?.GetStaticId() ?? -1))) return point;
+		}
+		return null;
 	}
 }

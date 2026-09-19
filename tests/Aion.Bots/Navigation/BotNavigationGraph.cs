@@ -24,12 +24,12 @@ public sealed class BotNavigationGraph
 
 	private readonly IReadOnlyDictionary<int, BotMapNavigationGraph> maps;
 
-	internal BotNavigationGraph(IEnumerable<BotWaypoint> waypoints)
+	internal BotNavigationGraph(IEnumerable<BotWaypoint> waypoints, BotNavigationGeometry? geometry = null)
 	{
 		maps = waypoints
 			.GroupBy(waypoint => waypoint.MapId)
 			.OrderBy(group => group.Key)
-			.ToDictionary(group => group.Key, group => new BotMapNavigationGraph(group.Key, group));
+			.ToDictionary(group => group.Key, group => new BotMapNavigationGraph(group.Key, group, geometry));
 	}
 
 	public IReadOnlyDictionary<int, BotMapNavigationGraph> Maps => maps;
@@ -52,10 +52,12 @@ public sealed class BotMapNavigationGraph
 	private readonly IReadOnlyDictionary<int, BotWaypoint> waypointsById;
 	private readonly IReadOnlyDictionary<int, int[]> edges;
 	private readonly IReadOnlyDictionary<GridCell, int[]> cells;
+	private readonly BotNavigationGeometry? geometry;
 
-	internal BotMapNavigationGraph(int mapId, IEnumerable<BotWaypoint> source)
+	internal BotMapNavigationGraph(int mapId, IEnumerable<BotWaypoint> source, BotNavigationGeometry? geometry = null)
 	{
 		MapId = mapId;
+		this.geometry = geometry;
 		var waypoints = source.OrderBy(waypoint => waypoint.Id).ToArray();
 		Waypoints = waypoints;
 		waypointsById = waypoints.ToDictionary(waypoint => waypoint.Id);
@@ -89,7 +91,8 @@ public sealed class BotMapNavigationGraph
 	public int MapId { get; }
 	public IReadOnlyList<BotWaypoint> Waypoints { get; }
 
-	public IReadOnlyList<int> GetNeighbours(int waypointId) => edges.GetValueOrDefault(waypointId) ?? [];
+	public IReadOnlyList<int> GetNeighbours(int waypointId) => (edges.GetValueOrDefault(waypointId) ?? [])
+		.Where(id => EdgeAllowed(waypointsById[waypointId].Position, waypointsById[id].Position)).ToArray();
 
 	public IReadOnlyList<BotWaypoint> FindPath(int startWaypointId, int destinationWaypointId)
 	{
@@ -101,12 +104,16 @@ public sealed class BotMapNavigationGraph
 
 	/// <summary>
 	/// Routes between observed positions by attaching each endpoint only to graph nodes within the normal
-	/// twenty-metre edge limit. The destination is returned as the last node, preserving its packet-provided Z.
+	/// twenty-metre edge limit. Geometry-backed routes use sampled ground Z and validate every edge,
+	/// including the direct shortcut and the temporary start/destination connectors.
 	/// </summary>
 	public IReadOnlyList<BotPosition> FindPath(BotPosition start, BotPosition destination)
 	{
-		if (Distance(start, destination) <= BotNavigationGraph.MaximumEdgeDistance)
-			return [destination];
+		// Geometry-backed direct routes are emitted as <=2m edges, even when the sparse spawn graph
+		// has no intermediate waypoint. Never fall back to an unchecked straight line at the caller.
+		if ((Distance(start, destination) <= BotNavigationGraph.MaximumEdgeDistance || geometry != null)
+			&& EdgeAllowed(start, destination))
+			return SamplePath(start, [destination]);
 
 		var startEdges = FindNearby(start);
 		var destinationEdges = FindNearby(destination);
@@ -114,7 +121,23 @@ public sealed class BotMapNavigationGraph
 			return [];
 
 		var path = Search(StartNodeId, DestinationNodeId, start, destination, startEdges, destinationEdges);
-		return path.Select(waypoint => waypoint.Id == DestinationNodeId ? destination : waypoint.Position).ToArray();
+		return SamplePath(start, path.Select(waypoint => waypoint.Id == DestinationNodeId ? destination : waypoint.Position));
+	}
+
+	private bool EdgeAllowed(BotPosition start, BotPosition end) => geometry == null || geometry.TraceEdge(MapId, start, end) != null;
+
+	private IReadOnlyList<BotPosition> SamplePath(BotPosition start, IEnumerable<BotPosition> path)
+	{
+		if (geometry == null) return path.ToArray();
+		var samples = new List<BotPosition>();
+		foreach (var end in path)
+		{
+			var edge = geometry.TraceEdge(MapId, start, end);
+			if (edge == null) return []; // collision state changed while querying; never emit an unchecked edge
+			samples.AddRange(edge);
+			start = edge[^1];
+		}
+		return samples;
 	}
 
 	private IReadOnlyList<BotWaypoint> Search(int startId, int destinationId, BotPosition start,
@@ -138,6 +161,7 @@ public sealed class BotMapNavigationGraph
 				var candidateCost = costs[current] + Distance(currentPosition, neighbourPosition);
 				if (costs.TryGetValue(neighbour, out var knownCost) && candidateCost >= knownCost)
 					continue;
+				if (!EdgeAllowed(currentPosition, neighbourPosition)) continue;
 				cameFrom[neighbour] = current;
 				costs[neighbour] = candidateCost;
 				var score = candidateCost + Distance(neighbourPosition, destination);

@@ -32,6 +32,9 @@ public class GeoService : GameEngine
 
     private readonly Dictionary<int, GeoMap> geoMaps = new();
 
+    // Read-only lookup seam: consumers reuse the loaded geometry and instance state, never load a second world.
+    internal GeoMap GetMap(int worldId) => geoMaps[worldId];
+
     public void Init()
     {
         foreach (var map in DataManager.WORLD_MAPS_DATA)

@@ -193,6 +193,9 @@ function Compress-RollingJsonLines([string]$Path) {
 }
 
 function Remove-OldRuns {
+	# Full-run children share one matrix root. They are scenarios of the same run,
+	# not historical runs: pruning them destroys receipts before coverage aggregation.
+	if ($FullRun) { return }
 	$otherRuns = Get-ChildItem -LiteralPath $script:runRootPath -Directory |
 		Where-Object { $_.FullName -ne $script:runPath } |
 		Sort-Object LastWriteTimeUtc -Descending

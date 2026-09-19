@@ -176,6 +176,12 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 				case "C15":
 					await RunC15Async(execution.Scenario, includeHistory);
 					break;
+				case "GEO-FEAR":
+					await RunGeoDisplacementAsync(execution.Scenario, includeHistory, fear: true);
+					break;
+				case "GEO-KNOCKBACK":
+					await RunGeoDisplacementAsync(execution.Scenario, includeHistory, fear: false);
+					break;
 				case "Q1":
 					await RunQ1Async(execution.Scenario, includeHistory);
 					break;
@@ -650,7 +656,10 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		int asak = await session.WaitForNpcAsync(203500, token);
 		Assert.Contains("SM_PLAY_MOVIE", session.PacketTypes);
 
-		BotNavigationGraph graph = BotNavigationGraphFactory.Build(fixture.DataManager.StaticData, [203500, 203504]);
+		Player navigatingPlayer = fixture.World.GetPlayer(session.CharacterId);
+		Assert.True(GeoDataConfig.GEO_ENABLE && GeoDataConfig.CANSEE_ENABLE && GeoDataConfig.GEO_NPC_MOVE);
+		BotNavigationGraph graph = BotNavigationGraphFactory.Build(fixture.DataManager.StaticData, [203500, 203504],
+			BotNavigationGeometry.ForServerWorld(navigatingPlayer.GetInstanceId(), navigatingPlayer.GetRace()));
 		session.BeginStep("s04", "walk-to-asak");
 		await session.MoveToNpcAsync(graph, asak, token);
 		session.BeginStep("s05", "accept-quest-2101");
@@ -1020,9 +1029,12 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			IReadOnlyList<BotPosition> route = navigator.FindPathToNpc(api.World, objectId, start);
 			if (route.Count == 0)
 			{
-				BotPosition destination = api.World.Objects[objectId].Position;
-				route = SegmentRoute(start, destination);
+				Player player = fixture.World.GetPlayer(CharacterId);
+				route = BotNavigationGeometry.ForServerWorld(player.GetInstanceId(), player.GetRace())
+					.FindLocalPath(player.GetWorldId(), start, api.World.Objects[objectId].Position);
 			}
+			if (route.Count == 0)
+				throw new InvalidOperationException($"No collision-checked route to NPC {objectId} from {start} to {api.World.Objects[objectId].Position}.");
 			var mover = new BotMover(api.World, api.Timing);
 			BotMovementPlan plan = mover.CreateGroundPlan(route, start, speed);
 			await BotMover.ExecuteAsync(plan,
