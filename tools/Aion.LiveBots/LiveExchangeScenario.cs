@@ -44,6 +44,8 @@ public static partial class LiveBotRunner
 			await first.StepAsync("verify-exchange-audit", stepToken => VerifyExchangeAuditAsync(options, first, second, stepToken), token);
 			foreach (var actor in new[] { first, second, director })
 			{
+				if (actor != director)
+					await actor.StepAsync("verify-inventory-oracle", actor.Session.VerifyInventoryAsync, token);
 				await actor.StepAsync("quit", actor.Session.QuitAsync, token);
 				actor.Trace.WriteAction(actor.LastStep, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = "E6" });
 			}
@@ -76,7 +78,7 @@ public static partial class LiveBotRunner
 		public Task VerifyReleasedAsync(CancellationToken token)
 		{
 			if (Api.Timing.BlockingActivities.Count != 0) throw new InvalidDataException("Exchange left a blocking client interaction.");
-			// P8-04 adds the server storage oracle. Reopening the canceled trade also exercises server cleanup.
+			// The runner cross-checks storage before logout; reopening the canceled trade exercises server cleanup.
 			return Task.CompletedTask;
 		}
 	}

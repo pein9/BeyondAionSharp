@@ -35,6 +35,8 @@ public static partial class LiveBotRunner
 			await first.StepAsync("verify-mail-audit", stepToken => VerifyMailAuditAsync(options, first, second, stepToken), token);
 			foreach (var actor in new[] { first, second, director })
 			{
+				if (actor != director)
+					await actor.StepAsync("verify-inventory-oracle", actor.Session.VerifyInventoryAsync, token);
 				await actor.StepAsync("quit", actor.Session.QuitAsync, token);
 				actor.Trace.WriteAction(actor.LastStep, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = "E7" });
 			}
@@ -87,7 +89,7 @@ public static partial class LiveBotRunner
 		public Task VerifyInventoryAsync(CancellationToken token)
 		{
 			if (Api.Timing.BlockingActivities.Count != 0) throw new InvalidDataException("Mail left a blocking client interaction.");
-			// The shared body verifies every inventory delta from packets; P8-04 adds the server storage oracle.
+			// The runner cross-checks server storage after the shared scenario, before logout.
 			return Task.CompletedTask;
 		}
 	}

@@ -42,6 +42,7 @@ public static partial class LiveBotRunner
 				if (workOrders)
 					foreach (var order in CookingWorkOrder.For(master))
 						await CookingWorkOrderScenario.RunAsync(driver, order, token);
+				await subject.StepAsync("verify-inventory-oracle", subject.Session.VerifyInventoryAsync, token);
 				await subject.StepAsync("quit", subject.Session.QuitAsync, token);
 				subject.Trace.WriteAction(subject.LastStep, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = scenarioId });
 			}
@@ -87,7 +88,7 @@ public static partial class LiveBotRunner
 			await SendAsync(GameClientPackets.TimeCheck(unchecked((int)Environment.TickCount64)), token);
 			await WaitAsync(typeof(SM_TIME_CHECK), _ => true, token);
 		}
-		// P8-04 adds the LIVE storage oracle; this shared scenario already checks complete client totals.
+		// The runner cross-checks server storage after the shared scenario, before logout.
 		public Task VerifyServerStateAsync(CancellationToken token) => Task.CompletedTask;
 		public async Task PrepareWorkOrderAsync(CookingWorkOrder order, CancellationToken token)
 		{

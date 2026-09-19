@@ -26,6 +26,7 @@ public static partial class LiveBotRunner
 			}
 			await CapitalAscensionScenario.RunAsync(new LiveCapitalDriver(subject, director, director.Session.CreateLiveGmFacade()), token);
 			QuestCoverageReceipt.Save(options.OutputDirectory, "LIVE", "CAPITAL", subject.Session.Api.World);
+			await subject.StepAsync("verify-inventory-oracle", subject.Session.VerifyInventoryAsync, token);
 			await subject.StepAsync("quit", subject.Session.QuitAsync, token);
 			await director.StepAsync("quit", director.Session.QuitAsync, token);
 			subject.Trace.WriteAction(subject.LastStep, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = "CAPITAL" });

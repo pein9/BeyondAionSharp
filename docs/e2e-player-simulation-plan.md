@@ -1299,8 +1299,31 @@ Every economy scenario ends with invariants: kinah and item totals conserved acr
     inventory persistence; Docker Fast `p8-03-fast-20260918a` passes. Solution tests: 3,776 passed,
     15 prerequisite skips. Warning inventory remains 4,243; logger/clock/custom-quest/fidelity/compiler
     checks pass. No quest/content additions and no Java runtime used.
-- [ ] **P8-04** [LIVE] S — After each LIVE economy scenario, compare the bot's inventory model with
-  `/admin/player-storage-state`.
+- [x] **P8-04** [LIVE] S — After each LIVE economy scenario, compare the bot's inventory model with
+  `/admin/player-storage-state`. (`010b05b10`)
+  Correction to the assumed oracle contract — the endpoint previously exposed only counts,
+  limits and kinah, not individual items. Its read-only snapshot now includes scalar item rows from the
+  cube, distinct equipped items and the separately stored kinah item, without creating items or sending
+  an inventory refresh. After E1–E7 and CAPITAL, every subject drains prior replies through a time-check
+  barrier and compares exact object IDs, template IDs, counts, descriptions, masks, creators, wire slots
+  and cloth flags. Both views are saved as run artifacts, including on mismatch. 24 focused tests pass.
+  Initial enforced LIVE E3 `p8-04-e3-live-20260918a` passes with an exact inventory receipt and no new or
+  regressed problems. Inventory inspection/refresh now resides in the focused `AdminInventory` helper,
+  reducing `AdminHttpService` rather than growing the existing oversized class; its fidelity ceiling is
+  ratcheted down from 3,410 to 3,358 lines. E1–E7 and CAPITAL pass in the
+  `p8-04-*-live-20260918b` batch, with zero new/regressed problems, including E1's real-time harvest
+  and respawn window and the capital quest/combat/reward journey. All 14 expected inventory comparisons
+  have successful trace events and receipts; every run's bot-problem file is empty.
+  The focused tests include duplicate client/server
+  identities and fail on a counts-only oracle, not merely on aggregate inventory discrepancies.
+  The warning gate exposed a missing-description edge case in the new oracle: description ID zero
+  produces Java/C# `WriteS(null)`, decoded by the client as an empty string. A red/green regression pins
+  that representation; no null-forgiving suppression or warning-baseline increase was used.
+  Final solution tests: 3,800 passed / 15 prerequisite skips; the warning inventory remains 4,243.
+  Docker Fast `p8-04-fast-20260918a` and `p8-04-fast-20260918b` pass. Rebuilt LIVE E3
+  `p8-04-e3-live-20260918c` verifies the corrected image with its inventory receipt and zero new/regressed
+  problems. Logger, clock, custom-quest, fidelity and quest-compiler checks pass. No Java runtime used.
+  Future E8–E11 must invoke the same check before logout.
 - [ ] **P8-05** [BOTH] L — Gear progression (add writers, decoders and API calls as needed; rolls pinned by the P4-05
   seed; invariant: no orphaned manastones):
   - **G1** Manastone socketing, success and failure; enchantment +1..+N with failure downgrade (`CM_MANASTONE`,
@@ -1573,6 +1596,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 38 | `LegionDAO` bound unsigned C# color bytes into signed `TINYINT` columns, so high-bit emblem colors failed to save at logout; its read path also used unsigned `GetByte` and threw on a default emblem's SQL NULL blob | `dao/LegionDAO.java:262-287` uses signed `setByte` for all four colors; `:306-310` reads signed bytes and nullable `getBytes` | P8-02/S7 LIVE `p8-s7-live-dev-20260918a` caught fingerprint `d580e505` at logout. Signed bindings/reads and nullable blob handling restored; eight parameter regressions fail before the fix. Clean LIVE b plus Full SIM b reconnect and fresh DAO reads verify the fix; not allowlisted |
 | 39 | C6 waited for death after only one normal NPC attack; Full SIM could time out before reaching S7 because a normal attack is not guaranteed to damage its target (test assumption, not a production divergence) | `controllers/CreatureController.java:321-369` calculates normal attack outcomes including DODGE/RESIST before applying damage | P8-02: repeat the existing normal attack at two-second intervals, at most 20 attempts, assert actual death before waiting for the death packet. No combat rules changed; Full SIM `p8-s7-full-sim-20260918b` passes |
 | 40 | C#-only `WorkOrderRecipeTable` redundantly parsed work-order XML at startup despite no gameplay consumer; the actual quest path already uses `XMLQuests` | `dataholders/XMLQuests.java:22-40` indexes `WorkOrdersData`; `questEngine/handlers/models/WorkOrdersData.java:36-42` registers the recipe-bearing handler directly | P8-03: table retained only as a test audit helper; remove unused startup construction/property and compare all 574 rows with the production holder |
+| 41 | `EnchantInfoBlobEntry.CreateManastoneMap` silently overwrites duplicate slot keys, masking invalid item state; Java rejects duplicate keys | `network/aion/iteminfo/EnchantInfoBlobEntry.java`, `createManastoneMap`, uses `Collectors.toMap` without a merge function at `ce54b7931`; C# uses dictionary indexer assignment | Latent source-level divergence found while preparing P8-05; add a duplicate-slot regression and match Java's fail-loud behavior with the gear work. No observed LIVE failure and no allowlist entry |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

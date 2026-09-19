@@ -48,6 +48,8 @@ public static partial class LiveBotRunner
 					GatheringScenario.RunAsync(second, GatheringTarget.YoungAzpha, cancellationToken));
 			foreach (L0Actor actor in actors)
 			{
+				if (actor != director)
+					await actor.StepAsync("verify-inventory-oracle", actor.Session.VerifyInventoryAsync, cancellationToken);
 				await actor.StepAsync("quit", actor.Session.QuitAsync, cancellationToken);
 				actor.Trace.WriteAction(actor.LastStep, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = scenarioId });
 			}

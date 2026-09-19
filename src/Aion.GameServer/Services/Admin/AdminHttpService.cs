@@ -1408,7 +1408,7 @@ public sealed class AdminHttpService : IHostedService
                 recipientCharacterId = common.GetPlayerObjId(),
                 recipientName = common.GetName(),
                 position = PositionSnapshotFor(player, "live"),
-                inventory = SnapshotInventory(player),
+                inventory = AdminInventory.Read(player),
                 warehouse = SnapshotWarehouse(player),
                 mailbox = SnapshotMailbox(player.GetMailbox())
             });
@@ -1759,7 +1759,7 @@ public sealed class AdminHttpService : IHostedService
             var common = player.GetCommonData();
             int characterId = common.GetPlayerObjId();
             string recipientName = common.GetName();
-            AdminInventorySnapshot inventory = SendInventoryRefresh(player);
+            var inventory = AdminInventory.Refresh(player);
 
             _logger.LogInformation("Admin API: refresh inventory -> {Recipient} ({CharacterId}) cubeItems={CubeItems} equipped={EquippedItems} kinah={Kinah} reason={Reason}",
                 recipientName, characterId, inventory.CubeItemCount, inventory.EquippedItemCount, inventory.Kinah,
@@ -2240,7 +2240,7 @@ public sealed class AdminHttpService : IHostedService
                 return;
             }
 
-            AdminInventorySnapshot? inventory = storageType == StorageType.CUBE ? SendInventoryRefresh(player) : null;
+            var inventory = storageType == StorageType.CUBE ? AdminInventory.Refresh(player) : null;
             AdminWarehouseSnapshot? warehouse = storageType == StorageType.CUBE ? null : SendWarehouseRefresh(player);
             _logger.LogWarning("Admin API: repaired item count -> {Recipient} ({CharacterId}) item={ItemId}:{ItemName} object={ItemUniqueId} storage={StorageId} count={PreviousCount}->{TargetCount} reason={Reason}",
                 recipientName, characterId, itemId, itemName, dto.ItemUniqueId, storageType.GetId(), previousCount, targetCount,
@@ -2962,49 +2962,6 @@ public sealed class AdminHttpService : IHostedService
         };
     }
 
-    private static AdminInventorySnapshot SendInventoryRefresh(Player player)
-    {
-        player.SetCubeLimit();
-        Storage inventory = player.GetInventory();
-        if (inventory.GetKinah() == 0)
-            inventory.IncreaseKinah(0);
-
-        List<Item> allItems = new List<Item>();
-        var kinahItem = inventory.GetKinahItem();
-        if (kinahItem != null)
-            allItems.Add(kinahItem);
-        var equippedItems = player.GetEquipment().GetEquippedItems();
-        allItems.AddRange(equippedItems);
-        allItems.AddRange(inventory.GetItems());
-
-        var inventoryItemSplitList = new FixedElementCountSplitList<Item>(allItems, true, 10);
-        inventoryItemSplitList.ForEach(part => PacketSendUtility.SendPacket(player, new SM_INVENTORY_INFO(part.IsFirst(), part, player)));
-        PacketSendUtility.SendPacket(player, new SM_INVENTORY_INFO(false, new List<Item>(), player));
-        PacketSendUtility.SendPacket(player, SM_CUBE_UPDATE.CubeSize(StorageType.CUBE, player));
-
-        return SnapshotInventory(player, inventory, equippedItems.Count, allItems.Count);
-    }
-
-    private static AdminInventorySnapshot SnapshotInventory(Player player)
-    {
-        Storage inventory = player.GetInventory();
-        int equippedItemCount = player.GetEquipment().GetEquippedItems().Count;
-        int totalPacketItemCount = equippedItemCount + inventory.GetItems().Count + (inventory.GetKinahItem() == null ? 0 : 1);
-        return SnapshotInventory(player, inventory, equippedItemCount, totalPacketItemCount);
-    }
-
-    private static AdminInventorySnapshot SnapshotInventory(Player player, Storage inventory, int equippedItemCount, int totalPacketItemCount)
-    {
-        return new AdminInventorySnapshot
-        {
-            CubeItemCount = inventory.Size(),
-            EquippedItemCount = equippedItemCount,
-            TotalPacketItemCount = totalPacketItemCount,
-            CubeLimit = inventory.GetLimit(),
-            CubeFreeSlots = inventory.GetFreeSlots(),
-            Kinah = inventory.GetKinah()
-        };
-    }
 
     private static AdminWarehouseSnapshot SendWarehouseRefresh(Player player)
     {
@@ -3367,15 +3324,6 @@ public sealed class AdminHttpService : IHostedService
         public int UnreadBlackCloudCount { get; set; }
     }
 
-    private sealed class AdminInventorySnapshot
-    {
-        public int CubeItemCount { get; set; }
-        public int EquippedItemCount { get; set; }
-        public int TotalPacketItemCount { get; set; }
-        public int CubeLimit { get; set; }
-        public int CubeFreeSlots { get; set; }
-        public long Kinah { get; set; }
-    }
 
     private sealed class AdminWarehouseSnapshot
     {

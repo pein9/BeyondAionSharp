@@ -3,6 +3,6 @@
   "godclass_line_threshold": 3000,
   "banned_vocab_files": [],
   "oversized_files": {
-    "src/Aion.GameServer/Services/Admin/AdminHttpService.cs": 3410
+    "src/Aion.GameServer/Services/Admin/AdminHttpService.cs": 3358
   }
 }

@@ -25,6 +25,7 @@ public static partial class LiveBotRunner
 				await actor.StepAsync("enter-world", actor.Session.EnterWorldAsync, cancellationToken);
 			}
 			await VendorScenario.RunAsync(new LiveVendorDriver(subject, director, director.Session.CreateLiveGmFacade()), cancellationToken);
+			await subject.StepAsync("verify-inventory-oracle", subject.Session.VerifyInventoryAsync, cancellationToken);
 			foreach (L0Actor actor in new[] { subject, director })
 			{
 				await actor.StepAsync("quit", actor.Session.QuitAsync, cancellationToken);
@@ -65,7 +66,7 @@ public static partial class LiveBotRunner
 		}
 		public Task VerifyServerStateAsync(IReadOnlyDictionary<int, long> expected, CancellationToken token)
 		{
-			// Client packets are E3's LIVE oracle; the server-side storage cross-check is added in P8-04.
+			// The runner cross-checks server storage after the shared scenario, before logout.
 			if (Api.Timing.BlockingActivities.Count != 0)
 				throw new InvalidDataException("Vendor transaction left a client interaction active.");
 			return Task.CompletedTask;
