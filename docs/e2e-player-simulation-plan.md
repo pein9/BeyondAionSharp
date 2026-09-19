@@ -32,8 +32,8 @@ alone does not prove autonomous progression. It does not authorize adding unimpl
   (`docs/upstream-port-state.json`, currently `ce54b7931`). The local `../aion-server` branch `4.8` was
   fast-forwarded to it on 2026-09-17 (D8); keep it there as ports advance, because
   `scripts/parity/check_fidelity.py` and anyone reading Java side by side use that working tree.
-- **Do not create branches or worktrees in this repo.** In `../aion-server` they are allowed when a TODO
-  genuinely needs one (D12, for example P0-05).
+- **Do not create branches or worktrees in this repo.** Ordinary branches in `../aion-server` are allowed when a
+  TODO genuinely needs one (D12, for example P0-05). The later global AGENTS.md policy prohibits worktrees there too.
 - **No hosted CI, no schedulers** (D9). Every test run is a local script. The `docker/` compose stack is how
   the emulator is deployed and run; LIVE test runs use a separate compose project and never disturb it (D13).
 
@@ -74,7 +74,7 @@ alone does not prove autonomous progression. It does not authorize adding unimpl
 | B5 | **Resolved through P2-05.** `Aion.Bots` owns the real client crypt, framing, opcode transforms, all Appendix B CM writers and 45 bot-perception SM decoders. `AionXorCipher` is explicitly marked as an unrelated legacy helper. | Bots can now form actions and perceive the packet bodies needed by their world model. | `tests/Aion.Bots/Protocol/`; `BotGameClientPacketWriterTests.cs`; `BotServerPacketDecoderTests.cs` |
 | B6 | **Resolved in P2-00.** A protected socketless connection path runs packets and disconnect cleanup inline without a selector, dispatcher, alive-check timer or eager packet-processor threads. | SIM can host an in-process game connection and exercise quit/drop cleanup. | `AConnection.cs`; `AionConnection.cs`; `SocketlessAionConnectionTests.cs` |
 | B7 | **Persistence is 56 static MySQL DAOs with no seam** (244 public static methods), plus six C#-only `I*Repository` DI interfaces of which only `IUsedIdRepository`, `IServerVariablesRepository` and `ICharacterSelectionRepository` are consumed. Character create, enter world, recipes and mail only work after a DB write succeeds; failures are swallowed. | SIM needs a database; a DB-less SIM silently loses state. | `DatabaseFactory.cs:151-157`; `RecipeList.cs:26,37`; `Program.cs:115-120` |
-| B8 | **Geodata is never loaded.** `GeoWorldLoader.Load` is a stub whose only action is a warning through `AionLog`, although `gameserver.geodata.enable` defaults to true; 230 geo files (158 MiB) are unused. `GetZ` returns NaN; `CanSee` is true within 80 m (false beyond, as in Java); fear, confuse, back-dash and random-move effects never displace; stagger, stumble, pull, dash and move-behind displace the full distance through walls at unchanged Z; NPCs chasing a jumping or flying target freeze. | Line of sight, Z, collision and NPC pathing are untestable in both modes and wrong in production. | `GeoEngine/GeoWorldLoader.cs`; `GeoMap.cs:126-156,217-221` |
+| B8 | **Loader resolved in P9-01/P9-03; query and scenario validation remain.** Real meshes, placements, PNG terrain/materials, material zones and parallel collision preload now load in production. The two starter zones load 9,513 entities; all maps load 420,626, with about 455 MiB additional retained managed memory. Before this fix the stub made Z/LOS/collision and displacement unreliable. | P9-02 must prove Java query parity; P9-04 must enable geo in SIM/LIVE profiles, validate navigation and retire C9's expected failure. Loading alone does not prove those behaviors. | `GeoEngine/GeoWorldLoader.cs`; `docs/e2e-geodata-measurements.md` |
 | B9 | **Partly resolved through P4-06.** `Rnd` accepts execution-context and process-wide deterministic seeds while its production default remains thread-local. Deterministic mode also orders the replay-sensitive movement, world, known-list, aggro and nearby-message object maps by object id. | The S0-shaped core can replay, but scenarios touching the recorded effect/economy/social/siege/rift/base/housing/autogroup collection surfaces remain non-replayable until their scenario work adds stable packet and state ordering. | `Rnd.cs`; `DeterministicIteration.cs`; `KnownList.cs`; `AggroList.cs`; `WorldMapInstance.cs` |
 | B10 | **Process-global state.** 93 `GetInstance` singletons (58 never-reset `SingletonHolder`s), a once-only `CronService`, a static `DatabaseFactory`, a static capture observer, and a bootstrap that changes the process CWD. | One world per test process; scenarios need isolation by account, channel and ordering (`P5-12`). | `CronService.cs:41-52`; `GameServerBootstrapService.cs:72` |
 | B11 | **Resolved for Phase 1.** Env-gated DB/artifact tests report visible skips, and the real-time shutdown/socket suite passed ten consecutive local solution runs after stabilization. LIVE still needs its isolated compose project (P3-02) and SIM its Docker database script (P5-06). | Missing prerequisites and flakes are now distinguishable from regressions. | `Skip.IfNot`; `ShutdownHookTests.cs`; Phase 1 completion record |
@@ -1830,15 +1830,30 @@ Fast tier); E1, E5, E6, S1 and S2 pass in the LIVE Full tier; P8-08 baselines ar
 P9-01 and P9-03 can start any time after Phase 1; P9-02 needs P0-05; P9-04 needs Phases 6–8. Landing P9-01 turns
 real geodata on in production immediately, because geo is enabled by default; that is approved (D11).
 
-- [ ] **P9-01** [BOTH] L — Parity fix (B8): port `GeoWorldLoader` (Java, 285 lines): `models.mesh`, `<mapId>.geo`, PNG
+- [x] **P9-01** [BOTH] L — Parity fix (B8): port `GeoWorldLoader` (Java, 285 lines): `models.mesh`, `<mapId>.geo`, PNG
   heightmaps and material maps, despawnable nodes, material zones (`ZoneService.CreateMaterialZoneTemplate`, zero
   callers today), parallel collision preload. Add a map-id filter so SIM loads only the maps under test. The 16-bit
   PNG and mesh readers at `git -C ../ProjectObelisk show bd00c3c:tools/Obelisk.Import/Png16.cs` and `...:GeoReader.cs`
   (tests under `tests/Obelisk.Sim.Tests/Import/`) are a starting point; they are deleted in that repo's working tree.
+  Implemented the full loader against `ce54b7931`, including alias/shared meshes, unsigned binary samples,
+  town-level masks, transformed bounds, material zones and collision preload. PNG coverage includes all five
+  filters, split IDAT and indexed-material values. Corrupt binary widths/placement metadata fail visibly.
+  The empty map-filter default preserves all-map production loading; SIM profiles are not changed until P9-04.
+  Landed together with P9-03 because D11 requires its measurements before production activation. Commit: `d9f103699`.
+  Required checks pass: 4,092 solution tests (21 explicit skips), warning baseline 4,243, logger/clock/custom-quest
+  ratchets, fidelity, both Python suites and Docker Fast `p9-01-fast-a`. The additional legacy DB boot-tail probe
+  is not green; its deferred siege failure remains visible in §7 #65.
 - [ ] **P9-02** [BOTH] M — Java-generated golden geo fixtures: `GetZ` at every Poeta and Ishalgen spawn spot and walker
   step, `CanSee` pairs, collision rays for both `GetClosestCollision` and `FindMovementCollision`. The ported query
-  code (`GeoMap`, BIH tree, terrain) has zero tests.
-- [ ] **P9-03** [BOTH] S — Measure load time and memory for all maps and for a filtered set.
+  code (`GeoMap`, BIH tree, terrain) previously had zero tests; P9-01 adds only basic loader/spawn-height smoke
+  coverage, not this Java-generated query corpus.
+- [x] **P9-03** [BOTH] S — Measure load time and memory for all maps and for a filtered set.
+  Two fresh processes per profile, including completed collision preload: Poeta/Ishalgen 676–684 ms and
+  15.52–15.69 MiB retained managed delta; all maps 2,317–2,407 ms and 455.17–455.18 MiB. All-map loading has no
+  warnings/errors or missing meshes. Filtered starter loading reports only the inherited lack of material PNGs
+  (`fe5c9d83`), not missing terrain. Reproduction, counts, memory limits and warning ownership/expiry are in
+  [the measurement report](e2e-geodata-measurements.md). This measures warm file-cache loader cost after static
+  data loading, not total spawned-world memory or a cold-disk deployment boot. Commit: `d9f103699` (with P9-01).
 - [ ] **P9-04** [BOTH] M — Turn geo on in SIM and LIVE profiles; validate navigation edges with `GetZ` every 2 m plus
   collision; re-run Phases 6–8; retire C9's expected-fail; add scenarios for fear/knockback displacement against
   walls.
@@ -2045,7 +2060,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 19 | `_19638TroublewithTwos` extra dialog branch | `_19638TroublewithTwos.java:48-50` (removed upstream in `1d6a2d8f7`) | P7-11 |
 | 20 | Duplicate `CraftSkillUpdateService`; the `Craft` copy's unused profession lookup returns ordinal 0 instead of null (latent) | `services/craft/CraftSkillUpdateService.java:79-81` | P8-03: one canonical `Services.Craft` singleton with nullable lookup; all 36 trainer IDs and unmapped-NPC/dialog behavior tested |
 | 21 | `InventoryDAO.Store` catch scope too wide | `InventoryDAO.java:232` catches `SQLException` | P8-03: narrow to `MySqlException`; red/green tests cover catch type and non-SQL propagation |
-| 22 | `GeoWorldLoader` is a stub, so boot reports both the loader warning (`f802a125`, count 1) and four normalized missing-door-geometry warnings (`39050e81`, count 4) | `GeoWorldLoader.java` (285 lines); `GeoMap.java:287-301` | P9-01 |
+| 22 | `GeoWorldLoader` was a stub, so boot reported both the loader warning (`f802a125`, count 1) and four normalized missing-door-geometry warnings (`39050e81`, count 4) | `GeoWorldLoader.java` (285 lines); `GeoMap.java:287-301` at `ce54b7931` | Loader fixed in P9-01 with all-map/filtered load measurements in P9-03. P9-02 query parity and P9-04 geo-enabled SIM/LIVE scenario validation remain |
 | 23 | Production boot skips `HousingService`/housing tasks, faction ratio counts, `InitSieges`, `PvpMapService.Init` | `GameServer.java:118-122,130-134,141,175` | Deferred (D7) |
 | 24 | `BossAiHarness.Kill` calls `OnDie` twice (test bug) | n/a | Resolved by P6-08 (`b736fad55`) |
 | 25 | The DB-backed full-boot test pre-registers test AIs before `StartAsync` initializes the real AI engine, and the assembly-wide `SiegeServiceTestInit` can construct the process-global siege singleton against empty fixture data; in isolation this produces duplicate-AI registration before boot or a stale-location NRE in the separately asserted deferred boot tail | n/a (C# test-process defect; production `StartAsync` completed for P0-03 after bypassing the test AI preload) | P1-12 / P5-12 |
@@ -2094,6 +2109,10 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 62 | Globally declared stigma skills can require weapons outside a class's learned masteries (inherited data inconsistency) | `data/static_data/skill_tree/skill_tree.xml`, `skills/skill_templates.xml` and `dataholders/SkillTreeData.java:afterUnmarshal/getTemplatesForSkill` at `ce54b7931`: 11504–11507 omit class restrictions and expand to every class; Ferocious Strike 11506 excludes spellbooks, the starting Mage's only weapon mastery | P8-08 skill runs p/q stop after 2,035 successful cases at MAGE:ELYOS:11506. No production/data change: the exhaustive GM-assisted sweep records and temporarily grants a missing mastery only for a demonstrably classless skill-tree entry, then unequips its weapon and removes that mastery. This tests execution, not ordinary character progression. Full aa/ab replays pass all 5,033 cases, including this setup; no inactive/unreachable exemption or allowlist |
 
 | 63 | Starting-class DP cannot change, including when test-granted global morphing consumes a recipe (inherited rule / artificial setup boundary) | `model/gameobjects/player/PlayerCommonData.java:setDp`, `services/craft/CraftService.java:startCrafting` and `data/static_data/skill_tree/craft_skill_tree.xml` at `ce54b7931`: morphing is global at level 10, while `setDp` returns immediately for starting classes | P8-08 skill run x passes 4,984 cases and crafts the Warrior's morph product, then a test-only DP-zero assertion fails. No Java/C# divergence or production change: the GM-assisted class-expansion sweep must retain sufficient director-supplied DP across class setup and assert unchanged DP for starting classes, exact recipe-cost consumption for advanced classes. This does not claim natural pre-ascension morphing. Both rules are independently validated with negative mutation tests; no allowance or action bypass |
+
+| 64 | Real-data bootstrap tests reuse synthetic geo map IDs across worlds and pre-initialize engines that `StartAsync` now owns (C# test-isolation defects) | `world/geo/GeoService.java:init` and `GameServer.java` at `ce54b7931` initialize a single production world once; the C# suite reuses process singletons across synthetic worlds | P9-01 real-loader validation exposed stale-map lookup failures; the separately enabled full-boot test exposed duplicate AI registration before its own boot. Test-only scopes preserve/restore geo maps, AI registrations, geo config and working directory; the full boot delegates engine initialization to `StartAsync`. No production null guard, duplicate-registration exemption or disabled geo |
+
+| 65 | Separately enabled legacy DB boot-tail assertion fails in `SiegeService.UpdateFortressNextState` after normal `StartAsync` succeeds | `services/SiegeService.java:updateFortressNextState` at `ce54b7931` also dereferences every scheduled location without a null guard; the C# failure is at the scheduled-location lookup. Root cause/parity classification still requires the deferred siege audit | P9-01 Docker run `p9-01-fullboot-b.log`: normal all-map geo boot and populated-world assertions pass, then the test explicitly invokes the D7-deferred siege/PvP tail and fails. Kept visible, not disabled or allowlisted; follow up with P10-05/P11-05 if D7 is approved. This does not establish that the legacy full-boot test is green |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

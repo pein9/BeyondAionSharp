@@ -38,7 +38,9 @@ public class GeoService : GameEngine
             geoMaps[map.GetMapId()] = new GeoMap(map.GetMapId());
         if (GeoDataConfig.GEO_ENABLE)
         {
-            GeoWorldLoader.Load(geoMaps.Values);
+            var ids = GeoDataConfig.GEO_MAP_IDS.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            GeoWorldLoader.Load(geoMaps.Values, ids.Length == 0 ? null
+                : ids.Select(id => int.Parse(id, System.Globalization.CultureInfo.InvariantCulture)).ToHashSet());
         }
         else
         {

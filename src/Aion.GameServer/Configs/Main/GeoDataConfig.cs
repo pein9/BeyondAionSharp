@@ -12,6 +12,10 @@ public static class GeoDataConfig
     [Property(key: "gameserver.geodata.enable", defaultValue: "true")]
     public static bool GEO_ENABLE = true;
 
+    /// <summary>C# host filter for SIM: empty loads all production maps; comma-separated IDs load a subset.</summary>
+    [Property(key: "gameserver.geodata.map.ids", defaultValue: "")]
+    public static string GEO_MAP_IDS = "";
+
     /// <summary>Enable canSee checks using geodata. Property key: gameserver.geodata.cansee.enable (default true).</summary>
     [Property(key: "gameserver.geodata.cansee.enable", defaultValue: "true")]
     public static bool CANSEE_ENABLE = true;

@@ -256,6 +256,7 @@ public sealed class GameServerBootstrapTests
 	[Fact]
 	public async Task GameServerBootstrap_RealSpawnDataMaterializesNpcsIntoWorld()
 	{
+		using var geoScope = new RealGeoBootstrapScope();
 		// Spawn-data-backed integration proof: unlike the minimal-fixture tests above (which seed a temp
 		// static_data dir with a single item and assert an EMPTY world), this test boots the REAL game-server/data
 		// + cache through the production DataManager.LoadAsync(repoRoot) path (the same real-data load proven by
@@ -365,6 +366,8 @@ public sealed class GameServerBootstrapTests
 		// Env-gated: visibly skipped unless AION_GAMESERVER_DB_INTEGRATION=1 (the Docker container is only present
 		// in the integration environment).
 		Skip.IfNot(Environment.GetEnvironmentVariable("AION_GAMESERVER_DB_INTEGRATION") == "1", "Set AION_GAMESERVER_DB_INTEGRATION=1 to run Docker MySQL integration tests.");
+		using var geoScope = new RealGeoBootstrapScope();
+		using var aiScope = new RealAiBootstrapScope();
 
 		var repoRoot = RealStaticData.RepoRoot();
 
@@ -387,19 +390,15 @@ public sealed class GameServerBootstrapTests
 		var dataManager = await RealStaticData.LoadAsync();
 		DataManager.RegisterInstance(dataManager);
 
-		// Java parity: GameServer.main inits the engines (AIEngine/ZoneService/GeoService/...) before the spawn path.
-		// The spawn-critical singleton engines are initialized here exactly as the spawn-backed test does (each spawned Npc
-		// resolves its AI by name via AIEngine.NewAI; Npc OnAfterSpawn reads the per-world geo/zone maps that
-		// GeoService/ZoneService seed). Register the singleton bridges StartAsync's spawn path reads.
+		// StartAsync now owns all content-engine initialization. Do not initialize the engines here too:
+		// a duplicate AI registration aborts boot, and duplicate geo loading registers material zones twice.
+		// The serial test scope clears/restores prior synthetic AI/geo state without changing production boot.
 		IDFactory.RegisterInstance(new IDFactory());
 		await using var threadPoolManager = new ThreadPoolManager(NullLogger<ThreadPoolManager>.Instance);
 		ThreadPoolManager.RegisterInstance(threadPoolManager);
 		var world = new GameWorld(NullLogger<GameWorld>.Instance);
 		world.LoadWorldMaps(DataManager.WORLD_MAPS_DATA);
 		GameWorld.RegisterInstance(world);
-		TestAiEngine.EnsureAllRegistered();
-		await Aion.GameServer.World.Zone.ZoneService.GetInstance().InitAsync(cts.Token);
-		await Aion.GameServer.World.Geo.GeoService.GetInstance().InitAsync(cts.Token);
 
 		var gameTime = new GameTimeService(
 			NullLogger<GameTimeService>.Instance,
@@ -562,11 +561,52 @@ public sealed class GameServerBootstrapTests
 		}
 	}
 
-	// Test isolation: the bootstrap path calls DataManager.RegisterInstance(...) with a throwaway fixture,
-	// overwriting the process-global DataManager singleton bridge. Snapshot it on entry and restore it on
-	// dispose (including on a failing/throwing boot) so sibling test classes in the same process — e.g.
-	// GoldenStatsInfoFixtureTests, which binds a synthetic PlayerExperienceTable once in its static ctor —
-	// keep reading their own DataManager instead of this test's minimal/real fixture.
+	// Java initializes GeoService once. Our serial suite reuses it across synthetic worlds;
+	// full boot must not try to load a prior fixture's map ID against the real WORLD_MAPS_DATA.
+	private sealed class RealGeoBootstrapScope : IDisposable
+	{
+		private readonly string previousDirectory = Directory.GetCurrentDirectory();
+		private readonly bool previousEnabled = Aion.GameServer.Configs.Main.GeoDataConfig.GEO_ENABLE;
+		private readonly string previousFilter = Aion.GameServer.Configs.Main.GeoDataConfig.GEO_MAP_IDS;
+		private readonly Dictionary<int, Aion.GameServer.GeoEngine.Models.GeoMap> maps;
+		private readonly KeyValuePair<int, Aion.GameServer.GeoEngine.Models.GeoMap>[] previousMaps;
+		public RealGeoBootstrapScope()
+		{
+			maps = (Dictionary<int, Aion.GameServer.GeoEngine.Models.GeoMap>)typeof(Aion.GameServer.World.Geo.GeoService)
+				.GetField("geoMaps", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+				.GetValue(Aion.GameServer.World.Geo.GeoService.GetInstance())!;
+			previousMaps = maps.ToArray();
+			maps.Clear();
+			Directory.SetCurrentDirectory(Path.Combine(RealStaticData.RepoRoot(), "game-server"));
+			Aion.GameServer.Configs.Main.GeoDataConfig.GEO_ENABLE = true;
+			Aion.GameServer.Configs.Main.GeoDataConfig.GEO_MAP_IDS = "";
+		}
+		public void Dispose()
+		{
+			maps.Clear();
+			foreach (var pair in previousMaps) maps.Add(pair.Key, pair.Value);
+			Aion.GameServer.Configs.Main.GeoDataConfig.GEO_ENABLE = previousEnabled;
+			Aion.GameServer.Configs.Main.GeoDataConfig.GEO_MAP_IDS = previousFilter;
+			Directory.SetCurrentDirectory(previousDirectory);
+		}
+	}
+
+	private sealed class RealAiBootstrapScope : IDisposable
+	{
+		private readonly Dictionary<string, Type> handlers = (Dictionary<string, Type>)typeof(Aion.GameServer.Ai.AIEngine)
+			.GetField("aiHandlers", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+			.GetValue(Aion.GameServer.Ai.AIEngine.GetInstance())!;
+		private readonly KeyValuePair<string, Type>[] previous;
+		public RealAiBootstrapScope() { previous = handlers.ToArray(); handlers.Clear(); }
+		public void Dispose()
+		{
+			handlers.Clear();
+			foreach (var pair in previous) handlers.Add(pair.Key, pair.Value);
+		}
+	}
+
+	// Test isolation: bootstrap replaces the global DataManager; restore it even when boot fails
+	// so sibling golden tests keep reading their own synthetic data rather than this fixture.
 	private readonly struct DataManagerSingletonGuard : IDisposable
 	{
 		private readonly DataManager? _previous;
