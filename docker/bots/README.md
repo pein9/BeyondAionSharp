@@ -30,3 +30,20 @@ and the current schema shape. It queries MySQL only inside the compose container
 The bot-only database seed registers game server 1 and creates the director account `director` / `aion-bots`
 with access level 9. Subject accounts are auto-created at access level 0. Name them `b{bot:D2}r{MMdd}` (for
 example, `b01r0917`) so server log scopes can be joined to a run and bot without extra protocol traffic.
+
+## Cross-server topology prerequisite
+
+`scripts/live/test-cross-server-topology.ps1 -Run <unique-id>` owns a temporary,
+zero-bot Docker validation run and removes its stack/databases afterwards. It
+checks two Game/Chat pairs sharing Login; Java and C# Chat each admit one GS only.
+This proves provisioning and observation, not player transfer.
+
+The optional `cross-server` Compose profile adds `gameserver2` and `chatserver2`.
+Set `AION_BOT_SECOND_GS=true` **before fresh MySQL initialization** to create
+`aion_gs2`, `aion_cs2` and Login registration 2. Instance overlays are appended
+after the shared profile. Default second-instance ports are game 17778, admin
+17781 (loopback only), and chat 11242; use `AION_BOT_GAME2_PORT`,
+`AION_BOT_ADMIN2_PORT`, and `AION_BOT_CHAT2_PORT` to override them. Both pairs use
+the same built images; build the primary services first. Mount separate `logs/gs2`
+and `logs/cs2` directories, call `wait-ready.ps1 -SecondGameServer`, and pass
+`--second-game-server true` to the watcher. Default single-GS runs are unchanged.

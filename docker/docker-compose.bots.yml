@@ -31,11 +31,13 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${AION_BOT_DB_PASSWORD:-aion-bots}
       MYSQL_ROOT_HOST: "%"
+      AION_BOT_SECOND_GS: ${AION_BOT_SECOND_GS:-false}
     tmpfs:
       - /var/lib/mysql:size=1g,mode=1777
     volumes:
       - ./mysql/init/00-init.sh:/docker-entrypoint-initdb.d/00-init.sh:ro
       - ./bots/seed/10-bot-seed.sql:/docker-entrypoint-initdb.d/10-bot-seed.sql:ro
+      - ./bots/seed/20-second-game-server.sh:/docker-entrypoint-initdb.d/20-second-game-server.sh:ro
       - ../login-server/sql:/sql/login:ro
       - ../game-server/sql:/sql/game:ro
       - ../chat-server/sql:/sql/chat:ro
@@ -158,3 +160,88 @@ services:
         target: /app/game-server/log
     restart: unless-stopped
     stop_grace_period: 90s
+
+  # A separate world/database and Chat, sharing only Login. The owning runner sets
+  # AION_BOT_SECOND_GS=true before the fresh MySQL initializes, and enables this profile.
+  gameserver2:
+    profiles: ["cross-server"]
+    image: aion-bots-gameserver:local
+    depends_on:
+      mysql:
+        condition: service_healthy
+      chatserver2:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: ${AION_BOT_DB_PASSWORD:-aion-bots}
+      SERVER_HOST: ${AION_BOT_SERVER_HOST:-127.0.0.1}
+      GAME_CLIENT_PORT: ${AION_BOT_GAME2_PORT:-17778}
+      LOGIN_ADDRESS: loginserver:9014
+      CHAT_ADDRESS: chatserver2:9021
+      RESPAWN_TIME_MULTIPLIER: "1.0"
+      AION_CONFIG_OVERLAY_DIR: /app/config-overlay
+      AION_CONFIG_INSTANCE_OVERLAY_DIR: /app/instance-overlay
+      AION_LOG_JSONL_DIR: /app/game-server/log
+      AION_RUN_ID: ${AION_RUN_ID:-}
+      AION_PACKET_TAP: ${AION_PACKET_TAP:-false}
+      GAMESERVER_ADMIN_API_ENABLED: "true"
+      GAMESERVER_ADMIN_API_PORT: "7780"
+      AION_TIMER_CENSUS: "1"
+      GAMESERVER_ADMIN_API_TOKEN: ${AION_BOT_ADMIN_TOKEN:-aion-bots-local-token}
+    ports:
+      - "${AION_BOT_GAME2_PORT:-17778}:7777"
+      - "127.0.0.1:${AION_BOT_ADMIN2_PORT:-17781}:7780"
+    volumes:
+      - type: bind
+        source: ${AION_BOT_OVERLAY_DIR:-./bots/overlay}
+        target: /app/config-overlay
+        read_only: true
+      - type: bind
+        source: ./bots/overlay-gs2
+        target: /app/instance-overlay
+        read_only: true
+      - type: bind
+        source: ${AION_E2E_RUN_DIR:?Set AION_E2E_RUN_DIR to the current run directory}/logs/gs2
+        target: /app/game-server/log
+    restart: unless-stopped
+    stop_grace_period: 90s
+
+  chatserver2:
+    profiles: ["cross-server"]
+    image: aion-bots-chatserver:local
+    depends_on:
+      mysql:
+        condition: service_healthy
+      loginserver:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: ${AION_BOT_DB_PASSWORD:-aion-bots}
+      SERVER_HOST: ${AION_BOT_SERVER_HOST:-127.0.0.1}
+      CHAT_CLIENT_PORT: ${AION_BOT_CHAT2_PORT:-11242}
+      AION_CONFIG_OVERLAY_DIR: /app/config-overlay
+      AION_CONFIG_INSTANCE_OVERLAY_DIR: /app/instance-overlay
+      AION_LOG_JSONL_DIR: /app/chat-server/log
+      AION_RUN_ID: ${AION_RUN_ID:-}
+    ports:
+      - "${AION_BOT_CHAT2_PORT:-11242}:10241"
+    volumes:
+      - type: bind
+        source: ${AION_BOT_OVERLAY_DIR:-./bots/overlay}
+        target: /app/config-overlay
+        read_only: true
+      - type: bind
+        source: ./bots/overlay-cs2
+        target: /app/instance-overlay
+        read_only: true
+      - type: bind
+        source: ${AION_E2E_RUN_DIR:?Set AION_E2E_RUN_DIR to the current run directory}/logs/cs2
+        target: /app/chat-server/log
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped

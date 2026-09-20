@@ -114,7 +114,7 @@ public static class ProblemWatcher
 			botProblems = new FileTail(Path.Combine(options.RunDirectory, "bot.problems.jsonl"));
 			foreach (var server in options.Servers)
 			{
-				string producer = server == "gs2" ? "gs" : server;
+				string producer = server switch { "gs2" => "gs", "cs2" => "cs", _ => server };
 				eventTails.Add(server, new FileTail(Path.Combine(options.RunDirectory, "logs", server, $"{producer}.events.jsonl")));
 				problemTails.Add(server, new FileTail(Path.Combine(options.RunDirectory, "logs", server, $"{producer}.problems.jsonl")));
 			}
@@ -362,7 +362,7 @@ public static class ProblemWatcher
 		{
 			// Both GS instances use the unchanged production producer name. Their
 			// separate mounted directories establish instance identity, never arrival order.
-			string expected = server == "gs2" ? "gs" : server;
+			string expected = server switch { "gs2" => "gs", "cs2" => "cs", _ => server };
 			if (WatchProblem.RequiredString(root, "srv") != expected)
 				throw new InvalidDataException($"Log producer does not match the {server} source directory.");
 		}
@@ -585,6 +585,7 @@ public static class ProblemWatcher
 		{
 			"gameserver" => "gs",
 			"gameserver2" => "gs2",
+			"chatserver2" => "cs2",
 			"loginserver" => "ls",
 			"chatserver" => "cs",
 			_ => service,

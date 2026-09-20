@@ -24,9 +24,9 @@ public sealed record WatchOptions(
 {
 	public bool ExpectGameServerCrash { get; init; }
 	public bool SecondGameServer { get; init; }
-	internal IReadOnlyList<string> Servers => SecondGameServer ? ["gs", "gs2", "ls", "cs"] : ["gs", "ls", "cs"];
+	internal IReadOnlyList<string> Servers => SecondGameServer ? ["gs", "gs2", "ls", "cs", "cs2"] : ["gs", "ls", "cs"];
 	internal IReadOnlyList<string> DockerServices => SecondGameServer
-		? ["loginserver", "chatserver", "gameserver", "gameserver2", "mysql"]
+		? ["loginserver", "chatserver", "chatserver2", "gameserver", "gameserver2", "mysql"]
 		: ["loginserver", "chatserver", "gameserver", "mysql"];
 	public TimeSpan MissingHeartbeatThreshold { get; init; } = TimeSpan.FromSeconds(20);
 	public TimeSpan InitialHeartbeatThreshold { get; init; } = TimeSpan.FromSeconds(30);

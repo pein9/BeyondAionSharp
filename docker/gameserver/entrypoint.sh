@@ -23,7 +23,8 @@ EOF
 
 # A bot/test stack may mount read-only overrides here. Files are appended in glob order so the generated
 # deployment values above remain today's defaults when no overlay is present, while overlays win when mounted.
-overlay_dir="${AION_CONFIG_OVERLAY_DIR:-/app/config-overlay}"
+# The optional instance overlay supplies topology (for example GS id/database) after the shared profile.
+for overlay_dir in "${AION_CONFIG_OVERLAY_DIR:-/app/config-overlay}" "${AION_CONFIG_INSTANCE_OVERLAY_DIR:-/app/instance-overlay}"; do
 if [ -d "$overlay_dir" ]; then
     for overlay in "$overlay_dir"/*.properties; do
         [ -f "$overlay" ] || continue
@@ -32,6 +33,7 @@ if [ -d "$overlay_dir" ]; then
         printf '\n' >> /app/game-server/config/mygs.properties
     done
 fi
+done
 
 cd /app
 exec dotnet Aion.GameServer.dll

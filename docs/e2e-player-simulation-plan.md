@@ -2174,13 +2174,17 @@ real geodata on in production immediately, because geo is enabled by default; th
   `docs/e2e-phase10-validation.md` for acceptance evidence and the preserved failed draft.
 - [ ] **P10-09** [LIVE] L — Turn the open journeys in `docs/Deep-Port-Audit-Remediation-Tracker.md` into LIVE
   scenarios and tick the tracker as each passes: BA-001 two-GS character transfer (the bots compose project gets a second
-  game server service); BA-002 chat auth success, gagged, timeout/disconnect, duplicate request; BA-003 login-server kick,
+  game server service with its own Chat instance: both Java and C# Chat admit only one GS per process);
+  BA-002 chat auth success, gagged, timeout/disconnect, duplicate request; BA-003 login-server kick,
   reconnect key, access grant, account ban, MAC/HDD ban sync, duplicate login; BA-005 in-world siege gate repair
   and assault (deferred with P10-05, D7); BA-006 hardware-ban persistence across a login-server restart.
   **In progress:** the watcher has an explicit second-GS topology option with independent log/heartbeat
   identity, Docker failure attribution, source validation, repro context and owned hang diagnostics.
-  First-GS allowances and O1 crash gaps do not extend to the second instance. This is a prerequisite,
-  not a completed journey; second-GS provisioning, runtime scenarios and tracker closeouts remain.
+  First-GS allowances and O1 crash gaps do not extend to the second instance. The opt-in `cross-server`
+  Compose profile provisions two GS/Chat pairs and isolated schemas sharing Login; the watcher tracks all
+  five producers. A zero-bot Docker topology probe checks registration, schema, instance DB targets,
+  stable container identity and live logs before owned cleanup. This is a prerequisite,
+  not a completed journey; runtime player scenarios and tracker closeouts remain.
 - [ ] **P10-10** [BOTH] M — Run report. Every run writes `run/<id>/report.md` and `report.json`:
   each scenario as passed, failed, skipped or flaky with duration; NEW, KNOWN and REGRESSED fingerprints; coverage
   deltas; peak heartbeat, memory and timer counts. `run-fast.ps1` and `run-full.ps1` print the summary at the end

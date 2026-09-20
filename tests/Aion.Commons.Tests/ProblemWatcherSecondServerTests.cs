@@ -16,6 +16,8 @@ public sealed partial class ProblemWatcherTests
 			"--second-game-server", enabled.ToString()]);
 		Assert.Equal(enabled, options.SecondGameServer);
 		Assert.Equal(enabled, options.Servers.Contains("gs2"));
+		Assert.Equal(enabled, options.Servers.Contains("cs2"));
+		Assert.Equal(enabled, options.DockerServices.Contains("chatserver2"));
 		Assert.Equal(enabled, options.DockerServices.Contains("gameserver2"));
 		Assert.False(run.Options().SecondGameServer);
 	}
@@ -23,13 +25,15 @@ public sealed partial class ProblemWatcherTests
 	[Theory]
 	[InlineData("gs", "gs2")]
 	[InlineData("gs2", "gs")]
+	[InlineData("cs", "cs2")]
+	[InlineData("cs2", "cs")]
 	public async Task OneGameServerHeartbeatCannotHideTheOtherMissingProducer(string healthy, string missing)
 	{
 		using var run = new WatcherRun();
 		var options = run.Options() with { SecondGameServer = true, Duration = null };
 		var state = new ProblemWatcher.WatcherState(options);
 		var now = DateTimeOffset.UtcNow.AddSeconds(31);
-		foreach (string server in new[] { healthy, "ls", "cs" })
+		foreach (string server in options.Servers.Where(server => server != missing))
 			WriteInstanceHeartbeat(run, server, now);
 		state.ReadFiles();
 		state.CheckHeartbeats(now);
@@ -37,7 +41,8 @@ public sealed partial class ProblemWatcherTests
 		Assert.Contains($"NEW HEARTBEAT {missing}", run.ReadDigest(), StringComparison.Ordinal);
 		using var summary = JsonDocument.Parse(File.ReadAllText(run.SummaryPath));
 		Assert.Equal(1, summary.RootElement.GetProperty("total").GetInt32());
-		Assert.Equal(4, summary.RootElement.GetProperty("servers").GetArrayLength());
+		Assert.Equal(5, summary.RootElement.GetProperty("servers").GetArrayLength());
+		Assert.DoesNotContain($"NEW HEARTBEAT {healthy}\n", run.ReadDigest(), StringComparison.Ordinal);
 	}
 
 	[Fact]
@@ -87,33 +92,37 @@ public sealed partial class ProblemWatcherTests
 	}
 
 	[Theory]
-	[InlineData("log")]
-	[InlineData("event")]
-	public async Task SecondContainerFailureIsAttributedToSecondGameServer(string source)
+	[InlineData("log", "gameserver2", "gs2")]
+	[InlineData("event", "gameserver2", "gs2")]
+	[InlineData("log", "chatserver2", "cs2")]
+	[InlineData("event", "chatserver2", "cs2")]
+	public async Task SecondContainerFailureIsAttributedToSecondGameServer(string source, string service, string identity)
 	{
 		using var run = new WatcherRun();
 		var state = new ProblemWatcher.WatcherState(run.Options() with { SecondGameServer = true });
 		var lines = Channel.CreateUnbounded<DockerLine>();
 		lines.Writer.TryWrite(source == "log"
-			? new DockerLine("log", "gameserver2", "Unhandled exception. second server", false)
+			? new DockerLine("log", service, "Unhandled exception. second server", false)
 			: new DockerLine("event", "docker", JsonSerializer.Serialize(new
-				{ service = "gameserver2", action = "die", time = DateTimeOffset.UtcNow.ToUnixTimeSeconds() }), false));
+				{ service, action = "die", time = DateTimeOffset.UtcNow.ToUnixTimeSeconds() }), false));
 		state.ReadDocker(lines.Reader);
 		await state.WriteSummaryAsync(CancellationToken.None);
-		Assert.Contains("gs2", run.ReadDigest(), StringComparison.Ordinal);
+		Assert.Contains(identity, run.ReadDigest(), StringComparison.Ordinal);
 		Assert.True(state.FailingProblemCount > 0);
 	}
 
 	[Theory]
-	[InlineData(false)]
-	[InlineData(true)]
-	public async Task SecondServerHangCollectorTargetsOnlyItsExplicitComposeService(bool enabled)
+	[InlineData(false, "gameserver2", "gs2", "Aion.GameServer.dll")]
+	[InlineData(true, "gameserver2", "gs2", "Aion.GameServer.dll")]
+	[InlineData(false, "chatserver2", "cs2", "Aion.ChatServer.dll")]
+	[InlineData(true, "chatserver2", "cs2", "Aion.ChatServer.dll")]
+	public async Task SecondServerHangCollectorTargetsOnlyItsExplicitComposeService(bool enabled, string service, string identity, string assembly)
 	{
 		using var run = new WatcherRun();
-		var command = new FakeHangCommand("normal", "gameserver2");
+		var command = new FakeHangCommand("normal", service);
 		var diagnostics = new HangDiagnostics(run.Options() with
 			{ DockerEnabled = true, Duration = null, SecondGameServer = enabled }, command);
-		diagnostics.Observe(new("gs2", DateTimeOffset.UtcNow, null, null, 30, 20));
+		diagnostics.Observe(new(identity, DateTimeOffset.UtcNow, null, null, 30, 20));
 		var results = await diagnostics.CompleteAsync();
 		if (!enabled)
 		{
@@ -123,14 +132,14 @@ public sealed partial class ProblemWatcherTests
 		}
 		var result = Assert.Single(results);
 		Assert.Equal("collected", result.Status);
-		Assert.EndsWith(Path.Combine("hangs", "gs2"), result.Directory, StringComparison.Ordinal);
-		Assert.Contains("label=com.docker.compose.service=gameserver2", Assert.Single(command.Calls, args => args[0] == "ps"));
-		Assert.Equal("Aion.GameServer.dll", Assert.Single(command.Calls, args => args[0] == "exec")[^1]);
+		Assert.EndsWith(Path.Combine("hangs", identity), result.Directory, StringComparison.Ordinal);
+		Assert.Contains($"label=com.docker.compose.service={service}", Assert.Single(command.Calls, args => args[0] == "ps"));
+		Assert.Equal(assembly, Assert.Single(command.Calls, args => args[0] == "exec")[^1]);
 	}
 
 	private static void WriteInstanceHeartbeat(WatcherRun run, string server, DateTimeOffset at, string? producer = null)
 	{
-		string name = server == "gs2" ? "gs" : server;
+		string name = server switch { "gs2" => "gs", "cs2" => "cs", _ => server };
 		string directory = Path.Combine(run.Options().RunDirectory, "logs", server);
 		Directory.CreateDirectory(directory);
 		File.AppendAllText(Path.Combine(directory, $"{name}.events.jsonl"), JsonSerializer.Serialize(new

@@ -35,13 +35,15 @@ template supplies liveness; census/configuration messages from the same category
 
 ## Two-game-server runs
 
-Pass `--second-game-server true` for a topology containing Compose service `gameserver2`.
+Pass `--second-game-server true` for a topology containing Compose services `gameserver2` and `chatserver2`.
+Chat admits one GS per process in both Java and C#, so each GS needs its own Chat instance.
 The default remains one GS. The second service must mount its logs under `logs/gs2/`;
 production filenames and JSON `srv` remain `gs` (`gs.events.jsonl`, `gs.problems.jsonl`).
 The watcher attributes them to instance `gs2` using the separate source directory,
 and rejects a producer inconsistent with that directory. No server logging change is required.
 
-Continuous watching then expects four independent heartbeat producers. One GS cannot
+The second Chat service similarly writes production `cs.*.jsonl` files under `logs/cs2`.
+Continuous watching then expects five independent heartbeat producers. One instance cannot
 refresh the other; the P10-03 expected restart gap still applies only to `gs`.
 Second-server problems, Docker failures, repro context and hang diagnostics retain
 `gs2` identity. Its hang collector selects only service `gameserver2` and validates
@@ -53,7 +55,7 @@ or prove a cross-server journey; the owning runner must do both.
 
 ## Bounded hang diagnostics
 
-Continuing Docker watches collect once per affected server under `hangs/<gs|gs2|ls|cs>/`, without blocking
+Continuing Docker watches collect once per affected server under `hangs/<gs|gs2|ls|cs|cs2>/`, without blocking
 the polling loop. `observation.json` contains the detection time, thresholds and last heartbeat sample
 (capped at 16,384 characters). `collection.json` records command results and target identity; failures
 instead produce `failure.json`. The watcher summary/digest reports `collected`, `partial`, or `failed`.

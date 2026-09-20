@@ -22,7 +22,9 @@ param(
 	[int]$GamePort = 0,
 
 	[ValidateRange(0, 65535)]
-	[int]$AdminPort = 0
+	[int]$AdminPort = 0,
+
+	[switch]$SecondGameServer
 )
 
 $ErrorActionPreference = 'Stop'
@@ -73,6 +75,11 @@ $ports = [ordered]@{
 	game = Resolve-Port $GamePort 'AION_BOT_GAME_PORT' 17777
 	admin = Resolve-Port $AdminPort 'AION_BOT_ADMIN_PORT' 17780
 }
+if ($SecondGameServer) {
+	$ports.game2 = Resolve-Port 0 'AION_BOT_GAME2_PORT' 17778
+	$ports.admin2 = Resolve-Port 0 'AION_BOT_ADMIN2_PORT' 17781
+	$ports.chat2 = Resolve-Port 0 'AION_BOT_CHAT2_PORT' 11242
+}
 $gameLog = Join-Path $runPath 'logs/gs/server_console.log'
 $loginLog = Join-Path $runPath 'logs/ls/server_console.log'
 $databasePassword = if ([string]::IsNullOrWhiteSpace($env:AION_BOT_DB_PASSWORD)) { 'aion-bots' } else { $env:AION_BOT_DB_PASSWORD }
@@ -92,6 +99,19 @@ SELECT CASE WHEN
        WHERE table_schema = 'aion_ls' AND table_name = 'account_rewards') = 0
 THEN 1 ELSE 0 END;
 "@
+if ($SecondGameServer) {
+	$schemaQuery += @"
+SELECT CASE WHEN
+  (SELECT COUNT(*) FROM information_schema.tables WHERE
+    (table_schema='aion_gs2' AND table_name IN ('inventory','player_effects','players'))
+    OR (table_schema='aion_cs2' AND table_name='chatlog')) = 4
+  AND (SELECT COUNT(*) FROM aion_ls.gameservers WHERE id IN (1,2)) = 2
+  AND (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='aion_gs2'
+    AND ((table_name='inventory' AND column_name='rank_limit_expire_time')
+      OR (table_name='player_effects' AND column_name='magical_criticals'))) = 2
+THEN 1 ELSE 0 END;
+"@
+}
 
 $previousRunDirectory = $env:AION_E2E_RUN_DIR
 $env:AION_E2E_RUN_DIR = $runPath
@@ -115,11 +135,19 @@ try {
 		if (-not (Test-LogText $loginLog 'Gameserver #1 is now online')) {
 			$missing.Add('login-server game-server registration log')
 		}
+		if ($SecondGameServer) {
+			if (-not (Test-LogText (Join-Path $runPath 'logs/gs2/server_console.log') 'Game server started in ')) { $missing.Add('second game-server startup') }
+			if (-not (Test-LogText $loginLog 'Gameserver #2 is now online')) { $missing.Add('second Login registration') }
+			foreach ($pair in @(@('cs',1),@('cs2',2))) {
+				if (-not (Test-LogText (Join-Path $runPath "logs/$($pair[0])/server_console.log") "Gameserver #$($pair[1]) is now online")) { $missing.Add("$($pair[0]) registration") }
+			}
+		}
 
 		if (-not $schemaReady) {
 			try {
 				$schemaResult = (& docker @composeArgs exec -T mysql mysql -uroot "-p$databasePassword" -Nse $schemaQuery 2>$null | Out-String).Trim()
-				$schemaReady = $LASTEXITCODE -eq 0 -and $schemaResult -eq '1'
+				$expectedSchema = if ($SecondGameServer) { "1`n1" } else { '1' }
+				$schemaReady = $LASTEXITCODE -eq 0 -and $schemaResult.Replace("`r",'') -ceq $expectedSchema
 			}
 			catch {
 				$schemaReady = $false

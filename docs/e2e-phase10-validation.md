@@ -2736,7 +2736,50 @@ warning sites, structural fidelity and all CLAUDE.md ancillary gates. Evidence:
 `run/p10-09-watchers-{focused,warnings,tests}.log`. No Docker stack or bots were
 started for this watcher-only checkpoint.
 
-## Scope decisions
+## P10-09 topology prerequisite
+
+`scripts/live/test-cross-server-topology.ps1 -Run <unique-id>` builds and starts an
+isolated Docker stack with two GS/Chat pairs and one Login. No players are created.
+The opt-in Compose `cross-server` profile requires `AION_BOT_SECOND_GS=true` before
+fresh MySQL initialization. GS2 uses `aion_gs2`, Chat2 uses `aion_cs2`; normal runs
+retain their original topology. The probe verifies both Login registrations,
+each Chat registration, schema readiness and last-wins generated database URLs,
+then watches all five independent heartbeat producers for 35 seconds.
+
+Source review corrected the initial shared-Chat assumption: Java
+`chat-server/src/com/aionemu/chatserver/service/GameServerService.java` at
+`ce54b7931` rejects a second GS while online, as does the C# implementation. This
+is a deployment constraint, not a port bug to fix. Both instances use identical
+images with ordered instance overlays; no game behavior changes. The watcher
+extends source identity, Docker failure attribution and hang collection to `cs2`.
+
+The run-local allowance preserves the owner/expiry of fingerprint `231c488f` and
+allows exactly two boot reports across `gs`/`gs2`; a final raw audit requires
+exactly one per GS and zero problems from Login/either Chat. No global allowance
+or ledger changes. Evidence retains source patch/probe hashes, image/container
+identities, watcher output and final cleanup result. The 24-assertion contract
+checks target ownership and read-only Compose resolution; it starts no containers.
+
+`run/p10-09-topology/p10-09-topology-a` passed the initial real topology check,
+including all five heartbeats, stable identities and raw problem counts. The
+explicit generated-DB-target assertion was added for the final replay. The first
+warning rebuild overlapped the running watcher and failed on its Windows DLL
+lock, not a compiler regression; its log is retained and checks are rerun after
+the probe exits. `run/p10-09-topology/p10-09-topology-b` passed the final replay,
+including the four generated DB targets, watcher exit 0, two scoped startup
+reports, no new/known/regressed problems, and clean removal of all six owned
+containers and their network. Both runs used zero bots; the maintainer's Docker
+MySQL and unrelated existing container were untouched. The final probe hash is
+`d465539ecafe8242e74c9e35ea7e993b830f6926705fc9766e4a36d9a019947b`;
+the base revision is `b762d460b` with the archived working patch. Neither topology
+proof closes BA-001 or any other journey.
+
+Pre-commit validation passes: 4,453 solution tests / 27 explicit skips, 88 focused
+watcher cases, 24 topology-contract assertions, unchanged 4,243 warning sites,
+structural fidelity and all CLAUDE.md ancillary gates. Final build/test logs:
+`run/p10-09-topology-warnings-final.log` and `run/p10-09-topology-tests.log`.
+
+## Remaining scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
 - P10-06 Java runtime comparisons are explicitly deferred under D15. Java remains

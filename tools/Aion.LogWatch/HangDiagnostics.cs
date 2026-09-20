@@ -27,7 +27,7 @@ internal sealed class HangDiagnostics(WatchOptions options, IDiagnosticCommand c
 	private async Task<HangDiagnosticResult> CollectAsync(HangObservation observation)
 	{
 		string server = observation.Server;
-		string service = server switch { "gs" => "gameserver", "gs2" => "gameserver2", "ls" => "loginserver", _ => "chatserver" };
+		string service = server switch { "gs" => "gameserver", "gs2" => "gameserver2", "cs2" => "chatserver2", "ls" => "loginserver", _ => "chatserver" };
 		string directory = Path.Combine(options.RunDirectory, "hangs", server);
 		using var lifetime = new CancellationTokenSource(CollectionBudget);
 		var steps = new Dictionary<string, DiagnosticCommandResult>(StringComparer.Ordinal);
