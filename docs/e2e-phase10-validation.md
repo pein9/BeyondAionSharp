@@ -1173,6 +1173,42 @@ ancillary check. The old-image census's 24-hour effect timers rise from 344 at
 boot to 391 after the first eight-minute spawn wave; this temporal association
 is not substituted for corrected-image capacity evidence.
 
+## P10-02 natural Kisk retirement and census parser corrections
+
+`p10-02-mixed50-2h-d` reached natural Kisk expiry but hung in PvP step s380.
+Subject b09 received, at 07:45:57.162 UTC, the final update for owned Kisk 134371
+(42 charges, **one second** remaining), its old bind point, `STR_BINDSTONE_IS_REMOVED`
+and `SM_DELETE`. The old loop awaited a zero lifetime that never arrived. Java
+`KiskService.removeKisk`, `KiskAI.handleDespawned` and `Kisk.getRemainingLifetime`
+at `ce54b7931` confirm this is a bot assumption, not a server timing divergence.
+
+The bot now retains an explicit owned/bound removal notice joined to its subsequent
+delete; visibility-only deletes do not suffice. It preserves the raw final update
+and old binding, clears retirement for a new owned Kisk, rejects unexpected
+destruction, and fails missing retirement evidence thirty seconds after the
+observed lifetime. Replacement still uses ordinary item cooldown, casting and
+binding. The captured sequence fails before the fix and passes afterward.
+
+The obsolete mixed run and `p10-02-capacity-matrix-a` were intentionally aborted;
+both owning scripts report failure and removed only their isolated Docker stacks.
+Their raw files, incomplete windows and diagnostic-abort notes remain intact.
+The corrected image/bot combination still needs a fresh owning capacity matrix;
+these runs do not establish natural replacement or a plateau.
+
+`p10-02-economy50-census-a` completed 1,200 seconds, 1,070 actions and all final
+checks. Enforced watcher: one existing suppressed startup fingerprint, zero
+new/known/regressed problems; retained cache 3,264 records / 862,104 characters.
+Its owning invocation nevertheless failed when telemetry treated a census event
+as a heartbeat. The parser regression recognizes only that explicit supplemental
+event, includes its bytes in the source hash, and does not let it fill heartbeat
+gaps. Wrong identities, corrupt census and unknown category events still fail.
+`soak-telemetry-parser-replay.json` parses the preserved run but correctly fails
+the two-hour requirement; the original failed invocation is not rewritten.
+
+Validation: full solution 4,301 passed / 24 explicit skips; warning baseline
+4,243; Docker Fast 6/6 (36.4 seconds); all CLAUDE.md ancillary checks, including
+26 telemetry parser/policy tests, pass. P10-02 remains unchecked.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

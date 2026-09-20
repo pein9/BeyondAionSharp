@@ -115,6 +115,8 @@ public sealed partial class BotWorldModel
 			objects.Remove(packet.Get<int>("objectId"));
 			ForgetPrivateStore(packet.Get<int>("objectId"));
 			lootStatuses.Remove(packet.Get<int>("objectId"));
+			if (OwnedKiskRemoval is { } removal && removal.ObjectId == packet.Get<int>("objectId"))
+				OwnedKiskRemoval = removal with { DeleteObserved = true };
 		}
 		else if (type == typeof(SM_TELEPORT_LOC))
 			ApplyTeleport(packet);
@@ -139,7 +141,11 @@ public sealed partial class BotWorldModel
 			LastKiskUpdate = new(packet.Get<int>("objectId"), packet.Get<int>("creatorId"), packet.Get<int>("useMask"),
 				packet.Get<int>("currentMembers"), packet.Get<int>("maxMembers"), packet.Get<int>("remainingResurrects"),
 				packet.Get<int>("maxResurrects"), packet.Get<int>("remainingLifetimeSeconds"));
-			if (LastKiskUpdate.CreatorId == SelfObjectId) OwnedKiskUpdate = LastKiskUpdate;
+			if (LastKiskUpdate.CreatorId == SelfObjectId)
+			{
+				if (OwnedKiskUpdate?.ObjectId != LastKiskUpdate.ObjectId) OwnedKiskRemoval = null;
+				OwnedKiskUpdate = LastKiskUpdate;
+			}
 		}
 		else if (type == typeof(SM_INVENTORY_INFO))
 			ApplyInventoryInfo(packet);
@@ -520,6 +526,11 @@ public sealed partial class BotWorldModel
 
 	private void ApplySystemMessage(DecodedBotServerPacket packet)
 	{
+		string? name = GetNullableString(packet.Fields, "name");
+		if (name is "STR_BINDSTONE_IS_REMOVED" or "STR_BINDSTONE_IS_DESTROYED" &&
+			OwnedKiskUpdate is { } owned && KiskBindPoint?.KiskObjectId == owned.ObjectId)
+			OwnedKiskRemoval = new(owned.ObjectId, name == "STR_BINDSTONE_IS_DESTROYED",
+				OwnedKiskRemoval is { DeleteObserved: true } previous && previous.ObjectId == owned.ObjectId);
 		systemMessages.Add(new BotSystemMessage(packet.Get<int>("msgId"), GetNullableString(packet.Fields, "name"),
 			packet.Get<string[]>("params"), packet.Get<string[]>("specialParams"), packet.Get<int>("senderObjectId")));
 		TrimSystemMessages();

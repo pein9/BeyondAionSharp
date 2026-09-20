@@ -89,20 +89,27 @@ public static partial class LiveBotRunner
 		{
 			var observed = world.OwnedKiskUpdate;
 			if (observed?.ObjectId != state.ObjectId) throw new InvalidDataException("Owned Kisk observation was lost or replaced unexpectedly.");
-			if (observed.RemainingResurrects > 0 && observed.RemainingLifetimeSeconds > 0 && state.Remaining > TimeSpan.FromMinutes(5))
+			if (world.OwnedKiskRemoval == null && observed.RemainingResurrects > 0 && observed.RemainingLifetimeSeconds > 0 && state.Remaining > TimeSpan.FromMinutes(5))
 			{
 				if (world.KiskBindPoint?.KiskObjectId != state.ObjectId) throw new InvalidDataException("Relog did not preserve the owned Kisk binding.");
 				return;
 			}
 			// Never begin a fight near expiry, force-despawn a Kisk, or reset its real cooldown.
 			// Java removal may send the old bind point before clearing the server reference: use the
-			// terminal owned update, not an invented requirement for a cleared bind-point packet.
-			while (world.OwnedKiskUpdate is { RemainingResurrects: > 0, RemainingLifetimeSeconds: > 0 })
+			// removal notice joined to this Kisk's deletion. Its final update may still report one second.
+			while (world.OwnedKiskRemoval is not { DeleteObserved: true } removal || removal.ObjectId != state.ObjectId)
 			{
+				if (state.Remaining < TimeSpan.FromSeconds(-30))
+					throw new InvalidDataException("Owned Kisk retirement notice/deletion missing thirty seconds after its observed lifetime.");
 				await Task.Delay(1000, token);
 				await session.SynchronizeAsync(token);
 				if (world.IsDead) throw new InvalidDataException("Subject died while waiting for natural Kisk expiry.");
 			}
+			if (world.OwnedKiskRemoval.Destroyed)
+				throw new InvalidDataException("Owned Kisk was destroyed instead of retiring naturally.");
+			actor.Trace.WriteAction(actor.LastStep, "soak:kisk-retired", new Dictionary<string, object?>
+			{ ["kisk"] = state.ObjectId, ["source"] = "STR_BINDSTONE_IS_REMOVED+SM_DELETE",
+				["finalReportedLifetimeSeconds"] = world.OwnedKiskUpdate!.RemainingLifetimeSeconds });
 		}
 		while (session.Api.Timing.TimeUntilItemUse(state.Template) > TimeSpan.Zero ||
 			state.ObjectId != 0 && Stopwatch.GetElapsedTime(state.ObservedAt) < TimeSpan.FromMilliseconds(state.Template.GetUseLimits().GetDelayTime() + 1000))

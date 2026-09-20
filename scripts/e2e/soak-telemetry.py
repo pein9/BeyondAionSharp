@@ -89,6 +89,17 @@ def read_samples(path, service, run):
                     continue
                 if row.get("run") != run or row.get("srv") != service:
                     raise ValueError("Heartbeat belongs to another run/server")
+                if not isinstance(row.get("msg"), str):
+                    raise ValueError("Heartbeat event message must be a string")
+                # Optional census events share the logger, not the heartbeat schema.
+                # Keep their bytes in the source digest but never count them as liveness samples.
+                if row["msg"].startswith("Scheduled timer census: "):
+                    census = json.loads(row["msg"][len("Scheduled timer census: "):])
+                    if not isinstance(census, dict) or not isinstance(census.get("Groups"), list):
+                        raise ValueError("Invalid timer census")
+                    for key in ("ActiveCount", "GroupCount", "OmittedActiveCount"):
+                        nonnegative(census[key], key, integer=True)
+                    continue
                 match = HEARTBEAT.fullmatch(row["msg"])
                 if match is None:
                     raise ValueError("Missing or changed heartbeat metrics")

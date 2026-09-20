@@ -11,6 +11,8 @@ public sealed partial class BotWorldModel
 	public BotKiskUpdate? LastKiskUpdate { get; private set; }
 	/// <summary>Last update whose creator is self; retained across visibility reloads, not proof of a live binding.</summary>
 	public BotKiskUpdate? OwnedKiskUpdate { get; private set; }
+	/// <summary>Explicit removal notice for our bound, owned Kisk, joined to its observed deletion.</summary>
+	public BotKiskRemoval? OwnedKiskRemoval { get; private set; }
 
 	private void ApplyBindPoint(DecodedBotServerPacket packet)
 	{
@@ -24,3 +26,4 @@ public sealed partial class BotWorldModel
 public sealed record BotBindPoint(int MapId, BotPosition Position, int KiskObjectId);
 public sealed record BotKiskUpdate(int ObjectId, int CreatorId, int UseMask, int CurrentMembers, int MaxMembers,
 	int RemainingResurrects, int MaxResurrects, int RemainingLifetimeSeconds);
+public sealed record BotKiskRemoval(int ObjectId, bool Destroyed, bool DeleteObserved);

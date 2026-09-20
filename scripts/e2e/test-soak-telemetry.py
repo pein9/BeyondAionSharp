@@ -225,6 +225,23 @@ class SoakTelemetryTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 telemetry.read_samples(path, "gs", "test")
 
+    def test_optional_timer_census_is_hashed_but_not_a_heartbeat(self):
+        row = self.row(self.samples[0])
+        census = dict(row, msg='Scheduled timer census: {"ActiveCount":0,"GroupCount":0,"OmittedActiveCount":0,"Groups":[]}')
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "events.jsonl"
+            path.write_text(json.dumps(row) + "\n")
+            original, original_hash = telemetry.read_samples(path, "gs", "test")
+            path.write_text(json.dumps(row) + "\n" + json.dumps(census) + "\n")
+            samples, digest = telemetry.read_samples(path, "gs", "test")
+            self.assertEqual(original, samples)
+            self.assertNotEqual(original_hash, digest)
+            for invalid in (dict(census, run="other"), dict(census, msg="Scheduled timer census: broken"),
+                            dict(census, msg="Unrecognized diagnostic"), dict(census, msg=None)):
+                path.write_text(json.dumps(invalid) + "\n")
+                with self.assertRaises(ValueError):
+                    telemetry.read_samples(path, "gs", "test")
+
     def test_invalid_cli_replaces_stale_green_output(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
