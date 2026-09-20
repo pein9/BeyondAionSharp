@@ -96,14 +96,14 @@ $runSimTier = {
 	$recorded.Add([pscustomobject]@{ kind = 'Sim'; seed = $Seed; run = $Run; root = $RunRoot; shards = $ShardCount; parent = $SimulationRunId })
 }
 $runLive = {
-	param($Run, $Scenario, $WatcherMode, $RunRoot, [switch]$FullRun, [switch]$PacketTap, [switch]$SkipImageBuild, $StepTimeoutSeconds, $Seed)
+	param($Run, $Scenario, $WatcherMode, $RunRoot, [switch]$FullRun, [switch]$PacketTap, [switch]$SkipImageBuild, $StepTimeoutSeconds, $Seed, $BotExecution)
 	$recorded.Add([pscustomobject]@{ kind = 'Live'; seed = $Seed; run = $Run; root = $RunRoot;
-		full = [bool]$FullRun; tap = [bool]$PacketTap; skipBuild = [bool]$SkipImageBuild; watcher = $WatcherMode })
+		full = [bool]$FullRun; tap = [bool]$PacketTap; skipBuild = [bool]$SkipImageBuild; watcher = $WatcherMode; execution = $BotExecution })
 }
 $runSoak = {
-	param($Run, $RunRoot, [switch]$FullRun, $Bots, $DurationSeconds, $Seed, [switch]$PacketTap, [switch]$SkipImageBuild)
+	param($Run, $RunRoot, [switch]$FullRun, $Bots, $DurationSeconds, $Seed, [switch]$PacketTap, [switch]$SkipImageBuild, $BotExecution)
 	$recorded.Add([pscustomobject]@{ kind = 'Soak'; seed = $Seed; run = $Run; root = $RunRoot;
-		full = [bool]$FullRun; tap = [bool]$PacketTap; skipBuild = [bool]$SkipImageBuild; bots = $Bots; seconds = $DurationSeconds })
+		full = [bool]$FullRun; tap = [bool]$PacketTap; skipBuild = [bool]$SkipImageBuild; bots = $Bots; seconds = $DurationSeconds; execution = $BotExecution })
 }
 $Run = 'contract'
 $runRoot = 'contract-artifacts'
@@ -111,6 +111,7 @@ $Seed = 73
 $SimShards = 2
 $PacketTap = $true
 $Suite = 'All'
+$BotExecution = 'Docker'
 $suiteState = @{ imagesReady = $false }
 $dispatchPlan = @($breadth[0], $liveSteps[0], $liveSteps[1], $soak[1])
 Invoke-FullSuitePlan -Plan $dispatchPlan -Execute $dispatch -Record { param($result) }
@@ -120,6 +121,7 @@ Assert-True ($recorded[0].shards -eq 2 -and $recorded[0].parent -eq 'contract') 
 Assert-True (-not $recorded[1].skipBuild -and $recorded[2].skipBuild -and $recorded[3].skipBuild) 'Images must build only once.'
 Assert-True ($recorded[1].full -and $recorded[1].tap -and $recorded[1].watcher -eq 'enforce') 'LIVE observability or retention contract lost.'
 Assert-True ($recorded[3].full -and $recorded[3].tap -and $recorded[3].bots -eq 200 -and $recorded[3].seconds -eq 7200) 'Soak invocation contract lost.'
+Assert-True (@($recorded | Where-Object { $_.kind -ne 'Sim' -and $_.execution -cne 'Docker' }).Count -eq 0) 'Docker bot execution was not forwarded to every LIVE/soak child.'
 
 $planned = & (Join-Path $PSScriptRoot 'run-full.ps1') -Suite All -PlanOnly -Run p10-plan-only-test -Seed 73 | ConvertFrom-Json
 Assert-True ($planned.seed -eq 73 -and $planned.steps.Count -eq $all.Count) 'Public plan-only contract failed.'

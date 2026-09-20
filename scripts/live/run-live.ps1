@@ -32,6 +32,7 @@ param(
 	[switch]$Keep,
 
 	[switch]$SkipImageBuild,
+	[ValidateSet('Host', 'Docker')][string]$BotExecution = 'Host',
 
 	[string]$RunRoot,
 
@@ -43,6 +44,7 @@ Set-StrictMode -Version Latest
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $repoRoot 'scripts/e2e/run-artifact-owner.ps1')
+. (Join-Path $PSScriptRoot 'docker-bot-runner.ps1')
 if ([string]::IsNullOrWhiteSpace($RunRoot)) {
 	$RunRoot = if ([string]::IsNullOrWhiteSpace($env:AION_E2E_RUN_ROOT)) {
 		Join-Path $repoRoot 'run'
@@ -71,6 +73,7 @@ if ($Scenario.Count -eq 0 -or $Scenario.Where({ [string]::IsNullOrWhiteSpace($_)
 
 $projectName = "aion-bots-$Run"
 $composeArgs = @('compose', '-f', $composeFilePath, '-p', $projectName)
+if ($BotExecution -eq 'Docker') { $composeArgs += @('--profile', 'bot-runner') }
 $watcherProcess = $null
 $watcherExitCode = $null
 $botExitCode = $null
@@ -281,6 +284,13 @@ try {
 		}
 		Invoke-CheckedNative 'dotnet' @('build', 'tools/Aion.LiveBots/Aion.LiveBots.csproj', '--nologo') 'Live bot build'
 		Invoke-CheckedNative 'dotnet' @('build', 'tools/Aion.LogWatch/Aion.LogWatch.csproj', '--nologo') 'Log watcher build'
+		if ($BotExecution -eq 'Docker') {
+			# Like the host bot build, always prepare this run's client even when server images are reused.
+			Invoke-CheckedNative 'docker' (@($composeArgs) + @('build', '--build-arg', "AION_BOT_SOURCE_REVISION=$gitSha", 'botrunner')) 'Docker bot build'
+			if (-not $SkipImageBuild) {
+				Invoke-CheckedNative 'docker' (@($composeArgs) + @('build', 'loginserver', 'chatserver', 'gameserver')) 'Docker server build'
+			}
+		}
 		if ((Get-LiveGitRevision) -cne $gitSha) {
 			throw 'Git HEAD changed during LIVE tool builds; start a fresh run with a consistent revision.'
 		}
@@ -289,11 +299,17 @@ try {
 		$upArguments.AddRange([string[]]$composeArgs)
 		$upArguments.Add('up')
 		$upArguments.Add('-d')
-		if (-not $SkipImageBuild) { $upArguments.Add('--build') }
+		# Docker clients were already built with the captured revision; do not rebuild them without it.
+		if (-not $SkipImageBuild -and $BotExecution -eq 'Host') { $upArguments.Add('--build') }
 		$stackCreated = $true
 		Invoke-CheckedNative 'docker' $upArguments.ToArray() 'Bot stack startup'
 
 		& (Join-Path $repoRoot 'scripts/live/wait-ready.ps1') -ProjectName $projectName -RunDirectory $runPath -TimeoutSeconds $ReadyTimeoutSeconds -ComposeFile $composeFilePath
+		if ($BotExecution -eq 'Docker') {
+			$dockerEndpoints = Get-LiveDockerEndpoints -ComposeArguments $composeArgs -ProjectName $projectName -ExpectedRevision $gitSha
+			[pscustomobject]@{ schemaVersion = 1; execution = 'Docker'; gitSha = $gitSha; endpoints = $dockerEndpoints } |
+				ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $runPath 'bot-execution.json') -Encoding utf8NoBOM
+		}
 
 		$watcherArguments = @(
 			'run', '--project', 'tools/Aion.LogWatch', '--no-build', '--',
@@ -324,7 +340,12 @@ try {
 		if ($Scenario -contains 'SOAK') {
 			$botArguments += @('--soak-seconds', $SoakSeconds.ToString(), '--soak-activities', $SoakActivities)
 		}
-		& dotnet @botArguments
+		if ($BotExecution -eq 'Docker') {
+			$containerArguments = Get-LiveDockerBotArguments -HostArguments $botArguments -Endpoints $dockerEndpoints
+			& docker @composeArgs @containerArguments
+		} else {
+			& dotnet @botArguments
+		}
 		$botExitCode = $LASTEXITCODE
 		Stop-Watcher
 		if ($botExitCode -ne 0) { throw "Live bots failed with exit code $botExitCode." }

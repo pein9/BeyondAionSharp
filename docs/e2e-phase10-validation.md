@@ -13,7 +13,8 @@ not acceptance evidence.
 directories. Until P10-02 supplies the soak driver, selecting actual `Soak` or
 `All` execution fails before any run starts. Missing policy is never a green soak.
 The driver contract is `scripts/live/run-soak.ps1` with `Run`, `RunRoot`,
-`FullRun`, `Bots`, `DurationSeconds`, `Seed`, `PacketTap`, and `SkipImageBuild`.
+`FullRun`, `Bots`, `DurationSeconds`, `Seed`, `PacketTap`, `SkipImageBuild`, and
+optional `BotExecution` (`Host`, the default, or `Docker`).
 It must throw on failure and preserve its sibling artifacts.
 
 Breadth selection comes from the shared manifest: currently 72 SIM scenarios and
@@ -1746,8 +1747,9 @@ These results do **not** establish ordinary port-range exhaustion or an unclosed
 socket leak. [Microsoft's troubleshooting guidance](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/tcp-ip-port-exhaustion-troubleshooting)
 likewise distinguishes TIME_WAIT churn from confirmed exhaustion. No host settings,
 port ranges, close semantics, buffers, gameplay concurrency or refusal checks are
-changed on a speculative diagnosis. The maintainer has been offered optional
-Docker-hosted Linux bot execution; no implementation decision is inferred.
+changed on a speculative diagnosis. An optional Docker-hosted Linux load generator
+is implemented later below, keeping Host as the default. This is harness
+infrastructure, not a maintainer-selected replacement or a Windows root-cause fix.
 
 ## P10-02 full-mixed 500-subject timeout diagnostic
 
@@ -1865,6 +1867,65 @@ Pre-commit validation passes: 4,318 solution tests / 26 explicit skips, warning
 baseline 4,243, and every CLAUDE.md ancillary check. Logs:
 `run/p10-02-coverage-problem-{warning,fulltests}.log`. Harness-only correction;
 no production behavior, image, timeout or upstream automation change.
+
+## P10-02 full-mixed socket failure and optional Docker bot execution
+
+`p10-02-mixed500-c` launches from clean `3e3d63446`, seed 73, all ten activities,
+500 subjects and a 1,800-second diagnostic window. Corrected login image
+`18c4130be3cf` and unchanged game image `1f38a4c1c4e5` are retained. Its workload
+starts at 2026-09-20 15:31:43.9516483 UTC and fails at 15:39:30.2170675 after
+466.2653841 seconds; drift is 0.0000351 seconds. The first recorded failure,
+b120 at 15:39:25.245, is native Windows socket error 10055 while reconnecting
+through `TcpBotTransport.ConnectAsync`/`WildcardBindForConnectIfNecessary`.
+The paired b119 row reports the same failure, not proof of two native failures.
+Bot problems contain two socket rows and 472 cancellation rows. LS/CS are clean;
+GS has only startup allowance `231c488f`. Watcher totals: 475 observations,
+one suppressed, zero new/known, one regressed, 473 repeated. Economic exposure
+is insufficient with zero impossible outcomes. The owner removes only its stack.
+
+Three stack reports, 26–34 seconds after workload start, each show four ground
+searches, consistent with the new gate. This does not prove the exact original
+stall cause or resolve #103. `bot-legacy-counters.csv`, `bot-process.jsonl`, raw
+traces and failed-window evidence remain under the diagnostic run directory.
+
+LIVE, Soak and Full runners now accept `-BotExecution Docker`; omission remains
+Host. The optional `bot-runner` Compose profile builds the same C# bot code into
+`aion-bots-runner:local`, mounts repository data read-only and that run's artifacts
+writable, and uses numeric internal LS/GS/CS addresses with their native ports.
+No extra game server, proxy, protocol change, retry, timeout relaxation or host
+network tuning is introduced. The helper remains alive while `compose exec`
+returns the actual bot process exit code; the host watcher drains before owned
+stack shutdown. Container failures are not allowlisted. The runner verifies
+container identity, exclusive project network, running state and captured image
+revision, and writes `bot-execution.json`; bot metadata records OS/framework.
+Server image reuse still obeys `-SkipImageBuild`; the bot image always builds.
+Rebuilding server images must not rebuild the client without its revision label.
+
+Contract tests cover endpoint/provenance rejection, workload forwarding,
+Host/Docker selection, startup image-build policy and exit codes 0/1/137.
+Three C# cases pin inherited IPv4/IPv6 and distinct service endpoints; fifteen
+focused endpoint/options tests pass. The Docker smoke attempt `docker-smoke-a`
+was an operator error (unsupported combined `connect,L0` selection); it correctly
+returned bot exit 2 and removed its stack. It is failed evidence, not a pass.
+`p10-02-docker-smoke-b` then passes L0 with two subjects, including chat, on
+Ubuntu 24.04.5 / .NET 10.0.12. Enforced watching sees only the existing startup
+allowance (one suppressed, no new/known/regressed/repeated problem); cleanup
+removes all five owned containers. Both smoke runs used the uncommitted runner
+changes atop `3e3d63446`, not an attested clean source revision. Their actual
+image IDs and endpoints are retained in `bot-execution.json`.
+
+Pre-commit checks pass: 4,321 solution tests / 26 explicit skips, warning baseline
+4,243, every CLAUDE.md ancillary check, and the new Docker runner contract included
+by `test-run-soak.ps1`. Logs: `run/p10-02-docker-runner-{focused,warning,fulltests}.log`.
+No gameplay or upstream automation changes. This smoke validates the optional
+execution path, not scaled workload behavior or two-hour acceptance.
+
+Matrix-d 200 retains its original host binaries and begins the two-hour window
+at 2026-09-20 15:55:26.1761525 UTC, scheduled to end 17:55:26.1761525. Docker smoke
+builds/runs and local validation overlap this measured window; observed resource
+and latency results include that overhead. Its 500 stage has not started.
+P10-02 remains open; the accepted fifty-subject result is from matrix-c and does
+not establish a uniform accepted matrix on the newer runner/images.
 
 ## Scope decisions
 

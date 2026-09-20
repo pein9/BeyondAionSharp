@@ -13,3 +13,4 @@
 **/TestResults/
 **/logs/
 *.log
+run/

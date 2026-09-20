@@ -548,6 +548,8 @@ public static partial class LiveBotRunner
 			seed = options.Seed,
 			virtualEpoch = (string?)null,
 			timeZone = options.TimeZone,
+			runtimeOs = System.Runtime.InteropServices.RuntimeInformation.OSDescription,
+			runtimeFramework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
 			configProfile = options.Profile,
 			scenarios = options.Scenarios,
 			scenarioDefinitions = options.ScenarioDefinitions,

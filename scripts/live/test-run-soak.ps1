@@ -5,6 +5,7 @@ Set-StrictMode -Version Latest
 & (Join-Path $PSScriptRoot 'test-live-build-provenance.ps1')
 & (Join-Path $PSScriptRoot 'test-stop-watcher.ps1')
 & (Join-Path $PSScriptRoot 'test-soak-heap-readiness.ps1')
+& (Join-Path $PSScriptRoot 'test-docker-bot-runner.ps1')
 $tokens = $null; $errors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'run-soak.ps1'), [ref]$tokens, [ref]$errors)
 if ($errors.Count -ne 0) { throw 'Soak runner did not parse.' }
@@ -17,6 +18,7 @@ New-Item -ItemType Directory -Path $testRoot | Out-Null
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $RunRoot = $testRoot; $Bots = 200; $DurationSeconds = 7200; $Seed = 73
 $FullRun = $true; $PacketTap = $true; $SkipImageBuild = $true
+$BotExecution = 'Docker'
 $script:called = [Collections.Generic.List[string]]::new()
 function dotnet {
 	param([Parameter(ValueFromRemainingArguments = $true)][object[]]$Arguments)
@@ -32,10 +34,10 @@ function python {
 }
 $runLive = {
 	param($Run, $RunRoot, [switch]$FullRun, $Scenario, $Bots, $SoakSeconds, $Seed, $StepTimeoutSeconds,
-		$WatcherMode, [switch]$PacketTap, [switch]$SkipImageBuild)
+		$WatcherMode, [switch]$PacketTap, [switch]$SkipImageBuild, $BotExecution)
 	$script:called.Add('live')
 	if ($Scenario -ne 'SOAK' -or $Bots -ne 200 -or $SoakSeconds -ne 7200 -or $Seed -ne 73 -or
-		$StepTimeoutSeconds -ne 1800 -or $WatcherMode -ne 'enforce' -or -not ($FullRun -and $PacketTap -and $SkipImageBuild)) {
+		$StepTimeoutSeconds -ne 1800 -or $WatcherMode -ne 'enforce' -or $BotExecution -cne 'Docker' -or -not ($FullRun -and $PacketTap -and $SkipImageBuild)) {
 		throw 'Soak child settings were lost.'
 	}
 	New-Item -ItemType Directory -Path (Join-Path $RunRoot $Run) | Out-Null

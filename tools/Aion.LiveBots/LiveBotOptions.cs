@@ -29,7 +29,7 @@ public sealed record LiveBotOptions(
 	public IReadOnlyList<SoakActivity> SoakActivities { get; init; } = Enum.GetValues<SoakActivity>();
 	public const string Usage = "Usage: dotnet run --project tools/Aion.LiveBots -- --run <id> --output <run-dir> " +
 		"[--scenario manifest-id[,manifest-id]] [--bots N] [--host 127.0.0.1] [--login-port 12106] " +
-		"[--game-port 17777] [--chat-port 11241] [--admin-port 17780] [--admin-token TOKEN] " +
+		"[--login-host IP] [--chat-host IP] [--game-port 17777] [--chat-port 11241] [--admin-port 17780] [--admin-token TOKEN] " +
 		"[--connect-timeout-seconds 10] [--step-timeout-seconds 15] [--seed N] [--git-sha SHA] " +
 		"[--profile deterministic] [--time-zone ID] [--reentry-seconds 10] " +
 		"[--soak-seconds 7200] [--soak-activities Quest,Gather,Craft,Vendor,Trade,Group,Duel,Pvp,Relog,CrashDisconnect]";
@@ -50,6 +50,8 @@ public sealed record LiveBotOptions(
 			throw new ArgumentException("--run may contain only ASCII letters, digits, '-' and '_'.");
 		var output = Path.GetFullPath(Required(values, "output"));
 		var host = IPAddress.Parse(Get(values, "host", "127.0.0.1"));
+		var loginHost = IPAddress.Parse(Get(values, "login-host", host.ToString()));
+		var chatHost = IPAddress.Parse(Get(values, "chat-host", host.ToString()));
 		var loginPort = PositiveInt(values, "login-port", EnvironmentPort("AION_BOT_LOGIN_PORT", 12106), 65535);
 		var gamePort = PositiveInt(values, "game-port", EnvironmentPort("AION_BOT_GAME_PORT", 17777), 65535);
 		var chatPort = PositiveInt(values, "chat-port", EnvironmentPort("AION_BOT_CHAT_PORT", 11241), 65535);
@@ -101,7 +103,7 @@ public sealed record LiveBotOptions(
 
 		var known = new HashSet<string>(StringComparer.Ordinal)
 		{
-			"run", "output", "host", "login-port", "game-port", "chat-port", "admin-port", "admin-token",
+			"run", "output", "host", "login-host", "chat-host", "login-port", "game-port", "chat-port", "admin-port", "admin-token",
 			"bots", "scenario", "connect-timeout-seconds", "step-timeout-seconds", "reentry-seconds",
 			"seed", "git-sha", "profile", "time-zone",
 			"soak-seconds", "soak-activities",
@@ -113,9 +115,9 @@ public sealed record LiveBotOptions(
 		return new LiveBotOptions(
 			run,
 			output,
-			new IPEndPoint(host, loginPort),
+			new IPEndPoint(loginHost, loginPort),
 			new IPEndPoint(host, gamePort),
-			new IPEndPoint(host, chatPort),
+			new IPEndPoint(chatHost, chatPort),
 			new Uri($"http://{(host.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? $"[{host}]" : host.ToString())}:{adminPort}/"),
 			Get(values, "admin-token", Environment.GetEnvironmentVariable("AION_BOT_ADMIN_TOKEN") ?? "aion-bots-local-token"),
 			bots,

@@ -4,6 +4,7 @@ param(
 	[string]$Run = ('full-' + [DateTimeOffset]::Now.ToString('yyyyMMdd-HHmmss')),
 	[switch]$PacketTap,
 	[switch]$SkipImageBuild,
+	[ValidateSet('Host', 'Docker')][string]$BotExecution = 'Host',
 	[ValidateRange(1, 100)][int]$SimShards = 2,
 	[int]$Seed = 1,
 	[ValidateSet('Breadth', 'Soak', 'All')][string]$Suite = 'Breadth',
@@ -22,7 +23,7 @@ $plan = @(Get-FullSuitePlan -Manifest $manifest -Suite $Suite -SimShards $SimSha
 $runSoak = Join-Path $repoRoot 'scripts/live/run-soak.ps1'
 if ($PlanOnly) {
 	# Planning has no filesystem, Docker, process, or database side effects.
-	[pscustomobject]@{ suite = $Suite; seed = $Seed; simShards = $SimShards;
+	[pscustomobject]@{ suite = $Suite; seed = $Seed; simShards = $SimShards; botExecution = $BotExecution;
 		soakRunnerAvailable = (Test-Path -LiteralPath $runSoak -PathType Leaf); steps = $plan } | ConvertTo-Json -Depth 12
 	return
 }
@@ -35,7 +36,7 @@ New-Item -ItemType Directory -Path $runRoot | Out-Null
 Register-AionRunArtifactOwner -Directory $runRoot
 $gitSha = & git -C $repoRoot rev-parse HEAD
 if ($LASTEXITCODE -ne 0) { throw 'Cannot record Full-run git SHA.' }
-[pscustomobject]@{ run = $Run; suite = $Suite; gitSha = $gitSha; seed = $Seed;
+[pscustomobject]@{ run = $Run; suite = $Suite; gitSha = $gitSha; seed = $Seed; botExecution = $BotExecution;
 	simShards = $SimShards; timeZone = [TimeZoneInfo]::Local.Id; steps = $plan } |
 	ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $runRoot 'suite-plan.json') -Encoding utf8NoBOM
 $suiteState = @{ imagesReady = [bool]$SkipImageBuild }
@@ -57,7 +58,7 @@ try {
 			'Live' {
 				& $runLive -Run "$Run-$($step.scenario.ToLowerInvariant())" -Scenario $step.scenario `
 					-WatcherMode enforce -RunRoot $runRoot -FullRun -PacketTap:$PacketTap `
-					-SkipImageBuild:$suiteState.imagesReady -StepTimeoutSeconds $step.stepTimeoutSeconds -Seed $Seed
+					-SkipImageBuild:$suiteState.imagesReady -StepTimeoutSeconds $step.stepTimeoutSeconds -Seed $Seed -BotExecution $BotExecution
 				$suiteState.imagesReady = $true
 			}
 			'PacketParity' {
@@ -74,7 +75,7 @@ try {
 			}
 			'Soak' {
 				& $runSoak -Run "$Run-$($step.id)" -RunRoot $runRoot -FullRun -Bots $step.bots `
-					-DurationSeconds $step.durationSeconds -Seed $Seed -PacketTap:$PacketTap -SkipImageBuild:$suiteState.imagesReady
+					-DurationSeconds $step.durationSeconds -Seed $Seed -PacketTap:$PacketTap -SkipImageBuild:$suiteState.imagesReady -BotExecution $BotExecution
 				$suiteState.imagesReady = $true
 			}
 			default { throw "Unsupported suite step: $($step.kind)" }

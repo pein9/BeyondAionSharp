@@ -7,7 +7,8 @@ param(
 	[string]$RunRoot,
 	[switch]$FullRun,
 	[switch]$PacketTap,
-	[switch]$SkipImageBuild
+	[switch]$SkipImageBuild,
+	[ValidateSet('Host', 'Docker')][string]$BotExecution = 'Host'
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -28,13 +29,13 @@ try {
 	try {
 		& $runLive -Run $Run -RunRoot $RunRoot -FullRun:$FullRun -Scenario SOAK -Bots $Bots `
 			-SoakSeconds $DurationSeconds -Seed $Seed -StepTimeoutSeconds 1800 -WatcherMode enforce `
-			-PacketTap:$PacketTap -SkipImageBuild:$SkipImageBuild
+			-PacketTap:$PacketTap -SkipImageBuild:$SkipImageBuild -BotExecution $BotExecution
 		$success = $true
 	}
 	catch { $failure = $_ }
 	finally {
 		if (Test-Path -LiteralPath $runPath -PathType Container) {
-			[pscustomobject]@{ schemaVersion = 1; run = $Run; bots = $Bots; seed = $Seed; seconds = $DurationSeconds;
+			[pscustomobject]@{ schemaVersion = 1; run = $Run; bots = $Bots; seed = $Seed; seconds = $DurationSeconds; botExecution = $BotExecution;
 				startedUtc = $started.ToString('O'); completedUtc = [DateTimeOffset]::UtcNow.ToString('O'); success = $success;
 				failure = if ($null -eq $failure) { $null } else { $failure.ToString() } } |
 				ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $runPath 'soak-execution.json') -Encoding utf8NoBOM
