@@ -135,9 +135,12 @@ public static partial class LiveBotRunner
 	{
 		var nav = session.Navigation ?? throw new InvalidOperationException("Quest journey requires checked navigation.");
 		int map = session.Api.World.MapId ?? throw new InvalidDataException("Missing quest map.");
-		var path = nav.Graph.FindPath(map, session.CurrentPosition, destination);
-		if (path.Count == 0) path = nav.Geometry.FindLocalPath(map, session.CurrentPosition, destination);
-		if (path.Count == 0) path = nav.Geometry.FindJourneyPath(map, session.CurrentPosition, destination);
+		var path = await LiveNavigationWorkQueue.Shared.RunAsync(() =>
+		{
+			var route = nav.Graph.FindPath(map, session.CurrentPosition, destination);
+			if (route.Count == 0) route = nav.Geometry.FindLocalPath(map, session.CurrentPosition, destination);
+			return route.Count != 0 ? route : nav.Geometry.FindJourneyPath(map, session.CurrentPosition, destination);
+		}, token);
 		if (path.Count == 0) throw new InvalidDataException($"No checked quest route from {session.CurrentPosition} to {destination}.");
 		// Keep the single client reader draining during long walks, not just at the final NPC.
 		foreach (var segment in path.Chunk(24))

@@ -1785,6 +1785,50 @@ that preflight, not a completed capacity measurement. Evidence checkpoint checks
 pass: 4,314 solution tests / 26 skips, warning baseline 4,243, and every CLAUDE.md
 ancillary check. No gameplay or upstream automation change.
 
+## P10-02 bounded LIVE navigation work
+
+The next full-mixed 500-subject diagnostic, `p10-02-mixed500-b`, launches on clean
+source `7c7dfaaeb` with unchanged images/workload/seed and its own Docker stack.
+It retains its original binaries while the queue correction is developed.
+Locally installed diagnostic tools `dotnet-stack` / `dotnet-counters` version
+10.0.745401 observe only its identified `Aion.LiveBots.exe` PID 8284 (start ticks
+639255139128259403), not the capacity matrix's processes. Ten stack reports are
+taken at 15:12:46.999–15:13:15.066 UTC, two seconds apart plus collection time.
+Runtime counters and five-second process samples are bounded. Stack collection
+and concurrent validation add overhead; this is not an uninstrumented benchmark.
+
+Reports 2–8 contain respectively 30/28/28/27/33/30/28 synchronous
+`BotNavigationGeometry.FindGroundPath` stacks. Report 3 has 57 reported threads,
+28 ground-search stacks and 28 `DespawnableNode.IsActive` frames, all its active
+worker-pool dispatch stacks in route computation. The modern runtime counter tool
+exports thread-count/queue-length observations as **rates**, so those values are
+not reported as absolute thread/queue sizes. Completed-work-item rates fall to
+zero in multiple consecutive early samples. A separately started legacy
+EventCounters capture provides absolute thread/queue sizes only from later in
+the run. These are evidence of the unbounded navigation scheduling hazard; they
+do not prove the exact cause of mixed500-a's missing cast response.
+
+Java `game-server/.../geoEngine/scene/DespawnableNode.java:isActive` at `ce54b7931`
+uses the same synchronized instance-read shape. Do not change that production
+behavior to optimize the offline client. `LiveNavigationWorkQueue` instead limits
+only LIVE starter quest/gather CPU route work to four concurrent calls. Excess
+requests await a semaphore rather than starting further synchronous searches on
+socket/timer worker threads. All original graph/local/journey search budgets and
+collision checks still run; gathering's outbound-plus-return validation occupies
+one slot, and its final return is freshly checked. Failed/canceled queued search
+releases an acquired gathering lease. No packet/action concurrency, population,
+activity schedule, timing gate, geometry result or server image is changed.
+
+Tests exercise held slots, nonblocking queued admission, cancellation without
+executing a queued search, exception identity and slot recovery after cancellation
+inside a search. A mutation increasing available slots makes the admission test
+fail (`Assert.False`, actual true); restored bound passes both new tests and three
+existing return-route regressions. Logs: `run/p10-02-nav-work-queue-{red,green}.log`.
+Pre-commit checks pass: 4,316 solution tests / 26 explicit skips, warning baseline
+4,243, and all CLAUDE.md ancillary checks. Full logs are
+`run/p10-02-nav-work-queue-{warning,fulltests}.log`. No gameplay or upstream script
+change. Scaled replay with the corrected runner remains required.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

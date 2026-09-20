@@ -34,7 +34,8 @@ public static partial class LiveBotRunner
 				if (!search.Contains(spot)) continue;
 				selected = pool.TryAcquire(spot, candidate.ObjectId, Stopwatch.GetElapsedTime(epoch));
 				if (selected == null) continue;
-				route = ReturnableRoute(candidate.Position);
+				try { route = await ReturnableRouteAsync(candidate.Position); }
+				catch { selected.Dispose(); throw; }
 				if (route.Count != 0) break;
 				search.Reject(spot);
 				selected.Dispose(); selected = null;
@@ -44,7 +45,7 @@ public static partial class LiveBotRunner
 			{
 				// Explore beyond the initial known list, including after a nearby node becomes busy.
 				// This hint does not reserve anything. The next loop must observe and lease a real object.
-				var approach = ReturnableRoute(approachSpot.Position);
+				var approach = await ReturnableRouteAsync(approachSpot.Position);
 				if (approach.Count == 0) search.Reject(approachSpot);
 				else
 				{
@@ -96,13 +97,14 @@ public static partial class LiveBotRunner
 			statistics.Observe(actor.Bot, "Gather", probability, outcome == 6);
 		}
 		// Rendezvous before pair-owned trade/group/duel actions; this is ordinary checked movement.
-		var back = Route(home);
+		var back = await LiveNavigationWorkQueue.Shared.RunAsync(() => Route(home), token);
 		if (back.Count == 0) throw new InvalidDataException("No checked route back to the soak rendezvous.");
 		await WalkAsync(back);
 		await session.SynchronizeAsync(token);
 
-		IReadOnlyList<BotPosition> ReturnableRoute(BotPosition destination) =>
-			SoakGatheringRoute.FindReturnablePath(session.CurrentPosition, destination, home, FindPath);
+		Task<IReadOnlyList<BotPosition>> ReturnableRouteAsync(BotPosition destination) =>
+			LiveNavigationWorkQueue.Shared.RunAsync(() =>
+				SoakGatheringRoute.FindReturnablePath(session.CurrentPosition, destination, home, FindPath), token);
 		IReadOnlyList<BotPosition> Route(BotPosition destination) => FindPath(session.CurrentPosition, destination);
 		IReadOnlyList<BotPosition> FindPath(BotPosition start, BotPosition destination)
 		{
