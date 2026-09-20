@@ -116,12 +116,13 @@ public static partial class LiveBotRunner
 			{
 				await session.SendPacketAsync(session.Api.Cast(new SpellCastData(1282, checked((byte)bolt.Level), 0)
 				{ TargetObjectId = id, HitTime = SocialBasicsScenario.DuelHitTime(session.CurrentPosition, world.Objects[id].Position, RaceOf(cohort.FirstRace)) }), token);
-				var started = await session.WaitForPacketAsync(typeof(SM_CASTSPELL), token,
-					packet => packet.Get<int>("objectId") == session.CharacterId && packet.Get<ushort>("spellId") == 1282);
+				var started = await BotCastProtocol.WaitForStartAsync(session.WaitForAnyPacketAsync, session.CharacterId, 1282, token);
 				await Task.Delay(started.Get<ushort>("castDuration") + 1, token);
-				var result = await session.WaitForPacketAsync(typeof(SM_CASTSPELL_RESULT), token,
-					packet => packet.Get<int>("effectorId") == session.CharacterId && packet.Get<ushort>("skillId") == 1282);
-				await Task.Delay(Math.Max(2000, result.Get<ushort>("hitTime") + 1), token);
+				var result = await BotCastProtocol.WaitForCompletionAsync(session.WaitForAnyPacketAsync, session.CharacterId, 1282, token);
+				if (result.PacketType == typeof(SM_SKILL_CANCEL))
+					actor.Trace.WriteAction(actor.LastStep, "soak:quest-cast-interrupted", new Dictionary<string, object?>
+					{ ["skill"] = 1282, ["target"] = id, ["attempt"] = cast + 1 });
+				await Task.Delay(BotCastProtocol.RecoveryDelay(result), token);
 				await session.SynchronizeAsync(token);
 				if (world.IsDead) throw new InvalidDataException("Quest subject died.");
 				if (world.LootStatuses.TryGetValue(id, out byte status) && status == (byte)SM_LOOT_STATUS.Status.LOOT_ENABLE) return;

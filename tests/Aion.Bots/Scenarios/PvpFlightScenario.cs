@@ -14,6 +14,7 @@ public interface IPvpFlightDriver
 	Task StepAsync(string action, Func<CancellationToken, Task> operation, CancellationToken token);
 	Task SendAsync(BotClientPacket packet, CancellationToken token);
 	Task<DecodedBotServerPacket> WaitAsync(Type type, Func<DecodedBotServerPacket, bool> predicate, CancellationToken token);
+	Task<DecodedBotServerPacket> WaitAnyAsync(Func<DecodedBotServerPacket, bool> predicate, CancellationToken token);
 	Task SynchronizeAsync(CancellationToken token);
 	Task DelayAsync(TimeSpan duration, CancellationToken token);
 	Task FlyAsync(BotPosition destination, CancellationToken token);

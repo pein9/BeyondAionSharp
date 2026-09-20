@@ -899,9 +899,44 @@ Twenty-eight model/statistics tests pass, including ten independent
 150,000-attempt bar simulations, exhaustive 24-bit increment enumeration and a
 failure-to-problem-watcher regression. The full solution passes 4,253 tests with
 24 explicit skips; warnings remain 4,243 and Docker Fast passes 6/6.
-A LIVE integration diagnostic is pending. The failed mixed50-2h-c predates this
-gate and cannot retroactively acquire its runtime observations or be reported
-as passing the new statistics policy.
+All required ancillary checks pass. The failed mixed50-2h-c predates this gate
+and cannot retroactively acquire its runtime observations or be reported as
+passing the new statistics policy.
+
+LIVE `p10-02-stats10-a` passes ten subjects/600 scheduled seconds, 130 cohort
+actions, exact final inventory/offline checks and enforced watching. It records
+67 crafts (60 successful) and 22 gathers (17 successful), each with its pre-action
+probability. All four statistical tests correctly remain **insufficient**:
+individual prefixes are incomplete, and gathering has only 4.7504 expected
+failures. There are no impossible outcomes. This is integration evidence, not
+proof of the null or a full soak. Automatic telemetry analyzes exactly 600
+seconds and rejects two-hour eligibility. The final in-flight work order and
+cleanup take another 211.7233 seconds; they do not enlarge that telemetry window.
+The run exits 0 and removes its isolated Docker stack. Its compiled diagnostic
+predates the final failure-to-problem-watcher helper, which is unit-tested;
+this run does not claim LIVE rejection-path coverage.
+
+## P10-02 interrupted-cast handling
+
+Quest combat, S1 duels and S2/PvP now share caster-and-skill-filtered start and
+terminal waits. A normal `SM_SKILL_CANCEL` is terminal without a result, matching
+Java `PlayerController.cancelCurrentSkill`; the existing `BotApi` observation
+releases its casting gate. All packets still pass through one reader and the
+ordinary perception/reflex path. The next attempt retains the conservative
+two-second cadence and the existing 30/60-attempt combat bound. Successful casts
+retain their animation delay, and death/reward/loot assertions are unchanged.
+
+Each start/completion packet wait has its own ten-second deadline, distinct
+from the longer overall quest budget. Completion waits begin after the advertised
+cast-duration advance in either SIM or LIVE. Missing packets fail the scenario;
+they are not retried on a potentially pending socket read. Caller cancellation
+is not relabelled as a protocol timeout. Twelve focused tests include the
+mixed50-2h-c caster/skill cancellation, other-caster/skill filtering, preserved
+animation recovery and manually driven deadline/cancellation checks without
+real-time sleeps. The full solution passes 4,265 tests with 24 explicit skips;
+warnings remain 4,243. Docker Fast and the separately selected Full S1/S2 shards
+each pass all six selected tests, including log and teardown gates. All required
+ancillary checks pass. The corrected scaled LIVE replay remains pending.
 
 ## Scope decisions
 

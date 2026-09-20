@@ -1184,7 +1184,10 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		}
 	}
 
-	private async Task<DecodedBotServerPacket> WaitForGamePacketAsync(Type packetType, CancellationToken cancellationToken,
+	public Task<DecodedBotServerPacket> WaitForAnyPacketAsync(Func<DecodedBotServerPacket, bool> predicate,
+		CancellationToken token) => WaitForGamePacketAsync(null, token, predicate);
+
+	private async Task<DecodedBotServerPacket> WaitForGamePacketAsync(Type? packetType, CancellationToken cancellationToken,
 		Func<DecodedBotServerPacket, bool>? predicate = null)
 	{
 		while (true)
@@ -1193,7 +1196,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 			var response = api.Observe(packet);
 			if (response != null)
 				await SendGameAsync(response, cancellationToken);
-			if (packet.PacketType == packetType && (predicate == null || predicate(packet)))
+			if ((packetType == null || packet.PacketType == packetType) && (predicate == null || predicate(packet)))
 				return packet;
 		}
 	}

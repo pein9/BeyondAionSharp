@@ -298,6 +298,8 @@ public static partial class LiveBotRunner
 		public Task VerifyExtendedSocialAsync(int legionId, CancellationToken token) => Task.CompletedTask;
 		public Task StepAsync(string action, Func<CancellationToken, Task> operation, CancellationToken token) => actor.StepAsync(action, operation, token);
 		public Task SendAsync(BotClientPacket packet, CancellationToken token) => actor.Session.SendPacketAsync(packet, token);
+		public Task<DecodedBotServerPacket> WaitAnyAsync(Func<DecodedBotServerPacket, bool> predicate, CancellationToken token) =>
+			actor.Session.WaitForAnyPacketAsync(predicate, token);
 		public Task<DecodedBotServerPacket> WaitAsync(Type type, Func<DecodedBotServerPacket, bool> predicate, CancellationToken token) =>
 			actor.Session.WaitForPacketAsync(type, token, predicate);
 		public Task DelayAsync(TimeSpan duration, CancellationToken token) => Task.Delay(duration, token);

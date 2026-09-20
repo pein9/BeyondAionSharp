@@ -19,6 +19,7 @@ public interface ISocialBasicsDriver
 	Task StepAsync(string action, Func<CancellationToken, Task> operation, CancellationToken token);
 	Task SendAsync(BotClientPacket packet, CancellationToken token);
 	Task<DecodedBotServerPacket> WaitAsync(Type type, Func<DecodedBotServerPacket, bool> predicate, CancellationToken token);
+	Task<DecodedBotServerPacket> WaitAnyAsync(Func<DecodedBotServerPacket, bool> predicate, CancellationToken token);
 	Task SynchronizeAsync(CancellationToken token);
 	Task DelayAsync(TimeSpan duration, CancellationToken token);
 	Task MoveAsync(BotPosition position, CancellationToken token);
@@ -198,10 +199,10 @@ public static class SocialBasicsScenario
 			{
 				TargetObjectId = second.CharacterId, HitTime = DuelHitTime(first.CurrentPosition, second.CurrentPosition, casterRace),
 			}), ct);
-			var started = await first.WaitAsync(typeof(SM_CASTSPELL), packet => packet.Get<int>("objectId") == first.CharacterId && packet.Get<ushort>("spellId") == 1282, ct);
+			var started = await BotCastProtocol.WaitForStartAsync(first.WaitAnyAsync, first.CharacterId, 1282, ct);
 			await first.DelayAsync(TimeSpan.FromMilliseconds(started.Get<ushort>("castDuration") + 1), ct);
-			var result = await first.WaitAsync(typeof(SM_CASTSPELL_RESULT), packet => packet.Get<int>("effectorId") == first.CharacterId && packet.Get<ushort>("skillId") == 1282, ct);
-			await first.DelayAsync(TimeSpan.FromMilliseconds(Math.Max(2000, result.Get<ushort>("hitTime") + 1)), ct);
+			var result = await BotCastProtocol.WaitForCompletionAsync(first.WaitAnyAsync, first.CharacterId, 1282, ct);
+			await first.DelayAsync(BotCastProtocol.RecoveryDelay(result), ct);
 			await first.SynchronizeAsync(ct); await second.SynchronizeAsync(ct);
 			Require(!first.Api.World.IsDead && !second.Api.World.IsDead, "A duel participant died rather than losing the duel.");
 		}

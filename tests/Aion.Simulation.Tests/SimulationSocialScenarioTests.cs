@@ -305,6 +305,11 @@ public sealed partial class SimulationFastScenarioTests
 			}
 		}
 		public Task SendAsync(BotClientPacket packet, CancellationToken token) => session.SendPacketAsync(packet, token);
+		public async Task<DecodedBotServerPacket> WaitAnyAsync(Func<DecodedBotServerPacket, bool> predicate, CancellationToken token)
+		{
+			await session.DrainServerPacketsAsync(token);
+			return await session.WaitForPacketAsync(predicate, token);
+		}
 		public async Task<DecodedBotServerPacket> WaitAsync(Type type, Func<DecodedBotServerPacket, bool> predicate, CancellationToken token)
 		{
 			await session.DrainServerPacketsAsync(token);

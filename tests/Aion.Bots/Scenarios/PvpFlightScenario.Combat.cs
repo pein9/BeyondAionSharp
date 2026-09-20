@@ -30,10 +30,10 @@ public static partial class PvpFlightScenario
 				TargetObjectId = victim.CharacterId,
 				HitTime = SocialBasicsScenario.DuelHitTime(winner.CurrentPosition, victim.CurrentPosition, casterRace),
 			}), token);
-			var started = await winner.WaitAsync(typeof(SM_CASTSPELL), packet => packet.Get<int>("objectId") == winner.CharacterId && packet.Get<ushort>("spellId") == 1282, token);
+			var started = await BotCastProtocol.WaitForStartAsync(winner.WaitAnyAsync, winner.CharacterId, 1282, token);
 			await winner.DelayAsync(TimeSpan.FromMilliseconds(started.Get<ushort>("castDuration") + 1), token);
-			var result = await winner.WaitAsync(typeof(SM_CASTSPELL_RESULT), packet => packet.Get<int>("effectorId") == winner.CharacterId && packet.Get<ushort>("skillId") == 1282, token);
-			await winner.DelayAsync(TimeSpan.FromMilliseconds(Math.Max(2000, result.Get<ushort>("hitTime") + 1)), token);
+			var result = await BotCastProtocol.WaitForCompletionAsync(winner.WaitAnyAsync, winner.CharacterId, 1282, token);
+			await winner.DelayAsync(BotCastProtocol.RecoveryDelay(result), token);
 			await SyncAsync();
 			Require(!winner.Api.World.IsDead, "PvP attacker died before defeating the expected victim.");
 		}
