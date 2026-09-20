@@ -34,8 +34,8 @@ class SoakAcceptanceTests(unittest.TestCase):
         (self.root / "bots").mkdir()
         for bot in ["gm"] + [f"b{i:02}" for i in range(1, 51)]:
             (self.root / f"bots/{bot}.trace.jsonl").write_text("")
-        self.workload = dict(Policy="p10-02-workload-v1", Status="passed", Run="test", GitSha="a" * 40, Failures=[],
-                CapacityConfiguration=True, OverallSoakAccepted=False, SourceSha256={}, Subjects=[dict(Bot=f"b{i:02}") for i in range(1, 51)],
+        self.workload = dict(Policy="p10-02-workload-v2", Status="passed", Run="test", GitSha="a" * 40, Failures=[],
+                CapacityConfiguration=True, OverallSoakAccepted=False, SourceSha256={}, Subjects=[dict(Bot=f"b{i:02}", ActivityProgressWindows=[5] * 8) for i in range(1, 51)],
                 RecomputedEconomy=dict(Policy="p10-02-economy-v1", Status="passed", ImpossibleOutcomes=0, OverallSoakAccepted=False,
                                       Tests=[dict(Status="passed") for _ in range(4)]))
         self.rehash()
@@ -88,6 +88,10 @@ class SoakAcceptanceTests(unittest.TestCase):
             ("soak-workload.json", lambda v: v.update(CapacityConfiguration=False)),
             ("soak-workload.json", lambda v: v["SourceSha256"].pop("bots/b01.trace.jsonl")),
             ("soak-workload.json", lambda v: v["Subjects"].pop()),
+            ("soak-workload.json", lambda v: v.update(Policy="p10-02-workload-v1")),
+            ("soak-workload.json", lambda v: v["Subjects"][0].update(ActivityProgressWindows=[40] + [0] * 7)),
+            ("soak-workload.json", lambda v: v["Subjects"][0].update(ActivityProgressWindows=[True] * 8)),
+            ("soak-workload.json", lambda v: v["Subjects"][0].update(ActivityProgressWindows=[5] * 7)),
             ("soak-workload.json", lambda v: v["RecomputedEconomy"].update(Status="insufficient")),
             ("soak-workload.json", lambda v: v["RecomputedEconomy"].update(ImpossibleOutcomes=1)),
             ("soak-workload.json", lambda v: v["RecomputedEconomy"]["Tests"][0].update(Status="failed")),

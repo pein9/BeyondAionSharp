@@ -111,6 +111,38 @@ public sealed class SoakWorkloadEvidenceTests
 		Assert.Throws<InvalidDataException>(() => Read(duplicate, cohort, new([])));
 	}
 
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public void TwoHourWindowRequiresActivityBeyondAnInitialBurst(bool idleAfterBurst)
+	{
+		var cohort = Cohort(SoakActivity.Relog, SoakActivity.CrashDisconnect);
+		var lines = Trace("b01", cohort);
+		for (int i = 2; i < lines.Count; i++)
+		{
+			var row = JsonNode.Parse(lines[i])!;
+			row["ts"] = i >= lines.Count - 4 ? Start.AddSeconds(7200.05) :
+				Start.AddSeconds((i - 2) / 2 * (idleAfterBurst ? 1 : 360));
+			lines[i] = row.ToJsonString();
+		}
+		if (idleAfterBurst)
+			for (int i = 1; i < 8; i++)
+			{
+				lines.Insert(lines.Count - 4, Row("b01", "SM_MOVE", new { }, Start.AddSeconds(i * 900), "<"));
+				lines.Insert(lines.Count - 4, Row("b01", "soak-think", new { }, Start.AddSeconds(i * 900)));
+			}
+		SoakSubjectEvidence Analyze() => SoakTraceEvidence.Read(lines, "test", "b01", cohort, 73, Start,
+			Start.AddSeconds(7200), Start.AddSeconds(7201), new([]), new Dictionary<int, SoakCookingOrder>());
+		if (idleAfterBurst) Assert.Throws<InvalidDataException>(() => Analyze());
+		else
+		{
+			var result = Analyze();
+			Assert.Equal(20, result.Decisions);
+			Assert.Equal(8, result.ActivityProgressWindows.Count);
+			Assert.All(result.ActivityProgressWindows, count => Assert.True(count > 0));
+		}
+	}
+
 	[Fact]
 	public void EconomyProbabilitiesAreRecomputedNotTrustedFromTrace()
 	{

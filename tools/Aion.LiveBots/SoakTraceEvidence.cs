@@ -4,7 +4,7 @@ using Aion.Bots.Scenarios;
 namespace Aion.LiveBots;
 
 public sealed record SoakSubjectEvidence(string Bot, int Cohort, int Map, long Decisions,
-	Dictionary<string, long> Counts, bool QuestPersisted, DateTimeOffset CompletedUtc);
+	Dictionary<string, long> Counts, bool QuestPersisted, DateTimeOffset CompletedUtc, IReadOnlyList<long> ActivityProgressWindows);
 
 /// <summary>Bounded-memory replay of the retained client evidence, not a second gameplay driver.</summary>
 internal static class SoakTraceEvidence
@@ -13,6 +13,8 @@ internal static class SoakTraceEvidence
 		int seed, DateTimeOffset start, DateTimeOffset end, DateTimeOffset completed, SoakEconomyStatistics economy,
 		IReadOnlyDictionary<int, SoakCookingOrder> recipes)
 	{
+		// Coarse sustained-work evidence, not a throughput SLA. Ambient packets/pings cannot fill a window.
+		var progress = new long[checked((int)Math.Ceiling((end - start).TotalSeconds / 900))];
 		var policy = new SoakLifePolicy(seed, cohort);
 		var counts = cohort.Actions.ToDictionary(action => action.Activity.ToString(), _ => 0L);
 		int map = 0, finalStage = 0, questOrdinal = 0, gatherOutcomes = 0, craftOutcomes = 0;
@@ -57,7 +59,7 @@ internal static class SoakTraceEvidence
 					Require(fields.GetProperty("cohort").GetInt32() == cohort.Number && fields.GetProperty("sequence").GetInt64() == ++decisions &&
 						active == expected.Action.Activity.ToString() && fields.GetProperty("source").GetString() == expected.Action.SourceScenario,
 						"Decision differs from the seeded cohort schedule.");
-					counts[active!]++; break;
+					counts[active!]++; RecordProgress(at); break;
 				case "soak:select-channel":
 					Require(cohort.MapId is 210010000 or 220010000 && fields.GetProperty("channel").GetInt32() == SoakLifePolicy.StarterChannel(cohort) &&
 						fields.GetProperty("instance").GetInt32() == SoakLifePolicy.StarterChannel(cohort) + 1, "Wrong starter channel selection.");
@@ -66,7 +68,7 @@ internal static class SoakTraceEvidence
 					Require(activityStarted && active == "Quest" && questOrdinal < quests.Count && fields.GetProperty("quest").GetInt32() == quests[questOrdinal].Id &&
 						fields.GetProperty("xp").GetInt32() == quests[questOrdinal].Experience && fields.GetProperty("gold").GetInt32() == quests[questOrdinal].Gold,
 						"Missing, reordered, repeated or contradictory starter quest reward.");
-					questOrdinal++; break;
+					questOrdinal++; RecordProgress(at); break;
 				case "soak:quest-journey-persisted":
 					Require(active == "Quest" && !questPersisted && questOrdinal == quests.Count && quests.Count > 0, "Invalid finite quest retirement.");
 					int prologue = cohort.FirstRace == ScenarioRace.Elyos ? 1000 : 2000;
@@ -92,7 +94,7 @@ internal static class SoakTraceEvidence
 					double probability = gather ? SoakProgressProbability.Gather(lead) : SoakProgressProbability.Craft(lead);
 					Require(fields.GetProperty("probabilityModel").GetString() == SoakProgressProbability.Version &&
 						Math.Abs(fields.GetProperty("expectedProbability").GetDouble() - probability) < 1e-12, "Recorded probability differs from the source-derived model.");
-					economy.Observe(bot, active!, probability, fields.GetProperty("success").GetBoolean()); break;
+					economy.Observe(bot, active!, probability, fields.GetProperty("success").GetBoolean()); RecordProgress(at); break;
 				case "verify-final-inventory":
 					Require(activityStarted && finalStage == 0 && at >= end.AddMilliseconds(-1), "Early or repeated final inventory check.");
 					finalStage = 1; break;
@@ -108,7 +110,14 @@ internal static class SoakTraceEvidence
 		Require(finished != null && counts.Values.All(count => count > 0), "Incomplete subject or missing selected workload.");
 		Require(quests.Count == 0 || questPersisted && counts["Quest"] == 1, "Finite starter journey was not persisted exactly once.");
 		Require(gatherOutcomes == counts.GetValueOrDefault("Gather") && craftOutcomes >= counts.GetValueOrDefault("Craft"), "Missing economy outcomes.");
-		return new(bot, cohort.Number, cohort.MapId, decisions, counts, questPersisted, finished!.Value);
+		Require((end - start).TotalSeconds < 7200 || progress.All(count => count > 0), "Subject has a fifteen-minute window without selected activity progress.");
+		return new(bot, cohort.Number, cohort.MapId, decisions, counts, questPersisted, finished!.Value, progress);
+
+		void RecordProgress(DateTimeOffset at)
+		{
+			if (at < start || at >= end) return; // In-flight cleanup cannot fill an earlier workload window.
+			progress[(int)((at - start).TotalSeconds / 900)]++;
+		}
 	}
 
 	internal static void Require(bool condition, string message)

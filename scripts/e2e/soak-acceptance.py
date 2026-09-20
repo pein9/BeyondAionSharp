@@ -13,7 +13,7 @@ import sys
 spec = importlib.util.spec_from_file_location("soak_telemetry", Path(__file__).with_name("soak-telemetry.py"))
 telemetry = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(telemetry)
-POLICY = "p10-02-acceptance-v1"
+POLICY = "p10-02-acceptance-v2"
 
 
 def digest(path):
@@ -49,7 +49,7 @@ def analyze(directory, allowlist_path, today=None):
                 execution["failure"] is None, "The owning LIVE invocation did not complete successfully")
         gates["runner"] = "passed"
         workload = read("soak-workload.json")
-        require(workload["Policy"] == "p10-02-workload-v1" and workload["Run"] == run and workload["GitSha"] == sha and
+        require(workload["Policy"] == "p10-02-workload-v2" and workload["Run"] == run and workload["GitSha"] == sha and
                 workload["Status"] == "passed" and workload["Failures"] == [] and workload["CapacityConfiguration"] is True and
                 workload["OverallSoakAccepted"] is False, "Workload evidence does not establish the complete capacity configuration")
         require(metadata["bots"] in (50, 200, 500) and metadata["soakSeconds"] == 7200, "Unsupported population or duration")
@@ -63,6 +63,9 @@ def analyze(directory, allowlist_path, today=None):
         require(len(workload["Subjects"]) == metadata["bots"] and
                 {subject["Bot"] for subject in workload["Subjects"]} == {f"b{i:02}" for i in range(1, metadata["bots"] + 1)},
                 "Workload subject inventory is incomplete")
+        require(all(len(subject["ActivityProgressWindows"]) == 8 and
+                    all(type(count) is int and count > 0 for count in subject["ActivityProgressWindows"])
+                    for subject in workload["Subjects"]), "Subject lacks sustained activity evidence in every fifteen-minute window")
         gates["workload"] = "passed"
         economy = workload["RecomputedEconomy"]
         require(economy["Policy"] == "p10-02-economy-v1" and economy["Status"] == "passed" and economy["ImpossibleOutcomes"] == 0 and

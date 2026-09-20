@@ -997,6 +997,27 @@ All mandatory ancillary checks, including the new acceptance and runner
 contracts now listed in CLAUDE.md, pass. No production behavior or allowance
 has changed. Full 50/200/500-subject accepted runs are still outstanding.
 
+## P10-02 sustained-work evidence correction
+
+The post-commit audit of workload v1 exposed a gap (#84): total repeated-action
+counts plus a final two-hour timestamp still accepted a synthetic twenty-second
+burst followed by almost two hours of idle time. A red regression reproduces
+that acceptance before the correction; no real capacity run was accepted by v1.
+
+Workload/aggregate policy v2 requires positive selected-activity progress in
+every one of the eight fifteen-minute windows for every subject. Validated
+seeded decisions, starter quest completions and gather/craft outcomes count;
+ambient packets, pings, think markers and cleanup outside the scheduled window
+do not. The report exposes those eight counters per subject. This is a coarse
+sustained-work gate, not a throughput SLA or proof that every intervening second
+is busy. Older v1 reports cannot satisfy v2 acceptance. The regression's idle
+case, including ambient traffic and think markers, now fails; its spread-out
+control passes. All 21 workload evidence tests pass, as do the six aggregation
+tests (now 21 individual mutation controls). Full solution validation passes
+4,286 tests with 24 explicit skips; warnings remain 4,243, Docker Fast passes
+6/6 and every required ancillary check passes. The real stats10-a diagnostic
+still replays successfully under v2 without claiming capacity acceptance.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

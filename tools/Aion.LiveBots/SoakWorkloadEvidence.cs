@@ -12,7 +12,7 @@ public sealed record SoakWorkloadReport(string Policy, string Status, string? Ru
 /// <summary>Checks retained workload evidence; telemetry, error watching and runner exit remain separate gates.</summary>
 public static class SoakWorkloadEvidence
 {
-	public const string Policy = "p10-02-workload-v1";
+	public const string Policy = "p10-02-workload-v2";
 
 	public static SoakWorkloadReport Analyze(string directory, ScenarioManifest manifest)
 	{
