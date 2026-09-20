@@ -1916,13 +1916,18 @@ real geodata on in production immediately, because geo is enabled by default; th
   selects eligible shipped apprentice orders as skill rises, with ordinary abandonment/reacceptance after
   failed crafts exhaust issued materials. Coordinated starter gathering is implemented diagnostically, using
   ordinary level-9 human gatherers, per-spawn/explicitly-selected-channel reservations, checked ground paths and real respawns.
-  Repeatable duels are under validation, reusing S1's combat flow with ordinary HP/MP rest recovery,
-  race-specific spell timing and alternating winner roles. Quest/PvP drivers, remaining resource coordination, telemetry
+  Repeatable duels pass a ten-subject/twenty-minute diagnostic (257 cohort actions, 35 duels), reusing
+  S1's combat flow with ordinary HP/MP rest recovery, race-specific spell timing and alternating winner roles.
+  The finite quest driver is under validation; the PvP driver, remaining resource coordination, telemetry
   and two-hour evidence remain required. This is still not acceptance of the full mixed workload.
   The quest loop cannot reset completed starter quests: shipped Q1/Q2 quests permit one completion.
   D16 settles the workload: complete Q1/Q2 once per bot, then continue the other activities. The scheduler
   can retire a completed cohort journey without replaying it or discarding queued non-quest activities;
   the runtime must verify both subjects' completions before retiring it. No quests are added or reset.
+  The diagnostic quest implementation uses checked ground travel, exclusive observed target reservations,
+  ordinary Flame Bolt combat/loot/dialogs, exact quest reward checks and completion persistence across relog.
+  Long route gaps use a bounded collision-checked ground search; they do not fall back to straight-line movement.
+  LIVE quest execution has not yet passed; this remains implementation under validation, not acceptance.
   PvP reward assertions now have an independent ordinary-rate solo-soldier oracle, including the native
   fifth-opponent-kill reduction to 1 AP, rank changes and victim AP loss. Repeated PvP resurrection/return
   still needs implementation and LIVE proof; the oracle alone does not make the workload available.

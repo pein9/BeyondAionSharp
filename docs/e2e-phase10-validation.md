@@ -294,7 +294,7 @@ only the existing startup content allowance, no bot problems, and isolated-stack
 cleanup. No gameplay change, new allowance or Java runtime was involved. The
 two-hour workload, higher populations and resource fairness remain unaccepted.
 
-## P10-02 repeatable duels (under validation)
+## P10-02 repeatable duels (short LIVE diagnostic passed)
 
 The existing S1 duel exchange/combat assertions are shared with the soak driver,
 not replaced by a simulated outcome. Same-race pairs alternate caster/winner roles
@@ -315,9 +315,14 @@ checking actual server life stats and cleanup. It passed Docker run
 Docker Fast `p10-02-duel-fast-a` also passed. Final checks: 4,155 solution tests
 passed / 22 explicit skips; 4,243 warnings unchanged; all CLAUDE ratchets, fidelity,
 quest-compiler/report tests, retention and Full-suite contracts passed.
-`p10-02-duel10-a` is an in-progress twenty-minute diagnostic mixing duel, gathering,
-vendor, group, trade, relog and crash disconnect. LIVE repeated-duel validation is
-pending; this is not yet full P10-02 acceptance.
+`p10-02-duel10-a` passed its ten-subject/twenty-minute diagnostic mixing duel,
+gathering, vendor, group, trade, relog and crash disconnect: 257 cohort actions,
+35 duels (5/8/11/11 in the eligible cohorts), both races and reversed winner roles.
+Every selected activity ran in every eligible cohort. Final inventory/offline
+checks and enforced watching passed: no bot problems, only the existing startup
+content fingerprint (one suppressed occurrence), no new allowance. The isolated
+stack was cleaned up; the maintainer's `aion-mysql` stayed running. This is not
+full P10-02 acceptance or a two-hour capacity result.
 
 ## P10-02 repeated PvP reward contract (runtime still missing)
 
@@ -350,7 +355,7 @@ Docker SIM `p10-02-pvp-oracle-sim` passed (Full shard-36/100, selecting S2,
 seed 73), exercising the first-kill oracle through the real server. The
 fifth-kill boundary is currently a focused contract test, not repeated LIVE proof.
 
-## P10-02 finite quest scheduling (runtime still missing)
+## P10-02 finite quest workload (LIVE validation pending)
 
 D16 settles the single-completion starter workload: each eligible bot completes
 its racial Q1/Q2 journey once, then continues the other activities. The policy's
@@ -359,11 +364,40 @@ future cycles, preserving queued non-quest actions, continuous sequence numbers,
 seeded reproducibility and ordinary think times. Duplicate completion, a cohort
 without quests, and retirement with no remaining activities fail visibly.
 
-This is scheduling infrastructure, not a claim that the mixed-workload quest
-driver exists. That driver must verify both cohort subjects' real quest completion
-before calling the operation. Nothing changes server quest state or adds content.
+The diagnostic runtime now has a finite Q1/Q2 driver for the prepared mage subjects.
+It checks ordinary dialog acceptance, exclusive target ownership, Flame Bolt
+cast/result timing, kill credit, item acquisition/consumption, exact quest XP/kinah
+and chosen/item rewards, one completion, database rows and the completed-list
+packet after normal relog. Only then may the cohort scheduler retire Quest. No GM
+commands are used after setup. Shipped rewards, objectives and coordinates are
+pinned independently against the XML; source handlers are Java `ReportTo`,
+`MonsterHunt`, `ItemCollecting`, `_1100KaliosCall`, `_2100OrderoftheCaptain`,
+`QuestItemNpcAI`, `QuestService` and `RespawnService` at `ce54b7931`.
 
-Checkpoint validation: 26 focused policy/reward cases passed. The full solution
+Consumed object ids cannot be claimed again by another quest subject. This table
+is limited to ten objectives per configured subject, not an unbounded record of
+repeating activity. Reservation tests exercise concurrent claims, channel isolation,
+failure release, duplicate completion and the finite capacity limit. Actual new
+respawns must be observed over the protocol; the driver never creates replacements.
+
+The existing sparse spawn graph/local fallback could not bridge the vendor-to-Elpas
+walk. A separate longer ground search retains two-metre height/collision checks,
+with a 1,000-metre distance and 65,536-visited-cell limit; the original local search
+limits stay unchanged. The direct Ulgorn-to-hub search still has no route within
+its bounds, so the return visits Vanar and Vandar again. Walks drain incoming packets
+in short segments. This remains static starter geometry, not dynamic-door navigation
+or autonomous path planning. LIVE quest execution has not yet passed.
+
+Driver checkpoint checks: 11 focused cases passed with the real-geometry gate
+enabled, including every planned outward/return leg (about 102 seconds for the
+two complete routes). The full solution passed 4,177 tests / 23 explicit skips;
+warnings remained at 4,243. Docker Fast `p10-02-quest-driver-fast` passed 6/6, as
+did all mandatory ratchets, fidelity, compiler/report, retention and Full-suite
+contracts. `p10-02-quest10-a` is running a ten-subject/twenty-minute diagnostic
+with Quest, Vendor, Group, Trade, Relog and CrashDisconnect. It is not yet a pass
+and does not satisfy the two-hour population matrix.
+
+Previous scheduling/reward checkpoint validation: 26 focused policy/reward cases passed. The full solution
 passed 4,172 tests with 22 explicit skips; compiler warnings stayed at 4,243.
 Docker Fast `p10-02-finite-quest-fast` passed 6/6. Logger/clock/custom-quest
 ratchets, fidelity, ten quest-compiler tests, 23 report tests, retention and

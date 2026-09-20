@@ -18,8 +18,17 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
     /// <summary>Bounded local ground search when spawn/walker waypoints leave a gap. This is not a navmesh:
     /// it cannot invent jumps, open doors or cross maps, and reports no route when its budget is exhausted.</summary>
     public IReadOnlyList<BotPosition> FindLocalPath(int mapId, BotPosition start, BotPosition destination)
+        => FindGroundPath(mapId, start, destination, 200, 8192, 20);
+
+    /// <summary>Bounded longer starter-journey search. Uses the same two-metre ground/collision checks,
+    /// not unchecked interpolation across gaps in the sparse spawn graph.</summary>
+    public IReadOnlyList<BotPosition> FindJourneyPath(int mapId, BotPosition start, BotPosition destination)
+        => FindGroundPath(mapId, start, destination, 1000, 65536, 60);
+
+    private IReadOnlyList<BotPosition> FindGroundPath(int mapId, BotPosition start, BotPosition destination,
+        float maximumDistance, int maximumVisited, float padding)
     {
-        if (!Finite(start) || !Finite(destination) || Distance(start, destination) > 200) return [];
+        if (!Finite(start) || !Finite(destination) || Distance(start, destination) > maximumDistance) return [];
         var initial = TraceEdge(mapId, start, start);
         if (initial == null) return [];
         var first = new Cell(0, 0, (int)MathF.Round(initial[0].Z * 2));
@@ -30,7 +39,7 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
         int order = 0;
         open.Enqueue(first, (Distance(start, destination), order++));
         var closed = new HashSet<Cell>();
-        while (open.TryDequeue(out var cell, out _) && closed.Count < 8192)
+        while (open.TryDequeue(out var cell, out _) && closed.Count < maximumVisited)
         {
             if (!closed.Add(cell)) continue;
             BotPosition current = positions[cell];
@@ -55,8 +64,8 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
                 if (dx == 0 && dy == 0) continue;
                 int x = cell.X + dx, y = cell.Y + dy;
                 var candidate = new BotPosition(start.X + x * SampleSpacing, start.Y + y * SampleSpacing, current.Z, destination.Heading);
-                if (candidate.X < MathF.Min(start.X, destination.X) - 20 || candidate.X > MathF.Max(start.X, destination.X) + 20
-                    || candidate.Y < MathF.Min(start.Y, destination.Y) - 20 || candidate.Y > MathF.Max(start.Y, destination.Y) + 20) continue;
+                if (candidate.X < MathF.Min(start.X, destination.X) - padding || candidate.X > MathF.Max(start.X, destination.X) + padding
+                    || candidate.Y < MathF.Min(start.Y, destination.Y) - padding || candidate.Y > MathF.Max(start.Y, destination.Y) + padding) continue;
                 var edge = TraceEdge(mapId, current, candidate);
                 if (edge == null) continue;
                 candidate = edge[^1];

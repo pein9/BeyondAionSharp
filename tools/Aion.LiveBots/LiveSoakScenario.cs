@@ -13,7 +13,7 @@ namespace Aion.LiveBots;
 public static partial class LiveBotRunner
 {
 	private static readonly SoakActivity[] ImplementedSoakActivities =
-		[SoakActivity.Group, SoakActivity.Trade, SoakActivity.Relog, SoakActivity.CrashDisconnect, SoakActivity.Vendor, SoakActivity.Craft, SoakActivity.Gather, SoakActivity.Duel];
+			[SoakActivity.Group, SoakActivity.Trade, SoakActivity.Relog, SoakActivity.CrashDisconnect, SoakActivity.Vendor, SoakActivity.Craft, SoakActivity.Gather, SoakActivity.Duel, SoakActivity.Quest];
 
 	private static async Task<int> RunSoakAsync(LiveBotOptions options, LiveBotProblemWriter problems, CancellationToken token)
 	{
@@ -27,9 +27,10 @@ public static partial class LiveBotRunner
 		var gatheringSpots = options.SoakActivities.Contains(SoakActivity.Gather) ? SoakGatheringPool.StarterSpots() : [];
 		var gatheringPool = new SoakGatheringPool(gatheringSpots.SelectMany(spot => Enumerable.Range(1, 5).Select(instance => spot with { InstanceId = instance })));
 		long gatheringEpoch = Stopwatch.GetTimestamp();
+		var questResources = new SoakQuestResources(options.BotCount * 10);
 		BotNavigationAssets? navigationAssets = null;
 		var routes = new ConcurrentDictionary<(Race Race, int Instance), Lazy<(BotNavigationGraph Graph, BotNavigationGeometry Geometry)>>();
-		if (gatheringSpots.Count != 0)
+		if (gatheringSpots.Count != 0 || options.SoakActivities.Contains(SoakActivity.Quest))
 		{
 			string root = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../.."));
 			navigationAssets = await BotNavigationAssets.LoadAsync(root, Path.Combine(options.OutputDirectory, "navigation-cache"), token);
@@ -57,7 +58,7 @@ public static partial class LiveBotRunner
 					await MoveSubjectWithDirectorAsync(director, actor, gm, cohort.MapId, point.X + offset++, point.Y, point.Z, "soak-initial-position", stop.Token);
 					await actor.StepAsync("soak-initial-supplies", async ct =>
 					{
-						if (cohort.Actions.Any(action => action.Activity == SoakActivity.Gather))
+						if (cohort.Actions.Any(action => action.Activity is SoakActivity.Gather or SoakActivity.Quest))
 							await gm.ExecuteAsync(new GmCommand("set", ["level", "9"], "level to 9"), new GmSubject(actor.Session.CharacterId, actor.Session.CharacterName), ct);
 						else
 							await gm.ExecuteVerifiedAsync(new GmCommand("set", ["class", "sorcerer"], "replyless class change"),
@@ -67,7 +68,7 @@ public static partial class LiveBotRunner
 						await actor.Session.WaitForInventoryItemAsync(169300002, ct);
 						await actor.Session.SynchronizeAsync(ct);
 					}, stop.Token);
-					if (cohort.Actions.Any(action => action.Activity == SoakActivity.Gather))
+					if (cohort.Actions.Any(action => action.Activity is SoakActivity.Gather or SoakActivity.Quest))
 						await actor.StepAsync("soak-select-gather-channel", ct => SetGatheringRouteAsync(actor, cohort, ct), stop.Token);
 				}
 				loops.Add(RunPairAsync(cohort, first, second));
@@ -104,7 +105,7 @@ public static partial class LiveBotRunner
 
 		async Task SetGatheringRouteAsync(L0Actor actor, SoakCohort cohort, CancellationToken ct)
 		{
-			if (!cohort.Actions.Any(action => action.Activity == SoakActivity.Gather)) return;
+			if (!cohort.Actions.Any(action => action.Activity is SoakActivity.Gather or SoakActivity.Quest)) return;
 			int requested = SoakLifePolicy.StarterChannel(cohort);
 			await actor.Session.ChangeChannelAsync(requested, ct);
 			await actor.Session.WaitForPacketAsync(typeof(SM_SYSTEM_MESSAGE), ct, packet =>
@@ -149,6 +150,11 @@ public static partial class LiveBotRunner
 								await SoakIndependentPairAsync(first, second, (actor, ct) => SoakCookingAsync(actor, master, ct), inner); break;
 							case SoakActivity.Gather:
 								await SoakIndependentPairAsync(first, second, (actor, ct) => SoakGatherAsync(actor, cohort, gatheringPool, gatheringSpots, gatheringEpoch, ct), inner); break;
+							case SoakActivity.Quest:
+								await SocialBasicsScenario.RecoverForDuelAsync(new LiveSocialDriver(first), new LiveSocialDriver(second), inner);
+								await SoakIndependentPairAsync(first, second, (actor, ct) => SoakQuestsAsync(actor, cohort, questResources, ct), inner);
+								await Task.WhenAll(SetGatheringRouteAsync(first, cohort, inner), SetGatheringRouteAsync(second, cohort, inner));
+								policy.CompleteQuestJourney(); break;
 							case SoakActivity.Duel:
 								bool firstWins = counts[SoakActivity.Duel.ToString()] % 2 == 0;
 								await SoakDuelAsync(firstWins ? first : second, firstWins ? second : first, RaceOf(cohort.FirstRace), inner); break;

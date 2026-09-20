@@ -10,6 +10,25 @@ namespace Aion.GameServer.Tests;
 public sealed class BotNavigationGeometryTests
 {
     [Fact]
+    public void JourneySearchCrossesLongSparseGapsButStillChecksEverySegmentAndBoundsDistance()
+    {
+        var map = Ground(size: 300); AddWall(map);
+        var geometry = new BotNavigationGeometry(_ => map, 1, IgnoreProperties.ANY_RACE);
+        BotPosition start = new(10, 10, 10, 0), end = new(510, 10, 10, 0);
+        Assert.Empty(geometry.FindLocalPath(1, start, end));
+        var path = geometry.FindJourneyPath(1, start, end);
+        Assert.NotEmpty(path); Assert.Equal(end, path[^1]);
+        Assert.Contains(path, point => point.Y > 25);
+        foreach (var point in path)
+        {
+            Assert.NotNull(geometry.TraceEdge(1, start, point));
+            start = point;
+        }
+        Assert.Empty(geometry.FindJourneyPath(1, end, end with { X = 1511 }));
+        Assert.Empty(geometry.FindJourneyPath(1, end, end with { X = float.NaN }));
+    }
+
+    [Fact]
     public void BoundedLocalSearchBridgesSparseWaypointsWithoutCrossingTheWall()
     {
         var map = Ground(); AddWall(map);
@@ -99,11 +118,11 @@ public sealed class BotNavigationGeometryTests
     private static BotNavigationGraph Graph(BotNavigationGeometry geometry, params BotPosition[] points) =>
         new(points.Select((point, id) => new BotWaypoint(id, 1, point, BotWaypointSource.Spawn)), geometry);
 
-    private static GeoMap Ground(Func<int, int, short>? sample = null)
+    private static GeoMap Ground(Func<int, int, short>? sample = null, int size = 50)
     {
-        var height = new short[50 * 50];
-        for (int x = 0; x < 50; x++) for (int y = 0; y < 50; y++) height[x * 50 + y] = sample?.Invoke(x, y) ?? 320;
-        var terrain = new Terrain(); terrain.SetHeightmap(height, 50, 50);
+        var height = new short[size * size];
+        for (int x = 0; x < size; x++) for (int y = 0; y < size; y++) height[x * size + y] = sample?.Invoke(x, y) ?? 320;
+        var terrain = new Terrain(); terrain.SetHeightmap(height, size, size);
         var map = new GeoMap(1); map.SetTerrain(terrain); return map;
     }
 
