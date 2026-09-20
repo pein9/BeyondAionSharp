@@ -2168,11 +2168,95 @@ Pre-commit checks pass: 4,333 solution tests / 27 explicit skips, warning baseli
 `run/p10-02-quest200-terminal-{warning,fulltests}.log`. This checkpoint changes
 evidence/triage documentation only. P10-02 remains unchecked.
 
+## P10-02 repeated Docker game-socket timeout
+
+`p10-02-mixed500-docker-d`, clean source `e537f6626`, includes both the expanded
+quest collection search and the assertion-HTTP idle bound. All 500 subjects prepare;
+the ten-activity workload starts at 2026-09-20 17:27:46.821841 UTC and fails at
+17:29:16.6802641 after 89.8622702 monotonic seconds. Clock drift is -0.0038471
+seconds. This is a failed thirty-minute diagnostic, not capacity acceptance.
+
+The first timeout rows at 17:29:12.274 belong to b366 and b36: game-socket
+`TcpClient.CompleteConnectAsync` exceeds the unchanged ten-second deadline.
+The surrounding pair traces b365/b366 and b35/b36 all end after quit responses
+at 17:28:33.863–17:28:36.001, without a new SM_KEY. Nested pair-step reporting
+does not identify which individual socket failed; do not equate the row's bot
+label with the originating connection. Finding #107 is reproduced, not fixed
+by the independent HTTP mitigation. No HTTP reset occurs in this diagnostic.
+
+Bounded, read-only probes execute inside the run's own bot and GS containers,
+not extra Compose-labeled containers. Five-second namespace samples contain
+zero ListenOverflows, ListenDrops, TCPSynRetrans, TCPTimeouts, TCPAbortOnMemory
+and TCPBacklogDrop, with no sampled SYN_SENT entry. These observations narrow
+the investigation but do not prove a TCP handshake or exclude transient events
+between samples. Near failure the bot has 63–65 worker threads, fluctuating
+queue length (2–63 in the inspected 17:28:55–17:29:12 interval), CPU about
+12–19 percent and GC time 3–8 percent. Neither host exhaustion nor a global
+worker-pool stall is established. No pool, timeout, workload or host tuning is
+applied. Further connection-event/stack evidence is needed before a causal fix.
+
+At 17:29:02.263 the GS heartbeat records 445 connections, packet queue zero,
+2,851 armed timers, fifteen pending writes with oldest age 0.2952 ms, and
+maximum completed write latency 11.0398 ms. LS/CS problem logs are empty;
+GS contains only its existing startup allowance. Enforced watching correctly
+fails: 491 observations, one suppressed, two regressed fingerprints and 488
+repeats. Mirrored pair errors and cancellation fallout are not independent
+root causes. All raw traces, counters, namespace samples, failed window and
+launch provenance remain under `run/p10-02-gathering-diagnostics/p10-02-mixed500-docker-d`.
+
+The owner exits 1 and removes its five containers. Matrix-e's idle heap
+preflight overlaps this diagnostic; its original binaries and stack remain
+untouched. Neither the maintainer's Docker MySQL nor unrelated containers are
+changed. P10-02 remains incomplete.
+
+## Maintainer population cap and stopped matrix
+
+On 2026-09-20 the maintainer requested a maximum of ten bots during testing.
+Apply this across concurrent runs and include setup/director connections in the
+limit. Larger-population testing is deferred (D17), not accepted or silently
+redefined as a ten-subject capacity check.
+
+The final 500-subject diagnostic `p10-02-mixed500-docker-e` had already failed:
+workload 17:39:27.0597211–17:41:45.6035293 UTC, elapsed 138.5498811 seconds,
+drift -0.0060729 seconds, first reported game-connect timeout on paired step
+b236 at 17:41:42.505. Its owner removed all five containers. Socket tracing
+completed with zero reported lost events: 2,373 starts/stops and one
+ConnectFailed event. This first trace omitted activity-flow enablement, so
+do not pair asynchronous connects by thread or claim a bot-specific origin.
+Periodic stack snapshots show many workers in synchronous trace-file flushes,
+alongside four navigation searches and idle workers. This is an observed cost,
+not yet a causal diagnosis of #107. Raw diagnostic artifacts are preserved;
+the attempted second, activity-correlated trace found the container already
+gone and collected no evidence. No further large diagnostic was started.
+
+Matrix-e's 200-subject stage was still in natural heap preflight when the request
+arrived. Signaling its watcher stop file causes readiness to fail closed and
+the owner to remove its isolated stack; the 500 stage never starts. No subject
+workload or capacity result exists for this invocation. Missing workload files
+in its terminal analysis reflect this intentional preflight cancellation, not
+a gameplay failure. `run/p10-02-capacity-matrix-e/maintainer-stop.md` records the
+reason. Docker verification afterward shows only the untouched maintainer
+`aion-mysql` and unrelated `evejs-market-1`; no bots remain running.
+
+Pre-commit warning baseline passes at 4,243. The first solution run fails one
+login loopback test at native listener bind with Windows socket error 10055;
+retain `run/p10-02-socket-repeat-fulltests.log`. A subsequent host snapshot has
+388 TCP entries, about 21 GiB available physical memory and the unchanged
+16,384-port range; this does not establish port exhaustion or the exact cause.
+No unrelated application is stopped and no host setting is changed. All 22
+login socket smoke tests pass on a focused recheck; the complete solution
+recheck passes 4,333 tests with 27 explicit skips. This does not erase the
+earlier failure or close Windows finding #103. Every CLAUDE.md ancillary check
+also passes. Logs: `run/p10-02-socket-repeat-{warning,loginfocused,fulltests-recheck}.log`.
+This checkpoint changes documentation/triage only, not gameplay or acceptance gates.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
 - P10-06 Java runtime comparisons are explicitly deferred under D15. Java remains
   the source and golden-fixture reference; no Java server is started.
 - P10-07 needs real **4.8** client protocol captures, not just extracted geodata.
+- D17 caps current testing at ten concurrent bots total; larger capacity runs
+  require explicit renewed authorization.
 - A green orchestration contract does not prove a two-hour populated soak, five
   consecutive Full runs, or natural autonomous player progression.
