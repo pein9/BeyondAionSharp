@@ -40,10 +40,12 @@ public sealed class SoakGatheringPoolTests
 		var elapsed = TimeSpan.Zero;
 		for (int generation = 0; generation < 100; generation++)
 		{
+			Assert.True(pool.IsAvailable(Spot, elapsed));
 			for (int use = 1; use <= 3; use++)
 			{
 				using var lease = pool.TryAcquire(Spot, generation + 1, elapsed);
 				Assert.NotNull(lease);
+				Assert.False(pool.IsAvailable(Spot, elapsed));
 				Assert.Equal(use, lease.UseNumber);
 				Assert.Equal(use == 3, lease.Depletes);
 				// No success/failure parameter: Java consumes a use for either outcome.
@@ -51,6 +53,7 @@ public sealed class SoakGatheringPoolTests
 				Assert.Throws<InvalidOperationException>(() => lease.Complete(elapsed));
 			}
 			Assert.Null(pool.TryAcquire(Spot, generation + 2, elapsed + GatheringTarget.RespawnDelay - TimeSpan.FromMilliseconds(1)));
+			Assert.False(pool.IsAvailable(Spot, elapsed + GatheringTarget.RespawnDelay - TimeSpan.FromMilliseconds(1)));
 			elapsed += GatheringTarget.RespawnDelay;
 			Assert.Equal(1, pool.Count);
 		}

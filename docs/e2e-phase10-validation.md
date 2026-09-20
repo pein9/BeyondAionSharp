@@ -1439,6 +1439,51 @@ Checks use the separate validation output root, leaving active 200-subject tools
 untouched. This commit is documentation only; it neither changes gameplay nor
 closes P10-02.
 
+## P10-02 scaled gathering supply correction
+
+A read-only audit during matrix-c's 200-subject heap preflight finds #97 before
+500 starts. Each Poeta channel would enroll twenty gatherers, requiring 400
+attempts under the existing twenty-sample-per-subject policy. The former 150 m
+radius around the vendor rendezvous includes only four shipped Young Aria nodes.
+Even instantaneous casts and travel allow only `4 * 3 * (1 + floor(7200 / 295))`
+= 300 attempts in the window. One final in-flight attempt per subject raises the
+upper bound to only 320. The old search also approached a shipped spot only once,
+then waited on its known list instead of exploring other available locations.
+
+Java source `GatherableController.completeInteraction` and
+`GatheringTask.onInteractionFinish` at `ce54b7931` confirms per-attempt consumption;
+the shipped template/spawn files supply three uses and 295-second respawn. These
+server mechanics are unchanged. A new supply regression fails with radius 150
+(`4 spots supply at most 300, need 400`) and passes with the revised 300 m search,
+which includes 27 Poeta and 12 Ishalgen candidates. This optimistic bound catches
+impossible enrollment; it does not predict actual harvest throughput.
+
+The finite search itinerary rotates its starting choice across subjects sharing
+a channel, skips coordinator-known busy/cooling spots, and continues exploring
+when initially known nodes cannot be acquired. The availability query is only an
+advisory hint: no unseen object is reserved or invented. Actual interaction still
+requires a visible gatherable and the existing exclusive lease. Unreachable
+candidates are rejected for that attempt; ordinary cancellation fails the run.
+Travel and return use the existing graph/local/journey collision checks, with
+packet draining between bounded movement segments and death checks. There is no
+straight-line fallback, teleport, extra spawn, shortened cooldown, or statistical
+policy change. Exploration traces do not count as successful gather outcomes or
+fill the sustained-activity acceptance windows.
+
+Nine focused tests pass, including the opt-in real-geometry test: both active hubs
+have at least eight checked round-trip nodes from both initial subject offsets.
+Other tests cover 50/200/500 enrollment bounds, rotated search, busy versus
+unreachable candidates, exclusive ownership, and cooldown/respawn availability.
+The geometry test also retains the alternate Poeta hub's existing route check.
+The running 200-subject invocation is not hot-patched; its tools remain at
+`ed923ff65`. Future populations rebuild from the new source. Revised LIVE routing
+and 500-subject throughput still require runtime evidence; P10-02 stays unchecked.
+
+Pre-commit validation passes: 4,307 solution tests / 24 explicit skips, warning
+baseline 4,243, all CLAUDE.md ancillary checks, and Docker Fast 6/6 (37.1 seconds).
+Separate validation outputs preserve the active matrix binaries. No production
+source, Docker image, upstream automation, or allowance changes.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

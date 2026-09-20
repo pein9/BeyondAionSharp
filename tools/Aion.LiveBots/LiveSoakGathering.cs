@@ -18,13 +18,11 @@ public static partial class LiveBotRunner
 		var target = cohort.MapId == GatheringTarget.YoungAria.MapId ? GatheringTarget.YoungAria : GatheringTarget.YoungAzpha;
 		var navigation = session.Navigation ?? throw new InvalidOperationException("Soak gathering requires checked starter navigation.");
 		if (!world.Skills.ContainsKey(30001)) throw new InvalidDataException("Starter subject lost human gathering.");
-		var localSpots = spots.Where(spot => spot.MapId == cohort.MapId && Distance(spot.Position, home) <= 150)
-			.Select(spot => spot with { InstanceId = channel + 1 }).ToArray();
-		if (localSpots.Length == 0) throw new InvalidDataException("Soak hub has no shipped starter gathering spots.");
-		var unreachable = new HashSet<SoakGatheringSpot>();
+		// Separate starting exploration choices for the subjects sharing this map/channel.
+		int offset = (cohort.Number - 1) / 25 * 2 + (actor.Bot == $"b{cohort.FirstSubject:D2}" ? 0 : 1);
+		var search = new SoakGatheringSearch(spots, cohort.MapId, channel, home, offset);
 		SoakGatheringPool.Lease? selected = null;
 		IReadOnlyList<BotPosition>? route = null;
-		bool approached = false;
 		int waits = 0;
 		while (selected == null)
 		{
@@ -33,27 +31,29 @@ public static partial class LiveBotRunner
 				.OrderBy(value => Distance(session.CurrentPosition, value.Position)))
 			{
 				var spot = new SoakGatheringSpot(cohort.MapId, channel + 1, target.TemplateId, candidate.Position.X, candidate.Position.Y, candidate.Position.Z);
-				if (!localSpots.Contains(spot) || unreachable.Contains(spot)) continue;
+				if (!search.Contains(spot)) continue;
 				selected = pool.TryAcquire(spot, candidate.ObjectId, Stopwatch.GetElapsedTime(epoch));
 				if (selected == null) continue;
 				route = Route(candidate.Position);
 				if (route.Count != 0) break;
-				unreachable.Add(spot);
+				search.Reject(spot);
 				selected.Dispose(); selected = null;
 			}
 			if (selected != null) break;
-			if (!approached)
+			if (search.NextApproach(spot => pool.IsAvailable(spot, Stopwatch.GetElapsedTime(epoch))) is { } approachSpot)
 			{
-				// The nearest spawn can start outside the client's known list. Walk to shipped coordinates,
-				// then acquire only an actually observed object, never a fabricated server object id.
-				foreach (var spot in localSpots.OrderBy(spot => Distance(session.CurrentPosition, spot.Position)))
+				// Explore beyond the initial known list, including after a nearby node becomes busy.
+				// This hint does not reserve anything. The next loop must observe and lease a real object.
+				var approach = Route(approachSpot.Position);
+				if (approach.Count == 0) search.Reject(approachSpot);
+				else
 				{
-					var approach = Route(spot.Position);
-					if (approach.Count == 0) { unreachable.Add(spot); continue; }
-					await WalkAsync(approach); approached = true; break;
+					actor.Trace.WriteAction(actor.LastStep, "soak:gather-explore", new Dictionary<string, object?>
+					{ ["x"] = approachSpot.X, ["y"] = approachSpot.Y, ["z"] = approachSpot.Z, ["channel"] = channel });
+					await WalkAsync(approach);
 				}
-				if (!approached) throw new InvalidDataException("No collision-checked path to any local gathering spot.");
 			}
+			if (search.AllRejected) throw new InvalidDataException("No collision-checked path to any local gathering spot.");
 			waits++;
 			await Task.Delay(1000, token); // Continue reading on every iteration while nodes are occupied or respawning.
 		}
@@ -104,10 +104,19 @@ public static partial class LiveBotRunner
 		IReadOnlyList<BotPosition> Route(BotPosition destination)
 		{
 			var path = navigation.Graph.FindPath(cohort.MapId, session.CurrentPosition, destination);
-			return path.Count != 0 ? path : navigation.Geometry.FindLocalPath(cohort.MapId, session.CurrentPosition, destination);
+			if (path.Count == 0) path = navigation.Geometry.FindLocalPath(cohort.MapId, session.CurrentPosition, destination);
+			return path.Count != 0 ? path : navigation.Geometry.FindJourneyPath(cohort.MapId, session.CurrentPosition, destination);
 		}
-		Task WalkAsync(IReadOnlyList<BotPosition> path) => session.ExecuteMovementAsync(new BotMover(world, session.Api.Timing)
-			.CreateGroundPlan(path, session.CurrentPosition, world.MovementSpeed ?? throw new InvalidDataException("Missing movement speed.")), token);
+		async Task WalkAsync(IReadOnlyList<BotPosition> path)
+		{
+			foreach (var segment in path.Chunk(24))
+			{
+				await session.ExecuteMovementAsync(new BotMover(world, session.Api.Timing)
+					.CreateGroundPlan(segment, session.CurrentPosition, world.MovementSpeed ?? throw new InvalidDataException("Missing movement speed.")), token);
+				await session.SynchronizeAsync(token);
+				if (world.IsDead) throw new InvalidDataException("Gathering subject died while travelling.");
+			}
+		}
 		static float Distance(BotPosition a, BotPosition b) => MathF.Sqrt(MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2) + MathF.Pow(a.Z - b.Z, 2));
 	}
 }

@@ -15,6 +15,17 @@ public sealed class SoakGatheringPool(IEnumerable<SoakGatheringSpot> spots)
 	private readonly Dictionary<SoakGatheringSpot, Node> nodes = spots.ToDictionary(spot => spot, _ => new Node());
 	public int Count => nodes.Count;
 
+	/// <summary>Advisory exploration hint only; never reserves or supplies an unseen object id.</summary>
+	public bool IsAvailable(SoakGatheringSpot spot, TimeSpan elapsed)
+	{
+		if (elapsed < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(elapsed));
+		lock (gate)
+		{
+			var node = nodes[spot];
+			return !node.Owned && elapsed >= node.AvailableAt;
+		}
+	}
+
 	public Lease? TryAcquire(SoakGatheringSpot spot, int objectId, TimeSpan elapsed)
 	{
 		if (objectId <= 0 || elapsed < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(objectId));
