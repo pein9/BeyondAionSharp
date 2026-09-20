@@ -1227,6 +1227,29 @@ explicit skips, warning baseline 4,243, Docker Fast 6/6 and every CLAUDE.md
 ancillary check. P10-02 remains unchecked; this repairs error evidence, not the
 pending capacity result.
 
+## P10-02 object-ID lifecycle audit (open)
+
+A read-only check of replacement Kisk identity found an existing server parity
+gap (#93), not evidence that the running C# server reused a retired Kisk's ID.
+At Java `ce54b7931`, `Kisk` inherits the `Npc` auto-release constructor path;
+`AionObject` registers a Cleaner that hands pending respawns their release
+responsibility or returns the ID to the factory after collection. The C# base
+constructor explicitly discards that option. Its `RespawnService.SetAutoReleaseId`
+exists but has no caller, and `World.RemoveObject` does not provide an alternative
+release path. Both factories can reuse explicitly released IDs, which alone does
+not prove that C# Kisk deletion releases one.
+
+This remains open: do not change production object ownership or make a speculative
+bot correction during the capacity run. An eventual lifecycle fix must preserve
+the pending-respawn contract and test a replacement Kisk with a reused ID (the
+current bot clears its retirement observation only for a different owned ID).
+No measured memory slope is attributed to this gap; a passing bounded soak would
+not prove indefinite ID reclamation. P10-02 remains unchecked.
+
+Documentation-only validation: full solution 4,303 passed / 24 explicit skips;
+warning baseline 4,243; all CLAUDE.md ancillary checks pass. No gameplay change,
+upstream automation change, or additional LIVE stack was introduced.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
