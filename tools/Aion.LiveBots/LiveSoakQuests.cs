@@ -18,7 +18,7 @@ public static partial class LiveBotRunner
 		await session.SynchronizeAsync(token);
 		if (world.GroupId != null || world.IsDead || world.Level < 3 || session.Navigation == null)
 			throw new InvalidDataException("Soak quest journey requires a living ungrouped subject and checked navigation.");
-		await session.WaitForQuestStatusAsync(prologue, 5, token);
+		if (!StarterSoakQuest.ObservedComplete(world, prologue)) await session.WaitForQuestStatusAsync(prologue, 5, token);
 		foreach (var stage in stages)
 		{
 			if (world.CompletedQuests.ContainsKey(stage.Id) || world.Quests.GetValueOrDefault(stage.Id)?.Status == 5)
@@ -84,10 +84,9 @@ public static partial class LiveBotRunner
 			if (stage.Gold != 0) SoakAdd(expected, BotWorldModel.KinahItemId, stage.Gold);
 			if (stage.RewardItem != 0) SoakAdd(expected, stage.RewardItem, stage.RewardCount);
 			SoakAssertInventory(world, expected);
-			if (world.CurrentExperience != xp + stage.Experience || world.Quests[stage.Id] is not { Status: 5, CompleteCount: 1 })
-				throw new InvalidDataException($"Soak quest {stage.Id} did not grant exact XP and one completion.");
+			stage.AssertImmediateReward(world, xp);
 			actor.Trace.WriteAction(actor.LastStep, "soak:quest-complete", new Dictionary<string, object?>
-			{ ["quest"] = stage.Id, ["count"] = 1, ["xp"] = stage.Experience, ["gold"] = stage.Gold });
+			{ ["quest"] = stage.Id, ["xp"] = stage.Experience, ["gold"] = stage.Gold });
 		}
 		foreach (var point in StarterSoakQuest.ReturnVia(cohort.FirstRace).Append(SoakStartPoint(cohort)))
 			await SoakQuestWalkAsync(session, point, token);

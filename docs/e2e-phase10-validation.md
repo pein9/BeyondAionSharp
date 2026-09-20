@@ -393,9 +393,22 @@ enabled, including every planned outward/return leg (about 102 seconds for the
 two complete routes). The full solution passed 4,177 tests / 23 explicit skips;
 warnings remained at 4,243. Docker Fast `p10-02-quest-driver-fast` passed 6/6, as
 did all mandatory ratchets, fidelity, compiler/report, retention and Full-suite
-contracts. `p10-02-quest10-a` is running a ten-subject/twenty-minute diagnostic
-with Quest, Vendor, Group, Trade, Relog and CrashDisconnect. It is not yet a pass
-and does not satisfy the two-hour population matrix.
+contracts. `p10-02-quest10-a` failed during the initial ten-subject diagnostic:
+Q1101 returned exact 130 XP and COMPLETE status, but the driver incorrectly
+expected complete_count in `SM_QUEST_ACTION`, which does not carry it. The
+Asmodian actors also waited for prologue action state after a prior relog had
+correctly moved that quest into `SM_QUEST_COMPLETED_LIST`. Both are harness
+assumptions, not server divergences (§7 #75). The immediate reward assertion now
+checks XP/status, and the existing final database/completed-list checks still
+require count one. A focused packet-state regression covers both representations.
+The failed run is retained; no problem is allowlisted. LIVE proof remains pending.
+
+Wire-state correction checks passed: 4,178 solution tests / 23 explicit skips,
+4,243 warnings unchanged, the focused packet-state regression, Docker Fast
+`p10-02-quest-wire-fast` 6/6, and every mandatory ancillary check. Fresh run
+`p10-02-quest10-b` has passed Q2101's exact rewards for both Asmodian subjects and
+started coordinated ordinary Q2102 kills. The complete journeys, persistence,
+scheduler retirement and twenty-minute diagnostic outcome are still pending.
 
 Previous scheduling/reward checkpoint validation: 26 focused policy/reward cases passed. The full solution
 passed 4,172 tests with 22 explicit skips; compiler warnings stayed at 4,243.

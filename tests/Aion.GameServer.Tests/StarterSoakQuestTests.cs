@@ -3,12 +3,40 @@ using Aion.Bots.Navigation;
 using Aion.Bots.Scenarios;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
+using Aion.GameServer.Network.Aion.ServerPackets;
 
 namespace Aion.GameServer.Tests;
 
 [Collection("GoldenDataManager")]
 public sealed class StarterSoakQuestTests
 {
+	[Fact]
+	public void ImmediateQuestActionDoesNotInventCompletionCountAndRelogPrologueUsesCompletedList()
+	{
+		var world = new BotWorldModel();
+		var quest = StarterSoakQuest.ForRace(ScenarioRace.Elyos)[0];
+		world.Apply(new(typeof(SM_QUEST_ACTION), new Dictionary<string, object?>
+		{ ["action"] = (byte)2, ["questId"] = quest.Id, ["status"] = (byte)5, ["stepAndFlags"] = 1 }));
+		world.Apply(new(typeof(SM_STATUPDATE_EXP), new Dictionary<string, object?>
+		{ ["currentExp"] = 130L, ["recoverableExp"] = 0L, ["maxExp"] = 43087L }));
+		Assert.Equal(0, world.Quests[quest.Id].CompleteCount);
+		quest.AssertImmediateReward(world, 0);
+		Assert.Throws<InvalidDataException>(() => quest.AssertImmediateReward(world, 1));
+		Assert.True(StarterSoakQuest.ObservedComplete(world, quest.Id));
+		Assert.False(StarterSoakQuest.ObservedComplete(world, 1000));
+		world.Apply(new(typeof(SM_QUEST_LIST), new Dictionary<string, object?>
+		{ ["quests"] = new List<IReadOnlyDictionary<string, object?>>() }));
+		world.Apply(new(typeof(SM_QUEST_COMPLETED_LIST), new Dictionary<string, object?>
+		{
+			["updateMode"] = (byte)0,
+			["quests"] = new List<IReadOnlyDictionary<string, object?>> { new Dictionary<string, object?>
+			{ ["questId"] = 1000, ["completeCount"] = (byte)1, ["nonRepeatable"] = true } },
+		}));
+		Assert.Empty(world.Quests);
+		Assert.True(StarterSoakQuest.ObservedComplete(world, 1000));
+		Assert.Throws<InvalidDataException>(() => quest.AssertImmediateReward(world, 0));
+	}
+
 	[Theory]
 	[InlineData(ScenarioRace.Elyos, 7, 9)]
 	[InlineData(ScenarioRace.Asmodians, 6, 10)]

@@ -44,6 +44,17 @@ public sealed record StarterSoakQuest(int Id, StarterQuestNpc? Start, StarterQue
 		yield return End.Position;
 	}
 
+	public static bool ObservedComplete(BotWorldModel world, int questId) =>
+		world.Quests.GetValueOrDefault(questId)?.Status == 5 || world.CompletedQuests.ContainsKey(questId);
+
+	public void AssertImmediateReward(BotWorldModel world, long experienceBefore)
+	{
+		// SM_QUEST_ACTION carries status/vars, not complete_count. Check that count later
+		// against persistence and SM_QUEST_COMPLETED_LIST instead of inventing a wire field.
+		if (world.CurrentExperience != experienceBefore + Experience || world.Quests.GetValueOrDefault(Id)?.Status != 5)
+			throw new InvalidDataException($"Soak Q{Id}: expected XP {experienceBefore + Experience}/status 5; observed {world.CurrentExperience}/{world.Quests.GetValueOrDefault(Id)?.Status}.");
+	}
+
 	// The bounded direct search from Ulgorn to the hub has no checked route. Return via
 	// the already visited western camp and Vandar; validate these legs just like the outward trip.
 	public static IReadOnlyList<BotPosition> ReturnVia(ScenarioRace race) => race switch
