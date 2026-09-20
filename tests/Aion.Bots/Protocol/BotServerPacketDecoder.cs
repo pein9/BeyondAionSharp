@@ -63,6 +63,8 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_WINDSTREAM)] = DecodeWindstream,
 			[typeof(SM_WINDSTREAM_ANNOUNCE)] = DecodeWindstreamAnnounce,
 			[typeof(SM_DIE)] = DecodeDie,
+			[typeof(SM_BIND_POINT_INFO)] = DecodeBindPoint,
+			[typeof(SM_KISK_UPDATE)] = DecodeKiskUpdate,
 			[typeof(SM_INVENTORY_INFO)] = DecodeInventoryInfo,
 			[typeof(SM_INVENTORY_ADD_ITEM)] = DecodeInventoryAdd,
 			[typeof(SM_INVENTORY_UPDATE_ITEM)] = DecodeInventoryUpdate,

@@ -406,15 +406,49 @@ The failed run is retained; no problem is allowlisted. LIVE proof remains pendin
 Wire-state correction checks passed: 4,178 solution tests / 23 explicit skips,
 4,243 warnings unchanged, the focused packet-state regression, Docker Fast
 `p10-02-quest-wire-fast` 6/6, and every mandatory ancillary check. Fresh run
-`p10-02-quest10-b` has passed Q2101's exact rewards for both Asmodian subjects and
-started coordinated ordinary Q2102 kills. The complete journeys, persistence,
-scheduler retirement and twenty-minute diagnostic outcome are still pending.
+`p10-02-quest10-b` later failed at the leading Elyos subject's database check,
+after that subject completed the entire chain and relogged. The admin endpoint
+exposes persisted `quests` only while offline; the soak caller used it after
+reconnecting (§7 #76). This is not a server quest failure or a passing run.
+The database assertion now runs after confirmed logout, before reconnect;
+count-one/nonrepeatable packet checks remain after login. Five focused contract
+cases reject online/missing snapshots, missing rows and wrong completion counts.
+Fresh twenty-minute run `p10-02-quest10-c` is in progress. Whole-cohort persistence,
+scheduler retirement and the final run outcome remain unproven.
 
 Previous scheduling/reward checkpoint validation: 26 focused policy/reward cases passed. The full solution
 passed 4,172 tests with 22 explicit skips; compiler warnings stayed at 4,243.
 Docker Fast `p10-02-finite-quest-fast` passed 6/6. Logger/clock/custom-quest
 ratchets, fidelity, ten quest-compiler tests, 23 report tests, retention and
 Full-suite contracts all passed. No new allowance or production behavior change.
+
+## P10-02 resurrection perception checkpoint
+
+Audited Java `SM_BIND_POINT_INFO.writeImpl` and `SM_KISK_UPDATE.writeImpl` at
+`ce54b7931` now have bot decoders: exact 22/32-byte layouts, independent obelisk
+and Kisk bindings, explicit Kisk-clear handling, and one last-observed Kisk update
+with creator ID, members, remaining resurrections and lifetime in seconds. Nearby
+same-race Kisks also broadcast updates: consumers must match IDs, not assume the
+last update belongs to them. Updates do not imply binding or successful revival.
+Tests cover every truncated length, trailing bytes, binding replacement/clear,
+world reload and bounded observation state. The decoder inventory is now 112.
+
+A local offline geometry probe found candidate grounded triangles near the old
+airborne S2 encounter. For example, `(3180,2480,1557.9525)` to
+`(3192,2480,1557.6388)` has a checked ground edge; a third checked corner is
+`(3180,2492,1550.9584)`. The origin is about 108m from the nearest ordinary static
+spawn returned by `SpawnsDh`. This is reconnaissance only, **not a selected or
+LIVE-validated camp**: dynamic siege/artifact state, actual hostile clearance,
+Kisk placement, resurrection/return and capacity spacing still need validation.
+The temporary probe was removed; raw output remains in
+`run/p10-02-reshanta-probe.log`. No geodata or production behavior was changed.
+
+Focused packet/persistence checks passed 36 cases; the full solution passed
+4,185 tests with 23 explicit skips and warnings stayed at 4,243. Mandatory
+logger/clock/custom-quest ratchets, fidelity, ten quest-compiler tests, 23 report
+tests, retention and Full-suite contracts passed. Docker Fast
+`p10-02-quest-persistence-fast` passed 6/6. Repeated PvP is still unavailable and
+fails closed.
 
 ## Scope decisions
 

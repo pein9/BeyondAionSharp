@@ -58,7 +58,7 @@ internal sealed partial class LiveBotSession
 		await VerifyOfflineAsync(token);
 	}
 
-	public async Task ReenterForSoakAsync(bool crash, CancellationToken token)
+	public async Task ReenterForSoakAsync(bool crash, CancellationToken token, IReadOnlyCollection<int>? completedQuestIds = null)
 	{
 		int previous = ConnectionGeneration;
 		var inventory = api.World.Inventory.Values.GroupBy(item => item.ItemId)
@@ -66,6 +66,8 @@ internal sealed partial class LiveBotSession
 		ushort level = api.World.Level;
 		if (crash) await CrashForSoakAsync(token);
 		else { await QuitAsync(token); await VerifyOfflineAsync(token); }
+		// The admin endpoint exposes persisted quest rows only while the character is offline.
+		if (completedQuestIds != null) await VerifyQuestRowsAsync(completedQuestIds, token);
 		await WaitForReentryAsync(token);
 		await ReloginAndVerifyPersistenceAsync(token);
 		await EnterWorldAsync(token);

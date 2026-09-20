@@ -368,16 +368,7 @@ internal sealed partial class LiveBotSession
 		response.EnsureSuccessStatusCode();
 		await using Stream content = await response.Content.ReadAsStreamAsync(cancellationToken);
 		using JsonDocument document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
-		Dictionary<int, JsonElement> rows = document.RootElement.GetProperty("quests").EnumerateArray()
-			.ToDictionary(row => row.GetProperty("questId").GetInt32(), row => row.Clone());
-		foreach (int questId in questIds)
-		{
-			if (!rows.TryGetValue(questId, out JsonElement row))
-				throw new InvalidDataException($"player_quests omitted Q{questId}.");
-			if (!string.Equals(row.GetProperty("status").GetString(), "COMPLETE", StringComparison.Ordinal) ||
-				row.GetProperty("completeCount").GetInt32() != 1)
-				throw new InvalidDataException($"player_quests Q{questId} was not COMPLETE with complete_count 1.");
-		}
+		QuestPersistenceContract.AssertCompletedOnce(document.RootElement, questIds);
 	}
 
 	private static T ReadField<T>(IReadOnlyDictionary<string, object?> fields, string name) =>

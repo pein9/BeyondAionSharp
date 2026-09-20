@@ -14,7 +14,9 @@ public sealed class BotServerPacketDecoderTests
 	[Fact]
 	public void DecoderInventoryContainsExpectedBotPerceptionPackets()
 	{
-		Assert.Equal(110, decoder.PacketTypes.Count);
+		Assert.Equal(112, decoder.PacketTypes.Count);
+		Assert.Contains(typeof(SM_BIND_POINT_INFO), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_KISK_UPDATE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_UNWRAP_ITEM), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_FIRST_SHOW_DECOMPOSABLE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_SECONDARY_SHOW_DECOMPOSABLE), decoder.PacketTypes);
@@ -288,6 +290,7 @@ public sealed class BotServerPacketDecoderTests
 			if (BotBrokerPacketTests.AssertAuditedWireContract(packetType)) continue;
 			if (BotPrivateStorePacketTests.AssertAuditedWireContract(packetType)) continue;
 			if (BotTradeInPacketTests.AssertAuditedWireContract(packetType)) continue;
+			if (BotResurrectionPacketTests.AssertAuditedWireContract(packetType)) continue;
 			if (packetType == typeof(SM_UPDATE_PLAYER_APPEARANCE))
 			{
 				BotPlayerCommandPacketTests.AssertAppearanceWireContract();

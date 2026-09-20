@@ -92,9 +92,8 @@ public static partial class LiveBotRunner
 			await SoakQuestWalkAsync(session, point, token);
 		await session.SynchronizeAsync(token);
 		// Force normal persistence and packet-list reconstruction before retiring this cohort's workload.
-		await session.ReenterForSoakAsync(false, token);
 		int[] ids = stages.Select(stage => stage.Id).Prepend(prologue).ToArray();
-		await session.VerifyQuestRowsAsync(ids, token);
+		await session.ReenterForSoakAsync(false, token, ids);
 		foreach (int id in ids)
 			if (world.CompletedQuests.GetValueOrDefault(id) is not { CompleteCount: 1, NonRepeatable: true })
 				throw new InvalidDataException($"Relog did not restore exactly one nonrepeatable Q{id} completion.");
