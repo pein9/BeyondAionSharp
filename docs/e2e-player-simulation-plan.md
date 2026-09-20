@@ -1893,7 +1893,13 @@ real geodata on in production immediately, because geo is enabled by default; th
 
 ### Phase 10 — Scale, operations, coverage
 
-- [ ] **P10-01** [BOTH] M — Extend `scripts/e2e/run-full.ps1` with the soak and breadth suites.
+- [x] **P10-01** [BOTH] M — Extend `scripts/e2e/run-full.ps1` with the soak and breadth suites.
+  Explicit `Breadth` (default), `Soak`, `All` and side-effect-free `PlanOnly`; manifest-driven 72 SIM/42 LIVE
+  selections, preserved reset/shard isolation and deadlines, seed forwarding to every child, ordered plan and
+  fail-fast step records. Soak selects 50/200/500 subjects for two hours each; its P10-02 driver is a separate
+  dependency and unavailable execution fails before starting anything, never reports a pass. Contract tests
+  cover selection, isolation, deadlines and failure paths. This completes orchestration, not soak acceptance.
+  See [Phase 10 evidence](e2e-phase10-validation.md). Commit: `6498330b1` (before SHA-recording amend).
 - [ ] **P10-02** [LIVE] M — Soak and capacity: 50, 200 and 500 bots across the starter zones (and Reshanta for PvP)
   for 2 hours. Bots run a seeded "life" policy looping over the manifest scenarios allowed in their zone (quest,
   gather, craft, vendor, trade, group, duel, relog, crash-disconnect) with random think times. Watch dispatcher write
@@ -1907,7 +1913,8 @@ real geodata on in production immediately, because geo is enabled by default; th
   tail the C# production boot skips: `HousingService` and the housing bid/auction/maintenance tasks, faction ratio counts,
   `SiegeService.InitSieges`, `PvpMapService.Init` (`GameServer.java:118-122,130-134,141,175`). Move the no-DB fixture
   that shaped today's boot off the production path.
-- [ ] **P10-06** [LIVE] L — Differential Java-vs-C# runs, narrowly: build `../aion-server` `4.8` (kept at
+- [ ] **P10-06** [LIVE] L — **Deferred by maintainer (D15): do not run the Java server.** Original proposal:
+  differential Java-vs-C# runs, narrowly: build `../aion-server` `4.8` (kept at
   `lastCompletedJavaCommit`, P0-02) locally with JDK 25 and Maven; start the Java game server as a local process
   against its own throwaway databases; run the same bot scripts; compare normalized DB rows and per-request SM opcode multisets for roll-free,
   non-combat flows (character create, inventory, dialogs, trade, mail). Capture on the bot side so Java needs no
@@ -2060,6 +2067,7 @@ exits (`docker compose events`) and MySQL errors.
 | D11 | Enable real geodata in production when P9-01 lands (geo defaults to on) | Yes as a parity fix, after P9-03 measures memory | **Approved** 2026-09-17 |
 | D12 | How Java golden fixtures are generated against `lastCompletedJavaCommit` | Bring the generator tests forward onto the spec revision | **Approved** 2026-09-17: branches or worktrees in `../aion-server` are allowed when needed |
 | D14 | Trade catalogs attached to NPCs without their corresponding trade action | Report separately as inactive content, not successful transactions or missing-spawn rows | **Approved** 2026-09-19: do not enable new vendors; independently verify the missing action from shipped NPC data |
+| D15 | Java runtime comparisons in P10-06 | Defer; keep Java as source/golden reference only | **Decided** 2026-09-19: maintainer explicitly deferred Java runtime comparisons; Phase 10 continues with C#-only execution |
 
 ---
 
@@ -2148,6 +2156,10 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 66 | C9 attributed its expected failure to missing geo but teleported the combat target away before testing the jump (harness defect, not Java/C# divergence) | `services/teleport/TeleportService.java:sendLoc`, `world/knownlist/KnownList.java:clear/del`, `controllers/CreatureController.java:notKnow` at `ce54b7931`: teleport despawns, known-list removal clears the target and aggro | P9-04 `p9-04-full-c` still failed with real geo: zero chase distance, no hate. Replace the post-aggro teleport with collision-checked CM_MOVE retreat. `p9-04-full-g` passes the actual chase assertion with no expected-failure catch. C11 and S1 also needed legitimate unobstructed casting positions once real LOS was active. No production combat/aggro exemption or allowlist |
 | 67 | Gathering sweep/quest driver's fixed west-side setup can be obstructed by shipped geometry (harness defect, not demonstrated Java/C# divergence) | `controllers/GatherableController.java:startGathering`, `world/geo/GeoService.java:canSee` at `ce54b7931` require range and LOS | Full matrix failed at 400017; coverage recovery reproduced blocked LOS for Q2134's 400201 at Poeta (212.52646, 1054.5825, 122.08079). Both SIM drivers now share visible nearby director setup selection and assert real LOS before ordinary gathering packets. `p9-04-gather-c` passes 374 reachable / 382 unreachable templates; `p9-04-q4p-fixed` and `sim-reset-q4i-fixed` pass all 25/27 plans. No timeout extension, server-rule change, new content, baseline exclusion or log allowance |
 | 68 | LIVE child retention deleted earlier scenarios inside the same Full matrix, including SIM/LIVE quest receipts (harness infrastructure defect) | No Java analogue; `scripts/live/run-live.ps1:Remove-OldRuns` treated sibling scenarios as historical runs | All 41 LIVE runs passed, but aggregation found zero receipts because only the newest 20 folders survived. Full children now skip pruning; standalone runs retain twenty. A 40-child regression fails before/passes after. Deleted details cannot be recovered; console logs survive. Quest sources were rerun, 29 child folders remain, and final coverage passes at 58 SIM / 59 LIVE completed quests. No coverage-baseline relaxation; completion uses documented composite evidence, not a clean original full invocation |
+
+| 69 | Full orchestration accepted a seed but omitted it from every LIVE child invocation, so SIM and LIVE metadata could describe different seeds (harness infrastructure defect) | No Java analogue; `scripts/e2e/run-full.ps1` forwarded `Seed` only to SIM | P10-01 forwards the seed to SIM, LIVE and soak children. Regression executes the actual runner dispatch block with recording children and a non-default seed; no gameplay RNG or production behavior change |
+
+| 70 | LIVE's dispatch fallthrough ran the connection-only smoke test for an unimplemented manifest scenario or a multi-scenario selection, recording the requested IDs as completed without executing them (harness false-positive defect) | No Java analogue; `tools/Aion.LiveBots/LiveBotRunner.cs:RunAsync/RunConnectBotAsync` | P10-01 restricts the fallback to exactly `connect`. Focused regressions require rejection for a future manifest entry and two known scenarios selected together, before any bot/socket is created. Essential when Full selection becomes manifest-driven |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

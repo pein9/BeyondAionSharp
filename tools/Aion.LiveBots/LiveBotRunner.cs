@@ -115,6 +115,11 @@ public static partial class LiveBotRunner
 		if (options.ScenarioDefinitions is [{ Id: "M6" }])
 			return await RunM6Async(options, problems, cancellationToken);
 
+		if (options.ScenarioDefinitions is not [{ Id: "connect" }])
+			throw new InvalidOperationException("No LIVE dispatcher is implemented for this scenario selection: " +
+				string.Join(", ", options.ScenarioDefinitions.Select(scenario => scenario.Id)) +
+				". Run one supported scenario at a time; never substitute the connection smoke test.");
+
 		var tasks = Enumerable.Range(1, options.BotCount)
 			.Select(index => RunConnectBotAsync(options, problems, index, cancellationToken))
 			.ToArray();
