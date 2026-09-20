@@ -3088,6 +3088,37 @@ Logs: `run/p10-09-hardware-snapshot-warnings-final.log`,
 `run/p10-09-hardware-snapshot-tests-final.log`, and
 `run/p10-09-hardware-snapshot-ancillary-final.log`. No LIVE restart proof yet.
 
+## P10-09 HDD command arithmetic parity
+
+The follow-up fixes §7/120 without changing the reference policy. Java
+`game-server/data/handlers/admincommands/BanHdd.java` at `ce54b7931` multiplies
+the minutes as an overflowing int before adding the result to the long epoch.
+C# now explicitly uses `unchecked(timeMins * 60 * 1000)` in the same order.
+In particular, zero first becomes 5,256,000 minutes, whose wrapped offset is
+1,827,387,392 milliseconds, not ten years. This preserves an upstream quirk;
+seasonal reload fixtures still require exact initial database timestamps.
+
+Eleven independent boundary vectors exercise the actual command, inspect the
+real manager's stored epoch and current enforcement result, and decode the
+actual outgoing `SM_HDDBAN_CONTROL` payload. They cover both int extremes,
+negative/positive duration boundaries, zero and a second wrap boundary. The
+unchanged command failed seven vectors and passed four; after the correction
+all eleven pass. Each case restores its own manager key, clock and connector
+singleton. Evidence: `run/p10-09-hdd-arithmetic-before.log` and
+`run/p10-09-hdd-arithmetic-after.log`.
+
+The full solution passes 4,532 tests with 27 explicit skips. Warning inventory
+is unchanged at 4,243 sites; all CLAUDE.md ancillary checks pass. Logs:
+`run/p10-09-hdd-arithmetic-warnings.log`,
+`run/p10-09-hdd-arithmetic-tests.log` and
+`run/p10-09-hdd-arithmetic-ancillary.log`.
+Docker-backed Fast also passes (six test methods executing the Fast manifest),
+with metadata and TRX under
+`run/p10-09-hdd-arithmetic/p10-09-hdd-arithmetic-fast`. Only Docker MySQL was
+used; the run's temporary simulation database was dropped by fixture cleanup.
+This is a parity checkpoint, not the full LIVE hardware-ban restart journey;
+BA-003, BA-006 and P10-09 remain open.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
