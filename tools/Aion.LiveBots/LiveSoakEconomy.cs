@@ -58,7 +58,7 @@ public static partial class LiveBotRunner
 		}
 	}
 
-	private static async Task SoakCookingAsync(L0Actor actor, CookingMaster master, CancellationToken token)
+	private static async Task SoakCookingAsync(L0Actor actor, CookingMaster master, SoakEconomyStatistics statistics, CancellationToken token)
 	{
 		var session = actor.Session;
 		var world = session.Api.World;
@@ -110,6 +110,7 @@ public static partial class LiveBotRunner
 				await AcceptAsync();
 			}
 			int skill = world.Skills[CookingLearnScenario.SkillId].Level;
+			double probability = SoakProgressProbability.Craft(skill - order.SkillLevel);
 			if (selected.Materials.Any(material => expected.GetValueOrDefault(material.Key) < material.Value))
 				throw new InvalidDataException("Cooking replenishment did not cover the next craft.");
 			await session.SendPacketAsync(session.Api.Craft(CookingWorkOrder.OvenTemplateId, order.RecipeId, oven,
@@ -134,7 +135,9 @@ public static partial class LiveBotRunner
 			SoakAssertInventory(world, expected);
 			if (session.Api.Timing.BlockingActivities.Count != 0) throw new InvalidDataException("Soak craft failed to release its interaction.");
 			actor.Trace.WriteAction(actor.LastStep, "soak:craft-outcome", new Dictionary<string, object?>
-			{ ["recipe"] = order.RecipeId, ["skillBefore"] = skill, ["skillDifference"] = skill - order.SkillLevel, ["success"] = outcome == 5 });
+			{ ["recipe"] = order.RecipeId, ["skillBefore"] = skill, ["skillDifference"] = skill - order.SkillLevel, ["success"] = outcome == 5,
+				["expectedProbability"] = probability, ["probabilityModel"] = SoakProgressProbability.Version });
+			statistics.Observe(actor.Bot, "Craft", probability, outcome == 5);
 		}
 		await session.MoveToKnownObjectAsync(npc, token);
 		await session.SendPacketAsync(session.Api.TalkTo(npc), token);

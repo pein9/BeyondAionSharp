@@ -50,7 +50,8 @@ public static class SoakCookingCatalog
 				!int.TryParse(reader.GetAttribute("id"), out int id) || !orders.TryGetValue(id, out var order)) continue;
 			var recipe = (XElement)XNode.ReadFrom(reader);
 			if ((int?)recipe.Attribute("quantity") != 1 || (int?)recipe.Attribute("productid") != order.ProductId ||
-				(int?)recipe.Attribute("skillpoint") != order.SkillLevel || recipe.Attributes().Any(attribute => attribute.Name.LocalName.StartsWith("combo", StringComparison.Ordinal)))
+				(int?)recipe.Attribute("skillpoint") != order.SkillLevel || (int?)recipe.Attribute("skillid") != CookingLearnScenario.SkillId ||
+				recipe.Attribute("max_production_count") != null || recipe.Attributes().Any(attribute => attribute.Name.LocalName.StartsWith("combo", StringComparison.Ordinal)))
 				throw new InvalidDataException($"Unsupported work recipe {id}.");
 			var materials = recipe.Elements("components_data").Single().Elements("component")
 				.ToDictionary(item => (int)item.Attribute("itemid")!, item => (long)item.Attribute("quantity")!);
@@ -58,6 +59,14 @@ public static class SoakCookingCatalog
 			result.Add(new SoakCookingOrder(order, materials));
 		}
 		if (result.Count != orders.Count) throw new InvalidDataException("Incomplete apprentice Cooking recipe catalog.");
+		// The soak completion model uses ordinary COMMON-quality, unlimited, non-combo work products.
+		var products = result.Select(entry => entry.Order.ProductId).ToHashSet();
+		using var items = XmlReader.Create(Path.Combine(root, "items", "item_templates.xml"));
+		while (items.Read())
+			if (items.NodeType == XmlNodeType.Element && items.LocalName == "item_template" &&
+				int.TryParse(items.GetAttribute("id"), out int itemId) && products.Remove(itemId) && items.GetAttribute("quality") != "COMMON")
+				throw new InvalidDataException("Work-order product quality changed; update the probability model explicitly.");
+		if (products.Count != 0) throw new InvalidDataException("Work-order products are missing.");
 		return result.AsReadOnly();
 	}
 }

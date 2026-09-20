@@ -865,8 +865,43 @@ isolated Docker stack. This is reporting evidence, not capacity acceptance.
 The longer fifty-subject mixed replay `p10-02-mixed50-2h-c` runs source
 `1fb659efe` with an explicit 1,800-second activity-step timeout. It started
 before the recorded-window change and cannot gain that provenance retroactively.
-Its terminal workload, watcher and manual diagnostic telemetry results remain
-pending; do not present it as completed or overall accepted while it runs.
+It exits 1 at 05:26:54 UTC on b01's 1,800-second quest-step timeout; its isolated
+Docker stack is removed. Nineteen other finite starter journeys persisted.
+The b01 trace identifies the actual stall: a Flame Bolt (1282) starts at
+05:02:52.569 against object 12667, then an NPC attack and `SM_SKILL_CANCEL`
+arrive at 05:02:54.582. The bot waits only for `SM_CASTSPELL_RESULT`, which Java
+correctly does not send for this cancelled cast. The subject remains connected,
+but that is not workload progress. Section 7 #83 tracks this harness omission;
+do not disable interruptions or extend the timeout. Watching records one startup
+allowance, two regressed generic fingerprints and 41 repeats (43 bot records,
+including cancellation fallout, not independent root causes). No allowance is
+added. This failed run is not capacity or new-policy statistics evidence.
+
+## P10-02 source-derived statistical economy gate
+
+The probability model and gate are specified in
+[the versioned statistical policy](e2e-soak-statistics.md). This replaces the
+unverified completion-rate guesses with discrete competing-bar calculations,
+including critical progress, skill lead, float scaling and craft truncation.
+The twenty Cooking recipes/products are validated against the supported model.
+Every new LIVE outcome records its pre-action probability/model version.
+
+The gate uses both a fixed first-twenty sample per enrolled subject and a
+whole-stream test retaining every later attempt. Omitted subjects, small samples
+and insufficient expected failures cannot pass. Forced early success/failure
+and late biased-stream controls reject. Reports retain log evidence, exposure
+and bounded counters; neither statistical non-rejection nor a short diagnostic
+claims overall soak acceptance. Section 7 #82 records a newly identified random
+float endpoint divergence; its small, explicitly bounded probability envelope
+does not mark that production issue fixed.
+
+Twenty-eight model/statistics tests pass, including ten independent
+150,000-attempt bar simulations, exhaustive 24-bit increment enumeration and a
+failure-to-problem-watcher regression. The full solution passes 4,253 tests with
+24 explicit skips; warnings remain 4,243 and Docker Fast passes 6/6.
+A LIVE integration diagnostic is pending. The failed mixed50-2h-c predates this
+gate and cannot retroactively acquire its runtime observations or be reported
+as passing the new statistics policy.
 
 ## Scope decisions
 

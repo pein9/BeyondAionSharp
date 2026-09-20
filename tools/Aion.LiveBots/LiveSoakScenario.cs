@@ -25,6 +25,10 @@ public static partial class LiveBotRunner
 		if (cohorts.Any(cohort => cohort.Actions.Count == 0))
 			throw new InvalidOperationException("SOAK selection leaves a cohort without work; include a lifecycle activity.");
 		var gatheringSpots = options.SoakActivities.Contains(SoakActivity.Gather) ? SoakGatheringPool.StarterSpots() : [];
+		var economy = new SoakEconomyStatistics(cohorts.SelectMany(cohort =>
+			cohort.Actions.Where(action => action.Activity is SoakActivity.Gather or SoakActivity.Craft)
+				.SelectMany(action => new[] { cohort.FirstSubject, cohort.SecondSubject }.Select(subject =>
+					new SoakEconomySubject($"b{subject:D2}", action.Activity.ToString())))));
 		var gatheringPool = new SoakGatheringPool(gatheringSpots.SelectMany(spot => Enumerable.Range(1, 5).Select(instance => spot with { InstanceId = instance })));
 		long gatheringEpoch = Stopwatch.GetTimestamp();
 		var questResources = new SoakQuestResources(options.BotCount * 10);
@@ -94,6 +98,7 @@ public static partial class LiveBotRunner
 			await WriteWindowAsync(window);
 			start.SetResult(workloadStart);
 			SoakCohortResult[] results = await Task.WhenAll(loops);
+			await ValidateSoakEconomyAsync(options.Run, problems, economy.Snapshot());
 			await File.WriteAllTextAsync(Path.Combine(options.OutputDirectory, "soak-runtime.json"), JsonSerializer.Serialize(new
 			{
 				options.Seed, options.BotCount, options.SoakSeconds, Activities = options.SoakActivities.Select(value => value.ToString()),
@@ -112,6 +117,9 @@ public static partial class LiveBotRunner
 			foreach (var actor in actors) await actor.DisposeAsync();
 			if (window != null)
 				await WriteWindowAsync(window.Finish(workloadSuccessful, DateTimeOffset.UtcNow, Stopwatch.GetElapsedTime(workloadStart)));
+			var economicReport = economy.Snapshot();
+			await File.WriteAllTextAsync(Path.Combine(options.OutputDirectory, "soak-economy.json"),
+				JsonSerializer.Serialize(economicReport, new JsonSerializerOptions { WriteIndented = true }), CancellationToken.None);
 		}
 
 		async Task WriteWindowAsync(SoakWorkloadWindow value)
@@ -178,9 +186,9 @@ public static partial class LiveBotRunner
 								await Task.WhenAll(VendorScenario.RunAsync(new SoakVendorDriver(first), inner), VendorScenario.RunAsync(new SoakVendorDriver(second), inner)); break;
 							case SoakActivity.Craft:
 								var master = cohort.MapId == CookingMaster.Hestia.MapId ? CookingMaster.Hestia : CookingMaster.Lainita;
-								await SoakIndependentPairAsync(first, second, (actor, ct) => SoakCookingAsync(actor, master, ct), inner); break;
+								await SoakIndependentPairAsync(first, second, (actor, ct) => SoakCookingAsync(actor, master, economy, ct), inner); break;
 							case SoakActivity.Gather:
-								await SoakIndependentPairAsync(first, second, (actor, ct) => SoakGatherAsync(actor, cohort, gatheringPool, gatheringSpots, gatheringEpoch, ct), inner); break;
+								await SoakIndependentPairAsync(first, second, (actor, ct) => SoakGatherAsync(actor, cohort, gatheringPool, gatheringSpots, gatheringEpoch, economy, ct), inner); break;
 							case SoakActivity.Quest:
 								await SocialBasicsScenario.RecoverForDuelAsync(new LiveSocialDriver(first), new LiveSocialDriver(second), inner);
 								await SoakIndependentPairAsync(first, second, (actor, ct) => SoakQuestsAsync(actor, cohort, questResources, ct), inner);
@@ -220,6 +228,14 @@ public static partial class LiveBotRunner
 				throw;
 			}
 		}
+	}
+
+	internal static async Task ValidateSoakEconomyAsync(string run, LiveBotProblemWriter problems, SoakEconomyReport report)
+	{
+		if (report.Status != "failed") return; // Short diagnostics may be explicitly insufficient, never accepted.
+		var failure = new InvalidDataException("Soak economic observations reject the predeclared probability model; see soak-economy.json.");
+		await problems.WriteAsync(run, "population", "population", "soak-economy", "economy-statistics", failure.Message, failure);
+		throw failure;
 	}
 
 	private sealed record SoakCohortResult(int Cohort, long Actions, Dictionary<string, long> Counts);

@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Aion.GameServer.Tests" />
     <ProjectReference Include="..\..\tests\Aion.Bots\Aion.Bots.csproj" />
   </ItemGroup>
 

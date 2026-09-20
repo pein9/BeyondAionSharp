@@ -9,7 +9,7 @@ namespace Aion.LiveBots;
 public static partial class LiveBotRunner
 {
 	private static async Task SoakGatherAsync(L0Actor actor, SoakCohort cohort, SoakGatheringPool pool,
-		IReadOnlyList<SoakGatheringSpot> spots, long epoch, CancellationToken token)
+		IReadOnlyList<SoakGatheringSpot> spots, long epoch, SoakEconomyStatistics statistics, CancellationToken token)
 	{
 		var session = actor.Session;
 		var world = session.Api.World;
@@ -64,6 +64,7 @@ public static partial class LiveBotRunner
 			var expected = SoakTotals(world);
 			long previous = expected.GetValueOrDefault(target.ItemId);
 			int skillBefore = world.Skills[30001].Level;
+			double probability = SoakProgressProbability.Gather(skillBefore - 1);
 			foreach (var packet in session.Api.Gather(selected.ObjectId)) await session.SendPacketAsync(packet, token);
 			var start = await session.WaitForPacketAsync(typeof(SM_GATHER_UPDATE), token);
 			if (start.Get<byte>("action") != 0) throw new InvalidDataException("Coordinated gather did not start.");
@@ -89,8 +90,10 @@ public static partial class LiveBotRunner
 			{
 				["template"] = target.TemplateId, ["object"] = selected.ObjectId, ["use"] = selected.UseNumber,
 				["success"] = outcome == 6, ["skillBefore"] = skillBefore, ["skillDifference"] = skillBefore - 1,
+				["expectedProbability"] = probability, ["probabilityModel"] = SoakProgressProbability.Version,
 				["depleted"] = selected.Depletes, ["resourceWaits"] = waits, ["channel"] = channel,
 			});
+			statistics.Observe(actor.Bot, "Gather", probability, outcome == 6);
 		}
 		// Rendezvous before pair-owned trade/group/duel actions; this is ordinary checked movement.
 		var back = Route(home);
