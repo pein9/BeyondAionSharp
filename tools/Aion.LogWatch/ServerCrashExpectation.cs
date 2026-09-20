@@ -24,8 +24,8 @@ internal sealed class ServerCrashExpectation
 	};
 	private readonly Plan plan;
 	internal string Server { get; }
-	private string Service => Server == "gs" ? "gameserver" : "chatserver";
-	private string Name => Server == "gs" ? "game server" : "chat server";
+	private string Service => Server switch { "gs" => "gameserver", "cs" => "chatserver", "ls" => "loginserver", _ => throw new InvalidOperationException("Unknown crash target.") };
+	private string Name => Server switch { "gs" => "game server", "cs" => "chat server", "ls" => "login server", _ => throw new InvalidOperationException("Unknown crash target.") };
 	private DateTimeOffset? latestHeartbeat;
 	internal DateTimeOffset? DiedUtc { get; private set; }
 	internal DateTimeOffset? StartedUtc { get; private set; }
@@ -36,7 +36,7 @@ internal sealed class ServerCrashExpectation
 
 	internal static ServerCrashExpectation Load(string json, string run, string project, DateTimeOffset now, string server = "gs")
 	{
-		if (server is not ("gs" or "cs")) throw new ArgumentException("Only an explicitly selected first Game or Chat server may be faulted.", nameof(server));
+		if (server is not ("gs" or "cs" or "ls")) throw new ArgumentException("Only an explicitly selected first Game, Chat or Login server may be faulted.", nameof(server));
 		var plan = JsonSerializer.Deserialize<Plan>(json, JsonOptions)
 			?? throw new InvalidDataException("Crash plan must be an object.");
 		if (plan.SchemaVersion != 1 || plan.Run != run || plan.Project != project ||

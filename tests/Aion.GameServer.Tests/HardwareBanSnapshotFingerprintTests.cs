@@ -9,6 +9,8 @@ using GameLoginServer = Aion.GameServer.Network.LoginServer.LoginServer;
 
 namespace Aion.GameServer.Tests;
 
+// Runtime-dispatch cases replace the same LoginServer singleton used by command tests.
+[Collection("GoldenDataManager")]
 public sealed class HardwareBanSnapshotFingerprintTests
 {
 	private const long Winter = 1_800_032_400_000; // 2027-01-15 12:00 America/New_York

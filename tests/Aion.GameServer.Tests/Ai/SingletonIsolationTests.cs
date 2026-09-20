@@ -39,6 +39,17 @@ public sealed class SingletonIsolationTests
 	/// <summary>The collection whose whole purpose is to stop these classes running side by side.</summary>
 	private const string Serialising = "GoldenDataManager";
 
+	[Theory]
+	[InlineData(typeof(BanHddJavaArithmeticTests))]
+	[InlineData(typeof(HardwareBanSnapshotFingerprintTests))]
+	public void HardwareBanFixturesThatSwapTheLoginSingletonAreSerialised(Type fixture)
+	{
+		// Construction writes LoginServer._instance; the command resolves it again via GetInstance().
+		// These indirect writes are not covered by the source-call patterns below.
+		var attribute = Assert.Single(fixture.GetCustomAttributesData(), a => a.AttributeType == typeof(CollectionAttribute));
+		Assert.Equal(Serialising, Assert.Single(attribute.ConstructorArguments).Value);
+	}
+
 	/// <summary>The attribute, in either spelling the project uses.</summary>
 	private static readonly Regex InTheCollection = new(
 		@"\[\s*(?:Xunit\.)?Collection\s*\(\s*""GoldenDataManager""\s*\)\s*\]",

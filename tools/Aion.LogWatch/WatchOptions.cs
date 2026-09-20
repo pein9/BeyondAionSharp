@@ -24,9 +24,10 @@ public sealed record WatchOptions(
 {
 	public bool ExpectGameServerCrash { get; init; }
 	public bool ExpectChatServerCrash { get; init; }
-	internal bool ExpectsServerCrash => ExpectGameServerCrash || ExpectChatServerCrash;
-	internal string CrashServer => ExpectChatServerCrash ? "cs" : "gs";
-	internal string CrashPrefix => ExpectChatServerCrash ? "chat-server" : "game-server";
+	public bool ExpectLoginServerCrash { get; init; }
+	internal bool ExpectsServerCrash => ExpectGameServerCrash || ExpectChatServerCrash || ExpectLoginServerCrash;
+	internal string CrashServer => ExpectLoginServerCrash ? "ls" : ExpectChatServerCrash ? "cs" : "gs";
+	internal string CrashPrefix => ExpectLoginServerCrash ? "login-server" : ExpectChatServerCrash ? "chat-server" : "game-server";
 	public bool SecondGameServer { get; init; }
 	internal IReadOnlyList<string> Servers => SecondGameServer ? ["gs", "gs2", "ls", "cs", "cs2"] : ["gs", "ls", "cs"];
 	internal IReadOnlyList<string> DockerServices => SecondGameServer
@@ -37,7 +38,7 @@ public sealed record WatchOptions(
 
 	internal void ValidateHeartbeatThresholds()
 	{
-		if (ExpectGameServerCrash && ExpectChatServerCrash)
+		if ((ExpectGameServerCrash ? 1 : 0) + (ExpectChatServerCrash ? 1 : 0) + (ExpectLoginServerCrash ? 1 : 0) > 1)
 			throw new ArgumentException("Only one explicitly selected server crash may be expected in a run.");
 		if (MissingHeartbeatThreshold < TimeSpan.FromSeconds(20) || MissingHeartbeatThreshold > TimeSpan.FromSeconds(300))
 			throw new ArgumentException("--heartbeat-timeout-seconds must be between 20 and 300 (producer interval: 10 seconds).");
@@ -50,7 +51,7 @@ public sealed record WatchOptions(
 		"[--mode enforce|record] [--duration-seconds N] [--stop-file path] [--no-docker true|false] " +
 		"[--full-run true|false] [--unexpected-refusals STR_SKILL_NOT_READY,...] [--expect-game-server-crash true|false] " +
 		"[--heartbeat-timeout-seconds 20] [--initial-heartbeat-timeout-seconds 30] [--second-game-server true|false] " +
-		"[--expect-chat-server-crash true|false]";
+		"[--expect-chat-server-crash true|false] [--expect-login-server-crash true|false]";
 
 	public static WatchOptions Parse(string[] args)
 	{
@@ -68,7 +69,7 @@ public sealed record WatchOptions(
 			"run", "run-dir", "project", "compose-file", "allowlist", "ledger", "mode",
 			"duration-seconds", "stop-file", "no-docker", "full-run", "unexpected-refusals", "expect-game-server-crash",
 			"heartbeat-timeout-seconds", "initial-heartbeat-timeout-seconds",
-			"second-game-server", "expect-chat-server-crash",
+			"second-game-server", "expect-chat-server-crash", "expect-login-server-crash",
 		};
 		var unknown = values.Keys.FirstOrDefault(key => !known.Contains(key));
 		if (unknown != null)
@@ -112,6 +113,7 @@ public sealed record WatchOptions(
 		{
 			ExpectGameServerCrash = Boolean(values, "expect-game-server-crash", false),
 			ExpectChatServerCrash = Boolean(values, "expect-chat-server-crash", false),
+			ExpectLoginServerCrash = Boolean(values, "expect-login-server-crash", false),
 			SecondGameServer = Boolean(values, "second-game-server", false),
 			MissingHeartbeatThreshold = TimeSpan.FromSeconds(Integer(values, "heartbeat-timeout-seconds", 20)),
 			InitialHeartbeatThreshold = TimeSpan.FromSeconds(Integer(values, "initial-heartbeat-timeout-seconds", 30)),

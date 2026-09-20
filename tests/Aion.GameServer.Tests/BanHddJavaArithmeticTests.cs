@@ -12,6 +12,8 @@ using GameLoginServer = Aion.GameServer.Network.LoginServer.LoginServer;
 
 namespace Aion.GameServer.Tests;
 
+// The command uses process-wide LoginServer and ban-manager singletons.
+[Collection("GoldenDataManager")]
 public sealed class BanHddJavaArithmeticTests
 {
 	// Java BanHdd: int minutes, zero -> 5,256,000; int multiplication precedes long epoch addition.

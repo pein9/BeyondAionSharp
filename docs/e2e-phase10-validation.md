@@ -3119,6 +3119,53 @@ used; the run's temporary simulation database was dropped by fixture cleanup.
 This is a parity checkpoint, not the full LIVE hardware-ban restart journey;
 BA-003, BA-006 and P10-09 remain open.
 
+## P10-09 Login fault monitoring prerequisite
+
+The watcher now accepts `--expect-login-server-crash true`. Like the existing
+Game and Chat options, this selects exactly one server; every pair or triple of
+crash opt-ins is rejected by both CLI parsing and direct watcher construction.
+The controller must supply a fresh `login-server-crash-plan.json` naming this
+isolated project and a full container ID, and await the SHA-256-bound
+`login-server-crash-armed.json` receipt. The existing limits remain 30 seconds
+to observe one exit-137 death and 180 seconds to recover with a fresh Login
+heartbeat. `expectedLoginServerCrash` is recorded separately in the summary.
+
+Watcher tests exercise successful Login death/start/recovery and refusal of
+unplanned deaths, other containers/projects, OOM, repeated deaths, server errors,
+missing restart/heartbeat/timestamps and recycled pre-kill heartbeats. Missing
+plans fail closed. Game/Chat and second-instance heartbeats remain monitored
+during a planned Login gap, and normal Login monitoring resumes after recovery.
+The tracked-second-death test now computes its ledger fingerprint for the
+selected service instead of hard-coding Game, so Chat/Login cases genuinely
+exercise an existing tracked fingerprint too. No allowance or threshold was
+broadened.
+
+The first full validation exposed §7/121: an intermittent failure of the HDD
+arithmetic regression. Both new hardware-ban fixtures replace the process-wide
+Login connector and were missing the suite's shared serial-collection tag.
+They now join `GoldenDataManager`; two architecture cases pin that requirement.
+The isolated 16-case hardware run passed even before isolation, demonstrating
+why its earlier green result was insufficient. The initial full failure remains
+in `run/p10-09-login-fault-watcher-tests.log`. No assertion was weakened and no
+retry policy or flake allowance was added. The warning gate also caught an xUnit
+assertion-style warning in the new architecture check; the assertion was corrected,
+not the baseline.
+
+This is harness-only fault monitoring. No Docker process was killed, no bot
+started and no hardware-ban restart acceptance is claimed in this checkpoint.
+The owned Login controller, initial seasonal fixtures, fresh snapshot comparison
+and real client enforcement remain necessary for BA-006/P10-09.
+
+Final pre-commit validation: two consecutive full solution runs pass 4,563 tests
+with 27 explicit skips each. Warning inventory remains 4,243 sites and all
+CLAUDE.md ancillary checks pass. Evidence:
+`run/p10-09-login-fault-watcher-warnings-verified.log`,
+`run/p10-09-login-fault-watcher-tests-final.log`,
+`run/p10-09-login-fault-watcher-tests-repeat.log` and
+`run/p10-09-login-fault-watcher-ancillary-final.log`.
+No gameplay changes in this checkpoint; the preceding arithmetic fix
+(`f104bd78a`) already passed Docker Fast.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

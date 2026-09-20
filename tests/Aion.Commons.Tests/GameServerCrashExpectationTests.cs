@@ -6,31 +6,35 @@ namespace Aion.Commons.Tests;
 public sealed class GameServerCrashExpectationTests
 {
 	[Theory]
-	[InlineData("gs")]
-	[InlineData("gs2")]
-	[InlineData("ls")]
-	[InlineData("cs2")]
-	public void ChatExpectationNeverCoversAnotherProducer(string otherServer)
+	[InlineData("cs", "gs")]
+	[InlineData("cs", "gs2")]
+	[InlineData("cs", "ls")]
+	[InlineData("cs", "cs2")]
+	[InlineData("ls", "gs")]
+	[InlineData("ls", "gs2")]
+	[InlineData("ls", "cs")]
+	[InlineData("ls", "cs2")]
+	public void BridgeExpectationNeverCoversAnotherProducer(string target, string otherServer)
 	{
 		var expectation = ServerCrashExpectation.Load(JsonSerializer.Serialize(Plan(), new JsonSerializerOptions(JsonSerializerDefaults.Web)),
-			"test", "aion-bots-test", Epoch, "cs");
-		string otherService = otherServer switch { "cs2" => "chatserver2", "gs2" => "gameserver2", "ls" => "loginserver", _ => "gameserver" };
+			"test", "aion-bots-test", Epoch, target);
+		string service = target == "cs" ? "chatserver" : "loginserver";
+		string otherService = otherServer switch { "cs" => "chatserver", "cs2" => "chatserver2", "gs2" => "gameserver2", "ls" => "loginserver", _ => "gameserver" };
 		Assert.False(expectation.ObserveDocker("aion-bots-test", Container, otherService, "die", "137", Epoch.AddSeconds(1)));
-		Assert.True(expectation.ObserveDocker("aion-bots-test", Container, "chatserver", "die", "137", Epoch.AddSeconds(1)));
-		Assert.True(expectation.ExpectsHeartbeatGap("cs", Epoch.AddSeconds(25)));
+		Assert.True(expectation.ObserveDocker("aion-bots-test", Container, service, "die", "137", Epoch.AddSeconds(1)));
+		Assert.True(expectation.ExpectsHeartbeatGap(target, Epoch.AddSeconds(25)));
 		Assert.False(expectation.ExpectsHeartbeatGap(otherServer, Epoch.AddSeconds(25)));
-		Assert.True(expectation.ObserveDocker("aion-bots-test", Container, "chatserver", "start", null, Epoch.AddSeconds(40)));
+		Assert.True(expectation.ObserveDocker("aion-bots-test", Container, service, "start", null, Epoch.AddSeconds(40)));
 		expectation.ObserveHeartbeat(otherServer, Epoch.AddSeconds(41));
 		Assert.False(expectation.Complete);
-		expectation.ObserveHeartbeat("cs", Epoch.AddSeconds(41));
+		expectation.ObserveHeartbeat(target, Epoch.AddSeconds(41));
 		Assert.True(expectation.Complete);
-		Assert.False(expectation.ExpectsHeartbeatGap("cs", Epoch.AddSeconds(62)));
+		Assert.False(expectation.ExpectsHeartbeatGap(target, Epoch.AddSeconds(62)));
 	}
 
 	[Theory]
 	[InlineData("cs2")]
 	[InlineData("gs2")]
-	[InlineData("ls")]
 	[InlineData("mysql")]
 	public void UnsupportedCrashTargetsCannotBeSelected(string server) => Assert.Throws<ArgumentException>(() =>
 		ServerCrashExpectation.Load(JsonSerializer.Serialize(Plan(), new JsonSerializerOptions(JsonSerializerDefaults.Web)),

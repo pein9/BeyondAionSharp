@@ -8,7 +8,7 @@ public sealed partial class ProblemWatcherTests
 {
 	public static IEnumerable<object[]> CrashCases()
 	{
-		foreach (string server in new[] { "gs", "cs" })
+		foreach (string server in new[] { "gs", "cs", "ls" })
 		foreach (string variant in new[] { "normal", "no-opt-in", "second-death", "other-container", "other-project",
 			"oom", "server-error", "tracked-error", "tracked-second-death", "missing-restart", "missing-heartbeat",
 			"missing-timestamp", "pre-kill-heartbeat" })
@@ -20,15 +20,16 @@ public sealed partial class ProblemWatcherTests
 	public async Task InjectedCrashIsNarrowAndNeverHidesOtherFailures(string variant, int expectedFailure, string server)
 	{
 		using var run = new WatcherRun();
-		string service = server == "gs" ? "gameserver" : "chatserver";
-		string prefix = server == "gs" ? "game-server" : "chat-server";
-		string summaryProperty = server == "gs" ? "expectedGameServerCrash" : "expectedChatServerCrash";
+		string service = server switch { "gs" => "gameserver", "cs" => "chatserver", _ => "loginserver" };
+		string prefix = server switch { "gs" => "game-server", "cs" => "chat-server", _ => "login-server" };
+		string summaryProperty = server switch { "gs" => "expectedGameServerCrash", "cs" => "expectedChatServerCrash", _ => "expectedLoginServerCrash" };
 		var options = run.Options() with { ExpectGameServerCrash = server == "gs" && variant != "no-opt-in",
-			ExpectChatServerCrash = server == "cs" && variant != "no-opt-in" };
+			ExpectChatServerCrash = server == "cs" && variant != "no-opt-in",
+			ExpectLoginServerCrash = server == "ls" && variant != "no-opt-in" };
 		if (variant.StartsWith("tracked-", StringComparison.Ordinal))
 		{
 			string fingerprint = variant == "tracked-error" ? "1234abcd" :
-				Aion.Commons.Logging.LogFingerprint.Create("Container process event: die", null, "Container gameserver die code=137.").Value;
+				Aion.Commons.Logging.LogFingerprint.Create("Container process event: die", null, $"Container {service} die code=137.").Value;
 			run.WriteLedger(JsonSerializer.Serialize(new[] { new
 			{
 				fp = fingerprint, firstSeenSha = "1111111", lastSeenSha = "2222222", lastSeenRun = "older",
@@ -85,13 +86,44 @@ public sealed partial class ProblemWatcherTests
 	}
 
 	[Theory]
-	[InlineData(false)]
-	[InlineData(true)]
-	public async Task CrashOptInWithoutAPlanFailsClosed(bool chat)
+	[InlineData("gs", "game")]
+	[InlineData("cs", "chat")]
+	[InlineData("ls", "login")]
+	public async Task CrashOptInWithoutAPlanFailsClosed(string server, string prefix)
 	{
 		using var run = new WatcherRun();
-		Assert.Equal(1, await ProblemWatcher.RunAsync(run.Options() with { ExpectGameServerCrash = !chat, ExpectChatServerCrash = chat }));
-		Assert.Contains($"No valid {(chat ? "chat" : "game")}-server crash plan was armed", run.ReadDigest(), StringComparison.Ordinal);
+		Assert.Equal(1, await ProblemWatcher.RunAsync(run.Options() with { ExpectGameServerCrash = server == "gs",
+			ExpectChatServerCrash = server == "cs", ExpectLoginServerCrash = server == "ls" }));
+		Assert.Contains($"No valid {prefix}-server crash plan was armed", run.ReadDigest(), StringComparison.Ordinal);
+	}
+
+	[Theory]
+	[InlineData(true, false, false)]
+	[InlineData(false, true, false)]
+	[InlineData(false, false, true)]
+	[InlineData(true, true, false)]
+	[InlineData(true, false, true)]
+	[InlineData(false, true, true)]
+	[InlineData(true, true, true)]
+	[InlineData(false, false, false)]
+	public void CrashSelectionIsExplicitAndMutuallyExclusive(bool game, bool chat, bool login)
+	{
+		using var run = new WatcherRun();
+		string[] args = ["--run", "test", "--run-dir", run.Options().RunDirectory,
+			"--expect-game-server-crash", game.ToString(), "--expect-chat-server-crash", chat.ToString(),
+			"--expect-login-server-crash", login.ToString()];
+		if ((game ? 1 : 0) + (chat ? 1 : 0) + (login ? 1 : 0) > 1)
+		{
+			Assert.Throws<ArgumentException>(() => WatchOptions.Parse(args));
+			Assert.Throws<ArgumentException>(() => new ProblemWatcher.WatcherState(run.Options() with
+				{ ExpectGameServerCrash = game, ExpectChatServerCrash = chat, ExpectLoginServerCrash = login }));
+			return;
+		}
+		var parsed = WatchOptions.Parse(args);
+		Assert.Equal(login, parsed.ExpectLoginServerCrash);
+		Assert.Equal(game || chat || login, parsed.ExpectsServerCrash);
+		Assert.Equal(login ? "ls" : chat ? "cs" : "gs", parsed.CrashServer);
+		Assert.Equal(login ? "login-server" : chat ? "chat-server" : "game-server", parsed.CrashPrefix);
 	}
 
 	[Fact]
@@ -106,12 +138,18 @@ public sealed partial class ProblemWatcherTests
 	}
 
 	[Theory]
-	[InlineData("ls")]
-	[InlineData("gs2")]
-	public async Task PlannedGapIsOnlyForGsAndNormalHeartbeatMonitoringResumes(string otherServer)
+	[InlineData("gs", "ls")]
+	[InlineData("gs", "gs2")]
+	[InlineData("ls", "gs")]
+	[InlineData("ls", "cs")]
+	[InlineData("ls", "gs2")]
+	[InlineData("ls", "cs2")]
+	public async Task PlannedGapIsOnlyForSelectedServerAndNormalHeartbeatMonitoringResumes(string target, string otherServer)
 	{
 		using var run = new WatcherRun();
-		var options = run.Options() with { ExpectGameServerCrash = true, SecondGameServer = otherServer == "gs2" };
+		var options = run.Options() with { ExpectGameServerCrash = target == "gs", ExpectLoginServerCrash = target == "ls",
+			SecondGameServer = otherServer is "gs2" or "cs2" };
+		string prefix = target == "gs" ? "game-server" : "login-server";
 		var at = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 		string container = new('a', 64);
 		string planJson = JsonSerializer.Serialize(new
@@ -119,7 +157,7 @@ public sealed partial class ProblemWatcherTests
 			schemaVersion = 1, run = "test", project = "aion-bots-test", containerId = container,
 			armedUtc = at, killDeadlineUtc = at.AddSeconds(30), recoveryDeadlineUtc = at.AddSeconds(180),
 		});
-		File.WriteAllText(Path.Combine(options.RunDirectory, "game-server-crash-plan.json"), planJson);
+		File.WriteAllText(Path.Combine(options.RunDirectory, prefix + "-crash-plan.json"), planJson);
 		var state = new ProblemWatcher.WatcherState(options);
 		void Heartbeat(string server, int seconds)
 		{
@@ -131,13 +169,13 @@ public sealed partial class ProblemWatcherTests
 			var channel = Channel.CreateUnbounded<DockerLine>();
 			channel.Writer.TryWrite(new DockerLine("event", "docker", JsonSerializer.Serialize(new
 			{
-				action, id = container, service = "gameserver", time = at.AddSeconds(seconds),
+				action, id = container, service = target == "gs" ? "gameserver" : "loginserver", time = at.AddSeconds(seconds),
 				attributes = new { exitCode = "137" },
 			}), false) { ProjectName = options.ProjectName });
 			state.ReadDocker(channel.Reader);
 		}
-		Heartbeat("gs", 0);
-		using (var receipt = JsonDocument.Parse(File.ReadAllText(Path.Combine(options.RunDirectory, "game-server-crash-armed.json"))))
+		Heartbeat(target, 0);
+		using (var receipt = JsonDocument.Parse(File.ReadAllText(Path.Combine(options.RunDirectory, prefix + "-crash-armed.json"))))
 			Assert.Equal(Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(planJson))),
 				receipt.RootElement.GetProperty("planSha256").GetString());
 		Docker("die", 1);
@@ -147,14 +185,14 @@ public sealed partial class ProblemWatcherTests
 		state.CheckHeartbeats(at.AddSeconds(25));
 		Assert.True(state.FailingProblemCount > 0); // Other servers never enter the planned gap.
 		Docker("start", 40);
-		Heartbeat("gs", 41);
+		Heartbeat(target, 41);
 		state.CheckHeartbeats(at.AddSeconds(62));
 		await state.WriteSummaryAsync(CancellationToken.None);
 		Assert.Contains($"NEW HEARTBEAT {otherServer}", run.ReadDigest(), StringComparison.Ordinal);
-		Assert.Contains("REPEAT gs", run.ReadDigest(), StringComparison.Ordinal); // The shared heartbeat fingerprint repeats.
+		Assert.Contains("REPEAT " + target, run.ReadDigest(), StringComparison.Ordinal); // The shared heartbeat fingerprint repeats.
 		using var summary = JsonDocument.Parse(File.ReadAllText(run.SummaryPath));
 		Assert.Equal(2, summary.RootElement.GetProperty("total").GetInt32());
-		Assert.True(summary.RootElement.GetProperty("expectedGameServerCrash").GetBoolean());
+		Assert.True(summary.RootElement.GetProperty(target == "gs" ? "expectedGameServerCrash" : "expectedLoginServerCrash").GetBoolean());
 		Assert.True(summary.RootElement.GetProperty("failed").GetBoolean());
 	}
 }

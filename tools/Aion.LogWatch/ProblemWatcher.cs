@@ -261,6 +261,7 @@ public static class ProblemWatcher
 				hangDiagnostics = diagnostics.Select(d => new { server = d.Server, status = d.Status, directory = d.Directory, failure = d.Failure }),
 				expectedGameServerCrash = options.ExpectGameServerCrash ? expectedCrash?.Complete == true : (bool?)null,
 				expectedChatServerCrash = options.ExpectChatServerCrash ? expectedCrash?.Complete == true : (bool?)null,
+				expectedLoginServerCrash = options.ExpectLoginServerCrash ? expectedCrash?.Complete == true : (bool?)null,
 				failed = options.Mode == WatchMode.Enforce && FailingProblemCount > 0,
 				retainedTraceRecords = traceHistory.RetainedRecords,
 				retainedTraceCharacters = traceHistory.RetainedCharacters,
