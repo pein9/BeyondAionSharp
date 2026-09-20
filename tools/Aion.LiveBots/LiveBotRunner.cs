@@ -36,6 +36,8 @@ public static partial class LiveBotRunner
 			return await RunO1Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "B2" }])
 			return await RunB2Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "B2F" }])
+			return await RunB2FAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "SOAK" }])
 			return await RunSoakAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "L0" }])

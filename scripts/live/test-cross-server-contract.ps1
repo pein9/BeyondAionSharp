@@ -117,4 +117,73 @@ foreach ($database in @('aion_gs','aion_gs2')) {
 $threw=$false
 try { Read-TransferRows $sql 'other_database' | Out-Null } catch { $threw=$true }
 Assert-TopologyContract ($threw -and $queries.Count -eq 4)
+. (Join-Path $PSScriptRoot 'lifecycle-controller.ps1')
+. (Join-Path $PSScriptRoot 'chat-fault-controller.ps1')
+$chatArgs=@('compose','-f','fixture.yml','-p',$project)
+$chatCalls=[Collections.Generic.List[string]]::new()
+function docker {
+	$script:LASTEXITCODE=0
+	$chatCalls.Add(($args -join '|'))
+	if (($args -join '|') -ceq 'compose|-f|fixture.yml|-p|aion-bots-contract|ps|--all|--quiet|chatserver') { return $chatIds }
+	if (($args -join '|') -ceq ('inspect|'+$id)) { return ($chatFixture | ConvertTo-Json -Depth 8) }
+	throw 'Unexpected Docker operation in Chat ownership test.'
+}
+function New-ChatFaultFixture {
+	return [pscustomobject]@{Id=$id;Image=('sha256:'+('b'*64));RestartCount=0;
+		State=[pscustomobject]@{Running=$true;Paused=$false;StartedAt='2026-09-20T00:00:00Z'};
+		Config=[pscustomobject]@{Labels=[pscustomobject]@{'com.docker.compose.project'=$project;'com.docker.compose.service'='chatserver'}};
+		NetworkSettings=[pscustomobject]@{Networks=[pscustomobject]@{"${project}_default"=[pscustomobject]@{}}}}
+}
+$chatIds=@($id); $chatFixture=New-ChatFaultFixture
+Assert-TopologyContract ((Get-ChatFaultContainer $chatArgs $project).Id -ceq $id)
+foreach ($defect in @('empty','duplicate','short','id','image','project','service','network','shared-network','stopped','paused','restart','compose')) {
+	$chatIds=@($id); $chatFixture=New-ChatFaultFixture; $selection=$chatArgs
+	switch ($defect) {
+		'empty' {$chatIds=@()}
+		'duplicate' {$chatIds=@($id,$id)}
+		'short' {$chatIds=@('chatserver')}
+		'id' {$chatFixture.Id='c'*64}
+		'image' {$chatFixture.Image='mutable-tag'}
+		'project' {$chatFixture.Config.Labels.'com.docker.compose.project'='aion'}
+		'service' {$chatFixture.Config.Labels.'com.docker.compose.service'='chatserver2'}
+		'network' {$chatFixture.NetworkSettings.Networks=[pscustomobject]@{aion_default=[pscustomobject]@{}}}
+		'shared-network' {$chatFixture.NetworkSettings.Networks | Add-Member -NotePropertyName aion_default -NotePropertyValue ([pscustomobject]@{})}
+		'stopped' {$chatFixture.State.Running=$false}
+		'paused' {$chatFixture.State.Paused=$true}
+		'restart' {$chatFixture.RestartCount=1}
+		'compose' {$selection=@('compose','-f','fixture.yml','-p','aion')}
+	}
+	$threw=$false
+	try { Get-ChatFaultContainer $selection $project | Out-Null } catch { $threw=$true }
+	Assert-TopologyContract $threw
+}
+foreach ($subjects in @(@(1,2),@(1,1),@(1),@(1,2,3),@(-1,2),@('1',2),@(1.5,2),@([long]::MaxValue,2))) {
+	$request=[pscustomobject]@{schemaVersion=1;run='contract';subjects=$subjects}
+	$threw=$false
+	try { Assert-ChatFaultRequest $request 'contract' } catch { $threw=$true }
+	Assert-TopologyContract ($threw -eq -not ($subjects.Count -eq 2 -and $subjects[0] -is [int] -and $subjects[0] -eq 1 -and $subjects[1] -eq 2))
+}
+$threw=$false
+try { Assert-ChatFaultRequest ([pscustomobject]@{schemaVersion=1;run='other';subjects=@(1,2)}) 'contract' } catch { $threw=$true }
+Assert-TopologyContract $threw
+Assert-TopologyContract (@($chatCalls | Where-Object { $_ -notmatch '^(compose\|.*\|ps\|--all\|--quiet\|chatserver|inspect\|[a-f0-9]{64})$' }).Count -eq 0)
+$request=[pscustomobject]@{schemaVersion=1;run='contract';subjects=@(11,12)}
+foreach ($defect in @('none','run','subject','schema','no-replies','fraction-replies','short','long','nan','infinity','string')) {
+	$receipt=[pscustomobject]@{schemaVersion=1;run='contract';characterId=11;gameReplies=20;elapsedSeconds=3.1}
+	switch ($defect) {
+		'run' {$receipt.run='other'}
+		'subject' {$receipt.characterId=12}
+		'schema' {$receipt.schemaVersion=2}
+		'no-replies' {$receipt.gameReplies=0}
+		'fraction-replies' {$receipt.gameReplies=2.5}
+		'short' {$receipt.elapsedSeconds=2.9}
+		'long' {$receipt.elapsedSeconds=30.1}
+		'nan' {$receipt.elapsedSeconds=[double]::NaN}
+		'infinity' {$receipt.elapsedSeconds=[double]::PositiveInfinity}
+		'string' {$receipt.elapsedSeconds='3.1'}
+	}
+	$threw=$false
+	try { Assert-ChatOutageReceipt $receipt $request 'contract' } catch { $threw=$true }
+	Assert-TopologyContract ($threw -eq ($defect -cne 'none'))
+}
 Write-Host "Cross-server contract passed ($checks assertions); no containers, databases or bots started."

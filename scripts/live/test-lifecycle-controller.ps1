@@ -310,22 +310,37 @@ try {
 	Assert-True ((Get-Content -Raw -LiteralPath (Join-Path $repoRoot 'parity-artifacts/e2e/log-allowlist.json')) -ceq $originalAllowlist) 'Global allowances were changed.'
 	Assert-True (($watcherArguments -join '|').Contains('--expect-game-server-crash|true|--allowlist|')) 'O1 watcher did not arm fault checking.'
 	$dispatches = @($runner.FindAll({ param($node)
-		$node -is [Management.Automation.Language.IfStatementAst] -and $node.Extent.Text.Contains('$botExitCode = Invoke-LifecycleBot')
+		$node -is [Management.Automation.Language.IfStatementAst] -and
+			$node.Clauses[0].Item1.Extent.Text -ceq '$Scenario -contains ''O1'' -or $Scenario -contains ''B2F'''
 	}, $true))
 	Assert-True ($dispatches.Count -eq 1) 'O1 bypassed the owning controller.'
 	function Get-LiveDockerBotArguments { return @('exec','-T','botrunner','dotnet','/app/Aion.LiveBots.dll') }
 	function Invoke-LifecycleBot {
 		param($FileName, $Arguments, $ComposeArguments, $ProjectName, $Run, $RunDirectory, $Watcher)
+		Assert-True ($Scenario -contains 'O1') 'Chat fault was routed to the Game controller.'
+		Assert-FaultDispatch @PSBoundParameters
+	}
+	function Invoke-ChatFaultBot {
+		param($FileName, $Arguments, $ComposeArguments, $ProjectName, $Run, $RunDirectory, $Watcher)
+		Assert-True ($Scenario -contains 'B2F') 'Game fault was routed to the Chat controller.'
+		Assert-FaultDispatch @PSBoundParameters
+	}
+	function Assert-FaultDispatch {
+		param($FileName, $Arguments, $ComposeArguments, $ProjectName, $Run, $RunDirectory, $Watcher)
 		Assert-True ($FileName -ceq $(if ($BotExecution -eq 'Host') { 'dotnet' } else { 'docker' })) 'Wrong lifecycle execution host.'
 		Assert-True ($ProjectName -ceq $project -and $Run -ceq 'contract' -and $RunDirectory -ceq $runPath -and $Watcher -ceq 'fixture-watcher') 'Lifecycle owner settings lost.'
 		Assert-True (($Arguments -join '|') -ceq $(if ($BotExecution -eq 'Host') { 'host-arguments' } else { ($compose -join '|') + '|exec|-T|botrunner|dotnet|/app/Aion.LiveBots.dll' })) 'Lifecycle child arguments lost.'
-		return 0
+		return $expectedExit
 	}
 	$botArguments=@('host-arguments'); $composeArgs=$compose; $projectName=$project; $watcherProcess='fixture-watcher'; $dockerEndpoints=@{}
 	foreach ($BotExecution in @('Host','Docker')) {
-		$botExitCode=-1
-		. ([scriptblock]::Create($dispatches[0].Extent.Text))
-		Assert-True ($botExitCode -eq 0) 'Lifecycle controller exit code was lost.'
+		foreach ($Scenario in @(@('O1'), @('B2F'))) {
+			foreach ($expectedExit in @(0, 7)) {
+				$botExitCode=-1
+				. ([scriptblock]::Create($dispatches[0].Extent.Text))
+				Assert-True ($botExitCode -eq $expectedExit) 'Fault controller exit code was lost.'
+			}
+		}
 	}
 	Write-Host "Lifecycle controller contract passed ($script:assertions assertions); Docker was mocked, no bots or servers started."
 }

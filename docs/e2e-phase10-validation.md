@@ -2898,8 +2898,8 @@ remain untouched. B's executable SHA-256 is
 its base revision is also `493e6234f`, with archived scenario and working patch.
 
 Coverage limits: this tests duplicate requests **before attaching the new Chat
-socket**, not takeover of an already-authenticated socket. Bridge outage/pending
-request timeout/recovery still need an owned live fault run. Later successful
+socket**, not takeover of an already-authenticated socket. The separate B2F fault
+journey below covers bridge outage/client timeout/recovery. Later successful
 gag refusal, no-leak barrier, ungag/re-auth and final logout assertions are not
 claimed as passed when the scenario stops at gag enforcement. Run B did observe
 the no-leak barrier and disproved it; ungag/final logout remain unreached. BA-002 and P10-09
@@ -2911,6 +2911,66 @@ checks pass, including Full planning with B2 automatically included. Logs:
 `run/p10-09-chat-warnings.log`, `run/p10-09-chat-tests.log`, and
 `run/p10-09-chat-ancillary.log`. These green checks validate the harness, not the
 failing LIVE gag behavior.
+
+## P10-09 Chat fault recovery
+
+LIVE `B2F` is a separate Full scenario using two ordinary clients, no director.
+After successful auth/channel delivery, its owned controller declares one exact
+Chat container SIGKILL to the watcher and waits for the hash-bound arming receipt.
+The controller validates container/image, service/project labels, exclusive
+network and process state before injection. Game and Login remain running.
+
+The controller waits for a fresh GS reconnect-failure log before releasing the
+bot outage step. Both Chat sockets must close. A normal `CM_CHAT_AUTH` then gets
+no `SM_CHAT_INIT` through a three-second **client-side** deadline while repeated
+`CM_TIME_CHECK`/`SM_TIME_CHECK` barriers prove Game is still responsive. This is
+the production Java-equivalent request path: `ChatServer.sendPlayerLoginRequest`
+drops a request while the bridge is down. It is not the optional C# callback API,
+does not claim an application-level timeout reply, and does not inject a pending
+bridge response. Normal retry timing is unchanged.
+
+After the run/subject-bound bot receipt, the controller starts the same Chat
+container, confirms a later process start, fresh GS Chat-auth/Chat registration
+logs and a new non-future heartbeat. Game's container/image/start must be unchanged.
+Both players then obtain fresh Chat tokens, rejoin, receive the same message,
+quit and verify offline. Watching stays active; its one-server expected fault
+does not cover other processes, second deaths, OOM, warning categories or errors.
+Game and Chat crash opt-ins are mutually exclusive. O1's existing contract remains.
+
+`run/p10-09-chat-fault/p10-09-chat-fault-a` passes the first real journey with
+28 Game replies during 3.0438 seconds of unavailable auth. Chat dies at
+`2026-09-20T21:38:23.930Z`, restarts at `21:39:11.568Z`, and supplies a fresh
+heartbeat at `21:39:21.905Z`. The watcher exits 0, records exactly two expected
+process events and `expectedChatServerCrash: true`, with only the existing scoped
+GS boot report. Both bot subjects pass, no director logs in, and all four owned
+containers/their network are removed. No new allowance or problem fingerprint.
+
+Base revision: `722471798`, plus the archived working patch, controller, scenario
+and crash-state-machine source. Tool hashes are retained in `executable-hashes.json`.
+The tightened final replay `p10-09-chat-fault-b` also passes, with the same 28
+Game replies over 3.0511 seconds, same-process GS, both final offline checks,
+watcher exit 0, exactly two expected process events and no new/known/regressed
+problems. It additionally validates the outage receipt against the requested
+subject and rechecks the still-dead process before restart. Chat restarts at
+`2026-09-20T21:42:37.911Z` and supplies the fresh heartbeat at `21:42:48.197Z`.
+Its four owned containers/network are removed without disturbing other containers.
+Both runs retain the same bot/watcher executable hashes:
+`d02ca2cd7a289ca95135a972ab6d88104664f99ad9bd1b24a90f8b475e1d4fa7` and
+`938d30395539e58dd313e6308bcb329ec77b5d3b8ff2c69fed4950e8494b399c`.
+
+Java references at `ce54b7931`: GS `network/chatserver/ChatServer.java`,
+`ChatServerConnection.java`, and `network/aion/clientpackets/CM_CHAT_AUTH.java`.
+No production source or Java runtime changes. B2's separate gag failure remains
+open; a successful fault-recovery run does not close BA-002 or P10-09.
+
+Pre-commit checks: 4,502 solution tests pass with 27 explicit skips; warnings
+remain at 4,243 sites. All CLAUDE.md ancillary gates pass, including 495 lifecycle
+controller assertions (both fault routes, Host/Docker, success/failure exit codes),
+76 cross-server assertions and Full planning with 45 LIVE scenarios. Logs:
+`run/p10-09-chat-fault-warnings.log`, `run/p10-09-chat-fault-tests.log`, and
+`run/p10-09-chat-fault-ancillary.log`. The initial ancillary pass exposed an
+O1-only AST selector in the routing test; it was updated to exercise both routes,
+and the entire ancillary suite was rerun successfully.
 
 ## Deferred scope
 

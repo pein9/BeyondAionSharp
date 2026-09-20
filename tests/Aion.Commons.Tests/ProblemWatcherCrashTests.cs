@@ -6,24 +6,25 @@ namespace Aion.Commons.Tests;
 
 public sealed partial class ProblemWatcherTests
 {
+	public static IEnumerable<object[]> CrashCases()
+	{
+		foreach (string server in new[] { "gs", "cs" })
+		foreach (string variant in new[] { "normal", "no-opt-in", "second-death", "other-container", "other-project",
+			"oom", "server-error", "tracked-error", "tracked-second-death", "missing-restart", "missing-heartbeat",
+			"missing-timestamp", "pre-kill-heartbeat" })
+			yield return [variant, variant == "normal" ? 0 : 1, server];
+	}
+
 	[Theory]
-	[InlineData("normal", 0)]
-	[InlineData("no-opt-in", 1)]
-	[InlineData("second-death", 1)]
-	[InlineData("other-container", 1)]
-	[InlineData("other-project", 1)]
-	[InlineData("oom", 1)]
-	[InlineData("server-error", 1)]
-	[InlineData("tracked-error", 1)]
-	[InlineData("tracked-second-death", 1)]
-	[InlineData("missing-restart", 1)]
-	[InlineData("missing-heartbeat", 1)]
-	[InlineData("missing-timestamp", 1)]
-	[InlineData("pre-kill-heartbeat", 1)]
-	public async Task InjectedCrashIsNarrowAndNeverHidesOtherFailures(string variant, int expectedFailure)
+	[MemberData(nameof(CrashCases))]
+	public async Task InjectedCrashIsNarrowAndNeverHidesOtherFailures(string variant, int expectedFailure, string server)
 	{
 		using var run = new WatcherRun();
-		var options = run.Options() with { ExpectGameServerCrash = variant != "no-opt-in" };
+		string service = server == "gs" ? "gameserver" : "chatserver";
+		string prefix = server == "gs" ? "game-server" : "chat-server";
+		string summaryProperty = server == "gs" ? "expectedGameServerCrash" : "expectedChatServerCrash";
+		var options = run.Options() with { ExpectGameServerCrash = server == "gs" && variant != "no-opt-in",
+			ExpectChatServerCrash = server == "cs" && variant != "no-opt-in" };
 		if (variant.StartsWith("tracked-", StringComparison.Ordinal))
 		{
 			string fingerprint = variant == "tracked-error" ? "1234abcd" :
@@ -36,20 +37,20 @@ public sealed partial class ProblemWatcherTests
 		}
 		var at = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 		string container = new('a', 64);
-		File.WriteAllText(Path.Combine(options.RunDirectory, "game-server-crash-plan.json"), JsonSerializer.Serialize(new
+		File.WriteAllText(Path.Combine(options.RunDirectory, prefix + "-crash-plan.json"), JsonSerializer.Serialize(new
 		{
 			schemaVersion = 1, run = "test", project = "aion-bots-test", containerId = container,
 			armedUtc = at, killDeadlineUtc = at.AddSeconds(30), recoveryDeadlineUtc = at.AddSeconds(180),
 		}));
 		var state = new ProblemWatcher.WatcherState(options);
 		state.ReadFiles();
-		Assert.Equal(options.ExpectGameServerCrash, File.Exists(Path.Combine(options.RunDirectory, "game-server-crash-armed.json")));
+		Assert.Equal(options.ExpectsServerCrash, File.Exists(Path.Combine(options.RunDirectory, prefix + "-crash-armed.json")));
 		void Docker(string action, int seconds, string? id = null, string? code = null)
 		{
 			var channel = Channel.CreateUnbounded<DockerLine>();
 			var record = new Dictionary<string, object?>
 			{
-				["action"] = action, ["id"] = id ?? container, ["service"] = "gameserver",
+				["action"] = action, ["id"] = id ?? container, ["service"] = service,
 				["attributes"] = new Dictionary<string, object?> { ["exitCode"] = code },
 			};
 			if (variant != "missing-timestamp") record["time"] = at.AddSeconds(seconds);
@@ -66,29 +67,42 @@ public sealed partial class ProblemWatcherTests
 		if (variant != "missing-restart") Docker("start", variant == "pre-kill-heartbeat" ? 1 : 40);
 		if (variant != "missing-heartbeat")
 		{
-			run.WriteEvent(JsonSerializer.Serialize(new { ts = at.AddSeconds(variant == "pre-kill-heartbeat" ? 1.750 : 41), srv = "gs", run = "test", cat = "Heartbeat", tpl = "Server heartbeat", msg = "heartbeat" }));
+			WriteInstanceHeartbeat(run, server, at.AddSeconds(variant == "pre-kill-heartbeat" ? 1.750 : 41));
 			state.ReadFiles();
 		}
 		await state.WriteSummaryAsync(CancellationToken.None);
 		Assert.Equal(expectedFailure != 0, state.FailingProblemCount > 0);
 		using var summary = JsonDocument.Parse(File.ReadAllText(run.SummaryPath));
 		Assert.Equal(expectedFailure != 0, summary.RootElement.GetProperty("failed").GetBoolean());
-		if (variant == "pre-kill-heartbeat") Assert.False(summary.RootElement.GetProperty("expectedGameServerCrash").GetBoolean());
+		if (variant == "pre-kill-heartbeat") Assert.False(summary.RootElement.GetProperty(summaryProperty).GetBoolean());
 		if (variant == "normal")
 		{
 			Assert.Equal(2, summary.RootElement.GetProperty("expectedProcessEvents").GetInt32());
-			Assert.True(summary.RootElement.GetProperty("expectedGameServerCrash").GetBoolean());
+			Assert.True(summary.RootElement.GetProperty(summaryProperty).GetBoolean());
 			Assert.Equal(0, summary.RootElement.GetProperty("suppressed").GetInt32());
-			Assert.Contains("EXPECTED_FAULT PROCESS gs action=die", run.ReadDigest(), StringComparison.Ordinal);
+			Assert.Contains($"EXPECTED_FAULT PROCESS {server} action=die", run.ReadDigest(), StringComparison.Ordinal);
 		}
 	}
 
-	[Fact]
-	public async Task CrashOptInWithoutAPlanFailsClosed()
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task CrashOptInWithoutAPlanFailsClosed(bool chat)
 	{
 		using var run = new WatcherRun();
-		Assert.Equal(1, await ProblemWatcher.RunAsync(run.Options() with { ExpectGameServerCrash = true }));
-		Assert.Contains("No valid game-server crash plan was armed", run.ReadDigest(), StringComparison.Ordinal);
+		Assert.Equal(1, await ProblemWatcher.RunAsync(run.Options() with { ExpectGameServerCrash = !chat, ExpectChatServerCrash = chat }));
+		Assert.Contains($"No valid {(chat ? "chat" : "game")}-server crash plan was armed", run.ReadDigest(), StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public void TwoServerCrashOptInsCannotBroadenTheFaultScope()
+	{
+		using var run = new WatcherRun();
+		Assert.Throws<ArgumentException>(() => new ProblemWatcher.WatcherState(run.Options() with
+			{ ExpectGameServerCrash = true, ExpectChatServerCrash = true }));
+		var args = new[] { "--run", "test", "--run-dir", run.Options().RunDirectory, "--expect-chat-server-crash", "true" };
+		Assert.True(WatchOptions.Parse(args).ExpectChatServerCrash);
+		Assert.Throws<ArgumentException>(() => WatchOptions.Parse([..args, "--expect-game-server-crash", "true"]));
 	}
 
 	[Theory]

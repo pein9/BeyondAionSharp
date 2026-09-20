@@ -5,6 +5,15 @@ namespace Aion.GameServer.Tests;
 public sealed class LiveChatContractTests
 {
 	[Fact]
+	public void FaultScenarioRequiresTwoSubjectsAndEnoughTimeForNormalReconnect()
+	{
+		string[] args = ["--run", "chat-fault-contract", "--output", "run/chat-fault-contract", "--git-sha", "test", "--scenario", "B2F"];
+		Assert.Throws<ArgumentException>(() => LiveBotOptions.Parse(args));
+		Assert.Equal(2, LiveBotOptions.Parse([..args, "--step-timeout-seconds", "180"]).BotCount);
+		Assert.Throws<ArgumentException>(() => LiveBotOptions.Parse([..args, "--step-timeout-seconds", "180", "--bots", "3"]));
+	}
+
+	[Fact]
 	public void ScenarioRequiresExactlyTwoOrdinarySubjectsAndIsNeverAnExpectedFailure()
 	{
 		string[] args = ["--run", "chat-contract", "--output", "run/chat-contract", "--git-sha", "test"];

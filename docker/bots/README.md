@@ -62,3 +62,9 @@ uses two ordinary subjects plus one director (three clients total). It exercises
 auth/token refresh, client reconnect and gag replay. The current shared upstream
 gag defect makes it fail; `chat-gag-evidence.json` retains both players' messages.
 It is not an expected-pass diagnostic or a substitute for Chat bridge fault tests.
+
+The separate `-Scenario B2F -Bots 2 -StepTimeoutSeconds 180` journey uses two
+ordinary clients, no director. It declares one owned Chat SIGKILL to the watcher,
+checks disconnected Chat sockets and a bounded unavailable-auth deadline while
+Game still responds, then checks fresh authentication and delivery after normal
+bridge reconnection. It refuses Keep/record mode and removes the isolated stack.

@@ -149,5 +149,20 @@ The controller retains SQL samples, phase/failure, child stdout/stderr, and
 kill/restart receipts. Its contract tests mock Docker and use tiny artifact
 producer processes, not bots or servers. `run-live.ps1 -Scenario O1 -Bots 1
 -StepTimeoutSeconds 1200` now integrates the controller with the protocol bot.
-The actual small-population journey still needs LIVE evidence; passing controller
-contracts alone do not complete P10-03.
+O1's completed small-population LIVE evidence is recorded in
+`docs/e2e-phase10-validation.md`; passing controller contracts alone is not that proof.
+
+For the separate B2F Chat fault, `--expect-chat-server-crash true` selects the same
+narrow state machine for **cs/chatserver only**. It cannot be combined with the
+Game fault option. The controller and watcher exchange `chat-server-crash-plan.json`
+and its hash-bound `chat-server-crash-armed.json`; one exact `die/137`, one start,
+and a fresh post-start heartbeat must complete within 180 seconds. No GS, LS,
+second Chat/GS, OOM, other container, second death or unexpected warning is covered.
+The summary requires `expectedChatServerCrash: true`. Known unallowlisted problems
+also fail this mode. The existing O1 file names/options remain compatible.
+
+`scripts/live/chat-fault-controller.ps1` owns the B2F injection, verifies exclusive
+project/network/service and immutable container/image identity, awaits the real
+GS outage log and bot's run/subject-bound observation, then restarts the same Chat
+container. Fresh GS authentication/Chat registration logs and heartbeat prove
+recovery; GS identity/start must remain unchanged. No databases are edited.

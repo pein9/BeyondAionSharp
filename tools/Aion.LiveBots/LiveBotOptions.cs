@@ -86,6 +86,8 @@ public sealed record LiveBotOptions(
 			throw new ArgumentException("O1 must run alone with one subject and at least 1050 seconds per step.");
 		if (scenarios.Contains("B2", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 2))
 			throw new ArgumentException("B2 must run alone with exactly two subjects (plus its director).");
+		if (scenarios.Contains("B2F", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 2 || stepSeconds < 180))
+			throw new ArgumentException("B2F must run alone with two subjects and at least 180 seconds per step.");
 		var reentrySeconds = PositiveInt(values, "reentry-seconds", 10, 3600);
 		int soakSeconds = PositiveInt(values, "soak-seconds", 7200, 7200);
 		SoakActivity[] soakActivities = Enum.GetValues<SoakActivity>();

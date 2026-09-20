@@ -81,7 +81,9 @@ The full journey remains open; see `docs/e2e-phase10-validation.md` and simulati
 proves ordinary authentication, back-to-back auth responses with fresh tokens, and Chat-client
 disconnect/reconnect before failing gag enforcement. Java and C# both send a duration but compare it
 as an absolute expiry in Chat (simulation-plan §7/119). No production change or allowance was added.
-Bridge outage/pending-request timeout and the remaining gag/ungag journey are still open.
+LIVE `B2F` separately verifies an owned Chat crash/restart, a bounded unavailable-auth client deadline
+with continued Game responses, and fresh Chat delivery after normal bridge recovery. The gag/ungag
+journey remains open; optional C# callback API internals retain their focused loopback coverage.
 
 - [x] The real client request path consumes Chat opcode `0x01` by resolving Java's current World player.
 - [x] The exact token reaches the client in `SM_CHAT_INIT`.
@@ -92,7 +94,8 @@ Bridge outage/pending-request timeout and the remaining gag/ungag journey are st
   - [x] Back-to-back Game auth requests yield distinct tokens with stable account digest; latest token authenticates.
   - [x] Chat-client FIN/peer-close followed by fresh authentication restores message delivery.
   - [ ] Gag replay/enforcement: B2 captures forbidden text at both players (§7/119); ungag/final logout are unreached.
-  - [ ] Chat bridge outage and pending-request timeout/recovery still need live fault evidence.
+  - [x] LIVE B2F observes both Chat socket losses, no auth response during a three-second client deadline,
+    continued Game replies, and fresh auth/delivery after an owned Chat restart without restarting Game.
 - [x] Full solution tests pass (1,002/1,002).
 
 ### BA-003 — Complete GS↔LS response surface

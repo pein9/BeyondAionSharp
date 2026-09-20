@@ -5,15 +5,46 @@ namespace Aion.Commons.Tests;
 
 public sealed class GameServerCrashExpectationTests
 {
+	[Theory]
+	[InlineData("gs")]
+	[InlineData("gs2")]
+	[InlineData("ls")]
+	[InlineData("cs2")]
+	public void ChatExpectationNeverCoversAnotherProducer(string otherServer)
+	{
+		var expectation = ServerCrashExpectation.Load(JsonSerializer.Serialize(Plan(), new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+			"test", "aion-bots-test", Epoch, "cs");
+		string otherService = otherServer switch { "cs2" => "chatserver2", "gs2" => "gameserver2", "ls" => "loginserver", _ => "gameserver" };
+		Assert.False(expectation.ObserveDocker("aion-bots-test", Container, otherService, "die", "137", Epoch.AddSeconds(1)));
+		Assert.True(expectation.ObserveDocker("aion-bots-test", Container, "chatserver", "die", "137", Epoch.AddSeconds(1)));
+		Assert.True(expectation.ExpectsHeartbeatGap("cs", Epoch.AddSeconds(25)));
+		Assert.False(expectation.ExpectsHeartbeatGap(otherServer, Epoch.AddSeconds(25)));
+		Assert.True(expectation.ObserveDocker("aion-bots-test", Container, "chatserver", "start", null, Epoch.AddSeconds(40)));
+		expectation.ObserveHeartbeat(otherServer, Epoch.AddSeconds(41));
+		Assert.False(expectation.Complete);
+		expectation.ObserveHeartbeat("cs", Epoch.AddSeconds(41));
+		Assert.True(expectation.Complete);
+		Assert.False(expectation.ExpectsHeartbeatGap("cs", Epoch.AddSeconds(62)));
+	}
+
+	[Theory]
+	[InlineData("cs2")]
+	[InlineData("gs2")]
+	[InlineData("ls")]
+	[InlineData("mysql")]
+	public void UnsupportedCrashTargetsCannotBeSelected(string server) => Assert.Throws<ArgumentException>(() =>
+		ServerCrashExpectation.Load(JsonSerializer.Serialize(Plan(), new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+			"test", "aion-bots-test", Epoch, server));
+
 	private static readonly DateTimeOffset Epoch = new(2026, 9, 20, 12, 0, 0, TimeSpan.Zero);
 	private static readonly string Container = new('a', 64);
-	private static GameServerCrashExpectation.Plan Plan() => new()
+	private static ServerCrashExpectation.Plan Plan() => new()
 	{
 		SchemaVersion = 1, Run = "test", Project = "aion-bots-test", ContainerId = Container,
 		ArmedUtc = Epoch, KillDeadlineUtc = Epoch.AddSeconds(30), RecoveryDeadlineUtc = Epoch.AddSeconds(180),
 	};
-	private static GameServerCrashExpectation Load(GameServerCrashExpectation.Plan? plan = null) =>
-		GameServerCrashExpectation.Load(JsonSerializer.Serialize(plan ?? Plan(), new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+	private static ServerCrashExpectation Load(ServerCrashExpectation.Plan? plan = null) =>
+		ServerCrashExpectation.Load(JsonSerializer.Serialize(plan ?? Plan(), new JsonSerializerOptions(JsonSerializerDefaults.Web)),
 			"test", "aion-bots-test", Epoch);
 
 	[Theory]
@@ -50,7 +81,7 @@ public sealed class GameServerCrashExpectationTests
 	[InlineData("[]")]
 	[InlineData("{broken")]
 	public void MalformedOrIncompletePlansAreRejected(string json) => Assert.Throws<JsonException>(() =>
-		GameServerCrashExpectation.Load(json, "test", "aion-bots-test", Epoch));
+		ServerCrashExpectation.Load(json, "test", "aion-bots-test", Epoch));
 
 	[Theory]
 	[InlineData("aion-bots-other", "gameserver", "die", "137", 1)]

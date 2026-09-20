@@ -2190,7 +2190,11 @@ real geodata on in production immediately, because geo is enabled by default; th
   LIVE `B2` adds ordinary Chat authentication, back-to-back auth/token refresh, client disconnect/reconnect,
   and gag enforcement/replay assertions with two subjects plus one director. It exposes a shared upstream
   duration-versus-expiry defect in Chat gags (§7/119), so BA-002 remains open, not expected-failed or allowlisted.
-  Chat bridge outage/pending-request timeout cases still need their separate live fault journey.
+  LIVE `B2F` adds the separate owned Chat SIGKILL/restart journey: both clients observe socket loss,
+  Game remains responsive while an unavailable Chat auth request reaches its client deadline, and fresh
+  authentication restores Chat delivery without restarting Game. Watcher opt-in is scoped to one exact
+  Chat container, one death/start and a bounded fresh-heartbeat recovery; Game/Login monitoring stays active.
+  This does not prove the optional C# callback API's pending-request internals or close the gag failure.
   Remaining runtime player scenarios and tracker closeouts are still open.
 - [ ] **P10-10** [BOTH] M — Run report. Every run writes `run/<id>/report.md` and `report.json`:
   each scenario as passed, failed, skipped or flaky with duration; NEW, KNOWN and REGRESSED fingerprints; coverage

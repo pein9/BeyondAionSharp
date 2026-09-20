@@ -97,7 +97,7 @@ public static class ProblemWatcher
 		private int knownProblems;
 		private int regressedProblems;
 		private int repeatedProblems;
-		private GameServerCrashExpectation? expectedCrash;
+		private ServerCrashExpectation? expectedCrash;
 		private bool crashPlanRead;
 		private bool crashFailureReported;
 		private bool crashGapReported;
@@ -129,7 +129,7 @@ public static class ProblemWatcher
 		}
 
 		public int FailingProblemCount => newProblems + regressedProblems +
-			(options.ExpectGameServerCrash ? knownProblems : knownHeartbeatProblems) + (crashFailureReported ? 1 : 0);
+			(options.ExpectsServerCrash ? knownProblems : knownHeartbeatProblems) + (crashFailureReported ? 1 : 0);
 
 		public void DiscoverTraceFiles()
 		{
@@ -142,17 +142,17 @@ public static class ProblemWatcher
 
 		public void ReadFiles()
 		{
-			if (options.ExpectGameServerCrash && !crashPlanRead)
+			if (options.ExpectsServerCrash && !crashPlanRead)
 			{
-				string path = Path.Combine(options.RunDirectory, "game-server-crash-plan.json");
+				string path = Path.Combine(options.RunDirectory, options.CrashPrefix + "-crash-plan.json");
 				if (File.Exists(path))
 				{
 					crashPlanRead = true;
-					ReadJsonLine("game-server crash plan", "", () =>
+					ReadJsonLine(options.CrashPrefix + " crash plan", "", () =>
 					{
 						string json = File.ReadAllText(path);
-						expectedCrash = GameServerCrashExpectation.Load(json, options.Run, options.ProjectName, DateTimeOffset.UtcNow);
-						string receipt = Path.Combine(options.RunDirectory, "game-server-crash-armed.json");
+						expectedCrash = ServerCrashExpectation.Load(json, options.Run, options.ProjectName, DateTimeOffset.UtcNow, options.CrashServer);
+						string receipt = Path.Combine(options.RunDirectory, options.CrashPrefix + "-crash-armed.json");
 						File.WriteAllText(receipt + ".tmp", JsonSerializer.Serialize(new
 						{
 							schemaVersion = 1, run = options.Run, armedUtc = DateTimeOffset.UtcNow,
@@ -202,7 +202,7 @@ public static class ProblemWatcher
 				if (expectedCrash?.ExpectsHeartbeatGap(server, now) == true)
 				{
 					if (!crashGapReported)
-						digest.WriteLine($"{FormatTimestamp(now)} EXPECTED_FAULT HEARTBEAT gs bounded restart window.");
+						digest.WriteLine($"{FormatTimestamp(now)} EXPECTED_FAULT HEARTBEAT {options.CrashServer} bounded restart window.");
 					crashGapReported = true;
 					continue;
 				}
@@ -260,6 +260,7 @@ public static class ProblemWatcher
 				servers = options.Servers,
 				hangDiagnostics = diagnostics.Select(d => new { server = d.Server, status = d.Status, directory = d.Directory, failure = d.Failure }),
 				expectedGameServerCrash = options.ExpectGameServerCrash ? expectedCrash?.Complete == true : (bool?)null,
+				expectedChatServerCrash = options.ExpectChatServerCrash ? expectedCrash?.Complete == true : (bool?)null,
 				failed = options.Mode == WatchMode.Enforce && FailingProblemCount > 0,
 				retainedTraceRecords = traceHistory.RetainedRecords,
 				retainedTraceCharacters = traceHistory.RetainedCharacters,
@@ -271,12 +272,12 @@ public static class ProblemWatcher
 
 		private void CheckCrashCompletion(DateTimeOffset now, bool final)
 		{
-			if (!options.ExpectGameServerCrash || crashFailureReported) return;
+			if (!options.ExpectsServerCrash || crashFailureReported) return;
 			string? failure = expectedCrash?.Failure(now, final);
-			if (final && expectedCrash == null) failure = "No valid game-server crash plan was armed.";
+			if (final && expectedCrash == null) failure = $"No valid {options.CrashPrefix} crash plan was armed.";
 			if (failure == null) return;
 			crashFailureReported = true;
-			AddSynthetic(now, "watcher", "ERROR", "Planned game-server crash was not completed", failure, kind: "fault-expectation");
+			AddSynthetic(now, "watcher", "ERROR", $"Planned {options.CrashPrefix} crash was not completed", failure, kind: "fault-expectation");
 		}
 
 		private void ReadTrace(string path, string line)
@@ -398,7 +399,7 @@ public static class ProblemWatcher
 				if (timestamp is { } at && expectedCrash?.ObserveDocker(project, container, service, action, exitCode, at) == true)
 				{
 					expectedProcessEvents++;
-					digest.WriteLine($"{FormatTimestamp(at)} EXPECTED_FAULT PROCESS gs action={action} container={container}.");
+					digest.WriteLine($"{FormatTimestamp(at)} EXPECTED_FAULT PROCESS {options.CrashServer} action={action} container={container}.");
 					return;
 				}
 				if (action == "start") return;
