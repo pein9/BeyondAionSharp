@@ -49,7 +49,9 @@ comes from native event labels or the explicitly selected Compose follower
 (Compose removes its project/service labels from event attributes). Other container
 ids, services, projects, exit codes, OOM/restart events and repeated deaths remain
 problems. A `start` for the same container and a fresh GS heartbeat are both
-required before the recovery deadline. Only the GS heartbeat gap *after the
+required before the recovery deadline. The heartbeat must be in a later second
+than the start event: Docker's whole-second timestamps cannot distinguish an old
+process heartbeat from a rapid kill/restart within that same second. Only the GS heartbeat gap *after the
 observed death* is expected; LS/CS checks continue and GS checks resume on recovery.
 The digest records `EXPECTED_FAULT` observations separately from allowances and
 the summary requires `expectedGameServerCrash: true`. Missing observations fail

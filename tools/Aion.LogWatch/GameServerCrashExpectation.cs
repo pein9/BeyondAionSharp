@@ -75,8 +75,11 @@ internal sealed class GameServerCrashExpectation
 
 	private void TryRecover()
 	{
+		// Docker may truncate death/start to whole seconds. A heartbeat from the old
+		// process later in that same second cannot prove recovery, regardless of the
+		// order in which its log and the Docker stream reach the watcher.
 		if (StartedUtc is { } started && latestHeartbeat is { } heartbeat &&
-			heartbeat > DiedUtc && heartbeat >= started && heartbeat <= plan.RecoveryDeadlineUtc)
+			heartbeat >= DateTimeOffset.FromUnixTimeSeconds(started.ToUnixTimeSeconds() + 1) && heartbeat <= plan.RecoveryDeadlineUtc)
 			RecoveredUtc ??= heartbeat;
 	}
 

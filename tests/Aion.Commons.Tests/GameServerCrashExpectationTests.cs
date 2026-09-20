@@ -119,4 +119,24 @@ public sealed class GameServerCrashExpectationTests
 		Assert.NotNull(Load().Failure(Epoch.AddSeconds(31), final: false));
 		Assert.NotNull(Load().Failure(Epoch, final: true));
 	}
+
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public void WholeSecondDockerEventsCannotRecycleAPreDeathHeartbeat(bool heartbeatReadFirst)
+	{
+		var expectation = Load();
+		// The last old-process heartbeat was at 10.750; death/start happened later in
+		// second 10, but the Docker event stream exposes only that whole second.
+		if (heartbeatReadFirst) expectation.ObserveHeartbeat("gs", Epoch.AddSeconds(10.750));
+		Assert.True(expectation.ObserveDocker("aion-bots-test", Container, "gameserver", "die", "137", Epoch.AddSeconds(10)));
+		Assert.True(expectation.ObserveDocker("aion-bots-test", Container, "gameserver", "start", null, Epoch.AddSeconds(10)));
+		if (!heartbeatReadFirst) expectation.ObserveHeartbeat("gs", Epoch.AddSeconds(10.750));
+		Assert.False(expectation.Complete);
+		Assert.True(expectation.ExpectsHeartbeatGap("gs", Epoch.AddSeconds(10.9)));
+		Assert.NotNull(expectation.Failure(Epoch.AddSeconds(11), final: true));
+		expectation.ObserveHeartbeat("gs", Epoch.AddSeconds(11));
+		Assert.True(expectation.Complete);
+		Assert.Equal(Epoch.AddSeconds(11), expectation.RecoveredUtc);
+	}
 }

@@ -2383,6 +2383,51 @@ CLAUDE.md check. Seventeen new protocol/admission tests pass. Logs:
 Full planning now includes 72 SIM and 43 LIVE scenarios; no capacity run was
 launched. The in-flight one-subject probe is separate from these green checks.
 
+## P10-03 first LIVE fault and heartbeat-precision correction
+
+`run/p10-03-lifecycle/o1-a` is **failed**, retained with owner log
+`run/p10-03-o1-a-owner.log`. It created ordinary character 133599, entered at
+`2026-09-20T18:26:43.249Z`, and supplied 168 read-only Docker SQL samples. The
+first row still held `(571.0388,2787.342,299.875)`; at `18:41:48.806Z` the normal
+periodic save had stored `(560.83,2788.11,299.05188)`. The bot then walked to
+`(526.99,2775.67,295.75)` while SQL retained the saved checkpoint.
+
+The owner armed the exact container, verified the hash receipt, killed it with
+exit 137, and restarted the same container/image. Fresh GS startup and LS
+registration were ready at `18:42:20.201Z`. A genuinely new GS heartbeat was
+recorded at `18:42:17.658Z`, after the start event at `18:41:59.234Z`; this run's
+raw evidence does not suffer the same-second ambiguity described below.
+Relog restored the saved position; the before/after inventory oracles both
+verified 13 entries and 1,000 kinah, and the bot's exact inventory/level comparison
+passed. The duplicate attempt returned code 7 and the original session received
+STR_KICK_ANOTHER_USER_TRY_LOGIN and closed.
+
+The old binary then checked offline before the normal delayed leave, producing
+one `ebe67ab3` regression (section 7 #112). Its watcher summary is failed with
+two expected process events, two existing startup allowances and one bot
+assertion. Raw GS problems contain only those two startup reports. The owner
+removed this run's four containers, network and ephemeral DB volume; artifacts
+remain. The maintainer's Docker MySQL and unrelated containers were untouched.
+O1-b runs separately with the corrected logout timing, using ports 22106/21241/
+27777/27780 and its own Docker DB; its outcome is pending. At most two subject
+bots ran concurrently, without directors.
+
+While these timers ran, source review found watcher defect #111: a cached old
+heartbeat at second `10.750` could satisfy die/start events truncated to second
+`10`. Both file/event-order regressions failed on the previous implementation.
+Recovery now requires a heartbeat in a later second than the start event, with
+the original deadline unchanged. A third regression drives numeric Docker
+timestamps through the real watcher parser and verifies failed finalization
+without a genuinely new heartbeat. All 56 focused watcher tests pass. O1-a/b
+started on the previous watcher, so they do not prove this corrected watcher's
+LIVE execution.
+
+Pre-commit validation: 4,393 solution tests pass with 27 explicit skips; warning
+baseline remains 4,243. All applicable CLAUDE.md ancillary checks pass, including
+463 controller/runner assertions. Logs: `run/p10-03-heartbeat-red.log`,
+`run/p10-03-heartbeat-green-final.log`, and
+`run/p10-03-heartbeat-{warning,fulltests}-final.log`. P10-03 remains unchecked.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

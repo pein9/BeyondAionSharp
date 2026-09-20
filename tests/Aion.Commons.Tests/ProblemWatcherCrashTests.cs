@@ -19,6 +19,7 @@ public sealed partial class ProblemWatcherTests
 	[InlineData("missing-restart", 1)]
 	[InlineData("missing-heartbeat", 1)]
 	[InlineData("missing-timestamp", 1)]
+	[InlineData("pre-kill-heartbeat", 1)]
 	public async Task InjectedCrashIsNarrowAndNeverHidesOtherFailures(string variant, int expectedFailure)
 	{
 		using var run = new WatcherRun();
@@ -52,6 +53,7 @@ public sealed partial class ProblemWatcherTests
 				["attributes"] = new Dictionary<string, object?> { ["exitCode"] = code },
 			};
 			if (variant != "missing-timestamp") record["time"] = at.AddSeconds(seconds);
+			if (variant == "pre-kill-heartbeat") record["time"] = at.AddSeconds(seconds).ToUnixTimeSeconds();
 			channel.Writer.TryWrite(new DockerLine("event", "docker", JsonSerializer.Serialize(record), false)
 			{ ProjectName = variant == "other-project" ? "aion-bots-other" : options.ProjectName });
 			state.ReadDocker(channel.Reader);
@@ -61,16 +63,17 @@ public sealed partial class ProblemWatcherTests
 		if (variant == "other-container") Docker("die", 2, new string('b', 64), "137");
 		if (variant == "oom") Docker("oom", 2);
 		if (variant is "server-error" or "tracked-error") { run.WriteProblem("1234abcd"); state.ReadFiles(); }
-		if (variant != "missing-restart") Docker("start", 40);
+		if (variant != "missing-restart") Docker("start", variant == "pre-kill-heartbeat" ? 1 : 40);
 		if (variant != "missing-heartbeat")
 		{
-			run.WriteEvent(JsonSerializer.Serialize(new { ts = at.AddSeconds(41), srv = "gs", run = "test", cat = "Heartbeat", tpl = "heartbeat", msg = "heartbeat" }));
+			run.WriteEvent(JsonSerializer.Serialize(new { ts = at.AddSeconds(variant == "pre-kill-heartbeat" ? 1.750 : 41), srv = "gs", run = "test", cat = "Heartbeat", tpl = "heartbeat", msg = "heartbeat" }));
 			state.ReadFiles();
 		}
 		await state.WriteSummaryAsync(CancellationToken.None);
 		Assert.Equal(expectedFailure != 0, state.FailingProblemCount > 0);
 		using var summary = JsonDocument.Parse(File.ReadAllText(run.SummaryPath));
 		Assert.Equal(expectedFailure != 0, summary.RootElement.GetProperty("failed").GetBoolean());
+		if (variant == "pre-kill-heartbeat") Assert.False(summary.RootElement.GetProperty("expectedGameServerCrash").GetBoolean());
 		if (variant == "normal")
 		{
 			Assert.Equal(2, summary.RootElement.GetProperty("expectedProcessEvents").GetInt32());
