@@ -76,4 +76,45 @@ try {
 		Assert-TopologyContract ($overlay.Count -eq 1 -and $overlay[0].read_only)
 	}
 } finally { foreach ($name in $names) { [Environment]::SetEnvironmentVariable($name,$saved[$name]) } }
+. (Join-Path $PSScriptRoot 'transfer-controller.ps1')
+function New-TransferFixture {
+	return [pscustomobject]@{
+		source=[pscustomobject]@{players=@([pscustomobject]@{id=101;accountId=11;online=0},[pscustomobject]@{id=102;accountId=12;online=0});inventory=@([pscustomobject]@{id=103})};
+		target=[pscustomobject]@{players=@();inventory=@()};
+		accounts=@([pscustomobject]@{id=11;accessLevel=0;activated=1},[pscustomobject]@{id=12;accessLevel=0;activated=1})
+	}
+}
+$fixture=New-TransferFixture
+Assert-TransferSetup $fixture.source $fixture.target $fixture.accounts
+$checks++
+foreach ($defect in @('source-empty','target-player','target-item','inventory-empty','online','staff','inactive','account-missing','same-account','negative','fraction','overflow','string')) {
+	$fixture=New-TransferFixture
+	switch ($defect) {
+		'source-empty' {$fixture.source.players=@()}
+		'target-player' {$fixture.target.players=@([pscustomobject]@{id=999})}
+		'target-item' {$fixture.target.inventory=@([pscustomobject]@{id=999})}
+		'inventory-empty' {$fixture.source.inventory=@()}
+		'online' {$fixture.source.players[0].online=1}
+		'staff' {$fixture.accounts[0].accessLevel=9}
+		'inactive' {$fixture.accounts[0].activated=0}
+		'account-missing' {$fixture.accounts=@()}
+		'same-account' {$fixture.source.players[1].accountId=11}
+		'negative' {$fixture.source.players[0].id=-1}
+		'fraction' {$fixture.source.players[0].id=1.5}
+		'overflow' {$fixture.source.players[0].id=[long]::MaxValue}
+		'string' {$fixture.source.players[0].accountId='11'}
+	}
+	$threw=$false
+	try { Assert-TransferSetup $fixture.source $fixture.target $fixture.accounts } catch { $threw=$true }
+	Assert-TopologyContract $threw
+}
+$queries=[Collections.Generic.List[string]]::new()
+$sql={param($query) $queries.Add($query); if ($query -match '\.players ORDER BY id$') { '{"id":101}' } elseif ($query -match '\.inventory ORDER BY item_unique_id$') { '{"id":102}' } else { throw 'Unexpected SQL.' } }
+foreach ($database in @('aion_gs','aion_gs2')) {
+	$rows=Read-TransferRows $sql $database
+	Assert-TopologyContract ($rows.players.Count -eq 1 -and $rows.inventory.Count -eq 1)
+}
+$threw=$false
+try { Read-TransferRows $sql 'other_database' | Out-Null } catch { $threw=$true }
+Assert-TopologyContract ($threw -and $queries.Count -eq 4)
 Write-Host "Cross-server contract passed ($checks assertions); no containers, databases or bots started."

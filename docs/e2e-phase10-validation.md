@@ -2779,7 +2779,75 @@ watcher cases, 24 topology-contract assertions, unchanged 4,243 warning sites,
 structural fidelity and all CLAUDE.md ancillary gates. Final build/test logs:
 `run/p10-09-topology-warnings-final.log` and `run/p10-09-topology-tests.log`.
 
-## Remaining scope decisions
+## P10-09 transfer diagnostic
+
+`test-cross-server-topology.ps1 -TransferAttempt` reuses two ordinary L0 clients
+on GS1, then submits one real Login `player_transfers` task to move one offline
+character to GS2 on the same account. The other character/account is a control.
+There is no direct insertion of characters, protocol extension, synthetic GS
+completion packet, scheduler acceleration, or account reactivation. The normal
+seven-minute scheduler gets up to 500 seconds to select the queued request;
+an ACTIVE request is then observed for 60 seconds. The evidence records both
+worlds' selected character fields, inventory identities/counts and account
+activation/access state before and after the attempt. This is diagnostic evidence,
+not the full BA-001 acceptance journey; even a DONE queue result would still need
+target login and the remaining control-flow/data assertions.
+
+- `p10-09-transfer-a` failed during L0 login, before queue submission; its watcher
+  correctly failed on bot fingerprint `ebe67ab3`, and cleanup succeeded.
+- A bot protocol correction validates the complete 21-byte server-list entry
+  sequence and accepts a bounded number of valid updates before `SM_PLAY_OK`.
+  It neither skips login/play refusals nor changes the server. Eleven focused
+  tests cover updates, entry order, malformed/unavailable lists, unexpected
+  replies and flooding. Java references: `SM_SERVER_LIST`, `SM_PLAY_OK`,
+  `CM_GS_CHARACTER` and `AccountController` at `ce54b7931`.
+- `p10-09-transfer-b` captures an actual extra `SM_SERVER_LIST` on b02 and both
+  ordinary clients complete L0. The real operator task is then queued; its final
+  transfer evidence is recorded separately from that passing setup.
+
+Final B evidence: the scheduler processes task 1 at `2026-09-20T21:04:34Z`. The
+diagnostic observes ACTIVE for 60 seconds and exits 1 (`stalled-active`), with 155
+timestamped task samples. Both source character rows and selected inventory
+fields match before/after; GS2 has zero players/items. All three persisted account
+activation/access pairs remain unchanged, including the unrelated subject and
+director. Six isolated containers/their network are removed; cleanup has no errors.
+No bot remains running. The watcher independently exits 1: two known boot reports
+and one NEW warning `93be1a24`; no allowance is added for the latter.
+
+The warning's full stack points to `SM_PTRANSFER_CONTROL.WritePayload` line 338:
+a nullable quest completion timestamp is dereferenced. This is **not** a C#-only
+regression: Java `QuestState` defaults these timestamps to null, and its transfer
+writer calls both `.getTime()` methods without checks. Two further shared source
+constraints are relevant: LS ignores GS sections 5–9, although target cloning
+needs response 28; and `AccountDAO.updateAccount` omits `activated`, so the
+transfer service's in-memory deactivation is not persisted. Read references at
+`ce54b7931`: GS `SM_PTRANSFER_CONTROL`, `CM_PTRANSFER_RESPONSE`, `QuestState`; LS
+`CM_PTRANSFER_CONTROL`, `PlayerTransferService`, `AccountDAO`. No Java runtime was
+started. These remain preserved under the existing spec decision, not repaired
+or papered over in the harness. BA-001 remains open.
+
+Run B's bot executable hash (read before subsequent rebuilds) is
+`9bc3b2cca3f3a3bef956231166ef78f2c4508f2a1e42daaa17c7a8a951b06227`.
+The runner now records this automatically and archives the client helper and
+working patch on future runs. Run B retains its probe/controller sources; the
+parent base revision is `422f62d8f`. Its selected-row evidence does not claim a
+complete database diff or target-login verification.
+
+The refactored watcher's default, zero-bot path also passes in
+`run/p10-09-topology/p10-09-topology-c`: all five producers remain healthy,
+watcher exit is 0, the only problems are the two scoped startup reports, and
+all six owned containers and their network are removed without cleanup errors.
+The maintainer's Docker MySQL and unrelated existing container are untouched.
+The contract now passes 41 assertions, including transfer fixture identity,
+ordinary/offline account guards and read-only snapshot schema restrictions.
+
+Pre-commit validation: 4,464 solution tests pass with 27 explicit skips; warning
+inventory remains 4,243 sites. Logs are `run/p10-09-transfer-warnings.log` and
+`run/p10-09-transfer-tests.log`. All CLAUDE.md ancillary gates pass, with their
+combined output in `run/p10-09-transfer-ancillary.log`; the 41-assertion
+cross-server contract is run separately. No production gameplay code changed.
+
+## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
 - P10-06 Java runtime comparisons are explicitly deferred under D15. Java remains

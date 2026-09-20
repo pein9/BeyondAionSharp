@@ -47,3 +47,12 @@ after the shared profile. Default second-instance ports are game 17778, admin
 the same built images; build the primary services first. Mount separate `logs/gs2`
 and `logs/cs2` directories, call `wait-ready.ps1 -SecondGameServer`, and pass
 `--second-game-server true` to the watcher. Default single-GS runs are unchanged.
+
+Add `-TransferAttempt` to run a **diagnostic**, not a passing BA-001 scenario:
+two ordinary L0 clients create source characters and disconnect, then the runner
+inserts one task into Login's existing `player_transfers` operator queue. It waits
+for the normal scheduler and records task/account/player/inventory observations.
+It never accelerates the scheduler, invents missing bridge messages, unlocks the
+account, or repairs transferred data. Incomplete/stalled evidence exits nonzero;
+the isolated stack is removed afterwards. Parent metadata is retained in
+`topology-run.json`; root bot metadata/traces describe the L0 setup workload.

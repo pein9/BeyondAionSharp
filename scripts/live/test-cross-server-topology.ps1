@@ -1,14 +1,16 @@
-# Zero-bot prerequisite for BA-001: two GS/Chat pairs, one Login, Docker-only databases.
+# BA-001 topology prerequisite; optional two-bot diagnostic submits a real transfer request.
 [CmdletBinding()]
 param(
 	[Parameter(Mandatory)][ValidatePattern('^[a-z0-9][a-z0-9_-]{0,49}$')][string]$Run,
 	[string]$RunRoot = (Join-Path $PSScriptRoot '../../run/p10-09-topology'),
-	[switch]$SkipImageBuild
+	[switch]$SkipImageBuild,
+	[switch]$TransferAttempt
 )
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $PSScriptRoot 'lifecycle-controller.ps1')
+. (Join-Path $PSScriptRoot 'transfer-controller.ps1')
 . (Join-Path $repoRoot 'scripts/e2e/run-artifact-owner.ps1')
 $project="aion-bots-$Run"
 $composeFile=Join-Path $repoRoot 'docker/docker-compose.bots.yml'
@@ -37,6 +39,9 @@ $created=$false; $validated=$false; $failure=$null; $watcherExit=$null
 $cleanupErrors=[Collections.Generic.List[string]]::new()
 $identities=@{}
 $databases=@{}
+$watcher=$null; $watcherOut=$null; $watcherErr=$null
+$stopFile=Join-Path $directory 'watcher.stop'
+$botCount=if ($TransferAttempt) {2} else {0}
 
 function Invoke-TopologyDocker([string[]]$Arguments) {
 	$result=@(& docker @Arguments)
@@ -53,6 +58,16 @@ function Read-TopologyContainer([string]$Service) {
 		-not $container.State.Running -or $container.RestartCount -ne 0) { throw 'Topology target ownership/health mismatch.' }
 	return [ordered]@{id=$container.Id;image=$container.Image;startedAt=$container.State.StartedAt;service=$Service}
 }
+function Stop-TopologyWatcher {
+	if ($null -eq $watcher) { return }
+	if (-not $watcher.HasExited) {
+		[IO.File]::WriteAllText($stopFile,'stop')
+		if (-not $watcher.WaitForExit(30000)) { $watcher.Kill($true); throw 'Topology watcher exceeded shutdown deadline.' }
+	}
+	$script:watcherExit=$watcher.ExitCode
+	[IO.File]::WriteAllText((Join-Path $directory 'watcher.log'),$watcherOut.GetAwaiter().GetResult())
+	[IO.File]::WriteAllText((Join-Path $directory 'watcher.stderr.log'),$watcherErr.GetAwaiter().GetResult())
+}
 
 Push-Location $repoRoot
 try {
@@ -60,12 +75,19 @@ try {
 	if ($LASTEXITCODE -ne 0 -or $sha -cnotmatch '^[a-f0-9]{40}$') { throw 'Missing source revision.' }
 	& dotnet build tools/Aion.LogWatch --nologo *> (Join-Path $directory 'build.log')
 	if ($LASTEXITCODE -ne 0) { throw 'Watcher build failed.' }
+	if ($TransferAttempt) {
+		& dotnet build tools/Aion.LiveBots --nologo *> (Join-Path $directory 'bots-build.log')
+		if ($LASTEXITCODE -ne 0) { throw 'Transfer bot build failed.' }
+		Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'transfer-controller.ps1') -Destination (Join-Path $directory 'transfer-controller.ps1')
+		Copy-Item -LiteralPath (Join-Path $repoRoot 'tools/Aion.LiveBots/LiveLoginSelection.cs') -Destination (Join-Path $directory 'LiveLoginSelection.cs')
+	}
 	Write-LifecycleJson (Join-Path $directory 'bots-run.json') ([ordered]@{run=$Run;gitSha=$sha;seed=1;virtualEpoch=$null;timeZone='Etc/UTC';
-		configProfile='docker-cross-server';scenarios=@('P10-09-topology');bots=0;
+		configProfile='docker-cross-server';scenarios=@($(if ($TransferAttempt) {'BA-001-transfer-diagnostic'} else {'P10-09-topology'}));bots=$botCount;
 		scriptSha256=(Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash;
+		botExecutableSha256=$(if ($TransferAttempt) {(Get-FileHash -LiteralPath 'tools/Aion.LiveBots/bin/Debug/net10.0/Aion.LiveBots.dll' -Algorithm SHA256).Hash} else {$null});
 		watcherSha256=(Get-FileHash -LiteralPath 'tools/Aion.LogWatch/bin/Debug/net10.0/Aion.LogWatch.dll' -Algorithm SHA256).Hash})
 	# Archive the working patch because this proof may precede its commit.
-	& git diff --binary HEAD -- docker tools/Aion.LogWatch scripts/live/wait-ready.ps1 *> (Join-Path $directory 'source.patch')
+	& git diff --binary HEAD -- docker tools/Aion.LogWatch tools/Aion.LiveBots scripts/live/wait-ready.ps1 *> (Join-Path $directory 'source.patch')
 	foreach ($path in @('docker/bots/seed/20-second-game-server.sh','docker/bots/overlay-gs2/99-instance.properties','docker/bots/overlay-cs2/99-instance.properties')) {
 		Copy-Item -LiteralPath $path -Destination (Join-Path $directory (($path -replace '/','_')))
 	}
@@ -89,11 +111,33 @@ try {
 	$boot[0].reason+=' P10-09 topology has exactly one boot of each of two game servers; raw counts are also checked per instance.'
 	$allowlistPath=Join-Path $directory 'topology-log-allowlist.json'
 	Write-LifecycleJson $allowlistPath $allowlist
-	Write-Host 'Both GS/Chat pairs registered. Observing five independent heartbeat producers for 35 seconds; zero bots.'
-	& dotnet tools/Aion.LogWatch/bin/Debug/net10.0/Aion.LogWatch.dll --run $Run --run-dir $directory --project $project --compose-file $composeFile `
-		--mode enforce --duration-seconds 35 --second-game-server true --allowlist $allowlistPath --ledger (Join-Path $directory 'known-problems.json') `
-		*> (Join-Path $directory 'watcher.log')
-	$watcherExit=$LASTEXITCODE
+	Write-Host "Both GS/Chat pairs registered. Watching five heartbeat producers; at most $botCount bots."
+	$start=[Diagnostics.ProcessStartInfo]::new('dotnet'); $start.UseShellExecute=$false; $start.CreateNoWindow=$true
+	$start.RedirectStandardOutput=$true; $start.RedirectStandardError=$true
+	foreach ($arg in @('tools/Aion.LogWatch/bin/Debug/net10.0/Aion.LogWatch.dll','--run',$Run,'--run-dir',$directory,'--project',$project,
+		'--compose-file',$composeFile,'--mode','enforce','--stop-file',$stopFile,'--second-game-server','true',
+		'--allowlist',$allowlistPath,'--ledger',(Join-Path $directory 'known-problems.json'))) { $start.ArgumentList.Add($arg) }
+	$watcher=[Diagnostics.Process]::Start($start)
+	$watcherOut=$watcher.StandardOutput.ReadToEndAsync(); $watcherErr=$watcher.StandardError.ReadToEndAsync()
+	if ($TransferAttempt) {
+		$sql={param([string]$Query)
+			$mysql=Read-TopologyContainer 'mysql'
+			if ($mysql.id -cne $identities.mysql.id -or $mysql.startedAt -cne $identities.mysql.startedAt) { throw 'Transfer MySQL identity changed.' }
+			$password=if ([string]::IsNullOrWhiteSpace($env:AION_BOT_DB_PASSWORD)) {'aion-bots'} else {$env:AION_BOT_DB_PASSWORD}
+			Invoke-TopologyDocker @('exec','-e',"MYSQL_PWD=$password",$mysql.id,'mysql','-uroot','-Nse',$Query)
+		}
+		$transfer=Invoke-LiveTransferAttempt -Directory $directory -Run $Run -RepoRoot $repoRoot -GitSha $sha -Sql $sql -CheckWatcher {
+			if ($watcher.HasExited) { throw "Transfer watcher exited early ($($watcher.ExitCode))." }
+		}
+		if (-not $transfer.passed) { throw $transfer.failure }
+	} else {
+		$deadline=[DateTimeOffset]::UtcNow.AddSeconds(35)
+		while ([DateTimeOffset]::UtcNow -lt $deadline) {
+			if ($watcher.HasExited) { throw "Topology watcher exited early ($($watcher.ExitCode))." }
+			Start-Sleep -Milliseconds 200
+		}
+	}
+	Stop-TopologyWatcher
 	if ($watcherExit -ne 0) { throw "Topology watcher failed ($watcherExit)." }
 	foreach ($server in $identities.Keys) {
 		$actual=Read-TopologyContainer $identities[$server].service
@@ -102,6 +146,8 @@ try {
 	$validated=$true
 } catch { $failure=$_.Exception.ToString() }
 finally {
+	try { Stop-TopologyWatcher } catch { $cleanupErrors.Add($_.Exception.Message) }
+	if ($null -ne $watcher) { $watcher.Dispose() }
 	if ($created) {
 		try { Invoke-TopologyDocker (@($composeArgs)+@('logs','--no-color','--timestamps')) | Set-Content -LiteralPath (Join-Path $directory 'docker.log') }
 		catch { $cleanupErrors.Add($_.Exception.Message) }
@@ -120,6 +166,6 @@ $rawProblems=foreach ($server in $services.Keys) {
 }
 $passed=$validated -and $null -eq $failure -and $cleanupErrors.Count -eq 0
 Write-LifecycleJson (Join-Path $directory 'topology-result.json') ([ordered]@{schemaVersion=1;run=$Run;passed=$passed;watcherExitCode=$watcherExit;
-	botCount=0;failure=$failure;cleanupErrors=$cleanupErrors.ToArray();identities=$identities;databases=$databases;rawProblems=@($rawProblems)})
+	botCount=$botCount;failure=$failure;cleanupErrors=$cleanupErrors.ToArray();identities=$identities;databases=$databases;rawProblems=@($rawProblems)})
 if (-not $passed) { throw "Cross-server topology validation failed. Evidence: $directory" }
 Write-Host "Cross-server topology passed; isolated Docker stack removed. This does not prove a player transfer. Evidence: $directory"

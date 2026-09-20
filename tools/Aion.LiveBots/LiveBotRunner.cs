@@ -1174,12 +1174,12 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		loginOk = login.Result.LoginOk;
 		await stream.WriteAsync(login.Protocol.Crypto.CreateServerListFrame(accountId, loginOk), cancellationToken);
 		var serverList = login.Protocol.Crypto.DecryptServerFrame(await LoginClientProtocol.ReadFrameAsync(stream, cancellationToken));
-		if (serverList.Length < 19 || serverList[0] != 0x04 || serverList[1] == 0 || serverList[3] != 1 || serverList[18] != 1)
-			throw new InvalidDataException("Login server did not advertise online game server 1.");
+		LiveLoginSelection.RequireOnlineServer(serverList, 1);
 		await stream.WriteAsync(login.Protocol.Crypto.CreatePlayFrame(accountId, loginOk, 1), cancellationToken);
-		var play = login.Protocol.Crypto.DecryptServerFrame(await LoginClientProtocol.ReadFrameAsync(stream, cancellationToken));
-		if (play.Length < 10 || play[0] != 0x07 || play[9] != 1)
-			throw new InvalidDataException("Login server did not return SM_PLAY_OK for game server 1.");
+		var play = await LiveLoginSelection.ReadPlayOkAsync(async token =>
+			login.Protocol.Crypto.DecryptServerFrame(await LoginClientProtocol.ReadFrameAsync(stream, token)), 1,
+			list => trace.WriteAction(currentStep, "login-server-list-update", new Dictionary<string, object?>
+				{ ["serverCount"] = list[1], ["payloadHex"] = Convert.ToHexString(list) }), cancellationToken);
 		playOk1 = BinaryPrimitives.ReadInt32LittleEndian(play.AsSpan(1, 4));
 		playOk2 = BinaryPrimitives.ReadInt32LittleEndian(play.AsSpan(5, 4));
 	}

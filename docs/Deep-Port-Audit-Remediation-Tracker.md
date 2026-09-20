@@ -60,7 +60,12 @@ The baseline is not proof of runtime parity; it records the starting point again
 
 **Status:** Code complete
 
-**Current work:** Implementation and focused tests pass; awaiting the BA-003 two-GS journey.
+**Current work:** Implementation and focused tests pass. P10-09 now provisions two real C# GS/Chat pairs
+and runs ordinary L0 setup followed by the real transfer queue. `p10-09-transfer-b` remains ACTIVE with
+no target clone and logs a nullable quest-date serialization failure (`93be1a24`). The Java source shares
+that defect and the already-recorded missing multi-section forwarding; `AccountDAO.updateAccount` also
+does not persist activation changes. No non-Java protocol extension or error allowance was added.
+The full journey remains open; see `docs/e2e-phase10-validation.md` and simulation-plan §7/118.
 
 - [x] Every constructor writes `[0D, action, ...]` exactly as Java.
 - [x] LS factory selects transfer control in the authenticated state.
