@@ -13,6 +13,56 @@ namespace Aion.LoginServer.Tests;
 
 public class LoginDatabaseIntegrationTests
 {
+	[SkippableTheory]
+	[InlineData(1)]
+	[InlineData(5)]
+	public async Task AccountRepository_ReleasesAccountConnectionBeforeLoadingTime_WhenEnabled(int poolSize)
+	{
+		Skip.IfNot(Environment.GetEnvironmentVariable("AION_LOGIN_DB_INTEGRATION") == "1", "Set AION_LOGIN_DB_INTEGRATION=1 to run Docker MySQL integration tests.");
+		DatabaseFactory.Initialize(
+			server: Environment.GetEnvironmentVariable("AION_LOGIN_DB_HOST") ?? "localhost",
+			userId: Environment.GetEnvironmentVariable("AION_LOGIN_DB_USER") ?? "root",
+			password: Environment.GetEnvironmentVariable("AION_LOGIN_DB_PASSWORD") ?? "aion",
+			database: Environment.GetEnvironmentVariable("AION_LOGIN_DB_NAME") ?? "aion_ls",
+			port: int.Parse(Environment.GetEnvironmentVariable("AION_LOGIN_DB_PORT") ?? "3307"),
+			maxPoolSize: poolSize,
+			connectionTimeout: 2000);
+		await InitializeSchemaAsync();
+		await ExecuteNonQueryAsync("INSERT INTO account_data(id, name, ext_auth_name, password) VALUES (301, 'poolaccount', 'externalpool', 'hash')");
+		var timeRepository = new AccountTimeRepository();
+		await timeRepository.UpdateAccountTimeAsync(301, new AccountTime
+		{
+			LastLoginTime = DatabaseTimestamp.FromUnixTimeMilliseconds(1_768_496_400_000L),
+			SessionDuration = 11,
+			AccumulatedOnlineTime = 22,
+			AccumulatedRestTime = 33,
+		});
+		var repository = new AccountRepository(timeRepository);
+		using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+		// Java AccountController loads account time only after AccountDAO has closed its connection.
+		// A one-slot pool makes an accidental nested checkout fail without relying on timing.
+		var accounts = await Task.WhenAll(Enumerable.Range(0, 30).Select(index => (index % 3) switch
+		{
+			0 => repository.GetAccountByIdAsync(301, false, deadline.Token),
+			1 => repository.GetAccountByNameAsync("poolaccount", false, deadline.Token),
+			_ => repository.GetAccountByNameAsync("externalpool", true, deadline.Token),
+		}));
+		Assert.Equal(30, accounts.Length);
+		for (var index = 0; index < accounts.Length; index++)
+		{
+			var account = Assert.IsType<Account>(accounts[index]);
+			Assert.Equal(301, account.Id);
+			Assert.Equal(index % 3 == 2 ? "externalpool" : "poolaccount", account.Name);
+			Assert.Equal("hash", account.PasswordHash);
+			Assert.Equal(11, account.AccountTime.SessionDuration);
+			Assert.Equal(22, account.AccountTime.AccumulatedOnlineTime);
+			Assert.Equal(33, account.AccountTime.AccumulatedRestTime);
+			Assert.Equal(1_768_496_400_000L, DatabaseTimestamp.ToUnixTimeMilliseconds(account.AccountTime.LastLoginTime));
+		}
+		Assert.Null(await repository.GetAccountByIdAsync(302, false, deadline.Token));
+		Assert.Null(await repository.GetAccountByNameAsync("missing", false, deadline.Token));
+	}
+
 	[SkippableFact]
 	public async Task TemporalRepositories_PreserveExactEpochsAcrossNonUtcSession_WhenEnabled()
 	{

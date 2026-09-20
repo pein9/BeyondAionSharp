@@ -1544,6 +1544,59 @@ exercise the gate and existing connection reuse. No production code, Docker
 image, upstream automation or allowance changes; validation uses a separate
 output root from the live capacity process.
 
+## P10-02 gather500-b login pool divergence
+
+`run/p10-02-gathering-diagnostics/p10-02-gather500-b`, clean source `99b88d1e2`,
+seed 73, repeats the isolated 500-subject/600-second Gather/Vendor/Relog diagnostic
+with the assertion gate. All subjects prepare; the workload starts at
+2026-09-20 14:13:26.732180 UTC and fails at 14:14:01.4085839 UTC (34.676 seconds).
+The owning script exits 1 and removes its isolated stack. This is failed diagnostic
+evidence, not capacity acceptance. Its concentrated 300 relog-only subjects differ
+from the full mixed workload.
+
+No new GS/CS fingerprint appears in this short invocation. Login-server pool
+timeouts begin at 14:13:59.180 UTC; b116 then receives unexpected login EOF.
+The raw LS stream contains four fingerprints, each triaged as a bug under #100:
+
+| Fingerprint | Count | Failing operation |
+|---|---:|---|
+| `9525cc21` | 3 | Update account time during successful login |
+| `9bf40a7b` | 8 | Load account time while the account-row connection is still held |
+| `ad257c69` | 238 | Acquire the outer account lookup connection |
+| `373a2ce4` | 1 | Update last server during GS account authentication |
+
+The existing generic bot-failure fingerprint `ebe67ab3` records the disconnect
+and cancellation fallout; it does not identify independent root causes. The watcher
+reports 671 observations: one suppressed, four new, one regressed and 665 repeated.
+No new allowance is added. There are 181 exploration events, including 80 Poeta
+events beyond the former 150 m radius, but only two completed gathers. This is
+insufficient to validate revised gathering throughput.
+
+Source comparison confirms a C#-specific nested pool checkout: Java's AccountDAO
+returns after closing its query resources, then AccountController loads account
+time. C# had combined both operations inside the first connection's lifetime.
+The fix closes that scope before the time lookup; SQL, returned fields, missing
+account behavior, null-time rejection, pool size, and production timeouts stay
+unchanged. No login/cohort throttle is introduced.
+
+A dedicated Docker MySQL 8.4 regression submits thirty simultaneous name, ID and
+external-auth lookups with pools of one and five connections. Both cases reproduce
+the pool timeout before the fix and pass afterward, verifying account/time values
+and missing-account results. The initial attempt ran before MySQL was ready and
+is retained separately, not counted as the reproduction; the ready-container RED
+log is `run/p10-02-login-pool-red-ready.log`. All seven login DB integration tests
+pass after correction, including the real encrypted login socket handshake.
+
+The existing matrix-c 200-subject preflight is untouched on its original binaries
+and image. It cannot validate this correction. A rebuilt login image and a new
+scaled diagnostic are still needed, along with complete 200/500 acceptance runs.
+P10-02 remains unchecked.
+
+Pre-commit checks pass: 4,310 solution tests / 26 explicit skips (including the two
+new Docker-only cases, separately executed successfully), warning baseline 4,243,
+all CLAUDE.md ancillary checks, and Docker Fast 6/6 in 36.4 seconds. Validation
+uses the separate stats output root and does not replace the active matrix tools.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

@@ -160,17 +160,22 @@ public sealed class AccountRepository : IAccountRepository
 
 	private async Task<Account?> GetAccountAsync(string sql, object parameter, bool useExternalAuth, CancellationToken cancellationToken)
 	{
-		await using var connection = DatabaseFactory.GetConnection();
-		await connection.OpenAsync(cancellationToken);
-		await using var command = connection.CreateCommand();
-		command.CommandText = sql;
-		command.Parameters.Add(new MySqlParameter { Value = parameter });
+		Account account;
+		await using (var connection = DatabaseFactory.GetConnection())
+		{
+			await connection.OpenAsync(cancellationToken);
+			await using var command = connection.CreateCommand();
+			command.CommandText = sql;
+			command.Parameters.Add(new MySqlParameter { Value = parameter });
 
-		await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-		if (!await reader.ReadAsync(cancellationToken))
-			return null;
+			await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+			if (!await reader.ReadAsync(cancellationToken))
+				return null;
+			account = ReadAccount(reader, useExternalAuth);
+		}
 
-		var account = ReadAccount(reader, useExternalAuth);
+		// Java AccountController.loadAccount calls setAccountTime after AccountDAO has
+		// disposed its query connection. Holding it here can exhaust the pool on relog.
 		account.AccountTime = await _accountTimeRepository.GetAccountTimeAsync(account.Id, cancellationToken)
 			?? throw new InvalidOperationException($"Account time for account {account.Id} is null.");
 		return account;
