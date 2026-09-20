@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using System.Security.Cryptography;
 
 namespace Aion.LogWatch;
 
@@ -9,17 +10,20 @@ internal sealed class KnownProblemLedger
 	private static readonly HashSet<string> ValidStatuses = ["new", "tracked", "fixed"];
 	private readonly string path;
 	private readonly Dictionary<string, LedgerEntry> entries;
+	private readonly Dictionary<string, LedgerEntry> baseline;
 
 	private KnownProblemLedger(string path, Dictionary<string, LedgerEntry> entries)
 	{
 		this.path = path;
 		this.entries = entries;
+		baseline = new(entries, StringComparer.Ordinal);
 	}
 
 	public IReadOnlyDictionary<string, LedgerEntry> Entries => entries;
 
 	public static KnownProblemLedger Load(string path)
 	{
+		using var ledgerLock = new LedgerFileLock(path);
 		var entries = new Dictionary<string, LedgerEntry>(StringComparer.Ordinal);
 		if (!File.Exists(path))
 			return new KnownProblemLedger(path, entries);
@@ -96,13 +100,32 @@ internal sealed class KnownProblemLedger
 
 	public void Save()
 	{
+		using var ledgerLock = new LedgerFileLock(path);
+		// Merge under the same cross-process lock as reads and replacement. A watcher's startup
+		// snapshot is not authority to overwrite another run's counts or later maintainer edits.
+		var merged = Load(path).entries;
+		foreach (var (fingerprint, local) in entries)
+		{
+			baseline.TryGetValue(fingerprint, out var original);
+			long delta = checked(local.Count - (original?.Count ?? 0));
+			if (delta < 0) throw new InvalidDataException("Ledger observations cannot decrease within a watcher.");
+			merged.TryGetValue(fingerprint, out var latest);
+			if (delta > 0)
+				merged[fingerprint] = latest == null ? local with { Count = delta } : latest with
+				{
+					Count = checked(latest.Count + delta), LastSeenSha = local.LastSeenSha, LastSeenRun = local.LastSeenRun,
+				};
+			else if (original != null && local != original && latest == original)
+				// Auto-fix status is safe only if no other writer has changed this record meanwhile.
+				merged[fingerprint] = local;
+		}
 		var directory = Path.GetDirectoryName(path);
 		if (!string.IsNullOrEmpty(directory))
 			Directory.CreateDirectory(directory);
 		var temporaryPath = path + $".{Guid.NewGuid():N}.tmp";
 		try
 		{
-			var payload = entries.Values
+			var payload = merged.Values
 				.OrderBy(entry => entry.Fingerprint, StringComparer.Ordinal)
 				.Select(entry => new
 				{
@@ -122,12 +145,40 @@ internal sealed class KnownProblemLedger
 				DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
 			}) + "\n", new UTF8Encoding(false));
 			File.Move(temporaryPath, path, overwrite: true);
+			entries.Clear(); baseline.Clear();
+			foreach (var (fingerprint, entry) in merged)
+			{
+				entries.Add(fingerprint, entry);
+				baseline.Add(fingerprint, entry);
+			}
 		}
 		finally
 		{
 			if (File.Exists(temporaryPath))
 				File.Delete(temporaryPath);
 		}
+	}
+
+	private sealed class LedgerFileLock : IDisposable
+	{
+		private readonly Mutex mutex;
+		public LedgerFileLock(string path)
+		{
+			string canonical = Path.GetFullPath(path);
+			if (OperatingSystem.IsWindows()) canonical = canonical.ToUpperInvariant();
+			string key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
+			mutex = new Mutex(false, "AionLogWatch-Ledger-" + key);
+			try
+			{
+				try
+				{
+					if (!mutex.WaitOne(TimeSpan.FromSeconds(30))) throw new TimeoutException("Timed out acquiring known-problem ledger lock.");
+				}
+				catch (AbandonedMutexException) { /* The crashed owner released ownership; validate disk state through Load. */ }
+			}
+			catch { mutex.Dispose(); throw; }
+		}
+		public void Dispose() { mutex.ReleaseMutex(); mutex.Dispose(); }
 	}
 
 	private static void Validate(LedgerEntry entry, string sourcePath)

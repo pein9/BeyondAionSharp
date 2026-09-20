@@ -618,8 +618,32 @@ its startup snapshot with atomic replacement, not a concurrent merge. That can
 overwrite later tracking edits or another run's counts. Per-run logs/reports are
 the authoritative evidence. After both writers finished, the shared ledger was
 reconciled to retain the telemetry10-a occurrence (count 118 rather than the stale
-117) and the current tracking annotations. A merge-safe ledger remains required
-before accepting concurrent runs.
+117) and the current tracking annotations.
+
+## P10-02 concurrent evidence preservation
+
+The shared ledger now serializes reads and atomic replacement through a
+path-keyed cross-process mutex. Each save reloads the current ledger and adds
+only observations accumulated since that watcher's previous load/save. It keeps
+later tracking/status edits, first-seen provenance and unrelated fingerprints.
+Automatic fixed-status transitions apply only if the current record still
+equals the original snapshot; another observation or maintainer edit prevents
+that stale transition. The in-memory baseline advances only after replacement
+succeeds, so saving twice does not count the same observations twice.
+
+Before the fix, regressions reproduced both count loss (5 overwritten by 3) and
+Windows replacement collisions. Six new cases now cover stale green saves,
+maintainer edits, auto-fix conflicts, sixteen concurrent writers, repeat-save
+idempotence and two separate watcher processes. The latter waits until both
+processes observe their input before permitting either to save. Together with
+the existing watcher tests, all sixteen focused cases pass. No Java analogue or
+gameplay behavior changes. This protects cooperating updated watchers, not old
+already-running binaries or unsynchronized external edits during a save.
+P10-02 remains incomplete; evidence preservation is not capacity acceptance.
+Checkpoint validation passes 4,202 solution tests with 24 explicit skips;
+warnings remain 4,243 and all CLAUDE.md ancillary checks pass. No gameplay,
+shared-bot or network code changed, so Docker Fast is not required for this
+ledger-only checkpoint.
 
 ## Scope decisions
 
