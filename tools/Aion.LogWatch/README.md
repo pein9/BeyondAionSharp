@@ -19,8 +19,19 @@ the run. `KNOWN` comes from a tracked entry in `parity-artifacts/e2e/known-probl
 up to their `maxCount`.
 
 For a file-only snapshot (useful when inspecting an existing run), pass `--no-docker true --duration-seconds 0`.
-The watcher begins missing-heartbeat checks only after that server emits its first heartbeat, so the check becomes
-active when P3-12 supplies the heartbeat producer.
+Snapshots check only servers whose heartbeat is present. Continuing watches expect all three servers:
+`--initial-heartbeat-timeout-seconds` defaults to 30 seconds from watcher startup, and
+`--heartbeat-timeout-seconds` defaults to 20 seconds since the last sample (producer cadence is 10 seconds).
+The owning LIVE runner starts the watcher after stack readiness. Bounds are 20–600 seconds for the initial
+sample and 20–300 for subsequent samples; both thresholds are recorded in the summary. An absent producer
+is therefore visible instead of silently disabling liveness checking. Duplicate, older and still-stale samples
+do not rearm an active alert; a fresh sample does. Recovery never erases a failure already recorded in this run.
+Unallowlisted heartbeat failures fail enforcement even when their fingerprint is already `KNOWN`.
+The declared P10-03 restart gap remains restricted to the game server and its original deadline.
+
+These are suspected-hang alerts, not proof of deadlock. Unlike Java's `DeadLockDetector`, a missing heartbeat
+cannot establish a cycle of thread/lock ownership. P10-04 diagnostic collection and LIVE fault-injection
+validation remain pending; the alerts alone do not complete that TODO.
 
 Live trace attribution retains at most 64 records and 128 Ki characters per account. Older or ambiguous
 timestamp lookups and reproduction bundles stream the original trace files; do not remove them while a run

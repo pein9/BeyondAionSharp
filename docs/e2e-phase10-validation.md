@@ -2492,6 +2492,35 @@ Pre-commit checks pass: 4,393 solution tests / 27 explicit skips, warning baseli
 Logs: `run/p10-03-close-*.log`. This evidence-only closeout changes no gameplay,
 upstream automation, warning baseline or global allowance.
 
+## P10-04 heartbeat alert foundation (not yet complete)
+
+Source review of Java `commons/utils/concurrent/DeadLockDetector.java` at
+`ce54b7931` confirms its diagnostic is based on thread/lock ownership cycles.
+C# heartbeat absence is only a suspected hang; no Java runtime is started and
+no equivalent deadlock proof is claimed. Production scheduling is unchanged.
+
+Four regressions fail on the previous watcher: absent first heartbeats never
+alert, duplicate/older samples clear an active alert, newer but still stale
+samples do the same, and a tracked unallowlisted heartbeat allows exit 0.
+The corrected watcher expects GS/LS/CS in continuous mode with a 30-second initial
+window and 20-second later gap. Configurable bounded thresholds are included in
+the final summary. Snapshot reads still tolerate missing server artifacts.
+Fresh recovery rearms the alert without erasing recorded failures, and the O1
+restart exception remains scoped to the exact GS crash and existing deadline.
+
+Thirteen new cases pin absent/snapshot behavior, duplicate/older/stale/fresh
+samples, exact gap boundaries, known/allowlisted failure handling, and threshold
+option validation. The complete 41-case watcher integration group passes,
+including its existing crash-expectation tests. Red/green logs:
+`run/p10-04-heartbeat-{red,green}.log`. No bots or containers were started for
+this checkpoint. Bounded diagnostic collection and real isolated LIVE hang
+injection are still pending; P10-04 remains unchecked.
+
+All applicable pre-commit gates pass: 4,406 solution tests / 27 explicit skips,
+warning baseline 4,243, structural fidelity and every CLAUDE.md ancillary check
+(including the 463-assertion mock lifecycle controller). Logs:
+`run/p10-04-alert-*.log`. No warning baseline, allowance or gameplay change.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

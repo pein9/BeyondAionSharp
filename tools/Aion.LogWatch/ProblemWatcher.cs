@@ -10,7 +10,6 @@ public static class ProblemWatcher
 {
 	private static readonly string[] Servers = ["gs", "ls", "cs"];
 	private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(100);
-	private static readonly TimeSpan MissingHeartbeatThreshold = TimeSpan.FromSeconds(20);
 
 	public static async Task<int> RunAsync(WatchOptions options, CancellationToken cancellationToken = default)
 	{
@@ -88,6 +87,8 @@ public static class ProblemWatcher
 		private readonly Dictionary<string, WatchProblem> newProblemSamples = new(StringComparer.Ordinal);
 		private readonly Dictionary<string, DateTimeOffset> lastHeartbeats = new(StringComparer.Ordinal);
 		private readonly HashSet<string> heartbeatAlerts = new(StringComparer.Ordinal);
+		private readonly DateTimeOffset watchingStarted = DateTimeOffset.UtcNow;
+		private int knownHeartbeatProblems;
 		private readonly StreamWriter digest;
 		private int totalProblems;
 		private int suppressedProblems;
@@ -103,6 +104,7 @@ public static class ProblemWatcher
 
 		public WatcherState(WatchOptions options)
 		{
+			options.ValidateHeartbeatThresholds();
 			this.options = options;
 			traceHistory = new BotTraceHistory(options.Run);
 			allowlist = LogProblemAllowlist.Load(options.AllowlistPath);
@@ -124,7 +126,7 @@ public static class ProblemWatcher
 		}
 
 		public int FailingProblemCount => newProblems + regressedProblems +
-			(options.ExpectGameServerCrash ? knownProblems : 0) + (crashFailureReported ? 1 : 0);
+			(options.ExpectGameServerCrash ? knownProblems : knownHeartbeatProblems) + (crashFailureReported ? 1 : 0);
 
 		public void DiscoverTraceFiles()
 		{
@@ -187,8 +189,13 @@ public static class ProblemWatcher
 		public void CheckHeartbeats(DateTimeOffset now)
 		{
 			CheckCrashCompletion(now, final: false);
-			foreach (var (server, lastSeen) in lastHeartbeats)
+			foreach (var server in Servers)
 			{
+				bool observed = lastHeartbeats.TryGetValue(server, out var lastSeen);
+				// A snapshot may inspect partial historical artifacts. A continuing watcher
+				// expects every server, including one whose heartbeat producer never started.
+				if (!observed && options.Duration == TimeSpan.Zero) continue;
+				if (!observed) lastSeen = watchingStarted;
 				if (expectedCrash?.ExpectsHeartbeatGap(server, now) == true)
 				{
 					if (!crashGapReported)
@@ -196,10 +203,13 @@ public static class ProblemWatcher
 					crashGapReported = true;
 					continue;
 				}
-				if (now - lastSeen < MissingHeartbeatThreshold || !heartbeatAlerts.Add(server))
+				var threshold = observed ? options.MissingHeartbeatThreshold : options.InitialHeartbeatThreshold;
+				if (now - lastSeen < threshold || !heartbeatAlerts.Add(server))
 					continue;
-				var message = $"Heartbeat missed for {Math.Floor((now - lastSeen).TotalSeconds):0} s.";
-				AddSynthetic(now, server, "HEARTBEAT", "Heartbeat missed for {Server}", message, kind: "heartbeat");
+				var message = observed ? $"Heartbeat missed for {Math.Floor((now - lastSeen).TotalSeconds):0} s." :
+					$"Initial heartbeat not observed within {threshold.TotalSeconds:0} s of watcher startup.";
+				AddSynthetic(now, server, "HEARTBEAT", observed ? "Heartbeat missed for {Server}" :
+					"Initial heartbeat missing for {Server}", message, kind: "heartbeat");
 			}
 		}
 
@@ -231,6 +241,8 @@ public static class ProblemWatcher
 				regressed = regressedProblems,
 				repeated = repeatedProblems,
 				expectedProcessEvents,
+				heartbeatTimeoutSeconds = options.MissingHeartbeatThreshold.TotalSeconds,
+				initialHeartbeatTimeoutSeconds = options.InitialHeartbeatThreshold.TotalSeconds,
 				expectedGameServerCrash = options.ExpectGameServerCrash ? expectedCrash?.Complete == true : (bool?)null,
 				failed = options.Mode == WatchMode.Enforce && FailingProblemCount > 0,
 				retainedTraceRecords = traceHistory.RetainedRecords,
@@ -312,9 +324,14 @@ public static class ProblemWatcher
 				!category.Contains("heartbeat", StringComparison.OrdinalIgnoreCase))
 				return;
 			var server = WatchProblem.RequiredString(root, "srv");
-			lastHeartbeats[server] = WatchProblem.ReadTimestamp(root);
-			expectedCrash?.ObserveHeartbeat(server, lastHeartbeats[server]);
-			heartbeatAlerts.Remove(server);
+			if (!Servers.Contains(server, StringComparer.Ordinal)) return;
+			var timestamp = WatchProblem.ReadTimestamp(root);
+			if (lastHeartbeats.TryGetValue(server, out var previous) && timestamp <= previous) return;
+			lastHeartbeats[server] = timestamp;
+			expectedCrash?.ObserveHeartbeat(server, timestamp);
+			// File catch-up can deliver a newer but still stale sample. It is not recovery.
+			if (DateTimeOffset.UtcNow - timestamp < options.MissingHeartbeatThreshold)
+				heartbeatAlerts.Remove(server);
 		}
 
 		private void ReadServerProblem(string line)
@@ -425,7 +442,10 @@ public static class ProblemWatcher
 			};
 			switch (disposition)
 			{
-				case "KNOWN": knownProblems++; break;
+				case "KNOWN":
+					knownProblems++;
+					if (problem.Kind == "heartbeat") knownHeartbeatProblems++;
+					break;
 				case "REGRESSED": regressedProblems++; break;
 				default:
 					newProblems++;

@@ -23,11 +23,22 @@ public sealed record WatchOptions(
 	IReadOnlySet<string> UnexpectedRefusals)
 {
 	public bool ExpectGameServerCrash { get; init; }
+	public TimeSpan MissingHeartbeatThreshold { get; init; } = TimeSpan.FromSeconds(20);
+	public TimeSpan InitialHeartbeatThreshold { get; init; } = TimeSpan.FromSeconds(30);
+
+	internal void ValidateHeartbeatThresholds()
+	{
+		if (MissingHeartbeatThreshold < TimeSpan.FromSeconds(20) || MissingHeartbeatThreshold > TimeSpan.FromSeconds(300))
+			throw new ArgumentException("--heartbeat-timeout-seconds must be between 20 and 300 (producer interval: 10 seconds).");
+		if (InitialHeartbeatThreshold < TimeSpan.FromSeconds(20) || InitialHeartbeatThreshold > TimeSpan.FromSeconds(600))
+			throw new ArgumentException("--initial-heartbeat-timeout-seconds must be between 20 and 600.");
+	}
 	public const string Usage = "Usage: dotnet run --project tools/Aion.LogWatch -- --run <id> --run-dir <path> " +
 		"[--project aion-bots-<id>] [--compose-file docker/docker-compose.bots.yml] " +
 		"[--allowlist parity-artifacts/e2e/log-allowlist.json] [--ledger parity-artifacts/e2e/known-problems.json] " +
 		"[--mode enforce|record] [--duration-seconds N] [--stop-file path] [--no-docker true|false] " +
-		"[--full-run true|false] [--unexpected-refusals STR_SKILL_NOT_READY,...] [--expect-game-server-crash true|false]";
+		"[--full-run true|false] [--unexpected-refusals STR_SKILL_NOT_READY,...] [--expect-game-server-crash true|false] " +
+		"[--heartbeat-timeout-seconds 20] [--initial-heartbeat-timeout-seconds 30]";
 
 	public static WatchOptions Parse(string[] args)
 	{
@@ -44,6 +55,7 @@ public sealed record WatchOptions(
 		{
 			"run", "run-dir", "project", "compose-file", "allowlist", "ledger", "mode",
 			"duration-seconds", "stop-file", "no-docker", "full-run", "unexpected-refusals", "expect-game-server-crash",
+			"heartbeat-timeout-seconds", "initial-heartbeat-timeout-seconds",
 		};
 		var unknown = values.Keys.FirstOrDefault(key => !known.Contains(key));
 		if (unknown != null)
@@ -71,7 +83,7 @@ public sealed record WatchOptions(
 			.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
 			.ToHashSet(StringComparer.Ordinal);
 
-		return new WatchOptions(
+		var options = new WatchOptions(
 			run,
 			runDirectory,
 			project,
@@ -83,7 +95,14 @@ public sealed record WatchOptions(
 			values.TryGetValue("stop-file", out var stopFile) ? Path.GetFullPath(stopFile) : null,
 			dockerEnabled,
 			Boolean(values, "full-run", false),
-			refusals) { ExpectGameServerCrash = Boolean(values, "expect-game-server-crash", false) };
+			refusals)
+		{
+			ExpectGameServerCrash = Boolean(values, "expect-game-server-crash", false),
+			MissingHeartbeatThreshold = TimeSpan.FromSeconds(Integer(values, "heartbeat-timeout-seconds", 20)),
+			InitialHeartbeatThreshold = TimeSpan.FromSeconds(Integer(values, "initial-heartbeat-timeout-seconds", 30)),
+		};
+		options.ValidateHeartbeatThresholds();
+		return options;
 	}
 
 	private static string Required(IReadOnlyDictionary<string, string> values, string name) =>
