@@ -30,13 +30,22 @@ public sealed class SoakGatheringRouteTests
 				int reachable = 0;
 				foreach (var spot in new SoakGatheringSearch(spots, map, 0, home, 0).Candidates)
 				{
-					var outbound = Path(start, spot.Position);
+					var outbound = SoakGatheringRoute.FindReturnablePath(start, spot.Position, home, Path);
 					if (outbound.Count == 0) continue;
 					var inbound = Path(outbound[^1], home);
 					if (inbound.Count == 0) continue;
 					if (++reachable == minimum) break;
 				}
 				Assert.True(reachable >= minimum, $"Hub {map}:{start} has only {reachable} collision-checked round-trip nodes; need {minimum}.");
+			}
+			if (map == 220010000)
+			{
+				// gather500-c b323 walked here and harvested, then failed the return search.
+				var node = new BotPosition(480.537f, 2787.35f, 295.073f, 0);
+				var captured = new BotPosition(480.537f, 2787.35f, 295.0508f, 59);
+				Assert.NotEmpty(Path(home, node));
+				Assert.Empty(Path(captured, home));
+				Assert.Empty(SoakGatheringRoute.FindReturnablePath(home, node, home, Path));
 			}
 			IReadOnlyList<BotPosition> Path(BotPosition start, BotPosition end)
 			{

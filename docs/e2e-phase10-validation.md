@@ -1597,6 +1597,50 @@ new Docker-only cases, separately executed successfully), warning baseline 4,243
 all CLAUDE.md ancillary checks, and Docker Fast 6/6 in 36.4 seconds. Validation
 uses the separate stats output root and does not replace the active matrix tools.
 
+## P10-02 gather500-c outward-only routing failure
+
+The replacement diagnostic uses tools and a rebuilt test login image from
+`ac08359f8508ce9ac4cb0af37e8868f471a8056a`:
+`sha256:18c4130be3cfc46f1a1b75c85ecee505d72eabdff322d6e5508eee5fb62b3329`.
+The game image remains matrix-c's `1f38a4c1c4e5f45832ae7ba8eff67c98ecdd562d9091c7f04fb5d9df5217559d`.
+`run/p10-02-gathering-diagnostics/p10-02-gather500-c` retains command, ports and
+image provenance. All 500 subjects prepare. The workload runs from
+2026-09-20 14:25:19.9234991 to 14:26:09.7025097 UTC (49.779 seconds), then fails.
+All LS/CS raw problem streams are empty; GS contains only the existing startup
+allowance. This short result does not prove sustained pool health.
+
+The first printed error is attributed to b324, but paired operations share their
+failure: b323's trace has the successful gather, followed by failed return planning.
+b324 is still gathering. b323 explored Ishalgen node `(480.537,2787.35,295.073)` on
+channel 2, reached ground Z `295.0508`, then completed one successful harvest at
+14:26:04.905. The bounded graph/local/journey searches could not find the return
+to `(577.529,2817.34,303.613)`. These planners do not promise symmetric reachability.
+The earlier geometry test required eight usable nodes, but runtime did not apply
+that round-trip condition to every candidate it admitted.
+
+`SoakGatheringRoute.FindReturnablePath` now applies that condition to both
+exploration hints and observed-object approaches. It probes from the outward
+path's normalized final position to the original rendezvous, even after intervening
+exploration. A missing return rejects that candidate for the current gathering
+attempt; no movement, forced return, unchecked edge reversal or altered geometry
+budget is substituted. The final return is still freshly planned and can fail if
+conditions change. Existing offline dynamic-world limitations remain.
+
+The run records six gather outcomes, not adequate exposure. Watcher summary:
+453 observations, one suppressed, zero new/known, one regressed, 451 repeated.
+The generic `ebe67ab3` records two mirrored route exceptions and 450 cancellations,
+triaged under #101; no new allowance. Its isolated stack was removed by the owner;
+raw evidence remains. Matrix-c's 200-subject preflight continues untouched.
+
+Two focused regressions fail with the previous outward-only behavior. All eight
+focused tests pass after correction, including the full-geometry captured-node
+regression and at least eight eligible round-trip nodes per active starter hub
+from both initial offsets (plus the alternate Poeta hub's two-node check).
+No production code or server image changes in this routing correction.
+Pre-commit validation passes: 4,313 solution tests / 26 explicit skips, warning
+baseline 4,243, and every CLAUDE.md ancillary check. The opt-in geometry test is
+included in the eight separately executed focused tests, not counted as a full-suite pass.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

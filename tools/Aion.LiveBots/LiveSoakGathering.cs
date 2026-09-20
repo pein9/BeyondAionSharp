@@ -34,7 +34,7 @@ public static partial class LiveBotRunner
 				if (!search.Contains(spot)) continue;
 				selected = pool.TryAcquire(spot, candidate.ObjectId, Stopwatch.GetElapsedTime(epoch));
 				if (selected == null) continue;
-				route = Route(candidate.Position);
+				route = ReturnableRoute(candidate.Position);
 				if (route.Count != 0) break;
 				search.Reject(spot);
 				selected.Dispose(); selected = null;
@@ -44,7 +44,7 @@ public static partial class LiveBotRunner
 			{
 				// Explore beyond the initial known list, including after a nearby node becomes busy.
 				// This hint does not reserve anything. The next loop must observe and lease a real object.
-				var approach = Route(approachSpot.Position);
+				var approach = ReturnableRoute(approachSpot.Position);
 				if (approach.Count == 0) search.Reject(approachSpot);
 				else
 				{
@@ -101,11 +101,14 @@ public static partial class LiveBotRunner
 		await WalkAsync(back);
 		await session.SynchronizeAsync(token);
 
-		IReadOnlyList<BotPosition> Route(BotPosition destination)
+		IReadOnlyList<BotPosition> ReturnableRoute(BotPosition destination) =>
+			SoakGatheringRoute.FindReturnablePath(session.CurrentPosition, destination, home, FindPath);
+		IReadOnlyList<BotPosition> Route(BotPosition destination) => FindPath(session.CurrentPosition, destination);
+		IReadOnlyList<BotPosition> FindPath(BotPosition start, BotPosition destination)
 		{
-			var path = navigation.Graph.FindPath(cohort.MapId, session.CurrentPosition, destination);
-			if (path.Count == 0) path = navigation.Geometry.FindLocalPath(cohort.MapId, session.CurrentPosition, destination);
-			return path.Count != 0 ? path : navigation.Geometry.FindJourneyPath(cohort.MapId, session.CurrentPosition, destination);
+			var path = navigation.Graph.FindPath(cohort.MapId, start, destination);
+			if (path.Count == 0) path = navigation.Geometry.FindLocalPath(cohort.MapId, start, destination);
+			return path.Count != 0 ? path : navigation.Geometry.FindJourneyPath(cohort.MapId, start, destination);
 		}
 		async Task WalkAsync(IReadOnlyList<BotPosition> path)
 		{
