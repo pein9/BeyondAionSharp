@@ -26,6 +26,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+. (Join-Path $repoRoot 'scripts/e2e/run-artifact-owner.ps1')
 if ([string]::IsNullOrWhiteSpace($RunRoot)) {
 	$RunRoot = if ([string]::IsNullOrWhiteSpace($env:AION_E2E_RUN_ROOT)) {
 		Join-Path $repoRoot 'run'
@@ -72,6 +73,7 @@ if ($scenarioIds.Count -eq 0) {
 }
 
 New-Item -ItemType Directory -Path $runPath | Out-Null
+Register-AionRunArtifactOwner -Directory $runPath
 $transcriptPath = Join-Path $runPath 'transcript.log'
 $consolePath = Join-Path $runPath 'test-console.log'
 $dockerPath = Join-Path $runPath 'docker-info.log'

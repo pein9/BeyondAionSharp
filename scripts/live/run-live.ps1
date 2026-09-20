@@ -41,6 +41,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+. (Join-Path $repoRoot 'scripts/e2e/run-artifact-owner.ps1')
 if ([string]::IsNullOrWhiteSpace($RunRoot)) {
 	$RunRoot = if ([string]::IsNullOrWhiteSpace($env:AION_E2E_RUN_ROOT)) {
 		Join-Path $repoRoot 'run'
@@ -201,16 +202,24 @@ function Remove-OldRuns {
 	$otherRuns = Get-ChildItem -LiteralPath $script:runRootPath -Directory |
 		Where-Object { $_.FullName -ne $script:runPath } |
 		Sort-Object LastWriteTimeUtc -Descending
-	foreach ($oldRun in @($otherRuns | Select-Object -Skip 19)) {
+	$completedCount = 0
+	foreach ($oldRun in @($otherRuns)) {
 		$resolved = [IO.Path]::GetFullPath($oldRun.FullName)
 		if ([IO.Path]::GetFullPath((Split-Path $resolved -Parent)) -ne $script:runRootPath -or $resolved -eq $script:runRootPath) {
 			throw "Refusing to remove unexpected retention target: $resolved"
 		}
-		Remove-Item -LiteralPath $resolved -Recurse -Force
+		# Active, foreign and legacy/unknown owners never consume the completed-run budget.
+		if (-not (Test-AionRunArtifactOwnerExited -Directory $resolved)) { continue }
+		$completedCount++
+		if ($completedCount -le 19) { continue }
+		if (Test-AionRunArtifactOwnerExited -Directory $resolved) {
+			Remove-Item -LiteralPath $resolved -Recurse -Force
+		}
 	}
 }
 
 New-Item -ItemType Directory -Path $runPath,(Join-Path $runPath 'logs/gs'),(Join-Path $runPath 'logs/ls'),(Join-Path $runPath 'logs/cs') | Out-Null
+Register-AionRunArtifactOwner -Directory $runPath
 $env:AION_E2E_RUN_DIR = $runPath
 $env:AION_RUN_ID = $Run
 $env:AION_PACKET_TAP = $PacketTap.IsPresent.ToString().ToLowerInvariant()

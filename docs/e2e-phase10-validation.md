@@ -1018,6 +1018,34 @@ tests (now 21 individual mutation controls). Full solution validation passes
 6/6 and every required ancillary check passes. The real stats10-a diagnostic
 still replays successfully under v2 without claiming capacity acceptance.
 
+## P10-02 concurrent artifact retention
+
+Audit found a second retention defect (#85): preserving the current run and Full
+siblings did not protect a different active root from another standalone run's
+twenty-folder cleanup. A regression reproduces deletion before the correction.
+LIVE, SIM and Full roots now create immutable `run-owner.json` provenance with
+machine, PID and process creation ticks. Cleanup counts only owners demonstrably
+exited (including reused PIDs), keeps the nineteen newest completed runs plus the
+current run, and leaves live/foreign/malformed/unregistered roots untouched.
+Unknown legacy roots therefore need deliberate manual cleanup; age alone is not
+proof that deleting them is safe. Ownership remains after completion, and nested
+same-process runners keep protection through evidence aggregation. The contract
+also checks that registration cannot overwrite another owner's record.
+
+Validation: full solution 4,286 passed / 24 explicit skips; warning baseline
+4,243; Docker Fast 6/6 with an actual owner record; all CLAUDE.md ancillary
+checks pass. This changes artifact lifecycle only, not gameplay or Java parity.
+
+The acceptance-owned `p10-02-capacity-matrix-a` started at source `746a9cbeb`,
+seed 73, with ordered 50/200/500-subject two-hour children and separate Docker
+ports/databases. Its first population overlaps the earlier fifty-subject
+diagnostic until that workload ends at 07:45:22 UTC. This is shared-host load,
+not an isolated hardware benchmark; all per-server acceptance gates still apply.
+Neither invocation is terminal or accepted at this checkpoint. Both started
+before the ownership correction and are not retroactively assigned markers;
+their old standalone cleanup is protected by keeping newer root counts below
+its historical retention limit while it remains active.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

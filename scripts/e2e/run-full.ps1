@@ -15,6 +15,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'full-suite.ps1')
+. (Join-Path $PSScriptRoot 'run-artifact-owner.ps1')
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $manifest = Get-Content -Raw -LiteralPath (Join-Path $repoRoot 'parity-artifacts/e2e/scenarios.json') | ConvertFrom-Json
 $plan = @(Get-FullSuitePlan -Manifest $manifest -Suite $Suite -SimShards $SimShards -SoakBots $SoakBots -SoakSeconds $SoakSeconds)
@@ -31,6 +32,7 @@ if ($Suite -ne 'Breadth' -and -not (Test-Path -LiteralPath $runSoak -PathType Le
 $runRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot "run/$Run"))
 if (Test-Path -LiteralPath $runRoot) { throw "Full-run directory already exists: $runRoot" }
 New-Item -ItemType Directory -Path $runRoot | Out-Null
+Register-AionRunArtifactOwner -Directory $runRoot
 $gitSha = & git -C $repoRoot rev-parse HEAD
 if ($LASTEXITCODE -ne 0) { throw 'Cannot record Full-run git SHA.' }
 [pscustomobject]@{ run = $Run; suite = $Suite; gitSha = $gitSha; seed = $Seed;
