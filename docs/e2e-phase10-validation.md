@@ -1927,6 +1927,48 @@ and latency results include that overhead. Its 500 stage has not started.
 P10-02 remains open; the accepted fifty-subject result is from matrix-c and does
 not establish a uniform accepted matrix on the newer runner/images.
 
+## P10-02 quest kill credit surviving corpse decay
+
+The first Docker full-mixed diagnostic, `p10-02-mixed500-docker-a`, runs clean
+`2b443a2fc`, 500 subjects, all ten activities, seed 73 and 1,800 planned seconds.
+All subjects prepare. Workload starts 2026-09-20 16:04:16.7809703 UTC and fails
+at 16:07:22.7847435 after 186.0110014 monotonic seconds (drift -0.0072282 seconds).
+This is a harness quest exception, not a socket failure or accepted capacity.
+Traces retain 79 gathering outcomes from 79 subjects and 483 craft outcomes from
+197 subjects; no finite quest journey reaches its final persistence check.
+LS/CS have no problems and GS only its existing startup allowance. Enforced
+watching records 484 observations: one suppressed, zero new/known, one regressed,
+482 repeated. The owner exits 1 and removes its five-container Docker project.
+Independent matrix-d 200 remains running on its original host binaries.
+
+b352's trace is decisive: target 141840 is NPC 210133; at 16:07:21.572 it receives
+Q1102 status 3 / kill counter 1, then target-specific loot-enable at .584 and
+`SM_DELETE` at .960. Its next cast iteration at 16:07:22.021 indexes the absent
+NPC. `SM_DELETE` correctly removes both the object and current loot status.
+Java `NpcController.doReward` invokes quest kill credit before drop registration;
+`MonsterHunt.onKillEvent` updates the quest counter; `DropRegistrationService`
+enables loot even for empty drops; `RespawnService.scheduleDecayTask` uses a
+two-second empty-corpse delay. All references are at `ce54b7931`. The packet-drain
+timestamps are receipt times, not the server's exact scheduling intervals.
+
+Finding #106 fixes only the LIVE harness. For pure kill objectives, completion
+requires the exact active quest counter; excess credit fails before another cast.
+Item objectives still require that target's loot-enable plus the existing item
+and inventory checks. A target disappearing without sufficient evidence fails
+explicitly rather than indexing the dictionary. No retained corpse, guessed death,
+quest reset, retry, timeout relaxation, production change or new allowance.
+
+Six regressions cover the observed credit/loot/delete sequence, next-objective
+credit, missing/wrong/completed quests, excessive credit and target-specific item
+loot requirements. The former loot-only logic fails five cases; the corrected
+logic passes all six plus three existing quest tests (one explicit geometry skip).
+Logs: `run/p10-02-quest-kill-credit-{red,green}.log`. A new scaled replay is required;
+the failed diagnostic and matrix-d binaries are never reinterpreted or hot-patched.
+All pre-commit checks pass: 4,327 solution tests / 26 explicit skips, unchanged
+4,243-warning baseline and every CLAUDE.md ancillary check. Full logs:
+`run/p10-02-quest-kill-credit-{warning,fulltests}.log`. This is a harness-only
+correction; no gameplay or upstream automation changes.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

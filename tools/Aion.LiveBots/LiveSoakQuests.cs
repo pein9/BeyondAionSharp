@@ -56,7 +56,7 @@ public static partial class LiveBotRunner
 					using (lease)
 					{
 						await session.MoveToNpcAsync(lease.ObjectId, token);
-						if (objective.Kill) await KillAsync(lease.ObjectId);
+						if (objective.Kill) await KillAsync(lease.ObjectId, stage.Id, objective.ItemId == 0 ? index + 1 : null);
 						if (objective.ItemId != 0)
 						{
 							await session.LootQuestItemAsync(lease.ObjectId, objective.ItemId, objective.Kill, token);
@@ -108,14 +108,16 @@ public static partial class LiveBotRunner
 			return id;
 		}
 
-		async Task KillAsync(int id)
+		async Task KillAsync(int id, int questId, int? expectedKillCredit)
 		{
 			if (!world.Skills.TryGetValue(1282, out var bolt)) throw new InvalidDataException("Quest mage lacks Flame Bolt.");
 			await session.SendPacketAsync(session.Api.Target(id), token);
 			for (int cast = 0; cast < 30; cast++)
 			{
+				if (!world.Objects.TryGetValue(id, out var target))
+					throw new InvalidDataException($"Quest target {id} disappeared before Q{questId} supplied the required kill/loot evidence.");
 				await session.SendPacketAsync(session.Api.Cast(new SpellCastData(1282, checked((byte)bolt.Level), 0)
-				{ TargetObjectId = id, HitTime = SocialBasicsScenario.DuelHitTime(session.CurrentPosition, world.Objects[id].Position, RaceOf(cohort.FirstRace)) }), token);
+				{ TargetObjectId = id, HitTime = SocialBasicsScenario.DuelHitTime(session.CurrentPosition, target.Position, RaceOf(cohort.FirstRace)) }), token);
 				var started = await BotCastProtocol.WaitForStartAsync(session.WaitForAnyPacketAsync, session.CharacterId, 1282, token);
 				await Task.Delay(started.Get<ushort>("castDuration") + 1, token);
 				var result = await BotCastProtocol.WaitForCompletionAsync(session.WaitForAnyPacketAsync, session.CharacterId, 1282, token);
@@ -125,10 +127,25 @@ public static partial class LiveBotRunner
 				await Task.Delay(BotCastProtocol.RecoveryDelay(result), token);
 				await session.SynchronizeAsync(token);
 				if (world.IsDead) throw new InvalidDataException("Quest subject died.");
-				if (world.LootStatuses.TryGetValue(id, out byte status) && status == (byte)SM_LOOT_STATUS.Status.LOOT_ENABLE) return;
+				if (SoakQuestKillCompleted(world, id, questId, expectedKillCredit)) return;
 			}
 			throw new InvalidDataException("Quest target survived thirty ordinary casts.");
 		}
+	}
+
+	internal static bool SoakQuestKillCompleted(BotWorldModel world, int targetId, int questId, int? expectedKillCredit)
+	{
+		// Java awards quest kill credit before registering drops. Empty corpses decay
+		// after two seconds, so a packet drain may observe both LOOT_ENABLE and DELETE.
+		// Pure kill objectives use their durable, exact quest counter, not corpse presence.
+		if (expectedKillCredit is int expected)
+		{
+			if (!world.Quests.TryGetValue(questId, out var quest) || quest.Status != 3) return false;
+			int observed = quest.StepAndFlags & 63;
+			if (observed > expected) throw new InvalidDataException($"Soak quest {questId} kill credit exceeded {expected}: {observed}.");
+			return observed == expected;
+		}
+		return world.LootStatuses.TryGetValue(targetId, out byte status) && status == (byte)SM_LOOT_STATUS.Status.LOOT_ENABLE;
 	}
 
 	private static async Task SoakQuestWalkAsync(LiveBotSession session, BotPosition destination, CancellationToken token)
