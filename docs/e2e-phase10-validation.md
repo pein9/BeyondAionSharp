@@ -95,6 +95,73 @@ The foundation solution run passes 4,123 tests with 21 explicit skips; compiler
 warnings remain 4,243. All required logger/clock/draft ratchets, fidelity, Python
 compiler/report tests, retention, Full-suite and compose contract checks pass.
 
+## P10-02 repeatable social/lifecycle runtime (still diagnostic)
+
+The explicit `SOAK` manifest entry is excluded from breadth selection. The LIVE
+runner can now create a long-lived population and execute seeded, independently
+scheduled pairs. Earlier pairs drain their incoming packets while later pairs
+are prepared; the requested duration starts only after the whole population is
+ready. A failed pair cancels its peers, and all tasks are joined before disposal.
+The director only supplies initial class/level, position, kinah and bandages, then
+logs out. Subjects remain ordinary access-zero players. This is fixture setup,
+not a natural, cheat-free journey or a claim of travel between zones.
+
+Implemented diagnostic activities:
+
+- Group invitation/acceptance, reciprocal roster checks, leave and cleanup.
+- Trade cancellation and commitment on every invocation, item/kinah offers in
+  both directions and exact per-subject inventory conservation. Trading one
+  bandage each keeps the workload repeatable without replenishment.
+- Normal logout/relogin and abrupt client disconnect/relogin, respecting the
+  existing delayed logout and reentry gates. Each reconnect must preserve the
+  character ID, position, level and inventory on a fresh connection; every
+  subject ends with the independent inventory oracle and an offline DB check.
+
+In-memory packet lookback is capped only for this profile; disk packet traces
+remain complete and existing breadth lookback behavior is unchanged. Per-pair
+decisions are traced, and `soak-runtime.json` records activity counts with
+`Acceptance: false`. Every selected eligible activity must actually execute in
+each cohort or the diagnostic fails. There is no silent skipping of activities.
+
+For example (the run ID must be unused):
+
+```powershell
+pwsh scripts/live/run-live.ps1 -Run soak-diagnostic -Scenario SOAK -Bots 10 `
+  -SoakSeconds 180 -SoakActivities Group,Trade,Relog,CrashDisconnect `
+  -StepTimeoutSeconds 90 -Seed 73 -FullRun
+```
+
+Default `SOAK` requests **all** activities and currently rejects the unimplemented
+ones before opening bot sessions. The PowerShell wrapper may already have started
+its disposable Docker stack at that point, and cleans it up. `run-full.ps1`
+continues to reject Soak/All before startup while `run-soak.ps1` is unavailable.
+Quest/gather/craft/vendor/duel/PvP runtime, shared-resource coordination, statistical
+checks, dispatcher/memory/timer telemetry and every two-hour acceptance run remain
+outstanding. System-message history is also still unbounded; the diagnostic
+packet-history cap alone is not a claim of flat bot-process memory.
+
+First runtime evidence: `p10-02-cycle10-a`, seed 1, 10 authenticated subjects,
+180 seconds after population setup, 74 cohort actions. It passed enforced log
+watching with no new allowance. This run predates the additional reconnect
+level/inventory comparison; its existing final independent inventory oracle
+passed. Twelve new option/preflight regressions cover explicit subsets, invalid
+values and failure before sockets for unavailable activities or empty cohorts.
+
+The stronger runtime passed `p10-02-cycle50-b`: seed 73, 50 subjects/25 cohorts,
+180 seconds after population setup, 368 cohort actions and all 50 completion
+traces. Every reconnect checked character identity, position, level and exact
+inventory totals. The bot problem file is empty and enforced log watching passed
+without any new allowance. Both diagnostic stacks were removed; the maintainer's
+Docker MySQL container was untouched. These results are **not** the two-hour
+50/200/500 matrix or a memory/timer plateau measurement.
+
+Checkpoint validation: 4,135 solution tests pass with 21 explicit skips; 4,243
+compiler warnings (unchanged). Logger/clock/custom-quest ratchets, fidelity,
+quest-compiler/data-sweep tests, retention, Full-suite and compose contracts pass.
+No production gameplay code or upstream automation changed. Java's
+`AionConnection.java:onDisconnect` at `ce54b7931` was checked for the existing
+maximum ten-second delayed crash logout; no Java runtime was used.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

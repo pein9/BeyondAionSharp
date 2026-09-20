@@ -1790,6 +1790,20 @@
     "resetEpoch": true
   },
   {
+    "id": "SOAK",
+    "modes": ["Live"],
+    "tier": "Soak",
+    "race": "Both",
+    "map": null,
+    "channelNeeds": "None",
+    "bots": 10,
+    "virtualDuration": "02:00:00",
+    "consumes": [],
+    "requires": ["Db", "Geo"],
+    "expectedFail": null,
+    "resetEpoch": false
+  },
+  {
     "id": "connect",
     "modes": ["Live"],
     "tier": "Full",

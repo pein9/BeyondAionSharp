@@ -21,6 +21,8 @@ param(
 	[int]$StepTimeoutSeconds = 15,
 
 	[int]$Seed = 1,
+	[ValidateRange(1, 7200)][int]$SoakSeconds = 7200,
+	[string]$SoakActivities = 'Quest,Gather,Craft,Vendor,Trade,Group,Duel,Pvp,Relog,CrashDisconnect',
 
 	[switch]$PacketTap,
 
@@ -217,6 +219,11 @@ $failure = $null
 try {
 	Push-Location $repoRoot
 	try {
+		if ($Scenario -contains 'SOAK') {
+			if ($Scenario.Count -ne 1) { throw 'SOAK needs its own isolated stack.' }
+			$env:AION_BOT_OVERLAY_DIR = Join-Path $repoRoot 'docker/bots/overlay-soak'
+			$configProfile = 'docker-bots-soak'
+		}
 		if ($Scenario -contains 'L4') {
 			if ($Scenario.Count -ne 1) { throw 'The passkey profile must run L4 in its own isolated stack.' }
 			$profileDirectory = Join-Path $runPath 'config-overlay'
@@ -275,6 +282,9 @@ try {
 			'--step-timeout-seconds', $StepTimeoutSeconds.ToString(), '--seed', $Seed.ToString(),
 			'--git-sha', $gitSha, '--profile', $configProfile, '--time-zone', $timeZone
 		)
+		if ($Scenario -contains 'SOAK') {
+			$botArguments += @('--soak-seconds', $SoakSeconds.ToString(), '--soak-activities', $SoakActivities)
+		}
 		& dotnet @botArguments
 		$botExitCode = $LASTEXITCODE
 		Stop-Watcher

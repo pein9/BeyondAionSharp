@@ -1909,9 +1909,16 @@ real geodata on in production immediately, because geo is enabled by default; th
   collisions; a per-cohort seeded shuffle policy covers all required activity types in both starter zones,
   capitals for crafting, and cross-race Reshanta. The isolated soak overlay admits 1,000 subjects plus its
   director and shares the ordinary test observability/geo/chat controls without deterministic rate overrides.
-  Runtime action drivers, resource coordination, telemetry and two-hour evidence remain required.
+  An explicit diagnostic runtime now repeats group/trade/relog/crash-disconnect flows with per-cohort
+  seeded decisions, conservation/persistence checks and fail-fast population cleanup. All unimplemented
+  activities fail closed, and diagnostic output explicitly says it is not acceptance evidence.
+  Quest/gather/craft/vendor/duel/PvP drivers, resource coordination, telemetry and two-hour evidence remain required.
   Foundation validation: 21 focused identity/policy tests and 500 TCP key-exchange/close smoke cases pass;
   neither proves a populated world or a two-hour soak. The TODO remains unchecked until full runtime evidence.
+  Runtime checkpoint: 10- and 50-subject, three-minute group/trade/relog/crash diagnostics pass (74/368
+  cohort actions, seeds 1/73); the 50-subject run checks level/inventory preservation on every reconnect.
+  All subjects finish and both runs pass enforced log watching without a new allowance. These short,
+  partial-workload diagnostics do not satisfy the two-hour matrix or memory/timer/latency acceptance.
 - [ ] **P10-03** [LIVE] S — Crash and restart: kill the game server mid-session, restart, relog succeeds, delayed save is
   correct, a second login on the same account kicks the first.
 - [ ] **P10-04** [LIVE] S — Hang detection on top of the P3-12 heartbeat: alert thresholds and diagnostics on a missed

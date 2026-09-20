@@ -25,11 +25,14 @@ public sealed record LiveBotOptions(
 	string TimeZone,
 	TimeSpan ReentryDelay)
 {
+	public int SoakSeconds { get; init; } = 7200;
+	public IReadOnlyList<SoakActivity> SoakActivities { get; init; } = Enum.GetValues<SoakActivity>();
 	public const string Usage = "Usage: dotnet run --project tools/Aion.LiveBots -- --run <id> --output <run-dir> " +
 		"[--scenario manifest-id[,manifest-id]] [--bots N] [--host 127.0.0.1] [--login-port 12106] " +
 		"[--game-port 17777] [--chat-port 11241] [--admin-port 17780] [--admin-token TOKEN] " +
 		"[--connect-timeout-seconds 10] [--step-timeout-seconds 15] [--seed N] [--git-sha SHA] " +
-		"[--profile deterministic] [--time-zone ID] [--reentry-seconds 10]";
+		"[--profile deterministic] [--time-zone ID] [--reentry-seconds 10] " +
+		"[--soak-seconds 7200] [--soak-activities Quest,Gather,Craft,Vendor,Trade,Group,Duel,Pvp,Relog,CrashDisconnect]";
 
 	public static LiveBotOptions Parse(string[] args)
 	{
@@ -78,12 +81,30 @@ public sealed record LiveBotOptions(
 		if (bots > BotIdentity.MaximumSubjects)
 			throw new ArgumentException($"Scenario requires more than {BotIdentity.MaximumSubjects} subject bots.", "scenario");
 		var reentrySeconds = PositiveInt(values, "reentry-seconds", 10, 3600);
+		int soakSeconds = PositiveInt(values, "soak-seconds", 7200, 7200);
+		SoakActivity[] soakActivities = Enum.GetValues<SoakActivity>();
+		if (values.TryGetValue("soak-activities", out string? selection))
+		{
+			string[] names = selection.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+			if (names.Length == 0 || names.Any(name => !Enum.GetNames<SoakActivity>().Contains(name, StringComparer.Ordinal)))
+				throw new ArgumentException("--soak-activities requires named SoakActivity values.");
+			soakActivities = names.Select(Enum.Parse<SoakActivity>).ToArray();
+			if (soakActivities.Distinct().Count() != soakActivities.Length) throw new ArgumentException("Duplicate soak activity.");
+		}
+		if (scenarios.Contains("SOAK", StringComparer.Ordinal))
+		{
+			if (scenarios.Length != 1) throw new ArgumentException("SOAK must run alone.");
+			_ = SoakLifePolicy.CreatePopulation(bots, manifest);
+		}
+		else if (values.ContainsKey("soak-seconds") || values.ContainsKey("soak-activities"))
+			throw new ArgumentException("Soak options require --scenario SOAK.");
 
 		var known = new HashSet<string>(StringComparer.Ordinal)
 		{
 			"run", "output", "host", "login-port", "game-port", "chat-port", "admin-port", "admin-token",
 			"bots", "scenario", "connect-timeout-seconds", "step-timeout-seconds", "reentry-seconds",
 			"seed", "git-sha", "profile", "time-zone",
+			"soak-seconds", "soak-activities",
 		};
 		var unknown = values.Keys.FirstOrDefault(key => !known.Contains(key));
 		if (unknown != null)
@@ -106,7 +127,7 @@ public sealed record LiveBotOptions(
 			Get(values, "git-sha", ResolveGitSha()),
 			Get(values, "profile", "deterministic"),
 			Get(values, "time-zone", TimeZoneInfo.Local.Id),
-			TimeSpan.FromSeconds(reentrySeconds));
+			TimeSpan.FromSeconds(reentrySeconds)) { SoakSeconds = soakSeconds, SoakActivities = soakActivities };
 	}
 
 	private static string Required(IReadOnlyDictionary<string, string> values, string name) =>

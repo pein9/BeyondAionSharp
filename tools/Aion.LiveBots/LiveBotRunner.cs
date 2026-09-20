@@ -32,6 +32,8 @@ public static partial class LiveBotRunner
 		Directory.CreateDirectory(Path.Combine(options.OutputDirectory, "bots"));
 		await WriteRunMetadataAsync(options, cancellationToken);
 		await using var problems = new LiveBotProblemWriter(Path.Combine(options.OutputDirectory, "bot.problems.jsonl"));
+		if (options.ScenarioDefinitions is [{ Id: "SOAK" }])
+			return await RunSoakAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "L0" }])
 			return await RunL0Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "L1" }])
@@ -1205,6 +1207,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 			activeMoveNext = null;
 			var packet = packets.Current;
 			packetHistory.Add(packet);
+			TrimHistory();
 			trace.WriteReceived(currentStep, packet);
 			if (packet.PacketType == typeof(SM_ENTER_WORLD_CHECK) && packet.Get<byte>("msg") != 0)
 				throw new LiveBotFailureException($"SM_ENTER_WORLD_CHECK refused entry with message {packet.Get<byte>("msg")}.");
