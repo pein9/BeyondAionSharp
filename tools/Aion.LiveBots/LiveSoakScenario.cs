@@ -1,6 +1,8 @@
 using System.Diagnostics;
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Aion.Bots.Gm;
+using Aion.Bots.Navigation;
 using Aion.Bots.Scenarios;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
@@ -11,7 +13,7 @@ namespace Aion.LiveBots;
 public static partial class LiveBotRunner
 {
 	private static readonly SoakActivity[] ImplementedSoakActivities =
-		[SoakActivity.Group, SoakActivity.Trade, SoakActivity.Relog, SoakActivity.CrashDisconnect, SoakActivity.Vendor, SoakActivity.Craft];
+		[SoakActivity.Group, SoakActivity.Trade, SoakActivity.Relog, SoakActivity.CrashDisconnect, SoakActivity.Vendor, SoakActivity.Craft, SoakActivity.Gather];
 
 	private static async Task<int> RunSoakAsync(LiveBotOptions options, LiveBotProblemWriter problems, CancellationToken token)
 	{
@@ -22,6 +24,16 @@ public static partial class LiveBotRunner
 			.Select(cohort => cohort with { Actions = cohort.Actions.Where(action => options.SoakActivities.Contains(action.Activity)).ToArray() }).ToArray();
 		if (cohorts.Any(cohort => cohort.Actions.Count == 0))
 			throw new InvalidOperationException("SOAK selection leaves a cohort without work; include a lifecycle activity.");
+		var gatheringSpots = options.SoakActivities.Contains(SoakActivity.Gather) ? SoakGatheringPool.StarterSpots() : [];
+		var gatheringPool = new SoakGatheringPool(gatheringSpots.SelectMany(spot => Enumerable.Range(1, 5).Select(instance => spot with { InstanceId = instance })));
+		long gatheringEpoch = Stopwatch.GetTimestamp();
+		BotNavigationAssets? navigationAssets = null;
+		var routes = new ConcurrentDictionary<(Race Race, int Instance), Lazy<(BotNavigationGraph Graph, BotNavigationGeometry Geometry)>>();
+		if (gatheringSpots.Count != 0)
+		{
+			string root = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../.."));
+			navigationAssets = await BotNavigationAssets.LoadAsync(root, Path.Combine(options.OutputDirectory, "navigation-cache"), token);
+		}
 		var actors = new List<L0Actor>();
 		var loops = new List<Task<SoakCohortResult>>();
 		using var stop = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -41,17 +53,22 @@ public static partial class LiveBotRunner
 				foreach (var actor in new[] { first, second })
 				{
 					await InitializeAsync(actor, stop.Token);
-					var point = cohort.Actions.Any(action => action.Activity == SoakActivity.Vendor) ? VendorScenario.Position : SoakStart(cohort.MapId);
+					var point = SoakStartPoint(cohort);
 					await MoveSubjectWithDirectorAsync(director, actor, gm, cohort.MapId, point.X + offset++, point.Y, point.Z, "soak-initial-position", stop.Token);
 					await actor.StepAsync("soak-initial-supplies", async ct =>
 					{
-						await gm.ExecuteVerifiedAsync(new GmCommand("set", ["class", "sorcerer"], "replyless class change"),
-							new GmCommand("set", ["level", "10"], "level to 10"), new GmSubject(actor.Session.CharacterId, actor.Session.CharacterName), ct);
+						if (cohort.Actions.Any(action => action.Activity == SoakActivity.Gather))
+							await gm.ExecuteAsync(new GmCommand("set", ["level", "9"], "level to 9"), new GmSubject(actor.Session.CharacterId, actor.Session.CharacterName), ct);
+						else
+							await gm.ExecuteVerifiedAsync(new GmCommand("set", ["class", "sorcerer"], "replyless class change"),
+								new GmCommand("set", ["level", "10"], "level to 10"), new GmSubject(actor.Session.CharacterId, actor.Session.CharacterName), ct);
 						await gm.ExecuteAsync(new GmCommand("add", [actor.Session.CharacterName, "182400001", "1000000"], "You gave"), cancellationToken: ct);
 						await gm.ExecuteAsync(new GmCommand("add", [actor.Session.CharacterName, "169300002", "100"], "You gave"), cancellationToken: ct);
 						await actor.Session.WaitForInventoryItemAsync(169300002, ct);
 						await actor.Session.SynchronizeAsync(ct);
 					}, stop.Token);
+					if (cohort.Actions.Any(action => action.Activity == SoakActivity.Gather))
+						await actor.StepAsync("soak-select-gather-channel", ct => SetGatheringRouteAsync(actor, cohort, ct), stop.Token);
 				}
 				loops.Add(RunPairAsync(cohort, first, second));
 				Console.WriteLine($"SOAK prepared {actors.Count}/{options.BotCount} subjects.");
@@ -85,6 +102,25 @@ public static partial class LiveBotRunner
 			await actor.StepAsync("enter-world", actor.Session.EnterWorldAsync, ct);
 		}
 
+		async Task SetGatheringRouteAsync(L0Actor actor, SoakCohort cohort, CancellationToken ct)
+		{
+			if (!cohort.Actions.Any(action => action.Activity == SoakActivity.Gather)) return;
+			int requested = SoakLifePolicy.StarterChannel(cohort);
+			await actor.Session.ChangeChannelAsync(requested, ct);
+			await actor.Session.WaitForPacketAsync(typeof(SM_SYSTEM_MESSAGE), ct, packet =>
+				packet.Get<string>("name") == "STR_MSG_TELEPORT_ZONECHANNEL" && packet.Get<string[]>("params").SequenceEqual([requested.ToString(System.Globalization.CultureInfo.InvariantCulture)]));
+			await actor.Session.SynchronizeAsync(ct);
+			var channel = actor.Session.Api.World.ChannelInfo ?? throw new InvalidDataException("Channel change omitted SM_CHANNEL_INFO.");
+			// Java builds this packet before spawning: preserve its 1/1 fallback, never infer an instance from it.
+			if (channel != (1, 1) && (channel.Index != requested || channel.Count <= channel.Index || channel.Count > 5))
+				throw new InvalidDataException("Channel acknowledgement contradicted the requested channel.");
+			var key = (RaceOf(cohort.FirstRace), requested + 1);
+			actor.Session.Navigation = routes.GetOrAdd(key, value => new Lazy<(BotNavigationGraph, BotNavigationGeometry)>(
+				() => navigationAssets!.StarterRoute(value.Race, value.Instance))).Value;
+			actor.Trace.WriteAction(actor.LastStep, "soak:select-channel", new Dictionary<string, object?>
+			{ ["channel"] = requested, ["instance"] = requested + 1, ["preSpawnFallback"] = channel == (1, 1) });
+		}
+
 		async Task<SoakCohortResult> RunPairAsync(SoakCohort cohort, L0Actor first, L0Actor second)
 		{
 			try
@@ -111,10 +147,13 @@ public static partial class LiveBotRunner
 							case SoakActivity.Craft:
 								var master = cohort.MapId == CookingMaster.Hestia.MapId ? CookingMaster.Hestia : CookingMaster.Lainita;
 								await SoakIndependentPairAsync(first, second, (actor, ct) => SoakCookingAsync(actor, master, ct), inner); break;
+							case SoakActivity.Gather:
+								await SoakIndependentPairAsync(first, second, (actor, ct) => SoakGatherAsync(actor, cohort, gatheringPool, gatheringSpots, gatheringEpoch, ct), inner); break;
 							case SoakActivity.Relog:
 							case SoakActivity.CrashDisconnect:
 								bool crash = decision.Action.Activity == SoakActivity.CrashDisconnect;
-								await Task.WhenAll(first.Session.ReenterForSoakAsync(crash, inner), second.Session.ReenterForSoakAsync(crash, inner)); break;
+								await Task.WhenAll(first.Session.ReenterForSoakAsync(crash, inner), second.Session.ReenterForSoakAsync(crash, inner));
+								await Task.WhenAll(SetGatheringRouteAsync(first, cohort, inner), SetGatheringRouteAsync(second, cohort, inner)); break;
 							default: throw new InvalidOperationException("Unimplemented soak activity.");
 						}
 					}, ct), stop.Token);
@@ -143,6 +182,7 @@ public static partial class LiveBotRunner
 
 	private sealed record SoakCohortResult(int Cohort, long Actions, Dictionary<string, long> Counts);
 	private static Race RaceOf(ScenarioRace race) => race == ScenarioRace.Elyos ? Race.ELYOS : Race.ASMODIANS;
+	private static BotPosition SoakStartPoint(SoakCohort cohort) => cohort.Actions.Any(action => action.Activity == SoakActivity.Vendor) ? VendorScenario.Position : SoakStart(cohort.MapId);
 	private static BotPosition SoakStart(int map) => map switch
 	{
 		210010000 => new(1212, 1040, 140.756f, 0),

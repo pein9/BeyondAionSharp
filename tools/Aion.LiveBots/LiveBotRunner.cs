@@ -828,7 +828,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 
 	public async Task ChangeChannelAsync(int channel, CancellationToken cancellationToken)
 	{
-		if (channel <= 0)
+		if (channel < 0)
 			throw new ArgumentOutOfRangeException(nameof(channel));
 		api.World.BeginWorldReload();
 		await SendGameAsync(api.ChangeChannel(channel), cancellationToken);

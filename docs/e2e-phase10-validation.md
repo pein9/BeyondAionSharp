@@ -137,8 +137,8 @@ its disposable Docker stack at that point, and cleans it up. `run-full.ps1`
 continues to reject Soak/All before startup while `run-soak.ps1` is unavailable.
 Quest/gather/duel/PvP runtime, shared-resource coordination, statistical
 checks, dispatcher/memory/timer telemetry and every two-hour acceptance run remain
-outstanding. System-message history is also still unbounded; the diagnostic
-packet-history cap alone is not a claim of flat bot-process memory.
+outstanding. At this checkpoint system-message history was still unbounded; the
+later gathering checkpoint bounds it too, without claiming flat process memory.
 
 First runtime evidence: `p10-02-cycle10-a`, seed 1, 10 authenticated subjects,
 180 seconds after population setup, 74 cohort actions. It passed enforced log
@@ -229,6 +229,64 @@ regression. Null-logger/clock/custom-quest ratchets, fidelity, ten quest-compile
 tests, 23 data-sweep report tests, retention, Full-suite and compose contracts
 all passed. P10-02 remains unchecked; the Full soak driver remains unavailable
 until the complete workload and capacity assertions exist.
+
+## P10-02 coordinated gathering (under validation)
+
+The prior economy implementation also passed the longer `p10-02-cooking20-a`
+diagnostic (seed 73, ten subjects, twenty-minute window): 345 cohort actions,
+24 completed orders, 116 craft attempts (96 successes / 20 failures), four
+abandon/reaccept recoveries, and three ordinary ingredient purchases from both
+racial merchants. Eight orders were the next apprentice tier (5501/6501), closing
+the first-order-only and unexercised-purchase gaps above. This does not prove all
+twenty order templates or the two-hour workload. All subjects passed final inventory
+and offline checks; the problem file was empty and enforced log watching passed
+with only the existing startup content allowance. Its isolated stack was removed.
+
+The starter gathering workload uses the existing Young Aria/Azpha spawns and
+production randomness. Starter subjects stay level-9 Mages so they retain human
+gathering; making them Daevas would replace that skill (§7 #74). The director
+still only supplies initial setup and then quits. No plants or skills are spawned
+or granted. Capital and Reshanta subjects keep their earlier setup.
+
+The bounded reservation table keys by shipped position, template, map and selected
+channel, not by an ever-growing set of respawn object IDs. Only one bot may own a
+node at once; different nodes can be gathered concurrently. Both success and
+failure consume one of its three uses, exactly as Java `completeInteraction`
+does. The third attempt must observe deletion; the coordinator waits at least
+295 seconds before permitting reuse and requires an actually visible node.
+Queued bots keep draining packets. Cancellation releases reservations and fails
+the population rather than silently continuing with uncertain node state.
+
+Movement uses the existing collision-checked starter graph/local search, including
+the return to a pair's rendezvous before social activity. The offline route test
+(`AION_SOAK_NAV_INTEGRATION=1`) loads real geometry and requires round trips to at
+least two nodes for each starter hub and both initial subject offsets. It passed;
+this is route evidence, not yet proof of the LIVE gathering loop or capacity.
+
+`SM_CHANNEL_INFO` now has a strict eight-byte decoder and world-model observation,
+pinned to the existing Java golden fixture and malformed-length tests. Source and
+trace inspection showed that Java constructs this packet before spawn, sending
+its `1/1` fallback on login/teleport/channel changes. That fallback is not an
+instance observation. Gathering cohorts distribute evenly across the five existing
+starter channels (indices 0–4 at 50/200/500 subjects) and explicitly select theirs. They
+require the ordinary channel-change system-message acknowledgement, including
+after every reconnect; reservations/navigation use the selected index plus one.
+The shared Java packet quirk is preserved. The
+soak also opts into bounded system-message lookback, alongside its packet history
+bound; disk traces and online refusal checks remain complete. Neither bound alone
+proves a flat process working set. Four reservation tests cover concurrent owners,
+separate instances, real cooldown boundaries and 100 respawn generations without
+table growth. The existing breadth lookback remains unbounded by default.
+
+Checkpoint checks: 4,155 solution tests passed / 22 explicit skips, with 4,243
+compiler warnings unchanged. The opt-in real-geometry route check also passed
+separately. Docker Fast `p10-02-gather-fast`, logger/clock/custom-quest ratchets,
+fidelity, ten quest-compiler tests, 23 report tests, retention and Full-suite
+contracts passed. `p10-02-gather10-a` is an in-progress ten-subject/ten-minute
+diagnostic, not accepted evidence yet; its first attempts exercised both races,
+ordinary successes and a natural failure. Depletion/respawn and final lifecycle
+checks must finish before claiming a LIVE gathering pass. No gameplay change,
+new allowance or Java runtime was involved.
 
 ## Scope decisions
 

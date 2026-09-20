@@ -57,6 +57,14 @@ public sealed class SoakLifePolicy
 		return new SoakDecision(++sequence, actions[bag[next++]], TimeSpan.FromMilliseconds(random.Next(1000, 5001)));
 	}
 
+	/// <summary>Distribute each starter-zone population evenly over its five shipped channels.</summary>
+	public static int StarterChannel(SoakCohort cohort)
+	{
+		if (cohort.Number < 1 || cohort.MapId is not (210010000 or 220010000))
+			throw new ArgumentException("Starter channel selection requires a valid starter cohort.", nameof(cohort));
+		return (cohort.Number - 1) / 5 % 5;
+	}
+
 	public static IReadOnlyList<SoakCohort> CreatePopulation(int subjects, ScenarioManifest manifest)
 	{
 		ArgumentNullException.ThrowIfNull(manifest);

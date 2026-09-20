@@ -10,6 +10,29 @@ namespace Aion.GameServer.Tests;
 public sealed class BotWorldModelTests
 {
 	[Fact]
+	public void SoakSystemMessageLookbackIsOptInBoundedAndKeepsTheNewestMessageAcrossReloads()
+	{
+		var world = new BotWorldModel();
+		for (int i = 0; i < 100; i++) Add(i);
+		Assert.Equal(100, world.SystemMessages.Count);
+		Assert.Throws<ArgumentOutOfRangeException>(() => world.BoundSystemMessageHistory(0));
+		world.BoundSystemMessageHistory(8);
+		Assert.InRange(world.SystemMessages.Count, 1, 8);
+		for (int i = 100; i < 500; i++)
+		{
+			if (i == 200) world.BeginWorldReload();
+			Add(i);
+			Assert.InRange(world.SystemMessages.Count, 1, 8);
+			Assert.Equal(i, world.SystemMessages[^1].MessageId);
+		}
+		world.BoundSystemMessageHistory(1);
+		Add(500);
+		Assert.Equal(500, Assert.Single(world.SystemMessages).MessageId);
+		void Add(int id) => world.Apply(Packet<SM_SYSTEM_MESSAGE>(("msgId", id), ("name", "test"),
+			("params", Array.Empty<string>()), ("specialParams", Array.Empty<string>()), ("senderObjectId", 0)));
+	}
+
+	[Fact]
 	public void RecipesTrackSnapshotLearningAndQuestCleanup()
 	{
 		var world = new BotWorldModel();

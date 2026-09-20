@@ -30,6 +30,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_UPDATE_PLAYER_APPEARANCE)] = DecodeEquipmentAppearance,
 			[typeof(SM_ENTER_WORLD_CHECK)] = DecodeEnterWorldCheck,
 			[typeof(SM_PLAYER_SPAWN)] = DecodePlayerSpawn,
+			[typeof(SM_CHANNEL_INFO)] = DecodeChannelInfo,
 			[typeof(SM_PLAY_MOVIE)] = DecodePlayMovie,
 			[typeof(SM_CHAT_INIT)] = DecodeChatInit,
 			[typeof(SM_PLAYER_INFO)] = DecodePlayerInfo,
@@ -850,6 +851,13 @@ public sealed partial class BotServerPacketDecoder
 	{
 		var r = new PacketBodyReader(body);
 		return Fields(("globalPrices", r.ReadByte()), ("globalModifier", r.ReadByte()), ("taxes", r.ReadByte()));
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeChannelInfo(ReadOnlySpan<byte> body)
+	{
+		if (body.Length != 8) throw new InvalidDataException("SM_CHANNEL_INFO must contain two int32 fields.");
+		var r = new PacketBodyReader(body);
+		return Fields(("currentChannel", r.ReadInt32()), ("instanceCount", r.ReadInt32()));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeSellItem(ReadOnlySpan<byte> body)

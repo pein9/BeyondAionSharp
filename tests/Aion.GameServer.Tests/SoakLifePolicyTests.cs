@@ -22,6 +22,12 @@ public sealed class SoakLifePolicyTests
 			if (pair.FirstRace != pair.SecondRace)
 				Assert.DoesNotContain(pair.Actions, action => action.Activity is SoakActivity.Group or SoakActivity.Trade or SoakActivity.Duel);
 		}
+		foreach (int map in new[] { 210010000, 220010000 })
+		{
+			var channels = cohorts.Where(pair => pair.MapId == map).GroupBy(SoakLifePolicy.StarterChannel).ToArray();
+			Assert.Equal(Enumerable.Range(0, 5), channels.Select(group => group.Key).Order());
+			Assert.All(channels, group => Assert.Equal(subjects / 50, group.Count()));
+		}
 	}
 
 	[Fact]

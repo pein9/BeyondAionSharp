@@ -35,6 +35,7 @@ internal sealed partial class LiveBotSession
 	{
 		if (capacity < 64) throw new ArgumentOutOfRangeException(nameof(capacity));
 		historyLimit = capacity;
+		api.World.BoundSystemMessageHistory(capacity);
 		TrimHistory();
 	}
 

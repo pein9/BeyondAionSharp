@@ -14,7 +14,7 @@ public sealed class BotServerPacketDecoderTests
 	[Fact]
 	public void DecoderInventoryContainsExpectedBotPerceptionPackets()
 	{
-		Assert.Equal(109, decoder.PacketTypes.Count);
+		Assert.Equal(110, decoder.PacketTypes.Count);
 		Assert.Contains(typeof(SM_UNWRAP_ITEM), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_FIRST_SHOW_DECOMPOSABLE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_SECONDARY_SHOW_DECOMPOSABLE), decoder.PacketTypes);
@@ -51,6 +51,28 @@ public sealed class BotServerPacketDecoderTests
 				Assert.Throws<InvalidDataException>(() => decoder.Decode(packetType, body[..length]));
 			Assert.Throws<InvalidDataException>(() => decoder.Decode(packetType, [.. body, 0]));
 		}
+	}
+
+	[Fact]
+	public void ChannelInfoReadsJavaGoldenAndTracksObservedInstanceWithoutInferringFromMap()
+	{
+		using var fixture = LoadFixture("SM_CHANNEL_INFO.json");
+		var cases = fixture.RootElement.GetProperty("cases");
+		Assert.Equal(1, cases.GetArrayLength());
+		byte[] golden = Convert.FromHexString(cases[0].GetProperty("payloadHex").GetString()!);
+		var fallback = decoder.Decode(typeof(SM_CHANNEL_INFO), golden);
+		Assert.Equal(1, fallback.Get<int>("currentChannel")); // Java's null-position fallback is intentionally 1/1.
+		Assert.Equal(1, fallback.Get<int>("instanceCount"));
+		var world = new Aion.Bots.World.BotWorldModel();
+		world.Apply(decoder.Decode(typeof(SM_CHANNEL_INFO), Convert.FromHexString("0400000005000000")));
+		Assert.Equal((4, 5), world.ChannelInfo);
+		world.BeginWorldReload();
+		Assert.Null(world.ChannelInfo);
+		world.Apply(decoder.Decode(typeof(SM_CHANNEL_INFO), Convert.FromHexString("0000000005000000")));
+		Assert.Equal((0, 5), world.ChannelInfo);
+		for (int size = 0; size < 8; size++)
+			Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_CHANNEL_INFO), golden[..size]));
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_CHANNEL_INFO), [.. golden, 0]));
 	}
 
 	[Fact]
@@ -535,6 +557,13 @@ public sealed class BotServerPacketDecoderTests
 		if (packetType == typeof(SM_KEY))
 		{
 			Assert.Equal(0x1A3D5948, decoded.Get<int>("encodedKey"));
+			return;
+		}
+		if (packetType == typeof(SM_CHANNEL_INFO))
+		{
+			// The existing Java fixture takes a null position, not primitive constructor arguments.
+			Assert.Equal(1, decoded.Get<int>("currentChannel"));
+			Assert.Equal(1, decoded.Get<int>("instanceCount"));
 			return;
 		}
 		if (packetType == typeof(SM_LEAVE_GROUP_MEMBER))

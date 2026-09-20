@@ -1914,7 +1914,9 @@ real geodata on in production immediately, because geo is enabled by default; th
   activities fail closed, and diagnostic output explicitly says it is not acceptance evidence.
   Vendor buy/sell/repurchase and production-random Cooking work-order loops are implemented diagnostically; Cooking
   selects eligible shipped apprentice orders as skill rises, with ordinary abandonment/reacceptance after
-  failed crafts exhaust issued materials. Quest/gather/duel/PvP drivers, resource coordination, telemetry
+  failed crafts exhaust issued materials. Coordinated starter gathering is under validation, using
+  ordinary level-9 human gatherers, per-spawn/explicitly-selected-channel reservations, checked ground paths and real respawns.
+  Quest/duel/PvP drivers, remaining resource coordination, telemetry
   and two-hour evidence remain required. This is still not acceptance of the full mixed workload.
   Foundation validation: 21 focused identity/policy tests and 500 TCP key-exchange/close smoke cases pass;
   neither proves a populated world or a two-hour soak. The TODO remains unchecked until full runtime evidence.
@@ -1924,8 +1926,10 @@ real geodata on in production immediately, because geo is enabled by default; th
   partial-workload diagnostics do not satisfy the two-hour matrix or memory/timer/latency acceptance.
   Economy checkpoint: `p10-02-economy10-c` passes ten subjects/eight minutes, 143 cohort actions,
   46 craft attempts (36 successes/10 failures), twelve completed orders and three abandon/reaccept
-  recoveries, without a new allowance. Higher apprentice orders and ordinary ingredient purchases
-  still need LIVE evidence. Details and checkpoint limitations: `docs/e2e-phase10-validation.md`.
+  recoveries, without a new allowance. The longer `p10-02-cooking20-a` passes ten subjects/twenty minutes,
+  345 actions, 24 orders including eight next-tier orders, and three ordinary ingredient purchases.
+  All twenty apprentice templates and the two-hour workload are not yet proven.
+  Details and checkpoint limitations: `docs/e2e-phase10-validation.md`.
 - [ ] **P10-03** [LIVE] S — Crash and restart: kill the game server mid-session, restart, relog succeeds, delayed save is
   correct, a second login on the same account kicks the first.
 - [ ] **P10-04** [LIVE] S — Hang detection on top of the P3-12 heartbeat: alert thresholds and diagnostics on a missed
@@ -2185,8 +2189,15 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 71 | LIVE options stopped at 99 bots; subject MAC encoding overflowed past 255, collided with director address 254, and character suffixes stopped being letters above 676 (harness capacity defects) | No Java analogue; `LiveBotOptions.Parse`, `LiveBotSession` identity construction, `LiveBotRunner.CharacterName` | P10-02 foundations support 1,000 subjects, preserve small-run names/MACs and reserve the director's address. Whole-population tests verify uniqueness, valid wire/name format and boundaries at 50/200/500/1,000 |
 | 72 | Soak overlay claimed the same observability controls as deterministic runs but lacked later chat credentials, twin-channel and explicit geo settings (harness profile drift) | No Java behavior change; source `NetworkConfig.java` at `ce54b7931` confirms the configurable 100-player admission default | P10-02 aligns shared controls and ratchets every common key against the ordinary bot overlay. Only soak raises admission to 1,001; production remains 100 and the single dispatcher is unchanged. Gather/craft rates, events and random quest bonuses remain production defaults |
 | 73 | E3's vendor assertions assumed one inventory stack per item template; mixing trade and vendor loops caused `SingleOrDefault` to throw on legitimate multiple bandage stacks (harness defect, not a gameplay divergence) | Java `model/items/storage/Storage.java:getItemsByItemId` at `ce54b7931` returns a list. `CM_BUY_ITEM.java:runImpl` completes vendor transactions synchronously; a following time-check drains their add/update responses | P10-02 diagnostic `p10-02-economy10-a` exposed the assumption. E3 now totals all stacks and selects a sufficient sale stack; the SIM regression starts with 10,001 bandages to guarantee multiple stacks, retaining exact item/kinah and repurchase checks. Docker Fast passes. No new allowance or gameplay change |
+| 74 | Initial soak setup made every subject a level-10 Sorcerer, which cannot use the human-gathering skill required by the shipped starter plants (harness setup incompatibility) | Java `services/SkillLearnService.java:learnNewSkills/autoLearnSkills` at `ce54b7931` replaces 30001 with 30002 for level-10 Daevas and does not auto-learn 30001 for advanced classes. `GatherableController.checkPlayerSkill` requires the plant's actual harvest skill | Starter cohorts selecting Gather stay level-9 Mages; capital/Reshanta setup is unchanged. No gathering skill is granted, no plant template changed, and no refusal is allowlisted |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
+`SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the
+packet's `1/1` fallback rather than the real channel (`PlayerEnterWorldService`, `TeleportService`,
+`SM_CHANNEL_INFO` at `ce54b7931`). Soak gathering distributes cohorts across existing indices 0–4,
+explicitly selects their channel, verifies the ordinary channel-change system-message acknowledgement
+and uses instance index + 1; it does not treat the
+fallback as evidence of the actual channel or alter this shared behavior.
 
 ---
 

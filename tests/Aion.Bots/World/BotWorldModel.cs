@@ -18,6 +18,7 @@ public sealed partial class BotWorldModel
 	private readonly HashSet<int> acceptedQuestIds = [];
 	private readonly HashSet<int> completedQuestIds = [];
 	private readonly List<BotSystemMessage> systemMessages = [];
+	private int systemMessageHistoryLimit = int.MaxValue;
 	private readonly Dictionary<int, byte> lootStatuses = [];
 	public IReadOnlyDictionary<int, byte> LootStatuses => lootStatuses;
 
@@ -32,8 +33,23 @@ public sealed partial class BotWorldModel
 	public IReadOnlySet<int> CompletedQuestIds => completedQuestIds;
 	public IReadOnlyList<BotSystemMessage> SystemMessages => systemMessages;
 
+	/// <summary>Opt-in diagnostic lookback bound; packet traces and live refusal checking remain complete.</summary>
+	public void BoundSystemMessageHistory(int capacity)
+	{
+		if (capacity < 1) throw new ArgumentOutOfRangeException(nameof(capacity));
+		systemMessageHistoryLimit = capacity;
+		TrimSystemMessages();
+	}
+
+	private void TrimSystemMessages()
+	{
+		if (systemMessages.Count > systemMessageHistoryLimit)
+			systemMessages.RemoveRange(0, systemMessages.Count - Math.Max(1, systemMessageHistoryLimit / 2));
+	}
+
 	public int? SelfObjectId { get; private set; }
 	public int? MapId { get; private set; }
+	public (int Index, int Count)? ChannelInfo { get; private set; }
 	public BotPosition? Position { get; private set; }
 	public ushort Level { get; private set; }
 	public int CurrentHp { get; private set; }
@@ -64,6 +80,7 @@ public sealed partial class BotWorldModel
 	/// <summary>Forget object ids that become invalid when the server rebuilds the player's visible world.</summary>
 	public void BeginWorldReload()
 	{
+		ChannelInfo = null;
 		objects.Clear();
 		openPrivateStores.Clear(); privateStoreNames.Clear(); privateStoreListings.Clear();
 		lootStatuses.Clear();
@@ -79,6 +96,8 @@ public sealed partial class BotWorldModel
 		var type = packet.PacketType;
 		if (type == typeof(SM_PLAYER_SPAWN))
 			ApplyPlayerSpawn(packet);
+		else if (type == typeof(SM_CHANNEL_INFO))
+			ChannelInfo = (packet.Get<int>("currentChannel"), packet.Get<int>("instanceCount"));
 		else if (type == typeof(SM_PLAYER_INFO))
 			ApplyPlayerInfo(packet);
 		else if (type == typeof(SM_EMOTION))
@@ -488,6 +507,7 @@ public sealed partial class BotWorldModel
 	{
 		systemMessages.Add(new BotSystemMessage(packet.Get<int>("msgId"), GetNullableString(packet.Fields, "name"),
 			packet.Get<string[]>("params"), packet.Get<string[]>("specialParams"), packet.Get<int>("senderObjectId")));
+		TrimSystemMessages();
 	}
 
 	private void UpdateSelfObjectPosition()
