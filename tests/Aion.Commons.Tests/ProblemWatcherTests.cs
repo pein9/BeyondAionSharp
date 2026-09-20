@@ -5,6 +5,29 @@ namespace Aion.Commons.Tests;
 
 public sealed class ProblemWatcherTests
 {
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task FailureBundleReadsACompleteBoundedSnapshotWhileTheServerLogIsOpen(bool matchingMessage)
+	{
+		using var run = new WatcherRun();
+		string source = Path.Combine(run.Options().RunDirectory, "logs", "gs", "server_console.log");
+		using var writer = new StreamWriter(new FileStream(source, FileMode.Append, FileAccess.Write, FileShare.ReadWrite)) { AutoFlush = true };
+		for (int index = 0; index < 300; index++)
+			writer.WriteLine(index == 150 && matchingMessage ? "Synthetic failure" : $"context {index}");
+		writer.Write("unfinished"); // A live producer need not have finished its next record.
+		run.WriteProblem("1234abcd");
+
+		Assert.Equal(1, await ProblemWatcher.RunAsync(run.Options()));
+		string[] context = File.ReadAllLines(Path.Combine(run.ProblemDirectory("1234abcd"), "server-context.log"));
+		Assert.Equal(matchingMessage ? 200 : 101, context.Length);
+		Assert.Equal(matchingMessage ? "context 50" : "context 199", context[0]);
+		Assert.Equal(matchingMessage ? "context 249" : "context 299", context[^1]);
+		Assert.DoesNotContain(context, line => line.Contains("unfinished", StringComparison.Ordinal));
+		writer.WriteLine("-done"); // The reader must not deny subsequent producer writes.
+		Assert.True(File.Exists(Path.Combine(run.ProblemDirectory("1234abcd"), "metadata.json")));
+	}
+
 	[Fact]
 	public async Task LongTraceKeepsBoundedCacheWithoutLosingAnEarlyFailureContext()
 	{

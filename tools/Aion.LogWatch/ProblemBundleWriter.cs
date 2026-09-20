@@ -61,7 +61,8 @@ internal sealed class ProblemBundleWriter(string runDirectory, string run, RunPr
 		var preceding = new Queue<string>();
 		var context = new List<string>(200);
 		bool matched = false;
-		foreach (string line in File.ReadLines(source))
+		// Share with active writers and stop at this poll's complete-record boundary.
+		foreach (string line in new FileTail(source).ReadNewLines())
 		{
 			if (!matched && line.Contains(needle, StringComparison.Ordinal))
 			{

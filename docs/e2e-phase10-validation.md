@@ -1209,6 +1209,24 @@ Validation: full solution 4,301 passed / 24 explicit skips; warning baseline
 4,243; Docker Fast 6/6 (36.4 seconds); all CLAUDE.md ancillary checks, including
 26 telemetry parser/policy tests, pass. P10-02 remains unchecked.
 
+## P10-02 active-log bundle regression
+
+The follow-up watcher audit found that server-context extraction still used
+`File.ReadLines`, whose Windows share mode conflicts with an open writer. Two
+regressions run the real watcher with a writable server-log handle held open;
+both initially throw `IOException` from `ProblemBundleWriter.WriteServerContext`.
+The bundle reader now reuses `FileTail`'s shared, finite complete-line snapshot.
+The matched-message path remains bounded at 200 lines, the no-match fallback
+at 101; neither includes a producer's unfinished last record. Both cases verify
+the metadata file and successful subsequent producer writes. This is harness-only
+and has no Java gameplay counterpart. The running matrix's binaries are not
+rebuilt or replaced in place.
+
+Validation passes: 17 focused watcher tests, full solution 4,303 passed / 24
+explicit skips, warning baseline 4,243, Docker Fast 6/6 and every CLAUDE.md
+ancillary check. P10-02 remains unchecked; this repairs error evidence, not the
+pending capacity result.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
