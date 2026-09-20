@@ -77,13 +77,22 @@ The full journey remains open; see `docs/e2e-phase10-validation.md` and simulati
 
 **Status:** Code complete
 
-**Current work:** Production response handling and focused loopback tests pass; lifecycle cleanup/duplicate handling remains coupled to BA-004.
+**Current work:** Production response handling and focused loopback tests pass. P10-09 LIVE `B2` now
+proves ordinary authentication, back-to-back auth responses with fresh tokens, and Chat-client
+disconnect/reconnect before failing gag enforcement. Java and C# both send a duration but compare it
+as an absolute expiry in Chat (simulation-plan §7/119). No production change or allowance was added.
+Bridge outage/pending-request timeout and the remaining gag/ungag journey are still open.
 
 - [x] The real client request path consumes Chat opcode `0x01` by resolving Java's current World player.
 - [x] The exact token reaches the client in `SM_CHAT_INIT`.
 - [x] Gag state matches Java (focused replay test: 300,000 ms remaining).
 - [x] Tagged staff nickname behavior matches `player.getName(true)`, including Java `%s` tag substitution.
 - [ ] Success, gagged, timeout/disconnect, and duplicate-request tests pass.
+  - [x] LIVE B2 authenticates ordinary players and delivers channel messages to both (`p10-09-chat-b`).
+  - [x] Back-to-back Game auth requests yield distinct tokens with stable account digest; latest token authenticates.
+  - [x] Chat-client FIN/peer-close followed by fresh authentication restores message delivery.
+  - [ ] Gag replay/enforcement: B2 captures forbidden text at both players (§7/119); ungag/final logout are unreached.
+  - [ ] Chat bridge outage and pending-request timeout/recovery still need live fault evidence.
 - [x] Full solution tests pass (1,002/1,002).
 
 ### BA-003 — Complete GS↔LS response surface
@@ -287,7 +296,11 @@ Tagged Chat nickname is tracked with BA-002 because it shares the same Java requ
 - [x] `docs/Full-Parity-Backlog.md` and the source audit agree with current implementation status.
 - [x] Final worktree/diff review found no whitespace errors and preserved the user's untracked `AGENTS.md`.
 
-The unchecked completion items trace exactly to the five Code-complete findings: BA-001, BA-002, BA-003, BA-005, and BA-006. They require the two-GS/Login/Chat, in-world siege, and hardware-ban restart journeys; they are not hidden test failures or unfinished code patches.
+The unchecked completion items trace to the five Code-complete findings: BA-001, BA-002, BA-003,
+BA-005, and BA-006. They require the two-GS/Login/Chat, in-world siege, and hardware-ban restart
+journeys. P10-09 now has explicit failing runtime evidence for shared upstream transfer and Chat-gag
+defects; "Code complete" describes the port, not a successful end-to-end journey. See
+`docs/e2e-phase10-validation.md` for preserved failures and remaining coverage.
 
 ## Progress log
 

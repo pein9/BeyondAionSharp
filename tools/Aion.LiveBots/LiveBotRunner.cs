@@ -34,6 +34,8 @@ public static partial class LiveBotRunner
 		await using var problems = new LiveBotProblemWriter(Path.Combine(options.OutputDirectory, "bot.problems.jsonl"));
 		if (options.ScenarioDefinitions is [{ Id: "O1" }])
 			return await RunO1Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "B2" }])
+			return await RunB2Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "SOAK" }])
 			return await RunSoakAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "L0" }])
@@ -820,6 +822,12 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 	{
 		await SendGameAsync(GameClientPackets.ChatAuth(characterId, macBytes), cancellationToken);
 		var chatInit = await WaitForGamePacketAsync(typeof(SM_CHAT_INIT), cancellationToken);
+		await OpenChatAsync(chatInit, cancellationToken);
+	}
+
+	private async Task OpenChatAsync(DecodedBotServerPacket chatInit, CancellationToken cancellationToken)
+	{
+		if (chatClient != null) throw new InvalidOperationException("The previous Chat connection must be closed first.");
 		chatProtocol = ChatClientProtocol.FromChatInit(chatInit);
 		chatClient = new TcpClient(options.ChatEndPoint.AddressFamily) { NoDelay = true };
 		await chatClient.ConnectAsync(options.ChatEndPoint.Address, options.ChatEndPoint.Port, cancellationToken);
@@ -828,7 +836,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		RequireChatOpcode(await ReadChatPayloadAsync(cancellationToken), 0x31, "SM_CHAT_INI");
 		await WriteChatAsync(chatProtocol.CreatePlayerAuthFrame(characterId, account, characterName, RegionChannel),
 			"CM_PLAYER_AUTH", cancellationToken);
-		RequireChatOpcode(await ReadChatPayloadAsync(cancellationToken), 0x02, "SM_PLAYER_AUTH_RESPONSE");
+		LiveChatContract.RequireAuthResponse(await ReadChatPayloadAsync(cancellationToken));
 		await WriteChatAsync(chatProtocol.CreateChannelRequestFrame(1, RegionChannel), "CM_CHANNEL_REQUEST", cancellationToken);
 		var channelResponse = await ReadChatPayloadAsync(cancellationToken);
 		RequireChatOpcode(channelResponse, 0x11, "SM_CHANNEL_RESPONSE");

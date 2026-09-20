@@ -56,3 +56,9 @@ It never accelerates the scheduler, invents missing bridge messages, unlocks the
 account, or repairs transferred data. Incomplete/stalled evidence exits nonzero;
 the isolated stack is removed afterwards. Parent metadata is retained in
 `topology-run.json`; root bot metadata/traces describe the L0 setup workload.
+
+Phase 10 Chat journey: `scripts/live/run-live.ps1 -Scenario B2 -Bots 2 -StepTimeoutSeconds 30`
+uses two ordinary subjects plus one director (three clients total). It exercises
+auth/token refresh, client reconnect and gag replay. The current shared upstream
+gag defect makes it fail; `chat-gag-evidence.json` retains both players' messages.
+It is not an expected-pass diagnostic or a substitute for Chat bridge fault tests.

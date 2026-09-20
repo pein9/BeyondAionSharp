@@ -2847,6 +2847,71 @@ inventory remains 4,243 sites. Logs are `run/p10-09-transfer-warnings.log` and
 combined output in `run/p10-09-transfer-ancillary.log`; the 41-assertion
 cross-server contract is run separately. No production gameplay code changed.
 
+## P10-09 Chat player journey
+
+LIVE `B2` is in the Full manifest and dispatcher (44 LIVE breadth scenarios). It
+uses two ordinary Elyos subjects and one seeded director, never more than three
+concurrent bots. The director only invokes the existing `//gag` and `//gag remove`
+commands; subjects use real Login/Game/Chat sockets. No direct state/DB writes,
+invented packets, production behavior changes or error allowances are used.
+
+`run/p10-09-chat/p10-09-chat-a` first verifies two back-to-back `CM_CHAT_AUTH`
+requests, distinct 48-byte tokens with the same account digest, the latest token's
+complete Chat authentication response, channel join and delivery to both clients.
+A client FIN followed by observed peer close, fresh auth and another delivered
+message proves client disconnect/reconnect. The director then acknowledges a
+five-minute gag; reconnect/auth repeats its bridge replay. Chat logs three gag
+receipts (initial command and two auth responses), but the subject receives its
+original text instead of a refusal. The bot exits 1 and watching fails on the
+generic assertion fingerprint `ebe67ab3` (one retained observation, not a fix).
+All four owned containers and their network are removed. This is not a passing
+BA-002 journey.
+
+Source explains this as a shared upstream defect: Game sends a **duration** of
+300,000 ms; Chat stores that value as **epoch expiry**, already past. Java source
+at `ce54b7931`: GS `services/ban/ChatBanService`,
+`network/chatserver/clientpackets/CM_CS_PLAYER_AUTH_RESPONSE`,
+`network/chatserver/serverpackets/SM_CS_PLAYER_GAG`; Chat
+`network/gameserver/clientpackets/CM_PLAYER_GAG`, `service/ChatService`,
+`model/ChatClient`, `network/aion/clientpackets/CM_CHANNEL_MESSAGE`.
+No Java runtime was started. This is recorded in §7/119 and left unchanged under
+the existing source-spec decision; B2 has no `expectedFail` or allowance.
+
+Run A's base revision is `493e6234f`, with the source patch/scenario and executable
+hash archived alongside the run. The executable SHA-256 is
+`4e80b966699aa960e4e3996de5d41a2539ef162888979fdec1d1e93df51ba2ed`.
+The subsequent evidence refinement records both players' responses through a
+positive control-message barrier before failing, and gives this bug a dedicated
+`chat-gag-not-enforced` problem kind instead of reusing generic assertion history.
+
+`run/p10-09-chat/p10-09-chat-b` confirms the original forbidden text reaches
+**both** the subject and the ordinary control player. `chat-gag-evidence.json`
+then records the positive control marker received by both. This distinguishes
+actual leakage from a silence timeout or an ambiguous sender-only echo. The bot
+exits 1; the watcher independently fails with one NEW fingerprint `c899dfcc` and
+one scoped boot report, no other problems. The ledger retains this observation
+with its defect reference and status `new`, keeping enforced watching red; it is
+not an allowance. The draft A's generic observation is retained separately.
+Four owned containers/their network are removed; existing unrelated containers
+remain untouched. B's executable SHA-256 is
+`05ad2b94b1fea70efff315114fd6b03c0ef263e63ad1db23a72e986782650f95`;
+its base revision is also `493e6234f`, with archived scenario and working patch.
+
+Coverage limits: this tests duplicate requests **before attaching the new Chat
+socket**, not takeover of an already-authenticated socket. Bridge outage/pending
+request timeout/recovery still need an owned live fault run. Later successful
+gag refusal, no-leak barrier, ungag/re-auth and final logout assertions are not
+claimed as passed when the scenario stops at gag enforcement. Run B did observe
+the no-leak barrier and disproved it; ungag/final logout remain unreached. BA-002 and P10-09
+remain unchecked.
+
+Pre-commit checks: 4,478 solution tests pass with 27 explicit skips, including
+14 Chat contract cases; warnings remain at 4,243 sites. All CLAUDE.md ancillary
+checks pass, including Full planning with B2 automatically included. Logs:
+`run/p10-09-chat-warnings.log`, `run/p10-09-chat-tests.log`, and
+`run/p10-09-chat-ancillary.log`. These green checks validate the harness, not the
+failing LIVE gag behavior.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
