@@ -3250,6 +3250,28 @@ Java source reference `ce54b7931`: GS `network/loginserver/LoginServer`
 All new implementation here is test orchestration/client code, not a server
 parity or ban-policy change.
 
+## P10-09 — Full-suite LIVE population integration
+
+After the accepted B4 checkpoint (`0efefda54`), inspection found that Full planning
+and dispatch omitted each LIVE scenario's manifest bot count. B4 and B2F therefore
+failed the public runner's admission guard before their executable could expand
+the default one-bot population. The standalone accepted runs are unaffected.
+
+Full steps now carry a validated integer `bots` value and pass `-Bots` explicitly.
+The contract exercises the actual runner dispatch for all 47 LIVE scenarios in
+both Host and Docker modes, including B4's five subjects and B2F's two. It rejects
+missing, non-integer and out-of-range manifest values. All child invocations are
+recording stubs: no bots, servers or databases are launched. This does not relax
+D17 or claim a green Full run; L1 and the original capacity matrix exceed the
+current ten-client limit and remain unexecuted here.
+
+Validation: 4,570 solution tests pass with 27 skips; warning baseline remains
+4,243 sites; all CLAUDE.md ancillary gates pass. Evidence is retained in
+`run/p10-09-population-contract.log`, `run/p10-09-population-warnings.log`,
+`run/p10-09-population-tests.log` and `run/p10-09-population-ancillary.log`.
+No production behavior changed; no new gameplay Fast run is required.
+The orchestration defect is recorded in plan §7/124. P10-09 remains open.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

@@ -2217,6 +2217,11 @@ real geodata on in production immediately, because geo is enabled by default; th
   re-entry, and unchanged Game/Chat/MySQL processes. BA-006 is verified; BA-003 and P10-09 overall
   remain open for the separately recorded transfer/Chat-gag and deferred siege acceptance.
   Remaining runtime player scenarios and tracker closeouts are still open.
+  Full-suite integration now forwards each LIVE manifest population to runner admission; B4 (five)
+  and B2F (two) previously inherited the one-bot default and were rejected before starting (§7/124).
+  Both Host and Docker dispatch paths are covered without launching children. B4's accepted runtime
+  proof is committed in `0efefda54`; this integration correction does not claim a green Full suite
+  or authorize populations above D17's ten-client limit.
 - [ ] **P10-10** [BOTH] M — Run report. Every run writes `run/<id>/report.md` and `report.json`:
   each scenario as passed, failed, skipped or flaky with duration; NEW, KNOWN and REGRESSED fingerprints; coverage
   deltas; peak heartbeat, memory and timer counts. `run-fast.ps1` and `run-full.ps1` print the summary at the end
@@ -2517,6 +2522,8 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 122 | Hardware controller could not read the live Docker log on Windows (harness-only) | First B4 run seeded exact seasonal epochs and observed all four ban refusals, but `File.ReadLines` failed with a sharing violation while Game was writing its bind-mounted JSONL. It stopped before arming/killing Login; the watcher correctly failed for the missing declared fault | Use an explicit read stream shared for read/write/delete, with a regression that keeps a writer open. Preserve `p10-09-hardware-a` as a failed run; no allowance or production change |
 
 | 123 | Login fault controller waited for an optional connection-error log (harness-only) | Second B4 run verified Login's exit 137, but withheld the bot's outage checkpoint while waiting for `Could not connect to login server`. The connector emits that only after a SocketException; silent EOF or an in-flight OS connect does not guarantee it during the outage. The controller never restarted Login, and watcher fingerprint `e425e285` correctly failed recovery | Handoff now uses the exact stopped-container inspection and the control's real Game barriers, then restarts Login. Fresh generation-tagged MAC/HDD application and heartbeat are still mandatory. `p10-09-hardware-c` passes generation 1→2 without any server/retry-policy change; the controller mock rejects reliance on optional reconnect logs |
+
+| 124 | Full runner dropped LIVE manifest bot counts (harness-only) | `Get-FullSuitePlan` omitted `bots` from LIVE steps and `run-full.ps1` never passed `-Bots`. The child runner therefore saw its default of one: B4 and B2F rejected admission before the bot executable's manifest expansion could occur. Standalone B4 evidence is unaffected | Include and validate positive integer manifest counts, pass them through the actual Full dispatch, and exercise all 47 LIVE invocations in both execution backends with recording stubs. Missing, fractional, string, boolean and out-of-range counts fail planning. No production or Java behavior changes; no real bots launched by these contract tests and no claim that Full acceptance is green |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the

@@ -28,6 +28,10 @@ Assert-True ($breadth[-1].kind -eq 'QuestCoverage') 'Coverage must follow the la
 $l0Index = [Array]::FindIndex($breadth, [Predicate[object]]{ param($step) $step.id -eq 'live-l0' })
 Assert-True ($breadth[$l0Index + 1].kind -eq 'PacketParity') 'Packet parity must immediately follow LIVE L0.'
 Assert-True (($liveSteps | Where-Object scenario -EQ Q4I).stepTimeoutSeconds -eq 1800) 'Quest plan deadline regressed.'
+foreach ($step in $liveSteps) {
+	$definition = $manifest | Where-Object id -CEQ $step.scenario
+	Assert-True ($step.bots -eq $definition.bots) "LIVE population lost for $($step.scenario)."
+}
 
 foreach ($shards in @(1, 2, 100)) {
 	$plan = @(Get-FullSuitePlan -Manifest $manifest -SimShards $shards)
@@ -50,9 +54,15 @@ Assert-True ($short.Count -eq 1 -and $short[0].bots -eq 200 -and $short[0].durat
 Assert-Throws { Get-FullSuitePlan -Manifest $manifest -SoakBots @(50, 50) } '*distinct soak population*'
 Assert-Throws { Get-FullSuitePlan -Manifest ($manifest + $manifest[0]) } '*duplicate scenario id*'
 Assert-Throws { Get-FullSuitePlan -Manifest @($manifest | Where-Object id -NE L0) } '*L0 in both*'
-$new = [pscustomobject]@{ id = 'OPS-NEW'; tier = 'Full'; modes = @('Live'); resetEpoch = $false }
+$new = [pscustomobject]@{ id = 'OPS-NEW'; tier = 'Full'; modes = @('Live'); resetEpoch = $false; bots = 3 }
 $expanded = @(Get-FullSuitePlan -Manifest ($manifest + $new))
 Assert-True (@($expanded | Where-Object id -EQ live-ops-new).Count -eq 1) 'New manifest scenario requires manual runner edits.'
+foreach ($invalidBots in @($null, 0, -1, 1001, 1.5, '2', $true)) {
+	$new.bots = $invalidBots
+	Assert-Throws { Get-FullSuitePlan -Manifest ($manifest + $new) } '*requires an integer bots count*'
+}
+$new.PSObject.Properties.Remove('bots')
+Assert-Throws { Get-FullSuitePlan -Manifest ($manifest + $new) } '*requires an integer bots count*'
 
 # Exercise failure semantics without launching Docker, databases or real children.
 $calls = [Collections.Generic.List[string]]::new()
@@ -96,8 +106,9 @@ $runSimTier = {
 	$recorded.Add([pscustomobject]@{ kind = 'Sim'; seed = $Seed; run = $Run; root = $RunRoot; shards = $ShardCount; parent = $SimulationRunId })
 }
 $runLive = {
-	param($Run, $Scenario, $WatcherMode, $RunRoot, [switch]$FullRun, [switch]$PacketTap, [switch]$SkipImageBuild, $StepTimeoutSeconds, $Seed, $BotExecution)
+	param($Run, $Scenario, $Bots, $WatcherMode, $RunRoot, [switch]$FullRun, [switch]$PacketTap, [switch]$SkipImageBuild, $StepTimeoutSeconds, $Seed, $BotExecution)
 	$recorded.Add([pscustomobject]@{ kind = 'Live'; seed = $Seed; run = $Run; root = $RunRoot;
+		scenario = $Scenario; bots = $Bots; timeout = $StepTimeoutSeconds;
 		full = [bool]$FullRun; tap = [bool]$PacketTap; skipBuild = [bool]$SkipImageBuild; watcher = $WatcherMode; execution = $BotExecution })
 }
 $runSoak = {
@@ -122,6 +133,21 @@ Assert-True (-not $recorded[1].skipBuild -and $recorded[2].skipBuild -and $recor
 Assert-True ($recorded[1].full -and $recorded[1].tap -and $recorded[1].watcher -eq 'enforce') 'LIVE observability or retention contract lost.'
 Assert-True ($recorded[3].full -and $recorded[3].tap -and $recorded[3].bots -eq 200 -and $recorded[3].seconds -eq 7200) 'Soak invocation contract lost.'
 Assert-True (@($recorded | Where-Object { $_.kind -ne 'Sim' -and $_.execution -cne 'Docker' }).Count -eq 0) 'Docker bot execution was not forwarded to every LIVE/soak child.'
+
+# All dispatches are recording stubs, including populations above the current
+# maintainer limit. Planning/testing an invocation never authorizes a real run.
+foreach ($backend in @('Host', 'Docker')) {
+	$BotExecution = $backend
+	$recorded.Clear()
+	Invoke-FullSuitePlan -Plan $liveSteps -Execute $dispatch -Record { param($result) }
+	foreach ($step in $liveSteps) {
+		$actual = @($recorded | Where-Object scenario -CEQ $step.scenario)
+		Assert-True ($actual.Count -eq 1 -and $actual[0].bots -eq $step.bots -and
+			$actual[0].timeout -eq $step.stepTimeoutSeconds -and $actual[0].execution -ceq $backend) "LIVE dispatch lost population/deadline/backend for $($step.scenario)."
+	}
+	Assert-True (($recorded | Where-Object scenario -EQ B4).bots -eq 5) 'B4 must receive five subjects at runner admission.'
+	Assert-True (($recorded | Where-Object scenario -EQ B2F).bots -eq 2) 'B2F must receive two subjects at runner admission.'
+}
 
 $planned = & (Join-Path $PSScriptRoot 'run-full.ps1') -Suite All -PlanOnly -Run p10-plan-only-test -Seed 73 | ConvertFrom-Json
 Assert-True ($planned.seed -eq 73 -and $planned.steps.Count -eq $all.Count) 'Public plan-only contract failed.'

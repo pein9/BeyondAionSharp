@@ -57,7 +57,7 @@ try {
 			}
 			'Live' {
 				& $runLive -Run "$Run-$($step.scenario.ToLowerInvariant())" -Scenario $step.scenario `
-					-WatcherMode enforce -RunRoot $runRoot -FullRun -PacketTap:$PacketTap `
+					-Bots $step.bots -WatcherMode enforce -RunRoot $runRoot -FullRun -PacketTap:$PacketTap `
 					-SkipImageBuild:$suiteState.imagesReady -StepTimeoutSeconds $step.stepTimeoutSeconds -Seed $Seed -BotExecution $BotExecution
 				$suiteState.imagesReady = $true
 			}

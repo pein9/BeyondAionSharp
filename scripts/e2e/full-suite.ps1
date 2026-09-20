@@ -48,9 +48,13 @@ function Get-FullSuitePlan {
 			S1 = 300; S2 = 180; S3 = 60; S4 = 60; S5 = 180; S6 = 180; S7 = 180;
 			L0 = 15; B2 = 30; B2F = 180; B3 = 120; B4 = 180; M1 = 15; M6 = 15; O1 = 1200; connect = 15; canaries = 15 }
 		foreach ($scenario in $live) {
+			if (-not $scenario.PSObject.Properties['bots'] -or ($scenario.bots -isnot [long] -and $scenario.bots -isnot [int]) -or
+				$scenario.bots -lt 1 -or $scenario.bots -gt 1000) {
+				throw "LIVE scenario $($scenario.id) requires an integer bots count between 1 and 1000."
+			}
 			$seconds = if ($timeouts.ContainsKey($scenario.id)) { $timeouts[$scenario.id] } else { 600 }
 			$steps.Add([pscustomobject]@{ kind = 'Live'; id = "live-$($scenario.id.ToLowerInvariant())";
-				scenario = $scenario.id; stepTimeoutSeconds = $seconds })
+				scenario = $scenario.id; bots = $scenario.bots; stepTimeoutSeconds = $seconds })
 			if ($scenario.id -ceq 'L0') { $steps.Add([pscustomobject]@{ kind = 'PacketParity'; id = 'l0-packet-parity' }) }
 		}
 		$steps.Add([pscustomobject]@{ kind = 'QuestCoverage'; id = 'quest-coverage' })
