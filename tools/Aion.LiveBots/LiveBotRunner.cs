@@ -668,11 +668,11 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		bool director = string.Equals(account, LiveGmFacade.DirectorAccount, StringComparison.Ordinal);
 		macBytes = BotIdentity.MacBytes(director ? 1 : BotIdentity.ParseSubjectNumber(bot), director);
 		macAddress = BotIdentity.MacAddress(macBytes);
-		AdminClient = new HttpClient { BaseAddress = options.AdminBaseUri };
+		AdminClient = new LiveAdminClient(options.AdminBaseUri);
 	}
 
 	// Keep the read-only oracle connection pool across relogs; requests own their authentication headers.
-	internal HttpClient AdminClient { get; }
+	internal LiveAdminClient AdminClient { get; }
 
 	public void BeginStep(string step) => currentStep = step;
 	public int CharacterId => characterId;

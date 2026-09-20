@@ -1484,6 +1484,66 @@ baseline 4,243, all CLAUDE.md ancillary checks, and Docker Fast 6/6 (37.1 second
 Separate validation outputs preserve the active matrix binaries. No production
 source, Docker image, upstream automation, or allowance changes.
 
+## P10-02 gather500-a failure and assertion-oracle isolation
+
+`run/p10-02-gathering-diagnostics/p10-02-gather500-a`, source `d6a0a3d38`, seed 73,
+uses the same game image as matrix-c on separate ports/build outputs. It prepares
+all 500 subjects for a 600-second Gather/Vendor/Relog diagnostic, then fails after
+18.994 seconds (2026-09-20 14:00:32.0338074–14:00:51.027898 UTC). The owning script
+exits 1 and removes only its isolated stack. The failed window, logs and launch
+provenance remain. This proves neither the revised gathering loop nor capacity.
+
+Pool-acquisition timeouts first appear at 14:00:37.124, during the initial relog
+burst. The restricted activity selection leaves 300 subjects with only Relog,
+so this is a concentrated diagnostic load, not the full mixed workload's shape.
+The first bot assertion failure is an admin player-state HTTP 404 at 14:00:50.087.
+The server lookup logs a DB timeout and returns null; its HTTP handler maps null
+to not-found. This is not evidence that a character was actually deleted.
+
+Source audit #98 finds an important interference risk. Both Java and C# configure
+five DB connections and a 5,000 ms acquisition timeout. `PlayerDAO` holds the
+player-row connection while `PlayerCommonData.SetExp` calls `UpdateDaeva`; for a
+non-starting class that can load quests using another connection. Five concurrent
+outer reads can therefore occupy all slots while waiting for nested reads. The
+C#-only admin endpoint is called concurrently by the bot oracle. No runtime wait
+graph was captured before the owning failed-run cleanup, so the exact allocation
+of all five connections at failure remains unproven. The Java-shared nested
+connection lifetime remains open; it is not silently rewritten as a parity fix.
+
+`LiveAdminClient` now keeps session-owned connection pooling but shares one
+cancellable read-only request gate across the LIVE bot process. The gate covers
+full response buffering. Cancellation while queued cannot release another caller's
+permit; active cancellation and faults release it. HTTP error responses are not
+retried or converted into success. All existing oracle call sites use the wrapper;
+game packets, per-cohort scheduling and ordinary server SQL stay unchanged. This
+isolates assertion traffic, not gameplay workload. It is not a DB concurrency fix
+or proof of general HTTP endpoint capacity. Two tests fail against ungated request
+delegation; all four focused gate/connection-reuse tests pass after correction.
+
+Fingerprint triage (no new allowance):
+
+| Fingerprints | Evidence and disposition |
+|---|---|
+| `ab16d694`, `31ac73fc`, `367d981e`, `96a8a5ff`, `09c0c5b0`, `2e9a8bbe`, `72c95289`, `528a4f09`, `1c6594e8`, `b4947b74`, `46ec4a02`, `8a9b3f9f` | Logged pool-acquisition timeouts in effects, quest, inventory, cooldown, player-state and character-count reads/writes. Track under #98; genuine failed persistence/load operations, not benign content. |
+| `0d086b61` | Slow CM_QUIT execution during the same timeout interval. Track with #98; retain the warning and unchanged threshold. |
+| `ebe67ab3` | Existing generic bot-failure fingerprint reused for the HTTP-404 assertion. Six HTTP exceptions plus 526 mirrored/cancelled-step records are retained; they are not 532 independent root causes. This run remains failed. |
+| `3ef73bfe`, `4d999c25`, `72e453eb` | Raw cleanup errors after population cancellation: null connection in leave-world and duplicate abyss-rank INSERT. Separate open #99; exact lifecycle race still needs reproduction. No silent null/duplicate handling is added. |
+| `231c488f` | The unchanged, already-owned startup content allowance. No new suppression. |
+
+The watcher terminal summary reports 569 observations: one suppressed, twelve new,
+one regressed and 555 repeated. Server logs continue during stack cleanup, so the
+complete raw GS problem stream contains additional post-summary fingerprints; the
+summary is not presented as a complete shutdown census. The raw evidence above
+and generated ledger changes are retained. The 200-subject matrix preflight remains
+live on its original binaries and has no new logged problem at this checkpoint.
+Future runs load the oracle gate; revised LIVE validation is still required.
+
+Pre-commit validation passes: full solution 4,310 tests / 24 explicit skips,
+warning baseline 4,243, and every CLAUDE.md ancillary check. Four focused tests
+exercise the gate and existing connection reuse. No production code, Docker
+image, upstream automation or allowance changes; validation uses a separate
+output root from the live capacity process.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
