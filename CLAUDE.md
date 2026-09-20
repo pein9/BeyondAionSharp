@@ -73,6 +73,7 @@ pwsh -NoProfile -File scripts/ci/check-custom-quest-drafts.ps1 # Roslyn custom-q
 python scripts/parity/check_fidelity.py                        # structural-fidelity check
 python scripts/e2e/test-quest-plan-compiler.py                 # quest plan/classifier drift and contract
 python scripts/e2e/test-data-sweep-report.py                   # exhaustive sweep evidence/baseline contract
+python scripts/e2e/test-soak-telemetry.py                      # capacity heartbeat/plateau/latency evidence gate
 pwsh -NoProfile -File scripts/live/test-run-retention.ps1       # Full child runs must preserve sibling evidence
 pwsh -NoProfile -File scripts/e2e/test-full-suite.ps1            # breadth/soak selection and fail-fast orchestration
 pwsh -NoProfile -File scripts/e2e/run-fast.ps1                 # additionally, before gameplay-change commits (Docker)

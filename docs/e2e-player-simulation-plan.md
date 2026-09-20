@@ -1921,6 +1921,10 @@ real geodata on in production immediately, because geo is enabled by default; th
   The finite quest and repeatable PvP drivers each pass ten-subject/twenty-minute diagnostics.
   Heartbeat memory and bounded outbound request-to-dispatch metrics pass a short LIVE diagnostic, including
   still-pending write age and abandoned requests; raw samples are not capacity acceptance.
+  `scripts/e2e/soak-telemetry.py` now validates a supplied workload window against versioned heartbeat,
+  plateau and dispatcher-tail criteria, hashing the source logs. It rejects incomplete/short telemetry
+  and never claims overall soak acceptance. Runtime-window integration and economic statistical gates
+  are still required; thresholds and limitations are recorded in the Phase 10 evidence document.
   Remaining resource coordination, telemetry acceptance/reporting
   and two-hour evidence remain required. This is still not acceptance of the full mixed workload.
   The quest loop cannot reset completed starter quests: shipped Q1/Q2 quests permit one completion.

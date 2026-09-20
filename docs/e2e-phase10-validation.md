@@ -645,6 +645,54 @@ warnings remain 4,243 and all CLAUDE.md ancillary checks pass. No gameplay,
 shared-bot or network code changed, so Docker Fast is not required for this
 ledger-only checkpoint.
 
+## P10-02 telemetry evidence gate (not full soak acceptance)
+
+`scripts/e2e/soak-telemetry.py` reads the LS/CS/GS JSONL heartbeats for an explicit
+offset-qualified `--start`/`--end` workload interval and writes `--output` JSON.
+It verifies run/server identity, monotonic sample times, memory presence and
+dispatcher histogram/count/max consistency, and hashes all three source files.
+Malformed or missing evidence fails closed; an evidence-validation failure replaces
+any previous output with a failed report. It exits 0 only when this **telemetry gate** passes,
+1 for a failed gate, and 2 for invalid inputs. `overallSoakAccepted` is always
+false: population, workload completion, clean watching, persistence and economic
+statistics are separate requirements. Runtime-window integration remains pending;
+manually supplied timestamps are diagnostic analysis, not automatic acceptance.
+
+Policy `p10-02-telemetry-v1` is declared before the capacity matrix, not fitted to
+an observed two-hour result. These are harness engineering tolerances, not Java
+gameplay rules or a claim of a production service-level agreement:
+
+- Require at least 7,200 seconds and no heartbeat gap over 30 seconds, including
+  either interval edge (three nominal ten-second beats).
+- Ignore the first 30 minutes for plateau calculations, then require at least
+  six complete 15-minute windows. Compare both last-minus-first window medians
+  and positive least-squares fitted growth across the medians. Each must remain
+  within max(64 MiB, 5% of the first median) for working set and managed heap,
+  and max(10 timers, 2% of the first median) for armed timers, on every server.
+  Medians avoid treating a single GC/allocation spike as sustained growth;
+  absolute floors accommodate small processes. Peaks remain visible in reports.
+- Aggregate disjoint dispatcher windows with count-weighted means and histogram
+  quantile upper bounds: p99 at most 100 ms, p99.9 at most 1,000 ms, observed max
+  at most 5,000 ms, and sampled pending-write age at most 1,000 ms. These bounds
+  distinguish routine dispatch from sustained delays and severe individual stalls.
+  The first selected heartbeat's dispatch batch is excluded because part of it
+  predates the requested interval. Empty evidence and unbounded quantile buckets
+  fail. Abandoned observations are reported separately, not disguised as fast
+  writes or automatically failed: crash-disconnect is part of this workload.
+
+Changing these tolerances requires a documented policy revision and rerun, not
+silently relaxing a failing report. The metrics measure request-to-buffer-
+preparation, not flush/RTT; sampled plateaus do not prove all leaks absent, and
+pending age is sampled rather than continuously observed. Synthetic regressions
+cover missing edges/interior beats, short windows, growing timers/memory,
+trend-vs-endpoint masking, outlier latency, stalled uncompleted writes, invalid
+histograms and real-file provenance. Retained LIVE `p10-02-telemetry10-b` logs
+parse successfully and correctly fail two-hour/plateau eligibility as a short
+diagnostic. No additional allowance or server behavior change is introduced.
+All 17 telemetry regressions and required ancillary checks pass; the solution
+passes 4,202 tests with 24 explicit skips, and warnings remain 4,243. Docker Fast
+is not required for these offline reporting-only changes.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
