@@ -9,7 +9,12 @@ internal sealed class LiveAdminClient : IDisposable
 	private readonly HttpClient client;
 	public LiveAdminClient(Uri baseAddress, HttpMessageHandler? handler = null)
 	{
-		client = handler == null ? new HttpClient() : new HttpClient(handler);
+		// The managed Linux HttpListener closes a reused connection after 15 seconds
+		// without a request. Retire idle oracle connections before that close can race
+		// with their next use. Active requests/reuse and the normal request timeout
+		// are unchanged; transport failures still propagate without an added retry.
+		handler ??= new SocketsHttpHandler { PooledConnectionIdleTimeout = TimeSpan.FromSeconds(10) };
+		client = new HttpClient(handler);
 		client.BaseAddress = baseAddress;
 	}
 

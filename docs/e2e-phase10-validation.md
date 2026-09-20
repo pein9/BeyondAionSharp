@@ -2046,6 +2046,74 @@ ended. No host tuning, forced GC, new allowance, retry, deadline change or weake
 acceptance gate is introduced. Findings #107/#109 remain open, and all three
 failed runs stay failed. P10-02 remains unchecked.
 
+## P10-02 assertion-HTTP idle-boundary reproduction
+
+Finding #109 remains distinct from the unproven game-socket connect timeout (#107).
+The C# admin endpoint uses `HttpListener`. In the exact deployed .NET 10.0.12
+[managed listener implementation](https://github.com/dotnet/runtime/blob/v10.0.12/src/libraries/System.Net.HttpListener/src/System/Net/Managed/HttpConnection.cs),
+`BeginReadRequest` arms a fifteen-second timeout after the first response;
+`OnTimeout` closes the socket. This creates a possible race with reuse of a
+longer-idle client pool entry. No Java implementation exists for this infrastructure.
+
+The isolated `run/p10-02-http-idle-probe/` experiment runs the real `LiveAdminClient`
+against a loopback Linux listener in the bot runtime image, with `--network none`
+and no database or game server. Two hundred session-owned clients serialize GETs
+through the existing oracle gate. Eight rounds schedule reuse after 14.8–15.2
+idle seconds. The original client reports socket-104 resets at 16:47:27.509 UTC
+(id 7, round 3, measured idle 14,998.8381 ms) and 16:47:42.396 (id 1, round 4,
+15,002.3482 ms). Both occur in HTTP read-ahead, whereas the LIVE failure was on
+write; this proves the idle-boundary hazard, not exact attribution of the LIVE
+connection. The original probe subsequently reports a 100-second HTTP timeout
+and is explicitly stopped (exit 143) before completing all rounds. Its partial
+output is failed diagnostic evidence, never an accepted run.
+
+A comparison changes only `PooledConnectionIdleTimeout` to ten seconds and
+completes all 1,800 requests without failure (`bounded.jsonl`). The implementation
+now uses that bound by default for the assertion HTTP pool. It retains immediate
+connection reuse, full response buffering under the global read gate, the normal
+request timeout and transport/status failure propagation. No retry, suppression,
+allowance, game-socket change, server timeout change or host tuning is added.
+The maintainer's database is not involved. Probe containers auto-remove and raw
+results remain on disk; the corrected-client probe uses its own published output,
+not an overwritten running binary. Local probes/builds overlap the active
+200-subject diagnostic, so it is not an uncontended capacity benchmark.
+
+The initial loopback regression keeps the server connection open, performs four
+reads, waits eleven idle seconds, then performs four more. The old client fails
+because it uses one TCP connection instead of two; the revised client passes in
+isolation. However the first full-suite run exposes the test's timing assumption:
+pool cleanup is periodic, not guaranteed at exactly eleven seconds. The final
+test awaits actual client-initiated EOF before continuing, bounded by its overall
+thirty-second deadline; the server never initiates idle closure. A second case
+verifies all eight immediate reads still share one connection. Existing gate,
+cancellation, body-buffering and status tests pass unchanged (five focused cases
+total). Logs: `run/p10-02-http-idle-{red,green,green-observed,fulltests}.log`; the
+initial full-suite failure is retained, not silently retried as a pass.
+This does not hot-patch the
+already-running `p10-02-mixed200-docker-quest-a` image at `5f8da2f84`, which still
+uses the original client. Scaled LIVE replay remains required.
+The separately published revised default client also completes 1,800 requests
+without failure (`corrected.jsonl`, terminal 2026-09-20 16:53:13.0954655 UTC).
+That run supplies no injected handler; it exercises the actual corrected default.
+
+The first warning rebuild cannot copy the host watcher's loaded DLL and fails
+with MSB3021/MSB3027 (`run/p10-02-http-idle-warning.log`). Do not stop that watcher
+or call this pass. Re-run the same baseline script with SDK `ArtifactsPath` /
+`UseArtifactsOutput` pointed at the existing isolated validation directory;
+this changes only build output placement, not the warning inventory or baseline.
+Final validation passes: 4,333 solution tests / 27 explicit skips, warning baseline
+4,243, and every CLAUDE.md ancillary check. Logs:
+`run/p10-02-http-idle-{warning-final,fulltests-final}.log`. This is a harness-only
+HTTP pool change; no production gameplay or upstream automation file changes.
+
+At 2026-09-20 16:58:13 UTC the unchanged active 200-subject diagnostic has all
+forty Asmodian subjects through Q2104, with per-subject durations 76.258–415.964
+seconds (mean 208.540). b154 takes 97.612 seconds instead of its prior 25-minute
+collection wait. The bot problem ledger is empty at that snapshot. This is direct
+collection-throughput evidence for #108 at 200 subjects, not terminal success,
+the whole finite journey's acceptance, or evidence for the HTTP change absent
+from that image. Its thirty-minute workload still ends no earlier than 17:15:52 UTC.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

@@ -8,14 +8,16 @@ namespace Aion.GameServer.Tests;
 
 public sealed class LiveAdminConnectionReuseTests
 {
-	[Fact]
-	public async Task RepeatedOracleReadsReuseTheSessionConnection()
+	[Theory]
+	[InlineData(false, 1)]
+	[InlineData(true, 2)]
+	public async Task OracleReadsReuseActiveConnectionsButRetireIdleOnes(bool idleBetweenReads, int expectedConnections)
 	{
 		string directory = Path.Combine(Path.GetTempPath(), "aion-admin-reuse-" + Guid.NewGuid().ToString("N"));
 		Directory.CreateDirectory(directory);
 		try
 		{
-			using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+			using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 			using var listener = new TcpListener(IPAddress.Loopback, 0);
 			listener.Start();
 			var endpoint = (IPEndPoint)listener.LocalEndpoint;
@@ -26,12 +28,18 @@ public sealed class LiveAdminConnectionReuseTests
 			using var trace = new BotActionTraceWriter(new MemoryStream(), "admin-reuse", "b01", "test-account");
 			var session = new LiveBotSession(options, problems, trace, "b01", "test-account", "Testplayer");
 			bool disposed = false;
-			Task<int> server = ServeAsync(listener, 8, deadline.Token);
+			var idleConnectionClosed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+			Task<int> server = ServeAsync(listener, 8, deadline.Token, () => idleConnectionClosed.TrySetResult());
 			try
 			{
 				for (int i = 0; i < 8; i++)
+				{
+					// Pool cleanup is periodic. Observe the actual client-initiated EOF,
+					// not an assumed cleanup instant; the server never closes an idle peer.
+					if (i == 4 && idleBetweenReads) await idleConnectionClosed.Task.WaitAsync(deadline.Token);
 					Assert.Equal(7, await session.ReadCubeFreeSlotsAsync(deadline.Token));
-				Assert.Equal(1, await server);
+				}
+				Assert.Equal(expectedConnections, await server);
 				await session.DisposeAsync();
 				disposed = true;
 				await Assert.ThrowsAsync<ObjectDisposedException>(() => session.ReadCubeFreeSlotsAsync(CancellationToken.None));
@@ -46,7 +54,7 @@ public sealed class LiveAdminConnectionReuseTests
 		finally { Directory.Delete(directory, recursive: true); } // Exact GUID-named directory owned by this test.
 	}
 
-	private static async Task<int> ServeAsync(TcpListener listener, int requests, CancellationToken token)
+	private static async Task<int> ServeAsync(TcpListener listener, int requests, CancellationToken token, Action? connectionClosed = null)
 	{
 		int connections = 0, served = 0;
 		const string body = "{\"inventory\":{\"cubeFreeSlots\":7}}";
@@ -60,7 +68,11 @@ public sealed class LiveAdminConnectionReuseTests
 			while (served < requests)
 			{
 				string? line = await reader.ReadLineAsync(token);
-				if (line == null) break; // The old per-request client closes here, forcing another accept.
+				if (line == null)
+				{
+					connectionClosed?.Invoke();
+					break;
+				}
 				Assert.Equal("GET /admin/player-storage-state?recipientCharacterId=0 HTTP/1.1", line);
 				bool authorized = false;
 				while (!string.IsNullOrEmpty(line = await reader.ReadLineAsync(token)))
