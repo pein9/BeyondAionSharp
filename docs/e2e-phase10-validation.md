@@ -693,6 +693,45 @@ All 17 telemetry regressions and required ancillary checks pass; the solution
 passes 4,202 tests with 24 explicit skips, and warnings remain 4,243. Docker Fast
 is not required for these offline reporting-only changes.
 
+## P10-02 first complete mixed-workload diagnostic
+
+`p10-02-mixed10-a` (source `8eda3e7ec`, seed 73) passes ten subjects with a
+1,200-second scheduled workload and all ten activity types selected together.
+Every cohort exercises every activity assigned to its zone. The 134 completed
+cohort actions comprise 2 finite quest journeys, 7 gathering actions, 11 Cooking
+actions, 4 vendor transactions, 16 trades, 16 group cycles, 15 duels, 11 PvP
+cycles, 25 ordinary relogs and 27 crash-disconnects. Pair actions exercise both
+subjects: the trace contains 14 gathers (13 successes), 22 completed work orders
+and 99 craft attempts (84 successes). These small, mixed-skill samples are not
+statistical acceptance evidence.
+
+Both Elyos and both Asmodian quest subjects verify their persisted journeys
+(30 saved completions including the four prologues), retire quest work without
+resetting it, and continue their other activities. All ten subjects verify final
+inventory, quit, and verify offline status. Enforced watching reports zero new,
+known or regressed fingerprints; the only suppressed event is the existing
+startup quest-spawn allowance. `bot.problems.jsonl` is empty. The isolated Docker
+stack is removed after a terminal exit 0; the maintainer's database is untouched.
+
+Some actions begun before the deadline finish afterwards: the final Cooking
+pair completes at 04:24:43 UTC, after the scheduled workload ended around
+04:21:12 UTC. This overrun is completion/cleanup, not additional scheduled
+population time and must not extend a capacity telemetry window. The diagnostic
+retains `Acceptance: false`. Fifty/two-hundred/five-hundred subjects for two hours,
+Kisk expiry/replacement, statistical assertions and the automated acceptance
+driver remain outstanding. This supersedes earlier statements that the complete
+mixed workload had not yet been exercised, but does not close P10-02.
+
+Post-run telemetry analysis finds an additional observability defect (§7 #80):
+the login-server heartbeat records a negative `GC.GetTotalMemory(false)` estimate
+of -907,936 bytes at 04:22:00 UTC, followed by more negative samples during
+cleanup. The strict telemetry reader rejects the evidence. The successful
+workload/watcher result above does not override that rejection, and no values
+are clamped or allowlisted. The sampler needs a reliable, explicitly defined
+replacement or qualification before capacity telemetry acceptance. The retained
+raw logs are the source for this finding. The full solution and all mandatory
+ancillary checks remain green (4,202 passed, 24 explicit skips; 4,243 warnings).
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

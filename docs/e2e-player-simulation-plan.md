@@ -1926,7 +1926,8 @@ real geodata on in production immediately, because geo is enabled by default; th
   and never claims overall soak acceptance. Runtime-window integration and economic statistical gates
   are still required; thresholds and limitations are recorded in the Phase 10 evidence document.
   Remaining resource coordination, telemetry acceptance/reporting
-  and two-hour evidence remain required. This is still not acceptance of the full mixed workload.
+  and two-hour evidence remain required. The full mixed workload passes the ten-subject/twenty-minute
+  diagnostic `p10-02-mixed10-a` (134 cohort actions); this is not capacity acceptance.
   The quest loop cannot reset completed starter quests: shipped Q1/Q2 quests permit one completion.
   D16 settles the workload: complete Q1/Q2 once per bot, then continue the other activities. The scheduler
   can retire a completed cohort journey without replaying it or discarding queued non-quest activities;
@@ -1947,7 +1948,7 @@ real geodata on in production immediately, because geo is enabled by default; th
   Kisks cannot overwrite the subject's evidence. The run completes 453 cohort actions and eleven
   alternating PvP kill/revive/recovery cycles, with fifth-kill 1-AP rewards in both directions,
   binding preservation across relogs/crashes, final inventory/offline checks and enforced watching.
-  Natural expiry/replacement and the full mixed/scaled workload remain unproven.
+  Natural expiry/replacement and the scaled mixed workload remain unproven.
   Foundation validation: 21 focused identity/policy tests and 500 TCP key-exchange/close smoke cases pass;
   neither proves a populated world or a two-hour soak. The TODO remains unchecked until full runtime evidence.
   Runtime checkpoint: 10- and 50-subject, three-minute group/trade/relog/crash diagnostics pass (74/368
@@ -2230,6 +2231,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 77 | Offline PvP navigation consulted server-only shield state beyond its short movement segment (harness scene-query defect) | Java `geoEngine/scene/Node.collideWith`, `bounding/BoundingBox.intersects(Ray)` use infinite-ray bounds; `DespawnableNode.collideWith` consults `SiegeService` before its own bounds test. C# matches `ce54b7931` | `p10-02-pvp10-a` through e placed/bound both Kisks but failed during navigation; e pinned the Asmodian two-metre approach. Bounded routing and no-op/zero-ray fixes alone were insufficient. An offline-only finite-segment broad phase now excludes only wholly distant dynamic bounds; nearby or uncertain nodes retain their original fail-closed path. Thirteen focused checks pass; LIVE f passes twenty minutes with eleven alternating kill/revive/recovery cycles, final checks and enforced watching. No allowance, invented siege state, stripped geometry or production change |
 | 78 | LIVE launcher overrides the configured game port, connecting alternate-port diagnostics to another test stack (harness isolation defect) | No Java analogue; `run-live.ps1` passed `--game-port 17777` despite Compose, readiness and `LiveBotOptions` supporting environment ports | `p10-02-telemetry10-a` failed authentication against the wrong stack. Remove the CLI override and pin all four environment ports plus launcher contract in a serialized regression. Corrected b passes ten subjects/180 seconds, 75 actions and enforced watching; no allowance |
 | 79 | Concurrent watchers can replace later ledger edits/counts with a stale startup snapshot (harness evidence defect) | No Java analogue; `KnownProblemLedger.Load/RecordRun/Save` previously replaced its startup dictionary without merging concurrent writers | Fixed with a path-keyed cross-process mutex and fresh-ledger merge of each watcher's observation deltas. Later tracking/status edits and unrelated fingerprints survive; auto-fix applies only to an unchanged record. Repeated saves are idempotent. Regression tests cover 16 concurrent writers and two actual watcher processes. Old already-running watcher binaries are not protected; per-run evidence remains authoritative |
+| 80 | Heartbeat managed-heap estimates can be negative, making the new telemetry evidence invalid (harness observability defect) | No Java analogue; `DelegateServerHeartbeatMetrics.Capture` records `GC.GetTotalMemory(false)` unchanged | Open: completed mixed10-a's login-server log contains `managedHeapBytes=-907936` at 04:22:00 UTC and further negative estimates during cleanup. The telemetry gate rejects these records; do not clamp them to a fabricated zero or call the run capacity-accepted. Replace or explicitly qualify the unreliable estimate, preserve raw evidence and verify the revised sampler before telemetry acceptance |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the
