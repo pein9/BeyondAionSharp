@@ -9,7 +9,13 @@ internal sealed record BotStep(
 	DateTimeOffset Timestamp,
 	string Direction,
 	string Packet,
-	string RawLine);
+	string RawLine)
+{
+	public static BotStep FromJson(JsonElement root, string line) => new(
+		WatchProblem.RequiredString(root, "bot"), WatchProblem.RequiredString(root, "account"),
+		WatchProblem.RequiredString(root, "step"), WatchProblem.ReadTimestamp(root),
+		WatchProblem.RequiredString(root, "dir"), WatchProblem.RequiredString(root, "packet"), line);
+}
 
 internal sealed record LedgerEntry(
 	string Fingerprint,

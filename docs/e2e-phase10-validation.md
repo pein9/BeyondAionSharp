@@ -1072,10 +1072,45 @@ The timer-growth investigation is separate and remains open pending evidence.
 
 The corrected `p10-02-lifecycle50-b` repeats the same fifty-subject/600-second
 diagnostic from `e7d820e04` plus the local HTTP-pooling diff. It is diagnostic,
-not capacity acceptance; terminal results remain pending at this checkpoint.
+not capacity acceptance. It passes 600 seconds / 1,215 cohort actions, with
+final inventory/offline checks for all fifty subjects and clean enforced watching
+(only the existing startup allowance). Workload ends 07:03:06 UTC; terminal
+cleanup completes 20.157 seconds later. Two-minute diagnostic timer medians are
+790, 752, 742, 744 and 774: this short lifecycle-only run does not reproduce the
+mixed run's sustained rise, but cannot establish a two-hour plateau or causation.
 Validation passes: full solution 4,287 tests / 24 explicit skips, warning baseline
 4,243, Docker Fast 6/6, and every CLAUDE.md ancillary check. Failure records and
 investigation limits are retained in the plan and known-problem ledger.
+
+## P10-02 bounded watcher history
+
+The older fifty-subject watcher reached about 1.8 GiB private memory after roughly
+seventy minutes. Inspection found full raw packet lines retained indefinitely in
+`stepsByAccount` (#87); this is host-side harness memory, distinct from the server
+working-set/heap/timer acceptance metrics. The live cache now retains at most
+64 records and 128 Ki characters per account. An eviction watermark prevents
+incorrect cache attribution for old, equal-timestamp or out-of-order records;
+those cases stream the retained account traces. Reproduction bundles recover the
+exact latest fifty eligible records from disk with a bounded selection queue,
+including old errors discovered after the live cache has moved on.
+
+File tails use finite byte snapshots and pooled chunks, retaining only an
+unfinished line between polls. Server-log reproduction context streams a bounded
+window rather than reading the entire log. Docker follower producers apply
+backpressure at 1,024 queued lines; records are not dropped. Summary fields expose
+retained trace-record and character counts. Raw files, refusal detection,
+fingerprint classification and allowance limits are unchanged.
+
+A red regression retains 20,000 records before the fix; after it, the bounded
+cache still resolves the error at second 56 and its exact preceding fifty
+records. Focused tests cover oversized rows, tied and late timestamps, account
+isolation, split UTF-8/CRLF/partial lines, truncation, early enumeration disposal,
+finite snapshots during appends, and queue backpressure. Real scaled watcher
+evidence and the game-server timer-growth diagnosis remain outstanding.
+
+Validation passes: full solution 4,292 tests / 24 explicit skips, warning baseline
+4,243, Docker Fast 6/6, and all CLAUDE.md ancillary checks. This is an infrastructure
+correction, not a completed capacity gate; P10-02 remains unchecked.
 
 ## Scope decisions
 

@@ -9,8 +9,12 @@ internal sealed class DockerFollowers : IAsyncDisposable
 	private readonly List<Process> processes = [];
 	private readonly List<Task> readers = [];
 	private readonly CancellationTokenSource lifetime = new();
-	private readonly Channel<DockerLine> lines = Channel.CreateUnbounded<DockerLine>(
-		new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+	internal const int BufferedLineLimit = 1024;
+	private readonly Channel<DockerLine> lines = CreateBuffer();
+
+	internal static Channel<DockerLine> CreateBuffer() => Channel.CreateBounded<DockerLine>(
+		new BoundedChannelOptions(BufferedLineLimit)
+		{ SingleReader = true, SingleWriter = false, FullMode = BoundedChannelFullMode.Wait });
 
 	public ChannelReader<DockerLine> Lines => lines.Reader;
 

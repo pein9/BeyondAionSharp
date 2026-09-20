@@ -6,6 +6,27 @@ namespace Aion.Commons.Tests;
 public sealed class ProblemWatcherTests
 {
 	[Fact]
+	public async Task LongTraceKeepsBoundedCacheWithoutLosingAnEarlyFailureContext()
+	{
+		using var run = new WatcherRun();
+		var start = new DateTimeOffset(2026, 9, 17, 12, 34, 0, TimeSpan.Zero);
+		run.WriteTrace(string.Join('\n', Enumerable.Range(0, 20000).Select(index => JsonSerializer.Serialize(new
+		{
+			ts = start.AddSeconds(index), vt = (long?)null, run = "test", bot = "b01", account = "b01r0917",
+			step = $"s{index:D5}", dir = ">", packet = "CM_MOVE", fields = new { payload = new string('x', 256) },
+		}))));
+		run.WriteProblem("1234abcd", account: "b01r0917"); // Timestamp is second 56, long before the final cache.
+		Assert.Equal(1, await ProblemWatcher.RunAsync(run.Options()));
+		using var summary = JsonDocument.Parse(File.ReadAllText(run.SummaryPath));
+		Assert.InRange(summary.RootElement.GetProperty("retainedTraceRecords").GetInt32(), 0, 64);
+		Assert.Contains("bot=b01 step=s00056", run.ReadDigest(), StringComparison.Ordinal);
+		string[] context = File.ReadAllLines(Path.Combine(run.ProblemDirectory("1234abcd"), "bot-trace.jsonl"));
+		Assert.Equal(50, context.Length);
+		Assert.Contains("s00007", context[0], StringComparison.Ordinal);
+		Assert.Contains("s00056", context[^1], StringComparison.Ordinal);
+	}
+
+	[Fact]
 	public void FixTrailerParserRequiresAnExactTrailerLine()
 	{
 		const string fingerprint = "1234abcd";

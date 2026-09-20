@@ -55,16 +55,31 @@ internal sealed class ProblemBundleWriter(string runDirectory, string run, RunPr
 			File.WriteAllText(destination, $"<server log unavailable: {source}>\n", new UTF8Encoding(false));
 			return;
 		}
-		var lines = File.ReadAllLines(source);
 		var needle = OneLine(problem.Message);
 		if (needle.Length > 160)
 			needle = needle[..160];
-		var match = Array.FindIndex(lines, line => line.Contains(needle, StringComparison.Ordinal));
-		if (match < 0)
-			match = Math.Max(0, lines.Length - 1);
-		var start = Math.Max(0, match - 100);
-		var count = Math.Min(200, lines.Length - start);
-		File.WriteAllLines(destination, lines.Skip(start).Take(count), new UTF8Encoding(false));
+		var preceding = new Queue<string>();
+		var context = new List<string>(200);
+		bool matched = false;
+		foreach (string line in File.ReadLines(source))
+		{
+			if (!matched && line.Contains(needle, StringComparison.Ordinal))
+			{
+				context.AddRange(preceding.TakeLast(100));
+				matched = true;
+			}
+			if (matched)
+			{
+				context.Add(line);
+				if (context.Count == 200) break;
+			}
+			else
+			{
+				preceding.Enqueue(line);
+				if (preceding.Count > 101) preceding.Dequeue();
+			}
+		}
+		File.WriteAllLines(destination, matched ? context : preceding, new UTF8Encoding(false));
 	}
 
 	private static void WriteTraceContext(WatchProblem problem, IReadOnlyList<BotStep> steps, string destination)

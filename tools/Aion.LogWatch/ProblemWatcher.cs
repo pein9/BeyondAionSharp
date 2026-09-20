@@ -81,7 +81,7 @@ public static class ProblemWatcher
 		private readonly Dictionary<string, FileTail> eventTails = new(StringComparer.OrdinalIgnoreCase);
 		private readonly Dictionary<string, FileTail> problemTails = new(StringComparer.OrdinalIgnoreCase);
 		private readonly FileTail botProblems;
-		private readonly Dictionary<string, List<BotStep>> stepsByAccount = new(StringComparer.Ordinal);
+		private readonly BotTraceHistory traceHistory;
 		private readonly Dictionary<string, int> allowlistCounts = new(StringComparer.Ordinal);
 		private readonly Dictionary<string, int> problemCounts = new(StringComparer.Ordinal);
 		private readonly Dictionary<string, WatchProblem> newProblemSamples = new(StringComparer.Ordinal);
@@ -98,6 +98,7 @@ public static class ProblemWatcher
 		public WatcherState(WatchOptions options)
 		{
 			this.options = options;
+			traceHistory = new BotTraceHistory(options.Run);
 			allowlist = LogProblemAllowlist.Load(options.AllowlistPath);
 			ledger = KnownProblemLedger.Load(options.LedgerPath);
 			botProblems = new FileTail(Path.Combine(options.RunDirectory, "bot.problems.jsonl"));
@@ -129,9 +130,9 @@ public static class ProblemWatcher
 
 		public void ReadFiles()
 		{
-			foreach (var tail in traceTails.Values)
+			foreach (var (path, tail) in traceTails)
 				foreach (var line in tail.ReadNewLines())
-					ReadJsonLine("bot trace", line, () => ReadTrace(line));
+					ReadJsonLine("bot trace", line, () => ReadTrace(path, line));
 
 			foreach (var line in botProblems.ReadNewLines())
 				ReadJsonLine("bot problem", line, () => ReadBotProblem(line));
@@ -181,9 +182,8 @@ public static class ProblemWatcher
 			}
 			ledger.Save();
 			var bundleWriter = new ProblemBundleWriter(options.RunDirectory, options.Run, provenance);
-			var allSteps = stepsByAccount.Values.SelectMany(steps => steps).OrderBy(step => step.Timestamp).ToArray();
 			foreach (var sample in newProblemSamples.Values)
-				bundleWriter.Write(JoinStep(sample), allSteps);
+				bundleWriter.Write(JoinStep(sample), traceHistory.ContextBefore(sample.Account, sample.Timestamp));
 			var summary = new
 			{
 				run = options.Run,
@@ -195,32 +195,22 @@ public static class ProblemWatcher
 				regressed = regressedProblems,
 				repeated = repeatedProblems,
 				failed = options.Mode == WatchMode.Enforce && FailingProblemCount > 0,
+				retainedTraceRecords = traceHistory.RetainedRecords,
+				retainedTraceCharacters = traceHistory.RetainedCharacters,
 			};
 			await using var output = File.Create(Path.Combine(options.RunDirectory, "logwatch-summary.json"));
 			await JsonSerializer.SerializeAsync(output, summary,
 				new JsonSerializerOptions { WriteIndented = true }, cancellationToken);
 		}
 
-		private void ReadTrace(string line)
+		private void ReadTrace(string path, string line)
 		{
 			using var document = JsonDocument.Parse(line);
 			var root = document.RootElement;
 			if (!BelongsToRun(root))
 				return;
-			var step = new BotStep(
-				WatchProblem.RequiredString(root, "bot"),
-				WatchProblem.RequiredString(root, "account"),
-				WatchProblem.RequiredString(root, "step"),
-				WatchProblem.ReadTimestamp(root),
-				WatchProblem.RequiredString(root, "dir"),
-				WatchProblem.RequiredString(root, "packet"),
-				line);
-			if (!stepsByAccount.TryGetValue(step.Account, out var steps))
-			{
-				steps = [];
-				stepsByAccount.Add(step.Account, steps);
-			}
-			steps.Add(step);
+			var step = BotStep.FromJson(root, line);
+			traceHistory.Observe(path, step);
 
 			if (step.Direction != "<" || step.Packet != "SM_SYSTEM_MESSAGE" ||
 				!root.TryGetProperty("fields", out var fields) || fields.ValueKind != JsonValueKind.Object ||
@@ -411,11 +401,9 @@ public static class ProblemWatcher
 
 		private WatchProblem JoinStep(WatchProblem problem)
 		{
-			if (problem.Bot != null || problem.Account == null || !stepsByAccount.TryGetValue(problem.Account, out var steps))
+			if (problem.Bot != null || problem.Account == null)
 				return problem;
-			var step = steps
-				.Where(candidate => candidate.Timestamp <= problem.Timestamp)
-				.MaxBy(candidate => candidate.Timestamp);
+			var step = traceHistory.LatestBefore(problem.Account, problem.Timestamp);
 			return step == null ? problem : problem with { Bot = step.Bot, Step = step.Step };
 		}
 
