@@ -24,7 +24,8 @@ class SoakTelemetryTests(unittest.TestCase):
                          "PendingConnections": 0, "OldestPendingMilliseconds": 0}
         self.samples = [{"time": self.start + timedelta(seconds=second), "connections": 200,
                          "queue": 0, "timers": 650, "workingSetBytes": 2_000_000_000,
-                         "managedHeapBytes": 1_000_000_000, "dispatch": copy.deepcopy(self.dispatch)}
+                         "lastGcHeapBytes": 1_000_000_000, "lastGcIndex": 1 + second // 60,
+                         "dispatch": copy.deepcopy(self.dispatch)}
                         for second in range(0, 7201, 10)]
 
     def analyze(self):
@@ -81,7 +82,7 @@ class SoakTelemetryTests(unittest.TestCase):
         self.assertEqual("failed", self.analyze()["status"])
 
     def test_sustained_memory_or_timer_growth_fails(self):
-        for metric, delta in (("workingSetBytes", 500_000), ("managedHeapBytes", 500_000), ("timers", 1)):
+        for metric, delta in (("workingSetBytes", 500_000), ("lastGcHeapBytes", 500_000), ("timers", 1)):
             with self.subTest(metric=metric):
                 original = copy.deepcopy(self.samples)
                 for i, sample in enumerate(self.samples):
@@ -127,7 +128,7 @@ class SoakTelemetryTests(unittest.TestCase):
         return {"cat": "Aion.Commons.Diagnostics.ServerHeartbeatService", "srv": service, "run": run,
                 "ts": sample["time"].isoformat(), "msg": f"Server heartbeat: connections={sample['connections']}, "
                 f"packetQueueDepth={sample['queue']}, armedTimers={sample['timers']}, workingSetBytes={sample['workingSetBytes']}, "
-                f"managedHeapBytes={sample['managedHeapBytes']}, dispatcherWrites={dispatch}"}
+                f"lastGcHeapBytes={sample['lastGcHeapBytes'] or 0}, lastGcIndex={sample['lastGcIndex']}, dispatcherWrites={dispatch}"}
 
     def test_real_file_contract_and_source_hashes(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -179,6 +180,43 @@ class SoakTelemetryTests(unittest.TestCase):
         plateau = self.analyze()["plateaus"]["workingSetBytes"]
         self.assertEqual("passed", plateau["status"])
         self.assertGreater(plateau["endpointGrowth"], 0)
+
+    def test_no_collection_yet_is_missing_not_a_flat_zero_heap(self):
+        for sample in self.samples:
+            sample.update(lastGcHeapBytes=None, lastGcIndex=0)
+        result = self.analyze()
+        self.assertEqual("failed", result["status"])
+        self.assertEqual("insufficient", result["plateaus"]["lastGcHeapBytes"]["status"])
+        self.assertIsNone(result["peaks"]["lastGcHeapBytes"])
+        self.assertEqual(0, result["lastGcObservations"]["distinctIndices"])
+
+    def test_last_collection_index_exposes_staleness(self):
+        for sample in self.samples:
+            sample["lastGcIndex"] = 7
+        result = self.analyze()
+        self.assertEqual({"firstIndex": 7, "lastIndex": 7, "distinctIndices": 1}, result["lastGcObservations"])
+
+    def test_parser_distinguishes_uncollected_and_measured_zero_heap(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "events.jsonl"
+            for index, expected in ((0, None), (1, 0)):
+                row = self.row(dict(self.samples[0], lastGcHeapBytes=0, lastGcIndex=index))
+                path.write_text(json.dumps(row) + "\n")
+                samples, _ = telemetry.read_samples(path, "gs", "test")
+                self.assertEqual(expected, samples[0]["lastGcHeapBytes"])
+            row = self.row(dict(self.samples[0], lastGcIndex=0))
+            path.write_text(json.dumps(row) + "\n")
+            with self.assertRaisesRegex(ValueError, "without a completed collection"):
+                telemetry.read_samples(path, "gs", "test")
+
+    def test_legacy_negative_estimate_is_not_reinterpreted_as_a_last_gc_snapshot(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "events.jsonl"
+            row = self.row(self.samples[0])
+            row["msg"] = row["msg"].replace("lastGcHeapBytes=1000000000, lastGcIndex=1", "managedHeapBytes=-907936")
+            path.write_text(json.dumps(row) + "\n")
+            with self.assertRaisesRegex(ValueError, "changed heartbeat metrics"):
+                telemetry.read_samples(path, "gs", "test")
 
 
 if __name__ == "__main__":

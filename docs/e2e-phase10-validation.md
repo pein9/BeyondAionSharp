@@ -732,6 +732,58 @@ replacement or qualification before capacity telemetry acceptance. The retained
 raw logs are the source for this finding. The full solution and all mandatory
 ancillary checks remain green (4,202 passed, 24 explicit skips; 4,243 warnings).
 
+## P10-02 explicitly last-GC heap telemetry (v2)
+
+The sampler no longer uses `GC.GetTotalMemory(false)`. It records
+`lastGcHeapBytes` and `lastGcIndex` from the same `GC.GetGCMemoryInfo()` result.
+These names deliberately change the log schema: last-collection heap size must
+not be mistaken for the previous current-heap estimate. No collection is forced,
+and no invalid value is clamped. Index zero means no collection has happened;
+the analyzer treats that heap observation as unavailable, not a measured zero.
+A real zero from an identified collection remains a zero measurement.
+
+The API describes the last collection and can remain stale between collections,
+as documented in [Microsoft's GCMemoryInfo reference](https://learn.microsoft.com/en-us/dotnet/api/system.gcmemoryinfo?view=net-10.0).
+Reports expose first/last collection index and the number of distinct indices
+observed, alongside working-set measurements that are still refreshed every
+heartbeat. This does not claim the heap snapshot captures current allocations.
+Policy `p10-02-telemetry-v2` keeps all v1 tolerances and changes only this named
+measurement and its availability semantics. It rejects old-schema records,
+including the retained negative estimate; v1 reports are not silently upgraded.
+Three Commons heartbeat tests and 21 Python telemetry cases pass, including
+uncollected vs measured-zero heaps, legacy rejection and visible staleness.
+Corrected LIVE `p10-02-heap10-a` passes ten subjects/180 seconds, 75 cohort
+actions and all final checks. Enforced watching has no new/known/regressed
+fingerprint; only the existing startup allowance occurs. The retained samples
+parse under v2 and correctly fail two-hour eligibility. In the diagnostic window,
+all three servers have 18 samples. LS transitions from collection index zero to
+one (1,320,272-byte last-GC heap); CS has no collection and reports unavailable,
+not a flat zero; GS shows indices 369 through 383 with fifteen distinct observed
+indices. This validates measurement identity and availability, not a plateau.
+The solution passes 4,204 tests with 24 explicit skips, warnings remain 4,243,
+Docker Fast passes 6/6, and all required ancillary checks pass.
+
+## P10-02 first 50-subject mixed attempt (failed, not a soak result)
+
+`p10-02-mixed50-2h-a` (source `4fd4e0e87`, seed 73) prepares all fifty subjects,
+then stops at 04:31:20 UTC on cohort 25's PvP assertion, well before its requested
+two hours. The winner expected 300 AP but received 330; victim AP loss and kill
+counts match. The trace places a `[Server Buff]` notification immediately before
+the 330-AP system message, and decoded `SM_ABNORMAL_STATE` confirms skill 10549,
+level 1, BOOST slot, with 3,600,000 ms remaining. Source inspection identifies the shipped 2% PvP-kill
+trigger for skill 10549 (+10% AP). Java invokes that event before calculating
+the reward and applies `AP_BOOST` through `Rates.AP_PVP`; C# follows this path.
+The existing independent oracle explicitly excludes boosts, so it does not
+cover the enabled production-random event. This is tracked as §7 #81, not a
+reason to disable the event or widen the acceptable AP range.
+
+The runner exits 1 and removes its isolated Docker stack. Enforced watching
+records the reused generic bot fingerprint plus cancellation fallout (46 bot
+records, not 46 independent causes). The ledger preserves those counts and the
+new diagnosis. No allowance is added. The next scaled replay needs an oracle
+that validates the actually observed active effect and its reward timing,
+including the fifth-opponent-kill reduction that bypasses ordinary boosted AP.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

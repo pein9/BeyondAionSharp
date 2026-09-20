@@ -13,7 +13,7 @@ import sys
 
 BUCKETS_MS = (0.1, 0.5, 1, 2, 5, 10, 20, 50, 100, 250, 500, 1000, 5000, math.inf)
 POLICY = {
-    "id": "p10-02-telemetry-v1",
+    "id": "p10-02-telemetry-v2",
     "minimumSeconds": 7200,
     "maximumHeartbeatGapSeconds": 30,
     "warmupSeconds": 1800,
@@ -29,7 +29,7 @@ POLICY = {
 }
 HEARTBEAT = re.compile(
     r"Server heartbeat: connections=(\d+), packetQueueDepth=(\d+), armedTimers=(\d+), "
-    r"workingSetBytes=(\d+), managedHeapBytes=(\d+), dispatcherWrites=(.*)")
+    r"workingSetBytes=(\d+), lastGcHeapBytes=(\d+), lastGcIndex=(\d+), dispatcherWrites=(.*)")
 
 
 def timestamp(value):
@@ -92,16 +92,19 @@ def read_samples(path, service, run):
                 match = HEARTBEAT.fullmatch(row["msg"])
                 if match is None:
                     raise ValueError("Missing or changed heartbeat metrics")
-                connections, queue, timers, working, managed = map(int, match.groups()[:5])
-                if working == 0 or managed == 0:
+                connections, queue, timers, working, managed, gc_index = map(int, match.groups()[:6])
+                if working == 0:
                     raise ValueError("Heartbeat is missing process-memory observations")
-                dispatch = json.loads(match.group(6))
+                if gc_index == 0 and managed != 0:
+                    raise ValueError("Heap measurement without a completed collection")
+                dispatch = json.loads(match.group(7))
                 if service == "gs":
                     dispatch = validate_dispatch(dispatch)
                 elif dispatch is not None:
                     raise ValueError("Unexpected dispatcher metrics outside game server")
                 sample = {"time": timestamp(row["ts"]), "connections": connections, "queue": queue,
-                          "timers": timers, "workingSetBytes": working, "managedHeapBytes": managed,
+                          "timers": timers, "workingSetBytes": working,
+                          "lastGcHeapBytes": managed if gc_index else None, "lastGcIndex": gc_index,
                           "dispatch": dispatch}
                 if samples and sample["time"] <= samples[-1]["time"]:
                     raise ValueError("Duplicate or nonmonotonic heartbeat; possible process restart")
@@ -130,7 +133,8 @@ def plateau(samples, start, end, metric, absolute, fraction, failures):
     windows = []
     cursor = beginning
     while cursor + timedelta(seconds=width) <= end:
-        values = [sample[metric] for sample in samples if cursor <= sample["time"] < cursor + timedelta(seconds=width)]
+        values = [sample[metric] for sample in samples if sample[metric] is not None
+                  and cursor <= sample["time"] < cursor + timedelta(seconds=width)]
         minimum_samples = math.ceil(width / POLICY["maximumHeartbeatGapSeconds"])
         if len(values) < minimum_samples:
             failures.append(f"{metric}: insufficient plateau-window samples at {cursor.isoformat()}")
@@ -163,14 +167,16 @@ def analyze_service(samples, service, start, end):
     if gap > POLICY["maximumHeartbeatGapSeconds"]:
         failures.append(f"Heartbeat gap {gap:g}s exceeds policy (including window edges)")
     plateaus = {}
-    for metric in ("workingSetBytes", "managedHeapBytes", "timers"):
+    for metric in ("workingSetBytes", "lastGcHeapBytes", "timers"):
         memory = metric != "timers"
         plateaus[metric] = plateau(selected, start, end, metric,
             POLICY["memoryGrowthBytes" if memory else "timerGrowthCount"],
             POLICY["memoryGrowthFraction" if memory else "timerGrowthFraction"], failures)
     result = {"samples": len(selected), "maximumHeartbeatGapSeconds": gap,
-              "peaks": {metric: max(sample[metric] for sample in selected) for metric in
-                        ("connections", "queue", "timers", "workingSetBytes", "managedHeapBytes")},
+              "peaks": {metric: max((sample[metric] for sample in selected if sample[metric] is not None), default=None) for metric in
+                        ("connections", "queue", "timers", "workingSetBytes", "lastGcHeapBytes")},
+              "lastGcObservations": {"firstIndex": selected[0]["lastGcIndex"], "lastIndex": selected[-1]["lastGcIndex"],
+                                     "distinctIndices": len({sample["lastGcIndex"] for sample in selected if sample["lastGcIndex"] > 0})},
               "plateaus": plateaus}
     if service == "gs":
         # Samples drain disjoint windows. Exclude the first sample's batch because
@@ -220,6 +226,7 @@ def analyze(run_directory, start, end):
             "overallSoakAccepted": False,
             "scope": "Telemetry gate only: workload, population, persistence, errors and economic statistics require separate validation. "
                      "Dispatcher latency is request-to-buffer-preparation, not socket flush or client RTT. "
+                     "Last-GC heap snapshots can be stale between collections; the index identifies their age in collection sequence. "
                      "Sampled plateaus do not prove the absence of all memory leaks."}
 
 

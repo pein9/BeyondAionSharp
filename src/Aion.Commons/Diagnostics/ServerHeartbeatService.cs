@@ -16,8 +16,9 @@ public readonly record struct ServerHeartbeatSnapshot(
 	int PacketQueueDepth,
 	int ArmedTimerCount,
 	long WorkingSetBytes = 0,
-	long ManagedHeapBytes = 0,
-	DispatchLatencySnapshot? DispatcherWrites = null);
+	long LastGcHeapBytes = 0,
+	DispatchLatencySnapshot? DispatcherWrites = null,
+	long LastGcIndex = 0);
 
 /// <summary>Adapts server-owned counters without coupling Commons to any server implementation.</summary>
 public sealed class DelegateServerHeartbeatMetrics(
@@ -30,8 +31,12 @@ public sealed class DelegateServerHeartbeatMetrics(
 	{
 		using var process = Process.GetCurrentProcess();
 		process.Refresh();
+		// GetTotalMemory(false) returned negative estimates in LIVE. This is instead
+		// an explicitly last-collection snapshot, not current allocations. Index zero
+		// means no collection has happened; do not force a GC or fabricate a zero sample.
+		var gc = GC.GetGCMemoryInfo();
 		return new(connectionCount(), packetQueueDepth(), armedTimerCount(), process.WorkingSet64,
-			GC.GetTotalMemory(forceFullCollection: false), dispatcherWrites?.Invoke());
+			gc.HeapSizeBytes, dispatcherWrites?.Invoke(), gc.Index);
 	}
 }
 
@@ -60,12 +65,13 @@ public sealed class ServerHeartbeatService(
 	{
 		var snapshot = metrics.Capture();
 		logger.LogInformation(
-			"Server heartbeat: connections={ConnectionCount}, packetQueueDepth={PacketQueueDepth}, armedTimers={ArmedTimerCount}, workingSetBytes={WorkingSetBytes}, managedHeapBytes={ManagedHeapBytes}, dispatcherWrites={DispatcherWrites}",
+			"Server heartbeat: connections={ConnectionCount}, packetQueueDepth={PacketQueueDepth}, armedTimers={ArmedTimerCount}, workingSetBytes={WorkingSetBytes}, lastGcHeapBytes={LastGcHeapBytes}, lastGcIndex={LastGcIndex}, dispatcherWrites={DispatcherWrites}",
 			snapshot.ConnectionCount,
 			snapshot.PacketQueueDepth,
 			snapshot.ArmedTimerCount,
 			snapshot.WorkingSetBytes,
-			snapshot.ManagedHeapBytes,
+			snapshot.LastGcHeapBytes,
+			snapshot.LastGcIndex,
 			JsonSerializer.Serialize(snapshot.DispatcherWrites));
 	}
 }

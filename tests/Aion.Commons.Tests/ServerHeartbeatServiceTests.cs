@@ -11,8 +11,8 @@ public sealed class ServerHeartbeatServiceTests
 	{
 		var logger = new RecordingLogger();
 		var service = new ServerHeartbeatService(
-			new DelegateServerHeartbeatMetrics(() => 7, () => 11, () => 13,
-				() => new DispatchLatencySnapshot(2, 1, 5, 9, [1, 1], 3, 15)),
+			new FixedMetrics(new(7, 11, 13, 1234, 567,
+				new DispatchLatencySnapshot(2, 1, 5, 9, [1, 1], 3, 15), 42)),
 			logger);
 
 		service.WriteHeartbeat();
@@ -20,12 +20,42 @@ public sealed class ServerHeartbeatServiceTests
 		Assert.Equal(TimeSpan.FromSeconds(10), ServerHeartbeatService.HeartbeatInterval);
 		Assert.Equal(LogLevel.Information, logger.Level);
 		Assert.StartsWith("Server heartbeat: connections=7, packetQueueDepth=11, armedTimers=13, workingSetBytes=", logger.Message);
-		Assert.True((long)logger.Fields["WorkingSetBytes"]! > 0);
-		Assert.True((long)logger.Fields["ManagedHeapBytes"]! > 0);
+		Assert.Equal(1234L, logger.Fields["WorkingSetBytes"]);
+		Assert.Equal(567L, logger.Fields["LastGcHeapBytes"]);
+		Assert.Equal(42L, logger.Fields["LastGcIndex"]);
+		Assert.DoesNotContain("managedHeapBytes", logger.Message);
 		using var writes = JsonDocument.Parse((string)logger.Fields["DispatcherWrites"]!);
 		Assert.Equal(2, writes.RootElement.GetProperty("Count").GetInt64());
 		Assert.Equal(2, writes.RootElement.GetProperty("Buckets").GetArrayLength());
 		Assert.Equal(15, writes.RootElement.GetProperty("OldestPendingMilliseconds").GetDouble());
+	}
+
+	[Fact]
+	public void Capture_ReportsProcessAndLastCollectionWithoutRequiringACollection()
+	{
+		var snapshot = new DelegateServerHeartbeatMetrics(() => 7, () => 11, () => 13).Capture();
+		Assert.Equal(7, snapshot.ConnectionCount);
+		Assert.Equal(11, snapshot.PacketQueueDepth);
+		Assert.Equal(13, snapshot.ArmedTimerCount);
+		Assert.True(snapshot.WorkingSetBytes > 0);
+		Assert.True(snapshot.LastGcHeapBytes >= 0);
+		Assert.True(snapshot.LastGcIndex >= 0);
+		if (snapshot.LastGcIndex == 0) Assert.Equal(0, snapshot.LastGcHeapBytes);
+		Assert.Null(snapshot.DispatcherWrites);
+	}
+
+	[Fact]
+	public void BeforeFirstCollection_ZeroIndexIsEmittedWithoutInventingAHeapMeasurement()
+	{
+		var logger = new RecordingLogger();
+		new ServerHeartbeatService(new FixedMetrics(new(0, 0, 0, 1234)), logger).WriteHeartbeat();
+		Assert.Equal(0L, logger.Fields["LastGcHeapBytes"]);
+		Assert.Equal(0L, logger.Fields["LastGcIndex"]);
+	}
+
+	private sealed class FixedMetrics(ServerHeartbeatSnapshot snapshot) : IServerHeartbeatMetrics
+	{
+		public ServerHeartbeatSnapshot Capture() => snapshot;
 	}
 
 	private sealed class RecordingLogger : ILogger<ServerHeartbeatService>
