@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Aion.Commons.Logging;
@@ -72,7 +73,7 @@ public static class ProblemWatcher
 		};
 	}
 
-	private sealed class WatcherState
+	internal sealed class WatcherState
 	{
 		private readonly WatchOptions options;
 		private readonly LogProblemAllowlist allowlist;
@@ -94,6 +95,11 @@ public static class ProblemWatcher
 		private int knownProblems;
 		private int regressedProblems;
 		private int repeatedProblems;
+		private GameServerCrashExpectation? expectedCrash;
+		private bool crashPlanRead;
+		private bool crashFailureReported;
+		private bool crashGapReported;
+		private int expectedProcessEvents;
 
 		public WatcherState(WatchOptions options)
 		{
@@ -117,7 +123,8 @@ public static class ProblemWatcher
 			};
 		}
 
-		public int FailingProblemCount => newProblems + regressedProblems;
+		public int FailingProblemCount => newProblems + regressedProblems +
+			(options.ExpectGameServerCrash ? knownProblems : 0) + (crashFailureReported ? 1 : 0);
 
 		public void DiscoverTraceFiles()
 		{
@@ -130,6 +137,26 @@ public static class ProblemWatcher
 
 		public void ReadFiles()
 		{
+			if (options.ExpectGameServerCrash && !crashPlanRead)
+			{
+				string path = Path.Combine(options.RunDirectory, "game-server-crash-plan.json");
+				if (File.Exists(path))
+				{
+					crashPlanRead = true;
+					ReadJsonLine("game-server crash plan", "", () =>
+					{
+						string json = File.ReadAllText(path);
+						expectedCrash = GameServerCrashExpectation.Load(json, options.Run, options.ProjectName, DateTimeOffset.UtcNow);
+						string receipt = Path.Combine(options.RunDirectory, "game-server-crash-armed.json");
+						File.WriteAllText(receipt + ".tmp", JsonSerializer.Serialize(new
+						{
+							schemaVersion = 1, run = options.Run, armedUtc = DateTimeOffset.UtcNow,
+							planSha256 = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(json))),
+						}));
+						File.Move(receipt + ".tmp", receipt); // The controller must await this exact-plan receipt before killing.
+					});
+				}
+			}
 			foreach (var (path, tail) in traceTails)
 				foreach (var line in tail.ReadNewLines())
 					ReadJsonLine("bot trace", line, () => ReadTrace(path, line));
@@ -151,7 +178,7 @@ public static class ProblemWatcher
 			while (reader.TryRead(out var line))
 			{
 				if (line.Source == "event")
-					ReadDockerEvent(line.Line);
+					ReadDockerEvent(line.Line, line.ProjectName);
 				else
 					ReadDockerLog(line);
 			}
@@ -159,8 +186,16 @@ public static class ProblemWatcher
 
 		public void CheckHeartbeats(DateTimeOffset now)
 		{
+			CheckCrashCompletion(now, final: false);
 			foreach (var (server, lastSeen) in lastHeartbeats)
 			{
+				if (expectedCrash?.ExpectsHeartbeatGap(server, now) == true)
+				{
+					if (!crashGapReported)
+						digest.WriteLine($"{FormatTimestamp(now)} EXPECTED_FAULT HEARTBEAT gs bounded restart window.");
+					crashGapReported = true;
+					continue;
+				}
 				if (now - lastSeen < MissingHeartbeatThreshold || !heartbeatAlerts.Add(server))
 					continue;
 				var message = $"Heartbeat missed for {Math.Floor((now - lastSeen).TotalSeconds):0} s.";
@@ -170,6 +205,7 @@ public static class ProblemWatcher
 
 		public async Task WriteSummaryAsync(CancellationToken cancellationToken)
 		{
+			CheckCrashCompletion(DateTimeOffset.UtcNow, final: true);
 			digest.Dispose();
 			var provenance = RunProvenance.Load(options.RunDirectory);
 			ledger.RecordRun(problemCounts, provenance, options.Run);
@@ -194,6 +230,8 @@ public static class ProblemWatcher
 				known = knownProblems,
 				regressed = regressedProblems,
 				repeated = repeatedProblems,
+				expectedProcessEvents,
+				expectedGameServerCrash = options.ExpectGameServerCrash ? expectedCrash?.Complete == true : (bool?)null,
 				failed = options.Mode == WatchMode.Enforce && FailingProblemCount > 0,
 				retainedTraceRecords = traceHistory.RetainedRecords,
 				retainedTraceCharacters = traceHistory.RetainedCharacters,
@@ -201,6 +239,16 @@ public static class ProblemWatcher
 			await using var output = File.Create(Path.Combine(options.RunDirectory, "logwatch-summary.json"));
 			await JsonSerializer.SerializeAsync(output, summary,
 				new JsonSerializerOptions { WriteIndented = true }, cancellationToken);
+		}
+
+		private void CheckCrashCompletion(DateTimeOffset now, bool final)
+		{
+			if (!options.ExpectGameServerCrash || crashFailureReported) return;
+			string? failure = expectedCrash?.Failure(now, final);
+			if (final && expectedCrash == null) failure = "No valid game-server crash plan was armed.";
+			if (failure == null) return;
+			crashFailureReported = true;
+			AddSynthetic(now, "watcher", "ERROR", "Planned game-server crash was not completed", failure, kind: "fault-expectation");
 		}
 
 		private void ReadTrace(string path, string line)
@@ -265,6 +313,7 @@ public static class ProblemWatcher
 				return;
 			var server = WatchProblem.RequiredString(root, "srv");
 			lastHeartbeats[server] = WatchProblem.ReadTimestamp(root);
+			expectedCrash?.ObserveHeartbeat(server, lastHeartbeats[server]);
 			heartbeatAlerts.Remove(server);
 		}
 
@@ -285,7 +334,7 @@ public static class ProblemWatcher
 				AddSynthetic(timestamp, "mysql", "ERROR", "MySQL error", text, kind: "mysql");
 		}
 
-		private void ReadDockerEvent(string line)
+		private void ReadDockerEvent(string line, string? sourceProject)
 		{
 			if (string.IsNullOrWhiteSpace(line) || line[0] != '{')
 				return;
@@ -295,12 +344,23 @@ public static class ProblemWatcher
 				var root = document.RootElement;
 				var action = OptionalProperty(root, "action") ?? OptionalProperty(root, "Action") ??
 					OptionalProperty(root, "status") ?? OptionalProperty(root, "Status");
-				if (action is not ("die" or "oom" or "restart"))
+				if (action is not ("die" or "oom" or "restart" or "start"))
 					return;
 				var service = OptionalProperty(root, "service") ?? ReadEventAttribute(root, "com.docker.compose.service") ?? "docker";
 				var exitCode = ReadEventAttribute(root, "exitCode") ?? ReadEventAttribute(root, "exitcode");
+				var container = OptionalProperty(root, "id") ?? OptionalProperty(root, "ID");
+				if (container == null && root.TryGetProperty("Actor", out var actor)) container = OptionalProperty(actor, "ID");
+				var project = ReadEventAttribute(root, "com.docker.compose.project") ?? sourceProject;
+				var timestamp = TryReadDockerEventTimestamp(root);
+				if (timestamp is { } at && expectedCrash?.ObserveDocker(project, container, service, action, exitCode, at) == true)
+				{
+					expectedProcessEvents++;
+					digest.WriteLine($"{FormatTimestamp(at)} EXPECTED_FAULT PROCESS gs action={action} container={container}.");
+					return;
+				}
+				if (action == "start") return;
 				var message = $"Container {service} {action}" + (exitCode == null ? "." : $" code={exitCode}.");
-				AddSynthetic(ReadDockerEventTimestamp(root), MapService(service), "PROCESS",
+				AddSynthetic(timestamp ?? DateTimeOffset.UtcNow, MapService(service), "PROCESS",
 					$"Container process event: {action}", message, kind: "process");
 			});
 		}
@@ -436,7 +496,7 @@ public static class ProblemWatcher
 			return (DateTimeOffset.UtcNow, line);
 		}
 
-		private static DateTimeOffset ReadDockerEventTimestamp(JsonElement root)
+		private static DateTimeOffset? TryReadDockerEventTimestamp(JsonElement root)
 		{
 			foreach (var name in new[] { "time", "Time" })
 			{
@@ -447,7 +507,7 @@ public static class ProblemWatcher
 				if (value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var seconds))
 					return DateTimeOffset.FromUnixTimeSeconds(seconds);
 			}
-			return DateTimeOffset.UtcNow;
+			return null;
 		}
 
 		private static string? ReadEventAttribute(JsonElement root, string name)

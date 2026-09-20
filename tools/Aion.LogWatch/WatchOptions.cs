@@ -22,11 +22,12 @@ public sealed record WatchOptions(
 	bool FullRun,
 	IReadOnlySet<string> UnexpectedRefusals)
 {
+	public bool ExpectGameServerCrash { get; init; }
 	public const string Usage = "Usage: dotnet run --project tools/Aion.LogWatch -- --run <id> --run-dir <path> " +
 		"[--project aion-bots-<id>] [--compose-file docker/docker-compose.bots.yml] " +
 		"[--allowlist parity-artifacts/e2e/log-allowlist.json] [--ledger parity-artifacts/e2e/known-problems.json] " +
 		"[--mode enforce|record] [--duration-seconds N] [--stop-file path] [--no-docker true|false] " +
-		"[--full-run true|false] [--unexpected-refusals STR_SKILL_NOT_READY,...]";
+		"[--full-run true|false] [--unexpected-refusals STR_SKILL_NOT_READY,...] [--expect-game-server-crash true|false]";
 
 	public static WatchOptions Parse(string[] args)
 	{
@@ -42,7 +43,7 @@ public sealed record WatchOptions(
 		var known = new HashSet<string>(StringComparer.Ordinal)
 		{
 			"run", "run-dir", "project", "compose-file", "allowlist", "ledger", "mode",
-			"duration-seconds", "stop-file", "no-docker", "full-run", "unexpected-refusals",
+			"duration-seconds", "stop-file", "no-docker", "full-run", "unexpected-refusals", "expect-game-server-crash",
 		};
 		var unknown = values.Keys.FirstOrDefault(key => !known.Contains(key));
 		if (unknown != null)
@@ -82,7 +83,7 @@ public sealed record WatchOptions(
 			values.TryGetValue("stop-file", out var stopFile) ? Path.GetFullPath(stopFile) : null,
 			dockerEnabled,
 			Boolean(values, "full-run", false),
-			refusals);
+			refusals) { ExpectGameServerCrash = Boolean(values, "expect-game-server-crash", false) };
 	}
 
 	private static string Required(IReadOnlyDictionary<string, string> values, string name) =>

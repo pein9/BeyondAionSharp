@@ -2098,6 +2098,13 @@ real geodata on in production immediately, because geo is enabled by default; th
   for diagnosis without retaining completed tasks or changing scheduling.
 - [ ] **P10-03** [LIVE] S — Crash and restart: kill the game server mid-session, restart, relog succeeds, delayed save is
   correct, a second login on the same account kicks the first.
+  **In progress under the ten-bot cap (D17).** The watcher has an opt-in, one-use
+  crash expectation tied to the exact isolated project/container and short kill/recovery
+  deadlines. A hashed arming receipt precedes injection; matching death, restart and a
+  fresh heartbeat are all required. Unrelated/repeated process events, other server
+  heartbeat gaps and unallowlisted known problems still fail. No global allowance is
+  added. Controller integration and the actual saved-state/crash/relogin/duplicate-login
+  journey remain unimplemented; this foundation does not complete the TODO.
 - [ ] **P10-04** [LIVE] S — Hang detection on top of the P3-12 heartbeat: alert thresholds and diagnostics on a missed
   beat (Java's `DeadLockDetector` does not port 1:1).
 - [ ] **P10-05** [LIVE] M — **Deferred (D7 declined for now; revisit later).** If approved, restore the Java boot

@@ -2250,6 +2250,56 @@ earlier failure or close Windows finding #103. Every CLAUDE.md ancillary check
 also passes. Logs: `run/p10-02-socket-repeat-{warning,loginfocused,fulltests-recheck}.log`.
 This checkpoint changes documentation/triage only, not gameplay or acceptance gates.
 
+## P10-03 bounded crash-watching foundation
+
+Under D17, larger capacity runs stay deferred and P10-03 proceeds with a planned
+small-population lifecycle test. This checkpoint adds supporting watcher
+infrastructure only; no server is killed, no bot is launched and the TODO remains
+unchecked. Production gameplay and the existing normal watcher mode are unchanged.
+
+The opt-in `--expect-game-server-crash true` mode accepts one fresh, strict-schema
+plan for the exact isolated project and full container id. The watcher publishes
+an atomic SHA-256 arming receipt; the future controller must verify it before
+injection. Death must be observed within thirty seconds of arming, with exit 137;
+the same container must start and emit a fresh GS heartbeat within three minutes.
+Only the observed-death-to-recovery GS heartbeat gap is expected. Other services
+remain watched and ordinary GS heartbeat checks resume on recovery. Missing
+plans/events, early termination and expired recovery fail closed. Expected events
+are separately visible in the digest/summary, not fingerprint allowances.
+
+Retained raw Compose events show that Compose removes its project/service labels
+from the attributes object. `DockerFollowers` now carries its explicitly selected
+project identity on event records; the matcher still requires the full planned
+container id and service. No container-name inference or broad project allowance
+is used. Normal watchers do not opt in merely because a plan file exists.
+
+Forty new deterministic tests cover identity, freshness, deadline bounds,
+malformed plans, one-use death matching, exit code, OOM, missing timestamps,
+restart/heartbeat ordering, receipt hashing, missing recovery, other-server
+heartbeat failures and post-recovery monitoring. Tests include previously tracked
+process/server fingerprints: this opt-in mode also fails unallowlisted KNOWN
+problems, so the tracked generic container-death fingerprint cannot conceal an
+additional crash. The focused watcher suite passes 53 cases. One initial test
+incorrectly expected separate NEW heartbeat fingerprints for LS and GS; the
+existing shared fingerprint correctly makes the second observation REPEAT.
+The corrected test asserts both server observations and total count two.
+
+Remaining P10-03 work is the scoped Docker fault controller, saved-state bot
+assertions, actual mid-session kill/restart/relogin and duplicate-login journey,
+plus LIVE evidence and orchestration integration. Source review for that next
+step uses Java `ce54b7931`: `PeriodicSaveConfig` / `PlayerEnterWorldService`
+schedule general/items persistence every 900 seconds; `AccountController.login`
+returns ALREADY_LOGIN (7) on the duplicate attempt while requesting the prior
+session's kick, and `LoginServer.kickAccount` sends
+`STR_KICK_ANOTHER_USER_TRY_LOGIN`. A subsequent fresh authentication must be
+tested, not assumed to succeed on the duplicate attempt itself. No Java runtime
+comparison is performed.
+
+Final pre-commit validation passes: 4,373 solution tests / 27 explicit skips,
+warning baseline 4,243, and every CLAUDE.md ancillary check. Logs:
+`run/p10-03-crash-expectation-{focused-final,warning-final,fulltests-final}.log`.
+No gameplay or upstream automation file changes; no new allowance or baseline increase.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

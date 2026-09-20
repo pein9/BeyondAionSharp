@@ -3,7 +3,7 @@ using Aion.LogWatch;
 
 namespace Aion.Commons.Tests;
 
-public sealed class ProblemWatcherTests
+public sealed partial class ProblemWatcherTests
 {
 	[Theory]
 	[InlineData(true)]

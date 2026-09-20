@@ -32,7 +32,7 @@ internal sealed class DockerFollowers : IAsyncDisposable
 		var events = StartDocker(options,
 			["compose", "-f", options.ComposeFile, "-p", options.ProjectName, "events", "--json", "--since", "1970-01-01T00:00:00Z"]);
 		processes.Add(events);
-		readers.Add(ReadLinesAsync(events.StandardOutput, new DockerLine("event", "docker", "", false), lifetime.Token));
+		readers.Add(ReadLinesAsync(events.StandardOutput, new DockerLine("event", "docker", "", false) { ProjectName = options.ProjectName }, lifetime.Token));
 		readers.Add(ReadLinesAsync(events.StandardError, new DockerLine("event", "docker", "", true), lifetime.Token));
 	}
 

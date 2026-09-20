@@ -104,4 +104,9 @@ internal sealed record WatchProblem(
 	}
 }
 
-internal sealed record DockerLine(string Source, string Service, string Line, bool IsErrorStream);
+internal sealed record DockerLine(string Source, string Service, string Line, bool IsErrorStream)
+{
+	// Compose strips its own project/service labels from event attributes. Preserve
+	// the independently selected follower's project, not a value inferred from an id.
+	internal string? ProjectName { get; init; }
+}
