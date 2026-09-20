@@ -230,7 +230,7 @@ tests, 23 data-sweep report tests, retention, Full-suite and compose contracts
 all passed. P10-02 remains unchecked; the Full soak driver remains unavailable
 until the complete workload and capacity assertions exist.
 
-## P10-02 coordinated gathering (under validation)
+## P10-02 coordinated gathering (still diagnostic)
 
 The prior economy implementation also passed the longer `p10-02-cooking20-a`
 diagnostic (seed 73, ten subjects, twenty-minute window): 345 cohort actions,
@@ -282,11 +282,42 @@ Checkpoint checks: 4,155 solution tests passed / 22 explicit skips, with 4,243
 compiler warnings unchanged. The opt-in real-geometry route check also passed
 separately. Docker Fast `p10-02-gather-fast`, logger/clock/custom-quest ratchets,
 fidelity, ten quest-compiler tests, 23 report tests, retention and Full-suite
-contracts passed. `p10-02-gather10-a` is an in-progress ten-subject/ten-minute
-diagnostic, not accepted evidence yet; its first attempts exercised both races,
-ordinary successes and a natural failure. Depletion/respawn and final lifecycle
-checks must finish before claiming a LIVE gathering pass. No gameplay change,
-new allowance or Java runtime was involved.
+contracts passed. `p10-02-gather10-a` passed its ten-subject/ten-minute diagnostic:
+184 cohort actions, 18 gather attempts (13 successes / 5 failures), four depleted
+plants, and two successfully harvested natural respawns. The respawns were Asmodian:
+original objects 134/442 reappeared as 134297/134301 at the same shipped coordinates
+after their 295-second cooldown, then were gathered with use count one. Both races
+exercised depletion, but Elyos respawn reuse and nonzero-channel gathering remain
+unproven by this run. All selected activities executed in every eligible cohort;
+all subjects passed final inventory/offline checks. Enforced watching passed with
+only the existing startup content allowance, no bot problems, and isolated-stack
+cleanup. No gameplay change, new allowance or Java runtime was involved. The
+two-hour workload, higher populations and resource fairness remain unaccepted.
+
+## P10-02 repeatable duels (under validation)
+
+The existing S1 duel exchange/combat assertions are shared with the soak driver,
+not replaced by a simulated outcome. Same-race pairs alternate caster/winner roles
+on successive duels. Before fighting they recover through ordinary sit/stand
+packets and the server's natural HP/MP regeneration, draining both clients while
+waiting. Each duel requires reciprocal opponents, observed cast/results, reciprocal
+win/loss, no actual death, cleared duel state, no blocking interaction, and unchanged
+inventory totals. Spell hit timing uses the caster's actual race with the existing
+male starter-book profile; both racial pointfire timings are pinned by tests.
+
+Java reference at `ce54b7931`: `DuelService`, `PlayerController.onDie` (duel defeat
+restores a 33% HP/MP floor instead of death), `CM_EMOTION` (resting state),
+`PlayerGameStats` (rest regeneration multipliers), `CreatureLifeStats` and
+`LifeStatsRestoreService` (ordinary restore tasks). No server behavior is changed.
+The SIM S1 regression adds natural recovery and a second duel with reversed roles,
+checking actual server life stats and cleanup. It passed Docker run
+`p10-02-duel-sim-a` (Full shard-35/100, selecting exactly S1, seed 73).
+Docker Fast `p10-02-duel-fast-a` also passed. Final checks: 4,155 solution tests
+passed / 22 explicit skips; 4,243 warnings unchanged; all CLAUDE ratchets, fidelity,
+quest-compiler/report tests, retention and Full-suite contracts passed.
+`p10-02-duel10-a` is an in-progress twenty-minute diagnostic mixing duel, gathering,
+vendor, group, trade, relog and crash disconnect. LIVE repeated-duel validation is
+pending; this is not yet full P10-02 acceptance.
 
 ## Scope decisions
 

@@ -1914,9 +1914,10 @@ real geodata on in production immediately, because geo is enabled by default; th
   activities fail closed, and diagnostic output explicitly says it is not acceptance evidence.
   Vendor buy/sell/repurchase and production-random Cooking work-order loops are implemented diagnostically; Cooking
   selects eligible shipped apprentice orders as skill rises, with ordinary abandonment/reacceptance after
-  failed crafts exhaust issued materials. Coordinated starter gathering is under validation, using
+  failed crafts exhaust issued materials. Coordinated starter gathering is implemented diagnostically, using
   ordinary level-9 human gatherers, per-spawn/explicitly-selected-channel reservations, checked ground paths and real respawns.
-  Quest/duel/PvP drivers, remaining resource coordination, telemetry
+  Repeatable duels are under validation, reusing S1's combat flow with ordinary HP/MP rest recovery,
+  race-specific spell timing and alternating winner roles. Quest/PvP drivers, remaining resource coordination, telemetry
   and two-hour evidence remain required. This is still not acceptance of the full mixed workload.
   Foundation validation: 21 focused identity/policy tests and 500 TCP key-exchange/close smoke cases pass;
   neither proves a populated world or a two-hour soak. The TODO remains unchecked until full runtime evidence.
@@ -1929,6 +1930,10 @@ real geodata on in production immediately, because geo is enabled by default; th
   recoveries, without a new allowance. The longer `p10-02-cooking20-a` passes ten subjects/twenty minutes,
   345 actions, 24 orders including eight next-tier orders, and three ordinary ingredient purchases.
   All twenty apprentice templates and the two-hour workload are not yet proven.
+  Gathering checkpoint: `p10-02-gather10-a` passes ten subjects/ten minutes, 184 cohort actions,
+  18 gathers (13 successes/5 failures), four depleted nodes and harvesting of two naturally respawned
+  Asmodian nodes, with final inventory/offline checks and enforced watcher success. Higher populations,
+  nonzero-channel gathering and Elyos respawn reuse still need LIVE evidence.
   Details and checkpoint limitations: `docs/e2e-phase10-validation.md`.
 - [ ] **P10-03** [LIVE] S — Crash and restart: kill the game server mid-session, restart, relog succeeds, delayed save is
   correct, a second login on the same account kicks the first.

@@ -33,13 +33,14 @@ public static class SocialBasicsScenario
 	public const long LegionFee = 10_000;
 	private static readonly Lazy<(BotMotionTiming Timing, SkillTemplate Skill)> DuelTiming = new(LoadDuelTiming);
 
-	public static ushort DuelHitTime(BotPosition source, BotPosition target)
+	public static ushort DuelHitTime(BotPosition source, BotPosition target, Race race = Race.ELYOS)
 	{
+		if (race is not (Race.ELYOS or Race.ASMODIANS)) throw new ArgumentOutOfRangeException(nameof(race));
 		var (timing, skill) = DuelTiming.Value;
 		double distance = Math.Sqrt(Math.Pow(source.X - target.X, 2) + Math.Pow(source.Y - target.Y, 2) + Math.Pow(source.Z - target.Z, 2));
 		int travelMillis = checked((int)Math.Ceiling(distance / skill.GetAmmoSpeed() * 1000));
-		// S1's subjects and S2's caster are male Elyos with unmodified starter spellbooks and attack speed.
-		return checked((ushort)timing.CalculateClientHitTime(skill, new BotMotionProfile(Race.ELYOS, Gender.MALE, BotWeaponMotionType.Book), travelMillis));
+		// Subjects use unmodified starter spellbooks and attack speed; soak includes both races.
+		return checked((ushort)timing.CalculateClientHitTime(skill, new BotMotionProfile(race, Gender.MALE, BotWeaponMotionType.Book), travelMillis));
 	}
 
 	private static (BotMotionTiming, SkillTemplate) LoadDuelTiming()
@@ -130,32 +131,7 @@ public static class SocialBasicsScenario
 			await first.MoveAsync(Registrar with { X = Registrar.X - 4 }, ct);
 			await second.MoveAsync(Registrar with { X = Registrar.X - 5 }, ct);
 			await BothSyncAsync(ct);
-			await first.SendAsync(first.Api.Duel(second.CharacterId), ct);
-			await second.WaitAsync(typeof(SM_QUESTION_WINDOW), packet => packet.Get<int>("code") == 50028, ct);
-			await second.SendAsync(second.Api.Answer(1), ct);
-			await first.WaitAsync(typeof(SM_DUEL), packet => packet.Get<byte>("type") == 0, ct);
-			await second.WaitAsync(typeof(SM_DUEL), packet => packet.Get<byte>("type") == 0, ct);
-			Require(first.Api.World.DuelOpponentId == second.CharacterId && second.Api.World.DuelOpponentId == first.CharacterId,
-				"Duel did not establish reciprocal opponents.");
-			Require(first.Api.World.Skills.TryGetValue(1282, out var flameBolt), "Duel mage must know Flame Bolt.");
-			await first.SendAsync(first.Api.Target(second.CharacterId), ct);
-			for (int cast = 0; cast < 60 && first.Api.World.DuelOpponentId != null; cast++)
-			{
-				await first.SendAsync(first.Api.Cast(new SpellCastData(1282, checked((byte)flameBolt!.Level), 0)
-				{
-					TargetObjectId = second.CharacterId, HitTime = DuelHitTime(first.CurrentPosition, second.CurrentPosition),
-				}), ct);
-				var started = await first.WaitAsync(typeof(SM_CASTSPELL), packet => packet.Get<int>("objectId") == first.CharacterId && packet.Get<ushort>("spellId") == 1282, ct);
-				await first.DelayAsync(TimeSpan.FromMilliseconds(started.Get<ushort>("castDuration") + 1), ct);
-				var result = await first.WaitAsync(typeof(SM_CASTSPELL_RESULT), packet => packet.Get<int>("effectorId") == first.CharacterId && packet.Get<ushort>("skillId") == 1282, ct);
-				await first.DelayAsync(TimeSpan.FromMilliseconds(Math.Max(2000, result.Get<ushort>("hitTime") + 1)), ct);
-				await BothSyncAsync(ct);
-				Require(!first.Api.World.IsDead && !second.Api.World.IsDead, "A duel participant died rather than losing the duel.");
-			}
-			Require(first.Api.World.LastDuelResult is { ResultId: 2 } win && win.OpponentName == second.CharacterName &&
-				second.Api.World.LastDuelResult is { ResultId: 0 } loss && loss.OpponentName == first.CharacterName,
-				"Duel did not finish with reciprocal win/loss within the bounded combat window.");
-			Require(first.Api.World.DuelOpponentId == null && second.Api.World.DuelOpponentId == null, "Duel opponent state was not cleared.");
+			await RunDuelAsync(first, second, Race.ELYOS, ct);
 		}, token);
 		await BothStepAsync("leave-group-and-verify-cleanup", async ct =>
 		{
@@ -174,6 +150,65 @@ public static class SocialBasicsScenario
 		Task BothStepAsync(string action, Func<CancellationToken, Task> operation, CancellationToken ct) =>
 			first.StepAsync(action, inner => second.StepAsync(action, operation, inner), ct);
 		async Task BothSyncAsync(CancellationToken ct) { await first.SynchronizeAsync(ct); await second.SynchronizeAsync(ct); }
+	}
+
+	/// <summary>Recover through ordinary resting and server regeneration; never supply HP or MP.</summary>
+	public static async Task RecoverForDuelAsync(ISocialBasicsDriver first, ISocialBasicsDriver second, CancellationToken token)
+	{
+		await SyncAsync();
+		foreach (var actor in new[] { first, second })
+			Require(!actor.Api.World.IsDead && actor.Api.World.MaxHp > 0 && actor.Api.World.MaxMp > 0 && actor.Api.World.DuelOpponentId == null,
+				"Duel recovery requires alive subjects with known life stats and no active duel.");
+		if (Recovered(first) && Recovered(second)) return;
+		await RestAsync(first, true); await RestAsync(second, true);
+		while (!Recovered(first) || !Recovered(second))
+		{
+			await first.DelayAsync(TimeSpan.FromSeconds(1), token);
+			await SyncAsync();
+			Require(!first.Api.World.IsDead && !second.Api.World.IsDead, "A subject died during duel recovery.");
+		}
+		await RestAsync(first, false); await RestAsync(second, false);
+		await SyncAsync();
+
+		static bool Recovered(ISocialBasicsDriver actor) => actor.Api.World.CurrentHp == actor.Api.World.MaxHp && actor.Api.World.CurrentMp == actor.Api.World.MaxMp;
+		async Task SyncAsync() { await first.SynchronizeAsync(token); await second.SynchronizeAsync(token); }
+		async Task RestAsync(ISocialBasicsDriver actor, bool sitting)
+		{
+			await actor.SendAsync(actor.Api.Rest(sitting), token);
+			await actor.WaitAsync(typeof(SM_EMOTION), packet => packet.Get<int>("senderObjectId") == actor.CharacterId &&
+				packet.Get<byte>("emotionType") == (byte)(sitting ? EmotionType.SIT : EmotionType.STAND), token);
+		}
+	}
+
+	/// <summary>The ordinary bounded duel flow shared by S1 and repeatable soak; callers own positioning and recovery.</summary>
+	public static async Task RunDuelAsync(ISocialBasicsDriver first, ISocialBasicsDriver second, Race casterRace, CancellationToken ct)
+	{
+		await first.SendAsync(first.Api.Duel(second.CharacterId), ct);
+		await second.WaitAsync(typeof(SM_QUESTION_WINDOW), packet => packet.Get<int>("code") == 50028, ct);
+		await second.SendAsync(second.Api.Answer(1), ct);
+		await first.WaitAsync(typeof(SM_DUEL), packet => packet.Get<byte>("type") == 0, ct);
+		await second.WaitAsync(typeof(SM_DUEL), packet => packet.Get<byte>("type") == 0, ct);
+		Require(first.Api.World.DuelOpponentId == second.CharacterId && second.Api.World.DuelOpponentId == first.CharacterId,
+			"Duel did not establish reciprocal opponents.");
+		Require(first.Api.World.Skills.TryGetValue(1282, out var flameBolt), "Duel mage must know Flame Bolt.");
+		await first.SendAsync(first.Api.Target(second.CharacterId), ct);
+		for (int cast = 0; cast < 60 && first.Api.World.DuelOpponentId != null; cast++)
+		{
+			await first.SendAsync(first.Api.Cast(new SpellCastData(1282, checked((byte)flameBolt!.Level), 0)
+			{
+				TargetObjectId = second.CharacterId, HitTime = DuelHitTime(first.CurrentPosition, second.CurrentPosition, casterRace),
+			}), ct);
+			var started = await first.WaitAsync(typeof(SM_CASTSPELL), packet => packet.Get<int>("objectId") == first.CharacterId && packet.Get<ushort>("spellId") == 1282, ct);
+			await first.DelayAsync(TimeSpan.FromMilliseconds(started.Get<ushort>("castDuration") + 1), ct);
+			var result = await first.WaitAsync(typeof(SM_CASTSPELL_RESULT), packet => packet.Get<int>("effectorId") == first.CharacterId && packet.Get<ushort>("skillId") == 1282, ct);
+			await first.DelayAsync(TimeSpan.FromMilliseconds(Math.Max(2000, result.Get<ushort>("hitTime") + 1)), ct);
+			await first.SynchronizeAsync(ct); await second.SynchronizeAsync(ct);
+			Require(!first.Api.World.IsDead && !second.Api.World.IsDead, "A duel participant died rather than losing the duel.");
+		}
+		Require(first.Api.World.LastDuelResult is { ResultId: 2 } win && win.OpponentName == second.CharacterName &&
+			second.Api.World.LastDuelResult is { ResultId: 0 } loss && loss.OpponentName == first.CharacterName,
+			"Duel did not finish with reciprocal win/loss within the bounded combat window.");
+		Require(first.Api.World.DuelOpponentId == null && second.Api.World.DuelOpponentId == null, "Duel opponent state was not cleared.");
 	}
 
 	private static Dictionary<int, long> Totals(ISocialBasicsDriver actor) => actor.Api.World.Inventory.Values

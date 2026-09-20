@@ -16,6 +16,10 @@ public sealed class BotSocialPacketTests
 		var point = SocialBasicsScenario.Registrar;
 		Assert.Equal((ushort)467, SocialBasicsScenario.DuelHitTime(point, point with { X = point.X - 2 }));
 		Assert.Equal((ushort)500, SocialBasicsScenario.DuelHitTime(point, point with { X = point.X - 3 }));
+		// Shipped pointfire has 0.4s book hit timing for both male races; flight is 30m/s.
+		Assert.Equal((ushort)467, SocialBasicsScenario.DuelHitTime(point, point with { X = point.X - 2 }, Aion.GameServer.Model.Race.ASMODIANS));
+		Assert.Equal((ushort)500, SocialBasicsScenario.DuelHitTime(point, point with { X = point.X - 3 }, Aion.GameServer.Model.Race.ASMODIANS));
+		Assert.Throws<ArgumentOutOfRangeException>(() => SocialBasicsScenario.DuelHitTime(point, point, (Aion.GameServer.Model.Race)999));
 	}
 
 	// These five packets have no checked-in Java-generated fixtures. These are hand-built contracts

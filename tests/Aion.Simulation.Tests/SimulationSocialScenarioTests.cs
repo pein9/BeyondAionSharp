@@ -222,8 +222,21 @@ public sealed partial class SimulationFastScenarioTests
 			await session.MoveToPositionAsync(point with { X = point.X - 4 - offset }, token);
 			offset++;
 		}
-		await SocialBasicsScenario.RunAsync(new SimSocialDriver(fixture, first, fixture.World.GetPlayer(first.CharacterId)),
-			new SimSocialDriver(fixture, second, fixture.World.GetPlayer(second.CharacterId)), "SimSocial", token);
+		var firstDriver = new SimSocialDriver(fixture, first, fixture.World.GetPlayer(first.CharacterId));
+		var secondDriver = new SimSocialDriver(fixture, second, fixture.World.GetPlayer(second.CharacterId));
+		await SocialBasicsScenario.RunAsync(firstDriver, secondDriver, "SimSocial", token);
+		foreach (var session in new[] { first, second }) session.BeginStep("s90", "natural-duel-recovery");
+		await SocialBasicsScenario.RecoverForDuelAsync(firstDriver, secondDriver, token);
+		foreach (var session in new[] { first, second })
+		{
+			var player = fixture.World.GetPlayer(session.CharacterId);
+			Assert.Equal(player.GetLifeStats().GetMaxHp(), player.GetLifeStats().GetCurrentHp());
+			Assert.Equal(player.GetLifeStats().GetMaxMp(), player.GetLifeStats().GetCurrentMp());
+			session.BeginStep("s91", "repeat-duel-with-reversed-roles");
+		}
+		await SocialBasicsScenario.RunDuelAsync(secondDriver, firstDriver, Race.ELYOS, token);
+		await firstDriver.VerifyAsync(second.CharacterId, "SimSocial", token);
+		await secondDriver.VerifyAsync(first.CharacterId, "SimSocial", token);
 		policy.AssertClean();
 	}
 

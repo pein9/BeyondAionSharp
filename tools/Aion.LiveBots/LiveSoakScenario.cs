@@ -13,7 +13,7 @@ namespace Aion.LiveBots;
 public static partial class LiveBotRunner
 {
 	private static readonly SoakActivity[] ImplementedSoakActivities =
-		[SoakActivity.Group, SoakActivity.Trade, SoakActivity.Relog, SoakActivity.CrashDisconnect, SoakActivity.Vendor, SoakActivity.Craft, SoakActivity.Gather];
+		[SoakActivity.Group, SoakActivity.Trade, SoakActivity.Relog, SoakActivity.CrashDisconnect, SoakActivity.Vendor, SoakActivity.Craft, SoakActivity.Gather, SoakActivity.Duel];
 
 	private static async Task<int> RunSoakAsync(LiveBotOptions options, LiveBotProblemWriter problems, CancellationToken token)
 	{
@@ -149,6 +149,9 @@ public static partial class LiveBotRunner
 								await SoakIndependentPairAsync(first, second, (actor, ct) => SoakCookingAsync(actor, master, ct), inner); break;
 							case SoakActivity.Gather:
 								await SoakIndependentPairAsync(first, second, (actor, ct) => SoakGatherAsync(actor, cohort, gatheringPool, gatheringSpots, gatheringEpoch, ct), inner); break;
+							case SoakActivity.Duel:
+								bool firstWins = counts[SoakActivity.Duel.ToString()] % 2 == 0;
+								await SoakDuelAsync(firstWins ? first : second, firstWins ? second : first, RaceOf(cohort.FirstRace), inner); break;
 							case SoakActivity.Relog:
 							case SoakActivity.CrashDisconnect:
 								bool crash = decision.Action.Activity == SoakActivity.CrashDisconnect;
