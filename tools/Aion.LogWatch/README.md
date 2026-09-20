@@ -30,8 +30,36 @@ Unallowlisted heartbeat failures fail enforcement even when their fingerprint is
 The declared P10-03 restart gap remains restricted to the game server and its original deadline.
 
 These are suspected-hang alerts, not proof of deadlock. Unlike Java's `DeadLockDetector`, a missing heartbeat
-cannot establish a cycle of thread/lock ownership. P10-04 diagnostic collection and LIVE fault-injection
-validation remain pending; the alerts alone do not complete that TODO.
+cannot establish a cycle of thread/lock ownership. P10-04 LIVE fault-injection validation remains pending.
+
+## Bounded hang diagnostics
+
+Continuing Docker watches collect once per affected server under `hangs/<gs|ls|cs>/`, without blocking
+the polling loop. `observation.json` contains the detection time, thresholds and last heartbeat sample
+(capped at 16,384 characters). `collection.json` records command results and target identity; failures
+instead produce `failure.json`. The watcher summary/digest reports `collected`, `partial`, or `failed`.
+A partial collection is not a clean bill of health and never clears the underlying heartbeat failure.
+Repeated alerts still reach the digest but do not create repeated dumps. File-only and snapshot watches
+never start diagnostic Docker commands.
+
+Target selection requires exactly one full container ID with this run's `aion-bots-<run>` project and
+matching service labels, on only its own default network. Inspection deliberately excludes environment
+variables/credentials. It collects selected state fields, `docker top`, resource usage, and revalidates
+identity/image/process start before and after an in-container managed stack probe. Paused, stopped or restarting
+containers skip that probe explicitly. No restart, unpause, server signal, host tuning or SQL is performed.
+
+Each collection has a 20-second budget; individual CLI calls have 3–10-second deadlines. Captured command
+output is capped at 128 Ki characters stdout / 16 Ki stderr, with overflow reported as partial evidence.
+Only the owned diagnostic child is terminated on timeout/overflow. The managed probe additionally uses
+an eight-second in-container `timeout`, so a disconnected Docker CLI cannot leave an unbounded probe.
+It targets PID 1 only after checking the expected server assembly. An unresponsive runtime may not supply
+managed stacks; failure/timeout evidence and container state are retained instead.
+
+The bot Compose file selects `bot-diagnostics` build targets containing pinned `dotnet-stack 10.0.745401`.
+The final/default `runtime` targets are unchanged deployment images without diagnostic tooling. Stack
+collection uses [Microsoft's EventPipe-based dotnet-stack tool](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/dotnet-stack)
+and adds sampling overhead; it is not lock-cycle proof. Rebuild bot images after this change. Reusing an
+older image with `-SkipImageBuild` will record a missing-tool result (exit 69), never fabricate stacks.
 
 Live trace attribution retains at most 64 records and 128 Ki characters per account. Older or ambiguous
 timestamp lookups and reproduction bundles stream the original trace files; do not remove them while a run

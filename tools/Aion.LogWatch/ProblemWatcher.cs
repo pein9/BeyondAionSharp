@@ -86,6 +86,8 @@ public static class ProblemWatcher
 		private readonly Dictionary<string, int> problemCounts = new(StringComparer.Ordinal);
 		private readonly Dictionary<string, WatchProblem> newProblemSamples = new(StringComparer.Ordinal);
 		private readonly Dictionary<string, DateTimeOffset> lastHeartbeats = new(StringComparer.Ordinal);
+		private readonly Dictionary<string, string> lastHeartbeatRecords = new(StringComparer.Ordinal);
+		private readonly HangDiagnostics hangDiagnostics;
 		private readonly HashSet<string> heartbeatAlerts = new(StringComparer.Ordinal);
 		private readonly DateTimeOffset watchingStarted = DateTimeOffset.UtcNow;
 		private int knownHeartbeatProblems;
@@ -102,10 +104,11 @@ public static class ProblemWatcher
 		private bool crashGapReported;
 		private int expectedProcessEvents;
 
-		public WatcherState(WatchOptions options)
+		public WatcherState(WatchOptions options, IDiagnosticCommand? diagnosticCommand = null)
 		{
 			options.ValidateHeartbeatThresholds();
 			this.options = options;
+			hangDiagnostics = new HangDiagnostics(options, diagnosticCommand ?? new BoundedDiagnosticCommand());
 			traceHistory = new BotTraceHistory(options.Run);
 			allowlist = LogProblemAllowlist.Load(options.AllowlistPath);
 			ledger = KnownProblemLedger.Load(options.LedgerPath);
@@ -210,12 +213,23 @@ public static class ProblemWatcher
 					$"Initial heartbeat not observed within {threshold.TotalSeconds:0} s of watcher startup.";
 				AddSynthetic(now, server, "HEARTBEAT", observed ? "Heartbeat missed for {Server}" :
 					"Initial heartbeat missing for {Server}", message, kind: "heartbeat");
+				hangDiagnostics.Observe(new(server, now, observed ? lastSeen : null,
+					lastHeartbeatRecords.GetValueOrDefault(server), options.InitialHeartbeatThreshold.TotalSeconds,
+					options.MissingHeartbeatThreshold.TotalSeconds));
 			}
 		}
 
 		public async Task WriteSummaryAsync(CancellationToken cancellationToken)
 		{
+			var diagnostics = await hangDiagnostics.CompleteAsync();
+			// Collection may still be running when the owner requests stop. Preserve
+			// problems written during that bounded drain before finalizing evidence.
+			DiscoverTraceFiles();
+			ReadFiles();
 			CheckCrashCompletion(DateTimeOffset.UtcNow, final: true);
+			foreach (var diagnostic in diagnostics)
+				digest.WriteLine($"{FormatTimestamp(DateTimeOffset.UtcNow)} HANG_DIAGNOSTICS {diagnostic.Server} " +
+					$"status={diagnostic.Status} path={diagnostic.Directory} failure={OneLine(diagnostic.Failure ?? "none")}");
 			digest.Dispose();
 			var provenance = RunProvenance.Load(options.RunDirectory);
 			ledger.RecordRun(problemCounts, provenance, options.Run);
@@ -243,6 +257,7 @@ public static class ProblemWatcher
 				expectedProcessEvents,
 				heartbeatTimeoutSeconds = options.MissingHeartbeatThreshold.TotalSeconds,
 				initialHeartbeatTimeoutSeconds = options.InitialHeartbeatThreshold.TotalSeconds,
+				hangDiagnostics = diagnostics.Select(d => new { server = d.Server, status = d.Status, directory = d.Directory, failure = d.Failure }),
 				expectedGameServerCrash = options.ExpectGameServerCrash ? expectedCrash?.Complete == true : (bool?)null,
 				failed = options.Mode == WatchMode.Enforce && FailingProblemCount > 0,
 				retainedTraceRecords = traceHistory.RetainedRecords,
@@ -328,6 +343,7 @@ public static class ProblemWatcher
 			var timestamp = WatchProblem.ReadTimestamp(root);
 			if (lastHeartbeats.TryGetValue(server, out var previous) && timestamp <= previous) return;
 			lastHeartbeats[server] = timestamp;
+			lastHeartbeatRecords[server] = line.Length <= 16384 ? line : line[..16384] + " [truncated]";
 			expectedCrash?.ObserveHeartbeat(server, timestamp);
 			// File catch-up can deliver a newer but still stale sample. It is not recovery.
 			if (DateTimeOffset.UtcNow - timestamp < options.MissingHeartbeatThreshold)

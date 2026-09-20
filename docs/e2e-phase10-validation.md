@@ -2521,6 +2521,53 @@ warning baseline 4,243, structural fidelity and every CLAUDE.md ancillary check
 (including the 463-assertion mock lifecycle controller). Logs:
 `run/p10-04-alert-*.log`. No warning baseline, allowance or gameplay change.
 
+## P10-04 bounded diagnostic collection (LIVE injection pending)
+
+The watcher now schedules one independent collection per affected server/run.
+Its 20-second budget, per-command deadlines and stdout/stderr limits prevent
+diagnosis from blocking log ingestion or accumulating unlimited dumps. It keeps
+the detection timestamp, thresholds and last heartbeat, selects exactly one full
+container ID by project/service, verifies exclusive network ownership, and
+captures selected Docker state, process/thread and resource samples. Environment
+variables are not included in inspection output. Identity/image/process start
+are rechecked before the managed probe. The expected server assembly must own
+PID 1; an eight-second container-side timeout bounds the diagnostic tool even
+if its owning Docker CLI disconnects. No server signal/restart or SQL is issued.
+
+Paused/stopped/restarting containers explicitly skip managed stacks. A failed,
+timed-out, truncated or missing-tool probe is partial evidence, never success;
+collection results do not erase the heartbeat failure. Per-server artifacts are
+create-new, not overwritten. Existing P10-03 expected restart gaps do not trigger
+collection. File-only and snapshot watches never invoke Docker diagnostics.
+
+All three isolated bot image targets build with pinned `dotnet-stack 10.0.745401`.
+The tool executes successfully in a Linux bot image, with `DOTNET_ROLL_FORWARD=Major`
+scoped to the probe because its package targets .NET 8. A separately built normal
+`runtime` target passes a no-diagnostic-directory assertion. Temporary toolcheck
+containers used no network or DB and removed themselves; no bots ran. Build logs:
+`run/p10-04-build-{login,chat,game}.log`, `run/p10-04-runtime-target.log`.
+
+Twenty-six new tests cover exact ownership, ambiguous/invalid targets, changed
+identity, paused/stopped/restarting state, missing tool, timeout/truncation,
+exception handling, no-Docker/snapshot isolation, artifact preservation, and
+nonblocking integration with continued watcher failure handling. Real child
+process tests check bounded output, launch failure and deadline termination.
+The 67-case watcher integration group passes in
+`run/p10-04-diagnostics-focused.log`. Actual missed-heartbeat collection from an
+isolated live server remains to be validated; P10-04 stays unchecked.
+
+Review also reproduced two draft-collector defects before commit: a process
+replacement during stack capture was reported as collected, and a problem
+appended during the final diagnostic drain was omitted from the summary. A
+post-stack identity recheck and final shared-file drain correct both, with
+red/green evidence in `run/p10-04-collector-review-red.log` and the focused log.
+
+Final pre-commit validation passes: 4,432 solution tests / 27 explicit skips,
+warning baseline 4,243 and every applicable CLAUDE.md ancillary gate. Logs:
+`run/p10-04-collector-{warning,fulltests}-final.log` and
+`run/p10-04-collector-final-*.log`. No baseline/allowlist change or Java runtime
+comparison; Java reference remains `4.8` at `ce54b7931`.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

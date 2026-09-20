@@ -2130,9 +2130,13 @@ real geodata on in production immediately, because geo is enabled by default; th
   cannot clear an active alert; fresh recovery rearms monitoring but retains the run failure.
   Tracked unallowlisted heartbeat problems also fail enforcement. Snapshot reads keep their
   partial-artifact semantics, and O1's exact bounded GS restart gap remains unchanged.
-  Red/green tests cover these previously missing guarantees (#113). Bounded diagnostic
-  collection and real isolated LIVE hang-injection evidence are still required; no deadlock
-  detection or P10-04 completion is claimed from heartbeat alerts alone.
+  Red/green tests cover these previously missing guarantees (#113). Diagnostic collection
+  now runs independently, once per affected server, with a 20-second budget and bounded
+  command output. It validates exact isolated container/network ownership, captures state,
+  thread/resource samples and managed stacks, and explicitly records unavailable/partial
+  evidence. Bot-only image targets supply pinned tooling; deployment targets stay unchanged.
+  Real isolated LIVE hang-injection evidence is still required; no deadlock detection or
+  P10-04 completion is claimed from unit tests/image builds alone.
 - [ ] **P10-05** [LIVE] M — **Deferred (D7 declined for now; revisit later).** If approved, restore the Java boot
   tail the C# production boot skips: `HousingService` and the housing bid/auction/maintenance tasks, faction ratio counts,
   `SiegeService.InitSieges`, `PvpMapService.Init` (`GameServer.java:118-122,130-134,141,175`). Move the no-DB fixture
@@ -2432,6 +2436,8 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 112 | Draft O1 checks offline immediately after a duplicate-login socket close (bot timing defect) | O1-a receives ALREADY_LOGIN and the correct kick at `18:42:20.577–.581Z`, then fails its offline assertion at `.584Z` with generic fingerprint `ebe67ab3`. Java `AionConnection.onDisconnect` at `ce54b7931` schedules leave up to ten seconds after the last client message; C# matches | Bot corrected in `db151124a` to honor normal delayed logout before offline/reentry checks. O1-a's older binary stays failed; its real save/crash/recovery and duplicate-kick evidence is retained. No production change, retry or allowance. Corrected complete LIVE replays `o1-b` and `o1-c` pass, including normal delayed leave, fresh authentication, saved coordinates, unchanged inventory and final offline checks; owners exit 0 with no unallowlisted problems |
 
 | 113 | Heartbeat watcher ignores a never-started producer, rearms active alerts on replayed/stale samples, and accepts tracked heartbeat failures as green outside O1 (watcher defects) | Four red regressions reproduce absent first-heartbeat silence, duplicate/older and newer-but-stale rearming, and tracked-failure exit 0. No Java gameplay analogue; Java `commons/utils/concurrent/DeadLockDetector.java` at `ce54b7931` uses actual thread/lock ownership, not heartbeat absence | P10-04 alert foundation expects all three servers in continuous mode, records bounded initial/gap thresholds, rearms only on a fresh newer sample, and keeps unallowlisted known heartbeat failures fatal. Snapshot partial-artifact semantics and O1 bounded restart exceptions are preserved. No suppression or production change; diagnostics and LIVE validation remain pending |
+
+| 114 | Draft hang collector can attribute stacks across a process restart and omit problems appended during its final drain (infrastructure defects) | Two red tests reproduce changed process start during stack capture being reported as collected and a late problem absent from the final summary. No Java gameplay analogue | Corrected before P10-04 collector commit: revalidate exact identity/image/start after sampling, preserve ambiguous evidence as failed collection, and drain shared trace/problem files after pending diagnostics complete. No server restart, suppression or production change |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the
