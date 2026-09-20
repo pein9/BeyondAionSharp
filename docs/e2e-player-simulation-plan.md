@@ -1905,7 +1905,7 @@ real geodata on in production immediately, because geo is enabled by default; th
   gather, craft, vendor, trade, group, duel, relog, crash-disconnect) with random think times. Watch dispatcher write
   latency (the selector shim does O(connections) work per wakeup), working-set plateau, heartbeat, timer-count growth
   and flood kicks.
-  **In progress, not accepted:** capacity identities/options now support 1,000 subjects without MAC/name
+  **In progress: 50 accepted; 200/500 pending.** Capacity identities/options now support 1,000 subjects without MAC/name
   collisions; a per-cohort seeded shuffle policy covers all required activity types in both starter zones,
   capitals for crafting, and cross-race Reshanta. The isolated soak overlay admits 1,000 subjects plus its
   director and shares the ordinary test observability/geo/chat controls without deterministic rate overrides.
@@ -1929,11 +1929,11 @@ real geodata on in production immediately, because geo is enabled by default; th
   derives completion probabilities from Java's competing progress bars and records fixed-prefix plus
   whole-stream tests; missing exposure is insufficient, never acceptance. `scripts/live/run-soak.ps1` now
   joins successful terminal execution, source-hashed trace replay, economic statistics, fresh two-hour
-  telemetry and enforced problem evidence. Full LIVE statistical/capacity evidence is still required;
+  telemetry and enforced problem evidence. The complete 50/200/500 matrix is still required;
   synthetic green controls do not close the TODO. See [statistical policy](e2e-soak-statistics.md)
   and the Phase 10 evidence document for thresholds and limitations.
-  Remaining resource coordination, telemetry acceptance/reporting
-  and two-hour evidence remain required. The full mixed workload passes the ten-subject/twenty-minute
+  Scaled resource coordination and two-hour acceptance at 200/500 remain unproven.
+  The earlier full mixed workload passes the ten-subject/twenty-minute
   diagnostic `p10-02-mixed10-a` (134 cohort actions); this is not capacity acceptance.
   The quest loop cannot reset completed starter quests: shipped Q1/Q2 quests permit one completion.
   D16 settles the workload: complete Q1/Q2 once per bot, then continue the other activities. The scheduler
@@ -1942,8 +1942,8 @@ real geodata on in production immediately, because geo is enabled by default; th
   The diagnostic quest implementation uses checked ground travel, exclusive observed target reservations,
   ordinary Flame Bolt combat/loot/dialogs, exact quest reward checks and completion persistence across relog.
   Shared cast waits now recognize normal cancellation and bound missing start/result packets to ten seconds
-  after the appropriate timing advance. In the ongoing fifty-subject replay, b41 recovers from an
-  interruption and persists its starter journey (#83); terminal scaled evidence is still pending.
+  after the appropriate timing advance. In the earlier fifty-subject replay, b41 recovers from an
+  interruption and persists its starter journey (#83); matrix-c now supplies accepted fifty-subject evidence.
   No interruption is disabled and the overall activity budget is unchanged.
   Long route gaps use a bounded collision-checked ground search; they do not fall back to straight-line movement.
   `p10-02-quest10-c` passes with 382 cohort actions: both Elyos and both Asmodian subjects complete
@@ -1964,11 +1964,15 @@ real geodata on in production immediately, because geo is enabled by default; th
   `p10-02-capacity-matrix-b-soak-50`, followed by another PvP cycle. The full fifty-subject workload,
   finite quests, economy statistics and enforced watching pass, but the population is **not accepted**:
   chat has no completed GC early enough to supply two required heap windows (#94).
-  Matrix-c's natural-only heap preflight succeeds after 4,048 seconds; its two-hour
-  workload remains in progress, not accepted. The runner shutdown helper also rejects
+  Matrix-c's natural-only heap preflight succeeds after 4,048 seconds; its fifty-subject
+  two-hour run is **accepted** under the unchanged v2 policy: 4,737 cohort actions,
+  3,337 craft attempts, 716 gathers, twenty finite quest journeys, clean enforced watching,
+  and all three servers' telemetry gates pass. Retained raw evidence independently recomputes green.
+  The owning matrix has advanced to 200-subject natural heap preflight; 500 has not started.
+  This is one accepted population, not P10-02 completion. The runner shutdown helper also rejects
   a watcher that has already exited, even with code zero, or requires forced termination
   (#95). Its regression exercises the actual helper without starting processes; it does
-  not change the already-running matrix-c fifty-subject invocation.
+  not change the now-completed matrix-c fifty-subject invocation.
   Build provenance now captures Git HEAD before preparing/building the LIVE tools,
   rejects a revision change during those builds, and preserves that captured revision
   through readiness (#96); it does not attest uncommitted files or reused server images.
@@ -1982,7 +1986,7 @@ real geodata on in production immediately, because geo is enabled by default; th
   46 craft attempts (36 successes/10 failures), twelve completed orders and three abandon/reaccept
   recoveries, without a new allowance. The longer `p10-02-cooking20-a` passes ten subjects/twenty minutes,
   345 actions, 24 orders including eight next-tier orders, and three ordinary ingredient purchases.
-  All twenty apprentice templates and the two-hour workload are not yet proven.
+  All twenty apprentice templates are not yet proven; matrix-c now proves the selected two-hour workload at fifty subjects.
   Gathering checkpoint: `p10-02-gather10-a` passes ten subjects/ten minutes, 184 cohort actions,
   18 gathers (13 successes/5 failures), four depleted nodes and harvesting of two naturally respawned
   Asmodian nodes, with final inventory/offline checks and enforced watcher success. Higher populations,
@@ -2277,7 +2281,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 91 | Optional timer census shares the heartbeat logger, but telemetry parsing assumed every event in that category was a heartbeat (harness report defect) | No Java analogue; economy50-census-a finishes 1,070 actions with clean enforced watching, then rejects its first census event as changed heartbeat metrics | Parser recognizes the specific census event without counting it as a heartbeat, retaining its bytes in the source hash. Regression keeps wrong identities, corrupt census and unknown events failing. Original runner exit remains failed; separately named replay parses the retained evidence and correctly fails the short-duration capacity gate |
 | 92 | Reproduction bundles use `File.ReadLines` on an actively written server log; its Windows share mode can throw or deny a concurrent append, interrupting summary/bundle creation (harness infrastructure defect) | No Java analogue; `ProblemBundleWriter.WriteServerContext`. A regression holds a real writable file handle open while running the watcher and reproduces `IOException` at `File.ReadLines` in both matched-message and fallback paths | Server context now uses the existing `FileTail` shared finite snapshot. Tests preserve the 200-line matched context / 101-line fallback bounds, omit the unfinished record, verify metadata is written and leave the producer writable. No error is suppressed or allowed; the active capacity binary is not hot-patched |
 | 93 | Temporary NPC object-ID auto-release is not wired in C# | Java `AionObject(int, boolean)` at `ce54b7931` registers a Cleaner that first calls `RespawnService.setAutoReleaseId`, otherwise `IDFactory.releaseId`; `Npc` passes true, including the `Kisk` → `SummonedObject` → `Npc` path. C# `AionObject` discards `autoReleaseObjectId`; `World.RemoveObject` does not replace that cleanup and no caller wires `RespawnService.SetAutoReleaseId` | **OPEN.** Removed, collected temporary objects can leave IDs reserved in the C# factory. This is a source-confirmed lifecycle gap, not a measured explanation of the current soak's memory/timer behavior. Do not add an immediate release at deletion: Java preserves ownership until collection and coordinates pending respawns. A future fix needs lifetime/respawn tests and a bot regression for a replacement Kisk reusing a retired ID. No production or bot behavior changed during the running capacity matrix |
-| 94 | Capacity startup checks service readiness but not availability of the required last-GC heap observations (harness precondition gap) | No Java analogue; matrix-b-soak-50 completes 4,732 cohort actions with clean workload/economy/watcher verdicts, but chat's first collection arrives after its first post-warm-up window and too late for sufficient samples in the second. Its managed-heap plateau is correctly insufficient, not a measured zero; all other telemetry gates pass | Full-duration SOAK now waits, before starting bots, for fresh same-run heartbeat observations with a completed GC on LS/CS/GS. This is bounded to 90 minutes by default and journaled separately, with the watcher active throughout. No forced GC, allocation pressure, fabricated data, threshold change or retrospective acceptance. Short diagnostics are unchanged. The original failed matrix is retained; a fresh matrix is still required |
+| 94 | Capacity startup checks service readiness but not availability of the required last-GC heap observations (harness precondition gap) | No Java analogue; matrix-b-soak-50 completes 4,732 cohort actions with clean workload/economy/watcher verdicts, but chat's first collection arrives after its first post-warm-up window and too late for sufficient samples in the second. Its managed-heap plateau is correctly insufficient, not a measured zero; all other telemetry gates pass | Full-duration SOAK now waits, before starting bots, for fresh same-run heartbeat observations with a completed GC on LS/CS/GS. This is bounded to 90 minutes by default and journaled separately, with the watcher active throughout. No forced GC, allocation pressure, fabricated data, threshold change or retrospective acceptance. Short diagnostics are unchanged. The original failed matrix is retained. Fresh matrix-c-soak-50 passes natural readiness and all terminal acceptance gates; 200/500 remain pending |
 | 95 | LIVE shutdown trusts watcher exit code zero even if the watcher has already stopped before its owner requests shutdown (harness lifecycle gap) | No Java analogue; `run-live.ps1` `Stop-Watcher` accepted an already-exited process and did not independently reject forced termination. Ordinary watcher cancellation/crashes return nonzero; the uncovered case is an early clean stop | A red/green process-double regression executes the actual helper and reproduces the early-clean false success. The helper now rejects any observed pre-shutdown exit and any forced stop, preserves the exit code, and disposes/clears the process handle for idempotent final cleanup. Normal zero/nonzero completion and forced-stop controls are covered through the mandatory soak-runner contract. No claim of continuous watcher responsiveness is added; the already-running matrix-c invocation is not hot-patched |
 | 96 | LIVE metadata reads Git HEAD after readiness, although its tools were built before that wait (harness provenance gap) | No Java analogue; `run-live.ps1` built `Aion.LiveBots` and `Aion.LogWatch`, then queried HEAD after stack/heap readiness. A commit during that interval could label existing binaries with a newer revision | Capture HEAD before preparation/build, verify it again after both tool builds before starting Docker, and keep the captured value for bot metadata. The red/green contract pins actual source ordering, exercises the real revision reader/build guard/argument construction with mocked Git results, rejects malformed/failed lookups and build-time revision changes, and preserves the original SHA after a simulated readiness-time commit. This does not attest dirty working-tree contents or reused image source; those remain separate provenance limits. The active matrix-c fifty-subject invocation correctly captured `b9613ef1b` before later commits and is unchanged |
 

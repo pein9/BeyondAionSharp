@@ -1299,8 +1299,9 @@ Earlier startup growth is outside the measured workload, as with other setup;
 this does not prove startup memory is flat or that an idle runtime must collect.
 
 The new readiness contract is exercised by the existing mandatory
-`scripts/live/test-run-soak.ps1` check. A fresh owning matrix is still required;
-the old failed invocation cannot be upgraded by changing its report.
+`scripts/live/test-run-soak.ps1` check. A fresh owning matrix was required;
+matrix-c below supplies the accepted fifty-subject result. The old failed invocation
+cannot be upgraded by changing its report.
 
 Preflight validation passes: full solution 4,303 tests / 24 explicit skips,
 warning baseline 4,243, Docker Fast 6/6 (37.3 seconds), every CLAUDE.md ancillary
@@ -1317,10 +1318,10 @@ The fresh `p10-02-capacity-matrix-c-soak-50` invocation, launched from
 passes natural-only heap readiness after 4,048.207 seconds. The readiness journal
 ends at 2026-09-20 11:27:56.3256432 UTC with actual completed-GC indices on all
 three services; no forced collection or allocation pressure was used. Its workload
-starts at 11:28:13.8962836 UTC and is scheduled to end two hours later. At the
+starts at 11:28:13.8962836 UTC and ends two hours later (terminal result below). At the
 halfway checkpoint, all fifty subjects have qualifying activity in each of four
 completed activity windows, and all three services have ninety available heap
-observations in each of the first two post-warm-up windows. These are interim
+observations in each of the first two post-warm-up windows. Those were interim
 read-only checks, not terminal acceptance. P10-02 remains unchecked.
 
 A separate runner audit finds #95: `Stop-Watcher` previously accepted a watcher
@@ -1364,8 +1365,8 @@ it performs no build, Git mutation, or Docker operation. The existing mandatory
 Java gameplay analogue, not a gameplay or capacity-policy change.
 
 This records the checkout's commit identity, not an immutable snapshot of dirty
-working-tree files, nor proof of a reused Docker image's source. Matrix-c's active
-fifty-subject invocation already recorded `b9613ef1b` before subsequent commits;
+working-tree files, nor proof of a reused Docker image's source. Matrix-c's
+fifty-subject invocation recorded `b9613ef1b` before subsequent commits;
 its metadata and binaries are not rewritten. Later populations load the corrected
 runner and retain the revision captured for their own builds. P10-02 stays unchecked.
 
@@ -1373,6 +1374,70 @@ Provenance-fix validation passes: full solution 4,303 tests / 24 explicit skips,
 warning baseline 4,243, and every CLAUDE.md ancillary check. The new contract runs
 through the existing mandatory soak-runner check. No gameplay code, Docker image,
 active capacity binary or upstream automation was changed.
+
+## P10-02 matrix-c: fifty subjects accepted; 200/500 pending
+
+`run/p10-02-capacity-matrix-c/p10-02-capacity-matrix-c-soak-50` passes the complete
+`p10-02-acceptance-v2` policy: runner, workload, economy, telemetry and problems
+all pass, with no acceptance failures. Independently invoking the analyzer against
+the retained raw sources recomputes the result without rewriting any report.
+The owning Full runner records `soak-50` as Passed and advances to 200. This is
+one accepted population, not a completed capacity matrix or Phase 10.
+
+Bot source is `b9613ef1b582d1d04081ce214f4563ee98d4197c`, seed 73, with the same
+game image as matrix-b (`sha256:1f38a4c1c4e5f45832ae7ba8eff67c98ecdd562d9091c7f04fb5d9df5217559d`,
+production `83836fe47`). After the separately journaled 4,048.207-second natural
+heap preflight, the measured window is 2026-09-20 11:28:13.8962836–13:28:13.8962836
+UTC, exactly 7,200 seconds. In-flight work and cleanup finish at 13:30:54.8868181;
+the owning LIVE invocation succeeds at 13:31:01.3183430. The owner removes its
+isolated Docker stack and preserves the evidence. No local MySQL is used.
+
+- All 50 subjects pass replay and final inventory/quit/offline checks; all eight
+  fifteen-minute activity windows have progress. The run completes 4,737 cohort
+  actions. Twenty eligible subjects persist their race-specific starter journeys
+  once, then continue other activities (D16); no completed quest is reset.
+- Economy passes all four fixed-prefix/whole-stream tests: 3,337 craft attempts
+  and 716 gathers, twenty subjects per activity, twenty prefix samples per subject,
+  and zero impossible outcomes. Ordinary production randomness remains enabled.
+- All ten PvP traces record natural Kisk retirement, a second binding, and another
+  completed PvP cycle (61 for b39/b40, 62 for the others). As an independent raw
+  packet example, b39 receives Kisk 135799's final one-second update, removal
+  notice and deletion at 13:28:24.037 UTC, performs its own ordinary ten-second
+  item cast, and receives creator-matched 72-charge/7,200-second Kisk 147229 plus
+  `SM_BIND_POINT_INFO` at 13:28:34.386. Cycle 61 completes at 13:29:46.367.
+  Replacement occurs during in-flight completion, outside the measured window;
+  it is lifecycle evidence, not extra measured soak duration. No forced expiry,
+  timed GM revival or replenishment is used.
+- Enforced watcher: one existing suppressed startup fingerprint; zero new,
+  known, regressed or repeated problems. Its bounded cache retains 3,264 records /
+  777,372 characters. No allowance is added.
+- All three servers pass telemetry with 720 heartbeat samples each and ninety
+  available last-GC heap observations in each of six post-warm-up windows. These
+  snapshots may repeat between collections; they are not 720 independent GCs.
+  Game-server timer medians are 908.5, 915, 904.5, 907, 905 and 905.5. Its working-set
+  endpoint growth is 2,973,696 bytes; last-GC heap endpoint growth is 278,104 bytes.
+  Maximum heartbeat gaps are 11.171 s (login), 10.219 s (chat), and 10.027 s (game).
+- Of 2,028,664 game dispatch observations, p99 upper bound is 0.5 ms, p99.9 is
+  10 ms and maximum is 1,110.8702 ms; oldest pending age is 0.1409 ms. This is
+  request-to-buffer-preparation latency, not network RTT. Two separate-output
+  host validation cycles ran during the measured window for the watcher/provenance
+  fixes; this is not a pristine isolated-host benchmark, and no causal attribution
+  of the latency maximum is claimed. Active game/bot binaries stayed unchanged.
+
+The 200-subject child starts natural heap preflight at approximately 13:32 UTC,
+using tools built from `ed923ff651e0b3c95d61d6b900a5168a47acddbf` (also verified
+from `Aion.LiveBots.dll` ProductVersion) and the same inspected game image. At this
+recording checkpoint its measured workload has not started; 500 has not started.
+The 200/500 acceptance gates, later Phase 10 TODOs, and the five-consecutive-Full
+completion condition remain outstanding. The open object-ID lifecycle gap (#93)
+is not closed by this bounded passing run. Matrix-b remains failed and unchanged.
+
+Evidence-record validation: full solution 4,303 passed / 24 explicit skips;
+warning baseline 4,243; all CLAUDE.md ancillary checks pass, including fidelity,
+quest/compiler drift, sweep/telemetry/acceptance and runner/retention contracts.
+Checks use the separate validation output root, leaving active 200-subject tools
+untouched. This commit is documentation only; it neither changes gameplay nor
+closes P10-02.
 
 ## Scope decisions
 
