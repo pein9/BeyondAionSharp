@@ -2408,9 +2408,9 @@ two expected process events, two existing startup allowances and one bot
 assertion. Raw GS problems contain only those two startup reports. The owner
 removed this run's four containers, network and ephemeral DB volume; artifacts
 remain. The maintainer's Docker MySQL and unrelated containers were untouched.
-O1-b runs separately with the corrected logout timing, using ports 22106/21241/
-27777/27780 and its own Docker DB; its outcome is pending. At most two subject
-bots ran concurrently, without directors.
+O1-b ran separately with the corrected logout timing, using ports 22106/21241/
+27777/27780 and its own Docker DB; its successful result is recorded below. At
+most two subject bots ran concurrently, without directors.
 
 While these timers ran, source review found watcher defect #111: a cached old
 heartbeat at second `10.750` could satisfy die/start events truncated to second
@@ -2427,6 +2427,70 @@ baseline remains 4,243. All applicable CLAUDE.md ancillary checks pass, includin
 463 controller/runner assertions. Logs: `run/p10-03-heartbeat-red.log`,
 `run/p10-03-heartbeat-green-final.log`, and
 `run/p10-03-heartbeat-{warning,fulltests}-final.log`. P10-03 remains unchecked.
+
+## P10-03 corrected logout LIVE replay
+
+`run/p10-03-lifecycle/o1-b`, built at `db151124a`, **passed** with owner exit 0.
+Its 168 read-only Docker SQL samples observed the initial position followed by
+the natural saved checkpoint at `2026-09-20T18:51:47.173Z`. The controller verified
+the later unsaved movement, killed the exact owned GS container with exit 137,
+and restarted that same container/image. Its new process started at
+`18:51:56.796Z`; new GS heartbeats at `18:52:12Z` and `18:52:22Z` are unambiguously
+later, even though this run predates the stricter heartbeat implementation.
+Fresh startup/LS registration completed at `18:52:14.689Z`.
+
+The bot relogged at the saved checkpoint, preserving level and exact inventory
+(13 entries, 1,000 kinah). Duplicate authentication returned code 7 at
+`18:52:15.014Z`, and the original session observed the kick/close at
+`18:52:15.018Z`. After the normal delayed-leave and reentry windows, fresh login
+spawned at the saved checkpoint at `18:52:35.556Z`; final inventory/offline checks
+and `scenario:complete` passed at `18:52:35.575Z`.
+
+The enforced watcher reports two expected process events, completed crash
+expectation, two narrowly allowed boot reports, and zero new/known/regressed
+unallowlisted problems. The bot problem ledger is empty. Post-cleanup raw logs
+contain those same two GS boot reports and no LS/CS problems. Controller failure
+is null and cleanup errors are empty. The owner removed only this run's isolated
+stack and ephemeral database; all evidence remains. O1-b predates the stricter
+heartbeat check; the separate O1-c evidence below validates that implementation.
+
+## P10-03 final LIVE acceptance
+
+`run/p10-03-lifecycle/o1-c`, built at `18f014616`, **passed** with owner exit 0.
+One ordinary subject entered at `2026-09-20T18:47:40.290Z`; 168 read-only Docker
+SQL samples observed the initial checkpoint and its normal periodic save at
+`19:02:45.700Z`. The bot then walked to Vandar while SQL still held Asak's saved
+position. No GM, save-interval override, SQL mutation or quest reset was used.
+
+The owner killed container
+`6ac58cdba772063e28ce6b26c135f642e3b48dde6d44b97cb958f918fcc8129e`
+with exit 137, then restarted that exact container and unchanged image. The new
+process started at `19:02:55.560Z`; fresh startup/registration was ready at
+`19:03:13.387Z`. A new GS heartbeat at `19:03:11.923Z` satisfies the corrected
+strictly-later-second rule, and the watcher recorded exactly two expected process
+events and a completed crash expectation.
+
+World entry at `19:03:13.757Z` restored `(560.83,2788.11,299.052)`, not the later
+unsaved `(526.99,2775.67,295.75)`. The exact before/after inventory and level
+comparison passed: 13 entries and 1,000 kinah. Duplicate authentication returned
+code 7 at `19:03:13.835Z`, followed by the original session's required kick and
+close at `19:03:13.839Z`. After ordinary delayed logout/reentry, fresh world entry
+at `19:03:34.559Z`, final inventory check, quit/offline and `scenario:complete`
+at `19:03:34.575Z` all passed.
+
+The final enforced summary has zero new/known/regressed unallowlisted problems,
+two existing narrowly allowed startup reports and `failed=false`. The bot ledger
+is empty; post-cleanup raw GS problems contain only fingerprint `231c488f` twice,
+and LS/CS problem files are empty. Controller failure is null with no cleanup
+errors. All four isolated containers, network and ephemeral database were
+removed; the maintainer's Docker MySQL and unrelated container remain untouched.
+There are now no running bots. The failed O1-a evidence is retained, not retried
+into a pass. P10-03 is complete; Phase 10's broader acceptance remains incomplete.
+
+Pre-commit checks pass: 4,393 solution tests / 27 explicit skips, warning baseline
+4,243, all ancillary CLAUDE.md checks including 463 controller/runner assertions.
+Logs: `run/p10-03-close-*.log`. This evidence-only closeout changes no gameplay,
+upstream automation, warning baseline or global allowance.
 
 ## Scope decisions
 
