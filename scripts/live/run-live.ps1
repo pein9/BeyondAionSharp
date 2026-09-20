@@ -22,6 +22,7 @@ param(
 
 	[int]$Seed = 1,
 	[ValidateRange(1, 7200)][int]$SoakSeconds = 7200,
+	[ValidateRange(1, 7200)][int]$SoakHeapReadyTimeoutSeconds = 5400,
 	[string]$SoakActivities = 'Quest,Gather,Craft,Vendor,Trade,Group,Duel,Pvp,Relog,CrashDisconnect',
 
 	[switch]$PacketTap,
@@ -279,6 +280,13 @@ try {
 		)
 		$watcherProcess = Start-Process -FilePath 'dotnet' -ArgumentList $watcherArguments -WorkingDirectory $repoRoot `
 			-RedirectStandardOutput $watcherStdout -RedirectStandardError $watcherStderr -WindowStyle Hidden -PassThru
+
+		if ($Scenario -contains 'SOAK' -and $SoakSeconds -eq 7200) {
+			. (Join-Path $PSScriptRoot 'soak-heap-readiness.ps1')
+			Wait-SoakHeapReadiness -RunDirectory $runPath -Run $Run -TimeoutSeconds $SoakHeapReadyTimeoutSeconds -CheckWatcher {
+				if ($watcherProcess.HasExited) { throw 'Log watcher exited before soak heap readiness.' }
+			}
+		}
 
 		$gitSha = (& git rev-parse HEAD).Trim()
 		if ($LASTEXITCODE -ne 0) { throw 'Could not resolve the run Git SHA.' }

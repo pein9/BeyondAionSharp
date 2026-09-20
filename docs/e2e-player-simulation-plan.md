@@ -1960,7 +1960,10 @@ real geodata on in production immediately, because geo is enabled by default; th
   Kisks cannot overwrite the subject's evidence. The run completes 453 cohort actions and eleven
   alternating PvP kill/revive/recovery cycles, with fifth-kill 1-AP rewards in both directions,
   binding preservation across relogs/crashes, final inventory/offline checks and enforced watching.
-  Natural expiry/replacement and the scaled mixed workload remain unproven.
+  Natural expiry/replacement is now observed for all ten PvP subjects in
+  `p10-02-capacity-matrix-b-soak-50`, followed by another PvP cycle. The full fifty-subject workload,
+  finite quests, economy statistics and enforced watching pass, but the population is **not accepted**:
+  chat has no completed GC early enough to supply two required heap windows (#94).
   Foundation validation: 21 focused identity/policy tests and 500 TCP key-exchange/close smoke cases pass;
   neither proves a populated world or a two-hour soak. The TODO remains unchecked until full runtime evidence.
   Runtime checkpoint: 10- and 50-subject, three-minute group/trade/relog/crash diagnostics pass (74/368
@@ -1979,8 +1982,10 @@ real geodata on in production immediately, because geo is enabled by default; th
   Details and checkpoint limitations: `docs/e2e-phase10-validation.md`.
   Two obsolete fifty-subject mixed runs showed post-warm-up armed-timer growth;
   both were aborted as failed diagnostics after the natural Kisk-expiry harness hang (#90).
-  The conquest accumulation defect (#88) is fixed, but its LIVE impact is unproven and
-  the plateau threshold is unchanged. An opt-in
+  The conquest accumulation defect (#88) is fixed; matrix-b's game-server timer medians
+  are 900, 911, 905.5, 902, 904.5 and 900 across six complete post-warm-up windows,
+  with memory/dispatch gates passing. This does not override the separate chat heap availability
+  failure. The plateau thresholds are unchanged. An opt-in
   per-callback timer census in the bot stack records active kinds/delays/periods
   for diagnosis without retaining completed tasks or changing scheduling.
 - [ ] **P10-03** [LIVE] S — Crash and restart: kill the game server mid-session, restart, relog succeeds, delayed save is
@@ -2264,6 +2269,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 91 | Optional timer census shares the heartbeat logger, but telemetry parsing assumed every event in that category was a heartbeat (harness report defect) | No Java analogue; economy50-census-a finishes 1,070 actions with clean enforced watching, then rejects its first census event as changed heartbeat metrics | Parser recognizes the specific census event without counting it as a heartbeat, retaining its bytes in the source hash. Regression keeps wrong identities, corrupt census and unknown events failing. Original runner exit remains failed; separately named replay parses the retained evidence and correctly fails the short-duration capacity gate |
 | 92 | Reproduction bundles use `File.ReadLines` on an actively written server log; its Windows share mode can throw or deny a concurrent append, interrupting summary/bundle creation (harness infrastructure defect) | No Java analogue; `ProblemBundleWriter.WriteServerContext`. A regression holds a real writable file handle open while running the watcher and reproduces `IOException` at `File.ReadLines` in both matched-message and fallback paths | Server context now uses the existing `FileTail` shared finite snapshot. Tests preserve the 200-line matched context / 101-line fallback bounds, omit the unfinished record, verify metadata is written and leave the producer writable. No error is suppressed or allowed; the active capacity binary is not hot-patched |
 | 93 | Temporary NPC object-ID auto-release is not wired in C# | Java `AionObject(int, boolean)` at `ce54b7931` registers a Cleaner that first calls `RespawnService.setAutoReleaseId`, otherwise `IDFactory.releaseId`; `Npc` passes true, including the `Kisk` → `SummonedObject` → `Npc` path. C# `AionObject` discards `autoReleaseObjectId`; `World.RemoveObject` does not replace that cleanup and no caller wires `RespawnService.SetAutoReleaseId` | **OPEN.** Removed, collected temporary objects can leave IDs reserved in the C# factory. This is a source-confirmed lifecycle gap, not a measured explanation of the current soak's memory/timer behavior. Do not add an immediate release at deletion: Java preserves ownership until collection and coordinates pending respawns. A future fix needs lifetime/respawn tests and a bot regression for a replacement Kisk reusing a retired ID. No production or bot behavior changed during the running capacity matrix |
+| 94 | Capacity startup checks service readiness but not availability of the required last-GC heap observations (harness precondition gap) | No Java analogue; matrix-b-soak-50 completes 4,732 cohort actions with clean workload/economy/watcher verdicts, but chat's first collection arrives after its first post-warm-up window and too late for sufficient samples in the second. Its managed-heap plateau is correctly insufficient, not a measured zero; all other telemetry gates pass | Full-duration SOAK now waits, before starting bots, for fresh same-run heartbeat observations with a completed GC on LS/CS/GS. This is bounded to 90 minutes by default and journaled separately, with the watcher active throughout. No forced GC, allocation pressure, fabricated data, threshold change or retrospective acceptance. Short diagnostics are unchanged. The original failed matrix is retained; a fresh matrix is still required |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the

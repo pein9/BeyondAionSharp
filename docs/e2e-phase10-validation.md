@@ -1250,6 +1250,66 @@ Documentation-only validation: full solution 4,303 passed / 24 explicit skips;
 warning baseline 4,243; all CLAUDE.md ancillary checks pass. No gameplay change,
 upstream automation change, or additional LIVE stack was introduced.
 
+## P10-02 matrix-b: complete 50-subject workload, failed heap availability
+
+`run/p10-02-capacity-matrix-b/p10-02-capacity-matrix-b-soak-50` uses bot source
+`87db142f6c8130938419cd2edf6c466d6aef0427`, seed 73, and game image
+`sha256:1f38a4c1c4e5f45832ae7ba8eff67c98ecdd562d9091c7f04fb5d9df5217559d`
+(production `83836fe47`). The measured window is 2026-09-20 08:02:43.0798546–
+10:02:43.0798546 UTC; in-flight work and cleanup finish at 10:06:29.3262372 UTC.
+The owning LIVE invocation succeeds, but overall soak acceptance **fails** and
+the Full runner stops before 200/500. The failed terminal journal and all raw
+artifacts remain unchanged. P10-02 stays unchecked.
+
+- Workload replay passes for all 50 subjects and 4,732 cohort actions; all eight
+  fifteen-minute activity windows have progress. Twenty eligible quest subjects
+  persist Q1/Q2 exactly once; all subjects finish inventory/quit/offline checks.
+- Economy fixed-prefix and whole-stream gates pass: 3,347 craft attempts and 714
+  gather attempts, with twenty enrolled subjects per activity and twenty-prefix
+  samples per subject. These are production-random outcomes, not rate overrides.
+- All ten PvP subjects naturally retire their initial Kisk and bind a replacement.
+  Retained packets verify removal notice, old-ID deletion, ordinary ten-second
+  item cast, creator-matched fresh 72-charge/7,200-second update and new bind point.
+  All ten subsequently complete their 62nd PvP cycle. For example, b39 receives
+  the old Kisk 134342's final one-second update/removal/deletion at 10:02:53.780 UTC,
+  then binds 145987 at 10:03:04.139 UTC and completes the cycle at 10:04:16.171 UTC.
+- Enforced watcher: one existing suppressed startup fingerprint; zero new,
+  known or regressed problems. Retained cache: 3,264 records / 773,602 characters.
+- Game-server telemetry passes all six complete windows: timer medians 900,
+  911, 905.5, 902, 904.5, 900; working-set endpoint growth 13,015,040 bytes and
+  last-GC heap endpoint growth 4,974,952 bytes. Of 2,037,105 dispatch observations,
+  p99 upper bound is 0.5 ms, p99.9 is 5 ms, maximum is 114.7255 ms, and oldest
+  pending age is 0.4668 ms. These measure preparation dispatch, not network RTT.
+- Login telemetry passes. Chat heartbeat/working-set/timer checks pass, but its
+  first completed GC is too late: the first heap window has no samples and the
+  second has only sixteen. The last-GC metric is unavailable before that event,
+  not zero. This sole failing gate prevents population acceptance.
+
+The correction is a capacity-only startup precondition, not a policy relaxation.
+`scripts/live/soak-heap-readiness.ps1` waits for all three fresh, same-run heap
+observations before any bots start. It keeps error watching active, takes bounded
+shared-file snapshots, ignores partial edge records, preserves timestamp offsets,
+rejects invalid identities/schema, and fails on watcher exit or a 90-minute default
+timeout (`run-live.ps1 -SoakHeapReadyTimeoutSeconds`). No collection is forced and
+no allocation pressure is generated. `soak-heap-readiness.json` records the extra
+unmeasured setup time separately; it never claims capacity acceptance. The normal
+two-hour workload, thirty-minute workload warm-up, six-window policy and all
+thresholds remain unchanged. Short diagnostic runs do not incur this preflight.
+Earlier startup growth is outside the measured workload, as with other setup;
+this does not prove startup memory is flat or that an idle runtime must collect.
+
+The new readiness contract is exercised by the existing mandatory
+`scripts/live/test-run-soak.ps1` check. A fresh owning matrix is still required;
+the old failed invocation cannot be upgraded by changing its report.
+
+Preflight validation passes: full solution 4,303 tests / 24 explicit skips,
+warning baseline 4,243, Docker Fast 6/6 (37.3 seconds), every CLAUDE.md ancillary
+check, and the new readiness contract through the existing soak-runner check.
+The contract exercises the actual capacity-only runner guard as well as missing,
+uncollected, measured-zero, stale, wrong-identity and offset-preserving samples;
+shared bounded reads, partial records, timeout, watcher exit and a waiting-to-ready
+transition are covered. Its operational wait still needs a fresh LIVE run.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

@@ -2,6 +2,7 @@
 param()
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+& (Join-Path $PSScriptRoot 'test-soak-heap-readiness.ps1')
 $tokens = $null; $errors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'run-soak.ps1'), [ref]$tokens, [ref]$errors)
 if ($errors.Count -ne 0) { throw 'Soak runner did not parse.' }
