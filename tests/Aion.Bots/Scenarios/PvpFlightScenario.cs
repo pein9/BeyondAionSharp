@@ -80,6 +80,8 @@ public static class PvpFlightScenario
 			// These pin the configured contract, not the production reward function as its own oracle.
 			var win = elyos.Api.World.AbyssRank!;
 			var loss = asmodian.Api.World.AbyssRank!;
+			SoloPvpRewardContract.AssertMatches(SoloPvpRewardContract.Predict(beforeWinner, beforeVictim,
+				10, 10, elyos.Api.World.Level, killsAgainstVictimInWindow: 1), win, loss);
 			Require(win.Ap == beforeWinner.Ap + 300 && loss.Ap == beforeVictim.Ap - 90, $"Wrong PvP AP deltas: {win.Ap - beforeWinner.Ap}/{loss.Ap - beforeVictim.Ap}.");
 			Require(win.AllKills == 1 && win.Daily.Kills == beforeWinner.Daily.Kills + 1 && win.Weekly.Kills == beforeWinner.Weekly.Kills + 1 && loss.AllKills == 0,
 				"PvP kill counters did not update exactly once.");

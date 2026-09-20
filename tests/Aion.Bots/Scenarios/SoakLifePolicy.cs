@@ -31,6 +31,7 @@ public sealed class SoakLifePolicy
 	private int[] bag = [];
 	private int next;
 	private long sequence;
+	private bool questJourneyCompleted;
 
 	public SoakLifePolicy(int seed, SoakCohort cohort)
 	{
@@ -46,7 +47,8 @@ public sealed class SoakLifePolicy
 	{
 		if (next == bag.Length)
 		{
-			bag = Enumerable.Range(0, actions.Length).ToArray();
+			bag = Enumerable.Range(0, actions.Length)
+				.Where(i => !questJourneyCompleted || actions[i].Activity != SoakActivity.Quest).ToArray();
 			for (int i = bag.Length - 1; i > 0; i--)
 			{
 				int other = random.Next(i + 1);
@@ -55,6 +57,19 @@ public sealed class SoakLifePolicy
 			next = 0;
 		}
 		return new SoakDecision(++sequence, actions[bag[next++]], TimeSpan.FromMilliseconds(random.Next(1000, 5001)));
+	}
+
+	/// <summary>
+	/// Retire the single-completion Q1/Q2 journey after both subjects' completion has been verified.
+	/// This changes scheduling only; it never abandons, resets or modifies server quest state.
+	/// </summary>
+	public void CompleteQuestJourney()
+	{
+		if (questJourneyCompleted || !actions.Any(action => action.Activity == SoakActivity.Quest) || actions.Length == 1)
+			throw new InvalidOperationException("Quest retirement requires an unfinished quest journey and remaining activities.");
+		questJourneyCompleted = true;
+		bag = bag.Skip(next).Where(i => actions[i].Activity != SoakActivity.Quest).ToArray();
+		next = 0;
 	}
 
 	/// <summary>Distribute each starter-zone population evenly over its five shipped channels.</summary>

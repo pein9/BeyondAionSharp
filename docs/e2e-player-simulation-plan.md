@@ -1919,6 +1919,13 @@ real geodata on in production immediately, because geo is enabled by default; th
   Repeatable duels are under validation, reusing S1's combat flow with ordinary HP/MP rest recovery,
   race-specific spell timing and alternating winner roles. Quest/PvP drivers, remaining resource coordination, telemetry
   and two-hour evidence remain required. This is still not acceptance of the full mixed workload.
+  The quest loop cannot reset completed starter quests: shipped Q1/Q2 quests permit one completion.
+  D16 settles the workload: complete Q1/Q2 once per bot, then continue the other activities. The scheduler
+  can retire a completed cohort journey without replaying it or discarding queued non-quest activities;
+  the runtime must verify both subjects' completions before retiring it. No quests are added or reset.
+  PvP reward assertions now have an independent ordinary-rate solo-soldier oracle, including the native
+  fifth-opponent-kill reduction to 1 AP, rank changes and victim AP loss. Repeated PvP resurrection/return
+  still needs implementation and LIVE proof; the oracle alone does not make the workload available.
   Foundation validation: 21 focused identity/policy tests and 500 TCP key-exchange/close smoke cases pass;
   neither proves a populated world or a two-hour soak. The TODO remains unchecked until full runtime evidence.
   Runtime checkpoint: 10- and 50-subject, three-minute group/trade/relog/crash diagnostics pass (74/368
@@ -2098,6 +2105,7 @@ exits (`docker compose events`) and MySQL errors.
 | D12 | How Java golden fixtures are generated against `lastCompletedJavaCommit` | Bring the generator tests forward onto the spec revision | **Approved** 2026-09-17: branches or worktrees in `../aion-server` are allowed when needed |
 | D14 | Trade catalogs attached to NPCs without their corresponding trade action | Report separately as inactive content, not successful transactions or missing-spawn rows | **Approved** 2026-09-19: do not enable new vendors; independently verify the missing action from shipped NPC data |
 | D15 | Java runtime comparisons in P10-06 | Defer; keep Java as source/golden reference only | **Decided** 2026-09-19: maintainer explicitly deferred Java runtime comparisons; Phase 10 continues with C#-only execution |
+| D16 | Single-completion Q1/Q2 quests during the two-hour soak | Complete once per bot, then continue other activities | **Decided** 2026-09-19: maintainer selected finite completion; do not add quests, reset completed state or substitute abandon/reaccept loops |
 
 ---
 

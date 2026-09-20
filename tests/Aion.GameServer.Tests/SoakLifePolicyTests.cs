@@ -67,6 +67,66 @@ public sealed class SoakLifePolicyTests
 	}
 
 	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public void CompletedQuestIsRemovedFromQueuedAndFutureCyclesWithoutLosingOtherActions(bool selectQuestFirst)
+	{
+		var pair = SoakLifePolicy.CreatePopulation(50, ScenarioManifest.Load(ScenarioManifest.FindDefaultPath()))[0];
+		var expected = new SoakLifePolicy(73, pair);
+		SoakDecision[] cycle = Enumerable.Range(0, pair.Actions.Count).Select(_ => expected.Next()).ToArray();
+		int consumed = selectQuestFirst ? Array.FindIndex(cycle, decision => decision.Action.Activity == SoakActivity.Quest) + 1 : 0;
+		var policy = new SoakLifePolicy(73, pair);
+		for (int i = 0; i < consumed; i++) Assert.Equal(cycle[i], policy.Next());
+		// Populate a cycle before retiring its still-queued quest, if necessary.
+		if (!selectQuestFirst)
+		{
+			Assert.NotEqual(SoakActivity.Quest, cycle[0].Action.Activity);
+			Assert.Equal(cycle[0], policy.Next());
+			consumed = 1;
+		}
+		policy.CompleteQuestJourney();
+		long sequence = consumed;
+		foreach (var queued in cycle.Skip(consumed).Where(decision => decision.Action.Activity != SoakActivity.Quest))
+		{
+			var decision = policy.Next();
+			Assert.Equal(queued.Action, decision.Action);
+			Assert.Equal(++sequence, decision.Sequence);
+		}
+		var remaining = pair.Actions.Where(action => action.Activity != SoakActivity.Quest).Select(action => action.Activity).Order().ToArray();
+		for (int i = 0; i < 20; i++)
+		{
+			var decisions = Enumerable.Range(0, remaining.Length).Select(_ => policy.Next()).ToArray();
+			Assert.Equal(remaining, decisions.Select(decision => decision.Action.Activity).Order());
+			foreach (var decision in decisions)
+			{
+				Assert.Equal(++sequence, decision.Sequence);
+				Assert.InRange(decision.ThinkTime.TotalMilliseconds, 1000, 5000);
+			}
+		}
+	}
+
+	[Fact]
+	public void QuestRetirementIsDeterministicAndRejectsInvalidOrRepeatedCompletion()
+	{
+		var pairs = SoakLifePolicy.CreatePopulation(50, ScenarioManifest.Load(ScenarioManifest.FindDefaultPath()));
+		var first = new SoakLifePolicy(73, pairs[0]);
+		var second = new SoakLifePolicy(73, pairs[0]);
+		first.CompleteQuestJourney();
+		second.CompleteQuestJourney();
+		for (int i = 0; i < 100; i++)
+		{
+			var decision = first.Next();
+			Assert.Equal(second.Next(), decision);
+			Assert.NotEqual(SoakActivity.Quest, decision.Action.Activity);
+		}
+		Assert.Throws<InvalidOperationException>(first.CompleteQuestJourney);
+		Assert.Throws<InvalidOperationException>(new SoakLifePolicy(73, pairs[2]).CompleteQuestJourney);
+		var questOnly = new SoakLifePolicy(73, pairs[0] with { Actions = [new(SoakActivity.Quest, "Q1")] });
+		Assert.Throws<InvalidOperationException>(questOnly.CompleteQuestJourney);
+		Assert.Equal(SoakActivity.Quest, questOnly.Next().Action.Activity);
+	}
+
+	[Theory]
 	[InlineData(0)]
 	[InlineData(8)]
 	[InlineData(11)]

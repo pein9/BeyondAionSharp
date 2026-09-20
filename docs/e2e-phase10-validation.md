@@ -319,6 +319,56 @@ quest-compiler/report tests, retention and Full-suite contracts passed.
 vendor, group, trade, relog and crash disconnect. LIVE repeated-duel validation is
 pending; this is not yet full P10-02 acceptance.
 
+## P10-02 repeated PvP reward contract (runtime still missing)
+
+`SoloPvpRewardContract` provides an independent AP/rank/counter oracle for GP-zero
+soldiers, ordinary account rates, and one opposing damage source. It does not call
+production reward functions. The source is `PvpService.rewardPlayerTeam`,
+`KillCounter`, `StatFunctions.calculatePvpApGained/calculatePvPApLost`,
+`AbyssRankEnum`, `AbyssRank.addAp` and `AbyssPointsService` at `ce54b7931`.
+
+Java increments its rolling opponent counter before comparing it strictly against
+the default limit five: kills 1–4 receive full AP, kill 5 onward receives 1 AP.
+Victim AP loss still applies and clamps at zero. AP gains update earned daily/weekly
+totals, losses do not subtract from those totals, and every credited kill increments
+the kill counters. Level and soldier-rank penalties preserve single-precision Java
+rounding. Victim loss uses the winner's level **after** the kill XP reward; the
+winner's AP gain uses the level before that reward. Leaderboard cache position is
+explicitly outside this per-kill contract; rank, max rank, GP and period counters
+are checked. Officer/GP-bearing snapshots are rejected. Teams, boosted rates and
+AP caps are outside this model; callers must use the ordinary-rate, uncapped profile.
+
+Fourteen focused cases pin the fifth-kill boundary, level penalties (including
+90 × 0.65f rounding to 58), level-up ordering, rank promotion/demotion, rank-penalty
+cutoff, zero-AP victims and injected wrong rewards/counters/GP. The existing S2
+flight/combat scenario now invokes this oracle in addition to its original
+first-kill +300/-90 checks. Repeated PvP runtime, ordinary resurrection and return
+remain required; this checkpoint does not claim those paths or fifth-kill LIVE
+execution. The server's anti-farming limits are not disabled or reset.
+
+Docker SIM `p10-02-pvp-oracle-sim` passed (Full shard-36/100, selecting S2,
+seed 73), exercising the first-kill oracle through the real server. The
+fifth-kill boundary is currently a focused contract test, not repeated LIVE proof.
+
+## P10-02 finite quest scheduling (runtime still missing)
+
+D16 settles the single-completion starter workload: each eligible bot completes
+its racial Q1/Q2 journey once, then continues the other activities. The policy's
+explicit completion operation removes Quest from the unconsumed shuffle and all
+future cycles, preserving queued non-quest actions, continuous sequence numbers,
+seeded reproducibility and ordinary think times. Duplicate completion, a cohort
+without quests, and retirement with no remaining activities fail visibly.
+
+This is scheduling infrastructure, not a claim that the mixed-workload quest
+driver exists. That driver must verify both cohort subjects' real quest completion
+before calling the operation. Nothing changes server quest state or adds content.
+
+Checkpoint validation: 26 focused policy/reward cases passed. The full solution
+passed 4,172 tests with 22 explicit skips; compiler warnings stayed at 4,243.
+Docker Fast `p10-02-finite-quest-fast` passed 6/6. Logger/clock/custom-quest
+ratchets, fidelity, ten quest-compiler tests, 23 report tests, retention and
+Full-suite contracts all passed. No new allowance or production behavior change.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
