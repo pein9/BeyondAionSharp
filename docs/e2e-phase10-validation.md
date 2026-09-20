@@ -1702,6 +1702,89 @@ tests / 26 explicit skips, warning baseline 4,243, all CLAUDE.md ancillary check
 and the focused six-code regression. No gameplay, server image, timing gate or
 upstream automation change.
 
+## P10-02 gather500-e/f Windows socket failure
+
+Both diagnostics use source `9a7a8c3d3`, the corrected login image from `ac08359f8`,
+and the unchanged game image. Each prepares 500 subjects for the same 600-second
+Gather/Vendor/Relog selection: 200 gatherers, 300 relog-only subjects. This is a
+concentrated reconnect workload, not the full mixed life policy.
+
+| Run | Workload start/end (UTC, 2026-09-20) | Duration | First failure | Gather outcomes |
+|---|---|---:|---|---:|
+| `p10-02-gather500-e` | 14:48:24.5491965–14:52:16.8001395 | 232.2508567 s | b136, 14:52:06.487, opening login socket | 196 across 175 subjects |
+| `p10-02-gather500-f` | 14:57:43.1797496–14:58:54.1867903 | 71.0070044 s | b40, 14:58:50.032, opening game socket | 8 across 8 subjects |
+
+Both throw Windows `SocketException` 10055 from
+`Socket.WildcardBindForConnectIfNecessary`. Both clocks are consistent (wall/
+monotonic differences 0.0000863 / 0.0000363 seconds). Their owners exit 1 and
+remove only their own Docker stacks. LS/CS raw problem logs are empty; GS has
+only the existing startup allowance. Watcher summaries are respectively
+458/457 observations, one suppressed, zero new/known, one regressed and 456/455
+repeated. Generic bot fingerprint `ebe67ab3` retains the primary socket errors
+and cancellation fallout under open #103, not a new allowance.
+
+The first post-e host snapshot at 14:52:47 has 4,600 TIME_WAIT rows, including
+1,743 client connections to login, 502 to game and 121 to admin. That is after
+cleanup, not a failure-time peak. Windows reports dynamic TCP ports 49152–65535;
+excluded intervals within this range total 660 ports. Queries found no System
+events 4227/4231/2004 in the relevant recent interval. `MaxUserPort`, `MaxFreeTcbs`,
+`MaxHashTableSize`, `TcpNumConnections` and `TcpTimedWaitDelay` have no explicit
+values in the queried TCP parameters key; absence is not a measured limit.
+
+For f, one-off local read-only samplers retain `host-sockets.jsonl` (28 snapshots)
+and `bot-process.jsonl` (17 snapshots), with explicit PID/start-time identity,
+timestamps and bounded lifetimes. They capture aggregate TCP state/target-port
+counts and resource usage, not packet contents or unrelated remote addresses.
+The first sampler's process rows are dotnet wrappers; the second follows actual
+`Aion.LiveBots.exe` PID 60528. Observed maxima: 5,112 TCP rows, 2,346 distinct
+ephemeral local ports, 2,185 bot handles, 2,014,556,160 bot private bytes,
+1,641,574,400 nonpaged pool bytes; observed available memory never falls below
+21,328,646,144 bytes. Sampling gaps and post-failure cleanup mean these are not
+continuous maxima or proof of the exact failing resource.
+
+These results do **not** establish ordinary port-range exhaustion or an unclosed
+socket leak. [Microsoft's troubleshooting guidance](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/tcp-ip-port-exhaustion-troubleshooting)
+likewise distinguishes TIME_WAIT churn from confirmed exhaustion. No host settings,
+port ranges, close semantics, buffers, gameplay concurrency or refusal checks are
+changed on a speculative diagnosis. The maintainer has been offered optional
+Docker-hosted Linux bot execution; no implementation decision is inferred.
+
+## P10-02 full-mixed 500-subject timeout diagnostic
+
+`p10-02-mixed500-a` restores all ten activities with the same source `9a7a8c3d3`,
+corrected login / unchanged game images, seed 73 and 600-second duration. The
+only tracked dirty file at launch was the generated problem ledger; documentation
+was edited subsequently. All 500 subjects prepare. Workload starts at
+2026-09-20 15:03:21.7745674 UTC and fails at 15:03:51.8067951 after 30.0321938
+monotonic seconds (clock drift 0.0000339 seconds). No gathering outcome completes.
+
+The first recorded problem at 15:03:37.003 is `No matching cast start within 10
+seconds.` on b328's enclosing paired step. The actual caster is b327, which sends
+`CM_TARGET_SELECT` and `CM_CASTSPELL` at 15:03:23.598 after both reciprocal duel
+start packets. Its final received packet is an unrelated `SM_MOVE` at that same
+timestamp. Across all bot traces, 15:03:24 contains five records, seconds 25–33
+contain none, and activity resumes at second 34. GS heartbeats continue at seconds
+28/38 with packet queue depth zero, no pending dispatcher writes and maximum
+completed dispatch latencies 151.9183 / 19.3789 ms. This is a clue for load-generator
+stall diagnosis, **not proof** of thread-pool starvation, a server cast defect, or
+the exact location of the missing response. No production or timeout change is
+made on this evidence.
+
+Bot problems contain one timeout and 487 cancellation records, no socket error.
+LS/CS raw problem logs are empty; GS contains only the existing startup allowance.
+Enforced watcher reports 489 observations: one suppressed, zero new/known, two
+regressed, 486 repeated. The owner exits 1 and removes only its Docker stack.
+Retained read-only `host-sockets.jsonl` has 24 samples: maximum 2,263 TCP rows /
+1,143 distinct ephemeral ports and minimum 20,877,230,080 available bytes. Its
+process rows describe dotnet wrappers, not actual bot apphost resource usage.
+
+This failed diagnostic does not replace e/f or satisfy the two-hour capacity gate.
+Independent matrix-d 200 remains in natural heap preflight on its original output
+directory; 500 has not started. Diagnostic/sampler and validation overhead overlaps
+that preflight, not a completed capacity measurement. Evidence checkpoint checks
+pass: 4,314 solution tests / 26 skips, warning baseline 4,243, and every CLAUDE.md
+ancillary check. No gameplay or upstream automation change.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
