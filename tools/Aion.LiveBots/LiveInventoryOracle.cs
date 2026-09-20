@@ -17,10 +17,9 @@ internal sealed partial class LiveBotSession
         await WaitForPacketAsync(typeof(SM_TIME_CHECK), token);
         var items = Api.World.Inventory.Values.ToArray();
         long kinah = Api.World.Kinah;
-        using var client = new HttpClient { BaseAddress = options.AdminBaseUri };
         using var request = new HttpRequestMessage(HttpMethod.Get, $"admin/player-storage-state?recipientCharacterId={characterId}");
         request.Headers.Add("X-Admin-Token", options.AdminToken);
-        using var response = await client.SendAsync(request, token);
+        using var response = await AdminClient.SendAsync(request, token);
         response.EnsureSuccessStatusCode();
         await using var content = await response.Content.ReadAsStreamAsync(token);
         using var document = await JsonDocument.ParseAsync(content, cancellationToken: token);

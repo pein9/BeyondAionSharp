@@ -170,11 +170,10 @@ internal sealed partial class LiveBotSession
 {
 	public async Task<int> ReadCubeFreeSlotsAsync(CancellationToken token)
 	{
-		using var client = new HttpClient { BaseAddress = options.AdminBaseUri };
 		using var request = new HttpRequestMessage(HttpMethod.Get,
 			$"admin/player-storage-state?recipientCharacterId={characterId}");
 		request.Headers.Add("X-Admin-Token", options.AdminToken);
-		using HttpResponseMessage response = await client.SendAsync(request, token);
+		using HttpResponseMessage response = await AdminClient.SendAsync(request, token);
 		response.EnsureSuccessStatusCode();
 		await using Stream content = await response.Content.ReadAsStreamAsync(token);
 		using JsonDocument document = await JsonDocument.ParseAsync(content, cancellationToken: token);

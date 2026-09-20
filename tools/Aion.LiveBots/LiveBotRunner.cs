@@ -668,7 +668,11 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		bool director = string.Equals(account, LiveGmFacade.DirectorAccount, StringComparison.Ordinal);
 		macBytes = BotIdentity.MacBytes(director ? 1 : BotIdentity.ParseSubjectNumber(bot), director);
 		macAddress = BotIdentity.MacAddress(macBytes);
+		AdminClient = new HttpClient { BaseAddress = options.AdminBaseUri };
 	}
+
+	// Keep the read-only oracle connection pool across relogs; requests own their authentication headers.
+	internal HttpClient AdminClient { get; }
 
 	public void BeginStep(string step) => currentStep = step;
 	public int CharacterId => characterId;
@@ -1092,11 +1096,10 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 
 	public async Task VerifyOfflineAsync(CancellationToken cancellationToken)
 	{
-		using var client = new HttpClient { BaseAddress = options.AdminBaseUri };
 		using var request = new HttpRequestMessage(HttpMethod.Get,
 			$"admin/player-state?characterName={Uri.EscapeDataString(characterName)}");
 		request.Headers.Add("X-Admin-Token", options.AdminToken);
-		using var response = await client.SendAsync(request, cancellationToken);
+		using var response = await AdminClient.SendAsync(request, cancellationToken);
 		response.EnsureSuccessStatusCode();
 		await using var content = await response.Content.ReadAsStreamAsync(cancellationToken);
 		using var document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
@@ -1144,9 +1147,16 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 	public async ValueTask DisposeAsync()
 	{
 		quitExpected = true;
-		await CloseChatAsync();
-		await CloseConnectionAsync(CancellationToken.None);
-		sendLock.Dispose();
+		try
+		{
+			await CloseChatAsync();
+			await CloseConnectionAsync(CancellationToken.None);
+		}
+		finally
+		{
+			AdminClient.Dispose();
+			sendLock.Dispose();
+		}
 	}
 
 	private async Task LoginServerAsync(CancellationToken cancellationToken)

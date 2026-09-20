@@ -58,10 +58,9 @@ public static partial class LiveBotRunner
 		public Task DelayAsync(TimeSpan delay, CancellationToken token) => Task.Delay(delay, token);
 		public async Task VerifyStoredAsync(bool exists, CancellationToken token)
 		{
-			using var client = new HttpClient { BaseAddress = options.AdminBaseUri };
 			using var request = new HttpRequestMessage(HttpMethod.Get, $"admin/player-state?characterId={CharacterId}");
 			request.Headers.Add("X-Admin-Token", options.AdminToken);
-			using var response = await client.SendAsync(request, token);
+			using var response = await actor.Session.AdminClient.SendAsync(request, token);
 			await using var content = await response.Content.ReadAsStreamAsync(token);
 			using var document = await JsonDocument.ParseAsync(content, cancellationToken: token);
 			var root = document.RootElement;

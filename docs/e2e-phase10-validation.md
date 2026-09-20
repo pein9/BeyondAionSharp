@@ -1046,6 +1046,37 @@ before the ownership correction and are not retroactively assigned markers;
 their old standalone cleanup is protected by keeping newer root counts below
 its historical retention limit while it remains active.
 
+## P10-02 lifecycle isolation and HTTP pooling
+
+The older mixed fifty-subject run showed increasing armed-timer samples despite
+comparatively steady recent memory. A separate `p10-02-lifecycle50-a` selected
+only group/trade/relog/crash-disconnect for fifty subjects/600 seconds to help
+separate lifecycle pressure from the combat/economy workload. It ran on its own
+Docker project and ports 12136/17807/11271/17810, sharing the physical host with
+the two existing runs. It failed after 171.38 seconds at 06:46:21 UTC with Windows
+socket error 10055 while opening an HTTP connection for the offline-state oracle.
+The 47 retained bot records are two mirrored failures and 45 cancellation records;
+the watcher reports one regressed generic bot-assertion fingerprint. No allowance
+was added. Its stack was removed by normal cleanup; both older runs stayed live
+with empty bot-problem files at the immediate follow-up check.
+
+Inspection found six oracle paths constructed/disposed `HttpClient` on every
+read. A real loopback regression fails before the change (eight reads, eight TCP
+connections) and passes with one session-owned pool. All six paths now use that
+client across relogs, retain request-local authentication and response disposal,
+and dispose the pool on session teardown, even if transport cleanup throws.
+The regression also verifies that a disposed session rejects further HTTP reads.
+This corrects confirmed connection churn (#86), not a proven diagnosis of the
+host's 10055 failure. No retry, socket/OS tuning or gameplay change is introduced.
+The timer-growth investigation is separate and remains open pending evidence.
+
+The corrected `p10-02-lifecycle50-b` repeats the same fifty-subject/600-second
+diagnostic from `e7d820e04` plus the local HTTP-pooling diff. It is diagnostic,
+not capacity acceptance; terminal results remain pending at this checkpoint.
+Validation passes: full solution 4,287 tests / 24 explicit skips, warning baseline
+4,243, Docker Fast 6/6, and every CLAUDE.md ancillary check. Failure records and
+investigation limits are retained in the plan and known-problem ledger.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

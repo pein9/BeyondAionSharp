@@ -360,11 +360,10 @@ internal sealed partial class LiveBotSession
 
 	public async Task VerifyQuestRowsAsync(IEnumerable<int> questIds, CancellationToken cancellationToken)
 	{
-		using var client = new HttpClient { BaseAddress = options.AdminBaseUri };
 		using var request = new HttpRequestMessage(HttpMethod.Get,
 			$"admin/player-state?characterName={Uri.EscapeDataString(characterName)}");
 		request.Headers.Add("X-Admin-Token", options.AdminToken);
-		using HttpResponseMessage response = await client.SendAsync(request, cancellationToken);
+		using HttpResponseMessage response = await AdminClient.SendAsync(request, cancellationToken);
 		response.EnsureSuccessStatusCode();
 		await using Stream content = await response.Content.ReadAsStreamAsync(cancellationToken);
 		using JsonDocument document = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken);
