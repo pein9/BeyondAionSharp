@@ -10,6 +10,26 @@ namespace Aion.GameServer.Tests;
 public sealed class BotNavigationGeometryTests
 {
     [Fact]
+    public void StationaryGroundSampleDoesNotCastAZeroLengthCollisionRay()
+    {
+        var terrain = new Terrain(); terrain.SetHeightmap(Enumerable.Repeat((short)320, 2500).ToArray(), 50, 50);
+        var map = new RejectDegenerateRayMap(); map.SetTerrain(terrain);
+        var geometry = new BotNavigationGeometry(_ => map, 1, IgnoreProperties.ELYOS);
+        var point = new BotPosition(10, 10, 10, 0);
+        Assert.Equal(point, Assert.Single(geometry.TraceEdge(1, point, point)!));
+        Assert.NotNull(geometry.TraceEdge(1, point, point with { X = 12 }));
+    }
+
+    private sealed class RejectDegenerateRayMap() : GeoMap(1)
+    {
+        public override int CollideWith(Collidable other, CollisionResults results)
+        {
+            if (other is Aion.GameServer.GeoEngine.Math.Ray ray) Assert.True(ray.limit > 0, "A stationary sample has no collision segment.");
+            return base.CollideWith(other, results);
+        }
+    }
+
+    [Fact]
     public void JourneySearchCrossesLongSparseGapsButStillChecksEverySegmentAndBoundsDistance()
     {
         var map = Ground(size: 300); AddWall(map);

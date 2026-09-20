@@ -66,6 +66,31 @@ public sealed class BotResurrectionPacketTests
 		Assert.Throws<InvalidDataException>(() => decoder.Decode(type, [.. body, 0]));
 		return decoder.Decode(type, body);
 	}
+
+	[Fact]
+	public void NearbyUpdatesCannotOverwriteTheCreatorsOwnBoundedObservation()
+	{
+		var world = new BotWorldModel();
+		world.Apply(new(typeof(SM_STATS_INFO), new Dictionary<string, object?>
+		{
+			["objectId"] = 5678, ["level"] = (ushort)10, ["expNeeded"] = 0L, ["expRecoverable"] = 0L, ["expShown"] = 0L,
+			["maxHp"] = 100, ["currentHp"] = 100, ["maxMp"] = 100, ["currentMp"] = 100,
+			["maxDp"] = (ushort)0, ["dp"] = (ushort)0, ["maxFp"] = 60, ["currentFp"] = 60,
+		}));
+		world.Apply(decoder.Decode(typeof(SM_KISK_UPDATE), Kisk(1234, 72, 7190)));
+		byte[] neighbor = Kisk(9999, 72, 7200);
+		System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(neighbor.AsSpan(4), 9876);
+		world.Apply(decoder.Decode(typeof(SM_KISK_UPDATE), neighbor));
+		Assert.Equal(9999, world.LastKiskUpdate!.ObjectId);
+		Assert.Equal(1234, world.OwnedKiskUpdate!.ObjectId);
+		Assert.Null(world.KiskBindPoint);
+		world.BeginWorldReload();
+		Assert.Equal(1234, world.OwnedKiskUpdate.ObjectId);
+		world.Apply(decoder.Decode(typeof(SM_KISK_UPDATE), Kisk(1234, 0, 0)));
+		Assert.Equal(0, world.OwnedKiskUpdate.RemainingResurrects);
+		world.Apply(decoder.Decode(typeof(SM_KISK_UPDATE), Kisk(4321, 72, 7200)));
+		Assert.Equal(4321, world.OwnedKiskUpdate.ObjectId);
+	}
 	private static byte[] Bind(byte type, int map, int objectId) => Body(w =>
 	{
 		w.Write(type); w.Write((byte)1); w.Write(map);

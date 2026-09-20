@@ -13,7 +13,7 @@ namespace Aion.LiveBots;
 public static partial class LiveBotRunner
 {
 	private static readonly SoakActivity[] ImplementedSoakActivities =
-			[SoakActivity.Group, SoakActivity.Trade, SoakActivity.Relog, SoakActivity.CrashDisconnect, SoakActivity.Vendor, SoakActivity.Craft, SoakActivity.Gather, SoakActivity.Duel, SoakActivity.Quest];
+			[SoakActivity.Group, SoakActivity.Trade, SoakActivity.Relog, SoakActivity.CrashDisconnect, SoakActivity.Vendor, SoakActivity.Craft, SoakActivity.Gather, SoakActivity.Duel, SoakActivity.Quest, SoakActivity.Pvp];
 
 	private static async Task<int> RunSoakAsync(LiveBotOptions options, LiveBotProblemWriter problems, CancellationToken token)
 	{
@@ -30,7 +30,7 @@ public static partial class LiveBotRunner
 		var questResources = new SoakQuestResources(options.BotCount * 10);
 		BotNavigationAssets? navigationAssets = null;
 		var routes = new ConcurrentDictionary<(Race Race, int Instance), Lazy<(BotNavigationGraph Graph, BotNavigationGeometry Geometry)>>();
-		if (gatheringSpots.Count != 0 || options.SoakActivities.Contains(SoakActivity.Quest))
+		if (gatheringSpots.Count != 0 || options.SoakActivities.Any(action => action is SoakActivity.Quest or SoakActivity.Pvp))
 		{
 			string root = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../.."));
 			navigationAssets = await BotNavigationAssets.LoadAsync(root, Path.Combine(options.OutputDirectory, "navigation-cache"), token);
@@ -55,7 +55,12 @@ public static partial class LiveBotRunner
 				{
 					await InitializeAsync(actor, stop.Token);
 					var point = SoakStartPoint(cohort);
-					await MoveSubjectWithDirectorAsync(director, actor, gm, cohort.MapId, point.X + offset++, point.Y, point.Z, "soak-initial-position", stop.Token);
+					bool pvp = cohort.Actions.Any(action => action.Activity == SoakActivity.Pvp);
+					Race race = RaceOf(actor == first ? cohort.FirstRace : cohort.SecondRace);
+					if (pvp) point = SoakPvpCamp.Home(race);
+					else point = point with { X = point.X + offset++ };
+					await MoveSubjectWithDirectorAsync(director, actor, gm, cohort.MapId, point.X, point.Y, point.Z, "soak-initial-position", stop.Token);
+					if (pvp) actor.Session.Navigation = navigationAssets!.PvpCampRoute(race);
 					await actor.StepAsync("soak-initial-supplies", async ct =>
 					{
 						if (cohort.Actions.Any(action => action.Activity is SoakActivity.Gather or SoakActivity.Quest))
@@ -65,6 +70,12 @@ public static partial class LiveBotRunner
 								new GmCommand("set", ["level", "10"], "level to 10"), new GmSubject(actor.Session.CharacterId, actor.Session.CharacterName), ct);
 						await gm.ExecuteAsync(new GmCommand("add", [actor.Session.CharacterName, "182400001", "1000000"], "You gave"), cancellationToken: ct);
 						await gm.ExecuteAsync(new GmCommand("add", [actor.Session.CharacterName, "169300002", "100"], "You gave"), cancellationToken: ct);
+						if (pvp)
+						{
+							await gm.ExecuteAsync(new GmCommand("set", ["ap", "500"], "abyss points to 500"), new GmSubject(actor.Session.CharacterId, actor.Session.CharacterName), ct);
+							await gm.ExecuteAsync(new GmCommand("add", [actor.Session.CharacterName, SoakPvpCamp.Item(race).ToString(), SoakPvpCamp.InitialKisks.ToString()], "You gave"), cancellationToken: ct);
+							await actor.Session.WaitForInventoryItemAsync(SoakPvpCamp.Item(race), ct);
+						}
 						await actor.Session.WaitForInventoryItemAsync(169300002, ct);
 						await actor.Session.SynchronizeAsync(ct);
 					}, stop.Token);
@@ -80,7 +91,7 @@ public static partial class LiveBotRunner
 			await File.WriteAllTextAsync(Path.Combine(options.OutputDirectory, "soak-runtime.json"), JsonSerializer.Serialize(new
 			{
 				options.Seed, options.BotCount, options.SoakSeconds, Activities = options.SoakActivities.Select(value => value.ToString()),
-				Acceptance = false, Scope = "diagnostic activity subset; capacity telemetry and full workload pending", Cohorts = results,
+				Acceptance = false, Scope = "diagnostic workload; capacity telemetry and acceptance pending", Cohorts = results,
 			}, new JsonSerializerOptions { WriteIndented = true }), token);
 			Console.WriteLine($"SOAK diagnostic passed: {options.BotCount} subjects, {options.SoakSeconds}s, {results.Sum(result => result.Actions)} actions. Not full P10-02 acceptance.");
 			return 0;
@@ -130,6 +141,9 @@ public static partial class LiveBotRunner
 					await first.StepAsync("wait-for-population", ct => SoakDrainAsync(first, second, TimeSpan.FromSeconds(1), ct), stop.Token);
 				long began = await start.Task;
 				var policy = new SoakLifePolicy(options.Seed, cohort);
+				var pvpStates = cohort.Actions.Any(action => action.Activity == SoakActivity.Pvp)
+					? new[] { new SoakKiskState(RaceOf(cohort.FirstRace), navigationAssets!.KiskTemplate(RaceOf(cohort.FirstRace))),
+						new SoakKiskState(RaceOf(cohort.SecondRace), navigationAssets!.KiskTemplate(RaceOf(cohort.SecondRace))) } : [];
 				var counts = cohort.Actions.ToDictionary(action => action.Activity.ToString(), _ => 0L);
 				while (Stopwatch.GetElapsedTime(began) < TimeSpan.FromSeconds(options.SoakSeconds))
 				{
@@ -158,6 +172,8 @@ public static partial class LiveBotRunner
 							case SoakActivity.Duel:
 								bool firstWins = counts[SoakActivity.Duel.ToString()] % 2 == 0;
 								await SoakDuelAsync(firstWins ? first : second, firstWins ? second : first, RaceOf(cohort.FirstRace), inner); break;
+							case SoakActivity.Pvp:
+								await SoakPvpAsync(first, second, pvpStates, counts[SoakActivity.Pvp.ToString()], inner); break;
 							case SoakActivity.Relog:
 							case SoakActivity.CrashDisconnect:
 								bool crash = decision.Action.Activity == SoakActivity.CrashDisconnect;

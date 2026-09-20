@@ -131,7 +131,7 @@ pwsh scripts/live/run-live.ps1 -Run soak-diagnostic -Scenario SOAK -Bots 10 `
   -StepTimeoutSeconds 90 -Seed 73 -FullRun
 ```
 
-Default `SOAK` requests **all** activities and currently rejects the unimplemented
+At this early checkpoint default `SOAK` requested **all** activities and rejected the unimplemented
 ones before opening bot sessions. The PowerShell wrapper may already have started
 its disposable Docker stack at that point, and cleans it up. `run-full.ps1`
 continues to reject Soak/All before startup while `run-soak.ps1` is unavailable.
@@ -355,7 +355,7 @@ Docker SIM `p10-02-pvp-oracle-sim` passed (Full shard-36/100, selecting S2,
 seed 73), exercising the first-kill oracle through the real server. The
 fifth-kill boundary is currently a focused contract test, not repeated LIVE proof.
 
-## P10-02 finite quest workload (LIVE validation pending)
+## P10-02 finite quest workload (ten-subject diagnostic passed)
 
 D16 settles the single-completion starter workload: each eligible bot completes
 its racial Q1/Q2 journey once, then continues the other activities. The policy's
@@ -413,8 +413,19 @@ reconnecting (§7 #76). This is not a server quest failure or a passing run.
 The database assertion now runs after confirmed logout, before reconnect;
 count-one/nonrepeatable packet checks remain after login. Five focused contract
 cases reject online/missing snapshots, missing rows and wrong completion counts.
-Fresh twenty-minute run `p10-02-quest10-c` is in progress. Whole-cohort persistence,
-scheduler retirement and the final run outcome remain unproven.
+Fresh run `p10-02-quest10-c` passed ten subjects/twenty minutes, seed 73, with
+382 cohort actions. Both Elyos subjects completed seven journey quests and both
+Asmodian subjects completed six, once each. Each also verified its already-finished
+prologue: 30 persisted count-one rows/completed-list entries across the four bots.
+Both quest cohorts retired that action exactly once and continued all their
+other eligible activities. Counts by cohort: 76, 33, 104, 106 and 63; quest counts
+are one for each starter cohort, not repeated abandon/reaccept operations.
+All ten subjects passed final inventory/offline checks; `bot.problems.jsonl` is
+empty. The enforced watcher recorded one existing suppressed startup-content
+fingerprint and zero new/known/regressed fingerprints (`failed: false`). The
+isolated stack was removed; the maintainer's `aion-mysql` remained running.
+No allowance was added. Higher-population contention, the whole mixed workload,
+statistical/telemetry acceptance and the two-hour matrix remain unproven.
 
 Previous scheduling/reward checkpoint validation: 26 focused policy/reward cases passed. The full solution
 passed 4,172 tests with 22 explicit skips; compiler warnings stayed at 4,243.
@@ -448,7 +459,102 @@ Focused packet/persistence checks passed 36 cases; the full solution passed
 logger/clock/custom-quest ratchets, fidelity, ten quest-compiler tests, 23 report
 tests, retention and Full-suite contracts passed. Docker Fast
 `p10-02-quest-persistence-fast` passed 6/6. Repeated PvP is still unavailable and
-fails closed.
+fails closed at this perception-only checkpoint; the following driver checkpoint supersedes that limitation.
+
+## P10-02 repeatable PvP driver (LIVE validation pending)
+
+The diagnostic runtime now implements the last activity type, `Pvp`. It shares
+S2's ordinary Flame Bolt combat with race-specific animation timing and the
+independent reward oracle. Winner roles alternate, and opponent kill counts
+survive client reconnects, matching the server's 24-hour counter window. S2's
+first-kill +300/-90 contract and flight assertions remain intact.
+
+Reshanta subjects receive level/class, 500 AP and four ordinary race-specific
+medium Kisk items only during fixture setup. The director logs out before the
+timed workload. Subjects place and bind their own Kisks with ordinary item-use
+and question-response packets. Every cast, consumed item, creator, binding,
+72-charge initial count and two-hour lifetime is checked. Each actual PvP death
+must offer Kisk revival; the driver sends `CM_REVIVE(4)`, requires exactly one
+charge consumed, observes restored life and position, rests normally, and walks
+back over checked ground. It never patches HP/MP, resets a cooldown or respawns
+a Kisk. Near-expiry/exhausted Kisks wait for ordinary terminal updates and the
+real item cooldown before consuming another finite-supply item.
+
+The shared load-test camp uses the grounded Reshanta edge documented above,
+with exact own-Kisk/target IDs even when cohorts share the encounter. This is an
+intentional encounter hotspot, not distributed autonomous exploration or a
+general safe-camp planner. Each round walks from home to its encounter point:
+Java `CM_MOVE` only ends protection on actual displacement, so a zero-distance
+turn after relog would not suffice. Kisk placement and combat safety remain
+subject to the real server, including live zone restrictions and hostile NPCs.
+
+Java source references at `ce54b7931`: `ToyPetSpawnAction`, `KiskAI`, `KiskService`,
+`Kisk`, `CM_REVIVE`, `PlayerReviveService.kiskRevive`, `TeleportService`,
+`PlayerController.see/startProtectionActiveTask`, `CM_MOVE`, and `KillCounter`.
+No production behavior or geodata changes. The client retains only one
+creator-matched Kisk snapshot plus its last general update; neither implies
+binding or successful revival on its own.
+
+Focused packet/item/option/reward and actual-ground-route checks passed 32 cases.
+Docker Fast `p10-02-pvp-driver-fast` passed 6/6; Full SIM shard 36/100
+`p10-02-pvp-driver-sim` selected and passed S2. The solution passed 4,188 tests
+with 24 explicit skips, compiler warnings remained 4,243, and all mandatory
+ancillary checks passed. Full LIVE repeat-kill, resurrection, fifth-kill reward,
+expiry/replacement and higher-population evidence remain pending. Default SOAK
+can now select every implemented activity, but its output still says
+`Acceptance: false`; `run-full.ps1` still refuses Soak/All until the acceptance
+driver/telemetry exists. This is not P10-02 completion.
+
+First LIVE attempt `p10-02-pvp10-a` failed after both subjects successfully used
+their normal ten-second placement casts and bound to their own 72-charge Kisks.
+The generic local A* then explored a nearby dynamic shield node from the offline
+client, which has no server `SiegeService` (§7 #77). The camp now uses only its
+bounded direct ground edge and rechecks every segment; it does not ignore shields,
+strip geometry or initialize gameplay services in the client. A fresh-process
+actual-geometry regression runs 20 round trips per race with database-rounded and
+ground-normalized starting coordinates and rejects off-edge destinations.
+The failed run is retained, with no new allowance. The next attempt,
+`p10-02-pvp10-b`, again passed both placements but failed on a stationary home
+sample even with the bounded path. The original A*-only diagnosis was incomplete:
+`TraceEdge` sent zero-length collision rays after ground normalization. Such a
+ray is not a movement segment and may traverse unrelated scene bounds. A focused
+regression first failed, then passed when the bot skipped only exactly stationary
+collision segments (retaining ground lookup and every nonzero collision check).
+All eight navigation/camp tests pass, including a real-geometry route test using
+the movement packet's final position. No server geometry behavior is changed.
+LIVE `p10-02-pvp10-c` still failed on the subsequent home sample: the zero-ray
+guard alone did not resolve the LIVE dependency, so it is not claimed as the
+complete root cause. The camp now treats an already-home request (exact same
+X/Y, less than one centimetre Z rounding) as no movement. It sends no frames and
+does not snap or replace the current position. Unit tests pin this for exact,
+rounded and adjacent-float heights and require actual displacement to consult
+geometry. The real home-to-encounter segment is still checked normally.
+LIVE d also failed. Instrumented e identified the actual failing segment as
+`(3192,2480,1557.64)` to `(3190,2480,1558.3164)`: the Asmodian's two-metre approach,
+not the no-op home walk suggested by the earlier source-line attribution. The
+fresh-process route tests did not reproduce this LIVE failure and are not proof
+of its resolution.
+
+Java/C# `Node.collideWith` and `BoundingBox.intersects(Ray)` use an infinite-ray
+broad phase; `DespawnableNode` consults siege state before its own bounds check.
+The bot's offline Reshanta scene now wraps dynamic nodes with a conservative
+finite-segment AABB broad phase. It skips only nodes wholly outside the segment
+(with padding), retains every node and collision intention, and delegates nearby,
+unknown-bound or unbounded queries to the original path. It neither strips
+shields nor supplies invented siege state; actual nearby dynamic dependencies
+still fail closed. The server and SIM geometry remain unchanged. A focused test
+requires distant dynamic state not to be queried while boundary, inside-box and
+unbounded cases retain the original failure. Thirteen navigation/camp tests pass.
+Corrected LIVE run `p10-02-pvp10-f` reached actual combat and its first death and
+Kisk revival: winner AP 500→800, victim AP 500→410, charges 72→71, restored HP 137
+and MP 410. Ordinary recovery is underway. The twenty-minute diagnostic is still
+running; repeated opposite-race kills, fifth-kill behavior and terminal checks
+are not yet claimed. Offline dynamic siege-state synchronization remains
+unsupported; none of these changes permits crossing an unobserved shield.
+
+Final checkpoint validation: 4,192 solution tests passed, 24 explicit skips,
+4,243 compiler warnings (unchanged). Docker Fast `p10-02-pvp-guard-fast` passed
+6/6 and all CLAUDE.md ancillary checks passed. P10-02 remains unchecked.
 
 ## Scope decisions
 

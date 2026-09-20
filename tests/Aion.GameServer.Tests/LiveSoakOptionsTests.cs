@@ -47,6 +47,7 @@ public sealed class LiveSoakOptionsTests
 		{
 			var options = Parse() with { OutputDirectory = output };
 			if (emptyCohort) options = options with { SoakActivities = [SoakActivity.Group] };
+			else options = options with { SoakActivities = [(SoakActivity)999] };
 			var error = await Assert.ThrowsAsync<InvalidOperationException>(() => LiveBotRunner.RunAsync(options));
 			Assert.Contains(emptyCohort ? "without work" : "not implemented", error.Message);
 			Assert.Empty(Directory.GetFiles(Path.Combine(output, "bots")));

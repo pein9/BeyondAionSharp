@@ -9,6 +9,8 @@ public sealed partial class BotWorldModel
 	/// <summary>Last observed update, not necessarily our Kisk. Consumers must match object/creator IDs
 	/// and account for elapsed time. No optimistic countdown or unbounded history of nearby Kisks.</summary>
 	public BotKiskUpdate? LastKiskUpdate { get; private set; }
+	/// <summary>Last update whose creator is self; retained across visibility reloads, not proof of a live binding.</summary>
+	public BotKiskUpdate? OwnedKiskUpdate { get; private set; }
 
 	private void ApplyBindPoint(DecodedBotServerPacket packet)
 	{

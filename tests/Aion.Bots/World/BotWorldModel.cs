@@ -134,9 +134,12 @@ public sealed partial class BotWorldModel
 		else if (type == typeof(SM_BIND_POINT_INFO))
 			ApplyBindPoint(packet);
 		else if (type == typeof(SM_KISK_UPDATE))
+		{
 			LastKiskUpdate = new(packet.Get<int>("objectId"), packet.Get<int>("creatorId"), packet.Get<int>("useMask"),
 				packet.Get<int>("currentMembers"), packet.Get<int>("maxMembers"), packet.Get<int>("remainingResurrects"),
 				packet.Get<int>("maxResurrects"), packet.Get<int>("remainingLifetimeSeconds"));
+			if (LastKiskUpdate.CreatorId == SelfObjectId) OwnedKiskUpdate = LastKiskUpdate;
+		}
 		else if (type == typeof(SM_INVENTORY_INFO))
 			ApplyInventoryInfo(packet);
 		else if (type == typeof(SM_INVENTORY_ADD_ITEM))

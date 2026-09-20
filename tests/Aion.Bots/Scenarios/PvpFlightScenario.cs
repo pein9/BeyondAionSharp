@@ -21,7 +21,7 @@ public interface IPvpFlightDriver
 }
 
 /// <summary>S2: two ungrouped, access-zero, level-ten Sorcerers fly to an airborne cross-race encounter.</summary>
-public static class PvpFlightScenario
+public static partial class PvpFlightScenario
 {
 	public const int MapId = 400010000;
 	public const int InitialAp = 500;
@@ -59,23 +59,8 @@ public static class PvpFlightScenario
 		}, token);
 		await BothStepAsync("ordinary-pvp-kill-and-abyss-rewards", async ct =>
 		{
-			Require(elyos.Api.World.Skills.TryGetValue(1282, out var flameBolt), "Missing learned Flame Bolt.");
-			await elyos.SendAsync(elyos.Api.Target(asmodian.CharacterId), ct);
-			for (int cast = 0; cast < 40 && !asmodian.Api.World.IsDead; cast++)
-			{
-				await elyos.SendAsync(elyos.Api.Cast(new SpellCastData(1282, checked((byte)flameBolt!.Level), 0)
-				{
-					TargetObjectId = asmodian.CharacterId,
-					HitTime = SocialBasicsScenario.DuelHitTime(elyos.CurrentPosition, asmodian.CurrentPosition),
-				}), ct);
-				var started = await elyos.WaitAsync(typeof(SM_CASTSPELL), packet => packet.Get<int>("objectId") == elyos.CharacterId && packet.Get<ushort>("spellId") == 1282, ct);
-				await elyos.DelayAsync(TimeSpan.FromMilliseconds(started.Get<ushort>("castDuration") + 1), ct);
-				var result = await elyos.WaitAsync(typeof(SM_CASTSPELL_RESULT), packet => packet.Get<int>("effectorId") == elyos.CharacterId && packet.Get<ushort>("skillId") == 1282, ct);
-				await elyos.DelayAsync(TimeSpan.FromMilliseconds(Math.Max(2000, result.Get<ushort>("hitTime") + 1)), ct);
-				await SyncAsync(ct);
-				Require(!elyos.Api.World.IsDead && elyos.Api.World.CurrentFlightTime > 0, "Attacker died or ran out of flight time before a PvP kill.");
-			}
-			Require(asmodian.Api.World.IsDead && !elyos.Api.World.IsDead, "Cross-race combat did not produce the expected actual death.");
+			await KillAsync(elyos, asmodian, Race.ELYOS, 1, ct);
+			Require(elyos.Api.World.CurrentFlightTime > 0, "Attacker ran out of flight time before a PvP kill.");
 			// Equal levels/rank-nine, one damage source, ordinary account rates: +300 AP / -90 AP.
 			// These pin the configured contract, not the production reward function as its own oracle.
 			var win = elyos.Api.World.AbyssRank!;

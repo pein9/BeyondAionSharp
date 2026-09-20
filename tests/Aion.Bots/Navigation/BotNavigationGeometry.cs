@@ -107,7 +107,11 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
             float horizontalStep = MathF.Sqrt(MathF.Pow(x - previous.X, 2) + MathF.Pow(y - previous.Y, 2));
             // Do not connect different floors or climb a cliff between otherwise valid endpoint samples.
             if (MathF.Abs(z - previous.Z) > horizontalStep + 0.05f) return null;
-            if (map.GetCollisions(previous.X, previous.Y, previous.Z + GeoMap.COLLISION_CHECK_Z_OFFSET,
+            // Ground normalization may make this a stationary sample. A zero-direction ray has no
+            // segment to test and can visit unrelated scene bounds. Keep the ground lookup above,
+            // and continue checking every nonzero segment with the ordinary race collision rules.
+            if ((x != previous.X || y != previous.Y || z != previous.Z) &&
+                map.GetCollisions(previous.X, previous.Y, previous.Z + GeoMap.COLLISION_CHECK_Z_OFFSET,
                 x, y, z + GeoMap.COLLISION_CHECK_Z_OFFSET, instanceId,
                 CollisionIntention.DEFAULT_COLLISIONS.GetId(), ignoreProperties).GetClosestCollision() != null) return null;
             previous = new BotPosition(x, y, z, destination.Heading);
