@@ -784,6 +784,43 @@ new diagnosis. No allowance is added. The next scaled replay needs an oracle
 that validates the actually observed active effect and its reward timing,
 including the fifth-opponent-kill reduction that bypasses ordinary boosted AP.
 
+## P10-02 observed-effect PvP reward correction
+
+The bot now retains the complete visible effect snapshot from `SM_ABNORMAL_STATE`
+and captures it at the AP/counter-changing `SM_ABYSS_RANK`, rather than consulting
+whatever effects happen to remain when the combat assertion eventually runs.
+Later expiry and leaderboard-position refresh cannot rewrite that evidence.
+World entry/reload invalidates the snapshot; unknown is not treated as no buffs.
+The slot mask does not make this a slot-filtered delta: Java
+`PlayerEffectController.updatePlayerEffectIcons` sends all visible effects even
+for a single changed slot. The normal post-entry full snapshot restores authority.
+
+An independent shipped-skill-data catalog supports the currently shipped static
+ADD `AP_BOOST` modifiers. Unknown skills and unsupported future AP definitions
+fail closed instead of silently assuming a rate. The oracle applies their
+single-precision multiplier after base reward rounding, truncates as
+`Rates.AP_PVP` does, and still bypasses it for the fifth-and-later 1-AP reward.
+Victim loss and all rank/kill/daily/weekly assertions remain exact. No gameplay,
+event probability, production data or allowlist changes are made.
+
+Thirteen new regression cases include the failed run's observed
+710 → 1040 AP transition with skill 10549, post-reward expiry, reload invalidation,
+malformed packets, unsupported modifiers, boosted rewards, Java truncation and
+the repeat-kill reduction. All 65 focused decoder/model/reward tests pass.
+The full solution passes 4,217 tests with 24 explicit skips; warnings remain
+4,243. Docker Fast and the isolated Full S2 shard each pass all six selected
+tests; all required ancillary checks pass.
+
+`p10-02-mixed50-2h-b` did not validate the fix at scale: an invocation error left
+the generic 15-second step timeout in place. All fifty subjects were prepared,
+but the first ordinary duel was cancelled during its legitimate cast delays;
+a concurrent crash/reconnect step also reached that deadline. The run exits 1,
+removes its Docker stack, and retains both timeout fingerprints and mirrored
+cancellation fallout (48 bot records). This is not evidence of a production
+combat/reconnect defect. The corrected invocation must explicitly allow the
+long bounded quest/combat/recovery steps. A passing scaled replay is still
+required; no timeout is allowlisted and no capacity acceptance is claimed.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

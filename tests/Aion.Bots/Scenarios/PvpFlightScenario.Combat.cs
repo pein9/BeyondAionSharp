@@ -19,6 +19,7 @@ public static partial class PvpFlightScenario
 			"Cross-race opponents must perceive each other before combat.");
 		var beforeWinner = winner.Api.World.AbyssRank!;
 		var beforeVictim = victim.Api.World.AbyssRank!;
+		Require(winner.Api.World.VisibleEffects != null, "PvP requires an observed post-entry effect snapshot.");
 		int winnerLevel = winner.Api.World.Level, victimLevel = victim.Api.World.Level;
 		Require(winner.Api.World.Skills.TryGetValue(1282, out var flameBolt), "Missing learned Flame Bolt.");
 		await winner.SendAsync(winner.Api.Target(victim.CharacterId), token);
@@ -37,8 +38,11 @@ public static partial class PvpFlightScenario
 			Require(!winner.Api.World.IsDead, "PvP attacker died before defeating the expected victim.");
 		}
 		Require(victim.Api.World.IsDead && !winner.Api.World.IsDead, "Cross-race combat did not produce the expected actual death.");
+		var reward = winner.Api.World.LastAbyssReward ?? throw new InvalidDataException("PvP produced no observed AP/counter transition.");
+		Require(reward.Before with { RankingListPosition = beforeWinner.RankingListPosition } == beforeWinner,
+			"PvP AP transition does not start at the observed pre-combat rank.");
 		SoloPvpRewardContract.AssertMatches(SoloPvpRewardContract.Predict(beforeWinner, beforeVictim,
-			winnerLevel, victimLevel, winner.Api.World.Level, killsAgainstVictimInWindow),
+			winnerLevel, victimLevel, winner.Api.World.Level, killsAgainstVictimInWindow, PvpApBoostCatalog.Percent(reward.Effects)),
 			winner.Api.World.AbyssRank!, victim.Api.World.AbyssRank!);
 		async Task SyncAsync() { await winner.SynchronizeAsync(token); await victim.SynchronizeAsync(token); }
 	}

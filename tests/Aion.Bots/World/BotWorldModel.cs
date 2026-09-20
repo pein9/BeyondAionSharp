@@ -80,6 +80,7 @@ public sealed partial class BotWorldModel
 	/// <summary>Forget object ids that become invalid when the server rebuilds the player's visible world.</summary>
 	public void BeginWorldReload()
 	{
+		ForgetEffectObservations();
 		ChannelInfo = null;
 		objects.Clear();
 		openPrivateStores.Clear(); privateStoreNames.Clear(); privateStoreListings.Clear();
@@ -200,6 +201,8 @@ public sealed partial class BotWorldModel
 				packet.Get<byte>("taxes"));
 		else if (type == typeof(SM_SYSTEM_MESSAGE))
 			ApplySystemMessage(packet);
+		else if (type == typeof(SM_ABNORMAL_STATE))
+			ApplyVisibleEffects(packet);
 		else if (type == typeof(SM_EXCHANGE_REQUEST))
 			ExchangeRequestFrom = packet.Get<string>("receiver");
 		else
@@ -208,6 +211,8 @@ public sealed partial class BotWorldModel
 
 	private void ApplyPlayerSpawn(DecodedBotServerPacket packet)
 	{
+		// CM_LEVEL_READY returns the authoritative full effect list after every entry.
+		ForgetEffectObservations();
 		MapId = packet.Get<int>("worldId");
 		Position = ReadPosition(packet.Fields);
 		UpdateSelfObjectPosition();

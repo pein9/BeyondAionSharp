@@ -61,9 +61,13 @@ public sealed partial class BotWorldModel
 				blockedPlayers.Add((string)value["name"]!, (string)value["reason"]!);
 		}
 		else if (packet.PacketType == typeof(SM_ABYSS_RANK))
+		{
+			var previous = AbyssRank;
 			AbyssRank = new BotAbyssRank(packet.Get<long>("ap"), packet.Get<int>("currentGp"), packet.Get<int>("rank"),
 				packet.Get<int>("rankingListPosition"), packet.Get<int>("allKill"), packet.Get<int>("maxRank"),
 				ReadPeriod("daily"), ReadPeriod("weekly"), ReadPeriod("last"));
+			ObserveAbyssReward(previous, AbyssRank);
+		}
 		else if (packet.PacketType == typeof(SM_GROUP_INFO))
 		{
 			int id = packet.Get<int>("groupId");

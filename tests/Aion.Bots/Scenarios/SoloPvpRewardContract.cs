@@ -6,7 +6,8 @@ public sealed record SoloPvpRewardExpectation(BotAbyssRank Winner, BotAbyssRank 
 
 /// <summary>
 /// Independent oracle for ordinary-rate, solo cross-race kills between GP-zero soldiers.
-/// No production reward/rank function is used. Officers, teams, rate boosts and AP caps are outside this contract.
+/// No production reward/rank function is used. Visible AP_BOOST effects are supported;
+/// officers, teams, nonordinary account rates, equipment modifiers and AP caps are outside this contract.
 /// </summary>
 public static class SoloPvpRewardContract
 {
@@ -16,9 +17,10 @@ public static class SoloPvpRewardContract
 	private static readonly int[] Thresholds = [0, 1200, 4220, 10990, 23500, 42780, 69700, 105600, 150800];
 
 	public static SoloPvpRewardExpectation Predict(BotAbyssRank winner, BotAbyssRank victim,
-		int winnerLevelBeforeKill, int victimLevel, int winnerLevelAfterKill, int killsAgainstVictimInWindow)
+		int winnerLevelBeforeKill, int victimLevel, int winnerLevelAfterKill, int killsAgainstVictimInWindow, int apBoostPercent = 100)
 	{
 		Validate(winner); Validate(victim);
+		ArgumentOutOfRangeException.ThrowIfNegative(apBoostPercent);
 		if (winnerLevelBeforeKill is < 1 or > 65 || victimLevel is < 1 or > 65 ||
 			winnerLevelAfterKill < winnerLevelBeforeKill || winnerLevelAfterKill > 65 || killsAgainstVictimInWindow < 1)
 			throw new ArgumentOutOfRangeException(nameof(killsAgainstVictimInWindow), "Invalid level or updated opponent kill count.");
@@ -29,6 +31,7 @@ public static class SoloPvpRewardContract
 			gain -= Round(gain * ((winner.Rank - victim.Rank) * .05f));
 		// Java increments before comparing strictly less than five: only kills 1..4 receive full rewards.
 		if (killsAgainstVictimInWindow >= FullRewardKillLimit) gain = 1;
+		else gain = checked((int)(gain * (apBoostPercent / 100f))); // Rates.AP_PVP truncates after single-precision multiplication.
 		// Victim loss is calculated after the winner's XP reward, which may have raised their level.
 		int lossDifference = winnerLevelAfterKill - victimLevel;
 		float lossFactor = lossDifference switch { >= 5 => .1f, 4 => .65f, 3 => .85f, _ => 1f };

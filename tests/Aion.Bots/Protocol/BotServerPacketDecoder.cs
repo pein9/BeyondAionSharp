@@ -511,6 +511,7 @@ public sealed partial class BotServerPacketDecoder
 				("effectorId", r.ReadInt32()), ("skillId", r.ReadUInt16()), ("skillLevel", r.ReadByte()),
 				("targetSlot", r.ReadByte()), ("remainingMillis", r.ReadInt32())));
 		}
+		if (r.Remaining != 0) throw new InvalidDataException("Abnormal-state snapshot has unexpected trailing bytes.");
 		return Fields(("abnormals", abnormals), ("slot", slot), ("effectCount", effectCount), ("effects", effects));
 	}
 
