@@ -53,232 +53,247 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		Assert.NotEmpty(processPlan);
 		Assert.Equal(processPlan.OrderBy(execution => execution.Order), processPlan);
 		var driver = new SimulationDriver(fixture.Clock);
+		string? runDirectory = Environment.GetEnvironmentVariable("AION_E2E_RUN_DIR");
+		using var journal = string.IsNullOrWhiteSpace(runDirectory) ? null : new ScenarioRunJournal(runDirectory,
+			Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "sim-fast", "SIM");
 		bool includeHistory = true;
 		foreach (ScenarioExecution execution in processPlan)
 		{
-			await driver.PrepareScenarioAsync(execution);
-			switch (execution.Scenario.Id)
-			{
-				case "SWEEP-SKILL":
-					await RunSkillSweepAsync(execution.Scenario, includeHistory);
-					break;
-				case "SWEEP-TRADE":
-					await RunTradeSweepAsync(execution.Scenario, includeHistory);
-					break;
-				case "SWEEP-TELEPORT":
-					await RunTeleportSweepAsync(execution.Scenario, includeHistory);
-					break;
-				case "SWEEP-BIND":
-					await RunBindSweepAsync(execution.Scenario, includeHistory);
-					break;
-				case "SWEEP-CRAFT":
-					await RunCraftSweepAsync(execution.Scenario, includeHistory);
-					break;
-				case "SWEEP-GATHER":
-					await RunGatherSweepAsync(execution.Scenario, includeHistory);
-					break;
-				case "S0":
-					await RunS0Async(execution.Scenario, includeHistory);
-					break;
-				case "L0":
-					await RunL0Async(execution, includeHistory);
-					break;
-				case "L1":
-					await RunL1Async(execution.Scenario, includeHistory);
-					break;
-				case "L2":
-					await RunL2Async(execution.Scenario, includeHistory);
-					break;
-				case "L3":
-					await RunL3Async(execution.Scenario, includeHistory);
-					break;
-				case "L4":
-					await RunL4Async(execution.Scenario, includeHistory);
-					break;
-				case "L5":
-					await RunL5Async(execution.Scenario, includeHistory);
-					break;
-				case "L6":
-					await RunL6Async(execution.Scenario, includeHistory);
-					break;
-				case "L7":
-					await RunL7Async(execution.Scenario, includeHistory);
-					break;
-				case "L8C":
-					await RunL8CommandsAsync(execution.Scenario, includeHistory);
-					break;
-				case "L8":
-					await RunL8EventsAsync(execution.Scenario, includeHistory);
-					break;
-				case "M1":
-					await RunM1Async(execution, includeHistory);
-					break;
-				case "M2":
-					await RunM2Async(execution.Scenario, includeHistory);
-					break;
-				case "M3":
-					await RunM3Async(execution.Scenario, includeHistory);
-					break;
-				case "M4":
-					await RunM4Async(execution.Scenario, includeHistory);
-					break;
-				case "M5":
-					await RunM5Async(execution.Scenario, includeHistory);
-					break;
-				case "M6":
-					await RunM6Async(execution.Scenario, includeHistory);
-					break;
-				case "M7":
-					await RunM7Async(execution.Scenario, includeHistory);
-					break;
-				case "C1":
-					await RunC1Async(execution.Scenario, includeHistory);
-					break;
-				case "C2":
-					await RunC2Async(execution.Scenario, includeHistory);
-					break;
-				case "C3":
-					await RunC3Async(execution.Scenario, includeHistory);
-					break;
-				case "C4":
-					await RunC4Async(execution.Scenario, includeHistory);
-					break;
-				case "C5":
-					await RunC5Async(execution.Scenario, includeHistory);
-					break;
-				case "C6":
-					await RunC6Async(execution.Scenario, includeHistory);
-					break;
-				case "C7":
-					await RunC7Async(execution.Scenario, includeHistory);
-					break;
-				case "C8":
-					await RunC8Async(execution.Scenario, includeHistory);
-					break;
-				case "C9":
-					await RunC9Async(execution.Scenario, includeHistory);
-					break;
-				case "C10":
-					await RunC10Async(execution.Scenario, includeHistory);
-					break;
-				case "C11":
-					await RunC11Async(execution.Scenario, includeHistory);
-					break;
-				case "C12":
-					await RunC12Async(execution.Scenario, includeHistory);
-					break;
-				case "C13":
-					await RunC13Async(execution.Scenario, includeHistory);
-					break;
-				case "C14":
-					await RunC14Async(execution.Scenario, includeHistory);
-					break;
-				case "C15":
-					await RunC15Async(execution.Scenario, includeHistory);
-					break;
-				case "GEO-FEAR":
-					await RunGeoDisplacementAsync(execution.Scenario, includeHistory, fear: true);
-					break;
-				case "GEO-KNOCKBACK":
-					await RunGeoDisplacementAsync(execution.Scenario, includeHistory, fear: false);
-					break;
-				case "Q1":
-					await RunQ1Async(execution.Scenario, includeHistory);
-					break;
-				case "Q2":
-					await RunQ2Async(execution.Scenario, includeHistory);
-					break;
-				case "Q3":
-					await RunQ3Async(execution.Scenario, includeHistory);
-					break;
-				case "Q4P":
-					await RunQuestPlanZoneAsync(execution.Scenario, includeHistory, "Poeta", Race.ELYOS, 39, "Aesimqp");
-					break;
-				case "Q4I":
-					await RunQuestPlanZoneAsync(execution.Scenario, includeHistory, "Ishalgen", Race.ASMODIANS, 40, "Assimqi");
-					break;
-				case "Q5":
-					await RunQ5Async(execution.Scenario, includeHistory);
-					break;
-				case "E1":
-					await RunE1Async(execution.Scenario, includeHistory);
-					break;
-				case "E2":
-					await RunE2Async(execution.Scenario, includeHistory);
-					break;
-				case "E3":
-					await RunE3Async(execution.Scenario, includeHistory);
-					break;
-				case "E4":
-					await RunE4Async(execution.Scenario, includeHistory);
-					break;
-				case "E5":
-					await RunE5Async(execution.Scenario, includeHistory);
-					break;
-				case "E6":
-					await RunE6Async(execution.Scenario, includeHistory);
-					break;
-				case "E7":
-					await RunE7Async(execution.Scenario, includeHistory);
-					break;
-				case "S1":
-					await RunS1Async(execution.Scenario, includeHistory);
-					break;
-				case "S2":
-					await RunS2Async(execution.Scenario, includeHistory);
-					break;
-				case "S3":
-					await RunS3Async(execution.Scenario, includeHistory);
-					break;
-				case "S4":
-					await RunS4Async(execution.Scenario, includeHistory);
-					break;
-				case "S5":
-					await RunS5Async(execution.Scenario, includeHistory);
-					break;
-				case "S6":
-					await RunS6Async(execution.Scenario, includeHistory);
-					break;
-				case "S7":
-					await RunS7Async(execution.Scenario, includeHistory);
-					break;
-				case "G1":
-					await RunG1Async(execution.Scenario, includeHistory);
-					break;
-				case "G2":
-					await RunG2Async(execution.Scenario, includeHistory);
-					break;
-				case "G3":
-					await RunG3Async(execution.Scenario, includeHistory);
-					break;
-				case "G4":
-					await RunG4Async(execution.Scenario, includeHistory);
-					break;
-				case "G5":
-					await RunG5Async(execution.Scenario, includeHistory);
-					break;
-				case "G6":
-					await RunG6Async(execution.Scenario, includeHistory);
-					break;
-				case "E8":
-					await RunE8Async(execution.Scenario, includeHistory);
-					break;
-				case "E9":
-					await RunE9Async(execution.Scenario, includeHistory);
-					break;
-				case "E10":
-					await RunE10Async(execution.Scenario, includeHistory);
-					break;
-				case "E11":
-					await RunE11Async(execution.Scenario, includeHistory);
-					break;
-				case "CAPITAL":
-					await RunCapitalAsync(execution.Scenario, includeHistory);
-					break;
-				default:
-					throw new InvalidOperationException($"SIM scenario '{execution.Scenario.Id}' has no runner.");
-			}
+			if (journal == null)
+				await RunManifestScenarioAsync(driver, execution, includeHistory);
+			else
+				await journal.ExecuteAsync(execution.Scenario.Id, async () =>
+				{
+					await RunManifestScenarioAsync(driver, execution, includeHistory);
+					return 0;
+				});
 			includeHistory = false;
+		}
+	}
+
+	private async Task RunManifestScenarioAsync(SimulationDriver driver, ScenarioExecution execution, bool includeHistory)
+	{
+		await driver.PrepareScenarioAsync(execution);
+		switch (execution.Scenario.Id)
+		{
+			case "SWEEP-SKILL":
+				await RunSkillSweepAsync(execution.Scenario, includeHistory);
+				break;
+			case "SWEEP-TRADE":
+				await RunTradeSweepAsync(execution.Scenario, includeHistory);
+				break;
+			case "SWEEP-TELEPORT":
+				await RunTeleportSweepAsync(execution.Scenario, includeHistory);
+				break;
+			case "SWEEP-BIND":
+				await RunBindSweepAsync(execution.Scenario, includeHistory);
+				break;
+			case "SWEEP-CRAFT":
+				await RunCraftSweepAsync(execution.Scenario, includeHistory);
+				break;
+			case "SWEEP-GATHER":
+				await RunGatherSweepAsync(execution.Scenario, includeHistory);
+				break;
+			case "S0":
+				await RunS0Async(execution.Scenario, includeHistory);
+				break;
+			case "L0":
+				await RunL0Async(execution, includeHistory);
+				break;
+			case "L1":
+				await RunL1Async(execution.Scenario, includeHistory);
+				break;
+			case "L2":
+				await RunL2Async(execution.Scenario, includeHistory);
+				break;
+			case "L3":
+				await RunL3Async(execution.Scenario, includeHistory);
+				break;
+			case "L4":
+				await RunL4Async(execution.Scenario, includeHistory);
+				break;
+			case "L5":
+				await RunL5Async(execution.Scenario, includeHistory);
+				break;
+			case "L6":
+				await RunL6Async(execution.Scenario, includeHistory);
+				break;
+			case "L7":
+				await RunL7Async(execution.Scenario, includeHistory);
+				break;
+			case "L8C":
+				await RunL8CommandsAsync(execution.Scenario, includeHistory);
+				break;
+			case "L8":
+				await RunL8EventsAsync(execution.Scenario, includeHistory);
+				break;
+			case "M1":
+				await RunM1Async(execution, includeHistory);
+				break;
+			case "M2":
+				await RunM2Async(execution.Scenario, includeHistory);
+				break;
+			case "M3":
+				await RunM3Async(execution.Scenario, includeHistory);
+				break;
+			case "M4":
+				await RunM4Async(execution.Scenario, includeHistory);
+				break;
+			case "M5":
+				await RunM5Async(execution.Scenario, includeHistory);
+				break;
+			case "M6":
+				await RunM6Async(execution.Scenario, includeHistory);
+				break;
+			case "M7":
+				await RunM7Async(execution.Scenario, includeHistory);
+				break;
+			case "C1":
+				await RunC1Async(execution.Scenario, includeHistory);
+				break;
+			case "C2":
+				await RunC2Async(execution.Scenario, includeHistory);
+				break;
+			case "C3":
+				await RunC3Async(execution.Scenario, includeHistory);
+				break;
+			case "C4":
+				await RunC4Async(execution.Scenario, includeHistory);
+				break;
+			case "C5":
+				await RunC5Async(execution.Scenario, includeHistory);
+				break;
+			case "C6":
+				await RunC6Async(execution.Scenario, includeHistory);
+				break;
+			case "C7":
+				await RunC7Async(execution.Scenario, includeHistory);
+				break;
+			case "C8":
+				await RunC8Async(execution.Scenario, includeHistory);
+				break;
+			case "C9":
+				await RunC9Async(execution.Scenario, includeHistory);
+				break;
+			case "C10":
+				await RunC10Async(execution.Scenario, includeHistory);
+				break;
+			case "C11":
+				await RunC11Async(execution.Scenario, includeHistory);
+				break;
+			case "C12":
+				await RunC12Async(execution.Scenario, includeHistory);
+				break;
+			case "C13":
+				await RunC13Async(execution.Scenario, includeHistory);
+				break;
+			case "C14":
+				await RunC14Async(execution.Scenario, includeHistory);
+				break;
+			case "C15":
+				await RunC15Async(execution.Scenario, includeHistory);
+				break;
+			case "GEO-FEAR":
+				await RunGeoDisplacementAsync(execution.Scenario, includeHistory, fear: true);
+				break;
+			case "GEO-KNOCKBACK":
+				await RunGeoDisplacementAsync(execution.Scenario, includeHistory, fear: false);
+				break;
+			case "Q1":
+				await RunQ1Async(execution.Scenario, includeHistory);
+				break;
+			case "Q2":
+				await RunQ2Async(execution.Scenario, includeHistory);
+				break;
+			case "Q3":
+				await RunQ3Async(execution.Scenario, includeHistory);
+				break;
+			case "Q4P":
+				await RunQuestPlanZoneAsync(execution.Scenario, includeHistory, "Poeta", Race.ELYOS, 39, "Aesimqp");
+				break;
+			case "Q4I":
+				await RunQuestPlanZoneAsync(execution.Scenario, includeHistory, "Ishalgen", Race.ASMODIANS, 40, "Assimqi");
+				break;
+			case "Q5":
+				await RunQ5Async(execution.Scenario, includeHistory);
+				break;
+			case "E1":
+				await RunE1Async(execution.Scenario, includeHistory);
+				break;
+			case "E2":
+				await RunE2Async(execution.Scenario, includeHistory);
+				break;
+			case "E3":
+				await RunE3Async(execution.Scenario, includeHistory);
+				break;
+			case "E4":
+				await RunE4Async(execution.Scenario, includeHistory);
+				break;
+			case "E5":
+				await RunE5Async(execution.Scenario, includeHistory);
+				break;
+			case "E6":
+				await RunE6Async(execution.Scenario, includeHistory);
+				break;
+			case "E7":
+				await RunE7Async(execution.Scenario, includeHistory);
+				break;
+			case "S1":
+				await RunS1Async(execution.Scenario, includeHistory);
+				break;
+			case "S2":
+				await RunS2Async(execution.Scenario, includeHistory);
+				break;
+			case "S3":
+				await RunS3Async(execution.Scenario, includeHistory);
+				break;
+			case "S4":
+				await RunS4Async(execution.Scenario, includeHistory);
+				break;
+			case "S5":
+				await RunS5Async(execution.Scenario, includeHistory);
+				break;
+			case "S6":
+				await RunS6Async(execution.Scenario, includeHistory);
+				break;
+			case "S7":
+				await RunS7Async(execution.Scenario, includeHistory);
+				break;
+			case "G1":
+				await RunG1Async(execution.Scenario, includeHistory);
+				break;
+			case "G2":
+				await RunG2Async(execution.Scenario, includeHistory);
+				break;
+			case "G3":
+				await RunG3Async(execution.Scenario, includeHistory);
+				break;
+			case "G4":
+				await RunG4Async(execution.Scenario, includeHistory);
+				break;
+			case "G5":
+				await RunG5Async(execution.Scenario, includeHistory);
+				break;
+			case "G6":
+				await RunG6Async(execution.Scenario, includeHistory);
+				break;
+			case "E8":
+				await RunE8Async(execution.Scenario, includeHistory);
+				break;
+			case "E9":
+				await RunE9Async(execution.Scenario, includeHistory);
+				break;
+			case "E10":
+				await RunE10Async(execution.Scenario, includeHistory);
+				break;
+			case "E11":
+				await RunE11Async(execution.Scenario, includeHistory);
+				break;
+			case "CAPITAL":
+				await RunCapitalAsync(execution.Scenario, includeHistory);
+				break;
+			default:
+				throw new InvalidOperationException($"SIM scenario '{execution.Scenario.Id}' has no runner.");
 		}
 	}
 

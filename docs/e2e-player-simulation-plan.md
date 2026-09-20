@@ -2221,11 +2221,19 @@ real geodata on in production immediately, because geo is enabled by default; th
   and B2F (two) previously inherited the one-bot default and were rejected before starting (§7/124).
   Both Host and Docker dispatch paths are covered without launching children. B4's accepted runtime
   proof is committed in `0efefda54`; this integration correction does not claim a green Full suite
-  or authorize populations above D17's ten-client limit.
+  or authorize populations above D17's ten-client limit. Integration receipt: `7d523b8fd`.
 - [ ] **P10-10** [BOTH] M — Run report. Every run writes `run/<id>/report.md` and `report.json`:
   each scenario as passed, failed, skipped or flaky with duration; NEW, KNOWN and REGRESSED fingerprints; coverage
   deltas; peak heartbeat, memory and timer counts. `run-fast.ps1` and `run-full.ps1` print the summary at the end
   and point at the P3-14 repro bundle for every NEW fingerprint.
+  **In progress:** SIM and LIVE now write a shared `scenario-results.jsonl` journal around actual
+  scenario dispatch: a flushed start, terminal status, monotonic wall duration, original exit code
+  or full thrown exception. SIM records each scenario rather than only the enclosing test method;
+  LIVE waits for the dispatcher and actor cleanup. Cancellation is a failed attempt, not a skip;
+  missing terminal evidence is never a pass. Existing attempts cannot be overwritten or retried
+  within one journal. This is an evidence prerequisite, not the completed report: runner/cleanup
+  verdicts, watcher fingerprints and repro links, coverage/heartbeat aggregation, skipped-plan
+  accounting and the Fast/Full `report.md`/`report.json` outputs still remain.
 - [ ] **P10-11** [BOTH] M — Coverage. (a) Packet coverage from bot traces and the P3-07 tap: client opcodes sent out
   of 186 and server opcodes decoded out of 238. (b) SIM line and branch coverage of `src/Aion.GameServer` with
   coverlet on `tests/Aion.Simulation.Tests`, per directory (`Services`, `Handlers/Instance`, `Handlers/AI`,

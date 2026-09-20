@@ -3272,6 +3272,55 @@ Validation: 4,570 solution tests pass with 27 skips; warning baseline remains
 No production behavior changed; no new gameplay Fast run is required.
 The orchestration defect is recorded in plan §7/124. P10-09 remains open.
 
+## P10-10 — Per-scenario outcome evidence
+
+The first reporting checkpoint adds `scenario-results.jsonl` to SIM manifest
+execution and LIVE dispatch. Previously SIM's enclosing xUnit test could execute
+many scenarios without emitting an individual outcome/duration for each one.
+The shared journal writes and flushes a `started`/`running` record before invoking
+the scenario, then a `completed` record with a monotonic wall duration and either
+the original exit code or the full thrown exception. Cancellation remains failed;
+nonzero returned codes remain failed. It does not convert an unstarted scenario
+or an incomplete attempt into a pass, and it never reuses an existing journal.
+
+These records are scenario evidence, not an overall run verdict: watcher failure,
+test/fixture teardown, runner cleanup and coverage checks can still fail afterward.
+P10-10 remains open for those joins and for the actual JSON/Markdown reports.
+No retry, allowance, server behavior or population policy changes are included.
+
+Thirteen new journal cases cover successful/failed exit codes, identity, duration,
+original exception/cancellation propagation, flushed in-flight starts, duplicate
+attempts, concurrent use, disposal and invalid inputs. The two existing real
+LIVE-dispatch rejection tests also check that unsupported selections cannot leave
+a successful scenario record. The initial exception assertion compared a captured
+stack with the same exception after xUnit had appended rethrow frames; it now
+checks the original exception identity, captured type/message/inner cause and
+journal stack frame. The failed draft test output is retained, not allowlisted.
+
+Actual Docker-backed Fast run `run/p10-10-journal/p10-10-journal-fast` passes all
+six test cases and records all eleven manifest scenarios: S0, L0, M1, C1–C3,
+Q1–Q2, E1, E3 and E6. The journal has exactly 22 records, one start and one
+successful terminal record per planned scenario, matching the run identity;
+wall durations range from approximately 0.24 to 4.75 seconds. No local MySQL
+was used. The source baseline is `7d523b8fd` plus the archived tracked patch and
+new source files in `run/p10-10-journal-source`.
+
+Actual LIVE run `run/p10-10-journal/p10-10-journal-l0` also passes. Two ordinary
+L0 subjects complete; the new journal records start at `2026-09-20T23:25:28.394Z`
+and successful completion at `23:25:41.677Z` (13.283 seconds, exit 0), after both
+actor traces report completion. The enforced watcher exits 0 with zero new,
+known or regressed problems and only the existing scoped boot warning. Runner
+cleanup removes all four owned containers and their network; maintainer Docker
+MySQL and unrelated containers are untouched. No allowances changed. This used
+fresh host bot binaries and the existing server images (no production change);
+their exact image IDs are archived with the source evidence. It is not a rebuilt
+server acceptance run or a Full-suite completion claim. LIVE console evidence:
+`run/p10-10-journal-l0.log`.
+
+Pre-commit warning inventory remains 4,243 sites across 21 codes. The solution
+passes 4,583 tests with 27 explicit skips and every CLAUDE.md ancillary gate.
+Logs are `run/p10-10-journal-{targeted-final,warnings,tests,ancillary,fast}.log`.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

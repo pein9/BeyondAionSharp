@@ -32,6 +32,18 @@ public static partial class LiveBotRunner
 		Directory.CreateDirectory(Path.Combine(options.OutputDirectory, "bots"));
 		await WriteRunMetadataAsync(options, cancellationToken);
 		await using var problems = new LiveBotProblemWriter(Path.Combine(options.OutputDirectory, "bot.problems.jsonl"));
+		if (options.ScenarioDefinitions.Count != 1)
+			throw new InvalidOperationException("No LIVE dispatcher is implemented for this scenario selection: " +
+				string.Join(", ", options.ScenarioDefinitions.Select(scenario => scenario.Id)) +
+				". Run one supported scenario at a time; never substitute the connection smoke test.");
+		using var journal = new ScenarioRunJournal(options.OutputDirectory, options.Run, "LIVE");
+		return await journal.ExecuteAsync(options.ScenarioDefinitions[0].Id,
+			() => DispatchAsync(options, problems, cancellationToken));
+	}
+
+	private static async Task<int> DispatchAsync(LiveBotOptions options, LiveBotProblemWriter problems,
+		CancellationToken cancellationToken)
+	{
 		if (options.ScenarioDefinitions is [{ Id: "O1" }])
 			return await RunO1Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "B2" }])
