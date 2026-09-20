@@ -1,5 +1,20 @@
 # Phase 10 execution and evidence
 
+## Deferred-work checkpoint (2026-09-20)
+
+P10-07 real 4.8 client captures are deferred by the maintainer (D18); continue with
+P10-08. No real-client capture or bot-versus-client fidelity result is claimed.
+When ready, the maintainer will explicitly request Computer Use for the agent to
+drive the client against the C# server, monitor logs and add necessary capturing.
+The earlier requirement for a person to drive the client manually is superseded;
+client access and supported computer-control capabilities must be verified then.
+
+At the end of non-deferred work, review **all deferred items** with the maintainer,
+including the boot tail/siege/housing (D7), Java runtime comparisons (D15), larger
+population acceptance (D17), client captures (D18) and the Natural Ishalgen Journey.
+Return to them only when ready and explicitly authorized. Deferrals are not passes;
+existing completion criteria and the ten-concurrent-bot limit remain unchanged.
+
 ## P10-01: suite orchestration
 
 `scripts/e2e/run-full.ps1` accepts `-Suite Breadth` (the default), `Soak`, or `All`.

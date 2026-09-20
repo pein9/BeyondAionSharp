@@ -20,6 +20,9 @@ alone does not prove autonomous progression. It does not authorize adding unimpl
 
 - Phases are ordered by dependency. Inside a phase, TODOs run in order unless marked otherwise; explicit
   `Depends on` lines point across phases.
+- **Deferred is not done.** At the end of the non-deferred work, review all deferred items with the
+  maintainer and return to them only when ready (D18). Keep their checkboxes open and original acceptance
+  criteria visible; this checkpoint does not automatically authorize deferred execution or lift limits.
 - Each TODO has an id (`P3-06`), a mode tag and a size. When one lands, tick the box and append the commit
   SHA: `- [x] P1-04 ... (a1b2c3d)`.
 - Modes: **[SIM]** means in-process on a virtual clock. **[LIVE]** means real processes, sockets and MySQL in
@@ -2154,8 +2157,12 @@ real geodata on in production immediately, because geo is enabled by default; th
   against its own throwaway databases; run the same bot scripts; compare normalized DB rows and per-request SM opcode multisets for roll-free,
   non-combat flows (character create, inventory, dialogs, trade, mail). Capture on the bot side so Java needs no
   patch. Allowlist the sanctioned retail-AI divergences. Do not attempt combat or NPC stream diffs.
-- [ ] **P10-07** [BOTH] M — Real 4.8 client captures (needs a person with a client): `CM_MOVE` masks and cadence, auth
-  packet order, `CM_CRAFT` first byte. Store under `parity-artifacts/` and validate bots against them.
+- [ ] **P10-07** [BOTH] M — **Deferred by maintainer (D18).** Real 4.8 client captures: `CM_MOVE` masks and cadence,
+  auth packet order, `CM_CRAFT` first byte. Store under `parity-artifacts/` and validate bots against them.
+  When ready, the maintainer will explicitly request the **Computer Use** skill: the agent should drive
+  the real client against the C# server, watch logs, and add the capture instrumentation needed for this
+  evidence. Do not require the maintainer to operate the session manually or run a Java server. Client
+  access and available computer-control capabilities must be checked then; no capture session is authorized now.
 - [ ] **P10-08** [SIM] S — Parameterize `tools/client-extract/run_mutations.py` (hardcoded test project and `Ai.` name
   filter) so seeded regressions prove the scenarios catch them.
 - [ ] **P10-09** [LIVE] L — Turn the open journeys in `docs/Deep-Port-Audit-Remediation-Tracker.md` into LIVE
@@ -2305,6 +2312,7 @@ exits (`docker compose events`) and MySQL errors.
 | D15 | Java runtime comparisons in P10-06 | Defer; keep Java as source/golden reference only | **Decided** 2026-09-19: maintainer explicitly deferred Java runtime comparisons; Phase 10 continues with C#-only execution |
 | D16 | Single-completion Q1/Q2 quests during the two-hour soak | Complete once per bot, then continue other activities | **Decided** 2026-09-19: maintainer selected finite completion; do not add quests, reset completed state or substitute abandon/reaccept loops |
 | D17 | Population limit during current testing | At most ten concurrent bots total, including setup/director bots and concurrent runs | **Decided** 2026-09-20: maintainer capped testing at ten. Stop the running 200/500 matrix; defer larger-population runs until explicitly authorized again. Keep original capacity acceptance criteria and failed evidence; small runs do not satisfy them |
+| D18 | Defer real-client capture and revisit deferred work when ready | Continue at P10-08; keep deferred acceptance open | **Decided** 2026-09-20: P10-07 is deferred. At the end of non-deferred work, review all deferred items with the maintainer and return only when ready. For P10-07 the maintainer will explicitly request Computer Use so the agent drives the real client, watches logs and adds necessary capture instrumentation against the C# server. This does not authorize that session now, Java runtime execution, or larger bot populations |
 
 ---
 
