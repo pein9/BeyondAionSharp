@@ -557,6 +557,10 @@ public static partial class LiveBotRunner
 			chatEndPoint = options.ChatEndPoint.ToString(),
 			adminBaseUri = options.AdminBaseUri.ToString(),
 			reentrySeconds = options.ReentryDelay.TotalSeconds,
+			connectTimeoutSeconds = options.ConnectTimeout.TotalSeconds,
+			stepTimeoutSeconds = options.StepTimeout.TotalSeconds,
+			soakSeconds = options.Scenarios.Contains("SOAK") ? (int?)options.SoakSeconds : null,
+			soakActivities = options.Scenarios.Contains("SOAK") ? options.SoakActivities.Select(activity => activity.ToString()).ToArray() : null,
 		};
 		await using var output = File.Create(Path.Combine(options.OutputDirectory, "bots-run.json"));
 		await JsonSerializer.SerializeAsync(output, metadata, new JsonSerializerOptions

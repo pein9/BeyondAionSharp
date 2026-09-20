@@ -346,6 +346,16 @@ finally {
 	if ($null -eq $previousOverlayDirectory) { Remove-Item Env:AION_BOT_OVERLAY_DIR -ErrorAction SilentlyContinue }
 	else { $env:AION_BOT_OVERLAY_DIR = $previousOverlayDirectory }
 
+	if ($Scenario -contains 'SOAK' -and (Test-Path -LiteralPath $runPath -PathType Container)) {
+		try {
+			& python (Join-Path $repoRoot 'scripts/e2e/soak-telemetry.py') $runPath --recorded-window --output (Join-Path $runPath 'soak-telemetry.json')
+			# Short diagnostics deliberately fail eligibility (1), without changing their workload verdict.
+			# Invalid/missing evidence (2) is an orchestration failure, including a stale running window.
+			if ($LASTEXITCODE -gt 1 -or $LASTEXITCODE -lt 0) { throw "Invalid soak telemetry evidence (exit $LASTEXITCODE)." }
+			Write-Host 'SOAK telemetry report retained; this runner does not grant overall capacity acceptance.'
+		}
+		catch { if ($null -eq $failure) { $failure = $_ } }
+	}
 	try { Remove-OldRuns }
 	catch { if ($null -eq $failure) { $failure = $_ } }
 }

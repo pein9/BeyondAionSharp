@@ -147,6 +147,70 @@ class SoakTelemetryTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 telemetry.analyze(root, self.end, self.start)
 
+    def recorded_fixture(self, root):
+        window = {"SchemaVersion": 1, "Status": "completed", "OverallSoakAccepted": False,
+                  "Run": "test", "BotCount": 50, "PlannedSeconds": 7200,
+                  "StartedUtc": self.start.isoformat(), "EndedUtc": self.end.isoformat(),
+                  "CompletedUtc": (self.end + timedelta(minutes=5)).isoformat(),
+                  "ElapsedSeconds": 7500, "ClockConsistent": True, "WallClockDriftSeconds": 0}
+        (root / "bots-run.json").write_text(json.dumps({"run": "test", "bots": 50,
+                                                       "soakSeconds": 7200, "scenarios": ["SOAK"]}))
+        (root / "soak-window.json").write_text(json.dumps(window))
+        for service in ("ls", "cs", "gs"):
+            path = root / "logs" / service / f"{service}.events.jsonl"
+            path.parent.mkdir(parents=True)
+            path.write_text("".join(json.dumps(self.row(sample, service)) + "\n" for sample in self.samples))
+        return window
+
+    def test_recorded_window_excludes_cleanup_and_hashes_its_provenance(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.recorded_fixture(root)
+            result = telemetry.analyze_recorded_window(root)
+            self.assertEqual("passed", result["telemetryStatus"])
+            self.assertEqual(7200, result["seconds"])
+            self.assertEqual("runner-recorded", result["windowSource"])
+            self.assertEqual(5, len(result["sourceSha256"]))
+            self.assertFalse(result["overallSoakAccepted"])
+
+    def test_recorded_window_rejects_incomplete_wrong_population_or_clock_and_cleanup_extension(self):
+        changes = ({"Status": "running"}, {"Status": "failed"}, {"SchemaVersion": 2}, {"SchemaVersion": True},
+                   {"Run": "other"}, {"BotCount": 200}, {"BotCount": True}, {"PlannedSeconds": 7500},
+                   {"OverallSoakAccepted": True}, {"ElapsedSeconds": 7199}, {"ClockConsistent": False},
+                   {"WallClockDriftSeconds": 3}, {"WallClockDriftSeconds": float("nan")},
+                   {"CompletedUtc": (self.start - timedelta(seconds=1)).isoformat()},
+                   {"EndedUtc": (self.end + timedelta(minutes=5)).isoformat()})
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            window = self.recorded_fixture(root)
+            for change in changes:
+                with self.subTest(change=change):
+                    (root / "soak-window.json").write_text(json.dumps(dict(window, **change)))
+                    with self.assertRaises(ValueError):
+                        telemetry.analyze_recorded_window(root)
+
+    def test_recorded_cli_rejects_missing_or_mixed_windows_and_replaces_stale_output(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "telemetry.json"
+            for options in ([], ["--recorded-window"], ["--start", self.start.isoformat()],
+                            ["--recorded-window", "--start", self.start.isoformat(), "--end", self.end.isoformat()]):
+                output.write_text('{"telemetryStatus":"passed"}')
+                argv = ["soak-telemetry.py", str(root), "--output", str(output)] + options
+                with mock.patch("sys.argv", argv), contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(2, telemetry.main())
+                self.assertEqual("failed", json.loads(output.read_text())["telemetryStatus"])
+
+    def test_recorded_cli_accepts_full_telemetry_without_claiming_soak_acceptance(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.recorded_fixture(root)
+            output = root / "telemetry.json"
+            argv = ["soak-telemetry.py", str(root), "--recorded-window", "--output", str(output)]
+            with mock.patch("sys.argv", argv), contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(0, telemetry.main())
+            self.assertFalse(json.loads(output.read_text())["overallSoakAccepted"])
+
     def test_wrong_identity_duplicate_legacy_and_corrupt_rows_rejected(self):
         row = self.row(self.samples[0])
         cases = ([dict(row, run="other")], [dict(row, srv="ls")], [row, row],

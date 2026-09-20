@@ -207,7 +207,8 @@ def analyze_service(samples, service, start, end):
 def analyze(run_directory, start, end):
     if end <= start:
         raise ValueError("Workload window must have positive duration")
-    metadata = json.loads((run_directory / "bots-run.json").read_text(encoding="utf-8-sig"))
+    metadata_raw = (run_directory / "bots-run.json").read_bytes()
+    metadata = json.loads(metadata_raw)
     if not isinstance(metadata.get("run"), str) or not metadata["run"]:
         raise ValueError("Missing run provenance")
     servers, sources = {}, {}
@@ -230,15 +231,58 @@ def analyze(run_directory, start, end):
                      "Sampled plateaus do not prove the absence of all memory leaks."}
 
 
+def analyze_recorded_window(run_directory):
+    """Use the runner's terminal monotonic/UTC record; never infer duration from cleanup logs."""
+    window_path = run_directory / "soak-window.json"
+    raw = window_path.read_bytes()
+    window = json.loads(raw)
+    metadata_raw = (run_directory / "bots-run.json").read_bytes()
+    metadata = json.loads(metadata_raw)
+    nonnegative(window["SchemaVersion"], "window schema", integer=True)
+    if window["SchemaVersion"] != 1 or window["Status"] != "completed" or window["OverallSoakAccepted"] is not False:
+        raise ValueError("Soak workload window is not a completed supported diagnostic")
+    if window["Run"] != metadata["run"] or window["BotCount"] != metadata["bots"]:
+        raise ValueError("Soak window run/population disagrees with metadata")
+    nonnegative(window["BotCount"], "population", integer=True)
+    seconds = nonnegative(window["PlannedSeconds"], "planned seconds", integer=True)
+    if window["BotCount"] <= 0 or seconds <= 0 or seconds != metadata["soakSeconds"] or metadata["scenarios"] != ["SOAK"]:
+        raise ValueError("Soak window has contradictory workload configuration")
+    start, end = timestamp(window["StartedUtc"]), timestamp(window["EndedUtc"])
+    completed = timestamp(window["CompletedUtc"])
+    elapsed = nonnegative(window["ElapsedSeconds"], "monotonic duration")
+    drift = window["WallClockDriftSeconds"]
+    if isinstance(drift, bool) or not isinstance(drift, (int, float)) or not math.isfinite(drift):
+        raise ValueError("Invalid wall-clock drift")
+    if window["ClockConsistent"] is not True or abs(drift) > 2 or not math.isclose(
+            (completed - start).total_seconds() - elapsed, drift, abs_tol=0.00001):
+        raise ValueError("Workload wall clock disagrees with monotonic duration")
+    if (end - start).total_seconds() != seconds or elapsed < seconds or completed < end:
+        raise ValueError("Workload ended early or its telemetry window includes cleanup")
+    result = analyze(run_directory, start, end)
+    result["windowSource"] = "runner-recorded"
+    result["sourceSha256"]["soak-window.json"] = hashlib.sha256(raw).hexdigest()
+    result["sourceSha256"]["bots-run.json"] = hashlib.sha256(metadata_raw).hexdigest()
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run_directory", type=Path)
-    parser.add_argument("--start", required=True, type=timestamp)
-    parser.add_argument("--end", required=True, type=timestamp)
+    parser.add_argument("--start", type=timestamp)
+    parser.add_argument("--end", type=timestamp)
+    parser.add_argument("--recorded-window", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
-        result = analyze(args.run_directory, args.start, args.end)
+        if args.recorded_window:
+            if args.start is not None or args.end is not None:
+                raise ValueError("Recorded and manual workload windows are mutually exclusive")
+            result = analyze_recorded_window(args.run_directory)
+        else:
+            if args.start is None or args.end is None:
+                raise ValueError("Supply --recorded-window or both --start and --end")
+            result = analyze(args.run_directory, args.start, args.end)
+            result["windowSource"] = "manual-diagnostic"
     except (OSError, ValueError, KeyError, TypeError) as error:
         # A failed rerun must not leave a previous green report at the output path.
         result = {"schemaVersion": 1, "telemetryStatus": "failed", "overallSoakAccepted": False,

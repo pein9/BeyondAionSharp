@@ -1923,8 +1923,11 @@ real geodata on in production immediately, because geo is enabled by default; th
   still-pending write age and abandoned requests; raw samples are not capacity acceptance.
   `scripts/e2e/soak-telemetry.py` now validates a supplied workload window against versioned heartbeat,
   plateau and dispatcher-tail criteria, hashing the source logs. It rejects incomplete/short telemetry
-  and never claims overall soak acceptance. Runtime-window integration and economic statistical gates
-  are still required; thresholds and limitations are recorded in the Phase 10 evidence document.
+  and never claims overall soak acceptance. The LIVE runner now records the shared population start,
+  scheduled end and terminal monotonic/UTC evidence in `soak-window.json`; automatic analysis excludes
+  setup and cleanup, rejects incomplete/drifting windows and hashes its provenance. Economic statistical
+  gates and the complete acceptance driver are still required; thresholds and limitations are recorded
+  in the Phase 10 evidence document.
   Remaining resource coordination, telemetry acceptance/reporting
   and two-hour evidence remain required. The full mixed workload passes the ten-subject/twenty-minute
   diagnostic `p10-02-mixed10-a` (134 cohort actions); this is not capacity acceptance.

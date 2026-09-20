@@ -39,6 +39,9 @@ public static partial class LiveBotRunner
 		var loops = new List<Task<SoakCohortResult>>();
 		using var stop = CancellationTokenSource.CreateLinkedTokenSource(token);
 		var start = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
+		SoakWorkloadWindow? window = null;
+		long workloadStart = 0;
+		bool workloadSuccessful = false;
 		await using var director = new L0Actor(options, problems, 99, Race.ELYOS,
 			bot: "gm", account: LiveGmFacade.DirectorAccount, characterName: "Director");
 		try
@@ -86,7 +89,10 @@ public static partial class LiveBotRunner
 				Console.WriteLine($"SOAK prepared {actors.Count}/{options.BotCount} subjects.");
 			}
 			await director.StepAsync("director-quit-after-setup", director.Session.QuitAsync, stop.Token);
-			start.SetResult(Stopwatch.GetTimestamp());
+			window = new(options.Run, options.BotCount, options.SoakSeconds, DateTimeOffset.UtcNow);
+			workloadStart = Stopwatch.GetTimestamp();
+			await WriteWindowAsync(window);
+			start.SetResult(workloadStart);
 			SoakCohortResult[] results = await Task.WhenAll(loops);
 			await File.WriteAllTextAsync(Path.Combine(options.OutputDirectory, "soak-runtime.json"), JsonSerializer.Serialize(new
 			{
@@ -94,6 +100,7 @@ public static partial class LiveBotRunner
 				Acceptance = false, Scope = "diagnostic workload; capacity telemetry and acceptance pending", Cohorts = results,
 			}, new JsonSerializerOptions { WriteIndented = true }), token);
 			Console.WriteLine($"SOAK diagnostic passed: {options.BotCount} subjects, {options.SoakSeconds}s, {results.Sum(result => result.Actions)} actions. Not full P10-02 acceptance.");
+			workloadSuccessful = true;
 			return 0;
 		}
 		catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
@@ -103,6 +110,16 @@ public static partial class LiveBotRunner
 			await stop.CancelAsync();
 			try { await Task.WhenAll(loops); } catch { /* Original failure is recorded by the owning step. */ }
 			foreach (var actor in actors) await actor.DisposeAsync();
+			if (window != null)
+				await WriteWindowAsync(window.Finish(workloadSuccessful, DateTimeOffset.UtcNow, Stopwatch.GetElapsedTime(workloadStart)));
+		}
+
+		async Task WriteWindowAsync(SoakWorkloadWindow value)
+		{
+			string path = Path.Combine(options.OutputDirectory, "soak-window.json");
+			string temporary = path + ".tmp";
+			await File.WriteAllTextAsync(temporary, JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true }), CancellationToken.None);
+			File.Move(temporary, path, overwrite: true);
 		}
 
 		async Task InitializeAsync(L0Actor actor, CancellationToken ct)

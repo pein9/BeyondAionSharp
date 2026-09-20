@@ -821,6 +821,53 @@ combat/reconnect defect. The corrected invocation must explicitly allow the
 long bounded quest/combat/recovery steps. A passing scaled replay is still
 required; no timeout is allowlisted and no capacity acceptance is claimed.
 
+## P10-02 runner-recorded workload window
+
+`soak-window.json` anchors the telemetry interval to the same monotonic start
+released to all prepared cohorts after the director logs out. Its scheduled
+end is start plus the requested workload duration. Completion/cleanup time is
+recorded separately and cannot enlarge the interval. An early/cancelled run
+remains failed, and a hard-killed process leaves a nonterminal running record;
+neither can pass recorded-window analysis. Terminal evidence reports the
+difference between elapsed monotonic time and elapsed wall time; more than two
+seconds of disagreement invalidates the UTC mapping instead of shifting it.
+
+The CLI's `--recorded-window` mode validates run identity, subject count,
+configured duration, terminal status, elapsed time and clock consistency before
+the unchanged v2 telemetry gates. It hashes the window and bot metadata along
+with the server logs. Manual `--start`/`--end` remain explicitly labelled manual
+diagnostics and cannot be mixed with the recorded option. Bot metadata now also
+records step/connect timeouts and the selected soak duration/activities, so an
+invocation such as mixed50-2h-b is auditable without guessing its timeout.
+
+`run-live.ps1` automatically retains `soak-telemetry.json` after a SOAK run.
+Short diagnostics can pass workload checks while failing two-hour telemetry
+eligibility; invalid/missing evidence is a runner failure. Both cases are
+explicitly separate from overall soak acceptance, which is always false until
+the remaining economic, workload and capacity gates are implemented. Full/Soak
+still refuses to launch without the complete acceptance driver.
+
+Eight C# window tests and 25 Python telemetry tests pass. The full solution
+passes 4,225 tests with 24 explicit skips; warnings remain 4,243. Docker Fast
+passes 6/6, and all required ancillary checks pass.
+
+LIVE `p10-02-window10-a` passes ten subjects, 180 scheduled seconds, all final
+inventory/offline checks and enforced log watching (only the existing startup
+allowance; no new/known/regressed fingerprint). The retained window spans
+05:02:01.3557186–05:05:01.3557186 UTC on 2026-09-20. Completion is separately
+recorded at 05:05:16.7732755, with 195.4175185 monotonic seconds and only
+0.0000384 seconds of wall-clock disagreement. An in-flight probe correctly
+rejects the running record. Automatic terminal analysis hashes all five inputs,
+reports exactly 180 workload seconds, and rejects two-hour eligibility without
+counting the 15.4-second cleanup overrun. The diagnostic exits 0 and removes its
+isolated Docker stack. This is reporting evidence, not capacity acceptance.
+
+The longer fifty-subject mixed replay `p10-02-mixed50-2h-c` runs source
+`1fb659efe` with an explicit 1,800-second activity-step timeout. It started
+before the recorded-window change and cannot gain that provenance retroactively.
+Its terminal workload, watcher and manual diagnostic telemetry results remain
+pending; do not present it as completed or overall accepted while it runs.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
