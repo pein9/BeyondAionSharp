@@ -2200,16 +2200,22 @@ real geodata on in production immediately, because geo is enabled by default; th
   LIVE `B3` covers BA-003's duplicate-login kick, key-authenticated fast reconnect/replay refusal,
   director access grant/revoke and account-only ban with natural expiry. It uses one subject plus a
   director and transient Login probes (at most three clients); no password fallback on the fast path,
-  clock acceleration or DB reset. Hardware-ban synchronization/restart and full transfer remain open.
+  clock acceleration or DB reset. B4 below now proves hardware synchronization/restart; full transfer remains open.
   Hardware-ban restart evidence now has a diagnostic prerequisite: Game logs a generation-tagged
   canonical fingerprint only after each received MAC/HDD batch has been applied completely. This
   distinguishes fresh Login synchronization from a ban merely surviving in Game's retained cache;
-  the fixture/owned Login restart/real enforcement journey is still required for BA-006.
+  B4 uses this alongside the owned Login restart and real enforcement journey to close BA-006.
   The HDD command's duration widening divergence is corrected with real-command boundary tests
   (§7/120); this preserves Java's overflow behavior, not a new long-duration ban policy.
   The watcher also accepts an explicit Login-only crash plan with exact container/project identity,
   one SIGKILL and a bounded fresh-heartbeat recovery; other producers and logged errors stay monitored.
-  This monitoring prerequisite alone does not execute or prove the hardware-ban restart journey.
+  This monitoring prerequisite alone was insufficient; B4 supplies the runtime evidence.
+  LIVE `B4` now connects those prerequisites: five subjects, initial Docker-only seasonal MAC/HDD
+  fixtures, an unbanned online control, eight expected authentication refusals across one owned Login
+  SIGKILL/restart, exact persisted epochs and freshly applied generation-tagged snapshots. The actual
+  `p10-09-hardware-c` run and enforced watcher pass: generation 1→2, eight refusals, unbanned control
+  re-entry, and unchanged Game/Chat/MySQL processes. BA-006 is verified; BA-003 and P10-09 overall
+  remain open for the separately recorded transfer/Chat-gag and deferred siege acceptance.
   Remaining runtime player scenarios and tracker closeouts are still open.
 - [ ] **P10-10** [BOTH] M — Run report. Every run writes `run/<id>/report.md` and `report.json`:
   each scenario as passed, failed, skipped or flaky with duration; NEW, KNOWN and REGRESSED fingerprints; coverage
@@ -2507,6 +2513,10 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 120 | HDD-ban command widens Java's overflowing duration arithmetic | Java `data/handlers/admincommands/BanHdd.java` adds `timeMins * 60 * 1000` as an overflowing 32-bit product to the epoch; C# `Handlers/AdminCommands/BanHdd.cs` cast `timeMins` to `long` first. Durations above 35,791 minutes (including the pseudo-infinite zero option) could disagree. MAC command multiplication remains 32-bit in both trees | Fixed in the P10-09 arithmetic checkpoint: explicit unchecked int multiplication before epoch addition; 11 real-command cases inspect manager expiry/enforcement and the outgoing bridge epoch, with seven reproduced failures before the fix. Preserve Java's arithmetic, including its pseudo-infinite overflow quirk. Exact seasonal database-reload fixtures must not rely on this GM duration shortcut. Java reference `ce54b7931`; this does not close the LIVE restart journey |
 
 | 121 | Hardware-ban fixtures raced on the global Login connector (C# test-only) | The full suite intermittently failed `BanHddJavaArithmeticTests` after its first green commit. Both it and `HardwareBanSnapshotFingerprintTests` construct `LoginServer`, which replaces static `_instance`, outside the shared serial collection. The command looks up that singleton again to send its packet, so another fixture can divert the send; per-case restoration does not prevent overlapping execution | Both fixtures now join `GoldenDataManager`; an architectural test pins the tags because the existing source scanner did not detect constructor-side singleton writes. No production behavior change or retry/flake allowance; keep the initial full-run failure as evidence and rerun the whole suite |
+
+| 122 | Hardware controller could not read the live Docker log on Windows (harness-only) | First B4 run seeded exact seasonal epochs and observed all four ban refusals, but `File.ReadLines` failed with a sharing violation while Game was writing its bind-mounted JSONL. It stopped before arming/killing Login; the watcher correctly failed for the missing declared fault | Use an explicit read stream shared for read/write/delete, with a regression that keeps a writer open. Preserve `p10-09-hardware-a` as a failed run; no allowance or production change |
+
+| 123 | Login fault controller waited for an optional connection-error log (harness-only) | Second B4 run verified Login's exit 137, but withheld the bot's outage checkpoint while waiting for `Could not connect to login server`. The connector emits that only after a SocketException; silent EOF or an in-flight OS connect does not guarantee it during the outage. The controller never restarted Login, and watcher fingerprint `e425e285` correctly failed recovery | Handoff now uses the exact stopped-container inspection and the control's real Game barriers, then restarts Login. Fresh generation-tagged MAC/HDD application and heartbeat are still mandatory. `p10-09-hardware-c` passes generation 1→2 without any server/retry-policy change; the controller mock rejects reliance on optional reconnect logs |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the

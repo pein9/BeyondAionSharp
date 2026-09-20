@@ -8,7 +8,7 @@
 
 **Java specification baseline:** `4.8` at `59f65a9561bfa655eb24134da88ba3121c66ee8a`
 
-**Overall state:** Close to resolved — all scoped code/automation work is complete; five findings await live operator journeys
+**Overall state:** Close to resolved — 14 findings verified; four findings retain open runtime journeys or deferred acceptance. P10-09 B4 verifies BA-006's non-UTC hardware-ban restart journey.
 
 ## Status rules
 
@@ -27,8 +27,8 @@ A finding is not counted as resolved until it is **Verified**. “Code complete�
 
 | Check | Starting result | Latest result |
 |---|---:|---:|
-| `dotnet test AionServer.slnx --no-build --no-restore -v:minimal` | 812 passed, 0 failed | **1,002 passed, 0 failed, 0 skipped** |
-| `dotnet build AionServer.slnx -t:Rebuild -v:minimal` | 0 errors, 4,359 warnings | **0 errors, 4,325 warnings**; ratchet passes at 4,318 unique sites / 21 codes |
+| `dotnet test AionServer.slnx` | 812 passed, 0 failed | **4,570 passed, 0 failed, 27 explicit skips** (P10-09 B4) |
+| Warning-ratchet rebuild | 0 errors, 4,359 warnings | **0 errors**; ratchet passes at 4,243 unique sites / 21 codes (P10-09 B4) |
 | `python scripts/parity/check_fidelity.py` | Passed | Passed |
 | Audit/tracker/backlog local links | 69 valid, 0 broken at initial audit | **77 valid, 0 broken** after final reconciliation |
 
@@ -38,8 +38,8 @@ The baseline is not proof of runtime parity; it records the starting point again
 
 | Status | Count |
 |---|---:|
-| Verified | 13 |
-| Code complete | 5 |
+| Verified | 14 |
+| Code complete | 4 |
 | In progress | 0 |
 | Not started | 0 |
 | Blocked | 0 |
@@ -50,9 +50,9 @@ The baseline is not proof of runtime parity; it records the starting point again
 | Gate | Findings | State | Exit evidence |
 |---|---|---|---|
 | Release Gate 1 — primary cross-server flows | BA-001, BA-002, BA-003, BA-004 | Close to resolved | BA-004 Verified; BA-001/002/003 await two-GS and retail-client/multi-process journeys |
-| Release Gate 2 — gameplay and temporal data | BA-005, BA-006, BA-007 | Close to resolved | BA-007 Verified; BA-005/006 await in-world siege and full hardware-ban restart journeys |
+| Release Gate 2 — gameplay and temporal data | BA-005, BA-006, BA-007 | Close to resolved | BA-006/007 Verified; BA-005's in-world siege journey remains deferred |
 | Hardening and setup Gate | BA-008 through BA-018 | Verified | Semantic/schema suites, static-data atomicity, warning ratchet, full solution, and fidelity checks pass |
-| Completion Audit | All findings and backlog | Close to resolved | 13 Verified; five Code complete; final operator journeys listed below |
+| Completion Audit | All findings and backlog | Close to resolved | 14 Verified; four Code complete; remaining journeys listed below |
 
 ## Release Gate 1 — primary cross-server flows
 
@@ -102,7 +102,7 @@ journey remains open; optional C# callback API internals retain their focused lo
 
 **Status:** Code complete
 
-**Current work:** The complete Java opcode/state table, post-auth account synchronization, runtime handlers, and focused parser/dispatch tests pass. LIVE B3 now proves duplicate-login refusal/kick, fast reconnect to the existing character without password fallback, consumed-key replay refusal, access grant/revoke, and an account-only ban with natural expiry/re-entry. Hardware-ban synchronization and the full transfer journey remain open; this does not close the release gate.
+**Current work:** The complete Java opcode/state table, post-auth account synchronization, runtime handlers, and focused parser/dispatch tests pass. LIVE B3 proves duplicate-login refusal/kick, fast reconnect without password fallback, consumed-key replay refusal, access grant/revoke, and an account-only ban with natural expiry/re-entry. LIVE B4 additionally proves fresh MAC/HDD synchronization and enforcement across Login restart. The full transfer journey remains open; this does not close the release gate.
 
 - [x] `0x02` kick/duplicate-login behavior matches Java.
 - [x] `0x03` fast reconnect returns and consumes the reconnect key correctly.
@@ -117,7 +117,8 @@ journey remains open; optional C# callback API internals retain their focused lo
   - [x] LIVE B3: reconnect key authenticates a new Login session, replay closes, and the authenticated socket selects Game and recovers the same character.
   - [x] LIVE B3: director and subject see grant/revoke feedback; read-only live state verifies 0→1→0, and revocation survives relogin. No gameplay/login occurs at access 1.
   - [x] LIVE B3: account-only one-minute ban acknowledges, kicks without a duplicate-login notification requirement, refuses two fresh logins, and expires naturally before successful re-entry/logout.
-  - [ ] MAC/HDD synchronization/enforcement and transfer still require their own full LIVE proofs.
+  - [x] LIVE B4: exact winter/summer MAC/HDD epochs and fresh applied generation 1→2 across owned Login restart, eight client refusals and an unbanned control (`p10-09-hardware-c`).
+  - [ ] Full transfer still requires successful LIVE proof; shared Java limitations remain recorded under BA-001.
 - [x] `docs/Full-Parity-Backlog.md` §I1 reflects the implemented Java 4.8 opcode/state ownership.
 - [x] Full solution tests pass (1,002/1,002).
 
@@ -153,21 +154,21 @@ journey remains open; optional C# callback API internals retain their focused lo
 
 ### BA-006 — Database options and time semantics
 
-**Status:** Code complete
+**Status:** Verified
 
-**Current work:** The full instant-valued DAO sweep is complete. Deterministic tests and isolated MySQL 8 `America/New_York` winter/summer round-trips pass for Login and production Game repositories, including MAC/HDD reloads; the isolated container was removed. The remaining item is a complete LS→GS hardware-ban synchronization journey across restart.
+**Current work:** The full instant-valued DAO sweep and deterministic/non-UTC MySQL round-trips are complete. LIVE B4 (`p10-09-hardware-c`) now verifies the remaining LS→GS synchronization/enforcement journey: exact 2027 winter/summer epochs before/after one owned Login SIGKILL/restart, newly applied generation-2 fingerprints, eight authenticated-account hardware refusals, and an unbanned control that remains in Game and subsequently relogs successfully. Game/Chat/MySQL stay unchanged. The enforced watcher passes with two expected process events and no new/known/regressed problems; all four run-owned containers/network were removed. See `docs/e2e-phase10-validation.md` for evidence and the two retained failed controller drafts.
 
 Game now emits a compact, generation-tagged fingerprint after applying each received MAC/HDD batch.
 This is an evidence prerequisite: enforcement from Game's retained cache alone cannot prove a fresh
 Login reload. Canonical and real-dispatch tests cover exact epoch values and suppress the completion
-record when a batch fails partway. No LIVE restart acceptance is claimed by these tests.
+record when a batch fails partway. Those tests alone were insufficient; the successful B4 run now supplies the LIVE acceptance.
 
 - [x] Supported JDBC query options are explicitly translated to MySqlConnector; unsupported options fail visibly.
 - [x] `players.last_online` has one UTC instant contract in every read/write path.
 - [x] MAC/HDD ban timestamps preserve the same epoch before and after DB reload.
 - [x] Winter and summer `America/New_York` player/Game DAO timestamp round-trips match Java.
-- [ ] A full LS→GS MAC/HDD synchronization and enforcement journey preserves winter/summer epochs across database reload/restart.
-- [x] Full solution tests pass (1,002/1,002).
+- [x] A full LS→GS MAC/HDD synchronization and enforcement journey preserves winter/summer epochs across database reload/restart (`p10-09-hardware-c`).
+- [x] Full solution tests pass (4,570 passed / 27 explicit skips in the B4 checkpoint).
 
 ### BA-007 — Nullable event themes
 
@@ -301,17 +302,17 @@ Tagged Chat nickname is tracked with BA-002 because it shares the same Java requ
 - [ ] Every explicit acceptance item above has direct test/runtime evidence.
 - [x] No active legal GS↔LS opcode is silently dropped in factory/dispatch coverage.
 - [x] Required static-data holders and nested indexes pass real-data invariants.
-- [ ] Hardware-ban epochs survive the full non-UTC LS→GS synchronization/restart journey.
+- [x] Hardware-ban epochs survive the full non-UTC LS→GS synchronization/restart journey (B4, `p10-09-hardware-c`).
 - [x] Warning-ratchet rebuild succeeds at 0 errors.
-- [x] `dotnet test AionServer.slnx` passes 1,002/1,002.
+- [x] `dotnet test AionServer.slnx` passes 4,570 tests with 27 explicit skips (P10-09 B4).
 - [x] `python scripts/parity/check_fidelity.py` passes.
 - [x] Audit/tracker/backlog local-link scan has 0 broken links.
 - [x] `docs/Full-Parity-Backlog.md` and the source audit agree with current implementation status.
 - [x] Final worktree/diff review found no whitespace errors and preserved the user's untracked `AGENTS.md`.
 
-The unchecked completion items trace to the five Code-complete findings: BA-001, BA-002, BA-003,
-BA-005, and BA-006. They require the two-GS/Login/Chat, in-world siege, and hardware-ban restart
-journeys. P10-09 now has explicit failing runtime evidence for shared upstream transfer and Chat-gag
+The unchecked completion items trace to four Code-complete findings: BA-001, BA-002, BA-003,
+and BA-005. They require successful transfer/Chat-gag and deferred in-world siege journeys.
+P10-09 has explicit failing runtime evidence for shared upstream transfer and Chat-gag
 defects; "Code complete" describes the port, not a successful end-to-end journey. See
 `docs/e2e-phase10-validation.md` for preserved failures and remaining coverage.
 

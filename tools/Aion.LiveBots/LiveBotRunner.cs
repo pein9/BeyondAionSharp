@@ -40,6 +40,8 @@ public static partial class LiveBotRunner
 			return await RunB2FAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "B3" }])
 			return await RunB3Async(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "B4" }])
+			return await RunB4Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "SOAK" }])
 			return await RunSoakAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "L0" }])
@@ -725,8 +727,17 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 
 	private async Task<DecodedBotServerPacket> AuthenticateGameCharacterListAsync(CancellationToken cancellationToken)
 	{
+		var auth = await AuthenticateGameAsync(false, cancellationToken);
+		if (!auth.Get<bool>("ok"))
+			throw new InvalidDataException("Game-server authentication failed.");
+		state = AionConnection.State.AUTHED;
+		return await ReadCharacterListAsync(cancellationToken);
+	}
+
+	private async Task<DecodedBotServerPacket> AuthenticateGameAsync(bool expectedClose, CancellationToken cancellationToken)
+	{
 		await OpenConnectionAsync(cancellationToken);
-		quitExpected = false;
+		quitExpected = expectedClose;
 		AssertPacketType(await ReadNextAsync(cancellationToken), typeof(SM_KEY));
 		await SendGameAsync(GameClientPackets.VersionCheck(207, 0, 65001, 10, 0, 2), cancellationToken);
 		var version = await WaitForGamePacketAsync(typeof(SM_VERSION_CHECK), cancellationToken);
@@ -734,11 +745,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 			throw new InvalidDataException("Game server rejected client version 207.");
 		await SendGameAsync(GameClientPackets.L2AuthLoginCheck(playOk2, playOk1, accountId, loginOk), cancellationToken);
 		await SendGameAsync(GameClientPackets.MacAddress(macAddress, $"E2E-{bot.ToUpperInvariant()}"), cancellationToken);
-		var auth = await WaitForGamePacketAsync(typeof(SM_L2AUTH_LOGIN_CHECK), cancellationToken);
-		if (!auth.Get<bool>("ok"))
-			throw new InvalidDataException("Game-server authentication failed.");
-		state = AionConnection.State.AUTHED;
-		return await ReadCharacterListAsync(cancellationToken);
+		return await WaitForGamePacketAsync(typeof(SM_L2AUTH_LOGIN_CHECK), cancellationToken);
 	}
 
 	public async Task<DecodedBotServerPacket> ReadCharacterListAsync(CancellationToken cancellationToken)

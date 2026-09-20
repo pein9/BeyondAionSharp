@@ -47,6 +47,10 @@ $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $PSScriptRoot 'docker-bot-runner.ps1')
 . (Join-Path $PSScriptRoot 'lifecycle-controller.ps1')
 . (Join-Path $PSScriptRoot 'chat-fault-controller.ps1')
+. (Join-Path $PSScriptRoot 'hardware-ban-controller.ps1')
+if ($Scenario -contains 'B4' -and ($Scenario.Count -ne 1 -or $Bots -ne 5 -or $Keep -or $WatcherMode -ne 'enforce' -or $StepTimeoutSeconds -lt 180)) {
+	throw 'B4 must run alone with five subjects, enforce watching, no Keep and at least 180 seconds per step.'
+}
 if ($Scenario -contains 'B2F' -and ($Scenario.Count -ne 1 -or $Bots -ne 2 -or $Keep -or $WatcherMode -ne 'enforce' -or $StepTimeoutSeconds -lt 180)) {
 	throw 'B2F must run alone with two subjects, enforce watching, no Keep and at least 180 seconds per step.'
 }
@@ -99,6 +103,7 @@ $previousQuestPlanRoot = $env:AION_E2E_QUEST_PLAN_ROOT
 $previousOverlayDirectory = $env:AION_BOT_OVERLAY_DIR
 $configProfile = 'docker-bots'
 if ($Scenario -contains 'B2F') { $configProfile='docker-bots-chat-fault' }
+if ($Scenario -contains 'B4') { $configProfile='docker-bots-hardware' }
 
 function Invoke-CheckedNative([string]$Command, [string[]]$Arguments, [string]$Description) {
 	& $Command @Arguments
@@ -305,6 +310,11 @@ try {
 			throw 'Git HEAD changed during LIVE tool builds; start a fresh run with a consistent revision.'
 		}
 
+		if ($Scenario -contains 'B4') {
+			$stackCreated = $true
+			Invoke-CheckedNative 'docker' (@($composeArgs) + @('up','-d','--wait','mysql')) 'Hardware fixture database startup'
+			Initialize-HardwareBanFixture $composeArgs $projectName $Run $runPath
+		}
 		$upArguments = [Collections.Generic.List[string]]::new()
 		$upArguments.AddRange([string[]]$composeArgs)
 		$upArguments.Add('up')
@@ -339,6 +349,7 @@ try {
 			$watcherArguments += @('--expect-game-server-crash', 'true', '--allowlist', $allowlistPath)
 		}
 		if ($Scenario -contains 'B2F') { $watcherArguments += @('--expect-chat-server-crash','true') }
+		if ($Scenario -contains 'B4') { $watcherArguments += @('--expect-login-server-crash','true') }
 		$watcherProcess = Start-Process -FilePath 'dotnet' -ArgumentList $watcherArguments -WorkingDirectory $repoRoot `
 			-RedirectStandardOutput $watcherStdout -RedirectStandardError $watcherStderr -WindowStyle Hidden -PassThru
 
@@ -362,7 +373,7 @@ try {
 		if ($Scenario -contains 'SOAK') {
 			$botArguments += @('--soak-seconds', $SoakSeconds.ToString(), '--soak-activities', $SoakActivities)
 		}
-		if ($Scenario -contains 'O1' -or $Scenario -contains 'B2F') {
+		if ($Scenario -contains 'O1' -or $Scenario -contains 'B2F' -or $Scenario -contains 'B4') {
 			$childFile = 'dotnet'; $childArguments = $botArguments
 			if ($BotExecution -eq 'Docker') {
 				$childFile = 'docker'
@@ -370,6 +381,9 @@ try {
 			}
 			if ($Scenario -contains 'O1') {
 				$botExitCode = Invoke-LifecycleBot -FileName $childFile -Arguments $childArguments -ComposeArguments $composeArgs `
+					-ProjectName $projectName -Run $Run -RunDirectory $runPath -Watcher $watcherProcess
+			} elseif ($Scenario -contains 'B4') {
+				$botExitCode = Invoke-HardwareBanBot -FileName $childFile -Arguments $childArguments -ComposeArguments $composeArgs `
 					-ProjectName $projectName -Run $Run -RunDirectory $runPath -Watcher $watcherProcess
 			} else {
 				$botExitCode = Invoke-ChatFaultBot -FileName $childFile -Arguments $childArguments -ComposeArguments $composeArgs `

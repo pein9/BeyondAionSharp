@@ -3166,6 +3166,90 @@ CLAUDE.md ancillary checks pass. Evidence:
 No gameplay changes in this checkpoint; the preceding arithmetic fix
 (`f104bd78a`) already passed Docker Fast.
 
+## P10-09 B4 seasonal hardware-ban restart journey
+
+`B4` uses five ordinary subjects: MAC-ban winter/summer subjects b01/b02,
+HDD-ban winter/summer subjects b03/b04, and unbanned control b05. No director,
+privilege changes, new content, host clock changes or Java runtime is involved.
+The isolated Compose project starts MySQL alone first. Before any server exists,
+the controller verifies empty ban tables, sets this Docker database's default
+session zone to America/New_York and seeds next year's January/July 15 at noon.
+The year is bounded through 2037 by MySQL TIMESTAMP's supported range. It then
+reads back exact epochs and rows, rather than relying on the overflowing GM
+minute-duration shortcut.
+
+For the 2027 fixture, winter is `1800032400000`, summer `1815667200000`;
+the canonical MAC hash is
+`2bf4448388d3209a635447f9f117fa4b6e1b74eb96d7582f12661dcf21fa3aec`
+and HDD hash is
+`a5a2b7b5c1fd5b377e3cb590e650f1b95c9fa0190479995991f2bc00676fb3fc`.
+Independent Python struct/hashlib encoding agrees with the controller's binary
+writer. The controller compares two complete applied batches in one generation,
+then requires a later generation and post-restart timestamps with the same
+hashes. Read-only Docker SQL independently compares every identity, epoch and
+MAC detail before/after restart.
+
+The four banned subjects must each authenticate with Login, receive Game's
+negative `SM_L2AUTH_LOGIN_CHECK` for their actual account name, and observe peer
+close, both before and after reload. A generic Login refusal, successful Game
+authentication or a different account cannot pass. The unbanned subject creates
+and enters normally, stays responsive on the existing Game socket during the
+Login outage, then logs out and makes a fresh successful Login/Game connection
+after recovery. Game, Chat and MySQL container IDs/images/start times must remain
+unchanged; only the exact owned Login container is killed and started. The
+watcher must arm the exact plan and observe the one death/start and fresh heartbeat.
+
+The first run `run/p10-09-hardware/p10-09-hardware-a` correctly seeded the fixture
+and observed all four initial refusals, but failed before any Login kill: the
+Windows log reader did not share its read handle with the active Docker writer
+(§7/122). The watcher failed closed with `89688cf2` (no valid declared Login
+crash plan), not a server error allowance. The reader now explicitly shares
+read/write/delete and has an open-writer regression. The failed artifacts remain;
+this initial run is not restart acceptance. Source patches/new files are archived
+under `run/p10-09-hardware-source-a` and `run/p10-09-hardware-source-b` against
+base `f5307ca19`.
+
+The second run `p10-09-hardware-b` reached the exact Login SIGKILL, but the
+controller then waited for an optional socket-connect error log before handing
+control back to the bot. That log never appeared; the controller withheld
+restart and the watcher correctly failed recovery (`e425e285`, §7/123). The
+corrected handoff uses verified container death and the control's Game-response
+window, then starts Login. It does not shorten the server retry policy or relax
+the mandatory fresh-generation check.
+
+Final run **`run/p10-09-hardware/p10-09-hardware-c` passes**. Login was killed
+after `2026-09-20T23:02:13.856Z` and the same container/image restarted at
+`23:02:18.608Z`. The control received 28 Game barriers in 3.049 seconds while
+Login was stopped. Fresh MAC/HDD batch records at `23:02:28.985Z` and
+`23:02:29.032Z` carry generation 2, compared with initial generation 1, with the
+same exact hashes and rows. The fresh Login heartbeat is `23:02:29.240Z`.
+All four post-restart refusals pass at `23:02:32.541Z`–`23:02:32.720Z`; the
+unbanned control relogs, re-enters at access 0 and finishes offline at
+`23:02:43.572Z`. All five actors emit completion. Controller and bot exit 0;
+watcher exit 0 reports two expected process events, zero new/known/regressed
+problems and only the existing single scoped boot warning. No allowance changed.
+The compact process identity evidence confirms Game/Chat/MySQL were not restarted.
+All four owned containers/network were removed; maintainer MySQL and unrelated
+containers remain untouched. C's source patch and new source files are archived
+under `run/p10-09-hardware-source-c` against the same base revision.
+
+This completes BA-006 and the LS→GS hardware-sync subset of BA-003, not P10-09
+overall: transfer and Chat-gag failures plus deferred siege remain open.
+Pre-commit validation passes 4,570 solution tests with 27 explicit skips,
+4,243 unchanged warning sites and every CLAUDE.md ancillary gate, including the
+new hardware controller contract. Final logs:
+`run/p10-09-hardware-warnings-final.log`,
+`run/p10-09-hardware-tests-final.log`, and
+`run/p10-09-hardware-ancillary-final.log`. The first solution check caught the
+manifest's old expected LIVE list; B4 is now explicitly included. Initial failed
+logs remain retained. No gameplay changes require a new Fast run here.
+
+Java source reference `ce54b7931`: GS `network/loginserver/LoginServer`
+`accountAuthenticationResponse`/`validateMacAndHddSerial`; LS
+`SM_MACBAN_LIST`, `SM_HDDBAN_LIST`, `BannedMacDAO` and `BannedHddDAO`.
+All new implementation here is test orchestration/client code, not a server
+parity or ban-policy change.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

@@ -311,7 +311,7 @@ try {
 	Assert-True (($watcherArguments -join '|').Contains('--expect-game-server-crash|true|--allowlist|')) 'O1 watcher did not arm fault checking.'
 	$dispatches = @($runner.FindAll({ param($node)
 		$node -is [Management.Automation.Language.IfStatementAst] -and
-			$node.Clauses[0].Item1.Extent.Text -ceq '$Scenario -contains ''O1'' -or $Scenario -contains ''B2F'''
+			$node.Clauses[0].Item1.Extent.Text -ceq '$Scenario -contains ''O1'' -or $Scenario -contains ''B2F'' -or $Scenario -contains ''B4'''
 	}, $true))
 	Assert-True ($dispatches.Count -eq 1) 'O1 bypassed the owning controller.'
 	function Get-LiveDockerBotArguments { return @('exec','-T','botrunner','dotnet','/app/Aion.LiveBots.dll') }
@@ -332,9 +332,14 @@ try {
 		Assert-True (($Arguments -join '|') -ceq $(if ($BotExecution -eq 'Host') { 'host-arguments' } else { ($compose -join '|') + '|exec|-T|botrunner|dotnet|/app/Aion.LiveBots.dll' })) 'Lifecycle child arguments lost.'
 		return $expectedExit
 	}
+	function Invoke-HardwareBanBot {
+		param($FileName, $Arguments, $ComposeArguments, $ProjectName, $Run, $RunDirectory, $Watcher)
+		Assert-True ($Scenario -contains 'B4') 'Another fault was routed to the hardware controller.'
+		Assert-FaultDispatch @PSBoundParameters
+	}
 	$botArguments=@('host-arguments'); $composeArgs=$compose; $projectName=$project; $watcherProcess='fixture-watcher'; $dockerEndpoints=@{}
 	foreach ($BotExecution in @('Host','Docker')) {
-		foreach ($Scenario in @(@('O1'), @('B2F'))) {
+		foreach ($Scenario in @(@('O1'), @('B2F'), @('B4'))) {
 			foreach ($expectedExit in @(0, 7)) {
 				$botExitCode=-1
 				. ([scriptblock]::Create($dispatches[0].Extent.Text))

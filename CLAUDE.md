@@ -80,6 +80,7 @@ pwsh -NoProfile -File scripts/live/test-run-soak.ps1           # acceptance runn
 pwsh -NoProfile -File scripts/live/test-lifecycle-controller.ps1 # isolated crash ownership and saved-state gates (mock Docker)
 pwsh -NoProfile -File scripts/live/test-hang-probe-contract.ps1 # hang probe target/identity safeguards (mock Docker)
 pwsh -NoProfile -File scripts/live/test-cross-server-contract.ps1 # topology identity safeguards and read-only Compose resolution
+pwsh -NoProfile -File scripts/live/test-hardware-ban-controller.ps1 # exact seasonal epochs and owned Login fault safeguards (mock Docker)
 pwsh -NoProfile -File scripts/live/test-run-retention.ps1       # Full child runs must preserve sibling evidence
 pwsh -NoProfile -File scripts/e2e/test-full-suite.ps1            # breadth/soak selection and fail-fast orchestration
 pwsh -NoProfile -File scripts/e2e/run-fast.ps1                 # additionally, before gameplay-change commits (Docker)

@@ -199,6 +199,14 @@
     "status": "new"
   },
   {
+    "fp": "89688cf2",
+    "firstSeenSha": "f5307ca19d9f9e260b87456ec08bc275a5d240d6",
+    "lastSeenSha": "f5307ca19d9f9e260b87456ec08bc275a5d240d6",
+    "lastSeenRun": "p10-09-hardware-a",
+    "count": 1,
+    "status": "new"
+  },
+  {
     "fp": "8a9b3f9f",
     "firstSeenSha": "d6a0a3d38e573648529019fe3409f413d86995b1",
     "lastSeenSha": "d6a0a3d38e573648529019fe3409f413d86995b1",
@@ -302,6 +310,14 @@
     "status": "fixed",
     "tracking": "P8-07/L8; plan section 7 #56. EventDAO empty MySqlBatch for Increased AP Rates. Parity fix preserves deletion and skips empty insertion. Docker DAO regression and clean event run p8-07-l8-sim-20260919i plus shared Full p8-07-final-full-sim-20260919a verified. No allowlist.",
     "fixedIn": "4209e3ea60cea5ff87286dafb17f5866f40462c2"
+  },
+  {
+    "fp": "e425e285",
+    "firstSeenSha": "f5307ca19d9f9e260b87456ec08bc275a5d240d6",
+    "lastSeenSha": "f5307ca19d9f9e260b87456ec08bc275a5d240d6",
+    "lastSeenRun": "p10-09-hardware-b",
+    "count": 1,
+    "status": "new"
   },
   {
     "fp": "ebe67ab3",
