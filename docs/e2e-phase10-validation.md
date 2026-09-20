@@ -1641,6 +1641,67 @@ Pre-commit validation passes: 4,313 solution tests / 26 explicit skips, warning
 baseline 4,243, and every CLAUDE.md ancillary check. The opt-in geometry test is
 included in the eight separately executed focused tests, not counted as a full-suite pass.
 
+## P10-02 gather500-d clock discontinuity and entry-refusal evidence
+
+`run/p10-02-gathering-diagnostics/p10-02-gather500-d` uses clean tools at
+`bdd488dc9`, the corrected login image from `ac08359f8`, and the unchanged game
+image recorded for c. All 500 subjects prepare; the 600-second diagnostic starts
+2026-09-20 14:35:40.5286425 UTC and fails at 14:38:00.4180898 UTC. Monotonic duration
+is 136.0655742 seconds, but wall duration is 3.8238731 seconds longer. Its clock
+consistency gate is correctly false. This is not accepted diagnostic/capacity evidence.
+
+Windows System event 59188 (`Microsoft-Windows-Kernel-General`, ID 1) records
+`OldTime=2026-09-20T14:37:45.6232524Z`,
+`NewTime=2026-09-20T14:37:49.4476147Z`, `TimeDeltaInMs=3824`, process `svchost.exe`.
+Two following events (59191/59193) are sub-millisecond adjustments. No agent action
+changed the clock or time service. This corroborates a real host-clock discontinuity;
+it does not by itself prove the server's exact refusal branch or DB timestamp at
+the failed entry. Do not weaken the timing/clock gates or retroactively accept d.
+
+b157 and b158 receive `SM_ENTER_WORLD_CHECK` message 6 at 14:37:56.622 and
+14:37:56.650 UTC. Java source confirms this means reentry delay (including a still
+online DB row), and the C# checks match. Their previous quit sends are at
+14:37:45.571/45.572; b157's received quit response straddles the clock adjustment.
+Persisted last-online values at refusal were not retained, so causal attribution
+beyond the observed discontinuity/refusals remains open. The runner's fail-fast
+cleanup removed only its isolated Docker stack; raw logs/traces remain.
+
+Seventy gathers across 69 subjects completed before failure. No new raw server
+problem appears: LS/CS are empty; GS has only the existing startup allowance.
+The watcher reports 452 observations (one suppressed, zero new/known, one regressed,
+450 repeated). Critically, its 451 bot problem rows are cancellation fallout:
+the primary entry refusals were printed only to stderr because the step wrapper
+assumed `LiveBotFailureException` was already recorded (#102).
+
+The packet reader now records entry refusal before propagating it. Codes 1–6 retain
+their original exception, bot/account/step and full stack; zero/unrelated packets
+emit nothing. One regression fails with six expected records versus zero before
+the correction and passes afterward through the actual step wrapper, which does
+not duplicate the records. No production change, refusal retry or new allowance.
+
+## P10-02 matrix-c 200-subject terminal failure
+
+The existing 200-subject run completes natural-only heap preflight after 4,026.5
+seconds and prepares all subjects. Its measured window is
+2026-09-20 14:40:06.5540749–14:40:26.0744068 UTC (19.5202607 seconds), with a
+consistent clock. It fails during initial relogs on the original, unpatched login
+image: `9525cc21` (3), `9bf40a7b` (7), `ad257c69` (36), `373a2ce4` (1) are the
+same pool-timeout fingerprints as gather500-b/#100. No additional GS/CS problem
+appears beyond the owned startup allowance. This is not a failure of the corrected
+login image, which was never injected into this invocation.
+
+The watcher reports 237 observations: one suppressed, four new, one regressed,
+231 repeated; its original snapshot classified these fingerprints as new. The
+owning matrix exits 1 and removes only its test stack. Its 500-subject stage never
+starts. Matrix-c's accepted fifty-subject evidence remains intact; the full matrix
+is **not** accepted. Replacement 200/500 runs must use current tools/corrected login
+image and record their own provenance, without relabelling any failed run.
+
+Pre-commit validation for the refusal-ledger correction passes: 4,314 solution
+tests / 26 explicit skips, warning baseline 4,243, all CLAUDE.md ancillary checks,
+and the focused six-code regression. No gameplay, server image, timing gate or
+upstream automation change.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

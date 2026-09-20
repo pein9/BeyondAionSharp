@@ -1226,8 +1226,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 			packetHistory.Add(packet);
 			TrimHistory();
 			trace.WriteReceived(currentStep, packet);
-			if (packet.PacketType == typeof(SM_ENTER_WORLD_CHECK) && packet.Get<byte>("msg") != 0)
-				throw new LiveBotFailureException($"SM_ENTER_WORLD_CHECK refused entry with message {packet.Get<byte>("msg")}.");
+			await CheckEntryResponseAsync(packet);
 			if (packet.PacketType == typeof(SM_QUIT_RESPONSE) && !quitExpected)
 			{
 				await problems.WriteAsync(options.Run, bot, account, currentStep, "unexpected-quit-response",
@@ -1242,6 +1241,22 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 				throw;
 			await AttemptReconnectAsync(ex, cancellationToken);
 			throw new LiveBotFailureException("Game connection ended unexpectedly.", ex);
+		}
+	}
+
+	internal async Task CheckEntryResponseAsync(DecodedBotServerPacket packet)
+	{
+		try
+		{
+			if (packet.PacketType == typeof(SM_ENTER_WORLD_CHECK) && packet.Get<byte>("msg") != 0)
+				throw new LiveBotFailureException($"SM_ENTER_WORLD_CHECK refused entry with message {packet.Get<byte>("msg")}.");
+		}
+		catch (LiveBotFailureException failure)
+		{
+			// RunStepAsync preserves already-reported failures. Record this primary cause
+			// before it triggers population cancellation, including its original stack.
+			await problems.WriteAsync(options.Run, bot, account, currentStep, "enter-world-refused", failure.Message, failure);
+			throw;
 		}
 	}
 

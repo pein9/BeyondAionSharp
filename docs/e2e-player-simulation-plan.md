@@ -1968,7 +1968,9 @@ real geodata on in production immediately, because geo is enabled by default; th
   two-hour run is **accepted** under the unchanged v2 policy: 4,737 cohort actions,
   3,337 craft attempts, 716 gathers, twenty finite quest journeys, clean enforced watching,
   and all three servers' telemetry gates pass. Retained raw evidence independently recomputes green.
-  The owning matrix has advanced to 200-subject natural heap preflight; 500 has not started.
+  The owning matrix then advanced to 200 subjects. Natural heap readiness passed
+  after 4,026.5 seconds, but its original login image hit #100 after 19.5 seconds
+  of workload. The matrix failed fast; its 500-subject stage never started.
   This is one accepted population, not P10-02 completion. The runner shutdown helper also rejects
   a watcher that has already exited, even with code zero, or requires forced termination
   (#95). Its regression exercises the actual helper without starting processes; it does
@@ -1980,8 +1982,8 @@ real geodata on in production immediately, because geo is enabled by default; th
   Poeta subjects' fixed-prefix sample count (#97). Search now covers shipped nodes within
   300 m and explores alternatives when known nodes are busy, using checked ground travel
   and observed-object reservations. Real geometry confirms at least eight round-trip nodes
-  per active hub; this does not prove scaled LIVE throughput. The running 200-subject
-  invocation retains its original binaries; future populations use the revised search.
+  per active hub; this does not prove scaled LIVE throughput. The failed 200-subject
+  invocation retained its original binaries; future populations use the revised search.
   The first revised 500-subject gathering/vendor/relog diagnostic prepares all subjects
   but fails after 19 seconds on database-pool timeouts during concurrent HTTP oracle reads
   (#98), before gathering throughput can be established. Assertion HTTP reads now share
@@ -1993,13 +1995,19 @@ real geodata on in production immediately, because geo is enabled by default; th
   C# retained the account-row connection while loading account time; Java releases it
   first. The corrected lifetime passes Docker regressions with one- and five-slot
   pools plus the encrypted login handshake. Scaled LIVE replay is still required;
-  the ongoing 200-subject invocation retains its original server image.
+  the now-failed 200-subject invocation used its original server image.
   The next short 500-subject replay uses the corrected login image (`ac08359f8`)
   and logs no new server problems, but fails after 50 seconds when gathering has
   an outward checked route without a checked return (#101). Gathering now probes
   a route home from the ground-normalized endpoint before exploring or travelling
   to a leased node; it rejects a one-way result without disabling collision checks. This does
   not prove LIVE throughput or close the capacity TODO.
+  The return-checked 500-subject diagnostic completes seventy gathers before an
+  entry-delay refusal, with no new server problem. It is failed, not accepted:
+  Windows records a +3,824 ms clock step during the workload, matching the rejected
+  monotonic/UTC window. Exact refusal causality remains unproven. The refusal also
+  exposed a missing primary problem record (#102); entry refusals now log their
+  origin and full exception before propagating, without retry or suppression.
   Foundation validation: 21 focused identity/policy tests and 500 TCP key-exchange/close smoke cases pass;
   neither proves a populated world or a two-hour soak. The TODO remains unchecked until full runtime evidence.
   Runtime checkpoint: 10- and 50-subject, three-minute group/trade/relog/crash diagnostics pass (74/368
@@ -2313,6 +2321,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 99 | Failed scaled-run cleanup logs leave-world null connections and duplicate abyss-rank INSERTs | After gather500-a's primary failure/cancellation, raw logs show `3ef73bfe` / `4d999c25` at C# `PlayerLeaveWorldService.LeaveWorld` line 161 (`con.SetActivePlayer(null)`) and `72e453eb` at `AbyssRankDAO.InsertRank`. Java `services/player/PlayerLeaveWorldService.java` and `dao/AbyssRankDAO.java` at `ce54b7931` use the same non-idempotent save/leave shape | **OPEN.** Preserve raw post-watcher-shutdown errors separately from its terminal summary. Concurrent cleanup is a hypothesis, not a proven causal explanation. No null guard, INSERT-ignore, retry, suppression or allowance is added; a targeted failure-path/lifecycle reproduction is still required |
 | 100 | Login account loading retained a pooled connection while awaiting a second account-time query | Java `login-server/.../dao/AccountDAO.java:getAccount` closes its connection before `controller/AccountController.java:loadAccount` calls `setAccountTime` / `AccountTimeDAO.getAccountTime`, at `ce54b7931`. C# `AccountRepository.GetAccountAsync` instead scoped its connection/reader across the nested await. gather500-b logged `9525cc21`, `9bf40a7b`, `ad257c69`, `373a2ce4` pool timeouts during relog | **Corrected; scaled LIVE replay pending.** Dispose the account query before loading time, preserving lookup/null/field semantics. Docker regression reproduces exhaustion with one and five slots, then passes 30 concurrent name/id/external-auth lookups per case after correction; all seven login DB tests pass. No pool enlargement, retry, workload throttle, timeout relaxation or allowance |
 | 101 | Expanded gathering search could walk to a node without finding a checked route back to its pair rendezvous (harness defect) | gather500-c b323/channel 2 reaches Ishalgen node `(480.537,2787.35,295.073)`, grounds at Z `295.0508`, and successfully harvests, then all bounded return searches fail. The old geometry test counted eight round-trip nodes but runtime admitted other one-way results. No Java behavior change | **Corrected; LIVE replay pending.** Probe the return from the actual ground-normalized outward endpoint before either exploration or observed-object travel. Keep final return search and collision checks; reject an unavailable round trip rather than teleporting, reversing unchecked edges, increasing search budgets, or allowlisting failure. Partner b324 mirrors the primary exception; it is not a second independent route failure |
+| 102 | Entry-refusal exceptions bypassed the bot problem ledger (harness observability defect) | `ReadNextAsync` threw `LiveBotFailureException` for nonzero `SM_ENTER_WORLD_CHECK`; `RunStepAsync` assumes that exception is already reported and rethrows. gather500-d printed primary message 6 refusals for b157/b158 but its ledger contained only cancellation fallout. Java `SM_ENTER_WORLD_CHECK.Msg` / `PlayerEnterWorldService.enterWorld` at `ce54b7931` identify 6 as reentry delay, not success | **Corrected.** Record `enter-world-refused` with originating run/bot/account/step and the thrown exception's stack before propagating. A red/green regression checks codes 1–6 through the real step wrapper, exactly one record each, and no record for success/unrelated packets. No retry, success conversion or allowance; d's host-clock discontinuity and exact reentry refusal cause are separate evidence limits |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the
