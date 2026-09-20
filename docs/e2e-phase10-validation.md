@@ -2114,6 +2114,60 @@ collection-throughput evidence for #108 at 200 subjects, not terminal success,
 the whole finite journey's acceptance, or evidence for the HTTP change absent
 from that image. Its thirty-minute workload still ends no earlier than 17:15:52 UTC.
 
+## P10-02 completed 200-subject workload, failed probe isolation
+
+`p10-02-mixed200-docker-quest-a` finishes its full mixed workload on source
+`5f8da2f84`: 2026-09-20 16:45:52.8927586 UTC to scheduled end 17:15:52.8927586,
+then in-flight work/final checks complete at 17:18:24.0713233. Monotonic elapsed
+time is 1,951.2547717 seconds; drift -0.076207 seconds is within the unchanged
+clock check. There are 4,130 cohort actions, 3,070 craft attempts, 458 gathers,
+eighty finite quest journeys with relog persistence, and all 200 subjects finish
+inventory/offline checks. The independent `--soak-evidence` replay passes and
+hashes all input files (`soak-workload.json`); `CapacityConfiguration` and overall
+acceptance remain false. Economy exposure is insufficient with no impossible
+outcomes. Telemetry correctly rejects a thirty-minute window for two-hour capacity.
+
+The **overall invocation fails**, exit 1, on enforced watching: four observations,
+one suppressed, one new fingerprint `00c8849f`, two repeats. The three process
+events occur at 16:50:14.239, 16:50:32.940 and 16:53:13.163 UTC, corresponding to
+the bounded HTTP probe's exit, the explicit stop of the original HTTP probe, and
+the corrected HTTP probe's exit. No bot problem or new GS/LS/CS problem is logged.
+The actual workload container remains running until all subjects finish.
+
+Finding #110 is an operator/probe isolation error, not a gameplay bug: the probes
+used the Compose-built bot image with `--network none` but did not override its
+inherited `com.docker.compose.project` / `.service` labels. The watcher follows
+project-scoped Compose events, so those containers were labeled as its bot-runner.
+The former image has since been removed by its owner; inspection of matrix-e's
+replacement image independently confirms the Compose project/service labels.
+The process-event timestamps and probe terminal logs are retained; raw engine
+events are no longer available from Docker's bounded history. Do not invent their
+missing actor payloads, remove the recorded fingerprint, or declare this run green.
+
+Future standalone probes must use a clean base image or override **both** labels
+with an independent probe identity before starting. A control container using
+project `aion-probes-p10-02`, service `http-idle-probe` and no network is inspected
+before execution, exits 0, and is removed by its exact verified id. It does not
+enter matrix-e's event stream. No container-death allowance or watcher weakening
+is added. The failed run's owner removes its five containers; maintainer
+`aion-mysql` and unrelated `evejs-market-1` remain untouched. Workload/quest evidence
+is useful but does not replace a fully passing invocation.
+
+Replacement `p10-02-capacity-matrix-e` starts from clean `119205fff` with Docker
+execution, seed 73, and 200 then 500 subjects for 7,200 seconds each, fail-fast.
+It uses corrected LS image `18c4130be3cf`, unchanged GS `1f38a4c1c4e5`, and bot
+image `44c65a2abd0b` for its first child. Ports and build outputs are independent
+of the completed diagnostic; startup/preflight overlap and validation overhead
+are disclosed in `run/p10-02-capacity-matrix-e/launch-provenance.md`. Natural heap
+readiness is pending at this checkpoint; no measured capacity result exists yet.
+The earlier accepted matrix-c fifty-subject result is retained separately, not
+relabeled as new-revision evidence. All acceptance gates remain unchanged.
+
+Pre-commit checks pass: 4,333 solution tests / 27 explicit skips, warning baseline
+4,243 and every CLAUDE.md ancillary check. Logs:
+`run/p10-02-quest200-terminal-{warning,fulltests}.log`. This checkpoint changes
+evidence/triage documentation only. P10-02 remains unchecked.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

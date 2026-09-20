@@ -1,5 +1,14 @@
 [
   {
+    "fp": "00c8849f",
+    "firstSeenSha": "5f8da2f8493d0d7e29c763cba7c12aaf65ce2eab",
+    "lastSeenSha": "5f8da2f8493d0d7e29c763cba7c12aaf65ce2eab",
+    "lastSeenRun": "p10-02-mixed200-docker-quest-a",
+    "count": 3,
+    "status": "tracked",
+    "tracking": "P10-02; plan section 7 #110. Standalone HTTP probes reused a Compose-built bot image without overriding its inherited project/service labels. Their exits were attributed to mixed200-docker-quest-a's botrunner by the project-scoped Docker event follower. Keep that diagnostic failed; use an independently labeled probe project/service or a clean base image. No container-death allowance or watcher weakening. Genuine owned botrunner exits must still fail."
+  },
+  {
     "fp": "0647ba2d",
     "firstSeenSha": "1d7f5be259e06d4731e9a3429838a9d5e20aee7f",
     "lastSeenSha": "1d7f5be259e06d4731e9a3429838a9d5e20aee7f",
