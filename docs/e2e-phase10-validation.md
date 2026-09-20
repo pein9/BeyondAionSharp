@@ -938,6 +938,65 @@ warnings remain 4,243. Docker Fast and the separately selected Full S1/S2 shards
 each pass all six selected tests, including log and teardown gates. All required
 ancillary checks pass. The corrected scaled LIVE replay remains pending.
 
+The corrected `p10-02-mixed50-2h-d` runs source `58c74165d`, seed 73, all ten
+activities, a 1,800-second activity budget and the full 7,200-second workload.
+Its recorded window is 05:45:22.7835411–07:45:22.7835411 UTC on 2026-09-20.
+At 05:53:53.404, b41 records a normal Flame Bolt interruption, then completes
+and persists its full Q1 journey at 05:55:50.810. This is direct recovery
+evidence for #83, not a terminal capacity result. The run remains active.
+By 06:08 UTC, all twenty starter subjects have persisted their finite journeys;
+the only server problem fingerprint observed is the existing startup allowance.
+
+## P10-02 workload replay and aggregate acceptance
+
+`dotnet run --project tools/Aion.LiveBots -- --soak-evidence run/<id>` reads
+stable terminal evidence and writes `soak-workload.json`. It streams the traces
+with bounded per-subject counters and hashes their exact bytes. It reconstructs
+the window, checks every expected subject, replays each seeded cohort schedule,
+checks observed maps/channel selections, requires the actual activity-start
+records and compares decision counts against the runtime summary. Each subject
+must join the shared start within 30 seconds, stop starting activities at the
+scheduled end, and finish inventory/quit/offline checks afterward. Full capacity
+configurations require every repeatable activity at least twice per eligible
+subject, not just one action plus a long idle connection.
+
+Finite Q1/Q2 retirement requires every ordered reward plus the exact persisted
+quest set once. The reader recomputes each gather/craft probability from its
+skill/recipe evidence and reruns both statistical tests; the recorded economic
+summary must agree (floating score totals allow only 1e-8 accumulation error
+from interleaving). The director must quit before the window begins and send
+no later traffic. No missing data is relabelled a pass.
+
+`scripts/live/run-soak.ps1` supplies the Full runner's missing child. It fixes
+enforced watching, the full mixed workload and the explicit activity budget,
+preserves Full-run evidence retention, and journals the owning LIVE invocation's
+terminal result. It then runs workload validation and `soak-acceptance.py`.
+The aggregator rehashes every workload input, recomputes telemetry from raw
+heartbeats, requires sufficient/passing economy statistics, checks enforced
+watcher success against retained problem logs, and rechecks each used exact
+allowance's owner/reason/tracking/expiry/count. All gates must pass before
+`soak-acceptance.json` sets `overallSoakAccepted: true`; that accepts one population,
+not the three-population matrix or Phase 10. Invalid evidence overwrites stale
+green output with failure. Short diagnostics remain available through run-live
+and cannot pass run-soak acceptance.
+
+Nineteen C# evidence tests and six Python aggregation tests (including seventeen
+individually exercised mutation cases) cover missing/altered evidence, schedule,
+quest retirement, probabilities, telemetry, watcher and allowance failures.
+The PowerShell contract executes the actual runner dispatch with substituted
+children and verifies propagation, its terminal journal and all failure
+boundaries without Docker. Synthetic green evidence is explicitly only a test
+of these gates. The real retained `p10-02-stats10-a` replays successfully as a
+diagnostic, with insufficient economy exposure and no capacity configuration;
+the active fifty-subject window is correctly rejected as nonterminal.
+That fifty-subject invocation predates the new owning-wrapper journal and will
+remain diagnostic evidence even if it finishes cleanly; no terminal authority
+is fabricated retroactively. The full solution passes 4,284 tests with 24
+explicit skips; the warning inventory remains 4,243. Docker Fast passes 6/6.
+All mandatory ancillary checks, including the new acceptance and runner
+contracts now listed in CLAUDE.md, pass. No production behavior or allowance
+has changed. Full 50/200/500-subject accepted runs are still outstanding.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

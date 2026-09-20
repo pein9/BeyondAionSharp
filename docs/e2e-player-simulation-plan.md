@@ -1927,8 +1927,10 @@ real geodata on in production immediately, because geo is enabled by default; th
   scheduled end and terminal monotonic/UTC evidence in `soak-window.json`; automatic analysis excludes
   setup and cleanup, rejects incomplete/drifting windows and hashes its provenance. The economy gate now
   derives completion probabilities from Java's competing progress bars and records fixed-prefix plus
-  whole-stream tests; missing exposure is insufficient, never acceptance. Full LIVE statistical evidence
-  and the complete acceptance driver are still required. See [statistical policy](e2e-soak-statistics.md)
+  whole-stream tests; missing exposure is insufficient, never acceptance. `scripts/live/run-soak.ps1` now
+  joins successful terminal execution, source-hashed trace replay, economic statistics, fresh two-hour
+  telemetry and enforced problem evidence. Full LIVE statistical/capacity evidence is still required;
+  synthetic green controls do not close the TODO. See [statistical policy](e2e-soak-statistics.md)
   and the Phase 10 evidence document for thresholds and limitations.
   Remaining resource coordination, telemetry acceptance/reporting
   and two-hour evidence remain required. The full mixed workload passes the ten-subject/twenty-minute
@@ -1940,8 +1942,9 @@ real geodata on in production immediately, because geo is enabled by default; th
   The diagnostic quest implementation uses checked ground travel, exclusive observed target reservations,
   ordinary Flame Bolt combat/loot/dialogs, exact quest reward checks and completion persistence across relog.
   Shared cast waits now recognize normal cancellation and bound missing start/result packets to ten seconds
-  after the appropriate timing advance; the fifty-subject interrupted-cast finding (#83) still needs a
-  corrected scaled replay. No interruption is disabled and the overall activity budget is unchanged.
+  after the appropriate timing advance. In the ongoing fifty-subject replay, b41 recovers from an
+  interruption and persists its starter journey (#83); terminal scaled evidence is still pending.
+  No interruption is disabled and the overall activity budget is unchanged.
   Long route gaps use a bounded collision-checked ground search; they do not fall back to straight-line movement.
   `p10-02-quest10-c` passes with 382 cohort actions: both Elyos and both Asmodian subjects complete
   their chains exactly once, verify saved rows while offline and completed lists after relog, then
