@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using Aion.Commons.Network;
 using Aion.GameServer.Configuration;
 using Aion.GameServer.Configs.Main;
@@ -717,12 +718,13 @@ public sealed class LoginServer : IAsyncDisposable, ILoginServerLink
 		}
 	}
 
-	private static void ProcessMacBanList(MacBanListPacket packet)
+	private void ProcessMacBanList(MacBanListPacket packet)
 	{
 		var manager = BannedMacManager.GetInstance();
 		foreach (var entry in packet.Entries)
 			manager.DbLoad(entry.Address, entry.Time, entry.Details);
 		manager.OnEnd();
+		LogHardwareBanSnapshot("mac", FingerprintMacBans(packet.Entries));
 	}
 
 	private void ProcessHddBanList(HddBanListPacket packet)
@@ -731,6 +733,66 @@ public sealed class LoginServer : IAsyncDisposable, ILoginServerLink
 		foreach (var entry in packet.Entries)
 			service.LoadBan(entry.Serial, entry.Time);
 		_logger.LogInformation("Loaded {Count} HDD ban entries.", packet.Entries.Count);
+		LogHardwareBanSnapshot("hdd", FingerprintHddBans(packet.Entries));
+	}
+
+	private void LogHardwareBanSnapshot(string kind, (int Entries, int DistinctEntries, string Sha256) snapshot) =>
+		_logger.LogInformation("Applied Login hardware-ban snapshot: kind={Kind}, generation={Generation}, entries={Entries}, distinctEntries={DistinctEntries}, sha256={Sha256}",
+			kind, _sessionGeneration, snapshot.Entries, snapshot.DistinctEntries, snapshot.Sha256);
+
+	// Diagnostic only: hash the last-write-wins entries in this applied batch, not the retained cache.
+	// v1: version/kind bytes, int32 distinct count, then ordinal-key-sorted rows of length-prefixed
+	// UTF-16LE key, int64 epoch milliseconds and (MAC only) length-prefixed UTF-16LE details.
+	// Counts/lengths are int32 LE code-unit counts. No ban policy/state is changed by these helpers.
+	private static (int Entries, int DistinctEntries, string Sha256) FingerprintMacBans(IReadOnlyList<MacBanListEntry> entries)
+	{
+		var effective = new Dictionary<string, MacBanListEntry>(StringComparer.Ordinal);
+		foreach (var entry in entries) effective[entry.Address] = entry;
+		using var hash = StartBanFingerprint(0x09, effective.Count);
+		foreach (var pair in effective.OrderBy(p => p.Key, StringComparer.Ordinal))
+		{
+			AppendBanString(hash, pair.Key); AppendBanTime(hash, pair.Value.Time); AppendBanString(hash, pair.Value.Details);
+		}
+		return (entries.Count, effective.Count, Convert.ToHexStringLower(hash.GetHashAndReset()));
+	}
+
+	private static (int Entries, int DistinctEntries, string Sha256) FingerprintHddBans(IReadOnlyList<HddBanListEntry> entries)
+	{
+		var effective = new Dictionary<string, HddBanListEntry>(StringComparer.Ordinal);
+		foreach (var entry in entries) effective[entry.Serial] = entry;
+		using var hash = StartBanFingerprint(0x0A, effective.Count);
+		foreach (var pair in effective.OrderBy(p => p.Key, StringComparer.Ordinal))
+		{
+			AppendBanString(hash, pair.Key); AppendBanTime(hash, pair.Value.Time);
+		}
+		return (entries.Count, effective.Count, Convert.ToHexStringLower(hash.GetHashAndReset()));
+	}
+
+	private static IncrementalHash StartBanFingerprint(byte kind, int count)
+	{
+		var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+		Span<byte> header = stackalloc byte[6]; header[0] = 1; header[1] = kind;
+		BinaryPrimitives.WriteInt32LittleEndian(header[2..], count); hash.AppendData(header);
+		return hash;
+	}
+
+	private static void AppendBanTime(IncrementalHash hash, long time)
+	{
+		Span<byte> bytes = stackalloc byte[8]; BinaryPrimitives.WriteInt64LittleEndian(bytes, time); hash.AppendData(bytes);
+	}
+
+	private static void AppendBanString(IncrementalHash hash, string value)
+	{
+		Span<byte> bytes = stackalloc byte[256];
+		BinaryPrimitives.WriteInt32LittleEndian(bytes, value.Length); hash.AppendData(bytes[..4]);
+		// Preserve even unpaired surrogates instead of replacing invalid UTF-16 during encoding.
+		for (int offset = 0; offset < value.Length; offset += 128)
+		{
+			int count = Math.Min(128, value.Length - offset);
+			for (int index = 0; index < count; index++)
+				BinaryPrimitives.WriteUInt16LittleEndian(bytes.Slice(index * 2, 2), value[offset + index]);
+			hash.AppendData(bytes[..(count * 2)]);
+		}
 	}
 
 	private void ProcessPlayerTransferResponse(PlayerTransferResponsePacket packet)

@@ -3038,6 +3038,56 @@ whole solution were rerun successfully. Evidence:
 `run/p10-09-login-warnings-final.log`, `run/p10-09-login-tests-final.log` and
 `run/p10-09-login-ancillary.log`; the initial failed test log remains retained.
 
+## P10-09 hardware-ban snapshot evidence prerequisite
+
+Game's ban managers retain entries when Login disconnects. Therefore a blocked
+client after Login restart is insufficient evidence of database reload and fresh
+LS→GS synchronization. Game now logs `Applied Login hardware-ban snapshot` after
+the existing load loop completes, with `Kind`, bridge `Generation`, raw `Entries`,
+`DistinctEntries`, and `Sha256`. Existing load messages and all load/enforcement
+semantics remain unchanged. The extra INFO diagnostic contains no raw hardware
+identifiers or ban details.
+
+Fingerprint v1 is SHA-256 of the following binary encoding: byte 1, kind byte
+9 (MAC) or 10 (HDD), int32-LE distinct count, then effective entries sorted by
+ordinal UTF-16 key. Each row is a length-prefixed UTF-16LE key, int64-LE signed
+epoch milliseconds and, for MAC only, length-prefixed UTF-16LE details. String
+lengths are int32-LE code-unit counts; unpaired surrogates are preserved. Duplicate
+keys use the last entry, matching the managers' existing overwrite behavior.
+This describes one completely applied **batch**, not the entire retained cache.
+
+Five tests check independent Python `struct`/`hashlib` vectors, sorting,
+duplicates, all hashed fields, signed values and chunked surrogate encoding.
+The production dispatcher receives parsed bridge payloads in two tests; at the
+instant the fingerprint is logged, both actual manager values must equal winter
+`1800032400000` (2027-01-15 noon America/New_York) and summer `1815667200000`
+(2027-07-15 noon America/New_York). An invalid second epoch must fail without
+emitting a complete-batch record. Tests restore only their own manager keys and
+the connector singleton. They do not start a Java runtime, MySQL or bot clients.
+
+Java reference `ce54b7931`: `CM_MACBAN_LIST`, `CM_HDD_BANLIST`,
+`BannedMacManager.dbLoad`, and `HDDBanService.loadBan`. This is a gameplay-neutral
+diagnostic seam, not a parity or ban-policy change. Remaining acceptance still
+requires an owned Docker Login restart, fresh generation-tagged hashes matching
+the fixture before/after reload, exact persisted epochs, and real MAC/HDD refusal
+plus unbanned controls. BA-006 and P10-09 remain unchecked.
+
+Fixture research also found §7/120: C# `BanHdd` widens the duration product to
+64-bit while Java uses overflowing 32-bit multiplication. `BanMac` preserves the
+overflow in both implementations. This checkpoint records the divergence without
+changing command behavior. The hardware work still needs the parity correction;
+exact seasonal reload fixtures cannot assume that a many-month GM duration maps
+to the requested future timestamp.
+
+Pre-commit checks: 4,521 solution tests pass with 27 explicit skips; warnings
+remain at 4,243 sites. All CLAUDE.md ancillary checks pass. The initial standalone
+snapshot type was rejected by the fidelity gate; it was removed and the
+diagnostic helpers kept private inside the existing connector, with no new
+production type or baseline exemption. All checks were rerun on that final form.
+Logs: `run/p10-09-hardware-snapshot-warnings-final.log`,
+`run/p10-09-hardware-snapshot-tests-final.log`, and
+`run/p10-09-hardware-snapshot-ancillary-final.log`. No LIVE restart proof yet.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

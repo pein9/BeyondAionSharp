@@ -157,6 +157,11 @@ journey remains open; optional C# callback API internals retain their focused lo
 
 **Current work:** The full instant-valued DAO sweep is complete. Deterministic tests and isolated MySQL 8 `America/New_York` winter/summer round-trips pass for Login and production Game repositories, including MAC/HDD reloads; the isolated container was removed. The remaining item is a complete LS→GS hardware-ban synchronization journey across restart.
 
+Game now emits a compact, generation-tagged fingerprint after applying each received MAC/HDD batch.
+This is an evidence prerequisite: enforcement from Game's retained cache alone cannot prove a fresh
+Login reload. Canonical and real-dispatch tests cover exact epoch values and suppress the completion
+record when a batch fails partway. No LIVE restart acceptance is claimed by these tests.
+
 - [x] Supported JDBC query options are explicitly translated to MySqlConnector; unsupported options fail visibly.
 - [x] `players.last_online` has one UTC instant contract in every read/write path.
 - [x] MAC/HDD ban timestamps preserve the same epoch before and after DB reload.
