@@ -66,7 +66,7 @@ public sealed partial class ProblemWatcherTests
 		if (variant != "missing-restart") Docker("start", variant == "pre-kill-heartbeat" ? 1 : 40);
 		if (variant != "missing-heartbeat")
 		{
-			run.WriteEvent(JsonSerializer.Serialize(new { ts = at.AddSeconds(variant == "pre-kill-heartbeat" ? 1.750 : 41), srv = "gs", run = "test", cat = "Heartbeat", tpl = "heartbeat", msg = "heartbeat" }));
+			run.WriteEvent(JsonSerializer.Serialize(new { ts = at.AddSeconds(variant == "pre-kill-heartbeat" ? 1.750 : 41), srv = "gs", run = "test", cat = "Heartbeat", tpl = "Server heartbeat", msg = "heartbeat" }));
 			state.ReadFiles();
 		}
 		await state.WriteSummaryAsync(CancellationToken.None);
@@ -108,7 +108,7 @@ public sealed partial class ProblemWatcherTests
 		void Heartbeat(string server, int seconds)
 		{
 			File.AppendAllText(Path.Combine(options.RunDirectory, "logs", "gs", "gs.events.jsonl"),
-				JsonSerializer.Serialize(new { ts = at.AddSeconds(seconds), srv = server, run = "test", cat = "Heartbeat", tpl = "heartbeat", msg = "heartbeat" }) + "\n");
+				JsonSerializer.Serialize(new { ts = at.AddSeconds(seconds), srv = server, run = "test", cat = "Heartbeat", tpl = "Server heartbeat", msg = "heartbeat" }) + "\n");
 			state.ReadFiles();
 		}
 		void Docker(string action, int seconds)

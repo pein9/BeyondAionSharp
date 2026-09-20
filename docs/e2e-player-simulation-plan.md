@@ -2122,9 +2122,9 @@ real geodata on in production immediately, because geo is enabled by default; th
   exit 0 with no unallowlisted problems and remove their isolated stacks. The older
   `o1-a` failure remains preserved (#112). Detailed timestamps and validation are in
   `docs/e2e-phase10-validation.md`; no capacity acceptance is inferred.
-- [ ] **P10-04** [LIVE] S — Hang detection on top of the P3-12 heartbeat: alert thresholds and diagnostics on a missed
-  beat (Java's `DeadLockDetector` does not port 1:1).
-  **In progress.** Continuing watches now expect the first GS/LS/CS heartbeat within
+- [x] **P10-04** [LIVE] S — Hang detection on top of the P3-12 heartbeat: alert thresholds and diagnostics on a missed
+  beat (Java's `DeadLockDetector` does not port 1:1). (`ead592930`, `77592eff0`)
+  **Done.** Continuing watches now expect the first GS/LS/CS heartbeat within
   30 seconds of watcher startup (after stack readiness); later gaps default to 20 seconds.
   Bounded CLI thresholds are recorded in the summary. Duplicate/older/still-stale samples
   cannot clear an active alert; fresh recovery rearms monitoring but retains the run failure.
@@ -2135,8 +2135,15 @@ real geodata on in production immediately, because geo is enabled by default; th
   command output. It validates exact isolated container/network ownership, captures state,
   thread/resource samples and managed stacks, and explicitly records unavailable/partial
   evidence. Bot-only image targets supply pinned tooling; deployment targets stay unchanged.
-  Real isolated LIVE hang-injection evidence is still required; no deadlock detection or
-  P10-04 completion is claimed from unit tests/image builds alone.
+  `scripts/live/test-hang-diagnostics.ps1 -Run <unique-id>` provides repeatable isolated
+  LIVE proof with zero player bots: healthy managed-stack controls, sequential GS/LS/CS
+  freezes, bounded diagnostics, same-process recovery and a deliberately failed watcher.
+  Corrected replay `p10-04-b` detects all three gaps at 20.074/20.103/20.085 seconds and
+  retains exactly those failures after recovery. Paused-process diagnostics correctly say
+  partial (managed sampling is unavailable while frozen); healthy controls provide real
+  managed frames. Raw post-cleanup logs have only the existing boot allowance. The initial
+  probe exposed category-based heartbeat misclassification (#115), fixed and replayed.
+  No lock-cycle proof, automatic restart, gameplay change or capacity acceptance is claimed.
 - [ ] **P10-05** [LIVE] M — **Deferred (D7 declined for now; revisit later).** If approved, restore the Java boot
   tail the C# production boot skips: `HousingService` and the housing bid/auction/maintenance tasks, faction ratio counts,
   `SiegeService.InitSieges`, `PvpMapService.Init` (`GameServer.java:118-122,130-134,141,175`). Move the no-DB fixture
@@ -2438,6 +2445,8 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 113 | Heartbeat watcher ignores a never-started producer, rearms active alerts on replayed/stale samples, and accepts tracked heartbeat failures as green outside O1 (watcher defects) | Four red regressions reproduce absent first-heartbeat silence, duplicate/older and newer-but-stale rearming, and tracked-failure exit 0. No Java gameplay analogue; Java `commons/utils/concurrent/DeadLockDetector.java` at `ce54b7931` uses actual thread/lock ownership, not heartbeat absence | P10-04 alert foundation expects all three servers in continuous mode, records bounded initial/gap thresholds, rearms only on a fresh newer sample, and keeps unallowlisted known heartbeat failures fatal. Snapshot partial-artifact semantics and O1 bounded restart exceptions are preserved. No suppression or production change; diagnostics and LIVE validation remain pending |
 
 | 114 | Draft hang collector can attribute stacks across a process restart and omit problems appended during its final drain (infrastructure defects) | Two red tests reproduce changed process start during stack capture being reported as collected and a late problem absent from the final summary. No Java gameplay analogue | Corrected before P10-04 collector commit: revalidate exact identity/image/start after sampling, preserve ambiguous evidence as failed collection, and drain shared trace/problem files after pending diagnostics complete. No server restart, suppression or production change |
+
+| 115 | Watcher treats any event whose category/message mentions heartbeat as a liveness sample (infrastructure defect) | LIVE `p10-04-a` stores `Scheduled timer census` instead of the actual heartbeat in its GS diagnostic context because both originate from `ServerHeartbeatService`. Three red tests show census, configuration and unrelated message text postponing a missing-heartbeat failure. No Java gameplay analogue | Accept only the actual `Server heartbeat` / `Server heartbeat:` template. Existing synthetic crash fixtures use that same event name. Corrected LIVE `p10-04-b` verifies the saved sample template/timestamp for all three servers, preserves the expected failure verdict and completes cleanup. No allowance or production change |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the

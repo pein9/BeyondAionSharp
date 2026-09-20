@@ -332,11 +332,9 @@ public static class ProblemWatcher
 			if (!BelongsToRun(root))
 				return;
 			var template = WatchProblem.RequiredString(root, "tpl");
-			var message = WatchProblem.RequiredString(root, "msg");
-			var category = WatchProblem.RequiredString(root, "cat");
-			if (!template.Contains("heartbeat", StringComparison.OrdinalIgnoreCase) &&
-				!message.Contains("heartbeat", StringComparison.OrdinalIgnoreCase) &&
-				!category.Contains("heartbeat", StringComparison.OrdinalIgnoreCase))
+			// Timer census and diagnostics share the producer's category. Only the
+			// heartbeat event itself establishes liveness or supplies its metrics.
+			if (template != "Server heartbeat" && !template.StartsWith("Server heartbeat:", StringComparison.Ordinal))
 				return;
 			var server = WatchProblem.RequiredString(root, "srv");
 			if (!Servers.Contains(server, StringComparer.Ordinal)) return;

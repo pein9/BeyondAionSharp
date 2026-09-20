@@ -2568,6 +2568,68 @@ warning baseline 4,243 and every applicable CLAUDE.md ancillary gate. Logs:
 `run/p10-04-collector-final-*.log`. No baseline/allowlist change or Java runtime
 comparison; Java reference remains `4.8` at `ce54b7931`.
 
+## P10-04 isolated LIVE acceptance
+
+The repeatable `scripts/live/test-hang-diagnostics.ps1` starts a new four-service
+Docker project with zero player bots, verifies real managed stack output while
+healthy, then freezes GS, LS and CS sequentially. Each target is selected by full
+ID and verified project/service/network ownership. Identity, image and process
+start must remain unchanged through recovery. Cleanup unfreezes an interrupted
+probe before removing its private stack; the shared Docker MySQL is never used.
+The probe source and SHA-256, watcher binary SHA-256, image IDs, observations,
+command results, raw logs and final failed watcher summary are retained.
+
+Initial `run/p10-04-hangs/p10-04-a` passed its original assertions and cleaned up,
+but inspection found its GS diagnostic context was a timer-census record rather
+than the genuine heartbeat (#115). The old category/message substring rule
+accepted both. Three red regressions reproduce unrelated events postponing a
+missing-heartbeat failure; matching only the actual heartbeat template fixes it.
+The original result remains, but does not stand in for the corrected replay.
+
+Corrected `run/p10-04-hangs/p10-04-b` passes with the strengthened context check.
+It records source base `77592eff0`, watcher binary SHA-256
+`80DFFABB4CB00A5C5C35D16DCE8A821FAA956CF7B1896C3F16076AA5CEF55BFB`
+and archived probe SHA-256
+`3BDE2459ADEC6717A99B8ECBF3D272A1DC6CACCCAEE0C6BD5563082F2E12AF0F`.
+The template fix and probe source were uncommitted during this replay; the hashes
+pin the exact validated versions. Server images are unchanged from the collector
+checkpoint's bot-only builds.
+
+| Server | Last genuine heartbeat (UTC) | Alert (UTC) | Gap | Fresh post-unpause heartbeat (UTC) |
+|---|---|---|---|---|
+| GS | 19:35:20.727 | 19:35:40.801 | 20.074 s | 19:35:53.396 |
+| LS | 19:35:50.447 | 19:36:10.550 | 20.103 s | 19:36:23.541 |
+| CS | 19:36:15.932 | 19:36:36.017 | 20.085 s | 19:36:49.485 |
+
+All timestamps are 2026-09-20. Every collection retains the exact target, paused
+state, successful bounded process/resource samples and actual heartbeat context.
+All report **partial**, correctly refusing to claim managed stacks from a frozen
+runtime. Healthy controls separately contain real thread/application frames:
+19,682 bytes GS, 3,877 LS and 4,076 CS. This demonstrates liveness detection and
+diagnostics, not Java-style lock-cycle proof or diagnosis of every possible hang.
+
+The watcher deliberately exits **1**, with `failed=true`, one NEW heartbeat
+fingerprint plus two repeats, and only the existing single boot allowance
+(`total=4`, `suppressed=1`, `known=regressed=0`). All three failures remain after
+fresh recovery. The validator exits **0** only after checking those exact facts.
+Faults go to `injected-problems.json` inside the run, not the shared ledger; no
+new allowance is created. Post-cleanup raw GS problems contain `231c488f` once;
+LS/CS files are empty. Cleanup errors are empty, all four test containers/network/
+ephemeral DB are removed, and the existing Docker MySQL/unrelated container remain.
+No bots ran. P10-04 is complete; Phase 10 is not.
+
+The 70-case watcher integration group and 14-assertion mock probe-ownership gate
+pass. The latter is now in CLAUDE.md's pre-commit checks. Evidence:
+`run/p10-04-template-{red,green}.log`, `run/p10-04-{a,b}-owner.log`, and each
+probe's `hang-probe-result.json` / `logwatch-summary.json` / `hangs/` directory.
+
+Final pre-commit checks pass: 4,435 solution tests / 27 explicit skips, unchanged
+warning baseline 4,243, structural fidelity and every CLAUDE.md ancillary gate,
+including the new mock ownership contract. Logs: `run/p10-04-live-*.log`.
+The archived probe source, current source and replay's watcher binary all match
+their recorded hashes. No gameplay, upstream automation, global ledger or
+allowlist change was made.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

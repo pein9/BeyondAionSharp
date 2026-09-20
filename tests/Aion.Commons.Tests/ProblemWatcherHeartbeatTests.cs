@@ -5,6 +5,21 @@ namespace Aion.Commons.Tests;
 
 public sealed partial class ProblemWatcherTests
 {
+	[Theory]
+	[InlineData("Scheduled timer census: {TimerCensus}", "Aion.Commons.Diagnostics.ServerHeartbeatService", "Scheduled timer census: {}")]
+	[InlineData("Heartbeat producer configured", "Other", "Configured")]
+	[InlineData("Unrelated event", "Other", "Last heartbeat was stale")]
+	public async Task OnlyTheHeartbeatTemplateCanRefreshLiveness(string template, string category, string message)
+	{
+		using var run = new WatcherRun();
+		AppendHeartbeat(run, DateTimeOffset.UtcNow.AddSeconds(-30));
+		File.AppendAllText(Path.Combine(run.Options().RunDirectory, "logs", "gs", "gs.events.jsonl"),
+			JsonSerializer.Serialize(new { lvl = "INFO", ts = DateTimeOffset.UtcNow, srv = "gs", run = "test",
+				cat = category, tpl = template, msg = message }) + "\n");
+		Assert.Equal(1, await ProblemWatcher.RunAsync(run.Options()));
+		Assert.Contains("NEW HEARTBEAT gs", run.ReadDigest(), StringComparison.Ordinal);
+	}
+
 	[Fact]
 	public async Task ContinuousWatchingDetectsServersThatNeverEmitTheirFirstHeartbeat()
 	{

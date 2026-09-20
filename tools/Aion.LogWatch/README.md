@@ -30,7 +30,8 @@ Unallowlisted heartbeat failures fail enforcement even when their fingerprint is
 The declared P10-03 restart gap remains restricted to the game server and its original deadline.
 
 These are suspected-hang alerts, not proof of deadlock. Unlike Java's `DeadLockDetector`, a missing heartbeat
-cannot establish a cycle of thread/lock ownership. P10-04 LIVE fault-injection validation remains pending.
+cannot establish a cycle of thread/lock ownership. Only the actual `Server heartbeat` / `Server heartbeat:`
+template supplies liveness; census/configuration messages from the same category do not.
 
 ## Bounded hang diagnostics
 
@@ -60,6 +61,22 @@ The final/default `runtime` targets are unchanged deployment images without diag
 collection uses [Microsoft's EventPipe-based dotnet-stack tool](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/dotnet-stack)
 and adds sampling overhead; it is not lock-cycle proof. Rebuild bot images after this change. Reusing an
 older image with `-SkipImageBuild` will record a missing-tool result (exit 69), never fabricate stacks.
+
+### Local fault-injection validation
+
+```powershell
+pwsh -NoProfile -File scripts/live/test-hang-diagnostics.ps1 -Run hang-unique-id
+```
+
+This deliberately freezes each server in a new isolated Docker stack, one at a time, with zero player bots.
+It uses ports 32106/31241/37777/37780, its own Docker MySQL, healthy managed-stack controls, and guarded
+unpause/cleanup. It verifies that the collector identifies the paused target, records partial diagnostics,
+and that all servers resume emitting genuine heartbeats without restarting. The watcher **must exit 1**:
+these faults must remain failures, not become allowlisted. Only the fault-injection validator exits 0 when
+the exact expected evidence and post-cleanup raw logs pass. Its ledger is local to the run, never the shared
+known-problem ledger. Artifacts, copied probe source, hashes and failed watcher summary are retained under
+`run/p10-04-hangs/<id>`. Use `-SkipImageBuild` only after building current bot diagnostic image targets.
+The mock ownership gate `scripts/live/test-hang-probe-contract.ps1` starts no Docker services or bots.
 
 Live trace attribution retains at most 64 records and 128 Ki characters per account. Older or ambiguous
 timestamp lookups and reproduction bundles stream the original trace files; do not remove them while a run
