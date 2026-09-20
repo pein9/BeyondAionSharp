@@ -17,6 +17,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'full-suite.ps1')
 . (Join-Path $PSScriptRoot 'run-artifact-owner.ps1')
+. (Join-Path $PSScriptRoot 'run-report.ps1')
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $manifest = Get-Content -Raw -LiteralPath (Join-Path $repoRoot 'parity-artifacts/e2e/scenarios.json') | ConvertFrom-Json
 $plan = @(Get-FullSuitePlan -Manifest $manifest -Suite $Suite -SimShards $SimShards -SoakBots $SoakBots -SoakSeconds $SoakSeconds)
@@ -42,6 +43,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Cannot record Full-run git SHA.' }
 $suiteState = @{ imagesReady = [bool]$SkipImageBuild }
 $runLive = Join-Path $repoRoot 'scripts/live/run-live.ps1'
 $runSimTier = Join-Path $repoRoot 'scripts/sim/run-sim-tier.ps1'
+$suiteStarted = [DateTimeOffset]::UtcNow
+$suiteTimer = [Diagnostics.Stopwatch]::StartNew()
+$suiteFailure = $null
 Push-Location $repoRoot
 try {
 	Invoke-FullSuitePlan -Plan $plan -Record {
@@ -82,7 +86,19 @@ try {
 		}
 	}
 }
-finally { Pop-Location }
+catch { $suiteFailure = $_; throw }
+finally {
+	Pop-Location
+	try {
+		Write-AionRunReport -RunDirectory $runRoot -Run $Run -Mode FULL -Scenarios @() `
+			-Status $(if ($null -eq $suiteFailure) { 'passed' } else { 'failed' }) `
+			-StartedUtc $suiteStarted -DurationSeconds $suiteTimer.Elapsed.TotalSeconds `
+			-Failure $(if ($null -eq $suiteFailure) { $null } else { $suiteFailure.Exception.ToString() }) -GitSha $gitSha -Seed $Seed
+	} catch {
+		if ($null -eq $suiteFailure) { throw }
+		Write-Warning "Could not finalize report: $_. Original suite failure is preserved."
+	}
+}
 
 Write-Host "$Suite suite $Run passed. Artifacts: $runRoot"
 if ($Suite -ne 'All' -or $SoakSeconds -ne 7200 -or ((@($SoakBots | Sort-Object) -join ',') -ne '50,200,500')) {

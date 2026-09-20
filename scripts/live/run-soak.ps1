@@ -13,6 +13,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+. (Join-Path $repoRoot 'scripts/e2e/run-report.ps1')
 if ([string]::IsNullOrWhiteSpace($RunRoot)) {
 	$RunRoot = if ([string]::IsNullOrWhiteSpace($env:AION_E2E_RUN_ROOT)) { Join-Path $repoRoot 'run' } else { $env:AION_E2E_RUN_ROOT }
 }
@@ -23,6 +24,7 @@ if (Test-Path -LiteralPath $runPath) { throw "Soak output already exists: $runPa
 $failure = $null
 $success = $false
 $started = [DateTimeOffset]::UtcNow
+$soakTimer = [Diagnostics.Stopwatch]::StartNew()
 $runLive = Join-Path $PSScriptRoot 'run-live.ps1'
 Push-Location $repoRoot
 try {
@@ -51,4 +53,18 @@ try {
 	if ($workloadCode -ne 0 -or $acceptanceCode -ne 0) { throw "Soak acceptance failed. See $runPath/soak-acceptance.json" }
 	Write-Host "Soak $Run accepted for $Bots subjects/$DurationSeconds seconds. This is one population, not the complete Phase 10 matrix."
 }
-finally { Pop-Location }
+catch { $failure = $_; throw }
+finally {
+	Pop-Location
+	if (Test-Path -LiteralPath $runPath -PathType Container) {
+		try {
+			Write-AionRunReport -RunDirectory $runPath -Run $Run -Mode LIVE -Scenarios @('SOAK') `
+				-Status $(if ($null -eq $failure) { 'passed' } else { 'failed' }) `
+				-StartedUtc $started -DurationSeconds $soakTimer.Elapsed.TotalSeconds `
+				-Failure $(if ($null -eq $failure) { $null } else { $failure.Exception.ToString() }) -Seed $Seed
+		} catch {
+			if ($null -eq $failure) { throw }
+			Write-Warning "Could not finalize report: $_. Original soak failure is preserved."
+		}
+	}
+}

@@ -27,6 +27,7 @@ Set-StrictMode -Version Latest
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $repoRoot 'scripts/e2e/run-artifact-owner.ps1')
+. (Join-Path $repoRoot 'scripts/e2e/run-report.ps1')
 if ([string]::IsNullOrWhiteSpace($RunRoot)) {
 	$RunRoot = if ([string]::IsNullOrWhiteSpace($env:AION_E2E_RUN_ROOT)) {
 		Join-Path $repoRoot 'run'
@@ -148,6 +149,26 @@ function Restore-Environment([string]$Name, [AllowNull()][string]$PreviousValue)
 	else { Set-Item "Env:$Name" $PreviousValue }
 }
 
+function Test-RunDataSweeps {
+	foreach ($sweep in @(
+		@{ Scenario = 'SWEEP-GATHER'; Name = 'gatherables' },
+		@{ Scenario = 'SWEEP-CRAFT'; Name = 'recipes' },
+		@{ Scenario = 'SWEEP-BIND'; Name = 'bindpoints' },
+		@{ Scenario = 'SWEEP-TELEPORT'; Name = 'teleporters' },
+		@{ Scenario = 'SWEEP-TRADE'; Name = 'tradelists' },
+		@{ Scenario = 'SWEEP-SKILL'; Name = 'skills' }
+	)) {
+		if ($scenarioIds.Contains($sweep.Scenario)) {
+			& python (Join-Path $repoRoot 'scripts/e2e/report-data-sweep.py') `
+				--report (Join-Path $runPath "data-sweeps/$($sweep.Name).json") `
+				--baseline (Join-Path $repoRoot "parity-artifacts/e2e/data-sweeps/$($sweep.Name)-baseline.json")
+			if ($LASTEXITCODE -ne 0) {
+				throw "$($sweep.Name) data-sweep coverage failed validation or regressed against its baseline."
+			}
+		}
+	}
+}
+
 $gitSha = ''
 try {
 	Start-Transcript -LiteralPath $transcriptPath | Out-Null
@@ -198,13 +219,18 @@ try {
 			throw "SIM $Tier process '$ProcessKey' failed with exit code $testExitCode."
 		}
 		$status = 'passed'
+		# Sweep validators require successful test-process provenance. A sweep
+		# rejection below is still caught and replaces this provisional status.
+		Write-RunMetadata -GitSha $gitSha
+		Test-RunDataSweeps
 	}
 	finally {
 		Pop-Location
 	}
 }
 catch {
-	$failureMessage = $_.Exception.Message
+	$status = 'failed'
+	$failureMessage = $_.Exception.ToString()
 	throw
 }
 finally {
@@ -221,27 +247,13 @@ finally {
 	Restore-Environment 'AION_E2E_QUEST_PLAN_ROOT' $previousQuestPlanRoot
 
 	if ($transcriptStarted) { Stop-Transcript | Out-Null }
-}
-
-
-foreach ($sweep in @(
-	@{ Scenario = 'SWEEP-GATHER'; Name = 'gatherables' },
-	@{ Scenario = 'SWEEP-CRAFT'; Name = 'recipes' },
-	@{ Scenario = 'SWEEP-BIND'; Name = 'bindpoints' },
-	@{ Scenario = 'SWEEP-TELEPORT'; Name = 'teleporters' },
-	@{ Scenario = 'SWEEP-TRADE'; Name = 'tradelists' },
-	@{ Scenario = 'SWEEP-SKILL'; Name = 'skills' }
-)) {
-	if ($scenarioIds.Contains($sweep.Scenario)) {
-		& python (Join-Path $repoRoot 'scripts/e2e/report-data-sweep.py') `
-			--report (Join-Path $runPath "data-sweeps/$($sweep.Name).json") `
-			--baseline (Join-Path $repoRoot "parity-artifacts/e2e/data-sweeps/$($sweep.Name)-baseline.json")
-		if ($LASTEXITCODE -ne 0) {
-			$status = 'failed'
-			$failureMessage = "$($sweep.Name) data-sweep coverage failed validation or regressed against its baseline."
-			Write-RunMetadata -GitSha $gitSha
-			throw $failureMessage
-		}
+	try {
+		Write-AionRunReport -RunDirectory $runPath -Run $SimulationRunId -Mode SIM -Scenarios $scenarioIds.ToArray() `
+			-Status $status -StartedUtc $startedAt -DurationSeconds $stopwatch.Elapsed.TotalSeconds `
+			-Failure $failureMessage -GitSha $gitSha -Seed $Seed
+	} catch {
+		if ($status -eq 'passed') { throw }
+		Write-Warning "Could not finalize report: $_. Original SIM failure is preserved."
 	}
 }
 

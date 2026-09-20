@@ -285,9 +285,9 @@
   {
     "fp": "c899dfcc",
     "firstSeenSha": "493e6234ff332e4000e0fcb4cda7cbd8388172f3",
-    "lastSeenSha": "493e6234ff332e4000e0fcb4cda7cbd8388172f3",
-    "lastSeenRun": "p10-09-chat-b",
-    "count": 1,
+    "lastSeenSha": "93b8938200bf51a4ca559b68fe8988e934a72d97",
+    "lastSeenRun": "p10-10-report-b2-failure",
+    "count": 2,
     "status": "new",
     "tracking": "P10-09/BA-002; simulation-plan section 7 #119. Game sends a gag duration but Chat compares it as an epoch expiry, identically to Java ce54b7931. LIVE B2 chat-b captures forbidden text at both subject and control before a positive barrier. Preserve server behavior under the source-spec decision; unresolved, no allowance or fixedIn. Keep status new so enforced watching remains red. Draft chat-a used the generic ebe67ab3 assertion fingerprint; its observation count is retained, not treated as a fix."
   },

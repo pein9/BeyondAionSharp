@@ -2231,9 +2231,17 @@ real geodata on in production immediately, because geo is enabled by default; th
   or full thrown exception. SIM records each scenario rather than only the enclosing test method;
   LIVE waits for the dispatcher and actor cleanup. Cancellation is a failed attempt, not a skip;
   missing terminal evidence is never a pass. Existing attempts cannot be overwritten or retried
-  within one journal. This is an evidence prerequisite, not the completed report: runner/cleanup
-  verdicts, watcher fingerprints and repro links, coverage/heartbeat aggregation, skipped-plan
-  accounting and the Fast/Full `report.md`/`report.json` outputs still remain.
+  within one journal. Journal receipt: `93b893820`.
+  The report renderer now joins terminal runner evidence with those journals and writes both
+  `report.md` and `report.json` from SIM/Fast, LIVE, Full and soak finalization, including failed
+  runs. It preserves skipped/unvalidated plan rows, keeps cleanup failures separate from successful
+  scenario outcomes, joins retained LIVE watcher classifications and NEW repro links, and reports
+  sampled heartbeat/queue/memory/timer peaks. Full aggregation checks child identities and retained
+  gate artifacts rather than trusting a stale child report. Missing evidence cannot establish a pass.
+  Remaining P10-10 work: structured SIM problem/repro and resource export, complete coverage delta
+  integration (including the P10-11 measurements), and final acceptance of all report paths. These
+  missing observations are explicitly unavailable, not zero. No retry/flaky policy is enabled here;
+  P10-12 still owns it. The current Full matrix remains unexecuted under D17 and known P10-09 failures.
 - [ ] **P10-11** [BOTH] M — Coverage. (a) Packet coverage from bot traces and the P3-07 tap: client opcodes sent out
   of 186 and server opcodes decoded out of 238. (b) SIM line and branch coverage of `src/Aion.GameServer` with
   coverlet on `tests/Aion.Simulation.Tests`, per directory (`Services`, `Handlers/Instance`, `Handlers/AI`,

@@ -3321,6 +3321,82 @@ Pre-commit warning inventory remains 4,243 sites across 21 codes. The solution
 passes 4,583 tests with 27 explicit skips and every CLAUDE.md ancillary gate.
 Logs are `run/p10-10-journal-{targeted-final,warnings,tests,ancillary,fast}.log`.
 
+## P10-10 — Runner report generation and evidence joins
+
+`scripts/e2e/report-run.py` now renders `report.json` and `report.md` from
+terminal `runner-result.json`, the scenario journal, and retained watcher,
+heartbeat and coverage-comparison artifacts. The common PowerShell finalizer
+is called from SIM/Fast, LIVE, Full and soak `finally` paths, after their normal
+validation/cleanup. Full reads child evidence afresh, checks each child's run,
+mode and scenario identities against the selected plan, preserves fail-fast
+skips, and requires retained artifacts for successful coverage/parity/soak gates.
+It never trusts a previously rendered child report as a verdict.
+
+Successful scenario cleanup and whole-run cleanup are distinct: a failed runner
+can contain completed scenarios but its report is still failed. Missing terminal
+scenario evidence is failed; absent/unvalidated planned execution is skipped with
+an explicit reason and no invented duration. Invalid journals, mismatched run IDs,
+corrupt suite receipts and missing gate artifacts cannot become green. The
+PowerShell finalizer also checks the report's hash of the exact terminal runner
+receipt so an older rendered report cannot silently substitute for the new one.
+
+LIVE classifications come from that run's digest and are reconciled with its
+watcher summary, not reclassified using today's ledger. Every NEW fingerprint
+links to its P3-14 repro and missing repro files are reported as evidence issues.
+Heartbeat peaks are sampled observations per producer, not claims of a continuous
+process maximum or a passed two-hour soak. Stored coverage comparisons are linked
+and retained; unavailable deltas, SIM structured problem export and SIM resource
+metrics remain explicit limitations. P10-10 remains unchecked for these remaining
+items and final report acceptance; P10-11/P10-12 are not claimed implemented.
+
+The first actual Docker-backed Fast report is
+`run/p10-10-report/p10-10-report-fast/report.md` (and adjacent JSON). All six
+xUnit cases pass, all eleven manifest scenarios are individually passed, and
+the public Fast command prints the summary and report path. Twenty-one Python
+report cases plus the PowerShell contract cover clean/failing runs, corrupt and
+missing evidence, whole-run cleanup failure, no-terminal interruptions, Full
+fail-fast inventory, classifications/repro links, sampled peaks, retained coverage
+and actual success/failure CLI output. The report checks are now mandatory in
+CLAUDE.md.
+
+The initial ancillary pass caught the LIVE provenance test's single-capture
+invariant: a provisional empty `$gitSha` was counted as a second capture. The
+report fallback now uses a separate variable copied only from the single actual
+capture; existing drift protection and the provenance test remain unchanged.
+The failed ancillary log is retained. No production or Java behavior changes.
+Source evidence is archived under `run/p10-10-report-source-a`, based on
+`93b893820`, with exact reused Docker image identities.
+
+Two subsequent LIVE runs exercise the actual finalizer:
+
+- `run/p10-10-report/p10-10-report-l0/report.md`: L0 passes with two subjects;
+  runner, scenario and enforced watcher all agree. The report contains two Game,
+  seven Login and five Chat heartbeat samples; observed Game peaks are
+  2,519,412,736 working-set bytes and 675 armed timers. The scenario takes 13.325
+  seconds; the entire runner including startup and cleanup takes 84.823 seconds.
+- `run/p10-10-report/p10-10-report-b2-failure/report.md`: two subjects plus one
+  director reproduce the existing §7/119 Chat-gag defect. The scenario and runner
+  exit 1; the enforced watcher reports NEW `c899dfcc`. The report remains FAILED,
+  preserves the scenario's failed exit code/duration and links the complete repro
+  bundle. The console summary also prints that NEW bundle path. The existing
+  ledger entry's count increases from one to two; its status remains `new` and
+  its tracking/allowance policy is unchanged. This is a retained failure, not a
+  successful B2 acceptance run. A separate negative contract covers a failed
+  scenario even when its watcher is clean.
+
+Both isolated stacks and networks were removed; only maintainer Docker MySQL and
+the unrelated container remain. No run exceeded three concurrent clients. Later
+malformed-input hardening adds truncated gzip and numeric-overflow cases; rendering
+all three retained runs with the final writer preserves their report JSON hashes
+and verdicts byte-for-byte. No raw evidence was rewritten. Full-suite and large
+soak execution are still not claimed: their joins are contract-tested only.
+
+All pre-commit checks pass: 4,583 solution tests with 27 skips, unchanged 4,243
+warning sites, all previous ancillary gates, and both new report gates. Logs:
+`run/p10-10-report-warnings.log`, `run/p10-10-report-dotnet.log`,
+`run/p10-10-report-ancillary-final.log`, `run/p10-10-report-tests-final.log`,
+`run/p10-10-report-contract-final.log`, and the per-run Fast/L0/B2 console logs.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

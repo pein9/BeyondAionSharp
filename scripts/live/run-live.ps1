@@ -44,6 +44,7 @@ Set-StrictMode -Version Latest
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $repoRoot 'scripts/e2e/run-artifact-owner.ps1')
+. (Join-Path $repoRoot 'scripts/e2e/run-report.ps1')
 . (Join-Path $PSScriptRoot 'docker-bot-runner.ps1')
 . (Join-Path $PSScriptRoot 'lifecycle-controller.ps1')
 . (Join-Path $PSScriptRoot 'chat-fault-controller.ps1')
@@ -92,6 +93,7 @@ $botExitCode = $null
 $stackCreated = $false
 $stackStopped = $false
 $runStartedAt = [DateTimeOffset]::UtcNow
+$runTimer = [Diagnostics.Stopwatch]::StartNew()
 $stopFile = Join-Path $runPath 'watcher.stop'
 $watcherStdout = Join-Path $runPath 'watcher.stdout.log'
 $watcherStderr = Join-Path $runPath 'watcher.stderr.log'
@@ -262,10 +264,12 @@ $env:AION_RUN_ID = $Run
 $env:AION_PACKET_TAP = $PacketTap.IsPresent.ToString().ToLowerInvariant()
 
 $failure = $null
+$reportGitSha = ''
 try {
 	Push-Location $repoRoot
 	try {
 		$gitSha = Get-LiveGitRevision
+		$reportGitSha = $gitSha
 		if ($Scenario -contains 'O1') { $configProfile = 'docker-bots-lifecycle' }
 		if ($Scenario -contains 'SOAK') {
 			if ($Scenario.Count -ne 1) { throw 'SOAK needs its own isolated stack.' }
@@ -468,6 +472,12 @@ finally {
 	}
 	try { Remove-OldRuns }
 	catch { if ($null -eq $failure) { $failure = $_ } }
+	try {
+		Write-AionRunReport -RunDirectory $runPath -Run $Run -Mode LIVE -Scenarios $Scenario `
+			-Status $(if ($null -eq $failure) { 'passed' } else { 'failed' }) `
+			-StartedUtc $runStartedAt -DurationSeconds $runTimer.Elapsed.TotalSeconds `
+			-Failure $(if ($null -eq $failure) { $null } else { $failure.Exception.ToString() }) -GitSha $reportGitSha -Seed $Seed
+	} catch { if ($null -eq $failure) { $failure = $_ } else { Write-Warning "Could not finalize report: $_. Original LIVE failure is preserved." } }
 }
 
 if ($null -ne $failure) {
