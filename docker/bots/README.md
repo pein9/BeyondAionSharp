@@ -11,6 +11,11 @@ and safety controls but leaves the shipped failure rates unchanged.
 The stack publishes login, chat and game on host ports 12106, 11241 and 17777 by default. The admin API is
 published only on `127.0.0.1:17780`. Override any port with the corresponding `AION_BOT_*_PORT` variable.
 
+The game container enables `AION_TIMER_CENSUS=1` for capacity diagnostics. Every heartbeat is accompanied
+by a separate bounded breakdown of active scheduled callback methods, delays, periods and oldest registration
+times. Omitted groups have an explicit active-task count. This does not alter timer execution or acceptance
+thresholds; ordinary production configuration defaults to count-only metrics.
+
 After starting a uniquely named compose project, wait for the real stack contract rather than the login/chat
 healthcheck pacing timers:
 

@@ -1112,6 +1112,37 @@ Validation passes: full solution 4,292 tests / 24 explicit skips, warning baseli
 4,243, Docker Fast 6/6, and all CLAUDE.md ancillary checks. This is an infrastructure
 correction, not a completed capacity gate; P10-02 remains unchecked.
 
+## P10-02 timer-growth attribution (investigation open)
+
+Both fifty-subject mixed runs show post-warm-up armed-timer growth. At the
+95-minute checkpoint, the older run's complete fifteen-minute medians are 1,193,
+1,123, 1,231, 1,324, 1,388 and 1,483. The matrix child's first four are 1,187,
+1,117, 1,211 and 1,302. These observations do not establish a leaking callback,
+nor do they satisfy the unchanged plateau gate. The short lifecycle-only control
+did not show the same sustained trend; duel isolation is running separately.
+
+An opt-in `AION_TIMER_CENSUS=1` diagnostic now accompanies each game heartbeat in
+the bot Docker stack. It groups active scheduled tasks by callback method,
+one-shot/fixed-rate kind, original delay and period, with the oldest registration
+time. The output caps groups at 128 and explicitly accounts for omitted active
+tasks. Metadata is removed on completion, fault or cancellation; completed
+history, delegate targets, stack traces and player objects are not retained.
+Anonymous scheduler adapters can still have opaque method names, so the census
+is attribution evidence, not an automatic leak verdict.
+
+Production defaults to count-only metrics. The separate diagnostic event leaves
+the existing heartbeat format and acceptance thresholds unchanged. Java
+`utils/ThreadPoolManager.java:schedule/scheduleAtFixedRate/getStats` at
+`ce54b7931` was read as the scheduling reference; this adds C# observability only,
+with no callback execution, cancellation or timing change. Runtime attribution
+still requires a newly built image; older running containers cannot emit it.
+
+Validation passes: full solution 4,297 tests / 24 explicit skips, warning baseline
+4,243, Docker Fast 6/6, and all CLAUDE.md ancillary checks. Focused tests cover
+default-off behavior, grouping/oldest registration, every terminal state,
+already-completed observations, output truncation accounting and the unchanged
+heartbeat event contract.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

@@ -1977,6 +1977,10 @@ real geodata on in production immediately, because geo is enabled by default; th
   Asmodian nodes, with final inventory/offline checks and enforced watcher success. Higher populations,
   nonzero-channel gathering and Elyos respawn reuse still need LIVE evidence.
   Details and checkpoint limitations: `docs/e2e-phase10-validation.md`.
+  Two ongoing fifty-subject mixed runs show post-warm-up armed-timer growth; the
+  cause remains unclassified and the plateau threshold is unchanged. An opt-in
+  per-callback timer census in the bot stack records active kinds/delays/periods
+  for diagnosis without retaining completed tasks or changing scheduling.
 - [ ] **P10-03** [LIVE] S — Crash and restart: kill the game server mid-session, restart, relog succeeds, delayed save is
   correct, a second login on the same account kicks the first.
 - [ ] **P10-04** [LIVE] S — Hang detection on top of the P3-12 heartbeat: alert thresholds and diagnostics on a missed

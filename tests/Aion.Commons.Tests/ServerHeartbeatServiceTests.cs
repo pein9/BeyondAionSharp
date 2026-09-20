@@ -42,6 +42,25 @@ public sealed class ServerHeartbeatServiceTests
 		Assert.True(snapshot.LastGcIndex >= 0);
 		if (snapshot.LastGcIndex == 0) Assert.Equal(0, snapshot.LastGcHeapBytes);
 		Assert.Null(snapshot.DispatcherWrites);
+		Assert.Null(snapshot.TimerCensus);
+	}
+
+	[Fact]
+	public void OptionalTimerCensusIsASeparateEventAndDoesNotAlterHeartbeatContract()
+	{
+		var census = new TimerCensusSnapshot(2, 1, 0,
+			[new("Once", 1000, null, "Example.Callback", 2, DateTimeOffset.UnixEpoch)]);
+		var metrics = new DelegateServerHeartbeatMetrics(() => 7, () => 11, () => 2, timerCensus: () => census);
+		Assert.Same(census, metrics.Capture().TimerCensus);
+		var logger = new RecordingLogger();
+		new ServerHeartbeatService(metrics, logger).WriteHeartbeat();
+		Assert.Equal(2, logger.Messages.Count);
+		Assert.StartsWith("Server heartbeat: connections=7, packetQueueDepth=11, armedTimers=2,", logger.Messages[0]);
+		Assert.EndsWith("dispatcherWrites=null", logger.Messages[0]);
+		Assert.StartsWith("Scheduled timer census:", logger.Messages[1]);
+		using var payload = JsonDocument.Parse((string)logger.Fields["TimerCensus"]!);
+		Assert.Equal(2, payload.RootElement.GetProperty("ActiveCount").GetInt32());
+		Assert.Equal("Example.Callback", payload.RootElement.GetProperty("Groups")[0].GetProperty("Callback").GetString());
 	}
 
 	[Fact]
@@ -63,6 +82,7 @@ public sealed class ServerHeartbeatServiceTests
 		public LogLevel? Level { get; private set; }
 		public string? Message { get; private set; }
 		public Dictionary<string, object?> Fields { get; private set; } = [];
+		public List<string> Messages { get; } = [];
 
 		public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
@@ -77,6 +97,7 @@ public sealed class ServerHeartbeatServiceTests
 		{
 			Level = logLevel;
 			Message = formatter(state, exception);
+			Messages.Add(Message);
 			Fields = ((IEnumerable<KeyValuePair<string, object?>>)state!).ToDictionary();
 		}
 	}

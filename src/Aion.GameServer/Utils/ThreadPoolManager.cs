@@ -74,7 +74,7 @@ public class ThreadPoolManager : IAsyncDisposable
 		var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_shutdownTokenSource.Token, cancellationToken);
 		var task = Task.Run(() => RunOnceAsync(action, delay, maximumRuntimeWithoutWarning, scheduledAt, linkedTokenSource.Token), CancellationToken.None);
 		TrackScheduledTask(task);
-		_scheduleObserver?.Invoke(new ThreadPoolScheduleObservation(ThreadPoolScheduleKind.Once, delay, Period: null, task));
+		_scheduleObserver?.Invoke(new ThreadPoolScheduleObservation(ThreadPoolScheduleKind.Once, delay, Period: null, task, action, scheduledAt));
 		return new ScheduledTask(task, linkedTokenSource, scheduledAt + delay);
 	}
 
@@ -132,7 +132,7 @@ public class ThreadPoolManager : IAsyncDisposable
 		var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_shutdownTokenSource.Token, cancellationToken);
 		var task = Task.Run(() => RunFixedRateAsync(action, initialDelay, period, MaximumRuntimeWithoutWarning, scheduledAt, linkedTokenSource), CancellationToken.None);
 		TrackScheduledTask(task);
-		_scheduleObserver?.Invoke(new ThreadPoolScheduleObservation(ThreadPoolScheduleKind.FixedRate, initialDelay, period, task));
+		_scheduleObserver?.Invoke(new ThreadPoolScheduleObservation(ThreadPoolScheduleKind.FixedRate, initialDelay, period, task, action, scheduledAt));
 		return new ScheduledTask(task, linkedTokenSource, scheduledAt + initialDelay);
 	}
 
@@ -275,7 +275,9 @@ public sealed record ThreadPoolScheduleObservation(
 	ThreadPoolScheduleKind Kind,
 	TimeSpan Delay,
 	TimeSpan? Period,
-	Task Completion);
+	Task Completion,
+	Delegate? Callback = null,
+	DateTimeOffset? ScheduledAt = null);
 
 public enum ThreadPoolScheduleKind
 {

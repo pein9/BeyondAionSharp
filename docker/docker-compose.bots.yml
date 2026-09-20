@@ -120,6 +120,7 @@ services:
       AION_PACKET_TAP: ${AION_PACKET_TAP:-false}
       GAMESERVER_ADMIN_API_ENABLED: "true"
       GAMESERVER_ADMIN_API_PORT: "7780"
+      AION_TIMER_CENSUS: "1"
       GAMESERVER_ADMIN_API_TOKEN: ${AION_BOT_ADMIN_TOKEN:-aion-bots-local-token}
     ports:
       - "${AION_BOT_GAME_PORT:-17777}:7777"

@@ -32,7 +32,8 @@ public static class GameServerServiceCollectionExtensions
 		services.AddSingleton(options);
 		services.AddSingleton(databaseOptions);
 		services.AddSingleton(configLoadOptions ?? GameServerConfigLoadOptions.Default);
-		services.AddSingleton<ThreadPoolMetrics>();
+		// Opt-in diagnostics for LIVE capacity investigations; production defaults to count-only.
+		services.AddSingleton(_ => new ThreadPoolMetrics(Environment.GetEnvironmentVariable("AION_TIMER_CENSUS") == "1"));
 		services.AddSingleton<Action<ThreadPoolScheduleObservation>>(
 			serviceProvider => serviceProvider.GetRequiredService<ThreadPoolMetrics>().Observe);
 		services.AddSingleton<ThreadPoolManager>();
@@ -74,7 +75,8 @@ public static class GameServerServiceCollectionExtensions
 			() => AionConnection.PacketQueueDepth,
 			() => serviceProvider.GetRequiredService<ThreadPoolMetrics>().ArmedTimerCount,
 			() => Aion.GameServer.Commons.Network.AConnection.CaptureWriteLatency(
-				NioServer.GetRegisteredInstance()?.GetAllConnections() ?? [])));
+				NioServer.GetRegisteredInstance()?.GetAllConnections() ?? []),
+			() => serviceProvider.GetRequiredService<ThreadPoolMetrics>().CaptureDetails()));
 		services.AddHostedService<ServerHeartbeatService>();
 		services.AddHostedService<Aion.GameServer.Services.Admin.AdminHttpService>();
 

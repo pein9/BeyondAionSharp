@@ -18,14 +18,22 @@ public readonly record struct ServerHeartbeatSnapshot(
 	long WorkingSetBytes = 0,
 	long LastGcHeapBytes = 0,
 	DispatchLatencySnapshot? DispatcherWrites = null,
-	long LastGcIndex = 0);
+	long LastGcIndex = 0,
+	TimerCensusSnapshot? TimerCensus = null);
+
+public sealed record TimerCensusGroup(string Kind, double DelayMilliseconds, double? PeriodMilliseconds,
+	string Callback, int Count, DateTimeOffset? OldestScheduledUtc);
+
+public sealed record TimerCensusSnapshot(int ActiveCount, int GroupCount, int OmittedActiveCount,
+	IReadOnlyList<TimerCensusGroup> Groups);
 
 /// <summary>Adapts server-owned counters without coupling Commons to any server implementation.</summary>
 public sealed class DelegateServerHeartbeatMetrics(
 	Func<int> connectionCount,
 	Func<int> packetQueueDepth,
 	Func<int> armedTimerCount,
-	Func<DispatchLatencySnapshot>? dispatcherWrites = null) : IServerHeartbeatMetrics
+	Func<DispatchLatencySnapshot>? dispatcherWrites = null,
+	Func<TimerCensusSnapshot?>? timerCensus = null) : IServerHeartbeatMetrics
 {
 	public ServerHeartbeatSnapshot Capture()
 	{
@@ -36,7 +44,7 @@ public sealed class DelegateServerHeartbeatMetrics(
 		// means no collection has happened; do not force a GC or fabricate a zero sample.
 		var gc = GC.GetGCMemoryInfo();
 		return new(connectionCount(), packetQueueDepth(), armedTimerCount(), process.WorkingSet64,
-			gc.HeapSizeBytes, dispatcherWrites?.Invoke(), gc.Index);
+			gc.HeapSizeBytes, dispatcherWrites?.Invoke(), gc.Index, timerCensus?.Invoke());
 	}
 }
 
@@ -73,5 +81,8 @@ public sealed class ServerHeartbeatService(
 			snapshot.LastGcHeapBytes,
 			snapshot.LastGcIndex,
 			JsonSerializer.Serialize(snapshot.DispatcherWrites));
+		// Separate optional event preserves the versioned heartbeat/acceptance wire contract.
+		if (snapshot.TimerCensus != null)
+			logger.LogInformation("Scheduled timer census: {TimerCensus}", JsonSerializer.Serialize(snapshot.TimerCensus));
 	}
 }
