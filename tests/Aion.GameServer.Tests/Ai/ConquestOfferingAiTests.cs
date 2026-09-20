@@ -1,4 +1,5 @@
 using Aion.GameServer.Handlers.AI;
+using Aion.GameServer.Commons.Utils;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.GameObjects.Players;
 
@@ -9,7 +10,8 @@ namespace Aion.GameServer.Tests.Ai;
 /// </summary>
 /// <remarks>
 /// <b>Retail runs this as two stages and this port ran it as one.</b> A spawner waits eight minutes and
-/// then places a spot — or nothing, 27% of the time — and the spot lives ten seconds and rolls its own
+/// then tests solo and party branches in priority order; on success it waits for a reset message.
+/// The spot lives ten seconds and rolls its own
 /// monster. What stood here rolled once on spawning and placed the monster directly.
 /// <para>
 /// The odds are what they are, so these pins assert the parts that are not random: the cadence, the
@@ -19,6 +21,20 @@ namespace Aion.GameServer.Tests.Ai;
 [Collection("GoldenDataManager")]
 public sealed class ConquestOfferingAiTests
 {
+	[Fact]
+	public void OneOfferingRemainsOneUntilItsResetMessage()
+	{
+		using BossAiHarness harness = NewHarness();
+		Rnd.UseSeed(73);
+		try
+		{
+			harness.Spawn(Spawner, 300f, 300f, 200f);
+			var seen = harness.WatchNew(10 * 481, null, SoloSpot, PartySpot);
+			Assert.Equal(1, seen.Total);
+		}
+		finally { Rnd.UseProductionRandom(); }
+	}
+
 	private const int Gelkmaros = 220070000;
 
 	/// <summary>One spawner, and the pair of spots retail gives it.</summary>
@@ -84,22 +100,26 @@ public sealed class ConquestOfferingAiTests
 	}
 
 	/// <summary>
-	/// <b>The clock keeps turning</b>, so over several cycles something is placed.
+	/// Failed probability branches retry, but a successful offering stops the clock.
 	/// </summary>
 	/// <remarks>
-	/// With a 73% chance a turn places something, five turns are silent about one time in fifteen
-	/// hundred — asserted over ten, which is past any run this suite will see.
+	/// Controlled rolls avoid probabilistic test failures and pin both independent branch tests.
 	/// </remarks>
 	[Fact]
-	public void TheClockKeepsTurning()
+	public void FailedBranchesRetryAfterEightMinutes()
 	{
 		using BossAiHarness harness = NewHarness();
-		harness.Spawn(Spawner, 300f, 300f, 200f);
+		Npc spawner = harness.Spawn(Spawner, 300f, 300f, 200f);
+		var ai = (ConquestOfferingSpawnerAI)spawner.GetAi();
+		var rolls = new List<int>();
+		ai.SpotRollOverride = percent => { rolls.Add(percent); return false; };
+		Assert.Equal(0, harness.WatchNew(481, null, SoloSpot, PartySpot).Total);
+		Assert.Equal([51, 22], rolls);
 
-		BossAiHarness.Watched seen = harness.WatchNew(
-			10 * 481, null, SoloSpot, PartySpot);
-
-		Assert.True(seen.Total > 0, "ten turns of the eight-minute clock placed no spot at all");
+		ai.SpotRollOverride = percent => percent == 22;
+		Assert.Equal(0, harness.WatchNew(478, null, SoloSpot, PartySpot).Total);
+		Assert.Equal(1, harness.WatchNew(2, null, PartySpot).Total);
+		Assert.Equal(0, harness.WatchNew(481, null, SoloSpot, PartySpot).Total);
 	}
 
 	/// <summary>
@@ -181,31 +201,58 @@ public sealed class ConquestOfferingAiTests
 	}
 
 	/// <summary>
-	/// <b>The reset npc re-arms a nearby spawner's clock.</b> This is the loop closing.
+	/// A reset before any offering cannot unset the flag and must not postpone the first roll.
 	/// </summary>
 	/// <remarks>
 	/// Spawner places a spot, spot places a monster, monster leaves the reset npc, reset npc broadcasts
 	/// <c>13929</c> at fifty metres — and the spawner starts its eight minutes again. Nothing in this
 	/// port sent that message before, so a spawner's clock ran on regardless of what the raid did.
 	/// <para>
-	/// Asserted by driving the clock almost to its end, resetting it, and showing that the turn which
-	/// would have fired does not.
+	/// The old pin asserted the opposite; it had omitted retail's unset_flag_var condition.
 	/// </para>
 	/// </remarks>
 	[Fact]
-	public void TheResetNpcStartsTheSpawnersEightMinutesAgain()
+	public void ResetBeforeFirstOfferingDoesNotPostponeItsRoll()
 	{
 		using BossAiHarness harness = NewHarness();
 		Npc spawner = harness.Spawn(Spawner, 300f, 300f, 200f);
+		((ConquestOfferingSpawnerAI)spawner.GetAi()).SpotRollOverride = _ => true;
 
 		harness.Clock.Advance(TimeSpan.FromSeconds(470));
 
 		// The reset npc lands ten metres off, inside its fifty-metre earshot.
 		harness.Spawn(TimeReset, 310f, 300f, 200f);
 
-		// The turn that was eleven seconds away now never comes.
+		// No flag has been set yet, so these repeated broadcasts do not move the deadline.
 		BossAiHarness.Watched seen = harness.WatchNew(30, null, SoloSpot, PartySpot);
-		Assert.Equal(0, seen.Total);
+		Assert.Equal(1, seen.Total);
+	}
+
+	[Fact]
+	public void ResetAfterAnOfferingArmsExactlyOnceDespiteRepeatedBroadcasts()
+	{
+		using BossAiHarness harness = NewHarness();
+		Npc spawner = harness.Spawn(Spawner, 300f, 300f, 200f);
+		var ai = (ConquestOfferingSpawnerAI)spawner.GetAi();
+		ai.SpotRollOverride = _ => true;
+		Assert.Equal(1, harness.WatchNew(481, null, SoloSpot, PartySpot).Total);
+		ai.OnNpcMessage(spawner, -1, null);
+		Assert.Equal(0, harness.WatchNew(481, null, SoloSpot, PartySpot).Total);
+		harness.Spawn(TimeReset, 310f, 300f, 200f);
+		Assert.Equal(0, harness.WatchNew(479, null, SoloSpot, PartySpot).Total);
+		Assert.Equal(1, harness.WatchNew(2, null, SoloSpot, PartySpot).Total);
+	}
+
+	[Fact]
+	public void DespawningCancelsThePendingRoll()
+	{
+		using BossAiHarness harness = NewHarness();
+		Npc spawner = harness.Spawn(Spawner, 300f, 300f, 200f);
+		var ai = (ConquestOfferingSpawnerAI)spawner.GetAi();
+		ai.SpotRollOverride = _ => true;
+		spawner.GetController().Delete();
+		ai.OnNpcMessage(spawner, ConquestOfferingSpawnerAI.TimeReset, null);
+		Assert.Equal(0, harness.WatchNew(481, null, SoloSpot, PartySpot).Total);
 	}
 
 	/// <summary><c>BF4_Rotation_Skill_NPC</c>, dropped on whoever the monster is fighting.</summary>

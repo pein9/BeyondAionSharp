@@ -41477,3 +41477,39 @@ Production still reads wall time through the default source. A runtime pin arms 
 advances eight, attempts a five-second re-arm, and proves the original arm count and ten-second fire are
 preserved. This is infrastructure clock alignment only; the measured retail take-the-shorter semantics
 recorded above are unchanged.
+
+## Conquest offering: the eight-minute retry was incorrectly unconditional
+
+Found during P10-02 capacity investigation, 2026-09-20. This corrects the earlier
+claim that a spot's ten-second lifetime replaces the spawner's flag, and the
+claims of unconditional eight-minute spawning and a flat 51/22/27 distribution.
+
+Source: `NpcAIPatterns_F4_Rotation_JSM.xml`, SHA-256
+`018f5685cb51bdebdad25ab1be73284ddf3a7e20ff0f2f2f1859da880a64aaac`.
+All 24 `LF4/DF4_Rotation_Nor/Din_SpawnNPC_01..06` patterns were checked:
+
+- Wake arms 480,000 ms.
+- Successful solo/party branches set `FLAGVARI_ALPHA_1`, spawn a temporary spot,
+  and call `set_idle_timer(0)` (the already-established stop convention).
+- Only the fallback retries after 480,000 ms.
+- Message 13929 must successfully **unset** that flag before re-arming. Repeated
+  six-second reset-NPC pulses while it is already clear must not postpone the roll.
+- The two probability conditions are first-match tests, 51% followed by 22%,
+  giving 51% / 10.78% / 38.22% under the runtime's independent-roll semantics.
+
+The prior implementation omitted the flag and stop, so it placed more permanent
+monsters even with the previous offering alive. A fixed-seed virtual regression
+observed six offerings in ten cycles without any reset; the corrected implementation
+produces one. Tests also pin failed-roll retry, both selection branches, resets
+before/after an offering, repeated pulses and cancellation on despawn. Lifecycle
+callbacks are serialized and stale generations are ignored after cancellation.
+Java `data/handlers/ai/ConquestOfferingSpawnerAI.java` and
+`ConquestOfferingAggressiveAI.java` at `ce54b7931` were read: Java likewise waits
+for a death-triggered respawn, but its original one-stage odds/timing are not
+restored over retail. No templates/spawns were added or removed.
+
+This is a proven behavior defect, **not yet proof of the entire LIVE timer-growth
+cause**. The running old-image diagnostic remains untouched; a corrected image
+and new LIVE evidence are required. A separate open discrepancy was recorded in
+simulation-plan §7 #89: spot branch chances/lifetime also differ from raw retail;
+the old comments are not an audited distribution contract.

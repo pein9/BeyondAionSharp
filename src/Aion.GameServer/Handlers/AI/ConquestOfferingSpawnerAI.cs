@@ -16,11 +16,11 @@ namespace Aion.GameServer.Handlers.AI;
 /// Retail-sourced; see docs/retail-ai-fidelity.md. <b>Retail runs this as two stages and this class ran
 /// it as one.</b>
 /// <list type="number">
-/// <item>a spawner waits <b>eight minutes</b>, then places a <b>solo spot</b> at 51%, a <b>party
-/// spot</b> at 22%, or <b>nothing at all</b> at 27%;</item>
-/// <item>the spot it places lives <b>ten seconds</b>, and on waking rolls again — 19/19/20/20 for four
-/// ordinary monsters and 6/7/7 for three "All" variants, with an eighth taking the remaining two per
-/// cent — and puts one at its own point.</item>
+/// <item>a spawner waits <b>eight minutes</b>, then tests the solo branch at 51%, followed by
+/// the party branch at 22% if solo failed. A successful branch sets FLAGVARI_ALPHA_1 and stops
+/// the timer; only a successful unset by message 13929 re-arms it. The fallback retries in eight minutes;</item>
+/// <item>the spot places a monster at its own point. Its legacy cumulative-weight selection and
+/// lifetime still need the separate retail-fidelity correction recorded in the simulation plan.</item>
 /// </list>
 /// <para>
 /// What stood here rolled <b>once, immediately, on spawning</b>, at 70/30 with a nested 30, and placed
@@ -33,9 +33,9 @@ namespace Aion.GameServer.Handlers.AI;
 /// carries the same weights, which is the kind of regularity worth checking rather than assuming.
 /// </para>
 /// <para>
-/// <b>Not translated.</b> Message <c>13929</c>, which resets a spawner's clock and has no sender in this
-/// port, and the flag var each branch sets — retail uses it to stop a spawner re-rolling while its spot
-/// is still standing, and the ten-second lifetime does that here.
+/// The flag outlives the temporary spot. Ignoring it and the success branch's zero idle delay
+/// repeatedly created permanent monsters even while the previous offering remained alive.
+/// Repeated reset broadcasts while the flag is already clear must not postpone the next roll.
 /// </para>
 /// </remarks>
 [AIName("conquest_offering_spawner")]
@@ -47,7 +47,7 @@ public class ConquestOfferingSpawnerAI : NpcAI, INpcMessageListener
     /// <summary>Retail's idle timer on every spawner.</summary>
     private const long CycleMillis = 480_000L;
 
-    /// <summary>Retail's <c>test_probability</c> on the two spot branches; the rest is silence.</summary>
+    /// <summary>Independent first-match probability tests, not a cumulative-weight table.</summary>
     private const int SoloChance = 51;
     private const int PartyChance = 22;
 
@@ -84,6 +84,12 @@ public class ConquestOfferingSpawnerAI : NpcAI, INpcMessageListener
             [856173] = (856371, 856377),
         };
     private ScheduledTask? cycleTask;
+    private readonly object cycleGate = new();
+    private bool offeringFlag;
+    private long cycleGeneration;
+
+    /// <summary>Deterministic branch control for tests; production uses ordinary random draws.</summary>
+    internal System.Func<int, bool>? SpotRollOverride { get; set; }
 
     public ConquestOfferingSpawnerAI(Npc owner)
         : base(owner)
@@ -93,38 +99,56 @@ public class ConquestOfferingSpawnerAI : NpcAI, INpcMessageListener
     protected override void HandleSpawned()
     {
         base.HandleSpawned();
-        ArmCycle();
+        lock (cycleGate)
+        {
+            offeringFlag = false;
+            CancelCycle();
+            ArmCycle();
+        }
     }
 
     private void ArmCycle()
     {
+        long generation = ++cycleGeneration;
         cycleTask = ThreadPoolManager.GetInstance().Schedule(_ =>
         {
-            PlaceSpot();
+            PlaceSpot(generation);
             return ValueTask.CompletedTask;
         }, CycleMillis);
     }
 
     /// <summary>One turn of the eight-minute clock: a spot, the other spot, or nothing.</summary>
-    private void PlaceSpot()
+    private void PlaceSpot(long generation)
     {
-        if (GetOwner().IsSpawned() && Spots.TryGetValue(GetNpcId(), out (int Solo, int Party) pair))
+        lock (cycleGate)
         {
-            int roll = Rnd.NextInt(100);
-            int spot = roll < SoloChance ? pair.Solo
-                : roll < SoloChance + PartyChance ? pair.Party
-                : 0;
+            if (generation != cycleGeneration)
+                return; // An already-dispatched callback must not replace a newer lifecycle's timer.
+            cycleTask = null;
+            if (!GetOwner().IsSpawned())
+                return;
+            if (Spots.TryGetValue(GetNpcId(), out (int Solo, int Party) pair))
+            {
+                int spot = Roll(SoloChance) && !offeringFlag ? pair.Solo
+                    : Roll(PartyChance) && !offeringFlag ? pair.Party : 0;
 
-            if (spot != 0)
-                SpawnFor(spot, GetOwner().GetX(), GetOwner().GetY(), GetOwner().GetZ(),
-                    (sbyte)GetOwner().GetHeading(), SpotLife);
+                if (spot != 0)
+                {
+                    offeringFlag = true;
+                    SpawnFor(spot, GetOwner().GetX(), GetOwner().GetY(), GetOwner().GetZ(),
+                        (sbyte)GetOwner().GetHeading(), SpotLife);
+                    return; // Retail set_idle_timer(0): stay stopped until the flag is unset.
+                }
+            }
+            ArmCycle();
         }
-
-        ArmCycle();
     }
+
+    private bool Roll(int percent) => SpotRollOverride?.Invoke(percent) ?? Rnd.NextInt(100) < percent;
 
     private void CancelCycle()
     {
+        cycleGeneration++;
         if (cycleTask != null && !cycleTask.IsDone())
             cycleTask.Cancel(true);
         cycleTask = null;
@@ -132,13 +156,13 @@ public class ConquestOfferingSpawnerAI : NpcAI, INpcMessageListener
 
     protected override void HandleDespawned()
     {
-        CancelCycle();
+        lock (cycleGate) CancelCycle();
         base.HandleDespawned();
     }
 
     protected override void HandleDied()
     {
-        CancelCycle();
+        lock (cycleGate) CancelCycle();
         base.HandleDied();
     }
 
@@ -156,8 +180,14 @@ public class ConquestOfferingSpawnerAI : NpcAI, INpcMessageListener
         if (messageType != TimeReset)
             return;
 
-        CancelCycle();
-        ArmCycle();
+        lock (cycleGate)
+        {
+            if (!GetOwner().IsSpawned() || !offeringFlag)
+                return;
+            offeringFlag = false;
+            CancelCycle();
+            ArmCycle();
+        }
     }
 }
 

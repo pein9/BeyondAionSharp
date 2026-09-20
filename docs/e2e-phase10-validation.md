@@ -1105,8 +1105,13 @@ A red regression retains 20,000 records before the fix; after it, the bounded
 cache still resolves the error at second 56 and its exact preceding fifty
 records. Focused tests cover oversized rows, tied and late timestamps, account
 isolation, split UTF-8/CRLF/partial lines, truncation, early enumeration disposal,
-finite snapshots during appends, and queue backpressure. Real scaled watcher
-evidence and the game-server timer-growth diagnosis remain outstanding.
+finite snapshots during appends, and queue backpressure. `p10-02-duel50-a` passes
+50 subjects / 600 seconds / 517 cohort actions, including 120 duels, with final
+checks and clean enforced watching. The watcher retains 3,264 records (51 accounts
+including the director), 880,683 characters, and preserves 100,091,770 raw trace
+bytes. A mid-run private-memory sample is about 35 MiB. Two-minute server timer
+medians are 832.5, 814.5, 811.5, 793 and 854; this short diagnostic does not prove
+a plateau or establish the mixed-workload growth cause.
 
 Validation passes: full solution 4,292 tests / 24 explicit skips, warning baseline
 4,243, Docker Fast 6/6, and all CLAUDE.md ancillary checks. This is an infrastructure
@@ -1115,7 +1120,7 @@ correction, not a completed capacity gate; P10-02 remains unchecked.
 ## P10-02 timer-growth attribution (investigation open)
 
 Both fifty-subject mixed runs show post-warm-up armed-timer growth. At the
-95-minute checkpoint, the older run's complete fifteen-minute medians are 1,193,
+95-minute checkpoint, the older run's rounded fifteen-minute medians are 1,193,
 1,123, 1,231, 1,324, 1,388 and 1,483. The matrix child's first four are 1,187,
 1,117, 1,211 and 1,302. These observations do not establish a leaking callback,
 nor do they satisfy the unchanged plateau gate. The short lifecycle-only control
@@ -1142,6 +1147,31 @@ Validation passes: full solution 4,297 tests / 24 explicit skips, warning baseli
 default-off behavior, grouping/oldest registration, every terminal state,
 already-completed observations, output truncation accounting and the unchanged
 heartbeat event contract.
+
+## P10-02 conquest spawner investigation
+
+The new census is being exercised by `p10-02-economy50-census-a`: fifty subjects,
+seed 73, twenty minutes of gathering/crafting/vendor/social/lifecycle activities,
+without quest/combat activities. Its game image is
+`sha256:747613998e573b63c473941ae6e415e6bac97f36aa8b03a09268d512d543262c`
+from `7fd98ccbe`; workload starts 07:28:21 UTC. It remains a diagnostic, not a
+capacity population result.
+
+The census exposed 162 armed conquest-spawner cycles at boot. Reading their
+retail source found an unconditional-repeat defect (#88): success should stop
+the timer with a latched flag until a valid reset message. The fixed-seed virtual
+regression produces six offerings without resets before the correction and one
+after it. All 24 spawner patterns share the same flag/stop/reset contract. Details
+and the source hash are in `retail-ai-fidelity.md`. This corrects a demonstrated
+behavior bug without disabling content; its contribution to LIVE timer growth
+still requires a corrected-image run. The spot-family odds/lifetime gap (#89)
+is recorded separately and remains open.
+
+Spawner-fix validation passes: 13 focused AI tests, full solution 4,300 tests /
+24 explicit skips, warning baseline 4,243, Docker Fast 6/6 and every CLAUDE.md
+ancillary check. The old-image census's 24-hour effect timers rise from 344 at
+boot to 391 after the first eight-minute spawn wave; this temporal association
+is not substituted for corrected-image capacity evidence.
 
 ## Scope decisions
 
