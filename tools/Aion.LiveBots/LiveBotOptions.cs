@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using Aion.Bots.Scenarios;
+using Aion.Bots.Transport;
 
 namespace Aion.LiveBots;
 
@@ -50,7 +51,7 @@ public sealed record LiveBotOptions(
 		var gamePort = PositiveInt(values, "game-port", EnvironmentPort("AION_BOT_GAME_PORT", 17777), 65535);
 		var chatPort = PositiveInt(values, "chat-port", EnvironmentPort("AION_BOT_CHAT_PORT", 11241), 65535);
 		var adminPort = PositiveInt(values, "admin-port", EnvironmentPort("AION_BOT_ADMIN_PORT", 17780), 65535);
-		var bots = PositiveInt(values, "bots", 1, 99);
+		var bots = PositiveInt(values, "bots", 1, BotIdentity.MaximumSubjects);
 		var connectSeconds = PositiveInt(values, "connect-timeout-seconds", 10, 3600);
 		var stepSeconds = PositiveInt(values, "step-timeout-seconds", 15, 3600);
 		var seed = Int(values, "seed", 1);
@@ -74,6 +75,8 @@ public sealed record LiveBotOptions(
 		if (scenarios.Any(scenario => scenario is "L0" or "canaries") && scenarios.Length != 1)
 			throw new ArgumentException("L0 and canaries are coordinated scenarios and must be run by themselves.");
 		bots = Math.Max(bots, scenarioDefinitions.Max(definition => definition.Bots));
+		if (bots > BotIdentity.MaximumSubjects)
+			throw new ArgumentException($"Scenario requires more than {BotIdentity.MaximumSubjects} subject bots.", "scenario");
 		var reentrySeconds = PositiveInt(values, "reentry-seconds", 10, 3600);
 
 		var known = new HashSet<string>(StringComparer.Ordinal)

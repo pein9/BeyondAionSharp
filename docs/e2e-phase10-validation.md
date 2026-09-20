@@ -50,6 +50,51 @@ Logger/clock/custom-quest ratchets, fidelity, quest-compiler/data-sweep Python
 tests and retention regression pass. No gameplay code changed. This is not a new
 full breadth replay or a soak result.
 
+## P10-02: capacity and policy foundations (in progress)
+
+The LIVE option cap is now 1,000 subjects. `BotIdentity` preserves existing small
+run names/MACs, reserves the director's historical MAC, and extends addresses and
+alphabetic character suffixes without collisions. Population tests cover every
+identity at 50/200/500/1,000, including the old 254/255 and 676 boundaries.
+
+`SoakLifePolicy` allocates same-race pairs to Poeta, Ishalgen and both capitals,
+plus opposing-race pairs to Reshanta. Capitals are needed for the shipped crafting
+facilities; their inclusion does not claim ordinary travel between these areas.
+Each pair has an independent seeded random stream and shuffled action cycles,
+with 1–5 second think times. Every allowed activity appears once per cycle rather
+than relying on chance to eventually cover it. The combined policy covers quest,
+gather, craft, vendor, trade, group, duel, PvP, relog and crash-disconnect. Sources
+must be existing, enabled LIVE scenario contracts, not deferred D7 content.
+
+The policy references the breadth protocol contracts, not the one-shot fixtures:
+E1 already gathers in both starter zones and E5 crafts in both capitals despite
+their single-map manifest setup fields. Social and lifecycle packet flows are
+reusable outside their original fixture map. Runtime drivers still need to prove
+their repeatable state, timing, legitimate failures, cleanup and observations;
+the policy alone proves none of those actions work at scale.
+
+The soak overlay now mirrors every shared observability/chat/channel/geo control.
+Its admission limit is 1,001 (up to 1,000 subjects plus the director), because the
+unchanged production/Java default of 100 cannot admit the 200/500-player runs.
+The existing single I/O dispatcher, production gather/craft failure rates, events
+and random quest bonus rewards are untouched. The compose regression checks both
+shared controls and the permitted capacity-only difference.
+
+This is preparation, **not P10-02 completion**. The long-lived action runtime,
+resource coordination, latency/memory/timer sampling, statistical assertions and
+all two-hour population runs remain outstanding. The Full runner must continue
+to reject unavailable soak execution until that runtime is implemented.
+
+Foundation evidence: 21 focused identity/policy tests pass. Docker run
+`p10-02-connect500` records `500 passed, 0 failed` and 500 separate bot traces,
+with enforced log watching and no new allowance. This is a TCP key-exchange/close
+smoke workload, **not** 500 authenticated or simultaneously in-world players;
+it does not exercise the new admission limit. The test stack was removed after
+the run; the maintainer's Docker MySQL container was left alone.
+The foundation solution run passes 4,123 tests with 21 explicit skips; compiler
+warnings remain 4,243. All required logger/clock/draft ratchets, fidelity, Python
+compiler/report tests, retention, Full-suite and compose contract checks pass.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

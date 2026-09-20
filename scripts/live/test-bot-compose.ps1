@@ -79,6 +79,19 @@ try {
 	Assert-Contract ($soakProfile -notmatch 'gameserver\.event\.service\.disabled_events') 'soak profile disables production events'
 	Assert-Contract ($soakProfile -notmatch 'gameserver\.quest\.random_bonus_rewards\.enabled') 'soak profile overrides random quest bonus rewards'
 	Assert-Contract ($soakProfile -match 'loginserver\.accounts\.autocreate\s*=\s*true') 'soak profile does not enable account auto-creation'
+	$sharedControls = Get-Content (Join-Path $repoRoot 'docker/bots/overlay/10-bot-observability.properties')
+	$soakControls = @{}
+	foreach ($line in ($soakProfile -split '\r?\n')) {
+		if ($line -match '^\s*([^#=\s]+)\s*=(.*)$') { $soakControls[$Matches[1]] = $Matches[2].Trim() }
+	}
+	foreach ($line in $sharedControls) {
+		if ($line -match '^\s*([^#=\s]+)\s*=(.*)$') {
+			$key = $Matches[1]; $value = $Matches[2].Trim()
+			Assert-Contract ($soakControls.ContainsKey($key) -and $soakControls[$key] -eq $value) "soak lost shared control $key"
+		}
+	}
+	Assert-Contract ($soakControls['gameserver.network.login.max_players'] -eq '1001') 'soak cannot admit the subject population plus its director'
+	Assert-Contract (-not $soakControls.ContainsKey('gameserver.network.nio.threads')) 'soak changes dispatcher concurrency instead of measuring production defaults'
 
 	$seedSql = Get-Content -Raw (Join-Path $repoRoot 'docker/bots/seed/10-bot-seed.sql')
 	Assert-Contract ($seedSql -match "'director'\s*,\s*'Zd2bHPtGKgR\+5Xk\+9H2ugwisL08='\s*,\s*TRUE\s*,\s*9") 'director credentials or access level changed'

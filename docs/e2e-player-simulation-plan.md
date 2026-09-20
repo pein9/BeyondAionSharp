@@ -1905,6 +1905,13 @@ real geodata on in production immediately, because geo is enabled by default; th
   gather, craft, vendor, trade, group, duel, relog, crash-disconnect) with random think times. Watch dispatcher write
   latency (the selector shim does O(connections) work per wakeup), working-set plateau, heartbeat, timer-count growth
   and flood kicks.
+  **In progress, not accepted:** capacity identities/options now support 1,000 subjects without MAC/name
+  collisions; a per-cohort seeded shuffle policy covers all required activity types in both starter zones,
+  capitals for crafting, and cross-race Reshanta. The isolated soak overlay admits 1,000 subjects plus its
+  director and shares the ordinary test observability/geo/chat controls without deterministic rate overrides.
+  Runtime action drivers, resource coordination, telemetry and two-hour evidence remain required.
+  Foundation validation: 21 focused identity/policy tests and 500 TCP key-exchange/close smoke cases pass;
+  neither proves a populated world or a two-hour soak. The TODO remains unchecked until full runtime evidence.
 - [ ] **P10-03** [LIVE] S — Crash and restart: kill the game server mid-session, restart, relog succeeds, delayed save is
   correct, a second login on the same account kicks the first.
 - [ ] **P10-04** [LIVE] S — Hang detection on top of the P3-12 heartbeat: alert thresholds and diagnostics on a missed
@@ -2160,6 +2167,9 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 69 | Full orchestration accepted a seed but omitted it from every LIVE child invocation, so SIM and LIVE metadata could describe different seeds (harness infrastructure defect) | No Java analogue; `scripts/e2e/run-full.ps1` forwarded `Seed` only to SIM | P10-01 forwards the seed to SIM, LIVE and soak children. Regression executes the actual runner dispatch block with recording children and a non-default seed; no gameplay RNG or production behavior change |
 
 | 70 | LIVE's dispatch fallthrough ran the connection-only smoke test for an unimplemented manifest scenario or a multi-scenario selection, recording the requested IDs as completed without executing them (harness false-positive defect) | No Java analogue; `tools/Aion.LiveBots/LiveBotRunner.cs:RunAsync/RunConnectBotAsync` | P10-01 restricts the fallback to exactly `connect`. Focused regressions require rejection for a future manifest entry and two known scenarios selected together, before any bot/socket is created. Essential when Full selection becomes manifest-driven |
+
+| 71 | LIVE options stopped at 99 bots; subject MAC encoding overflowed past 255, collided with director address 254, and character suffixes stopped being letters above 676 (harness capacity defects) | No Java analogue; `LiveBotOptions.Parse`, `LiveBotSession` identity construction, `LiveBotRunner.CharacterName` | P10-02 foundations support 1,000 subjects, preserve small-run names/MACs and reserve the director's address. Whole-population tests verify uniqueness, valid wire/name format and boundaries at 50/200/500/1,000 |
+| 72 | Soak overlay claimed the same observability controls as deterministic runs but lacked later chat credentials, twin-channel and explicit geo settings (harness profile drift) | No Java behavior change; source `NetworkConfig.java` at `ce54b7931` confirms the configurable 100-player admission default | P10-02 aligns shared controls and ratchets every common key against the ordinary bot overlay. Only soak raises admission to 1,001; production remains 100 and the single dispatcher is unchanged. Gather/craft rates, events and random quest bonuses remain production defaults |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

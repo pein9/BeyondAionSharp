@@ -529,8 +529,7 @@ public static partial class LiveBotRunner
 
 	private static string CharacterName(int index)
 	{
-		var suffix = new string([(char)('a' + ((index - 1) / 26)), (char)('a' + ((index - 1) % 26))]);
-		return "Aelive" + suffix;
+		return BotIdentity.CharacterName(index);
 	}
 
 	private static T Get<T>(IReadOnlyDictionary<string, object?> fields, string name) =>
@@ -660,11 +659,9 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		this.account = account;
 		this.characterName = characterName;
 		this.race = race;
-		var botNumber = string.Equals(account, LiveGmFacade.DirectorAccount, StringComparison.Ordinal)
-			? (byte)0xFE
-			: byte.Parse(bot.AsSpan(1), System.Globalization.CultureInfo.InvariantCulture);
-		macAddress = $"02-00-00-00-00-{botNumber:X2}";
-		macBytes = [0x02, 0x00, 0x00, 0x00, 0x00, botNumber];
+		bool director = string.Equals(account, LiveGmFacade.DirectorAccount, StringComparison.Ordinal);
+		macBytes = BotIdentity.MacBytes(director ? 1 : BotIdentity.ParseSubjectNumber(bot), director);
+		macAddress = BotIdentity.MacAddress(macBytes);
 	}
 
 	public void BeginStep(string step) => currentStep = step;
