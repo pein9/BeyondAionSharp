@@ -1346,6 +1346,34 @@ actual-helper contract through `test-run-soak.ps1`). Validation uses a separate
 build output root, not the active capacity binaries. This change contains no
 gameplay code or upstream automation changes and does not rebuild a Docker image.
 
+## P10-02 build-revision capture
+
+Audit #96 finds that the LIVE runner queried Git HEAD after service/heap readiness,
+even though it built its bot and watcher tools before starting the stack. A commit
+during the long readiness interval could therefore mislabel those tools. The runner
+now captures HEAD before preparation/build, checks it again after both tool builds
+and before Docker startup, and passes the captured revision into bot metadata.
+Readiness-time commits do not relabel already-built binaries. Build-time revision
+changes, malformed revisions and failed Git lookups fail closed.
+
+`test-live-build-provenance.ps1` fails against the former ordering and passes after
+the correction. It checks the actual build/start ordering and executes the real
+revision-reader, build guard and bot-argument construction with mocked Git results;
+it performs no build, Git mutation, or Docker operation. The existing mandatory
+`test-run-soak.ps1` invokes this contract. This is harness infrastructure with no
+Java gameplay analogue, not a gameplay or capacity-policy change.
+
+This records the checkout's commit identity, not an immutable snapshot of dirty
+working-tree files, nor proof of a reused Docker image's source. Matrix-c's active
+fifty-subject invocation already recorded `b9613ef1b` before subsequent commits;
+its metadata and binaries are not rewritten. Later populations load the corrected
+runner and retain the revision captured for their own builds. P10-02 stays unchecked.
+
+Provenance-fix validation passes: full solution 4,303 tests / 24 explicit skips,
+warning baseline 4,243, and every CLAUDE.md ancillary check. The new contract runs
+through the existing mandatory soak-runner check. No gameplay code, Docker image,
+active capacity binary or upstream automation was changed.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

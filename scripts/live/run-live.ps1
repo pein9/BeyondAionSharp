@@ -95,6 +95,14 @@ function Invoke-CheckedNative([string]$Command, [string[]]$Arguments, [string]$D
 	}
 }
 
+function Get-LiveGitRevision {
+	$revision = ([string](& git -C $repoRoot rev-parse HEAD)).Trim()
+	if ($LASTEXITCODE -ne 0 -or $revision -cnotmatch '^[0-9a-f]{40}$') {
+		throw 'Could not resolve the LIVE build Git SHA.'
+	}
+	return $revision
+}
+
 function Stop-Watcher {
 	if ($null -eq $script:watcherProcess) { return }
 	$watcherExitedEarly = $script:watcherProcess.HasExited
@@ -240,6 +248,7 @@ $failure = $null
 try {
 	Push-Location $repoRoot
 	try {
+		$gitSha = Get-LiveGitRevision
 		if ($Scenario -contains 'SOAK') {
 			if ($Scenario.Count -ne 1) { throw 'SOAK needs its own isolated stack.' }
 			$env:AION_BOT_OVERLAY_DIR = Join-Path $repoRoot 'docker/bots/overlay-soak'
@@ -272,6 +281,9 @@ try {
 		}
 		Invoke-CheckedNative 'dotnet' @('build', 'tools/Aion.LiveBots/Aion.LiveBots.csproj', '--nologo') 'Live bot build'
 		Invoke-CheckedNative 'dotnet' @('build', 'tools/Aion.LogWatch/Aion.LogWatch.csproj', '--nologo') 'Log watcher build'
+		if ((Get-LiveGitRevision) -cne $gitSha) {
+			throw 'Git HEAD changed during LIVE tool builds; start a fresh run with a consistent revision.'
+		}
 
 		$upArguments = [Collections.Generic.List[string]]::new()
 		$upArguments.AddRange([string[]]$composeArgs)
@@ -299,8 +311,7 @@ try {
 			}
 		}
 
-		$gitSha = (& git rev-parse HEAD).Trim()
-		if ($LASTEXITCODE -ne 0) { throw 'Could not resolve the run Git SHA.' }
+		# Keep the revision captured for these binaries, even if HEAD moves during readiness.
 		$timeZone = if ([string]::IsNullOrWhiteSpace($env:TZ)) { [TimeZoneInfo]::Local.Id } else { $env:TZ }
 		$botArguments = @(
 			'run', '--project', 'tools/Aion.LiveBots', '--no-build', '--',
