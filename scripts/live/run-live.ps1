@@ -276,7 +276,7 @@ try {
 		$timeZone = if ([string]::IsNullOrWhiteSpace($env:TZ)) { [TimeZoneInfo]::Local.Id } else { $env:TZ }
 		$botArguments = @(
 			'run', '--project', 'tools/Aion.LiveBots', '--no-build', '--',
-			'--run', $Run, '--output', $runPath, '--host', '127.0.0.1', '--game-port', '17777',
+			'--run', $Run, '--output', $runPath, '--host', '127.0.0.1',
 			'--bots', $Bots.ToString(), '--scenario', ($Scenario -join ','),
 			'--connect-timeout-seconds', $ConnectTimeoutSeconds.ToString(),
 			'--step-timeout-seconds', $StepTimeoutSeconds.ToString(), '--seed', $Seed.ToString(),

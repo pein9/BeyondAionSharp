@@ -72,7 +72,9 @@ public static class GameServerServiceCollectionExtensions
 		services.AddSingleton<IServerHeartbeatMetrics>(serviceProvider => new DelegateServerHeartbeatMetrics(
 			() => NioServer.GetRegisteredInstance()?.GetAllConnections().Count ?? 0,
 			() => AionConnection.PacketQueueDepth,
-			() => serviceProvider.GetRequiredService<ThreadPoolMetrics>().ArmedTimerCount));
+			() => serviceProvider.GetRequiredService<ThreadPoolMetrics>().ArmedTimerCount,
+			() => Aion.GameServer.Commons.Network.AConnection.CaptureWriteLatency(
+				NioServer.GetRegisteredInstance()?.GetAllConnections() ?? [])));
 		services.AddHostedService<ServerHeartbeatService>();
 		services.AddHostedService<Aion.GameServer.Services.Admin.AdminHttpService>();
 

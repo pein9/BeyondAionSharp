@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Aion.Commons.Concurrent;
+using Aion.Commons.Diagnostics;
 using Aion.Commons.Nio;
 using Aion.Commons.Nio.Channels;
 using Aion.Commons.Options;
@@ -28,6 +29,24 @@ public abstract class AConnection
     private readonly string ip;
     private readonly bool socketless;
     private bool locked = false;
+    private static readonly DispatchLatencyMetrics writeLatencyMetrics = new();
+    private volatile PendingDispatchProbe? writeLatency;
+
+    public static DispatchLatencySnapshot CaptureWriteLatency(IEnumerable<AConnection> connections)
+    {
+        int pending = 0;
+        double oldest = 0;
+        foreach (var connection in connections)
+            if (connection.writeLatency?.PendingMilliseconds is double age)
+            {
+                pending++;
+                oldest = Math.Max(oldest, age);
+            }
+        return writeLatencyMetrics.TakeSnapshot() with { PendingConnections = pending, OldestPendingMilliseconds = oldest };
+    }
+
+    protected void ObserveWriteQueued() => (writeLatency ??= new PendingDispatchProbe(writeLatencyMetrics)).Queued();
+    protected void DiscardWriteObservation() => writeLatency?.Discard();
 
     protected AConnection(SocketChannel sc, Dispatcher d, int rbSize, int wbSize)
     {
@@ -74,6 +93,7 @@ public abstract class AConnection
             if (closed)
                 return;
             closed = true;
+            DiscardWriteObservation();
         }
 
         if (socketless)
@@ -126,7 +146,11 @@ public abstract class AConnection
     internal bool ProcessDataInternal(ByteBuffer data) => ProcessData(data);
 
     protected abstract bool WriteData(ByteBuffer data);
-    internal bool WriteDataInternal(ByteBuffer data) => WriteData(data);
+    internal bool WriteDataInternal(ByteBuffer data)
+    {
+        writeLatency?.Dispatched();
+        return WriteData(data);
+    }
 
     protected abstract void Initialized();
     internal void InitializedInternal() => Initialized();
@@ -190,7 +214,11 @@ public abstract class AConnection<T> : AConnection where T : BaseServerPacket
 
     internal override bool IsSendQueueEmpty() => GetSendMsgQueue().Count == 0;
 
-    protected virtual void ClearPendingPackets() => GetSendMsgQueue().Clear();
+    protected virtual void ClearPendingPackets()
+    {
+        GetSendMsgQueue().Clear();
+        DiscardWriteObservation();
+    }
 
     /// <summary>Queues a packet and signals the transport. Socketless subclasses override this to capture packets.</summary>
     protected virtual void EnqueuePacket(T packet, bool closing)
@@ -198,6 +226,7 @@ public abstract class AConnection<T> : AConnection where T : BaseServerPacket
         GetSendMsgQueue().Enqueue(packet);
         if (IsSocketless)
             return;
+        ObserveWriteQueued();
         key.InterestOps(closing ? SelectionKey.OP_WRITE : key.InterestOps() | SelectionKey.OP_WRITE);
         if (!closing)
             key.Selector().Wakeup();

@@ -461,7 +461,7 @@ tests, retention and Full-suite contracts passed. Docker Fast
 `p10-02-quest-persistence-fast` passed 6/6. Repeated PvP is still unavailable and
 fails closed at this perception-only checkpoint; the following driver checkpoint supersedes that limitation.
 
-## P10-02 repeatable PvP driver (LIVE validation pending)
+## P10-02 repeatable PvP driver (twenty-minute LIVE diagnostic passed)
 
 The diagnostic runtime now implements the last activity type, `Pvp`. It shares
 S2's ordinary Flame Bolt combat with race-specific animation timing and the
@@ -545,16 +545,81 @@ shields nor supplies invented siege state; actual nearby dynamic dependencies
 still fail closed. The server and SIM geometry remain unchanged. A focused test
 requires distant dynamic state not to be queried while boundary, inside-box and
 unbounded cases retain the original failure. Thirteen navigation/camp tests pass.
-Corrected LIVE run `p10-02-pvp10-f` reached actual combat and its first death and
-Kisk revival: winner AP 500→800, victim AP 500→410, charges 72→71, restored HP 137
-and MP 410. Ordinary recovery is underway. The twenty-minute diagnostic is still
-running; repeated opposite-race kills, fifth-kill behavior and terminal checks
-are not yet claimed. Offline dynamic siege-state synchronization remains
+Corrected LIVE run `p10-02-pvp10-f` passes ten subjects/twenty minutes with 453
+cohort actions, including eleven alternating PvP kills, ordinary Kisk revivals,
+natural recoveries and checked return walks. The first kill gives +300/-90 AP;
+both winners' fifth kills give exactly 1 AP, and the Elyos sixth kill also obeys
+the reduced reward. Final Kisk charges are 67 (Elyos) and 66 (Asmodian).
+The PvP cohort also completes eleven ordinary relogs and eleven crash-disconnect
+actions without losing binding/owned-Kisk state. All subjects finish inventory
+and offline checks. Enforced watching has no new/known/regressed fingerprint;
+only the existing startup quest-spawn allowance occurs. Natural Kisk expiry and
+replacement, higher populations and the full mixed workload remain unproven.
+Offline dynamic siege-state synchronization remains
 unsupported; none of these changes permits crossing an unobserved shield.
 
 Final checkpoint validation: 4,192 solution tests passed, 24 explicit skips,
 4,243 compiler warnings (unchanged). Docker Fast `p10-02-pvp-guard-fast` passed
 6/6 and all CLAUDE.md ancillary checks passed. P10-02 remains unchecked.
+
+## P10-02 process and outbound-dispatch telemetry (short LIVE diagnostic passed)
+
+All three process heartbeats now include refreshed process working-set bytes and
+`GC.GetTotalMemory(false)` (an estimate, without forcing collection). The game
+server adds bounded outbound-dispatch observations: the first pending request
+through the next dispatcher buffer-preparation attempt. Repeated enqueues
+coalesce into one sample. This is **not** per-packet latency, completed socket
+flush time, or client-observed response time.
+
+Each ten-second heartbeat drains a disjoint aggregate window with sample count,
+mean/max milliseconds, abandoned observations, and fourteen histogram counts.
+The inclusive bucket upper bounds in milliseconds are
+`0.1, 0.5, 1, 2, 5, 10, 20, 50, 100, 250, 500, 1000, 5000, +infinity`.
+The heartbeat also samples the count and oldest age of still-pending connections,
+so a stuck writer cannot disappear merely because it never contributes a
+completed latency sample. Closing/discarding a pending queue counts as abandoned,
+not a zero-latency success. No packet, connection or individual-sample history is
+retained by the aggregate. Per-connection state is one optional probe; socketless
+SIM connections do not create probes. The probe's real monotonic clock is Commons
+infrastructure and does not change gameplay clocks or the clock-read ratchet.
+
+`dispatcherWrites` is serialized as invariant JSON within the existing heartbeat
+message, preserving arrays in JSONL without changing the logging envelope. Login
+and chat report `null` for this game-reactor-specific metric. Counters and process
+memory are independently sampled, not one global atomic server-state transaction.
+No acceptance thresholds, memory-plateau claim or statistical workload success
+claim follows from merely emitting these fields.
+
+Java `commons/network/AConnection.sendPacket/close` and `Dispatcher.write` at
+`ce54b7931` were inspected. Queueing, wakeups, serialization, writes and close
+semantics are unchanged; these are observation-only infrastructure additions.
+Three Commons metric/heartbeat tests and seven game wiring/socketless/DI tests
+pass. Alternate-port Docker diagnostic `p10-02-telemetry10-a` exposed a launcher
+bug (§7 #78): Compose/readiness used the configured game port, but the bot command
+overrode it with 17777, producing a correctly refused cross-stack authentication.
+The hardcoded override is removed; a serialized environment/launcher regression
+pins all four configured ports. Corrected `p10-02-telemetry10-b` passes ten subjects
+for 180 seconds, 75 cohort actions and final persistence/inventory cleanup.
+Enforced watching reports no new/known/regressed fingerprint; only the existing
+startup quest-spawn allowance occurs. The failed run is retained, not allowlisted.
+
+Twenty game-server heartbeat samples contain 11,939 completed dispatch batches
+(histogram totals agree), one abandoned observation, a 13.8977 ms observed maximum,
+and no pending writer at the sampled instants. Working-set samples range from
+2,478,239,744 to 2,535,055,360 bytes; armed timers range 632–708 across startup,
+connections and cleanup. These short raw measurements are **not** a two-hour
+memory/timer plateau or latency-tail acceptance result. All three processes emit
+memory fields; only the game reactor emits dispatch samples. Solution validation
+passes 4,196 tests with 24 explicit skips, warnings stay 4,243, Docker Fast passes
+6/6, and all mandatory ancillary checks pass.
+
+Concurrent watchers also expose a shared-ledger limitation (§7 #79): each saves
+its startup snapshot with atomic replacement, not a concurrent merge. That can
+overwrite later tracking edits or another run's counts. Per-run logs/reports are
+the authoritative evidence. After both writers finished, the shared ledger was
+reconciled to retain the telemetry10-a occurrence (count 118 rather than the stale
+117) and the current tracking annotations. A merge-safe ledger remains required
+before accepting concurrent runs.
 
 ## Scope decisions
 
