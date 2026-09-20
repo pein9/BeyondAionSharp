@@ -8,7 +8,6 @@ namespace Aion.LogWatch;
 
 public static class ProblemWatcher
 {
-	private static readonly string[] Servers = ["gs", "ls", "cs"];
 	private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(100);
 
 	public static async Task<int> RunAsync(WatchOptions options, CancellationToken cancellationToken = default)
@@ -113,10 +112,11 @@ public static class ProblemWatcher
 			allowlist = LogProblemAllowlist.Load(options.AllowlistPath);
 			ledger = KnownProblemLedger.Load(options.LedgerPath);
 			botProblems = new FileTail(Path.Combine(options.RunDirectory, "bot.problems.jsonl"));
-			foreach (var server in Servers)
+			foreach (var server in options.Servers)
 			{
-				eventTails.Add(server, new FileTail(Path.Combine(options.RunDirectory, "logs", server, $"{server}.events.jsonl")));
-				problemTails.Add(server, new FileTail(Path.Combine(options.RunDirectory, "logs", server, $"{server}.problems.jsonl")));
+				string producer = server == "gs2" ? "gs" : server;
+				eventTails.Add(server, new FileTail(Path.Combine(options.RunDirectory, "logs", server, $"{producer}.events.jsonl")));
+				problemTails.Add(server, new FileTail(Path.Combine(options.RunDirectory, "logs", server, $"{producer}.problems.jsonl")));
 			}
 
 			var digestPath = Path.Combine(options.RunDirectory, "digest.log");
@@ -169,12 +169,12 @@ public static class ProblemWatcher
 			foreach (var line in botProblems.ReadNewLines())
 				ReadJsonLine("bot problem", line, () => ReadBotProblem(line));
 
-			foreach (var server in Servers)
+			foreach (var server in options.Servers)
 			{
 				foreach (var line in eventTails[server].ReadNewLines())
-					ReadJsonLine($"{server} event", line, () => ReadServerEvent(line));
+					ReadJsonLine($"{server} event", line, () => ReadServerEvent(line, server));
 				foreach (var line in problemTails[server].ReadNewLines())
-					ReadJsonLine($"{server} problem", line, () => ReadServerProblem(line));
+					ReadJsonLine($"{server} problem", line, () => ReadServerProblem(line, server));
 			}
 		}
 
@@ -192,7 +192,7 @@ public static class ProblemWatcher
 		public void CheckHeartbeats(DateTimeOffset now)
 		{
 			CheckCrashCompletion(now, final: false);
-			foreach (var server in Servers)
+			foreach (var server in options.Servers)
 			{
 				bool observed = lastHeartbeats.TryGetValue(server, out var lastSeen);
 				// A snapshot may inspect partial historical artifacts. A continuing watcher
@@ -257,6 +257,7 @@ public static class ProblemWatcher
 				expectedProcessEvents,
 				heartbeatTimeoutSeconds = options.MissingHeartbeatThreshold.TotalSeconds,
 				initialHeartbeatTimeoutSeconds = options.InitialHeartbeatThreshold.TotalSeconds,
+				servers = options.Servers,
 				hangDiagnostics = diagnostics.Select(d => new { server = d.Server, status = d.Status, directory = d.Directory, failure = d.Failure }),
 				expectedGameServerCrash = options.ExpectGameServerCrash ? expectedCrash?.Complete == true : (bool?)null,
 				failed = options.Mode == WatchMode.Enforce && FailingProblemCount > 0,
@@ -325,7 +326,7 @@ public static class ProblemWatcher
 				Stack: WatchProblem.OptionalString(root, "stack")));
 		}
 
-		private void ReadServerEvent(string line)
+		private void ReadServerEvent(string line, string server)
 		{
 			using var document = JsonDocument.Parse(line);
 			var root = document.RootElement;
@@ -336,8 +337,7 @@ public static class ProblemWatcher
 			// heartbeat event itself establishes liveness or supplies its metrics.
 			if (template != "Server heartbeat" && !template.StartsWith("Server heartbeat:", StringComparison.Ordinal))
 				return;
-			var server = WatchProblem.RequiredString(root, "srv");
-			if (!Servers.Contains(server, StringComparer.Ordinal)) return;
+			ValidateProducer(root, server);
 			var timestamp = WatchProblem.ReadTimestamp(root);
 			if (lastHeartbeats.TryGetValue(server, out var previous) && timestamp <= previous) return;
 			lastHeartbeats[server] = timestamp;
@@ -348,11 +348,23 @@ public static class ProblemWatcher
 				heartbeatAlerts.Remove(server);
 		}
 
-		private void ReadServerProblem(string line)
+		private void ReadServerProblem(string line, string server)
 		{
 			using var document = JsonDocument.Parse(line);
 			if (BelongsToRun(document.RootElement))
-				AddProblem(WatchProblem.FromServerJson(document.RootElement));
+			{
+				ValidateProducer(document.RootElement, server);
+				AddProblem(WatchProblem.FromServerJson(document.RootElement) with { Server = server });
+			}
+		}
+
+		private static void ValidateProducer(JsonElement root, string server)
+		{
+			// Both GS instances use the unchanged production producer name. Their
+			// separate mounted directories establish instance identity, never arrival order.
+			string expected = server == "gs2" ? "gs" : server;
+			if (WatchProblem.RequiredString(root, "srv") != expected)
+				throw new InvalidDataException($"Log producer does not match the {server} source directory.");
 		}
 
 		private void ReadDockerLog(DockerLine line)
@@ -572,6 +584,7 @@ public static class ProblemWatcher
 		private static string MapService(string service) => service switch
 		{
 			"gameserver" => "gs",
+			"gameserver2" => "gs2",
 			"loginserver" => "ls",
 			"chatserver" => "cs",
 			_ => service,

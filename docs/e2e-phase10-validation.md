@@ -2713,6 +2713,29 @@ all remaining CLAUDE.md gates. Build/test logs: `run/p10-08-warnings.log` and
 `run/p10-08-tests.log`. No gameplay source, global allowance, known-problem ledger
 or upstream automation change is retained.
 
+## P10-09: cross-server journeys (in progress)
+
+The first checkpoint adds `--second-game-server true` to the LIVE watcher. It
+expects independent `gs`, `gs2`, `ls`, `cs` heartbeats and follows Compose service
+`gameserver2`, reading its unchanged production `gs.*.jsonl` files from `logs/gs2`.
+Directory identity is checked against the producer field, and the second instance
+retains distinct failure context and bounded hang diagnostics. A `gs`-only allowance
+cannot suppress `gs2`; O1's expected crash cannot suppress its missing heartbeat.
+Default single-GS watching is unchanged. No allowance or production change is made.
+
+Twelve added cases (82 focused watcher cases total) cover explicit topology,
+independent liveness in both directions, second-server errors/context, mismatched
+producer rejection, allowance scope, Docker logs/events, exact hang target and
+O1 gap isolation. The prior crash fixture mixed LS records into a GS file; it now
+uses the actual per-server layout rather than weakening source validation.
+This is unit/contract evidence, not a two-server LIVE result. Provisioning the
+second GS and executing BA-001/002/003/006 remain; BA-005 remains deferred under D7.
+
+Pre-commit checks pass: 4,447 solution tests / 27 explicit skips, unchanged 4,243
+warning sites, structural fidelity and all CLAUDE.md ancillary gates. Evidence:
+`run/p10-09-watchers-{focused,warnings,tests}.log`. No Docker stack or bots were
+started for this watcher-only checkpoint.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

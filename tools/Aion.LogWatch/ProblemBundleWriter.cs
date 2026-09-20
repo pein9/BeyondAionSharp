@@ -46,7 +46,7 @@ internal sealed class ProblemBundleWriter(string runDirectory, string run, RunPr
 	{
 		var source = problem.Server switch
 		{
-			"gs" or "ls" or "cs" => Path.Combine(runDirectory, "logs", problem.Server, "server_console.log"),
+			"gs" or "gs2" or "ls" or "cs" => Path.Combine(runDirectory, "logs", problem.Server, "server_console.log"),
 			"bots" => Path.Combine(runDirectory, "bot.problems.jsonl"),
 			_ => Path.Combine(runDirectory, "logs", "containers", $"{problem.Server}.log"),
 		};

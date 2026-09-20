@@ -91,11 +91,13 @@ public sealed partial class ProblemWatcherTests
 		Assert.Contains("No valid game-server crash plan was armed", run.ReadDigest(), StringComparison.Ordinal);
 	}
 
-	[Fact]
-	public async Task PlannedGapIsOnlyForGsAndNormalHeartbeatMonitoringResumes()
+	[Theory]
+	[InlineData("ls")]
+	[InlineData("gs2")]
+	public async Task PlannedGapIsOnlyForGsAndNormalHeartbeatMonitoringResumes(string otherServer)
 	{
 		using var run = new WatcherRun();
-		var options = run.Options() with { ExpectGameServerCrash = true };
+		var options = run.Options() with { ExpectGameServerCrash = true, SecondGameServer = otherServer == "gs2" };
 		var at = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 		string container = new('a', 64);
 		string planJson = JsonSerializer.Serialize(new
@@ -107,8 +109,7 @@ public sealed partial class ProblemWatcherTests
 		var state = new ProblemWatcher.WatcherState(options);
 		void Heartbeat(string server, int seconds)
 		{
-			File.AppendAllText(Path.Combine(options.RunDirectory, "logs", "gs", "gs.events.jsonl"),
-				JsonSerializer.Serialize(new { ts = at.AddSeconds(seconds), srv = server, run = "test", cat = "Heartbeat", tpl = "Server heartbeat", msg = "heartbeat" }) + "\n");
+			WriteInstanceHeartbeat(run, server, at.AddSeconds(seconds));
 			state.ReadFiles();
 		}
 		void Docker(string action, int seconds)
@@ -128,14 +129,14 @@ public sealed partial class ProblemWatcherTests
 		Docker("die", 1);
 		state.CheckHeartbeats(at.AddSeconds(25));
 		Assert.Equal(0, state.FailingProblemCount);
-		Heartbeat("ls", 0);
+		Heartbeat(otherServer, 0);
 		state.CheckHeartbeats(at.AddSeconds(25));
 		Assert.True(state.FailingProblemCount > 0); // Other servers never enter the planned gap.
 		Docker("start", 40);
 		Heartbeat("gs", 41);
 		state.CheckHeartbeats(at.AddSeconds(62));
 		await state.WriteSummaryAsync(CancellationToken.None);
-		Assert.Contains("NEW HEARTBEAT ls", run.ReadDigest(), StringComparison.Ordinal);
+		Assert.Contains($"NEW HEARTBEAT {otherServer}", run.ReadDigest(), StringComparison.Ordinal);
 		Assert.Contains("REPEAT gs", run.ReadDigest(), StringComparison.Ordinal); // The shared heartbeat fingerprint repeats.
 		using var summary = JsonDocument.Parse(File.ReadAllText(run.SummaryPath));
 		Assert.Equal(2, summary.RootElement.GetProperty("total").GetInt32());

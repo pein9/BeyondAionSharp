@@ -5,7 +5,6 @@ namespace Aion.LogWatch;
 
 internal sealed class DockerFollowers : IAsyncDisposable
 {
-	private static readonly string[] Services = ["loginserver", "chatserver", "gameserver", "mysql"];
 	private readonly List<Process> processes = [];
 	private readonly List<Task> readers = [];
 	private readonly CancellationTokenSource lifetime = new();
@@ -20,7 +19,7 @@ internal sealed class DockerFollowers : IAsyncDisposable
 
 	public void Start(WatchOptions options)
 	{
-		foreach (var service in Services)
+		foreach (var service in options.DockerServices)
 		{
 			var process = StartDocker(options,
 				["compose", "-f", options.ComposeFile, "-p", options.ProjectName, "logs", "--follow", "--no-color", "--no-log-prefix", "--timestamps", "--tail", "all", service]);

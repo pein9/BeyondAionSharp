@@ -23,6 +23,11 @@ public sealed record WatchOptions(
 	IReadOnlySet<string> UnexpectedRefusals)
 {
 	public bool ExpectGameServerCrash { get; init; }
+	public bool SecondGameServer { get; init; }
+	internal IReadOnlyList<string> Servers => SecondGameServer ? ["gs", "gs2", "ls", "cs"] : ["gs", "ls", "cs"];
+	internal IReadOnlyList<string> DockerServices => SecondGameServer
+		? ["loginserver", "chatserver", "gameserver", "gameserver2", "mysql"]
+		: ["loginserver", "chatserver", "gameserver", "mysql"];
 	public TimeSpan MissingHeartbeatThreshold { get; init; } = TimeSpan.FromSeconds(20);
 	public TimeSpan InitialHeartbeatThreshold { get; init; } = TimeSpan.FromSeconds(30);
 
@@ -38,7 +43,7 @@ public sealed record WatchOptions(
 		"[--allowlist parity-artifacts/e2e/log-allowlist.json] [--ledger parity-artifacts/e2e/known-problems.json] " +
 		"[--mode enforce|record] [--duration-seconds N] [--stop-file path] [--no-docker true|false] " +
 		"[--full-run true|false] [--unexpected-refusals STR_SKILL_NOT_READY,...] [--expect-game-server-crash true|false] " +
-		"[--heartbeat-timeout-seconds 20] [--initial-heartbeat-timeout-seconds 30]";
+		"[--heartbeat-timeout-seconds 20] [--initial-heartbeat-timeout-seconds 30] [--second-game-server true|false]";
 
 	public static WatchOptions Parse(string[] args)
 	{
@@ -56,6 +61,7 @@ public sealed record WatchOptions(
 			"run", "run-dir", "project", "compose-file", "allowlist", "ledger", "mode",
 			"duration-seconds", "stop-file", "no-docker", "full-run", "unexpected-refusals", "expect-game-server-crash",
 			"heartbeat-timeout-seconds", "initial-heartbeat-timeout-seconds",
+			"second-game-server",
 		};
 		var unknown = values.Keys.FirstOrDefault(key => !known.Contains(key));
 		if (unknown != null)
@@ -98,6 +104,7 @@ public sealed record WatchOptions(
 			refusals)
 		{
 			ExpectGameServerCrash = Boolean(values, "expect-game-server-crash", false),
+			SecondGameServer = Boolean(values, "second-game-server", false),
 			MissingHeartbeatThreshold = TimeSpan.FromSeconds(Integer(values, "heartbeat-timeout-seconds", 20)),
 			InitialHeartbeatThreshold = TimeSpan.FromSeconds(Integer(values, "initial-heartbeat-timeout-seconds", 30)),
 		};

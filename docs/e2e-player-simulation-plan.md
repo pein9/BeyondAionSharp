@@ -2177,6 +2177,10 @@ real geodata on in production immediately, because geo is enabled by default; th
   game server service); BA-002 chat auth success, gagged, timeout/disconnect, duplicate request; BA-003 login-server kick,
   reconnect key, access grant, account ban, MAC/HDD ban sync, duplicate login; BA-005 in-world siege gate repair
   and assault (deferred with P10-05, D7); BA-006 hardware-ban persistence across a login-server restart.
+  **In progress:** the watcher has an explicit second-GS topology option with independent log/heartbeat
+  identity, Docker failure attribution, source validation, repro context and owned hang diagnostics.
+  First-GS allowances and O1 crash gaps do not extend to the second instance. This is a prerequisite,
+  not a completed journey; second-GS provisioning, runtime scenarios and tracker closeouts remain.
 - [ ] **P10-10** [BOTH] M — Run report. Every run writes `run/<id>/report.md` and `report.json`:
   each scenario as passed, failed, skipped or flaky with duration; NEW, KNOWN and REGRESSED fingerprints; coverage
   deltas; peak heartbeat, memory and timer counts. `run-fast.ps1` and `run-full.ps1` print the summary at the end

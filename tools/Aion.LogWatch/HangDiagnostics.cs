@@ -18,7 +18,7 @@ internal sealed class HangDiagnostics(WatchOptions options, IDiagnosticCommand c
 	internal void Observe(HangObservation observation)
 	{
 		if (!options.DockerEnabled || options.Duration == TimeSpan.Zero || pending.ContainsKey(observation.Server)) return;
-		if (observation.Server is not ("gs" or "ls" or "cs")) return;
+		if (!options.Servers.Contains(observation.Server, StringComparer.Ordinal)) return;
 		pending.Add(observation.Server, Task.Run(() => CollectAsync(observation)));
 	}
 
@@ -27,7 +27,7 @@ internal sealed class HangDiagnostics(WatchOptions options, IDiagnosticCommand c
 	private async Task<HangDiagnosticResult> CollectAsync(HangObservation observation)
 	{
 		string server = observation.Server;
-		string service = server switch { "gs" => "gameserver", "ls" => "loginserver", _ => "chatserver" };
+		string service = server switch { "gs" => "gameserver", "gs2" => "gameserver2", "ls" => "loginserver", _ => "chatserver" };
 		string directory = Path.Combine(options.RunDirectory, "hangs", server);
 		using var lifetime = new CancellationTokenSource(CollectionBudget);
 		var steps = new Dictionary<string, DiagnosticCommandResult>(StringComparer.Ordinal);
@@ -65,7 +65,7 @@ internal sealed class HangDiagnostics(WatchOptions options, IDiagnosticCommand c
 				steps.Add("managed-stacks", new(null, "", "", Failure: "Container is not an unpaused running process; managed stack probe not attempted."));
 			else
 			{
-				string assembly = server switch { "gs" => "Aion.GameServer.dll", "ls" => "Aion.LoginServer.dll", _ => "Aion.ChatServer.dll" };
+				string assembly = server switch { "gs" or "gs2" => "Aion.GameServer.dll", "ls" => "Aion.LoginServer.dll", _ => "Aion.ChatServer.dll" };
 				// Only fixed arguments enter the shell. timeout kills the diagnostic tool, never PID 1.
 				await RunAsync("managed-stacks", ["exec", id, "sh", "-c",
 					"test \"$(tr '\\000' '\\n' < /proc/1/cmdline | head -n 2 | tail -n 1)\" = \"$1\" || exit 65; " +

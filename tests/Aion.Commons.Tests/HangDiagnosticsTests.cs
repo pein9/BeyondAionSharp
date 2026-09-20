@@ -154,7 +154,7 @@ public sealed partial class ProblemWatcherTests
 		Assert.False(result.Succeeded);
 	}
 
-	private sealed class FakeHangCommand(string variant) : IDiagnosticCommand
+	private sealed class FakeHangCommand(string variant, string service = "gameserver") : IDiagnosticCommand
 	{
 		internal const string ContainerId = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 		internal readonly List<string[]> Calls = [];
@@ -183,7 +183,7 @@ public sealed partial class ProblemWatcherTests
 				{
 					id = variant == "wrong-id" ? new string('b', 64) : ContainerId,
 					project = variant == "wrong-project" ? "aion" : "aion-bots-test",
-					service = variant == "wrong-service" ? "mysql" : "gameserver", networks,
+					service = variant == "wrong-service" ? "mysql" : service, networks,
 					image = variant == "changed-image" && inspections > 1 ? "changed" : "image",
 					startedAt = (variant == "changed-start" && inspections > 1) ||
 						(variant == "changed-during-stack" && inspections > 2) ? "changed" : "start",
