@@ -1308,7 +1308,43 @@ check, and the new readiness contract through the existing soak-runner check.
 The contract exercises the actual capacity-only runner guard as well as missing,
 uncollected, measured-zero, stale, wrong-identity and offset-preserving samples;
 shared bounded reads, partial records, timeout, watcher exit and a waiting-to-ready
-transition are covered. Its operational wait still needs a fresh LIVE run.
+transition are covered.
+
+## P10-02 matrix-c readiness and watcher shutdown guard
+
+The fresh `p10-02-capacity-matrix-c-soak-50` invocation, launched from
+`b9613ef1b582d1d04081ce214f4563ee98d4197c` with the same game image as matrix-b,
+passes natural-only heap readiness after 4,048.207 seconds. The readiness journal
+ends at 2026-09-20 11:27:56.3256432 UTC with actual completed-GC indices on all
+three services; no forced collection or allocation pressure was used. Its workload
+starts at 11:28:13.8962836 UTC and is scheduled to end two hours later. At the
+halfway checkpoint, all fifty subjects have qualifying activity in each of four
+completed activity windows, and all three services have ninety available heap
+observations in each of the first two post-warm-up windows. These are interim
+read-only checks, not terminal acceptance. P10-02 remains unchecked.
+
+A separate runner audit finds #95: `Stop-Watcher` previously accepted a watcher
+that had already exited with code zero before the owning runner requested its
+stop. A process-double regression executes the actual PowerShell helper and fails
+on that early-clean case before the fix. The helper now rejects observed early
+exits and forced termination regardless of exit code, while preserving the code
+and disposing/clearing its handle so the outer `finally` remains idempotent.
+Normal success, normal nonzero exit propagation, early zero/nonzero exits and
+forced termination are covered by `test-stop-watcher.ps1`, invoked through the
+existing mandatory `test-run-soak.ps1` check. No subprocess is started or killed by
+the contract test. This is harness infrastructure with no Java gameplay analogue.
+
+The already-running fifty-subject invocation keeps its original helper and
+binaries; the watcher process is independently confirmed live during the audit.
+Later matrix populations load the updated runner and record their actual source
+revision. This guard is not proof of continuous watcher responsiveness and does
+not relax the final raw-problem, workload, economy or telemetry gates.
+
+Shutdown-guard validation passes: full solution 4,303 tests / 24 explicit skips,
+warning baseline 4,243, and all CLAUDE.md ancillary checks (including the new
+actual-helper contract through `test-run-soak.ps1`). Validation uses a separate
+build output root, not the active capacity binaries. This change contains no
+gameplay code or upstream automation changes and does not rebuild a Docker image.
 
 ## Scope decisions
 

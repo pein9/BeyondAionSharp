@@ -97,16 +97,27 @@ function Invoke-CheckedNative([string]$Command, [string[]]$Arguments, [string]$D
 
 function Stop-Watcher {
 	if ($null -eq $script:watcherProcess) { return }
-	if (-not $script:watcherProcess.HasExited) {
-		New-Item -ItemType File -Path $script:stopFile -Force | Out-Null
-		if (-not $script:watcherProcess.WaitForExit(30000)) {
-			$script:watcherProcess.Kill($true)
-			$script:watcherProcess.WaitForExit()
+	$watcherExitedEarly = $script:watcherProcess.HasExited
+	$watcherForcedStop = $false
+	try {
+		if (-not $watcherExitedEarly) {
+			New-Item -ItemType File -Path $script:stopFile -Force | Out-Null
+			if (-not $script:watcherProcess.WaitForExit(30000)) {
+				$watcherForcedStop = $true
+				$script:watcherProcess.Kill($true)
+				$script:watcherProcess.WaitForExit()
+			}
 		}
+		$script:watcherExitCode = $script:watcherProcess.ExitCode
 	}
-	$script:watcherExitCode = $script:watcherProcess.ExitCode
-	$script:watcherProcess.Dispose()
-	$script:watcherProcess = $null
+	finally {
+		$script:watcherProcess.Dispose()
+		$script:watcherProcess = $null
+	}
+	# Exit code zero is insufficient if watching ended before the owner's shutdown request,
+	# or the watcher had to be killed without completing its final evidence drain.
+	if ($watcherExitedEarly) { throw "Log watcher exited before the owning runner requested shutdown (exit code $script:watcherExitCode)." }
+	if ($watcherForcedStop) { throw 'Log watcher did not stop within its shutdown deadline.' }
 }
 
 function Collect-DockerArtifacts {
