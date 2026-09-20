@@ -55,5 +55,20 @@ The digest records `EXPECTED_FAULT` observations separately from allowances and
 the summary requires `expectedGameServerCrash: true`. Missing observations fail
 even on early watcher shutdown. In this opt-in mode unallowlisted `KNOWN` problems
 also fail, so an existing tracked process fingerprint cannot hide another death.
-No category or fingerprint allowance is added. Controller integration, saved-state
-assertions and the actual small-population crash/relogin journey remain P10-03 work.
+No category or fingerprint allowance is added.
+
+`scripts/live/lifecycle-controller.ps1` implements the owning controller. Its
+read-only SQL calls run through the isolated Compose MySQL service; it never
+starts a host database. It observes the subject's initial position, its delayed
+save, then a second movement still absent from storage before arming the kill.
+It validates project/service labels, exclusive project network, full container
+id and stable image before injection. Restart requires the same container/image,
+a later process start, and GS startup plus LS registration logs ingested after
+the kill boundary. Old startup messages cannot satisfy this check. The watcher
+independently requires its fresh heartbeat and matching Docker events.
+
+The controller retains SQL samples, phase/failure, child stdout/stderr, and
+kill/restart receipts. Its contract tests mock Docker and use tiny artifact
+producer processes, not bots or servers. LIVE runner integration and the actual
+small-population crash/relogin/duplicate-login journey remain P10-03 work; a
+passing controller contract is not LIVE lifecycle evidence.

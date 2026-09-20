@@ -2300,6 +2300,48 @@ warning baseline 4,243, and every CLAUDE.md ancillary check. Logs:
 `run/p10-03-crash-expectation-{focused-final,warning-final,fulltests-final}.log`.
 No gameplay or upstream automation file changes; no new allowance or baseline increase.
 
+## P10-03 owned Docker controller
+
+The next infrastructure checkpoint adds `scripts/live/lifecycle-controller.ps1`.
+Its runner owns a child process, drains stdout/stderr concurrently, watches the
+log watcher and enforces a 25-minute total deadline. It reads only the selected
+character row through the isolated Docker MySQL service. The first observed row
+must retain the pre-movement position; a later row must contain the new position
+while still online. A second movement request must continue that saved checkpoint,
+and SQL must still contain the checkpoint immediately before fault injection.
+No save interval is shortened and no SQL state is changed.
+
+The fault controller checks the exact project, full container id, service label,
+exclusive project network and image. It publishes one fresh plan, requires the
+watcher's exact hash receipt, and rechecks identity/owner before SIGKILL. It
+requires exit 137 without OOM, starts only that container, and requires a later
+process start plus fresh GS startup/LS registration messages. Docker's log
+ingestion cutoff excludes the first boot; the watcher still independently
+requires matching death/start events and a new GS heartbeat. Failed/partial
+recovery never emits a success receipt.
+
+`test-lifecycle-controller.ps1` intercepts every Docker command. Tests cover
+selection failures, malformed position/identity requests, changed containers,
+missing/wrong receipts, lost owner, kill/start failure, wrong exit/OOM, stale
+process/log evidence, missing registration, SQL failure/ambiguity, early child
+exit, failed launch and process cleanup. Tiny real artifact-producer processes
+exercise the complete controller sequence and SQL-gate failures; they are not
+bots, servers, or a substitute for a real watcher integration. Two defects found
+by these tests were corrected: JSON-decoded timestamps must retain subsecond
+precision, and completed stream-copy tasks must not leak result objects into
+the returned exit code. No production Java/C# divergence is introduced.
+
+The controller is not yet wired into `run-live.ps1`. O1's protocol bot, natural
+900-second save, actual Docker crash/relogin, duplicate-login assertion and LIVE
+evidence remain to be implemented/verified. P10-03 stays unchecked. No Docker
+container was started, stopped or deleted for this checkpoint, and no bots ran.
+
+Pre-commit checks pass: 4,373 solution tests / 27 explicit skips, warning
+baseline 4,243, 431 controller contract assertions and every other CLAUDE.md
+check applicable to this infrastructure-only change. Logs:
+`run/p10-03-controller-{contract,warning,fulltests}.log`. No gameplay or
+upstream-automation files changed; no baseline or allowance was increased.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

@@ -2103,8 +2103,13 @@ real geodata on in production immediately, because geo is enabled by default; th
   deadlines. A hashed arming receipt precedes injection; matching death, restart and a
   fresh heartbeat are all required. Unrelated/repeated process events, other server
   heartbeat gaps and unallowlisted known problems still fail. No global allowance is
-  added. Controller integration and the actual saved-state/crash/relogin/duplicate-login
-  journey remain unimplemented; this foundation does not complete the TODO.
+  added. The Docker controller now validates exact project/container/image/network ownership,
+  observes a delayed position save through read-only Docker SQL, requires subsequent unsaved
+  movement, and performs the one-use kill/restart only after the hashed watcher receipt.
+  Recovery requires a new process start and fresh GS startup/LS registration logs; earlier
+  boot logs cannot satisfy it. Mock-Docker/process contracts cover fault prevention and cleanup.
+  LIVE runner integration and the actual saved-state/crash/relogin/duplicate-login journey
+  remain unimplemented; these foundations do not complete the TODO.
 - [ ] **P10-04** [LIVE] S — Hang detection on top of the P3-12 heartbeat: alert thresholds and diagnostics on a missed
   beat (Java's `DeadLockDetector` does not port 1:1).
 - [ ] **P10-05** [LIVE] M — **Deferred (D7 declined for now; revisit later).** If approved, restore the Java boot
