@@ -6,6 +6,14 @@ public sealed record BotCharacterAppearance(int Voice, int SkinRgb, int HairRgb,
 
 public sealed partial class BotServerPacketDecoder
 {
+	private static IReadOnlyDictionary<string, object?> DecodeReconnectKey(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		byte reserved = r.ReadByte(); int key = r.ReadInt32();
+		if (reserved != 0 || r.Remaining != 0) throw new InvalidDataException("Invalid reconnect key response.");
+		return Fields(("key", key));
+	}
+
 	private static IReadOnlyDictionary<string, object?> DecodeCharacterSelect(ReadOnlySpan<byte> body)
 	{
 		var r = new PacketBodyReader(body);

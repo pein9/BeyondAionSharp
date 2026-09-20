@@ -24,6 +24,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_UI_SETTINGS)] = DecodeUiSettings,
 			[typeof(SM_PLASTIC_SURGERY)] = DecodePlasticSurgery,
 			[typeof(SM_QUIT_RESPONSE)] = DecodeQuitResponse,
+			[typeof(SM_RECONNECT_KEY)] = DecodeReconnectKey,
 			[typeof(SM_CHARACTER_SELECT)] = DecodeCharacterSelect,
 			[typeof(SM_PET)] = DecodePet,
 			[typeof(SM_ATREIAN_PASSPORT)] = DecodeAtreianPassport,

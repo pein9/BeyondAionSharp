@@ -1,5 +1,19 @@
 [
   {
+    "id": "B3",
+    "modes": ["Live"],
+    "tier": "Full",
+    "race": "Elyos",
+    "map": 210010000,
+    "channelNeeds": "None",
+    "bots": 1,
+    "virtualDuration": "00:03:00",
+    "consumes": [],
+    "requires": ["Db"],
+    "expectedFail": null,
+    "resetEpoch": false
+  },
+  {
     "id": "B2F",
     "modes": ["Live"],
     "tier": "Full",

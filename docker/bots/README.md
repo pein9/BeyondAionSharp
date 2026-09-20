@@ -68,3 +68,12 @@ ordinary clients, no director. It declares one owned Chat SIGKILL to the watcher
 checks disconnected Chat sockets and a bounded unavailable-auth deadline while
 Game still responds, then checks fresh authentication and delivery after normal
 bridge reconnection. It refuses Keep/record mode and removes the isolated stack.
+
+The `-Scenario B3 -Bots 1 -StepTimeoutSeconds 120` Login bridge journey uses one
+subject plus the director, with transient extra Login sockets (at most three
+simultaneous clients). It verifies duplicate-login refusal/kick, fast reconnect
+without password fallback, consumed-key replay refusal, access grant/revoke and
+an account-only one-minute ban followed by natural expiry. No IP bans, clock
+acceleration or database resets. The subject performs no gameplay/login while
+temporarily elevated; level 0 is restored and checked before resuming. Hardware
+ban synchronization and Login process restart are separate journeys.

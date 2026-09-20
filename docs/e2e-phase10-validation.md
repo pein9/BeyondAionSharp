@@ -2972,6 +2972,72 @@ controller assertions (both fault routes, Host/Docker, success/failure exit code
 O1-only AST selector in the routing test; it was updated to exercise both routes,
 and the entire ancillary suite was rerun successfully.
 
+## P10-09 Login account-control journey
+
+LIVE `B3` uses one subject plus the director, at most three simultaneous clients
+including transient Login probes. It does not restart servers or change the DB
+directly. Duplicate login receives ALREADY_LOGIN (7) and the original Game client
+sees `STR_KICK_ANOTHER_USER_TRY_LOGIN` followed by peer close. After ordinary
+delayed leave/re-entry, the client returns to selection, requests
+`CM_RECONNECT_AUTH`, receives its key and observes the Game socket closing.
+
+The key authenticates a fresh Login connection with `CM_UPDATE_SESSION`. A new
+socket attempts the consumed key and must close without a response. The original
+key-authenticated socket then selects Game; no password-login fallback is used.
+The Game authentication/character list must recover the same character and saved
+position before normal re-entry. Protocol contracts check signed key bits, the
+AUTHED-only packet registration, complete key responses and correct account/status
+in the Login response.
+
+The director grants then revokes access 1 through `//grant a`; both clients must
+receive the matching feedback, and the read-only player oracle checks 0→1→0.
+The subject performs no gameplay or login while elevated. Revocation is also
+checked after an ordinary relogin. `//ban <name> account 1` must acknowledge,
+kick the subject, and make two fresh Login attempts return `SM_ACCOUNT_BANNED_2`
+(not a generic refusal) and close. The bot waits 61 real seconds after those
+refusals, then verifies offline state, relogs, re-enters at access 0 and quits.
+No account reset, IP ban, unban shortcut, clock override or retry acceleration.
+
+`run/p10-09-login/p10-09-login-a` passes this journey and both final offline
+checks. Enforced watching exits 0 with zero new/known/regressed problems and only
+the existing scoped boot report; all four owned containers/network are removed.
+This first run's replay used the new login value with the consumed reconnect key;
+the final implementation strengthens it to resend the original account/login/key
+triple on a fresh encrypted connection. The final replay is recorded separately.
+A's bot executable SHA-256:
+`e9b2f9e66ca26db9b6cdd07f8ac54fb481087da626846f3a01264c4f9bbc1747`.
+Base revision `3274d4974`, plus archived scenario source and working patch.
+
+The final `p10-09-login-b` replay passes with the original account/login/key
+triple reused. Key authentication and replay close are observed at
+`2026-09-20T22:00:36.583Z`/`22:00:36.588Z`; ban refusal twice at
+`22:00:58.632Z`/`22:00:58.641Z`; successful post-expiry re-entry/access 0 at
+`22:01:59.726Z`. Both clients finish and verify offline. The watcher again exits
+0 with zero new/known/regressed problems, one scoped boot report and no expected
+process-fault opt-in. Four owned containers/network are removed; the maintainer's
+Docker MySQL and unrelated containers are untouched. No problem allowance was
+added. B's bot SHA-256 is
+`5e74db3b059af25872b4ac6f91e6da8b9384a6ddce28a0b11743b46e00a718fc`;
+its base and archived source/patch are recorded in the same manner as A.
+
+Java source references at `ce54b7931`: GS `CM_RECONNECT_AUTH`,
+`SM_RECONNECT_KEY`, `network/loginserver/LoginServer`,
+`CM_ACCOUNT_RECONNECT_KEY`, `CM_REQUEST_KICK_ACCOUNT`,
+`CM_LS_CONTROL_RESPONSE`, `CM_BAN_RESPONSE`, and admin `Grant`/`Ban`;
+LS `AccountController`, `CM_ACCOUNT_RECONNECT_KEY`, `CM_LS_CONTROL`,
+`CM_BAN`, `CM_UPDATE_SESSION`, `SM_UPDATE_SESSION` and `SM_ACCOUNT_BANNED_2`.
+No production changes or Java runtime execution. Hardware-ban synchronization/
+restart remains separate; B3 does not close BA-003, BA-006 or P10-09 overall.
+
+Pre-commit checks: 4,516 solution tests pass with 27 explicit skips, including
+14 new Login bridge contract cases; warning baseline unchanged at 4,243 sites.
+All CLAUDE.md ancillary gates pass, with 46 LIVE scenarios in Full planning.
+The initial solution run caught the old 112-decoder inventory assertion; it now
+expects 113 and explicitly requires `SM_RECONNECT_KEY`. Warning baseline and the
+whole solution were rerun successfully. Evidence:
+`run/p10-09-login-warnings-final.log`, `run/p10-09-login-tests-final.log` and
+`run/p10-09-login-ancillary.log`; the initial failed test log remains retained.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

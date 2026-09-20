@@ -102,7 +102,7 @@ journey remains open; optional C# callback API internals retain their focused lo
 
 **Status:** Code complete
 
-**Current work:** The complete Java opcode/state table, post-auth account synchronization, runtime handlers, and focused parser/dispatch tests pass; full runtime journeys and the release gate remain.
+**Current work:** The complete Java opcode/state table, post-auth account synchronization, runtime handlers, and focused parser/dispatch tests pass. LIVE B3 now proves duplicate-login refusal/kick, fast reconnect to the existing character without password fallback, consumed-key replay refusal, access grant/revoke, and an account-only ban with natural expiry/re-entry. Hardware-ban synchronization and the full transfer journey remain open; this does not close the release gate.
 
 - [x] `0x02` kick/duplicate-login behavior matches Java.
 - [x] `0x03` fast reconnect returns and consumes the reconnect key correctly.
@@ -113,6 +113,11 @@ journey remains open; optional C# callback API internals retain their focused lo
 - [x] `0x0C` dispatch reaches all transfer response actions `20..28`.
 - [x] Factory state/opcode tests cover every active legal opcode and illegal-state rejection.
 - [ ] Loopback journeys cover duplicate login, kick, reconnect, grant, ban, hardware-ban sync, and transfer.
+  - [x] LIVE B3: duplicate login returns ALREADY_LOGIN and kicks the original Game session with the expected message.
+  - [x] LIVE B3: reconnect key authenticates a new Login session, replay closes, and the authenticated socket selects Game and recovers the same character.
+  - [x] LIVE B3: director and subject see grant/revoke feedback; read-only live state verifies 0→1→0, and revocation survives relogin. No gameplay/login occurs at access 1.
+  - [x] LIVE B3: account-only one-minute ban acknowledges, kicks without a duplicate-login notification requirement, refuses two fresh logins, and expires naturally before successful re-entry/logout.
+  - [ ] MAC/HDD synchronization/enforcement and transfer still require their own full LIVE proofs.
 - [x] `docs/Full-Parity-Backlog.md` §I1 reflects the implemented Java 4.8 opcode/state ownership.
 - [x] Full solution tests pass (1,002/1,002).
 

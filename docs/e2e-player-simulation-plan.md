@@ -143,6 +143,8 @@ flowchart LR
    are access level 0. Staff accounts auto-run `//invis //invul //enemy none //see` on login and hit 77
    staff-only branches, so they are never the subject of combat, PvP, trade or chat tests. Per-command
    `//access` grants do not work in Java either, so power is granted only through account access levels.
+   P10-09's account-control test alone temporarily grants/revokes access on its subject to verify that
+   protocol: no gameplay or login occurs while elevated, and level 0 is checked before resuming play.
 7. **Production changes are either parity fixes or gameplay-neutral seams.** Parity fixes cite
    `upstream/4.8`. Seams (logging bridge, clock routing, socketless connection, login-link interface, RNG
    seed, deterministic-mode switches) default to today's behaviour. See D4.
@@ -2195,6 +2197,10 @@ real geodata on in production immediately, because geo is enabled by default; th
   authentication restores Chat delivery without restarting Game. Watcher opt-in is scoped to one exact
   Chat container, one death/start and a bounded fresh-heartbeat recovery; Game/Login monitoring stays active.
   This does not prove the optional C# callback API's pending-request internals or close the gag failure.
+  LIVE `B3` covers BA-003's duplicate-login kick, key-authenticated fast reconnect/replay refusal,
+  director access grant/revoke and account-only ban with natural expiry. It uses one subject plus a
+  director and transient Login probes (at most three clients); no password fallback on the fast path,
+  clock acceleration or DB reset. Hardware-ban synchronization/restart and full transfer remain open.
   Remaining runtime player scenarios and tracker closeouts are still open.
 - [ ] **P10-10** [BOTH] M — Run report. Every run writes `run/<id>/report.md` and `report.json`:
   each scenario as passed, failed, skipped or flaky with duration; NEW, KNOWN and REGRESSED fingerprints; coverage

@@ -38,6 +38,8 @@ public static partial class LiveBotRunner
 			return await RunB2Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "B2F" }])
 			return await RunB2FAsync(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "B3" }])
+			return await RunB3Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "SOAK" }])
 			return await RunSoakAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "L0" }])
@@ -718,6 +720,11 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 	public async Task<DecodedBotServerPacket> LoginCharacterListAsync(CancellationToken cancellationToken)
 	{
 		await LoginServerAsync(cancellationToken);
+		return await AuthenticateGameCharacterListAsync(cancellationToken);
+	}
+
+	private async Task<DecodedBotServerPacket> AuthenticateGameCharacterListAsync(CancellationToken cancellationToken)
+	{
 		await OpenConnectionAsync(cancellationToken);
 		quitExpected = false;
 		AssertPacketType(await ReadNextAsync(cancellationToken), typeof(SM_KEY));
