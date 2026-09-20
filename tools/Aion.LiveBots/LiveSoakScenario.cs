@@ -210,7 +210,9 @@ public static partial class LiveBotRunner
 					counts[decision.Action.Activity.ToString()]++;
 					await first.StepAsync("soak-think", ct => SoakDrainAsync(first, second, decision.ThinkTime, ct), stop.Token);
 				}
-				if (counts.Values.Any(count => count == 0)) throw new InvalidDataException($"Cohort {cohort.Number} did not exercise every selected activity; increase diagnostic duration.");
+				first.Trace.WriteAction("soak-coverage", "soak:activity-coverage", new Dictionary<string, object?>
+				{ ["cohort"] = cohort.Number, ["counts"] = counts });
+				await ValidateSoakCoverageAsync(options.Run, problems, cohort.Number, first.Bot, first.Account, counts);
 				foreach (var actor in new[] { first, second })
 				{
 					await actor.StepAsync("verify-final-inventory", actor.Session.VerifyInventoryAsync, stop.Token);
@@ -227,6 +229,23 @@ public static partial class LiveBotRunner
 				await stop.CancelAsync();
 				throw;
 			}
+		}
+	}
+
+	internal static async Task ValidateSoakCoverageAsync(string run, LiveBotProblemWriter problems, int cohort,
+		string bot, string account, IReadOnlyDictionary<string, long> counts)
+	{
+		var missing = counts.Where(entry => entry.Value <= 0).Select(entry => entry.Key).Order(StringComparer.Ordinal).ToArray();
+		if (counts.Count != 0 && missing.Length == 0) return;
+		try
+		{
+			throw new InvalidDataException($"Cohort {cohort} did not exercise every selected activity; " +
+				$"missing: {(counts.Count == 0 ? "all (empty coverage)" : string.Join(", ", missing))}. Increase diagnostic duration.");
+		}
+		catch (InvalidDataException failure)
+		{
+			await problems.WriteAsync(run, bot, account, "soak-coverage", "activity-coverage", failure.Message, failure);
+			throw;
 		}
 	}
 

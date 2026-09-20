@@ -1829,6 +1829,43 @@ Pre-commit checks pass: 4,316 solution tests / 26 explicit skips, warning baseli
 `run/p10-02-nav-work-queue-{warning,fulltests}.log`. No gameplay or upstream script
 change. Scaled replay with the corrected runner remains required.
 
+## P10-02 profiled mixed500-b outcome and coverage reporting
+
+The unmodified runner in `p10-02-mixed500-b` completes its planned ten-minute
+workload window, then fails at 2026-09-20 15:23:50.6097912 UTC after 664.2083176
+seconds including in-flight work/cleanup. Clock drift is 0.0000684 seconds.
+The first failure is cohort 96's all-selected-activities check, not a socket or
+cast timeout. b191's recorded schedule is Quest (15:12:47), CrashDisconnect
+(15:20:48), Vendor (15:21:11), Group (15:21:14), Gather (15:21:16). Its Q1 journey
+persists once at 15:20:44; the remaining Trade/Duel/Relog activities never start
+before the window expires. Do not reset quests or narrow the activity list to
+make this diagnostic pass. A longer diagnostic is needed; the two-hour capacity
+requirement remains unchanged.
+
+Retained traces show 97 gathering outcomes across 97 subjects, 2,099 crafts and
+fourteen persisted finite quest journeys. Economic evidence is explicitly
+`insufficient`, with zero impossible outcomes. No new server error: LS/CS problem
+logs are empty, GS has only startup allowance `231c488f`. Enforced watcher records
+248 observations: one suppressed, zero new/known, one regressed, 246 repeats.
+The owner exits 1 and removes only its Docker stack. The process sampler peaks
+at 2,072 handles, 69 threads and 2,576,105,472 private bytes; these sampled maxima
+do not prove absence of transient native resource pressure. Both runtime counter
+sessions finish normally when the bot exits.
+
+All 247 bot problems were cancellation fallout: the primary coverage exception
+was printed only on stderr. Finding #105 corrects this independent reporting
+gap. Each cohort now traces its completed activity counts, and a failed check
+writes one primary `activity-coverage` record at `soak-coverage`, attributed to
+that pair's first bot/account, listing the sorted missing names and original
+stack before triggering cancellation. Complete coverage is silent; empty
+coverage is rejected. No success conversion, exception suppression or allowance.
+The two-case regression fails when the write is removed, then passes when
+restored; `run/p10-02-coverage-problem-{red,green}.log` retains both outcomes.
+Pre-commit validation passes: 4,318 solution tests / 26 explicit skips, warning
+baseline 4,243, and every CLAUDE.md ancillary check. Logs:
+`run/p10-02-coverage-problem-{warning,fulltests}.log`. Harness-only correction;
+no production behavior, image, timeout or upstream automation change.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
