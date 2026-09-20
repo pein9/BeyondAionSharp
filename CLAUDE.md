@@ -75,6 +75,7 @@ python scripts/e2e/test-quest-plan-compiler.py                 # quest plan/clas
 python scripts/e2e/test-data-sweep-report.py                   # exhaustive sweep evidence/baseline contract
 python scripts/e2e/test-soak-telemetry.py                      # capacity heartbeat/plateau/latency evidence gate
 python scripts/e2e/test-soak-acceptance.py                     # all soak evidence gates must agree
+python scripts/e2e/test-mutation-runner.py                     # mutation verdicts, prerequisites and exact restoration
 pwsh -NoProfile -File scripts/live/test-run-soak.ps1           # acceptance runner propagation and failure paths
 pwsh -NoProfile -File scripts/live/test-lifecycle-controller.ps1 # isolated crash ownership and saved-state gates (mock Docker)
 pwsh -NoProfile -File scripts/live/test-hang-probe-contract.ps1 # hang probe target/identity safeguards (mock Docker)

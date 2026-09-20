@@ -2163,8 +2163,13 @@ real geodata on in production immediately, because geo is enabled by default; th
   the real client against the C# server, watch logs, and add the capture instrumentation needed for this
   evidence. Do not require the maintainer to operate the session manually or run a Java server. Client
   access and available computer-control capabilities must be checked then; no capture session is authorized now.
-- [ ] **P10-08** [SIM] S — Parameterize `tools/client-extract/run_mutations.py` (hardcoded test project and `Ai.` name
-  filter) so seeded regressions prove the scenarios catch them.
+- [ ] **P10-08** [SIM] S — Parameterize `tools/client-extract/run_mutations.py` (hardcoded test project and AI-specific
+  failure-name parsing; the test filter was already configurable) so seeded regressions prove the scenarios catch them.
+  **Implementation checkpoint:** project/filter selection and optional display-only name prefix; separate build
+  and TRX-based test verdicts; reject zero/skipped/aborted or changed test sets and unexplained process failures.
+  Preserve byte-exact source backups/restoration, per-invocation evidence and a clean post-mutation rebuild/test.
+  `parity-artifacts/e2e/mutations/m1.json` seeds movement and quest-wire regressions against the existing M1
+  scenario with one bot on Docker MySQL. See `docs/e2e-phase10-validation.md` for acceptance evidence.
 - [ ] **P10-09** [LIVE] L — Turn the open journeys in `docs/Deep-Port-Audit-Remediation-Tracker.md` into LIVE
   scenarios and tick the tracker as each passes: BA-001 two-GS character transfer (the bots compose project gets a second
   game server service); BA-002 chat auth success, gagged, timeout/disconnect, duplicate request; BA-003 login-server kick,
@@ -2455,6 +2460,8 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 114 | Draft hang collector can attribute stacks across a process restart and omit problems appended during its final drain (infrastructure defects) | Two red tests reproduce changed process start during stack capture being reported as collected and a late problem absent from the final summary. No Java gameplay analogue | Corrected before P10-04 collector commit: revalidate exact identity/image/start after sampling, preserve ambiguous evidence as failed collection, and drain shared trace/problem files after pending diagnostics complete. No server restart, suppression or production change |
 
 | 115 | Watcher treats any event whose category/message mentions heartbeat as a liveness sample (infrastructure defect) | LIVE `p10-04-a` stores `Scheduled timer census` instead of the actual heartbeat in its GS diagnostic context because both originate from `ServerHeartbeatService`. Three red tests show census, configuration and unrelated message text postponing a missing-heartbeat failure. No Java gameplay analogue | Accept only the actual `Server heartbeat` / `Server heartbeat:` template. Existing synthetic crash fixtures use that same event name. Corrected LIVE `p10-04-b` verifies the saved sample template/timestamp for all three servers, preserves the expected failure verdict and completes cleanup. No allowance or production change |
+
+| 116 | Mutation runner can report unusable tests as survivors and returns success even with survivors/build failures (test infrastructure defect) | Original `run_mutations.py` checks only `: error CS` and console `[FAIL]` lines, never subprocess exit codes, test counts or skips. It also normalizes original source line endings while restoring. No Java analogue or gameplay divergence | P10-08 separates build/test results, checks completed TRX counters and exact test selection, fails skipped/empty/aborted/inconsistent evidence, returns nonzero for survivors/inconclusive mutants, and restores exact original bytes before a final clean rebuild/test. Draft M1 run A exposed that xUnit uses TRX RunInfo Error for ordinary `[FAIL]` announcements; recognize only announcements naming actual failed test results, reject other errors. The draft stays failed; regression and corrected replay are recorded separately |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the

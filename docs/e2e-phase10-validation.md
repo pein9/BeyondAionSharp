@@ -2645,12 +2645,79 @@ The archived probe source, current source and replay's watcher binary all match
 their recorded hashes. No gameplay, upstream automation, global ledger or
 allowlist change was made.
 
+## P10-08: scenario mutation runner
+
+`tools/client-extract/run_mutations.py` now accepts a test project and optional
+display-only name prefix; the existing test filter remains configurable. The
+original AI project is still the default. Full test names are retained in evidence.
+Build and test are separate commands, and verdicts come from completed TRX results,
+not console `[FAIL]` strings. Empty selections, skips, changed test sets, incomplete
+runs, unexplained exit codes and build failures cannot count as catches. Survivors
+and inconclusive results exit nonzero. A clean baseline must pass before mutation
+and again after restoring/rebuilding the source. No retries hide a failed baseline.
+
+The runner saves per-stage build/test logs, TRX and scenario artifacts, a copied
+specification, exact source backups, hashes and `report.json`. It restores exact
+bytes (including BOM/line endings), detects concurrent edits instead of overwriting
+them, bounds each child command and aborts on uncertain process-tree cleanup.
+Its lock excludes other cooperating mutation runners, not arbitrary builds or
+editors; the documented workflow requires exclusive use of the checkout.
+The 22-case `scripts/e2e/test-mutation-runner.py` contract is a pre-commit check.
+
+The checked-in M1 spec and command are in
+`parity-artifacts/e2e/mutations/README.md`. The actual existing SIM scenario is
+selected using Fast / eleven shards / shard-02, seed 73, UTC virtual epoch
+`2026-09-16T08:59:00Z`, geo enabled. This runs **one bot**, not eleven. Each stage
+creates/drops its own throwaway database on Docker's `aion-mysql`; no host database
+or Java server runs. The two temporary regressions are a lost `CM_MOVE` coordinate
+update and an incorrect `SM_QUEST_ACTION` quest status. The unmodified behavior was
+checked against both corresponding Java packet classes at `ce54b7931` before
+seeding. No production source change is retained.
+
+Evidence history:
+
+- `run/p10-08-m1-a`: draft runner exits 1. Both mutants compile and fail M1, and
+  the restored baseline passes, but the draft misclassifies xUnit's ordinary
+  failure announcements in TRX RunInfo Error as infrastructure errors. Keep this
+  run failed. The archived `runner.py` preserves the draft. A red/green contract
+  verifies the correction: only an exact xUnit `[FAIL]` announcement naming an
+  actual failed result is accepted; unrelated errors remain fatal.
+- `run/p10-08-m1-b`: corrected runner exits 0; baseline and restored baseline each
+  pass one test, and both mutants compile and fail that same test with no skips.
+  The movement seed prevents the expected dialog at Vandar (`FinishQuestAsync`,
+  line 1083); the status seed prevents the required completed-status packet
+  (`FinishQuestAsync`, line 1107). Both hit the existing scenario cancellation
+  deadline, not a runner timeout or boot failure. The failures and full stacks are
+  in their TRX files. Both source hashes restore exactly. Runner hash is
+  `6a8f079a1f41385a9f2046c3891f8f27a3d03395dc789e97913341ed1d070ed9`;
+  the archived runner matches it. Final cleanup hardening receives its own replay.
+- `run/p10-08-m1-c`: final cleanup-hardened runner exits 0 with the same two caught
+  mutations and passing baseline/restored baseline (one test each, zero skips).
+  Runner hash is `a4a1fc08e07153ce3850ac533127042f27ac5b727ae6af0b4eeff84795fc23bd`.
+  The recorded base revision is `1c7b11b5b`; the runner changes were uncommitted
+  during the run and are pinned by that hash and archived `runner.py`. Both source
+  files match the report's original hashes after restoration; `git diff` is empty
+  for both, the lock is removed, and none of the A/B/C throwaway databases remains.
+  Only the maintainer's Docker MySQL and the unrelated existing container remain;
+  no bot/test server is left running.
+
+This demonstrates that M1 detects those two seeded regressions. It does not claim
+exhaustive mutation coverage, real-client fidelity, or completion of Phase 10.
+
+Pre-commit validation passes: 4,435 solution tests / 27 explicit skips, 22 mutation
+runner contract tests, unchanged 4,243-warning baseline, structural fidelity and
+all remaining CLAUDE.md gates. Build/test logs: `run/p10-08-warnings.log` and
+`run/p10-08-tests.log`. No gameplay source, global allowance, known-problem ledger
+or upstream automation change is retained.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
 - P10-06 Java runtime comparisons are explicitly deferred under D15. Java remains
   the source and golden-fixture reference; no Java server is started.
-- P10-07 needs real **4.8** client protocol captures, not just extracted geodata.
+- P10-07 is deferred under D18. It needs real **4.8** client protocol captures,
+  not just extracted geodata; the agent-driven Computer Use session awaits readiness
+  and the maintainer's explicit request.
 - D17 caps current testing at ten concurrent bots total; larger capacity runs
   require explicit renewed authorization.
 - A green orchestration contract does not prove a two-hour populated soak, five

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "M1 loses client movement position updates",
+    "file": "src/Aion.GameServer/Network/Aion/ClientPackets/CM_MOVE.cs",
+    "old": "global::Aion.GameServer.World.World.GetInstance().UpdatePosition(player, x, y, z, heading);",
+    "new": "global::Aion.GameServer.World.World.GetInstance().UpdatePosition(player, player.GetX(), player.GetY(), player.GetZ(), heading);"
+  },
+  {
+    "name": "M1 receives an incorrect quest status on the wire",
+    "file": "src/Aion.GameServer/Network/Aion/ServerPackets/SM_QUEST_ACTION.cs",
+    "old": "this.status = qs.GetStatus().Value();",
+    "new": "this.status = qs.GetStatus().Value() + 1;"
+  }
+]
