@@ -25,8 +25,11 @@ public sealed partial class SimulationFastScenarioTests
 		await session.EnterWorldAsync(token);
 		await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
 		Player player = fixture.World.GetPlayer(session.CharacterId);
+		// Exercise purchases/sales with more than one stack, as repeated trades create in LIVE soaks.
+		Aion.GameServer.Services.Items.ItemService.AddItem(player, VendorScenario.ItemId, 10001);
 		var driver = new SimVendorDriver(this, fixture, session, player);
 		await VendorScenario.RunAsync(driver, token);
+		Assert.True(session.Api.World.Inventory.Values.Count(item => item.ItemId == VendorScenario.ItemId) >= 2);
 		int prices = PricesConfig.DEFAULT_PRICES, taxes = PricesConfig.DEFAULT_TAXES, modifier = PricesConfig.DEFAULT_MODIFIER;
 		try
 		{
@@ -42,6 +45,21 @@ public sealed partial class SimulationFastScenarioTests
 			PricesConfig.DEFAULT_TAXES = taxes;
 			PricesConfig.DEFAULT_MODIFIER = modifier;
 		}
+		session.BeginStep("s20", "split-and-merge-vendor-stack");
+		var stacks = session.Api.World.Inventory.Values.Where(item => item.ItemId == VendorScenario.ItemId).ToArray();
+		long total = stacks.Sum(item => item.Count);
+		Assert.Equal(player.GetInventory().GetItemsByItemId(VendorScenario.ItemId).First().GetItemTemplate().GetMaxStackCount(), VendorScenario.ReadMaxStack());
+		var source = stacks.First(item => item.Count > 1 && item.Count < VendorScenario.ReadMaxStack());
+		await session.SendPacketAsync(GameClientPackets.SplitItem(source.ObjectId, 1, 0, 0, 0, 20), token);
+		await driver.SynchronizeAsync(token);
+		var split = session.Api.World.Inventory.Values.Single(item => item.ItemId == VendorScenario.ItemId && !stacks.Any(old => old.ObjectId == item.ObjectId));
+		Assert.Equal(1, split.Count);
+		Assert.Equal(source.Count - 1, session.Api.World.Inventory[source.ObjectId].Count);
+		await session.SendPacketAsync(GameClientPackets.SplitItem(split.ObjectId, 1, 0, source.ObjectId, 0, 0), token);
+		await driver.SynchronizeAsync(token);
+		Assert.False(session.Api.World.Inventory.ContainsKey(split.ObjectId));
+		Assert.Equal(source.Count, session.Api.World.Inventory[source.ObjectId].Count);
+		Assert.Equal(total, session.Api.World.Inventory.Values.Where(item => item.ItemId == VendorScenario.ItemId).Sum(item => item.Count));
 		policy.AssertClean();
 	}
 

@@ -1912,13 +1912,20 @@ real geodata on in production immediately, because geo is enabled by default; th
   An explicit diagnostic runtime now repeats group/trade/relog/crash-disconnect flows with per-cohort
   seeded decisions, conservation/persistence checks and fail-fast population cleanup. All unimplemented
   activities fail closed, and diagnostic output explicitly says it is not acceptance evidence.
-  Quest/gather/craft/vendor/duel/PvP drivers, resource coordination, telemetry and two-hour evidence remain required.
+  Vendor buy/sell/repurchase and production-random Cooking work-order loops are implemented diagnostically; Cooking
+  selects eligible shipped apprentice orders as skill rises, with ordinary abandonment/reacceptance after
+  failed crafts exhaust issued materials. Quest/gather/duel/PvP drivers, resource coordination, telemetry
+  and two-hour evidence remain required. This is still not acceptance of the full mixed workload.
   Foundation validation: 21 focused identity/policy tests and 500 TCP key-exchange/close smoke cases pass;
   neither proves a populated world or a two-hour soak. The TODO remains unchecked until full runtime evidence.
   Runtime checkpoint: 10- and 50-subject, three-minute group/trade/relog/crash diagnostics pass (74/368
   cohort actions, seeds 1/73); the 50-subject run checks level/inventory preservation on every reconnect.
   All subjects finish and both runs pass enforced log watching without a new allowance. These short,
   partial-workload diagnostics do not satisfy the two-hour matrix or memory/timer/latency acceptance.
+  Economy checkpoint: `p10-02-economy10-c` passes ten subjects/eight minutes, 143 cohort actions,
+  46 craft attempts (36 successes/10 failures), twelve completed orders and three abandon/reaccept
+  recoveries, without a new allowance. Higher apprentice orders and ordinary ingredient purchases
+  still need LIVE evidence. Details and checkpoint limitations: `docs/e2e-phase10-validation.md`.
 - [ ] **P10-03** [LIVE] S — Crash and restart: kill the game server mid-session, restart, relog succeeds, delayed save is
   correct, a second login on the same account kicks the first.
 - [ ] **P10-04** [LIVE] S — Hang detection on top of the P3-12 heartbeat: alert thresholds and diagnostics on a missed
@@ -2077,7 +2084,7 @@ exits (`docker compose events`) and MySQL errors.
 | D8 | Java reference for this work | Keep local `../aion-server` `4.8` at `lastCompletedJavaCommit` | **Done** 2026-09-17 (`6ffedcd4f` → `ce54b7931`) |
 | D9 | Where runs happen | Local scripts | **Decided** 2026-09-17: no GitHub Actions, no n8n or other schedulers (both removed from the repo). The `docker/` compose stack stays as the way the emulator is deployed and run. Runs may create and drop databases on a Docker MySQL freely |
 | D13 | How LIVE mode starts the servers | An isolated docker compose project built from `docker/` | **Decided** 2026-09-17: LIVE runs as its own compose project (own name, images, ports, MySQL and logs), so it tests the same images the emulator is deployed with (P3-00, P3-02, P3-08) |
-| D10 | Randomness in economy scenarios | Deterministic profile (fail chances 0) for pass/fail; separate soak profile with statistical assertions (gather success ≈ 74%, craft ≈ 79% at skill lead 0) | Proposed |
+| D10 | Randomness in economy scenarios | Deterministic profile (fail chances 0) for pass/fail; separate soak profile with statistical assertions. Earlier ≈74% gather / ≈79% craft completion-rate estimates at skill lead 0 are not validated acceptance thresholds. Production defaults give 67% success per progress-step roll there; derive completion expectations from the competing progress bars and stratify by skill lead | Proposed |
 | D11 | Enable real geodata in production when P9-01 lands (geo defaults to on) | Yes as a parity fix, after P9-03 measures memory | **Approved** 2026-09-17 |
 | D12 | How Java golden fixtures are generated against `lastCompletedJavaCommit` | Bring the generator tests forward onto the spec revision | **Approved** 2026-09-17: branches or worktrees in `../aion-server` are allowed when needed |
 | D14 | Trade catalogs attached to NPCs without their corresponding trade action | Report separately as inactive content, not successful transactions or missing-spawn rows | **Approved** 2026-09-19: do not enable new vendors; independently verify the missing action from shipped NPC data |
@@ -2177,6 +2184,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 
 | 71 | LIVE options stopped at 99 bots; subject MAC encoding overflowed past 255, collided with director address 254, and character suffixes stopped being letters above 676 (harness capacity defects) | No Java analogue; `LiveBotOptions.Parse`, `LiveBotSession` identity construction, `LiveBotRunner.CharacterName` | P10-02 foundations support 1,000 subjects, preserve small-run names/MACs and reserve the director's address. Whole-population tests verify uniqueness, valid wire/name format and boundaries at 50/200/500/1,000 |
 | 72 | Soak overlay claimed the same observability controls as deterministic runs but lacked later chat credentials, twin-channel and explicit geo settings (harness profile drift) | No Java behavior change; source `NetworkConfig.java` at `ce54b7931` confirms the configurable 100-player admission default | P10-02 aligns shared controls and ratchets every common key against the ordinary bot overlay. Only soak raises admission to 1,001; production remains 100 and the single dispatcher is unchanged. Gather/craft rates, events and random quest bonuses remain production defaults |
+| 73 | E3's vendor assertions assumed one inventory stack per item template; mixing trade and vendor loops caused `SingleOrDefault` to throw on legitimate multiple bandage stacks (harness defect, not a gameplay divergence) | Java `model/items/storage/Storage.java:getItemsByItemId` at `ce54b7931` returns a list. `CM_BUY_ITEM.java:runImpl` completes vendor transactions synchronously; a following time-check drains their add/update responses | P10-02 diagnostic `p10-02-economy10-a` exposed the assumption. E3 now totals all stacks and selects a sufficient sale stack; the SIM regression starts with 10,001 bandages to guarantee multiple stacks, retaining exact item/kinah and repurchase checks. Docker Fast passes. No new allowance or gameplay change |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 

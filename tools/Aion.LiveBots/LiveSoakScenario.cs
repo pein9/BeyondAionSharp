@@ -11,7 +11,7 @@ namespace Aion.LiveBots;
 public static partial class LiveBotRunner
 {
 	private static readonly SoakActivity[] ImplementedSoakActivities =
-		[SoakActivity.Group, SoakActivity.Trade, SoakActivity.Relog, SoakActivity.CrashDisconnect];
+		[SoakActivity.Group, SoakActivity.Trade, SoakActivity.Relog, SoakActivity.CrashDisconnect, SoakActivity.Vendor, SoakActivity.Craft];
 
 	private static async Task<int> RunSoakAsync(LiveBotOptions options, LiveBotProblemWriter problems, CancellationToken token)
 	{
@@ -41,7 +41,7 @@ public static partial class LiveBotRunner
 				foreach (var actor in new[] { first, second })
 				{
 					await InitializeAsync(actor, stop.Token);
-					var point = SoakStart(cohort.MapId);
+					var point = cohort.Actions.Any(action => action.Activity == SoakActivity.Vendor) ? VendorScenario.Position : SoakStart(cohort.MapId);
 					await MoveSubjectWithDirectorAsync(director, actor, gm, cohort.MapId, point.X + offset++, point.Y, point.Z, "soak-initial-position", stop.Token);
 					await actor.StepAsync("soak-initial-supplies", async ct =>
 					{
@@ -106,6 +106,11 @@ public static partial class LiveBotRunner
 						{
 							case SoakActivity.Group: await SoakGroupAsync(first.Session, second.Session, inner); break;
 							case SoakActivity.Trade: await SoakTradeAsync(first.Session, second.Session, inner); break;
+							case SoakActivity.Vendor:
+								await Task.WhenAll(VendorScenario.RunAsync(new SoakVendorDriver(first), inner), VendorScenario.RunAsync(new SoakVendorDriver(second), inner)); break;
+							case SoakActivity.Craft:
+								var master = cohort.MapId == CookingMaster.Hestia.MapId ? CookingMaster.Hestia : CookingMaster.Lainita;
+								await SoakIndependentPairAsync(first, second, (actor, ct) => SoakCookingAsync(actor, master, ct), inner); break;
 							case SoakActivity.Relog:
 							case SoakActivity.CrashDisconnect:
 								bool crash = decision.Action.Activity == SoakActivity.CrashDisconnect;
@@ -225,6 +230,8 @@ public static partial class LiveBotRunner
 				throw new InvalidDataException("Soak exchange violated exact per-subject conservation.");
 			if (first.Api.Timing.BlockingActivities.Count != 0 || second.Api.Timing.BlockingActivities.Count != 0)
 				throw new InvalidDataException("Soak exchange left a blocking interaction.");
+			await Task.WhenAll(first.ConsolidateSoakStacksAsync(VendorScenario.ItemId, SoakBandageStack.Value, token),
+				second.ConsolidateSoakStacksAsync(VendorScenario.ItemId, SoakBandageStack.Value, token));
 		}
 		Task Confirmation(LiveBotSession session, byte action) => session.WaitForPacketAsync(typeof(SM_EXCHANGE_CONFIRMATION), token, packet => packet.Get<byte>("action") == action);
 		static Dictionary<int, long> Totals(LiveBotSession session) => session.Api.World.Inventory.Values.GroupBy(item => item.ItemId)

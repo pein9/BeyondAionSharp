@@ -135,7 +135,7 @@ Default `SOAK` requests **all** activities and currently rejects the unimplement
 ones before opening bot sessions. The PowerShell wrapper may already have started
 its disposable Docker stack at that point, and cleans it up. `run-full.ps1`
 continues to reject Soak/All before startup while `run-soak.ps1` is unavailable.
-Quest/gather/craft/vendor/duel/PvP runtime, shared-resource coordination, statistical
+Quest/gather/duel/PvP runtime, shared-resource coordination, statistical
 checks, dispatcher/memory/timer telemetry and every two-hour acceptance run remain
 outstanding. System-message history is also still unbounded; the diagnostic
 packet-history cap alone is not a claim of flat bot-process memory.
@@ -161,6 +161,74 @@ quest-compiler/data-sweep tests, retention, Full-suite and compose contracts pas
 No production gameplay code or upstream automation changed. Java's
 `AionConnection.java:onDisconnect` at `ce54b7931` was checked for the existing
 maximum ten-second delayed crash logout; no Java runtime was used.
+
+## P10-02 repeatable economy workload (still diagnostic)
+
+The explicit SOAK subset now also supports vendor buy/sell/repurchase and Cooking
+work orders at production failure rates. Cooking starts at skill one through the
+ordinary trainer dialog. The catalog selects the highest eligible shipped
+apprentice order for the subject's current skill, through the native skill-99
+mastery gate; it does not add quests or automatically upgrade mastery. Exhausting
+issued materials abandons/reaccepts the order through ordinary client packets,
+preserving already-crafted products as Java does. Ingredient stock is bought in
+small batches from the existing active cooking merchants, with exact price,
+kinah and item assertions; there are no GM ingredient grants.
+
+Each craft checks ingredient consumption on success **and** failure. Work-order
+completion checks the race/skill-specific TASK bonus against an independent
+static-data oracle, requiring exactly one eligible reward when any group matches.
+Useful ingredient rewards remain in inventory; other bonus items are discarded
+through normal client packets, never by resetting server state. Faster crafters
+continue draining incoming packets while their paired subject finishes. Bandage
+fragments left by trades/vendor loops are consolidated through `CM_SPLIT_ITEM`,
+with source/destination and total conservation checks.
+
+Fourteen new contract tests cover every apprentice level for both races, reward
+race/window/count bounds, and injected missing/duplicate/unrelated reward deltas.
+The SIM vendor regression begins with multiple stacks and exercises splitting
+and merging through ordinary packets. These tests do not replace LIVE evidence
+for higher work orders, ingredient replenishment, or the two-hour mixed workload.
+
+Failed exploratory diagnostics remain useful evidence, not passes:
+
+- `p10-02-economy10-a` found the E3 one-stack assumption (§7 #73); vendor assertions
+  now aggregate stacks and pick a sufficient sale stack.
+- `p10-02-economy10-b` filled the cube with an oversized draft GM ingredient grant.
+  That fixture was removed in favor of ordinary small-batch merchant purchases.
+  No inventory-full refusal or bot failure was allowlisted.
+
+The plan's old ~79% craft / ~74% gather completion estimates are not validated
+acceptance thresholds. Java `CraftingTask.analyzeInteraction` and
+`GatheringTask.analyzeInteraction` at `ce54b7931` advance competing progress bars;
+the production failure chance of 33 gives 67% success per step at skill lead zero.
+The future statistical assertion must model those bars and stratify by skill
+lead; this checkpoint traces craft outcomes/skill lead but makes no statistical
+acceptance claim. No production gameplay code or Java runtime is involved.
+
+LIVE `p10-02-economy10-c` passed with seed 73, ten subjects and an eight-minute
+window after population setup: 143 cohort actions, twelve completed work orders
+across four crafters, 46 craft attempts (36 successes / 10 failures), and three
+abandon/reaccept recoveries. All ten subjects completed their final inventory
+oracle and offline checks. The bot problem file is empty; enforced log watching
+reports zero new/known/regressed fingerprints and only the existing startup
+content warning allowance. Its isolated stack was removed. This run predates the
+stack-consolidation addition. It reached Cooking 10 but completed only the first
+orders, so higher-order selection and merchant replenishment still require LIVE
+proof; neither is claimed by this result.
+
+The final stack-consolidation code passed `p10-02-stacks10-a`: ten subjects,
+seed 73, three minutes, 78 cohort actions and 32 ordinary stack merges. Its
+group/trade/vendor/relog/crash subset completed with an empty bot problem file
+and enforced watcher success, without new allowances. The temporary stack was
+removed; the maintainer's Docker MySQL container was left running.
+
+Final checkpoint checks: 4,149 solution tests passed / 21 explicit skips; 4,243
+compiler warnings (unchanged). Docker Fast `p10-02-economy-fast-final` passed all
+eleven scenarios, including the multiple-stack vendor and packet split/merge
+regression. Null-logger/clock/custom-quest ratchets, fidelity, ten quest-compiler
+tests, 23 data-sweep report tests, retention, Full-suite and compose contracts
+all passed. P10-02 remains unchecked; the Full soak driver remains unavailable
+until the complete workload and capacity assertions exist.
 
 ## Scope decisions
 

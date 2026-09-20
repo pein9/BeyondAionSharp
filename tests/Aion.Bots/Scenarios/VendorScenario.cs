@@ -59,7 +59,7 @@ public static class VendorScenario
 			var sell = await driver.WaitAsync(typeof(SM_SELL_ITEM), packet => packet.Get<int>("targetObjectId") == vendor, token);
 			sellReward = BotVendorPrices.SellPrice(driver.BasePrice, sell.Get<int>("buyPriceRate")) * 2;
 			Require(sellReward > 0, "Sell-price probe requires a nonzero reward.");
-			BotInventoryItem item = driver.Api.World.Inventory.Values.Single(item => item.ItemId == ItemId);
+			BotInventoryItem item = driver.Api.World.Inventory.Values.First(item => item.ItemId == ItemId && item.Count >= 2);
 			await driver.SendAsync(driver.Api.Sell(vendor, [(item.ObjectId, 2)]), token);
 			expected[ItemId] -= 2;
 			expected[BotWorldModel.KinahItemId] += sellReward;
@@ -91,11 +91,13 @@ public static class VendorScenario
 
 	private static async Task WaitForItemCountAsync(IVendorScenarioDriver driver, int itemId, long count, CancellationToken token)
 	{
-		BotInventoryItem? item = driver.Api.World.Inventory.Values.SingleOrDefault(item => item.ItemId == itemId);
-		if (item?.Count == count)
+		if (driver.Api.World.Inventory.Values.Where(item => item.ItemId == itemId).Sum(item => item.Count) == count)
 			return;
-		await driver.WaitAsync(item == null ? typeof(SM_INVENTORY_ADD_ITEM) : typeof(SM_INVENTORY_UPDATE_ITEM),
-			_ => driver.Api.World.Inventory.Values.Where(value => value.ItemId == itemId).Sum(value => value.Count) == count, token);
+		// Vendor transactions run synchronously on the connection's packet queue. Drain their responses
+		// with the next time-check: a purchase may update existing stacks AND add a new one.
+		await driver.SynchronizeAsync(token);
+		Require(driver.Api.World.Inventory.Values.Where(item => item.ItemId == itemId).Sum(item => item.Count) == count,
+			$"Vendor did not produce expected aggregate item count {itemId}:{count}.");
 	}
 
 	private static async Task VerifyAsync(IVendorScenarioDriver driver, Dictionary<int, long> expected, CancellationToken token)
@@ -113,13 +115,16 @@ public static class VendorScenario
 	}
 
 	/// <summary>Static client knowledge comes from the checked-in item data, not a hard-coded purchase price.</summary>
-	public static long ReadBasePrice(int itemId = ItemId)
+	public static long ReadBasePrice(int itemId = ItemId) => ReadItemAttribute(itemId, "price");
+	public static long ReadMaxStack(int itemId = ItemId) => ReadItemAttribute(itemId, "max_stack_count");
+
+	private static long ReadItemAttribute(int itemId, string attribute)
 	{
 		string root = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "..", ".."));
 		using XmlReader reader = XmlReader.Create(Path.Combine(root, "game-server", "data", "static_data", "items", "item_templates.xml"));
 		while (reader.Read())
 			if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "item_template" && reader.GetAttribute("id") == itemId.ToString(CultureInfo.InvariantCulture))
-				return long.Parse(reader.GetAttribute("price") ?? throw new InvalidDataException("Vendor probe item has no price."), CultureInfo.InvariantCulture);
+				return long.Parse(reader.GetAttribute(attribute) ?? throw new InvalidDataException($"Vendor probe item has no {attribute}."), CultureInfo.InvariantCulture);
 		throw new InvalidDataException($"Probe item {itemId} was not found.");
 	}
 }
