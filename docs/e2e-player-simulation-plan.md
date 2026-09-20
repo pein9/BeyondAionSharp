@@ -2163,13 +2163,15 @@ real geodata on in production immediately, because geo is enabled by default; th
   the real client against the C# server, watch logs, and add the capture instrumentation needed for this
   evidence. Do not require the maintainer to operate the session manually or run a Java server. Client
   access and available computer-control capabilities must be checked then; no capture session is authorized now.
-- [ ] **P10-08** [SIM] S — Parameterize `tools/client-extract/run_mutations.py` (hardcoded test project and AI-specific
-  failure-name parsing; the test filter was already configurable) so seeded regressions prove the scenarios catch them.
-  **Implementation checkpoint:** project/filter selection and optional display-only name prefix; separate build
+- [x] **P10-08** [SIM] S — Parameterize `tools/client-extract/run_mutations.py` (hardcoded test project and AI-specific
+  failure-name parsing; the test filter was already configurable) so seeded regressions prove the scenarios catch them. (486731fc4)
+  **Done:** project/filter selection and optional display-only name prefix; separate build
   and TRX-based test verdicts; reject zero/skipped/aborted or changed test sets and unexplained process failures.
   Preserve byte-exact source backups/restoration, per-invocation evidence and a clean post-mutation rebuild/test.
   `parity-artifacts/e2e/mutations/m1.json` seeds movement and quest-wire regressions against the existing M1
-  scenario with one bot on Docker MySQL. See `docs/e2e-phase10-validation.md` for acceptance evidence.
+  scenario with one bot on Docker MySQL. Final `p10-08-m1-c` catches both compiled mutants, restores exact
+  source bytes and passes the rebuilt baseline; 22 runner contract tests pass. See
+  `docs/e2e-phase10-validation.md` for acceptance evidence and the preserved failed draft.
 - [ ] **P10-09** [LIVE] L — Turn the open journeys in `docs/Deep-Port-Audit-Remediation-Tracker.md` into LIVE
   scenarios and tick the tracker as each passes: BA-001 two-GS character transfer (the bots compose project gets a second
   game server service); BA-002 chat auth success, gagged, timeout/disconnect, duplicate request; BA-003 login-server kick,

@@ -2647,6 +2647,9 @@ allowlist change was made.
 
 ## P10-08: scenario mutation runner
 
+**Complete:** implementation `486731fc4`; final one-bot Docker SIM evidence is
+`run/p10-08-m1-c`. P10-09 is the next non-deferred TODO.
+
 `tools/client-extract/run_mutations.py` now accepts a test project and optional
 display-only name prefix; the existing test filter remains configurable. The
 original AI project is still the default. Full test names are retained in evidence.
