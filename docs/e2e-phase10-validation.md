@@ -1969,6 +1969,83 @@ All pre-commit checks pass: 4,327 solution tests / 26 explicit skips, unchanged
 `run/p10-02-quest-kill-credit-{warning,fulltests}.log`. This is a harness-only
 correction; no gameplay or upstream automation changes.
 
+## P10-02 terminal replays and expanded quest collection
+
+Matrix-d 200 is now **failed**, not still running. Natural heap readiness took
+4,052.068 seconds. Its measured window starts 2026-09-20 15:55:26.1761525 UTC
+and terminates at 16:25:34.9662644 after 1,808.7900451 seconds; clock drift is
+0.0000668 seconds. The 500-subject stage never starts. Source remains `9a7a8c3d3`,
+login image `18c4130be3cf`, game image `1f38a4c1c4e5`; no hot-patching occurred.
+Concurrent local validation/diagnostics are included in its observed performance.
+
+The slow subject is b154 (its paired b153 finished and persisted at 16:04:46).
+b154 starts Q2104 at 15:58:20.469, gets baskets at 16:18:44.771, 16:23:24.922
+and 16:23:42.950, completes it at 16:23:57.236, then finishes Q2105 and starts
+Q2100 at 16:24:49.728. The unchanged 1,800-second quest deadline expires during
+that final leg. Its channel is the intended index 0, not an accidental shared
+fallback. Enforced watcher: 189 observations, one suppressed, zero new/known,
+two regressed and 186 repeats. Owner cleanup removes only this run's stack.
+
+Finding #108: all three former Q2104 hints cover only the same three baskets
+within the 30 m selection radius. Eight quest subjects per Ishalgen channel at
+population 200 need 24 items: even ideal use requires seven 295-second respawns
+(2,065 seconds), exceeding the whole journey's deadline before travel. The shipped
+zone has 32 baskets; Poeta likewise has 32 grain sacks. Spawn files match Java
+byte-for-byte, and Java `RespawnService.RespawnTask.respawn` at `ce54b7931` uses
+the original spawn template. No new content or faster respawn is necessary.
+
+The harness now rotates through all shipped collection hints, distributing
+initial positions across subjects on each channel. Hints are not object ids or
+reservations: only actually observed objects may be leased. Exploration checks
+outward travel and a return from the grounded endpoint to the quest NPC under
+the existing four-search bound; unavailable paths are rejected. Movement still
+drains packets and enforces collision/speed rules. Three required items, exact
+inventory/rewards, finite completion and relog persistence remain unchanged.
+Real-geometry integration passes in 3m51s, requiring at least 24 returnable spots
+in each zone. This proves route availability, not scaled runtime throughput.
+Unit cases pin the old impossible supply, all 32 hints, twenty distinct initial
+positions, cycling/rejection and invalid inputs. Validation logs:
+`run/p10-02-quest-search-{green,geometry,warning,fulltests}.log`.
+All pre-commit checks pass: 4,332 solution tests / 27 explicit skips, unchanged
+4,243-warning baseline and every CLAUDE.md ancillary check. The added skip is
+the separately executed real-geometry test. This is a harness-only correction;
+no production gameplay or upstream automation files change.
+
+Docker replay b uses clean `385526021`, all ten activities, 500 subjects, seed 73,
+1,800 planned seconds and the same server images. It validates #106 in live
+packet sequences for both races: b122 receives Q1102 counter 3 / loot-enable /
+delete before validating objective 3 at 16:21:41.323; b153 does the equivalent
+for Q2102 at 16:21:14.183. However the run fails after 252.4143781 seconds at
+16:22:37.3749019 UTC (drift -0.010462) on a separate ten-second game-socket connect
+timeout (#107). b331 has no new key after quit, while b332 receives its key and
+enters world before reporting the pair's propagated exception. GS heartbeats
+continue with zero packet queue and pending writes. This does not identify the
+failed connect's cause. Watcher: 481 observations, one suppressed, zero new/known,
+two regressed, 478 repeats. All five owned containers are removed.
+
+Instrumented Docker replay c keeps the same bot revision and server images;
+the quest-search edits are not in its image. Its 16:29:10.6779188 UTC window fails
+at 16:37:35.7726182 after 505.1147897 seconds (drift -0.0200903), not on the prior
+game-socket timeout: b110's offline persistence HTTP request is reset while writing
+(socket 104); b109 propagates the same exception (#109). There are two HTTP rows
+and 486 cancellation rows. LS/CS problem logs are empty, GS has only startup
+allowance `231c488f`. Watcher: 489 observations, one suppressed, zero new/known,
+one regressed, 487 repeats. Owner exit is 1; its five containers are removed.
+The maintainer's `aion-mysql` and unrelated `evejs-market-1` remain untouched.
+
+Read-only five-second Linux `/proc/net` samples in both bot and game containers
+show zero listen overflows/drops, SYN retransmissions, TCP timeouts, memory aborts
+and backlog drops. Aggregate close/data-abort counters rise, but cannot identify
+this request or distinguish expected crash-disconnect activity. Bot runtime
+counters near failure show an empty worker queue; neither sampling result proves
+absence of a transient problem. HTTP idle/reuse behavior is only a hypothesis.
+The source, sampler commands, container identities and overhead are recorded in
+the run's `launch-provenance.md`; counters and raw network snapshots are retained.
+Local validation overlaps this diagnostic, but matrix-d's workload had already
+ended. No host tuning, forced GC, new allowance, retry, deadline change or weakened
+acceptance gate is introduced. Findings #107/#109 remain open, and all three
+failed runs stay failed. P10-02 remains unchecked.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

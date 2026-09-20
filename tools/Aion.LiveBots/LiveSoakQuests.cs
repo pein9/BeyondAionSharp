@@ -38,9 +38,13 @@ public static partial class LiveBotRunner
 				throw new InvalidDataException($"Soak quest {stage.Id} did not start.");
 			if (stage.Objective is { } objective)
 			{
+				int offset = (cohort.Number - 1) / 25 * 2 + (actor.Bot == $"b{cohort.FirstSubject:D2}" ? 0 : 1);
+				var exploration = !objective.Kill && objective.ItemId != 0
+					? new SoakQuestObjectSearch(SoakQuestObjectSearch.ShippedPositions(cohort.FirstRace, objective.TemplateId), offset) : null;
 				for (int index = 0; index < objective.Positions.Count; index++)
 				{
-					await SoakQuestWalkAsync(session, objective.Positions[index], token);
+					if (exploration == null) await SoakQuestWalkAsync(session, objective.Positions[index], token);
+					else await ExploreAsync();
 					SoakQuestResources.Lease? lease = null;
 					while (lease == null)
 					{
@@ -51,7 +55,11 @@ public static partial class LiveBotRunner
 							lease = resources.TryAcquire(cohort.MapId, SoakLifePolicy.StarterChannel(cohort), candidate.ObjectId);
 							if (lease != null) break;
 						}
-						if (lease == null) await Task.Delay(1000, token);
+						if (lease == null)
+						{
+							if (exploration != null) await ExploreAsync();
+							await Task.Delay(1000, token);
+						}
 					}
 					using (lease)
 					{
@@ -70,6 +78,22 @@ public static partial class LiveBotRunner
 						actor.Trace.WriteAction(actor.LastStep, "soak:quest-objective", new Dictionary<string, object?>
 						{ ["quest"] = stage.Id, ["ordinal"] = index + 1, ["object"] = lease.ObjectId, ["template"] = objective.TemplateId });
 					}
+				}
+
+				async Task ExploreAsync()
+				{
+					while (exploration!.Next() is { } point)
+					{
+						// An offline hint only. After walking, lease an object actually observed on this channel.
+						if (await TrySoakQuestWalkAsync(session, point, token, stage.End.Position))
+						{
+							actor.Trace.WriteAction(actor.LastStep, "soak:quest-explore", new Dictionary<string, object?>
+							{ ["quest"] = stage.Id, ["template"] = objective.TemplateId, ["x"] = point.X, ["y"] = point.Y, ["z"] = point.Z });
+							return;
+						}
+						exploration.Reject(point);
+					}
+					throw new InvalidDataException($"No collision-checked route to Q{stage.Id} collection objects.");
 				}
 			}
 			int end = await ApproachAsync(stage.End);
@@ -150,15 +174,29 @@ public static partial class LiveBotRunner
 
 	private static async Task SoakQuestWalkAsync(LiveBotSession session, BotPosition destination, CancellationToken token)
 	{
+		if (!await TrySoakQuestWalkAsync(session, destination, token))
+			throw new InvalidDataException($"No checked quest route from {session.CurrentPosition} to {destination}.");
+	}
+
+	private static async Task<bool> TrySoakQuestWalkAsync(LiveBotSession session, BotPosition destination, CancellationToken token,
+		BotPosition? returnTo = null)
+	{
 		var nav = session.Navigation ?? throw new InvalidOperationException("Quest journey requires checked navigation.");
 		int map = session.Api.World.MapId ?? throw new InvalidDataException("Missing quest map.");
 		var path = await LiveNavigationWorkQueue.Shared.RunAsync(() =>
 		{
-			var route = nav.Graph.FindPath(map, session.CurrentPosition, destination);
-			if (route.Count == 0) route = nav.Geometry.FindLocalPath(map, session.CurrentPosition, destination);
-			return route.Count != 0 ? route : nav.Geometry.FindJourneyPath(map, session.CurrentPosition, destination);
+			return returnTo is { } home
+				? SoakGatheringRoute.FindReturnablePath(session.CurrentPosition, destination, home, Find)
+				: Find(session.CurrentPosition, destination);
+
+			IReadOnlyList<BotPosition> Find(BotPosition start, BotPosition end)
+			{
+				var route = nav.Graph.FindPath(map, start, end);
+				if (route.Count == 0) route = nav.Geometry.FindLocalPath(map, start, end);
+				return route.Count != 0 ? route : nav.Geometry.FindJourneyPath(map, start, end);
+			}
 		}, token);
-		if (path.Count == 0) throw new InvalidDataException($"No checked quest route from {session.CurrentPosition} to {destination}.");
+		if (path.Count == 0) return false;
 		// Keep the single client reader draining during long walks, not just at the final NPC.
 		foreach (var segment in path.Chunk(24))
 		{
@@ -167,6 +205,7 @@ public static partial class LiveBotRunner
 			await session.SynchronizeAsync(token);
 			if (session.Api.World.IsDead) throw new InvalidDataException("Quest subject died while travelling.");
 		}
+		return true;
 	}
 	private static float QuestDistance(BotPosition a, BotPosition b) => MathF.Sqrt(MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2) + MathF.Pow(a.Z - b.Z, 2));
 }
