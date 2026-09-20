@@ -84,12 +84,13 @@ $dispatch=@($ast.FindAll({ param($node)
 if ($dispatch.Count -ne 1) { throw 'Missing backend dispatch.' }
 $block=[scriptblock]::Create($dispatch[0].Extent.Text)
 $botArguments=$hostArguments; $dockerEndpoints=$endpoints; $composeArgs=$compose
+$Scenario = @('SOAK')
 function dotnet { param([Parameter(ValueFromRemainingArguments=$true)][object[]]$Arguments) $script:called='Host'; $script:LASTEXITCODE=$script:expectedExit }
 function docker { param([Parameter(ValueFromRemainingArguments=$true)][object[]]$Arguments) $script:called='Docker'; $script:LASTEXITCODE=$script:expectedExit }
 foreach ($BotExecution in @('Host','Docker')) {
 	foreach ($script:expectedExit in @(0,1,137)) {
 		$script:called=''; . $block
-		if ($script:called -cne $BotExecution -or $LASTEXITCODE -ne $script:expectedExit) { throw 'Backend or exit status was lost.' }
+		if ($script:called -cne $BotExecution -or $botExitCode -ne $script:expectedExit) { throw 'Backend or exit status was lost.' }
 	}
 }
 Write-Host 'Docker bot runner contract passed: isolated endpoint identity, revision, workload forwarding, backend selection and failure propagation.'

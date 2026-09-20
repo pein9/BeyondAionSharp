@@ -268,6 +268,65 @@ try {
 			if ($script:mode -eq 'bot-passed') { Assert-True ($evidence.samples.Count -eq 2 -and $evidence.samples[0].row.x -eq 1 -and $evidence.samples[1].row.x -eq 4) 'Delayed save evidence was lost.' }
 		}
 	} finally { $watcher.Dispose() }
+	# Execute the actual public runner's O1 guards, allowance scope and backend dispatch.
+	$tokens = $null; $errors = $null
+	$runner = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'run-live.ps1'), [ref]$tokens, [ref]$errors)
+	Assert-True ($errors.Count -eq 0) 'LIVE runner did not parse.'
+	$guards = @($runner.FindAll({ param($node)
+		$node -is [Management.Automation.Language.IfStatementAst] -and $node.Extent.Text.Contains("throw 'O1 must run alone")
+	}, $true))
+	Assert-True ($guards.Count -eq 1) 'Missing O1 admission guard.'
+	$guard = [scriptblock]::Create($guards[0].Extent.Text)
+	foreach ($invalid in @('none','multiple','population','keep','record','short')) {
+		$Scenario=@('O1'); $Bots=1; $Keep=$false; $WatcherMode='enforce'; $StepTimeoutSeconds=1200
+		switch ($invalid) {
+			'multiple' { $Scenario=@('O1','connect') }
+			'population' { $Bots=2 }
+			'keep' { $Keep=$true }
+			'record' { $WatcherMode='record' }
+			'short' { $StepTimeoutSeconds=1049 }
+		}
+		if ($invalid -eq 'none') { & $guard } else { Assert-Fails $guard 'O1 must run alone' }
+	}
+	$allowances = @($runner.FindAll({ param($node)
+		$node -is [Management.Automation.Language.IfStatementAst] -and $node.Extent.Text.Contains('$bootEntries =')
+	}, $true))
+	Assert-True ($allowances.Count -eq 1) 'Missing scoped O1 boot allowance.'
+	$repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+	$runPath = Join-Path $testRoot 'runner-allowance'; New-Item -ItemType Directory -Path $runPath | Out-Null
+	$Scenario=@('O1'); $watcherArguments=@('original'); $Run='contract'
+	$originalAllowlist = Get-Content -Raw -LiteralPath (Join-Path $repoRoot 'parity-artifacts/e2e/log-allowlist.json')
+	. ([scriptblock]::Create($allowances[0].Extent.Text))
+	$scoped = @(Get-Content -Raw -LiteralPath (Join-Path $runPath 'lifecycle-log-allowlist.json') | ConvertFrom-Json)
+	$original = @($originalAllowlist | ConvertFrom-Json)
+	Assert-True ($scoped.Count -eq $original.Count) 'O1 created a new fingerprint allowance.'
+	foreach ($entry in $original) {
+		$copy = @($scoped | Where-Object fp -CEQ $entry.fp)
+		Assert-True ($copy.Count -eq 1) 'Allowance fingerprint changed.'
+		if ($entry.fp -eq '231c488f') {
+			Assert-True ($copy[0].maxCount -eq 2 -and $copy[0].owner -ceq $entry.owner -and $copy[0].expires -eq $entry.expires) 'Two-boot scope lost count/owner/expiry.'
+		} else { Assert-True (($copy[0] | ConvertTo-Json -Depth 8) -ceq ($entry | ConvertTo-Json -Depth 8)) 'Unrelated allowance was broadened.' }
+	}
+	Assert-True ((Get-Content -Raw -LiteralPath (Join-Path $repoRoot 'parity-artifacts/e2e/log-allowlist.json')) -ceq $originalAllowlist) 'Global allowances were changed.'
+	Assert-True (($watcherArguments -join '|').Contains('--expect-game-server-crash|true|--allowlist|')) 'O1 watcher did not arm fault checking.'
+	$dispatches = @($runner.FindAll({ param($node)
+		$node -is [Management.Automation.Language.IfStatementAst] -and $node.Extent.Text.Contains('$botExitCode = Invoke-LifecycleBot')
+	}, $true))
+	Assert-True ($dispatches.Count -eq 1) 'O1 bypassed the owning controller.'
+	function Get-LiveDockerBotArguments { return @('exec','-T','botrunner','dotnet','/app/Aion.LiveBots.dll') }
+	function Invoke-LifecycleBot {
+		param($FileName, $Arguments, $ComposeArguments, $ProjectName, $Run, $RunDirectory, $Watcher)
+		Assert-True ($FileName -ceq $(if ($BotExecution -eq 'Host') { 'dotnet' } else { 'docker' })) 'Wrong lifecycle execution host.'
+		Assert-True ($ProjectName -ceq $project -and $Run -ceq 'contract' -and $RunDirectory -ceq $runPath -and $Watcher -ceq 'fixture-watcher') 'Lifecycle owner settings lost.'
+		Assert-True (($Arguments -join '|') -ceq $(if ($BotExecution -eq 'Host') { 'host-arguments' } else { ($compose -join '|') + '|exec|-T|botrunner|dotnet|/app/Aion.LiveBots.dll' })) 'Lifecycle child arguments lost.'
+		return 0
+	}
+	$botArguments=@('host-arguments'); $composeArgs=$compose; $projectName=$project; $watcherProcess='fixture-watcher'; $dockerEndpoints=@{}
+	foreach ($BotExecution in @('Host','Docker')) {
+		$botExitCode=-1
+		. ([scriptblock]::Create($dispatches[0].Extent.Text))
+		Assert-True ($botExitCode -eq 0) 'Lifecycle controller exit code was lost.'
+	}
 	Write-Host "Lifecycle controller contract passed ($script:assertions assertions); Docker was mocked, no bots or servers started."
 }
 finally {

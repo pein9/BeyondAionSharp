@@ -69,6 +69,7 @@ independently requires its fresh heartbeat and matching Docker events.
 
 The controller retains SQL samples, phase/failure, child stdout/stderr, and
 kill/restart receipts. Its contract tests mock Docker and use tiny artifact
-producer processes, not bots or servers. LIVE runner integration and the actual
-small-population crash/relogin/duplicate-login journey remain P10-03 work; a
-passing controller contract is not LIVE lifecycle evidence.
+producer processes, not bots or servers. `run-live.ps1 -Scenario O1 -Bots 1
+-StepTimeoutSeconds 1200` now integrates the controller with the protocol bot.
+The actual small-population journey still needs LIVE evidence; passing controller
+contracts alone do not complete P10-03.

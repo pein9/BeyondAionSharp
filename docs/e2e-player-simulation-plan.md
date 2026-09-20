@@ -2108,8 +2108,14 @@ real geodata on in production immediately, because geo is enabled by default; th
   movement, and performs the one-use kill/restart only after the hashed watcher receipt.
   Recovery requires a new process start and fresh GS startup/LS registration logs; earlier
   boot logs cannot satisfy it. Mock-Docker/process contracts cover fault prevention and cleanup.
-  LIVE runner integration and the actual saved-state/crash/relogin/duplicate-login journey
-  remain unimplemented; these foundations do not complete the TODO.
+  Controller checkpoint: `bde3ce3b2`. O1 now wires the LIVE runner to one ordinary Asmodian
+  subject, checked movement, the natural 900-second save, hard-crash recovery and the
+  duplicate-login refusal/kick followed by fresh authentication. Full-tier planning includes
+  O1 with a 1,200-second step limit. Guards forbid extra subjects, mixed scenarios,
+  record-only watching and retained stacks. Only O1's copy of the existing startup
+  fingerprint allowance permits its two boots; the global allowance is unchanged.
+  Actual LIVE completion remains unproven; the TODO stays unchecked until saved-state,
+  crash/relogin and duplicate-login evidence all pass together.
 - [ ] **P10-04** [LIVE] S — Hang detection on top of the P3-12 heartbeat: alert thresholds and diagnostics on a missed
   beat (Java's `DeadLockDetector` does not port 1:1).
 - [ ] **P10-05** [LIVE] M — **Deferred (D7 declined for now; revisit later).** If approved, restore the Java boot

@@ -82,6 +82,8 @@ public sealed record LiveBotOptions(
 		bots = Math.Max(bots, scenarioDefinitions.Max(definition => definition.Bots));
 		if (bots > BotIdentity.MaximumSubjects)
 			throw new ArgumentException($"Scenario requires more than {BotIdentity.MaximumSubjects} subject bots.", "scenario");
+		if (scenarios.Contains("O1", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 1 || stepSeconds < 1050))
+			throw new ArgumentException("O1 must run alone with one subject and at least 1050 seconds per step.");
 		var reentrySeconds = PositiveInt(values, "reentry-seconds", 10, 3600);
 		int soakSeconds = PositiveInt(values, "soak-seconds", 7200, 7200);
 		SoakActivity[] soakActivities = Enum.GetValues<SoakActivity>();

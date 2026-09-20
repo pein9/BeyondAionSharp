@@ -2342,6 +2342,47 @@ check applicable to this infrastructure-only change. Logs:
 `run/p10-03-controller-{contract,warning,fulltests}.log`. No gameplay or
 upstream-automation files changed; no baseline or allowance was increased.
 
+## P10-03 O1 protocol integration (LIVE proof pending)
+
+O1 is now a Full-tier LIVE-only manifest scenario. One ordinary Asmodian warrior
+finishes the standard prologue, walks a checked route to Asak, waits for the
+ordinary 900-second save, then walks to Vandar. No quests are added, no GM is
+created, and neither gameplay nor SQL state is edited for setup. The owning
+controller verifies the first saved position and the second still-unsaved
+movement before its single hard kill. After fresh server startup, the bot checks
+offline state, character-list identity/coordinates, in-world position and the
+independent admin oracle, plus unchanged level, kinah and exact inventory.
+
+One temporary LS connection attempts the same credentials. The required outcome
+is ALREADY_LOGIN (7), the original GS session's STR_KICK_ANOTHER_USER_TRY_LOGIN
+message and peer close, followed by successful fresh authentication. Source
+review also caught the original probe's premature offline assertion: Java
+`AionConnection.onDisconnect` at `ce54b7931` permits up to ten seconds before
+leave/save. The current implementation honors that ordinary window before the
+offline/reentry assertions. This changes only the bot, not server behavior.
+The first probe `run/p10-03-lifecycle/o1-a` was launched before that correction;
+its eventual result must be retained separately and cannot prove the corrected
+complete journey. At this checkpoint LIVE acceptance is still pending.
+
+The runner requires one subject, O1 alone, enforced watching, no `Keep`, and at
+least 1,050 seconds per step (Full uses 1,200). Both host and Docker bot execution
+use the same owning controller; MySQL remains Docker-only. O1 creates a local
+allowlist copy permitting the existing exact startup fingerprint `231c488f`
+twice, preserving owner/expiry. No global count or unrelated fingerprint changes.
+Protocol contract tests cover the refusal code, strict peer-close classification,
+position mismatch/rounding and scenario admission. Controller tests exercise the
+actual runner guards, both backend dispatches, watcher options and allowance-copy
+scope as well as the existing fault/save/cleanup cases. Child logs are now readable
+while the controller drains them; the first probe retains its original exclusive
+log handles until completion.
+
+Pre-commit validation passes: 4,390 solution tests / 27 explicit skips, warning
+baseline 4,243, 463 controller/runner assertions, and every other applicable
+CLAUDE.md check. Seventeen new protocol/admission tests pass. Logs:
+`run/p10-03-o1-{focused,controller-tests,warning-final,fulltests-final}.log`.
+Full planning now includes 72 SIM and 43 LIVE scenarios; no capacity run was
+launched. The in-flight one-subject probe is separate from these green checks.
+
 ## Scope decisions
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

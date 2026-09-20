@@ -13,3 +13,39 @@ account and current step, and make the process exit non-zero. `bots-run.json` re
 zone, profile and scenario list. The runner enforces real-time connection and step deadlines, schedules honest
 180-183 second game pings after world entry, and records any automatic reconnect or unexpected quit response
 as a problem even if recovery succeeds.
+
+## O1: server crash and duplicate login
+
+Run through the owning Docker controller, not the standalone bot command:
+
+```powershell
+pwsh -NoProfile -File scripts/live/run-live.ps1 -Run lifecycle-check `
+  -Scenario O1 -Bots 1 -StepTimeoutSeconds 1200
+```
+
+O1 runs alone with one ordinary Asmodian subject and no GM director. A temporary
+second login connection tests the same account; peak connection population is two.
+The maintainer's current ten-bot total cap still applies across all concurrent runs.
+`-Keep` and record-only watching are rejected. `-BotExecution Docker` is supported;
+the database and server stack always run in their isolated Docker project.
+
+The bot walks checked starter-zone routes, waits for the normal 900-second player
+save, then moves again. Read-only Docker SQL proves the saved checkpoint differs
+from the initial position and that the second movement is not saved before the
+declared SIGKILL. The watcher must arm the exact container's one-use fault plan.
+After restart, character selection, world entry and the independent player-state
+oracle must restore the saved position; level, kinah and inventory must survive.
+
+The duplicate attempt must receive ALREADY_LOGIN (7), while the original game
+connection receives STR_KICK_ANOTHER_USER_TRY_LOGIN and closes. The bot honors the
+ordinary delayed logout and reentry window before proving fresh login succeeds.
+No Java runtime, SQL mutation, quest reset, shortened save interval or GM setup
+is used. This takes roughly sixteen minutes even when healthy.
+
+The owning runner copies the existing fingerprint allowlist only for O1 and gives
+the exact known QuestSpawnAnalyzer boot report (`231c488f`) two occurrences for
+the two boots, preserving its owner and expiry. Global allowances are unchanged;
+unrelated problems, extra deaths and missing recovery still fail. Evidence includes
+the bot trace, SQL samples in `lifecycle-controller.json`, checkpoint/fault receipts,
+child stdout/stderr and the watcher digest/summary. Implementation and contract
+tests alone do not prove the LIVE journey; see `docs/e2e-phase10-validation.md`.

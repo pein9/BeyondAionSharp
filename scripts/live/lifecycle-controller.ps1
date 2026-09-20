@@ -149,8 +149,8 @@ function Invoke-LifecycleBot {
 	$start.UseShellExecute = $false; $start.CreateNoWindow = $true
 	$start.RedirectStandardOutput = $true; $start.RedirectStandardError = $true
 	foreach ($argument in $Arguments) { $start.ArgumentList.Add($argument) }
-	$stdout = [IO.File]::Create((Join-Path $RunDirectory 'lifecycle-bot.stdout.log'))
-	$stderr = [IO.File]::Create((Join-Path $RunDirectory 'lifecycle-bot.stderr.log'))
+	$stdout = [IO.FileStream]::new((Join-Path $RunDirectory 'lifecycle-bot.stdout.log'), [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::Read)
+	$stderr = [IO.FileStream]::new((Join-Path $RunDirectory 'lifecycle-bot.stderr.log'), [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::Read)
 	$child = $null; $phase = 'waiting-for-position'; $failure = $null; $request = $null
 	$outputCopy = $null; $errorCopy = $null
 	$samples = [Collections.Generic.List[object]]::new()

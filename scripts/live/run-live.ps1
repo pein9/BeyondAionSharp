@@ -45,6 +45,10 @@ Set-StrictMode -Version Latest
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $repoRoot 'scripts/e2e/run-artifact-owner.ps1')
 . (Join-Path $PSScriptRoot 'docker-bot-runner.ps1')
+. (Join-Path $PSScriptRoot 'lifecycle-controller.ps1')
+if ($Scenario -contains 'O1' -and ($Scenario.Count -ne 1 -or $Bots -ne 1 -or $Keep -or $WatcherMode -ne 'enforce' -or $StepTimeoutSeconds -lt 1050)) {
+	throw 'O1 must run alone with one subject, enforce watching, no Keep and at least 1050 seconds per step.'
+}
 if ([string]::IsNullOrWhiteSpace($RunRoot)) {
 	$RunRoot = if ([string]::IsNullOrWhiteSpace($env:AION_E2E_RUN_ROOT)) {
 		Join-Path $repoRoot 'run'
@@ -252,6 +256,7 @@ try {
 	Push-Location $repoRoot
 	try {
 		$gitSha = Get-LiveGitRevision
+		if ($Scenario -contains 'O1') { $configProfile = 'docker-bots-lifecycle' }
 		if ($Scenario -contains 'SOAK') {
 			if ($Scenario.Count -ne 1) { throw 'SOAK needs its own isolated stack.' }
 			$env:AION_BOT_OVERLAY_DIR = Join-Path $repoRoot 'docker/bots/overlay-soak'
@@ -317,6 +322,17 @@ try {
 			'--compose-file', $composeFilePath, '--mode', $WatcherMode, '--stop-file', $stopFile,
 			'--full-run', $FullRun.IsPresent.ToString().ToLowerInvariant()
 		)
+		if ($Scenario -contains 'O1') {
+			# Two known boot reports, scoped only to this two-boot scenario. Preserve owner/expiry.
+			$allowlist = @(Get-Content -Raw -LiteralPath (Join-Path $repoRoot 'parity-artifacts/e2e/log-allowlist.json') | ConvertFrom-Json)
+			$bootEntries = @($allowlist | Where-Object fp -CEQ '231c488f')
+			if ($bootEntries.Count -ne 1 -or $bootEntries[0].maxCount -ne 1) { throw 'Lifecycle boot allowance prerequisite changed.' }
+			$bootEntries[0].maxCount = 2
+			$bootEntries[0].reason += ' O1 performs exactly two GS boots (one declared hard restart).'
+			$allowlistPath = Join-Path $runPath 'lifecycle-log-allowlist.json'
+			Write-LifecycleJson $allowlistPath $allowlist
+			$watcherArguments += @('--expect-game-server-crash', 'true', '--allowlist', $allowlistPath)
+		}
 		$watcherProcess = Start-Process -FilePath 'dotnet' -ArgumentList $watcherArguments -WorkingDirectory $repoRoot `
 			-RedirectStandardOutput $watcherStdout -RedirectStandardError $watcherStderr -WindowStyle Hidden -PassThru
 
@@ -340,13 +356,22 @@ try {
 		if ($Scenario -contains 'SOAK') {
 			$botArguments += @('--soak-seconds', $SoakSeconds.ToString(), '--soak-activities', $SoakActivities)
 		}
-		if ($BotExecution -eq 'Docker') {
+		if ($Scenario -contains 'O1') {
+			$childFile = 'dotnet'; $childArguments = $botArguments
+			if ($BotExecution -eq 'Docker') {
+				$childFile = 'docker'
+				$childArguments = @($composeArgs) + @(Get-LiveDockerBotArguments -HostArguments $botArguments -Endpoints $dockerEndpoints)
+			}
+			$botExitCode = Invoke-LifecycleBot -FileName $childFile -Arguments $childArguments -ComposeArguments $composeArgs `
+				-ProjectName $projectName -Run $Run -RunDirectory $runPath -Watcher $watcherProcess
+		} elseif ($BotExecution -eq 'Docker') {
 			$containerArguments = Get-LiveDockerBotArguments -HostArguments $botArguments -Endpoints $dockerEndpoints
 			& docker @composeArgs @containerArguments
+			$botExitCode = $LASTEXITCODE
 		} else {
 			& dotnet @botArguments
+			$botExitCode = $LASTEXITCODE
 		}
-		$botExitCode = $LASTEXITCODE
 		Stop-Watcher
 		if ($botExitCode -ne 0) { throw "Live bots failed with exit code $botExitCode." }
 		if ($watcherExitCode -ne 0) { throw "Log watcher failed with exit code $watcherExitCode." }

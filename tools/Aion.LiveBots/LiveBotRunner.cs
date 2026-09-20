@@ -32,6 +32,8 @@ public static partial class LiveBotRunner
 		Directory.CreateDirectory(Path.Combine(options.OutputDirectory, "bots"));
 		await WriteRunMetadataAsync(options, cancellationToken);
 		await using var problems = new LiveBotProblemWriter(Path.Combine(options.OutputDirectory, "bot.problems.jsonl"));
+		if (options.ScenarioDefinitions is [{ Id: "O1" }])
+			return await RunO1Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "SOAK" }])
 			return await RunSoakAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "L0" }])
@@ -639,6 +641,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 	private IAsyncEnumerator<DecodedBotServerPacket>? packets;
 	private Task<bool>? activeMoveNext;
 	private CancellationTokenSource? connectionLifetime;
+	private CancellationTokenSource? pingLifetime;
 	private Task? pingTask;
 	private TcpClient? chatClient;
 	private NetworkStream? chatStream;
@@ -1296,7 +1299,8 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		}
 		connectionLifetime = new CancellationTokenSource();
 		packets = transport.ReceiveAsync(connectionLifetime.Token).GetAsyncEnumerator(connectionLifetime.Token);
-		pingTask = RunPingLoopAsync(connectionLifetime.Token);
+		pingLifetime = CancellationTokenSource.CreateLinkedTokenSource(connectionLifetime.Token);
+		pingTask = RunPingLoopAsync(pingLifetime.Token);
 	}
 
 	private async Task CloseConnectionAsync(CancellationToken cancellationToken)
@@ -1324,6 +1328,8 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		if (transport != null)
 			await transport.DisposeAsync();
 		connectionLifetime?.Dispose();
+		pingLifetime?.Dispose();
+		pingLifetime = null;
 		connectionLifetime = null;
 		packets = null;
 		activeMoveNext = null;
