@@ -95,7 +95,9 @@ public sealed class ChatService : IChatService
 		if (client == null)
 			return;
 
-		client.SetGagTime(gagTimeMillis);
+		// Intentional Java defect correction (E2E D19 / finding 119): GS sends a
+		// duration, but ChatClient stores an epoch deadline. Zero remains explicit ungag.
+		client.SetGagTime(gagTimeMillis == 0 ? 0 : unchecked(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + gagTimeMillis));
 		_logger.LogInformation("Player[id={PlayerId}] was gagged for {Minutes} minutes", playerId, gagTimeMillis / 60000);
 	}
 

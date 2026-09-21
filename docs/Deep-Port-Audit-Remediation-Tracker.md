@@ -8,7 +8,7 @@
 
 **Java specification baseline:** `4.8` at `59f65a9561bfa655eb24134da88ba3121c66ee8a`
 
-**Overall state:** Close to resolved — 14 findings verified; four findings retain open runtime journeys or deferred acceptance. P10-09 B4 verifies BA-006's non-UTC hardware-ban restart journey.
+**Overall state:** Close to resolved — 15 findings verified; three findings retain open runtime journeys or deferred acceptance. P10-09 B2/B2F verify BA-002's Chat journeys, including the D19-authorized gag correction.
 
 ## Status rules
 
@@ -27,7 +27,7 @@ A finding is not counted as resolved until it is **Verified**. “Code complete�
 
 | Check | Starting result | Latest result |
 |---|---:|---:|
-| `dotnet test AionServer.slnx` | 812 passed, 0 failed | **4,570 passed, 0 failed, 27 explicit skips** (P10-09 B4) |
+| `dotnet test AionServer.slnx` | 812 passed, 0 failed | **4,626 passed, 0 failed, 27 explicit skips** (P10-09 Chat-gag correction) |
 | Warning-ratchet rebuild | 0 errors, 4,359 warnings | **0 errors**; ratchet passes at 4,243 unique sites / 21 codes (P10-09 B4) |
 | `python scripts/parity/check_fidelity.py` | Passed | Passed |
 | Audit/tracker/backlog local links | 69 valid, 0 broken at initial audit | **77 valid, 0 broken** after final reconciliation |
@@ -38,8 +38,8 @@ The baseline is not proof of runtime parity; it records the starting point again
 
 | Status | Count |
 |---|---:|
-| Verified | 14 |
-| Code complete | 4 |
+| Verified | 15 |
+| Code complete | 3 |
 | In progress | 0 |
 | Not started | 0 |
 | Blocked | 0 |
@@ -49,10 +49,10 @@ The baseline is not proof of runtime parity; it records the starting point again
 
 | Gate | Findings | State | Exit evidence |
 |---|---|---|---|
-| Release Gate 1 — primary cross-server flows | BA-001, BA-002, BA-003, BA-004 | Close to resolved | BA-004 Verified; BA-001/002/003 await two-GS and retail-client/multi-process journeys |
+| Release Gate 1 — primary cross-server flows | BA-001, BA-002, BA-003, BA-004 | Close to resolved | BA-002/004 Verified; BA-001/003 await successful two-GS transfer |
 | Release Gate 2 — gameplay and temporal data | BA-005, BA-006, BA-007 | Close to resolved | BA-006/007 Verified; BA-005's in-world siege journey remains deferred |
 | Hardening and setup Gate | BA-008 through BA-018 | Verified | Semantic/schema suites, static-data atomicity, warning ratchet, full solution, and fidelity checks pass |
-| Completion Audit | All findings and backlog | Close to resolved | 14 Verified; four Code complete; remaining journeys listed below |
+| Completion Audit | All findings and backlog | Close to resolved | 15 Verified; three Code complete; remaining journeys listed below |
 
 ## Release Gate 1 — primary cross-server flows
 
@@ -75,25 +75,27 @@ The full journey remains open; see `docs/e2e-phase10-validation.md` and simulati
 
 ### BA-002 — Chat authentication response
 
-**Status:** Code complete
+**Status:** Verified
 
-**Current work:** Production response handling and focused loopback tests pass. P10-09 LIVE `B2` now
-proves ordinary authentication, back-to-back auth responses with fresh tokens, and Chat-client
-disconnect/reconnect before failing gag enforcement. Java and C# both send a duration but compare it
-as an absolute expiry in Chat (simulation-plan §7/119). No production change or allowance was added.
+**Current work:** D19 authorizes correcting the shared upstream duration/deadline defect (§7/119).
+Chat now converts the received nonzero duration to an epoch deadline; zero still clears the gag.
+Fresh LIVE `p10-09-gag-fixed-a` passes ordinary authentication, duplicate auth with fresh tokens,
+client disconnect/reconnect, replayed gag refusal without delivery to the control, and resumed
+delivery after ungag/re-authentication. The enforced watcher has no new/known/regressed errors;
+no assertions were weakened or allowances added. Unit and real-socket regressions fail before the fix.
 LIVE `B2F` separately verifies an owned Chat crash/restart, a bounded unavailable-auth client deadline
-with continued Game responses, and fresh Chat delivery after normal bridge recovery. The gag/ungag
-journey remains open; optional C# callback API internals retain their focused loopback coverage.
+with continued Game responses, and fresh Chat delivery after normal bridge recovery. Optional C#
+callback API internals retain their focused loopback coverage. See `docs/e2e-phase10-validation.md`.
 
 - [x] The real client request path consumes Chat opcode `0x01` by resolving Java's current World player.
 - [x] The exact token reaches the client in `SM_CHAT_INIT`.
-- [x] Gag state matches Java (focused replay test: 300,000 ms remaining).
+- [x] Game's wire/replay duration matches Java (focused replay: 300,000 ms); Chat's conversion to a deadline intentionally corrects Java under D19.
 - [x] Tagged staff nickname behavior matches `player.getName(true)`, including Java `%s` tag substitution.
-- [ ] Success, gagged, timeout/disconnect, and duplicate-request tests pass.
+- [x] Success, gagged, timeout/disconnect, and duplicate-request tests pass.
   - [x] LIVE B2 authenticates ordinary players and delivers channel messages to both (`p10-09-chat-b`).
   - [x] Back-to-back Game auth requests yield distinct tokens with stable account digest; latest token authenticates.
   - [x] Chat-client FIN/peer-close followed by fresh authentication restores message delivery.
-  - [ ] Gag replay/enforcement: B2 captures forbidden text at both players (§7/119); ungag/final logout are unreached.
+  - [x] Fresh B2 passes gag replay/refusal, positive control-message non-delivery barrier, ungag/re-authentication, delivery and final logout (`p10-09-gag-fixed-a`).
   - [x] LIVE B2F observes both Chat socket losses, no auth response during a three-second client deadline,
     continued Game replies, and fresh auth/delivery after an owned Chat restart without restarting Game.
 - [x] Full solution tests pass (1,002/1,002).
@@ -304,16 +306,16 @@ Tagged Chat nickname is tracked with BA-002 because it shares the same Java requ
 - [x] Required static-data holders and nested indexes pass real-data invariants.
 - [x] Hardware-ban epochs survive the full non-UTC LS→GS synchronization/restart journey (B4, `p10-09-hardware-c`).
 - [x] Warning-ratchet rebuild succeeds at 0 errors.
-- [x] `dotnet test AionServer.slnx` passes 4,570 tests with 27 explicit skips (P10-09 B4).
+- [x] `dotnet test AionServer.slnx` passes 4,626 tests with 27 explicit skips (P10-09 Chat-gag correction).
 - [x] `python scripts/parity/check_fidelity.py` passes.
 - [x] Audit/tracker/backlog local-link scan has 0 broken links.
 - [x] `docs/Full-Parity-Backlog.md` and the source audit agree with current implementation status.
 - [x] Final worktree/diff review found no whitespace errors and preserved the user's untracked `AGENTS.md`.
 
-The unchecked completion items trace to four Code-complete findings: BA-001, BA-002, BA-003,
-and BA-005. They require successful transfer/Chat-gag and deferred in-world siege journeys.
-P10-09 has explicit failing runtime evidence for shared upstream transfer and Chat-gag
-defects; "Code complete" describes the port, not a successful end-to-end journey. See
+The unchecked completion items trace to three Code-complete findings: BA-001, BA-003,
+and BA-005. They require successful transfer and deferred in-world siege journeys.
+P10-09 retains failing transfer evidence; D19 authorizes scoped C# corrections, still pending.
+Chat-gag now has a successful corrected runtime journey. See
 `docs/e2e-phase10-validation.md` for preserved failures and remaining coverage.
 
 ## Progress log

@@ -4034,6 +4034,55 @@ Verification logs: `run/p10-11-l1-concurrency-tests.log`,
 All CLAUDE pre-commit checks passed: 4,621 solution tests passed / 27 skipped,
 with the warning baseline unchanged at 4,243 sites / 21 codes.
 
+## P10-09 D19 Chat-gag correction and accepted B2 replay
+
+The maintainer-authorized correction is confined to ChatService.GagPlayer:
+convert a nonzero received duration to an epoch deadline, with ordinary unchecked
+signed-long addition; zero remains explicit ungag. Initial Game sends, remaining
+duration replay, the long wire field, Chat's deadline comparison and sender-only
+refusal are unchanged. This intentionally corrects the shared Java defect, not
+a Java runtime comparison. Reference: `ce54b7931`, Chat `service/ChatService.java`,
+`model/ChatClient.java`, `network/gameserver/clientpackets/CM_PLAYER_GAG.java`,
+`network/aion/clientpackets/CM_CHANNEL_MESSAGE.java`; Game `services/ban/ChatBanService.java`,
+`network/chatserver/clientpackets/CM_CS_PLAYER_AUTH_RESPONSE.java` and
+`network/chatserver/serverpackets/SM_CS_PLAYER_GAG.java`. The preservation mapping
+is recorded in `upstream-porting.md` and CLAUDE.md to prevent reintroducing the bug.
+
+Before the production change, six targeted regression cases compiled and ran:
+five failed, one passed. After it, all Chat tests pass (41 passed / one explicit
+skip). Coverage includes positive/negative durations, replacement by remaining
+duration rather than extension, zero clearing, and real two-client socket
+refusal/non-delivery followed by ungag delivery. Timestamp assertions use bounds,
+not sleeps. Logs: `run/p10-09-gag-fix-{red,green}.log`.
+
+Fresh `run/p10-09-gag-fixed-a` rebuilt the isolated C# stack from `74082eedc`
+plus the scoped fix, then ran unchanged LIVE B2 with packet taps, seed 1,
+two ordinary subjects and one director (peak three bots), Docker-only MySQL,
+and watcher enforcement. Exit 0: one passed scenario, no failures/skips/flakes
+or evidence issues. The 0.8640594-second scenario time excludes stack startup.
+Report SHA256: `b85b1e515d5c67f064e78d12ee8869d10c688ee2e4a9e5acf0b7463fbfbda43e`.
+
+The subject receives `You have been gagged for 4 minutes.` after reconnect/auth
+replays the five-minute gag. The control receives only its positive barrier
+message, not `B2 must not broadcast while gagged`; both observe the barrier.
+Ungag, re-authentication and channel rejoin restore delivery to both clients.
+The run also covers initial delivery, distinct duplicate-auth tokens, client
+FIN/reconnect, and final logout. `chat-gag-evidence.json` retains the control
+observations. Watcher: zero new/known/regressed/repeated findings, zero expected
+process events, one suppression for the existing boot allowance `231c488f` only.
+No new allowances, weakened assertions or rewritten old failures. Owned Docker
+containers/network were removed and absence confirmed; unrelated containers remain.
+
+Together with the separately accepted B2F owned Chat crash/unavailable-auth/recovery
+receipt above, this verifies BA-002. BA-001/003 transfer and deferred BA-005 siege
+remain open; P10-09 is not complete. The prior L1 checkpoint landed as `74082eedc`.
+
+All CLAUDE checks pass: solution 4,626 passed / 27 skipped, warning baseline
+unchanged at 4,243 sites / 21 codes, all ancillary checks, and Docker Fast
+`fast-20260920-231531` (six tests, eleven passed scenarios). Logs:
+`run/p10-09-gag-fix-{warnings,dotnet,checks,fast}.log`. No shared problem-ledger
+status was manually promoted; full aggregate acceptance remains outstanding.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

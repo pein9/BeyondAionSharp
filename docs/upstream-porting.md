@@ -53,6 +53,24 @@ Port-Status: ported|direct-data|not-applicable|blocked
 
 ## Mechanical Java-to-C# mappings
 
+### Approved E2E shared-defect corrections
+
+Decision D19 in `docs/e2e-player-simulation-plan.md` authorizes scoped corrections
+for the shared character-transfer and Chat-gag defects (§7/118–119). Keep the
+documented corrections when applying upstream changes; do not silently restore
+the known defects in the name of parity. These are not new upstream queue items.
+
+- Chat `ChatService.gagPlayer` receives a **duration in milliseconds** from Game's
+  `ChatBanService` and `CM_CS_PLAYER_AUTH_RESPONSE`, while `ChatClient.gagTime` is an
+  absolute epoch deadline. C# converts at `Services/ChatService.GagPlayer`: zero
+  clears, otherwise deadline = current UTC epoch milliseconds + duration (ordinary
+  signed-long addition). The wire field/layout, Game replay and Chat refusal path
+  stay unchanged. Java reference: `ce54b7931`, E2E §7/119 / D19. Service and socket
+  regressions pin duration conversion, replay replacement, immediate ungag and
+  no forbidden-message broadcast. Transfer's separately authorized fix remains pending.
+
+### General mappings
+
 | Java | C# | Notes |
 |---|---|---|
 | `LoggerFactory.getLogger(X.class)` | `AionLog.For(nameof(X))` | The returned logger is late-bound: it resolves the current `ILoggerFactory` when each message is written. |

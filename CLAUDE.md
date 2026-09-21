@@ -12,7 +12,7 @@ source is the reference implementation; the C# port exists to match its behavior
 - When Java and C# disagree, **Java wins** — except pure infrastructure
   (DI, lifecycle, threading, sockets), where idiomatic C# is acceptable.
 
-**One sanctioned exception:** NPC AI behavior sourced from NCSoft's own retail AI
+**Retail AI exception:** NPC AI behavior sourced from NCSoft's own retail AI
 pattern data outranks aionemu, whose version is an approximation. Those changes are
 logged in `docs/retail-ai-fidelity.md` — read it before "correcting" NPC skill,
 summon, or shout data back toward Java, and add to it when making such a change.
@@ -24,6 +24,13 @@ template, spawn or skill so that a 5.8 pattern will fit. Every extractor under
 `tools/client-extract/` refuses what this port does not have and prints the count —
 keep it that way, and see section E of `docs/retail-ai-backlog.md` for what the
 boundary currently costs.
+
+**Approved shared-defect corrections:** E2E decision D19 in
+`docs/e2e-player-simulation-plan.md` authorizes narrowly scoped C# fixes for the
+Java-shared character-transfer and Chat-gag defects (§7/118–119). Read/cite the
+pinned Java implementation and preserve the documented intentional corrections;
+do not silently port these known defects back. This is not a general exemption
+from parity or authorization to reopen other deferred behavior.
 
 ## Always watch for Java ↔ C# semantic gaps
 

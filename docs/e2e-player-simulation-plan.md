@@ -131,7 +131,7 @@ every future run, including director/setup accounts.
 | Character settings/switching, passkey, pets and sell limits | L2, L3, L4, L5, L7 | Implemented (P8-07) | Implemented (P8-07) |
 | Passport, event calendars and event commands | L6, L8, L8C | Implemented (P8-07); isolated virtual epochs | Not selected |
 | Shipped skill, vendor, travel, bind, recipe and gatherable catalogs | SWEEP-SKILL, SWEEP-TRADE, SWEEP-TELEPORT, SWEEP-BIND, SWEEP-CRAFT, SWEEP-GATHER | Implemented (P8-08), isolated per-row coverage; inactive catalogs remain separate | Not selected as exhaustive sweeps |
-| Chat authentication/gag, Chat crash recovery, account controls and hardware bans | B2, B2F, B3, B4 | Not selected | B2 remains red (§7/119); B2F/B3/B4 accepted checkpoints in P10-09 |
+| Chat authentication/gag, Chat crash recovery, account controls and hardware bans | B2, B2F, B3, B4 | Not selected | B2 passes after D19's scoped Chat-gag correction (§7/119); B2F/B3/B4 accepted checkpoints in P10-09 |
 | Two-game-server character transfer | No current manifest scenario | Not selected | P10-09 diagnostic reaches the real scheduler but remains blocked (§7/118); no accepted BA-001 journey |
 | Save/crash/relogin and duplicate-session lifecycle | O1 | Component/DAO tests, not a SIM manifest scenario | Implemented and accepted (P10-03) |
 | Sustained mixed activities and scale | SOAK | Not selected | Workload exists; small-population evidence is not the deferred larger-capacity acceptance (D17) |
@@ -2229,13 +2229,15 @@ real geodata on in production immediately, because geo is enabled by default; th
   blocked by the shared Java transfer limitations; D19 now authorizes scoped C# corrections with
   regression and real-journey evidence. Implementation and acceptance remain pending.
   LIVE `B2` adds ordinary Chat authentication, back-to-back auth/token refresh, client disconnect/reconnect,
-  and gag enforcement/replay assertions with two subjects plus one director. It exposes a shared upstream
-  duration-versus-expiry defect in Chat gags (§7/119), so BA-002 remains open, not expected-failed or allowlisted.
+  and gag enforcement/replay assertions with two subjects plus one director. D19's scoped correction
+  converts the received duration to a Chat deadline, preserving zero ungag and the wire/replay contract.
+  Fresh `p10-09-gag-fixed-a` passes refusal, control-player non-delivery, ungag/re-auth and resumed delivery
+  with the enforced watcher green (§7/119). No assertion or allowance changes. BA-002 is verified with B2F.
   LIVE `B2F` adds the separate owned Chat SIGKILL/restart journey: both clients observe socket loss,
   Game remains responsive while an unavailable Chat auth request reaches its client deadline, and fresh
   authentication restores Chat delivery without restarting Game. Watcher opt-in is scoped to one exact
   Chat container, one death/start and a bounded fresh-heartbeat recovery; Game/Login monitoring stays active.
-  This does not prove the optional C# callback API's pending-request internals or close the gag failure.
+  Optional C# callback API pending-request internals retain their focused loopback coverage.
   LIVE `B3` covers BA-003's duplicate-login kick, key-authenticated fast reconnect/replay refusal,
   director access grant/revoke and account-only ban with natural expiry. It uses one subject plus a
   director and transient Login probes (at most three clients); no password fallback on the fast path,
@@ -2254,7 +2256,7 @@ real geodata on in production immediately, because geo is enabled by default; th
   SIGKILL/restart, exact persisted epochs and freshly applied generation-tagged snapshots. The actual
   `p10-09-hardware-c` run and enforced watcher pass: generation 1→2, eight refusals, unbanned control
   re-entry, and unchanged Game/Chat/MySQL processes. BA-006 is verified; BA-003 and P10-09 overall
-  remain open for the separately recorded transfer/Chat-gag and deferred siege acceptance.
+  remain open for the separately recorded transfer and deferred siege acceptance.
   Remaining runtime player scenarios and tracker closeouts are still open.
   Full-suite integration now forwards each LIVE manifest population to runner admission; B4 (five)
   and B2F (two) previously inherited the one-bot default and were rejected before starting (§7/124).
@@ -2358,7 +2360,7 @@ real geodata on in production immediately, because geo is enabled by default; th
   instrumentation. Raw two-process union and report contracts verify unique-point aggregation; see
   the validation document for exact scope, counts, negative controls and hashes.
   Line/branch and matrix receipt: `2549a1e30`.
-  **Concurrency audit checkpoint:** L1's `bots: 12` counts distinct race/class cases, not concurrent
+  **Concurrency audit checkpoint (`74082eedc`):** L1's `bots: 12` counts distinct race/class cases, not concurrent
   sessions. Its unchanged shared orchestrator closes each subject before the next and waits disconnected
   through the five-minute deletion grace. Both session constructors are disconnected; no director is used.
   The new asynchronous lifecycle regression pins peak one and all twelve complete cases (§7/132).
@@ -2690,7 +2692,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 
 | 118 | Ordinary character transfer has shared upstream defects, not a completed LIVE journey | `p10-09-transfer-b` reaches ACTIVE but does not create a target character during 60 seconds of active observation. GS fingerprint `93be1a24` is `SM_PTRANSFER_CONTROL.WritePayload` dereferencing a null quest timestamp. Java `QuestState` permits null completion/repeat dates and `SM_PTRANSFER_CONTROL` calls `.getTime()` without checks. Independently, Java LS `CM_PTRANSFER_CONTROL` handles only actions 1–4 while GS sends sections 5–9 and clones only on response 28. Java `AccountDAO.updateAccount` also omits `activated`, matching the unchanged persisted activation observed in C# | Initially preserved under the Java-spec policy; D19 now authorizes scoped C# corrections with regressions and real journey validation, still pending. No error allowance. Diagnostic exits 1, watcher exits 1, source/control selected fields and inventories remain identical, target remains empty, and owned Docker cleanup succeeds. BA-001 stays open; source references are at `ce54b7931`, with evidence in `docs/e2e-phase10-validation.md` |
 
-| 119 | Chat gag duration is interpreted as an absolute expiry (shared upstream defect) | LIVE `B2` authenticates ordinary clients, refreshes tokens after duplicate requests and reconnects successfully, but receives the original text instead of a gag refusal after an acknowledged five-minute gag and auth replay. Chat logs receipt of the gag. Java GS `ChatBanService.banPlayer` / `CM_CS_PLAYER_AUTH_RESPONSE` send a duration; `SM_CS_PLAYER_GAG` writes it unchanged. Chat `CM_PLAYER_GAG` / `ChatService.gagPlayer` / `ChatClient.setGagTime` store it unchanged, while `isGagged` compares against epoch milliseconds. C# matches every stage | Initially preserved under the Java-spec decision; D19 now authorizes a scoped C# correction with regressions and real B2 validation, still pending. B2 keeps its real gag assertion and no expected-failure/allowance; BA-002 remains open. Java reference `ce54b7931`; captures, control-player evidence and verification limits are recorded in `docs/e2e-phase10-validation.md` |
+| 119 | Chat gag duration is interpreted as an absolute expiry (shared upstream defect, corrected under D19) | LIVE `B2` originally received forbidden text after an acknowledged five-minute gag and auth replay. Java GS `ChatBanService.banPlayer` / `CM_CS_PLAYER_AUTH_RESPONSE` send a duration; `SM_CS_PLAYER_GAG` writes it unchanged. Chat `CM_PLAYER_GAG` / `ChatService.gagPlayer` / `ChatClient.setGagTime` store it unchanged, while `isGagged` compares against epoch milliseconds. C# originally matched every stage | D19-authorized intentional C# correction converts nonzero duration to epoch deadline in ChatService; zero clears the gag. Wire/replay/refusal behavior otherwise unchanged. Five reproduced failing regression cases now pass. Fresh `p10-09-gag-fixed-a` passes unchanged B2 assertions and enforced watching, including positive control-player non-delivery and resumed delivery after ungag/re-auth; BA-002 is verified with the prior B2F crash/recovery receipt. No new allowance or expected failure. Java reference `ce54b7931`; full evidence/limits in `docs/e2e-phase10-validation.md` |
 | 120 | HDD-ban command widens Java's overflowing duration arithmetic | Java `data/handlers/admincommands/BanHdd.java` adds `timeMins * 60 * 1000` as an overflowing 32-bit product to the epoch; C# `Handlers/AdminCommands/BanHdd.cs` cast `timeMins` to `long` first. Durations above 35,791 minutes (including the pseudo-infinite zero option) could disagree. MAC command multiplication remains 32-bit in both trees | Fixed in the P10-09 arithmetic checkpoint: explicit unchecked int multiplication before epoch addition; 11 real-command cases inspect manager expiry/enforcement and the outgoing bridge epoch, with seven reproduced failures before the fix. Preserve Java's arithmetic, including its pseudo-infinite overflow quirk. Exact seasonal database-reload fixtures must not rely on this GM duration shortcut. Java reference `ce54b7931`; this does not close the LIVE restart journey |
 
 | 121 | Hardware-ban fixtures raced on the global Login connector (C# test-only) | The full suite intermittently failed `BanHddJavaArithmeticTests` after its first green commit. Both it and `HardwareBanSnapshotFingerprintTests` construct `LoginServer`, which replaces static `_instance`, outside the shared serial collection. The command looks up that singleton again to send its packet, so another fixture can divert the send; per-case restoration does not prevent overlapping execution | Both fixtures now join `GoldenDataManager`; an architectural test pins the tags because the existing source scanner did not detect constructor-side singleton writes. No production behavior change or retry/flake allowance; keep the initial full-run failure as evidence and rerun the whole suite |

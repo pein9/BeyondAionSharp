@@ -11,6 +11,39 @@ namespace Aion.ChatServer.Tests;
 
 public class ChatServiceTests
 {
+	[Theory]
+	[InlineData(300000L)]
+	[InlineData(60000L)]
+	[InlineData(-30000L)]
+	public void GagPlayer_ConvertsWireDurationToEpochExpiry(long durationMillis)
+	{
+		var service = CreateService();
+		var client = service.RegisterPlayer(7, "PlayerOne", "Daeva", Race.Elyos, 0);
+		long before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+		service.GagPlayer(7, durationMillis);
+		long after = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+		Assert.InRange(client.GagTime, before + durationMillis, after + durationMillis);
+		Assert.Equal(durationMillis > 0, client.IsGagged());
+	}
+
+	[Fact]
+	public void GagReplayReplacesRemainingDurationAndZeroImmediatelyClearsIt()
+	{
+		var service = CreateService();
+		var client = service.RegisterPlayer(7, "PlayerOne", "Daeva", Race.Elyos, 0);
+		service.GagPlayer(7, 300000);
+		long initial = client.GagTime;
+		long before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+		service.GagPlayer(7, 60000);
+		long after = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+		Assert.InRange(client.GagTime, before + 60000, after + 60000);
+		Assert.True(client.GagTime < initial);
+		Assert.True(client.IsGagged());
+		service.GagPlayer(7, 0);
+		Assert.Equal(0, client.GagTime);
+		Assert.False(client.IsGagged());
+	}
+
 	[Fact]
 	public void RegisterPlayer_GeneratesJavaShapedToken()
 	{

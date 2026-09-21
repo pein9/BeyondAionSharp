@@ -139,8 +139,10 @@ public class ChatConnectionSmokeTests
 		Assert.NotEqual(0, BinaryPrimitives.ReadInt32LittleEndian(channelResponse.AsSpan(8, 4)));
 	}
 
-	[Fact]
-	public async Task ClientConnection_BroadcastsChannelMessagesToChannelMembers()
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task ClientConnection_BroadcastsChannelMessagesToChannelMembersUnlessGagged(bool gagged)
 	{
 		var options = new ChatServerOptions();
 		var channels = new ChatChannels(NullLogger<ChatChannels>.Instance);
@@ -178,9 +180,22 @@ public class ChatConnectionSmokeTests
 		var secondChannelId = await AuthenticateAndJoinAsync(second.ClientStream, secondClient, secondProtocol, requestId: 2);
 		Assert.Equal(channelId, secondChannelId);
 
+		if (gagged) chatService.GagPlayer(firstClient.ClientId, 300000);
 		await first.ClientStream.WriteAsync(firstProtocol.CreateChannelMessageFrame(channelId, "Hello"));
 
 		var firstPayload = await ReadPayloadAsync(first.ClientStream);
+		if (gagged)
+		{
+			Assert.StartsWith("You have been gagged for ", ExtractChannelMessageText(firstPayload), StringComparison.Ordinal);
+			// A positive control barrier proves the forbidden text was not sent to the peer;
+			// do not infer absence from a timeout or an unread socket.
+			await second.ClientStream.WriteAsync(secondProtocol.CreateChannelMessageFrame(channelId, "Control"));
+			Assert.Equal("Control", ExtractChannelMessageText(await ReadPayloadAsync(first.ClientStream)));
+			Assert.Equal("Control", ExtractChannelMessageText(await ReadPayloadAsync(second.ClientStream)));
+			chatService.GagPlayer(firstClient.ClientId, 0);
+			await first.ClientStream.WriteAsync(firstProtocol.CreateChannelMessageFrame(channelId, "Hello"));
+			firstPayload = await ReadPayloadAsync(first.ClientStream);
+		}
 		var secondPayload = await ReadPayloadAsync(second.ClientStream);
 		Assert.Equal(0x1A, firstPayload[0]);
 		Assert.Equal(0x1A, secondPayload[0]);
