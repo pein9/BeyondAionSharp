@@ -3504,9 +3504,89 @@ Logs: `run/p10-10-sim-export-{warnings,dotnet,ancillary,final,final-audit}.log`,
 `run/p10-10-sim-evidence-tests-final-b.log`, and the preserved intermediate
 test/negative-control logs. No larger-population or Full acceptance claim follows.
 
-P10-10 remains open for SIM resource metrics, complete coverage-delta integration
-and final report acceptance. Exporting packet traces supplies inputs for P10-11;
+At this checkpoint P10-10 remained open for SIM resource metrics, complete
+coverage-delta integration and final report acceptance. Exporting packet traces supplies inputs for P10-11;
 it does not claim that coverage measurement/baselines are already implemented.
+
+## P10-10 — SIM resource samples and report integration
+
+`SimulationResourceWriter` writes `sim-resources.jsonl` on the SIM owner thread,
+at run start/end, every log-policy start/end and each bot action. It neither
+schedules a diagnostic timer nor advances virtual time, starts a background
+thread, or forces a collection. The measurements are the **whole test process
+after bootstrap**, including harness/static-data allocations. The fixture removes
+all hosted services, so there is no SIM heartbeat to export and no liveness
+claim is made from these nonperiodic sample gaps.
+
+Each attempt retains its sequence, wall timestamp, monotonic elapsed seconds,
+virtual milliseconds and scope identity. Successful observations include current
+working set, a separately labelled OS process-lifetime peak, the heap size/index
+from the last natural GC, and `VirtualThreadPool.ArmedTimerCount` rather than the
+production pool's unrelated counter. GC index zero produces a null heap value,
+not a fabricated zero or a forced collection. Process-lifetime peak memory may
+include startup before the first sample; observed boundary peaks may miss spikes
+between samples. A failed capture retains its complete exception and null
+counters; later successful observations cannot erase the failure.
+
+The report validates source/run/seed/profile, producer identity and sampling
+contract, exact sample sequencing, wall/virtual monotonicity, counter types and
+GC availability, start/end order and footer totals. Every policy boundary must
+match the independent problem receipts, including scenario identity. Partial or
+corrupt evidence keeps validated earlier peaks visible but cannot pass. Full
+aggregation retains each child's evidence path/hash and process scope separately
+from LIVE heartbeat peaks; it does not sum processes or invent a periodic SIM
+heartbeat. The Markdown report links the raw resource evidence, with additional
+gap and OS-lifetime details in JSON.
+
+The first actual Docker-backed run,
+`run/p10-10-sim-resources/p10-10-sim-resources-a`, passes six xUnit cases and all
+eleven manifest scenarios. Its resource export contains 100 successful attempts,
+zero errors, 2,617,430,016 bytes peak sampled working set, 2,387,313,864 bytes peak
+last-collected heap and 2,468 peak armed virtual timers. The distinct OS lifetime
+peak is 2,617,475,072 bytes. Largest observed gaps are 3.1103 wall seconds and
+295,000 virtual milliseconds. These are observations of this Fast run, not a
+memory plateau, server-only resource budget, or two-hour soak result.
+
+The initial implementation and exact source basis (`e268aa91a`) are archived in
+`run/p10-10-sim-resources-source-a`. No production or Java behavior changes.
+`p10-10-sim-resources-negative` then injects exactly one counter-capture exception
+at the second observation. All six xUnit cases and eleven gameplay scenarios
+still pass, but the report fails and the public Fast command exits 1: 99 good
+samples do not hide the one failed attempt. The retained error has its full
+exception and null metrics/timer count; the report preserves the good samples'
+peaks. Its initial runner receipt describes successful scenario execution, not
+successful overall reporting acceptance. The injection's exact source is archived
+beside the baseline and it was removed immediately afterward. The independent
+audit is `run/p10-10-sim-resources-negative-audit.log`. No ledger/allowlist change
+or expected-failure exception was added to make this control pass.
+
+Pre-commit verification passes 4,612 solution tests with 27 explicit skips and
+an unchanged 4,243-warning inventory across 21 codes. All ancillary checks pass,
+including 35 Python report tests and the PowerShell finalizer contract. Twelve
+new resource-writer cases cover boundary sequence/flushes, wall/virtual coordinates,
+real process readings, last-GC availability, failed/invalid counters, idempotent
+cleanup, evidence preservation, cancellation-aware timer counts and unchanged
+timer firing order. Existing exporter tests also pin nested policy boundaries
+and action sampling. The first test draft used boxed Int32 arguments for nullable
+Int64 theory parameters; those two cases were corrected and rerun. A new analyzer
+warning was fixed using Assert.Single's predicate overload; no baseline increase.
+Evidence: `run/p10-10-sim-resources-{warnings,dotnet,ancillary,audit}.log`,
+`run/p10-10-sim-resource-tests-{a,b}.log`, and
+`run/p10-10-resource-report-contract.log`. The restored final source is archived
+under `run/p10-10-sim-resources-source-final`.
+
+The clean replay `run/p10-10-sim-resources/p10-10-sim-resources-final`, after
+removing the capture injection, passes all six xUnit cases and eleven manifest
+scenarios, with 100 valid resource samples and zero capture errors. Its report
+peaks and source hash agree with an independent raw-file audit
+(`run/p10-10-sim-resources-final-audit.log`). All three temporary SIM schemas are
+removed by normal fixture cleanup; the maintainer's Docker MySQL remains healthy.
+These sequential runs never exceed two subject bots. Console evidence is retained
+in `run/p10-10-sim-resources-{a,negative,final}.log`.
+
+P10-10 remains open for complete coverage deltas (including P10-11) and final
+report acceptance; no deferred population, client-capture or Java-runtime scope
+is reopened.
 
 ## Deferred scope
 

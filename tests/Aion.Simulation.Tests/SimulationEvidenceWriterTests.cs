@@ -57,6 +57,9 @@ public sealed class SimulationEvidenceWriterTests : IDisposable
 		Assert.Equal(new long[] { 1, 2 }, rows.Where(r => r.GetProperty("event").GetString() == "policy-started").Select(r => r.GetProperty("policy").GetInt64()));
 		Assert.Equal(2, rows[^1].GetProperty("policiesCompleted").GetInt32());
 		Assert.Empty(rows[^1].GetProperty("activePolicies").EnumerateArray());
+		var resources = Rows("sim-resources.jsonl");
+		Assert.Equal(new[] { "run-started", "policy-started", "policy-started", "policy-completed", "policy-completed", "run-completed" },
+			resources.Where(r => r.GetProperty("event").GetString() == "sample").Select(r => r.GetProperty("trigger").GetString()));
 	}
 
 	[Theory]
@@ -120,6 +123,7 @@ public sealed class SimulationEvidenceWriterTests : IDisposable
 		Assert.False(terminal.GetProperty("assertionPassed").GetBoolean());
 		Assert.Equal("virtual-timer", terminal.GetProperty("observations")[0].GetProperty("kind").GetString());
 		Assert.Equal(new[] { "action", ">", "<" }, Rows("bots/S0.b01.account.trace.jsonl").Select(r => r.GetProperty("dir").GetString()));
+		Assert.Single(Rows("sim-resources.jsonl"), r => r.TryGetProperty("trigger", out var trigger) && trigger.GetString() == "bot-action");
 	}
 
 	[Fact]

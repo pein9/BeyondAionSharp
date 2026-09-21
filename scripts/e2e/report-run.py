@@ -353,12 +353,124 @@ def planned_rows(root, outcome):
     return result
 
 
+def sim_resources(root, outcome, report):
+    path = child_path(root, "sim-resources.jsonl")
+    rows = iter(lines(path))
+    header = next(rows, {})
+    if (header.get("event") != "run-started" or type(header["schemaVersion"]) is not int or header["schemaVersion"] != 1 or
+            any(header[k] != outcome[k] for k in ("run", "mode", "seed", "gitSha")) or
+            type(header["seed"]) is not int or type(outcome["seed"]) is not int or
+            type(header["processId"]) is not int or header["processId"] <= 0 or
+            header["sampling"] != "run-policy-and-bot-action-boundaries" or header["scope"] != "post-bootstrap-test-process" or
+            header["timerSource"] != "VirtualThreadPool.ArmedTimerCount" or header["heartbeat"] != "not-applicable"):
+        raise ValueError("SIM resource identity/provenance/sampling contract mismatch")
+    timestamp(header["startedUtc"])
+    identifier(header["profile"])
+    if report["simulation"] and header["profile"] != report["simulation"]["provenance"]["profile"]:
+        raise ValueError("SIM resource profile disagrees with problem export")
+    summary = dict(mode="SIM", processId=header["processId"], scope=header["scope"], sampling=header["sampling"],
+        evidence="sim-resources.jsonl", evidenceSha256=hashlib.sha256(path.read_bytes()).hexdigest(), complete=False,
+        attempts=0, samples=0, errors=0, maximumObservedWallGapSeconds=None, maximumObservedVirtualGapMillis=None,
+        peakWorkingSetBytes=None, processLifetimePeakWorkingSetBytes=None, peakLastGcHeapBytes=None,
+        peakArmedTimers=None, firstVirtualMillis=None, lastVirtualMillis=None, lastGcIndex=None)
+    # Keep validated observations available even if a later row is corrupt or truncated.
+    report["resourcePeaks"].append(summary)
+    starts, ends, active = {}, {}, {}
+    footer, terminal, previous = None, False, None
+    for row in rows:
+        if row["run"] != outcome["run"] or footer is not None:
+            raise ValueError("SIM resource stream identity/order mismatch")
+        event = row["event"]
+        if event == "run-completed":
+            if not terminal or any(type(row[k]) is not int or row[k] != summary[k] for k in ("attempts", "samples", "errors")):
+                raise ValueError("SIM resource footer disagrees with observations")
+            footer = row
+            continue
+        if event not in ("sample", "sample-error") or terminal:
+            raise ValueError("SIM resource event out of order")
+        if type(row["sequence"]) is not int or row["sequence"] != summary["attempts"] + 1:
+            raise ValueError("SIM resource sample sequence incomplete/duplicated")
+        elapsed = number(row["elapsedSeconds"])
+        vt = row["virtualMillis"]
+        if type(vt) is not int or vt < 0:
+            raise ValueError("SIM resource virtual time invalid")
+        timestamp(row["timestampUtc"])
+        if previous:
+            if elapsed < previous[0] or vt < previous[1]:
+                raise ValueError("SIM resource elapsed/virtual time moved backwards")
+            summary["maximumObservedWallGapSeconds"] = max(summary["maximumObservedWallGapSeconds"] or 0, elapsed - previous[0])
+            summary["maximumObservedVirtualGapMillis"] = max(summary["maximumObservedVirtualGapMillis"] or 0, vt - previous[1])
+        else:
+            summary["firstVirtualMillis"] = vt
+        previous = (elapsed, vt)
+        summary["lastVirtualMillis"] = vt
+        trigger, policy, scenario = row["trigger"], row["policy"], row["scenario"]
+        if (summary["attempts"] == 0) != (trigger == "run-started"):
+            raise ValueError("SIM resource stream requires exactly one initial sample")
+        if trigger in ("run-started", "run-completed"):
+            if any(row[k] is not None for k in ("policy", "scenario", "bot", "account", "step")):
+                raise ValueError("SIM run-boundary sample has scenario identity")
+            terminal = trigger == "run-completed"
+        elif trigger in ("policy-started", "policy-completed"):
+            if type(policy) is not int or policy <= 0 or scenario not in outcome["scenarios"] or any(row[k] is not None for k in ("bot", "account", "step")):
+                raise ValueError("SIM resource policy identity invalid")
+            if trigger == "policy-started":
+                if policy != len(starts) + 1:
+                    raise ValueError("SIM resource policy start duplicated/incomplete")
+                starts[policy] = active[policy] = scenario
+            else:
+                if active.pop(policy, None) != scenario:
+                    raise ValueError("SIM resource policy completion without matching start")
+                ends[policy] = scenario
+        elif trigger == "bot-action":
+            if policy is not None or scenario not in active.values() or any(not isinstance(row[k], str) or not row[k].strip() for k in ("bot", "account", "step")):
+                raise ValueError("SIM resource bot action has no active scenario/identity")
+        else:
+            raise ValueError("Unknown SIM resource sample trigger")
+        if event == "sample-error":
+            if row["metrics"] is not None or row["armedTimers"] is not None or not isinstance(row["error"], str) or not row["error"].strip():
+                raise ValueError("SIM failed resource sample fabricated counters or lost its error")
+            summary["errors"] += 1
+        else:
+            metrics = row["metrics"]
+            for field in ("workingSetBytes", "processLifetimePeakWorkingSetBytes", "lastGcIndex"):
+                if type(metrics[field]) is not int or metrics[field] < (0 if field == "lastGcIndex" else 1):
+                    raise ValueError("Invalid SIM resource counter")
+            heap, index, timers = metrics["lastGcHeapBytes"], metrics["lastGcIndex"], row["armedTimers"]
+            if ((index == 0) != (heap is None) or heap is not None and (type(heap) is not int or heap < 0) or
+                    type(timers) is not int or timers < 0 or row["error"] is not None or
+                    summary["lastGcIndex"] is not None and index < summary["lastGcIndex"]):
+                raise ValueError("Invalid SIM collection availability/timer/error counters")
+            for target, value in (("peakWorkingSetBytes", metrics["workingSetBytes"]),
+                    ("processLifetimePeakWorkingSetBytes", metrics["processLifetimePeakWorkingSetBytes"]),
+                    ("peakLastGcHeapBytes", heap), ("peakArmedTimers", timers)):
+                if value is not None:
+                    summary[target] = max(summary[target] or 0, value)
+            summary["lastGcIndex"] = index
+            summary["samples"] += 1
+        summary["attempts"] += 1
+    if footer is None or active:
+        report["evidenceIssues"].append("SIM resource export lacks terminal evidence or has unfinished policy scopes.")
+    if summary["errors"]:
+        report["evidenceIssues"].append(f"SIM resource sampling failed {summary['errors']} time(s); missing counters are not zero.")
+    if not summary["samples"]:
+        report["evidenceIssues"].append("SIM has no successful resource samples.")
+    # Join every scope to the independent problem receipts, not just a total count.
+    expected_starts, expected_ends = {}, {}
+    for row in lines(child_path(root, "sim-problems.jsonl")):
+        if row["event"] == "policy-started": expected_starts[row["policy"]] = row["scenario"]
+        if row["event"] == "policy-completed": expected_ends[row["policy"]] = row["scenario"]
+    if starts != expected_starts or ends != expected_ends:
+        raise ValueError("SIM resource policy scopes disagree with retained problem receipts")
+    summary["complete"] = footer is not None and not active
+
+
 def build_report(root):
     root = root.resolve()
     issues = []
     expected = []
     report = dict(schemaVersion=1, run=root.name, mode=None, status="failed", runner=None,
-                  scenarios=[], steps=[], fingerprints=[], watcher=None, simulation=None, heartbeatPeaks=[], coverage=[], evidenceIssues=issues,
+                  scenarios=[], steps=[], fingerprints=[], watcher=None, simulation=None, heartbeatPeaks=[], resourcePeaks=[], coverage=[], evidenceIssues=issues,
                   runnerSourceSha256=None, limitations=["Scenario completion alone does not prove watcher, cleanup, coverage or capacity acceptance.",
                                "Heartbeat peaks are observed samples, not a continuous resource maximum."])
     try:
@@ -381,8 +493,15 @@ def build_report(root):
             if outcome["mode"] == "LIVE":
                 report["watcher"], report["fingerprints"], report["heartbeatPeaks"] = live_observations(root, outcome, issues)
             else:
-                report["limitations"].append("SIM resource export is not yet available; absent metrics are not zero. Policy observation counts can overlap in nested scopes.")
-                sim_observations(root, outcome, report)
+                report["limitations"].extend([
+                    "SIM policy observation counts can overlap in nested scopes.",
+                    "SIM resources are boundary samples of the whole test process after bootstrap, not server-only or continuous maxima. The OS lifetime peak can predate the first sample.",
+                    "SIM omits hosted heartbeats; resource sample gaps are not liveness checks. Last-GC heap is unavailable until a natural collection; sampling never forces GC."])
+                for collect in (sim_observations, sim_resources):
+                    try:
+                        collect(root, outcome, report)
+                    except (OSError, EOFError, ValueError, KeyError, TypeError, IndexError, AttributeError) as error:
+                        issues.append(f"Invalid or missing SIM evidence: {error}")
         report["coverage"].extend(coverage(root))
         for item in report["coverage"]:
             if item["comparison"].get("baselineComparison", {}).get("passed") is False:
@@ -463,6 +582,7 @@ def collect_suite(root, outcome, report):
             report["fingerprints"].extend(dict(row, child=relative,
                 repro=f"{relative}/{row['repro']}" if row["repro"] else None) for row in child["fingerprints"])
             report["heartbeatPeaks"].extend(dict(row, child=relative) for row in child["heartbeatPeaks"])
+            report["resourcePeaks"].extend(dict(row, child=relative, evidence=f"{relative}/{row['evidence']}") for row in child["resourcePeaks"])
             report["coverage"].extend(dict(row, evidence=f"{relative}/{row['evidence']}") for row in child["coverage"])
             report["limitations"].extend(f"{relative}: {value}" for value in child["limitations"] if value not in report["limitations"][:2])
             if child["status"] != "passed":
@@ -493,6 +613,14 @@ def markdown(report):
     for row in report["heartbeatPeaks"]:
         rows.append("| " + " | ".join(cell(row.get(key) if row.get(key) is not None else "unavailable") for key in
                     ("server", "samples", "maximumObservedGapSeconds", "peakWorkingSetBytes", "peakArmedTimers", "peakPacketQueueDepth")) + " |")
+    if report["resourcePeaks"]:
+        rows += ["", "## SIM resource samples", "", "Boundary samples of the test process, not heartbeats or continuous maxima.", "",
+                 "| Evidence | Samples / errors | Complete | Working set peak (bytes) | Last-GC heap peak (bytes) | Timers peak |",
+                 "|---|---:|---|---:|---:|---:|"]
+        for item in report["resourcePeaks"]:
+            metrics = ["unavailable" if item[k] is None else str(item[k]) for k in ("peakWorkingSetBytes", "peakLastGcHeapBytes", "peakArmedTimers")]
+            rows.append(f"| [{cell(item['evidence'])}]({item['evidence']}) | {item['samples']} / {item['errors']} | {item['complete']} | " + " | ".join(metrics) + " |")
+        rows += ["", "Process-lifetime OS peaks and observed wall/virtual sample gaps are retained separately in report.json. The lifetime peak may include bootstrap."]
     rows += ["", "## Coverage comparisons", ""]
     rows.extend(f"- [{item['evidence']}]({item['evidence']}) (full retained comparison in report.json)" for item in report["coverage"])
     if not report["coverage"]:

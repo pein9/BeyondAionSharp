@@ -21,6 +21,7 @@ public sealed class SimulationEvidenceWriter : IDisposable
 	private readonly VirtualThreadPool clock;
 	private readonly TimeProvider wallClock;
 	private readonly StreamWriter output;
+	private readonly SimulationResourceWriter resources;
 	private readonly Dictionary<string, string> statuses = new(StringComparer.Ordinal);
 	private readonly Dictionary<long, string> active = [];
 	private readonly Dictionary<(string Scenario, string Bot, string Account), BotActionTraceWriter> traces = [];
@@ -60,9 +61,14 @@ public sealed class SimulationEvidenceWriter : IDisposable
 		WriteNew(AllowlistPath, allowance);
 		output = new StreamWriter(new FileStream(Path.Combine(this.directory, "sim-problems.jsonl"),
 			FileMode.CreateNew, FileAccess.Write, FileShare.Read), new UTF8Encoding(false)) { AutoFlush = true };
-		Write(new { schemaVersion = 1, @event = "run-started", run, mode = "SIM", seed, gitSha, profile, startedUtc = this.wallClock.GetUtcNow(),
-			ledgerSha256 = Convert.ToHexStringLower(SHA256.HashData(ledger)),
-			allowlistSha256 = Convert.ToHexStringLower(SHA256.HashData(allowance)) });
+		try
+		{
+			Write(new { schemaVersion = 1, @event = "run-started", run, mode = "SIM", seed, gitSha, profile, startedUtc = this.wallClock.GetUtcNow(),
+				ledgerSha256 = Convert.ToHexStringLower(SHA256.HashData(ledger)),
+				allowlistSha256 = Convert.ToHexStringLower(SHA256.HashData(allowance)) });
+			resources = new SimulationResourceWriter(this.directory, run, seed, gitSha, profile, clock);
+		}
+		catch { output.Dispose(); throw; }
 	}
 
 	public long BeginPolicy(string scenario)
@@ -74,6 +80,7 @@ public sealed class SimulationEvidenceWriter : IDisposable
 			long id = ++started;
 			active.Add(id, identity);
 			Write(new { @event = "policy-started", run, policy = id, scenario });
+			resources.Sample("policy-started", scenario, id);
 			return id;
 		}
 	}
@@ -100,6 +107,7 @@ public sealed class SimulationEvidenceWriter : IDisposable
 			}).ToArray();
 			Write(new { @event = "policy-completed", run, policy = id, scenario, assertedClean, assertionPassed,
 				virtualMillis = clock.NowMillis, observations });
+			resources.Sample("policy-completed", scenario, id);
 			active.Remove(id);
 			completed++;
 		}
@@ -107,7 +115,11 @@ public sealed class SimulationEvidenceWriter : IDisposable
 
 	public void TraceAction(string scenario, string bot, string account, string step, string action)
 	{
-		lock (gate) Trace(scenario, bot, account).WriteAction(step, action);
+		lock (gate)
+		{
+			Trace(scenario, bot, account).WriteAction(step, action);
+			resources.Sample("bot-action", scenario, bot: bot, account: account, step: step);
+		}
 	}
 
 	public void TraceSent(string scenario, string bot, string account, string step, BotClientPacket packet)
@@ -197,8 +209,12 @@ public sealed class SimulationEvidenceWriter : IDisposable
 			try { Write(new { @event = "run-completed", run, policiesStarted = started, policiesCompleted = completed, activePolicies = active.Keys.ToArray() }); }
 			finally
 			{
-				foreach (var trace in traces.Values) trace.Dispose();
-				output.Dispose();
+				try { resources.Dispose(); }
+				finally
+				{
+					foreach (var trace in traces.Values) trace.Dispose();
+					output.Dispose();
+				}
 			}
 		}
 	}

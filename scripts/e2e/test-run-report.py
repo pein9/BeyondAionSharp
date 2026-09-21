@@ -62,7 +62,131 @@ class RunReportTests(unittest.TestCase):
                 assertedClean=True, assertionPassed=True, virtualMillis=100, observations=list(observations))])
         rows.append(dict(event="run-completed", run=run, policiesStarted=len(scenarios), policiesCompleted=len(scenarios), activePolicies=[]))
         self.write_sim_rows(rows, root)
+        self.sim_resources(scenarios, run=run, root=root)
         return rows
+
+    def sim_resources(self, scenarios=("Q1",), run="run-a", root=None):
+        rows = [dict(schemaVersion=1, event="run-started", run=run, mode="SIM", seed=1, gitSha="contract",
+            profile="sim-fast", startedUtc=STAMP, processId=42, sampling="run-policy-and-bot-action-boundaries",
+            scope="post-bootstrap-test-process", timerSource="VirtualThreadPool.ArmedTimerCount", heartbeat="not-applicable")]
+        boundaries = [("run-started", None, None)]
+        for policy, scenario in enumerate(scenarios, 1):
+            boundaries += [("policy-started", scenario, policy), ("policy-completed", scenario, policy)]
+        boundaries += [("run-completed", None, None)]
+        for sequence, (trigger, scenario, policy) in enumerate(boundaries, 1):
+            rows.append(dict(event="sample", run=run, sequence=sequence, timestampUtc=STAMP, elapsedSeconds=sequence,
+                virtualMillis=sequence*1000, trigger=trigger, scenario=scenario, policy=policy, bot=None, account=None,
+                step=None, armedTimers=sequence%3, metrics=dict(workingSetBytes=100+sequence*10,
+                    processLifetimePeakWorkingSetBytes=2000, lastGcIndex=0, lastGcHeapBytes=None), error=None))
+        rows.append(dict(event="run-completed", run=run, attempts=len(boundaries), samples=len(boundaries), errors=0))
+        self.write_resource_rows(rows, root)
+        return rows
+
+    def write_resource_rows(self, rows, root=None):
+        (root or self.root).joinpath("sim-resources.jsonl").write_text("".join(json.dumps(row)+"\n" for row in rows), encoding="utf-8")
+
+    def test_sim_resource_samples_preserve_scope_gaps_observed_peaks_and_heap_availability(self):
+        self.fixture()
+        result = reporter.build_report(self.root)
+        self.assertEqual("passed", result["status"])
+        peak = result["resourcePeaks"][0]
+        self.assertTrue(peak["complete"])
+        self.assertEqual(4, peak["samples"])
+        self.assertEqual(140, peak["peakWorkingSetBytes"])
+        self.assertEqual(2000, peak["processLifetimePeakWorkingSetBytes"])
+        self.assertEqual(2, peak["peakArmedTimers"])
+        self.assertEqual(1, peak["maximumObservedWallGapSeconds"])
+        self.assertEqual(1000, peak["maximumObservedVirtualGapMillis"])
+        self.assertIsNone(peak["peakLastGcHeapBytes"])
+        self.assertEqual([], result["heartbeatPeaks"])
+        self.assertEqual(hashlib.sha256((self.root/"sim-resources.jsonl").read_bytes()).hexdigest(), peak["evidenceSha256"])
+        self.assertIn("sim-resources.jsonl", reporter.markdown(result))
+        rows = self.sim_resources()
+        rows[-2]["metrics"].update(lastGcIndex=3, lastGcHeapBytes=91)
+        self.write_resource_rows(rows)
+        peak = reporter.build_report(self.root)["resourcePeaks"][0]
+        self.assertEqual(91, peak["peakLastGcHeapBytes"])
+        self.assertEqual(3, peak["lastGcIndex"])
+
+    def test_sim_failed_resource_observations_remain_failed_after_good_samples(self):
+        self.fixture()
+        rows = self.sim_resources()
+        rows[2].update(event="sample-error", metrics=None, armedTimers=None, error="counter unavailable")
+        rows[-1].update(samples=3, errors=1)
+        self.write_resource_rows(rows)
+        result = reporter.build_report(self.root)
+        self.assertEqual("failed", result["status"])
+        self.assertEqual(1, result["resourcePeaks"][0]["errors"])
+        self.assertEqual(3, result["resourcePeaks"][0]["samples"])
+        self.assertEqual(140, result["resourcePeaks"][0]["peakWorkingSetBytes"])
+        for row in rows[1:-1]: row.update(event="sample-error", metrics=None, armedTimers=None, error="unavailable")
+        rows[-1].update(samples=0, errors=4)
+        self.write_resource_rows(rows)
+        result = reporter.build_report(self.root)
+        self.assertEqual("failed", result["status"])
+        self.assertIsNone(result["resourcePeaks"][0]["peakWorkingSetBytes"])
+        self.assertIsNone(result["resourcePeaks"][0]["peakArmedTimers"])
+
+    def test_missing_incomplete_or_corrupt_sim_resources_fail_without_erasing_problem_evidence(self):
+        for variant in ("missing", "empty", "no-footer", "partial"):
+            with self.subTest(variant=variant):
+                self.fixture()
+                self.sim_evidence(ledger=[dict(fp="1234abcd", status="tracked")], observations=[dict(
+                    fingerprint="1234abcd", disposition="KNOWN", allowlisted=False, server="gs")])
+                rows = list(reporter.lines(self.root/"sim-resources.jsonl"))
+                if variant == "missing": (self.root/"sim-resources.jsonl").unlink()
+                elif variant == "empty": self.write_resource_rows([])
+                else:
+                    self.write_resource_rows(rows[:-1])
+                    if variant == "partial":
+                        with (self.root/"sim-resources.jsonl").open("a", encoding="utf-8") as f: f.write('{"partial":')
+                result = reporter.build_report(self.root)
+                self.assertEqual("failed", result["status"])
+                self.assertEqual("KNOWN", result["fingerprints"][0]["disposition"])
+                if variant in ("no-footer", "partial"):
+                    self.assertFalse(result["resourcePeaks"][0]["complete"])
+                    self.assertEqual(140, result["resourcePeaks"][0]["peakWorkingSetBytes"])
+
+    def test_sim_resource_corrupt_counters_identity_scopes_or_order_cannot_pass(self):
+        mutations = [lambda r: r[0].update(run="other"), lambda r: r[0].update(seed=True),
+            lambda r: r[0].update(profile="other"), lambda r: r[0].update(processId=0),
+            lambda r: r[0].update(sampling="continuous"), lambda r: r[0].update(scope="game-server-only"),
+            lambda r: r[0].update(heartbeat="live"), lambda r: r[2].update(sequence=1),
+            lambda r: r[2].update(elapsedSeconds=-1), lambda r: r[2].update(elapsedSeconds=0),
+            lambda r: r[2].update(virtualMillis=0), lambda r: r[2].update(armedTimers=None),
+            lambda r: r[2].update(armedTimers=-1), lambda r: r[2].update(armedTimers=True),
+            lambda r: r[2]["metrics"].update(workingSetBytes=0), lambda r: r[2]["metrics"].update(workingSetBytes=1.5),
+            lambda r: r[2]["metrics"].update(lastGcIndex=1), lambda r: r[2]["metrics"].update(lastGcHeapBytes=0),
+            lambda r: r[2].update(policy=2), lambda r: r[3].update(scenario="other"),
+            lambda r: r[-1].update(samples=99), lambda r: r.append(r[-1]),
+            lambda r: r[2].update(trigger="bot-action", policy=None, bot="b01", account="a", step="s01")]
+        for mutate in mutations:
+            with self.subTest(mutate=mutate):
+                self.fixture()
+                rows = self.sim_resources()
+                mutate(rows)
+                self.write_resource_rows(rows)
+                self.assertEqual("failed", reporter.build_report(self.root)["status"])
+        self.fixture()
+        # Plausible complete metrics for fewer policies cannot replace the selected run.
+        rows = self.sim_resources(scenarios=())
+        self.assertEqual("failed", reporter.build_report(self.root)["status"])
+        self.fixture()
+        outcome = reporter.read_json(self.root/"runner-result.json")
+        outcome["seed"] = True  # Python's True == 1 must not establish provenance.
+        self.put("runner-result.json", outcome)
+        self.assertEqual("failed", reporter.build_report(self.root)["status"])
+
+    def test_full_joins_sim_resource_provenance_without_mixing_it_with_live_heartbeats(self):
+        self.suite(True)
+        result = reporter.build_report(self.root)
+        self.assertEqual("passed", result["status"])
+        self.assertEqual(1, len(result["resourcePeaks"]))
+        self.assertEqual("sim-a/sim-resources.jsonl", result["resourcePeaks"][0]["evidence"])
+        self.assertEqual("sim-a", result["resourcePeaks"][0]["child"])
+        self.assertEqual("gs", result["heartbeatPeaks"][0]["server"])
+        (self.root/"sim-a/sim-resources.jsonl").unlink()
+        self.assertEqual("failed", reporter.build_report(self.root)["status"])
 
     def write_sim_rows(self, rows, root=None):
         (root or self.root).joinpath("sim-problems.jsonl").write_text("".join(json.dumps(row)+"\n" for row in rows), encoding="utf-8")

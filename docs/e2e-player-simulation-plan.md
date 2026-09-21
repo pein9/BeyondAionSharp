@@ -2228,6 +2228,8 @@ real geodata on in production immediately, because geo is enabled by default; th
   each scenario as passed, failed, skipped or flaky with duration; NEW, KNOWN and REGRESSED fingerprints; coverage
   deltas; peak heartbeat, memory and timer counts. `run-fast.ps1` and `run-full.ps1` print the summary at the end
   and point at the P3-14 repro bundle for every NEW fingerprint.
+  **Coverage dependency:** P10-11 produces the measurements and baseline comparisons this report
+  consumes; P10-10 stays open until that integration is verified.
   **In progress:** SIM and LIVE now write a shared `scenario-results.jsonl` journal around actual
   scenario dispatch: a flushed start, terminal status, monotonic wall duration, original exit code
   or full thrown exception. SIM records each scenario rather than only the enclosing test method;
@@ -2253,7 +2255,17 @@ real geodata on in production immediately, because geo is enabled by default; th
   not unique occurrences, and do not update the shared ledger. Fast's eleven scenarios pass with real
   Docker MySQL; an injected L0 error produces a failed report, nine fail-fast skips and a complete NEW
   repro. The temporary injection is removed; validation details and replay receipts are recorded separately.
-  Remaining P10-10 work: SIM resource export, complete coverage delta
+  SIM problem/trace export receipt: `e268aa91a`.
+  SIM resource export now samples the test process at run, policy and bot-action boundaries without
+  adding timers, threads, forced collections or virtual time advances. `sim-resources.jsonl` records
+  monotonic wall elapsed time, virtual time, working set, separate OS process-lifetime peak, last-natural-GC
+  heap availability and the virtual pool's armed count. The report checks policy identities against
+  the log receipts, retains sampled peaks and evidence hashes, and keeps collection failures fatal.
+  These are post-bootstrap test-process observations, not isolated-server or continuous maxima;
+  SIM deliberately removes hosted heartbeat services, so its sample gaps are not liveness checks.
+  Full joins child resource evidence separately from LIVE heartbeats. Runtime receipts are in the
+  validation document; the current reporting checkpoint does not establish capacity/soak acceptance.
+  Remaining P10-10 work: complete coverage delta
   integration (including the P10-11 measurements), and final acceptance of all report paths. These
   missing observations are explicitly unavailable, not zero. No retry/flaky policy is enabled here;
   P10-12 still owns it. The current Full matrix remains unexecuted under D17 and known P10-09 failures.

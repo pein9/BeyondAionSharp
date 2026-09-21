@@ -37,6 +37,19 @@ try {
 		@{ event='policy-completed'; run='run-report-test'; scenario='Q1'; policy=1; assertedClean=$true; assertionPassed=$true; virtualMillis=100; observations=@() },
 		@{ event='run-completed'; run='run-report-test'; policiesStarted=1; policiesCompleted=1; activePolicies=@() }
 	) | ForEach-Object { $_ | ConvertTo-Json -Depth 5 -Compress } | Set-Content -LiteralPath (Join-Path $testRoot 'sim-problems.jsonl') -Encoding utf8NoBOM
+	$resourceRows = @(@{ schemaVersion=1; event='run-started'; run='run-report-test'; mode='SIM'; seed=1; gitSha=''; profile='sim-fast';
+		startedUtc=$started.ToString('O'); processId=42; sampling='run-policy-and-bot-action-boundaries'; scope='post-bootstrap-test-process';
+		timerSource='VirtualThreadPool.ArmedTimerCount'; heartbeat='not-applicable' })
+	$sequence = 0
+	foreach ($trigger in @('run-started', 'policy-started', 'policy-completed', 'run-completed')) {
+		$sequence++
+		$resourceRows += @{ event='sample'; run='run-report-test'; sequence=$sequence; timestampUtc=$started.ToString('O');
+			elapsedSeconds=$sequence; virtualMillis=$sequence; trigger=$trigger; policy=$(if ($trigger -like 'policy-*') { 1 } else { $null });
+			scenario=$(if ($trigger -like 'policy-*') { 'Q1' } else { $null }); bot=$null; account=$null; step=$null; armedTimers=1; error=$null;
+			metrics=@{ workingSetBytes=100; processLifetimePeakWorkingSetBytes=200; lastGcIndex=0; lastGcHeapBytes=$null } }
+	}
+	$resourceRows += @{ event='run-completed'; run='run-report-test'; attempts=4; samples=4; errors=0 }
+	$resourceRows | ForEach-Object { $_ | ConvertTo-Json -Depth 5 -Compress } | Set-Content -LiteralPath (Join-Path $testRoot 'sim-resources.jsonl') -Encoding utf8NoBOM
 	Write-AionRunReport -RunDirectory $testRoot -Run run-report-test -Mode SIM -Scenarios @('Q1') `
 		-Status passed -StartedUtc $started -DurationSeconds 3
 	$report = Get-Content -Raw -LiteralPath (Join-Path $testRoot 'report.json') | ConvertFrom-Json
