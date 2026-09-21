@@ -4381,3 +4381,45 @@ Retained SHA-256 receipts:
 `p10-accept-03` is not a green acceptance run and does not start the required
 five-run streak. The next complete Full attempt must validate the corrected
 per-child packet evidence and remain free of first-attempt flakes.
+
+## P10-11 complete-Breadth coverage closeout and first clean Full candidate
+
+`p10-accept-04` ran the complete supported Breadth selection at revision
+`9f71edbbc3dd9a1bfe00863e9e23a134924240cf` with two SIM shards and Host bot
+execution. It completed in 14,021.005 seconds and passed 119 scenarios with zero
+failed, skipped or flaky outcomes. B2F and S5 both passed on their first attempts.
+Quest coverage passed with 58 SIM and 60 LIVE completions. Every live stack used
+Docker MySQL, and the largest simultaneous player population was S4 at eight;
+L1's twelve subjects remained sequential. Character transfer was not planned,
+executed or counted because D20 makes it inapplicable to this single-server
+emulator.
+
+The corrected packet gate accepted all 63 retained child directories and found no
+lost baseline identity. The complete Breadth observations are:
+
+- SIM: 104/186 client opcodes sent and 111/238 structured server opcodes decoded.
+- LIVE: 100/186 client opcodes sent and 111/238 structured server opcodes decoded.
+- E6 retains all six client exchange sends and all four structured exchange
+  decodes that were absent from attempt 03's invalid aggregate.
+
+All 16 planned Coverlet processes were collected. Their compatible union covers
+95,599/267,950 GameServer lines (35.678%) and 23,789/103,697 IL branches
+(22.941%). The requested directory measurements are retained: Services
+10,387/26,107 lines and 4,103/11,749 branches; Handlers/Instance 361/12,686 and
+82/5,542; Handlers/AI 12,864/38,947 and 508/8,185; Handlers/AdminCommands
+942/6,630 and 29/2,742; Network/Aion/ClientPackets 2,344/5,073 and 853/2,032.
+The run retains source, point-inventory and settings hashes, attachment hashes,
+and zero report evidence issues. This supplies the complete supported-Breadth
+runtime proof needed to close P10-11. It is instrumented correctness/coverage
+evidence, not capacity or performance evidence.
+
+Immutable SHA-256 receipts:
+
+- `report.json`: `8723937f762f0205856b913fddb164773b4057e439958d54cad7b9fb1f3a5b39`
+- `packet-coverage-comparison.json`: `1f1f110b93c20026f4e3c30ffa211ce82cf3f3b03c183e377a5e655301417bb7`
+- `quest-coverage.json`: `a1ceab3f402034897972e15169d60059254a493852e0a58874d193ca30be11e2`
+
+The Full-history ledger records attempt 04 as green with every selected LIVE
+scenario passed and no quarantine. This is clean Full candidate 1/5. P10-10 and
+Phase 10 remain open for four more consecutive clean runs and the two-hour
+ten-bot soak.

@@ -2346,6 +2346,15 @@ real geodata on in production immediately, because geo is enabled by default; th
   issues (§7/138). The failed aggregate and its original evidence remain immutable and do not count toward the five
   consecutive green runs. L1's twelve sequential coverage subjects still peak at one connection (§7/132); D17's
   ten-concurrent-bot cap was not exceeded. Character transfer remains inapplicable under D20.
+  Complete Breadth attempt `p10-accept-04` is the first clean candidate in the required five-run sequence.
+  It passed 119 scenarios with zero failed, skipped or flaky outcomes in 14,021 seconds, including first-attempt
+  B2F and S5, all 16 instrumented SIM processes, every supported LIVE journey, quest coverage (58 SIM / 60 LIVE)
+  and the aggregate packet gate. Its immutable report SHA-256 is
+  `8723937f762f0205856b913fddb164773b4057e439958d54cad7b9fb1f3a5b39`; packet comparison SHA-256 is
+  `1f1f110b93c20026f4e3c30ffa211ce82cf3f3b03c183e377a5e655301417bb7`. Full history records the run as
+  green with every selected LIVE scenario passed and no quarantine. The peak live population remained S4's
+  eight bots. Transfer was neither selected nor counted because it is inapplicable under D20. Four further
+  consecutive clean Breadth runs and the two-hour ten-bot soak remain before Phase 10 acceptance.
   **Aggregate ledger safeguard checkpoint (`198500442`):** child watchers only record observations; their `FullRun`
   flag cannot mark an absent fingerprint fixed (§7/129). After aggregate reporting and flake-history
   persistence succeed, the Full parent invokes a read-only raw-evidence gate before ledger mutation.
@@ -2355,15 +2364,12 @@ real geodata on in production immediately, because geo is enabled by default; th
   Only tracked absent entries with an exact Git fix trailer can transition; concurrent observations and
   maintainer edits still win the existing atomic merge. Promotion errors make the aggregate non-green.
   This is contract-tested infrastructure, not a new successful Full run; no shared ledger was rewritten.
-  Remaining P10-10 work: final coverage/report acceptance across the complete Full workload.
-  P10-11 supplies packet and line/branch measurement/delta
-  integration; P10-12 supplies Full attempt joins, FLAKY reporting and bounded standalone runtime proof,
-  but the complete-Full reference/acceptance is still missing. Uncollected observations are unavailable,
-  not zero; genuinely measured zero-hit directories remain visible. The complete Full matrix still lacks
-  an accepted run: the first attempt stopped at the corrected SIM resource-export defect before LIVE
-  dispatch. D17 still caps the run at ten concurrent bots, and D20 removes unsupported transfer work from
-  the supported product scope.
-- [ ] **P10-11** [BOTH] M — Coverage. (a) Packet coverage from bot traces and the P3-07 tap: client opcodes sent out
+  Remaining P10-10 work: four more consecutive clean Full Breadth runs and the accepted two-hour ten-bot soak.
+  P10-11 now supplies verified complete-Breadth packet and line/branch measurement integration; P10-12 supplies
+  Full attempt joins, FLAKY reporting and bounded standalone runtime proof. Uncollected observations are
+  unavailable, not zero; genuinely measured zero-hit directories remain visible. D17 still caps the run at
+  ten concurrent bots, and D20 removes unsupported transfer work from the supported product scope.
+- [x] **P10-11** [BOTH] M — Coverage. (a) Packet coverage from bot traces and the P3-07 tap: client opcodes sent out
   of 186 and server opcodes decoded out of 238. (b) SIM line and branch coverage of `src/Aion.GameServer` with
   coverlet on `tests/Aion.Simulation.Tests`, per directory (`Services`, `Handlers/Instance`, `Handlers/AI`,
   `Handlers/AdminCommands`, `Network/Aion/ClientPackets`). (c) A system matrix appended to §1 (system → scenario ids
@@ -2375,8 +2381,8 @@ real geodata on in production immediately, because geo is enabled by default; th
   tap drops and catalog module identities remain with each report. Receiving bytes is not handler or
   gameplay-branch coverage. The Full breadth gate revalidates child acceptance, snapshots the reviewed
   baseline and fails on lost opcode identities or registry/decoder drift, even when total counts stay flat.
-  The initial floor is explicitly limited to accepted Fast SIM and LIVE L0 evidence; it is not a measured
-  complete-Full baseline. Full-breadth measurement remains outstanding under the recorded runtime constraints.
+  The initial floor was explicitly limited to accepted Fast SIM and LIVE L0 evidence; it was not a measured
+  complete-Full baseline. Complete-Breadth measurement is now supplied by `p10-accept-04` below.
   Fast's eleven scenarios exercise 31/186 client opcodes and 57/238 structured server decodes; LIVE L0
   exercises 13/186 and 37/238. Its tap retains all 447 received frames without drops; raw/tapped traffic
   is not credited as decoding. A second independent Fast run holds the same identity floor. Same-count
@@ -2395,8 +2401,9 @@ real geodata on in production immediately, because geo is enabled by default; th
   source, instrumentation, point inventory, RNG seed and workload match; different Full workloads are explicitly
   incomparable, not fabricated regressions or improvements. The §1 matrix covers every current manifest
   scenario and distinguishes implemented modes, known failures, population restrictions and future work.
-  The complete Full runtime measurement/baseline remains unaccepted; this checkpoint does not close
-  Phase 10's broader acceptance criteria or authorize any deferred execution.
+  This checkpoint alone did not close the complete Full runtime measurement or Phase 10's broader acceptance
+  criteria and did not authorize any deferred execution; `p10-accept-04` subsequently supplies the complete
+  supported-Breadth measurement below.
   Three fresh instrumented Fast runs pass after the attachment-discovery correction; the final run
   reports seed-matched retained-baseline deltas. A one-bot Full `reset-Q5` run proves automatic collection
   and correctly labels its different workload incomparable. The plain Fast path still passes without
@@ -2408,9 +2415,17 @@ real geodata on in production immediately, because geo is enabled by default; th
   through the five-minute deletion grace. Both session constructors are disconnected; no director is used.
   The new asynchronous lifecycle regression pins peak one and all twelve complete cases (§7/132).
   Fresh instrumented Full-process L1 `p10-11-l1-serial-sim-a` passes against Docker MySQL, retaining one
-  passed scenario and complete line/branch evidence. This corrects the false D17 blocker without reducing
-  the matrix or changing deletion timing. It is an isolated process, not complete Full measurement or a
-  fresh LIVE pass; complete breadth and D19's newly authorized production fixes remain pending.
+  passed scenario and complete line/branch evidence. This corrected the false D17 blocker without reducing
+  the matrix or changing deletion timing.
+  **Done:** clean supported-Breadth run `p10-accept-04` collected all 16 planned Coverlet processes and retained
+  95,599/267,950 GameServer lines plus 23,789/103,697 IL branches. The five requested directory totals are
+  present, including measured low/zero-hit paths rather than fabricated coverage. Its packet comparison passes
+  with no missing baseline identity: SIM observes 104/186 client sends and 111/238 structured server decodes;
+  LIVE observes 100/186 and 111/238. The E6 exchange identities are present. The system matrix, source/point/
+  settings hashes, byte-identical attachment deduplication and baseline provenance are all retained with zero
+  evidence issues. Report, packet and quest SHA-256 receipts are recorded in the Phase 10 validation document.
+  This closes P10-11 coverage integration, not P10-10's five-run/soak acceptance. Commit: `ae95ab181`
+  (before SHA-recording amend).
 - [x] **P10-12** [LIVE] S — Flake policy: a failed LIVE scenario is rerun once; a pass on rerun is reported FLAKY with
   both traces and recorded in `parity-artifacts/e2e/flaky.json`; 3 flakes in the last 10 Full runs quarantines the scenario with
   an owner and an expiry. SIM is never retried: a SIM flake is a determinism bug.
