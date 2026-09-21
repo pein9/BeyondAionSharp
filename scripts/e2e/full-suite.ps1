@@ -58,6 +58,7 @@ function Get-FullSuitePlan {
 			if ($scenario.id -ceq 'L0') { $steps.Add([pscustomobject]@{ kind = 'PacketParity'; id = 'l0-packet-parity' }) }
 		}
 		$steps.Add([pscustomobject]@{ kind = 'QuestCoverage'; id = 'quest-coverage' })
+		$steps.Add([pscustomobject]@{ kind = 'PacketCoverage'; id = 'packet-coverage' })
 	}
 	if ($Suite -ne 'Breadth') {
 		foreach ($count in $SoakBots) {

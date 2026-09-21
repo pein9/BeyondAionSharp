@@ -82,6 +82,10 @@ try {
 					-DurationSeconds $step.durationSeconds -Seed $Seed -PacketTap:$PacketTap -SkipImageBuild:$suiteState.imagesReady -BotExecution $BotExecution
 				$suiteState.imagesReady = $true
 			}
+			'PacketCoverage' {
+				& python scripts/e2e/report-packet-coverage.py --run-root $runRoot
+				if ($LASTEXITCODE -ne 0) { throw "Packet coverage validation/regression failure. See $runRoot/packet-coverage-comparison.json" }
+			}
 			default { throw "Unsupported suite step: $($step.kind)" }
 		}
 	}

@@ -74,7 +74,7 @@ alone does not prove autonomous progression. It does not authorize adding unimpl
 | B2 | **Resolved in P1-04.** Each periodic iteration now runs through the Java-style `ExecuteWrapper`, so failures are logged without killing the schedule; deadlines advance at a fixed rate and pooled work emits Java's slow-task warning. | One bad NPC no longer stops all NPC movement for the rest of a LIVE run. | `ThreadPoolManager.cs`; `ExecuteWrapper.cs` |
 | B3 | **Resolved through P4-10.** P4-01 put every identified mixed-clock pair on `SystemClock`; P4-02 added host-wide control and routed server-zone time, scheduled-task due metadata and quest timestamps; P4-03/P4-04 inventoried and migrated the remaining gameplay clocks and made direct `DateTime` wall-clock access an RS0030 error; P4-10 moved the last deferred retail-AI deadline comparison onto the shared clock. | Virtual combat, movement, item/effect expiry, services, persistence timestamps, shared time services and retail-AI timer ordering now advance together; the 20-read floor is reviewed infrastructure. | `SystemClock.cs`; `BannedSymbols.txt`; `check-clock-reads.ps1` |
 | B4 | **Partly resolved through P5-00.** The virtual scheduler now surfaces faults, rejects backward time, reports virtual delay correctly, orders work through a due-time/insertion-order priority queue, guards re-entrant/concurrent advancement and cross-thread scheduling during advancement, and has strict disposal enabled throughout the existing boss-AI harness. Deterministic mode routes movement sequentially, periodic-manager rearming, `NetFlusher`, shutdown countdowns and cron jobs through it; the housing cron singletons construct under bounded wall time with a zero-delay drain and immediate fault propagation between each one. The earlier P4-08 text incorrectly claimed backward-time rejection before it was implemented; P5-00 added and pinned it. `PacketProcessor` still bypasses the deterministic path. | Whole-server SIM still needs the remaining deterministic-thread routing in Phase 5. | `VirtualThreadPool.cs`; `ThreadPoolManager.cs`; `MoveTaskManager.cs`; `NetFlusher.cs`; `ShutdownHook.cs`; `CronService.cs`; `SimulationCronTaskInitialization.cs` |
-| B5 | **Resolved through P2-05.** `Aion.Bots` owns the real client crypt, framing, opcode transforms, all Appendix B CM writers and 45 bot-perception SM decoders. `AionXorCipher` is explicitly marked as an unrelated legacy helper. | Bots can now form actions and perceive the packet bodies needed by their world model. | `tests/Aion.Bots/Protocol/`; `BotGameClientPacketWriterTests.cs`; `BotServerPacketDecoderTests.cs` |
+| B5 | **Resolved through P2-05; expanded since.** `Aion.Bots` owns the real client crypt, framing, opcode transforms, all Appendix B CM writers and currently 113 structured SM decoders (P10-11 runtime inventory; 45 at P2-05). `AionXorCipher` is explicitly marked as an unrelated legacy helper. | Bots can now form actions and perceive the packet bodies needed by their world model. Decoder availability is not exercised coverage, and raw fallback packets are not structured decodes. | `tests/Aion.Bots/Protocol/`; `BotGameClientPacketWriterTests.cs`; `BotServerPacketDecoderTests.cs` |
 | B6 | **Resolved in P2-00.** A protected socketless connection path runs packets and disconnect cleanup inline without a selector, dispatcher, alive-check timer or eager packet-processor threads. | SIM can host an in-process game connection and exercise quit/drop cleanup. | `AConnection.cs`; `AionConnection.cs`; `SocketlessAionConnectionTests.cs` |
 | B7 | **Persistence is 56 static MySQL DAOs with no seam** (244 public static methods), plus six C#-only `I*Repository` DI interfaces of which only `IUsedIdRepository`, `IServerVariablesRepository` and `ICharacterSelectionRepository` are consumed. Character create, enter world, recipes and mail only work after a DB write succeeds; failures are swallowed. | SIM needs a database; a DB-less SIM silently loses state. | `DatabaseFactory.cs:151-157`; `RecipeList.cs:26,37`; `Program.cs:115-120` |
 | B8 | **Resolved in Phase 9.** Real meshes, placements, PNG terrain/materials, material zones and collision preload load in production. The starter zones load 9,513 entities; all maps load 420,626, with about 455 MiB additional retained managed memory. All 29,817 starter geo queries match Java. | P9-04 pins geo-on SIM/LIVE profiles; checked navigation, C9 and wall displacement controls pass. Full SIM/LIVE breadth was rerun with documented harness corrections and targeted evidence recovery, not a clean single full-run invocation. Natural travel and dynamic LIVE obstacle synchronization remain separate work. | `GeoEngine/GeoWorldLoader.cs`; `docs/e2e-geodata-measurements.md`; `docs/e2e-geodata-validation.md`; `parity-artifacts/golden/geo/` |
@@ -2265,6 +2265,7 @@ real geodata on in production immediately, because geo is enabled by default; th
   SIM deliberately removes hosted heartbeat services, so its sample gaps are not liveness checks.
   Full joins child resource evidence separately from LIVE heartbeats. Runtime receipts are in the
   validation document; the current reporting checkpoint does not establish capacity/soak acceptance.
+  SIM resource receipt: `2438d4e0a`.
   Remaining P10-10 work: complete coverage delta
   integration (including the P10-11 measurements), and final acceptance of all report paths. These
   missing observations are explicitly unavailable, not zero. No retry/flaky policy is enabled here;
@@ -2274,6 +2275,20 @@ real geodata on in production immediately, because geo is enabled by default; th
   coverlet on `tests/Aion.Simulation.Tests`, per directory (`Services`, `Handlers/Instance`, `Handlers/AI`,
   `Handlers/AdminCommands`, `Network/Aion/ClientPackets`). (c) A system matrix appended to §1 (system → scenario ids
   → SIM and LIVE status). Baselines under `parity-artifacts/e2e/`; `run-full.ps1` fails when packet coverage drops.
+  **Packet measurement/gate checkpoint:** SIM and LIVE freeze the loaded 186-client / 238-server registry and
+  113 structured decoder registrations in `packet-catalog.json`. Reports distinguish recorded client send
+  attempts, received server opcodes, structured decodes, raw fallback bodies and optional P3-07 serialized
+  frames; Login/Chat actions do not enter the game-protocol denominator. Input hashes, missing identities,
+  tap drops and catalog module identities remain with each report. Receiving bytes is not handler or
+  gameplay-branch coverage. The Full breadth gate revalidates child acceptance, snapshots the reviewed
+  baseline and fails on lost opcode identities or registry/decoder drift, even when total counts stay flat.
+  The initial floor is explicitly limited to accepted Fast SIM and LIVE L0 evidence; it is not a measured
+  complete-Full baseline. Full breadth, line/branch coverage and the system matrix remain outstanding.
+  Fast's eleven scenarios exercise 31/186 client opcodes and 57/238 structured server decodes; LIVE L0
+  exercises 13/186 and 37/238. Its tap retains all 447 received frames without drops; raw/tapped traffic
+  is not credited as decoding. A second independent Fast run holds the same identity floor. Same-count
+  replacement of an exercised opcode fails the comparison; Full dispatch and stale-success/provenance
+  rejection are covered by contracts. Runtime and negative-control receipts are in the validation document.
 - [ ] **P10-12** [LIVE] S — Flake policy: a failed LIVE scenario is rerun once; a pass on rerun is reported FLAKY with
   both traces and recorded in `parity-artifacts/e2e/flaky.json`; 3 flakes in the last 10 Full runs quarantines the scenario with
   an owner and an expiry. SIM is never retried: a SIM flake is a determinism bug.
@@ -2585,7 +2600,7 @@ fallback as evidence of the actual channel or alter this shared behavior.
 
 | # | Stays untestable or partial | Covered instead by |
 |---|---|---|
-| 1 | Real-client behaviour: client-side validation, HTML dialogs, rendering, whether the real client accepts each server packet (about 45 of 238 server packets get decoders) | Golden packet suite, P10-07 client captures, a manual client session per release |
+| 1 | Real-client behaviour: client-side validation, HTML dialogs, rendering, whether the real client accepts each server packet (113 of 238 server packets currently have structured bot decoders; this is not real-client acceptance) | Golden packet suite, P10-07 client captures, a manual client session per release |
 | 2 | Combat numbers and NPC AI against Java (differential runs exclude combat and NPC streams) | Golden formula fixtures and the retail-AI fidelity audits |
 | 3 | Sieges and housing, because the Java boot tail stays skipped (D7 declined for now) | P10-05 if D7 is revisited |
 | 4 | Mass PvP at realistic scale | Not covered; P10-02 soaks starter zones and a small Reshanta PvP set |

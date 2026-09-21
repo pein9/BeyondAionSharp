@@ -24,7 +24,7 @@ Assert-True (($actualSim -join ',') -ceq ($expectedSim -join ',')) 'Breadth lost
 Assert-True (@($breadth | Where-Object kind -EQ Soak).Count -eq 0) 'Breadth unexpectedly launches a soak.'
 $liveSteps = @($breadth | Where-Object kind -EQ Live)
 Assert-True ($liveSteps[0].scenario -ceq 'L0' -and $liveSteps[-1].scenario -ceq 'canaries') 'L0/canary ordering changed.'
-Assert-True ($breadth[-1].kind -eq 'QuestCoverage') 'Coverage must follow the last breadth child.'
+Assert-True ($breadth[-2].kind -eq 'QuestCoverage' -and $breadth[-1].kind -eq 'PacketCoverage') 'Both coverage gates must follow the last breadth child.'
 $l0Index = [Array]::FindIndex($breadth, [Predicate[object]]{ param($step) $step.id -eq 'live-l0' })
 Assert-True ($breadth[$l0Index + 1].kind -eq 'PacketParity') 'Packet parity must immediately follow LIVE L0.'
 Assert-True (($liveSteps | Where-Object scenario -EQ Q4I).stepTimeoutSeconds -eq 1800) 'Quest plan deadline regressed.'
@@ -149,6 +149,18 @@ foreach ($backend in @('Host', 'Docker')) {
 	Assert-True (($recorded | Where-Object scenario -EQ B2F).bots -eq 2) 'B2F must receive two subjects at runner admission.'
 }
 
+# The real dispatch must propagate a rejected identity floor; these children are mocks, not bots.
+& {
+	$script:packetGateExit = 0
+	function python {
+		Assert-True ($args[0] -eq 'scripts/e2e/report-packet-coverage.py' -and $args[1] -eq '--run-root' -and $args[2] -eq $runRoot) 'Packet gate invocation lost its run root.'
+		$global:LASTEXITCODE = $script:packetGateExit
+	}
+	& $dispatch ([pscustomobject]@{ kind = 'PacketCoverage'; id = 'packet-coverage' })
+	$script:packetGateExit = 1
+	Assert-Throws { & $dispatch ([pscustomobject]@{ kind = 'PacketCoverage'; id = 'packet-coverage' }) } '*Packet coverage validation/regression failure*'
+	$global:LASTEXITCODE = 0
+}
 $planned = & (Join-Path $PSScriptRoot 'run-full.ps1') -Suite All -PlanOnly -Run p10-plan-only-test -Seed 73 | ConvertFrom-Json
 Assert-True ($planned.seed -eq 73 -and $planned.steps.Count -eq $all.Count) 'Public plan-only contract failed.'
 if (-not $planned.soakRunnerAvailable) {

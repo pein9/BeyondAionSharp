@@ -10,6 +10,7 @@ import math
 from pathlib import Path
 import re
 import sys
+from packet_coverage import collect as collect_packets, compare as compare_packets
 
 ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 DIGEST = re.compile(r"^\S+ (NEW|KNOWN|REGRESSED) \S+ \S+ fp=([a-f0-9]{8})(?:\s|$)")
@@ -208,7 +209,7 @@ def live_observations(root, outcome, issues):
 def coverage(root):
     result = []
     # Use only comparisons retained with this run, never today's mutable baseline.
-    for name in ("quest-coverage.json", "coverage.json"):
+    for name in ("quest-coverage.json", "coverage.json", "packet-coverage-comparison.json"):
         path = child_path(root, name)
         if path.exists():
             result.append(dict(evidence=name, comparison=read_json(path)))
@@ -470,7 +471,7 @@ def build_report(root):
     issues = []
     expected = []
     report = dict(schemaVersion=1, run=root.name, mode=None, status="failed", runner=None,
-                  scenarios=[], steps=[], fingerprints=[], watcher=None, simulation=None, heartbeatPeaks=[], resourcePeaks=[], coverage=[], evidenceIssues=issues,
+                  scenarios=[], steps=[], fingerprints=[], watcher=None, simulation=None, heartbeatPeaks=[], resourcePeaks=[], packetCoverage=[], coverage=[], evidenceIssues=issues,
                   runnerSourceSha256=None, limitations=["Scenario completion alone does not prove watcher, cleanup, coverage or capacity acceptance.",
                                "Heartbeat peaks are observed samples, not a continuous resource maximum."])
     try:
@@ -490,6 +491,13 @@ def build_report(root):
             collect_suite(root, outcome, report)
         else:
             report["scenarios"] = scenario_outcomes(root, outcome, issues)
+            if child_path(root, "packet-catalog.json").exists():
+                try:
+                    report["packetCoverage"].append(collect_packets(root, outcome))
+                except (OSError, EOFError, ValueError, KeyError, TypeError, IndexError, AttributeError) as error:
+                    issues.append(f"Invalid packet coverage evidence: {error}")
+            else:
+                report["limitations"].append("No frozen packet catalog; opcode coverage is unavailable for this run.")
             if outcome["mode"] == "LIVE":
                 report["watcher"], report["fingerprints"], report["heartbeatPeaks"] = live_observations(root, outcome, issues)
             else:
@@ -540,7 +548,7 @@ def collect_suite(root, outcome, report):
     if [row["id"] for row in results] != ids[:len(results)] or len(results) > len(ids):
         raise ValueError("suite outcomes are not an execution prefix")
     for index, step in enumerate(steps):
-        if step["kind"] not in ("Sim", "Live", "Soak", "QuestCoverage", "PacketParity"):
+        if step["kind"] not in ("Sim", "Live", "Soak", "QuestCoverage", "PacketParity", "PacketCoverage"):
             raise ValueError("unknown suite step kind")
         result = results[index] if index < len(results) else None
         status = result["status"].lower() if result else "skipped"
@@ -551,12 +559,19 @@ def collect_suite(root, outcome, report):
                                     error=result.get("error") if result else "Not reached (fail-fast)."))
         if status != "passed":
             report["evidenceIssues"].append(f"Suite step {step['id']}: {status}.")
-        if status == "passed" and step["kind"] in ("QuestCoverage", "PacketParity"):
-            name = "quest-coverage.json" if step["kind"] == "QuestCoverage" else "l0-packet-parity.json"
+        if status == "passed" and step["kind"] in ("QuestCoverage", "PacketParity", "PacketCoverage"):
+            name = {"QuestCoverage": "quest-coverage.json", "PacketParity": "l0-packet-parity.json", "PacketCoverage": "packet-coverage-comparison.json"}[step["kind"]]
             gate = read_json(child_path(root, name))
-            passed = gate.get("baselineComparison", {}).get("passed") is True if step["kind"] == "QuestCoverage" else gate.get("status") == "passed"
+            passed = gate.get("baselineComparison", {}).get("passed") is True if step["kind"] != "PacketParity" else gate.get("status") == "passed"
             if not passed:
                 report["evidenceIssues"].append(f"Suite gate {step['id']} contradicts its retained evidence.")
+            if step["kind"] == "PacketCoverage":
+                baseline_path = child_path(root, "packet-coverage-baseline.json")
+                if gate.get("run") != outcome["run"] or gate.get("baselineSourceSha256") != hashlib.sha256(baseline_path.read_bytes()).hexdigest():
+                    raise ValueError("Packet coverage baseline provenance mismatch")
+                comparison = compare_packets(report["packetCoverage"], read_json(baseline_path))
+                if not comparison["passed"]:
+                    report["evidenceIssues"].append("Packet coverage no longer satisfies retained baseline: " + "; ".join(comparison["errors"]))
         if step["kind"] not in ("Sim", "Live", "Soak"):
             continue
         scenario_ids = step["scenarios"] if step["kind"] == "Sim" else [step.get("scenario", "SOAK")]
@@ -583,6 +598,7 @@ def collect_suite(root, outcome, report):
                 repro=f"{relative}/{row['repro']}" if row["repro"] else None) for row in child["fingerprints"])
             report["heartbeatPeaks"].extend(dict(row, child=relative) for row in child["heartbeatPeaks"])
             report["resourcePeaks"].extend(dict(row, child=relative, evidence=f"{relative}/{row['evidence']}") for row in child["resourcePeaks"])
+            report["packetCoverage"].extend(dict(row, child=relative) for row in child["packetCoverage"])
             report["coverage"].extend(dict(row, evidence=f"{relative}/{row['evidence']}") for row in child["coverage"])
             report["limitations"].extend(f"{relative}: {value}" for value in child["limitations"] if value not in report["limitations"][:2])
             if child["status"] != "passed":
@@ -603,7 +619,14 @@ def markdown(report):
     for row in report["scenarios"]:
         duration = "unavailable" if row["durationSeconds"] is None else f"{row['durationSeconds']:.3f}"
         rows.append(f"| {cell(row['id'])} | {row['mode']} | {row['status']} | {duration} | {cell(row.get('reason') or '')} |")
-    rows += ["", "## Problems and repros", ""]
+    rows += ["", "## Game packet observations", "", "| Mode / child | Client send attempts | Server received | Structured decoded | Raw received | Tap serialized / dropped |", "|---|---:|---:|---:|---:|---:|"]
+    for packet in report["packetCoverage"]:
+        def ratio(key):
+            metric = packet["metrics"][key]
+            return f"{metric['count']}/{metric['total']}"
+        tap = f"{ratio('serverTapped')} / {packet['tap']['droppedRecords']}" if packet["tap"]["available"] else "unavailable"
+        rows.append(f"| {cell(packet['mode'] + ' / ' + packet.get('child', packet['run']))} | {ratio('clientSent')} | {ratio('serverReceived')} | {ratio('serverDecoded')} | {ratio('serverRaw')} | {tap} |")
+    rows += ["", "Distinct game opcodes, not packet volume or behavior coverage. Raw/tapped packets do not count as structured decoded. Frozen catalogs and input hashes are retained in report.json.", "", "## Problems and repros", ""]
     for row in report["fingerprints"]:
         suffix = f" — [repro bundle]({row['repro']}/metadata.json)" if row["repro"] else ""
         rows.append(f"- {row['disposition']} `{row['fingerprint']}`{suffix}")

@@ -3588,6 +3588,72 @@ P10-10 remains open for complete coverage deltas (including P10-11) and final
 report acceptance; no deferred population, client-capture or Java-runtime scope
 is reopened.
 
+## P10-11 packet measurement and initial floor
+
+This checkpoint implements packet measurements and the breadth regression gate,
+not the remaining SIM line/branch collection or system matrix. It is test/reporting
+infrastructure, with no production protocol or gameplay changes and no Java runtime.
+P10-10 and P10-11 remain open; no clean complete-Full result is claimed.
+
+`PacketCoverageCatalog` freezes the loaded 186-client / 238-server registration
+tables and 113 structured bot decoders before scenario dispatch. SIM and LIVE
+reports derive distinct opcode sets from retained traces and optional P3-07 taps,
+with source hashes, module identities, missing packet names and raw/decoded/tapped
+counts kept separate. A client trace is a recorded send attempt, not proof of
+handler execution; a raw received packet or serialized server frame does not earn
+structured-decoder coverage. Login/Chat actions are outside this game denominator.
+
+The Full breadth plan now ends with the packet gate after quest coverage. It
+revalidates planned child acceptance, not just old reports, snapshots the baseline,
+and rejects lost opcode identities or changed protocol/decoder inventory. A new
+opcode cannot compensate for a missing one. Final Full reporting rechecks the
+floor against raw child evidence and verifies the retained baseline hash, so a
+stale successful gate cannot hide a later evidence loss. Missing catalog coverage
+in legacy runs is unavailable, not zero; the Full packet gate requires it. Optional
+tap loss is explicit lower-bound evidence, not a claimed complete capture.
+
+Runtime evidence under `run/p10-11-packets/`:
+
+| Run | Acceptance | Client send opcodes | Structured server decodes | Other server observations |
+|---|---|---:|---:|---|
+| `p10-11-packets-fast-a` | 6 xUnit cases / 11 scenarios passed | 31/186 | 57/238 | 86 received; 29 raw-only; no tap |
+| `p10-11-packets-l0-a` | LIVE L0 passed with two bots and enforce watcher | 13/186 | 37/238 | 57 received; 20 raw-only; tap 57 types / 447 frames, zero drops |
+| `p10-11-packets-fast-final` | Independent 6-case / 11-scenario Fast pass | 31/186 | 57/238 | 86 received; 29 raw-only; same identity floor |
+
+The LIVE watcher reports zero NEW, KNOWN or REGRESSED problems and one existing
+suppressed boot allowance. No new allowance or ledger classification was added.
+The first two accepted runs seed `parity-artifacts/e2e/packet-coverage-baseline.json`;
+this is explicitly a Fast/L0 minimum, not a Full-breadth measurement or 100% coverage.
+It records reference report/catalog hashes and exact packet identities. Both modes
+have semantic inventory hash
+`15b96e6820211535e09b6ca015329b0841508ec349b0a1fdcd97d7e7f9e3ab89`.
+
+`run/p10-11-packets-comparison-audit.json` revalidates the final Fast plus L0 against
+that floor, then replaces SIM `CM_MOVE` with registered but unobserved
+`CM_APPEARANCE` **in memory only**. The distinct count remains 31 but the comparison
+fails on missing `CM_MOVE`. Accepted source artifacts remain unchanged. This is a
+diagnostic gate control, not a fabricated Full run. Contracts separately prove
+public Full dispatch propagates the nonzero exit, failed children cannot supply
+acceptance, raw/tap bytes cannot inflate decoded coverage, and baseline snapshots
+cannot be overwritten or silently changed beneath a passing report.
+
+Source receipts: `run/p10-11-packets-source-a/` retains the initial overlay; the final
+overlay and added files are in `run/p10-11-packets-source-final/`, both against
+`2438d4e0a`. Runner Git SHAs identify that base, not an already committed patch.
+Console logs are `run/p10-11-packets-{fast-a,fast-final,l0-a}.log`. The final Fast
+report SHA256 is `3a3cd7f2db7da380cadf56eae2f7897b61d00bcfaab5287aa2ec5f6f2efc7124`;
+the L0 report SHA256 is `5d73c78a6a6e630160bae8c111813af5f0bd46de30fdfe0d708212ee45cd51e2`.
+
+Pre-commit validation: solution **4,614 passed / 27 skipped**, warning baseline
+**4,243 sites / 21 codes** unchanged, all CLAUDE ratchets/fidelity/Python/PowerShell
+contracts passed, including 14 packet-coverage and 35 existing report tests. The
+initial new catalog test produced one CS8620 nullable warning; its assertion was
+corrected, with no warning suppression or baseline increase. No upstream scripts
+were changed. Tests that mention large populations use mocked children, not bots.
+The real runs were sequential and used at most two bots. The owned LIVE Docker
+stack was removed normally; the maintainer's Docker MySQL remains healthy. No
+local MySQL, real-client session or deferred Java/population work was run.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

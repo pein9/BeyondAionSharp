@@ -749,6 +749,8 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 	private static void WriteL0PacketArtifact(IReadOnlyList<SimulationL0Actor> actors)
 	{
 		string? runDirectory = Environment.GetEnvironmentVariable("AION_E2E_RUN_DIR");
+		if (!string.IsNullOrWhiteSpace(runDirectory))
+			PacketCoverageCatalog.Write(runDirectory, Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "sim-fast", "SIM");
 		if (string.IsNullOrWhiteSpace(runDirectory))
 			return;
 		string path = Path.Combine(Path.GetFullPath(runDirectory), "l0-packets.json");

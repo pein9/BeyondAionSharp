@@ -36,6 +36,7 @@ public static partial class LiveBotRunner
 			throw new InvalidOperationException("No LIVE dispatcher is implemented for this scenario selection: " +
 				string.Join(", ", options.ScenarioDefinitions.Select(scenario => scenario.Id)) +
 				". Run one supported scenario at a time; never substitute the connection smoke test.");
+		PacketCoverageCatalog.Write(options.OutputDirectory, options.Run, "LIVE");
 		using var journal = new ScenarioRunJournal(options.OutputDirectory, options.Run, "LIVE");
 		return await journal.ExecuteAsync(options.ScenarioDefinitions[0].Id,
 			() => DispatchAsync(options, problems, cancellationToken));
