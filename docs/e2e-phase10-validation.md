@@ -3262,8 +3262,10 @@ The contract exercises the actual runner dispatch for all 47 LIVE scenarios in
 both Host and Docker modes, including B4's five subjects and B2F's two. It rejects
 missing, non-integer and out-of-range manifest values. All child invocations are
 recording stubs: no bots, servers or databases are launched. This does not relax
-D17 or claim a green Full run; L1 and the original capacity matrix exceed the
-current ten-client limit and remain unexecuted here.
+D17 or claim a green Full run; the original capacity matrix exceeds the
+current ten-client limit and remains unexecuted here. The earlier claim that L1
+also exceeds the cap was incorrect: §7/132 audits its twelve sequential cases,
+one connected subject at a time, not twelve concurrent clients.
 
 Validation: 4,570 solution tests pass with 27 skips; warning baseline remains
 4,243 sites; all CLAUDE.md ancillary gates pass. Evidence is retained in
@@ -3739,8 +3741,8 @@ shard hits, incompatible inputs, conflicting copies, missing evidence, failed-ru
 reporting and actual Full report evidence-path joining.
 
 The §1 system matrix now maps every current manifest scenario to its system and
-SIM/LIVE implementation status, including known red B2 journeys, L1's twelve-subject
-population restriction, future instance coverage and existing deferrals. A contract
+SIM/LIVE implementation status, including known red B2 journeys, L1's twelve-case
+sequential matrix (corrected in §7/132), future instance coverage and existing deferrals. A contract
 checks exact manifest membership; it does not substitute listed implementation for
 fresh runtime acceptance. The complete Full workload/baseline and Phase 10's wider
 acceptance remain open. No deferred scope was reopened.
@@ -3988,6 +3990,49 @@ P10-10 remains open for complete Full report/coverage acceptance. P10-09's trans
 and Chat-gag failures, P10-11's complete-Full measurement, the ten-bot cap and all
 deferrals remain unchanged. P10-12's standalone/runtime completion receipt is
 `2fa7e868e`. No old run evidence or shared ledger entries were rewritten here.
+
+## P10-11 L1 concurrency audit and instrumented replay
+
+The prior matrix statement that L1 exceeded D17 was incorrect (§7/132). The
+manifest's twelve subjects are the twelve race/starting-class combinations, not
+twelve concurrently connected clients. `CharacterLifecycleScenario.RunAsync`
+visits one actor at a time, awaits each close, then waits with all actors
+disconnected through the normal five-minute deletion grace. It revisits them
+sequentially for expired deletion and failed restore checks. SIM and LIVE session
+constructors only allocate local state; connection creation happens in Login.
+The drivers await transport cleanup, and this scenario has no director.
+
+`AllTwelveCasesUseOneConnectedSubjectAndWaitForGraceDisconnected` now exercises
+the unchanged shared orchestrator with asynchronous open/close doubles. It asserts
+peak one, no open sessions during the grace waits or at completion, and six opens/
+closes, one creation, three deletion requests and two restores for each of all
+twelve cases. This is orchestration evidence, not simulated server acceptance.
+
+Fresh runtime `run/p10-11-l1-serial-sim-a` runs the original Full L1 selection in
+isolation (`shard-52`, `ShardCount 100`, seed 1; these select one process, not 100
+concurrent processes). Docker MySQL is the only database. All six selected test
+cases pass, with the report correctly crediting **one scenario: L1**. No evidence
+issues remain, and the owned database is confirmed absent after cleanup.
+Report SHA256: `a336c7cd6fab8c54188af3974f9247c59a6f94a23be355166fc4596f45ed5b14`.
+
+Automatic Full instrumentation retains 47,311 / 267,941 line points and
+7,725 / 103,691 branch paths (17.66% / 7.45%), including bootstrap and auxiliary
+test work. Instance handlers have zero hits, visibly reported. This is neither
+a complete-Full baseline nor a performance result; the different Fast workload
+is explicitly incomparable. Production and bot workflow code are unchanged from
+`198500442`; only the new test and documentation are pending in this checkpoint.
+No LIVE replay is claimed here.
+
+The maintainer separately authorized scoped C# production corrections for both
+transfer and Chat-gag (§6/D19). Their earlier preserve-only dispositions no longer
+block implementation; read/cite Java, document intentional differences and retain
+the real assertions. These fixes are next, not established by the L1 pass. Other
+deferrals and the aggregate ten-concurrent-bot cap are unchanged.
+
+Verification logs: `run/p10-11-l1-concurrency-tests.log`,
+`run/p10-11-l1-serial-sim-a.log`, and `run/p10-11-l1-{warnings,dotnet,checks}.log`.
+All CLAUDE pre-commit checks passed: 4,621 solution tests passed / 27 skipped,
+with the warning baseline unchanged at 4,243 sites / 21 codes.
 
 ## Deferred scope
 
