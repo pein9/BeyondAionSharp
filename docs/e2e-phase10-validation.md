@@ -4251,3 +4251,36 @@ including a direct bind attempt with the exact live window handle. The client wa
 closed after that failed capability probe. No fallback keyboard/mouse automation,
 account creation, login, capture claim, or P10-07 acceptance occurred. Resume
 P10-07 when native Windows app control is available to this task.
+
+## P10-10 Full SIM resource monotonicity checkpoint
+
+The first aggregate Breadth attempt, `p10-accept-01`, ran with two SIM shards
+and the existing ten-concurrent-bot cap. Its first SIM child completed all 29
+selected scenarios, but aggregate execution stopped before LIVE dispatch because
+the child report rejected its resource journal. In
+`run/p10-accept-01/sim-shard-00/sim-resources.jsonl`, sequence 213 recorded
+last-natural-GC index 595 and sequence 214 recorded 594. The evidence was
+otherwise complete: 463 capture attempts, no capture errors, a run-completed
+sample/footer and complete problem-policy export. The failed run and report are
+preserved; it is not counted toward the five-green-run acceptance sequence and it
+did not start a LIVE Docker stack.
+
+This exposed harness finding §7/136. `GC.GetGCMemoryInfo()` can briefly return an
+older last-collection snapshot, while P10-10 intentionally requires a monotonic
+record of the latest natural collection the exporter has already observed. The
+writer now retains the greatest observed collection index and that collection's
+heap size when a later capture reports an older or identical index. It still
+records fresh working-set/process-peak values, does not force a collection or add
+a timer, and does not weaken `report-run.py`: a decreasing journal remains invalid.
+A focused regression reproduced 5→4→6 before the correction and now exports
+5→5→6 with matching heaps 73→73→81.
+
+Fresh Full-process replay `p10-gc-latch-a` selected shard 0 of 2 and passed six
+tests / 29 manifest scenarios in 3.95 minutes against Docker MySQL. Its 455 valid
+resource samples move from collection index 433 to 634 with zero regressions.
+`report.json` SHA-256 is
+`0b6be0b249d4ed6f3a202fdbdc935ad628e988b01d8b2a64a1d18c095dbd0e9b`;
+`sim-resources.jsonl` SHA-256 is
+`f6bb2f7f59be0984dedf6916cfeb7b5b35d9b86ea282777915b2cb27af6a0333`.
+This validates the corrected SIM child boundary only. Aggregate Full acceptance,
+five consecutive green runs and the two-hour ten-bot soak remain outstanding.

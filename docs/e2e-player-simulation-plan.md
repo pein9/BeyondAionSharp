@@ -2320,6 +2320,13 @@ real geodata on in production immediately, because geo is enabled by default; th
   Full joins child resource evidence separately from LIVE heartbeats. Runtime receipts are in the
   validation document; the current reporting checkpoint does not establish capacity/soak acceptance.
   SIM resource receipt: `2438d4e0a`.
+  The first complete-Breadth attempt, `p10-accept-01`, stopped after its first passing SIM shard because
+  `GC.GetGCMemoryInfo()` returned collection index 594 after 595 and the report correctly rejected the
+  decreasing resource series (§7/136). The exporter now latches the newest observed natural collection
+  and its matching heap size while retaining current working-set observations; report validation remains
+  strict. A fresh two-shard Full-process replay, `p10-gc-latch-a`, passes 29 scenarios with 455 valid samples
+  and no index regression. This is the harness prerequisite for resuming aggregate acceptance, not one of
+  the five required green Full runs.
   **Aggregate ledger safeguard checkpoint (`198500442`):** child watchers only record observations; their `FullRun`
   flag cannot mark an absent fingerprint fixed (§7/129). After aggregate reporting and flake-history
   persistence succeed, the Full parent invokes a read-only raw-evidence gate before ledger mutation.
@@ -2333,8 +2340,10 @@ real geodata on in production immediately, because geo is enabled by default; th
   P10-11 supplies packet and line/branch measurement/delta
   integration; P10-12 supplies Full attempt joins, FLAKY reporting and bounded standalone runtime proof,
   but the complete-Full reference/acceptance is still missing. Uncollected observations are unavailable,
-  not zero; genuinely measured zero-hit directories remain visible. The current Full matrix remains
-  unexecuted under D17 and known P10-09 failures.
+  not zero; genuinely measured zero-hit directories remain visible. The complete Full matrix still lacks
+  an accepted run: the first attempt stopped at the corrected SIM resource-export defect before LIVE
+  dispatch. D17 still caps the run at ten concurrent bots, and D20 removes unsupported transfer work from
+  the supported product scope.
 - [ ] **P10-11** [BOTH] M — Coverage. (a) Packet coverage from bot traces and the P3-07 tap: client opcodes sent out
   of 186 and server opcodes decoded out of 238. (b) SIM line and branch coverage of `src/Aion.GameServer` with
   coverlet on `tests/Aion.Simulation.Tests`, per directory (`Services`, `Handlers/Instance`, `Handlers/AI`,
@@ -2732,6 +2741,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 
 | 134 | Transfer clone does not load target account passports before saving (shared upstream defect) | After the D19 relay/wire corrections, `p10-09-transfer-relay-a` reaches target `CMT_CHARACTER_INFORMATION.ReadInfo` and persists a partial clone, then `PlayerService.StorePlayer` calls `AccountPassportsDAO.StorePassport` with a null passport list (fingerprint `92a0c151`). Java/C# `AccountService.loadAccount/LoadAccount` do not load passports; normal `PlayerService.getPlayer/GetPlayer` does, but the clone uses `newPlayer/NewPlayer` instead | Preserved diagnostic, no follow-up under D20. Character transfer is unsupported in this single-server emulator. Do not repair, allowlist, or count the partial clone as acceptance. Java reference `ce54b7931`; runtime receipt in the validation document |
 | 135 | Starter-class transfer duplicates character-creation inventory (shared upstream defect) | The same diagnostic has 13 source inventory rows and 26 target rows: every starter item is duplicated. Both Java/C# CMT call `PlayerService.newPlayer/NewPlayer`, which supplies starter items for classes with creation data, then append the serialized source inventory. This is a data assertion failure even without a dedicated error log | Preserved diagnostic, no follow-up under D20. Character transfer is unsupported in this single-server emulator. Do not repair, delete duplicate rows as cleanup, or treat the task as a supported journey. Java reference `ce54b7931` |
+| 136 | Complete Full SIM resource evidence can regress its last-GC index even when collection succeeds (harness-only) | `p10-accept-01` completed all 29 scenarios in shard 0, but `sim-resources.jsonl` sequence 214 reported `GC.GetGCMemoryInfo()` index 594 immediately after 595. The report correctly rejected the decreasing series and stopped Full before LIVE dispatch. The runtime API may return an older last-collection snapshot; this is not a Java/gameplay divergence | At the writer boundary, retain the greatest natural collection index observed and its matching heap size when a later capture is older or repeats the same index. Keep fresh working-set and process-peak values, do not force GC, and keep the reporter's corruption check strict. A red/green capture regression covers 5→4→6. Fresh Full shard `p10-gc-latch-a` passes 29 scenarios with 455 samples, indices 433→634 and zero regressions; failed `p10-accept-01` remains unchanged |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the

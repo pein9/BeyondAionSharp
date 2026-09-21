@@ -20,6 +20,8 @@ public sealed class SimulationResourceWriter : IDisposable
 	private int attempts;
 	private int samples;
 	private int errors;
+	private long lastGcIndex;
+	private long? lastGcHeapBytes;
 	private bool disposed;
 
 	public SimulationResourceWriter(string directory, string run, int seed, string gitSha, string profile,
@@ -61,6 +63,7 @@ public sealed class SimulationResourceWriter : IDisposable
 				snapshot.LastGcIndex < 0 || snapshot.LastGcHeapBytes < 0 ||
 				(snapshot.LastGcIndex == 0) != (snapshot.LastGcHeapBytes == null))
 				throw new InvalidDataException("Invalid SIM process resource counters.");
+			snapshot = NormalizeLastCollection(snapshot);
 			armedTimers = clock.ArmedTimerCount;
 			metrics = snapshot;
 			samples++;
@@ -73,6 +76,16 @@ public sealed class SimulationResourceWriter : IDisposable
 		}
 		Write(new { @event = error == null ? "sample" : "sample-error", run, sequence, timestampUtc, elapsedSeconds,
 			virtualMillis, trigger, scenario, policy, bot, account, step, armedTimers, metrics, error });
+	}
+
+	private SimulationProcessResources NormalizeLastCollection(SimulationProcessResources snapshot)
+	{
+		if (snapshot.LastGcIndex <= lastGcIndex)
+			return snapshot with { LastGcIndex = lastGcIndex, LastGcHeapBytes = lastGcHeapBytes };
+
+		lastGcIndex = snapshot.LastGcIndex;
+		lastGcHeapBytes = snapshot.LastGcHeapBytes;
+		return snapshot;
 	}
 
 	public static SimulationProcessResources CaptureProcess()

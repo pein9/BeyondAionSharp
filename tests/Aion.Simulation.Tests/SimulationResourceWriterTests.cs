@@ -65,6 +65,25 @@ public sealed class SimulationResourceWriterTests : IDisposable
 	}
 
 	[Fact]
+	public async Task OlderRuntimeCollectionSnapshotCannotRegressTheExportedLastCollection()
+	{
+		await using var clock = new VirtualThreadPool(strict: true);
+		int calls = 0;
+		SimulationProcessResources Capture() => ++calls switch
+		{
+			1 => new(100, 200, 73, 5),
+			2 => new(110, 210, 69, 4),
+			_ => new(120, 220, 81, 6),
+		};
+		using (var writer = Writer(clock, Capture))
+			writer.Sample("bot-action", "S0", bot: "b01", account: "account", step: "s01");
+
+		var samples = Rows().Where(row => row.GetProperty("event").GetString() == "sample").ToArray();
+		Assert.Equal([5L, 5L, 6L], samples.Select(row => row.GetProperty("metrics").GetProperty("lastGcIndex").GetInt64()));
+		Assert.Equal([73L, 73L, 81L], samples.Select(row => row.GetProperty("metrics").GetProperty("lastGcHeapBytes").GetInt64()));
+	}
+
+	[Fact]
 	public async Task FailedCaptureIsRetainedWithNoFabricatedCountersAndCannotBeErasedByLaterSamples()
 	{
 		await using var clock = new VirtualThreadPool(strict: true);
