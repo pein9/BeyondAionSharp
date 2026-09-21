@@ -90,6 +90,18 @@ internal sealed class ServerCrashExpectation
 	internal bool ExpectsHeartbeatGap(string server, DateTimeOffset now) =>
 		server == Server && !Complete && DiedUtc is { } died && now >= died && now <= plan.RecoveryDeadlineUtc;
 
+	internal bool ExpectsChatBridgeDisconnect(string producer, string level, string template, DateTimeOffset timestamp)
+	{
+		if (Server != "cs" || producer != "gs" || level != "WARN" ||
+			template != "Lost connection with chat server; reconnecting in {Delay}")
+			return false;
+		// The bridge observes EOF before Docker publishes the corresponding die event,
+		// and the watcher reads file logs before Docker events. The armed plan is the
+		// narrow start boundary; a missing exact death still fails the whole run.
+		var end = RecoveredUtc ?? plan.RecoveryDeadlineUtc;
+		return timestamp >= plan.ArmedUtc && timestamp <= end;
+	}
+
 	internal string? Failure(DateTimeOffset now, bool final) =>
 		DiedUtc == null && (final || now > plan.KillDeadlineUtc) ? $"The planned {Name} SIGKILL was not observed before its deadline." :
 		!Complete && (final || now > plan.RecoveryDeadlineUtc) ? $"The killed {Name} did not restart with a fresh heartbeat before its deadline." : null;

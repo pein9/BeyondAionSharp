@@ -164,6 +164,8 @@ public sealed class ChatServer : IAsyncDisposable
 				_logger.LogInformation("Connected to chat server at {Endpoint}", _options.Network.ChatEndPoint);
 				await ReadLoopAsync(session);
 				retryDelay = session.WasAuthed ? _retryDelays.AuthedReconnect : _retryDelays.PreAuthReconnect;
+				// Java ChatServerConnection.onDisconnect emits this immediately on remote EOF before scheduling reconnect.
+				_logger.LogWarning("Lost connection with chat server; reconnecting in {Delay}", retryDelay);
 			}
 			catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
 			{

@@ -85,6 +85,50 @@ public sealed partial class ProblemWatcherTests
 		}
 	}
 
+	[Fact]
+	public async Task PlannedChatCrashSuppressesOnlyItsExactBridgeDisconnectWarning()
+	{
+		using var run = new WatcherRun();
+		var options = run.Options() with { ExpectChatServerCrash = true };
+		var at = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+		string container = new('a', 64);
+		File.WriteAllText(Path.Combine(options.RunDirectory, "chat-server-crash-plan.json"), JsonSerializer.Serialize(new
+		{
+			schemaVersion = 1, run = "test", project = "aion-bots-test", containerId = container,
+			armedUtc = at, killDeadlineUtc = at.AddSeconds(30), recoveryDeadlineUtc = at.AddSeconds(180),
+		}));
+		var state = new ProblemWatcher.WatcherState(options);
+		state.ReadFiles();
+		var docker = Channel.CreateUnbounded<DockerLine>();
+		File.WriteAllText(Path.Combine(options.RunDirectory, "logs", "gs", "gs.problems.jsonl"), JsonSerializer.Serialize(new
+		{
+			lvl = "WARN", ts = at.AddSeconds(0.5), srv = "gs", run = "test", fp = "2d899d45",
+			tpl = "Lost connection with chat server; reconnecting in {Delay}",
+			msg = "Lost connection with chat server; reconnecting in 00:00:05",
+		}) + "\n");
+		state.ReadFiles();
+		docker.Writer.TryWrite(new DockerLine("event", "docker", JsonSerializer.Serialize(new
+		{
+			action = "die", id = container, service = "chatserver", time = at.AddSeconds(1),
+			attributes = new { exitCode = "137" },
+		}), false) { ProjectName = options.ProjectName });
+		state.ReadDocker(docker.Reader);
+
+		docker.Writer.TryWrite(new DockerLine("event", "docker", JsonSerializer.Serialize(new
+		{
+			action = "start", id = container, service = "chatserver", time = at.AddSeconds(3),
+			attributes = new { exitCode = (string?)null },
+		}), false) { ProjectName = options.ProjectName });
+		state.ReadDocker(docker.Reader);
+		WriteInstanceHeartbeat(run, "cs", at.AddSeconds(4));
+		state.ReadFiles();
+		await state.WriteSummaryAsync(CancellationToken.None);
+
+		Assert.Equal(0, state.FailingProblemCount);
+		Assert.Contains("EXPECTED_FAULT WARN gs fp=2d899d45", run.ReadDigest(), StringComparison.Ordinal);
+		Assert.DoesNotContain("NEW WARN gs fp=2d899d45", run.ReadDigest(), StringComparison.Ordinal);
+	}
+
 	[Theory]
 	[InlineData("gs", "game")]
 	[InlineData("cs", "chat")]

@@ -4,7 +4,204 @@
   "threshold": 3,
   "owner": "e2e-simulation",
   "expiryDays": 14,
-  "fullRuns": [],
+  "fullRuns": [
+    {
+      "run": "p10-accept-02",
+      "suite": "Breadth",
+      "finishedUtc": "2026-09-21T06:00:39.2928951+00:00",
+      "reportSha256": "2e8764894dfb8de4566a13e78b40b7c782323d6763f1637c2fe636bd03fae0e2",
+      "scenarios": [
+        {
+          "scenario": "L0",
+          "status": "passed"
+        },
+        {
+          "scenario": "B4",
+          "status": "passed"
+        },
+        {
+          "scenario": "B3",
+          "status": "passed"
+        },
+        {
+          "scenario": "B2F",
+          "status": "failed"
+        },
+        {
+          "scenario": "B2",
+          "status": "skipped"
+        },
+        {
+          "scenario": "O1",
+          "status": "skipped"
+        },
+        {
+          "scenario": "M1",
+          "status": "skipped"
+        },
+        {
+          "scenario": "M6",
+          "status": "skipped"
+        },
+        {
+          "scenario": "C1",
+          "status": "skipped"
+        },
+        {
+          "scenario": "Q1",
+          "status": "skipped"
+        },
+        {
+          "scenario": "Q2",
+          "status": "skipped"
+        },
+        {
+          "scenario": "Q3",
+          "status": "skipped"
+        },
+        {
+          "scenario": "Q4P",
+          "status": "skipped"
+        },
+        {
+          "scenario": "Q4I",
+          "status": "skipped"
+        },
+        {
+          "scenario": "E1",
+          "status": "skipped"
+        },
+        {
+          "scenario": "E2",
+          "status": "skipped"
+        },
+        {
+          "scenario": "E3",
+          "status": "skipped"
+        },
+        {
+          "scenario": "E4",
+          "status": "skipped"
+        },
+        {
+          "scenario": "E5",
+          "status": "skipped"
+        },
+        {
+          "scenario": "E6",
+          "status": "skipped"
+        },
+        {
+          "scenario": "E7",
+          "status": "skipped"
+        },
+        {
+          "scenario": "CAPITAL",
+          "status": "skipped"
+        },
+        {
+          "scenario": "S1",
+          "status": "skipped"
+        },
+        {
+          "scenario": "S2",
+          "status": "skipped"
+        },
+        {
+          "scenario": "S3",
+          "status": "skipped"
+        },
+        {
+          "scenario": "S4",
+          "status": "skipped"
+        },
+        {
+          "scenario": "S5",
+          "status": "skipped"
+        },
+        {
+          "scenario": "S6",
+          "status": "skipped"
+        },
+        {
+          "scenario": "S7",
+          "status": "skipped"
+        },
+        {
+          "scenario": "G1",
+          "status": "skipped"
+        },
+        {
+          "scenario": "G2",
+          "status": "skipped"
+        },
+        {
+          "scenario": "G3",
+          "status": "skipped"
+        },
+        {
+          "scenario": "G4",
+          "status": "skipped"
+        },
+        {
+          "scenario": "G5",
+          "status": "skipped"
+        },
+        {
+          "scenario": "G6",
+          "status": "skipped"
+        },
+        {
+          "scenario": "E8",
+          "status": "skipped"
+        },
+        {
+          "scenario": "E9",
+          "status": "skipped"
+        },
+        {
+          "scenario": "E10",
+          "status": "skipped"
+        },
+        {
+          "scenario": "E11",
+          "status": "skipped"
+        },
+        {
+          "scenario": "L1",
+          "status": "skipped"
+        },
+        {
+          "scenario": "L2",
+          "status": "skipped"
+        },
+        {
+          "scenario": "L3",
+          "status": "skipped"
+        },
+        {
+          "scenario": "L4",
+          "status": "skipped"
+        },
+        {
+          "scenario": "L5",
+          "status": "skipped"
+        },
+        {
+          "scenario": "L7",
+          "status": "skipped"
+        },
+        {
+          "scenario": "connect",
+          "status": "skipped"
+        },
+        {
+          "scenario": "canaries",
+          "status": "skipped"
+        }
+      ]
+    }
+  ],
   "quarantines": [],
   "standaloneRuns": [
     {
@@ -27,6 +224,42 @@
       "scenarios": [
         {
           "scenario": "L0",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "run": "p10-b2f-disconnect-a",
+      "suite": "Standalone",
+      "finishedUtc": "2026-09-21T06:10:03.2327669+00:00",
+      "reportSha256": "02dc9ba917d320a562dd85211e0159bd9d6ddc11d0220749e4b0c9f7e4c32466",
+      "scenarios": [
+        {
+          "scenario": "B2F",
+          "status": "failed"
+        }
+      ]
+    },
+    {
+      "run": "p10-b2f-disconnect-b",
+      "suite": "Standalone",
+      "finishedUtc": "2026-09-21T06:17:34.3162337+00:00",
+      "reportSha256": "34ac0640cf89f4327548a9921cbadaedf37901f25a256c9be59fa46a4b9bb8e8",
+      "scenarios": [
+        {
+          "scenario": "B2F",
+          "status": "failed"
+        }
+      ]
+    },
+    {
+      "run": "p10-b2f-disconnect-c",
+      "suite": "Standalone",
+      "finishedUtc": "2026-09-21T06:20:52.6440589+00:00",
+      "reportSha256": "fb49d89c2afe7af512eadbd1979d335bb1535bf4961e10fb2135e0e5264408ea",
+      "scenarios": [
+        {
+          "scenario": "B2F",
           "status": "passed"
         }
       ]

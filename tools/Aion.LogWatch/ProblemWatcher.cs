@@ -431,6 +431,12 @@ public static class ProblemWatcher
 		{
 			totalProblems++;
 			var problem = JoinStep(original);
+			if (expectedCrash?.ExpectsChatBridgeDisconnect(problem.Server, problem.Level, problem.Template, problem.Timestamp) == true)
+			{
+				suppressedProblems++;
+				WriteProblemLine(problem, "EXPECTED_FAULT", tracking: null, fixedIn: null);
+				return;
+			}
 			var allowlistEntry = allowlist.Entries.FirstOrDefault(entry =>
 				entry.Fingerprint == problem.Fingerprint &&
 				entry.Modes.Contains("LIVE", StringComparer.OrdinalIgnoreCase) &&

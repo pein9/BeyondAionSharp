@@ -72,8 +72,9 @@ function Invoke-ChatFault {
 	$dead=@((& docker inspect $container.Id) | ConvertFrom-Json)
 	if ($LASTEXITCODE -ne 0 -or $dead.Count -ne 1 -or $dead[0].Id -cne $container.Id -or $dead[0].Image -cne $container.Image -or
 		$dead[0].State.Running -or $dead[0].State.ExitCode -ne 137 -or $dead[0].State.OOMKilled) { throw 'Chat did not exit by planned SIGKILL.' }
-	# Confirm the real GS reconnect supervisor has observed this outage before the negative auth request.
-	while (-not (Read-ChatFaultLog $ComposeArguments 'gameserver' $killedAfter).Contains('Could not connect to chat server at')) {
+	# Confirm the real GS bridge has observed remote EOF before the negative auth request. A later reconnect
+	# attempt may remain pending in Docker networking, so it is not the outage observation boundary.
+	while (-not (Read-ChatFaultLog $ComposeArguments 'gameserver' $killedAfter).Contains('Lost connection with chat server')) {
 		& $CheckOwner
 		if ([DateTimeOffset]::UtcNow -gt $armed.AddSeconds(60)) { throw 'GS did not observe the Chat outage.' }
 		Start-Sleep -Milliseconds 300

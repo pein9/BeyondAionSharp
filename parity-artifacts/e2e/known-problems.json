@@ -292,6 +292,15 @@
     "tracking": "P10-09/BA-002; simulation-plan section 7 #119. Game sends a gag duration but Chat compares it as an epoch expiry, identically to Java ce54b7931. LIVE B2 chat-b captures forbidden text at both subject and control before a positive barrier. Preserve server behavior under the source-spec decision; unresolved, no allowance or fixedIn. Keep status new so enforced watching remains red. Draft chat-a used the generic ebe67ab3 assertion fingerprint; its observation count is retained, not treated as a fix."
   },
   {
+    "fp": "d01a9d21",
+    "firstSeenSha": "a4b7554f91082f07a967ec9f757dda1dbc625ecb",
+    "lastSeenSha": "a4b7554f91082f07a967ec9f757dda1dbc625ecb",
+    "lastSeenRun": "p10-accept-02-b2f-retry1",
+    "count": 2,
+    "status": "new",
+    "tracking": "P10-10; simulation-plan section 7 #137. B2F waited for a later refused reconnect rather than Java's immediate Chat bridge-disconnect signal, so Docker could leave the reconnect pending past the restart deadline. Corrected in the pending commit; keep status new until aggregate Full promotion validates the Fixes-Fingerprint trailer."
+  },
+  {
     "fp": "d580e505",
     "firstSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",
     "lastSeenSha": "c789965bb9a9f2fc392109158375d428d84fd3fd",

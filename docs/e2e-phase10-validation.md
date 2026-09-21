@@ -4284,3 +4284,58 @@ resource samples move from collection index 433 to 634 with zero regressions.
 `f6bb2f7f59be0984dedf6916cfeb7b5b35d9b86ea282777915b2cb27af6a0333`.
 This validates the corrected SIM child boundary only. Aggregate Full acceptance,
 five consecutive green runs and the two-hour ten-bot soak remain outstanding.
+
+## P10-10 B2F disconnect and restart checkpoint
+
+Complete Breadth attempt `p10-accept-02` passed both 29-scenario SIM shards,
+Q4P/Q4I/Q5/L6/L8/L8C, all 5,033 skill-sweep cases, the trade/teleport/bind/
+craft/gather and GEO gates, LIVE L0 with an exact SIM/LIVE packet multiset,
+B4 and B3. B2F then failed both attempts. Its controller killed Chat but waited
+for GameServer text `Could not connect to chat server at`; the watcher reached
+the bounded recovery deadline first and emitted fingerprint `d01a9d21`. The
+aggregate report therefore correctly remained red (75 passed, 1 failed, 43
+skipped) and is retained in Full flake history.
+
+The pinned Java source at `ce54b7931` was read before correction:
+`network/chatserver/ChatServerConnection.java` emits `Lost connection with chat
+server` from `onDisconnect`, and `ChatServer.java` schedules reconnect. C# had
+silently accepted a normal remote-EOF return from its read loop. GameServer now
+emits `Lost connection with chat server; reconnecting in {Delay}` immediately at
+that supervisor boundary, and the B2F controller restarts Chat from that signal
+instead of depending on a later refused TCP attempt.
+
+Draft standalone runs `p10-b2f-disconnect-a` and `p10-b2f-disconnect-b` preserve
+two failed attempts each. Their scenario bodies and restart controller completed,
+but the Java-parity warning initially appeared as NEW fingerprint `2d899d45`.
+The watcher now recognizes that warning only when all of these match: a valid
+armed Chat crash plan, GS producer, `WARN` severity, exact structured template,
+and timestamp within that plan's bounded window. The expected container death,
+start and fresh Chat heartbeat remain mandatory, so suppressing the warning
+cannot make an incomplete fault injection green. The shared problem ledger does
+not retain `2d899d45`, and no allowlist was added. There are 183 focused
+fault-monitoring tests covering the accepted path and wrong producer, severity,
+template, target and time boundaries.
+
+Corrected Docker-backed replay `p10-b2f-disconnect-c` used two bots and passed on
+its first attempt in 18.798 seconds. The controller ended in `restarted` with no
+failure. The watcher retained the exact warning as `EXPECTED_FAULT`, observed
+the exact Chat container `die`/`start` pair, accepted a fresh Chat heartbeat,
+and reported total 2, suppressed 2, NEW 0, KNOWN 0, REGRESSED 0 and failed false.
+The report has no evidence issues. SHA-256 receipts:
+
+- aggregate `report.json`: `fb49d89c2afe7af512eadbd1979d335bb1535bf4961e10fb2135e0e5264408ea`
+- child `logwatch-summary.json`: `387fba66d3ad5d7bb9db33157e8270f1f65acd1811a6aab7c08cdc0cc1b84a71`
+- `chat-fault-controller.json`: `14cd99a31f3b8cdbe04cd98705c05d5c8cfee43712fdc3fabfbcd309e000f37e`
+- armed crash plan: `56ba19ca9a09ca57d7051d0b9368646833a1bf64659660535d49f72636c1dd57`
+- b01/b02 traces: `421f3176fa838e6bc8e6a9e2a562bd946e95596e35bff9a4a3bd9ea6323bb0af` / `0b07f9d1cc04432aa20d3ee0107ac32757e8235ec75e01ce967c57f9e3ab5c50`
+
+This fixes the B2F acceptance blocker but does not turn `p10-accept-02` green.
+The next complete Full attempt starts a new acceptance candidate; five
+consecutive green Full runs and the ten-bot two-hour soak remain outstanding.
+
+Pre-commit validation is green: warning inventory remains 4,243 sites across 21
+codes; the solution passes 4,655 tests with 27 intentional skips; fidelity has no
+new violations; and the cross-server contract passes 76 assertions. Docker Fast
+run `p10-b2f-fix-fast` passes six test cases / eleven scenarios with no failures,
+skips or flakes. Its `report.json` SHA-256 is
+`213172628f9ee3f01023268704c6fdc1ddfa13a9dcbb4d856c1e6a5e986773ab`.

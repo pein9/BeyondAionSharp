@@ -72,9 +72,10 @@ public sealed class OutboundLinkLifecycleTests
 	[Fact]
 	public async Task ChatConnector_Reconnects_AndClearsPublicEndpointBetweenSessions()
 	{
+		var logger = new RecordingLogger<GameChatServer>();
 		await using var server = await TwoSessionChatServer.StartAsync();
 		await using var connector = new GameChatServer(
-			NullLogger<GameChatServer>.Instance,
+			logger,
 			CreateOptions(chatEndPoint: server.EndPoint, chatPassword: "secret"),
 			FastRetries);
 
@@ -95,6 +96,7 @@ public sealed class OutboundLinkLifecycleTests
 		Assert.Equal(0, GetPrivateCollectionCount(connector, "_playerAuthCallbacks"));
 
 		server.DropFirstSession();
+		await WaitUntilAsync(() => logger.Messages.Any(message => message.Contains("Lost connection with chat server", StringComparison.Ordinal)));
 		await server.WaitForSecondAuthAsync();
 
 		Assert.Equal(Aion.GameServer.Network.ChatServer.ChatServerState.Connected, connector.State);
@@ -380,6 +382,25 @@ public sealed class OutboundLinkLifecycleTests
 		{
 			if (logLevel == LogLevel.Warning)
 				Interlocked.Increment(ref _warningCount);
+		}
+	}
+
+	private sealed class RecordingLogger<T> : ILogger<T>
+	{
+		public ConcurrentQueue<string> Messages { get; } = new();
+
+		public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+		public bool IsEnabled(LogLevel logLevel) => true;
+
+		public void Log<TState>(
+			LogLevel logLevel,
+			EventId eventId,
+			TState state,
+			Exception? exception,
+			Func<TState, Exception?, string> formatter)
+		{
+			Messages.Enqueue(formatter(state, exception));
 		}
 	}
 

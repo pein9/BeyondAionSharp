@@ -40,6 +40,23 @@ public sealed class GameServerCrashExpectationTests
 		ServerCrashExpectation.Load(JsonSerializer.Serialize(Plan(), new JsonSerializerOptions(JsonSerializerDefaults.Web)),
 			"test", "aion-bots-test", Epoch, server));
 
+	[Theory]
+	[InlineData("cs", "gs", "WARN", "Lost connection with chat server; reconnecting in {Delay}", 2, true)]
+	[InlineData("cs", "gs", "WARN", "Lost connection with chat server; reconnecting in {Delay}", 0, true)]
+	[InlineData("cs", "gs2", "WARN", "Lost connection with chat server; reconnecting in {Delay}", 2, false)]
+	[InlineData("cs", "gs", "ERROR", "Lost connection with chat server; reconnecting in {Delay}", 2, false)]
+	[InlineData("cs", "gs", "WARN", "Could not connect to chat server at {Endpoint}", 2, false)]
+	[InlineData("gs", "gs", "WARN", "Lost connection with chat server; reconnecting in {Delay}", 2, false)]
+	[InlineData("cs", "gs", "WARN", "Lost connection with chat server; reconnecting in {Delay}", -1, false)]
+	[InlineData("cs", "gs", "WARN", "Lost connection with chat server; reconnecting in {Delay}", 181, false)]
+	public void ChatDisconnectSuppressionIsExactAndBounded(string target, string producer, string level,
+		string template, int seconds, bool expected)
+	{
+		var expectation = ServerCrashExpectation.Load(JsonSerializer.Serialize(Plan(), new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+			"test", "aion-bots-test", Epoch, target);
+		Assert.Equal(expected, expectation.ExpectsChatBridgeDisconnect(producer, level, template, Epoch.AddSeconds(seconds)));
+	}
+
 	private static readonly DateTimeOffset Epoch = new(2026, 9, 20, 12, 0, 0, TimeSpan.Zero);
 	private static readonly string Container = new('a', 64);
 	private static ServerCrashExpectation.Plan Plan() => new()
