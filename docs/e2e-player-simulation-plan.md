@@ -2216,7 +2216,7 @@ real geodata on in production immediately, because geo is enabled by default; th
   scenario with one bot on Docker MySQL. Final `p10-08-m1-c` catches both compiled mutants, restores exact
   source bytes and passes the rebuilt baseline; 22 runner contract tests pass. See
   `docs/e2e-phase10-validation.md` for acceptance evidence and the preserved failed draft.
-- [ ] **P10-09** [LIVE] L — Turn the supported journeys in `docs/Deep-Port-Audit-Remediation-Tracker.md` into LIVE
+- [x] **P10-09** [LIVE] L — Turn the supported journeys in `docs/Deep-Port-Audit-Remediation-Tracker.md` into LIVE
   scenarios and tick the tracker as each passes. D20 establishes that BA-001 character transfer is not a
   supported journey in this single-server emulator; its two-GS diagnostics remain historical evidence, not
   an acceptance gate. The supported scope is:
@@ -2272,6 +2272,7 @@ real geodata on in production immediately, because geo is enabled by default; th
   re-entry, and unchanged Game/Chat/MySQL processes. BA-006 is verified; BA-003 is verified for the
   single-server product. BA-005 remains explicitly deferred with P10-05 under D7 and does not keep this
   TODO open. BA-002/003/006 and the watcher/runtime closeouts therefore complete P10-09's supported scope.
+  Scope closeout: `d0738e42b`.
   Full-suite integration now forwards each LIVE manifest population to runner admission; B4 (five)
   and B2F (two) previously inherited the one-bot default and were rejected before starting (§7/124).
   Both Host and Docker dispatch paths are covered without launching children. B4's accepted runtime
