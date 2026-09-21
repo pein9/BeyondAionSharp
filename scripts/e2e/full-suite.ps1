@@ -79,13 +79,21 @@ function Invoke-FullSuitePlan {
 	foreach ($step in $Plan) {
 		$started = [DateTimeOffset]::UtcNow
 		$elapsed = [Diagnostics.Stopwatch]::StartNew()
-		try { & $Execute $step }
+		$context = @{ status = 'Passed' }
+		try {
+			& $Execute $step $context
+			if ($context.status -notin @('Passed', 'Flaky')) { throw "Invalid successful step status: $($context.status)" }
+			if ($context.status -eq 'Flaky' -and $step.kind -notin @('Live', 'Soak')) { throw 'Only LIVE steps may recover as FLAKY.' }
+		}
 		catch {
-			& $Record ([pscustomobject]@{ id = $step.id; kind = $step.kind; status = 'Failed';
-				startedUtc = $started.ToString('O'); durationSeconds = $elapsed.Elapsed.TotalSeconds; error = $_.Exception.ToString() })
+			$context.status = 'Failed'
+			$context.id = $step.id; $context.kind = $step.kind; $context.startedUtc = $started.ToString('O')
+			$context.durationSeconds = $elapsed.Elapsed.TotalSeconds; $context.error = $_.Exception.ToString()
+			& $Record ([pscustomobject]$context)
 			throw
 		}
-		& $Record ([pscustomobject]@{ id = $step.id; kind = $step.kind; status = 'Passed';
-			startedUtc = $started.ToString('O'); durationSeconds = $elapsed.Elapsed.TotalSeconds; error = $null })
+		$context.id = $step.id; $context.kind = $step.kind; $context.startedUtc = $started.ToString('O')
+		$context.durationSeconds = $elapsed.Elapsed.TotalSeconds; $context.error = $null
+		& $Record ([pscustomobject]$context)
 	}
 }

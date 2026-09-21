@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 
 from packet_coverage import compare, read
+from flake_policy import selected_child
 
 spec = importlib.util.spec_from_file_location("report_run", Path(__file__).with_name("report-run.py"))
 reporter = importlib.util.module_from_spec(spec)
@@ -29,11 +30,11 @@ def build(root, baseline):
         if step["kind"] not in ("Sim", "Live"):
             continue
         result = by_id.get(step["id"])
-        if not result or result["status"] != "Passed" or result["kind"] != step["kind"]:
+        if not result or result["status"].lower() not in ("passed", "flaky") or result["kind"] != step["kind"]:
             issues.append(f"Breadth step {step['id']} did not pass")
             continue
         mode = "SIM" if step["kind"] == "Sim" else "LIVE"
-        relative = step["id"] if mode == "SIM" else plan["run"] + "-" + step["scenario"].lower()
+        relative = selected_child(root, plan, step, result, reporter.build_report)
         directory = reporter.child_path(root, relative)
         child = reporter.build_report(directory)
         expected_run = plan["run"] if mode == "SIM" else relative

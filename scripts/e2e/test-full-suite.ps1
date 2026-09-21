@@ -80,6 +80,16 @@ Assert-Throws {
 Assert-True ($calls.Count -eq 2 -and $results.Count -eq 2) 'Failure was retried or later children ran.'
 Assert-True ($results[0].status -eq 'Passed' -and $results[1].status -eq 'Failed' -and
 	$results[1].error -like '*injected child failure*') 'Failure detail was lost or labeled passed.'
+$calls.Clear(); $results.Clear()
+Invoke-FullSuitePlan -Plan @($liveSteps[0], $breadth[0]) -Execute {
+	param($step, $context)
+	$calls.Add($step.id)
+	if ($step.kind -eq 'Live') { $context.status = 'Flaky' }
+} -Record { param($result) $results.Add($result) }
+Assert-True ($calls.Count -eq 2 -and $results[0].status -eq 'Flaky' -and $results[1].status -eq 'Passed') 'A recovered LIVE step must stay FLAKY while later steps continue.'
+Assert-Throws {
+	Invoke-FullSuitePlan -Plan @($breadth[0]) -Execute { param($step, $context) $context.status='Flaky' } -Record { param($result) }
+} '*Only LIVE steps*'
 
 # Execute the actual public runner's dispatch block with recording children. This
 # catches dropped arguments (especially the previously missing LIVE seed) rather
@@ -101,6 +111,18 @@ for ($i = 0; $i -lt $invoke.CommandElements.Count - 1; $i++) {
 }
 Assert-True ($null -ne $dispatch) 'Public runner dispatch block missing.'
 $recorded = [Collections.Generic.List[object]]::new()
+# These dispatch-only stubs do not execute admission or touch run directories.
+# test-live-retry.ps1 separately exercises the real wrapper and safety guard.
+function Invoke-AionFullLiveStep {
+	param($Step, $Context, $Run, $RunRoot, $Execute, $Admit)
+	$baseRun = "$Run-$(if ($Step.kind -eq 'Live') { $Step.scenario.ToLowerInvariant() } else { $Step.id })"
+	& $Execute $baseRun 1
+	$Context.status = 'passed'
+}
+function python {
+	Assert-True ($args[0] -like '*flake-history.py' -and $args[1] -eq 'verify') 'Unexpected Python command in recording dispatch.'
+	$global:LASTEXITCODE = 0
+}
 $runSimTier = {
 	param($Run, $Tier, $ProcessKey, $ShardCount, $Seed, $SimulationRunId, $RunRoot)
 	$recorded.Add([pscustomobject]@{ kind = 'Sim'; seed = $Seed; run = $Run; root = $RunRoot; shards = $ShardCount; parent = $SimulationRunId })

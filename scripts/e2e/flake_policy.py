@@ -8,7 +8,7 @@ import copy
 from datetime import datetime, timedelta, timezone
 import re
 
-from packet_coverage import evidence, rows
+from packet_coverage import evidence, rows, read
 
 
 def identifier(value):
@@ -190,3 +190,76 @@ def admission(ledger, scenario, now_utc):
     return dict(allowed=False, quarantine=copy.deepcopy(quarantine),
                 expired=instant(quarantine["expiresUtc"]) <= now,
                 reason="Quarantined scenario requires maintainer review; do not report as passed.")
+
+
+def full_observation(root, plan, step, result, build_report):
+    """Join a Full step's controller receipt to freshly validated child evidence."""
+    if step["kind"] not in ("Live", "Soak") or plan.get("retryPolicyVersion") != 1:
+        raise ValueError("Not a retry-enabled Full LIVE step")
+    full_admission(root, plan, step, require_allowed=True)
+    base = plan["run"] + "-" + (step["scenario"].lower() if step["kind"] == "Live" else step["id"])
+    identifier(step["id"])
+    path = root / "live-attempts" / (step["id"] + ".json")
+    source = evidence(root, path)
+    receipt = read(path)
+    attempts = receipt["attempts"]
+    journal_path = path.with_suffix(".jsonl")
+    journal_source = evidence(root, journal_path)
+    if list(rows(journal_path)) != attempts:
+        raise ValueError("Original terminal-attempt journal disagrees with retry receipt")
+    if (receipt["run"] != base or receipt["mode"] != "LIVE" or receipt["status"] != result["status"].lower() or
+            result["attemptReceipt"] != source["path"] or result["attemptReceiptSha256"] != source["sha256"] or
+            not attempts or len(attempts) > 2):
+        raise ValueError("Full retry receipt disagrees with terminal step")
+    for number, attempt in enumerate(attempts, 1):
+        expected = base if number == 1 else base + "-retry1"
+        if attempt["number"] != number or attempt["run"] != expected or attempt["status"] not in ("passed", "failed"):
+            raise ValueError("Invalid Full retry sequence")
+    if len(attempts) == 2:
+        guard_path = root / "live-attempts" / (step["id"] + ".retry-admission.json")
+        guard = read(guard_path)
+        if (guard["priorRun"] != base or guard["retryRun"] != base + "-retry1" or
+                guard["passed"] is not True or guard["containers"] != []):
+            raise ValueError("Missing successful fresh-stack retry admission")
+        instant(guard["checkedUtc"])
+        guard_source = evidence(root, guard_path)
+    else:
+        guard_source = None
+    observed = observe(root, base, step.get("scenario", "SOAK"), len(attempts), build_report)
+    if (observed["status"] != receipt["status"] or
+            [a["status"] for a in observed["attempts"]] != [a["status"] for a in attempts] or
+            observed["seed"] != plan["seed"] or observed["gitSha"] != plan["gitSha"]):
+        raise ValueError("Full attempt outcome/revision/seed disagrees with raw evidence")
+    observed.update(step=step["id"], receipt=source, attemptJournal=journal_source, retryAdmission=guard_source)
+    return observed
+
+
+def full_admission(root, plan, step, require_allowed=False):
+    snapshot = evidence(root, root / "flaky-at-start.json")
+    if snapshot["sha256"] != plan["flakeLedgerSha256"]:
+        raise ValueError("Full flake ledger snapshot mismatch")
+    ledger = validate(read(root / "flaky-at-start.json"))
+    decision = read(root / "live-admission" / (identifier(step["id"]) + ".json"))
+    scenario = step.get("scenario", "SOAK")
+    expected = admission(ledger, scenario, decision["checkedUtc"])
+    if (decision["step"] != step["id"] or decision["scenario"] != scenario or
+            decision["ledgerSha256"] != snapshot["sha256"] or
+            any(decision.get(k) != v for k, v in expected.items())):
+        raise ValueError("Full scenario admission contradicts its frozen policy")
+    if require_allowed and expected["allowed"] is not True:
+        raise ValueError("Quarantined scenario was executed")
+    return decision
+
+
+def selected_child(root, plan, step, result, build_report):
+    """Select the accepted attempt for comparisons, never the failed one's traffic."""
+    relative = step["id"] if step["kind"] == "Sim" else plan["run"] + "-" + (
+        step["scenario"].lower() if step["kind"] == "Live" else step["id"])
+    if step["kind"] in ("Live", "Soak") and plan.get("retryPolicyVersion") == 1:
+        observed = full_observation(root, plan, step, result, build_report)
+        if observed["status"] not in ("passed", "flaky"):
+            raise ValueError("No accepted LIVE attempt available for comparison")
+        return observed["attempts"][-1]["child"]
+    if result["status"].lower() != "passed":
+        raise ValueError("Child did not pass")
+    return relative

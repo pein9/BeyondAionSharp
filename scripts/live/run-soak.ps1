@@ -58,10 +58,12 @@ finally {
 	Pop-Location
 	if (Test-Path -LiteralPath $runPath -PathType Container) {
 		try {
+			# Preserve the actual single-attempt build revision, not an empty wrapper default.
+			$liveResult = Get-Content -Raw -LiteralPath (Join-Path $runPath 'runner-result.json') | ConvertFrom-Json
 			Write-AionRunReport -RunDirectory $runPath -Run $Run -Mode LIVE -Scenarios @('SOAK') `
 				-Status $(if ($null -eq $failure) { 'passed' } else { 'failed' }) `
 				-StartedUtc $started -DurationSeconds $soakTimer.Elapsed.TotalSeconds `
-				-Failure $(if ($null -eq $failure) { $null } else { $failure.Exception.ToString() }) -Seed $Seed
+				-Failure $(if ($null -eq $failure) { $null } else { $failure.Exception.ToString() }) -Seed $Seed -GitSha $liveResult.gitSha
 		} catch {
 			if ($null -eq $failure) { throw }
 			Write-Warning "Could not finalize report: $_. Original soak failure is preserved."

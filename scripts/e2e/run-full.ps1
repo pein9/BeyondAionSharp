@@ -18,6 +18,7 @@ Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'full-suite.ps1')
 . (Join-Path $PSScriptRoot 'run-artifact-owner.ps1')
 . (Join-Path $PSScriptRoot 'run-report.ps1')
+. (Join-Path $PSScriptRoot 'full-live-retry.ps1')
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $manifest = Get-Content -Raw -LiteralPath (Join-Path $repoRoot 'parity-artifacts/e2e/scenarios.json') | ConvertFrom-Json
 $plan = @(Get-FullSuitePlan -Manifest $manifest -Suite $Suite -SimShards $SimShards -SoakBots $SoakBots -SoakSeconds $SoakSeconds)
@@ -37,7 +38,10 @@ New-Item -ItemType Directory -Path $runRoot | Out-Null
 Register-AionRunArtifactOwner -Directory $runRoot
 $gitSha = & git -C $repoRoot rev-parse HEAD
 if ($LASTEXITCODE -ne 0) { throw 'Cannot record Full-run git SHA.' }
+& python (Join-Path $PSScriptRoot 'flake-history.py') snapshot --root $runRoot
+if ($LASTEXITCODE -ne 0) { throw 'Cannot freeze Full flake policy; no children started.' }
 [pscustomobject]@{ run = $Run; suite = $Suite; gitSha = $gitSha; seed = $Seed; botExecution = $BotExecution;
+	retryPolicyVersion = 1; flakeLedgerSha256 = (Get-FileHash (Join-Path $runRoot 'flaky-at-start.json') -Algorithm SHA256).Hash.ToLowerInvariant();
 	simShards = $SimShards; timeZone = [TimeZoneInfo]::Local.Id; steps = $plan } |
 	ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $runRoot 'suite-plan.json') -Encoding utf8NoBOM
 $suiteState = @{ imagesReady = [bool]$SkipImageBuild }
@@ -50,9 +54,9 @@ Push-Location $repoRoot
 try {
 	Invoke-FullSuitePlan -Plan $plan -Record {
 		param($result)
-		$result | ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $runRoot 'suite-results.jsonl') -Encoding utf8NoBOM
+		$result | ConvertTo-Json -Depth 8 -Compress | Add-Content -LiteralPath (Join-Path $runRoot 'suite-results.jsonl') -Encoding utf8NoBOM
 	} -Execute {
-		param($step)
+		param($step, $context)
 		Write-Host "Full $Suite step $($step.id)"
 		switch ($step.kind) {
 			'Sim' {
@@ -60,17 +64,27 @@ try {
 					-Seed $Seed -SimulationRunId $Run -RunRoot $runRoot
 			}
 			'Live' {
-				& $runLive -Run "$Run-$($step.scenario.ToLowerInvariant())" -Scenario $step.scenario `
+				Invoke-AionFullLiveStep -Step $step -Context $context -Run $Run -RunRoot $runRoot -Admit {
+					& python (Join-Path $PSScriptRoot 'flake-history.py') admit --root $runRoot --step $step.id
+					if ($LASTEXITCODE -ne 0) { throw "LIVE scenario admission failed (possibly quarantined): $($step.scenario)" }
+				} -Execute {
+					param($attemptRun, $number)
+					& $runLive -Run $attemptRun -Scenario $step.scenario `
 					-Bots $step.bots -WatcherMode enforce -RunRoot $runRoot -FullRun -PacketTap:$PacketTap `
 					-SkipImageBuild:$suiteState.imagesReady -StepTimeoutSeconds $step.stepTimeoutSeconds -Seed $Seed -BotExecution $BotExecution
-				$suiteState.imagesReady = $true
+					$suiteState.imagesReady = $true
+				}
+				& python (Join-Path $PSScriptRoot 'flake-history.py') verify --root $runRoot --step $step.id
+				if ($LASTEXITCODE -ne 0) { throw 'LIVE retry evidence validation failed.' }
 			}
 			'PacketParity' {
 				$simPackets = @(Get-ChildItem -LiteralPath $runRoot -Directory -Filter 'sim-*' |
 					ForEach-Object { Join-Path $_.FullName 'l0-packets.json' } | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
 				if ($simPackets.Count -ne 1) { throw "Expected one SIM L0 packet artifact, found $($simPackets.Count)." }
+				$l0Child = & python (Join-Path $PSScriptRoot 'flake-history.py') select --root $runRoot --step live-l0
+				if ($LASTEXITCODE -ne 0) { throw 'No validated L0 attempt for packet parity.' }
 				& (Join-Path $PSScriptRoot 'compare-l0-packets.ps1') -SimPacketPath $simPackets[0] `
-					-LiveTraceDirectory (Join-Path $runRoot "$Run-l0/bots") -OutputPath (Join-Path $runRoot 'l0-packet-parity.json')
+					-LiveTraceDirectory (Join-Path $runRoot "$l0Child/bots") -OutputPath (Join-Path $runRoot 'l0-packet-parity.json')
 			}
 			'QuestCoverage' {
 				$report = Join-Path $runRoot 'quest-coverage.json'
@@ -78,9 +92,17 @@ try {
 				if ($LASTEXITCODE -ne 0) { throw "Quest coverage regressed. See $report" }
 			}
 			'Soak' {
-				& $runSoak -Run "$Run-$($step.id)" -RunRoot $runRoot -FullRun -Bots $step.bots `
+				Invoke-AionFullLiveStep -Step $step -Context $context -Run $Run -RunRoot $runRoot -Admit {
+					& python (Join-Path $PSScriptRoot 'flake-history.py') admit --root $runRoot --step $step.id
+					if ($LASTEXITCODE -ne 0) { throw 'SOAK scenario admission failed (possibly quarantined).' }
+				} -Execute {
+					param($attemptRun, $number)
+					& $runSoak -Run $attemptRun -RunRoot $runRoot -FullRun -Bots $step.bots `
 					-DurationSeconds $step.durationSeconds -Seed $Seed -PacketTap:$PacketTap -SkipImageBuild:$suiteState.imagesReady -BotExecution $BotExecution
-				$suiteState.imagesReady = $true
+					$suiteState.imagesReady = $true
+				}
+				& python (Join-Path $PSScriptRoot 'flake-history.py') verify --root $runRoot --step $step.id
+				if ($LASTEXITCODE -ne 0) { throw 'SOAK retry evidence validation failed.' }
 			}
 			'PacketCoverage' {
 				& python scripts/e2e/report-packet-coverage.py --run-root $runRoot
@@ -101,6 +123,15 @@ finally {
 	} catch {
 		if ($null -eq $suiteFailure) { throw }
 		Write-Warning "Could not finalize report: $_. Original suite failure is preserved."
+	} finally {
+		& python (Join-Path $PSScriptRoot 'flake-history.py') record --root $runRoot
+		if ($LASTEXITCODE -ne 0) {
+			[ordered]@{ error = 'Full flake history was not persisted; review before counting this run.' } |
+				ConvertTo-Json | Set-Content -LiteralPath (Join-Path $runRoot 'flake-history-error.json') -Encoding utf8NoBOM
+			& python (Join-Path $PSScriptRoot 'report-run.py') $runRoot
+			if ($null -eq $suiteFailure) { throw 'Full flake history persistence failed.' }
+			Write-Warning 'Full flake history persistence failed; original suite failure is preserved.'
+		}
 	}
 }
 

@@ -12,6 +12,7 @@ import re
 import sys
 from packet_coverage import collect as collect_packets, compare as compare_packets
 from code_coverage import collect as collect_code, load as load_code, summarize as summarize_code
+import flake_policy
 
 ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 DIGEST = re.compile(r"^\S+ (NEW|KNOWN|REGRESSED) \S+ \S+ fp=([a-f0-9]{8})(?:\s|$)")
@@ -472,7 +473,7 @@ def build_report(root):
     issues = []
     expected = []
     report = dict(schemaVersion=1, run=root.name, mode=None, status="failed", runner=None,
-                  scenarios=[], steps=[], fingerprints=[], watcher=None, simulation=None, heartbeatPeaks=[], resourcePeaks=[], packetCoverage=[], codeCoverage=None, coverage=[], evidenceIssues=issues,
+                  scenarios=[], steps=[], liveAttempts=[], fingerprints=[], watcher=None, simulation=None, heartbeatPeaks=[], resourcePeaks=[], packetCoverage=[], codeCoverage=None, coverage=[], evidenceIssues=issues,
                   runnerSourceSha256=None, limitations=["Scenario completion alone does not prove watcher, cleanup, coverage or capacity acceptance.",
                                "Heartbeat peaks are observed samples, not a continuous resource maximum."])
     try:
@@ -528,6 +529,8 @@ def build_report(root):
             report["limitations"].append("No retained quest/packet coverage comparison for this run; those deltas are unavailable.")
         if outcome["status"] == "failed":
             issues.append(outcome.get("error") or "Runner failed without a recorded exception.")
+        if child_path(root, "flake-history-error.json").exists():
+            issues.append(read_json(child_path(root, "flake-history-error.json"))["error"])
         if any(row["status"] != "passed" for row in report["scenarios"]):
             issues.append("Not all planned scenarios passed.")
         if not issues:
@@ -563,8 +566,10 @@ def collect_suite(root, outcome, report):
             raise ValueError("unknown suite step kind")
         result = results[index] if index < len(results) else None
         status = result["status"].lower() if result else "skipped"
-        if status not in ("passed", "failed", "skipped") or result and result["kind"] != step["kind"]:
+        if status not in ("passed", "failed", "skipped", "flaky") or result and result["kind"] != step["kind"]:
             raise ValueError("invalid suite outcome")
+        if status == "flaky" and (step["kind"] not in ("Live", "Soak") or plan.get("retryPolicyVersion") != 1):
+            raise ValueError("Only verified retry-enabled LIVE steps may be FLAKY")
         duration = number(result["durationSeconds"]) if result else None
         report["steps"].append(dict(id=step["id"], kind=step["kind"], status=status, durationSeconds=duration,
                                     error=result.get("error") if result else "Not reached (fail-fast)."))
@@ -590,8 +595,30 @@ def collect_suite(root, outcome, report):
             identifier(scenario)
         mode = "SIM" if step["kind"] == "Sim" else "LIVE"
         relative = step["id"] if mode == "SIM" else outcome["run"] + "-" + (step["scenario"].lower() if step["kind"] == "Live" else step["id"])
+        planned_relative = relative
+        observed = None
+        if result and mode == "LIVE" and plan.get("retryPolicyVersion") == 1:
+            admission_path = child_path(root, f"live-admission/{step['id']}.json")
+            if admission_path.exists():
+                decision = flake_policy.full_admission(root, plan, step)
+                if not decision["allowed"]:
+                    if result.get("attemptReceipt") or status != "failed" or child_path(root, relative).exists():
+                        raise ValueError("Quarantine cannot execute or pass a scenario")
+                    report["scenarios"].extend(dict(id=s, mode=mode, status="skipped", durationSeconds=None,
+                        reason="Quarantined: " + decision["reason"], evidence=str(admission_path.relative_to(root)),
+                        child=relative, quarantine=decision["quarantine"]) for s in scenario_ids)
+                    continue
+            if result.get("attemptReceipt"):
+                observed = flake_policy.full_observation(root, plan, step, result, build_report)
+                report["liveAttempts"].append(observed)
+                relative = observed["attempts"][-1]["child"]
+                for attempt in observed["attempts"][:-1]:
+                    prior = build_report(child_path(root, attempt["child"]))
+                    append_child_observations(report, prior, attempt["child"], include_coverage=False)
+            elif status in ("passed", "flaky"):
+                raise ValueError("Successful retry-enabled LIVE step lacks its attempt receipt")
         directory = child_path(root, relative)
-        if step["kind"] == "Soak" and status == "passed":
+        if step["kind"] == "Soak" and status in ("passed", "flaky"):
             acceptance = read_json(child_path(directory, "soak-acceptance.json"))
             if acceptance.get("status") != "passed" or acceptance.get("overallSoakAccepted") is not True:
                 report["evidenceIssues"].append(f"Soak step {step['id']} lacks capacity acceptance.")
@@ -609,14 +636,15 @@ def collect_suite(root, outcome, report):
                 for source in measurement["sources"]:
                     source["path"] = f"{relative}/{source['path']}"
                 code_measurements.append(measurement)
-            report["scenarios"].extend(dict(row, child=relative) for row in child["scenarios"])
-            report["fingerprints"].extend(dict(row, child=relative,
-                repro=f"{relative}/{row['repro']}" if row["repro"] else None) for row in child["fingerprints"])
-            report["heartbeatPeaks"].extend(dict(row, child=relative) for row in child["heartbeatPeaks"])
-            report["resourcePeaks"].extend(dict(row, child=relative, evidence=f"{relative}/{row['evidence']}") for row in child["resourcePeaks"])
-            report["packetCoverage"].extend(dict(row, child=relative) for row in child["packetCoverage"])
-            report["coverage"].extend(dict(row, evidence=f"{relative}/{row['evidence']}") for row in child["coverage"])
-            report["limitations"].extend(f"{relative}: {value}" for value in child["limitations"] if value not in report["limitations"][:2])
+            for row in child["scenarios"]:
+                merged = dict(row, child=planned_relative)
+                if observed:
+                    merged.update(status=observed["status"], selectedChild=relative, attempts=observed["attempts"],
+                        durationSeconds=sum(a["durationSeconds"] for a in observed["attempts"]))
+                    if observed["status"] == "flaky":
+                        merged["reason"] = "First LIVE attempt failed; one fresh retry passed. Not a clean Full pass."
+                report["scenarios"].append(merged)
+            append_child_observations(report, child, relative, include_coverage=not observed or observed["status"] in ("passed", "flaky"))
             if child["status"] != "passed":
                 report["evidenceIssues"].append(f"Child {relative} failed: " + "; ".join(child["evidenceIssues"]))
         else:
@@ -631,6 +659,17 @@ def collect_suite(root, outcome, report):
         report["codeCoverage"]["limitations"].append("Merged retained processes only; failed or unexecuted scenarios are not credited as successful by these coverage observations.")
 
 
+def append_child_observations(report, child, relative, include_coverage=True):
+    report["fingerprints"].extend(dict(row, child=relative,
+        repro=f"{relative}/{row['repro']}" if row["repro"] else None) for row in child["fingerprints"])
+    report["heartbeatPeaks"].extend(dict(row, child=relative) for row in child["heartbeatPeaks"])
+    report["resourcePeaks"].extend(dict(row, child=relative, evidence=f"{relative}/{row['evidence']}") for row in child["resourcePeaks"])
+    if include_coverage:
+        report["packetCoverage"].extend(dict(row, child=relative) for row in child["packetCoverage"])
+        report["coverage"].extend(dict(row, evidence=f"{relative}/{row['evidence']}") for row in child["coverage"])
+    report["limitations"].extend(f"{relative}: {value}" for value in child["limitations"] if value not in report["limitations"][:2])
+
+
 def markdown(report):
     def cell(value):
         return str(value).replace("|", "\\|").replace("\r", " ").replace("\n", " ").replace("<", "&lt;").replace(">", "&gt;")
@@ -640,6 +679,14 @@ def markdown(report):
     for row in report["scenarios"]:
         duration = "unavailable" if row["durationSeconds"] is None else f"{row['durationSeconds']:.3f}"
         rows.append(f"| {cell(row['id'])} | {row['mode']} | {row['status']} | {duration} | {cell(row.get('reason') or '')} |")
+    if report.get("liveAttempts"):
+        rows += ["", "## LIVE attempts", "", "FLAKY retains both attempts and is not a clean Full pass.", ""]
+        for observation in report["liveAttempts"]:
+            rows.append(f"- {cell(observation['scenario'])}: {observation['status'].upper()}")
+            for attempt in observation["attempts"]:
+                rows.append(f"  - [{cell(attempt['child'])}]({attempt['child']}/report.md): {attempt['status']}")
+                for trace in attempt["traces"]:
+                    rows.append(f"    - [Trace]({trace['path']}) (SHA256 `{trace['sha256']}`)")
     rows += ["", "## Game packet observations", "", "| Mode / child | Client send attempts | Server received | Structured decoded | Raw received | Tap serialized / dropped |", "|---|---:|---:|---:|---:|---:|"]
     for packet in report["packetCoverage"]:
         def ratio(key):

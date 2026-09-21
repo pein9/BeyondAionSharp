@@ -2302,11 +2302,12 @@ real geodata on in production immediately, because geo is enabled by default; th
   Full joins child resource evidence separately from LIVE heartbeats. Runtime receipts are in the
   validation document; the current reporting checkpoint does not establish capacity/soak acceptance.
   SIM resource receipt: `2438d4e0a`.
-  Remaining P10-10 work: final coverage/report acceptance across the complete Full workload and
-  P10-12's flaky outcomes. P10-11 now supplies packet and line/branch measurement/delta integration,
-  but the complete-Full reference and acceptance are still missing. Uncollected observations are
-  unavailable, not zero; genuinely measured zero-hit directories remain visible. No retry/flaky policy is enabled here;
-  P10-12 still owns it. The current Full matrix remains unexecuted under D17 and known P10-09 failures.
+  Remaining P10-10 work: final coverage/report acceptance across the complete Full workload, including
+  runtime acceptance of P10-12's flaky outcomes. P10-11 supplies packet and line/branch measurement/delta
+  integration; P10-12 now supplies Full attempt joins and FLAKY reporting, but its connected runtime proof
+  and the complete-Full reference/acceptance are still missing. Uncollected observations are unavailable,
+  not zero; genuinely measured zero-hit directories remain visible. The current Full matrix remains
+  unexecuted under D17 and known P10-09 failures.
 - [ ] **P10-11** [BOTH] M — Coverage. (a) Packet coverage from bot traces and the P3-07 tap: client opcodes sent out
   of 186 and server opcodes decoded out of 238. (b) SIM line and branch coverage of `src/Aion.GameServer` with
   coverlet on `tests/Aion.Simulation.Tests`, per directory (`Services`, `Handlers/Instance`, `Handlers/AI`,
@@ -2350,7 +2351,7 @@ real geodata on in production immediately, because geo is enabled by default; th
 - [ ] **P10-12** [LIVE] S — Flake policy: a failed LIVE scenario is rerun once; a pass on rerun is reported FLAKY with
   both traces and recorded in `parity-artifacts/e2e/flaky.json`; 3 flakes in the last 10 Full runs quarantines the scenario with
   an owner and an expiry. SIM is never retried: a SIM flake is a determinism bug.
-  **Policy foundation implemented; not enabled in public runners yet.** The injectable controller
+  **Policy foundation implemented (`107fc9d62`); Full integration implemented, runtime proof pending.** The injectable controller
   executes at most two sequential LIVE attempts with separate run ids, records the original failure
   before retry admission, and never retries SIM. A cleanup/admission rejection or failed evidence write
   stops before a second attempt. The evidence evaluator calls the raw run-report builder for each
@@ -2361,11 +2362,21 @@ real geodata on in production immediately, because geo is enabled by default; th
   exact scenario on its third flake in the trailing ten, and gives flakes/quarantines the existing `e2e-simulation`
   owner and a fourteen-day review expiry. Quarantine never silently passes or automatically releases
   on expiry; it requires maintainer review. These are infrastructure defaults, not a gameplay allowance.
-  **Remaining:** wire fresh-stack retry and cleanup verification into public LIVE/Full execution,
-  integrate both attempts into Full reporting/coverage without crediting a flake as a clean pass,
-  persist ledger updates safely/idempotently, enforce quarantine admission, and prove the connected
-  behavior with bounded LIVE evidence. The foundation's raw-evidence fixtures and controller tests
-  use no bots, containers or databases. P10-12 and Phase 10 acceptance remain open.
+  Full now freezes this ledger, checks quarantine before each LIVE/soak step, and records terminal
+  attempts before starting a fresh `-retry1` stack. The exact old Docker project must be absent;
+  an unavailable Docker query or remaining container prevents retry. Raw revalidation checks the
+  original attempt journal, final receipt, admission proof, both traces and unchanged build/seed.
+  Reports retain both attempts' fingerprints/resources and one FLAKY scenario row; packet/quest/L0
+  comparisons use only the accepted retry. FLAKY keeps Full non-green. Ledger recording runs after
+  reporting even on failure, uses a kernel lock and atomic replacement, and counts several SOAK
+  populations at most once per Full invocation. History persistence failures make reporting non-green.
+  The soak wrapper now preserves the child build SHA (§7/127). Quarantined scenarios are visibly
+  skipped, not passed; their Full run remains non-green.
+  **Remaining:** bounded connected LIVE runtime proof and a retry-enabled standalone LIVE entry
+  point (the existing `run-live.ps1`/`run-soak.ps1` remain single-attempt primitives). Current proof
+  consists of raw-evidence report/CLI fixtures and actual PowerShell controllers/finalizers with
+  injected children and mocked Docker; no bots or databases were started for these contracts.
+  P10-12 and Phase 10 acceptance remain open.
 
 **Done when:** `run-full.ps1` is green on 5 consecutive runs with `report.json` written; the 200-bot soak keeps
 working set and timer count flat for 2 hours; P10-03 and P10-09 pass; every allowlist and flaky entry has an owner
@@ -2661,6 +2672,7 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 125 | Run report rejected ordinary tracked LIVE problems despite P3-14's watcher policy (harness-only) | `report-run.py` in `faa8a4581` failed every retained fingerprint, including KNOWN with an enforced watcher verdict of success. Two red regressions reproduce standalone and Full-child false failures; `ProblemWatcher.FailingProblemCount` and its tracked/heartbeat/crash tests establish the existing policy | Retain KNOWN in the report and honor the watcher's boolean verdict. NEW/REGRESSED still fail even if the summary inconsistently says success; known heartbeat and declared-crash-window failures remain fatal through the watcher verdict. Reject non-boolean verdicts. No change to classification, ledger, allowance, SIM policy or production/Java behavior |
 
 | 126 | Initial P10-11 collector receipt treated VSTest's copied attachments as conflicting measurements (harness-only) | Instrumented `p10-11-code-fast-a` passed all six test cases and eleven scenarios, but VSTest retained byte-identical JSON/Cobertura files in both the collector GUID directory and the TRX deployment tree. The first discovery implementation required exactly one filename and correctly left the run red for its invalid receipt | Retain/hash every equivalent copy and count its observations once; reject differing hashes, missing attachments, changed settings/source identity or unrestored binaries. Fresh `p10-11-code-fast-b` passes with all copies validated. Failed a remains unchanged. No Java or production behavior, allowance or failure policy was changed |
+| 127 | Soak acceptance wrapper discarded its LIVE child's recorded build revision (harness-only) | `run-live.ps1` writes the built revision into `runner-result.json`, but the final `run-soak.ps1` report call omitted `-GitSha`, replacing it with the empty default. This prevented valid same-revision retry identity joins | Preserve the retained child revision when the acceptance wrapper finalizes. The actual soak finalizer is exercised with a known child SHA in `test-full-flake.ps1`; no old run receipts are rewritten. No Java or gameplay behavior changed |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the

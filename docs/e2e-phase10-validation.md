@@ -3806,6 +3806,62 @@ Full report/coverage integration retaining both attempts, safe ledger persistenc
 quarantine enforcement and bounded runtime proof. FLAKY must not count toward the
 five clean Full runs. All original Phase 10 acceptance and deferrals remain visible.
 
+## P10-12 Full execution, reporting and history integration
+
+The foundation in `107fc9d62` is now connected to `run-full.ps1`. Each Full run
+freezes the checked-in ledger and its hash before children start. LIVE and soak
+steps check scenario quarantine against that snapshot, execute once, and may retry
+once under a distinct `-retry1` run/project identity. The first terminal attempt is
+persisted before admission. The exact previous Docker compose project must have
+no remaining containers; an unavailable Docker query or any remaining container
+blocks retry. SIM is not wrapped or retried. Existing `run-live.ps1` and
+`run-soak.ps1` remain single-attempt primitives; standalone retry entry remains open.
+
+Each step retains its append-only attempt journal, final receipt/hash and successful
+fresh-stack admission proof. Full reports revalidate those records against raw
+child reports and both trace sets, not cached green reports. They retain both
+attempts' fingerprints and resource observations, but present one FLAKY scenario
+row when failed→passed is verified. Markdown links both reports and both trace
+sets. FLAKY remains non-green and cannot count toward five clean Full runs.
+Packet, quest and L0 packet-parity comparisons select only the validated successful
+attempt, avoiding duplicate quest receipts or credit for failed-attempt traffic.
+
+Full history recording runs in finalization even when report acceptance throws
+for FLAKY or when an earlier step fails. `flake-history.py` validates the retained
+Full report against a fresh raw rebuild, locks the ledger using the OS, flushes a
+same-directory temporary file and atomically replaces the ledger. Identical replay
+is idempotent; conflicting history is rejected. Failed/empty terminal Full runs
+still advance the window. Multiple SOAK populations can contribute only one flake
+per scenario per Full invocation. A failed history update records a visible error
+and rerenders the report non-green; it cannot silently leave a clean public result.
+Quarantine admission is recorded, and blocked scenarios are shown as skipped with
+their owner/reason/expiry, never passed or silently removed from the plan.
+
+Integration exposed §7/127: the soak wrapper's final report replaced its child's
+build revision with an empty default. It now preserves that actual child SHA;
+the original historical receipts remain unchanged. This is harness infrastructure,
+not a Java parity change or a reason to run Java.
+
+Fifteen Python integration contracts exercise the real report builder and CLI
+over owned temporary raw evidence: recovered/double failures, trace links, original
+fingerprints, missing/changed receipts, retry cleanup and quarantine admission,
+accepted-attempt-only packet/quest selection, idempotent history, lock contention,
+failed atomic replacement and stale report rejection. The PowerShell contracts
+exercise the real wrapper with mocked Docker, plus the actual Full/soak finalizer
+ASTs with injected commands; history still runs after report rejection and the
+soak child SHA survives. These are contract fixtures, not real flakes or Full
+acceptance evidence. The checked-in ledger remains empty. No bots, containers or
+databases were started by this checkpoint's contracts.
+
+All CLAUDE checks passed: 4,614 solution tests passed / 27 skipped; warning baseline
+4,243 sites / 21 codes, unchanged. Logs: `run/p10-12-wiring-{warnings,dotnet,checks}.log`;
+`run/p10-12-wiring-full-final.log` also verifies that a FLAKY LIVE step continues
+to later steps without becoming Passed, and a SIM step cannot return FLAKY.
+
+Still required for P10-12: bounded connected LIVE runtime evidence and the
+standalone retry-enabled entry point. Original Full/Phase 10 acceptance, known
+P10-09 failures, the population cap and deferred scope remain unchanged.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

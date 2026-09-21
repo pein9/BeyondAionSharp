@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sys
 from collections import Counter, defaultdict
@@ -47,7 +48,29 @@ def problem_rows(problems: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def load_receipts(run_root: Path, quest_ids: set[int]) -> dict[str, dict[str, dict[str, Any]]]:
     result: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
-    for path in sorted(run_root.rglob("quest-coverage/*.json")):
+    receipt_paths = sorted(run_root.rglob("quest-coverage/*.json"))
+    plan_path = run_root / "suite-plan.json"
+    if plan_path.exists() and (plan := read_json(plan_path)).get("retryPolicyVersion") == 1:
+        from flake_policy import selected_child
+        spec = importlib.util.spec_from_file_location("quest_full_reporter", Path(__file__).with_name("report-run.py"))
+        reporter = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(reporter)
+        outcomes = list(reporter.lines(run_root / "suite-results.jsonl"))
+        if [r["id"] for r in outcomes] != [s["id"] for s in plan["steps"]][:len(outcomes)]:
+            raise ValueError("Quest coverage Full outcomes are not a planned prefix")
+        by_id = {row["id"]: row for row in outcomes}
+        receipt_paths = []
+        for step in plan["steps"]:
+            if step["kind"] not in ("Sim", "Live"):
+                continue
+            if step["id"] not in by_id:
+                raise ValueError("Quest coverage requires every planned breadth child")
+            relative = selected_child(run_root, plan, step, by_id[step["id"]], reporter.build_report)
+            directory = reporter.child_path(run_root, relative)
+            if reporter.build_report(directory)["status"] != "passed":
+                raise ValueError("Quest coverage child failed raw evidence validation")
+            receipt_paths.extend(sorted(directory.rglob("quest-coverage/*.json")))
+    for path in receipt_paths:
         receipt = read_json(path)
         if receipt.get("schemaVersion") != 1:
             raise ValueError(f"unsupported quest coverage receipt schema in {path}")
