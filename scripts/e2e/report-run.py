@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import sys
 from packet_coverage import collect as collect_packets, compare as compare_packets
+from code_coverage import collect as collect_code, load as load_code, summarize as summarize_code
 
 ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 DIGEST = re.compile(r"^\S+ (NEW|KNOWN|REGRESSED) \S+ \S+ fp=([a-f0-9]{8})(?:\s|$)")
@@ -471,7 +472,7 @@ def build_report(root):
     issues = []
     expected = []
     report = dict(schemaVersion=1, run=root.name, mode=None, status="failed", runner=None,
-                  scenarios=[], steps=[], fingerprints=[], watcher=None, simulation=None, heartbeatPeaks=[], resourcePeaks=[], packetCoverage=[], coverage=[], evidenceIssues=issues,
+                  scenarios=[], steps=[], fingerprints=[], watcher=None, simulation=None, heartbeatPeaks=[], resourcePeaks=[], packetCoverage=[], codeCoverage=None, coverage=[], evidenceIssues=issues,
                   runnerSourceSha256=None, limitations=["Scenario completion alone does not prove watcher, cleanup, coverage or capacity acceptance.",
                                "Heartbeat peaks are observed samples, not a continuous resource maximum."])
     try:
@@ -501,6 +502,15 @@ def build_report(root):
             if outcome["mode"] == "LIVE":
                 report["watcher"], report["fingerprints"], report["heartbeatPeaks"] = live_observations(root, outcome, issues)
             else:
+                try:
+                    metadata = read_json(child_path(root, "run.json")) if child_path(root, "run.json").exists() else {}
+                    if metadata.get("codeCoverageEnabled") is True or child_path(root, "code-coverage-request.json").exists():
+                        report["limitations"].append("Coverage instrumentation is active; timings/resource samples are not uninstrumented performance measurements.")
+                        report["codeCoverage"] = collect_code(root, outcome)
+                    else:
+                        report["limitations"].append("SIM line/branch coverage was not requested for this process.")
+                except (OSError, EOFError, ValueError, KeyError, TypeError, IndexError, AttributeError) as error:
+                    issues.append(f"Invalid or missing SIM code coverage: {error}")
                 report["limitations"].extend([
                     "SIM policy observation counts can overlap in nested scopes.",
                     "SIM resources are boundary samples of the whole test process after bootstrap, not server-only or continuous maxima. The OS lifetime peak can predate the first sample.",
@@ -515,7 +525,7 @@ def build_report(root):
             if item["comparison"].get("baselineComparison", {}).get("passed") is False:
                 issues.append(f"Coverage comparison failed: {item['evidence']}.")
         if not report["coverage"]:
-            report["limitations"].append("No retained coverage comparison for this run; coverage deltas are unavailable.")
+            report["limitations"].append("No retained quest/packet coverage comparison for this run; those deltas are unavailable.")
         if outcome["status"] == "failed":
             issues.append(outcome.get("error") or "Runner failed without a recorded exception.")
         if any(row["status"] != "passed" for row in report["scenarios"]):
@@ -536,6 +546,7 @@ def build_report(root):
 
 
 def collect_suite(root, outcome, report):
+    code_measurements = []
     plan = read_json(child_path(root, "suite-plan.json"))
     if plan["run"] != outcome["run"]:
         raise ValueError("suite plan identity mismatch")
@@ -593,6 +604,11 @@ def collect_suite(root, outcome, report):
         else:
             child = None
         if child:
+            if mode == "SIM" and child.get("codeCoverage") is not None:
+                measurement = load_code(directory, child["runner"])
+                for source in measurement["sources"]:
+                    source["path"] = f"{relative}/{source['path']}"
+                code_measurements.append(measurement)
             report["scenarios"].extend(dict(row, child=relative) for row in child["scenarios"])
             report["fingerprints"].extend(dict(row, child=relative,
                 repro=f"{relative}/{row['repro']}" if row["repro"] else None) for row in child["fingerprints"])
@@ -608,6 +624,11 @@ def collect_suite(root, outcome, report):
                 reason="No valid child outcome; not credited as executed.", evidence=None, child=relative) for scenario in scenario_ids)
             if status == "passed":
                 report["evidenceIssues"].append(f"Passed step {step['id']} lacks valid child evidence.")
+    if code_measurements:
+        report["codeCoverage"] = summarize_code(code_measurements)
+        report["codeCoverage"]["plannedProcesses"] = sum(step["kind"] == "Sim" for step in steps)
+        report["codeCoverage"]["collectedProcesses"] = len(code_measurements)
+        report["codeCoverage"]["limitations"].append("Merged retained processes only; failed or unexecuted scenarios are not credited as successful by these coverage observations.")
 
 
 def markdown(report):
@@ -644,6 +665,26 @@ def markdown(report):
             metrics = ["unavailable" if item[k] is None else str(item[k]) for k in ("peakWorkingSetBytes", "peakLastGcHeapBytes", "peakArmedTimers")]
             rows.append(f"| [{cell(item['evidence'])}]({item['evidence']}) | {item['samples']} / {item['errors']} | {item['complete']} | " + " | ".join(metrics) + " |")
         rows += ["", "Process-lifetime OS peaks and observed wall/virtual sample gaps are retained separately in report.json. The lifetime peak may include bootstrap."]
+    rows += ["", "## SIM line and branch coverage", ""]
+    code = report.get("codeCoverage")
+    if code is None:
+        rows.append("Unavailable; no line/branch coverage is inferred.")
+    else:
+        rows += ["Instrumented observations, including bootstrap; not performance evidence.", "",
+                 "| Directory | Lines covered / total | Branch paths covered / total | Instrumented / source files |", "|---|---:|---:|---:|"]
+        def covered(metric):
+            fraction = "n/a" if metric["fraction"] is None else f"{metric['fraction']:.2%}"
+            return f"{metric['covered']} / {metric['total']} ({fraction})"
+        for entry in code["directories"]:
+            rows.append(f"| {entry['directory']} | {covered(entry['lines'])} | {covered(entry['branches'])} | {entry['instrumentedFiles']} / {entry['sourceFiles']} |")
+        comparison = code["baselineComparison"]
+        if comparison["comparable"]:
+            rows += ["", "Informational deltas against the retained, same-source/same-workload baseline:", "",
+                     "| Directory | Covered line delta | Covered branch-path delta |", "|---|---:|---:|"]
+            for entry in comparison["directories"]:
+                rows.append(f"| {entry['directory']} | {entry['lines']['coveredDelta']:+d} | {entry['branches']['coveredDelta']:+d} |")
+        else:
+            rows += ["", cell(comparison["reason"])]
     rows += ["", "## Coverage comparisons", ""]
     rows.extend(f"- [{item['evidence']}]({item['evidence']}) (full retained comparison in report.json)" for item in report["coverage"])
     if not report["coverage"]:

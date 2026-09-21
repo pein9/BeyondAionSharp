@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "scope": "Initial instrumented Fast SIM reference; not complete Full breadth and not a regression floor.",
+  "reference": {
+    "run": "p10-11-code-fast-b",
+    "report": "run/p10-11-code/p10-11-code-fast-b/report.json",
+    "reportSha256": "2dc7888c4c023d4183f16212891dbb088b95b4e5aa7f0d411dedd1e750d58ac3",
+    "gitSha": "2f90442d65ea943e6c303d78896b6d138bea84c4"
+  },
+  "measurement": {
+    "schemaVersion": 1,
+    "mode": "SIM",
+    "collector": "coverlet.collector/6.0.4",
+    "sourceInventorySha256": "a1739d9865c409903b72b72a219ef6661ceddb3fd3185d0b38abbfbac7ae3206",
+    "pointInventorySha256": "3dac07a2430e9a49655b575b5beb77c7425d43256f61c5eef94735193ab497c9",
+    "settingsSha256": "1a16742ad23e67c8e80c48b506d7ff3d7e540152b3182e09b590ee87e3c89226",
+    "directories": [
+      {
+        "directory": "ALL",
+        "lines": {
+          "covered": 64975,
+          "total": 267941,
+          "fraction": 0.24249741547579504
+        },
+        "branches": {
+          "covered": 13308,
+          "total": 103691,
+          "fraction": 0.12834286485808796
+        },
+        "instrumentedFiles": 4222,
+        "sourceFiles": 4387
+      },
+      {
+        "directory": "Services",
+        "lines": {
+          "covered": 4898,
+          "total": 26099,
+          "fraction": 0.18767002567148167
+        },
+        "branches": {
+          "covered": 1614,
+          "total": 11743,
+          "fraction": 0.137443583411394
+        },
+        "instrumentedFiles": 185,
+        "sourceFiles": 187
+      },
+      {
+        "directory": "Handlers/Instance",
+        "lines": {
+          "covered": 0,
+          "total": 12686,
+          "fraction": 0
+        },
+        "branches": {
+          "covered": 0,
+          "total": 5542,
+          "fraction": 0
+        },
+        "instrumentedFiles": 78,
+        "sourceFiles": 78
+      },
+      {
+        "directory": "Handlers/AI",
+        "lines": {
+          "covered": 11717,
+          "total": 38947,
+          "fraction": 0.300844737720492
+        },
+        "branches": {
+          "covered": 187,
+          "total": 8185,
+          "fraction": 0.022846670739156996
+        },
+        "instrumentedFiles": 631,
+        "sourceFiles": 631
+      },
+      {
+        "directory": "Handlers/AdminCommands",
+        "lines": {
+          "covered": 890,
+          "total": 6630,
+          "fraction": 0.13423831070889894
+        },
+        "branches": {
+          "covered": 17,
+          "total": 2742,
+          "fraction": 0.006199854121079504
+        },
+        "instrumentedFiles": 101,
+        "sourceFiles": 101
+      },
+      {
+        "directory": "Network/Aion/ClientPackets",
+        "lines": {
+          "covered": 728,
+          "total": 5073,
+          "fraction": 0.14350482948945398
+        },
+        "branches": {
+          "covered": 229,
+          "total": 2032,
+          "fraction": 0.11269685039370078
+        },
+        "instrumentedFiles": 190,
+        "sourceFiles": 190
+      }
+    ],
+    "processes": [
+      {
+        "run": "p10-11-code-fast-b",
+        "tier": "Fast",
+        "seed": 1,
+        "scenarios": [
+          "S0",
+          "L0",
+          "M1",
+          "C1",
+          "C2",
+          "C3",
+          "Q1",
+          "Q2",
+          "E1",
+          "E3",
+          "E6"
+        ],
+        "binaries": {
+          "Aion.GameServer.dll": "7ec77692fe194c3ace54b55642a531164107ea83ff678b9a329c647a00cd8438",
+          "Aion.GameServer.pdb": "f92ab6044398b01460005d38b382efe221538a73f04750c8ac450e032aee2076"
+        },
+        "sources": [
+          {
+            "path": "code-coverage-request.json",
+            "sha256": "04f1ce2823a85ff3c53020fd4d951faa9ca377d5e9ec584616a17811a57b1e42",
+            "bytes": 514491
+          },
+          {
+            "path": "code-coverage-result.json",
+            "sha256": "4f9c0c49dd535826369417b27d69c539d62a16df151996626e6555e8d09f1da9",
+            "bytes": 971
+          },
+          {
+            "path": "coverage.runsettings",
+            "sha256": "1a16742ad23e67c8e80c48b506d7ff3d7e540152b3182e09b590ee87e3c89226",
+            "bytes": 634
+          },
+          {
+            "path": "af70e61c-736e-4824-a167-50bdbd00a48b/coverage.json",
+            "sha256": "3eeff04ae2c567167a18a4335c1272e188fd2b32a41ba738251a055ddd508357",
+            "bytes": 34863786
+          },
+          {
+            "path": "ryanf_FARMER-14700K_2026-09-20_21_26_44/In/FARMER-14700K/coverage.json",
+            "sha256": "3eeff04ae2c567167a18a4335c1272e188fd2b32a41ba738251a055ddd508357",
+            "bytes": 34863786
+          },
+          {
+            "path": "af70e61c-736e-4824-a167-50bdbd00a48b/coverage.cobertura.xml",
+            "sha256": "2fed44d86e481663bab3803628cc2a2c5d0bbed879f16412a47ea545e274d9a9",
+            "bytes": 55696887
+          },
+          {
+            "path": "ryanf_FARMER-14700K_2026-09-20_21_26_44/In/FARMER-14700K/coverage.cobertura.xml",
+            "sha256": "2fed44d86e481663bab3803628cc2a2c5d0bbed879f16412a47ea545e274d9a9",
+            "bytes": 55696887
+          }
+        ]
+      }
+    ],
+    "limitations": [
+      "Coverlet sequence points and IL branch paths, not every textual source line or gameplay behavior.",
+      "Includes test-process bootstrap and auxiliary selected tests as well as scenario execution.",
+      "Lines are unioned by source file/line; branches by source file, class, method and branch identity. Shards are never added as percentages.",
+      "Instrumentation changes timing and resource usage; this run is not capacity/performance evidence.",
+      "Only build-generated obj files are explicitly excluded. Files without sequence points remain visible in source-file counts."
+    ],
+    "baselineComparison": {
+      "comparable": false,
+      "reason": "No baseline was retained at run start."
+    }
+  }
+}

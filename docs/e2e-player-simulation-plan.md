@@ -101,6 +101,42 @@ alone does not prove autonomous progression. It does not authorize adding unimpl
 
 ---
 
+### System-to-scenario matrix (P10-11)
+
+This is the current **implemented test surface**, not a claim that all these scenarios
+passed together on the current revision or that each system is fully covered. Scenario selection
+comes from `parity-artifacts/e2e/scenarios.json`; the completed phase entries and their linked
+validation documents retain runtime receipts. Fresh acceptance comes from each run's journal,
+watcher, coverage and resource evidence. "Not selected" means there is no corresponding mode in
+the manifest, not that the system is absent from the production server. D17 still applies to
+every future run, including director/setup accounts.
+
+| System | Scenario ids | SIM status | LIVE status |
+|---|---|---|---|
+| Bootstrap, game entry, channels and protocol | S0, L0, connect | S0/L0 implemented; latest Fast passes | L0/connect implemented; latest P10-11 L0 passes |
+| Watcher canaries | canaries | Separate policy/unit controls; not a SIM manifest scenario | Implemented (P3/P10); deliberate scoped diagnostics |
+| Movement, flight, teleport and visibility | M1, M2, M3, M4, M5, M6, M7 | Implemented (P6/P9) | M1/M6 implemented; M2–M5/M7 not selected |
+| Combat, healing, skills, aggro and resurrection | C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15 | Implemented (P6/P9); Fast covers C1–C3 | C1 implemented; C2–C15 not selected |
+| Collision-aware forced displacement | GEO-FEAR, GEO-KNOCKBACK | Implemented (P9), isolated reset processes | Not selected |
+| Quest progression, planner and persistence | Q1, Q2, Q3, Q4P, Q4I, Q5 | Implemented (P7); Q4P/Q4I/Q5 isolated | Q1/Q2/Q3/Q4P/Q4I implemented; Q5 not selected |
+| Ascension and capital ceremony | CAPITAL | Implemented (P8-01), GM-prepared focused journey | Implemented; not the deferred natural journey |
+| Gathering and refusal/interruption | E1, E2 | Implemented (P8-01) | Implemented (P8-01) |
+| Vendor buy/sell/repurchase and trade-in limits | E3, E11 | Implemented (P8-01/P8-06) | Implemented (P8-01/P8-06) |
+| Cooking, profession learning and work orders | E4, E5 | Implemented (P8-01) | Implemented (P8-01) |
+| Direct exchange and mail | E6, E7 | Implemented (P8-01) | Implemented with inventory/persistence oracles |
+| Warehouses, broker and private stores | E8, E9, E10 | Implemented (P8-06) | Implemented with inventory/persistence oracles |
+| Gear upgrades, socketing, binding and inventory utilities | G1, G2, G3, G4, G5, G6 | Implemented (P8-05) | Implemented (P8-05) |
+| Group/legion, PvP, friends, alliance/league, loot, quest sharing and recruitment | S1, S2, S3, S4, S5, S6, S7 | Implemented (P8-02) | Implemented (P8-02); population and director admission still required |
+| Character creation/deletion/restoration across classes and races | L1 | Implemented; original twelve-subject acceptance predates D17 | Implemented; twelve-subject manifest run cannot be rerun under current cap |
+| Character settings/switching, passkey, pets and sell limits | L2, L3, L4, L5, L7 | Implemented (P8-07) | Implemented (P8-07) |
+| Passport, event calendars and event commands | L6, L8, L8C | Implemented (P8-07); isolated virtual epochs | Not selected |
+| Shipped skill, vendor, travel, bind, recipe and gatherable catalogs | SWEEP-SKILL, SWEEP-TRADE, SWEEP-TELEPORT, SWEEP-BIND, SWEEP-CRAFT, SWEEP-GATHER | Implemented (P8-08), isolated per-row coverage; inactive catalogs remain separate | Not selected as exhaustive sweeps |
+| Chat authentication/gag, Chat crash recovery, account controls and hardware bans | B2, B2F, B3, B4 | Not selected | B2 remains red (§7/119); B2F/B3/B4 accepted checkpoints in P10-09 |
+| Two-game-server character transfer | No current manifest scenario | Not selected | P10-09 diagnostic reaches the real scheduler but remains blocked (§7/118); no accepted BA-001 journey |
+| Save/crash/relogin and duplicate-session lifecycle | O1 | Component/DAO tests, not a SIM manifest scenario | Implemented and accepted (P10-03) |
+| Sustained mixed activities and scale | SOAK | Not selected | Workload exists; small-population evidence is not the deferred larger-capacity acceptance (D17) |
+| Whole-instance, scheduled siege/housing and broader journey | No current manifest scenario | Phase 11 remains future work | Siege/housing deferred (D7); natural journey remains separate policy work |
+
 ## 2. Target design
 
 ```mermaid
@@ -2266,9 +2302,10 @@ real geodata on in production immediately, because geo is enabled by default; th
   Full joins child resource evidence separately from LIVE heartbeats. Runtime receipts are in the
   validation document; the current reporting checkpoint does not establish capacity/soak acceptance.
   SIM resource receipt: `2438d4e0a`.
-  Remaining P10-10 work: complete coverage delta
-  integration (including the P10-11 measurements), and final acceptance of all report paths. These
-  missing observations are explicitly unavailable, not zero. No retry/flaky policy is enabled here;
+  Remaining P10-10 work: final coverage/report acceptance across the complete Full workload and
+  P10-12's flaky outcomes. P10-11 now supplies packet and line/branch measurement/delta integration,
+  but the complete-Full reference and acceptance are still missing. Uncollected observations are
+  unavailable, not zero; genuinely measured zero-hit directories remain visible. No retry/flaky policy is enabled here;
   P10-12 still owns it. The current Full matrix remains unexecuted under D17 and known P10-09 failures.
 - [ ] **P10-11** [BOTH] M — Coverage. (a) Packet coverage from bot traces and the P3-07 tap: client opcodes sent out
   of 186 and server opcodes decoded out of 238. (b) SIM line and branch coverage of `src/Aion.GameServer` with
@@ -2283,12 +2320,32 @@ real geodata on in production immediately, because geo is enabled by default; th
   gameplay-branch coverage. The Full breadth gate revalidates child acceptance, snapshots the reviewed
   baseline and fails on lost opcode identities or registry/decoder drift, even when total counts stay flat.
   The initial floor is explicitly limited to accepted Fast SIM and LIVE L0 evidence; it is not a measured
-  complete-Full baseline. Full breadth, line/branch coverage and the system matrix remain outstanding.
+  complete-Full baseline. Full-breadth measurement remains outstanding under the recorded runtime constraints.
   Fast's eleven scenarios exercise 31/186 client opcodes and 57/238 structured server decodes; LIVE L0
   exercises 13/186 and 37/238. Its tap retains all 447 received frames without drops; raw/tapped traffic
   is not credited as decoding. A second independent Fast run holds the same identity floor. Same-count
   replacement of an exercised opcode fails the comparison; Full dispatch and stale-success/provenance
   rejection are covered by contracts. Runtime and negative-control receipts are in the validation document.
+  Packet measurement/gate receipt: `2f90442d6`.
+  **Line/branch and matrix checkpoint implemented:** Coverlet collection is automatic in Full SIM
+  processes and opt-in for Fast (`-CodeCoverage`). It instruments the game-server assembly, retaining
+  JSON/Cobertura attachments, source/compiled-input hashes, settings, restoration checks and the exact
+  selected workload. Reports show all-source and five-directory totals; physical lines and individual
+  IL branch paths are unioned across compatible processes, not added as percentages. Byte-identical
+  VSTest/TRX copies are retained and verified without double-counting (§7/126). Only build-generated
+  `obj` files are explicitly excluded. Missing or conflicting evidence fails acceptance; real zero-hit
+  directories remain visible. Instrumented timing/memory observations are not performance evidence.
+  The initial line/branch reference is scoped to Fast and produces informational deltas only when
+  source, instrumentation, point inventory, RNG seed and workload match; different Full workloads are explicitly
+  incomparable, not fabricated regressions or improvements. The §1 matrix covers every current manifest
+  scenario and distinguishes implemented modes, known failures, population restrictions and future work.
+  The complete Full runtime measurement/baseline remains unaccepted; this checkpoint does not close
+  Phase 10's broader acceptance criteria or authorize any deferred execution.
+  Three fresh instrumented Fast runs pass after the attachment-discovery correction; the final run
+  reports seed-matched retained-baseline deltas. A one-bot Full `reset-Q5` run proves automatic collection
+  and correctly labels its different workload incomparable. The plain Fast path still passes without
+  instrumentation. Raw two-process union and report contracts verify unique-point aggregation; see
+  the validation document for exact scope, counts, negative controls and hashes.
 - [ ] **P10-12** [LIVE] S — Flake policy: a failed LIVE scenario is rerun once; a pass on rerun is reported FLAKY with
   both traces and recorded in `parity-artifacts/e2e/flaky.json`; 3 flakes in the last 10 Full runs quarantines the scenario with
   an owner and an expiry. SIM is never retried: a SIM flake is a determinism bug.
@@ -2585,6 +2642,8 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 124 | Full runner dropped LIVE manifest bot counts (harness-only) | `Get-FullSuitePlan` omitted `bots` from LIVE steps and `run-full.ps1` never passed `-Bots`. The child runner therefore saw its default of one: B4 and B2F rejected admission before the bot executable's manifest expansion could occur. Standalone B4 evidence is unaffected | Include and validate positive integer manifest counts, pass them through the actual Full dispatch, and exercise all 47 LIVE invocations in both execution backends with recording stubs. Missing, fractional, string, boolean and out-of-range counts fail planning. No production or Java behavior changes; no real bots launched by these contract tests and no claim that Full acceptance is green |
 
 | 125 | Run report rejected ordinary tracked LIVE problems despite P3-14's watcher policy (harness-only) | `report-run.py` in `faa8a4581` failed every retained fingerprint, including KNOWN with an enforced watcher verdict of success. Two red regressions reproduce standalone and Full-child false failures; `ProblemWatcher.FailingProblemCount` and its tracked/heartbeat/crash tests establish the existing policy | Retain KNOWN in the report and honor the watcher's boolean verdict. NEW/REGRESSED still fail even if the summary inconsistently says success; known heartbeat and declared-crash-window failures remain fatal through the watcher verdict. Reject non-boolean verdicts. No change to classification, ledger, allowance, SIM policy or production/Java behavior |
+
+| 126 | Initial P10-11 collector receipt treated VSTest's copied attachments as conflicting measurements (harness-only) | Instrumented `p10-11-code-fast-a` passed all six test cases and eleven scenarios, but VSTest retained byte-identical JSON/Cobertura files in both the collector GUID directory and the TRX deployment tree. The first discovery implementation required exactly one filename and correctly left the run red for its invalid receipt | Retain/hash every equivalent copy and count its observations once; reject differing hashes, missing attachments, changed settings/source identity or unrestored binaries. Fresh `p10-11-code-fast-b` passes with all copies validated. Failed a remains unchanged. No Java or production behavior, allowance or failure policy was changed |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the

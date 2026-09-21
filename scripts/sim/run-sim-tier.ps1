@@ -19,7 +19,8 @@ param(
 
 	[string]$SimulationRunId = $Run,
 
-	[string]$RunRoot
+	[string]$RunRoot,
+	[switch]$CodeCoverage
 )
 
 $ErrorActionPreference = 'Stop'
@@ -28,6 +29,8 @@ Set-StrictMode -Version Latest
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $repoRoot 'scripts/e2e/run-artifact-owner.ps1')
 . (Join-Path $repoRoot 'scripts/e2e/run-report.ps1')
+. (Join-Path $PSScriptRoot 'code-coverage.ps1')
+$collectCoverage = $CodeCoverage -or $Tier -eq 'Full'
 if ([string]::IsNullOrWhiteSpace($RunRoot)) {
 	$RunRoot = if ([string]::IsNullOrWhiteSpace($env:AION_E2E_RUN_ROOT)) {
 		Join-Path $repoRoot 'run'
@@ -116,6 +119,7 @@ function Write-RunMetadata {
 		})
 		timeZone = 'UTC'
 		configProfile = "sim-$($Tier.ToLowerInvariant())"
+		codeCoverageEnabled = [bool]$collectCoverage
 		scenarioConfigOverrides = $(if ($scenarioIds.Contains('L4')) {
 			@{ L4 = @{ 'gameserver.security.passkey.enable' = $true; 'gameserver.security.passkey.wrong.maxcount' = 5 } }
 		} elseif ($scenarioIds.Contains('L8C')) {
@@ -205,6 +209,13 @@ try {
 		}
 		Write-RunMetadata -GitSha $gitSha
 
+		if ($collectCoverage) {
+			# Freeze the exact compiled/source inputs before the collector instruments this process's copy.
+			& dotnet build tests/Aion.Simulation.Tests/Aion.Simulation.Tests.csproj --no-restore --nologo
+			if ($LASTEXITCODE -ne 0) { throw 'Coverage test-host build failed.' }
+			Initialize-AionSimCoverage -RepoRoot $repoRoot -RunDirectory $runPath -Run $SimulationRunId `
+				-GitSha $gitSha -Seed $Seed -Tier $Tier -Scenarios $scenarioIds.ToArray()
+		}
 		$testArguments = @(
 			'test', 'tests/Aion.Simulation.Tests/Aion.Simulation.Tests.csproj',
 			'--no-restore', '--nologo',
@@ -213,6 +224,9 @@ try {
 			'--logger', 'console;verbosity=normal',
 			'--logger', 'trx;LogFileName=simulation.trx'
 		)
+		if ($collectCoverage) {
+			$testArguments += @('--no-build', '--collect', 'XPlat Code Coverage', '--settings', (Join-Path $runPath 'coverage.runsettings'))
+		}
 		& dotnet @testArguments 2>&1 | Tee-Object -LiteralPath $consolePath
 		$testExitCode = $LASTEXITCODE
 		if ($testExitCode -ne 0) {
@@ -235,6 +249,10 @@ catch {
 }
 finally {
 	$stopwatch.Stop()
+	if ($collectCoverage -and (Test-Path -LiteralPath (Join-Path $runPath 'code-coverage-request.json'))) {
+		try { Complete-AionSimCoverage -RepoRoot $repoRoot -RunDirectory $runPath }
+		catch { Write-Warning "Coverage finalization failed: $_. The report must reject missing/invalid coverage evidence." }
+	}
 	Write-RunMetadata -GitSha $gitSha
 	Restore-Environment 'AION_SIM_DB_INTEGRATION' $previousIntegration
 	Restore-Environment 'AION_SIM_RUN_ID' $previousRunId

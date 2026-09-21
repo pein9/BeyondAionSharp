@@ -3654,6 +3654,109 @@ The real runs were sequential and used at most two bots. The owned LIVE Docker
 stack was removed normally; the maintainer's Docker MySQL remains healthy. No
 local MySQL, real-client session or deferred Java/population work was run.
 
+## P10-11 SIM source coverage and system matrix
+
+Coverlet now instruments `Aion.GameServer` for every Full SIM process. Fast remains
+uninstrumented by default; `scripts/e2e/run-fast.ps1 -CodeCoverage` selects the same
+collector. The test-only `coverlet.collector` dependency is pinned to 6.0.4, compatible
+with the existing VSTest integration and verified on this repository's .NET 10 host;
+see the [versioned integration guide](https://github.com/coverlet-coverage/coverlet/blob/v6.0.4/Documentation/VSTestIntegration.md).
+It is not added to production projects. No gameplay/Java parity change is involved.
+
+Each instrumented process freezes its source inventory, compiled DLL/PDB hashes,
+collector settings, run/seed/scenario selection and optional baseline before testing.
+It retains JSON and Cobertura attachments, hashes every equivalent VSTest/TRX copy,
+and verifies that instrumentation restored the original DLL/PDB. Missing/conflicting
+attachments, changed inputs or failed restoration cannot establish a passing report.
+Raw attachments remain available even when scenario execution fails. Reports count
+physical file/line identities once and individual class/method/IL branch paths once;
+Full aggregation unions compatible raw child observations, never adds percentages.
+
+Only build-generated `obj` files are explicitly excluded. The measured inventory is
+4,222 instrumented files out of 4,387 source files, with 267,941 line points and
+103,691 branch paths. This is executable sequence-point coverage, not a percentage
+of every textual source line. Bootstrap and the auxiliary tests selected with
+`SimulationFastScenarioTests` are included; counts are not proof of natural player
+behavior. Instrumented timing and memory are explicitly not performance evidence.
+
+Accepted initial Fast measurement (`p10-11-code-fast-b`):
+
+| Directory | Covered lines / total | Covered branch paths / total |
+|---|---:|---:|
+| All game-server source | 64,975 / 267,941 (24.25%) | 13,308 / 103,691 (12.83%) |
+| Services | 4,898 / 26,099 | 1,614 / 11,743 |
+| Handlers/Instance | 0 / 12,686 | 0 / 5,542 |
+| Handlers/AI | 11,717 / 38,947 | 187 / 8,185 |
+| Handlers/AdminCommands | 890 / 6,630 | 17 / 2,742 |
+| Network/Aion/ClientPackets | 728 / 5,073 | 229 / 2,032 |
+
+`parity-artifacts/e2e/code-coverage-baseline.json` retains this **Fast-only** reference,
+not a complete Full measurement. Line/branch deltas are informational (the plan's
+mandatory regression gate is for packet identities). A delta requires matching
+source, instrumentation, point inventory, RNG seed and selected workload; otherwise the report
+states that comparison is unavailable. Zero-hit directories are shown as zero, not
+omitted. This makes the unexercised instance surface particularly visible.
+
+Runtime receipts under `run/p10-11-code/`:
+
+- `p10-11-code-fast-a`: all six test cases and eleven scenarios passed, but the
+  initial receipt rejected VSTest's two byte-identical attachment copies (§7/126).
+  Its failed report and original receipt are preserved, not rewritten as green.
+- `p10-11-code-fast-b`: fresh corrected Fast run passed all six cases/eleven scenarios,
+  with equivalent copies verified and DLL/PDB restoration confirmed. Report SHA256:
+  `2dc7888c4c023d4183f16212891dbb088b95b4e5aa7f0d411dedd1e750d58ac3`.
+- `p10-11-code-q5-full`: `-Tier Full -ProcessKey reset-Q5`, without a coverage switch,
+  passed six test cases and its one selected Q5 scenario with one bot. Coverage was
+  automatically collected: 56,860/267,941 lines and 10,317/103,691 branch paths.
+  The Fast baseline is correctly incomparable, rather than reported as a regression.
+  Report SHA256: `f4202a01c010dc12a8ea56b7638850a750608930562bd190c4e37edd2c90f1ce`.
+- `p10-11-code-fast-final`: another instrumented six-case/eleven-scenario pass with
+  the frozen Fast reference. The then-current report performs its workload comparison:
+  65,036 covered lines (+61) and 13,314 covered branch paths (+6), with unchanged
+  denominators and source/point inventories. These are observed execution differences
+  on unchanged source, not evidence of a code fix or improved scenario coverage.
+  Report SHA256: `e91fa90e4cda12a674312e2f611c429d23f1f6e6a8ae72095439f9948d3b1056`.
+  Final review subsequently added the RNG seed to baseline workload matching. This
+  run's original snapshot lacks that field; current readers retain its measurements
+  but conservatively mark its old baseline incomparable. Its original report is not rewritten.
+- `p10-11-code-plain-fast`: six cases and eleven scenarios pass without `-CodeCoverage`;
+  metadata records collection disabled and the report leaves code coverage unavailable.
+  Installing the collector does not silently instrument ordinary Fast runs.
+- `p10-11-code-seed-final`: fresh instrumented run passes six cases/eleven scenarios
+  with the final seed-aware contract. Both workload and seed 1 match the frozen
+  baseline: 65,042/267,941 lines (+67) and 13,305/103,691 branch paths (-3).
+  Deltas are informational execution variation, not an assertion of improvement or
+  regression. All attachment copies validate and DLL/PDB restoration passes.
+  Report SHA256: `b41c9234573a3f102f10cc538b71a5e92c03aa7afd1b178312cf14d758c0323c`.
+
+The pre-seed-refinement `run/p10-11-code-union-audit.json` independently revalidates
+the historical `p10-11-code-fast-final` and Full Q5
+receipts and unions their raw identities: 65,092/267,941 lines and 13,343/103,691 branch
+paths. Denominators are not doubled. Its scope is explicitly two selected processes,
+not a fabricated complete Full suite; the combined workload does not match the Fast
+baseline, so no combined delta is inferred. Unit contracts also exercise disjoint
+shard hits, incompatible inputs, conflicting copies, missing evidence, failed-run
+reporting and actual Full report evidence-path joining.
+
+The §1 system matrix now maps every current manifest scenario to its system and
+SIM/LIVE implementation status, including known red B2 journeys, L1's twelve-subject
+population restriction, future instance coverage and existing deferrals. A contract
+checks exact manifest membership; it does not substitute listed implementation for
+fresh runtime acceptance. The complete Full workload/baseline and Phase 10's wider
+acceptance remain open. No deferred scope was reopened.
+
+Pre-commit checks: **4,614 solution tests passed / 27 skipped**; warning inventory
+**4,243 sites / 21 codes**, unchanged. All CLAUDE checks passed, including 15 code-coverage
+contracts, 14 packet contracts, 35 report tests and the PowerShell collection/restoration
+contract. Full orchestration's large-population checks are mocks, not real bot runs.
+Logs: `run/p10-11-code-{warnings,dotnet,ancillary,ancillary-final}.log` and the per-run
+console logs; the final ancillary pass includes the seed-scope refinement.
+The post-discovery-fix source overlay is in `run/p10-11-code-source-a/`; the final overlay,
+new files and baseline are in `run/p10-11-code-source-final/`, against `2f90442d6`.
+Source coverage includes bootstrap: these receipts do not substitute for all Full
+scenarios, a player-policy journey, capacity acceptance, or the deferred real-client work.
+Runs were sequential, with at most two bots, using Docker MySQL only.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
