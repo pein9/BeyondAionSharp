@@ -3433,6 +3433,81 @@ Logs: `run/p10-10-known-warnings.log`, `run/p10-10-known-dotnet.log` and
 the report reader, its tests and documentation; the retained-run comparison above
 exercises actual prior Docker evidence without rewriting it.
 
+## P10-10 — SIM structured problems, traces and repro export
+
+`SimulationEvidenceWriter` now retains per-policy start/completion records in
+`sim-problems.jsonl`. The manifest test owns its lifetime; each scenario's existing
+log policy exports on disposal, including exceptions, early exits that never
+reach `AssertClean`, and errors logged during cleanup after a clean assertion.
+Nested sweep policies have distinct IDs and may observe the same log entry:
+the report labels their aggregate as policy observations, not unique occurrences.
+The shared ledger is read-only for SIM export, avoiding duplicate count inflation.
+
+The writer snapshots the exact ledger and allowlist bytes, records their SHA-256
+hashes with run/source/seed/profile provenance, and emits action/sent/received
+traces through the same `BotActionTraceWriter` used by LIVE. Files are separated
+by scenario, bot and account so reused bot labels do not merge identities. The
+S0 unauthenticated connection probes also retain their observed key packets.
+NEW findings retain full exception text, up to 200 surrounding captured log
+records, up to 50 preceding trace records, provenance and a draft backlog entry.
+Existing exports/repro directories cannot be silently overwritten. Trace reads
+share the still-open writer on Windows; the first test draft caught the same
+reader-sharing pitfall already recorded in §7/122. A separate allowance test
+initially calculated a fingerprint without AionLog's call-site state; it now
+measures the actual emitted fingerprint before checking frozen allowances.
+
+The report reader validates hashed snapshots, scenario/policy identities,
+completion receipts, assertion flags, scope/count/owner/reason/expiry allowances,
+recorded classifications and NEW repro provenance. Missing or truncated evidence
+cannot establish a pass. SIM remains stricter than LIVE's ordinary tracked-log
+policy: any unallowlisted NEW, KNOWN or REGRESSED observation fails the report,
+even when a scenario journal says passed. Previously observed fingerprints remain
+visible if a later export line is corrupt. Historical SIM runs without the new
+export cannot satisfy this new reporting gate; their existing files are not rewritten.
+
+Runtime evidence, all against throwaway databases on Docker MySQL:
+
+- `run/p10-10-sim-export/p10-10-sim-export-a`: six xUnit cases pass; eleven
+  manifest scenarios and eleven completed clean log policies pass. Fifteen trace
+  files retain 3,976,532 bytes of observed actions/packets.
+- `run/p10-10-sim-export/p10-10-sim-export-negative`: a temporary test-only
+  logged exception after the real two-subject L0 journey proves the failure path.
+  S0 passes, L0 fails, nine unreached scenarios are skipped, and runner/report
+  both fail. NEW `710bcacf` points to five repro files with the full thrown
+  `InvalidOperationException`, 50 b01 trace records ending at `report-sentinel`,
+  102 available context records, and matching source/seed/profile metadata.
+  This is a deliberate negative control, not a discovered production defect or
+  an allowlist entry. It does not modify the known-problem ledger.
+- `run/p10-10-sim-export/p10-10-sim-export-final`: clean replay after removal of
+  the injection and final hardening passes all six xUnit cases, eleven manifest
+  scenarios and eleven log policies, with fifteen nonempty trace files and no
+  classified problems. The report and public Fast exit are both successful.
+
+The temporary injection was removed immediately after the failure proof. Its
+exact source and the initial implementation are archived under
+`run/p10-10-sim-export-source-a`; the final pre-commit implementation is under
+`run/p10-10-sim-export-source-final`, based on `b02f880c2`. The negative proof is
+independently checked in `run/p10-10-sim-export-negative-audit.log`. Runs use at
+most two subject bots; no Java runtime, local MySQL, production behavior change,
+retry policy or relaxed failure assertion is involved.
+
+Final verification: 4,600 solution tests pass with 27 explicit skips; warning
+inventory is unchanged at 4,243 sites across 21 codes. All CLAUDE.md ancillary
+checks pass, including 30 Python report tests and the PowerShell finalizer
+contract. Seventeen new C# exporter cases cover frozen classification/allowance
+counts, nested scopes, real errors/timer faults, post-assertion/early-exit logs,
+bounded/scoped repro tails, preservation of first-failure evidence, safe path
+identities, and logger restoration on constructor/disposal failures. All three
+throwaway SIM schemas are gone after normal fixture cleanup. The maintainer's
+Docker MySQL container remains healthy and the shared ledger/allowlist are unchanged.
+Logs: `run/p10-10-sim-export-{warnings,dotnet,ancillary,final,final-audit}.log`,
+`run/p10-10-sim-evidence-tests-final-b.log`, and the preserved intermediate
+test/negative-control logs. No larger-population or Full acceptance claim follows.
+
+P10-10 remains open for SIM resource metrics, complete coverage-delta integration
+and final report acceptance. Exporting packet traces supplies inputs for P10-11;
+it does not claim that coverage measurement/baselines are already implemented.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

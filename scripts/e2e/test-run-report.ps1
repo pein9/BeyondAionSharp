@@ -26,6 +26,17 @@ try {
 			startedUtc=$started.ToString('O'); timestampUtc=$started.ToString('O'); durationSeconds=1.5; exitCode=0; error=$null }
 	)
 	$rows | ForEach-Object { $_ | ConvertTo-Json -Compress } | Set-Content -LiteralPath (Join-Path $testRoot 'scenario-results.jsonl') -Encoding utf8NoBOM
+	$header = @{ schemaVersion=1; event='run-started'; run='run-report-test'; mode='SIM'; seed=1; gitSha=''; profile='sim-fast'; startedUtc=$started.ToString('O') }
+	foreach ($name in @('ledger', 'allowlist')) {
+		$path = Join-Path $testRoot "sim-$name-at-start.json"
+		'[]' | Set-Content -LiteralPath $path -Encoding utf8NoBOM
+		$header["$($name)Sha256"] = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+	}
+	@($header,
+		@{ event='policy-started'; run='run-report-test'; scenario='Q1'; policy=1 },
+		@{ event='policy-completed'; run='run-report-test'; scenario='Q1'; policy=1; assertedClean=$true; assertionPassed=$true; virtualMillis=100; observations=@() },
+		@{ event='run-completed'; run='run-report-test'; policiesStarted=1; policiesCompleted=1; activePolicies=@() }
+	) | ForEach-Object { $_ | ConvertTo-Json -Depth 5 -Compress } | Set-Content -LiteralPath (Join-Path $testRoot 'sim-problems.jsonl') -Encoding utf8NoBOM
 	Write-AionRunReport -RunDirectory $testRoot -Run run-report-test -Mode SIM -Scenarios @('Q1') `
 		-Status passed -StartedUtc $started -DurationSeconds 3
 	$report = Get-Content -Raw -LiteralPath (Join-Path $testRoot 'report.json') | ConvertFrom-Json

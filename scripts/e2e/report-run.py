@@ -215,6 +215,125 @@ def coverage(root):
     return result
 
 
+def sim_observations(root, outcome, report):
+    """Validate retained policy decisions against frozen inputs, not today's ledger."""
+    issues = report["evidenceIssues"]
+    rows = iter(lines(child_path(root, "sim-problems.jsonl")))
+    header = next(rows, {})
+    if (header.get("event") != "run-started" or header["schemaVersion"] != 1 or
+            header["run"] != outcome["run"] or header["mode"] != "SIM" or
+            header["gitSha"] != outcome["gitSha"] or type(header["seed"]) is not int or header["seed"] != outcome["seed"]):
+        raise ValueError("SIM problem export identity/provenance mismatch")
+    started = timestamp(header["startedUtc"])
+    identifier(header["profile"])
+    snapshots = {}
+    for name in ("ledger", "allowlist"):
+        path = child_path(root, f"sim-{name}-at-start.json")
+        if hashlib.sha256(path.read_bytes()).hexdigest() != header[f"{name}Sha256"]:
+            raise ValueError(f"SIM {name} snapshot hash mismatch")
+        snapshot = read_json(path)
+        if not isinstance(snapshot, list):
+            raise ValueError(f"SIM {name} snapshot must be an array")
+        entries = {}
+        for entry in snapshot:
+            fp = entry["fp"]
+            if not isinstance(fp, str) or not re.fullmatch("[a-f0-9]{8}", fp) or fp in entries:
+                raise ValueError(f"SIM {name} fingerprint invalid/duplicated")
+            if name == "ledger" and entry["status"] not in ("new", "tracked", "fixed"):
+                raise ValueError("SIM ledger status invalid")
+            if name == "allowlist":
+                for field in ("reason", "owner", "tracking"):
+                    if not isinstance(entry[field], str) or not entry[field].strip():
+                        raise ValueError(f"SIM allowance requires {field}")
+                if (type(entry["maxCount"]) is not int or entry["maxCount"] <= 0 or
+                        datetime.fromisoformat(entry["expires"]).date() < started.date()):
+                    raise ValueError("SIM allowance expired or has invalid count")
+                for field in ("modes", "servers", "scenarios"):
+                    values = entry.get(field)
+                    if field == "scenarios" and values is None:
+                        continue
+                    if not isinstance(values, list) or not values or any(not isinstance(v, str) or not v.strip() for v in values):
+                        raise ValueError(f"SIM allowance requires {field}")
+            entries[fp] = entry
+        snapshots[name] = entries
+    active, completed, seen = {}, {}, {}
+    started_policies = 0
+    footer = None
+    for row in rows:
+        if row["run"] != outcome["run"] or footer is not None:
+            raise ValueError("SIM policy export identity/order mismatch")
+        event = row["event"]
+        if event == "run-completed":
+            if (type(row["policiesStarted"]) is not int or type(row["policiesCompleted"]) is not int or
+                    row["policiesStarted"] != started_policies or row["policiesCompleted"] != len(completed) or
+                    not isinstance(row["activePolicies"], list) or any(type(p) is not int for p in row["activePolicies"]) or
+                    row["activePolicies"] != list(active)):
+                raise ValueError("SIM policy footer disagrees with observations")
+            footer = row
+            continue
+        scenario, policy = row["scenario"], row["policy"]
+        if scenario not in outcome["scenarios"] or type(policy) is not int or policy <= 0:
+            raise ValueError("SIM policy identity invalid")
+        if event == "policy-started":
+            if policy != started_policies + 1:
+                raise ValueError("SIM policy sequence duplicated or incomplete")
+            active[policy] = scenario
+            started_policies += 1
+            continue
+        if event != "policy-completed" or active.get(policy) != scenario:
+            raise ValueError("SIM policy completion without matching start")
+        del active[policy]
+        completed[policy] = scenario
+        number(row["virtualMillis"])
+        if type(row["assertedClean"]) is not bool or type(row["assertionPassed"]) is not bool:
+            raise ValueError("SIM policy assertion verdict must be boolean")
+        if not row["assertedClean"] or not row["assertionPassed"]:
+            issues.append(f"SIM {scenario} policy {policy} did not pass its clean-log assertion.")
+        counts = Counter()
+        if not isinstance(row["observations"], list):
+            raise ValueError("SIM observations must be an array")
+        for observation in row["observations"]:
+            fp = observation["fingerprint"]
+            if not isinstance(fp, str) or not re.fullmatch("[a-f0-9]{8}", fp):
+                raise ValueError("SIM observation fingerprint invalid")
+            counts[fp] += 1
+            allowance = snapshots["allowlist"].get(fp)
+            allowed = bool(allowance and "sim" in [m.lower() for m in allowance["modes"]] and
+                           observation["server"].lower() in [s.lower() for s in allowance["servers"]] and
+                           (allowance.get("scenarios") is None or scenario in allowance["scenarios"]) and counts[fp] <= allowance["maxCount"])
+            disposition = "ALLOWLISTED" if allowed else {"tracked": "KNOWN", "fixed": "REGRESSED"}.get(
+                snapshots["ledger"].get(fp, {}).get("status"), "NEW")
+            if type(observation["allowlisted"]) is not bool or observation["allowlisted"] != allowed or observation["disposition"] != disposition:
+                raise ValueError("SIM observation contradicts frozen classification/allowance")
+            key = (fp, disposition)
+            if key not in seen:
+                bundle = f"problems/{fp}" if disposition == "NEW" else None
+                item = dict(fingerprint=fp, disposition=disposition, repro=bundle, missingReproFiles=[], policyObservations=0)
+                seen[key] = item
+                report["fingerprints"].append(item)
+                if not allowed:  # Unlike LIVE, SIM never exempts ordinary KNOWN problems.
+                    issues.append(f"SIM {scenario} has unallowlisted {disposition} fingerprint {fp}.")
+                if bundle:
+                    for name in ("metadata.json", "stack.txt", "server-context.log", "bot-trace.jsonl", "draft-backlog.md"):
+                        if not child_path(root, f"{bundle}/{name}").is_file():
+                            item["missingReproFiles"].append(name)
+                    if item["missingReproFiles"]:
+                        issues.append(f"NEW {fp} missing repro files: {', '.join(item['missingReproFiles'])}")
+                    else:
+                        metadata = read_json(child_path(root, f"{bundle}/metadata.json"))
+                        if any(metadata.get(k) != v for k, v in dict(run=outcome["run"], mode="SIM", scenario=scenario,
+                                fingerprint=fp, seed=header["seed"], gitSha=header["gitSha"], configProfile=header["profile"]).items()):
+                            raise ValueError("SIM repro provenance mismatch")
+            seen[key]["policyObservations"] += 1
+    if footer is None or active:
+        issues.append("SIM export has no complete policy footer or has unfinished policy scopes.")
+    for scenario in report["scenarios"]:
+        if scenario["status"] == "passed" and scenario["id"] not in completed.values():
+            issues.append(f"SIM passed scenario {scenario['id']} has no completed log policy.")
+    report["simulation"] = dict(evidence="sim-problems.jsonl", policiesStarted=started_policies,
+        policiesCompleted=len(completed), activePolicies=list(active), provenance=header)
+
+
 def planned_rows(root, outcome):
     if outcome["mode"] != "FULL":
         return [dict(id=identifier(scenario), mode=outcome["mode"]) for scenario in outcome["scenarios"]]
@@ -239,7 +358,7 @@ def build_report(root):
     issues = []
     expected = []
     report = dict(schemaVersion=1, run=root.name, mode=None, status="failed", runner=None,
-                  scenarios=[], steps=[], fingerprints=[], watcher=None, heartbeatPeaks=[], coverage=[], evidenceIssues=issues,
+                  scenarios=[], steps=[], fingerprints=[], watcher=None, simulation=None, heartbeatPeaks=[], coverage=[], evidenceIssues=issues,
                   runnerSourceSha256=None, limitations=["Scenario completion alone does not prove watcher, cleanup, coverage or capacity acceptance.",
                                "Heartbeat peaks are observed samples, not a continuous resource maximum."])
     try:
@@ -262,7 +381,8 @@ def build_report(root):
             if outcome["mode"] == "LIVE":
                 report["watcher"], report["fingerprints"], report["heartbeatPeaks"] = live_observations(root, outcome, issues)
             else:
-                report["limitations"].append("SIM structured fingerprint and resource export is not yet available; absent metrics are not zero.")
+                report["limitations"].append("SIM resource export is not yet available; absent metrics are not zero. Policy observation counts can overlap in nested scopes.")
+                sim_observations(root, outcome, report)
         report["coverage"].extend(coverage(root))
         for item in report["coverage"]:
             if item["comparison"].get("baselineComparison", {}).get("passed") is False:

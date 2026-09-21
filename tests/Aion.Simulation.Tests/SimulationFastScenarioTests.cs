@@ -29,6 +29,7 @@ namespace Aion.Simulation.Tests;
 [Collection(SimulationWorldCollection.Name)]
 public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture fixture)
 {
+	private SimulationEvidenceWriter? evidence;
 	private readonly string allowlistPath = Path.Combine(
 		Aion.GameServer.TestKit.RealStaticData.RepoRoot(), "parity-artifacts", "e2e", "log-allowlist.json");
 
@@ -56,6 +57,8 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		string? runDirectory = Environment.GetEnvironmentVariable("AION_E2E_RUN_DIR");
 		using var journal = string.IsNullOrWhiteSpace(runDirectory) ? null : new ScenarioRunJournal(runDirectory,
 			Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "sim-fast", "SIM");
+		using var exported = OpenEvidence(runDirectory);
+		evidence = exported;
 		bool includeHistory = true;
 		foreach (ScenarioExecution execution in processPlan)
 		{
@@ -699,20 +702,22 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		Assert.True(fixture.World.ObjectCount > 0);
 		Assert.NotNull(fixture.World.GetWorldMap(scenario.Map!.Value).GetMainWorldMapInstance().GetNpc(210119));
 
-		IReadOnlyList<string> first = await RunS0ProbeAsync(scenario.VirtualDuration);
-		IReadOnlyList<string> second = await RunS0ProbeAsync(scenario.VirtualDuration);
+		IReadOnlyList<string> first = await RunS0ProbeAsync(scenario.VirtualDuration, policy, "probe1");
+		IReadOnlyList<string> second = await RunS0ProbeAsync(scenario.VirtualDuration, policy, "probe2");
 
 		Assert.Equal(first, second);
 		Assert.Equal([nameof(SM_KEY)], first);
 		policy.AssertClean();
 	}
 
-	private async Task<IReadOnlyList<string>> RunS0ProbeAsync(TimeSpan duration)
+	private async Task<IReadOnlyList<string>> RunS0ProbeAsync(TimeSpan duration, SimulationLogPolicy policy, string probe)
 	{
 		Rnd.SetProcessSeed(fixture.Seed);
+		policy.ObserveAction(probe, "unauthenticated-probe", "s01", "open-and-observe-key");
 		await using var transport = new InProcessBotTransport(elapsed => fixture.Clock.Advance(elapsed));
 		await using var packets = transport.ReceiveAsync().GetAsyncEnumerator();
 		Assert.True(await packets.MoveNextAsync());
+		policy.ObservePacket(probe, "s01", packets.Current, "unauthenticated-probe");
 		var stream = new List<string> { packets.Current.PacketType.Name };
 		await transport.AdvanceAsync(duration);
 		return stream;
@@ -765,14 +770,25 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 
 	private SimulationLogPolicy NewPolicy(string scenario, bool includeHistory,
 		SimulationLogPolicyOptions? options = null) => new(
-		"sim-fast",
+		Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "sim-fast",
 		scenario,
 		fixture.Clock,
-		allowlistPath,
+		evidence?.AllowlistPath ?? allowlistPath,
 		options,
 		captureProvider: fixture.LogCapture,
 		loggerFactory: fixture.LoggerFactory,
-		includeHistory: includeHistory);
+		includeHistory: includeHistory,
+		evidence: evidence);
+
+	private SimulationEvidenceWriter? OpenEvidence(string? directory)
+	{
+		if (string.IsNullOrWhiteSpace(directory)) return null;
+		using var metadata = JsonDocument.Parse(File.ReadAllText(Path.Combine(directory, "run.json")));
+		var root = metadata.RootElement;
+		return new SimulationEvidenceWriter(directory, root.GetProperty("run").GetString()!, fixture.Seed,
+			root.GetProperty("gitSha").GetString()!, root.GetProperty("configProfile").GetString()!, fixture.Clock,
+			Path.Combine(Path.GetDirectoryName(allowlistPath)!, "known-problems.json"), allowlistPath);
+	}
 
 	private static ScenarioTier ReadTier() =>
 		Enum.TryParse(Environment.GetEnvironmentVariable("AION_SIM_TIER") ?? nameof(ScenarioTier.Fast),
@@ -868,6 +884,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		{
 			currentStep = step;
 			currentAction = action;
+			policy.ObserveAction(bot, accountName, step, action);
 		}
 
 		public async Task LoginAndAuthenticateAsync(CancellationToken cancellationToken)
@@ -1247,7 +1264,9 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		private Task SendAsync(BotClientPacket packet, CancellationToken cancellationToken)
 		{
 			InProcessBotTransport active = transport ?? throw new InvalidOperationException("Simulation game connection is not open.");
-			return active.SendAsync(packet.Encode(active.Codec, state), cancellationToken).AsTask();
+			byte[] encoded = packet.Encode(active.Codec, state);
+			policy.ObserveSent(bot, accountName, currentStep, packet);
+			return active.SendAsync(encoded, cancellationToken).AsTask();
 		}
 
 		private async Task<DecodedBotServerPacket> WaitForAsync(Type packetType, CancellationToken cancellationToken)
@@ -1280,7 +1299,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			PacketHistory.Add(packet);
 			int? objectId = packet.Fields.TryGetValue("objectId", out object? value) && value is int id ? id : null;
 			PacketObservations.Add(new SimulationPacketObservation(currentAction, packet.PacketType.Name, objectId));
-			policy.ObservePacket(bot, currentStep, packet);
+			policy.ObservePacket(bot, currentStep, packet, accountName);
 			return packet;
 		}
 

@@ -27,6 +27,10 @@ public sealed class SimulationLogPolicy : IDisposable
 	private readonly List<SimulationProblem> syntheticProblems = [];
 	private readonly Dictionary<string, Queue<string>> recentPackets = new(StringComparer.Ordinal);
 	private int completed;
+	private int disposed;
+	private bool assertionPassed;
+	private readonly SimulationEvidenceWriter? evidence;
+	private readonly long evidencePolicy;
 
 	public SimulationLogPolicy(
 		string run,
@@ -36,7 +40,8 @@ public sealed class SimulationLogPolicy : IDisposable
 		SimulationLogPolicyOptions? options = null,
 		CapturingLoggerProvider? captureProvider = null,
 		ILoggerFactory? loggerFactory = null,
-		bool includeHistory = false)
+		bool includeHistory = false,
+		SimulationEvidenceWriter? evidence = null)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(run);
 		ArgumentException.ThrowIfNullOrWhiteSpace(scenario);
@@ -66,6 +71,15 @@ public sealed class SimulationLogPolicy : IDisposable
 			["step"] = string.Empty,
 		});
 		firstFault = clock.Faults.Count;
+		this.evidence = evidence;
+		try { evidencePolicy = evidence?.BeginPolicy(scenario) ?? 0; }
+		catch
+		{
+			scenarioScope?.Dispose();
+			factoryOverride.Dispose();
+			if (ownsLoggerResources) { factory.Dispose(); capture.Dispose(); }
+			throw;
+		}
 	}
 
 	public IDisposable? BeginBotStep(string bot, string step)
@@ -79,11 +93,18 @@ public sealed class SimulationLogPolicy : IDisposable
 		});
 	}
 
-	public void ObservePacket(string bot, string step, DecodedBotServerPacket packet)
+	public void ObserveAction(string bot, string account, string step, string action) =>
+		evidence?.TraceAction(scenario, bot, account, step, action);
+
+	public void ObserveSent(string bot, string account, string step, BotClientPacket packet) =>
+		evidence?.TraceSent(scenario, bot, account, step, packet);
+
+	public void ObservePacket(string bot, string step, DecodedBotServerPacket packet, string? account = null)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(bot);
 		ArgumentException.ThrowIfNullOrWhiteSpace(step);
 		ArgumentNullException.ThrowIfNull(packet);
+		if (account != null) evidence?.TraceReceived(scenario, bot, account, step, packet);
 		if (!recentPackets.TryGetValue(bot, out Queue<string>? packets))
 		{
 			packets = new Queue<string>();
@@ -109,7 +130,7 @@ public sealed class SimulationLogPolicy : IDisposable
 			template,
 			null,
 			bot,
-			step));
+			step) { ObservedAt = DateTimeOffset.UtcNow });
 	}
 
 	public void AssertClean()
@@ -117,9 +138,17 @@ public sealed class SimulationLogPolicy : IDisposable
 		if (Interlocked.Exchange(ref completed, 1) != 0)
 			throw new InvalidOperationException("Simulation log policy was already completed.");
 		var problems = CollectProblems();
+		bool[] allowed = ClassifyAllowances(problems);
+		var unallowlisted = problems.Where((_, index) => !allowed[index]).ToArray();
+		if (unallowlisted.Length != 0)
+			throw new SimulationLogPolicyException(FormatFailure(unallowlisted), unallowlisted);
+		assertionPassed = true;
+	}
+
+	private bool[] ClassifyAllowances(IReadOnlyList<SimulationProblem> problems)
+	{
 		var counts = new Dictionary<string, int>(StringComparer.Ordinal);
-		var unallowlisted = new List<SimulationProblem>();
-		foreach (SimulationProblem problem in problems)
+		return problems.Select(problem =>
 		{
 			LogProblemAllowlistEntry? entry = allowlist.Entries.FirstOrDefault(candidate =>
 				candidate.Fingerprint == problem.Fingerprint &&
@@ -128,21 +157,32 @@ public sealed class SimulationLogPolicy : IDisposable
 				(candidate.Scenarios == null || candidate.Scenarios.Contains(scenario, StringComparer.Ordinal)));
 			int count = counts.GetValueOrDefault(problem.Fingerprint) + 1;
 			counts[problem.Fingerprint] = count;
-			if (entry == null || count > entry.MaxCount)
-				unallowlisted.Add(problem);
-		}
-		if (unallowlisted.Count != 0)
-			throw new SimulationLogPolicyException(FormatFailure(unallowlisted), unallowlisted);
+			return entry != null && count <= entry.MaxCount;
+		}).ToArray();
 	}
 
 	public void Dispose()
 	{
-		scenarioScope?.Dispose();
-		factoryOverride.Dispose();
-		if (ownsLoggerResources)
+		if (Interlocked.Exchange(ref disposed, 1) != 0) return;
+		try
 		{
-			factory.Dispose();
-			capture.Dispose();
+			if (evidence != null)
+			{
+				// Include cleanup logs even when an earlier assertion threw or AssertClean was never reached.
+				var problems = CollectProblems();
+				evidence.CompletePolicy(evidencePolicy, completed != 0, assertionPassed,
+					problems, ClassifyAllowances(problems), capture.Entries);
+			}
+		}
+		finally
+		{
+			scenarioScope?.Dispose();
+			factoryOverride.Dispose();
+			if (ownsLoggerResources)
+			{
+				factory.Dispose();
+				capture.Dispose();
+			}
 		}
 	}
 
@@ -170,7 +210,7 @@ public sealed class SimulationLogPolicy : IDisposable
 				entry.Message,
 				entry.Exception?.ToString(),
 				entry.Scopes.GetValueOrDefault("bot"),
-				entry.Scopes.GetValueOrDefault("step")));
+				entry.Scopes.GetValueOrDefault("step")) { ObservedAt = entry.Timestamp });
 		}
 
 		foreach (VirtualThreadPoolFault fault in faults)
@@ -185,7 +225,7 @@ public sealed class SimulationLogPolicy : IDisposable
 				$"{template} at {fault.DueMillis}ms",
 				fault.Exception.ToString(),
 				null,
-				null));
+				null) { ObservedAt = capture.Entries.FirstOrDefault(entry => ReferenceEquals(entry.Exception, fault.Exception))?.Timestamp });
 		}
 		return problems;
 	}
@@ -235,7 +275,10 @@ public sealed record SimulationProblem(
 	string Message,
 	string? ExceptionText,
 	string? Bot,
-	string? Step);
+	string? Step)
+{
+	public DateTimeOffset? ObservedAt { get; init; }
+}
 
 public sealed class SimulationLogPolicyException(
 	string message,

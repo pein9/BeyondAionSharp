@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import copy
 import gzip
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -39,9 +40,117 @@ class RunReportTests(unittest.TestCase):
     def fixture(self, mode="SIM", scenarios=None, status="passed", run="run-a", root=None):
         scenarios = scenarios or ["Q1"]
         self.put("runner-result.json", dict(schemaVersion=1, run=run, mode=mode, scenarios=scenarios,
-                 status=status, startedUtc=STAMP, finishedUtc=STAMP, durationSeconds=4.5, error=None if status == "passed" else "runner failure"), root)
+                 status=status, startedUtc=STAMP, finishedUtc=STAMP, durationSeconds=4.5, gitSha="contract", seed=1,
+                 error=None if status == "passed" else "runner failure"), root)
         if mode != "FULL":
             self.journal([row for scenario in scenarios for row in self.scenario(scenario, mode=mode, run=run)], root)
+        if mode == "SIM":
+            self.sim_evidence(scenarios, run=run, root=root)
+
+    def sim_evidence(self, scenarios=("Q1",), run="run-a", root=None, ledger=None, allowlist=None, observations=()):
+        root = root or self.root
+        header = dict(schemaVersion=1, event="run-started", run=run, mode="SIM", seed=1,
+                      gitSha="contract", profile="sim-fast", startedUtc=STAMP)
+        for name, snapshot in (("ledger", ledger or []), ("allowlist", allowlist or [])):
+            path = f"sim-{name}-at-start.json"
+            self.put(path, snapshot, root)
+            header[name+"Sha256"] = hashlib.sha256((root/path).read_bytes()).hexdigest()
+        rows = [header]
+        for policy, scenario in enumerate(scenarios, 1):
+            common = dict(run=run, policy=policy, scenario=scenario)
+            rows.extend([dict(common, event="policy-started"), dict(common, event="policy-completed",
+                assertedClean=True, assertionPassed=True, virtualMillis=100, observations=list(observations))])
+        rows.append(dict(event="run-completed", run=run, policiesStarted=len(scenarios), policiesCompleted=len(scenarios), activePolicies=[]))
+        self.write_sim_rows(rows, root)
+        return rows
+
+    def write_sim_rows(self, rows, root=None):
+        (root or self.root).joinpath("sim-problems.jsonl").write_text("".join(json.dumps(row)+"\n" for row in rows), encoding="utf-8")
+
+    def sim_bundle(self, fp="1234abcd", **changes):
+        bundle = self.root / "problems" / fp
+        self.put("metadata.json", dict(dict(run="run-a", mode="SIM", scenario="Q1", fingerprint=fp,
+            seed=1, gitSha="contract", configProfile="sim-fast"), **changes), bundle)
+        for name in ("stack.txt", "server-context.log", "bot-trace.jsonl", "draft-backlog.md"):
+            (bundle/name).write_text("retained evidence\n", encoding="utf-8")
+
+    def test_sim_requires_export_and_a_completed_policy_for_every_passed_scenario(self):
+        for variant in ("missing", "empty", "no-footer", "active", "missing-scenario", "unasserted"):
+            with self.subTest(variant=variant):
+                self.fixture(scenarios=["Q1", "Q2"])
+                rows = list(reporter.lines(self.root/"sim-problems.jsonl"))
+                if variant == "missing":
+                    (self.root/"sim-problems.jsonl").unlink()
+                else:
+                    if variant == "empty": rows = []
+                    if variant == "no-footer": rows.pop()
+                    if variant == "active":
+                        rows.pop(4)
+                        rows[-1].update(policiesCompleted=1, activePolicies=[2])
+                    if variant == "missing-scenario":
+                        rows = rows[:3]+[dict(rows[-1], policiesStarted=1, policiesCompleted=1)]
+                    if variant == "unasserted": rows[2]["assertedClean"] = False
+                    self.write_sim_rows(rows)
+                self.assertEqual("failed", reporter.build_report(self.root)["status"])
+
+    def test_sim_dispositions_preserve_strict_policy_even_if_journal_claims_success(self):
+        for status, disposition in (("new", "NEW"), ("tracked", "KNOWN"), ("fixed", "REGRESSED")):
+            with self.subTest(status=status):
+                self.fixture()
+                self.sim_evidence(ledger=[dict(fp="1234abcd", status=status)], observations=[dict(
+                    fingerprint="1234abcd", disposition=disposition, allowlisted=False, server="gs")])
+                if disposition == "NEW": self.sim_bundle()
+                result = reporter.build_report(self.root)
+                self.assertEqual("failed", result["status"])
+                self.assertEqual(disposition, result["fingerprints"][0]["disposition"])
+                self.assertEqual(1, result["fingerprints"][0]["policyObservations"])
+                if disposition == "NEW": self.assertIn("problems/1234abcd/metadata.json", reporter.markdown(result))
+
+    def test_sim_allowances_require_frozen_owner_scope_expiry_and_count(self):
+        allowance = dict(fp="1234abcd", reason="test", owner="tests", tracking="P10-10", modes=["SIM"], servers=["gs"],
+                         scenarios=["Q1"], maxCount=1, expires="2099-01-01")
+        observation = dict(fingerprint="1234abcd", disposition="ALLOWLISTED", allowlisted=True, server="gs")
+        for change in ({}, {"owner": ""}, {"expires": "2000-01-01"}, {"modes": ["LIVE"]},
+                       {"servers": ["ls"]}, {"scenarios": ["Q2"]}, {"maxCount": 0}):
+            with self.subTest(change=change):
+                self.fixture()
+                self.sim_evidence(allowlist=[dict(allowance, **change)], observations=[observation])
+                self.assertEqual("failed" if change else "passed", reporter.build_report(self.root)["status"])
+        self.sim_evidence(allowlist=[allowance], observations=[observation, observation])
+        self.assertEqual("failed", reporter.build_report(self.root)["status"])
+
+    def test_sim_snapshot_provenance_sequence_and_repro_validation_fail_closed(self):
+        mutations = [lambda r: r[0].update(run="foreign"), lambda r: r[0].update(seed=2),
+                     lambda r: r[0].update(gitSha="other"), lambda r: r[0].update(ledgerSha256="bad"),
+                     lambda r: r[1].update(policy=2), lambda r: r[2].update(policy=2),
+                     lambda r: r[2].update(scenario="Q2"), lambda r: r[2].update(assertionPassed=None),
+                     lambda r: r[-1].update(policiesCompleted=2), lambda r: r.append(r[-1])]
+        for mutate in mutations:
+            self.fixture()
+            rows = self.sim_evidence()
+            mutate(rows)
+            self.write_sim_rows(rows)
+            self.assertEqual("failed", reporter.build_report(self.root)["status"])
+        self.fixture()
+        self.sim_evidence(observations=[dict(fingerprint="1234abcd", disposition="NEW", allowlisted=False, server="gs")])
+        self.assertIn("missing repro", " ".join(reporter.build_report(self.root)["evidenceIssues"]))
+        self.sim_bundle(seed=2)
+        self.assertIn("repro provenance mismatch", " ".join(reporter.build_report(self.root)["evidenceIssues"]))
+
+    def test_sim_nested_policy_receipts_keep_counts_explicit_and_partial_export_keeps_findings(self):
+        self.fixture()
+        rows = self.sim_evidence(observations=[dict(fingerprint="1234abcd", disposition="KNOWN", allowlisted=False, server="gs")],
+            ledger=[dict(fp="1234abcd", status="tracked")])
+        rows = [rows[0], rows[1], dict(rows[1], policy=2), dict(rows[2], policy=2), rows[2],
+                dict(rows[3], policiesStarted=2, policiesCompleted=2)]
+        self.write_sim_rows(rows)
+        report = reporter.build_report(self.root)
+        self.assertEqual(2, report["fingerprints"][0]["policyObservations"])
+        self.assertEqual(2, report["simulation"]["policiesCompleted"])
+        with (self.root/"sim-problems.jsonl").open("a", encoding="utf-8") as f: f.write('{"partial":')
+        report = reporter.build_report(self.root)
+        self.assertEqual("failed", report["status"])
+        self.assertEqual("KNOWN", report["fingerprints"][0]["disposition"])
 
     def watcher(self, dispositions=(), root=None, run="run-a"):
         root = root or self.root

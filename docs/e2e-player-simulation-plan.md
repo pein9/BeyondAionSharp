@@ -2244,8 +2244,16 @@ real geodata on in production immediately, because geo is enabled by default; th
   classification policy: ordinary tracked (`KNOWN`) problems remain visible without independently
   failing the run; NEW, REGRESSED and any watcher-declared failure remain fatal. Known heartbeat and
   declared-crash-window failures still fail. This does not change SIM's unallowlisted-problem policy
-  or add any allowance; see §7/125 and the validation document.
-  Remaining P10-10 work: structured SIM problem/repro and resource export, complete coverage delta
+  or add any allowance; see §7/125 and the validation document. Policy receipt: `b02f880c2`.
+  SIM now exports `sim-problems.jsonl` policy receipts and per-scenario/account bot action and packet
+  traces. Ledger and allowlist snapshots are hashed at run start; the report validates classifications,
+  scoped allowance counts, policy completion and NEW repro provenance against those retained inputs.
+  Error/early-exit and post-assertion cleanup logs are exported on scope disposal. Every unallowlisted
+  SIM problem, including KNOWN, remains fatal; overlapping nested policies explicitly count observations,
+  not unique occurrences, and do not update the shared ledger. Fast's eleven scenarios pass with real
+  Docker MySQL; an injected L0 error produces a failed report, nine fail-fast skips and a complete NEW
+  repro. The temporary injection is removed; validation details and replay receipts are recorded separately.
+  Remaining P10-10 work: SIM resource export, complete coverage delta
   integration (including the P10-11 measurements), and final acceptance of all report paths. These
   missing observations are explicitly unavailable, not zero. No retry/flaky policy is enabled here;
   P10-12 still owns it. The current Full matrix remains unexecuted under D17 and known P10-09 failures.
