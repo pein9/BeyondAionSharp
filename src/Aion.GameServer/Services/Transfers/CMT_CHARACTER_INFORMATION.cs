@@ -34,7 +34,8 @@ namespace Aion.GameServer.Services.Transfers;
 public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
 {
     public CMT_CHARACTER_INFORMATION(byte[] byteBuffer)
-        : base(Aion.Commons.Nio.ByteBuffer.Wrap(byteBuffer), 0)
+        // Java PlayerTransfer.getDB explicitly orders the assembled buffer LITTLE_ENDIAN.
+        : base(Aion.Commons.Nio.ByteBuffer.Wrap(byteBuffer).Order(Aion.Commons.Nio.ByteOrder.LITTLE_ENDIAN), 0)
     {
     }
 
@@ -388,22 +389,28 @@ public class CMT_CHARACTER_INFORMATION : BaseClientPacket<AionConnection>
         player.SetQuestStateList(new QuestStateList());
         for (int a = 0; a < cnt; a++)
         { // quests
-            int questId = ReadD();
-            string status = ReadS();
-            int qvars = ReadD(), completeCount = ReadD(), reward = ReadD();
-            DateTime completeTime = DateTimeOffset.FromUnixTimeMilliseconds(ReadQ()).UtcDateTime;
-            DateTime nextRepeatTime = DateTimeOffset.FromUnixTimeMilliseconds(ReadQ()).UtcDateTime;
-            int flags = ReadD();
+            QuestState? quest = ReadQuestState(PlayerTransferConfig.ALLOW_QUESTS);
 
-            if (PlayerTransferConfig.ALLOW_QUESTS)
+            if (quest != null)
             {
-                player.GetQuestStateList().AddQuest(questId, new QuestState(questId, JavaEnum.ValueOf<QuestStatus>(status), qvars, flags, completeCount, nextRepeatTime,
-                    reward == -1 ? (int?)null : reward, completeTime));
+                player.GetQuestStateList().AddQuest(quest.GetQuestId(), quest);
             }
         }
 
         PlayerService.StorePlayer(player);
         textLog.LogInformation("finished in " + stopwatch.ElapsedMilliseconds + " ms");
         return player;
+    }
+
+    internal QuestState? ReadQuestState(bool includeQuest = true)
+    {
+        int questId = ReadD();
+        string status = ReadS();
+        int qvars = ReadD(), completeCount = ReadD(), reward = ReadD();
+        DateTime? completeTime = PlayerTransfer.DecodeQuestTimestamp(ReadQ());
+        DateTime? nextRepeatTime = PlayerTransfer.DecodeQuestTimestamp(ReadQ());
+        int flags = ReadD();
+        return includeQuest ? new QuestState(questId, JavaEnum.ValueOf<QuestStatus>(status), qvars, flags, completeCount, nextRepeatTime,
+            reward == -1 ? (int?)null : reward, completeTime) : null;
     }
 }

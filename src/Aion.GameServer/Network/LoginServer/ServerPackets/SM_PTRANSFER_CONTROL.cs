@@ -61,7 +61,7 @@ public sealed class SM_PTRANSFER_CONTROL : LoginServerPacket
         _player = tp.player;
     }
 
-    // Java parity (writeImpl): 1:1 with game-server/.../loginserver/serverpackets/SM_PTRANSFER_CONTROL.java.
+    // Java writeImpl layout; D19 intentionally adds a null sentinel for quest timestamps.
     protected override void WritePayload(PacketBuffer buffer)
     {
         // Java's LsServerPacket writes the opcode passed to super(13) before writeImpl().
@@ -334,8 +334,8 @@ public sealed class SM_PTRANSFER_CONTROL : LoginServerPacket
                     buffer.WriteD(qs.GetQuestVars().GetQuestVars());
                     buffer.WriteD(qs.GetCompleteCount());
                     buffer.WriteD(qs.GetRewardGroup() == null ? -1 : qs.GetRewardGroup()!.Value);
-                    buffer.WriteQ(new System.DateTimeOffset(qs.GetLastCompleteTime()!.Value.ToUniversalTime()).ToUnixTimeMilliseconds());
-                    buffer.WriteQ(new System.DateTimeOffset(qs.GetNextRepeatTime()!.Value.ToUniversalTime()).ToUnixTimeMilliseconds());
+                    buffer.WriteQ(PlayerTransfer.EncodeQuestTimestamp(qs.GetLastCompleteTime()));
+                    buffer.WriteQ(PlayerTransfer.EncodeQuestTimestamp(qs.GetNextRepeatTime()));
                     buffer.WriteD(qs.GetFlags());
                 }
                 break;

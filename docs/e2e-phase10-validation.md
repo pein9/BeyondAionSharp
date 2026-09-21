@@ -4083,6 +4083,50 @@ unchanged at 4,243 sites / 21 codes, all ancillary checks, and Docker Fast
 `run/p10-09-gag-fix-{warnings,dotnet,checks,fast}.log`. No shared problem-ledger
 status was manually promoted; full aggregate acceptance remains outstanding.
 
+## P10-09 transfer wire checkpoint: nullable dates and byte order
+
+The first D19-authorized transfer correction is deliberately limited to the
+Game-server wire boundary; it does not yet enable Login's missing forwarding.
+Java `QuestState` allows null completion/repeat timestamps, while
+`SM_PTRANSFER_CONTROL` dereferences them and `CMT_CHARACTER_INFORMATION` always
+constructs dates. C# now writes/reads `long.MinValue` for null in those same two
+64-bit fields. This sentinel is outside DateTime's representable epoch range.
+Non-null dates, including zero and negative epochs, retain their previous bytes;
+null is not silently converted into a 1970 completion/repeat date. Both C# peers
+must have the correction; this is not a mixed Java/C# compatibility claim.
+
+The read exposed another independent porting defect (§7/133): Java
+`PlayerTransfer.getDB()` explicitly orders the concatenated ByteBuffer little-endian,
+whereas C# returned byte[] then wrapped it with the big-endian default. CMT now
+sets the Java byte order at construction. Without this fix the reader reverses
+integers, floats and UTF-16 text, and realistic dates exceed DateTime's range.
+Java reference for all four classes: `ce54b7931`, `game-server/src/com/aionemu/gameserver/`
+under `questEngine/model/QuestState.java`, `network/loginserver/serverpackets/SM_PTRANSFER_CONTROL.java`,
+and `services/transfers/{PlayerTransfer,CMT_CHARACTER_INFORMATION}.java`.
+
+`PlayerTransferQuestWireTests` exercises the real source packet writer and target
+quest reader against independent little-endian fixtures. Five combinations cover
+both dates null, either date null, two distinct real dates, epoch zero and a
+negative epoch; the other fields and exact payload bytes are checked. A numeric
+reader test checks 32/64-bit integers and a float. Two additional controls ensure
+disabled quest transfer consumes the section without interpreting its status,
+and malformed non-sentinel dates still throw. The source-writer fixture supplies
+only the consulted quest list, not a booted player; none of these are LIVE proof.
+
+Before the fix, the initial eleven cases compile/run with nine failures and two
+passes (`run/p10-09-transfer-dates-red.log`). The corrected focused run passes
+eighteen cases including the existing enum-boundary suite. The final solution
+includes all thirteen new wire cases: 4,639 passed / 27 explicit skips. Warning
+ratchet stays at 4,243 sites / 21 codes; all CLAUDE ancillary checks pass.
+Docker Fast `fast-20260920-232414` also passes (six tests, eleven scenarios).
+Logs: `run/p10-09-transfer-dates-{green,warnings,dotnet,checks,fast}.log`.
+
+No two-GS transfer acceptance is claimed. Login section forwarding and activation
+persistence are still pending, followed by a rebuilt Docker journey with target
+login/data verification and unrelated-character controls. BA-001/003 and P10-09
+stay unchecked; no allowances or old failure artifacts were changed. The Chat
+checkpoint is committed as `0e787de97`.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

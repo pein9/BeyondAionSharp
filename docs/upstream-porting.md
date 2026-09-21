@@ -67,7 +67,15 @@ the known defects in the name of parity. These are not new upstream queue items.
   signed-long addition). The wire field/layout, Game replay and Chat refusal path
   stay unchanged. Java reference: `ce54b7931`, E2E §7/119 / D19. Service and socket
   regressions pin duration conversion, replay replacement, immediate ungag and
-  no forbidden-message broadcast. Transfer's separately authorized fix remains pending.
+  no forbidden-message broadcast.
+- **Transfer nullable quest timestamps:** `QuestState` permits null dates, but Java
+  `SM_PTRANSFER_CONTROL` dereferences them and `CMT_CHARACTER_INFORMATION` always
+  constructs a timestamp. Under D19, C# reserves signed-long `MinValue` for null
+  in those two existing fields. Both C# peers encode/decode it; real dates retain
+  their epoch milliseconds, including epoch zero and negative epochs. Do not replace
+  null with 1970 or change field widths/order. Mixed Java/C# transfer is not supported
+  by this correction. Java reference `ce54b7931`; E2E §7/118. Login section forwarding
+  and activation persistence remain pending independently of this wire checkpoint.
 
 ### General mappings
 

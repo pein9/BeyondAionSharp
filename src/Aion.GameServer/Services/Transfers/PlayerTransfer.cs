@@ -5,6 +5,15 @@ namespace Aion.GameServer.Services.Transfers;
 /// <summary>Java parity: services/transfers/PlayerTransfer (xTz). Holds serialized per-section byte[] blobs (common/items/data/skill/recipe/quest) for a cross-server character transfer; getDB concatenates them. java.nio.ByteBuffer (LITTLE_ENDIAN, only whole-array puts) -> plain byte[] concatenation (endianness irrelevant for byte[] puts).</summary>
 public class PlayerTransfer
 {
+    // D19 / E2E finding 118: Java dereferences nullable quest dates. Reserve an
+    // impossible DateTime epoch value without changing field widths or real dates
+    // (including epoch zero). Both C# transfer peers must understand this sentinel.
+    internal static long EncodeQuestTimestamp(DateTime? value) => value.HasValue
+        ? new DateTimeOffset(value.Value.ToUniversalTime()).ToUnixTimeMilliseconds() : long.MinValue;
+
+    internal static DateTime? DecodeQuestTimestamp(long value) => value == long.MinValue
+        ? null : DateTimeOffset.FromUnixTimeMilliseconds(value).UtcDateTime;
+
     private byte[] commonData, itemsData, data, recipeData, skillData, questData;
     private readonly int taskId, targetAccount;
     private readonly string name, account;
