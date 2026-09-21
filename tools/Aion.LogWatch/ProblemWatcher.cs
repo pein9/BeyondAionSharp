@@ -233,13 +233,8 @@ public static class ProblemWatcher
 			digest.Dispose();
 			var provenance = RunProvenance.Load(options.RunDirectory);
 			ledger.RecordRun(problemCounts, provenance, options.Run);
-			if (options.FullRun && FailingProblemCount == 0)
-			{
-				await ledger.MarkFixedAfterGreenFullRunAsync(
-					problemCounts.Keys.ToHashSet(StringComparer.Ordinal),
-					provenance.GitSha,
-					cancellationToken);
-			}
+			// A child watcher cannot establish aggregate Full success. FullRun is retained
+			// for CLI compatibility; only the validated parent promotion command may fix entries.
 			ledger.Save();
 			var bundleWriter = new ProblemBundleWriter(options.RunDirectory, options.Run, provenance);
 			foreach (var sample in newProblemSamples.Values)

@@ -11,7 +11,12 @@ $finalize = [scriptblock]::Create("param(`$PSScriptRoot)`n" + $outer[0].Finally.
 $runnerScriptRoot = $PSScriptRoot
 $testRoot = [IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) ('aion-full-flake-' + [Guid]::NewGuid().ToString('N'))))
 New-Item -ItemType Directory -Path $testRoot | Out-Null
-$state = @{ rejectReport=$false; historyFails=$false; calls=[Collections.Generic.List[string]]::new() }
+$state = @{ rejectReport=$false; historyFails=$false; promotionFails=$false; calls=[Collections.Generic.List[string]]::new() }
+function dotnet {
+	if ($args -notcontains 'promote-full') { throw 'Unexpected promotion command.' }
+	$state.calls.Add('promotion')
+	$global:LASTEXITCODE = if ($state.promotionFails) { 2 } else { 0 }
+}
 function Write-AionRunReport {
 	$state.calls.Add('report')
 	if ($state.rejectReport) { throw 'FLAKY is not a clean Full pass' }
@@ -27,19 +32,26 @@ function python {
 }
 try {
 	$Run='full-test'; $suiteStarted=[DateTimeOffset]::UtcNow; $suiteTimer=[Diagnostics.Stopwatch]::StartNew()
-	$gitSha='contract'; $Seed=1
-	foreach ($mode in @('passed', 'flaky', 'history-failed', 'original-failed')) {
+	$gitSha='contract'; $Seed=1; $repoRoot=Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+	foreach ($mode in @('passed', 'flaky', 'history-failed', 'original-failed', 'promotion-failed', 'soak-only')) {
 		$state.calls.Clear(); $state.rejectReport=$mode -eq 'flaky'; $state.historyFails=$mode -eq 'history-failed'
+		$state.promotionFails=$mode -eq 'promotion-failed'; $Suite=if ($mode -eq 'soak-only') { 'Soak' } else { 'Breadth' }
 		$suiteFailure = if ($mode -eq 'original-failed') { [Management.Automation.ErrorRecord]::new([Exception]::new('original suite failure'), 'original', 'NotSpecified', $null) } else { $null }
 		$runRoot = Join-Path $testRoot $mode
 		New-Item -ItemType Directory -Path $runRoot | Out-Null
 		$caught = $null
 		Push-Location $testRoot
 		try { . $finalize $runnerScriptRoot } catch { $caught = $_ }
-		$expected = if ($state.historyFails) { 'report,history,rerender' } else { 'report,history' }
+		$expected = switch ($mode) {
+			'passed' { 'report,history,promotion' }
+			'history-failed' { 'report,history,rerender' }
+			'promotion-failed' { 'report,history,promotion,rerender' }
+			default { 'report,history' }
+		}
 		if (($state.calls -join ',') -cne $expected) { throw "Full finalizer skipped history after $mode. Calls: $($state.calls -join ','); error: $caught" }
-		if (($null -ne $caught) -ne ($mode -in @('flaky', 'history-failed'))) { throw "Wrong Full finalizer exit for $mode." }
+		if (($null -ne $caught) -ne ($mode -in @('flaky', 'history-failed', 'promotion-failed'))) { throw "Wrong Full finalizer exit for $mode." }
 		if ($state.historyFails -and -not (Test-Path (Join-Path $runRoot 'flake-history-error.json'))) { throw 'History loss would leave a green report.' }
+		if ($state.promotionFails -and -not (Test-Path (Join-Path $runRoot 'problem-ledger-error.json'))) { throw 'Promotion failure would leave a green report.' }
 	}
 	# Also execute the actual soak finalizer with a retained child SHA, not a duplicate call implementation.
 	$soakAst = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot '../live/run-soak.ps1'), [ref]$tokens, [ref]$errors)

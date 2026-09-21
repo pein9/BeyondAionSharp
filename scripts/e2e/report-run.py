@@ -536,6 +536,8 @@ def build_report(root):
             issues.append(outcome.get("error") or "Runner failed without a recorded exception.")
         if child_path(root, "flake-history-error.json").exists():
             issues.append(read_json(child_path(root, "flake-history-error.json"))["error"])
+        if child_path(root, "problem-ledger-error.json").exists():
+            issues.append(read_json(child_path(root, "problem-ledger-error.json"))["error"])
         if any(row["status"] != "passed" for row in report["scenarios"]):
             issues.append("Not all planned scenarios passed.")
         if not issues:

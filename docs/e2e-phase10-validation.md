@@ -3934,6 +3934,61 @@ The original draft overlay is in `run/p10-12-standalone-source-a/`; final source
 tracked patch and retained fault driver are in `run/p10-12-standalone-source-final/`,
 based on `320e43b1f`. Failed attempts and first-draft reports were not rewritten.
 
+## P10-10 aggregate-only problem-ledger promotion checkpoint
+
+The §7/129 follow-up is implemented. `FullRun` on a LIVE child retains artifacts
+but cannot promote a problem ledger entry. Child watchers record observations and
+retain their existing failure policy. The Full parent invokes `Aion.LogWatch
+promote-full` only after its report and flake-history finalizers succeed, and only
+for Breadth/All selections. A failed/FLAKY report or history failure stops before
+that invocation; soak-only and standalone runs do not qualify.
+
+The command loads the ledger before revalidation, then calls the read-only
+`validate-full-promotion.py` gate. That rebuilds the report from raw retained
+evidence, rejects stale/non-green reports, reconstructs the exact selected plan
+through the production PowerShell planner, and requires all breadth scenarios and
+gates. Parent/child Git revision and seed must match the current checkout; the
+terminal history receipt must match the report hash. This is aggregate breadth
+eligibility, **not** five-run or 200-bot Phase 10 acceptance.
+
+Promotion uses all observed fingerprints, including LIVE ALLOWLISTED digest lines
+(§7/131) and SIM's already retained scoped observations. An allowance is not proof
+of absence. Only tracked absent fingerprints with an exact `Fixes-Fingerprint`
+Git trailer transition to fixed; untriaged entries remain new. The existing
+locked atomic merge refuses to overwrite concurrent observations/maintainer edits.
+The Git lookup now uses the explicit repository directory rather than depending
+on the caller's current directory. Promotion failures leave an error artifact,
+rerender the aggregate report non-green and fail the public command. Any earlier
+history receipt then fails fresh report-hash validation; it is not repaired into
+successful acceptance or used to promote anything further.
+
+Validation is entirely local contract work—no bots, containers, databases, Java
+runtime, real-client session or shared problem-ledger mutations:
+
+- Fourteen Python tests use real raw report/retry fixtures for clean, failed,
+  FLAKY, standalone/soak-only, missing/stale child/report/history, changed build/
+  seed, incomplete plan and observed/allowlisted-fingerprint controls. Completeness
+  is separately checked against the real production planner and manifest; the
+  one-child fixture's positive policy test injects only that expected-plan boundary.
+  It is not a full workload runtime proof.
+- Six new .NET cases exercise real disposable Git commits/trailer discovery,
+  child non-promotion, absent/tracked-only transitions, and the actual Python gate's
+  refusal before any private-ledger mutation. Existing concurrency controls still pass.
+- PowerShell tests execute the real Full finalizer AST with injected commands:
+  promotion follows successful reporting/history, does not run after failure or
+  FLAKY rejection, excludes soak-only, and its failure cannot leave a green report.
+
+Pre-commit verification: 4,620 solution tests passed / 27 skipped; warning baseline
+unchanged at 4,243 sites / 21 codes. The new Python gate is listed in CLAUDE.md.
+Logs: `run/p10-10-promotion-focused.log`, `run/p10-10-promotion-warnings.log`,
+`run/p10-10-promotion-dotnet.log`, `run/p10-10-promotion-checks.log` and the final
+post-review ancillary run `run/p10-10-promotion-final-checks.log`.
+
+P10-10 remains open for complete Full report/coverage acceptance. P10-09's transfer
+and Chat-gag failures, P10-11's complete-Full measurement, the ten-bot cap and all
+deferrals remain unchanged. P10-12's standalone/runtime completion receipt is
+`2fa7e868e`. No old run evidence or shared ledger entries were rewritten here.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

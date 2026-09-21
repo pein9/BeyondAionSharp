@@ -81,6 +81,7 @@ python scripts/e2e/test-packet-coverage.py                     # frozen opcode c
 python scripts/e2e/test-code-coverage.py                       # Coverlet provenance, unique line/branch unions and scoped deltas
 python scripts/e2e/test-flake-policy.py                        # raw retry evidence and three-in-ten Full-run quarantine policy
 python scripts/e2e/test-full-flake.py                          # Full retry joins, coverage selection, quarantine and atomic history
+python scripts/e2e/test-full-promotion.py                      # aggregate-only problem promotion, complete plan and fresh evidence
 pwsh -NoProfile -File scripts/e2e/test-full-flake.ps1          # actual Full/soak finalizers retain history and build identity
 pwsh -NoProfile -File scripts/e2e/test-live-retry.ps1          # sequential single retry, original failures and no SIM retries
 pwsh -NoProfile -File scripts/sim/test-code-coverage.ps1       # collector requests, attachment/restoration failures and runner selection

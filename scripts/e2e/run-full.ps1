@@ -133,6 +133,18 @@ finally {
 			Write-Warning 'Full flake history persistence failed; original suite failure is preserved.'
 		}
 	}
+	# This point is unreachable when report validation or history persistence threw.
+	# Child FullRun flags retain artifacts only; they never promote problem records.
+	if ($null -eq $suiteFailure -and $Suite -in @('Breadth', 'All')) {
+		& dotnet run --project (Join-Path $repoRoot 'tools/Aion.LogWatch') --no-build -- promote-full `
+			$runRoot $repoRoot (Join-Path $repoRoot 'parity-artifacts/e2e/known-problems.json')
+		if ($LASTEXITCODE -ne 0) {
+			@{ error = 'Aggregate Full problem-ledger promotion failed; this run is not accepted.' } |
+				ConvertTo-Json | Set-Content -LiteralPath (Join-Path $runRoot 'problem-ledger-error.json') -Encoding utf8NoBOM
+			& python (Join-Path $PSScriptRoot 'report-run.py') $runRoot
+			throw 'Aggregate Full problem-ledger promotion failed.'
+		}
+	}
 }
 
 Write-Host "$Suite suite $Run passed. Artifacts: $runRoot"

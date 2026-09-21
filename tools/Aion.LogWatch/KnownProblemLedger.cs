@@ -84,15 +84,16 @@ internal sealed class KnownProblemLedger
 	public async Task MarkFixedAfterGreenFullRunAsync(
 		IReadOnlySet<string> seenFingerprints,
 		string currentSha,
+		string repositoryDirectory,
 		CancellationToken cancellationToken)
 	{
 		if (!IsGitSha(currentSha))
 			return;
 		foreach (var (fingerprint, entry) in entries.ToArray())
 		{
-			if (entry.Status == "fixed" || seenFingerprints.Contains(fingerprint) || !IsGitSha(entry.LastSeenSha))
+			if (entry.Status != "tracked" || seenFingerprints.Contains(fingerprint) || !IsGitSha(entry.LastSeenSha))
 				continue;
-			var fixingCommit = await FindFixingCommitAsync(fingerprint, entry.LastSeenSha, currentSha, cancellationToken);
+			var fixingCommit = await FindFixingCommitAsync(fingerprint, entry.LastSeenSha, currentSha, repositoryDirectory, cancellationToken);
 			if (fixingCommit != null)
 				entries[fingerprint] = entry with { Status = "fixed", FixedIn = fixingCommit };
 		}
@@ -206,6 +207,7 @@ internal sealed class KnownProblemLedger
 		string fingerprint,
 		string lastSeenSha,
 		string currentSha,
+		string repositoryDirectory,
 		CancellationToken cancellationToken)
 	{
 		var startInfo = new ProcessStartInfo("git")
@@ -214,6 +216,7 @@ internal sealed class KnownProblemLedger
 			RedirectStandardError = true,
 			UseShellExecute = false,
 			CreateNoWindow = true,
+			WorkingDirectory = repositoryDirectory,
 		};
 		startInfo.ArgumentList.Add("log");
 		startInfo.ArgumentList.Add("--format=%H%x1f%B%x1e");
