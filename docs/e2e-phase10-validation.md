@@ -3397,6 +3397,42 @@ warning sites, all previous ancillary gates, and both new report gates. Logs:
 `run/p10-10-report-ancillary-final.log`, `run/p10-10-report-tests-final.log`,
 `run/p10-10-report-contract-final.log`, and the per-run Fast/L0/B2 console logs.
 
+## P10-10 — Preserve the established LIVE watcher verdict
+
+The report audit found a harness regression in `faa8a4581`: the renderer failed
+every retained fingerprint, including ordinary `KNOWN` findings that P3-14 and
+`ProblemWatcher.FailingProblemCount` deliberately report without failing the run.
+The pre-existing tracked, heartbeat and crash-window watcher tests distinguish
+these cases. Two new report regressions fail against the previous renderer,
+covering standalone LIVE and a LIVE child inside Full (plan §7/125).
+
+The report now preserves that existing policy while retaining every KNOWN row.
+NEW and REGRESSED remain fatal even with an inconsistent successful watcher
+summary; a watcher-declared failure remains fatal, including known heartbeat and
+declared-crash-window failures. The `failed` field must be an actual JSON boolean,
+not a falsey placeholder. No ledger entry, allowance, watcher policy, SIM failure
+policy, production behavior or Java code changes. The plan's earlier blanket
+wording now explicitly references its already-completed P3-14 exception.
+
+All 25 Python report tests pass, including four new tests covering these rules
+and Full propagation. Read-only rendering of the retained Fast, L0 and B2 runs
+preserves their respective passed/passed/failed verdicts and all evidence. The
+only B2 difference is the more precise NEW/REGRESSED issue text; the first exact
+comparison exposed that wording change, and a second comparison permits only
+that exact replacement. Neither comparison rewrites the historical reports.
+Evidence: `run/p10-10-known-{red-tests,report-tests,retained-reports,retained-reports-final}.log`.
+
+This is a P10-10 correctness checkpoint, not completion. Structured SIM
+problem/repro export, SIM resource metrics, full coverage deltas and final report
+acceptance remain open. No bot or database was started by this checkpoint.
+
+Pre-commit checks pass: 4,583 solution tests, 27 explicit skips, unchanged 4,243
+warning sites across 21 codes, fidelity and every CLAUDE.md ancillary gate.
+Logs: `run/p10-10-known-warnings.log`, `run/p10-10-known-dotnet.log` and
+`run/p10-10-known-ancillary.log`. Fast was not rerun: this checkpoint changes only
+the report reader, its tests and documentation; the retained-run comparison above
+exercises actual prior Docker evidence without rewriting it.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

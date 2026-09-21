@@ -150,6 +150,44 @@ class RunReportTests(unittest.TestCase):
         (self.root / "problems/00000000/stack.txt").unlink()
         self.assertTrue(any("missing repro" in i for i in reporter.build_report(self.root)["evidenceIssues"]))
 
+    def test_known_classification_preserves_watchers_existing_verdict(self):
+        for watcher_failed in (False, True):
+            with self.subTest(watcher_failed=watcher_failed):
+                self.fixture("LIVE")
+                self.watcher(("KNOWN",))
+                summary = reporter.read_json(self.root / "logwatch-summary.json")
+                # Ordinary tracked logs are nonfatal; known heartbeat and declared
+                # server-fault-window problems remain fatal in the real watcher.
+                summary["failed"] = watcher_failed
+                self.put("logwatch-summary.json", summary)
+                result = reporter.build_report(self.root)
+                self.assertEqual("failed" if watcher_failed else "passed", result["status"])
+                self.assertEqual("KNOWN", result["fingerprints"][0]["disposition"])
+                self.assertIsNone(result["fingerprints"][0]["repro"])
+
+    def test_new_or_regressed_cannot_be_hidden_by_inconsistent_clean_summary(self):
+        for disposition in ("NEW", "REGRESSED"):
+            with self.subTest(disposition=disposition):
+                self.fixture("LIVE")
+                self.watcher((disposition,))
+                summary = reporter.read_json(self.root / "logwatch-summary.json")
+                summary["failed"] = False
+                self.put("logwatch-summary.json", summary)
+                result = reporter.build_report(self.root)
+                self.assertEqual("failed", result["status"])
+
+    def test_watcher_verdict_requires_a_boolean_not_a_falsey_placeholder(self):
+        for value in (None, 0, "", [], {}, "false"):
+            with self.subTest(value=value):
+                self.fixture("LIVE")
+                self.watcher(("KNOWN",))
+                summary = reporter.read_json(self.root / "logwatch-summary.json")
+                summary["failed"] = value
+                self.put("logwatch-summary.json", summary)
+                result = reporter.build_report(self.root)
+                self.assertEqual("failed", result["status"])
+                self.assertTrue(any("boolean" in issue for issue in result["evidenceIssues"]))
+
     def test_watcher_count_identity_mode_and_heartbeat_inconsistencies_fail(self):
         for mutation in ({"run": "foreign"}, {"mode": "record"}, {"new": 1}, {"servers": []}):
             with self.subTest(mutation=mutation):
@@ -223,6 +261,19 @@ class RunReportTests(unittest.TestCase):
         self.assertEqual("failed", result["status"])
         self.assertEqual(["passed", "passed", "skipped"], [r["status"] for r in result["scenarios"]])
         self.assertEqual("skipped", result["steps"][-1]["status"])
+
+    def test_full_preserves_known_classification_and_child_watchers_verdict(self):
+        for failed in (False, True):
+            with self.subTest(failed=failed):
+                self.suite(True)
+                child = self.root / "run-a-l0"
+                self.watcher(("KNOWN",), root=child, run="run-a-l0")
+                summary = reporter.read_json(child / "logwatch-summary.json")
+                summary["failed"] = failed
+                self.put("logwatch-summary.json", summary, child)
+                result = reporter.build_report(self.root)
+                self.assertEqual("failed" if failed else "passed", result["status"])
+                self.assertEqual("KNOWN", result["fingerprints"][0]["disposition"])
 
     def test_full_pass_without_child_journal_fails(self):
         self.suite(True)

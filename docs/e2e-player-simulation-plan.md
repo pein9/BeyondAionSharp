@@ -136,7 +136,9 @@ flowchart LR
    stops testing the real SQL.
 4. **Problems are the primary oracle.** Any Error, swallowed exception, protocol or audit Warning, unexpected
    refusal system message, bot timeout or unexpected disconnect fails the scenario unless its
-   **fingerprint** is allowlisted with a reason, an owner and an expiry.
+   **fingerprint** is allowlisted with a reason, an owner and an expiry. LIVE's completed P3-14 adds the
+   recorded exception for ordinary tracked problems: report them as KNOWN without failing solely on
+   that classification. Known heartbeat and declared-crash-window problems still fail. SIM remains strict.
 5. **Bots behave like a real client.** Honest movement speed, the client timing contract, and the acks a
    real client sends. A server "too early" or audit line is a bot bug until proven otherwise.
 6. **Setup may use GM powers; subjects may not be staff.** A GM *director* account sets state; subject bots
@@ -2238,6 +2240,11 @@ real geodata on in production immediately, because geo is enabled by default; th
   scenario outcomes, joins retained LIVE watcher classifications and NEW repro links, and reports
   sampled heartbeat/queue/memory/timer peaks. Full aggregation checks child identities and retained
   gate artifacts rather than trusting a stale child report. Missing evidence cannot establish a pass.
+  Report-generation receipt: `faa8a4581`. The follow-up report audit preserves P3-14's existing LIVE
+  classification policy: ordinary tracked (`KNOWN`) problems remain visible without independently
+  failing the run; NEW, REGRESSED and any watcher-declared failure remain fatal. Known heartbeat and
+  declared-crash-window failures still fail. This does not change SIM's unallowlisted-problem policy
+  or add any allowance; see §7/125 and the validation document.
   Remaining P10-10 work: structured SIM problem/repro and resource export, complete coverage delta
   integration (including the P10-11 measurements), and final acceptance of all report paths. These
   missing observations are explicitly unavailable, not zero. No retry/flaky policy is enabled here;
@@ -2286,7 +2293,8 @@ Rules every scenario and fixture follows. Most come from failures recorded in `d
 swallowed exception or a hollow fixture made a mechanic look correctly absent.
 
 1. **A logged or swallowed problem fails the scenario** unless its fingerprint is allowlisted with a reason, an owner
-   and an expiry. Never allowlist a whole category (for example all DB errors).
+   and an expiry, subject to LIVE's P3-14 tracked-problem exception described in principle 4. Never allowlist
+   a whole category (for example all DB errors). Tracking does not suppress the finding or fix the bug.
 2. **Print the whole exception** and the bot's recent packets, not only the assertion line.
 3. **A missing prerequisite is Skipped, never Passed.** No "return if unavailable" helpers.
 4. **Assert the count before iterating**; compare unordered collections as sets.
@@ -2540,6 +2548,8 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 | 123 | Login fault controller waited for an optional connection-error log (harness-only) | Second B4 run verified Login's exit 137, but withheld the bot's outage checkpoint while waiting for `Could not connect to login server`. The connector emits that only after a SocketException; silent EOF or an in-flight OS connect does not guarantee it during the outage. The controller never restarted Login, and watcher fingerprint `e425e285` correctly failed recovery | Handoff now uses the exact stopped-container inspection and the control's real Game barriers, then restarts Login. Fresh generation-tagged MAC/HDD application and heartbeat are still mandatory. `p10-09-hardware-c` passes generation 1→2 without any server/retry-policy change; the controller mock rejects reliance on optional reconnect logs |
 
 | 124 | Full runner dropped LIVE manifest bot counts (harness-only) | `Get-FullSuitePlan` omitted `bots` from LIVE steps and `run-full.ps1` never passed `-Bots`. The child runner therefore saw its default of one: B4 and B2F rejected admission before the bot executable's manifest expansion could occur. Standalone B4 evidence is unaffected | Include and validate positive integer manifest counts, pass them through the actual Full dispatch, and exercise all 47 LIVE invocations in both execution backends with recording stubs. Missing, fractional, string, boolean and out-of-range counts fail planning. No production or Java behavior changes; no real bots launched by these contract tests and no claim that Full acceptance is green |
+
+| 125 | Run report rejected ordinary tracked LIVE problems despite P3-14's watcher policy (harness-only) | `report-run.py` in `faa8a4581` failed every retained fingerprint, including KNOWN with an enforced watcher verdict of success. Two red regressions reproduce standalone and Full-child false failures; `ProblemWatcher.FailingProblemCount` and its tracked/heartbeat/crash tests establish the existing policy | Retain KNOWN in the report and honor the watcher's boolean verdict. NEW/REGRESSED still fail even if the summary inconsistently says success; known heartbeat and declared-crash-window failures remain fatal through the watcher verdict. Reject non-boolean verdicts. No change to classification, ledger, allowance, SIM policy or production/Java behavior |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the

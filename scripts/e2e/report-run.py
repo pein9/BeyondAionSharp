@@ -136,6 +136,8 @@ def live_observations(root, outcome, issues):
         raise ValueError("watcher requires distinct producers")
     if summary["mode"] != "enforce":
         issues.append("Watcher was not enforcing; this run cannot establish acceptance.")
+    if type(summary["failed"]) is not bool:
+        raise ValueError("watcher failure verdict must be a boolean")
     if summary["failed"]:
         issues.append("Enforced watcher failed.")
     fingerprints = {}
@@ -166,8 +168,11 @@ def live_observations(root, outcome, issues):
     for kind in ("new", "known", "regressed"):
         if number(summary[kind]) != counts[kind]:
             issues.append(f"Watcher {kind} count disagrees with retained digest.")
-    if fingerprints:
-        issues.append("Unallowlisted watcher fingerprints remain; none are converted to passes.")
+    # KNOWN is a recorded classification, not an additional failure policy.
+    # The watcher permits ordinary tracked problems but still fails known
+    # heartbeat/fault-window problems via summary.failed. Preserve that verdict.
+    if any(row["disposition"] in ("NEW", "REGRESSED") for row in fingerprints.values()):
+        issues.append("NEW or REGRESSED watcher fingerprints remain.")
     peaks = []
     for server in summary["servers"]:
         identifier(server)
