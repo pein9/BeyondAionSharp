@@ -87,7 +87,7 @@ try {
 		botExecutableSha256=$(if ($TransferAttempt) {(Get-FileHash -LiteralPath 'tools/Aion.LiveBots/bin/Debug/net10.0/Aion.LiveBots.dll' -Algorithm SHA256).Hash} else {$null});
 		watcherSha256=(Get-FileHash -LiteralPath 'tools/Aion.LogWatch/bin/Debug/net10.0/Aion.LogWatch.dll' -Algorithm SHA256).Hash})
 	# Archive the working patch because this proof may precede its commit.
-	& git diff --binary HEAD -- docker tools/Aion.LogWatch tools/Aion.LiveBots scripts/live/wait-ready.ps1 *> (Join-Path $directory 'source.patch')
+	& git diff --binary HEAD -- src tests docker tools/Aion.LogWatch tools/Aion.LiveBots scripts/live docs/upstream-porting.md *> (Join-Path $directory 'source.patch')
 	foreach ($path in @('docker/bots/seed/20-second-game-server.sh','docker/bots/overlay-gs2/99-instance.properties','docker/bots/overlay-cs2/99-instance.properties')) {
 		Copy-Item -LiteralPath $path -Destination (Join-Path $directory (($path -replace '/','_')))
 	}

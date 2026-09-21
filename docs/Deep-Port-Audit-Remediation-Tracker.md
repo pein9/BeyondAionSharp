@@ -67,13 +67,17 @@ that defect and the already-recorded missing multi-section forwarding; `AccountD
 does not persist activation changes. D19 now authorizes scoped corrections: the first checkpoint
 adds a nullable quest-date sentinel at both C# peers and restores the clone reader's Java
 little-endian order (§7/133). Non-null bytes/layout remain unchanged; no error allowance was added.
-Login forwarding/activation and the full journey remain open; see `docs/e2e-phase10-validation.md`
-and simulation-plan §7/118.
+Login now relays sections 5–9 to the existing Game response formats 24–28, with active-task,
+source and ordering checks; account activation changes persist through a fresh Docker DB load.
+Rebuilt `p10-09-transfer-relay-a` now reaches a partial target clone, but fails its final passport
+save and exposes duplicate starter inventory (§7/134–135). The task stays ACTIVE and its subject
+account disabled; source/control records remain unchanged. These are open bugs, with no allowance
+or database repair. The full journey remains open; see `docs/e2e-phase10-validation.md`.
 
-- [x] Every constructor writes `[0D, action, ...]` exactly as Java.
+- [x] Transfer control headers retain Java's `[0D, action, ...]` layout; D19 adds only the documented null-date sentinel for nullable quest fields.
 - [x] LS factory selects transfer control in the authenticated state.
 - [x] Focused byte-golden and factory tests pass (Game Server bridge 10/10; Login protocol/transfer 30/30).
-- [ ] Two-GS transfer covers the Java-reachable control flow (GS actions `1..4`, LS responses `20..23`) without unrelated state mutation; parser tests cover Java's dormant response cases `24..28`.
+- [ ] Two-GS transfer completes through D19's section relay (GS actions `1..9`, LS responses `20..28`), verifies target login/data and source cleanup, and preserves unrelated control characters. Parser/unit proofs alone are insufficient.
 - [x] Full solution tests pass (1,002/1,002).
 
 ### BA-002 — Chat authentication response

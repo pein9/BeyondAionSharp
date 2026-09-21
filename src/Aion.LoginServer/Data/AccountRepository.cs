@@ -130,7 +130,7 @@ public sealed class AccountRepository : IAccountRepository
 		await connection.OpenAsync(cancellationToken);
 		await using var command = connection.CreateCommand();
 		command.CommandText = $"""
-			UPDATE account_data SET `{nameColumn}` = ?, `password` = ?, access_level = ?, membership = ?, last_server = ?, last_ip = ?, last_mac = ?, ip_force = ? WHERE `id` = ?
+			UPDATE account_data SET `{nameColumn}` = ?, `password` = ?, access_level = ?, membership = ?, last_server = ?, last_ip = ?, last_mac = ?, ip_force = ?, activated = ? WHERE `id` = ?
 			""";
 		command.Parameters.AddRange(
 			new[]
@@ -143,6 +143,8 @@ public sealed class AccountRepository : IAccountRepository
 				new MySqlParameter { Value = (object?)account.LastIp ?? DBNull.Value },
 				new MySqlParameter { Value = account.LastMac },
 				new MySqlParameter { Value = (object?)account.IpForce ?? DBNull.Value },
+				// D19: Java updateAccount omits the activation field used by transfers.
+				new MySqlParameter { Value = account.Activated },
 				new MySqlParameter { Value = account.Id },
 			});
 		return await command.ExecuteNonQueryAsync(cancellationToken) > 0;

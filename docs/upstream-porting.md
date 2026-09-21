@@ -74,8 +74,17 @@ the known defects in the name of parity. These are not new upstream queue items.
   in those two existing fields. Both C# peers encode/decode it; real dates retain
   their epoch milliseconds, including epoch zero and negative epochs. Do not replace
   null with 1970 or change field widths/order. Mixed Java/C# transfer is not supported
-  by this correction. Java reference `ce54b7931`; E2E §7/118. Login section forwarding
-  and activation persistence remain pending independently of this wire checkpoint.
+  by this correction. Java reference `ce54b7931`; E2E §7/118.
+- **Transfer section relay and activation:** Java Login `CM_PTRANSFER_CONTROL`
+  drops Game actions 5–9, although Game's `CM_PTRANSFER_RESPONSE` defines their
+  corresponding responses 24–28. C# relays those opaque payloads with the existing
+  target format (task id, byte length, bytes), checking active request/source,
+  target availability and sequential section order. Failed sends do not advance
+  that order. This deliberately supplies the missing Login path, not new Game
+  response formats. `AccountRepository.UpdateAccountAsync` additionally persists
+  `activated`, omitted by Java `AccountDAO.updateAccount` despite transfer's
+  deactivation/reactivation calls. Reference `ce54b7931`, D19 / E2E §7/118.
+  A successful relay or persisted flag alone is not transfer acceptance.
 
 ### General mappings
 

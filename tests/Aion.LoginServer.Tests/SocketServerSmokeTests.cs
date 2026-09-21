@@ -1181,6 +1181,8 @@ public sealed class SocketServerSmokeTests
 
 		public Task RequestTransferAsync(int taskId, string name, byte[] db, CancellationToken cancellationToken = default) => throw NotUsed();
 
+		public Task ForwardSectionAsync(int taskId, byte sourceServerId, byte actionId, byte[] db, CancellationToken cancellationToken = default) => throw NotUsed();
+
 		public Task OnErrorAsync(int taskId, string reason, CancellationToken cancellationToken = default) => throw NotUsed();
 
 		public Task OnOkAsync(int taskId, CancellationToken cancellationToken = default) => throw NotUsed();

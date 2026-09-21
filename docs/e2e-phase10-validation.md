@@ -4127,6 +4127,93 @@ login/data verification and unrelated-character controls. BA-001/003 and P10-09
 stay unchecked; no allowances or old failure artifacts were changed. The Chat
 checkpoint is committed as `0e787de97`.
 
+## P10-09 Login transfer relay and activation checkpoint
+
+Following `ad04093c7`, Login now consumes source sections 5–9 rather than silently
+dropping them. It relays their opaque bytes as responses 24–28 using the format
+already defined by Java Game's `CM_PTRANSFER_RESPONSE`: action, task id, length,
+bytes. The active transfer supplies the destination; the authenticated connection
+supplies the source identity. Unknown/finished tasks, wrong sources, invalid,
+duplicate or out-of-order sections are logged and not forwarded. Target-offline
+and failed-send paths do not advance the expected section. The five sections do
+not mark the task DONE: that remains the target's OK response. These checks are
+not a new retry, crash recovery or transfer rollback protocol.
+
+`AccountRepository.UpdateAccountAsync` now writes the activation value that the
+existing transfer service sets on deactivation/reactivation. Other updated fields
+and the row-id predicate are unchanged. Reference `ce54b7931`: Login
+`network/gameserver/clientpackets/CM_PTRANSFER_CONTROL.java`,
+`network/gameserver/serverpackets/SM_PTRANSFER_RESPONSE.java`,
+`service/PlayerTransferService.java`, `service/ptransfer/PlayerTransferResultStatus.java`,
+`dao/AccountDAO.java`; Game `network/loginserver/{clientpackets/CM_PTRANSFER_RESPONSE.java,serverpackets/SM_PTRANSFER_CONTROL.java}`.
+The added relay and activation persistence intentionally correct the shared
+defects under D19, rather than claiming identical Java Login behavior.
+
+Five new parser cases reproduce the dropped sections before the fix (five failures).
+The existing real-socket dispatch test now sends all five sections and verifies
+their order, task, bytes and authenticated source identity. A service regression
+checks exact response payloads, target routing, refusal controls, failed-send
+ordering, and that target OK—not forwarding—completes the task. The focused Login
+suite passes 135 tests / seven explicit DB skips.
+
+The DB regression is also actually executed, not just skipped: Docker container
+`aion-mysql`, fresh owned `aion_p1009_transfer_activation` database, one selected
+test. The old production writer fails after a requested 0 reloads as 1; the fix
+passes fresh loads of both 0 and 1, retaining name/password/last-server fields.
+Both runs remove their owned schema in finally, and subsequent schema inspection
+confirms absence. No local MySQL or unrelated database/container was used or removed.
+Logs: `run/p10-09-transfer-{relay-red,relay-green,activation-red,activation-green}.log`.
+
+All CLAUDE checks pass: 4,645 solution tests / 27 explicit skips; warning inventory
+unchanged at 4,243 sites / 21 codes; all ancillary checks; Docker Fast
+`fast-20260920-233138` (six tests, eleven scenarios). Logs:
+`run/p10-09-transfer-relay-{warnings,dotnet,checks,fast}.log`.
+
+The topology diagnostic now retains production/test changes in its source patch,
+so a pre-commit rebuilt stack can be attributed to the actual correction.
+BA-001/003 remain open pending full transfer acceptance; unit/DB results do not
+establish target login, full character data retention or source cleanup.
+
+### Rebuilt two-GS diagnostic: relay succeeds, clone remains failed
+
+`run/p10-09-topology/p10-09-transfer-relay-a` rebuilt the C# images from
+`ad04093c7` plus the retained Login relay/activation patch. Two ordinary L0 bots
+create/enter/relog and exit; the controller then submits the real operator queue
+request and waits for the unchanged seven-minute scheduler. No GM grants,
+fabricated bridge frames, scheduler acceleration, account repair or extra bots.
+
+The source now serializes the quest section and Login forwards all sections to
+the target. At `2026-09-21T03:40:56Z`, target clone persistence fails with
+`92a0c151`, `AccountPassportsDAO.StorePassport`: the newly loaded target account
+has no passport list. Java `AccountService.loadAccount` and CMT's `newPlayer`
+path likewise omit the passport load performed by normal `PlayerService.getPlayer`.
+This is §7/134, an open bug—not an allowance or a green journey.
+
+The controller retains ACTIVE after its sixty-second active observation. The
+source/control selected player fields and all source inventory rows compare
+byte-for-byte equal before/after. The subject account changes 1→0 (confirming
+actual activation persistence) while the control stays active. The destination
+contains partial character `133724` for source `133597`, with no final transfer
+timestamp. It also contains **26 inventory rows against the source's 13**: the
+starter kit was granted again by `NewPlayer` before appending transferred items.
+Java shares that path; this is the separate data-integrity finding §7/135, even
+though it has no additional logged fingerprint. Do not treat the row's existence
+as successful transfer or manually repair it into a pass.
+
+Diagnostic exit 1; watcher exit 1, one new fingerprint, no known/regressed/repeated
+problems, two suppressions for the existing one-per-GS boot warning only. All six
+owned containers, their isolated data and the network were removed; cleanup errors
+are empty and exact project/network absence was confirmed. Unrelated `aion-mysql`
+and other project containers were untouched. This run used a private problem
+ledger and did not change the shared ledger's statuses.
+
+`transfer-attempt.json` SHA256:
+`bb9fc81a9633e785b1b15f1c361abced5a59b6b109f11ba3458fc1ac4d162abb`.
+Also retain `source.patch`, `topology-result.json`, `logwatch-summary.json`, raw
+five-producer logs and `run/p10-09-transfer-relay-a.log`. Old diagnostics remain
+unchanged. Next work is the scoped clone-initialization corrections and a real
+destination-server login/data/control journey; no additional deferral is implied.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

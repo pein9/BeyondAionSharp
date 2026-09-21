@@ -13,6 +13,8 @@ public interface IPlayerTransferService
 
 	Task RequestTransferAsync(int taskId, string name, byte[] db, CancellationToken cancellationToken = default);
 
+	Task ForwardSectionAsync(int taskId, byte sourceServerId, byte actionId, byte[] db, CancellationToken cancellationToken = default);
+
 	Task OnErrorAsync(int taskId, string reason, CancellationToken cancellationToken = default);
 
 	Task OnOkAsync(int taskId, CancellationToken cancellationToken = default);
@@ -141,6 +143,26 @@ public sealed class PlayerTransferService : IPlayerTransferService
 		await _accountRepository.UpdateAccountAsync(sourceAccount, useExternalAuth: false, cancellationToken);
 
 		await _gameServerRegistry.SendPacketToGameServerAsync(task.TargetServerId, new SmPlayerTransferResponse(PlayerTransferResultStatus.SendInfo, request));
+	}
+
+	public async Task ForwardSectionAsync(int taskId, byte sourceServerId, byte actionId, byte[] db, CancellationToken cancellationToken = default)
+	{
+		// D19: Java Login drops actions 5..9 even though both Game peers define them.
+		// Dispatch is awaited per authenticated source connection, preserving section order.
+		if (!_transfers.TryGetValue(taskId, out var request) || request.ServerId != sourceServerId
+			|| actionId is < 5 or > 9 || request.NextSectionAction != actionId)
+		{
+			_logger.LogError("Rejected transfer section {ActionId} for task #{TaskId} from server #{ServerId}", actionId, taskId, sourceServerId);
+			return;
+		}
+		var target = _gameServerRegistry.GetGameServer(request.TargetServerId);
+		if (target == null || !target.IsOnline || !await _gameServerRegistry.SendPacketToGameServerAsync(
+			request.TargetServerId, new SmPlayerTransferResponse((PlayerTransferResultStatus)(actionId + 19), taskId, db)))
+		{
+			_logger.LogError("Cannot forward transfer section {ActionId} for task #{TaskId}: target is offline", actionId, taskId);
+			return;
+		}
+		request.NextSectionAction++;
 	}
 
 	public async Task OnTaskStopAsync(int taskId, string reason, CancellationToken cancellationToken = default)

@@ -2,6 +2,8 @@ namespace Aion.LoginServer.Model;
 
 public sealed class PlayerTransferRequest
 {
+	public byte NextSectionAction { get; set; } = 5;
+
 	public byte ServerId { get; set; }
 
 	public byte TargetServerId { get; set; }

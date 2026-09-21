@@ -10,6 +10,59 @@ namespace Aion.LoginServer.Tests;
 public class PlayerTransferServiceTests
 {
 	[Fact]
+	public async Task RelayForwardsAllFiveSectionsOnlyInOrderAndToTheTarget()
+	{
+		var task = TestTask();
+		var repository = new FakePlayerTransferRepository(task);
+		var registry = new FakeGameServerRegistry();
+		registry.AddOnlineServer(1);
+		registry.AddOnlineServer(2);
+		var service = CreateService(repository, registry, new FakeAccountRepository(
+			new Account { Id = 100, Name = "source", Activated = 1 },
+			new Account { Id = 101, Name = "target", Activated = 1 }));
+		await service.VerifyNewTasksAsync();
+		await service.RequestTransferAsync(task.Id, "character", [1, 2, 3]);
+		registry.SentPackets.Clear();
+		await service.ForwardSectionAsync(999, 1, 5, [1]); // unknown task
+		await service.ForwardSectionAsync(task.Id, 2, 5, [1]); // wrong sender
+		await service.ForwardSectionAsync(task.Id, 1, 9, [1]); // premature clone section
+		await service.ForwardSectionAsync(task.Id, 1, 4, [1]); // not a section
+		Assert.Empty(registry.SentPackets);
+		registry.GetGameServer(2)!.MarkOffline();
+		await service.ForwardSectionAsync(task.Id, 1, 5, [1]);
+		Assert.Empty(registry.SentPackets);
+		registry.AddOnlineServer(2);
+		registry.RejectSends = true;
+		await service.ForwardSectionAsync(task.Id, 1, 5, [1]);
+		Assert.Empty(registry.SentPackets);
+		registry.RejectSends = false;
+		for (byte action = 5; action <= 9; action++)
+		{
+			byte[] data = [0, action, 255, 128];
+			await service.ForwardSectionAsync(task.Id, 1, action, data);
+			var sent = registry.SentPackets[^1];
+			Assert.Equal(2, sent.ServerId);
+			using var expected = new Aion.Commons.Network.PacketBuffer();
+			expected.WriteC(12);
+			expected.WriteD(action + 19);
+			expected.WriteD(task.Id);
+			expected.WriteD(data.Length);
+			expected.WriteB(data);
+			Assert.Equal(expected.ToArray(), sent.Packet.SerializePayload());
+			int count = registry.SentPackets.Count;
+			await service.ForwardSectionAsync(task.Id, 1, action, data); // duplicate
+			Assert.Equal(count, registry.SentPackets.Count);
+		}
+		Assert.Equal(5, registry.SentPackets.Count);
+		Assert.Equal(PlayerTransferTask.StatusActive, task.Status); // only target OK completes
+		await service.OnOkAsync(task.Id);
+		Assert.Equal(PlayerTransferTask.StatusDone, task.Status);
+		registry.SentPackets.Clear();
+		await service.ForwardSectionAsync(task.Id, 1, 5, [1]);
+		Assert.Empty(registry.SentPackets);
+	}
+
+	[Fact]
 	public async Task VerifyRequestAndOk_FollowsJavaPlayerTransferFlow()
 	{
 		var task = TestTask();
@@ -154,6 +207,8 @@ public class PlayerTransferServiceTests
 
 		public List<(byte ServerId, GsServerPacket Packet)> SentPackets { get; } = new();
 
+		public bool RejectSends { get; set; }
+
 		public GameServerInfo AddOnlineServer(byte serverId)
 		{
 			var server = new GameServerInfo(serverId, "*", "pass");
@@ -199,6 +254,7 @@ public class PlayerTransferServiceTests
 
 		public Task<bool> SendPacketToGameServerAsync(byte serverId, GsServerPacket packet)
 		{
+			if (RejectSends) return Task.FromResult(false);
 			SentPackets.Add((serverId, packet));
 			return Task.FromResult(_gameServers.ContainsKey(serverId));
 		}

@@ -418,6 +418,9 @@ public sealed class GameServerConnection : BaseClientConnection, IGameServerSess
 			case 4:
 				await _playerTransferService.OnTaskStopAsync(packet.TaskId, packet.Reason);
 				break;
+			case >= 5 and <= 9 when _gameServerInfo != null:
+				await _playerTransferService.ForwardSectionAsync(packet.TaskId, _gameServerInfo.Id, packet.ActionId, packet.Db);
+				break;
 		}
 	}
 

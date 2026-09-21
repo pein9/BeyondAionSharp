@@ -37,6 +37,11 @@ public sealed class CmPlayerTransferControl : GsClientPacket
 			case 3:
 				TaskId = buffer.ReadD();
 				break;
+			case >= 5 and <= 9:
+				// D19: relay the sections already emitted/consumed by the Game servers.
+				TaskId = buffer.ReadD();
+				Db = buffer.ReadB(buffer.Remaining);
+				break;
 		}
 	}
 }

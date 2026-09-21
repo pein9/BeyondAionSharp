@@ -10,6 +10,15 @@ public sealed class SmPlayerTransferResponse : GsServerPacket
 	private readonly string _reason;
 	private readonly PlayerTransferRequest? _request;
 	private readonly PlayerTransferTask? _task;
+	private readonly byte[]? _section;
+
+	public SmPlayerTransferResponse(PlayerTransferResultStatus result, int taskId, byte[] section)
+		: this(result, taskId)
+	{
+		if (result is < PlayerTransferResultStatus.SendItems or > PlayerTransferResultStatus.SendQuests)
+			throw new ArgumentOutOfRangeException(nameof(result));
+		_section = section;
+	}
 
 	public SmPlayerTransferResponse(PlayerTransferResultStatus result, int taskId)
 	{
@@ -46,6 +55,14 @@ public sealed class SmPlayerTransferResponse : GsServerPacket
 		buffer.WriteD((int)_result);
 		switch (_result)
 		{
+			case >= PlayerTransferResultStatus.SendItems and <= PlayerTransferResultStatus.SendQuests:
+				if (_section == null)
+					throw new InvalidOperationException("Transfer section response requires data.");
+				// Java CM_PTRANSFER_RESPONSE cases 24..28: task, length, opaque bytes.
+				buffer.WriteD(_taskId);
+				buffer.WriteD(_section.Length);
+				buffer.WriteB(_section);
+				break;
 			case PlayerTransferResultStatus.SendInfo:
 				if (_request == null)
 					throw new InvalidOperationException("SEND_INFO requires a transfer request.");

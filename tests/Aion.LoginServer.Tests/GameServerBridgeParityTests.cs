@@ -216,6 +216,15 @@ public sealed class GameServerBridgeParityTests
 			playerTransferService: playerTransferService);
 
 		await context.Stream.WriteAsync(CreatePlayerTransferRequestFrame(10, "source-player", new byte[] { 1, 2, 3, 4 }));
+		for (byte action = 5; action <= 9; action++)
+		{
+			using var section = new PacketBuffer();
+			section.WriteC(13);
+			section.WriteC(action);
+			section.WriteD(10);
+			section.WriteB([0, action, 255]);
+			await context.Stream.WriteAsync(PacketFrameCodec.CreateFrame(section.ToArray()));
+		}
 		await context.Stream.WriteAsync(CreatePlayerTransferErrorFrame(11, "bad transfer"));
 		await context.Stream.WriteAsync(CreatePlayerTransferOkFrame(12));
 		await context.Stream.WriteAsync(CreatePlayerTransferStopFrame(13, "stopped"));
@@ -225,6 +234,13 @@ public sealed class GameServerBridgeParityTests
 		var request = Assert.Single(playerTransferService.Requests);
 		Assert.Equal((10, "source-player"), (request.TaskId, request.Name));
 		Assert.Equal(new byte[] { 1, 2, 3, 4 }, request.Db);
+		Assert.Equal(5, playerTransferService.Sections.Count);
+		for (int index = 0; index < 5; index++)
+		{
+			var section = playerTransferService.Sections[index];
+			Assert.Equal((10, (byte)1, (byte)(index + 5)), (section.TaskId, section.Source, section.Action));
+			Assert.Equal(new byte[] { 0, (byte)(index + 5), 255 }, section.Db);
+		}
 		Assert.Equal(new[] { (11, "bad transfer") }, playerTransferService.Errors);
 		Assert.Equal(new[] { 12 }, playerTransferService.Oks);
 		Assert.Equal(new[] { (13, "stopped") }, playerTransferService.Stops);
@@ -780,6 +796,14 @@ public sealed class GameServerBridgeParityTests
 
 	private sealed class TrackingPlayerTransferService : IPlayerTransferService
 	{
+		public List<(int TaskId, byte Source, byte Action, byte[] Db)> Sections { get; } = new();
+
+		public Task ForwardSectionAsync(int taskId, byte sourceServerId, byte actionId, byte[] db, CancellationToken cancellationToken = default)
+		{
+			Sections.Add((taskId, sourceServerId, actionId, db));
+			return Task.CompletedTask;
+		}
+
 		private readonly List<(int TaskId, string Name, byte[] Db)> _requests = new();
 		private readonly List<(int TaskId, string Reason)> _errors = new();
 		private readonly List<int> _oks = new();
@@ -862,6 +886,8 @@ public sealed class GameServerBridgeParityTests
 		public Task VerifyNewTasksAsync(CancellationToken cancellationToken = default) => throw NotUsed();
 
 		public Task RequestTransferAsync(int taskId, string name, byte[] db, CancellationToken cancellationToken = default) => throw NotUsed();
+
+		public Task ForwardSectionAsync(int taskId, byte sourceServerId, byte actionId, byte[] db, CancellationToken cancellationToken = default) => throw NotUsed();
 
 		public Task OnErrorAsync(int taskId, string reason, CancellationToken cancellationToken = default) => throw NotUsed();
 

@@ -153,6 +153,18 @@ public class LoginDatabaseIntegrationTests
 		Assert.NotNull(loaded);
 		Assert.Equal(inserted.Id, loaded.Id);
 		Assert.Equal(inserted.PasswordHash, loaded.PasswordHash);
+		// D19: transfer deactivation/reactivation must survive a new repository load,
+		// not merely mutate the in-memory objects held by PlayerTransferService.
+		foreach (byte activation in new byte[] { 0, 1 })
+		{
+			loaded.Activated = activation;
+			Assert.True(await accountRepo.UpdateAccountAsync(loaded, useExternalAuth: false));
+			var reloaded = Assert.IsType<Account>(await accountRepo.GetAccountByIdAsync(loaded.Id, false));
+			Assert.Equal(activation, reloaded.Activated);
+			Assert.Equal(loaded.Name, reloaded.Name);
+			Assert.Equal(loaded.PasswordHash, reloaded.PasswordHash);
+			Assert.Equal(loaded.LastServer, reloaded.LastServer);
+		}
 	}
 
 	[SkippableFact]
