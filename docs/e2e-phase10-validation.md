@@ -4226,3 +4226,28 @@ destination-server login/data/control journey; no additional deferral is implied
   require explicit renewed authorization.
 - A green orchestration contract does not prove a two-hour populated soak, five
   consecutive Full runs, or natural autonomous player progression.
+
+## P10-09 supported-scope closeout and P10-07 client-control attempt
+
+On 2026-09-20 the maintainer clarified that BeyondAionSharp is a single-server
+emulator and does not support character transfer. Decision D20 therefore makes
+BA-001 and the transfer-only BA-003 runtime item not applicable. The transfer
+diagnostics above remain immutable evidence of a dormant inherited path; they are
+not an allowance, product failure, or reason to add more transfer behavior. No
+further passport/starter-package fix or two-GS run is planned. BA-002, supported
+BA-003, and BA-006 have their accepted B2/B2F/B3/B4 LIVE evidence, while BA-005
+remains separately deferred with P10-05 under D7. This closes P10-09 in the
+supported single-server scope.
+
+The maintainer also activated D18 and supplied
+`C:\Program Files (x86)\Beyond Aion\FarmerAionServerStart - LOCALHOST.bat`.
+The normal production-style Docker stack started on localhost ports 2106, 7777
+and 10241 using Docker MySQL only. Game loaded 668 static-data XML files, spawned
+the world, authenticated as the one registered game server and listened for real
+clients. The launcher created process `aion.bin` and a live window titled
+`AION Client (64bit)`. The task's Computer Use inventory, however, exposed only
+browser tabs; native Windows app discovery and binding functions were unavailable,
+including a direct bind attempt with the exact live window handle. The client was
+closed after that failed capability probe. No fallback keyboard/mouse automation,
+account creation, login, capture claim, or P10-07 acceptance occurred. Resume
+P10-07 when native Windows app control is available to this task.

@@ -26,11 +26,13 @@ keep it that way, and see section E of `docs/retail-ai-backlog.md` for what the
 boundary currently costs.
 
 **Approved shared-defect corrections:** E2E decision D19 in
-`docs/e2e-player-simulation-plan.md` authorizes narrowly scoped C# fixes for the
-Java-shared character-transfer and Chat-gag defects (§7/118–119). Read/cite the
-pinned Java implementation and preserve the documented intentional corrections;
-do not silently port these known defects back. This is not a general exemption
-from parity or authorization to reopen other deferred behavior.
+`docs/e2e-player-simulation-plan.md` authorized narrowly scoped C# fixes for the
+Java-shared character-transfer and Chat-gag defects (§7/118–119). The Chat-gag
+correction remains approved and must not be silently ported back. D20 supersedes
+the transfer half: this is a single-server emulator and character transfer is not
+a supported product journey, so do not extend or runtime-validate that dormant
+path. These decisions are not a general exemption from parity or authorization to
+reopen other deferred behavior.
 
 ## Always watch for Java ↔ C# semantic gaps
 

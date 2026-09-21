@@ -49,16 +49,16 @@ The baseline is not proof of runtime parity; it records the starting point again
 
 | Gate | Findings | State | Exit evidence |
 |---|---|---|---|
-| Release Gate 1 — primary cross-server flows | BA-001, BA-002, BA-003, BA-004 | Close to resolved | BA-002/004 Verified; BA-001/003 await successful two-GS transfer |
+| Release Gate 1 — primary server flows | BA-001, BA-002, BA-003, BA-004 | Verified in supported scope | BA-002/003/004 Verified; BA-001 is not applicable to the single-server emulator (D20) |
 | Release Gate 2 — gameplay and temporal data | BA-005, BA-006, BA-007 | Close to resolved | BA-006/007 Verified; BA-005's in-world siege journey remains deferred |
 | Hardening and setup Gate | BA-008 through BA-018 | Verified | Semantic/schema suites, static-data atomicity, warning ratchet, full solution, and fidelity checks pass |
-| Completion Audit | All findings and backlog | Close to resolved | 15 Verified; three Code complete; remaining journeys listed below |
+| Completion Audit | All findings and backlog | Close to resolved | 16 Verified; BA-001 not applicable; BA-005 Code complete with its in-world journey deferred |
 
 ## Release Gate 1 — primary cross-server flows
 
 ### BA-001 — Character-transfer opcode
 
-**Status:** Code complete
+**Status:** Not applicable — unsupported single-server product path (D20)
 
 **Current work:** Implementation and focused tests pass. P10-09 now provisions two real C# GS/Chat pairs
 and runs ordinary L0 setup followed by the real transfer queue. `p10-09-transfer-b` remains ACTIVE with
@@ -71,13 +71,14 @@ Login now relays sections 5–9 to the existing Game response formats 24–28, w
 source and ordering checks; account activation changes persist through a fresh Docker DB load.
 Rebuilt `p10-09-transfer-relay-a` now reaches a partial target clone, but fails its final passport
 save and exposes duplicate starter inventory (§7/134–135). The task stays ACTIVE and its subject
-account disabled; source/control records remain unchanged. These are open bugs, with no allowance
-or database repair. The full journey remains open; see `docs/e2e-phase10-validation.md`.
+account disabled; source/control records remain unchanged. D20 records the maintainer's clarification
+that BeyondAionSharp is a single-server emulator and does not support character transfer. This evidence
+is preserved, but no further transfer fixes or two-GS acceptance runs are in scope.
 
 - [x] Transfer control headers retain Java's `[0D, action, ...]` layout; D19 adds only the documented null-date sentinel for nullable quest fields.
 - [x] LS factory selects transfer control in the authenticated state.
 - [x] Focused byte-golden and factory tests pass (Game Server bridge 10/10; Login protocol/transfer 30/30).
-- [ ] Two-GS transfer completes through D19's section relay (GS actions `1..9`, LS responses `20..28`), verifies target login/data and source cleanup, and preserves unrelated control characters. Parser/unit proofs alone are insufficient.
+- [x] Two-GS runtime acceptance is explicitly not applicable to the supported single-server product (D20); prior failures remain evidence, not an allowance.
 - [x] Full solution tests pass (1,002/1,002).
 
 ### BA-002 — Chat authentication response
@@ -109,9 +110,9 @@ callback API internals retain their focused loopback coverage. See `docs/e2e-pha
 
 ### BA-003 — Complete GS↔LS response surface
 
-**Status:** Code complete
+**Status:** Verified
 
-**Current work:** The complete Java opcode/state table, post-auth account synchronization, runtime handlers, and focused parser/dispatch tests pass. LIVE B3 proves duplicate-login refusal/kick, fast reconnect without password fallback, consumed-key replay refusal, access grant/revoke, and an account-only ban with natural expiry/re-entry. LIVE B4 additionally proves fresh MAC/HDD synchronization and enforcement across Login restart. The full transfer journey remains open; this does not close the release gate.
+**Current work:** The complete Java opcode/state table, post-auth account synchronization, runtime handlers, and focused parser/dispatch tests pass. LIVE B3 proves duplicate-login refusal/kick, fast reconnect without password fallback, consumed-key replay refusal, access grant/revoke, and an account-only ban with natural expiry/re-entry. LIVE B4 additionally proves fresh MAC/HDD synchronization and enforcement across Login restart. D20 removes transfer-only runtime acceptance from this single-server emulator's product scope.
 
 - [x] `0x02` kick/duplicate-login behavior matches Java.
 - [x] `0x03` fast reconnect returns and consumes the reconnect key correctly.
@@ -121,13 +122,13 @@ callback API internals retain their focused loopback coverage. See `docs/e2e-pha
 - [x] `0x09` MAC and `0x0A` HDD lists populate the GS managers; entry counts are consumed incrementally instead of sizing peer-controlled arrays, with huge/truncated and Java-negative-count regressions pinned.
 - [x] `0x0C` dispatch reaches all transfer response actions `20..28`.
 - [x] Factory state/opcode tests cover every active legal opcode and illegal-state rejection.
-- [ ] Loopback journeys cover duplicate login, kick, reconnect, grant, ban, hardware-ban sync, and transfer.
+- [x] Loopback journeys cover supported duplicate login, kick, reconnect, grant, ban and hardware-ban synchronization.
   - [x] LIVE B3: duplicate login returns ALREADY_LOGIN and kicks the original Game session with the expected message.
   - [x] LIVE B3: reconnect key authenticates a new Login session, replay closes, and the authenticated socket selects Game and recovers the same character.
   - [x] LIVE B3: director and subject see grant/revoke feedback; read-only live state verifies 0→1→0, and revocation survives relogin. No gameplay/login occurs at access 1.
   - [x] LIVE B3: account-only one-minute ban acknowledges, kicks without a duplicate-login notification requirement, refuses two fresh logins, and expires naturally before successful re-entry/logout.
   - [x] LIVE B4: exact winter/summer MAC/HDD epochs and fresh applied generation 1→2 across owned Login restart, eight client refusals and an unbanned control (`p10-09-hardware-c`).
-  - [ ] Full transfer still requires successful LIVE proof; shared Java limitations remain recorded under BA-001.
+  - [x] Transfer-only runtime proof is not applicable to the supported single-server product (D20); shared Java limitations remain recorded under BA-001.
 - [x] `docs/Full-Parity-Backlog.md` §I1 reflects the implemented Java 4.8 opcode/state ownership.
 - [x] Full solution tests pass (1,002/1,002).
 
@@ -319,11 +320,11 @@ Tagged Chat nickname is tracked with BA-002 because it shares the same Java requ
 - [x] `docs/Full-Parity-Backlog.md` and the source audit agree with current implementation status.
 - [x] Final worktree/diff review found no whitespace errors and preserved the user's untracked `AGENTS.md`.
 
-The unchecked completion items trace to three Code-complete findings: BA-001, BA-003,
-and BA-005. They require successful transfer and deferred in-world siege journeys.
-P10-09 retains failing transfer evidence; D19 authorizes scoped C# corrections, still pending.
-Chat-gag now has a successful corrected runtime journey. See
-`docs/e2e-phase10-validation.md` for preserved failures and remaining coverage.
+The remaining unchecked completion item is BA-005's in-world siege journey, deferred with
+P10-05 under D7. D20 makes BA-001 not applicable and closes BA-003 on its supported
+single-server journeys. P10-09 retains the failed transfer evidence as historical diagnostics;
+it is not an acceptance gate or allowance. Chat-gag has a successful corrected runtime journey.
+See `docs/e2e-phase10-validation.md` for preserved failures and remaining coverage.
 
 ## Progress log
 
