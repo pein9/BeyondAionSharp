@@ -2355,6 +2355,17 @@ real geodata on in production immediately, because geo is enabled by default; th
   green with every selected LIVE scenario passed and no quarantine. The peak live population remained S4's
   eight bots. Transfer was neither selected nor counted because it is inapplicable under D20. Four further
   consecutive clean Breadth runs and the two-hour ten-bot soak remain before Phase 10 acceptance.
+  Complete Breadth attempt `p10-accept-05` is clean candidate 2/5 at revision `da3b1c7c9`: 119 passed,
+  zero failed/skipped/flaky in 14,492.546 seconds, with first-attempt B2F and S5, quest coverage 58 SIM /
+  60 LIVE, all packet gates green, all 16 coverage processes collected and the aggregate ledger promotion
+  accepted. Its `report.json`, packet-comparison and quest-comparison SHA-256 receipts are
+  `74407e7657320577c56d76dac38cb4004b6f71787ec12bb0066952f53a3fad07`,
+  `33e71ad3e54f81ac327ff7dc31834ef0a7cb49b2a44f591d3e0cc546f548b650` and
+  `20ad1d97a1434928d15e9303695275e3ec32ef407abea29d7e4c3bda765d35d6`. The catalog totals and packet
+  identity counts match candidate 1; measured coverage is 95,554/267,950 lines and 23,765/103,697 branches.
+  S4 remains the peak live population at eight bots. Transfer remains unselected and uncounted under D20.
+  Three further consecutive clean Breadth runs and the two-hour ten-bot soak remain. Checkpoint receipt:
+  `1a99e8738` (before SHA-recording amend).
   **Aggregate ledger safeguard checkpoint (`198500442`):** child watchers only record observations; their `FullRun`
   flag cannot mark an absent fingerprint fixed (§7/129). After aggregate reporting and flake-history
   persistence succeed, the Full parent invokes a read-only raw-evidence gate before ledger mutation.
@@ -2364,7 +2375,7 @@ real geodata on in production immediately, because geo is enabled by default; th
   Only tracked absent entries with an exact Git fix trailer can transition; concurrent observations and
   maintainer edits still win the existing atomic merge. Promotion errors make the aggregate non-green.
   This is contract-tested infrastructure, not a new successful Full run; no shared ledger was rewritten.
-  Remaining P10-10 work: four more consecutive clean Full Breadth runs and the accepted two-hour ten-bot soak.
+  Remaining P10-10 work: three more consecutive clean Full Breadth runs and the accepted two-hour ten-bot soak.
   P10-11 now supplies verified complete-Breadth packet and line/branch measurement integration; P10-12 supplies
   Full attempt joins, FLAKY reporting and bounded standalone runtime proof. Uncollected observations are
   unavailable, not zero; genuinely measured zero-hit directories remain visible. D17 still caps the run at
