@@ -2346,9 +2346,26 @@ real geodata on in production immediately, because geo is enabled by default; th
   and correctly labels its different workload incomparable. The plain Fast path still passes without
   instrumentation. Raw two-process union and report contracts verify unique-point aggregation; see
   the validation document for exact scope, counts, negative controls and hashes.
+  Line/branch and matrix receipt: `2549a1e30`.
 - [ ] **P10-12** [LIVE] S — Flake policy: a failed LIVE scenario is rerun once; a pass on rerun is reported FLAKY with
   both traces and recorded in `parity-artifacts/e2e/flaky.json`; 3 flakes in the last 10 Full runs quarantines the scenario with
   an owner and an expiry. SIM is never retried: a SIM flake is a determinism bug.
+  **Policy foundation implemented; not enabled in public runners yet.** The injectable controller
+  executes at most two sequential LIVE attempts with separate run ids, records the original failure
+  before retry admission, and never retries SIM. A cleanup/admission rejection or failed evidence write
+  stops before a second attempt. The evidence evaluator calls the raw run-report builder for each
+  attempt, retains both trace/journal/runner hashes, and rejects missing traces, stale reports and
+  changed run/scenario/seed/revision identity. Failed→passed is FLAKY; failed→failed remains failed.
+  The checked-in ledger starts empty: no fixture or earlier diagnostic has been counted as a real flake.
+  Its pure transition counts completed Full invocations (including failed ones) once, quarantines an
+  exact scenario on its third flake in the trailing ten, and gives flakes/quarantines the existing `e2e-simulation`
+  owner and a fourteen-day review expiry. Quarantine never silently passes or automatically releases
+  on expiry; it requires maintainer review. These are infrastructure defaults, not a gameplay allowance.
+  **Remaining:** wire fresh-stack retry and cleanup verification into public LIVE/Full execution,
+  integrate both attempts into Full reporting/coverage without crediting a flake as a clean pass,
+  persist ledger updates safely/idempotently, enforce quarantine admission, and prove the connected
+  behavior with bounded LIVE evidence. The foundation's raw-evidence fixtures and controller tests
+  use no bots, containers or databases. P10-12 and Phase 10 acceptance remain open.
 
 **Done when:** `run-full.ps1` is green on 5 consecutive runs with `report.json` written; the 200-bot soak keeps
 working set and timer count flat for 2 hours; P10-03 and P10-09 pass; every allowlist and flaky entry has an owner

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "window": 10,
+  "threshold": 3,
+  "owner": "e2e-simulation",
+  "expiryDays": 14,
+  "fullRuns": [],
+  "quarantines": []
+}

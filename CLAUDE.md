@@ -79,6 +79,8 @@ python scripts/e2e/test-mutation-runner.py                     # mutation verdic
 python scripts/e2e/test-run-report.py                          # report evidence joins, failures, fingerprints and metrics
 python scripts/e2e/test-packet-coverage.py                     # frozen opcode catalogs, raw/tap distinction and identity floors
 python scripts/e2e/test-code-coverage.py                       # Coverlet provenance, unique line/branch unions and scoped deltas
+python scripts/e2e/test-flake-policy.py                        # raw retry evidence and three-in-ten Full-run quarantine policy
+pwsh -NoProfile -File scripts/e2e/test-live-retry.ps1          # sequential single retry, original failures and no SIM retries
 pwsh -NoProfile -File scripts/sim/test-code-coverage.ps1       # collector requests, attachment/restoration failures and runner selection
 pwsh -NoProfile -File scripts/e2e/test-run-report.ps1            # report finalization and runner failure paths
 pwsh -NoProfile -File scripts/live/test-run-soak.ps1           # acceptance runner propagation and failure paths

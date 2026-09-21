@@ -3757,6 +3757,55 @@ Source coverage includes bootstrap: these receipts do not substitute for all Ful
 scenarios, a player-policy journey, capacity acceptance, or the deferred real-client work.
 Runs were sequential, with at most two bots, using Docker MySQL only.
 
+## P10-12 retry and flake-history foundation
+
+The public runners still retain their existing fail-fast behavior. This checkpoint
+adds the shared contracts that their retry/report/ledger integration will consume;
+it does **not** claim a real recovered LIVE failure or complete P10-12 acceptance.
+
+`scripts/e2e/live-retry.ps1` is an injectable sequential controller. Successful runs
+execute once. LIVE failures may execute one fresh `-retry1` attempt, only after the
+first terminal attempt has been recorded and the supplied cleanup/admission guard
+has passed. SIM executes once even on failure. Both failure causes survive a second
+failure; recording or safety failures stop before retry. The controller's provisional
+FLAKY outcome still requires raw-evidence validation, not merely a child exit code.
+
+`scripts/e2e/flake_policy.py` reuses the actual run-report builder to revalidate each
+attempt, including its watcher verdict, and hashes both retained runner results,
+scenario journals and bot trace sets. It accepts compressed traces but rejects
+duplicate compressed/uncompressed copies, empty/missing/corrupt/foreign traces,
+stale report hashes, changed revision/seed and unexpected scenario/run/mode identity.
+An original failed watcher remains a failed attempt even if its scenario passed.
+Two failed attempts are failed, and a clean first attempt must never be retried.
+
+`parity-artifacts/e2e/flaky.json` starts empty, with no synthetic or historical
+diagnostic flakes. Its policy is three flakes in ten completed Full invocations;
+failed/empty Full invocations still advance the window, but a retry is not another
+Full run. Pure ledger transitions are idempotent for identical receipts and reject
+rewriting an existing Full run. Full history remains available beyond the rolling
+window. Each recorded flake and quarantine has the existing `e2e-simulation` owner and a
+fourteen-day review expiry. Quarantine blocks the exact scenario, not a category;
+expired quarantine still requires review and never silently turns into a pass.
+
+Validation uses the real report builder over synthetic retained LIVE evidence in
+owned temporary directories, not mocked report verdicts. Eighteen Python contracts
+cover evidence integrity, both attempt outcomes, watcher failures, the third-flake
+boundary, the eleventh-run sliding window, owner/expiry, idempotency, history order,
+and rejection of SIM/diagnostic history. The PowerShell contract exercises the real
+controller with injected children, including cleanup and persistence failures.
+Neither contract starts bots, containers, servers or databases. No gameplay/Java
+parity change or real flake classification is involved.
+
+All CLAUDE pre-commit checks passed: 4,614 solution tests passed / 27 skipped;
+the warning baseline remains 4,243 sites / 21 codes. Logs are retained at
+`run/p10-12-policy-{warnings,dotnet,checks}.log`. The two new contracts are listed
+in CLAUDE so the retry/history policy cannot silently regress in later work.
+
+Still required: public-runner integration (including safe fresh-stack admission),
+Full report/coverage integration retaining both attempts, safe ledger persistence,
+quarantine enforcement and bounded runtime proof. FLAKY must not count toward the
+five clean Full runs. All original Phase 10 acceptance and deferrals remain visible.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.
