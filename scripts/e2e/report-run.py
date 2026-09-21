@@ -338,7 +338,7 @@ def sim_observations(root, outcome, report):
 
 
 def planned_rows(root, outcome):
-    if outcome["mode"] != "FULL":
+    if outcome["mode"] not in ("FULL", "LIVE_RETRY"):
         return [dict(id=identifier(scenario), mode=outcome["mode"]) for scenario in outcome["scenarios"]]
     result = []
     plan = read_json(child_path(root, "suite-plan.json"))
@@ -479,7 +479,7 @@ def build_report(root):
     try:
         outcome = read_json(child_path(root, "runner-result.json"))
         report["runnerSourceSha256"] = hashlib.sha256((root / "runner-result.json").read_bytes()).hexdigest()
-        if outcome["schemaVersion"] != 1 or outcome["mode"] not in ("SIM", "LIVE", "FULL") or outcome["status"] not in ("passed", "failed"):
+        if outcome["schemaVersion"] != 1 or outcome["mode"] not in ("SIM", "LIVE", "FULL", "LIVE_RETRY") or outcome["status"] not in ("passed", "failed"):
             raise ValueError("invalid terminal runner result")
         identifier(outcome["run"])
         number(outcome["durationSeconds"])
@@ -489,7 +489,12 @@ def build_report(root):
         expected = planned_rows(root, outcome)
         if not expected:
             raise ValueError("run has no planned scenarios")
-        if outcome["mode"] == "FULL":
+        if outcome["mode"] in ("FULL", "LIVE_RETRY"):
+            if outcome["mode"] == "LIVE_RETRY":
+                plan = read_json(child_path(root, "suite-plan.json"))
+                if plan["suite"] != "Standalone" or len(plan["steps"]) != 1 or plan["steps"][0]["kind"] != "Live":
+                    raise ValueError("Standalone retry requires exactly one LIVE scenario, not a Full suite")
+                report["limitations"].append("Standalone LIVE retry run; does not advance the ten-Full-run flake window or establish Full acceptance.")
             collect_suite(root, outcome, report)
         else:
             report["scenarios"] = scenario_outcomes(root, outcome, issues)

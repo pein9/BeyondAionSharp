@@ -4,7 +4,7 @@ function Write-AionRunReport {
 	param(
 		[Parameter(Mandatory)][string]$RunDirectory,
 		[Parameter(Mandatory)][string]$Run,
-		[Parameter(Mandatory)][ValidateSet('SIM', 'LIVE', 'FULL')][string]$Mode,
+		[Parameter(Mandatory)][ValidateSet('SIM', 'LIVE', 'FULL', 'LIVE_RETRY')][string]$Mode,
 		[AllowEmptyCollection()][string[]]$Scenarios = @(),
 		[Parameter(Mandatory)][ValidateSet('passed', 'failed')][string]$Status,
 		[Parameter(Mandatory)][DateTimeOffset]$StartedUtc,

@@ -81,8 +81,10 @@ def record(root, ledger_path):
     frozen(root, plan)
     retained = read(root / "report.json")
     fresh = reporter.build_report(root)
-    if retained != fresh or fresh["mode"] != "FULL" or fresh["run"] != plan["run"]:
-        raise ValueError("Full report is stale or not this terminal Full invocation")
+    if retained != fresh or fresh["mode"] not in ("FULL", "LIVE_RETRY") or fresh["run"] != plan["run"]:
+        raise ValueError("Retry report is stale or not this terminal invocation")
+    if (fresh["mode"] == "LIVE_RETRY") != (plan["suite"] == "Standalone"):
+        raise ValueError("Standalone history cannot be counted as a Full invocation")
     runner = fresh["runner"]
     if runner is None or runner["status"] not in ("passed", "failed"):
         raise ValueError("Missing terminal Full runner receipt")
@@ -103,8 +105,11 @@ def record(root, ledger_path):
     with ledger_lock(ledger_path):
         before = sha(ledger_path)
         ledger = policy.validate(read(ledger_path))
-        updated = policy.record_full(ledger, plan["run"], plan["suite"], runner["finishedUtc"],
-                                     report_hash, list(observations.values()))
+        if fresh["mode"] == "LIVE_RETRY":
+            updated = policy.record_standalone(ledger, plan["run"], runner["finishedUtc"], report_hash, list(observations.values()))
+        else:
+            updated = policy.record_full(ledger, plan["run"], plan["suite"], runner["finishedUtc"],
+                                         report_hash, list(observations.values()))
         if updated != ledger:
             atomic_write(ledger_path, updated)
         after = sha(ledger_path)

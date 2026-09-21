@@ -56,7 +56,7 @@ try {
 	if ($report.status -ne 'passed' -or $report.counts.passed -ne 1) { throw 'Complete scenario was not reported.' }
 
 	# Every public owner must finalize after its try body, not only on success.
-	foreach ($relative in @('run-full.ps1', '../sim/run-sim-tier.ps1', '../live/run-live.ps1', '../live/run-soak.ps1')) {
+	foreach ($relative in @('run-full.ps1', '../sim/run-sim-tier.ps1', '../live/run-live.ps1', '../live/run-soak.ps1', '../live/run-scenario.ps1')) {
 		$tokens = $null; $parseErrors = $null
 		$ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $relative), [ref]$tokens, [ref]$parseErrors)
 		if ($parseErrors.Count) { throw "Runner parse failed: $relative" }

@@ -137,7 +137,29 @@ def validate(ledger):
         if any(run not in history or not any(s["scenario"] == scenario and s["status"] == "flaky"
                 for s in history[run]["scenarios"]) for run in triggers):
             raise ValueError("Quarantine triggers lack historical flakes")
+    standalone = ledger.get("standaloneRuns", [])
+    if not isinstance(standalone, list) or any(row["suite"] != "Standalone" for row in standalone):
+        raise ValueError("Invalid standalone flake history")
+    if standalone:
+        if {row["run"] for row in standalone} & {row["run"] for row in runs}:
+            raise ValueError("A run cannot be both standalone and Full history")
+        # Apply the same receipt/owner/expiry validation, without treating these
+        # observations as inputs to the Full-only rolling quarantine policy.
+        validate(dict(ledger, fullRuns=[dict(row, suite="Breadth") for row in standalone],
+                      standaloneRuns=[], quarantines=[]))
     return ledger
+
+
+def record_standalone(ledger, run, finished_utc, report_sha256, observations):
+    validate(ledger)
+    # Reuse the common entry validation and idempotency logic in a separate history
+    # namespace; discard its computed Full quarantine state, never merge it back.
+    isolated = dict(ledger, fullRuns=[dict(row, suite="Breadth") for row in ledger.get("standaloneRuns", [])],
+                    standaloneRuns=[], quarantines=[])
+    recorded = record_full(isolated, run, "Breadth", finished_utc, report_sha256, observations)
+    result = copy.deepcopy(ledger)
+    result["standaloneRuns"] = [dict(row, suite="Standalone") for row in recorded["fullRuns"]]
+    return validate(result)
 
 
 def record_full(ledger, run, suite, finished_utc, report_sha256, observations):

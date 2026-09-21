@@ -5,5 +5,31 @@
   "owner": "e2e-simulation",
   "expiryDays": 14,
   "fullRuns": [],
-  "quarantines": []
+  "quarantines": [],
+  "standaloneRuns": [
+    {
+      "run": "p10-12-standalone-l0-a",
+      "suite": "Standalone",
+      "finishedUtc": "2026-09-21T02:29:12.6126027+00:00",
+      "reportSha256": "de99ef379a15ec5d73f8a5757c8630469a48c3a1cab366f4c5a014f90b5daf60",
+      "scenarios": [
+        {
+          "scenario": "L0",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "run": "p10-12-standalone-l0-c",
+      "suite": "Standalone",
+      "finishedUtc": "2026-09-21T02:36:31.4853418+00:00",
+      "reportSha256": "d6d683dd925ae83c94ea42f2471728be62b83e422ac7232bbdfe2a0d3f102a0e",
+      "scenarios": [
+        {
+          "scenario": "L0",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
 }

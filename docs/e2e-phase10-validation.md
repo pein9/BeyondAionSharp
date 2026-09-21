@@ -3862,6 +3862,78 @@ Still required for P10-12: bounded connected LIVE runtime evidence and the
 standalone retry-enabled entry point. Original Full/Phase 10 acceptance, known
 P10-09 failures, the population cap and deferred scope remain unchanged.
 
+## P10-12 standalone entry and connected runtime completion
+
+Use `pwsh -NoProfile -File scripts/live/run-scenario.ps1 -Scenario L0 -Run <unique-id>`
+for a retry-enabled standalone LIVE breadth scenario. It selects population/deadline
+defaults from the same manifest/planner as Full, allows explicit seed/timeout/backend
+selection, always enforces watching, and supports `-PlanOnly`. Its single-attempt
+children remain ordinary `run-live.ps1` invocations. SOAK acceptance/retry remains
+under the existing Full Soak path; larger populations remain deferred under D17.
+
+The parent is explicitly `LIVE_RETRY`, never `FULL`. Standalone results—including
+owned, expiring flakes—are retained under `standaloneRuns` in the selected flake
+ledger. They do not advance, trigger or age out the ten-Full-run quarantine window.
+Optional `-FlakeLedger` and `-ProblemLedger` paths support isolated diagnostic
+records; default operation uses the checked-in ledgers. A FLAKY parent is deliberately
+non-green/exit 1; both attempts and their original errors/fingerprints remain visible.
+The checked-in ledger currently retains two observed standalone passes and **zero**
+Full runs/quarantines. The deliberately faulted run uses private ledgers only.
+
+Runtime evidence, all on the C# Docker stack at base `320e43b1f` plus this source overlay:
+
+- `run/p10-12-standalone-l0-a`: first real public-command pass, one L0 attempt.
+  Subsequent review caught §7/128: this draft wrongly forwarded the child `FullRun`
+  flag for retention. No shared problem-ledger changes occurred; its original report
+  remains retained, but this is not the final corrected scope proof.
+- `run/p10-12-standalone-fault-b`: the retained driver
+  `run/p10-12-retry-fault-driver.ps1` starts the real public command with private
+  problem/flake ledgers and waits for the first L0 journal start. After verifying the
+  exact owned project/container identity and real watcher's `--full-run false`, it
+  issues one `docker kill` to that first-attempt game server only. The first attempt
+  fails in 75.09 seconds. The retry admission receipt proves the old project has no
+  containers; the fresh `-retry1` stack passes in 86.61 seconds. The parent reports
+  **one FLAKY, zero passed/failed/skipped**, overall failed, public exit 1. The driver
+  validates that expected result and exits 0. Both trace sets and the original
+  failed report remain; packet observations come only from the successful retry.
+  Report SHA256: `3dba3e72eee8ce12907c22f24a32f9a8241cc953a79681916efa7c823b458d9d`.
+  The private ledger records one owned flake expiring 2026-10-05, no Full runs and
+  no quarantine. This is a **controlled recovered-failure proof**, not natural
+  flakiness or a Full acceptance result.
+- Fault fingerprint triage: `ee0109a0` is the deliberately killed GS process;
+  `ebe67ab3` is the resulting bot transport write failure, reported REGRESSED by the
+  copied problem ledger. Both remain fatal on the first attempt and visible in the
+  parent report. No allowance, tracking suppression or shared-ledger edit was added.
+- `run/p10-12-standalone-l0-c`: final corrected clean replay passes L0 once with
+  no fingerprints and exit 0. Report SHA256:
+  `d6d683dd925ae83c94ea42f2471728be62b83e422ac7232bbdfe2a0d3f102a0e`.
+  Both clean and recovered-run reporting/history paths are now observed at runtime.
+
+All these invocations were sequential with at most **two concurrent bots**. Only
+Docker MySQL was used; every owned test stack/database was removed afterward while
+logs, traces, tap frames and receipts remain under `run/`. The maintainer's existing
+`aion-mysql` container and unrelated containers were not modified.
+
+Seventeen Python Full/standalone integration contracts and eighteen policy tests
+cover replay/history integrity and the three-in-ten boundary. Actual PowerShell
+dispatch/controller/finalizer contracts pin the standalone non-Full flag, private
+ledger forwarding, SIM non-retry, cleanup admission and non-green history failures.
+P10-12 is complete as a retry/report/quarantine feature. It does not close broader
+Full runtime acceptance, P10-09's red journeys or any deferred scope. Review also
+identified §7/129: Full child watchers can promote problem-ledger entries before
+the aggregate Full verdict. That remains an explicit P10-10 follow-up, not hidden
+by the successful standalone proof.
+
+Pre-commit verification: all CLAUDE checks passed; 4,614 solution tests passed /
+27 skipped; warning baseline unchanged at 4,243 sites / 21 codes. The first ancillary
+pass exposed §7/130: synthetic fixtures retained newly populated real standalone
+history. The fixture now clears both history namespaces, without deleting real
+records or weakening chronological validation; the complete corrected ancillary
+pass is green. Logs: `run/p10-12-final-{warnings,dotnet,checks,checks-corrected}.log`.
+The original draft overlay is in `run/p10-12-standalone-source-a/`; final source,
+tracked patch and retained fault driver are in `run/p10-12-standalone-source-final/`,
+based on `320e43b1f`. Failed attempts and first-draft reports were not rewritten.
+
 ## Deferred scope
 
 - P10-05 and siege/housing-dependent journeys remain deferred under D7.

@@ -21,7 +21,7 @@ class FlakePolicyTests(unittest.TestCase):
         self.root = self.helper.root
         self.ledger = json.loads((Path(__file__).resolve().parents[2] / "parity-artifacts/e2e/flaky.json").read_text())
         # Existing real entries must never become fixtures or be modified by tests.
-        self.ledger.update(fullRuns=[], quarantines=[])
+        self.ledger.update(fullRuns=[], standaloneRuns=[], quarantines=[])
 
     def attempt(self, number, status="passed", **runner_changes):
         name = "full-l0" + ("-retry1" if number == 2 else "")

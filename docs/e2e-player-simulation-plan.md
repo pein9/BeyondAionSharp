@@ -2303,9 +2303,9 @@ real geodata on in production immediately, because geo is enabled by default; th
   validation document; the current reporting checkpoint does not establish capacity/soak acceptance.
   SIM resource receipt: `2438d4e0a`.
   Remaining P10-10 work: final coverage/report acceptance across the complete Full workload, including
-  runtime acceptance of P10-12's flaky outcomes. P10-11 supplies packet and line/branch measurement/delta
-  integration; P10-12 now supplies Full attempt joins and FLAKY reporting, but its connected runtime proof
-  and the complete-Full reference/acceptance are still missing. Uncollected observations are unavailable,
+  final Full problem-ledger promotion (§7/129). P10-11 supplies packet and line/branch measurement/delta
+  integration; P10-12 supplies Full attempt joins, FLAKY reporting and bounded standalone runtime proof,
+  but the complete-Full reference/acceptance is still missing. Uncollected observations are unavailable,
   not zero; genuinely measured zero-hit directories remain visible. The current Full matrix remains
   unexecuted under D17 and known P10-09 failures.
 - [ ] **P10-11** [BOTH] M — Coverage. (a) Packet coverage from bot traces and the P3-07 tap: client opcodes sent out
@@ -2348,10 +2348,10 @@ real geodata on in production immediately, because geo is enabled by default; th
   instrumentation. Raw two-process union and report contracts verify unique-point aggregation; see
   the validation document for exact scope, counts, negative controls and hashes.
   Line/branch and matrix receipt: `2549a1e30`.
-- [ ] **P10-12** [LIVE] S — Flake policy: a failed LIVE scenario is rerun once; a pass on rerun is reported FLAKY with
+- [x] **P10-12** [LIVE] S — Flake policy: a failed LIVE scenario is rerun once; a pass on rerun is reported FLAKY with
   both traces and recorded in `parity-artifacts/e2e/flaky.json`; 3 flakes in the last 10 Full runs quarantines the scenario with
   an owner and an expiry. SIM is never retried: a SIM flake is a determinism bug.
-  **Policy foundation implemented (`107fc9d62`); Full integration implemented, runtime proof pending.** The injectable controller
+  **Implemented (`107fc9d62`, `320e43b1f`, plus the standalone/runtime completion checkpoint).** The injectable controller
   executes at most two sequential LIVE attempts with separate run ids, records the original failure
   before retry admission, and never retries SIM. A cleanup/admission rejection or failed evidence write
   stops before a second attempt. The evidence evaluator calls the raw run-report builder for each
@@ -2372,11 +2372,24 @@ real geodata on in production immediately, because geo is enabled by default; th
   populations at most once per Full invocation. History persistence failures make reporting non-green.
   The soak wrapper now preserves the child build SHA (§7/127). Quarantined scenarios are visibly
   skipped, not passed; their Full run remains non-green.
-  **Remaining:** bounded connected LIVE runtime proof and a retry-enabled standalone LIVE entry
-  point (the existing `run-live.ps1`/`run-soak.ps1` remain single-attempt primitives). Current proof
-  consists of raw-evidence report/CLI fixtures and actual PowerShell controllers/finalizers with
-  injected children and mocked Docker; no bots or databases were started for these contracts.
-  P10-12 and Phase 10 acceptance remain open.
+  Full integration receipt: `320e43b1f`.
+  **Standalone and runtime checkpoint:** `scripts/live/run-scenario.ps1` selects one exact LIVE
+  breadth scenario and uses the same retry/controller/report path in explicit `LIVE_RETRY` mode.
+  Its owned/expiring records go to `standaloneRuns`, never the ten-Full-run history window. The
+  single-attempt `run-live.ps1`/`run-soak.ps1` primitives remain available; Full owns soak retries.
+  Standalone never advertises itself as a Full watcher run (§7/128). Optional private problem/flake
+  ledgers support controlled diagnostics without adding natural-flake strikes to the shared ledger.
+  `p10-12-standalone-fault-b` proves a deliberate first-attempt GS kill followed by a clean fresh L0
+  retry: both traces/fingerprints are retained, the old Docker project is absent before retry, and
+  the parent reports one FLAKY result with exit 1. Private history records it without changing Full
+  history or quarantine. This is a controlled recovered-failure test, not evidence of natural flakes
+  or full-matrix acceptance. Exact final clean replay and check receipts are in the validation document.
+  Final corrected `p10-12-standalone-l0-c` passes with one attempt, no fingerprints and exit 0;
+  the controlled recovered run exits 1 with one FLAKY. Both old/new stacks are removed with receipts
+  retained. Seventeen report/CLI integration tests, eighteen policy tests and the actual PowerShell
+  dispatch/controller/finalizer contracts cover Full-window quarantine, SIM non-retry, missing evidence,
+  cleanup/persistence failures and standalone isolation. Phase 10 remains open for P10-09/10/11 and
+  its unchanged broad acceptance/deferrals; P10-12 does not certify five complete green Full runs.
 
 **Done when:** `run-full.ps1` is green on 5 consecutive runs with `report.json` written; the 200-bot soak keeps
 working set and timer count flat for 2 hours; P10-03 and P10-09 pass; every allowlist and flaky entry has an owner
@@ -2673,6 +2686,9 @@ Each is a Java ↔ C# divergence (or a C#-only defect) found while preparing thi
 
 | 126 | Initial P10-11 collector receipt treated VSTest's copied attachments as conflicting measurements (harness-only) | Instrumented `p10-11-code-fast-a` passed all six test cases and eleven scenarios, but VSTest retained byte-identical JSON/Cobertura files in both the collector GUID directory and the TRX deployment tree. The first discovery implementation required exactly one filename and correctly left the run red for its invalid receipt | Retain/hash every equivalent copy and count its observations once; reject differing hashes, missing attachments, changed settings/source identity or unrestored binaries. Fresh `p10-11-code-fast-b` passes with all copies validated. Failed a remains unchanged. No Java or production behavior, allowance or failure policy was changed |
 | 127 | Soak acceptance wrapper discarded its LIVE child's recorded build revision (harness-only) | `run-live.ps1` writes the built revision into `runner-result.json`, but the final `run-soak.ps1` report call omitted `-GitSha`, replacing it with the empty default. This prevented valid same-revision retry identity joins | Preserve the retained child revision when the acceptance wrapper finalizes. The actual soak finalizer is exercised with a known child SHA in `test-full-flake.ps1`; no old run receipts are rewritten. No Java or gameplay behavior changed |
+| 128 | First standalone retry draft forwarded `FullRun` to its watcher (harness-only, corrected before completion) | `p10-12-standalone-l0-a` passed L0, but review showed that the retention-oriented `-FullRun` forwarding also enabled the watcher's Full-only problem-ledger promotion. No shared problem-ledger changes occurred in that run; its original report is preserved | Standalone no longer passes that flag. Its unique parent has at most two children, retained under active ownership and the existing retention limit. The public dispatch contract rejects Full forwarding; the controlled fault-b driver also observes `--full-run false` on the real watcher. Parent reports/history use explicit `LIVE_RETRY` / `standaloneRuns`. No Java behavior changed |
+| 129 | Full child watcher can promote absent fingerprints before the aggregate Full result is known (harness-only, open) | `run-full.ps1` passes `FullRun` to each LIVE child. `ProblemWatcher` calls `MarkFixedAfterGreenFullRunAsync` whenever that child has zero failing problems; a matching `Fixes-Fingerprint` commit can therefore promote an absent fingerprint even if a later child fails or the aggregate is FLAKY | P10-10 follow-up: separate child artifact retention from aggregate-green ledger promotion, and promote only after the complete Full evidence gate succeeds. Add failed/FLAKY-parent and missing-child negative controls. No automatic promotion or historical ledger edits are authorized merely by this finding; no Java parity change is needed |
+| 130 | Flake test fixtures retained real standalone history after the first public runtime passes (test-only, corrected) | The shared fixture cleared `fullRuns` and quarantines but not the newly added `standaloneRuns`; once real passes were recorded, two synthetic older-timestamp tests correctly hit the history ordering guard | Clear both history namespaces in the owned in-memory fixture. Keep the real checked-in records and production ordering checks unchanged. Rerun the complete contract suite against the now-populated ledger; no Java or runtime policy change |
 
 Defects Java shares, kept as-is: per-command `//access` grants never take effect (see P8-03).
 `SM_CHANNEL_INFO` is constructed before world spawn on login/teleport/channel change, so it sends the

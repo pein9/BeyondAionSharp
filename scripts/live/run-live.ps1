@@ -35,6 +35,7 @@ param(
 	[ValidateSet('Host', 'Docker')][string]$BotExecution = 'Host',
 
 	[string]$RunRoot,
+	[string]$ProblemLedger,
 
 	[string]$ComposeFile = (Join-Path $PSScriptRoot '../../docker/docker-compose.bots.yml')
 )
@@ -341,6 +342,9 @@ try {
 			'--compose-file', $composeFilePath, '--mode', $WatcherMode, '--stop-file', $stopFile,
 			'--full-run', $FullRun.IsPresent.ToString().ToLowerInvariant()
 		)
+		if (-not [string]::IsNullOrWhiteSpace($ProblemLedger)) {
+			$watcherArguments += @('--ledger', [IO.Path]::GetFullPath($ProblemLedger))
+		}
 		if ($Scenario -contains 'O1') {
 			# Two known boot reports, scoped only to this two-boot scenario. Preserve owner/expiry.
 			$allowlist = @(Get-Content -Raw -LiteralPath (Join-Path $repoRoot 'parity-artifacts/e2e/log-allowlist.json') | ConvertFrom-Json)

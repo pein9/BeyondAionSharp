@@ -212,6 +212,44 @@ class FullFlakeTests(unittest.TestCase):
         self.assertEqual("failed", report["status"])
         self.assertIn("history not retained", report["evidenceIssues"])
 
+    def test_standalone_report_and_cli_history_never_advance_full_window(self):
+        self.suite()
+        self.plan["suite"] = "Standalone"
+        self.put("suite-plan.json", self.plan)
+        runner = reporter.read_json(self.root / "runner-result.json")
+        runner["mode"] = "LIVE_RETRY"
+        self.put("runner-result.json", runner)
+        report = self.retain_report()
+        self.assertEqual("LIVE_RETRY", report["mode"])
+        self.assertEqual(1, report["counts"]["flaky"])
+        result = self.cli("record")
+        self.assertEqual(0, result.returncode, result.stderr)
+        ledger = json.loads(self.ledger.read_text())
+        self.assertEqual([], ledger["fullRuns"])
+        self.assertEqual([], ledger["quarantines"])
+        self.assertEqual("flaky", ledger["standaloneRuns"][0]["scenarios"][0]["status"])
+        before = self.ledger.read_bytes()
+        self.assertEqual(0, self.cli("record").returncode)
+        self.assertEqual(before, self.ledger.read_bytes())
+        self.plan["suite"] = "Breadth"
+        self.put("suite-plan.json", self.plan)
+        self.assertEqual("failed", reporter.build_report(self.root)["status"])
+        self.assertNotEqual(0, self.cli("record").returncode)
+
+    def test_standalone_flakes_do_not_trigger_or_expire_full_quarantine_window(self):
+        self.suite()
+        observation = policy.observe(self.root, "full-l0", "L0", 2, reporter.build_report)
+        ledger = self.fixture.ledger
+        for number in range(1, 13):
+            ledger = policy.record_standalone(ledger, f"standalone-{number}", f"2026-09-20T12:{number:02}:00+00:00",
+                f"{number:064x}", [observation])
+        self.assertEqual(12, len(ledger["standaloneRuns"]))
+        self.assertEqual([], ledger["fullRuns"])
+        self.assertEqual([], ledger["quarantines"])
+        self.assertTrue(policy.admission(ledger, "L0", STAMP)["allowed"])
+        with self.assertRaisesRegex(ValueError, "both standalone and Full"):
+            policy.record_full(ledger, "standalone-1", "Breadth", STAMP, "0" * 64, [])
+
     def test_quest_gate_selects_retry_without_duplicate_or_failed_receipts(self):
         self.suite()
         receipt = dict(schemaVersion=1, mode="LIVE", scenario="Q1", acceptedQuestIds=[1], completedQuestIds=[1])
