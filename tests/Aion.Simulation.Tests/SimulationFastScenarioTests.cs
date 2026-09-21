@@ -55,6 +55,8 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		Assert.Equal(processPlan.OrderBy(execution => execution.Order), processPlan);
 		var driver = new SimulationDriver(fixture.Clock);
 		string? runDirectory = Environment.GetEnvironmentVariable("AION_E2E_RUN_DIR");
+		if (!string.IsNullOrWhiteSpace(runDirectory))
+			PacketCoverageCatalog.Write(runDirectory, Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "sim-fast", "SIM");
 		using var journal = string.IsNullOrWhiteSpace(runDirectory) ? null : new ScenarioRunJournal(runDirectory,
 			Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "sim-fast", "SIM");
 		using var exported = OpenEvidence(runDirectory);
@@ -749,8 +751,6 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 	private static void WriteL0PacketArtifact(IReadOnlyList<SimulationL0Actor> actors)
 	{
 		string? runDirectory = Environment.GetEnvironmentVariable("AION_E2E_RUN_DIR");
-		if (!string.IsNullOrWhiteSpace(runDirectory))
-			PacketCoverageCatalog.Write(runDirectory, Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "sim-fast", "SIM");
 		if (string.IsNullOrWhiteSpace(runDirectory))
 			return;
 		string path = Path.Combine(Path.GetFullPath(runDirectory), "l0-packets.json");

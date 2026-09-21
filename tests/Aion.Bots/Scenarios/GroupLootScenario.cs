@@ -78,6 +78,9 @@ public static class GroupLootScenario
 					Require(players.All(p => p.Api.World.Objects.ContainsKey(corpse)), "All three subjects must see the spawned target.");
 					long[] before = players.Select(CountItem).ToArray();
 					await DefeatAsync(corpse, ct);
+					// The killing blow can come from the last client in the synchronization loop. Drain one
+					// more per-client barrier so its corpse-rights broadcast is visible to every client.
+					await SyncAsync(ct);
 					var allowed = players.Where(p => p.Api.World.LootStatuses.TryGetValue(corpse, out byte status) && status == 0).ToArray();
 					Require(allowed.Length == (rule == 0 ? 3 : 1), "Wrong number of clients received initial corpse loot rights.");
 					if (rule == 1) Require(roundRobinOwners.Add(allowed[0].CharacterId), "Round-robin did not rotate to a new member across three consecutive kills.");

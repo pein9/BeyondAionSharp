@@ -4339,3 +4339,45 @@ new violations; and the cross-server contract passes 76 assertions. Docker Fast
 run `p10-b2f-fix-fast` passes six test cases / eleven scenarios with no failures,
 skips or flakes. Its `report.json` SHA-256 is
 `213172628f9ee3f01023268704c6fdc1ddfa13a9dcbb4d856c1e6a5e986773ab`.
+
+## P10-10 complete-matrix attempt 03 and harness corrections
+
+`p10-accept-03` reached every supported Breadth child. It retained 118 passing
+attempts, no deterministic failed journey, and one FLAKY S5 result: the first S5
+attempt failed its initial free-for-all recipient count and the fresh retry passed.
+All later LIVE journeys, lifecycle cases, connectivity and canaries passed. Quest
+coverage passed with 58 SIM and 60 LIVE completions. Character transfer was not
+selected because D20 makes it inapplicable to this single-server emulator.
+
+The final packet gate correctly kept the aggregate red. Only the SIM shard
+containing L0 had written `packet-catalog.json`; every other passing SIM child
+therefore lacked independently verifiable packet evidence. Because E6 ran in the
+other shard, the aggregate also reported all six client exchange sends and four
+structured server exchange decodes as missing. This was §7/138, an evidence
+placement defect—not an opcode or decoder regression. Catalog creation now occurs
+once at the start of every SIM manifest process. Fresh non-L0 Full shard
+`p10-packet-catalog-shard00-a` passes 29 scenarios in 3.98 minutes with one packet
+measurement, all ten exchange identities and zero evidence issues.
+
+The S5 failure was §7/139. Its last attacker received the corpse-rights packet
+after b01 and b02 had already completed their sequential barriers, so the shared
+assertion raced queued broadcasts. A second per-client barrier now drains the
+killing blow's broadcast before retaining the exact 3/1 recipient assertions.
+Fresh Docker run `p10-s5-barrier-a` passes all six ordinary kills, free-for-all,
+three rotating round-robin owners, leader-only and three-player roll conservation
+on its first attempt with enforced watching. No production behavior, retry policy,
+baseline or allowance changed. L1's twelve race/class subjects were sequential and
+peaked at one connection (§7/132); the maximum concurrent player group remained
+eight, within D17's cap of ten.
+
+Retained SHA-256 receipts:
+
+- failed aggregate `report.json`: `91bcf7e1ad0a749f52124a2677a7cacbbc1f2160e540f06042cd3dd7bacb1b42`
+- failed packet comparison: `902b7fdd5809b3cfee4733cbce727a7c8a78bfc8945a459491b95ac1c7251ed4`
+- corrected non-L0 SIM report: `d8a30efc9b7ab8507620ffeb852111aa2b0d60c83ce4e53837bfe114ffedf9ea`
+- corrected SIM packet catalog: `8c211cbd49274f9f6f676572183acea324681919accd95adc55a0daabf63d64f`
+- corrected S5 LIVE report: `2876b30c840e051e08402fdf383b17006a8db5d71c1742dcc920266d08730fc7`
+
+`p10-accept-03` is not a green acceptance run and does not start the required
+five-run streak. The next complete Full attempt must validate the corrected
+per-child packet evidence and remain free of first-attempt flakes.

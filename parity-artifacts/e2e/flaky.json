@@ -200,6 +200,301 @@
           "status": "skipped"
         }
       ]
+    },
+    {
+      "run": "p10-accept-03",
+      "suite": "Breadth",
+      "finishedUtc": "2026-09-21T10:18:47.0235464+00:00",
+      "reportSha256": "91bcf7e1ad0a749f52124a2677a7cacbbc1f2160e540f06042cd3dd7bacb1b42",
+      "scenarios": [
+        {
+          "scenario": "L0",
+          "status": "passed"
+        },
+        {
+          "scenario": "B4",
+          "status": "passed"
+        },
+        {
+          "scenario": "B3",
+          "status": "passed"
+        },
+        {
+          "scenario": "B2F",
+          "status": "passed"
+        },
+        {
+          "scenario": "B2",
+          "status": "passed"
+        },
+        {
+          "scenario": "O1",
+          "status": "passed"
+        },
+        {
+          "scenario": "M1",
+          "status": "passed"
+        },
+        {
+          "scenario": "M6",
+          "status": "passed"
+        },
+        {
+          "scenario": "C1",
+          "status": "passed"
+        },
+        {
+          "scenario": "Q1",
+          "status": "passed"
+        },
+        {
+          "scenario": "Q2",
+          "status": "passed"
+        },
+        {
+          "scenario": "Q3",
+          "status": "passed"
+        },
+        {
+          "scenario": "Q4P",
+          "status": "passed"
+        },
+        {
+          "scenario": "Q4I",
+          "status": "passed"
+        },
+        {
+          "scenario": "E1",
+          "status": "passed"
+        },
+        {
+          "scenario": "E2",
+          "status": "passed"
+        },
+        {
+          "scenario": "E3",
+          "status": "passed"
+        },
+        {
+          "scenario": "E4",
+          "status": "passed"
+        },
+        {
+          "scenario": "E5",
+          "status": "passed"
+        },
+        {
+          "scenario": "E6",
+          "status": "passed"
+        },
+        {
+          "scenario": "E7",
+          "status": "passed"
+        },
+        {
+          "scenario": "CAPITAL",
+          "status": "passed"
+        },
+        {
+          "scenario": "S1",
+          "status": "passed"
+        },
+        {
+          "scenario": "S2",
+          "status": "passed"
+        },
+        {
+          "scenario": "S3",
+          "status": "passed"
+        },
+        {
+          "scenario": "S4",
+          "status": "passed"
+        },
+        {
+          "scenario": "S5",
+          "status": "flaky",
+          "owner": "e2e-simulation",
+          "expiresUtc": "2026-10-05T10:18:47.023546+00:00",
+          "attempts": [
+            {
+              "number": 1,
+              "child": "p10-accept-03-s5",
+              "status": "failed",
+              "durationSeconds": 72.3960574,
+              "evidence": [
+                {
+                  "path": "p10-accept-03-s5/runner-result.json",
+                  "sha256": "e4791d8bdba573f5aa3013e20ed046e5ab0af6d87812617535bfd94efe1441d5",
+                  "bytes": 445
+                },
+                {
+                  "path": "p10-accept-03-s5/scenario-results.jsonl",
+                  "sha256": "c29060d7cc5079e62183102d5128731b15d392bd0eb4b7b8953b4d40541267e8",
+                  "bytes": 600
+                }
+              ],
+              "traces": [
+                {
+                  "path": "p10-accept-03-s5/bots/b01.trace.jsonl",
+                  "sha256": "08a2077c74b07521112d6d05704f79b4840b2e3896fbb3630d40416fa3fe0468",
+                  "bytes": 149486,
+                  "observations": 494
+                },
+                {
+                  "path": "p10-accept-03-s5/bots/b02.trace.jsonl",
+                  "sha256": "5ab28ad8dfdb0afaa4a90614691b09b201afdd849c335bbe84afd7098605ea8a",
+                  "bytes": 147573,
+                  "observations": 487
+                },
+                {
+                  "path": "p10-accept-03-s5/bots/b03.trace.jsonl",
+                  "sha256": "2c589cd54537b4192531949e90efbe4147e62d2fd9e7cff5a9cfbb732aec722b",
+                  "bytes": 147744,
+                  "observations": 488
+                },
+                {
+                  "path": "p10-accept-03-s5/bots/gm.trace.jsonl",
+                  "sha256": "649ff22ee35300bd440860068bb35cac11eba8e62aea4122695f5e9901a330f0",
+                  "bytes": 185493,
+                  "observations": 603
+                }
+              ],
+              "evidenceIssues": [
+                "Enforced watcher failed.",
+                "NEW or REGRESSED watcher fingerprints remain.",
+                "System.Management.Automation.RuntimeException: Live bots failed with exit code 1.",
+                "Not all planned scenarios passed."
+              ]
+            },
+            {
+              "number": 2,
+              "child": "p10-accept-03-s5-retry1",
+              "status": "passed",
+              "durationSeconds": 111.289597,
+              "evidence": [
+                {
+                  "path": "p10-accept-03-s5-retry1/runner-result.json",
+                  "sha256": "45ce562b83bae9a37a7f9cf36e61ce456ec32e06fc7ea190b39ca169b653056c",
+                  "bytes": 371
+                },
+                {
+                  "path": "p10-accept-03-s5-retry1/scenario-results.jsonl",
+                  "sha256": "fe8b76266dcf53cce02fe871bb966633c1a477072c748e18c0b8076e77390a27",
+                  "bytes": 548
+                }
+              ],
+              "traces": [
+                {
+                  "path": "p10-accept-03-s5-retry1/bots/b01.trace.jsonl",
+                  "sha256": "5b53b9c4a834f4f202b325413b168bd5bbbe183ae5105fb1fdad5de75ce7250f",
+                  "bytes": 372667,
+                  "observations": 1413
+                },
+                {
+                  "path": "p10-accept-03-s5-retry1/bots/b02.trace.jsonl",
+                  "sha256": "b05cb2560a08382c2f1c404a56e9f10f5b59a8f09be5ac7209c78e8d06539982",
+                  "bytes": 363020,
+                  "observations": 1375
+                },
+                {
+                  "path": "p10-accept-03-s5-retry1/bots/b03.trace.jsonl",
+                  "sha256": "b53212e9f1a6e036dc89d074fb625f5f7f488b8af96a7f2cf291b554a839dd30",
+                  "bytes": 367979,
+                  "observations": 1388
+                },
+                {
+                  "path": "p10-accept-03-s5-retry1/bots/gm.trace.jsonl",
+                  "sha256": "fa96bab819c58b469c0bbf6c7a3eb3c46c9716d6fbb4e6e5c1093acf3f5dcfe8",
+                  "bytes": 346678,
+                  "observations": 1229
+                }
+              ],
+              "evidenceIssues": []
+            }
+          ]
+        },
+        {
+          "scenario": "S6",
+          "status": "passed"
+        },
+        {
+          "scenario": "S7",
+          "status": "passed"
+        },
+        {
+          "scenario": "G1",
+          "status": "passed"
+        },
+        {
+          "scenario": "G2",
+          "status": "passed"
+        },
+        {
+          "scenario": "G3",
+          "status": "passed"
+        },
+        {
+          "scenario": "G4",
+          "status": "passed"
+        },
+        {
+          "scenario": "G5",
+          "status": "passed"
+        },
+        {
+          "scenario": "G6",
+          "status": "passed"
+        },
+        {
+          "scenario": "E8",
+          "status": "passed"
+        },
+        {
+          "scenario": "E9",
+          "status": "passed"
+        },
+        {
+          "scenario": "E10",
+          "status": "passed"
+        },
+        {
+          "scenario": "E11",
+          "status": "passed"
+        },
+        {
+          "scenario": "L1",
+          "status": "passed"
+        },
+        {
+          "scenario": "L2",
+          "status": "passed"
+        },
+        {
+          "scenario": "L3",
+          "status": "passed"
+        },
+        {
+          "scenario": "L4",
+          "status": "passed"
+        },
+        {
+          "scenario": "L5",
+          "status": "passed"
+        },
+        {
+          "scenario": "L7",
+          "status": "passed"
+        },
+        {
+          "scenario": "connect",
+          "status": "passed"
+        },
+        {
+          "scenario": "canaries",
+          "status": "passed"
+        }
+      ]
     }
   ],
   "quarantines": [],
