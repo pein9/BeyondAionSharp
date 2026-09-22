@@ -104,11 +104,11 @@ useful independently of this later journey.
 | Capability needed for continuous play | Readiness | Evidence and remaining gap |
 |---|---|---|
 | Create an Asmodian Priest normally | Mostly ready | The LIVE session supports an explicit base class and lifecycle tests cover Priest; journey entry points still default to Warrior and need a retained Priest identity. |
-| Travel on traversable routes and approach live objects | Partial | Geodata-backed local/journey pathing and checked long-distance LIVE movement exist. Add progress/stuck detection, bounded replanning and moving-target reacquisition. Q2002 legitimately teleports to the Ataxiar instance and returns by quest dialogue; the journey needs a narrowly scoped quest-transport policy, not an unrestricted map change. |
+| Travel on traversable routes and approach live objects | Partial | Geodata-backed local/journey pathing and checked long-distance LIVE movement exist. Add progress/stuck detection, bounded replanning and moving-target reacquisition. Q2002's legitimate quest teleport to Ataxiar and scripted return now pass in Docker SIM under a narrowly scoped Q2002 START/99 policy exception; this is not an unrestricted map change or LIVE proof. |
 | Priest combat and survival | Policy implemented; bounded LIVE proof | NI-04 chooses only client-observed Sprigg Workers, intersects the frozen level-1–9 Priest map with the learned skill list, gates range/MP/group cooldowns, heals, uses owned starter potions, rests, and bounds retreat/revive attempts. Two ordinary LIVE kills and sit/stand recovery passed. Low-HP, consumable, retreat and death branches are policy-tested but not yet induced in LIVE; longer varied combats remain NI-07/NI-09 evidence. |
 | Gathering | Policy implemented; bounded LIVE quest proof | NI-06 earned level 2 by ordinary Priest combat, accepted Q2133, walked to a client-observed Young Azpha, gathered three items and completed the quest with Nobekk. Failed-use depletion, occupied-node fallback, next-node search and normal respawn wait are policy-tested; this LIVE run had three successes on one node, so those recovery branches remain uninduced LIVE evidence. Cube-pressure handling uses NI-05's sell-only policy. |
 | Inventory, equipment, skills and economy | Policy implemented; bounded LIVE sale proof | NI-05 selects class-usable rewards and gear from shipped templates, verifies auto-learned Priest skills from the client, protects all 41 quests' item references plus quest/key items and HP/MP supplies, and sells other sellable items without buying. A one-bot LIVE run sold the starter bandage stack at an active Ishalgen vendor; reward claiming, upgrade equipping and full-inventory recovery remain policy-tested until NI-07 exercises them naturally. Shipped unsellable starter extras cannot be sold. |
-| Quest selection and execution | NI-07 in progress | Q4I completes 27 template quests with GM level/items/teleports and omits custom campaigns. A separate Docker SIM checkpoint now completes Q2000, Q2100–Q2104, and Q2001 on one ordinary Priest with checked walking, natural combat, object loot, class-appropriate rewards, and packet-confirmed quest state. This is 7/41, not the complete journey; Q2002 is auto-started next and its Ataxiar leg remains to be integrated. |
+| Quest selection and execution | NI-07 in progress | Q4I completes 27 template quests with GM level/items/teleports and omits custom campaigns. A separate Docker SIM checkpoint now completes Q2000, Q2100–Q2104, and Q2001–Q2002 on one ordinary Priest with checked walking, natural combat, object loot, class-appropriate rewards, quest-driven instance travel and packet-confirmed quest state. This is 8/41, not the complete journey. |
 | Persistence and recovery | Partial | Relog/crash/save evidence and state oracles exist. A connection failure still ends a run; add checkpoint reconstruction, same-character resume, stall classification and bounded recovery. |
 | Share a world with a human player | Not ready | Multi-bot contention is proven only in isolated LIVE stacks. Add an explicit attach mode that never owns server/DB lifecycle, then validate visibility with the real client. P10-07's client capture remains deferred. |
 
@@ -209,14 +209,14 @@ These are new journey TODOs, not retroactive claims about the phase scenarios:
   SIM without grants, forced state, setup teleports or boosted stats. Allow the
   ordinary level-9 XP cap while finishing every included quest, then end at Munin
   before any Q2008 interaction. In progress: a Docker-backed focused SIM test
-  creates a Priest and completes Q2000/Q2100–Q2104/Q2001 naturally on the same
+  creates a Priest and completes Q2000/Q2100–Q2104/Q2001–Q2002 naturally on the same
   character, including ordinary Priest combat kills, post-kill rests, object loot,
-  and class-appropriate rewards. Q2002 auto-starts at this checkpoint; its
-  quest-driven Ataxiar visit is not yet exercised. Java `ce54b7931`
-  `_2002WheresRae` specifies the temporary instance teleport and return.
+  class-appropriate rewards, and Q2002's quest-driven Ataxiar visit and return.
+  The decision engine permits that temporary map only with Q2002 START/99.
+  Java `ce54b7931` `_2002WheresRae` specifies the instance teleport and return.
   The decision engine now requires client-observed proximity to Munin before it
   can report `journey-complete`; journal state alone is insufficient. Neither
-  the seven-quest checkpoint nor the endpoint rule satisfies the 41-quest TODO.
+  the eight-quest checkpoint nor the endpoint rule satisfies the 41-quest TODO.
 - [ ] **NI-08 — Durable resume and diagnosis.** Reconstruct state after relog or
   server interruption, resume the same character, and preserve a minimal failure
   package for stalls, disconnects and server defects.

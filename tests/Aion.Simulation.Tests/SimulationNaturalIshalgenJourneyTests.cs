@@ -46,7 +46,8 @@ public sealed partial class SimulationFastScenarioTests
 
 		BotNavigationGraph graph = BotNavigationGraphFactory.Build(fixture.DataManager.StaticData,
 			[203500, 203504, 203501, 203502, 203516, 203518,
-				210363, 210367, 210369, 700124, 700093],
+			203519, 203534, 790002, 210377, 210378, 700045, 203538,
+			210363, 210367, 210369, 700124, 700093],
 			BotNavigationGeometry.ForServerWorld(player.GetInstanceId(), player.GetRace()));
 		var navigator = new NaturalSimulationNavigator(session, graph,
 			BotNavigationGeometry.ForServerWorld(player.GetInstanceId(), player.GetRace()));
@@ -158,6 +159,8 @@ public sealed partial class SimulationFastScenarioTests
 		}
 		else
 			Assert.Equal(2002, decision.SelectedQuestId); // The next automatically started campaign precedes Q2105.
+		if (decision.SelectedQuestId == 2002)
+			await AdvanceWheresRaeAsync();
 
 		for (int grind = 0; session.Api.World.Level < 3 && grind < 20; grind++)
 		{
@@ -189,13 +192,16 @@ public sealed partial class SimulationFastScenarioTests
 				.Where(waypoint => waypoint.TemplateId == templateId)
 				.OrderBy(waypoint => Distance(session.CurrentPosition, waypoint.Position)).ToArray();
 			if (anchors.Length == 0) throw new InvalidDataException($"Shipped spawn graph has no NPC {templateId}.");
+			var reasons = new List<string>();
 			foreach (BotWaypoint anchor in anchors.Take(12))
 			{
 				NaturalNavigationResult result = await NaturalIshalgenNavigator.ApproachNpcAsync(
 					contract.MapId, templateId, anchor.Position, navigator, token);
 				if (result.Arrived && result.TargetObjectId is int objectId) return objectId;
+				reasons.Add(result.Reason);
 			}
-			throw new InvalidDataException($"No client-observed NPC {templateId} at twelve shipped spawn hints.");
+			throw new InvalidDataException($"No client-observed NPC {templateId} at twelve shipped spawn hints " +
+				$"from {session.CurrentPosition}: {string.Join(" | ", reasons)}");
 		}
 
 		async Task FinishCaptainOrderAsync()
@@ -267,6 +273,145 @@ public sealed partial class SimulationFastScenarioTests
 			await FinishStandardQuestAsync(session, boromer, 2001, token,
 				DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex);
 			Assert.Equal(5, session.Api.World.Quests[2001].Status);
+		}
+
+		async Task AdvanceWheresRaeAsync()
+		{
+			await WaitForQuestStatusAsync(session, 2002, 3, token);
+			session.BeginStep("ni07-q2002-nobekk", "walk-to-nobekk-and-ask-about-rae");
+			int nobekk = await ApproachShippedSpawnAsync(203519);
+			await OpenQuestDialogAsync(nobekk, 2002);
+			await session.SendPacketAsync(session.Api.SelectDialog(nobekk, DialogAction.SETPRO1, questId: 2002), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(1, session.Api.World.Quests[2002].StepAndFlags);
+
+			session.BeginStep("ni07-q2002-dabi", "walk-to-dabi-and-ask-about-verdandi");
+			int dabi = await ApproachShippedSpawnAsync(203534);
+			await OpenQuestDialogAsync(dabi, 2002);
+			await session.SendPacketAsync(session.Api.SelectDialog(dabi, DialogAction.SELECT2_1, questId: 2002), token);
+			await session.SynchronizeAsync(token);
+			Assert.Contains(session.PacketHistory, packet => packet.PacketType == typeof(SM_PLAY_MOVIE) &&
+				packet.Get<int>("cutsceneId") == 52);
+			await session.SendPacketAsync(session.Api.SelectDialog(dabi, DialogAction.SETPRO2, questId: 2002), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(2, session.Api.World.Quests[2002].StepAndFlags);
+
+			session.BeginStep("ni07-q2002-verdandi", "walk-to-verdandi-and-accept-sprigg-task");
+			int verdandi = await ApproachShippedSpawnAsync(790002);
+			await OpenQuestDialogAsync(verdandi, 2002);
+			await session.SendPacketAsync(session.Api.SelectDialog(verdandi, DialogAction.SETPRO3, questId: 2002), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(3, session.Api.World.Quests[2002].StepAndFlags);
+			for (int kill = 0; kill < 7; kill++)
+			{
+				session.BeginStep($"ni07-q2002-kill-{kill + 1}", "fight-sprigg-in-verdandis-task");
+				int target = await ApproachShippedSpawnAsync(210377);
+				await combat.KillAsync(target, token);
+				navigator.UnavailableObjects.Add(target);
+				await combat.RestAsync(token);
+			}
+			Assert.Equal(10, session.Api.World.Quests[2002].StepAndFlags);
+			session.BeginStep("ni07-q2002-verdandi-report", "report-sprigg-kills-to-verdandi");
+			verdandi = await ApproachShippedSpawnAsync(790002);
+			await OpenQuestDialogAsync(verdandi, 2002);
+			await session.SendPacketAsync(session.Api.SelectDialog(verdandi, DialogAction.SETPRO3, questId: 2002), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(11, session.Api.World.Quests[2002].StepAndFlags);
+			session.BeginStep("ni07-q2002-mushroom", "collect-sticky-mushroom-for-verdandi");
+			int mushroom = await ApproachShippedSpawnAsync(700045);
+			await LootActionObjectAsync(session, mushroom, 182203003, token);
+			Assert.Equal(1, ItemCount(session.Api.World, 182203003));
+			session.BeginStep("ni07-q2002-mushroom-report", "present-collected-mushroom-to-verdandi");
+			verdandi = await ApproachShippedSpawnAsync(790002);
+			await OpenQuestDialogAsync(verdandi, 2002);
+			await session.SendPacketAsync(session.Api.SelectDialog(verdandi,
+				DialogAction.CHECK_USER_HAS_QUEST_ITEM, questId: 2002), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(12, session.Api.World.Quests[2002].StepAndFlags);
+			session.BeginStep("ni07-q2002-ataxiar-enter", "take-verdandis-quest-teleport-to-ataxiar");
+			session.Api.World.BeginWorldReload();
+			await session.SendPacketAsync(session.Api.SelectDialog(verdandi, DialogAction.SETPRO5, questId: 2002), token);
+			await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token,
+				packet => packet.Get<int>("worldId") == 320010000);
+			await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token,
+				packet => packet.Get<int>("objectId") == session.CharacterId);
+			session.AcceptTeleportPosition();
+			Assert.Equal(320010000, session.Api.World.MapId);
+			Assert.Equal(99, session.Api.World.Quests[2002].StepAndFlags);
+			NaturalDecision inInstance = NaturalIshalgenDecisionEngine.Decide(contract,
+				ObserveNaturalJourney(session), 7);
+			Assert.Equal(2002, inInstance.SelectedQuestId);
+			Assert.Equal("continue-quest", inInstance.SelectedAction);
+			Assert.Contains(inInstance.GlobalChecks, check => check.Rule == "quest-transport" && check.Verdict == "pass");
+			session.BeginStep("ni07-q2002-hagen", "walk-to-hagen-and-take-quest-return-flight");
+			var instanceGeometry = BotNavigationGeometry.ForServerWorld(player.GetInstanceId(), player.GetRace());
+			BotNavigationGraph instanceGraph = BotNavigationGraphFactory.Build(fixture.DataManager.StaticData,
+				[205020], instanceGeometry);
+			var instanceNavigator = new NaturalSimulationNavigator(session, instanceGraph, instanceGeometry);
+			NaturalNavigationResult hagenApproach = await NaturalIshalgenNavigator.ApproachNpcAsync(
+				320010000, 205020, new BotPosition(434.75f, 399.5f, 235f, 25), instanceNavigator, token);
+			Assert.True(hagenApproach.Arrived, hagenApproach.Reason);
+			int hagen = Assert.IsType<int>(hagenApproach.TargetObjectId);
+			await session.SendPacketAsync(session.Api.TalkTo(hagen), token);
+			await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
+				packet => packet.Get<int>("targetObjectId") == hagen);
+			await session.SendPacketAsync(session.Api.SelectDialog(hagen, DialogAction.QUEST_SELECT, questId: 2002), token);
+			await session.WaitForPacketAsync(typeof(SM_EMOTION), token,
+				packet => packet.Get<int>("senderObjectId") == session.CharacterId &&
+				packet.Get<byte>("emotionType") == (byte)EmotionType.START_FLYTELEPORT);
+			session.Api.World.BeginWorldReload();
+			await session.AdvanceAsync(TimeSpan.FromSeconds(40), token);
+			await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token,
+				packet => packet.Get<int>("worldId") == contract.MapId);
+			await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token,
+				packet => packet.Get<int>("objectId") == session.CharacterId);
+			session.AcceptTeleportPosition();
+			Assert.Equal(contract.MapId, session.Api.World.MapId);
+			Assert.Equal(13, session.Api.World.Quests[2002].StepAndFlags);
+			session.BeginStep("ni07-q2002-verdandi-return", "report-return-from-ataxiar");
+			verdandi = await ApproachShippedSpawnAsync(790002);
+			await OpenQuestDialogAsync(verdandi, 2002);
+			await session.SendPacketAsync(session.Api.SelectDialog(verdandi, DialogAction.SETPRO3, questId: 2002), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(14, session.Api.World.Quests[2002].StepAndFlags);
+			session.BeginStep("ni07-q2002-ribbit", "find-and-interact-with-cute-ribbit");
+			int ribbit = await ApproachShippedSpawnAsync(203538);
+			await session.SendPacketAsync(session.Api.TalkTo(ribbit), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(15, session.Api.World.Quests[2002].StepAndFlags);
+			int rae = await session.WaitForNpcAsync(203553, token);
+			BotPosition raePosition = session.Api.World.Objects[rae].Position;
+			NaturalNavigationResult raeApproach = await NaturalIshalgenNavigator.ApproachNpcAsync(
+				contract.MapId, 203553, raePosition, navigator, token);
+			Assert.True(raeApproach.Arrived, raeApproach.Reason);
+			session.BeginStep("ni07-q2002-rae", "speak-to-quest-spawned-rae");
+			await OpenQuestDialogAsync(rae, 2002);
+			await session.SendPacketAsync(session.Api.SelectDialog(rae, DialogAction.SETPRO7, questId: 2002), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(4, session.Api.World.Quests[2002].Status);
+			session.BeginStep("ni07-q2002-finish", "return-to-ulgorn-and-claim-priest-reward");
+			await ApproachShippedSpawnAsync(203534); // Retrace the walked route through Dabi and Nobekk.
+			await ApproachShippedSpawnAsync(203519);
+			int ulgorn = await ApproachShippedSpawnAsync(203516);
+			string root = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../.."));
+			var inventory = NaturalIshalgenInventoryPolicy.Load(root,
+				session.Api.World.Inventory.Values.Select(item => item.ItemId));
+			int rewardIndex = inventory.ChooseReward(2002, session.Api.World.Level,
+				session.Api.World.Inventory.Values);
+			Assert.True(rewardIndex >= 0);
+			await session.SendPacketAsync(session.Api.TalkTo(ulgorn), token);
+			await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
+				packet => packet.Get<int>("targetObjectId") == ulgorn);
+			await session.SendPacketAsync(session.Api.SelectDialog(ulgorn, DialogAction.QUEST_SELECT, questId: 2002), token);
+			await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
+				packet => packet.Get<int>("targetObjectId") == ulgorn && packet.Get<int>("questId") == 2002);
+			await session.SendPacketAsync(session.Api.SelectDialog(ulgorn, DialogAction.SETPRO8, questId: 2002), token);
+			await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
+				packet => packet.Get<int>("targetObjectId") == ulgorn && packet.Get<int>("questId") == 2002);
+			await session.SendPacketAsync(session.Api.SelectDialog(ulgorn,
+				checked((ushort)(DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex)), questId: 2002), token);
+			await WaitForQuestStatusAsync(session, 2002, 5, token);
+			Assert.Contains(2002, session.Api.World.CompletedQuestIds);
 		}
 
 		async Task OpenQuestDialogAsync(int npc, int questId)

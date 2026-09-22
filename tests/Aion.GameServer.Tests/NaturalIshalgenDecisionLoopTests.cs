@@ -74,6 +74,22 @@ public sealed class NaturalIshalgenDecisionLoopTests
 	}
 
 	[Fact]
+	public void RaeQuestAllowsOnlyItsObservedTemporaryInstanceStep()
+	{
+		NaturalIshalgenContract full = NaturalIshalgenContract.LoadDefault();
+		NaturalIshalgenObservation ataxiar = Observe(level: 5,
+			active: [new BotQuestState(2002, 3, 99, 0, null)]) with { MapId = 320010000 };
+		NaturalDecision decision = NaturalIshalgenDecisionEngine.Decide(full, ataxiar, 1);
+		Assert.Equal("continue-quest", decision.SelectedAction);
+		Assert.Equal(2002, decision.SelectedQuestId);
+		Assert.Contains(decision.GlobalChecks, check => check.Rule == "quest-transport" && check.Verdict == "pass");
+		Assert.Equal("blocked", NaturalIshalgenDecisionEngine.Decide(full,
+			ataxiar with { Quests = new Dictionary<int, BotQuestState> { [2002] = new(2002, 3, 12, 0, null) } }, 2).Outcome);
+		Assert.Equal("blocked", NaturalIshalgenDecisionEngine.Decide(full,
+			ataxiar with { MapId = 320020000 }, 3).Outcome);
+	}
+
+	[Fact]
 	public async Task RefreshIsBoundedAndEveryDecisionIsRecorded()
 	{
 		var driver = new FakeDriver(Observe() with { JournalObserved = false });

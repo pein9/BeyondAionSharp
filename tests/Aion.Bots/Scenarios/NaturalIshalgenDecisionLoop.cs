@@ -66,8 +66,14 @@ public static class NaturalIshalgenDecisionEngine
 			return new(sequence, "refresh-observation", null, "planned", "Wait for a synchronized client view.", [.. global], []);
 		}
 		global.Add(new("client-observation", "pass", "Client journal, completed journal, and map were observed."));
-		if (state.MapId != contract.MapId)
+		bool inRaeInstance = state.MapId == 320010000 &&
+			contract.Quests.Any(quest => quest.Id == 2002) &&
+			state.Quests.TryGetValue(2002, out BotQuestState? rae) &&
+			rae.Status == 3 && rae.StepAndFlags == 99;
+		if (state.MapId != contract.MapId && !inRaeInstance)
 			return Stop("wrong-map", $"Observed map {state.MapId}, expected {contract.MapId}.", "blocked");
+		if (inRaeInstance)
+			global.Add(new("quest-transport", "pass", "Q2002 START/99 authorizes temporary Ataxiar map 320010000; return to Ishalgen by quest dialogue."));
 		if (state.Level >= 10)
 			return Stop("pre-ascension-level", $"Observed level {state.Level}; the journey must stop below level 10.", "blocked");
 		if (state.CompletedQuestIds.Contains(contract.AscensionQuestId))
