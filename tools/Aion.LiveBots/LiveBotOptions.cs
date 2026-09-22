@@ -84,6 +84,8 @@ public sealed record LiveBotOptions(
 			throw new ArgumentException($"Scenario requires more than {BotIdentity.MaximumSubjects} subject bots.", "scenario");
 		if (scenarios.Contains("O1", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 1 || stepSeconds < 1050))
 			throw new ArgumentException("O1 must run alone with one subject and at least 1050 seconds per step.");
+		if (scenarios.Contains("NI-01", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 1))
+			throw new ArgumentException("NI-01 must run alone with exactly one retained subject.");
 		if (scenarios.Contains("B2", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 2))
 			throw new ArgumentException("B2 must run alone with exactly two subjects (plus its director).");
 		if (scenarios.Contains("B2F", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 2 || stepSeconds < 180))

@@ -14,6 +14,23 @@ zone, profile and scenario list. The runner enforces real-time connection and st
 180-183 second game pings after world entry, and records any automatic reconnect or unexpected quit response
 as a problem even if recovery succeeds.
 
+## NI-01: retained Natural Ishalgen identity
+
+```powershell
+pwsh -NoProfile -File scripts/live/run-live.ps1 -Run ni01-check `
+  -Scenario NI-01 -Bots 1 -StepTimeoutSeconds 60
+```
+
+NI-01 uses the stable ordinary account `niishalgen` and character `Ishalgenbot`.
+It creates an Asmodian Priest through normal login/game packets only when the
+account is empty; otherwise it requires that account's sole character to be the
+same non-deleted pre-Ascension Priest. It enters Ishalgen, verifies access level 0
+through the read-only admin oracle, quits without deleting, then logs in again and
+must select the same character id. The output includes
+`natural-ishalgen-identity.json`. A conflicting account, class, race, name,
+post-boundary level or pending deletion is a failure and is never repaired with GM
+or database mutation.
+
 ## O1: server crash and duplicate login
 
 Run through the owning Docker controller, not the standalone bot command:
