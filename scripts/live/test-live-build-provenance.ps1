@@ -50,7 +50,7 @@ function git {
 $script:fixtureHead = 'b' * 40 # A commit during readiness must not relabel the already-built tools.
 $Run = 'fixture'; $runPath = $repoRoot; $Bots = 50; $Scenario = @('SOAK')
 $ConnectTimeoutSeconds = 10; $StepTimeoutSeconds = 1800; $Seed = 73
-$configProfile = 'docker-bots-soak'; $timeZone = 'UTC'
+$configProfile = 'docker-bots-soak'; $timeZone = 'UTC'; $DashboardPort = 0
 . $makeArguments
 $index = [Array]::IndexOf($botArguments, '--git-sha')
 if ($index -lt 0 -or $botArguments[$index+1] -cne ('a' * 40)) { throw 'Post-build HEAD replaced the built revision.' }

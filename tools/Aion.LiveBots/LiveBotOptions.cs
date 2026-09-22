@@ -27,11 +27,13 @@ public sealed record LiveBotOptions(
 {
 	public int SoakSeconds { get; init; } = 7200;
 	public IReadOnlyList<SoakActivity> SoakActivities { get; init; } = Enum.GetValues<SoakActivity>();
+	public int DashboardPort { get; init; }
+	internal LiveBotDashboardState Dashboard { get; } = new();
 	public const string Usage = "Usage: dotnet run --project tools/Aion.LiveBots -- --run <id> --output <run-dir> " +
 		"[--scenario manifest-id[,manifest-id]] [--bots N] [--host 127.0.0.1] [--login-port 12106] " +
 		"[--login-host IP] [--chat-host IP] [--game-port 17777] [--chat-port 11241] [--admin-port 17780] [--admin-token TOKEN] " +
 		"[--connect-timeout-seconds 10] [--step-timeout-seconds 15] [--seed N] [--git-sha SHA] " +
-		"[--profile deterministic] [--time-zone ID] [--reentry-seconds 10] " +
+		"[--profile deterministic] [--time-zone ID] [--reentry-seconds 10] [--dashboard-port 0] " +
 		"[--soak-seconds 7200] [--soak-activities Quest,Gather,Craft,Vendor,Trade,Group,Duel,Pvp,Relog,CrashDisconnect]";
 
 	public static LiveBotOptions Parse(string[] args)
@@ -93,6 +95,7 @@ public sealed record LiveBotOptions(
 		if (scenarios.Contains("B3", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 1 || stepSeconds < 120))
 			throw new ArgumentException("B3 must run alone with one subject, its director and at least 120 seconds per step.");
 		var reentrySeconds = PositiveInt(values, "reentry-seconds", 10, 3600);
+		var dashboardPort = NonNegativeInt(values, "dashboard-port", 0, 65535);
 		if (scenarios.Contains("B4", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 5 || stepSeconds < 180))
 			throw new ArgumentException("B4 must run alone with five subjects and at least 180 seconds per step.");
 		int soakSeconds = PositiveInt(values, "soak-seconds", 7200, 7200);
@@ -117,7 +120,7 @@ public sealed record LiveBotOptions(
 		{
 			"run", "output", "host", "login-host", "chat-host", "login-port", "game-port", "chat-port", "admin-port", "admin-token",
 			"bots", "scenario", "connect-timeout-seconds", "step-timeout-seconds", "reentry-seconds",
-			"seed", "git-sha", "profile", "time-zone",
+			"seed", "git-sha", "profile", "time-zone", "dashboard-port",
 			"soak-seconds", "soak-activities",
 		};
 		var unknown = values.Keys.FirstOrDefault(key => !known.Contains(key));
@@ -141,7 +144,12 @@ public sealed record LiveBotOptions(
 			Get(values, "git-sha", ResolveGitSha()),
 			Get(values, "profile", "deterministic"),
 			Get(values, "time-zone", TimeZoneInfo.Local.Id),
-			TimeSpan.FromSeconds(reentrySeconds)) { SoakSeconds = soakSeconds, SoakActivities = soakActivities };
+			TimeSpan.FromSeconds(reentrySeconds))
+		{
+			SoakSeconds = soakSeconds,
+			SoakActivities = soakActivities,
+			DashboardPort = dashboardPort,
+		};
 	}
 
 	private static string Required(IReadOnlyDictionary<string, string> values, string name) =>
@@ -157,6 +165,14 @@ public sealed record LiveBotOptions(
 		var value = Int(values, name, fallback);
 		if (value is < 1 || value > 65535 || value > maximum)
 			throw new ArgumentException($"--{name} must be between 1 and {maximum}.");
+		return value;
+	}
+
+	private static int NonNegativeInt(IReadOnlyDictionary<string, string> values, string name, int fallback, int maximum)
+	{
+		var value = Int(values, name, fallback);
+		if (value < 0 || value > maximum)
+			throw new ArgumentException($"--{name} must be between 0 and {maximum}.");
 		return value;
 	}
 

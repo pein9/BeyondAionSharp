@@ -30,6 +30,10 @@ public static partial class LiveBotRunner
 	{
 		Directory.CreateDirectory(options.OutputDirectory);
 		Directory.CreateDirectory(Path.Combine(options.OutputDirectory, "bots"));
+		await using var dashboard = new LiveBotDashboardHost(
+			options.Run, options.Scenarios, options.Dashboard, options.DashboardPort);
+		if (dashboard.Enabled)
+			Console.WriteLine($"Live bot dashboard: {dashboard.Url}");
 		await WriteRunMetadataAsync(options, cancellationToken);
 		await using var problems = new LiveBotProblemWriter(Path.Combine(options.OutputDirectory, "bot.problems.jsonl"));
 		if (options.ScenarioDefinitions.Count != 1)
@@ -491,12 +495,14 @@ public static partial class LiveBotRunner
 			{
 				var step = $"s{++stepNumber:D2}";
 				trace.WriteAction(step, "scenario:start", new Dictionary<string, object?> { ["scenario"] = scenario.Id });
-				session.BeginStep(step);
+				session.BeginStep(step, "connect");
 				await RunStepAsync(options, problems, trace, bot, account, step, "connect", cancellationToken,
 					session.ConnectAndReadKeyAsync);
+				session.FinishStep("completed");
 				step = $"s{++stepNumber:D2}";
-				session.BeginStep(step);
+				session.BeginStep(step, "close");
 				await RunStepAsync(options, problems, trace, bot, account, step, "close", cancellationToken, session.CloseAsync);
+				session.FinishStep("completed");
 				trace.WriteAction(step, "scenario:complete", new Dictionary<string, object?> { ["scenario"] = scenario.Id });
 			}
 			return true;
@@ -583,6 +589,7 @@ public static partial class LiveBotRunner
 			gameEndPoint = options.GameEndPoint.ToString(),
 			chatEndPoint = options.ChatEndPoint.ToString(),
 			adminBaseUri = options.AdminBaseUri.ToString(),
+			dashboardUrl = options.DashboardPort == 0 ? null : $"http://127.0.0.1:{options.DashboardPort}/",
 			reentrySeconds = options.ReentryDelay.TotalSeconds,
 			connectTimeoutSeconds = options.ConnectTimeout.TotalSeconds,
 			stepTimeoutSeconds = options.StepTimeout.TotalSeconds,
@@ -624,11 +631,20 @@ public static partial class LiveBotRunner
 		IL0ScenarioSession IL0ScenarioActor.Session => Session;
 		public string LastStep => $"s{stepNumber:D2}";
 
-		public Task StepAsync(string action, Func<CancellationToken, Task> operation, CancellationToken cancellationToken)
+		public async Task StepAsync(string action, Func<CancellationToken, Task> operation, CancellationToken cancellationToken)
 		{
 			var step = $"s{++stepNumber:D2}";
-			Session.BeginStep(step);
-			return RunStepAsync(options, problems, Trace, Bot, Account, step, action, cancellationToken, operation);
+			Session.BeginStep(step, action);
+			try
+			{
+				await RunStepAsync(options, problems, Trace, Bot, Account, step, action, cancellationToken, operation);
+				Session.FinishStep("completed");
+			}
+			catch
+			{
+				Session.FinishStep("failed");
+				throw;
+			}
 		}
 
 		Task IL0ScenarioActor.StepAsync(
@@ -670,6 +686,9 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 	private NetworkStream? chatStream;
 	private ChatClientProtocol? chatProtocol;
 	private string currentStep = "startup";
+	private string currentAction = "starting";
+	private string actionStatus = "waiting";
+	private string? lastPacket;
 	private AionConnection.State state = AionConnection.State.CONNECTED;
 	private bool quitExpected;
 	private int accountId;
@@ -697,12 +716,26 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		macBytes = BotIdentity.MacBytes(director ? 1 : BotIdentity.ParseSubjectNumber(bot), director);
 		macAddress = BotIdentity.MacAddress(macBytes);
 		AdminClient = new LiveAdminClient(options.AdminBaseUri);
+		PublishDashboard();
 	}
 
 	// Keep the read-only oracle connection pool across relogs; requests own their authentication headers.
 	internal LiveAdminClient AdminClient { get; }
 
-	public void BeginStep(string step) => currentStep = step;
+	public void BeginStep(string step, string action)
+	{
+		currentStep = step;
+		currentAction = action;
+		actionStatus = "running";
+		PublishDashboard();
+	}
+	public void BeginStep(string step) => BeginStep(step, "unspecified");
+
+	public void FinishStep(string status)
+	{
+		actionStatus = status;
+		PublishDashboard();
+	}
 	public int CharacterId => characterId;
 	public int ConnectionGeneration { get; private set; }
 	public string CharacterName => characterName;
@@ -808,6 +841,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		expectedPosition = null;
 		currentPosition = null;
 		persistedLastOnline = null;
+		PublishDashboard();
 	}
 
 	public async Task EnterWorldAsync(CancellationToken cancellationToken)
@@ -847,6 +881,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		currentPosition = new BotPosition(spawn.Get<float>("x"), spawn.Get<float>("y"),
 			spawn.Get<float>("z"), spawn.Get<byte>("heading"));
 		await WaitForGamePacketAsync(typeof(SM_PLAYER_INFO), cancellationToken);
+		PublishDashboard();
 	}
 
 	public async Task ConnectChatAsync(CancellationToken cancellationToken)
@@ -946,9 +981,14 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 
 	public async Task ExecuteMovementAsync(BotMovementPlan plan, CancellationToken cancellationToken)
 	{
-		await BotMover.ExecuteAsync(plan,
-			(packet, token) => new ValueTask(SendGameAsync(packet, token)),
-			(delay, token) => new ValueTask(Task.Delay(delay, token)), cancellationToken);
+		foreach (BotMovementFrame frame in plan.Frames)
+		{
+			if (frame.DelayBefore > TimeSpan.Zero)
+				await Task.Delay(frame.DelayBefore, cancellationToken);
+			await SendGameAsync(frame.Packet, cancellationToken);
+			currentPosition = frame.Position;
+			PublishDashboard();
+		}
 		if (plan.Frames.Count > 0)
 		{
 			BotPosition position = plan.Frames[^1].Position;
@@ -1248,6 +1288,8 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		{
 			var packet = await ReadNextAsync(cancellationToken);
 			var response = api.Observe(packet);
+			lastPacket = packet.PacketType.Name;
+			PublishDashboard();
 			if (response != null)
 				await SendGameAsync(response, cancellationToken);
 			if ((packetType == null || packet.PacketType == packetType) && (predicate == null || predicate(packet)))
@@ -1331,6 +1373,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		{
 			transport = await TcpBotTransport.ConnectAsync(options.GameEndPoint, connectTimeout.Token);
 			ConnectionGeneration++;
+			PublishDashboard();
 		}
 		catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested && connectTimeout.IsCancellationRequested)
 		{
@@ -1375,6 +1418,58 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		pingTask = null;
 		transport = null;
 		state = AionConnection.State.CONNECTED;
+		PublishDashboard();
+	}
+
+	private void PublishDashboard()
+	{
+		BotWorldModel world = api.World;
+		BotPosition? observedPosition = currentPosition ?? world.Position;
+		BotSystemMessage? message = world.SystemMessages.LastOrDefault();
+		var nearby = new BotDashboardObjectCounts(
+			world.Objects.Values.Count(item => item.Kind == BotKnownObjectKind.Player),
+			world.Objects.Values.Count(item => item.Kind == BotKnownObjectKind.Npc),
+			world.Objects.Values.Count(item => item.Kind == BotKnownObjectKind.Gatherable),
+			world.Objects.Values.Count(item => item.Kind == BotKnownObjectKind.Static));
+		options.Dashboard.Publish(new BotDashboardSnapshot(
+			bot,
+			account,
+			characterName,
+			characterId,
+			state.ToString(),
+			ConnectionGeneration,
+			currentStep,
+			currentAction,
+			actionStatus,
+			lastPacket,
+			DateTimeOffset.UtcNow,
+			world.MapId,
+			world.ChannelInfo?.Index,
+			observedPosition is { } position
+				? new BotDashboardPosition(position.X, position.Y, position.Z, position.Heading)
+				: null,
+			world.Level,
+			world.CurrentExperience,
+			world.ExperienceNeeded,
+			world.CurrentHp,
+			world.MaxHp,
+			world.CurrentMp,
+			world.MaxMp,
+			world.CurrentDp,
+			world.MaxDp,
+			world.IsDead,
+			world.Kinah,
+			world.Skills.Count,
+			world.Cooldowns.Count,
+			nearby,
+			world.Quests.Values.OrderBy(quest => quest.QuestId)
+				.Select(quest => new BotDashboardQuest(quest.QuestId, quest.Status, quest.StepAndFlags,
+					quest.CompleteCount, quest.TimerSeconds)).ToArray(),
+			world.CompletedQuestIds.Order().ToArray(),
+			world.Inventory.Values.OrderBy(item => item.ItemId).ThenBy(item => item.ObjectId)
+				.Select(item => new BotDashboardItem(item.ObjectId, item.ItemId, item.Description,
+					item.Count, item.EquipmentSlot)).ToArray(),
+			message == null ? null : message.Name ?? $"System message {message.MessageId}"));
 	}
 
 	private async Task RunPingLoopAsync(CancellationToken cancellationToken)

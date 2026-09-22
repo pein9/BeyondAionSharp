@@ -20,6 +20,9 @@ param(
 	[ValidateRange(1, 3600)]
 	[int]$StepTimeoutSeconds = 15,
 
+	[ValidateRange(0, 65535)]
+	[int]$DashboardPort = 0,
+
 	[int]$Seed = 1,
 	[ValidateRange(1, 7200)][int]$SoakSeconds = 7200,
 	[ValidateRange(1, 7200)][int]$SoakHeapReadyTimeoutSeconds = 5400,
@@ -58,6 +61,9 @@ if ($Scenario -contains 'B2F' -and ($Scenario.Count -ne 1 -or $Bots -ne 2 -or $K
 }
 if ($Scenario -contains 'O1' -and ($Scenario.Count -ne 1 -or $Bots -ne 1 -or $Keep -or $WatcherMode -ne 'enforce' -or $StepTimeoutSeconds -lt 1050)) {
 	throw 'O1 must run alone with one subject, enforce watching, no Keep and at least 1050 seconds per step.'
+}
+if ($BotExecution -eq 'Docker' -and $DashboardPort -ne 0) {
+	throw 'The loopback bot dashboard requires host bot execution.'
 }
 if ([string]::IsNullOrWhiteSpace($RunRoot)) {
 	$RunRoot = if ([string]::IsNullOrWhiteSpace($env:AION_E2E_RUN_ROOT)) {
@@ -376,7 +382,8 @@ try {
 			'--bots', $Bots.ToString(), '--scenario', ($Scenario -join ','),
 			'--connect-timeout-seconds', $ConnectTimeoutSeconds.ToString(),
 			'--step-timeout-seconds', $StepTimeoutSeconds.ToString(), '--seed', $Seed.ToString(),
-			'--git-sha', $gitSha, '--profile', $configProfile, '--time-zone', $timeZone
+			'--git-sha', $gitSha, '--profile', $configProfile, '--time-zone', $timeZone,
+			'--dashboard-port', $DashboardPort.ToString()
 		)
 		if ($Scenario -contains 'SOAK') {
 			$botArguments += @('--soak-seconds', $SoakSeconds.ToString(), '--soak-activities', $SoakActivities)

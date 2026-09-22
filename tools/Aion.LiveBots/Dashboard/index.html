@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beyond Aion Bot Monitor</title>
+  <link rel="stylesheet" href="/dashboard.css">
+</head>
+<body>
+  <header>
+    <div>
+      <p class="eyebrow">Beyond Aion</p>
+      <h1>Live bot monitor</h1>
+    </div>
+    <div class="connection"><span id="pulse" class="pulse"></span><span id="connection">Connecting…</span></div>
+  </header>
+  <main>
+    <section class="runbar" aria-label="Run information">
+      <div><span>Run</span><strong id="run">—</strong></div>
+      <div><span>Scenario</span><strong id="scenarios">—</strong></div>
+      <div><span>Bots</span><strong id="bot-count">0</strong></div>
+      <div><span>Updated</span><strong id="updated">—</strong></div>
+    </section>
+    <div id="empty" class="empty">Waiting for a bot to register…</div>
+    <div id="bots" class="bots" aria-live="polite"></div>
+  </main>
+  <template id="bot-template">
+    <article class="bot-card">
+      <div class="bot-heading">
+        <div><p class="bot-id"></p><h2 class="character"></h2><p class="identity"></p></div>
+        <span class="state-pill"></span>
+      </div>
+      <section class="activity">
+        <span>Current activity</span>
+        <strong class="action"></strong>
+        <small class="step"></small>
+      </section>
+      <div class="stat-grid">
+        <div class="stat"><span>Level</span><strong class="level"></strong></div>
+        <div class="stat"><span>Map / channel</span><strong class="map"></strong></div>
+        <div class="stat"><span>Position</span><strong class="position"></strong></div>
+        <div class="stat"><span>Kinah</span><strong class="kinah"></strong></div>
+        <div class="stat"><span>Skills</span><strong class="skills"></strong></div>
+        <div class="stat"><span>Nearby</span><strong class="nearby"></strong></div>
+      </div>
+      <div class="meters">
+        <div class="meter-row"><span>HP</span><div class="meter"><i class="hp-bar"></i></div><b class="hp-text"></b></div>
+        <div class="meter-row"><span>MP</span><div class="meter"><i class="mp-bar"></i></div><b class="mp-text"></b></div>
+        <div class="meter-row"><span>XP</span><div class="meter"><i class="xp-bar"></i></div><b class="xp-text"></b></div>
+      </div>
+      <div class="tables">
+        <section><h3>Active quests <span class="quest-count"></span></h3><div class="table-wrap"><table><thead><tr><th>ID</th><th>Status</th><th>Step / flags</th><th>Count</th></tr></thead><tbody class="quests"></tbody></table></div></section>
+        <section><h3>Inventory <span class="item-count"></span></h3><div class="table-wrap"><table><thead><tr><th>Item</th><th>Description</th><th>Count</th></tr></thead><tbody class="inventory"></tbody></table></div></section>
+      </div>
+      <footer><span class="packet"></span><span class="message"></span><span class="age"></span></footer>
+    </article>
+  </template>
+  <script src="/dashboard.js" defer></script>
+</body>
+</html>

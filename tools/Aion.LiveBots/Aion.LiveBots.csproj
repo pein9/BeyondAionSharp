@@ -11,6 +11,9 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Aion.GameServer.Tests" />
     <ProjectReference Include="..\..\tests\Aion.Bots\Aion.Bots.csproj" />
+    <EmbeddedResource Include="Dashboard\index.html" LogicalName="Aion.LiveBots.Dashboard.index.html" />
+    <EmbeddedResource Include="Dashboard\dashboard.css" LogicalName="Aion.LiveBots.Dashboard.dashboard.css" />
+    <EmbeddedResource Include="Dashboard\dashboard.js" LogicalName="Aion.LiveBots.Dashboard.dashboard.js" />
   </ItemGroup>
 
 </Project>

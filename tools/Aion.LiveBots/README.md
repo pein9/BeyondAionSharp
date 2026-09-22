@@ -14,6 +14,25 @@ zone, profile and scenario list. The runner enforces real-time connection and st
 180-183 second game pings after world entry, and records any automatic reconnect or unexpected quit response
 as a problem even if recovery succeeds.
 
+## Live bot monitor
+
+Add `-DashboardPort 17880` to a host-executed `run-live.ps1` command, then open
+<http://127.0.0.1:17880/> while the bot is running. The loopback-only, read-only
+page refreshes once per second and shows each bot's current scenario action,
+connection, identity, map/channel/position, HP/MP/XP, level, kinah, nearby-object
+counts, skills/cooldowns, active/completed quests, inventory and last observed
+packet/system message.
+
+The dashboard is opt-in (`0`/disabled by default), has no control endpoints, and
+uses only the bot's normal packet-derived world model. It neither reads admin/DB
+state nor supplies gameplay decisions. It exists only while the bot process runs;
+the normal traces, receipts and reports remain the durable evidence.
+
+```powershell
+pwsh -NoProfile -File scripts/live/run-live.ps1 -Run ni-monitor `
+  -Scenario NI-01 -Bots 1 -StepTimeoutSeconds 60 -DashboardPort 17880
+```
+
 ## NI-01: retained Natural Ishalgen identity
 
 ```powershell
