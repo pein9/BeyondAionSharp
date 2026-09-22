@@ -4,8 +4,9 @@ Status: Phase 10 readiness review completed 2026-09-22 against Java `4.8` at
 `ce54b7931`. The journey is **not yet executable end to end without assistance**:
 the protocol, navigation, gathering and persistence foundations exist, but the
 continuous Priest combat, inventory, quest-planning and recovery policies do not.
-Implementation has not started. The broader game journey remains a post-Phase 11
-review. Review commit: `7d80e48d6` (before SHA-recording amend).
+NI-00 is complete; NI-01 awaits maintainer approval. The broader game journey
+remains a post-Phase 11 review. Review commit: `7d80e48d6` (before SHA-recording
+amend).
 
 ## Goal
 
@@ -106,9 +107,12 @@ its group/scheduled-content work matters to the later whole-game goal.
 
 These are new journey TODOs, not retroactive claims about the phase scenarios:
 
-- [ ] **NI-00 — Contract fixture.** Encode the 41 quest IDs, exclusions,
+- [x] **NI-00 — Contract fixture.** Encode the 41 quest IDs, exclusions,
   prerequisites, XP/level gates, Q2133 source and Q2008 stop state as a reviewed,
-  machine-checked journey contract.
+  machine-checked journey contract. The fixture is
+  `parity-artifacts/e2e/natural-ishalgen-contract.json`; focused tests verify it
+  against shipped static data and the Ascension handler. (`9f4fe836b`, before
+  SHA-recording amend)
 - [ ] **NI-01 — Natural Priest identity.** Create one access-level-0 Asmodian
   Priest through normal packets and retain the same account/character across runs.
 - [ ] **NI-02 — Decision loop and trace.** Combine observed world state, eligible

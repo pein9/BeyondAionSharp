@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "journey": {
+    "mapId": 220010000,
+    "race": "ASMODIANS",
+    "initialClass": "PRIEST",
+    "includedQuestCount": 41
+  },
+  "levelThresholds": {
+    "level9": 126069,
+    "level10": 182252
+  },
+  "rewardExperience": {
+    "minimum": 155234,
+    "maximum": 156219
+  },
+  "quests": [
+    { "id": 2000, "minimumLevel": 1, "minimumRewardExperience": 1, "maximumRewardExperience": 1, "prerequisites": [] },
+    { "id": 2001, "minimumLevel": 3, "minimumRewardExperience": 2475, "maximumRewardExperience": 2475, "prerequisites": [] },
+    { "id": 2002, "minimumLevel": 3, "minimumRewardExperience": 4895, "maximumRewardExperience": 4895, "prerequisites": [] },
+    { "id": 2003, "minimumLevel": 4, "minimumRewardExperience": 8125, "maximumRewardExperience": 8125, "prerequisites": [] },
+    { "id": 2004, "minimumLevel": 4, "minimumRewardExperience": 8256, "maximumRewardExperience": 8256, "prerequisites": [] },
+    { "id": 2005, "minimumLevel": 6, "minimumRewardExperience": 18675, "maximumRewardExperience": 18675, "prerequisites": [] },
+    { "id": 2006, "minimumLevel": 6, "minimumRewardExperience": 21320, "maximumRewardExperience": 21320, "prerequisites": [] },
+    { "id": 2007, "minimumLevel": 6, "minimumRewardExperience": 24150, "maximumRewardExperience": 24150, "prerequisites": [] },
+    { "id": 2100, "minimumLevel": 3, "minimumRewardExperience": 510, "maximumRewardExperience": 510, "prerequisites": [] },
+    { "id": 2101, "minimumLevel": 1, "minimumRewardExperience": 130, "maximumRewardExperience": 130, "prerequisites": [] },
+    { "id": 2102, "minimumLevel": 1, "minimumRewardExperience": 180, "maximumRewardExperience": 180, "prerequisites": [] },
+    { "id": 2103, "minimumLevel": 1, "minimumRewardExperience": 590, "maximumRewardExperience": 590, "prerequisites": [2102] },
+    { "id": 2104, "minimumLevel": 1, "minimumRewardExperience": 520, "maximumRewardExperience": 520, "prerequisites": [] },
+    { "id": 2105, "minimumLevel": 1, "minimumRewardExperience": 420, "maximumRewardExperience": 420, "prerequisites": [] },
+    { "id": 2106, "minimumLevel": 1, "minimumRewardExperience": 950, "maximumRewardExperience": 950, "prerequisites": [2104] },
+    { "id": 2108, "minimumLevel": 2, "minimumRewardExperience": 1155, "maximumRewardExperience": 1155, "prerequisites": [] },
+    { "id": 2109, "minimumLevel": 3, "minimumRewardExperience": 517, "maximumRewardExperience": 517, "prerequisites": [] },
+    { "id": 2110, "minimumLevel": 3, "minimumRewardExperience": 2112, "maximumRewardExperience": 2112, "prerequisites": [] },
+    { "id": 2112, "minimumLevel": 3, "minimumRewardExperience": 1925, "maximumRewardExperience": 1925, "prerequisites": [] },
+    { "id": 2113, "minimumLevel": 4, "minimumRewardExperience": 1705, "maximumRewardExperience": 1705, "prerequisites": [] },
+    { "id": 2114, "minimumLevel": 4, "minimumRewardExperience": 2010, "maximumRewardExperience": 2145, "prerequisites": [2110] },
+    { "id": 2115, "minimumLevel": 5, "minimumRewardExperience": 1353, "maximumRewardExperience": 1353, "prerequisites": [] },
+    { "id": 2116, "minimumLevel": 5, "minimumRewardExperience": 2255, "maximumRewardExperience": 2255, "prerequisites": [2137] },
+    { "id": 2117, "minimumLevel": 5, "minimumRewardExperience": 1705, "maximumRewardExperience": 1705, "prerequisites": [] },
+    { "id": 2118, "minimumLevel": 5, "minimumRewardExperience": 2365, "maximumRewardExperience": 2365, "prerequisites": [] },
+    { "id": 2119, "minimumLevel": 5, "minimumRewardExperience": 2530, "maximumRewardExperience": 2530, "prerequisites": [2116] },
+    { "id": 2120, "minimumLevel": 5, "minimumRewardExperience": 1595, "maximumRewardExperience": 1595, "prerequisites": [] },
+    { "id": 2121, "minimumLevel": 5, "minimumRewardExperience": 1078, "maximumRewardExperience": 1078, "prerequisites": [] },
+    { "id": 2123, "minimumLevel": 6, "minimumRewardExperience": 3430, "maximumRewardExperience": 4280, "prerequisites": [] },
+    { "id": 2124, "minimumLevel": 6, "minimumRewardExperience": 3157, "maximumRewardExperience": 3157, "prerequisites": [] },
+    { "id": 2125, "minimumLevel": 7, "minimumRewardExperience": 3465, "maximumRewardExperience": 3465, "prerequisites": [] },
+    { "id": 2126, "minimumLevel": 7, "minimumRewardExperience": 4499, "maximumRewardExperience": 4499, "prerequisites": [] },
+    { "id": 2127, "minimumLevel": 7, "minimumRewardExperience": 5555, "maximumRewardExperience": 5555, "prerequisites": [] },
+    { "id": 2128, "minimumLevel": 7, "minimumRewardExperience": 5302, "maximumRewardExperience": 5302, "prerequisites": [] },
+    { "id": 2129, "minimumLevel": 8, "minimumRewardExperience": 9185, "maximumRewardExperience": 9185, "prerequisites": [] },
+    { "id": 2131, "minimumLevel": 5, "minimumRewardExperience": 1573, "maximumRewardExperience": 1573, "prerequisites": [2115] },
+    { "id": 2132, "minimumLevel": 3, "minimumRewardExperience": 275, "maximumRewardExperience": 275, "prerequisites": [] },
+    { "id": 2133, "minimumLevel": 2, "minimumRewardExperience": 1441, "maximumRewardExperience": 1441, "prerequisites": [] },
+    { "id": 2134, "minimumLevel": 7, "minimumRewardExperience": 3245, "maximumRewardExperience": 3245, "prerequisites": [] },
+    { "id": 2135, "minimumLevel": 3, "minimumRewardExperience": 132, "maximumRewardExperience": 132, "prerequisites": [2109] },
+    { "id": 2137, "minimumLevel": 5, "minimumRewardExperience": 473, "maximumRewardExperience": 473, "prerequisites": [2118] }
+  ],
+  "exclusions": [
+    { "questIds": [2107], "reason": "missingStarterSource", "starterItemId": 182203107 },
+    { "questIds": [2122], "reason": "randomDropStarter", "starterItemId": 182203120, "dropChancePercent": 5, "sourceNpcIds": [210592, 210593] },
+    { "questIds": [2136], "reason": "randomDropStarter", "starterItemId": 182203130, "dropChancePercent": 5, "sourceNpcIds": [210377, 210378] },
+    { "questIds": [2111, 2130], "reason": "minimumLevel99" },
+    { "questIds": [2150, 2151], "reason": "noHandler" },
+    { "questIds": [80160, 80619, 80622, 80644], "reason": "disabledEvent" },
+    { "questIds": [2144, 2145, 2146, 2147], "reason": "postBoundary" }
+  ],
+  "gathering": {
+    "questId": 2133,
+    "itemId": 152000451,
+    "count": 3,
+    "sourceNpcId": 400651,
+    "skillId": 30001,
+    "skillLevel": 1
+  },
+  "ascensionStop": {
+    "questId": 2008,
+    "activationLevel": 9,
+    "status": "START",
+    "step": 0,
+    "var": 0,
+    "firstObjectiveNpcId": 203550,
+    "simpleSecondClassRequired": false
+  }
+}
