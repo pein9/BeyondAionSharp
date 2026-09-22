@@ -2404,6 +2404,21 @@ real geodata on in production immediately, because geo is enabled by default; th
   remain historical evidence. The next attempt must use pipe-backed execution rather than an interactive PTY,
   and five new consecutive clean Breadth runs plus the two-hour ten-bot soak remain. Checkpoint receipt:
   `08e81ea7f` (before SHA-recording amend).
+  Complete Breadth attempt `p10-accept-09` at revision `12bce1d1c` used pipe-backed execution and is the first
+  clean candidate after the attempt-08 reset: 119 passed, 0 failed, 0 skipped and 0 flaky in 13,961.356 seconds.
+  All catalog totals match the earlier clean candidates: skills 5,033/5,033; trade 2,290 rows with 1,304 passed,
+  816 unreachable and 170 inactive; teleport 284 with 238 passed and 46 unreachable; bind 129 with 89 passed
+  and 40 unreachable; craft 12,494/12,494; gather 756 with 374 passed and 382 unreachable. Quest coverage is
+  SIM 58 and LIVE 60. Packet coverage is SIM 104/186 client opcodes and 111/238 structured server decodes,
+  LIVE 100/186 and 111/238. Measured coverage is 95,580/267,950 lines and 23,820/103,697 branches. Every LIVE
+  Compose stack started and stopped cleanly, including B2F and S5 on their first attempts. S4 remained the peak
+  live population at eight bots and L1's twelve subjects remained sequential with peak one. Character transfer
+  was not selected, executed, deferred or counted because D20 makes it inapplicable to this single-server
+  emulator. The immutable report, packet and quest receipts are
+  `5dee2c7d25499e38b864a31071f589e5e467cb980134437134fdc10df4cb417b`,
+  `98c8824f2e81a40bc889f13eda410fcd0b9889a2ddae0fe78ff1174a4dda67de` and
+  `7244bd4af083a83ae1c7304e9ddc1dbc9cfcb88f271a03cd69b52396f20266ee`. Four more consecutive clean
+  Breadth runs and the two-hour ten-bot soak remain. Checkpoint receipt: `fe7f38abc` (before SHA-recording amend).
   **Aggregate ledger safeguard checkpoint (`198500442`):** child watchers only record observations; their `FullRun`
   flag cannot mark an absent fingerprint fixed (§7/129). After aggregate reporting and flake-history
   persistence succeed, the Full parent invokes a read-only raw-evidence gate before ledger mutation.
@@ -2413,7 +2428,7 @@ real geodata on in production immediately, because geo is enabled by default; th
   Only tracked absent entries with an exact Git fix trailer can transition; concurrent observations and
   maintainer edits still win the existing atomic merge. Promotion errors make the aggregate non-green.
   This is contract-tested infrastructure, not a new successful Full run; no shared ledger was rewritten.
-  Remaining P10-10 work: three more consecutive clean Full Breadth runs and the accepted two-hour ten-bot soak.
+  Remaining P10-10 work: four more consecutive clean Full Breadth runs and the accepted two-hour ten-bot soak.
   P10-11 now supplies verified complete-Breadth packet and line/branch measurement integration; P10-12 supplies
   Full attempt joins, FLAKY reporting and bounded standalone runtime proof. Uncollected observations are
   unavailable, not zero; genuinely measured zero-hit directories remain visible. D17 still caps the run at
