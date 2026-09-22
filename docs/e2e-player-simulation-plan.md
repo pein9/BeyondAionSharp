@@ -1943,12 +1943,13 @@ real geodata on in production immediately, because geo is enabled by default; th
   dependency and unavailable execution fails before starting anything, never reports a pass. Contract tests
   cover selection, isolation, deadlines and failure paths. This completes orchestration, not soak acceptance.
   See [Phase 10 evidence](e2e-phase10-validation.md). Commit: `6498330b1` (before SHA-recording amend).
-- [ ] **P10-02** [LIVE] M — Soak and capacity: 50, 200 and 500 bots across the starter zones (and Reshanta for PvP)
+- [ ] **P10-02** [LIVE] M — **Deferred under D17 and D21.** Soak and capacity: 50, 200 and 500 bots across the starter zones (and Reshanta for PvP)
   for 2 hours. Bots run a seeded "life" policy looping over the manifest scenarios allowed in their zone (quest,
   gather, craft, vendor, trade, group, duel, relog, crash-disconnect) with random think times. Watch dispatcher write
   latency (the selector shim does O(connections) work per wakeup), working-set plateau, heartbeat, timer-count growth
   and flood kicks.
-  **In progress: 50 accepted; larger-population testing deferred under D17.** Current testing is capped
+  **Deferred: 50 accepted; larger-population and further two-hour testing are not worth the runtime now
+  (D17, D21).** Current testing is capped
   at ten concurrent bots in total, including setup/director bots and concurrent runs. The original
   50/200/500 acceptance criteria remain unfulfilled; do not relabel small diagnostics as capacity acceptance.
   Capacity identities/options now support 1,000 subjects without MAC/name
@@ -2278,13 +2279,13 @@ real geodata on in production immediately, because geo is enabled by default; th
   Both Host and Docker dispatch paths are covered without launching children. B4's accepted runtime
   proof is committed in `0efefda54`; this integration correction does not claim a green Full suite
   or authorize populations above D17's ten-client limit. Integration receipt: `7d523b8fd`.
-- [ ] **P10-10** [BOTH] M — Run report. Every run writes `run/<id>/report.md` and `report.json`:
+- [x] **P10-10** [BOTH] M — Run report. Every run writes `run/<id>/report.md` and `report.json`:
   each scenario as passed, failed, skipped or flaky with duration; NEW, KNOWN and REGRESSED fingerprints; coverage
   deltas; peak heartbeat, memory and timer counts. `run-fast.ps1` and `run-full.ps1` print the summary at the end
   and point at the P3-14 repro bundle for every NEW fingerprint.
   **Coverage dependency:** P10-11 produces the measurements and baseline comparisons this report
-  consumes; P10-10 stays open until that integration is verified.
-  **In progress:** SIM and LIVE now write a shared `scenario-results.jsonl` journal around actual
+  consumes; P10-10 stayed open until that integration was verified.
+  **Implementation history:** SIM and LIVE write a shared `scenario-results.jsonl` journal around actual
   scenario dispatch: a flushed start, terminal status, monotonic wall duration, original exit code
   or full thrown exception. SIM records each scenario rather than only the enclosing test method;
   LIVE waits for the dispatcher and actor cleanup. Cancellation is a failed attempt, not a skip;
@@ -2442,11 +2443,19 @@ real geodata on in production immediately, because geo is enabled by default; th
   Only tracked absent entries with an exact Git fix trailer can transition; concurrent observations and
   maintainer edits still win the existing atomic merge. Promotion errors make the aggregate non-green.
   This is contract-tested infrastructure, not a new successful Full run; no shared ledger was rewritten.
-  Remaining P10-10 work: three more consecutive clean Full Breadth runs and the accepted two-hour ten-bot soak.
+  At that checkpoint, the remaining acceptance repetition was three more consecutive clean Full Breadth runs
+  and the accepted two-hour ten-bot soak.
   P10-11 now supplies verified complete-Breadth packet and line/branch measurement integration; P10-12 supplies
   Full attempt joins, FLAKY reporting and bounded standalone runtime proof. Uncollected observations are
   unavailable, not zero; genuinely measured zero-hit directories remain visible. D17 still caps the run at
   ten concurrent bots, and D20 removes unsupported transfer work from the supported product scope.
+  **Closed under D21:** candidates 09 and 10 are complete, independent, clean 119-outcome Breadth runs with
+  immutable report/packet/quest receipts. Candidate 11 was interrupted during its SIM reset/skill sweep at the
+  maintainer's request, before aggregate reporting; it is neither acceptance evidence nor a failed Full run.
+  The maintainer explicitly waived three more repetitive Full runs and the two-hour ten-bot soak because their
+  runtime cost is not justified. This accepts the run-report implementation and current non-deferred Phase 10
+  evidence; it does not claim a completed capacity soak or close P10-02. Commit: `7ee9c1c89`
+  (before SHA-recording amend).
 - [x] **P10-11** [BOTH] M — Coverage. (a) Packet coverage from bot traces and the P3-07 tap: client opcodes sent out
   of 186 and server opcodes decoded out of 238. (b) SIM line and branch coverage of `src/Aion.GameServer` with
   coverlet on `tests/Aion.Simulation.Tests`, per directory (`Services`, `Handlers/Instance`, `Handlers/AI`,
@@ -2547,9 +2556,11 @@ real geodata on in production immediately, because geo is enabled by default; th
   cleanup/persistence failures and standalone isolation. Phase 10 remains open for P10-09/10/11 and
   its unchanged broad acceptance/deferrals; P10-12 does not certify five complete green Full runs.
 
-**Done when:** `run-full.ps1` is green on 5 consecutive runs with `report.json` written; the 10-bot soak keeps
-working set and timer count flat for 2 hours; P10-03 and P10-09 pass; every allowlist and flaky entry has an owner
-and an unexpired date.
+**Done when (current non-deferred scope, D21):** P10-03 and P10-09 pass; complete clean Breadth runs establish
+repeatability with `report.json`, packet, quest, coverage, resource and ledger evidence; every allowlist and flaky
+entry has an owner and an unexpired date. Candidates 09 and 10 satisfy this closeout. Additional Full-run repetition
+and a two-hour ten-bot soak are explicitly waived. P10-02, P10-05, P10-06 and P10-07 remain deferred and uncompleted;
+their original acceptance criteria stay visible for the eventual deferred-work review.
 
 **Follow-up checkpoint:** review [Natural Ishalgen Journey](natural-ishalgen-journey.md#revisit-checklist)
 for readiness and remaining player-policy work. This deferred review does not change Phase 10's done-when.
@@ -2670,7 +2681,7 @@ exits (`docker compose events`) and MySQL errors.
 | D8 | Java reference for this work | Keep local `../aion-server` `4.8` at `lastCompletedJavaCommit` | **Done** 2026-09-17 (`6ffedcd4f` → `ce54b7931`) |
 | D9 | Where runs happen | Local scripts | **Decided** 2026-09-17: no GitHub Actions, no n8n or other schedulers (both removed from the repo). The `docker/` compose stack stays as the way the emulator is deployed and run. Runs may create and drop databases on a Docker MySQL freely |
 | D13 | How LIVE mode starts the servers | An isolated docker compose project built from `docker/` | **Decided** 2026-09-17: LIVE runs as its own compose project (own name, images, ports, MySQL and logs), so it tests the same images the emulator is deployed with (P3-00, P3-02, P3-08) |
-| D10 | Randomness in economy scenarios | Deterministic profile (fail chances 0) for pass/fail; separate soak profile with statistical assertions. P10-02 now derives completion probabilities from the competing progress bars, using each attempt's pre-action skill lead; lead-zero outputs are ≈73.4276% gather / ≈79.4563% ordinary craft, not fixed acceptance thresholds for mixed leads. Fixed-prefix and whole-stream tests use the documented v1 policy; sufficient LIVE exposure is still required | Implemented policy; full soak evidence pending |
+| D10 | Randomness in economy scenarios | Deterministic profile (fail chances 0) for pass/fail; separate soak profile with statistical assertions. P10-02 now derives completion probabilities from the competing progress bars, using each attempt's pre-action skill lead; lead-zero outputs are ≈73.4276% gather / ≈79.4563% ordinary craft, not fixed acceptance thresholds for mixed leads. Fixed-prefix and whole-stream tests use the documented v1 policy; sufficient LIVE exposure is still required | Implemented policy; full soak evidence deferred under D21 |
 | D11 | Enable real geodata in production when P9-01 lands (geo defaults to on) | Yes as a parity fix, after P9-03 measures memory | **Approved** 2026-09-17 |
 | D12 | How Java golden fixtures are generated against `lastCompletedJavaCommit` | Bring the generator tests forward onto the spec revision | **Approved** 2026-09-17: branches or worktrees in `../aion-server` are allowed when needed |
 | D14 | Trade catalogs attached to NPCs without their corresponding trade action | Report separately as inactive content, not successful transactions or missing-spawn rows | **Approved** 2026-09-19: do not enable new vendors; independently verify the missing action from shipped NPC data |
@@ -2680,6 +2691,7 @@ exits (`docker compose events`) and MySQL errors.
 | D18 | Defer real-client capture and revisit deferred work when ready | Continue at P10-08; keep deferred acceptance open | **Authorized, capability-blocked** 2026-09-20: the maintainer explicitly requested Computer Use, supplied the localhost launcher, and authorized account/character creation and playtesting. The normal Docker stack and client launch succeeded, but this task exposes browser control only; native Windows app discovery/binding is unavailable. Resume P10-07 when the Computer Use surface can bind the Aion window. Java runtime execution and larger bot populations remain unauthorized/deferred |
 | D19 | Correct shared upstream defects blocking the two-GS transfer and Chat-gag journeys (§7/118–119) | Scoped C# production fixes with regression tests and real journey evidence | **Partially superseded by D20** 2026-09-20: the Chat-gag correction remains approved and verified. The earlier transfer authorization produced preserved diagnostics and wire/relay checkpoints, but D20 ends further transfer work. Other Java-spec rules, deferrals and the ten-concurrent-bot cap remain unchanged |
 | D20 | Product topology and character-transfer acceptance | Treat BeyondAionSharp as one game server; character transfer is unsupported | **Decided** 2026-09-20: the maintainer clarified that this emulator has one server and does not support transferring characters. BA-001 and transfer-only BA-003 acceptance are not applicable; do not run more two-GS transfer journeys or add transfer fixes. Preserve existing code, tests and failed evidence as historical unless separately asked to remove them. P10-09 closes on the supported BA-002/003/006 journeys; BA-005 remains deferred under D7 |
+| D21 | Phase 10 acceptance runtime | Stop additional clean Full runs and do not run a two-hour soak; accept the non-deferred Phase 10 closeout from the retained evidence | **Decided** 2026-09-22: the maintainer determined the runtime is not worth the marginal confidence. Candidates 09 and 10 remain the final complete clean Breadth evidence. Interrupted candidate 11 is uncounted. Close P10-10 and proceed to Phase 11; keep P10-02 capacity, P10-05 boot-tail content, P10-06 Java runtime comparison and P10-07 client capture deferred and visibly incomplete. Do not describe the waived soak/capacity work as passed |
 
 ---
 

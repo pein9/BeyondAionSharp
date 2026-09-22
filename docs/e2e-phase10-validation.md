@@ -4650,3 +4650,24 @@ Immutable SHA-256 receipts:
 This is clean Full candidate 2/5 in the new streak. P10-10 and Phase 10 remain
 open for three more consecutive clean Breadth runs and the two-hour ten-bot
 soak. Checkpoint receipt: `5b5751ccf` (before SHA-recording amend).
+
+## Phase 10 non-deferred closeout (D21)
+
+On 2026-09-22 the maintainer waived the remaining three clean Full Breadth
+runs and the two-hour ten-bot soak because their runtime cost was not worth the
+marginal confidence. The preceding statement was the status before that
+decision. Complete candidates 09 and 10 are the final repetition evidence:
+each independently passed all 119 selected outcomes with no failed, skipped or
+flaky result and retained immutable report, packet and quest receipts.
+
+Candidate `p10-accept-11` was stopped at the maintainer's request during the SIM
+reset/skill sweep, after earlier SIM shards/checks had passed but before the
+aggregate report existed. It is incomplete and uncounted: it is neither a clean
+candidate nor a failed Full result, and it does not reset or extend any streak.
+No Docker project from that candidate remained, and the repository was clean.
+
+D21 closes P10-10 and accepts the current non-deferred Phase 10 evidence. It
+does **not** retroactively claim a five-run streak, a two-hour ten-bot soak, or
+completion of P10-02's capacity matrix. P10-02, P10-05, P10-06 and P10-07 stay
+deferred with their original evidence gaps visible. The next active ordered
+work item is P11-01, the SIM instance-entry matrix for all 78 handlers.
