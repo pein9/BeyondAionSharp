@@ -1,4 +1,6 @@
 using Aion.Bots.Scenarios;
+using Aion.Bots.Movement;
+using Aion.Bots.Navigation;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -8,12 +10,19 @@ namespace Aion.LiveBots;
 public static partial class LiveBotRunner
 {
 	private static async Task<int> RunNaturalIshalgenDecisionAsync(
-		LiveBotOptions options, LiveBotProblemWriter problems, CancellationToken token)
+		LiveBotOptions options, LiveBotProblemWriter problems, CancellationToken token, bool navigate = false)
 	{
+		string scenario = navigate ? "NI-03" : "NI-02";
+		BotNavigationAssets? assets = null;
+		if (navigate)
+		{
+			string repoRoot = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../.."));
+			assets = await BotNavigationAssets.LoadAsync(repoRoot, Path.Combine(options.OutputDirectory, "navigation-cache"), token);
+		}
 		NaturalIshalgenIdentity identity = NaturalIshalgenIdentityScenario.Identity;
 		await using var actor = new L0Actor(options, problems, 1, Race.ASMODIANS, bot: "b01",
 			account: identity.AccountName, characterName: identity.CharacterName);
-		actor.Trace.WriteAction("s00", "scenario:start", new Dictionary<string, object?> { ["scenario"] = "NI-02" });
+		actor.Trace.WriteAction("s00", "scenario:start", new Dictionary<string, object?> { ["scenario"] = scenario });
 		try
 		{
 			var identityDriver = new LiveNaturalIshalgenIdentityDriver(options, actor, identity);
@@ -23,7 +32,25 @@ public static partial class LiveBotRunner
 			var decisionDriver = new LiveNaturalIshalgenDecisionDriver(options, actor);
 			NaturalDecision decision = await NaturalIshalgenDecisionLoop.RunAsync(contract, decisionDriver, token: token);
 			if (decision.Outcome == "blocked")
-				throw new InvalidDataException($"NI-02 decision loop blocked: {decision.Reason}");
+				throw new InvalidDataException($"{scenario} decision loop blocked: {decision.Reason}");
+			NaturalNavigationResult? navigationResult = null;
+			if (navigate)
+			{
+				if (decision.SelectedAction != "find-quest-starter" || decision.SelectedQuestId != 2101)
+					throw new InvalidDataException("NI-03 requires the untouched Q2101 starter as its bounded navigation proof.");
+				int channel = actor.Session.Api.World.ChannelInfo?.Index ?? 0;
+				var navigation = assets!.StarterRoute(Race.ASMODIANS, channel + 1);
+				actor.Session.Navigation = navigation;
+				BotWaypoint anchor = navigation.Graph.GetMap(contract.MapId)?.Waypoints
+					.Where(waypoint => waypoint.TemplateId == 203500 && waypoint.Sources.HasFlag(BotWaypointSource.QuestNpc))
+					.OrderBy(waypoint => waypoint.Id).FirstOrDefault()
+					?? throw new InvalidDataException("Shipped Ishalgen route has no Asak quest waypoint.");
+				var navigationDriver = new LiveNaturalIshalgenNavigationDriver(options, actor, decision.Sequence);
+				navigationResult = await NaturalIshalgenNavigator.ApproachNpcAsync(contract.MapId, 203500,
+					anchor.Position, navigationDriver, token);
+				if (!navigationResult.Arrived)
+					throw new InvalidDataException($"NI-03 navigation failed: {navigationResult.Reason}");
+			}
 			if (options.DecisionViewSeconds > 0)
 			{
 				actor.Trace.WriteAction(actor.LastStep, "natural:dashboard-view-window", new Dictionary<string, object?>
@@ -35,18 +62,67 @@ public static partial class LiveBotRunner
 			await actor.StepAsync("quit-without-deleting-character", actor.Session.QuitAsync, token);
 			actor.Trace.WriteAction(actor.LastStep, "scenario:complete", new Dictionary<string, object?>
 			{
-				["scenario"] = "NI-02", ["decision"] = decision,
+				["scenario"] = scenario, ["decision"] = decision, ["navigation"] = navigationResult,
 			});
-			Console.WriteLine($"LIVE NI-02: retained Priest {identity.CharacterName} ({subject.CharacterId}); " +
-				$"selected {decision.SelectedAction} for Q{decision.SelectedQuestId?.ToString() ?? "none"} " +
-				$"({decision.Outcome}). No gameplay capability was invented.");
+			Console.WriteLine($"LIVE {scenario}: retained Priest {identity.CharacterName} ({subject.CharacterId}); " +
+				(navigationResult == null
+					? $"selected {decision.SelectedAction} for Q{decision.SelectedQuestId?.ToString() ?? "none"} ({decision.Outcome})."
+					: $"approached client-observed Asak for Q2101 in {navigationResult.Segments} paced segments; no quest interaction."));
 			return 0;
 		}
 		catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
 		catch (Exception exception)
 		{
-			Console.Error.WriteLine($"NI-02 failed: {exception}");
+			Console.Error.WriteLine($"{scenario} failed: {exception}");
 			return 1;
+		}
+	}
+
+	private sealed class LiveNaturalIshalgenNavigationDriver(LiveBotOptions options, L0Actor actor, int decisionSequence)
+		: INaturalNavigationDriver
+	{
+		public NaturalNavigationObservation Observe()
+		{
+			BotWorldModel world = actor.Session.Api.World;
+			BotPosition? position = world.MapId == null ? null : actor.Session.CurrentPosition;
+			return new(world.MapId, position, world.IsDead, world.Objects.Values
+				.Where(item => item.Kind == BotKnownObjectKind.Npc)
+				.Select(item => new NaturalNavigationObject(item.ObjectId, item.TemplateId ?? 0, item.Position)).ToArray());
+		}
+
+		public Task<IReadOnlyList<BotPosition>> FindRouteAsync(BotPosition start, BotPosition destination, CancellationToken token) =>
+			LiveNavigationWorkQueue.Shared.RunAsync(() =>
+			{
+				var navigation = actor.Session.Navigation ?? throw new InvalidOperationException("NI-03 navigation assets are missing.");
+				int map = actor.Session.Api.World.MapId ?? throw new InvalidDataException("NI-03 map is unobserved.");
+				var route = navigation.Graph.FindPath(map, start, destination);
+				if (route.Count == 0) route = navigation.Geometry.FindLocalPath(map, start, destination);
+				return route.Count != 0 ? route : navigation.Geometry.FindJourneyPath(map, start, destination);
+			}, token);
+
+		public Task MoveAsync(IReadOnlyList<BotPosition> segment, CancellationToken token) =>
+			actor.StepAsync("natural-walk-segment", ct => actor.Session.ExecuteMovementAsync(
+				new BotMover(actor.Session.Api.World, actor.Session.Api.Timing).CreateGroundPlan(segment,
+					actor.Session.CurrentPosition, actor.Session.Api.World.MovementSpeed
+						?? throw new InvalidDataException("Client movement speed is unobserved.")), ct), token);
+
+		public Task SynchronizeAsync(CancellationToken token) =>
+			actor.StepAsync("synchronize-navigation", actor.Session.SynchronizeAsync, token);
+
+		public void Record(NaturalNavigationEvent navigationEvent)
+		{
+			actor.Trace.WriteAction(actor.LastStep, "natural:navigation", new Dictionary<string, object?>
+			{
+				["navigation"] = navigationEvent,
+			});
+			var decision = new NaturalDecision(decisionSequence + navigationEvent.Sequence,
+				navigationEvent.Action, 2101, navigationEvent.Outcome, navigationEvent.Reason,
+				[
+					new("position-source", "pass", "Client-estimated self position; no server self-move echo."),
+					new("navigation-budget", navigationEvent.Outcome == "blocked" ? "blocked" : "pass",
+						$"Route searches {navigationEvent.RouteSearches}, segments {navigationEvent.Segments}, target object {navigationEvent.TargetObjectId?.ToString() ?? "unobserved"}."),
+				], []);
+			options.Dashboard.PublishDecision(actor.Bot, decision);
 		}
 	}
 

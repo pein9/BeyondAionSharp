@@ -87,8 +87,8 @@ public sealed record LiveBotOptions(
 			throw new ArgumentException($"Scenario requires more than {BotIdentity.MaximumSubjects} subject bots.", "scenario");
 		if (scenarios.Contains("O1", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 1 || stepSeconds < 1050))
 			throw new ArgumentException("O1 must run alone with one subject and at least 1050 seconds per step.");
-		if (scenarios.Any(scenario => scenario is "NI-01" or "NI-02") && (scenarios.Length != 1 || bots != 1))
-			throw new ArgumentException("NI-01 and NI-02 must run alone with exactly one retained subject.");
+		if (scenarios.Any(scenario => scenario is "NI-01" or "NI-02" or "NI-03") && (scenarios.Length != 1 || bots != 1))
+			throw new ArgumentException("Natural Ishalgen scenarios must run alone with exactly one retained subject.");
 		if (scenarios.Contains("B2", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 2))
 			throw new ArgumentException("B2 must run alone with exactly two subjects (plus its director).");
 		if (scenarios.Contains("B2F", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 2 || stepSeconds < 180))
@@ -98,8 +98,8 @@ public sealed record LiveBotOptions(
 		var reentrySeconds = PositiveInt(values, "reentry-seconds", 10, 3600);
 		var dashboardPort = NonNegativeInt(values, "dashboard-port", 0, 65535);
 		var decisionViewSeconds = NonNegativeInt(values, "decision-view-seconds", 30, 600);
-		if (values.ContainsKey("decision-view-seconds") && !scenarios.Contains("NI-02", StringComparer.Ordinal))
-			throw new ArgumentException("--decision-view-seconds requires --scenario NI-02.");
+		if (values.ContainsKey("decision-view-seconds") && !scenarios.Any(scenario => scenario is "NI-02" or "NI-03"))
+			throw new ArgumentException("--decision-view-seconds requires --scenario NI-02 or NI-03.");
 		if (scenarios.Contains("B4", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 5 || stepSeconds < 180))
 			throw new ArgumentException("B4 must run alone with five subjects and at least 180 seconds per step.");
 		int soakSeconds = PositiveInt(values, "soak-seconds", 7200, 7200);

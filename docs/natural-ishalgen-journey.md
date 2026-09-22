@@ -4,8 +4,9 @@ Status: Phase 10 readiness review completed 2026-09-22 against Java `4.8` at
 `ce54b7931`. The journey is **not yet executable end to end without assistance**:
 the protocol, navigation, gathering and persistence foundations exist, but the
 continuous Priest combat, inventory, quest-planning and recovery policies do not.
-NI-00 through NI-02 are complete. NI-02 selects and explains the next bounded
-step but does not yet execute quest objectives. The broader game
+NI-00 through NI-03 are complete. NI-02 selects and explains the next bounded
+step; NI-03 approaches its first quest starter without accepting the quest.
+Neither step executes quest objectives. The broader game
 journey remains a post-Phase 11 review. Review commit: `7d80e48d6` (before
 SHA-recording amend).
 
@@ -128,9 +129,19 @@ These are new journey TODOs, not retroactive claims about the phase scenarios:
   It stops on crossed Ascension/map boundaries and reports unavailable natural
   gameplay actions as `awaiting-capability`, not as completed quests. The NI-02
   LIVE run has no GM gameplay inputs. (`0ed2068407`, before SHA-recording amend)
-- [ ] **NI-03 — Resilient Ishalgen navigation.** Add stuck/progress detection,
-  replanning, moving-object reacquisition and reproducible route failures on the
-  existing geodata pathfinder.
+- [x] **NI-03 — Resilient Ishalgen navigation.** A reusable bounded policy follows
+  speed-paced, collision-checked graph/local/journey paths in short segments,
+  synchronizes client packets, monitors client-estimated progress, replans after
+  movement deviation, and reacquires moving/replaced NPCs by their observed
+  template and object IDs. Each route and failure records map, positions, target,
+  segment/search budgets and checked route points in the bot trace; navigation
+  decisions appear in the dashboard. A one-bot enforced Docker LIVE run walked
+  the ordinary Priest from spawn to packet-observed Asak for Q2101 and stopped
+  before dialogue. The static approach anchor comes from shipped spawn waypoints,
+  not a hand-authored route. Java does not echo the mover's own `CM_MOVE`, so
+  segment progress is a client estimate, not continuous server confirmation;
+  interaction and later persistence checks remain separate proofs. (`ced820ba05`,
+  before SHA-recording amend)
 - [ ] **NI-04 — Priest combat and survival.** Implement natural target selection,
   learned-skill use, range/cast/cooldown/MP handling, self-healing, rest,
   consumables, retreat and death/revive recovery.

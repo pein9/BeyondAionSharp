@@ -23,6 +23,10 @@ public sealed class LiveBotDashboardTests
 		Assert.Throws<ArgumentException>(() => Parse("--decision-view-seconds", "0"));
 		Assert.Throws<ArgumentException>(() => LiveBotOptions.Parse(["--run", "decision", "--output", "run/decision",
 			"--scenario", "NI-02", "--bots", "2"]));
+		Assert.Equal(0, LiveBotOptions.Parse(["--run", "navigation", "--output", "run/navigation",
+			"--scenario", "NI-03", "--decision-view-seconds", "0"]).DecisionViewSeconds);
+		Assert.Throws<ArgumentException>(() => LiveBotOptions.Parse(["--run", "navigation", "--output", "run/navigation",
+			"--scenario", "NI-03", "--bots", "2"]));
 	}
 
 	[Fact]

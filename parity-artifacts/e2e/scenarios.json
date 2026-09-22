@@ -98,6 +98,20 @@
     "resetEpoch": false
   },
   {
+    "id": "NI-03",
+    "modes": ["Live"],
+    "tier": "Full",
+    "race": "Asmodians",
+    "map": 220010000,
+    "channelNeeds": "None",
+    "bots": 1,
+    "virtualDuration": "00:05:00",
+    "consumes": [],
+    "requires": ["Db", "Geo"],
+    "expectedFail": null,
+    "resetEpoch": false
+  },
+  {
     "id": "S0",
     "modes": ["Sim"],
     "tier": "Fast",

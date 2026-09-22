@@ -53,6 +53,8 @@ public static partial class LiveBotRunner
 			return await RunO1Async(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "NI-01" }])
 			return await RunNaturalIshalgenIdentityAsync(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "NI-03" }])
+			return await RunNaturalIshalgenDecisionAsync(options, problems, cancellationToken, navigate: true);
 		if (options.ScenarioDefinitions is [{ Id: "NI-02" }])
 			return await RunNaturalIshalgenDecisionAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "B2" }])

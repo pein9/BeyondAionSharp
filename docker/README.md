@@ -106,6 +106,19 @@ retains the decisions afterward. NI-02 deliberately stops at `awaiting-capabilit
 navigation, combat, gathering, or quest-specific play is needed; it does not yet
 complete the area. The dashboard is loopback-only, and this command uses no host MySQL.
 
+NI-03 adds a bounded, collision-checked walk to Q2101's packet-observed starter
+without starting the quest. For a short isolated proof, use:
+
+```powershell
+pwsh -NoProfile -File scripts/live/run-live.ps1 `
+  -Run ni03-review -Scenario NI-03 -Bots 1 `
+  -StepTimeoutSeconds 60 -DashboardPort 17880 -DecisionViewSeconds 30
+```
+
+The dashboard includes route/replan decisions; `run/ni03-review/bots/b01.trace.jsonl`
+retains checked route points and failure context. NI-03 requires an untouched Q2101
+starter state and stops at approach, so it is not a quest-completion test.
+
 The Phase 3 Full tier runs L0 and then the watcher canaries in fresh isolated stacks, both in enforce mode, and
 keeps their artifacts together under `run/<id>/`:
 
