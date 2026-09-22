@@ -66,14 +66,24 @@ three Young Azpha items at gathering skill 1 for Nobekk.
 
 The quest-reward lower bound for the 41 included quests is 155,234 XP (maximum
 156,219 XP), before ordinary kill and gathering XP. The shipped absolute level-9
-threshold is 126,069 XP and level 10 is 182,252 XP. The reviewed content is
-therefore sufficient to reach level 9 without an XP grant while leaving room to
-stop below level 10. Route ordering must still satisfy each quest's level gate.
+threshold is 126,069 XP and the level-10 threshold is 182,252 XP. For an online
+non-Daeva Priest, `PlayerCommonData.setExp` caps stored XP at 182,252 and displayed
+level at 9, even with a full XP bar. Ordinary combat, gathering, and quest rewards
+may reach that cap before all 41 quests are complete; this is expected and must
+not cause route pruning, XP avoidance, or a false level-10 failure. Route ordering
+must still satisfy each quest's level and prerequisite gates. Java `4.8` at
+`ce54b7931`: `PlayerCommonData.setExp` and `player_experience_table.xml`; the
+C# `PlayerCommonData.SetExp` mirrors this behavior.
 
-Q2008 activates at level 9. The accepted stop state is Q2008 present at START,
-step/var 0, with no conversation with Munin and no objectives or class selection.
-`ENABLE_SIMPLE_2NDCLASS` must remain off. The Java and C# Q2008 handlers agree on
-this boundary.
+Q2008 is automatically added to the journal at level 9. The accepted stop state
+is the Priest physically standing at Munin (NPC 203550) in Ishalgen, with Q2008
+at START, step/var 0 and no Q2008 dialogue, objectives, class selection, or
+Ascension progression. Earlier conversations with Munin for included quests are
+allowed and may be required. "Before Munin gives the quest" means before the
+first Q2008 interaction, not that Q2008 is absent from the journal.
+`ENABLE_SIMPLE_2NDCLASS` must remain off. Java `4.8` at `ce54b7931`:
+`_2008Ascension.onLevelChangedEvent` and `AbstractQuestHandler.defaultOnLevelChangedEvent`;
+the C# handler agrees on this boundary.
 
 ## Current foundation and remaining work
 
@@ -196,7 +206,9 @@ These are new journey TODOs, not retroactive claims about the phase scenarios:
   (`620a93363`, before SHA-recording amend)
 - [ ] **NI-07 — Forty-one-quest execution.** Support the custom campaigns and
   quest-specific operations omitted by Q4I, then complete the frozen contract in
-  SIM without grants, forced state, setup teleports or boosted stats.
+  SIM without grants, forced state, setup teleports or boosted stats. Allow the
+  ordinary level-9 XP cap while finishing every included quest, then end at Munin
+  before any Q2008 interaction.
 - [ ] **NI-08 — Durable resume and diagnosis.** Reconstruct state after relog or
   server interruption, resume the same character, and preserve a minimal failure
   package for stalls, disconnects and server defects.
@@ -265,10 +277,12 @@ correctness by themselves.
 2. Complete the reviewed eligible quest list on that same character, using natural
    travel, combat, healing, inventory decisions, and gathering. Implement missing
    bot behaviors for existing quests as needed; do not add missing server content.
-3. Earn level 9 and leave Ascension Q2008 at its initial, unadvanced state. Its
-   automatic journal activation is allowed; do not perform its objectives or choose
-   Chanter. Reaching level 9 early does not excuse remaining eligible Ishalgen
-   quests; verify level/XP behavior against the reference when defining the route.
+3. Earn level 9 and finish physically standing at Munin (NPC 203550) in Ishalgen,
+   still a Priest, with Ascension Q2008 at START, step/var 0. Its automatic journal
+   activation is expected; do not interact with Munin for Q2008, perform its
+   objectives, or choose Chanter. Earlier Munin interactions for included quests
+   are allowed. Reaching level 9 or the 182,252-XP cap early does not excuse any
+   remaining eligible Ishalgen quests; a full XP bar is acceptable.
 4. Relog and verify that completed quests, character class/level, inventory, and
    location persisted. Resume normal play from observed state across interruptions.
 5. Run with a real client in the same world for the coexistence proof, with the bot
