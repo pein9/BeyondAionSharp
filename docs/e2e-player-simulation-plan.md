@@ -2378,6 +2378,18 @@ real geodata on in production immediately, because geo is enabled by default; th
   remain sequential with peak one. Transfer remains outside this single-server emulator and is neither selected
   nor counted under D20. Two further consecutive clean Breadth runs and the two-hour ten-bot soak remain.
   Checkpoint receipt: `85197205b` (before SHA-recording amend).
+  Complete Breadth attempt `p10-accept-07` is clean candidate 4/5 at revision `05a073c17`: 119 passed,
+  zero failed/skipped/flaky in 14,337.832 seconds, with first-attempt B2F and S5, quest coverage 58 SIM /
+  60 LIVE, all packet gates green, all 16 coverage processes collected and the aggregate ledger promotion
+  accepted. Its `report.json`, packet-comparison and quest-comparison SHA-256 receipts are
+  `d86bc43b0c72a670775088c34a0c36970b1115d4b341598b277417b7d812ad96`,
+  `bd677b3d4dd8afa98ae16265514605db5aab562fc029cc50bae939131c203f23` and
+  `faeac2d7dccded376d0c02baa3a67e7a6ee746fee9c3dd06d245730e74e5e9ac`. The catalog totals and packet
+  identity counts again match candidates 1-3; measured coverage is 95,571/267,950 lines and
+  23,769/103,697 branches. S4 remains the peak live population at eight bots, while L1's twelve subjects
+  remain sequential with peak one. Character transfer remains outside this single-server emulator and is
+  neither selected nor counted under D20. One further clean Breadth run and the two-hour ten-bot soak remain.
+  Checkpoint receipt: `3b446e9a3` (before SHA-recording amend).
   **Aggregate ledger safeguard checkpoint (`198500442`):** child watchers only record observations; their `FullRun`
   flag cannot mark an absent fingerprint fixed (§7/129). After aggregate reporting and flake-history
   persistence succeed, the Full parent invokes a read-only raw-evidence gate before ledger mutation.

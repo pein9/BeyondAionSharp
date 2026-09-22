@@ -4501,3 +4501,42 @@ scenario passed and no quarantine. Full-ledger promotion also passed against the
 same revision. This is clean Full candidate 3/5. P10-10 and Phase 10 remain open
 for two more consecutive clean runs and the two-hour ten-bot soak. Checkpoint
 receipt: `85197205b` (before SHA-recording amend).
+
+## P10-10 fourth clean Full candidate
+
+`p10-accept-07` ran the same complete supported Breadth selection at revision
+`05a073c17cd642e1eec8e27060fc1eb2304683df`, with two SIM shards and Host bot
+execution. It exited zero after 14,337.832 seconds and passed 119 scenarios with
+zero failed, skipped or flaky outcomes. B2F and S5 again passed on their first
+attempts. Quest coverage again passed with 58 SIM and 60 LIVE completions. The
+catalog sweeps reproduced the prior candidates exactly: skills 5,033/5,033;
+trade 2,290 rows with 1,304 passed, 816 unreachable and 170 inactive; teleport
+284 with 238 passed and 46 unreachable; bind 129 with 89 passed and 40
+unreachable; craft 12,494/12,494; gather 756 with 374 passed and 382
+unreachable. Inactive trade content remained reported rather than enabled.
+
+Every live stack used Docker MySQL. S4 remained the largest simultaneous player
+population at eight, and L1's twelve subjects remained sequential with peak one.
+Character transfer was not selected, executed, deferred or counted: D20 makes it
+inapplicable to this single-server emulator.
+
+Packet coverage passed with the same complete-Breadth identities as candidates
+1-3: SIM observed 104/186 client sends and 111/238 structured server decodes;
+LIVE observed 100/186 and 111/238. The E6 exchange identities remained present.
+All 16 planned Coverlet processes were collected with zero evidence issues. Their
+compatible union measured 95,571/267,950 GameServer lines (35.667%) and
+23,769/103,697 branches (22.922%). The execution-coverage variation is retained
+as measured timing/path evidence; the functional, quest, packet and report
+verdicts are unchanged.
+
+Immutable SHA-256 receipts:
+
+- `report.json`: `d86bc43b0c72a670775088c34a0c36970b1115d4b341598b277417b7d812ad96`
+- `packet-coverage-comparison.json`: `bd677b3d4dd8afa98ae16265514605db5aab562fc029cc50bae939131c203f23`
+- `quest-coverage.json`: `faeac2d7dccded376d0c02baa3a67e7a6ee746fee9c3dd06d245730e74e5e9ac`
+
+The Full-history ledger records attempt 07 as green with every selected LIVE
+scenario passed and no quarantine. Full-ledger promotion also passed against the
+same revision. This is clean Full candidate 4/5. P10-10 and Phase 10 remain open
+for one more consecutive clean run and the two-hour ten-bot soak. Checkpoint
+receipt: `3b446e9a3` (before SHA-recording amend).
