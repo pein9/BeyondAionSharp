@@ -162,7 +162,8 @@ public static partial class LiveBotRunner
 				actor.Session.PacketHistory.Any(packet => packet.PacketType == typeof(SM_QUEST_LIST)),
 				actor.Session.PacketHistory.Any(packet => packet.PacketType == typeof(SM_QUEST_COMPLETED_LIST)),
 				world.MapId, world.Level, world.IsDead,
-				new Dictionary<int, BotQuestState>(world.Quests), world.CompletedQuestIds.ToHashSet());
+				new Dictionary<int, BotQuestState>(world.Quests), world.CompletedQuestIds.ToHashSet(),
+				world.MapId == null ? null : actor.Session.CurrentPosition, world.Objects.Values.ToArray());
 		}
 
 		public Task RefreshAsync(CancellationToken token) =>

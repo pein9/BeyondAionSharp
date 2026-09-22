@@ -9,6 +9,8 @@ public sealed record NaturalIshalgenQuestContract(int Id, int MinimumLevel, int[
 public sealed record NaturalIshalgenContract(int MapId, int AscensionQuestId, int AscensionLevel,
 	NaturalIshalgenQuestContract[] Quests)
 {
+	public int AscensionNpcId { get; init; } = 203550;
+
 	public static NaturalIshalgenContract Load(string path)
 	{
 		using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
@@ -28,7 +30,10 @@ public sealed record NaturalIshalgenContract(int MapId, int AscensionQuestId, in
 		return new NaturalIshalgenContract(
 			root.GetProperty("journey").GetProperty("mapId").GetInt32(),
 			root.GetProperty("ascensionStop").GetProperty("questId").GetInt32(),
-			root.GetProperty("ascensionStop").GetProperty("activationLevel").GetInt32(), quests);
+			root.GetProperty("ascensionStop").GetProperty("activationLevel").GetInt32(), quests)
+		{
+			AscensionNpcId = root.GetProperty("ascensionStop").GetProperty("firstObjectiveNpcId").GetInt32(),
+		};
 	}
 
 	public static NaturalIshalgenContract LoadDefault() => Load(Path.Combine(
@@ -40,7 +45,8 @@ public sealed record NaturalIshalgenContract(int MapId, int AscensionQuestId, in
 public sealed record NaturalIshalgenObservation(
 	bool Fresh, bool JournalObserved, bool CompletedJournalObserved,
 	int? MapId, ushort Level, bool IsDead,
-	IReadOnlyDictionary<int, BotQuestState> Quests, IReadOnlySet<int> CompletedQuestIds);
+	IReadOnlyDictionary<int, BotQuestState> Quests, IReadOnlySet<int> CompletedQuestIds,
+	BotPosition? Position = null, IReadOnlyList<BotKnownObject>? ObservedObjects = null);
 
 public sealed record NaturalDecisionCheck(string Rule, string Verdict, string Reason);
 public sealed record NaturalQuestDecision(int QuestId, string Verdict, NaturalDecisionCheck[] Checks);
@@ -117,7 +123,20 @@ public static class NaturalIshalgenDecisionEngine
 			if (state.Level == contract.AscensionLevel &&
 				state.Quests.TryGetValue(contract.AscensionQuestId, out BotQuestState? stop) &&
 				stop.Status == 3 && stop.StepAndFlags == 0)
-				return new(sequence, "journey-complete", null, "complete", "All included quests complete at untouched Ascension START/0.", [.. global], [.. quests]);
+			{
+				BotKnownObject? munin = state.ObservedObjects?.FirstOrDefault(item =>
+					item.Kind == BotKnownObjectKind.Npc && item.TemplateId == contract.AscensionNpcId);
+				if (state.Position is BotPosition position && munin != null &&
+					MathF.Sqrt(MathF.Pow(position.X - munin.Position.X, 2) +
+						MathF.Pow(position.Y - munin.Position.Y, 2) +
+						MathF.Pow(position.Z - munin.Position.Z, 2)) <= 6f)
+					return new(sequence, "journey-complete", null, "complete",
+						$"All included quests complete; standing at client-observed Munin {munin.ObjectId} with untouched Ascension START/0.",
+						[.. global], [.. quests]);
+				return new(sequence, "approach-ascension-npc", null, "awaiting-capability",
+					$"All included quests complete; approach client-observed Munin (template {contract.AscensionNpcId}) without Q{contract.AscensionQuestId} dialogue.",
+					[.. global], [.. quests]);
+			}
 			return new(sequence, "await-level-or-ascension", null, "awaiting-capability",
 				"All included quests complete; the level-9 Ascension stop has not been observed.", [.. global], [.. quests]);
 		}

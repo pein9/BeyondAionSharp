@@ -54,8 +54,17 @@ public sealed class NaturalIshalgenDecisionLoopTests
 	{
 		int[] all = Contract.Quests.Select(quest => quest.Id).ToArray();
 		var atBoundary = Observe(level: 9, completed: all,
-			active: [new BotQuestState(2008, 3, 0, 0, null)]);
+			active: [new BotQuestState(2008, 3, 0, 0, null)]) with
+		{
+			Position = new BotPosition(378.74f, 1895.46f, 328.838f, 0),
+			ObservedObjects = [new BotKnownObject(42, BotKnownObjectKind.Npc,
+				new BotPosition(378.74f, 1895.46f, 328.838f, 0), 203550)],
+		};
 		Assert.Equal("complete", NaturalIshalgenDecisionEngine.Decide(Contract, atBoundary, 1).Outcome);
+		Assert.Equal("approach-ascension-npc", NaturalIshalgenDecisionEngine.Decide(Contract,
+			atBoundary with { Position = new BotPosition(400f, 1895.46f, 328.838f, 0) }, 1).SelectedAction);
+		Assert.Equal("approach-ascension-npc", NaturalIshalgenDecisionEngine.Decide(Contract,
+			atBoundary with { ObservedObjects = [] }, 1).SelectedAction);
 		Assert.Equal("blocked", NaturalIshalgenDecisionEngine.Decide(Contract,
 			atBoundary with { Quests = new Dictionary<int, BotQuestState> { [2008] = new(2008, 3, 1, 0, null) } }, 1).Outcome);
 		Assert.Equal("blocked", NaturalIshalgenDecisionEngine.Decide(Contract,
