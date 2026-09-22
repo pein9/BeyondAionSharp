@@ -91,6 +91,21 @@ stops the servers gracefully, collects artifacts, and removes only its exact Com
 `-SkipImageBuild` only when the images already contain the code under test. Add `-Keep` to leave that project
 running for inspection; remove it afterward with the exact project name printed by the runner.
 
+To inspect NI-02's deterministic Natural Ishalgen decision tree, run a single retained Priest in
+the isolated Docker stack while the bot and dashboard run on the host:
+
+```powershell
+pwsh -NoProfile -File scripts/live/run-live.ps1 `
+  -Run ni02-review -Scenario NI-02 -Bots 1 `
+  -DashboardPort 17880 -DecisionViewSeconds 60
+```
+
+Open `http://127.0.0.1:17880/` during the 60-second view window. The dashboard
+shows the selected action and every quest's rule checks; `run/ni02-review/bots/b01.trace.jsonl`
+retains the decisions afterward. NI-02 deliberately stops at `awaiting-capability` when
+navigation, combat, gathering, or quest-specific play is needed; it does not yet
+complete the area. The dashboard is loopback-only, and this command uses no host MySQL.
+
 The Phase 3 Full tier runs L0 and then the watcher canaries in fresh isolated stacks, both in enforce mode, and
 keeps their artifacts together under `run/<id>/`:
 

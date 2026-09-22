@@ -35,6 +35,34 @@ public static class NaturalIshalgenIdentityScenario
 		INaturalIshalgenIdentityDriver driver,
 		CancellationToken token = default)
 	{
+		NaturalIshalgenIdentityResult first = await EnterAsync(driver, token);
+		int characterId = first.CharacterId;
+		ushort level = first.Level;
+		await driver.StepAsync("quit-without-deleting-character", driver.QuitAndVerifyOfflineAsync, token);
+		await driver.StepAsync("honor-reentry-delay", driver.WaitForReentryAsync, token);
+
+		await driver.StepAsync("relogin-and-select-retained-priest", async ct =>
+		{
+			IReadOnlyList<IReadOnlyDictionary<string, object?>> characters = CharacterList(await driver.LoginAsync(ct));
+			if (characters.Count != 1 || ValidateCharacter(characters[0]) != new ObservedNaturalCharacter(characterId, level))
+				throw new InvalidDataException("NI-01 relogin did not return the same retained Priest identity.");
+			driver.SelectCharacter(characterId, Identity.CharacterName);
+		}, token);
+		await driver.StepAsync("reenter-and-verify-retained-priest", async ct =>
+		{
+			await driver.EnterWorldAsync(ct);
+			await driver.VerifyOrdinaryOnlineIdentityAsync(characterId, level, ct);
+		}, token);
+		await driver.StepAsync("final-quit-without-deleting-character", driver.QuitAndVerifyOfflineAsync, token);
+
+		return first;
+	}
+
+	/// <summary>Shared create-or-reuse entry for the later natural decision loop.</summary>
+	public static async Task<NaturalIshalgenIdentityResult> EnterAsync(
+		INaturalIshalgenIdentityDriver driver,
+		CancellationToken token = default)
+	{
 		if (driver.Identity != Identity)
 			throw new InvalidDataException("NI-01 must use its stable ordinary account and character identity.");
 
@@ -76,23 +104,6 @@ public static class NaturalIshalgenIdentityScenario
 			await driver.EnterWorldAsync(ct);
 			await driver.VerifyOrdinaryOnlineIdentityAsync(characterId, level, ct);
 		}, token);
-		await driver.StepAsync("quit-without-deleting-character", driver.QuitAndVerifyOfflineAsync, token);
-		await driver.StepAsync("honor-reentry-delay", driver.WaitForReentryAsync, token);
-
-		await driver.StepAsync("relogin-and-select-retained-priest", async ct =>
-		{
-			IReadOnlyList<IReadOnlyDictionary<string, object?>> characters = CharacterList(await driver.LoginAsync(ct));
-			if (characters.Count != 1 || ValidateCharacter(characters[0]) != new ObservedNaturalCharacter(characterId, level))
-				throw new InvalidDataException("NI-01 relogin did not return the same retained Priest identity.");
-			driver.SelectCharacter(characterId, Identity.CharacterName);
-		}, token);
-		await driver.StepAsync("reenter-and-verify-retained-priest", async ct =>
-		{
-			await driver.EnterWorldAsync(ct);
-			await driver.VerifyOrdinaryOnlineIdentityAsync(characterId, level, ct);
-		}, token);
-		await driver.StepAsync("final-quit-without-deleting-character", driver.QuitAndVerifyOfflineAsync, token);
-
 		return new NaturalIshalgenIdentityResult(characterId, level, created);
 	}
 

@@ -42,6 +42,16 @@ h1 { font-size: clamp(24px, 4vw, 38px); letter-spacing: -.04em; }
 .stat:last-child { border-right: 0; }
 .stat strong { display: block; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .meters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.decision-panel { padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.decision-summary { margin: 0 0 10px; color: var(--cyan); }
+.decision-checks { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.decision-check { padding: 4px 7px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); }
+.decision-check.pass { color: var(--cyan); }.decision-check.blocked { color: var(--red); }
+.decision-panel details { margin-top: 9px; }.decision-panel summary { cursor: pointer; color: var(--muted); }
+.decision-quests { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 7px; margin-top: 10px; }
+.decision-quest { padding: 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
+.decision-quest strong { display: block; margin-bottom: 3px; }.decision-quest small { display: block; color: var(--muted); }
+.decision-history { margin: 10px 0 0; padding-left: 24px; color: var(--muted); }
 .meter-row { display: grid; grid-template-columns: 24px 1fr auto; gap: 9px; align-items: center; }
 .meter-row > span, .meter-row > b { color: var(--muted); font-size: 11px; }
 .meter { height: 8px; overflow: hidden; border-radius: 999px; background: #080c13; }

@@ -51,6 +51,39 @@ function renderBot(bot) {
   rows(card.querySelector(".inventory"), bot.inventory, [i => i.itemId, i => i.description || "—", i => number(i.count)]);
   card.querySelector(".packet").textContent = `Last packet: ${bot.lastPacket || "—"}`;
   card.querySelector(".message").textContent = bot.lastSystemMessage || (bot.isDead ? "Character is dead" : "");
+  const decisions = bot.decisions || [];
+  if (decisions.length) {
+    const latest = decisions[decisions.length - 1];
+    card.querySelector(".decision-summary").textContent =
+      `#${latest.sequence}: ${latest.selectedAction}${latest.selectedQuestId ? ` Q${latest.selectedQuestId}` : ""} · ${latest.outcome} · ${latest.reason}`;
+    const checks = card.querySelector(".decision-checks");
+    for (const check of latest.globalChecks) {
+      const badge = document.createElement("span");
+      badge.className = `decision-check ${check.verdict}`;
+      badge.textContent = `${check.rule}: ${check.verdict} — ${check.reason}`;
+      checks.append(badge);
+    }
+    const quests = card.querySelector(".decision-quests");
+    for (const quest of latest.quests) {
+      const node = document.createElement("div");
+      node.className = "decision-quest";
+      const title = document.createElement("strong");
+      title.textContent = `Q${quest.questId} · ${quest.verdict}`;
+      node.append(title);
+      for (const check of quest.checks) {
+        const line = document.createElement("small");
+        line.textContent = `${check.rule}: ${check.verdict} — ${check.reason}`;
+        node.append(line);
+      }
+      quests.append(node);
+    }
+    const history = card.querySelector(".decision-history");
+    for (const decision of decisions.slice().reverse()) {
+      const entry = document.createElement("li");
+      entry.textContent = `#${decision.sequence} ${decision.selectedAction} · ${decision.outcome}: ${decision.reason}`;
+      history.append(entry);
+    }
+  }
   const age = Math.max(0, (Date.now() - new Date(bot.updatedAt).getTime()) / 1000);
   card.querySelector(".age").textContent = `State age: ${age.toFixed(1)}s`;
   return card;

@@ -5,16 +5,23 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using Aion.Bots.Scenarios;
 
 namespace Aion.LiveBots;
 
 internal sealed class LiveBotDashboardState
 {
 	private readonly ConcurrentDictionary<string, BotDashboardSnapshot> bots = new(StringComparer.Ordinal);
+	private readonly ConcurrentDictionary<string, NaturalDecision[]> decisions = new(StringComparer.Ordinal);
 
 	public void Publish(BotDashboardSnapshot snapshot) => bots[snapshot.Bot] = snapshot;
 
-	public BotDashboardSnapshot[] Snapshot() => bots.Values.OrderBy(bot => bot.Bot, StringComparer.Ordinal).ToArray();
+	public void PublishDecision(string bot, NaturalDecision decision) =>
+		decisions.AddOrUpdate(bot, [decision], (_, prior) => [.. prior.TakeLast(19), decision]);
+
+	public BotDashboardSnapshot[] Snapshot() => bots.Values.OrderBy(bot => bot.Bot, StringComparer.Ordinal)
+		.Select(bot => bot with { Decisions = decisions.TryGetValue(bot.Bot, out NaturalDecision[]? history) ? history : [] })
+		.ToArray();
 }
 
 internal sealed record BotDashboardSnapshot(
@@ -49,7 +56,8 @@ internal sealed record BotDashboardSnapshot(
 	BotDashboardQuest[] ActiveQuests,
 	int[] CompletedQuestIds,
 	BotDashboardItem[] Inventory,
-	string? LastSystemMessage);
+	string? LastSystemMessage,
+	NaturalDecision[]? Decisions = null);
 
 internal sealed record BotDashboardPosition(float X, float Y, float Z, byte Heading);
 internal sealed record BotDashboardObjectCounts(int Players, int Npcs, int Gatherables, int Statics);

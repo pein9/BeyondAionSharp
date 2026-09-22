@@ -28,12 +28,13 @@ public sealed record LiveBotOptions(
 	public int SoakSeconds { get; init; } = 7200;
 	public IReadOnlyList<SoakActivity> SoakActivities { get; init; } = Enum.GetValues<SoakActivity>();
 	public int DashboardPort { get; init; }
+	public int DecisionViewSeconds { get; init; } = 30;
 	internal LiveBotDashboardState Dashboard { get; } = new();
 	public const string Usage = "Usage: dotnet run --project tools/Aion.LiveBots -- --run <id> --output <run-dir> " +
 		"[--scenario manifest-id[,manifest-id]] [--bots N] [--host 127.0.0.1] [--login-port 12106] " +
 		"[--login-host IP] [--chat-host IP] [--game-port 17777] [--chat-port 11241] [--admin-port 17780] [--admin-token TOKEN] " +
 		"[--connect-timeout-seconds 10] [--step-timeout-seconds 15] [--seed N] [--git-sha SHA] " +
-		"[--profile deterministic] [--time-zone ID] [--reentry-seconds 10] [--dashboard-port 0] " +
+		"[--profile deterministic] [--time-zone ID] [--reentry-seconds 10] [--dashboard-port 0] [--decision-view-seconds 30] " +
 		"[--soak-seconds 7200] [--soak-activities Quest,Gather,Craft,Vendor,Trade,Group,Duel,Pvp,Relog,CrashDisconnect]";
 
 	public static LiveBotOptions Parse(string[] args)
@@ -86,8 +87,8 @@ public sealed record LiveBotOptions(
 			throw new ArgumentException($"Scenario requires more than {BotIdentity.MaximumSubjects} subject bots.", "scenario");
 		if (scenarios.Contains("O1", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 1 || stepSeconds < 1050))
 			throw new ArgumentException("O1 must run alone with one subject and at least 1050 seconds per step.");
-		if (scenarios.Contains("NI-01", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 1))
-			throw new ArgumentException("NI-01 must run alone with exactly one retained subject.");
+		if (scenarios.Any(scenario => scenario is "NI-01" or "NI-02") && (scenarios.Length != 1 || bots != 1))
+			throw new ArgumentException("NI-01 and NI-02 must run alone with exactly one retained subject.");
 		if (scenarios.Contains("B2", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 2))
 			throw new ArgumentException("B2 must run alone with exactly two subjects (plus its director).");
 		if (scenarios.Contains("B2F", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 2 || stepSeconds < 180))
@@ -96,6 +97,9 @@ public sealed record LiveBotOptions(
 			throw new ArgumentException("B3 must run alone with one subject, its director and at least 120 seconds per step.");
 		var reentrySeconds = PositiveInt(values, "reentry-seconds", 10, 3600);
 		var dashboardPort = NonNegativeInt(values, "dashboard-port", 0, 65535);
+		var decisionViewSeconds = NonNegativeInt(values, "decision-view-seconds", 30, 600);
+		if (values.ContainsKey("decision-view-seconds") && !scenarios.Contains("NI-02", StringComparer.Ordinal))
+			throw new ArgumentException("--decision-view-seconds requires --scenario NI-02.");
 		if (scenarios.Contains("B4", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 5 || stepSeconds < 180))
 			throw new ArgumentException("B4 must run alone with five subjects and at least 180 seconds per step.");
 		int soakSeconds = PositiveInt(values, "soak-seconds", 7200, 7200);
@@ -120,7 +124,7 @@ public sealed record LiveBotOptions(
 		{
 			"run", "output", "host", "login-host", "chat-host", "login-port", "game-port", "chat-port", "admin-port", "admin-token",
 			"bots", "scenario", "connect-timeout-seconds", "step-timeout-seconds", "reentry-seconds",
-			"seed", "git-sha", "profile", "time-zone", "dashboard-port",
+			"seed", "git-sha", "profile", "time-zone", "dashboard-port", "decision-view-seconds",
 			"soak-seconds", "soak-activities",
 		};
 		var unknown = values.Keys.FirstOrDefault(key => !known.Contains(key));
@@ -149,6 +153,7 @@ public sealed record LiveBotOptions(
 			SoakSeconds = soakSeconds,
 			SoakActivities = soakActivities,
 			DashboardPort = dashboardPort,
+			DecisionViewSeconds = decisionViewSeconds,
 		};
 	}
 

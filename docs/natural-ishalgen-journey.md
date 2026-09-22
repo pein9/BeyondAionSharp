@@ -4,7 +4,8 @@ Status: Phase 10 readiness review completed 2026-09-22 against Java `4.8` at
 `ce54b7931`. The journey is **not yet executable end to end without assistance**:
 the protocol, navigation, gathering and persistence foundations exist, but the
 continuous Priest combat, inventory, quest-planning and recovery policies do not.
-NI-00 and NI-01 are complete; NI-02 awaits maintainer approval. The broader game
+NI-00 through NI-02 are complete. NI-02 selects and explains the next bounded
+step but does not yet execute quest objectives. The broader game
 journey remains a post-Phase 11 review. Review commit: `7d80e48d6` (before
 SHA-recording amend).
 
@@ -119,9 +120,14 @@ These are new journey TODOs, not retroactive claims about the phase scenarios:
   only on an empty account, strictly reuses the same character ID, never deletes
   it, and rejects conflicting or post-boundary state. (`9c02d16ce`, before
   SHA-recording amend)
-- [ ] **NI-02 — Decision loop and trace.** Combine observed world state, eligible
-  work, bounded actions and explanations into a scheduler with no admin gameplay
-  inputs.
+- [x] **NI-02 — Decision loop and trace.** The deterministic scheduler reads the
+  retained Priest's client-observed map, level and quest journals; evaluates all
+  41 frozen quests with level/prerequisite/active/completed checks; chooses the
+  next eligible work in stable order; and records the full rule tree in bot trace
+  and the live dashboard. Client synchronization retries are bounded at two.
+  It stops on crossed Ascension/map boundaries and reports unavailable natural
+  gameplay actions as `awaiting-capability`, not as completed quests. The NI-02
+  LIVE run has no GM gameplay inputs. (`0ed2068407`, before SHA-recording amend)
 - [ ] **NI-03 — Resilient Ishalgen navigation.** Add stuck/progress detection,
   replanning, moving-object reacquisition and reproducible route failures on the
   existing geodata pathfinder.

@@ -22,6 +22,8 @@ param(
 
 	[ValidateRange(0, 65535)]
 	[int]$DashboardPort = 0,
+	[ValidateRange(0, 600)]
+	[int]$DecisionViewSeconds = 30,
 
 	[int]$Seed = 1,
 	[ValidateRange(1, 7200)][int]$SoakSeconds = 7200,
@@ -387,6 +389,9 @@ try {
 		)
 		if ($Scenario -contains 'SOAK') {
 			$botArguments += @('--soak-seconds', $SoakSeconds.ToString(), '--soak-activities', $SoakActivities)
+		}
+		if ($Scenario -contains 'NI-02') {
+			$botArguments += @('--decision-view-seconds', $DecisionViewSeconds.ToString())
 		}
 		if ($Scenario -contains 'O1' -or $Scenario -contains 'B2F' -or $Scenario -contains 'B4') {
 			$childFile = 'dotnet'; $childArguments = $botArguments
