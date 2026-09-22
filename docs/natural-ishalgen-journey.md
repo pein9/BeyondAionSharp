@@ -3,10 +3,11 @@
 Status: Phase 10 readiness review completed 2026-09-22 against Java `4.8` at
 `ce54b7931`. The journey is **not yet executable end to end without assistance**:
 the protocol, navigation, gathering and persistence foundations exist, but the
-continuous Priest combat, inventory, quest-planning and recovery policies do not.
-NI-00 through NI-03 are complete. NI-02 selects and explains the next bounded
-step; NI-03 approaches its first quest starter without accepting the quest.
-Neither step executes quest objectives. The broader game
+inventory, quest execution and durable recovery policies do not.
+NI-00 through NI-04 are complete. NI-02 selects and explains the next bounded
+step; NI-03 approaches its first quest starter without accepting the quest;
+NI-04 proves a short Priest fight/rest loop. These steps do not yet execute the
+41-quest journey. The broader game
 journey remains a post-Phase 11 review. Review commit: `7d80e48d6` (before
 SHA-recording amend).
 
@@ -92,7 +93,7 @@ useful independently of this later journey.
 |---|---|---|
 | Create an Asmodian Priest normally | Mostly ready | The LIVE session supports an explicit base class and lifecycle tests cover Priest; journey entry points still default to Warrior and need a retained Priest identity. |
 | Travel on traversable routes and approach live objects | Partial | Geodata-backed local/journey pathing and checked long-distance LIVE movement exist. Add progress/stuck detection, bounded replanning and moving-target reacquisition. Ishalgen does not require a transport policy. |
-| Priest combat and survival | Not ready | Auto-attack and Mage casting scenarios exist, and the world model tracks HP/MP/skills. There is no Priest skill/cooldown policy, healing, consumable use, retreat, death/revive recovery or adaptive target model. This is the largest blocker. |
+| Priest combat and survival | Policy implemented; bounded LIVE proof | NI-04 chooses only client-observed Sprigg Workers, intersects the frozen level-1–9 Priest map with the learned skill list, gates range/MP/group cooldowns, heals, uses owned starter potions, rests, and bounds retreat/revive attempts. Two ordinary LIVE kills and sit/stand recovery passed. Low-HP, consumable, retreat and death branches are policy-tested but not yet induced in LIVE; longer varied combats remain NI-07/NI-09 evidence. |
 | Gathering | Mostly ready | Natural level-1 gathering already handles occupied/depleted nodes, leases, failures and respawns. Integrate that behavior with Q2133, ordinary failure rates and cube pressure. |
 | Inventory, equipment, skills and economy | Not ready as a policy | Inventory/equipment state and equip/buy/sell primitives exist. Current gear scenarios use GM setup. Add reward choice, upgrade comparison, legitimate skill learning, consumables, quest-item protection, junk sale and cube-pressure decisions. |
 | Quest selection and execution | Not ready | Q4I completes 27 template quests with GM level/items/teleports and omits custom campaigns. Add eligibility/dependency scheduling and natural operations for all 41 frozen quests. |
@@ -142,9 +143,23 @@ These are new journey TODOs, not retroactive claims about the phase scenarios:
   segment progress is a client estimate, not continuous server confirmation;
   interaction and later persistence checks remain separate proofs. (`ced820ba05`,
   before SHA-recording amend)
-- [ ] **NI-04 — Priest combat and survival.** Implement natural target selection,
+- [x] **NI-04 — Priest combat and survival.** Implement natural target selection,
   learned-skill use, range/cast/cooldown/MP handling, self-healing, rest,
-  consumables, retreat and death/revive recovery.
+  consumables, retreat and death/revive recovery. The deterministic level-1–9
+  policy is gated by the client's learned-skill list, uses independent cooldown
+  groups, reserves healing mana, and records each rule check in trace/dashboard.
+  No Priest follow-up chain skill is learnable before Ascension: Smite,
+  Hallowed Strike and Infernal Blaze are openers. Follow-ups require an observed
+  matching opening and their own cooldown; later-class rotation is outside this
+  milestone. A one-bot Docker LIVE run `ni04-20260922-b` completed two normal
+  Sprigg Worker kills with +80 XP each and packet-confirmed sit/stand pauses
+  after kills; it did not need to heal, use potions, retreat or die. Those
+  survival branches are implemented and policy-tested, not claimed LIVE-proven.
+  The bot does not yet decode login-time `SM_ITEM_COOLDOWN`; it conservatively
+  holds both shared-delay starter potions for 30 seconds after reentry.
+  Java specification: `ce54b7931` `ChainCondition`, `ChainSkills`, `Skill`,
+  `CM_CASTSPELL`, `CM_USE_ITEM`, `skill_tree.xml`, and `skill_templates.xml`.
+  (`93dab2180`, before SHA-recording amend)
 - [ ] **NI-05 — Inventory and character growth.** Choose quest rewards, equip
   usable upgrades, learn available skills legitimately, reserve quest items,
   manage cube pressure and buy/sell only with earned kinah.
