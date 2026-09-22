@@ -1,9 +1,11 @@
 # Natural Ishalgen Journey
 
-Status: deferred design, recorded 2026-09-18 after Phase 7. Revisit after Phase 10;
-review the broader game journey after Phase 11. This document does not schedule or
-start implementation. The active sequence remains the
-[end-to-end player simulation plan](e2e-player-simulation-plan.md).
+Status: Phase 10 readiness review completed 2026-09-22 against Java `4.8` at
+`ce54b7931`. The journey is **not yet executable end to end without assistance**:
+the protocol, navigation, gathering and persistence foundations exist, but the
+continuous Priest combat, inventory, quest-planning and recovery policies do not.
+Implementation has not started. The broader game journey remains a post-Phase 11
+review. Review commit: `7d80e48d6` (before SHA-recording amend).
 
 ## Goal
 
@@ -29,28 +31,51 @@ handlers, spawns, rewards, or content to make a checklist completable. Existing
 implementation defects may be diagnosed and fixed through the normal Java-first
 parity process. An upstream content limitation remains a recorded boundary.
 
-Build a reviewed quest list when implementation starts. Include the implemented,
-naturally obtainable Ishalgen quests applicable to the character before Ascension,
-with prerequisites and evidence for the actual acquisition path. Exclude quests
-started by random drops, disabled/event-only content outside the selected profile,
-unimplemented quests, and content unavailable to this character. Ordinary quest
-objectives that require killing and collecting drops remain in scope; the random
-drop exclusion concerns quest starters, not all loot objectives.
+The accepted scope is frozen at **41 quests** for Java/C# revision `ce54b7931`:
 
-The Phase 7 classifier is a useful inventory, but a generated plan or an
-"obtainable" label does not prove natural acquisition. In particular, Q2107's
-starter source still needs verification; the current Q4I runner grants it through
-the director. Q2122 and Q2136 have random-drop starters. These are review notes,
-not a fixed completion count. Freeze the accepted scope before a run; a required
-quest that fails during play remains a failure or blocker rather than being
-silently removed from the denominator.
+- Campaign/prologue: Q2000–Q2007.
+- Other Ishalgen quests: Q2100–Q2106, Q2108–Q2110, Q2112–Q2121,
+  Q2123–Q2129, Q2131–Q2135, and Q2137.
+
+This list includes ordinary kill, collection and gathering objectives. The
+random-drop exclusion applies only to quest starters. A required quest that fails
+during play remains a failure or blocker rather than being silently removed from
+the denominator.
+
+The prerequisite chains visible in the shipped quest data are Q2102 → Q2103,
+Q2104 → Q2106, Q2109 → Q2135, Q2110 → Q2114, Q2115 → Q2131, and
+Q2118 → Q2137 → Q2116 → Q2119. Q2133 is the natural gathering proof: collect
+three Young Azpha items at gathering skill 1 for Nobekk.
+
+### Reviewed exclusions
+
+| Quest/content | Classification | Evidence and treatment |
+|---|---|---|
+| Q2107 | Inactive/unobtainable shipped content | The Rolled Scroll (`182203107`) is required to start the quest, but an exact Java and C# source search finds no drop, reward, vendor or script source. The Q4I director grants it. Do not add a source or count it. |
+| Q2122, Q2136 | Random-drop starters | The shipped Ishalgen global-drop rules provide their starter items at 5%. Excluded by the requested boundary; do not suppress their drops. |
+| Q2111, Q2130 | Disabled/unused | Both use the shipped level-99 gate. Do not enable them. |
+| Q2150, Q2151 | Unimplemented | The shipped script list marks them TODO/no-handler. Do not add handlers for this journey. |
+| Q80160 and Q80619/Q80622/Q80644 | Disabled/event content | Outside the selected normal profile. |
+| Q2144–Q2147 | Post-boundary content | Level 10/16 quests are beyond the pre-Ascension Ishalgen milestone. |
+
+The quest-reward lower bound for the 41 included quests is 155,234 XP (maximum
+156,219 XP), before ordinary kill and gathering XP. The shipped absolute level-9
+threshold is 126,069 XP and level 10 is 182,252 XP. The reviewed content is
+therefore sufficient to reach level 9 without an XP grant while leaving room to
+stop below level 10. Route ordering must still satisfy each quest's level gate.
+
+Q2008 activates at level 9. The accepted stop state is Q2008 present at START,
+step/var 0, with no conversation with Munin and no objectives or class selection.
+`ENABLE_SIMPLE_2NDCLASS` must remain off. The Java and C# Q2008 handlers agree on
+this boundary.
 
 ## Current foundation and remaining work
 
-At `58113f4a8`, real client packets, movement timing, combat, gathering, quest
-dialogs, persistence, and logging are exercised by scenarios. The missing layer
-is a continuous player policy that selects and combines those actions and recovers
-when the world does not follow a prescribed sequence.
+At the Phase 10 closeout, real client packets, movement timing, combat, gathering,
+quest dialogs, persistence, and logging are exercised by scenarios. The missing
+layer is a continuous player policy that selects and combines those actions and
+recovers when the world does not follow a prescribed sequence. P10-05's deferred
+housing/siege/PvP boot tail is unrelated to Ishalgen and does not block this work.
 
 The current [LIVE Q4I runner](../tools/Aion.LiveBots/LiveQuestPlanScenario.cs)
 raises the subject to level 50/Gladiator, boosts attack and gathering, teleports to
@@ -60,20 +85,66 @@ controlled setup; they do not establish natural progression. The present LIVE
 character creation also selects Warrior. Keep these focused regression scenarios
 useful independently of this later journey.
 
-| Capability needed for continuous play | Foundation to review |
-|---|---|
-| Travel across the area on traversable routes; approach moving NPCs; recover from blocked paths; use legitimate transport and pay its costs | Phase 6 movement plus Phase 9 geodata/collision; packet emission alone is insufficient |
-| Priest combat: choose targets and usable skills, respect range/cast/cooldown rules, heal, manage HP/MP, rest, retreat, and recover from death | Phase 6 combat primitives; an adaptive survival policy still needs implementation |
-| Loot, choose usable quest rewards, equip earned upgrades, learn skills legitimately, manage cube space, protect quest items, and buy/sell within earned kinah | Phase 8 inventory, economy, gear, and lifecycle coverage |
-| Gather quest materials at earned skill levels, handling failures, occupied nodes, depletion, respawns, and inventory limits | Phase 8 gathering coverage plus a resource acquisition policy |
-| Select eligible quests, fulfill dependencies, handle implemented custom missions, and earn levels continuously | Phase 7 plans/dialog evidence plus new bot policies for existing content |
-| Resume the same character after relog/restart, reconstruct progress, diagnose stalls, and capture reproducible failures | Phase 10 operations, reports, and client captures |
-| Coexist with human players and tolerate contested mobs/nodes, changing object IDs, and unsolicited packets | LIVE operation and Phase 10 soaks/client validation; group cooperation expands after Phase 11 |
+| Capability needed for continuous play | Readiness | Evidence and remaining gap |
+|---|---|---|
+| Create an Asmodian Priest normally | Mostly ready | The LIVE session supports an explicit base class and lifecycle tests cover Priest; journey entry points still default to Warrior and need a retained Priest identity. |
+| Travel on traversable routes and approach live objects | Partial | Geodata-backed local/journey pathing and checked long-distance LIVE movement exist. Add progress/stuck detection, bounded replanning and moving-target reacquisition. Ishalgen does not require a transport policy. |
+| Priest combat and survival | Not ready | Auto-attack and Mage casting scenarios exist, and the world model tracks HP/MP/skills. There is no Priest skill/cooldown policy, healing, consumable use, retreat, death/revive recovery or adaptive target model. This is the largest blocker. |
+| Gathering | Mostly ready | Natural level-1 gathering already handles occupied/depleted nodes, leases, failures and respawns. Integrate that behavior with Q2133, ordinary failure rates and cube pressure. |
+| Inventory, equipment, skills and economy | Not ready as a policy | Inventory/equipment state and equip/buy/sell primitives exist. Current gear scenarios use GM setup. Add reward choice, upgrade comparison, legitimate skill learning, consumables, quest-item protection, junk sale and cube-pressure decisions. |
+| Quest selection and execution | Not ready | Q4I completes 27 template quests with GM level/items/teleports and omits custom campaigns. Add eligibility/dependency scheduling and natural operations for all 41 frozen quests. |
+| Persistence and recovery | Partial | Relog/crash/save evidence and state oracles exist. A connection failure still ends a run; add checkpoint reconstruction, same-character resume, stall classification and bounded recovery. |
+| Share a world with a human player | Not ready | Multi-bot contention is proven only in isolated LIVE stacks. Add an explicit attach mode that never owns server/DB lifecycle, then validate visibility with the real client. P10-07's client capture remains deferred. |
 
-Completing Phases 8–11 supplies tested mechanics and diagnostics. It does not by
-itself deliver autonomous progression: that orchestration is a separate future
-implementation. Phase 10's loop over existing scenarios is not evidence that a
-fresh character can progress through an area without setup assistance.
+Phases 8–10 supplied tested mechanics and diagnostics. They did not deliver
+autonomous progression: Phase 10's loop over existing scenarios is not evidence
+that a fresh character can progress through an area without setup assistance.
+Phase 11 is not a prerequisite for this single-character starter-zone journey;
+its group/scheduled-content work matters to the later whole-game goal.
+
+## Ordered implementation path
+
+These are new journey TODOs, not retroactive claims about the phase scenarios:
+
+- [ ] **NI-00 — Contract fixture.** Encode the 41 quest IDs, exclusions,
+  prerequisites, XP/level gates, Q2133 source and Q2008 stop state as a reviewed,
+  machine-checked journey contract.
+- [ ] **NI-01 — Natural Priest identity.** Create one access-level-0 Asmodian
+  Priest through normal packets and retain the same account/character across runs.
+- [ ] **NI-02 — Decision loop and trace.** Combine observed world state, eligible
+  work, bounded actions and explanations into a scheduler with no admin gameplay
+  inputs.
+- [ ] **NI-03 — Resilient Ishalgen navigation.** Add stuck/progress detection,
+  replanning, moving-object reacquisition and reproducible route failures on the
+  existing geodata pathfinder.
+- [ ] **NI-04 — Priest combat and survival.** Implement natural target selection,
+  learned-skill use, range/cast/cooldown/MP handling, self-healing, rest,
+  consumables, retreat and death/revive recovery.
+- [ ] **NI-05 — Inventory and character growth.** Choose quest rewards, equip
+  usable upgrades, learn available skills legitimately, reserve quest items,
+  manage cube pressure and buy/sell only with earned kinah.
+- [ ] **NI-06 — Natural gathering.** Integrate the proven gathering behavior with
+  Q2133 and the shared decision/inventory/recovery policies.
+- [ ] **NI-07 — Forty-one-quest execution.** Support the custom campaigns and
+  quest-specific operations omitted by Q4I, then complete the frozen contract in
+  SIM without grants, forced state, setup teleports or boosted stats.
+- [ ] **NI-08 — Durable resume and diagnosis.** Reconstruct state after relog or
+  server interruption, resume the same character, and preserve a minimal failure
+  package for stalls, disconnects and server defects.
+- [ ] **NI-09 — Isolated LIVE acceptance.** Complete the entire contract in the
+  normal Docker-only isolated LIVE stack under ordinary rates and rules.
+- [ ] **NI-10 — Existing-world attach.** Add an explicit operator-selected mode
+  that attaches to a retained server and never creates, drops or owns its database,
+  containers or lifecycle; prove the unattended bot can coexist with a human.
+- [ ] **NI-11 — Real-client observation.** With the authorized Computer Use
+  workflow, follow the bot in the 4.8 client and retain visual/log evidence without
+  assisting it. This is the deferred P10-07-style proof, not a gameplay oracle.
+
+Implement NI-00 first, then NI-01/NI-02. NI-03 through NI-06 build the reusable
+player policy; NI-07 integrates it. NI-08 precedes either acceptance run, and
+NI-09 must pass before the retained-world NI-10/NI-11 proof. Failures caused by
+existing Java/C# content follow the normal Java-first parity process; shared Java
+limitations remain declared boundaries rather than invented content.
 
 ## Rules for a natural run
 
@@ -148,17 +219,18 @@ unsatisfied journey objective. Successful retries must not erase earlier errors.
 
 ## Revisit checklist
 
-- [ ] After Phase 10, assess natural travel, Priest survival, gathering, inventory,
-  persistence, and LIVE coexistence against the capability table above.
-- [ ] Freeze the eligible Ishalgen quest set and validate starter sources, level
-  gates, prerequisites, and the Ascension stopping condition at the then-current
-  Java reference.
-- [ ] Turn the remaining policy gaps into ordered implementation TODOs. Keep the
-  current SIM/LIVE regression suites and their evidence intact.
+- [x] After Phase 10, assess natural travel, Priest survival, gathering, inventory,
+  persistence, and LIVE coexistence against the capability table above. (`7d80e48d6`)
+- [x] Freeze the eligible Ishalgen quest set and validate starter sources, level
+  gates, prerequisites, and the Ascension stopping condition at Java
+  `ce54b7931`. (`7d80e48d6`)
+- [x] Turn the remaining policy gaps into ordered implementation TODOs. Keep the
+  current SIM/LIVE regression suites and their evidence intact. (`7d80e48d6`)
 - [ ] After Phase 11, define the broader character-to-endgame milestones, including
   required group composition, legitimate access to scheduled content, and durable
   progress across areas and sessions. Honor existing deferred-content decisions.
 
-These are review checkpoints, not a promise that the preceding phases will have
-implemented every capability. Continue Phases 8–11 in their existing order; decide
-the natural journey's implementation scope using the resulting evidence.
+The Phase 10 review is a readiness decision, not an implementation claim. The
+open NI TODOs define the work required for the natural Ishalgen proof. The
+post-Phase 11 checkpoint remains responsible for defining the much broader
+character-to-endgame contract.

@@ -10,11 +10,11 @@ The maintainer's decisions (§6) were applied the same day: no hosted CI and no 
 local scripts. The `docker/` compose stack stays: it is how the emulator is deployed and run, and LIVE bot
 runs use their own isolated compose project.
 
-**Deferred continuous-play goal.** [Natural Ishalgen Journey](natural-ishalgen-journey.md)
-records the later goal of an ordinary player bot progressing from character creation through implemented
-content without GM assistance, visible alongside human players. Review readiness after Phase 10 and the
-broader game journey after Phase 11. This is additional bot-policy work; completing the scenario phases
-alone does not prove autonomous progression. It does not authorize adding unimplemented quests or content.
+**Continuous-play follow-up.** The Phase 10 readiness review in
+[Natural Ishalgen Journey](natural-ishalgen-journey.md) freezes a 41-quest starter-zone contract and an
+ordered NI implementation backlog. The journey is not yet executable without assistance: Priest combat,
+inventory, quest-planning and recovery policies remain. The broader game journey is still reviewed after
+Phase 11. This does not authorize adding unimplemented quests or content.
 
 ## How to use this document
 
@@ -2562,8 +2562,13 @@ entry has an owner and an unexpired date. Candidates 09 and 10 satisfy this clos
 and a two-hour ten-bot soak are explicitly waived. P10-02, P10-05, P10-06 and P10-07 remain deferred and uncompleted;
 their original acceptance criteria stay visible for the eventual deferred-work review.
 
-**Follow-up checkpoint:** review [Natural Ishalgen Journey](natural-ishalgen-journey.md#revisit-checklist)
-for readiness and remaining player-policy work. This deferred review does not change Phase 10's done-when.
+**Follow-up checkpoint completed:** the
+[Natural Ishalgen Journey](natural-ishalgen-journey.md#revisit-checklist) readiness review freezes the
+natural pre-Ascension scope at 41 quests and orders the remaining work as NI-00 through NI-11. The result is
+not an end-to-end pass: autonomous Priest combat/survival, inventory/growth, all-quest scheduling, durable
+resume and safe retained-world attachment still need implementation. P10-05's housing/siege/PvP boot tail
+does not block Ishalgen. Review commit: `7d80e48d6` (before SHA-recording amend). This review does not change
+Phase 10's done-when.
 
 ### Phase 11 — Group and scheduled content
 
@@ -2692,6 +2697,7 @@ exits (`docker compose events`) and MySQL errors.
 | D19 | Correct shared upstream defects blocking the two-GS transfer and Chat-gag journeys (§7/118–119) | Scoped C# production fixes with regression tests and real journey evidence | **Partially superseded by D20** 2026-09-20: the Chat-gag correction remains approved and verified. The earlier transfer authorization produced preserved diagnostics and wire/relay checkpoints, but D20 ends further transfer work. Other Java-spec rules, deferrals and the ten-concurrent-bot cap remain unchanged |
 | D20 | Product topology and character-transfer acceptance | Treat BeyondAionSharp as one game server; character transfer is unsupported | **Decided** 2026-09-20: the maintainer clarified that this emulator has one server and does not support transferring characters. BA-001 and transfer-only BA-003 acceptance are not applicable; do not run more two-GS transfer journeys or add transfer fixes. Preserve existing code, tests and failed evidence as historical unless separately asked to remove them. P10-09 closes on the supported BA-002/003/006 journeys; BA-005 remains deferred under D7 |
 | D21 | Phase 10 acceptance runtime | Stop additional clean Full runs and do not run a two-hour soak; accept the non-deferred Phase 10 closeout from the retained evidence | **Decided** 2026-09-22: the maintainer determined the runtime is not worth the marginal confidence. Candidates 09 and 10 remain the final complete clean Breadth evidence. Interrupted candidate 11 is uncounted. Close P10-10 and proceed to Phase 11; keep P10-02 capacity, P10-05 boot-tail content, P10-06 Java runtime comparison and P10-07 client capture deferred and visibly incomplete. Do not describe the waived soak/capacity work as passed |
+| D22 | Natural Ishalgen content and implementation boundary | Freeze the naturally obtainable pre-Ascension contract; build bot policy without inventing server content | **Reviewed** 2026-09-22 against Java/C# `ce54b7931`: include 41 quests (Q2000–Q2007 plus the listed natural Q2100-series set); exclude Q2107 because its required starter has no shipped source, Q2122/Q2136 because their starters are random drops, and disabled, unimplemented, event or post-boundary content. Stop Q2008 at its initial level-9 state. P10-05 is unrelated. Implement NI-00 through NI-11 in the journey document before claiming a natural end-to-end pass. Review commit: `7d80e48d6` (before SHA-recording amend) |
 
 ---
 
