@@ -4540,3 +4540,41 @@ scenario passed and no quarantine. Full-ledger promotion also passed against the
 same revision. This is clean Full candidate 4/5. P10-10 and Phase 10 remain open
 for one more consecutive clean run and the two-hour ten-bot soak. Checkpoint
 receipt: `3b446e9a3` (before SHA-recording amend).
+
+## P10-10 failed infrastructure attempt 08 and clean-streak reset
+
+`p10-accept-08` ran at revision
+`63d32f26a6e7befcac84a8cb664339060ca3b159` with the same supported Breadth
+selection, two SIM shards and Host bot execution. It is preserved as a failed
+Full attempt after 5,855.012 seconds and does not count as candidate 5.
+
+All 72 selected SIM outcomes completed successfully before LIVE startup. This
+included the same catalog totals as candidates 1-4: skills 5,033/5,033; trade
+2,290 rows with 1,304 passed, 816 unreachable and 170 inactive; teleport 284
+with 238 passed and 46 unreachable; bind 129 with 89 passed and 40 unreachable;
+craft 12,494/12,494; and gather 756 with 374 passed and 382 unreachable. Both
+geodata fear and knockback checks passed against open ground and wall collision.
+
+The first LIVE L0 child failed before creating scenario evidence. Its one
+policy-permitted fresh retry also failed during `docker compose up`; the only
+native diagnostic was Docker's Windows interactive-terminal error `failed to
+get console: The handle is invalid.` No LIVE bot scenario started, so the report
+correctly marks all 47 LIVE outcomes skipped and uncredited rather than inferring
+coverage. Post-failure diagnostics found Docker MySQL healthy, no game/login/chat
+listener occupying the configured ports, no retained containers from either
+failed Compose project, and a passing fresh-stack retry-admission receipt. This
+classifies the attempt as a launch-environment failure, not a game-behavior pass,
+game-behavior failure, or character-transfer result. The next attempt must be
+launched with pipe-backed output rather than an interactive PTY.
+
+Immutable SHA-256 receipts:
+
+- `report.json`: `8d63037c04549f75614e40ad299256d73ae46e0766891fc45e4817f566735e8c`
+- `live-attempts/live-l0.json`: `eebff171b6bca8a8d79a568b7a8e995a2f383cbfbd4be28e09f2de4226839aa2`
+
+The Full-history ledger retains attempt 08 as failed. Because the acceptance
+contract requires consecutive clean Full runs, the active streak is reset to
+0/5; candidates 1-4 remain useful historical evidence but no longer form the
+current acceptance streak. P10-10 and Phase 10 remain open for five new
+consecutive clean Breadth runs and the two-hour ten-bot soak. Checkpoint receipt:
+`08e81ea7f` (before SHA-recording amend).

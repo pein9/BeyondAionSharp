@@ -2390,6 +2390,20 @@ real geodata on in production immediately, because geo is enabled by default; th
   remain sequential with peak one. Character transfer remains outside this single-server emulator and is
   neither selected nor counted under D20. One further clean Breadth run and the two-hour ten-bot soak remain.
   Checkpoint receipt: `3b446e9a3` (before SHA-recording amend).
+  Complete Breadth attempt `p10-accept-08` at revision `63d32f26a` is retained as a failed infrastructure
+  attempt and does not count as candidate 5. All 72 selected SIM outcomes passed, including the exact prior
+  catalog totals and both geodata displacement checks, before the first LIVE step failed to create its Docker
+  stack. Both the original L0 attempt and its one policy-permitted fresh retry exited during `docker compose up`
+  with Docker's Windows PTY error `failed to get console: The handle is invalid.` No LIVE bot scenario started;
+  47 LIVE outcomes are therefore explicitly skipped/uncredited. Docker MySQL remained healthy, the game/login/chat
+  ports were free, both failed projects retained no containers, and the retry-admission cleanup receipt passed.
+  The immutable `report.json` and LIVE-attempt receipts are
+  `8d63037c04549f75614e40ad299256d73ae46e0766891fc45e4817f566735e8c` and
+  `eebff171b6bca8a8d79a568b7a8e995a2f383cbfbd4be28e09f2de4226839aa2`. Because P10-10 requires
+  consecutive clean Full runs, this failure resets the active streak to 0/5; the four earlier clean candidates
+  remain historical evidence. The next attempt must use pipe-backed execution rather than an interactive PTY,
+  and five new consecutive clean Breadth runs plus the two-hour ten-bot soak remain. Checkpoint receipt:
+  `08e81ea7f` (before SHA-recording amend).
   **Aggregate ledger safeguard checkpoint (`198500442`):** child watchers only record observations; their `FullRun`
   flag cannot mark an absent fingerprint fixed (§7/129). After aggregate reporting and flake-history
   persistence succeed, the Full parent invokes a read-only raw-evidence gate before ledger mutation.
