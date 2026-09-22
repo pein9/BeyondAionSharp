@@ -33,6 +33,19 @@ public static class NaturalIshalgenNavigator
 
 	public static async Task<NaturalNavigationResult> ApproachNpcAsync(int mapId, int npcTemplateId,
 		BotPosition staticAnchor, INaturalNavigationDriver driver, CancellationToken token = default)
+		=> await ApproachObservedObjectAsync(mapId, npcTemplateId, staticAnchor, driver, "NPC", token);
+
+	public static async Task<NaturalNavigationResult> ApproachObservedObjectAsync(int mapId, int templateId,
+		BotPosition staticAnchor, INaturalNavigationDriver driver, string kind, CancellationToken token = default)
+		=> await ApproachAsync(mapId, templateId, staticAnchor, driver, kind, false, token);
+
+	public static async Task<NaturalNavigationResult> ExploreAnchorAsync(int mapId, int templateId,
+		BotPosition staticAnchor, INaturalNavigationDriver driver, string kind, CancellationToken token = default)
+		=> await ApproachAsync(mapId, templateId, staticAnchor, driver, kind, true, token);
+
+	private static async Task<NaturalNavigationResult> ApproachAsync(int mapId, int templateId,
+		BotPosition staticAnchor, INaturalNavigationDriver driver, string kind, bool allowAnchorOnly,
+		CancellationToken token)
 	{
 		ArgumentNullException.ThrowIfNull(driver);
 		int routeSearches = 0, segments = 0, replans = 0, targetWaits = 0, sequence = 0;
@@ -46,15 +59,15 @@ public static class NaturalIshalgenNavigator
 			if (observed.MapId != mapId || observed.Position is not BotPosition start || observed.IsDead)
 				return Fail("Map, position, or survival state changed during navigation.", observed);
 			NaturalNavigationObject? target = observed.Npcs
-				.Where(npc => npc.TemplateId == npcTemplateId)
+				.Where(npc => npc.TemplateId == templateId)
 				.OrderBy(npc => Distance(start, npc.Position)).ThenBy(npc => npc.ObjectId).FirstOrDefault();
 			if (target != null)
 			{
 				if (Distance(start, target.Position) <= ArrivalRadius)
 				{
-					Emit("navigation-arrived", "completed", "Within interaction approach radius of a client-observed NPC.",
+					Emit("navigation-arrived", "completed", $"Within interaction approach radius of a client-observed {kind}.",
 						start, target.Position, target.ObjectId);
-					return new(true, "Observed NPC approached; no quest interaction performed.", target.ObjectId, routeSearches, segments);
+					return new(true, $"Observed {kind} approached; no interaction performed.", target.ObjectId, routeSearches, segments);
 				}
 				if (targetId != target.ObjectId || Distance(destination, target.Position) > TargetMovementThreshold)
 				{
@@ -63,7 +76,7 @@ public static class NaturalIshalgenNavigator
 					targetId = target.ObjectId;
 					destination = target.Position;
 					route = [];
-					Emit("target-reacquired", "planned", "Using the latest client-observed NPC object and position.",
+					Emit("target-reacquired", "planned", $"Using the latest client-observed {kind} object and position.",
 						start, destination, targetId);
 				}
 			}
@@ -71,15 +84,21 @@ public static class NaturalIshalgenNavigator
 			{
 				if (++targetWaits > MaximumTargetWaits)
 					return Fail("Observed target disappeared and did not reappear within the bounded wait.", observed);
-				Emit("target-lost", "planned", "NPC disappeared; waiting for another observed instance.", start, destination, targetId);
+				Emit("target-lost", "planned", $"{kind} disappeared; waiting for another observed instance.", start, destination, targetId);
 				await driver.SynchronizeAsync(token);
 				continue;
 			}
 			else if (Distance(start, staticAnchor) <= ArrivalRadius)
 			{
+				if (allowAnchorOnly)
+				{
+					Emit("anchor-observed", "completed", $"Reached the shipped {kind} area hint; rescan client-visible objects.",
+						start, staticAnchor, null);
+					return new(true, "Reached area hint without assuming a gatherable is present.", null, routeSearches, segments);
+				}
 				if (++targetWaits > MaximumTargetWaits)
-					return Fail("Reached the static area anchor but no NPC was observed.", observed);
-				Emit("await-observed-target", "planned", "Area anchor reached; only client packets may identify the NPC.",
+					return Fail($"Reached the static area anchor but no {kind} was observed.", observed);
+				Emit("await-observed-target", "planned", $"Area anchor reached; only client packets may identify the {kind}.",
 					start, staticAnchor, null);
 				await driver.SynchronizeAsync(token);
 				continue;
@@ -92,7 +111,7 @@ public static class NaturalIshalgenNavigator
 				routeIndex = 0;
 				if (route.Count == 0)
 					return Fail("No collision-checked route to the current destination.", observed);
-				Emit(targetId == null ? "route-to-anchor" : "route-to-observed-npc", "planned",
+				Emit(targetId == null ? "route-to-anchor" : kind == "NPC" ? "route-to-observed-npc" : "route-to-observed-object", "planned",
 					$"Collision-checked path has {route.Count} points; travel is segmented and speed-paced.",
 					start, destination, targetId, route.ToArray());
 			}
@@ -128,7 +147,7 @@ public static class NaturalIshalgenNavigator
 		}
 		void Emit(string action, string outcome, string reason, BotPosition? position, BotPosition goal,
 			int? objectId, BotPosition[]? plannedRoute = null) =>
-			driver.Record(new NaturalNavigationEvent(++sequence, action, outcome, reason, mapId, npcTemplateId,
+			driver.Record(new NaturalNavigationEvent(++sequence, action, outcome, reason, mapId, templateId,
 				position, goal, objectId, routeSearches, segments, plannedRoute));
 	}
 

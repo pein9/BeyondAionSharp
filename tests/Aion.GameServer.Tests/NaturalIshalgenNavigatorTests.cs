@@ -6,6 +6,17 @@ namespace Aion.GameServer.Tests;
 public sealed class NaturalIshalgenNavigatorTests
 {
 	[Fact]
+	public async Task ExploringSpawnHintDoesNotInventGatherableObject()
+	{
+		var driver = new FakeDriver([]);
+		NaturalNavigationResult result = await NaturalIshalgenNavigator.ExploreAnchorAsync(220010000, 400651,
+			At(8), driver, "gatherable");
+		Assert.True(result.Arrived);
+		Assert.Null(result.TargetObjectId);
+		Assert.Contains(driver.Events, item => item.Action == "anchor-observed" && item.Outcome == "completed");
+	}
+
+	[Fact]
 	public async Task SegmentsCheckedRouteAndStopsAtObservedNpcWithoutInteracting()
 	{
 		var driver = new FakeDriver([new(77, 203500, At(20))]);

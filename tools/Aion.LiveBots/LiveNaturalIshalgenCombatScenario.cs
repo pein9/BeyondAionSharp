@@ -75,6 +75,17 @@ public static partial class LiveBotRunner
 		public int Kills { get; private set; }
 
 		public async Task ProveAsync(CancellationToken token)
+			=> await FightAsync(2, null, token);
+
+		public async Task ReachLevelAsync(ushort targetLevel, CancellationToken token)
+		{
+			if (targetLevel != 2) throw new ArgumentOutOfRangeException(nameof(targetLevel));
+			await FightAsync(20, targetLevel, token);
+			if (actor.Session.Api.World.Level < targetLevel)
+				throw new InvalidDataException("Ordinary Sprigg combat did not reach level 2 within twenty kills.");
+		}
+
+		private async Task FightAsync(int maximumKills, ushort? targetLevel, CancellationToken token)
 		{
 			LiveBotSession session = actor.Session;
 			BotWorldModel world = session.Api.World;
@@ -92,7 +103,7 @@ public static partial class LiveBotRunner
 				if (known != null && saved.RemainingSeconds > 0)
 					cooldowns[known.CooldownId] = enteredAt.AddSeconds(saved.RemainingSeconds);
 			}
-			for (int kill = 0; kill < 2; kill++)
+			for (int kill = 0; kill < maximumKills && (targetLevel == null || world.Level < targetLevel); kill++)
 			{
 				await RecoverAsync(token, forceRest: kill > 0);
 				int target = await SelectSpriggAsync(token);

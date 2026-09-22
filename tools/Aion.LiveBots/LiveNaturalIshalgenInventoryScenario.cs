@@ -48,52 +48,7 @@ public static partial class LiveBotRunner
 			plan = policy.Decide(world);
 			PublishInventoryDecision(options, actor, plan, "post-equip-inventory", 2);
 			if (plan.Sales.Count != 0)
-			{
-				BotNavigationAssets assets = await BotNavigationAssets.LoadAsync(root,
-					Path.Combine(options.OutputDirectory, "navigation-cache"), token);
-				int channel = world.ChannelInfo?.Index ?? 0;
-				actor.Session.Navigation = assets.StarterRoute(Race.ASMODIANS, channel + 1);
-				BotPosition anchor = ReadIshalgenVendorAnchor(root);
-				var navigation = new LiveNaturalIshalgenNavigationDriver(options, actor, 2, selectedQuestId: null);
-				NaturalNavigationResult result = await NaturalIshalgenNavigator.ApproachNpcAsync(
-					220010000, IshalgenVendor, anchor, navigation, token);
-				if (!result.Arrived || result.TargetObjectId is not int vendor)
-					throw new InvalidDataException($"Could not reach an observed active vendor: {result.Reason}");
-				await actor.StepAsync("sell-unneeded-items", async ct =>
-				{
-					LiveBotSession session = actor.Session;
-					await session.SendPacketAsync(session.Api.TalkTo(vendor), ct);
-					await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), ct,
-						packet => packet.Get<int>("targetObjectId") == vendor);
-					await session.SendPacketAsync(session.Api.SelectDialog(vendor, 2), ct);
-					var trade = await session.WaitForPacketAsync(typeof(SM_TRADELIST), ct,
-						packet => packet.Get<int>("targetObjectId") == vendor);
-					if (!trade.Get<bool>("showSellTab"))
-						throw new InvalidDataException("The client-observed vendor has no active sell tab.");
-					await session.SendPacketAsync(session.Api.SelectDialog(vendor, 3), ct);
-					await session.WaitForPacketAsync(typeof(SM_SELL_ITEM), ct,
-						packet => packet.Get<int>("targetObjectId") == vendor);
-					foreach (NaturalInventoryDecision sale in policy.Decide(world).Sales)
-					{
-						BotInventoryItem owned = world.Inventory[sale.ObjectId];
-						long before = owned.Count;
-						long kinah = world.Kinah;
-						if (before <= 0 || before > 20000) throw new InvalidDataException("Unsupported sale stack count.");
-						await session.SendPacketAsync(session.Api.Sell(vendor, [(owned.ObjectId, before)]), ct);
-						await session.SynchronizeAsync(ct);
-						if (world.Inventory.TryGetValue(owned.ObjectId, out BotInventoryItem? remaining) && remaining.Count != 0)
-							throw new InvalidDataException($"Sale of {owned.ItemId} was not reflected in client inventory.");
-						if (world.Kinah < kinah)
-							throw new InvalidDataException("Kinah decreased during a sell-only transaction.");
-						actor.Trace.WriteAction(actor.LastStep, "natural:item-sold", new Dictionary<string, object?>
-						{
-							["itemId"] = owned.ItemId, ["objectId"] = owned.ObjectId, ["count"] = before,
-							["kinahBefore"] = kinah, ["kinahAfter"] = world.Kinah,
-						});
-					}
-					await session.SendPacketAsync(session.Api.CloseDialog(vendor), ct);
-				}, token);
-			}
+				await SellUnneededAtVendorAsync(options, actor, policy, root, token);
 			NaturalInventoryPlan after = policy.Decide(world);
 			PublishInventoryDecision(options, actor, after, "inventory-housekeeping-complete", 3);
 			if (after.Sales.Count != 0)
@@ -119,12 +74,64 @@ public static partial class LiveBotRunner
 		}
 	}
 
-	private static BotPosition ReadIshalgenVendorAnchor(string root)
+	private static async Task SellUnneededAtVendorAsync(LiveBotOptions options, L0Actor actor,
+		NaturalIshalgenInventoryPolicy policy, string root, CancellationToken token)
+	{
+		BotWorldModel world = actor.Session.Api.World;
+		if (actor.Session.Navigation == null)
+		{
+			BotNavigationAssets assets = await BotNavigationAssets.LoadAsync(root,
+				Path.Combine(options.OutputDirectory, "navigation-cache"), token);
+			int channel = world.ChannelInfo?.Index ?? 0;
+			actor.Session.Navigation = assets.StarterRoute(Race.ASMODIANS, channel + 1);
+		}
+		var navigation = new LiveNaturalIshalgenNavigationDriver(options, actor, 2, selectedQuestId: null);
+		NaturalNavigationResult result = await NaturalIshalgenNavigator.ApproachNpcAsync(
+			220010000, IshalgenVendor, ReadIshalgenNpcAnchor(root, IshalgenVendor), navigation, token);
+		if (!result.Arrived || result.TargetObjectId is not int vendor)
+			throw new InvalidDataException($"Could not reach an observed active vendor: {result.Reason}");
+		await actor.StepAsync("sell-unneeded-items", async ct =>
+		{
+			LiveBotSession session = actor.Session;
+			await session.SendPacketAsync(session.Api.TalkTo(vendor), ct);
+			await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), ct,
+				packet => packet.Get<int>("targetObjectId") == vendor);
+			await session.SendPacketAsync(session.Api.SelectDialog(vendor, 2), ct);
+			var trade = await session.WaitForPacketAsync(typeof(SM_TRADELIST), ct,
+				packet => packet.Get<int>("targetObjectId") == vendor);
+			if (!trade.Get<bool>("showSellTab"))
+				throw new InvalidDataException("The client-observed vendor has no active sell tab.");
+			await session.SendPacketAsync(session.Api.SelectDialog(vendor, 3), ct);
+			await session.WaitForPacketAsync(typeof(SM_SELL_ITEM), ct,
+				packet => packet.Get<int>("targetObjectId") == vendor);
+			foreach (NaturalInventoryDecision sale in policy.Decide(world).Sales)
+			{
+				BotInventoryItem owned = world.Inventory[sale.ObjectId];
+				long before = owned.Count;
+				long kinah = world.Kinah;
+				if (before <= 0 || before > 20000) throw new InvalidDataException("Unsupported sale stack count.");
+				await session.SendPacketAsync(session.Api.Sell(vendor, [(owned.ObjectId, before)]), ct);
+				await session.SynchronizeAsync(ct);
+				if (world.Inventory.TryGetValue(owned.ObjectId, out BotInventoryItem? remaining) && remaining.Count != 0)
+					throw new InvalidDataException($"Sale of {owned.ItemId} was not reflected in client inventory.");
+				if (world.Kinah < kinah)
+					throw new InvalidDataException("Kinah decreased during a sell-only transaction.");
+				actor.Trace.WriteAction(actor.LastStep, "natural:item-sold", new Dictionary<string, object?>
+				{
+					["itemId"] = owned.ItemId, ["objectId"] = owned.ObjectId, ["count"] = before,
+					["kinahBefore"] = kinah, ["kinahAfter"] = world.Kinah,
+				});
+			}
+			await session.SendPacketAsync(session.Api.CloseDialog(vendor), ct);
+		}, token);
+	}
+
+	private static BotPosition ReadIshalgenNpcAnchor(string root, int templateId)
 	{
 		XElement spawns = XDocument.Load(Path.Combine(root,
 			"game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml")).Root!;
-		XElement spot = spawns.Descendants("spawn").Single(spawn => (int)spawn.Attribute("npc_id")! == IshalgenVendor)
-			.Element("spot") ?? throw new InvalidDataException("Shipped vendor spawn has no approach anchor.");
+		XElement spot = spawns.Descendants("spawn").Single(spawn => (int)spawn.Attribute("npc_id")! == templateId)
+			.Element("spot") ?? throw new InvalidDataException($"Shipped NPC {templateId} has no approach anchor.");
 		return new((float)spot.Attribute("x")!, (float)spot.Attribute("y")!, (float)spot.Attribute("z")!,
 			checked((byte)(int)spot.Attribute("h")!));
 	}

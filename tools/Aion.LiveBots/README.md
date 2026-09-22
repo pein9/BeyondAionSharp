@@ -50,6 +50,23 @@ must select the same character id. The output includes
 post-boundary level or pending deletion is a failure and is never repaired with GM
 or database mutation.
 
+## NI-06: natural Azpha gathering for Q2133
+
+```powershell
+pwsh -NoProfile -File scripts/live/run-live.ps1 -Run ni06-check `
+  -Scenario NI-06 -Bots 1 -StepTimeoutSeconds 1200 `
+  -DashboardPort 17880 -DecisionViewSeconds 180
+```
+
+Open <http://127.0.0.1:17880/> while the command is running. The retained Priest
+earns level 2 by ordinary Sprigg combat if needed, walks to Nobekk, accepts Q2133,
+and gathers three Young Azpha with normal failure rates. A failed gather consumes
+one of that node's three uses; the bot seeks another client-observed node or a
+shipped spawn hint, then waits for normal respawn if necessary. All waits, routes,
+outcomes, and inventory decisions appear in the dashboard and bot trace. It
+returns to Nobekk and confirms journal completion without GM actions or buying.
+The page closes when the process exits; the run artifacts remain.
+
 ## O1: server crash and duplicate login
 
 Run through the owning Docker controller, not the standalone bot command:

@@ -59,6 +59,8 @@ public static partial class LiveBotRunner
 			return await RunNaturalIshalgenCombatAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "NI-05" }])
 			return await RunNaturalIshalgenInventoryAsync(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "NI-06" }])
+			return await RunNaturalIshalgenGatheringAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "NI-02" }])
 			return await RunNaturalIshalgenDecisionAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "B2" }])

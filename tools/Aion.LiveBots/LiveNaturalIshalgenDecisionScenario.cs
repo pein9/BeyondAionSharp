@@ -79,7 +79,8 @@ public static partial class LiveBotRunner
 	}
 
 	private sealed class LiveNaturalIshalgenNavigationDriver(LiveBotOptions options, L0Actor actor, int decisionSequence,
-		int? selectedQuestId = 2101)
+		int? selectedQuestId = 2101, BotKnownObjectKind objectKind = BotKnownObjectKind.Npc,
+		int? targetObjectId = null)
 		: INaturalNavigationDriver
 	{
 		public NaturalNavigationObservation Observe()
@@ -87,7 +88,7 @@ public static partial class LiveBotRunner
 			BotWorldModel world = actor.Session.Api.World;
 			BotPosition? position = world.MapId == null ? null : actor.Session.CurrentPosition;
 			return new(world.MapId, position, world.IsDead, world.Objects.Values
-				.Where(item => item.Kind == BotKnownObjectKind.Npc)
+				.Where(item => item.Kind == objectKind && (targetObjectId == null || item.ObjectId == targetObjectId))
 				.Select(item => new NaturalNavigationObject(item.ObjectId, item.TemplateId ?? 0, item.Position)).ToArray());
 		}
 

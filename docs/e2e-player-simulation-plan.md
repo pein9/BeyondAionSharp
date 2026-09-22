@@ -13,7 +13,8 @@ runs use their own isolated compose project.
 **Continuous-play follow-up.** The Phase 10 readiness review in
 [Natural Ishalgen Journey](natural-ishalgen-journey.md) freezes a 41-quest starter-zone contract and an
 ordered NI implementation backlog. The journey is not yet executable without assistance: bounded Priest
-combat/rest and inventory/sell-only policies exist, while quest execution and durable recovery policies remain. The broader
+combat/rest, inventory/sell-only and Q2133 natural gathering policies exist, while the remaining quest
+execution and durable recovery policies remain. The broader
 game journey is still reviewed after Phase 11. This does not authorize adding unimplemented quests or content.
 
 ## How to use this document
@@ -119,6 +120,7 @@ every future run, including director/setup accounts.
 | Combat, healing, skills, aggro and resurrection | C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15 | Implemented (P6/P9); Fast covers C1–C3 | C1 implemented; C2–C15 not selected |
 | Collision-aware forced displacement | GEO-FEAR, GEO-KNOCKBACK | Implemented (P9), isolated reset processes | Not selected |
 | Quest progression, planner and persistence | Q1, Q2, Q3, Q4P, Q4I, Q5 | Implemented (P7); Q4P/Q4I/Q5 isolated | Q1/Q2/Q3/Q4P/Q4I implemented; Q5 not selected |
+| Natural Ishalgen policy slices | NI-01, NI-02, NI-03, NI-04, NI-05, NI-06 | Unit-tested policy; no natural SIM manifest scenario yet | One-bot retained Priest slices through NI-06; NI-06 completes Q2133, not the 41-quest journey |
 | Ascension and capital ceremony | CAPITAL | Implemented (P8-01), GM-prepared focused journey | Implemented; not the deferred natural journey |
 | Gathering and refusal/interruption | E1, E2 | Implemented (P8-01) | Implemented (P8-01) |
 | Vendor buy/sell/repurchase and trade-in limits | E3, E11 | Implemented (P8-01/P8-06) | Implemented (P8-01/P8-06) |

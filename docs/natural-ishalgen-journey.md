@@ -4,10 +4,11 @@ Status: Phase 10 readiness review completed 2026-09-22 against Java `4.8` at
 `ce54b7931`. The journey is **not yet executable end to end without assistance**:
 the protocol, navigation, gathering and inventory foundations exist, but the
 quest execution and durable recovery policies do not.
-NI-00 through NI-05 are complete. NI-02 selects and explains the next bounded
+NI-00 through NI-06 are complete. NI-02 selects and explains the next bounded
 step; NI-03 approaches its first quest starter without accepting the quest;
 NI-04 proves a short Priest fight/rest loop; NI-05 proves sell-only inventory
-housekeeping at a real vendor. These steps do not yet execute the
+housekeeping at a real vendor; NI-06 completes Q2133 through ordinary combat,
+travel, gathering and turn-in. These slices do not yet execute the
 41-quest journey. The broader game
 journey remains a post-Phase 11 review. Review commit: `7d80e48d6` (before
 SHA-recording amend).
@@ -95,7 +96,7 @@ useful independently of this later journey.
 | Create an Asmodian Priest normally | Mostly ready | The LIVE session supports an explicit base class and lifecycle tests cover Priest; journey entry points still default to Warrior and need a retained Priest identity. |
 | Travel on traversable routes and approach live objects | Partial | Geodata-backed local/journey pathing and checked long-distance LIVE movement exist. Add progress/stuck detection, bounded replanning and moving-target reacquisition. Ishalgen does not require a transport policy. |
 | Priest combat and survival | Policy implemented; bounded LIVE proof | NI-04 chooses only client-observed Sprigg Workers, intersects the frozen level-1–9 Priest map with the learned skill list, gates range/MP/group cooldowns, heals, uses owned starter potions, rests, and bounds retreat/revive attempts. Two ordinary LIVE kills and sit/stand recovery passed. Low-HP, consumable, retreat and death branches are policy-tested but not yet induced in LIVE; longer varied combats remain NI-07/NI-09 evidence. |
-| Gathering | Mostly ready | Natural level-1 gathering already handles occupied/depleted nodes, leases, failures and respawns. Integrate that behavior with Q2133, ordinary failure rates and cube pressure. |
+| Gathering | Policy implemented; bounded LIVE quest proof | NI-06 earned level 2 by ordinary Priest combat, accepted Q2133, walked to a client-observed Young Azpha, gathered three items and completed the quest with Nobekk. Failed-use depletion, occupied-node fallback, next-node search and normal respawn wait are policy-tested; this LIVE run had three successes on one node, so those recovery branches remain uninduced LIVE evidence. Cube-pressure handling uses NI-05's sell-only policy. |
 | Inventory, equipment, skills and economy | Policy implemented; bounded LIVE sale proof | NI-05 selects class-usable rewards and gear from shipped templates, verifies auto-learned Priest skills from the client, protects all 41 quests' item references plus quest/key items and HP/MP supplies, and sells other sellable items without buying. A one-bot LIVE run sold the starter bandage stack at an active Ishalgen vendor; reward claiming, upgrade equipping and full-inventory recovery remain policy-tested until NI-07 exercises them naturally. Shipped unsellable starter extras cannot be sold. |
 | Quest selection and execution | Not ready | Q4I completes 27 template quests with GM level/items/teleports and omits custom campaigns. Add eligibility/dependency scheduling and natural operations for all 41 frozen quests. |
 | Persistence and recovery | Partial | Relog/crash/save evidence and state oracles exist. A connection failure still ends a run; add checkpoint reconstruction, same-character resume, stall classification and bounded recovery. |
@@ -182,8 +183,17 @@ These are new journey TODOs, not retroactive claims about the phase scenarios:
   `PlayerSkillList`, `Equipment`, `ItemTemplate`, `ItemMask`, `QuestService`,
   `CM_EQUIP_ITEM`, `CM_BUY_ITEM`, `TradeService`, `ItemGroup` and
   `ItemQuality`. (`b084e1270`, before SHA-recording amend)
-- [ ] **NI-06 — Natural gathering.** Integrate the proven gathering behavior with
-  Q2133 and the shared decision/inventory/recovery policies.
+- [x] **NI-06 — Natural gathering.** Integrated Q2133 with ordinary Priest
+  level-2 combat, checked movement to Nobekk and client-observed Azpha nodes,
+  ordinary-rate gathering, sell-only cube recovery, normal quest dialogue and
+  packet-confirmed completion. Java `ce54b7931` `GatheringTask` and
+  `GatherableController` consume a node use on success or failure; the bounded
+  policy tries the next reachable node before waiting for the 295-second
+  respawn. Focused policy tests cover failure, occupancy, depletion and an
+  unseen spawn hint. One-bot Docker-only LIVE `ni06-live-a` passed with three
+  successes on one node and no retained watcher fingerprint (447 seconds);
+  this does not claim LIVE failure/respawn induction or the 41-quest journey.
+  (`620a93363`, before SHA-recording amend)
 - [ ] **NI-07 — Forty-one-quest execution.** Support the custom campaigns and
   quest-specific operations omitted by Q4I, then complete the frozen contract in
   SIM without grants, forced state, setup teleports or boosted stats.
