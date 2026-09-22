@@ -45,7 +45,9 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.NotEqual("complete", decision.Outcome);
 
 		BotNavigationGraph graph = BotNavigationGraphFactory.Build(fixture.DataManager.StaticData,
-			[203500, 203504, 203501, 210363], BotNavigationGeometry.ForServerWorld(player.GetInstanceId(), player.GetRace()));
+			[203500, 203504, 203501, 203502, 203516, 203518,
+				210363, 210367, 210369, 700124, 700093],
+			BotNavigationGeometry.ForServerWorld(player.GetInstanceId(), player.GetRace()));
 		var navigator = new NaturalSimulationNavigator(session, graph,
 			BotNavigationGeometry.ForServerWorld(player.GetInstanceId(), player.GetRace()));
 		int observedAsak = await session.WaitForNpcAsync(203500, token);
@@ -81,7 +83,7 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.True(approach.Arrived, approach.Reason);
 			int target = Assert.IsType<int>(approach.TargetObjectId);
 			await combat.KillAsync(target, token);
-			navigator.Defeated.Add(target);
+			navigator.UnavailableObjects.Add(target);
 			await combat.RestAsync(token);
 		}
 		Assert.Equal(4, session.Api.World.Quests[2102].StepAndFlags);
@@ -103,10 +105,179 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.True(guheitunApproach.Arrived, guheitunApproach.Reason);
 		await session.FinishQuestAsync(Assert.IsType<int>(guheitunApproach.TargetObjectId), 2103, token);
 		Assert.Equal(5, session.Api.World.Quests[2103].Status);
+
+		decision = NaturalIshalgenDecisionEngine.Decide(contract, ObserveNaturalJourney(session), 3);
+		Assert.Equal(2104, decision.SelectedQuestId);
+		session.BeginStep("ni07-q2104-start", "walk-to-vanar-and-accept");
+		int vanar = await ApproachAsync(203502, new BotPosition(220.15f, 2678.81f, 295.25f, 0));
+		await session.StartQuestAsync(vanar, 2104, token);
+		for (int basket = 0; basket < 3; basket++)
+		{
+			session.BeginStep($"ni07-q2104-basket-{basket + 1}", "walk-and-loot-shipped-basket");
+			int objectId = await ApproachShippedSpawnAsync(700124);
+			await LootActionObjectAsync(session, objectId, 182203104, token);
+			navigator.UnavailableObjects.Add(objectId);
+		}
+		Assert.Equal(3, ItemCount(session.Api.World, 182203104));
+		session.BeginStep("ni07-q2104-finish", "return-to-vanar-and-turn-in");
+		vanar = await ApproachAsync(203502, new BotPosition(220.15f, 2678.81f, 295.25f, 0));
+		await FinishItemQuestAsync(session, vanar, 2104, token);
+		Assert.Equal(5, session.Api.World.Quests[2104].Status);
+		Assert.Equal(0, ItemCount(session.Api.World, 182203104));
+
+		decision = NaturalIshalgenDecisionEngine.Decide(contract, ObserveNaturalJourney(session), 4);
+		if (decision.SelectedQuestId == 2100)
+		{
+			await FinishCaptainOrderAsync();
+			decision = NaturalIshalgenDecisionEngine.Decide(contract, ObserveNaturalJourney(session), 5);
+		}
+		if (decision.SelectedQuestId == 2001)
+		{
+			await CompleteThinkingAheadAsync();
+			decision = NaturalIshalgenDecisionEngine.Decide(contract, ObserveNaturalJourney(session), 6);
+		}
+		if (decision.SelectedQuestId == 2105)
+		{
+		session.BeginStep("ni07-q2105-start", "accept-sparkie-collection-at-vanar");
+		await session.StartQuestAsync(vanar, 2105, token);
+		for (int kill = 0; kill < 3; kill++)
+		{
+			session.BeginStep($"ni07-q2105-kill-{kill + 1}", "fight-and-loot-sparkie");
+			int target = await ApproachShippedSpawnAsync(210367);
+			await combat.KillAsync(target, token);
+			navigator.UnavailableObjects.Add(target);
+			await LootCorpseItemAsync(session, target, 182203105, token);
+			await combat.RestAsync(token);
+		}
+		Assert.Equal(3, ItemCount(session.Api.World, 182203105));
+		session.BeginStep("ni07-q2105-finish", "return-to-vanar-and-turn-in");
+		vanar = await ApproachAsync(203502, new BotPosition(220.15f, 2678.81f, 295.25f, 0));
+		await FinishItemQuestAsync(session, vanar, 2105, token);
+		Assert.Equal(5, session.Api.World.Quests[2105].Status);
+		Assert.Equal(0, ItemCount(session.Api.World, 182203105));
+		}
+		else
+			Assert.Equal(2002, decision.SelectedQuestId); // The next automatically started campaign precedes Q2105.
+
+		for (int grind = 0; session.Api.World.Level < 3 && grind < 20; grind++)
+		{
+			session.BeginStep($"ni07-level-3-kill-{grind + 1}", "ordinary-priest-level-gate-combat");
+			int target = await ApproachShippedSpawnAsync(210363);
+			await combat.KillAsync(target, token);
+			navigator.UnavailableObjects.Add(target);
+			await combat.RestAsync(token);
+		}
+		Assert.True(session.Api.World.Level >= 3, "Ordinary combat did not earn the level-3 campaign gate.");
+		if (!session.Api.World.CompletedQuestIds.Contains(2100)) await FinishCaptainOrderAsync();
+		Assert.Equal(5, session.Api.World.Quests[2100].Status);
 		Assert.Equal(41, contract.Quests.Length);
 		Assert.InRange(session.Api.World.Level, (ushort)1, (ushort)9);
 		await session.QuitAsync(token);
 		policy.AssertClean();
+
+		async Task<int> ApproachAsync(int templateId, BotPosition anchor)
+		{
+			NaturalNavigationResult result = await NaturalIshalgenNavigator.ApproachNpcAsync(
+				contract.MapId, templateId, anchor, navigator, token);
+			Assert.True(result.Arrived, result.Reason);
+			return Assert.IsType<int>(result.TargetObjectId);
+		}
+
+		async Task<int> ApproachShippedSpawnAsync(int templateId)
+		{
+			BotWaypoint[] anchors = graph.GetMap(contract.MapId)!.Waypoints
+				.Where(waypoint => waypoint.TemplateId == templateId)
+				.OrderBy(waypoint => Distance(session.CurrentPosition, waypoint.Position)).ToArray();
+			if (anchors.Length == 0) throw new InvalidDataException($"Shipped spawn graph has no NPC {templateId}.");
+			foreach (BotWaypoint anchor in anchors.Take(12))
+			{
+				NaturalNavigationResult result = await NaturalIshalgenNavigator.ApproachNpcAsync(
+					contract.MapId, templateId, anchor.Position, navigator, token);
+				if (result.Arrived && result.TargetObjectId is int objectId) return objectId;
+			}
+			throw new InvalidDataException($"No client-observed NPC {templateId} at twelve shipped spawn hints.");
+		}
+
+		async Task FinishCaptainOrderAsync()
+		{
+			await WaitForQuestStatusAsync(session, 2100, 3, token);
+			session.BeginStep("ni07-q2100-finish", "walk-to-ulgorn-and-claim-natural-reward");
+			int ulgorn = await ApproachShippedSpawnAsync(203516);
+			string root = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../.."));
+			var inventory = NaturalIshalgenInventoryPolicy.Load(root,
+				session.Api.World.Inventory.Values.Select(item => item.ItemId));
+			int rewardIndex = inventory.ChooseReward(2100, session.Api.World.Level,
+				session.Api.World.Inventory.Values);
+			Assert.True(rewardIndex >= 0, "Q2100 should present a selectable reward to the natural Priest.");
+			await FinishStandardQuestAsync(session, ulgorn, 2100, token,
+				DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex);
+			Assert.Equal(5, session.Api.World.Quests[2100].Status);
+		}
+
+		async Task CompleteThinkingAheadAsync()
+		{
+			await WaitForQuestStatusAsync(session, 2001, 3, token);
+			int boromer = await ApproachShippedSpawnAsync(203518);
+			session.BeginStep("ni07-q2001-boromer-start", "speak-to-boromer-and-watch-campaign-movie");
+			await OpenQuestDialogAsync(boromer, 2001);
+			await session.SendPacketAsync(session.Api.SelectDialog(boromer, DialogAction.SELECT1_1, questId: 2001), token);
+			await session.SynchronizeAsync(token);
+			Assert.Contains(session.PacketHistory, packet => packet.PacketType == typeof(SM_PLAY_MOVIE) &&
+				packet.Get<int>("cutsceneId") == 51);
+			await session.SendPacketAsync(session.Api.SelectDialog(boromer, DialogAction.SETPRO1, questId: 2001), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(1, session.Api.World.Quests[2001].StepAndFlags);
+
+			for (int sack = 0; sack < 3; sack++)
+			{
+				session.BeginStep($"ni07-q2001-sack-{sack + 1}", "walk-and-loot-sprigg-grain-sack");
+				int objectId = await ApproachShippedSpawnAsync(700093);
+				await LootActionObjectAsync(session, objectId, 182203002, token);
+				navigator.UnavailableObjects.Add(objectId);
+			}
+			Assert.Equal(3, ItemCount(session.Api.World, 182203002));
+			boromer = await ApproachShippedSpawnAsync(203518);
+			session.BeginStep("ni07-q2001-boromer-check", "present-grain-and-advance-mission");
+			await OpenQuestDialogAsync(boromer, 2001);
+			await session.SendPacketAsync(session.Api.SelectDialog(boromer,
+				DialogAction.CHECK_USER_HAS_QUEST_ITEM, questId: 2001), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(2, session.Api.World.Quests[2001].StepAndFlags);
+			await session.SendPacketAsync(session.Api.SelectDialog(boromer, DialogAction.SETPRO3, questId: 2001), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(3, session.Api.World.Quests[2001].StepAndFlags);
+
+			for (int kill = 0; kill < 6; kill++)
+			{
+				session.BeginStep($"ni07-q2001-kill-{kill + 1}", "fight-sprigg-gatherer-for-campaign");
+				int target = await ApproachShippedSpawnAsync(210369);
+				await combat.KillAsync(target, token);
+				navigator.UnavailableObjects.Add(target);
+				await combat.RestAsync(token);
+			}
+			Assert.Equal(4, session.Api.World.Quests[2001].Status);
+			boromer = await ApproachShippedSpawnAsync(203518);
+			session.BeginStep("ni07-q2001-finish", "claim-priest-appropriate-campaign-reward");
+			string root = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../.."));
+			var inventory = NaturalIshalgenInventoryPolicy.Load(root,
+				session.Api.World.Inventory.Values.Select(item => item.ItemId));
+			int rewardIndex = inventory.ChooseReward(2001, session.Api.World.Level,
+				session.Api.World.Inventory.Values);
+			Assert.True(rewardIndex >= 0);
+			await FinishStandardQuestAsync(session, boromer, 2001, token,
+				DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex);
+			Assert.Equal(5, session.Api.World.Quests[2001].Status);
+		}
+
+		async Task OpenQuestDialogAsync(int npc, int questId)
+		{
+			await session.SendPacketAsync(session.Api.TalkTo(npc), token);
+			await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
+				packet => packet.Get<int>("targetObjectId") == npc);
+			await session.SendPacketAsync(session.Api.SelectDialog(npc, DialogAction.QUEST_SELECT, questId: questId), token);
+			await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
+				packet => packet.Get<int>("targetObjectId") == npc && packet.Get<int>("questId") == questId);
+		}
 	}
 
 	private static NaturalIshalgenObservation ObserveNaturalJourney(SimulationL0Session session)
@@ -124,14 +295,14 @@ public sealed partial class SimulationFastScenarioTests
 		BotNavigationGraph graph, BotNavigationGeometry geometry) : INaturalNavigationDriver
 	{
 		public List<NaturalNavigationEvent> Events { get; } = [];
-		public HashSet<int> Defeated { get; } = [];
+		public HashSet<int> UnavailableObjects { get; } = [];
 
 		public NaturalNavigationObservation Observe()
 		{
 			BotWorldModel world = session.Api.World;
 			return new(world.MapId, session.CurrentPosition, world.IsDead,
 				world.Objects.Values.Where(item => item.Kind == BotKnownObjectKind.Npc && item.TemplateId != null &&
-					!Defeated.Contains(item.ObjectId))
+					!UnavailableObjects.Contains(item.ObjectId))
 					.Select(item => new NaturalNavigationObject(item.ObjectId, item.TemplateId!.Value, item.Position)).ToArray());
 		}
 
