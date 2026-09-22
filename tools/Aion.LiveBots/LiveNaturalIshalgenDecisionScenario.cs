@@ -78,7 +78,8 @@ public static partial class LiveBotRunner
 		}
 	}
 
-	private sealed class LiveNaturalIshalgenNavigationDriver(LiveBotOptions options, L0Actor actor, int decisionSequence)
+	private sealed class LiveNaturalIshalgenNavigationDriver(LiveBotOptions options, L0Actor actor, int decisionSequence,
+		int? selectedQuestId = 2101)
 		: INaturalNavigationDriver
 	{
 		public NaturalNavigationObservation Observe()
@@ -97,8 +98,32 @@ public static partial class LiveBotRunner
 				int map = actor.Session.Api.World.MapId ?? throw new InvalidDataException("NI-03 map is unobserved.");
 				var route = navigation.Graph.FindPath(map, start, destination);
 				if (route.Count == 0) route = navigation.Geometry.FindLocalPath(map, start, destination);
-				return route.Count != 0 ? route : navigation.Geometry.FindJourneyPath(map, start, destination);
+				if (route.Count == 0) route = navigation.Geometry.FindJourneyPath(map, start, destination);
+				if (route.Count != 0) return route;
+				// A sparse spawn graph may have no end-to-end chain even when nearby road/spawn
+				// anchors are reachable. Advance one checked hop, then reobserve and replan.
+				float remaining = Distance(start, destination);
+				BotPosition[] candidates = navigation.Graph.GetMap(map)?.Waypoints
+					.Select(waypoint => waypoint.Position)
+					.Where(point => Distance(start, point) is > 15 and <= 120 &&
+						Distance(point, destination) < remaining - 15)
+					.OrderBy(point => Distance(point, destination)).ThenBy(point => Distance(start, point))
+					.Take(24).ToArray() ?? [];
+				foreach (BotPosition candidate in candidates)
+				{
+					var edge = navigation.Geometry.TraceEdge(map, start, candidate);
+					if (edge != null) return edge;
+				}
+				foreach (BotPosition candidate in candidates.Take(8))
+				{
+					route = navigation.Geometry.FindLocalPath(map, start, candidate);
+					if (route.Count != 0) return route;
+				}
+				return route;
 			}, token);
+
+		private static float Distance(BotPosition a, BotPosition b) => MathF.Sqrt(
+			MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2) + MathF.Pow(a.Z - b.Z, 2));
 
 		public Task MoveAsync(IReadOnlyList<BotPosition> segment, CancellationToken token) =>
 			actor.StepAsync("natural-walk-segment", ct => actor.Session.ExecuteMovementAsync(
@@ -116,7 +141,7 @@ public static partial class LiveBotRunner
 				["navigation"] = navigationEvent,
 			});
 			var decision = new NaturalDecision(decisionSequence + navigationEvent.Sequence,
-				navigationEvent.Action, 2101, navigationEvent.Outcome, navigationEvent.Reason,
+				navigationEvent.Action, selectedQuestId, navigationEvent.Outcome, navigationEvent.Reason,
 				[
 					new("position-source", "pass", "Client-estimated self position; no server self-move echo."),
 					new("navigation-budget", navigationEvent.Outcome == "blocked" ? "blocked" : "pass",

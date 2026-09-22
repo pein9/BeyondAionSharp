@@ -2,11 +2,12 @@
 
 Status: Phase 10 readiness review completed 2026-09-22 against Java `4.8` at
 `ce54b7931`. The journey is **not yet executable end to end without assistance**:
-the protocol, navigation, gathering and persistence foundations exist, but the
-inventory, quest execution and durable recovery policies do not.
-NI-00 through NI-04 are complete. NI-02 selects and explains the next bounded
+the protocol, navigation, gathering and inventory foundations exist, but the
+quest execution and durable recovery policies do not.
+NI-00 through NI-05 are complete. NI-02 selects and explains the next bounded
 step; NI-03 approaches its first quest starter without accepting the quest;
-NI-04 proves a short Priest fight/rest loop. These steps do not yet execute the
+NI-04 proves a short Priest fight/rest loop; NI-05 proves sell-only inventory
+housekeeping at a real vendor. These steps do not yet execute the
 41-quest journey. The broader game
 journey remains a post-Phase 11 review. Review commit: `7d80e48d6` (before
 SHA-recording amend).
@@ -95,7 +96,7 @@ useful independently of this later journey.
 | Travel on traversable routes and approach live objects | Partial | Geodata-backed local/journey pathing and checked long-distance LIVE movement exist. Add progress/stuck detection, bounded replanning and moving-target reacquisition. Ishalgen does not require a transport policy. |
 | Priest combat and survival | Policy implemented; bounded LIVE proof | NI-04 chooses only client-observed Sprigg Workers, intersects the frozen level-1–9 Priest map with the learned skill list, gates range/MP/group cooldowns, heals, uses owned starter potions, rests, and bounds retreat/revive attempts. Two ordinary LIVE kills and sit/stand recovery passed. Low-HP, consumable, retreat and death branches are policy-tested but not yet induced in LIVE; longer varied combats remain NI-07/NI-09 evidence. |
 | Gathering | Mostly ready | Natural level-1 gathering already handles occupied/depleted nodes, leases, failures and respawns. Integrate that behavior with Q2133, ordinary failure rates and cube pressure. |
-| Inventory, equipment, skills and economy | Not ready as a policy | Inventory/equipment state and equip/buy/sell primitives exist. Current gear scenarios use GM setup. Add reward choice, upgrade comparison, legitimate skill learning, consumables, quest-item protection, junk sale and cube-pressure decisions. |
+| Inventory, equipment, skills and economy | Policy implemented; bounded LIVE sale proof | NI-05 selects class-usable rewards and gear from shipped templates, verifies auto-learned Priest skills from the client, protects all 41 quests' item references plus quest/key items and HP/MP supplies, and sells other sellable items without buying. A one-bot LIVE run sold the starter bandage stack at an active Ishalgen vendor; reward claiming, upgrade equipping and full-inventory recovery remain policy-tested until NI-07 exercises them naturally. Shipped unsellable starter extras cannot be sold. |
 | Quest selection and execution | Not ready | Q4I completes 27 template quests with GM level/items/teleports and omits custom campaigns. Add eligibility/dependency scheduling and natural operations for all 41 frozen quests. |
 | Persistence and recovery | Partial | Relog/crash/save evidence and state oracles exist. A connection failure still ends a run; add checkpoint reconstruction, same-character resume, stall classification and bounded recovery. |
 | Share a world with a human player | Not ready | Multi-bot contention is proven only in isolated LIVE stacks. Add an explicit attach mode that never owns server/DB lifecycle, then validate visibility with the real client. P10-07's client capture remains deferred. |
@@ -160,9 +161,27 @@ These are new journey TODOs, not retroactive claims about the phase scenarios:
   Java specification: `ce54b7931` `ChainCondition`, `ChainSkills`, `Skill`,
   `CM_CASTSPELL`, `CM_USE_ITEM`, `skill_tree.xml`, and `skill_templates.xml`.
   (`93dab2180`, before SHA-recording amend)
-- [ ] **NI-05 — Inventory and character growth.** Choose quest rewards, equip
-  usable upgrades, learn available skills legitimately, reserve quest items,
-  manage cube pressure and buy/sell only with earned kinah.
+- [x] **NI-05 — Inventory and character growth.** Choose the best Priest-usable
+  reward (or highest sale value when no upgrade exists), equip only mace and
+  cloth/leather upgrades, reserve quest/key items and the two combat potions,
+  and sell junk, unusable gear and other sellable surplus. There is no buy path.
+  Priest level-1–9 skills are auto-learned by the server on create/level-up;
+  the bot checks the client-observed skill list rather than buying books or
+  granting skills. Packet-derived cube occupancy retains three slots for quest
+  and gathering work; protected/unsellable pressure blocks instead of dropping
+  items. A one-bot Docker LIVE run `ni05-20260922-b` walked to shipped vendor
+  Ungfu using bounded collision-checked waypoint hops and sold 20 starter
+  bandages (kinah 1,000 → 1,020; cube free slots 18 → 19), with no purchase or
+  GM action. The initial direct route failed because the sparse graph and
+  bounded long-distance search could not connect spawn to the vendor; the
+  checked hop fallback resolved that route. The 10 selectable-reward decisions,
+  equipment choices and full-cube branch are policy-tested, not yet claimed
+  LIVE-proven; NI-07 integrates them with real quest rewards. Shipped items
+  without a sellable mask, including several starter extras, are retained and
+  explained. Java specification: `ce54b7931` `SkillLearnService`,
+  `PlayerSkillList`, `Equipment`, `ItemTemplate`, `ItemMask`, `QuestService`,
+  `CM_EQUIP_ITEM`, `CM_BUY_ITEM`, `TradeService`, `ItemGroup` and
+  `ItemQuality`. (`b084e1270`, before SHA-recording amend)
 - [ ] **NI-06 — Natural gathering.** Integrate the proven gathering behavior with
   Q2133 and the shared decision/inventory/recovery policies.
 - [ ] **NI-07 — Forty-one-quest execution.** Support the custom campaigns and

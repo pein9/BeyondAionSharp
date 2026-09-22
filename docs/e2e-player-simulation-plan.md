@@ -12,8 +12,8 @@ runs use their own isolated compose project.
 
 **Continuous-play follow-up.** The Phase 10 readiness review in
 [Natural Ishalgen Journey](natural-ishalgen-journey.md) freezes a 41-quest starter-zone contract and an
-ordered NI implementation backlog. The journey is not yet executable without assistance: a bounded Priest
-combat/rest policy exists, while inventory, quest execution and durable recovery policies remain. The broader
+ordered NI implementation backlog. The journey is not yet executable without assistance: bounded Priest
+combat/rest and inventory/sell-only policies exist, while quest execution and durable recovery policies remain. The broader
 game journey is still reviewed after Phase 11. This does not authorize adding unimplemented quests or content.
 
 ## How to use this document
