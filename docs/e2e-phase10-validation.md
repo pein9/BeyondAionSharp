@@ -4615,3 +4615,38 @@ Immutable SHA-256 receipts:
 This is clean Full candidate 1/5 in the new streak. P10-10 and Phase 10 remain
 open for four more consecutive clean Breadth runs and the two-hour ten-bot soak.
 Checkpoint receipt: `fe7f38abc` (before SHA-recording amend).
+
+## P10-10 second clean Full candidate after the reset
+
+`p10-accept-10` ran the complete supported Breadth selection at revision
+`90f2e2836889956ebaa0b321db167020d37a9aaa` with two SIM shards, Host bot
+execution and pipe-backed output. It passed after 14,029.934 seconds with 119
+passed, 0 failed, 0 skipped and 0 flaky outcomes. Full-ledger promotion also
+passed against the same revision.
+
+All catalog totals match candidate 09: skills 5,033/5,033; trade 2,290 rows
+with 1,304 passed, 816 unreachable and 170 inactive; teleport 284 with 238
+passed and 46 unreachable; bind 129 with 89 passed and 40 unreachable; craft
+12,494/12,494; and gather 756 with 374 passed and 382 unreachable. Both geodata
+displacement checks passed. Quest coverage passed with 58 SIM and 60 LIVE
+completions. Packet coverage passed with SIM 104/186 client opcodes and 111/238
+structured server decodes, and LIVE 100/186 and 111/238. The 16 Coverlet
+processes measured 95,654/267,950 lines and 23,803/103,697 branches.
+
+Every LIVE Compose project created its own Docker MySQL container; no local
+MySQL was used. All stacks started, registered, passed schema/port/log health,
+completed their bot journey and cleaned up. B2F and S5 passed on their first
+attempts. S4 remained the peak live population at eight bots. L1's twelve
+subjects remained sequential with peak one. Character transfer was not
+selected or counted because D20 makes it inapplicable to this single-server
+emulator.
+
+Immutable SHA-256 receipts:
+
+- `report.json`: `d648f9f34037c63a673c58d013ee43af28be1cf81e1551efb3c86e45c3cd6154`
+- `packet-coverage-comparison.json`: `3a111a3d7fbcd7f3d2b66d04f1cc80d3def3b3e91e693dbd836958d0b5793b16`
+- `quest-coverage.json`: `f92a6cdd351ffa5ddb152bf104435eb4a06fec76b2b6d83e354539cf81580716`
+
+This is clean Full candidate 2/5 in the new streak. P10-10 and Phase 10 remain
+open for three more consecutive clean Breadth runs and the two-hour ten-bot
+soak. Checkpoint receipt: `5b5751ccf` (before SHA-recording amend).
