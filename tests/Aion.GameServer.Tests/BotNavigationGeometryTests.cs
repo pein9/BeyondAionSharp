@@ -91,6 +91,25 @@ public sealed class BotNavigationGeometryTests
     }
 
     [Fact]
+    public void InteractionApproachStopsOnCheckedGroundNearBlockedNpcCenter()
+    {
+        var map = Ground(); AddWall(map);
+        var geometry = new BotNavigationGeometry(_ => map, 1, IgnoreProperties.ANY_RACE);
+        BotPosition start = new(10, 10, 10, 0), npc = new(20, 10, 10, 0);
+        Assert.Null(geometry.TraceEdge(1, start, npc));
+        IReadOnlyList<BotPosition> path = geometry.FindInteractionPath(1, start, npc);
+        Assert.NotEmpty(path);
+        BotPosition destination = path[^1];
+        Assert.True(MathF.Sqrt(MathF.Pow(destination.X - npc.X, 2) +
+            MathF.Pow(destination.Y - npc.Y, 2) + MathF.Pow(destination.Z - npc.Z, 2)) <= 3);
+        foreach (BotPosition point in path)
+        {
+            Assert.NotNull(geometry.TraceEdge(1, start, point));
+            start = point;
+        }
+    }
+
+    [Fact]
     public void TemporaryStartAndDestinationConnectorsCannotCrossWalls()
     {
         var map = Ground(); AddWall(map);

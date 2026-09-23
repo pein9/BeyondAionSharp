@@ -25,6 +25,22 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
     public IReadOnlyList<BotPosition> FindJourneyPath(int mapId, BotPosition start, BotPosition destination)
         => FindGroundPath(mapId, start, destination, 1000, 65536, 60);
 
+    /// <summary>Find checked ground inside the ordinary three-metre interaction radius when an
+    /// observed NPC's exact spawn point is occupied or otherwise not walkable. Never returns an
+    /// approach outside that radius, and does not assume that a nearby point can be teleported to.</summary>
+    public IReadOnlyList<BotPosition> FindInteractionPath(int mapId, BotPosition start, BotPosition target)
+    {
+        for (int sector = 0; sector < 16; sector++)
+        {
+            float angle = sector * MathF.PI / 8f;
+            var candidate = new BotPosition(target.X + 2 * MathF.Cos(angle),
+                target.Y + 2 * MathF.Sin(angle), target.Z, target.Heading);
+            IReadOnlyList<BotPosition> path = FindJourneyPath(mapId, start, candidate);
+            if (path.Count != 0 && Distance(path[^1], target) <= 3) return path;
+        }
+        return [];
+    }
+
     private IReadOnlyList<BotPosition> FindGroundPath(int mapId, BotPosition start, BotPosition destination,
         float maximumDistance, int maximumVisited, float padding)
     {

@@ -20,7 +20,7 @@ public sealed partial class SimulationFastScenarioTests
 	{
 		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
 		using var policy = NewPolicy("NI07", includeHistory: true);
-		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(4));
 		CancellationToken token = timeout.Token;
 		await using var session = new SimulationL0Session(
 			fixture, policy, "b01", accountId: 41, "Asimnjour", Race.ASMODIANS);
@@ -47,6 +47,7 @@ public sealed partial class SimulationFastScenarioTests
 		BotNavigationGraph graph = BotNavigationGraphFactory.Build(fixture.DataManager.StaticData,
 			[203500, 203504, 203501, 203502, 203516, 203518,
 			203519, 203534, 790002, 210377, 210378, 700045, 203538,
+			203539, 210592, 700047, 203550, 210402, 210403, 203530, 203535, 203551,
 			210363, 210367, 210369, 700124, 700093],
 			BotNavigationGeometry.ForServerWorld(player.GetInstanceId(), player.GetRace()));
 		var navigator = new NaturalSimulationNavigator(session, graph,
@@ -160,7 +161,23 @@ public sealed partial class SimulationFastScenarioTests
 		else
 			Assert.Equal(2002, decision.SelectedQuestId); // The next automatically started campaign precedes Q2105.
 		if (decision.SelectedQuestId == 2002)
+		{
 			await AdvanceWheresRaeAsync();
+			decision = NaturalIshalgenDecisionEngine.Decide(contract, ObserveNaturalJourney(session), 8);
+		}
+		if (decision.SelectedQuestId == 2132)
+		{
+			await CompleteNewSkillAsync();
+			decision = NaturalIshalgenDecisionEngine.Decide(contract, ObserveNaturalJourney(session), 9);
+		}
+		Assert.Equal(2003, decision.SelectedQuestId);
+		if (decision.SelectedQuestId == 2003)
+		{
+			await CompleteTreasureOfTheDeceasedAsync();
+			decision = NaturalIshalgenDecisionEngine.Decide(contract, ObserveNaturalJourney(session), 10);
+		}
+		Assert.Equal(2004, decision.SelectedQuestId);
+		await CompleteCharmedCubeAsync();
 
 		for (int grind = 0; session.Api.World.Level < 3 && grind < 20; grind++)
 		{
@@ -414,6 +431,129 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.Contains(2002, session.Api.World.CompletedQuestIds);
 		}
 
+		async Task CompleteTreasureOfTheDeceasedAsync()
+		{
+			await WaitForQuestStatusAsync(session, 2003, 3, token);
+			session.BeginStep("ni07-q2003-start", "walk-to-treasure-keeper-and-watch-campaign-movie");
+			await ApproachShippedSpawnAsync(203519); // Retrace the Nobekk-Dabi route proved during Q2002.
+			await ApproachShippedSpawnAsync(203534);
+			await ApproachShippedSpawnAsync(790002);
+			await ApproachShippedSpawnAsync(203535); // Eastern road avoids the collision-blocked direct valley line.
+			int keeper = await ApproachShippedSpawnAsync(203539);
+			await OpenQuestDialogAsync(keeper, 2003);
+			await session.SendPacketAsync(session.Api.SelectDialog(keeper, DialogAction.SELECT1_1, questId: 2003), token);
+			await session.SynchronizeAsync(token);
+			Assert.Contains(session.PacketHistory, packet => packet.PacketType == typeof(SM_PLAY_MOVIE) &&
+				packet.Get<int>("cutsceneId") == 53);
+			await session.SendPacketAsync(session.Api.SelectDialog(keeper, DialogAction.SETPRO1, questId: 2003), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(1, session.Api.World.Quests[2003].StepAndFlags);
+			for (int attempt = 0; attempt < 9 && ItemCount(session.Api.World, 182203004) < 3; attempt++)
+			{
+				session.BeginStep($"ni07-q2003-kill-{attempt + 1}", "fight-and-loot-treasure-guardian");
+				await combat.RestAsync(token);
+				int target = await ApproachShippedSpawnAsync(210592);
+				bool killed = await combat.TryKillAsync(target, token);
+				navigator.UnavailableObjects.Add(target);
+				if (killed) await LootCorpseItemAsync(session, target, 182203004, token);
+				await combat.RestAsync(token);
+			}
+			Assert.Equal(3, ItemCount(session.Api.World, 182203004));
+			session.BeginStep("ni07-q2003-finish", "return-treasure-and-claim-reward");
+			keeper = await ApproachShippedSpawnAsync(203539);
+			await FinishItemQuestAsync(session, keeper, 2003, token);
+			Assert.Contains(2003, session.Api.World.CompletedQuestIds);
+		}
+
+		async Task CompleteNewSkillAsync()
+		{
+			await WaitForQuestStatusAsync(session, 2132, 4, token);
+			Assert.Equal(4, session.Api.World.Quests[2132].StepAndFlags);
+			session.BeginStep("ni07-q2132-finish", "walk-to-priest-trainer-for-auto-learned-skill-quest");
+			int trainer = await ApproachShippedSpawnAsync(203530);
+			await FinishStandardQuestAsync(session, trainer, 2132, token);
+			Assert.Contains(2132, session.Api.World.CompletedQuestIds);
+		}
+
+		async Task CompleteCharmedCubeAsync()
+		{
+			await WaitForQuestStatusAsync(session, 2004, 3, token);
+			session.BeginStep("ni07-q2004-derot-start", "ask-derot-about-charmed-cube");
+			int derot = await ApproachShippedSpawnAsync(203539);
+			await OpenQuestDialogAsync(derot, 2004);
+			await session.SendPacketAsync(session.Api.SelectDialog(derot, DialogAction.SETPRO1, questId: 2004), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(1, session.Api.World.Quests[2004].StepAndFlags);
+			bool foundCube = false;
+			for (int attempt = 1; attempt <= 8 && !foundCube; attempt++)
+			{
+				session.BeginStep($"ni07-q2004-tombstone-{attempt}", "wake-and-fight-tombstone-guardian");
+				await combat.RestAsync(token);
+				int tombstone = await ApproachShippedSpawnAsync(700047);
+				await session.SendPacketAsync(session.Api.TalkTo(tombstone), token);
+				await session.WaitForPacketAsync(typeof(SM_EMOTION), token,
+					packet => packet.Get<int>("senderObjectId") == session.CharacterId &&
+					packet.Get<byte>("emotionType") == (byte)EmotionType.START_QUESTLOOT);
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(3001), token);
+				await session.SynchronizeAsync(token);
+				BotKnownObject? guardian = session.Api.World.Objects.Values.FirstOrDefault(item =>
+					item.Kind == BotKnownObjectKind.Npc && item.TemplateId == 211755 &&
+					!navigator.UnavailableObjects.Contains(item.ObjectId));
+				Assert.NotNull(guardian);
+				NaturalNavigationResult approach = await NaturalIshalgenNavigator.ApproachNpcAsync(
+					contract.MapId, 211755, guardian.Position, navigator, token);
+				Assert.True(approach.Arrived, approach.Reason);
+				int target = Assert.IsType<int>(approach.TargetObjectId);
+				await combat.KillAsync(target, token);
+				navigator.UnavailableObjects.Add(target);
+				foundCube = await TryLootCorpseItemAsync(session, target, 182203005, token);
+				await combat.RestAsync(token);
+			}
+			Assert.True(foundCube, "Eight ordinary tombstone guardians did not drop the quest cube.");
+			Assert.Equal(1, ItemCount(session.Api.World, 182203005));
+			session.BeginStep("ni07-q2004-derot-check", "show-quest-cube-to-derot");
+			derot = await ApproachShippedSpawnAsync(203539);
+			await OpenQuestDialogAsync(derot, 2004);
+			await session.SendPacketAsync(session.Api.SelectDialog(derot,
+				DialogAction.CHECK_USER_HAS_QUEST_ITEM, questId: 2004), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(2, session.Api.World.Quests[2004].StepAndFlags);
+			session.BeginStep("ni07-q2004-munin-start", "take-charmed-cube-to-munin");
+			NaturalNavigationResult camp = await NaturalIshalgenNavigator.ExploreAnchorAsync(
+				contract.MapId, -1, new BotPosition(667.961f, 1767.09f, 271.583f, 0),
+				navigator, "shipped-west-side-camp", token);
+			Assert.True(camp.Arrived, camp.Reason); // Static route hint; no roaming NPC interaction.
+			NaturalNavigationResult hillside = await NaturalIshalgenNavigator.ExploreAnchorAsync(
+				contract.MapId, -1, new BotPosition(413.25f, 1901.5f, 319.136f, 0),
+				navigator, "shipped-munin-hillside", token);
+			Assert.True(hillside.Arrived, hillside.Reason);
+			int munin = await ApproachShippedSpawnAsync(203550);
+			await OpenQuestDialogAsync(munin, 2004);
+			await session.SendPacketAsync(session.Api.SelectDialog(munin, DialogAction.SETPRO3, questId: 2004), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(3, session.Api.World.Quests[2004].StepAndFlags);
+			for (int kill = 0; kill < 3; kill++)
+			{
+				session.BeginStep($"ni07-q2004-kill-{kill + 1}", "fight-munins-cube-target");
+				await combat.RestAsync(token);
+				int target = await ApproachShippedSpawnAsync(210402);
+				await combat.KillAsync(target, token);
+				navigator.UnavailableObjects.Add(target);
+				await combat.RestAsync(token);
+			}
+			Assert.Equal(6, session.Api.World.Quests[2004].StepAndFlags);
+			session.BeginStep("ni07-q2004-munin-report", "report-cube-combat-to-munin");
+			munin = await ApproachShippedSpawnAsync(203550);
+			await OpenQuestDialogAsync(munin, 2004);
+			await session.SendPacketAsync(session.Api.SelectDialog(munin, DialogAction.SETPRO4, questId: 2004), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(4, session.Api.World.Quests[2004].Status);
+			session.BeginStep("ni07-q2004-finish", "return-to-derot-for-quest-reward");
+			derot = await ApproachShippedSpawnAsync(203539);
+			await FinishStandardQuestAsync(session, derot, 2004, token);
+			Assert.Contains(2004, session.Api.World.CompletedQuestIds);
+		}
+
 		async Task OpenQuestDialogAsync(int npc, int questId)
 		{
 			await session.SendPacketAsync(session.Api.TalkTo(npc), token);
@@ -478,6 +618,8 @@ public sealed partial class SimulationFastScenarioTests
 					if (route.Count != 0) break;
 				}
 			}
+			if (route.Count == 0 && Observe().Npcs.Any(npc => Distance(npc.Position, destination) < 0.1f))
+				route = geometry.FindInteractionPath(map, start, destination);
 			return Task.FromResult(route);
 		}
 
@@ -498,15 +640,23 @@ public sealed partial class SimulationFastScenarioTests
 
 		public async Task KillAsync(int target, CancellationToken token)
 		{
+			if (!await TryKillAsync(target, token))
+				throw new InvalidDataException($"Engaged NPC {target} disappeared without client-observed kill evidence.");
+		}
+
+		public async Task<bool> TryKillAsync(int target, CancellationToken token)
+		{
 			BotWorldModel world = session.Api.World;
 			long startingExperience = world.CurrentExperience;
 			for (int turn = 0; turn < 24; turn++)
 			{
 				await session.SynchronizeAsync(token);
-				if (world.CurrentExperience > startingExperience || world.LootStatuses.ContainsKey(target)) return;
-				if (world.IsDead) throw new InvalidDataException("Natural Priest died before a bounded recovery could be attempted.");
+				if (world.CurrentExperience > startingExperience || world.LootStatuses.ContainsKey(target)) return true;
+				if (world.IsDead) throw new InvalidDataException(
+					$"Natural Priest died fighting {target} at level {world.Level}; HP={world.CurrentHp}/{world.MaxHp}, " +
+					$"MP={world.CurrentMp}/{world.MaxMp}, position={session.CurrentPosition}.");
 				if (!world.Objects.TryGetValue(target, out BotKnownObject? npc))
-					throw new InvalidDataException("Engaged Sprigg disappeared without client-observed kill evidence.");
+					return false; // Reacquire a new client-observed mob; do not count this as a kill.
 				DateTimeOffset now = fixture.Epoch.AddMilliseconds(fixture.Clock.NowMillis);
 				NaturalCombatChoice choice = NaturalPriestCombatPolicy.Decide(new NaturalCombatObservation(
 					world.Level, world.CurrentHp, world.MaxHp, world.CurrentMp, world.MaxMp, world.IsDead,
@@ -529,15 +679,23 @@ public sealed partial class SimulationFastScenarioTests
 					default: throw new InvalidDataException($"Natural combat cannot act: {choice.Action}: {choice.Reason}");
 				}
 			}
-			throw new InvalidDataException("Natural Priest exceeded 24 actions without a client-observed Sprigg kill.");
+			throw new InvalidDataException("Natural Priest exceeded 24 actions without a client-observed NPC kill.");
 		}
 
 		public async Task RestAsync(CancellationToken token)
 		{
-			await session.SendPacketAsync(session.Api.Rest(true), token);
-			await session.AdvanceAsync(TimeSpan.FromSeconds(10), token);
-			await session.SendPacketAsync(session.Api.Rest(false), token);
-			await session.SynchronizeAsync(token);
+			for (int interval = 0; interval < 12; interval++)
+			{
+				BotWorldModel world = session.Api.World;
+				if (world.IsDead) throw new InvalidDataException("Cannot rest while dead.");
+				if (world.CurrentHp * 100 >= world.MaxHp * 90 &&
+					world.CurrentMp * 100 >= world.MaxMp * 80) return;
+				await session.SendPacketAsync(session.Api.Rest(true), token);
+				await session.AdvanceAsync(TimeSpan.FromSeconds(10), token);
+				await session.SendPacketAsync(session.Api.Rest(false), token);
+				await session.SynchronizeAsync(token);
+			}
+			throw new InvalidDataException("Priest could not recover HP/MP before the next pull within two minutes.");
 		}
 
 		private async Task CastAsync(NaturalPriestSkill skill, int target, CancellationToken token)
@@ -559,6 +717,33 @@ public sealed partial class SimulationFastScenarioTests
 			}
 			await session.AdvanceAsync(BotCastProtocol.RecoveryDelay(result), token);
 		}
+	}
+
+	private static async Task<bool> TryLootCorpseItemAsync(SimulationL0Session session,
+		int objectId, int itemId, CancellationToken token)
+	{
+		await session.SendPacketAsync(session.Api.Loot(objectId), token);
+		DecodedBotServerPacket list = await session.WaitForPacketAsync(typeof(SM_LOOT_ITEMLIST), token,
+			packet => packet.Get<int>("targetObjectId") == objectId);
+		IReadOnlyDictionary<string, object?>? item = list
+			.Get<List<IReadOnlyDictionary<string, object?>>>("items")
+			.FirstOrDefault(entry => Get<int>(entry, "itemId") == itemId);
+		if (item == null)
+		{
+			await session.SendPacketAsync(session.Api.Loot(objectId, close: true), token);
+			return false;
+		}
+		BotInventoryItem? existing = session.Api.World.Inventory.Values.SingleOrDefault(entry => entry.ItemId == itemId);
+		await session.SendPacketAsync(session.Api.Loot(objectId, Get<byte>(item, "index")), token);
+		if (existing == null)
+			await session.WaitForPacketAsync(typeof(SM_INVENTORY_ADD_ITEM), token,
+				packet => packet.Get<List<IReadOnlyDictionary<string, object?>>>("items")
+					.Any(entry => Get<int>(entry, "itemId") == itemId));
+		else
+			await session.WaitForPacketAsync(typeof(SM_INVENTORY_UPDATE_ITEM), token,
+				packet => packet.Get<int>("objectId") == existing.ObjectId);
+		await session.SendPacketAsync(session.Api.Loot(objectId, close: true), token);
+		return true;
 	}
 
 	private static float Distance(BotPosition a, BotPosition b) => MathF.Sqrt(
