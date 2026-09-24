@@ -155,13 +155,21 @@ other spawn circles when it can. Resting inside a spawn circle means every respa
 a rest, fight, rest loop that ends in death. The Stalkers at Rae's camp respawn every 180 s, 12–15 m
 from where the Priest used to rest.
 
+**Clearing around an objective.** Before a use bar that one hit interrupts (the Q2007 generators),
+the Priest pulls, one at a time, every observed monster whose aggro circle plus 2 m comes within 20 m of
+the object (`objective-clear`), then walks back and uses it. A death on the way to a generator rejoins
+through Nalto and Rae from bind, the same recovery as the Rae leg.
+
 **Stuns.** A cast refused with `STR_SKILL_CAN_NOT_ATTACK_WHILE_IN_ABNORMAL_STATE` (Java
-`PlayerRestrictions.canUseSkill`: stunned, knocked down) is a start rejection. The Priest waits a second
-and re-evaluates instead of timing out.
+`PlayerRestrictions.canUseSkill`: stunned, knocked down) is a start rejection, and a potion refused with
+`STR_SKILL_CAN_NOT_USE_ITEM_WHILE_IN_ABNORMAL_STATE` (`canUseItem`) stays in the bag. Either way the
+Priest waits a second and re-evaluates instead of failing.
 
 **Travel caps are stall guards, not distance limits.** The navigator moves in 8-point segments. Its
 cap is 1,000 segments, about 16 km, so a cross-map walk back to a quest giver never runs out. Following
-an NPC that walks around town is ordinary travel and does not use the hazard replan budget. A target
+an NPC that walks around town is ordinary travel and does not use the hazard replan budget. That budget
+(three) counts replans in a row without progress, so a long walk that meets new monsters along the way
+keeps going. A target
 that drops out of view at the edge of visibility range is not a failure either. The bot walks on to
 the shipped spawn hint and reacquires it, and reports it missing only when it stands there and still
 sees nothing.

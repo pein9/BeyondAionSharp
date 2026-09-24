@@ -226,6 +226,9 @@ public static class NaturalIshalgenNavigator
 				continue;
 			}
 			routeIndex += segment.Length;
+			// The replan budget counts replans in a row without progress (a real stall), not every new
+			// hostile met on a long walk that keeps advancing.
+			replans = 0;
 			Emit("segment-progress", "completed", $"Client-estimated progress {progress:F2} m; not a server movement echo.",
 				actual, destination, targetId);
 		}

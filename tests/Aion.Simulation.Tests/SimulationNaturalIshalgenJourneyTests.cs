@@ -631,6 +631,43 @@ public sealed partial class SimulationFastScenarioTests
 			throw new InvalidDataException($"Quest object {templateId} did not yield item {itemId} after ten uses.");
 		}
 
+		// Pull, one at a time, every observed monster whose aggro circle (plus the 2 m assist offset) comes
+		// within 20 m of the objective, then walk back to it. Bounded only as a stall guard.
+		async Task ClearAroundObjectiveAsync(int objectiveObjectId, string purpose)
+		{
+			BotPosition? objective = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == objectiveObjectId)?.Position;
+			if (objective is not BotPosition spot) return;
+			bool cleared = false;
+			for (int pull = 0; pull < 20 && !session.Api.World.IsDead; pull++)
+			{
+				NaturalNavigationObject[] near = ObservedPullMonsters(objectiveObjectId)
+					.Where(m => Distance(m.Npc.Position, spot) <= m.AggroRadius + NaturalPullPlanner.SupportRangeOffset + 20)
+					.OrderBy(m => Distance(m.Npc.Position, session.CurrentPosition))
+					.Select(m => m.Npc).ToArray();
+				if (near.Length == 0) break;
+				session.TraceDiagnostic("objective-clear", new Dictionary<string, object?>
+				{
+					["purpose"] = purpose,
+					["objective"] = spot,
+					["monsters"] = near.Select(npc => $"{npc.TemplateId}/{npc.ObjectId}").ToArray(),
+				});
+				NaturalPullPlan? plan = await MoveToPullSpotAsync(near, [], purpose);
+				if (plan == null || session.Api.World.IsDead) break;
+				int revivesBefore = combat.ReviveCount;
+				bool killed;
+				try { killed = await combat.TryKillAsync(plan.Target.Npc.ObjectId, token, session.CurrentPosition); }
+				catch (NaturalCombatApproachBlockedException) { killed = false; }
+				if (combat.ReviveCount > revivesBefore) return;
+				if (killed) navigator.UnavailableObjects.Add(plan.Target.Npc.ObjectId);
+				cleared = true;
+				await combat.RestAsync(token);
+			}
+			if (cleared && !session.Api.World.IsDead)
+				await NaturalIshalgenNavigator.ApproachNpcAsync(contract.MapId,
+					navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == objectiveObjectId)?.TemplateId ?? -1,
+					spot, navigator, token);
+		}
+
 		// Fight what is already on the bot, one at a time, before any new pull. False if the bot died.
 		async Task<bool> DefendAgainstEngagedAsync(string purpose)
 		{
@@ -1979,8 +2016,12 @@ public sealed partial class SimulationFastScenarioTests
 							// a 2 km detour through every camp on the way.
 							if (Distance(session.CurrentPosition, new BotPosition(571.0388f, 2787.342f, 299.875f, 0)) < 400)
 								await WalkEasternRoadToDerotAsync();
-							if (templateId == 203554)
+							// Rae and her generators lie past Nalto's camp: rejoin through Nalto, and for a generator
+							// through Rae as well, one guarded leg at a time, as the first visit did.
+							if (templateId is 203554 or 700085 or 700086 or 700087)
 								await ApproachShippedNpcThroughObservedGuardsAsync(203552, maximumGuardClears: 8);
+							if (templateId is 700085 or 700086 or 700087)
+								await ApproachShippedNpcThroughObservedGuardsAsync(203554, maximumGuardClears: 8);
 						}
 						return await ApproachShippedNpcThroughObservedGuardsAsync(templateId,
 							maximumGuardClears: 8);
@@ -1995,8 +2036,25 @@ public sealed partial class SimulationFastScenarioTests
 							["reason"] = exception.Message,
 						});
 					}
+					catch (InvalidDataException exception) when (recovery < MaximumQ2007Recoveries &&
+						exception.Message.StartsWith("No checked guarded approach", StringComparison.Ordinal))
+					{
+						// Every checked way in is closed right now (a patrol in the corridor, a camp that has not
+						// respawned into a pullable shape). Back off, rest away from respawns, let patrols move,
+						// and try again, as a player would, within the same recovery bound.
+						session.TraceDiagnostic("q2007-guarded-objective-wait", new Dictionary<string, object?>
+						{
+							["npcTemplateId"] = templateId,
+							["recovery"] = recovery + 1,
+							["position"] = session.CurrentPosition,
+							["reason"] = exception.Message.Length > 300 ? exception.Message[..300] : exception.Message,
+						});
+						await combat.RestAsync(token);
+						await session.AdvanceAsync(TimeSpan.FromSeconds(30), token);
+						await session.SynchronizeAsync(token);
+					}
 				}
-				throw new InvalidDataException($"Q2007 guarded NPC {templateId} exhausted {MaximumQ2007Recoveries} bind recoveries.");
+				throw new InvalidDataException($"Q2007 guarded NPC {templateId} exhausted {MaximumQ2007Recoveries} recoveries.");
 			}
 			foreach (var (npcId, action, step, name) in conversations)
 			{
@@ -2023,7 +2081,13 @@ public sealed partial class SimulationFastScenarioTests
 				for (int use = 1; session.Api.World.Quests[2007].StepAndFlags < step; use++)
 				{
 					if (use > 10) Assert.Fail($"Q2007 {color} generator use did not complete after ten attempts.");
-					int generator = await ApproachShippedSpawnAsync(npcId);
+					// The same walk-back-after-death recovery as Rae and Nalto: a death on the way, or while
+					// clearing, rejoins from bind instead of ending the journey.
+					int generator = await ApproachGuardedCampaignNpcAsync(npcId);
+					// A player clears what stands near an object before a 3 s use bar a single hit interrupts.
+					await ClearAroundObjectiveAsync(generator, $"q2007-{color}-generator");
+					if (session.Api.World.IsDead || !navigator.Observe().Npcs.Any(npc => npc.ObjectId == generator &&
+						Distance(session.CurrentPosition, npc.Position) <= 3)) continue; // walked off while clearing
 					int usePacketStart = session.PacketHistory.Count;
 					await session.SendPacketAsync(session.Api.TalkTo(generator), token);
 					await session.SynchronizeAsync(token);
@@ -2852,9 +2916,23 @@ public sealed partial class SimulationFastScenarioTests
 						if (hotPotion == null || hotTemplate == null)
 							throw new InvalidDataException("Combat chose a potion absent from observed inventory.");
 						long before = NaturalIshalgenPotionPolicy.Count(world.Inventory.Values, hotPotion.ItemId);
+						int useStart = session.PacketHistory.Count;
 						await session.SendPacketAsync(session.Api.UseItem(hotPotion.ObjectId, hotTemplate), token);
 						await session.SynchronizeAsync(token);
 						long after = NaturalIshalgenPotionPolicy.Count(world.Inventory.Values, hotPotion.ItemId);
+						if (after == before && session.PacketHistory.Skip(useStart).Any(packet =>
+							packet.PacketType == typeof(SM_SYSTEM_MESSAGE) &&
+							packet.Get<object>("name") is "STR_SKILL_CAN_NOT_USE_ITEM_WHILE_IN_ABNORMAL_STATE"))
+						{
+							// Stunned or knocked down (Java PlayerRestrictions.canUseItem): the potion stays in the
+							// bag. Wait for the state to wear off and decide again.
+							session.TraceDiagnostic("combat-item-while-disabled", new Dictionary<string, object?>
+							{
+								["itemId"] = hotPotion.ItemId, ["hp"] = world.CurrentHp, ["position"] = session.CurrentPosition,
+							});
+							await session.AdvanceAsync(TimeSpan.FromMilliseconds(1000), token);
+							break;
+						}
 						if (after != before - 1)
 							throw new InvalidDataException($"Timed healing potion {hotPotion.ItemId} was not consumed: {before}->{after}.");
 						session.TraceDiagnostic("combat-hot-potion", new Dictionary<string, object?>
