@@ -111,6 +111,13 @@ services:
       GAMESERVER_ADMIN_API_ENABLED: "true"
       GAMESERVER_ADMIN_API_PORT: "7780"
       GAMESERVER_ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:-change-me-admin-token}
+      # Session recorder (docs/session-recording.md): every packet of the named accounts, both directions,
+      # to run/recordings on the host. Off unless AION_RECORD=true.
+      AION_RECORD: ${AION_RECORD:-false}
+      AION_RECORD_ACCOUNTS: ${AION_RECORD_ACCOUNTS:-}
+      AION_RECORD_DIR: /app/recordings
+    volumes:
+      - ../run/recordings:/app/recordings
     ports:
       - "${GAME_CLIENT_PORT:-7777}:7777"
     restart: unless-stopped

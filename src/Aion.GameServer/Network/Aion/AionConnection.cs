@@ -13,6 +13,7 @@ using Aion.GameServer.Commons.Utils.Concurrent;
 using Aion.GameServer.Configs.Network;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.Account;
+using Aion.GameServer.Network.Aion.Capture;
 using Aion.GameServer.Network.Aion.ClientPackets;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.Network.LoginServer;
@@ -140,7 +141,15 @@ public class AionConnection : AConnection<AionServerPacket>
             return false;
         }
 
+        // C#-only session recorder (off unless AION_RECORD=true): copy the decrypted payload before it is decoded.
+        SessionRecorder? recorder = SessionRecorder.Current;
+        string stateBefore = state.ToString();
+        byte[]? recordedPayload = recorder?.OnClientPayload(this, data);
+
         AionClientPacket pck = AionClientPacketFactory.TryCreatePacket(data, this);
+
+        if (pck == null && recordedPayload != null)
+            recorder!.OnClientPacketHandled(this, recordedPayload, null, "not-created", stateBefore);
 
         if (pck != null)
         {
@@ -160,7 +169,11 @@ public class AionConnection : AConnection<AionServerPacket>
                         {
                             log.LogWarning(this + " is flooding " + pck.GetType().Name + " (last diff: " + diff + "ms)");
                             if (PffConfig.PFF_MODE == 1) // disconnect
+                            {
+                                if (recordedPayload != null)
+                                    recorder!.OnClientPacketHandled(this, recordedPayload, pck, "flood-disconnect", stateBefore);
                                 return false;
+                            }
                         }
                     }
                 }
@@ -168,9 +181,13 @@ public class AionConnection : AConnection<AionServerPacket>
 
             if (pck.Read())
             {
+                if (recordedPayload != null)
+                    recorder!.OnClientPacketHandled(this, recordedPayload, pck, "executed", stateBefore);
                 SendPacketInfo(pck);
                 ExecutePacket(pck);
             }
+            else if (recordedPayload != null)
+                recorder!.OnClientPacketHandled(this, recordedPayload, pck, "read-failed", stateBefore);
         }
 
         return true;
@@ -257,6 +274,7 @@ public class AionConnection : AConnection<AionServerPacket>
     protected override void OnDisconnect()
     {
         connectionAliveChecker?.Stop();
+        SessionRecorder.Current?.OnDisconnect(this);
 
         if (IsServerShuttingDownSoon())
         {

@@ -60,6 +60,7 @@ public abstract class AionServerPacket : BaseServerPacket
         ServerPacketCaptureObserver observer = captureObserver;
         if (observer.IsEnabled())
             observer.OnPacketSerialized(con, this, buf.AsReadOnlyBuffer());
+        SessionRecorder.Current?.OnServerPacket(con, this, buf.AsReadOnlyBuffer());
         ByteBuffer b = buf.Slice();
         buf.SetPosition(0);
         con.Encrypt(b);

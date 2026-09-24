@@ -23,6 +23,7 @@ public sealed class GameServerHostedService : IHostedService
 	private readonly ILogger<GameServerHostedService> _logger;
 	private NioServer? _nioServer;
 	private JsonLinesServerPacketCaptureObserver? _packetTap;
+	private SessionRecorder? _recorder;
 
 	public GameServerHostedService(GameServerOptions options, ILogger<GameServerHostedService> logger)
 	{
@@ -38,6 +39,13 @@ public sealed class GameServerHostedService : IHostedService
 			_packetTap = new JsonLinesServerPacketCaptureObserver(packetTapPath);
 			AionServerPacket.SetCaptureObserver(_packetTap);
 			_logger.LogInformation("Server packet tap enabled at {Path}", packetTapPath);
+		}
+		_recorder = SessionRecorder.FromEnvironment();
+		if (_recorder != null)
+		{
+			SessionRecorder.SetCurrent(_recorder);
+			_logger.LogInformation("Session recorder enabled: every packet of recorded sessions goes to {Directory}",
+				Environment.GetEnvironmentVariable("AION_RECORD_DIR") ?? Path.Combine(Directory.GetCurrentDirectory(), "log", "recordings"));
 		}
 		try
 		{
@@ -75,6 +83,12 @@ public sealed class GameServerHostedService : IHostedService
 		{
 			await _packetTap.DisposeAsync();
 			_packetTap = null;
+		}
+		if (_recorder != null)
+		{
+			SessionRecorder.SetCurrent(null);
+			await _recorder.DisposeAsync();
+			_recorder = null;
 		}
 	}
 

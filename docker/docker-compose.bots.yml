@@ -143,6 +143,9 @@ services:
       AION_LOG_JSONL_DIR: /app/game-server/log
       AION_RUN_ID: ${AION_RUN_ID:-}
       AION_PACKET_TAP: ${AION_PACKET_TAP:-false}
+      AION_RECORD: ${AION_RECORD:-false}
+      AION_RECORD_ACCOUNTS: ${AION_RECORD_ACCOUNTS:-}
+      AION_RECORD_DIR: /app/game-server/log/recordings
       GAMESERVER_ADMIN_API_ENABLED: "true"
       GAMESERVER_ADMIN_API_PORT: "7780"
       AION_TIMER_CENSUS: "1"
@@ -185,6 +188,9 @@ services:
       AION_LOG_JSONL_DIR: /app/game-server/log
       AION_RUN_ID: ${AION_RUN_ID:-}
       AION_PACKET_TAP: ${AION_PACKET_TAP:-false}
+      AION_RECORD: ${AION_RECORD:-false}
+      AION_RECORD_ACCOUNTS: ${AION_RECORD_ACCOUNTS:-}
+      AION_RECORD_DIR: /app/game-server/log/recordings
       GAMESERVER_ADMIN_API_ENABLED: "true"
       GAMESERVER_ADMIN_API_PORT: "7780"
       AION_TIMER_CENSUS: "1"
