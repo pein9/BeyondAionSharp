@@ -58,7 +58,8 @@ public sealed class BotNavMeshRouter(BotNavMeshSet navMeshes, BotNavigationGeome
 		if (Distance(start, destination) <= 0.05f) return Succeed([]);
 		IReadOnlyList<BotPosition>? route = Route(mapId, start, destination, options);
 		if (route == null && lastOutcome is BotNavRouteOutcome.NotConnected or BotNavRouteOutcome.EndpointOffMesh)
-			route = Bridge(mapId, start, destination, options);
+			route = StepOffIsland(mapId, start, destination, options, (from, _) => Route(mapId, from, destination, options))
+				?? Bridge(mapId, start, destination, options);
 		if (route == null) return [];
 		if (route.Count == 0 || Distance(route[^1], destination) > 0.05f)
 		{
@@ -73,6 +74,40 @@ public sealed class BotNavMeshRouter(BotNavMeshSet navMeshes, BotNavigationGeome
 			}
 		}
 		return Succeed(route);
+	}
+
+	/// <summary>The bot itself stands on a separate scrap of navmesh (a rock top, a crate, a ledge the voxel
+	/// bake split off) that the server geometry let it reach: take a short checked step to nearby ground on
+	/// the destination's island (within 15 m), then continue with <paramref name="onward"/>. Null when no such
+	/// step exists.</summary>
+	private IReadOnlyList<BotPosition>? StepOffIsland(int mapId, BotPosition start, BotPosition destination, BotNavQuery options,
+		Func<BotPosition, BotNavRouteOutcome, IReadOnlyList<BotPosition>?> onward)
+	{
+		BotNavRouteOutcome original = lastOutcome;
+		BotNavMesh? mesh = NavMeshes.Get(mapId);
+		if (mesh == null) return null;
+		int here = mesh.IslandOf(start, options with { SnapHorizontal = 2 });
+		int there = mesh.IslandOf(destination, options);
+		if (there < 0 || here == there) { lastOutcome = original; return null; }
+		foreach (BotPosition ground in Around(start, [2f, 4f, 7f, 10f, 15f], 12)
+			.Select(p => mesh.Snap(p, options with { SnapHorizontal = 1.5f, SnapVertical = 15f })).OfType<BotPosition>()
+			.Where(p => mesh.IslandOf(p, options with { SnapHorizontal = 1f }) == there)
+			.OrderBy(p => Horizontal(p, start)).Take(6))
+		{
+			IReadOnlyList<BotPosition> step = options.Hazards.Count == 0
+				? Geometry.GridLocalPath(mapId, start, ground)
+				: Geometry.GridJourneyPathAvoiding(mapId, start, ground, options.Hazards);
+			if (step.Count == 0) continue;
+			IReadOnlyList<BotPosition>? rest = onward(step[^1], lastOutcome);
+			if (rest == null) continue;
+			List<BotPosition> route = [.. step, .. rest];
+			if (options.Hazards.Count > 0 && !BotNavigationGeometry.AvoidsHazards(start, route, options.Hazards)) continue;
+			Log?.Invoke($"stepped off navmesh island {here} at {start} onto {there} at {step[^1]}");
+			lastOutcome = BotNavRouteOutcome.Routed;
+			return route;
+		}
+		lastOutcome = original;
+		return null;
 	}
 
 	/// <summary>The destination stands on a separate scrap of navmesh (a crate top, a platform, a ledge the voxel
@@ -112,6 +147,9 @@ public sealed class BotNavMeshRouter(BotNavMeshSet navMeshes, BotNavigationGeome
 		// Partial: the target may stand on its own tiny island (a platform, a crate) or snap to a rock top;
 		// Detour then walks to the reachable polygon closest to it, which usually lies within reach.
 		IReadOnlyList<BotPosition>? route = Route(mapId, start, target, options, allowPartial: true, acceptShort: true);
+		if (route == null && lastOutcome is BotNavRouteOutcome.NotConnected or BotNavRouteOutcome.EndpointOffMesh)
+			route = StepOffIsland(mapId, start, target, options,
+				(from, _) => Route(mapId, from, target, options, allowPartial: true, acceptShort: true));
 		if (route == null)
 		{
 			BotNavRouteOutcome first = lastOutcome;
@@ -172,6 +210,15 @@ public sealed class BotNavMeshRouter(BotNavMeshSet navMeshes, BotNavigationGeome
 	{
 		BotNavMesh? mesh = NavMeshes.Get(mapId);
 		if (mesh == null) { lastOutcome = BotNavRouteOutcome.NoNavMesh; return null; }
+		if (options.HazardClearance > 0 && options.Hazards.Count > 0)
+			options = options with
+			{
+				HazardClearance = 0,
+				Danger = [.. options.Danger, .. options.Hazards
+					.Where(h => Horizontal(start, h.Position) >= h.Radius + options.HazardClearance &&
+						Horizontal(destination, h.Position) >= h.Radius + options.HazardClearance)
+					.Select(h => new BotNavDanger(h.Position.X, h.Position.Y, h.Radius + options.HazardClearance, 8))],
+			};
 		if (mesh.Snap(start, options) == null || (!allowPartial && mesh.Snap(destination, options) == null))
 		{ lastOutcome = BotNavRouteOutcome.EndpointOffMesh; return null; }
 		IReadOnlyList<BotPosition> raw = mesh.FindCorners(start, destination, options, allowPartial);

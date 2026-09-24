@@ -65,6 +65,111 @@ navmesh first whenever one is checked in for the map. This covers SIM (`ForServe
   `EndpointOffMesh`, `NotConnected`, `GeometryRejected`, `HazardRejected` or `NoApproachPoint`.
   It can go straight into a bot trace.
 
+## Pulling and retreating like a player
+
+**Chain aggro, from the Java spec.** `AggroEventHandler.onCreatureNeedsSupport` decides who joins a
+fight. When a monster is hit, or aggroes and broadcasts, every NPC whose tribe can support it
+(`TribeRelationsData.canSupport`) and is not already fighting joins. It joins when it is within its
+own aggro range + 2 m of the monster or of the attacker, and can see it. `NaturalPullPlanner` uses
+exactly that rule:
+
+- **Target choice.** Among the first monsters the route meets, it prefers the one with no
+  supporters within their assist range. A lone monster further along the path beats the first one
+  of a pair.
+- **Firing spot.** The spot is within spell range (22 m) and in line of sight. It is outside every
+  monster's aggro circle and every supporter's assist range, so no one joins. It sits on the side
+  with the most clearance, which is the "left or right side of the path".
+- **Waiting.** When helpers would still come, the bot waits up to three times, 3 s each, for
+  patrols to move. After that it takes the pull with the fewest helpers.
+- **Reachability.** The bot walks to the spot on a checked, hostile-free navmesh route on its own
+  navmesh island, so it never ends up on a rock top.
+
+The journey uses the planner in three places: fighting through blockers (`MoveToPullSpotAsync`), the
+Q2005 Stalker hunt, and the quest-kill standoff. Each decision is traced as `pull-plan`, with the
+candidates, the target, the firing spot, the expected helpers and the clearance.
+
+**Passing by.** Routes that only pass observed monsters keep an extra 4 m where there is room
+(`BotNavQuery.HazardClearance`, `BotNavigationGeometry.PassingClearance`), so the bot takes the far
+side of the road from a pack.
+
+**Retreat.** Java `AttackManager.checkGiveupDistance` sets the escape rule. With Ishalgen's defaults,
+a chaser gives up beyond 50 m from its target, beyond 200 m from home, or beyond 100 m from home
+after 10 s without being hit. An equal-speed chaser cannot be outrun, so `RetreatFromPackAsync`
+drags the pack away from home:
+
+- **Candidates.** Walked ground, the refuge, and navmesh rings at 45–150 m. Only ground on the
+  bot's own navmesh island counts: a ring point that snaps onto a rock top can never be reached.
+- **Direction.** Candidates must lie ahead, away from the attackers' centre. None may be inside
+  another observed circle.
+- **Ranking.** Candidates are ranked by distance from the attackers' homes (first-seen
+  `SM_NPC_INFO` positions).
+- **First steps.** Routes avoid every other observed monster but not the chasers, whose circles
+  move with the bot. The first steps may swing sideways around a rock or another monster, but a
+  route whose point about 10 m along turns back into the pack is rejected.
+- **Cornered.** When no candidate passes, or the chasers are still close after eight replans, the
+  retreat reports `combat-retreat-cornered` and the Priest fights it out. The combat policy then
+  never picks retreat again in that fight (`NaturalCombatObservation.Cornered`). It heals, uses
+  potions and keeps attacking, as a player with no way out would. A death there is an ordinary
+  death and revive, not a failed run.
+
+The destination is kept until the bot reaches it. The old policy re-measured clearance from chasers
+that moved with the bot, and alternated between checkpoints back toward them.
+
+**No fight-length limits.** A fight lasts as long as it needs to. Chain aggro and respawns can keep
+monsters coming, and a cornered Priest alternates heals and damage for minutes. The only bound is
+1,000 combat actions (`MaximumCombatActions`), about an hour of game time, which stops a genuine
+stall from hanging the run. The same applies to defending before a pull, which keeps killing
+attackers while any remain. It also applies to resting. A rest interrupted by an attack fights the
+attackers nearest first instead of failing, and only quiet rest intervals count toward the
+recovery budget.
+
+**Open routes after a fight.** When the fight-through plan finds a route to the objective that no
+observed monster blocks, for example after a retreat dragged the pack away, the caller walks again
+instead of giving up.
+
+**Walkers.** A walking NPC's `SM_MOVE` carries its walk target after the start position (Java
+`SM_MOVE.writeImpl`: `POSITION|MANUAL|ABSOLUTE`), and a real client animates the NPC toward it. The bot
+decoder used to drop those floats, so a walker looked frozen where its walk began. It now keeps the
+target (`BotKnownObject.MoveTarget`, `SettledPosition`). When the server answers
+`STR_SKILL_NOT_ENOUGH_DISTANCE` or `STR_SKILL_OBSTACLE` although the last-known position looks fine, the
+Priest closes in, up to 8 m and never nearer than 10 m, toward where the walker settled
+(`combat-range-close-in`), or finds a firing spot with sight of it. That was the long-standing
+"no checked guarded approach to Nalto" failure: a patrolling Mau stood 25 m past where the bot thought.
+
+**Chasing a walker.** When the pull's target has walked on by the time the bot reaches its firing
+spot, the bot plans the pull again against the target's new position, up to three times
+(`pull-target-moved`), instead of dropping it.
+
+**Learning from deaths.** The Priest records where it died (`NaturalSimulationCombat.DeathSpots`). Pull
+planning prefers firing spots more than 12 m from one, as a player avoids the spot where hidden or
+respawning monsters killed them. It is a preference, not a wall: when the only way in passes there, as
+at Rae's camp, the Priest goes anyway. The camp near Rae (about 641, 961) is the usual example: monsters that
+were never visible joined "clean" pulls there.
+
+**Resting away from respawns.** Before sitting down, the Priest moves to the nearest ground that nothing
+respawning or already visible can aggro from. That means outside every shipped hostile spawn point's aggro
+range and every observed monster's, plus 5 m (Java's 2 m assist offset and some slack), within 150 m
+(`NaturalSimulationCombat.RestMargin`, traced as `rest-relocate`). Candidates are recently walked ground
+and navmesh rings on the bot's own island, nearest first. The walk there avoids observed monsters, and
+other spawn circles when it can. Resting inside a spawn circle means every respawn interrupts the rest,
+a rest, fight, rest loop that ends in death. The Stalkers at Rae's camp respawn every 180 s, 12–15 m
+from where the Priest used to rest.
+
+**Stuns.** A cast refused with `STR_SKILL_CAN_NOT_ATTACK_WHILE_IN_ABNORMAL_STATE` (Java
+`PlayerRestrictions.canUseSkill`: stunned, knocked down) is a start rejection. The Priest waits a second
+and re-evaluates instead of timing out.
+
+**Travel caps are stall guards, not distance limits.** The navigator moves in 8-point segments. Its
+cap is 1,000 segments, about 16 km, so a cross-map walk back to a quest giver never runs out. Following
+an NPC that walks around town is ordinary travel and does not use the hazard replan budget. A target
+that drops out of view at the edge of visibility range is not a failure either. The bot walks on to
+the shipped spawn hint and reacquires it, and reports it missing only when it stands there and still
+sees nothing.
+
+**Stepping off islands.** If the bot stands on a scrap of mesh the bake split off (the server
+geometry can allow it), `BotNavMeshRouter` takes a short checked step to nearby ground on the
+destination's island first.
+
 ## Files
 
 | Path | Contents | Made by |

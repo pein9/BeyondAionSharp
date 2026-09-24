@@ -505,9 +505,21 @@ public sealed partial class BotServerPacketDecoder
 	private static IReadOnlyDictionary<string, object?> DecodeMove(ReadOnlySpan<byte> body)
 	{
 		var r = new PacketBodyReader(body);
-		return Fields(
+		var fields = Fields(
 			("objectId", r.ReadInt32()), ("x", r.ReadSingle()), ("y", r.ReadSingle()), ("z", r.ReadSingle()),
 			("heading", r.ReadByte()), ("movementMask", r.ReadByte()));
+		// Java SM_MOVE.writeImpl: POSITION|MANUAL (0x80|0x40) is followed by three floats. With ABSOLUTE
+		// (0x20) they are the move controller's target (an NPC's walk or chase destination, which a real
+		// client animates toward); without it they are a player's relative vector.
+		byte mask = (byte)fields["movementMask"]!;
+		if ((mask & 0xC0) == 0xC0 && r.Remaining >= 12)
+		{
+			string prefix = (mask & 0x20) != 0 ? "target" : "vector";
+			fields[prefix + "X"] = r.ReadSingle();
+			fields[prefix + "Y"] = r.ReadSingle();
+			fields[prefix + "Z"] = r.ReadSingle();
+		}
+		return fields;
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeCraftUpdate(ReadOnlySpan<byte> body)

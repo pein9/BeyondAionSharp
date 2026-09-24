@@ -33,6 +33,10 @@ public sealed partial class SimulationFastScenarioTests
 		bool stopAfterQ2006 = Environment.GetEnvironmentVariable("NI07_STOP_AFTER_Q2006") == "1";
 		bool stopAfterQ2007 = Environment.GetEnvironmentVariable("NI07_STOP_AFTER_Q2007") == "1";
 		bool fullJourney = Environment.GetEnvironmentVariable("NI07_FULL_JOURNEY") == "1";
+		// Set by TryFightThroughAsync: its last plan found a route to the objective that no observed monster
+		// blocks (for example after a retreat dragged the pack away), so the caller should simply walk again.
+		bool fightRouteOpen = false;
+		BotPosition? fightRouteOpenAt = null;
 		Skip.IfNot(stopAfterQ2004 || stopAfterQ2005 || stopAfterQ2006 || stopAfterQ2007 || fullJourney,
 			"Set NI07_STOP_AFTER_Q2004=1, NI07_STOP_AFTER_Q2005=1, NI07_STOP_AFTER_Q2006=1 " +
 			"or NI07_STOP_AFTER_Q2007=1 " +
@@ -142,6 +146,11 @@ public sealed partial class SimulationFastScenarioTests
 		bool maintainingInventory = false;
 		long failedRestockKinah = -1;
 		combat.MaintainInventoryAsync = MaintainInventoryAsync;
+		combat.HostileSpawns = graph.GetMap(contract.MapId)!.Waypoints
+			.Select(waypoint => (waypoint, template: waypoint.TemplateId is int id
+				? Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(id) : null))
+			.Where(entry => entry.template?.GetNpcTemplateType() == NpcTemplateType.MONSTER && entry.template.GetAggroRange() > 0)
+			.Select(entry => new BotNavigationHazard(entry.waypoint.Position, entry.template!.GetAggroRange())).ToArray();
 		async Task MaintainInventoryAsync(CancellationToken maintenanceToken)
 		{
 			BotWorldModel world = session.Api.World;
@@ -265,8 +274,7 @@ public sealed partial class SimulationFastScenarioTests
 		for (int basket = 0; basket < 3; basket++)
 		{
 			session.BeginStep($"ni07-q2104-basket-{basket + 1}", "walk-and-loot-shipped-basket");
-			int objectId = await ApproachShippedSpawnAsync(700124);
-			await LootActionObjectAsync(session, objectId, 182203104, token);
+			int objectId = await UseAndLootQuestObjectAsync(700124, 182203104);
 			navigator.UnavailableObjects.Add(objectId);
 		}
 		Assert.Equal(3, ItemCount(session.Api.World, 182203104));
@@ -398,6 +406,9 @@ public sealed partial class SimulationFastScenarioTests
 			return Assert.IsType<int>(result.TargetObjectId);
 		}
 
+		bool SpawnsOnMap(int templateId) =>
+			graph.GetMap(contract.MapId)!.Waypoints.Any(waypoint => waypoint.TemplateId == templateId);
+
 		async Task<int> ApproachShippedSpawnAsync(int templateId, bool skipBlockedTarget = false)
 		{
 			BotWaypoint[] anchors = graph.GetMap(contract.MapId)!.Waypoints
@@ -464,6 +475,22 @@ public sealed partial class SimulationFastScenarioTests
 					reasons.Add(approach.Reason);
 					continue;
 				}
+				// Prefer the target and spot that pull it alone (fewest helpers), not merely the nearest.
+				NaturalNavigationObject[] visible = navigator.Observe().Npcs
+					.Where(npc => npc.TemplateId == templateId && Distance(session.CurrentPosition, npc.Position) <= 30)
+					.OrderBy(npc => Distance(session.CurrentPosition, npc.Position)).ToArray();
+				if (visible.Length > 0 && await MoveToPullSpotAsync(visible, [], $"quest-kill-{templateId}") is { Helpers.Count: 0 } pull)
+				{
+					session.TraceDiagnostic("combat-standoff-selected", new Dictionary<string, object?>
+					{
+						["templateId"] = templateId,
+						["objectId"] = pull.Target.Npc.ObjectId,
+						["distance"] = Distance(session.CurrentPosition, pull.Target.Npc.Position),
+						["position"] = session.CurrentPosition,
+						["cleanPull"] = true,
+					});
+					return pull.Target.Npc.ObjectId;
+				}
 				for (int scan = 0; scan < 2; scan++)
 				{
 					NaturalNavigationObject? observed = navigator.Observe().Npcs
@@ -529,6 +556,202 @@ public sealed partial class SimulationFastScenarioTests
 				$"last route: {navigator.LastRouteDiagnostic}");
 		}
 
+		// Observed monsters as the pull planner sees them (Java aggro range and tribe).
+		NaturalPullMonster[] ObservedPullMonsters(int? except = null) => navigator.Observe().Npcs
+			.Where(npc => npc.ObjectId != except)
+			.Select(npc => (npc, template: Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)))
+			.Where(entry => entry.template?.GetNpcTemplateType() == NpcTemplateType.MONSTER)
+			.Select(entry => new NaturalPullMonster(entry.npc, entry.template!.GetAggroRange(), entry.template.GetTribe().ToString()))
+			.ToArray();
+		static bool CanSupport(string helper, string asking) =>
+			Enum.TryParse(helper, out Aion.GameServer.Model.TribeClass h) && Enum.TryParse(asking, out Aion.GameServer.Model.TribeClass a) &&
+			Aion.GameServer.Dataholders.DataManager.TRIBE_RELATIONS_DATA.CanSupport(h, a);
+
+		// Monsters already on the bot (attacked it in the recent packet window and still within 30 m) and
+		// pursuers still closing in (over 10 m from where they were first seen, and nearer the bot than that
+		// spot). A player deals with these before pulling anything new.
+		(int[] Attackers, int[] Pursuers) Engaged()
+		{
+			var observed = navigator.Observe().Npcs.ToDictionary(npc => npc.ObjectId);
+			int[] attackers = session.PacketHistory.TakeLast(400)
+				.Where(packet => packet.PacketType == typeof(SM_ATTACK) && packet.Get<int>("targetObjId") == session.CharacterId)
+				.Select(packet => packet.Get<int>("attackerObjId")).Distinct()
+				.Where(id => observed.TryGetValue(id, out var npc) && Distance(session.CurrentPosition, npc.Position) < 30)
+				.ToArray();
+			int[] pursuers = ObservedPullMonsters()
+				.Where(m => !attackers.Contains(m.Npc.ObjectId) && Distance(session.CurrentPosition, m.Npc.Position) < 45)
+				.Where(m => session.PacketHistory.FirstOrDefault(packet => packet.PacketType == typeof(SM_NPC_INFO) &&
+					packet.Get<int>("objectId") == m.Npc.ObjectId) is { } info &&
+					new BotPosition(info.Get<float>("x"), info.Get<float>("y"), info.Get<float>("z"), 0) is var home &&
+					Distance(home, m.Npc.Position) > 10 &&
+					Distance(session.CurrentPosition, m.Npc.Position) < Distance(session.CurrentPosition, home))
+				.Select(m => m.Npc.ObjectId).ToArray();
+			return (attackers, pursuers);
+		}
+
+		// Use a quest object and loot its item like a player: wait out the use bar the server starts
+		// (SM_USE_OBJECT), and if a monster interrupts it (the closing SM_USE_OBJECT has duration 0), fight
+		// what is on the Priest and walk back to use it again. Returns the object that was looted.
+		async Task<int> UseAndLootQuestObjectAsync(int templateId, int itemId, bool skipBlockedTarget = false)
+		{
+			for (int attempt = 1; attempt <= 10; attempt++)
+			{
+				int objectId = await ApproachShippedSpawnAsync(templateId, skipBlockedTarget);
+				long before = ItemCount(session.Api.World, itemId);
+				int start = session.PacketHistory.Count;
+				await session.SendPacketAsync(session.Api.TalkTo(objectId), token);
+				await session.SynchronizeAsync(token);
+				DecodedBotServerPacket? started = session.PacketHistory.Skip(start)
+					.LastOrDefault(packet => packet.PacketType == typeof(SM_USE_OBJECT) &&
+						packet.Get<int>("targetObjectId") == objectId && packet.Get<byte>("actionType") != 2);
+				int durationMs = started?.Get<int>("durationMs") ?? 3000;
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Max(durationMs, 1) + 1), token);
+				await session.SynchronizeAsync(token);
+				DecodedBotServerPacket? finish = session.PacketHistory.Skip(start)
+					.LastOrDefault(packet => packet.PacketType == typeof(SM_USE_OBJECT) &&
+						packet.Get<int>("targetObjectId") == objectId && packet.Get<byte>("actionType") == 2);
+				bool completed = finish == null || finish.Get<int>("durationMs") > 0;
+				if (completed && (await TryLootCorpseItemAsync(session, objectId, itemId, token) ||
+					ItemCount(session.Api.World, itemId) > before))
+					return objectId;
+				session.TraceDiagnostic(completed ? "quest-object-without-item" : "quest-object-use-interrupted",
+					new Dictionary<string, object?>
+				{
+					["templateId"] = templateId,
+					["objectId"] = objectId,
+					["itemId"] = itemId,
+					["attempt"] = attempt,
+					["durationMs"] = finish?.Get<int>("durationMs"),
+					["position"] = session.CurrentPosition,
+				});
+				if (completed) navigator.UnavailableObjects.Add(objectId); // used up without the item: try another
+				else if (!await DefendAgainstEngagedAsync($"quest-object-{templateId}"))
+					await combat.RestAsync(token);
+			}
+			throw new InvalidDataException($"Quest object {templateId} did not yield item {itemId} after ten uses.");
+		}
+
+		// Fight what is already on the bot, one at a time, before any new pull. False if the bot died.
+		async Task<bool> DefendAgainstEngagedAsync(string purpose)
+		{
+			// No cap on how many attackers are fought: chain aggro and respawns can keep them coming. Only the
+			// wait for pursuers that never arrive is bounded (they gave up and walked home).
+			int pursuerWaits = 0;
+			for (int round = 0; round < NaturalSimulationCombat.MaximumCombatActions; round++)
+			{
+				var (attackers, pursuers) = Engaged();
+				if (attackers.Length == 0 && pursuers.Length == 0) return true;
+				if (attackers.Length == 0)
+				{
+					// Let a chaser arrive and commit rather than walking into a fresh pull with it behind us.
+					await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+					await session.SynchronizeAsync(token);
+					if (++pursuerWaits >= 3) return true; // it turned back (leash/give-up); carry on
+					continue;
+				}
+				pursuerWaits = 0;
+				int attacker = attackers.OrderBy(id => Distance(session.CurrentPosition,
+					navigator.Observe().Npcs.First(npc => npc.ObjectId == id).Position)).First();
+				session.TraceDiagnostic("defend-before-pull", new Dictionary<string, object?>
+				{
+					["purpose"] = purpose,
+					["attacker"] = attacker,
+					["attackers"] = attackers,
+					["pursuers"] = pursuers,
+					["hp"] = session.Api.World.CurrentHp,
+					["position"] = session.CurrentPosition,
+				});
+				int revivesBefore = combat.ReviveCount;
+				bool killed = await combat.TryKillAsync(attacker, token, session.CurrentPosition);
+				if (combat.ReviveCount > revivesBefore || session.Api.World.IsDead) return false;
+				if (killed) navigator.UnavailableObjects.Add(attacker);
+				else return true; // combat decided otherwise (retreat); let the caller re-plan
+			}
+			await combat.RestAsync(token);
+			return true;
+		}
+
+		// Pull like a player: choose, among the given targets (earlier ones preferred on ties), the one and the
+		// spot that bring the fewest helpers (Java assist rule), at spell range off to the side of the pack,
+		// outside every circle; if helpers would still come, wait briefly for patrols to move. Then walk there
+		// on a checked, hostile-free route. Returns the target to fight, or null when no spot is reachable.
+		// A preference, not a wall: the spot where the Priest died is avoided when any other firing spot
+		// works, but when it is the only way in (Rae's camp) the Priest still goes.
+		const float DeathSpotAvoidance = 12f;
+		async Task<NaturalPullPlan?> MoveToPullSpotAsync(IReadOnlyList<NaturalNavigationObject> targets,
+			IReadOnlyList<BotPosition> stagingPoints, string purpose)
+		{
+			if (!await DefendAgainstEngagedAsync(purpose)) return null;
+			if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 80) await combat.RestAsync(token);
+			NaturalPullPlan? plan = null;
+			for (int wait = 0; wait <= 3; wait++)
+			{
+				NaturalPullMonster[] monsters = ObservedPullMonsters();
+				NaturalPullMonster[] pullTargets = targets
+					.Select(t => monsters.FirstOrDefault(m => m.Npc.ObjectId == t.ObjectId)).OfType<NaturalPullMonster>().ToArray();
+				if (pullTargets.Length == 0) return null;
+				BotNavigationHazard[] hazards = monsters.Select(m => new BotNavigationHazard(m.Npc.Position, m.AggroRadius)).ToArray();
+				var reachable = new Dictionary<(int, int), bool>();
+				bool avoidDeaths = combat.DeathSpots.Count > 0;
+				NaturalPullPlan? PlanOnce() => NaturalPullPlanner.Plan(session.CurrentPosition, pullTargets, monsters, stagingPoints, CanSupport,
+					(a, b) => geometry.HasLineOfSight(contract.MapId, a, b),
+					point => geometry.SnapToGround(contract.MapId, point),
+					spot =>
+					{
+						var key = ((int)MathF.Round(spot.X), (int)MathF.Round(spot.Y));
+						// Navmesh-connected only: a grid shortcut can climb onto a rock top the navmesh keeps
+						// as a separate island, stranding the bot for every later route.
+						if (avoidDeaths && combat.DeathSpots.Any(death => Distance(death, spot) < DeathSpotAvoidance)) return false;
+						if (!reachable.TryGetValue(key, out bool ok))
+							reachable[key] = ok = Distance(session.CurrentPosition, spot) < 1 ||
+								(geometry.NavMesh is { } router && router.NavMeshes.Get(contract.MapId) is { } mesh
+									? mesh.IslandOf(spot) >= 0 && mesh.IslandOf(spot) == mesh.IslandOf(session.CurrentPosition) &&
+										router.FindPath(contract.MapId, session.CurrentPosition, spot,
+											BotNavQuery.Default with { Hazards = hazards }).Count > 0
+									: geometry.FindJourneyPathAvoiding(contract.MapId, session.CurrentPosition, spot, hazards).Count > 0);
+						return ok;
+					});
+				plan = PlanOnce();
+				if (plan == null && avoidDeaths)
+				{
+					avoidDeaths = false; // the only way in passes where the Priest died: go anyway
+					plan = PlanOnce();
+				}
+				session.TraceDiagnostic("pull-plan", new Dictionary<string, object?>
+				{
+					["purpose"] = purpose,
+					["wait"] = wait,
+					["position"] = session.CurrentPosition,
+					["candidates"] = pullTargets.Select(t => $"{t.Npc.TemplateId}/{t.Npc.ObjectId}").ToArray(),
+					["target"] = plan == null ? null : $"{plan.Target.Npc.TemplateId}/{plan.Target.Npc.ObjectId}",
+					["firingPosition"] = plan?.FiringPosition,
+					["expectedHelpers"] = plan?.Helpers.Select(h => $"{h.Npc.TemplateId}/{h.Npc.ObjectId}").ToArray(),
+					["clearance"] = plan?.ClearanceFromOthers,
+				});
+				if (plan == null || plan.Helpers.Count == 0 || wait == 3) break;
+				// A helper stands in range: patrols move, so give it a few seconds before accepting a chain pull.
+				await session.AdvanceAsync(TimeSpan.FromSeconds(3), token);
+				await session.SynchronizeAsync(token);
+			}
+			if (plan == null) return null;
+			if (Distance(session.CurrentPosition, plan.FiringPosition) > 1.5f)
+			{
+				BotNavigationHazard[] hazards = ObservedPullMonsters()
+					.Select(m => new BotNavigationHazard(m.Npc.Position, m.AggroRadius)).ToArray();
+				IReadOnlyList<BotPosition> approach = geometry.FindJourneyPathAvoiding(contract.MapId,
+					session.CurrentPosition, plan.FiringPosition, hazards);
+				if (approach.Count == 0) return null;
+				foreach (BotPosition[] chunk in approach.Chunk(8))
+				{
+					if (!navigator.IsSegmentSafe(chunk, plan.Target.Npc.ObjectId)) return null; // new hostile: re-plan
+					await navigator.MoveAsync(chunk, token);
+					await navigator.SynchronizeAsync(token);
+					if (session.Api.World.IsDead) return null;
+				}
+			}
+			return plan;
+		}
+
 		// Fight your way in: when observed monsters close every hostile-free route, take the route that fights
 		// the least, walk its hostile-free prefix to a firing point just outside the first circle it enters,
 		// and pull that one monster with ordinary combat. True after a kill (the caller re-observes and
@@ -558,18 +781,40 @@ public sealed partial class SimulationFastScenarioTests
 				["next"] = next == null ? null : $"{next.Monster.Npc.TemplateId}/{next.Monster.Npc.ObjectId}",
 				["firingPosition"] = next?.FiringPosition,
 			});
+			fightRouteOpen = fightRoute.Count > 0 &&
+				NaturalFightThrough.BlockersInOrder(session.CurrentPosition, fightRoute, monsters).Count == 0;
 			if (next == null) return false;
-			foreach (BotPosition[] chunk in next.Staging.Chunk(8))
+			// The first few monsters the route meets, pulled in the order and from the spot that chain least.
+			NaturalNavigationObject[] blockers = NaturalFightThrough.BlockersInOrder(session.CurrentPosition, fightRoute, monsters)
+				.Where(m => !rejected.Contains(m.Npc.ObjectId)).Take(3).Select(m => m.Npc).ToArray();
+			NaturalPullPlan? pull = await MoveToPullSpotAsync(blockers, next.Staging, "fight-through");
+			if (session.Api.World.IsDead) return false;
+			if (pull == null)
 			{
-				if (!navigator.IsSegmentSafe(chunk, next.Monster.Npc.ObjectId)) return true; // new hostile: re-plan
-				await navigator.MoveAsync(chunk, token);
-				await navigator.SynchronizeAsync(token);
-				if (session.Api.World.IsDead) return false;
+				rejected.Add(next.Monster.Npc.ObjectId);
+				return true; // re-plan: nothing reachable to pull from here now
 			}
-			NaturalNavigationObject? target = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == next.Monster.Npc.ObjectId);
+			NaturalNavigationObject? target = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == pull.Target.Npc.ObjectId);
+			bool OutOfReach(NaturalNavigationObject npc) =>
+				Distance(session.CurrentPosition, npc.Position) > NaturalPullPlanner.SpellRange + 3 ||
+				!geometry.HasLineOfSight(contract.MapId, session.CurrentPosition, npc.Position);
+			// A patrolling monster walks on while the bot walks to its firing spot: follow it and plan the
+			// pull again, as a player does, rather than giving up on it.
+			for (int chase = 1; target != null && chase <= 3 && OutOfReach(target) && !session.Api.World.IsDead; chase++)
+			{
+				session.TraceDiagnostic("pull-target-moved", new Dictionary<string, object?>
+				{
+					["target"] = $"{target.TemplateId}/{target.ObjectId}",
+					["chase"] = chase,
+					["distance"] = Distance(session.CurrentPosition, target.Position),
+					["position"] = session.CurrentPosition,
+				});
+				NaturalPullPlan? again = await MoveToPullSpotAsync([target], [], "fight-through-chase");
+				if (again == null) break;
+				target = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == again.Target.Npc.ObjectId);
+			}
 			if (target == null) return true; // it moved away or despawned: re-plan from here
-			if (Distance(session.CurrentPosition, target.Position) > NaturalFightThrough.FiringRange + 2 ||
-				!geometry.HasLineOfSight(contract.MapId, session.CurrentPosition, target.Position))
+			if (OutOfReach(target))
 			{
 				rejected.Add(target.ObjectId);
 				return true;
@@ -610,7 +855,18 @@ public sealed partial class SimulationFastScenarioTests
 			for (int pull = 0; pull < 3; pull++)
 			{
 				int killsBefore = navigator.UnavailableObjects.Count;
-				if (!await TryFightThroughAsync(objective, objectiveObjectId, rejected)) break;
+				if (!await TryFightThroughAsync(objective, objectiveObjectId, rejected))
+				{
+					// Nothing blocks now: walk again. Only once per spot, though; if the walk fails again from
+					// the same place, the navigator sees something the fight-through plan does not.
+					if (fightRouteOpen && !session.Api.World.IsDead &&
+						(fightRouteOpenAt is not BotPosition last || Distance(last, session.CurrentPosition) > 2))
+					{
+						fightRouteOpenAt = session.CurrentPosition;
+						return true;
+					}
+					break;
+				}
 				if (navigator.UnavailableObjects.Count > killsBefore) return true;
 			}
 			// A pack can block every checked detour even when a side guard's own
@@ -788,8 +1044,7 @@ public sealed partial class SimulationFastScenarioTests
 			for (int sack = 0; sack < 3; sack++)
 			{
 				session.BeginStep($"ni07-q2001-sack-{sack + 1}", "walk-and-loot-sprigg-grain-sack");
-				int objectId = await ApproachShippedSpawnAsync(700093);
-				await LootActionObjectAsync(session, objectId, 182203002, token);
+				int objectId = await UseAndLootQuestObjectAsync(700093, 182203002);
 				navigator.UnavailableObjects.Add(objectId);
 			}
 			Assert.Equal(3, ItemCount(session.Api.World, 182203002));
@@ -919,8 +1174,7 @@ public sealed partial class SimulationFastScenarioTests
 			await session.SynchronizeAsync(token);
 			Assert.Equal(11, session.Api.World.Quests[2002].StepAndFlags);
 			session.BeginStep("ni07-q2002-mushroom", "collect-sticky-mushroom-for-verdandi");
-			int mushroom = await ApproachShippedSpawnAsync(700045);
-			await LootActionObjectAsync(session, mushroom, 182203003, token);
+			await UseAndLootQuestObjectAsync(700045, 182203003);
 			Assert.Equal(1, ItemCount(session.Api.World, 182203003));
 			session.BeginStep("ni07-q2002-mushroom-report", "present-collected-mushroom-to-verdandi");
 			verdandi = await ApproachShippedSpawnAsync(790002);
@@ -1488,7 +1742,22 @@ public sealed partial class SimulationFastScenarioTests
 					mijou = await ApproachShippedSpawnAsync(203540);
 					continue; // A patrolling target may be outside this bounded scan; try another area.
 				}
-				NaturalNavigationObject[] nearbyHostiles = navigator.Observe().Npcs
+				// Choose the Stalker and the spell-range spot that bring no helpers (Java assist rule), off to the
+				// side of any pack, and walk there before pulling; a planned clean pull replaces the blanket veto.
+				NaturalPullPlan? stalkerPull = null;
+				if (session.Api.World.CurrentHp * 100 >= session.Api.World.MaxHp * 90)
+				{
+					NaturalNavigationObject[] stalkers = navigator.Observe().Npcs
+						.Where(npc => npc.TemplateId is 210395 or 210396 or 210750 &&
+							Distance(session.CurrentPosition, npc.Position) <= 35)
+						.OrderBy(npc => Distance(npc.Position, isolatedStalker)).ToArray();
+					stalkerPull = await MoveToPullSpotAsync(stalkers, [], "q2005-stalker");
+					if (stalkerPull is { Helpers.Count: 0 } &&
+						navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == stalkerPull.Target.Npc.ObjectId) is { } planned)
+						observedStalker = planned;
+				}
+				bool cleanPull = stalkerPull is { Helpers.Count: 0 } && observedStalker.ObjectId == stalkerPull.Target.Npc.ObjectId;
+				NaturalNavigationObject[] nearbyHostiles = cleanPull ? [] : navigator.Observe().Npcs
 					.Where(npc => npc.ObjectId != observedStalker.ObjectId &&
 						Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)?.GetNpcTemplateType() == NpcTemplateType.MONSTER &&
 						Distance(session.CurrentPosition, npc.Position) < 12)
@@ -1689,9 +1958,12 @@ public sealed partial class SimulationFastScenarioTests
 				(203552, DialogAction.SETPRO4, 4, "nalto"),
 				(203554, DialogAction.SETPRO5, 5, "rae"),
 			];
+			// A player who dies in the Rae/Nalto camps walks back from bind and tries again. Ten deaths at one
+			// objective is a finding worth stopping for; two was not.
+			const int MaximumQ2007Recoveries = 10;
 			async Task<int> ApproachGuardedCampaignNpcAsync(int templateId)
 			{
-				for (int recovery = 0; recovery <= 2; recovery++)
+				for (int recovery = 0; recovery <= MaximumQ2007Recoveries; recovery++)
 				{
 					try
 					{
@@ -1702,14 +1974,18 @@ public sealed partial class SimulationFastScenarioTests
 							session.BeginStep($"ni07-q2007-rejoin-{templateId}-{recovery}",
 								"rest-at-bind-and-walk-previously-checked-eastern-road");
 							await combat.RestAsync(token);
-							await WalkEasternRoadToDerotAsync();
+							// Only a Priest still near bind needs the eastern road. The navigator may already have
+							// walked back south after the revive; turning round to Nobekk from Rae's camp would be
+							// a 2 km detour through every camp on the way.
+							if (Distance(session.CurrentPosition, new BotPosition(571.0388f, 2787.342f, 299.875f, 0)) < 400)
+								await WalkEasternRoadToDerotAsync();
 							if (templateId == 203554)
 								await ApproachShippedNpcThroughObservedGuardsAsync(203552, maximumGuardClears: 8);
 						}
 						return await ApproachShippedNpcThroughObservedGuardsAsync(templateId,
 							maximumGuardClears: 8);
 					}
-					catch (NaturalGuardedObjectiveRevivedException exception) when (recovery < 2)
+					catch (NaturalGuardedObjectiveRevivedException exception) when (recovery < MaximumQ2007Recoveries)
 					{
 					session.TraceDiagnostic("q2007-guarded-objective-revive", new Dictionary<string, object?>
 						{
@@ -1720,7 +1996,7 @@ public sealed partial class SimulationFastScenarioTests
 						});
 					}
 				}
-				throw new InvalidDataException($"Q2007 guarded NPC {templateId} exhausted two bind recoveries.");
+				throw new InvalidDataException($"Q2007 guarded NPC {templateId} exhausted {MaximumQ2007Recoveries} bind recoveries.");
 			}
 			foreach (var (npcId, action, step, name) in conversations)
 			{
@@ -1741,9 +2017,34 @@ public sealed partial class SimulationFastScenarioTests
 			})
 			{
 				session.BeginStep($"ni07-q2007-{color}-generator", "walk-to-and-use-quest-generator");
-				int generator = await ApproachShippedSpawnAsync(npcId);
-				await session.SendPacketAsync(session.Api.TalkTo(generator), token);
-				await session.SynchronizeAsync(token);
+				// Generators are quest_use_item objects (like the Mau sacks): the quest advances only when the
+				// ordinary use bar completes (SM_USE_OBJECT action 2 with its full duration). An attack aborts
+				// the use (duration 0); defend and use again.
+				for (int use = 1; session.Api.World.Quests[2007].StepAndFlags < step; use++)
+				{
+					if (use > 10) Assert.Fail($"Q2007 {color} generator use did not complete after ten attempts.");
+					int generator = await ApproachShippedSpawnAsync(npcId);
+					int usePacketStart = session.PacketHistory.Count;
+					await session.SendPacketAsync(session.Api.TalkTo(generator), token);
+					await session.SynchronizeAsync(token);
+					DecodedBotServerPacket? started = session.PacketHistory.Skip(usePacketStart)
+						.LastOrDefault(packet => packet.PacketType == typeof(SM_USE_OBJECT) &&
+							packet.Get<int>("targetObjectId") == generator && packet.Get<byte>("actionType") != 2);
+					int durationMs = started?.Get<int>("durationMs") ?? 3000;
+					await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Max(durationMs, 1) + 1), token);
+					await session.SynchronizeAsync(token);
+					if (session.Api.World.Quests[2007].StepAndFlags >= step) break;
+					session.TraceDiagnostic("generator-use-incomplete", new Dictionary<string, object?>
+					{
+						["generator"] = npcId,
+						["use"] = use,
+						["durationMs"] = durationMs,
+						["questStep"] = session.Api.World.Quests[2007].StepAndFlags,
+						["position"] = session.CurrentPosition,
+					});
+					// A death here is an ordinary death: revive at bind, walk back and use the generator again.
+					await DefendAgainstEngagedAsync($"q2007-{color}-generator");
+				}
 				Assert.Equal(step, session.Api.World.Quests[2007].StepAndFlags);
 			}
 			Assert.Contains(session.PacketHistory, packet => packet.PacketType == typeof(SM_PLAY_MOVIE) &&
@@ -1753,8 +2054,8 @@ public sealed partial class SimulationFastScenarioTests
 			await OpenQuestDialogAsync(rae, 2007);
 			session.Api.World.BeginWorldReload();
 			await session.SendPacketAsync(session.Api.SelectDialog(rae, DialogAction.SETPRO6, questId: 2007), token);
-			await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token,
-				packet => packet.Get<int>("worldId") == contract.MapId);
+			// Java TeleportService.teleportToNpc(player, 203516) stays on Ishalgen, and a same-map teleport
+			// (SpawnTask.run -> spawnOnSameMap) sends SM_CHANNEL_INFO and SM_PLAYER_INFO but no SM_PLAYER_SPAWN.
 			await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token,
 				packet => packet.Get<int>("objectId") == session.CharacterId);
 			session.AcceptTeleportPosition();
@@ -1850,8 +2151,7 @@ public sealed partial class SimulationFastScenarioTests
 			int munin = await ApproachShippedSpawnAsync(203550);
 			await session.StartQuestAsync(munin, 2123, token);
 			session.BeginStep("ni07-q2123-methu-egg", "walk-to-and-loot-client-observed-methu-egg");
-			int egg = await ApproachShippedSpawnAsync(700128, skipBlockedTarget: true);
-			await LootActionObjectAsync(session, egg, 182203122, token);
+			int egg = await UseAndLootQuestObjectAsync(700128, 182203122, skipBlockedTarget: true);
 			navigator.UnavailableObjects.Add(egg);
 			Assert.Equal(1, ItemCount(session.Api.World, 182203122));
 			session.BeginStep("ni07-q2123-munin-reward", "give-methu-egg-to-munin-without-ascension-dialogue");
@@ -1933,7 +2233,10 @@ public sealed partial class SimulationFastScenarioTests
 					}
 					case QuestRunOperationKind.Kill:
 					{
-						int[] targetIds = operation.Npcs?.Select(npc => npc.Id).Distinct().ToArray() ?? [];
+						// Quest data can list alternatives that never spawn on this map (Q2117 names 210389 and
+						// 210655; only 210389 has spawns): hunt what is actually there, as a player would.
+						int[] targetIds = (operation.Npcs?.Select(npc => npc.Id).Distinct() ?? [])
+							.Where(SpawnsOnMap).ToArray();
 						if (targetIds.Length == 0) throw new InvalidDataException($"Q{plan.Id} kill has no shipped target.");
 						for (int kill = 0; kill < operation.Count; kill++)
 						{
@@ -1948,22 +2251,23 @@ public sealed partial class SimulationFastScenarioTests
 					case QuestRunOperationKind.UseQuestObject:
 					{
 						int[] sourceIds = operation.Sources?.Select(source => source.Npc?.Id ?? 0)
-							.Where(id => id > 0).Distinct().ToArray() ?? [];
+							.Where(id => id > 0 && SpawnsOnMap(id)).Distinct().ToArray() ?? [];
 						if (sourceIds.Length == 0)
 							throw new InvalidDataException($"Q{plan.Id} item {operation.ItemId} has no shipped source.");
 						for (int attempt = 0; ItemCount(session.Api.World, operation.ItemId) < operation.Count;
 							attempt++)
 						{
 							int sourceId = sourceIds[attempt % sourceIds.Length];
-							int source = await ApproachShippedSpawnAsync(sourceId, skipBlockedTarget: sourceId >= 700000);
 							if (sourceId >= 700000)
-								await LootActionObjectAsync(session, source, operation.ItemId, token);
-							else
 							{
-								await combat.KillAsync(source, token);
-								await TryLootCorpseItemAsync(session, source, operation.ItemId, token);
-								await combat.RestAsync(token);
+								navigator.UnavailableObjects.Add(
+									await UseAndLootQuestObjectAsync(sourceId, operation.ItemId, skipBlockedTarget: true));
+								continue;
 							}
+							int source = await ApproachShippedSpawnAsync(sourceId);
+							await combat.KillAsync(source, token);
+							await TryLootCorpseItemAsync(session, source, operation.ItemId, token);
+							await combat.RestAsync(token);
 							navigator.UnavailableObjects.Add(source);
 						}
 						Assert.Equal(operation.Count, ItemCount(session.Api.World, operation.ItemId));
@@ -2143,11 +2447,18 @@ public sealed partial class SimulationFastScenarioTests
 		public NaturalNavigationObservation Observe()
 		{
 			BotWorldModel world = session.Api.World;
+			// A walking NPC is placed where its last SM_MOVE was heading (a real client animates it there;
+			// a walker that has been quiet for a while has arrived). Monsters that attacked the bot recently
+			// keep their reported position: their move target is the bot itself.
+			HashSet<int> attackers = session.PacketHistory.Skip(Math.Max(0, session.PacketHistory.Count - 400))
+				.Where(packet => packet.PacketType == typeof(SM_ATTACK) && packet.Get<int>("targetObjId") == session.CharacterId)
+				.Select(packet => packet.Get<int>("attackerObjId")).ToHashSet();
 			return new(world.MapId, session.CurrentPosition, world.IsDead,
 				world.Objects.Values.Where(item => (item.Kind is BotKnownObjectKind.Npc or BotKnownObjectKind.Gatherable) &&
 					item.TemplateId != null &&
 					!UnavailableObjects.Contains(item.ObjectId))
-					.Select(item => new NaturalNavigationObject(item.ObjectId, item.TemplateId!.Value, item.Position)).ToArray());
+					.Select(item => new NaturalNavigationObject(item.ObjectId, item.TemplateId!.Value,
+						attackers.Contains(item.ObjectId) ? item.Position : item.SettledPosition)).ToArray());
 		}
 
 		public Task<IReadOnlyList<BotPosition>> FindRouteAsync(BotPosition start, BotPosition destination,
@@ -2400,8 +2711,33 @@ public sealed partial class SimulationFastScenarioTests
 		public int ReviveCount => revives;
 		public bool InCombat { get; private set; }
 		public Func<CancellationToken, Task>? MaintainInventoryAsync { get; set; }
-		public Task EscapeAsync(BotPosition refuge, IReadOnlySet<int> observedAttackers,
-			CancellationToken token) => RetreatFromPackAsync(refuge, observedAttackers, token);
+		/// <summary>Leave the pack; when no checked escape leads away from it (a pocket, a ledge, more
+		/// monsters on every way out), fight the attackers nearest-first instead, as a cornered player would.</summary>
+		public async Task EscapeAsync(BotPosition refuge, IReadOnlySet<int> observedAttackers,
+			CancellationToken token)
+		{
+			if (await RetreatFromPackAsync(refuge, observedAttackers, token)) return;
+			foreach (int attacker in observedAttackers
+				.Select(id => navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == id))
+				.OfType<NaturalNavigationObject>()
+				.Where(npc => Distance(session.CurrentPosition, npc.Position) < 30)
+				.OrderBy(npc => Distance(session.CurrentPosition, npc.Position))
+				.Select(npc => npc.ObjectId).ToArray())
+			{
+				cornered = true;
+				await TryKillAsync(attacker, token);
+				if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0) return;
+			}
+		}
+
+		// Set when a retreat found no checked way out; the policy then fights instead of retreating again.
+		private bool cornered;
+		public const int MaximumCombatActions = 1000;
+		private const int MaximumRevives = 20;
+
+		/// <summary>Where the Priest died (client position at death). Pull planning avoids firing from near
+		/// these, as a player avoids the spot where hidden or respawning monsters killed them.</summary>
+		public List<BotPosition> DeathSpots { get; } = [];
 
 		public async Task KillAsync(int target, CancellationToken token)
 		{
@@ -2423,6 +2759,7 @@ public sealed partial class SimulationFastScenarioTests
 			{
 				InCombat = false;
 				navigator.InCombat = false;
+				cornered = false;
 			}
 		}
 
@@ -2440,7 +2777,10 @@ public sealed partial class SimulationFastScenarioTests
 			int? observedTargetHpPercent = null;
 			bool healedThisFight = false;
 			var incomingAttackers = new HashSet<int>();
-			for (int turn = 0; turn < 24; turn++)
+			// Fights may run long: a cornered Priest alternates heals and damage, and respawns or chain
+			// aggro can keep adding monsters. The bound only stops a genuine stall (every action rejected
+			// forever) from hanging the run; at a few seconds per action it is about an hour of game time.
+			for (int turn = 0; turn < MaximumCombatActions; turn++)
 			{
 				trace.Add($"t{turn}:pre-sync hp={world.CurrentHp}/{world.MaxHp} mp={world.CurrentMp}/{world.MaxMp} " +
 					$"dead={world.IsDead} pos={session.CurrentPosition}");
@@ -2482,7 +2822,8 @@ public sealed partial class SimulationFastScenarioTests
 					NearbyAggressors: nearbyAttackers, TargetHpPercent: observedTargetHpPercent,
 					HasHealedThisFight: healedThisFight, HasHotPotion: hotPotion != null,
 					HotPotionReady: hotReady,
-					HotPotionActive: NaturalIshalgenPotionPolicy.HasActiveHealing(world.VisibleEffects)), now);
+					HotPotionActive: NaturalIshalgenPotionPolicy.HasActiveHealing(world.VisibleEffects),
+					Cornered: cornered), now);
 				trace.Add($"t{turn}:action={choice.Action}/{choice.Skill?.Id} targetDistance={Distance(session.CurrentPosition, npc.Position):F1}");
 				lastCombatTrace = trace.TakeLast(12).ToArray();
 				session.TraceDiagnostic("combat-decision", new Dictionary<string, object?>
@@ -2588,75 +2929,230 @@ public sealed partial class SimulationFastScenarioTests
 						// Some quest pulls begin directly at an interacted object and have
 						// no named refuge. Previously walked client positions remain valid
 						// candidates, but each escape leg is checked against current mobs.
-						await RetreatFromPackAsync(retreatAnchor ?? session.CurrentPosition,
-							incomingAttackers, token);
-						return false;
+						if (await RetreatFromPackAsync(retreatAnchor ?? session.CurrentPosition,
+							incomingAttackers, token))
+							return false;
+						cornered = true; // No way out: stay and fight (heal, potions, then the target).
+						break;
 					default: throw new InvalidDataException($"Natural combat cannot act: {choice.Action}: {choice.Reason}");
 				}
 			}
-			throw new InvalidDataException("Natural Priest exceeded 24 actions without a client-observed NPC kill.");
+			throw new InvalidDataException($"Natural Priest exceeded {MaximumCombatActions} actions without a client-observed NPC kill.");
 		}
 
-		private async Task RetreatFromPackAsync(BotPosition refuge,
+		/// <summary>Where an attacker was when the bot first saw it: SM_NPC_INFO arrives as the NPC enters view,
+		/// normally at or near its spawn, so this estimates the home its give-up distance is measured from.</summary>
+		private BotPosition? FirstSeen(int objectId)
+		{
+			DecodedBotServerPacket? info = session.PacketHistory.FirstOrDefault(packet =>
+				packet.PacketType == typeof(SM_NPC_INFO) && packet.Get<int>("objectId") == objectId);
+			return info == null ? null
+				: new BotPosition(info.Get<float>("x"), info.Get<float>("y"), info.Get<float>("z"), 0);
+		}
+
+		/// <summary>
+		/// Break away from a pack: always away from the attackers, never back through them. Candidates are
+		/// previously walked ground, the refuge, and navmesh ground in rings around the bot, filtered to the
+		/// half-plane away from the attackers and outside other observed circles, and ranked by distance
+		/// from the attackers' homes (Java AttackManager.checkGiveupDistance: a chaser gives up beyond
+		/// 100 m from home after 10 s without being hit). A destination is kept until reached or blocked;
+		/// on arrival with chasers still close, the next one is chosen further out.
+		/// </summary>
+		private async Task<bool> RetreatFromPackAsync(BotPosition refuge,
 			IReadOnlySet<int> observedAttackers, CancellationToken token)
 		{
 			BotPosition origin = session.CurrentPosition;
-			for (int replan = 0; replan < 5; replan++)
+			int map = session.Api.World.MapId ?? throw new InvalidDataException("Retreat map unobserved.");
+			BotPosition[] homes = observedAttackers
+				.Select(id => FirstSeen(id) ?? navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == id)?.Position)
+				.OfType<BotPosition>().ToArray();
+			var tried = new List<BotPosition>();
+			for (int replan = 0; replan < 8; replan++)
 			{
 				BotPosition[] attackerPositions = navigator.Observe().Npcs
 					.Where(npc => observedAttackers.Contains(npc.ObjectId))
 					.Select(npc => npc.Position).ToArray();
-				BotPosition[] checkpoints = NaturalCombatRetreatPolicy.SelectCheckpoints(
-					session.CurrentPosition, refuge, navigator.Events, attackerPositions);
+				if (attackerPositions.Length == 0 || !attackerPositions.Any(p => Distance(session.CurrentPosition, p) < 30)) return true;
+				BotNavigationHazard[] otherHazards = navigator.Observe().Npcs
+					.Where(npc => !observedAttackers.Contains(npc.ObjectId))
+					.Select(npc => (npc, template: Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)))
+					.Where(entry => entry.template?.GetNpcTemplateType() == NpcTemplateType.MONSTER)
+					.Select(entry => new BotNavigationHazard(entry.npc.Position, entry.template!.GetAggroRange())).ToArray();
+				IEnumerable<BotPosition> candidates = navigator.Events
+					.Where(item => item.Action == "segment-progress" && item.Position != null)
+					.Select(item => item.Position!.Value).Append(refuge)
+					.Concat(geometry.GroundAround(map, session.CurrentPosition, [45f, 75f, 110f, 150f]))
+					.Where(p => !tried.Any(t => Distance(t, p) < 10) && geometry.OnSameIsland(map, session.CurrentPosition, p));
+				BotPosition[] escapes = NaturalCombatRetreatPolicy.SelectEscape(session.CurrentPosition,
+					attackerPositions, homes, candidates, otherHazards);
 				IReadOnlyList<BotPosition> route = [];
 				BotPosition? destination = null;
-				foreach (BotPosition checkpoint in checkpoints)
+				var rejections = new List<string>();
+				foreach (BotPosition escape in escapes)
 				{
-					IReadOnlyList<BotPosition> candidate = await navigator.FindRouteAsync(
-						session.CurrentPosition, checkpoint, token);
-					if (candidate.Count == 0 || Distance(session.CurrentPosition, candidate[^1]) < 5 ||
-						!navigator.IsSegmentSafe(candidate, null)) continue;
+					tried.Add(escape);
+					// Avoid every other observed monster, not the chasers themselves: they move with the bot,
+					// so their circles always surround it and would reject every escape.
+					IReadOnlyList<BotPosition> candidate = geometry.FindJourneyPathAvoiding(map, session.CurrentPosition, escape, otherHazards);
+					// The first steps may swing sideways around another monster or a rock, but must not turn
+					// back into the pack: the point about 10 m along stays within ~100 degrees of "away".
+					string? why = candidate.Count == 0 ? $"no route ({BotNavMeshRouter.LastOutcome})"
+						: Distance(session.CurrentPosition, candidate[^1]) < 10 ? "too short"
+						: AwayCosine(attackerPositions, session.CurrentPosition, candidate[Math.Min(candidate.Count - 1, 4)]) < -0.2f
+							? "first steps back into the pack" : null;
+					if (why != null)
+					{
+						rejections.Add($"({escape.X:F0},{escape.Y:F0}) {why}");
+						continue;
+					}
 					route = candidate;
-					destination = checkpoint;
+					destination = escape;
 					break;
 				}
 				if (destination == null)
-					throw new InvalidDataException($"No checked retreat toward previously walked ground " +
-						$"away from client-observed attackers [{string.Join(',', observedAttackers)}] " +
-						$"at {session.CurrentPosition}; candidates={checkpoints.Length}, " +
-						$"route={navigator.LastRouteDiagnostic}.");
+				{
+					session.TraceDiagnostic("combat-retreat-cornered", new Dictionary<string, object?>
+					{
+						["position"] = session.CurrentPosition,
+						["observedAttackers"] = observedAttackers.ToArray(),
+						["attackerPositions"] = attackerPositions,
+						["rejections"] = rejections.ToArray(),
+						["otherHazards"] = otherHazards.Length,
+						["hp"] = session.Api.World.CurrentHp,
+					});
+					return false;
+				}
 				session.TraceDiagnostic("combat-retreat-route", new Dictionary<string, object?>
 				{
 					["origin"] = session.CurrentPosition,
 					["destination"] = destination,
 					["checkedPoints"] = route.Count,
 					["observedAttackers"] = observedAttackers.ToArray(),
+					["attackerHomes"] = homes,
+					["fromNearestHome"] = homes.Length == 0 ? null : homes.Min(h => Distance(h, destination.Value)),
 				});
 				foreach (BotPosition[] segment in route.Chunk(2).Take(256))
 				{
-					if (!navigator.IsSegmentSafe(segment, null)) break;
+					BotNavigationHazard[] others = navigator.Observe().Npcs
+						.Where(npc => !observedAttackers.Contains(npc.ObjectId))
+						.Select(npc => (npc, template: Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)))
+						.Where(entry => entry.template?.GetNpcTemplateType() == NpcTemplateType.MONSTER)
+						.Select(entry => new BotNavigationHazard(entry.npc.Position, entry.template!.GetAggroRange())).ToArray();
+					if (!BotNavigationGeometry.AvoidsHazards(session.CurrentPosition, segment, others)) break; // new monster ahead
 					await navigator.MoveAsync(segment, token);
 					await session.SynchronizeAsync(token);
 					if (session.Api.World.CurrentHp <= 0 || session.Api.World.IsDead)
 					{
 						await ReviveAtBindAsync(token);
-						return;
+						return true;
 					}
 					if (!navigator.Observe().Npcs.Any(npc =>
 						observedAttackers.Contains(npc.ObjectId) &&
-						Distance(session.CurrentPosition, npc.Position) < 30)) return;
+						Distance(session.CurrentPosition, npc.Position) < 30)) return true;
 				}
 			}
-			throw new InvalidDataException($"Priest could not disengage from observed attackers " +
-				$"[{string.Join(',', observedAttackers)}] after five checked replans " +
-				$"from {origin} toward recorded ground; now {session.CurrentPosition}.");
+			session.TraceDiagnostic("combat-retreat-cornered", new Dictionary<string, object?>
+			{
+				["position"] = session.CurrentPosition,
+				["origin"] = origin,
+				["observedAttackers"] = observedAttackers.ToArray(),
+				["reason"] = "chasers still close after eight away-from-pack replans",
+			});
+			return false;
+
+			static float AwayCosine(IReadOnlyList<BotPosition> attackers, BotPosition from, BotPosition to)
+			{
+				float awayX = from.X - attackers.Average(a => a.X), awayY = from.Y - attackers.Average(a => a.Y);
+				float stepX = to.X - from.X, stepY = to.Y - from.Y;
+				float lengths = MathF.Sqrt(awayX * awayX + awayY * awayY) * MathF.Sqrt(stepX * stepX + stepY * stepY);
+				return lengths < 0.01f ? 1f : (awayX * stepX + awayY * stepY) / lengths;
+			}
 		}
+
+		/// <summary>Shipped spawn points of hostile monsters on the map, each with its aggro range. Resting
+		/// inside one means every respawn interrupts the rest, a rest/fight/rest loop that ends in death.</summary>
+		public IReadOnlyList<BotNavigationHazard> HostileSpawns { get; set; } = [];
+
+		/// <summary>Kept beyond each aggro range when choosing where to rest: Java's assist offset (2 m,
+		/// <c>SUPPORT_RANGE_OFFSET</c>) plus room for a respawn to stand a little off its spot.</summary>
+		public const float RestMargin = 5f;
+
+		/// <summary>
+		/// Before sitting down, move to the nearest ground that no respawning or observed monster can aggro
+		/// from: outside every hostile spawn point's aggro range and every observed monster's, each plus
+		/// <see cref="RestMargin"/>. Candidates are recently walked ground and navmesh ground in rings around
+		/// the bot on its own island, nearest first, reached on a checked route that avoids observed monsters
+		/// (and other spawn circles when there is a route that does). Stays put when already clear or when
+		/// nothing within 150 m qualifies.
+		/// </summary>
+		private async Task MoveToRestSpotAsync(CancellationToken token)
+		{
+			if (session.Api.World.MapId is not int map) return;
+			BotPosition here = session.CurrentPosition;
+			BotNavigationHazard[] observed = navigator.Observe().Npcs
+				.Select(npc => (npc, template: Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)))
+				.Where(entry => entry.template?.GetNpcTemplateType() == NpcTemplateType.MONSTER && entry.template.GetAggroRange() > 0)
+				.Select(entry => new BotNavigationHazard(entry.npc.Position, entry.template!.GetAggroRange())).ToArray();
+			BotNavigationHazard[] spawns = HostileSpawns.Where(spawn => Distance(spawn.Position, here) < 260).ToArray();
+			BotNavigationHazard[] threats = [.. spawns, .. observed];
+			bool Clear(BotPosition point) => threats.All(threat =>
+				Horizontal(threat.Position, point) >= threat.Radius + RestMargin || MathF.Abs(threat.Position.Z - point.Z) > 15);
+			if (Clear(here)) return;
+			IEnumerable<BotPosition> walked = navigator.Events.AsEnumerable().Reverse()
+				.Where(item => item.Action == "segment-progress" && item.Position != null)
+				.Select(item => item.Position!.Value).Take(400);
+			BotPosition[] candidates = walked.Concat(geometry.GroundAround(map, here, [15f, 25f, 40f, 60f, 85f, 115f, 150f], 24))
+				.Where(point => Distance(point, here) <= 150 && Clear(point) && geometry.OnSameIsland(map, here, point))
+				.OrderBy(point => Distance(point, here)).ToArray();
+			int tried = 0;
+			foreach (BotPosition spot in candidates)
+			{
+				if (++tried > 10) break;
+				// Prefer a way there that also stays out of other respawn circles; fall back to observed monsters only.
+				BotNavigationHazard[] passing = [.. observed, .. spawns.Where(spawn =>
+					Horizontal(spawn.Position, here) >= spawn.Radius && Horizontal(spawn.Position, spot) >= spawn.Radius)];
+				IReadOnlyList<BotPosition> route = geometry.FindJourneyPathAvoiding(map, here, spot, passing);
+				if (route.Count == 0) route = geometry.FindJourneyPathAvoiding(map, here, spot, observed);
+				if (route.Count == 0) continue;
+				session.TraceDiagnostic("rest-relocate", new Dictionary<string, object?>
+				{
+					["from"] = here,
+					["to"] = spot,
+					["routePoints"] = route.Count,
+					["candidates"] = candidates.Length,
+					["spawnsNearby"] = spawns.Count(spawn => Horizontal(spawn.Position, here) < spawn.Radius + RestMargin),
+				});
+				foreach (BotPosition[] segment in route.Chunk(8))
+				{
+					if (!navigator.IsSegmentSafe(segment, null)) break; // something new ahead: rest where we are
+					await navigator.MoveAsync(segment, token);
+					await navigator.SynchronizeAsync(token);
+					if (session.Api.World.IsDead) return;
+				}
+				return;
+			}
+			session.TraceDiagnostic("rest-relocate-none", new Dictionary<string, object?>
+			{
+				["position"] = here,
+				["candidates"] = candidates.Length,
+			});
+		}
+
+		private static float Horizontal(BotPosition a, BotPosition b) =>
+			MathF.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
 
 		public async Task RestAsync(CancellationToken token)
 		{
-			for (int interval = 0; interval < 12; interval++)
+			BotWorldModel restWorld = session.Api.World;
+			if (!restWorld.IsDead && (restWorld.CurrentHp * 100 < restWorld.MaxHp * 90 || restWorld.CurrentMp * 100 < restWorld.MaxMp * 80))
+				await MoveToRestSpotAsync(token);
+			// Twelve quiet rest intervals (about two minutes) to recover. An interval interrupted by an attack
+			// does not count: the Priest fights, then rests again, however many monsters arrive.
+			int quietIntervals = 0;
+			for (int interval = 0; quietIntervals < 12 && interval < MaximumCombatActions; interval++)
 			{
 				BotWorldModel world = session.Api.World;
+				bool interrupted = false;
 				if (world.IsDead || world.CurrentHp <= 0) await ReviveAtBindAsync(token);
 				if (world.CurrentHp * 100 >= world.MaxHp * 90 &&
 					world.CurrentMp * 100 >= world.MaxMp * 80)
@@ -2681,6 +3177,7 @@ public sealed partial class SimulationFastScenarioTests
 					},
 					async (attackers, defendToken) =>
 					{
+						interrupted = true;
 						session.TraceDiagnostic("rest-interrupted-by-attack", new Dictionary<string, object?>
 						{
 							["attackers"] = attackers,
@@ -2690,20 +3187,37 @@ public sealed partial class SimulationFastScenarioTests
 						if (navigator.DefendOnAttackAsync is { } defend)
 							await defend(attackers.ToArray(), navigator.LastMovementStart ?? session.CurrentPosition,
 								attackHistoryStart, defendToken);
-						if (attackers.Any(attacker => !navigator.UnavailableObjects.Contains(attacker) &&
-							world.Objects.TryGetValue(attacker, out BotKnownObject? observed) &&
-							Distance(session.CurrentPosition, observed.Position) < 30))
-							throw new InvalidDataException("Rest was interrupted by an unresolved nearby attacker; " +
-								$"refusing to sit under attack at {session.CurrentPosition}.");
+						// Never sit under attack: fight whatever is still on the Priest, nearest first. A fight that
+						// ends in a retreat re-observes; attackers left more than 30 m behind are no longer a threat.
+						for (int fight = 0; fight < MaximumCombatActions && !world.IsDead && world.CurrentHp > 0; fight++)
+						{
+							int[] remaining = attackers.Distinct()
+								.Where(attacker => !navigator.UnavailableObjects.Contains(attacker) &&
+									world.Objects.TryGetValue(attacker, out BotKnownObject? observed) &&
+									Distance(session.CurrentPosition, observed.Position) < 30)
+								.OrderBy(attacker => Distance(session.CurrentPosition, world.Objects[attacker].Position))
+								.ToArray();
+							if (remaining.Length == 0) break;
+							session.TraceDiagnostic("rest-defend", new Dictionary<string, object?>
+							{
+								["attacker"] = remaining[0],
+								["remaining"] = remaining,
+								["hp"] = world.CurrentHp,
+								["position"] = session.CurrentPosition,
+							});
+							if (await TryKillAsync(remaining[0], defendToken, session.CurrentPosition))
+								navigator.UnavailableObjects.Add(remaining[0]);
+						}
 					}, token);
 				if (outcome == NaturalRestOutcome.Dead)
 				{
 					await ReviveAtBindAsync(token);
 					return;
 				}
+				if (!interrupted) quietIntervals++;
 				await session.SynchronizeAsync(token);
 			}
-			throw new InvalidDataException("Priest could not recover HP/MP before the next pull within two minutes.");
+			throw new InvalidDataException("Priest could not recover HP/MP before the next pull within twelve quiet rest intervals.");
 		}
 
 		private async Task ReviveAtBindAsync(CancellationToken token)
@@ -2731,12 +3245,15 @@ public sealed partial class SimulationFastScenarioTests
 					$"trace={string.Join(" | ", lastCombatTrace)}; " +
 					$"combatTrace={session.CombatTracePath}.");
 			}
-			if (++revives > 3)
+			DeathSpots.Add(session.CurrentPosition);
+			// A 41-quest journey through Q2007's camps can die several times, as a player does; twenty deaths
+			// is a finding worth stopping for, three was not.
+			if (++revives > MaximumRevives)
 			{
 				string nearby = string.Join(", ", navigator.Observe().Npcs
 					.Where(npc => Distance(npc.Position, session.CurrentPosition) < 30)
 					.Select(npc => $"{npc.TemplateId}/{npc.ObjectId}:{Distance(npc.Position, session.CurrentPosition):F1}m"));
-				throw new InvalidDataException($"Natural Priest exceeded three ordinary bind revives; " +
+				throw new InvalidDataException($"Natural Priest exceeded {MaximumRevives} ordinary bind revives; " +
 					$"level={session.Api.World.Level}, " +
 					$"target={engagedTarget}, position={session.CurrentPosition}, nearby={nearby}; " +
 					$"trace={string.Join(" | ", lastCombatTrace)}.");
@@ -2752,6 +3269,39 @@ public sealed partial class SimulationFastScenarioTests
 			await session.SynchronizeAsync(token);
 			if (session.Api.World.IsDead) throw new InvalidDataException("Bind revive did not clear client-observed death.");
 			session.AcceptTeleportPosition();
+		}
+
+		/// <summary>Walk up to 8 m toward the target's last-known position (never nearer than 10 m), on a
+		/// checked route that stays out of other observed circles.</summary>
+		private async Task CloseInAfterRangeRejectionAsync(int target, CancellationToken token)
+		{
+			if (!session.Api.World.Objects.TryGetValue(target, out BotKnownObject? observed) ||
+				session.Api.World.MapId is not int map) return;
+			BotPosition start = session.CurrentPosition;
+			// A walker is where its last SM_MOVE was heading, not where that move began.
+			BotPosition settled = observed.SettledPosition;
+			float distance = Distance(start, settled);
+			if (distance <= 10) return;
+			float t = MathF.Min(8, distance - 10) / distance;
+			BotPosition? goal = geometry.SnapToGround(map, start with
+			{
+				X = start.X + (settled.X - start.X) * t,
+				Y = start.Y + (settled.Y - start.Y) * t,
+			});
+			IReadOnlyList<BotPosition> route = goal == null ? [] : geometry.FindLocalPath(map, start, goal.Value);
+			bool safe = route.Count > 0 && navigator.IsSegmentSafe(route, target);
+			session.TraceDiagnostic("combat-range-close-in", new Dictionary<string, object?>
+			{
+				["targetObjectId"] = target,
+				["from"] = start,
+				["goal"] = goal,
+				["clientTargetDistance"] = distance,
+				["routePoints"] = route.Count,
+				["safe"] = safe,
+			});
+			if (!safe) return;
+			await navigator.MoveAsync(route, token);
+			await navigator.SynchronizeAsync(token);
 		}
 
 		private async Task<bool> CastAsync(NaturalPriestSkill skill, int target, CancellationToken token)
@@ -2794,7 +3344,11 @@ public sealed partial class SimulationFastScenarioTests
 						["clientTargetDistance"] = session.Api.World.Objects.TryGetValue(target,
 							out BotKnownObject? observed) ? Distance(session.CurrentPosition, observed.Position) : null,
 					});
-					if (rejection > 2) return false; // Reacquire another observed guard, not an infinite stale pull.
+					if (rejection > 3) return false; // Reacquire another observed guard, not an infinite stale pull.
+					// The server measured more than the skill's range although the client's last-known
+					// position says otherwise: a walker moved on without a fresh SM_MOVE. Close in along
+					// checked ground, as a player walks toward a target that drifted out of range.
+					await CloseInAfterRangeRejectionAsync(target, token);
 					await session.AdvanceAsync(TimeSpan.FromMilliseconds(300), token);
 					await session.SynchronizeAsync(token);
 					return true; // Re-evaluate range, health and attackers before retrying.
@@ -2803,6 +3357,8 @@ public sealed partial class SimulationFastScenarioTests
 					session.Api.World.Objects.TryGetValue(target, out BotKnownObject? obstructedTarget) &&
 					++obstacleRepositions <= 2)
 				{
+					// Aim at where a walking target settled (its SM_MOVE target), not where its walk began.
+					obstructedTarget = obstructedTarget with { Position = obstructedTarget.SettledPosition };
 					IReadOnlyList<BotPosition> checkedApproach = await navigator.FindRouteAsync(
 						session.CurrentPosition, obstructedTarget.Position, token);
 					NaturalNavigationObject[] otherHostiles = navigator.Observe().Npcs
@@ -2825,6 +3381,19 @@ public sealed partial class SimulationFastScenarioTests
 					return true; // Re-evaluate the visible target and healing state before recasting.
 				}
 				if (started.Get<object>("name") is "STR_SKILL_OBSTACLE") return false;
+				if (started.Get<object>("name") is "STR_SKILL_CAN_NOT_ATTACK_WHILE_IN_ABNORMAL_STATE")
+				{
+					// Stunned or knocked down: the state wears off in a second or two. Re-evaluate then.
+					session.TraceDiagnostic("combat-cast-while-disabled", new Dictionary<string, object?>
+					{
+						["skillId"] = skill.Id,
+						["hp"] = session.Api.World.CurrentHp,
+						["position"] = session.CurrentPosition,
+					});
+					await session.AdvanceAsync(TimeSpan.FromMilliseconds(1000), token);
+					await session.SynchronizeAsync(token);
+					return true;
+				}
 				if (session.Api.World.CurrentHp <= 0 || session.Api.World.IsDead)
 				{
 					await ReviveAtBindAsync(token);

@@ -29,6 +29,46 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
     /// the navmesh's answer instead of spending minutes on a grid search that cannot finish.</summary>
     public const float GridFallbackDistance = 60f;
 
+    /// <summary>Extra berth kept, when there is room, around observed aggro circles a route only passes
+    /// (the far side of the road from a pack).</summary>
+    public const float PassingClearance = 4f;
+
+    /// <summary>Walkable ground in rings around <paramref name="center"/> (navmesh-snapped), for escape and
+    /// firing-spot searches. Only ground on the centre's own navmesh island is returned: a ring point that
+    /// snaps onto a rock top or a ledge the bake split off can never be walked to. Empty without a navmesh
+    /// for the map.</summary>
+    public IReadOnlyList<BotPosition> GroundAround(int mapId, BotPosition center, IReadOnlyList<float> radii, int sectors = 16)
+    {
+        BotNavMesh? mesh = NavMesh?.NavMeshes.Get(mapId);
+        if (mesh == null) return [];
+        int island = mesh.IslandOf(center, BotNavQuery.Default with { SnapHorizontal = 2 });
+        var points = new List<BotPosition>();
+        foreach (float radius in radii)
+            for (int sector = 0; sector < sectors; sector++)
+            {
+                float angle = sector * 2 * MathF.PI / sectors;
+                if (mesh.Snap(center with { X = center.X + radius * MathF.Cos(angle), Y = center.Y + radius * MathF.Sin(angle) },
+                    BotNavQuery.Default with { SnapHorizontal = 4, SnapVertical = 12 }) is BotPosition ground &&
+                    (island < 0 || mesh.IslandOf(ground, BotNavQuery.Default with { SnapHorizontal = 1 }) == island))
+                    points.Add(ground);
+            }
+        return points;
+    }
+
+    /// <summary>False only when a baked navmesh puts the two points on different connected islands.</summary>
+    public bool OnSameIsland(int mapId, BotPosition a, BotPosition b)
+    {
+        BotNavMesh? mesh = NavMesh?.NavMeshes.Get(mapId);
+        if (mesh == null) return true;
+        int first = mesh.IslandOf(a, BotNavQuery.Default with { SnapHorizontal = 2 });
+        int second = mesh.IslandOf(b, BotNavQuery.Default with { SnapHorizontal = 2 });
+        return first < 0 || second < 0 || first == second;
+    }
+
+    /// <summary>Navmesh-snapped ground near <paramref name="point"/>, or null (no navmesh or nothing near).</summary>
+    public BotPosition? SnapToGround(int mapId, BotPosition point) =>
+        NavMesh?.NavMeshes.Get(mapId)?.Snap(point, BotNavQuery.Default with { SnapHorizontal = 2, SnapVertical = 10 });
+
     private BotNavMeshRouter? navMesh;
     private bool navMeshResolved;
 
@@ -70,7 +110,8 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
     /// If already inside one, only outward steps are allowed until clear.</summary>
     public IReadOnlyList<BotPosition> FindJourneyPathAvoiding(int mapId, BotPosition start,
         BotPosition destination, IReadOnlyList<BotNavigationHazard> hazards)
-        => ViaNavMesh(mapId, start, destination, router => router.FindPath(mapId, start, destination, BotNavQuery.Default with { Hazards = hazards }))
+        => ViaNavMesh(mapId, start, destination, router => router.FindPath(mapId, start, destination,
+                BotNavQuery.Default with { Hazards = hazards, HazardClearance = PassingClearance }))
             ?? GridJourneyPathAvoiding(mapId, start, destination, hazards);
 
     /// <summary>Find checked ground in Priest spell range with sight to the observed
@@ -91,7 +132,7 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
         ArgumentNullException.ThrowIfNull(road);
         ArgumentNullException.ThrowIfNull(hazards);
         return ViaNavMesh(mapId, start, destination, router => router.FindPath(mapId, start, destination,
-                BotNavQuery.Default with { Hazards = hazards, GroundCost = 1.5f }))
+                BotNavQuery.Default with { Hazards = hazards, GroundCost = 1.5f, HazardClearance = PassingClearance }))
             ?? GridRoadPreferredJourneyPath(mapId, start, destination, road, hazards);
     }
 

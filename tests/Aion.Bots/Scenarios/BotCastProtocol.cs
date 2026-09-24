@@ -23,7 +23,9 @@ public static class BotCastProtocol
 		packet.PacketType == typeof(SM_SYSTEM_MESSAGE) &&
 		packet.Get<object>("name") is string name &&
 		name is "STR_SKILL_CANT_CAST" or "STR_SKILL_NOT_READY" or
-			"STR_SKILL_OBSTACLE" or "STR_SKILL_NOT_ENOUGH_DISTANCE";
+			"STR_SKILL_OBSTACLE" or "STR_SKILL_NOT_ENOUGH_DISTANCE" or
+			// Java PlayerRestrictions.canUseSkill: stunned, knocked down or otherwise unable to act.
+			"STR_SKILL_CAN_NOT_ATTACK_WHILE_IN_ABNORMAL_STATE";
 
 	public static Task<DecodedBotServerPacket> WaitForCompletionAsync(
 		Func<Func<DecodedBotServerPacket, bool>, CancellationToken, Task<DecodedBotServerPacket>> wait,

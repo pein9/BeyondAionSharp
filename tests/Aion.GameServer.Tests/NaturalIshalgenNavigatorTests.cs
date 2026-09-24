@@ -178,6 +178,24 @@ public sealed class NaturalIshalgenNavigatorTests
 	}
 
 	[Fact]
+	public async Task AWalkingTargetIsFollowedWithoutAReplanLimit()
+	{
+		// A town NPC that keeps walking ahead: every step the bot takes, it has moved on again. A player keeps
+		// walking toward it, so this is not a "moving target" failure however many times it moves.
+		var driver = new FakeDriver([new(77, 203500, At(12))])
+		{
+			AfterMove = (self, moved) =>
+			{
+				if (moved <= 6) self.Targets = [new(77, 203500, At(12 + moved * 4))];
+			},
+		};
+		NaturalNavigationResult result = await NaturalIshalgenNavigator.ApproachNpcAsync(220010000, 203500,
+			At(12), driver);
+		Assert.True(result.Arrived, result.Reason);
+		Assert.True(driver.Events.Count(item => item.Action == "target-reacquired") > 4);
+	}
+
+	[Fact]
 	public async Task DespawnedTargetHasBoundedWaitAndCanBeReacquiredByTemplate()
 	{
 		var recovered = new FakeDriver([new(77, 203500, At(20))])
@@ -197,9 +215,11 @@ public sealed class NaturalIshalgenNavigatorTests
 		};
 		NaturalNavigationResult failed = await NaturalIshalgenNavigator.ApproachNpcAsync(220010000, 203500,
 			At(20), lost);
+		// Out of view is not a failure: the bot walks on to the shipped hint, and only reports the NPC
+		// missing once it stands there and still sees nothing.
 		Assert.False(failed.Arrived);
-		Assert.Contains("disappeared", failed.Reason);
-		Assert.Equal(3, lost.Synchronizations);
+		Assert.Contains(lost.Events, item => item.Action == "target-out-of-view");
+		Assert.Contains("no NPC was observed", failed.Reason);
 	}
 
 	[Fact]

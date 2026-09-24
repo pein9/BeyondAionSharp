@@ -68,6 +68,17 @@ public sealed class NaturalPriestCombatPolicyTests
 	}
 
 	[Fact]
+	public void ACorneredPriestFightsInsteadOfRetreatingAgain()
+	{
+		// No checked escape leads away from the pack: heal first, and never choose retreat again.
+		var state = Observe(1, 20, 100, 40, 100, [1838, 4012], 10) with { Aggro = true, NearbyAggressors = 2 };
+		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state, Now).Action);
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with { Cornered = true }, Now).Action);
+		NaturalCombatChoice noMana = NaturalPriestCombatPolicy.Decide(state with { Cornered = true, Mp = 0 }, Now);
+		Assert.NotEqual("retreat", noMana.Action);
+	}
+
+	[Fact]
 	public void HealReserveRestAggressionAndRetreatAreDeterministic()
 	{
 		var state = Observe(1, 40, 100, 40, 100, [1838, 4012], 10);

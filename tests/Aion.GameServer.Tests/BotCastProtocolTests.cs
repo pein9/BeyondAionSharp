@@ -74,6 +74,8 @@ public sealed class BotCastProtocolTests
 		var range = new DecodedBotServerPacket(typeof(SM_SYSTEM_MESSAGE),
 			new Dictionary<string, object?> { ["name"] = "STR_SKILL_NOT_ENOUGH_DISTANCE" });
 		Assert.True(BotCastProtocol.IsStartRejection(range));
+		Assert.True(BotCastProtocol.IsStartRejection(new(typeof(SM_SYSTEM_MESSAGE),
+			new Dictionary<string, object?> { ["name"] = "STR_SKILL_CAN_NOT_ATTACK_WHILE_IN_ABNORMAL_STATE" })));
 		Assert.False(BotCastProtocol.IsStartRejection(new(typeof(SM_SYSTEM_MESSAGE),
 			new Dictionary<string, object?> { ["name"] = "STR_GET_EXP" })));
 		Assert.False(BotCastProtocol.IsStartRejection(new(typeof(SM_MOVE),

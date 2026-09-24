@@ -43,7 +43,9 @@ public static class NaturalIshalgenNavigator
 	private const float TargetMovementThreshold = 2f;
 	private const float MinimumProgress = 0.25f;
 	private const int SegmentPoints = 8;
-	private const int MaximumSegments = 128;
+	// Each segment is 8 checked points (about 16 m) of real progress, so this is a stall guard, not a
+	// distance limit: 1,000 segments is about 16 km, several times the longest single walk on a map.
+	private const int MaximumSegments = 1000;
 	private const int MaximumReplans = 3;
 	private const int MaximumTargetWaits = 2;
 
@@ -114,7 +116,7 @@ public static class NaturalIshalgenNavigator
 		float arrivalRadius, CancellationToken token)
 	{
 		ArgumentNullException.ThrowIfNull(driver);
-		int routeSearches = 0, segments = 0, replans = 0, targetWaits = 0, sequence = 0;
+		int routeSearches = 0, segments = 0, replans = 0, targetWaits = 0, targetMoves = 0, sequence = 0;
 		int? targetId = null;
 		BotPosition destination = staticAnchor;
 		IReadOnlyList<BotPosition> route = [];
@@ -137,7 +139,10 @@ public static class NaturalIshalgenNavigator
 				}
 				if (targetId != target.ObjectId || Distance(destination, target.Position) > TargetMovementThreshold)
 				{
-					if (targetId != null && ++replans > MaximumReplans)
+					// Following a walking NPC is ordinary travel, as a player keeps walking toward it: every
+					// iteration still moves a checked segment, so the segment guard bounds this, not the
+					// hazard replan budget.
+					if (targetId != null && ++targetMoves > MaximumSegments)
 						return Fail("Moving/replaced target exceeded the bounded replan budget.", observed);
 					targetId = target.ObjectId;
 					destination = target.Position;
@@ -149,7 +154,18 @@ public static class NaturalIshalgenNavigator
 			else if (targetId != null)
 			{
 				if (++targetWaits > MaximumTargetWaits)
-					return Fail("Observed target disappeared and did not reappear within the bounded wait.", observed);
+				{
+					// Usually the edge of the visibility range, not a despawn: walk on to the shipped spawn
+					// hint as a player would, and reacquire the NPC when it comes back into view. If it is
+					// really gone, the anchor branch below reports that on arrival.
+					Emit("target-out-of-view", "planned", $"{kind} left view; continuing to its shipped area hint.",
+						start, staticAnchor, targetId);
+					targetId = null;
+					targetWaits = 0;
+					destination = staticAnchor;
+					route = [];
+					continue;
+				}
 				Emit("target-lost", "planned", $"{kind} disappeared; waiting for another observed instance.", start, destination, targetId);
 				await driver.SynchronizeAsync(token);
 				continue;

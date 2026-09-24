@@ -101,6 +101,16 @@ the C# handler agrees on this boundary.
 > no longer end an approach: the journey fights through them one pull at a time along the route
 > that fights least (`TryFightThroughAsync`). The open problem at Q2007 is now retreat and
 > survival against two attackers, not routing.
+>
+> **Spawn heights, 2026-09-24.** The 2026-09-23 Ishalgen spawn refresh (the aion-portal 5.8 import)
+> took most heights from the outdoor terrain heightmap. Under overhangs and in caves that is the
+> hill top, not the floor. Nineteen spawns landed 30–57 m above their retail height: Carak and the
+> Q2119 Jewel Box in Carak's cave, and seventeen Lycans in the camp near Rae. The Jewel Box sat on
+> the hill above the cave, where no walkable route exists, so Q2119 could not be finished. Those
+> nineteen spots now use the server-geometry surface nearest their retail height. Carak (259.15) and
+> the Jewel Box (260.89) match the Java spawn data exactly. The portal import's height snap needs the
+> same rule, or a re-import will undo this: pick the surface nearest the source height, not the
+> terrain heightmap.
 
 At the Phase 10 closeout, real client packets, movement timing, combat, gathering,
 quest dialogs, persistence, and logging are exercised by scenarios. The missing
@@ -625,7 +635,7 @@ These are new journey TODOs, not retroactive claims about the phase scenarios:
   but the Priest died at a second Rae guard and revived at bind. The guard
   loop then incorrectly kept interpreting bind-area monsters as Rae-route
   blockers. It now stops guard clearing immediately when the ordinary combat
-  policy revives the Priest. Q2007 allows at most two death recoveries:
+  policy revives the Priest. Q2007 allows up to ten death recoveries (two until 2026-09-24):
   rest at bind, walk the previously checked bind-to-eastern-road legs, then
   re-approach Nalto before Rae. No setup teleport or guard deletion is used.
   This recovery compiles but has not yet passed a journey replay.

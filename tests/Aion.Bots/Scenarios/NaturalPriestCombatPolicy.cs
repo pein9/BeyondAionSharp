@@ -38,7 +38,8 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	bool? HasBlessing = null, bool HasLifePotion = false, bool HasManaPotion = false,
 	bool LifePotionReady = false, bool ManaPotionReady = false, int NearbyAggressors = 0,
 	int? TargetHpPercent = null, bool HasHealedThisFight = false,
-	bool HasHotPotion = false, bool HotPotionReady = false, bool HotPotionActive = false);
+	bool HasHotPotion = false, bool HotPotionReady = false, bool HotPotionActive = false,
+	bool Cornered = false);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);
@@ -54,7 +55,8 @@ public static class NaturalPriestCombatPolicy
 		if (state.MaxHp <= 0 || state.MaxMp <= 0 || state.Hp < 0 || state.Mp < 0)
 			return Choice("blocked", null, "Client life statistics are incomplete.");
 		NaturalPriestSkill? heal = NaturalPriestSkills.Best("heal", state.Level, state.Learned, catalog);
-		if ((state.TargetObjectId != null || state.Aggro || state.NearbyAggressors > 0) &&
+		// Cornered: no checked escape leads away from the pack, so fight it out as a player would.
+		if (!state.Cornered && (state.TargetObjectId != null || state.Aggro || state.NearbyAggressors > 0) &&
 			state.Hp * 100 <= state.MaxHp * 30)
 			return Choice("retreat", null, "HP is at or below 30% during a client-observed fight, regardless of attacker count.");
 		bool urgent = state.Hp * 100 <= state.MaxHp * 70 &&
@@ -80,7 +82,7 @@ public static class NaturalPriestCombatPolicy
 			return Choice("life-potion", null, "Critical HP and self-heal is unavailable; consume an owned life potion.");
 		if (state.Mp < (heal?.ManaCost ?? 0) + 10 && state.HasManaPotion && state.ManaPotionReady)
 			return Choice("mana-potion", null, "Mana is below the healing reserve; consume an owned mana potion.");
-		if (critical && state.Aggro)
+		if (critical && state.Aggro && !state.Cornered)
 			return Choice("retreat", null, "Critical HP and no legal self-heal; leave the aggressor.");
 		NaturalPriestSkill? blessing = NaturalPriestSkills.Best("blessing", state.Level, state.Learned, catalog);
 		if (!state.Aggro && state.TargetObjectId == null && state.HasBlessing == false && blessing != null &&

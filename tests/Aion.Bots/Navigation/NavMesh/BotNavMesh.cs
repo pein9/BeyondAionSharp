@@ -54,6 +54,10 @@ public sealed record BotNavQuery
 
 	/// <summary>Circles the route should stay out of; entering one costs <see cref="HazardCostMultiplier"/>.</summary>
 	public IReadOnlyList<BotNavigationHazard> Hazards { get; init; } = [];
+	/// <summary>Extra berth, in metres, the route tries to keep around <see cref="Hazards"/> it only passes
+	/// by: a soft ring outside each circle, so a route along a pack takes the far side of the path when
+	/// there is room. Best effort; never blocks a route.</summary>
+	public float HazardClearance { get; init; }
 	/// <summary>Soft, cost-only danger zones (see <see cref="BotNavDanger"/>).</summary>
 	public IReadOnlyList<BotNavDanger> Danger { get; init; } = [];
 	public float HazardCostMultiplier { get; init; } = 60f;
@@ -170,6 +174,18 @@ public sealed class BotNavMesh
 	{
 		options ??= BotNavQuery.Default;
 		return Nearest(queries.Value!, new BotNavFilter(options), position, options, out long reference, out _) ? reference : 0;
+	}
+
+	private Dictionary<long, int>? islands;
+	private readonly Lock islandGate = new();
+
+	/// <summary>Connected-island id of the walkable polygon nearest <paramref name="position"/>, or -1.</summary>
+	public int IslandOf(BotPosition position, BotNavQuery? options = null)
+	{
+		long reference = NearestPolygon(position, options);
+		if (reference == 0) return -1;
+		lock (islandGate) islands ??= Polygons().ToDictionary(p => p.Reference, p => p.Island);
+		return islands.GetValueOrDefault(reference, -1);
 	}
 
 	/// <summary>True when both positions snap onto the same connected navmesh island.</summary>

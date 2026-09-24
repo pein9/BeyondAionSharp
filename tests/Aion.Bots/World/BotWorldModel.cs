@@ -274,8 +274,12 @@ public sealed partial class BotWorldModel
 	{
 		var objectId = packet.Get<int>("objectId");
 		var position = ReadPosition(packet.Fields);
+		BotPosition? target = packet.Fields.ContainsKey("targetX")
+			? new BotPosition(Get<float>(packet.Fields, "targetX"), Get<float>(packet.Fields, "targetY"),
+				Get<float>(packet.Fields, "targetZ"), position.Heading)
+			: null;
 		if (objects.TryGetValue(objectId, out var known))
-			objects[objectId] = known with { Position = position };
+			objects[objectId] = known with { Position = position, MoveTarget = target };
 		if (SelfObjectId == objectId)
 			Position = position;
 	}
@@ -571,7 +575,13 @@ public readonly record struct BotPosition(float X, float Y, float Z, byte Headin
 public sealed record BotKnownObject(int ObjectId, BotKnownObjectKind Kind, BotPosition Position,
 	int? TemplateId = null, int? VisualTemplateId = null, int? StaticId = null, string? Name = null,
 	ushort? State = null, bool? IsOpen = null, byte? Race = null, byte? PlayerClass = null,
-	float? MovementSpeed = null);
+	float? MovementSpeed = null, BotPosition? MoveTarget = null)
+{
+	/// <summary>Where the object stands once its last observed move ends: the SM_MOVE target when one was
+	/// sent (a walking or chasing NPC), else its reported position. A walker that has not sent SM_MOVE for a
+	/// while has normally arrived there.</summary>
+	public BotPosition SettledPosition => MoveTarget ?? Position;
+}
 
 public sealed record BotInventoryItem(int ObjectId, int ItemId, string Description, long Count, ushort ItemMask,
 	string Creator, ushort EquipmentSlot, bool Cloth)
