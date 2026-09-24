@@ -1,0 +1,341 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2126,
+    "name": "As Much as You Can Carry",
+    "nameId": 1103226,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 7,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2126,
+        "start_npc_ids": 203544
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203544,
+        "name": "devalin",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 927.426,
+            "y": 1561.422,
+            "z": 284.697,
+            "heading": 15,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203544,
+      "name": "devalin",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 927.426,
+          "y": 1561.422,
+          "z": 284.697,
+          "heading": 15,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203544,
+      "name": "devalin",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 927.426,
+          "y": 1561.422,
+          "z": 284.697,
+          "heading": 15,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182203126,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182203126,
+          "npc_id": 700129,
+          "npc": {
+            "id": 700129,
+            "name": "dundun urn",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 458.107,
+                "y": 1423.214,
+                "z": 335.076,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 458.28,
+                "y": 1362.53,
+                "z": 331.967,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 494.643,
+                "y": 1417.701,
+                "z": 317.625,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 495.72,
+                "y": 1327.98,
+                "z": 326.0,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 498.06,
+                "y": 1532.6,
+                "z": 323.638,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 509.686,
+                "y": 1443.796,
+                "z": 317.625,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 516.67,
+                "y": 1427.32,
+                "z": 316.167,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 521.67,
+                "y": 1490.6,
+                "z": 312.845,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 534.76,
+                "y": 1539.13,
+                "z": 317.417,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 559.69,
+                "y": 1533.1,
+                "z": 315.174,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 566.93,
+                "y": 1435.36,
+                "z": 310.143,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 606.09,
+                "y": 1446.54,
+                "z": 296.454,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 614.78,
+                "y": 1467.13,
+                "z": 295.136,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 623.683,
+                "y": 1520.493,
+                "z": 292.687,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 630.68,
+                "y": 1493.22,
+                "z": 292.098,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 632.38,
+                "y": 1435.02,
+                "z": 296.41,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 659.8,
+                "y": 1404.19,
+                "z": 298.752,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 674.695,
+                "y": 1439.104,
+                "z": 297.875,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 687.369,
+                "y": 1523.17,
+                "z": 295.534,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 711.897,
+                "y": 1521.846,
+                "z": 294.25,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203544,
+          "name": "devalin",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 927.426,
+              "y": 1561.422,
+              "z": 284.697,
+              "heading": 15,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 4499,
+        "gold": 4820,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2126,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 7,
+      "name": "As Much as You Can Carry",
+      "nameId": 1103226,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182203126
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 4499,
+          "gold": 4820
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182203126,
+          "npc_id": 700129
+        }
+      }
+    ]
+  }
+}

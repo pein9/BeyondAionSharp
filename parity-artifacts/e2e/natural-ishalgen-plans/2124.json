@@ -1,0 +1,567 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2124,
+    "name": "The Captain's Secret",
+    "nameId": 1103224,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 6,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2124,
+        "start_npc_ids": 203548
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203548,
+        "name": "jephani",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 669.813,
+            "y": 1725.244,
+            "z": 271.368,
+            "heading": 30,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203548,
+      "name": "jephani",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 669.813,
+          "y": 1725.244,
+          "z": 271.368,
+          "heading": 30,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203548,
+      "name": "jephani",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 669.813,
+          "y": 1725.244,
+          "z": 271.368,
+          "heading": 30,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182203124,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182203124,
+          "npc_id": 210402,
+          "npc": {
+            "id": 210402,
+            "name": "grave sparkle",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 444.133,
+                "y": 1912.411,
+                "z": 308.954,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 446.28,
+                "y": 1943.351,
+                "z": 307.648,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 544.17,
+                "y": 1837.98,
+                "z": 296.972,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 551.25,
+                "y": 1892.348,
+                "z": 286.191,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 558.323,
+                "y": 1796.647,
+                "z": 302.483,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 562.93,
+                "y": 1923.023,
+                "z": 285.131,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 590.147,
+                "y": 1729.964,
+                "z": 330.043,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 604.71,
+                "y": 1855.52,
+                "z": 283.772,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 610.893,
+                "y": 1898.317,
+                "z": 283.052,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 644.186,
+                "y": 1846.936,
+                "z": 274.684,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 655.652,
+                "y": 1838.891,
+                "z": 274.375,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 671.484,
+                "y": 1752.56,
+                "z": 270.481,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 672.765,
+                "y": 1794.4,
+                "z": 271.375,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 696.051,
+                "y": 1743.444,
+                "z": 261.286,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182203124,
+          "npc_id": 210403,
+          "npc": {
+            "id": 210403,
+            "name": "grave sparkle",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 444.133,
+                "y": 1912.411,
+                "z": 308.954,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 446.28,
+                "y": 1943.351,
+                "z": 307.648,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 518.5,
+                "y": 1927.263,
+                "z": 291.559,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 520.37,
+                "y": 1848.4,
+                "z": 298.232,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 522.69,
+                "y": 1872.64,
+                "z": 295.905,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 530.232,
+                "y": 1805.299,
+                "z": 304.742,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 534.888,
+                "y": 1758.202,
+                "z": 316.25,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 544.17,
+                "y": 1837.98,
+                "z": 296.972,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 551.25,
+                "y": 1892.348,
+                "z": 286.191,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 558.323,
+                "y": 1796.647,
+                "z": 302.483,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 562.93,
+                "y": 1923.023,
+                "z": 285.131,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 590.147,
+                "y": 1729.964,
+                "z": 330.043,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 604.71,
+                "y": 1855.52,
+                "z": 283.772,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 610.893,
+                "y": 1898.317,
+                "z": 283.052,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182203125,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182203125,
+          "npc_id": 210404,
+          "npc": {
+            "id": 210404,
+            "name": "thorned ampha",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 519.786,
+                "y": 1821.303,
+                "z": 301.589,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 542.221,
+                "y": 1743.101,
+                "z": 319.084,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 547.371,
+                "y": 1890.98,
+                "z": 287.805,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 552.431,
+                "y": 1816.812,
+                "z": 298.983,
+                "heading": 80,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 557.785,
+                "y": 1932.372,
+                "z": 286.343,
+                "heading": 90,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 565.445,
+                "y": 1786.956,
+                "z": 302.992,
+                "heading": 36,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 615.05,
+                "y": 1839.551,
+                "z": 285.915,
+                "heading": 95,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182203125,
+          "npc_id": 210405,
+          "npc": {
+            "id": 210405,
+            "name": "thorned ampha",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203548,
+          "name": "jephani",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 669.813,
+              "y": 1725.244,
+              "z": 271.368,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 3157,
+        "gold": 3140,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "count": 6,
+            "item_id": 162000052
+          },
+          {
+            "count": 6,
+            "item_id": 162000057
+          },
+          {
+            "count": 300,
+            "item_id": 169000003
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2124,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 6,
+      "name": "The Captain's Secret",
+      "nameId": 1103224,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182203124
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182203125
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 3157,
+          "gold": 3140
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 6,
+              "item_id": 162000052
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 6,
+              "item_id": 162000057
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 300,
+              "item_id": 169000003
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182203124,
+          "npc_id": 210402
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182203124,
+          "npc_id": 210403
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182203125,
+          "npc_id": 210404
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182203125,
+          "npc_id": 210405
+        }
+      }
+    ]
+  }
+}

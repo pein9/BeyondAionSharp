@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2110,
+    "name": "Idle Hands",
+    "nameId": 1103210,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 3,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 203533,
+        "id": 2110,
+        "start_npc_ids": 203522
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203522,
+        "name": "kaindal",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 595.69,
+            "y": 2467.97,
+            "z": 278.75,
+            "heading": 76,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203522,
+      "name": "kaindal",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 595.69,
+          "y": 2467.97,
+          "z": 278.75,
+          "heading": 76,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203533,
+      "name": "motgar",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 853.4,
+          "y": 2224.9,
+          "z": 265.856,
+          "heading": 90,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203533,
+          "name": "motgar",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 853.4,
+              "y": 2224.9,
+              "z": 265.856,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 2112,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 160003503
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2110,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 3,
+      "name": "Idle Hands",
+      "nameId": 1103210,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 2112
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 160003503
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

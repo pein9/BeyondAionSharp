@@ -1,0 +1,401 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2118,
+    "name": "Up to no Good",
+    "nameId": 1103218,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 5,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2118,
+        "start_npc_ids": 203539
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203539,
+        "name": "derot",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 948.97,
+            "y": 1700.725,
+            "z": 259.625,
+            "heading": 18,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203539,
+      "name": "derot",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 948.97,
+          "y": 1700.725,
+          "z": 259.625,
+          "heading": 18,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203539,
+      "name": "derot",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 948.97,
+          "y": 1700.725,
+          "z": 259.625,
+          "heading": 18,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182203116,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "item_id": 182203116,
+          "npc_id": 210735,
+          "npc": {
+            "id": 210735,
+            "name": "eyvindr peon",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "item_id": 182203116,
+          "npc_id": 210737,
+          "npc": {
+            "id": 210737,
+            "name": "eyvindr sailor",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 1060.604,
+                "y": 1832.997,
+                "z": 259.301,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1078.18,
+                "y": 1798.69,
+                "z": 262.29123,
+                "heading": 108,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1129.235,
+                "y": 1791.786,
+                "z": 275.806,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1157.927,
+                "y": 1809.396,
+                "z": 276.312,
+                "heading": 80,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "item_id": 182203116,
+          "npc_id": 210736,
+          "npc": {
+            "id": 210736,
+            "name": "eyvindr peon",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 1065.205,
+                "y": 1814.678,
+                "z": 260.825,
+                "heading": 66,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1086.637,
+                "y": 1825.756,
+                "z": 264.869,
+                "heading": 50,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1112.286,
+                "y": 1841.099,
+                "z": 270.905,
+                "heading": 76,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1141.301,
+                "y": 1785.974,
+                "z": 279.125,
+                "heading": 40,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1146.344,
+                "y": 1827.565,
+                "z": 275.379,
+                "heading": 76,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1150.493,
+                "y": 1816.04,
+                "z": 275.278,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1191.571,
+                "y": 1888.54,
+                "z": 244.442,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1214.765,
+                "y": 1879.195,
+                "z": 243.0,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "item_id": 182203116,
+          "npc_id": 210738,
+          "npc": {
+            "id": 210738,
+            "name": "eyvindr sailor",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 1122.64,
+                "y": 1813.066,
+                "z": 272.545,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1128.993,
+                "y": 1781.14,
+                "z": 276.473,
+                "heading": 73,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1142.378,
+                "y": 1794.52,
+                "z": 278.978,
+                "heading": 73,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1145.67,
+                "y": 1854.9,
+                "z": 262.4481,
+                "heading": 108,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1201.74,
+                "y": 1863.916,
+                "z": 247.125,
+                "heading": 76,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1228.926,
+                "y": 1876.739,
+                "z": 243.0,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203539,
+          "name": "derot",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 948.97,
+              "y": 1700.725,
+              "z": 259.625,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 2365,
+        "rewardItems": [
+          {
+            "count": 4,
+            "item_id": 160003002
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2118,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 5,
+      "name": "Up to no Good",
+      "nameId": 1103218,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182203116
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 2365
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 4,
+              "item_id": 160003002
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "item_id": 182203116,
+          "npc_id": 210735
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "item_id": 182203116,
+          "npc_id": 210737
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "item_id": 182203116,
+          "npc_id": 210736
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "item_id": 182203116,
+          "npc_id": 210738
+        }
+      }
+    ]
+  }
+}

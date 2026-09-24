@@ -1,0 +1,223 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2119,
+    "name": "Black Opal",
+    "nameId": 1103219,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 5,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2116
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2119,
+        "start_npc_ids": 203541
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203541,
+        "name": "lidun",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 936.318,
+            "y": 1681.933,
+            "z": 261.859,
+            "heading": 80,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203541,
+      "name": "lidun",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 936.318,
+          "y": 1681.933,
+          "z": 261.859,
+          "heading": 80,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203541,
+      "name": "lidun",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 936.318,
+          "y": 1681.933,
+          "z": 261.859,
+          "heading": 80,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182203117,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182203117,
+          "npc_id": 700127,
+          "npc": {
+            "id": 700127,
+            "name": "jewel box",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 1082.013,
+                "y": 1603.221,
+                "z": 298.89,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203541,
+          "name": "lidun",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 936.318,
+              "y": 1681.933,
+              "z": 261.859,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 2530,
+        "title": 52,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 121000749
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2119,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 5,
+      "name": "Black Opal",
+      "nameId": 1103219,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182203117
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 2530,
+          "title": 52
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 121000749
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182203117,
+          "npc_id": 700127
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2116
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

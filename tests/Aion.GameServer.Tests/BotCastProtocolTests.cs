@@ -68,6 +68,18 @@ public sealed class BotCastProtocolTests
 		}, 133611, 1282, CancellationToken.None));
 	}
 
+	[Fact]
+	public void MovingTargetRangeRejectionTerminatesTheCastStartWait()
+	{
+		var range = new DecodedBotServerPacket(typeof(SM_SYSTEM_MESSAGE),
+			new Dictionary<string, object?> { ["name"] = "STR_SKILL_NOT_ENOUGH_DISTANCE" });
+		Assert.True(BotCastProtocol.IsStartRejection(range));
+		Assert.False(BotCastProtocol.IsStartRejection(new(typeof(SM_SYSTEM_MESSAGE),
+			new Dictionary<string, object?> { ["name"] = "STR_GET_EXP" })));
+		Assert.False(BotCastProtocol.IsStartRejection(new(typeof(SM_MOVE),
+			new Dictionary<string, object?> { ["name"] = "STR_SKILL_NOT_ENOUGH_DISTANCE" })));
+	}
+
 	[Theory]
 	[InlineData(false)]
 	[InlineData(true)]

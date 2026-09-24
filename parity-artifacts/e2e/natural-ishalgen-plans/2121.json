@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2121,
+    "name": "Checking on a Friend",
+    "nameId": 1103221,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 5,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 203547,
+        "id": 2121,
+        "start_npc_ids": 203540
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203540,
+        "name": "mijou",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 946.253,
+            "y": 1702.775,
+            "z": 259.625,
+            "heading": 18,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203540,
+      "name": "mijou",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 946.253,
+          "y": 1702.775,
+          "z": 259.625,
+          "heading": 18,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203547,
+      "name": "delle",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 667.962,
+          "y": 1767.089,
+          "z": 271.583,
+          "heading": 90,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203547,
+          "name": "delle",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 667.962,
+              "y": 1767.089,
+              "z": 271.583,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 1078,
+        "gold": 730,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2121,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 5,
+      "name": "Checking on a Friend",
+      "nameId": 1103221,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 1078,
+          "gold": 730
+        }
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182203119
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

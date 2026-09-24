@@ -1,0 +1,368 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2113,
+    "name": "Token of a Lost Love",
+    "nameId": 1103213,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 4,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2113,
+        "start_npc_ids": 203534
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203534,
+        "name": "dabi",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 856.0,
+            "y": 2216.0,
+            "z": 266.0,
+            "heading": 80,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203534,
+      "name": "dabi",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 856.0,
+          "y": 2216.0,
+          "z": 266.0,
+          "heading": 80,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203534,
+      "name": "dabi",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 856.0,
+          "y": 2216.0,
+          "z": 266.0,
+          "heading": 80,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182203113,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 70,
+          "item_id": 182203113,
+          "npc_id": 210585,
+          "npc": {
+            "id": 210585,
+            "name": "arma snuffler",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 871.855,
+                "y": 2263.055,
+                "z": 269.357,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 877.413,
+                "y": 2250.275,
+                "z": 269.179,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 909.4,
+                "y": 2172.78,
+                "z": 263.308,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 936.792,
+                "y": 2168.586,
+                "z": 254.938,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 947.61,
+                "y": 2235.35,
+                "z": 259.581,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 961.23,
+                "y": 2259.47,
+                "z": 265.91,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 70,
+          "item_id": 182203113,
+          "npc_id": 210586,
+          "npc": {
+            "id": 210586,
+            "name": "arma snuffler",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 1065.575,
+                "y": 2073.704,
+                "z": 252.34,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1103.54,
+                "y": 2173.86,
+                "z": 252.989,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1124.937,
+                "y": 2239.385,
+                "z": 256.621,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1141.74,
+                "y": 2202.61,
+                "z": 255.533,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1154.258,
+                "y": 2142.578,
+                "z": 256.431,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1161.33,
+                "y": 2097.217,
+                "z": 255.732,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1189.237,
+                "y": 2098.485,
+                "z": 259.905,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1192.104,
+                "y": 2193.13,
+                "z": 257.324,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1196.656,
+                "y": 2142.415,
+                "z": 258.892,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1205.383,
+                "y": 2168.753,
+                "z": 255.752,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1206.357,
+                "y": 2109.534,
+                "z": 261.236,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1208.042,
+                "y": 2178.031,
+                "z": 257.884,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1227.044,
+                "y": 2153.632,
+                "z": 261.716,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203534,
+          "name": "dabi",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 856.0,
+              "y": 2216.0,
+              "z": 266.0,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 1705,
+        "rewardItems": [
+          {
+            "count": 2,
+            "item_id": 162000007
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2113,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 4,
+      "name": "Token of a Lost Love",
+      "nameId": 1103213,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182203113
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 1705
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 162000007
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 70,
+          "item_id": 182203113,
+          "npc_id": 210585
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 70,
+          "item_id": 182203113,
+          "npc_id": 210586
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2137,
+    "name": "A Cursed Opal",
+    "nameId": 1103237,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 5,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2118
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 203541,
+        "id": 2137,
+        "start_npc_ids": 203539
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203539,
+        "name": "derot",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 948.97,
+            "y": 1700.725,
+            "z": 259.625,
+            "heading": 18,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203539,
+      "name": "derot",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 948.97,
+          "y": 1700.725,
+          "z": 259.625,
+          "heading": 18,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203541,
+      "name": "lidun",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 936.318,
+          "y": 1681.933,
+          "z": 261.859,
+          "heading": 80,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203541,
+          "name": "lidun",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 936.318,
+              "y": 1681.933,
+              "z": 261.859,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 473,
+        "gold": 370,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2137,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 5,
+      "name": "A Cursed Opal",
+      "nameId": 1103237,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 473,
+          "gold": 370
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2118
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182203132
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

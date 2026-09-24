@@ -19,6 +19,12 @@ public static class BotCastProtocol
 			packet.Get<int>("objectId") == caster && packet.Get<ushort>("spellId") == skill,
 			"cast start", token, deadlines);
 
+	public static bool IsStartRejection(DecodedBotServerPacket packet) =>
+		packet.PacketType == typeof(SM_SYSTEM_MESSAGE) &&
+		packet.Get<object>("name") is string name &&
+		name is "STR_SKILL_CANT_CAST" or "STR_SKILL_NOT_READY" or
+			"STR_SKILL_OBSTACLE" or "STR_SKILL_NOT_ENOUGH_DISTANCE";
+
 	public static Task<DecodedBotServerPacket> WaitForCompletionAsync(
 		Func<Func<DecodedBotServerPacket, bool>, CancellationToken, Task<DecodedBotServerPacket>> wait,
 		int caster, ushort skill, CancellationToken token, TimeProvider? deadlines = null) =>

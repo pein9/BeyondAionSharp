@@ -6,6 +6,58 @@ namespace Aion.GameServer.Tests;
 public sealed class NaturalIshalgenNavigatorTests
 {
 	[Fact]
+	public async Task CheckedIngressReturnRetracesRecordedPositionsInReverse()
+	{
+		var driver = new FakeDriver([]) { Position = At(20) };
+		NaturalNavigationResult result = await NaturalIshalgenNavigator.RetraceIngressAsync(
+			220010000, At(0), [At(5), At(10), At(15), At(20)], driver);
+		Assert.True(result.Arrived, result.Reason);
+		Assert.Equal(0, driver.Position.X);
+		Assert.Equal([15f, 10f, 5f, 0f],
+			driver.MovedSegments.Select(segment => segment[^1].X).ToArray());
+		Assert.Equal(4, result.RouteSearches);
+	}
+
+	[Fact]
+	public async Task CheckedIngressReturnSkipsNewlyBlockedCheckpointOnlyWithSafeDetour()
+	{
+		var driver = new FakeDriver([]) { Position = At(20), BlockedDestinations = [15] };
+		NaturalNavigationResult result = await NaturalIshalgenNavigator.RetraceIngressAsync(
+			220010000, At(0), [At(5), At(10), At(15), At(20)], driver);
+		Assert.True(result.Arrived, result.Reason);
+		Assert.Equal(0, driver.Position.X);
+		Assert.DoesNotContain(driver.MovedSegments, segment => segment[^1].X == 15);
+		Assert.Contains(driver.Events, entry => entry.Action == "navigation-failed" &&
+			entry.Destination.X == 15);
+	}
+
+	[Fact]
+	public async Task CheckedIngressReturnCanSkipFiveNewlyBlockedCheckpointsWhenStartRemainsReachable()
+	{
+		var driver = new FakeDriver([])
+		{
+			Position = At(30),
+			BlockedDestinations = [5, 10, 15, 20, 25],
+		};
+		NaturalNavigationResult result = await NaturalIshalgenNavigator.RetraceIngressAsync(
+			220010000, At(0), [At(5), At(10), At(15), At(20), At(25), At(30)], driver);
+		Assert.True(result.Arrived, result.Reason);
+		Assert.Equal(0, driver.Position.X);
+		Assert.Equal(5, driver.Events.Count(entry => entry.Action == "navigation-failed"));
+	}
+
+	[Fact]
+	public async Task CheckedIngressReturnStopsWhenAReverseLegHasNoRoute()
+	{
+		var driver = new FakeDriver([]) { Position = At(20), NoRoute = true };
+		NaturalNavigationResult result = await NaturalIshalgenNavigator.RetraceIngressAsync(
+			220010000, At(0), [At(5), At(10), At(15), At(20)], driver);
+		Assert.False(result.Arrived);
+		Assert.Contains("checkpoint", result.Reason);
+		Assert.Empty(driver.MovedSegments);
+	}
+
+	[Fact]
 	public async Task ExploringSpawnHintDoesNotInventGatherableObject()
 	{
 		var driver = new FakeDriver([]);
@@ -14,6 +66,32 @@ public sealed class NaturalIshalgenNavigatorTests
 		Assert.True(result.Arrived);
 		Assert.Null(result.TargetObjectId);
 		Assert.Contains(driver.Events, item => item.Action == "anchor-observed" && item.Outcome == "completed");
+	}
+
+	[Fact]
+	public async Task RangedSearchStopsNearAreaHintWithoutClaimingAVisibleTarget()
+	{
+		var driver = new FakeDriver([]) { MaxRoutePoints = 16 };
+		NaturalNavigationResult result = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
+			220010000, -1, At(100), 23, driver, "stalker-search-area");
+		Assert.True(result.Arrived, result.Reason);
+		Assert.Null(result.TargetObjectId);
+		Assert.True(result.RouteSearches > 1); // The planner can return safe forward progress, not a full route.
+		Assert.InRange(driver.Position.X, 77, 100);
+		Assert.Contains(driver.Events, entry => entry.Action == "anchor-observed");
+		Assert.DoesNotContain(driver.MovedSegments, segment => segment[^1].X > 80);
+	}
+
+	[Fact]
+	public async Task ObservedCombatTargetStopsAtPriestSpellRangeInsteadOfMeleeRange()
+	{
+		var driver = new FakeDriver([new(77, 210402, At(30))]);
+		NaturalNavigationResult result = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
+			220010000, 210402, At(30), 23, driver, "priest-spell-range-target");
+		Assert.True(result.Arrived, result.Reason);
+		Assert.Equal(77, result.TargetObjectId);
+		Assert.InRange(driver.Position.X, 7, 10);
+		Assert.DoesNotContain(driver.MovedSegments, segment => segment[^1].X > 10);
 	}
 
 	[Fact]
@@ -60,6 +138,18 @@ public sealed class NaturalIshalgenNavigatorTests
 		Assert.True(result.Arrived);
 		Assert.True(result.RouteSearches >= 2);
 		Assert.Contains(driver.Events, item => item.Action == "target-reacquired" && item.Destination.X == 20);
+	}
+
+	[Fact]
+	public async Task NewlyObservedHazardReplansBeforeEnteringNextSegment()
+	{
+		var driver = new FakeDriver([new(77, 203500, At(20))]) { RejectNextSegment = true };
+		NaturalNavigationResult result = await NaturalIshalgenNavigator.ApproachNpcAsync(220010000,
+			203500, At(20), driver);
+		Assert.True(result.Arrived, result.Reason);
+		Assert.True(result.RouteSearches >= 2);
+		Assert.Contains(driver.Events, item => item.Action == "replan-hostile");
+		Assert.Equal(1f, driver.MovedSegments[0][0].X); // The rejected segment was never sent.
 	}
 
 	[Fact]
@@ -112,14 +202,37 @@ public sealed class NaturalIshalgenNavigatorTests
 		Assert.Equal(3, lost.Synchronizations);
 	}
 
+	[Fact]
+	public void ReturnBreadcrumbsUseOnlyWalkedProgressAndKeepTheLastPoint()
+	{
+		NaturalNavigationEvent Event(int sequence, string action, BotPosition? position) =>
+			new(sequence, action, "completed", "test", 220010000, -1, position,
+				At(100), null, 1, sequence, action == "route-to-anchor" ? [At(99)] : null);
+		NaturalNavigationEvent[] events =
+		[
+			Event(1, "route-to-anchor", At(99)),
+			Event(2, "segment-progress", At(10)),
+			Event(3, "segment-progress", At(20)),
+			Event(4, "segment-progress", At(30)),
+			Event(5, "segment-progress", At(40)),
+		];
+		Assert.Equal([At(10), At(30), At(40)],
+			NaturalIshalgenNavigator.SelectRetraceCheckpoints(events));
+		Assert.Empty(NaturalIshalgenNavigator.SelectRetraceCheckpoints(
+			[Event(1, "route-to-anchor", At(99))]));
+	}
+
 	private static BotPosition At(float x) => new(x, 0, 0, 0);
 
 	private sealed class FakeDriver(List<NaturalNavigationObject> targets) : INaturalNavigationDriver
 	{
 		public List<NaturalNavigationObject> Targets { get; set; } = targets;
-		public BotPosition Position { get; private set; } = At(0);
+		public BotPosition Position { get; set; } = At(0);
 		public bool NoRoute { get; init; }
+		public HashSet<float> BlockedDestinations { get; init; } = [];
 		public bool Stall { get; init; }
+		public int MaxRoutePoints { get; init; } = int.MaxValue;
+		public bool RejectNextSegment { get; set; }
 		public int Synchronizations { get; private set; }
 		public Action<FakeDriver, int>? AfterMove { get; init; }
 		public Action<FakeDriver, int>? AfterSynchronize { get; init; }
@@ -129,10 +242,12 @@ public sealed class NaturalIshalgenNavigatorTests
 		public NaturalNavigationObservation Observe() => new(220010000, Position, false, Targets.ToArray());
 		public Task<IReadOnlyList<BotPosition>> FindRouteAsync(BotPosition start, BotPosition destination, CancellationToken token)
 		{
-			if (NoRoute) return Task.FromResult<IReadOnlyList<BotPosition>>([]);
-			var route = Enumerable.Range((int)start.X + 1, (int)destination.X - (int)start.X)
-				.Select(x => At(x)).ToArray();
-			return Task.FromResult<IReadOnlyList<BotPosition>>(route);
+			if (NoRoute || BlockedDestinations.Contains(destination.X))
+				return Task.FromResult<IReadOnlyList<BotPosition>>([]);
+			int step = Math.Sign(destination.X - start.X);
+			var route = Enumerable.Range(1, Math.Abs((int)destination.X - (int)start.X))
+				.Select(index => At(start.X + step * index)).ToArray();
+			return Task.FromResult<IReadOnlyList<BotPosition>>(route.Take(MaxRoutePoints).ToArray());
 		}
 		public Task MoveAsync(IReadOnlyList<BotPosition> segment, CancellationToken token)
 		{
@@ -146,6 +261,12 @@ public sealed class NaturalIshalgenNavigatorTests
 			Synchronizations++;
 			AfterSynchronize?.Invoke(this, Synchronizations);
 			return Task.CompletedTask;
+		}
+		public bool IsSegmentSafe(IReadOnlyList<BotPosition> segment, int? targetObjectId)
+		{
+			if (!RejectNextSegment) return true;
+			RejectNextSegment = false;
+			return false;
 		}
 		public void Record(NaturalNavigationEvent navigationEvent) => Events.Add(navigationEvent);
 	}

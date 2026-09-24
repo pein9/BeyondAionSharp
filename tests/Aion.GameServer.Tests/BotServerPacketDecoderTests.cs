@@ -14,7 +14,8 @@ public sealed class BotServerPacketDecoderTests
 	[Fact]
 	public void DecoderInventoryContainsExpectedBotPerceptionPackets()
 	{
-		Assert.Equal(113, decoder.PacketTypes.Count);
+		Assert.Equal(115, decoder.PacketTypes.Count);
+		Assert.Contains(typeof(SM_ATTACK), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_RECONNECT_KEY), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_BIND_POINT_INFO), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_KISK_UPDATE), decoder.PacketTypes);
@@ -26,6 +27,7 @@ public sealed class BotServerPacketDecoderTests
 		Assert.Contains(typeof(SmAttackStatus), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_MESSAGE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_EMOTION), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_USE_OBJECT), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_SYSTEM_MESSAGE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_PLAYER_SPAWN), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_INVENTORY_ADD_ITEM), decoder.PacketTypes);
@@ -33,6 +35,25 @@ public sealed class BotServerPacketDecoderTests
 		Assert.Contains(typeof(SM_WINDSTREAM_ANNOUNCE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_ABNORMAL_STATE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_GATHER_UPDATE), decoder.PacketTypes);
+	}
+
+	[Fact]
+	public void UseObjectCompletionDistinguishesThreeSecondFinishFromAttackAbort()
+	{
+		// Java ce54b7931 SM_USE_OBJECT / ActionItemNpcAI. These body shapes
+		// were also observed in the NI-07 Mau sack traces.
+		var completed = decoder.Decode(typeof(SM_USE_OBJECT),
+			Convert.FromHexString("8B060200E4400000B80B000002"));
+		Assert.Equal(132747, completed.Get<int>("playerObjectId"));
+		Assert.Equal(16612, completed.Get<int>("targetObjectId"));
+		Assert.Equal(3000, completed.Get<int>("durationMs"));
+		Assert.Equal((byte)2, completed.Get<byte>("actionType"));
+		var aborted = decoder.Decode(typeof(SM_USE_OBJECT),
+			Convert.FromHexString("8B060200E44000000000000002"));
+		Assert.Equal(0, aborted.Get<int>("durationMs"));
+		for (int length = 0; length < 13; length++)
+			Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_USE_OBJECT),
+				Convert.FromHexString("8B060200E4400000B80B000002")[..length]));
 	}
 
 	[Theory]
@@ -338,6 +359,22 @@ public sealed class BotServerPacketDecoderTests
 	}
 
 	[Fact]
+	public void AttackGoldenPacketsExposeClientVisibleAttackerAndTarget()
+	{
+		using var fixture = LoadFixture("SM_ATTACK.json");
+		foreach (JsonElement sample in fixture.RootElement.GetProperty("cases").EnumerateArray())
+		{
+			byte[] body = Convert.FromHexString(sample.GetProperty("payloadHex").GetString()!);
+			DecodedBotServerPacket attack = decoder.Decode(typeof(SM_ATTACK), body);
+			Assert.Equal(sample.GetProperty("inputs").GetProperty("attackerObjId").GetInt32(),
+				attack.Get<int>("attackerObjId"));
+			Assert.Equal(sample.GetProperty("inputs").GetProperty("targetObjId").GetInt32(),
+				attack.Get<int>("targetObjId"));
+		}
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_ATTACK), new byte[12]));
+	}
+
+	[Fact]
 	public void AbyssRankGoldenPacketUpdatesClientRewardAndKillCounters()
 	{
 		using var fixture = LoadFixture("SM_ABYSS_RANK.json");
@@ -472,6 +509,7 @@ public sealed class BotServerPacketDecoderTests
 		var sourceHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(normalizedSource)));
 		Assert.Equal(SystemMessageNames.SourceSha256, sourceHash);
 		Assert.Equal("STR_MOVE_PORTAL_ERROR_INVALID_RACE", SystemMessageNames.GetNameOrNull(901354));
+		Assert.Equal("STR_SKILL_NOT_ENOUGH_DISTANCE", SystemMessageNames.GetNameOrNull(1402920));
 	}
 
 	private static int AssertPrimitiveInputs(JsonElement inputs, IReadOnlyDictionary<string, object?> fields)

@@ -12,8 +12,8 @@ public sealed record StarterSoakQuest(int Id, StarterQuestNpc? Start, StarterQue
 	{
 		var mires = Npc(203057, 1141, 1032, 128.875f);
 		var kales = Npc(203050, 984.994f, 1133.94f, 108.563f);
-		var vandar = Npc(203504, 526.99f, 2775.67f, 295.751f);
-		var vanar = Npc(203502, 220.15f, 2678.81f, 295.25f);
+		var vandar = Npc(203504, 527.004f, 2775.671f, 295.751f);
+		var vanar = Npc(203502, 228.848f, 2694.775f, 295.173f);
 		return race switch
 		{
 			ScenarioRace.Elyos => [
@@ -26,12 +26,12 @@ public sealed record StarterSoakQuest(int Id, StarterQuestNpc? Start, StarterQue
 				new(1106, kales, Npc(203061, 847.263f, 1256.88f, 118.75f), 0, 300, WorkItem: 182200203),
 			],
 			ScenarioRace.Asmodians => [
-				new(2101, Npc(203500, 560.83f, 2788.11f, 299.062f), vandar, 80, 130),
-				new(2102, vandar, vandar, 120, 180, new(210363, [P(458.924f, 2784.15f, 288.893f), P(468.672f, 2763.12f, 289.292f), P(469.915f, 2770.84f, 288.947f), P(424.609f, 2828.68f, 295.793f)], true), 169300002, 10),
-				new(2103, vandar, Npc(203501, 223.975f, 2679.86f, 295.25f), 410, 590),
-				new(2104, vanar, vanar, 770, 520, new(700124, [P(135.39f, 2643.84f, 306.337f), P(140.963f, 2653.23f, 305.977f), P(145.208f, 2668.29f, 305.299f)], false, 182203104)),
-				new(2105, vanar, vanar, 530, 420, new(210367, [P(148.34f, 2692.48f, 305.894f), P(168.82f, 2638.2f, 305.185f), P(169.49f, 2623.05f, 307.181f)], true, 182203105)),
-				new(2100, null, Npc(203516, 589.35f, 2450.09f, 278.375f), 0, 510, RewardItem: 100000107, Campaign: true),
+				new(2101, Npc(203500, 560.989f, 2789.895f, 299.117f), vandar, 80, 130),
+				new(2102, vandar, vandar, 120, 180, new(210363, [P(454.128f, 2774.140f, 288.875f), P(476.033f, 2758.439f, 290.032f), P(520.441f, 2716.861f, 293.456f), P(420.613f, 2810.292f, 293.230f)], true), 169300002, 10),
+				new(2103, vandar, Npc(203501, 223.372f, 2676.063f, 295.250f), 410, 590),
+				new(2104, vanar, vanar, 770, 520, new(700124, [P(135.390f, 2643.841f, 306.346f), P(140.963f, 2653.232f, 305.952f), P(145.208f, 2668.289f, 305.299f)], false, 182203104)),
+				new(2105, vanar, vanar, 530, 420, new(210367, [P(157.943f, 2696.984f, 304.504f), P(166.709f, 2716.284f, 305.403f), P(282.344f, 2842.345f, 308.772f)], true, 182203105)),
+				new(2100, null, Npc(203516, 584.949f, 2418.722f, 278.625f), 0, 510, RewardItem: 100000107, Campaign: true),
 			],
 			_ => throw new ArgumentOutOfRangeException(nameof(race)),
 		};
@@ -60,7 +60,7 @@ public sealed record StarterSoakQuest(int Id, StarterQuestNpc? Start, StarterQue
 	public static IReadOnlyList<BotPosition> ReturnVia(ScenarioRace race) => race switch
 	{
 		ScenarioRace.Elyos => [],
-		ScenarioRace.Asmodians => [P(220.15f, 2678.81f, 295.25f), P(526.99f, 2775.67f, 295.751f)],
+		ScenarioRace.Asmodians => [P(228.848f, 2694.775f, 295.173f), P(527.004f, 2775.671f, 295.751f)],
 		_ => throw new ArgumentOutOfRangeException(nameof(race)),
 	};
 

@@ -6,6 +6,8 @@ using Aion.GameServer.World.Geo;
 
 namespace Aion.Bots.Navigation;
 
+public readonly record struct BotNavigationHazard(BotPosition Position, float Radius);
+
 /// <summary>Ground-only bot routes over the same checked-in geometry used by the server.</summary>
 public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId, IgnoreProperties ignoreProperties)
 {
@@ -14,6 +16,12 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
 
     public static BotNavigationGeometry ForServerWorld(int instanceId, Race race) =>
         new(GeoService.GetInstance().GetMap, instanceId, IgnoreProperties.Of(race));
+
+    /// <summary>Read-only terrain/obstacle sight check for selecting a ranged firing point.
+    /// The 1.25 m eye height matches the ordinary player offset used by GeoService.</summary>
+    public bool HasLineOfSight(int mapId, BotPosition observer, BotPosition target) =>
+        maps(mapId).CanSee(observer.X, observer.Y, observer.Z + 1.25f,
+            target.X, target.Y, target.Z + 1.25f, instanceId, ignoreProperties);
 
     /// <summary>Bounded local ground search when spawn/walker waypoints leave a gap. This is not a navmesh:
     /// it cannot invent jumps, open doors or cross maps, and reports no route when its budget is exhausted.</summary>
@@ -25,11 +33,57 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
     public IReadOnlyList<BotPosition> FindJourneyPath(int mapId, BotPosition start, BotPosition destination)
         => FindGroundPath(mapId, start, destination, 1000, 65536, 60);
 
+    /// <summary>Checked ground route that stays outside client-observed aggro circles.
+    /// If already inside one, only outward steps are allowed until clear.</summary>
+    public IReadOnlyList<BotPosition> FindJourneyPathAvoiding(int mapId, BotPosition start,
+        BotPosition destination, IReadOnlyList<BotNavigationHazard> hazards)
+        => FindGroundPath(mapId, start, destination, 1000, 131072, 180, hazards);
+
+    /// <summary>Find checked ground in Priest spell range with sight to the observed
+    /// target. Other observed aggro circles remain forbidden; reaching the mob's
+    /// occupied ground position is neither required nor treated as safe.</summary>
+    public IReadOnlyList<BotPosition> FindRangedApproachPath(int mapId, BotPosition start,
+        BotPosition target, IReadOnlyList<BotNavigationHazard> otherHazards)
+        => FindGroundPath(mapId, start, target, 200, 32768, 30, otherHazards,
+            arrivalRadius: 20, arrivalPredicate: point => HasLineOfSight(mapId, point, target));
+
+    /// <summary>Prefer a mapped road on longer journeys only when both endpoints
+    /// can reasonably join it. This remains the same collision- and hazard-checked
+    /// A* search; map artwork changes cost, not walkability.</summary>
+    public IReadOnlyList<BotPosition> FindRoadPreferredJourneyPath(int mapId, BotPosition start,
+        BotPosition destination, IReadOnlyList<BotRoadPoint> road,
+        IReadOnlyList<BotNavigationHazard> hazards)
+    {
+        ArgumentNullException.ThrowIfNull(road);
+        ArgumentNullException.ThrowIfNull(hazards);
+        if (road.Count < 2 || Distance(start, destination) < 100 ||
+            RoadDistance(start.X, start.Y, road) > 90 ||
+            RoadDistance(destination.X, destination.Y, road) > 90)
+            return [];
+        return FindGroundPath(mapId, start, destination, 1000, 131072, 120, hazards,
+            preferredRoad: road);
+    }
+
+    public static bool AvoidsHazards(BotPosition start, IReadOnlyList<BotPosition> route,
+        IReadOnlyList<BotNavigationHazard> hazards)
+    {
+        BotPosition previous = start;
+        foreach (BotPosition point in route)
+        {
+            if (!SafeStep(start, previous, point, hazards)) return false;
+            previous = point;
+        }
+        return true;
+    }
+
     /// <summary>Find checked ground inside the ordinary three-metre interaction radius when an
     /// observed NPC's exact spawn point is occupied or otherwise not walkable. Never returns an
     /// approach outside that radius, and does not assume that a nearby point can be teleported to.</summary>
     public IReadOnlyList<BotPosition> FindInteractionPath(int mapId, BotPosition start, BotPosition target)
     {
+		IReadOnlyList<BotPosition> nearbyGround = FindGroundPath(mapId, start, target,
+			1000, 65536, 60, arrivalRadius: 3);
+		if (nearbyGround.Count != 0) return nearbyGround;
         for (int sector = 0; sector < 16; sector++)
         {
             float angle = sector * MathF.PI / 8f;
@@ -42,9 +96,19 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
     }
 
     private IReadOnlyList<BotPosition> FindGroundPath(int mapId, BotPosition start, BotPosition destination,
-        float maximumDistance, int maximumVisited, float padding)
+        float maximumDistance, int maximumVisited, float padding,
+        IReadOnlyList<BotNavigationHazard>? hazards = null, float arrivalRadius = 0,
+        IReadOnlyList<BotRoadPoint>? preferredRoad = null,
+        Func<BotPosition, bool>? arrivalPredicate = null)
     {
         if (!Finite(start) || !Finite(destination) || Distance(start, destination) > maximumDistance) return [];
+        // A path cannot enter an observed aggro circle that does not already
+        // contain its origin. Reject this impossible goal before exploring a
+        // large ground grid around it.
+        if (hazards != null && hazards.Any(hazard =>
+            HorizontalDistance(start, hazard.Position) >= hazard.Radius &&
+            HorizontalDistance(destination, hazard.Position) < hazard.Radius - arrivalRadius))
+            return [];
         var initial = TraceEdge(mapId, start, start);
         if (initial == null) return [];
         var first = new Cell(0, 0, (int)MathF.Round(initial[0].Z * 2));
@@ -59,7 +123,27 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
         {
             if (!closed.Add(cell)) continue;
             BotPosition current = positions[cell];
-            var tail = Distance(current, destination) <= 3 ? TraceEdge(mapId, current, destination) : null;
+			if (arrivalRadius > 0 && Distance(current, destination) <= arrivalRadius &&
+				(arrivalPredicate == null || arrivalPredicate(current)))
+			{
+				var reverse = new List<BotPosition> { current };
+				Cell parentCell = cell;
+				while (parent.TryGetValue(parentCell, out parentCell)) reverse.Add(positions[parentCell]);
+				reverse.Reverse();
+				var checkedPath = new List<BotPosition>();
+				BotPosition previous = start;
+				foreach (BotPosition point in reverse.Skip(1))
+				{
+					IReadOnlyList<BotPosition>? edge = TraceEdge(mapId, previous, point);
+					if (edge == null || hazards != null && !SafeEdge(start, previous, edge, hazards)) return [];
+					checkedPath.AddRange(edge);
+					previous = edge[^1];
+				}
+				return checkedPath;
+			}
+            var tail = arrivalPredicate == null && Distance(current, destination) <= 3
+                ? TraceEdge(mapId, current, destination) : null;
+            if (tail != null && hazards != null && !SafeEdge(start, current, tail, hazards)) tail = null;
             if (tail != null)
             {
                 var reverse = new List<BotPosition> { current };
@@ -70,7 +154,7 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
                 foreach (var point in reverse.Skip(1).Append(destination))
                 {
                     var edge = TraceEdge(mapId, previous, point);
-                    if (edge == null) return [];
+                    if (edge == null || hazards != null && !SafeEdge(start, previous, edge, hazards)) return [];
                     result.AddRange(edge); previous = edge[^1];
                 }
                 return result;
@@ -84,9 +168,16 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
                     || candidate.Y < MathF.Min(start.Y, destination.Y) - padding || candidate.Y > MathF.Max(start.Y, destination.Y) + padding) continue;
                 var edge = TraceEdge(mapId, current, candidate);
                 if (edge == null) continue;
+                if (hazards != null && !SafeEdge(start, current, edge, hazards)) continue;
                 candidate = edge[^1];
                 var next = new Cell(x, y, (int)MathF.Round(candidate.Z * 2));
-                float cost = costs[cell] + Distance(current, candidate);
+                float stepCost = Distance(current, candidate);
+                if (preferredRoad != null)
+                {
+                    float offRoad = MathF.Min(1, RoadDistance(candidate.X, candidate.Y, preferredRoad) / 30);
+                    stepCost *= 1 + 1.5f * offRoad;
+                }
+                float cost = costs[cell] + stepCost;
                 if (closed.Contains(next) || costs.TryGetValue(next, out float old) && old <= cost) continue;
                 costs[next] = cost; positions[next] = candidate; parent[next] = cell;
                 open.Enqueue(next, (cost + Distance(candidate, destination), order++));
@@ -96,6 +187,61 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
     }
 
     private readonly record struct Cell(int X, int Y, int Z);
+
+    private static float RoadDistance(float x, float y, IReadOnlyList<BotRoadPoint> road)
+    {
+        float nearest = float.PositiveInfinity;
+        for (int index = 1; index < road.Count; index++)
+        {
+            BotRoadPoint a = road[index - 1], b = road[index];
+            float dx = b.X - a.X, dy = b.Y - a.Y;
+            float lengthSquared = dx * dx + dy * dy;
+            float fraction = lengthSquared <= 0 ? 0 : Math.Clamp(
+                ((x - a.X) * dx + (y - a.Y) * dy) / lengthSquared, 0, 1);
+            float px = a.X + fraction * dx, py = a.Y + fraction * dy;
+            nearest = MathF.Min(nearest, MathF.Sqrt((x - px) * (x - px) + (y - py) * (y - py)));
+        }
+        return nearest;
+    }
+
+    private static bool SafeEdge(BotPosition start, BotPosition from,
+        IReadOnlyList<BotPosition> samples, IReadOnlyList<BotNavigationHazard> hazards)
+    {
+        BotPosition previous = from;
+        foreach (BotPosition sample in samples)
+        {
+            if (!SafeStep(start, previous, sample, hazards)) return false;
+            previous = sample;
+        }
+        return true;
+    }
+
+    private static bool SafeStep(BotPosition start, BotPosition previous,
+        BotPosition next, IReadOnlyList<BotNavigationHazard> hazards)
+    {
+        float previousExposure = 0, nextExposure = 0;
+        foreach (BotNavigationHazard hazard in hazards)
+        {
+            float nextDistance = HorizontalDistance(next, hazard.Position);
+            if (nextDistance >= hazard.Radius) continue;
+            float previousDistance = HorizontalDistance(previous, hazard.Position);
+            if (HorizontalDistance(start, hazard.Position) >= hazard.Radius ||
+                previousDistance >= hazard.Radius) return false; // Do not enter or re-enter a hazard.
+        }
+        foreach (BotNavigationHazard hazard in hazards)
+        {
+            if (HorizontalDistance(start, hazard.Position) >= hazard.Radius) continue;
+            previousExposure += MathF.Max(0, hazard.Radius - HorizontalDistance(previous, hazard.Position));
+            nextExposure += MathF.Max(0, hazard.Radius - HorizontalDistance(next, hazard.Position));
+        }
+        // Overlapping circles can make moving outward from each individual mob
+        // geometrically impossible. Permit a checked escape only when total
+        // exposure to the already-observed pack does not increase.
+        return nextExposure <= previousExposure + 0.01f;
+    }
+
+    private static float HorizontalDistance(BotPosition a, BotPosition b) =>
+        MathF.Sqrt(MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2));
     private static float Distance(BotPosition a, BotPosition b) =>
         MathF.Sqrt(MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2) + MathF.Pow(a.Z - b.Z, 2));
 

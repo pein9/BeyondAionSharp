@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2120,
+    "name": "A Brax Skin Rug",
+    "nameId": 1103220,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 5,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2120,
+        "start_npc_ids": 203542
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203542,
+        "name": "denma",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 933.167,
+            "y": 1685.701,
+            "z": 261.821,
+            "heading": 6,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203542,
+      "name": "denma",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 933.167,
+          "y": 1685.701,
+          "z": 261.821,
+          "heading": 6,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203542,
+      "name": "denma",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 933.167,
+          "y": 1685.701,
+          "z": 261.821,
+          "heading": 6,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182203118,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182203118,
+          "npc_id": 210652,
+          "npc": {
+            "id": 210652,
+            "name": "graybristle brax",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 1008.491,
+                "y": 1733.929,
+                "z": 259.478,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1039.601,
+                "y": 1822.53,
+                "z": 255.075,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1058.32,
+                "y": 1742.54,
+                "z": 263.34125,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1076.99,
+                "y": 1778.116,
+                "z": 258.61,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182203118,
+          "npc_id": 210749,
+          "npc": {
+            "id": 210749,
+            "name": "graybristle braxie",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 991.188,
+                "y": 1703.49,
+                "z": 260.832,
+                "heading": 31,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1010.93,
+                "y": 1833.62,
+                "z": 253.375,
+                "heading": 98,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1048.98,
+                "y": 1776.06,
+                "z": 258.186,
+                "heading": 56,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1059.43,
+                "y": 1788.96,
+                "z": 257.404,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1064.8,
+                "y": 1735.89,
+                "z": 264.125,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1064.88,
+                "y": 1751.74,
+                "z": 261.985,
+                "heading": 32,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1081.48,
+                "y": 1732.5,
+                "z": 264.687,
+                "heading": 46,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1085.34,
+                "y": 1725.96,
+                "z": 265.255,
+                "heading": 82,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 1099.45,
+                "y": 1773.61,
+                "z": 260.61,
+                "heading": 61,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182203118,
+          "npc_id": 210748,
+          "npc": {
+            "id": 210748,
+            "name": "graybristle brax",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203542,
+          "name": "denma",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 933.167,
+              "y": 1685.701,
+              "z": 261.821,
+              "heading": 6,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 1595,
+        "gold": 3760,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2120,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 5,
+      "name": "A Brax Skin Rug",
+      "nameId": 1103220,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182203118
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 1595,
+          "gold": 3760
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182203118,
+          "npc_id": 210652
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182203118,
+          "npc_id": 210749
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182203118,
+          "npc_id": 210748
+        }
+      }
+    ]
+  }
+}

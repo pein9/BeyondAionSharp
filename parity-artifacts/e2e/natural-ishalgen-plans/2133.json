@@ -1,0 +1,1024 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2133,
+    "name": "Azpha For Health And Well-being",
+    "nameId": 1103233,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 2,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2133,
+        "start_npc_ids": 203519
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203519,
+        "name": "nobekk",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 513.12,
+            "y": 2432.481,
+            "z": 277.361,
+            "heading": 96,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203519,
+      "name": "nobekk",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 513.12,
+          "y": 2432.481,
+          "z": 277.361,
+          "heading": 96,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203519,
+      "name": "nobekk",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 513.12,
+          "y": 2432.481,
+          "z": 277.361,
+          "heading": 96,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 152000451,
+      "sources": [
+        {
+          "kind": "gatherable",
+          "gatherableId": 400651,
+          "name": "Young Azpha",
+          "rate": 10000000,
+          "skillLevel": 1,
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 411.113,
+              "y": 2663.17,
+              "z": 281.491,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 422.643,
+              "y": 2746.67,
+              "z": 289.391,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 425.017,
+              "y": 2258.66,
+              "z": 252.746,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 442.634,
+              "y": 2322.91,
+              "z": 256.313,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 460.112,
+              "y": 2412.77,
+              "z": 264.098,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 464.185,
+              "y": 2234.9,
+              "z": 249.046,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 470.588,
+              "y": 2185.12,
+              "z": 250.265,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 479.209,
+              "y": 2547.25,
+              "z": 273.656,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 480.537,
+              "y": 2787.35,
+              "z": 295.073,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 481.533,
+              "y": 2330.62,
+              "z": 251.702,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 482.19,
+              "y": 2700.18,
+              "z": 294.148,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 489.599,
+              "y": 2842.77,
+              "z": 303.938,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 499.236,
+              "y": 2630.99,
+              "z": 281.24,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 505.959,
+              "y": 1392.2,
+              "z": 315.005,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 521.332,
+              "y": 2714.86,
+              "z": 293.411,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 522.556,
+              "y": 1939.89,
+              "z": 289.018,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 547.328,
+              "y": 1428.93,
+              "z": 310.687,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 548.037,
+              "y": 1500.33,
+              "z": 309.646,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 555.176,
+              "y": 2859.5,
+              "z": 303.44,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 562.838,
+              "y": 2551.45,
+              "z": 270.673,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 566.146,
+              "y": 1755.45,
+              "z": 320.999,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 568.013,
+              "y": 1859.47,
+              "z": 291.122,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 577.529,
+              "y": 2817.34,
+              "z": 303.613,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 614.349,
+              "y": 1899.52,
+              "z": 284.032,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 615.67,
+              "y": 1523.57,
+              "z": 293.901,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 627.744,
+              "y": 2785.73,
+              "z": 294.626,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 638.486,
+              "y": 2099.4,
+              "z": 249.318,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 654.704,
+              "y": 1432.76,
+              "z": 296.486,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 666.153,
+              "y": 1529.79,
+              "z": 292.854,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 675.933,
+              "y": 1849.7,
+              "z": 276.322,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 708.135,
+              "y": 1716.62,
+              "z": 262.537,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 708.91,
+              "y": 2139.4,
+              "z": 250.194,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 740.929,
+              "y": 1533.49,
+              "z": 294.318,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 762.903,
+              "y": 2146.13,
+              "z": 256.289,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 785.346,
+              "y": 1719.11,
+              "z": 257.071,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 805.596,
+              "y": 2221.32,
+              "z": 266.133,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 820.411,
+              "y": 1534.86,
+              "z": 285.652,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 846.338,
+              "y": 1995.79,
+              "z": 257.107,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 858.712,
+              "y": 2245.77,
+              "z": 267.28,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 873.576,
+              "y": 1749.55,
+              "z": 263.869,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 886.484,
+              "y": 2127.79,
+              "z": 262.261,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 907.152,
+              "y": 1640.41,
+              "z": 273.358,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 925.266,
+              "y": 2255.22,
+              "z": 264.016,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 927.455,
+              "y": 2016.8,
+              "z": 253.277,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 945.463,
+              "y": 1574.58,
+              "z": 285.735,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 959.478,
+              "y": 1808.88,
+              "z": 257.964,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 968.565,
+              "y": 2205.63,
+              "z": 255.205,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 977.004,
+              "y": 1907.36,
+              "z": 257.809,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 987.614,
+              "y": 2153.73,
+              "z": 254.385,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 995.449,
+              "y": 1655.2,
+              "z": 259.817,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1007.99,
+              "y": 2209.85,
+              "z": 258.121,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1029.44,
+              "y": 2055.85,
+              "z": 254.086,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1052.02,
+              "y": 2325.7,
+              "z": 256.068,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1055.07,
+              "y": 2145.15,
+              "z": 256.231,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1057.43,
+              "y": 2247.14,
+              "z": 257.516,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1058.66,
+              "y": 1766.68,
+              "z": 260.095,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1073.31,
+              "y": 2057.7,
+              "z": 253.125,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1108.65,
+              "y": 2110.88,
+              "z": 252.477,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1129.19,
+              "y": 2193.16,
+              "z": 255.428,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1145.55,
+              "y": 2251.47,
+              "z": 254.955,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1214.49,
+              "y": 2095.31,
+              "z": 262.267,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1221.75,
+              "y": 2171.62,
+              "z": 259.751,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            }
+          ]
+        },
+        {
+          "kind": "gatherable",
+          "gatherableId": 400652,
+          "name": "Azpha",
+          "rate": 8000000,
+          "skillLevel": 1,
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1363.49,
+              "y": 1382.25,
+              "z": 283.55,
+              "heading": 107,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1368.06,
+              "y": 803.871,
+              "z": 263.125,
+              "heading": 71,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1370.11,
+              "y": 680.692,
+              "z": 274.943,
+              "heading": 84,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1403.98,
+              "y": 1349.65,
+              "z": 280.299,
+              "heading": 83,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1421.31,
+              "y": 686.416,
+              "z": 277.668,
+              "heading": 109,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1425.98,
+              "y": 1445.71,
+              "z": 282.964,
+              "heading": 19,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1426.47,
+              "y": 1175.48,
+              "z": 267.128,
+              "heading": 50,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1434.45,
+              "y": 1325.86,
+              "z": 283.237,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1438.18,
+              "y": 789.164,
+              "z": 249.543,
+              "heading": 6,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1447.76,
+              "y": 1492.88,
+              "z": 279.256,
+              "heading": 64,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1460.02,
+              "y": 1393.65,
+              "z": 276.522,
+              "heading": 9,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1467.39,
+              "y": 919.907,
+              "z": 259.559,
+              "heading": 50,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1484.65,
+              "y": 1486.13,
+              "z": 275.641,
+              "heading": 79,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1485.53,
+              "y": 778.937,
+              "z": 267.007,
+              "heading": 69,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1488.69,
+              "y": 1208.95,
+              "z": 262.157,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1495.52,
+              "y": 735.969,
+              "z": 262.119,
+              "heading": 3,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1506.42,
+              "y": 1398.9,
+              "z": 279.875,
+              "heading": 42,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1510.9,
+              "y": 1312.37,
+              "z": 274.729,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1523.51,
+              "y": 1231.85,
+              "z": 259.644,
+              "heading": 99,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1527.15,
+              "y": 649.827,
+              "z": 259.854,
+              "heading": 37,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1550.55,
+              "y": 1341.41,
+              "z": 259.829,
+              "heading": 16,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1556.66,
+              "y": 1135.19,
+              "z": 261.42,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1578.1,
+              "y": 1416.22,
+              "z": 259.611,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1583.55,
+              "y": 1247.82,
+              "z": 259.314,
+              "heading": 84,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1609.56,
+              "y": 1434.71,
+              "z": 257.768,
+              "heading": 92,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1614.13,
+              "y": 682.181,
+              "z": 260.168,
+              "heading": 21,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1624.31,
+              "y": 1175.44,
+              "z": 259.81,
+              "heading": 98,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1640.21,
+              "y": 1490.13,
+              "z": 252.396,
+              "heading": 25,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1646.7,
+              "y": 720.431,
+              "z": 259.909,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1698.33,
+              "y": 1221.5,
+              "z": 271.781,
+              "heading": 96,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1715.25,
+              "y": 1175.53,
+              "z": 274.65,
+              "heading": 99,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1724.49,
+              "y": 1127.26,
+              "z": 274.862,
+              "heading": 98,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1758.38,
+              "y": 1376.27,
+              "z": 283.445,
+              "heading": 97,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1765.59,
+              "y": 1132.55,
+              "z": 271.974,
+              "heading": 49,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1774.5,
+              "y": 1184.84,
+              "z": 271.438,
+              "heading": 70,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1776.48,
+              "y": 1247.92,
+              "z": 273.43,
+              "heading": 8,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1776.96,
+              "y": 1311.28,
+              "z": 281.155,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1818.71,
+              "y": 1253.44,
+              "z": 280.795,
+              "heading": 86,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1840.23,
+              "y": 1136.21,
+              "z": 268.913,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1864.78,
+              "y": 1073.15,
+              "z": 264.625,
+              "heading": 3,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1931.18,
+              "y": 1036.2,
+              "z": 265.997,
+              "heading": 119,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1942.22,
+              "y": 1117.65,
+              "z": 271.608,
+              "heading": 102,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203519,
+          "name": "nobekk",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 513.12,
+              "y": 2432.481,
+              "z": 277.361,
+              "heading": 96,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 1441,
+        "rewardItems": [
+          {
+            "count": 3,
+            "item_id": 162000002
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2133,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 2,
+      "name": "Azpha For Health And Well-being",
+      "nameId": 1103233,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 152000451
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 1441
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 162000002
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2101,
+    "name": "On Your Feet!",
+    "nameId": 1103201,
+    "zone": "Ishalgen",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 1,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 203504,
+        "id": 2101,
+        "start_npc_ids": 203500
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203500,
+        "name": "asak",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 560.989,
+            "y": 2789.895,
+            "z": 299.117,
+            "heading": 83,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203500,
+      "name": "asak",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 560.989,
+          "y": 2789.895,
+          "z": 299.117,
+          "heading": 83,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203504,
+      "name": "vandar",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 527.004,
+          "y": 2775.671,
+          "z": 295.751,
+          "heading": 1,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203504,
+          "name": "vandar",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 527.004,
+              "y": 2775.671,
+              "z": 295.751,
+              "heading": 1,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 130,
+        "gold": 80,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 2101,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 1,
+      "name": "On Your Feet!",
+      "nameId": 1103201,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 130,
+          "gold": 80
+        }
+      }
+    ]
+  }
+}

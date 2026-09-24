@@ -1,0 +1,292 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2127,
+    "name": "Pearls Before Swine",
+    "nameId": 1103227,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 7,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2127,
+        "start_npc_ids": 203544
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203544,
+        "name": "devalin",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 927.426,
+            "y": 1561.422,
+            "z": 284.697,
+            "heading": 15,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203544,
+      "name": "devalin",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 927.426,
+          "y": 1561.422,
+          "z": 284.697,
+          "heading": 15,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203544,
+      "name": "devalin",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 927.426,
+          "y": 1561.422,
+          "z": 284.697,
+          "heading": 15,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182203127,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182203127,
+          "npc_id": 210397,
+          "npc": {
+            "id": 210397,
+            "name": "gray mane scratcher",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 687.16,
+                "y": 1355.26,
+                "z": 291.8225,
+                "heading": 59,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 772.05,
+                "y": 1504.0,
+                "z": 283.7469,
+                "heading": 59,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182203127,
+          "npc_id": 210398,
+          "npc": {
+            "id": 210398,
+            "name": "gray mane scratcher",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 462.688,
+                "y": 1372.826,
+                "z": 330.561,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 466.845,
+                "y": 1356.253,
+                "z": 331.947,
+                "heading": 11,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 481.2,
+                "y": 1348.15,
+                "z": 328.36874,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 539.83,
+                "y": 1526.66,
+                "z": 313.1875,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 582.17,
+                "y": 1470.43,
+                "z": 305.6856,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 615.94,
+                "y": 1501.09,
+                "z": 292.96503,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 685.661,
+                "y": 1322.643,
+                "z": 300.235,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 701.708,
+                "y": 1387.322,
+                "z": 290.127,
+                "heading": 50,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 709.235,
+                "y": 1323.719,
+                "z": 300.23,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203544,
+          "name": "devalin",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 927.426,
+              "y": 1561.422,
+              "z": 284.697,
+              "heading": 15,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 5555,
+        "gold": 4450,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2127,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 7,
+      "name": "Pearls Before Swine",
+      "nameId": 1103227,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182203127
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 5555,
+          "gold": 4450
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182203127,
+          "npc_id": 210397
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182203127,
+          "npc_id": 210398
+        }
+      }
+    ]
+  }
+}

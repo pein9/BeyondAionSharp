@@ -1,0 +1,2712 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2134,
+    "name": "Alfrigh's Request",
+    "nameId": 1103234,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 7,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2134,
+        "start_npc_ids": 203543
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203543,
+        "name": "alfrigh",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 931.094,
+            "y": 1573.486,
+            "z": 283.943,
+            "heading": 48,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203543,
+      "name": "alfrigh",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 931.094,
+          "y": 1573.486,
+          "z": 283.943,
+          "heading": 48,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203543,
+      "name": "alfrigh",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 931.094,
+          "y": 1573.486,
+          "z": 283.943,
+          "heading": 48,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 152000201,
+      "sources": [
+        {
+          "kind": "gatherable",
+          "gatherableId": 400201,
+          "name": "Impure Iron Ore",
+          "rate": 10000000,
+          "skillLevel": 15,
+          "positions": [
+            {
+              "mapId": 210010000,
+              "x": 170.17715,
+              "y": 1108.7924,
+              "z": 131.55333,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 186.3017,
+              "y": 1142.244,
+              "z": 120.7218,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 206.89223,
+              "y": 2007.7362,
+              "z": 154.80087,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 212.52646,
+              "y": 1054.5825,
+              "z": 122.08079,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 216.14534,
+              "y": 1100.1772,
+              "z": 126.92699,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 222.82338,
+              "y": 2060.47,
+              "z": 159.04393,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 247.17177,
+              "y": 2119.919,
+              "z": 158.07193,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 247.28442,
+              "y": 1064.1493,
+              "z": 120.58621,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 255.02032,
+              "y": 1980.7307,
+              "z": 154.40714,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 255.08322,
+              "y": 1879.3469,
+              "z": 156.25783,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 258.27295,
+              "y": 1017.0779,
+              "z": 120.653465,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 261.7899,
+              "y": 1835.0522,
+              "z": 147.7436,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 313.693,
+              "y": 1837.5961,
+              "z": 146.82451,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 325.55103,
+              "y": 2083.348,
+              "z": 159.45639,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 342.15012,
+              "y": 1894.6616,
+              "z": 159.00938,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 344.81876,
+              "y": 2011.0582,
+              "z": 155.75728,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 379.09048,
+              "y": 1895.5021,
+              "z": 152.03755,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 381.56274,
+              "y": 2095.451,
+              "z": 160.75171,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 664.33,
+              "y": 1885.64,
+              "z": 142.69127,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            },
+            {
+              "mapId": 210010000,
+              "x": 692.3023,
+              "y": 1899.4275,
+              "z": 143.53069,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/210010000_Poeta.xml"
+            }
+          ]
+        },
+        {
+          "kind": "gatherable",
+          "gatherableId": 400202,
+          "name": "Iron",
+          "rate": 10000000,
+          "skillLevel": 15,
+          "positions": [
+            {
+              "mapId": 210030000,
+              "x": 614.719,
+              "y": 2516.17,
+              "z": 231.519,
+              "heading": 71,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 617.577,
+              "y": 2570.29,
+              "z": 233.813,
+              "heading": 108,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 691.106,
+              "y": 2445.14,
+              "z": 225.491,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 691.998,
+              "y": 2645.02,
+              "z": 229.379,
+              "heading": 76,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 726.967,
+              "y": 2675.22,
+              "z": 226.456,
+              "heading": 9,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 775.244,
+              "y": 2495.04,
+              "z": 218.332,
+              "heading": 117,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 779.591,
+              "y": 2694.94,
+              "z": 225.481,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 837.464,
+              "y": 2573.49,
+              "z": 203.065,
+              "heading": 37,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 837.885,
+              "y": 2147.27,
+              "z": 165.083,
+              "heading": 72,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 838.607,
+              "y": 2194.98,
+              "z": 159.5,
+              "heading": 115,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 839.953,
+              "y": 2551.34,
+              "z": 195.601,
+              "heading": 114,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 850.244,
+              "y": 2640.63,
+              "z": 213.417,
+              "heading": 86,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 862.914,
+              "y": 2070.24,
+              "z": 150.316,
+              "heading": 40,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 868.43,
+              "y": 2038.54,
+              "z": 157.684,
+              "heading": 14,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 878.168,
+              "y": 2445.53,
+              "z": 192.253,
+              "heading": 61,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 881.182,
+              "y": 2111.57,
+              "z": 149.773,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 890.614,
+              "y": 2460.3,
+              "z": 192.423,
+              "heading": 34,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 891.39,
+              "y": 2138.56,
+              "z": 150.785,
+              "heading": 41,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 898.64,
+              "y": 2562.5,
+              "z": 191.033,
+              "heading": 111,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 908.386,
+              "y": 2074.65,
+              "z": 155.129,
+              "heading": 103,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 918.047,
+              "y": 2332.02,
+              "z": 179.122,
+              "heading": 25,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 918.193,
+              "y": 2048.77,
+              "z": 155.664,
+              "heading": 9,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 918.623,
+              "y": 1996.37,
+              "z": 177.417,
+              "heading": 44,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 919.576,
+              "y": 2352.51,
+              "z": 180.793,
+              "heading": 92,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 920.58,
+              "y": 2563.41,
+              "z": 180.179,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 923.386,
+              "y": 2218.47,
+              "z": 160.747,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 936.333,
+              "y": 2060.59,
+              "z": 154.476,
+              "heading": 57,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 947.412,
+              "y": 2090.18,
+              "z": 148.473,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 957.271,
+              "y": 2367.19,
+              "z": 181.344,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 964.527,
+              "y": 2143.37,
+              "z": 145.277,
+              "heading": 88,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 969.85,
+              "y": 2121.36,
+              "z": 152.106,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 971.666,
+              "y": 2188.73,
+              "z": 150.992,
+              "heading": 19,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 985.733,
+              "y": 2287.78,
+              "z": 171.257,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 989.175,
+              "y": 2253.45,
+              "z": 157.992,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 990.588,
+              "y": 2319.73,
+              "z": 171.088,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1001.78,
+              "y": 2146.33,
+              "z": 151.222,
+              "heading": 70,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1010.65,
+              "y": 2315.7,
+              "z": 168.294,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1124.67,
+              "y": 1846.97,
+              "z": 102.788,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1162.38,
+              "y": 1739.84,
+              "z": 101.255,
+              "heading": 107,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1184.48,
+              "y": 2725.11,
+              "z": 213.19,
+              "heading": 39,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1222.7,
+              "y": 2663.01,
+              "z": 206.125,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1224.47,
+              "y": 2700.12,
+              "z": 206.625,
+              "heading": 9,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1224.77,
+              "y": 2737.34,
+              "z": 209.733,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1226.33,
+              "y": 1794.89,
+              "z": 107.007,
+              "heading": 114,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1238.9,
+              "y": 2739.17,
+              "z": 211.087,
+              "heading": 3,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1274.3,
+              "y": 2720.76,
+              "z": 218.077,
+              "heading": 112,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1275.65,
+              "y": 1952.16,
+              "z": 130.452,
+              "heading": 23,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1286.85,
+              "y": 2731.73,
+              "z": 216.067,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1291.2,
+              "y": 2030.01,
+              "z": 147.221,
+              "heading": 74,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1292.36,
+              "y": 1930.21,
+              "z": 125.393,
+              "heading": 23,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1334.85,
+              "y": 2728.6,
+              "z": 215.922,
+              "heading": 76,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1396.56,
+              "y": 2724.99,
+              "z": 218.062,
+              "heading": 61,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1418.99,
+              "y": 2272.14,
+              "z": 164.275,
+              "heading": 29,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1419.2,
+              "y": 2711.71,
+              "z": 218.019,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1454.41,
+              "y": 1824.4,
+              "z": 135.959,
+              "heading": 82,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1464.83,
+              "y": 2714.29,
+              "z": 216.053,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1485.72,
+              "y": 2022.73,
+              "z": 133.465,
+              "heading": 20,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1493.19,
+              "y": 2150.23,
+              "z": 150.927,
+              "heading": 2,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1501.69,
+              "y": 2693.23,
+              "z": 221.538,
+              "heading": 21,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1535.91,
+              "y": 2709.82,
+              "z": 225.203,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1539.55,
+              "y": 1106.74,
+              "z": 118.31,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1546.22,
+              "y": 2776.28,
+              "z": 236.842,
+              "heading": 79,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1557.73,
+              "y": 1175.34,
+              "z": 114.749,
+              "heading": 88,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1568.16,
+              "y": 1097.32,
+              "z": 114.734,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1583.65,
+              "y": 1156.25,
+              "z": 114.495,
+              "heading": 39,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1591.45,
+              "y": 2215.43,
+              "z": 160.272,
+              "heading": 88,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1597.21,
+              "y": 2817.93,
+              "z": 240.911,
+              "heading": 120,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1613.86,
+              "y": 2830.32,
+              "z": 242.13,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1637.24,
+              "y": 1909.09,
+              "z": 166.575,
+              "heading": 23,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1642.22,
+              "y": 1099.53,
+              "z": 118.009,
+              "heading": 94,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1644.51,
+              "y": 2852.7,
+              "z": 241.712,
+              "heading": 21,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1704.44,
+              "y": 2849.9,
+              "z": 245.994,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1729.0,
+              "y": 2150.71,
+              "z": 182.831,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1731.48,
+              "y": 2801.02,
+              "z": 257.925,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1762.91,
+              "y": 2766.95,
+              "z": 271.342,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1812.87,
+              "y": 2776.21,
+              "z": 279.088,
+              "heading": 57,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1844.46,
+              "y": 2777.17,
+              "z": 280.877,
+              "heading": 12,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1863.46,
+              "y": 1120.29,
+              "z": 128.898,
+              "heading": 86,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1876.01,
+              "y": 866.915,
+              "z": 148.182,
+              "heading": 99,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1894.25,
+              "y": 2843.91,
+              "z": 283.41,
+              "heading": 42,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1897.93,
+              "y": 2724.65,
+              "z": 272.526,
+              "heading": 20,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1917.07,
+              "y": 2559.29,
+              "z": 297.306,
+              "heading": 84,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1927.14,
+              "y": 935.357,
+              "z": 137.155,
+              "heading": 77,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1928.73,
+              "y": 2679.85,
+              "z": 294.29,
+              "heading": 107,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1957.93,
+              "y": 2731.08,
+              "z": 301.181,
+              "heading": 98,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1960.67,
+              "y": 2770.72,
+              "z": 280.354,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1962.34,
+              "y": 2381.21,
+              "z": 292.105,
+              "heading": 104,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1981.71,
+              "y": 714.279,
+              "z": 132.432,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1989.98,
+              "y": 895.135,
+              "z": 144.108,
+              "heading": 16,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 1998.3,
+              "y": 947.356,
+              "z": 139.493,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2002.48,
+              "y": 2319.34,
+              "z": 268.608,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2011.12,
+              "y": 2507.87,
+              "z": 283.723,
+              "heading": 29,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2049.89,
+              "y": 2646.43,
+              "z": 301.196,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2085.87,
+              "y": 2113.78,
+              "z": 205.686,
+              "heading": 8,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2089.88,
+              "y": 2265.82,
+              "z": 230.43,
+              "heading": 83,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2091.03,
+              "y": 2431.4,
+              "z": 276.151,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2095.78,
+              "y": 1105.27,
+              "z": 128.309,
+              "heading": 35,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2125.66,
+              "y": 1945.43,
+              "z": 133.59,
+              "heading": 73,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2134.54,
+              "y": 819.751,
+              "z": 150.622,
+              "heading": 1,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2148.76,
+              "y": 975.2,
+              "z": 141.696,
+              "heading": 55,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2159.4,
+              "y": 2156.62,
+              "z": 186.96,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2179.75,
+              "y": 1828.85,
+              "z": 126.92,
+              "heading": 65,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2207.15,
+              "y": 1278.97,
+              "z": 166.835,
+              "heading": 70,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2223.43,
+              "y": 1063.76,
+              "z": 153.522,
+              "heading": 110,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2248.55,
+              "y": 1589.83,
+              "z": 129.382,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2271.14,
+              "y": 1158.56,
+              "z": 158.445,
+              "heading": 29,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2286.64,
+              "y": 2051.74,
+              "z": 132.943,
+              "heading": 120,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2295.26,
+              "y": 1246.86,
+              "z": 160.06,
+              "heading": 40,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2302.43,
+              "y": 1301.67,
+              "z": 180.668,
+              "heading": 88,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2325.42,
+              "y": 1189.97,
+              "z": 169.372,
+              "heading": 112,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2337.2,
+              "y": 1247.05,
+              "z": 161.056,
+              "heading": 53,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2345.04,
+              "y": 1077.16,
+              "z": 169.307,
+              "heading": 92,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2354.12,
+              "y": 1581.49,
+              "z": 131.456,
+              "heading": 14,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2382.23,
+              "y": 1295.87,
+              "z": 184.127,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2395.16,
+              "y": 1135.85,
+              "z": 170.135,
+              "heading": 97,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2417.92,
+              "y": 1569.5,
+              "z": 129.422,
+              "heading": 9,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2418.22,
+              "y": 1984.41,
+              "z": 125.947,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2509.53,
+              "y": 1204.83,
+              "z": 187.31,
+              "heading": 5,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2522.78,
+              "y": 1924.36,
+              "z": 129.128,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2584.33,
+              "y": 1743.03,
+              "z": 133.25,
+              "heading": 47,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 210030000,
+              "x": 2629.55,
+              "y": 1821.45,
+              "z": 139.274,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Gather/210030000_Verteron.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1152.25,
+              "y": 860.85,
+              "z": 280.094,
+              "heading": 4,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1159.68,
+              "y": 919.766,
+              "z": 279.395,
+              "heading": 68,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1179.13,
+              "y": 850.754,
+              "z": 279.656,
+              "heading": 62,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1184.17,
+              "y": 927.318,
+              "z": 264.913,
+              "heading": 3,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1199.16,
+              "y": 1003.09,
+              "z": 252.383,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1241.19,
+              "y": 834.642,
+              "z": 278.263,
+              "heading": 24,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1251.46,
+              "y": 807.353,
+              "z": 254.767,
+              "heading": 31,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1258.7,
+              "y": 989.46,
+              "z": 250.966,
+              "heading": 8,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1261.63,
+              "y": 865.126,
+              "z": 253.446,
+              "heading": 106,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1263.76,
+              "y": 786.73,
+              "z": 254.51,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1283.97,
+              "y": 875.2,
+              "z": 248.896,
+              "heading": 110,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1285.4,
+              "y": 1031.98,
+              "z": 257.393,
+              "heading": 105,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1300.58,
+              "y": 1288.71,
+              "z": 258.608,
+              "heading": 50,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1303.91,
+              "y": 626.582,
+              "z": 291.969,
+              "heading": 1,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1325.22,
+              "y": 1277.08,
+              "z": 256.787,
+              "heading": 24,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1325.36,
+              "y": 876.506,
+              "z": 250.818,
+              "heading": 71,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1332.98,
+              "y": 905.786,
+              "z": 252.686,
+              "heading": 89,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1333.5,
+              "y": 802.941,
+              "z": 269.449,
+              "heading": 102,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1337.48,
+              "y": 1020.99,
+              "z": 259.762,
+              "heading": 65,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1344.04,
+              "y": 619.467,
+              "z": 289.155,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1350.35,
+              "y": 784.563,
+              "z": 271.565,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1352.12,
+              "y": 1257.86,
+              "z": 257.321,
+              "heading": 109,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1355.71,
+              "y": 1134.19,
+              "z": 257.494,
+              "heading": 89,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1357.01,
+              "y": 1392.25,
+              "z": 287.451,
+              "heading": 104,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1357.35,
+              "y": 668.689,
+              "z": 277.619,
+              "heading": 93,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1365.38,
+              "y": 1357.22,
+              "z": 281.841,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1371.75,
+              "y": 516.922,
+              "z": 323.3,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1374.47,
+              "y": 925.749,
+              "z": 260.934,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1376.77,
+              "y": 795.939,
+              "z": 261.969,
+              "heading": 66,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1380.36,
+              "y": 1184.7,
+              "z": 251.551,
+              "heading": 2,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1381.21,
+              "y": 1418.1,
+              "z": 287.523,
+              "heading": 113,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1393.44,
+              "y": 540.17,
+              "z": 320.038,
+              "heading": 20,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1396.45,
+              "y": 1029.74,
+              "z": 276.253,
+              "heading": 81,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1413.28,
+              "y": 662.45,
+              "z": 278.712,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1423.31,
+              "y": 886.12,
+              "z": 250.504,
+              "heading": 46,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1438.16,
+              "y": 474.711,
+              "z": 296.796,
+              "heading": 21,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1440.84,
+              "y": 1501.39,
+              "z": 280.996,
+              "heading": 101,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1444.85,
+              "y": 1471.65,
+              "z": 281.159,
+              "heading": 23,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1446.98,
+              "y": 1536.18,
+              "z": 282.463,
+              "heading": 92,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1460.61,
+              "y": 662.919,
+              "z": 263.723,
+              "heading": 12,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1473.86,
+              "y": 803.699,
+              "z": 253.464,
+              "heading": 19,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1477.1,
+              "y": 1522.99,
+              "z": 276.784,
+              "heading": 23,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1477.52,
+              "y": 538.206,
+              "z": 295.547,
+              "heading": 20,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1479.95,
+              "y": 954.504,
+              "z": 266.472,
+              "heading": 114,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1489.28,
+              "y": 443.262,
+              "z": 285.625,
+              "heading": 87,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1497.98,
+              "y": 1519.2,
+              "z": 275.357,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1509.33,
+              "y": 908.924,
+              "z": 249.747,
+              "heading": 69,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1521.86,
+              "y": 787.89,
+              "z": 270.954,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1530.5,
+              "y": 1529.28,
+              "z": 273.925,
+              "heading": 53,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1544.51,
+              "y": 558.935,
+              "z": 278.195,
+              "heading": 20,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1545.3,
+              "y": 1511.27,
+              "z": 270.982,
+              "heading": 34,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1568.84,
+              "y": 1498.89,
+              "z": 268.204,
+              "heading": 114,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1584.65,
+              "y": 464.61,
+              "z": 266.909,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1587.83,
+              "y": 1020.83,
+              "z": 277.815,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1592.97,
+              "y": 645.88,
+              "z": 268.64,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1611.27,
+              "y": 1500.53,
+              "z": 255.846,
+              "heading": 105,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1634.83,
+              "y": 653.399,
+              "z": 275.721,
+              "heading": 91,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1637.57,
+              "y": 1452.24,
+              "z": 253.619,
+              "heading": 81,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1637.87,
+              "y": 991.927,
+              "z": 259.382,
+              "heading": 107,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1643.8,
+              "y": 755.048,
+              "z": 259.003,
+              "heading": 34,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1656.02,
+              "y": 1294.84,
+              "z": 280.768,
+              "heading": 23,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1669.35,
+              "y": 570.945,
+              "z": 255.643,
+              "heading": 74,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1688.82,
+              "y": 1485.56,
+              "z": 253.783,
+              "heading": 66,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1691.56,
+              "y": 1294.54,
+              "z": 282.178,
+              "heading": 5,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1701.41,
+              "y": 1337.12,
+              "z": 296.177,
+              "heading": 104,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1707.89,
+              "y": 1308.46,
+              "z": 290.336,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1716.59,
+              "y": 1434.32,
+              "z": 270.42,
+              "heading": 88,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1732.61,
+              "y": 1365.49,
+              "z": 278.842,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1732.92,
+              "y": 650.861,
+              "z": 264.281,
+              "heading": 110,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1785.1,
+              "y": 1414.39,
+              "z": 299.343,
+              "heading": 8,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1791.47,
+              "y": 381.032,
+              "z": 255.437,
+              "heading": 107,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1792.38,
+              "y": 1329.64,
+              "z": 286.189,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1803.69,
+              "y": 1310.78,
+              "z": 282.409,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1805.23,
+              "y": 1399.86,
+              "z": 299.425,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1812.43,
+              "y": 1352.15,
+              "z": 293.797,
+              "heading": 89,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1816.82,
+              "y": 299.437,
+              "z": 273.326,
+              "heading": 34,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1823.09,
+              "y": 1219.67,
+              "z": 283.581,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1827.37,
+              "y": 1530.46,
+              "z": 255.019,
+              "heading": 102,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1831.69,
+              "y": 1200.51,
+              "z": 287.432,
+              "heading": 65,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1834.81,
+              "y": 1279.41,
+              "z": 283.496,
+              "heading": 4,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1836.7,
+              "y": 358.962,
+              "z": 268.303,
+              "heading": 2,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1856.99,
+              "y": 948.781,
+              "z": 254.011,
+              "heading": 11,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1858.7,
+              "y": 1509.63,
+              "z": 261.167,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1873.53,
+              "y": 1999.76,
+              "z": 250.6,
+              "heading": 66,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1873.89,
+              "y": 510.344,
+              "z": 262.498,
+              "heading": 107,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1885.71,
+              "y": 1150.07,
+              "z": 271.85,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1895.89,
+              "y": 1542.36,
+              "z": 255.711,
+              "heading": 40,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1908.77,
+              "y": 1941.39,
+              "z": 249.32,
+              "heading": 79,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1912.02,
+              "y": 356.853,
+              "z": 270.283,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1912.16,
+              "y": 1126.75,
+              "z": 275.413,
+              "heading": 71,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1912.16,
+              "y": 1868.62,
+              "z": 250.061,
+              "heading": 23,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1914.25,
+              "y": 2040.37,
+              "z": 254.27,
+              "heading": 43,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1917.06,
+              "y": 1634.51,
+              "z": 263.261,
+              "heading": 44,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1924.68,
+              "y": 1982.09,
+              "z": 261.245,
+              "heading": 105,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1931.51,
+              "y": 971.575,
+              "z": 264.762,
+              "heading": 57,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1931.66,
+              "y": 1672.18,
+              "z": 274.266,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1942.81,
+              "y": 419.263,
+              "z": 273.073,
+              "heading": 31,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1951.83,
+              "y": 1031.05,
+              "z": 272.573,
+              "heading": 69,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1952.93,
+              "y": 1724.74,
+              "z": 277.526,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1956.4,
+              "y": 1676.96,
+              "z": 281.062,
+              "heading": 25,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1959.74,
+              "y": 1811.32,
+              "z": 271.453,
+              "heading": 112,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1960.76,
+              "y": 1122.3,
+              "z": 276.224,
+              "heading": 41,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1964.85,
+              "y": 1748.43,
+              "z": 272.559,
+              "heading": 4,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1977.88,
+              "y": 1783.28,
+              "z": 269.25,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2248.18,
+              "y": 2178.26,
+              "z": 280.709,
+              "heading": 77,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2268.61,
+              "y": 2289.59,
+              "z": 292.951,
+              "heading": 29,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2316.29,
+              "y": 851.173,
+              "z": 327.158,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2318.34,
+              "y": 2333.75,
+              "z": 294.048,
+              "heading": 20,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2326.46,
+              "y": 2097.09,
+              "z": 279.833,
+              "heading": 104,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2342.24,
+              "y": 803.815,
+              "z": 325.443,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2356.5,
+              "y": 2324.43,
+              "z": 263.005,
+              "heading": 62,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2380.43,
+              "y": 1112.11,
+              "z": 271.663,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2382.78,
+              "y": 739.45,
+              "z": 310.734,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2391.69,
+              "y": 2099.93,
+              "z": 287.905,
+              "heading": 79,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2392.84,
+              "y": 2125.56,
+              "z": 272.192,
+              "heading": 118,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2402.87,
+              "y": 1232.7,
+              "z": 257.5,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2414.09,
+              "y": 705.913,
+              "z": 320.491,
+              "heading": 23,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2428.6,
+              "y": 768.424,
+              "z": 312.337,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2431.24,
+              "y": 1960.72,
+              "z": 290.124,
+              "heading": 33,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2436.78,
+              "y": 873.681,
+              "z": 313.165,
+              "heading": 120,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2448.64,
+              "y": 1178.91,
+              "z": 271.55,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2458.5,
+              "y": 917.039,
+              "z": 312.821,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2470.31,
+              "y": 2205.73,
+              "z": 267.215,
+              "heading": 119,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2471.04,
+              "y": 1099.23,
+              "z": 283.811,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2480.24,
+              "y": 1299.99,
+              "z": 258.869,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2489.55,
+              "y": 637.564,
+              "z": 326.563,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2496.48,
+              "y": 917.243,
+              "z": 311.251,
+              "heading": 11,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2506.04,
+              "y": 811.604,
+              "z": 312.253,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2515.59,
+              "y": 1201.9,
+              "z": 268.972,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2519.47,
+              "y": 1161.2,
+              "z": 288.408,
+              "heading": 102,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2528.19,
+              "y": 661.425,
+              "z": 326.23,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2533.39,
+              "y": 2203.94,
+              "z": 279.587,
+              "heading": 79,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2540.78,
+              "y": 825.468,
+              "z": 318.596,
+              "heading": 6,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2547.52,
+              "y": 1102.13,
+              "z": 294.25,
+              "heading": 68,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2548.38,
+              "y": 750.447,
+              "z": 325.241,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2570.57,
+              "y": 847.597,
+              "z": 322.284,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2577.18,
+              "y": 1040.99,
+              "z": 329.509,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2580.0,
+              "y": 862.958,
+              "z": 317.25,
+              "heading": 37,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2606.23,
+              "y": 1153.84,
+              "z": 291.146,
+              "heading": 61,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2606.34,
+              "y": 1030.82,
+              "z": 326.055,
+              "heading": 106,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2616.46,
+              "y": 1091.62,
+              "z": 294.33,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2617.92,
+              "y": 1057.32,
+              "z": 307.506,
+              "heading": 42,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2664.34,
+              "y": 1121.39,
+              "z": 301.875,
+              "heading": 108,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2664.79,
+              "y": 1029.04,
+              "z": 311.431,
+              "heading": 52,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2691.92,
+              "y": 1065.47,
+              "z": 308.644,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2692.64,
+              "y": 1102.68,
+              "z": 310.967,
+              "heading": 107,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2744.45,
+              "y": 1079.81,
+              "z": 312.527,
+              "heading": 88,
+              "source": "game-server/data/static_data/spawns/Gather/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 69.5883,
+              "y": 93.2732,
+              "z": 138.70984,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 78.9733,
+              "y": 126.446,
+              "z": 139.6161,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 86.3678,
+              "y": 96.1942,
+              "z": 139.05595,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 93.4669,
+              "y": 83.3656,
+              "z": 142.6956,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 100.602,
+              "y": 113.529,
+              "z": 138.9776,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/300200000_Haramel.xml"
+            }
+          ]
+        },
+        {
+          "kind": "gatherable",
+          "gatherableId": 400203,
+          "name": "Iron",
+          "rate": 10000000,
+          "skillLevel": 15,
+          "positions": []
+        },
+        {
+          "kind": "gatherable",
+          "gatherableId": 400251,
+          "name": "Impure Iron Ore",
+          "rate": 10000000,
+          "skillLevel": 15,
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 413.161,
+              "y": 1406.45,
+              "z": 343.164,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 509.042,
+              "y": 1568.7,
+              "z": 322.624,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 529.603,
+              "y": 1324.35,
+              "z": 327.779,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 601.601,
+              "y": 1586.08,
+              "z": 304.043,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 666.024,
+              "y": 1357.87,
+              "z": 297.14,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 668.891,
+              "y": 1022.35,
+              "z": 314.43,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 717.433,
+              "y": 1565.8,
+              "z": 298.619,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 728.883,
+              "y": 1095.47,
+              "z": 315.31,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 743.118,
+              "y": 979.881,
+              "z": 322.38,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 748.491,
+              "y": 1021.19,
+              "z": 318.783,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 791.736,
+              "y": 1476.07,
+              "z": 281.555,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Gather/220010000_Ishalgen.xml"
+            }
+          ]
+        },
+        {
+          "kind": "gatherable",
+          "gatherableId": 400252,
+          "name": "Iron",
+          "rate": 10000000,
+          "skillLevel": 15,
+          "positions": []
+        },
+        {
+          "kind": "gatherable",
+          "gatherableId": 400253,
+          "name": "Iron",
+          "rate": 10000000,
+          "skillLevel": 15,
+          "positions": []
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203543,
+          "name": "alfrigh",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 931.094,
+              "y": 1573.486,
+              "z": 283.943,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 3245,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "count": 1,
+            "item_id": 100200126
+          },
+          {
+            "count": 1,
+            "item_id": 100000108
+          },
+          {
+            "count": 1,
+            "item_id": 100100025
+          },
+          {
+            "count": 1,
+            "item_id": 100600048
+          },
+          {
+            "count": 1,
+            "item_id": 101800195
+          },
+          {
+            "count": 1,
+            "item_id": 102000208
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2134,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 7,
+      "name": "Alfrigh's Request",
+      "nameId": 1103234,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 152000201
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 3245
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 100200126
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 100000108
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 100100025
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 100600048
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 101800195
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 102000208
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

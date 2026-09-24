@@ -68,6 +68,117 @@ public sealed class BotNavigationGeometryTests
     }
 
     [Fact]
+    public void JourneyRouteAvoidsObservedAggroCircleAndCanEscapeOneAlreadyEntered()
+    {
+        var map = Ground(size: 80);
+        var geometry = new BotNavigationGeometry(_ => map, 1, IgnoreProperties.ANY_RACE);
+        BotPosition start = new(10, 20, 10, 0), end = new(50, 20, 10, 0);
+        BotNavigationHazard[] hazards = [new(new BotPosition(30, 20, 10, 0), 8)];
+        IReadOnlyList<BotPosition> detour = geometry.FindJourneyPathAvoiding(1, start, end, hazards);
+        Assert.NotEmpty(detour);
+        Assert.Equal(end, detour[^1]);
+        Assert.True(BotNavigationGeometry.AvoidsHazards(start, detour, hazards));
+        Assert.Contains(detour, point => MathF.Abs(point.Y - 20) >= 8);
+
+        BotPosition trapped = new(26, 20, 10, 0);
+        IReadOnlyList<BotPosition> escape = geometry.FindJourneyPathAvoiding(1, trapped,
+            new BotPosition(10, 20, 10, 0), hazards);
+        Assert.NotEmpty(escape);
+        Assert.True(BotNavigationGeometry.AvoidsHazards(trapped, escape, hazards));
+        Assert.False(BotNavigationGeometry.AvoidsHazards(start,
+            [new BotPosition(30, 20, 10, 0)], hazards));
+    }
+
+    [Fact]
+    public void LongGroundRouteCanPreferMappedRoadWithoutTreatingItAsWalkability()
+    {
+        var geometry = new BotNavigationGeometry(_ => Ground(size: 180), 1, IgnoreProperties.ANY_RACE);
+        BotPosition start = new(10, 10, 10, 0), end = new(130, 10, 10, 0);
+        BotRoadPoint[] road = [new(20, 30), new(120, 30)];
+        IReadOnlyList<BotPosition> route = geometry.FindRoadPreferredJourneyPath(1,
+            start, end, road, []);
+        Assert.NotEmpty(route);
+        Assert.Equal(end, route[^1]);
+        Assert.Contains(route, point => point.Y >= 25);
+        foreach (BotPosition point in route)
+        {
+            Assert.NotNull(geometry.TraceEdge(1, start, point));
+            start = point;
+        }
+        Assert.Empty(geometry.FindRoadPreferredJourneyPath(1,
+            new BotPosition(10, 130, 10, 0), new BotPosition(130, 130, 10, 0), road, []));
+    }
+
+    [Fact]
+    public void MappedRoadStillAvoidsObservedAggroCircle()
+    {
+        var geometry = new BotNavigationGeometry(_ => Ground(size: 180), 1, IgnoreProperties.ANY_RACE);
+        BotPosition start = new(10, 10, 10, 0), end = new(130, 10, 10, 0);
+        BotRoadPoint[] road = [new(20, 30), new(120, 30)];
+        BotNavigationHazard[] hazards = [new(new BotPosition(70, 30, 10, 0), 9)];
+        IReadOnlyList<BotPosition> route = geometry.FindRoadPreferredJourneyPath(1,
+            start, end, road, hazards);
+        Assert.NotEmpty(route);
+        Assert.True(BotNavigationGeometry.AvoidsHazards(start, route, hazards));
+    }
+
+    [Fact]
+    public void ClientMapCalibrationPlacesMijouAndMauSacksNearTheRoadHint()
+    {
+        BotRoadPoint[] road = NaturalIshalgenRoads.MijouToMauFarms;
+        Assert.InRange(MathF.Sqrt(MathF.Pow(road[0].X - 946.253f, 2) +
+            MathF.Pow(road[0].Y - 1702.775f, 2)), 0, 20);
+        Assert.InRange(MathF.Sqrt(MathF.Pow(road[^1].X - 742.801f, 2) +
+            MathF.Pow(road[^1].Y - 1515.77f, 2)), 0, 35);
+    }
+
+    [Fact]
+    public void DestinationInsideNewAggroCircleHasNoHazardFreeRoute()
+    {
+        var geometry = new BotNavigationGeometry(_ => Ground(size: 80), 1, IgnoreProperties.ANY_RACE);
+        BotPosition start = new(10, 20, 10, 0), coveredObject = new(50, 20, 10, 0);
+        BotNavigationHazard[] hazards = [new(coveredObject, 8)];
+        Assert.Empty(geometry.FindJourneyPathAvoiding(1, start, coveredObject, hazards));
+    }
+
+    [Fact]
+    public void OverlappingObservedAggroCirclesAllowOnlyNonWorseningPackEscape()
+    {
+        var map = Ground(size: 80);
+        var geometry = new BotNavigationGeometry(_ => map, 1, IgnoreProperties.ANY_RACE);
+        BotPosition start = new(30, 30, 10, 0), end = new(30, 50, 10, 0);
+        BotNavigationHazard[] hazards =
+        [
+            new(new BotPosition(27, 30, 10, 0), 8),
+            new(new BotPosition(33, 30, 10, 0), 8),
+        ];
+        IReadOnlyList<BotPosition> escape = geometry.FindJourneyPathAvoiding(1, start, end, hazards);
+        Assert.NotEmpty(escape);
+        Assert.True(BotNavigationGeometry.AvoidsHazards(start, escape, hazards));
+        Assert.True(BotNavigationGeometry.AvoidsHazards(start,
+            [new BotPosition(29, 30, 10, 0)], hazards)); // Neutral step in overlapping circles.
+        BotNavigationHazard[] asymmetricalPack =
+        [.. hazards, new(new BotPosition(30, 33, 10, 0), 8)];
+        Assert.False(BotNavigationGeometry.AvoidsHazards(start,
+            [new BotPosition(30, 31, 10, 0)], asymmetricalPack));
+    }
+
+    [Fact]
+    public void ObservedHostileWallCanRequireAWideCheckedDetour()
+    {
+        var map = Ground(size: 120);
+        var geometry = new BotNavigationGeometry(_ => map, 1, IgnoreProperties.ANY_RACE);
+        BotPosition start = new(20, 100, 10, 0), end = new(120, 100, 10, 0);
+        BotNavigationHazard[] wall = Enumerable.Range(0, 9)
+            .Select(index => new BotNavigationHazard(
+                new BotPosition(70, 45 + index * 15, 10, 0), 10)).ToArray();
+        IReadOnlyList<BotPosition> detour = geometry.FindJourneyPathAvoiding(1, start, end, wall);
+        Assert.NotEmpty(detour);
+        Assert.True(BotNavigationGeometry.AvoidsHazards(start, detour, wall));
+        Assert.Contains(detour, point => point.Y < 40 || point.Y > 160);
+    }
+
+    [Fact]
     public void BlockedDirectShortcutAndGraphEdgesUseTheClearDetour()
     {
         var map = Ground();

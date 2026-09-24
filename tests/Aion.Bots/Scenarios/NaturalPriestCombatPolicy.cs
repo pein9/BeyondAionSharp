@@ -36,7 +36,9 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	IReadOnlyDictionary<int, BotSkill> Learned, IReadOnlyDictionary<int, DateTimeOffset> Cooldowns,
 	string? OpenChainCategory = null, int? OpenChainTargetId = null, DateTimeOffset? ChainExpiresAt = null,
 	bool? HasBlessing = null, bool HasLifePotion = false, bool HasManaPotion = false,
-	bool LifePotionReady = false, bool ManaPotionReady = false);
+	bool LifePotionReady = false, bool ManaPotionReady = false, int NearbyAggressors = 0,
+	int? TargetHpPercent = null, bool HasHealedThisFight = false,
+	bool HasHotPotion = false, bool HotPotionReady = false, bool HotPotionActive = false);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);
@@ -52,10 +54,28 @@ public static class NaturalPriestCombatPolicy
 		if (state.MaxHp <= 0 || state.MaxMp <= 0 || state.Hp < 0 || state.Mp < 0)
 			return Choice("blocked", null, "Client life statistics are incomplete.");
 		NaturalPriestSkill? heal = NaturalPriestSkills.Best("heal", state.Level, state.Learned, catalog);
-		bool urgent = state.Hp * 100 <= state.MaxHp * 55;
+		if ((state.TargetObjectId != null || state.Aggro || state.NearbyAggressors > 0) &&
+			state.Hp * 100 <= state.MaxHp * 30)
+			return Choice("retreat", null, "HP is at or below 30% during a client-observed fight, regardless of attacker count.");
+		bool urgent = state.Hp * 100 <= state.MaxHp * 70 &&
+			(state.Aggro || state.TargetObjectId != null || state.NearbyAggressors > 0);
 		bool critical = state.Hp * 100 <= state.MaxHp * 25;
+		if (state.Hp * 100 <= state.MaxHp * 80 &&
+			(state.Aggro || state.TargetObjectId != null || state.NearbyAggressors > 0) &&
+			state.HasHotPotion && state.HotPotionReady && !state.HotPotionActive)
+			return Choice("hot-potion", null,
+				"HP is at or below 80% in a fight; apply owned timed healing before the 70% self-heal threshold.");
+		if (urgent && state.HasHealedThisFight && state.TargetHpPercent is > 0 and <= 15 &&
+			state.TargetObjectId is int finishingTarget && state.TargetDistance is float finishingDistance)
+		{
+			NaturalPriestSkill? finisher = NaturalPriestSkills.Best("smite", state.Level, state.Learned, catalog);
+			if (finisher != null && Eligible(finisher, finishingTarget, finishingDistance,
+				state, now, reserveHeal: true))
+				return Choice("cast-target", finisher,
+					"Client-observed target is at or below 15% HP after this fight already received a self-heal.");
+		}
 		if (urgent && heal != null && Eligible(heal, state.TargetObjectId, 0, state, now, reserveHeal: false))
-			return Choice("cast-self", heal, "HP is below the healing threshold.");
+			return Choice("cast-self", heal, "HP is at or below 70% during a client-observed fight.");
 		if (critical && state.HasLifePotion && state.LifePotionReady)
 			return Choice("life-potion", null, "Critical HP and self-heal is unavailable; consume an owned life potion.");
 		if (state.Mp < (heal?.ManaCost ?? 0) + 10 && state.HasManaPotion && state.ManaPotionReady)
@@ -83,7 +103,15 @@ public static class NaturalPriestCombatPolicy
 				return Choice("cast-target", skill, $"Learned {role} is in range, ready, and leaves healing mana reserved.");
 		}
 		if (distance > 3)
+		{
+			NaturalPriestSkill? smite = NaturalPriestSkills.Best("smite", state.Level, state.Learned, catalog);
+			if (smite != null && distance <= smite.Range &&
+				state.Mp >= smite.ManaCost + (heal?.ManaCost ?? 0) &&
+				state.Cooldowns.TryGetValue(smite.CooldownId, out DateTimeOffset readyAt) &&
+				readyAt > now && readyAt - now <= TimeSpan.FromSeconds(3))
+				return Choice("wait", null, "Hold spell range during the short shared Smite cooldown.");
 			return Choice("approach", null, "No ranged skill is ready; close for ordinary melee.");
+		}
 		return Choice("attack", null, "No legal skill is ready; use paced ordinary attack.");
 
 		NaturalCombatChoice Choice(string action, NaturalPriestSkill? skill, string reason) =>

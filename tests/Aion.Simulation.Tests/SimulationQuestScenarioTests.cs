@@ -130,7 +130,8 @@ public sealed partial class SimulationFastScenarioTests
 	}
 
 	private static async Task FinishItemQuestAsync(
-		SimulationL0Session session, int npcObjectId, int questId, CancellationToken token)
+		SimulationL0Session session, int npcObjectId, int questId, CancellationToken token,
+		int rewardAction = DialogAction.SELECTED_QUEST_NOREWARD)
 	{
 		await session.SendPacketAsync(session.Api.TalkTo(npcObjectId), token);
 		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
@@ -141,7 +142,7 @@ public sealed partial class SimulationFastScenarioTests
 		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
 		Assert.Equal((byte)4, session.Api.World.Quests[questId].Status);
 		await session.SendPacketAsync(session.Api.SelectDialog(
-			npcObjectId, DialogAction.SELECTED_QUEST_NOREWARD, questId: questId), token);
+			npcObjectId, checked((ushort)rewardAction), questId: questId), token);
 		await WaitForQuestStatusAsync(session, questId, 5, token);
 		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
 			packet => packet.Get<int>("targetObjectId") == npcObjectId);

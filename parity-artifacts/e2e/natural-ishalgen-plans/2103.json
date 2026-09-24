@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2103,
+    "name": "The Sprigg Report",
+    "nameId": 1103203,
+    "zone": "Ishalgen",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 1,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2102
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 203501,
+        "id": 2103,
+        "start_npc_ids": 203504
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203504,
+        "name": "vandar",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 527.004,
+            "y": 2775.671,
+            "z": 295.751,
+            "heading": 1,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203504,
+      "name": "vandar",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 527.004,
+          "y": 2775.671,
+          "z": 295.751,
+          "heading": 1,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203501,
+      "name": "guheitun",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 223.372,
+          "y": 2676.063,
+          "z": 295.25,
+          "heading": 15,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203501,
+          "name": "guheitun",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 223.372,
+              "y": 2676.063,
+              "z": 295.25,
+              "heading": 15,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 590,
+        "gold": 410,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 2103,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 1,
+      "name": "The Sprigg Report",
+      "nameId": 1103203,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 590,
+          "gold": 410
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2102
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,470 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2117,
+    "name": "Food Bandits",
+    "nameId": 1103217,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 5,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2117,
+        "start_npc_ids": 203540
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203540,
+        "name": "mijou",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 946.253,
+            "y": 1702.775,
+            "z": 259.625,
+            "heading": 18,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203540,
+      "name": "mijou",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 946.253,
+          "y": 1702.775,
+          "z": 259.625,
+          "heading": 18,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203540,
+      "name": "mijou",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 946.253,
+          "y": 1702.775,
+          "z": 259.625,
+          "heading": 18,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 9,
+      "npc_ids": "210389 210655",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210389,
+          "name": "fanged karnif",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 781.476,
+              "y": 1735.498,
+              "z": 255.936,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 796.683,
+              "y": 1711.738,
+              "z": 258.082,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 802.904,
+              "y": 1757.56,
+              "z": 258.626,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 806.179,
+              "y": 1707.004,
+              "z": 259.624,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 829.715,
+              "y": 1734.618,
+              "z": 261.368,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 903.206,
+              "y": 1739.484,
+              "z": 261.232,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 906.94,
+              "y": 1681.81,
+              "z": 264.215,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 922.729,
+              "y": 1633.167,
+              "z": 275.341,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 932.899,
+              "y": 1778.827,
+              "z": 259.638,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 939.47,
+              "y": 1872.17,
+              "z": 255.432,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 947.348,
+              "y": 1655.898,
+              "z": 267.459,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 947.767,
+              "y": 1759.727,
+              "z": 256.75,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 964.035,
+              "y": 1831.653,
+              "z": 254.968,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 973.47,
+              "y": 1931.253,
+              "z": 257.075,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 975.48,
+              "y": 1781.453,
+              "z": 260.651,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 975.875,
+              "y": 1893.194,
+              "z": 261.209,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 985.993,
+              "y": 1765.482,
+              "z": 259.5,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 987.23,
+              "y": 1815.339,
+              "z": 252.666,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 995.944,
+              "y": 1901.217,
+              "z": 258.618,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1000.626,
+              "y": 1784.278,
+              "z": 256.838,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1010.575,
+              "y": 1906.004,
+              "z": 259.233,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1011.078,
+              "y": 1889.088,
+              "z": 258.242,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1022.081,
+              "y": 1861.371,
+              "z": 255.546,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1023.838,
+              "y": 1880.249,
+              "z": 256.656,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1028.361,
+              "y": 1681.821,
+              "z": 257.238,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1037.194,
+              "y": 1646.974,
+              "z": 258.625,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1038.832,
+              "y": 1877.757,
+              "z": 255.86,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1043.028,
+              "y": 1706.342,
+              "z": 258.507,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1050.845,
+              "y": 1890.338,
+              "z": 258.347,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1058.32,
+              "y": 1742.54,
+              "z": 263.34125,
+              "heading": 9,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 1069.024,
+              "y": 1915.179,
+              "z": 269.198,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210655,
+          "name": "fanged karnif",
+          "positions": [],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203540,
+          "name": "mijou",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 946.253,
+              "y": 1702.775,
+              "z": 259.625,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 1705,
+        "rewardItems": [
+          {
+            "count": 4,
+            "item_id": 160003501
+          }
+        ],
+        "selectableItems": [
+          {
+            "count": 4,
+            "item_id": 162000052
+          },
+          {
+            "count": 4,
+            "item_id": 162000057
+          },
+          {
+            "count": 200,
+            "item_id": 169000003
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2117,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 5,
+      "name": "Food Bandits",
+      "nameId": 1103217,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 1705
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 4,
+              "item_id": 162000052
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 4,
+              "item_id": 162000057
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 200,
+              "item_id": 169000003
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 4,
+              "item_id": 160003501
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 9,
+          "npc_ids": "210389 210655",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

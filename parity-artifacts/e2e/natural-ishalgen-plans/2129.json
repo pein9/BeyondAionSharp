@@ -1,0 +1,304 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2129,
+    "name": "Suspicious Activity",
+    "nameId": 1103229,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 8,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "end_npc_ids": 203516,
+        "id": 2129,
+        "start_npc_ids": 203552
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203552,
+        "name": "nalto",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 729.102,
+            "y": 1156.882,
+            "z": 302.737,
+            "heading": 23,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203552,
+      "name": "nalto",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 729.102,
+          "y": 1156.882,
+          "z": 302.737,
+          "heading": 23,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203516,
+      "name": "ulgorn",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 584.949,
+          "y": 2418.722,
+          "z": 278.625,
+          "heading": 33,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 1,
+      "npc_ids": 210408,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210408,
+          "name": "gray mane strongfur",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 630.403,
+              "y": 1062.36,
+              "z": 356.26,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 630.672,
+              "y": 1051.198,
+              "z": 347.591,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 636.156,
+              "y": 1041.774,
+              "z": 344.231,
+              "heading": 21,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 641.332,
+              "y": 940.564,
+              "z": 312.382,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 643.969,
+              "y": 1062.523,
+              "z": 340.999,
+              "heading": 76,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 654.019,
+              "y": 940.968,
+              "z": 312.068,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 710.655,
+              "y": 1097.772,
+              "z": 311.332,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            },
+            {
+              "mapId": 220010000,
+              "x": 757.463,
+              "y": 1052.686,
+              "z": 316.424,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 1,
+      "npc_ids": 210409,
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 210409,
+          "name": "hatata the torturer",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 662.601,
+              "y": 882.597,
+              "z": 369.611,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203516,
+          "name": "ulgorn",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 584.949,
+              "y": 2418.722,
+              "z": 278.625,
+              "heading": 33,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 9185,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "count": 1,
+            "item_id": 111100763
+          },
+          {
+            "count": 1,
+            "item_id": 111300768
+          },
+          {
+            "count": 1,
+            "item_id": 111500751
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2129,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 8,
+      "name": "Suspicious Activity",
+      "nameId": 1103229,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 9185
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 111100763
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 111300768
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 111500751
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 1,
+          "npc_ids": 210408,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 1,
+          "npc_ids": 210409,
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      }
+    ]
+  }
+}

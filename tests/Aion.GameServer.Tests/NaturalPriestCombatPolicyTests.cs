@@ -63,7 +63,7 @@ public sealed class NaturalPriestCombatPolicyTests
 		{
 			Cooldowns = new Dictionary<int, DateTimeOffset> { [1229] = Now.AddSeconds(2) },
 		}, Now);
-		Assert.Equal("approach", gated.Action);
+		Assert.Equal("wait", gated.Action);
 		Assert.Contains(gated.Checks, check => check.Rule == "skill-4013" && check.Verdict == "skip");
 	}
 
@@ -72,10 +72,46 @@ public sealed class NaturalPriestCombatPolicyTests
 	{
 		var state = Observe(1, 40, 100, 40, 100, [1838, 4012], 10);
 		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state, Now).Action);
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with { Hp = 70 }, Now).Action);
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with
+		{
+			Hp = 31, Aggro = true, NearbyAggressors = 2,
+		}, Now).Action);
+		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
+		{
+			Hp = 30, Aggro = true, NearbyAggressors = 2,
+		}, Now).Action);
+		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
+		{
+			Hp = 30, Aggro = true, NearbyAggressors = 1,
+		}, Now).Action);
+		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
+		{
+			Hp = 30, Aggro = true, NearbyAggressors = 0,
+		}, Now).Action);
+		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
+		{
+			Hp = 30, Aggro = false, NearbyAggressors = 0,
+		}, Now).Action);
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with
+		{
+			Hp = 31, Aggro = true, NearbyAggressors = 1,
+		}, Now).Action);
+		Assert.Equal("cast-target", NaturalPriestCombatPolicy.Decide(state with { Hp = 71 }, Now).Action);
+		Assert.Equal("cast-target", NaturalPriestCombatPolicy.Decide(state with { Hp = 80 }, Now).Action);
+		Assert.Equal("cast-target", NaturalPriestCombatPolicy.Decide(state with { Hp = 85 }, Now).Action);
 		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with { Hp = 20, Mp = 0, Aggro = true }, Now).Action);
 		Assert.Equal("attack", NaturalPriestCombatPolicy.Decide(state with { Hp = 100, Mp = 13, TargetDistance = 2 }, Now).Action);
 		Assert.Equal("rest", NaturalPriestCombatPolicy.Decide(state with { Hp = 70, TargetObjectId = null, TargetDistance = null }, Now).Action);
-		Assert.Equal("defend", NaturalPriestCombatPolicy.Decide(state with { Hp = 70, TargetObjectId = null, TargetDistance = null, Aggro = true }, Now).Action);
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with { Hp = 70, TargetObjectId = null, TargetDistance = null, Aggro = true }, Now).Action);
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with
+		{
+			Hp = 70, TargetObjectId = null, TargetDistance = null, Aggro = false, NearbyAggressors = 1,
+		}, Now).Action);
+		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
+		{
+			Hp = 30, TargetObjectId = null, TargetDistance = null, Aggro = false, NearbyAggressors = 1,
+		}, Now).Action);
 		Assert.Equal("ready", NaturalPriestCombatPolicy.Decide(state with { Hp = 95, Mp = 95, TargetObjectId = null, TargetDistance = null }, Now).Action);
 		Assert.Equal("revive", NaturalPriestCombatPolicy.Decide(state with { Dead = true }, Now).Action);
 	}
@@ -83,7 +119,10 @@ public sealed class NaturalPriestCombatPolicyTests
 	[Fact]
 	public void OwnedConsumablesAndObservedBuffAreGated()
 	{
-		var state = Observe(5, 20, 100, 0, 100, [1838, 4012, 1684], 2);
+		var state = Observe(5, 20, 100, 0, 100, [1838, 4012, 1684], 2) with
+		{
+			TargetObjectId = null, TargetDistance = null,
+		};
 		Assert.Equal("life-potion", NaturalPriestCombatPolicy.Decide(state with
 		{
 			HasLifePotion = true, LifePotionReady = true,
@@ -103,6 +142,24 @@ public sealed class NaturalPriestCombatPolicyTests
 	}
 
 	[Fact]
+	public void ObservedNearDefeatAllowsOneFinishingSmiteAfterHealingButNeverOverridesRetreat()
+	{
+		NaturalCombatObservation state = Observe(8, 32, 100, 100, 100,
+			[1839, 4013], 3) with { TargetHpPercent = 13, HasHealedThisFight = true };
+		NaturalCombatChoice finisher = NaturalPriestCombatPolicy.Decide(state, Now);
+		Assert.Equal("cast-target", finisher.Action);
+		Assert.Equal((ushort)4013, finisher.Skill?.Id);
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with
+		{
+			HasHealedThisFight = false,
+		}, Now).Action);
+		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
+		{
+			Hp = 30,
+		}, Now).Action);
+	}
+
+	[Fact]
 	public void FollowupRequiresObservedWindowAndItsOwnLongerCooldown()
 	{
 		var followup = new NaturalPriestSkill(9999, 1, "followup", 5, 25, 9999, 80,
@@ -113,11 +170,16 @@ public sealed class NaturalPriestCombatPolicyTests
 		var opened = state with { OpenChainCategory = "P_CHAINA_1TH_1", OpenChainTargetId = 71,
 			ChainExpiresAt = Now.AddSeconds(3), Cooldowns = new Dictionary<int, DateTimeOffset> { [1229] = Now.AddSeconds(2) } };
 		Assert.Equal((ushort)9999, NaturalPriestCombatPolicy.Decide(opened, Now, catalog).Skill?.Id);
-		Assert.Equal("approach", NaturalPriestCombatPolicy.Decide(opened with
+		Assert.Equal("wait", NaturalPriestCombatPolicy.Decide(opened with
 		{
 			Cooldowns = new Dictionary<int, DateTimeOffset> { [1229] = Now.AddSeconds(2), [9999] = Now.AddSeconds(8) },
 		}, Now).Action);
-		Assert.Equal("approach", NaturalPriestCombatPolicy.Decide(opened with { ChainExpiresAt = Now }, Now, catalog).Action);
+		Assert.Equal("wait", NaturalPriestCombatPolicy.Decide(opened with { ChainExpiresAt = Now }, Now, catalog).Action);
+		Assert.Equal("approach", NaturalPriestCombatPolicy.Decide(opened with
+		{
+			TargetDistance = 26,
+			Cooldowns = new Dictionary<int, DateTimeOffset> { [1229] = Now.AddSeconds(2) },
+		}, Now, catalog).Action);
 	}
 
 	private static NaturalCombatObservation Observe(int level, int hp, int maxHp, int mp, int maxMp,

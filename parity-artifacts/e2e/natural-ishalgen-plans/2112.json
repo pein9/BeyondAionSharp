@@ -1,0 +1,367 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2112,
+    "name": "Urd's Request",
+    "nameId": 1103212,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 3,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2112,
+        "start_npc_ids": 790003
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 790003,
+        "name": "urd",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 579.49,
+            "y": 2430.147,
+            "z": 278.375,
+            "heading": 0,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 790003,
+      "name": "urd",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 579.49,
+          "y": 2430.147,
+          "z": 278.375,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 790003,
+      "name": "urd",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 579.49,
+          "y": 2430.147,
+          "z": 278.375,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182203112,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182203112,
+          "npc_id": 210372,
+          "npc": {
+            "id": 210372,
+            "name": "blackbeak airon",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 494.96,
+                "y": 2101.0,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 497.957,
+                "y": 2138.534,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 507.568,
+                "y": 2234.008,
+                "z": 247.402,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 511.89,
+                "y": 2275.281,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 515.43,
+                "y": 2264.95,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 516.974,
+                "y": 2155.789,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 524.205,
+                "y": 2133.6,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 525.14,
+                "y": 2196.56,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 531.485,
+                "y": 2269.655,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 531.7,
+                "y": 2235.95,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 536.442,
+                "y": 2256.196,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 542.681,
+                "y": 2171.29,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 547.11,
+                "y": 2153.08,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 548.1,
+                "y": 2242.6,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 567.28,
+                "y": 2240.87,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 570.343,
+                "y": 2130.938,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 572.715,
+                "y": 2171.884,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 591.065,
+                "y": 2232.689,
+                "z": 247.375,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 603.85,
+                "y": 2137.86,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 615.064,
+                "y": 2202.681,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 630.79,
+                "y": 2166.44,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "item_id": 182203112,
+          "npc_id": 210589,
+          "npc": {
+            "id": 210589,
+            "name": "blackbeak airon",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 790003,
+          "name": "urd",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 579.49,
+              "y": 2430.147,
+              "z": 278.375,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 1925,
+        "gold": 2970,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2112,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 3,
+      "name": "Urd's Request",
+      "nameId": 1103212,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182203112
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 1925,
+          "gold": 2970
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182203112,
+          "npc_id": 210372
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182203112,
+          "npc_id": 210589
+        }
+      }
+    ]
+  }
+}

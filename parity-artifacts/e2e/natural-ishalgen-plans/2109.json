@@ -1,0 +1,339 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2109,
+    "name": "Love in Bloom",
+    "nameId": 1103209,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 3,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2109,
+        "start_npc_ids": 203532
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203532,
+        "name": "bolir",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 486.013,
+            "y": 2292.946,
+            "z": 248.3,
+            "heading": 100,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203532,
+      "name": "bolir",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 486.013,
+          "y": 2292.946,
+          "z": 248.3,
+          "heading": 100,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203532,
+      "name": "bolir",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 486.013,
+          "y": 2292.946,
+          "z": 248.3,
+          "heading": 100,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182203109,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182203109,
+          "npc_id": 700125,
+          "npc": {
+            "id": 700125,
+            "name": "ampreh flower",
+            "positions": [
+              {
+                "mapId": 220010000,
+                "x": 479.963,
+                "y": 2132.992,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 491.651,
+                "y": 2114.095,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 493.431,
+                "y": 2281.111,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 494.254,
+                "y": 2136.582,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 507.757,
+                "y": 2233.791,
+                "z": 247.39,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 511.18,
+                "y": 2277.195,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 515.516,
+                "y": 2138.844,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 518.819,
+                "y": 2189.773,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 541.602,
+                "y": 2253.621,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 546.54,
+                "y": 2111.144,
+                "z": 247.645,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 561.711,
+                "y": 2118.93,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 576.941,
+                "y": 2136.353,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 590.598,
+                "y": 2166.052,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 595.711,
+                "y": 2246.756,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 604.332,
+                "y": 2114.233,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 612.163,
+                "y": 2258.61,
+                "z": 247.385,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 613.596,
+                "y": 2213.441,
+                "z": 247.375,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 622.746,
+                "y": 2171.331,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 657.607,
+                "y": 2190.834,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              },
+              {
+                "mapId": 220010000,
+                "x": 661.956,
+                "y": 2154.55,
+                "z": 247.5,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203532,
+          "name": "bolir",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 486.013,
+              "y": 2292.946,
+              "z": 248.3,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 517,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2109,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 3,
+      "name": "Love in Bloom",
+      "nameId": 1103209,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182203109
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 517
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182203109,
+          "npc_id": 700125
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2131,
+    "name": "A Delivery of Leather",
+    "nameId": 1103231,
+    "zone": "Ishalgen",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 5,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2115
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/ishalgen.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 203542,
+        "id": 2131,
+        "start_npc_ids": 203515
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203515,
+        "name": "dalor",
+        "positions": [
+          {
+            "mapId": 220010000,
+            "x": 602.833,
+            "y": 2431.828,
+            "z": 280.354,
+            "heading": 45,
+            "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203515,
+      "name": "dalor",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 602.833,
+          "y": 2431.828,
+          "z": 280.354,
+          "heading": 45,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203542,
+      "name": "denma",
+      "positions": [
+        {
+          "mapId": 220010000,
+          "x": 933.167,
+          "y": 1685.701,
+          "z": 261.821,
+          "heading": 6,
+          "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203542,
+          "name": "denma",
+          "positions": [
+            {
+              "mapId": 220010000,
+              "x": 933.167,
+              "y": 1685.701,
+              "z": 261.821,
+              "heading": 6,
+              "source": "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 1573,
+        "gold": 2680,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2131,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 5,
+      "name": "A Delivery of Leather",
+      "nameId": 1103231,
+      "quest_zone": "Ishalgen",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 1573,
+          "gold": 2680
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2115
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182203129
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

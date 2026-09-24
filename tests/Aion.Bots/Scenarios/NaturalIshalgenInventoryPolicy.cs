@@ -42,7 +42,7 @@ public sealed record NaturalInventoryPlan(int Capacity, int Occupied, IReadOnlyL
 
 public sealed class NaturalIshalgenInventoryPolicy
 {
-	private static readonly HashSet<int> Supplies = [162000002, 162000007]; // normal starter HP/MP potions
+	private static readonly HashSet<int> Supplies = [162000002, 162000007, 162000052]; // starter HP/MP and bought timed healing
 	private readonly IReadOnlyDictionary<int, NaturalItem> items;
 	private readonly HashSet<int> questItems;
 	private readonly IReadOnlyDictionary<int, int[]> rewards;

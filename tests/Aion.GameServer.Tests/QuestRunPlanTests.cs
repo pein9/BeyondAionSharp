@@ -5,6 +5,51 @@ namespace Aion.GameServer.Tests;
 public sealed class QuestRunPlanTests
 {
 	[Fact]
+	public void FrozenNaturalIshalgenTemplatePlansCoverExactlyTheSupportedQuestIds()
+	{
+		string directory = Path.Combine(Aion.GameServer.TestKit.RealStaticData.RepoRoot(),
+			"parity-artifacts", "e2e", "natural-ishalgen-plans");
+		IReadOnlyList<QuestRunPlan> plans = QuestRunPlan.LoadDirectory(directory);
+		Assert.Equal(
+			[2101, 2102, 2103, 2104, 2105, 2108, 2109, 2110, 2112, 2113,
+			 2115, 2116, 2117, 2118, 2119, 2120, 2121, 2124, 2126, 2127,
+			 2128, 2129, 2131, 2133, 2134, 2137],
+			plans.Select(plan => plan.Id).ToArray());
+		var included = NaturalIshalgenContract.LoadDefault().Quests.Select(quest => quest.Id).ToHashSet();
+		foreach (QuestRunPlan plan in plans)
+		{
+			Assert.Contains(plan.Id, included);
+			Assert.Contains(plan.Template, new[] { "report_to", "monster_hunt", "item_collecting" });
+			Assert.All(QuestRunBook.Build(plan).Operations, operation =>
+				Assert.Contains(operation.Kind,
+				new[]
+				{
+					QuestRunOperationKind.Prepare, QuestRunOperationKind.StartAtNpc,
+					QuestRunOperationKind.Kill, QuestRunOperationKind.CollectQuestDrop,
+					QuestRunOperationKind.UseQuestObject, QuestRunOperationKind.Gather,
+					QuestRunOperationKind.Report, QuestRunOperationKind.ClaimReward,
+				}));
+		}
+	}
+
+	[Theory]
+	[InlineData(2113, 182203113, 210585, 210586)]
+	[InlineData(2118, 182203116, 210736, 210737)]
+	public void NonGuaranteedIshalgenDropsRemainInventoryCountedCollections(
+		int questId, int itemId, int firstSource, int secondSource)
+	{
+		string path = Path.Combine(Aion.GameServer.TestKit.RealStaticData.RepoRoot(),
+			"parity-artifacts", "e2e", "natural-ishalgen-plans", $"{questId}.json");
+		QuestRunOperation collect = Assert.Single(
+			QuestRunBook.Build(QuestRunPlan.Load(path)).Operations,
+			operation => operation.Kind == QuestRunOperationKind.CollectQuestDrop);
+		Assert.Equal(itemId, collect.ItemId);
+		Assert.Equal(1, collect.Count);
+		Assert.Contains(collect.Sources!, source => source.NpcId == firstSource);
+		Assert.Contains(collect.Sources!, source => source.NpcId == secondSource);
+	}
+
+	[Fact]
 	public async Task XmlQuestPlanLoadsIntoExecutableQuestObjectRunBook()
 	{
 		QuestRunPlan plan = Load("""

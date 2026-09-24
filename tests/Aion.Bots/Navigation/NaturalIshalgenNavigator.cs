@@ -17,17 +17,33 @@ public interface INaturalNavigationDriver
 	Task<IReadOnlyList<BotPosition>> FindRouteAsync(BotPosition start, BotPosition destination, CancellationToken token);
 	Task MoveAsync(IReadOnlyList<BotPosition> segment, CancellationToken token);
 	Task SynchronizeAsync(CancellationToken token);
+	bool IsSegmentSafe(IReadOnlyList<BotPosition> segment, int? targetObjectId) => true;
 	void Record(NaturalNavigationEvent navigationEvent);
 }
 
 /// <summary>Client-observed, bounded ground approach. Its position is a paced client estimate, not a server echo.</summary>
 public static class NaturalIshalgenNavigator
 {
+	/// <summary>Thin actual client-estimated progress into reverse-route checkpoints.
+	/// Planned routes are intentionally excluded: only walked positions may guide
+	/// a return, and every reverse leg is routed and hazard-checked again.</summary>
+	public static BotPosition[] SelectRetraceCheckpoints(
+		IEnumerable<NaturalNavigationEvent> events, int stride = 2)
+	{
+		ArgumentNullException.ThrowIfNull(events);
+		if (stride <= 0) throw new ArgumentOutOfRangeException(nameof(stride));
+		BotPosition[] walked = events
+			.Where(item => item.Action == "segment-progress" && item.Position != null)
+			.Select(item => item.Position!.Value).ToArray();
+		return walked.Where((_, index) => index % stride == 0)
+			.Concat(walked.TakeLast(1)).Distinct().ToArray();
+	}
+
 	private const float ArrivalRadius = 3f;
 	private const float TargetMovementThreshold = 2f;
 	private const float MinimumProgress = 0.25f;
 	private const int SegmentPoints = 8;
-	private const int MaximumSegments = 64;
+	private const int MaximumSegments = 128;
 	private const int MaximumReplans = 3;
 	private const int MaximumTargetWaits = 2;
 
@@ -37,15 +53,65 @@ public static class NaturalIshalgenNavigator
 
 	public static async Task<NaturalNavigationResult> ApproachObservedObjectAsync(int mapId, int templateId,
 		BotPosition staticAnchor, INaturalNavigationDriver driver, string kind, CancellationToken token = default)
-		=> await ApproachAsync(mapId, templateId, staticAnchor, driver, kind, false, token);
+		=> await ApproachAsync(mapId, templateId, staticAnchor, driver, kind, false, ArrivalRadius, token);
 
 	public static async Task<NaturalNavigationResult> ExploreAnchorAsync(int mapId, int templateId,
 		BotPosition staticAnchor, INaturalNavigationDriver driver, string kind, CancellationToken token = default)
-		=> await ApproachAsync(mapId, templateId, staticAnchor, driver, kind, true, token);
+		=> await ApproachAsync(mapId, templateId, staticAnchor, driver, kind, true, ArrivalRadius, token);
+
+	/// <summary>Reach ordinary spell/search range of a shipped area hint without claiming the target exists.</summary>
+	public static async Task<NaturalNavigationResult> ExploreWithinRangeAsync(int mapId, int templateId,
+		BotPosition staticAnchor, float radius, INaturalNavigationDriver driver, string kind,
+		CancellationToken token = default)
+	{
+		if (!float.IsFinite(radius) || radius <= 0)
+			throw new ArgumentOutOfRangeException(nameof(radius));
+		return await ApproachAsync(mapId, templateId, staticAnchor, driver, kind, true, radius, token);
+	}
+
+	/// <summary>Return over client-estimated checkpoints from a previously checked approach.
+	/// Each reverse leg is independently routed against current observations. A checkpoint
+	/// occupied by a newly observed hostile may be skipped only if a farther recorded
+	/// checkpoint has its own checked, hazard-safe route.</summary>
+	public static async Task<NaturalNavigationResult> RetraceIngressAsync(int mapId,
+		BotPosition ingressStart, IReadOnlyList<BotPosition> checkpoints,
+		INaturalNavigationDriver driver, CancellationToken token = default)
+	{
+		ArgumentNullException.ThrowIfNull(checkpoints);
+		ArgumentNullException.ThrowIfNull(driver);
+		int searches = 0, segments = 0, skipped = 0;
+		var skippedReasons = new List<string>();
+		BotPosition[] returnPoints = checkpoints.Reverse().Append(ingressStart).ToArray();
+		for (int index = 0; index < returnPoints.Length; index++)
+		{
+			BotPosition checkpoint = returnPoints[index];
+			BotPosition? current = driver.Observe().Position;
+			if (current is BotPosition position && Distance(position, checkpoint) <= ArrivalRadius) continue;
+			NaturalNavigationResult leg = await ExploreAnchorAsync(mapId, -1, checkpoint,
+				driver, "recorded-ingress-checkpoint", token);
+			searches += leg.RouteSearches;
+			segments += leg.Segments;
+			if (!leg.Arrived)
+			{
+				skippedReasons.Add($"{checkpoint}: {leg.Reason}");
+				// Recorded ingress length, not an arbitrary number of newly occupied
+				// checkpoints, bounds this search. A farther checkpoint may be the
+				// first one outside a hostile pack and still have a checked detour.
+				skipped++;
+				if (index == returnPoints.Length - 1)
+					return new(false, $"Checked return could not bypass {skipped} blocked ingress " +
+						$"checkpoints: {string.Join(" | ", skippedReasons)}", null, searches, segments);
+				continue;
+			}
+			skipped = 0;
+			skippedReasons.Clear();
+		}
+		return new(true, "Returned along checked ingress checkpoints.", null, searches, segments);
+	}
 
 	private static async Task<NaturalNavigationResult> ApproachAsync(int mapId, int templateId,
 		BotPosition staticAnchor, INaturalNavigationDriver driver, string kind, bool allowAnchorOnly,
-		CancellationToken token)
+		float arrivalRadius, CancellationToken token)
 	{
 		ArgumentNullException.ThrowIfNull(driver);
 		int routeSearches = 0, segments = 0, replans = 0, targetWaits = 0, sequence = 0;
@@ -63,9 +129,9 @@ public static class NaturalIshalgenNavigator
 				.OrderBy(npc => Distance(start, npc.Position)).ThenBy(npc => npc.ObjectId).FirstOrDefault();
 			if (target != null)
 			{
-				if (Distance(start, target.Position) <= ArrivalRadius)
+				if (Distance(start, target.Position) <= arrivalRadius)
 				{
-					Emit("navigation-arrived", "completed", $"Within interaction approach radius of a client-observed {kind}.",
+					Emit("navigation-arrived", "completed", $"Within {arrivalRadius:F1} m of a client-observed {kind}.",
 						start, target.Position, target.ObjectId);
 					return new(true, $"Observed {kind} approached; no interaction performed.", target.ObjectId, routeSearches, segments);
 				}
@@ -88,7 +154,7 @@ public static class NaturalIshalgenNavigator
 				await driver.SynchronizeAsync(token);
 				continue;
 			}
-			else if (Distance(start, staticAnchor) <= ArrivalRadius)
+			else if (Distance(start, staticAnchor) <= arrivalRadius)
 			{
 				if (allowAnchorOnly)
 				{
@@ -117,6 +183,15 @@ public static class NaturalIshalgenNavigator
 			}
 			BotPosition[] segment = route.Skip(routeIndex).Take(SegmentPoints).ToArray();
 			BotPosition expected = segment[^1];
+			if (!driver.IsSegmentSafe(segment, targetId))
+			{
+				if (++replans > MaximumReplans)
+					return Fail("New client-observed hazards exceeded the bounded replan budget.", observed);
+				route = [];
+				Emit("replan-hostile", "planned", "A newly observed hostile lies on the next ground segment.",
+					start, destination, targetId);
+				continue;
+			}
 			await driver.MoveAsync(segment, token);
 			segments++;
 			await driver.SynchronizeAsync(token);

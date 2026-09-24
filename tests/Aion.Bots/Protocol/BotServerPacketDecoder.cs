@@ -36,6 +36,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_CHAT_INIT)] = DecodeChatInit,
 			[typeof(SM_PLAYER_INFO)] = DecodePlayerInfo,
 			[typeof(SM_EMOTION)] = DecodeEmotion,
+			[typeof(SM_USE_OBJECT)] = DecodeUseObject,
 			[typeof(SM_NPC_INFO)] = DecodeNpcInfo,
 			[typeof(SM_GATHERABLE_INFO)] = DecodeGatherableInfo,
 			[typeof(SM_GATHER_UPDATE)] = DecodeGatherUpdate,
@@ -46,6 +47,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_FIRST_SHOW_DECOMPOSABLE)] = DecodeDecomposable,
 			[typeof(SM_SECONDARY_SHOW_DECOMPOSABLE)] = DecodeDecomposable,
 			[typeof(SmAttackStatus)] = DecodeAttackStatus,
+			[typeof(SM_ATTACK)] = DecodeAttack,
 			[typeof(SM_MOVE)] = DecodeMove,
 			[typeof(SM_DELETE)] = DecodeDelete,
 			[typeof(SM_TELEPORT_LOC)] = DecodeTeleport,
@@ -192,6 +194,20 @@ public sealed partial class BotServerPacketDecoder
 			("hpOrMp", r.ReadByte()), ("skillId", r.ReadUInt16()), ("logId", r.ReadByte()), ("criticalDisplayCode", r.ReadByte()));
 		if (r.Remaining != 0) throw new InvalidDataException("Attack status has unexpected trailing bytes.");
 		return fields;
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeAttack(ReadOnlySpan<byte> body)
+	{
+		// The hit list is variable-length; the fixed prefix is enough to identify
+		// incoming attackers without using server-only aggro state.
+		var r = new PacketBodyReader(body);
+		int attackerObjId = r.ReadInt32();
+		byte attackno = r.ReadByte();
+		ushort time = r.ReadUInt16();
+		byte attackTypeId = r.ReadByte(), attackHandId = r.ReadByte();
+		int targetObjId = r.ReadInt32();
+		return Fields(("attackerObjId", attackerObjId), ("attackno", attackno), ("time", time),
+			("attackTypeId", attackTypeId), ("attackHandId", attackHandId), ("targetObjId", targetObjId));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeItemUsage(ReadOnlySpan<byte> body)
@@ -434,6 +450,19 @@ public sealed partial class BotServerPacketDecoder
 		else if ((byte)fields["emotionType"]! == (byte)Aion.GameServer.Model.EmotionType.START_FLYTELEPORT)
 			fields["teleportId"] = r.ReadInt32();
 		return fields;
+	}
+
+	private static IReadOnlyDictionary<string, object?> DecodeUseObject(ReadOnlySpan<byte> body)
+	{
+		// Java ce54b7931 SM_USE_OBJECT.writeImpl: D player, D target,
+		// D duration, C action. Action 2 carries duration 0 on observer abort,
+		// but the original use duration on successful completion.
+		var r = new PacketBodyReader(body);
+		return Fields(
+			("playerObjectId", r.ReadInt32()),
+			("targetObjectId", r.ReadInt32()),
+			("durationMs", r.ReadInt32()),
+			("actionType", r.ReadByte()));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeNpcInfo(ReadOnlySpan<byte> body)

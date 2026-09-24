@@ -6,6 +6,7 @@ using Aion.Bots.Navigation;
 using Aion.Bots.Protocol;
 using Aion.Bots.Scenarios;
 using Aion.Bots.Timing;
+using Aion.Bots.Tracing;
 using Aion.Bots.Transport;
 using Aion.Bots.World;
 using Aion.GameServer.Ai;
@@ -845,6 +846,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		private readonly string macAddress;
 		private readonly Race race;
 		private readonly BotApi api;
+		private readonly BotActionTraceWriter? combatTrace;
 		private InProcessBotTransport? transport;
 		private IAsyncEnumerator<DecodedBotServerPacket>? packets;
 		private AionConnection.State state = AionConnection.State.CONNECTED;
@@ -860,7 +862,9 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			string bot,
 			int accountId,
 			string characterName,
-			Race race = Race.ELYOS)
+			Race race = Race.ELYOS,
+			BotActionTraceWriter? combatTrace = null,
+			string? combatTracePath = null)
 		{
 			this.fixture = fixture;
 			this.policy = policy;
@@ -869,6 +873,8 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			accountName = $"sim-player-{accountId}";
 			this.characterName = characterName;
 			this.race = race;
+			this.combatTrace = combatTrace;
+			CombatTracePath = combatTracePath;
 			macAddress = $"02-00-00-00-00-{accountId:X2}";
 			api = new BotApi(timing: new BotTimingContract(new SimulationTimeProvider()));
 		}
@@ -877,8 +883,13 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		public List<DecodedBotServerPacket> PacketHistory { get; } = [];
 		public List<SimulationPacketObservation> PacketObservations { get; } = [];
 		public int CharacterId => characterId;
+		public string CurrentStep => currentStep;
+		public string CurrentAction => currentAction;
 		public int ConnectionGeneration { get; private set; }
 		public BotApi Api => api;
+		public string? CombatTracePath { get; }
+		public void TraceDiagnostic(string action, IReadOnlyDictionary<string, object?> fields) =>
+			combatTrace?.WriteAction(currentStep, action, fields);
 		public BotPosition CurrentPosition => currentPosition ?? api.World.Position
 			?? throw new InvalidOperationException("Enter the world before reading the current position.");
 
@@ -887,6 +898,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			currentStep = step;
 			currentAction = action;
 			policy.ObserveAction(bot, accountName, step, action);
+			combatTrace?.WriteAction(step, action);
 		}
 
 		public async Task LoginAndAuthenticateAsync(CancellationToken cancellationToken)
@@ -1268,6 +1280,10 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			InProcessBotTransport active = transport ?? throw new InvalidOperationException("Simulation game connection is not open.");
 			byte[] encoded = packet.Encode(active.Codec, state);
 			policy.ObserveSent(bot, accountName, currentStep, packet);
+			if (combatTrace != null && packet.PacketType.Name is
+				"CM_MOVE" or "CM_TARGET_SELECT" or "CM_ATTACK" or "CM_CASTSPELL" or "CM_USE_ITEM" or
+				"CM_SHOW_DIALOG" or "CM_DIALOG_SELECT" or "CM_LOOT")
+				combatTrace.WriteSent(currentStep, packet);
 			return active.SendAsync(encoded, cancellationToken).AsTask();
 		}
 
@@ -1302,8 +1318,24 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			int? objectId = packet.Fields.TryGetValue("objectId", out object? value) && value is int id ? id : null;
 			PacketObservations.Add(new SimulationPacketObservation(currentAction, packet.PacketType.Name, objectId));
 			policy.ObservePacket(bot, currentStep, packet, accountName);
+			if (combatTrace != null && IsCombatTracePacket(packet.PacketType))
+				combatTrace.WriteReceived(currentStep, packet);
 			return packet;
 		}
+
+		private static bool IsCombatTracePacket(Type type) =>
+			type == typeof(SM_ATTACK) || type == typeof(SmAttackStatus) ||
+			type == typeof(SM_CASTSPELL) || type == typeof(SM_CASTSPELL_RESULT) ||
+			type == typeof(SM_SKILL_CANCEL) || type == typeof(SM_SKILL_COOLDOWN) ||
+			type == typeof(SM_STATUPDATE_HP) || type == typeof(SM_STATUPDATE_MP) ||
+			 type == typeof(SM_STATUPDATE_EXP) || type == typeof(SM_DIE) ||
+			 type == typeof(SM_SYSTEM_MESSAGE) || type == typeof(SM_MESSAGE) ||
+			 type == typeof(SM_USE_OBJECT) || type == typeof(SM_LOOT_ITEMLIST) ||
+			 type == typeof(SM_GATHERABLE_INFO) || type == typeof(SM_GATHER_UPDATE) ||
+			 type == typeof(SM_INVENTORY_ADD_ITEM) || type == typeof(SM_INVENTORY_UPDATE_ITEM) ||
+			 type == typeof(SM_QUEST_ACTION) || type == typeof(SM_DIALOG_WINDOW) ||
+			 type == typeof(SM_ABNORMAL_STATE) || type == typeof(SM_MOVE) ||
+			type == typeof(SM_NPC_INFO) || type == typeof(SM_DELETE);
 
 		private void AssertPosition(int mapId, float x, float y, float z)
 		{
