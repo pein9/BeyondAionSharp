@@ -112,8 +112,10 @@ public sealed partial class SimulationFastScenarioTests
 		await using SimulationL0Session session = await EnterCombatWorldAsync(
 			policy, accountId: 19, "Asimcac", Race.ASMODIANS, PlayerClass.WARRIOR, token);
 		Player player = fixture.World.GetPlayer(session.CharacterId);
-		Npc target = fixture.World.GetWorldMap(220010000).GetMainWorldMapInstance().GetNpcs(210365)
-			.Where(npc => npc.IsSpawned() && !npc.IsDead()).Skip(1).First();
+		// The level-2 bucktoothed snuffler (199 HP): a level-1 Warrior's Ferocious Strike has hit the level-1
+		// snuffler (143 HP) for its whole health, which ended the fight before the gate could be measured.
+		Npc target = fixture.World.GetWorldMap(220010000).GetMainWorldMapInstance().GetNpcs(210366)
+			.Where(npc => npc.IsSpawned() && !npc.IsDead()).First();
 		await PlaceBesideNpcAsync(session, player, target, token);
 		target.GetLifeStats().SetCurrentHp(target.GetLifeStats().GetMaxHp());
 		await session.SendPacketAsync(session.Api.Target(target.GetObjectId()), token);
@@ -134,9 +136,9 @@ public sealed partial class SimulationFastScenarioTests
 
 		session.BeginStep("s04", "accept-after-fourteen-hundred-milliseconds");
 		// This scenario measures the auto-attack gate, not damage. The skill's hit lands during the wait below
-		// (hitTime 800 ms); after the first auto-attack a strong roll could kill the level-1 target, leaving the
-		// final swing nothing to hit. Which target and which rolls depend on spawn data, so start the wait at
-		// full health: one Ferocious Strike cannot kill a full-health snuffler.
+		// (hitTime 800 ms); after the first auto-attack a strong roll could kill the target, leaving the final
+		// swing nothing to hit. Which rolls come depend on spawn data, so start the wait at full health: the
+		// largest Ferocious Strike seen (143) leaves a full-health level-2 snuffler standing.
 		target.GetLifeStats().SetCurrentHp(target.GetLifeStats().GetMaxHp());
 		await session.AdvanceAsync(TimeSpan.FromMilliseconds(900), token);
 		await session.SendPacketAsync(GameClientPackets.Attack(target.GetObjectId(), 2, 0, 0), token);
