@@ -132,6 +132,7 @@ It builds in about 10 s.
 | Q2004 checkpoint (the last proven green point), seed 1 | passed in 42 s | passed in 4 min 49 s |
 | Q2006 checkpoint, seed 1 | passed in 4 min 16 s (including a natural Return-skill escape) | not rerun |
 | Q2006 checkpoint, seed 2 | failed once (no route through a pack near Nalto), passed on rerun in 1 min 12 s | not rerun |
+| Full journey, seed 1 | completed Q2000–Q2006, Q2100–Q2104 and Q2132, then stopped in Q2007: 11 observed aggro circles in the Mau camp closed every checked approach to Nalto (the journey doc's open tactical limit) | not rerun |
 | Q2007 checkpoint, seed 1 | failed in Q2005 (retreat could not outrun three attackers) or at Q2006 before the spacing fix | failed at Q2007 Rae (dead end at 620,2439 after a death) |
 
 Runs vary from one run to the next through combat outcomes, so single failures are not
