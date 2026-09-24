@@ -38,6 +38,7 @@ public static partial class LiveBotRunner
 				Path.Combine(options.OutputDirectory, "navigation-cache"), token);
 			int channel = world.ChannelInfo?.Index ?? 0;
 			session.Navigation = assets.StarterRoute(Race.ASMODIANS, channel + 1);
+			session.TravelPlanner = assets.TravelPlanner(GatheringTarget.YoungAzpha.MapId, session.Navigation.Value.Geometry);
 			if (world.Level < 2)
 			{
 				var combat = new NaturalPriestLiveDriver(options, actor, root);

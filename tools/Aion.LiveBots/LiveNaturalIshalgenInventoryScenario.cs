@@ -84,6 +84,7 @@ public static partial class LiveBotRunner
 				Path.Combine(options.OutputDirectory, "navigation-cache"), token);
 			int channel = world.ChannelInfo?.Index ?? 0;
 			actor.Session.Navigation = assets.StarterRoute(Race.ASMODIANS, channel + 1);
+			actor.Session.TravelPlanner = assets.TravelPlanner(220010000, actor.Session.Navigation.Value.Geometry);
 		}
 		var navigation = new LiveNaturalIshalgenNavigationDriver(options, actor, 2, selectedQuestId: null);
 		NaturalNavigationResult result = await NaturalIshalgenNavigator.ApproachNpcAsync(

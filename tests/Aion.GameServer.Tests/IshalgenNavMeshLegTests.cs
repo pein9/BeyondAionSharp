@@ -53,5 +53,25 @@ public sealed class IshalgenNavMeshLegTests
 			}
 			Assert.True(length / route.Count >= 1.7f, $"{from} -> {to}: mean spacing {length / route.Count:F2} m");
 		}
+
+		// The journey drivers' planner: level-aware plans for the long legs, every step checked.
+		BotTravelPlanner planner = assets.TravelPlanner(220010000, geometry)
+			?? throw new InvalidDataException("Ishalgen travel planner is unavailable.");
+		foreach (var (from, to) in new[] { (ulgorn, dabi), (dabi, derot), (derot, nalto), (mijou, munin), (ulgorn, mijou) })
+		{
+			foreach (int level in new[] { 1, 9 })
+			{
+				var watch = Stopwatch.StartNew();
+				BotTravelPlan? plan = planner.PlanJourney(220010000, from, to, level, []);
+				Assert.True(plan != null, $"level {level} {from} -> {to}: no plan ({BotNavMeshRouter.LastOutcome})");
+				Assert.True(watch.Elapsed < TimeSpan.FromSeconds(5), $"level {level} {from} -> {to} took {watch.Elapsed}");
+				BotPosition previous = from;
+				foreach (BotPosition point in plan!.Route)
+				{
+					Assert.NotNull(geometry.TraceEdge(220010000, previous, point));
+					previous = point;
+				}
+			}
+		}
 	}
 }

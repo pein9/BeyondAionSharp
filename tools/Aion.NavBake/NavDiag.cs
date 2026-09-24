@@ -27,6 +27,13 @@ internal static class NavDiag
 			Console.WriteLine($"  -> {to}: {route.Count} points, {BotNavMeshRouter.LastOutcome}");
 			var interaction = router.FindInteractionPath(mapId, from, to);
 			Console.WriteLine($"     interaction: {interaction.Count} points, {BotNavMeshRouter.LastOutcome}");
+			if (Environment.GetEnvironmentVariable("NAV_LEVEL") is string levelText)
+			{
+				var planner = new BotTravelPlanner(BotTravelGraph.Load(Path.Combine(navDir, mapId + ".graph.json"))!, router,
+					BotNavSites.Load(world, mapId));
+				var plan = planner.Plan(from, to, int.Parse(levelText, System.Globalization.CultureInfo.InvariantCulture));
+				Console.WriteLine($"     plan L{levelText}: {plan.Route.Count} points, {BotNavMeshRouter.LastOutcome}; {BotTravelPlanner.Describe(plan)}");
+			}
 		}
 		return 0;
 	}

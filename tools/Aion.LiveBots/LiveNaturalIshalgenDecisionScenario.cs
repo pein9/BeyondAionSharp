@@ -41,6 +41,7 @@ public static partial class LiveBotRunner
 				int channel = actor.Session.Api.World.ChannelInfo?.Index ?? 0;
 				var navigation = assets!.StarterRoute(Race.ASMODIANS, channel + 1);
 				actor.Session.Navigation = navigation;
+				actor.Session.TravelPlanner = assets.TravelPlanner(contract.MapId, navigation.Geometry);
 				BotWaypoint anchor = navigation.Graph.GetMap(contract.MapId)?.Waypoints
 					.Where(waypoint => waypoint.TemplateId == 203500 && waypoint.Sources.HasFlag(BotWaypointSource.QuestNpc))
 					.OrderBy(waypoint => waypoint.Id).FirstOrDefault()
@@ -97,6 +98,17 @@ public static partial class LiveBotRunner
 			{
 				var navigation = actor.Session.Navigation ?? throw new InvalidOperationException("NI-03 navigation assets are missing.");
 				int map = actor.Session.Api.World.MapId ?? throw new InvalidDataException("NI-03 map is unobserved.");
+				// Long legs: the level-aware travel planner (roads, hubs, static danger) first.
+				if (actor.Session.TravelPlanner?.PlanJourney(map, start, destination, actor.Session.Api.World.Level, []) is { } plan)
+				{
+					actor.Trace.WriteAction(actor.LastStep, "natural:travel-plan", new Dictionary<string, object?>
+					{
+						["start"] = start,
+						["destination"] = destination,
+						["plan"] = Aion.Bots.Navigation.NavMesh.BotTravelPlanner.Describe(plan),
+					});
+					return plan.Route;
+				}
 				var route = navigation.Graph.FindPath(map, start, destination);
 				if (route.Count == 0) route = navigation.Geometry.FindLocalPath(map, start, destination);
 				if (route.Count == 0) route = navigation.Geometry.FindJourneyPath(map, start, destination);

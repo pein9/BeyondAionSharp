@@ -202,6 +202,26 @@ public sealed class BotNavMeshTests
 		Assert.Equal(new BotPosition(30, 10, 10, 0), plan.Route[^1]);
 	}
 
+	[Fact]
+	public void PlanJourneyServesOnlyLongLegsOnItsMapAndHonoursObservedHazards()
+	{
+		BotNavigationGeometry geometry = Geometry();
+		var planner = new BotTravelPlanner(new BotTravelGraph { MapId = MapId }, geometry.NavMesh!, []);
+		BotPosition start = new(5, 5, 10, 0), far = new(90, 90, 10, 0);
+		Assert.Null(planner.PlanJourney(MapId, start, new BotPosition(30, 10, 10, 0), 5, []));
+		Assert.Null(planner.PlanJourney(MapId + 1, start, far, 5, []));
+		BotTravelPlan plan = planner.PlanJourney(MapId, start, far, 5, [])!;
+		Assert.NotNull(plan);
+		Assert.True(Distance(plan.Route[^1], far) <= 3);
+		Assert.Contains("direct navmesh route", BotTravelPlanner.Describe(plan));
+		// A pack standing on the goal: the planner refuses rather than walking into it.
+		Assert.Null(planner.PlanJourney(MapId, start, far, 5, [new BotNavigationHazard(far, 6)]));
+		var aside = new BotNavigationHazard(new BotPosition(50, 50, 10, 0), 8);
+		BotTravelPlan around = planner.PlanJourney(MapId, start, far, 5, [aside])!;
+		Assert.NotNull(around);
+		Assert.True(BotNavigationGeometry.AvoidsHazards(start, around.Route, [aside]));
+	}
+
 	private static float Distance(BotPosition a, BotPosition b) =>
 		MathF.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y) + (a.Z - b.Z) * (a.Z - b.Z));
 

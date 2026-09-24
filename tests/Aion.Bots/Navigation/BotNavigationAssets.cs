@@ -49,6 +49,14 @@ public sealed class BotNavigationAssets(IReadOnlyDictionary<int, GeoMap> maps, S
             data.GatherableDataDh, data.Portal2DataDh, data.PortalLocs, data.BindPointDataDh, [203500, 203504], geometry), geometry);
     }
 
+    /// <summary>The offline static data the assets were loaded with (sites for the travel planner).</summary>
+    public StaticData Data => data;
+
+    /// <summary>Level-aware travel planner for a starter map's geometry, or null when its navmesh or
+    /// travel graph is not available.</summary>
+    public NavMesh.BotTravelPlanner? TravelPlanner(int mapId, BotNavigationGeometry geometry) =>
+        NavMesh.BotTravelPlanner.For(mapId, geometry, data);
+
     public ItemTemplate KiskTemplate(Race race) => data.ItemDataDh.GetItemTemplate(SoakPvpCamp.Item(race))
         ?? throw new InvalidDataException("Shipped medium Kisk template is missing.");
 

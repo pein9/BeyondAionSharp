@@ -989,6 +989,10 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 
 	public (BotNavigationGraph Graph, BotNavigationGeometry Geometry)? Navigation { get; set; }
 
+	/// <summary>Level-aware roads-and-branches planner used first by natural journey navigation for long
+	/// legs; null when unset or when the map has no baked navmesh and travel graph.</summary>
+	public Aion.Bots.Navigation.NavMesh.BotTravelPlanner? TravelPlanner { get; set; }
+
 	public async Task ExecuteMovementAsync(BotMovementPlan plan, CancellationToken cancellationToken)
 	{
 		foreach (BotMovementFrame frame in plan.Frames)
