@@ -36,6 +36,7 @@ explicitly on still-encoded `0x81` input.
 | `aionpak.py` | Read/extract a `.pak` archive. Every entry is CRC32-verified. |
 | `bxml.py` | Decode the binary XML (magic `0x80`) most `.pak` members contain. |
 | `index_paks.py` | Index every entry name across a client install, reading only archive directories. |
+| `decode_path_dat.py` | Decode a level's `<level>-path.dat` client ground grid (format: `docs/client-path-dat-format.md`); `--png`, `--bin`, `--validate`. Used by `tools/nav/extract_walk_masks.py` and the navmesh `validate` command. |
 | `extract_quest_dialog_map.py` | Reduce decoded `0x81` quest HTML to page/button/action topology. |
 | `build_ai_binding.py` | Join the client's per-NPC `ai_name` against an NpcAIPatterns dump to produce the pattern → `npc_id` table. |
 | `audit_missing_adds.py` | Report retail encounter adds our server never spawns. |
