@@ -96,7 +96,11 @@ the C# handler agrees on this boundary.
 > roads and a travel graph ([bot-navigation.md](bot-navigation.md)). `BotNavigationGeometry`'s path
 > methods use it automatically; every step still passes the same ground/collision check and the
 > observed-hazard rule. Entries below that say "navigation has no navmesh" describe the grid search
-> that preceded it; set `AION_BOT_NAVMESH=0` to reproduce those runs.
+> that preceded it; set `AION_BOT_NAVMESH=0` to reproduce those runs. Long legs go through the
+> level-aware travel planner first (`AION_BOT_TRAVEL_PLANNER=0` disables it). Observed monsters
+> no longer end an approach: the journey fights through them one pull at a time along the route
+> that fights least (`TryFightThroughAsync`). The open problem at Q2007 is now retreat and
+> survival against two attackers, not routing.
 
 At the Phase 10 closeout, real client packets, movement timing, combat, gathering,
 quest dialogs, persistence, and logging are exercised by scenarios. The missing

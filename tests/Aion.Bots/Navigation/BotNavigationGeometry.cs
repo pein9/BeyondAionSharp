@@ -102,6 +102,27 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
         => ViaNavMesh(mapId, start, target, router => router.FindInteractionPath(mapId, start, target))
             ?? GridInteractionPath(mapId, start, target);
 
+    /// <summary>Terrain-checked route to within interaction range of <paramref name="destination"/> that treats
+    /// the observed aggro circles as costs rather than walls: it skirts a circle when a reasonable detour
+    /// exists and otherwise goes through, so the caller can fight its way in along it
+    /// (<see cref="NaturalFightThrough"/>). Every step still passes the ground/collision check; hostiles are
+    /// deliberately not a hard rule here, so walk only its hostile-free prefix.</summary>
+    public IReadOnlyList<BotPosition> FindFightThroughPath(int mapId, BotPosition start, BotPosition destination,
+        IReadOnlyList<BotNavigationHazard> hazards)
+    {
+        ArgumentNullException.ThrowIfNull(hazards);
+        BotNavMeshRouter? router = NavMesh;
+        if (router != null && router.Covers(mapId))
+        {
+            var danger = hazards.Where(h => HorizontalDistance(start, h.Position) >= h.Radius)
+                .Select(h => new BotNavDanger(h.Position.X, h.Position.Y, h.Radius + 1, 12)).ToArray();
+            IReadOnlyList<BotPosition> route = router.FindInteractionPath(mapId, start, destination,
+                BotNavQuery.Default with { Danger = danger });
+            if (route.Count > 0 || BotNavMeshRouter.LastOutcome == BotNavRouteOutcome.Routed) return route;
+        }
+        return Distance(start, destination) <= 3 ? [] : GridInteractionPath(mapId, start, destination);
+    }
+
     /// <summary>Navmesh answer, or null when the caller should use the grid search: no navmesh for this
     /// map, or a failed request short enough for the bounded grid search to settle.</summary>
     private IReadOnlyList<BotPosition>? ViaNavMesh(int mapId, BotPosition start, BotPosition destination,

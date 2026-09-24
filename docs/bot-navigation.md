@@ -44,6 +44,23 @@ navmesh first whenever one is checked in for the map. This covers SIM (`ForServe
   `AION_BOT_NAVMESH_DIR=<dir>` to use navmeshes from another folder.
 - `BotNavigationGeometry.WithNavMesh(set)` overrides the default for one geometry instance.
   Tests use it.
+- **Travel planner in the journeys.** The natural Ishalgen drivers ask `BotTravelPlanner.PlanJourney`
+  first for every non-combat leg of 100 m or more: the SIM driver
+  (`SimulationNaturalIshalgenJourneyTests`) and the LIVE driver (natural decision, gathering and
+  inventory scenarios through `LiveBotSession.TravelPlanner`). It passes the bot's level and the
+  observed hostiles. The plan is used when it satisfies the hostiles as hard rules. Otherwise the
+  driver's ordinary search chain runs as before. Each attempt is traced as `travel-plan`, with its
+  waypoints and the static danger crossed, or as `travel-plan-unavailable`.
+  `AION_BOT_TRAVEL_PLANNER=0` turns the planner off without touching the navmesh.
+- **Fight your way in.** Monsters on the way are not a wall. When observed aggro circles close every
+  hostile-free route to an objective, `BotNavigationGeometry.FindFightThroughPath` plans the route
+  that fights least. Circles become costs, so avoidable monsters are skirted and unavoidable ones
+  crossed. `NaturalFightThrough.SelectNext` names the first monster that route enters. The route's
+  samples before that entry are outside every circle and end within spell range. The journey
+  (`TryFightThroughAsync`) walks that prefix, pulls that one monster with ordinary combat, rests,
+  observes again and re-plans, up to eight pulls per spawn hint. Every guarded approach and every
+  blocked spawn approach tries this before the older blocker heuristics. Each attempt is traced as
+  `fight-through-plan`, `fight-through-cleared` or `fight-through-pull-blocked`.
 - `BotNavMeshRouter.LastOutcome` says why the last request ended: `Routed`, `NoNavMesh`,
   `EndpointOffMesh`, `NotConnected`, `GeometryRejected`, `HazardRejected` or `NoApproachPoint`.
   It can go straight into a bot trace.
@@ -135,6 +152,18 @@ It builds in about 10 s.
 | Full journey, seed 1 | completed Q2000–Q2006, Q2100–Q2104 and Q2132, then stopped in Q2007: 11 observed aggro circles in the Mau camp closed every checked approach to Nalto (the journey doc's open tactical limit) | not rerun |
 | Q2007 checkpoint, seed 1 | failed in Q2005 (retreat could not outrun three attackers) or at Q2006 before the spacing fix | failed at Q2007 Rae (dead end at 620,2439 after a death) |
 
+With the travel planner wired in (2026-09-24), the Q2004 checkpoint passes in 33 s, and Q2006
+passes on seeds 1 and 2 in about 1.5 min each. The planner served 25–37 long legs per run, about
+a third of them through graph waypoints. With the planner on and off (`AION_BOT_TRAVEL_PLANNER`),
+full journeys on seeds 3 and 4 both reached Q2007 with 13 quests. Every run stopped on a route that
+observed monsters closed.
+
+With fight-through, full journeys on seeds 1, 3 and 4 made 5–7 ordinary pulls each and cleared
+their way through the Q2006 Mau farms and to Nalto. On seed 3 the Priest also reached the Rae
+leg. They still stop in Q2007, now on combat survival rather than routing. Two monsters engage,
+and `RetreatFromPackAsync` alternates between the same walked checkpoints until its five-replan
+limit. That retreat policy is the next thing to fix for the journey.
+
 Runs vary from one run to the next through combat outcomes, so single failures are not
 regressions by themselves. Q2007 has never passed on either planner. Two problems surfaced
 and were fixed along the way.
@@ -161,5 +190,7 @@ and were fixed along the way.
   interaction search (within 3 m). An exact route to them can report `NotConnected`.
 - **Teleports** are recorded as graph exits (`BotTravelExit`), but the planner walks. Using an
   exit is a dialog action the journey code has to take.
+- **The planner declines legs blocked by observed hostiles.** The driver's older chain, whose grid
+  backstop has a wider search, then decides. Combat approaches and retreats do not use the planner.
 - The **road art** also marks a few painted rocks on Poeta. These are cost hints only and change
   no walkability.

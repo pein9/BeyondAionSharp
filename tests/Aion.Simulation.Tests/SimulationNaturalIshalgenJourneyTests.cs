@@ -1,4 +1,5 @@
 using Aion.Bots.Navigation;
+using Aion.Bots.Navigation.NavMesh;
 using Aion.Bots.Movement;
 using Aion.Bots.Protocol;
 using Aion.Bots.Reflexes;
@@ -86,7 +87,12 @@ public sealed partial class SimulationFastScenarioTests
 			203533, 210734, 203514, 203543, 203532, 203531, 700128,
 			210363, 210367, 210369, 700124, 700093],
 			geometry);
-		var navigator = new NaturalSimulationNavigator(session, graph, geometry);
+		var navigator = new NaturalSimulationNavigator(session, graph, geometry)
+		{
+			// Level-aware roads-and-branches planning for long legs; null (grid/navmesh chain only)
+			// when the map has no baked navmesh or travel graph.
+			Planner = BotTravelPlanner.For(NaturalIshalgenRoads.MapId, geometry, fixture.DataManager.StaticData),
+		};
 		BotPosition? easternRoadIngressStart = null;
 		BotPosition[] easternRoadIngress = [];
 		NaturalSimulationCombat? navigationDefense = null;
@@ -401,16 +407,23 @@ public sealed partial class SimulationFastScenarioTests
 			var reasons = new List<string>();
 			foreach (BotWaypoint anchor in anchors.Take(12))
 			{
-				for (int guardClears = 0; guardClears <= 4; guardClears++)
+				for (int guardClears = 0; guardClears <= 8; guardClears++)
 				{
 					NaturalNavigationResult result = await NaturalIshalgenNavigator.ApproachNpcAsync(
 						contract.MapId, templateId, anchor.Position, navigator, token);
 					if (result.Arrived && result.TargetObjectId is int objectId) return objectId;
-					if (skipBlockedTarget && guardClears < 4 && result.TargetObjectId is int blockedObjectId &&
-						result.Reason == "No collision-checked route to the current destination." &&
-						navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == blockedObjectId) is { } objective &&
-						await TryClearObservedBlockerAsync(objective.Position, blockedObjectId))
-						continue;
+					// Monsters on the way are not a wall: fight through to the objective (observed or its
+					// shipped anchor) one pull at a time before giving up on this spawn hint.
+					if (guardClears < 8 && result.Reason is "No collision-checked route to the current destination." or
+							"New client-observed hazards exceeded the bounded replan budget.")
+					{
+						NaturalNavigationObject? seen = result.TargetObjectId is int blockedObjectId
+							? navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == blockedObjectId) : null;
+						int revivesBefore = combat.ReviveCount;
+						if (await TryClearObservedBlockerAsync(seen?.Position ?? anchor.Position, seen?.ObjectId))
+							continue;
+						if (combat.ReviveCount > revivesBefore) break;
+					}
 					if (skipBlockedTarget && result.TargetObjectId is int unavailableObjectId &&
 						result.Reason == "No collision-checked route to the current destination.")
 					{
@@ -516,9 +529,90 @@ public sealed partial class SimulationFastScenarioTests
 				$"last route: {navigator.LastRouteDiagnostic}");
 		}
 
+		// Fight your way in: when observed monsters close every hostile-free route, take the route that fights
+		// the least, walk its hostile-free prefix to a firing point just outside the first circle it enters,
+		// and pull that one monster with ordinary combat. True after a kill (the caller re-observes and
+		// re-plans); false when there is no terrain route or no safe pull.
+		async Task<bool> TryFightThroughAsync(BotPosition objective, int? objectiveObjectId, HashSet<int> rejected)
+		{
+			static float AggroRadius(int templateId)
+			{
+				var template = Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(templateId);
+				return template?.GetNpcTemplateType() == NpcTemplateType.MONSTER ? template.GetAggroRange() + 1f : 0f;
+			}
+			NaturalObservedMonster[] monsters = navigator.Observe().Npcs
+				.Where(npc => npc.ObjectId != objectiveObjectId)
+				.Select(npc => new NaturalObservedMonster(npc, AggroRadius(npc.TemplateId)))
+				.Where(monster => monster.Radius > 0).ToArray();
+			IReadOnlyList<BotPosition> fightRoute = geometry.FindFightThroughPath(contract.MapId, session.CurrentPosition,
+				objective, monsters.Select(m => new BotNavigationHazard(m.Npc.Position, m.Radius)).ToArray());
+			NaturalFightThroughBlocker? next = fightRoute.Count == 0 ? null
+				: NaturalFightThrough.SelectNext(session.CurrentPosition, fightRoute, monsters, rejected);
+			session.TraceDiagnostic("fight-through-plan", new Dictionary<string, object?>
+			{
+				["objective"] = objective,
+				["position"] = session.CurrentPosition,
+				["routePoints"] = fightRoute.Count,
+				["blockers"] = NaturalFightThrough.BlockersInOrder(session.CurrentPosition, fightRoute, monsters)
+					.Select(m => $"{m.Npc.TemplateId}/{m.Npc.ObjectId}").ToArray(),
+				["next"] = next == null ? null : $"{next.Monster.Npc.TemplateId}/{next.Monster.Npc.ObjectId}",
+				["firingPosition"] = next?.FiringPosition,
+			});
+			if (next == null) return false;
+			foreach (BotPosition[] chunk in next.Staging.Chunk(8))
+			{
+				if (!navigator.IsSegmentSafe(chunk, next.Monster.Npc.ObjectId)) return true; // new hostile: re-plan
+				await navigator.MoveAsync(chunk, token);
+				await navigator.SynchronizeAsync(token);
+				if (session.Api.World.IsDead) return false;
+			}
+			NaturalNavigationObject? target = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == next.Monster.Npc.ObjectId);
+			if (target == null) return true; // it moved away or despawned: re-plan from here
+			if (Distance(session.CurrentPosition, target.Position) > NaturalFightThrough.FiringRange + 2 ||
+				!geometry.HasLineOfSight(contract.MapId, session.CurrentPosition, target.Position))
+			{
+				rejected.Add(target.ObjectId);
+				return true;
+			}
+			int revivesBefore = combat.ReviveCount;
+			try
+			{
+				bool killed = await combat.TryKillAsync(target.ObjectId, token, session.CurrentPosition);
+				if (combat.ReviveCount > revivesBefore) return false;
+				if (!killed) { rejected.Add(target.ObjectId); return true; }
+				navigator.UnavailableObjects.Add(target.ObjectId);
+				session.TraceDiagnostic("fight-through-cleared", new Dictionary<string, object?>
+				{
+					["objective"] = objective,
+					["cleared"] = $"{target.TemplateId}/{target.ObjectId}",
+					["hp"] = session.Api.World.CurrentHp,
+					["position"] = session.CurrentPosition,
+				});
+				await combat.RestAsync(token);
+				return true;
+			}
+			catch (NaturalCombatApproachBlockedException exception)
+			{
+				session.TraceDiagnostic("fight-through-pull-blocked", new Dictionary<string, object?>
+				{
+					["blocker"] = target.ObjectId,
+					["reason"] = exception.Message,
+				});
+				rejected.Add(target.ObjectId);
+				return combat.ReviveCount == revivesBefore;
+			}
+		}
+
 		async Task<bool> TryClearObservedBlockerAsync(BotPosition objective, int? objectiveObjectId = null)
 		{
 			var rejected = new HashSet<int>();
+			// First the route that fights the least, pulled in order; then the older corridor heuristics.
+			for (int pull = 0; pull < 3; pull++)
+			{
+				int killsBefore = navigator.UnavailableObjects.Count;
+				if (!await TryFightThroughAsync(objective, objectiveObjectId, rejected)) break;
+				if (navigator.UnavailableObjects.Count > killsBefore) return true;
+			}
 			// A pack can block every checked detour even when a side guard's own
 			// circle misses the straight objective line. Try the direct corridor
 			// first, then a bounded twenty-metre shoulder of observed monsters.
@@ -2038,6 +2132,8 @@ public sealed partial class SimulationFastScenarioTests
 		public bool InCombat { get; set; }
 		public Func<int[], BotPosition, int, CancellationToken, Task>? DefendOnAttackAsync { get; set; }
 		public string LastRouteDiagnostic { get; private set; } = "none";
+		/// <summary>Travel planner tried first for long non-combat legs (see BotTravelPlanner.PlanJourney).</summary>
+		public BotTravelPlanner? Planner { get; init; }
 		public List<NaturalNavigationEvent> Events { get; } = [];
 		public HashSet<int> UnavailableObjects { get; } = [];
 		private BotPosition? lastMovementStart;
@@ -2061,6 +2157,25 @@ public sealed partial class SimulationFastScenarioTests
 			int map = session.Api.World.MapId ?? throw new InvalidDataException("SIM journey map unobserved.");
 			BotNavigationHazard[] hazards = ObservedHazards(destination);
 			float remaining = Distance(start, destination);
+			if (Planner != null && !InCombat && remaining >= BotTravelPlanner.MinimumJourneyDistance)
+			{
+				BotTravelPlan? plan = Planner.PlanJourney(map, start, destination, session.Api.World.Level, hazards);
+				session.TraceDiagnostic(plan == null ? "travel-plan-unavailable" : "travel-plan", new Dictionary<string, object?>
+				{
+					["start"] = start,
+					["destination"] = destination,
+					["level"] = session.Api.World.Level,
+					["observedHazards"] = hazards.Length,
+					["navmeshOutcome"] = BotNavMeshRouter.LastOutcome.ToString(),
+					["plan"] = plan == null ? null : BotTravelPlanner.Describe(plan),
+					["waypoints"] = plan?.Waypoints.Select(node => new { node.Id, node.Name, node.Kind }).ToArray(),
+				});
+				if (plan != null)
+				{
+					LastRouteDiagnostic = $"travel-plan: {BotTravelPlanner.Describe(plan)}, hazards={hazards.Length}, destination={destination}";
+					return Task.FromResult(plan.Route);
+				}
+			}
 			if (map == NaturalIshalgenRoads.MapId && !InCombat &&
 				session.CurrentStep.StartsWith("ni07-q2006", StringComparison.Ordinal))
 			{
