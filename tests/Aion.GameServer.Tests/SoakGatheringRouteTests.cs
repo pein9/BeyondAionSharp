@@ -40,12 +40,16 @@ public sealed class SoakGatheringRouteTests
 			}
 			if (map == 220010000)
 			{
-				// gather500-c b323 walked here and harvested, then failed the return search.
+				// gather500-c b323 walked here and harvested, then the bounded grid search found no return.
+				// The baked navmesh router finds it (every step still passes the same ground/collision
+				// check), so the node is now returnable; the grid alone still cannot find it.
 				var node = new BotPosition(480.537f, 2787.35f, 295.073f, 0);
 				var captured = new BotPosition(480.537f, 2787.35f, 295.0508f, 59);
 				Assert.NotEmpty(Path(home, node));
-				Assert.Empty(Path(captured, home));
-				Assert.Empty(SoakGatheringRoute.FindReturnablePath(home, node, home, Path));
+				Assert.NotEmpty(Path(captured, home));
+				Assert.NotEmpty(SoakGatheringRoute.FindReturnablePath(home, node, home, Path));
+				Assert.Empty(nav.Geometry.GridLocalPath(map, captured, home));
+				Assert.Empty(nav.Geometry.GridJourneyPath(map, captured, home));
 			}
 			IReadOnlyList<BotPosition> Path(BotPosition start, BotPosition end)
 			{

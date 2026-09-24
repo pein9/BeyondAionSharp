@@ -1,3 +1,4 @@
+using Aion.Bots.Navigation.NavMesh;
 using Aion.Bots.World;
 using Aion.GameServer.GeoEngine.Collision;
 using Aion.GameServer.GeoEngine.Models;
@@ -23,34 +24,122 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
         maps(mapId).CanSee(observer.X, observer.Y, observer.Z + 1.25f,
             target.X, target.Y, target.Z + 1.25f, instanceId, ignoreProperties);
 
-    /// <summary>Bounded local ground search when spawn/walker waypoints leave a gap. This is not a navmesh:
-    /// it cannot invent jumps, open doors or cross maps, and reports no route when its budget is exhausted.</summary>
-    public IReadOnlyList<BotPosition> FindLocalPath(int mapId, BotPosition start, BotPosition destination)
-        => FindGroundPath(mapId, start, destination, 200, 8192, 20);
+    /// <summary>Straight-line distance within which a failed navmesh request still gets the bounded grid
+    /// search (NPCs standing in collision, doors, gaps the voxel bake cannot express). Longer requests trust
+    /// the navmesh's answer instead of spending minutes on a grid search that cannot finish.</summary>
+    public const float GridFallbackDistance = 60f;
 
-    /// <summary>Bounded longer starter-journey search. Uses the same two-metre ground/collision checks,
-    /// not unchecked interpolation across gaps in the sparse spawn graph.</summary>
+    private BotNavMeshRouter? navMesh;
+    private bool navMeshResolved;
+
+    /// <summary>The baked-navmesh router used first by every path method below, or null when disabled
+    /// (<c>AION_BOT_NAVMESH=0</c>) or when no navmeshes are checked in. Maps without a baked navmesh
+    /// keep using the grid search.</summary>
+    public BotNavMeshRouter? NavMesh
+    {
+        get
+        {
+            if (!navMeshResolved)
+            {
+                navMesh = BotNavMeshSet.Default is { } set ? new BotNavMeshRouter(set, this) : null;
+                navMeshResolved = true;
+            }
+            return navMesh;
+        }
+    }
+
+    /// <summary>Uses the given navmeshes (or none) instead of the process default.</summary>
+    public BotNavigationGeometry WithNavMesh(BotNavMeshSet? set)
+    {
+        navMesh = set == null ? null : new BotNavMeshRouter(set, this);
+        navMeshResolved = true;
+        return this;
+    }
+
+    /// <summary>Checked route to <paramref name="destination"/> for short hops.</summary>
+    public IReadOnlyList<BotPosition> FindLocalPath(int mapId, BotPosition start, BotPosition destination)
+        => ViaNavMesh(mapId, start, destination, router => router.FindPath(mapId, start, destination, BotNavQuery.Default with { GroundCost = 1f }))
+            ?? GridLocalPath(mapId, start, destination);
+
+    /// <summary>Checked route for longer journeys, preferring mapped roads.</summary>
     public IReadOnlyList<BotPosition> FindJourneyPath(int mapId, BotPosition start, BotPosition destination)
-        => FindGroundPath(mapId, start, destination, 1000, 65536, 60);
+        => ViaNavMesh(mapId, start, destination, router => router.FindPath(mapId, start, destination))
+            ?? GridJourneyPath(mapId, start, destination);
 
     /// <summary>Checked ground route that stays outside client-observed aggro circles.
     /// If already inside one, only outward steps are allowed until clear.</summary>
     public IReadOnlyList<BotPosition> FindJourneyPathAvoiding(int mapId, BotPosition start,
         BotPosition destination, IReadOnlyList<BotNavigationHazard> hazards)
-        => FindGroundPath(mapId, start, destination, 1000, 131072, 180, hazards);
+        => ViaNavMesh(mapId, start, destination, router => router.FindPath(mapId, start, destination, BotNavQuery.Default with { Hazards = hazards }))
+            ?? GridJourneyPathAvoiding(mapId, start, destination, hazards);
 
     /// <summary>Find checked ground in Priest spell range with sight to the observed
     /// target. Other observed aggro circles remain forbidden; reaching the mob's
     /// occupied ground position is neither required nor treated as safe.</summary>
     public IReadOnlyList<BotPosition> FindRangedApproachPath(int mapId, BotPosition start,
         BotPosition target, IReadOnlyList<BotNavigationHazard> otherHazards)
+        => ViaNavMesh(mapId, start, target, router => router.FindRangedApproachPath(mapId, start, target, BotNavQuery.Default with { Hazards = otherHazards }))
+            ?? GridRangedApproachPath(mapId, start, target, otherHazards);
+
+    /// <summary>Road-preferring journey. With a navmesh, the roads baked into it (extracted from the
+    /// client map art) replace the hand-transcribed <paramref name="road"/> polyline; either way roads
+    /// change cost, never walkability.</summary>
+    public IReadOnlyList<BotPosition> FindRoadPreferredJourneyPath(int mapId, BotPosition start,
+        BotPosition destination, IReadOnlyList<BotRoadPoint> road,
+        IReadOnlyList<BotNavigationHazard> hazards)
+    {
+        ArgumentNullException.ThrowIfNull(road);
+        ArgumentNullException.ThrowIfNull(hazards);
+        return ViaNavMesh(mapId, start, destination, router => router.FindPath(mapId, start, destination,
+                BotNavQuery.Default with { Hazards = hazards, GroundCost = 1.5f }))
+            ?? GridRoadPreferredJourneyPath(mapId, start, destination, road, hazards);
+    }
+
+    /// <summary>Find checked ground inside the ordinary three-metre interaction radius when an
+    /// observed NPC's exact spawn point is occupied or otherwise not walkable. Never returns an
+    /// approach outside that radius, and does not assume that a nearby point can be teleported to.</summary>
+    public IReadOnlyList<BotPosition> FindInteractionPath(int mapId, BotPosition start, BotPosition target)
+        => ViaNavMesh(mapId, start, target, router => router.FindInteractionPath(mapId, start, target))
+            ?? GridInteractionPath(mapId, start, target);
+
+    /// <summary>Navmesh answer, or null when the caller should use the grid search: no navmesh for this
+    /// map, or a failed request short enough for the bounded grid search to settle.</summary>
+    private IReadOnlyList<BotPosition>? ViaNavMesh(int mapId, BotPosition start, BotPosition destination,
+        Func<BotNavMeshRouter, IReadOnlyList<BotPosition>> query)
+    {
+        BotNavMeshRouter? router = NavMesh;
+        if (router == null || !router.Covers(mapId)) return null;
+        IReadOnlyList<BotPosition> route = query(router);
+        if (route.Count > 0 || BotNavMeshRouter.LastOutcome == BotNavRouteOutcome.Routed) return route;
+        // Observed packs: the navmesh's local detours are bounded, so keep the grid's wider avoidance search
+        // as a backstop. Routing around hostiles is never worse than before the navmesh.
+        if (BotNavMeshRouter.LastOutcome == BotNavRouteOutcome.HazardRejected) return null;
+        return Distance(start, destination) <= GridFallbackDistance ? null : route;
+    }
+
+    /// <summary>Bounded local grid search (no navmesh). It cannot invent jumps, open doors or cross
+    /// maps, and reports no route when its budget is exhausted.</summary>
+    public IReadOnlyList<BotPosition> GridLocalPath(int mapId, BotPosition start, BotPosition destination)
+        => FindGroundPath(mapId, start, destination, 200, 8192, 20);
+
+    /// <summary>Bounded longer grid search (no navmesh), with the same two-metre ground/collision checks.</summary>
+    public IReadOnlyList<BotPosition> GridJourneyPath(int mapId, BotPosition start, BotPosition destination)
+        => FindGroundPath(mapId, start, destination, 1000, 65536, 60);
+
+    /// <summary>Grid search (no navmesh) that stays outside client-observed aggro circles.</summary>
+    public IReadOnlyList<BotPosition> GridJourneyPathAvoiding(int mapId, BotPosition start,
+        BotPosition destination, IReadOnlyList<BotNavigationHazard> hazards)
+        => FindGroundPath(mapId, start, destination, 1000, 131072, 180, hazards);
+
+    /// <summary>Grid search (no navmesh) for a ranged firing point with sight to the target.</summary>
+    public IReadOnlyList<BotPosition> GridRangedApproachPath(int mapId, BotPosition start,
+        BotPosition target, IReadOnlyList<BotNavigationHazard> otherHazards)
         => FindGroundPath(mapId, start, target, 200, 32768, 30, otherHazards,
             arrivalRadius: 20, arrivalPredicate: point => HasLineOfSight(mapId, point, target));
 
-    /// <summary>Prefer a mapped road on longer journeys only when both endpoints
-    /// can reasonably join it. This remains the same collision- and hazard-checked
-    /// A* search; map artwork changes cost, not walkability.</summary>
-    public IReadOnlyList<BotPosition> FindRoadPreferredJourneyPath(int mapId, BotPosition start,
+    /// <summary>Grid search (no navmesh) preferring a mapped road on longer journeys, only when both
+    /// endpoints can reasonably join it.</summary>
+    public IReadOnlyList<BotPosition> GridRoadPreferredJourneyPath(int mapId, BotPosition start,
         BotPosition destination, IReadOnlyList<BotRoadPoint> road,
         IReadOnlyList<BotNavigationHazard> hazards)
     {
@@ -76,10 +165,8 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
         return true;
     }
 
-    /// <summary>Find checked ground inside the ordinary three-metre interaction radius when an
-    /// observed NPC's exact spawn point is occupied or otherwise not walkable. Never returns an
-    /// approach outside that radius, and does not assume that a nearby point can be teleported to.</summary>
-    public IReadOnlyList<BotPosition> FindInteractionPath(int mapId, BotPosition start, BotPosition target)
+    /// <summary>Grid search (no navmesh) for ground within the three-metre interaction radius.</summary>
+    public IReadOnlyList<BotPosition> GridInteractionPath(int mapId, BotPosition start, BotPosition target)
     {
 		IReadOnlyList<BotPosition> nearbyGround = FindGroundPath(mapId, start, target,
 			1000, 65536, 60, arrivalRadius: 3);
@@ -89,7 +176,7 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
             float angle = sector * MathF.PI / 8f;
             var candidate = new BotPosition(target.X + 2 * MathF.Cos(angle),
                 target.Y + 2 * MathF.Sin(angle), target.Z, target.Heading);
-            IReadOnlyList<BotPosition> path = FindJourneyPath(mapId, start, candidate);
+            IReadOnlyList<BotPosition> path = GridJourneyPath(mapId, start, candidate);
             if (path.Count != 0 && Distance(path[^1], target) <= 3) return path;
         }
         return [];

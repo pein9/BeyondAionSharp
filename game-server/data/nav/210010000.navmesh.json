@@ -1,0 +1,42 @@
+{
+  "mapId": 210010000,
+  "mapName": "Poeta",
+  "bakerVersion": 4,
+  "settingsFingerprint": "5db8e45a00557337",
+  "settings": {
+    "cellSize": 0.3,
+    "cellHeight": 0.2,
+    "agentHeight": 1.6,
+    "agentRadius": 0.5,
+    "agentMaxClimb": 0.8,
+    "agentMaxSlope": 45,
+    "tileSizeCells": 128,
+    "regionMinSize": 8,
+    "regionMergeSize": 20,
+    "edgeMaxLength": 12,
+    "edgeMaxError": 1.3,
+    "vertsPerPoly": 6,
+    "detailSampleDistance": 6,
+    "detailSampleMaxError": 1,
+    "flagMergeVoxels": 1,
+    "swimDepth": 1.5,
+    "roadHalfWidth": 3
+  },
+  "sourceFingerprint": "49c7a47b0d1c9ab2",
+  "waterLevel": 100,
+  "tilesX": 80,
+  "tilesY": 80,
+  "tilesWithPolygons": 1954,
+  "polygons": 56211,
+  "polygonsByArea": {
+    "ground": 54401,
+    "road": 1235,
+    "water": 575
+  },
+  "doors": 0,
+  "roads": 696,
+  "maskSectors": 7083,
+  "modelTriangles": 267783,
+  "terrainTriangles": 4712450,
+  "navMeshSha256": "092a2415f962a12390d0dee988d49e922efed351acef23b1c083da2bd17d3979"
+}

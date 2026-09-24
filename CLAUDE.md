@@ -69,6 +69,7 @@ when it lives elsewhere.
 | Retail AI extractors and emitters | `tools/client-extract/` — `regen_check.py` runs the whole pipeline |
 | Run / DB / setup guide | `RUNNING.md` |
 | Automated player simulation (bots, SIM/LIVE modes, live log watching) | `docs/e2e-player-simulation-plan.md` — phased plan with TODOs |
+| Bot navigation (navmesh, roads, travel graph; generated, do not hand-edit) | `docs/bot-navigation.md`; data in `game-server/data/nav/`; tools `tools/Aion.NavBake`, `tools/nav/` |
 
 ## Build & test (C#)
 
@@ -102,6 +103,7 @@ pwsh -NoProfile -File scripts/live/test-cross-server-contract.ps1 # topology ide
 pwsh -NoProfile -File scripts/live/test-hardware-ban-controller.ps1 # exact seasonal epochs and owned Login fault safeguards (mock Docker)
 pwsh -NoProfile -File scripts/live/test-run-retention.ps1       # Full child runs must preserve sibling evidence
 pwsh -NoProfile -File scripts/e2e/test-full-suite.ps1            # breadth/soak selection and fail-fast orchestration
+dotnet run --project tools/Aion.NavBake -- check --maps baked # checked-in bot navmeshes match their inputs
 pwsh -NoProfile -File scripts/e2e/run-fast.ps1                 # additionally, before gameplay-change commits (Docker)
 ```
 
