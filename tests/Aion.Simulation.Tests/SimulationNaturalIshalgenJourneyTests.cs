@@ -1251,8 +1251,14 @@ public sealed partial class SimulationFastScenarioTests
 						}
 					}, token);
 			}
+			int unreachableAreas = 0;
 			for (int attempt = 0; ItemCount(session.Api.World, 182203006) < 3; attempt++)
 			{
+				// Route failures take no game time, so a pocket closed by observed packs could otherwise
+				// rotate through the search areas forever. Bound the whole search loudly.
+				if (attempt >= 120)
+					throw new InvalidDataException($"Q2005 Stalker search exceeded 120 attempts at {session.CurrentPosition}: " +
+						string.Join(" | ", searchNotes.TakeLast(8)));
 				BotPosition isolatedStalker = successfulStalkerArea ??
 					stalkerSearchAreas[attempt % stalkerSearchAreas.Length];
 				session.BeginStep($"ni07-q2005-stalker-{attempt + 1}",
@@ -1363,8 +1369,17 @@ public sealed partial class SimulationFastScenarioTests
 							.Select(npc => $"{npc.TemplateId}@{Distance(npc.Position, session.CurrentPosition):F1}"))}");
 					if (successfulStalkerArea != null && ++preferredAreaMisses >= 2)
 						successfulStalkerArea = null;
+					if (++unreachableAreas >= stalkerSearchAreas.Length)
+					{
+						// Every shipped area is closed from here: leave the pocket the ordinary way
+						// (checked walk through observed guards, else the learned Return skill).
+						unreachableAreas = 0;
+						corridorClearAttempts = 0;
+						mijou = await ReachMijouFromFieldAsync();
+					}
 					continue; // Try another shipped area; one blocked corridor is not proof all are blocked.
 				}
+				unreachableAreas = 0;
 				await session.SynchronizeAsync(token);
 				NaturalNavigationObject? observedStalker = navigator.Observe().Npcs
 					.Where(npc => npc.TemplateId is 210395 or 210396 or 210750 &&
@@ -2126,6 +2141,14 @@ public sealed partial class SimulationFastScenarioTests
 					route = geometry.FindJourneyPathAvoiding(map, start, destination, hazards);
 				}
 			}
+			if (route.Count == 0)
+				session.TraceDiagnostic("route-failed", new Dictionary<string, object?>
+				{
+					["start"] = start,
+					["destination"] = destination,
+					["navmeshOutcome"] = Aion.Bots.Navigation.NavMesh.BotNavMeshRouter.LastOutcome.ToString(),
+					["hazardCircles"] = hazards.Select(hazard => new { hazard.Position.X, hazard.Position.Y, hazard.Position.Z, hazard.Radius }).ToArray(),
+				});
 			LastRouteDiagnostic = $"checked={checkedRoutePoints}, avoided={route.Count}, " +
 				$"destination={destination}, distance={Distance(start, destination):F1}, " +
 				$"hazards=[{string.Join(';', hazards.Select(hazard =>

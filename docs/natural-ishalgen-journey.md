@@ -92,6 +92,12 @@ the C# handler agrees on this boundary.
 
 ## Current foundation and remaining work
 
+> **Navigation update 2026-09-24.** Route planning now goes through a baked navmesh with mapped
+> roads and a travel graph ([bot-navigation.md](bot-navigation.md)). `BotNavigationGeometry`'s path
+> methods use it automatically; every step still passes the same ground/collision check and the
+> observed-hazard rule. Entries below that say "navigation has no navmesh" describe the grid search
+> that preceded it; set `AION_BOT_NAVMESH=0` to reproduce those runs.
+
 At the Phase 10 closeout, real client packets, movement timing, combat, gathering,
 quest dialogs, persistence, and logging are exercised by scenarios. The missing
 layer is a continuous player policy that selects and combines those actions and
