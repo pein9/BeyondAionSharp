@@ -133,6 +133,11 @@ public sealed partial class SimulationFastScenarioTests
 		await session.WaitForPacketAsync(typeof(SM_ATTACK_RESPONSE), token);
 
 		session.BeginStep("s04", "accept-after-fourteen-hundred-milliseconds");
+		// This scenario measures the auto-attack gate, not damage. The skill's hit lands during the wait below
+		// (hitTime 800 ms); after the first auto-attack a strong roll could kill the level-1 target, leaving the
+		// final swing nothing to hit. Which target and which rolls depend on spawn data, so start the wait at
+		// full health: one Ferocious Strike cannot kill a full-health snuffler.
+		target.GetLifeStats().SetCurrentHp(target.GetLifeStats().GetMaxHp());
 		await session.AdvanceAsync(TimeSpan.FromMilliseconds(900), token);
 		await session.SendPacketAsync(GameClientPackets.Attack(target.GetObjectId(), 2, 0, 0), token);
 		await session.WaitForPacketAsync(typeof(SM_ATTACK), token);
