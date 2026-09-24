@@ -87,7 +87,8 @@ public sealed class BotNavWorld
 		hash.AppendData(System.Text.Encoding.UTF8.GetBytes(WaterLevel(mapId).ToString(System.Globalization.CultureInfo.InvariantCulture)));
 		hash.AppendData(JsonSerializer.SerializeToUtf8Bytes(roads));
 		string mask = BotNavMask.PathFor(RepoRoot, mapId);
-		if (File.Exists(mask)) hash.AppendData(File.ReadAllBytes(mask));
+		// Text inputs are hashed with normalized line endings so a checkout's CRLF conversion is not "stale".
+		if (File.Exists(mask)) hash.AppendData(System.Text.Encoding.UTF8.GetBytes(File.ReadAllText(mask).Replace("\r\n", "\n")));
 		return Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant()[..16];
 	}
 }
