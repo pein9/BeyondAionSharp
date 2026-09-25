@@ -242,6 +242,14 @@ their retail deck or platform (the Eyvindr peon under the Anturoon deck, the dun
 Munin, the Methu egg); those nine heights are applied, with the travel graph and geo golden
 regenerated.
 
+The batches on the lifted heights surfaced three last journey gaps, none about placement: the
+Return fallback cast within the client's own cast interval after a Smite (it now waits the gate
+out), the fight-through advance only closed on a blocker within 40 m (it now walks the checked
+route from any distance and re-plans the pull within 30 m, which is what reaches Hatata's cave),
+and a death mid-kill or a target that reset out of view ended the step (kill steps now walk back
+and try again, up to six times). A fight-through walk that ends at the objective itself is
+reported as arrival. With those, four of four seeds completed the journey with no deaths at all.
+
 ## Regenerating
 
 ```powershell

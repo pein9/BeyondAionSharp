@@ -919,6 +919,9 @@ public sealed partial class SimulationFastScenarioTests
 			NaturalNavigationObject? walkBlocker = null;
 			if (next == null)
 			{
+				// The walk below can end within arm's reach of the objective (2.8 m from Munin on his platform),
+				// where no route of any kind is left to plan: report success so the navigator confirms arrival.
+				if (Distance(session.CurrentPosition, objective) <= 3f) return true;
 				// The strict router refused (a circle's clearance margin closes the last metres) but the
 				// checked fight-through route enters no circle: walk it, segment by segment, as a player would.
 				if (fightRouteOpen && Distance(session.CurrentPosition, objective) > 3 &&
@@ -978,8 +981,8 @@ public sealed partial class SimulationFastScenarioTests
 					NaturalNavigationObject? advance = blockers
 						.Select(b => navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == b.ObjectId))
 						.OfType<NaturalNavigationObject>()
-						.Where(npc => Distance(session.CurrentPosition, npc.Position) <= 40)
 						.OrderBy(npc => Distance(session.CurrentPosition, npc.Position)).FirstOrDefault();
+					const float PullRange = 30f;
 					if (advance != null && fightRoute.Count > 1)
 					{
 						int closest = Enumerable.Range(0, fightRoute.Count)
@@ -991,6 +994,7 @@ public sealed partial class SimulationFastScenarioTests
 							["routePoints"] = closest + 1,
 							["position"] = session.CurrentPosition,
 						});
+						bool far = Distance(session.CurrentPosition, advance.Position) > PullRange;
 						foreach (BotPosition[] pair in fightRoute.Take(closest + 1).Skip(1).Chunk(2))
 						{
 							await navigator.MoveAsync(pair, token);
@@ -998,6 +1002,8 @@ public sealed partial class SimulationFastScenarioTests
 							if (session.Api.World.IsDead) return false;
 							target = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == advance.ObjectId);
 							if (target == null || !OutOfReach(target)) break;
+							// Started far away: stop once within pull range and plan a proper pull from here.
+							if (far && Distance(session.CurrentPosition, target.Position) <= PullRange) return true;
 						}
 					}
 					if (target == null || OutOfReach(target))
@@ -1071,6 +1077,8 @@ public sealed partial class SimulationFastScenarioTests
 			// First the route that fights the least, pulled in order; then the older corridor heuristics.
 			for (int pull = 0; pull < 3; pull++)
 			{
+				// A fight-through walk can end at the objective itself: hand back so the navigator confirms arrival.
+				if (Distance(session.CurrentPosition, objective) <= 3f) return true;
 				int killsBefore = navigator.UnavailableObjects.Count;
 				if (!await TryFightThroughAsync(objective, objectiveObjectId, rejected))
 				{
@@ -1084,7 +1092,8 @@ public sealed partial class SimulationFastScenarioTests
 					}
 					break;
 				}
-				if (navigator.UnavailableObjects.Count > killsBefore) return true;
+				if (navigator.UnavailableObjects.Count > killsBefore ||
+					Distance(session.CurrentPosition, objective) <= 3f) return true;
 			}
 			// A pack can block every checked detour even when a side guard's own
 			// circle misses the straight objective line. Try the direct corridor
@@ -1202,6 +1211,8 @@ public sealed partial class SimulationFastScenarioTests
 			for (int attempt = 1; ; attempt++)
 			{
 				packetStart = session.PacketHistory.Count;
+				TimeSpan castGate = session.Api.Timing.TimeUntilCast(returnSkillId);
+				if (castGate > TimeSpan.Zero) await session.AdvanceAsync(castGate + TimeSpan.FromMilliseconds(1), token);
 				await session.SendPacketAsync(session.Api.Target(session.CharacterId), token);
 				await session.SendPacketAsync(session.Api.Cast(new SpellCastData(returnSkillId,
 					checked((byte)learned!.Level), 0) { TargetObjectId = session.CharacterId }), token);
@@ -2518,8 +2529,7 @@ public sealed partial class SimulationFastScenarioTests
 						if (targetIds.Length == 0) throw new InvalidDataException($"Q{plan.Id} kill has no shipped target.");
 						for (int kill = 0; kill < operation.Count; kill++)
 						{
-							int target = await ApproachShippedSpawnAsync(targetIds[kill % targetIds.Length]);
-							await combat.KillAsync(target, token);
+							int target = await KillShippedSpawnAsync(targetIds[kill % targetIds.Length]);
 							navigator.UnavailableObjects.Add(target);
 							await combat.RestAsync(token);
 						}
@@ -2542,8 +2552,7 @@ public sealed partial class SimulationFastScenarioTests
 									await UseAndLootQuestObjectAsync(sourceId, operation.ItemId, skipBlockedTarget: true));
 								continue;
 							}
-							int source = await ApproachShippedSpawnAsync(sourceId);
-							await combat.KillAsync(source, token);
+							int source = await KillShippedSpawnAsync(sourceId);
 							await TryLootCorpseItemAsync(session, source, operation.ItemId, token);
 							await combat.RestAsync(token);
 							navigator.UnavailableObjects.Add(source);
@@ -2583,6 +2592,31 @@ public sealed partial class SimulationFastScenarioTests
 					default:
 						throw new InvalidDataException($"Q{plan.Id} needs natural {operation.Kind} capability.");
 				}
+			}
+		}
+
+		// Kill one shipped spawn of this template. A death mid-fight ends the engagement without kill
+		// evidence (the monster resets while the bot revives at the obelisk): walk back and fight again,
+		// as a player does, rather than treating the vanished target as an error. A target that despawns
+		// or walks out of view for another reason is simply looked for again.
+		async Task<int> KillShippedSpawnAsync(int templateId)
+		{
+			for (int attempt = 1; ; attempt++)
+			{
+				int target = await ApproachShippedSpawnAsync(templateId);
+				int revives = combat.ReviveCount;
+				if (await combat.TryKillAsync(target, token)) return target;
+				bool died = combat.ReviveCount > revives;
+				session.TraceDiagnostic(died ? "kill-retry-after-death" : "kill-target-vanished", new Dictionary<string, object?>
+				{
+					["template"] = templateId,
+					["target"] = target,
+					["attempt"] = attempt,
+					["position"] = session.CurrentPosition,
+				});
+				if (attempt >= 6)
+					throw new InvalidDataException($"NPC {templateId} was not killed in {attempt} attempts (last target {target}).");
+				await combat.RestAsync(token);
 			}
 		}
 
