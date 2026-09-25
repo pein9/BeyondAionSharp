@@ -87,4 +87,17 @@ public sealed class NaturalPullPlannerTests
 	}
 
 	private static float Distance(BotPosition a, BotPosition b) => MathF.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
+
+	[Fact]
+	public void AddsAreTheSupportersAndTheCirclesThatReachTheFight_NothingElse()
+	{
+		// Hatata at the origin; the bot fights from 12 m out. A Stalker 6 m behind him supports him (8 + 2 m);
+		// an unrelated-tribe monster 14 m to the side does not help and its circle misses the spot; a second
+		// unrelated monster stands 9 m from the firing spot: its 8 m circle reaches the 3 m melee band.
+		NaturalPullMonster hatata = M(1, 0, 0), supporter = M(2, -6, 0), bystander = M(3, 0, -14, tribe: "KARNIF"),
+			nearSpot = M(4, 12, 9, tribe: "KARNIF"), far = M(5, 40, 40);
+		BotPosition spot = P(12, 0);
+		IReadOnlyList<NaturalPullMonster> adds = NaturalPullPlanner.AddsAt(hatata, spot, [hatata, supporter, bystander, nearSpot, far], Support, Sight);
+		Assert.Equal([2, 4], adds.Select(add => add.Npc.ObjectId).Order());
+	}
 }

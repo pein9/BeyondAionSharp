@@ -39,6 +39,26 @@ public static class NaturalPullPlanner
 		.ToArray();
 
 	/// <summary>
+	/// Everything that joins a melee fight with <paramref name="target"/> fought from <paramref name="fightSpot"/>,
+	/// and nothing else: its supporters under the server's assist rule (<see cref="Helpers"/>), plus any monster
+	/// whose own aggro circle reaches where the bot stands (within <paramref name="meleeReach"/> of the spot).
+	/// A monster that is merely nearby, with a tribe that does not help and a circle that does not reach, is
+	/// left alone; killing it would only cost time and a respawn window.
+	/// </summary>
+	public static IReadOnlyList<NaturalPullMonster> AddsAt(NaturalPullMonster target, BotPosition fightSpot,
+		IReadOnlyList<NaturalPullMonster> monsters, Func<string, string, bool> canSupport,
+		Func<BotPosition, BotPosition, bool>? lineOfSight = null, float meleeReach = 3f)
+	{
+		var adds = new List<NaturalPullMonster>(Helpers(target, fightSpot, monsters, canSupport, lineOfSight));
+		foreach (NaturalPullMonster monster in monsters)
+			if (monster.Npc.ObjectId != target.Npc.ObjectId && monster.AggroRadius > 0 &&
+				adds.All(add => add.Npc.ObjectId != monster.Npc.ObjectId) &&
+				Near(monster, fightSpot, monster.AggroRadius + meleeReach, lineOfSight))
+				adds.Add(monster);
+		return adds;
+	}
+
+	/// <summary>
 	/// Best pull among <paramref name="targets"/> (earlier entries win ties, e.g. route order). Firing
 	/// candidates per target: the given staging points plus a ring at 60–95% of spell range around it.
 	/// <paramref name="reachable"/> must say whether the bot can walk to a spot outside the observed

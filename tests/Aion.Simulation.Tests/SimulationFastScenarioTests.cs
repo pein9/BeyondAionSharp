@@ -835,6 +835,11 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		public ValueTask DisposeAsync() => Session.DisposeAsync();
 	}
 
+	/// <summary>The server refused a dialog because the NPC is out of talk range (STR_DIALOG_TOO_FAR_TO_TALK):
+	/// a walking NPC moved on after the client-estimated arrival. Callers walk up to it again and retry.</summary>
+	private sealed class DialogTooFarException()
+		: InvalidOperationException("The NPC is too far to talk to (STR_DIALOG_TOO_FAR_TO_TALK); approach it again.");
+
 	private sealed class SimulationL0Session : IL0ScenarioSession, IAsyncDisposable
 	{
 		private readonly SimulationWorldFixture fixture;
@@ -1290,27 +1295,68 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		private async Task<DecodedBotServerPacket> WaitForAsync(Type packetType, CancellationToken cancellationToken)
 			=> await WaitForAsync(packetType, cancellationToken, null);
 
+		/// <summary>A single packet wait never blocks a run for good: a wait for a dialog window the server had
+		/// refused once ran until the batch runner's 45-minute cap. Three minutes of real time is far beyond any
+		/// legitimate wait in a simulated session.</summary>
+		private static readonly TimeSpan PacketWaitLimit = TimeSpan.FromMinutes(3);
+
 		private async Task<DecodedBotServerPacket> WaitForAsync(Type? packetType, CancellationToken cancellationToken,
 			Func<DecodedBotServerPacket, bool>? predicate)
 		{
+			using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+			limit.CancelAfter(PacketWaitLimit);
 			while (true)
 			{
-				DecodedBotServerPacket packet = await ReadNextAsync(cancellationToken);
+				DecodedBotServerPacket packet;
+				try
+				{
+					packet = await ReadNextAsync(limit.Token);
+				}
+				catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+				{
+					throw new TimeoutException($"No {packetType?.Name ?? "matching"} packet within {PacketWaitLimit.TotalMinutes:F0} minutes " +
+						$"of real time (step {currentStep}; last packet {(PacketHistory.Count > 0 ? PacketHistory[^1].PacketType.Name : "none")}).");
+				}
 				BotClientPacket? response = api.Observe(packet);
 				if (response != null)
 					await SendAsync(response, cancellationToken);
 				if (packet.PacketType == typeof(SM_ENTER_WORLD_CHECK) && packet.Get<byte>("msg") != 0)
 					throw new InvalidDataException($"SM_ENTER_WORLD_CHECK refused entry with message {packet.Get<byte>("msg")}.");
+				if (packetType == typeof(SM_DIALOG_WINDOW) && packet.PacketType == typeof(SM_SYSTEM_MESSAGE) &&
+					packet.Get<object>("name") is "STR_DIALOG_TOO_FAR_TO_TALK")
+					throw new DialogTooFarException();
 				if ((packetType == null || packet.PacketType == packetType) && (predicate == null || predicate(packet)))
 					return packet;
 			}
 		}
 
+		// A wait abandoned by a real-time timeout (the 5 s loot list, the 2 s finish-quest reply, the wait cap)
+		// leaves the transport iterator's MoveNextAsync pending. The next wait must resume that same call: an
+		// async iterator throws a bare InvalidOperationException on re-entry, and the packet it was about to
+		// yield would be lost.
+		private Task<bool>? pendingRead;
+
 		private async Task<DecodedBotServerPacket> ReadNextAsync(CancellationToken cancellationToken)
 		{
 			IAsyncEnumerator<DecodedBotServerPacket> active = packets
 				?? throw new EndOfStreamException("Simulation game transport ended before the expected packet.");
-			if (!await active.MoveNextAsync().AsTask().WaitAsync(cancellationToken))
+			Task<bool> read = pendingRead ??= active.MoveNextAsync().AsTask();
+			bool moved;
+			try
+			{
+				moved = await read.WaitAsync(cancellationToken);
+			}
+			catch (OperationCanceledException) when (!read.IsCompleted)
+			{
+				throw; // the read stays pending for the next wait
+			}
+			catch
+			{
+				pendingRead = null;
+				throw;
+			}
+			pendingRead = null;
+			if (!moved)
 				throw new EndOfStreamException("Simulation game transport ended before the expected packet.");
 			DecodedBotServerPacket packet = active.Current;
 			PacketTypes.Add(packet.PacketType.Name);

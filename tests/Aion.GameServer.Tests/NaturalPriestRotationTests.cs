@@ -92,4 +92,26 @@ public sealed class NaturalPriestRotationTests
 		Assert.False(NaturalHostility.IsAggressive(data.NpcDataDh.GetNpcTemplate(203552), data.TribeRelations, TribeClass.PC_DARK));
 		Assert.False(NaturalHostility.IsAggressive(null, data.TribeRelations, TribeClass.PC_DARK));
 	}
+
+	[Fact]
+	public void EmergencyComesEarlierAgainstASeasonedTargetWithASecondAttacker()
+	{
+		Assert.Equal(35, NaturalPriestCombatPolicy.EmergencyEnterPercent(1, true));
+		Assert.Equal(35, NaturalPriestCombatPolicy.EmergencyEnterPercent(2, false));
+		Assert.Equal(55, NaturalPriestCombatPolicy.EmergencyEnterPercent(2, true));
+		Assert.Equal(65, NaturalPriestCombatPolicy.EmergencyExitPercent(2, true));
+		Assert.Equal(45, NaturalPriestCombatPolicy.EmergencyExitPercent(1, false));
+	}
+
+	[Fact]
+	public void WalksUpToARangedMonsterThatHoldsItsGround()
+	{
+		// Thorned ampha: attack range 37 m, rooted. Smite cooling, 8 m out: a chaser gets waited for, a plant gets walked to.
+		var smiteCooling = new Dictionary<int, DateTimeOffset> { [1229] = Now.AddSeconds(1.5) };
+		NaturalCombatObservation chaser = At(8, cooldowns: smiteCooling);
+		Assert.Equal("wait", NaturalPriestCombatPolicy.Decide(chaser, Now).Action);
+		Assert.Equal("approach", NaturalPriestCombatPolicy.Decide(chaser with { TargetRanged = true }, Now).Action);
+		// Adjacent to it, the melee rotation applies as to anything else.
+		Assert.Equal((ushort)1814, NaturalPriestCombatPolicy.Decide(At(2.3f, attackers: 1) with { TargetRanged = true }, Now).Skill?.Id);
+	}
 }

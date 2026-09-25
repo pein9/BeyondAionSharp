@@ -47,7 +47,8 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	bool LifePotionReady = false, bool ManaPotionReady = false, int NearbyAggressors = 0,
 	int? TargetHpPercent = null, bool HasHealedThisFight = false,
 	bool HasHotPotion = false, bool HotPotionReady = false, bool HotPotionActive = false,
-	bool Cornered = false, bool TargetAdjacent = false, bool InEmergency = false);
+	bool Cornered = false, bool TargetAdjacent = false, bool InEmergency = false, bool TargetSeasoned = false,
+	bool TargetRanged = false);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);
@@ -72,6 +73,16 @@ public static class NaturalPriestCombatPolicy
 	public const float MeleeReach = 3f;
 
 	public const int HealPercentSingle = 70, HealPercentMultiple = 55, EmergencyPercent = 35, EmergencyClearPercent = 45;
+
+	/// <summary>The HP percentage at which a fight becomes an emergency (heal chain and potions until
+	/// <see cref="EmergencyExitPercent"/>). Earlier against a Seasoned or better target with a second attacker on
+	/// the bot: two swings a round and interrupted heals made 35% too late against Hatata the Torturer
+	/// (1,821 HP, stuns), where every death in the Ishalgen batches happened.</summary>
+	public static int EmergencyEnterPercent(int attackers, bool targetSeasoned) =>
+		attackers >= 2 && targetSeasoned ? 55 : EmergencyPercent;
+
+	public static int EmergencyExitPercent(int attackers, bool targetSeasoned) =>
+		EmergencyEnterPercent(attackers, targetSeasoned) + (EmergencyClearPercent - EmergencyPercent);
 
 	public static NaturalCombatChoice Decide(NaturalCombatObservation state, DateTimeOffset now,
 		IEnumerable<NaturalPriestSkill>? catalog = null)
@@ -116,7 +127,7 @@ public static class NaturalPriestCombatPolicy
 		}
 		if (urgent && heal != null && Eligible(heal, state.TargetObjectId, 0, state, now, reserveHeal: false))
 			return Choice("cast-self", heal, state.InEmergency
-				? $"Emergency: HP fell to {EmergencyPercent}% and has not recovered to {EmergencyClearPercent}%."
+				? $"Emergency: HP fell to {EmergencyEnterPercent(state.NearbyAggressors, state.TargetSeasoned)}% and has not recovered to {EmergencyExitPercent(state.NearbyAggressors, state.TargetSeasoned)}%."
 				: $"HP is at or below {healPercent}% during a client-observed fight with {state.NearbyAggressors} attackers.");
 		if (critical && state.HasLifePotion && state.LifePotionReady)
 			return Choice("life-potion", null, "Critical HP and self-heal is unavailable; consume an owned life potion.");
@@ -149,6 +160,8 @@ public static class NaturalPriestCombatPolicy
 					? $"Learned {role} is ready at melee and leaves healing mana reserved."
 					: $"Learned {role} is in range, ready, and leaves healing mana reserved.");
 		}
+		if (!adjacent && state.TargetRanged)
+			return Choice("approach", null, "Nothing ready at range and the target attacks from range, so it will not close: walk up to it.");
 		if (!adjacent)
 			return Choice("wait", null, "Nothing ready at range; the pulled monster is closing, so hold position.");
 		return Choice("attack", null, "No skill is ready at melee; swing the mace.");

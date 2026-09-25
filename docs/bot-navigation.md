@@ -250,6 +250,38 @@ and a death mid-kill or a target that reset out of view ended the step (kill ste
 and try again, up to six times). A fight-through walk that ends at the objective itself is
 reported as arrival. With those, four of four seeds completed the journey with no deaths at all.
 
+### Quest kills are planned pulls, and only the adds that would join are cleared (2026-09-25)
+
+Every death left in the batches was one fight: Hatata the Torturer (1,821 HP, Seasoned, stuns) with
+a second or third Gray Mane on the bot. The quest-kill path used to walk to arm's reach of its
+target, so the fight started wherever the monster aggroed, with whatever was near. It now stops at
+pull range and plans the fight like any other pull:
+
+- **Who joins** is the server's own rule, not a radius. `AggroEventHandler`: when a monster
+  aggroes it broadcasts for support, and every NPC whose tribe can support it and that is within
+  *its own* aggro range + 2 m of the monster or of the attacker (with line of sight) comes; plus
+  any monster whose circle covers where the bot stands. `NaturalPullPlanner.AddsAt` evaluates
+  exactly that at the planned firing spot (the priest opens at range and holds there). A monster
+  that is merely nearby, with a tribe that does not help and a circle that misses the spot, is left
+  alone: killing it costs time and a respawn window for nothing.
+- **Order**: the firing spot with the fewest adds; each add pulled and killed first, itself from
+  the spot with the fewest adds of its own, so every fight stays one-on-one; rest only when
+  needed inside the 180 s respawn window; the target engaged at 80 % HP / 60 % MP or better.
+- **No clean spot** (two patrols standing at Hatata): wait up to a minute for patrols to walk on
+  and plan again; failing that, take the adds at the target's own spot first, then walk in.
+- Firing spots avoid patrol paths and respawn points (the shipped spawn circles), falling back to
+  the old choice only when nothing else exists.
+- A **Seasoned or better target with a second attacker** makes the fight an emergency at 55 % HP
+  instead of 35 %: heal chain and potions until 65 %.
+
+Two companions fell out of the same batches. A monster that attacks from range and never closes
+(the thorned ampha, 37 m) is walked up to: a hit no longer implies adjacency for it, and a range
+rejection closes to the rejected skill's own reach. A server-side line-of-sight refusal
+(`STR_SKILL_OBSTACLE`, huts and fences the bot's geometry does not see) closes to melee instead of
+re-anchoring. And a dialog refused as "too far to talk" (a walking start NPC moved on after the
+client-estimated arrival) re-approaches the NPC; a single packet wait is capped at three minutes
+of real time, so such a case fails with a message instead of running to the batch cap.
+
 ## Regenerating
 
 ```powershell
