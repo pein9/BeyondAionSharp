@@ -7,7 +7,17 @@ using Aion.GameServer.World.Geo;
 
 namespace Aion.Bots.Navigation;
 
-public readonly record struct BotNavigationHazard(BotPosition Position, float Radius);
+/// <summary>An observed monster's aggro circle. Membership is a 3D distance, as the server measures aggro
+/// range (Java <c>MathUtil.isInRange</c> with x, y and z): a monster under a deck or on a ledge 12 m below
+/// does not aggro the bot walking above it.</summary>
+public readonly record struct BotNavigationHazard(BotPosition Position, float Radius)
+{
+	public float DistanceTo(BotPosition point) => MathF.Sqrt(
+		(point.X - Position.X) * (point.X - Position.X) + (point.Y - Position.Y) * (point.Y - Position.Y) +
+		(point.Z - Position.Z) * (point.Z - Position.Z));
+
+	public bool Contains(BotPosition point) => DistanceTo(point) < Radius;
+}
 
 /// <summary>Ground-only bot routes over the same checked-in geometry used by the server.</summary>
 public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId, IgnoreProperties ignoreProperties)
@@ -371,17 +381,17 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
         float previousExposure = 0, nextExposure = 0;
         foreach (BotNavigationHazard hazard in hazards)
         {
-            float nextDistance = HorizontalDistance(next, hazard.Position);
+            float nextDistance = hazard.DistanceTo(next);
             if (nextDistance >= hazard.Radius) continue;
-            float previousDistance = HorizontalDistance(previous, hazard.Position);
-            if (HorizontalDistance(start, hazard.Position) >= hazard.Radius ||
+            float previousDistance = hazard.DistanceTo(previous);
+            if (hazard.DistanceTo(start) >= hazard.Radius ||
                 previousDistance >= hazard.Radius) return false; // Do not enter or re-enter a hazard.
         }
         foreach (BotNavigationHazard hazard in hazards)
         {
-            if (HorizontalDistance(start, hazard.Position) >= hazard.Radius) continue;
-            previousExposure += MathF.Max(0, hazard.Radius - HorizontalDistance(previous, hazard.Position));
-            nextExposure += MathF.Max(0, hazard.Radius - HorizontalDistance(next, hazard.Position));
+            if (hazard.DistanceTo(start) >= hazard.Radius) continue;
+            previousExposure += MathF.Max(0, hazard.Radius - hazard.DistanceTo(previous));
+            nextExposure += MathF.Max(0, hazard.Radius - hazard.DistanceTo(next));
         }
         // Overlapping circles can make moving outward from each individual mob
         // geometrically impossible. Permit a checked escape only when total

@@ -134,6 +134,14 @@
     "fixedIn": "9d445eb63f9d999bf347af7bb00a78fc28088372"
   },
   {
+    "fp": "3aae81d7",
+    "firstSeenSha": "1729efecc93bf65407f1a076b22dc63c08efc90f",
+    "lastSeenSha": "1729efecc93bf65407f1a076b22dc63c08efc90f",
+    "lastSeenRun": "r20260924-165845",
+    "count": 5,
+    "status": "new"
+  },
+  {
     "fp": "46ec4a02",
     "firstSeenSha": "d6a0a3d38e573648529019fe3409f413d86995b1",
     "lastSeenSha": "d6a0a3d38e573648529019fe3409f413d86995b1",

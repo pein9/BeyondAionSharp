@@ -27,7 +27,6 @@ public static class NaturalPullPlanner
 {
 	public const float SupportRangeOffset = 2f;
 	public const float SpellRange = 22f;
-	private const float VerticalBand = 10f;
 
 	/// <summary>Monsters that would come to <paramref name="target"/>'s aid when it is hit from
 	/// <paramref name="firingPosition"/>.</summary>
@@ -96,7 +95,7 @@ public static class NaturalPullPlanner
 
 	private static bool Near(NaturalPullMonster monster, BotPosition point, float range,
 		Func<BotPosition, BotPosition, bool>? lineOfSight) =>
-		Horizontal(monster.Npc.Position, point) <= range && MathF.Abs(monster.Npc.Position.Z - point.Z) < VerticalBand &&
+		new BotNavigationHazard(monster.Npc.Position, range).DistanceTo(point) <= range &&
 		(lineOfSight == null || lineOfSight(monster.Npc.Position, point));
 
 	private static float Horizontal(BotPosition a, BotPosition b) =>

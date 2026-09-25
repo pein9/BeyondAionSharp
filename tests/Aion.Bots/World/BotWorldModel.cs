@@ -77,6 +77,17 @@ public sealed partial class BotWorldModel
 	public BotQuestShare? PendingQuestShare { get; private set; }
 	public string? ExchangeRequestFrom { get; private set; }
 
+	/// <summary>The visible objects before a reload that may not happen (a teleport cast that gets interrupted
+	/// sends nothing to rebuild the world with).</summary>
+	public IReadOnlyList<BotKnownObject> SnapshotObjects() => objects.Values.ToArray();
+
+	/// <summary>Put a snapshot back after a reload that never came; whatever arrived since stays.</summary>
+	public void RestoreObjects(IEnumerable<BotKnownObject> snapshot)
+	{
+		foreach (BotKnownObject known in snapshot)
+			objects.TryAdd(known.ObjectId, known);
+	}
+
 	/// <summary>Forget object ids that become invalid when the server rebuilds the player's visible world.</summary>
 	public void BeginWorldReload()
 	{

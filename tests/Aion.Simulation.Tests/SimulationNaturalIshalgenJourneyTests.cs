@@ -36,6 +36,7 @@ public sealed partial class SimulationFastScenarioTests
 		// Set by TryFightThroughAsync: its last plan found a route to the objective that no observed monster
 		// blocks (for example after a retreat dragged the pack away), so the caller should simply walk again.
 		bool fightRouteOpen = false;
+		int emptySpawnWaits = 0;
 		BotPosition? fightRouteOpenAt = null;
 		Skip.IfNot(stopAfterQ2004 || stopAfterQ2005 || stopAfterQ2006 || stopAfterQ2007 || fullJourney,
 			"Set NI07_STOP_AFTER_Q2004=1, NI07_STOP_AFTER_Q2005=1, NI07_STOP_AFTER_Q2006=1 " +
@@ -477,6 +478,8 @@ public sealed partial class SimulationFastScenarioTests
 
 		async Task<int> ApproachShippedSpawnAsync(int templateId, bool skipBlockedTarget = false)
 		{
+			// Dead on entry (a use bar or a walk ended in a death nobody handled): revive and recover first.
+			if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0) await combat.RestAsync(token);
 			BotWaypoint[] anchors = graph.GetMap(contract.MapId)!.Waypoints
 				.Where(waypoint => waypoint.TemplateId == templateId)
 				.OrderBy(waypoint => Distance(session.CurrentPosition, waypoint.Position)).ToArray();
@@ -488,7 +491,7 @@ public sealed partial class SimulationFastScenarioTests
 				{
 					NaturalNavigationResult result = await NaturalIshalgenNavigator.ApproachNpcAsync(
 						contract.MapId, templateId, anchor.Position, navigator, token);
-					if (result.Arrived && result.TargetObjectId is int objectId) return objectId;
+					if (result.Arrived && result.TargetObjectId is int objectId) { emptySpawnWaits = 0; return objectId; }
 					// Monsters on the way are not a wall: fight through to the objective (observed or its
 					// shipped anchor) one pull at a time before giving up on this spawn hint.
 					if (guardClears < 8 && result.Reason is "No collision-checked route to the current destination." or
@@ -520,6 +523,21 @@ public sealed partial class SimulationFastScenarioTests
 					break;
 				}
 			}
+			// Every hint empty: the monsters were killed (by the bot itself, clearing) and respawn in up to 180 s.
+			// A player waits at the spot; do the same, resting, up to four times, then try the hints again.
+			if (reasons.Count > 0 && reasons.All(reason => reason.Contains("no NPC was observed", StringComparison.Ordinal)) &&
+				++emptySpawnWaits <= 4)
+			{
+				session.TraceDiagnostic("spawn-wait", new Dictionary<string, object?>
+				{
+					["templateId"] = templateId, ["wait"] = emptySpawnWaits, ["position"] = session.CurrentPosition,
+				});
+				await combat.RestAsync(token);
+				await session.AdvanceAsync(TimeSpan.FromSeconds(60), token);
+				await session.SynchronizeAsync(token);
+				return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget);
+			}
+			emptySpawnWaits = 0;
 			throw new InvalidDataException($"No client-observed NPC {templateId} at twelve shipped spawn hints " +
 				$"from {session.CurrentPosition}: {string.Join(" | ", reasons)}");
 		}
@@ -898,21 +916,105 @@ public sealed partial class SimulationFastScenarioTests
 			});
 			fightRouteOpen = fightRoute.Count > 0 &&
 				NaturalFightThrough.BlockersInOrder(session.CurrentPosition, fightRoute, monsters).Count == 0;
-			if (next == null) return false;
-			// The first few monsters the route meets, pulled in the order and from the spot that chain least.
-			NaturalNavigationObject[] blockers = NaturalFightThrough.BlockersInOrder(session.CurrentPosition, fightRoute, monsters)
-				.Where(m => !rejected.Contains(m.Npc.ObjectId)).Take(3).Select(m => m.Npc).ToArray();
-			NaturalPullPlan? pull = await MoveToPullSpotAsync(blockers, next.Staging, "fight-through");
-			if (session.Api.World.IsDead) return false;
-			if (pull == null)
+			NaturalNavigationObject? walkBlocker = null;
+			if (next == null)
 			{
-				rejected.Add(next.Monster.Npc.ObjectId);
-				return true; // re-plan: nothing reachable to pull from here now
+				// The strict router refused (a circle's clearance margin closes the last metres) but the
+				// checked fight-through route enters no circle: walk it, segment by segment, as a player would.
+				if (fightRouteOpen && Distance(session.CurrentPosition, objective) > 3 &&
+					(fightRouteOpenAt is not BotPosition walked || Distance(walked, session.CurrentPosition) > 2))
+				{
+					fightRouteOpenAt = session.CurrentPosition;
+					session.TraceDiagnostic("fight-through-walk", new Dictionary<string, object?>
+					{
+						["objective"] = objective, ["position"] = session.CurrentPosition, ["routePoints"] = fightRoute.Count,
+					});
+					foreach (BotPosition[] segment in fightRoute.Chunk(8))
+					{
+						if (!navigator.IsSegmentSafe(segment, objectiveObjectId))
+						{
+							// The segment brushes a circle the plan did not count (the margin, not the circle). A
+							// player kills that monster and walks on: pull whichever one the segment touches.
+							walkBlocker = monsters
+								.Where(m => !rejected.Contains(m.Npc.ObjectId) && segment.Any(point =>
+									// Horizontal: the server's aggro range ignores height (a peon under a deck still aggroes).
+									MathF.Sqrt((point.X - m.Npc.Position.X) * (point.X - m.Npc.Position.X) +
+										(point.Y - m.Npc.Position.Y) * (point.Y - m.Npc.Position.Y)) < m.Radius + 2))
+								.OrderBy(m => Distance(session.CurrentPosition, m.Npc.Position))
+								.Select(m => m.Npc).FirstOrDefault();
+							break;
+						}
+						await navigator.MoveAsync(segment, token);
+						await navigator.SynchronizeAsync(token);
+						if (session.Api.World.IsDead) return false;
+					}
+					if (walkBlocker == null) return true;
+				}
+				else return false;
 			}
-			NaturalNavigationObject? target = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == pull.Target.Npc.ObjectId);
+			// The first few monsters the route meets, pulled in the order and from the spot that chain least.
+			NaturalNavigationObject[] blockers = walkBlocker != null ? [walkBlocker]
+				: NaturalFightThrough.BlockersInOrder(session.CurrentPosition, fightRoute, monsters)
+					.Where(m => !rejected.Contains(m.Npc.ObjectId)).Take(3).Select(m => m.Npc).ToArray();
+			NaturalPullPlan? pull = await MoveToPullSpotAsync(blockers, next?.Staging ?? [], "fight-through");
+			if (session.Api.World.IsDead) return false;
 			bool OutOfReach(NaturalNavigationObject npc) =>
 				Distance(session.CurrentPosition, npc.Position) > NaturalPullPlanner.SpellRange + 3 ||
 				!geometry.HasLineOfSight(contract.MapId, session.CurrentPosition, npc.Position);
+			NaturalNavigationObject? target;
+			if (pull == null)
+			{
+				// No clean firing spot exists (a dense camp): a player fights the blocker in front of them from
+				// where they stand rather than giving up. Take the nearest blocker already in reach.
+				target = blockers.Select(b => navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == b.ObjectId))
+					.OfType<NaturalNavigationObject>().Where(npc => !OutOfReach(npc))
+					.OrderBy(npc => Distance(session.CurrentPosition, npc.Position)).FirstOrDefault();
+				if (target == null)
+				{
+					// Nothing in reach or in sight from here (the Methu nest hides the Mau 8.6 m away): walk the
+					// checked fight-through route toward the nearest blocker until it is in spell range and sight,
+					// as a melee player closes on the monster in front of them. An attack on the way is fought
+					// through the navigator's own defence.
+					NaturalNavigationObject? advance = blockers
+						.Select(b => navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == b.ObjectId))
+						.OfType<NaturalNavigationObject>()
+						.Where(npc => Distance(session.CurrentPosition, npc.Position) <= 40)
+						.OrderBy(npc => Distance(session.CurrentPosition, npc.Position)).FirstOrDefault();
+					if (advance != null && fightRoute.Count > 1)
+					{
+						int closest = Enumerable.Range(0, fightRoute.Count)
+							.OrderBy(i => Distance(fightRoute[i], advance.Position)).ThenBy(i => i).First();
+						session.TraceDiagnostic("fight-through-advance", new Dictionary<string, object?>
+						{
+							["target"] = $"{advance.TemplateId}/{advance.ObjectId}",
+							["distance"] = Distance(session.CurrentPosition, advance.Position),
+							["routePoints"] = closest + 1,
+							["position"] = session.CurrentPosition,
+						});
+						foreach (BotPosition[] pair in fightRoute.Take(closest + 1).Skip(1).Chunk(2))
+						{
+							await navigator.MoveAsync(pair, token);
+							await navigator.SynchronizeAsync(token);
+							if (session.Api.World.IsDead) return false;
+							target = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == advance.ObjectId);
+							if (target == null || !OutOfReach(target)) break;
+						}
+					}
+					if (target == null || OutOfReach(target))
+					{
+						rejected.Add(walkBlocker?.ObjectId ?? next?.Monster.Npc.ObjectId ?? advance?.ObjectId ?? -1);
+						return true; // re-plan: nothing reachable to pull from here now
+					}
+				}
+				session.TraceDiagnostic("fight-through-stand", new Dictionary<string, object?>
+				{
+					["target"] = $"{target.TemplateId}/{target.ObjectId}",
+					["distance"] = Distance(session.CurrentPosition, target.Position),
+					["position"] = session.CurrentPosition,
+				});
+			}
+			else
+				target = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == pull.Target.Npc.ObjectId);
 			// A patrolling monster walks on while the bot walks to its firing spot: follow it and plan the
 			// pull again, as a player does, rather than giving up on it.
 			for (int chase = 1; target != null && chase <= 3 && OutOfReach(target) && !session.Api.World.IsDead; chase++)
@@ -1093,20 +1195,41 @@ public sealed partial class SimulationFastScenarioTests
 				"The Priest did not observe the auto-learned Return skill.");
 			BotPosition origin = session.CurrentPosition;
 			session.BeginStep("ni07-natural-return", "cast-learned-return-after-checked-route-blocked");
-			int packetStart = session.PacketHistory.Count;
-			await session.SendPacketAsync(session.Api.Target(session.CharacterId), token);
-			await session.SendPacketAsync(session.Api.Cast(new SpellCastData(returnSkillId,
-				checked((byte)learned!.Level), 0) { TargetObjectId = session.CharacterId }), token);
-			DecodedBotServerPacket started = await BotCastProtocol.WaitForStartAsync(
-				(predicate, waitToken) => session.WaitForPacketAsync(packet => predicate(packet) ||
-					BotCastProtocol.IsStartRejection(packet), waitToken),
-				session.CharacterId, returnSkillId, token);
-			Assert.Equal(typeof(SM_CASTSPELL), started.PacketType);
-			session.Api.World.BeginWorldReload();
-			await session.AdvanceAsync(TimeSpan.FromMilliseconds(started.Get<ushort>("castDuration") + 1), token);
-			DecodedBotServerPacket result = await BotCastProtocol.WaitForCompletionAsync(
-				session.WaitForPacketAsync, session.CharacterId, returnSkillId, token);
-			Assert.Equal(typeof(SM_CASTSPELL_RESULT), result.PacketType);
+			int packetStart;
+			DecodedBotServerPacket result;
+			// A monster that reaches the bot during the cast interrupts it (Java Skill.cancelCast on damage); a
+			// player fights it off, recovers and casts again.
+			for (int attempt = 1; ; attempt++)
+			{
+				packetStart = session.PacketHistory.Count;
+				await session.SendPacketAsync(session.Api.Target(session.CharacterId), token);
+				await session.SendPacketAsync(session.Api.Cast(new SpellCastData(returnSkillId,
+					checked((byte)learned!.Level), 0) { TargetObjectId = session.CharacterId }), token);
+				DecodedBotServerPacket started = await BotCastProtocol.WaitForStartAsync(
+					(predicate, waitToken) => session.WaitForPacketAsync(packet => predicate(packet) ||
+						BotCastProtocol.IsStartRejection(packet), waitToken),
+					session.CharacterId, returnSkillId, token);
+				Assert.Equal(typeof(SM_CASTSPELL), started.PacketType);
+				IReadOnlyList<BotKnownObject> visibleBefore = session.Api.World.SnapshotObjects();
+				session.Api.World.BeginWorldReload();
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(started.Get<ushort>("castDuration") + 1), token);
+				result = await BotCastProtocol.WaitForCompletionAsync(
+					session.WaitForPacketAsync, session.CharacterId, returnSkillId, token);
+				if (result.PacketType == typeof(SM_CASTSPELL_RESULT)) break;
+				Assert.Equal(typeof(SM_SKILL_CANCEL), result.PacketType);
+				Assert.True(attempt < 4, "Return was interrupted four times in a row.");
+				session.Api.World.RestoreObjects(visibleBefore);
+				session.TraceDiagnostic("natural-return-interrupted", new Dictionary<string, object?>
+				{
+					["attempt"] = attempt,
+					["hp"] = session.Api.World.CurrentHp,
+					["position"] = session.CurrentPosition,
+				});
+				await session.SynchronizeAsync(token);
+				await DefendAgainstEngagedAsync("natural-return");
+				await combat.RestAsync(token); // revives when the defence was lost, rests otherwise
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(BotCastProtocol.ReactionMillis), token);
+			}
 			await session.AdvanceAsync(TimeSpan.FromMilliseconds(result.Get<ushort>("hitTime") + 1), token);
 			await session.SynchronizeAsync(token);
 			Assert.Contains(session.PacketHistory.Skip(packetStart), packet =>
@@ -1968,6 +2091,10 @@ public sealed partial class SimulationFastScenarioTests
 			{
 				session.BeginStep($"ni07-q2006-sack-{attempt}", "walk-to-client-observed-mau-sack-and-loot-grain");
 				if (attempt == 1) await combat.RestAsync(token); // Mijou-side refuge; do not sit in the Mau field.
+				// A sack's 3 s use bar breaks on any hit: fight what is on the Priest first, and never start a
+				// use below 80% HP (a death here used to leave the loop navigating while dead).
+				if (!await DefendAgainstEngagedAsync("q2006-sack")) { await combat.RestAsync(token); continue; }
+				if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 80) await combat.RestAsync(token);
 				int sack = await ApproachShippedSpawnAsync(700095, skipBlockedTarget: true);
 				int interactionPacketStart = session.PacketHistory.Count;
 				await session.SendPacketAsync(session.Api.TalkTo(sack), token);
@@ -2428,7 +2555,7 @@ public sealed partial class SimulationFastScenarioTests
 						// These frozen plans use only a final report; ClaimReward performs its NPC dialogue.
 						break;
 					case QuestRunOperationKind.Gather:
-						await GatherYoungAzphaAsync(operation);
+						await GatherAsync(operation);
 						break;
 					case QuestRunOperationKind.ClaimReward:
 					{
@@ -2459,36 +2586,74 @@ public sealed partial class SimulationFastScenarioTests
 			}
 		}
 
-		async Task GatherYoungAzphaAsync(QuestRunOperation operation)
+		int GatheringSkillLevel() =>
+			session.Api.World.Skills.TryGetValue(30001, out BotSkill? gatheringSkill) ? gatheringSkill.Level : 0;
+
+		// A collect step served by gatherable nodes: Q2133's Young Azpha (skill 1) and Q2134's Impure Iron Ore
+		// (skill 15). The plan lists every node template that yields the item on every map; only the spots on
+		// this map count. When Essencetapping is below the node's level the bot first skills up on Young Azpha,
+		// as a player does (Java GatherableController.OnStartUse refuses a node above the skill level, and
+		// PlayerSkillList.AddSkillXp raises the skill one point per ~76-224 xp at 91 xp a harvest).
+		async Task GatherAsync(QuestRunOperation operation)
 		{
-			if (operation.ItemId != GatheringTarget.YoungAzpha.ItemId || operation.Count != 3 ||
-				operation.Source?.GatherableId != GatheringTarget.YoungAzpha.TemplateId)
-				throw new InvalidDataException("Natural gathering only supports the frozen Q2133 Young Azpha objective.");
-			if (!session.Api.World.Skills.TryGetValue(30001, out BotSkill? gatheringSkill) || gatheringSkill.Level < 1)
+			QuestRunSource source = (operation.Sources ?? []).Prepend(operation.Source).OfType<QuestRunSource>()
+				.FirstOrDefault(candidate => candidate.Kind == "gatherable" && candidate.GatherableId is > 0 &&
+					candidate.Positions.Any(position => position.MapId == contract.MapId))
+				?? throw new InvalidDataException($"Item {operation.ItemId} has no gatherable node on map {contract.MapId}.");
+			if (GatheringSkillLevel() < 1)
 				throw new InvalidDataException("Client did not observe the required level-1 gathering skill.");
-			var policy = new NaturalIshalgenGatheringPolicy(SoakGatheringPool.StarterSpots());
-			for (int decisionIndex = 0; decisionIndex < 96 &&
-				ItemCount(session.Api.World, operation.ItemId) < operation.Count; decisionIndex++)
+			if (GatheringSkillLevel() < source.SkillLevel)
+			{
+				session.TraceDiagnostic("gather-train", new Dictionary<string, object?>
+				{
+					["template"] = source.GatherableId,
+					["requiredSkillLevel"] = source.SkillLevel,
+					["gatheringSkillLevel"] = GatheringSkillLevel(),
+				});
+				var trainer = new NaturalIshalgenGatheringPolicy(SoakGatheringPool.StarterSpots(),
+					GatheringTarget.YoungAzpha.MapId, GatheringTarget.YoungAzpha.TemplateId, long.MaxValue);
+				for (int round = 0; round < 8 && GatheringSkillLevel() < source.SkillLevel; round++)
+					await HarvestAsync(trainer, GatheringTarget.YoungAzpha.ItemId, "Essencetapping practice",
+						() => GatheringSkillLevel() >= source.SkillLevel);
+				if (GatheringSkillLevel() < source.SkillLevel)
+					throw new InvalidDataException($"Essencetapping stayed at {GatheringSkillLevel()} below the node's level {source.SkillLevel}.");
+			}
+			IEnumerable<SoakGatheringSpot> spots = source.GatherableId == GatheringTarget.YoungAzpha.TemplateId
+				? SoakGatheringPool.StarterSpots()
+				: source.Positions.Where(position => position.MapId == contract.MapId)
+					.Select(position => new SoakGatheringSpot(position.MapId, 1, source.GatherableId!.Value, position.X, position.Y, position.Z));
+			var policy = new NaturalIshalgenGatheringPolicy(spots, contract.MapId, source.GatherableId!.Value, operation.Count);
+			await HarvestAsync(policy, operation.ItemId, $"gatherable {source.GatherableId}",
+				() => ItemCount(session.Api.World, operation.ItemId) >= operation.Count);
+			Assert.Equal(operation.Count, ItemCount(session.Api.World, operation.ItemId));
+		}
+
+		async Task HarvestAsync(NaturalIshalgenGatheringPolicy policy, int itemId, string purpose, Func<bool> done)
+		{
+			for (int decisionIndex = 0; decisionIndex < 96 && !done(); decisionIndex++)
 			{
 				NaturalGatherNode[] visible = session.Api.World.Objects.Values
 					.Where(obj => obj.Kind == BotKnownObjectKind.Gatherable &&
-						obj.TemplateId == GatheringTarget.YoungAzpha.TemplateId)
+						obj.TemplateId == policy.TemplateId)
 					.Select(obj => new NaturalGatherNode(obj.ObjectId, obj.Position)).ToArray();
 				TimeSpan elapsed = TimeSpan.FromMilliseconds(fixture.Clock.NowMillis);
 				NaturalGatherChoice choice = policy.Decide(session.CurrentPosition, visible,
-					ItemCount(session.Api.World, operation.ItemId), elapsed);
-				session.TraceDiagnostic("azpha-decision", new Dictionary<string, object?>
+					ItemCount(session.Api.World, itemId), elapsed);
+				session.TraceDiagnostic("gather-decision", new Dictionary<string, object?>
 				{
+					["purpose"] = purpose,
+					["template"] = policy.TemplateId,
+					["gatheringSkillLevel"] = GatheringSkillLevel(),
 					["action"] = choice.Action,
 					["reason"] = choice.Reason,
 					["objectId"] = choice.ObjectId,
 					["spot"] = choice.Spot?.Position,
-					["inventoryCount"] = ItemCount(session.Api.World, operation.ItemId),
+					["inventoryCount"] = ItemCount(session.Api.World, itemId),
 				});
 				if (choice.Action == "explore" && choice.Spot is { } hint)
 				{
 					NaturalNavigationResult search = await NaturalIshalgenNavigator.ExploreAnchorAsync(
-						contract.MapId, -1, hint.Position, navigator, "Young Azpha spawn hint", token);
+						contract.MapId, -1, hint.Position, navigator, $"{purpose} spawn hint", token);
 					if (!search.Arrived)
 					{
 						if (search.Reason != "No collision-checked route to the current destination." ||
@@ -2497,7 +2662,7 @@ public sealed partial class SimulationFastScenarioTests
 					}
 					else if (!session.Api.World.Objects.Values.Any(obj =>
 						obj.Kind == BotKnownObjectKind.Gatherable &&
-						obj.TemplateId == GatheringTarget.YoungAzpha.TemplateId &&
+						obj.TemplateId == policy.TemplateId &&
 						Distance(obj.Position, hint.Position) < 1))
 						policy.RecordUnobserved(hint, TimeSpan.FromMilliseconds(fixture.Clock.NowMillis));
 					continue;
@@ -2514,10 +2679,10 @@ public sealed partial class SimulationFastScenarioTests
 					continue;
 				}
 				if (choice.Action != "gather" || choice.Spot is not { } spot || choice.ObjectId is not int objectId)
-					throw new InvalidDataException($"Unexpected Young Azpha decision {choice.Action}.");
+					throw new InvalidDataException($"Unexpected {purpose} decision {choice.Action}.");
 				NaturalNavigationResult approach = await NaturalIshalgenNavigator.ApproachObservedObjectAsync(
-					contract.MapId, GatheringTarget.YoungAzpha.TemplateId, spot.Position,
-					navigator, "Young Azpha", token);
+					contract.MapId, policy.TemplateId, spot.Position,
+					navigator, purpose, token);
 				if (!approach.Arrived || approach.TargetObjectId != objectId)
 				{
 					if (approach.Reason != "No collision-checked route to the current destination." ||
@@ -2525,7 +2690,7 @@ public sealed partial class SimulationFastScenarioTests
 						policy.RecordUnreachable(spot, TimeSpan.FromMilliseconds(fixture.Clock.NowMillis));
 					continue;
 				}
-				long before = ItemCount(session.Api.World, operation.ItemId);
+				long before = ItemCount(session.Api.World, itemId);
 				int packetStart = session.PacketHistory.Count;
 				foreach (BotClientPacket packet in session.Api.Gather(objectId))
 					await session.SendPacketAsync(packet, token);
@@ -2541,21 +2706,20 @@ public sealed partial class SimulationFastScenarioTests
 							.LastOrDefault(packet => packet.PacketType == typeof(SM_GATHER_UPDATE) &&
 								packet.Get<byte>("action") >= 5);
 					}
-					update = finished ?? throw new TimeoutException("Young Azpha harvest did not finish within 60 virtual seconds.");
+					update = finished ?? throw new TimeoutException($"{purpose} harvest did not finish within 60 virtual seconds.");
 				}
 				byte outcome = update.Get<byte>("action");
 				policy.RecordAttempt(spot, objectId, outcome, TimeSpan.FromMilliseconds(fixture.Clock.NowMillis));
 				if (outcome == 6)
 				{
-					for (int followup = 0; followup < 5 && ItemCount(session.Api.World, operation.ItemId) == before; followup++)
+					for (int followup = 0; followup < 5 && ItemCount(session.Api.World, itemId) == before; followup++)
 					{
 						await session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
 						await navigator.SynchronizeAsync(token);
 					}
-					Assert.Equal(before + 1, ItemCount(session.Api.World, operation.ItemId));
+					Assert.Equal(before + 1, ItemCount(session.Api.World, itemId));
 				}
 			}
-			Assert.Equal(operation.Count, ItemCount(session.Api.World, operation.ItemId));
 		}
 
 		async Task OpenQuestDialogAsync(int npc, int questId)
@@ -2928,7 +3092,7 @@ public sealed partial class SimulationFastScenarioTests
 			int? observedTargetHpPercent = null;
 			bool healedThisFight = false;
 			bool inEmergency = false;
-			long lastHitByTargetMillis = long.MinValue;
+			long? lastHitByTargetMillis = null;
 			IReadOnlySet<int> blessingIds = NaturalPriestSkills.Ids("blessing");
 			var incomingAttackers = new HashSet<int>();
 			// Fights may run long: a cornered Priest alternates heals and damage, and respawns or chain
@@ -2965,12 +3129,15 @@ public sealed partial class SimulationFastScenarioTests
 					await ReviveAtBindAsync(token);
 					return false; // The engaged corpse was not looted; reacquire from the client.
 				}
-				if (world.CurrentExperience > startingExperience || world.LootStatuses.ContainsKey(target)) return true;
+				// Kill evidence: experience, a loot window, or the target's own status at 0% HP (a grey monster
+				// pays no experience, so SM_STATUPDATE_EXP never comes; SM_DELETE follows the death status).
+				if (world.CurrentExperience > startingExperience || world.LootStatuses.ContainsKey(target) ||
+					observedTargetHpPercent == 0) return true;
 				if (!world.Objects.TryGetValue(target, out BotKnownObject? npc))
 					return false; // Reacquire a new client-observed mob; do not count this as a kill.
 				DateTimeOffset now = fixture.Epoch.AddMilliseconds(fixture.Clock.NowMillis);
 				// A monster that hit us in the last 3 s is in melee reach whatever its lagging client position says.
-				bool targetAdjacent = fixture.Clock.NowMillis - lastHitByTargetMillis <= 3000 ||
+				bool targetAdjacent = lastHitByTargetMillis is long lastHit && fixture.Clock.NowMillis - lastHit <= 3000 ||
 					Distance(session.CurrentPosition, npc.Position) <= NaturalPriestCombatPolicy.MeleeReach;
 				if (world.CurrentHp * 100 <= world.MaxHp * NaturalPriestCombatPolicy.EmergencyPercent) inEmergency = true;
 				else if (world.CurrentHp * 100 >= world.MaxHp * NaturalPriestCombatPolicy.EmergencyClearPercent) inEmergency = false;

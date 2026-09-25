@@ -326,6 +326,29 @@ and were fixed along the way.
 - **Point spacing.** Combat moves a fixed number of route points per turn. Routes must keep the
   grid search's roughly 2 m spacing, and tests pin that.
 
+## Q2007 after the melee rotation (2026-09-25)
+
+| Batch (4 seeds) | Deaths | Retreats | Q2007 |
+|---|---|---|---|
+| Before (tribe-blind hostility, ranged rotation, 2 s cast floor) | 84 | 27 | 0 of 4 finished, all hit the 20-revive cap |
+| After (see the Stalkers, melee rotation, real cadence, respawn-window rests) | 1 | 0 | 4 of 4 finished; runs stopped later, in side quests |
+
+The remaining stops were ordinary journey gaps, not combat: waiting for a respawn at empty spawn
+hints, a grey monster that pays no experience (its 0% status is now kill evidence), the strict router
+refusing the last metres to a quest object that the checked fight-through route reaches, and an
+unhandled death during a use bar. Each is fixed in the journey code; the next batches measure them.
+
+The batch after that reached two more journey gaps. Three seeds stopped on the way from the Methu
+egg to Munin: the egg sits 8.6 m from a Mau spawn, so no clean firing position exists and the pull
+planner returned nothing; the fight-through now stands and fights the nearest blocker when there is
+no clean pull. The fourth reached Q2134 (Alfrigh's Request), whose Iron Ore comes from Impure Iron
+Ore nodes at Essencetapping 15. The gather step was frozen to Q2133's Young Azpha; it now takes the
+plan's node template on the current map, and when the skill is below the node's level it first
+practises on Young Azpha (91 skill xp a harvest against 76-224 xp a point, about thirty harvests),
+which is what a player does before mining. With both in place all four seeds completed the whole
+Ishalgen journey (Q2004 through Q2134 and Munin, 205 quest updates, one death in four runs); each
+raised Essencetapping from 3 to 16 with 29-30 practice harvests before the ore.
+
 ## Known limits
 
 - **Doors and dynamic objects** are baked open. Door footprints become door areas, and

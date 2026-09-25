@@ -50,7 +50,7 @@ public sealed class BotNavMeshRouter(BotNavMeshSet navMeshes, BotNavigationGeome
 	{
 		options ??= BotNavQuery.Default;
 		if (options.Hazards.Count > 0 && options.Hazards.Any(hazard =>
-			Horizontal(start, hazard.Position) >= hazard.Radius && Horizontal(destination, hazard.Position) < hazard.Radius))
+			!hazard.Contains(start) && hazard.Contains(destination)))
 		{
 			Log?.Invoke($"destination {destination} lies inside an observed hazard");
 			return Fail(BotNavRouteOutcome.HazardRejected);
@@ -323,7 +323,7 @@ public sealed class BotNavMeshRouter(BotNavMeshSet navMeshes, BotNavigationGeome
 	private static int ExitIndex(List<BotPosition> route, int at, BotPosition start, IReadOnlyList<BotNavigationHazard> hazards,
 		BotNavDanger[] heavy)
 	{
-		BotNavigationHazard[] relevant = hazards.Where(h => Horizontal(start, h.Position) >= h.Radius).ToArray();
+		BotNavigationHazard[] relevant = hazards.Where(h => !h.Contains(start)).ToArray();
 		bool Clear(BotPosition p) => relevant.All(h => Horizontal(p, h.Position) >= h.Radius + 0.5f) && heavy.All(d => !InZone(p, d));
 		for (int j = at + 1; j < route.Count; j++)
 			if (Clear(route[j]) && (j + 1 >= route.Count || Clear(route[j + 1])) && (j + 2 >= route.Count || Clear(route[j + 2])))
@@ -345,7 +345,7 @@ public sealed class BotNavMeshRouter(BotNavMeshSet navMeshes, BotNavigationGeome
 		float minX = MathF.Min(a.X, b.X) - margin, maxX = MathF.Max(a.X, b.X) + margin;
 		float minY = MathF.Min(a.Y, b.Y) - margin, maxY = MathF.Max(a.Y, b.Y) + margin;
 		if (maxX - minX > 420 || maxY - minY > 420) return null;
-		BotNavigationHazard[] forbidden = hazards.Where(h => Horizontal(routeStart, h.Position) >= h.Radius).ToArray();
+		BotNavigationHazard[] forbidden = hazards.Where(h => !h.Contains(routeStart)).ToArray();
 		BotNavigationHazard[] escaping = hazards.Where(h => Horizontal(routeStart, h.Position) < h.Radius).ToArray();
 		var open = new PriorityQueue<(int X, int Y), float>();
 		var cost = new Dictionary<(int, int), float>();

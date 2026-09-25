@@ -22,7 +22,6 @@ public static class NaturalFightThrough
 {
 	/// <summary>Priest spell range used by the journey's combat policy, minus a margin for movement.</summary>
 	public const float FiringRange = 23f;
-	private const float VerticalBand = 8f;
 
 	public static NaturalFightThroughBlocker? SelectNext(BotPosition start, IReadOnlyList<BotPosition> route,
 		IReadOnlyList<NaturalObservedMonster> monsters, IReadOnlySet<int>? rejected = null)
@@ -58,8 +57,9 @@ public static class NaturalFightThrough
 		return order;
 	}
 
+	// The server measures aggro range in 3D (Java MathUtil.isInRange): a monster under a deck is not a blocker.
 	private static bool Inside(BotPosition point, NaturalObservedMonster monster) =>
-		Horizontal(point, monster.Npc.Position) < monster.Radius && MathF.Abs(point.Z - monster.Npc.Position.Z) < VerticalBand;
+		new BotNavigationHazard(monster.Npc.Position, monster.Radius).Contains(point);
 
 	private static float Horizontal(BotPosition a, BotPosition b) =>
 		MathF.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));

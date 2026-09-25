@@ -341,11 +341,11 @@ public sealed class BotNavMesh
 			for (int i = 0; i <= samples; i++)
 			{
 				float t = (float)i / samples;
-				float x = pa.X + (pb.X - pa.X) * t, y = pa.Z + (pb.Z - pa.Z) * t;
+				float x = pa.X + (pb.X - pa.X) * t, y = pa.Z + (pb.Z - pa.Z) * t, z = pa.Y + (pb.Y - pa.Y) * t;
 				foreach (BotNavigationHazard hazard in hazards)
 				{
-					float dx = x - hazard.Position.X, dy = y - hazard.Position.Y;
-					if (dx * dx + dy * dy < hazard.Radius * hazard.Radius) { inside++; break; }
+					float dx = x - hazard.Position.X, dy = y - hazard.Position.Y, dz = z - hazard.Position.Z;
+					if (dx * dx + dy * dy + dz * dz < hazard.Radius * hazard.Radius) { inside++; break; }
 				}
 			}
 			return inside == 0 ? cost : cost * (1 + hazardMultiplier * inside / (samples + 1f));

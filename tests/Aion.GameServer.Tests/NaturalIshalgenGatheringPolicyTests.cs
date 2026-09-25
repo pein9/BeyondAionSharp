@@ -76,4 +76,18 @@ public sealed class NaturalIshalgenGatheringPolicyTests
 		policy.RecordUnobserved(Near, TimeSpan.Zero);
 		Assert.Equal(Far, policy.Decide(Home, [], 0, TimeSpan.FromSeconds(1)).Spot);
 	}
+
+	[Fact]
+	public void TargetsAnyNodeTemplateWithItsOwnGoal()
+	{
+		SoakGatheringSpot ore = new(220010000, 1, 400251, 10, 0, 0);
+		var policy = new NaturalIshalgenGatheringPolicy([Near, ore], 220010000, 400251, 3);
+		Assert.Equal(400251, policy.TemplateId);
+		NaturalGatherNode[] observed = [new(303, ore.Position)];
+		Assert.Equal(303, policy.Decide(Home, observed, 2, TimeSpan.Zero).ObjectId);
+		Assert.Equal("complete", policy.Decide(Home, observed, 3, TimeSpan.Zero).Action);
+		var practice = new NaturalIshalgenGatheringPolicy([Near, ore], 220010000, 400651, long.MaxValue);
+		Assert.Equal("gather", practice.Decide(Home, [new(101, Near.Position)], 40, TimeSpan.Zero).Action);
+		Assert.Throws<InvalidDataException>(() => new NaturalIshalgenGatheringPolicy([Near], 220010000, 400251, 3));
+	}
 }

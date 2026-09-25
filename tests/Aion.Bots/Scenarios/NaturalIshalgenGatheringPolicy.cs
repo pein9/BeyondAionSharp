@@ -7,9 +7,10 @@ public sealed record NaturalGatherChoice(string Action, string Reason, SoakGathe
 	int? ObjectId, TimeSpan? Wait);
 
 /// <summary>
-/// NI-06 single-player Azpha search. Shipped spots are area hints only: a gather action
-/// always requires a currently client-observed object id. Java completeInteraction
-/// consumes a node use after either success or failure.
+/// NI-06 single-player node search for one gatherable template (Q2133 Young Azpha by default; Q2134
+/// mines Impure Iron Ore the same way). Shipped spots are area hints only: a gather action always
+/// requires a currently client-observed object id. Java completeInteraction consumes a node use after
+/// either success or failure.
 /// </summary>
 public sealed class NaturalIshalgenGatheringPolicy
 {
@@ -17,34 +18,42 @@ public sealed class NaturalIshalgenGatheringPolicy
 	private static readonly TimeSpan SearchDelay = TimeSpan.FromSeconds(5);
 	private readonly IReadOnlyList<SoakGatheringSpot> spots;
 	private readonly Dictionary<SoakGatheringSpot, NodeState> nodes;
+	private readonly long goal;
 
 	public NaturalIshalgenGatheringPolicy(IEnumerable<SoakGatheringSpot> shippedSpots)
+		: this(shippedSpots, GatheringTarget.YoungAzpha.MapId, GatheringTarget.YoungAzpha.TemplateId, 3) { }
+
+	/// <param name="goal">Items wanted; the caller may also stop earlier (a gathering skill-up run has no item goal).</param>
+	public NaturalIshalgenGatheringPolicy(IEnumerable<SoakGatheringSpot> shippedSpots, int mapId, int templateId, long goal)
 	{
-		spots = shippedSpots.Where(spot => spot.MapId == GatheringTarget.YoungAzpha.MapId &&
-			spot.TemplateId == GatheringTarget.YoungAzpha.TemplateId).Distinct().ToArray();
-		if (spots.Count == 0) throw new InvalidDataException("No shipped Young Azpha spawn spots.");
+		TemplateId = templateId;
+		this.goal = goal;
+		spots = shippedSpots.Where(spot => spot.MapId == mapId && spot.TemplateId == templateId).Distinct().ToArray();
+		if (spots.Count == 0) throw new InvalidDataException($"No shipped spawn spots for gatherable {templateId} on map {mapId}.");
 		nodes = spots.ToDictionary(spot => spot, _ => new NodeState());
 	}
 
+	public int TemplateId { get; }
+
 	public NaturalGatherChoice Decide(BotPosition position, IReadOnlyList<NaturalGatherNode> observed,
-		long azphaCount, TimeSpan elapsed)
+		long itemCount, TimeSpan elapsed)
 	{
-		if (azphaCount >= 3) return new("complete", "Three Azpha items are present in client-observed inventory.", null, null, null);
+		if (itemCount >= goal) return new("complete", $"{goal} wanted items are present in client-observed inventory.", null, null, null);
 		if (elapsed < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(elapsed));
 		var visible = observed.Select(node => (Node: node, Spot: Match(node.Position)))
 			.Where(pair => pair.Spot != null && elapsed >= nodes[pair.Spot.Value].AvailableAt)
 			.OrderBy(pair => Distance(position, pair.Node.Position)).ThenBy(pair => pair.Node.ObjectId).FirstOrDefault();
 		if (visible.Spot is { } spot)
-			return new("gather", $"Nearest available client-observed Azpha {visible.Node!.ObjectId}; " +
+			return new("gather", $"Nearest available client-observed node {visible.Node!.ObjectId}; " +
 				$"attempt {nodes[spot].Uses + 1} of {GatheringTarget.HarvestCount} on this node.", spot,
 				visible.Node.ObjectId, null);
 		SoakGatheringSpot? hint = spots.Where(spot => elapsed >= nodes[spot].AvailableAt)
 			.OrderBy(spot => Distance(position, spot.Position)).ThenBy(spot => spot.X).ThenBy(spot => spot.Y)
 			.Cast<SoakGatheringSpot?>().FirstOrDefault();
 		if (hint != null)
-			return new("explore", "No usable Azpha is visible; path to the closest shipped spawn hint and observe again.", hint, null, null);
+			return new("explore", "No usable node is visible; path to the closest shipped spawn hint and observe again.", hint, null, null);
 		TimeSpan next = nodes.Values.Min(node => node.AvailableAt) - elapsed;
-		return new("wait", "All searched Azpha spots are occupied, depleted, or awaiting observation; wait and rescan.",
+		return new("wait", "All searched spots are occupied, depleted, or awaiting observation; wait and rescan.",
 			null, null, TimeSpan.FromTicks(Math.Min(next.Ticks, SearchDelay.Ticks)));
 	}
 
