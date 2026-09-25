@@ -20,7 +20,13 @@ public sealed class NaturalIshalgenPotionPolicyTests
 		Assert.Equal("hot-potion", NaturalPriestCombatPolicy.Decide(state, Now).Action);
 		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with { Hp = 70, HotPotionReady = false }, Now).Action);
 		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with { Hp = 70, HotPotionActive = true }, Now).Action);
-		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with { Hp = 30 }, Now).Action);
+		// At 30% the timed potion still comes first; retreat only when swarmed or out of heals and potions.
+		Assert.Equal("hot-potion", NaturalPriestCombatPolicy.Decide(state with { Hp = 30 }, Now).Action);
+		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
+		{
+			Hp = 30, NearbyAggressors = NaturalPriestCombatPolicy.SwarmedAttackers,
+		}, Now).Action);
+		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with { Hp = 30, Mp = 0, HotPotionReady = false }, Now).Action);
 		Assert.NotEqual("hot-potion", NaturalPriestCombatPolicy.Decide(state with { Hp = 81 }, Now).Action);
 		Assert.NotEqual("hot-potion", NaturalPriestCombatPolicy.Decide(state with
 		{

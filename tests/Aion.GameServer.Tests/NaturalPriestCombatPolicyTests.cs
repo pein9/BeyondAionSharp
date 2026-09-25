@@ -71,7 +71,10 @@ public sealed class NaturalPriestCombatPolicyTests
 	public void ACorneredPriestFightsInsteadOfRetreatingAgain()
 	{
 		// No checked escape leads away from the pack: heal first, and never choose retreat again.
-		var state = Observe(1, 20, 100, 40, 100, [1838, 4012], 10) with { Aggro = true, NearbyAggressors = 2 };
+		var state = Observe(1, 20, 100, 40, 100, [1838, 4012], 10) with
+		{
+			Aggro = true, NearbyAggressors = NaturalPriestCombatPolicy.SwarmedAttackers,
+		};
 		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state, Now).Action);
 		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with { Cornered = true }, Now).Action);
 		NaturalCombatChoice noMana = NaturalPriestCombatPolicy.Decide(state with { Cornered = true, Mp = 0 }, Now);
@@ -88,21 +91,28 @@ public sealed class NaturalPriestCombatPolicyTests
 		{
 			Hp = 31, Aggro = true, NearbyAggressors = 2,
 		}, Now).Action);
-		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
+		// At or below 30%: heal through one or two attackers while a heal is castable (the recorded human run).
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with
 		{
 			Hp = 30, Aggro = true, NearbyAggressors = 2,
 		}, Now).Action);
-		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with
 		{
 			Hp = 30, Aggro = true, NearbyAggressors = 1,
 		}, Now).Action);
+		// Three attackers outdamage the heal: leave.
 		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
 		{
-			Hp = 30, Aggro = true, NearbyAggressors = 0,
+			Hp = 30, Aggro = true, NearbyAggressors = NaturalPriestCombatPolicy.SwarmedAttackers,
+		}, Now).Action);
+		// Nothing left to heal with: leave.
+		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
+		{
+			Hp = 30, Mp = 0, Aggro = true, NearbyAggressors = 1,
 		}, Now).Action);
 		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
 		{
-			Hp = 30, Aggro = false, NearbyAggressors = 0,
+			Hp = 30, Mp = 0, Aggro = false, NearbyAggressors = 0,
 		}, Now).Action);
 		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with
 		{
@@ -119,9 +129,13 @@ public sealed class NaturalPriestCombatPolicyTests
 		{
 			Hp = 70, TargetObjectId = null, TargetDistance = null, Aggro = false, NearbyAggressors = 1,
 		}, Now).Action);
-		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with
 		{
 			Hp = 30, TargetObjectId = null, TargetDistance = null, Aggro = false, NearbyAggressors = 1,
+		}, Now).Action);
+		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
+		{
+			Hp = 30, Mp = 0, TargetObjectId = null, TargetDistance = null, Aggro = false, NearbyAggressors = 1,
 		}, Now).Action);
 		Assert.Equal("ready", NaturalPriestCombatPolicy.Decide(state with { Hp = 95, Mp = 95, TargetObjectId = null, TargetDistance = null }, Now).Action);
 		Assert.Equal("revive", NaturalPriestCombatPolicy.Decide(state with { Dead = true }, Now).Action);
@@ -166,7 +180,7 @@ public sealed class NaturalPriestCombatPolicyTests
 		}, Now).Action);
 		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
 		{
-			Hp = 30,
+			Hp = 30, NearbyAggressors = NaturalPriestCombatPolicy.SwarmedAttackers,
 		}, Now).Action);
 	}
 

@@ -155,9 +155,24 @@ other spawn circles when it can. Resting inside a spawn circle means every respa
 a rest, fight, rest loop that ends in death. The Stalkers at Rae's camp respawn every 180 s, 12–15 m
 from where the Priest used to rest.
 
+**Learning from a human run (2026-09-24).** A recorded session (`docs/session-recording.md`) of a player
+driving the same Priest from Nalto finished Q2007 and Q2129 with no deaths. Three habits the bot lacked
+now drive it:
+
+- **Wear upgrades.** After every full rest the Priest equips, per slot, the highest-level bag item its
+  class, race and level may wear (`NaturalGearPolicy`, traced as `gear-equip`). The human put on four
+  unused quest rewards (a mace, a ring, shoes, leggings), which raised max HP from 594 to 669.
+- **Keep the blessing up.** Blessing of Guardianship is recast between fights whenever the client's own
+  effect list lacks it (`MaintainBuffsAsync`, `buff-blessing`). The bot had never cast it.
+- **Heal through a double pull.** At 30% HP or below, the Priest retreats only with three or more attackers,
+  or when no heal or potion is available (`NaturalPriestCombatPolicy.SwarmedAttackers`). The human chained
+  Healing Light down to 24% HP against two monsters and won; the bot used to run into the next camp.
+
 **Clearing around an objective.** Before a use bar that one hit interrupts (the Q2007 generators),
 the Priest pulls, one at a time, every observed monster whose aggro circle plus 2 m comes within 20 m of
-the object (`objective-clear`), then walks back and uses it. A death on the way to a generator rejoins
+the object (`objective-clear`). It does this from range around the generator's shipped spot before
+stepping onto it, as the human did (pull the Stalker beside the blue generator from 20 m, then use it), and
+again on arrival for anything newly visible. A death on the way to a generator rejoins
 through Nalto and Rae from bind, the same recovery as the Rae leg.
 
 **Stuns.** A cast refused with `STR_SKILL_CAN_NOT_ATTACK_WHILE_IN_ABNORMAL_STATE` (Java

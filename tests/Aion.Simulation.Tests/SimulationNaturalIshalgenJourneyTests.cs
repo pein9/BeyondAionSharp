@@ -145,6 +145,46 @@ public sealed partial class SimulationFastScenarioTests
 		navigationDefense = combat;
 		bool maintainingInventory = false;
 		long failedRestockKinah = -1;
+		var refusedGear = new HashSet<int>();
+
+		// Wear the best gear in the bag (the recorded human put on four unused quest rewards at Nalto).
+		// The client knows each item's slots, level and class/race limits from its tooltip; the server
+		// still checks every equip, and an item it refuses is never asked for again.
+		async Task EquipUpgradesAsync(CancellationToken gearToken)
+		{
+			BotWorldModel world = session.Api.World;
+			if (world.IsDead) return;
+			var playerClass = player.GetPlayerClass();
+			var race = player.GetRace();
+			var gender = player.GetGender();
+			NaturalGearInfo? Describe(int itemId)
+			{
+				var template = Aion.GameServer.Dataholders.DataManager.ITEM_DATA.GetItemTemplate(itemId);
+				if (template == null || template.GetItemSlot() == 0) return null;
+				var genderLimit = template.GetUseLimits()?.GetGenderPermitted();
+				return new NaturalGearInfo(template.GetItemSlot(), template.GetRequiredLevel(playerClass), template.GetLevel(),
+					(template.GetRace() == Aion.GameServer.Model.Race.PC_ALL || template.GetRace() == race) &&
+					(genderLimit == null || genderLimit == gender));
+			}
+			foreach (NaturalGearUpgrade upgrade in NaturalGearPolicy.SelectUpgrades(world.Inventory.Values, world.Level,
+				Describe, (long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, refusedGear))
+			{
+				await session.SendPacketAsync(session.Api.Equip(0, upgrade.Slot, upgrade.ObjectId), gearToken);
+				await session.SynchronizeAsync(gearToken);
+				bool worn = world.Inventory.TryGetValue(upgrade.ObjectId, out BotInventoryItem? after) &&
+					(after.Details.EquippedSlot ?? 0) > 0;
+				if (!worn) refusedGear.Add(upgrade.ObjectId);
+				session.TraceDiagnostic("gear-equip", new Dictionary<string, object?>
+				{
+					["itemId"] = upgrade.ItemId,
+					["objectId"] = upgrade.ObjectId,
+					["slot"] = upgrade.Slot,
+					["itemLevel"] = upgrade.ItemLevel,
+					["replacesItemLevel"] = upgrade.ReplacesItemLevel,
+					["worn"] = worn,
+				});
+			}
+		}
 		combat.MaintainInventoryAsync = MaintainInventoryAsync;
 		combat.HostileSpawns = graph.GetMap(contract.MapId)!.Waypoints
 			.Select(waypoint => (waypoint, template: waypoint.TemplateId is int id
@@ -153,6 +193,7 @@ public sealed partial class SimulationFastScenarioTests
 			.Select(entry => new BotNavigationHazard(entry.waypoint.Position, entry.template!.GetAggroRange())).ToArray();
 		async Task MaintainInventoryAsync(CancellationToken maintenanceToken)
 		{
+			await EquipUpgradesAsync(maintenanceToken);
 			BotWorldModel world = session.Api.World;
 			if (maintainingInventory || !NaturalIshalgenPotionPolicy.NeedsRestock(world.Inventory.Values) ||
 				world.Kinah == failedRestockKinah) return;
@@ -227,7 +268,15 @@ public sealed partial class SimulationFastScenarioTests
 					});
 					return;
 				}
-				throw new InvalidDataException("Neither shipped Ishalgen elixir vendor had a checked approach.");
+				// Deep in a camp, every checked way to both vendors can be closed. A player keeps going on heals and
+				// shops later: record it and retry once the purse changes (the same back-off as an empty purse).
+				failedRestockKinah = world.Kinah;
+				session.TraceDiagnostic("restock-unreachable", new Dictionary<string, object?>
+				{
+					["totalHealing"] = totalStock,
+					["kinah"] = world.Kinah,
+					["position"] = session.CurrentPosition,
+				});
 			}
 			finally { maintainingInventory = false; }
 		}
@@ -633,9 +682,15 @@ public sealed partial class SimulationFastScenarioTests
 
 		// Pull, one at a time, every observed monster whose aggro circle (plus the 2 m assist offset) comes
 		// within 20 m of the objective, then walk back to it. Bounded only as a stall guard.
-		async Task ClearAroundObjectiveAsync(int objectiveObjectId, string purpose)
+		async Task ClearAroundObjectiveAsync(int objectiveObjectId, string purpose) =>
+			await ClearAroundSpotAsync(navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == objectiveObjectId)?.Position,
+				objectiveObjectId, purpose);
+
+		// The same, around a position (a shipped spawn hint) before walking onto it: the recorded human pulled the
+		// Stalker beside the blue generator from 20 m out first, instead of stepping onto the generator and being
+		// jumped there. With an object id, walks back to it afterwards.
+		async Task ClearAroundSpotAsync(BotPosition? objective, int? objectiveObjectId, string purpose)
 		{
-			BotPosition? objective = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == objectiveObjectId)?.Position;
 			if (objective is not BotPosition spot) return;
 			bool cleared = false;
 			for (int pull = 0; pull < 20 && !session.Api.World.IsDead; pull++)
@@ -662,7 +717,7 @@ public sealed partial class SimulationFastScenarioTests
 				cleared = true;
 				await combat.RestAsync(token);
 			}
-			if (cleared && !session.Api.World.IsDead)
+			if (cleared && objectiveObjectId != null && !session.Api.World.IsDead)
 				await NaturalIshalgenNavigator.ApproachNpcAsync(contract.MapId,
 					navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == objectiveObjectId)?.TemplateId ?? -1,
 					spot, navigator, token);
@@ -720,6 +775,7 @@ public sealed partial class SimulationFastScenarioTests
 		{
 			if (!await DefendAgainstEngagedAsync(purpose)) return null;
 			if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 80) await combat.RestAsync(token);
+			await combat.MaintainBuffsAsync(token);
 			NaturalPullPlan? plan = null;
 			for (int wait = 0; wait <= 3; wait++)
 			{
@@ -2081,8 +2137,13 @@ public sealed partial class SimulationFastScenarioTests
 				for (int use = 1; session.Api.World.Quests[2007].StepAndFlags < step; use++)
 				{
 					if (use > 10) Assert.Fail($"Q2007 {color} generator use did not complete after ten attempts.");
-					// The same walk-back-after-death recovery as Rae and Nalto: a death on the way, or while
-					// clearing, rejoins from bind instead of ending the journey.
+					// Clear around the generator's spot from range before stepping onto it (the recorded human's
+					// order), then approach with the same walk-back-after-death recovery as Rae and Nalto.
+					BotPosition? generatorHint = graph.GetMap(contract.MapId)!.Waypoints
+						.Where(waypoint => waypoint.TemplateId == npcId)
+						.OrderBy(waypoint => Distance(session.CurrentPosition, waypoint.Position))
+						.Select(waypoint => (BotPosition?)waypoint.Position).FirstOrDefault();
+					await ClearAroundSpotAsync(generatorHint, null, $"q2007-{color}-generator-approach");
 					int generator = await ApproachGuardedCampaignNpcAsync(npcId);
 					// A player clears what stands near an object before a 3 s use bar a single hit interrupts.
 					await ClearAroundObjectiveAsync(generator, $"q2007-{color}-generator");
@@ -3219,6 +3280,34 @@ public sealed partial class SimulationFastScenarioTests
 		private static float Horizontal(BotPosition a, BotPosition b) =>
 			MathF.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
 
+		/// <summary>
+		/// Keep the learned protection buff (Blessing of Guardianship) up between fights, as the recorded human
+		/// did. The client sees its own effects (SM_ABNORMAL_EFFECT); the buff is recast only when absent, off
+		/// cooldown and affordable. The combat policy's own blessing rule never fires mid-pull, so this is where
+		/// it happens.
+		/// </summary>
+		public async Task MaintainBuffsAsync(CancellationToken token)
+		{
+			BotWorldModel world = session.Api.World;
+			if (world.IsDead || world.CurrentHp <= 0 || InCombat) return;
+			NaturalPriestSkill? blessing = NaturalPriestSkills.Best("blessing", world.Level, world.Skills);
+			if (blessing == null) return;
+			var blessingIds = NaturalPriestSkills.All.Where(skill => skill.Role == "blessing").Select(skill => (int)skill.Id).ToHashSet();
+			if (world.VisibleEffects?.Any(effect => blessingIds.Contains(effect.SkillId)) == true) return;
+			DateTimeOffset now = fixture.Epoch.AddMilliseconds(fixture.Clock.NowMillis);
+			if (cooldowns.TryGetValue(blessing.CooldownId, out DateTimeOffset readyAt) && readyAt > now) return;
+			if (world.CurrentMp < blessing.ManaCost) return;
+			TimeSpan gate = session.Api.Timing.TimeUntilCast(blessing.Id);
+			if (gate > TimeSpan.Zero) await session.AdvanceAsync(gate + TimeSpan.FromMilliseconds(1), token);
+			session.TraceDiagnostic("buff-blessing", new Dictionary<string, object?>
+			{
+				["skillId"] = blessing.Id,
+				["mp"] = world.CurrentMp,
+				["position"] = session.CurrentPosition,
+			});
+			await CastAsync(blessing, session.CharacterId, token);
+		}
+
 		public async Task RestAsync(CancellationToken token)
 		{
 			BotWorldModel restWorld = session.Api.World;
@@ -3235,6 +3324,7 @@ public sealed partial class SimulationFastScenarioTests
 				if (world.CurrentHp * 100 >= world.MaxHp * 90 &&
 					world.CurrentMp * 100 >= world.MaxMp * 80)
 				{
+					await MaintainBuffsAsync(token);
 					if (MaintainInventoryAsync is { } maintain)
 						await maintain(token);
 					return;

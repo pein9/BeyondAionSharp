@@ -47,6 +47,9 @@ public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skil
 /// <summary>Pure, deterministic one-step policy. The caller supplies only observed client state.</summary>
 public static class NaturalPriestCombatPolicy
 {
+	/// <summary>Attackers at which low HP means leave rather than heal through it.</summary>
+	public const int SwarmedAttackers = 3;
+
 	public static NaturalCombatChoice Decide(NaturalCombatObservation state, DateTimeOffset now,
 		IEnumerable<NaturalPriestSkill>? catalog = null)
 	{
@@ -55,10 +58,22 @@ public static class NaturalPriestCombatPolicy
 		if (state.MaxHp <= 0 || state.MaxMp <= 0 || state.Hp < 0 || state.Mp < 0)
 			return Choice("blocked", null, "Client life statistics are incomplete.");
 		NaturalPriestSkill? heal = NaturalPriestSkills.Best("heal", state.Level, state.Learned, catalog);
-		// Cornered: no checked escape leads away from the pack, so fight it out as a player would.
+		// Low HP: heal through it while heals and potions last, as a player does against two monsters (the
+		// recorded human run kept chaining Healing Light down to 24% and won). Retreat only when swarmed (three
+		// or more attackers outdamage the heal) or when nothing is left to heal with. Cornered: no checked
+		// escape leads away from the pack, so fight it out regardless.
 		if (!state.Cornered && (state.TargetObjectId != null || state.Aggro || state.NearbyAggressors > 0) &&
 			state.Hp * 100 <= state.MaxHp * 30)
-			return Choice("retreat", null, "HP is at or below 30% during a client-observed fight, regardless of attacker count.");
+		{
+			bool swarmed = state.NearbyAggressors >= SwarmedAttackers;
+			bool canHeal = heal != null && Eligible(heal, state.TargetObjectId, 0, state, now, reserveHeal: false);
+			bool canPotion = state.HasLifePotion && state.LifePotionReady ||
+				state.HasHotPotion && state.HotPotionReady && !state.HotPotionActive;
+			if (swarmed)
+				return Choice("retreat", null, $"HP is at or below 30% with {state.NearbyAggressors} client-observed attackers.");
+			if (!canHeal && !canPotion)
+				return Choice("retreat", null, "HP is at or below 30% and no self-heal or potion is available.");
+		}
 		bool urgent = state.Hp * 100 <= state.MaxHp * 70 &&
 			(state.Aggro || state.TargetObjectId != null || state.NearbyAggressors > 0);
 		bool critical = state.Hp * 100 <= state.MaxHp * 25;
