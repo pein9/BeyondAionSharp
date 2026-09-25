@@ -227,6 +227,13 @@ destination's island first.
 
 All of these are generated. Never hand-edit them. Change the inputs or settings and regenerate.
 
+**After a spawn placement pass** (retail-accuracy edits to `spawns/Npcs`, `Gather` or `Statics`
+on a starter map): run the height audit above — a heightmap-derived placement puts anything under
+an overhang or in a cave on the ground above it (nineteen Ishalgen spawns around the Black Opal
+cave were 30–57 m up after the 5.8 import) — then regenerate the Java geo golden, which hashes
+those files and would otherwise fail `GoldenGeoFixtureTests`. Bot tests pin what a scenario needs
+(for example at least 20 basket spots for the soak), never a raw spot count.
+
 ## Regenerating
 
 ```powershell
@@ -234,6 +241,8 @@ All of these are generated. Never hand-edit them. Change the inputs or settings 
 python tools/nav/extract_walk_masks.py --client "C:/Program Files (x86)/Beyond Aion"
 # 2. Roads from the client map art cached by the aion-portal spawn editor (needs numpy, scikit-image, pillow)
 python tools/nav/extract_roads.py --map-id 220010000 --image ../aion-portal/assets/maps/220010000-ishalgen-map.webp --manifest ../aion-portal/assets/maps/manifest.json
+python tools/nav/audit_spawn_heights.py --map-id 220010000 --base <rev before the spawn change>   # floating spots and floors beneath
+pwsh -NoProfile -File scripts/parity/regen-geo-golden.ps1                                          # after any starter spawn/walker edit
 # 3. Navmeshes (starter maps by default; --maps all|baked|<id,id>)
 dotnet run --project tools/Aion.NavBake -- bake --maps starter
 # 4. Travel graphs

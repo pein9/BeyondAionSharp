@@ -13,7 +13,9 @@ public sealed class SoakQuestObjectSearchTests
 	public void UsesAllShippedCollectionSpotsWithoutChangingTheRequiredItemCount(ScenarioRace race, int template, int quest)
 	{
 		var positions = SoakQuestObjectSearch.ShippedPositions(race, template);
-		Assert.Equal(32, positions.Count);
+		// Spawn placement is tuned toward retail over time (Ishalgen went from 32 to 27 baskets in the 5.8
+		// pass); what the soak needs is one distinct starting hint per subject, not a fixed count.
+		Assert.True(positions.Count >= 20, $"Only {positions.Count} shipped spots for {template}; the soak needs 20 distinct hints.");
 		var objective = StarterSoakQuest.ForRace(race).Single(stage => stage.Id == quest).Objective!;
 		Assert.Equal(3, objective.Positions.Count);
 		Assert.All(objective.Positions, position => Assert.Contains(position, positions));

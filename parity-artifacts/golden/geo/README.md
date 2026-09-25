@@ -23,13 +23,13 @@ coordinates and checks complete point coverage, rather than trusting fixture IDs
 
 | Query | Cases | Coverage |
 |---|---:|---|
-| `GetZ` | 13,017 | All 4,339 points: ±2 m, ±50 m, and ±2 m rejecting steep slopes |
-| `CanSee` | 5,600 | Every 31st input, 8 headings, lengths 0/1/10/30/81 m, varied target Z |
-| `GetClosestCollision` | 5,600 | Same rays; alternating near-ground adjustment |
-| `FindMovementCollision` | 5,600 | Same XY targets; new mutable origin for each query |
+| `GetZ` | 12,480 | All 4,160 points: ±2 m, ±50 m, and ±2 m rejecting steep slopes |
+| `CanSee` | 5,400 | Every 31st input, 8 headings, lengths 0/1/10/30/81 m, varied target Z |
+| `GetClosestCollision` | 5,400 | Same rays; alternating near-ground adjustment |
+| `FindMovementCollision` | 5,400 | Same XY targets; new mutable origin for each query |
 
-The 4,339 points comprise 1,685 Poeta and 2,654 Ishalgen positions. Java yields
-12,899 finite height results and 118 NaNs; visibility has 2,803 clear and 2,797
+The 4,160 points comprise 1,685 Poeta and 2,475 Ishalgen positions. Java yields
+12,359 finite height results and 121 NaNs; visibility has 2,761 clear and 2,639
 blocked results. C# must reproduce hit/miss topology and booleans exactly, with
 an absolute **0.001 m** tolerance on finite float coordinates. This does not waive
 missing-ground results, exceptions or loader errors.
@@ -37,13 +37,17 @@ missing-ground results, exceptions or loader errors.
 The sole permitted loader warning is the exact starter-profile absence of material
 PNGs, with ownership/review date recorded in `docs/e2e-geodata-measurements.md`.
 
-Regenerated output was byte-identical in consecutive Java runs:
-`starter-queries.jsonl` SHA256
-`25fbceb2ab6bbc5902d3a9213e105d7124376bcdb296cfba6075eb0acb607e80`.
+The first generation (July 2026) was byte-identical in consecutive Java runs. The
+fixture was regenerated on 2026-09-25 after the 5.8 Ishalgen placement pass
+(`1856203e5`, then heights re-snapped and three lycan spots removed); the current
+`starter-queries.jsonl` SHA256 is
+`60adc49f419e73a72162be4c62a6ac6b16f1974de97a5d8b7bf8c116c75bcbb2`.
 
 ## Regenerate locally
 
-Keep both working checkouts clean, switch only the Java checkout to its existing
+`pwsh -NoProfile -File scripts/parity/regen-geo-golden.ps1` does all of the below and runs the
+C# test afterwards; every starter spawn or walker edit needs it, because the input hashes above
+change. By hand: keep both working checkouts clean, switch only the Java checkout to its existing
 generator branch, then run from the Java repository root:
 
 ```powershell
