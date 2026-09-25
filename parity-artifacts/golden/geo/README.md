@@ -39,9 +39,10 @@ PNGs, with ownership/review date recorded in `docs/e2e-geodata-measurements.md`.
 
 The first generation (July 2026) was byte-identical in consecutive Java runs. The
 fixture was regenerated on 2026-09-25 after the 5.8 Ishalgen placement pass
-(`1856203e5`, then heights re-snapped and three lycan spots removed); the current
+(`1856203e5`, then heights re-snapped, three lycan spots removed, and nine fixed
+positions lifted onto their retail deck or platform); the current
 `starter-queries.jsonl` SHA256 is
-`60adc49f419e73a72162be4c62a6ac6b16f1974de97a5d8b7bf8c116c75bcbb2`.
+`8f5685b7228a81ec199a354c4fa6b52a7393781b3c6d79bab92ae24219b56600`.
 
 ## Regenerate locally
 

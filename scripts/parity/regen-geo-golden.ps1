@@ -44,6 +44,6 @@ try {
 $manifest = Get-Content (Join-Path $root 'parity-artifacts/golden/geo/starter-inputs.json') | ConvertFrom-Json
 Write-Host "Fixture regenerated: $($manifest.points) points. Verifying with the C# test..."
 dotnet test (Join-Path $root 'tests/Aion.GameServer.Tests/Aion.GameServer.Tests.csproj') --filter 'FullyQualifiedName~GoldenGeoFixtureTests' 2>&1 |
-    Where-Object { $_ -match 'Passed!|Failed!|error' } | ForEach-Object { Write-Host $_ }
+    Where-Object { $_ -match 'Passed!|Failed!| error ' } | ForEach-Object { Write-Host $_ }
 if ($LASTEXITCODE -ne 0) { throw 'GoldenGeoFixtureTests failed against the regenerated fixture.' }
 Write-Host 'Done. Update the counts in parity-artifacts/golden/geo/README.md and commit the fixture with the spawn change.'

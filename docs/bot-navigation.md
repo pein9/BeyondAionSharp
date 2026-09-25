@@ -239,7 +239,8 @@ collision surfaces under every fixed retail position and takes the one nearest t
 spawns, whose retail height is only an area anchor, still use the heightmap. Replayed on the
 pre-import XML it reproduces the nineteen cave floors and additionally lifts nine spots onto
 their retail deck or platform (the Eyvindr peon under the Anturoon deck, the dundun highsitters,
-Munin, the Methu egg); those nine were left as committed and will follow on the next pass.
+Munin, the Methu egg); those nine heights are applied, with the travel graph and geo golden
+regenerated.
 
 ## Regenerating
 
