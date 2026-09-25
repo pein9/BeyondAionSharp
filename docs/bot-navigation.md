@@ -233,6 +233,13 @@ an overhang or in a cave on the ground above it (nineteen Ishalgen spawns around
 cave were 30–57 m up after the 5.8 import) — then regenerate the Java geo golden, which hashes
 those files and would otherwise fail `GoldenGeoFixtureTests`. Bot tests pin what a scenario needs
 (for example at least 20 basket spots for the soak), never a raw spot count.
+The portal's importer (`aion-portal/scripts/import_58_ishalgen.py`) now asks Aion.NavBake for the
+collision surfaces under every fixed retail position and takes the one nearest the retail height
+(within 6 m), so cave floors, ship decks and platforms come out right on the next pass; territory
+spawns, whose retail height is only an area anchor, still use the heightmap. Replayed on the
+pre-import XML it reproduces the nineteen cave floors and additionally lifts nine spots onto
+their retail deck or platform (the Eyvindr peon under the Anturoon deck, the dundun highsitters,
+Munin, the Methu egg); those nine were left as committed and will follow on the next pass.
 
 ## Regenerating
 
