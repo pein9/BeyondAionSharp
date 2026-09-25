@@ -168,6 +168,27 @@ now drive it:
   or when no heal or potion is available (`NaturalPriestCombatPolicy.SwarmedAttackers`). The human chained
   Healing Light down to 24% HP against two monsters and won; the bot used to run into the next camp.
 
+**The Priest is a melee class (2026-09-25).** Two findings from the human recording changed the combat
+core. First, the bot had never cast Hallowed Strike (45 casts in the human session, 0 in every bot run):
+its 1 m template range never passed against the client's lagging distance, and the rotation order put it
+last. Second, the human opened from range (median 11.5 m) and then fought at melee (median 2.3 m for every
+skill), with instants first. `NaturalPriestCombatPolicy` now plays it that way: Smite opens and is the
+filler while the monster closes; the bot holds position instead of walking into melee (walking pulled it
+into the neighbours' circles); once the monster is adjacent, by client distance or because it hit the bot
+in the last 3 s, the order is Infernal Blaze (instant, stun), Hallowed Strike (instant, 30% attack-speed
+slow, every 8 s), Smite, then the mace. Heals at 70% against one attacker and 55% against two or more, the
+potion at 80%, and below 35% sustain only until 45%. After a cast the bot waits for the animation or a
+0.7 s reaction, not a fixed 2 s: the human cast every 2.4 s, the bot every 3.5 s, and against two Stalkers
+that gap is the difference between 78 HP/s of healing and a slow loss.
+
+**The bot could not see the Stalkers.** The two Gray Mane Stalker templates in the Q2007 camp (210750,
+211284) carry no `type` attribute, so `GetNpcTemplateType()` is NONE for them, and every "is it a monster?"
+test in the journey used that attribute: a Stalker was in the final fight of all 84 deaths across four
+runs while every one of the 128 Q2007 pull plans reported a clean pull. `NaturalHostility.IsAggressive`
+now mirrors the server's own aggro test (tribe aggressive to the player's tribe, not friendly, aggro range
+above 0) and is used at all 14 sites. Patrol routes count too: every step of a walker's route is a spawn
+circle for rest and route decisions.
+
 **Clearing around an objective.** Before a use bar that one hit interrupts (the Q2007 generators),
 the Priest pulls, one at a time, every observed monster whose aggro circle plus 2 m comes within 20 m of
 the object (`objective-clear`). It does this from range around the generator's shipped spot before

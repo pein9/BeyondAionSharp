@@ -186,11 +186,28 @@ public sealed partial class SimulationFastScenarioTests
 			}
 		}
 		combat.MaintainInventoryAsync = MaintainInventoryAsync;
-		combat.HostileSpawns = graph.GetMap(contract.MapId)!.Waypoints
+		NaturalHostility.PlayerTribe = NaturalHostility.TribeOf(player.GetRace());
+		// Every aggressive spawn spot, plus every step of a patrol's route (a walker stands anywhere on it).
+		var hostileSpawns = graph.GetMap(contract.MapId)!.Waypoints
 			.Select(waypoint => (waypoint, template: waypoint.TemplateId is int id
 				? Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(id) : null))
-			.Where(entry => entry.template?.GetNpcTemplateType() == NpcTemplateType.MONSTER && entry.template.GetAggroRange() > 0)
-			.Select(entry => new BotNavigationHazard(entry.waypoint.Position, entry.template!.GetAggroRange())).ToArray();
+			.Where(entry => NaturalHostility.IsAggressive(entry.template))
+			.Select(entry => new BotNavigationHazard(entry.waypoint.Position, entry.template!.GetAggroRange())).ToList();
+		foreach (var group in Aion.GameServer.Dataholders.DataManager.SPAWNS_DATA.GetSpawnsByWorldId(contract.MapId))
+		{
+			var template = Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(group.GetNpcId());
+			if (!NaturalHostility.IsAggressive(template)) continue;
+			foreach (var spot in group.GetSpawnTemplates())
+			{
+				if (spot.GetWalkerId() is not { Length: > 0 } routeId) continue;
+				var route = Aion.GameServer.Dataholders.DataManager.WALKER_DATA.GetWalkerTemplate(routeId);
+				if (route == null) continue;
+				foreach (var step in route.GetRouteSteps())
+					hostileSpawns.Add(new BotNavigationHazard(new BotPosition(step.GetX(), step.GetY(), step.GetZ(), 0),
+						template!.GetAggroRange()));
+			}
+		}
+		combat.HostileSpawns = hostileSpawns;
 		async Task MaintainInventoryAsync(CancellationToken maintenanceToken)
 		{
 			await EquipUpgradesAsync(maintenanceToken);
@@ -609,7 +626,7 @@ public sealed partial class SimulationFastScenarioTests
 		NaturalPullMonster[] ObservedPullMonsters(int? except = null) => navigator.Observe().Npcs
 			.Where(npc => npc.ObjectId != except)
 			.Select(npc => (npc, template: Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)))
-			.Where(entry => entry.template?.GetNpcTemplateType() == NpcTemplateType.MONSTER)
+			.Where(entry => NaturalHostility.IsAggressive(entry.template))
 			.Select(entry => new NaturalPullMonster(entry.npc, entry.template!.GetAggroRange(), entry.template.GetTribe().ToString()))
 			.ToArray();
 		static bool CanSupport(string helper, string asking) =>
@@ -715,7 +732,12 @@ public sealed partial class SimulationFastScenarioTests
 				if (combat.ReviveCount > revivesBefore) return;
 				if (killed) navigator.UnavailableObjects.Add(plan.Target.Npc.ObjectId);
 				cleared = true;
-				await combat.RestAsync(token);
+				// Respawns take 180 s: rest only when it is needed, so the object gets used inside that window.
+				if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 60 ||
+					session.Api.World.CurrentMp * 100 < session.Api.World.MaxMp * 40)
+					await combat.RestAsync(token);
+				else
+					await combat.MaintainBuffsAsync(token);
 			}
 			if (cleared && objectiveObjectId != null && !session.Api.World.IsDead)
 				await NaturalIshalgenNavigator.ApproachNpcAsync(contract.MapId,
@@ -854,7 +876,7 @@ public sealed partial class SimulationFastScenarioTests
 			static float AggroRadius(int templateId)
 			{
 				var template = Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(templateId);
-				return template?.GetNpcTemplateType() == NpcTemplateType.MONSTER ? template.GetAggroRange() + 1f : 0f;
+				return NaturalHostility.IsAggressive(template) ? template.GetAggroRange() + 1f : 0f;
 			}
 			NaturalObservedMonster[] monsters = navigator.Observe().Npcs
 				.Where(npc => npc.ObjectId != objectiveObjectId)
@@ -971,7 +993,7 @@ public sealed partial class SimulationFastScenarioTests
 				float AggroRadius(int templateId)
 				{
 					var template = Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(templateId);
-					return template?.GetNpcTemplateType() == NpcTemplateType.MONSTER
+					return NaturalHostility.IsAggressive(template)
 						? template.GetAggroRange() + 1f : 0f;
 				}
 				IReadOnlyList<NaturalNavigationObject> observed = navigator.Observe().Npcs;
@@ -1218,8 +1240,8 @@ public sealed partial class SimulationFastScenarioTests
 					.Where(npc => npc.TemplateId == 210377 && !rejectedSpriggs.Contains(npc.ObjectId) &&
 						pairedGuardHints.All(guard => Distance(guard, npc.Position) >= 10))
 					.OrderBy(npc => observed.Count(other => other.ObjectId != npc.ObjectId &&
-						Aion.GameServer.Dataholders.DataManager.NPC_DATA
-							.GetNpcTemplate(other.TemplateId)?.GetNpcTemplateType() == NpcTemplateType.MONSTER &&
+						NaturalHostility.IsAggressive(
+							Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(other.TemplateId)) &&
 						Distance(other.Position, npc.Position) < 10))
 					.ThenBy(npc => Distance(session.CurrentPosition, npc.Position)).ToArray();
 				int? selected = null;
@@ -1562,7 +1584,7 @@ public sealed partial class SimulationFastScenarioTests
 			BotNavigationHazard[] ObservedFieldHazards() => navigator.Observe().Npcs
 				.Select(npc => (Npc: npc,
 					Template: Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)))
-				.Where(entry => entry.Template?.GetNpcTemplateType() == NpcTemplateType.MONSTER)
+				.Where(entry => NaturalHostility.IsAggressive(entry.Template))
 				.Select(entry => new BotNavigationHazard(entry.Npc.Position,
 					entry.Template!.GetAggroRange())).ToArray();
 			async Task<bool> RestAtObservedFieldCampAsync()
@@ -1734,15 +1756,15 @@ public sealed partial class SimulationFastScenarioTests
 				{
 					NaturalNavigationObject[] observed = navigator.Observe().Npcs.ToArray();
 					var blocker = observed
-						.Where(npc => Aion.GameServer.Dataholders.DataManager.NPC_DATA
-							.GetNpcTemplate(npc.TemplateId)?.GetNpcTemplateType() == NpcTemplateType.MONSTER &&
+						.Where(npc => NaturalHostility.IsAggressive(
+							Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)) &&
 							Distance(session.CurrentPosition, npc.Position) <= 30 &&
 							!rejectedPullTargets.Contains(npc.ObjectId))
 						.Select(npc => new { Npc = npc, Edge = FindCheckedFiringEdge(npc) })
 						.Where(entry => entry.Edge != null)
 						.OrderBy(entry => observed.Count(other => other.ObjectId != entry.Npc.ObjectId &&
-							Aion.GameServer.Dataholders.DataManager.NPC_DATA
-								.GetNpcTemplate(other.TemplateId)?.GetNpcTemplateType() == NpcTemplateType.MONSTER &&
+							NaturalHostility.IsAggressive(
+								Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(other.TemplateId)) &&
 							Distance(other.Position, entry.Npc.Position) < 9))
 						.ThenBy(entry => Distance(session.CurrentPosition, entry.Npc.Position))
 						.FirstOrDefault();
@@ -1852,7 +1874,7 @@ public sealed partial class SimulationFastScenarioTests
 				bool cleanPull = stalkerPull is { Helpers.Count: 0 } && observedStalker.ObjectId == stalkerPull.Target.Npc.ObjectId;
 				NaturalNavigationObject[] nearbyHostiles = cleanPull ? [] : navigator.Observe().Npcs
 					.Where(npc => npc.ObjectId != observedStalker.ObjectId &&
-						Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)?.GetNpcTemplateType() == NpcTemplateType.MONSTER &&
+						NaturalHostility.IsAggressive(Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)) &&
 						Distance(session.CurrentPosition, npc.Position) < 12)
 					.ToArray();
 				if (nearbyHostiles.Length > 0 ||
@@ -2143,6 +2165,10 @@ public sealed partial class SimulationFastScenarioTests
 						.Where(waypoint => waypoint.TemplateId == npcId)
 						.OrderBy(waypoint => Distance(session.CurrentPosition, waypoint.Position))
 						.Select(waypoint => (BotPosition?)waypoint.Position).FirstOrDefault();
+					// Never enter the camp low or without a potion in the bag (the recorded human topped up first).
+					if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 80 ||
+						NaturalIshalgenPotionPolicy.SelectOwnedPotion(session.Api.World.Inventory.Values) == null)
+						await combat.RestAsync(token);
 					await ClearAroundSpotAsync(generatorHint, null, $"q2007-{color}-generator-approach");
 					int generator = await ApproachGuardedCampaignNpcAsync(npcId);
 					// A player clears what stands near an object before a 3 s use bar a single hit interrupts.
@@ -2752,7 +2778,7 @@ public sealed partial class SimulationFastScenarioTests
 				(destination == null || Distance(npc.Position, destination.Value) > 0.1f))
 			.Select(npc => (npc,
 				template: Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)))
-			.Where(entry => entry.template?.GetNpcTemplateType() == NpcTemplateType.MONSTER &&
+			.Where(entry => NaturalHostility.IsAggressive(entry.template) &&
 				entry.template.GetAggroRange() > 0)
 			.Select(entry => new BotNavigationHazard(entry.npc.Position,
 				entry.template!.GetAggroRange() + 1f)).ToArray();
@@ -2901,6 +2927,9 @@ public sealed partial class SimulationFastScenarioTests
 			int statusPacketCount = session.PacketHistory.Count;
 			int? observedTargetHpPercent = null;
 			bool healedThisFight = false;
+			bool inEmergency = false;
+			long lastHitByTargetMillis = long.MinValue;
+			IReadOnlySet<int> blessingIds = NaturalPriestSkills.Ids("blessing");
 			var incomingAttackers = new HashSet<int>();
 			// Fights may run long: a cornered Priest alternates heals and damage, and respawns or chain
 			// aggro can keep adding monsters. The bound only stops a genuine stall (every action rejected
@@ -2914,7 +2943,11 @@ public sealed partial class SimulationFastScenarioTests
 					.Where(packet => packet.PacketType == typeof(SM_ATTACK) &&
 						packet.Get<int>("targetObjId") == session.CharacterId).ToArray();
 				foreach (DecodedBotServerPacket attack in recentAttacks)
-					incomingAttackers.Add(attack.Get<int>("attackerObjId"));
+				{
+					int attacker = attack.Get<int>("attackerObjId");
+					incomingAttackers.Add(attacker);
+					if (attacker == target) lastHitByTargetMillis = fixture.Clock.NowMillis;
+				}
 				observedPacketCount = session.PacketHistory.Count;
 				foreach (DecodedBotServerPacket status in session.PacketHistory.Skip(statusPacketCount)
 					.Where(packet => packet.PacketType == typeof(SmAttackStatus) &&
@@ -2936,6 +2969,12 @@ public sealed partial class SimulationFastScenarioTests
 				if (!world.Objects.TryGetValue(target, out BotKnownObject? npc))
 					return false; // Reacquire a new client-observed mob; do not count this as a kill.
 				DateTimeOffset now = fixture.Epoch.AddMilliseconds(fixture.Clock.NowMillis);
+				// A monster that hit us in the last 3 s is in melee reach whatever its lagging client position says.
+				bool targetAdjacent = fixture.Clock.NowMillis - lastHitByTargetMillis <= 3000 ||
+					Distance(session.CurrentPosition, npc.Position) <= NaturalPriestCombatPolicy.MeleeReach;
+				if (world.CurrentHp * 100 <= world.MaxHp * NaturalPriestCombatPolicy.EmergencyPercent) inEmergency = true;
+				else if (world.CurrentHp * 100 >= world.MaxHp * NaturalPriestCombatPolicy.EmergencyClearPercent) inEmergency = false;
+				bool hasBlessing = world.VisibleEffects?.Any(effect => blessingIds.Contains(effect.SkillId)) == true;
 				BotInventoryItem? hotPotion = NaturalIshalgenPotionPolicy.SelectOwnedPotion(world.Inventory.Values);
 				var hotTemplate = hotPotion == null ? null :
 					Aion.GameServer.Dataholders.DataManager.ITEM_DATA.GetItemTemplate(hotPotion.ItemId);
@@ -2948,7 +2987,7 @@ public sealed partial class SimulationFastScenarioTests
 					HasHealedThisFight: healedThisFight, HasHotPotion: hotPotion != null,
 					HotPotionReady: hotReady,
 					HotPotionActive: NaturalIshalgenPotionPolicy.HasActiveHealing(world.VisibleEffects),
-					Cornered: cornered), now);
+					Cornered: cornered, TargetAdjacent: targetAdjacent, InEmergency: inEmergency, HasBlessing: hasBlessing), now);
 				trace.Add($"t{turn}:action={choice.Action}/{choice.Skill?.Id} targetDistance={Distance(session.CurrentPosition, npc.Position):F1}");
 				lastCombatTrace = trace.TakeLast(12).ToArray();
 				session.TraceDiagnostic("combat-decision", new Dictionary<string, object?>
@@ -2964,6 +3003,8 @@ public sealed partial class SimulationFastScenarioTests
 					["maxHp"] = world.MaxHp,
 					["mp"] = world.CurrentMp,
 					["observedAttackers"] = nearbyAttackers,
+					["targetAdjacent"] = targetAdjacent,
+					["inEmergency"] = inEmergency,
 					["targetHpPercent"] = observedTargetHpPercent,
 					["healedThisFight"] = healedThisFight,
 					["hotPotionItemId"] = hotPotion?.ItemId,
@@ -3062,7 +3103,7 @@ public sealed partial class SimulationFastScenarioTests
 							throw new NaturalCombatApproachBlockedException(approach.Reason);
 						break;
 					case "wait":
-						await session.AdvanceAsync(TimeSpan.FromMilliseconds(300), token);
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
 						break;
 					case "retreat":
 						// Some quest pulls begin directly at an interacted object and have
@@ -3115,7 +3156,7 @@ public sealed partial class SimulationFastScenarioTests
 				BotNavigationHazard[] otherHazards = navigator.Observe().Npcs
 					.Where(npc => !observedAttackers.Contains(npc.ObjectId))
 					.Select(npc => (npc, template: Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)))
-					.Where(entry => entry.template?.GetNpcTemplateType() == NpcTemplateType.MONSTER)
+					.Where(entry => NaturalHostility.IsAggressive(entry.template))
 					.Select(entry => new BotNavigationHazard(entry.npc.Position, entry.template!.GetAggroRange())).ToArray();
 				IEnumerable<BotPosition> candidates = navigator.Events
 					.Where(item => item.Action == "segment-progress" && item.Position != null)
@@ -3175,7 +3216,7 @@ public sealed partial class SimulationFastScenarioTests
 					BotNavigationHazard[] others = navigator.Observe().Npcs
 						.Where(npc => !observedAttackers.Contains(npc.ObjectId))
 						.Select(npc => (npc, template: Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)))
-						.Where(entry => entry.template?.GetNpcTemplateType() == NpcTemplateType.MONSTER)
+						.Where(entry => NaturalHostility.IsAggressive(entry.template))
 						.Select(entry => new BotNavigationHazard(entry.npc.Position, entry.template!.GetAggroRange())).ToArray();
 					if (!BotNavigationGeometry.AvoidsHazards(session.CurrentPosition, segment, others)) break; // new monster ahead
 					await navigator.MoveAsync(segment, token);
@@ -3230,7 +3271,7 @@ public sealed partial class SimulationFastScenarioTests
 			BotPosition here = session.CurrentPosition;
 			BotNavigationHazard[] observed = navigator.Observe().Npcs
 				.Select(npc => (npc, template: Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)))
-				.Where(entry => entry.template?.GetNpcTemplateType() == NpcTemplateType.MONSTER && entry.template.GetAggroRange() > 0)
+				.Where(entry => NaturalHostility.IsAggressive(entry.template))
 				.Select(entry => new BotNavigationHazard(entry.npc.Position, entry.template!.GetAggroRange())).ToArray();
 			BotNavigationHazard[] spawns = HostileSpawns.Where(spawn => Distance(spawn.Position, here) < 260).ToArray();
 			BotNavigationHazard[] threats = [.. spawns, .. observed];
@@ -3531,7 +3572,7 @@ public sealed partial class SimulationFastScenarioTests
 						session.CurrentPosition, obstructedTarget.Position, token);
 					NaturalNavigationObject[] otherHostiles = navigator.Observe().Npcs
 						.Where(npc => npc.ObjectId != target &&
-							Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)?.GetNpcTemplateType() == NpcTemplateType.MONSTER)
+							NaturalHostility.IsAggressive(Aion.GameServer.Dataholders.DataManager.NPC_DATA.GetNpcTemplate(npc.TemplateId)))
 						.ToArray();
 					BotPosition? firingPoint = checkedApproach
 						.Where(point => Distance(point, obstructedTarget.Position) is >= 8 and <= 21 &&

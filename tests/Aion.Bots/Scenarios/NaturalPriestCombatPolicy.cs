@@ -25,12 +25,20 @@ public static class NaturalPriestSkills
 		new(1615, 8, "hallowed", 15, 1, 1512, 80, "C_CHAINJ_1TH_1"),
 	];
 
+	/// <summary>Skill ids by role, for recognising them in packets and effect lists.</summary>
+	public static IReadOnlySet<int> Ids(string role) => All.Where(skill => skill.Role == role).Select(skill => (int)skill.Id).ToHashSet();
+
 	public static NaturalPriestSkill? Best(string role, int level, IReadOnlyDictionary<int, BotSkill> learned,
 		IEnumerable<NaturalPriestSkill>? catalog = null) =>
 		(catalog ?? All).Where(skill => skill.Role == role && skill.MinimumLevel <= level && learned.ContainsKey(skill.Id))
 		.OrderByDescending(skill => skill.MinimumLevel).ThenByDescending(skill => skill.Id).FirstOrDefault();
 }
 
+/// <param name="TargetAdjacent">The target is in melee reach: within <see cref="NaturalPriestCombatPolicy.MeleeReach"/>
+/// by the client's estimate, or it hit the bot within the last few seconds (a chasing monster's client
+/// position lags; its swings do not).</param>
+/// <param name="InEmergency">HP fell to <see cref="NaturalPriestCombatPolicy.EmergencyPercent"/> and has not
+/// recovered to <see cref="NaturalPriestCombatPolicy.EmergencyClearPercent"/> yet: sustain only.</param>
 public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int Mp, int MaxMp,
 	bool Dead, bool Aggro, float? TargetDistance, int? TargetObjectId,
 	IReadOnlyDictionary<int, BotSkill> Learned, IReadOnlyDictionary<int, DateTimeOffset> Cooldowns,
@@ -39,16 +47,31 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	bool LifePotionReady = false, bool ManaPotionReady = false, int NearbyAggressors = 0,
 	int? TargetHpPercent = null, bool HasHealedThisFight = false,
 	bool HasHotPotion = false, bool HotPotionReady = false, bool HotPotionActive = false,
-	bool Cornered = false);
+	bool Cornered = false, bool TargetAdjacent = false, bool InEmergency = false);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);
 
-/// <summary>Pure, deterministic one-step policy. The caller supplies only observed client state.</summary>
+/// <summary>
+/// Pure, deterministic one-step policy. The caller supplies only observed client state.
+///
+/// The Priest is a melee class with a few ranged spells, and this plays it the way the recorded human did
+/// (docs/session-recording.md, 2026-09-24): open with Smite from range and let the monster come; once it is
+/// adjacent, the instants first because nothing can interrupt them (Infernal Blaze with its stun, Hallowed
+/// Strike with its 30% attack-speed slow, every 8 s), Smite as the filler, and the mace between skills.
+/// Never walk into melee: the monster closes, and walking pulls the bot into its neighbours' circles.
+/// Heal at 70% against one attacker and at 55% against two or more (damage ends a two-on-one; healing
+/// alone does not), potion at 80%, and below 35% sustain only until 45% again.
+/// </summary>
 public static class NaturalPriestCombatPolicy
 {
 	/// <summary>Attackers at which low HP means leave rather than heal through it.</summary>
 	public const int SwarmedAttackers = 3;
+
+	/// <summary>Client distance at which a monster is on the bot (its bound radius plus the swing reach).</summary>
+	public const float MeleeReach = 3f;
+
+	public const int HealPercentSingle = 70, HealPercentMultiple = 55, EmergencyPercent = 35, EmergencyClearPercent = 45;
 
 	public static NaturalCombatChoice Decide(NaturalCombatObservation state, DateTimeOffset now,
 		IEnumerable<NaturalPriestSkill>? catalog = null)
@@ -58,12 +81,13 @@ public static class NaturalPriestCombatPolicy
 		if (state.MaxHp <= 0 || state.MaxMp <= 0 || state.Hp < 0 || state.Mp < 0)
 			return Choice("blocked", null, "Client life statistics are incomplete.");
 		NaturalPriestSkill? heal = NaturalPriestSkills.Best("heal", state.Level, state.Learned, catalog);
+		bool fighting = state.Aggro || state.TargetObjectId != null || state.NearbyAggressors > 0;
+		bool adjacent = state.TargetAdjacent || state.TargetDistance is float near && near <= MeleeReach;
 		// Low HP: heal through it while heals and potions last, as a player does against two monsters (the
 		// recorded human run kept chaining Healing Light down to 24% and won). Retreat only when swarmed (three
 		// or more attackers outdamage the heal) or when nothing is left to heal with. Cornered: no checked
 		// escape leads away from the pack, so fight it out regardless.
-		if (!state.Cornered && (state.TargetObjectId != null || state.Aggro || state.NearbyAggressors > 0) &&
-			state.Hp * 100 <= state.MaxHp * 30)
+		if (!state.Cornered && fighting && state.Hp * 100 <= state.MaxHp * 30)
 		{
 			bool swarmed = state.NearbyAggressors >= SwarmedAttackers;
 			bool canHeal = heal != null && Eligible(heal, state.TargetObjectId, 0, state, now, reserveHeal: false);
@@ -74,15 +98,14 @@ public static class NaturalPriestCombatPolicy
 			if (!canHeal && !canPotion)
 				return Choice("retreat", null, "HP is at or below 30% and no self-heal or potion is available.");
 		}
-		bool urgent = state.Hp * 100 <= state.MaxHp * 70 &&
-			(state.Aggro || state.TargetObjectId != null || state.NearbyAggressors > 0);
+		int healPercent = state.InEmergency ? 100 : state.NearbyAggressors >= 2 ? HealPercentMultiple : HealPercentSingle;
+		bool urgent = fighting && state.Hp * 100 <= state.MaxHp * healPercent;
 		bool critical = state.Hp * 100 <= state.MaxHp * 25;
-		if (state.Hp * 100 <= state.MaxHp * 80 &&
-			(state.Aggro || state.TargetObjectId != null || state.NearbyAggressors > 0) &&
+		if (fighting && state.Hp * 100 <= state.MaxHp * 80 &&
 			state.HasHotPotion && state.HotPotionReady && !state.HotPotionActive)
 			return Choice("hot-potion", null,
-				"HP is at or below 80% in a fight; apply owned timed healing before the 70% self-heal threshold.");
-		if (urgent && state.HasHealedThisFight && state.TargetHpPercent is > 0 and <= 15 &&
+				"HP is at or below 80% in a fight; apply owned timed healing before the self-heal threshold.");
+		if (urgent && !state.InEmergency && state.HasHealedThisFight && state.TargetHpPercent is > 0 and <= 15 &&
 			state.TargetObjectId is int finishingTarget && state.TargetDistance is float finishingDistance)
 		{
 			NaturalPriestSkill? finisher = NaturalPriestSkills.Best("smite", state.Level, state.Learned, catalog);
@@ -92,7 +115,9 @@ public static class NaturalPriestCombatPolicy
 					"Client-observed target is at or below 15% HP after this fight already received a self-heal.");
 		}
 		if (urgent && heal != null && Eligible(heal, state.TargetObjectId, 0, state, now, reserveHeal: false))
-			return Choice("cast-self", heal, "HP is at or below 70% during a client-observed fight.");
+			return Choice("cast-self", heal, state.InEmergency
+				? $"Emergency: HP fell to {EmergencyPercent}% and has not recovered to {EmergencyClearPercent}%."
+				: $"HP is at or below {healPercent}% during a client-observed fight with {state.NearbyAggressors} attackers.");
 		if (critical && state.HasLifePotion && state.LifePotionReady)
 			return Choice("life-potion", null, "Critical HP and self-heal is unavailable; consume an owned life potion.");
 		if (state.Mp < (heal?.ManaCost ?? 0) + 10 && state.HasManaPotion && state.ManaPotionReady)
@@ -111,25 +136,22 @@ public static class NaturalPriestCombatPolicy
 				? Choice("rest", null, "No engaged target; recover before the next pull.")
 				: Choice("ready", null, "HP and MP exceed the conservative next-pull thresholds.");
 		}
-		if (distance > 25)
+		if (distance > 25 && !adjacent)
 			return Choice("approach", null, "Target is outside Priest spell range.");
-		foreach (string role in new[] { "followup", "infernal", "smite", "hallowed" })
+		// The rotation. Adjacent: instants first (they cannot be interrupted and each buys time: the stun, the
+		// slow), then Smite. At range: Smite is the pull and the filler while the monster closes.
+		string[] rotation = adjacent ? ["followup", "infernal", "hallowed", "smite"] : ["followup", "smite"];
+		foreach (string role in rotation)
 		{
 			NaturalPriestSkill? skill = NaturalPriestSkills.Best(role, state.Level, state.Learned, catalog);
 			if (skill != null && Eligible(skill, target, distance, state, now, reserveHeal: true))
-				return Choice("cast-target", skill, $"Learned {role} is in range, ready, and leaves healing mana reserved.");
+				return Choice("cast-target", skill, adjacent
+					? $"Learned {role} is ready at melee and leaves healing mana reserved."
+					: $"Learned {role} is in range, ready, and leaves healing mana reserved.");
 		}
-		if (distance > 3)
-		{
-			NaturalPriestSkill? smite = NaturalPriestSkills.Best("smite", state.Level, state.Learned, catalog);
-			if (smite != null && distance <= smite.Range &&
-				state.Mp >= smite.ManaCost + (heal?.ManaCost ?? 0) &&
-				state.Cooldowns.TryGetValue(smite.CooldownId, out DateTimeOffset readyAt) &&
-				readyAt > now && readyAt - now <= TimeSpan.FromSeconds(3))
-				return Choice("wait", null, "Hold spell range during the short shared Smite cooldown.");
-			return Choice("approach", null, "No ranged skill is ready; close for ordinary melee.");
-		}
-		return Choice("attack", null, "No legal skill is ready; use paced ordinary attack.");
+		if (!adjacent)
+			return Choice("wait", null, "Nothing ready at range; the pulled monster is closing, so hold position.");
+		return Choice("attack", null, "No skill is ready at melee; swing the mace.");
 
 		NaturalCombatChoice Choice(string action, NaturalPriestSkill? skill, string reason) =>
 			new(action, skill, state.TargetObjectId, reason, checks.ToArray());
@@ -137,7 +159,9 @@ public static class NaturalPriestCombatPolicy
 		bool Eligible(NaturalPriestSkill skill, int? candidateTarget, float range,
 			NaturalCombatObservation observed, DateTimeOffset instant, bool reserveHeal)
 		{
-			bool inRange = range <= skill.Range;
+			// A melee skill's template range (1 m) is measured by the server from bound radius to bound radius;
+			// a monster that is on the bot is in reach whatever the client's lagging distance says.
+			bool inRange = range <= skill.Range || skill.Range <= MeleeReach && adjacent;
 			bool ready = !observed.Cooldowns.TryGetValue(skill.CooldownId, out var until) || until <= instant;
 			int reserve = reserveHeal && heal != null ? heal.ManaCost : 0;
 			bool enoughMana = observed.Mp >= skill.ManaCost + reserve;

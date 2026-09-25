@@ -29,7 +29,7 @@ public sealed class BotCastProtocolTests
 		}, 133611, 1282, CancellationToken.None);
 		Assert.Same(cancel, result);
 		Assert.DoesNotContain(BotBlockingActivity.Casting, api.Timing.BlockingActivities);
-		Assert.Equal(TimeSpan.FromSeconds(2), BotCastProtocol.RecoveryDelay(result));
+		Assert.Equal(TimeSpan.FromMilliseconds(BotCastProtocol.ReactionMillis), BotCastProtocol.RecoveryDelay(result));
 	}
 
 	[Theory]
@@ -113,8 +113,9 @@ public sealed class BotCastProtocolTests
 	}
 
 	[Theory]
-	[InlineData(0, 2000)]
-	[InlineData(1999, 2000)]
+	[InlineData(0, 700)]
+	[InlineData(699, 700)]
+	[InlineData(700, 701)]
 	[InlineData(2000, 2001)]
 	[InlineData(3000, 3001)]
 	public void SuccessfulCastKeepsItsAnimationRecovery(ushort hitTime, int expectedMillis) =>

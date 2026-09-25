@@ -35,10 +35,17 @@ public static class BotCastProtocol
 			 packet.PacketType == typeof(SM_SKILL_CANCEL) && packet.Get<int>("objectId") == caster) &&
 			packet.Get<ushort>("skillId") == skill, "cast result or cancellation", token, deadlines);
 
+	/// <summary>A player's reaction time after an animation ends or a cast is cancelled: the recorded human
+	/// cast every 2.4 s on median (Healing Light every 2.6 s, instants 0.7-1.7 s apart).</summary>
+	public const int ReactionMillis = 700;
+
+	/// <summary>The wait before the next action: the cast's own animation (hitTime) or a reaction time,
+	/// whichever is longer; a reaction time after a cancellation. The client timing contract enforces the
+	/// server's minimum cast interval separately.</summary>
 	public static TimeSpan RecoveryDelay(DecodedBotServerPacket terminal) => terminal.PacketType == typeof(SM_SKILL_CANCEL)
-		? TimeSpan.FromSeconds(2) // Keep the same conservative retry cadence; never retry in a tight loop.
+		? TimeSpan.FromMilliseconds(ReactionMillis)
 		: terminal.PacketType == typeof(SM_CASTSPELL_RESULT)
-			? TimeSpan.FromMilliseconds(Math.Max(2000, terminal.Get<ushort>("hitTime") + 1))
+			? TimeSpan.FromMilliseconds(Math.Max(ReactionMillis, terminal.Get<ushort>("hitTime") + 1))
 			: throw new ArgumentException("Expected cast result or cancellation.", nameof(terminal));
 
 	private static async Task<DecodedBotServerPacket> WaitAsync(
