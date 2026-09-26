@@ -68,8 +68,8 @@ Batches of the same four seeds (1, 3, 4, 5); "completed" means the whole journey
 | smart45 | + passing reach (15 m of a path on routes), forced landing on ground | 3/4 | 1 | seed 1: rested with a stalker on it after a fight-through kill and died; the retry found no route back to Hatata |
 | smart46 | + defend before journey rests, progress-based guarded-approach retries, preserve pull range after empty-spawn waits | **4/4** | **0** | —; all four reached Munin with 205 quest updates and no retreats |
 
-**Working-tree note** (2026-09-26): the combined smart44-46 changes are included in the commit
-containing this entry. smart46 passed 4/4 with zero deaths; 153 affected unit tests passed. The
+**Baseline validation** (2026-09-26): the combined smart44-46 changes were committed
+as `3930f9aaa`. smart46 passed 4/4 with zero deaths; 153 affected unit tests passed. The
 full **31-command CLAUDE.md checklist passed**, including solution tests (4,797 passed, 45 gated
 skips), warning baseline, null loggers, clock reads, custom-quest drafts, structural fidelity,
 all harness contracts, both baked navmeshes and the Docker Fast tier. Fast run
@@ -139,6 +139,66 @@ entries at the end; the code is `tests/Aion.Bots` (policies, planners, navigatio
   fight-through defends before walking on and after a kill before resting. All journey rests
   check engaged monsters before relocating. Guarded approaches count consecutive stalls, not successful
   fights and walking progress, with an overall attempt cap.
+
+## NI-08 durable resume and diagnosis (complete, 2026-09-26)
+
+NI-08 builds on `3930f9aaa`. Each login rebuilds
+its client world from current/completed quest journals, location, stats, inventory
+and skills. The journey chooses from that state; a saved diagnostic receipt never
+restores or grants server state. Active quest handlers skip finished steps and
+use remaining kill counters or held items, including Hatata's separate six-bit
+counter. Disconnects preserve an incident file, honor reentry timing, and resume
+the same character with bounded connection retries. A quest-progress budget and
+the overall run timeout bound stalls; failure packages include the last complete
+observation, recent packet names, trace path, build/run/seed and elapsed time.
+
+A cold Hatata restart exposed a policy-state dependency: route hazard avoidance
+had been enabled only by executing Q2005. Each decision now derives that mode
+from the current/completed journal, so resuming beyond Q2005 cannot silently
+walk through hostile circles. Pull plans are abandoned after a revive. Fresh
+`SM_NPC_INFO` observations also decode Java's state/heading fields, so a corpse
+is excluded from live targets without relying on remembered kill object IDs.
+
+The read-only monitor is enabled at `http://127.0.0.1:17880/` during natural SIM
+runs. `AION_BOT_DASHBOARD_PORT=0` disables it. It is unavailable during server boot
+and between runs; announce when a run is available to watch.
+
+Cold restart proof uses a dedicated GUID-named SIM database, owned only by the
+wrapper. It stops and saves through ordinary quit, then launches a fresh server
+and bot process, reconstructs the same character, and completes the journey:
+
+```powershell
+pwsh -NoProfile -File scripts/sim/run-natural-resume.ps1 -Run ni08-next -StopAt 2007:3:6 -Seed 1
+```
+
+The wrapper never opens a dev-world database; its `finally` drops only its own
+schema. `StopAt` means quest ID, status and packed quest variables. This is a
+saved-state restart proof, not an abrupt server-crash durability claim.
+`NI08_RELOG_AT=2102:3:2` injects one lost connection into a normal full SIM run.
+`NI08_RESUME_CHARACTER` requires an existing matching identity and never creates
+a replacement if missing. Run directories must be new to preserve failed evidence.
+
+| NI-08 evidence | Result | Limits |
+|---|---|---|
+| `ni08-early-reconnect-s1` | Failed on an obsolete spawn-position assertion | Replaced with login-derived location |
+| `ni08-early-reconnect-b-s1` | Same character resumed Q2102; diagnostic stopped at repeated Q2007 route failure | Not a pass; added an ordinary Return fallback |
+| `ni08-cold-generator-a-s1` | Failed before gameplay on empty elapsed-time environment input | Empty optional environment values normalized |
+| `ni08-cold-generator-b-s1` | Fresh processes resumed Q2007 START/6 and completed 41 quests at Munin | 0 deaths before restart, 4 after; not zero-death evidence |
+| `ni08-warm-c-s1` | Disconnect at Q2102 START/2; same character finished all 41 quests on connection generation 2 | Zero deaths; original incident retained |
+| `ni08-cold-hatata-s1` | State persistence passed; journey failed after six deaths and the 60-minute quest-progress limit | Revealed a route-policy flag initialized only by executing Q2005; cold resume skipped that initialization |
+| `ni08-cold-hatata-b-s1` | Same checkpoint completed after policy reconstruction; all persistence comparisons passed | Zero deaths before and after restart; 40 saved completions, then all 41 at Munin |
+| `ni08-cold-reward-s1` | Warm reconnect at Q2102 START/2, cold restart at Q2003 REWARD/1 with its items consumed, then all 41 quests | Zero deaths before/after; pending reward claimed and all persistence comparisons passed |
+| `ni08-missing-character` | Expected startup refusal for missing retained ID 987654 | No replacement creation; startup failure package and trace verified |
+
+**Working-tree note:** NI-08 is included in the commit containing this entry on
+main, without a push. The 183 affected unit tests passed. All **31 CLAUDE.md
+checklist commands passed**, including 4,820 solution tests (45 gated skips),
+warning baseline, clock reads, fidelity and both baked navmeshes. Docker Fast
+`fast-20260926-000243` passed all 11 manifest scenarios (22 tests passed, one
+gated skip). Logs and exit codes: `run/ni08-checks/results.json`; expected missing
+identity verification: `run/ni08-missing-verification.log`. No production server
+rules changed. NI-09 isolated LIVE acceptance is next; NI-10 retained-world attach
+and NI-11 real-client observation remain uncompleted.
 
 ## Open items, in the order I would take them
 

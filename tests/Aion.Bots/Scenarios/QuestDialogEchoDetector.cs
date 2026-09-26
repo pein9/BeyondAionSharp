@@ -29,6 +29,13 @@ public sealed class QuestDialogEchoDetector
 	private bool expectRejection;
 	private PendingQuestDialogAction? expectedRejection;
 
+	public void BeginLoginObservation()
+	{
+		pending = null;
+		expectRejection = false;
+		expectedRejection = null;
+	}
+
 	public PendingQuestDialogAction? Pending => pending;
 	public PendingQuestDialogAction? ExpectedRejection => expectedRejection;
 

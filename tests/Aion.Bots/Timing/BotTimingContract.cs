@@ -45,6 +45,13 @@ public sealed class BotTimingContract
 
 	public IReadOnlySet<BotBlockingActivity> BlockingActivities => blockingActivities;
 
+	/// <summary>Connection-local actions ended; cooldown and reentry deadlines remain in force.</summary>
+	public void BeginLoginObservation()
+	{
+		SelectedTargetId = null;
+		blockingActivities.Clear();
+	}
+
 	public void RecordTargetSelection(int targetObjectId) => SelectedTargetId = targetObjectId;
 
 	public TimeSpan TimeUntilAttack(int attackSpeedMillis) => Remaining(nextAttackAt);

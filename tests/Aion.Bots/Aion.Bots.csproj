@@ -23,4 +23,10 @@
     <PackageReference Include="DotRecast.Recast" Version="2026.3.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Dashboard\index.html" LogicalName="Aion.Bots.Dashboard.index.html" />
+    <EmbeddedResource Include="Dashboard\dashboard.css" LogicalName="Aion.Bots.Dashboard.dashboard.css" />
+    <EmbeddedResource Include="Dashboard\dashboard.js" LogicalName="Aion.Bots.Dashboard.dashboard.js" />
+  </ItemGroup>
+
 </Project>

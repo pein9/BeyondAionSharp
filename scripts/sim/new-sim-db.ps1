@@ -1,5 +1,5 @@
 param(
-	[ValidateSet('Create', 'Drop')]
+	[ValidateSet('Create', 'Open', 'Drop')]
 	[string]$Action = 'Create',
 	[string]$RunId = $env:AION_SIM_RUN_ID,
 	[string]$Shard = '0',
@@ -64,6 +64,14 @@ do {
 } while ((Get-Date) -lt $deadline)
 if ($LASTEXITCODE -ne 0) {
 	throw "Timed out waiting for Docker MySQL container $ContainerName."
+}
+
+# Open never resets data. The NI-08 orchestrator owns creation and final cleanup.
+if ($Action -eq 'Open') {
+	$count = (& docker exec -e "MYSQL_PWD=$RootPassword" $ContainerName mysql -uroot -N -e "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name='$DatabaseName';" | Out-String).Trim()
+	if ($LASTEXITCODE -ne 0 -or $count -ne '1') { throw "Retained simulation database does not exist: $DatabaseName" }
+	[ordered]@{ database=$DatabaseName; host='127.0.0.1'; port=$HostPort; user='root'; password=$RootPassword; container=$ContainerName } | ConvertTo-Json -Compress
+	return
 }
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))

@@ -11,6 +11,33 @@ public sealed class BotServerPacketDecoderTests
 {
 	private readonly BotServerPacketDecoder decoder = new();
 
+	[Theory]
+	[InlineData(7, true)]
+	[InlineData(23, true)]
+	[InlineData(71, true)]
+	[InlineData(8, true)]
+	[InlineData(24, true)]
+	[InlineData(1, false)]
+	[InlineData(65, false)]
+	[InlineData(11, false)]
+	public void FreshNpcObservationDistinguishesCorpsesWithoutPriorKillHistory(ushort state, bool corpse)
+	{
+		string root = Aion.GameServer.TestKit.RealStaticData.RepoRoot();
+		using var golden = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "parity-artifacts/golden/packets/SM_NPC_INFO.json")));
+		byte[] body = Convert.FromHexString(golden.RootElement.GetProperty("cases")[0].GetProperty("payloadHex").GetString()!);
+		// Java SM_NPC_INFO writes state and heading immediately after creatureType.
+		System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(body.AsSpan(25), state);
+		body[27] = 42;
+		var decoded = decoder.Decode(typeof(SM_NPC_INFO), body);
+		var world = new Aion.Bots.World.BotWorldModel();
+		world.Apply(decoded);
+		var npc = Assert.Single(world.Objects).Value;
+		Assert.Equal(state, npc.State);
+		Assert.Equal((byte)42, npc.Position.Heading);
+		Assert.Equal(corpse, npc.IsCorpse);
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_NPC_INFO), body[..27]));
+	}
+
 	[Fact]
 	public void DecoderInventoryContainsExpectedBotPerceptionPackets()
 	{

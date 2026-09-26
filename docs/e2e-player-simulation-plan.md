@@ -2567,8 +2567,10 @@ their original acceptance criteria stay visible for the eventual deferred-work r
 **Follow-up checkpoint completed:** the
 [Natural Ishalgen Journey](natural-ishalgen-journey.md#revisit-checklist) readiness review freezes the
 natural pre-Ascension scope at 41 quests and orders the remaining work as NI-00 through NI-11. The result is
-not an end-to-end pass: autonomous Priest combat/survival, inventory/growth, all-quest scheduling, durable
-resume and safe retained-world attachment still need implementation. P10-05's housing/siege/PvP boot tail
+a readiness decision: at that review, autonomous Priest combat/survival, inventory/growth, all-quest scheduling,
+durable resume and safe retained-world attachment still needed implementation. Subsequent NI-07 SIM journey
+and NI-08 resume work are now complete; see the [current Ishalgen evidence](natural-ishalgen-status.md).
+NI-09 isolated LIVE acceptance remains next in that subplan, before NI-10/NI-11 retained-world observation. P10-05's housing/siege/PvP boot tail
 does not block Ishalgen. Review commit: `7d80e48d6` (before SHA-recording amend). This review does not change
 Phase 10's done-when.
 

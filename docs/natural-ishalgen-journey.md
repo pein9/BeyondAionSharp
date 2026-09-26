@@ -1,22 +1,19 @@
 # Natural Ishalgen Journey
 
-Status: Phase 10 readiness review completed 2026-09-22 against Java `4.8` at
-`ce54b7931`. The journey is **not yet executable end to end without assistance**:
-the protocol, navigation, gathering and inventory foundations exist, but the
-quest execution and durable recovery policies do not.
-NI-00 through NI-06 are complete. NI-02 selects and explains the next bounded
-step; NI-03 approaches its first quest starter without accepting the quest;
-NI-04 proves a short Priest fight/rest loop; NI-05 proves sell-only inventory
-housekeeping at a real vendor; NI-06 completes Q2133 through ordinary combat,
-travel, gathering and turn-in. These slices do not yet execute the
-41-quest journey. The broader game
-journey remains a post-Phase 11 review. Review commit: `7d80e48d6` (before
-SHA-recording amend).
+Status (2026-09-26): NI-00 through NI-08 are complete in their documented scope.
+The integrated NI-07 SIM journey passed smart46 seeds 1/3/4/5: all 41 quests,
+level 9 at Munin, zero deaths. NI-08 now rebuilds state from each login and resumes
+partial quests on the same character. Final warm reconnect and cold restart
+proofs completed all 41 quests with zero deaths, including a pending item reward
+and a partial Hatata hunt. All 31 repository checks passed, including Docker Fast.
+See [current evidence and retained failures](natural-ishalgen-status.md).
+NI-09 isolated LIVE acceptance, NI-10 retained-world attach and NI-11 real-client
+observation remain uncompleted, in that order.
 
-NI-07 is paused at the operator's request after a Q2007 Rae-path diagnostic
-run. Do not start another journey run until the operator resumes it. A separate
-survivability addition now supplies a deterministic timed-healing potion policy
-and vendor-restock session, but has not been journey- or LIVE-proven.
+The Phase 10 readiness review was against Java `4.8` at `ce54b7931`, review
+commit `7d80e48d6` (before SHA-recording amend). The broader game journey remains
+a post-Phase 11 review. Historical NI-07 diagnostics below explain the changes;
+their earlier pauses and unproven-path notes are superseded by smart46.
 
 ## Goal
 
@@ -133,8 +130,8 @@ useful independently of this later journey.
 | Priest combat and survival | Policy implemented; bounded LIVE proof | NI-04 chooses only client-observed Sprigg Workers, intersects the frozen level-1–9 Priest map with the learned skill list, gates range/MP/group cooldowns, heals, uses owned starter potions, rests, and bounds retreat/revive attempts. Two ordinary LIVE kills and sit/stand recovery passed. Low-HP, consumable, retreat and death branches are policy-tested but not yet induced in LIVE. NI-07's crowded Q2005 area shows that the journey driver still needs attack-aware travel, early multi-attacker retreat and safe pull selection; the policy alone is not a proof of survival there. |
 | Gathering | Policy implemented; bounded LIVE quest proof | NI-06 earned level 2 by ordinary Priest combat, accepted Q2133, walked to a client-observed Young Azpha, gathered three items and completed the quest with Nobekk. Failed-use depletion, occupied-node fallback, next-node search and normal respawn wait are policy-tested; this LIVE run had three successes on one node, so those recovery branches remain uninduced LIVE evidence. Cube-pressure handling uses NI-05's sell-only policy. |
 | Inventory, equipment, skills and economy | Policy implemented; bounded LIVE sale proof | NI-05 selects class-usable rewards and gear from shipped templates, verifies auto-learned Priest skills from the client, protects all 41 quests' item references plus quest/key items and HP/MP supplies, and sells other sellable items without buying. A one-bot LIVE run sold the starter bandage stack at an active Ishalgen vendor; reward claiming, upgrade equipping and full-inventory recovery remain policy-tested until NI-07 exercises them naturally. Shipped unsellable starter extras cannot be sold. |
-| Quest selection and execution | NI-07 in progress | Q4I completes 27 template quests with GM level/items/teleports and omits custom campaigns. A separate Docker SIM checkpoint reaches packet-confirmed completion of Q2000–Q2006, Q2100–Q2104 and Q2132 on one ordinary Priest with checked walking, natural combat, object loot, class-appropriate rewards and quest-driven instance travel. This is 13/41, not the complete journey. Q2006 earned three Mau Grain, returned on checked ingress and retraced the eastern road for Ulgorn's reward. |
-| Persistence and recovery | Partial | Relog/crash/save evidence and state oracles exist. A connection failure still ends a run; add checkpoint reconstruction, same-character resume, stall classification and bounded recovery. |
+| Quest selection and execution | NI-07 SIM complete | smart46 completed all 41 frozen quests on seeds 1/3/4/5, with level 9 at Munin, Q2008 untouched and zero deaths. The historical checkpoints below explain how that implementation developed. Isolated LIVE acceptance is NI-09. |
+| Persistence and recovery | NI-08 SIM complete | Each login reconstructs both journals, position, stats, inventory and skills. Same-character warm reconnect and fresh-process restart proofs completed the journey. Stalls and a missing identity retained failure packages. Isolated LIVE acceptance is NI-09. |
 | Share a world with a human player | Not ready | Multi-bot contention is proven only in isolated LIVE stacks. Add an explicit attach mode that never owns server/DB lifecycle, then validate visibility with the real client. P10-07's client capture remains deferred. |
 
 Phases 8–10 supplied tested mechanics and diagnostics. They did not deliver
@@ -231,11 +228,12 @@ These are new journey TODOs, not retroactive claims about the phase scenarios:
   successes on one node and no retained watcher fingerprint (447 seconds);
   this does not claim LIVE failure/respawn induction or the 41-quest journey.
   (`620a93363`, before SHA-recording amend)
-- [ ] **NI-07 — Forty-one-quest execution.** Support the custom campaigns and
+- [x] **NI-07 — Forty-one-quest execution.** Support the custom campaigns and
   quest-specific operations omitted by Q4I, then complete the frozen contract in
   SIM without grants, forced state, setup teleports or boosted stats. Allow the
   ordinary level-9 XP cap while finishing every included quest, then end at Munin
-  before any Q2008 interaction. In progress: a Docker-backed focused SIM test
+  before any Q2008 interaction. **Completed by smart46; historical development
+  notes follow.** An earlier Docker-backed focused SIM test
   creates a Priest and completes Q2000–Q2005/Q2100–Q2104/Q2132 naturally on the same
   character, including ordinary Priest combat kills, post-kill rests, object loot,
   class-appropriate rewards, Q2002's quest-driven Ataxiar visit and return,
@@ -664,9 +662,23 @@ These are new journey TODOs, not retroactive claims about the phase scenarios:
   `NI07_STOP_AFTER_Q2006=1` and `NI07_STOP_AFTER_Q2007=1` select shorter
   diagnostic checkpoints. The staged paths beyond Q2007 remain unexecuted,
   and no full-scope acceptance result exists yet.
-- [ ] **NI-08 — Durable resume and diagnosis.** Reconstruct state after relog or
+  **Superseding acceptance (2026-09-26):** smart46 completed the entire contract
+  on all four seeds with zero deaths. See the status document and retained
+  `run/natural-batch/smart46-full-s*/` evidence; the historical limitations above
+  describe the earlier checkpoints, not the current implementation.
+- [x] **NI-08 — Durable resume and diagnosis.** Reconstruct state after relog or
   server interruption, resume the same character, and preserve a minimal failure
   package for stalls, disconnects and server defects.
+  Implemented and validated in SIM: warm reconnect at Q2102 START/2, cold
+  restarts at Q2003 REWARD/1 and Q2129 START/1, followed by all 41 completions
+  and Munin on the same character. Both final restart runs had zero deaths;
+  journal, inventory, skills, level and location persistence comparisons passed.
+  The earlier failed Hatata restart exercised the quest-progress stall report;
+  a missing retained identity refuses replacement creation and preserves a
+  startup failure report. Diagnostic receipts do not restore server state.
+  These are ordinary saved-state restart proofs, not abrupt-crash durability
+  or full LIVE acceptance claims. See the status document for retained evidence,
+  failed diagnostics and the full checklist results.
 - [ ] **NI-09 — Isolated LIVE acceptance.** Complete the entire contract in the
   normal Docker-only isolated LIVE stack under ordinary rates and rules.
 - [ ] **NI-10 — Existing-world attach.** Add an explicit operator-selected mode
@@ -718,7 +730,7 @@ limitations remain declared boundaries rather than invented content.
   respawn, choose another eligible target/node, reroute, revive, or reconnect.
   Repeated lack of progress produces a diagnostic failure, not infinite retries.
 
-## Paused-NI-07 potion support
+## Potion support added during NI-07
 
 The shipped Asmodian Priest starts with 100 Minor Life Potions (`162000002`).
 They apply an immediate heal plus a 20-second healing-over-time effect and use
@@ -741,9 +753,9 @@ potions, and buys enough elixirs to bring combined stock toward twelve only as
 observed Kinah and the displayed
 vendor modifier allow. It verifies the packet-observed stock after purchase.
 If no elixir is affordable, it waits for Kinah to change rather than looping
-at the vendor. The specific walk, sale, purchase, and potion use still need a
-bounded SIM/LIVE validation after NI-07 is resumed; unit/static-data tests are
-not that proof. No new quests, vendors, stock, or server behavior were added.
+at the vendor. smart46 now covers potion use during the SIM journey. The complete vendor
+walk/sale/purchase path still needs focused runtime evidence; isolated LIVE
+acceptance remains NI-09. Unit/static-data tests do not prove that runtime path. No new quests, vendors, stock, or server behavior were added.
 
 ## Sharing the world with a human player
 

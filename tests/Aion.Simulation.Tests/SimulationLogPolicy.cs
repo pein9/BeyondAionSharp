@@ -186,6 +186,9 @@ public sealed class SimulationLogPolicy : IDisposable
 		}
 	}
 
+	/// <summary>Read-only diagnosis; does not consume allowance counts or change the verdict.</summary>
+	public IReadOnlyList<SimulationProblem> SnapshotProblems() => CollectProblems();
+
 	private IReadOnlyList<SimulationProblem> CollectProblems()
 	{
 		var problems = new List<SimulationProblem>(syntheticProblems);

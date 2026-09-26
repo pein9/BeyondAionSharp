@@ -26,7 +26,16 @@ public sealed class BotApi
 		this.motionTiming = motionTiming;
 	}
 
-	public BotWorldModel World { get; }
+	public BotWorldModel World { get; private set; }
+
+	/// <summary>A new login must reconstruct observations from this connection, including empty journals.
+	/// Keep timing restrictions: reconnecting does not erase a skill or item use delay.</summary>
+	public void BeginLoginObservation()
+	{
+		World = new BotWorldModel();
+		Timing.BeginLoginObservation();
+		QuestDialogEchoes.BeginLoginObservation();
+	}
 	public BotTimingContract Timing { get; }
 	public BotReflexes Reflexes { get; }
 	public QuestDialogEchoDetector QuestDialogEchoes { get; }

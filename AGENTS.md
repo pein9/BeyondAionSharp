@@ -33,6 +33,13 @@ These differ in ways that silently change behavior. Check them on every port/fix
 The Java checkout is expected at `../aion-server` by default. Set `BEYOND_AION_JAVA_ROOT`
 when it lives elsewhere.
 
+## Natural bot observation
+
+Keep the read-only bot monitor at `http://127.0.0.1:17880/` running whenever the
+active bot harness supports it. Tell the user when a run is available to watch.
+Natural SIM journey runs enable it by default; `AION_BOT_DASHBOARD_PORT=0` disables
+it when needed. Never build or run other checks while a journey batch holds the DLLs.
+
 ## Where things live
 
 | What | Path |

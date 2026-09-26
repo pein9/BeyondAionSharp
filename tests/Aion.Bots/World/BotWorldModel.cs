@@ -47,6 +47,14 @@ public sealed partial class BotWorldModel
 			systemMessages.RemoveRange(0, systemMessages.Count - Math.Max(1, systemMessageHistoryLimit / 2));
 	}
 
+	public bool QuestJournalObserved { get; private set; }
+	public bool CompletedJournalObserved { get; private set; }
+	public bool StatsObserved { get; private set; }
+	public bool InventoryObserved { get; private set; }
+	public bool SkillsObserved { get; private set; }
+	public bool LoginStateObserved => SelfObjectId != null && Position != null && MapId != null &&
+		QuestJournalObserved && CompletedJournalObserved && StatsObserved && InventoryObserved && SkillsObserved;
+
 	public int? SelfObjectId { get; private set; }
 	public int? MapId { get; private set; }
 	public (int Index, int Count)? ChannelInfo { get; private set; }
@@ -107,6 +115,10 @@ public sealed partial class BotWorldModel
 	public void Apply(DecodedBotServerPacket packet)
 	{
 		var type = packet.PacketType;
+		if (type == typeof(SM_STATS_INFO)) StatsObserved = true;
+		if (type == typeof(SM_SKILL_LIST)) SkillsObserved = true;
+		if (type == typeof(SM_INVENTORY_INFO) && !packet.Get<bool>("firstPacket") &&
+			packet.Get<List<IReadOnlyDictionary<string, object?>>>("items").Count == 0) InventoryObserved = true;
 		if (type == typeof(SM_PLAYER_SPAWN))
 			ApplyPlayerSpawn(packet);
 		else if (type == typeof(SM_CHANNEL_INFO))
@@ -271,8 +283,10 @@ public sealed partial class BotWorldModel
 		var npcId = packet.Get<int>("npcId");
 		// The same monster described again keeps the patrol path already watched.
 		var patrolPath = objects.TryGetValue(objectId, out var known) && known.TemplateId == npcId ? known.PatrolPath : null;
-		objects[objectId] = new BotKnownObject(objectId, BotKnownObjectKind.Npc, ReadPosition(packet.Fields, 0),
-			TemplateId: npcId, VisualTemplateId: packet.Get<int>("visualNpcId"), PatrolPath: patrolPath);
+		objects[objectId] = new BotKnownObject(objectId, BotKnownObjectKind.Npc,
+			ReadPosition(packet.Fields, GetNullableStruct<byte>(packet.Fields, "heading") ?? 0),
+			TemplateId: npcId, VisualTemplateId: packet.Get<int>("visualNpcId"),
+			State: GetNullableStruct<ushort>(packet.Fields, "state"), PatrolPath: patrolPath);
 	}
 
 	private void ApplyGatherableInfo(DecodedBotServerPacket packet)
@@ -455,6 +469,7 @@ public sealed partial class BotWorldModel
 
 	private void ApplyQuestList(DecodedBotServerPacket packet)
 	{
+		QuestJournalObserved = true;
 		quests.Clear();
 		foreach (var entry in packet.Get<List<IReadOnlyDictionary<string, object?>>>("quests"))
 		{
@@ -497,6 +512,7 @@ public sealed partial class BotWorldModel
 
 	private void ApplyCompletedQuests(DecodedBotServerPacket packet)
 	{
+		if (packet.Get<byte>("updateMode") == 0) CompletedJournalObserved = true;
 		if (packet.Get<byte>("updateMode") == 0)
 			completedQuests.Clear();
 		foreach (var entry in packet.Get<List<IReadOnlyDictionary<string, object?>>>("quests"))
@@ -614,6 +630,10 @@ public sealed record BotKnownObject(int ObjectId, BotKnownObjectKind Kind, BotPo
 	/// sent (a walking or chasing NPC), else its reported position. A walker that has not sent SM_MOVE for a
 	/// while has normally arrived there.</summary>
 	public BotPosition SettledPosition => MoveTarget ?? Position;
+
+	/// <summary>Java CreatureState stance bits; walk/weapon flags do not make a corpse attackable.</summary>
+	public bool IsCorpse => Kind is BotKnownObjectKind.Npc or BotKnownObjectKind.Player &&
+		State is ushort state && (state & 15) is 7 or 8;
 }
 
 public sealed record BotInventoryItem(int ObjectId, int ItemId, string Description, long Count, ushort ItemMask,

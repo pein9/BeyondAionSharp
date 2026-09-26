@@ -43,6 +43,7 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 	private IDisposable? _configLoadScope;
 	private string? _scratchDirectory;
 	private SimDatabase? _database;
+	private bool externallyOwnedDatabase;
 	private EventHandler? _processExitHandler;
 
 	public bool IsAvailable { get; private set; }
@@ -88,7 +89,12 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 				throw new InvalidOperationException("AION_SIM_SEED must be an integer.");
 			Seed = seed;
 			Rnd.SetProcessSeed(seed);
-			_database = await RunDatabaseScriptAsync("Create");
+			string? sharedDatabase = Environment.GetEnvironmentVariable("AION_SIM_NI08_DATABASE");
+			if (string.IsNullOrWhiteSpace(sharedDatabase)) sharedDatabase = null;
+			if (sharedDatabase != null && !System.Text.RegularExpressions.Regex.IsMatch(sharedDatabase, "^aion_gs_sim_ni08_[a-z0-9_]+$"))
+				throw new InvalidOperationException("NI-08 shared database must be owned by the natural resume runner.");
+			externallyOwnedDatabase = sharedDatabase != null;
+			_database = await RunDatabaseScriptAsync(externallyOwnedDatabase ? "Open" : "Create", sharedDatabase);
 			_processExitHandler = (_, _) => DropDatabaseAtProcessExit();
 			AppDomain.CurrentDomain.ProcessExit += _processExitHandler;
 
@@ -100,6 +106,8 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 
 			Clock = new VirtualThreadPool(strict: true);
 			Epoch = EpochForProcess(Environment.GetEnvironmentVariable("AION_SIM_PROCESS_KEY") ?? "shard-00");
+			if (externallyOwnedDatabase)
+				Epoch += TimeSpan.FromMilliseconds(long.TryParse(Environment.GetEnvironmentVariable("AION_SIM_NI08_ELAPSED_MS"), out long elapsed) && elapsed >= 0 ? elapsed : 0);
 			SystemClock.SetProcessSource(() => Epoch.ToUnixTimeMilliseconds() + Clock.NowMillis);
 			ServerTime.Initialize(TimeZoneInfo.Utc);
 
@@ -236,7 +244,7 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 		Rnd.UseProductionRandomProcessWide();
 		if (_database != null)
 		{
-			await RunDatabaseScriptAsync("Drop", _database.Database);
+			if (!externallyOwnedDatabase) await RunDatabaseScriptAsync("Drop", _database.Database);
 			_database = null;
 		}
 		if (_scratchDirectory != null && Directory.Exists(_scratchDirectory))
@@ -302,7 +310,7 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 
 	private void DropDatabaseAtProcessExit()
 	{
-		if (_database == null)
+		if (_database == null || externallyOwnedDatabase)
 			return;
 		try
 		{

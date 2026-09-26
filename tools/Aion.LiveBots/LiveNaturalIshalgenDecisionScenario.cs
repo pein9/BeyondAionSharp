@@ -89,7 +89,7 @@ public static partial class LiveBotRunner
 			BotWorldModel world = actor.Session.Api.World;
 			BotPosition? position = world.MapId == null ? null : actor.Session.CurrentPosition;
 			return new(world.MapId, position, world.IsDead, world.Objects.Values
-				.Where(item => item.Kind == objectKind && (targetObjectId == null || item.ObjectId == targetObjectId))
+				.Where(item => item.Kind == objectKind && !item.IsCorpse && (targetObjectId == null || item.ObjectId == targetObjectId))
 				.Select(item => new NaturalNavigationObject(item.ObjectId, item.TemplateId ?? 0, item.Position)).ToArray());
 		}
 
@@ -170,9 +170,8 @@ public static partial class LiveBotRunner
 		public NaturalIshalgenObservation Observe(bool fresh)
 		{
 			BotWorldModel world = actor.Session.Api.World;
-			return new NaturalIshalgenObservation(fresh,
-				actor.Session.PacketHistory.Any(packet => packet.PacketType == typeof(SM_QUEST_LIST)),
-				actor.Session.PacketHistory.Any(packet => packet.PacketType == typeof(SM_QUEST_COMPLETED_LIST)),
+			return new NaturalIshalgenObservation(fresh && world.LoginStateObserved,
+				world.QuestJournalObserved, world.CompletedJournalObserved,
 				world.MapId, world.Level, world.IsDead,
 				new Dictionary<int, BotQuestState>(world.Quests), world.CompletedQuestIds.ToHashSet(),
 				world.MapId == null ? null : actor.Session.CurrentPosition, world.Objects.Values.ToArray());

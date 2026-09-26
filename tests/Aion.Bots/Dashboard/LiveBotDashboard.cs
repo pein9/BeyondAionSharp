@@ -6,10 +6,11 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using Aion.Bots.Scenarios;
+using Aion.Bots.World;
 
-namespace Aion.LiveBots;
+namespace Aion.Bots.Dashboard;
 
-internal sealed class LiveBotDashboardState
+public sealed class LiveBotDashboardState
 {
 	private readonly ConcurrentDictionary<string, BotDashboardSnapshot> bots = new(StringComparer.Ordinal);
 	private readonly ConcurrentDictionary<string, NaturalDecision[]> decisions = new(StringComparer.Ordinal);
@@ -24,7 +25,7 @@ internal sealed class LiveBotDashboardState
 		.ToArray();
 }
 
-internal sealed record BotDashboardSnapshot(
+public sealed record BotDashboardSnapshot(
 	string Bot,
 	string Account,
 	string CharacterName,
@@ -57,15 +58,40 @@ internal sealed record BotDashboardSnapshot(
 	int[] CompletedQuestIds,
 	BotDashboardItem[] Inventory,
 	string? LastSystemMessage,
-	NaturalDecision[]? Decisions = null);
+	NaturalDecision[]? Decisions = null)
+{
+	public static BotDashboardSnapshot Observe(BotWorldModel world, string bot, string account,
+		string characterName, int characterId, string connection, int generation, string step,
+		string action, string status, string? lastPacket, BotPosition? position = null)
+	{
+		BotPosition? at = position ?? world.Position;
+		BotSystemMessage? message = world.SystemMessages.LastOrDefault();
+		return new(bot, account, characterName, characterId, connection, generation, step, action, status,
+			lastPacket, DateTimeOffset.UtcNow, world.MapId, world.ChannelInfo?.Index,
+			at is { } p ? new(p.X, p.Y, p.Z, p.Heading) : null,
+			world.Level, world.CurrentExperience, world.ExperienceNeeded, world.CurrentHp, world.MaxHp,
+			world.CurrentMp, world.MaxMp, world.CurrentDp, world.MaxDp, world.IsDead, world.Kinah,
+			world.Skills.Count, world.Cooldowns.Count,
+			new(world.Objects.Values.Count(o => o.Kind == BotKnownObjectKind.Player),
+				world.Objects.Values.Count(o => o.Kind == BotKnownObjectKind.Npc),
+				world.Objects.Values.Count(o => o.Kind == BotKnownObjectKind.Gatherable),
+				world.Objects.Values.Count(o => o.Kind == BotKnownObjectKind.Static)),
+			world.Quests.Values.OrderBy(q => q.QuestId).Select(q =>
+				new BotDashboardQuest(q.QuestId, q.Status, q.StepAndFlags, q.CompleteCount, q.TimerSeconds)).ToArray(),
+			world.CompletedQuestIds.Order().ToArray(),
+			world.Inventory.Values.OrderBy(i => i.ItemId).ThenBy(i => i.ObjectId).Select(i =>
+				new BotDashboardItem(i.ObjectId, i.ItemId, i.Description, i.Count, i.EquipmentSlot)).ToArray(),
+			message == null ? null : message.Name ?? $"System message {message.MessageId}");
+	}
+}
 
-internal sealed record BotDashboardPosition(float X, float Y, float Z, byte Heading);
-internal sealed record BotDashboardObjectCounts(int Players, int Npcs, int Gatherables, int Statics);
-internal sealed record BotDashboardQuest(int QuestId, byte Status, int StepAndFlags, byte CompleteCount, int? TimerSeconds);
-internal sealed record BotDashboardItem(int ObjectId, int ItemId, string Description, long Count, ushort EquipmentSlot);
+public sealed record BotDashboardPosition(float X, float Y, float Z, byte Heading);
+public sealed record BotDashboardObjectCounts(int Players, int Npcs, int Gatherables, int Statics);
+public sealed record BotDashboardQuest(int QuestId, byte Status, int StepAndFlags, byte CompleteCount, int? TimerSeconds);
+public sealed record BotDashboardItem(int ObjectId, int ItemId, string Description, long Count, ushort EquipmentSlot);
 
 /// <summary>Loopback-only, read-only HTTP view of immutable bot state snapshots.</summary>
-internal sealed class LiveBotDashboardHost : IAsyncDisposable
+public sealed class LiveBotDashboardHost : IAsyncDisposable
 {
 	private static readonly JsonSerializerOptions JsonOptions = new()
 	{
@@ -215,9 +241,9 @@ internal sealed class LiveBotDashboardHost : IAsyncDisposable
 		Assembly assembly = typeof(LiveBotDashboardHost).Assembly;
 		return new Dictionary<string, DashboardAsset>(StringComparer.Ordinal)
 		{
-			["/index.html"] = Load(assembly, "Aion.LiveBots.Dashboard.index.html", "text/html; charset=utf-8"),
-			["/dashboard.css"] = Load(assembly, "Aion.LiveBots.Dashboard.dashboard.css", "text/css; charset=utf-8"),
-			["/dashboard.js"] = Load(assembly, "Aion.LiveBots.Dashboard.dashboard.js", "text/javascript; charset=utf-8"),
+			["/index.html"] = Load(assembly, "Aion.Bots.Dashboard.index.html", "text/html; charset=utf-8"),
+			["/dashboard.css"] = Load(assembly, "Aion.Bots.Dashboard.dashboard.css", "text/css; charset=utf-8"),
+			["/dashboard.js"] = Load(assembly, "Aion.Bots.Dashboard.dashboard.js", "text/javascript; charset=utf-8"),
 		};
 	}
 

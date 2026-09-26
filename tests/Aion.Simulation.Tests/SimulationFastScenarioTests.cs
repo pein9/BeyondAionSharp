@@ -1,3 +1,4 @@
+using Aion.Bots.Dashboard;
 using System.Diagnostics;
 using System.Text.Json;
 using Aion.Bots.Api;
@@ -893,6 +894,20 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		public int ConnectionGeneration { get; private set; }
 		public BotApi Api => api;
 		public string? CombatTracePath { get; }
+		public LiveBotDashboardState? Dashboard { get; set; }
+		public Action? BeforeSend { get; set; }
+		public Action? AfterSynchronize { get; set; }
+		private long lastDashboardUpdate;
+		public void PublishDashboard(string status = "running", bool force = false)
+		{
+			if (Dashboard == null) return;
+			long now = Environment.TickCount64;
+			if (!force && now - lastDashboardUpdate < 100) return;
+			lastDashboardUpdate = now;
+			Dashboard.Publish(BotDashboardSnapshot.Observe(api.World, bot, accountName, characterName,
+				characterId, transport == null ? "disconnected" : state.ToString(), ConnectionGeneration,
+				currentStep, currentAction, status, PacketHistory.LastOrDefault()?.PacketType.Name, currentPosition));
+		}
 		public void TraceDiagnostic(string action, IReadOnlyDictionary<string, object?> fields) =>
 			combatTrace?.WriteAction(currentStep, action, fields);
 		public BotPosition CurrentPosition => currentPosition ?? api.World.Position
@@ -910,6 +925,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			currentAction = action;
 			policy.ObserveAction(bot, accountName, step, action);
 			combatTrace?.WriteAction(step, action);
+			PublishDashboard(force: true);
 		}
 
 		public async Task LoginAndAuthenticateAsync(CancellationToken cancellationToken)
@@ -1208,6 +1224,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			int marker = unchecked((int)fixture.Clock.NowMillis);
 			await SendAsync(GameClientPackets.TimeCheck(marker), token);
 			await WaitForAsync(typeof(SM_TIME_CHECK), token);
+			AfterSynchronize?.Invoke();
 		}
 
 		public async Task QuitAsync(CancellationToken cancellationToken)
@@ -1225,6 +1242,13 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			PlayerCommonData persisted = PlayerDAO.LoadPlayerCommonData(characterId)
 				?? throw new InvalidDataException($"PlayerDAO could not reload {characterName}.");
 			AssertPosition(persisted.GetMapId(), persisted.GetX(), persisted.GetY(), persisted.GetZ());
+			return Task.CompletedTask;
+		}
+
+		public Task AdvanceOfflineAsync(TimeSpan duration, CancellationToken token)
+		{
+			token.ThrowIfCancellationRequested();
+			fixture.Clock.Advance(duration);
 			return Task.CompletedTask;
 		}
 
@@ -1253,11 +1277,26 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 				Get<float>(character, "y"), Get<float>(character, "z"));
 		}
 
+		public async Task ReloginExistingCharacterAsync(CancellationToken token)
+		{
+			var list = await LoginCharacterListAsync(token);
+			var character = list.Get<List<IReadOnlyDictionary<string, object?>>>("characters")
+				.SingleOrDefault(entry => Get<int>(entry, "objectId") == characterId)
+				?? throw new InvalidDataException("The retained natural character is missing; refusing to create a replacement.");
+			if (Get<string>(character, "name") != characterName || Get<int>(character, "race") != (int)race ||
+				Get<int>(character, "playerClass") != (int)PlayerClass.PRIEST || Get<int>(character, "deletionTimeSeconds") != 0)
+				throw new InvalidDataException("Retained natural character identity changed.");
+			// The next world entry supplies the authoritative saved position, even if a crash rolled it back.
+			SelectCharacter(characterId, characterName);
+		}
+
 		public async ValueTask DisposeAsync() => await CloseAsync(CancellationToken.None);
 
 		private async Task OpenAsync(CancellationToken cancellationToken)
 		{
 			await CloseAsync(CancellationToken.None);
+			api.BeginLoginObservation();
+			currentPosition = null;
 			transport = new InProcessBotTransport(elapsed => fixture.Clock.Advance(elapsed), ip: $"127.0.0.{accountId}");
 			ConnectionGeneration++;
 			packets = transport.ReceiveAsync(cancellationToken).GetAsyncEnumerator(cancellationToken);
@@ -1271,6 +1310,12 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 				await transport.CloseAsync(cancellationToken);
 				await transport.DisposeAsync();
 				transport = null;
+			}
+			if (pendingRead != null)
+			{
+				try { await pendingRead; }
+				catch (OperationCanceledException) { }
+				finally { pendingRead = null; }
 			}
 			if (packets != null)
 			{
@@ -1288,7 +1333,8 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 
 		private Task SendAsync(BotClientPacket packet, CancellationToken cancellationToken)
 		{
-			InProcessBotTransport active = transport ?? throw new InvalidOperationException("Simulation game connection is not open.");
+			BeforeSend?.Invoke();
+			InProcessBotTransport active = transport ?? throw new EndOfStreamException("Simulation game connection is not open.");
 			byte[] encoded = packet.Encode(active.Codec, state);
 			policy.ObserveSent(bot, accountName, currentStep, packet);
 			if (combatTrace != null && packet.PacketType.Name is
@@ -1324,6 +1370,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 						$"of real time (step {currentStep}; last packet {(PacketHistory.Count > 0 ? PacketHistory[^1].PacketType.Name : "none")}).");
 				}
 				BotClientPacket? response = api.Observe(packet);
+				PublishDashboard();
 				if (response != null)
 					await SendAsync(response, cancellationToken);
 				// A knockback, stumble or pull moved the character on the server: the client stands where it landed.
@@ -1385,6 +1432,9 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		}
 
 		private static bool IsCombatTracePacket(Type type) =>
+			type == typeof(SM_PLAYER_SPAWN) || type == typeof(SM_PLAYER_INFO) || type == typeof(SM_STATS_INFO) ||
+			type == typeof(SM_QUEST_LIST) || type == typeof(SM_QUEST_COMPLETED_LIST) ||
+			type == typeof(SM_INVENTORY_INFO) || type == typeof(SM_SKILL_LIST) ||
 			type == typeof(SM_ATTACK) || type == typeof(SmAttackStatus) || type == typeof(SM_FORCED_MOVE) ||
 			type == typeof(SM_CASTSPELL) || type == typeof(SM_CASTSPELL_RESULT) ||
 			type == typeof(SM_SKILL_CANCEL) || type == typeof(SM_SKILL_COOLDOWN) ||

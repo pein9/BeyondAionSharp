@@ -471,7 +471,8 @@ public sealed partial class BotServerPacketDecoder
 		var r = new PacketBodyReader(body);
 		return Fields(
 			("x", r.ReadSingle()), ("y", r.ReadSingle()), ("z", r.ReadSingle()), ("objectId", r.ReadInt32()),
-			("npcId", r.ReadInt32()), ("visualNpcId", r.ReadInt32()), ("creatureType", r.ReadByte()));
+			("npcId", r.ReadInt32()), ("visualNpcId", r.ReadInt32()), ("creatureType", r.ReadByte()),
+			("state", r.ReadUInt16()), ("heading", r.ReadByte()));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeGatherableInfo(ReadOnlySpan<byte> body)

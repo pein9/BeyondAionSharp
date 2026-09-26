@@ -139,7 +139,7 @@ public sealed record QuestRunPlan(
 			OptionalInt(value, "count"),
 			OptionalInt(value, "item_id"),
 			OptionalInt(value, "recipeId"),
-			OptionalInt(value, "sequence"),
+			value.TryGetProperty("sequence", out _) ? OptionalInt(value, "sequence") : OptionalInt(value, "seq"),
 			ParseIntList(value, "ids", "skill_ids", "skill_id"),
 			value.TryGetProperty("npcs", out JsonElement npcs) ? ParseNpcs(npcs, path) : [],
 			value.TryGetProperty("sources", out JsonElement sources) ? ParseSources(sources, path) : [],

@@ -1,3 +1,4 @@
+using Aion.Bots.Dashboard;
 using System.Text.Json;
 using Aion.Bots.Scenarios;
 using Aion.LiveBots;

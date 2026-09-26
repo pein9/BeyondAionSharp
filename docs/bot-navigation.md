@@ -485,3 +485,25 @@ raised Essencetapping from 3 to 16 with 29-30 practice harvests before the ore.
   backstop has a wider search, then decides. Combat approaches and retreats do not use the planner.
 - The **road art** also marks a few painted rocks on Poeta. These are cost hints only and change
   no walkability.
+
+
+### A resumed journey reconstructs its route policy (2026-09-26)
+
+NI-08's cold Hatata checkpoint (`ni08-cold-hatata-s1`, Q2129 START/1) reloaded
+its character, inventory, skills, both journals and position correctly, but died
+six times and hit the one-hour quest-progress limit. The trace showed unguarded
+routes: `AvoidHostileAggro` was a local flag enabled when Q2005 executed. A fresh
+process resuming after that quest never executed the assignment.
+
+The decision loop now derives the same journey mode from the observed journal:
+Q2005/2006/2007 and journeys with Q2005 complete use guarded routes. The temporary
+Q2002 Sprigg-hunt mode remains local to that hunt. A revive also invalidates the
+current pull plan; being alive at the bind point does not mean the old engagement
+is still reachable. `SM_NPC_INFO` supplies state and heading per Java, including
+corpse stances 7/8 under the stance mask. Fresh navigation excludes those corpses
+without relying on remembered kill IDs.
+
+The repeat (`ni08-cold-hatata-b-s1`) saved with 40 completions, restarted the
+server and bot processes, and finished all 41 quests at Munin. It had zero deaths
+before or after restart; the persisted state comparison passed. This is SIM
+resume evidence, not retained-world or real-client acceptance.

@@ -1,3 +1,4 @@
+using Aion.Bots.Dashboard;
 using System.Buffers.Binary;
 using System.Net.Sockets;
 using System.Text;
@@ -1386,6 +1387,9 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		try
 		{
 			transport = await TcpBotTransport.ConnectAsync(options.GameEndPoint, connectTimeout.Token);
+			api.BeginLoginObservation();
+			api.World.BoundSystemMessageHistory(historyLimit);
+			currentPosition = null;
 			ConnectionGeneration++;
 			PublishDashboard();
 		}
@@ -1435,56 +1439,9 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		PublishDashboard();
 	}
 
-	private void PublishDashboard()
-	{
-		BotWorldModel world = api.World;
-		BotPosition? observedPosition = currentPosition ?? world.Position;
-		BotSystemMessage? message = world.SystemMessages.LastOrDefault();
-		var nearby = new BotDashboardObjectCounts(
-			world.Objects.Values.Count(item => item.Kind == BotKnownObjectKind.Player),
-			world.Objects.Values.Count(item => item.Kind == BotKnownObjectKind.Npc),
-			world.Objects.Values.Count(item => item.Kind == BotKnownObjectKind.Gatherable),
-			world.Objects.Values.Count(item => item.Kind == BotKnownObjectKind.Static));
-		options.Dashboard.Publish(new BotDashboardSnapshot(
-			bot,
-			account,
-			characterName,
-			characterId,
-			state.ToString(),
-			ConnectionGeneration,
-			currentStep,
-			currentAction,
-			actionStatus,
-			lastPacket,
-			DateTimeOffset.UtcNow,
-			world.MapId,
-			world.ChannelInfo?.Index,
-			observedPosition is { } position
-				? new BotDashboardPosition(position.X, position.Y, position.Z, position.Heading)
-				: null,
-			world.Level,
-			world.CurrentExperience,
-			world.ExperienceNeeded,
-			world.CurrentHp,
-			world.MaxHp,
-			world.CurrentMp,
-			world.MaxMp,
-			world.CurrentDp,
-			world.MaxDp,
-			world.IsDead,
-			world.Kinah,
-			world.Skills.Count,
-			world.Cooldowns.Count,
-			nearby,
-			world.Quests.Values.OrderBy(quest => quest.QuestId)
-				.Select(quest => new BotDashboardQuest(quest.QuestId, quest.Status, quest.StepAndFlags,
-					quest.CompleteCount, quest.TimerSeconds)).ToArray(),
-			world.CompletedQuestIds.Order().ToArray(),
-			world.Inventory.Values.OrderBy(item => item.ItemId).ThenBy(item => item.ObjectId)
-				.Select(item => new BotDashboardItem(item.ObjectId, item.ItemId, item.Description,
-					item.Count, item.EquipmentSlot)).ToArray(),
-			message == null ? null : message.Name ?? $"System message {message.MessageId}"));
-	}
+	private void PublishDashboard() => options.Dashboard.Publish(BotDashboardSnapshot.Observe(
+		api.World, bot, account, characterName, characterId, state.ToString(), ConnectionGeneration,
+		currentStep, currentAction, actionStatus, lastPacket, currentPosition));
 
 	private async Task RunPingLoopAsync(CancellationToken cancellationToken)
 	{
