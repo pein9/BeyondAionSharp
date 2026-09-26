@@ -14,7 +14,7 @@ public sealed class BotServerPacketDecoderTests
 	[Fact]
 	public void DecoderInventoryContainsExpectedBotPerceptionPackets()
 	{
-		Assert.Equal(115, decoder.PacketTypes.Count);
+		Assert.Equal(116, decoder.PacketTypes.Count);
 		Assert.Contains(typeof(SM_ATTACK), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_RECONNECT_KEY), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_BIND_POINT_INFO), decoder.PacketTypes);
@@ -35,6 +35,22 @@ public sealed class BotServerPacketDecoderTests
 		Assert.Contains(typeof(SM_WINDSTREAM_ANNOUNCE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_ABNORMAL_STATE), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_GATHER_UPDATE), decoder.PacketTypes);
+		Assert.Contains(typeof(SM_FORCED_MOVE), decoder.PacketTypes);
+	}
+
+	[Fact]
+	public void ForcedMoveNamesTheMovedCreatureAndWhereItLanded()
+	{
+		// Java SM_FORCED_MOVE golden payload (parity-artifacts/golden/packets/SM_FORCED_MOVE.json).
+		byte[] body = Convert.FromHexString("61AE0A0002350C001000509A440028D44500407A43");
+		var forced = decoder.Decode(typeof(SM_FORCED_MOVE), body);
+		Assert.Equal(700001, forced.Get<int>("effectorObjectId"));
+		Assert.Equal(800002, forced.Get<int>("objectId"));
+		Assert.Equal(1234.5f, forced.Get<float>("x"));
+		Assert.Equal(6789f, forced.Get<float>("y"));
+		Assert.Equal(250.25f, forced.Get<float>("z"));
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_FORCED_MOVE), body[..^1]));
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_FORCED_MOVE), [.. body, 0]));
 	}
 
 	[Fact]

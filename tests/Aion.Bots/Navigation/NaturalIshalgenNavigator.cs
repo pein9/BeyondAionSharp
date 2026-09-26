@@ -2,7 +2,25 @@ using Aion.Bots.World;
 
 namespace Aion.Bots.Navigation;
 
-public sealed record NaturalNavigationObject(int ObjectId, int TemplateId, BotPosition Position);
+public sealed record NaturalNavigationObject(int ObjectId, int TemplateId, BotPosition Position,
+	IReadOnlyList<BotPosition>? PatrolPath = null)
+{
+	/// <summary>Where the monster can be: where it is now, and anywhere on the path it was seen walking
+	/// (<see cref="BotPatrolPath"/>) within <paramref name="reach"/> of that. A patrol at the far end of its loop
+	/// still comes back to a place the bot stays at; a route only passing by needs
+	/// <see cref="BotPatrolPath.PassingReach"/>.</summary>
+	public IEnumerable<BotPosition> PossiblePositions(float reach = float.PositiveInfinity) =>
+		PatrolPath is { Count: > 0 } path
+			? path.Where(point => Horizontal(point, Position) <= reach).Prepend(Position)
+			: [Position];
+
+	/// <summary>Its aggro circles: one at every possible position.</summary>
+	public IEnumerable<BotNavigationHazard> Hazards(float radius, float reach = float.PositiveInfinity) =>
+		PossiblePositions(reach).Select(position => new BotNavigationHazard(position, radius));
+
+	private static float Horizontal(BotPosition a, BotPosition b) =>
+		MathF.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
+}
 public sealed record NaturalNavigationObservation(int? MapId, BotPosition? Position, bool IsDead,
 	IReadOnlyList<NaturalNavigationObject> Npcs);
 public sealed record NaturalNavigationEvent(int Sequence, string Action, string Outcome, string Reason,

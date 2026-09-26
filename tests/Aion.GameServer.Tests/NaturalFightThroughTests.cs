@@ -41,5 +41,24 @@ public sealed class NaturalFightThroughTests
 		Assert.Null(NaturalFightThrough.SelectNext(P(0, 0), Route, [above]));
 	}
 
+	[Fact]
+	public void APatrolBlocksThePathItCanWalkToWhileTheBotPasses()
+	{
+		// A patrol seen walking a line that crosses the corridor at x = 60. It stands 14 m off the corridor now:
+		// seen only there it leaves the corridor open, but its path reaches the corridor within walking reach.
+		BotPosition[] beat = [P(60, 30), P(60, 20), P(60, 10), P(60, 0), P(60, -10)];
+		var patrol = new NaturalObservedMonster(new NaturalNavigationObject(7, 210407, P(60, 14), beat), 9);
+		var seenOnce = new NaturalObservedMonster(new NaturalNavigationObject(7, 210407, P(60, 14)), 9);
+		Assert.Empty(NaturalFightThrough.BlockersInOrder(P(0, 0), Route, [seenOnce]));
+		Assert.Equal([patrol], NaturalFightThrough.BlockersInOrder(P(0, 0), Route, [patrol]));
+		Assert.Same(patrol, NaturalFightThrough.SelectNext(P(0, 0), Route, [patrol])!.Monster);
+		// At the far end of the same beat it cannot reach the corridor while the bot goes by.
+		var far = new NaturalObservedMonster(new NaturalNavigationObject(7, 210407, P(60, 40), [.. beat, P(60, 40)]), 9);
+		Assert.Empty(NaturalFightThrough.BlockersInOrder(P(0, 0), Route, [far]));
+		// Standing on its path, walking on along the corridor leaves it: nothing blocks.
+		BotPosition[] onward = Route.Where(p => p.X > 60).ToArray();
+		Assert.Empty(NaturalFightThrough.BlockersInOrder(P(60, 0), onward, [patrol]));
+	}
+
 	private static float Distance(BotPosition a, BotPosition b) => MathF.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
 }

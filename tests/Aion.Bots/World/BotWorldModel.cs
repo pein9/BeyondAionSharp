@@ -121,6 +121,8 @@ public sealed partial class BotWorldModel
 			ApplyGatherableInfo(packet);
 		else if (type == typeof(SM_MOVE))
 			ApplyMove(packet);
+		else if (type == typeof(SM_FORCED_MOVE))
+			ApplyForcedMove(packet);
 		else if (type == typeof(SM_DELETE))
 		{
 			objects.Remove(packet.Get<int>("objectId"));
@@ -266,8 +268,11 @@ public sealed partial class BotWorldModel
 	private void ApplyNpcInfo(DecodedBotServerPacket packet)
 	{
 		var objectId = packet.Get<int>("objectId");
+		var npcId = packet.Get<int>("npcId");
+		// The same monster described again keeps the patrol path already watched.
+		var patrolPath = objects.TryGetValue(objectId, out var known) && known.TemplateId == npcId ? known.PatrolPath : null;
 		objects[objectId] = new BotKnownObject(objectId, BotKnownObjectKind.Npc, ReadPosition(packet.Fields, 0),
-			TemplateId: packet.Get<int>("npcId"), VisualTemplateId: packet.Get<int>("visualNpcId"));
+			TemplateId: npcId, VisualTemplateId: packet.Get<int>("visualNpcId"), PatrolPath: patrolPath);
 	}
 
 	private void ApplyGatherableInfo(DecodedBotServerPacket packet)
@@ -290,9 +295,26 @@ public sealed partial class BotWorldModel
 				Get<float>(packet.Fields, "targetZ"), position.Heading)
 			: null;
 		if (objects.TryGetValue(objectId, out var known))
-			objects[objectId] = known with { Position = position, MoveTarget = target };
+			objects[objectId] = known with
+			{
+				Position = position,
+				MoveTarget = target,
+				PatrolPath = known.Kind == BotKnownObjectKind.Npc
+					? BotPatrolPath.Extend(known.PatrolPath, GetNullableStruct<byte>(packet.Fields, "movementMask"), position, target)
+					: known.PatrolPath,
+			};
 		if (SelfObjectId == objectId)
 			Position = position;
+	}
+
+	// A knockback, stumble or pull moved the creature on the server; the client puts it where it landed.
+	private void ApplyForcedMove(DecodedBotServerPacket packet)
+	{
+		var objectId = packet.Get<int>("objectId");
+		if (objects.TryGetValue(objectId, out var known))
+			objects[objectId] = known with { Position = ReadPosition(packet.Fields, known.Position.Heading), MoveTarget = null };
+		if (SelfObjectId == objectId && Position is BotPosition self)
+			Position = ReadPosition(packet.Fields, self.Heading);
 	}
 
 	private void ApplyTeleport(DecodedBotServerPacket packet)
@@ -586,7 +608,7 @@ public readonly record struct BotPosition(float X, float Y, float Z, byte Headin
 public sealed record BotKnownObject(int ObjectId, BotKnownObjectKind Kind, BotPosition Position,
 	int? TemplateId = null, int? VisualTemplateId = null, int? StaticId = null, string? Name = null,
 	ushort? State = null, bool? IsOpen = null, byte? Race = null, byte? PlayerClass = null,
-	float? MovementSpeed = null, BotPosition? MoveTarget = null)
+	float? MovementSpeed = null, BotPosition? MoveTarget = null, IReadOnlyList<BotPosition>? PatrolPath = null)
 {
 	/// <summary>Where the object stands once its last observed move ends: the SM_MOVE target when one was
 	/// sent (a walking or chasing NPC), else its reported position. A walker that has not sent SM_MOVE for a

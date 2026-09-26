@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using Aion.Bots.Navigation;
 using Aion.Bots.Protocol;
 using Aion.Bots.Scenarios;
@@ -107,10 +106,9 @@ public sealed partial class SimulationFastScenarioTests
 												else
 												{
 														var forced = Assert.Single(targetSession.PacketHistory.Skip(packetStart), p => p.PacketType == typeof(SM_FORCED_MOVE));
-														byte[] body = Convert.FromHexString(forced.Get<string>("bodyHex"));
-														Assert.Equal(target.GetObjectId(), BinaryPrimitives.ReadInt32LittleEndian(body.AsSpan(4)));
-														Assert.Equal(target.GetX(), BinaryPrimitives.ReadSingleLittleEndian(body.AsSpan(9)), 3);
-														Assert.Equal(target.GetY(), BinaryPrimitives.ReadSingleLittleEndian(body.AsSpan(13)), 3);
+														Assert.Equal(target.GetObjectId(), forced.Get<int>("objectId"));
+														Assert.Equal(target.GetX(), forced.Get<float>("x"), 3);
+														Assert.Equal(target.GetY(), forced.Get<float>("y"), 3);
 												}
 										}
 										// Let effects and cooldowns expire normally. The next director setup teleport ends the duel.

@@ -20,8 +20,9 @@ public sealed record NaturalPullPlan(NaturalPullMonster Target, BotPosition Firi
 /// helps if it is within its own aggro range + 2 m (<c>SUPPORT_RANGE_OFFSET</c>) of the monster or of the
 /// attacker and can see it. So a pull costs nothing extra when no supporter is within that range of the
 /// target, and none is within that range of the firing spot. The firing spot must also be outside every
-/// monster's own aggro circle, within spell range of the target, and in line of sight. Candidates are
-/// ranked by expected helpers, then by clearance from every other monster, then by route order.
+/// monster's own aggro circle, within spell range of the target, and in line of sight. A patrol is measured
+/// from the nearest point of the path it was seen walking: it walks into a fight there sooner or later.
+/// Candidates are ranked by expected helpers, then by clearance from every other monster, then by route order.
 /// </summary>
 public static class NaturalPullPlanner
 {
@@ -94,7 +95,7 @@ public static class NaturalPullPlanner
 				.Where(p => monsters.All(m => !Near(m, p, m.AggroRadius + 1, null)))
 				.Select(p => (Spot: p, Helpers: Helpers(target, p, monsters, canSupport, lineOfSight),
 					Clearance: monsters.Where(m => m.Npc.ObjectId != target.Npc.ObjectId)
-						.Select(m => Horizontal(p, m.Npc.Position) - m.AggroRadius).DefaultIfEmpty(99).Min()))
+						.Select(m => m.Npc.PossiblePositions().Min(at => Horizontal(p, at)) - m.AggroRadius).DefaultIfEmpty(99).Min()))
 				.OrderBy(c => c.Helpers.Count).ThenByDescending(c => MathF.Min(c.Clearance, 15)).ThenBy(c => Horizontal(current, c.Spot)))
 			{
 				var key = (helpers.Count, MathF.Min(clearance, 15), order);
@@ -113,10 +114,14 @@ public static class NaturalPullPlanner
 			: a.Order >= b.Order;
 	}
 
+	// A patrol comes by anywhere on the path it was seen walking: measure from the nearest point of it.
 	private static bool Near(NaturalPullMonster monster, BotPosition point, float range,
-		Func<BotPosition, BotPosition, bool>? lineOfSight) =>
-		new BotNavigationHazard(monster.Npc.Position, range).DistanceTo(point) <= range &&
-		(lineOfSight == null || lineOfSight(monster.Npc.Position, point));
+		Func<BotPosition, BotPosition, bool>? lineOfSight)
+	{
+		BotPosition nearest = monster.Npc.PossiblePositions().MinBy(at => new BotNavigationHazard(at, range).DistanceTo(point));
+		return new BotNavigationHazard(nearest, range).DistanceTo(point) <= range &&
+			(lineOfSight == null || lineOfSight(nearest, point));
+	}
 
 	private static float Horizontal(BotPosition a, BotPosition b) =>
 		MathF.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));

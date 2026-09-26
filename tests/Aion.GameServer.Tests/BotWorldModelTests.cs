@@ -289,6 +289,88 @@ public sealed class BotWorldModelTests
 		}
 	}
 
+	[Fact]
+	public void ForcedMovePutsTheCharacterAndMonstersWhereTheyLanded()
+	{
+		var world = new BotWorldModel();
+		world.Apply(Packet<SM_PLAYER_INFO>(
+			("x", 1f), ("y", 2f), ("z", 3f), ("heading", (byte)4), ("objectId", 100),
+			("race", (byte)0), ("playerClass", (byte)1), ("state", (ushort)2), ("name", "Daeva"),
+			("movementSpeed", 6f)));
+		world.Apply(Packet<SM_STATS_INFO>(
+			("objectId", 100), ("level", (ushort)9), ("expNeeded", 900L), ("expRecoverable", 0L), ("expShown", 500L),
+			("maxHp", 669), ("currentHp", 669), ("maxMp", 1200), ("currentMp", 1200),
+			("maxDp", (ushort)4000), ("dp", (ushort)0), ("maxFp", 60), ("currentFp", 60)));
+		world.Apply(Packet<SM_PLAYER_SPAWN>(
+			("worldId", 220010000), ("x", 5f), ("y", 6f), ("z", 7f), ("heading", (byte)10)));
+		world.Apply(Packet<SM_NPC_INFO>(
+			("x", 10f), ("y", 20f), ("z", 30f), ("objectId", 200), ("npcId", 211284),
+			("visualNpcId", 211284), ("creatureType", (byte)8)));
+		// A stalker's Thrust stumbles the Priest 2 m back (Java StumbleEffect): the client stands where it landed.
+		world.Apply(Packet<SM_FORCED_MOVE>(("effectorObjectId", 200), ("objectId", 100), ("unknown", (byte)16),
+			("x", 3f), ("y", 6f), ("z", 7f)));
+		Assert.Equal(new BotPosition(3, 6, 7, 10), world.Position);
+		world.Apply(Packet<SM_FORCED_MOVE>(("effectorObjectId", 100), ("objectId", 200), ("unknown", (byte)16),
+			("x", 12f), ("y", 20f), ("z", 30f)));
+		Assert.Equal(new BotPosition(12, 20, 30, 0), world.Objects[200].Position);
+		Assert.Equal(world.Objects[200].Position, world.Objects[200].SettledPosition);
+	}
+
+	[Fact]
+	public void WalkingMonstersRevealTheirPatrolPathAndChasesDoNot()
+	{
+		var world = new BotWorldModel();
+		world.Apply(Packet<SM_NPC_INFO>(
+			("x", 641.7f), ("y", 865.6f), ("z", 317f), ("objectId", 300), ("npcId", 210407),
+			("visualNpcId", 210407), ("creatureType", (byte)8)));
+		Assert.Null(world.Objects[300].PatrolPath);
+		// The Gray Mane patrol by Hatata's cave: NPC_WALK_SLOW (0xEA) legs toward its next route step.
+		Move(0xEA, 641.7f, 865.6f, 638.4f, 869.3f);
+		Move(0xEA, 638.4f, 869.3f, 633.7f, 872.3f);
+		Move(0xEA, 633.7f, 872.3f, 620.1f, 876.7f);
+		IReadOnlyList<BotPosition> path = world.Objects[300].PatrolPath!;
+		Assert.Equal(10, path.Count);
+		Assert.Equal((641.7f, 865.6f), (path[0].X, path[0].Y));
+		Assert.Equal((620.1f, 876.7f), (path[^1].X, path[^1].Y));
+		Assert.All(path.SelectMany((a, i) => path.Skip(i + 1).Select(b => (a, b))), pair =>
+			Assert.True(Horizontal(pair.a, pair.b) >= BotPatrolPath.MinimumSeparation));
+		Assert.All(path.Zip(path.Skip(1)), pair => Assert.True(Horizontal(pair.First, pair.Second) <= BotPatrolPath.PointSpacing + 0.01f));
+
+		// A start-move (0xE0), a stop, the next lap of the same legs and the walk back to the route after a chase
+		// (a leg no patrol step is that long) add nothing.
+		Move(0xE0, 620.1f, 876.7f, 626.7f, 870.7f);
+		world.Apply(Packet<SM_MOVE>(("objectId", 300), ("x", 620.1f), ("y", 876.7f), ("z", 317f),
+			("heading", (byte)0), ("movementMask", (byte)0)));
+		Move(0xEA, 641.7f, 865.6f, 638.4f, 869.3f);
+		Move(0xEA, 700f, 960f, 620.1f, 876.7f);
+		Assert.Equal(path, world.Objects[300].PatrolPath);
+		// Described again as it comes back into sight: the same monster keeps the beat already watched.
+		world.Apply(Packet<SM_NPC_INFO>(
+			("x", 630f), ("y", 873f), ("z", 317f), ("objectId", 300), ("npcId", 210407),
+			("visualNpcId", 210407), ("creatureType", (byte)8)));
+		Assert.Equal(path, world.Objects[300].PatrolPath);
+		// Chasing the bot (NPC_RUN_SLOW, weapon drawn) is not its beat: learning starts over.
+		Move(0xE4, 630f, 873f, 634f, 880f);
+		Assert.Null(world.Objects[300].PatrolPath);
+
+		void Move(int mask, float x, float y, float targetX, float targetY) => world.Apply(Packet<SM_MOVE>(
+			("objectId", 300), ("x", x), ("y", y), ("z", 317f), ("heading", (byte)0), ("movementMask", (byte)mask),
+			("targetX", targetX), ("targetY", targetY), ("targetZ", 317f)));
+		static float Horizontal(BotPosition a, BotPosition b) => MathF.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
+	}
+
+	[Fact]
+	public void PatrolPathKeepsTheNewestPoints()
+	{
+		IReadOnlyList<BotPosition>? path = null;
+		for (int leg = 0; leg < 40; leg++)
+			path = BotPatrolPath.Extend(path, 0xEA, new BotPosition(leg * 10, 0, 0, 0), new BotPosition(leg * 10 + 10, 0, 0, 0));
+		Assert.Equal(BotPatrolPath.MaximumPoints, path!.Count);
+		Assert.Equal(400f, path[^1].X);
+		Assert.Null(BotPatrolPath.Extend(path, 0xE2, new BotPosition(400, 0, 0, 0), new BotPosition(0, 0, 0, 0)));
+		Assert.Same(path, BotPatrolPath.Extend(path, null, new BotPosition(400, 0, 0, 0), null));
+	}
+
 	private static DecodedBotServerPacket Packet<T>(params (string Name, object? Value)[] fields) =>
 		new(typeof(T), Item(fields));
 

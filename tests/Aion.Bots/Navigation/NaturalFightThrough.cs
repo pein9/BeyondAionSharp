@@ -28,13 +28,12 @@ public static class NaturalFightThrough
 	{
 		ArgumentNullException.ThrowIfNull(route);
 		ArgumentNullException.ThrowIfNull(monsters);
-		// A circle the bot already stands in is an engagement, not a blocker on the way.
 		NaturalObservedMonster[] ahead = monsters
-			.Where(m => m.Radius > 0 && rejected?.Contains(m.Npc.ObjectId) != true && !Inside(start, m))
+			.Where(m => m.Radius > 0 && rejected?.Contains(m.Npc.ObjectId) != true)
 			.ToArray();
 		for (int index = 0; index < route.Count; index++)
 		{
-			NaturalObservedMonster? entered = ahead.Where(m => Inside(route[index], m))
+			NaturalObservedMonster? entered = ahead.Where(m => Blocks(start, route[index], m))
 				.OrderBy(m => Horizontal(route[index], m.Npc.Position)).ThenBy(m => m.Npc.ObjectId).FirstOrDefault();
 			if (entered == null) continue;
 			IReadOnlyList<BotPosition> staging = route.Take(index).ToArray();
@@ -53,13 +52,16 @@ public static class NaturalFightThrough
 		var order = new List<NaturalObservedMonster>();
 		foreach (BotPosition point in route)
 			foreach (NaturalObservedMonster monster in monsters)
-				if (!Inside(start, monster) && Inside(point, monster) && !order.Contains(monster)) order.Add(monster);
+				if (Blocks(start, point, monster) && !order.Contains(monster)) order.Add(monster);
 		return order;
 	}
 
 	// The server measures aggro range in 3D (Java MathUtil.isInRange): a monster under a deck is not a blocker.
-	private static bool Inside(BotPosition point, NaturalObservedMonster monster) =>
-		new BotNavigationHazard(monster.Npc.Position, monster.Radius).Contains(point);
+	// A patrol also blocks the stretch of its observed path it can walk to while the bot passes. A circle the bot
+	// already stands in is an engagement (the monster's own) or ground it is leaving (a patrol's path).
+	private static bool Blocks(BotPosition start, BotPosition point, NaturalObservedMonster monster) =>
+		monster.Npc.Hazards(monster.Radius, BotPatrolPath.PassingReach)
+			.Any(hazard => hazard.Contains(point) && !hazard.Contains(start));
 
 	private static float Horizontal(BotPosition a, BotPosition b) =>
 		MathF.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));

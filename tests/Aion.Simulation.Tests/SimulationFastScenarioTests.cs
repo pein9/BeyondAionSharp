@@ -898,6 +898,12 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		public BotPosition CurrentPosition => currentPosition ?? api.World.Position
 			?? throw new InvalidOperationException("Enter the world before reading the current position.");
 
+		/// <summary>Where the client stands after the server knocked, stumbled or pulled it somewhere: exactly
+		/// there unless a host with geometry resolves it. Java's knockback stops at the first collision without
+		/// looking for ground, so a landing can hang against a rock face; the client's own physics puts the
+		/// character on the ground at its foot before the next move.</summary>
+		public Func<BotPosition, BotPosition>? ResolveForcedLanding { get; set; }
+
 		public void BeginStep(string step, string action)
 		{
 			currentStep = step;
@@ -1320,6 +1326,15 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 				BotClientPacket? response = api.Observe(packet);
 				if (response != null)
 					await SendAsync(response, cancellationToken);
+				// A knockback, stumble or pull moved the character on the server: the client stands where it landed.
+				if (packet.PacketType == typeof(SM_FORCED_MOVE) && packet.Get<int>("objectId") == characterId &&
+					api.World.Position is BotPosition landed)
+				{
+					BotPosition standing = ResolveForcedLanding?.Invoke(landed) ?? landed;
+					currentPosition = standing;
+					if (api.World.MapId is int mapId)
+						expectedPosition = new PersistedPosition(mapId, standing.X, standing.Y, standing.Z);
+				}
 				if (packet.PacketType == typeof(SM_ENTER_WORLD_CHECK) && packet.Get<byte>("msg") != 0)
 					throw new InvalidDataException($"SM_ENTER_WORLD_CHECK refused entry with message {packet.Get<byte>("msg")}.");
 				if (packetType == typeof(SM_DIALOG_WINDOW) && packet.PacketType == typeof(SM_SYSTEM_MESSAGE) &&
@@ -1370,7 +1385,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		}
 
 		private static bool IsCombatTracePacket(Type type) =>
-			type == typeof(SM_ATTACK) || type == typeof(SmAttackStatus) ||
+			type == typeof(SM_ATTACK) || type == typeof(SmAttackStatus) || type == typeof(SM_FORCED_MOVE) ||
 			type == typeof(SM_CASTSPELL) || type == typeof(SM_CASTSPELL_RESULT) ||
 			type == typeof(SM_SKILL_CANCEL) || type == typeof(SM_SKILL_COOLDOWN) ||
 			type == typeof(SM_STATUPDATE_HP) || type == typeof(SM_STATUPDATE_MP) ||

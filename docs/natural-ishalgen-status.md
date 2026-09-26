@@ -1,4 +1,4 @@
-# Natural Ishalgen Priest: status and handoff (2026-09-25)
+# Natural Ishalgen Priest: status and handoff (2026-09-26)
 
 The automated Priest plays Ishalgen 1–9 like a human: the frozen NI-07 journey
 (`NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup`, Q2001 through Q2134 and Munin,
@@ -9,8 +9,10 @@ combat lives in `docs/bot-navigation.md`; this page only points at it.
 ## How to run and read a batch
 
 ```bash
-bash scripts/sim/run-natural-batch.sh smart43 1 3 4 5
+bash scripts/sim/run-natural-batch.sh smart47 1 3 4 5
 ```
+
+Use a new prefix for the next batch; preserve the smart46 evidence.
 
 One full journey per seed, sequentially, ~4–6 min real time each when it completes (a 4-hour
 virtual day). One summary line per run: verdict, pulls (`clean` = single pulls with no expected
@@ -18,6 +20,12 @@ helper), defends, retreats, close-ins, deaths, quest updates, last step, first e
 in `run/natural-batch/<prefix>-full-s<seed>/` with a combat trace (`*.trace.jsonl`: every packet
 and every decision, one JSON object per line, fields `vt` virtual time, `step`, `dir` (`>` sent,
 `<` received, `action` decision), `packet`, `fields`).
+
+Scripts that compare batches (`scripts/sim/trace/`, each takes run folders under `run/natural-batch/`):
+`aggro_causes.py` (how every monster came to attack: respawn beside the bot, a patrol walking in, or
+other; plus deaths), `death_profile.py` (the decisions and attackers before each death),
+`hatata_profile.py` (the Q2129 Hatata step: length, kills, every attacker and whether it respawned
+during the step), `step_times.py` (virtual and real time per quest, two runs side by side).
 
 Trace queries that were used to compare batches (Python one-liners over the trace):
 
@@ -31,7 +39,8 @@ Trace queries that were used to compare batches (Python one-liners over the trac
   `adds-that-would-join` (`adds`, `purpose` ending `-at-target` for the no-clean-spot fallback),
   `pull-wait-for-patrol`, `fight-through-plan/-walk/-advance/-stand/-cleared`,
   `kill-retry-after-death`, `kill-target-vanished`, `combat-obstacle-close-in`,
-  `combat-range-close-in`, `dialog-too-far`.
+  `combat-range-close-in`, `dialog-too-far`, `forced-landing-on-ground`; `SM_FORCED_MOVE` (knockbacks)
+  is traced since 2026-09-26.
 
 Before committing gameplay changes run the checks listed in `CLAUDE.md` (warning baseline, null
 loggers, clock reads, fidelity, Fast tier). They rebuild, so never run them while a batch is
@@ -54,19 +63,52 @@ Batches of the same four seeds (1, 3, 4, 5); "completed" means the whole journey
 | smart40 (seed 3) | same build | 1/1 | 0 | — |
 | smart41 | dialog re-approach, 3-minute packet-wait cap | 3/4 | 0 | seed 4: bare InvalidOperationException 37 s in |
 | smart42 | resumable packet read (fix for the above) | not run to completion | | stopped for the handoff |
+| smart43 | commit b6a047006 (previous baseline) | 4/4 | 3 | — (deaths: Q2007 green and blue generators, Hatata) |
+| smart44 | + patrol paths (whole path everywhere), `SM_FORCED_MOVE`, in-aggro = engaged, defend before fight-through | 3/4 | 0 | seed 4: knocked into a rock face, no legal step from there |
+| smart45 | + passing reach (15 m of a path on routes), forced landing on ground | 3/4 | 1 | seed 1: rested with a stalker on it after a fight-through kill and died; the retry found no route back to Hatata |
+| smart46 | + defend before journey rests, progress-based guarded-approach retries, preserve pull range after empty-spawn waits | **4/4** | **0** | —; all four reached Munin with 205 quest updates and no retreats |
 
-The last commit's build (smart41 + the resumable read) has **not** been batch-verified as a whole:
-smart41 ran 3/4 with zero deaths before the read fix; the read fix was built and unit-tested only.
-The first thing to do in a new session is `run-natural-batch.sh smart43 1 3 4 5`.
+**Working-tree note** (2026-09-26): the combined smart44-46 changes are included in the commit
+containing this entry. smart46 passed 4/4 with zero deaths; 153 affected unit tests passed. The
+full **31-command CLAUDE.md checklist passed**, including solution tests (4,797 passed, 45 gated
+skips), warning baseline, null loggers, clock reads, custom-quest drafts, structural fidelity,
+all harness contracts, both baked navmeshes and the Docker Fast tier. Fast run
+`fast-20260925-215110` passed all 11 manifest scenarios (22 tests passed, one gated skip).
+Logs and exit codes are in `run/smart46-checks/`; no new warnings or baseline increases.
+The throwaway cadence probe was removed before these checks. No server combat rules changed.
 
-### What the smart41 fights looked like
+### What the batches since smart41 showed
 
-Hatata the Torturer (Q2129, 1,821 HP, Seasoned, stuns, in the Black Opal cave) is the only fight
-that has killed the bot since the melee rotation. One-on-one he dies in 8–13 s. Every death was an
-add: a second Gray Mane on the bot. The planned-pull path (below) kept the last batches at
-zero deaths, but seed 3 in smart41 still met a stalker and two patrols right at the arrival point
-after a three-minute fight-through: the cave entrance respawns in 180 s, and the way in takes
-about that long. That is the open combat risk.
+Measured with the scripts above; the design is in `docs/bot-navigation.md`, entry "Patrols are known
+by the path they walk; a knockback moves the bot (2026-09-25)".
+
+- **There is no Hatata respawn race.** In ten Hatata steps (smart37–41) no attacker was a respawn of
+  anything killed on the way in. The smart41 seed-3 "stalker and two patrols at the arrival point"
+  were original spawns: the Gray Mane patrol (walker loop x 620–642, y 859–877) walked into the bot's
+  route, and its two neighbours joined by assist.
+- **All three smart43 deaths were in that one area** (the Q2007 generators and Hatata share it): a pull
+  of the patrol from a spot on its own loop; a stalker respawning 3.9 m from the bot while it planned
+  the next pull; and melee casts refused at "1.97 m" after stumbles the bot never saw (it did not
+  decode `SM_FORCED_MOVE`), after which the fight-through walked on with two attackers.
+- **smart44/45 with the fixes**: 0 deaths in smart44's four runs, 1 in smart45's. Q2007 on seed 3 went
+  from 3,201 s plus a 2,094 s rejoin (two deaths) to 1,175 s. Knockbacks now reach the bot 7–16 times
+  a run.
+- **Whole patrol paths on routes were too much**: they closed the Mau farm corridor on the way back to
+  Ulgorn (all ten checkpoints refused against 62 circles; Return fallback, +350 s). Routes now use the
+  15 m of a path a walker can reach while the bot passes, and smart45 real time is back near smart43.
+
+- **smart46 is 4/4, zero deaths and zero retreats.** Seeds 1/3/4/5 finished in 6:20/7:10/8:36/8:09
+  real time, each with 205 quest updates. Whole-journey virtual time was 3:22–3:28. The Hatata kill
+  steps (including approach and guards) were 364/304/277/250 s, with 8/8/7/7 kills and no attacker
+  identified as a respawn during the step. Hatata combat decisions themselves span 27.4/26.4/25.9/26.0 s.
+- **The defence-before-rest change is exercised outside Hatata too:** 91 pre-rest defence decisions
+  across the four runs. Knockbacks were received 18/8/6/5 times; seed 1 resolved one landing to ground
+  and continued. `aggro_causes.py` classified 30 nearby arrivals as respawn-on-bot and 14 as patrol
+  engagements; these are heuristic classifications, not proof that every nearby arrival was a respawn.
+  `death_profile.py` reports no deaths on any seed. Reports are in `run/smart46-analysis/`.
+- **Cost remains in route searches.** Versus smart45, Q2007 virtual time is lower on seeds 3/4/5
+  (1152/1204/1158 s) and higher on seed 1 (1589 s). Real time is slower on three seeds, and also varies
+  across unchanged travel legs. The zero-death result is not a claim of a route-performance improvement.
 
 ## What the bot does now (pointers)
 
@@ -90,24 +132,59 @@ entries at the end; the code is `tests/Aion.Bots` (policies, planners, navigatio
   node's skill level (Q2134 needs 15; ~30 harvests).
 - **Session robustness**: a single packet wait is capped at three minutes of real time; a read
   abandoned by a real-time timeout is resumed by the next wait (never re-entered).
+- **Patrols**: the world model learns each walker's path from its walk moves
+  (`BotPatrolPath`); places the bot stays at keep off the whole path, routes off the 15 m a walker can
+  reach meanwhile. **Knockbacks** move the bot (`SM_FORCED_MOVE`); a landing against a rock face stands
+  on the ground at its foot. A monster whose aggro circle the bot stands in counts as engaged; the
+  fight-through defends before walking on and after a kill before resting. All journey rests
+  check engaged monsters before relocating. Guarded approaches count consecutive stalls, not successful
+  fights and walking progress, with an overall attempt cap.
 
 ## Open items, in the order I would take them
 
-1. **Batch-verify the current build** (smart43). Expect 4/4; if seed 4 shows the loot-list timeout
-   again it is now harmless (`quest-loot-list-missing` trace, then the next wait resumes).
-2. **Hatata's cave respawn race.** The fight-through to him takes ~3 minutes; the entrance
-   respawns in 180 s. Options: skip the unconditional rest after each fight-through kill when HP
-   is high (it is in `TryFightThroughAsync` after `fight-through-cleared`), or pull him out to the
-   cave mouth. Measure with the seed-3 profile query above.
-3. **The generator clearing** (Q2007) still uses the old wide margin (aggro + 22 m). It has gone
-   4/4 in every batch; only tighten it with a measured reason.
-4. **SIM oddity**: NPCs swing every exactly 2.000 s in SIM regardless of template `attack_speed`
-   (2100 in LIVE). Unpinned; affects how SIM fight lengths compare to LIVE.
-5. **Portal importer** (`../aion-portal/scripts/import_58_ishalgen.py`, uncommitted there along
-   with another session's spawn-editor work): fixed retail positions now take the collision surface
-   nearest the retail height. Commit it in that repo with its test.
-6. Pre-existing, unrelated: none left; the two tests broken by the 2026-09-23 spawn import were
-   repaired (soak basket count, geo golden regenerated; `scripts/parity/regen-geo-golden.ps1`).
+1. **Done — defend before rest.** `TryFightThroughAsync` defends after `fight-through-cleared`;
+   `RestSafelyAsync` covers the other journey rests, including add clearing and quest kills.
+2. **Done — keep fight-through on the return from bind.** The old eight-total-clear budget was exhausted
+   while the smart45 approach made progress before and after a death. The next blocked segment never
+   reached fight-through. `NaturalApproachProgress` now allows progress while bounding consecutive
+   stalls at eight and total attempts at 120. Empty-spawn retries retain `withinRange`.
+3. **Done - smart46 4/4, zero deaths.** Full checklist and Fast tier passed; committed locally to main.
+4. **Travel-route cost**: every patrol point is a circle, so failed hazard searches cost about 1.3 s of
+   real time each (0.8 s before). Thinning the circles to r/2 spacing would narrow the band to 0.87 r;
+   only do it if real time matters.
+5. **Done — SIM swing cadence measured after smart46 was green.** A throwaway SIM probe placed a
+   character beside a shipped 211284 Stalker, initiated one ordinary attack, kept the character at full
+   HP and advanced 50 ms at a time for 30 s. Eleven `SM_ATTACK` packets were sampled against
+   `fixture.Clock.NowMillis`: first at 750 ms, eight subsequent intervals of **2100 ms** and two of
+   5200 ms. The current attack-speed stat was 2100 throughout. This contradicts the earlier
+   "exactly 2.000 s regardless of attack_speed" claim; no scheduler change is justified. The longer
+   gaps were not classified by this minimal probe. An initial passive setup did not establish combat
+   and produced no swings. Evidence: `run/smart46-cadence.json`, `run/smart46-cadence.log`, source
+   retained as `run/SimulationNpcCadenceProbe.cs.txt`; the throwaway test was removed before the full
+   checklist. Java `SimpleAttackManager` and `NpcGameStats.getNextAttackInterval` remain the spec.
+6. **The generator clearing** (Q2007) still uses the wide margin (aggro + 22 m), now measured from a
+   patrol's whole path. The Q2007 deaths are gone in smart44-46; leave it.
+7. **Portal importer** (`../aion-portal`): its 8 tests pass, but it is one change with the 5.8 overlay
+   there (`scripts/cache_58_ishalgen.py` and its test, `assets/maps/ishalgen-58.json`, the spawn-editor
+   UI files, the `package.json` scripts, `docs/PROGRESS.md` iterations 109–110; also a modified
+   `assets/maps/bot-deaths.json`). Ask the user how to commit it; do not commit that repo alone.
+
+## Recorded human Hatata fight (reviewed 2026-09-26)
+
+Found `run/recordings/rrfarmer-20260924T234749765Z-1a0d5d17712-486fe9.recording.jsonl`:
+Pilot, level 9, a 1,308 s session with no `SM_DIE`. Hatata (210409, object 41392) was engaged
+at **2026-09-25 00:05:16.307 UTC** (September 24, 8:05 p.m. Eastern). The quest update and
+loot-enable arrived at **00:06:03.978/979**, 47.7 s later. He was the only attacker during
+that fight; the lowest server-reported HP was 393/669 (59%). Pilot fought around (670, 872),
+used Smite 4012, Infernal Blaze 1814, Hallowed Strike 1615, Healing Light 1838, a potion and
+seven mace attacks. Two Smite casts were interrupted.
+
+For comparison, the successful **Q2129** Hatata fights in smart45 seeds 3/4/5 span 33.0/28.2/24.2 s
+from first to last combat decision (excluding the final cast's completion). Their minimum decision
+HP was 530/613/584, and each had one observed attacker. These are different gear/skill-rank and
+random-outcome samples, not a controlled speed benchmark. They do show that the bot can finish
+an isolated Hatata fight promptly. Approach clearing and carrying adds into a rest are the measured
+problems; another human recording is not needed to diagnose those.
 
 ## Spawn placement passes (for the next retail-accuracy edit)
 

@@ -86,6 +86,25 @@ public sealed class NaturalPullPlannerTests
 		Assert.DoesNotContain(P(200, 110), blocked);
 	}
 
+	[Fact]
+	public void APatrolCountsAlongTheWholePathItWasSeenWalking()
+	{
+		// A lone target, approached from the south; an unrelated patrol is 40 m north of it now but was seen
+		// walking an east-west line 15 m south of it. Seen only where it stands, the near (south) side looks
+		// best; the patrol walks through there.
+		BotPosition[] beat = Enumerable.Range(0, 21).Select(i => P(20 + i * 3, -15)).ToArray();
+		NaturalPullMonster target = M(1, 50, 0);
+		var patrol = new NaturalPullMonster(new NaturalNavigationObject(2, 210407, P(50, 40), beat), 8, "LYCAN");
+		var seenOnce = patrol with { Npc = patrol.Npc with { PatrolPath = null } };
+		NaturalPullPlan blind = NaturalPullPlanner.Plan(P(50, -60), [target], [target, seenOnce], [], Support, Sight, Ground, Reachable)!;
+		Assert.Contains(beat, point => Distance(blind.FiringPosition, point) <= patrol.AggroRadius + 1);
+		NaturalPullPlan plan = NaturalPullPlanner.Plan(P(50, -60), [target], [target, patrol], [], Support, Sight, Ground, Reachable)!;
+		Assert.All(beat, point => Assert.True(Distance(plan.FiringPosition, point) > patrol.AggroRadius + 1));
+		// A fight on its path meets it sooner or later; one well away from it does not.
+		Assert.Contains(patrol, NaturalPullPlanner.AddsAt(target, P(50, -12), [target, patrol], Support, Sight));
+		Assert.DoesNotContain(patrol, NaturalPullPlanner.AddsAt(target, P(50, 12), [target, patrol], Support, Sight));
+	}
+
 	private static float Distance(BotPosition a, BotPosition b) => MathF.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
 
 	[Fact]

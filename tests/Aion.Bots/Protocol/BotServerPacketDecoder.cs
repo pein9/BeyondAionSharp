@@ -49,6 +49,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SmAttackStatus)] = DecodeAttackStatus,
 			[typeof(SM_ATTACK)] = DecodeAttack,
 			[typeof(SM_MOVE)] = DecodeMove,
+			[typeof(SM_FORCED_MOVE)] = DecodeForcedMove,
 			[typeof(SM_DELETE)] = DecodeDelete,
 			[typeof(SM_TELEPORT_LOC)] = DecodeTeleport,
 			[typeof(SM_DIALOG_WINDOW)] = DecodeDialog,
@@ -519,6 +520,17 @@ public sealed partial class BotServerPacketDecoder
 			fields[prefix + "Y"] = r.ReadSingle();
 			fields[prefix + "Z"] = r.ReadSingle();
 		}
+		return fields;
+	}
+
+	// Java SM_FORCED_MOVE.writeImpl: the effector, the creature moved, a constant 16, then where it landed. Sent by
+	// knockback, stumble and pull effects (StaggerEffect, StumbleEffect, PulledEffect) and the anti-hack move-back.
+	private static IReadOnlyDictionary<string, object?> DecodeForcedMove(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		var fields = Fields(("effectorObjectId", r.ReadInt32()), ("objectId", r.ReadInt32()), ("unknown", r.ReadByte()),
+			("x", r.ReadSingle()), ("y", r.ReadSingle()), ("z", r.ReadSingle()));
+		if (r.Remaining != 0) throw new InvalidDataException("Forced move has unexpected trailing bytes.");
 		return fields;
 	}
 

@@ -130,7 +130,8 @@ instead of giving up.
 **Walkers.** A walking NPC's `SM_MOVE` carries its walk target after the start position (Java
 `SM_MOVE.writeImpl`: `POSITION|MANUAL|ABSOLUTE`), and a real client animates the NPC toward it. The bot
 decoder used to drop those floats, so a walker looked frozen where its walk began. It now keeps the
-target (`BotKnownObject.MoveTarget`, `SettledPosition`). When the server answers
+target (`BotKnownObject.MoveTarget`, `SettledPosition`), and the path a walker has been seen patrolling
+(`BotKnownObject.PatrolPath`, see the 2026-09-25 entry below). When the server answers
 `STR_SKILL_NOT_ENOUGH_DISTANCE` or `STR_SKILL_OBSTACLE` although the last-known position looks fine, the
 Priest closes in, up to 8 m and never nearer than 10 m, toward where the walker settled
 (`combat-range-close-in`), or finds a firing spot with sight of it. That was the long-standing
@@ -281,6 +282,67 @@ rejection closes to the rejected skill's own reach. A server-side line-of-sight 
 re-anchoring. And a dialog refused as "too far to talk" (a walking start NPC moved on after the
 client-estimated arrival) re-approaches the NPC; a single packet wait is capped at three minutes
 of real time, so such a case fails with a message instead of running to the batch cap.
+
+### Patrols are known by the path they walk; a knockback moves the bot (2026-09-25)
+
+The "cave respawn race" at Hatata was measured and is not what kills: across ten Hatata steps
+(smart37–41) no attacker was a respawn of anything killed on the way in. Every loss near the Black
+Opal cave came from one of three other things, each fixed here.
+
+- **The Gray Mane patrol.** A 10-step walker loop (x 620–642, y 859–877) between the Q2007
+  generators and Hatata. The bot saw a walker only at its next route step, so routes and firing spots
+  crossed the loop while the patrol was at the far end, and it walked into the fight. The world
+  model now learns each NPC's patrol path the way a player does, by watching it: Java
+  `NpcMoveController.getMoveMask` sends `NPC_WALK_SLOW/FAST` while an NPC walks (patrol, random walk)
+  and `NPC_RUN_SLOW/FAST` while it fights or goes home, so walk legs up to 25 m are the path and a run
+  starts it over (`BotPatrolPath`, `BotKnownObject.PatrolPath`; the Gray Mane loop is 21 points). A
+  place the bot stays at (firing spot, assist and add checks, objective clearing, rest spot) keeps off
+  the whole path; a route that only passes keeps off the stretch the walker can reach meanwhile, 15 m
+  at about 1 m/s (`BotPatrolPath.PassingReach`). Whole paths on routes closed the Mau farm corridor
+  on the way back to Ulgorn and sent the bot home by Return.
+- **Knockbacks.** A stalker's Thrust stumbles the Priest 2 m (Java `StumbleEffect` moves it and sends
+  `SM_FORCED_MOVE`). The bot did not decode that packet, so after every stumble it planned from 2 m
+  off: melee casts came back `STR_SKILL_NOT_ENOUGH_DISTANCE` at "1.97 m", the fight was dropped after
+  four, and the fight-through walked on to Hatata with two attackers on it (the smart43 seed-4 death).
+  It now decodes the packet and stands where it landed. Java stops a knockback at the first collision
+  at the old height, so a landing can hang against a rock face where no step is legal; the SIM client
+  then stands on the navmesh ground at its foot (within 3 m, traced `forced-landing-on-ground`), as the
+  client's physics does.
+- **Monsters already on the bot.** A stalker respawned 3.9 m from the Priest while it planned its next
+  pull, and followed it into that pull (the smart43 seed-3 generator death). A monster whose aggro
+  circle the bot stands in now counts as engaged: it is fought first, and one that never attacks is
+  waited for only once. The fight-through also defends first, so it never walks on with a monster
+  still on the Priest.
+
+Every route check now carries more circles, so failed searches cost more real time (median 1.3 s
+against 0.8 s); virtual time and outcomes are what the batches compare. smart44 (whole paths on routes)
+had no deaths in four runs but stopped once on a jammed knockback landing; smart45 (passing reach,
+landing on ground) completed three of four with one death, which is the next item in
+`docs/natural-ishalgen-status.md`.
+
+### Deal with the remaining attacker before resting (2026-09-26)
+
+smart45 seed 1 killed its fight-through target with a Stalker still on it, then tried to walk
+25 m to a rest spot. Fighting the Stalker only after that walk began left too little HP.
+`TryFightThroughAsync` now calls `DefendAgainstEngagedAsync` immediately after
+`fight-through-cleared` and before `RestAsync`; a death during that defence is handed back to
+its caller. The other journey rests use `RestSafelyAsync`, including add clearing, quest kills,
+loot and the rest at the start of the next hunt iteration. The defence loop's stall limit reports
+failure instead of falling through to rest with an unresolved attacker.
+
+The same smart45 run then exhausted the spawn approach's **eight total guard clears**, including
+progress before and after its death. Its next hazard-rejected segment at the cave mouth never
+reached fight-through, so a visible Hatata was reported as missing at the spawn hints.
+`NaturalApproachProgress` counts eight consecutive attempts without a guard clear or more than
+2 m of movement; successful progress resets that stall count. A separate 120-attempt bound still
+stops cycling or endless respawns. Every eligible blocked segment, including a return from bind,
+gets the same fight-through handoff. A retry after waiting at empty hints also retains its requested
+pull range.
+
+The server's combat rules are unchanged. Java `CM_EMOTION` allows sitting but does not clear
+aggro; Java `SimpleAttackManager` continues attacking a living, reachable target. These are bot
+decision changes. Batch results and the recorded human Hatata comparison are in
+`docs/natural-ishalgen-status.md`.
 
 ## Regenerating
 
