@@ -308,6 +308,102 @@ in the validated local main change; see `docs/bot-monitor.md`. No portal files w
 and nothing was pushed. The preview on port 17880 shows a saved 41-quest snapshot
 labelled **Map preview · no bot running**. NI-10/NI-11 remain the next milestones.
 
+Selective placement update (2026-09-26): Hatata's Hideout and Rae now use the
+5.8 fixed-position reference within X 600–710, Y 840–980. Rae 203554, Patrol
+210407, Strongfur 210408, Hatata 210409, and Stalkers 210750/211284 are the
+selected templates; the 4.8-only Stalkers 210395/210396 were removed within
+that boundary. The two walker spots and the gate/generator static objects were
+preserved. The selected Rae/mob count changed from 36 to 18; all spots outside
+the rectangle matched the Java 4.8 baseline at that stage. The editor's
+`scripts/import_58_hatata_hideout.py` records the reproducible import. This is
+an on-disk XML change; the running game server was not restarted.
+
+The next selective pass (2026-09-26) covers the shipped Dubaro Vine Canyon
+zone polygon, clipped to 980 < Y ≤ 1175 between Nalto and Rae. Nalto 203552,
+Dundun Looklook 210394, Dundun Lookout 210406, Gray Mane Patrol 210407,
+Strongfur 210408, and Stalker 210750 use 5.8 fixed-position references. The
+4.8 Looklook 210393 and Stalkers 210395/210396 were removed only in this slice.
+Selected NPC/mob spots changed from 34 to 19. Two Stalker walkers and all six
+Treasure Box 210596 spots remain; the 5.8 box markers are territory anchors,
+not fixed positions. The earlier Hatata/Rae pass and all other areas remain
+unchanged. The editor's `scripts/import_58_dubaro_canyon.py` records the
+boundary, backup, and height audit. The running game server was not restarted.
+
+The Odella Plantation pass (2026-09-26) covers the complete shipped zone
+polygon. Mob spots change from 135 to 109 by accounting for 98 fixed 5.8
+references (86 explicit spots and 12 protected behavior matches), plus 11
+retained 4.8 spots for territory-only populations. The 5.8 Karnif 210655
+coordinate is used with the existing 4.8 Karnif ID 210389. Territory-only
+Methu 210497 is not added. All 48 quest and field objects remain unchanged.
+Twelve protected spots match fixed references and retain their walker or
+random-walk behavior; one Farmer walker remains on the 4.8 territory baseline.
+Its inherited route step at (602.36, 1494.14) was corrected from Z=-15.35597
+to the collision floor Z=296.77. The other 203 steps across the twelve retained
+routes were within 2 m of a walkable surface. One fixed Looklook is 1.12 m
+from a Mau Grain Sack; they are distinct positions and the sack's static ID is
+unchanged. The editor's `scripts/import_58_odella_plantation.py` records the
+boundary, source checks, backup, count audit, and mesh-grounded heights.
+At that stage, every spot outside the three selected areas still matched Java
+4.8. This is an on-disk XML update; the game server was not restarted.
+
+Sonna and Gardar follow-up (2026-09-26): The user's client screenshot shows
+both visibly suspended near the village cliff. Their ordinary Ishalgen XML
+spots had *not* moved during the 4.8 reset and matched Java 4.8 exactly.
+The editor's `scripts/import_58_sonna_gardar.py` now moves only Gardar 801218
+and Sonna 801219 to their explicit 5.8 X/Y references, respectively
+(556.129, 2426.967) and (555.431, 2429.317), with the 5.8 heading. Their
+Z values are set to walkable collision floors 278.500 and 278.350 rather than
+5.8 source Z 281.0 and 280.708, which would be 2.4–2.5 m above those floors.
+Their 4.8 groups remain unconditional. The separate 5.8 gated TSV rows are
+marked as overlaps and skipped by the current gated loader. No other NPC
+spots or group settings changed. The candidate passed the spawn XSD, nearby
+spawn check, and byte-idempotence check. The running game server was not
+restarted; the user's next rebuilt container needs an in-game visual check.
+
+Aldelle Hill and Lake Tunapre mob pass (2026-09-26): Used the complete shipped
+zone polygons and changed only mob positions in groups 210363, 210727, and
+210590. Aldelle Hill mobs change 273 to 274; Lake Tunapre mobs change 216 to
+210. Three 210363 fixed 5.8 references are already reached by protected walker
+routes, and four ordinary spots were replaced. Nine fixed 210727 Fighter spots
+replace eight nearby 4.8 spots, leaving one additional Fighter. Lake Hulker
+210590 uses its single fixed 5.8 spot instead of seven 4.8 spots. Territory
+anchor populations remain on the 4.8 baseline. The 210364 western fixed
+references were left alone because nearby 4.8 walkers cover that patrol area;
+5.8-only 210728 was not added. All 203xxx NPC and raider groups, field/quest
+objects, other mobs, and areas outside these two polygons retain their prior
+spawns. The editor's `scripts/import_58_aldelle_lake_mobs.py` records the
+boundary, backup, source checks, counts, and mesh-grounded fixed heights.
+
+The same pass corrected two inherited mob patrol height errors: the 210650
+Lake Braxie route had 20 steps and its attached spawn center roughly 19.7 m
+above the collision floor; the 210364 hill worker route had two steps about
+13.9 m high. Only those Z values changed. The editor's
+`scripts/repair_aldelle_lake_mob_patrol_heights.py` records both backups and
+the before/after values. A repeat audit found no step more than 2 m off a
+walkable surface across all 50 retained routes (1,586 steps) in the zones.
+The spawn editor now offers a read-only gatherable
+overlay sourced from the shipped Gather XML (93 Ishalgen spots). The running
+game server was not restarted; in-game results require the user's rebuild.
+
+Remaining Ishalgen mob review (2026-09-26): Inventoried every shipped SUB
+zone against 5.8 fixed positions and territory anchors. Aldelle Basin's eight
+fixed references are already represented by current spots or patrol routes.
+The selective import replaced 24 nearby 4.8 mob spots: three Whitefoot Daru
+in Munihele Forest, 14 mobs in Anturoon Crossing (including its overlapping
+coast), and seven Thorned Ampha in Ishalgen Prison Camp. The 5.8 Fanged
+Karnif 210655 coordinates use the existing Java 4.8 ID 210389. Every group
+count stays the same; the Daru random-walk flag, all NPCs and quest objects,
+group settings, and patrol routes are unchanged. Territory-only populations
+remain on their 4.8 baseline. Nine fixed references in the selected groups
+were withheld because their only 4.8 candidate was distant or the target
+was occupied by another mob. Other 5.8-only level variants and distant prison
+references were not introduced. The editor scripts
+`scripts/review_58_remaining_ishalgen.py` and
+`scripts/import_58_remaining_ishalgen_mobs.py` record the inventory, guarded
+replacement, backup, and per-spot report. The candidate passed `spawns.xsd`,
+a second import was byte-identical, and comparison with the backup found
+exactly 24 changed mob spot records. Docker was not managed in this pass.
+
 ## Open items, in the order I would take them
 
 1. **Done — defend before rest.** `TryFightThroughAsync` defends after `fight-through-cleared`;
