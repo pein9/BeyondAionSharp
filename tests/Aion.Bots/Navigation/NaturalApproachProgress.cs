@@ -8,6 +8,10 @@ public sealed class NaturalApproachProgress
 
 	public bool CanRetry(int attempts) => attempts < MaximumAttempts && stalledAttempts < 8;
 
-	public void Observe(float distanceWalked, bool clearedGuard) =>
-		stalledAttempts = distanceWalked > 2 || clearedGuard ? 0 : stalledAttempts + 1;
+	public bool Observe(float distanceWalked, bool clearedGuard)
+	{
+		bool progressed = distanceWalked > 2 || clearedGuard;
+		stalledAttempts = progressed ? 0 : stalledAttempts + 1;
+		return progressed;
+	}
 }

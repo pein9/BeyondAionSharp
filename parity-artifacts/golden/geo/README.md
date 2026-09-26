@@ -44,6 +44,10 @@ positions lifted onto their retail deck or platform); the current
 `starter-queries.jsonl` SHA256 is
 `8f5685b7228a81ec199a354c4fa6b52a7393781b3c6d79bab92ae24219b56600`.
 
+Regenerated on 2026-09-26 after removing the ineffective pool attribute on the
+sole Ishalgen Hulker spawn. Only that XML input hash changed; point counts and
+all Java query results remain identical.
+
 ## Regenerate locally
 
 `pwsh -NoProfile -File scripts/parity/regen-geo-golden.ps1` does all of the below and runs the

@@ -21,6 +21,28 @@
       <div><span>Bots</span><strong id="bot-count">0</strong></div>
       <div><span>Updated</span><strong id="updated">—</strong></div>
     </section>
+    <section class="map-panel" aria-label="Journey map">
+      <div class="map-heading"><div><p class="eyebrow">Journey map</p><h2 id="map-title">Ishalgen</h2></div>
+        <div class="map-controls">
+          <label>Character <select id="map-bot" aria-label="Map character"><option value="">Waiting for a bot</option></select></label>
+          <button id="map-fit" type="button">Whole map</button>
+          <button id="map-minus" type="button" aria-label="Zoom out">−</button>
+          <button id="map-plus" type="button" aria-label="Zoom in">+</button>
+          <label><input id="map-follow" type="checkbox" checked> Follow character</label>
+        </div>
+      </div>
+      <div class="map-layers" aria-label="Map layers">
+        <label class="map-mob"><input id="map-mobs" type="checkbox" checked> Mobs</label>
+        <label class="map-npc"><input id="map-npcs" type="checkbox" checked> NPCs / objects</label>
+        <label class="map-gatherable"><input id="map-gatherables" type="checkbox" checked> Gatherables</label>
+        <label><input id="map-observed" type="checkbox" checked> Observed nearby</label>
+        <label><input id="map-trail" type="checkbox" checked> Character trail</label>
+        <input id="map-search" type="search" placeholder="Find a spawn by name or ID" aria-label="Filter spawns by name or ID">
+      </div>
+      <div class="map-viewport"><canvas id="journey-map" tabindex="0" aria-label="Map: drag to pan, scroll or use plus and minus to zoom"></canvas><div id="map-tooltip" hidden></div></div>
+      <div class="map-caption"><span id="map-status">Loading portal map…</span><span>Hollow dots: spawn references · Solid dots: observed · Cyan: character</span></div>
+      <p class="map-note">Spawn locations show the shipped world layout, including conditional placements; they do not confirm a creature is alive. Dashed lines show observed movement destinations. Drag to explore; hover or tap a marker for details.</p>
+    </section>
     <div id="empty" class="empty">Waiting for a bot to register…</div>
     <div id="bots" class="bots" aria-live="polite"></div>
   </main>
@@ -62,6 +84,7 @@
       <footer><span class="packet"></span><span class="message"></span><span class="age"></span></footer>
     </article>
   </template>
+  <script src="/dashboard-map.js" defer></script>
   <script src="/dashboard.js" defer></script>
 </body>
 </html>

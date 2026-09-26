@@ -52,6 +52,12 @@ public sealed class BotNavigationAssets(IReadOnlyDictionary<int, GeoMap> maps, S
     /// <summary>The offline static data the assets were loaded with (sites for the travel planner).</summary>
     public StaticData Data => data;
 
+    /// <summary>The two maps visited by the pre-Ascension Priest journey.</summary>
+    public BotNavigationGeometry NaturalJourneyGeometry(Race race, int instanceId) =>
+        new(id => id is 220010000 or 320010000 ? maps[id]
+            : throw new InvalidOperationException($"Map {id} is outside the natural Ishalgen journey."),
+            instanceId, IgnoreProperties.Of(race));
+
     /// <summary>Level-aware travel planner for a starter map's geometry, or null when its navmesh or
     /// travel graph is not available.</summary>
     public NavMesh.BotTravelPlanner? TravelPlanner(int mapId, BotNavigationGeometry geometry) =>

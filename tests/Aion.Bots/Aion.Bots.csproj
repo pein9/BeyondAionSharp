@@ -27,6 +27,8 @@
     <EmbeddedResource Include="Dashboard\index.html" LogicalName="Aion.Bots.Dashboard.index.html" />
     <EmbeddedResource Include="Dashboard\dashboard.css" LogicalName="Aion.Bots.Dashboard.dashboard.css" />
     <EmbeddedResource Include="Dashboard\dashboard.js" LogicalName="Aion.Bots.Dashboard.dashboard.js" />
+    <EmbeddedResource Include="Dashboard\dashboard-map.js" LogicalName="Aion.Bots.Dashboard.dashboard-map.js" />
+    <EmbeddedResource Include="Dashboard\maps\*" LogicalName="Aion.Bots.Dashboard.maps.%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

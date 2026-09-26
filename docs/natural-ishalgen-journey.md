@@ -1,13 +1,16 @@
 # Natural Ishalgen Journey
 
-Status (2026-09-26): NI-00 through NI-08 are complete in their documented scope.
+Status (2026-09-26): NI-00 through NI-09 are complete in their documented scope.
 The integrated NI-07 SIM journey passed smart46 seeds 1/3/4/5: all 41 quests,
 level 9 at Munin, zero deaths. NI-08 now rebuilds state from each login and resumes
 partial quests on the same character. Final warm reconnect and cold restart
 proofs completed all 41 quests with zero deaths, including a pending item reward
 and a partial Hatata hunt. All 31 repository checks passed, including Docker Fast.
 See [current evidence and retained failures](natural-ishalgen-status.md).
-NI-09 isolated LIVE acceptance, NI-10 retained-world attach and NI-11 real-client
+NI-09 isolated LIVE run `ni09-live-a4` completed all 41 quests with zero deaths
+in 3h 42m 26s under ordinary rates. A final ordinary relog verified persistence,
+level 9 at Munin and Q2008 START/0. Enforce watching and all 31 repository checks,
+including Docker Fast, passed. NI-10 retained-world attach and NI-11 real-client
 observation remain uncompleted, in that order.
 
 The Phase 10 readiness review was against Java `4.8` at `ce54b7931`, review
@@ -679,8 +682,11 @@ These are new journey TODOs, not retroactive claims about the phase scenarios:
   These are ordinary saved-state restart proofs, not abrupt-crash durability
   or full LIVE acceptance claims. See the status document for retained evidence,
   failed diagnostics and the full checklist results.
-- [ ] **NI-09 — Isolated LIVE acceptance.** Complete the entire contract in the
-  normal Docker-only isolated LIVE stack under ordinary rates and rules.
+- [x] **NI-09 — Isolated LIVE acceptance.** `ni09-live-a4` completed the entire
+  contract in the normal Docker-only isolated LIVE stack under ordinary rates
+  and rules: 41 quests, zero deaths, level 9 at Munin, Q2008 START/0 and final
+  same-character relog persistence. Enforce watching and all 31 repository
+  checks passed; see the status document for evidence and retained failures.
 - [ ] **NI-10 — Existing-world attach.** Add an explicit operator-selected mode
   that attaches to a retained server and never creates, drops or owns its database,
   containers or lifecycle; prove the unattended bot can coexist with a human.

@@ -62,6 +62,8 @@ public static partial class LiveBotRunner
 			return await RunNaturalIshalgenInventoryAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "NI-06" }])
 			return await RunNaturalIshalgenGatheringAsync(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "NI-09" }])
+			return await RunNaturalIshalgenJourneyAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "NI-02" }])
 			return await RunNaturalIshalgenDecisionAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "B2" }])
@@ -738,6 +740,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		currentStep = step;
 		currentAction = action;
 		actionStatus = "running";
+		if (naturalJourney) trace.WriteAction(step, action);
 		PublishDashboard();
 	}
 	public void BeginStep(string step) => BeginStep(step, "unspecified");
@@ -1144,6 +1147,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 	{
 		await SendGameAsync(GameClientPackets.TimeCheck(unchecked((int)Environment.TickCount64)), token);
 		await WaitForGamePacketAsync(typeof(SM_TIME_CHECK), token);
+		AfterSynchronize?.Invoke();
 	}
 
 	public async Task SendFriendStatusCanaryAsync(CancellationToken cancellationToken)
@@ -1280,12 +1284,17 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 
 	private async Task SendGameAsync(BotClientPacket packet, CancellationToken cancellationToken)
 	{
+		BeforeSend?.Invoke();
 		var activeTransport = transport ?? throw new InvalidOperationException("The game connection is not open.");
 		await sendLock.WaitAsync(cancellationToken);
 		try
 		{
 			trace.WriteSent(currentStep, packet);
 			await activeTransport.SendAsync(activeTransport.Codec.EncodeClientFrame(packet, state), cancellationToken);
+		}
+		catch (IOException failure) when (naturalJourney)
+		{
+			throw new EndOfStreamException("Natural journey game transport failed while sending.", failure);
 		}
 		finally
 		{
@@ -1299,14 +1308,32 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 	private async Task<DecodedBotServerPacket> WaitForGamePacketAsync(Type? packetType, CancellationToken cancellationToken,
 		Func<DecodedBotServerPacket, bool>? predicate = null)
 	{
+		using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+		if (naturalJourney) limit.CancelAfter(TimeSpan.FromMinutes(3));
 		while (true)
 		{
-			var packet = await ReadNextAsync(cancellationToken);
+			DecodedBotServerPacket packet;
+			try { packet = await ReadNextAsync(limit.Token); }
+			catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && limit.IsCancellationRequested)
+			{
+				throw new TimeoutException($"No {packetType?.Name ?? "matching"} packet within three minutes (step {currentStep}; last packet {lastPacket}).");
+			}
 			var response = api.Observe(packet);
+			if (naturalJourney && packet.PacketType == typeof(SM_FORCED_MOVE) && packet.Get<int>("objectId") == characterId &&
+				api.World.Position is BotPosition landed)
+			{
+				BotPosition standing = ResolveForcedLanding?.Invoke(landed) ?? landed;
+				currentPosition = standing;
+				if (api.World.MapId is int mapId)
+					expectedPosition = new PersistedPosition(mapId, standing.X, standing.Y, standing.Z);
+			}
 			lastPacket = packet.PacketType.Name;
 			PublishDashboard();
 			if (response != null)
 				await SendGameAsync(response, cancellationToken);
+			if (naturalJourney && packetType == typeof(SM_DIALOG_WINDOW) && packet.PacketType == typeof(SM_SYSTEM_MESSAGE) &&
+				packet.Get<object>("name") is "STR_DIALOG_TOO_FAR_TO_TALK")
+				throw new NaturalDialogTooFarException();
 			if ((packetType == null || packet.PacketType == packetType) && (predicate == null || predicate(packet)))
 				return packet;
 		}
@@ -1318,11 +1345,14 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		{
 			if (packets == null)
 				throw new EndOfStreamException("Game transport ended before the expected packet.");
-			var moveNext = packets.MoveNextAsync().AsTask();
-			activeMoveNext = moveNext;
-			if (!await moveNext.WaitAsync(cancellationToken))
-				throw new EndOfStreamException("Game transport ended before the expected packet.");
-			activeMoveNext = null;
+			// A cancelled waiter leaves the iterator read pending; resume it instead of reentering MoveNextAsync.
+			var moveNext = activeMoveNext ??= packets.MoveNextAsync().AsTask();
+			try
+			{
+				if (!await moveNext.WaitAsync(cancellationToken))
+					throw new EndOfStreamException("Game transport ended before the expected packet.");
+			}
+			finally { if (moveNext.IsCompleted) activeMoveNext = null; }
 			var packet = packets.Current;
 			packetHistory.Add(packet);
 			TrimHistory();
@@ -1330,6 +1360,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 			await CheckEntryResponseAsync(packet);
 			if (packet.PacketType == typeof(SM_QUIT_RESPONSE) && !quitExpected)
 			{
+				if (naturalJourney) throw new EndOfStreamException("Server ended the natural journey connection with SM_QUIT_RESPONSE.");
 				await problems.WriteAsync(options.Run, bot, account, currentStep, "unexpected-quit-response",
 					"Received SM_QUIT_RESPONSE before the scenario requested quit.");
 				throw new LiveBotFailureException("Unexpected SM_QUIT_RESPONSE.");
@@ -1338,6 +1369,8 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		}
 		catch (Exception ex) when (ex is EndOfStreamException or IOException or SocketException)
 		{
+			if (naturalJourney && !quitExpected)
+				throw new EndOfStreamException("Natural journey game transport ended unexpectedly.", ex);
 			if (quitExpected)
 				throw;
 			await AttemptReconnectAsync(ex, cancellationToken);
@@ -1416,6 +1449,8 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 			try { await activeMoveNext; }
 			catch (OperationCanceledException) when (connectionLifetime?.IsCancellationRequested == true) { }
 			catch (ObjectDisposedException) when (connectionLifetime?.IsCancellationRequested == true) { }
+			catch (IOException) when (connectionLifetime?.IsCancellationRequested == true) { }
+			catch (SocketException) when (connectionLifetime?.IsCancellationRequested == true) { }
 			activeMoveNext = null;
 		}
 		if (pingTask != null)

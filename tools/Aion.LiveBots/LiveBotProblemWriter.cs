@@ -8,6 +8,8 @@ public sealed class LiveBotProblemWriter : IAsyncDisposable
 	private static readonly UTF8Encoding Utf8WithoutBom = new(encoderShouldEmitUTF8Identifier: false);
 	private readonly StreamWriter writer;
 	private readonly SemaphoreSlim writeLock = new(1, 1);
+	private readonly System.Collections.Concurrent.ConcurrentQueue<JsonElement> records = new();
+	public JsonElement[] Snapshot() => records.ToArray();
 
 	public LiveBotProblemWriter(string path)
 	{
@@ -41,6 +43,7 @@ public sealed class LiveBotProblemWriter : IAsyncDisposable
 			stack = exception?.ToString(),
 		};
 		var line = JsonSerializer.Serialize(record);
+		records.Enqueue(JsonSerializer.SerializeToElement(record));
 		await writeLock.WaitAsync();
 		try
 		{

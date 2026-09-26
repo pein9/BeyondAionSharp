@@ -98,12 +98,14 @@ async function refresh() {
     byId("scenarios").textContent = state.scenarios.join(", ");
     byId("bot-count").textContent = state.bots.length;
     byId("updated").textContent = new Date(state.serverTime).toLocaleTimeString();
-    byId("connection").textContent = "Live · refreshes every second";
-    byId("pulse").className = "pulse live";
+    byId("connection").textContent = state.mode === "preview" ? "Map preview · no bot running" : "Live · refreshes every second";
+    byId("pulse").className = state.mode === "preview" ? "pulse" : "pulse live";
     byId("empty").hidden = state.bots.length > 0;
+    window.journeyMap.update(state.bots, state.mode === "preview");
     const host = byId("bots");
     host.replaceChildren(...state.bots.map(renderBot));
   } catch (error) {
+    window.journeyMap.disconnected();
     byId("connection").textContent = `Disconnected · ${error.message}`;
     byId("pulse").className = "pulse error";
   }

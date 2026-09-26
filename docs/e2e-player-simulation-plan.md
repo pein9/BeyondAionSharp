@@ -121,6 +121,7 @@ every future run, including director/setup accounts.
 | Collision-aware forced displacement | GEO-FEAR, GEO-KNOCKBACK | Implemented (P9), isolated reset processes | Not selected |
 | Quest progression, planner and persistence | Q1, Q2, Q3, Q4P, Q4I, Q5 | Implemented (P7); Q4P/Q4I/Q5 isolated | Q1/Q2/Q3/Q4P/Q4I implemented; Q5 not selected |
 | Natural Ishalgen policy slices | NI-01, NI-02, NI-03, NI-04, NI-05, NI-06 | Unit-tested policy; no natural SIM manifest scenario yet | One-bot retained Priest slices through NI-06; NI-06 completes Q2133, not the 41-quest journey |
+| Natural Ishalgen full journey | NI-09 | Shared driver completed all 41 quests on seeds 1/3/4/5; SIM receipt is separate from this LIVE manifest scenario | Isolated ordinary-rate LIVE run ni09-live-a4 passed all 41 quests with zero deaths, level 9 at Munin, Q2008 untouched and final relog persistence verified |
 | Ascension and capital ceremony | CAPITAL | Implemented (P8-01), GM-prepared focused journey | Implemented; not the deferred natural journey |
 | Gathering and refusal/interruption | E1, E2 | Implemented (P8-01) | Implemented (P8-01) |
 | Vendor buy/sell/repurchase and trade-in limits | E3, E11 | Implemented (P8-01/P8-06) | Implemented (P8-01/P8-06) |
@@ -2570,7 +2571,7 @@ natural pre-Ascension scope at 41 quests and orders the remaining work as NI-00 
 a readiness decision: at that review, autonomous Priest combat/survival, inventory/growth, all-quest scheduling,
 durable resume and safe retained-world attachment still needed implementation. Subsequent NI-07 SIM journey
 and NI-08 resume work are now complete; see the [current Ishalgen evidence](natural-ishalgen-status.md).
-NI-09 isolated LIVE acceptance remains next in that subplan, before NI-10/NI-11 retained-world observation. P10-05's housing/siege/PvP boot tail
+NI-09 isolated LIVE run ni09-live-a4 and all 31 repository checks passed; evidence is recorded in the status document. NI-10/NI-11 retained-world observation remain next in that subplan. P10-05's housing/siege/PvP boot tail
 does not block Ishalgen. Review commit: `7d80e48d6` (before SHA-recording amend). This review does not change
 Phase 10's done-when.
 

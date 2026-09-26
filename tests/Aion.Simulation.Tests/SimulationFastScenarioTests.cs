@@ -836,12 +836,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		public ValueTask DisposeAsync() => Session.DisposeAsync();
 	}
 
-	/// <summary>The server refused a dialog because the NPC is out of talk range (STR_DIALOG_TOO_FAR_TO_TALK):
-	/// a walking NPC moved on after the client-estimated arrival. Callers walk up to it again and retry.</summary>
-	private sealed class DialogTooFarException()
-		: InvalidOperationException("The NPC is too far to talk to (STR_DIALOG_TOO_FAR_TO_TALK); approach it again.");
-
-	private sealed class SimulationL0Session : IL0ScenarioSession, IAsyncDisposable
+	private sealed class SimulationL0Session : IL0ScenarioSession, INaturalJourneySession, IAsyncDisposable
 	{
 		private readonly SimulationWorldFixture fixture;
 		private readonly SimulationLogPolicy policy;
@@ -893,6 +888,8 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		public string CurrentAction => currentAction;
 		public int ConnectionGeneration { get; private set; }
 		public BotApi Api => api;
+		IReadOnlyList<DecodedBotServerPacket> INaturalJourneySession.PacketHistory => PacketHistory;
+		public void ClearPacketHistory() => PacketHistory.Clear();
 		public string? CombatTracePath { get; }
 		public LiveBotDashboardState? Dashboard { get; set; }
 		public Action? BeforeSend { get; set; }
@@ -1386,7 +1383,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 					throw new InvalidDataException($"SM_ENTER_WORLD_CHECK refused entry with message {packet.Get<byte>("msg")}.");
 				if (packetType == typeof(SM_DIALOG_WINDOW) && packet.PacketType == typeof(SM_SYSTEM_MESSAGE) &&
 					packet.Get<object>("name") is "STR_DIALOG_TOO_FAR_TO_TALK")
-					throw new DialogTooFarException();
+					throw new NaturalDialogTooFarException();
 				if ((packetType == null || packet.PacketType == packetType) && (predicate == null || predicate(packet)))
 					return packet;
 			}

@@ -67,6 +67,9 @@ if ($Scenario -contains 'O1' -and ($Scenario.Count -ne 1 -or $Bots -ne 1 -or $Ke
 if ($BotExecution -eq 'Docker' -and $DashboardPort -ne 0) {
 	throw 'The loopback bot dashboard requires host bot execution.'
 }
+if ($Scenario -contains 'NI-09' -and ($Scenario.Count -ne 1 -or $Bots -ne 1 -or $Keep -or $WatcherMode -ne 'enforce')) {
+	throw 'NI-09 must run alone with one ordinary subject, enforce watching and no Keep.'
+}
 if ([string]::IsNullOrWhiteSpace($RunRoot)) {
 	$RunRoot = if ([string]::IsNullOrWhiteSpace($env:AION_E2E_RUN_ROOT)) {
 		Join-Path $repoRoot 'run'
@@ -280,6 +283,10 @@ try {
 		$gitSha = Get-LiveGitRevision
 		$reportGitSha = $gitSha
 		if ($Scenario -contains 'O1') { $configProfile = 'docker-bots-lifecycle' }
+		if ($Scenario -contains 'NI-09') {
+			$env:AION_BOT_OVERLAY_DIR = Join-Path $repoRoot 'docker/bots/overlay-natural'
+			$configProfile = 'docker-bots-natural'
+		}
 		if ($Scenario -contains 'SOAK') {
 			if ($Scenario.Count -ne 1) { throw 'SOAK needs its own isolated stack.' }
 			$env:AION_BOT_OVERLAY_DIR = Join-Path $repoRoot 'docker/bots/overlay-soak'

@@ -136,9 +136,9 @@
   {
     "fp": "3aae81d7",
     "firstSeenSha": "1729efecc93bf65407f1a076b22dc63c08efc90f",
-    "lastSeenSha": "1729efecc93bf65407f1a076b22dc63c08efc90f",
-    "lastSeenRun": "r20260924-165845",
-    "count": 5,
+    "lastSeenSha": "32e059129a1cae8def6f70301f3d90bf8ff041b9",
+    "lastSeenRun": "ni09-live-a1",
+    "count": 6,
     "status": "new"
   },
   {
@@ -254,6 +254,14 @@
     "lastSeenSha": "ed923ff651e0b3c95d61d6b900a5168a47acddbf",
     "lastSeenRun": "p10-02-capacity-matrix-c-soak-200",
     "count": 7,
+    "status": "new"
+  },
+  {
+    "fp": "9deb427b",
+    "firstSeenSha": "32e059129a1cae8def6f70301f3d90bf8ff041b9",
+    "lastSeenSha": "32e059129a1cae8def6f70301f3d90bf8ff041b9",
+    "lastSeenRun": "ni09-live-a2",
+    "count": 2,
     "status": "new"
   },
   {

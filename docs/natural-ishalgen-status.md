@@ -21,11 +21,18 @@ in `run/natural-batch/<prefix>-full-s<seed>/` with a combat trace (`*.trace.json
 and every decision, one JSON object per line, fields `vt` virtual time, `step`, `dir` (`>` sent,
 `<` received, `action` decision), `packet`, `fields`).
 
-Scripts that compare batches (`scripts/sim/trace/`, each takes run folders under `run/natural-batch/`):
+Scripts that compare batches (`scripts/sim/trace/`):
 `aggro_causes.py` (how every monster came to attack: respawn beside the bot, a patrol walking in, or
 other; plus deaths), `death_profile.py` (the decisions and attackers before each death),
 `hatata_profile.py` (the Q2129 Hatata step: length, kills, every attacker and whether it respawned
-during the step), `step_times.py` (virtual and real time per quest, two runs side by side).
+during the step), `step_times.py` (game-clock and real time per quest, one run or two
+runs side by side). Their working-tree input adapter accepts a SIM run folder, a
+LIVE run root containing `bots/*.trace.jsonl`, or one explicit trace file. It
+requires a single bot trace so problem ledgers cannot be selected accidentally.
+LIVE has no virtual clock and uses recorded wall timestamps. All four tools were
+verified against `ni09-shared-s1` and the terminal `ni09-live-a2` trace; the former
+still reports its one death and 193-second, five-kill Hatata step. The latter
+reports 8,638 seconds, no deaths, and no Hatata step before its Q2116 failure.
 
 Trace queries that were used to compare batches (Python one-liners over the trace):
 
@@ -67,6 +74,8 @@ Batches of the same four seeds (1, 3, 4, 5); "completed" means the whole journey
 | smart44 | + patrol paths (whole path everywhere), `SM_FORCED_MOVE`, in-aggro = engaged, defend before fight-through | 3/4 | 0 | seed 4: knocked into a rock face, no legal step from there |
 | smart45 | + passing reach (15 m of a path on routes), forced landing on ground | 3/4 | 1 | seed 1: rested with a stalker on it after a fight-through kill and died; the retry found no route back to Hatata |
 | smart46 | + defend before journey rests, progress-based guarded-approach retries, preserve pull range after empty-spawn waits | **4/4** | **0** | —; all four reached Munin with 205 quest updates and no retreats |
+| ni09-route-full | NI-09 shared SIM/LIVE driver, client animation timing, replan after guard-clearing movement without a kill | **4/4** | **4** | —; seeds 1/3/4/5 completed all 41 quests; deaths 1/0/1/2, all recovered |
+| ni09-live-a4 | Full isolated LIVE journey, ordinary rates, final same-character relog | **1/1** | **0** | All 41 quests, level 9 at Munin, Q2008 START/0; persistence verified; 3h 42m 26s |
 
 **Baseline validation** (2026-09-26): the combined smart44-46 changes were committed
 as `3930f9aaa`. smart46 passed 4/4 with zero deaths; 153 affected unit tests passed. The
@@ -197,8 +206,107 @@ warning baseline, clock reads, fidelity and both baked navmeshes. Docker Fast
 `fast-20260926-000243` passed all 11 manifest scenarios (22 tests passed, one
 gated skip). Logs and exit codes: `run/ni08-checks/results.json`; expected missing
 identity verification: `run/ni08-missing-verification.log`. No production server
-rules changed. NI-09 isolated LIVE acceptance is next; NI-10 retained-world attach
-and NI-11 real-client observation remain uncompleted.
+rules changed. NI-09 isolated LIVE acceptance subsequently passed below;
+NI-10 retained-world attach and NI-11 real-client observation remain uncompleted.
+
+## NI-09 isolated LIVE acceptance (complete, 2026-09-26)
+
+The NI-09 change extracts the full quest/navigation/combat/recovery driver into
+`tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs`. SIM supplies its clock and
+in-process session; LIVE supplies real sockets and wall-clock delays through
+`INaturalJourneySession`. Static data is injected, with no running server's world
+or administrative mutations available to the shared policy. The LIVE acceptance
+entry requires a fresh ordinary Priest and runs the entire contract, with an
+eight-hour overall limit and the NI-08 bounded recovery/diagnosis behavior.
+
+```powershell
+pwsh -NoProfile -File scripts/live/run-live.ps1 -Run ni09-live-a2 -Scenario NI-09 -Bots 1 -WatcherMode enforce -DashboardPort 17880 -StepTimeoutSeconds 120 -RunRoot run/ni09-live
+```
+
+Use a fresh run name. The runner owns a separate Docker database/server stack,
+forces `docker-bots-natural`, refuses Keep or record-only watching, and inherits
+ordinary shipped rates, gather failures and respawns. The host bot exposes the
+loopback monitor; this is not retained-dev-world attachment (NI-10).
+
+Evidence so far:
+
+- `run/ni09-shared-s1.log`: the extracted driver passed all 41 quests in SIM,
+  6m23s gameplay, with one Q2007 green-generator death and successful recovery.
+  Hatata completed without a death or retreat. This preceded the explicit
+  client animation hit-time change described below.
+- `run/ni09-affected-tests-b.log`: 189 affected tests passed. A new LIVE session
+  test proves a cancelled packet wait resumes its pending read without losing
+  the packet. The Full suite planning contract passed with NI-09 included.
+- `run/ni09-live/ni09-live-a1/`: failed immediately after login. Q2000's movie-end
+  response had not arrived at the first time-check barrier. Fresh entry now waits
+  explicitly for the ordinary Q2000 completion. The watcher also found Hulker's
+  stale `pool=1` on a single spot left by `1856203e52`; removing that ineffective
+  attribute preserves Java `SpawnEngine.checkPool`'s existing single-spawn
+  fallback, coordinates, count and respawn delay. No warning exemption was added.
+- Java `Skill.updateHitTime` requires ordinary client animation/projectile timing.
+  The shared driver now calculates it from shipped motion data, equipped Priest
+  weapon and observed target distance (as the earlier bounded LIVE combat driver
+  did), instead of sending zero. Server skill/combat rules are unchanged.
+- `ni09-live-a2` **failed after 31/41 quests and 8,638 seconds**, with zero deaths.
+  Q2002's Ataxiar round trip and all Q2007 generators completed. At Q2116, object
+  700139 was observed at its Java-shipped location, but its hazard-blocked approach
+  exhausted the clearing helper. That helper had moved the bot about 108 m without
+  killing a selected guard; the caller discarded this progress and failed against
+  the original route result instead of replanning. The caller now observes walking
+  progress even when clearing returns false, retaining the eight-stall and
+  120-attempt limits. A regression covers progress without a guard kill and both
+  bounds. No server or spawn-placement change was made for this failure.
+- The route fix builds; `run/ni09-route-tests.log` records 180 affected tests
+  passing. Map calibration/assets/spawn checks and all four trace tools passed.
+  Four full sequential SIM runs (seeds 1/3/4/5) passed via the ignored
+  `run/run-ni09-route-regression.ps1`, with receipts under `run/ni09-route-full-s*/`
+  and exit codes in `run/ni09-route-regression-results.json`. Every receipt has
+  level 9, all 41 completions, and Q2008 START/0. Deaths were 1/0/1/2: three in
+  Q2007 and one on seed 5's Hatata approach; all recovered. All four trace tools
+  ran successfully; Hatata's death count now uses recorded SM_DIE packets within
+  the step span, including revival label changes. Its seed-5 count is one.
+  None of these SIM runs exercised `guard-clear-replan-after-progress`, so they
+  establish regression coverage, not direct proof of the LIVE route correction.
+- `ni09-live-a3` was deliberately stopped early after an acceptance audit found
+  that NI-09 lacked the contract's final relog proof. The runner collected its
+  evidence and removed its owned stack; this is an incomplete attempt, not a pass.
+  `operator-stop.txt` records the reason. The LIVE wrapper now relogs after the
+  completed journey, requires a fresh connection generation and the same ordinary
+  Priest, compares both journals, inventory, skills, level and saved position,
+  then rechecks all 41 completions/Munin/Q2008 before its final logout. Successful
+  runs retain `natural-ishalgen-persistence.json` with both observations.
+  The build and 192 affected tests passed (`run/ni09-persistence-*.log`), including
+  rejection of missing or changed persisted state. Gameplay policy is unchanged
+  from the four-seed regression above.
+- Full LIVE attempt **`ni09-live-a4` passed** with enforce watching, one ordinary
+  access-level-0 Priest, and the ordinary profile. All 41 quests completed with
+  **zero SM_DIE packets** in 13,345.9 seconds (3h 42m 26s), ending level 9 at Munin
+  `(379, 1892.77, 327.688)` with Q2008 START/0. The final ordinary relog advanced
+  connection generation 1 to 2, preserved journals, inventory, equipment, skills,
+  level and saved position, and reverified the complete contract before logout.
+  `natural-ishalgen-persistence.json` records `verified: true`; the completion
+  artifact and trace contain the post-relog checkpoint and `scenario:complete`.
+  Enforce watcher: zero new/known/regressed problems, only the existing suppressed
+  startup warning. The runner exited 0 and removed its owned Docker stack.
+  Evidence: `run/ni09-live/ni09-live-a4/`, runner `run/ni09-live-a4-runner.log`.
+  All four trace tools succeeded (`run/ni09-live-a4-*.log`): Hatata's objective
+  took 303 seconds including approach, seven kills, no retreats and no deaths.
+  Q2134 took 1,373 seconds, including ordinary Essencetapping training to 15.
+  Q2116 passed; this run did not exercise the movement-only replan branch.
+- All **31 CLAUDE.md checks passed**, including Docker Fast
+  `fast-20260926-080115` (11 scenarios; 22 tests, one gated skip), warning baseline
+  (4,243 unique sites), and navigation bake verification. Evidence:
+  `run/ni09-checks/final-results.json`; original failures remain in `results.json`.
+  The final solution suite passed **4,837 tests** with 45 gated skips.
+  The stale golden input hash was regenerated through Java: all 4,160 points and
+  query results stayed identical. The scenario matrix and C# manifest assertion
+  now include NI-09. Final full-suite output is `02-final.log`, coverage-matrix
+  rerun `15-rerun.log`. Map calibration, hashes and all placements also passed.
+
+Working-tree handoff: the map QoL and NI-09 implementation are included together
+in the validated local main change; see `docs/bot-monitor.md`. No portal files were changed
+and nothing was pushed. The preview on port 17880 shows a saved 41-quest snapshot
+labelled **Map preview · no bot running**. NI-10/NI-11 remain the next milestones.
 
 ## Open items, in the order I would take them
 

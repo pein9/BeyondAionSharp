@@ -60,6 +60,8 @@ public sealed record BotDashboardSnapshot(
 	string? LastSystemMessage,
 	NaturalDecision[]? Decisions = null)
 {
+	public BotDashboardObject[] ObservedObjects { get; init; } = [];
+
 	public static BotDashboardSnapshot Observe(BotWorldModel world, string bot, string account,
 		string characterName, int characterId, string connection, int generation, string step,
 		string action, string status, string? lastPacket, BotPosition? position = null)
@@ -81,11 +83,19 @@ public sealed record BotDashboardSnapshot(
 			world.CompletedQuestIds.Order().ToArray(),
 			world.Inventory.Values.OrderBy(i => i.ItemId).ThenBy(i => i.ObjectId).Select(i =>
 				new BotDashboardItem(i.ObjectId, i.ItemId, i.Description, i.Count, i.EquipmentSlot)).ToArray(),
-			message == null ? null : message.Name ?? $"System message {message.MessageId}");
+			message == null ? null : message.Name ?? $"System message {message.MessageId}")
+		{
+			ObservedObjects = world.Objects.Values.OrderBy(o => o.ObjectId).Select(o =>
+				new BotDashboardObject(o.ObjectId, o.TemplateId, o.Name, o.Kind.ToString().ToLowerInvariant(),
+					new(o.Position.X, o.Position.Y, o.Position.Z, o.Position.Heading), o.IsCorpse,
+					o.MoveTarget is { } target ? new(target.X, target.Y, target.Z, target.Heading) : null)).ToArray(),
+		};
 	}
 }
 
 public sealed record BotDashboardPosition(float X, float Y, float Z, byte Heading);
+public sealed record BotDashboardObject(int ObjectId, int? TemplateId, string? Name, string Kind,
+	BotDashboardPosition Position, bool IsCorpse, BotDashboardPosition? MoveTarget);
 public sealed record BotDashboardObjectCounts(int Players, int Npcs, int Gatherables, int Statics);
 public sealed record BotDashboardQuest(int QuestId, byte Status, int StepAndFlags, byte CompleteCount, int? TimerSeconds);
 public sealed record BotDashboardItem(int ObjectId, int ItemId, string Description, long Count, ushort EquipmentSlot);
@@ -230,7 +240,7 @@ public sealed class LiveBotDashboardHost : IAsyncDisposable
 		string header = $"HTTP/1.1 {status} {reason}\r\n" +
 			$"Content-Type: {contentType}\r\nContent-Length: {body.Length.ToString(CultureInfo.InvariantCulture)}\r\n" +
 			"Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n" +
-			"Content-Security-Policy: default-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'none'\r\n" +
+			"Content-Security-Policy: default-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self'\r\n" +
 			"Connection: close\r\n\r\n";
 		await stream.WriteAsync(Encoding.ASCII.GetBytes(header), token);
 		await stream.WriteAsync(body, token);
@@ -239,12 +249,18 @@ public sealed class LiveBotDashboardHost : IAsyncDisposable
 	private static IReadOnlyDictionary<string, DashboardAsset> LoadAssets()
 	{
 		Assembly assembly = typeof(LiveBotDashboardHost).Assembly;
-		return new Dictionary<string, DashboardAsset>(StringComparer.Ordinal)
+		var assets = new Dictionary<string, DashboardAsset>(StringComparer.Ordinal)
 		{
 			["/index.html"] = Load(assembly, "Aion.Bots.Dashboard.index.html", "text/html; charset=utf-8"),
 			["/dashboard.css"] = Load(assembly, "Aion.Bots.Dashboard.dashboard.css", "text/css; charset=utf-8"),
 			["/dashboard.js"] = Load(assembly, "Aion.Bots.Dashboard.dashboard.js", "text/javascript; charset=utf-8"),
+			["/dashboard-map.js"] = Load(assembly, "Aion.Bots.Dashboard.dashboard-map.js", "text/javascript; charset=utf-8"),
 		};
+		const string prefix = "Aion.Bots.Dashboard.maps.";
+		foreach (string name in assembly.GetManifestResourceNames().Where(n => n.StartsWith(prefix, StringComparison.Ordinal)))
+			assets["/maps/" + name[prefix.Length..]] = Load(assembly, name,
+				name.EndsWith(".webp", StringComparison.Ordinal) ? "image/webp" : "application/json; charset=utf-8");
+		return assets;
 	}
 
 	private static DashboardAsset Load(Assembly assembly, string name, string contentType)
