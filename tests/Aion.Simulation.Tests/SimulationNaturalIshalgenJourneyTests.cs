@@ -63,7 +63,8 @@ public sealed partial class SimulationFastScenarioTests
 		await new NaturalIshalgenJourney(session, runtime, new NaturalJourneyOptions(
 			stopAfterQ2004 ? 2004 : stopAfterQ2005 ? 2005 : stopAfterQ2006 ? 2006 : stopAfterQ2007 ? 2007 : null,
 			Environment.GetEnvironmentVariable("NI08_RELOG_AT"), Environment.GetEnvironmentVariable("NI08_STOP_AT"),
-			Environment.GetEnvironmentVariable("NI07_STOP_ON_DEATH") == "1")).RunAsync(token);
+			Environment.GetEnvironmentVariable("NI07_STOP_ON_DEATH") == "1",
+			Environment.GetEnvironmentVariable("NI07_OPTIMIZE_HUBS") == "1")).RunAsync(token);
 
 		async Task<bool> EnterAsync(CancellationToken token)
 		{

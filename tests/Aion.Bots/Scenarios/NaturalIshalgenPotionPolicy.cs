@@ -13,8 +13,8 @@ public static class NaturalIshalgenPotionPolicy
 	public static readonly int[] HealingSkillIds = [9889, 10202];
 	public static readonly (int NpcId, BotPosition Position)[] Vendors =
 	[
-		(798038, new BotPosition(608.150f, 2451.652f, 280.509f, 63)), // Crizpinerk
-		(203542, new BotPosition(933.167f, 1685.701f, 261.821f, 6)), // Denma
+		(798038, new BotPosition(611.017f, 2417.96f, 280.625f, 23)), // Crizpinerk
+		(203542, new BotPosition(933.167f, 1685.7f, 261.813f, 6)), // Denma
 	];
 
 	public static long Count(IEnumerable<BotInventoryItem> inventory, int itemId) =>

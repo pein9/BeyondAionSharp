@@ -4,7 +4,8 @@ namespace Aion.Bots.Navigation;
 
 /// <summary>An observed monster as the pull planner sees it: where it is, how far it aggroes, and its
 /// tribe, which decides who comes to help it.</summary>
-public sealed record NaturalPullMonster(NaturalNavigationObject Npc, float AggroRadius, string Tribe);
+public sealed record NaturalPullMonster(NaturalNavigationObject Npc, float AggroRadius, string Tribe,
+	float BoundRadius = 0);
 
 /// <summary>A chosen pull: fire at <see cref="Target"/> from <see cref="FiringPosition"/>. <see cref="Helpers"/>
 /// lists the monsters expected to join (the fewest the planner could find; empty is a clean single pull).</summary>
@@ -35,8 +36,12 @@ public static class NaturalPullPlanner
 		IReadOnlyList<NaturalPullMonster> monsters, Func<string, string, bool> canSupport,
 		Func<BotPosition, BotPosition, bool>? lineOfSight = null) => monsters
 		.Where(m => m.Npc.ObjectId != target.Npc.ObjectId && canSupport(m.Tribe, target.Tribe) &&
-			(Near(m, target.Npc.Position, m.AggroRadius + SupportRangeOffset, lineOfSight) ||
-			 Near(m, firingPosition, m.AggroRadius + SupportRangeOffset, lineOfSight)))
+			// Java PositionUtil.isInRange(..., false) adds both NPC body radii
+			// when checking support near the target; the player template has radius 0.
+			(Near(m, target.Npc.Position,
+				m.AggroRadius + SupportRangeOffset + m.BoundRadius + target.BoundRadius, lineOfSight) ||
+			 Near(m, firingPosition,
+				m.AggroRadius + SupportRangeOffset + m.BoundRadius, lineOfSight)))
 		.ToArray();
 
 	/// <summary>

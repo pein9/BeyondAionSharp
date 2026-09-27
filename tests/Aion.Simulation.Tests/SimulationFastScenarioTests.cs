@@ -1133,25 +1133,26 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 
 		public async Task StartQuestAsync(int npcObjectId, int questId, CancellationToken cancellationToken)
 		{
-			await SendAsync(api.TalkTo(npcObjectId), cancellationToken);
+			await NaturalDialogProtocol.OpenAsync(this, npcObjectId, cancellationToken);
 			await WaitForAsync(typeof(SM_DIALOG_WINDOW), cancellationToken,
 				packet => packet.Get<int>("targetObjectId") == npcObjectId &&
 					packet.Get<ushort>("dialogPageId") == 10 && packet.Get<int>("questId") == 0);
-			await SendAsync(api.SelectDialog(npcObjectId, 31, questId: questId), cancellationToken);
+			await NaturalDialogProtocol.SelectAsync(this, api.SelectDialog(npcObjectId, 31, questId: questId), cancellationToken);
 			await WaitForAsync(typeof(SM_DIALOG_WINDOW), cancellationToken,
 				packet => packet.Get<int>("targetObjectId") == npcObjectId && packet.Get<int>("questId") == questId);
-			await SendAsync(api.SelectDialog(npcObjectId, 1002, questId: questId), cancellationToken);
+			await NaturalDialogProtocol.SelectAsync(this, api.SelectDialog(npcObjectId, 1002, questId: questId), cancellationToken);
 			await WaitForAsync(typeof(SM_QUEST_ACTION), cancellationToken,
 				packet => packet.Get<int>("questId") == questId);
 			await WaitForAsync(typeof(SM_DIALOG_WINDOW), cancellationToken,
 				packet => packet.Get<int>("targetObjectId") == npcObjectId);
+			await SendAsync(api.CloseDialog(npcObjectId), cancellationToken);
 		}
 
 		public async Task FinishQuestAsync(int npcObjectId, int questId, CancellationToken cancellationToken)
 		{
-			await SendAsync(api.TalkTo(npcObjectId), cancellationToken);
+			await NaturalDialogProtocol.OpenAsync(this, npcObjectId, cancellationToken);
 			DecodedBotServerPacket opened = await WaitForAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
-			await SendAsync(api.SelectDialog(npcObjectId, 31, questId: questId), cancellationToken);
+			await NaturalDialogProtocol.SelectAsync(this, api.SelectDialog(npcObjectId, 31, questId: questId), cancellationToken);
 			using (var responseTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
 			{
 				responseTimeout.CancelAfter(TimeSpan.FromSeconds(2));
@@ -1171,12 +1172,13 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 						$"packets={string.Join(",", PacketTypes.TakeLast(12))}");
 				}
 			}
-			await SendAsync(api.SelectDialog(npcObjectId, 1009, questId: questId), cancellationToken);
+			await NaturalDialogProtocol.SelectAsync(this, api.SelectDialog(npcObjectId, 1009, questId: questId), cancellationToken);
 			await WaitForAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
-			await SendAsync(api.SelectDialog(npcObjectId, 23, questId: questId), cancellationToken);
+			await NaturalDialogProtocol.SelectAsync(this, api.SelectDialog(npcObjectId, 23, questId: questId), cancellationToken);
 			await WaitForAsync(typeof(SM_QUEST_ACTION), cancellationToken,
 				packet => packet.Get<int>("questId") == questId &&
 					packet.Fields.TryGetValue("status", out object? status) && status is byte value && value == 5);
+			await SendAsync(api.CloseDialog(npcObjectId), cancellationToken);
 		}
 
 		public async Task ChangeChannelAsync(int channel, CancellationToken cancellationToken)

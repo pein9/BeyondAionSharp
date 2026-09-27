@@ -61,11 +61,11 @@ public sealed class NaturalPriestRotationTests
 	}
 
 	[Fact]
-	public void HealsAtSeventyAgainstOneAttackerAndFiftyFiveAgainstTwo()
+	public void HealsAtFiftyFiveAgainstOneAttackerAndSeventyAgainstTwo()
 	{
-		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(At(2, adjacent: true, hp: 65, attackers: 1), Now).Action);
-		Assert.Equal("cast-target", NaturalPriestCombatPolicy.Decide(At(2, adjacent: true, hp: 65, attackers: 2), Now).Action);
-		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(At(2, adjacent: true, hp: 55, attackers: 2), Now).Action);
+		Assert.Equal("cast-target", NaturalPriestCombatPolicy.Decide(At(2, adjacent: true, hp: 65, attackers: 1), Now).Action);
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(At(2, adjacent: true, hp: 65, attackers: 2), Now).Action);
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(At(2, adjacent: true, hp: 55, attackers: 1), Now).Action);
 	}
 
 	[Fact]
@@ -77,7 +77,7 @@ public sealed class NaturalPriestRotationTests
 		};
 		NaturalCombatChoice choice = NaturalPriestCombatPolicy.Decide(emergency, Now);
 		Assert.Equal("cast-self", choice.Action); // no finisher, no rotation: heal
-		Assert.Equal("cast-target", NaturalPriestCombatPolicy.Decide(emergency with { InEmergency = false, Hp = 60 }, Now).Action);
+		Assert.Equal("cast-target", NaturalPriestCombatPolicy.Decide(emergency with { InEmergency = false, Hp = 71 }, Now).Action);
 	}
 
 	[Fact]

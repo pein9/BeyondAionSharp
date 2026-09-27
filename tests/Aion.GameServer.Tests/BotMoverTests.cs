@@ -12,7 +12,7 @@ namespace Aion.GameServer.Tests;
 public sealed class BotMoverTests
 {
 	[Fact]
-	public void GroundPlanStartsWithTargetUpdatesAtObservedSpeedAndStops()
+	public void GroundPlanStartsWithHumanStyleVelocityUpdatesAtObservedSpeedAndStops()
 	{
 		var mover = new BotMover(WorldAt(new BotPosition(0, 0, 0, 0), 4));
 		var plan = mover.CreateGroundPlan([new BotPosition(10, 0, 5, 0)]);
@@ -21,10 +21,12 @@ public sealed class BotMoverTests
 		Assert.Equal(MathF.Sqrt(125), plan.Distance, 4);
 		Assert.IsType<BotClientPacket>(plan.Frames[0].Packet);
 		Assert.Equal(typeof(CM_MOVE), plan.Frames[0].Packet.PacketType);
-		Assert.Equal((byte)(MovementMask.POSITION | MovementMask.MANUAL | MovementMask.ABSOLUTE),
+		Assert.Equal((byte)(MovementMask.POSITION | MovementMask.MANUAL),
 			plan.Frames[0].Packet.Body[13]);
-		Assert.Equal(10f, BitConverter.ToSingle(plan.Frames[0].Packet.Body, 14));
-		Assert.Equal(5f, BitConverter.ToSingle(plan.Frames[0].Packet.Body, 22));
+		Assert.Equal(4f, BitConverter.ToSingle(plan.Frames[0].Packet.Body, 14));
+		Assert.Equal(0f, BitConverter.ToSingle(plan.Frames[0].Packet.Body, 22));
+		Assert.All(plan.Frames.Where(frame => frame.DelayBefore > TimeSpan.Zero),
+			frame => Assert.Equal(MovementMask.POSITION, frame.Packet.Body[13]));
 		Assert.Equal(MovementMask.IMMEDIATE, plan.Frames[^1].Packet.Body[13]);
 		Assert.Equal(new BotPosition(10, 0, 5, 0), plan.Frames[^1].Position with { Heading = 0 });
 

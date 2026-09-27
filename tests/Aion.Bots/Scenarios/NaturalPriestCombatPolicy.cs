@@ -48,7 +48,7 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	int? TargetHpPercent = null, bool HasHealedThisFight = false,
 	bool HasHotPotion = false, bool HotPotionReady = false, bool HotPotionActive = false,
 	bool Cornered = false, bool TargetAdjacent = false, bool InEmergency = false, bool TargetSeasoned = false,
-	bool TargetRanged = false);
+	bool TargetRanged = false, bool ConservativeRangedHold = false);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);
@@ -61,18 +61,18 @@ public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skil
 /// adjacent, the instants first because nothing can interrupt them (Infernal Blaze with its stun, Hallowed
 /// Strike with its 30% attack-speed slow, every 8 s), Smite as the filler, and the mace between skills.
 /// Never walk into melee: the monster closes, and walking pulls the bot into its neighbours' circles.
-/// Heal at 70% against one attacker and at 55% against two or more (damage ends a two-on-one; healing
-/// alone does not), potion at 80%, and below 35% sustain only until 45% again.
+/// Heal at 55% against one attacker and at 70% against two; flee from three or more attackers
+/// regardless of HP. Use an owned timed-healing potion at 90%, and below 35% sustain only until 45% again.
 /// </summary>
 public static class NaturalPriestCombatPolicy
 {
-	/// <summary>Attackers at which low HP means leave rather than heal through it.</summary>
+	/// <summary>Attackers at which the Priest leaves regardless of HP.</summary>
 	public const int SwarmedAttackers = 3;
 
 	/// <summary>Client distance at which a monster is on the bot (its bound radius plus the swing reach).</summary>
 	public const float MeleeReach = 3f;
 
-	public const int HealPercentSingle = 70, HealPercentMultiple = 55, EmergencyPercent = 35, EmergencyClearPercent = 45;
+	public const int HealPercentSingle = 55, HealPercentMultiple = 70, EmergencyPercent = 35, EmergencyClearPercent = 45;
 
 	/// <summary>The HP percentage at which a fight becomes an emergency (heal chain and potions until
 	/// <see cref="EmergencyExitPercent"/>). Earlier against a Seasoned or better target with a second attacker on
@@ -94,28 +94,31 @@ public static class NaturalPriestCombatPolicy
 		NaturalPriestSkill? heal = NaturalPriestSkills.Best("heal", state.Level, state.Learned, catalog);
 		bool fighting = state.Aggro || state.TargetObjectId != null || state.NearbyAggressors > 0;
 		bool adjacent = state.TargetAdjacent || state.TargetDistance is float near && near <= MeleeReach;
+		if (!state.Cornered && state.NearbyAggressors >= SwarmedAttackers)
+			return Choice("retreat", null, $"{state.NearbyAggressors} client-observed attackers; disengage from the whole pack.");
+		if (!fighting && state.Mp * 100 < state.MaxMp * 50 &&
+			!(state.Hp * 100 <= state.MaxHp * 25 && state.HasLifePotion && state.LifePotionReady) &&
+			!(state.Mp < (heal?.ManaCost ?? 0) + 10 && state.HasManaPotion && state.ManaPotionReady))
+			return Choice("rest", null, "Between fights, mana is below 50%; recover before spending more on healing.");
 		// Low HP: heal through it while heals and potions last, as a player does against two monsters (the
-		// recorded human run kept chaining Healing Light down to 24% and won). Retreat only when swarmed (three
-		// or more attackers outdamage the heal) or when nothing is left to heal with. Cornered: no checked
+		// recorded human run kept chaining Healing Light down to 24% and won). Retreat when nothing is left
+		// to heal with. Cornered: no checked
 		// escape leads away from the pack, so fight it out regardless.
 		if (!state.Cornered && fighting && state.Hp * 100 <= state.MaxHp * 30)
 		{
-			bool swarmed = state.NearbyAggressors >= SwarmedAttackers;
 			bool canHeal = heal != null && Eligible(heal, state.TargetObjectId, 0, state, now, reserveHeal: false);
 			bool canPotion = state.HasLifePotion && state.LifePotionReady ||
 				state.HasHotPotion && state.HotPotionReady && !state.HotPotionActive;
-			if (swarmed)
-				return Choice("retreat", null, $"HP is at or below 30% with {state.NearbyAggressors} client-observed attackers.");
 			if (!canHeal && !canPotion)
 				return Choice("retreat", null, "HP is at or below 30% and no self-heal or potion is available.");
 		}
 		int healPercent = state.InEmergency ? 100 : state.NearbyAggressors >= 2 ? HealPercentMultiple : HealPercentSingle;
 		bool urgent = fighting && state.Hp * 100 <= state.MaxHp * healPercent;
 		bool critical = state.Hp * 100 <= state.MaxHp * 25;
-		if (fighting && state.Hp * 100 <= state.MaxHp * 80 &&
+		if (fighting && state.Hp * 100 <= state.MaxHp * 90 &&
 			state.HasHotPotion && state.HotPotionReady && !state.HotPotionActive)
 			return Choice("hot-potion", null,
-				"HP is at or below 80% in a fight; apply owned timed healing before the self-heal threshold.");
+				"HP is at or below 90% in a fight; apply owned timed healing before the self-heal threshold.");
 		if (urgent && !state.InEmergency && state.HasHealedThisFight && state.TargetHpPercent is > 0 and <= 15 &&
 			state.TargetObjectId is int finishingTarget && state.TargetDistance is float finishingDistance)
 		{
@@ -143,9 +146,10 @@ public static class NaturalPriestCombatPolicy
 		if (state.TargetObjectId is not int target || state.TargetDistance is not float distance)
 		{
 			if (state.Aggro) return Choice("defend", null, "Aggression observed without a target; reacquire before pulling.");
-			return state.Hp * 100 < state.MaxHp * 90 || state.Mp * 100 < state.MaxMp * 80
-				? Choice("rest", null, "No engaged target; recover before the next pull.")
-				: Choice("ready", null, "HP and MP exceed the conservative next-pull thresholds.");
+			if (state.Hp * 100 < state.MaxHp * 90 && heal != null &&
+				Eligible(heal, null, 0, state, now, reserveHeal: false))
+				return Choice("cast-self", heal, "Between fights, heal HP while mana remains above 50%.");
+			return Choice("ready", null, "Mana is above 50%; no sit is needed between fights.");
 		}
 		if (distance > 25 && !adjacent)
 			return Choice("approach", null, "Target is outside Priest spell range.");
@@ -160,6 +164,10 @@ public static class NaturalPriestCombatPolicy
 					? $"Learned {role} is ready at melee and leaves healing mana reserved."
 					: $"Learned {role} is in range, ready, and leaves healing mana reserved.");
 		}
+		if (!adjacent && state.TargetRanged && state.ConservativeRangedHold &&
+			(distance <= 12 || state.NearbyAggressors >= 2))
+			return Choice("wait", null,
+				"Ranged target is in spell range or multiple attackers are present; hold checked ground until Smite is ready.");
 		if (!adjacent && state.TargetRanged)
 			return Choice("approach", null, "Nothing ready at range and the target attacks from range, so it will not close: walk up to it.");
 		if (!adjacent)

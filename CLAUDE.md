@@ -69,7 +69,7 @@ when it lives elsewhere.
 | Retail AI extractors and emitters | `tools/client-extract/` — `regen_check.py` runs the whole pipeline |
 | Run / DB / setup guide | `RUNNING.md` |
 | Automated player simulation (bots, SIM/LIVE modes, live log watching) | `docs/e2e-player-simulation-plan.md` — phased plan with TODOs |
-| Natural Ishalgen Priest: current state, batch runner, open items | `docs/natural-ishalgen-status.md`; `scripts/sim/run-natural-batch.sh <prefix> <seeds>`; trace analysis `scripts/sim/trace/` |
+| Natural Ishalgen Priest: current state, batch runner, open items | `docs/natural-ishalgen-status.md`; `scripts/sim/run-natural-batch.sh <prefix> <seeds>`; trace analysis `scripts/sim/trace/`; play it on your running world: `scripts/live/attach-live.ps1 -Target aion` (NI-10, D24) |
 | Bot navigation (navmesh, roads, travel graph; generated, do not hand-edit) | `docs/bot-navigation.md`; data in `game-server/data/nav/`; tools `tools/Aion.NavBake`, `tools/nav/` |
 | Session recording (every packet of chosen accounts, for replay) | `docs/session-recording.md`; `AION_RECORD`; reader `tools/recording/recording.py` |
 
@@ -104,6 +104,7 @@ pwsh -NoProfile -File scripts/live/test-hang-probe-contract.ps1 # hang probe tar
 pwsh -NoProfile -File scripts/live/test-cross-server-contract.ps1 # topology identity safeguards and read-only Compose resolution
 pwsh -NoProfile -File scripts/live/test-hardware-ban-controller.ps1 # exact seasonal epochs and owned Login fault safeguards (mock Docker)
 pwsh -NoProfile -File scripts/live/test-run-retention.ps1       # Full child runs must preserve sibling evidence
+pwsh -NoProfile -File scripts/live/test-attach-live.ps1         # NI-10 attach can only read the operator's world (mock Docker)
 pwsh -NoProfile -File scripts/e2e/test-full-suite.ps1            # breadth/soak selection and fail-fast orchestration
 dotnet run --project tools/Aion.NavBake -- check --maps baked # checked-in bot navmeshes match their inputs
 pwsh -NoProfile -File scripts/e2e/run-fast.ps1                 # additionally, before gameplay-change commits (Docker)

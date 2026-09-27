@@ -122,7 +122,7 @@ public sealed class BotMover
 				BotMovementMode.Fall => (byte)(MovementMask.POSITION | MovementMask.ABSOLUTE | MovementMask.FALL),
 				BotMovementMode.Glide => (byte)(MovementMask.POSITION | MovementMask.ABSOLUTE | MovementMask.GLIDE),
 				BotMovementMode.Jump => MovementMask.POSITION,
-				_ => (byte)(MovementMask.POSITION | MovementMask.ABSOLUTE),
+				_ => MovementMask.POSITION,
 			};
 			AddSamples(frames, current, destination, heading, speed, interval, ref duration, ref distance,
 				(position, _) => GameClientPackets.Move(new MovementPacketData(position.X, position.Y, position.Z,
@@ -156,13 +156,19 @@ public sealed class BotMover
 	private static MovementPacketData StartPacket(BotPosition start, BotPosition destination, byte heading,
 		float speed, float distance, BotMovementMode mode)
 	{
-		if (mode == BotMovementMode.Jump)
+		if (mode is BotMovementMode.Ground or BotMovementMode.Jump)
 		{
+			// The recorded 4.8 client uses relative velocity for ordinary keyboard movement.
+			// Ground movement follows terrain through position samples, not a vertical velocity.
+			var horizontalDistance = MathF.Sqrt(MathF.Pow(destination.X - start.X, 2) +
+				MathF.Pow(destination.Y - start.Y, 2));
+			var velocityDistance = mode == BotMovementMode.Ground && horizontalDistance > 0
+				? horizontalDistance : distance;
 			return new MovementPacketData(start.X, start.Y, start.Z, heading,
 				(byte)(MovementMask.POSITION | MovementMask.MANUAL),
-				VectorX: (destination.X - start.X) / distance * speed,
-				VectorY: (destination.Y - start.Y) / distance * speed,
-				VectorZ: (destination.Z - start.Z) / distance * speed);
+				VectorX: (destination.X - start.X) / velocityDistance * speed,
+				VectorY: (destination.Y - start.Y) / velocityDistance * speed,
+				VectorZ: mode == BotMovementMode.Ground ? 0 : (destination.Z - start.Z) / distance * speed);
 		}
 
 		var mask = (byte)(MovementMask.POSITION | MovementMask.MANUAL | MovementMask.ABSOLUTE);

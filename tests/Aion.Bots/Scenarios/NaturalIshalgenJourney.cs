@@ -8,6 +8,7 @@ using Aion.Bots.Tracing;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.Templates.Npc;
+using Aion.GameServer.Model.Templates.Quest;
 using Aion.GameServer.Network.Aion.ServerPackets;
 
 using Require = Aion.Bots.Scenarios.NaturalJourneyRequirements;
@@ -16,6 +17,7 @@ namespace Aion.Bots.Scenarios;
 
 public sealed class NaturalIshalgenJourney(INaturalJourneySession session, NaturalJourneyRuntime runtime, NaturalJourneyOptions options)
 {
+	private enum TemplatePhase { Full, Work, Claim }
 	private sealed class NaturalJourneyCheckpointStopException : Exception;
 	private sealed class NaturalCombatApproachBlockedException(string message) : IOException(message);
 	private sealed class NaturalGuardedObjectiveRevivedException(string message) : IOException(message);
@@ -108,7 +110,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				203540, 210395, 210396, 210750, 700095,
 				203552, 203554, 700085, 700086, 700087, 203517,
 				203533, 210734, 203514, 203543, 203532, 203531, 700128,
-				210363, 210367, 210369, 700124, 700093],
+					210363, 210367, 210369, 700124, 700093,
+					700063, 203513, 203545],
 				geometry);
 			var navigator = new NaturalJourneyNavigator(session, graph, geometry, runtime, options.StopOnDeath)
 			{
@@ -140,9 +143,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					else return; // Re-observe after a retreat or lost target before another pull.
 				}
 			};
-			var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry, options.StopOnDeath);
+			var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry,
+				options.StopOnDeath, options.OptimizeHubs);
 			navigationDefense = combat;
 			bool maintainingInventory = false;
+			var workedTemplates = new HashSet<int>();
+			long lastReturnMillis = long.MinValue / 2;
 			long failedRestockKinah = -1;
 			var refusedGear = new HashSet<int>();
 
@@ -236,11 +242,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							contract.MapId, candidate.NpcId, candidate.Position, navigator, maintenanceToken);
 						if (!approach.Arrived) continue;
 						int vendor = Require.IsType<int>(approach.TargetObjectId);
-						await session.SendPacketAsync(session.Api.TalkTo(vendor), maintenanceToken);
+						await NaturalDialogProtocol.OpenAsync(session, vendor, maintenanceToken);
 						await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), maintenanceToken);
 						if (plan.Sales.Count > 0)
 						{
-							await session.SendPacketAsync(session.Api.SelectDialog(vendor, 3), maintenanceToken);
+							await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(vendor, 3), maintenanceToken);
 							await session.WaitForPacketAsync(typeof(SM_SELL_ITEM), maintenanceToken);
 							foreach (NaturalInventoryDecision sale in plan.Sales)
 							{
@@ -249,7 +255,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								await session.SynchronizeAsync(maintenanceToken);
 							}
 						}
-						await session.SendPacketAsync(session.Api.SelectDialog(vendor, 2), maintenanceToken);
+						await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(vendor, 2), maintenanceToken);
 						await session.WaitForPacketAsync(typeof(SM_TRADELIST), maintenanceToken);
 						BotTradeWindow trade = world.Trade ?? throw new InvalidDataException("Vendor sent no trade window.");
 						if (trade.TargetObjectId != vendor || !trade.Tabs.Contains(721))
@@ -345,6 +351,37 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						session.ConnectionGeneration, contract, session.CurrentPosition, sequence);
 					progress.Observe(checkpoint, TimeSpan.FromMilliseconds(runtime.NowMillis - journeyStart));
 					decision = checkpoint.Next;
+					if (options.OptimizeHubs && session.Api.World.MapId == contract.MapId &&
+						!session.Api.World.IsDead)
+					{
+						await AcceptAllAtCurrentHubAsync();
+						checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
+							session.ConnectionGeneration, contract, session.CurrentPosition, sequence);
+						decision = checkpoint.Next;
+						int[] safeGroup = NaturalIshalgenHubPolicy.CurrentSafeGroup(
+							session.Api.World.CompletedQuestIds);
+						int[] available = NaturalIshalgenHubPolicy.Order(
+							decision.Quests.Where(quest => safeGroup.Contains(quest.QuestId) &&
+								NaturalIshalgenHubPolicy.CanWorkNow(
+								quest.QuestId, session.Api.World.CompletedQuestIds) &&
+								(quest.Verdict == "active" ||
+								quest.Verdict == "candidate" &&
+								(templatePlans.ContainsKey(quest.QuestId) ||
+								NaturalIshalgenHubPolicy.CustomNpcStarters.ContainsKey(quest.QuestId) ||
+								quest.QuestId == 2114)))
+								.Select(quest => quest.QuestId), contract,
+							id => runtime.Data.Quests.GetQuestById(id)?.GetCategory() ?? QuestCategory.QUEST,
+							NaturalIshalgenHubPolicy.At(session.CurrentPosition), workedTemplates);
+						if (safeGroup.Length > 0 && available.Length == 0)
+							throw new InvalidDataException($"Safe hub group [{string.Join(',', safeGroup)}] has no available quest at level {session.Api.World.Level}.");
+						if (available.Length > 0)
+							decision = decision with
+							{
+								SelectedQuestId = available[0],
+								SelectedAction = QuestStatus(available[0]) >= 3 ? "continue-quest" : "find-quest-starter",
+								Reason = $"Safe hub group: lowest level, blue before gold, and unfinished local work; selected Q{available[0]}.",
+							};
+					}
 					// Q2005 originally switched this on for the rest of the run. Reconstruct the policy
 					// from the journal: a cold login after Q2005 must not walk straight through the Mau camp.
 					navigator.AvoidHostileAggro = decision.SelectedQuestId is 2005 or 2006 or 2007 ||
@@ -355,6 +392,27 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					{
 						await CompleteJourneyAsync();
 						return;
+					}
+					if (options.OptimizeHubs)
+					{
+						BotPosition? journeyDestination = null;
+						if (templatePlans.TryGetValue(questId, out QuestRunPlan? selectedPlan))
+						{
+							QuestRunNpc? endpoint = workedTemplates.Contains(questId)
+								? selectedPlan.EndNpcs.FirstOrDefault()
+								: selectedPlan.StartNpcs.FirstOrDefault();
+							QuestRunPosition? place = endpoint?.Positions.FirstOrDefault(position =>
+								position.MapId == contract.MapId);
+							if (place != null)
+								journeyDestination = new(place.X, place.Y, place.Z, checked((byte)place.Heading));
+						}
+						else if (QuestStatus(questId) < 3)
+							journeyDestination = NaturalIshalgenHubPolicy.ForQuest(questId)?.Center;
+						if (journeyDestination is BotPosition destination)
+						{
+							await UseFasterTravelAsync(destination);
+							await AcceptAllAtCurrentHubAsync();
+						}
 					}
 					switch (questId)
 					{
@@ -380,7 +438,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						default:
 							if (!templatePlans.TryGetValue(questId, out var plan))
 								throw new InvalidDataException($"Natural Ishalgen Q{questId} has no journey actions.");
-							await CompleteTemplateQuestAsync(plan); break;
+						if (!options.OptimizeHubs)
+							await CompleteTemplateQuestAsync(plan);
+						else if (workedTemplates.Contains(questId))
+						{
+							await CompleteTemplateQuestAsync(plan, TemplatePhase.Claim);
+							workedTemplates.Remove(questId);
+						}
+						else
+						{
+							await CompleteTemplateQuestAsync(plan, TemplatePhase.Work);
+							if (QuestStatus(questId) != 5) workedTemplates.Add(questId);
+						}
+						break;
 					}
 					if (questId == 2004 && stopAfterQ2004 || questId == 2005 && stopAfterQ2005 ||
 						questId == 2006 && stopAfterQ2006 || questId == 2007 && stopAfterQ2007)
@@ -544,6 +614,80 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				return Require.IsType<int>(result.TargetObjectId);
 			}
 
+			async Task BindAtAldelleIfNeededAsync()
+			{
+				if (session.Api.World.ObeliskBindPoint is { MapId: 220010000 } bound &&
+					Distance(bound.Position, new BotPosition(587.688f, 2467.1f, 278.788f, 0)) < 20)
+					return;
+				int fee = runtime.Data.BindPointDataDh.GetBindPointTemplate(700063)?.GetPrice() ?? int.MaxValue;
+				if (session.Api.World.Kinah < fee) return;
+				session.BeginStep("ni07-bind-aldelle", "register-ordinary-aldele-obelisk");
+				int obelisk = await ApproachShippedSpawnAsync(700063);
+				await session.SendPacketAsync(session.Api.TalkTo(obelisk), token);
+				DecodedBotServerPacket question = await session.WaitForPacketAsync(typeof(SM_QUESTION_WINDOW), token,
+					packet => packet.Get<int>("code") == SM_QUESTION_WINDOW.STR_ASK_REGISTER_RESURRECT_POINT);
+				await session.SendPacketAsync(GameClientPackets.QuestionResponse(
+					question.Get<int>("code"), 1, question.Get<int>("senderId")), token);
+				await session.WaitForPacketAsync(typeof(SM_BIND_POINT_INFO), token);
+				await session.SynchronizeAsync(token);
+				Require.True(session.Api.World.ObeliskBindPoint is { MapId: 220010000 } registered &&
+					Distance(registered.Position, session.CurrentPosition) < 20);
+			}
+
+			async Task UseFasterTravelAsync(BotPosition destination)
+			{
+				if (!options.OptimizeHubs || session.Api.World.MapId != contract.MapId ||
+					session.Api.World.IsDead) return;
+				long fare = session.Api.World.VendorPrices?.ServicePrice(160) ?? 160;
+				NaturalTravelChoice choice = NaturalJourneyTravelPolicy.Choose(
+					session.CurrentPosition, destination, session.Api.World.ObeliskBindPoint,
+					session.Api.World.Skills.ContainsKey(243) &&
+						session.Api.Timing.TimeUntilCast(243) <= TimeSpan.FromSeconds(1) &&
+						runtime.NowMillis - lastReturnMillis >= TimeSpan.FromMinutes(20).TotalMilliseconds + 1000,
+					session.Api.World.Kinah >= fare);
+				if (choice == NaturalTravelChoice.Walk) return;
+				session.TraceDiagnostic("journey-travel-choice", new Dictionary<string, object?>
+				{
+					["choice"] = choice.ToString(), ["from"] = session.CurrentPosition,
+					["destination"] = destination, ["fare"] = fare,
+				});
+				if (choice == NaturalTravelChoice.Return)
+				{
+					await UseLearnedReturnToBindAsync();
+					return;
+				}
+				int npcId = choice == NaturalTravelChoice.FlightToAnturoon ? 203513 : 203545;
+				int locationId = choice == NaturalTravelChoice.FlightToAnturoon ? 18 : 17;
+				int pathId = choice == NaturalTravelChoice.FlightToAnturoon ? 11 : 12;
+				var path = runtime.Data.FlyPathDataDh.GetPathTemplate(pathId)
+					?? throw new InvalidDataException($"Java 4.8 flight path {pathId} is missing.");
+				BotPosition departure = new(path.GetStartX(), path.GetStartY(), path.GetStartZ(), 0);
+				BotPosition arrival = new(path.GetEndX(), path.GetEndY(), path.GetEndZ(), 0);
+				session.BeginStep($"ni07-flight-{pathId}", "take-cheaper-faster-flight-transporter");
+				int transporter = await ApproachAsync(npcId, departure);
+				if (Distance(session.CurrentPosition, departure) > 6)
+				{
+					NaturalNavigationResult atPath = await NaturalIshalgenNavigator.ExploreAnchorAsync(
+						contract.MapId, -1, departure, navigator, "flight-departure", token);
+					Require.True(atPath.Arrived, atPath.Reason);
+				}
+				Require.True(Distance(session.CurrentPosition, departure) <= 7,
+					"Flight validator requires the client to stand by the path start.");
+				await session.SendPacketAsync(session.Api.Teleport(transporter, locationId), token);
+				await session.WaitForPacketAsync(typeof(SM_EMOTION), token, packet =>
+					packet.Get<int>("senderObjectId") == session.CharacterId &&
+					packet.Get<byte>("emotionType") == (byte)EmotionType.START_FLYTELEPORT &&
+					packet.Get<int>("teleportId") == pathId * 1000 + 1);
+				await session.ExecuteMovementAsync(CapitalAscensionScenario.CreateQuestFlight(
+					session.CurrentPosition, arrival, contract.MapId,
+					TimeSpan.FromMilliseconds(path.GetTimeInMs())), token);
+				await session.SendPacketAsync(GameClientPackets.Emotion((byte)EmotionType.LAND_FLYTELEPORT), token);
+				await session.SynchronizeAsync(token);
+				Require.True(Distance(session.CurrentPosition, arrival) < 8,
+					"Flight landing was not client-observed at the destination.");
+			}
+
+
 			bool SpawnsOnMap(int templateId) =>
 				graph.GetMap(contract.MapId)!.Waypoints.Any(waypoint => waypoint.TemplateId == templateId);
 
@@ -580,7 +724,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								? navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == blockedObjectId) : null;
 							int revivesBefore = combat.ReviveCount;
 							bool cleared = await TryClearObservedBlockerAsync(seen?.Position ?? anchor.Position, seen?.ObjectId);
-							if (combat.ReviveCount > revivesBefore) break;
+							if (combat.ReviveCount > revivesBefore)
+							{
+								// A death moved the client back to its bind point. None of this hint's
+								// failed route observations apply there; recover and plan the journey again.
+								await RestSafelyAsync(token);
+								return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget, withinRange);
+							}
 							bool progressed = progress.Observe(Distance(beforeApproach, session.CurrentPosition),
 								navigator.UnavailableObjects.Count > killsBeforeApproach);
 							if (cleared || progressed)
@@ -594,6 +744,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 										["templateId"] = templateId, ["from"] = beforeApproach,
 										["position"] = session.CurrentPosition, ["attempt"] = guardClears + 1,
 									});
+							continue;
+							}
+							// A moving patrol can briefly close every checked route. Re-observe after
+							// it has had time to move, but do not wait indefinitely at one hint.
+							if (progress.StalledAttempts <= 3)
+							{
+								session.TraceDiagnostic("guard-clear-wait-and-retry", new Dictionary<string, object?>
+								{
+									["templateId"] = templateId, ["position"] = session.CurrentPosition,
+									["stall"] = progress.StalledAttempts,
+								});
+								await session.AdvanceAsync(TimeSpan.FromSeconds(10), token);
+								await session.SynchronizeAsync(token);
 								continue;
 							}
 						}
@@ -707,14 +870,17 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					for (int cleared = 0; cleared <= maximumGuardClears; cleared++)
 					{
+						int revivesBefore = combat.ReviveCount;
 						NaturalNavigationResult result = await NaturalIshalgenNavigator.ApproachNpcAsync(
 							contract.MapId, templateId, anchor.Position, navigator, token);
+						if (combat.ReviveCount > revivesBefore)
+							throw new NaturalGuardedObjectiveRevivedException(
+								$"Priest revived while approaching guarded NPC {templateId} from {anchor.Position}.");
 						if (result.Arrived && result.TargetObjectId is int objectId) return objectId;
 						reasons.Add(result.Reason);
 						if (result.Reason is not ("No collision-checked route to the current destination." or
 							"New client-observed hazards exceeded the bounded replan budget.") ||
 							cleared == maximumGuardClears) break;
-						int revivesBefore = combat.ReviveCount;
 						bool guardKilled = await TryClearObservedBlockerAsync(anchor.Position);
 						if (combat.ReviveCount > revivesBefore)
 							throw new NaturalGuardedObjectiveRevivedException(
@@ -738,12 +904,16 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				.Where(npc => npc.ObjectId != except)
 				.Select(npc => (npc, template: runtime.Data.NpcDataDh.GetNpcTemplate(npc.TemplateId)))
 				.Where(entry => runtime.IsAggressive(entry.template))
-				.Select(entry => new NaturalPullMonster(entry.npc, entry.template!.GetAggroRange(), entry.template.GetTribe().ToString()))
+				.Select(entry => new NaturalPullMonster(entry.npc, entry.template!.GetAggroRange(),
+					entry.template.GetTribe().ToString(),
+					entry.template.GetBoundRadius().GetMaxOfFrontAndSide()))
 				.ToArray();
 			NaturalPullMonster PullMonsterOf(NaturalNavigationObject npc)
 			{
 				var template = runtime.Data.NpcDataDh.GetNpcTemplate(npc.TemplateId);
-				return new NaturalPullMonster(npc, runtime.AggroRadius(template), template?.GetTribe().ToString() ?? "NONE");
+				return new NaturalPullMonster(npc, runtime.AggroRadius(template),
+					template?.GetTribe().ToString() ?? "NONE",
+					template?.GetBoundRadius().GetMaxOfFrontAndSide() ?? 0);
 			}
 			bool CanSupport(string helper, string asking) =>
 				Enum.TryParse(helper, out Aion.GameServer.Model.TribeClass h) && Enum.TryParse(asking, out Aion.GameServer.Model.TribeClass a) &&
@@ -788,7 +958,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					int objectId = await ApproachShippedSpawnAsync(templateId, skipBlockedTarget);
 					long before = ItemCount(session.Api.World, itemId);
 					int start = session.PacketHistory.Count;
-					await session.SendPacketAsync(session.Api.TalkTo(objectId), token);
+					await NaturalDialogProtocol.OpenAsync(session, objectId, token);
 					await session.SynchronizeAsync(token);
 					DecodedBotServerPacket? started = session.PacketHistory.Skip(start)
 						.LastOrDefault(packet => packet.PacketType == typeof(SM_USE_OBJECT) &&
@@ -800,7 +970,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						.LastOrDefault(packet => packet.PacketType == typeof(SM_USE_OBJECT) &&
 							packet.Get<int>("targetObjectId") == objectId && packet.Get<byte>("actionType") == 2);
 					bool completed = finish == null || finish.Get<int>("durationMs") > 0;
-					if (completed && (await TryLootCorpseItemAsync(session, objectId, itemId, token) ||
+					if (completed && (await TryLootCorpseItemAsync(session, objectId, itemId, token, start) ||
 						ItemCount(session.Api.World, itemId) > before))
 						return objectId;
 					session.TraceDiagnostic(completed ? "quest-object-without-item" : "quest-object-use-interrupted",
@@ -832,6 +1002,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			async Task ClearAroundSpotAsync(BotPosition? objective, int? objectiveObjectId, string purpose)
 			{
 				if (objective is not BotPosition spot) return;
+				// Clear the camp only once the bot has rejoined it. After a bind revive, old camp NPCs
+				// may still be in the client model despite being over a kilometre away.
+				if (Distance(session.CurrentPosition, spot) > 80) return;
 				bool cleared = false;
 				for (int pull = 0; pull < 20 && !session.Api.World.IsDead; pull++)
 				{
@@ -905,7 +1078,18 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						["position"] = session.CurrentPosition,
 					});
 					int revivesBefore = combat.ReviveCount;
-					bool killed = await combat.TryKillAsync(attacker, token, session.CurrentPosition);
+					bool killed;
+					try { killed = await combat.TryKillAsync(attacker, token, session.CurrentPosition); }
+					catch (NaturalCombatApproachBlockedException) when (
+						navigator.Observe().Npcs.Any(npc => npc.ObjectId == attacker &&
+							Distance(session.CurrentPosition, npc.Position) <= NaturalPullPlanner.SpellRange))
+					{
+						// A ranged aggressor can be in Smite range across a blocked seam. Wait
+						// for the spell cooldown instead of ending the whole quest or entering adds.
+						await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+						await session.SynchronizeAsync(token);
+						continue;
+					}
 					if (combat.ReviveCount > revivesBefore || session.Api.World.IsDead) return false;
 					if (killed) navigator.UnavailableObjects.Add(attacker);
 					else return true; // combat decided otherwise (retreat); let the caller re-plan
@@ -1032,8 +1216,75 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					.Where(npc => npc.ObjectId != objectiveObjectId)
 					.Select(npc => new NaturalObservedMonster(npc, AggroRadius(npc.TemplateId)))
 					.Where(monster => monster.Radius > 0).ToArray();
-				IReadOnlyList<BotPosition> fightRoute = geometry.FindFightThroughPath(contract.MapId, session.CurrentPosition,
-					objective, monsters.SelectMany(m => m.Npc.Hazards(m.Radius, BotPatrolPath.PassingReach)).ToArray());
+				BotPosition origin = session.CurrentPosition;
+				BotNavigationHazard[] fightHazards = monsters
+					.SelectMany(m => m.Npc.Hazards(m.Radius, BotPatrolPath.PassingReach)).ToArray();
+				IReadOnlyList<BotPosition> fightRoute = geometry.FindFightThroughPath(contract.MapId, origin,
+					objective, fightHazards);
+				if (fightRoute.Count == 0 && Distance(origin, objective) > 30)
+				{
+					// A long destination can exceed the local fight-through search while the next monster is
+					// quite reachable. Plan to an observed forward guard first, then re-plan toward the objective.
+					foreach (NaturalObservedMonster guard in monsters
+						.Where(m => Distance(origin, m.Npc.Position) <= 65 &&
+								Distance(m.Npc.Position, objective) < Distance(origin, objective) - 3)
+						.OrderBy(m => Distance(origin, m.Npc.Position)).Take(12))
+					{
+						IReadOnlyList<BotPosition> leg = geometry.FindFightThroughPath(contract.MapId,
+							origin, guard.Npc.Position, fightHazards);
+						if (leg.Count == 0) continue;
+						fightRoute = leg;
+						session.TraceDiagnostic("fight-through-local-guard", new Dictionary<string, object?>
+						{
+							["objective"] = objective, ["guard"] = $"{guard.Npc.TemplateId}/{guard.Npc.ObjectId}",
+							["routePoints"] = leg.Count, ["position"] = origin,
+						});
+						break;
+					}
+				}
+				if (fightRoute.Count == 0)
+				{
+					// If even the nearby guard routes fail, take a short terrain-checked probe toward the
+					// objective. Treat aggro as a cost (at most two new circles), defend after every two
+					// points, and re-plan from the resulting client position. This is not a teleport or
+					// permission to cross an unwalkable navmesh edge.
+					var probes = geometry.GroundAround(contract.MapId, origin, [12f, 24f, 36f], 16)
+						.Where(point => Distance(point, objective) < Distance(origin, objective) - 3 &&
+							geometry.OnSameIsland(contract.MapId, origin, point))
+						.OrderBy(point => Distance(point, objective)).Take(24)
+						.Select(point => geometry.FindLocalPath(contract.MapId, origin, point).Take(6).ToArray())
+						.Where(path => path.Length > 0 && Distance(origin, path[^1]) >= 2)
+						.Select(path => new
+						{
+							Path = path,
+							NewHazards = fightHazards.Count(hazard => !hazard.Contains(origin) &&
+								path.Any(hazard.Contains)),
+							Progress = Distance(origin, objective) - Distance(path[^1], objective),
+						})
+						.Where(probe => probe.NewHazards <= 2 && probe.Progress > 1)
+						.OrderBy(probe => probe.NewHazards).ThenByDescending(probe => probe.Progress)
+						.FirstOrDefault();
+					if (probes == null) return false;
+					session.TraceDiagnostic("fight-through-terrain-probe", new Dictionary<string, object?>
+					{
+						["objective"] = objective, ["from"] = origin, ["toward"] = probes.Path[^1],
+						["newHazards"] = probes.NewHazards, ["routePoints"] = probes.Path.Length,
+					});
+					foreach (BotPosition[] segment in probes.Path.Chunk(2))
+					{
+						await navigator.MoveAsync(segment, token);
+						await navigator.SynchronizeAsync(token);
+						if (session.Api.World.IsDead || !await DefendAgainstEngagedAsync("fight-through-terrain-probe"))
+							return false;
+					}
+					return Distance(origin, session.CurrentPosition) >= 2;
+				}
+				IReadOnlyList<NaturalObservedMonster> orderedBlockers =
+					NaturalFightThrough.BlockersInOrder(session.CurrentPosition, fightRoute, monsters);
+				// The first circle on this route must be cleared first. Skipping a refused
+				// Stalker to pull a patrol behind it puts both onto the Priest.
+				if (orderedBlockers.Count > 0 && rejected.Contains(orderedBlockers[0].Npc.ObjectId))
+					return false;
 				NaturalFightThroughBlocker? next = fightRoute.Count == 0 ? null
 					: NaturalFightThrough.SelectNext(session.CurrentPosition, fightRoute, monsters, rejected);
 				session.TraceDiagnostic("fight-through-plan", new Dictionary<string, object?>
@@ -1041,13 +1292,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					["objective"] = objective,
 					["position"] = session.CurrentPosition,
 					["routePoints"] = fightRoute.Count,
-					["blockers"] = NaturalFightThrough.BlockersInOrder(session.CurrentPosition, fightRoute, monsters)
+					["blockers"] = orderedBlockers
 						.Select(m => $"{m.Npc.TemplateId}/{m.Npc.ObjectId}").ToArray(),
 					["next"] = next == null ? null : $"{next.Monster.Npc.TemplateId}/{next.Monster.Npc.ObjectId}",
 					["firingPosition"] = next?.FiringPosition,
 				});
-				fightRouteOpen = fightRoute.Count > 0 &&
-					NaturalFightThrough.BlockersInOrder(session.CurrentPosition, fightRoute, monsters).Count == 0;
+				fightRouteOpen = fightRoute.Count > 0 && orderedBlockers.Count == 0;
 				NaturalNavigationObject? walkBlocker = null;
 				if (next == null)
 				{
@@ -1087,10 +1337,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					}
 					else return false;
 				}
-				// The first few monsters the route meets, pulled in the order and from the spot that chain least.
+				// Pull the first monster the route meets before advancing into later circles.
 				NaturalNavigationObject[] blockers = walkBlocker != null ? [walkBlocker]
-					: NaturalFightThrough.BlockersInOrder(session.CurrentPosition, fightRoute, monsters)
-						.Where(m => !rejected.Contains(m.Npc.ObjectId)).Take(3).Select(m => m.Npc).ToArray();
+					: next == null ? [] : [next.Monster.Npc];
 				NaturalPullPlan? pull = await MoveToPullSpotAsync(blockers, next?.Staging ?? [], "fight-through");
 				if (session.Api.World.IsDead) return false;
 				bool OutOfReach(NaturalNavigationObject npc) =>
@@ -1240,7 +1489,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						return runtime.IsAggressive(template)
 							? template.GetAggroRange() + 1f : 0f;
 					}
-					IReadOnlyList<NaturalNavigationObject> observed = navigator.Observe().Npcs;
+					// A bind revive can leave distant camp NPCs in the client model until its known list
+					// catches up. Only a nearby guard can be pulled from this position.
+					IReadOnlyList<NaturalNavigationObject> observed = navigator.Observe().Npcs
+						.Where(npc => Distance(session.CurrentPosition, npc.Position) <= 80).ToArray();
 					float corridorMargin = corridorPass == 0 ? 0 : 20;
 					NaturalNavigationObject? blocker = corridorPass == 2
 						? NaturalGuardedObjectivePolicy.SelectBlockerOnRoute(session.CurrentPosition,
@@ -1335,8 +1587,29 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				const int returnSkillId = 243;
 				Require.True(session.Api.World.Skills.TryGetValue(returnSkillId, out BotSkill? learned),
 					"The Priest did not observe the auto-learned Return skill.");
-				BotPosition origin = session.CurrentPosition;
 				session.BeginStep("ni07-natural-return", "cast-learned-return-after-checked-route-blocked");
+				// A checked route can fail again soon after a prior Return. Honor the
+				// SM_CASTSPELL_RESULT cooldown while staying ready to fight nearby monsters.
+				TimeSpan remainingCooldown = session.Api.Timing.TimeUntilCast(returnSkillId);
+				if (remainingCooldown > TimeSpan.FromSeconds(5))
+				{
+					session.TraceDiagnostic("natural-return-cooldown-wait", new Dictionary<string, object?>
+					{
+						["remainingMillis"] = remainingCooldown.TotalMilliseconds,
+						["position"] = session.CurrentPosition,
+					});
+					while ((remainingCooldown = session.Api.Timing.TimeUntilCast(returnSkillId)) > TimeSpan.FromSeconds(5))
+					{
+						await DefendAgainstEngagedAsync("natural-return-cooldown");
+						if (session.Api.World.IsDead || session.Api.World.CurrentHp < session.Api.World.MaxHp * 0.75f)
+							await RestSafelyAsync(token);
+						remainingCooldown = session.Api.Timing.TimeUntilCast(returnSkillId);
+						if (remainingCooldown <= TimeSpan.FromSeconds(5)) break;
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Min(5000, remainingCooldown.TotalMilliseconds)), token);
+						await session.SynchronizeAsync(token);
+					}
+				}
+				BotPosition origin = session.CurrentPosition;
 				int packetStart;
 				DecodedBotServerPacket result;
 				// A monster that reaches the bot during the cast interrupts it (Java Skill.cancelCast on damage); a
@@ -1376,6 +1649,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				}
 				await session.AdvanceAsync(TimeSpan.FromMilliseconds(result.Get<ushort>("hitTime") + 1), token);
 				await session.SynchronizeAsync(token);
+				lastReturnMillis = runtime.NowMillis;
 				Require.Contains(session.PacketHistory.Skip(packetStart), packet =>
 					packet.PacketType == typeof(SM_CHANNEL_INFO));
 				Require.Contains(session.PacketHistory.Skip(packetStart), packet =>
@@ -1418,11 +1692,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					boromer = await ApproachShippedSpawnAsync(203518);
 					session.BeginStep("ni07-q2001-boromer-start", "speak-to-boromer-and-watch-campaign-movie");
 					await OpenQuestDialogAsync(boromer, 2001);
-					await session.SendPacketAsync(session.Api.SelectDialog(boromer, DialogAction.SELECT1_1, questId: 2001), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(boromer, DialogAction.SELECT1_1, questId: 2001), token);
 					await session.SynchronizeAsync(token);
 					Require.Contains(session.PacketHistory, packet => packet.PacketType == typeof(SM_PLAY_MOVIE) &&
 						packet.Get<int>("cutsceneId") == 51);
-					await session.SendPacketAsync(session.Api.SelectDialog(boromer, DialogAction.SETPRO1, questId: 2001), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(boromer, DialogAction.SETPRO1, questId: 2001), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(1, session.Api.World.Quests[2001].StepAndFlags);
 				}
@@ -1439,7 +1713,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					boromer = await ApproachShippedSpawnAsync(203518);
 					session.BeginStep("ni07-q2001-boromer-check", "present-grain-and-advance-mission");
 					await OpenQuestDialogAsync(boromer, 2001);
-					await session.SendPacketAsync(session.Api.SelectDialog(boromer,
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(boromer,
 						DialogAction.CHECK_USER_HAS_QUEST_ITEM, questId: 2001), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(2, session.Api.World.Quests[2001].StepAndFlags);
@@ -1448,7 +1722,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					boromer = await ApproachShippedSpawnAsync(203518);
 					await OpenQuestDialogAsync(boromer, 2001);
-					await session.SendPacketAsync(session.Api.SelectDialog(boromer, DialogAction.SETPRO3, questId: 2001), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(boromer, DialogAction.SETPRO3, questId: 2001), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(3, session.Api.World.Quests[2001].StepAndFlags);
 				}
@@ -1484,7 +1758,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2002-nobekk", "walk-to-nobekk-and-ask-about-rae");
 					int nobekk = await ApproachShippedSpawnAsync(203519);
 					await OpenQuestDialogAsync(nobekk, 2002);
-					await session.SendPacketAsync(session.Api.SelectDialog(nobekk, DialogAction.SETPRO1, questId: 2002), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(nobekk, DialogAction.SETPRO1, questId: 2002), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(1, session.Api.World.Quests[2002].StepAndFlags);
 				}
@@ -1494,11 +1768,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2002-dabi", "walk-to-dabi-and-ask-about-verdandi");
 					int dabi = await ApproachShippedSpawnAsync(203534);
 					await OpenQuestDialogAsync(dabi, 2002);
-					await session.SendPacketAsync(session.Api.SelectDialog(dabi, DialogAction.SELECT2_1, questId: 2002), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(dabi, DialogAction.SELECT2_1, questId: 2002), token);
 					await session.SynchronizeAsync(token);
 					Require.Contains(session.PacketHistory, packet => packet.PacketType == typeof(SM_PLAY_MOVIE) &&
 						packet.Get<int>("cutsceneId") == 52);
-					await session.SendPacketAsync(session.Api.SelectDialog(dabi, DialogAction.SETPRO2, questId: 2002), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(dabi, DialogAction.SETPRO2, questId: 2002), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(2, session.Api.World.Quests[2002].StepAndFlags);
 				}
@@ -1508,7 +1782,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2002-verdandi", "walk-to-verdandi-and-accept-sprigg-task");
 					verdandi = await ApproachShippedSpawnAsync(790002);
 					await OpenQuestDialogAsync(verdandi, 2002);
-					await session.SendPacketAsync(session.Api.SelectDialog(verdandi, DialogAction.SETPRO3, questId: 2002), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(verdandi, DialogAction.SETPRO3, questId: 2002), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(3, session.Api.World.Quests[2002].StepAndFlags);
 				}
@@ -1560,6 +1834,21 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								break;
 							}
 						}
+						if (selected == null && candidates.Length == 0)
+						{
+							// The 4.8 Sprigg spawns are beyond sight of Verdandi. Walk to a shipped
+							// hint before treating an empty observed list as a respawn wait.
+							try { selected = await ApproachShippedCombatSpawnAsync(210377); }
+							catch (InvalidDataException exception) when (exception.Message.StartsWith(
+								"No spell-range client-observed NPC 210377", StringComparison.Ordinal))
+							{
+								session.TraceDiagnostic("sprigg-hint-unreachable", new Dictionary<string, object?>
+								{
+									["reason"] = exception.Message,
+									["position"] = session.CurrentPosition,
+								});
+							}
+						}
 						if (selected is not int target)
 						{
 							await session.AdvanceAsync(TimeSpan.FromSeconds(25), token); // Ordinary respawn/patrol wait.
@@ -1580,7 +1869,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2002-verdandi-report", "report-sprigg-kills-to-verdandi");
 					verdandi = await ApproachShippedSpawnAsync(790002);
 					await OpenQuestDialogAsync(verdandi, 2002);
-					await session.SendPacketAsync(session.Api.SelectDialog(verdandi, DialogAction.SETPRO3, questId: 2002), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(verdandi, DialogAction.SETPRO3, questId: 2002), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(11, session.Api.World.Quests[2002].StepAndFlags);
 				}
@@ -1592,7 +1881,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2002-mushroom-report", "present-collected-mushroom-to-verdandi");
 					verdandi = await ApproachShippedSpawnAsync(790002);
 					await OpenQuestDialogAsync(verdandi, 2002);
-					await session.SendPacketAsync(session.Api.SelectDialog(verdandi,
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(verdandi,
 						DialogAction.CHECK_USER_HAS_QUEST_ITEM, questId: 2002), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(12, session.Api.World.Quests[2002].StepAndFlags);
@@ -1603,7 +1892,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await OpenQuestDialogAsync(verdandi, 2002);
 					session.BeginStep("ni07-q2002-ataxiar-enter", "take-verdandis-quest-teleport-to-ataxiar");
 					session.Api.World.BeginWorldReload();
-					await session.SendPacketAsync(session.Api.SelectDialog(verdandi, DialogAction.SETPRO5, questId: 2002), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(verdandi, DialogAction.SETPRO5, questId: 2002), token);
 					await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token,
 						packet => packet.Get<int>("worldId") == 320010000);
 					await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token,
@@ -1613,8 +1902,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					Require.Equal(99, session.Api.World.Quests[2002].StepAndFlags);
 					NaturalDecision inInstance = NaturalIshalgenDecisionEngine.Decide(contract,
 						ObserveNaturalJourney(session), 7);
-					Require.Equal(2002, inInstance.SelectedQuestId);
-					Require.Equal("continue-quest", inInstance.SelectedAction);
+					if (!options.OptimizeHubs)
+					{
+						Require.Equal(2002, inInstance.SelectedQuestId);
+						Require.Equal("continue-quest", inInstance.SelectedAction);
+					}
 					Require.Contains(inInstance.GlobalChecks, check => check.Rule == "quest-transport" && check.Verdict == "pass");
 				}
 				if (session.Api.World.MapId == 320010000 && AtQuestStep(2002, 99))
@@ -1628,10 +1920,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						320010000, 205020, new BotPosition(434.75f, 399.5f, 235f, 25), instanceNavigator, token);
 					Require.True(hagenApproach.Arrived, hagenApproach.Reason);
 					int hagen = Require.IsType<int>(hagenApproach.TargetObjectId);
-					await session.SendPacketAsync(session.Api.TalkTo(hagen), token);
+					await NaturalDialogProtocol.OpenAsync(session, hagen, token);
 					await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
 						packet => packet.Get<int>("targetObjectId") == hagen);
-					await session.SendPacketAsync(session.Api.SelectDialog(hagen, DialogAction.QUEST_SELECT, questId: 2002), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(hagen, DialogAction.QUEST_SELECT, questId: 2002), token);
 					await session.WaitForPacketAsync(typeof(SM_EMOTION), token,
 						packet => packet.Get<int>("senderObjectId") == session.CharacterId &&
 						packet.Get<byte>("emotionType") == (byte)EmotionType.START_FLYTELEPORT);
@@ -1650,7 +1942,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2002-verdandi-return", "report-return-from-ataxiar");
 					verdandi = await ApproachShippedSpawnAsync(790002);
 					await OpenQuestDialogAsync(verdandi, 2002);
-					await session.SendPacketAsync(session.Api.SelectDialog(verdandi, DialogAction.SETPRO3, questId: 2002), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(verdandi, DialogAction.SETPRO3, questId: 2002), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(14, session.Api.World.Quests[2002].StepAndFlags);
 				}
@@ -1658,7 +1950,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					session.BeginStep("ni07-q2002-ribbit", "find-and-interact-with-cute-ribbit");
 					int ribbit = await ApproachShippedSpawnAsync(203538);
-					await session.SendPacketAsync(session.Api.TalkTo(ribbit), token);
+					await NaturalDialogProtocol.OpenAsync(session, ribbit, token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(15, session.Api.World.Quests[2002].StepAndFlags);
 				}
@@ -1671,7 +1963,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					Require.True(raeApproach.Arrived, raeApproach.Reason);
 					session.BeginStep("ni07-q2002-rae", "speak-to-quest-spawned-rae");
 					await OpenQuestDialogAsync(rae, 2002);
-					await session.SendPacketAsync(session.Api.SelectDialog(rae, DialogAction.SETPRO7, questId: 2002), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(rae, DialogAction.SETPRO7, questId: 2002), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(4, session.Api.World.Quests[2002].Status);
 				}
@@ -1685,16 +1977,16 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				int rewardIndex = inventory.ChooseReward(2002, session.Api.World.Level,
 					session.Api.World.Inventory.Values);
 				Require.True(rewardIndex >= 0);
-				await session.SendPacketAsync(session.Api.TalkTo(ulgorn), token);
+				await NaturalDialogProtocol.OpenAsync(session, ulgorn, token);
 				await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
 					packet => packet.Get<int>("targetObjectId") == ulgorn);
-				await session.SendPacketAsync(session.Api.SelectDialog(ulgorn, DialogAction.QUEST_SELECT, questId: 2002), token);
+				await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(ulgorn, DialogAction.QUEST_SELECT, questId: 2002), token);
 				await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
 					packet => packet.Get<int>("targetObjectId") == ulgorn && packet.Get<int>("questId") == 2002);
-				await session.SendPacketAsync(session.Api.SelectDialog(ulgorn, DialogAction.SETPRO8, questId: 2002), token);
+				await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(ulgorn, DialogAction.SETPRO8, questId: 2002), token);
 				await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
 					packet => packet.Get<int>("targetObjectId") == ulgorn && packet.Get<int>("questId") == 2002);
-				await session.SendPacketAsync(session.Api.SelectDialog(ulgorn,
+				await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(ulgorn,
 					checked((ushort)(DialogAction.SELECTED_QUEST_REWARD1 + rewardIndex)), questId: 2002), token);
 				await WaitForQuestStatusAsync(session, 2002, 5, token);
 				Require.Contains(2002, session.Api.World.CompletedQuestIds);
@@ -1710,11 +2002,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await WalkEasternRoadToDerotAsync(); // Eastern road avoids the collision-blocked direct valley line.
 					keeper = await ApproachShippedSpawnAsync(203539);
 					await OpenQuestDialogAsync(keeper, 2003);
-					await session.SendPacketAsync(session.Api.SelectDialog(keeper, DialogAction.SELECT1_1, questId: 2003), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(keeper, DialogAction.SELECT1_1, questId: 2003), token);
 					await session.SynchronizeAsync(token);
 					Require.Contains(session.PacketHistory, packet => packet.PacketType == typeof(SM_PLAY_MOVIE) &&
 						packet.Get<int>("cutsceneId") == 53);
-					await session.SendPacketAsync(session.Api.SelectDialog(keeper, DialogAction.SETPRO1, questId: 2003), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(keeper, DialogAction.SETPRO1, questId: 2003), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(1, session.Api.World.Quests[2003].StepAndFlags);
 				}
@@ -1772,7 +2064,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2004-derot-start", "ask-derot-about-charmed-cube");
 					derot = await ApproachShippedSpawnAsync(203539);
 					await OpenQuestDialogAsync(derot, 2004);
-					await session.SendPacketAsync(session.Api.SelectDialog(derot, DialogAction.SETPRO1, questId: 2004), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(derot, DialogAction.SETPRO1, questId: 2004), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(1, session.Api.World.Quests[2004].StepAndFlags);
 				}
@@ -1785,7 +2077,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						await RestSafelyAsync(token);
 						BotPosition tombstoneIngress = session.CurrentPosition;
 						int tombstone = await ApproachShippedSpawnAsync(700047);
-						await session.SendPacketAsync(session.Api.TalkTo(tombstone), token);
+						await NaturalDialogProtocol.OpenAsync(session, tombstone, token);
 						await session.WaitForPacketAsync(typeof(SM_EMOTION), token,
 							packet => packet.Get<int>("senderObjectId") == session.CharacterId &&
 							packet.Get<byte>("emotionType") == (byte)EmotionType.START_QUESTLOOT);
@@ -1824,7 +2116,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2004-derot-check", "show-quest-cube-to-derot");
 					derot = await ApproachShippedSpawnAsync(203539);
 					await OpenQuestDialogAsync(derot, 2004);
-					await session.SendPacketAsync(session.Api.SelectDialog(derot,
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(derot,
 						DialogAction.CHECK_USER_HAS_QUEST_ITEM, questId: 2004), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(2, session.Api.World.Quests[2004].StepAndFlags);
@@ -1842,7 +2134,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					Require.True(hillside.Arrived, hillside.Reason);
 					munin = await ApproachShippedSpawnAsync(203550);
 					await OpenQuestDialogAsync(munin, 2004);
-					await session.SendPacketAsync(session.Api.SelectDialog(munin, DialogAction.SETPRO3, questId: 2004), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(munin, DialogAction.SETPRO3, questId: 2004), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(3, session.Api.World.Quests[2004].StepAndFlags);
 				}
@@ -1878,7 +2170,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2004-munin-report", "report-cube-combat-to-munin");
 					munin = await ApproachShippedSpawnAsync(203550);
 					await OpenQuestDialogAsync(munin, 2004);
-					await session.SendPacketAsync(session.Api.SelectDialog(munin, DialogAction.SETPRO4, questId: 2004), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(munin, DialogAction.SETPRO4, questId: 2004), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(4, session.Api.World.Quests[2004].Status);
 				}
@@ -1898,34 +2190,47 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2005-mijou-start", "walk-to-mijou-and-watch-campaign-movie");
 					mijou = await ApproachShippedSpawnAsync(203540);
 					await OpenQuestDialogAsync(mijou, 2005);
-					await session.SendPacketAsync(session.Api.SelectDialog(mijou, DialogAction.SELECT1_1, questId: 2005), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(mijou, DialogAction.SELECT1_1, questId: 2005), token);
 					await session.SynchronizeAsync(token);
 					Require.Contains(session.PacketHistory, packet => packet.PacketType == typeof(SM_PLAY_MOVIE) &&
 						packet.Get<int>("cutsceneId") == 54);
-					await session.SendPacketAsync(session.Api.SelectDialog(mijou, DialogAction.SETPRO1, questId: 2005), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(mijou, DialogAction.SETPRO1, questId: 2005), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(1, session.Api.World.Quests[2005].StepAndFlags);
 				}
 				if (AtQuestStep(2005, 1))
 				{
-					// Approach from the Mijou side and stop at spell range. A spawn coordinate is
-					// only a search hint: some Stalkers patrol and nearby Lycans are aggressive.
-					// Shipped static/walker hints from the refreshed Ishalgen spawn XML, not
-					// claims that a live Stalker is there. Live targets still come from packets.
-					// Rotate after an unsafe pull instead of charging the same Lycan pack.
-					BotPosition[] stalkerSearchAreas =
-					[
-						new(649.267f, 1535.266f, 294.283f, 0), // Western 210395 static.
-						new(710.511f, 1460.318f, 285.937f, 0), // Eastern 210750 static.
-						new(671.581f, 1331.605f, 299.5f, 0), // Southern 210750 static.
-						new(708.95f, 998.82f, 321.7725f, 0), // Northern 210750 walker.
-					];
+					// Java Q2005 awards Odella only from these three Stalker templates. Shipped
+					// spots guide exploration; a target still has to arrive in client packets.
+					// Build the hints from this world's loaded spawn data so retail placement
+					// edits cannot leave yesterday's coordinates in the search loop.
+					BotPosition[] stalkerSearchAreas = NaturalStalkerSearchPolicy.SelectAreas(
+						runtime.Data.SpawnsDh.GetSpawnsByWorldId(contract.MapId)
+							.Where(group => group.GetNpcId() is 210395 or 210396 or 210750)
+							.SelectMany(group => group.GetSpawnTemplates())
+							.Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0)),
+						session.CurrentPosition);
+					if (stalkerSearchAreas.Length == 0)
+						throw new InvalidDataException("Q2005 has no shipped Odella-dropping Stalker search areas.");
+					session.TraceDiagnostic("q2005-search-areas", new Dictionary<string, object?>
+					{
+						["origin"] = session.CurrentPosition,
+						["areas"] = stalkerSearchAreas,
+					});
 					int routedRevives = combat.ReviveCount;
 					bool lastStalkerKilled = false;
 					BotPosition? successfulStalkerArea = null;
 					int preferredAreaMisses = 0;
 					int corridorClearAttempts = 0;
 					var rejectedPullTargets = new HashSet<int>();
+					BotPosition rejectionPosition = session.CurrentPosition;
+					long rejectionMillis = runtime.NowMillis;
+					void RejectPullTarget(int objectId)
+					{
+						rejectedPullTargets.Add(objectId);
+						rejectionPosition = session.CurrentPosition;
+						rejectionMillis = runtime.NowMillis;
+					}
 					var searchNotes = new List<string>();
 					BotNavigationHazard[] ObservedFieldHazards() => navigator.Observe().Npcs
 						.Select(npc => (Npc: npc,
@@ -1971,6 +2276,16 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						{
 							return await ApproachShippedNpcThroughObservedGuardsAsync(203540, maximumGuardClears: 12);
 						}
+						catch (NaturalGuardedObjectiveRevivedException exception)
+						{
+							// The failed field route belongs to the position before death. Rejoin
+							// from the observed bind point instead of continuing that stale approach.
+							session.TraceDiagnostic("q2005-return-after-revive", new Dictionary<string, object?>
+							{
+								["position"] = session.CurrentPosition, ["reason"] = exception.Message,
+							});
+							return await RecoverMijouAfterReviveAsync();
+						}
 						catch (InvalidDataException exception) when (exception.Message.StartsWith(
 							"No checked guarded approach to NPC 203540 ", StringComparison.Ordinal))
 						{
@@ -1987,8 +2302,17 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							return await ApproachShippedSpawnAsync(203540);
 						}
 					}
+					async Task<int> RecoverMijouAfterReviveAsync()
+					{
+						await RestSafelyAsync(token);
+						await WalkEasternRoadToDerotAsync();
+						routedRevives = combat.ReviveCount;
+						return await ApproachShippedSpawnAsync(203540);
+					}
 					async Task<int> ReturnToMijouAlongIngressAsync(int eventStart, BotPosition ingressStart)
 					{
+						if (combat.ReviveCount > routedRevives)
+							return await RecoverMijouAfterReviveAsync();
 						// A distant reverse A* can fail on the geodata even though the bot just
 						// walked in. Revisit its client-estimated movement checkpoints in reverse.
 						BotPosition[] breadcrumbs = NaturalIshalgenNavigator.SelectRetraceCheckpoints(
@@ -1998,11 +2322,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							int eventBefore = navigator.Events.Count;
 							NaturalNavigationResult result = await NaturalIshalgenNavigator.RetraceIngressAsync(
 								contract.MapId, ingressStart, breadcrumbs, navigator, token);
+							if (combat.ReviveCount > routedRevives)
+								return await RecoverMijouAfterReviveAsync();
 							if (result.Arrived) return await ReachMijouFromFieldAsync();
 							BotPosition blockedCheckpoint = navigator.Events.Skip(eventBefore)
 								.LastOrDefault(entry => entry.Action == "navigation-failed")?.Destination ?? ingressStart;
 							if (guardClears < 4 && await TryClearObservedBlockerAsync(blockedCheckpoint))
+							{
+								if (combat.ReviveCount > routedRevives)
+									return await RecoverMijouAfterReviveAsync();
 								continue; // Ordinary kill may open a checked route; re-observe every hazard.
+							}
+							if (combat.ReviveCount > routedRevives)
+								return await RecoverMijouAfterReviveAsync();
 							session.TraceDiagnostic("q2005-ingress-blocked", new Dictionary<string, object?>
 							{
 								["position"] = session.CurrentPosition,
@@ -2072,6 +2404,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						session.BeginStep($"ni07-q2005-stalker-{attempt + 1}",
 							$"fight-and-loot-gray-mane-stalker-at-level-{session.Api.World.Level}");
 						await RestSafelyAsync(token);
+						// A failed pull describes this position and patrol moment, not the NPC forever.
+						if (rejectedPullTargets.Count > 0 && NaturalStalkerSearchPolicy.ShouldRetryRejected(
+							session.CurrentPosition, rejectionPosition, runtime.NowMillis - rejectionMillis))
+						{
+							session.TraceDiagnostic("q2005-retry-rejected-targets", new Dictionary<string, object?>
+							{
+								["count"] = rejectedPullTargets.Count,
+								["from"] = rejectionPosition,
+								["position"] = session.CurrentPosition,
+								["elapsedMs"] = runtime.NowMillis - rejectionMillis,
+							});
+							rejectedPullTargets.Clear();
+						}
 						int attackHistoryStart = session.PacketHistory.Count;
 						if (combat.ReviveCount > routedRevives)
 						{
@@ -2086,11 +2431,21 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						}
 						NaturalNavigationObject? nearbyStalker = navigator.Observe().Npcs
 							.Where(npc => npc.TemplateId is 210395 or 210396 or 210750 &&
-								Distance(session.CurrentPosition, npc.Position) <= 23)
+								!rejectedPullTargets.Contains(npc.ObjectId) &&
+								Distance(session.CurrentPosition, npc.Position) <= 80)
 							.OrderBy(npc => Distance(session.CurrentPosition, npc.Position))
 							.FirstOrDefault();
 						if (nearbyStalker != null)
-							isolatedStalker = nearbyStalker.Position; // Prefer a client-observed quest target already in spell range.
+							isolatedStalker = nearbyStalker.Position;
+						session.TraceDiagnostic("q2005-search-choice", new Dictionary<string, object?>
+						{
+							["attempt"] = attempt + 1,
+							["source"] = nearbyStalker == null ? "shipped-spot" : "client-observed-stalker",
+							["position"] = session.CurrentPosition,
+							["destination"] = isolatedStalker,
+							["observedObjectId"] = nearbyStalker?.ObjectId,
+							["rejectedObjectIds"] = rejectedPullTargets.Count,
+						});
 						int ingressEventStart = navigator.Events.Count;
 						BotPosition ingressStart = session.CurrentPosition;
 						NaturalNavigationResult safeStalkerArea = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
@@ -2131,12 +2486,22 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 									Distance(session.CurrentPosition, currentBlocker.Position) > 25 ||
 									!geometry.HasLineOfSight(contract.MapId, session.CurrentPosition, currentBlocker.Position))
 								{
-									rejectedPullTargets.Add(blocker.Npc.ObjectId);
+									RejectPullTarget(blocker.Npc.ObjectId);
 									searchNotes.Add($"corridor {corridorClearAttempts}: firing target moved or lost after checked flank");
 									continue;
 								}
-								bool cleared = await combat.TryKillAsync(blocker.Npc.ObjectId, token,
-									new BotPosition(946.253f, 1702.775f, 259.625f, 0));
+								bool cleared;
+								try
+								{
+									cleared = await combat.TryKillAsync(blocker.Npc.ObjectId, token,
+										new BotPosition(946.253f, 1702.775f, 259.625f, 0));
+								}
+								catch (NaturalCombatApproachBlockedException)
+								{
+									RejectPullTarget(blocker.Npc.ObjectId);
+									searchNotes.Add($"corridor {corridorClearAttempts}: moving blocker had no checked combat approach");
+									continue;
+								}
 								searchNotes.Add($"corridor {corridorClearAttempts}: " +
 									$"{blocker.Npc.TemplateId}/{blocker.Npc.ObjectId} at {session.CurrentPosition}, " +
 									$"killed={cleared}, HP={session.Api.World.CurrentHp}/{session.Api.World.MaxHp}");
@@ -2158,7 +2523,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 										}
 									}
 								}
-								else rejectedPullTargets.Add(blocker.Npc.ObjectId);
+								else RejectPullTarget(blocker.Npc.ObjectId);
 								if (combat.ReviveCount > routedRevives)
 								{
 									await WalkEasternRoadToDerotAsync();
@@ -2167,9 +2532,56 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								attempt--; // The same Stalker search remains pending after a corridor fight.
 								continue;
 							}
+							// A dense patrol can leave no safe short flank from the current spot.
+							// Use the journey's checked fight-through route before declaring every
+							// Stalker area unreachable from this same corridor.
+							BotPosition beforeFightThrough = session.CurrentPosition;
+							var unavailableBefore = navigator.UnavailableObjects.ToHashSet();
+							bool fightProgress = await TryFightThroughAsync(
+								isolatedStalker, nearbyStalker?.ObjectId, rejectedPullTargets);
+							NaturalNavigationObject[] defeated = observed
+								.Where(npc => !unavailableBefore.Contains(npc.ObjectId) &&
+									navigator.UnavailableObjects.Contains(npc.ObjectId)).ToArray();
+							session.TraceDiagnostic("q2005-corridor-fight-through", new Dictionary<string, object?>
+							{
+								["attempt"] = attempt + 1,
+								["destination"] = isolatedStalker,
+								["progressed"] = fightProgress,
+								["movedMetres"] = Distance(beforeFightThrough, session.CurrentPosition),
+								["defeated"] = defeated.Select(npc => $"{npc.TemplateId}/{npc.ObjectId}").ToArray(),
+							});
+							foreach (NaturalNavigationObject defeatedStalker in defeated.Where(npc =>
+								npc.TemplateId is 210395 or 210396 or 210750))
+							{
+								await TryLootCorpseItemAsync(session, defeatedStalker.ObjectId, 182203006, token);
+								lastStalkerKilled = true;
+								successfulStalkerArea = defeatedStalker.Position;
+								preferredAreaMisses = 0;
+								if (!await RestAtObservedFieldCampAsync())
+									mijou = await ReturnToMijouAlongIngressAsync(ingressEventStart, ingressStart);
+							}
+							if (combat.ReviveCount > routedRevives)
+							{
+								await WalkEasternRoadToDerotAsync();
+								routedRevives = combat.ReviveCount;
+							}
+							if (fightProgress && (defeated.Length > 0 ||
+								Distance(beforeFightThrough, session.CurrentPosition) > 1))
+							{
+								attempt--; // Reobserve the same area after a real fight or checked move.
+								continue;
+							}
+							searchNotes.Add($"corridor {corridorClearAttempts}: no checked flank or fight-through progress");
 						}
 						if (!safeStalkerArea.Arrived)
 						{
+							session.TraceDiagnostic("q2005-search-route-blocked", new Dictionary<string, object?>
+							{
+								["attempt"] = attempt + 1,
+								["destination"] = isolatedStalker,
+								["reason"] = safeStalkerArea.Reason,
+								["route"] = navigator.LastRouteDiagnostic,
+							});
 							searchNotes.Add($"attempt {attempt + 1} at {isolatedStalker}: {safeStalkerArea.Reason} " +
 								$"from {session.CurrentPosition}; route={navigator.LastRouteDiagnostic}; " +
 								$"nearby={string.Join(',', navigator.Observe().Npcs.Where(npc =>
@@ -2191,11 +2603,18 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						await session.SynchronizeAsync(token);
 						NaturalNavigationObject? observedStalker = navigator.Observe().Npcs
 							.Where(npc => npc.TemplateId is 210395 or 210396 or 210750 &&
+								!rejectedPullTargets.Contains(npc.ObjectId) &&
 								Distance(session.CurrentPosition, npc.Position) <= 30)
 							.OrderBy(npc => Distance(npc.Position, isolatedStalker))
 							.FirstOrDefault();
 						if (observedStalker == null)
 						{
+							session.TraceDiagnostic("q2005-search-empty", new Dictionary<string, object?>
+							{
+								["attempt"] = attempt + 1,
+								["area"] = isolatedStalker,
+								["position"] = session.CurrentPosition,
+							});
 							searchNotes.Add($"attempt {attempt + 1} at {isolatedStalker}: no Stalker in client view");
 							if (successfulStalkerArea != null && ++preferredAreaMisses >= 2)
 								successfulStalkerArea = null;
@@ -2209,6 +2628,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						{
 							NaturalNavigationObject[] stalkers = navigator.Observe().Npcs
 								.Where(npc => npc.TemplateId is 210395 or 210396 or 210750 &&
+									!rejectedPullTargets.Contains(npc.ObjectId) &&
 									Distance(session.CurrentPosition, npc.Position) <= 35)
 								.OrderBy(npc => Distance(npc.Position, isolatedStalker)).ToArray();
 							stalkerPull = await MoveToPullSpotAsync(stalkers, [], "q2005-stalker");
@@ -2251,8 +2671,18 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							continue;
 						}
 						int target = observedStalker.ObjectId;
-						bool killed = await combat.TryKillAsync(target, token,
-							new BotPosition(946.29f, 1702.67f, 259.625f, 0), attackHistoryStart);
+						bool killed;
+						try
+						{
+							killed = await combat.TryKillAsync(target, token,
+								new BotPosition(946.29f, 1702.67f, 259.625f, 0), attackHistoryStart);
+						}
+						catch (NaturalCombatApproachBlockedException exception)
+						{
+							RejectPullTarget(target);
+							searchNotes.Add($"attempt {attempt + 1}: moving Stalker {target} had no checked pull: {exception.Message}");
+							continue; // Reobserve at a different shipped area instead of walking into its pack.
+						}
 						searchNotes.Add($"attempt {attempt + 1} at {isolatedStalker}: " +
 							$"target={observedStalker.TemplateId}/{target}, killed={killed}, " +
 							$"HP={session.Api.World.CurrentHp}/{session.Api.World.MaxHp}");
@@ -2266,11 +2696,6 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						}
 						else if (successfulStalkerArea != null && ++preferredAreaMisses >= 2)
 							successfulStalkerArea = null;
-						if (combat.ReviveCount > routedRevives)
-						{
-							await WalkEasternRoadToDerotAsync();
-							routedRevives = combat.ReviveCount;
-						}
 						if (killed && await RestAtObservedFieldCampAsync()) continue;
 						mijou = await ReturnToMijouAlongIngressAsync(ingressEventStart, ingressStart);
 					}
@@ -2280,7 +2705,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2005-mijou-finish", "show-odella-and-claim-priest-reward");
 					mijou = await ApproachShippedSpawnAsync(203540);
 					await OpenQuestDialogAsync(mijou, 2005);
-					await session.SendPacketAsync(session.Api.SelectDialog(mijou,
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(mijou,
 						DialogAction.CHECK_USER_HAS_QUEST_ITEM, questId: 2005), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(4, session.Api.World.Quests[2005].Status);
@@ -2308,7 +2733,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2006-mijou-start", "ask-mijou-about-mau-grain");
 					mijou = await ApproachShippedSpawnAsync(203540);
 					await OpenQuestDialogAsync(mijou, 2006);
-					await session.SendPacketAsync(session.Api.SelectDialog(mijou, DialogAction.SETPRO1, questId: 2006), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(mijou, DialogAction.SETPRO1, questId: 2006), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(1, session.Api.World.Quests[2006].StepAndFlags);
 				}
@@ -2327,7 +2752,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 80) await RestSafelyAsync(token);
 						int sack = await ApproachShippedSpawnAsync(700095, skipBlockedTarget: true);
 						int interactionPacketStart = session.PacketHistory.Count;
-						await session.SendPacketAsync(session.Api.TalkTo(sack), token);
+						await NaturalDialogProtocol.OpenAsync(session, sack, token);
 						await session.WaitForPacketAsync(typeof(SM_EMOTION), token,
 							packet => packet.Get<int>("senderObjectId") == session.CharacterId &&
 								packet.Get<byte>("emotionType") == (byte)EmotionType.START_QUESTLOOT);
@@ -2339,7 +2764,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								packet.Get<byte>("actionType") == 2);
 						bool completedUse = finish?.Get<int>("durationMs") == 3000;
 						bool looted = completedUse &&
-							await TryLootCorpseItemAsync(session, sack, 182203008, token);
+							await TryLootCorpseItemAsync(session, sack, 182203008, token, interactionPacketStart);
 						if (completedUse) navigator.UnavailableObjects.Add(sack);
 						if (firstSackIngress.Length == 0)
 							firstSackIngress = NaturalIshalgenNavigator.SelectRetraceCheckpoints(
@@ -2367,9 +2792,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								navigator.UnavailableObjects.Add(attacker);
 						}
 					}
-					Require.Equal(3, ItemCount(session.Api.World, 182203008));
-					session.BeginStep("ni07-q2006-mijou-check", "show-earned-mau-grain-to-mijou");
-					if (firstSackIngress.Length > 0)
+				Require.Equal(3, ItemCount(session.Api.World, 182203008));
+				session.BeginStep("ni07-q2006-mijou-check", "show-earned-mau-grain-to-mijou");
+				if (firstSackIngress.Length > 0)
 					{
 						NaturalNavigationResult retrace = await NaturalIshalgenNavigator.RetraceIngressAsync(
 							contract.MapId, ingressStart, firstSackIngress, navigator, token);
@@ -2388,7 +2813,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					}
 					mijou = await ApproachShippedNpcThroughObservedGuardsAsync(203540, maximumGuardClears: 12);
 					await OpenQuestDialogAsync(mijou, 2006);
-					await session.SendPacketAsync(session.Api.SelectDialog(mijou,
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(mijou,
 						DialogAction.CHECK_USER_HAS_QUEST_ITEM, questId: 2006), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(4, session.Api.World.Quests[2006].Status);
@@ -2442,7 +2867,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					{
 						try
 						{
-							if (recovery > 0)
+							bool atBind = Distance(session.CurrentPosition,
+								new BotPosition(571.0388f, 2787.342f, 299.875f, 0)) < 400;
+							if (recovery > 0 || atBind && templateId is (203552 or 203554 or 700085 or 700086 or 700087))
 							{
 								// A death returns to bind. Never treat bind-area monsters as
 								// guards of the distant Rae/Nalto corridor.
@@ -2513,7 +2940,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						? await ApproachGuardedCampaignNpcAsync(npcId)
 						: await ApproachShippedSpawnAsync(npcId);
 					await OpenQuestDialogAsync(npc, 2007);
-					await session.SendPacketAsync(session.Api.SelectDialog(npc, checked((ushort)action), questId: 2007), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npc, checked((ushort)action), questId: 2007), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(step, session.Api.World.Quests[2007].StepAndFlags);
 				}
@@ -2547,7 +2974,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						if (session.Api.World.IsDead || !navigator.Observe().Npcs.Any(npc => npc.ObjectId == generator &&
 							Distance(session.CurrentPosition, npc.Position) <= 3)) continue; // walked off while clearing
 						int usePacketStart = session.PacketHistory.Count;
-						await session.SendPacketAsync(session.Api.TalkTo(generator), token);
+						await NaturalDialogProtocol.OpenAsync(session, generator, token);
 						await session.SynchronizeAsync(token);
 						DecodedBotServerPacket? started = session.PacketHistory.Skip(usePacketStart)
 							.LastOrDefault(packet => packet.PacketType == typeof(SM_USE_OBJECT) &&
@@ -2575,7 +3002,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					int rae = await ApproachShippedSpawnAsync(203554);
 					await OpenQuestDialogAsync(rae, 2007);
 					session.Api.World.BeginWorldReload();
-					await session.SendPacketAsync(session.Api.SelectDialog(rae, DialogAction.SETPRO6, questId: 2007), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(rae, DialogAction.SETPRO6, questId: 2007), token);
 					// Java TeleportService.teleportToNpc(player, 203516) stays on Ishalgen, and a same-map teleport
 					// (SpawnTask.run -> spawnOnSameMap) sends SM_CHANNEL_INFO and SM_PLAYER_INFO but no SM_PLAYER_SPAWN.
 					await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token,
@@ -2637,7 +3064,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					Require.Equal(1, ItemCount(session.Api.World, 182203106));
 					session.BeginStep("ni07-q2106-vanar-report", "confirm-letter-with-vanar");
 					await OpenQuestDialogAsync(vanarNpc, 2106);
-					await session.SendPacketAsync(session.Api.SelectDialog(vanarNpc, DialogAction.SETPRO1, questId: 2106), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(vanarNpc, DialogAction.SETPRO1, questId: 2106), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(4, session.Api.World.Quests[2106].Status);
 				}
@@ -2656,7 +3083,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				if (QuestStatus(2114) < 3)
 				{
 					await OpenQuestDialogAsync(motgar, 2114);
-					await session.SendPacketAsync(session.Api.SelectDialog(motgar, DialogAction.SETPRO1, questId: 2114), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(motgar, DialogAction.SETPRO1, questId: 2114), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(1, session.Api.World.Quests[2114].StepAndFlags);
 				}
@@ -2691,7 +3118,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2123-munin-reward", "give-methu-egg-to-munin-without-ascension-dialogue");
 					munin = await ApproachShippedSpawnAsync(203550);
 					await OpenQuestDialogAsync(munin, 2123);
-					await session.SendPacketAsync(session.Api.SelectDialog(munin, DialogAction.SETPRO2, questId: 2123), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(munin, DialogAction.SETPRO2, questId: 2123), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(4, session.Api.World.Quests[2123].Status);
 					Require.Equal(0, ItemCount(session.Api.World, 182203122));
@@ -2711,7 +3138,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2125-hephe", "ask-hephe-about-robbery");
 					int hephe = await ApproachShippedSpawnAsync(203514);
 					await OpenQuestDialogAsync(hephe, 2125);
-					await session.SendPacketAsync(session.Api.SelectDialog(hephe, DialogAction.SETPRO1, questId: 2125), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(hephe, DialogAction.SETPRO1, questId: 2125), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(1, session.Api.World.Quests[2125].StepAndFlags);
 				}
@@ -2734,7 +3161,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep("ni07-q2135-negi", "deliver-bolirs-letter-to-negi");
 					int negi = await ApproachShippedSpawnAsync(203531);
 					await OpenQuestDialogAsync(negi, 2135);
-					await session.SendPacketAsync(session.Api.SelectDialog(negi, DialogAction.SETPRO1, questId: 2135), token);
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(negi, DialogAction.SETPRO1, questId: 2135), token);
 					await session.SynchronizeAsync(token);
 					Require.Equal(1, session.Api.World.Quests[2135].StepAndFlags);
 					Require.Equal(0, ItemCount(session.Api.World, 182203131));
@@ -2752,7 +3179,51 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				else await FinishItemQuestAsync(session, npc, questId, token, rewardAction);
 			}
 
-			async Task CompleteTemplateQuestAsync(QuestRunPlan plan)
+			async Task AcceptAllAtCurrentHubAsync()
+			{
+				NaturalIshalgenHubPolicy.Hub? hub = NaturalIshalgenHubPolicy.At(session.CurrentPosition);
+				if (hub == null) return;
+				if (hub.Name == "aldelle") await BindAtAldelleIfNeededAsync();
+				int[] eligible = NaturalIshalgenHubPolicy.Order(
+					contract.Quests.Where(quest => hub.QuestIds.Contains(quest.Id) &&
+						NaturalIshalgenHubPolicy.CanAccept(quest, session.Api.World))
+						.Select(quest => quest.Id), contract,
+					id => runtime.Data.Quests.GetQuestById(id)?.GetCategory() ?? QuestCategory.QUEST, hub);
+				foreach (int id in eligible)
+				{
+					int? starterId = templatePlans.TryGetValue(id, out QuestRunPlan? plan) &&
+						plan.StartTrigger.Kind == "npc" ? plan.StartTrigger.Npcs.FirstOrDefault()?.Id :
+						NaturalIshalgenHubPolicy.CustomNpcStarters.GetValueOrDefault(id);
+					if (starterId is not > 0) continue; // auto-start and scripted campaign dialogue
+					// "At this hub" means an ordinary nearby NPC the client sees. A broad
+					// named hub may cover several hundred metres; walking to every starter
+					// just to accept its quest defeats grouping and can enter unsafe packs.
+					if (!navigator.Observe().Npcs.Any(npc => npc.TemplateId == starterId.Value &&
+						Distance(session.CurrentPosition, npc.Position) <= 45)) continue;
+					if (!NaturalIshalgenHubPolicy.CanAccept(contract.Quests.Single(quest => quest.Id == id),
+						session.Api.World)) continue;
+					if (plan != null && plan.FinishedQuestGroups.Count > 0 &&
+						!plan.FinishedQuestGroups.Any(group => group.All(session.Api.World.CompletedQuestIds.Contains)))
+						continue;
+					session.BeginStep($"ni07-hub-{hub.Name}-accept-{id}", "accept-all-available-hub-quests");
+					int starter = await ApproachShippedSpawnAsync(starterId.Value);
+					for (int attempt = 1; ; attempt++)
+					{
+						try { await session.StartQuestAsync(starter, id, token); break; }
+						catch (NaturalDialogTooFarException) when (attempt < 3)
+						{
+							await ReapproachForDialogAsync(starter);
+						}
+					}
+					session.TraceDiagnostic("hub-quest-accepted", new Dictionary<string, object?>
+					{
+						["hub"] = hub.Name, ["questId"] = id, ["starterId"] = starterId,
+						["level"] = session.Api.World.Level,
+					});
+				}
+			}
+
+			async Task CompleteTemplateQuestAsync(QuestRunPlan plan, TemplatePhase phase = TemplatePhase.Full)
 			{
 				// Java ce54b7931 ItemCollecting, MonsterHunt, ReportTo. The plan
 				// supplies shipped objectives only; this executor never uses Q4I's
@@ -2761,6 +3232,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				for (int index = 0; index < book.Operations.Count; index++)
 				{
 					QuestRunOperation operation = book.Operations[index];
+					if (phase == TemplatePhase.Work && operation.Kind == QuestRunOperationKind.ClaimReward ||
+						phase == TemplatePhase.Claim && operation.Kind != QuestRunOperationKind.ClaimReward)
+						continue;
 					if (QuestStatus(plan.Id) == 5) return;
 					if (QuestStatus(plan.Id) >= 3 && operation.Kind == QuestRunOperationKind.StartAtNpc) continue;
 					if (QuestStatus(plan.Id) == 4 && operation.Kind != QuestRunOperationKind.ClaimReward) continue;
@@ -2836,6 +3310,21 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						{
 							int recipientId = operation.Npcs?.FirstOrDefault()?.Id ??
 								throw new InvalidDataException($"Q{plan.Id} has no shipped reward NPC.");
+							if (plan.Id == 2129 &&
+								session.Api.World.ObeliskBindPoint is { MapId: 220010000 } bind &&
+								session.Api.World.Skills.ContainsKey(243) &&
+								session.Api.Timing.TimeUntilCast(243) <= TimeSpan.FromSeconds(1) &&
+								runtime.NowMillis - lastReturnMillis >= TimeSpan.FromMinutes(20).TotalMilliseconds + 1000)
+							{
+								BotPosition? rewardHint = graph.GetMap(contract.MapId)!.Waypoints
+									.Where(waypoint => waypoint.TemplateId == recipientId)
+									.Select(waypoint => (BotPosition?)waypoint.Position)
+									.FirstOrDefault();
+								if (rewardHint is BotPosition destination &&
+									NaturalJourneyTravelPolicy.Choose(session.CurrentPosition, destination, bind,
+										returnReady: true, flightFareAffordable: false) == NaturalTravelChoice.Return)
+									await UseLearnedReturnToBindAsync();
+							}
 							int recipient = await ApproachShippedSpawnAsync(recipientId);
 							int rewardAction = DialogAction.SELECTED_QUEST_NOREWARD;
 							if (plan.HasSelectableReward)
@@ -2875,23 +3364,40 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// or walks out of view for another reason is simply looked for again.
 			async Task<int> KillShippedSpawnAsync(int templateId)
 			{
+				int unsuccessfulKills = 0, tacticalRetreats = 0;
 				for (int attempt = 1; ; attempt++)
 				{
 					// Stop at pull range, outside the target's circle: the fight is planned from there, not started
 					// by walking into it (which is how every add reached the bot at Hatata's cave).
 					int target = await ApproachShippedSpawnAsync(templateId, withinRange: NaturalPullPlanner.SpellRange + 3);
 					int revives = combat.ReviveCount;
-					if (await PullAndKillAsync(target, $"kill-{templateId}")) return target;
+					int retreats = combat.CompletedRetreats;
+					int evidenceStart = session.PacketHistory.Count;
+					bool killed = await PullAndKillAsync(target, $"kill-{templateId}");
+					// Pull planning may defend against this very target as an add, then report
+					// it vanished when its corpse leaves the visible NPC list. At the level cap
+					// the EXP total cannot rise; its 0% HP packet is still kill evidence.
+					if (killed || session.PacketHistory.Skip(evidenceStart).Any(packet =>
+						packet.PacketType == typeof(SmAttackStatus) &&
+						packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0))
+						return target;
 					bool died = combat.ReviveCount > revives;
-					session.TraceDiagnostic(died ? "kill-retry-after-death" : "kill-target-vanished", new Dictionary<string, object?>
+					bool retreated = !died && combat.CompletedRetreats > retreats;
+					session.TraceDiagnostic(died ? "kill-retry-after-death" : retreated ? "kill-retry-after-retreat" : "kill-target-vanished", new Dictionary<string, object?>
 					{
 						["template"] = templateId,
 						["target"] = target,
 						["attempt"] = attempt,
+						["tacticalRetreats"] = tacticalRetreats,
 						["position"] = session.CurrentPosition,
 					});
-					if (attempt >= 6)
-						throw new InvalidDataException($"NPC {templateId} was not killed in {attempt} attempts (last target {target}).");
+					if (retreated)
+					{
+						if (++tacticalRetreats >= 12)
+							throw new InvalidDataException($"NPC {templateId} remains guarded after {tacticalRetreats} disengagement retreats.");
+					}
+					else if (++unsuccessfulKills >= 6)
+						throw new InvalidDataException($"NPC {templateId} was not killed in {unsuccessfulKills} non-retreat attempts (last target {target}).");
 					await RestSafelyAsync(token);
 				}
 			}
@@ -3169,6 +3675,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				NaturalNavigationResult again = await NaturalIshalgenNavigator.ApproachNpcAsync(
 					contract.MapId, seen.TemplateId, seen.Position, navigator, token);
 				if (!again.Arrived) throw new InvalidDataException($"Could not walk back to NPC {npc} to talk: {again.Reason}");
+				// Arrival permits 3 m of client-estimated distance. A talk refusal is
+				// stronger server evidence: send the final short movement and allow its
+				// ground position to settle before retrying the same ordinary dialogue.
+				seen = navigator.Observe().Npcs.FirstOrDefault(n => n.ObjectId == npc);
+				if (seen != null && Distance(session.CurrentPosition, seen.Position) > 0.4f)
+					await navigator.MoveAsync([seen.Position], token);
+				await navigator.SynchronizeAsync(token);
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
 			}
 
 			async Task OpenQuestDialogAsync(int npc, int questId)
@@ -3177,7 +3691,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					try
 					{
-						await session.SendPacketAsync(session.Api.TalkTo(npc), token);
+						await NaturalDialogProtocol.OpenAsync(session, npc, token);
 						await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
 							packet => packet.Get<int>("targetObjectId") == npc);
 						break;
@@ -3187,7 +3701,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						await ReapproachForDialogAsync(npc);
 					}
 				}
-				await session.SendPacketAsync(session.Api.SelectDialog(npc, DialogAction.QUEST_SELECT, questId: questId), token);
+				await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npc, DialogAction.QUEST_SELECT, questId: questId), token);
 				await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
 					packet => packet.Get<int>("targetObjectId") == npc && packet.Get<int>("questId") == questId);
 			}
@@ -3413,10 +3927,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				entry.template.GetAggroRange() > 0)
 			.SelectMany(entry => entry.npc.Hazards(entry.template!.GetAggroRange() + 1f, BotPatrolPath.PassingReach)).ToArray();
 
-		public Task MoveAsync(IReadOnlyList<BotPosition> segment, CancellationToken token)
+		public async Task MoveAsync(IReadOnlyList<BotPosition> segment, CancellationToken token)
 		{
+			// The regular client closes an NPC window before walking away. This also delivers
+			// DIALOG_FINISH to the NPC AI, so it can resume its idle movement and facing.
+			if (segment.Count > 0 && session.Api.OpenDialogTargetId is int dialogTarget)
+				await session.SendPacketAsync(session.Api.CloseDialog(dialogTarget), token);
 			lastMovementStart = session.CurrentPosition;
-			return session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing)
+			await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing)
 				.CreateGroundPlan(segment, session.CurrentPosition,
 					session.Api.World.MovementSpeed ?? throw new InvalidDataException("SIM movement speed unobserved.")), token);
 		}
@@ -3481,15 +3999,17 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 	private sealed class NaturalJourneyCombat(INaturalJourneySession session,
 		NaturalJourneyNavigator navigator, NaturalJourneyRuntime runtime,
-		BotNavigationGeometry geometry, bool stopOnDeath)
+		BotNavigationGeometry geometry, bool stopOnDeath, bool conservativeRangedHold)
 	{
 		private readonly Dictionary<int, DateTimeOffset> cooldowns = [];
 		private int revives;
+		private int completedRetreats;
 		private int? engagedTarget;
 		private string[] lastCombatTrace = [];
 		private int obstacleRepositions;
 		private int rangeRejections;
 		public int ReviveCount => revives;
+		public int CompletedRetreats => completedRetreats;
 		public bool InCombat { get; private set; }
 		public Func<CancellationToken, Task>? MaintainInventoryAsync { get; set; }
 		/// <summary>Leave the pack; when no checked escape leads away from it (a pocket, a ledge, more
@@ -3577,10 +4097,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				DecodedBotServerPacket[] recentAttacks = session.PacketHistory.Skip(observedPacketCount)
 					.Where(packet => packet.PacketType == typeof(SM_ATTACK) &&
 						packet.Get<int>("targetObjId") == session.CharacterId).ToArray();
+				NaturalCombatRetreatPolicy.ObserveEngagement(incomingAttackers,
+					session.PacketHistory.Skip(observedPacketCount), session.CharacterId);
 				foreach (DecodedBotServerPacket attack in recentAttacks)
 				{
 					int attacker = attack.Get<int>("attackerObjId");
-					incomingAttackers.Add(attacker);
 					if (attacker == target) lastHitByTargetMillis = runtime.NowMillis;
 				}
 				observedPacketCount = session.PacketHistory.Count;
@@ -3626,7 +4147,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					HotPotionReady: hotReady,
 					HotPotionActive: NaturalIshalgenPotionPolicy.HasActiveHealing(world.VisibleEffects),
 					Cornered: cornered, TargetAdjacent: targetAdjacent, InEmergency: inEmergency, HasBlessing: hasBlessing,
-					TargetSeasoned: targetSeasoned, TargetRanged: targetRanged), now);
+					TargetSeasoned: targetSeasoned, TargetRanged: targetRanged,
+					ConservativeRangedHold: conservativeRangedHold), now);
 				trace.Add($"t{turn}:action={choice.Action}/{choice.Skill?.Id} targetDistance={Distance(session.CurrentPosition, npc.Position):F1}");
 				lastCombatTrace = trace.TakeLast(12).ToArray();
 				session.TraceDiagnostic("combat-decision", new Dictionary<string, object?>
@@ -3744,13 +4266,16 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					case "wait":
 						await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
 						break;
-					case "retreat":
+				case "retreat":
 						// Some quest pulls begin directly at an interacted object and have
 						// no named refuge. Previously walked client positions remain valid
 						// candidates, but each escape leg is checked against current mobs.
-						if (await RetreatFromPackAsync(retreatAnchor ?? session.CurrentPosition,
-							incomingAttackers, token))
-							return false;
+					if (await RetreatFromPackAsync(retreatAnchor ?? session.CurrentPosition,
+						incomingAttackers.Append(target).ToHashSet(), token))
+					{
+						if (!session.Api.World.IsDead && session.Api.World.CurrentHp > 0) completedRetreats++;
+						return false;
+					}
 						cornered = true; // No way out: stay and fight (heal, potions, then the target).
 						break;
 					default: throw new InvalidDataException($"Natural combat cannot act: {choice.Action}: {choice.Reason}");
@@ -3773,27 +4298,31 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		/// Break away from a pack: always away from the attackers, never back through them. Candidates are
 		/// previously walked ground, the refuge, and navmesh ground in rings around the bot, filtered to the
 		/// half-plane away from the attackers and outside other observed circles, and ranked by distance
-		/// from the attackers' homes (Java AttackManager.checkGiveupDistance: a chaser gives up beyond
-		/// 100 m from home after 10 s without being hit). A destination is kept until reached or blocked;
-		/// on arrival with chasers still close, the next one is chosen further out.
+		/// from the attackers' homes (Java AttackManager.checkGiveupDistance). Keep running until every
+		/// pursuer broadcasts its neutral/return emotion or leaves client sight. A gap in distance alone
+		/// does not show that the NPC stopped chasing. New attackers join the same retreat.
 		/// </summary>
 		private async Task<bool> RetreatFromPackAsync(BotPosition refuge,
 			IReadOnlySet<int> observedAttackers, CancellationToken token)
 		{
 			BotPosition origin = session.CurrentPosition;
 			int map = session.Api.World.MapId ?? throw new InvalidDataException("Retreat map unobserved.");
-			BotPosition[] homes = observedAttackers
-				.Select(id => FirstSeen(id) ?? navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == id)?.Position)
-				.OfType<BotPosition>().ToArray();
+			var activeAttackers = observedAttackers.ToHashSet();
+			activeAttackers.RemoveWhere(id => !session.Api.World.Objects.ContainsKey(id));
+			int packetStart = session.PacketHistory.Count;
 			var tried = new List<BotPosition>();
-			for (int replan = 0; replan < 8; replan++)
+			for (int replan = 0; replan < 24; replan++)
 			{
+				activeAttackers.RemoveWhere(id => !session.Api.World.Objects.ContainsKey(id));
+				if (activeAttackers.Count == 0) return true;
 				BotPosition[] attackerPositions = navigator.Observe().Npcs
-					.Where(npc => observedAttackers.Contains(npc.ObjectId))
+					.Where(npc => activeAttackers.Contains(npc.ObjectId))
 					.Select(npc => npc.Position).ToArray();
-				if (attackerPositions.Length == 0 || !attackerPositions.Any(p => Distance(session.CurrentPosition, p) < 30)) return true;
+				BotPosition[] homes = activeAttackers
+					.Select(id => FirstSeen(id) ?? navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == id)?.Position)
+					.OfType<BotPosition>().ToArray();
 				BotNavigationHazard[] otherHazards = navigator.Observe().Npcs
-					.Where(npc => !observedAttackers.Contains(npc.ObjectId))
+					.Where(npc => !activeAttackers.Contains(npc.ObjectId))
 					.Select(npc => (npc, template: runtime.Data.NpcDataDh.GetNpcTemplate(npc.TemplateId)))
 					.Where(entry => runtime.IsAggressive(entry.template))
 					.SelectMany(entry => entry.npc.Hazards(entry.template!.GetAggroRange(), BotPatrolPath.PassingReach)).ToArray();
@@ -3813,12 +4342,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					// Avoid every other observed monster, not the chasers themselves: they move with the bot,
 					// so their circles always surround it and would reject every escape.
 					IReadOnlyList<BotPosition> candidate = geometry.FindJourneyPathAvoiding(map, session.CurrentPosition, escape, otherHazards);
-					// The first steps may swing sideways around another monster or a rock, but must not turn
-					// back into the pack: the point about 10 m along stays within ~100 degrees of "away".
+					// A sideways turn around terrain is fine; reject only a departure that actually
+					// takes the bot deeper into the pack before heading for the outward destination.
 					string? why = candidate.Count == 0 ? $"no route ({BotNavMeshRouter.LastOutcome})"
 						: Distance(session.CurrentPosition, candidate[^1]) < 10 ? "too short"
-						: AwayCosine(attackerPositions, session.CurrentPosition, candidate[Math.Min(candidate.Count - 1, 4)]) < -0.2f
-							? "first steps back into the pack" : null;
+						: !NaturalCombatRetreatPolicy.ClearsPackOnDeparture(session.CurrentPosition, candidate, attackerPositions)
+							? "route enters the pack" : null;
 					if (why != null)
 					{
 						rejections.Add($"({escape.X:F0},{escape.Y:F0}) {why}");
@@ -3833,7 +4362,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.TraceDiagnostic("combat-retreat-cornered", new Dictionary<string, object?>
 					{
 						["position"] = session.CurrentPosition,
-						["observedAttackers"] = observedAttackers.ToArray(),
+						["observedAttackers"] = activeAttackers.ToArray(),
 						["attackerPositions"] = attackerPositions,
 						["rejections"] = rejections.ToArray(),
 						["otherHazards"] = otherHazards.Length,
@@ -3846,46 +4375,39 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					["origin"] = session.CurrentPosition,
 					["destination"] = destination,
 					["checkedPoints"] = route.Count,
-					["observedAttackers"] = observedAttackers.ToArray(),
+					["observedAttackers"] = activeAttackers.ToArray(),
 					["attackerHomes"] = homes,
 					["fromNearestHome"] = homes.Length == 0 ? null : homes.Min(h => Distance(h, destination.Value)),
 				});
 				foreach (BotPosition[] segment in route.Chunk(2).Take(256))
 				{
 					BotNavigationHazard[] others = navigator.Observe().Npcs
-						.Where(npc => !observedAttackers.Contains(npc.ObjectId))
+						.Where(npc => !activeAttackers.Contains(npc.ObjectId))
 						.Select(npc => (npc, template: runtime.Data.NpcDataDh.GetNpcTemplate(npc.TemplateId)))
 						.Where(entry => runtime.IsAggressive(entry.template))
 						.SelectMany(entry => entry.npc.Hazards(entry.template!.GetAggroRange(), BotPatrolPath.PassingReach)).ToArray();
 					if (!BotNavigationGeometry.AvoidsHazards(session.CurrentPosition, segment, others)) break; // new monster ahead
 					await navigator.MoveAsync(segment, token);
 					await session.SynchronizeAsync(token);
+					NaturalCombatRetreatPolicy.ObserveEngagement(activeAttackers,
+						session.PacketHistory.Skip(packetStart), session.CharacterId);
+					packetStart = session.PacketHistory.Count;
 					if (session.Api.World.CurrentHp <= 0 || session.Api.World.IsDead)
 					{
 						await ReviveAtBindAsync(token);
 						return true;
 					}
-					if (!navigator.Observe().Npcs.Any(npc =>
-						observedAttackers.Contains(npc.ObjectId) &&
-						Distance(session.CurrentPosition, npc.Position) < 30)) return true;
+					if (activeAttackers.Count == 0) return true;
 				}
 			}
 			session.TraceDiagnostic("combat-retreat-cornered", new Dictionary<string, object?>
 			{
 				["position"] = session.CurrentPosition,
 				["origin"] = origin,
-				["observedAttackers"] = observedAttackers.ToArray(),
-				["reason"] = "chasers still close after eight away-from-pack replans",
+				["observedAttackers"] = activeAttackers.ToArray(),
+				["reason"] = "pursuers still engaged after 24 away-from-pack replans",
 			});
 			return false;
-
-			static float AwayCosine(IReadOnlyList<BotPosition> attackers, BotPosition from, BotPosition to)
-			{
-				float awayX = from.X - attackers.Average(a => a.X), awayY = from.Y - attackers.Average(a => a.Y);
-				float stepX = to.X - from.X, stepY = to.Y - from.Y;
-				float lengths = MathF.Sqrt(awayX * awayX + awayY * awayY) * MathF.Sqrt(stepX * stepX + stepY * stepY);
-				return lengths < 0.01f ? 1f : (awayX * stepX + awayY * stepY) / lengths;
-			}
 		}
 
 		/// <summary>Shipped spawn points of hostile monsters on the map, each with its aggro range. Resting
@@ -3990,28 +4512,69 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 		public async Task RestAsync(CancellationToken token)
 		{
-			BotWorldModel restWorld = session.Api.World;
-			if (!restWorld.IsDead && (restWorld.CurrentHp * 100 < restWorld.MaxHp * 90 || restWorld.CurrentMp * 100 < restWorld.MaxMp * 80))
-				await MoveToRestSpotAsync(token);
-			// Twelve quiet rest intervals (about two minutes) to recover. An interval interrupted by an attack
-			// does not count: the Priest fights, then rests again, however many monsters arrive.
+			// Heal while there is mana to spend. Sitting solely for missing HP leaves the Priest exposed to
+			// respawns and patrols; reserve sitting for MP below half, then recover it to 80%.
+			bool locatedForManaRest = false;
+			bool recoveringMana = false;
 			int quietIntervals = 0;
-			for (int interval = 0; quietIntervals < 12 && interval < MaximumCombatActions; interval++)
+			for (int interval = 0; interval < MaximumCombatActions; interval++)
 			{
 				BotWorldModel world = session.Api.World;
 				bool interrupted = false;
-				if (world.IsDead || world.CurrentHp <= 0) await ReviveAtBindAsync(token);
-				if (world.CurrentHp * 100 >= world.MaxHp * 90 &&
-					world.CurrentMp * 100 >= world.MaxMp * 80)
+				if (world.IsDead || world.CurrentHp <= 0)
 				{
+					await ReviveAtBindAsync(token);
+					return;
+				}
+				if (world.CurrentMp * 100 < world.MaxMp * 50) recoveringMana = true;
+				if (recoveringMana && world.CurrentMp * 100 >= world.MaxMp * 80)
+				{
+					recoveringMana = false;
+					locatedForManaRest = false;
+				}
+				if (!recoveringMana)
+				{
+					if (world.CurrentHp * 100 < world.MaxHp * 90)
+					{
+						NaturalPriestSkill? heal = NaturalPriestSkills.Best("heal", world.Level, world.Skills);
+						if (heal == null || world.CurrentMp < heal.ManaCost)
+							throw new InvalidDataException("Priest has mana but no client-observed usable self-heal between fights.");
+						TimeSpan gate = session.Api.Timing.TimeUntilCast(heal.Id);
+						if (gate > TimeSpan.Zero)
+						{
+							await session.AdvanceAsync(gate + TimeSpan.FromMilliseconds(1), token);
+							await session.SynchronizeAsync(token);
+							continue; // Reobserve HP and attackers after the cast gate.
+						}
+						session.TraceDiagnostic("between-fights-heal", new Dictionary<string, object?>
+						{
+							["skillId"] = heal.Id, ["hp"] = world.CurrentHp, ["maxHp"] = world.MaxHp,
+							["mp"] = world.CurrentMp, ["maxMp"] = world.MaxMp,
+						});
+						if (!await CastAsync(heal, session.CharacterId, token)) return;
+						await session.SynchronizeAsync(token);
+						continue;
+					}
 					await MaintainBuffsAsync(token);
 					if (MaintainInventoryAsync is { } maintain)
 						await maintain(token);
 					return;
 				}
+				if (quietIntervals >= 12) break;
+				if (!locatedForManaRest)
+				{
+					await MoveToRestSpotAsync(token);
+					locatedForManaRest = true;
+				}
 				int attackHistoryStart = 0;
 				NaturalRestOutcome outcome = await NaturalRestCadence.RunAsync(
-					(resting, waitToken) => session.SendPacketAsync(session.Api.Rest(resting), waitToken),
+					async (resting, waitToken) =>
+					{
+						await session.SendPacketAsync(session.Api.Rest(resting), waitToken);
+						// Pilot's recorded client leaves 343-361 ms between STAND and its first move.
+						// Keep the Priest in place until the stand-up animation completes for observers.
+						if (!resting) await session.AdvanceAsync(TimeSpan.FromMilliseconds(350), waitToken);
+					},
 					async (duration, waitToken) =>
 					{
 						attackHistoryStart = session.PacketHistory.Count;
@@ -4063,9 +4626,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					return;
 				}
 				if (!interrupted) quietIntervals++;
+				else locatedForManaRest = false;
 				await session.SynchronizeAsync(token);
 			}
-			throw new InvalidDataException("Priest could not recover HP/MP before the next pull within twelve quiet rest intervals.");
+			throw new InvalidDataException("Priest could not recover HP/MP before the next pull within bounded healing and mana-rest attempts.");
 		}
 
 		private async Task ReviveAtBindAsync(CancellationToken token)
@@ -4258,29 +4822,37 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	}
 
 	private static async Task<bool> TryLootCorpseItemAsync(INaturalJourneySession session,
-		int objectId, int itemId, CancellationToken token)
+		int objectId, int itemId, CancellationToken token, int preopenedPacketStart = -1)
 	{
 		long beforeCount = ItemCount(session.Api.World, itemId);
-		await session.SendPacketAsync(session.Api.Loot(objectId), token);
-		DecodedBotServerPacket list;
-		using (var lootTimeout = CancellationTokenSource.CreateLinkedTokenSource(token))
+		// Quest-use objects open their drop list on completion. Reopening that list sends a second
+		// START_LOOT/END_LOOT cycle within the same client frame and can leave observers in a loot pose.
+		DecodedBotServerPacket? list = preopenedPacketStart >= 0
+			? session.PacketHistory.Skip(preopenedPacketStart).LastOrDefault(packet =>
+				packet.PacketType == typeof(SM_LOOT_ITEMLIST) && packet.Get<int>("targetObjectId") == objectId)
+			: null;
+		if (list == null)
 		{
-			lootTimeout.CancelAfter(TimeSpan.FromSeconds(5));
-			try
+			await session.SendPacketAsync(session.Api.Loot(objectId), token);
+			using (var lootTimeout = CancellationTokenSource.CreateLinkedTokenSource(token))
 			{
-				list = await session.WaitForPacketAsync(typeof(SM_LOOT_ITEMLIST), lootTimeout.Token,
-					packet => packet.Get<int>("targetObjectId") == objectId);
-			}
-			catch (OperationCanceledException) when (!token.IsCancellationRequested)
-			{
-				session.TraceDiagnostic("quest-loot-list-missing", new Dictionary<string, object?>
+				lootTimeout.CancelAfter(TimeSpan.FromSeconds(5));
+				try
 				{
-					["objectId"] = objectId,
-					["itemId"] = itemId,
-					["inventoryCount"] = beforeCount,
-					["position"] = session.CurrentPosition,
-				});
-				return false;
+					list = await session.WaitForPacketAsync(typeof(SM_LOOT_ITEMLIST), lootTimeout.Token,
+						packet => packet.Get<int>("targetObjectId") == objectId);
+				}
+				catch (OperationCanceledException) when (!token.IsCancellationRequested)
+				{
+					session.TraceDiagnostic("quest-loot-list-missing", new Dictionary<string, object?>
+					{
+						["objectId"] = objectId,
+						["itemId"] = itemId,
+						["inventoryCount"] = beforeCount,
+						["position"] = session.CurrentPosition,
+					});
+					return false;
+				}
 			}
 		}
 		IReadOnlyDictionary<string, object?>? item = list
@@ -4299,6 +4871,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			return false;
 		}
 		BotInventoryItem? existing = session.Api.World.Inventory.Values.SingleOrDefault(entry => entry.ItemId == itemId);
+		if (preopenedPacketStart >= 0) await session.AdvanceAsync(TimeSpan.FromMilliseconds(450), token);
 		await session.SendPacketAsync(session.Api.Loot(objectId, Get<byte>(item, "index")), token);
 		if (existing == null)
 			await session.WaitForPacketAsync(typeof(SM_INVENTORY_ADD_ITEM), token,
@@ -4330,19 +4903,20 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		CancellationToken token,
 		int rewardAction = DialogAction.SELECTED_QUEST_NOREWARD)
 	{
-		await session.SendPacketAsync(session.Api.TalkTo(npcObjectId), token);
+		await NaturalDialogProtocol.OpenAsync(session, npcObjectId, token);
 		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
-		await session.SendPacketAsync(session.Api.SelectDialog(npcObjectId, DialogAction.QUEST_SELECT, questId: questId), token);
+		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npcObjectId, DialogAction.QUEST_SELECT, questId: questId), token);
 		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
 		if (session.Api.World.Quests[questId].Status == 3)
 		{
-			await session.SendPacketAsync(session.Api.SelectDialog(npcObjectId, DialogAction.SELECT_QUEST_REWARD, questId: questId), token);
+			await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npcObjectId, DialogAction.SELECT_QUEST_REWARD, questId: questId), token);
 			await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
 		}
-		await session.SendPacketAsync(session.Api.SelectDialog(npcObjectId, checked((ushort)rewardAction), questId: questId), token);
+		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npcObjectId, checked((ushort)rewardAction), questId: questId), token);
 		await WaitForQuestStatusAsync(session, questId, 5, token);
 		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
 			packet => packet.Get<int>("targetObjectId") == npcObjectId);
+		await session.SendPacketAsync(session.Api.CloseDialog(npcObjectId), token);
 	}
 
 	private static async Task WaitForQuestStatusAsync(
@@ -4366,19 +4940,20 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		INaturalJourneySession session, int npcObjectId, int questId, CancellationToken token,
 		int rewardAction = DialogAction.SELECTED_QUEST_NOREWARD)
 	{
-		await session.SendPacketAsync(session.Api.TalkTo(npcObjectId), token);
+		await NaturalDialogProtocol.OpenAsync(session, npcObjectId, token);
 		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
-		await session.SendPacketAsync(session.Api.SelectDialog(npcObjectId, DialogAction.QUEST_SELECT, questId: questId), token);
+		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npcObjectId, DialogAction.QUEST_SELECT, questId: questId), token);
 		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
-		await session.SendPacketAsync(session.Api.SelectDialog(
+		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(
 			npcObjectId, DialogAction.CHECK_USER_HAS_QUEST_ITEM, questId: questId), token);
 		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
 		Require.Equal((byte)4, session.Api.World.Quests[questId].Status);
-		await session.SendPacketAsync(session.Api.SelectDialog(
+		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(
 			npcObjectId, checked((ushort)rewardAction), questId: questId), token);
 		await WaitForQuestStatusAsync(session, questId, 5, token);
 		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
 			packet => packet.Get<int>("targetObjectId") == npcObjectId);
+		await session.SendPacketAsync(session.Api.CloseDialog(npcObjectId), token);
 	}
 
 

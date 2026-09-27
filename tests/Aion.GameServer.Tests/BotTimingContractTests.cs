@@ -39,6 +39,19 @@ public sealed class BotTimingContractTests
 	}
 
 	[Fact]
+	public void CastResultRetainsServerCooldownInDeciseconds()
+	{
+		var clock = new ManualTimeProvider(DateTimeOffset.UnixEpoch);
+		var timing = new BotTimingContract(clock);
+		timing.RecordCastResult(500, skillId: 243, cooldownDeciseconds: 12000);
+		Assert.Equal(TimeSpan.FromMinutes(20), timing.TimeUntilCast(243));
+		clock.Advance(TimeSpan.FromMinutes(11));
+		Assert.Equal(TimeSpan.FromMinutes(9), timing.TimeUntilCast(243));
+		clock.Advance(TimeSpan.FromMinutes(9));
+		Assert.Equal(TimeSpan.Zero, timing.TimeUntilCast(243));
+	}
+
+	[Fact]
 	public void UsesDecodedSkillCooldownsAndItemTemplateUseDelays()
 	{
 		var clock = new ManualTimeProvider(DateTimeOffset.UnixEpoch);

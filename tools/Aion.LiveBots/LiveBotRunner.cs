@@ -43,8 +43,50 @@ public static partial class LiveBotRunner
 				". Run one supported scenario at a time; never substitute the connection smoke test.");
 		PacketCoverageCatalog.Write(options.OutputDirectory, options.Run, "LIVE");
 		using var journal = new ScenarioRunJournal(options.OutputDirectory, options.Run, "LIVE");
-		return await journal.ExecuteAsync(options.ScenarioDefinitions[0].Id,
-			() => DispatchAsync(options, problems, cancellationToken));
+		if (options.AttachTarget == null)
+			return await journal.ExecuteAsync(options.ScenarioDefinitions[0].Id,
+				() => DispatchAsync(options, problems, cancellationToken));
+
+		// An attached world belongs to its operator, who may stop the bot at any time without touching the server:
+		// Ctrl+C or the stop file cancels play, and the scenario then leaves the world through an ordinary quit.
+		using var operatorStop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+		ConsoleCancelEventHandler onCancel = (_, args) =>
+		{
+			args.Cancel = true;
+			Console.Error.WriteLine("Operator stop requested; leaving the world.");
+			operatorStop.Cancel();
+		};
+		Console.CancelKeyPress += onCancel;
+		Task stopWatch = options.StopFile == null ? Task.CompletedTask : WatchStopFileAsync(options.StopFile, operatorStop);
+		try
+		{
+			return await journal.ExecuteAsync(options.ScenarioDefinitions[0].Id,
+				() => DispatchAsync(options, problems, operatorStop.Token));
+		}
+		finally
+		{
+			Console.CancelKeyPress -= onCancel;
+			await operatorStop.CancelAsync();
+			await stopWatch;
+		}
+	}
+
+	private static async Task WatchStopFileAsync(string path, CancellationTokenSource stop)
+	{
+		try
+		{
+			while (!stop.IsCancellationRequested)
+			{
+				if (File.Exists(path))
+				{
+					Console.Error.WriteLine($"Operator stop file found ({path}); leaving the world.");
+					await stop.CancelAsync();
+					return;
+				}
+				await Task.Delay(TimeSpan.FromSeconds(1), stop.Token);
+			}
+		}
+		catch (OperationCanceledException) when (stop.IsCancellationRequested) { }
 	}
 
 	private static async Task<int> DispatchAsync(LiveBotOptions options, LiveBotProblemWriter problems,
@@ -64,6 +106,8 @@ public static partial class LiveBotRunner
 			return await RunNaturalIshalgenGatheringAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "NI-09" }])
 			return await RunNaturalIshalgenJourneyAsync(options, problems, cancellationToken);
+		if (options.ScenarioDefinitions is [{ Id: "NI-10" }])
+			return await RunNaturalIshalgenAttachAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "NI-02" }])
 			return await RunNaturalIshalgenDecisionAsync(options, problems, cancellationToken);
 		if (options.ScenarioDefinitions is [{ Id: "B2" }])
@@ -601,7 +645,9 @@ public static partial class LiveBotRunner
 			loginEndPoint = options.LoginEndPoint.ToString(),
 			gameEndPoint = options.GameEndPoint.ToString(),
 			chatEndPoint = options.ChatEndPoint.ToString(),
-			adminBaseUri = options.AdminBaseUri.ToString(),
+			adminBaseUri = options.AttachTarget == null ? options.AdminBaseUri.ToString() : null,
+			attachTarget = options.AttachTarget,
+			stopFile = options.StopFile,
 			dashboardUrl = options.DashboardPort == 0 ? null : $"http://127.0.0.1:{options.DashboardPort}/",
 			reentrySeconds = options.ReentryDelay.TotalSeconds,
 			connectTimeoutSeconds = options.ConnectTimeout.TotalSeconds,
@@ -712,6 +758,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 	private int chatChannelId;
 	private PersistedPosition? expectedPosition;
 	private DateTimeOffset? persistedLastOnline;
+	private DateTimeOffset? lastQuitAt;
 	private BotPosition? currentPosition;
 	private readonly List<DecodedBotServerPacket> packetHistory = [];
 
@@ -1018,31 +1065,33 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 
 	public async Task StartQuestAsync(int npcObjectId, int questId, CancellationToken cancellationToken)
 	{
-		await SendGameAsync(api.TalkTo(npcObjectId), cancellationToken);
+		await NaturalDialogProtocol.OpenAsync(this, npcObjectId, cancellationToken);
 		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken,
 			packet => packet.Get<int>("targetObjectId") == npcObjectId &&
 				packet.Get<ushort>("dialogPageId") == 10 && packet.Get<int>("questId") == 0);
-		await SendGameAsync(api.SelectDialog(npcObjectId, 31, questId: questId), cancellationToken);
+		await NaturalDialogProtocol.SelectAsync(this, api.SelectDialog(npcObjectId, 31, questId: questId), cancellationToken);
 		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken,
 			packet => packet.Get<int>("targetObjectId") == npcObjectId && packet.Get<int>("questId") == questId);
-		await SendGameAsync(api.SelectDialog(npcObjectId, 1002, questId: questId), cancellationToken);
+		await NaturalDialogProtocol.SelectAsync(this, api.SelectDialog(npcObjectId, 1002, questId: questId), cancellationToken);
 		await WaitForGamePacketAsync(typeof(SM_QUEST_ACTION), cancellationToken,
 			packet => packet.Get<int>("questId") == questId);
 		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken,
 			packet => packet.Get<int>("targetObjectId") == npcObjectId);
+		await SendGameAsync(api.CloseDialog(npcObjectId), cancellationToken);
 	}
 
 	public async Task FinishQuestAsync(int npcObjectId, int questId, CancellationToken cancellationToken)
 	{
-		await SendGameAsync(api.TalkTo(npcObjectId), cancellationToken);
+		await NaturalDialogProtocol.OpenAsync(this, npcObjectId, cancellationToken);
 		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
-		await SendGameAsync(api.SelectDialog(npcObjectId, 31, questId: questId), cancellationToken);
+		await NaturalDialogProtocol.SelectAsync(this, api.SelectDialog(npcObjectId, 31, questId: questId), cancellationToken);
 		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
-		await SendGameAsync(api.SelectDialog(npcObjectId, 1009, questId: questId), cancellationToken);
+		await NaturalDialogProtocol.SelectAsync(this, api.SelectDialog(npcObjectId, 1009, questId: questId), cancellationToken);
 		await WaitForGamePacketAsync(typeof(SM_DIALOG_WINDOW), cancellationToken);
-		await SendGameAsync(api.SelectDialog(npcObjectId, 23, questId: questId), cancellationToken);
+		await NaturalDialogProtocol.SelectAsync(this, api.SelectDialog(npcObjectId, 23, questId: questId), cancellationToken);
 		await WaitForGamePacketAsync(typeof(SM_QUEST_ACTION), cancellationToken,
 			packet => packet.Get<int>("questId") == questId && packet.Get<byte>("status") == 5);
+		await SendGameAsync(api.CloseDialog(npcObjectId), cancellationToken);
 	}
 
 	public async Task WaitForPlayerClassAsync(PlayerClass playerClass, CancellationToken cancellationToken)
@@ -1193,6 +1242,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 		await CloseChatAsync();
 		await SendGameAsync(api.Quit(stayConnected: false), cancellationToken);
 		await WaitForGamePacketAsync(typeof(SM_QUIT_RESPONSE), cancellationToken);
+		lastQuitAt = DateTimeOffset.UtcNow;
 		await CloseConnectionAsync(cancellationToken);
 		quitExpected = false;
 	}
@@ -1218,6 +1268,13 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 	public async Task WaitForReentryAsync(CancellationToken cancellationToken)
 	{
 		TimeSpan remaining = api.Timing.TimeUntilEnterWorld();
+		// Without the admin oracle (an attached world), the ordinary quit time bounds the server's last-online stamp.
+		if (persistedLastOnline == null && lastQuitAt is DateTimeOffset quit)
+		{
+			TimeSpan quitRemaining = quit + TimeSpan.FromSeconds(BotTimingContract.ConfiguredReentrySeconds) - DateTimeOffset.UtcNow;
+			if (quitRemaining > remaining)
+				remaining = quitRemaining;
+		}
 		if (persistedLastOnline is DateTimeOffset lastOnline)
 		{
 			TimeSpan serverRemaining = lastOnline + TimeSpan.FromSeconds(BotTimingContract.ConfiguredReentrySeconds) -
@@ -1319,6 +1376,7 @@ internal sealed partial class LiveBotSession : IL0ScenarioSession, IAsyncDisposa
 				throw new TimeoutException($"No {packetType?.Name ?? "matching"} packet within three minutes (step {currentStep}; last packet {lastPacket}).");
 			}
 			var response = api.Observe(packet);
+			PacketObserved?.Invoke(packet);
 			if (naturalJourney && packet.PacketType == typeof(SM_FORCED_MOVE) && packet.Get<int>("objectId") == characterId &&
 				api.World.Position is BotPosition landed)
 			{

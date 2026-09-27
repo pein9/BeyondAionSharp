@@ -69,6 +69,9 @@ public static partial class LiveBotRunner
 		L0Actor actor,
 		NaturalIshalgenIdentity identity) : INaturalIshalgenIdentityDriver
 	{
+		// An attached world's admin API belongs to its operator; identity is then what the client itself observes.
+		private bool Attached => options.AttachTarget != null;
+
 		public NaturalIshalgenIdentity Identity => identity;
 		public Task StepAsync(string action, Func<CancellationToken, Task> operation, CancellationToken token) =>
 			actor.StepAsync(action, operation, token);
@@ -84,6 +87,11 @@ public static partial class LiveBotRunner
 		public async Task VerifyOrdinaryOnlineIdentityAsync(int characterId, ushort level, CancellationToken token)
 		{
 			await actor.Session.SynchronizeAsync(token);
+			if (Attached)
+			{
+				VerifyObservedIdentity(characterId, level);
+				return;
+			}
 			using var request = new HttpRequestMessage(HttpMethod.Get,
 				$"admin/player-state?characterId={characterId}");
 			request.Headers.Add("X-Admin-Token", options.AdminToken);
@@ -106,7 +114,21 @@ public static partial class LiveBotRunner
 		public async Task QuitAndVerifyOfflineAsync(CancellationToken token)
 		{
 			await actor.Session.QuitAsync(token);
-			await actor.Session.VerifyOfflineAsync(token);
+			if (!Attached)
+				await actor.Session.VerifyOfflineAsync(token);
+		}
+
+		private void VerifyObservedIdentity(int characterId, ushort level)
+		{
+			Aion.Bots.World.BotWorldModel world = actor.Session.Api.World;
+			Aion.Bots.World.BotKnownObject? self = world.Objects.GetValueOrDefault(characterId);
+			if (world.SelfObjectId != characterId || self == null
+				|| self.Name != identity.CharacterName
+				|| self.Race != (byte)identity.Race
+				|| self.PlayerClass != identity.PlayerClass.GetClassId()
+				|| world.Level != level)
+				throw new InvalidDataException("The attached world's client view is not the retained pre-Ascension Priest " +
+					$"(self {world.SelfObjectId}, name {self?.Name}, race {self?.Race}, class {self?.PlayerClass}, level {world.Level}).");
 		}
 		public Task WaitForReentryAsync(CancellationToken token) => actor.Session.WaitForReentryAsync(token);
 	}

@@ -51,4 +51,4 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 
 /// <summary>SIM diagnostic checkpoints are explicit; LIVE acceptance uses the complete default.</summary>
 public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? RelogAt = null,
-	string? StopAt = null, bool StopOnDeath = false);
+	string? StopAt = null, bool StopOnDeath = false, bool OptimizeHubs = false);

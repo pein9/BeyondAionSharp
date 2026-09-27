@@ -243,6 +243,16 @@ their retail deck or platform (the Eyvindr peon under the Anturoon deck, the dun
 Munin, the Methu egg); those nine heights are applied, with the travel graph and geo golden
 regenerated.
 
+The 2026-09-26 live NI-10 observation exposed exact-coordinate stacks from
+that 5.8 import. The operator chose Java 4.8 as the Ishalgen NPC placement
+baseline, so the working tree restores the pre-import XML (semantically equal
+to `../aion-server` branch `4.8`). This replacement has not been loaded into
+the active server. The Ishalgen travel graph, quest plans, dashboard catalog
+and geo golden must be regenerated after that run ends, followed by a new
+journey validation. The spawn editor/importer now lives in the sibling
+`../aion-spawn-editor` repository; the paragraph above records the earlier
+retail-placement experiment, not the intended new baseline.
+
 The batches on the lifted heights surfaced three last journey gaps, none about placement: the
 Return fallback cast within the client's own cast interval after a Smite (it now waits the gate
 out), the fight-through advance only closed on a blocker within 40 m (it now walks the checked
@@ -407,8 +417,9 @@ bake logic needs a `BakerVersion` bump. Either one makes `check` report the navm
 | Journey legs with every nearby monster as an observed circle (25 legs) | navmesh 20/25, mean 36 ms, max 0.3 s; grid 21/25, mean 3.8 s, max 31 s |
 | Legs the old tests timed (Ulgorn to Mijou, 802 m) | 772 points in 33 s on the grid; tens of ms on the navmesh |
 
-The travel graph has 335 nodes and 1,468 verified links, with 332 nodes on the main network.
-It builds in about 10 s.
+The regenerated Ishalgen travel graph (2026-09-26) has 351 nodes and 1,546 verified links,
+with 348 nodes on the main network and 3 exits. It was rebuilt from the current spawn data
+after the mob-placement changes; the navmesh check reports `220010000: ok`.
 
 ## Docker SIM evidence (natural Ishalgen Priest, 2026-09-24)
 

@@ -58,6 +58,17 @@ public sealed class NaturalPullPlannerTests
 	}
 
 	[Fact]
+	public void JavaSupportRangeIncludesBothNpcBodyRadii()
+	{
+		NaturalPullMonster target = M(1, 663.958f, 912.591f, "LYCAN", 9) with { BoundRadius = 0.615f };
+		NaturalPullMonster neighbour = M(2, 674.597f, 908.080f, "LYCAN", 9) with { BoundRadius = 0.615f };
+		BotPosition firingSpot = P(644.649f, 904.593f);
+		Assert.True(Distance(target.Npc.Position, neighbour.Npc.Position) > 11);
+		Assert.Contains(neighbour, NaturalPullPlanner.Helpers(target, firingSpot,
+			[target, neighbour], (helper, asking) => helper == asking, Sight));
+	}
+
+	[Fact]
 	public void UnreachableOrHiddenSpotsAreNeverChosen()
 	{
 		NaturalPullMonster target = M(1, 50, 0);

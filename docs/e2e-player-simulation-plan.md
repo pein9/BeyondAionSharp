@@ -40,6 +40,7 @@ game journey is still reviewed after Phase 11. This does not authorize adding un
   TODO genuinely needs one (D12, for example P0-05). The later global AGENTS.md policy prohibits worktrees there too.
 - **No hosted CI, no schedulers** (D9). Every test run is a local script. The `docker/` compose stack is how
   the emulator is deployed and run; LIVE test runs use a separate compose project and never disturb it (D13).
+  The one exception is NI-10's read-only attach runner, which plays the natural Priest on it by request (D24).
 
 ---
 
@@ -122,6 +123,7 @@ every future run, including director/setup accounts.
 | Quest progression, planner and persistence | Q1, Q2, Q3, Q4P, Q4I, Q5 | Implemented (P7); Q4P/Q4I/Q5 isolated | Q1/Q2/Q3/Q4P/Q4I implemented; Q5 not selected |
 | Natural Ishalgen policy slices | NI-01, NI-02, NI-03, NI-04, NI-05, NI-06 | Unit-tested policy; no natural SIM manifest scenario yet | One-bot retained Priest slices through NI-06; NI-06 completes Q2133, not the 41-quest journey |
 | Natural Ishalgen full journey | NI-09 | Shared driver completed all 41 quests on seeds 1/3/4/5; SIM receipt is separate from this LIVE manifest scenario | Isolated ordinary-rate LIVE run ni09-live-a4 passed all 41 quests with zero deaths, level 9 at Munin, Q2008 untouched and final relog persistence verified |
+| Natural Ishalgen existing-world attach | NI-10 | Not selected; attach-only (`Attach` mode) | Never run by a suite. `scripts/live/attach-live.ps1 -Target aion` plays NI-09's journey on the operator's running world, read-only toward its lifecycle and database; human coexistence proof pending |
 | Ascension and capital ceremony | CAPITAL | Implemented (P8-01), GM-prepared focused journey | Implemented; not the deferred natural journey |
 | Gathering and refusal/interruption | E1, E2 | Implemented (P8-01) | Implemented (P8-01) |
 | Vendor buy/sell/repurchase and trade-in limits | E3, E11 | Implemented (P8-01/P8-06) | Implemented (P8-01/P8-06) |
@@ -2571,7 +2573,7 @@ natural pre-Ascension scope at 41 quests and orders the remaining work as NI-00 
 a readiness decision: at that review, autonomous Priest combat/survival, inventory/growth, all-quest scheduling,
 durable resume and safe retained-world attachment still needed implementation. Subsequent NI-07 SIM journey
 and NI-08 resume work are now complete; see the [current Ishalgen evidence](natural-ishalgen-status.md).
-NI-09 isolated LIVE run ni09-live-a4 and all 31 repository checks passed; evidence is recorded in the status document. NI-10/NI-11 retained-world observation remain next in that subplan. P10-05's housing/siege/PvP boot tail
+NI-09 isolated LIVE run ni09-live-a4 and all 31 repository checks passed; evidence is recorded in the status document. NI-10's attach runner is implemented (D24); its human-coexistence proof and NI-11 real-client observation remain next in that subplan. P10-05's housing/siege/PvP boot tail
 does not block Ishalgen. Review commit: `7d80e48d6` (before SHA-recording amend). This review does not change
 Phase 10's done-when.
 
@@ -2704,6 +2706,7 @@ exits (`docker compose events`) and MySQL errors.
 | D21 | Phase 10 acceptance runtime | Stop additional clean Full runs and do not run a two-hour soak; accept the non-deferred Phase 10 closeout from the retained evidence | **Decided** 2026-09-22: the maintainer determined the runtime is not worth the marginal confidence. Candidates 09 and 10 remain the final complete clean Breadth evidence. Interrupted candidate 11 is uncounted. Close P10-10 and proceed to Phase 11; keep P10-02 capacity, P10-05 boot-tail content, P10-06 Java runtime comparison and P10-07 client capture deferred and visibly incomplete. Do not describe the waived soak/capacity work as passed |
 | D22 | Natural Ishalgen content and implementation boundary | Freeze the naturally obtainable pre-Ascension contract; build bot policy without inventing server content | **Reviewed** 2026-09-22 against Java/C# `ce54b7931`: include 41 quests (Q2000–Q2007 plus the listed natural Q2100-series set); exclude Q2107 because its required starter has no shipped source, Q2122/Q2136 because their starters are random drops, and disabled, unimplemented, event or post-boundary content. Stop Q2008 at its initial level-9 state. P10-05 is unrelated. Implement NI-00 through NI-11 in the journey document before claiming a natural end-to-end pass. Review commit: `7d80e48d6` (before SHA-recording amend) |
 | D23 | NI-07 pre-Ascension level/XP and endpoint | Finish all 41 quests despite capped XP, then stand at Munin before Q2008 interaction | **Clarified** 2026-09-22: Java `4.8` at `ce54b7931` (`PlayerCommonData.setExp`, `_2008Ascension.onLevelChangedEvent`, `AbstractQuestHandler.defaultOnLevelChangedEvent`) and matching C# cap an online non-Daeva Priest at level 9 and 182,252 XP; a full bar before quest completion is acceptable. Q2008 is automatically journaled at level 9, so the faithful stop is START/var 0 while physically at Munin, before any Q2008 dialogue or progression. Munin interactions for earlier included quests remain allowed. Do not start NI-07 until separately authorized |
+| D24 | NI-10 existing-world attach on the maintainer's `aion` stack | A read-only attach runner, an exception to D13 for this one scenario | **Authorized** 2026-09-26: the maintainer asked for NI-10 on this machine against the `aion` compose stack and to rebuild its servers as needed. The one-time rebuild/recreate of its three server containers was the operator's request, done before any attach; the MySQL container and `aion_aion-mysql-data` volume were untouched. `scripts/live/attach-live.ps1` itself only reads Docker (`ps`, `inspect`, `logs`, one fixed SELECT on the NI-01 identity) and the bot only speaks the client protocol: no builds, starts, stops, restarts, database writes or admin API. It creates the ordinary `niishalgen`/`Ishalgenbot` identity once through normal login/creation and resumes it thereafter. D13 still governs every other LIVE run |
 
 ---
 

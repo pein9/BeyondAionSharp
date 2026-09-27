@@ -15,6 +15,12 @@ internal sealed partial class LiveBotSession : INaturalJourneySession
 	public Action? BeforeSend { get; set; }
 	public Action? AfterSynchronize { get; set; }
 	public Func<BotPosition, BotPosition>? ResolveForcedLanding { get; set; }
+	/// <summary>Sees every game packet after the world model has applied it, on the reading flow.</summary>
+	public Action<DecodedBotServerPacket>? PacketObserved { get; set; }
+	internal bool InGame => state == Aion.GameServer.Network.Aion.AionConnection.State.IN_GAME;
+	internal bool HasGameConnection => transport != null;
+	/// <summary>The client-estimated position while walking, else the last server-reported one; null before entry.</summary>
+	internal BotPosition? ObservedPosition => currentPosition ?? api.World.Position;
 
 	public void EnableNaturalJourney() => naturalJourney = true;
 	public void ClearPacketHistory() => packetHistory.Clear();
@@ -43,7 +49,11 @@ internal sealed partial class LiveBotSession : INaturalJourneySession
 			expectedPosition = new PersistedPosition(mapId, position.X, position.Y, position.Z);
 	}
 
-	public async Task ReloginExistingCharacterAsync(CancellationToken token)
+	public Task ReloginExistingCharacterAsync(CancellationToken token) => ReloginExistingCharacterAsync(false, token);
+
+	/// <summary>With <paramref name="verifySavedPosition"/>, the selection list must show where the last quit left
+	/// the character: the client-visible persistence check when no admin oracle is available.</summary>
+	public async Task ReloginExistingCharacterAsync(bool verifySavedPosition, CancellationToken token)
 	{
 		// Shared recovery owns retry limits and reentry waits. Drop the old transport before logging in.
 		await CloseAsync(token);
@@ -54,6 +64,9 @@ internal sealed partial class LiveBotSession : INaturalJourneySession
 		if (Get<string>(character, "name") != characterName || Get<int>(character, "race") != (int)race ||
 			Get<int>(character, "playerClass") != (int)PlayerClass.PRIEST || Get<int>(character, "deletionTimeSeconds") != 0)
 			throw new InvalidDataException("Retained natural character identity changed.");
+		if (verifySavedPosition)
+			AssertPersistedPosition(Get<int>(character, "mapId"), Get<float>(character, "x"),
+				Get<float>(character, "y"), Get<float>(character, "z"));
 		SelectCharacter(characterId, characterName);
 		quitExpected = false;
 	}

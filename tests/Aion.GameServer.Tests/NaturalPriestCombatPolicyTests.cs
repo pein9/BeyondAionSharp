@@ -68,6 +68,21 @@ public sealed class NaturalPriestCombatPolicyTests
 	}
 
 	[Fact]
+	public void RangedAggressorWithNearbyAddWaitsForSmiteInsteadOfCrossingBlockedGround()
+	{
+		var state = Observe(6, 100, 100, 100, 100, [1839, 4013], 8) with
+		{
+			Aggro = true, TargetRanged = true, NearbyAggressors = 2, ConservativeRangedHold = true,
+			Cooldowns = new Dictionary<int, DateTimeOffset> { [1229] = Now.AddSeconds(2) },
+		};
+		Assert.Equal("wait", NaturalPriestCombatPolicy.Decide(state, Now).Action);
+		Assert.Equal("approach", NaturalPriestCombatPolicy.Decide(state with
+		{
+			TargetDistance = 20, NearbyAggressors = 1,
+		}, Now).Action);
+	}
+
+	[Fact]
 	public void ACorneredPriestFightsInsteadOfRetreatingAgain()
 	{
 		// No checked escape leads away from the pack: heal first, and never choose retreat again.
@@ -82,11 +97,40 @@ public sealed class NaturalPriestCombatPolicyTests
 	}
 
 	[Fact]
+	public void TwoAttackersHealEarlierAndThreeRetreatRegardlessOfHealth()
+	{
+		var state = Observe(6, 70, 100, 100, 100, [1839, 4013], 12) with
+		{
+			Aggro = true,
+		};
+		Assert.Equal("cast-target", NaturalPriestCombatPolicy.Decide(state with
+		{
+			NearbyAggressors = 1, Hp = 56,
+		}, Now).Action);
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with
+		{
+			NearbyAggressors = 1, Hp = 55,
+		}, Now).Action);
+		Assert.Equal("cast-target", NaturalPriestCombatPolicy.Decide(state with
+		{
+			NearbyAggressors = 2, Hp = 71,
+		}, Now).Action);
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with
+		{
+			NearbyAggressors = 2, Hp = 70,
+		}, Now).Action);
+		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
+		{
+			NearbyAggressors = 3, Hp = 100, HasHotPotion = true, HotPotionReady = true,
+		}, Now).Action);
+	}
+
+	[Fact]
 	public void HealReserveRestAggressionAndRetreatAreDeterministic()
 	{
 		var state = Observe(1, 40, 100, 40, 100, [1838, 4012], 10);
 		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state, Now).Action);
-		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with { Hp = 70 }, Now).Action);
+		Assert.Equal("cast-target", NaturalPriestCombatPolicy.Decide(state with { Hp = 70 }, Now).Action);
 		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with
 		{
 			Hp = 31, Aggro = true, NearbyAggressors = 2,
@@ -124,7 +168,7 @@ public sealed class NaturalPriestCombatPolicyTests
 		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with { Hp = 20, Mp = 0, Aggro = true }, Now).Action);
 		Assert.Equal("attack", NaturalPriestCombatPolicy.Decide(state with { Hp = 100, Mp = 13, TargetDistance = 2 }, Now).Action);
 		Assert.Equal("rest", NaturalPriestCombatPolicy.Decide(state with { Hp = 70, TargetObjectId = null, TargetDistance = null }, Now).Action);
-		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with { Hp = 70, TargetObjectId = null, TargetDistance = null, Aggro = true }, Now).Action);
+		Assert.Equal("defend", NaturalPriestCombatPolicy.Decide(state with { Hp = 70, TargetObjectId = null, TargetDistance = null, Aggro = true }, Now).Action);
 		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with
 		{
 			Hp = 70, TargetObjectId = null, TargetDistance = null, Aggro = false, NearbyAggressors = 1,
@@ -139,6 +183,31 @@ public sealed class NaturalPriestCombatPolicyTests
 		}, Now).Action);
 		Assert.Equal("ready", NaturalPriestCombatPolicy.Decide(state with { Hp = 95, Mp = 95, TargetObjectId = null, TargetDistance = null }, Now).Action);
 		Assert.Equal("revive", NaturalPriestCombatPolicy.Decide(state with { Dead = true }, Now).Action);
+	}
+
+	[Fact]
+	public void BetweenFightsHealHpUnlessManaIsBelowHalfAndUseTimedHealingEarlierInCombat()
+	{
+		var idle = Observe(6, 75, 100, 60, 100, [1839, 4013], null) with
+		{
+			TargetObjectId = null,
+		};
+		NaturalCombatChoice heal = NaturalPriestCombatPolicy.Decide(idle, Now);
+		Assert.Equal("cast-self", heal.Action);
+		Assert.Equal((ushort)1839, heal.Skill?.Id);
+		Assert.Equal("rest", NaturalPriestCombatPolicy.Decide(idle with { Mp = 49 }, Now).Action);
+		Assert.Equal("ready", NaturalPriestCombatPolicy.Decide(idle with { Hp = 95 }, Now).Action);
+
+		var fighting = idle with
+		{
+			TargetObjectId = 71, TargetDistance = 12, Aggro = true,
+				HasHotPotion = true, HotPotionReady = true,
+		};
+		Assert.Equal("hot-potion", NaturalPriestCombatPolicy.Decide(fighting with { Hp = 85 }, Now).Action);
+		Assert.NotEqual("hot-potion", NaturalPriestCombatPolicy.Decide(fighting with
+		{
+			Hp = 85, HotPotionActive = true,
+		}, Now).Action);
 	}
 
 	[Fact]

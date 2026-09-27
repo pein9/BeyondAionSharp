@@ -177,10 +177,8 @@ public sealed class GameServerConfigPropertyOverrideTests
             adminProps.LoadFromDirectory(configAdmin, false);
             ConfigurableProcessor.Process(adminProps, typeof(AdminConfig));
 
-            // Collection transformer parity: //invis, //invul, //enemy none, //see is comma-split into a List<string>.
-            Assert.Equal(
-                new List<string> { "//invis", "//invul", "//enemy none", "//see" },
-                AdminConfig.LOGIN_EXECUTE_COMMANDS);
+            // Staff should not inherit invulnerability or neutral NPC relations on login.
+            Assert.Empty(AdminConfig.LOGIN_EXECUTE_COMMANDS);
             // Single-element list (no comma): "*".
             Assert.Equal(new List<string> { "*" }, AdminConfig.ANNOUNCE_LEVELS);
             // string[] (Array transformer) — the customtags value has 9 %s entries.

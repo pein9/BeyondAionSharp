@@ -1,4 +1,7 @@
+using Aion.Bots.Protocol;
 using Aion.Bots.World;
+using Aion.GameServer.Model;
+using Aion.GameServer.Network.Aion.ServerPackets;
 
 namespace Aion.Bots.Navigation;
 
@@ -6,6 +9,45 @@ namespace Aion.Bots.Navigation;
 /// The caller must recheck every proposed route against current geometry and mobs.</summary>
 public static class NaturalCombatRetreatPolicy
 {
+	/// <summary>Allow short terrain detours but reject a route that first runs into the
+	/// attackers' centre. The destination itself is already selected away from them.</summary>
+	public static bool ClearsPackOnDeparture(BotPosition current, IReadOnlyList<BotPosition> route,
+		IReadOnlyList<BotPosition> attackers)
+	{
+		if (attackers.Count == 0) return false;
+		float centreX = attackers.Average(point => point.X), centreY = attackers.Average(point => point.Y);
+		float startingClearance = MathF.Sqrt(MathF.Pow(current.X - centreX, 2) + MathF.Pow(current.Y - centreY, 2));
+		float travelled = 0;
+		BotPosition previous = current;
+		foreach (BotPosition point in route)
+		{
+			travelled += Horizontal(previous, point);
+			if (travelled > 12) break;
+			float clearance = MathF.Sqrt(MathF.Pow(point.X - centreX, 2) + MathF.Pow(point.Y - centreY, 2));
+			if (clearance + 2 < startingClearance) return false;
+			previous = point;
+		}
+		return true;
+	}
+
+	/// <summary>Track the monsters still fighting this client. Java EmoteManager sends
+	/// NEUTRALMODE_IN_MOVE when an NPC returns or idles; a later attack re-engages it.
+	/// SM_DELETE also ends the client's observation of that pursuer.</summary>
+	public static void ObserveEngagement(HashSet<int> attackers,
+		IEnumerable<DecodedBotServerPacket> packets, int characterId)
+	{
+		foreach (DecodedBotServerPacket packet in packets)
+		{
+			if (packet.PacketType == typeof(SM_ATTACK) && packet.Get<int>("targetObjId") == characterId)
+				attackers.Add(packet.Get<int>("attackerObjId"));
+			else if (packet.PacketType == typeof(SM_EMOTION) &&
+				packet.Get<byte>("emotionType") == (byte)EmotionType.NEUTRALMODE_IN_MOVE)
+				attackers.Remove(packet.Get<int>("senderObjectId"));
+			else if (packet.PacketType == typeof(SM_DELETE))
+				attackers.Remove(packet.Get<int>("objectId"));
+		}
+	}
+
 	public static BotPosition[] SelectCheckpoints(BotPosition current, BotPosition refuge,
 		IEnumerable<NaturalNavigationEvent> events, IReadOnlyList<BotPosition> observedAttackers)
 	{

@@ -87,8 +87,8 @@ public static class AdminConfig
     [Property(key: "gameserver.administration.command.quest.advanced_parameters", defaultValue: "9")]
     public static sbyte CMD_QUEST_ADV_PARAMS = 9;
 
-    /// <summary>Key: gameserver.administration.login.execute_commands. Default: //invis, //invul, //enemy none, //see</summary>
-    [Property(key: "gameserver.administration.login.execute_commands", defaultValue: "//invis, //invul, //enemy none, //see")]
+    /// <summary>Key: gameserver.administration.login.execute_commands. Default: empty (staff log in with normal character state)</summary>
+    [Property(key: "gameserver.administration.login.execute_commands", defaultValue: "")]
     public static List<string> LOGIN_EXECUTE_COMMANDS;
 
     /// <summary>Key: gameserver.administration.login.print_revision</summary>

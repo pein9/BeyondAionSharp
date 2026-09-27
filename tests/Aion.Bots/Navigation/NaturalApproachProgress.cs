@@ -5,6 +5,7 @@ public sealed class NaturalApproachProgress
 {
 	public const int MaximumAttempts = 120;
 	private int stalledAttempts;
+	public int StalledAttempts => stalledAttempts;
 
 	public bool CanRetry(int attempts) => attempts < MaximumAttempts && stalledAttempts < 8;
 

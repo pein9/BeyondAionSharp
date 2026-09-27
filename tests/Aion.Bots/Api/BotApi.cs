@@ -33,6 +33,7 @@ public sealed class BotApi
 	public void BeginLoginObservation()
 	{
 		World = new BotWorldModel();
+		OpenDialogTargetId = null;
 		Timing.BeginLoginObservation();
 		QuestDialogEchoes.BeginLoginObservation();
 	}
@@ -240,7 +241,13 @@ public sealed class BotApi
 			: GameClientPackets.LootItem(targetObjectId, itemIndex.Value);
 	}
 
-	public BotClientPacket TalkTo(int targetObjectId) => GameClientPackets.ShowDialog(targetObjectId);
+	public int? OpenDialogTargetId { get; private set; }
+
+	public BotClientPacket TalkTo(int targetObjectId)
+	{
+		OpenDialogTargetId = targetObjectId;
+		return GameClientPackets.ShowDialog(targetObjectId);
+	}
 	public BotClientPacket ShareQuest(int questId) => GameClientPackets.ShareQuest(questId);
 	public BotClientPacket AcceptSharedQuest()
 	{
@@ -263,7 +270,12 @@ public sealed class BotApi
 		return GameClientPackets.DialogSelect(targetObjectId, actionId, rewardIndex, lastPage, questId);
 	}
 
-	public BotClientPacket CloseDialog(int targetObjectId) => GameClientPackets.CloseDialog(targetObjectId);
+	public BotClientPacket CloseDialog(int targetObjectId)
+	{
+		if (OpenDialogTargetId == targetObjectId)
+			OpenDialogTargetId = null;
+		return GameClientPackets.CloseDialog(targetObjectId);
+	}
 	public BotClientPacket DeleteQuest(int questId) => GameClientPackets.DeleteQuest(questId);
 
 	public BotClientPacket Answer(byte response)
@@ -374,7 +386,7 @@ public sealed class BotApi
 			Timing.ApplySkillCooldowns(packet);
 		else if (packet.PacketType == typeof(SM_CASTSPELL_RESULT) &&
 			(World.SelfObjectId == null || packet.Get<int>("effectorId") == World.SelfObjectId))
-			Timing.RecordCastResult(animationLastHitMillis);
+			Timing.RecordCastResult(animationLastHitMillis, packet.Get<ushort>("skillId"), packet.Get<int>("cooldown"));
 		else if (packet.PacketType == typeof(SM_SKILL_CANCEL) &&
 			(World.SelfObjectId == null || packet.Get<int>("objectId") == World.SelfObjectId))
 			Timing.RecordCastCancelled();

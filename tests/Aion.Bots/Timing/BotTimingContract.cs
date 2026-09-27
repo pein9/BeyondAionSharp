@@ -83,11 +83,16 @@ public sealed class BotTimingContract
 		blockingActivities.Add(BotBlockingActivity.Casting);
 	}
 
-	public void RecordCastResult(int animationLastHitMillis)
+	public void RecordCastResult(int animationLastHitMillis, int skillId = 0, int cooldownDeciseconds = 0)
 	{
-		var animationDue = timeProvider.GetUtcNow() + TimeSpan.FromMilliseconds(Math.Max(0, animationLastHitMillis));
+		var now = timeProvider.GetUtcNow();
+		var animationDue = now + TimeSpan.FromMilliseconds(Math.Max(0, animationLastHitMillis));
 		if (animationDue > nextCastAt)
 			nextCastAt = animationDue;
+		// Java Skill.setCooldowns stores getCooldown() in 100 ms units, and
+		// SM_CASTSPELL_RESULT writes that same value to the client.
+		if (skillId > 0 && cooldownDeciseconds > 0)
+			skillCooldowns[skillId] = now + TimeSpan.FromMilliseconds((long)cooldownDeciseconds * 100);
 		blockingActivities.Remove(BotBlockingActivity.Casting);
 	}
 

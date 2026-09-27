@@ -10,8 +10,9 @@ See [current evidence and retained failures](natural-ishalgen-status.md).
 NI-09 isolated LIVE run `ni09-live-a4` completed all 41 quests with zero deaths
 in 3h 42m 26s under ordinary rates. A final ordinary relog verified persistence,
 level 9 at Munin and Q2008 START/0. Enforce watching and all 31 repository checks,
-including Docker Fast, passed. NI-10 retained-world attach and NI-11 real-client
-observation remain uncompleted, in that order.
+including Docker Fast, passed. NI-10's attach runner now plays that journey on
+the maintainer's running `aion` world without owning it (D24); its human-coexistence
+proof and NI-11 real-client observation remain, in that order.
 
 The Phase 10 readiness review was against Java `4.8` at `ce54b7931`, review
 commit `7d80e48d6` (before SHA-recording amend). The broader game journey remains
@@ -135,7 +136,16 @@ useful independently of this later journey.
 | Inventory, equipment, skills and economy | Policy implemented; bounded LIVE sale proof | NI-05 selects class-usable rewards and gear from shipped templates, verifies auto-learned Priest skills from the client, protects all 41 quests' item references plus quest/key items and HP/MP supplies, and sells other sellable items without buying. A one-bot LIVE run sold the starter bandage stack at an active Ishalgen vendor; reward claiming, upgrade equipping and full-inventory recovery remain policy-tested until NI-07 exercises them naturally. Shipped unsellable starter extras cannot be sold. |
 | Quest selection and execution | NI-07 SIM complete | smart46 completed all 41 frozen quests on seeds 1/3/4/5, with level 9 at Munin, Q2008 untouched and zero deaths. The historical checkpoints below explain how that implementation developed. Isolated LIVE acceptance is NI-09. |
 | Persistence and recovery | NI-08 SIM complete | Each login reconstructs both journals, position, stats, inventory and skills. Same-character warm reconnect and fresh-process restart proofs completed the journey. Stalls and a missing identity retained failure packages. Isolated LIVE acceptance is NI-09. |
-| Share a world with a human player | Not ready | Multi-bot contention is proven only in isolated LIVE stacks. Add an explicit attach mode that never owns server/DB lifecycle, then validate visibility with the real client. P10-07's client capture remains deferred. |
+| Share a world with a human player | Attach implemented; proof pending | `scripts/live/attach-live.ps1 -Target aion` attaches the NI-09 journey to the operator's running world, read-only toward its containers and database, and records every other player the bot is shown. The coexistence proof needs a run with a human present; NI-11 then follows the bot in the real client. P10-07's client capture remains deferred. |
+
+The later SIM-only `NI07_OPTIMIZE_HUBS=1` experiment adds nearby multi-quest
+pickup, compatible work/claim grouping, an Aldelle obelisk bind, and conditional
+Return/flight travel. The `hubopt9` revision completed 41/41 on the same four
+seeds, but averaged 170 simulated seconds slower and had one death versus
+smart46's zero. A later scoped-policy follow-up died twice in Q2007 before
+completion, so the current experimental mode is not accepted. It stays opt-in;
+see the [status handoff](natural-ishalgen-status.md) for the seed table and the
+Mau-route limitation. LIVE remains on the validated scheduler.
 
 Phases 8–10 supplied tested mechanics and diagnostics. They did not deliver
 autonomous progression: Phase 10's loop over existing scenarios is not evidence
@@ -690,6 +700,19 @@ These are new journey TODOs, not retroactive claims about the phase scenarios:
 - [ ] **NI-10 — Existing-world attach.** Add an explicit operator-selected mode
   that attaches to a retained server and never creates, drops or owns its database,
   containers or lifecycle; prove the unattended bot can coexist with a human.
+  **Attach implemented 2026-09-26 (D24); the coexistence proof is still open.**
+  `NI-10` is an `Attach`-mode manifest scenario, so no SIM, Fast or Full suite can
+  select it. `scripts/live/attach-live.ps1 -Target <compose project>` discovers the
+  world's published ports and profile through `docker ps`/`inspect`, reads the
+  NI-01 identity with one fixed SELECT, runs a private copy of the bot, and saves
+  the world's logs for the run window. A gate refuses every other Docker verb; the
+  contract `scripts/live/test-attach-live.ps1` proves it against a mock Docker. The
+  bot uses no admin API: identity comes from the client view, and persistence from
+  the selection list and re-entry. It creates the ordinary Priest on first attach
+  and afterwards resumes it from observed state (NI-08). Ctrl+C or `-Stop` quits it
+  normally, leaving the server running. Every other player the server shows the bot
+  is recorded in `coexistence.json` with the bot's quest progress since. The box
+  stays open until a run with a human present has that evidence.
 - [ ] **NI-11 — Real-client observation.** With the authorized Computer Use
   workflow, follow the bot in the 4.8 client and retain visual/log evidence without
   assisting it. This is the deferred P10-07-style proof, not a gameplay oracle.
@@ -775,9 +798,9 @@ interference so the result can be interpreted correctly.
 First validate this in a retained development world accessible to a real 4.8
 client. Support a runner that attaches to an explicitly selected existing server,
 preserves its database, and leaves lifecycle ownership with the operator. The
-longer-term use is the maintainer's normal development play world. This document
-does not authorize launching bots there now or changing the current isolated LIVE
-stack policy (D13). MySQL remains Docker-only in every mode. Human observation
+longer-term use is the maintainer's normal development play world. D24 authorizes
+exactly that for NI-10 on the `aion` stack; D13 still governs every other LIVE run.
+MySQL remains Docker-only in every mode. Human observation
 also checks visible movement/combat; packet assertions cannot establish rendering
 correctness by themselves.
 

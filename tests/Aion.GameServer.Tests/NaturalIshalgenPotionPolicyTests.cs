@@ -12,22 +12,23 @@ public sealed class NaturalIshalgenPotionPolicyTests
 		new(objectId, templateId, "potion", count, 4, "", 0, false);
 
 	[Fact]
-	public void UsesTimedHealingAtEightyPercentBeforeSeventyPercentSelfHeal()
+	public void UsesTimedHealingAtNinetyPercentBeforeSelfHealThresholds()
 	{
 		var learned = new Dictionary<int, BotSkill> { [1838] = new(1838, 1, 0, 0, 0, 0) };
 		var state = new NaturalCombatObservation(3, 80, 100, 100, 100, false, true, 10, 71,
 			learned, new Dictionary<int, DateTimeOffset>(), HasHotPotion: true, HotPotionReady: true);
 		Assert.Equal("hot-potion", NaturalPriestCombatPolicy.Decide(state, Now).Action);
-		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with { Hp = 70, HotPotionReady = false }, Now).Action);
-		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with { Hp = 70, HotPotionActive = true }, Now).Action);
-		// At 30% the timed potion still comes first; retreat only when swarmed or out of heals and potions.
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with { Hp = 55, HotPotionReady = false }, Now).Action);
+		Assert.Equal("cast-self", NaturalPriestCombatPolicy.Decide(state with { Hp = 70, NearbyAggressors = 2, HotPotionActive = true }, Now).Action);
+		// At 30% the timed potion still comes first against fewer than three attackers.
 		Assert.Equal("hot-potion", NaturalPriestCombatPolicy.Decide(state with { Hp = 30 }, Now).Action);
 		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with
 		{
 			Hp = 30, NearbyAggressors = NaturalPriestCombatPolicy.SwarmedAttackers,
 		}, Now).Action);
 		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with { Hp = 30, Mp = 0, HotPotionReady = false }, Now).Action);
-		Assert.NotEqual("hot-potion", NaturalPriestCombatPolicy.Decide(state with { Hp = 81 }, Now).Action);
+		Assert.Equal("hot-potion", NaturalPriestCombatPolicy.Decide(state with { Hp = 90 }, Now).Action);
+		Assert.NotEqual("hot-potion", NaturalPriestCombatPolicy.Decide(state with { Hp = 91 }, Now).Action);
 		Assert.NotEqual("hot-potion", NaturalPriestCombatPolicy.Decide(state with
 		{
 			Aggro = false, TargetObjectId = null, TargetDistance = null,

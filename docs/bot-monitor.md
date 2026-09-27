@@ -1,7 +1,8 @@
 # Bot monitor map
 
 Natural SIM runs serve the read-only monitor at <http://127.0.0.1:17880/>.
-LIVE runs use the same dashboard with `--dashboard-port 17880`.
+LIVE runs use the same dashboard with `--dashboard-port 17880`, and NI-10's
+`scripts/live/attach-live.ps1` serves it there by default (`-DashboardPort` to change).
 
 The map uses the portal's Ishalgen artwork and `calibrated-game-y-x`
 coordinates. It switches to the portal's Ataxiar coordinate grid during that

@@ -9,6 +9,7 @@
 
 /artifacts/upstream/
 /run/
+/game-server/run/
 /parity-artifacts/e2e/flaky.json.lock
 /parity-artifacts/e2e/.flaky-*.tmp
 

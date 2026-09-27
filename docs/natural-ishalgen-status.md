@@ -1,4 +1,4 @@
-# Natural Ishalgen Priest: status and handoff (2026-09-26)
+# Natural Ishalgen Priest: status and handoff (2026-09-27)
 
 The automated Priest plays Ishalgen 1–9 like a human: the frozen NI-07 journey
 (`NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup`, Q2001 through Q2134 and Munin,
@@ -76,6 +76,13 @@ Batches of the same four seeds (1, 3, 4, 5); "completed" means the whole journey
 | smart46 | + defend before journey rests, progress-based guarded-approach retries, preserve pull range after empty-spawn waits | **4/4** | **0** | —; all four reached Munin with 205 quest updates and no retreats |
 | ni09-route-full | NI-09 shared SIM/LIVE driver, client animation timing, replan after guard-clearing movement without a kill | **4/4** | **4** | —; seeds 1/3/4/5 completed all 41 quests; deaths 1/0/1/2, all recovered |
 | ni09-live-a4 | Full isolated LIVE journey, ordinary rates, final same-character relog | **1/1** | **0** | All 41 quests, level 9 at Munin, Q2008 START/0; persistence verified; 3h 42m 26s |
+| retry60 | changed-spawn navigation and Return from Hatata to bind, before cast cooldown fix | 3/4 | 6 | seed 1: Q2006 Return refused because observed cast cooldown was not retained |
+| timing64 | retain client-observed cast cooldown; recover Q2005 after revive | 3/4 | 2 | seed 4: Q2005 retraced stale pre-death breadcrumbs until watchdog |
+| timing66 | discard Q2005 breadcrumbs after revive and rejoin from bind | 3/4 | 7 | seed 5: six Q2127 kills were not recognized after targets vanished during pull planning |
+| timing68 | plus accept client-observed 0%-HP kill evidence; same final working tree | **3/4** | **4** | seed 3: Q2007 rejoin at (633.6, 913.4) found no collision-checked guarded route after 10 attempts; seeds 1/4/5 finished all 41 quests |
+| recovery69 | heal HP between fights while MP ≥50%, sit only when MP <50% until 80%, timed HP potion at ≤90%, bounded terrain-checked route probe | **4/4** | **5** | all 41 quests completed; seed 1 died four times in Q2007 and once in Q2128; seeds 3/4/5 had zero deaths |
+| retreat70 | heal at 55% vs one / 70% vs two; retreat immediately vs three; require client-observed disengagement | 2/4 | 9 | seed 3 could not route back to Hatata; seed 4 timed out at Q2007 rejoin |
+| retreat72 | plus terrain-detour escape check and separate tactical-retreat retry budget | **4/4** | **8** | all 41 quests; deaths 3/3/1/1; four cornered escape fallbacks |
 
 **Baseline validation** (2026-09-26): the combined smart44-46 changes were committed
 as `3930f9aaa`. smart46 passed 4/4 with zero deaths; 153 affected unit tests passed. The
@@ -308,6 +315,114 @@ in the validated local main change; see `docs/bot-monitor.md`. No portal files w
 and nothing was pushed. The preview on port 17880 shows a saved 41-quest snapshot
 labelled **Map preview · no bot running**. NI-10/NI-11 remain the next milestones.
 
+## NI-10 existing-world attach (implemented 2026-09-26; coexistence proof open)
+
+NI-10 plays the NI-09 journey on a world the operator already runs, next to their
+own client. Authorized for the maintainer's `aion` compose stack (D24).
+
+```powershell
+pwsh -NoProfile -File scripts/live/attach-live.ps1 -Target aion          # attach and play
+pwsh -NoProfile -File scripts/live/attach-live.ps1 -Target aion -Stop    # from another terminal
+```
+
+- **The world stays the operator's.** The runner reads Docker only through an
+  allowlisted gate (`ps`, `inspect`, `logs`, and one fixed SELECT of the NI-01
+  identity). It never builds, starts, stops, restarts or recreates a container,
+  writes the database, or calls the admin API. Before and after each run it
+  records container ids, images and start times; `worldLifecycleUnchanged` in
+  `attach-report.json` says whether anything changed underneath the bot.
+- **Ordinary identity.** Account `niishalgen`, Priest `Ishalgenbot`, created once
+  through normal login and character creation (the login server's autocreate),
+  then resumed from whatever the client observes (NI-08). The runner refuses a
+  GM account, a name owned by another account, a second character, or an
+  already-online Priest. The client cannot see access level, so that comes from
+  the read-only identity check.
+- **Stop and resume.** Ctrl+C or `-Stop` cancels play; the Priest quits normally
+  and the server keeps running. The next attach resumes where it left off. Exit
+  code 3 means stopped, 0 complete (41 quests, Munin, relog verified), 1 failed.
+- **Coexistence evidence.** `coexistence.json` lists every other player the
+  server showed the bot (it only does so in mutual sight), with first/last
+  sighting, closest distance and quests the bot completed since first sight.
+  First sightings are also `coexistence:player-observed` trace actions.
+- **Monitor.** The live map defaults to <http://127.0.0.1:17880/>; stop any map
+  preview on that port first. The bot runs from a private copy under the run's
+  `bot/` folder (removed when it exits), so the checkout can still be built.
+- Evidence: `run/ni10-attach/<run>/` (`attach-report.json`, `attach-result.json`,
+  `coexistence.json`, `target-*.json`, `logs/containers/`, `bots/b01.trace.jsonl`).
+  Contract: `scripts/live/test-attach-live.ps1` (mock Docker, 43 assertions).
+
+Before the first attach, the `aion` server images were rebuilt from `018cca211`
+(all layers cache hits for that tree) and the login, chat and game containers
+recreated on them at the maintainer's request; nobody was connected, and MySQL
+and its volume were untouched. That was an operator action, not part of the runner.
+
+First attaches on `aion` (2026-09-26):
+
+- `ni10-a1`: created the ordinary Priest (id 104673) through normal login and
+  creation, finished the Q2000 prologue and Q2101, then was stopped with `-Stop`
+  in the middle of a Q2102 fight after 35 s. It quit normally (exit 3, "stopped");
+  the read-only check showed it offline; all four containers kept their ids,
+  images and start times; server logs for the window had no errors or warnings;
+  zero bot problems. The shared driver's "cancelled" diagnosis package in `bots/`
+  is the expected snapshot of where the stop landed, not a failure.
+- `ni10-a2`: re-attached and resumed the same character (`createdThisRun: false`)
+  at Q2102 START, the decision engine choosing `continue-quest 2102`, and then
+  **completed the whole contract unattended in 4h 09m 36s**: all 41 quests, level 9
+  at Munin `(379, 1892.77, 327.688)`, Q2008 START/0. The final relog advanced
+  connection generation 1 to 2, the selection list showed the saved position,
+  and journals, inventory, skills and level matched (`natural-ishalgen-persistence.json`,
+  `verified: true`). Two deaths, both recovered by bind revive: one on the fifth
+  Q2005 Stalker pull (14:20Z) and one during Q2128's quest-drop hunt (16:45Z);
+  NI-09's `ni09-live-a4` had none. Zero bot problems, no reconnects. The world
+  was untouched (same container ids, images and start times; the Priest offline
+  afterwards; no server errors or warnings in the run window). **No other player
+  was online, so `coexistence.json` is empty and the proof remains open.**
+
+`ni10-observe-s2b` is the fresh full replay requested after `ni10-a2` finished
+before the operator arrived. A separate ordinary account `niishalgen2` created
+`Ishalgenbottwo` at level 1, preserving the completed original Priest. The first
+attempt `ni10-observe-s2` was rejected before entering the world because Java's
+character-name pattern forbids the digit in `Ishalgenbot2`; the replay name now
+uses letters only. During the active replay, the bot recorded Pilot 44 m away
+at 18:33:59 UTC. The operator confirmed seeing it move in the 4.8 client; it
+then reached level 2 and three completed quests, with no bot problems at the
+observation point. Interim evidence: `run/ni10-attach/ni10-observe-s2b/human-observation.json`
+and the packet trace. At that observation point the bot was still active; NI-10
+coexistence proof remained open.
+
+Live observation investigation (2026-09-26): Pilot's grey, unattackable mobs
+were caused by `//enemy none`, recorded in the game-server log during this
+session. That Java-parity GM command makes every NPC neutral to Pilot;
+`//enemy cancel` restored targeting and combat, as confirmed in the client.
+This was separate from spawn placement. The bot packet trace recorded distinct
+Sprigg Gatherer objects 210368 and 210369 at the same exact coordinates
+`(612.850, 2297.140, 251.036)` and `(648.550, 2278.660, 252.966)`, and a
+Gatherer 210369 and Sentry 210732 together at `(724.906, 2182.051, 254.738)`.
+The XML loaded for this run (`HEAD`) has 59 exact-coordinate overlap sites (including
+some inherited from Java 4.8); Java's XML has 13. The extra overlaps first
+appear in the retail-placement import commit `1856203e5`. The spawn editor now
+lives in `../aion-spawn-editor` (moved from `../aion-portal`); its 5.8 importer
+tracks occupied positions per NPC group, not across groups, so shared territory
+anchors can produce stacked mobs. This is a placement-data issue, not a bot
+spawn action. Separately, Java and C# both respawn these Gatherers after 20 s
+while retaining an unlooted corpse for up to five minutes. In the trace, the
+bot's grain sack 700093/object 104996 received `SM_DELETE` with fade-out at
+18:39:28 UTC after looting. The trace does not establish what Pilot's client
+received for that object. Do not alter the running world during the observation;
+audit and correct imported overlapping positions, preserve intentional Java
+walker/pool overlaps, then rebake navigation and verify in a later live run.
+
+The operator chose the Java 4.8 placements as the repair baseline. The working
+tree now restores the pre-`1856203e5` Ishalgen NPC XML; a semantic comparison
+of every spawn group and spot confirms it matches the sibling Java 4.8 XML.
+The Ishalgen gathering XML already matched Java and was left unchanged. The
+bot's fixed vendor hints were updated to the restored Crizpinerk and Denma
+positions. This is only an on-disk candidate while `ni10-observe-s2b` runs:
+the active game server and bot monitor still show the previously loaded world.
+After the run, audit restored heights, regenerate the geo golden and Ishalgen
+travel graph and dashboard map catalog, then run the affected tests and a fresh
+live observation before deploying these placements.
+
 Selective placement update (2026-09-26): Hatata's Hideout and Rae now use the
 5.8 fixed-position reference within X 600–710, Y 840–980. Rae 203554, Patrol
 210407, Strongfur 210408, Hatata 210409, and Stalkers 210750/211284 are the
@@ -404,6 +519,55 @@ replacement, backup, and per-spot report. The candidate passed `spawns.xsd`,
 a second import was byte-identical, and comparison with the backup found
 exactly 24 changed mob spot records. Docker was not managed in this pass.
 
+## Live observer packet parity (2026-09-26)
+
+Pilot watched `Ishalgenbottwo` appear to
+stand while moving and skip NPC-interaction presentation. The existing Pilot
+recording sends ground `CM_MOVE` starts mainly as relative-velocity mask `0xC0`
+and ordinary position updates as `0x80`; the active bot trace uses absolute
+`0xE0` starts to destinations about 2 m away every 0.3 s and `0xA0` updates.
+Java broadcasts starts/stops, not the position-only updates, to observers.
+Pilot selects quest NPCs before `CM_SHOW_DIALOG`, generally keeps that target
+until selecting another, and spends roughly a second on each dialog page; the
+bot had selected no NPCs and advanced pages on the response. The bot now uses
+ground `0xC0`/`0x80`, selects before interaction, paces dialog choices, and
+sends `CM_CLOSE_DIALOG` on departure or completion. `ni10-observe-s2b` exited
+cleanly, then the solution build, 186 focused unit tests, nav check, and the
+Q2004 SIM journey passed. That SIM journey first exposed the restored 4.8
+Sprigg spawns being beyond sight of Verdandi; the bot now walks to their
+shipped hint instead of waiting at the quest giver. The Docker game server was
+rebuilt with the current on-disk spawn XML and packet recording for Pilot,
+Testsorc, and bot slot 3. `ni10-presentation-s3` started level-1
+Ishalgenbotthree with these DLLs; its trace confirms NPC select, paced pages,
+close dialog, and `0xC0`/`0x80` movement. It was stopped cleanly at level 2
+because Pilot and Testsorc were still offline after the server restart; a
+different fresh identity was reserved for the actual client observation.
+Pilot reconnected, and `ni10-observe-presentation-s4` started level-1
+Ishalgenbotfour on that identity. Pilot's server-side recording contains the
+bot's `SM_PLAYER_INFO` and hundreds of `SM_MOVE` packets while both characters
+are in Ishalgen; the bot reached level 2 with Pilot nearby. The live run remains
+active at `http://127.0.0.1:17880/` for visual observation. The packet record
+proves delivery to Pilot's connection; client-side animation quality still
+needs Pilot's observation. Pilot reported combat, selection, and quests now
+look natural, but the bot held an incorrect pose after collecting Sprigg grain
+sacks. In the Pilot recording, each sack sends `END_QUESTLOOT` and opens its
+loot list, then the bot immediately sends `CM_START_LOOT`, reopening that same
+list and causing a second rapid loot-animation cycle. The recorded human's
+median delay from loot list to item click is about 492 ms (25 samples). The
+working-tree bot now consumes an already-open quest-object loot list and waits
+450 ms before clicking its item. This edit is not in the running bot DLL; it
+needs a build, focused SIM check, and a fresh client observation after the live
+run ends. Pilot also saw the bot move while its stand-up animation was still
+playing. Five recorded Pilot stand-to-first-move intervals were 343-361 ms;
+five comparable bot intervals were 2-14 ms. The working-tree rest callback
+now waits 350 ms after sending `STAND` before any defense or navigation action.
+That edit likewise awaits the post-run build and observation.
+At the operator's request, `ni10-observe-presentation-s4` quit normally after
+34m39s on 2026-09-26. The `aion` game, login, chat, and MySQL containers and
+the Aion Portal preview container were stopped. The dashboard is offline.
+Keep the stack and runners stopped until the operator asks to start them again;
+the grain-sack and stand-up edits remain unbuilt and unverified.
+
 ## Open items, in the order I would take them
 
 1. **Done — defend before rest.** `TryFightThroughAsync` defends after `fight-through-cleared`;
@@ -459,3 +623,193 @@ pwsh -NoProfile -File scripts/parity/regen-geo-golden.ps1
 
 Then `dotnet run --project tools/Aion.NavBake -- graph --maps 220010000` if spawn positions
 changed (the travel graph is derived from them), and a batch.
+
+## SIM-only quest-hub optimization experiment (2026-09-26)
+
+`NI07_OPTIMIZE_HUBS=1` enables an experimental scheduler only in the accelerated
+SIM journey. The default NI-07 and LIVE routes remain unchanged. The mode uses a
+fixed named-hub list, accepts every eligible quest from a *nearby client-observed*
+starter NPC (within 45 m), works compatible template quests before returning to
+claim them, and orders work by minimum level with blue before campaign within
+safe groups. The groups retain the proven early campaign progression; the dense
+eastern blue quests and Q2116 are not attempted before Q2007. It binds at the
+ordinary Aldelle obelisk and uses observed Return readiness, fare, and Java 4.8
+flight paths to choose a faster inter-quest trip.
+
+The initially broad "accept everything assigned to this hub" pass caused long
+starter detours and unsafe early Q2116 work. A local-starter limit and safe
+quest groups fixed completion. The final `hubopt9` four-seed SIM evidence is:
+
+| Seed | smart46 virtual s / deaths | hubopt9 virtual s / deaths | Difference |
+|---|---:|---:|---:|
+| 1 | 12,475 / 0 | 12,918 / 1 | +443 s |
+| 3 | 12,127 / 0 | 13,291 / 0 | +1,164 s |
+| 4 | 12,461 / 0 | 11,894 / 0 | −567 s |
+| 5 | 12,141 / 0 | 11,781 / 0 | −360 s |
+
+Both modes completed all 41 quests on all four seeds. Hub optimization averaged
+170 s **slower** and added one Hatata-approach death, so it is not the new default.
+The slow seeds spent extra time in Q2005–Q2007's changing Mau patrols. Seed 5
+confirmed 25 nearby hub pickups, one flight, and two Returns. The trace tools
+`aggro_causes.py`, `death_profile.py`, `hatata_profile.py`, and `step_times.py`
+were used against `game-server/run/hubopt9-full-s{1,3,4,5}` and the smart46
+baseline. A later Q2006 Return-plus-flight shortcut was exercised in `hubopt10`
+seed 3, but two subsequent Q2007 deaths led us to revert that experiment.
+Further rollout should target the Mau route and compare multiple seeds again;
+the current policy is a measured opt-in, not a demonstrated general speedup.
+
+The operator's live Docker stack and runners remain stopped as requested. These
+SIM runs used their isolated fixture and did not restart that stack.
+
+Follow-up validation exposed variance beyond the `hubopt9` sample. The final
+working tree scopes the extra ranged hold to the opt-in mode, retains the normal
+bot's stationary-ranged-target behavior, and retries a refused hub dialogue with
+a short final movement. The 28 focused hub/rotation/combat tests and solution
+build pass. A subsequent final-code seed-1 run (`hubopt14`) was stopped after two
+Q2007 deaths; **the final experimental mode is not four-seed accepted**. Keep it
+disabled and use smart46 for playtests. The full solution test run also has four
+unrelated, pre-existing working-tree failures: three spawn/geo golden assertions
+after the Ishalgen placement edits and one admin-properties collection assertion.
+
+## Changed-spawn navigation follow-up (2026-09-27)
+
+The retail-placement edits changed the encounters around Rae and the Mau camp. This
+follow-up kept the normal quest order and the opt-in hub scheduler off. It did not
+change shipped spawn coordinates to make the four familiar seeds pass. The final
+working tree waits and reobserves after a stalled guarded fight-through, uses an
+observed Return to reach the bound obelisk after Hatata when that route is shorter,
+retains per-skill cooldowns from `SM_CASTSPELL_RESULT`, rejoins Q2005 from bind
+after a revive instead of retracing breadcrumbs from before death, and accepts
+client-observed 0%-HP kill evidence when a Q2127 target disappears during pull
+planning. These are general recovery and client-state fixes, not pre-baked routes
+to current mob coordinates.
+
+The final-code `timing68` run folders under `run/natural-batch/` are the handoff
+evidence: seeds **1, 4, and 5 completed all 41 quests**; seed 3 stopped at Q2007
+after 10 guarded-route rejoin attempts. Deaths were **0/2/1/1**, respectively.
+The stopped bot stood at (633.6, 913.4) with full HP while the observed hazards
+covered its checked approaches to the rejoin NPC and nearby blockers. Its earlier
+blue-generator death involved four attackers; the other two Q2007 deaths in this
+batch involved two and three Stalkers. `aggro_causes.py` counted 16 respawns near
+the bot and 12 patrol contacts across the four runs. The three completed Hatata
+steps took 297/314/310 virtual seconds, with 8/8/10 kills and **no deaths**.
+Seed 3 never reached Hatata. `death_profile.py`, `hatata_profile.py`, and
+`step_times.py` were run on these folders; seed 3 spent 3,190 virtual seconds in
+Q2007 before its stop. This is a route and add-control problem in the Mau camp,
+not evidence that the isolated Hatata fight is too slow.
+
+Build of `tests/Aion.Simulation.Tests` and the 196 filtered natural/timing/API
+unit tests passed after the final code edits. The full solution and Fast checks
+were not rerun at that point, and the working tree was **uncommitted** with unrelated
+live-bot, spawn, and hub-scheduler edits. One narrow branch (the 10-second wait
+after a stalled fight-through) was not observed in the final full-journey traces;
+it needs focused validation before acceptance.
+The Docker stack and live runners remain stopped. The read-only monitor was
+available during the SIM runs and is offline now.
+
+The next controlled step is Phase 0 of `docs/bot-learning-pilot.md`: lock two
+level-9 Mau-area legs (generator-to-Rae rejoin and Rae-to-Hatata) against the
+*current* spawn baseline and record an auditable deterministic-policy baseline
+on development and reserved seeds. Keep Q2007 rejoin failures and multi-attacker
+blue-generator pulls visible as separate outcomes; a short Hatata fight alone
+would miss the observed failure.
+No new human recording is required to define this benchmark. Pilot can record
+the same area later if a client-observed decision remains ambiguous.
+
+## Recovery and potion rule batch (2026-09-27)
+
+The next same-code batch, `run/natural-batch/recovery69-full-s{1,3,4,5}`,
+completed **4/4** with deaths **5/0/0/0**. The bot now heals HP with its
+client-observed Priest skill between fights while observed mana is at least
+50%. It sits only after mana falls below 50%, stands at 80%, then heals any
+remaining HP. It uses an owned, ready timed HP potion at or below 90% HP in a
+fight, provided the healing effect is not already active. The four traces
+contain 66 between-fight heals and 275 combat timed-potion uses, compared with
+161 timed-potion uses and 76 rest relocations in `timing68`. Rest relocations
+fell to 19. These are usage counts, not a controlled causal estimate of deaths.
+
+If a long fight-through route is empty, the planner now tries a terrain-checked
+route to a nearby observed guard that lies toward the objective. If that also
+fails, it may advance a short checked ground segment crossing at most two new
+aggro circles, defend after each two points, and re-plan. This fallback is
+bounded and uses no quest-specific coordinates. **None of the four full runs
+invoked it**, so `recovery69` does not prove the old seed-3 route stall is
+fixed. Do not claim the planner can always find a way through a dense pack.
+
+`aggro_causes.py`, `death_profile.py`, `hatata_profile.py`, and `step_times.py`
+were run on all four traces. Seed 1's four Q2007 deaths came from two- or
+three-attacker engagements with repeated stun/knockdown refusals of Healing
+Light; the fifth came from three attackers in Q2128. All four Hatata steps
+were death-free (317/401/407/360 virtual seconds, 10/11/11/11 kills). Seed 5
+spent **320 wall seconds in Q2006**: after a checked ingress return failed,
+the planner repeatedly searched hazard-rejected routes from the same position
+before recovering. Preserve it as a separate navigation performance regression
+alongside the two Mau-area legs, rather than rerunning the full journey for it.
+
+The build and 24 focused combat/navigation tests passed before the batch;
+all four SIM journeys passed on those DLLs. Afterwards, the solution build
+passed with 17 existing test-project nullable warnings and 197 filtered
+natural/timing/API tests passed. A final policy-only correction preserved
+critical life- and mana-potion precedence while idle; the journey's combat
+decisions always have a target, so that branch was not part of the four runs.
+The prior `timing68` had 3/4
+completion and four deaths. Treat `recovery69` as **good enough for the
+natural-journey prototype**, with deaths and slow route search still open.
+The next work is the controlled Mau-area benchmark in `docs/bot-learning-pilot.md`,
+then a small, inspectable combat-policy search aimed first at avoiding
+multi-attacker pulls and failed healing under stun. Keep the deterministic
+policy as the baseline and use more than the familiar four seeds before
+adopting any learned policy. At that point the working tree was uncommitted; the live
+Docker stack and runners remain stopped.
+
+## Two-attacker healing and pack disengagement (2026-09-27)
+
+The operator corrected the combat thresholds: Healing Light starts at 55% HP against
+one observed attacker and 70% against two. Three or more observed attackers trigger
+retreat at any HP, ahead of potion use or damage. A retreat keeps moving along
+collision-checked ground until every pursuer broadcasts Java's neutral/return NPC
+emotion or leaves client sight; new attackers join the retreat. If no checked
+escape exists, the Priest fights from the corner rather than claiming it escaped.
+The first `retreat70` four-seed batch completed 2/4 with nine deaths. Several
+otherwise outward routes were rejected because their first points turned sideways
+around terrain. The revised route check allows such a detour while rejecting a
+route that actually enters the pack. It completed seeds 1 and 3 (`retreat71`)
+without deaths; seed 4 then exposed a separate retry error: successful tactical
+retreats consumed the six-attempt kill limit for Q2128's 210391 target.
+
+The final same-DLL `retreat72` run folders under `run/natural-batch/` completed
+**4/4**, all 41 quests, with deaths **3/3/1/1** and 19 retreat routes. Seven
+Q2128 retreats in seed 4 were retried separately from failed kills. Four
+retreats still found no checked escape and fell back to combat. The eight deaths
+are worse than `recovery69`'s five; this four-seed comparison is not a causal
+estimate because SIM spawn/patrol timing varies. `death_profile.py` shows repeated
+stun/knockdown refusals of Healing Light against **two** Mau attackers in most
+deaths; the three-attacker threshold does not address that case. Seeds 1 and 3
+each had a Hatata-step death and a bind-rejoin death; seed 1 had one more
+bind-rejoin death, while seed 3 had one more Q2007 death. Seeds 4 and 5 each
+died once in Q2007. Hatata itself remained death-free on
+seeds 4 and 5. `aggro_causes.py`, `death_profile.py`, `hatata_profile.py`, and
+`step_times.py` were used on the traces. These requested deterministic rules are
+implemented, but do not establish a no-death policy. Further threshold tuning
+alone is unlikely to solve stun-locked two-on-one fights; the next controlled
+Mau-area pilot should focus on preventing the second add and testing safe exits.
+The working tree, including live/spawn/hub work, was uncommitted at this handoff.
+
+## Commit checkpoint (2026-09-27)
+
+The live attach runner, selected Ishalgen spawn baseline, opt-in hub scheduler,
+changed-spawn navigation recovery, and the requested healing, potion, and retreat
+rules are committed together after a clean checkout review. `game-server/run/`
+contains local traces and login observations; it is now ignored, alongside the
+already-ignored root `run/` evidence. Neither directory is part of the commit.
+The Java 4.8 generator refreshed the geo oracle for 4,275 current starter points;
+the finite soak hints now match shipped Ishalgen spawn coordinates.
+
+The full solution build passed with zero warnings, and the solution test suite
+passed with 4,862 tests and 45 gated skips. All remaining 30 `CLAUDE.md`
+checks passed, including the warning baseline, Java geo parity, baked navigation,
+NI-10 mock-Docker attach contract, and Docker Fast (11 manifest scenarios).
+`retreat72` is the last four-seed full-journey evidence: 4/4 completion, eight
+deaths. No new journey batch or human recording was run for this commit. The live
+Docker stack and bot runners remain stopped; the next learning-pilot step is the
+controlled Mau-area benchmark described above.

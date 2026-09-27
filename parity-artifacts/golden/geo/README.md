@@ -23,13 +23,13 @@ coordinates and checks complete point coverage, rather than trusting fixture IDs
 
 | Query | Cases | Coverage |
 |---|---:|---|
-| `GetZ` | 12,480 | All 4,160 points: ±2 m, ±50 m, and ±2 m rejecting steep slopes |
-| `CanSee` | 5,400 | Every 31st input, 8 headings, lengths 0/1/10/30/81 m, varied target Z |
-| `GetClosestCollision` | 5,400 | Same rays; alternating near-ground adjustment |
-| `FindMovementCollision` | 5,400 | Same XY targets; new mutable origin for each query |
+| `GetZ` | 12,825 | All 4,275 points: ±2 m, ±50 m, and ±2 m rejecting steep slopes |
+| `CanSee` | 5,520 | Every 31st input, 8 headings, lengths 0/1/10/30/81 m, varied target Z |
+| `GetClosestCollision` | 5,520 | Same rays; alternating near-ground adjustment |
+| `FindMovementCollision` | 5,520 | Same XY targets; new mutable origin for each query |
 
-The 4,160 points comprise 1,685 Poeta and 2,475 Ishalgen positions. Java yields
-12,359 finite height results and 121 NaNs; visibility has 2,761 clear and 2,639
+The 4,275 points comprise 1,685 Poeta and 2,590 Ishalgen positions. Java yields
+12,756 finite height results and 69 NaNs; visibility has 2,718 clear and 2,802
 blocked results. C# must reproduce hit/miss topology and booleans exactly, with
 an absolute **0.001 m** tolerance on finite float coordinates. This does not waive
 missing-ground results, exceptions or loader errors.
@@ -40,13 +40,18 @@ PNGs, with ownership/review date recorded in `docs/e2e-geodata-measurements.md`.
 The first generation (July 2026) was byte-identical in consecutive Java runs. The
 fixture was regenerated on 2026-09-25 after the 5.8 Ishalgen placement pass
 (`1856203e5`, then heights re-snapped, three lycan spots removed, and nine fixed
-positions lifted onto their retail deck or platform); the current
-`starter-queries.jsonl` SHA256 is
+positions lifted onto their retail deck or platform); that version's
+`starter-queries.jsonl` SHA256 was
 `8f5685b7228a81ec199a354c4fa6b52a7393781b3c6d79bab92ae24219b56600`.
 
 Regenerated on 2026-09-26 after removing the ineffective pool attribute on the
 sole Ishalgen Hulker spawn. Only that XML input hash changed; point counts and
 all Java query results remain identical.
+
+Regenerated on 2026-09-27 for the selected 5.8 Ishalgen placements and current
+walker inputs. The Java generator produced 4,275 points; the C# geo parity test
+passed. The current `starter-queries.jsonl` SHA256 is
+`58290e09b3fc307f5acd947231c08bd3f7147c7a20fc2dea3713a0a775fed427`.
 
 ## Regenerate locally
 

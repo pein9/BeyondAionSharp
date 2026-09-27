@@ -30,13 +30,20 @@ public sealed record LiveBotOptions(
 	public IReadOnlyList<SoakActivity> SoakActivities { get; init; } = Enum.GetValues<SoakActivity>();
 	public int DashboardPort { get; init; }
 	public int DecisionViewSeconds { get; init; } = 30;
+	/// <summary>Label of the operator's already-running world for Attach scenarios (NI-10); null for LIVE.</summary>
+	public string? AttachTarget { get; init; }
+	/// <summary>Designated ordinary Priest account for an attached journey; slot 1 is the original retained bot.</summary>
+	public int AttachIdentitySlot { get; init; } = 1;
+	/// <summary>The bot leaves the world and exits when this file appears (Attach only).</summary>
+	public string? StopFile { get; init; }
 	internal LiveBotDashboardState Dashboard { get; } = new();
 	public const string Usage = "Usage: dotnet run --project tools/Aion.LiveBots -- --run <id> --output <run-dir> " +
 		"[--scenario manifest-id[,manifest-id]] [--bots N] [--host 127.0.0.1] [--login-port 12106] " +
 		"[--login-host IP] [--chat-host IP] [--game-port 17777] [--chat-port 11241] [--admin-port 17780] [--admin-token TOKEN] " +
 		"[--connect-timeout-seconds 10] [--step-timeout-seconds 15] [--seed N] [--git-sha SHA] " +
 		"[--profile deterministic] [--time-zone ID] [--reentry-seconds 10] [--dashboard-port 0] [--decision-view-seconds 30] " +
-		"[--soak-seconds 7200] [--soak-activities Quest,Gather,Craft,Vendor,Trade,Group,Duel,Pvp,Relog,CrashDisconnect]";
+		"[--soak-seconds 7200] [--soak-activities Quest,Gather,Craft,Vendor,Trade,Group,Duel,Pvp,Relog,CrashDisconnect] " +
+		"[--attach-target LABEL --login-port N --game-port N [--identity-slot 1..9] [--stop-file PATH]] (Attach scenarios only)";
 
 	public static LiveBotOptions Parse(string[] args)
 	{
@@ -78,9 +85,26 @@ public sealed record LiveBotOptions(
 		{
 			throw new ArgumentException(exception.Message, "scenario", exception);
 		}
-		ScenarioDefinition? nonLive = scenarioDefinitions.FirstOrDefault(definition => !definition.Modes.Contains(ScenarioMode.Live));
-		if (nonLive != null)
-			throw new ArgumentException($"Scenario '{nonLive.Id}' does not support LIVE mode.", "scenario");
+		string? attachTarget = values.TryGetValue("attach-target", out string? attachValue) ? attachValue : null;
+		int identitySlot = PositiveInt(values, "identity-slot", 1, 9);
+		if (identitySlot != 1 && (attachTarget == null || !scenarios.Contains("NI-10", StringComparer.Ordinal)))
+			throw new ArgumentException("--identity-slot requires an attached NI-10 journey.");
+		ScenarioMode requiredMode = attachTarget == null ? ScenarioMode.Live : ScenarioMode.Attach;
+		ScenarioDefinition? unsupported = scenarioDefinitions.FirstOrDefault(definition => !definition.Modes.Contains(requiredMode));
+		if (unsupported != null)
+			throw new ArgumentException(attachTarget == null && unsupported.Modes.Contains(ScenarioMode.Attach)
+				? $"Scenario '{unsupported.Id}' attaches to an existing world; it requires --attach-target and explicit ports."
+				: $"Scenario '{unsupported.Id}' does not support {requiredMode.ToString().ToUpperInvariant()} mode.", "scenario");
+		if (attachTarget != null)
+		{
+			// Attaching never guesses a world: the isolated stack's default ports must not be picked up silently.
+			if (attachTarget.Length == 0 || !attachTarget.All(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_'))
+				throw new ArgumentException("--attach-target may contain only ASCII letters, digits, '-' and '_'.");
+			if (!values.ContainsKey("login-port") || !values.ContainsKey("game-port"))
+				throw new ArgumentException("Attach scenarios require explicit --login-port and --game-port for the selected world.");
+		}
+		if (values.ContainsKey("stop-file") && attachTarget == null)
+			throw new ArgumentException("--stop-file requires --attach-target.");
 		if (scenarios.Any(scenario => scenario is "L0" or "canaries") && scenarios.Length != 1)
 			throw new ArgumentException("L0 and canaries are coordinated scenarios and must be run by themselves.");
 		bots = Math.Max(bots, scenarioDefinitions.Max(definition => definition.Bots));
@@ -88,7 +112,7 @@ public sealed record LiveBotOptions(
 			throw new ArgumentException($"Scenario requires more than {BotIdentity.MaximumSubjects} subject bots.", "scenario");
 		if (scenarios.Contains("O1", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 1 || stepSeconds < 1050))
 			throw new ArgumentException("O1 must run alone with one subject and at least 1050 seconds per step.");
-		if (scenarios.Any(scenario => scenario is "NI-01" or "NI-02" or "NI-03" or "NI-04" or "NI-05" or "NI-06" or "NI-09") && (scenarios.Length != 1 || bots != 1))
+		if (scenarios.Any(scenario => scenario is "NI-01" or "NI-02" or "NI-03" or "NI-04" or "NI-05" or "NI-06" or "NI-09" or "NI-10") && (scenarios.Length != 1 || bots != 1))
 			throw new ArgumentException("Natural Ishalgen scenarios must run alone with exactly one retained subject.");
 		if (scenarios.Contains("B2", StringComparer.Ordinal) && (scenarios.Length != 1 || bots != 2))
 			throw new ArgumentException("B2 must run alone with exactly two subjects (plus its director).");
@@ -126,7 +150,7 @@ public sealed record LiveBotOptions(
 			"run", "output", "host", "login-host", "chat-host", "login-port", "game-port", "chat-port", "admin-port", "admin-token",
 			"bots", "scenario", "connect-timeout-seconds", "step-timeout-seconds", "reentry-seconds",
 			"seed", "git-sha", "profile", "time-zone", "dashboard-port", "decision-view-seconds",
-			"soak-seconds", "soak-activities",
+			"soak-seconds", "soak-activities", "attach-target", "identity-slot", "stop-file",
 		};
 		var unknown = values.Keys.FirstOrDefault(key => !known.Contains(key));
 		if (unknown != null)
@@ -155,6 +179,9 @@ public sealed record LiveBotOptions(
 			SoakActivities = soakActivities,
 			DashboardPort = dashboardPort,
 			DecisionViewSeconds = decisionViewSeconds,
+			AttachTarget = attachTarget,
+			AttachIdentitySlot = identitySlot,
+			StopFile = values.TryGetValue("stop-file", out string? stopFile) ? Path.GetFullPath(stopFile) : null,
 		};
 	}
 

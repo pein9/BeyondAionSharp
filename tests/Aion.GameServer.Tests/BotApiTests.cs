@@ -46,8 +46,10 @@ public sealed class BotApiTests
 		AssertPacket<CM_START_LOOT>(api.Loot(80));
 		AssertPacket<CM_LOOT_ITEM>(api.Loot(80, 1));
 		AssertPacket<CM_SHOW_DIALOG>(api.TalkTo(90));
+		Assert.Equal(90, api.OpenDialogTargetId);
 		AssertPacket<CM_DIALOG_SELECT>(api.SelectDialog(90, 39));
 		AssertPacket<CM_CLOSE_DIALOG>(api.CloseDialog(90));
+		Assert.Null(api.OpenDialogTargetId);
 		AssertPacket<CM_TELEPORT_SELECT>(api.Teleport(90, 100));
 	}
 

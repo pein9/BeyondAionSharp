@@ -7,6 +7,9 @@ public enum ScenarioMode
 {
 	Sim,
 	Live,
+	/// <summary>Real sockets against an operator-selected, already-running world. No suite or
+	/// runner starts one: only the explicit attach runner selects these scenarios (NI-10).</summary>
+	Attach,
 }
 
 public enum ScenarioTier
