@@ -1138,7 +1138,7 @@ OD-11, a development item is verified by **one** run.
       Heimdall, Balder and Lyfjaberga without the interaction-path fallback.
     - **Checks:** 214 Natural tests and the warning, null-logger and clock ratchets pass.
 
-- [ ] **NA-15 — Dispatch to Altgard, bind, Meiyer and Suthran (rows 15–19).**
+- [x] **NA-15 — Dispatch to Altgard, bind, Meiyer and Suthran (rows 15–19).**
   - **Depends:** NA-14, NA-08.
   - **Do:**
     - Doman within 4 m: QUEST_SELECT, then SETPRO1.
@@ -1150,6 +1150,25 @@ OD-11, a development item is verified by **one** run.
   - **Done when:** one snapshot run completes all four quests and the bind, and the Kinah
     changes match the contract.
   - **Verify:** that snapshot run's trace.
+
+  - **Evidence (2026-09-28):** the runner now plays Doman, Meiyer and Suthran as contract
+    talk steps, plus two new actions:
+    - `teleport` uses the NA-08 teleporter step. It charged 706 Kinah: the price-adjusted
+      fare (500 base) that the client observes through SM_PRICES. The bot landed at
+      (1752.5, 1806.6).
+    - `bind` approaches obelisk 700065 through the Altgard navigator, then uses the NA-08
+      bind step. The bind happened 2.7 m from the obelisk and cost 451 Kinah.
+
+    From the `munin` snapshot with `NA_ASCENSION=1` (`na15-altgard`), the bot ran in order:
+    1. Doman: QUEST_SELECT, SETPRO1;
+    2. the teleport to Altgard, where Q24010 appeared in the journal;
+    3. the bind;
+    4. Meiyer: QUEST_SELECT (page 2375), SELECT_QUEST_REWARD (page 5), NOREWARD;
+    5. Suthran: the same three.
+
+    **All four bridge quests (2008, 2009, 2904 and 24010) are complete**, at level 10 on
+    220030000, with no deaths. The run stopped at the `shop` action for NA-16.
+    - **Checks:** 214 Natural tests and the warning, null-logger and clock ratchets pass.
 
 - [ ] **NA-16 — The Altgard shop stop (row 20).**
   - **Depends:** NA-15, NA-08, NA-09.
@@ -1639,6 +1658,8 @@ has examples.
 - 2026-09-28 — Loop: NA-13 done. From the Munin snapshot the bot flies Hagen's path, wins the trial (no retreats, no deaths), becomes a Cleric and leaves Ataxiar. Q2008 is complete.
 
 - 2026-09-28 — Loop: NA-14 done. The Pandaemonium ceremony is complete: level 10, Karmic Staff equipped, Q2904 started. The run never came near the death level.
+
+- 2026-09-28 — Loop: NA-15 done. From the Munin snapshot the bot finishes all four bridge quests. It took Doman's teleporter (706 Kinah), bound at Altgard Fortress (451 Kinah), then turned in to Meiyer and Suthran.
 
 ## Appendix A: Altgard shops and consumables
 

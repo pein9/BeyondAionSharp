@@ -771,6 +771,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						await FightAscensionTrialAsync(bridge);
 					else if (next.Action == "wait-flight")
 						await session.AdvanceAsync(TimeSpan.FromSeconds(20), token);
+					else if (next.Action == "teleport")
+						await TakeBridgeTeleporterAsync(bridge);
+					else if (next.Action == "bind")
+						await BindInAltgardAsync(bridge);
 					else
 					{
 						await WriteBridgeStopAsync(next with { Outcome = "awaiting-capability", Reason = "Not built yet: " + next.Reason });
@@ -810,6 +814,37 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					});
 				}
 				finally { combat.ScriptedTrial = false; }
+			}
+
+			// NA-15: Doman's teleporter to Altgard (NA-08 service step: the price-adjusted fare, the map change).
+			async Task TakeBridgeTeleporterAsync(NaturalAscensionContract bridge)
+			{
+				session.BeginStep("na-teleport-altgard", "doman-teleporter-to-altgard");
+				NaturalAscensionStep doman = bridge.Steps.Single(step => step.Key == "q2904-v0-doman");
+				var anchor = new BotPosition(doman.Position[0], doman.Position[1], doman.Position[2], 0);
+				NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World), newEntry: false);
+				int npc = await ApproachBridgeNpcAsync(doman, anchor, here);
+				NaturalServiceOutcome result = await new NaturalServiceSteps(session).TeleportAsync(npc,
+					session.Api.World.Objects[npc].Position, doman.TalkRange, bridge.Teleporter.LocationId, bridge.Teleporter.BasePrice,
+					bridge.Teleporter.Destination.MapId, token);
+				Require.True(result.IsDone, result.Reason);
+				mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World));
+			}
+
+			// NA-15: the Altgard Fortress obelisk, first thing in Altgard (NA-08 service step: within 5 m, raw price).
+			async Task BindInAltgardAsync(NaturalAscensionContract bridge)
+			{
+				session.BeginStep("na-bind-altgard", "bind-at-altgard-fortress-obelisk");
+				var obelisk = new BotPosition(bridge.Bind.Position[0], bridge.Bind.Position[1], bridge.Bind.Position[2], 0);
+				NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World), newEntry: false);
+				NaturalNavigationResult approach = await NaturalIshalgenNavigator.ApproachNpcAsync(bridge.Bind.MapId, bridge.Bind.NpcId,
+					obelisk, here, token);
+				Require.True(approach.Arrived, $"Altgard obelisk: {approach.Reason}");
+				int stone = Require.IsType<int>(approach.TargetObjectId);
+				BotPosition at = session.Api.World.Objects[stone].Position;
+				NaturalServiceOutcome result = await new NaturalServiceSteps(session).BindAsync(stone, at, bridge.Bind.MapId,
+					bridge.Bind.Price, bridge.Bind.AcceptRange, token);
+				Require.True(result.IsDone, result.Reason);
 			}
 
 			async Task WriteBridgeStopAsync(NaturalAscensionDecision stop)
@@ -4078,7 +4113,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	private static readonly HashSet<string> ImplementedBridgeSteps =
 		["q2008-v0-munin", "q2008-v1-urd", "q2008-v2-verdandi", "q2008-v3-skuld", "q2008-v4-munin",
 		"q2008-v99-hagen", "q2008-v6-munin-class", "q2008-reward-munin",
-		"q2009-v0-munin", "q2009-v1-heimdall", "q2009-v2-balder", "q2009-reward-lyfjaberga"];
+		"q2009-v0-munin", "q2009-v1-heimdall", "q2009-v2-balder", "q2009-reward-lyfjaberga",
+		"q2904-v0-doman", "q2904-reward-meiyer", "q24010-reward-suthran"];
 
 	private static NaturalIshalgenObservation ObserveNaturalJourney(INaturalJourneySession session)
 	{
