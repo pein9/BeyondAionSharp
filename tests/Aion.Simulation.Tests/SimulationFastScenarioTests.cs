@@ -1290,8 +1290,11 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 				.SingleOrDefault(entry => Get<int>(entry, "objectId") == characterId)
 				?? throw new InvalidDataException("The retained natural character is missing; refusing to create a replacement.");
 			if (Get<string>(character, "name") != characterName || Get<int>(character, "race") != (int)race ||
-				Get<int>(character, "playerClass") != (int)PlayerClass.PRIEST || Get<int>(character, "deletionTimeSeconds") != 0)
+				Get<int>(character, "deletionTimeSeconds") != 0)
 				throw new InvalidDataException("Retained natural character identity changed.");
+			// NA-17: the Priest, or the Cleric it became at Ascension.
+			NaturalJourneyIdentityRules.Classify(Get<int>(character, "playerClass"), Get<ushort>(character, "level"),
+				Get<int>(character, "mapId"));
 			// The next world entry supplies the authoritative saved position, even if a crash rolled it back.
 			SelectCharacter(characterId, characterName);
 		}

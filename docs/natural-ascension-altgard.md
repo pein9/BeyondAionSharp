@@ -1223,7 +1223,7 @@ OD-11, a development item is verified by **one** run.
     - **Note for NA-19.** Foods are sold as unneeded today. The buff-ourself check could use
       food buffs (see aion-4.8-consumables.md), so revisit protecting them there.
 
-- [ ] **NA-17 — Endpoint, persistence, and resume within the bridge.**
+- [x] **NA-17 — Endpoint, persistence, and resume within the bridge.**
   - **Depends:** NA-16.
   - **Do:**
     - Add `CompleteAscensionLegAsync`. It asserts the endpoint contract, relogs,
@@ -1236,6 +1236,32 @@ OD-11, a development item is verified by **one** run.
     package.
   - **Verify:** that snapshot run (see `run-natural-resume.ps1` for the NI-08 injection
     pattern).
+
+  - **Evidence (2026-09-28):**
+    - **Endpoint.** `CompleteAscensionLegAsync` runs on `bridge-complete`. It checks the
+      endpoint contract from the client's view, then quits, logs back in and requires
+      `NaturalJourneyPersistence.Verify` to pass before writing `bridge-completion.json`.
+      The contract checks: Cleric, level at least 10, all four quests, Altgard, bound at
+      700065, the staff worn, and alive. The relog check compares class, level, quests,
+      bind point, equipment, inventory and position.
+    - **Resume.** Any login past the Munin stop resumes the bridge runner, whether fresh or
+      after an interruption. That covers Q2008 moved or done, the class, and a bridge-only
+      map.
+    - **Relog injection.** `NI08_RELOG_AT` now takes several boundaries (`,` or `;`), and
+      the bridge endpoint checks that each one fired.
+    - **SIM relogin.** It now uses the identity rules; it had been missed in NA-07.
+    - **The run.** One run (`run/na17-resume/`, a restored `munin` copy with
+      `NI08_RELOG_AT=2008:3:52,2009:3:2`) disconnected twice:
+      - inside the Ataxiar trial (Q2008 var 52); on reconnect it re-entered and finished the
+        trial;
+      - in Pandaemonium mid-ceremony (Q2009 var 2); it resumed at Balder.
+
+      It completed the whole bridge and passed the endpoint relog: class 10, level 10,
+      Altgard, bind persisted, connection generation 3 → 4. Both disconnects left
+      `failure.json` receipts of kind `disconnect`.
+    - **Checks.** 214 Natural tests and the warning, null-logger and clock ratchets pass.
+    - **For NA-23.** The LIVE journey scenario's post-journey relog check still expects the
+      Ishalgen endpoint, so it needs the bridge endpoint when the bridge is enabled.
 
 ### Phase 5: Level 10 Cleric play (the start of that work)
 
@@ -1689,6 +1715,8 @@ has examples.
 - 2026-09-28 — Loop: NA-15 done. From the Munin snapshot the bot finishes all four bridge quests. It took Doman's teleporter (706 Kinah), bound at Altgard Fortress (451 Kinah), then turned in to Meiyer and Suthran.
 
 - 2026-09-28 — Loop: NA-16 done. **The bridge completes end to end from the Munin snapshot**: a level 10 Cleric bound in Altgard, all four quests done, staff and accessories worn, junk sold, 12 elixirs and 30 powder bought, and the tea drunk.
+
+- 2026-09-28 — Loop: NA-17 done. The bridge endpoint is verified across a relog. The bridge resumed after interruptions inside the trial and mid-ceremony, then finished. **Phase 4 is complete.**
 
 ## Appendix A: Altgard shops and consumables
 

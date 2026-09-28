@@ -372,8 +372,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			bool relogInjected = false;
 			bool stopInjected = false;
 			int[]? ParseBoundary(string? value) => value == null ? null : value.Split(':').Select(int.Parse).ToArray();
-			int[]? relogBoundary = ParseBoundary(relogAt), stopBoundary = ParseBoundary(stopAt);
-			if (relogBoundary is { Length: not 3 } || stopBoundary is { Length: not 3 })
+			// NA-17: several relog boundaries may be listed ("2008:3:52,2009:3:2"); each is injected once, in order met.
+			int[][] relogBoundaries = relogAt == null ? [] : relogAt.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries)
+				.Select(value => ParseBoundary(value.Trim())!).ToArray();
+			var relogsInjected = new HashSet<int>();
+			int[]? stopBoundary = ParseBoundary(stopAt);
+			if (relogBoundaries.Any(boundary => boundary.Length != 3) || stopBoundary is { Length: not 3 })
 				throw new ArgumentException("NI08_RELOG_AT and NI08_STOP_AT must be questId:status:packedVars.");
 			session.BeforeSend = () =>
 			{
@@ -383,9 +387,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					stopInjected = true;
 					throw new NaturalJourneyCheckpointStopException();
 				}
-				if (!relogInjected && relogBoundary is { } at && QuestStatus(at[0]) == at[1] && QuestVar(at[0]) == at[2])
+				for (int index = 0; index < relogBoundaries.Length; index++)
 				{
-					relogInjected = true;
+					int[] at = relogBoundaries[index];
+					if (relogsInjected.Contains(index) || QuestStatus(at[0]) != at[1] || QuestVar(at[0]) != at[2]) continue;
+					relogsInjected.Add(index);
+					relogInjected = relogsInjected.Count == relogBoundaries.Length;
 					throw new EndOfStreamException($"NI-08 injected connection interruption at Q{at[0]} status {at[1]} vars {at[2]}.");
 				}
 			};
@@ -471,6 +478,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			{
 				try
 				{
+					if (options.AscensionBridge && AscensionBridgeStarted())
+					{
+						// NA-17: a login (fresh, or after an interruption) past the Munin stop resumes the bridge.
+						await RunAscensionBridgeAsync();
+						session.PublishDashboard("completed", force: true);
+						await session.QuitAsync(token);
+						runtime.AssertClean();
+						return;
+					}
 					if (session.Api.World.IsDead) await RestSafelyAsync(token);
 					checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
 						session.ConnectionGeneration, contract, session.CurrentPosition, sequence);
@@ -711,7 +727,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			async Task CompleteJourneyAsync()
 			{
 				if (stopAt != null) Require.True(stopInjected, "Requested NI-08 checkpoint was never exercised.");
-				if (relogAt != null) Require.True(relogInjected, "Requested NI-08 interruption was never exercised.");
+				// With the bridge on, its endpoint checks that every requested interruption happened (NA-17).
+				if (relogAt != null && !options.AscensionBridge) Require.True(relogInjected, "Requested NI-08 interruption was never exercised.");
 				Require.Equal(41, contract.Quests.Length);
 				Require.All(contract.Quests, quest => Require.Contains(quest.Id, session.Api.World.CompletedQuestIds));
 				Require.Equal((ushort)9, session.Api.World.Level);
@@ -763,6 +780,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					if (next.Outcome != "planned")
 					{
 						await WriteBridgeStopAsync(next);
+						if (next.Outcome == "complete") await CompleteAscensionLegAsync(bridge);
 						return;
 					}
 					NaturalAscensionStep? step = next.StepKey is string key ? bridge.Steps.Single(s => s.Key == key) : null;
@@ -817,6 +835,51 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					});
 				}
 				finally { combat.ScriptedTrial = false; }
+			}
+
+			bool AscensionBridgeStarted()
+			{
+				BotWorldModel world = session.Api.World;
+				if (world.CompletedQuestIds.Contains(2008)) return true;
+				if (world.Quests.TryGetValue(2008, out BotQuestState? ascension) && (ascension.Status != 3 || (ascension.StepAndFlags & 0x00FFFFFF) != 0))
+					return true;
+				return world.MapId is 320020000 or 120010000 or 220030000;
+			}
+
+			// NA-17: the bridge endpoint. Assert the contract from the client's view, then quit, log back in and require
+			// that class, level, quests, bind point, equipment, inventory and position all survived.
+			async Task CompleteAscensionLegAsync(NaturalAscensionContract bridge)
+			{
+				session.BeginStep("na-endpoint", "verify-and-relog-at-the-bridge-endpoint");
+				if (relogAt != null) Require.True(relogInjected, "A requested bridge interruption was never exercised.");
+				BotWorldModel world = session.Api.World;
+				Require.True(NaturalJourneyIdentityRules.Classify(world.Objects[session.CharacterId].PlayerClass ?? 0, world.Level, world.MapId)
+					== NaturalJourneyStage.AscensionCleric, "The endpoint character is not the bridge's Cleric.");
+				Require.True(world.Level >= bridge.Endpoint.MinimumLevel, $"Endpoint level {world.Level} is below {bridge.Endpoint.MinimumLevel}.");
+				Require.All(bridge.Endpoint.CompletedQuestIds, quest => Require.Contains(quest, world.CompletedQuestIds));
+				Require.Equal(bridge.Endpoint.MapId, world.MapId!.Value);
+				Require.True(world.ObeliskBindPoint is { } bound && bound.MapId == bridge.Bind.MapId, "The endpoint is not bound in Altgard.");
+				Require.All(bridge.Endpoint.EquippedItemIds, item => Require.True(world.Inventory.Values.Any(owned => owned.ItemId == item &&
+					(owned.Details.EquippedSlot ?? 0) > 0), $"Endpoint item {item} is not worn."));
+				Require.True(!world.IsDead, "The endpoint character is dead.");
+				NaturalJourneyCheckpoint before = NaturalJourneyCheckpoint.Capture(world, session.CharacterId,
+					session.ConnectionGeneration, contract, session.CurrentPosition);
+				session.BeforeSend = null;
+				await session.QuitAsync(token);
+				await session.WaitForReentryAsync(token);
+				await session.ReloginExistingCharacterAsync(token);
+				await session.EnterWorldAsync(token);
+				await session.SynchronizeAsync(token);
+				NaturalJourneyCheckpoint after = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
+					session.ConnectionGeneration, contract, session.CurrentPosition);
+				NaturalJourneyPersistence.Verify(before, after);
+				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "bridge-completion.json"),
+					System.Text.Json.JsonSerializer.Serialize(new { before, after, verified = true }), token);
+				session.TraceDiagnostic("ascension-bridge-complete", new Dictionary<string, object?>
+				{
+					["level"] = after.Level, ["class"] = after.PlayerClass, ["map"] = after.MapId, ["bind"] = after.BindPoint?.MapId,
+					["completed"] = bridge.Endpoint.CompletedQuestIds, ["kinah"] = session.Api.World.Kinah,
+				});
 			}
 
 			// NA-16: the Altgard shop stop. Wear the best owned gear (accessories included), sell what the Cleric rules call
