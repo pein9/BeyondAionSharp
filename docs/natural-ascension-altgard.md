@@ -563,7 +563,7 @@ OD-11, a development item is verified by **one** run.
 
 ### Phase 2: Snapshots and navigation data
 
-- [ ] **NA-03 — SIM snapshot save and restore, starting with Munin.**
+- [x] **NA-03 — SIM snapshot save and restore, starting with Munin.**
   - **Depends:** none. It can run alongside NA-01 and NA-02.
   - **Do:**
     - Add `scripts/sim/sim-snapshot.ps1`, with two modes:
@@ -585,6 +585,30 @@ OD-11, a development item is verified by **one** run.
     completed quests observed and Q2008 START/0.
   - **Verify:** a script contract test in the style of `scripts/sim/test-*.ps1`, plus one
     manual restore-and-enter.
+
+  - **Evidence (2026-09-28):**
+    - **Tooling.** `scripts/sim/sim-snapshot.ps1` supports Capture, Restore, Verify and
+      Drop. Its contract test, `scripts/sim/test-sim-snapshot.ps1` (fake Docker), passes and
+      checks four things:
+      - only owned `aion_gs_sim_ni08_*` schemas are touched;
+      - a snapshot is never overwritten;
+      - an edited dump is refused;
+      - every restore gets a fresh schema.
+    - **Clock.** The journey now writes `completion-clock.json` at its endpoint, so a
+      restored copy's game time keeps moving forward.
+    - **Snapshot `munin`.** Captured from natural SIM run `snapshot-munin-s1` (seed 1,
+      git `e838e6003`) and stored in `run/snapshots/munin/`:
+      - character 133297 "Asimnjour";
+      - endpoint reached at 15,674,212 virtual ms;
+      - dump SHA-256 `93617690…dacb9`;
+      - level 9 at exactly 126,069 XP, which confirms the non-Daeva cap.
+    - **Verify.** `-Action Verify -Name munin` (`na03-verify-munin`) restored a fresh copy
+      and resumed the same character. The journey's own endpoint check passed: 41 quests,
+      level 9 at Munin, Q2008 START/0. The owned schema was dropped afterwards.
+    - **Usage for later items.** `pwsh -File scripts/sim/sim-snapshot.ps1 -Action Restore
+      -Name munin` prints the database and the resume environment
+      (`AION_SIM_NI08_DATABASE`, `NI08_RESUME_CHARACTER`, `AION_SIM_NI08_ELAPSED_MS`).
+      Drop the schema with `-Action Drop -Database <db>` when done.
 
 - [ ] **NA-04 — Bake and check in navigation for 320020000, 120010000 and 220030000.**
   - **Depends:** none.
@@ -1310,6 +1334,8 @@ has examples.
 - 2026-09-28 — Loop: NA-01 is done, with the contract fixture, its loader and 4 passing tests. The endpoint pins a minimum level of 10, not exact XP.
 
 - 2026-09-28 — Loop: NA-02 done. CAPITAL-ASMO passes in SIM on the first clean run. The server carries the whole Asmodian bridge. The Doman fare is price-adjusted: 706 in SIM.
+
+- 2026-09-28 — Loop: NA-03 is done. The `munin` snapshot was captured from a natural seed-1 run, then restored and verified. Snapshot tooling and its contract test were added.
 
 ## Appendix A: Altgard shops and consumables
 

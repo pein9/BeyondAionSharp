@@ -702,6 +702,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "completion.json"),
 					System.Text.Json.JsonSerializer.Serialize(NaturalJourneyCheckpoint.Capture(session.Api.World,
 						session.CharacterId, session.ConnectionGeneration, contract, session.CurrentPosition)), token);
+				// NA-03: a saved Munin snapshot restores with this clock so game time keeps moving forward.
+				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "completion-clock.json"),
+					System.Text.Json.JsonSerializer.Serialize(new { session.CharacterId, ElapsedMillis = runtime.NowMillis }), token);
 				session.PublishDashboard("completed", force: true);
 				await session.QuitAsync(token);
 				runtime.AssertClean();
