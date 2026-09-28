@@ -36,7 +36,7 @@ a Cleric, bound, geared and restocked. Altgard's own quests are the next milesto
   has far more healing and buffs than the Priest had. See NA-22.
 
 **Help items.** The bot keeps itself buffed with scrolls:
-- the correct attack-speed scroll, always;
+- the correct **Awakening** (casting-speed) scroll, always (OD-15);
 - an **Anti-Shock** scroll at 50% HP (the level-appropriate tier). Despite its name, it is a damage shield;
 - running scrolls on long journeys.
 
@@ -150,7 +150,7 @@ The Ishalgen leg's contract (`parity-artifacts/e2e/natural-ishalgen-contract.jso
 | OD-12 | Are deaths failures? | **No.** "Zero deaths" is not a goal. A death is recorded and recovered from, and is never a pass/fail criterion by itself. What fails a run: an unmet objective, a stall, an exhausted bounded recovery, or a server defect. | Decided 2026-09-28 (rule for all natural runs from now on) |
 | OD-13 | Help items by cheating | **Allowed, after exploration.** NA-20 proposes the consumables and the supply mechanism. Only consumables the operator approves are supplied (no gear, quest items, XP or levels), and every run lists them in its profile. This amends D25's "no GM input" rule for those items only. | Decided in principle 2026-09-28; the item list needs approval at NA-20 |
 | OD-14 | Patrols in the way | **Cleric:** wait 15 s (game time) and path again; or decide to take on the patrol when the fight is winnable (NA-22). Both are bounded and traced. The frozen Ishalgen Priest keeps its current rules unless a later decision changes them. | Decided 2026-09-28 |
-| OD-15 | Which speed scroll stays up: Courage (attack speed) or Awakening (casting speed)? | They **replace each other** (both use effect id 30184), so only one can be active. You asked for attack speed (Courage). The research recommends **Awakening** for a Cleric: it speeds up the casts of Smite, Healing Light and Earth's Wrath, while attack speed mostly speeds up the staff swing. The bot uses Courage until the operator decides. | **Needs operator** |
+| OD-15 | Which speed scroll stays up: Courage (attack speed) or Awakening (casting speed)? | **Awakening** for the Cleric. The two scrolls **replace each other** (both use effect id 30184), so only one can be up. Awakening shortens the casts of Smite, Healing Light and Earth's Wrath; Courage mostly speeds up the staff swing. The bot never uses Courage. | Decided 2026-09-28 |
 
 ## Route at a glance (Java spec, verified in C#)
 
@@ -876,11 +876,10 @@ OD-11, a development item is verified by **one** run.
 
     The rules use the items in [Appendix D](#appendix-d-help-items-scrolls):
     1. **Class buffs.** Keep Blessing of Guardianship up, as today.
-    2. **One speed scroll, always (OD-15).** Whenever one is owned, keep one speed scroll
-       active. That is **Courage** (attack speed, `ITEM_SPEED_ATK`) unless the operator
-       switches to **Awakening** (casting speed). Both last 5 min.
-       - They **replace each other** (effect id 30184). Never alternate, or every swap
-         wastes a scroll.
+    2. **Awakening, always (OD-15).** Whenever an **Awakening** scroll (casting speed,
+       stack `ITEM_SPEED_BOOSTCASTINGTIME`, 5 min) is owned, keep one active.
+       - Courage replaces it (both use effect id 30184), so the bot never uses Courage. If
+         Courage is ever active, let it expire rather than wasting a scroll to swap.
        - Use the highest tier whose item level is at or below the character's level.
        - Refresh just before it expires, between casts.
     3. **Anti-Shock scroll at 50% HP (the "shield scroll").** Despite the name, the
@@ -947,7 +946,7 @@ OD-11, a development item is verified by **one** run.
   - **Do:** turn the report into a short proposal (Appendix D.2 of this doc) and ask the
     operator. It covers:
     1. **Allowlist.** Start from the report's kit and give ids per level band:
-       - the speed scroll family chosen under OD-15
+       - Awakening (OD-15), not Courage
        - Running
        - Anti-Shock
        - Life and Mana Serums
@@ -1184,7 +1183,6 @@ Each iteration:
 
 ## Blocked / questions for the operator
 
-- **OD-15:** Courage or Awakening as the speed scroll that stays up? Until you answer, the bot uses Courage.
 - **NA-20 → OD-13:** once NA-20 has written its proposal, you approve the help-item list, counts and supply mechanism. NA-21 waits for that approval.
 - The defaults for OD-8 and OD-10 stand unless the operator vetoes them.
 
@@ -1234,6 +1232,9 @@ Each iteration:
   - Powder becomes Odella Powder at level 25.
 
   NA-20 is now reduced to writing the proposal and requesting approval.
+
+- 2026-09-28 — OD-15 decided: the Cleric keeps **Awakening** (casting speed) up and
+  never uses Courage.
 
 ## Appendix A: Altgard shops and consumables
 
