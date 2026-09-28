@@ -23,7 +23,7 @@ public interface ICapitalAscensionDriver
 }
 
 /// <summary>CAPITAL: level-nine setup at Pernos, then complete 1006 and 1007 entirely through client actions.</summary>
-public static class CapitalAscensionScenario
+public static partial class CapitalAscensionScenario
 {
 	public static readonly BotPosition Pernos = new(241.094f, 1639.46f, 100.375f, 0);
 	public static readonly BotPosition Daminu = new(600, 1542, 116.375f, 0);
@@ -146,12 +146,12 @@ public static class CapitalAscensionScenario
 		{
 			int leah = await ApproachAsync(driver, 203725, new BotPosition(1369.60f, 1512.01f, 569.067f, 0), ct);
 			await DialogAsync(driver, leah, 1007, DialogAction.QUEST_SELECT, 1352, ct);
-			await MovieAsync(driver, leah, DialogAction.SELECT2_1, 92, ct);
+			await MovieAsync(driver, leah, 1007, DialogAction.SELECT2_1, 92, ct);
 			await SelectAsync(driver, leah, 1007, DialogAction.SETPRO2, ct);
 			await WaitStateAsync(driver, 1007, 3, 2, ct);
 			int jucleas = await ApproachAsync(driver, 203752, new BotPosition(1390.76f, 1693.14f, 573.286f, 0), ct);
 			await DialogAsync(driver, jucleas, 1007, DialogAction.QUEST_SELECT, 1693, ct);
-			await MovieAsync(driver, jucleas, DialogAction.SELECT3_1, 91, ct);
+			await MovieAsync(driver, jucleas, 1007, DialogAction.SELECT3_1, 91, ct);
 			await SelectAsync(driver, jucleas, 1007, DialogAction.SETPRO3, ct);
 			await WaitStateAsync(driver, 1007, 4, 10, ct);
 			int trainer = await ApproachAsync(driver, 203758, new BotPosition(1427.68f, 1614.14f, 573.706f, 0), ct);
@@ -182,11 +182,11 @@ public static class CapitalAscensionScenario
 		await driver.WaitAsync(typeof(SM_DIALOG_WINDOW), packet => packet.Get<int>("targetObjectId") == npc.ObjectId, token);
 		return npc.ObjectId;
 	}
-	private static async Task DefeatAsync(ICapitalAscensionDriver driver, int target, CancellationToken token)
+	private static async Task DefeatAsync(ICapitalAscensionDriver driver, int target, CancellationToken token, int maxAttacks = 180)
 	{
-		for (int attack = 0; attack < 180 && driver.Api.World.Objects.TryGetValue(target, out var npc); attack++)
+		for (int attack = 0; attack < maxAttacks && driver.Api.World.Objects.TryGetValue(target, out var npc); attack++)
 		{
-			Require(!driver.Api.World.IsDead, "The journey subject died in Karamatis.");
+			Require(!driver.Api.World.IsDead, "The journey subject died in the Ascension instance.");
 			await driver.MoveAsync(npc.Position with { X = npc.Position.X - 1 }, token);
 			await driver.DelayAsync(TimeSpan.FromSeconds(3), token);
 			await driver.SendAsync(driver.Api.Target(target), token);
@@ -195,9 +195,9 @@ public static class CapitalAscensionScenario
 		}
 		Require(!driver.Api.World.Objects.ContainsKey(target), "Ascension opponent survived the bounded normal-attack window.");
 	}
-	private static async Task MovieAsync(ICapitalAscensionDriver driver, int npc, int action, int movie, CancellationToken token)
+	private static async Task MovieAsync(ICapitalAscensionDriver driver, int npc, int quest, int action, int movie, CancellationToken token)
 	{
-		await SelectAsync(driver, npc, 1007, action, token);
+		await SelectAsync(driver, npc, quest, action, token);
 		await driver.WaitAsync(typeof(SM_PLAY_MOVIE), packet => packet.Get<int>("cutsceneId") == movie, token);
 	}
 	private static Task SelectAsync(ICapitalAscensionDriver driver, int npc, int quest, int action, CancellationToken token) =>

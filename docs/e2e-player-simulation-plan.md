@@ -124,7 +124,7 @@ every future run, including director/setup accounts.
 | Natural Ishalgen policy slices | NI-01, NI-02, NI-03, NI-04, NI-05, NI-06 | Unit-tested policy; no natural SIM manifest scenario yet | One-bot retained Priest slices through NI-06; NI-06 completes Q2133, not the 41-quest journey |
 | Natural Ishalgen full journey | NI-09 | Shared driver completed all 41 quests on seeds 1/3/4/5; SIM receipt is separate from this LIVE manifest scenario | Isolated ordinary-rate LIVE run ni09-live-a4 passed all 41 quests with zero deaths, level 9 at Munin, Q2008 untouched and final relog persistence verified |
 | Natural Ishalgen existing-world attach | NI-10 | Not selected; attach-only (`Attach` mode) | Never run by a suite. `scripts/live/attach-live.ps1 -Target aion` plays NI-09's journey on the operator's running world, read-only toward its lifecycle and database; human coexistence proof pending |
-| Ascension and capital ceremony | CAPITAL | Implemented (P8-01), GM-prepared focused journey | Implemented; not the deferred natural journey |
+| Ascension and capital ceremony | CAPITAL, CAPITAL-ASMO | Implemented (P8-01; Asmodian twin NA-02), GM-prepared focused journeys | Implemented; not the natural journey |
 | Gathering and refusal/interruption | E1, E2 | Implemented (P8-01) | Implemented (P8-01) |
 | Vendor buy/sell/repurchase and trade-in limits | E3, E11 | Implemented (P8-01/P8-06) | Implemented (P8-01/P8-06) |
 | Cooking, profession learning and work orders | E4, E5 | Implemented (P8-01) | Implemented (P8-01) |

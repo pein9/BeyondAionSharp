@@ -49,8 +49,12 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			tier,
 			shardCount,
 			_ => TimeSpan.Zero);
+		// AION_SIM_SCENARIO=<id>[,<id>] narrows a local development run to named scenarios of the selected tier.
+		string[] only = (Environment.GetEnvironmentVariable("AION_SIM_SCENARIO") ?? "")
+			.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 		ScenarioExecution[] processPlan = plan
 			.Where(execution => string.Equals(execution.ProcessKey, processKey, StringComparison.Ordinal))
+			.Where(execution => only.Length == 0 || only.Contains(execution.Scenario.Id, StringComparer.Ordinal))
 			.ToArray();
 
 		Assert.NotEmpty(processPlan);
@@ -298,6 +302,9 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 				break;
 			case "CAPITAL":
 				await RunCapitalAsync(execution.Scenario, includeHistory);
+				break;
+			case "CAPITAL-ASMO":
+				await RunCapitalAsmodianAsync(execution.Scenario, includeHistory);
 				break;
 			default:
 				throw new InvalidOperationException($"SIM scenario '{execution.Scenario.Id}' has no runner.");

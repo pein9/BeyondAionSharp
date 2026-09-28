@@ -735,6 +735,20 @@
     "resetEpoch": false
   },
   {
+    "id": "CAPITAL-ASMO",
+    "modes": ["Sim"],
+    "tier": "Full",
+    "race": "Asmodians",
+    "map": 220010000,
+    "channelNeeds": "Exclusive",
+    "bots": 1,
+    "virtualDuration": "00:35:00",
+    "consumes": [],
+    "requires": ["Db"],
+    "expectedFail": null,
+    "resetEpoch": false
+  },
+  {
     "id": "S1",
     "modes": ["Sim", "Live"],
     "tier": "Full",

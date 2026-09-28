@@ -193,7 +193,7 @@ The obelisk dialog opens at 9 m, but binding is accepted only **within 5 m**.
 | 13 | 2009 v2 | (1469.10, 1466.08, 177.82), about 160 m and 18 m lower | Balder 204075 | QUEST_SELECT → 1693; SELECT3_1 → **movie 122** (end or skip it); SETPRO3 | For a character that started as a Priest: var 40, **reward group 3**, REWARD |
 | 14 | 2009 REWARD | (1479.01, 1431.83, 177.32), about 36 m | Lyfjaberga 204083 | talk → page 3057; SELECT_QUEST_REWARD → page 8; **REWARD2 (9) = Karmic Staff 101500498** | +13,125 XP → **level 10**; 250,000 Kinah; 5× 162001057; level 10 skills auto-learned; Q2009 completes and **Q2904 starts at var 0** |
 | 15 | 2904 v0 | (1682.45, 1397.31, 195.36), about 206 m back up | Doman 204191 (4 m) | QUEST_SELECT → 1352; SETPRO1 | var 1 |
-| 16 | travel | Doman | Doman | AIRLINE_SERVICE (44) → `SM_TELEPORT_MAP` (teleport 50); `CM_TELEPORT_SELECT(npc, loc 9)` | −500 Kinah (through the price service); arrive at **Altgard 220030000 (1752.53, 1806.61, 254.66)**; **Q24010 starts by itself** on `CM_LEVEL_READY` |
+| 16 | travel | Doman | Doman | AIRLINE_SERVICE (44) → `SM_TELEPORT_MAP` (teleport 50); `CM_TELEPORT_SELECT(npc, loc 9)` | −500 Kinah before price modifiers. It went through `PricesService`, and **706** was observed in SIM (NA-02); arrive at **Altgard 220030000 (1752.53, 1806.61, 254.66)**; **Q24010 starts by itself** on `CM_LEVEL_READY` |
 | 17 | bind | Altgard Fortress (1658.44, 1815.30, 254.10), about 94 m west | obelisk 700065 | talk → `SM_QUESTION_WINDOW` 160012 (price 451); `CM_QUESTION_RESPONSE(160012, 1)` from within 5 m | −451 Kinah; `SM_BIND_POINT_INFO`; `BIND_KISK` animation |
 | 18 | 2904 v1 | (1667.09, 1747.48, 260.28), about 68 m south | Meiyer 203559 | QUEST_SELECT → REWARD, page 2375; SELECT_QUEST_REWARD → page 5; NOREWARD (23) | quest complete: 11,237 XP, 5× 160002273 |
 | 19 | 24010 | (1662.63, 1748.56, 260.24), beside Meiyer | Suthran 203557 | QUEST_SELECT → REWARD, page 1011; SELECT_QUEST_REWARD → page 5; NOREWARD (23) | quest complete: 22,473 XP, 2,170 Kinah. Q24011 stays locked below level 11 |
@@ -485,7 +485,7 @@ OD-11, a development item is verified by **one** run.
     The operator said exact XP does not matter, and that is right: there is no cap after
     Ascension. This also corrected hazard 1: the non-Daeva cap is 126,069, not 182,252.
 
-- [ ] **NA-02 — Server proof: a focused SIM scenario for the Asmodian chain.**
+- [x] **NA-02 — Server proof: a focused SIM scenario for the Asmodian chain.**
   - **Depends:** NA-01.
   - **Do:**
     - Add a GM-prepared focused scenario, the Asmodian twin of `CAPITAL` (e.g. manifest id
@@ -522,6 +522,44 @@ OD-11, a development item is verified by **one** run.
     - `python scripts/e2e/test-code-coverage.py`;
     - `pwsh -NoProfile -File scripts/e2e/test-full-suite.ps1`.
   - **Note:** this is server coverage, not natural-play evidence.
+
+  - **Evidence (2026-09-28): CAPITAL-ASMO passes in SIM.**
+    - **Run and result:** run `na02-capital-asmo-5`, evidence in `run/na02/`. All 12 steps
+      passed. Problem ledger clean (0 observations), about 30.5 virtual minutes.
+    - **What it proves:** the C# server carries the whole Asmodian chain:
+      - Norn teleports;
+      - Ataxiar instance and flight;
+      - four assassins, then Hellion;
+      - Cleric, and the NOREWARD exit;
+      - Pandaemonium ceremony with the staff, reaching level 10;
+      - Q2904 auto-start; the Doman teleport; the 700065 bind;
+      - Meiyer, and Suthran's Q24010.
+
+      All four movies were seen, and the cutscene state was cleared. No server divergence
+      was found.
+    - **What was built:**
+      - `CapitalAscensionScenario.Asmodian.cs` reuses the Elyos helpers, and takes every id,
+        position and dialog from the NA-01 contract.
+      - The SIM driver now takes race-specific setup and verification.
+      - Manifest entry `CAPITAL-ASMO` (Sim, Full).
+      - The id is added to the P10-11 matrix.
+      - A new `AION_SIM_SCENARIO=<id>` filter lets a local SIM run pick named scenarios.
+    - **Regression checks passed:**
+      - Elyos `CAPITAL` re-run;
+      - `ScenarioManifest` tests (86 + 7);
+      - `test-code-coverage.py`;
+      - `test-full-suite.ps1` (73 SIM scenarios);
+      - warning, null-logger and clock ratchets.
+    - **Findings for later items:**
+      - (a) **The Doman fare goes through `PricesService`.** Global prices, the modifier
+        and influence taxes all apply, and it cost **706**, not 500, in SIM. NA-08 must
+        check Kinah against the client-observed
+        `World.VendorPrices.ServicePrice(base)`. The bind's 451 is charged raw.
+      - (b) **The Priest's plain mace swings are slow against Hellion** (1,461 HP,
+        about 5 per hit, with stuns). The focused test needed up to 600 swings. The natural
+        trial (NA-13) should use the Priest's skills.
+      - (c) **Movie 152 arrives inside the kill loop.** So check for movies in the packet
+        history, not by waiting for them afterwards (relevant to NA-10/NA-13).
 
 ### Phase 2: Snapshots and navigation data
 
@@ -1201,6 +1239,11 @@ Each iteration:
 - add server content;
 - buy gear.
 
+**One SIM scenario:** use `AION_SIM_DB_INTEGRATION=1 AION_SIM_TIER=Full AION_SIM_SCENARIO=<id>
+AION_E2E_RUN_DIR=<dir with run.json> dotnet test tests/Aion.Simulation.Tests --filter
+"FullyQualifiedName~ManifestScenariosRunInFixedProcessOrder"`. NA-02 has the pattern and `run/na02/`
+has examples.
+
 **Long runs:**
 - A full SIM journey takes about 6–10 minutes of real time.
 - A snapshot bridge run should take a few minutes.
@@ -1265,6 +1308,8 @@ Each iteration:
 - 2026-09-28 — Loop: NA-00a done. The warning baseline passes again after 7 test-only fixes in `SimulationMauCourseTests.cs`.
 
 - 2026-09-28 — Loop: NA-01 is done, with the contract fixture, its loader and 4 passing tests. The endpoint pins a minimum level of 10, not exact XP.
+
+- 2026-09-28 — Loop: NA-02 done. CAPITAL-ASMO passes in SIM on the first clean run. The server carries the whole Asmodian bridge. The Doman fare is price-adjusted: 706 in SIM.
 
 ## Appendix A: Altgard shops and consumables
 
