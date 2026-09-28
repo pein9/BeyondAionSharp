@@ -1,0 +1,40 @@
+{
+  "mapId": 320020000,
+  "mapName": "Ataxiar",
+  "bakerVersion": 4,
+  "settingsFingerprint": "5db8e45a00557337",
+  "settings": {
+    "cellSize": 0.3,
+    "cellHeight": 0.2,
+    "agentHeight": 1.6,
+    "agentRadius": 0.5,
+    "agentMaxClimb": 0.8,
+    "agentMaxSlope": 45,
+    "tileSizeCells": 128,
+    "regionMinSize": 8,
+    "regionMergeSize": 20,
+    "edgeMaxLength": 12,
+    "edgeMaxError": 1.3,
+    "vertsPerPoly": 6,
+    "detailSampleDistance": 6,
+    "detailSampleMaxError": 1,
+    "flagMergeVoxels": 1,
+    "swimDepth": 1.5,
+    "roadHalfWidth": 3
+  },
+  "sourceFingerprint": "447832fd46302c91",
+  "waterLevel": 16,
+  "tilesX": 27,
+  "tilesY": 27,
+  "tilesWithPolygons": 29,
+  "polygons": 1052,
+  "polygonsByArea": {
+    "ground": 1052
+  },
+  "doors": 0,
+  "roads": 0,
+  "maskSectors": 94,
+  "modelTriangles": 66312,
+  "terrainTriangles": 0,
+  "navMeshSha256": "fc45682112459a686265479e394f993c3a00ff97e993ed6379ac850f8d743d75"
+}

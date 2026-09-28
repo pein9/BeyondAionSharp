@@ -228,6 +228,17 @@ destination's island first.
 
 All of these are generated. Never hand-edit them. Change the inputs or settings and regenerate.
 
+**Checked-in maps.** Poeta (210010000) and Ishalgen (220010000) are the starter maps. The Ascension bridge
+([natural-ascension-altgard.md](natural-ascension-altgard.md), NA-04, 2026-09-28) adds three more:
+
+| Map | Navmesh | Travel graph |
+|---|---|---|
+| Ataxiar instance (320020000) | 1,052 polygons, 66 KiB | 9 nodes |
+| Pandaemonium (120010000) | 1.2 MB | 260 nodes, 985 links, 7 exits |
+| Altgard (220030000) | 86,537 polygons, 5.5 MiB | 649 nodes, 2,601 links |
+
+None of the three has roads. They were baked with `bake --maps 320020000,120010000,220030000`.
+
 **After a spawn placement pass** (retail-accuracy edits to `spawns/Npcs`, `Gather` or `Statics`
 on a starter map): run the height audit above — a heightmap-derived placement puts anything under
 an overhang or in a cave on the ground above it (nineteen Ishalgen spawns around the Black Opal
@@ -359,8 +370,8 @@ decision changes. Batch results and the recorded human Hatata comparison are in
 ```powershell
 # 1. Playable-area masks from the client's <level>-path.dat (all maps, about 45 s)
 python tools/nav/extract_walk_masks.py --client "C:/Program Files (x86)/Beyond Aion"
-# 2. Roads from the client map art cached by the aion-portal spawn editor (needs numpy, scikit-image, pillow)
-python tools/nav/extract_roads.py --map-id 220010000 --image ../aion-portal/assets/maps/220010000-ishalgen-map.webp --manifest ../aion-portal/assets/maps/manifest.json
+# 2. Roads from the client map art cached by the spawn editor (../aion-spawn-editor; ../aion-portal/assets is empty now) (needs numpy, scikit-image, pillow)
+python tools/nav/extract_roads.py --map-id 220010000 --image ../aion-spawn-editor/assets/maps/220010000-ishalgen-map.webp --manifest ../aion-spawn-editor/assets/maps/manifest.json
 python tools/nav/audit_spawn_heights.py --map-id 220010000 --base <rev before the spawn change>   # floating spots and floors beneath
 pwsh -NoProfile -File scripts/parity/regen-geo-golden.ps1                                          # after any starter spawn/walker edit
 # 3. Navmeshes (starter maps by default; --maps all|baked|<id,id>)

@@ -610,7 +610,7 @@ OD-11, a development item is verified by **one** run.
       (`AION_SIM_NI08_DATABASE`, `NI08_RESUME_CHARACTER`, `AION_SIM_NI08_ELAPSED_MS`).
       Drop the schema with `-Action Drop -Database <db>` when done.
 
-- [ ] **NA-04 — Bake and check in navigation for 320020000, 120010000 and 220030000.**
+- [x] **NA-04 — Bake and check in navigation for 320020000, 120010000 and 220030000.**
   - **Depends:** none.
   - **Do:**
     - Run `dotnet run --project tools/Aion.NavBake -- bake --maps 320020000,120010000,220030000`,
@@ -628,6 +628,35 @@ OD-11, a development item is verified by **one** run.
   - **Done when:** the navmeshes and graphs are checked in, and `check` passes on all five
     baked maps.
   - **Verify:** `dotnet run --project tools/Aion.NavBake -- check --maps baked`.
+
+  - **Evidence (2026-09-28):**
+    - **Baked and checked in** under `game-server/data/nav/`:
+
+      | Map | Navmesh | Travel graph |
+      |---|---|---|
+      | 320020000 | 1,052 polygons, 66 KiB | 9 nodes |
+      | 120010000 | 1.2 MB | 260 nodes, 985 links |
+      | 220030000 | 86,537 polygons, 5.5 MiB | 649 nodes, 2,601 links |
+
+      `check --maps baked` passes on all five maps.
+    - **Routing** (`NavBake points` through the real router):
+      - Pandaemonium: arrival (1685, 1400, 195) → Heimdall, Balder, Lyfjaberga and Doman
+        all routed.
+      - Altgard: landing → obelisk 700065, Meiyer, Suthran, Donabe and Nirmirn all routed.
+      - Ataxiar: landing (308, 275) → Munin's spawn and all five trial spawns routed.
+    - **Render** (`run/na04-render/`): the Pandaemonium mesh covers the city only, as a
+      single main network.
+    - **Other checks:** `docs/bot-navigation.md` gained a table of the checked-in maps and
+      the fixed map-art path. 211 navigation/natural unit tests pass, as do the warning,
+      null-logger and clock ratchets.
+    - **Findings for NA-06/13/14:**
+      - (a) For Heimdall, Balder and Lyfjaberga, `FindInteractionPath` returns
+        `NoApproachPoint` although the plain route reaches them. They probably stand on a
+        dais or behind a counter, so the navigator needs a fallback to the plain route that
+        stops within talk range.
+      - (b) The plain route to obelisk 700065 is `GeometryRejected`, because the obelisk
+        itself is solid, but the interaction route works. Use interaction routing for the
+        bind.
 
 - [ ] **NA-05 — Monitor map art for the three maps.**
   - **Depends:** none.
@@ -1336,6 +1365,8 @@ has examples.
 - 2026-09-28 — Loop: NA-02 done. CAPITAL-ASMO passes in SIM on the first clean run. The server carries the whole Asmodian bridge. The Doman fare is price-adjusted: 706 in SIM.
 
 - 2026-09-28 — Loop: NA-03 is done. The `munin` snapshot was captured from a natural seed-1 run, then restored and verified. Snapshot tooling and its contract test were added.
+
+- 2026-09-28 — Loop: NA-04 done. Navmeshes and travel graphs for the Ataxiar instance, Pandaemonium and Altgard are checked in; every route leg routes. Pandaemonium NPCs report `NoApproachPoint` for the interaction route (noted for NA-14).
 
 ## Appendix A: Altgard shops and consumables
 
