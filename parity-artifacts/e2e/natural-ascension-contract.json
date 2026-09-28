@@ -78,7 +78,7 @@
     "potionGoodsList": 275,
     "reagentNpcId": 203579,
     "purchases": [
-      { "itemId": 162000053, "targetCombinedLifePotions": 12 },
+      { "itemId": 162000053, "target": 12 },
       { "itemId": 169300003, "target": 30 }
     ],
     "buysGear": false

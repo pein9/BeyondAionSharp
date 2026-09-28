@@ -1170,7 +1170,7 @@ OD-11, a development item is verified by **one** run.
     220030000, with no deaths. The run stopped at the `shop` action for NA-16.
     - **Checks:** 214 Natural tests and the warning, null-logger and clock ratchets pass.
 
-- [ ] **NA-16 — The Altgard shop stop (row 20).**
+- [x] **NA-16 — The Altgard shop stop (row 20).**
   - **Depends:** NA-15, NA-08, NA-09.
   - **Do:** after the turn-ins, plan one walk inside the fortress, with the stops ordered
     by route (see [Appendix A](#appendix-a-altgard-shops-and-consumables)).
@@ -1195,6 +1195,33 @@ OD-11, a development item is verified by **one** run.
   - **Verify:**
     - that snapshot run
     - policy tests for the Altgard supply targets and the no-gear-purchase rule
+
+  - **Evidence (2026-09-28): the whole bridge now completes.**
+    - **Run.** From the `munin` snapshot with `NA_ASCENSION=1` (`na16-shop`, confirmed by
+      `na16-shop-b` with sold/worn/supplies traced), the engine reached **`bridge-complete`**:
+      a Cleric at level 10 with Q2008, Q2009, Q2904 and Q24010 complete, bound at 700065,
+      standing in Altgard Fortress.
+    - **Shop stop, in order:**
+      1. The equip pass swapped the Karmic Staff for the Aldelle Mace and put on the unworn
+         Fighter's Gloves.
+      2. Vendors were visited in route order.
+         - **Donabe:** 13 stacks sold for Kinah — old weapons (starter, Raider's and Aldelle
+           maces, the refused dagger), outgrown armor, bandages, foods, and the Ghost Brooch
+           (vendor junk). She bought us 30 Lesser Odella Powder; elixirs were refused as not on
+           her list.
+         - **Nirmirn:** 12 Lesser Life Elixirs bought.
+      3. One Tea of Repose drunk.
+    - **What stayed:** nothing gear-related was bought (the contract and template slot are
+      asserted).
+      - **Worn:** staff, tunic, gloves, pants, shoes, and the three Ishalgen accessories
+        (ring, necklace, belt).
+      - **Kept:** 12 elixirs, 30 powder, 5 Zeller jellies, 4 teas, 32 starter potions.
+    - **Contract change.** The elixir purchase is now "12 Lesser Life Elixirs" rather than
+      combined life potions toward 12. The Priest still carried 32 or more starter potions,
+      and the operator asked for better potions.
+    - **Checks.** The Natural tests and the warning, null-logger and clock ratchets pass.
+    - **Note for NA-19.** Foods are sold as unneeded today. The buff-ourself check could use
+      food buffs (see aion-4.8-consumables.md), so revisit protecting them there.
 
 - [ ] **NA-17 — Endpoint, persistence, and resume within the bridge.**
   - **Depends:** NA-16.
@@ -1660,6 +1687,8 @@ has examples.
 - 2026-09-28 — Loop: NA-14 done. The Pandaemonium ceremony is complete: level 10, Karmic Staff equipped, Q2904 started. The run never came near the death level.
 
 - 2026-09-28 — Loop: NA-15 done. From the Munin snapshot the bot finishes all four bridge quests. It took Doman's teleporter (706 Kinah), bound at Altgard Fortress (451 Kinah), then turned in to Meiyer and Suthran.
+
+- 2026-09-28 — Loop: NA-16 done. **The bridge completes end to end from the Munin snapshot**: a level 10 Cleric bound in Altgard, all four quests done, staff and accessories worn, junk sold, 12 elixirs and 30 powder bought, and the tea drunk.
 
 ## Appendix A: Altgard shops and consumables
 

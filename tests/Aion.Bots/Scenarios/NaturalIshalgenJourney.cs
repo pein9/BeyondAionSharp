@@ -181,6 +181,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			long failedRestockKinah = -1;
 			var refusedGear = new HashSet<int>();
 			PlayerClass? gearClass = null;
+			bool bridgeShopVisited = false; // NA-16: the Altgard shop stop is done
 
 			// Wear the best gear in the bag (the recorded human put on four unused quest rewards at Nalto).
 			// The client knows each item's slots, level and class/race limits from its tooltip; the server
@@ -747,7 +748,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					await session.SynchronizeAsync(token);
 					NaturalAscensionDecision next = NaturalAscensionDecisionEngine.Decide(bridge,
-						NaturalAscensionObservation.Observe(session.Api.World, shopVisited: false), sequence);
+						NaturalAscensionObservation.Observe(session.Api.World, bridgeShopVisited), sequence);
 					session.TraceDiagnostic("ascension-bridge-decision", new Dictionary<string, object?>
 					{
 						["sequence"] = sequence, ["action"] = next.Action, ["step"] = next.StepKey, ["quest"] = next.QuestId,
@@ -775,6 +776,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						await TakeBridgeTeleporterAsync(bridge);
 					else if (next.Action == "bind")
 						await BindInAltgardAsync(bridge);
+					else if (next.Action == "shop")
+						await ShopInAltgardAsync(bridge);
 					else
 					{
 						await WriteBridgeStopAsync(next with { Outcome = "awaiting-capability", Reason = "Not built yet: " + next.Reason });
@@ -814,6 +817,69 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					});
 				}
 				finally { combat.ScriptedTrial = false; }
+			}
+
+			// NA-16: the Altgard shop stop. Wear the best owned gear (accessories included), sell what the Cleric rules call
+			// surplus, buy only the contract's consumables (better potions, powder; never gear, OD-7), drink one Tea of Repose.
+			async Task ShopInAltgardAsync(NaturalAscensionContract bridge)
+			{
+				session.BeginStep("na-shop-altgard", "altgard-shop-stop");
+				BotWorldModel world = session.Api.World;
+				await EquipUpgradesAsync(token);
+				await session.SynchronizeAsync(token);
+				long Owned(int item) => world.Inventory.Values.Where(i => i.ItemId == item).Sum(i => i.Count);
+				IReadOnlyCollection<int> Tab(int id) => runtime.Data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList() ?? [];
+				long Base(int item) => runtime.Data.ItemDataDh.GetItemTemplate(item).GetPrice();
+				Require.True(!bridge.Shop.BuysGear, "The bridge never buys gear (OD-7).");
+				Require.True(bridge.Shop.Purchases.All(p => runtime.Data.ItemDataDh.GetItemTemplate(p.ItemId).GetItemSlot() == 0),
+					"A bridge purchase would be equipment.");
+				var plan = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(i => i.ItemId)).Decide(world);
+				var sales = plan.Sales.Select(sale => new NaturalSale(sale.ObjectId, sale.ItemId, sale.Count)).ToList();
+				BotPosition VendorAt(int npc) => runtime.Data.SpawnsDh.GetSpawnsByWorldId(bridge.Bind.MapId)
+					.Where(group => group.GetNpcId() == npc).SelectMany(group => group.GetSpawnTemplates())
+					.Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), 0)).First();
+				var steps = new NaturalServiceSteps(session);
+				var vendors = new[] { bridge.Shop.SellNpcId, bridge.Shop.PotionNpcId, bridge.Shop.ReagentNpcId }.Distinct()
+					.OrderBy(npc => Distance(session.CurrentPosition, VendorAt(npc))).ToArray();
+				foreach (int vendorNpc in vendors)
+				{
+					var wanted = bridge.Shop.Purchases
+						.Select(p => new NaturalPurchase(p.ItemId, Math.Max(0, (p.Target ?? p.TargetCombinedLifePotions ?? 0) - Owned(p.ItemId))))
+						.Where(p => p.Count > 0).ToList();
+					var sell = vendorNpc == bridge.Shop.SellNpcId ? sales : [];
+					if (wanted.Count == 0 && sell.Count == 0) continue;
+					NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World), newEntry: false);
+					NaturalNavigationResult approach = await NaturalIshalgenNavigator.ApproachNpcAsync(bridge.Bind.MapId, vendorNpc,
+						VendorAt(vendorNpc), here, token);
+					Require.True(approach.Arrived, $"Altgard vendor {vendorNpc}: {approach.Reason}");
+					NaturalVendorResult trade = await steps.TradeAsync(Require.IsType<int>(approach.TargetObjectId), sell, wanted, Tab, Base, token);
+					if (vendorNpc == bridge.Shop.SellNpcId) sales = [];
+					session.TraceDiagnostic("altgard-shop-visit", new Dictionary<string, object?>
+					{
+						["vendor"] = vendorNpc, ["sold"] = trade.Sold.Select(sold => $"{sold.ItemId}x{sold.Count}").ToArray(),
+						["bought"] = trade.Bought.Select(b => $"{b.ItemId}x{b.Count}").ToArray(),
+						["refused"] = trade.Refused.Select(r => $"{r.Purchase.ItemId}:{r.Reason}").ToArray(), ["kinah"] = world.Kinah,
+					});
+				}
+				foreach (NaturalAscensionPurchase purchase in bridge.Shop.Purchases)
+					Require.True(Owned(purchase.ItemId) >= (purchase.Target ?? 0), $"Altgard shop left {purchase.ItemId} below its target.");
+				// Tea of Repose (OD-8): once, out of combat, now that the Cleric is level 10.
+				int teaId = bridge.CeremonyReward.TeaItemId;
+				if (world.Inventory.Values.FirstOrDefault(item => item.ItemId == teaId) is { } tea)
+				{
+					long before = Owned(teaId);
+					await session.SendPacketAsync(session.Api.UseItem(tea.ObjectId, runtime.Data.ItemDataDh.GetItemTemplate(teaId)), token);
+					await session.AdvanceAsync(TimeSpan.FromSeconds(3), token);
+					await session.SynchronizeAsync(token);
+					Require.Equal(before - 1, Owned(teaId));
+				}
+				session.TraceDiagnostic("altgard-shop-result", new Dictionary<string, object?>
+				{
+					["worn"] = world.Inventory.Values.Where(item => (item.Details.EquippedSlot ?? 0) > 0).Select(item => item.ItemId).Order().ToArray(),
+					["supplies"] = new[] { 162000053, 169300003, 160002273, 162001057, 162000002 }.Select(id => $"{id}x{Owned(id)}").ToArray(),
+					["kinah"] = world.Kinah,
+				});
+				bridgeShopVisited = true;
 			}
 
 			// NA-15: Doman's teleporter to Altgard (NA-08 service step: the price-adjusted fare, the map change).
