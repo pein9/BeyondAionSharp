@@ -755,7 +755,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						["checks"] = next.Checks.Select(check => $"{check.Rule}:{check.Verdict}").ToArray(),
 					});
 					session.PublishDashboard();
-					string signature = $"{next.Action}/{next.StepKey}";
+					string signature = $"{next.Action}/{next.StepKey}/{next.Reason}";
 					repeats = signature == previous ? repeats + 1 : 0;
 					previous = signature;
 					Require.True(repeats < 3, $"The Ascension bridge made no progress on {signature}: {next.Reason}");
@@ -767,6 +767,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					NaturalAscensionStep? step = next.StepKey is string key ? bridge.Steps.Single(s => s.Key == key) : null;
 					if (next.Action == "talk" && step != null && ImplementedBridgeSteps.Contains(step.Key))
 						await PlayBridgeTalkAsync(step);
+					else if (next.Action == "fight-trial")
+						await FightAscensionTrialAsync(bridge);
+					else if (next.Action == "wait-flight")
+						await session.AdvanceAsync(TimeSpan.FromSeconds(20), token);
 					else
 					{
 						await WriteBridgeStopAsync(next with { Outcome = "awaiting-capability", Reason = "Not built yet: " + next.Reason });
@@ -774,6 +778,38 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					}
 				}
 				throw new InvalidDataException("The Ascension bridge exceeded 80 decisions.");
+			}
+
+			// NA-13: Q2008's trial in Ataxiar. Its NPCs deal 1 damage (AscensationNpcAI) and the instance has no exit, so the
+			// Priest fights as if cornered: no swarm retreat, heals and potions still on. One kill per decision.
+			async Task FightAscensionTrialAsync(NaturalAscensionContract bridge)
+			{
+				session.BeginStep("na-q2008-trial", "scripted-ascension-trial");
+				var trial = bridge.Instance.Trial.Select(group => group.NpcId).ToHashSet();
+				int? target = null;
+				for (int wait = 0; wait < 30 && target == null; wait++)
+				{
+					target = session.Api.World.Objects.Values
+						.Where(npc => npc.Kind == BotKnownObjectKind.Npc && npc.TemplateId is int id && trial.Contains(id))
+						.OrderBy(npc => Distance(session.CurrentPosition, npc.Position)).Select(npc => (int?)npc.ObjectId).FirstOrDefault();
+					if (target == null)
+					{
+						await session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+						await session.SynchronizeAsync(token);
+					}
+				}
+				Require.True(target != null, "No trial opponent became visible in Ataxiar.");
+				combat.ScriptedTrial = true;
+				try
+				{
+					bool killed = await combat.TryKillAsync(target!.Value, token, retreatAnchor: session.CurrentPosition);
+					session.TraceDiagnostic("ascension-trial-kill", new Dictionary<string, object?>
+					{
+						["target"] = target, ["killed"] = killed, ["hp"] = session.Api.World.CurrentHp,
+						["quest"] = session.Api.World.Quests.TryGetValue(2008, out BotQuestState? q) ? q.StepAndFlags : null,
+					});
+				}
+				finally { combat.ScriptedTrial = false; }
 			}
 
 			async Task WriteBridgeStopAsync(NaturalAscensionDecision stop)
@@ -849,6 +885,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					}
 					session.AcceptTeleportPosition();
 					if (otherMap) mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World));
+				}
+				if (step.FlyPathId != null)
+				{
+					// Hagen's QUEST_SELECT starts the scripted flight (teleport 3001, flypath 3); the client flies the path
+					// with CM_MOVE_IN_AIR and lands with LAND_FLYTELEPORT. The trial spawns about 2 s before the landing.
+					NaturalAscensionInstance instance = NaturalAscensionContract.LoadDefault().Instance;
+					await session.WaitForPacketAsync(typeof(SM_EMOTION), token, packet =>
+						packet.Get<int>("senderObjectId") == session.CharacterId &&
+						packet.Get<byte>("emotionType") == (byte)EmotionType.START_FLYTELEPORT);
+					var landing = new BotPosition(instance.FlyPathEnd[0], instance.FlyPathEnd[1], instance.FlyPathEnd[2], 0);
+					await session.ExecuteMovementAsync(CapitalAscensionScenario.CreateQuestFlight(session.CurrentPosition, landing,
+						instance.MapId, TimeSpan.FromSeconds(instance.FlightSeconds)), token);
+					await session.SendPacketAsync(GameClientPackets.Emotion((byte)EmotionType.LAND_FLYTELEPORT), token);
 				}
 				await session.SynchronizeAsync(token);
 				if (step.ReceivesItemId is int card)
@@ -4017,7 +4066,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 	/// <summary>Bridge talk steps the runner can play so far (NA-12: the Q2008 Norn circuit into Ataxiar).</summary>
 	private static readonly HashSet<string> ImplementedBridgeSteps =
-		["q2008-v0-munin", "q2008-v1-urd", "q2008-v2-verdandi", "q2008-v3-skuld", "q2008-v4-munin"];
+		["q2008-v0-munin", "q2008-v1-urd", "q2008-v2-verdandi", "q2008-v3-skuld", "q2008-v4-munin",
+		"q2008-v99-hagen", "q2008-v6-munin-class", "q2008-reward-munin"];
 
 	private static NaturalIshalgenObservation ObserveNaturalJourney(INaturalJourneySession session)
 	{
@@ -4341,6 +4391,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 		// Set when a retreat found no checked way out; the policy then fights instead of retreating again.
 		private bool cornered;
+
+		/// <summary>NA-13: Q2008's Ataxiar trial — no exit and 1-damage NPCs, so never retreat from the swarm.</summary>
+		public bool ScriptedTrial { get; set; }
 		public const int MaximumCombatActions = 1000;
 		private const int MaximumRevives = 20;
 
@@ -4477,7 +4530,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					HasHealedThisFight: healedThisFight, HasHotPotion: hotPotion != null,
 					HotPotionReady: hotReady,
 					HotPotionActive: NaturalIshalgenPotionPolicy.HasActiveHealing(world.VisibleEffects),
-					Cornered: cornered, TargetAdjacent: targetAdjacent, InEmergency: inEmergency, HasBlessing: hasBlessing,
+					Cornered: cornered || ScriptedTrial, TargetAdjacent: targetAdjacent, InEmergency: inEmergency, HasBlessing: hasBlessing,
 					TargetSeasoned: targetSeasoned, TargetRanged: targetRanged,
 					ConservativeRangedHold: conservativeRangedHold);
 				NaturalCombatChoice choice = NaturalPriestCombatPolicy.Decide(observation, now, parameters: mauPolicy);

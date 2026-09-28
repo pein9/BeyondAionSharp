@@ -1060,7 +1060,7 @@ OD-11, a development item is verified by **one** run.
     - **Checks.** 214 Natural tests and the warning, null-logger and clock ratchets pass.
       The flag-off journey is unchanged.
 
-- [ ] **NA-13 — Ascension instance: flight, trial, Cleric, exit (rows 6–10).**
+- [x] **NA-13 — Ascension instance: flight, trial, Cleric, exit (rows 6–10).**
   - **Depends:** NA-12, NA-09.
   - **Do:**
     - Send QUEST_SELECT to Hagen.
@@ -1083,6 +1083,26 @@ OD-11, a development item is verified by **one** run.
   - **Done when:** one snapshot run completes Q2008 as a Cleric and is back in Ishalgen
     with Q2009 START/0.
   - **Verify:** that snapshot run's trace.
+
+  - **Evidence (2026-09-28):** the run from the `munin` snapshot with `NA_ASCENSION=1`
+    (`na13-trial`) played the whole instance.
+    - **Flight.** Hagen's QUEST_SELECT, then `START_FLYTELEPORT` observed, flypath 3 flown with
+      `CM_MOVE_IN_AIR` (45 s), and `LAND_FLYTELEPORT`.
+    - **Trial.** Four guardian assassins and then Hellion, one kill per decision.
+      - `NaturalJourneyCombat.ScriptedTrial` makes the policy treat the fight as cornered: no
+        swarm retreat, heals stay on.
+      - The Priest ended at about 767 of 769 HP, with no retreats and no deaths.
+      - Q2008 var went 51 → 52 → 53 → 54 → 5 → 6.
+    - **Cleric choice.** The spawned Munin was approached through the instance navigator.
+      QUEST_SELECT, SETPRO6 (page 4080) and SETPRO14 made the class go from 9 to 10, as the
+      client observed. NOREWARD then teleported to Ishalgen (386.03, 1893.93).
+    - **Result.** **Q2008 COMPLETE, Q2009 START/0**, level 9 (the cap), stopping at
+      `q2009-v0-munin` for NA-14.
+    - **Loop guard.** The progress signature now includes the decision reason, so successive
+      trial kills count as progress.
+    - **Checks.** 214 Natural tests and the warning, null-logger and clock ratchets pass.
+    - **Note.** Normal attacks alone were too slow against Hellion in NA-02; the natural
+      Priest rotation killed it without trouble.
 
 - [ ] **NA-14 — Q2009 Pandaemonium ceremony (rows 11–14).**
   - **Depends:** NA-13.
@@ -1598,6 +1618,8 @@ has examples.
 - 2026-09-28 — Loop: NA-11 done. The bridge decision engine (16 table tests) is in place behind the `AscensionBridge` handoff flag. From the Munin snapshot it picks Munin as the first move.
 
 - 2026-09-28 — Loop: NA-12 done. The bridge runner plays the Norn circuit from the Munin snapshot into Ataxiar (Q2008 var 99). It stops at Hagen for NA-13.
+
+- 2026-09-28 — Loop: NA-13 done. From the Munin snapshot the bot flies Hagen's path, wins the trial (no retreats, no deaths), becomes a Cleric and leaves Ataxiar. Q2008 is complete.
 
 ## Appendix A: Altgard shops and consumables
 
