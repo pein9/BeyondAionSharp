@@ -95,8 +95,8 @@ quests done, level 9, and Q2008 at START/0. From there, using only ordinary clie
 - Q2008, Q2009, Q2904 and Q24010 are complete in the client-observed completed journal.
 - Q2009 was completed with reward group 3 and **REWARD2**, the Karmic Staff 101500498.
 - Class is **Cleric** (id 10). The character is a Daeva.
-- The character is **level 10**, the expected value at ordinary rates; the contract test
-  computes it.
+- The character is **at least level 10**, which Q2904 requires. Exact XP is not tracked:
+  after Ascension there is no level cap.
 - The bind point is 700065 on map 220030000. `SM_BIND_POINT_INFO` was observed and
   451 Kinah was charged.
 
@@ -232,8 +232,8 @@ The C# twins live under `src/Aion.GameServer/Handlers/Quest/ascension/` and `…
 
 1. **The character stays level 9 through Q2008.**
    - Q2008's 73,200 XP is paid before Daeva status is set.
-   - A non-Daeva is capped at the level-10 threshold (182,252 XP); the client shows a full
-     bar at level 9.
+   - A non-Daeva is capped at the start of level 10 (126,069 XP), which the client shows as
+     a full bar at level 9. Nothing past Ascension is capped.
    - Level 10 comes only with the Q2009 payout.
    - The Ishalgen engine's `pre-ascension-level` guard (level ≥ 10 → blocked) must keep
      applying to the Ishalgen leg, and must not apply to this one.
@@ -438,7 +438,7 @@ OD-11, a development item is verified by **one** run.
 
 ### Phase 1: Contract and server confidence
 
-- [ ] **NA-01 — Bridge contract fixture.**
+- [x] **NA-01 — Bridge contract fixture.**
   - **Depends:** NA-00.
   - **Do:**
     - Write `parity-artifacts/e2e/natural-ascension-contract.json` with:
@@ -465,6 +465,25 @@ OD-11, a development item is verified by **one** run.
   - **Done when:** the fixture and its tests pass. Any mismatch with the data is resolved
     Java-first.
   - **Verify:** `dotnet test tests/Aion.GameServer.Tests --filter "FullyQualifiedName~NaturalAscensionContract"`.
+
+  - **Evidence (2026-09-28):** added:
+    - `parity-artifacts/e2e/natural-ascension-contract.json`;
+    - the loader `tests/Aion.Bots/Scenarios/NaturalAscensionContract.cs`, which resolves
+      action names to `DialogAction` ids;
+    - `tests/Aion.GameServer.Tests/NaturalAscensionContractTests.cs`, whose 4 tests pass.
+
+    The tests check, against the shipped data:
+    - every step's NPC spawn, talk range, dialog branch, item, teleport and movie;
+    - the class page 4080 and SETPRO14 → Cleric, plus the masteries;
+    - that only NOREWARD exits the instance;
+    - the trial spawns and the 1-damage AI;
+    - the flypath, teleporter loc 9 and its price, and the 700065 bind price;
+    - the shop goods lists and buy/sell dialogs;
+    - the accessories and protected items.
+
+    On XP, only one fact is pinned: the Q2009 payout reaches level 10, which Q2904 requires.
+    The operator said exact XP does not matter, and that is right: there is no cap after
+    Ascension. This also corrected hazard 1: the non-Daeva cap is 126,069, not 182,252.
 
 - [ ] **NA-02 — Server proof: a focused SIM scenario for the Asmodian chain.**
   - **Depends:** NA-01.
@@ -1244,6 +1263,8 @@ Each iteration:
   never uses Courage.
 
 - 2026-09-28 — Loop: NA-00a done. The warning baseline passes again after 7 test-only fixes in `SimulationMauCourseTests.cs`.
+
+- 2026-09-28 — Loop: NA-01 is done, with the contract fixture, its loader and 4 passing tests. The endpoint pins a minimum level of 10, not exact XP.
 
 ## Appendix A: Altgard shops and consumables
 

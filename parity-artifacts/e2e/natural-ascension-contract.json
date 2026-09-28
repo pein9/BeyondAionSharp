@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "start": {
+    "contract": "natural-ishalgen-contract.json",
+    "mapId": 220010000,
+    "race": "ASMODIANS",
+    "class": "PRIEST",
+    "level": 9,
+    "questId": 2008,
+    "status": "START",
+    "var": 0,
+    "npcId": 203550,
+    "experienceCap": 126069
+  },
+  "quests": [
+    { "id": 2008, "category": "MISSION", "minimumLevel": 9, "rewardExperience": 73200, "prerequisite": null },
+    { "id": 2009, "category": "MISSION", "minimumLevel": 9, "rewardExperience": 13125, "prerequisite": 2008 },
+    { "id": 2904, "category": "IMPORTANT", "minimumLevel": 10, "rewardExperience": 11237, "prerequisite": 2009 },
+    { "id": 24010, "category": "MISSION", "minimumLevel": 10, "rewardExperience": 22473, "prerequisite": null }
+  ],
+  "steps": [
+    { "key": "q2008-v0-munin", "questId": 2008, "var": 0, "mapId": 220010000, "npcId": 203550, "position": [378.74, 1895.46, 328.838], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO1"], "pages": [1011], "teleport": { "mapId": 220010000, "position": [585.5074, 2416.0312, 278.625] } },
+    { "key": "q2008-v1-urd", "questId": 2008, "var": 1, "mapId": 220010000, "npcId": 790003, "position": [587.621, 2412.88, 278.557], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO2"], "pages": [1352], "receivesItemId": 182203009, "teleport": { "mapId": 220010000, "position": [940.74475, 2295.5305, 265.65674] } },
+    { "key": "q2008-v2-verdandi", "questId": 2008, "var": 2, "mapId": 220010000, "npcId": 790002, "position": [938, 2298, 266.125], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO3"], "pages": [1693], "receivesItemId": 182203010, "teleport": { "mapId": 220010000, "position": [1111.5637, 1719.2745, 270.114256] } },
+    { "key": "q2008-v3-skuld", "questId": 2008, "var": 3, "mapId": 220010000, "npcId": 203546, "position": [1114.31, 1718.32, 271.179], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO4"], "pages": [2034], "receivesItemId": 182203011, "teleport": { "mapId": 220010000, "position": [383.10248, 1895.3093, 327.625] } },
+    { "key": "q2008-v4-munin", "questId": 2008, "var": 4, "mapId": 220010000, "npcId": 203550, "position": [378.74, 1895.46, 328.838], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SELECT5_1", "SETPRO5"], "pages": [2375, 2376], "movieId": 57, "teleport": { "mapId": 320020000, "position": [457.65, 426.8, 230.4] } },
+    { "key": "q2008-v99-hagen", "questId": 2008, "var": 99, "mapId": 320020000, "npcId": 205020, "position": [434.75, 399.5, 233.566], "talkRange": 6,
+      "actions": ["QUEST_SELECT"], "pages": [], "flyPathId": 3 },
+    { "key": "q2008-v6-munin-class", "questId": 2008, "var": 6, "mapId": 320020000, "npcId": 203550, "position": [301.93, 274.26, 205.7], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO6", "SETPRO14"], "pages": [2716, 4080] },
+    { "key": "q2008-reward-munin", "questId": 2008, "status": "REWARD", "mapId": 320020000, "npcId": 203550, "position": [301.93, 274.26, 205.7], "talkRange": 6,
+      "actions": ["SELECTED_QUEST_NOREWARD"], "pages": [5], "teleport": { "mapId": 220010000, "position": [386.03476, 1893.9309, 327.62283] } },
+    { "key": "q2009-v0-munin", "questId": 2009, "var": 0, "mapId": 220010000, "npcId": 203550, "position": [378.74, 1895.46, 328.838], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO1"], "pages": [1011], "teleport": { "mapId": 120010000, "position": [1685, 1400, 195] } },
+    { "key": "q2009-v1-heimdall", "questId": 2009, "var": 1, "mapId": 120010000, "npcId": 204182, "position": [1614.00, 1397.96, 193.127], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SELECT2_1", "SETPRO2"], "pages": [1352, 1353], "movieId": 121 },
+    { "key": "q2009-v2-balder", "questId": 2009, "var": 2, "mapId": 120010000, "npcId": 204075, "position": [1469.10, 1466.08, 177.816], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SELECT3_1", "SETPRO3"], "pages": [1693, 1694], "movieId": 122 },
+    { "key": "q2009-reward-lyfjaberga", "questId": 2009, "status": "REWARD", "var": 40, "mapId": 120010000, "npcId": 204083, "position": [1479.01, 1431.83, 177.317], "talkRange": 6,
+      "actions": ["USE_OBJECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_REWARD2"], "pages": [3057, 8] },
+    { "key": "q2904-v0-doman", "questId": 2904, "var": 0, "mapId": 120010000, "npcId": 204191, "position": [1682.45, 1397.31, 195.362], "talkRange": 4,
+      "actions": ["QUEST_SELECT", "SETPRO1"], "pages": [1352] },
+    { "key": "q2904-reward-meiyer", "questId": 2904, "var": 1, "mapId": 220030000, "npcId": 203559, "position": [1667.09, 1747.48, 260.282], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_NOREWARD"], "pages": [2375, 5] },
+    { "key": "q24010-reward-suthran", "questId": 24010, "var": 0, "mapId": 220030000, "npcId": 203557, "position": [1662.63, 1748.56, 260.236], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_NOREWARD"], "pages": [1011, 5] }
+  ],
+  "classChoice": { "questId": 2008, "fromClass": "PRIEST", "toClass": "CLERIC", "classPageId": 4080, "action": "SETPRO14", "masterySkillIds": [46, 48, 49, 50, 89, 106] },
+  "ceremonyReward": { "questId": 2009, "rewardGroup": 3, "selectableList": "priest_selectable_reward", "action": "SELECTED_QUEST_REWARD2", "itemId": 101500498, "itemGroup": "STAFF", "kinah": 250000, "teaItemId": 162001057, "teaCount": 5 },
+  "dispatch": { "questId": 2904, "startsAfter": 2009, "startReward": 3, "classesPermitted": ["CHANTER", "CLERIC"], "unhandedWorkItemId": 182207004 },
+  "instance": {
+    "mapId": 320020000,
+    "entry": [457.65, 426.8, 230.4],
+    "flyPathId": 3,
+    "flyPathEnd": [308.21, 275.45, 206.27],
+    "flightSeconds": 45,
+    "trial": [
+      { "npcId": 205040, "count": 4, "positions": [[294, 277, 207], [305, 279, 206.5], [298, 253, 205.7], [306, 251, 206]] },
+      { "npcId": 205041, "count": 1, "positions": [[301, 259, 205.5]] }
+    ],
+    "trialDamage": 1,
+    "hostileNpcIds": [205038],
+    "exitAction": "SELECTED_QUEST_NOREWARD",
+    "resetVar": 4
+  },
+  "teleporter": { "npcId": 204191, "teleportId": 50, "locationId": 9, "basePrice": 500, "destination": { "mapId": 220030000, "position": [1752.5322, 1806.6096, 254.66133] } },
+  "bind": { "npcId": 700065, "mapId": 220030000, "position": [1658.440, 1815.301, 254.099], "price": 451, "questionId": 160012, "acceptRange": 5 },
+  "movies": [57, 152, 121, 122],
+  "shop": {
+    "sellNpcId": 203579,
+    "potionNpcId": 203576,
+    "potionGoodsList": 275,
+    "reagentNpcId": 203579,
+    "purchases": [
+      { "itemId": 162000053, "targetCombinedLifePotions": 12 },
+      { "itemId": 169300003, "target": 30 }
+    ],
+    "buysGear": false
+  },
+  "keptAccessories": [122000869, 121000749, 123000864],
+  "protectedItemIds": [182203009, 182203010, 182203011, 101500498, 162000053, 162000057, 162000058, 169300003, 160002273, 162001057],
+  "endpoint": {
+    "mapId": 220030000,
+    "class": "CLERIC",
+    "classId": 10,
+    "minimumLevel": 10,
+    "completedQuestIds": [2008, 2009, 2904, 24010],
+    "bindNpcId": 700065,
+    "equippedItemIds": [101500498]
+  }
+}
