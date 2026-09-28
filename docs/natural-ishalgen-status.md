@@ -847,3 +847,18 @@ Keep the existing deterministic journey as the regression baseline; use
 focused checks before any new full-journey batch. The last full-journey
 evidence remains `retreat72` (four completed seeds, eight deaths) from the
 commit checkpoint above.
+
+## Next leg: Ascension to Altgard as a Cleric (planned 2026-09-28)
+
+D25 authorizes the next leg, an Ascension bridge: Q2008 choosing **Cleric**, the Q2009
+ceremony in Pandaemonium, Q2904 "Dispatch to Altgard", the Altgard Fortress bind (700065),
+Q24010, an Altgard shop stop (equip owned gear and accessories, sell junk, potions only), and
+the start of level 10 Cleric play (powder rest, a buff-ourself check with help-item scrolls,
+wait-or-fight patrol handling); the Karmic Staff is the ceremony weapon. Deaths are recorded,
+not failures. The Ishalgen
+leg above stays frozen as its regression baseline. The route spec, hazards and ordered TODO
+list (NA-00..NA-28, worked in Loop mode, one commit per item, each step proved once) are in
+[natural-ascension-altgard.md](natural-ascension-altgard.md). The C# server path was audited
+against Java `ce54b7931` and matches; the work is bot-side (multi-map context, class-aware
+identity/gear, the leg handlers), plus checked-in navigation for 320020000, 120010000 and
+220030000.

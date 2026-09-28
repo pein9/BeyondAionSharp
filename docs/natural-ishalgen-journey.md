@@ -726,8 +726,9 @@ limitations remain declared boundaries rather than invented content.
 ## Rules for a natural run
 
 - Create one ordinary access-level-0 Asmodian Priest at level 1, intended to become
-  a Chanter later. Chanter is selected during Ascension; this milestone ends while
-  the character is still a Priest.
+  a Cleric later (D25, 2026-09-28; earlier plans said Chanter). The class is selected
+  during Ascension; this milestone ends while the character is still a Priest. The
+  Ascension-to-Altgard leg is planned in [its own document](natural-ascension-altgard.md).
 - Earn XP, items, kinah, gathering skill, equipment, and learned combat skills
   through the same actions and eligibility rules as a human player.
 - No GM assistance to the subject or its objectives: no forced levels/classes,
@@ -813,7 +814,7 @@ correctness by themselves.
 3. Earn level 9 and finish physically standing at Munin (NPC 203550) in Ishalgen,
    still a Priest, with Ascension Q2008 at START, step/var 0. Its automatic journal
    activation is expected; do not interact with Munin for Q2008, perform its
-   objectives, or choose Chanter. Earlier Munin interactions for included quests
+   objectives, or choose a class (that is the D25 leg). Earlier Munin interactions for included quests
    are allowed. Reaching level 9 or the 182,252-XP cap early does not excuse any
    remaining eligible Ishalgen quests; a full XP bar is acceptable.
 4. Relog and verify that completed quests, character class/level, inventory, and
