@@ -413,7 +413,7 @@ OD-11, a development item is verified by **one** run.
   - The journey rules say Cleric instead of Chanter.
   - Pointers are in `CLAUDE.md` and the status handoff.
 
-- [ ] **NA-00a — Restore the warning baseline (pre-existing breach).**
+- [x] **NA-00a — Restore the warning baseline (pre-existing breach).**
   - **Depends:** none. Do this first: every loop commit runs the baseline check.
   - **The breach:** HEAD `e2f0599e9` (the Mau pilot checkpoint) raised the count from
     4,243 to 4,250 warning sites. All seven new sites are in
@@ -428,6 +428,13 @@ OD-11, a development item is verified by **one** run.
   - **Verify:** the baseline script, plus
     `dotnet test tests/Aion.Simulation.Tests --filter "FullyQualifiedName~MauCourse"`.
     That test is env-gated; it must still compile and skip or pass as before.
+
+  - **Evidence (2026-09-28):**
+    - Fixed `SimulationMauCourseTests.cs`: at `:163`, `Assert.Single` now uses the
+      predicate overload; at `:245-247`, `GetSpawn()!`, the repo's existing test idiom.
+    - `check-warning-baseline.ps1`, `check-null-loggers.ps1` and `check-clock-reads.ps1`
+      pass.
+    - The Mau filter builds and skips behind its environment gate, as before.
 
 ### Phase 1: Contract and server confidence
 
@@ -1235,6 +1242,8 @@ Each iteration:
 
 - 2026-09-28 — OD-15 decided: the Cleric keeps **Awakening** (casting speed) up and
   never uses Courage.
+
+- 2026-09-28 — Loop: NA-00a done. The warning baseline passes again after 7 test-only fixes in `SimulationMauCourseTests.cs`.
 
 ## Appendix A: Altgard shops and consumables
 

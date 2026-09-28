@@ -160,7 +160,7 @@ public sealed partial class SimulationFastScenarioTests
 			{
 				var instance = fixture.World.GetWorldMap(220010000).GetMainWorldMapInstance();
 				foreach (MauSpawnKey key in start.Keep)
-					Assert.Single(instance.GetNpcs().Where(npc => key.Matches(npc)));
+					Assert.Single(instance.GetNpcs(), npc => key.Matches(npc));
 				if (start.ClearRadius > 0)
 				{
 					foreach (var npc in instance.GetNpcs().Where(npc =>
@@ -242,9 +242,9 @@ public sealed partial class SimulationFastScenarioTests
 			var npcs = worldInstance.GetNpcs().OrderBy(npc => npc.GetObjectId()).Select(npc => new
 			{
 				objectId = npc.GetObjectId(), templateId = npc.GetNpcId(),
-				spawnX = npc.GetSpawn().GetX(), spawnY = npc.GetSpawn().GetY(),
-				spawnZ = npc.GetSpawn().GetZ(), spawnHeading = npc.GetSpawn().GetHeading(),
-				walkerId = npc.GetSpawn().GetWalkerId(), randomWalkRange = npc.GetSpawn().GetRandomWalkRange(),
+				spawnX = npc.GetSpawn()!.GetX(), spawnY = npc.GetSpawn()!.GetY(),
+				spawnZ = npc.GetSpawn()!.GetZ(), spawnHeading = npc.GetSpawn()!.GetHeading(),
+				walkerId = npc.GetSpawn()!.GetWalkerId(), randomWalkRange = npc.GetSpawn()!.GetRandomWalkRange(),
 				x = npc.GetX(), y = npc.GetY(), z = npc.GetZ(), heading = npc.GetHeading(),
 				hp = npc.GetLifeStats().GetCurrentHp(), dead = npc.IsDead(),
 				aiState = npc.GetAi().GetState().ToString(), aiSubState = npc.GetAi().GetSubState().ToString(),
