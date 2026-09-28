@@ -4,9 +4,10 @@ Natural SIM runs serve the read-only monitor at <http://127.0.0.1:17880/>.
 LIVE runs use the same dashboard with `--dashboard-port 17880`, and NI-10's
 `scripts/live/attach-live.ps1` serves it there by default (`-DashboardPort` to change).
 
-The map uses the portal's Ishalgen artwork and `calibrated-game-y-x`
-coordinates. It switches to the portal's Ataxiar coordinate grid during that
-quest segment. Other maps report that artwork is unavailable.
+The map uses the Ishalgen artwork and `calibrated-game-y-x` coordinates. It
+switches to the Ataxiar coordinate grid for the Q2002 instance (320010000). The
+Ascension bridge adds Pandaemonium, Altgard and the Ascension instance's
+Ataxiar grid (320020000). Other maps report that artwork is unavailable.
 
 - The cyan marker follows the selected character's observed/client-estimated
   position, refreshed once per second. Follow can be disabled by dragging or
@@ -31,8 +32,9 @@ python scripts/sim/import-dashboard-maps.py
 node scripts/sim/test-dashboard-map.cjs
 ```
 
-The importer defaults to `../aion-portal` (override with `--portal PATH`), verifies
-the portal manifest's artwork hashes, copies the two images and calibration,
+The importer defaults to `../aion-spawn-editor`, where the map art moved from
+`../aion-portal` (override with `--portal PATH`). It verifies the manifest's
+artwork hashes, copies the five images and calibration,
 and snapshots the local regular NPC/gatherable XML. Generated files are embedded
 in Aion.Bots, so a running monitor needs neither the portal checkout nor its
 HTTP server. Source hashes in `maps/catalog.json` make stale spawn snapshots

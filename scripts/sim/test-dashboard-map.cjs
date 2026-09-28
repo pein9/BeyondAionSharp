@@ -19,7 +19,9 @@ for (const map of catalog.maps) {
     const data = fs.readFileSync(path.join(root, source.path));
     assert.equal(crypto.createHash('sha256').update(data.toString().replace(/\r\n/g, '\n')).digest('hex'), source.sha256,
       `${source.path} changed; run python scripts/sim/import-dashboard-maps.py`);
-    count += (data.toString().replace(/<!--[\s\S]*?-->/g, '').match(/<spot\s/g) || []).length;
+    // Shared spawn files (e.g. Npcs/Custom) list several maps; count only this map's spawn_map blocks.
+    for (const block of data.toString().replace(/<!--[\s\S]*?-->/g, '').matchAll(/<spawn_map\b[^>]*\bmap_id="(\d+)"[^>]*>([\s\S]*?)<\/spawn_map>/g))
+      if (Number(block[1]) === map.mapId) count += (block[2].match(/<spot\s/g) || []).length;
   }
   assert.equal(map.spawns.length, count, `${map.name}: every shipped placement must be shown`);
   assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(root,

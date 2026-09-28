@@ -658,7 +658,7 @@ OD-11, a development item is verified by **one** run.
         itself is solid, but the interaction route works. Use interaction routing for the
         bind.
 
-- [ ] **NA-05 — Monitor map art for the three maps.**
+- [x] **NA-05 — Monitor map art for the three maps.**
   - **Depends:** none.
   - **Do:** add catalog entries and art (`tests/Aion.Bots/Dashboard/maps/catalog.json`,
     `scripts/sim/import-dashboard-maps.py`):
@@ -668,6 +668,27 @@ OD-11, a development item is verified by **one** run.
   - **Verify:**
     - `node scripts/sim/test-dashboard-map.cjs`
     - a preview with `scripts/sim/preview-dashboard.py`
+
+  - **Evidence (2026-09-28):** `scripts/sim/import-dashboard-maps.py` now reads from
+    `../aion-spawn-editor` and imports five maps:
+    - Ishalgen (1,415 placements), and Ataxiar 320010000 (47);
+    - the bridge maps: Pandaemonium (400, including its `Custom/` stigma, warehouse and
+      trainer NPCs), Altgard (3,143) and Ataxiar 320020000 (60).
+
+    The images are embedded automatically through the existing `Dashboard\maps\*` wildcard.
+
+    Test updates:
+    - `scripts/sim/test-dashboard-map.cjs` now counts only a map's own `spawn_map`
+      blocks, because the shared `Custom/` files list several maps. It passes for all five
+      maps.
+    - `LiveBotDashboardTests` now serves and checks the three bridge maps; all 4 tests pass.
+
+    Other notes:
+    - `docs/bot-monitor.md` is updated.
+    - The committed Ishalgen catalog had been stale since `49663a7a8` (the spawn-baseline
+      restore), so the dashboard map check was already failing on main. The re-import
+      fixes it.
+    - The warning, null-logger and clock ratchets pass.
 
 ### Phase 3: Bot foundations
 
@@ -1367,6 +1388,8 @@ has examples.
 - 2026-09-28 — Loop: NA-03 is done. The `munin` snapshot was captured from a natural seed-1 run, then restored and verified. Snapshot tooling and its contract test were added.
 
 - 2026-09-28 — Loop: NA-04 done. Navmeshes and travel graphs for the Ataxiar instance, Pandaemonium and Altgard are checked in; every route leg routes. Pandaemonium NPCs report `NoApproachPoint` for the interaction route (noted for NA-14).
+
+- 2026-09-28 — Loop: NA-05 done. The monitor shows Pandaemonium, Altgard and the Ascension instance. The stale Ishalgen map catalog was refreshed.
 
 ## Appendix A: Altgard shops and consumables
 

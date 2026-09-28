@@ -73,6 +73,14 @@ public sealed class LiveBotDashboardTests
 		using HttpResponseMessage artwork = await client.GetAsync(ishalgen.GetProperty("image").GetString());
 		Assert.Equal("image/webp", artwork.Content.Headers.ContentType!.MediaType);
 		Assert.Equal("RIFF", System.Text.Encoding.ASCII.GetString((await artwork.Content.ReadAsByteArrayAsync())[..4]));
+		// The Ascension bridge maps (NA-05): the Ataxiar instance grid, Pandaemonium and Altgard.
+		foreach (int mapId in new[] { 320020000, 120010000, 220030000 })
+		{
+			JsonElement bridge = catalog.RootElement.GetProperty("maps").EnumerateArray().Single(m => m.GetProperty("mapId").GetInt32() == mapId);
+			Assert.NotEmpty(bridge.GetProperty("spawns").EnumerateArray());
+			using HttpResponseMessage bridgeArt = await client.GetAsync(bridge.GetProperty("image").GetString());
+			Assert.Equal("image/webp", bridgeArt.Content.Headers.ContentType!.MediaType);
+		}
 		Assert.Contains("projectMapPoint", await client.GetStringAsync("dashboard-map.js"), StringComparison.Ordinal);
 		Assert.Equal(System.Net.HttpStatusCode.NotFound, (await client.GetAsync("maps/not-an-asset.webp")).StatusCode);
 	}

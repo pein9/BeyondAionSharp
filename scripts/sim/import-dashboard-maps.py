@@ -1,4 +1,4 @@
-"""Copy portal artwork/calibration and snapshot this checkout's normal spawn references.
+"""Copy spawn-editor artwork/calibration and snapshot this checkout's normal spawn references.
 
 No portal writes or 5.8 comparison overlays. Re-run after changing spawn XML.
 """
@@ -14,7 +14,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--portal", type=Path, default=ROOT.parent / "aion-portal")
+    # The map art and manifest moved from ../aion-portal to ../aion-spawn-editor.
+    parser.add_argument("--portal", type=Path, default=ROOT.parent / "aion-spawn-editor")
     args = parser.parse_args()
     portal = args.portal / "assets/maps"
     output = ROOT / "tests/Aion.Bots/Dashboard/maps"
@@ -29,7 +30,8 @@ def main():
                 element.clear()
     maps = []
     for definition in json.loads((portal / "manifest.json").read_text())['maps']:
-        if definition['mapId'] not in (220010000, 320010000):
+        # Ishalgen, the Q2002 instance, and the Ascension bridge maps (docs/natural-ascension-altgard.md, NA-05).
+        if definition['mapId'] not in (220010000, 320010000, 320020000, 120010000, 220030000):
             continue
         layer = definition['layers'][0]
         image = portal / layer['asset']
