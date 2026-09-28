@@ -787,7 +787,7 @@ OD-11, a development item is verified by **one** run.
       checks.
     - **Ratchets:** warning, null-logger and clock all pass.
 
-- [ ] **NA-08 — Bind, teleporter and vendor steps that work on any map.**
+- [x] **NA-08 — Bind, teleporter and vendor steps that work on any map.**
   - **Depends:** NA-06.
   - **Do:**
     - **Bind:** turn `BindAtAldelleIfNeededAsync` into a bind step that takes a map and an
@@ -810,6 +810,40 @@ OD-11, a development item is verified by **one** run.
     "refused" and "item not in trade list". The Ishalgen restock and the Aldelle bind still
     work.
   - **Verify:** the focused tests.
+
+  - **Evidence (2026-09-28):**
+    - **`NaturalServicePolicy`** (pure) decides from client-observed state:
+      - bind: `already-bound`, `wrong-map`, `too-far` (5 m), `not-enough-kinah`;
+      - teleport: `flying`, `too-far` (talk range), `not-enough-kinah` against the fare;
+      - vendor plan: `not-in-trade-list`, and purchases capped by Kinah.
+    - **`NaturalServiceSteps`** is the client-side executor, sharing one packet flow for all
+      three services:
+      - bind answers question 160012, then checks `SM_BIND_POINT_INFO` and the raw price;
+      - teleport opens AIRLINE_SERVICE, sends `CM_TELEPORT_SELECT` and follows the map
+        change. It checks the fare against `VendorPrices.ServicePrice(base)`;
+      - trade sells, reads the observed trade window, then buys and verifies the stock;
+      - every step records a `service-*` trace diagnostic.
+    - **Ishalgen behaviour:**
+      - The Aldelle bind now goes through the new bind step.
+      - The Ishalgen potion restock is left byte-for-byte unchanged. Its vendor packet flow is
+        the same one the new trade step uses, and it could move onto it later.
+    - **Tests:** `NaturalServicePolicyTests` (5) cover:
+      - too far, not enough Kinah, wrong map and already bound;
+      - flying;
+      - not in the trade list, and Kinah caps;
+      - Ishalgen tabs 264/721, Altgard tab 275 and Donabe's powder, resolved from shipped
+        goods lists.
+    - **Runtime proof:** the focused SIM test
+      `NaturalServiceStepsTeleportBindAndTradeOnTheBridgeMaps` passed with a clean ledger
+      (GM setup, not natural evidence). It showed:
+      - a teleport refused as too far;
+      - Doman → Altgard at the price-adjusted fare;
+      - the 700065 bind for 451, then `already-bound`;
+      - at Nirmirn, a sale plus 3 Lesser Life Elixirs, with powder refused as not in the
+        trade list;
+      - 5 powder bought at Donabe.
+    - **Regression:** 207 focused tests pass, and the warning, null-logger and clock ratchets
+      pass.
 
 - [ ] **NA-09 — Gear, accessories, inventory and rewards for a Cleric.**
   - **Depends:** NA-07.
@@ -1442,6 +1476,8 @@ has examples.
 - 2026-09-28 — Loop: NA-06 done. Per-map navigation contexts are in place, and the world model clears objects on map change. Cross-map bind revive works. The seed-1 Ishalgen regression passed.
 
 - 2026-09-28 — Loop: NA-07 done. Identity accepts only the Ishalgen Priest or the bridge Cleric. Relog keeps the class and bind point.
+
+- 2026-09-28 — Loop: NA-08 done. Bind, teleporter and vendor steps work on any map. The focused SIM test ran Doman's teleport, the Altgard bind and the Nirmirn/Donabe trades.
 
 ## Appendix A: Altgard shops and consumables
 

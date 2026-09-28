@@ -740,13 +740,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				if (session.Api.World.Kinah < fee) return;
 				session.BeginStep("ni07-bind-aldelle", "register-ordinary-aldele-obelisk");
 				int obelisk = await ApproachShippedSpawnAsync(700063);
-				await session.SendPacketAsync(session.Api.TalkTo(obelisk), token);
-				DecodedBotServerPacket question = await session.WaitForPacketAsync(typeof(SM_QUESTION_WINDOW), token,
-					packet => packet.Get<int>("code") == SM_QUESTION_WINDOW.STR_ASK_REGISTER_RESURRECT_POINT);
-				await session.SendPacketAsync(GameClientPackets.QuestionResponse(
-					question.Get<int>("code"), 1, question.Get<int>("senderId")), token);
-				await session.WaitForPacketAsync(typeof(SM_BIND_POINT_INFO), token);
-				await session.SynchronizeAsync(token);
+				// NA-08: the map-agnostic bind step (the Altgard Fortress bind uses it too).
+				BotPosition obeliskPosition = session.Api.World.Objects[obelisk].Position;
+				NaturalServiceOutcome bindOutcome = await new NaturalServiceSteps(session).BindAsync(obelisk, obeliskPosition,
+					contract.MapId, fee, acceptRange: 5, token);
+				Require.True(bindOutcome.IsDone, bindOutcome.Reason);
 				Require.True(session.Api.World.ObeliskBindPoint is { MapId: 220010000 } registered &&
 					Distance(registered.Position, session.CurrentPosition) < 20);
 			}
