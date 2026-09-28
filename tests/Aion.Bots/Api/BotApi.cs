@@ -39,6 +39,14 @@ public sealed class BotApi
 	}
 	public BotTimingContract Timing { get; }
 	public BotReflexes Reflexes { get; }
+
+	/// <summary>End the held movie: the packet to send, and the cutscene no longer blocks movement.</summary>
+	public BotPendingMovie? FinishPendingMovie()
+	{
+		BotPendingMovie? movie = Reflexes.TakePendingMovie();
+		if (movie != null) Timing.SetActivity(BotBlockingActivity.Cutscene, false);
+		return movie;
+	}
 	public QuestDialogEchoDetector QuestDialogEchoes { get; }
 
 	public async Task<BotLoginSession> Login(Stream stream, string username, string password,
@@ -407,7 +415,11 @@ public sealed class BotApi
 			packet.Get<string>("name") is "STR_GATHER_OUT_OF_SKILL_POINT" or
 				"STR_GATHER_TOO_FAR_FROM_GATHER_SOURCE" or "STR_GATHER_INVENTORY_IS_FULL")
 			Timing.SetActivity(BotBlockingActivity.Gathering, false);
-		return Reflexes.RespondTo(packet);
+		BotClientPacket? response = Reflexes.RespondTo(packet);
+		// NA-10: while a movie plays without an answer, the server drops CM_MOVE; so does the bot's own contract.
+		if (packet.PacketType == typeof(SM_PLAY_MOVIE))
+			Timing.SetActivity(BotBlockingActivity.Cutscene, Reflexes.PendingMovie != null);
+		return response;
 	}
 }
 

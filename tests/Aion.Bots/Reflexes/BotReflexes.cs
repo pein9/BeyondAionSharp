@@ -7,16 +7,50 @@ public delegate BotReviveType? BotRevivePolicy(BotDeathPrompt prompt);
 
 public delegate byte? BotQuestionPolicy(BotQuestionPrompt prompt);
 
+public enum BotMovieMode
+{
+	/// <summary>Answer at once, as a player who presses Esc does (the default; the bot's behaviour since NI-00).</summary>
+	Skip,
+	/// <summary>Hold CM_PLAY_MOVIE_END for the movie's length (real-client observation, NA-28).</summary>
+	Watch,
+}
+
+/// <summary>NA-10: whether quest movies are skipped or watched, and how long a watched movie lasts.</summary>
+public sealed record BotMoviePolicy(BotMovieMode Mode, IReadOnlyDictionary<int, TimeSpan>? Lengths = null)
+{
+	/// <summary>Until NA-28 measures them in the real client, a watched movie is held this long.</summary>
+	public static readonly TimeSpan DefaultLength = TimeSpan.FromSeconds(20);
+	public static BotMoviePolicy Skip { get; } = new(BotMovieMode.Skip);
+	public TimeSpan LengthOf(int movieId) => Lengths?.GetValueOrDefault(movieId) is { } length && length > TimeSpan.Zero ? length : DefaultLength;
+}
+
+/// <summary>A movie whose end the client has not sent yet; the session waits <see cref="Length"/> and sends <see cref="End"/>.</summary>
+public sealed record BotPendingMovie(int MovieId, int QuestId, bool CanSkip, TimeSpan Length, BotClientPacket End);
+
 /// <summary>Immediate protocol reactions that an honest game client sends for specific server packets.</summary>
 public sealed class BotReflexes
 {
 	private readonly BotRevivePolicy revivePolicy;
 	private readonly BotQuestionPolicy questionPolicy;
 
-	public BotReflexes(BotRevivePolicy? revivePolicy = null, BotQuestionPolicy? questionPolicy = null)
+	public BotReflexes(BotRevivePolicy? revivePolicy = null, BotQuestionPolicy? questionPolicy = null, BotMoviePolicy? moviePolicy = null)
 	{
 		this.revivePolicy = revivePolicy ?? (_ => null);
 		this.questionPolicy = questionPolicy ?? (_ => null);
+		MoviePolicy = moviePolicy ?? BotMoviePolicy.Skip;
+	}
+
+	public BotMoviePolicy MoviePolicy { get; }
+
+	/// <summary>The movie being watched, if its end has not been sent (watch mode, or an unskippable movie).</summary>
+	public BotPendingMovie? PendingMovie { get; private set; }
+
+	/// <summary>Hand over the held movie end to send; the cutscene is over for the client.</summary>
+	public BotPendingMovie? TakePendingMovie()
+	{
+		BotPendingMovie? movie = PendingMovie;
+		PendingMovie = null;
+		return movie;
 	}
 
 	public BotClientPacket? RespondTo(DecodedBotServerPacket packet)
@@ -27,9 +61,14 @@ public sealed class BotReflexes
 			return GameClientPackets.TeleportAnimationDone();
 		if (packet.PacketType == typeof(SM_PLAY_MOVIE))
 		{
-			return GameClientPackets.PlayMovieEnd(packet.Get<bool>("isMovie") ? (byte)1 : (byte)0,
-				packet.Get<int>("objectId"), packet.Get<int>("questId"), packet.Get<int>("cutsceneId"),
-				packet.Get<bool>("canSkip"));
+			bool canSkip = packet.Get<bool>("canSkip");
+			BotClientPacket end = GameClientPackets.PlayMovieEnd(packet.Get<bool>("isMovie") ? (byte)1 : (byte)0,
+				packet.Get<int>("objectId"), packet.Get<int>("questId"), packet.Get<int>("cutsceneId"), canSkip);
+			if (MoviePolicy.Mode == BotMovieMode.Skip && canSkip) return end;
+			// Watched, or unskippable: the client plays it through before answering.
+			int movieId = packet.Get<int>("cutsceneId");
+			PendingMovie = new BotPendingMovie(movieId, packet.Get<int>("questId"), canSkip, MoviePolicy.LengthOf(movieId), end);
+			return null;
 		}
 		if (packet.PacketType == typeof(SM_DIE))
 		{

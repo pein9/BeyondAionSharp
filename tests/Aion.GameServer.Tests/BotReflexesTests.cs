@@ -1,3 +1,5 @@
+using Aion.Bots.Timing;
+using Aion.Bots.Api;
 using System.Buffers.Binary;
 using Aion.Bots.Protocol;
 using Aion.Bots.Reflexes;
@@ -8,6 +10,48 @@ namespace Aion.GameServer.Tests;
 
 public sealed class BotReflexesTests
 {
+	[Fact]
+	public void WatchModeHoldsTheMovieEndAndSkipModeAnswersAtOnce()
+	{
+		DecodedBotServerPacket Movie(bool canSkip) => Packet<SM_PLAY_MOVIE>(("isMovie", false), ("objectId", 7),
+			("questId", 2008), ("cutsceneId", 57), ("canSkip", canSkip));
+		// Skip (default): answered immediately, nothing held — the Ishalgen behaviour.
+		var skip = new BotReflexes();
+		Assert.Equal(BotMovieMode.Skip, skip.MoviePolicy.Mode);
+		Assert.NotNull(skip.RespondTo(Movie(canSkip: true)));
+		Assert.Null(skip.PendingMovie);
+		// An unskippable movie is watched even in skip mode.
+		Assert.Null(skip.RespondTo(Movie(canSkip: false)));
+		Assert.Equal(BotMoviePolicy.DefaultLength, skip.PendingMovie!.Length);
+		// Watch: held for the configured length, then handed over once.
+		var watch = new BotReflexes(moviePolicy: new BotMoviePolicy(BotMovieMode.Watch,
+			new Dictionary<int, TimeSpan> { [57] = TimeSpan.FromSeconds(42) }));
+		Assert.Null(watch.RespondTo(Movie(canSkip: true)));
+		BotPendingMovie held = watch.TakePendingMovie()!;
+		Assert.Equal((57, 2008, TimeSpan.FromSeconds(42)), (held.MovieId, held.QuestId, held.Length));
+		Assert.Equal(typeof(CM_PLAY_MOVIE_END), held.End.PacketType);
+		Assert.Null(watch.TakePendingMovie());
+	}
+
+	[Fact]
+	public void AWatchedMovieBlocksMovementUntilItsEndIsSent()
+	{
+		var api = new BotApi(reflexes: new BotReflexes(moviePolicy: new BotMoviePolicy(BotMovieMode.Watch)));
+		Assert.Null(api.Observe(Packet<SM_PLAY_MOVIE>(("isMovie", false), ("objectId", 7), ("questId", 2009),
+			("cutsceneId", 121), ("canSkip", true))));
+		Assert.Contains(BotBlockingActivity.Cutscene, api.Timing.BlockingActivities);
+		Assert.Throws<InvalidOperationException>(() => api.Timing.EnsureCanMove());
+		BotPendingMovie finished = api.FinishPendingMovie()!;
+		Assert.Equal(121, finished.MovieId);
+		Assert.Empty(api.Timing.BlockingActivities);
+		api.Timing.EnsureCanMove();
+		// Skip mode never blocks: the reflex's end goes out with the reply.
+		var skipping = new BotApi();
+		Assert.NotNull(skipping.Observe(Packet<SM_PLAY_MOVIE>(("isMovie", false), ("objectId", 7), ("questId", 2009),
+			("cutsceneId", 121), ("canSkip", true))));
+		Assert.Empty(skipping.Timing.BlockingActivities);
+	}
+
 	[Fact]
 	public void AcknowledgesSpawnTeleportAndMovieWithTheirMatchingClientPackets()
 	{

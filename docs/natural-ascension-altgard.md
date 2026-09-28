@@ -921,7 +921,7 @@ OD-11, a development item is verified by **one** run.
 
       274 focused tests, and the warning, null-logger and clock ratchets pass.
 
-- [ ] **NA-10 — Movie policy: watch or skip.**
+- [x] **NA-10 — Movie policy: watch or skip.**
   - **Depends:** none.
   - **Do:**
     - Make the existing movie reflex a policy with two modes:
@@ -940,6 +940,30 @@ OD-11, a development item is verified by **one** run.
   - **Done when:** unit tests cover both modes, the movement hold, the unskippable case,
     and that Ishalgen is unchanged.
   - **Verify:** the focused tests (`BotReflexes*` and `Natural*`).
+
+  - **Evidence (2026-09-28):**
+    - **Policy.** `BotMoviePolicy` (in `Reflexes`) has two modes:
+      - `Skip` (the default, OD-10) answers at once, which is the unchanged Ishalgen
+        behaviour;
+      - `Watch` holds the `CM_PLAY_MOVIE_END` in `BotReflexes.PendingMovie` for the
+        configured length.
+
+      An unskippable movie is always held.
+    - **Movement block.** `BotApi.Observe` sets the new `BotBlockingActivity.Cutscene`
+      while a movie is held. It is also in the timing rule set's movement blockers, so
+      `EnsureCanMove` refuses `CM_MOVE` until the movie ends, mirroring Java
+      `CM_MOVE.handleBogusPacket`. `FinishPendingMovie` clears it.
+    - **Gate.** `NaturalMovieGate.FinishAsync` waits the length in session time (game time in
+      SIM, real time in LIVE), sends the end, and traces `movie-watched`.
+    - **Lengths.** Movie lengths come from a per-id table, defaulting to 20 s until NA-28
+      measures them in the real client. Reading them from the client data was not attempted.
+    - **Tests:** two new reflex/API tests pass, and 243 focused tests pass (including the
+      timing contract's movement-blocker set).
+    - **Regression:** CAPITAL-ASMO re-ran green, answering all four bridge movies on the
+      skip path. The warning, null-logger and clock ratchets pass.
+    - **For NA-12/13/14 in watch mode:** call `NaturalMovieGate.FinishAsync` after SELECT5_1,
+      the Hellion kill (then re-observe the NPCs, which are all deleted), SELECT2_1 and
+      SELECT3_1.
 
 ### Phase 4: The bridge
 
@@ -1517,6 +1541,8 @@ has examples.
 - 2026-09-28 — Loop: NA-08 done. Bind, teleporter and vendor steps work on any map. The focused SIM test ran Doman's teleport, the Altgard bind and the Nirmirn/Donabe trades.
 
 - 2026-09-28 — Loop: NA-09 done. There are now class-aware inventory rules: the Cleric keeps the staff, accessories and bridge supplies, and sells the replaced mace. The Q2009 reward is the staff. The Priest path is unchanged.
+
+- 2026-09-28 — Loop: NA-10 done. Movie policy added: skip by default; watch holds the end packet and blocks movement until `NaturalMovieGate` finishes it.
 
 ## Appendix A: Altgard shops and consumables
 

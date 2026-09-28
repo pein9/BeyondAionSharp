@@ -21,6 +21,7 @@ public sealed class BotTimingContract
 			BotBlockingActivity.Gathering,
 			BotBlockingActivity.Crafting,
 			BotBlockingActivity.ItemUse,
+			BotBlockingActivity.Cutscene, // Java CM_MOVE.handleBogusPacket drops moves while WATCHING_CUTSCENE
 		});
 
 	private readonly TimeProvider timeProvider;
@@ -183,6 +184,8 @@ public enum BotBlockingActivity
 	Gathering,
 	Crafting,
 	ItemUse,
+	/// <summary>A quest cutscene is playing: Java drops CM_MOVE until CM_PLAY_MOVIE_END (CustomPlayerState.WATCHING_CUTSCENE).</summary>
+	Cutscene,
 }
 
 public sealed record BotTimingRuleSet(string JavaCommit, int AttackGraceMillis, int MinimumCastIntervalMillis,
