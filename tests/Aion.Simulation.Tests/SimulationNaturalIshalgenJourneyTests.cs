@@ -81,8 +81,11 @@ public sealed partial class SimulationFastScenarioTests
 					.SingleOrDefault(c => Get<int>(c, "objectId") == retainedId)
 					?? throw new InvalidDataException($"NI-08 retained character {retainedId} is missing; refusing to create a replacement.");
 				if (Get<string>(retained, "name") != "Asimnjour" || Get<int>(retained, "race") != (int)Race.ASMODIANS ||
-					Get<int>(retained, "playerClass") != (int)PlayerClass.PRIEST || Get<int>(retained, "deletionTimeSeconds") != 0)
+					Get<int>(retained, "deletionTimeSeconds") != 0)
 					throw new InvalidDataException($"NI-08 retained character {retainedId} identity changed.");
+				// The Priest, or the Cleric it became at Ascension (NA-07).
+				NaturalJourneyIdentityRules.Classify(Get<int>(retained, "playerClass"), Get<ushort>(retained, "level"),
+					Get<int>(retained, "mapId"));
 				session.SelectCharacter(retainedId, "Asimnjour");
 			}
 			else
@@ -93,7 +96,9 @@ public sealed partial class SimulationFastScenarioTests
 			await session.EnterWorldAsync(token);
 			if (!resuming) await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
 			await session.SynchronizeAsync(token);
-			Assert.Equal(PlayerClass.PRIEST, fixture.World.GetPlayer(session.CharacterId).GetPlayerClass());
+			var entered = fixture.World.GetPlayer(session.CharacterId);
+			NaturalJourneyIdentityRules.Classify(entered.GetPlayerClass(), entered.GetLevel(), entered.GetWorldId());
+			if (!resuming) Assert.Equal(PlayerClass.PRIEST, entered.GetPlayerClass());
 			return resuming;
 		}
 	}

@@ -106,10 +106,10 @@ public static partial class LiveBotRunner
 				|| player.GetProperty("accountName").GetString() != identity.AccountName
 				|| player.GetProperty("accessLevel").GetInt32() != 0
 				|| player.GetProperty("race").GetString() != identity.Race.ToString()
-				|| player.GetProperty("playerClass").GetString() != identity.PlayerClass.ToString()
-				|| player.GetProperty("level").GetInt32() != level
-				|| player.GetProperty("worldId").GetInt32() != 220010000)
-				throw new InvalidDataException("NI-01 online identity is not the retained ordinary pre-Ascension Ishalgen Priest.");
+				|| player.GetProperty("level").GetInt32() != level)
+				throw new InvalidDataException("NI-01 online identity is not the retained ordinary natural character.");
+			NaturalJourneyIdentityRules.Classify(Enum.Parse<PlayerClass>(player.GetProperty("playerClass").GetString()!),
+				level, player.GetProperty("worldId").GetInt32());
 		}
 		public async Task QuitAndVerifyOfflineAsync(CancellationToken token)
 		{
@@ -125,10 +125,10 @@ public static partial class LiveBotRunner
 			if (world.SelfObjectId != characterId || self == null
 				|| self.Name != identity.CharacterName
 				|| self.Race != (byte)identity.Race
-				|| self.PlayerClass != identity.PlayerClass.GetClassId()
 				|| world.Level != level)
-				throw new InvalidDataException("The attached world's client view is not the retained pre-Ascension Priest " +
+				throw new InvalidDataException("The attached world's client view is not the retained natural character " +
 					$"(self {world.SelfObjectId}, name {self?.Name}, race {self?.Race}, class {self?.PlayerClass}, level {world.Level}).");
+			NaturalJourneyIdentityRules.Classify(self.PlayerClass ?? 0, world.Level, world.MapId);
 		}
 		public Task WaitForReentryAsync(CancellationToken token) => actor.Session.WaitForReentryAsync(token);
 	}

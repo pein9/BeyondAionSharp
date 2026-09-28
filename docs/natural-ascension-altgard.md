@@ -737,7 +737,7 @@ OD-11, a development item is verified by **one** run.
     - **Deferred.** The hostile-spawn list per map is left to the leg items that fight
       there (NA-13).
 
-- [ ] **NA-07 — Identity, persistence and world model that know the class and level.**
+- [x] **NA-07 — Identity, persistence and world model that know the class and level.**
   - **Depends:** NA-01.
   - **Do:**
     - Identity accepts exactly two states:
@@ -762,6 +762,30 @@ OD-11, a development item is verified by **one** run.
   - **Verify:**
     - the focused tests
     - `pwsh -NoProfile -File scripts/live/test-attach-live.ps1` if attach code changes
+
+  - **Evidence (2026-09-28):**
+    - **Rules.** `NaturalJourneyIdentityRules` accepts exactly two states and refuses
+      everything else (a Chanter, a Priest above level 9 or outside its maps, any other
+      class):
+      - Priest, levels 1–9, on 220010000, 320010000 or 320020000;
+      - Cleric, level 9 or above, on 320020000, 220010000, 120010000 or 220030000.
+
+      `RequireJournal` also accepts a Cleric at Q2008 REWARD inside Ataxiar: the class is
+      set before NOREWARD completes the quest.
+    - **Where it applies:**
+      - the NI-01 `ValidateCharacter` check;
+      - LIVE admin and attach observed identity;
+      - LIVE relogin (`LiveNaturalJourneySession`);
+      - the SIM retained-character entry (a new character must still be a Priest).
+    - **Checkpoint and persistence.** `NaturalJourneyCheckpoint` now records the class and
+      the obelisk bind point. `NaturalJourneyPersistence` fails a relog that changes either.
+      Equipment was already covered through the inventory slots, DP was already observed, and
+      the map was already compared.
+    - **Tests:** `NaturalJourneyIdentityRulesTests` has 18 cases. 202 focused tests and the
+      NI-10 attach contract (46 assertions) pass.
+    - **Runtime:** a `munin` snapshot Verify (`na07-verify-munin`) resumed through the new
+      checks.
+    - **Ratchets:** warning, null-logger and clock all pass.
 
 - [ ] **NA-08 — Bind, teleporter and vendor steps that work on any map.**
   - **Depends:** NA-06.
@@ -1416,6 +1440,8 @@ has examples.
 - 2026-09-28 — Loop: NA-05 done. The monitor shows Pandaemonium, Altgard and the Ascension instance. The stale Ishalgen map catalog was refreshed.
 
 - 2026-09-28 — Loop: NA-06 done. Per-map navigation contexts are in place, and the world model clears objects on map change. Cross-map bind revive works. The seed-1 Ishalgen regression passed.
+
+- 2026-09-28 — Loop: NA-07 done. Identity accepts only the Ishalgen Priest or the bridge Cleric. Relog keeps the class and bind point.
 
 ## Appendix A: Altgard shops and consumables
 

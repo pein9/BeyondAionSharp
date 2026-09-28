@@ -135,10 +135,11 @@ public static class NaturalIshalgenIdentityScenario
 		ushort level = Get<ushort>(character, "level");
 		if (id <= 0 || !string.Equals(Get<string>(character, "name"), identity.CharacterName, StringComparison.Ordinal)
 			|| Get<int>(character, "race") != (int)identity.Race
-			|| Get<int>(character, "playerClass") != (int)identity.PlayerClass
-			|| level is < 1 or > 9
 			|| Get<int>(character, "deletionTimeSeconds") != 0)
-			throw new InvalidDataException("NI-01 found a conflicting, post-boundary, or pending-deletion character identity.");
+			throw new InvalidDataException("NI-01 found a conflicting or pending-deletion character identity.");
+		// The created Priest, or the Cleric it became at Ascension (NA-07); anything else is refused, never fixed.
+		NaturalJourneyIdentityRules.Classify(Get<int>(character, "playerClass"), level,
+			character.TryGetValue("mapId", out object? map) && map is int mapId ? mapId : null);
 		return new ObservedNaturalCharacter(id, level);
 	}
 

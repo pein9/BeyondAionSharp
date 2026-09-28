@@ -62,8 +62,11 @@ internal sealed partial class LiveBotSession : INaturalJourneySession
 			.SingleOrDefault(entry => Get<int>(entry, "objectId") == characterId)
 			?? throw new InvalidDataException("The retained natural character is missing; refusing to create a replacement.");
 		if (Get<string>(character, "name") != characterName || Get<int>(character, "race") != (int)race ||
-			Get<int>(character, "playerClass") != (int)PlayerClass.PRIEST || Get<int>(character, "deletionTimeSeconds") != 0)
+			Get<int>(character, "deletionTimeSeconds") != 0)
 			throw new InvalidDataException("Retained natural character identity changed.");
+		// A Priest, or the Cleric it became at Ascension (NA-07).
+		NaturalJourneyIdentityRules.Classify(Get<int>(character, "playerClass"), Get<ushort>(character, "level"),
+			Get<int>(character, "mapId"));
 		if (verifySavedPosition)
 			AssertPersistedPosition(Get<int>(character, "mapId"), Get<float>(character, "x"),
 				Get<float>(character, "y"), Get<float>(character, "z"));

@@ -9,6 +9,10 @@ public static class NaturalJourneyPersistence
 		Require(before.CharacterId == after.CharacterId, "character identity");
 		Require(before.MapId == after.MapId, "map");
 		Require(before.Level == after.Level, "level");
+		Require(before.PlayerClass == after.PlayerClass, "class");
+		Require(before.BindPoint is null || after.BindPoint is null || before.BindPoint.MapId == after.BindPoint.MapId &&
+			Math.Abs(before.BindPoint.Position.X - after.BindPoint.Position.X) <= 0.05f &&
+			Math.Abs(before.BindPoint.Position.Y - after.BindPoint.Position.Y) <= 0.05f, "bind point");
 		// Match the existing NI-08 oracle: SQL FLOAT coordinates can round-trip with small error.
 		Require(Math.Abs(before.Position.X - after.Position.X) <= 0.05f &&
 			Math.Abs(before.Position.Y - after.Position.Y) <= 0.05f &&

@@ -1,0 +1,58 @@
+using Aion.GameServer.Model;
+
+namespace Aion.Bots.Scenarios;
+
+/// <summary>Which leg of the natural journey a retained character is on.</summary>
+public enum NaturalJourneyStage
+{
+	/// <summary>The pre-Ascension Priest: Ishalgen, its Q2002 instance, or Q2008's Ataxiar before the class choice.</summary>
+	IshalgenPriest,
+	/// <summary>The Cleric chosen at Ascension (D25): the rest of Q2008, Pandaemonium and Altgard.</summary>
+	AscensionCleric,
+}
+
+/// <summary>
+/// NA-07: the only two states a retained natural character may be in. Everything else is rejected — a Chanter,
+/// a Priest past level 9, a Cleric outside the bridge's maps — because the journey never "fixes" a character.
+/// </summary>
+public static class NaturalJourneyIdentityRules
+{
+	public const int AscensionQuestId = 2008;
+
+	/// <summary>Maps a Priest can stand on: Ishalgen, Q2002's instance, and Q2008's instance before SETPRO14.</summary>
+	public static readonly int[] PriestMaps = [220010000, 320010000, 320020000];
+
+	/// <summary>Maps a Cleric can stand on: Q2008's instance after SETPRO14, Ishalgen (the Q2008/Q2009 Munin
+	/// steps), Pandaemonium and Altgard.</summary>
+	public static readonly int[] ClericMaps = [320020000, 220010000, 120010000, 220030000];
+
+	/// <summary>Classify what a character list, an admin view or the client shows; null world means not shown.</summary>
+	public static NaturalJourneyStage Classify(PlayerClass playerClass, int level, int? worldId)
+	{
+		if (playerClass == PlayerClass.PRIEST && level is >= 1 and <= 9 && (worldId is null || PriestMaps.Contains(worldId.Value)))
+			return NaturalJourneyStage.IshalgenPriest;
+		if (playerClass == PlayerClass.CLERIC && level >= 9 && (worldId is null || ClericMaps.Contains(worldId.Value)))
+			return NaturalJourneyStage.AscensionCleric;
+		throw new InvalidDataException(
+			$"Retained natural character is outside the journey: {playerClass} level {level} on map {worldId?.ToString() ?? "unknown"}.");
+	}
+
+	/// <summary>The same classification from a wire class id (SM_CHARACTER_LIST, SM_PLAYER_INFO).</summary>
+	public static NaturalJourneyStage Classify(int classId, int level, int? worldId) =>
+		Classify(PlayerClassExtensions.GetPlayerClassById(checked((byte)classId), true)
+			?? throw new InvalidDataException($"Unknown player class id {classId}."), level, worldId);
+
+	/// <summary>Once the journals are observed: a Priest has not completed Ascension; a Cleric either has, or is
+	/// still in Q2008's REWARD step inside Ataxiar (the class is set before NOREWARD completes the quest).</summary>
+	public static void RequireJournal(NaturalJourneyStage stage, bool ascensionCompleted, byte? ascensionStatus, int? worldId)
+	{
+		bool consistent = stage switch
+		{
+			NaturalJourneyStage.IshalgenPriest => !ascensionCompleted,
+			NaturalJourneyStage.AscensionCleric => ascensionCompleted || ascensionStatus == 4 && worldId == 320020000,
+			_ => false,
+		};
+		if (!consistent)
+			throw new InvalidDataException($"{stage} contradicts Ascension (completed={ascensionCompleted}, status={ascensionStatus}, map={worldId}).");
+	}
+}
