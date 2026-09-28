@@ -728,6 +728,17 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				// NA-03: a saved Munin snapshot restores with this clock so game time keeps moving forward.
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "completion-clock.json"),
 					System.Text.Json.JsonSerializer.Serialize(new { session.CharacterId, ElapsedMillis = runtime.NowMillis }), token);
+				if (options.AscensionBridge)
+				{
+					// NA-11: the Ascension bridge (docs/natural-ascension-altgard.md) starts where Ishalgen ends.
+					NaturalAscensionDecision bridge = NaturalAscensionDecisionEngine.Decide(NaturalAscensionContract.LoadDefault(),
+						NaturalAscensionObservation.Observe(session.Api.World, shopVisited: false), 1);
+					session.TraceDiagnostic("ascension-bridge-handoff", new Dictionary<string, object?>
+					{
+						["action"] = bridge.Action, ["step"] = bridge.StepKey, ["outcome"] = bridge.Outcome, ["reason"] = bridge.Reason,
+					});
+					Require.Equal("q2008-v0-munin", bridge.StepKey);
+				}
 				session.PublishDashboard("completed", force: true);
 				await session.QuitAsync(token);
 				runtime.AssertClean();

@@ -967,7 +967,7 @@ OD-11, a development item is verified by **one** run.
 
 ### Phase 4: The bridge
 
-- [ ] **NA-11 — Decision engine for the bridge.**
+- [x] **NA-11 — Decision engine for the bridge.**
   - **Depends:** NA-01, NA-07.
   - **Do:**
     - Write a pure `NaturalAscensionDecisionEngine` over the NA-01 contract. It uses the
@@ -992,6 +992,30 @@ OD-11, a development item is verified by **one** run.
     - a pending shop stop;
     - the endpoint.
   - **Verify:** the focused tests.
+
+  - **Evidence (2026-09-28):**
+    - **Engine.** `NaturalAscensionDecisionEngine.Decide(contract, NaturalAscensionObservation,
+      sequence)` is pure and records its checks in the same shape as the Ishalgen engine.
+      - **Guards:** it first checks identity and journal (NA-07 rules).
+      - **Steps:** it follows every route row by contract step key, with a map allow-list
+        per step.
+      - **Activities:** revive at bind, wait on the flight, the scripted trial,
+        `teleport`, `bind` (first in Altgard), `shop`, and finally `bridge-complete`.
+      - **Stops:**
+        - `wrong-map` / `unexpected-var` / `identity` / `level` / `not-enough-kinah` stop as
+          `blocked`;
+        - the auto-started quests (Q2008, Q2009, Q2904, Q24010) stop as
+          `awaiting-capability` until they appear in the journal.
+    - **Handoff.** `NaturalJourneyOptions.AscensionBridge` (env `NA_ASCENSION=1` in SIM) is
+      off by default, so today's journey is unchanged. When it is on, the Ishalgen
+      `journey-complete` asks the engine for the first bridge move and records it in the
+      trace. NA-12 replaces the quit that follows with the bridge runner.
+    - **Tests.** `NaturalAscensionDecisionEngineTests` covers 16 cases: every route row, the
+      trial, the var-4 resets after a death or relog, wrong map, missing Kinah,
+      journal waits, identity, the shop stop and the endpoint.
+    - **Runtime proof.** A `munin` snapshot run with `NA_ASCENSION=1` (`na11-handoff`) had
+      the engine choose `talk → q2008-v0-munin` from real observed state.
+    - **Checks.** The warning, null-logger and clock ratchets pass.
 
 - [ ] **NA-12 — Q2008 Norn circuit (rows 1–5).**
   - **Depends:** NA-06, NA-10, NA-11.
@@ -1543,6 +1567,8 @@ has examples.
 - 2026-09-28 — Loop: NA-09 done. There are now class-aware inventory rules: the Cleric keeps the staff, accessories and bridge supplies, and sells the replaced mace. The Q2009 reward is the staff. The Priest path is unchanged.
 
 - 2026-09-28 — Loop: NA-10 done. Movie policy added: skip by default; watch holds the end packet and blocks movement until `NaturalMovieGate` finishes it.
+
+- 2026-09-28 — Loop: NA-11 done. The bridge decision engine (16 table tests) is in place behind the `AscensionBridge` handoff flag. From the Munin snapshot it picks Munin as the first move.
 
 ## Appendix A: Altgard shops and consumables
 
