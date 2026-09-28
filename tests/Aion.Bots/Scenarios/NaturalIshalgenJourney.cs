@@ -135,6 +135,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				// when the map has no baked navmesh or travel graph.
 				Planner = BotTravelPlanner.For(NaturalIshalgenRoads.MapId, geometry, runtime.Data),
 			};
+			// NA-06: navigation for whichever map the client entered. Ishalgen keeps the journey's own navigator;
+			// any other map (an instance, Pandaemonium, Altgard) gets geometry, graph and planner of its own.
+			var mapNavigators = new NaturalJourneyMapContexts<NaturalJourneyNavigator>(key =>
+			{
+				if (key.MapId == contract.MapId) return navigator;
+				BotNavigationGeometry mapGeometry = runtime.CreateGeometry();
+				BotNavigationGraph mapGraph = BotNavigationGraphFactory.Build(runtime.Data,
+					key.MapId == 320010000 ? [205020] : [], mapGeometry);
+				return new NaturalJourneyNavigator(session, mapGraph, mapGeometry, runtime, options.StopOnDeath)
+				{
+					Planner = BotTravelPlanner.For(key.MapId, mapGeometry, runtime.Data),
+				};
+			});
 			BotPosition? easternRoadIngressStart = null;
 			BotPosition[] easternRoadIngress = [];
 			NaturalJourneyCombat? navigationDefense = null;
@@ -2054,10 +2067,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				if (session.Api.World.MapId == 320010000 && AtQuestStep(2002, 99))
 				{
 					session.BeginStep("ni07-q2002-hagen", "walk-to-hagen-and-take-quest-return-flight");
-					var instanceGeometry = runtime.CreateGeometry();
-					BotNavigationGraph instanceGraph = BotNavigationGraphFactory.Build(runtime.Data,
-						[205020], instanceGeometry);
-					var instanceNavigator = new NaturalJourneyNavigator(session, instanceGraph, instanceGeometry, runtime, options.StopOnDeath);
+					NaturalJourneyNavigator instanceNavigator = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World));
 					NaturalNavigationResult hagenApproach = await NaturalIshalgenNavigator.ApproachNpcAsync(
 						320010000, 205020, new BotPosition(434.75f, 399.5f, 235f, 25), instanceNavigator, token);
 					Require.True(hagenApproach.Arrived, hagenApproach.Reason);
@@ -4872,8 +4882,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
 				await session.WaitForPacketAsync(typeof(SM_DIE), token);
 			}
+			// A bind on another map (an Altgard obelisk, reached from Pandaemonium or an instance) is a world
+			// change: the client reloads that world before it stands at the obelisk.
+			int? bindMap = session.Api.World.ObeliskBindPoint?.MapId;
+			bool otherMap = bindMap is int bound && bound != session.Api.World.MapId;
+			if (otherMap) session.Api.World.BeginWorldReload();
 			await session.SendPacketAsync(session.Api.Revive(BotReviveType.Bind), token);
-			await session.WaitForPacketAsync(typeof(SM_CHANNEL_INFO), token);
+			if (otherMap)
+			{
+				await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token, packet => packet.Get<int>("worldId") == bindMap);
+				await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+			}
+			else
+				await session.WaitForPacketAsync(typeof(SM_CHANNEL_INFO), token);
 			await session.SynchronizeAsync(token);
 			if (session.Api.World.IsDead) throw new InvalidDataException("Bind revive did not clear client-observed death.");
 			session.AcceptTeleportPosition();

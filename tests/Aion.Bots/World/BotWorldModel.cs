@@ -101,6 +101,13 @@ public sealed partial class BotWorldModel
 	{
 		ForgetEffectObservations();
 		ChannelInfo = null;
+		ForgetWorldObjects();
+	}
+
+	/// <summary>Everything bound to the objects of the world the player just left (not its channel, which the
+	/// server announces just before the spawn).</summary>
+	private void ForgetWorldObjects()
+	{
 		objects.Clear();
 		openPrivateStores.Clear(); privateStoreNames.Clear(); privateStoreListings.Clear();
 		lootStatuses.Clear();
@@ -244,7 +251,11 @@ public sealed partial class BotWorldModel
 	{
 		// CM_LEVEL_READY returns the authoritative full effect list after every entry.
 		ForgetEffectObservations();
-		MapId = packet.Get<int>("worldId");
+		int worldId = packet.Get<int>("worldId");
+		// Arriving on another map invalidates every object of the old one, even when no caller announced the
+		// transition (a bind revive, a quest teleport or a disconnect back to another world).
+		if (MapId is int previous && previous != worldId) ForgetWorldObjects();
+		MapId = worldId;
 		Position = ReadPosition(packet.Fields);
 		UpdateSelfObjectPosition();
 	}

@@ -317,6 +317,25 @@ public sealed class BotWorldModelTests
 	}
 
 	[Fact]
+	public void ArrivingOnAnotherMapForgetsTheOldWorldButKeepsTheAnnouncedChannel()
+	{
+		var world = new BotWorldModel();
+		world.Apply(Packet<SM_PLAYER_SPAWN>(("worldId", 120010000), ("x", 1685f), ("y", 1400f), ("z", 195f), ("heading", (byte)0)));
+		world.Apply(Packet<SM_NPC_INFO>(("x", 1682f), ("y", 1397f), ("z", 195f), ("objectId", 200), ("npcId", 204191),
+			("visualNpcId", 204191), ("creatureType", (byte)38)));
+		// Re-entry on the same map (a same-map quest teleport) keeps what the client still sees.
+		world.Apply(Packet<SM_PLAYER_SPAWN>(("worldId", 120010000), ("x", 1614f), ("y", 1398f), ("z", 193f), ("heading", (byte)0)));
+		Assert.True(world.Objects.ContainsKey(200));
+		// Doman's teleporter to Altgard: the server announces the channel, then spawns the player in the new world.
+		world.Apply(Packet<SM_CHANNEL_INFO>(("currentChannel", 1), ("instanceCount", 3)));
+		world.Apply(Packet<SM_PLAYER_SPAWN>(("worldId", 220030000), ("x", 1752.5f), ("y", 1806.6f), ("z", 254.7f), ("heading", (byte)60)));
+		Assert.Equal(220030000, world.MapId);
+		Assert.False(world.Objects.ContainsKey(200));
+		Assert.Equal((1, 3), world.ChannelInfo);
+		Assert.Equal(new NaturalMapKey(220030000, 1), NaturalMapKey.Observe(world));
+	}
+
+	[Fact]
 	public void WalkingMonstersRevealTheirPatrolPathAndChasesDoNot()
 	{
 		var world = new BotWorldModel();

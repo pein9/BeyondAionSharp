@@ -52,10 +52,13 @@ public sealed class BotNavigationAssets(IReadOnlyDictionary<int, GeoMap> maps, S
     /// <summary>The offline static data the assets were loaded with (sites for the travel planner).</summary>
     public StaticData Data => data;
 
-    /// <summary>The two maps visited by the pre-Ascension Priest journey.</summary>
+    /// <summary>The maps of the natural journey: Ishalgen and its Q2002 instance, then the Ascension bridge's
+    /// Ataxiar instance, Pandaemonium and Altgard (docs/natural-ascension-altgard.md).</summary>
+    public static readonly int[] NaturalJourneyMapIds = [220010000, 320010000, 320020000, 120010000, 220030000];
+
     public BotNavigationGeometry NaturalJourneyGeometry(Race race, int instanceId) =>
-        new(id => id is 220010000 or 320010000 ? maps[id]
-            : throw new InvalidOperationException($"Map {id} is outside the natural Ishalgen journey."),
+        new(id => NaturalJourneyMapIds.Contains(id) ? maps[id]
+            : throw new InvalidOperationException($"Map {id} is outside the natural journey."),
             instanceId, IgnoreProperties.Of(race));
 
     /// <summary>Level-aware travel planner for a starter map's geometry, or null when its navmesh or

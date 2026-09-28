@@ -692,7 +692,7 @@ OD-11, a development item is verified by **one** run.
 
 ### Phase 3: Bot foundations
 
-- [ ] **NA-06 — Journey context across multiple maps.**
+- [x] **NA-06 — Journey context across multiple maps.**
   - **Depends:** NA-04.
   - **Do:**
     - Generalize Q2002's map-change pattern into one per-map context, keyed by (map,
@@ -712,6 +712,30 @@ OD-11, a development item is verified by **one** run.
   - **Verify:**
     - the focused `Natural*`, `BotWorldModel*` and `BotNav*` tests
     - `bash scripts/sim/run-natural-batch.sh na06 1`
+
+  - **Evidence (2026-09-28):**
+    - **Map contexts.** `NaturalJourneyMapContexts<T>` and `NaturalMapKey` (map + observed
+      channel) hold per-map navigation state:
+      - Ishalgen keeps the journey's own navigator.
+      - Any other map builds its geometry, graph and planner on entry.
+      - An instance (3xxxxxxxx) is rebuilt on every entry but reused within one stay.
+      - Twin channels are separate worlds.
+    - **World model.** On `SM_PLAYER_SPAWN` to another world it forgets the old world's
+      objects and dialogs, but keeps the channel that `SM_CHANNEL_INFO` announced just
+      before the spawn.
+    - **Offline geometry.** `BotNavigationAssets.NaturalJourneyMapIds` now accepts
+      320020000, 120010000 and 220030000, so LIVE and attach runs can use these maps.
+    - **Q2002.** Its instance navigator now comes from the cache; behaviour is unchanged.
+    - **Bind revive.** A revive to an obelisk on another map now waits for the world reload
+      (`SM_PLAYER_SPAWN`, then the player's `SM_PLAYER_INFO`).
+    - **Tests.** 6 new tests pass: `NaturalJourneyMapContextsTests` ×5 and a
+      `BotWorldModelTests` map-change case. 218 focused tests pass in total.
+    - **Regression run.** `na06-full-s1` (seed 1) passed, reaching the Munin stop with 211
+      quest updates. It entered 320010000 for Q2002 through the cache. It also had 3 deaths,
+      which are recorded, not failures (OD-12).
+    - **Checks.** The warning, null-logger and clock ratchets pass.
+    - **Deferred.** The hostile-spawn list per map is left to the leg items that fight
+      there (NA-13).
 
 - [ ] **NA-07 — Identity, persistence and world model that know the class and level.**
   - **Depends:** NA-01.
@@ -1390,6 +1414,8 @@ has examples.
 - 2026-09-28 — Loop: NA-04 done. Navmeshes and travel graphs for the Ataxiar instance, Pandaemonium and Altgard are checked in; every route leg routes. Pandaemonium NPCs report `NoApproachPoint` for the interaction route (noted for NA-14).
 
 - 2026-09-28 — Loop: NA-05 done. The monitor shows Pandaemonium, Altgard and the Ascension instance. The stale Ishalgen map catalog was refreshed.
+
+- 2026-09-28 — Loop: NA-06 done. Per-map navigation contexts are in place, and the world model clears objects on map change. Cross-map bind revive works. The seed-1 Ishalgen regression passed.
 
 ## Appendix A: Altgard shops and consumables
 
