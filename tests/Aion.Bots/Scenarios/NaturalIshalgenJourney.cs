@@ -907,6 +907,16 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				if (step.Key == "q2008-v4-munin")
 					Require.True(NaturalAscensionContract.LoadDefault().Steps.Where(s => s.QuestId == 2008 && s.ReceivesItemId != null)
 						.All(s => ItemCount(session.Api.World, s.ReceivesItemId!.Value) == 0), "Munin did not take the Destiny Cards back.");
+				if (step.QuestId == NaturalAscensionContract.LoadDefault().CeremonyReward.QuestId && step.ExpectedStatus == "REWARD")
+				{
+					// NA-14: the ceremony pays level 10, the Karmic Staff (OD-5), 250,000 Kinah and five teas; wear the staff.
+					NaturalAscensionCeremonyReward reward = NaturalAscensionContract.LoadDefault().CeremonyReward;
+					Require.True(ItemCount(session.Api.World, reward.ItemId) == 1, "The ceremony did not pay the Karmic Staff.");
+					await EquipUpgradesAsync(token);
+					await session.SynchronizeAsync(token);
+					Require.True(session.Api.World.Inventory.Values.Any(item => item.ItemId == reward.ItemId &&
+						(item.Details.EquippedSlot ?? 0) > 0), "The Karmic Staff was not equipped after the ceremony.");
+				}
 				session.TraceDiagnostic("ascension-bridge-step", new Dictionary<string, object?>
 				{
 					["step"] = step.Key, ["map"] = session.Api.World.MapId, ["position"] = session.CurrentPosition,
@@ -4067,7 +4077,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	/// <summary>Bridge talk steps the runner can play so far (NA-12: the Q2008 Norn circuit into Ataxiar).</summary>
 	private static readonly HashSet<string> ImplementedBridgeSteps =
 		["q2008-v0-munin", "q2008-v1-urd", "q2008-v2-verdandi", "q2008-v3-skuld", "q2008-v4-munin",
-		"q2008-v99-hagen", "q2008-v6-munin-class", "q2008-reward-munin"];
+		"q2008-v99-hagen", "q2008-v6-munin-class", "q2008-reward-munin",
+		"q2009-v0-munin", "q2009-v1-heimdall", "q2009-v2-balder", "q2009-reward-lyfjaberga"];
 
 	private static NaturalIshalgenObservation ObserveNaturalJourney(INaturalJourneySession session)
 	{

@@ -1104,7 +1104,7 @@ OD-11, a development item is verified by **one** run.
     - **Note.** Normal attacks alone were too slow against Hellion in NA-02; the natural
       Priest rotation killed it without trouble.
 
-- [ ] **NA-14 — Q2009 Pandaemonium ceremony (rows 11–14).**
+- [x] **NA-14 — Q2009 Pandaemonium ceremony (rows 11–14).**
   - **Depends:** NA-13.
   - **Do:**
     - Step within 6 m of Munin and send SETPRO1. Handle the map change to 120010000.
@@ -1120,6 +1120,23 @@ OD-11, a development item is verified by **one** run.
   - **Done when:** one snapshot run finishes Q2009 with the staff worn, with no fall damage
     and nowhere near the death level.
   - **Verify:** that snapshot run's trace.
+
+  - **Evidence (2026-09-28):** from the `munin` snapshot with `NA_ASCENSION=1`
+    (`na14-ceremony`), the generic step handler played the four Q2009 steps from contract
+    data:
+    - Munin's SETPRO1: the cross-map teleport to 120010000, then a map-context switch;
+    - Heimdall: SELECT2_1 (movie 121), then SETPRO2;
+    - Balder: SELECT3_1 (movie 122), then SETPRO3, reaching REWARD var 40;
+    - Lyfjaberga: talk, SELECT_QUEST_REWARD (page 8), then REWARD2.
+
+    **Result:** Q2009 is COMPLETE, **level 10**, and Q2904 START/0 was observed. The
+    **Karmic Staff was equipped** by the NA-09 equip pass right after the reward, which the
+    run requires. The run stopped at `q2904-v0-doman` for NA-15.
+    - **Safety:** the city walk stayed on the navmesh, and the lowest of 328 moves was at
+      z 176.9 (death level 150). There were no deaths and no fall messages.
+    - **Finding:** the `NoApproachPoint` noted in NA-04 did not block. The navigator reached
+      Heimdall, Balder and Lyfjaberga without the interaction-path fallback.
+    - **Checks:** 214 Natural tests and the warning, null-logger and clock ratchets pass.
 
 - [ ] **NA-15 — Dispatch to Altgard, bind, Meiyer and Suthran (rows 15–19).**
   - **Depends:** NA-14, NA-08.
@@ -1620,6 +1637,8 @@ has examples.
 - 2026-09-28 — Loop: NA-12 done. The bridge runner plays the Norn circuit from the Munin snapshot into Ataxiar (Q2008 var 99). It stops at Hagen for NA-13.
 
 - 2026-09-28 — Loop: NA-13 done. From the Munin snapshot the bot flies Hagen's path, wins the trial (no retreats, no deaths), becomes a Cleric and leaves Ataxiar. Q2008 is complete.
+
+- 2026-09-28 — Loop: NA-14 done. The Pandaemonium ceremony is complete: level 10, Karmic Staff equipped, Q2904 started. The run never came near the death level.
 
 ## Appendix A: Altgard shops and consumables
 
