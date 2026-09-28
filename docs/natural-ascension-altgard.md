@@ -1017,7 +1017,7 @@ OD-11, a development item is verified by **one** run.
       the engine choose `talk → q2008-v0-munin` from real observed state.
     - **Checks.** The warning, null-logger and clock ratchets pass.
 
-- [ ] **NA-12 — Q2008 Norn circuit (rows 1–5).**
+- [x] **NA-12 — Q2008 Norn circuit (rows 1–5).**
   - **Depends:** NA-06, NA-10, NA-11.
   - **Do:**
     - Handlers for Munin v0, Urd, Verdandi, Skuld and Munin v4.
@@ -1032,6 +1032,33 @@ OD-11, a development item is verified by **one** run.
   - **Done when:** one run from the `munin` snapshot reaches 320020000 at var 99, with the
     cards consumed and movie 57 answered.
   - **Verify:** that snapshot run's trace.
+
+  - **Evidence (2026-09-28):**
+    - **Bridge runner.** With `AscensionBridge` on, the Ishalgen endpoint no longer quits.
+      `RunAscensionBridgeAsync` asks the NA-11 engine for each move, traces every
+      `ascension-bridge-decision`, and stops on a non-planned outcome or on a move not built
+      yet, writing `bridge-stop.json`. It fails if the same move repeats three times with no
+      progress.
+    - **Generic step handler.** `PlayBridgeTalkAsync` plays any contract talk step:
+      - approaches the NPC through the per-map navigator (NA-06) and opens the dialog,
+        re-approaching if "too far";
+      - sends the step's actions and waits for each contract page;
+      - finishes movies (NA-10);
+      - follows same-map teleports (`SM_CHANNEL_INFO` + self `SM_PLAYER_INFO`) and
+        cross-map ones (`SM_PLAYER_SPAWN` + self `SM_PLAYER_INFO`, then a map-context
+        change);
+      - checks received items, and that Munin takes the Destiny Cards back.
+    - **Steps enabled.** `ImplementedBridgeSteps` holds q2008-v0 to v4.
+    - **Result.** From the `munin` snapshot with `NA_ASCENSION=1` (`na12-norns`, confirmed by
+      `na12-norns-b` with the card check), the bot played the whole circuit:
+      - Munin, then the teleport to Urd (card of the past, then teleport);
+      - Verdandi (card, teleport), then Skuld (card, teleport);
+      - Munin again: SELECT5_1 (the page after movie 57), then SETPRO5.
+
+      It arrived in **Ataxiar 320020000 at Q2008 var 99** with the cards consumed. It then
+      stopped as planned at `q2008-v99-hagen` ("not built yet", NA-13).
+    - **Checks.** 214 Natural tests and the warning, null-logger and clock ratchets pass.
+      The flag-off journey is unchanged.
 
 - [ ] **NA-13 — Ascension instance: flight, trial, Cleric, exit (rows 6–10).**
   - **Depends:** NA-12, NA-09.
@@ -1569,6 +1596,8 @@ has examples.
 - 2026-09-28 — Loop: NA-10 done. Movie policy added: skip by default; watch holds the end packet and blocks movement until `NaturalMovieGate` finishes it.
 
 - 2026-09-28 — Loop: NA-11 done. The bridge decision engine (16 table tests) is in place behind the `AscensionBridge` handoff flag. From the Munin snapshot it picks Munin as the first move.
+
+- 2026-09-28 — Loop: NA-12 done. The bridge runner plays the Norn circuit from the Munin snapshot into Ataxiar (Q2008 var 99). It stops at Hagen for NA-13.
 
 ## Appendix A: Altgard shops and consumables
 

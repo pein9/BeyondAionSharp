@@ -728,20 +728,148 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				// NA-03: a saved Munin snapshot restores with this clock so game time keeps moving forward.
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "completion-clock.json"),
 					System.Text.Json.JsonSerializer.Serialize(new { session.CharacterId, ElapsedMillis = runtime.NowMillis }), token);
-				if (options.AscensionBridge)
-				{
-					// NA-11: the Ascension bridge (docs/natural-ascension-altgard.md) starts where Ishalgen ends.
-					NaturalAscensionDecision bridge = NaturalAscensionDecisionEngine.Decide(NaturalAscensionContract.LoadDefault(),
-						NaturalAscensionObservation.Observe(session.Api.World, shopVisited: false), 1);
-					session.TraceDiagnostic("ascension-bridge-handoff", new Dictionary<string, object?>
-					{
-						["action"] = bridge.Action, ["step"] = bridge.StepKey, ["outcome"] = bridge.Outcome, ["reason"] = bridge.Reason,
-					});
-					Require.Equal("q2008-v0-munin", bridge.StepKey);
-				}
+				// NA-11/12: with the bridge enabled, the Ascension bridge (docs/natural-ascension-altgard.md) starts where
+				// Ishalgen ends instead of quitting here.
+				if (options.AscensionBridge) await RunAscensionBridgeAsync();
 				session.PublishDashboard("completed", force: true);
 				await session.QuitAsync(token);
 				runtime.AssertClean();
+			}
+
+			// NA-12: the Ascension bridge runner. The NA-11 engine picks each move from the client's view; contract "talk"
+			// steps are played by one generic handler; moves not built yet stop the run with a precise receipt.
+			async Task RunAscensionBridgeAsync()
+			{
+				NaturalAscensionContract bridge = NaturalAscensionContract.LoadDefault();
+				string? previous = null;
+				int repeats = 0;
+				for (int sequence = 1; sequence <= 80; sequence++)
+				{
+					await session.SynchronizeAsync(token);
+					NaturalAscensionDecision next = NaturalAscensionDecisionEngine.Decide(bridge,
+						NaturalAscensionObservation.Observe(session.Api.World, shopVisited: false), sequence);
+					session.TraceDiagnostic("ascension-bridge-decision", new Dictionary<string, object?>
+					{
+						["sequence"] = sequence, ["action"] = next.Action, ["step"] = next.StepKey, ["quest"] = next.QuestId,
+						["outcome"] = next.Outcome, ["reason"] = next.Reason, ["map"] = session.Api.World.MapId,
+						["checks"] = next.Checks.Select(check => $"{check.Rule}:{check.Verdict}").ToArray(),
+					});
+					session.PublishDashboard();
+					string signature = $"{next.Action}/{next.StepKey}";
+					repeats = signature == previous ? repeats + 1 : 0;
+					previous = signature;
+					Require.True(repeats < 3, $"The Ascension bridge made no progress on {signature}: {next.Reason}");
+					if (next.Outcome != "planned")
+					{
+						await WriteBridgeStopAsync(next);
+						return;
+					}
+					NaturalAscensionStep? step = next.StepKey is string key ? bridge.Steps.Single(s => s.Key == key) : null;
+					if (next.Action == "talk" && step != null && ImplementedBridgeSteps.Contains(step.Key))
+						await PlayBridgeTalkAsync(step);
+					else
+					{
+						await WriteBridgeStopAsync(next with { Outcome = "awaiting-capability", Reason = "Not built yet: " + next.Reason });
+						return;
+					}
+				}
+				throw new InvalidDataException("The Ascension bridge exceeded 80 decisions.");
+			}
+
+			async Task WriteBridgeStopAsync(NaturalAscensionDecision stop)
+			{
+				session.TraceDiagnostic("ascension-bridge-stop", new Dictionary<string, object?>
+				{
+					["action"] = stop.Action, ["step"] = stop.StepKey, ["outcome"] = stop.Outcome, ["reason"] = stop.Reason,
+				});
+				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "bridge-stop.json"),
+					System.Text.Json.JsonSerializer.Serialize(new
+					{
+						stop, session.Api.World.MapId, session.Api.World.Level, session.CurrentPosition,
+						Quests = session.Api.World.Quests.Values.Where(q => q.QuestId is 2008 or 2009 or 2904 or 24010).ToArray(),
+						Completed = session.Api.World.CompletedQuestIds.Where(q => q is 2008 or 2009 or 2904 or 24010).ToArray(),
+					}), token);
+			}
+
+			// One contract talk step: approach the NPC on the current map, open its dialog, send the step's actions,
+			// wait for each dialog page, finish any movie, and follow a same-map or cross-map quest teleport.
+			async Task PlayBridgeTalkAsync(NaturalAscensionStep step)
+			{
+				session.BeginStep($"na-{step.Key}", "ascension-bridge-talk");
+				var anchor = new BotPosition(step.Position[0], step.Position[1], step.Position[2], 0);
+				NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World), newEntry: false);
+				int npc = await ApproachBridgeNpcAsync(step, anchor, here);
+				for (int attempt = 1; ; attempt++)
+				{
+					try
+					{
+						await NaturalDialogProtocol.OpenAsync(session, npc, token);
+						await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet => packet.Get<int>("targetObjectId") == npc);
+						break;
+					}
+					catch (NaturalDialogTooFarException) when (attempt < 3)
+					{
+						npc = await ApproachBridgeNpcAsync(step, anchor, here);
+					}
+				}
+				string[] actions = step.Actions;
+				int pageOffset = 0;
+				if (actions[0] == "USE_OBJECT")
+				{
+					// The talk itself was the first action; its page was the dialog just opened.
+					actions = actions[1..];
+					pageOffset = 1;
+				}
+				for (int i = 0; i < actions.Length; i++)
+				{
+					bool last = i == actions.Length - 1;
+					bool teleports = last && step.Teleport != null;
+					bool otherMap = teleports && step.Teleport!.MapId != session.Api.World.MapId;
+					if (otherMap) session.Api.World.BeginWorldReload();
+					ushort action = checked((ushort)NaturalAscensionContract.DialogActionId(actions[i]));
+					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npc, action, questId: step.QuestId), token);
+					if (step.MovieId != null && actions[i] is "SELECT5_1" or "SELECT2_1" or "SELECT3_1")
+						await NaturalMovieGate.FinishAsync(session, token);
+					if (pageOffset + i < step.Pages.Length && !teleports)
+					{
+						int page = step.Pages[pageOffset + i];
+						await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet =>
+							packet.Get<int>("targetObjectId") == npc && packet.Get<ushort>("dialogPageId") == page);
+					}
+					if (!teleports) continue;
+					if (otherMap)
+					{
+						await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token, packet => packet.Get<int>("worldId") == step.Teleport!.MapId);
+						await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+					}
+					else
+					{
+						await session.WaitForPacketAsync(typeof(SM_CHANNEL_INFO), token);
+						await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+					}
+					session.AcceptTeleportPosition();
+					if (otherMap) mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World));
+				}
+				await session.SynchronizeAsync(token);
+				if (step.ReceivesItemId is int card)
+					Require.True(ItemCount(session.Api.World, card) >= 1 || session.Api.World.Quests[step.QuestId].StepAndFlags > step.Var,
+						$"{step.Key} did not hand over item {card}.");
+				// Munin's SELECT5_1 takes the three Destiny Cards back before Ataxiar opens.
+				if (step.Key == "q2008-v4-munin")
+					Require.True(NaturalAscensionContract.LoadDefault().Steps.Where(s => s.QuestId == 2008 && s.ReceivesItemId != null)
+						.All(s => ItemCount(session.Api.World, s.ReceivesItemId!.Value) == 0), "Munin did not take the Destiny Cards back.");
+				session.TraceDiagnostic("ascension-bridge-step", new Dictionary<string, object?>
+				{
+					["step"] = step.Key, ["map"] = session.Api.World.MapId, ["position"] = session.CurrentPosition,
+					["quest"] = session.Api.World.Quests.TryGetValue(step.QuestId, out BotQuestState? state) ? $"{state.Status}/{state.StepAndFlags}" : "done",
+				});
+			}
+
+			async Task<int> ApproachBridgeNpcAsync(NaturalAscensionStep step, BotPosition anchor, NaturalJourneyNavigator here)
+			{
+				NaturalNavigationResult approach = await NaturalIshalgenNavigator.ApproachNpcAsync(step.MapId, step.NpcId, anchor, here, token);
+				Require.True(approach.Arrived, $"{step.Key}: {approach.Reason}");
+				return Require.IsType<int>(approach.TargetObjectId);
 			}
 
 			async Task<int> ApproachAsync(int templateId, BotPosition anchor)
@@ -3886,6 +4014,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			throw;
 		}
 	}
+
+	/// <summary>Bridge talk steps the runner can play so far (NA-12: the Q2008 Norn circuit into Ataxiar).</summary>
+	private static readonly HashSet<string> ImplementedBridgeSteps =
+		["q2008-v0-munin", "q2008-v1-urd", "q2008-v2-verdandi", "q2008-v3-skuld", "q2008-v4-munin"];
 
 	private static NaturalIshalgenObservation ObserveNaturalJourney(INaturalJourneySession session)
 	{
