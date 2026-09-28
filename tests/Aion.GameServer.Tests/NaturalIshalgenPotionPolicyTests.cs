@@ -29,6 +29,14 @@ public sealed class NaturalIshalgenPotionPolicyTests
 		Assert.Equal("retreat", NaturalPriestCombatPolicy.Decide(state with { Hp = 30, Mp = 0, HotPotionReady = false }, Now).Action);
 		Assert.Equal("hot-potion", NaturalPriestCombatPolicy.Decide(state with { Hp = 90 }, Now).Action);
 		Assert.NotEqual("hot-potion", NaturalPriestCombatPolicy.Decide(state with { Hp = 91 }, Now).Action);
+		NaturalMauPolicyParameters earlierUnderAttack = NaturalMauPolicyParameters.Baseline with
+		{
+			HotPotionPercent = 91,
+		};
+		Assert.NotEqual("hot-potion", NaturalPriestCombatPolicy.Decide(
+			state with { Hp = 91, NearbyAggressors = 0 }, Now, parameters: earlierUnderAttack).Action);
+		Assert.Equal("hot-potion", NaturalPriestCombatPolicy.Decide(
+			state with { Hp = 91, NearbyAggressors = 1 }, Now, parameters: earlierUnderAttack).Action);
 		Assert.NotEqual("hot-potion", NaturalPriestCombatPolicy.Decide(state with
 		{
 			Aggro = false, TargetObjectId = null, TargetDistance = null,

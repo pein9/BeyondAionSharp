@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "parentSha256": "04b6061d83fc282c9f16c99fe7e562f489a94928529e0b6974183edb3105763b",
+  "reason": "Ablate r05 pull timing and two-attacker priority after Rae-to-Hatata gained an add",
+  "candidates": [
+    {
+      "id": "l01",
+      "parent": "r05",
+      "mutation": {
+        "PullDistanceMeters": 22.0
+      },
+      "sha256": "7b609d661f91b5d40367e4a0ffd13111b0cc4fc31589280691b511f1c44fcfdf"
+    },
+    {
+      "id": "l02",
+      "parent": "r05",
+      "mutation": {
+        "PatrolWaitCycles": 3
+      },
+      "sha256": "3291123e684d7683d366d00f5d578e575644d9db130a161872d6668f0e9d9892"
+    },
+    {
+      "id": "l03",
+      "parent": "r05",
+      "mutation": {
+        "PreferWoundedWhenTwoAttackers": false
+      },
+      "sha256": "06987290a40d7aa06ed0c3741aaabb42dee948dd33a22e8238b684cbbbbcd02f"
+    },
+    {
+      "id": "l04",
+      "parent": "r05",
+      "mutation": {
+        "PullDistanceMeters": 22.0,
+        "PatrolWaitCycles": 3
+      },
+      "sha256": "8f74c184990a774cf53f0e6de196d95d50ba7d14d75e6649dea6c1b11457a094"
+    }
+  ]
+}

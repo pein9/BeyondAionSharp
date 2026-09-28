@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "split": "development",
+  "binaryRevision": "client-observed patrol motion no longer counts as pursuit without an attack or overlapping aggro circle",
+  "courseSeeds": [12, 16, 20],
+  "courses": ["GeneratorToRae", "RaeToHatata"],
+  "candidate": "r05",
+  "preexistingPair": {"course": "RaeToHatata", "seed": 16, "tag": "patrolfix-v1"},
+  "stageBSeeds": [11, 13, 14, 15, 17, 18],
+  "earlyStop": "Stop on a new course failure or more deaths than the paired baseline.",
+  "evaluationSeedsSealed": true
+}

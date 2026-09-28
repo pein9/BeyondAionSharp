@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "plan": {
+    "schemaVersion": 1,
+    "split": "development",
+    "stageASeeds": [
+      12,
+      16,
+      20
+    ],
+    "courses": [
+      "GeneratorToRae",
+      "RaeToHatata"
+    ],
+    "finalists": [
+      "r05",
+      "r07"
+    ],
+    "selection": "Top two passing random-screen candidates by completion, deaths, extra attackers and route failures, game time, then potions; r05 alone avoided the Hatata-with-add death.",
+    "earlyStop": "Stop a finalist after a development seed with a new course failure or more deaths than the paired baseline; preserve that run.",
+    "stageBSeeds": [
+      11,
+      13,
+      14,
+      15,
+      17,
+      18
+    ],
+    "evaluationSeedsSealed": true
+  },
+  "pairs": [
+    {
+      "seed": 12,
+      "course": "GeneratorToRae",
+      "baseline": {
+        "run": "p2-gen-full-base-s12-r01-dev-a",
+        "status": "complete",
+        "course": "GeneratorToRae",
+        "seed": 12,
+        "moduleId": "2e2e3c9f-86cc-482c-bb4d-bbfca3ae564f",
+        "policyId": "mau-parameter-v1:ce76a9fd03aa4ef3",
+        "policyBaseline": true,
+        "policySha256": "2dae14e3030243c676d2e2edb78fdd011df54c491793b9e71a26dbeb4128e27a",
+        "courseResetSha256": "f47ac7a4eb17405e2d6e7548f060a4752a8fb1d0a6b5fcb8da83c12412d5ef3e",
+        "traceSha256": "a51defeb7256bb5938abe22bbb3f3d664c4de8bbdea75802da9eaeb127951fb4",
+        "gameSeconds": 721.129,
+        "wallSeconds": 34.729,
+        "deaths": 0,
+        "maxObservedAttackers": 2,
+        "routeFailures": 3,
+        "potions": 15,
+        "retreatAttempts": 0,
+        "decisionRecords": 323
+      },
+      "candidates": {
+        "r05": {
+          "run": "p2-gen-full-cand-s12-r01-r05-dev-a",
+          "status": "complete",
+          "course": "GeneratorToRae",
+          "seed": 12,
+          "moduleId": "2e2e3c9f-86cc-482c-bb4d-bbfca3ae564f",
+          "policyId": "mau-parameter-v1:7f34d2383ad3dd11",
+          "policyBaseline": false,
+          "policySha256": "a1ee308cd70c98592b5d40d979e26b4164f9fa268a0119fca23e379cf4c42acb",
+          "courseResetSha256": "f47ac7a4eb17405e2d6e7548f060a4752a8fb1d0a6b5fcb8da83c12412d5ef3e",
+          "traceSha256": "f577a250c1aaac8ac12a1b7e07cc7adcbf4a80b5a313d94099ff78cb26804f23",
+          "gameSeconds": 419.565,
+          "wallSeconds": 13.532,
+          "deaths": 0,
+          "maxObservedAttackers": 2,
+          "routeFailures": 1,
+          "potions": 10,
+          "retreatAttempts": 0,
+          "decisionRecords": 172
+        },
+        "r07": {
+          "run": "p2-gen-full-cand-s12-r01-r07-dev-a",
+          "status": "complete",
+          "course": "GeneratorToRae",
+          "seed": 12,
+          "moduleId": "2e2e3c9f-86cc-482c-bb4d-bbfca3ae564f",
+          "policyId": "mau-parameter-v1:ba10b8d79d26c861",
+          "policyBaseline": false,
+          "policySha256": "0bf3ed3355e339cd9181a3b48d99a81ba0c18592cc4440e27e0e3d3c2792a302",
+          "courseResetSha256": "f47ac7a4eb17405e2d6e7548f060a4752a8fb1d0a6b5fcb8da83c12412d5ef3e",
+          "traceSha256": "13ebbc02b157e4fc9ccabd3214e7d86d2310835e735f6a49d210bacbd91b83da",
+          "gameSeconds": 2184.842,
+          "wallSeconds": 95.243,
+          "deaths": 2,
+          "maxObservedAttackers": 2,
+          "routeFailures": 13,
+          "potions": 14,
+          "retreatAttempts": 0,
+          "decisionRecords": 348
+        }
+      }
+    },
+    {
+      "seed": 12,
+      "course": "RaeToHatata",
+      "baseline": {
+        "run": "p2-hat-full-base-s12-r01-dev-a",
+        "status": "complete",
+        "course": "RaeToHatata",
+        "seed": 12,
+        "moduleId": "2e2e3c9f-86cc-482c-bb4d-bbfca3ae564f",
+        "policyId": "mau-parameter-v1:ce76a9fd03aa4ef3",
+        "policyBaseline": true,
+        "policySha256": "2dae14e3030243c676d2e2edb78fdd011df54c491793b9e71a26dbeb4128e27a",
+        "courseResetSha256": "4b3dd7906ecf5e9675bdd193e3620e068acb7a2908f97dc0f567d4a4dad6c1ba",
+        "traceSha256": "cdf7894489790a8e447ed7e6bdc8de75df45e75c533d612da86152564c9d4011",
+        "gameSeconds": 134.64,
+        "wallSeconds": 5.169,
+        "deaths": 0,
+        "maxObservedAttackers": 1,
+        "routeFailures": 1,
+        "potions": 1,
+        "retreatAttempts": 0,
+        "decisionRecords": 36
+      },
+      "candidates": {
+        "r05": {
+          "run": "p2-hat-full-cand-s12-r01-r05-dev-a",
+          "status": "complete",
+          "course": "RaeToHatata",
+          "seed": 12,
+          "moduleId": "2e2e3c9f-86cc-482c-bb4d-bbfca3ae564f",
+          "policyId": "mau-parameter-v1:7f34d2383ad3dd11",
+          "policyBaseline": false,
+          "policySha256": "a1ee308cd70c98592b5d40d979e26b4164f9fa268a0119fca23e379cf4c42acb",
+          "courseResetSha256": "4b3dd7906ecf5e9675bdd193e3620e068acb7a2908f97dc0f567d4a4dad6c1ba",
+          "traceSha256": "7c1410f4c02a780b5f21bc9d85075eaed82ad7e5de1a12ab1d3ba817d5d40014",
+          "gameSeconds": 174.425,
+          "wallSeconds": 5.125,
+          "deaths": 0,
+          "maxObservedAttackers": 2,
+          "routeFailures": 2,
+          "potions": 2,
+          "retreatAttempts": 0,
+          "decisionRecords": 63
+        }
+      }
+    },
+    {
+      "seed": 16,
+      "course": "GeneratorToRae",
+      "baseline": {
+        "run": "p2-gen-full-base-s16-r01-dev-a",
+        "status": "complete",
+        "course": "GeneratorToRae",
+        "seed": 16,
+        "moduleId": "2e2e3c9f-86cc-482c-bb4d-bbfca3ae564f",
+        "policyId": "mau-parameter-v1:ce76a9fd03aa4ef3",
+        "policyBaseline": true,
+        "policySha256": "2dae14e3030243c676d2e2edb78fdd011df54c491793b9e71a26dbeb4128e27a",
+        "courseResetSha256": "c5ca57800907cfcd0c1be565263ba598ba286f6356039447186dce161aa985ac",
+        "traceSha256": "534451b62dd51db99ee4ca1b78318451d34fde59cb0e55b67068c15e6b59d302",
+        "gameSeconds": 2552.675,
+        "wallSeconds": 131.075,
+        "deaths": 2,
+        "maxObservedAttackers": 2,
+        "routeFailures": 13,
+        "potions": 25,
+        "retreatAttempts": 0,
+        "decisionRecords": 510
+      },
+      "candidates": {
+        "r05": {
+          "run": "p2-gen-full-cand-s16-r01-r05-dev-a",
+          "status": "complete",
+          "course": "GeneratorToRae",
+          "seed": 16,
+          "moduleId": "2e2e3c9f-86cc-482c-bb4d-bbfca3ae564f",
+          "policyId": "mau-parameter-v1:7f34d2383ad3dd11",
+          "policyBaseline": false,
+          "policySha256": "a1ee308cd70c98592b5d40d979e26b4164f9fa268a0119fca23e379cf4c42acb",
+          "courseResetSha256": "c5ca57800907cfcd0c1be565263ba598ba286f6356039447186dce161aa985ac",
+          "traceSha256": "c2bf4b39905579f258af2ce805b92e57295308358db48599149cd9e0b43a2a0b",
+          "gameSeconds": 1745.484,
+          "wallSeconds": 99.876,
+          "deaths": 1,
+          "maxObservedAttackers": 2,
+          "routeFailures": 19,
+          "potions": 24,
+          "retreatAttempts": 0,
+          "decisionRecords": 443
+        }
+      }
+    },
+    {
+      "seed": 16,
+      "course": "RaeToHatata",
+      "baseline": {
+        "run": "p2-hat-full-base-s16-r01-dev-a",
+        "status": "complete",
+        "course": "RaeToHatata",
+        "seed": 16,
+        "moduleId": "2e2e3c9f-86cc-482c-bb4d-bbfca3ae564f",
+        "policyId": "mau-parameter-v1:ce76a9fd03aa4ef3",
+        "policyBaseline": true,
+        "policySha256": "2dae14e3030243c676d2e2edb78fdd011df54c491793b9e71a26dbeb4128e27a",
+        "courseResetSha256": "b0e543d2fbc6f4a429598f6732b646d4a9f591945f2d6a7092944e84b9fbd738",
+        "traceSha256": "02b3b843e86ffc32575b52783b496a062c905851ee6e8f3cddc3cba9d1ff3b8e",
+        "gameSeconds": 135.341,
+        "wallSeconds": 5.117,
+        "deaths": 0,
+        "maxObservedAttackers": 1,
+        "routeFailures": 1,
+        "potions": 2,
+        "retreatAttempts": 0,
+        "decisionRecords": 38
+      },
+      "candidates": {
+        "r05": {
+          "run": "p2-hat-full-cand-s16-r01-r05-dev-a",
+          "status": "failed",
+          "course": "RaeToHatata",
+          "seed": 16,
+          "moduleId": "2e2e3c9f-86cc-482c-bb4d-bbfca3ae564f",
+          "policyId": "mau-parameter-v1:7f34d2383ad3dd11",
+          "policyBaseline": false,
+          "policySha256": "a1ee308cd70c98592b5d40d979e26b4164f9fa268a0119fca23e379cf4c42acb",
+          "courseResetSha256": "b0e543d2fbc6f4a429598f6732b646d4a9f591945f2d6a7092944e84b9fbd738",
+          "traceSha256": "b96145fc1ca0c4bf140d600df1c91db9af72c1e9af7f81fe78f75705f5703652",
+          "gameSeconds": 179.921,
+          "wallSeconds": 5.438,
+          "deaths": 0,
+          "maxObservedAttackers": 2,
+          "routeFailures": 2,
+          "potions": 4,
+          "retreatAttempts": 0,
+          "decisionRecords": 70
+        }
+      }
+    },
+    {
+      "seed": 20,
+      "course": "GeneratorToRae",
+      "baseline": {
+        "run": "p2-gen-full-base-s20-r01-dev-a",
+        "status": "complete",
+        "course": "GeneratorToRae",
+        "seed": 20,
+        "moduleId": "2e2e3c9f-86cc-482c-bb4d-bbfca3ae564f",
+        "policyId": "mau-parameter-v1:ce76a9fd03aa4ef3",
+        "policyBaseline": true,
+        "policySha256": "2dae14e3030243c676d2e2edb78fdd011df54c491793b9e71a26dbeb4128e27a",
+        "courseResetSha256": "a4c43483e9e0eeac77dc9db8c2ba97786a7427dc59809ae2223a374e1e68221f",
+        "traceSha256": "ce822d88237a72ba26af1b902f01a127d00b55bae67971e952b2932cf2e8b170",
+        "gameSeconds": 1565.049,
+        "wallSeconds": 115.361,
+        "deaths": 1,
+        "maxObservedAttackers": 2,
+        "routeFailures": 11,
+        "potions": 18,
+        "retreatAttempts": 0,
+        "decisionRecords": 387
+      },
+      "candidates": {}
+    },
+    {
+      "seed": 20,
+      "course": "RaeToHatata",
+      "baseline": {
+        "run": "p2-hat-full-base-s20-r01-dev-a",
+        "status": "complete",
+        "course": "RaeToHatata",
+        "seed": 20,
+        "moduleId": "2e2e3c9f-86cc-482c-bb4d-bbfca3ae564f",
+        "policyId": "mau-parameter-v1:ce76a9fd03aa4ef3",
+        "policyBaseline": true,
+        "policySha256": "2dae14e3030243c676d2e2edb78fdd011df54c491793b9e71a26dbeb4128e27a",
+        "courseResetSha256": "2900846c3f84f5fa12df3174f1bf84fa9bfa58f8217b02d56e39ea631787691f",
+        "traceSha256": "9f907016f8be0724b287981cdf7fe0d4a9f462251532a6b13fab5384a5350f02",
+        "gameSeconds": 132.04,
+        "wallSeconds": 4.957,
+        "deaths": 0,
+        "maxObservedAttackers": 1,
+        "routeFailures": 1,
+        "potions": 2,
+        "retreatAttempts": 0,
+        "decisionRecords": 36
+      },
+      "candidates": {}
+    }
+  ],
+  "stopped": {
+    "r07": "More GeneratorToRae deaths on seed 12",
+    "r05": "New RaeToHatata course failure on seed 16"
+  }
+}

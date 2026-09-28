@@ -1,5 +1,12 @@
 # Level 9 bot learning pilot: Mau camp and Hatata
 
+**Status (2026-09-28): paused after Phase 2.** The benchmark and decision
+traces are retained as an audit, but no tuned policy passed the unseen-seed
+safety gate and no model was trained. The deterministic policy remains in use.
+Further level 9 policy search is deferred while work shifts to the Ascension
+quest and subsequent leveling/questing. This pilot does not gate that work;
+see [the latest natural Ishalgen status](natural-ishalgen-status.md).
+
 ## Goal and boundary
 
 Build two repeatable **area challenges** with a level 9 Priest: a generator-to-Rae return that covers the Q2007 rejoin, and a Rae-to-Hatata course that ends when Hatata is dead and the Priest has disengaged safely. Compare learned decisions with the current deterministic bot on the same simulation seeds. These are diagnostic challenges, not a replacement for the retail quest order: Q2007 and Q2129 occur at different points in the full journey. The generator-to-Rae leg is required because `timing68` seed 3 exhausted ten guarded approaches on that return; a Rae-to-Hatata course alone would miss it.
@@ -12,6 +19,13 @@ The pilot should have two explicit policies:
 - **Candidate:** the same legal-action and navigation checks, with a learned choice at a narrow decision point. Keep a switch to run either policy against identical seeds.
 
 ## Phase 0 — Lock the benchmark
+
+The course specification, seed split, archived journey slices, and verified
+88-run deterministic-policy baseline are in [the Phase 0 record](bot-learning-phase0.md).
+The Phase 0 trace gate is complete. The two full legs' same-seed reset and
+outcome reproducibility check passes for three development seeds per leg;
+[the Phase 1 audit](bot-learning-phase1.md) records the evidence, including
+the six short encounter starts and per-decision records.
 
 1. Specify each course's starting position and quest state, plus level, learned skills, gear, inventory, bind point, and world seed. Record the source of each value from a successful client-observed run. Do not assume the level grants a skill.
 2. Define success for the return leg as reaching Rae with a checked route, alive and out of combat; for the Hatata leg, Hatata's objective completes and the bot disengages safely. Both must have no stalled recovery. Record deaths, extra attackers, retreat attempts, potions, elapsed **game** time and wall time, damage taken, and actions by encounter.
@@ -30,6 +44,12 @@ Keep the `recovery69` seed-5 Q2006 Mijou return as a separate navigation-cost re
 
 **Gate:** repeated runs of one seed give the same meaningful outcome, and the encounter starts exercise the same combat and navigation code as the area challenge.
 
+**Current gate status:** Phase 1 passes for the full legs on development seeds
+12, 16, and 20 and for all six short starts repeated on seed 12. The blocked
+rejoin's reproducible failure is retained. Decision records cover combat and
+baseline-evaluated pull candidates; see the Phase 1 audit for scope and
+outcome-label limits.
+
 ## Phase 2 — First training: tune the existing policy
 
 Start with a small, inspectable parameter vector rather than a neural network: pull distance and patrol wait tolerance; healing and potion thresholds; mana reserve; low-HP finishing preference; and target priority when two mobs are engaged. Bounds must preserve legal skill use and a conservative emergency fallback.
@@ -38,7 +58,21 @@ Use random search as a reference, then a small genetic search if its generations
 
 **Gate:** freeze the best candidate and compare it with the baseline on at least 20 previously unseen paired seeds, plus the familiar regression seeds. Adopt it only if completion and deaths do not regress and a practical benefit remains on the unseen seeds. Preserve the full trace for any surprising win or loss.
 
+**Current gate status:** evaluated; candidate rejected. The parameterized
+policy, random reference search, development early stops, and paired runner
+are in place. A guarded 91% timed-potion candidate passed 15 development
+pairs and was frozen, then compared with baseline on all 20 reserved unseen
+seeds for both courses and familiar seeds 1/3/4/5. It added a death on unseen
+generator seed 118, failing the adoption gate. The deterministic baseline
+remains active. The [Phase 2 audit](bot-learning-phase2.md) records the freeze,
+reports, trace archives, and decision. Seeds 101–120 have now been used and
+cannot serve as an unseen gate for a subsequent candidate.
+
 ## Phase 3 — Learn which safe pull to choose
+
+**Deferred.** Resume only if later quest and skill progression exposes a
+specific decision worth learning and a fresh, broader held-out benchmark is
+available. Seeds 101–120 have already been used for diagnosis.
 
 If Phase 2 exposes repeated pull mistakes, train a small outcome or risk model to rank the current planner's legal target/firing-spot choices. Features can include observed hostiles and patrol paths, expected helpers, target type, range, HP/MP, recent damage, and the bot's position. Predictions can cover extra attackers, damage, death, and time to clear.
 
@@ -47,6 +81,8 @@ For training labels, rerun *different legal candidates* from the same encounter 
 **Gate:** fewer unwanted adds or deaths on unseen seeds, with no drop in completion; inspect disagreements rather than accepting an aggregate score alone.
 
 ## Phase 4 — Optional combat learning
+
+**Deferred with Phase 3.**
 
 Only if parameter tuning leaves clear combat mistakes, train a sequential combat policy on the short encounters. Decisions occur at events such as a skill becoming ready, a chain opening, damage arriving, or a target changing. Actions are legal casts, attack, heal, owned potion, target switch, hold, or retreat. The learned policy sees client-observed HP/MP, target HP, attackers, distance, effects, cooldowns, and learned skills. Compare it with the tuned deterministic policy across single and multiple attacker fights before placing it in the area challenge.
 

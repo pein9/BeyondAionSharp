@@ -1,0 +1,363 @@
+{
+  "schemaVersion": 1,
+  "sourceReport": "docs/bot-learning-phase2-evaluation.json",
+  "sourceReportSha256": "6d47aa777928fe51ca490025324af99c0865833d56bec66b89f0b9a3d34eb029",
+  "archives": [
+    {
+      "course": "GeneratorToRae",
+      "seed": 108,
+      "file": "docs/bot-learning-phase2-traces/generator-seed-108-paired.tar.gz",
+      "sha256": "25b7abdfbbb5bb189e3a0a4e270dc909929f355d437eea19a4291d7eede0ff7e",
+      "bytes": 512826,
+      "entries": [
+        {
+          "path": "p2-gen-full-base-s108-r01-heldout-v1/course-completion.json",
+          "sha256": "f761719c2f8d463f2fddf2db3703673d4d98b6ebeea4df5148ee5b6537cb4010",
+          "bytes": 20903
+        },
+        {
+          "path": "p2-gen-full-base-s108-r01-heldout-v1/course-reset.json",
+          "sha256": "a236658123b464cb3e9827cf4bb3631ec29c0f0b02f0a7a32a3e990cee360abc",
+          "bytes": 1260317
+        },
+        {
+          "path": "p2-gen-full-base-s108-r01-heldout-v1/login-observation.json",
+          "sha256": "16c3ce500b2da2304e092eac2c734fa64351c078db29f16677e52aa9128472a0",
+          "bytes": 20629
+        },
+        {
+          "path": "p2-gen-full-base-s108-r01-heldout-v1/p2-gen-full-base-s108-r01-heldout-v1.trace.jsonl",
+          "sha256": "5b15faf4235fce45882f56eda891b36c3f61fa5ce0d917e52c81b875848f97b4",
+          "bytes": 2805358
+        },
+        {
+          "path": "p2-gen-full-base-s108-r01-heldout-v1/policy.json",
+          "sha256": "2dae14e3030243c676d2e2edb78fdd011df54c491793b9e71a26dbeb4128e27a",
+          "bytes": 245
+        },
+        {
+          "path": "p2-gen-full-base-s108-r01-heldout-v1/summary.json",
+          "sha256": "99e0ece69761d51d8364773338037124cbccb80a9b2e7a51e739e9a9f3f111f6",
+          "bytes": 90747
+        },
+        {
+          "path": "p2-gen-full-base-s108-r01-heldout-v1/test.log",
+          "sha256": "500105b19d2e4efdd7945152be18f7ec6f0de7ef6ef49a2907db31249815096e",
+          "bytes": 345
+        },
+        {
+          "path": "p2-gen-full-base-s108-r01-heldout-v1/training-decisions.jsonl",
+          "sha256": "68218e004908e8e6e6ba635cfd374bfa49d00a57dc12ba593a47d8a222299410",
+          "bytes": 1587218
+        },
+        {
+          "path": "p2-gen-full-cand-s108-r01-heldout-v1/course-completion.json",
+          "sha256": "686031bf9dd457d2b9e688ad70eff8dc85ca2c6d9d33878f9a7b7d0aeb668c15",
+          "bytes": 20903
+        },
+        {
+          "path": "p2-gen-full-cand-s108-r01-heldout-v1/course-reset.json",
+          "sha256": "a236658123b464cb3e9827cf4bb3631ec29c0f0b02f0a7a32a3e990cee360abc",
+          "bytes": 1260317
+        },
+        {
+          "path": "p2-gen-full-cand-s108-r01-heldout-v1/login-observation.json",
+          "sha256": "16c3ce500b2da2304e092eac2c734fa64351c078db29f16677e52aa9128472a0",
+          "bytes": 20629
+        },
+        {
+          "path": "p2-gen-full-cand-s108-r01-heldout-v1/p2-gen-full-cand-s108-r01-heldout-v1.trace.jsonl",
+          "sha256": "a8b399913fcf4a940836ab66a8b969f20813216868200f5c6ba7985d4d42ef6b",
+          "bytes": 2683680
+        },
+        {
+          "path": "p2-gen-full-cand-s108-r01-heldout-v1/policy.json",
+          "sha256": "f85b52201c11d3178a554540a7aba668ec0f0e736a5e54db8390e6eacda49ba8",
+          "bytes": 245
+        },
+        {
+          "path": "p2-gen-full-cand-s108-r01-heldout-v1/summary.json",
+          "sha256": "1e51981f2270ed7742451097d4dc7506a9c66bd25aeed0bc5e122d241fe309dc",
+          "bytes": 90472
+        },
+        {
+          "path": "p2-gen-full-cand-s108-r01-heldout-v1/test.log",
+          "sha256": "6154d61bf827069a882f9d4f3118144cc81072cc4568c6286d9884a99ed748b1",
+          "bytes": 345
+        },
+        {
+          "path": "p2-gen-full-cand-s108-r01-heldout-v1/training-decisions.jsonl",
+          "sha256": "6f8304187088f76e9dee29c3f46d9c75061b3f5f718509d09247a198e1dfd8bf",
+          "bytes": 1517581
+        }
+      ]
+    },
+    {
+      "course": "GeneratorToRae",
+      "seed": 113,
+      "file": "docs/bot-learning-phase2-traces/generator-seed-113-paired.tar.gz",
+      "sha256": "72514f6bc597d9d2f7635b9f55c6530304465273dcb061677c7d51ed6713b02b",
+      "bytes": 1401327,
+      "entries": [
+        {
+          "path": "p2-gen-full-base-s113-r01-heldout-v1/course-completion.json",
+          "sha256": "3f5835f43c3ea92d75bc4074dc2e1e1a2d6fe26d920cb29b7168bc4e98a24b71",
+          "bytes": 20911
+        },
+        {
+          "path": "p2-gen-full-base-s113-r01-heldout-v1/course-reset.json",
+          "sha256": "ae4dd054fe6c5ceb608f1921b8deaad4ff3143e7779bee0636cbaffef0af2952",
+          "bytes": 1260314
+        },
+        {
+          "path": "p2-gen-full-base-s113-r01-heldout-v1/login-observation.json",
+          "sha256": "16c3ce500b2da2304e092eac2c734fa64351c078db29f16677e52aa9128472a0",
+          "bytes": 20629
+        },
+        {
+          "path": "p2-gen-full-base-s113-r01-heldout-v1/p2-gen-full-base-s113-r01-heldout-v1.trace.jsonl",
+          "sha256": "f6a5da396b0a32d9792587f28203ae382710882b2a0edf8daee64a9e722de009",
+          "bytes": 9544958
+        },
+        {
+          "path": "p2-gen-full-base-s113-r01-heldout-v1/policy.json",
+          "sha256": "2dae14e3030243c676d2e2edb78fdd011df54c491793b9e71a26dbeb4128e27a",
+          "bytes": 245
+        },
+        {
+          "path": "p2-gen-full-base-s113-r01-heldout-v1/summary.json",
+          "sha256": "8122d26a1568a8299fd87566ef04d7e9525ccd93ce818c9bb02ddb5c26f25a91",
+          "bytes": 95445
+        },
+        {
+          "path": "p2-gen-full-base-s113-r01-heldout-v1/test.log",
+          "sha256": "e02f3d8843a5f5eac84b0e5e7ef8627d823c15c4c1b1dd966cfa259b19ae0939",
+          "bytes": 349
+        },
+        {
+          "path": "p2-gen-full-base-s113-r01-heldout-v1/training-decisions.jsonl",
+          "sha256": "7959956f5cdbf59ca23e59dfe6efa251d690397651304a701e752f352032dccd",
+          "bytes": 2931901
+        },
+        {
+          "path": "p2-gen-full-cand-s113-r01-heldout-v1/course-completion.json",
+          "sha256": "6ca7eed31ff096c6ffb5d69491b6d2bea4a2dc0b375fc5e429bf52c345cf92c1",
+          "bytes": 20905
+        },
+        {
+          "path": "p2-gen-full-cand-s113-r01-heldout-v1/course-reset.json",
+          "sha256": "ae4dd054fe6c5ceb608f1921b8deaad4ff3143e7779bee0636cbaffef0af2952",
+          "bytes": 1260314
+        },
+        {
+          "path": "p2-gen-full-cand-s113-r01-heldout-v1/login-observation.json",
+          "sha256": "16c3ce500b2da2304e092eac2c734fa64351c078db29f16677e52aa9128472a0",
+          "bytes": 20629
+        },
+        {
+          "path": "p2-gen-full-cand-s113-r01-heldout-v1/p2-gen-full-cand-s113-r01-heldout-v1.trace.jsonl",
+          "sha256": "ce9925e9daa35446e2bd233cf8390ae4ba7bb73aaed5560eda60e0cc7655ac7f",
+          "bytes": 9487490
+        },
+        {
+          "path": "p2-gen-full-cand-s113-r01-heldout-v1/policy.json",
+          "sha256": "f85b52201c11d3178a554540a7aba668ec0f0e736a5e54db8390e6eacda49ba8",
+          "bytes": 245
+        },
+        {
+          "path": "p2-gen-full-cand-s113-r01-heldout-v1/summary.json",
+          "sha256": "9fa60a6ccd4bd5dc90f1f88797b38d91be5209077fd58a5024e15b0d832273c0",
+          "bytes": 95412
+        },
+        {
+          "path": "p2-gen-full-cand-s113-r01-heldout-v1/test.log",
+          "sha256": "9e4c9d133c7295db6f121d876c7615756a2d32c7f2fe352edb82ca89136e3cf0",
+          "bytes": 349
+        },
+        {
+          "path": "p2-gen-full-cand-s113-r01-heldout-v1/training-decisions.jsonl",
+          "sha256": "5ff23498ea8f546671977936c6b352f810799349a63cdb9793959b82a32f0d59",
+          "bytes": 2880114
+        }
+      ]
+    },
+    {
+      "course": "GeneratorToRae",
+      "seed": 115,
+      "file": "docs/bot-learning-phase2-traces/generator-seed-115-paired.tar.gz",
+      "sha256": "ccb01a44558859520cd466c733577ec229036904ccf12f3fc8b80c1510196b6b",
+      "bytes": 1997633,
+      "entries": [
+        {
+          "path": "p2-gen-full-base-s115-r01-heldout-v1/20260928T074337459Z-92f35149787c441281653a75e1c55353.failure.json",
+          "sha256": "80e446b33efe0f556c10208a065c7b9b804e68b98ce49f00fc4836bef9986098",
+          "bytes": 45974
+        },
+        {
+          "path": "p2-gen-full-base-s115-r01-heldout-v1/course-reset.json",
+          "sha256": "acfbb62f63e983914e242e936c0452d85ff4a083d83ceebcc84b5f8fcd0c3945",
+          "bytes": 1260320
+        },
+        {
+          "path": "p2-gen-full-base-s115-r01-heldout-v1/login-observation.json",
+          "sha256": "16c3ce500b2da2304e092eac2c734fa64351c078db29f16677e52aa9128472a0",
+          "bytes": 20629
+        },
+        {
+          "path": "p2-gen-full-base-s115-r01-heldout-v1/p2-gen-full-base-s115-r01-heldout-v1.trace.jsonl",
+          "sha256": "f50fdac780b612be593b56c523eb8162bb84c3dd9021283a2af33f107ef79484",
+          "bytes": 14443041
+        },
+        {
+          "path": "p2-gen-full-base-s115-r01-heldout-v1/policy.json",
+          "sha256": "2dae14e3030243c676d2e2edb78fdd011df54c491793b9e71a26dbeb4128e27a",
+          "bytes": 245
+        },
+        {
+          "path": "p2-gen-full-base-s115-r01-heldout-v1/summary.json",
+          "sha256": "134ea57f500c4b9c0b5ddde1fe457b9b5b9efad5a59c8167ae08fd7abf45a611",
+          "bytes": 56226
+        },
+        {
+          "path": "p2-gen-full-base-s115-r01-heldout-v1/test.log",
+          "sha256": "453699c85760373ef0618f9c651498fbd047c5b0c5a1beb42317b1e440f007d9",
+          "bytes": 5260
+        },
+        {
+          "path": "p2-gen-full-base-s115-r01-heldout-v1/training-decisions.jsonl",
+          "sha256": "ab1be508851d023ebc70cdb772e63c8f29ecb04c82d9c77850d3a0923dc0b9c5",
+          "bytes": 3390237
+        },
+        {
+          "path": "p2-gen-full-cand-s115-r01-heldout-v1/20260928T074600516Z-7bda24c53c1645ffa6f5a2be0b512083.failure.json",
+          "sha256": "d8f5176dd741b65f479fa7b071f2509620248ddd01ed9746e117906109882dff",
+          "bytes": 45974
+        },
+        {
+          "path": "p2-gen-full-cand-s115-r01-heldout-v1/course-reset.json",
+          "sha256": "acfbb62f63e983914e242e936c0452d85ff4a083d83ceebcc84b5f8fcd0c3945",
+          "bytes": 1260320
+        },
+        {
+          "path": "p2-gen-full-cand-s115-r01-heldout-v1/login-observation.json",
+          "sha256": "16c3ce500b2da2304e092eac2c734fa64351c078db29f16677e52aa9128472a0",
+          "bytes": 20629
+        },
+        {
+          "path": "p2-gen-full-cand-s115-r01-heldout-v1/p2-gen-full-cand-s115-r01-heldout-v1.trace.jsonl",
+          "sha256": "a6f73695afef87c68a2c27e19f42ace527abd621ca6a8b3f1315e74aa0628874",
+          "bytes": 14444898
+        },
+        {
+          "path": "p2-gen-full-cand-s115-r01-heldout-v1/policy.json",
+          "sha256": "f85b52201c11d3178a554540a7aba668ec0f0e736a5e54db8390e6eacda49ba8",
+          "bytes": 245
+        },
+        {
+          "path": "p2-gen-full-cand-s115-r01-heldout-v1/summary.json",
+          "sha256": "28b4a18907699626febde376442f9c015e03e35af14204f8f035a499e88eac5d",
+          "bytes": 56227
+        },
+        {
+          "path": "p2-gen-full-cand-s115-r01-heldout-v1/test.log",
+          "sha256": "190a7f9c7a61ea267655a8041e3cbd2e8bd4c6b528a5c35ee33e16e594d1581f",
+          "bytes": 5260
+        },
+        {
+          "path": "p2-gen-full-cand-s115-r01-heldout-v1/training-decisions.jsonl",
+          "sha256": "657d50a08c4dbc23bb05a10480aafd9aa9b5eb81208719ad9b1789ae77d94aba",
+          "bytes": 3390237
+        }
+      ]
+    },
+    {
+      "course": "GeneratorToRae",
+      "seed": 118,
+      "file": "docs/bot-learning-phase2-traces/generator-seed-118-paired.tar.gz",
+      "sha256": "697e2188263d8c82491cfce8a92f721148fe7d7b88bc5f6256d07671b1d15c19",
+      "bytes": 1209395,
+      "entries": [
+        {
+          "path": "p2-gen-full-base-s118-r01-heldout-v1/course-completion.json",
+          "sha256": "5845ab4a2c8d093f2fda141df039d2c5c93acdd1a44b929eb6cee093f35535fa",
+          "bytes": 20909
+        },
+        {
+          "path": "p2-gen-full-base-s118-r01-heldout-v1/course-reset.json",
+          "sha256": "1005db9efd1c7d3e231bfde4a68b3005c8effb9467da8eacc3062c78b6311fe8",
+          "bytes": 1260325
+        },
+        {
+          "path": "p2-gen-full-base-s118-r01-heldout-v1/login-observation.json",
+          "sha256": "16c3ce500b2da2304e092eac2c734fa64351c078db29f16677e52aa9128472a0",
+          "bytes": 20629
+        },
+        {
+          "path": "p2-gen-full-base-s118-r01-heldout-v1/p2-gen-full-base-s118-r01-heldout-v1.trace.jsonl",
+          "sha256": "d6f72c338868fc2d6640f754ccb1c1e47d07e3113e9b4dbc6c353c804611e828",
+          "bytes": 5612426
+        },
+        {
+          "path": "p2-gen-full-base-s118-r01-heldout-v1/policy.json",
+          "sha256": "2dae14e3030243c676d2e2edb78fdd011df54c491793b9e71a26dbeb4128e27a",
+          "bytes": 245
+        },
+        {
+          "path": "p2-gen-full-base-s118-r01-heldout-v1/summary.json",
+          "sha256": "b9c824c7bd18c778d87503f1844be223cb7325d448fa4f1a4730167ce4e4a2d3",
+          "bytes": 92605
+        },
+        {
+          "path": "p2-gen-full-base-s118-r01-heldout-v1/test.log",
+          "sha256": "8f21325ec551f04555cd47a2a22e1feec7ed94dc9532fdc7af0b03d74c9f8cd0",
+          "bytes": 348
+        },
+        {
+          "path": "p2-gen-full-base-s118-r01-heldout-v1/training-decisions.jsonl",
+          "sha256": "cf0b6f27c9766c50306470885ccb5b978a9161ffbbdcd197a3a7e0c50185abc3",
+          "bytes": 1913007
+        },
+        {
+          "path": "p2-gen-full-cand-s118-r01-heldout-v1/course-completion.json",
+          "sha256": "b8431317ea9e3aafdab5cf0124ac2b4a11397bdff84d00aa9d0027513c57bf2e",
+          "bytes": 20904
+        },
+        {
+          "path": "p2-gen-full-cand-s118-r01-heldout-v1/course-reset.json",
+          "sha256": "1005db9efd1c7d3e231bfde4a68b3005c8effb9467da8eacc3062c78b6311fe8",
+          "bytes": 1260325
+        },
+        {
+          "path": "p2-gen-full-cand-s118-r01-heldout-v1/login-observation.json",
+          "sha256": "16c3ce500b2da2304e092eac2c734fa64351c078db29f16677e52aa9128472a0",
+          "bytes": 20629
+        },
+        {
+          "path": "p2-gen-full-cand-s118-r01-heldout-v1/p2-gen-full-cand-s118-r01-heldout-v1.trace.jsonl",
+          "sha256": "e2c366fd9ef56ac4d8176e78b65d7c9f3db0b4a08bddd3f277d0c50a83392e12",
+          "bytes": 10232040
+        },
+        {
+          "path": "p2-gen-full-cand-s118-r01-heldout-v1/policy.json",
+          "sha256": "f85b52201c11d3178a554540a7aba668ec0f0e736a5e54db8390e6eacda49ba8",
+          "bytes": 245
+        },
+        {
+          "path": "p2-gen-full-cand-s118-r01-heldout-v1/summary.json",
+          "sha256": "a1d4ebaa4f7f1e6c6927dbf0194696e52ce4ca489a3c2fbc244fde60abfe5f10",
+          "bytes": 96281
+        },
+        {
+          "path": "p2-gen-full-cand-s118-r01-heldout-v1/test.log",
+          "sha256": "a707e9ca8218c4ed7b6aad16837824daadda9d425967e32e154008303547ed19",
+          "bytes": 349
+        },
+        {
+          "path": "p2-gen-full-cand-s118-r01-heldout-v1/training-decisions.jsonl",
+          "sha256": "62a63c123a806508ededdd854c4dfcaeb27b10d0dd5285701e9d8e24913e70f4",
+          "bytes": 3343275
+        }
+      ]
+    }
+  ]
+}

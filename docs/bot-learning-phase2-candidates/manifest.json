@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 1,
+  "searchSeed": 20260927,
+  "randomCandidateCount": 12,
+  "bounds": {
+    "PullDistanceMeters": [
+      18.0,
+      19.0,
+      20.0,
+      21.0,
+      22.0
+    ],
+    "PatrolWaitCycles": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "HealSinglePercent": [
+      50,
+      55,
+      60,
+      65
+    ],
+    "HealMultiplePercent": [
+      65,
+      70,
+      75,
+      80
+    ],
+    "HotPotionPercent": [
+      80,
+      85,
+      90,
+      95
+    ],
+    "ManaReserveExtra": [
+      0,
+      8,
+      16,
+      24
+    ],
+    "FinishTargetHpPercent": [
+      0,
+      10,
+      15,
+      20,
+      25
+    ],
+    "PreferWoundedWhenTwoAttackers": [
+      false,
+      true
+    ]
+  },
+  "candidates": [
+    {
+      "id": "baseline",
+      "sha256": "401e2e55c734ddac23dce3fb811e6c0e0a11900157acd43461def4f36bbc5cdd",
+      "parameters": {
+        "PullDistanceMeters": 22.0,
+        "PatrolWaitCycles": 3,
+        "HealSinglePercent": 55,
+        "HealMultiplePercent": 70,
+        "HotPotionPercent": 90,
+        "ManaReserveExtra": 0,
+        "FinishTargetHpPercent": 15,
+        "PreferWoundedWhenTwoAttackers": false
+      }
+    },
+    {
+      "id": "r01",
+      "sha256": "06b2202bf8011dc947320a3989ea21bd80a32223de2e0c4d6e1f0b64f9b46431",
+      "parameters": {
+        "PullDistanceMeters": 19.0,
+        "PatrolWaitCycles": 4,
+        "HealSinglePercent": 60,
+        "HealMultiplePercent": 65,
+        "HotPotionPercent": 80,
+        "ManaReserveExtra": 0,
+        "FinishTargetHpPercent": 20,
+        "PreferWoundedWhenTwoAttackers": true
+      }
+    },
+    {
+      "id": "r02",
+      "sha256": "5fb3f7e099a0c6e26c5fe06f98cee8b0bd74b61ce24d572df3a4b558afd3862d",
+      "parameters": {
+        "PullDistanceMeters": 20.0,
+        "PatrolWaitCycles": 1,
+        "HealSinglePercent": 60,
+        "HealMultiplePercent": 65,
+        "HotPotionPercent": 85,
+        "ManaReserveExtra": 24,
+        "FinishTargetHpPercent": 15,
+        "PreferWoundedWhenTwoAttackers": true
+      }
+    },
+    {
+      "id": "r03",
+      "sha256": "5c55a5d4a5a1697ca2dcf4fe4e1c378f3ba10258ea16da3072fbd15ebeec2047",
+      "parameters": {
+        "PullDistanceMeters": 18.0,
+        "PatrolWaitCycles": 2,
+        "HealSinglePercent": 60,
+        "HealMultiplePercent": 70,
+        "HotPotionPercent": 80,
+        "ManaReserveExtra": 8,
+        "FinishTargetHpPercent": 25,
+        "PreferWoundedWhenTwoAttackers": false
+      }
+    },
+    {
+      "id": "r04",
+      "sha256": "18a4fbce9e3b59c43d2a5f46355f5563a92f0586e8b6f361a4dce948e8b71b36",
+      "parameters": {
+        "PullDistanceMeters": 20.0,
+        "PatrolWaitCycles": 2,
+        "HealSinglePercent": 65,
+        "HealMultiplePercent": 65,
+        "HotPotionPercent": 95,
+        "ManaReserveExtra": 0,
+        "FinishTargetHpPercent": 0,
+        "PreferWoundedWhenTwoAttackers": false
+      }
+    },
+    {
+      "id": "r05",
+      "sha256": "04b6061d83fc282c9f16c99fe7e562f489a94928529e0b6974183edb3105763b",
+      "parameters": {
+        "PullDistanceMeters": 21.0,
+        "PatrolWaitCycles": 1,
+        "HealSinglePercent": 55,
+        "HealMultiplePercent": 75,
+        "HotPotionPercent": 90,
+        "ManaReserveExtra": 0,
+        "FinishTargetHpPercent": 10,
+        "PreferWoundedWhenTwoAttackers": true
+      }
+    },
+    {
+      "id": "r06",
+      "sha256": "b18854ec44104ca6a21a82bd6cb5fa0b3776ace625d7abc9b5ec76c1502b1484",
+      "parameters": {
+        "PullDistanceMeters": 19.0,
+        "PatrolWaitCycles": 2,
+        "HealSinglePercent": 55,
+        "HealMultiplePercent": 65,
+        "HotPotionPercent": 85,
+        "ManaReserveExtra": 0,
+        "FinishTargetHpPercent": 0,
+        "PreferWoundedWhenTwoAttackers": false
+      }
+    },
+    {
+      "id": "r07",
+      "sha256": "5699c7e1a357fcf22abbae78a4d393264b09cf188a1cfe3140da2085a7f0745e",
+      "parameters": {
+        "PullDistanceMeters": 22.0,
+        "PatrolWaitCycles": 1,
+        "HealSinglePercent": 50,
+        "HealMultiplePercent": 80,
+        "HotPotionPercent": 80,
+        "ManaReserveExtra": 24,
+        "FinishTargetHpPercent": 0,
+        "PreferWoundedWhenTwoAttackers": true
+      }
+    },
+    {
+      "id": "r08",
+      "sha256": "765ab6c327357b886a84b5a3f15f6eec66ed821317f5156d1d70845caa82c8ec",
+      "parameters": {
+        "PullDistanceMeters": 18.0,
+        "PatrolWaitCycles": 2,
+        "HealSinglePercent": 65,
+        "HealMultiplePercent": 65,
+        "HotPotionPercent": 80,
+        "ManaReserveExtra": 8,
+        "FinishTargetHpPercent": 10,
+        "PreferWoundedWhenTwoAttackers": true
+      }
+    },
+    {
+      "id": "r09",
+      "sha256": "14a79ee0450426dc6a6c30c5cbce4df8bfc3bbb17172629bd17b6e27a1a93b1b",
+      "parameters": {
+        "PullDistanceMeters": 21.0,
+        "PatrolWaitCycles": 3,
+        "HealSinglePercent": 55,
+        "HealMultiplePercent": 70,
+        "HotPotionPercent": 90,
+        "ManaReserveExtra": 8,
+        "FinishTargetHpPercent": 0,
+        "PreferWoundedWhenTwoAttackers": false
+      }
+    },
+    {
+      "id": "r10",
+      "sha256": "ec9cf37da53ee92a092ff46f7ec8d5f57cade222cbe9040c27a235258071a99d",
+      "parameters": {
+        "PullDistanceMeters": 20.0,
+        "PatrolWaitCycles": 4,
+        "HealSinglePercent": 65,
+        "HealMultiplePercent": 75,
+        "HotPotionPercent": 95,
+        "ManaReserveExtra": 0,
+        "FinishTargetHpPercent": 20,
+        "PreferWoundedWhenTwoAttackers": false
+      }
+    },
+    {
+      "id": "r11",
+      "sha256": "1a8e04f0076bccaf86077a7f4eb2849ec99c169e901c5e89ab744ffc95b39a7b",
+      "parameters": {
+        "PullDistanceMeters": 18.0,
+        "PatrolWaitCycles": 4,
+        "HealSinglePercent": 65,
+        "HealMultiplePercent": 80,
+        "HotPotionPercent": 90,
+        "ManaReserveExtra": 24,
+        "FinishTargetHpPercent": 20,
+        "PreferWoundedWhenTwoAttackers": false
+      }
+    },
+    {
+      "id": "r12",
+      "sha256": "095cd6ee174f8150146cb2e4fdd8f432fac0f711b1bb514cb39f1893ec74dc15",
+      "parameters": {
+        "PullDistanceMeters": 21.0,
+        "PatrolWaitCycles": 2,
+        "HealSinglePercent": 50,
+        "HealMultiplePercent": 80,
+        "HotPotionPercent": 90,
+        "ManaReserveExtra": 24,
+        "FinishTargetHpPercent": 10,
+        "PreferWoundedWhenTwoAttackers": false
+      }
+    }
+  ],
+  "selectionRule": "paired development seeds; completion, deaths, extra attackers and stalls, game time, then potions"
+}

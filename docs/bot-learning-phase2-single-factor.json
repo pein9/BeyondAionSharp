@@ -1,0 +1,440 @@
+{
+  "schemaVersion": 1,
+  "parent": "baseline",
+  "orderedSeeds": [
+    16,
+    17,
+    12
+  ],
+  "rule": "Stop after a new failure or more deaths than paired baseline; evaluate one parameter at a time",
+  "candidates": [
+    {
+      "id": "s01",
+      "mutation": {
+        "HotPotionPercent": 95
+      },
+      "policySha256": "e5117d3ed08809bef5ac3b2409d84c02eaead032c678a57028c9faae5775be38",
+      "pairs": [
+        {
+          "seed": 16,
+          "baseline": {
+            "run": "p2-gen-full-base-s16-r01-dev-b",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 1448.639,
+            "routeFailures": 7,
+            "potions": 15,
+            "traceSha256": "b9d16df212d16fb0f06af7bd1cd0715734bbd7a29bb33ceef883ca40d575de80"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s16-r01-s01-sf",
+            "status": "complete",
+            "deaths": 0,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 500.866,
+            "routeFailures": 1,
+            "potions": 11,
+            "traceSha256": "2f110becb85aab09a33f0de492dbb800e7690949f65fffae59285de40a027c52"
+          }
+        },
+        {
+          "seed": 17,
+          "baseline": {
+            "run": "p2-gen-full-base-s17-r01-dev-c",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 3,
+            "gameSeconds": 1526.018,
+            "routeFailures": 6,
+            "potions": 16,
+            "traceSha256": "96ab4726a3c2de3ca01e7d6ab7b23a35d49ae091e6f54b7d3479d5522064b7fa"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s17-r01-s01-sf",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 1339.928,
+            "routeFailures": 9,
+            "potions": 15,
+            "traceSha256": "f7b4f6147d86c9c1f23a29e1a8413da592df51e0766d64ef57992afb1e18adbf"
+          }
+        },
+        {
+          "seed": 12,
+          "baseline": {
+            "run": "p2-gen-full-base-s12-r01-dev-b",
+            "status": "complete",
+            "deaths": 0,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 558.667,
+            "routeFailures": 1,
+            "potions": 10,
+            "traceSha256": "e519d6c15798b7cf1b75f3627464b0f631dc98a98d6b0d1e814ae47702548475"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s12-r01-s01-sf",
+            "status": "complete",
+            "deaths": 0,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 515.494,
+            "routeFailures": 1,
+            "potions": 12,
+            "traceSha256": "743f9f819d2cd3a2d55e6eec48006e232885793e10a05cffde441a54ffd039c5"
+          }
+        }
+      ],
+      "stopped": null
+    },
+    {
+      "id": "s02",
+      "mutation": {
+        "HealMultiplePercent": 75
+      },
+      "policySha256": "287d3b7073283908eb97d7ce433bd7af367e831750b1a7f0c0c6c800ec2f76b6",
+      "pairs": [
+        {
+          "seed": 16,
+          "baseline": {
+            "run": "p2-gen-full-base-s16-r01-dev-b",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 1448.639,
+            "routeFailures": 7,
+            "potions": 15,
+            "traceSha256": "b9d16df212d16fb0f06af7bd1cd0715734bbd7a29bb33ceef883ca40d575de80"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s16-r01-s02-sf",
+            "status": "complete",
+            "deaths": 2,
+            "maxObservedAttackers": 3,
+            "gameSeconds": 2408.995,
+            "routeFailures": 9,
+            "potions": 23,
+            "traceSha256": "a347787337e638bb928ae606c4b73ad0660e9a883df3494b03bf9c2dd1f5d83b"
+          }
+        }
+      ],
+      "stopped": "More deaths on seed 16"
+    },
+    {
+      "id": "s03",
+      "mutation": {
+        "HealSinglePercent": 60
+      },
+      "policySha256": "a1e595267d685ef99b47849f5b0a5241ca83358bf0da4aa7e3dbdf1ac902c681",
+      "pairs": [
+        {
+          "seed": 16,
+          "baseline": {
+            "run": "p2-gen-full-base-s16-r01-dev-b",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 1448.639,
+            "routeFailures": 7,
+            "potions": 15,
+            "traceSha256": "b9d16df212d16fb0f06af7bd1cd0715734bbd7a29bb33ceef883ca40d575de80"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s16-r01-s03-sf",
+            "status": "complete",
+            "deaths": 0,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 749.022,
+            "routeFailures": 3,
+            "potions": 15,
+            "traceSha256": "3d44084925d940651a246053ae33b55adc9939de41680901b6d486524765d480"
+          }
+        },
+        {
+          "seed": 17,
+          "baseline": {
+            "run": "p2-gen-full-base-s17-r01-dev-c",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 3,
+            "gameSeconds": 1526.018,
+            "routeFailures": 6,
+            "potions": 16,
+            "traceSha256": "96ab4726a3c2de3ca01e7d6ab7b23a35d49ae091e6f54b7d3479d5522064b7fa"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s17-r01-s03-sf",
+            "status": "complete",
+            "deaths": 0,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 632.392,
+            "routeFailures": 2,
+            "potions": 13,
+            "traceSha256": "2da49e6db910bcfb26ec842b64ae29d251ff059ad9d1e8a39772d1aa99736241"
+          }
+        },
+        {
+          "seed": 12,
+          "baseline": {
+            "run": "p2-gen-full-base-s12-r01-dev-b",
+            "status": "complete",
+            "deaths": 0,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 558.667,
+            "routeFailures": 1,
+            "potions": 10,
+            "traceSha256": "e519d6c15798b7cf1b75f3627464b0f631dc98a98d6b0d1e814ae47702548475"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s12-r01-s03-sf",
+            "status": "complete",
+            "deaths": 0,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 516.363,
+            "routeFailures": 1,
+            "potions": 12,
+            "traceSha256": "671add94cc4e9d2fd1115b748818880ea033a13c031135e9147eaf984c80942a"
+          }
+        }
+      ],
+      "stopped": null
+    },
+    {
+      "id": "s04",
+      "mutation": {
+        "ManaReserveExtra": 8
+      },
+      "policySha256": "e43054051e9c053b07e50f5b8f8c4449b1c06ed916352a67348d9f972ad79ba5",
+      "pairs": [
+        {
+          "seed": 16,
+          "baseline": {
+            "run": "p2-gen-full-base-s16-r01-dev-b",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 1448.639,
+            "routeFailures": 7,
+            "potions": 15,
+            "traceSha256": "b9d16df212d16fb0f06af7bd1cd0715734bbd7a29bb33ceef883ca40d575de80"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s16-r01-s04-sf",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 1448.639,
+            "routeFailures": 7,
+            "potions": 15,
+            "traceSha256": "0b55d9e41faac093d7167e090d7fd6ba2bd30d9dea6b50e490b03a1d5e4d7d85"
+          }
+        },
+        {
+          "seed": 17,
+          "baseline": {
+            "run": "p2-gen-full-base-s17-r01-dev-c",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 3,
+            "gameSeconds": 1526.018,
+            "routeFailures": 6,
+            "potions": 16,
+            "traceSha256": "96ab4726a3c2de3ca01e7d6ab7b23a35d49ae091e6f54b7d3479d5522064b7fa"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s17-r01-s04-sf",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 3,
+            "gameSeconds": 1526.018,
+            "routeFailures": 6,
+            "potions": 16,
+            "traceSha256": "941acd205e7c108858fa859aa5f6fb5d459e5ab3f5a51e134fb8ee45d110907d"
+          }
+        },
+        {
+          "seed": 12,
+          "baseline": {
+            "run": "p2-gen-full-base-s12-r01-dev-b",
+            "status": "complete",
+            "deaths": 0,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 558.667,
+            "routeFailures": 1,
+            "potions": 10,
+            "traceSha256": "e519d6c15798b7cf1b75f3627464b0f631dc98a98d6b0d1e814ae47702548475"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s12-r01-s04-sf",
+            "status": "complete",
+            "deaths": 0,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 558.667,
+            "routeFailures": 1,
+            "potions": 10,
+            "traceSha256": "51693015945dc0a6832e0cbb2e2e59058945de92900bf2d6f84b4ccf01595885"
+          }
+        }
+      ],
+      "stopped": null
+    },
+    {
+      "id": "s05",
+      "mutation": {
+        "FinishTargetHpPercent": 10
+      },
+      "policySha256": "a4397c0f7e33b574eb2f9b4b6739548f12817e747a54c9db753478f9e2941bd7",
+      "pairs": [
+        {
+          "seed": 16,
+          "baseline": {
+            "run": "p2-gen-full-base-s16-r01-dev-b",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 1448.639,
+            "routeFailures": 7,
+            "potions": 15,
+            "traceSha256": "b9d16df212d16fb0f06af7bd1cd0715734bbd7a29bb33ceef883ca40d575de80"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s16-r01-s05-sf",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 1448.639,
+            "routeFailures": 7,
+            "potions": 15,
+            "traceSha256": "2cc53a4a545efc157ca5c7c4e967d6ea1e948a8529080a3fbcc12766ab3097e2"
+          }
+        },
+        {
+          "seed": 17,
+          "baseline": {
+            "run": "p2-gen-full-base-s17-r01-dev-c",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 3,
+            "gameSeconds": 1526.018,
+            "routeFailures": 6,
+            "potions": 16,
+            "traceSha256": "96ab4726a3c2de3ca01e7d6ab7b23a35d49ae091e6f54b7d3479d5522064b7fa"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s17-r01-s05-sf",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 3,
+            "gameSeconds": 1526.018,
+            "routeFailures": 6,
+            "potions": 16,
+            "traceSha256": "46c82c73b3984f30532a8ea08bf253288d2f81d7769def602b96673c9fd129d0"
+          }
+        },
+        {
+          "seed": 12,
+          "baseline": {
+            "run": "p2-gen-full-base-s12-r01-dev-b",
+            "status": "complete",
+            "deaths": 0,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 558.667,
+            "routeFailures": 1,
+            "potions": 10,
+            "traceSha256": "e519d6c15798b7cf1b75f3627464b0f631dc98a98d6b0d1e814ae47702548475"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s12-r01-s05-sf",
+            "status": "complete",
+            "deaths": 0,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 558.667,
+            "routeFailures": 1,
+            "potions": 10,
+            "traceSha256": "9aa5eb7eab5805fbf2a13489fcf2cad2e2602f292c12c6116f67abd07c12f964"
+          }
+        }
+      ],
+      "stopped": null
+    },
+    {
+      "id": "s06",
+      "mutation": {
+        "PreferWoundedWhenTwoAttackers": true
+      },
+      "policySha256": "af18912aa9c48b42cb4a6d3e2c00e9e208da997e885959864fe1b2ee27ea0b71",
+      "pairs": [
+        {
+          "seed": 16,
+          "baseline": {
+            "run": "p2-gen-full-base-s16-r01-dev-b",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 1448.639,
+            "routeFailures": 7,
+            "potions": 15,
+            "traceSha256": "b9d16df212d16fb0f06af7bd1cd0715734bbd7a29bb33ceef883ca40d575de80"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s16-r01-s06-sf",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 1448.639,
+            "routeFailures": 7,
+            "potions": 15,
+            "traceSha256": "6a63f33de80da4e0ce8ace11a3ec9bb0ac66e8d47ec4350a3ab0ba6b8f75fea2"
+          }
+        },
+        {
+          "seed": 17,
+          "baseline": {
+            "run": "p2-gen-full-base-s17-r01-dev-c",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 3,
+            "gameSeconds": 1526.018,
+            "routeFailures": 6,
+            "potions": 16,
+            "traceSha256": "96ab4726a3c2de3ca01e7d6ab7b23a35d49ae091e6f54b7d3479d5522064b7fa"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s17-r01-s06-sf",
+            "status": "complete",
+            "deaths": 1,
+            "maxObservedAttackers": 3,
+            "gameSeconds": 1526.018,
+            "routeFailures": 6,
+            "potions": 16,
+            "traceSha256": "005dea5e2b9e77ad5ccc1f33b141c73f3f57fe48aa90a699231d459cb9ca8842"
+          }
+        },
+        {
+          "seed": 12,
+          "baseline": {
+            "run": "p2-gen-full-base-s12-r01-dev-b",
+            "status": "complete",
+            "deaths": 0,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 558.667,
+            "routeFailures": 1,
+            "potions": 10,
+            "traceSha256": "e519d6c15798b7cf1b75f3627464b0f631dc98a98d6b0d1e814ae47702548475"
+          },
+          "candidate": {
+            "run": "p2-gen-full-cand-s12-r01-s06-sf",
+            "status": "complete",
+            "deaths": 0,
+            "maxObservedAttackers": 2,
+            "gameSeconds": 558.667,
+            "routeFailures": 1,
+            "potions": 10,
+            "traceSha256": "fc85c4242706f509c00888e3a33fb21293a2c679a5951c0d3b723be4bd848ad9"
+          }
+        }
+      ],
+      "stopped": null
+    }
+  ]
+}

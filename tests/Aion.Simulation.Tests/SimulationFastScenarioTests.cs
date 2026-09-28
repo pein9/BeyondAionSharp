@@ -429,11 +429,11 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 	}
 
 	private async Task TeleportForSetupAsync(SimulationL0Session session, Player player, int mapId,
-		float x, float y, float z, CancellationToken token, int? targetInstanceId = null)
+		float x, float y, float z, CancellationToken token, int? targetInstanceId = null, byte heading = 0)
 	{
 		int instanceId = targetInstanceId ?? fixture.World.GetWorldMap(mapId).GetMainWorldMapInstance().GetInstanceId();
 		bool reloadMap = player.GetWorldId() != mapId || player.GetInstanceId() != instanceId;
-		TeleportService.TeleportTo(player, mapId, instanceId, x, y, z, 0, TeleportAnimation.NONE);
+		TeleportService.TeleportTo(player, mapId, instanceId, x, y, z, heading, TeleportAnimation.NONE);
 		await session.DrainServerPacketsAsync(token);
 		try
 		{

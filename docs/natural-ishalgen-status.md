@@ -813,3 +813,37 @@ NI-10 mock-Docker attach contract, and Docker Fast (11 manifest scenarios).
 deaths. No new journey batch or human recording was run for this commit. The live
 Docker stack and bot runners remain stopped; the next learning-pilot step is the
 controlled Mau-area benchmark described above.
+
+## Level 9 Mau learning pilot concluded; Ascension handoff (2026-09-28)
+
+The two level 9 Mau courses and fixed SIM seed split are locked in
+[Phase 0](bot-learning-phase0.md). [Phase 1](bot-learning-phase1.md) verifies
+same-seed replay and records legal, client-observable decisions for full legs
+and six short starts. These are reusable diagnostic facilities, not a change
+to the normal quest journey. The experimental parameter vector remains
+course-only; the normal journey uses the deterministic baseline.
+
+[Phase 2](bot-learning-phase2.md) tried inspectable policy parameters with
+paired development courses, then froze one guarded 91% timed-potion candidate
+before opening 20 unseen seeds. It matched baseline completion on the 40
+unseen course pairs but added a death on generator seed 118. The four familiar
+regression seeds matched baseline. The candidate was rejected and no policy
+was adopted. The [seed-118 trace diagnosis](bot-learning-phase2-seed118-diagnosis.json)
+shows the first changed action and a later canceled Smite in a two-attacker
+fight; six additional Q2007 route searches followed the extra death. It does
+not establish a safe alternative. The full notable trace pairs are archived
+with hashes in the [trace manifest](bot-learning-phase2-traces/manifest.json).
+No model was trained and no new full-journey batch was run. Evaluation seeds
+101–120 are spent and must not be treated as unseen for a later candidate.
+
+Further level 9 tuning is **paused**. The current evidence did not yield a
+practical safe policy improvement, and the operator is moving to Ascension
+and subsequent leveling/questing to broaden the character's observed skills
+and situations. The next session should begin with the Java 4.8 Ascension
+quest implementation and the [parity backlog](Full-Parity-Backlog.md), then
+identify the C# quest/leveling gaps before changing behavior. Preserve the
+client-observed learned-skill rule: a level alone does not grant a skill.
+Keep the existing deterministic journey as the regression baseline; use
+focused checks before any new full-journey batch. The last full-journey
+evidence remains `retreat72` (four completed seeds, eight deaths) from the
+commit checkpoint above.

@@ -24,6 +24,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 	public async Task RunAsync(CancellationToken token)
 	{
+		if (options.MauPolicy != null && options.Course == null)
+			throw new InvalidOperationException("A tuned Mau policy is restricted to the focused SIM course.");
+		NaturalMauPolicyParameters mauPolicy = options.MauPolicy ?? NaturalMauPolicyParameters.Baseline;
+		mauPolicy.Validate();
 		bool stopAfterQ2004 = options.StopAfterQuest == 2004, stopAfterQ2005 = options.StopAfterQuest == 2005,
 			stopAfterQ2006 = options.StopAfterQuest == 2006, stopAfterQ2007 = options.StopAfterQuest == 2007;
 		bool fightRouteOpen = false;
@@ -40,6 +44,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				.OfType<System.Reflection.AssemblyInformationalVersionAttribute>().Single().InformationalVersion,
 			typeof(NaturalIshalgenJourney).Module.ModuleVersionId.ToString(), runtime.NowMillis);
 		combatTrace.WriteAction("ni08-run", "natural-run-context", new Dictionary<string, object?> { ["context"] = RunContext() });
+		if (options.Course != null)
+			combatTrace.WriteAction("ni08-run", "phase2-policy", new Dictionary<string, object?>
+			{
+				["policyId"] = mauPolicy.Id, ["parameters"] = mauPolicy,
+				["baseline"] = options.MauPolicy == null,
+			});
 		void WriteFailure(string kind, Exception failure)
 		{
 			// Diagnosis must never replace the original failure, including an incomplete or wrong-character login.
@@ -63,6 +73,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		try
 		{
 			bool resuming = await runtime.EnterAsync(token);
+			if (options.Course != null)
+			{
+				if (resuming || runtime.PrepareCourseAsync == null)
+					throw new InvalidOperationException("A Mau course requires a fresh SIM character and explicit preparation.");
+				await runtime.PrepareCourseAsync(token);
+			}
 			// The LIVE movie-end reply can arrive after the first time-check barrier: the
 			// reflex is sent while draining login packets. Observe completion explicitly.
 			if (!resuming && !session.Api.World.CompletedQuestIds.Contains(2000))
@@ -81,7 +97,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			Require.All(templatePlans.Keys, id => Require.Contains(id, contract.Quests.Select(quest => quest.Id)));
 			NaturalDecision decision = NaturalIshalgenDecisionEngine.Decide(contract,
 				ObserveNaturalJourney(session), 1);
-			if (!resuming)
+			if (!resuming && options.Course == null)
 			{
 				Require.Equal("find-quest-starter", decision.SelectedAction);
 				Require.Equal(2101, decision.SelectedQuestId);
@@ -144,7 +160,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				}
 			};
 			var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry,
-				options.StopOnDeath, options.OptimizeHubs);
+				options.StopOnDeath, options.OptimizeHubs, mauPolicy);
 			navigationDefense = combat;
 			bool maintainingInventory = false;
 			var workedTemplates = new HashSet<int>();
@@ -308,9 +324,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			var progress = new NaturalJourneyProgress(TimeSpan.FromMinutes(60),
 				templatePlans.Values.SelectMany(p => p.Steps).Where(s => s.ItemId > 0).Select(s => s.ItemId).ToHashSet());
 			long journeyStart = runtime.NowMillis;
+			void EnforceCourseGameClock()
+			{
+				if (options.Course != null && runtime.NowMillis - journeyStart >= TimeSpan.FromHours(1).TotalMilliseconds)
+					throw new TimeoutException($"Mau course exceeded its 3,600-second game-clock cap ({runtime.NowMillis - journeyStart} ms).");
+			}
 			long lastProgressObservation = -1000;
 			session.AfterSynchronize = () =>
 			{
+				EnforceCourseGameClock();
 				if (!session.Api.World.LoginStateObserved || runtime.NowMillis - lastProgressObservation < 1000) return;
 				lastProgressObservation = runtime.NowMillis;
 				checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
@@ -331,6 +353,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				throw new ArgumentException("NI08_RELOG_AT and NI08_STOP_AT must be questId:status:packedVars.");
 			session.BeforeSend = () =>
 			{
+				EnforceCourseGameClock();
 				if (!stopInjected && stopBoundary is { } stop && QuestStatus(stop[0]) == stop[1] && QuestVar(stop[0]) == stop[2])
 				{
 					stopInjected = true;
@@ -342,6 +365,84 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					throw new EndOfStreamException($"NI-08 injected connection interruption at Q{at[0]} status {at[1]} vars {at[2]}.");
 				}
 			};
+			if (options.Course is NaturalMauCourse course)
+			{
+				navigator.AvoidHostileAggro = true;
+				NaturalMauEncounter? encounter = options.Encounter;
+				int questId = course == NaturalMauCourse.GeneratorToRae ? 2007 : 2129;
+				int expectedVar = encounter == NaturalMauEncounter.BlockedGeneratorRejoin ? 8 :
+					course == NaturalMauCourse.GeneratorToRae ? 6 : 1;
+				Require.True(AtQuestStep(questId, expectedVar),
+					$"Mau course requires Q{questId} START/{expectedVar} observed from client packets.");
+				Require.Equal((ushort)9, session.Api.World.Level);
+				session.TraceDiagnostic("phase0-course-start", new Dictionary<string, object?>
+				{
+					["course"] = course.ToString(), ["encounter"] = encounter?.ToString(),
+					["seed"] = runtime.Seed,
+					["checkpoint"] = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
+						session.ConnectionGeneration, contract, session.CurrentPosition),
+				});
+				if (encounter != null)
+				{
+					session.BeginStep($"phase1-{encounter}", "shared-mau-navigation-and-combat");
+					session.TraceDiagnostic("phase1-encounter-start", new Dictionary<string, object?>
+					{
+						["encounter"] = encounter.ToString(), ["position"] = session.CurrentPosition,
+					});
+					if (encounter == NaturalMauEncounter.BlockedGeneratorRejoin)
+					{
+						await CompleteWheresRaeThisTimeAsync();
+						Require.Equal(8, QuestVar(2007));
+					}
+					else
+					{
+						int templateId = encounter switch
+						{
+							NaturalMauEncounter.IsolatedStalker => 210750,
+							NaturalMauEncounter.TwoAttackerPull => 211284,
+							NaturalMauEncounter.MovingPatrol => 210407,
+							NaturalMauEncounter.HatataAlone or NaturalMauEncounter.HatataWithAdd => 210409,
+							_ => throw new ArgumentOutOfRangeException(nameof(encounter)),
+						};
+						await KillShippedSpawnAsync(templateId);
+						if (templateId == 210409)
+							Require.True(QuestVar(2129) >= 65, "Hatata objective update was not client-observed.");
+					}
+				}
+				else if (course == NaturalMauCourse.GeneratorToRae)
+					await CompleteWheresRaeThisTimeAsync();
+				else
+				{
+					session.BeginStep("phase0-rae-to-hatata", "kill-hatata-with-current-pull-and-combat-policy");
+					await KillShippedSpawnAsync(210409);
+					Require.True(QuestVar(2129) >= 65, "Hatata objective update was not client-observed.");
+				}
+				await DefendAgainstEngagedAsync("phase0-terminal-disengagement");
+				await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+				await session.SynchronizeAsync(token);
+				var (remainingAttackers, remainingPursuers) = Engaged();
+				Require.True(!session.Api.World.IsDead && remainingAttackers.Length == 0 && remainingPursuers.Length == 0,
+					$"Mau course ended with attackers [{string.Join(',', remainingAttackers)}] and pursuers [{string.Join(',', remainingPursuers)}].");
+				string outcome = Path.Combine(Path.GetDirectoryName(combatTracePath)!, "course-completion.json");
+				await File.WriteAllTextAsync(outcome, System.Text.Json.JsonSerializer.Serialize(new
+				{
+					Course = course.ToString(), Encounter = encounter?.ToString(), runtime.Seed,
+					EndGameMillis = runtime.NowMillis,
+					Position = session.CurrentPosition, Quest = session.Api.World.Quests[questId],
+					Deaths = combat.ReviveCount, Disengaged = true,
+					Checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
+						session.ConnectionGeneration, contract, session.CurrentPosition),
+				}), token);
+				session.TraceDiagnostic("phase0-course-complete", new Dictionary<string, object?>
+				{
+					["course"] = course.ToString(), ["encounter"] = encounter?.ToString(),
+					["deaths"] = combat.ReviveCount,
+					["position"] = session.CurrentPosition, ["disengaged"] = true,
+				});
+				await session.QuitAsync(token);
+				runtime.AssertClean();
+				return;
+			}
 			for (int sequence = 1; sequence <= 100; sequence++)
 			{
 				try
@@ -934,6 +1035,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					.ToArray();
 				int[] pursuers = ObservedPullMonsters()
 					.Where(m => !attackers.Contains(m.Npc.ObjectId) && Distance(session.CurrentPosition, m.Npc.Position) < 45)
+					// A known walker can travel >10 m from its first SM_NPC_INFO on its normal Java
+					// route (NpcMoveController.isNextRouteStepChosen). Displacement alone does not
+					// show pursuit; an actual attack or an overlapping aggro circle is checked below.
+					.Where(m => m.Npc.PatrolPath is not { Count: > 0 })
 					.Where(m => session.PacketHistory.FirstOrDefault(packet => packet.PacketType == typeof(SM_NPC_INFO) &&
 						packet.Get<int>("objectId") == m.Npc.ObjectId) is { } info &&
 						new BotPosition(info.Get<float>("x"), info.Get<float>("y"), info.Get<float>("z"), 0) is var home &&
@@ -1066,8 +1171,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						continue;
 					}
 					pursuerWaits = 0;
-					int attacker = attackers.OrderBy(id => Distance(session.CurrentPosition,
-						navigator.Observe().Npcs.First(npc => npc.ObjectId == id).Position)).First();
+					int attacker = ChooseEngagedTarget(attackers, session, mauPolicy.PreferWoundedWhenTwoAttackers);
 					session.TraceDiagnostic("defend-before-pull", new Dictionary<string, object?>
 					{
 						["purpose"] = purpose,
@@ -1118,7 +1222,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 80) await RestSafelyAsync(token);
 				await combat.MaintainBuffsAsync(token);
 				NaturalPullPlan? plan = null;
-				for (int wait = 0; wait <= 3; wait++)
+				for (int wait = 0; wait <= mauPolicy.PatrolWaitCycles; wait++)
 				{
 					NaturalPullMonster[] monsters = ObservedPullMonsters();
 					var observed = navigator.Observe().Npcs.ToDictionary(npc => npc.ObjectId);
@@ -1134,6 +1238,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					// Not on a patrol's path or a respawn point (the shipped spawn circles): a fight of a minute or
 					// more there meets the patrol or the respawn, as the Hatata fights that went wrong did.
 					bool avoidSpawns = combat.HostileSpawns.Count > 0;
+					var evaluatedPullCandidates = new List<NaturalPullCandidate>();
 					NaturalPullPlan? PlanOnce() => NaturalPullPlanner.Plan(session.CurrentPosition, pullTargets, monsters, stagingPoints, CanSupport,
 						(a, b) => geometry.HasLineOfSight(contract.MapId, a, b),
 						point => geometry.SnapToGround(contract.MapId, point),
@@ -1152,7 +1257,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 												BotNavQuery.Default with { Hazards = hazards }).Count > 0
 										: geometry.FindJourneyPathAvoiding(contract.MapId, session.CurrentPosition, spot, hazards).Count > 0);
 							return ok;
-						});
+						}, audit: evaluatedPullCandidates.Add,
+						pullDistanceMeters: mauPolicy.PullDistanceMeters);
 					plan = PlanOnce();
 					if (plan == null && avoidSpawns)
 					{
@@ -1167,6 +1273,39 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.TraceDiagnostic("pull-plan", new Dictionary<string, object?>
 					{
 						["purpose"] = purpose,
+						["policyVersion"] = mauPolicy.Id,
+						["seed"] = runtime.Seed,
+						["candidateScope"] = "spots-evaluated-before-baseline-rank-cutoff",
+						["chosenAction"] = plan == null ? "no-plan" :
+							plan.Helpers.Count > 0 && wait < mauPolicy.PatrolWaitCycles ? "wait" : "pull",
+						["observedState"] = new
+						{
+							position = session.CurrentPosition,
+							targets = pullTargets.Select(target => new
+							{
+								target.Npc.ObjectId, target.Npc.TemplateId, target.Npc.Position,
+								target.AggroRadius, target.Tribe, target.BoundRadius,
+							}).ToArray(),
+							monsters = monsters.Select(monster => new
+							{
+								monster.Npc.ObjectId, monster.Npc.TemplateId, monster.Npc.Position,
+								monster.AggroRadius, monster.Tribe, monster.BoundRadius,
+								possiblePositions = monster.Npc.PossiblePositions().ToArray(),
+							}).ToArray(),
+							avoidDeaths, avoidSpawns,
+						},
+						["candidateActions"] = evaluatedPullCandidates.Select(candidate => new
+						{
+							candidate.TargetObjectId, candidate.FiringPosition,
+							candidate.ExpectedHelperObjectIds, candidate.ClearanceFromOthers,
+							candidate.Legal, candidate.IllegalReason,
+							BaselineRejection = !candidate.Legal ? candidate.IllegalReason :
+								plan != null && plan.Helpers.Count > 0 && wait < mauPolicy.PatrolWaitCycles ?
+								"Baseline waits for helpers to move." :
+								plan?.Target.Npc.ObjectId == candidate.TargetObjectId &&
+								plan.FiringPosition == candidate.FiringPosition ? null :
+								"Baseline chose a better-ranked evaluated pull.",
+						}).ToArray(),
 						["wait"] = wait,
 						["position"] = session.CurrentPosition,
 						["candidates"] = pullTargets.Select(t => $"{t.Npc.TemplateId}/{t.Npc.ObjectId}").ToArray(),
@@ -1175,7 +1314,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						["expectedHelpers"] = plan?.Helpers.Select(h => $"{h.Npc.TemplateId}/{h.Npc.ObjectId}").ToArray(),
 						["clearance"] = plan?.ClearanceFromOthers,
 					});
-					if (plan == null || plan.Helpers.Count == 0 || wait == 3) break;
+					if (plan == null || plan.Helpers.Count == 0 || wait == mauPolicy.PatrolWaitCycles) break;
 					// A helper stands in range: patrols move, so give it a few seconds before accepting a chain pull.
 					await session.AdvanceAsync(TimeSpan.FromSeconds(3), token);
 					await session.SynchronizeAsync(token);
@@ -2996,10 +3135,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					}
 					Require.Equal(step, session.Api.World.Quests[2007].StepAndFlags);
 				}
-				if (AtQuestStep(2007, 8))
-				{
-					session.BeginStep("ni07-q2007-rae-return", "ask-rae-for-quest-transport-back-to-ulgorn");
-					int rae = await ApproachShippedSpawnAsync(203554);
+			if (AtQuestStep(2007, 8))
+			{
+				session.BeginStep("ni07-q2007-rae-return", "ask-rae-for-quest-transport-back-to-ulgorn");
+				int rae = await ApproachShippedSpawnAsync(203554);
+				if (options.Course == NaturalMauCourse.GeneratorToRae) return;
 					await OpenQuestDialogAsync(rae, 2007);
 					session.Api.World.BeginWorldReload();
 					await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(rae, DialogAction.SETPRO6, questId: 2007), token);
@@ -3999,12 +4139,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 	private sealed class NaturalJourneyCombat(INaturalJourneySession session,
 		NaturalJourneyNavigator navigator, NaturalJourneyRuntime runtime,
-		BotNavigationGeometry geometry, bool stopOnDeath, bool conservativeRangedHold)
+		BotNavigationGeometry geometry, bool stopOnDeath, bool conservativeRangedHold,
+		NaturalMauPolicyParameters mauPolicy)
 	{
 		private readonly Dictionary<int, DateTimeOffset> cooldowns = [];
 		private int revives;
 		private int completedRetreats;
 		private int? engagedTarget;
+		private int combatAttemptId;
 		private string[] lastCombatTrace = [];
 		private int obstacleRepositions;
 		private int rangeRejections;
@@ -4022,7 +4164,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				.Select(id => navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == id))
 				.OfType<NaturalNavigationObject>()
 				.Where(npc => Distance(session.CurrentPosition, npc.Position) < 30)
-				.OrderBy(npc => Distance(session.CurrentPosition, npc.Position))
+				.OrderBy(npc => PriorityForEngagedTarget(npc.ObjectId, observedAttackers.Count,
+					session, mauPolicy.PreferWoundedWhenTwoAttackers))
+				.ThenBy(npc => Distance(session.CurrentPosition, npc.Position))
 				.Select(npc => npc.ObjectId).ToArray())
 			{
 				cornered = true;
@@ -4050,11 +4194,34 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			BotPosition? retreatAnchor = null, int? attackHistoryStart = null)
 		{
 			if (InCombat) throw new InvalidOperationException("Natural Priest combat cannot nest another fight.");
+			int attemptId = ++combatAttemptId;
+			int revivesBefore = revives;
 			InCombat = true;
 			navigator.InCombat = true;
+			session.TraceDiagnostic("combat-encounter-start", new Dictionary<string, object?>
+			{
+				["encounterId"] = attemptId, ["targetObjectId"] = target,
+			});
 			try
 			{
-				return await TryKillCoreAsync(target, token, retreatAnchor, attackHistoryStart);
+				bool killed = await TryKillCoreAsync(target, token, retreatAnchor, attackHistoryStart);
+				session.TraceDiagnostic("combat-encounter-end", new Dictionary<string, object?>
+				{
+					["encounterId"] = attemptId, ["targetObjectId"] = target,
+					["clientObservedKill"] = killed, ["revives"] = revives - revivesBefore,
+					["retreats"] = completedRetreats,
+				});
+				return killed;
+			}
+			catch (Exception error)
+			{
+				session.TraceDiagnostic("combat-encounter-end", new Dictionary<string, object?>
+				{
+					["encounterId"] = attemptId, ["targetObjectId"] = target,
+					["clientObservedKill"] = false, ["revives"] = revives - revivesBefore,
+					["error"] = error.GetType().Name,
+				});
+				throw;
 			}
 			finally
 			{
@@ -4138,7 +4305,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				var hotTemplate = hotPotion == null ? null :
 					runtime.Data.ItemDataDh.GetItemTemplate(hotPotion.ItemId);
 				bool hotReady = hotTemplate != null && session.Api.Timing.TimeUntilItemUse(hotTemplate) == TimeSpan.Zero;
-				NaturalCombatChoice choice = NaturalPriestCombatPolicy.Decide(new NaturalCombatObservation(
+				var observation = new NaturalCombatObservation(
 					world.Level, world.CurrentHp, world.MaxHp, world.CurrentMp, world.MaxMp, world.IsDead,
 					nearbyAttackers > 0 || recentAttacks.Length > 0,
 					Distance(session.CurrentPosition, npc.Position), target, world.Skills, cooldowns,
@@ -4148,12 +4315,35 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					HotPotionActive: NaturalIshalgenPotionPolicy.HasActiveHealing(world.VisibleEffects),
 					Cornered: cornered, TargetAdjacent: targetAdjacent, InEmergency: inEmergency, HasBlessing: hasBlessing,
 					TargetSeasoned: targetSeasoned, TargetRanged: targetRanged,
-					ConservativeRangedHold: conservativeRangedHold), now);
+					ConservativeRangedHold: conservativeRangedHold);
+				NaturalCombatChoice choice = NaturalPriestCombatPolicy.Decide(observation, now, parameters: mauPolicy);
+				NaturalCombatCandidate[] candidates = NaturalPriestCombatPolicy.CandidateActions(observation, now, choice,
+					parameters: mauPolicy);
+				if (!candidates.Any(candidate => candidate.Action == choice.Action &&
+					candidate.SkillId == choice.Skill?.Id && candidate.Legal))
+					throw new InvalidDataException($"Baseline chose an action absent from the legal candidate list: {choice.Action}/{choice.Skill?.Id}.");
 				trace.Add($"t{turn}:action={choice.Action}/{choice.Skill?.Id} targetDistance={Distance(session.CurrentPosition, npc.Position):F1}");
 				lastCombatTrace = trace.TakeLast(12).ToArray();
 				session.TraceDiagnostic("combat-decision", new Dictionary<string, object?>
 				{
+					["encounterId"] = combatAttemptId,
 					["turn"] = turn,
+					["policyVersion"] = mauPolicy.Id,
+					["seed"] = runtime.Seed,
+					["observedState"] = new
+					{
+						observation.Level, observation.Hp, observation.MaxHp, observation.Mp, observation.MaxMp,
+						observation.Dead, observation.Aggro, observation.TargetDistance, observation.TargetObjectId,
+						learnedSkillIds = observation.Learned.Keys.Order().ToArray(),
+						cooldowns = observation.Cooldowns.OrderBy(entry => entry.Key).Select(entry =>
+							new { id = entry.Key, readyAt = entry.Value }).ToArray(),
+						observation.NearbyAggressors, observation.TargetHpPercent, observation.HasHealedThisFight,
+						observation.HasHotPotion, observation.HotPotionReady, observation.HotPotionActive,
+						observation.Cornered, observation.TargetAdjacent, observation.InEmergency,
+						observation.HasBlessing, observation.TargetSeasoned, observation.TargetRanged,
+						observation.ConservativeRangedHold,
+					},
+					["candidateActions"] = candidates,
 					["action"] = choice.Action,
 					["skillId"] = choice.Skill?.Id,
 					["reason"] = choice.Reason,
@@ -4608,6 +4798,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 									Distance(session.CurrentPosition, observed.Position) < 30)
 								.OrderBy(attacker => Distance(session.CurrentPosition, world.Objects[attacker].Position))
 								.ToArray();
+							if (remaining.Length == 2 && mauPolicy.PreferWoundedWhenTwoAttackers)
+								remaining = remaining.OrderBy(attacker => PriorityForEngagedTarget(attacker,
+									remaining.Length, session, preferWounded: true)).ToArray();
 							if (remaining.Length == 0) break;
 							session.TraceDiagnostic("rest-defend", new Dictionary<string, object?>
 							{
@@ -4931,6 +5124,26 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 	private static long ItemCount(BotWorldModel world, int itemId) =>
 		world.Inventory.Values.Where(item => item.ItemId == itemId).Sum(item => item.Count);
+
+	private static int ChooseEngagedTarget(IReadOnlyList<int> attackers, INaturalJourneySession session,
+		bool preferWounded) => attackers
+		.OrderBy(id => PriorityForEngagedTarget(id, attackers.Count, session, preferWounded))
+		.ThenBy(id => session.Api.World.Objects.TryGetValue(id, out BotKnownObject? npc)
+			? Distance(session.CurrentPosition, npc.Position) : float.MaxValue)
+		.First();
+
+	private static int PriorityForEngagedTarget(int objectId, int attackerCount,
+		INaturalJourneySession session, bool preferWounded)
+	{
+		if (!preferWounded || attackerCount != 2) return 0;
+		for (int index = session.PacketHistory.Count - 1; index >= 0; index--)
+		{
+			DecodedBotServerPacket packet = session.PacketHistory[index];
+			if (packet.PacketType == typeof(SmAttackStatus) && packet.Get<int>("objectId") == objectId)
+				return packet.Get<byte>("hpOrMp");
+		}
+		return 100; // Unknown target HP is not treated as wounded.
+	}
 
 	private static T Get<T>(IReadOnlyDictionary<string, object?> fields, string name) =>
 		fields.TryGetValue(name, out object? value) && value is T typed

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "split": "development",
+  "candidate": "m01",
+  "parent": "r05",
+  "changedParameter": {"PullDistanceMeters": [21.0, 21.5]},
+  "seeds": [12, 16, 20, 11, 13, 14, 15, 17, 18],
+  "courses": ["GeneratorToRae", "RaeToHatata"],
+  "earlyStop": "Stop on a new course failure or more deaths than the paired baseline.",
+  "evaluationSeedsSealed": true
+}

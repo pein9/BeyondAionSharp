@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "course": "RaeToHatata",
+  "encounter": "HatataWithAdd",
+  "seed": 12,
+  "results": {
+    "baseline": {
+      "run": "p2-hat-hatata2-base-s12-r01-hat-sf",
+      "status": "complete",
+      "moduleId": "b71f17af-7a46-45ea-9daf-4cd1c24fd27f",
+      "courseResetSha256": "55cc7a3140fd818276faba7e41f2410947957fe7bdcfc5f2ef7fe6fc4c1c6137",
+      "traceSha256": "bd5ad56617ef3df2916bfa05310f2f3cf942c58a7e4947082e4e26094d8f02bf",
+      "policyId": "mau-parameter-v1:ce76a9fd03aa4ef3",
+      "gameSeconds": 1079.298,
+      "deaths": 1,
+      "maxObservedAttackers": 2,
+      "potions": 6,
+      "routeFailures": 3,
+      "decisionRecords": 142
+    },
+    "s04": {
+      "run": "p2-hat-hatata2-cand-s12-r01-s04-hat",
+      "status": "complete",
+      "moduleId": "b71f17af-7a46-45ea-9daf-4cd1c24fd27f",
+      "courseResetSha256": "55cc7a3140fd818276faba7e41f2410947957fe7bdcfc5f2ef7fe6fc4c1c6137",
+      "traceSha256": "939c5c7fa1c4bfa6b2d6b5b5b411fdabcfa62e6699f5a06f66f67ad87b855852",
+      "policyId": "mau-parameter-v1:7bcdf1396e7e0d9b",
+      "gameSeconds": 1079.298,
+      "deaths": 1,
+      "maxObservedAttackers": 2,
+      "potions": 6,
+      "routeFailures": 3,
+      "decisionRecords": 142
+    },
+    "s05": {
+      "run": "p2-hat-hatata2-cand-s12-r01-s05-hat",
+      "status": "complete",
+      "moduleId": "b71f17af-7a46-45ea-9daf-4cd1c24fd27f",
+      "courseResetSha256": "55cc7a3140fd818276faba7e41f2410947957fe7bdcfc5f2ef7fe6fc4c1c6137",
+      "traceSha256": "9fd9e5756633baf57a51845a0539b326171d9099cc08299be31f63ce606824e7",
+      "policyId": "mau-parameter-v1:975421e0ab158e05",
+      "gameSeconds": 1079.298,
+      "deaths": 1,
+      "maxObservedAttackers": 2,
+      "potions": 6,
+      "routeFailures": 3,
+      "decisionRecords": 142
+    },
+    "s06": {
+      "run": "p2-hat-hatata2-cand-s12-r01-s06-hat",
+      "status": "complete",
+      "moduleId": "b71f17af-7a46-45ea-9daf-4cd1c24fd27f",
+      "courseResetSha256": "55cc7a3140fd818276faba7e41f2410947957fe7bdcfc5f2ef7fe6fc4c1c6137",
+      "traceSha256": "2805448da8f31ee3d111baac8c40b7040be71198a6c27d62b07de2fd664ca5a9",
+      "policyId": "mau-parameter-v1:09f801457be11ea1",
+      "gameSeconds": 1079.298,
+      "deaths": 1,
+      "maxObservedAttackers": 2,
+      "potions": 6,
+      "routeFailures": 3,
+      "decisionRecords": 142
+    }
+  }
+}

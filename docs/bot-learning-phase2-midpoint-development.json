@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "plan": {
+    "schemaVersion": 1,
+    "split": "development",
+    "candidate": "m01",
+    "parent": "r05",
+    "changedParameter": {
+      "PullDistanceMeters": [
+        21.0,
+        21.5
+      ]
+    },
+    "seeds": [
+      12,
+      16,
+      20,
+      11,
+      13,
+      14,
+      15,
+      17,
+      18
+    ],
+    "courses": [
+      "GeneratorToRae",
+      "RaeToHatata"
+    ],
+    "earlyStop": "Stop on a new course failure or more deaths than the paired baseline.",
+    "evaluationSeedsSealed": true
+  },
+  "pairs": [
+    {
+      "course": "GeneratorToRae",
+      "seed": 12,
+      "baseline": {
+        "run": "p2-gen-full-base-s12-r01-dev-b",
+        "status": "complete",
+        "course": "GeneratorToRae",
+        "seed": 12,
+        "moduleId": "b71f17af-7a46-45ea-9daf-4cd1c24fd27f",
+        "policyId": "mau-parameter-v1:ce76a9fd03aa4ef3",
+        "policyBaseline": true,
+        "policySha256": "2dae14e3030243c676d2e2edb78fdd011df54c491793b9e71a26dbeb4128e27a",
+        "courseResetSha256": "f47ac7a4eb17405e2d6e7548f060a4752a8fb1d0a6b5fcb8da83c12412d5ef3e",
+        "traceSha256": "e519d6c15798b7cf1b75f3627464b0f631dc98a98d6b0d1e814ae47702548475",
+        "gameSeconds": 558.667,
+        "wallSeconds": 14.323,
+        "deaths": 0,
+        "maxObservedAttackers": 2,
+        "routeFailures": 1,
+        "potions": 10,
+        "retreatAttempts": 0,
+        "decisionRecords": 250
+      },
+      "candidate": {
+        "run": "p2-gen-full-cand-s12-r01-midpoint-v1",
+        "status": "complete",
+        "course": "GeneratorToRae",
+        "seed": 12,
+        "moduleId": "b71f17af-7a46-45ea-9daf-4cd1c24fd27f",
+        "policyId": "mau-parameter-v1:760cf8fb8e20f5cc",
+        "policyBaseline": false,
+        "policySha256": "e9ca53a1c011aef0f18081894aec5cbf5b6ac45bf13b0b51434d5a9e145b2bc1",
+        "courseResetSha256": "f47ac7a4eb17405e2d6e7548f060a4752a8fb1d0a6b5fcb8da83c12412d5ef3e",
+        "traceSha256": "174c51364fcb5361cdf89ca14e04f03afa8581feeabe83c23fc4cecfbd7be742",
+        "gameSeconds": 414.7,
+        "wallSeconds": 14.022,
+        "deaths": 0,
+        "maxObservedAttackers": 2,
+        "routeFailures": 1,
+        "potions": 6,
+        "retreatAttempts": 0,
+        "decisionRecords": 177
+      }
+    },
+    {
+      "course": "RaeToHatata",
+      "seed": 12,
+      "baseline": {
+        "run": "p2-hat-full-base-s12-r01-dev-b",
+        "status": "complete",
+        "course": "RaeToHatata",
+        "seed": 12,
+        "moduleId": "b71f17af-7a46-45ea-9daf-4cd1c24fd27f",
+        "policyId": "mau-parameter-v1:ce76a9fd03aa4ef3",
+        "policyBaseline": true,
+        "policySha256": "2dae14e3030243c676d2e2edb78fdd011df54c491793b9e71a26dbeb4128e27a",
+        "courseResetSha256": "4b3dd7906ecf5e9675bdd193e3620e068acb7a2908f97dc0f567d4a4dad6c1ba",
+        "traceSha256": "78b268a85fe2a7899abeb9b81fd9ccefac194ea3eed1d093955cccd2d302ae4e",
+        "gameSeconds": 142.379,
+        "wallSeconds": 4.809,
+        "deaths": 0,
+        "maxObservedAttackers": 1,
+        "routeFailures": 1,
+        "potions": 2,
+        "retreatAttempts": 0,
+        "decisionRecords": 44
+      },
+      "candidate": {
+        "run": "p2-hat-full-cand-s12-r01-midpoint-dev",
+        "status": "complete",
+        "course": "RaeToHatata",
+        "seed": 12,
+        "moduleId": "b71f17af-7a46-45ea-9daf-4cd1c24fd27f",
+        "policyId": "mau-parameter-v1:760cf8fb8e20f5cc",
+        "policyBaseline": false,
+        "policySha256": "e9ca53a1c011aef0f18081894aec5cbf5b6ac45bf13b0b51434d5a9e145b2bc1",
+        "courseResetSha256": "4b3dd7906ecf5e9675bdd193e3620e068acb7a2908f97dc0f567d4a4dad6c1ba",
+        "traceSha256": "716ebc2d094a9862bbf2cff02b09507dc9d08212d6723eaa827ed6002366836a",
+        "gameSeconds": 142.389,
+        "wallSeconds": 4.957,
+        "deaths": 0,
+        "maxObservedAttackers": 1,
+        "routeFailures": 1,
+        "potions": 2,
+        "retreatAttempts": 0,
+        "decisionRecords": 44
+      }
+    },
+    {
+      "course": "GeneratorToRae",
+      "seed": 16,
+      "baseline": {
+        "run": "p2-gen-full-base-s16-r01-dev-b",
+        "status": "complete",
+        "course": "GeneratorToRae",
+        "seed": 16,
+        "moduleId": "b71f17af-7a46-45ea-9daf-4cd1c24fd27f",
+        "policyId": "mau-parameter-v1:ce76a9fd03aa4ef3",
+        "policyBaseline": true,
+        "policySha256": "2dae14e3030243c676d2e2edb78fdd011df54c491793b9e71a26dbeb4128e27a",
+        "courseResetSha256": "c5ca57800907cfcd0c1be565263ba598ba286f6356039447186dce161aa985ac",
+        "traceSha256": "b9d16df212d16fb0f06af7bd1cd0715734bbd7a29bb33ceef883ca40d575de80",
+        "gameSeconds": 1448.639,
+        "wallSeconds": 58.108,
+        "deaths": 1,
+        "maxObservedAttackers": 2,
+        "routeFailures": 7,
+        "potions": 15,
+        "retreatAttempts": 0,
+        "decisionRecords": 328
+      },
+      "candidate": {
+        "run": "p2-gen-full-cand-s16-r01-midpoint-dev",
+        "status": "failed",
+        "course": "GeneratorToRae",
+        "seed": 16,
+        "moduleId": "b71f17af-7a46-45ea-9daf-4cd1c24fd27f",
+        "policyId": "mau-parameter-v1:760cf8fb8e20f5cc",
+        "policyBaseline": false,
+        "policySha256": "e9ca53a1c011aef0f18081894aec5cbf5b6ac45bf13b0b51434d5a9e145b2bc1",
+        "courseResetSha256": "c5ca57800907cfcd0c1be565263ba598ba286f6356039447186dce161aa985ac",
+        "traceSha256": "8e017f7deb9bd0a7a12e19550c50d858db23377fcf96db5f2d87ba1bfcfdaa3f",
+        "gameSeconds": 3599.875,
+        "wallSeconds": 148.46,
+        "deaths": 4,
+        "maxObservedAttackers": 3,
+        "routeFailures": 24,
+        "potions": 31,
+        "retreatAttempts": 1,
+        "decisionRecords": 574
+      }
+    }
+  ],
+  "stopped": "New GeneratorToRae failure on seed 16"
+}

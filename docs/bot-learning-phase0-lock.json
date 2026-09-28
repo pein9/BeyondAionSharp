@@ -1,0 +1,732 @@
+{
+  "schemaVersion": 1,
+  "status": "course-specification-with-archival-reference; resettable baseline gate remains open",
+  "frozenAtGitCommit": "32449aaa4c714593ec6987bea25aadc90342bf2e",
+  "sourceData": {
+    "ishalgenSpawnsSha256": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+    "javaQ2007HandlerSha256": "c4c1abbf358d69a9d5cbb10f95084c6fb1ae39bef24a2be30e1a19b461145766",
+    "javaQ2129TemplateSha256": "64c9a8fe7187fab12323cc4e1e9a3d3f00fe4e798551c0a180077b66da16e6b9",
+    "deterministicPolicySha256": "522788dec4a918bdf4900f51f85f8743b72fb2ca4e627b8eaa4e2aaf28a024f6",
+    "journeyDriverSha256": "fec752b6395d6c04241f2fdeae58f8b80e2166a1b8b288b314b5195815deeb39",
+    "javaMonsterHuntHandlerSha256": "c0ad71af9436f0a8c7175f56f4983672fffd025243d1b3f208916628b1fda59b"
+  },
+  "seedSplit": {
+    "regression": [
+      1,
+      3,
+      4,
+      5
+    ],
+    "development": [
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30
+    ],
+    "evaluation": [
+      101,
+      102,
+      103,
+      104,
+      105,
+      106,
+      107,
+      108,
+      109,
+      110,
+      111,
+      112,
+      113,
+      114,
+      115,
+      116,
+      117,
+      118,
+      119,
+      120
+    ],
+    "rule": "Do not inspect evaluation outcomes or tune on regression/evaluation seeds; pair baseline and candidate on the same seed."
+  },
+  "courses": [
+    {
+      "id": "generator_to_rae",
+      "canonicalSource": {
+        "run": "retreat72-full-s5",
+        "traceSha256": "28a09801db7a9fd3f2f714f04d02523b2aca912ecd7a650f2047b42ff8b7e11d",
+        "traceLine": 40100,
+        "build": "1.0.0+49663a7a83e816a35e7bccb3403b97c9b4e2018c",
+        "moduleId": "5cbeb462-2943-48d1-abda-e0e5fb8e9ff8",
+        "observation": "last client state before or at the archived course boundary",
+        "seed": 5
+      },
+      "mapId": 220010000,
+      "position": {
+        "X": 627.9615,
+        "Y": 893.3795,
+        "Z": 309.85568,
+        "Heading": 24
+      },
+      "class": "Asmodian Priest",
+      "level": 9,
+      "hp": 669,
+      "maxHp": 669,
+      "mp": 520,
+      "maxMp": 1211,
+      "quest": {
+        "questId": 2007,
+        "status": 3,
+        "stepAndFlags": 6
+      },
+      "skills": {
+        "39": 1,
+        "40": 1,
+        "41": 1,
+        "103": 1,
+        "243": 1,
+        "245": 1,
+        "302": 1,
+        "1614": 1,
+        "1615": 1,
+        "1684": 1,
+        "1814": 1,
+        "1838": 1,
+        "1839": 1,
+        "4012": 1,
+        "4013": 1,
+        "30001": 1
+      },
+      "inventory": [
+        {
+          "itemId": 100100011,
+          "count": 1,
+          "equipmentSlot": 1,
+          "equippedSlot": 0
+        },
+        {
+          "itemId": 100100024,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 1
+        },
+        {
+          "itemId": 100200604,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 0
+        },
+        {
+          "itemId": 110300292,
+          "count": 1,
+          "equipmentSlot": 8,
+          "equippedSlot": 8
+        },
+        {
+          "itemId": 113100773,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 4096
+        },
+        {
+          "itemId": 113300278,
+          "count": 1,
+          "equipmentSlot": 4096,
+          "equippedSlot": 0
+        },
+        {
+          "itemId": 114100794,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 0
+        },
+        {
+          "itemId": 114100795,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 32
+        },
+        {
+          "itemId": 122000869,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 256
+        },
+        {
+          "itemId": 160000001,
+          "count": 12,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 162000002,
+          "count": 81,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 162000007,
+          "count": 100,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 164002039,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 164002116,
+          "count": 50,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 164002117,
+          "count": 50,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 164002118,
+          "count": 50,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 169300002,
+          "count": 30,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 169620005,
+          "count": 2,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182000557,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203002,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203003,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203004,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203005,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203006,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203008,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203104,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182400001,
+          "count": 4270,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        }
+      ],
+      "bind": {
+        "mapId": 220010000,
+        "position": {
+          "X": 571.0388,
+          "Y": 2787.342,
+          "Z": 299.875
+        },
+        "evidence": "retreat72 seed 1 client SM_PLAYER_INFO at source trace line 119874 immediately after bound-obelisk revive; same observed initial login location"
+      },
+      "goal": "From Q2007 START/6, use the blue and violet generators, then reach client-observed Rae 203554 on a checked route, alive and with all pursuers disengaged; no stalled recovery.",
+      "maximumGameSeconds": 3600,
+      "maximumWallSeconds": 900
+    },
+    {
+      "id": "rae_to_hatata",
+      "canonicalSource": {
+        "run": "retreat72-full-s5",
+        "traceSha256": "28a09801db7a9fd3f2f714f04d02523b2aca912ecd7a650f2047b42ff8b7e11d",
+        "traceLine": 120259,
+        "build": "1.0.0+49663a7a83e816a35e7bccb3403b97c9b4e2018c",
+        "moduleId": "5cbeb462-2943-48d1-abda-e0e5fb8e9ff8",
+        "observation": "last client state before or at the archived course boundary",
+        "seed": 5
+      },
+      "mapId": 220010000,
+      "position": {
+        "X": 643.058,
+        "Y": 912.591,
+        "Z": 311.08878,
+        "Heading": 88
+      },
+      "class": "Asmodian Priest",
+      "level": 9,
+      "hp": 598,
+      "maxHp": 769,
+      "mp": 1031,
+      "maxMp": 1284,
+      "quest": {
+        "questId": 2129,
+        "status": 3,
+        "stepAndFlags": 1
+      },
+      "skills": {
+        "39": 1,
+        "40": 1,
+        "41": 1,
+        "103": 1,
+        "243": 1,
+        "245": 1,
+        "302": 1,
+        "1614": 1,
+        "1615": 1,
+        "1684": 1,
+        "1814": 1,
+        "1838": 1,
+        "1839": 1,
+        "4012": 1,
+        "4013": 1,
+        "30001": 16
+      },
+      "inventory": [
+        {
+          "itemId": 100100011,
+          "count": 1,
+          "equipmentSlot": 1,
+          "equippedSlot": 0
+        },
+        {
+          "itemId": 100100024,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 0
+        },
+        {
+          "itemId": 100100025,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 1
+        },
+        {
+          "itemId": 100200604,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 0
+        },
+        {
+          "itemId": 110101250,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 8
+        },
+        {
+          "itemId": 110300292,
+          "count": 1,
+          "equipmentSlot": 8,
+          "equippedSlot": 0
+        },
+        {
+          "itemId": 113100773,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 4096
+        },
+        {
+          "itemId": 113300278,
+          "count": 1,
+          "equipmentSlot": 4096,
+          "equippedSlot": 0
+        },
+        {
+          "itemId": 114100794,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 0
+        },
+        {
+          "itemId": 114100795,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 32
+        },
+        {
+          "itemId": 121000749,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 1024
+        },
+        {
+          "itemId": 122000869,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 256
+        },
+        {
+          "itemId": 123000864,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": 65536
+        },
+        {
+          "itemId": 152000201,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 152000451,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 152000451,
+          "count": 26,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 160000001,
+          "count": 12,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 160003002,
+          "count": 4,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 160003501,
+          "count": 4,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 160003503,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 160003504,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 162000002,
+          "count": 51,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 162000007,
+          "count": 106,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 162000052,
+          "count": 10,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 164002039,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 164002116,
+          "count": 50,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 164002117,
+          "count": 50,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 164002118,
+          "count": 50,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 169300002,
+          "count": 80,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 169620005,
+          "count": 2,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182000557,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203002,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203003,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203004,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203005,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203006,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203008,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203104,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203105,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203106,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203108,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203109,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203112,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203113,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203114,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203115,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203116,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203117,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203118,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203119,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203122,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203124,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203125,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203126,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203127,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203128,
+          "count": 3,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203129,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203131,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182203132,
+          "count": 1,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        },
+        {
+          "itemId": 182400001,
+          "count": 40590,
+          "equipmentSlot": 65535,
+          "equippedSlot": null
+        }
+      ],
+      "bind": {
+        "mapId": 220010000,
+        "position": {
+          "X": 571.0388,
+          "Y": 2787.342,
+          "Z": 299.875
+        },
+        "evidence": "retreat72 seed 1 client SM_PLAYER_INFO at source trace line 119874 immediately after bound-obelisk revive; same observed initial login location"
+      },
+      "goal": "Receive Q2129 Hatata objective update, stay alive, and observe all pursuers disengage; no stalled recovery.",
+      "maximumGameSeconds": 3600,
+      "maximumWallSeconds": 900
+    }
+  ],
+  "measures": [
+    "course success",
+    "deaths",
+    "max observed attackers and extra attacker object IDs",
+    "retreat attempts and cornered retreats",
+    "potions used",
+    "game seconds",
+    "wall seconds",
+    "client-observed HP decreases",
+    "actions by encounter",
+    "recovery stalls"
+  ],
+  "separateRegression": {
+    "id": "q2006_mijou_return",
+    "source": "recovery69-full-s5",
+    "observedWallSeconds": 320,
+    "includedInMauScores": false
+  }
+}

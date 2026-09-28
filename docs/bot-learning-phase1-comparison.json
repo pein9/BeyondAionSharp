@@ -1,0 +1,492 @@
+{
+  "schemaVersion": 1,
+  "status": "pass",
+  "groups": [
+    {
+      "course": "GeneratorToRae",
+      "seed": 12,
+      "repeatCount": 2,
+      "sameResetAndOutcome": true,
+      "differences": [],
+      "runs": [
+        {
+          "run": "phase0-generator-s12-phase1-snapshot-a",
+          "directory": "run/bot-learning-phase0/current/phase0-generator-s12-phase1-snapshot-a",
+          "moduleId": "4b72fdd4-7d1b-4309-8d01-cc498ee4a86c",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "a7bce618fcb5cd8e7ea0ca290ed409fd8f21a390153910a2a1a71bb13d898eee",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "522788dec4a918bdf4900f51f85f8743b72fb2ca4e627b8eaa4e2aaf28a024f6",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "4efcbb761ad80204ab3d6b555e69175385be8756bd45d04fc600fdce130fa838",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed"
+          },
+          "traceSha256": "6db03b622151395a58939d9f6e7377b031af1b0eea95f005221fc35c08829ff6",
+          "resetSha256": "c902af3c797306f179be1a621ab5807d653c4a9d9aa0d27b177b23a2362f82c6",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1321,
+          "armedTimerCount": 2473,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 8,
+            "terminalStep": null
+          },
+          "gameSeconds": 721.129,
+          "wallSeconds": 35.786,
+          "maxObservedAttackers": 2,
+          "potions": 15,
+          "routeFailures": 3
+        },
+        {
+          "run": "phase0-generator-s12-phase1-snapshot-b",
+          "directory": "run/bot-learning-phase0/current/phase0-generator-s12-phase1-snapshot-b",
+          "moduleId": "4b72fdd4-7d1b-4309-8d01-cc498ee4a86c",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "a7bce618fcb5cd8e7ea0ca290ed409fd8f21a390153910a2a1a71bb13d898eee",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "522788dec4a918bdf4900f51f85f8743b72fb2ca4e627b8eaa4e2aaf28a024f6",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "4efcbb761ad80204ab3d6b555e69175385be8756bd45d04fc600fdce130fa838",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed"
+          },
+          "traceSha256": "5c0df024dc192e00135677adb086cce9446df79f80a27c7cdc60ce0289408940",
+          "resetSha256": "c902af3c797306f179be1a621ab5807d653c4a9d9aa0d27b177b23a2362f82c6",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1321,
+          "armedTimerCount": 2473,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 8,
+            "terminalStep": null
+          },
+          "gameSeconds": 721.129,
+          "wallSeconds": 35.933,
+          "maxObservedAttackers": 2,
+          "potions": 15,
+          "routeFailures": 3
+        }
+      ]
+    },
+    {
+      "course": "GeneratorToRae",
+      "seed": 16,
+      "repeatCount": 2,
+      "sameResetAndOutcome": true,
+      "differences": [],
+      "runs": [
+        {
+          "run": "phase1-generator-s16-r01-ordered-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-generator-s16-r01-ordered-v1",
+          "moduleId": "4b72fdd4-7d1b-4309-8d01-cc498ee4a86c",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "a7bce618fcb5cd8e7ea0ca290ed409fd8f21a390153910a2a1a71bb13d898eee",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "522788dec4a918bdf4900f51f85f8743b72fb2ca4e627b8eaa4e2aaf28a024f6",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "4efcbb761ad80204ab3d6b555e69175385be8756bd45d04fc600fdce130fa838",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed"
+          },
+          "traceSha256": "012ac1f004c07b55e5dd0d01c530d07183b9bdc450cfb74a0b064bbe14f100b5",
+          "resetSha256": "02c9a0b1699ba67062c22e68c52a8dd7edf8bb20fd7c24a85da3d607677b1b62",
+          "rng": {
+            "seed": 16,
+            "drawCount": 0
+          },
+          "npcCount": 1321,
+          "armedTimerCount": 2473,
+          "outcome": {
+            "completed": true,
+            "deaths": 2,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 8,
+            "terminalStep": null
+          },
+          "gameSeconds": 2552.675,
+          "wallSeconds": 124.671,
+          "maxObservedAttackers": 2,
+          "potions": 25,
+          "routeFailures": 13
+        },
+        {
+          "run": "phase1-generator-s16-r02-ordered-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-generator-s16-r02-ordered-v1",
+          "moduleId": "4b72fdd4-7d1b-4309-8d01-cc498ee4a86c",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "a7bce618fcb5cd8e7ea0ca290ed409fd8f21a390153910a2a1a71bb13d898eee",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "522788dec4a918bdf4900f51f85f8743b72fb2ca4e627b8eaa4e2aaf28a024f6",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "4efcbb761ad80204ab3d6b555e69175385be8756bd45d04fc600fdce130fa838",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed"
+          },
+          "traceSha256": "99e4553f3025c4ce74f1960c329e54cd1a3d92df9bb20cf3fc23cf3374a99b6b",
+          "resetSha256": "02c9a0b1699ba67062c22e68c52a8dd7edf8bb20fd7c24a85da3d607677b1b62",
+          "rng": {
+            "seed": 16,
+            "drawCount": 0
+          },
+          "npcCount": 1321,
+          "armedTimerCount": 2473,
+          "outcome": {
+            "completed": true,
+            "deaths": 2,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 8,
+            "terminalStep": null
+          },
+          "gameSeconds": 2552.675,
+          "wallSeconds": 125.044,
+          "maxObservedAttackers": 2,
+          "potions": 25,
+          "routeFailures": 13
+        }
+      ]
+    },
+    {
+      "course": "GeneratorToRae",
+      "seed": 20,
+      "repeatCount": 2,
+      "sameResetAndOutcome": true,
+      "differences": [],
+      "runs": [
+        {
+          "run": "phase1-generator-s20-r01-ordered-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-generator-s20-r01-ordered-v1",
+          "moduleId": "4b72fdd4-7d1b-4309-8d01-cc498ee4a86c",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "a7bce618fcb5cd8e7ea0ca290ed409fd8f21a390153910a2a1a71bb13d898eee",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "522788dec4a918bdf4900f51f85f8743b72fb2ca4e627b8eaa4e2aaf28a024f6",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "4efcbb761ad80204ab3d6b555e69175385be8756bd45d04fc600fdce130fa838",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed"
+          },
+          "traceSha256": "c2b36460d89ecd482c1efd7e4d8de33ac1df0c7bd7a5f06dcaeb567918d8fdbe",
+          "resetSha256": "727bcde892ba5477e273b112dc9d8e7255891ea878d5786ca4d50e758947addb",
+          "rng": {
+            "seed": 20,
+            "drawCount": 0
+          },
+          "npcCount": 1321,
+          "armedTimerCount": 2473,
+          "outcome": {
+            "completed": true,
+            "deaths": 1,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 8,
+            "terminalStep": null
+          },
+          "gameSeconds": 1565.049,
+          "wallSeconds": 103.221,
+          "maxObservedAttackers": 2,
+          "potions": 18,
+          "routeFailures": 11
+        },
+        {
+          "run": "phase1-generator-s20-r02-ordered-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-generator-s20-r02-ordered-v1",
+          "moduleId": "4b72fdd4-7d1b-4309-8d01-cc498ee4a86c",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "a7bce618fcb5cd8e7ea0ca290ed409fd8f21a390153910a2a1a71bb13d898eee",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "522788dec4a918bdf4900f51f85f8743b72fb2ca4e627b8eaa4e2aaf28a024f6",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "4efcbb761ad80204ab3d6b555e69175385be8756bd45d04fc600fdce130fa838",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed"
+          },
+          "traceSha256": "0e60cf56a5391c34ba9b48ee7eeb5b7d264c6c4a85b3e3fb429e4cb122810581",
+          "resetSha256": "727bcde892ba5477e273b112dc9d8e7255891ea878d5786ca4d50e758947addb",
+          "rng": {
+            "seed": 20,
+            "drawCount": 0
+          },
+          "npcCount": 1321,
+          "armedTimerCount": 2473,
+          "outcome": {
+            "completed": true,
+            "deaths": 1,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 8,
+            "terminalStep": null
+          },
+          "gameSeconds": 1565.049,
+          "wallSeconds": 102.525,
+          "maxObservedAttackers": 2,
+          "potions": 18,
+          "routeFailures": 11
+        }
+      ]
+    },
+    {
+      "course": "RaeToHatata",
+      "seed": 12,
+      "repeatCount": 2,
+      "sameResetAndOutcome": true,
+      "differences": [],
+      "runs": [
+        {
+          "run": "phase0-hatata-s12-phase1-snapshot-a",
+          "directory": "run/bot-learning-phase0/current/phase0-hatata-s12-phase1-snapshot-a",
+          "moduleId": "4b72fdd4-7d1b-4309-8d01-cc498ee4a86c",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "a7bce618fcb5cd8e7ea0ca290ed409fd8f21a390153910a2a1a71bb13d898eee",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "522788dec4a918bdf4900f51f85f8743b72fb2ca4e627b8eaa4e2aaf28a024f6",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "4efcbb761ad80204ab3d6b555e69175385be8756bd45d04fc600fdce130fa838",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed"
+          },
+          "traceSha256": "4e960f935e9844cded88876c822390c23344563939faff7bbc52e93f67a401f3",
+          "resetSha256": "de13b39ffd6f7b2240b9d0b7084a2d497b01437d6d78795e1a4a1aaf600aeff9",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1321,
+          "armedTimerCount": 2472,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 65,
+            "terminalStep": null
+          },
+          "gameSeconds": 134.64,
+          "wallSeconds": 4.689,
+          "maxObservedAttackers": 1,
+          "potions": 1,
+          "routeFailures": 1
+        },
+        {
+          "run": "phase0-hatata-s12-phase1-snapshot-b",
+          "directory": "run/bot-learning-phase0/current/phase0-hatata-s12-phase1-snapshot-b",
+          "moduleId": "4b72fdd4-7d1b-4309-8d01-cc498ee4a86c",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "a7bce618fcb5cd8e7ea0ca290ed409fd8f21a390153910a2a1a71bb13d898eee",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "522788dec4a918bdf4900f51f85f8743b72fb2ca4e627b8eaa4e2aaf28a024f6",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "4efcbb761ad80204ab3d6b555e69175385be8756bd45d04fc600fdce130fa838",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed"
+          },
+          "traceSha256": "af3a7c69b9bfa8200f2f42c9bac5f90454428f647f01a13d95b512d7a56a6c07",
+          "resetSha256": "de13b39ffd6f7b2240b9d0b7084a2d497b01437d6d78795e1a4a1aaf600aeff9",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1321,
+          "armedTimerCount": 2472,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 65,
+            "terminalStep": null
+          },
+          "gameSeconds": 134.64,
+          "wallSeconds": 4.881,
+          "maxObservedAttackers": 1,
+          "potions": 1,
+          "routeFailures": 1
+        }
+      ]
+    },
+    {
+      "course": "RaeToHatata",
+      "seed": 16,
+      "repeatCount": 2,
+      "sameResetAndOutcome": true,
+      "differences": [],
+      "runs": [
+        {
+          "run": "phase1-hatata-s16-r01-ordered-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-hatata-s16-r01-ordered-v1",
+          "moduleId": "4b72fdd4-7d1b-4309-8d01-cc498ee4a86c",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "a7bce618fcb5cd8e7ea0ca290ed409fd8f21a390153910a2a1a71bb13d898eee",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "522788dec4a918bdf4900f51f85f8743b72fb2ca4e627b8eaa4e2aaf28a024f6",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "4efcbb761ad80204ab3d6b555e69175385be8756bd45d04fc600fdce130fa838",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed"
+          },
+          "traceSha256": "63d889554703e475b7b497078c5c1c2d956c147e1ca58b3866140902f2d59e09",
+          "resetSha256": "a0f012bf87373d73645a6dd4606d1597dc25662eb29f0c847a3c8c84b734c8af",
+          "rng": {
+            "seed": 16,
+            "drawCount": 0
+          },
+          "npcCount": 1321,
+          "armedTimerCount": 2472,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 65,
+            "terminalStep": null
+          },
+          "gameSeconds": 135.341,
+          "wallSeconds": 4.685,
+          "maxObservedAttackers": 1,
+          "potions": 2,
+          "routeFailures": 1
+        },
+        {
+          "run": "phase1-hatata-s16-r02-ordered-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-hatata-s16-r02-ordered-v1",
+          "moduleId": "4b72fdd4-7d1b-4309-8d01-cc498ee4a86c",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "a7bce618fcb5cd8e7ea0ca290ed409fd8f21a390153910a2a1a71bb13d898eee",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "522788dec4a918bdf4900f51f85f8743b72fb2ca4e627b8eaa4e2aaf28a024f6",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "4efcbb761ad80204ab3d6b555e69175385be8756bd45d04fc600fdce130fa838",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed"
+          },
+          "traceSha256": "c5128924faa27c114fdc5334473d401ff53cf9ff1e995ab8ad6452349470a7c1",
+          "resetSha256": "a0f012bf87373d73645a6dd4606d1597dc25662eb29f0c847a3c8c84b734c8af",
+          "rng": {
+            "seed": 16,
+            "drawCount": 0
+          },
+          "npcCount": 1321,
+          "armedTimerCount": 2472,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 65,
+            "terminalStep": null
+          },
+          "gameSeconds": 135.341,
+          "wallSeconds": 4.739,
+          "maxObservedAttackers": 1,
+          "potions": 2,
+          "routeFailures": 1
+        }
+      ]
+    },
+    {
+      "course": "RaeToHatata",
+      "seed": 20,
+      "repeatCount": 2,
+      "sameResetAndOutcome": true,
+      "differences": [],
+      "runs": [
+        {
+          "run": "phase1-hatata-s20-r01-ordered-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-hatata-s20-r01-ordered-v1",
+          "moduleId": "4b72fdd4-7d1b-4309-8d01-cc498ee4a86c",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "a7bce618fcb5cd8e7ea0ca290ed409fd8f21a390153910a2a1a71bb13d898eee",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "522788dec4a918bdf4900f51f85f8743b72fb2ca4e627b8eaa4e2aaf28a024f6",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "4efcbb761ad80204ab3d6b555e69175385be8756bd45d04fc600fdce130fa838",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed"
+          },
+          "traceSha256": "6126ed563657f7c8e6ba85cb1f879840d1a72e0cb37ef3d035e0ac84e71a1d82",
+          "resetSha256": "7e820889421629991a70329d28f79a61c9b53d2e43fd864d7955049fb957f9f7",
+          "rng": {
+            "seed": 20,
+            "drawCount": 0
+          },
+          "npcCount": 1321,
+          "armedTimerCount": 2472,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 65,
+            "terminalStep": null
+          },
+          "gameSeconds": 132.04,
+          "wallSeconds": 4.71,
+          "maxObservedAttackers": 1,
+          "potions": 2,
+          "routeFailures": 1
+        },
+        {
+          "run": "phase1-hatata-s20-r02-ordered-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-hatata-s20-r02-ordered-v1",
+          "moduleId": "4b72fdd4-7d1b-4309-8d01-cc498ee4a86c",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "a7bce618fcb5cd8e7ea0ca290ed409fd8f21a390153910a2a1a71bb13d898eee",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "522788dec4a918bdf4900f51f85f8743b72fb2ca4e627b8eaa4e2aaf28a024f6",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "4efcbb761ad80204ab3d6b555e69175385be8756bd45d04fc600fdce130fa838",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed"
+          },
+          "traceSha256": "7ca391aad33d2608d6f602f7019eef493bfaf581cfed9d04aa20bfee96b42c3c",
+          "resetSha256": "7e820889421629991a70329d28f79a61c9b53d2e43fd864d7955049fb957f9f7",
+          "rng": {
+            "seed": 20,
+            "drawCount": 0
+          },
+          "npcCount": 1321,
+          "armedTimerCount": 2472,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 65,
+            "terminalStep": null
+          },
+          "gameSeconds": 132.04,
+          "wallSeconds": 4.633,
+          "maxObservedAttackers": 1,
+          "potions": 2,
+          "routeFailures": 1
+        }
+      ]
+    }
+  ]
+}

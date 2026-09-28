@@ -18,6 +18,8 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 	Func<CancellationToken, Task<bool>> EnterAsync, Action AssertClean, Func<object> SnapshotProblems,
 	BotActionTraceWriter Trace, LiveBotDashboardState Dashboard)
 {
+	/// <summary>SIM-only benchmark preparation. Runs after ordinary login, before policy decisions.</summary>
+	public Func<CancellationToken, Task>? PrepareCourseAsync { get; init; }
 	private readonly Lazy<BotMotionTiming> motions = new(() => BotMotionTiming.Load(
 		Path.Combine(RepoRoot, "game-server/data/static_data/skills/motion_times.xml")));
 	public long NowMillis => ElapsedMilliseconds();
@@ -50,5 +52,20 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 }
 
 /// <summary>SIM diagnostic checkpoints are explicit; LIVE acceptance uses the complete default.</summary>
+public enum NaturalMauCourse { GeneratorToRae, RaeToHatata }
+
+/// <summary>Short Phase 1 SIM starts use the same navigation and combat paths as the area legs.</summary>
+public enum NaturalMauEncounter
+{
+	IsolatedStalker,
+	TwoAttackerPull,
+	MovingPatrol,
+	BlockedGeneratorRejoin,
+	HatataAlone,
+	HatataWithAdd,
+}
+
 public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? RelogAt = null,
-	string? StopAt = null, bool StopOnDeath = false, bool OptimizeHubs = false);
+	string? StopAt = null, bool StopOnDeath = false, bool OptimizeHubs = false,
+	NaturalMauCourse? Course = null, NaturalMauEncounter? Encounter = null,
+	NaturalMauPolicyParameters? MauPolicy = null);

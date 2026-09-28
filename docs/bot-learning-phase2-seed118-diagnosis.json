@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "sourceReport": "docs/bot-learning-phase2-evaluation.json",
+  "sourceReportSha256": "6d47aa777928fe51ca490025324af99c0865833d56bec66b89f0b9a3d34eb029",
+  "course": "GeneratorToRae",
+  "seed": 118,
+  "runs": {
+    "baseline": {
+      "run": "p2-gen-full-base-s118-r01-heldout-v1",
+      "traceSha256": "d6f72c338868fc2d6640f754ccb1c1e47d07e3113e9b4dbc6c353c804611e828",
+      "status": "complete",
+      "deaths": 1,
+      "gameSeconds": 1298.504,
+      "routeFailures": 9,
+      "potions": 14
+    },
+    "candidate": {
+      "run": "p2-gen-full-cand-s118-r01-heldout-v1",
+      "traceSha256": "e2c366fd9ef56ac4d8176e78b65d7c9f3db0b4a08bddd3f277d0c50a83392e12",
+      "status": "complete",
+      "deaths": 2,
+      "gameSeconds": 2420.089,
+      "routeFailures": 15,
+      "potions": 25
+    }
+  },
+  "firstDifferentCombatDecision": {
+    "baseline": {
+      "vt": "00:14:18.423",
+      "step": "ni07-q2007-rejoin-700086-1",
+      "encounterId": 9,
+      "turn": 6,
+      "action": "cast-target",
+      "skillId": 1615,
+      "hp": 603,
+      "maxHp": 669,
+      "mp": 636,
+      "targetHpPercent": 64,
+      "observedAttackers": 1,
+      "hotPotionReady": true,
+      "hotPotionActive": false
+    },
+    "candidate": {
+      "vt": "00:14:18.423",
+      "step": "ni07-q2007-rejoin-700086-1",
+      "encounterId": 9,
+      "turn": 6,
+      "action": "hot-potion",
+      "skillId": null,
+      "hp": 603,
+      "maxHp": 669,
+      "mp": 636,
+      "targetHpPercent": 64,
+      "observedAttackers": 1,
+      "hotPotionReady": true,
+      "hotPotionActive": false
+    }
+  },
+  "nextEncounterStart": {
+    "encounterId": 10,
+    "vt": "00:15:08.695",
+    "sameClientObservedState": true,
+    "targetObjectId": 54743
+  },
+  "encounter10Smite": {
+    "baselineResult": {
+      "vt": "00:15:17.612",
+      "packet": "SM_CASTSPELL_RESULT",
+      "flags": 32
+    },
+    "candidateCancel": {
+      "vt": "00:15:17.612",
+      "packet": "SM_SKILL_CANCEL",
+      "skillId": 4013
+    },
+    "targetHpPercentAtTurn8": {
+      "baseline": 27,
+      "candidate": 45
+    }
+  },
+  "candidateExtraDeath": {
+    "vt": "00:15:34.250",
+    "step": "ni07-q2007-rejoin-700086-1",
+    "message": "STR_MSG_COMBAT_MY_DEATH"
+  },
+  "routeFailures": {
+    "baseline": {
+      "total": 9,
+      "beforeExtraDeath": 8,
+      "afterExtraDeath": 1,
+      "byStep": {
+        "ni07-q2007-rae-return": 1,
+        "ni07-q2007-rejoin-700086-0": 1,
+        "ni07-q2007-rejoin-700086-1": 7
+      },
+      "byNavmeshOutcome": {
+        "HazardRejected": 9
+      }
+    },
+    "candidate": {
+      "total": 15,
+      "beforeExtraDeath": 8,
+      "afterExtraDeath": 7,
+      "byStep": {
+        "ni07-q2007-rae-return": 1,
+        "ni07-q2007-rejoin-700086-0": 1,
+        "ni07-q2007-rejoin-700086-1": 7,
+        "ni07-q2007-rejoin-700086-2": 6
+      },
+      "byNavmeshOutcome": {
+        "HazardRejected": 15
+      }
+    }
+  }
+}

@@ -26,6 +26,9 @@ public static class Rnd
     /// <summary>The deterministic seed active for this flow, or the process fallback when the flow has none.</summary>
     public static int? ActiveSeed => ActiveSeedSource?.Seed;
 
+    /// <summary>Number of public draws from the active seeded stream; useful for SIM reset audits.</summary>
+    public static long? ActiveSeedDrawCount => ActiveSeedSource?.Generator.DrawCount;
+
     /// <summary>Failure-report text for deterministic harnesses and scenario runners.</summary>
     public static string SeedDiagnostic => ActiveSeed is int seed ? $"Rnd seed: {seed}" : "Rnd seed: production default";
 
@@ -181,7 +184,7 @@ public static class Rnd
         }
 
         public int Seed { get; }
-        public Random Generator { get; }
+        public SynchronizedRandom Generator { get; }
     }
 
     /// <summary>
@@ -191,59 +194,89 @@ public static class Rnd
     private sealed class SynchronizedRandom(int seed) : Random(seed)
     {
         private readonly object _gate = new();
+        private long _drawCount;
+
+        public long DrawCount => Interlocked.Read(ref _drawCount);
 
         public override int Next()
         {
             lock (_gate)
+            {
+                _drawCount++;
                 return base.Next();
+            }
         }
 
         public override int Next(int maxValue)
         {
             lock (_gate)
+            {
+                _drawCount++;
                 return base.Next(maxValue);
+            }
         }
 
         public override int Next(int minValue, int maxValue)
         {
             lock (_gate)
+            {
+                _drawCount++;
                 return base.Next(minValue, maxValue);
+            }
         }
 
         public override long NextInt64()
         {
             lock (_gate)
+            {
+                _drawCount++;
                 return base.NextInt64();
+            }
         }
 
         public override long NextInt64(long maxValue)
         {
             lock (_gate)
+            {
+                _drawCount++;
                 return base.NextInt64(maxValue);
+            }
         }
 
         public override long NextInt64(long minValue, long maxValue)
         {
             lock (_gate)
+            {
+                _drawCount++;
                 return base.NextInt64(minValue, maxValue);
+            }
         }
 
         public override float NextSingle()
         {
             lock (_gate)
+            {
+                _drawCount++;
                 return base.NextSingle();
+            }
         }
 
         public override double NextDouble()
         {
             lock (_gate)
+            {
+                _drawCount++;
                 return base.NextDouble();
+            }
         }
 
         public override void NextBytes(byte[] buffer)
         {
             lock (_gate)
+            {
+                _drawCount++;
                 base.NextBytes(buffer);
+            }
         }
     }
 }

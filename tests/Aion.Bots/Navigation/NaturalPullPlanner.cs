@@ -12,6 +12,10 @@ public sealed record NaturalPullMonster(NaturalNavigationObject Npc, float Aggro
 public sealed record NaturalPullPlan(NaturalPullMonster Target, BotPosition FiringPosition,
 	IReadOnlyList<NaturalPullMonster> Helpers, float ClearanceFromOthers);
 
+/// <summary>A firing spot actually evaluated by the baseline planner; unevaluated spots are not asserted legal.</summary>
+public sealed record NaturalPullCandidate(int TargetObjectId, BotPosition FiringPosition,
+	int[] ExpectedHelperObjectIds, float ClearanceFromOthers, bool Legal, string? IllegalReason);
+
 /// <summary>
 /// Pull one monster at a time, the way a player does: from a spot off to the side of the path, at spell
 /// range, where neither the target's friends nor anything else will join in.
@@ -73,24 +77,27 @@ public static class NaturalPullPlanner
 	public static NaturalPullPlan? Plan(BotPosition current, IReadOnlyList<NaturalPullMonster> targets,
 		IReadOnlyList<NaturalPullMonster> monsters, IReadOnlyList<BotPosition> stagingPoints,
 		Func<string, string, bool> canSupport, Func<BotPosition, BotPosition, bool> lineOfSight,
-		Func<BotPosition, BotPosition?> snapToGround, Func<BotPosition, bool> reachable, int sectors = 16)
+		Func<BotPosition, BotPosition?> snapToGround, Func<BotPosition, bool> reachable, int sectors = 16,
+		Action<NaturalPullCandidate>? audit = null, float pullDistanceMeters = SpellRange)
 	{
 		ArgumentNullException.ThrowIfNull(targets);
 		ArgumentNullException.ThrowIfNull(monsters);
+		if (pullDistanceMeters is <= 0 or > SpellRange)
+			throw new ArgumentOutOfRangeException(nameof(pullDistanceMeters));
 		NaturalPullPlan? best = null;
 		(int Helpers, float Clearance, int Order) bestKey = (int.MaxValue, 0, int.MaxValue);
 		for (int order = 0; order < targets.Count; order++)
 		{
 			NaturalPullMonster target = targets[order];
-			var spots = new List<BotPosition>(stagingPoints.Where(p => Horizontal(p, target.Npc.Position) <= SpellRange));
+			var spots = new List<BotPosition>(stagingPoints.Where(p => Horizontal(p, target.Npc.Position) <= pullDistanceMeters));
 			foreach (float fraction in (float[])[0.95f, 0.8f, 0.6f])
 				for (int sector = 0; sector < sectors; sector++)
 				{
 					float angle = sector * 2 * MathF.PI / sectors;
 					var raw = target.Npc.Position with
 					{
-						X = target.Npc.Position.X + SpellRange * fraction * MathF.Cos(angle),
-						Y = target.Npc.Position.Y + SpellRange * fraction * MathF.Sin(angle),
+						X = target.Npc.Position.X + pullDistanceMeters * fraction * MathF.Cos(angle),
+						Y = target.Npc.Position.Y + pullDistanceMeters * fraction * MathF.Sin(angle),
 					};
 					if (snapToGround(raw) is BotPosition ground) spots.Add(ground);
 				}
@@ -105,7 +112,13 @@ public static class NaturalPullPlanner
 			{
 				var key = (helpers.Count, MathF.Min(clearance, 15), order);
 				if (best != null && Worse(key, bestKey)) break;
-				if (!lineOfSight(spot, target.Npc.Position) || !reachable(spot)) continue;
+				bool visible = lineOfSight(spot, target.Npc.Position);
+				bool route = visible && reachable(spot);
+				audit?.Invoke(new NaturalPullCandidate(target.Npc.ObjectId, spot,
+					helpers.Select(helper => helper.Npc.ObjectId).ToArray(), clearance,
+					visible && route, !visible ? "No collision-checked line of sight." :
+					!route ? "No checked route to firing spot." : null));
+				if (!visible || !route) continue;
 				best = new NaturalPullPlan(target, spot, helpers, clearance);
 				bestKey = key;
 				break;

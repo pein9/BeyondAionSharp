@@ -53,6 +53,10 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);
 
+/// <summary>Observed eligibility and baseline disposition; no outcome is assigned to an unchosen action.</summary>
+public sealed record NaturalCombatCandidate(string Action, ushort? SkillId, int? TargetObjectId,
+	bool Legal, string[] IllegalReasons, string? BaselineRejection, bool NeedsNavigationCheck = false);
+
 /// <summary>
 /// Pure, deterministic one-step policy. The caller supplies only observed client state.
 ///
@@ -66,6 +70,7 @@ public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skil
 /// </summary>
 public static class NaturalPriestCombatPolicy
 {
+	public const string PolicyVersion = "natural-priest-baseline-v1";
 	/// <summary>Attackers at which the Priest leaves regardless of HP.</summary>
 	public const int SwarmedAttackers = 3;
 
@@ -84,9 +89,85 @@ public static class NaturalPriestCombatPolicy
 	public static int EmergencyExitPercent(int attackers, bool targetSeasoned) =>
 		EmergencyEnterPercent(attackers, targetSeasoned) + (EmergencyClearPercent - EmergencyPercent);
 
-	public static NaturalCombatChoice Decide(NaturalCombatObservation state, DateTimeOffset now,
-		IEnumerable<NaturalPriestSkill>? catalog = null)
+	/// <summary>Audit all client-observable candidate actions after Decide, including later branches it did not visit.</summary>
+	public static NaturalCombatCandidate[] CandidateActions(NaturalCombatObservation state,
+		DateTimeOffset now, NaturalCombatChoice chosen, IEnumerable<NaturalPriestSkill>? catalog = null,
+		NaturalMauPolicyParameters? parameters = null)
 	{
+		NaturalMauPolicyParameters policy = parameters ?? NaturalMauPolicyParameters.Baseline;
+		policy.Validate();
+		NaturalPriestSkill[] skills = (catalog ?? NaturalPriestSkills.All).ToArray();
+		NaturalPriestSkill? heal = NaturalPriestSkills.Best("heal", state.Level, state.Learned, skills);
+		bool adjacent = state.TargetAdjacent || state.TargetDistance is float near && near <= MeleeReach;
+		bool fighting = state.Aggro || state.TargetObjectId != null || state.NearbyAggressors > 0;
+		var candidates = new List<NaturalCombatCandidate>();
+		void Add(string action, ushort? skillId, int? target, bool legal, string[] reasons,
+			bool needsNavigationCheck = false)
+		{
+			bool selected = chosen.Action == action && chosen.Skill?.Id == skillId &&
+				(action != "cast-target" || chosen.TargetObjectId == target);
+			string? rejected = selected ? null : !legal ? string.Join("; ", reasons) :
+				$"Baseline selected {chosen.Action}/{chosen.Skill?.Id}: {chosen.Reason}";
+			candidates.Add(new(action, skillId, target, legal, reasons, rejected, needsNavigationCheck));
+		}
+		void Simple(string action, bool legal, string reason, bool navigation = false) =>
+			Add(action, null, state.TargetObjectId, legal, legal ? [] : [reason], navigation);
+
+		Simple("revive", state.Dead, "Client did not report death.");
+		Simple("blocked", !state.Dead && (state.MaxHp <= 0 || state.MaxMp <= 0 || state.Hp < 0 || state.Mp < 0),
+			"Client life statistics are complete.");
+		Simple("rest", !state.Dead && !fighting, "A fight or target is active.");
+		Simple("retreat", !state.Dead && fighting && !state.Cornered,
+			"No active fight or no checked escape from this corner.", navigation: true);
+		Simple("hot-potion", !state.Dead && state.HasHotPotion && state.HotPotionReady && !state.HotPotionActive,
+			"Timed healing potion is absent, cooling down, or already active.");
+		Simple("life-potion", !state.Dead && state.HasLifePotion && state.LifePotionReady,
+			"Life potion is absent or cooling down.");
+		Simple("mana-potion", !state.Dead && state.HasManaPotion && state.ManaPotionReady,
+			"Mana potion is absent or cooling down.");
+		Simple("attack", !state.Dead && state.TargetObjectId != null && adjacent,
+			"No adjacent client-observed target.");
+		Simple("approach", !state.Dead && state.TargetObjectId != null,
+			"No client-observed target.", navigation: true);
+		Simple("wait", !state.Dead, "Client reported death.");
+		Simple("defend", !state.Dead && state.Aggro, "No client-observed aggression.");
+		Simple("ready", !state.Dead && !fighting, "A fight or target is active.");
+
+		foreach (NaturalPriestSkill skill in skills.OrderBy(skill => skill.Id))
+		{
+			string action = skill.Role is "heal" or "blessing" ? "cast-self" : "cast-target";
+			int? target = action == "cast-target" ? state.TargetObjectId : null;
+			var reasons = new List<string>();
+			if (state.Dead) reasons.Add("Client reported death.");
+			if (state.Level < skill.MinimumLevel || !state.Learned.ContainsKey(skill.Id))
+				reasons.Add("Skill is not in the client-observed learned list at this level.");
+			if (action == "cast-target" && (target == null || state.TargetDistance == null))
+				reasons.Add("No client-observed target position.");
+			float distance = action == "cast-target" ? state.TargetDistance ?? float.MaxValue : 0;
+			bool inRange = distance <= skill.Range || skill.Range <= MeleeReach && adjacent;
+			if (!inRange) reasons.Add("Target is outside the skill's observed range.");
+			if (state.Cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset until) && until > now)
+				reasons.Add("Client-observed cooldown is active.");
+			int reserve = (action == "cast-target" || skill.Role == "blessing") && heal != null
+				? heal.ManaCost + policy.ManaReserveExtra : 0;
+			if (state.Mp < skill.ManaCost + reserve) reasons.Add("Insufficient observed mana after healing reserve.");
+			if (skill.RequiresChainCategory != null && !(skill.RequiresChainCategory == state.OpenChainCategory &&
+				state.OpenChainTargetId == target && state.ChainExpiresAt > now))
+				reasons.Add("Required client-observed chain is not open.");
+			if (skill.Role == "blessing" && state.HasBlessing == true)
+				reasons.Add("Protection buff is already observed.");
+			Add(action, skill.Id, target, reasons.Count == 0, reasons.ToArray());
+			if (reasons.Count == 0 && NaturalPriestSkills.Best(skill.Role, state.Level, state.Learned, skills)?.Id != skill.Id)
+				candidates[^1] = candidates[^1] with { BaselineRejection = "Baseline prefers a higher learned rank for this role." };
+		}
+		return candidates.ToArray();
+	}
+
+	public static NaturalCombatChoice Decide(NaturalCombatObservation state, DateTimeOffset now,
+		IEnumerable<NaturalPriestSkill>? catalog = null, NaturalMauPolicyParameters? parameters = null)
+	{
+		NaturalMauPolicyParameters policy = parameters ?? NaturalMauPolicyParameters.Baseline;
+		policy.Validate();
 		var checks = new List<NaturalDecisionCheck>();
 		if (state.Dead) return Choice("revive", null, "Client reported death.");
 		if (state.MaxHp <= 0 || state.MaxMp <= 0 || state.Hp < 0 || state.Mp < 0)
@@ -112,21 +193,43 @@ public static class NaturalPriestCombatPolicy
 			if (!canHeal && !canPotion)
 				return Choice("retreat", null, "HP is at or below 30% and no self-heal or potion is available.");
 		}
-		int healPercent = state.InEmergency ? 100 : state.NearbyAggressors >= 2 ? HealPercentMultiple : HealPercentSingle;
+		int healPercent = state.InEmergency ? 100 : state.NearbyAggressors >= 2
+			? policy.HealMultiplePercent : policy.HealSinglePercent;
 		bool urgent = fighting && state.Hp * 100 <= state.MaxHp * healPercent;
 		bool critical = state.Hp * 100 <= state.MaxHp * 25;
-		if (fighting && state.Hp * 100 <= state.MaxHp * 90 &&
+		// A selected target can make this a "fight" before any monster has attacked.
+		// Earlier-than-baseline potion tuning applies only after an attacker is observed.
+		int hotPotionPercent = state.NearbyAggressors > 0 ? policy.HotPotionPercent
+			: Math.Min(policy.HotPotionPercent, NaturalMauPolicyParameters.Baseline.HotPotionPercent);
+		// At a healthy Priest and one attacker, a target already below 60% HP may
+		// finish before extra early healing matters. Keep the baseline timing there.
+		if (hotPotionPercent > NaturalMauPolicyParameters.Baseline.HotPotionPercent &&
+			state.NearbyAggressors == 1 && state.TargetHpPercent is < 60)
+			hotPotionPercent = NaturalMauPolicyParameters.Baseline.HotPotionPercent;
+		// Infernal Blaze is the learned instant stun. At HP above the baseline potion
+		// threshold, cast that ready control skill before spending the tuned early potion.
+		if (hotPotionPercent > NaturalMauPolicyParameters.Baseline.HotPotionPercent &&
+			state.Hp * 100 > state.MaxHp * NaturalMauPolicyParameters.Baseline.HotPotionPercent &&
+			adjacent && state.TargetObjectId is int potionTarget && state.TargetDistance is float potionDistance)
+		{
+			NaturalPriestSkill? infernal = NaturalPriestSkills.Best("infernal", state.Level, state.Learned, catalog);
+			if (infernal != null && Eligible(infernal, potionTarget, potionDistance,
+				state, now, reserveHeal: true))
+				hotPotionPercent = NaturalMauPolicyParameters.Baseline.HotPotionPercent;
+		}
+		if (fighting && state.Hp * 100 <= state.MaxHp * hotPotionPercent &&
 			state.HasHotPotion && state.HotPotionReady && !state.HotPotionActive)
 			return Choice("hot-potion", null,
-				"HP is at or below 90% in a fight; apply owned timed healing before the self-heal threshold.");
-		if (urgent && !state.InEmergency && state.HasHealedThisFight && state.TargetHpPercent is > 0 and <= 15 &&
+				$"HP is at or below {hotPotionPercent}% in a fight; apply owned timed healing before the self-heal threshold.");
+		if (urgent && !state.InEmergency && state.HasHealedThisFight &&
+			state.TargetHpPercent is > 0 && state.TargetHpPercent <= policy.FinishTargetHpPercent &&
 			state.TargetObjectId is int finishingTarget && state.TargetDistance is float finishingDistance)
 		{
 			NaturalPriestSkill? finisher = NaturalPriestSkills.Best("smite", state.Level, state.Learned, catalog);
 			if (finisher != null && Eligible(finisher, finishingTarget, finishingDistance,
 				state, now, reserveHeal: true))
 				return Choice("cast-target", finisher,
-					"Client-observed target is at or below 15% HP after this fight already received a self-heal.");
+					$"Client-observed target is at or below {policy.FinishTargetHpPercent}% HP after this fight already received a self-heal.");
 		}
 		if (urgent && heal != null && Eligible(heal, state.TargetObjectId, 0, state, now, reserveHeal: false))
 			return Choice("cast-self", heal, state.InEmergency
@@ -184,7 +287,7 @@ public static class NaturalPriestCombatPolicy
 			// a monster that is on the bot is in reach whatever the client's lagging distance says.
 			bool inRange = range <= skill.Range || skill.Range <= MeleeReach && adjacent;
 			bool ready = !observed.Cooldowns.TryGetValue(skill.CooldownId, out var until) || until <= instant;
-			int reserve = reserveHeal && heal != null ? heal.ManaCost : 0;
+			int reserve = reserveHeal && heal != null ? heal.ManaCost + policy.ManaReserveExtra : 0;
 			bool enoughMana = observed.Mp >= skill.ManaCost + reserve;
 			bool chainReady = skill.RequiresChainCategory == null ||
 				(skill.RequiresChainCategory == observed.OpenChainCategory &&

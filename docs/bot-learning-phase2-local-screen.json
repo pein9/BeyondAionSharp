@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "seed": 16,
+  "course": "RaeToHatata",
+  "baseline": "p2-hat-full-base-s16-r01-patrolfix-v1",
+  "parent": "p2-hat-full-cand-s16-r01-patrolfix-v1",
+  "candidates": [
+    {
+      "id": "l01",
+      "policySha256": "7b609d661f91b5d40367e4a0ffd13111b0cc4fc31589280691b511f1c44fcfdf",
+      "run": "p2-hat-full-cand-s16-r01-l01-local",
+      "status": "complete",
+      "deaths": 0,
+      "maxObservedAttackers": 1,
+      "routeFailures": 1,
+      "gameSeconds": 128.64,
+      "potions": 2,
+      "traceSha256": "bd13dbc7e5f594a6d0cff61aae42dc5bc1f6d255af8591d4b574a93f4b56907c"
+    },
+    {
+      "id": "l02",
+      "policySha256": "3291123e684d7683d366d00f5d578e575644d9db130a161872d6668f0e9d9892",
+      "run": "p2-hat-full-cand-s16-r01-l02-local",
+      "status": "complete",
+      "deaths": 0,
+      "maxObservedAttackers": 2,
+      "routeFailures": 2,
+      "gameSeconds": 177.581,
+      "potions": 4,
+      "traceSha256": "f0ffef7cb85f229c0c6be08925da820c573288cb510e6d68c205aed372ceaaf0"
+    },
+    {
+      "id": "l03",
+      "policySha256": "06987290a40d7aa06ed0c3741aaabb42dee948dd33a22e8238b684cbbbbcd02f",
+      "run": "p2-hat-full-cand-s16-r01-l03-local",
+      "status": "complete",
+      "deaths": 0,
+      "maxObservedAttackers": 2,
+      "routeFailures": 2,
+      "gameSeconds": 177.581,
+      "potions": 4,
+      "traceSha256": "1e52f04fe42b5897ce95127ea833a9666e33ff27d803a9c7e7f1bfe1a81912fd"
+    },
+    {
+      "id": "l04",
+      "policySha256": "8f74c184990a774cf53f0e6de196d95d50ba7d14d75e6649dea6c1b11457a094",
+      "run": "p2-hat-full-cand-s16-r01-l04-local",
+      "status": "complete",
+      "deaths": 0,
+      "maxObservedAttackers": 1,
+      "routeFailures": 1,
+      "gameSeconds": 128.64,
+      "potions": 2,
+      "traceSha256": "469b5b6e05f7495b8f8aa2189c47ac98ee765bf45d0dd763bf68430acb35a39f"
+    }
+  ]
+}

@@ -1,0 +1,582 @@
+{
+  "schemaVersion": 1,
+  "status": "pass",
+  "groups": [
+    {
+      "course": "GeneratorToRae",
+      "encounter": "BlockedGeneratorRejoin",
+      "seed": 12,
+      "repeatCount": 2,
+      "sameResetAndOutcome": true,
+      "differences": [],
+      "runs": [
+        {
+          "run": "phase1-generator-rejoin-s12-r01-audit-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-generator-rejoin-s12-r01-audit-v1",
+          "moduleId": "687c9b38-2490-4449-940e-a05ad59af55d",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "2445a4a313376bd17220b8174816ee61bc1c6f5839a3c9800f0dd41d3a09ecae",
+            "tests/Aion.Bots/Scenarios/NaturalJourneyRuntime.cs": "4d91df3aace79fe2957f8a9bf4114adeb22a3148ec59340874260557de91cf41",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "e1ad35076ae7098fab7c4108d616915d190660e88a0c502803d26aafaf9079e6",
+            "tests/Aion.Bots/Navigation/NaturalPullPlanner.cs": "a4e88f42803e9e156dbe503c523e5d964ef283c7c7e672ea450820c36d8bd254",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "22fd02f4e6ce5e5122922445b2961920590d1b86c7c9d9a141fa660797738708",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed",
+            "scripts/sim/trace/make_mau_decisions.py": "ea800e8556abbc1c3e58357ce14b75304e7827e8c2c9ed4705432c5e88e87c8c"
+          },
+          "traceSha256": "57a4d5119940c4d342f8f1170d1091efa2e1458545263c07a0aa7885244e2c13",
+          "resetSha256": "561bbcf9c964e11e4bf8d51bd892667f116e69ced0860c89030b0831a5f8051d",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1321,
+          "armedTimerCount": 2472,
+          "outcome": {
+            "completed": false,
+            "deaths": 0,
+            "terminalDisengaged": false,
+            "questStepAndFlags": null,
+            "terminalStep": "ni07-q2007-rae-return",
+            "failureType": "System.IO.InvalidDataException",
+            "failureReason": "No client-observed NPC 203554 at twelve shipped spawn hints from BotPosition { X = 628.25134, Y = 894.2491, Z = 309.9224, Heading = 24 }: No collision-checked route to the current destination."
+          },
+          "gameSeconds": 60.276,
+          "wallSeconds": 1.739,
+          "maxObservedAttackers": 0,
+          "potions": 0,
+          "routeFailures": 11,
+          "decisionRecords": 81,
+          "normalizedDecisionStreamSha256": "180fa09c0911a7f3f7cb6ba41e31e76d10d9153c2b922e1e0a6d73636d92c293"
+        },
+        {
+          "run": "phase1-generator-rejoin-s12-r02-audit-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-generator-rejoin-s12-r02-audit-v1",
+          "moduleId": "687c9b38-2490-4449-940e-a05ad59af55d",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "2445a4a313376bd17220b8174816ee61bc1c6f5839a3c9800f0dd41d3a09ecae",
+            "tests/Aion.Bots/Scenarios/NaturalJourneyRuntime.cs": "4d91df3aace79fe2957f8a9bf4114adeb22a3148ec59340874260557de91cf41",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "e1ad35076ae7098fab7c4108d616915d190660e88a0c502803d26aafaf9079e6",
+            "tests/Aion.Bots/Navigation/NaturalPullPlanner.cs": "a4e88f42803e9e156dbe503c523e5d964ef283c7c7e672ea450820c36d8bd254",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "22fd02f4e6ce5e5122922445b2961920590d1b86c7c9d9a141fa660797738708",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed",
+            "scripts/sim/trace/make_mau_decisions.py": "ea800e8556abbc1c3e58357ce14b75304e7827e8c2c9ed4705432c5e88e87c8c"
+          },
+          "traceSha256": "d038640c93aaa182c9e004ae25fce09204fdd60d57e3eee12030c1dc4e7f49ca",
+          "resetSha256": "561bbcf9c964e11e4bf8d51bd892667f116e69ced0860c89030b0831a5f8051d",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1321,
+          "armedTimerCount": 2472,
+          "outcome": {
+            "completed": false,
+            "deaths": 0,
+            "terminalDisengaged": false,
+            "questStepAndFlags": null,
+            "terminalStep": "ni07-q2007-rae-return",
+            "failureType": "System.IO.InvalidDataException",
+            "failureReason": "No client-observed NPC 203554 at twelve shipped spawn hints from BotPosition { X = 628.25134, Y = 894.2491, Z = 309.9224, Heading = 24 }: No collision-checked route to the current destination."
+          },
+          "gameSeconds": 60.276,
+          "wallSeconds": 1.795,
+          "maxObservedAttackers": 0,
+          "potions": 0,
+          "routeFailures": 11,
+          "decisionRecords": 81,
+          "normalizedDecisionStreamSha256": "180fa09c0911a7f3f7cb6ba41e31e76d10d9153c2b922e1e0a6d73636d92c293"
+        }
+      ]
+    },
+    {
+      "course": "RaeToHatata",
+      "encounter": "HatataAlone",
+      "seed": 12,
+      "repeatCount": 2,
+      "sameResetAndOutcome": true,
+      "differences": [],
+      "runs": [
+        {
+          "run": "phase1-hatata-hatata1-s12-r01-audit-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-hatata-hatata1-s12-r01-audit-v1",
+          "moduleId": "687c9b38-2490-4449-940e-a05ad59af55d",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "2445a4a313376bd17220b8174816ee61bc1c6f5839a3c9800f0dd41d3a09ecae",
+            "tests/Aion.Bots/Scenarios/NaturalJourneyRuntime.cs": "4d91df3aace79fe2957f8a9bf4114adeb22a3148ec59340874260557de91cf41",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "e1ad35076ae7098fab7c4108d616915d190660e88a0c502803d26aafaf9079e6",
+            "tests/Aion.Bots/Navigation/NaturalPullPlanner.cs": "a4e88f42803e9e156dbe503c523e5d964ef283c7c7e672ea450820c36d8bd254",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "22fd02f4e6ce5e5122922445b2961920590d1b86c7c9d9a141fa660797738708",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed",
+            "scripts/sim/trace/make_mau_decisions.py": "ea800e8556abbc1c3e58357ce14b75304e7827e8c2c9ed4705432c5e88e87c8c"
+          },
+          "traceSha256": "0bf241b306215d3581f0acfbce82d39e767198fa09cfbed8e22e48e5a843a99c",
+          "resetSha256": "6c94e205c46ab4275d6a8ea03456e5d1c14ff9aa5b8457492c95072d42adef93",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1310,
+          "armedTimerCount": 2472,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 65,
+            "terminalStep": null,
+            "failureType": null,
+            "failureReason": null
+          },
+          "gameSeconds": 43.854,
+          "wallSeconds": 0.686,
+          "maxObservedAttackers": 1,
+          "potions": 1,
+          "routeFailures": 0,
+          "decisionRecords": 20,
+          "normalizedDecisionStreamSha256": "81b1a6ff1c607fae1163e3114c28753da311a5c9b4cc3a4d5d851e7c9c4b034f"
+        },
+        {
+          "run": "phase1-hatata-hatata1-s12-r02-audit-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-hatata-hatata1-s12-r02-audit-v1",
+          "moduleId": "687c9b38-2490-4449-940e-a05ad59af55d",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "2445a4a313376bd17220b8174816ee61bc1c6f5839a3c9800f0dd41d3a09ecae",
+            "tests/Aion.Bots/Scenarios/NaturalJourneyRuntime.cs": "4d91df3aace79fe2957f8a9bf4114adeb22a3148ec59340874260557de91cf41",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "e1ad35076ae7098fab7c4108d616915d190660e88a0c502803d26aafaf9079e6",
+            "tests/Aion.Bots/Navigation/NaturalPullPlanner.cs": "a4e88f42803e9e156dbe503c523e5d964ef283c7c7e672ea450820c36d8bd254",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "22fd02f4e6ce5e5122922445b2961920590d1b86c7c9d9a141fa660797738708",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed",
+            "scripts/sim/trace/make_mau_decisions.py": "ea800e8556abbc1c3e58357ce14b75304e7827e8c2c9ed4705432c5e88e87c8c"
+          },
+          "traceSha256": "70f6f5135a31f839f94c28386bb95ce91180c82c6ce9fe3d0ad02ebe24d246c1",
+          "resetSha256": "6c94e205c46ab4275d6a8ea03456e5d1c14ff9aa5b8457492c95072d42adef93",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1310,
+          "armedTimerCount": 2472,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 65,
+            "terminalStep": null,
+            "failureType": null,
+            "failureReason": null
+          },
+          "gameSeconds": 43.854,
+          "wallSeconds": 0.773,
+          "maxObservedAttackers": 1,
+          "potions": 1,
+          "routeFailures": 0,
+          "decisionRecords": 20,
+          "normalizedDecisionStreamSha256": "81b1a6ff1c607fae1163e3114c28753da311a5c9b4cc3a4d5d851e7c9c4b034f"
+        }
+      ]
+    },
+    {
+      "course": "RaeToHatata",
+      "encounter": "HatataWithAdd",
+      "seed": 12,
+      "repeatCount": 2,
+      "sameResetAndOutcome": true,
+      "differences": [],
+      "runs": [
+        {
+          "run": "phase1-hatata-hatata2-s12-r01-audit-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-hatata-hatata2-s12-r01-audit-v1",
+          "moduleId": "687c9b38-2490-4449-940e-a05ad59af55d",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "2445a4a313376bd17220b8174816ee61bc1c6f5839a3c9800f0dd41d3a09ecae",
+            "tests/Aion.Bots/Scenarios/NaturalJourneyRuntime.cs": "4d91df3aace79fe2957f8a9bf4114adeb22a3148ec59340874260557de91cf41",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "e1ad35076ae7098fab7c4108d616915d190660e88a0c502803d26aafaf9079e6",
+            "tests/Aion.Bots/Navigation/NaturalPullPlanner.cs": "a4e88f42803e9e156dbe503c523e5d964ef283c7c7e672ea450820c36d8bd254",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "22fd02f4e6ce5e5122922445b2961920590d1b86c7c9d9a141fa660797738708",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed",
+            "scripts/sim/trace/make_mau_decisions.py": "ea800e8556abbc1c3e58357ce14b75304e7827e8c2c9ed4705432c5e88e87c8c"
+          },
+          "traceSha256": "99ca779e76035ac474d8562da5e1a23309ac787046f0b09cde599698ae18c476",
+          "resetSha256": "55cc7a3140fd818276faba7e41f2410947957fe7bdcfc5f2ef7fe6fc4c1c6137",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1311,
+          "armedTimerCount": 2474,
+          "outcome": {
+            "completed": true,
+            "deaths": 1,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 65,
+            "terminalStep": null,
+            "failureType": null,
+            "failureReason": null
+          },
+          "gameSeconds": 1079.298,
+          "wallSeconds": 35.754,
+          "maxObservedAttackers": 2,
+          "potions": 6,
+          "routeFailures": 3,
+          "decisionRecords": 142,
+          "normalizedDecisionStreamSha256": "6d087b5fac6173e4a025692ab3277bd25da702b01b2757670525a88df6e06a12"
+        },
+        {
+          "run": "phase1-hatata-hatata2-s12-r02-audit-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-hatata-hatata2-s12-r02-audit-v1",
+          "moduleId": "687c9b38-2490-4449-940e-a05ad59af55d",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "2445a4a313376bd17220b8174816ee61bc1c6f5839a3c9800f0dd41d3a09ecae",
+            "tests/Aion.Bots/Scenarios/NaturalJourneyRuntime.cs": "4d91df3aace79fe2957f8a9bf4114adeb22a3148ec59340874260557de91cf41",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "e1ad35076ae7098fab7c4108d616915d190660e88a0c502803d26aafaf9079e6",
+            "tests/Aion.Bots/Navigation/NaturalPullPlanner.cs": "a4e88f42803e9e156dbe503c523e5d964ef283c7c7e672ea450820c36d8bd254",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "22fd02f4e6ce5e5122922445b2961920590d1b86c7c9d9a141fa660797738708",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed",
+            "scripts/sim/trace/make_mau_decisions.py": "ea800e8556abbc1c3e58357ce14b75304e7827e8c2c9ed4705432c5e88e87c8c"
+          },
+          "traceSha256": "b908d31dc3ffeaa1ec19975aecc88317bf559d48a473338b964d4271bcf3979d",
+          "resetSha256": "55cc7a3140fd818276faba7e41f2410947957fe7bdcfc5f2ef7fe6fc4c1c6137",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1311,
+          "armedTimerCount": 2474,
+          "outcome": {
+            "completed": true,
+            "deaths": 1,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 65,
+            "terminalStep": null,
+            "failureType": null,
+            "failureReason": null
+          },
+          "gameSeconds": 1079.298,
+          "wallSeconds": 35.424,
+          "maxObservedAttackers": 2,
+          "potions": 6,
+          "routeFailures": 3,
+          "decisionRecords": 142,
+          "normalizedDecisionStreamSha256": "6d087b5fac6173e4a025692ab3277bd25da702b01b2757670525a88df6e06a12"
+        }
+      ]
+    },
+    {
+      "course": "RaeToHatata",
+      "encounter": "IsolatedStalker",
+      "seed": 12,
+      "repeatCount": 2,
+      "sameResetAndOutcome": true,
+      "differences": [],
+      "runs": [
+        {
+          "run": "phase1-hatata-stalker-s12-r01-audit-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-hatata-stalker-s12-r01-audit-v1",
+          "moduleId": "687c9b38-2490-4449-940e-a05ad59af55d",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "2445a4a313376bd17220b8174816ee61bc1c6f5839a3c9800f0dd41d3a09ecae",
+            "tests/Aion.Bots/Scenarios/NaturalJourneyRuntime.cs": "4d91df3aace79fe2957f8a9bf4114adeb22a3148ec59340874260557de91cf41",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "e1ad35076ae7098fab7c4108d616915d190660e88a0c502803d26aafaf9079e6",
+            "tests/Aion.Bots/Navigation/NaturalPullPlanner.cs": "a4e88f42803e9e156dbe503c523e5d964ef283c7c7e672ea450820c36d8bd254",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "22fd02f4e6ce5e5122922445b2961920590d1b86c7c9d9a141fa660797738708",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed",
+            "scripts/sim/trace/make_mau_decisions.py": "ea800e8556abbc1c3e58357ce14b75304e7827e8c2c9ed4705432c5e88e87c8c"
+          },
+          "traceSha256": "31735547b95cf58edf342b46678965e5e7d35b122289ead978d20a46c1c06fba",
+          "resetSha256": "893d63e1e6f5a7b539c91486894c3cfff79c15621e6d5e73459509d509d106f2",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1316,
+          "armedTimerCount": 2472,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 1,
+            "terminalStep": null,
+            "failureType": null,
+            "failureReason": null
+          },
+          "gameSeconds": 20.216,
+          "wallSeconds": 0.511,
+          "maxObservedAttackers": 1,
+          "potions": 0,
+          "routeFailures": 0,
+          "decisionRecords": 11,
+          "normalizedDecisionStreamSha256": "bf35bc662809c3f9972007e77e50f3bd49e5913a2380762ddffba3e1c2bb5ee2"
+        },
+        {
+          "run": "phase1-hatata-stalker-s12-r02-audit-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-hatata-stalker-s12-r02-audit-v1",
+          "moduleId": "687c9b38-2490-4449-940e-a05ad59af55d",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "2445a4a313376bd17220b8174816ee61bc1c6f5839a3c9800f0dd41d3a09ecae",
+            "tests/Aion.Bots/Scenarios/NaturalJourneyRuntime.cs": "4d91df3aace79fe2957f8a9bf4114adeb22a3148ec59340874260557de91cf41",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "e1ad35076ae7098fab7c4108d616915d190660e88a0c502803d26aafaf9079e6",
+            "tests/Aion.Bots/Navigation/NaturalPullPlanner.cs": "a4e88f42803e9e156dbe503c523e5d964ef283c7c7e672ea450820c36d8bd254",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "22fd02f4e6ce5e5122922445b2961920590d1b86c7c9d9a141fa660797738708",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed",
+            "scripts/sim/trace/make_mau_decisions.py": "ea800e8556abbc1c3e58357ce14b75304e7827e8c2c9ed4705432c5e88e87c8c"
+          },
+          "traceSha256": "2908f739bfb41564b8b711f974ca49091795ec5118b72a1f9aeeefaf1d991bdc",
+          "resetSha256": "893d63e1e6f5a7b539c91486894c3cfff79c15621e6d5e73459509d509d106f2",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1316,
+          "armedTimerCount": 2472,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 1,
+            "terminalStep": null,
+            "failureType": null,
+            "failureReason": null
+          },
+          "gameSeconds": 20.216,
+          "wallSeconds": 0.58,
+          "maxObservedAttackers": 1,
+          "potions": 0,
+          "routeFailures": 0,
+          "decisionRecords": 11,
+          "normalizedDecisionStreamSha256": "bf35bc662809c3f9972007e77e50f3bd49e5913a2380762ddffba3e1c2bb5ee2"
+        }
+      ]
+    },
+    {
+      "course": "RaeToHatata",
+      "encounter": "MovingPatrol",
+      "seed": 12,
+      "repeatCount": 2,
+      "sameResetAndOutcome": true,
+      "differences": [],
+      "runs": [
+        {
+          "run": "phase1-hatata-patrol-s12-r01-audit-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-hatata-patrol-s12-r01-audit-v1",
+          "moduleId": "687c9b38-2490-4449-940e-a05ad59af55d",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "2445a4a313376bd17220b8174816ee61bc1c6f5839a3c9800f0dd41d3a09ecae",
+            "tests/Aion.Bots/Scenarios/NaturalJourneyRuntime.cs": "4d91df3aace79fe2957f8a9bf4114adeb22a3148ec59340874260557de91cf41",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "e1ad35076ae7098fab7c4108d616915d190660e88a0c502803d26aafaf9079e6",
+            "tests/Aion.Bots/Navigation/NaturalPullPlanner.cs": "a4e88f42803e9e156dbe503c523e5d964ef283c7c7e672ea450820c36d8bd254",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "22fd02f4e6ce5e5122922445b2961920590d1b86c7c9d9a141fa660797738708",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed",
+            "scripts/sim/trace/make_mau_decisions.py": "ea800e8556abbc1c3e58357ce14b75304e7827e8c2c9ed4705432c5e88e87c8c"
+          },
+          "traceSha256": "cc89d40b1861c5603de34fb51ab45c69128c7491424073c31009a85845e316df",
+          "resetSha256": "afadd4ca43ff06cedfcc2c66229c0147ee1a0a6d14dc37083d7dde20dfb3dd3e",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1314,
+          "armedTimerCount": 2421,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 1,
+            "terminalStep": null,
+            "failureType": null,
+            "failureReason": null
+          },
+          "gameSeconds": 26.327,
+          "wallSeconds": 0.995,
+          "maxObservedAttackers": 1,
+          "potions": 1,
+          "routeFailures": 0,
+          "decisionRecords": 14,
+          "normalizedDecisionStreamSha256": "eff17ad2f9f11b8edec4542e453d5debf2ae141d7473f33d2d881e2f11cf8096"
+        },
+        {
+          "run": "phase1-hatata-patrol-s12-r02-audit-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-hatata-patrol-s12-r02-audit-v1",
+          "moduleId": "687c9b38-2490-4449-940e-a05ad59af55d",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "2445a4a313376bd17220b8174816ee61bc1c6f5839a3c9800f0dd41d3a09ecae",
+            "tests/Aion.Bots/Scenarios/NaturalJourneyRuntime.cs": "4d91df3aace79fe2957f8a9bf4114adeb22a3148ec59340874260557de91cf41",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "e1ad35076ae7098fab7c4108d616915d190660e88a0c502803d26aafaf9079e6",
+            "tests/Aion.Bots/Navigation/NaturalPullPlanner.cs": "a4e88f42803e9e156dbe503c523e5d964ef283c7c7e672ea450820c36d8bd254",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "22fd02f4e6ce5e5122922445b2961920590d1b86c7c9d9a141fa660797738708",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed",
+            "scripts/sim/trace/make_mau_decisions.py": "ea800e8556abbc1c3e58357ce14b75304e7827e8c2c9ed4705432c5e88e87c8c"
+          },
+          "traceSha256": "19957cd85d50ad7e85543aeb5fe641ee7da2b0dd8d65363b108222f35d3f3d2d",
+          "resetSha256": "afadd4ca43ff06cedfcc2c66229c0147ee1a0a6d14dc37083d7dde20dfb3dd3e",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1314,
+          "armedTimerCount": 2421,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 1,
+            "terminalStep": null,
+            "failureType": null,
+            "failureReason": null
+          },
+          "gameSeconds": 26.327,
+          "wallSeconds": 1.076,
+          "maxObservedAttackers": 1,
+          "potions": 1,
+          "routeFailures": 0,
+          "decisionRecords": 14,
+          "normalizedDecisionStreamSha256": "eff17ad2f9f11b8edec4542e453d5debf2ae141d7473f33d2d881e2f11cf8096"
+        }
+      ]
+    },
+    {
+      "course": "RaeToHatata",
+      "encounter": "TwoAttackerPull",
+      "seed": 12,
+      "repeatCount": 2,
+      "sameResetAndOutcome": true,
+      "differences": [],
+      "runs": [
+        {
+          "run": "phase1-hatata-twoadd-s12-r01-audit-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-hatata-twoadd-s12-r01-audit-v1",
+          "moduleId": "687c9b38-2490-4449-940e-a05ad59af55d",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "2445a4a313376bd17220b8174816ee61bc1c6f5839a3c9800f0dd41d3a09ecae",
+            "tests/Aion.Bots/Scenarios/NaturalJourneyRuntime.cs": "4d91df3aace79fe2957f8a9bf4114adeb22a3148ec59340874260557de91cf41",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "e1ad35076ae7098fab7c4108d616915d190660e88a0c502803d26aafaf9079e6",
+            "tests/Aion.Bots/Navigation/NaturalPullPlanner.cs": "a4e88f42803e9e156dbe503c523e5d964ef283c7c7e672ea450820c36d8bd254",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "22fd02f4e6ce5e5122922445b2961920590d1b86c7c9d9a141fa660797738708",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed",
+            "scripts/sim/trace/make_mau_decisions.py": "ea800e8556abbc1c3e58357ce14b75304e7827e8c2c9ed4705432c5e88e87c8c"
+          },
+          "traceSha256": "ced1c4827cacc9c679a5b70481792753980bd1f61a4a8d45488a90321e89c06a",
+          "resetSha256": "f4bcdea827a5033278c0e4d64bb83943f7d97f0c0002e10bfdf6eddb69fb2b1a",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1314,
+          "armedTimerCount": 2472,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 1,
+            "terminalStep": null,
+            "failureType": null,
+            "failureReason": null
+          },
+          "gameSeconds": 91.745,
+          "wallSeconds": 1.658,
+          "maxObservedAttackers": 2,
+          "potions": 1,
+          "routeFailures": 0,
+          "decisionRecords": 33,
+          "normalizedDecisionStreamSha256": "b7b48e79291fa6ee09eda62a8df2f9fe1b2452223daa7d33326b93571ae416f3"
+        },
+        {
+          "run": "phase1-hatata-twoadd-s12-r02-audit-v1",
+          "directory": "run/bot-learning-phase1/current/phase1-hatata-twoadd-s12-r02-audit-v1",
+          "moduleId": "687c9b38-2490-4449-940e-a05ad59af55d",
+          "codeAndDataSha256": {
+            "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": "2445a4a313376bd17220b8174816ee61bc1c6f5839a3c9800f0dd41d3a09ecae",
+            "tests/Aion.Bots/Scenarios/NaturalJourneyRuntime.cs": "4d91df3aace79fe2957f8a9bf4114adeb22a3148ec59340874260557de91cf41",
+            "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": "e1ad35076ae7098fab7c4108d616915d190660e88a0c502803d26aafaf9079e6",
+            "tests/Aion.Bots/Navigation/NaturalPullPlanner.cs": "a4e88f42803e9e156dbe503c523e5d964ef283c7c7e672ea450820c36d8bd254",
+            "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": "22fd02f4e6ce5e5122922445b2961920590d1b86c7c9d9a141fa660797738708",
+            "tests/Aion.Simulation.Tests/SimulationWorldFixture.cs": "488b21a57a198e2739891148a2c82d962793ee323dd0c4cf6f376128b993f75b",
+            "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+            "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+            "src/Aion.GameServer/Commons/Utils/Rnd.cs": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+            "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+            "docs/bot-learning-phase0-lock.json": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed",
+            "scripts/sim/trace/make_mau_decisions.py": "ea800e8556abbc1c3e58357ce14b75304e7827e8c2c9ed4705432c5e88e87c8c"
+          },
+          "traceSha256": "3a1afcbc8ecbeea8ab4d9e401ada94da7775502bf89cc38ee675421c9563f9f8",
+          "resetSha256": "f4bcdea827a5033278c0e4d64bb83943f7d97f0c0002e10bfdf6eddb69fb2b1a",
+          "rng": {
+            "seed": 12,
+            "drawCount": 0
+          },
+          "npcCount": 1314,
+          "armedTimerCount": 2472,
+          "outcome": {
+            "completed": true,
+            "deaths": 0,
+            "terminalDisengaged": true,
+            "questStepAndFlags": 1,
+            "terminalStep": null,
+            "failureType": null,
+            "failureReason": null
+          },
+          "gameSeconds": 91.745,
+          "wallSeconds": 1.566,
+          "maxObservedAttackers": 2,
+          "potions": 1,
+          "routeFailures": 0,
+          "decisionRecords": 33,
+          "normalizedDecisionStreamSha256": "b7b48e79291fa6ee09eda62a8df2f9fe1b2452223daa7d33326b93571ae416f3"
+        }
+      ]
+    }
+  ]
+}

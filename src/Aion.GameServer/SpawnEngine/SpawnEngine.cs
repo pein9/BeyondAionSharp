@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Aion.GameServer.Dataholders;
 using Aion.GameServer.Model.GameObjects;
@@ -12,6 +13,7 @@ using Aion.GameServer.Model.Templates.Spawns.Vortexspawns;
 using Aion.GameServer.Services;
 using Aion.GameServer.Services.Rift;
 using Aion.GameServer.World;
+using Aion.GameServer.Utils;
 
 namespace Aion.GameServer.SpawnEngine;
 
@@ -125,12 +127,23 @@ public class SpawnEngine
     /// <summary>Spawn all NPCs from templates</summary>
     public static void SpawnAll()
     {
-        DataManager.WORLD_MAPS_DATA.ForEachParalllel(worldMapTemplate =>
+        void SpawnMap(Aion.GameServer.Model.Templates.World.WorldMapTemplate worldMapTemplate)
         {
             WorldMap worldMap = Aion.GameServer.World.World.GetInstance().GetWorldMap(worldMapTemplate.GetMapId());
             if (!worldMap.IsInstanceType())
                 worldMap.ForEach(instance => SpawnInstance(instance, (byte)0, instance.GetOwnerId()));
-        });
+        }
+
+        // Java spawns maps in parallel. SIM uses one virtual timer queue and one seeded RNG;
+        // parallel map startup gives both a race-dependent order before a course even begins.
+        // Keep Java's parallel path for the server and serialize only the deterministic harness.
+        if (ThreadPoolManager.IsDeterministicMode)
+        {
+            foreach (var map in DataManager.WORLD_MAPS_DATA.OrderBy(map => map.GetMapId()))
+                SpawnMap(map);
+        }
+        else
+            DataManager.WORLD_MAPS_DATA.ForEachParalllel(SpawnMap);
         PrintWorldSpawnStats();
     }
 

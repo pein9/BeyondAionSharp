@@ -51,6 +51,35 @@ public sealed class NaturalPriestCombatPolicyTests
 	}
 
 	[Fact]
+	public void TunedEarlyPotionPreservesReadyInfernalStun()
+	{
+		NaturalCombatObservation state = Observe(9, 605, 669, 537, 1211,
+			[1839, 1814, 4013], 2.5f) with
+		{
+			NearbyAggressors = 1,
+			TargetAdjacent = true,
+			HasHotPotion = true,
+			HotPotionReady = true,
+		};
+		NaturalMauPolicyParameters tuned = NaturalMauPolicyParameters.Baseline with
+		{
+			HotPotionPercent = 91,
+		};
+		Assert.Equal((ushort)1814, NaturalPriestCombatPolicy.Decide(state, Now,
+			parameters: tuned).Skill?.Id);
+		Assert.Equal("hot-potion", NaturalPriestCombatPolicy.Decide(state with
+		{
+			Cooldowns = new Dictionary<int, DateTimeOffset> { [1549] = Now.AddMinutes(1) },
+			TargetHpPercent = 63,
+		}, Now, parameters: tuned).Action);
+		Assert.NotEqual("hot-potion", NaturalPriestCombatPolicy.Decide(state with
+		{
+			Cooldowns = new Dictionary<int, DateTimeOffset> { [1549] = Now.AddMinutes(1) },
+			TargetHpPercent = 52,
+		}, Now, parameters: tuned).Action);
+	}
+
+	[Fact]
 	public void ObservedLearningAndSharedRankCooldownGateCasting()
 	{
 		NaturalCombatObservation atSix = Observe(6, 100, 100, 100, 100, [1838, 4012, 1839, 4013], 12);

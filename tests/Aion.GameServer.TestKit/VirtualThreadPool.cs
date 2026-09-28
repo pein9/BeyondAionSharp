@@ -241,6 +241,19 @@ public sealed class VirtualThreadPool : ThreadPoolManager
 		}
 	}
 
+	/// <summary>Stable queue order and deadlines for a SIM course-boundary audit.</summary>
+	public IReadOnlyList<VirtualArmedTimer> GetArmedTimers()
+	{
+		lock (_queueGate)
+		{
+			PruneCancelledLocked();
+			return _entries.UnorderedItems.Select(item => item.Element)
+				.OrderBy(entry => entry.DueMillis).ThenBy(entry => entry.Sequence)
+				.Select(entry => new VirtualArmedTimer(entry.DueMillis, entry.Sequence,
+					entry.PeriodMillis, entry.Name)).ToArray();
+		}
+	}
+
 	private void Enqueue(Entry entry)
 	{
 		lock (_queueGate)
@@ -411,3 +424,5 @@ public sealed record VirtualTaskTiming(
 	string Name,
 	int Invocations,
 	TimeSpan TotalWallTime);
+
+public sealed record VirtualArmedTimer(long DueMillis, long Sequence, long? PeriodMillis, string Name);

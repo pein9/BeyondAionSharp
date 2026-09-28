@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "split": "development",
+  "stageASeeds": [12, 16, 20],
+  "courses": ["GeneratorToRae", "RaeToHatata"],
+  "finalists": ["r05", "r07"],
+  "selection": "Top two passing random-screen candidates by completion, deaths, extra attackers and route failures, game time, then potions; r05 alone avoided the Hatata-with-add death.",
+  "earlyStop": "Stop a finalist after a development seed with a new course failure or more deaths than the paired baseline; preserve that run.",
+  "stageBSeeds": [11, 13, 14, 15, 17, 18],
+  "evaluationSeedsSealed": true
+}

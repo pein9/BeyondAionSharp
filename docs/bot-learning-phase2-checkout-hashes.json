@@ -1,0 +1,278 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Verify original frozen byte receipts after Git line-ending conversion.",
+  "files": {
+    "docs/bot-learning-phase0-baseline.json": {
+      "originalSha256": "c8d62cffe2a91a3a7809dea537e94258646a4444d830249188dde4cb57f14e34",
+      "normalizedLfSha256": "9b18bbb7bc1fdd8efa22f8fd28d851860a60e5fc44158626e6f6734e04ba4300"
+    },
+    "docs/bot-learning-phase0-lock.json": {
+      "originalSha256": "7ab2f85167995a8e511e3d11ebc679a48a10c327bc985a7cc99130e4545ee5ed",
+      "normalizedLfSha256": "7566027b056bd810856ac02849fff9ca42997c00dad7babd8f98922e0fb8f588"
+    },
+    "docs/bot-learning-phase1-comparison.json": {
+      "originalSha256": "643e0832aaacfd67131de4f1d4633ca9abc262381e4b71fee1defd8026f7d18a",
+      "normalizedLfSha256": "8f8cf20c5ceaa58ccd15aedd4fcbd5b132da78645bf06327d3f76ded82993915"
+    },
+    "docs/bot-learning-phase1-encounters-comparison.json": {
+      "originalSha256": "9d14feaab312b21b7cb2ebf54a9cc4aff43eb94772dafa5e258131add8b74a74",
+      "normalizedLfSha256": "18c9f0556b2679258721e8005c1455b9107e63a2e962bf0c2686e6a440b303aa"
+    },
+    "docs/bot-learning-phase2-candidates/baseline.json": {
+      "originalSha256": "401e2e55c734ddac23dce3fb811e6c0e0a11900157acd43461def4f36bbc5cdd",
+      "normalizedLfSha256": "401e2e55c734ddac23dce3fb811e6c0e0a11900157acd43461def4f36bbc5cdd"
+    },
+    "docs/bot-learning-phase2-candidates/l01.json": {
+      "originalSha256": "7b609d661f91b5d40367e4a0ffd13111b0cc4fc31589280691b511f1c44fcfdf",
+      "normalizedLfSha256": "7b609d661f91b5d40367e4a0ffd13111b0cc4fc31589280691b511f1c44fcfdf"
+    },
+    "docs/bot-learning-phase2-candidates/l02.json": {
+      "originalSha256": "3291123e684d7683d366d00f5d578e575644d9db130a161872d6668f0e9d9892",
+      "normalizedLfSha256": "3291123e684d7683d366d00f5d578e575644d9db130a161872d6668f0e9d9892"
+    },
+    "docs/bot-learning-phase2-candidates/l03.json": {
+      "originalSha256": "06987290a40d7aa06ed0c3741aaabb42dee948dd33a22e8238b684cbbbbcd02f",
+      "normalizedLfSha256": "06987290a40d7aa06ed0c3741aaabb42dee948dd33a22e8238b684cbbbbcd02f"
+    },
+    "docs/bot-learning-phase2-candidates/l04.json": {
+      "originalSha256": "8f74c184990a774cf53f0e6de196d95d50ba7d14d75e6649dea6c1b11457a094",
+      "normalizedLfSha256": "8f74c184990a774cf53f0e6de196d95d50ba7d14d75e6649dea6c1b11457a094"
+    },
+    "docs/bot-learning-phase2-candidates/local-manifest.json": {
+      "originalSha256": "18d218d17b60d9a53ebd0a8e1b55ce2f9f3bf813e1724e4a4d8e2d193d600566",
+      "normalizedLfSha256": "18d218d17b60d9a53ebd0a8e1b55ce2f9f3bf813e1724e4a4d8e2d193d600566"
+    },
+    "docs/bot-learning-phase2-candidates/m01.json": {
+      "originalSha256": "6bdaa3b37b5d8fe6b2f405934b67ff9afffcd7977f53eae6f14ac1756549be15",
+      "normalizedLfSha256": "6bdaa3b37b5d8fe6b2f405934b67ff9afffcd7977f53eae6f14ac1756549be15"
+    },
+    "docs/bot-learning-phase2-candidates/manifest.json": {
+      "originalSha256": "15018d43bfb5dd058ed0ce1acb5b713c9f97d5b2c127dbac9054d9ac258398bd",
+      "normalizedLfSha256": "15018d43bfb5dd058ed0ce1acb5b713c9f97d5b2c127dbac9054d9ac258398bd"
+    },
+    "docs/bot-learning-phase2-candidates/n01.json": {
+      "originalSha256": "20b1589ec0f766633fd749f5dcf9d577b7090cb395391523820a70768a71c2d8",
+      "normalizedLfSha256": "20b1589ec0f766633fd749f5dcf9d577b7090cb395391523820a70768a71c2d8"
+    },
+    "docs/bot-learning-phase2-candidates/n02.json": {
+      "originalSha256": "b71c0c9aef834e36826c44dc24bceec34cca076dfd61844cfc7fc31f497617e7",
+      "normalizedLfSha256": "b71c0c9aef834e36826c44dc24bceec34cca076dfd61844cfc7fc31f497617e7"
+    },
+    "docs/bot-learning-phase2-candidates/n03.json": {
+      "originalSha256": "2ffb4aa0b856c7e32f57f855be1a62fc4d1c63d506a8b9bed32756424a2be115",
+      "normalizedLfSha256": "2ffb4aa0b856c7e32f57f855be1a62fc4d1c63d506a8b9bed32756424a2be115"
+    },
+    "docs/bot-learning-phase2-candidates/n04.json": {
+      "originalSha256": "654d3e8c78fac6bd24df2c75f37265a40df78c6c4c77b2f7139ca93c75aa095c",
+      "normalizedLfSha256": "654d3e8c78fac6bd24df2c75f37265a40df78c6c4c77b2f7139ca93c75aa095c"
+    },
+    "docs/bot-learning-phase2-candidates/r01.json": {
+      "originalSha256": "06b2202bf8011dc947320a3989ea21bd80a32223de2e0c4d6e1f0b64f9b46431",
+      "normalizedLfSha256": "06b2202bf8011dc947320a3989ea21bd80a32223de2e0c4d6e1f0b64f9b46431"
+    },
+    "docs/bot-learning-phase2-candidates/r02.json": {
+      "originalSha256": "5fb3f7e099a0c6e26c5fe06f98cee8b0bd74b61ce24d572df3a4b558afd3862d",
+      "normalizedLfSha256": "5fb3f7e099a0c6e26c5fe06f98cee8b0bd74b61ce24d572df3a4b558afd3862d"
+    },
+    "docs/bot-learning-phase2-candidates/r03.json": {
+      "originalSha256": "5c55a5d4a5a1697ca2dcf4fe4e1c378f3ba10258ea16da3072fbd15ebeec2047",
+      "normalizedLfSha256": "5c55a5d4a5a1697ca2dcf4fe4e1c378f3ba10258ea16da3072fbd15ebeec2047"
+    },
+    "docs/bot-learning-phase2-candidates/r04.json": {
+      "originalSha256": "18a4fbce9e3b59c43d2a5f46355f5563a92f0586e8b6f361a4dce948e8b71b36",
+      "normalizedLfSha256": "18a4fbce9e3b59c43d2a5f46355f5563a92f0586e8b6f361a4dce948e8b71b36"
+    },
+    "docs/bot-learning-phase2-candidates/r05.json": {
+      "originalSha256": "04b6061d83fc282c9f16c99fe7e562f489a94928529e0b6974183edb3105763b",
+      "normalizedLfSha256": "04b6061d83fc282c9f16c99fe7e562f489a94928529e0b6974183edb3105763b"
+    },
+    "docs/bot-learning-phase2-candidates/r06.json": {
+      "originalSha256": "b18854ec44104ca6a21a82bd6cb5fa0b3776ace625d7abc9b5ec76c1502b1484",
+      "normalizedLfSha256": "b18854ec44104ca6a21a82bd6cb5fa0b3776ace625d7abc9b5ec76c1502b1484"
+    },
+    "docs/bot-learning-phase2-candidates/r07.json": {
+      "originalSha256": "5699c7e1a357fcf22abbae78a4d393264b09cf188a1cfe3140da2085a7f0745e",
+      "normalizedLfSha256": "5699c7e1a357fcf22abbae78a4d393264b09cf188a1cfe3140da2085a7f0745e"
+    },
+    "docs/bot-learning-phase2-candidates/r08.json": {
+      "originalSha256": "765ab6c327357b886a84b5a3f15f6eec66ed821317f5156d1d70845caa82c8ec",
+      "normalizedLfSha256": "765ab6c327357b886a84b5a3f15f6eec66ed821317f5156d1d70845caa82c8ec"
+    },
+    "docs/bot-learning-phase2-candidates/r09.json": {
+      "originalSha256": "14a79ee0450426dc6a6c30c5cbce4df8bfc3bbb17172629bd17b6e27a1a93b1b",
+      "normalizedLfSha256": "14a79ee0450426dc6a6c30c5cbce4df8bfc3bbb17172629bd17b6e27a1a93b1b"
+    },
+    "docs/bot-learning-phase2-candidates/r10.json": {
+      "originalSha256": "ec9cf37da53ee92a092ff46f7ec8d5f57cade222cbe9040c27a235258071a99d",
+      "normalizedLfSha256": "ec9cf37da53ee92a092ff46f7ec8d5f57cade222cbe9040c27a235258071a99d"
+    },
+    "docs/bot-learning-phase2-candidates/r11.json": {
+      "originalSha256": "1a8e04f0076bccaf86077a7f4eb2849ec99c169e901c5e89ab744ffc95b39a7b",
+      "normalizedLfSha256": "1a8e04f0076bccaf86077a7f4eb2849ec99c169e901c5e89ab744ffc95b39a7b"
+    },
+    "docs/bot-learning-phase2-candidates/r12.json": {
+      "originalSha256": "095cd6ee174f8150146cb2e4fdd8f432fac0f711b1bb514cb39f1893ec74dc15",
+      "normalizedLfSha256": "095cd6ee174f8150146cb2e4fdd8f432fac0f711b1bb514cb39f1893ec74dc15"
+    },
+    "docs/bot-learning-phase2-candidates/s01.json": {
+      "originalSha256": "e5117d3ed08809bef5ac3b2409d84c02eaead032c678a57028c9faae5775be38",
+      "normalizedLfSha256": "e5117d3ed08809bef5ac3b2409d84c02eaead032c678a57028c9faae5775be38"
+    },
+    "docs/bot-learning-phase2-candidates/s02.json": {
+      "originalSha256": "287d3b7073283908eb97d7ce433bd7af367e831750b1a7f0c0c6c800ec2f76b6",
+      "normalizedLfSha256": "287d3b7073283908eb97d7ce433bd7af367e831750b1a7f0c0c6c800ec2f76b6"
+    },
+    "docs/bot-learning-phase2-candidates/s03.json": {
+      "originalSha256": "a1e595267d685ef99b47849f5b0a5241ca83358bf0da4aa7e3dbdf1ac902c681",
+      "normalizedLfSha256": "a1e595267d685ef99b47849f5b0a5241ca83358bf0da4aa7e3dbdf1ac902c681"
+    },
+    "docs/bot-learning-phase2-candidates/s04.json": {
+      "originalSha256": "e43054051e9c053b07e50f5b8f8c4449b1c06ed916352a67348d9f972ad79ba5",
+      "normalizedLfSha256": "e43054051e9c053b07e50f5b8f8c4449b1c06ed916352a67348d9f972ad79ba5"
+    },
+    "docs/bot-learning-phase2-candidates/s05.json": {
+      "originalSha256": "a4397c0f7e33b574eb2f9b4b6739548f12817e747a54c9db753478f9e2941bd7",
+      "normalizedLfSha256": "a4397c0f7e33b574eb2f9b4b6739548f12817e747a54c9db753478f9e2941bd7"
+    },
+    "docs/bot-learning-phase2-candidates/s06.json": {
+      "originalSha256": "af18912aa9c48b42cb4a6d3e2c00e9e208da997e885959864fe1b2ee27ea0b71",
+      "normalizedLfSha256": "af18912aa9c48b42cb4a6d3e2c00e9e208da997e885959864fe1b2ee27ea0b71"
+    },
+    "docs/bot-learning-phase2-development-a.json": {
+      "originalSha256": "fa50a1a020df2029141214484008aa71b39998c3d80eea9d6914088db281c35e",
+      "normalizedLfSha256": "a5917704238b8ff6cc9ef06bac790f4ab137b409e6fe8782d97a3143f5301b18"
+    },
+    "docs/bot-learning-phase2-development-b.json": {
+      "originalSha256": "595253997e6238b66f059001b506657a04df409450fa2cbc424bf3a7f6f359ab",
+      "normalizedLfSha256": "e15cc6da7dc1468338d6f0b95ba3a97a32634ac83be275c4bf09c7b551e22d59"
+    },
+    "docs/bot-learning-phase2-development-c.json": {
+      "originalSha256": "009391089a03b1fb766afdc1dae0268c2607fcd80c63c056df2dee39d289833c",
+      "normalizedLfSha256": "57d227af486eb83d1bd01ee7f1dd53a5d8e032b250370b89bd71cc4bc37e2625"
+    },
+    "docs/bot-learning-phase2-development-plan-b.json": {
+      "originalSha256": "308be1857a01f03b1c1c6e3e8e115d1e6d2646e1f7491cd3cfa2d904075984c7",
+      "normalizedLfSha256": "308be1857a01f03b1c1c6e3e8e115d1e6d2646e1f7491cd3cfa2d904075984c7"
+    },
+    "docs/bot-learning-phase2-development-plan.json": {
+      "originalSha256": "5f13d2b753f2533de165fc7fdf519cfa3533e01b23156ded7a7e58025d596eea",
+      "normalizedLfSha256": "5f13d2b753f2533de165fc7fdf519cfa3533e01b23156ded7a7e58025d596eea"
+    },
+    "docs/bot-learning-phase2-duration91-development.json": {
+      "originalSha256": "c4282f0f48fa7e9a9e6b905139104e4d22007d91b4fb05bf0cf86c3d998b8260",
+      "normalizedLfSha256": "494129f2f2ed599c8949e82961778c766f69366ac3946b75b41985b905b95d8d"
+    },
+    "docs/bot-learning-phase2-evaluation.json": {
+      "originalSha256": "6d47aa777928fe51ca490025324af99c0865833d56bec66b89f0b9a3d34eb029",
+      "normalizedLfSha256": "e384ad911fca2403d2106b2fd1271aa107be5314697fa20be91879148d024a1b"
+    },
+    "docs/bot-learning-phase2-finalist-development.json": {
+      "originalSha256": "e2a4dc6a6e150f7ca79e4c14141f98a984994a78cea08f3f2e3dc42c7ee51329",
+      "normalizedLfSha256": "276c049a1832678ae32b2544b53d83678eee491c9930cfc641d8395e2b4c6a79"
+    },
+    "docs/bot-learning-phase2-frozen.json": {
+      "originalSha256": "acfee1e8321a69de51ef2853844fd1ecb4d380cde906f26669f6a6f4ff901d58",
+      "normalizedLfSha256": "c9514d3742cb0c647ce32bc4b78900e67275b53a4167cfd42913356b4b852b80"
+    },
+    "docs/bot-learning-phase2-hatata-single-factor.json": {
+      "originalSha256": "bea68545f9214f34bfb3df80b607403e1721a4b1a2bab724cee200399c0013da",
+      "normalizedLfSha256": "7cc5be090915a23679af4a76cdb554dfc171596db19e8e04e79cf7a37f5aaa3d"
+    },
+    "docs/bot-learning-phase2-local-screen.json": {
+      "originalSha256": "f0ff9ebead07b0496983e2405e2c86bab8c35472ab014638c80493e25a835b60",
+      "normalizedLfSha256": "3cdeedfc31014e02af73e40782f379685fe9b20282339f2cb22f9d961c12b072"
+    },
+    "docs/bot-learning-phase2-midpoint-development.json": {
+      "originalSha256": "12df81456e50ba727aeb66fd9fff5065e098fef2f6f0ad002484e106a4f33451",
+      "normalizedLfSha256": "ce6051269e3fd37b137ea7fabc02b93b8b3222565ee0975ecc420c87131bdbd3"
+    },
+    "docs/bot-learning-phase2-midpoint-plan.json": {
+      "originalSha256": "deddeaf73a8b9b68a5691067819e5c37edd5aa067131fe42f892afbcbbbc9a4c",
+      "normalizedLfSha256": "deddeaf73a8b9b68a5691067819e5c37edd5aa067131fe42f892afbcbbbc9a4c"
+    },
+    "docs/bot-learning-phase2-narrow-screen.json": {
+      "originalSha256": "f7cae589071a2818ad6b79295c5ce6077008c77a213bd3305a7f41b97e24ab7e",
+      "normalizedLfSha256": "e5798c0c87920bfd14fc1835a018e04b4ff8ba95e85e5faf6fc4bdebb6fb9f26"
+    },
+    "docs/bot-learning-phase2-regression.json": {
+      "originalSha256": "dbf50afa772dd958325945162713ffe0c8a80eebba9c94b48c3c9c974b6d9141",
+      "normalizedLfSha256": "4f5713f0d94ec3080a1edfaa40a31e908084a7e5e2a82de42ec4ba89a829ea69"
+    },
+    "docs/bot-learning-phase2-screen.json": {
+      "originalSha256": "e0d9d92ed3e7abc92db3780e54138c7ee37fabdaa8fe0a559b4326468451736b",
+      "normalizedLfSha256": "62c39129bb855d6755b8675ba59129a41d9beedc4a7d20f496e47b5793989154"
+    },
+    "docs/bot-learning-phase2-seed118-diagnosis.json": {
+      "originalSha256": "2986e34b5179885b35489cc2190c74e13c64b019c8d66fec2b9bfef26f341f08",
+      "normalizedLfSha256": "b003d4e7c07285f9549366d2fbd549d6d1075fb886744263fa2714941f81abe3"
+    },
+    "docs/bot-learning-phase2-single-factor.json": {
+      "originalSha256": "63b5ce89df966da0c09d79f7debd92002767b9c84849030b21a1816fd585c243",
+      "normalizedLfSha256": "b3d4acb22fc9455cc9ca4258d01a5f3b8cacf5d21462e2e32ae38c7cd8348fe0"
+    },
+    "docs/bot-learning-phase2-threat91-development.json": {
+      "originalSha256": "eb5e366c8b8ef23919fa26a366b1948b74e04e86ab475cbfb6ee0bbd08879914",
+      "normalizedLfSha256": "a1a7908c08accd283d58a1a482d167518a6619b109df6d0d32b6dd9463415929"
+    },
+    "docs/bot-learning-phase2-traces/manifest.json": {
+      "originalSha256": "58f0a3d64713bfd46fa136f4daef24110f84899dc6d712ed96b8367fa738f0fc",
+      "normalizedLfSha256": "c25f75b99c8e7e5b161bdb24e9974fab45cc9cf74be3b0fb4515359f0684a08f"
+    },
+    "game-server/data/static_data/skills/skill_templates.xml": {
+      "originalSha256": "11de07111bb1b84daadeb5292153a026ed2da7b4a3418fe475c3129cea2cc9d7",
+      "normalizedLfSha256": "a013eec23b204abbe7d2b339595b90d1c7bbe8f089c3b718b03ae41558b16274"
+    },
+    "game-server/data/static_data/spawns/Npcs/220010000_Ishalgen.xml": {
+      "originalSha256": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528",
+      "normalizedLfSha256": "416eecc683868e2e9c0470dbae84cfcae5cc0901e6d1ffc12ac88f6acfa40528"
+    },
+    "scripts/sim/run-mau-phase2.ps1": {
+      "originalSha256": "48c4329ade461c28e1c0fb1922fa88b7cad174a42b8c269ccb6c22e5303ab63b",
+      "normalizedLfSha256": "48c4329ade461c28e1c0fb1922fa88b7cad174a42b8c269ccb6c22e5303ab63b"
+    },
+    "scripts/sim/trace/make_mau_decisions.py": {
+      "originalSha256": "ea800e8556abbc1c3e58357ce14b75304e7827e8c2c9ed4705432c5e88e87c8c",
+      "normalizedLfSha256": "ea800e8556abbc1c3e58357ce14b75304e7827e8c2c9ed4705432c5e88e87c8c"
+    },
+    "scripts/sim/trace/summarize_mau_course.py": {
+      "originalSha256": "f55458e6a9a86d8eebaaa0ce4fefe0b74ce8f0c9d5a6e762287389c4465b8fa5",
+      "normalizedLfSha256": "f55458e6a9a86d8eebaaa0ce4fefe0b74ce8f0c9d5a6e762287389c4465b8fa5"
+    },
+    "src/Aion.GameServer/Commons/Utils/Rnd.cs": {
+      "originalSha256": "b37a96a0be255efcf1b30f9e7821851fd24c7e215b5765753367fa556ea2ae72",
+      "normalizedLfSha256": "8d5ff06314e2441e9d9cedd08170b750ca910694d17da72c7e334ee6f402687c"
+    },
+    "src/Aion.GameServer/SpawnEngine/SpawnEngine.cs": {
+      "originalSha256": "9cb0c100f786380896b4f50e9726d8d8e8beac28d78de92be60606359ceafe32",
+      "normalizedLfSha256": "3656e4cc52372f4b78dba0ce62d9b4e30ef2c829d3503261ac5a54b6bc58789e"
+    },
+    "tests/Aion.Bots/Navigation/NaturalPullPlanner.cs": {
+      "originalSha256": "5e9fc59585937b5a87701866e267b6c7b34354cac7632913c0bea52a5d20b4f7",
+      "normalizedLfSha256": "5e9fc59585937b5a87701866e267b6c7b34354cac7632913c0bea52a5d20b4f7"
+    },
+    "tests/Aion.Bots/Scenarios/NaturalIshalgenJourney.cs": {
+      "originalSha256": "8dc3b41638e884d7e1bd1889aef55ff9130552a6889ebbde16025239836d328d",
+      "normalizedLfSha256": "27cee7c55311b7e13da6dd606b66f1fbdc2ac87fc06e2e5683cde8edeffa5c5f"
+    },
+    "tests/Aion.Bots/Scenarios/NaturalJourneyRuntime.cs": {
+      "originalSha256": "c661613474c9a241cd94b1768ad67825674f5cb308094229eeb848f9cd0272e0",
+      "normalizedLfSha256": "c661613474c9a241cd94b1768ad67825674f5cb308094229eeb848f9cd0272e0"
+    },
+    "tests/Aion.Bots/Scenarios/NaturalMauPolicyParameters.cs": {
+      "originalSha256": "2cd1ec5ccd4b023e159ef347768aceb0b676475258f20fdb0dac39244470c35b",
+      "normalizedLfSha256": "2cd1ec5ccd4b023e159ef347768aceb0b676475258f20fdb0dac39244470c35b"
+    },
+    "tests/Aion.Bots/Scenarios/NaturalPriestCombatPolicy.cs": {
+      "originalSha256": "c837695f98d9934a834513f246e1d3c30c444c678a98e405ebb3326fcc455359",
+      "normalizedLfSha256": "c837695f98d9934a834513f246e1d3c30c444c678a98e405ebb3326fcc455359"
+    },
+    "tests/Aion.GameServer.TestKit/VirtualThreadPool.cs": {
+      "originalSha256": "5ad3dc9ac180662b363ed0e814d4874ffdc6bd91a2a947a373afe20dd2f74f4e",
+      "normalizedLfSha256": "44f1968a879d051c4e6e6b620b322b09984ff0efca000a78b8b503b292423588"
+    },
+    "tests/Aion.Simulation.Tests/SimulationMauCourseTests.cs": {
+      "originalSha256": "f3c464667116312d5b3ef89f25d7645b464cb12d67991084e35dc9c817e2c102",
+      "normalizedLfSha256": "f3c464667116312d5b3ef89f25d7645b464cb12d67991084e35dc9c817e2c102"
+    }
+  }
+}

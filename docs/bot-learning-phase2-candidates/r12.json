@@ -1,0 +1,10 @@
+{
+  "PullDistanceMeters": 21.0,
+  "PatrolWaitCycles": 2,
+  "HealSinglePercent": 50,
+  "HealMultiplePercent": 80,
+  "HotPotionPercent": 90,
+  "ManaReserveExtra": 24,
+  "FinishTargetHpPercent": 10,
+  "PreferWoundedWhenTwoAttackers": false
+}
