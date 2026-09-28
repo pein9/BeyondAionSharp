@@ -7,7 +7,8 @@ namespace Aion.Bots.Scenarios;
 
 /// <summary>Static, shipped-item knowledge used with packet-observed inventory; no server-state oracle.</summary>
 public sealed record NaturalItem(int Id, string Group, int RequiredLevel, int MaximumLevel, string Race,
-	int Price, int Quality, int MinimumDamage, int MaximumDamage, int MagicBoost, int Mask)
+	int Price, int Quality, int MinimumDamage, int MaximumDamage, int MagicBoost, int Mask,
+	int ClericLevel = 0, int ClericMaximumLevel = 0, int ItemLevel = 0)
 {
 	public bool Sellable => (Mask & 4) != 0;
 	public bool IsPriestGear => Group is "MACE" or "RB_TORSO" or "RB_GLOVE" or "RB_SHOULDER" or "RB_PANTS" or "RB_SHOES"
@@ -28,6 +29,27 @@ public sealed record NaturalItem(int Id, string Group, int RequiredLevel, int Ma
 		&& (MaximumLevel == 0 || level <= MaximumLevel) && Race is ("PC_ALL" or "ASMODIANS");
 	public long GearScore => (long)RequiredLevel * 1_000_000 + (long)Quality * 100_000
 		+ (long)MagicBoost * 100 + MaximumDamage * 10L + MinimumDamage;
+
+	// NA-09: after Ascension the Cleric also wears chain, shields and staves (masteries 49/50/89), and its
+	// accessories are gear the journey keeps. The Priest rules above stay exactly as the Ishalgen leg used them.
+	public bool IsAccessory => Group is "RING" or "EARRING" or "NECKLACE" or "BELT";
+	public bool IsClericGear => IsPriestGear || IsAccessory || Group is "STAFF" or "SHIELD" or "HEAD"
+		or "CH_TORSO" or "CH_GLOVE" or "CH_SHOULDER" or "CH_PANTS" or "CH_SHOES" or "CH_HEADS";
+	public string? ClericGearSlot => Group switch
+	{
+		"MACE" or "STAFF" => "WEAPON",
+		"SHIELD" => "SUB",
+		"HEAD" or "CL_HEADS" or "LT_HEADS" or "CH_HEADS" => "HEAD",
+		_ when IsAccessory => Group,
+		_ when IsClericGear => Group[(Group.IndexOf('_') + 1)..],
+		_ => null,
+	};
+	public bool UsableByClericAt(int level) => IsClericGear && Quality > 0 && ClericLevel is > 0 && ClericLevel <= level
+		&& (ClericMaximumLevel == 0 || level <= ClericMaximumLevel) && Race is ("PC_ALL" or "ASMODIANS");
+	/// <summary>A Cleric casts: a weapon ranks by magic boost, then damage; armor by item level, then quality.</summary>
+	public long ClericGearScore => ClericGearSlot == "WEAPON"
+		? (long)MagicBoost * 1_000_000 + MaximumDamage * 1_000L + MinimumDamage
+		: (long)ItemLevel * 1_000_000 + (long)Quality * 100_000 + Price;
 }
 
 public sealed record NaturalInventoryDecision(int ObjectId, int ItemId, string Action, string Reason, long Count);
@@ -43,16 +65,23 @@ public sealed record NaturalInventoryPlan(int Capacity, int Occupied, IReadOnlyL
 public sealed class NaturalIshalgenInventoryPolicy
 {
 	private static readonly HashSet<int> Supplies = [162000002, 162000007, 162000052]; // starter HP/MP and bought timed healing
+	/// <summary>Priest-born class-reward list for Q2009's ceremony (quest_data.xml priest_selectable_reward).</summary>
+	private const string CeremonyList = "priest_selectable_reward";
 	private readonly IReadOnlyDictionary<int, NaturalItem> items;
 	private readonly HashSet<int> questItems;
 	private readonly IReadOnlyDictionary<int, int[]> rewards;
 
+	private readonly HashSet<int> clericSupplies;
+	private readonly (int QuestId, int ItemId) ceremony;
+
 	private NaturalIshalgenInventoryPolicy(IReadOnlyDictionary<int, NaturalItem> items, HashSet<int> questItems,
-		IReadOnlyDictionary<int, int[]> rewards)
+		IReadOnlyDictionary<int, int[]> rewards, HashSet<int> clericSupplies, (int, int) ceremony)
 	{
 		this.items = items;
 		this.questItems = questItems;
 		this.rewards = rewards;
+		this.clericSupplies = clericSupplies;
+		this.ceremony = ceremony;
 	}
 
 	public static NaturalIshalgenInventoryPolicy Load(string root, IEnumerable<int> observedItemIds)
@@ -72,7 +101,21 @@ public sealed class NaturalIshalgenInventoryPolicy
 			rewards[id] = quest.Elements("rewards").FirstOrDefault()?.Elements("selectable_reward_item")
 				.Select(element => (int)element.Attribute("item_id")!).ToArray() ?? [];
 		}
-		var needed = observedItemIds.Concat(rewards.Values.SelectMany(value => value)).ToHashSet();
+		// NA-09: the Ascension bridge (docs/natural-ascension-altgard.md): its protected items and the ceremony
+		// weapon the operator chose (OD-5), from the reviewed contract.
+		var bridge = NaturalAscensionContract.Load(Path.Combine(root, "parity-artifacts/e2e/natural-ascension-contract.json"));
+		XElement ceremonyQuest = quests.Elements("quest").Single(q => (int)q.Attribute("id")! == bridge.CeremonyReward.QuestId);
+		rewards[bridge.CeremonyReward.QuestId] = ceremonyQuest.Elements(CeremonyList).Select(e => (int)e.Attribute("item_id")!).ToArray();
+		foreach (int id in new[] { 2008, 2904, 24010 }) rewards[id] = [];
+		// The bridge quests' own item references (Destiny Cards, the dispatch work item) are quest items; the Priest
+		// never carries them, so its rules are unaffected.
+		foreach (XElement quest in quests.Elements("quest").Where(q => bridge.Quests.Any(b => b.Id == (int)q.Attribute("id")!)))
+			foreach (XAttribute item in quest.DescendantsAndSelf().Where(node => !node.AncestorsAndSelf("rewards").Any() &&
+				!node.Name.LocalName.EndsWith("selectable_reward", StringComparison.Ordinal)).Attributes("item_id"))
+				questItems.Add((int)item);
+		questItems.UnionWith([182203009, 182203010, 182203011]); // handed out by Q2008's handler, not its data
+		var clericSupplies = bridge.ProtectedItemIds.Concat(Supplies).ToHashSet();
+		var needed = observedItemIds.Concat(rewards.Values.SelectMany(value => value)).Concat(clericSupplies).ToHashSet();
 		var catalog = new Dictionary<int, NaturalItem>();
 		using XmlReader reader = XmlReader.Create(Path.Combine(root, "game-server/data/static_data/items/item_templates.xml"),
 			new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit });
@@ -87,25 +130,32 @@ public sealed class NaturalIshalgenInventoryPolicy
 			string[] maximums = ((string?)element.Attribute("restrict_max"))?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? [];
 			int priestLevel = levels.Length > 9 ? int.Parse(levels[9], CultureInfo.InvariantCulture) : 0;
 			int priestMaximum = maximums.Length > 9 ? int.Parse(maximums[9], CultureInfo.InvariantCulture) : 0;
+			int clericLevel = levels.Length > 10 ? int.Parse(levels[10], CultureInfo.InvariantCulture) : 0;
+			int clericMaximum = maximums.Length > 10 ? int.Parse(maximums[10], CultureInfo.InvariantCulture) : 0;
 			XElement? weapon = element.Element("weapon_stats");
 			catalog[id] = new NaturalItem(id, (string?)element.Attribute("item_group") ?? "NONE", priestLevel,
 				priestMaximum, (string?)element.Attribute("race") ?? "PC_ALL", (int?)element.Attribute("price") ?? 0,
 				Quality((string?)element.Attribute("quality")), (int?)weapon?.Attribute("min_damage") ?? 0,
 				(int?)weapon?.Attribute("max_damage") ?? 0, (int?)weapon?.Attribute("boost_magical_skill") ?? 0,
-				(int?)element.Attribute("mask") ?? 0);
+				(int?)element.Attribute("mask") ?? 0, clericLevel, clericMaximum, (int?)element.Attribute("level") ?? 0);
 			if (catalog.Count == needed.Count) break;
 		}
-		return new(catalog, questItems, rewards);
+		return new(catalog, questItems, rewards, clericSupplies, (bridge.CeremonyReward.QuestId, bridge.CeremonyReward.ItemId));
 	}
 
 	public NaturalInventoryPlan Decide(BotWorldModel world) => Decide(world.Inventory.Values, world.Level,
-		world.CubeExpansion?.Capacity ?? 27);
+		world.CubeExpansion?.Capacity ?? 27, IsCleric(world));
+
+	/// <summary>The client-observed class of the player: Cleric after Ascension (D25), else the Priest rules.</summary>
+	public static bool IsCleric(BotWorldModel world) => world.SelfObjectId is int self &&
+		world.Objects.TryGetValue(self, out BotKnownObject? known) && known.PlayerClass == (byte)Aion.GameServer.Model.PlayerClass.CLERIC;
 
 	public NaturalItem Item(int itemId) => items.TryGetValue(itemId, out NaturalItem? item) ? item
 		: throw new InvalidDataException($"Shipped item template {itemId} was not found.");
 
-	public NaturalInventoryPlan Decide(IEnumerable<BotInventoryItem> inventory, int level, int capacity)
+	public NaturalInventoryPlan Decide(IEnumerable<BotInventoryItem> inventory, int level, int capacity, bool cleric = false)
 	{
+		if (cleric) return DecideCleric(inventory, level, capacity);
 		BotInventoryItem[] observed = inventory.Where(item => item.ItemId != BotWorldModel.KinahItemId).ToArray();
 		int occupied = observed.Count(item => item.Details.EquippedSlot.GetValueOrDefault() == 0);
 		var best = observed.Where(item => items.TryGetValue(item.ItemId, out var template) && template.UsableAt(level))
@@ -130,8 +180,40 @@ public sealed class NaturalIshalgenInventoryPolicy
 		return new(capacity, occupied, decisions);
 	}
 
+	/// <summary>NA-09: the Cleric keeps every usable armor/weapon upgrade and all accessories, and protects the
+	/// bridge's supplies (Lesser Life Elixirs, mana elixirs, powder, Zeller jelly, Tea of Repose, Destiny Cards).</summary>
+	private NaturalInventoryPlan DecideCleric(IEnumerable<BotInventoryItem> inventory, int level, int capacity)
+	{
+		BotInventoryItem[] observed = inventory.Where(item => item.ItemId != BotWorldModel.KinahItemId).ToArray();
+		int occupied = observed.Count(item => item.Details.EquippedSlot.GetValueOrDefault() == 0);
+		var best = observed.Where(item => items.TryGetValue(item.ItemId, out var template) && template.UsableByClericAt(level) && !template.IsAccessory)
+			.GroupBy(item => items[item.ItemId].ClericGearSlot)
+			.ToDictionary(group => group.Key!, group => group.OrderByDescending(item => items[item.ItemId].ClericGearScore)
+				.ThenBy(item => item.ObjectId).First().ObjectId);
+		var decisions = new List<NaturalInventoryDecision>();
+		foreach (BotInventoryItem item in observed.OrderBy(item => item.ObjectId))
+		{
+			string action, reason;
+			if (!items.TryGetValue(item.ItemId, out NaturalItem? template)) (action, reason) = ("hold", "unknown-static-item");
+			else if (questItems.Contains(item.ItemId) || template.Group is "QUEST" or "KEY") (action, reason) = ("hold", "quest-protected");
+			else if (item.Details.EquippedSlot.GetValueOrDefault() != 0) (action, reason) = ("hold", "currently-equipped");
+			else if (template.Group == "CL_MULTISLOT") (action, reason) = ("hold", "multi-slot-needs-separate-equip-review");
+			else if (template.IsAccessory) (action, reason) = ("hold", "accessory-kept");
+			else if (best.TryGetValue(template.ClericGearSlot ?? "", out int winner) && winner == item.ObjectId)
+				(action, reason) = ("equip", "best-usable-cleric-upgrade");
+			else if (clericSupplies.Contains(item.ItemId)) (action, reason) = ("hold", "combat-supply");
+			else if ((item.ItemMask & 4) == 0 || !template.Sellable) (action, reason) = ("hold", "not-sellable");
+			else (action, reason) = ("sell", template.IsClericGear ? "surplus-gear" : "unneeded-or-unusable");
+			decisions.Add(new(item.ObjectId, item.ItemId, action, reason, item.Count));
+		}
+		return new(capacity, occupied, decisions);
+	}
+
 	public int ChooseReward(int questId, int level, IEnumerable<BotInventoryItem> inventory)
 	{
+		// The ceremony weapon is the operator's choice (OD-5: the Karmic Staff), not a score.
+		if (questId == ceremony.QuestId && rewards.TryGetValue(questId, out int[]? list))
+			return Array.IndexOf(list, ceremony.ItemId);
 		if (!rewards.TryGetValue(questId, out int[]? choices) || choices.Length == 0) return -1;
 		var owned = inventory.Where(item => items.TryGetValue(item.ItemId, out var template) && template.UsableAt(level))
 			.GroupBy(item => items[item.ItemId].GearSlot)

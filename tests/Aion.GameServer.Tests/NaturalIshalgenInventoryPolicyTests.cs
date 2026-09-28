@@ -15,6 +15,75 @@ public sealed class NaturalIshalgenInventoryPolicyTests
 			162000002, 162000007, 160000001, 164002116]);
 	});
 
+	// NA-09: what a new Cleric carries into Altgard: Aldelle Mace, Karmic Staff, the Ishalgen accessories, a Destiny Card,
+	// the bridge's supplies, and ordinary loot.
+	private static readonly Lazy<NaturalIshalgenInventoryPolicy> Bridge = new(() =>
+	{
+		string root = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../.."));
+		return NaturalIshalgenInventoryPolicy.Load(root,
+			[100100025, 101500498, 122000869, 121000749, 123000864, 182203009, 162000053, 169300003, 160002273,
+			162001057, 169300002]);
+	});
+
+	[Fact]
+	public void TheCeremonyRewardIsTheOperatorsStaffAndTheBridgeTurnInsHaveNoChoice()
+	{
+		// quest_data.xml Q2009 priest_selectable_reward: Karmic Warhammer, then Karmic Staff (OD-5).
+		Assert.Equal(1, Bridge.Value.ChooseReward(2009, 9, []));
+		Assert.All(new[] { 2008, 2904, 24010 }, quest => Assert.Equal(-1, Bridge.Value.ChooseReward(quest, 10, [])));
+	}
+
+	[Fact]
+	public void TheClericKeepsTheStaffAccessoriesAndBridgeSuppliesAndSellsTheReplacedMace()
+	{
+		BotInventoryItem[] bag =
+		[
+			Item(1, 101500498, equipped: 1), Item(2, 100100025), Item(3, 122000869), Item(4, 182203009, mask: 0),
+			Item(5, 162000053, 12), Item(6, 169300003, 30), Item(7, 160002273, 5), Item(8, 162001057, 4, mask: 0),
+			Item(9, 169300002, 20),
+		];
+		NaturalInventoryPlan plan = Bridge.Value.Decide(bag, 10, 27, cleric: true);
+		string Reason(int obj) => plan.Decisions.Single(d => d.ObjectId == obj).Reason;
+		Assert.Equal("currently-equipped", Reason(1));
+		Assert.Equal("accessory-kept", Reason(3));
+		Assert.Equal("quest-protected", Reason(4));
+		Assert.All(new[] { 5, 6, 7 }, obj => Assert.Equal("combat-supply", Reason(obj)));
+		// The replaced Aldelle Mace and ordinary loot go to the vendor; nothing protected does.
+		Assert.Equal(new[] { 2, 9 }, plan.Sales.Select(d => d.ObjectId).ToArray());
+		Assert.Equal("surplus-gear", Reason(2));
+	}
+
+	[Fact]
+	public void AnUnwornStaffIsTheClericsUpgradeButNotThePriests()
+	{
+		BotInventoryItem[] bag = [Item(1, 100100025, equipped: 1), Item(2, 101500498)];
+		Assert.Equal("best-usable-cleric-upgrade", Bridge.Value.Decide(bag, 10, 27, cleric: true).Decisions.Single(d => d.ObjectId == 2).Reason);
+		// The frozen Priest rules are unchanged: a Priest has no staff mastery, so the staff is not its gear.
+		Assert.Equal("unneeded-or-unusable", Bridge.Value.Decide(bag, 9, 27).Decisions.Single(d => d.ObjectId == 2).Reason);
+		NaturalItem staff = Bridge.Value.Item(101500498), mace = Bridge.Value.Item(100100025);
+		Assert.True(staff.UsableByClericAt(10));
+		Assert.True(staff.ClericGearScore > mace.ClericGearScore);
+		Assert.Equal("WEAPON", staff.ClericGearSlot);
+		Assert.True(Bridge.Value.Item(122000869).IsAccessory);
+	}
+
+	[Fact]
+	public void TheObservedClassSelectsTheClericRules()
+	{
+		var world = new BotWorldModel();
+		Assert.False(NaturalIshalgenInventoryPolicy.IsCleric(world));
+		world.Apply(Packet<Aion.GameServer.Network.Aion.ServerPackets.SM_STATS_INFO>(("objectId", 7), ("level", (ushort)10),
+			("expNeeded", 900L), ("expRecoverable", 0L), ("expShown", 500L), ("maxHp", 669), ("currentHp", 669), ("maxMp", 1200),
+			("currentMp", 1200), ("maxDp", (ushort)4000), ("dp", (ushort)0), ("maxFp", 60), ("currentFp", 60)));
+		world.Apply(Packet<Aion.GameServer.Network.Aion.ServerPackets.SM_PLAYER_INFO>(("objectId", 7), ("x", 0f), ("y", 0f), ("z", 0f),
+			("heading", (byte)0), ("name", "Asimnjour"), ("state", (ushort)0), ("race", (byte)1),
+			("playerClass", Aion.GameServer.Model.PlayerClassExtensions.GetClassId(Aion.GameServer.Model.PlayerClass.CLERIC))));
+		Assert.True(NaturalIshalgenInventoryPolicy.IsCleric(world));
+	}
+
+	private static Aion.Bots.Protocol.DecodedBotServerPacket Packet<T>(params (string Name, object? Value)[] fields) =>
+		new(typeof(T), fields.ToDictionary(field => field.Name, field => field.Value, StringComparer.Ordinal));
+
 	private static BotInventoryItem Item(int obj, int id, long count = 1, ushort mask = 4, long equipped = 0) =>
 		new(obj, id, "item", count, mask, "", 0, false)
 		{ Details = new BotItemDetails(EquippedSlot: equipped) };

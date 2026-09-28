@@ -180,6 +180,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			long lastReturnMillis = long.MinValue / 2;
 			long failedRestockKinah = -1;
 			var refusedGear = new HashSet<int>();
+			PlayerClass? gearClass = null;
 
 			// Wear the best gear in the bag (the recorded human put on four unused quest rewards at Nalto).
 			// The client knows each item's slots, level and class/race limits from its tooltip; the server
@@ -188,9 +189,18 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			{
 				BotWorldModel world = session.Api.World;
 				if (world.IsDead) return;
-				var playerClass = PlayerClass.PRIEST;
-				var race = Race.ASMODIANS;
-				var gender = Gender.MALE;
+				// NA-09: the observed class and race decide what can be worn; after Ascension the Cleric's new
+				// masteries (chain, shield, staff) make items the Priest was refused wearable, so refusals reset.
+				BotKnownObject? self = world.SelfObjectId is int selfId ? world.Objects.GetValueOrDefault(selfId) : null;
+				var playerClass = self?.PlayerClass is byte classId
+					? PlayerClassExtensions.GetPlayerClassById(classId, true) ?? PlayerClass.PRIEST : PlayerClass.PRIEST;
+				var race = self?.Race is byte raceId ? (Race)raceId : Race.ASMODIANS;
+				var gender = Gender.MALE; // the natural character is created male; gender is not in the client model
+				if (playerClass != gearClass)
+				{
+					gearClass = playerClass;
+					refusedGear.Clear();
+				}
 				NaturalGearInfo? Describe(int itemId)
 				{
 					var template = runtime.Data.ItemDataDh.GetItemTemplate(itemId);

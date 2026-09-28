@@ -845,7 +845,7 @@ OD-11, a development item is verified by **one** run.
     - **Regression:** 207 focused tests pass, and the warning, null-logger and clock ratchets
       pass.
 
-- [ ] **NA-09 — Gear, accessories, inventory and rewards for a Cleric.**
+- [x] **NA-09 — Gear, accessories, inventory and rewards for a Cleric.**
   - **Depends:** NA-07.
   - **Do:** fix everything in [Appendix B](#appendix-b-equipment-and-what-the-gear-code-gets-wrong).
     - **Class awareness:**
@@ -883,6 +883,43 @@ OD-11, a development item is verified by **one** run.
     - two-handed clearing;
     - no Priest regression.
   - **Verify:** the focused tests.
+
+  - **Evidence (2026-09-28):**
+    - **`NaturalItem` fields.** It now reads the Cleric restrict column (index 10) and the
+      item level. Its Cleric-only rules:
+      - `IsClericGear` adds staff, chain, shield, head and the accessories;
+      - `ClericGearSlot` maps staff to WEAPON and shield to SUB, and each accessory keeps its
+        own slot;
+      - `UsableByClericAt` checks level and race;
+      - `ClericGearScore` ranks weapons by magic boost, then damage, and armor by item
+        level.
+    - **Inventory rules.** `Decide(world)` picks the rules from the client-observed class
+      (`IsCleric`). The Cleric rules:
+      - never sell accessories (`accessory-kept`);
+      - protect the bridge supplies from the contract;
+      - treat the Destiny Cards and the dispatch work item as quest items;
+      - offer the best usable Cleric upgrade per slot;
+      - sell the replaced Aldelle Mace as surplus.
+
+      **The Priest path is unchanged.** A new test shows that a Priest still treats the staff as
+      unusable.
+    - **Rewards.** `ChooseReward` returns REWARD index 1 for Q2009, which is the Karmic
+      Staff (OD-5). Q2008, Q2904 and Q24010 have no choice (-1).
+    - **Equip step.** `EquipUpgradesAsync` takes class and race from the observed self
+      object. The character is created male, and the client model has no gender. Refused gear
+      is forgotten only when the class changes, so the Priest does not retry the dagger it
+      was refused.
+    - **Ranking.** Item level already ranks the level-10 staff above the level-8 mace. The
+      server itself clears the off hand for a two-handed staff.
+    - **Deferred:** a fuller two-handed-versus-shield model, left to a later milestone because
+      no shield is owned or bought (OD-7).
+    - **Tests.** Four new tests pass:
+      - the ceremony choice;
+      - the Cleric keep/sell plan;
+      - staff Cleric-versus-Priest;
+      - class detection from `SM_STATS_INFO` plus `SM_PLAYER_INFO`.
+
+      274 focused tests, and the warning, null-logger and clock ratchets pass.
 
 - [ ] **NA-10 — Movie policy: watch or skip.**
   - **Depends:** none.
@@ -1478,6 +1515,8 @@ has examples.
 - 2026-09-28 — Loop: NA-07 done. Identity accepts only the Ishalgen Priest or the bridge Cleric. Relog keeps the class and bind point.
 
 - 2026-09-28 — Loop: NA-08 done. Bind, teleporter and vendor steps work on any map. The focused SIM test ran Doman's teleport, the Altgard bind and the Nirmirn/Donabe trades.
+
+- 2026-09-28 — Loop: NA-09 done. There are now class-aware inventory rules: the Cleric keeps the staff, accessories and bridge supplies, and sells the replaced mace. The Q2009 reward is the staff. The Priest path is unchanged.
 
 ## Appendix A: Altgard shops and consumables
 
