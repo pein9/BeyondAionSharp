@@ -150,6 +150,7 @@ The Ishalgen leg's contract (`parity-artifacts/e2e/natural-ishalgen-contract.jso
 | OD-12 | Are deaths failures? | **No.** "Zero deaths" is not a goal. A death is recorded and recovered from, and is never a pass/fail criterion by itself. What fails a run: an unmet objective, a stall, an exhausted bounded recovery, or a server defect. | Decided 2026-09-28 (rule for all natural runs from now on) |
 | OD-13 | Help items by cheating | **Allowed, after exploration.** NA-20 proposes the consumables and the supply mechanism. Only consumables the operator approves are supplied (no gear, quest items, XP or levels), and every run lists them in its profile. This amends D25's "no GM input" rule for those items only. | Decided in principle 2026-09-28; the item list needs approval at NA-20 |
 | OD-14 | Patrols in the way | **Cleric:** wait 15 s (game time) and path again; or decide to take on the patrol when the fight is winnable (NA-22). Both are bounded and traced. The frozen Ishalgen Priest keeps its current rules unless a later decision changes them. | Decided 2026-09-28 |
+| OD-15 | Which speed scroll stays up: Courage (attack speed) or Awakening (casting speed)? | They **replace each other** (both use effect id 30184), so only one can be active. You asked for attack speed (Courage). The research recommends **Awakening** for a Cleric: it speeds up the casts of Smite, Healing Light and Earth's Wrath, while attack speed mostly speeds up the staff swing. The bot uses Courage until the operator decides. | **Needs operator** |
 
 ## Route at a glance (Java spec, verified in C#)
 
@@ -333,7 +334,12 @@ The C# twins live under `src/Aion.GameServer/Handlers/Quest/ascension/` and `…
     decode or be tolerated.
 18. **Potions share delay group 11.**
     - HP and MP elixirs block each other for 60 s.
-    - Every potion needs an equipped weapon; the staff counts.
+    - **No consumable needs a weapon.** The weapon start condition only applies to cast skills
+      (`WeaponCondition.java:30`).
+    - **Using any item cancels the current cast** (`CM_USE_ITEM.java:76`), so use items only
+      between casts.
+    - Items can't be used while dead, stunned or transformed.
+    - A potion used at full HP or MP is wasted.
     - The journey never sets `HasManaPotion`, `ManaPotionReady` or `HasLifePotion`
       (`NaturalIshalgenJourney.cs:4308-4318`), so the policy's mana-potion branch is dead
       today. Leave it alone for the frozen Ishalgen leg.
@@ -843,6 +849,8 @@ OD-11, a development item is verified by **one** run.
       - Sit only as a fallback: when out of powder, or when both are on cooldown and more
         recovery is still needed.
       - Keep about 30 powder, restocked at Donabe or through help items.
+      - From level 25 the skills use Odella Powder 169300004 instead. The skill's rank
+        decides the reagent, not the item level.
     - **Root** is a tool for retreating and kiting.
     - Ignore Light of Resurrection (the bot plays solo), the passives and Winged Recovery.
     - The observed class chooses the catalog. The Priest rotation and rest rules for the
@@ -868,18 +876,25 @@ OD-11, a development item is verified by **one** run.
 
     The rules use the items in [Appendix D](#appendix-d-help-items-scrolls):
     1. **Class buffs.** Keep Blessing of Guardianship up, as today.
-    2. **Attack speed, always.** Whenever one is owned, keep a **Courage** scroll active
-       (stack `ITEM_SPEED_ATK`, 5 min).
-       - Use the highest tier the character can use at its level.
-       - Refresh just before it expires, never mid-cast.
+    2. **One speed scroll, always (OD-15).** Whenever one is owned, keep one speed scroll
+       active. That is **Courage** (attack speed, `ITEM_SPEED_ATK`) unless the operator
+       switches to **Awakening** (casting speed). Both last 5 min.
+       - They **replace each other** (effect id 30184). Never alternate, or every swap
+         wastes a scroll.
+       - Use the highest tier whose item level is at or below the character's level.
+       - Refresh just before it expires, between casts.
     3. **Anti-Shock scroll at 50% HP (the "shield scroll").** Despite the name, the
        Anti-Shock family is **"All Damage Absorption"**: a damage shield.
-       - Lesser (164000067) is skill 9953. It absorbs 148 + 10 × level damage and lasts
-         24 s, on a 60 s use delay in group 32. Each tier has its own stack
-         (`ITEM_SHIELD_ALL_20A`, …).
-       - In combat, at or below 50% HP, use the right-tier Anti-Shock scroll if one is owned,
-         ready and not already active. NA-20 settles which tier fits each level: at level
-         10 the only candidate is Lesser, item level 20 with no `restrict`.
+       - Tiers, by item level: Lesser (20), plain (30), Greater (40), Major (50) and Fine
+         (60). They absorb 158, 245, 338, 425 and 550 damage respectively and last 24 s.
+         The use delay is 60 s, in group 32.
+       - Detect an active shield by any `ITEM_SHIELD_ALL_*` stack. A lower tier can't
+         replace an active higher one.
+       - In combat, at or below 50% HP, use the highest owned tier whose item level is at or
+         below the character's level + 10, if it is ready and no shield is active. At level
+         10 that means Lesser (164000067). Altgard quest Q2206 also rewards 8 of these.
+       - From level 40 the Cleric's own Blessed Shield conflicts with these scrolls. That
+         only matters in later milestones.
        - The 30% retreat and emergency rules still take priority.
        - The potion (80%) and heal thresholds do not change.
        - If both the scroll and Salvation apply, use the scroll first, because Salvation
@@ -898,11 +913,16 @@ OD-11, a development item is verified by **one** run.
       - 35 is shared by Running and Movement Speed.
       - 32 is the Anti-Shock group, with a 60 s delay.
       - 31 is shared by the defense scrolls.
-    - Never use a scroll while `WATCHING_CUTSCENE`, in flight, or dead.
+    - Use items only between casts, because any item use cancels the current cast.
+    - Never use one while `WATCHING_CUTSCENE`, in flight, dead or stunned.
+    - Running replaces the Movement Speed scroll and speed transforms (effect id 30182).
+      Their effects never add together.
     - With no help items owned, the check finds nothing to use. The bot must work without
       them.
   - **Done when:** pure policy tests cover:
-    - tier selection by level;
+    - tier selection by level, with level + 10 for Anti-Shock;
+    - one speed-scroll family only;
+    - no item use in the middle of a cast;
     - the refresh window;
     - shared delay groups;
     - the 50% Anti-Shock trigger, ordered against potion, retreat and Salvation;
@@ -911,59 +931,48 @@ OD-11, a development item is verified by **one** run.
     - unchanged behavior when nothing is owned.
   - **Verify:** the focused tests.
 
-- [ ] **NA-20 — Explore which help items can be supplied by cheating (a proposal).**
-  - **Depends:** none (research).
-  - **Do:** write the findings as Appendix D.2 of this doc. Cover four things.
-    1. **What exists.** From the shipped item and skill data (C# and Java), list the
-       consumables worth giving a level 10–20 Cleric:
-       - the Courage, Awakening, Running and Movement Speed scroll tiers;
-       - defensive scrolls;
-       - food buffs;
-       - potion tiers;
-       - powder;
-       - resurrection stones;
-       - return scrolls.
+- [ ] **NA-20 — Propose the help-item allowlist and how it is supplied (from the research).**
+  - **Depends:** none.
+  - **Research done:** [aion-4.8-consumables.md](aion-4.8-consumables.md) (2026-09-28)
+    surveyed every consumable in the Java and C# data (they match byte for byte), the retail
+    4.8 client on this machine, and aioncodex. Its findings:
+    - **No NPC sells the buff scrolls** (Courage, Awakening, Running, Anti-Shock, Crit,
+      Resist). In retail they came from Alchemy, quests and the broker, so keeping them up
+      for hours needs supplied items.
+    - **Lesser Physical Defense Scroll 164000015 is not a bug.** It did nothing in retail
+      4.8 either: the retail client item has no skill, and nothing produces it. The same is
+      true of 164000018–020. Leave them alone.
+    - **Tier rule, stacking/delay conflicts, and a level 10–20 starter kit with a restock
+      rule:** see its "Recommendations for the bot" and "Supply mechanisms".
+  - **Do:** turn the report into a short proposal (Appendix D.2 of this doc) and ask the
+    operator. It covers:
+    1. **Allowlist.** Start from the report's kit and give ids per level band:
+       - the speed scroll family chosen under OD-15
+       - Running
+       - Anti-Shock
+       - Life and Mana Serums
+       - Lesser Odella Powder
+       - Zeller Aether Jelly
+       - optionally Revival Stones
 
-       For each, record:
-       - id and name;
-       - item level and required level (`restrict`);
-       - skill, effect and duration;
-       - stack group and use-delay group;
-       - whether a vendor sells it (`goodslists`).
-
-       **The shield scroll is the Anti-Shock family** (the operator's intent).
-       - Settle its tier rule by level.
-       - Report its exact absorb values per tier.
-
-       **Also settle whether Lesser Physical Defense Scroll 164000015 is a data bug.**
-       - Neither the C# nor the Java data gives it an action, so this is shared upstream
-         data.
-       - If retail 4.8 gave it an effect, record it as an upstream data defect. Fix it only
-         with the operator's approval, under the Java-first rules.
-
-       **Input:** the research report [aion-4.8-consumables.md](aion-4.8-consumables.md),
-       produced 2026-09-28 from Java, C# and online 4.8 sources. Build the proposal from
-       it, and re-check anything the report marks uncertain.
-
-       **Answer whether Courage or Awakening, or both.** Awakening (casting speed) shares
-       Courage's use delay but has its own stack, so both can stay up. The operator asked
-       for attack speed; say whether casting speed would also help a Cleric.
-    2. **How to supply them.**
-       - SIM: insert straight into the inventory in the fixture, as the Mau course
-         preparation does.
-       - LIVE: the options are the GM director account's item command (the existing Q4I
-         runner pattern), mail, or a database insert before login on the isolated stack
-         only.
-       - Choose whichever leaves the cleanest audit trail. Never use the operator's `aion`
-         stack.
-    3. **When to supply them.** A one-time "starter kit" at the start of the bridge, or a
-       restock rule that tops up to N whenever stock falls below M. Propose counts: a
-       5-minute buff over a run of several hours needs dozens.
-    4. **How a run records them.** A `helpItems` block in the run profile and trace, and a
-       dashboard badge.
-  - **Done when:** the proposal is in this doc, and the approved list and counts are asked
-    of the operator under "Blocked / questions for the operator".
-  - **Verify:** the table matches the static data, and a focused test pins the proposed ids.
+       Foods and elixirs are still bought from vendors: foods are on the route, and elixirs
+       come from Nirmirn.
+    2. **Counts and restock.**
+       - A starter kit, then "top up to N when below M".
+       - Check stock at run start, each level-up, each town visit and each checkpoint.
+       - At levels 20, 25 and 30, supply the new tier.
+    3. **Mechanism.**
+       - SIM: `ItemService.AddItem` in the fixture, limited to the allowlist.
+       - LIVE, isolated stack only: the director account's `//add <player> <itemId> [count]`
+         (access level 8). It leaves a gmaudit line, the director's trace and the
+         subject's "received" message.
+       - Never on the operator's `aion` stack.
+    4. **Recording.** A `helpItems` block in the run profile and trace, and a dashboard
+       badge.
+  - **Done when:** the proposal is in this doc, and the operator's approval of the list,
+    counts and mechanism is requested under "Blocked / questions for the operator".
+  - **Verify:** a focused test pins the proposed ids against the static data: each exists,
+    and its skill, delay group and item level match.
 
 - [ ] **NA-21 — Supply the approved help items.**
   - **Depends:** NA-20, **plus operator approval of its list (OD-13)**.
@@ -1175,7 +1184,8 @@ Each iteration:
 
 ## Blocked / questions for the operator
 
-- **NA-20 → OD-13:** once NA-20 has written its proposal, the operator approves the help-item list, counts and supply mechanism. NA-21 waits for that approval.
+- **OD-15:** Courage or Awakening as the speed scroll that stays up? Until you answer, the bot uses Courage.
+- **NA-20 → OD-13:** once NA-20 has written its proposal, you approve the help-item list, counts and supply mechanism. NA-21 waits for that approval.
 - The defaults for OD-8 and OD-10 stand unless the operator vetoes them.
 
 ## Progress log
@@ -1213,6 +1223,18 @@ Each iteration:
   and it feeds NA-20. NA-00a was added: HEAD `e2f0599e9` broke the warning baseline
   (4,243 → 4,250, all in `SimulationMauCourseTests.cs`).
 
+- 2026-09-28 — The consumables research landed in
+  [aion-4.8-consumables.md](aion-4.8-consumables.md). Folded in:
+  - 164000015 does nothing in retail 4.8 too, so it is not a bug.
+  - Anti-Shock tiers absorb 158, 245, 338, 425 and 550, and use the level + 10 tier rule.
+  - Courage and Awakening replace each other, which raises the new question OD-15.
+  - Running does not add to other speed buffs.
+  - No vendor sells the buff scrolls.
+  - No consumable needs a weapon, and using an item cancels the current cast.
+  - Powder becomes Odella Powder at level 25.
+
+  NA-20 is now reduced to writing the proposal and requesting approval.
+
 ## Appendix A: Altgard shops and consumables
 
 **Merchants.** The fortress merchants below are all GENERAL, level 10 and Asmodian, with
@@ -1235,7 +1257,8 @@ Each iteration:
 Pandaemonium has no potion vendor. Its gear vendors are off the ceremony route and not
 used.
 
-**Consumables.** Every potion needs an equipped weapon. A heal over time ticks 10 times in
+**Consumables.** No consumable needs a weapon; `WeaponCondition` only checks cast
+skills. Using an item cancels the current cast. A heal over time ticks 10 times in
 20 s.
 
 | Item | Price | Effect | Delay |
@@ -1370,16 +1393,22 @@ These are from the shipped data, and C# matches Java.
 | Awakening (casting speed) | Lesser (10) / plain (20) / Greater (30) | 164000132 / 164000133 / 164000134 | 9965 (1–3) | Casting time down | 5 min | `ITEM_SPEED_BOOSTCASTINGTIME` (its own stack) | 34 (shared with Courage) |
 | **Running** (run speed) | Lesser (10) / plain (20) / Greater (30) | 164000074 / 164000075 / 164000076 | 9960 (1–3) | Movement speed +% | 5 min | `ITEM_SPEED_RUN` | 35 |
 | Movement Speed Scroll | (15) | 164000033 | 9943 (1) | +600 speed (a flat bonus) | 10 min | `ITEM_SCROLL_SPEED` | 35 |
-| Defense | Lesser Physical Defense (10) | 164000015 | **none: no action in either the C# or the Java data** | inert (a possible upstream data defect; NA-20) | — | — | 31 |
+| Defense | Lesser Physical Defense (10) | 164000015 | none | Also does nothing in retail 4.8: a leftover 1.x item that nothing produces. Not a bug. | — | — | 31 |
 | | King of Beasts' Shield (20) | 164000039 | 9924 (2) | Physical defense +20 | 10 min | `ITEM_SCROLL_DEFEND_PHYSICAL` | 31 |
 | | Lesser / plain Strike Resist (30 / 40) | 164000123 / 164000124 | 9966 (1–2) | Strike resist | — | — | 31 |
-| **Anti-Shock (the "shield scroll")** | Lesser (20) / plain (30) / Greater (40) | 164000067 / 164000068 / 164000069 | 9953 / 9954 / 9955 | **"All Damage Absorption"**: a shield absorbing damage on every hit (Lesser: 148 + 10 × level) | 24 s | `ITEM_SHIELD_ALL_20A` (one per tier) | 32, 60 s |
+| **Anti-Shock (the "shield scroll")** | Lesser (20) / plain (30) / Greater (40) / Major (50) / Fine (60) | 164000067 / 068 / 069 / … | 9953 / 9954 / 9955 / 9956 / 9964 | **"All Damage Absorption"** shield absorbing 158 / 245 / 338 / 425 / 550 | 24 s | `ITEM_SHIELD_ALL_*` (one per tier) | 32, 60 s |
 
 Notes:
-- **Stacking.** Courage and Awakening use separate stacks but share use-delay group 34, so
-  both can be kept up, 15 s apart.
-- **Running and Movement Speed** share group 35. The stacks differ, but NA-20 must check
-  whether the speed bonuses add together.
+- **Stacking (corrected by the research).**
+  - Courage and Awakening **replace each other**: both use effect id 30184 in the same buff
+    slot, so only one can be active (OD-15).
+  - Running, the Movement Speed Scroll and the speed transforms also replace each other
+    (effect id 30182).
+- **Tier rule.** Use the highest tier whose item level is at or below the character's
+  level. For Anti-Shock, allow up to level + 10, which matches when retail quests hand them
+  out.
+- **Sources.** No NPC sells any of these scrolls. They come from quests or are supplied
+  (OD-13).
 - **The "shield scroll" is Anti-Shock.** This was clarified 2026-09-28. The defense
   scrolls (group 31) are only a flat defense buff and are not the 50% HP tool.
 - **Timed and event variants.** The Legion-reward, Coliseum, Blackstar, Abbey and Stamp
