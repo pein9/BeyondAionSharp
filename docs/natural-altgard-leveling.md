@@ -1,8 +1,11 @@
-# Natural Altgard leveling leg (proposal)
+# Natural Altgard leveling leg
 
-**Status: proposal, awaiting the operator's approval (2026-09-29).** Nothing here is built yet.
-Once the list, the order and the decisions below are approved, this document gets a TODO
-list and a loop protocol like [the Ascension bridge](natural-ascension-altgard.md).
+**Status (2026-09-29): the list, the order and AL-1..AL-5 are approved**, with the
+recommendations and the operator's notes below.
+
+The zone is worked in **sub-legs**. The first one is
+[Leg 1: Altgard Fortress, level 10–12](#leg-1-altgard-fortress-level-1012). It has its own
+TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-altgard.md).
 
 ## Goal
 
@@ -46,15 +49,55 @@ Of the 107, this proposal:
 
 That makes 89 quests in the route tables.
 
-## Decisions for you
+## Decisions (approved 2026-09-29)
 
-| # | Question | Options | My recommendation |
+The operator approved every recommendation. Their notes:
+- **AL-3:** gathering must be levelled later. A gathering-training leg comes back for the four
+  [Gather] quests (Essencetapping 45 to 85).
+- **AL-4:** asked whether Lohaban is near the main town. **He is not.** Lohaban (203689) and
+  Lateni (203659, the starter of Q2147 and of [Coin] Q2293) stand together in the **Heart of
+  Impetusium** at (2665, 1660), about 1 km east of the fortress. Coins only matter at that
+  stop. Q2147 stays skipped, and can be looked at again at Stop 12.
+- **Flight** is a mechanic the bot does not have yet; see [Flight in Altgard](#flight-in-altgard).
+
+| # | Question | Options | Decided |
 |---|---|---|---|
-| AL-1 | **Where does the leg end?** | (a) when every approved quest is done, at whatever level that is. Quest rewards total about 1.75M XP for the core list, so kills included the Cleric lands around **level 18–19**. (b) (a), then hunt to **level 20**. (c) (b), plus the level 20 missions Q24014–Q24016, which need the **Haramel** (300200000) and **Bregirun** (320030000) instances. | **(b)**. Stop at level 20 with the zone done; the instances start the next leg, as Ishalgen stopped before Ascension. |
-| AL-2 | **[Group] quests** Q2277, Q2280, Q2281, Q2282. Their targets are EXPERT-rank "brutal Black Claw" monsters, level 16–20, with 2.7k–4.6k HP; ordinary SEASONED monsters here have 2.3k–3.1k. Q2283 "Report to Pandaemonium" needs Q2282. | include solo, or skip | **Include**, attempted solo at the target's level or above (Salvation, the heal over time and the Anti-Shock shield are for this). Deaths are recorded. |
-| AL-3 | **[Gather] quests** Q2250 Kandula (Essencetapping 45), Q2275 Krimer (55), Q2276 Horto (75), Q2297 Blicora (85). The bot has Essencetapping of about 15 from Ishalgen, so this means a gathering grind. | skip all; include Q2250 and Q2275 (grind to 55); include all four (grind to 85) | **Skip for this leg.** Gathering levels come with the next leg's gathering work. |
-| AL-4 | **Q2147 "Treasure Seek"** needs Lohaban's Treasure, which only Lohaban (203689), a *reward* vendor paid in quest coins, sells. The only coin quest here is the repeatable [Coin] Q2293. | skip, or add a coin loop | **Skip.** Its prerequisite Q2146 is still included. |
+| AL-1 | **Where does the leg end?** | (a) when every approved quest is done, at whatever level that is. Quest rewards total about 1.75M XP for the core list, so kills included the Cleric lands around **level 18–19**. (b) (a), then hunt to **level 20**. (c) (b), plus the level 20 missions Q24014–Q24016, which need the **Haramel** (300200000) and **Bregirun** (320030000) instances. | **(b)**: finish the zone, hunt to level 20; the instances start the next leg. |
+| AL-2 | **[Group] quests** Q2277, Q2280, Q2281, Q2282. Their targets are EXPERT-rank "brutal Black Claw" monsters, level 16–20, with 2.7k–4.6k HP; ordinary SEASONED monsters here have 2.3k–3.1k. Q2283 "Report to Pandaemonium" needs Q2282. | include solo, or skip | **Include**, solo, at the target's level or above. Deaths are recorded. |
+| AL-3 | **[Gather] quests** Q2250 Kandula (Essencetapping 45), Q2275 Krimer (55), Q2276 Horto (75), Q2297 Blicora (85). The bot has Essencetapping of about 15 from Ishalgen, so this means a gathering grind. | skip all; include Q2250 and Q2275 (grind to 55); include all four (grind to 85) | **Skip for now; come back.** A gathering-training leg (Essencetapping to 85) will do them. |
+| AL-4 | **Q2147 "Treasure Seek"** needs Lohaban's Treasure, which only Lohaban (203689), a *reward* vendor paid in quest coins, sells. The only coin quest here is the repeatable [Coin] Q2293. | skip, or add a coin loop | **Skip.** Q2146 is still included. Lohaban is at Heart of Impetusium, not the main town. |
 | AL-5 | **Pandaemonium trips:** Q2258 (Lindhelm), Q2278 (Cavalorn, Balder) and Q2283 (Vidar) need NPCs in Pandaemonium. | include (take the teleporter, which costs Kinah), or skip | **Include**, using the bridge's teleporter code. |
+
+## Flight in Altgard
+
+Flight is needed from the very first sub-leg:
+- **Q24011 "Funny Floating Fungus"** (campaign, level 11) has you talk to **Borender**
+  (203572), who stands on a floating rock at **z 406** above the fortress, whose floor is about
+  z 254. You then kill six **Abyss Fungus** (700092), which float at **z 367–400** over the
+  fortress (12 spawns).
+- **Q2209 "The Scribbler"** also has a Borender step (but see AF-Q1).
+
+What the Java spec says (4.8, `ce54b7931`; C# matches):
+- **Where:** Altgard's map and every ordinary area forbid flying. Areas use flags 55, which is
+  bind, recall, glide, ride and fly-ride, with no FLY bit. Only **two FLY zones** exist:
+  - `DF1_FZ_VERTERRON`, around the fortress (x 1392–1924, y 1569–2032, z 240–440);
+  - `DF1A_FZ_TOWN3`, around Heart of Impetusium (x 2401–2818, y 1455–1873, z 200–440).
+- **Taking off** (`CM_EMOTION` FLY → `FlyController.startFly`): the character must be a Daeva,
+  inside a FLY zone and not a NO_FLY zone, with no NOFLY effect, no transform and no private
+  store. There is a **10 s reuse cooldown** (`FLY_REUSE_TIME`).
+- **Water:** the server has no water check. Refusing to take off from water is the
+  **client's** rule, so the bot must copy it: never take off from a navmesh Water area or
+  below the map water level (z 200).
+- **Flight time (FP):** a level 10 Cleric has **60** (`maxFp` 60, observed). Flying drains 1
+  per tick inside a FLY zone and 2 outside (`PlayerLifeStats.triggerFpReduce`). At 0 the
+  server ends the flight (`LifeStatsRestoreService`) and the character falls. Over the
+  fortress a fall is about 150 m. FP refills on the ground.
+- **Leaving the FLY zone while flying** ends the flight (`FlyZoneInstance.onLeave` →
+  `onLeaveFlyArea`).
+
+So the bot needs an FP budget: take off from dry ground inside the zone, fly, and land
+(on the ground or on Borender's rock) with a safety margin. Air fights against the fungus
+have to fit inside that budget: kill one or two, land, let FP refill, and repeat.
 
 ## Proposed quest list and order
 
@@ -265,6 +308,88 @@ TODO items.
 6. **Acceptance** once, as before: one SIM run from the `altgard` snapshot, the full
    checklist, then one isolated LIVE run from the LIVE dump.
 
+## Leg 1: Altgard Fortress (level 10–12)
+
+The operator's current focus: the fortress quests, plus the campaign missions ("golds")
+up to level 12. It starts from the `altgard` snapshot, a level 10 Cleric bound at the
+fortress.
+
+| Quest | Name | Level | Where it is done | Notes |
+|---|---|---|---|---|
+| 2201–2206 | Crasaur, Lobnite, Crystals, Sparkie Sap, Airon, Slink | 10 | fortress NPCs; targets on the **Ice Lake** just west (z ≈ 247) | The first thing the bot needs is a way **out of the fortress** (NA-23: the route out was GeometryRejected). |
+| 2207 | Conversing With a Skurv | 11 | fortress (Emgata, Itu, Suthran) | |
+| 2208 | Mau in Ten Minutes a Day | 11 | Itu; **Mumu Bon in the Fortress Dungeon (z 203)** | Needs the dungeon route and the Mau Secret Remedy item use. |
+| 2209 | The Scribbler | 10 | Thrud, Tulberg, **Borender (z 406, flight)**, **Noroia (dungeon, z 205)** | **Blocked by a Java-shared defect (AF-Q1).** |
+| 24011 | Funny Floating Fungus (campaign) | 11 | Valurion, **Borender**, **6 Abyss Fungus in the air** | Flight. |
+| 2210 | Retrieving the Report | 12 | Rion (fortress) → Loriniah at **Moslan Crossroad** (1625, 1451), about 370 m south | Outside the fortress (AF-Q2). |
+| 24012 | An Ominous Crop (campaign) | 12 | Loriniah (Moslan Crossroad), the MuMu cart and farmers at **MuMu Farmland** (y ≈ 1100–1400) | Not around the fortress (AF-Q2). |
+
+**XP:** the fortress quests and Q24011 give about 138k, and Q24012 36k. With kills that
+should reach level 12 (360,825 XP), which Q2210 and Q24012 need.
+
+### Leg 1 TODO list
+
+Each item is worked like the bridge's items: read the Java spec first, do only that item,
+verify it once, commit it on main, never push (the [loop
+protocol](natural-ascension-altgard.md#how-to-work-this-list-loop-protocol) applies,
+with "AF" in place of "NA").
+
+- [ ] **AF-01 — The Leg 1 contract and quest plans.** Write
+  `parity-artifacts/e2e/natural-altgard-contract.json`: the Leg 1 quests, their order, level
+  gates, hubs and endpoint. Compile the template quests' plans (`compile-quest-plans.py`)
+  into `parity-artifacts/e2e/natural-altgard-plans/`. Add a loader and contract tests like
+  NA-01's.
+- [ ] **AF-02 — Leave and re-enter the fortress on foot.** Diagnose NA-23's
+  `GeometryRejected` route (obelisk → Ice Lake / open ground): a gate, a static door, or a
+  navmesh/geo mismatch. Fix it bot-side, with checked navigation data, never by editing
+  generated nav data by hand. **Done when:** a SIM probe walks from the obelisk to the Ice
+  Lake targets and back.
+- [ ] **AF-03 — The Fortress Dungeon.** A route to Mumu Bon (z 203) and Noroia (z 205):
+  the entrance, navmesh coverage, map context. **Done when:** a SIM probe talks to both.
+- [ ] **AF-04 — Flight policy (pure).** Covers:
+  - the two FLY zones;
+  - takeoff checks: a Daeva, inside a FLY zone and not NO_FLY, the 10 s reuse, and **not
+    on water** (the navmesh Water area or below z 200);
+  - the FP budget: 60 FP, 1 per tick inside the zone, landing reserved with a margin;
+  - never leaving the zone while airborne;
+  - landing targets (the ground, or Borender's rock).
+
+  **Done when:** policy tests cover each rule, including the water refusal and the FP margin.
+- [ ] **AF-05 — Flight protocol and movement.** Take off (`CM_EMOTION` FLY), fly (`CM_MOVE`
+  in flight) to a point in the air, land (`LAND`) on ground or on a platform, watch
+  `SM_FLY_TIME`, and let FP refill on the ground. **Done when:** a SIM probe flies from the
+  fortress to Borender's rock, talks to him, and lands back safely with FP left.
+- [ ] **AF-06 — Air combat for Q24011.** Kill the Abyss Fungus from the air within the FP
+  budget: fly to one, kill it, land to refill as needed. A fall or death is recorded
+  (OD-12). **Done when:** a SIM probe completes Q24011's six kills.
+- [ ] **AF-07 — Leg 1 quest mechanics.** Talk chains (Q2207), item use in the dungeon
+  (Q2208, Mau Secret Remedy), the template kill and collect quests (Q2201–2206, including
+  the crystal stone objects for Q2203), report quests (Q2210), and Q24012's MuMu cart and
+  collections. It reuses the Ishalgen quest machinery where it fits.
+- [ ] **AF-08 — The Leg 1 runner and decision engine.** From the `altgard` snapshot: an
+  Altgard map context, the decision engine over the contract (eligibility, level gates,
+  "come back later"), rests and restocks at the fortress, help items (NA-21), and the
+  missions as they auto-start. Trace every decision.
+- [ ] **AF-09 — One SIM run of Leg 1** from the `altgard` snapshot to the Leg 1 endpoint,
+  saved as the `altgard-l12` snapshot. Deaths are recorded (OD-12).
+- [ ] **AF-10 — The full `CLAUDE.md` checklist and a checkpoint.** The isolated LIVE run comes
+  at the end of the Altgard leg, not after each sub-leg (**AF-Q3**).
+
 ## Blocked / questions for the operator
 
-- **AL-1 to AL-5** above: please approve, change or reject each, and the quest list and order.
+- **AF-Q1 — Q2209 "The Scribbler" is broken in Java too.** Its handler's dialogue code has
+  a Borender (203572) step at var 1, but `register()` never registers Borender as a talk NPC
+  (Java `_2209TheScribbler.java` and the C# port alike). Talking to Borender never reaches
+  the quest, so it stalls at var 1. Options:
+  - (a) skip Q2209 as a recorded boundary;
+  - (b) approve a narrowly scoped C# correction, registering 203572 for Q2209's talk event,
+    like D19's approved corrections.
+
+  **Recommendation: (b)**, logged as a shared-defect correction.
+- **AF-Q2 — Q2210 and Q24012 are not at the fortress.** Q2210 ends at Loriniah at Moslan
+  Crossroad, about 370 m south. Q24012 is at Moslan Crossroad and MuMu Farmland, about
+  400–700 m south. Options: include them as Leg 1's last stop, or move them to Leg 2
+  (Moslan). **Recommendation: include**, since you asked for the golds up to level 12 and
+  Leg 2 starts there anyway.
+- **AF-Q3 — LIVE per sub-leg or per zone?** Recommendation: one isolated LIVE run at the end of
+  the Altgard leg, with SIM runs for each sub-leg.

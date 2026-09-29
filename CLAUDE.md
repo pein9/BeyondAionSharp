@@ -71,6 +71,7 @@ when it lives elsewhere.
 | Automated player simulation (bots, SIM/LIVE modes, live log watching) | `docs/e2e-player-simulation-plan.md` — phased plan with TODOs |
 | Natural Ishalgen Priest: current state, batch runner, open items | `docs/natural-ishalgen-status.md`; `scripts/sim/run-natural-batch.sh <prefix> <seeds>`; trace analysis `scripts/sim/trace/`; play it on your running world: `scripts/live/attach-live.ps1 -Target aion` (NI-10, D24) |
 | Natural Ascension → Altgard (Cleric) leg: route spec, hazards, TODO list and loop protocol | `docs/natural-ascension-altgard.md` — read it first when working that list (D25) |
+| Natural Altgard leveling leg: approved quest list and route, flight rules, Leg 1 (fortress) TODO list | `docs/natural-altgard-leveling.md` — read it first when working the AF list |
 | Bot navigation (navmesh, roads, travel graph; generated, do not hand-edit) | `docs/bot-navigation.md`; data in `game-server/data/nav/`; tools `tools/Aion.NavBake`, `tools/nav/` |
 | Session recording (every packet of chosen accounts, for replay) | `docs/session-recording.md`; `AION_RECORD`; reader `tools/recording/recording.py` |
 
