@@ -5,9 +5,14 @@ namespace Aion.Bots.Scenarios;
 /// <summary>One help scroll from the shipped item and skill data (docs/natural-ascension-altgard.md Appendix D).</summary>
 /// <param name="Family">awakening, courage, running, movement-speed or anti-shock.</param>
 /// <param name="EffectSlot">The Java effect id that decides replacement: 30184 (Courage/Awakening), 30182 (speed),
-/// 154 (the Anti-Shock shields).</param>
+/// 154 (the Anti-Shock shields); 0 for an instant item.</param>
+/// <param name="TierLevel">The tier the effect equals, for the tier rule (the item level, except for the veteran-reward
+/// event scrolls: item level 30 with the Lesser tier's effect and no required level).</param>
 public sealed record NaturalHelpItem(int ItemId, string Family, int ItemLevel, int SkillId, int UseDelayId,
-	int UseDelayMillis, int DurationMillis, int EffectSlot);
+	int UseDelayMillis, int DurationMillis, int EffectSlot, int? TierLevel = null)
+{
+	public int Tier => TierLevel ?? ItemLevel;
+}
 
 /// <summary>When the buff-ourself check runs.</summary>
 public enum NaturalHelpTrigger { PrePull, AfterRest, AfterRevive, AfterRelog, TravelLeg, Combat }
@@ -21,7 +26,7 @@ public enum NaturalHelpTrigger { PrePull, AfterRest, AfterRevive, AfterRelog, Tr
 public sealed record NaturalHelpItemObservation(int Level, int Hp, int MaxHp, bool Dead, bool Casting, bool Cutscene,
 	bool Flying, bool Disabled, IReadOnlyList<BotVisibleEffect>? Effects, long EffectsAgeMillis,
 	IReadOnlyDictionary<int, long> ItemCounts, IReadOnlyDictionary<int, DateTimeOffset> UseDelays,
-	float PlannedTravelMeters = 0, bool CrossMapTravel = false);
+	float PlannedTravelMeters = 0, bool CrossMapTravel = false, int Dp = 0, bool SalvationLearned = false);
 
 public sealed record NaturalHelpItemChoice(NaturalHelpItem? Item, string Reason, NaturalDecisionCheck[] Checks);
 
@@ -39,6 +44,7 @@ public static class NaturalHelpItemPolicy
 	public const int RefreshWindowMillis = 20_000;
 	public const float LongTravelMeters = 150;
 	public const int ShieldHpPercent = 50;
+	public const int SalvationDp = 2000;
 	/// <summary>Anti-Shock tiers come from quests about ten levels early (Q2206 at 10 hands out the level 20 tier).</summary>
 	public const int ShieldLevelAllowance = 10;
 
@@ -59,6 +65,12 @@ public static class NaturalHelpItemPolicy
 		new(164000069, "anti-shock", 40, 9955, 32, 60_000, 24_000, ShieldSlot),
 		new(164000070, "anti-shock", 50, 9956, 32, 60_000, 24_000, ShieldSlot),
 		new(164000131, "anti-shock", 60, 9964, 32, 60_000, 24_000, ShieldSlot),
+		// NA-20a: veteran-reward event scrolls the natural character already owns (Java VeteranRewardService).
+		new(164002118, "awakening", 30, 10467, 34, 1_000, 1_800_000, AwakeningSlot, TierLevel: 10),
+		new(164002116, "running", 30, 10465, 35, 1_000, 1_800_000, SpeedSlot, TierLevel: 10),
+		new(164002117, "courage", 30, 10466, 34, 1_000, 1_800_000, AwakeningSlot, TierLevel: 10),
+		// NA-20a: DP for Salvation (Q2904 rewards five).
+		new(160002273, "dp-jelly", 40, 10164, 23, 1_800_000, 0, 0),
 	];
 
 	/// <summary>Out of combat: the scroll to use now at this trigger, or none.</summary>
@@ -100,6 +112,18 @@ public static class NaturalHelpItemPolicy
 			checks.Add(new("running", "use", $"Travel leg of {state.PlannedTravelMeters:F0} m (cross-map: {state.CrossMapTravel})."));
 			return new(running, $"Long journey: Running scroll {running.ItemId}.", [.. checks]);
 		}
+
+		// NA-20a: a Zeller Aether Jelly when Salvation is learned and observed DP cannot pay for it.
+		NaturalHelpItem? jelly = Best(state, "dp-jelly", int.MaxValue);
+		if (!state.SalvationLearned) checks.Add(new("dp-jelly", "skip", "Salvation is not learned."));
+		else if (state.Dp >= SalvationDp) checks.Add(new("dp-jelly", "pass", $"Observed DP {state.Dp} pays for Salvation."));
+		else if (jelly == null) checks.Add(new("dp-jelly", "skip", "No DP jelly is owned."));
+		else if (!Ready(state, jelly, now)) checks.Add(new("dp-jelly", "skip", $"Use-delay group {jelly.UseDelayId} is running."));
+		else
+		{
+			checks.Add(new("dp-jelly", "use", $"Observed DP {state.Dp} is below Salvation's {SalvationDp}."));
+			return new(jelly, $"DP for Salvation: {jelly.ItemId}.", [.. checks]);
+		}
 		return new(null, "Nothing to apply.", [.. checks]);
 	}
 
@@ -134,9 +158,9 @@ public static class NaturalHelpItemPolicy
 	}
 
 	private static NaturalHelpItem? Best(NaturalHelpItemObservation state, string family, int maximumItemLevel) =>
-		All.Where(item => item.Family == family && item.ItemLevel <= maximumItemLevel &&
+		All.Where(item => item.Family == family && item.Tier <= maximumItemLevel &&
 				state.ItemCounts.GetValueOrDefault(item.ItemId) > 0)
-			.OrderByDescending(item => item.ItemLevel).FirstOrDefault();
+			.OrderByDescending(item => item.Tier).ThenByDescending(item => item.DurationMillis).FirstOrDefault();
 
 	private static BotVisibleEffect? Active(NaturalHelpItemObservation state, int effectSlot) =>
 		state.Effects?.FirstOrDefault(effect => All.Any(item => item.SkillId == effect.SkillId && item.EffectSlot == effectSlot));

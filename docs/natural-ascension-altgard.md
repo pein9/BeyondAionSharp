@@ -1481,11 +1481,13 @@ OD-11, a development item is verified by **one** run.
       - It also owns things nothing uses yet: 106 Minor Mana Potions, 5 Zeller Aether
         Jellies (the Q2904 reward) and the 12 Lesser Life Elixirs the shop stop bought (the
         potion policy only knows 162000052).
-      - Munin's Belt is listed as a kept accessory but is not worn.
+      - Munin's Belt is listed as a kept accessory but is not worn. *(Corrected by NA-20a:
+        it was worn. The checkpoint records the inventory packet's 16-bit slot field, and
+        the belt's WAIST bit, 1<<16, reads as 0 there.)*
       - All of these are about what the bot already owns, so they need no approval. They
         are the new item NA-20a.
 
-- [ ] **NA-20a — Use what the natural Cleric already owns (found by NA-20).**
+- [x] **NA-20a — Use what the natural Cleric already owns (found by NA-20).**
   - **Depends:** NA-19.
   - **Do:** Cleric only; the Ishalgen Priest is unchanged.
     - Add the veteran-reward event scrolls to the NA-19 catalog as the Awakening and Running
@@ -1505,6 +1507,30 @@ OD-11, a development item is verified by **one** run.
   - **Done when:** policy tests cover each of these, and one Munin-snapshot bridge run
     shows the belt worn and the endpoint unchanged otherwise.
   - **Verify:** the focused tests and that one run.
+  - **Evidence (2026-09-28):**
+    - **Event scrolls.** Castafodin and Accelerox joined the NA-19 catalog as the Awakening
+      and Running families (tier 10, 30 min), and Blitzopan as the Courage family, which is
+      never used. The tier rule now ranks by the tier's effect and then by duration, so
+      Castafodin beats a Lesser Awakening and a real tier wins from level 20.
+    - **Jelly.** A `dp-jelly` rule drinks one out of combat when Salvation is learned and
+      observed DP is below 2000.
+    - **Potions.** The potion policy knows Lesser Life Elixir 162000053 (skill 10203). In
+      combat the Cleric drinks its owned mana potions through the existing `mana-potion`
+      rule (Minor Mana Potion first, then the mana elixirs). The Priest still has no
+      mana-potion input.
+    - **Endpoint.** The endpoint requires every `keptAccessories` item to be worn, using
+      the full slot mask. **The belt was never unworn:** see the corrected NA-20 finding.
+    - **Tests.** 4 new cases in `NaturalHelpItemPolicyTests`. Focused `Natural*` suite:
+      256 of 256 passed. The warning, null-logger and clock-read checks pass.
+    - **Run `run/snapshots/_verify/na20a-bridge`.** The bridge completed and the endpoint
+      was verified across the relog (a level 10 Cleric in Altgard, all three accessories
+      worn), with no deaths.
+      - At Doman, the first walk after the ceremony (and the first at level 10), the bot
+        used Castafodin and Accelerox (50→49 each).
+      - At Suthran, the first walk after Q2904 handed over its five jellies, it drank a
+        Zeller Aether Jelly (5→4).
+      - It was level 9 at the Pandaemonium steps, below the event scrolls' tier 10, so
+        nothing was used there.
 
 - [ ] **NA-21 — Supply the approved help items.**
   - **Depends:** NA-20, **plus operator approval of its list (OD-13)**.
@@ -1833,6 +1859,7 @@ has examples.
   - The Cleric already owns veteran-reward event scrolls equivalent to Lesser Awakening and Running.
   - It also owns potions and jellies it never uses, and Munin's Belt is unworn.
   - These gaps became NA-20a, which needs no approval and is next.
+- 2026-09-28 — Loop: NA-20a done. The Cleric now uses its owned veteran scrolls (Castafodin, Accelerox), drinks a Zeller jelly for Salvation's DP, and recognizes all its potions. The "unworn belt" was a checkpoint slot truncation; the belt was always worn. Next is NA-22, since NA-21 waits for approval.
 
 ## Appendix A: Altgard shops and consumables
 

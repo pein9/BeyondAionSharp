@@ -10,6 +10,7 @@ public sealed class NaturalHelpItemPolicyTests
 	private static readonly DateTimeOffset Now = new(2026, 9, 28, 12, 0, 0, TimeSpan.Zero);
 	private const int LesserAwakening = 164000132, Awakening = 164000133, LesserCourage = 164000071;
 	private const int LesserRunning = 164000074, MovementSpeed = 164000033, LesserShield = 164000067, Shield = 164000068;
+	private const int Castafodin = 164002118, Accelerox = 164002116, Blitzopan = 164002117, Jelly = 160002273;
 
 	[Fact]
 	public void CatalogAgreesWithShippedItemsAndSkills()
@@ -29,9 +30,10 @@ public sealed class NaturalHelpItemPolicyTests
 			Assert.Equal(help.UseDelayId, (int?)item.Element("uselimits")?.Attribute("usedelayid"));
 			Assert.Equal(help.UseDelayMillis, (int?)item.Element("uselimits")?.Attribute("usedelay"));
 			XElement skill = Assert.Single(skills.Descendants("skill_template"), node => (int?)node.Attribute("skill_id") == help.SkillId);
-			XElement effect = skill.Element("effects")!.Elements().First(node => node.Attribute("duration2") != null);
-			Assert.Equal(help.DurationMillis, (int?)effect.Attribute("duration2"));
-			Assert.Equal(help.EffectSlot, (int?)effect.Attribute("effectid"));
+			XElement? effect = skill.Element("effects")!.Elements().FirstOrDefault(node => node.Attribute("duration2") != null);
+			// An instant item (the DP jelly) has no timed effect and no replacement slot.
+			Assert.Equal(help.DurationMillis, (int?)effect?.Attribute("duration2") ?? 0);
+			Assert.Equal(help.EffectSlot, (int?)effect?.Attribute("effectid") ?? 0);
 		}
 	}
 
@@ -158,6 +160,61 @@ public sealed class NaturalHelpItemPolicyTests
 			NaturalPriestCombatPolicy.Decide(state with { ShieldScrollReady = false }, Now).Reason);
 		Assert.Contains(NaturalPriestCombatPolicy.CandidateActions(state, Now, NaturalPriestCombatPolicy.Decide(state, Now)),
 			candidate => candidate.Action == "shield-scroll" && !candidate.Legal);
+	}
+
+	[Fact]
+	public void TheOwnedVeteranEventScrollsCountAsTheLesserTier()
+	{
+		// NA-20a: item level 30 but the Lesser tier's effect for 30 min, so usable at 10 and preferred to a Lesser scroll.
+		Assert.Equal(Castafodin, Buffs(State(10, owned: [Castafodin])).Item?.ItemId);
+		Assert.Equal(Castafodin, Buffs(State(10, owned: [Castafodin, LesserAwakening])).Item?.ItemId);
+		Assert.Equal(Awakening, Buffs(State(20, owned: [Castafodin, Awakening])).Item?.ItemId);
+		Assert.Equal(Accelerox, Buffs(State(10, owned: [Accelerox]), NaturalHelpTrigger.TravelLeg, 300).Item?.ItemId);
+		// A 30 min Castafodin is left alone until its last 20 s; Blitzopan (the Courage twin) is never used and left to expire.
+		Assert.Null(Buffs(State(10, owned: [Castafodin]) with { Effects = [Effect(10467, 600_000)] }).Item);
+		Assert.Null(Buffs(State(10, owned: [Castafodin]) with { Effects = [Effect(10466, 600_000)] }).Item);
+		Assert.Null(Buffs(State(10, owned: [Blitzopan])).Item);
+	}
+
+	[Fact]
+	public void AJellyBuysSalvationItsDpOutOfCombat()
+	{
+		NaturalHelpItemObservation owned = State(10, owned: [Jelly]) with { SalvationLearned = true };
+		Assert.Equal(Jelly, Buffs(owned).Item?.ItemId);
+		Assert.Equal(Jelly, Buffs(owned with { Dp = 1999 }, NaturalHelpTrigger.AfterRest).Item?.ItemId);
+		Assert.Null(Buffs(owned with { Dp = 2000 }).Item);
+		Assert.Null(Buffs(owned with { SalvationLearned = false }).Item);
+		Assert.Null(Buffs(owned with { UseDelays = Delay((23, 1200)) }).Item);
+		Assert.Null(Buffs(owned, NaturalHelpTrigger.Combat).Item);
+		// Awakening first; the jelly on the next call.
+		Assert.Equal(Castafodin, Buffs(State(10, owned: [Jelly, Castafodin]) with { SalvationLearned = true }).Item?.ItemId);
+	}
+
+	[Fact]
+	public void EveryOwnedLifeElixirAndManaPotionIsRecognised()
+	{
+		BotInventoryItem Owned(int objectId, int itemId) => new(objectId, itemId, "", 5, 0, "", ushort.MaxValue, false);
+		Assert.Equal(162000053, NaturalIshalgenPotionPolicy.SelectOwnedPotion([Owned(3, 162000053)])?.ItemId);
+		Assert.Equal(162000002, NaturalIshalgenPotionPolicy.SelectOwnedPotion([Owned(3, 162000053), Owned(9, 162000002)])?.ItemId);
+		Assert.Equal(162000052, NaturalIshalgenPotionPolicy.SelectOwnedPotion([Owned(3, 162000053), Owned(9, 162000052)])?.ItemId);
+		Assert.True(NaturalIshalgenPotionPolicy.HasActiveHealing([Effect(10203, 10_000)]));
+		Assert.Equal(15, NaturalIshalgenPotionPolicy.TotalHealingCount([Owned(3, 162000053), Owned(4, 162000052), Owned(5, 162000002)]));
+		Assert.Equal(162000007, NaturalIshalgenPotionPolicy.SelectOwnedManaPotion([Owned(3, 162000058), Owned(9, 162000007)])?.ItemId);
+		Assert.Equal(162000058, NaturalIshalgenPotionPolicy.SelectOwnedManaPotion([Owned(3, 162000058)])?.ItemId);
+		Assert.Null(NaturalIshalgenPotionPolicy.SelectOwnedManaPotion([Owned(3, 162000002)]));
+	}
+
+	[Fact]
+	public void TheClericDrinksAnOwnedManaPotionWhenHealingManaRunsOut()
+	{
+		var learned = new[] { 1838, 1839, 4012, 4013 }.ToDictionary(id => id, id => new BotSkill(checked((ushort)id), 1, 0, 0, 0, 0));
+		var fight = new NaturalCombatObservation(10, 1000, 1300, 20, 1300, false, true, 2, 71, learned,
+			new Dictionary<int, DateTimeOffset>(), NearbyAggressors: 1, TargetAdjacent: true, HasManaPotion: true, ManaPotionReady: true);
+		NaturalCombatChoice choice = NaturalPriestCombatPolicy.Decide(fight, Now, NaturalClericSkills.All);
+		Assert.Equal("mana-potion", choice.Action);
+		Assert.Contains(NaturalPriestCombatPolicy.CandidateActions(fight, Now, choice, NaturalClericSkills.All),
+			candidate => candidate.Action == "mana-potion" && candidate.Legal);
+		Assert.NotEqual("mana-potion", NaturalPriestCombatPolicy.Decide(fight with { ManaPotionReady = false }, Now, NaturalClericSkills.All).Action);
 	}
 
 	private static NaturalHelpItemChoice Buffs(NaturalHelpItemObservation state,

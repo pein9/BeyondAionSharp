@@ -863,6 +863,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				Require.True(world.ObeliskBindPoint is { } bound && bound.MapId == bridge.Bind.MapId, "The endpoint is not bound in Altgard.");
 				Require.All(bridge.Endpoint.EquippedItemIds, item => Require.True(world.Inventory.Values.Any(owned => owned.ItemId == item &&
 					(owned.Details.EquippedSlot ?? 0) > 0), $"Endpoint item {item} is not worn."));
+				// NA-20a: every kept accessory is worn. The item's full slot mask decides (the belt's WAIST bit, 1<<16, does not
+				// fit the inventory packet's 16-bit slot field that the checkpoint records).
+				Require.All(bridge.KeptAccessories, item => Require.True(world.Inventory.Values.Any(owned => owned.ItemId == item &&
+					(owned.Details.EquippedSlot ?? 0) > 0), $"Kept accessory {item} is not worn at the endpoint."));
 				Require.True(!world.IsDead, "The endpoint character is dead.");
 				NaturalJourneyCheckpoint before = NaturalJourneyCheckpoint.Capture(world, session.CharacterId,
 					session.ConnectionGeneration, contract, session.CurrentPosition);
@@ -4715,6 +4719,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					runtime.Data.ItemDataDh.GetItemTemplate(hotPotion.ItemId);
 				bool hotReady = hotTemplate != null && session.Api.Timing.TimeUntilItemUse(hotTemplate) == TimeSpan.Zero;
 				NaturalHelpItemChoice? shieldChoice = IsCleric ? NaturalHelpItemPolicy.DecideShield(ObserveHelpItems(), now) : null;
+				// NA-20a: the Cleric drinks its owned mana potions (the policy's mana-potion rule); the Priest never did.
+				BotInventoryItem? manaPotion = IsCleric ? NaturalIshalgenPotionPolicy.SelectOwnedManaPotion(world.Inventory.Values) : null;
+				var manaTemplate = manaPotion == null ? null : runtime.Data.ItemDataDh.GetItemTemplate(manaPotion.ItemId);
+				bool manaReady = manaTemplate != null && session.Api.Timing.TimeUntilItemUse(manaTemplate) == TimeSpan.Zero;
 				var observation = new NaturalCombatObservation(
 					world.Level, world.CurrentHp, world.MaxHp, world.CurrentMp, world.MaxMp, world.IsDead,
 					nearbyAttackers > 0 || recentAttacks.Length > 0,
@@ -4729,7 +4737,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					OpenChainCategory: openChain?.Category, OpenChainTargetId: openChain?.Target, ChainExpiresAt: openChain?.ExpiresAt,
 					Dp: world.CurrentDp,
 					HasRejuvenation: world.VisibleEffects?.Any(effect => rejuvenationIds.Contains(effect.SkillId)),
-					ShieldScrollReady: shieldChoice?.Item != null);
+					ShieldScrollReady: shieldChoice?.Item != null,
+					HasManaPotion: manaPotion != null, ManaPotionReady: manaReady);
 				NaturalPriestSkill[] catalog = Catalog;
 				NaturalCombatChoice choice = NaturalPriestCombatPolicy.Decide(observation, now, catalog, parameters: mauPolicy);
 				NaturalCombatCandidate[] candidates = NaturalPriestCombatPolicy.CandidateActions(observation, now, choice,
@@ -4781,6 +4790,20 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				});
 				switch (choice.Action)
 				{
+					case "mana-potion":
+					{
+						long before = ItemCount(world, manaPotion!.ItemId);
+						await session.SendPacketAsync(session.Api.UseItem(manaPotion.ObjectId, manaTemplate!), token);
+						await session.SynchronizeAsync(token);
+						session.TraceDiagnostic("combat-mana-potion", new Dictionary<string, object?>
+						{
+							["itemId"] = manaPotion.ItemId, ["before"] = before, ["after"] = ItemCount(world, manaPotion.ItemId),
+							["mp"] = world.CurrentMp,
+						});
+						if (ItemCount(world, manaPotion.ItemId) == before)
+							await session.AdvanceAsync(TimeSpan.FromMilliseconds(1000), token); // refused (stunned): decide again
+						break;
+					}
 					case "shield-scroll":
 						if (!await UseHelpItemAsync(shieldChoice!.Item!, token))
 							await session.AdvanceAsync(TimeSpan.FromMilliseconds(1000), token); // refused (stunned): decide again
@@ -5143,7 +5166,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			return new(world.Level, world.CurrentHp, world.MaxHp, world.IsDead || world.CurrentHp <= 0,
 				blocking.Contains(BotBlockingActivity.Casting), blocking.Contains(BotBlockingActivity.Cutscene),
 				Flying: false, Disabled: false, world.VisibleEffects, runtime.NowMillis - effectsSeenAtMillis, counts, delays,
-				travelMeters, crossMap);
+				travelMeters, crossMap, world.CurrentDp,
+				Catalog.Any(skill => skill.Role == "salvation" && world.Skills.ContainsKey(skill.Id)));
 		}
 
 		/// <summary>NA-19: the buff-ourself check. Class buffs as before (pre-pull, after rest); then, for the Cleric,
