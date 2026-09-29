@@ -18,7 +18,9 @@ namespace Aion.GameServer.Handlers.Quest
 
         public override void Register()
         {
-            int[] npc_ids = { 204052, 801224, 203550, 203654, 204369 };
+            // D30: Java never registers the teleport devices 730888 and 730898, so the var 10 -> 11 -> REWARD
+            // steps are unreachable (docs/upstream-reports/).
+            int[] npc_ids = { 204052, 801224, 203550, 203654, 204369, 730888, 730898 };
             qe.RegisterOnQuestCompleted(questId);
             qe.RegisterOnLevelChanged(questId);
             qe.RegisterOnEnterWorld(questId);
