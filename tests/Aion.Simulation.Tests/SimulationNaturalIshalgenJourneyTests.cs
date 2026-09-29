@@ -70,7 +70,9 @@ public sealed partial class SimulationFastScenarioTests
 			Environment.GetEnvironmentVariable("NI08_RELOG_AT"), Environment.GetEnvironmentVariable("NI08_STOP_AT"),
 			Environment.GetEnvironmentVariable("NI07_STOP_ON_DEATH") == "1",
 			Environment.GetEnvironmentVariable("NI07_OPTIMIZE_HUBS") == "1",
-			AscensionBridge: Environment.GetEnvironmentVariable("NA_ASCENSION") == "1")).RunAsync(token);
+			AscensionBridge: Environment.GetEnvironmentVariable("NA_ASCENSION") == "1",
+			// AF-08/09: Altgard Leg 1 from a restored `altgard` snapshot (docs/natural-altgard-leveling.md).
+			AltgardLeg1: Environment.GetEnvironmentVariable("AF_ALTGARD") == "1")).RunAsync(token);
 
 		async Task SupplyHelpItemAsync(int itemId, long count, CancellationToken supplyToken)
 		{

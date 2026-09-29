@@ -500,10 +500,34 @@ with "AF" in place of "NA").
     supported operations. The runner needs the journey's navigator for Altgard, so they
     are exercised in AF-09's run once AF-08 adds that map context.
   - The warning, logger and clock-read checks pass; all 292 Natural unit tests pass.
-- [ ] **AF-08 — The Leg 1 runner and decision engine.** From the `altgard` snapshot: an
+- [x] **AF-08 — The Leg 1 runner and decision engine.** From the `altgard` snapshot: an
   Altgard map context, the decision engine over the contract (eligibility, level gates,
   "come back later"), rests and restocks at the fortress, help items (NA-21), and the
   missions as they auto-start. Trace every decision.
+  - *Done 2026-09-29.*
+    - `NaturalAltgardDecisionEngine` (pure) picks one move from the client's view. Template
+      quests go hub-style (accept every eligible one at the fortress, work them on the Ice
+      Lake, claim each). Then come the scripted steps, the remedy, and the air kills from
+      var 2 to 6. Gated quests are left for later ("come back"), and it hunts for level
+      when only gated quests remain.
+    - A hunt quest is done when its kill counter is full: Java's monster_hunt keeps it at
+      START until it is turned in.
+    - The journey's `AltgardLeg1` mode (`AF_ALTGARD=1`) rebinds navigator, geometry, map and
+      combat to Altgard (as for NA-23), and puts the Leg 1 NPCs and hunt targets into the
+      waypoint graph. It runs template quests on the unchanged Ishalgen runner, scripted
+      steps on `NaturalAltgardQuestSteps`, and flight and air kills on the AF-04..06 code;
+      help items (NA-21) are topped up at run start, level-up and claims.
+    - Every decision, step and flight is traced. The endpoint is checked across a relog and
+      written to `altgard-l1-completion.json`.
+  - Three engine tests pass. Smoke runs from the `altgard` snapshot:
+    - `af08-smoke1` stopped with Q2201's counter full at START, which found the monster_hunt
+      rule above;
+    - `af08-smoke2` (`run/af-l1/af08-smoke2`) completed all of Leg 1 in 29 game minutes
+      (1 m 26 s real): the six template quests, Q2209, Q2207, Q2208 and Q24011 (5 air
+      kills). 51 fights, no death, no retreat, four flights. It ended at level 13 in the
+      fortress with the endpoint verified across the relog.
+  - The warning, logger and clock-read checks and all 295 Natural unit tests pass. No help
+    item was needed.
 - [ ] **AF-09 — One SIM run of Leg 1** from the `altgard` snapshot to the Leg 1 endpoint,
   saved as the `altgard-l12` snapshot. Deaths are recorded (OD-12).
 - [ ] **AF-10 — The full `CLAUDE.md` checklist and a checkpoint.** The isolated LIVE run comes
@@ -562,3 +586,4 @@ The original questions follow.
 - 2026-09-29 AF-05: flight protocol; the bot flies around the floating island to Borender's rock, talks, and flies back (FP 60 → 37, 40 → 17).
 - 2026-09-29 AF-06: air combat; Q24011 reached REWARD in SIM with 5 fungus kills in 3 sorties, refilling on Borender's rock.
 - 2026-09-29 AF-07: contract talk steps and the remedy use; SIM played Q2209, Q2207, Q2208 and Q24011 to completion (15 steps, air kills, dungeon, flight).
+- 2026-09-29 AF-08: Leg 1 decision engine and journey mode; smoke run completed Leg 1 from the snapshot at level 13 with no death.

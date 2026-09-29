@@ -75,4 +75,5 @@ public enum NaturalMauEncounter
 public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? RelogAt = null,
 	string? StopAt = null, bool StopOnDeath = false, bool OptimizeHubs = false,
 	NaturalMauCourse? Course = null, NaturalMauEncounter? Encounter = null,
-	NaturalMauPolicyParameters? MauPolicy = null, bool AscensionBridge = false, bool ClericEncounter = false);
+	NaturalMauPolicyParameters? MauPolicy = null, bool AscensionBridge = false, bool ClericEncounter = false,
+	bool AltgardLeg1 = false);

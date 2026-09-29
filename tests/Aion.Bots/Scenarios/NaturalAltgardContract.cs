@@ -66,6 +66,16 @@ public sealed record NaturalAltgardContract(
 
 	public NaturalAltgardQuest Quest(int questId) => Quests.Single(quest => quest.Id == questId);
 
+	/// <summary>Every NPC Leg 1 walks to, talks to or hunts: the navigation graph's waypoints for Altgard.</summary>
+	public int[] GraphNpcIds(IReadOnlyDictionary<int, QuestRunPlan> plans) =>
+		Quests.Select(quest => quest.StartNpcId).OfType<int>()
+			.Concat(Steps.Select(step => step.NpcId))
+			.Concat(plans.Values.SelectMany(plan => plan.StartNpcs.Concat(plan.EndNpcs)
+				.Concat(plan.Steps.SelectMany(step => step.Npcs.Concat(step.Sources.Select(source => source.Npc).OfType<QuestRunNpc>())))
+				.Select(npc => npc.Id)))
+			.Append(Start.BindNpcId).Append(AirKills.NpcId)
+			.Distinct().Order().ToArray();
+
 	public NaturalAltgardArea Area(string key) => Areas.Single(area => area.Key == key);
 
 	public IEnumerable<NaturalAltgardStep> StepsFor(int questId) => Steps.Where(step => step.QuestId == questId);
