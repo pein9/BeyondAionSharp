@@ -884,3 +884,17 @@ not treat that as a start (fixed in NA-25).
 Details, findings and the remaining acceptance item (NA-27, the isolated LIVE run) are in
 [natural-ascension-altgard.md](natural-ascension-altgard.md). NA-26 ran every `CLAUDE.md` check on 2026-09-28,
 and all pass. Docker Fast first failed on the NA-08 service-step test's history-wide log policy (fixed there).
+
+## Ascension bridge accepted in LIVE (NA-27, 2026-09-29)
+
+`pwsh -NoProfile -File scripts/live/run-live.ps1 -Run <name> -Scenario NI-09 -AscensionBridge -Bots 1 -WatcherMode enforce
+-DashboardPort 17880 -StepTimeoutSeconds 120 -RunRoot run/na27-live` runs a fresh Priest on its own isolated stack from
+creation to a level 10 Cleric bound in Altgard. The run supplies the approved help items through the director's
+`//add` and keeps the endpoint databases (`altgard-live-dump.sql.gz`).
+
+Attempt `na27-live-a3` passed in 4 h 22 min: all 41 Ishalgen quests, the whole bridge verified across a relog, an
+ordinary-identity check, 3 deaths recovered, and a clean enforce watcher. The two earlier attempts found:
+- a Return cast attempted while dead (now a bind revive);
+- Lake Hulker's restored ineffective `pool="1"` (removed again).
+
+Details are in [natural-ascension-altgard.md](natural-ascension-altgard.md).

@@ -1862,7 +1862,7 @@ OD-11, a development item is verified by **one** run.
     - **Docs.** `natural-ishalgen-status.md` and `natural-ishalgen-journey.md` are updated,
       and so is this doc.
 
-- [ ] **NA-27 — One isolated LIVE run (OD-4).**
+- [x] **NA-27 — One isolated LIVE run (OD-4).**
   - **Depends:** NA-26.
   - **Do:**
     - Run it on the NI-09-style isolated LIVE stack in its own compose project (D13): a
@@ -1917,6 +1917,37 @@ OD-11, a development item is verified by **one** run.
           `4.8`.
         - `run-live.ps1` now takes the endpoint dump before the watcher verdict.
       - `known-problems.json` carries the ledger updates the runs made.
+    - **`na27-live-a3` (2026-09-29): PASSED.** Evidence: `run/na27-live/na27-live-a3/`;
+      runner log `run/na27-live-a3-runner.log`; built at 549369bd1.
+      - **Report:** 1 of 1 passed, runner exit 0. Enforce watcher: 0 new, 0 known and
+        0 regressed problems, with only the existing suppressed startup warning. The
+        runner removed its own compose project `aion-bots-na27-live-a3`. The `aion` stack
+        was never touched.
+      - **Journey:**
+        - A fresh ordinary Priest (character 104403, created this run) completed all 41
+          Ishalgen quests at level 9 (`bots/completion.json`: complete).
+        - It then completed the whole bridge. The endpoint was verified across the relog
+          (`bots/bridge-completion.json`, verified): a level 10 Cleric (class 10) in
+          Altgard (220030000), bound at Altgard Fortress, with Q2008, Q2009, Q2904 and
+          Q24010 done, and 45 completions in all.
+        - The final identity relog checked the ordinary access-level-0 Cleric
+          (`natural-ascension-complete.json`, 4 h 21 min 43 s of wall time).
+      - **3 deaths**, all in Ishalgen (two at Q2003, one at the Q2007 blue generator), each
+        recovered by a bind revive. None on the bridge.
+      - 11 movies skipped. The help items came from the director's `//add`: Anti-Shock
+        ×30, Minor Mana Serum ×40, jelly ×8 and powder ×200 at level 10. The bot used
+        Castafodin, Accelerox and a jelly, and cast Blessing 6 times.
+      - **Wall seconds on the bridge's steps:**
+
+        | Munin approach | Q2008 | Q2009 | Q2904 | Teleport | Bind | Q24010 | Shop | Endpoint | Identity relog |
+        |---|---|---|---|---|---|---|---|---|---|
+        | 335 | 124 | 62 | 81 | 2 | 28 | 3 | 71 | 11 | 11 |
+
+      - **The LIVE starting point in Altgard:** `altgard-live-dump.sql.gz` (84 KB of SQL,
+        sha256 `9fb33cf9…` in `altgard-live-dump.json`) holds `aion_cs`, `aion_gs` and
+        `aion_ls` at the endpoint. It contains the Cleric in `players` (CLERIC, level 10,
+        220030000), `player_bind_point` at the Altgard obelisk, the quests, inventory,
+        skills, and the scroll effects still running.
 
 - [ ] **NA-28 — (Optional) watch it in the real client.**
   - With the authorized Computer Use workflow (NI-11 style), follow a LIVE bridge run
@@ -2139,6 +2170,10 @@ has examples.
 - 2026-09-28 — Loop: NA-24 done. A clean bridge run from Munin reached the verified endpoint in 300 game seconds with no deaths, four skipped movies and the help items supplied and used. Movies and per-quest times are now on the run record.
 - 2026-09-28 — Loop: NA-25 done. One full SIM journey from creation (seed 1) completed Ishalgen's 41 quests and the bridge (3 deaths in Ishalgen, recorded). The `altgard` snapshot is captured and restores. The first run caught Q2008's LOCKED journal state pulling the bot into the bridge early; now fixed and tested.
 - 2026-09-28 — Loop: NA-26 done. Every `CLAUDE.md` check passes, including Docker Fast and the NavBake check. Docker Fast first caught the NA-08 test counting an earlier scenario's audit lines (its policy is now scoped to its own window). The warning baseline is unchanged. This is the checkpoint before the isolated LIVE run (NA-27).
+- 2026-09-29 — Loop: NA-27 done. The third isolated LIVE attempt (`na27-live-a3`) passed, from a fresh Priest through Ishalgen and the whole bridge to a verified level 10 Cleric bound in Altgard, in 4 h 22 min, with 3 deaths recovered. The endpoint databases are kept as the LIVE start in Altgard.
+  - a1 found a Return cast attempted while dead.
+  - a2 passed the bot's side but lost to a restored ineffective spawn pool warning.
+  - Both are fixed. **The Ascension bridge is accepted in SIM and LIVE.** Only the optional NA-28 (watching in the real client) remains.
 
 ## Appendix A: Altgard shops and consumables
 
