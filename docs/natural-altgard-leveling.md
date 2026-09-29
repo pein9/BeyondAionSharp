@@ -7,7 +7,7 @@ The zone is worked in **sub-legs**. The first one is
 [Leg 1: Altgard Fortress, level 10–12](#leg-1-altgard-fortress-level-1012). It has its own
 TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-altgard.md).
 
-**Leg 1 is done (AF-00..AF-10, 2026-09-29).** [Leg 2: Moslan Crossroad](#leg-2-moslan-crossroad-level-1315--proposal) is approved and worked in Loop mode (AM-01..AM-09).
+**Leg 1 is done (AF-00..AF-10, 2026-09-29).** [Leg 2: Moslan Crossroad](#leg-2-moslan-crossroad-level-1315--proposal) is done (AM-01..AM-09, 2026-09-29): `altgard-l2` starts Leg 3.
 
 ## Goal
 
@@ -871,8 +871,26 @@ The same loop protocol, with "AM" in place of "NA".
     - A test restore showed the Cleric at XP 778,817 at (1459.56, 1192.68) in Altgard, with
       Q2210–2215, Q2218–2220 and Q24012 COMPLETE, and was dropped.
     - Every owned schema was dropped.
-- [ ] **AM-09 — The full `CLAUDE.md` checklist and a checkpoint.** LIVE stays at the end of the
+- [x] **AM-09 — The full `CLAUDE.md` checklist and a checkpoint.** LIVE stays at the end of the
   Altgard leg (AF-Q3).
+  - *Done 2026-09-29.* The whole `CLAUDE.md` build-and-test list was run in order
+    (`run/am09/summary.txt`, one log per check). 31 of 32 passed at first:
+    - the build and `dotnet test AionServer.slnx`: GameServer 4,382 passed and 16 skipped,
+      Commons 303, LoginServer 135 (7 skipped), ChatServer 41 (1 skipped), Simulation 145
+      (38 skipped);
+    - the warning baseline, the logger, clock-read and custom-quest-drafts checks,
+      fidelity, every Python and PowerShell contract test, and the NavBake check.
+  - **`run-fast.ps1` failed, on two of my probes** (the AF-07 scripted-quests probe and
+    the AM-03 crossroad probe): "too far to talk". Both pass alone. In the shared Fast
+    world the walking NPCs (Tulberg, Rion) have moved on by the time they run, and the
+    probes had assumed an NPC stands where it was first seen. They now walk to the NPC's
+    current position and talk again, as the journey does.
+  - The rerun passed: `run-fast.ps1` 34 passed and 3 skipped (`run/fast-20260929-185711`),
+    and the warning baseline and the logger, clock-read and drafts checks.
+  - **Checkpoint.** Leg 2 is done in SIM. Snapshot `altgard-l2` (level 15, at Manir's
+    Campsite) is the start of Leg 3, Stop 3: Manir's Campsite and Dock, with Q2221, the
+    Q2290 escort and Q2222. LIVE is still run once, at the end of the Altgard leg (AF-Q3).
+    The first real use of the Anti-Shock shield and Salvation is still to come.
 
 **Endpoint:** Q2210–Q2215, Q2218–Q2220 and Q24012 completed, alive, at Manir's Campsite
 (AM-Q1). No level target: level 14–15 is
@@ -974,3 +992,4 @@ The original questions follow.
 - 2026-09-29 AM-06: real Cleric combat for Q2211/2212/2220 from altgard-l12: 29 fights, no death; fixed the chain reset on non-chain casts.
 - 2026-09-29 AM-07: the Leg 2 runner; the smoke run completed Leg 2 from altgard-l12 with no death, level 15, at Manir.
 - 2026-09-29 AM-08: SIM run am08-l2-s1 completed Leg 2 with no death (level 15); snapshot altgard-l2 captured and restore-checked.
+- 2026-09-29 AM-09: full checklist green after the two probes learned to follow walking NPCs; Leg 2 is done.

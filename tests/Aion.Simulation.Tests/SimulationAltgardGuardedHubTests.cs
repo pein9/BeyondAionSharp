@@ -50,7 +50,16 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.Equal(13, session.Api.World.Level);
 
 		session.BeginStep("s01", "take-q2210-from-rion");
-		await session.StartQuestAsync(await session.WaitForNpcAsync(203603, token), report, token);
+		// Talk to Rion where the client sees him now: in a long shared SIM world he need not be at his spawn point.
+		int rionObject = await session.WaitForNpcAsync(203603, token);
+		for (int attempt = 1; ; attempt++)
+		{
+			BotPosition seen = session.Api.World.Objects[rionObject].Position;
+			if (NaturalGuardedTalkPolicy.Distance(session.CurrentPosition, seen) > 4)
+				await WalkAsync(geometry.FindInteractionPath(altgard, session.CurrentPosition, seen));
+			try { await session.StartQuestAsync(rionObject, report, token); break; }
+			catch (NaturalDialogTooFarException) when (attempt < 3) { await session.SynchronizeAsync(token); }
+		}
 
 		session.BeginStep("s02", "travel-to-the-crossroad-staging-point");
 		BotPosition staging = geometry.GroundAround(altgard, new BotPosition(leg.Hub.Anchor[0], leg.Hub.Anchor[1] + 30, leg.Hub.Anchor[2], 0), [0f, 2f, 4f])

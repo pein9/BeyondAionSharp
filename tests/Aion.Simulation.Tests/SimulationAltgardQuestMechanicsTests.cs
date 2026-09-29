@@ -89,7 +89,17 @@ public sealed partial class SimulationFastScenarioTests
 				Console.WriteLine($"AF-07 {step.NpcId} is seen at {seen}, not at its spawn {at}");
 				await WalkAsync(seen);
 			}
-			string change = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token);
+			// A walking NPC (Tulberg) may have moved on in a long shared SIM world: follow it and talk again, as a player does.
+			string change;
+			for (int attempt = 1; ; attempt++)
+			{
+				try { change = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token); break; }
+				catch (NaturalDialogTooFarException) when (attempt < 3 && !step.Flight)
+				{
+					await session.SynchronizeAsync(token);
+					await WalkAsync(session.Api.World.Objects[npc].Position);
+				}
+			}
 			log.Add(change);
 			Console.WriteLine($"AF-07 {change}");
 		}
