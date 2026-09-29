@@ -1,0 +1,13 @@
+diff --git a/game-server/data/handlers/quest/bare_truth/_14031AHyperVention.java b/game-server/data/handlers/quest/bare_truth/_14031AHyperVention.java
+index 8e0268804..4e0c7ab7e 100644
+--- a/game-server/data/handlers/quest/bare_truth/_14031AHyperVention.java
++++ b/game-server/data/handlers/quest/bare_truth/_14031AHyperVention.java
+@@ -26,7 +26,7 @@ public class _14031AHyperVention extends AbstractQuestHandler {
+ 
+ 	@Override
+ 	public void register() {
+-		int[] npc_ids = { 203700, 801216, 790001, 203183, 203989, };
++		int[] npc_ids = { 203700, 801216, 790001, 203183, 203989, 730888, 730898 };
+ 		qe.registerOnQuestCompleted(questId);
+ 		qe.registerOnLevelChanged(questId);
+ 		qe.registerOnEnterWorld(questId);

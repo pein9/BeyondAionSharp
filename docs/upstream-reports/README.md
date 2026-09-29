@@ -2,7 +2,7 @@
 
 Fixes for defects that the Java 4.8 server (`beyond-aion/aion-server`, branch `4.8`) shares
 with this port. Each patch is made against the Java repository root and checked with
-`git apply --check` (and `--cached`) on the local `../aion-server` checkout at `ce54b7931`.
+`git apply --check` (and `--cached`) on the local `../aion-server` checkout at `ce54b7931`, and on an export of `upstream/4.8` `a31c1dfcb`.
 Patches are kept with LF line endings (`.gitattributes`), as the Java repository stores them.
 
 | Quest | Defect | Patch | C# decision |
@@ -10,8 +10,15 @@ Patches are kept with LF line endings (`.gitattributes`), as the Java repository
 | 2209 The Scribbler (Altgard) | Borender 203572 is never registered for the talk event; var 1 → 2 is unreachable | `q2209-the-scribbler.patch`, report `q2209-the-scribbler.md` | D26 |
 | 2223 A Mythical Monster (Altgard) | Lamir 203620 is never registered for the talk event; var 0 → 1 (which gives item 182203217) is unreachable through the talk path. Masked while Q2231 or Q2224 is startable or active, because Lamir starts both and so opens the quest page. Retail step 1 is "Talk with Lamir" (https://aioncodex.com/enc/quest/2223/?sl=1) | `q2223-a-mythical-monster.patch` | D27, applied (deviation 141) |
 | 2916 Man in the Long Black Robe (Pandaemonium) | Annju 204151 is never registered for the talk event; var 2 → 3 (`SETPRO3`) is unreachable. No other quest registers 204151. Retail step 3 is "Interrogate Annju" (https://aioncodex.com/enc/quest/2916/?sl=1) | `q2916-man-in-the-long-black-robe.patch` | D28, applied (deviation 142) |
+| 14031 A Hyper-vention (Elyos mission) and 24031 Enemy at the Doorstep (Asmodian mission) | The Large Dimension Teleport Device 730888 and the Shattered one 730898, spawned by the handler in 320040000, are never registered; the mission stays at var 10 after the captain kill | `q14031-a-hyper-vention.patch`, `q24031-enemy-at-the-doorstep.patch` | D29, D30 |
+| 2002 Where's Rae? (Ishalgen) | Verdandi 790002 and Hagen 205020 are never registered | `q2002-wheres-rae.patch` | already registered (deviation 33) |
+| 18400 The Vanishings (Esoterrace) | Koray 799585, one of the two end NPCs, is never registered; Lanuaga 799584 still ends it | `q18400-the-vanishings.patch` | D31 (awaiting re-confirmation) |
+| 2493 Bringing up Tayga (Morheim) | The "Purra?" decoy spots 204436–204438 are never registered; cosmetic | `q2493-bringing-up-tayga.patch` | none |
+| 26960 Face the Commander (Iron Wall Warfront) | Copy slip from the Elyos twin 16960: 802055 registered for talk and 802054 for kill, instead of 802054 for talk and 233544 for kill. Untestable: Pashid 233544 has no spawn in 4.8 | `q26960-face-the-commander.patch` | none |
+| 2209 (work item) | Thrud does not hand out the quest work item 182203206; cosmetic | `q2209-the-scribbler-work-item.patch` | none |
 
-The evidence and the dialog-dispatch explanation that apply to all three are in
+The Java branch, the checks and the PR text are in `pull-request.md`.
+The evidence and the dialog-dispatch explanation that apply to all of them are in
 `q2209-the-scribbler.md`, whose appendix lists every handler the scan found.
 The scan tool and its output are in `scan/` (`scan_unregistered_talk.py`, read-only; `scan-ce54b7931.txt`).
 
@@ -19,8 +26,10 @@ The scan tool and its output are in `scan/` (`scan_unregistered_talk.py`, read-o
 
 **Status 2026-09-29.** Q2209 (Borender) is fixed in C# (D26, AF-00, commit `cfdebc04a`),
 and its Java patch and report are ready here. Q2223 (Lamir) is fixed in C# (D27, commit
-`8a8e54354`). Steps 1 and 2 below are done; the C# decisions D28–D31 and the Java branch
-await the operator. Nothing has been submitted upstream. The
+`8a8e54354`), and Q2916 (Annju) too (D28, `64eaf0b28`). Steps 1 and 2 are done. Step 3:
+the Java branch `fix/unregistered-quest-talk-npcs` is built in `../aion-server` (not
+pushed) and described in `pull-request.md`. D29 and D30 are approved; D31 awaits
+re-confirmation (see its row). Nothing has been submitted upstream. The
 operator asked for a separate session to fix **the other quests** that have the same
 defect, in both directions:
 - **Upstream Java:** **one** combined pull request to `beyond-aion/aion-server` (`4.8`)
@@ -60,9 +69,9 @@ removed (11060 is level 99 there; 14031, 24031 and 26960 have no page).
 | `bare_truth/_14031AHyperVention` | 730888, 730898 (spawned by the handler in 320040000) | var 10 → 11 → REWARD after the captain kill; the quest cannot finish | **Confirmed** (4.8 retail steps 11 "Operate the Large Dimension Teleport Device" and 12 "Check the Shattered Large Dimension Teleport Device"). Both NPCs are `ai="general"` and no other handler registers them, so a click opens page 1011 | include | proposed D29 |
 | `clash_of_destiny/_24031EnemyAtTheDoorstep` | 730888, 730898 | same as 14031 | **Confirmed** (4.8 retail steps 11 and 12, same text) | include | proposed D30 |
 | `ishalgen/_2002WheresRae` | 790002 Verdandi, 205020 Hagen | Verdandi's var 2 → 3, 10 → 11, 11 → 12, 12 → 99 (instance) and 13 → 14 steps; Hagen's flight back from Ataxiar | **Confirmed** (4.8 retail steps 3, 5 and 8 "Talk with Verdandi"). Can be masked while Q2008 Ascension, which registers both, is in the quest list and not complete | include | already registered (deviation 33, P7-09) |
-| `esoterrace/_18400TheVanishings` | 799585 Koray | the second of two end NPCs; 799584 Lanuaga also completes it | **Confirmed typo**: `register()` registers 799584 **twice**; 4.8 retail step 3 says either Sanctum Expedition Inspector ends it | include (turn the duplicate line into 799585) | proposed D31 |
-| `morheim/_2493BringingUpTayga` | 204436–204438 "Purra?" decoys | page 1353 ("not here"); no state change | Cosmetic (4.8 retail: "search every rooftop") | proposed: include | proposed: no change |
-| `iron_wall_warfront/_26960FacetheCommander` | 802054 Lundvarr (registered for **kill**, not talk) | var 0 → 1 unreachable; the Commander Pashid kill (233544) is not registered at all, and `register()` names 802055, the Elyos twin's NPC | **Different defect**: a copy slip from `_16960FacetheCommander` (which registers 802055 talk and 233544 kill). Not reachable in 4.8: Pashid 233544 has no spawn anywhere, so the Elyos twin cannot finish either | proposed: leave out (different defect, cannot be tested) | no change |
+| `esoterrace/_18400TheVanishings` | 799585 Koray | the second of two end NPCs; 799584 Lanuaga also completes it | **Confirmed**, cosmetic in effect (4.8 retail step 3: either Sanctum Expedition Inspector ends it). *Correction:* an earlier version of this row said `register()` lists 799584 twice. It does not; the scan's original reading (Koray is simply unregistered) was right | include | D31, awaiting re-confirmation |
+| `morheim/_2493BringingUpTayga` | 204436–204438 "Purra?" decoys | page 1353 ("not here"); no state change | Cosmetic (4.8 retail: "search every rooftop") | include | no change |
+| `iron_wall_warfront/_26960FacetheCommander` | 802054 Lundvarr (registered for **kill**, not talk) | var 0 → 1 unreachable; the Commander Pashid kill (233544) is not registered at all, and `register()` names 802055, the Elyos twin's NPC | **Different defect**: a copy slip from `_16960FacetheCommander` (which registers 802055 talk and 233544 kill). Not reachable in 4.8: Pashid 233544 has no spawn anywhere, so the Elyos twin cannot finish either | include (approved; the var 0 kill quirk it shares with 16960 is left alone) | no change |
 | `inggison/_11060TheOrbsOrders` | 218756 Padmarashka (kill-only) | the REWARD branch checks 218756 (the boss) instead of Siaqua 799015, who is registered but never handled | **Different defect** (4.8 retail step 3 "Talk with Siaqua"), but `restricted="true"` | leave out | no change |
 | `esoterrace/_18409GroupTiamatsPowerUnleashed` | 205232 Ukon | var 1 → 2 | `restricted="true"` | leave out | no change |
 | `reshanta/_1845OpeningDoors` | 204390 Bubu Kong | end branch | `restricted="true"`, and an Asmodian NPC in an Elyos quest | leave out | no change |
@@ -70,8 +79,8 @@ removed (11060 is level 99 there; 14031, 24031 and 26960 have no page).
 The other 50 NO_TALK entries are quest-start NPCs reached through the quest list: they
 are expected, not defects.
 
-"proposed" means the operator has not answered yet; the questions are D28–D31 in
-`docs/e2e-player-simulation-plan.md` §6.
+The C# decisions are D26–D31 in `docs/e2e-player-simulation-plan.md` §6. "include" means
+the quest has a commit on the Java branch and a patch here.
 
 ### Steps
 

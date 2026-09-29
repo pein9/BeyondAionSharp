@@ -1,0 +1,14 @@
+diff --git a/game-server/data/handlers/quest/morheim/_2493BringingUpTayga.java b/game-server/data/handlers/quest/morheim/_2493BringingUpTayga.java
+index 6b2c3010e..fe7b82c1b 100644
+--- a/game-server/data/handlers/quest/morheim/_2493BringingUpTayga.java
++++ b/game-server/data/handlers/quest/morheim/_2493BringingUpTayga.java
+@@ -23,6 +23,9 @@ public class _2493BringingUpTayga extends AbstractQuestHandler {
+ 		qe.registerOnLogOut(questId);
+ 		qe.registerQuestNpc(204325).addOnTalkEvent(questId);
+ 		qe.registerQuestNpc(204435).addOnTalkEvent(questId);
++		qe.registerQuestNpc(204436).addOnTalkEvent(questId);
++		qe.registerQuestNpc(204437).addOnTalkEvent(questId);
++		qe.registerQuestNpc(204438).addOnTalkEvent(questId);
+ 	}
+ 
+ 	@Override

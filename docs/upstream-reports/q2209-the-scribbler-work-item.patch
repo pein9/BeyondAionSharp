@@ -1,0 +1,13 @@
+diff --git a/game-server/data/handlers/quest/altgard/_2209TheScribbler.java b/game-server/data/handlers/quest/altgard/_2209TheScribbler.java
+index 363231caa..a0ee74ca5 100644
+--- a/game-server/data/handlers/quest/altgard/_2209TheScribbler.java
++++ b/game-server/data/handlers/quest/altgard/_2209TheScribbler.java
+@@ -39,7 +39,7 @@ public class _2209TheScribbler extends AbstractQuestHandler {
+ 				if (env.getDialogActionId() == QUEST_SELECT)
+ 					return sendQuestDialog(env, 1011);
+ 				else
+-					return sendQuestStartDialog(env);
++					return sendQuestStartDialog(env, workItems.getFirst());
+ 			}
+ 		} else if (qs.getStatus() == QuestStatus.START) {
+ 			switch (targetId) {

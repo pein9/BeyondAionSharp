@@ -1,0 +1,12 @@
+diff --git a/game-server/data/handlers/quest/esoterrace/_18400TheVanishings.java b/game-server/data/handlers/quest/esoterrace/_18400TheVanishings.java
+index 8101e5f76..01512c694 100644
+--- a/game-server/data/handlers/quest/esoterrace/_18400TheVanishings.java
++++ b/game-server/data/handlers/quest/esoterrace/_18400TheVanishings.java
+@@ -22,6 +22,7 @@ public class _18400TheVanishings extends AbstractQuestHandler {
+ 		qe.registerQuestNpc(799552).addOnQuestStart(questId);
+ 		qe.registerQuestNpc(799552).addOnTalkEvent(questId);
+ 		qe.registerQuestNpc(799584).addOnTalkEvent(questId);
++		qe.registerQuestNpc(799585).addOnTalkEvent(questId);
+ 		qe.registerQuestNpc(730014).addOnTalkEvent(questId);
+ 	}
+ 

@@ -1,0 +1,13 @@
+diff --git a/game-server/data/handlers/quest/ishalgen/_2002WheresRae.java b/game-server/data/handlers/quest/ishalgen/_2002WheresRae.java
+index 9f2221d31..d3bfc9883 100644
+--- a/game-server/data/handlers/quest/ishalgen/_2002WheresRae.java
++++ b/game-server/data/handlers/quest/ishalgen/_2002WheresRae.java
+@@ -32,7 +32,7 @@ public class _2002WheresRae extends AbstractQuestHandler {
+ 
+ 	@Override
+ 	public void register() {
+-		int[] npc_ids = { 203519, 203534, 203553, 700045, 203516, 203538 };
++		int[] npc_ids = { 203519, 203534, 203553, 700045, 203516, 203538, 790002, 205020 };
+ 		qe.registerOnQuestCompleted(questId);
+ 		qe.registerOnLevelChanged(questId);
+ 		qe.registerQuestNpc(210377).addOnKillEvent(questId);

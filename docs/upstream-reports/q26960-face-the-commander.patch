@@ -1,0 +1,15 @@
+diff --git a/game-server/data/handlers/quest/iron_wall_warfront/_26960FacetheCommander.java b/game-server/data/handlers/quest/iron_wall_warfront/_26960FacetheCommander.java
+index 039edc961..6fcb7a230 100644
+--- a/game-server/data/handlers/quest/iron_wall_warfront/_26960FacetheCommander.java
++++ b/game-server/data/handlers/quest/iron_wall_warfront/_26960FacetheCommander.java
+@@ -21,8 +21,8 @@ public class _26960FacetheCommander extends AbstractQuestHandler {
+ 	public void register() {
+ 		qe.registerQuestNpc(801280).addOnQuestStart(questId);
+ 		qe.registerQuestNpc(801280).addOnTalkEvent(questId);
+-		qe.registerQuestNpc(802055).addOnTalkEvent(questId);
+-		qe.registerQuestNpc(802054).addOnKillEvent(questId);
++		qe.registerQuestNpc(802054).addOnTalkEvent(questId);
++		qe.registerQuestNpc(233544).addOnKillEvent(questId);
+ 	}
+ 
+ 	@Override

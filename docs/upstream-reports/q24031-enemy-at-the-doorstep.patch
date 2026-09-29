@@ -1,0 +1,13 @@
+diff --git a/game-server/data/handlers/quest/clash_of_destiny/_24031EnemyAtTheDoorstep.java b/game-server/data/handlers/quest/clash_of_destiny/_24031EnemyAtTheDoorstep.java
+index 99c1a4e06..1b83cb464 100644
+--- a/game-server/data/handlers/quest/clash_of_destiny/_24031EnemyAtTheDoorstep.java
++++ b/game-server/data/handlers/quest/clash_of_destiny/_24031EnemyAtTheDoorstep.java
+@@ -21,7 +21,7 @@ public class _24031EnemyAtTheDoorstep extends AbstractQuestHandler {
+ 
+ 	@Override
+ 	public void register() {
+-		int[] npc_ids = { 204052, 801224, 203550, 203654, 204369 };
++		int[] npc_ids = { 204052, 801224, 203550, 203654, 204369, 730888, 730898 };
+ 		qe.registerOnQuestCompleted(questId);
+ 		qe.registerOnLevelChanged(questId);
+ 		qe.registerOnEnterWorld(questId);
