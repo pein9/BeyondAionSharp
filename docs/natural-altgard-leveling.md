@@ -158,7 +158,7 @@ quest must be finished first.
 | 2289 | Rampaging Mosbears | 13 | Gefion | 2288 | mosbears, then Komu Silverclaw (L17): Komu's Horn | 43,350 |
 | 2224 | Lamir's New Clothes | 13 | Lamir | | collect 6 Mosbear's Leather (cubs L13–15) | 17,678 |
 | 2226 | A Cure for Crazy | 13 | Garuntat | | deliver to Gornak at Idun's Lake | 17,678 |
-| 2223 | A Mythical Monster | 12 | Gefion | | burn the incense: Infernus (EXPERT, L13) spawns for 5 min; kill it | 23,250 |
+| 2223 | A Mythical Monster | 12 | Gefion | | talk to Lamir (**needs the D27 correction**), burn the incense: Infernus (EXPERT, L13) spawns for 5 min; kill it | 23,250 |
 | 24112 | No Laissez-faire for Lepharists | 14 | Nokir | | kill Comrade Sumarhon (SEASONED, L15), report to Brodir | 17,552 |
 
 ### Stop 5: Kaibech's Campsite and Gribade Canyon (level 13–16)
@@ -391,7 +391,10 @@ with "AF" in place of "NA").
   for them.
 - AF-Q3: **LIVE once, at the end** of the Altgard leg.
 
-**Open, not blocking Leg 1:**
+**Answered 2026-09-29:** AL-Q6 **approved (a)** as D27. The C# correction is applied when the
+bot reaches Q2223 at Stop 4; the upstream patch is `docs/upstream-reports/q2223-a-mythical-monster.patch`.
+All the Java fixes go upstream later as one combined PR (`docs/upstream-reports/README.md`).
+
 - **AL-Q6 — Q2223 "A Mythical Monster" has the same defect.** The upstream scan found that
   its handler never registers Lamir (203620), whose talk is the var 0 → 1 step (retail step
   1, "Talk with Lamir"). While Q2231 is startable or active, Lamir's quest page can mask it;
