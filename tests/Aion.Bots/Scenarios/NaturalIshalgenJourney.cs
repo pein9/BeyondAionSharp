@@ -121,8 +121,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				return ground with { Heading = landed.Heading };
 			};
 			// AF-08: Altgard Leg 1 walks to its own NPCs and hunts on the Ice Lake; they join the waypoint graph.
-			NaturalAltgardContract? altgardLeg = options.AltgardLeg1 ? NaturalAltgardContract.LoadDefault() : null;
-			IReadOnlyDictionary<int, QuestRunPlan> altgardPlans = options.AltgardLeg1 ? NaturalAltgardContract.LoadPlans() : new Dictionary<int, QuestRunPlan>();
+			// AM-06/07: the same runner plays any Altgard leg ("l1" the fortress, "l2" Moslan Crossroad).
+			string? altgardLegId = options.AltgardLegId ?? (options.AltgardLeg1 ? "l1" : null);
+			NaturalAltgardContract? altgardLeg = altgardLegId is { } legId ? NaturalAltgardContract.LoadLeg(legId) : null;
+			IReadOnlyDictionary<int, QuestRunPlan> altgardPlans = altgardLegId is { } planLeg
+				? NaturalAltgardContract.LoadPlans(planLeg) : new Dictionary<int, QuestRunPlan>();
 			int[] altgardNpcs = altgardLeg?.GraphNpcIds(altgardPlans) ?? [];
 			BotNavigationGraph graph = BotNavigationGraphFactory.Build(runtime.Data, altgardNpcs.Concat(new[] {
 				203500, 203504, 203501, 203502, 203516, 203518,
@@ -403,7 +406,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					throw new EndOfStreamException($"NI-08 injected connection interruption at Q{at[0]} status {at[1]} vars {at[2]}.");
 				}
 			};
-			if (options.AltgardLeg1)
+			if (altgardLegId != null)
 			{
 				await RunAltgardLeg1Async();
 				session.PublishDashboard("completed", force: true);
@@ -899,11 +902,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// AF-04..AF-06 code. Every decision is traced; a move that makes no progress three times stops the run.
 			async Task RunAltgardLeg1Async()
 			{
-				NaturalAltgardContract leg = altgardLeg ?? throw new InvalidOperationException("Altgard Leg 1 needs its contract.");
-				NaturalAltgardItemUse itemUse = leg.ItemUse ?? throw new InvalidDataException("Altgard Leg 1 needs its remedy use.");
-				NaturalAltgardAirKills airKills = leg.AirKills ?? throw new InvalidDataException("Altgard Leg 1 needs its air kills.");
-				NaturalAltgardFlight flight = leg.Flight ?? throw new InvalidDataException("Altgard Leg 1 needs its flight rules.");
-				Require.True(combat.IsCleric, "Altgard Leg 1 needs the Cleric.");
+				NaturalAltgardContract leg = altgardLeg ?? throw new InvalidOperationException("An Altgard leg needs its contract.");
+				IReadOnlySet<int>? only = options.AltgardOnlyQuests?.ToHashSet();
+				Require.True(combat.IsCleric, "An Altgard leg needs the Cleric.");
 				Require.Equal(leg.Hub.MapId, session.Api.World.MapId ?? 0);
 				NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World));
 				here.DefendOnAttackAsync = navigator.DefendOnAttackAsync;
@@ -919,12 +920,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(altgardPlans);
 				IReadOnlyList<NaturalFlyZone> zones = NaturalFlyZone.Load(Path.Combine(runtime.RepoRoot,
 					$"game-server/data/static_data/zones/zones_{leg.Hub.MapId}.xml"));
-				NaturalAltgardStep borender = leg.Steps.First(step => step.Flight);
-				BotPosition rock = geometry.SnapToGround(leg.Hub.MapId, new BotPosition(borender.Position[0] - 2.5f, borender.Position[1],
-					borender.Position[2] + 3, 0)) ?? throw new InvalidDataException("No rock top beside Borender.");
-				BotPosition ground = geometry.SnapToGround(leg.Hub.MapId, new BotPosition(leg.Hub.Anchor[0] - 3, leg.Hub.Anchor[1],
-					leg.Hub.Anchor[2] + 1, 0)) ?? throw new InvalidDataException("No ground beside the Altgard obelisk.");
-				float cruise = rock.Z + 8;
+				// Leg 1's flight: Borender's rock is the landing (AF-05); a leg with no flight step never flies.
+				NaturalAltgardStep? borender = leg.Steps.FirstOrDefault(step => step.Flight);
+				BotPosition? rockTop = borender == null ? null : geometry.SnapToGround(leg.Hub.MapId, new BotPosition(borender.Position[0] - 2.5f,
+					borender.Position[1], borender.Position[2] + 3, 0)) ?? throw new InvalidDataException("No rock top beside Borender.");
+				float[] home = leg.Town?.Anchor ?? leg.Hub.Anchor;
+				BotPosition ground = geometry.SnapToGround(leg.Hub.MapId, new BotPosition(home[0] - 3, home[1], home[2] + 1, 0))
+					?? throw new InvalidDataException("No ground beside the Altgard obelisk.");
+				float cruise = (rockTop?.Z ?? 0) + 8;
+				BotPosition Rock() => rockTop ?? throw new InvalidDataException($"{leg.Leg} has no flight landing.");
 				long? lastTakeoff = null;
 				await TopUpHelpItemsAsync("run-start");
 				await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token);
@@ -935,8 +939,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await session.SynchronizeAsync(token);
 					if (session.Api.World.Level != helpCheckedAtLevel) await TopUpHelpItemsAsync("level-up");
 					NaturalAltgardDecision next = NaturalAltgardDecisionEngine.Decide(leg,
-						NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition), objectives, sequence);
-					session.TraceDiagnostic("altgard-l1-decision", new Dictionary<string, object?>
+						NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition), objectives, sequence, only);
+					session.TraceDiagnostic($"altgard-{altgardLegId}-decision", new Dictionary<string, object?>
 					{
 						["sequence"] = sequence, ["action"] = next.Action, ["step"] = next.StepKey, ["quest"] = next.QuestId,
 						["outcome"] = next.Outcome, ["reason"] = next.Reason, ["level"] = session.Api.World.Level,
@@ -947,17 +951,25 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					string signature = $"{next.Action}/{next.StepKey}/{next.QuestId}/{next.Reason}";
 					repeats = signature == previous ? repeats + 1 : 0;
 					previous = signature;
-					Require.True(repeats < 3, $"Altgard Leg 1 made no progress on {signature}");
+					Require.True(repeats < 3, $"Altgard leg {altgardLegId} made no progress on {signature}");
 					if (next.Outcome == "complete")
 					{
+						if (only != null)
+						{
+							session.TraceDiagnostic($"altgard-{altgardLegId}-only-complete", new Dictionary<string, object?>
+							{
+								["quests"] = only.ToArray(), ["level"] = session.Api.World.Level, ["deaths"] = combat.ReviveCount,
+							});
+							return;
+						}
 						await CompleteAltgardLeg1Async(leg);
 						return;
 					}
 					if (next.Outcome != "planned")
 					{
-						await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "altgard-l1-stop.json"),
+						await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, $"altgard-{altgardLegId}-stop.json"),
 							System.Text.Json.JsonSerializer.Serialize(next), token);
-						throw new InvalidDataException($"Altgard Leg 1 stopped: {next.Outcome} {next.Action}: {next.Reason}");
+						throw new InvalidDataException($"Altgard leg {altgardLegId} stopped: {next.Outcome} {next.Action}: {next.Reason}");
 					}
 					session.BeginStep($"af-{sequence:000}-{next.Action}", next.StepKey ?? next.Action);
 					switch (next.Action)
@@ -996,7 +1008,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							int npc;
 							if (step.Flight)
 							{
-								await FlyToAsync(rock);
+								await FlyToAsync(Rock());
 								npc = await session.WaitForNpcAsync(step.NpcId, token);
 							}
 							else
@@ -1009,7 +1021,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								try
 								{
 									string change = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token);
-									session.TraceDiagnostic("altgard-l1-step", new Dictionary<string, object?> { ["step"] = step.Key, ["change"] = change });
+									session.TraceDiagnostic($"altgard-{altgardLegId}-step", new Dictionary<string, object?> { ["step"] = step.Key, ["change"] = change });
 									break;
 								}
 								catch (NaturalDialogTooFarException) when (attempt < 3 && !step.Flight) { await ReapproachForDialogAsync(npc); }
@@ -1017,19 +1029,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							break;
 						}
 						case "use-item":
-							await NaturalAltgardQuestSteps.UseQuestItemAsync(session, itemUse,
-								runtime.Data.ItemDataDh.GetItemTemplate(itemUse.ItemId), token);
+							await NaturalAltgardQuestSteps.UseQuestItemAsync(session, leg.RequiredItemUse,
+								runtime.Data.ItemDataDh.GetItemTemplate(leg.RequiredItemUse.ItemId), token);
 							break;
 						case "air-kills":
 						{
 							// No fungus is visible from the ground: the fight starts from Borender's rock (AF-06).
-							await FlyToAsync(rock);
+							await FlyToAsync(Rock());
 							NaturalAirCombat.Outcome outcome = await NaturalAirCombat.RunAsync(session, geometry, leg.Hub.MapId, zones,
-								flight.WaterLevel, new NaturalLandingTarget("platform", rock), cruise, airKills.QuestId,
+								leg.RequiredFlight.WaterLevel, new NaturalLandingTarget("platform", Rock()), cruise, leg.RequiredAirKills.QuestId,
 								(origin, skill, level, target) => runtime.CreateSpellCast(session.Api.World, origin, skill, level, target),
 								() => runtime.NowMillis, token);
 							lastTakeoff = runtime.NowMillis;
-							session.TraceDiagnostic("altgard-l1-air-kills", new Dictionary<string, object?>
+							session.TraceDiagnostic($"altgard-{altgardLegId}-air-kills", new Dictionary<string, object?>
 							{
 								["kills"] = outcome.Kills, ["sorties"] = outcome.Sorties, ["missed"] = outcome.Missed,
 								["shootingSeconds"] = outcome.ShootingSeconds, ["landedFp"] = outcome.LandedFp,
@@ -1055,10 +1067,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							await ApproachShippedSpawnAsync(leg.Start.BindNpcId);
 							break;
 						default:
-							throw new InvalidDataException($"Altgard Leg 1 has no executor for {next.Action}.");
+							throw new InvalidDataException($"The Altgard leg runner has no executor for {next.Action}.");
 					}
 				}
-				throw new InvalidDataException("Altgard Leg 1 exceeded 400 decisions.");
+				throw new InvalidDataException("An Altgard leg exceeded 400 decisions.");
 
 				// Fly from wherever the Cleric stands (AF-05): wait out the takeoff reuse and a refill, check the policy first.
 				async Task FlyToAsync(BotPosition destination)
@@ -1071,14 +1083,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					if (wait > 0) await session.AdvanceAsync(TimeSpan.FromMilliseconds(wait + 100), token);
 					await session.SynchronizeAsync(token);
 					NaturalFlightDecision ready = NaturalFlightPolicy.CanTakeOff(new NaturalTakeoffObservation(true, from, false,
-						flight.WaterLevel, runtime.NowMillis, lastTakeoff, false, false, false), zones);
+						leg.RequiredFlight.WaterLevel, runtime.NowMillis, lastTakeoff, false, false, false), zones);
 					Require.True(ready.Allowed, $"Cannot take off: {ready.Reason}");
 					NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, leg.Hub.MapId, from, destination, cruise);
 					Require.True(route.IsUsable, $"No flight to {destination}: {route.Refusal}");
 					lastTakeoff = runtime.NowMillis;
 					float speed = await NaturalFlightProtocol.TakeOffAsync(session, token);
 					NaturalFlightDecision go = NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, from, speed), world.CurrentFlightTime, zones);
-					session.TraceDiagnostic("altgard-l1-flight", new Dictionary<string, object?>
+					session.TraceDiagnostic($"altgard-{altgardLegId}-flight", new Dictionary<string, object?>
 					{
 						["from"] = from, ["to"] = destination, ["meters"] = route.Meters, ["fp"] = world.CurrentFlightTime, ["decision"] = go.Reason,
 					});
@@ -1091,7 +1103,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				// Everything but Borender's steps and the air fight is on foot: come down from the rock first.
 				async Task EnsureOnGroundAsync()
 				{
-					if (session.CurrentPosition.Z > rock.Z - 20) await FlyToAsync(ground);
+					if (rockTop is { } top && session.CurrentPosition.Z > top.Z - 20) await FlyToAsync(ground);
 				}
 			}
 
@@ -1117,13 +1129,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				NaturalJourneyCheckpoint after = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
 					session.ConnectionGeneration, contract, session.CurrentPosition);
 				NaturalJourneyPersistence.Verify(before, after);
-				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "altgard-l1-completion.json"),
+				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, $"altgard-{altgardLegId}-completion.json"),
 					System.Text.Json.JsonSerializer.Serialize(new
 					{
 						before, after, verified = true, session.CharacterId, ElapsedMillis = runtime.NowMillis,
 						Deaths = combat.ReviveCount,
 					}), token);
-				session.TraceDiagnostic("altgard-l1-complete", new Dictionary<string, object?>
+				session.TraceDiagnostic($"altgard-{altgardLegId}-complete", new Dictionary<string, object?>
 				{
 					["level"] = after.Level, ["map"] = after.MapId, ["completed"] = leg.Endpoint.CompletedQuestIds,
 					["deaths"] = combat.ReviveCount, ["kinah"] = session.Api.World.Kinah,
@@ -5896,6 +5908,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		private async Task<bool> CastAsync(NaturalPriestSkill skill, int target, CancellationToken token)
 		{
 			BotSkill learned = session.Api.World.Skills[skill.Id];
+			// AM-06: Java Skill.useSkill resets the player's chain when a skill without a chain category is cast, so a
+			// Light of Rejuvenation between Smite and Flashbolt breaks the chain and the server silently refuses Flashbolt.
+			if (skill.ChainCategory == null) openChain = null;
 			await session.SendPacketAsync(session.Api.Target(target), token);
 			await session.SendPacketAsync(session.Api.Cast(runtime.CreateSpellCast(session.Api.World,
 				session.CurrentPosition, skill.Id, checked((byte)learned.Level), target)), token);

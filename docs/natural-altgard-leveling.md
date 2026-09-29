@@ -803,10 +803,35 @@ The same loop protocol, with "AM" in place of "NA".
     - `TalkAsync` now counts completion as progress for a START step that ends the quest.
     - `ShootDownAsync` stops when the bot dies or the target leaves view.
   - The warning, logger and clock-read checks and 301 Natural tests pass.
-- [ ] **AM-06 — Farmland and tog combat.** Mixed farmer and patrol groups, highsitters, SEASONED
+- [x] **AM-06 — Farmland and tog combat.** Mixed farmer and patrol groups, highsitters, SEASONED
   black claw patrols (fight them only when the pull planner calls it winnable, as NA-22 does),
   wild tog packs. Trace the first shield, Salvation and serum uses. **Done when:** a SIM probe
   hunts the Q2220 patrols and the Q2212 togs with deaths recorded (OD-12).
+  - *Done 2026-09-29.* The fights use the journey's own Cleric combat (pull planner, patrol
+    policy, heals, rests), through the Leg runner, which now plays any leg:
+    - `AF_ALTGARD=l2` selects Leg 2;
+    - `AF_ONLY` limits a diagnostic run to listed quests, and the engine's `only` filter
+      completes the run when they are done;
+    - Leg 1's flight parts are set up only for a leg with flight steps;
+    - trace and completion names carry the leg id.
+  - **Bug found and fixed: the Cleric's chain.** Java `Skill.useSkill` resets the player's
+    chain whenever a skill without a chain category is cast. Light of Rejuvenation between
+    Smite and Flashbolt therefore broke the chain, the server refused Flashbolt without a
+    message, and the first run (`am06-hunt1`) stopped: "Cast 4025 had no start". The combat
+    now clears its open chain on every non-chain cast. The bug was latent since NA-18; the
+    level 10 fights never cast the heal-over-time in that gap.
+  - Run `am06-hunt2` (`run/af-l1/am06-hunt2`, from `altgard-l12`, only Q2211, Q2212 and
+    Q2220) passed in 34 game minutes (1 m 45 s real):
+    - it accepted, worked and claimed all three;
+    - 29 fights and 20 planned pulls, 7 defends before a pull, **no death, no retreat**;
+    - the level went 13 → 14;
+    - Flashbolt landed 22 times after Smite;
+    - the tog hunt for Q2212, the farthest ground, took about 20 minutes.
+  - No fight was hard enough for the Anti-Shock shield or Salvation. The first real use of
+    those still waits for a harder pull.
+  - An engine test covers the filter. The warning, logger and clock-read checks pass, as
+    do 302 Natural tests. The first warning-baseline attempt failed on a `.pdb` copy while
+    another session built at the same moment; the rerun passed.
 - [ ] **AM-07 — The Leg 2 runner.** Generalise the Leg 1 engine and the journey's `AltgardLeg1`
   mode to a leg id (`AF_ALTGARD=l2`). The hub is the crossroad; rests and restocks go back
   to the fortress; grounds are batched as above; the endpoint is checked across a relog.
@@ -911,3 +936,4 @@ The original questions follow.
 - 2026-09-29 AM-03: guarded talk spots; SIM handed Q2210 in and took Q2211 at the crossroad with no attack; the pluma are passive to Asmodians.
 - 2026-09-29 AM-04: Q2213 played in SIM: the Okaru log looted, the poison seen and removed at Tigg; the drain is covered by natural regeneration.
 - 2026-09-29 AM-05: Q24012 played in SIM: movie, zone step, three carts, var-5 drops at 100%, hauberk reward.
+- 2026-09-29 AM-06: real Cleric combat for Q2211/2212/2220 from altgard-l12: 29 fights, no death; fixed the chain reset on non-chain casts.

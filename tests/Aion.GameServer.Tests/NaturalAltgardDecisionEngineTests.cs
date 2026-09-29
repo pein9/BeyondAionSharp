@@ -122,4 +122,26 @@ public sealed class NaturalAltgardDecisionEngineTests
 		journal.Set(2207, 3, 7);
 		Assert.Equal(("unexpected-var", "blocked"), (journal.Decide().Action, journal.Decide().Outcome));
 	}
+
+	[Fact]
+	public void ALimitedRunWorksOnlyTheChosenQuestsAndEndsWhenTheyAreDone()
+	{
+		// AM-06: Leg 2 limited to its three hunts, from the altgard-l12 snapshot (level 13, Q24012 started).
+		NaturalAltgardContract leg2 = NaturalAltgardContract.LoadLeg("l2");
+		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(NaturalAltgardContract.LoadPlans("l2"));
+		var quests = new Dictionary<int, BotQuestState> { [24012] = new(24012, 3, 0, 0, null) };
+		var completed = new HashSet<int>(leg2.Start.CompletedQuestIds);
+		HashSet<int> only = [2211, 2212, 2220];
+		NaturalAltgardDecision Decide() => NaturalAltgardDecisionEngine.Decide(leg2, new NaturalAltgardObservation(true, 220030000, 13, false,
+			quests, completed, new BotPosition(1628, 1450, 256, 0), new Dictionary<int, long>()), objectives, 1, only);
+		Assert.Equal(("template-accept", 2211), (Decide().Action, Decide().QuestId));
+		quests[2211] = new(2211, 3, 0, 0, null);
+		Assert.Equal(("template-accept", 2220), (Decide().Action, Decide().QuestId));
+		foreach (int quest in only) { quests.Remove(quest); completed.Add(quest); }
+		NaturalAltgardDecision done = Decide();
+		Assert.Equal(("only-complete", "complete"), (done.Action, done.Outcome));
+		// Without the filter the rest of Leg 2 is still open: Q2210 is accepted from Rion first.
+		Assert.Equal(("template-accept", 2210), (NaturalAltgardDecisionEngine.Decide(leg2, new NaturalAltgardObservation(true, 220030000, 13, false,
+			quests, completed, new BotPosition(1628, 1450, 256, 0), new Dictionary<int, long>()), objectives, 1) is { } open ? (open.Action, open.QuestId) : default));
+	}
 }

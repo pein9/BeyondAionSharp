@@ -72,7 +72,11 @@ public sealed partial class SimulationFastScenarioTests
 			Environment.GetEnvironmentVariable("NI07_OPTIMIZE_HUBS") == "1",
 			AscensionBridge: Environment.GetEnvironmentVariable("NA_ASCENSION") == "1",
 			// AF-08/09: Altgard Leg 1 from a restored `altgard` snapshot (docs/natural-altgard-leveling.md).
-			AltgardLeg1: Environment.GetEnvironmentVariable("AF_ALTGARD") == "1")).RunAsync(token);
+			AltgardLeg1: Environment.GetEnvironmentVariable("AF_ALTGARD") == "1",
+			// AM-06/07: AF_ALTGARD=l2 plays Leg 2 from `altgard-l12`; AF_ONLY limits a diagnostic run to the listed quests.
+			AltgardLegId: Environment.GetEnvironmentVariable("AF_ALTGARD") is { Length: > 1 } legId ? legId : null,
+			AltgardOnlyQuests: Environment.GetEnvironmentVariable("AF_ONLY") is { Length: > 0 } onlyList
+				? onlyList.Split(',').Select(int.Parse).ToArray() : null)).RunAsync(token);
 
 		async Task SupplyHelpItemAsync(int itemId, long count, CancellationToken supplyToken)
 		{

@@ -47,8 +47,10 @@ public static class NaturalAltgardDecisionEngine
 {
 	public const byte Start = 3, Reward = 4, Locked = 6;
 
+	/// <param name="only">A diagnostic run limited to these quests (AM-06): the rest of the leg is left alone, and the run is
+	/// complete once these are done, wherever the bot stands.</param>
 	public static NaturalAltgardDecision Decide(NaturalAltgardContract contract, NaturalAltgardObservation state,
-		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives, int sequence)
+		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives, int sequence, IReadOnlySet<int>? only = null)
 	{
 		var checks = new List<NaturalDecisionCheck>();
 		NaturalAltgardDecision Plan(string action, int? questId, string reason, string? stepKey = null) =>
@@ -63,7 +65,8 @@ public static class NaturalAltgardDecisionEngine
 		if (state.MapId != contract.Hub.MapId)
 			return Stop("wrong-map", "blocked", $"Leg 1 is on map {contract.Hub.MapId}; the Cleric is on {state.MapId}.");
 
-		NaturalAltgardQuest[] open = contract.Order.Select(contract.Quest).Where(quest => !Done(quest.Id)).ToArray();
+		NaturalAltgardQuest[] open = contract.Order.Select(contract.Quest)
+			.Where(quest => !Done(quest.Id) && (only == null || only.Contains(quest.Id))).ToArray();
 		NaturalAltgardQuest[] eligible = open.Where(Eligible).ToArray();
 
 		// Template quests, hub-style: accept, work, claim.
@@ -116,7 +119,13 @@ public static class NaturalAltgardDecisionEngine
 			return Stop("gated", "awaiting-capability", $"Open quests {string.Join(", ", open.Select(quest => quest.Id))} are not available yet.");
 		}
 
-		// The endpoint: every Leg 1 quest done, back in the fortress, alive.
+		if (only != null)
+		{
+			checks.Add(new("only", "pass", $"The chosen quests {string.Join(", ", only)} are done."));
+			return Stop("only-complete", "complete", "The chosen quests are done (a limited run).");
+		}
+
+		// The endpoint: every quest of the leg done, alive, back in the hub.
 		float hub = MathF.Sqrt(MathF.Pow(state.Position.X - contract.Hub.Anchor[0], 2) + MathF.Pow(state.Position.Y - contract.Hub.Anchor[1], 2));
 		if (MathF.Abs(state.Position.Z - contract.Hub.Anchor[2]) > 15 || hub > contract.Hub.Radius)
 			return Plan("return-to-hub", null, "Every Leg 1 quest is done; walk back into the fortress.");
