@@ -63,22 +63,27 @@ public static class NaturalAltgardDecisionEngine
 		if (state.IsDead)
 			return Plan("revive-at-bind", null, "Dead: revive at the Altgard Fortress obelisk.");
 		if (state.MapId != contract.Hub.MapId)
-			return Stop("wrong-map", "blocked", $"Leg 1 is on map {contract.Hub.MapId}; the Cleric is on {state.MapId}.");
+			return Stop("wrong-map", "blocked", $"{contract.Leg} is on map {contract.Hub.MapId}; the Cleric is on {state.MapId}.");
 
 		NaturalAltgardQuest[] open = contract.Order.Select(contract.Quest)
 			.Where(quest => !Done(quest.Id) && (only == null || only.Contains(quest.Id))).ToArray();
 		NaturalAltgardQuest[] eligible = open.Where(Eligible).ToArray();
+		// A hand-in where the leg ends (Leg 2: Q2215 at Manir's Campsite, AM-Q1) waits until everything else is done.
+		string? endArea = contract.Endpoint.Anchor is { } end
+			? contract.Areas.Where(area => area.Contains(end[0], end[1], end[2]))
+				.MinBy(area => (area.Max[0] - area.Min[0]) * (area.Max[1] - area.Min[1]))?.Key : null; // the most specific area
+		bool AtTheEnd(NaturalAltgardQuest quest) => endArea != null && quest.Area == endArea;
 
 		// Template quests, hub-style: accept, work, claim.
 		foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate && Status(quest.Id) is not (Start or Reward)))
-			return Plan("template-accept", quest.Id, $"Q{quest.Id}: accept at the fortress with the other hub quests.");
+			return Plan("template-accept", quest.Id, $"Q{quest.Id}: accept at the hub with the other hub quests.");
 		foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate && Status(quest.Id) == Start && !WorkDone(quest.Id)))
-			return Plan("template-work", quest.Id, $"Q{quest.Id}: work the objectives on the Ice Lake.");
-		foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate))
-			return Plan("template-claim", quest.Id, $"Q{quest.Id}: objectives done; claim at the fortress.");
+			return Plan("template-work", quest.Id, $"Q{quest.Id}: work the objectives on {quest.Area ?? "its ground"}.");
+		foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate && !AtTheEnd(quest)))
+			return Plan("template-claim", quest.Id, $"Q{quest.Id}: objectives done; claim it.");
 
 		// Scripted quests, in the contract's order.
-		foreach (NaturalAltgardQuest quest in eligible)
+		foreach (NaturalAltgardQuest quest in eligible.Where(quest => !quest.IsTemplate))
 		{
 			byte? status = Status(quest.Id);
 			if (quest.Category == "MISSION" && status is null or Locked)
@@ -104,11 +109,25 @@ public static class NaturalAltgardDecisionEngine
 				return Plan("use-item", quest.Id, $"Q{quest.Id}: use item {use.ItemId} (anywhere).");
 			if (contract.AirKills is { } air && quest.Id == air.QuestId && var >= air.FromVar && var <= air.RewardVar)
 				return Plan("air-kills", quest.Id, $"Q{quest.Id}: shoot the Abyss Fungus down (var {var} of {air.RewardVar}).");
+			// AM-07: quest objects, a zone to enter, and items that drop only from a var.
+			if (contract.ObjectUseList.FirstOrDefault(use => use.QuestId == quest.Id && var >= use.FromVar && var < use.ToVar) is { } objectUse)
+				return Plan("use-object", quest.Id, $"Q{quest.Id} var {var}: use {objectUse.Key}.", objectUse.Key);
+			if (contract.ZoneStepList.FirstOrDefault(zone => zone.QuestId == quest.Id && var == zone.FromVar) is { } zoneStep)
+				return Plan("enter-zone", quest.Id, $"Q{quest.Id} var {var}: walk into {zoneStep.Zone}.");
+			if (contract.CollectionList.FirstOrDefault(collection => collection.QuestId == quest.Id && var == collection.AtVar) is { } collect &&
+				collect.Items.Any(item => state.ItemCounts.GetValueOrDefault(item.ItemId) < item.Count))
+				return Plan("collect", quest.Id, $"Q{quest.Id} var {var}: collect " +
+					string.Join(", ", collect.Items.Select(item => $"{state.ItemCounts.GetValueOrDefault(item.ItemId)}/{item.Count} of {item.ItemId}")) + ".");
 			NaturalAltgardStep? next = contract.StepsFor(quest.Id).SingleOrDefault(step => step.ExpectedStatus == "START" && step.Var == var);
 			return next == null
 				? Stop("unexpected-var", "blocked", $"Q{quest.Id} var {var} has no contract step.", quest.Id)
 				: Plan("talk", quest.Id, $"Q{quest.Id} var {var}: {next.Key}.", next.Key);
 		}
+
+		// The hand-ins held back for the end, once only they are left.
+		if (open.Length > 0 && open.All(AtTheEnd))
+			foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate))
+				return Plan("template-claim", quest.Id, $"Q{quest.Id}: the last hand-in, where the leg ends.");
 
 		// Only gated quests are left: hunt for the level they need, or wait for the campaign to unlock.
 		if (open.Length > 0)
@@ -125,12 +144,15 @@ public static class NaturalAltgardDecisionEngine
 			return Stop("only-complete", "complete", "The chosen quests are done (a limited run).");
 		}
 
-		// The endpoint: every quest of the leg done, alive, back in the hub.
-		float hub = MathF.Sqrt(MathF.Pow(state.Position.X - contract.Hub.Anchor[0], 2) + MathF.Pow(state.Position.Y - contract.Hub.Anchor[1], 2));
-		if (MathF.Abs(state.Position.Z - contract.Hub.Anchor[2]) > 15 || hub > contract.Hub.Radius)
-			return Plan("return-to-hub", null, "Every Leg 1 quest is done; walk back into the fortress.");
-		checks.Add(new("endpoint", "pass", $"All {contract.Endpoint.CompletedQuestIds.Length} quests done, in the fortress, alive, level {state.Level}."));
-		return Stop("leg-complete", "complete", "The Altgard Leg 1 endpoint is reached.");
+		// The endpoint: every quest of the leg done, alive, where the leg ends (its own anchor, else the hub).
+		float[] anchor = contract.Endpoint.Anchor ?? contract.Hub.Anchor;
+		float radius = contract.Endpoint.Anchor != null ? contract.Endpoint.Radius : contract.Hub.Radius;
+		float away = MathF.Sqrt(MathF.Pow(state.Position.X - anchor[0], 2) + MathF.Pow(state.Position.Y - anchor[1], 2));
+		if (MathF.Abs(state.Position.Z - anchor[2]) > 15 || away > radius)
+			return Plan(contract.Endpoint.Anchor != null ? "return-to-endpoint" : "return-to-hub", null,
+				$"Every {contract.Leg} quest is done; walk to where the leg ends.");
+		checks.Add(new("endpoint", "pass", $"All {contract.Endpoint.CompletedQuestIds.Length} quests done, at the endpoint, alive, level {state.Level}."));
+		return Stop("leg-complete", "complete", $"The {contract.Leg} endpoint is reached.");
 
 		bool Done(int questId) => state.CompletedQuestIds.Contains(questId);
 		byte? Status(int questId) => state.Quests.TryGetValue(questId, out BotQuestState? quest) ? quest.Status : null;

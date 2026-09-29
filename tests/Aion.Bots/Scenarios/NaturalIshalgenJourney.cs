@@ -1062,6 +1062,61 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							}
 							break;
 						}
+						case "use-object":
+						{
+							// AM-04/05: a quest object in the world (Q2213's Okaru Tree, Q24012's carts), used as the client does.
+							await EnsureOnGroundAsync();
+							NaturalAltgardObjectUse use = leg.ObjectUseList.Single(candidate => candidate.Key == next.StepKey);
+							int item = await ApproachShippedSpawnAsync(use.NpcId, skipBlockedTarget: true);
+							bool used = await NaturalAltgardQuestSteps.UseObjectAsync(session, item, use.LootItemId, token);
+							// A used cart dies but stays in view (AM-05): never pick it again.
+							if (use.Disappears) navigator.UnavailableObjects.Add(item);
+							session.TraceDiagnostic($"altgard-{altgardLegId}-object", new Dictionary<string, object?>
+							{
+								["use"] = use.Key, ["object"] = item, ["used"] = used,
+								["quest"] = NaturalAltgardQuestSteps.State(session.Api.World, use.QuestId)?.ToString(),
+							});
+							break;
+						}
+						case "enter-zone":
+						{
+							// Q24012's farmland step: the quest's own objects stand inside the zone, so walking to the nearest one
+							// enters it (the hub's NPCs stand outside the zone polygon, AM-05).
+							await EnsureOnGroundAsync();
+							NaturalAltgardObjectUse inside = leg.ObjectUseList.First(use => use.QuestId == next.QuestId);
+							await ApproachShippedSpawnAsync(inside.NpcId, skipBlockedTarget: true);
+							break;
+						}
+						case "collect":
+						{
+							// Q24012's hairpins and waist bands, which drop only from var 5 (AM-05). AM-Q3: the SEASONED black claw
+							// patrols are not sought out; they are fought only when they block the way.
+							await EnsureOnGroundAsync();
+							NaturalAltgardCollection collection = leg.CollectionList.Single(entry => entry.QuestId == next.QuestId);
+							NaturalAltgardCollectedItem wanted = collection.Items.First(entry => ItemCount(session.Api.World, entry.ItemId) < entry.Count);
+							int[] sources = wanted.SourceNpcIds.Where(SpawnsOnMap)
+								.Where(id => runtime.Data.NpcDataDh.GetNpcTemplate(id)?.GetRank() != Aion.GameServer.Model.Templates.Npc.NpcRank.SEASONED)
+								.ToArray();
+							Require.True(sources.Length > 0, $"No source of item {wanted.ItemId} spawns here.");
+							for (int kill = 0; kill < 6 && ItemCount(session.Api.World, wanted.ItemId) < wanted.Count; kill++)
+							{
+								int source = await KillShippedSpawnAsync(sources[kill % sources.Length]);
+								await TryLootCorpseItemAsync(session, source, wanted.ItemId, token);
+								navigator.UnavailableObjects.Add(source);
+								await RestSafelyAsync(token);
+							}
+							break;
+						}
+						case "return-to-endpoint":
+						{
+							// AM-Q1: Leg 2 ends at Manir's Campsite, beside the NPC who takes its last hand-in.
+							await EnsureOnGroundAsync();
+							float[] end = leg.Endpoint.Anchor ?? leg.Hub.Anchor;
+							int endNpc = altgardPlans.Values.SelectMany(plan => plan.EndNpcs)
+								.First(npc => npc.Positions.Any(at => MathF.Sqrt(MathF.Pow(at.X - end[0], 2) + MathF.Pow(at.Y - end[1], 2)) <= leg.Endpoint.Radius)).Id;
+							await ApproachShippedSpawnAsync(endNpc);
+							break;
+						}
 						case "return-to-hub":
 							await EnsureOnGroundAsync();
 							await ApproachShippedSpawnAsync(leg.Start.BindNpcId);

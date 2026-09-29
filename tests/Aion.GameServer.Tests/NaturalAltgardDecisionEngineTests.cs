@@ -144,4 +144,54 @@ public sealed class NaturalAltgardDecisionEngineTests
 		Assert.Equal(("template-accept", 2210), (NaturalAltgardDecisionEngine.Decide(leg2, new NaturalAltgardObservation(true, 220030000, 13, false,
 			quests, completed, new BotPosition(1628, 1450, 256, 0), new Dictionary<int, long>()), objectives, 1) is { } open ? (open.Action, open.QuestId) : default));
 	}
+
+	[Fact]
+	public void Leg2UsesObjectsEntersTheZoneCollectsAndEndsWithTheHandInAtManir()
+	{
+		NaturalAltgardContract leg2 = NaturalAltgardContract.LoadLeg("l2");
+		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(NaturalAltgardContract.LoadPlans("l2"));
+		var quests = new Dictionary<int, BotQuestState>();
+		var completed = new HashSet<int>(leg2.Start.CompletedQuestIds);
+		var itemCounts = new Dictionary<int, long>();
+		var at = new BotPosition(1628, 1450, 256, 0);
+		NaturalAltgardDecision Decide() => NaturalAltgardDecisionEngine.Decide(leg2,
+			new NaturalAltgardObservation(true, 220030000, 14, false, quests, completed, at, itemCounts), objectives, 1);
+		void Set(int quest, byte status, int var = 0) => quests[quest] = new(quest, status, var, 0, null);
+		void Complete(int quest) { quests.Remove(quest); completed.Add(quest); }
+		// Every template quest done except Q2215 (taken, not handed in).
+		foreach (int quest in leg2.Quests.Where(quest => quest.IsTemplate && quest.Id != 2215).Select(quest => quest.Id)) Complete(quest);
+		Set(2215, 3);
+
+		// Q2213: the Okaru Tree at var 0, Tigg at var 1.
+		Set(2213, 3, 0);
+		Assert.Equal(("use-object", "q2213-okaru-tree"), (Decide().Action, Decide().StepKey));
+		Set(2213, 3, 1);
+		Assert.Equal("q2213-v1-tigg", Decide().StepKey);
+		Complete(2213);
+
+		// Q24012: Loriniah, the zone, three carts, the collection from var 5, Loriniah again.
+		Set(24012, 3, 0);
+		Assert.Equal("q24012-v0-loriniah", Decide().StepKey);
+		Set(24012, 3, 1);
+		Assert.Equal("enter-zone", Decide().Action);
+		foreach (int var in new[] { 2, 3, 4 })
+		{
+			Set(24012, 3, var);
+			Assert.Equal(("use-object", "q24012-mumu-carts"), (Decide().Action, Decide().StepKey));
+		}
+		Set(24012, 3, 5);
+		Assert.Equal("collect", Decide().Action);
+		NaturalAltgardCollection collection = leg2.CollectionList.Single();
+		foreach (NaturalAltgardCollectedItem item in collection.Items) itemCounts[item.ItemId] = item.Count;
+		Assert.Equal("q24012-v5-loriniah", Decide().StepKey);
+		Complete(24012);
+
+		// Only Q2215 is left: its hand-in at Manir comes last, then the endpoint is Manir's Campsite (AM-Q1).
+		Assert.Equal(("template-claim", 2215), (Decide().Action, Decide().QuestId));
+		Complete(2215);
+		Assert.Equal("return-to-endpoint", Decide().Action);
+		at = new BotPosition(leg2.Endpoint.Anchor![0] + 5, leg2.Endpoint.Anchor[1], leg2.Endpoint.Anchor[2], 0);
+		NaturalAltgardDecision done = Decide();
+		Assert.Equal(("leg-complete", "complete"), (done.Action, done.Outcome));
+	}
 }

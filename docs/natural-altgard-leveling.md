@@ -832,9 +832,28 @@ The same loop protocol, with "AM" in place of "NA".
   - An engine test covers the filter. The warning, logger and clock-read checks pass, as
     do 302 Natural tests. The first warning-baseline attempt failed on a `.pdb` copy while
     another session built at the same moment; the rerun passed.
-- [ ] **AM-07 — The Leg 2 runner.** Generalise the Leg 1 engine and the journey's `AltgardLeg1`
+- [x] **AM-07 — The Leg 2 runner.** Generalise the Leg 1 engine and the journey's `AltgardLeg1`
   mode to a leg id (`AF_ALTGARD=l2`). The hub is the crossroad; rests and restocks go back
   to the fortress; grounds are batched as above; the endpoint is checked across a relog.
+  - *Done 2026-09-29.* The engine and the runner play Leg 2 from its contract:
+    - `use-object`: the Okaru Tree loot, and the carts (a used cart is marked unavailable);
+    - `enter-zone`: walk to the quest's first object, which stands inside the farmland;
+    - `collect`: the var-5 hairpins and waist bands, killing and looting the sources, with
+      SEASONED monsters skipped per AM-Q3;
+    - `return-to-endpoint`: the NPC of the leg's last hand-in.
+  - Q2215's hand-in at Manir is held back until everything else is done (the endpoint's
+    most specific area decides that), and template quests stay out of the scripted loop.
+  - An engine test walks the Leg 2 moves.
+  - Smoke run `am07-smoke1` (`run/af-l1/am07-smoke1`, from `altgard-l12`) completed all of
+    Leg 2 in 82 game minutes (6 m 8 s real):
+    - Q2210 and the karnif, pluma, patrol and tog quests;
+    - Q2213 (the tree and the poison), Q2218 and Q2219 (40 minutes for the frightcorn
+      seeds);
+    - Q24012 (movie, zone, three carts, 3 hairpins and 5 waist bands, the hauberk);
+    - Q2215 last, at Manir.
+    - 71 fights, **no death**, one retreat. It ends at level 15 beside Manir, with the
+      endpoint verified across the relog (`altgard-l2-completion.json`).
+  - The warning, logger and clock-read checks and 303 Natural tests pass.
 - [ ] **AM-08 — One SIM run of Leg 2** from `altgard-l12`, saved as the snapshot `altgard-l2`.
 - [ ] **AM-09 — The full `CLAUDE.md` checklist and a checkpoint.** LIVE stays at the end of the
   Altgard leg (AF-Q3).
@@ -937,3 +956,4 @@ The original questions follow.
 - 2026-09-29 AM-04: Q2213 played in SIM: the Okaru log looted, the poison seen and removed at Tigg; the drain is covered by natural regeneration.
 - 2026-09-29 AM-05: Q24012 played in SIM: movie, zone step, three carts, var-5 drops at 100%, hauberk reward.
 - 2026-09-29 AM-06: real Cleric combat for Q2211/2212/2220 from altgard-l12: 29 fights, no death; fixed the chain reset on non-chain casts.
+- 2026-09-29 AM-07: the Leg 2 runner; the smoke run completed Leg 2 from altgard-l12 with no death, level 15, at Manir.
