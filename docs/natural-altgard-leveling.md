@@ -752,9 +752,29 @@ The same loop protocol, with "AM" in place of "NA".
     - black claw patrols (LYCAN) call RATMANWORKER and TOWERMAN for support.
     A pull there can bring a group.
   - The warning, logger and clock-read checks pass.
-- [ ] **AM-04 — Q2213 and the poison.** Loot the Okaru Tree, observe skill 255 on the bot, keep
+- [x] **AM-04 — Q2213 and the poison.** Loot the Okaru Tree, observe skill 255 on the bot, keep
   resting sane under the damage-over-time (heal, never wait for full HP while poisoned), hand in
   to Tigg, and see the poison removed. **Done when:** a SIM probe completes Q2213.
+  - *Done 2026-09-29.*
+    - `NaturalAltgardQuestSteps.UseObjectAsync` uses a quest object as the client does:
+      it opens it, waits out the `SM_USE_OBJECT` bar and loots the named item, through
+      the journey's loot routine (now `internal`). AM-05's carts use it too.
+    - `HasEffect` reads the bot's visible effects.
+    - The SIM fixture accepts accounts up to 150; the Leg 2 probes use 139–141.
+  - SIM probe `AltgardPoisonRootLootsTheOkaruLogAndTiggRemovesThePoison`
+    (`run/am04/am04-sim.log`, account 141). A level 13 Cleric (GM setup) plays:
+    - Tigg's offer;
+    - the walk to the Okaru Tree (aggressive monsters beside the route despawned for
+      this probe);
+    - the use and loot: the Okaru Log is in the bag, Q2213 is at var 1, and the client
+      sees skill 255 on the bot;
+    - the walk back, and Tigg's hand-in: the quest completes, the log is taken, and the
+      poison is gone on both server and client.
+  - **The poison is harmless in practice.** HP read 794 of 794 both at the loot and
+    30 s later, sampled at those two points, with 571 s of poison left. Natural
+    regeneration seems to keep up with 20 HP per 6 s at level 13. Resting stops at 90%
+    HP, so a rest cannot stall on it, and nothing in the rest policy needed changing.
+  - The warning, logger and clock-read checks and 301 Natural tests pass.
 - [ ] **AM-05 — Q24012's mechanics.** Loriniah with movie 61, the farmland zone step, three
   cart uses on three different carts, the drops from var 5, CHECK_USER_HAS_QUEST_ITEM and
   the hauberk reward. **Done when:** a SIM probe completes Q24012.
@@ -864,3 +884,4 @@ The original questions follow.
 - 2026-09-29 AM-01: Leg 2 contract, eight template plans, the loader by leg, and three contract tests.
 - 2026-09-29 AM-02: all 12 Leg 2 travel legs route and walk in SIM; the danger on each is recorded.
 - 2026-09-29 AM-03: guarded talk spots; SIM handed Q2210 in and took Q2211 at the crossroad with no attack; the pluma are passive to Asmodians.
+- 2026-09-29 AM-04: Q2213 played in SIM: the Okaru log looted, the poison seen and removed at Tigg; the drain is covered by natural regeneration.

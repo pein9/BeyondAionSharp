@@ -6004,7 +6004,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		}
 	}
 
-	private static async Task<bool> TryLootCorpseItemAsync(INaturalJourneySession session,
+	internal static async Task<bool> TryLootCorpseItemAsync(INaturalJourneySession session,
 		int objectId, int itemId, CancellationToken token, int preopenedPacketStart = -1)
 	{
 		long beforeCount = ItemCount(session.Api.World, itemId);

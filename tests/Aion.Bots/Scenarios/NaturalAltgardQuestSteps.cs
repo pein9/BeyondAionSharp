@@ -1,3 +1,4 @@
+using Aion.Bots.Protocol;
 using Aion.Bots.World;
 using Aion.GameServer.Model.Templates.Items;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -70,6 +71,31 @@ public static class NaturalAltgardQuestSteps
 		if (State(world, use.QuestId) is not (3, int next) || next != use.NextVar)
 			throw new InvalidDataException($"Q{use.QuestId}: using item {use.ItemId} did not move the quest to var {use.NextVar}.");
 	}
+
+	/// <summary>
+	/// Use a quest object in reach (AM-04, AM-05): open it as the client does, wait out the use bar (<c>SM_USE_OBJECT</c>),
+	/// and for a loot take <paramref name="lootItemId"/> from the drop list it opens. False when the use was interrupted or
+	/// the loot held no such item.
+	/// </summary>
+	public static async Task<bool> UseObjectAsync(INaturalJourneySession session, int objectId, int? lootItemId, CancellationToken token)
+	{
+		int start = session.PacketHistory.Count;
+		await NaturalDialogProtocol.OpenAsync(session, objectId, token);
+		await session.SynchronizeAsync(token);
+		DecodedBotServerPacket? started = session.PacketHistory.Skip(start).LastOrDefault(packet =>
+			packet.PacketType == typeof(SM_USE_OBJECT) && packet.Get<int>("targetObjectId") == objectId && packet.Get<byte>("actionType") != 2);
+		int durationMs = started?.Get<int>("durationMs") ?? 3000;
+		await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Max(durationMs, 1) + 1), token);
+		await session.SynchronizeAsync(token);
+		DecodedBotServerPacket? finish = session.PacketHistory.Skip(start).LastOrDefault(packet =>
+			packet.PacketType == typeof(SM_USE_OBJECT) && packet.Get<int>("targetObjectId") == objectId && packet.Get<byte>("actionType") == 2);
+		if (finish != null && finish.Get<int>("durationMs") <= 0) return false;
+		return lootItemId is not int item || await NaturalIshalgenJourney.TryLootCorpseItemAsync(session, objectId, item, token, start);
+	}
+
+	/// <summary>An effect of <paramref name="skillId"/> on the bot, as the client sees it.</summary>
+	public static bool HasEffect(BotWorldModel world, int skillId) =>
+		world.VisibleEffects?.Any(effect => effect.SkillId == skillId) == true;
 
 	/// <summary>The quest's status and first variable as the client sees it.</summary>
 	public static (byte Status, int Var)? State(BotWorldModel world, int questId) =>
