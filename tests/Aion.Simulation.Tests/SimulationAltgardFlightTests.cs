@@ -28,7 +28,7 @@ public sealed partial class SimulationFastScenarioTests
 		NaturalAltgardContract contract = NaturalAltgardContract.LoadDefault();
 		IReadOnlyList<NaturalFlyZone> zones = NaturalFlyZone.Load(Path.Combine(Aion.GameServer.TestKit.RealStaticData.RepoRoot(),
 			"game-server/data/static_data/zones/zones_220030000.xml"));
-		await using var session = new SimulationL0Session(fixture, policy, "b01", 43, "Asimflyer", Race.ASMODIANS);
+		await using var session = new SimulationL0Session(fixture, policy, "b01", 136, "Asimflyer", Race.ASMODIANS);
 		session.BeginStep("s00", "login-create-enter-and-setup");
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token, PlayerClass.PRIEST);

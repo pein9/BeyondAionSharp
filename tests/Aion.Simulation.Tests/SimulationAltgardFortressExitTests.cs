@@ -27,7 +27,7 @@ public sealed partial class SimulationFastScenarioTests
 		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(10));
 		CancellationToken token = timeout.Token;
 		NaturalAltgardContract contract = NaturalAltgardContract.LoadDefault();
-		await using var session = new SimulationL0Session(fixture, policy, "b01", 62, "Asimexit", Race.ASMODIANS);
+		await using var session = new SimulationL0Session(fixture, policy, "b01", 134, "Asimexit", Race.ASMODIANS);
 		session.BeginStep("s00", "login-create-enter-and-setup");
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token, PlayerClass.PRIEST);
@@ -107,7 +107,7 @@ public sealed partial class SimulationFastScenarioTests
 		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
 		CancellationToken token = timeout.Token;
 		NaturalAltgardContract contract = NaturalAltgardContract.LoadDefault();
-		await using var session = new SimulationL0Session(fixture, policy, "b01", 70, "Asimdungeon", Race.ASMODIANS);
+		await using var session = new SimulationL0Session(fixture, policy, "b01", 135, "Asimdungeon", Race.ASMODIANS);
 		session.BeginStep("s00", "login-create-enter-and-setup");
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token, PlayerClass.PRIEST);

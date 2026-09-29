@@ -6,7 +6,7 @@
     "customQuests": 927,
     "withDialogActions": 917,
     "specialHandlers": 105,
-    "registrations": 3566,
+    "registrations": 3567,
     "decisions": 9949
   },
   "quests": [
@@ -56242,10 +56242,21 @@
             "RegisterQuestNpc"
           ],
           "npcIds": [
+            203572
+          ],
+          "expression": "qe.RegisterQuestNpc(203572).AddOnTalkEvent(questId)",
+          "line": 24
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
             203592
           ],
           "expression": "qe.RegisterQuestNpc(203592).AddOnTalkEvent(questId)",
-          "line": 23
+          "line": 25
         }
       ],
       "dialogCandidateActions": [
@@ -56271,7 +56282,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 1011)",
-          "line": 38
+          "line": 40
         },
         {
           "targetNpcIds": [
@@ -56288,7 +56299,7 @@
           ],
           "resultMethod": "SendQuestStartDialog",
           "result": "SendQuestStartDialog(env)",
-          "line": 40
+          "line": 42
         },
         {
           "targetNpcIds": [
@@ -56309,7 +56320,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 1352)",
-          "line": 51
+          "line": 53
         },
         {
           "targetNpcIds": [
@@ -56332,7 +56343,7 @@
           ],
           "resultMethod": "DefaultCloseDialog",
           "result": "DefaultCloseDialog(env, 0, 1)",
-          "line": 54
+          "line": 56
         },
         {
           "targetNpcIds": [
@@ -56353,7 +56364,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 1693)",
-          "line": 62
+          "line": 64
         },
         {
           "targetNpcIds": [
@@ -56376,7 +56387,7 @@
           ],
           "resultMethod": "DefaultCloseDialog",
           "result": "DefaultCloseDialog(env, 1, 2)",
-          "line": 65
+          "line": 67
         },
         {
           "targetNpcIds": [
@@ -56397,7 +56408,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 2034)",
-          "line": 73
+          "line": 75
         },
         {
           "targetNpcIds": [
@@ -56420,7 +56431,7 @@
           ],
           "resultMethod": "DefaultCloseDialog",
           "result": "DefaultCloseDialog(env, 2, 3)",
-          "line": 76
+          "line": 78
         },
         {
           "targetNpcIds": [
@@ -56441,7 +56452,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 2375)",
-          "line": 84
+          "line": 86
         },
         {
           "targetNpcIds": [
@@ -56464,7 +56475,7 @@
           ],
           "resultMethod": "SendQuestEndDialog",
           "result": "SendQuestEndDialog(env)",
-          "line": 89
+          "line": 91
         },
         {
           "targetNpcIds": [
@@ -56487,7 +56498,7 @@
           ],
           "resultMethod": "SendQuestEndDialog",
           "result": "SendQuestEndDialog(env)",
-          "line": 92
+          "line": 94
         },
         {
           "targetNpcIds": [
@@ -56506,7 +56517,7 @@
           ],
           "resultMethod": "SendQuestEndDialog",
           "result": "SendQuestEndDialog(env)",
-          "line": 100
+          "line": 102
         },
         {
           "targetNpcIds": [],
@@ -56515,7 +56526,7 @@
           "conditions": [],
           "resultMethod": null,
           "result": "false",
-          "line": 102
+          "line": 104
         }
       ],
       "specialOperations": []

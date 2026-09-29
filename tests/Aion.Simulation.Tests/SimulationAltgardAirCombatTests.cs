@@ -32,9 +32,9 @@ public sealed partial class SimulationFastScenarioTests
 		string directory = Path.Combine(root, "run", "af06");
 		Directory.CreateDirectory(directory);
 		string tracePath = Path.Combine(directory, $"af06-s{fixture.Seed}-{DateTime.UtcNow:yyyyMMddHHmmss}.trace.jsonl");
-		using var trace = BotActionTraceWriter.Open(tracePath, "af06", "b01", "sim-player-47",
+		using var trace = BotActionTraceWriter.Open(tracePath, "af06", "b01", "sim-player-137",
 			virtualTime: () => TimeSpan.FromMilliseconds(fixture.Clock.NowMillis));
-		await using var session = new SimulationL0Session(fixture, policy, "b01", 47, "Asimfungus", Race.ASMODIANS, trace, tracePath);
+		await using var session = new SimulationL0Session(fixture, policy, "b01", 137, "Asimfungus", Race.ASMODIANS, trace, tracePath);
 		session.BeginStep("s00", "login-create-enter-and-setup");
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token, PlayerClass.PRIEST);

@@ -549,8 +549,30 @@ with "AF" in place of "NA").
   - **The level target is exceeded:** Leg 1 ends at 13, not 11–12, because Ice Lake kills
     pay well. Leg 2 starts at Moslan Crossroad with Q2210 and Q24012 (level 12) already
     open.
-- [ ] **AF-10 — The full `CLAUDE.md` checklist and a checkpoint.** The isolated LIVE run comes
+- [x] **AF-10 — The full `CLAUDE.md` checklist and a checkpoint.** The isolated LIVE run comes
   at the end of the Altgard leg, not after each sub-leg (AF-Q3, decided).
+  - *Done 2026-09-29.* The whole `CLAUDE.md` build-and-test list was run in order
+    (`run/af10/summary.txt` and one log per check):
+    - the build and `dotnet test AionServer.slnx`: GameServer 4,374 passed and 16 skipped,
+      Commons 303, LoginServer 135 (7 skipped), ChatServer 41 (1 skipped), Simulation 145
+      (33 skipped);
+    - the warning baseline and the null-logger, clock-read and fidelity checks;
+    - every Python and PowerShell contract test;
+    - the NavBake check.
+    30 of 32 passed at first. The two failures were my own:
+    - **Custom-quest drafts drifted.** AF-00 added Borender's registration to Q2209 without
+      regenerating `parity-artifacts/e2e/custom-quest-handler-drafts.json`. It was
+      regenerated with `tools/Aion.QuestPlanExtractor`; the only change is that
+      registration.
+    - **`run-fast.ps1` failed:** "Fresh simulation account sim-player-42 already has a
+      character". The new AF probes used accounts 42, 43 and 47, which the gathering and
+      cooking scenarios also use (through tuples the earlier search missed). The SIM
+      fixture now accepts accounts 101–140, and the six AF probes use 133–138.
+    The rerun passed: drafts check, warning baseline, and `run-fast.ps1` (29 passed,
+    3 skipped, `run/fast-20260929-142741`).
+  - **Checkpoint.** Leg 1 is done in SIM. Snapshot `altgard-l12` (level 13) is the start of
+    Leg 2. LIVE is run once at the end of the Altgard leg (AF-Q3). The Java fixes wait
+    for one combined upstream PR (`docs/upstream-reports/README.md`).
 
 ## Blocked / questions for the operator
 
@@ -607,3 +629,4 @@ The original questions follow.
 - 2026-09-29 AF-07: contract talk steps and the remedy use; SIM played Q2209, Q2207, Q2208 and Q24011 to completion (15 steps, air kills, dungeon, flight).
 - 2026-09-29 AF-08: Leg 1 decision engine and journey mode; smoke run completed Leg 1 from the snapshot at level 13 with no death.
 - 2026-09-29 AF-09: SIM run af09-l1-s1 completed Leg 1 with no death (level 13); snapshot altgard-l12 captured and restore-checked.
+- 2026-09-29 AF-10: full checklist green after regenerating the quest drafts and moving the AF probes to their own SIM accounts; Leg 1 is done.
