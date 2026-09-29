@@ -20,6 +20,8 @@ public class _2209TheScribbler : AbstractQuestHandler
         qe.RegisterQuestNpc(203555).AddOnQuestStart(questId);
         qe.RegisterQuestNpc(203555).AddOnTalkEvent(questId);
         qe.RegisterQuestNpc(203562).AddOnTalkEvent(questId);
+        // D26: Java never registers Borender, so his var 1 -> 2 step is unreachable (docs/upstream-reports/).
+        qe.RegisterQuestNpc(203572).AddOnTalkEvent(questId);
         qe.RegisterQuestNpc(203592).AddOnTalkEvent(questId);
     }
 

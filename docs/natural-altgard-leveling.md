@@ -336,10 +336,17 @@ verify it once, commit it on main, never push (the [loop
 protocol](natural-ascension-altgard.md#how-to-work-this-list-loop-protocol) applies,
 with "AF" in place of "NA").
 
-- [ ] **AF-00 — The Q2209 correction (D26).** Apply the fix the upstream report prepared
+- [x] **AF-00 — The Q2209 correction (D26).** Apply the fix the upstream report prepared
   (`docs/upstream-reports/q2209-the-scribbler.patch`) to the C# handler, with a regression
   test that a registered Borender dialog advances var 1 → 2. Record it as a shared-defect
   correction.
+  - *Done 2026-09-29.* `_2209TheScribbler.Register` adds Borender's talk event. The SIM test
+    `Q2209BorenderIsRegisteredAndAdvancesTheScribbler` (Q24011 COMPLETE, Q2209 at var 1, on
+    Borender's rock) passes: the click opens page 10, Q2209 shows page 1693, and SETPRO2 sets
+    var 2 (`run/af00/af00-sim.log`). Without the fix it fails with page 1011, his default
+    chat (`run/af00/af00-sim-without-fix.log`). The warning, logger, clock-read and fidelity
+    checks pass; `run-fast.ps1` passed 24, skipped 3 (`run/af00/run-fast.log`). Recorded as
+    deviation 57 in `docs/e2e-player-simulation-plan.md`.
 - [ ] **AF-01 — The Leg 1 contract and quest plans.** Write
   `parity-artifacts/e2e/natural-altgard-contract.json`: the Leg 1 quests, their order, level
   gates, hubs and endpoint. Compile the template quests' plans (`compile-quest-plans.py`)
@@ -421,3 +428,9 @@ The original questions follow.
   Leg 2 starts there anyway.
 - **AF-Q3 — LIVE per sub-leg or per zone?** Recommendation: one isolated LIVE run at the end of
   the Altgard leg, with SIM runs for each sub-leg.
+
+
+## Progress log
+
+- 2026-09-29 AF-00: the D26 Q2209 correction is in the C# handler, with a SIM regression test
+  that fails without it (page 1011) and passes with it (var 1 → 2).
