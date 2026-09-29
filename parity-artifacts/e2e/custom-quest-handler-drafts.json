@@ -162687,7 +162687,7 @@
           ],
           "npcIds": [],
           "expression": "qe.RegisterOnQuestCompleted(questId)",
-          "line": 26
+          "line": 28
         },
         {
           "methods": [
@@ -162695,7 +162695,7 @@
           ],
           "npcIds": [],
           "expression": "qe.RegisterOnLevelChanged(questId)",
-          "line": 27
+          "line": 29
         },
         {
           "methods": [
@@ -162703,22 +162703,6 @@
           ],
           "npcIds": [],
           "expression": "qe.RegisterOnEnterWorld(questId)",
-          "line": 28
-        },
-        {
-          "methods": [
-            "RegisterQuestItem"
-          ],
-          "npcIds": [],
-          "expression": "qe.RegisterQuestItem(182215388, questId)",
-          "line": 29
-        },
-        {
-          "methods": [
-            "RegisterQuestItem"
-          ],
-          "npcIds": [],
-          "expression": "qe.RegisterQuestItem(182215389, questId)",
           "line": 30
         },
         {
@@ -162726,8 +162710,24 @@
             "RegisterQuestItem"
           ],
           "npcIds": [],
-          "expression": "qe.RegisterQuestItem(182215390, questId)",
+          "expression": "qe.RegisterQuestItem(182215388, questId)",
           "line": 31
+        },
+        {
+          "methods": [
+            "RegisterQuestItem"
+          ],
+          "npcIds": [],
+          "expression": "qe.RegisterQuestItem(182215389, questId)",
+          "line": 32
+        },
+        {
+          "methods": [
+            "RegisterQuestItem"
+          ],
+          "npcIds": [],
+          "expression": "qe.RegisterQuestItem(182215390, questId)",
+          "line": 33
         },
         {
           "methods": [
@@ -162738,7 +162738,7 @@
             233878
           ],
           "expression": "qe.RegisterQuestNpc(233878).AddOnKillEvent(questId)",
-          "line": 32
+          "line": 34
         },
         {
           "methods": [
@@ -162749,11 +162749,13 @@
             203183,
             203700,
             203989,
+            730888,
+            730898,
             790001,
             801216
           ],
           "expression": "qe.RegisterQuestNpc(npc_id).AddOnTalkEvent(questId)",
-          "line": 34
+          "line": 36
         }
       ],
       "dialogCandidateActions": [
@@ -162777,7 +162779,7 @@
           ],
           "resultMethod": null,
           "result": "false",
-          "line": 44
+          "line": 46
         },
         {
           "targetNpcIds": [
@@ -162796,7 +162798,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 1011)",
-          "line": 54
+          "line": 56
         },
         {
           "targetNpcIds": [
@@ -162815,7 +162817,7 @@
           ],
           "resultMethod": "CloseDialogWindow",
           "result": "CloseDialogWindow(env)",
-          "line": 58
+          "line": 60
         },
         {
           "targetNpcIds": [
@@ -162834,7 +162836,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 1352)",
-          "line": 65
+          "line": 67
         },
         {
           "targetNpcIds": [
@@ -162853,7 +162855,7 @@
           ],
           "resultMethod": "CloseDialogWindow",
           "result": "CloseDialogWindow(env)",
-          "line": 69
+          "line": 71
         },
         {
           "targetNpcIds": [
@@ -162872,7 +162874,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 1693)",
-          "line": 76
+          "line": 78
         },
         {
           "targetNpcIds": [
@@ -162892,7 +162894,7 @@
           ],
           "resultMethod": null,
           "result": "true",
-          "line": 79
+          "line": 81
         },
         {
           "targetNpcIds": [
@@ -162911,7 +162913,7 @@
           ],
           "resultMethod": "CloseDialogWindow",
           "result": "CloseDialogWindow(env)",
-          "line": 82
+          "line": 84
         },
         {
           "targetNpcIds": [
@@ -162930,7 +162932,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 2375)",
-          "line": 89
+          "line": 91
         },
         {
           "targetNpcIds": [
@@ -162950,7 +162952,7 @@
           ],
           "resultMethod": null,
           "result": "true",
-          "line": 92
+          "line": 94
         },
         {
           "targetNpcIds": [
@@ -162969,7 +162971,7 @@
           ],
           "resultMethod": "CloseDialogWindow",
           "result": "CloseDialogWindow(env)",
-          "line": 95
+          "line": 97
         },
         {
           "targetNpcIds": [
@@ -162989,7 +162991,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 3057)",
-          "line": 104
+          "line": 106
         },
         {
           "targetNpcIds": [
@@ -163009,7 +163011,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 3739)",
-          "line": 108
+          "line": 110
         },
         {
           "targetNpcIds": [
@@ -163028,7 +163030,7 @@
           ],
           "resultMethod": null,
           "result": "false",
-          "line": 110
+          "line": 112
         },
         {
           "targetNpcIds": [
@@ -163048,7 +163050,7 @@
           ],
           "resultMethod": null,
           "result": "true",
-          "line": 113
+          "line": 115
         },
         {
           "targetNpcIds": [
@@ -163067,7 +163069,7 @@
           ],
           "resultMethod": "CloseDialogWindow",
           "result": "CloseDialogWindow(env)",
-          "line": 116
+          "line": 118
         },
         {
           "targetNpcIds": [
@@ -163086,7 +163088,7 @@
           ],
           "resultMethod": "CloseDialogWindow",
           "result": "CloseDialogWindow(env)",
-          "line": 122
+          "line": 124
         },
         {
           "targetNpcIds": [
@@ -163105,7 +163107,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 4083)",
-          "line": 156
+          "line": 158
         },
         {
           "targetNpcIds": [
@@ -163124,7 +163126,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 5)",
-          "line": 158
+          "line": 160
         },
         {
           "targetNpcIds": [
@@ -163141,7 +163143,7 @@
           ],
           "resultMethod": "SendQuestEndDialog",
           "result": "SendQuestEndDialog(env)",
-          "line": 161
+          "line": 163
         },
         {
           "targetNpcIds": [],
@@ -163150,7 +163152,7 @@
           "conditions": [],
           "resultMethod": null,
           "result": "false",
-          "line": 165
+          "line": 167
         }
       ],
       "specialOperations": [
@@ -163158,67 +163160,67 @@
           "kind": "instance",
           "method": "GetNextAvailableInstance",
           "expression": "InstanceService.GetNextAvailableInstance(WorldMapType.NIDALBER.GetId(), player)",
-          "line": 120
+          "line": 122
         },
         {
           "kind": "teleport",
           "method": "TeleportTo",
           "expression": "TeleportService.TeleportTo(player, newInstance, 274, 167, 204)",
-          "line": 121
+          "line": 123
         },
         {
           "kind": "spawn",
           "method": "Spawn",
           "expression": "Spawn(730898, player, 257, 257, (float) 226.35, (byte) 95)",
-          "line": 133
+          "line": 135
         },
         {
           "kind": "teleport",
           "method": "TeleportTo",
           "expression": "TeleportService.TeleportTo(player, 110010000, 1876.29f, 1511f, 812.675f, (byte) 60, TeleportAnimation.FADE_OUT_BEAM)",
-          "line": 144
+          "line": 146
         },
         {
           "kind": "spawn",
           "method": "Spawn",
           "expression": "Spawn(730888, player, 257, 257, (float) 226.35, (byte) 95)",
-          "line": 211
-        },
-        {
-          "kind": "spawn",
-          "method": "Spawn",
-          "expression": "Spawn(233878, player, (float) 262.9, (float) 224.5, (float) 211.348, (byte) 95)",
           "line": 213
         },
         {
           "kind": "spawn",
           "method": "Spawn",
-          "expression": "Spawn(233886, player, (float) 217.015, (float) 221.694, (float) 207.49455, (byte) 97)",
+          "expression": "Spawn(233878, player, (float) 262.9, (float) 224.5, (float) 211.348, (byte) 95)",
           "line": 215
         },
         {
           "kind": "spawn",
           "method": "Spawn",
-          "expression": "Spawn(233886, player, (float) 239.732, (float) 211.250, (float) 209.19, (byte) 97)",
-          "line": 216
-        },
-        {
-          "kind": "spawn",
-          "method": "Spawn",
-          "expression": "Spawn(233886, player, (float) 257.065, (float) 204.49, (float) 209.094, (byte) 97)",
+          "expression": "Spawn(233886, player, (float) 217.015, (float) 221.694, (float) 207.49455, (byte) 97)",
           "line": 217
         },
         {
           "kind": "spawn",
           "method": "Spawn",
-          "expression": "Spawn(233886, player, (float) 274.899, (float) 199.398, (float) 208.83487, (byte) 97)",
+          "expression": "Spawn(233886, player, (float) 239.732, (float) 211.250, (float) 209.19, (byte) 97)",
           "line": 218
         },
         {
           "kind": "spawn",
           "method": "Spawn",
-          "expression": "Spawn(233886, player, (float) 282.878, (float) 223.742, (float) 208.252, (byte) 97)",
+          "expression": "Spawn(233886, player, (float) 257.065, (float) 204.49, (float) 209.094, (byte) 97)",
           "line": 219
+        },
+        {
+          "kind": "spawn",
+          "method": "Spawn",
+          "expression": "Spawn(233886, player, (float) 274.899, (float) 199.398, (float) 208.83487, (byte) 97)",
+          "line": 220
+        },
+        {
+          "kind": "spawn",
+          "method": "Spawn",
+          "expression": "Spawn(233886, player, (float) 282.878, (float) 223.742, (float) 208.252, (byte) 97)",
+          "line": 221
         }
       ]
     },
