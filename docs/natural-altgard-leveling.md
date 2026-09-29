@@ -696,9 +696,33 @@ The same loop protocol, with "AM" in place of "NA".
     They found that the waist bands also drop from the level 13 MuMu farmer (210469). All
     298 Natural tests pass, and so do the warning, logger and clock checks and
     `test-quest-plan-compiler.py`.
-- [ ] **AM-02 — Travel to the crossroad and its grounds.** Fortress ↔ crossroad ↔ Okaru Tree,
+- [x] **AM-02 — Travel to the crossroad and its grounds.** Fortress ↔ crossroad ↔ Okaru Tree,
   farmland, tog grounds and Manir, on the Altgard navmesh and travel planner. **Done when:**
   a SIM probe walks each leg and back, and reports what aggroes on the way.
+  - *Done 2026-09-29.* SIM probe `AltgardMoslanTravelWalksEveryGroundAndBack`
+    (`run/am02/am02-sim.log`, account 139). Every leg is planned the way the journey
+    plans a long leg (Altgard travel planner, level 13; the navmesh route for legs under
+    100 m) and walked on the live server. All 12 legs arrive within 5 m, with no death:
+
+    | Leg (out and back) | Length | Aggressive spawns the plan crosses | Live aggressive within 30 m of the route |
+    |---|---|---|---|
+    | fortress ↔ crossroad | 469 / 471 m | none | none |
+    | crossroad ↔ Okaru Tree | 234 / 242 m | a karnif (L10–11) | 6 needletail karnifs L11, 3 L10, a blackpaw karnif L12 |
+    | crossroad ↔ karnif slopes | 47 / 49 m | (navmesh) | 2 karnifs |
+    | crossroad ↔ farmland (nearest patrol) | 92 / 93 m | (navmesh) | 3 MuMu patrols, a highsitter |
+    | crossroad ↔ tog grounds (nearest tog) | 219 / 206 m | a wild tog L12, a veteran patrol L13 | 3 wild togs, a blackpaw karnif L13, 3 karnifs, a veteran patrol |
+    | crossroad ↔ Manir's Campsite | 346 / 328 m | a veteran patrol L13 (and a karnif back) | 7 wild togs, a fierce tog L11 |
+
+    The "live" column is what would have come for the bot: those monsters were despawned
+    before the walk (GM setup for a route probe), so the return legs show none.
+  - **Findings:**
+    - The fortress road is clean.
+    - The MuMu Farmland starts under 100 m from the crossroad.
+    - The way to Manir crosses the tog herds: the AM-06 fights, or a wider route, are
+      needed before Q2215's delivery.
+    - Blackpaw karnifs (L12–13) and fierce togs (L11) are extra aggressive species that
+      the quest data does not name.
+    - The warning, logger and clock-read checks pass.
 - [ ] **AM-03 — Talking at a guarded hub.** Clear or avoid the pluma near the three NPCs before
   a talk, with the NA-22 patrol and pull policy. **Done when:** a SIM probe takes and hands in
   a quest at the crossroad with no pluma joining.
@@ -812,3 +836,4 @@ The original questions follow.
 - 2026-09-29 AF-09: SIM run af09-l1-s1 completed Leg 1 with no death (level 13); snapshot altgard-l12 captured and restore-checked.
 - 2026-09-29 AF-10: full checklist green after regenerating the quest drafts and moving the AF probes to their own SIM accounts; Leg 1 is done.
 - 2026-09-29 AM-01: Leg 2 contract, eight template plans, the loader by leg, and three contract tests.
+- 2026-09-29 AM-02: all 12 Leg 2 travel legs route and walk in SIM; the danger on each is recorded.
