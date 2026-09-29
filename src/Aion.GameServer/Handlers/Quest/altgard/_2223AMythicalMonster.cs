@@ -18,6 +18,8 @@ public class _2223AMythicalMonster : AbstractQuestHandler
     {
         qe.RegisterQuestNpc(203616).AddOnQuestStart(questId);
         qe.RegisterQuestNpc(203616).AddOnTalkEvent(questId);
+        // D27: Java never registers Lamir, so his var 0 -> 1 step is unreachable (docs/upstream-reports/).
+        qe.RegisterQuestNpc(203620).AddOnTalkEvent(questId);
         qe.RegisterQuestNpc(700134).AddOnTalkEvent(questId);
         qe.RegisterQuestNpc(211621).AddOnKillEvent(questId);
     }

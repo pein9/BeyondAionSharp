@@ -8,7 +8,7 @@ Patches are kept with LF line endings (`.gitattributes`), as the Java repository
 | Quest | Defect | Patch | C# decision |
 |---|---|---|---|
 | 2209 The Scribbler (Altgard) | Borender 203572 is never registered for the talk event; var 1 → 2 is unreachable | `q2209-the-scribbler.patch`, report `q2209-the-scribbler.md` | D26 |
-| 2223 A Mythical Monster (Altgard) | Lamir 203620 is never registered for the talk event; var 0 → 1 (which gives item 182203217) is unreachable through the talk path. Masked while Q2231 is startable or active, because Lamir is Q2231's start NPC and so opens the quest page. Retail step 1 is "Talk with Lamir" (https://aioncodex.com/enc/quest/2223/?sl=1) | `q2223-a-mythical-monster.patch` | D27 |
+| 2223 A Mythical Monster (Altgard) | Lamir 203620 is never registered for the talk event; var 0 → 1 (which gives item 182203217) is unreachable through the talk path. Masked while Q2231 or Q2224 is startable or active, because Lamir starts both and so opens the quest page. Retail step 1 is "Talk with Lamir" (https://aioncodex.com/enc/quest/2223/?sl=1) | `q2223-a-mythical-monster.patch` | D27, applied (deviation 141) |
 | 2916 Man in the Long Black Robe (Pandaemonium) | Annju 204151 is never registered for the talk event; var 2 → 3 (`SETPRO3`) is unreachable. No other quest registers 204151. Retail step 3 is "Interrogate Annju" (https://aioncodex.com/enc/quest/2916/?sl=1) | `q2916-man-in-the-long-black-robe.patch` | none (not on the bot's route) |
 
 The evidence and the dialog-dispatch explanation that apply to all three are in
@@ -42,7 +42,7 @@ or active. The full dispatch explanation, with file and line references, is in
 | Handler | Unregistered NPC | Effect | Status | Next step |
 |---|---|---|---|---|
 | `altgard/_2209TheScribbler` | 203572 Borender | var 1 → 2 | **Confirmed**, fixed in C# (D26) | patch ready |
-| `altgard/_2223AMythicalMonster` | 203620 Lamir | var 0 → 1 (gives 182203217) | **Confirmed** (aioncodex step 1 "Talk with Lamir"); C# fix approved (**D27**) | patch ready; apply D27 in C# |
+| `altgard/_2223AMythicalMonster` | 203620 Lamir | var 0 → 1 (gives 182203217) | **Confirmed** (aioncodex step 1 "Talk with Lamir"); fixed in C# (**D27**, deviation 141) | patch ready |
 | `pandaemonium/_2916ManInTheLongBlackRobe` | 204151 Annju | var 2 → 3 (`SETPRO3`) | **Confirmed** (aioncodex step 3 "Interrogate Annju") | patch ready; C# needs a decision |
 | `bare_truth/_14031AHyperVention` | 730888, 730898 (quest-spawned teleporters) | var 10 → 11 → reward after the captain kill | Likely, from the code only | check retail, then patch |
 | `clash_of_destiny/_24031EnemyAtTheDoorstep` | 730888, 730898 | same as 14031 | Likely, from the code only | check retail, then patch |

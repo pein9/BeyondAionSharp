@@ -33,7 +33,8 @@ the transfer half: this is a single-server emulator and character transfer is no
 a supported product journey, so do not extend or runtime-validate that dormant
 path. D26 and D27 approve two more: registering Borender (203572) for Q2209 "The
 Scribbler" and Lamir (203620) for Q2223 "A Mythical Monster", whose Java handlers never
-register them (reported upstream, `docs/upstream-reports/`).
+register them (reported upstream, `docs/upstream-reports/`). Both are applied in C#
+(§7/57 and §7/141, tests in `SimulationQuestCorrectionTests.cs`) and must not be ported back.
 These decisions are not a general exemption from parity or authorization to
 reopen other deferred behavior.
 
