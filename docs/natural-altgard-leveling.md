@@ -422,10 +422,29 @@ with "AF" in place of "NA").
     Five `NaturalFlightPolicyTests` pass: the two zones (Altgard has no NO_FLY zone), every
     takeoff refusal including water, the reuse boundary, the zone and reserve rules, landing
     choice and restore times. The warning, logger and clock-read checks pass.
-- [ ] **AF-05 — Flight protocol and movement.** Take off (`CM_EMOTION` FLY), fly (`CM_MOVE`
+- [x] **AF-05 — Flight protocol and movement.** Take off (`CM_EMOTION` FLY), fly (`CM_MOVE`
   in flight) to a point in the air, land (`LAND`) on ground or on a platform, watch
   `SM_FLY_TIME`, and let FP refill on the ground. **Done when:** a SIM probe flies from the
   fortress to Borender's rock, talks to him, and lands back safely with FP left.
+  - *Done 2026-09-29.* `NaturalFlightProtocol`: takeoff (`CM_EMOTION` FLY, whose
+    `SM_EMOTION` answer carries the flight speed, 9 m/s at level 10), flight in
+    `CM_MOVE_IN_AIR` samples every 500 ms (the E2E plan's flight packet), landing
+    (`CM_EMOTION` LAND), and route planning.
+  - **Finding: a floating island hangs over the fortress.** It spans about
+    x 1600–1680, y 1780–1860 at z 335–395, with Borender on top. The straight climb from
+    the obelisk hits it, so the planner searches a 10 m grid within 100 m for a clear
+    column. It flies low to the column, climbs, crosses at cruise height and descends, and
+    mirrors that on the way down. The shortest clear route wins. Every leg is checked for
+    collision in pieces of 40 m or less, because the server's sight check refuses rays
+    over 80 m.
+  - SIM probe `AltgardFlightToBorendersRockAndBack` (`run/af05/af05-sim.log`): a level 10
+    Daeva Cleric (GM setup, as in NA-23) takes off beside the obelisk, where the AF-04
+    policy allows it. It flies 216 m to the rock top (FP 60 → 37; the policy predicted
+    36), lands, and Borender answers (page 1011). FP restores on the rock (37 → 40). It
+    flies back (FP 40 → 17) and lands exactly beside the obelisk, alive.
+  - The offline test `FlightToBorenderGoesAroundTheFloatingIsland`
+    (`run/af05/af05-offline.log`) pins the blocked straight climb and the clear detour
+    both ways. The warning, logger and clock-read checks pass.
 - [ ] **AF-06 — Air combat for Q24011.** Kill the Abyss Fungus from the air within the FP
   budget: fly to one, kill it, land to refill as needed. A fall or death is recorded
   (OD-12). **Done when:** a SIM probe completes Q24011's six kills.
@@ -492,3 +511,4 @@ The original questions follow.
 - 2026-09-29 AF-02: the fortress exit works; NA-23 started inside the obelisk. SIM probe walked 22 legs to the Ice Lake targets and back.
 - 2026-09-29 AF-03: the Fortress Dungeon is a ramp walk; SIM probe talked to Noroia and Mumu Bon and walked back.
 - 2026-09-29 AF-04: pure flight policy (takeoff, water, reuse, FP budget and reserve, zone bounds, landing, restore) with five tests.
+- 2026-09-29 AF-05: flight protocol; the bot flies around the floating island to Borender's rock, talks, and flies back (FP 60 → 37, 40 → 17).

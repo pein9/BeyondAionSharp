@@ -73,4 +73,40 @@ public sealed class AltgardFortressExitTests
 			Assert.NotEmpty(geometry.FindJourneyPath(Altgard, down[^1], beside));
 		}
 	}
+
+
+
+	/// <summary>AF-05: the floating island over the fortress (z 335-395) blocks the straight climb from the obelisk to
+	/// Borender's rock; the flight planner finds a clear column beside it, both ways, inside the FLY zone.</summary>
+	[SkippableFact]
+	public async Task FlightToBorenderGoesAroundTheFloatingIsland()
+	{
+		Skip.IfNot(Environment.GetEnvironmentVariable("AION_SOAK_NAV_INTEGRATION") == "1", "Set AION_SOAK_NAV_INTEGRATION=1 for the full offline geometry load.");
+		BotNavigationGeometry geometry = await Geometry.Value;
+		NaturalAltgardContract contract = NaturalAltgardContract.LoadDefault();
+		IReadOnlyList<NaturalFlyZone> zones = NaturalFlyZone.Load(Path.Combine(Path.GetFullPath(Path.Combine(
+			Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../..")), "game-server/data/static_data/zones/zones_220030000.xml"));
+		var obelisk = new BotPosition(contract.Hub.Anchor[0], contract.Hub.Anchor[1], contract.Hub.Anchor[2], 0);
+		BotPosition ground = geometry.SnapToGround(Altgard, obelisk with { X = obelisk.X - 3, Z = obelisk.Z + 1 })
+			?? throw new InvalidDataException("No ground beside the obelisk.");
+		NaturalAltgardStep borender = contract.Steps.First(step => step.Area == "borender-rock");
+		BotPosition rock = geometry.SnapToGround(Altgard, new BotPosition(borender.Position[0] - 2.5f, borender.Position[1], borender.Position[2] + 3, 0))
+			?? throw new InvalidDataException("No rock top beside Borender.");
+		Assert.False(NaturalFlightProtocol.IsClear(geometry, Altgard, ground, ground with { Z = rock.Z + 8 }));
+		foreach ((BotPosition start, BotPosition end) in new[] { (ground, rock), (rock, ground) })
+		{
+			NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, Altgard, start, end, rock.Z + 8);
+			Assert.True(route.IsUsable, route.Refusal);
+			Assert.Equal(5, route.Waypoints.Count);
+			Assert.Equal(end, route.Waypoints[^1]);
+			NaturalFlightDecision go = NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, start, 9), contract.Flight.MaxFlightTime, zones);
+			Assert.True(go.Allowed, go.Reason);
+			BotPosition previous = start;
+			foreach (BotPosition point in route.Waypoints)
+			{
+				Assert.True(NaturalFlightProtocol.IsClear(geometry, Altgard, previous, point));
+				previous = point;
+			}
+		}
+	}
 }
