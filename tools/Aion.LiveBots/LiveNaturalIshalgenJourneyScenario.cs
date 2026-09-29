@@ -15,6 +15,9 @@ public static partial class LiveBotRunner
 			throw new InvalidDataException("NI-09 requires the isolated ordinary-rate docker-bots-natural profile.");
 		using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 		lifetime.CancelAfter(TimeSpan.FromHours(8));
+		// NA-27: with NA_ASCENSION=1 the same fresh Priest continues over the Ascension bridge to Altgard
+		// (docs/natural-ascension-altgard.md); run-live.ps1 -AscensionBridge sets it and keeps the endpoint database.
+		bool bridge = Environment.GetEnvironmentVariable("NA_ASCENSION") == "1";
 		CancellationToken token = lifetime.Token;
 		var elapsed = Stopwatch.StartNew();
 		DateTimeOffset epoch = DateTimeOffset.UtcNow;
@@ -38,9 +41,10 @@ public static partial class LiveBotRunner
 			{
 				SupplyHelpItemAsync = helpItems == null ? null : helpItems.SupplyAsync,
 			};
-			await new NaturalIshalgenJourney(session, runtime, new NaturalJourneyOptions()).RunAsync(token);
+			await new NaturalIshalgenJourney(session, runtime, new NaturalJourneyOptions(AscensionBridge: bridge)).RunAsync(token);
 			// The shared driver proves all 41 completions, level 9, Munin proximity and untouched Ascension before quitting.
 			await session.VerifyOfflineAsync(token);
+			if (bridge) return await CompleteBridgeAsync();
 			NaturalIshalgenContract contract = NaturalIshalgenContract.LoadDefault();
 			NaturalJourneyCheckpoint beforeRelog = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
 				session.ConnectionGeneration, contract, session.CurrentPosition);
@@ -78,6 +82,45 @@ public static partial class LiveBotRunner
 			});
 			Console.WriteLine($"LIVE NI-09 completed: {identity.CharacterName}, all 41 quests, level 9 at Munin, Ascension untouched.");
 			return 0;
+
+			// NA-27: the journey already asserted the bridge endpoint and relogged to verify its persistence
+			// (bridge-completion.json). Log in once more and check the ordinary identity as the Cleric it became.
+			async Task<int> CompleteBridgeAsync()
+			{
+				string completion = Path.Combine(options.OutputDirectory, "bots", "bridge-completion.json");
+				if (!File.Exists(completion))
+					throw new InvalidDataException("NA-27: the Ascension bridge did not reach its verified endpoint.");
+				session.BeforeSend = null;
+				session.AfterSynchronize = null;
+				session.BeginStep("na27-identity", "relog-and-verify-the-ordinary-cleric");
+				await session.WaitForReentryAsync(token);
+				await session.ReloginExistingCharacterAsync(token);
+				await session.EnterWorldAsync(token);
+				await session.SynchronizeAsync(token);
+				if (session.Api.World.Level < 10)
+					throw new InvalidDataException($"NA-27: the endpoint Cleric is level {session.Api.World.Level}.");
+				await new LiveNaturalIshalgenIdentityDriver(options, actor, identity)
+					.VerifyOrdinaryOnlineIdentityAsync(session.CharacterId, session.Api.World.Level, token);
+				await session.QuitAsync(token);
+				await session.VerifyOfflineAsync(token);
+				session.FinishStep("completed");
+				await File.WriteAllTextAsync(Path.Combine(options.OutputDirectory, "natural-ascension-complete.json"),
+					JsonSerializer.Serialize(new
+					{
+						scenario = "NI-09", bridge = true, elapsed = elapsed.Elapsed, characterId = session.CharacterId,
+						level = session.Api.World.Level, mapId = session.Api.World.MapId,
+					}, new JsonSerializerOptions { WriteIndented = true }), token);
+				AssertClean();
+				actor.Trace.WriteAction(session.CurrentStep, "scenario:complete", new Dictionary<string, object?>
+				{
+					["scenario"] = "NI-09", ["bridge"] = true, ["characterId"] = session.CharacterId,
+					["elapsedSeconds"] = elapsed.Elapsed.TotalSeconds,
+				});
+				Console.WriteLine($"LIVE NI-09 with the Ascension bridge completed: {identity.CharacterName}, a level " +
+					$"{session.Api.World.Level} Cleric bound in Altgard.");
+				return 0;
+			}
+
 			async Task<bool> EnterAsync(CancellationToken ct)
 			{
 				var identityDriver = new LiveNaturalIshalgenIdentityDriver(options, actor, identity);

@@ -35,6 +35,8 @@ param(
 	[switch]$FullRun,
 
 	[switch]$Keep,
+	# NA-27: NI-09 continues over the Ascension bridge to Altgard; the endpoint databases are dumped before teardown.
+	[switch]$AscensionBridge,
 
 	[switch]$SkipImageBuild,
 	[ValidateSet('Host', 'Docker')][string]$BotExecution = 'Host',
@@ -69,6 +71,9 @@ if ($BotExecution -eq 'Docker' -and $DashboardPort -ne 0) {
 }
 if ($Scenario -contains 'NI-09' -and ($Scenario.Count -ne 1 -or $Bots -ne 1 -or $Keep -or $WatcherMode -ne 'enforce')) {
 	throw 'NI-09 must run alone with one ordinary subject, enforce watching and no Keep.'
+}
+if ($AscensionBridge -and -not ($Scenario.Count -eq 1 -and $Scenario -contains 'NI-09')) {
+	throw '-AscensionBridge extends NI-09 only.'
 }
 if ([string]::IsNullOrWhiteSpace($RunRoot)) {
 	$RunRoot = if ([string]::IsNullOrWhiteSpace($env:AION_E2E_RUN_ROOT)) {
@@ -286,6 +291,9 @@ try {
 		if ($Scenario -contains 'NI-09') {
 			$env:AION_BOT_OVERLAY_DIR = Join-Path $repoRoot 'docker/bots/overlay-natural'
 			$configProfile = 'docker-bots-natural'
+			# NA-27: the bot process inherits the bridge switch (the help items stay on unless NA_HELP_ITEMS=0).
+			$previousAscension = $env:NA_ASCENSION
+			if ($AscensionBridge) { $env:NA_ASCENSION = '1' } else { Remove-Item Env:NA_ASCENSION -ErrorAction SilentlyContinue }
 		}
 		if ($Scenario -contains 'SOAK') {
 			if ($Scenario.Count -ne 1) { throw 'SOAK needs its own isolated stack.' }
@@ -427,6 +435,23 @@ try {
 		Stop-Watcher
 		if ($botExitCode -ne 0) { throw "Live bots failed with exit code $botExitCode." }
 		if ($watcherExitCode -ne 0) { throw "Log watcher failed with exit code $watcherExitCode." }
+		if ($AscensionBridge) {
+			# NA-27: keep this run's own databases at the bridge endpoint as the LIVE starting point in Altgard. Only this
+			# run's isolated compose project is read; the operator's `aion` stack is never touched.
+			$dumpPassword = if ([string]::IsNullOrWhiteSpace($env:AION_BOT_DB_PASSWORD)) { 'aion-bots' } else { $env:AION_BOT_DB_PASSWORD }
+			$databases = (& docker @composeArgs exec -T -e "MYSQL_PWD=$dumpPassword" mysql mysql -uroot -Nse "SHOW DATABASES LIKE 'aion%'" | Out-String).Trim() -split '\s+'
+			if ($LASTEXITCODE -ne 0 -or $databases.Count -eq 0) { throw 'NA-27 could not list the endpoint databases.' }
+			$dumpPath = Join-Path $runPath 'altgard-live-dump.sql.gz'
+			& docker @composeArgs exec -T -e "MYSQL_PWD=$dumpPassword" mysql sh -c "mysqldump -uroot --single-transaction --no-tablespaces --routines --triggers --databases $($databases -join ' ') | gzip > /tmp/altgard-live.sql.gz"
+			if ($LASTEXITCODE -ne 0) { throw 'NA-27 endpoint database dump failed.' }
+			$mysqlContainer = (& docker @composeArgs ps -q mysql | Out-String).Trim()
+			Invoke-CheckedNative 'docker' @('cp', "${mysqlContainer}:/tmp/altgard-live.sql.gz", $dumpPath) 'NA-27 dump copy'
+			[ordered]@{
+				schemaVersion = 1; name = 'altgard-live'; run = $Run; gitSha = $gitSha; databases = $databases
+				capturedUtc = (Get-Date).ToUniversalTime().ToString('o')
+				dumpSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $dumpPath).Hash.ToLowerInvariant()
+			} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $runPath 'altgard-live-dump.json') -Encoding utf8
+		}
 		if (@($Scenario | Where-Object { $_ -match '^G[1-6]$' }).Count -gt 0) {
 			# Independent post-logout persistence invariant, inside this run's Docker DB only.
 			# The bot never reads this data to decide an action or to populate its world model.
@@ -476,6 +501,10 @@ finally {
 	else { $env:AION_E2E_RUN_DIR = $previousRunDirectory }
 	if ($null -eq $previousRunId) { Remove-Item Env:AION_RUN_ID -ErrorAction SilentlyContinue }
 	else { $env:AION_RUN_ID = $previousRunId }
+	if (Get-Variable -Name previousAscension -ErrorAction SilentlyContinue) {
+		if ($null -eq $previousAscension) { Remove-Item Env:NA_ASCENSION -ErrorAction SilentlyContinue }
+		else { $env:NA_ASCENSION = $previousAscension }
+	}
 	if ($null -eq $previousPacketTap) { Remove-Item Env:AION_PACKET_TAP -ErrorAction SilentlyContinue }
 	else { $env:AION_PACKET_TAP = $previousPacketTap }
 	if ($null -eq $previousQuestPlanRoot) { Remove-Item Env:AION_E2E_QUEST_PLAN_ROOT -ErrorAction SilentlyContinue }
