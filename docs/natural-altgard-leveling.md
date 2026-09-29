@@ -395,7 +395,7 @@ with "AF" in place of "NA").
     The offline test `DungeonNpcsAreReachedOnFootDownTheRamp` (`run/af03/af03-offline.log`)
     checks every step of both routes and the way back. The warning, logger and clock-read
     checks pass.
-- [ ] **AF-04 — Flight policy (pure).** Covers:
+- [x] **AF-04 — Flight policy (pure).** Covers:
   - the two FLY zones;
   - takeoff checks: a Daeva, inside a FLY zone and not NO_FLY, the 10 s reuse, and **not
     on water** (the navmesh Water area or below z 200);
@@ -404,6 +404,24 @@ with "AF" in place of "NA").
   - landing targets (the ground, or Borender's rock).
 
   **Done when:** policy tests cover each rule, including the water refusal and the FP margin.
+  - *Done 2026-09-29.* `NaturalFlightPolicy` and `NaturalFlyZone` (pure; zones parsed from
+    `zones_220030000.xml`). The Java rules it copies:
+    - takeoff: Daeva, inside a FLY zone and no NO_FLY zone, no NOFLY effect, no
+      transformation, no private store, and 9.9 s since the last takeoff
+      (`FLY_REUSE_TIME - 100`). The client's water rule is added: no takeoff from a navmesh
+      water area or below the map water level.
+    - FP: 1 per second in the zone (Java drains 1 FP a second, 2 outside); a flight's cost is
+      its airborne seconds, including air-fight time. Every waypoint must stay inside the
+      zone polygon, floor and ceiling. A flight is taken only when it lands with at least
+      10 FP.
+    - airborne: land as soon as the FP left would not cover the way to the landing plus
+      that reserve; the nearest landing (ground or platform) the FP still reaches.
+    - on the ground FP returns 3 every 6 s, the first 3 s after landing: 117 s from empty to
+      60. That is the price of a long air fight.
+
+    Five `NaturalFlightPolicyTests` pass: the two zones (Altgard has no NO_FLY zone), every
+    takeoff refusal including water, the reuse boundary, the zone and reserve rules, landing
+    choice and restore times. The warning, logger and clock-read checks pass.
 - [ ] **AF-05 — Flight protocol and movement.** Take off (`CM_EMOTION` FLY), fly (`CM_MOVE`
   in flight) to a point in the air, land (`LAND`) on ground or on a platform, watch
   `SM_FLY_TIME`, and let FP refill on the ground. **Done when:** a SIM probe flies from the
@@ -473,3 +491,4 @@ The original questions follow.
 - 2026-09-29 AF-01: Leg 1 contract, six compiled template plans, loader and five contract tests.
 - 2026-09-29 AF-02: the fortress exit works; NA-23 started inside the obelisk. SIM probe walked 22 legs to the Ice Lake targets and back.
 - 2026-09-29 AF-03: the Fortress Dungeon is a ramp walk; SIM probe talked to Noroia and Mumu Bon and walked back.
+- 2026-09-29 AF-04: pure flight policy (takeoff, water, reuse, FP budget and reserve, zone bounds, landing, restore) with five tests.
