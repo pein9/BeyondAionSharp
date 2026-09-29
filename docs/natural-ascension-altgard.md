@@ -1718,6 +1718,9 @@ OD-11, a development item is verified by **one** run.
          the Altgard obelisk (island 25) to open ground south-west was
          `GeometryRejected`, probably at the gate. The Altgard leveling leg must check
          the fortress exit first. The bridge never left the fortress.
+         *Corrected by AF-02 (2026-09-29):* not the gate. The route started on the
+         obelisk's own spot, inside its collision; from beside it the fortress exit
+         routes and walks (`docs/natural-altgard-leveling.md`, AF-02).
       4. **Earth's Wrath was cast twice in a row at melee once.** The first 1.5 s cast was
          probably interrupted by a hit, so no cooldown was recorded. A melee Wrath costs
          85 MP; consider it only at range, or when the monster is stunned.

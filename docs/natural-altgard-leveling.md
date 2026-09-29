@@ -363,11 +363,24 @@ with "AF" in place of "NA").
     and the C# handlers, and all 291 Natural and plan tests pass. Findings: the level 10
     quests alone reach level 11; all ten quests give 132,017 XP, short of level 12; the Ice
     Lake targets surround the fortress, not only the west side.
-- [ ] **AF-02 — Leave and re-enter the fortress on foot.** Diagnose NA-23's
+- [x] **AF-02 — Leave and re-enter the fortress on foot.** Diagnose NA-23's
   `GeometryRejected` route (obelisk → Ice Lake / open ground): a gate, a static door, or a
   navmesh/geo mismatch. Fix it bot-side, with checked navigation data, never by editing
   generated nav data by hand. **Done when:** a SIM probe walks from the obelisk to the Ice
   Lake targets and back.
+  - *Done 2026-09-29. No gate, no navigation change.* NA-23's failed route started on the
+    obelisk's own spot, which is inside its collision (NA-04 finding b). From the ground 3 m
+    beside it, routes leave the fortress. The bot never starts there: binding uses
+    interaction routing, and a revive puts the player where they bound.
+  - SIM probe `AltgardFortressExitWalksToTheIceLakeTargetsAndBack` (`run/af02/af02-sim.log`):
+    it starts beside the obelisk and routes on the live server's geometry to the nearest spawn
+    of each of the 11 Leg 1 hunt targets (Q2201–2206). It walks out and back: 22 legs of
+    131–211 waypoints, every one ending within 3 m of its goal, with no death. Aggressive
+    monsters near each route were despawned first; that is GM setup for a route probe.
+  - The offline test `RoutesLeaveTheFortressFromBesideTheObeliskButNotFromInsideIt`
+    (`AION_SOAK_NAV_INTEGRATION=1`, `run/af02/af02-offline.log`) pins the cause: from the
+    obelisk's spot there is no route to NA-23's stage or the western Ice Lake, and from
+    beside it there is, both ways. The warning, logger and clock-read checks pass.
 - [ ] **AF-03 — The Fortress Dungeon.** A route to Mumu Bon (z 203) and Noroia (z 205):
   the entrance, navmesh coverage, map context. **Done when:** a SIM probe talks to both.
 - [ ] **AF-04 — Flight policy (pure).** Covers:
@@ -446,3 +459,4 @@ The original questions follow.
 - 2026-09-29 AF-00: the D26 Q2209 correction is in the C# handler, with a SIM regression test
   that fails without it (page 1011) and passes with it (var 1 → 2).
 - 2026-09-29 AF-01: Leg 1 contract, six compiled template plans, loader and five contract tests.
+- 2026-09-29 AF-02: the fortress exit works; NA-23 started inside the obelisk. SIM probe walked 22 legs to the Ice Lake targets and back.
