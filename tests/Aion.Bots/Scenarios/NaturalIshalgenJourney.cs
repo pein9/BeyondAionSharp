@@ -2258,6 +2258,17 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				}
 			}
 
+			async Task<bool> RevivedInsteadOfReturnAsync()
+			{
+				if (!session.Api.World.IsDead && session.Api.World.CurrentHp > 0) return false;
+				session.TraceDiagnostic("natural-return-dead-revive-at-bind", new Dictionary<string, object?>
+				{
+					["position"] = session.CurrentPosition, ["hp"] = session.Api.World.CurrentHp,
+				});
+				await RestSafelyAsync(token); // revives at the bound obelisk, then rests
+				return true;
+			}
+
 			async Task UseLearnedReturnToBindAsync()
 			{
 				// Java ce54b7931 ReturnEffect moves the player to the character's
@@ -2267,6 +2278,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				Require.True(session.Api.World.Skills.TryGetValue(returnSkillId, out BotSkill? learned),
 					"The Priest did not observe the auto-learned Return skill.");
 				session.BeginStep("ni07-natural-return", "cast-learned-return-after-checked-route-blocked");
+				// NA-27 (LIVE): a monster can kill the bot on the very walk whose failure asked for Return, and Java refuses
+				// a dead player's cast (CM_CASTSPELL: STR_SKILL_CANT_CAST, DEAD). A bind revive lands at the same bind
+				// point Return goes to, so it replaces the cast; the death is recorded, not failed (OD-12).
+				if (await RevivedInsteadOfReturnAsync()) return;
 				// A checked route can fail again soon after a prior Return. Honor the
 				// SM_CASTSPELL_RESULT cooldown while staying ready to fight nearby monsters.
 				TimeSpan remainingCooldown = session.Api.Timing.TimeUntilCast(returnSkillId);
@@ -2295,6 +2310,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				// player fights it off, recovers and casts again.
 				for (int attempt = 1; ; attempt++)
 				{
+					if (await RevivedInsteadOfReturnAsync()) return;
 					packetStart = session.PacketHistory.Count;
 					TimeSpan castGate = session.Api.Timing.TimeUntilCast(returnSkillId);
 					if (castGate > TimeSpan.Zero) await session.AdvanceAsync(castGate + TimeSpan.FromMilliseconds(1), token);

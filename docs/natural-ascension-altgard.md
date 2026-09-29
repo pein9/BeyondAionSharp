@@ -1877,6 +1877,18 @@ OD-11, a development item is verified by **one** run.
   - **Done when:** the endpoint contract holds in LIVE, persistence is verified, and the
     evidence and the dump are kept under `run/`.
   - **Verify:** the `run-live.ps1` report and the kept evidence.
+  - **Attempts:**
+    - **`na27-live-a1` (2026-09-28) failed after 3,019 s**, in the Ishalgen leg (Q2005).
+      Evidence: `run/na27-live/na27-live-a1/`; runner log `run/na27-live-a1-runner.log`.
+      - A Q2005 stalker killed the Priest on a walk (the run's first death, which OD-12
+        records rather than fails). Navigation stopped with "survival state changed".
+      - The Q2005 fallback then cast Return (skill 243) while dead. Java's CM_CASTSPELL
+        refuses a dead player with `STR_SKILL_CANT_CAST(ActionState.DEAD)`; the traced
+        parameter 0x2AB9F7 = 2 × 1400059 + 1. The bot stopped on the unexpected message.
+      - **Fix:** `UseLearnedReturnToBindAsync` checks for death first and before each
+        attempt. A dead bot revives at its bind (`RestSafelyAsync`), which is where
+        Return goes, instead of casting.
+      - The isolated stack was removed by the runner. The `aion` stack was untouched.
 
 - [ ] **NA-28 — (Optional) watch it in the real client.**
   - With the authorized Computer Use workflow (NI-11 style), follow a LIVE bridge run
