@@ -38,6 +38,7 @@ register them (reported upstream, `docs/upstream-reports/`). Both are applied in
 D28 adds Annju (204151) for Q2916 "Man in the Long Black Robe" (§7/142).
 D29 adds the teleport devices (730888, 730898) for Q14031 "A Hyper-vention" (§7/143).
 D30 does the same for Q24031 "Enemy at the Doorstep" (§7/144).
+D31 adds Koray (799585) for Q18400 "The Vanishings", the second end NPC (§7/145).
 These decisions are not a general exemption from parity or authorization to
 reopen other deferred behavior.
 

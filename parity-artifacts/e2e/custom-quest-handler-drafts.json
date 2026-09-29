@@ -6,7 +6,7 @@
     "customQuests": 927,
     "withDialogActions": 917,
     "specialHandlers": 105,
-    "registrations": 3569,
+    "registrations": 3570,
     "decisions": 9949
   },
   "quests": [
@@ -171791,10 +171791,21 @@
             "RegisterQuestNpc"
           ],
           "npcIds": [
+            799585
+          ],
+          "expression": "qe.RegisterQuestNpc(799585).AddOnTalkEvent(questId)",
+          "line": 24
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
             730014
           ],
           "expression": "qe.RegisterQuestNpc(730014).AddOnTalkEvent(questId)",
-          "line": 23
+          "line": 25
         }
       ],
       "dialogCandidateActions": [
@@ -171817,7 +171828,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 1011)",
-          "line": 37
+          "line": 39
         },
         {
           "targetNpcIds": [
@@ -171834,7 +171845,7 @@
           ],
           "resultMethod": "SendQuestStartDialog",
           "result": "SendQuestStartDialog(env)",
-          "line": 39
+          "line": 41
         },
         {
           "targetNpcIds": [
@@ -171856,7 +171867,7 @@
           ],
           "resultMethod": "SendQuestDialog",
           "result": "SendQuestDialog(env, 2375)",
-          "line": 47
+          "line": 49
         },
         {
           "targetNpcIds": [
@@ -171880,7 +171891,7 @@
           ],
           "resultMethod": "SendQuestEndDialog",
           "result": "SendQuestEndDialog(env)",
-          "line": 53
+          "line": 55
         },
         {
           "targetNpcIds": [
@@ -171904,7 +171915,7 @@
           ],
           "resultMethod": "SendQuestEndDialog",
           "result": "SendQuestEndDialog(env)",
-          "line": 56
+          "line": 58
         },
         {
           "targetNpcIds": [],
@@ -171913,7 +171924,7 @@
           "conditions": [],
           "resultMethod": null,
           "result": "false",
-          "line": 59
+          "line": 61
         }
       ],
       "specialOperations": []
