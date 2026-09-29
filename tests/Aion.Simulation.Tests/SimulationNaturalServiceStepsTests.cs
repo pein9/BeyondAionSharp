@@ -19,7 +19,9 @@ public sealed partial class SimulationFastScenarioTests
 	public async Task NaturalServiceStepsTeleportBindAndTradeOnTheBridgeMaps()
 	{
 		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
-		using var policy = NewEconomyPolicy("NA08", includeHistory: true);
+		// Only this scenario's own window: in the Fast tier the process history holds earlier scenarios' audit lines
+		// (the Warrior combat scenario's skill 2864 timing audits failed NA-26's Docker Fast).
+		using var policy = NewEconomyPolicy("NA08", includeHistory: false);
 		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(3));
 		CancellationToken token = timeout.Token;
 		NaturalAscensionContract contract = NaturalAscensionContract.LoadDefault();

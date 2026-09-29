@@ -1831,7 +1831,7 @@ OD-11, a development item is verified by **one** run.
       pass. `bridge_summary.py` now counts logins, relogs and bind revives as recoveries,
       not every quest checkpoint.
 
-- [ ] **NA-26 — Full checklist and checkpoint.**
+- [x] **NA-26 — Full checklist and checkpoint.**
   - **Depends:** NA-25.
   - **Do:**
     - Run every `CLAUDE.md` check, including Docker Fast (`scripts/e2e/run-fast.ps1`) and
@@ -1840,6 +1840,27 @@ OD-11, a development item is verified by **one** run.
       doc.
     - Commit.
   - **Done when:** all checks pass and the warning baseline has not risen.
+  - **Evidence (2026-09-28): `run/na26/`** (`checklist.sh`, one log per check,
+    `verdicts.txt`).
+    - **Build and tests.** `dotnet build AionServer.slnx` passes. `dotnet test` passes
+      every project: GameServer 4360 (13 skipped), Commons 303, Simulation 145
+      (27 skipped, gated), LoginServer 135 (7 skipped), ChatServer 41 (1 skipped).
+    - **Scripts.** The warning baseline, null-logger, clock-read and custom-quest-draft
+      checks pass, as does `check_fidelity.py`. So do all 11 `scripts/e2e/test-*.py`
+      contracts, all 13 listed PowerShell contracts, and `test-sim-snapshot.ps1`.
+    - **Navmesh.** `Aion.NavBake check --maps baked` reports every baked map ok,
+      including 220030000 and 320020000.
+    - **Docker Fast.**
+      - The first run (`na26-fast`) failed. The NA-08 service-step test
+        (`NaturalServiceStepsTeleportBindAndTradeOnTheBridgeMaps`) built its log policy
+        with `includeHistory: true`. In the Fast process that counted the earlier Warrior
+        combat scenario's skill 2864 hit-time audits as NA-08 problems.
+      - NA-08 had never run in the Fast tier before; the last Fast run was 2026-09-27.
+        Its policy now covers only its own window.
+      - The rerun `na26-fast-2` passed, 11 of 11.
+    - **Warning baseline.** Unchanged ("Warning baseline passed" before and after the fix).
+    - **Docs.** `natural-ishalgen-status.md` and `natural-ishalgen-journey.md` are updated,
+      and so is this doc.
 
 - [ ] **NA-27 — One isolated LIVE run (OD-4).**
   - **Depends:** NA-26.
@@ -2077,6 +2098,7 @@ has examples.
 - 2026-09-28 — Loop: NA-23 done. The first Cleric fights (SIM, GM-prepared, goons outside Altgard Fortress) ran with no deaths: Smite → Flashbolt every time at range, the heal over time, the timed potion, powder rest, and the patrol wait-then-fight. Five findings are recorded for the Altgard milestone. **Phase 5 is complete.**
 - 2026-09-28 — Loop: NA-24 done. A clean bridge run from Munin reached the verified endpoint in 300 game seconds with no deaths, four skipped movies and the help items supplied and used. Movies and per-quest times are now on the run record.
 - 2026-09-28 — Loop: NA-25 done. One full SIM journey from creation (seed 1) completed Ishalgen's 41 quests and the bridge (3 deaths in Ishalgen, recorded). The `altgard` snapshot is captured and restores. The first run caught Q2008's LOCKED journal state pulling the bot into the bridge early; now fixed and tested.
+- 2026-09-28 — Loop: NA-26 done. Every `CLAUDE.md` check passes, including Docker Fast and the NavBake check. Docker Fast first caught the NA-08 test counting an earlier scenario's audit lines (its policy is now scoped to its own window). The warning baseline is unchanged. This is the checkpoint before the isolated LIVE run (NA-27).
 
 ## Appendix A: Altgard shops and consumables
 

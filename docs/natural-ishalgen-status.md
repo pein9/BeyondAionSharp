@@ -881,5 +881,6 @@ altgard`, character 133297). Use it as the starting point for Altgard play inste
 One bug surfaced only in this full run: Java lists Q2008 LOCKED from about level 8. The bridge's resume check must
 not treat that as a start (fixed in NA-25).
 
-Details, findings and the remaining acceptance items (NA-26 full checklist, NA-27 isolated LIVE run) are in
-[natural-ascension-altgard.md](natural-ascension-altgard.md).
+Details, findings and the remaining acceptance item (NA-27, the isolated LIVE run) are in
+[natural-ascension-altgard.md](natural-ascension-altgard.md). NA-26 ran every `CLAUDE.md` check on 2026-09-28,
+and all pass. Docker Fast first failed on the NA-08 service-step test's history-wide log policy (fixed there).

@@ -728,7 +728,10 @@ limitations remain declared boundaries rather than invented content.
 - Create one ordinary access-level-0 Asmodian Priest at level 1, intended to become
   a Cleric later (D25, 2026-09-28; earlier plans said Chanter). The class is selected
   during Ascension; this milestone ends while the character is still a Priest. The
-  Ascension-to-Altgard leg is planned in [its own document](natural-ascension-altgard.md).
+  Ascension-to-Altgard leg is in [its own document](natural-ascension-altgard.md). It
+  has been accepted in SIM (NA-25, 2026-09-28): with `NA_ASCENSION=1` the same run goes
+  on from Munin to a level 10 Cleric bound in Altgard. This milestone's contract below
+  is unchanged and is still checked before the bridge starts.
 - Earn XP, items, kinah, gathering skill, equipment, and learned combat skills
   through the same actions and eligibility rules as a human player.
 - No GM assistance to the subject or its objectives: no forced levels/classes,
