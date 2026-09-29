@@ -12,6 +12,7 @@ public static class NaturalMovieGate
 {
 	public static async Task<BotPendingMovie?> FinishAsync(INaturalJourneySession session, CancellationToken token)
 	{
+		RecordSkipped(session);
 		if (session.Api.Reflexes.PendingMovie is not { } movie) return null;
 		await session.AdvanceAsync(movie.Length, token);
 		BotPendingMovie finished = session.Api.FinishPendingMovie()!;
@@ -22,5 +23,15 @@ public static class NaturalMovieGate
 			["mode"] = session.Api.Reflexes.MoviePolicy.Mode.ToString(), ["heldMillis"] = finished.Length.TotalMilliseconds,
 		});
 		return finished;
+	}
+
+	/// <summary>NA-24: movies the skip policy already answered go on the run record too.</summary>
+	public static void RecordSkipped(INaturalJourneySession session)
+	{
+		while (session.Api.Reflexes.TakeSkippedMovie() is { } skipped)
+			session.TraceDiagnostic("movie-skipped", new Dictionary<string, object?>
+			{
+				["movieId"] = skipped.MovieId, ["questId"] = skipped.QuestId, ["mode"] = session.Api.Reflexes.MoviePolicy.Mode.ToString(),
+			});
 	}
 }

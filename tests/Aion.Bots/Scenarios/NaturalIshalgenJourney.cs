@@ -1171,6 +1171,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await session.SendPacketAsync(GameClientPackets.Emotion((byte)EmotionType.LAND_FLYTELEPORT), token);
 				}
 				await session.SynchronizeAsync(token);
+				NaturalMovieGate.RecordSkipped(session);
 				if (step.ReceivesItemId is int card)
 					Require.True(ItemCount(session.Api.World, card) >= 1 || session.Api.World.Quests[step.QuestId].StepAndFlags > step.Var,
 						$"{step.Key} did not hand over item {card}.");

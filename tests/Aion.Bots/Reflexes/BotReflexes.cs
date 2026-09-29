@@ -45,6 +45,11 @@ public sealed class BotReflexes
 	/// <summary>The movie being watched, if its end has not been sent (watch mode, or an unskippable movie).</summary>
 	public BotPendingMovie? PendingMovie { get; private set; }
 
+	private readonly Queue<BotPendingMovie> skippedMovies = new();
+
+	/// <summary>NA-24: the next movie the skip policy answered at once, for the run record; null when none is left.</summary>
+	public BotPendingMovie? TakeSkippedMovie() => skippedMovies.TryDequeue(out BotPendingMovie? movie) ? movie : null;
+
 	/// <summary>Hand over the held movie end to send; the cutscene is over for the client.</summary>
 	public BotPendingMovie? TakePendingMovie()
 	{
@@ -64,9 +69,13 @@ public sealed class BotReflexes
 			bool canSkip = packet.Get<bool>("canSkip");
 			BotClientPacket end = GameClientPackets.PlayMovieEnd(packet.Get<bool>("isMovie") ? (byte)1 : (byte)0,
 				packet.Get<int>("objectId"), packet.Get<int>("questId"), packet.Get<int>("cutsceneId"), canSkip);
-			if (MoviePolicy.Mode == BotMovieMode.Skip && canSkip) return end;
-			// Watched, or unskippable: the client plays it through before answering.
 			int movieId = packet.Get<int>("cutsceneId");
+			if (MoviePolicy.Mode == BotMovieMode.Skip && canSkip)
+			{
+				skippedMovies.Enqueue(new BotPendingMovie(movieId, packet.Get<int>("questId"), canSkip, TimeSpan.Zero, end));
+				return end;
+			}
+			// Watched, or unskippable: the client plays it through before answering.
 			PendingMovie = new BotPendingMovie(movieId, packet.Get<int>("questId"), canSkip, MoviePolicy.LengthOf(movieId), end);
 			return null;
 		}

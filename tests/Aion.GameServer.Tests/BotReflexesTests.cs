@@ -20,6 +20,9 @@ public sealed class BotReflexesTests
 		Assert.Equal(BotMovieMode.Skip, skip.MoviePolicy.Mode);
 		Assert.NotNull(skip.RespondTo(Movie(canSkip: true)));
 		Assert.Null(skip.PendingMovie);
+		// NA-24: the skipped movie is kept once for the run record.
+		Assert.Equal((57, 2008), skip.TakeSkippedMovie() is { } skipped ? (skipped.MovieId, skipped.QuestId) : default);
+		Assert.Null(skip.TakeSkippedMovie());
 		// An unskippable movie is watched even in skip mode.
 		Assert.Null(skip.RespondTo(Movie(canSkip: false)));
 		Assert.Equal(BotMoviePolicy.DefaultLength, skip.PendingMovie!.Length);

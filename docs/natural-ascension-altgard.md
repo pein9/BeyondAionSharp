@@ -1728,13 +1728,49 @@ OD-11, a development item is verified by **one** run.
 
 ### Phase 6: Acceptance (once each; OD-11)
 
-- [ ] **NA-24 — One clean bridge run from Munin.**
+- [x] **NA-24 — One clean bridge run from Munin.**
   - **Depends:** NA-17, NA-22.
   - **Do:** restore `munin` and run the whole bridge to the endpoint. Include the help
     items if they were approved by then (NA-21), and record them.
   - **Done when:** the run reaches the endpoint contract with no bot problems. Record the
     deaths (not a failure), recoveries, movies, buffs used, and time per quest
     (`scripts/sim/trace/step_times.py`, extended if needed).
+  - **Evidence (2026-09-28): run `run/snapshots/_verify/na24-bridge`** (at the HEAD before
+    this commit, with help items on).
+    - **Outcome.** The endpoint contract was met and verified across the relog: a level 10
+      Cleric in Altgard (220030000), bound at the fortress obelisk, all four quests done,
+      the staff and accessories worn. The server policy ledger was clean, so there were no
+      bot problems.
+    - **Deaths:** 0. **Recoveries:** the snapshot login, plus the endpoint relog. No
+      interruption was injected in this run; NA-17 covered resuming.
+    - **Movies, all skipped under the default policy:**
+      - 57 (Q2008, at Munin var 4);
+      - 152 (Q2008, at the class choice);
+      - 121 (Q2009, Heimdall);
+      - 122 (Q2009, Balder).
+    - **Help items supplied (NA-21) at the level 10 check:** Anti-Shock ×30, Minor Mana
+      Serum ×40, Zeller Aether Jelly ×8, Lesser Odella Powder ×200.
+    - **Used out of combat (NA-19/20a), at Doman:** Castafodin, Accelerox, and a jelly.
+    - **Class buffs cast:** none; Blessing's upkeep belongs to pulls and rests. **Bridge
+      decisions:** 24 (talk 15, fight-trial 5, teleport, bind, shop, complete).
+    - **Game-clock seconds per quest, 300 s in total (40 s wall):**
+
+      | Q2008 | Q2009 | Q2904 | Teleport | Bind | Q24010 | Shop | Endpoint |
+      |---|---|---|---|---|---|---|---|
+      | 107 | 58 | 60 | 1 | 12 | 3 | 62 | 10 |
+
+    - **Recording, extended for this item:**
+      - `BotReflexes` keeps each movie the skip policy answers, and
+        `NaturalMovieGate.RecordSkipped` traces them as `movie-skipped` at the end of each
+        bridge talk step.
+      - `step_times.py` groups the bridge's steps by quest and takes `--all`.
+      - The new `scripts/sim/trace/bridge_summary.py` prints deaths, recoveries, movies,
+        help items and bridge decisions.
+      - Two earlier runs are kept: `na24-bridge-pre-movie-record` (no movie record) and
+        `na24-bridge-late-movie-record` (movies traced one step late, and Balder's missed).
+        Both also reached the endpoint.
+    - **Checks.** Focused `Natural*` and `BotReflexes*` tests pass (a new test covers the
+      skipped-movie record). The warning, null-logger and clock-read checks pass.
 
 - [ ] **NA-25 — One full SIM journey from creation to Altgard, saved as the `altgard` snapshot.**
   - **Depends:** NA-24.
@@ -1996,6 +2032,7 @@ has examples.
 - 2026-09-28 — Loop: NA-22 done. When a patrol blocks a pull, the Cleric waits 15 s up to four times, then fights if the assessment says it can win, or pulls anyway (deaths recorded). The Priest is unchanged. Next is NA-23, the first Cleric fights.
 - 2026-09-28 — Loop: NA-21 done. The approved help items are supplied to the Cleric: ItemService in SIM, the director's //add on the isolated LIVE stack, NA_HELP_ITEMS=0 for off. They are recorded in help-items.json and the trace. The first run caught the shop stop selling them; now they are protected. Next is NA-23 with the items in the bag.
 - 2026-09-28 — Loop: NA-23 done. The first Cleric fights (SIM, GM-prepared, goons outside Altgard Fortress) ran with no deaths: Smite → Flashbolt every time at range, the heal over time, the timed potion, powder rest, and the patrol wait-then-fight. Five findings are recorded for the Altgard milestone. **Phase 5 is complete.**
+- 2026-09-28 — Loop: NA-24 done. A clean bridge run from Munin reached the verified endpoint in 300 game seconds with no deaths, four skipped movies and the help items supplied and used. Movies and per-quest times are now on the run record.
 
 ## Appendix A: Altgard shops and consumables
 
