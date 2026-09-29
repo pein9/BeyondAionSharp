@@ -528,8 +528,27 @@ with "AF" in place of "NA").
       fortress with the endpoint verified across the relog.
   - The warning, logger and clock-read checks and all 295 Natural unit tests pass. No help
     item was needed.
-- [ ] **AF-09 — One SIM run of Leg 1** from the `altgard` snapshot to the Leg 1 endpoint,
+- [x] **AF-09 — One SIM run of Leg 1** from the `altgard` snapshot to the Leg 1 endpoint,
   saved as the `altgard-l12` snapshot. Deaths are recorded (OD-12).
+  - *Done 2026-09-29.* `scripts/sim/sim-snapshot.ps1 -Action Capture -Name altgard-l12
+    -AltgardLeg1` does the capture:
+    - it restores `altgard` into a fresh owned schema and resumes character 133297 with
+      `AF_ALTGARD=1`;
+    - it dumps only a verified `altgard-l1-completion.json` for that character;
+    - its clock is the resume offset plus the run's own time.
+  - Run `af09-l1-s1` (`run/snapshots/_capture/af09-l1-s1`, seed 1) passed in 1 m 29 s real
+    time and 29 game minutes. All ten Leg 1 quests completed: 15 scripted steps, 36
+    decisions, 51 fights, 4 flights, and the five air kills in one sortie (at level 13 one
+    Smite, 2.1 s, drops a fungus). **No death** (OD-12 records deaths; there were none).
+    It ends at level 13 in the fortress, beside Valurion, with the endpoint verified across
+    the relog. It repeats the AF-08 smoke run exactly, as a deterministic SIM should.
+  - Snapshot `altgard-l12`: `run/snapshots/altgard-l12` (git-ignored), character 133297,
+    elapsed 17,736,346 ms, dump SHA-256 `be7d0750…09`. A test restore showed the Cleric at
+    XP 432,438 in Altgard with Q2201–2209 and Q24011 COMPLETE, and was dropped. Every
+    owned schema was dropped.
+  - **The level target is exceeded:** Leg 1 ends at 13, not 11–12, because Ice Lake kills
+    pay well. Leg 2 starts at Moslan Crossroad with Q2210 and Q24012 (level 12) already
+    open.
 - [ ] **AF-10 — The full `CLAUDE.md` checklist and a checkpoint.** The isolated LIVE run comes
   at the end of the Altgard leg, not after each sub-leg (AF-Q3, decided).
 
@@ -587,3 +606,4 @@ The original questions follow.
 - 2026-09-29 AF-06: air combat; Q24011 reached REWARD in SIM with 5 fungus kills in 3 sorties, refilling on Borender's rock.
 - 2026-09-29 AF-07: contract talk steps and the remedy use; SIM played Q2209, Q2207, Q2208 and Q24011 to completion (15 steps, air kills, dungeon, flight).
 - 2026-09-29 AF-08: Leg 1 decision engine and journey mode; smoke run completed Leg 1 from the snapshot at level 13 with no death.
+- 2026-09-29 AF-09: SIM run af09-l1-s1 completed Leg 1 with no death (level 13); snapshot altgard-l12 captured and restore-checked.

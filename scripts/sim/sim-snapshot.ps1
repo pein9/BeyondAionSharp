@@ -4,6 +4,8 @@
 #            that schema at the journey's natural endpoint into run/snapshots/<name>/ (git-ignored).
 #            With -Bridge (NA-25) the journey continues over the Ascension bridge and the dump is taken at the
 #            verified bridge endpoint in Altgard (the `altgard` snapshot).
+#            With -AltgardLeg1 (AF-09) the capture starts from a restored `altgard` snapshot instead of a new character,
+#            plays Altgard Leg 1 (docs/natural-altgard-leveling.md) and dumps its verified endpoint (`altgard-l12`).
 #   Restore: load a snapshot into a fresh owned schema and print the environment a resumed run needs.
 #   Verify:  restore, resume the retained character once and require the journey endpoint to be reached again
 #            (for `munin`: 41 quests, level 9 at Munin, Q2008 START/0), then drop the schema.
@@ -25,6 +27,8 @@ param(
 	[string]$RootPassword = 'aion',
 	[string]$SnapshotRoot,
 	[switch]$Bridge,
+	[switch]$AltgardLeg1,
+	[string]$From = 'altgard',
 	[switch]$NoBuild
 )
 
@@ -53,7 +57,7 @@ function Get-SnapshotDirectory {
 
 function Invoke-NaturalJourney([string]$Db, [string]$RunId, [string]$Evidence, [hashtable]$Extra) {
 	$names = @('AION_SIM_DB_INTEGRATION', 'AION_SIM_NI08_DATABASE', 'AION_SIM_NI08_ELAPSED_MS', 'AION_SIM_RUN_ID',
-		'AION_SIM_SEED', 'AION_NI07_COMBAT_DIR', 'NI07_FULL_JOURNEY', 'NI08_STOP_AT', 'NI08_RELOG_AT', 'NI08_RESUME_CHARACTER')
+		'AION_SIM_SEED', 'AION_NI07_COMBAT_DIR', 'NI07_FULL_JOURNEY', 'NI08_STOP_AT', 'NI08_RELOG_AT', 'NI08_RESUME_CHARACTER', 'NA_ASCENSION', 'AF_ALTGARD')
 	$prior = @{}
 	foreach ($variable in $names) { $prior[$variable] = [Environment]::GetEnvironmentVariable($variable); [Environment]::SetEnvironmentVariable($variable, $null) }
 	try {
@@ -76,8 +80,9 @@ function Invoke-NaturalJourney([string]$Db, [string]$RunId, [string]$Evidence, [
 	}
 }
 
-function Restore-Snapshot {
-	$directory = Get-SnapshotDirectory
+function Restore-Snapshot([string]$SnapshotName = $Name) {
+	if (-not $SnapshotName) { throw "$Action needs -Name." }
+	$directory = Join-Path $SnapshotRoot $SnapshotName
 	$metadata = Get-Content -Raw -LiteralPath (Join-Path $directory 'snapshot.json') | ConvertFrom-Json
 	$dump = Join-Path $directory 'dump.sql.gz'
 	$hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $dump).Hash.ToLowerInvariant()
@@ -94,7 +99,7 @@ function Restore-Snapshot {
 		throw
 	}
 	[pscustomobject]@{
-		snapshot = $Name
+		snapshot = $SnapshotName
 		database = $db
 		characterId = [int]$metadata.characterId
 		elapsedMillis = [long]$metadata.elapsedMillis
@@ -122,6 +127,48 @@ try {
 			if (-not $NoBuild) {
 				& dotnet build (Join-Path $repoRoot 'tests/Aion.Simulation.Tests') -v quiet *> $null
 				if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
+			}
+			if ($AltgardLeg1) {
+				# AF-09: Altgard Leg 1 resumes the character of a restored `altgard` snapshot; the new dump is taken at the
+				# verified Leg 1 endpoint. Its clock continues the base snapshot's: the resume offset plus the run's own time.
+				$base = Restore-Snapshot $From
+				$db = $base.database
+				try {
+					$extra = @{ AF_ALTGARD = '1' }
+					foreach ($key in $base.environment.Keys) { $extra[$key] = $base.environment[$key] }
+					Invoke-NaturalJourney $db $Run $evidence $extra
+					$legFile = Join-Path $evidence 'altgard-l1-completion.json'
+					if (-not (Test-Path -LiteralPath $legFile)) { throw 'Altgard Leg 1 did not complete; nothing was captured.' }
+					$leg = Get-Content -Raw -LiteralPath $legFile | ConvertFrom-Json
+					if (-not $leg.verified -or $leg.CharacterId -ne $base.characterId) {
+						throw 'The Altgard Leg 1 endpoint was not verified for the restored character; nothing was captured.'
+					}
+					New-Item -ItemType Directory -Path $directory | Out-Null
+					$remote = "/tmp/$db.sql.gz"
+					Invoke-Docker @('exec', '-e', "MYSQL_PWD=$RootPassword", $ContainerName, 'sh', '-c',
+						"mysqldump -uroot --single-transaction --no-tablespaces --routines --triggers $db | gzip > $remote")
+					Invoke-Docker @('cp', "${ContainerName}:$remote", (Join-Path $directory 'dump.sql.gz'))
+					Invoke-Docker @('exec', $ContainerName, 'rm', '-f', $remote)
+					Copy-Item -LiteralPath $legFile -Destination $directory
+					[ordered]@{
+						schemaVersion = 1
+						name = $Name
+						source = 'natural-altgard-leg-1'
+						from = $From
+						run = $Run
+						seed = $Seed
+						gitSha = (& git -C $repoRoot rev-parse HEAD).Trim()
+						capturedUtc = (Get-Date).ToUniversalTime().ToString('o')
+						characterId = [int]$leg.CharacterId
+						elapsedMillis = [long]$base.environment.AION_SIM_NI08_ELAPSED_MS + [long]$leg.ElapsedMillis
+						dumpSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $directory 'dump.sql.gz')).Hash.ToLowerInvariant()
+					} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $directory 'snapshot.json') -Encoding utf8
+					Write-Host "Captured snapshot $Name (character $($leg.CharacterId)) in $directory"
+				}
+				finally {
+					Remove-OwnedDatabase $db
+				}
+				break
 			}
 			$db = New-OwnedDatabaseName
 			& pwsh -NoProfile -File (Join-Path $PSScriptRoot 'new-sim-db.ps1') -Action Create -DatabaseName $db | Out-Null
