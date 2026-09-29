@@ -7,6 +7,8 @@ The zone is worked in **sub-legs**. The first one is
 [Leg 1: Altgard Fortress, level 10–12](#leg-1-altgard-fortress-level-1012). It has its own
 TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-altgard.md).
 
+**Leg 1 is done (AF-00..AF-10, 2026-09-29).** [Leg 2: Moslan Crossroad](#leg-2-moslan-crossroad-level-1315--proposal) is proposed and waits for AM-Q1..AM-Q3.
+
 ## Goal
 
 Take the level 10 Cleric from the bridge endpoint (bound at Altgard Fortress) through
@@ -574,7 +576,152 @@ with "AF" in place of "NA").
     Leg 2. LIVE is run once at the end of the Altgard leg (AF-Q3). The Java fixes wait
     for one combined upstream PR (`docs/upstream-reports/README.md`).
 
+## Leg 2: Moslan Crossroad (level 13–15) — proposal
+
+**Status (2026-09-29): proposal, awaiting the operator's answers to AM-Q1..AM-Q3.** It
+starts from the `altgard-l12` snapshot: character 133297, a level 13 Cleric at 432,438 XP,
+bound at Altgard Fortress, beside Valurion. Q24012 is already at START var 0 in that
+snapshot (it followed Q24011's completion at level 12+).
+
+### The hub and its grounds
+
+Moslan Crossroad is a guard post about **365 m south of the fortress**: Olenja (203606),
+Tigg (203604) and Loriniah (203605) stand within 7 m of each other at about
+(1628, 1452, 256). There is **no obelisk and no vendor** there. The bind stays at the
+fortress, and so do rests in town and restocks.
+
+| Ground | Where | Distance from the obelisk | What lives there |
+|---|---|---|---|
+| The crossroad itself | around (1628, 1452) | 365 m | **aggressive grove pluma (L10–11) 21–56 m from the three NPCs**, elroco (L1), needletail karnifs |
+| Karnif and pluma slopes | x 1400–1705, y 1125–1524 | 380–520 m | needletail karnifs (L10–11), grove pluma (L10–11) |
+| Okaru Tree | (1413, 1442, 282) | about 215 m west of the crossroad | the tree only |
+| MuMu Farmland (zone `MUMU_FARMLAND`, x 1624–1997, y 889–1475) | farmers, carts and frightcorn at y 1000–1400 | 470–810 m | MuMu farmers and gatherers (non-aggressive), **aggressive MuMu patrols (L11–13, 46 spots)**, **SEASONED black claw patrols (L11–13, 15 spots)**, MuMu highsitters (L13, aggro range 15 m), six MuMu Carts, 20 frightcorn stalks |
+| Wild tog grounds | x 1404–1881, y 673–1269 | 620–950 m | **aggressive wild togs (L11–13, 46 spots)** |
+| Manir's Campsite | Manir (1460, 1193, 259) | 654 m, about 310 m south-west of the crossroad | Q2215's end; Stop 3's hub |
+
+No FLY zone covers any of this; Leg 2 is on foot.
+
+### Quests
+
+| Quest | Name | Level | Kind | From → to | Objective | XP |
+|---|---|---|---|---|---|---|
+| 2210 | Retrieving the Report | 12 | template `report_to` | Rion (fortress, 1724,1677) → Loriniah | deliver | 16,283 |
+| 2211 | Karnif Threat | 11 | template `monster_hunt` | Olenja | kill 10 needletail karnifs (L10–11) | 16,950 |
+| 2212 | A Better Trap | 11 | template `item_collecting`, after 2211 | Olenja | 6 Tog Ribs, 80% from wild togs (L11–13, far south) | 11,895 |
+| 2215 | A Long-Lost Friend | 11 | template `report_to`, after 2212 | Olenja → **Manir** | deliver to Manir's Campsite (see AM-Q1) | 8,355 |
+| 2213 | Poison Root, Potent Fruit | 11 | **custom** | Tigg | loot the Okaru Tree (700057): the log (182203208) **poisons** the looter; Tigg takes it and removes the poison | 7,335 |
+| 2218 | Frightcorn Seeds | 11 | template `item_collecting`, after 2213 | Tigg | 5 seeds, 80% from MuMu farmers and gatherers | 15,750 |
+| 2219 | Ripened Frightcorn | 11 | template `item_collecting`, after 2218 | Tigg | 3 from frightcorn stalks (700052, `quest_use_item` objects) | 10,605 |
+| 2214 | No-Frills Quills | 11 | template `item_collecting` | Loriniah | 5 Pluma Feathers, 80% from grove pluma | 10,335 |
+| 2220 | Picking off Frightcorn | 12 | template `monster_hunt` | Tigg | kill 5 MuMu patrols (L11–13) | 16,283 |
+| 24012 | An Ominous Crop | 12 | **custom campaign** (already START) | Loriniah | see below | 36,324 |
+
+Total quest XP 150,115: from 432,438 that is 582,553, level 14 (490,331), with level 15
+(649,169) within reach of the kills.
+
+**Q2213 (Java `_2213PoisonRootPotentFruit`):**
+- Tigg offers it.
+- Using the Okaru Tree (USE_OBJECT) loots the Okaru Log. `onGetItemEvent` applies skill 255
+  **Okaru Poison**: 20 HP every 6 s and −1 m/s speed for 10 minutes. It cannot be dispelled
+  (`req_dispel_level` 99). The quest moves to var 1.
+- At Tigg, QUEST_SELECT shows page 2375, and SELECT_QUEST_REWARD takes the log, removes the
+  poison and sets REWARD.
+
+**Q24012 (Java `_24012AnOminousCrop`):**
+1. Loriniah, var 0: QUEST_SELECT (page 1011), SELECT1_1_1 (movie 61, page 1013), SETPRO1 → var 1.
+2. Entering the `MUMU_FARMLAND` zone moves var 1 → 2 by itself.
+3. Using a **MuMu Cart** (700096) moves var 2 → 3 → 4 → 5, one step per use. Each cart used
+   disappears (`useQuestObject(…, die)`); six carts stand in the farmland and respawn after
+   295 s, so the three uses take three carts.
+4. **Only at var 5** do the drops start (`collecting_step` 5): 3 **Hairpins** (182215357)
+   from MuMu patrols, highsitters and black claw patrols, and 5 **Waist Bands** (182215358)
+   from MuMu gatherers and farmers.
+5. Loriniah, var 5: QUEST_SELECT (page 2716), CHECK_USER_HAS_QUEST_ITEM → REWARD. The reward
+   choice for the Cleric is the **Altgard Legionary Hauberk** 110551139 (chain, heal boost),
+   SELECTED_QUEST_REWARD4.
+
+The C# handlers of Q2213 and Q24012 register the same NPCs and items as Java: **no
+Borender-style defect** in Leg 2.
+
+**Chains:** 2211 → 2212 → 2215 and 2213 → 2218 → 2219. Q2214, Q2220 and Q2210 stand
+alone. Q24012's drops depend on its own cart steps, and they share the farmland with
+Q2218, Q2219 and Q2220, so the farmland is best worked once, with all four in hand.
+
+### What is new for the bot
+
+1. **A hub without an obelisk or vendor**, 365 m from town. Long legs (365–950 m) use the
+   Altgard travel planner. A death revives at the fortress, and the bot must run back.
+2. **Aggressive monsters beside the quest NPCs.** Pluma 21–56 m from Olenja, Tigg and
+   Loriniah can join a talk. The Ishalgen hubs had none this close.
+3. **A poison that lasts 10 minutes** (Q2213). The rest policy must not wait for full HP
+   against a damage-over-time it cannot remove; the heals and potions handle it, and Tigg
+   ends it.
+4. **Q24012's objects and zone:** a zone-entry step, three cart uses (a new cart each time,
+   since a used one disappears), and drops that only start at var 5.
+5. **Farmland combat:** mixed groups of passive farmers and aggressive patrols, archer-like
+   highsitters (aggro 15 m), and the first **SEASONED** targets (black claw patrols). This is
+   the first real test of the Anti-Shock shield and Salvation (NA-23 could not trigger them).
+6. **Chains accepted as they open**, hub-style, while the grounds are far apart. The order
+   should batch the farmland (Q2218, Q2219, Q2220, Q24012) and the tog grounds (Q2212).
+
+### Leg 2 TODO list (proposed)
+
+The same loop protocol, with "AM" in place of "NA".
+
+- [ ] **AM-01 — The Leg 2 contract and plans.** `parity-artifacts/e2e/natural-altgard-l2-contract.json`
+  (the Leg 1 schema, generalised to name its hub and grounds), the eight template plans
+  (Q2210, 2211, 2212, 2214, 2215, 2218, 2219, 2220), the scripted steps of Q2213 and Q24012,
+  and contract tests like AF-01's. The loader takes a leg id instead of one default file.
+- [ ] **AM-02 — Travel to the crossroad and its grounds.** Fortress ↔ crossroad ↔ Okaru Tree,
+  farmland, tog grounds and Manir, on the Altgard navmesh and travel planner. **Done when:**
+  a SIM probe walks each leg and back, and reports what aggroes on the way.
+- [ ] **AM-03 — Talking at a guarded hub.** Clear or avoid the pluma near the three NPCs before
+  a talk, with the NA-22 patrol and pull policy. **Done when:** a SIM probe takes and hands in
+  a quest at the crossroad with no pluma joining.
+- [ ] **AM-04 — Q2213 and the poison.** Loot the Okaru Tree, observe skill 255 on the bot, keep
+  resting sane under the damage-over-time (heal, never wait for full HP while poisoned), hand in
+  to Tigg, and see the poison removed. **Done when:** a SIM probe completes Q2213.
+- [ ] **AM-05 — Q24012's mechanics.** Loriniah with movie 61, the farmland zone step, three
+  cart uses on three different carts, the drops from var 5, CHECK_USER_HAS_QUEST_ITEM and
+  the hauberk reward. **Done when:** a SIM probe completes Q24012.
+- [ ] **AM-06 — Farmland and tog combat.** Mixed farmer and patrol groups, highsitters, SEASONED
+  black claw patrols (fight them only when the pull planner calls it winnable, as NA-22 does),
+  wild tog packs. Trace the first shield, Salvation and serum uses. **Done when:** a SIM probe
+  hunts the Q2220 patrols and the Q2212 togs with deaths recorded (OD-12).
+- [ ] **AM-07 — The Leg 2 runner.** Generalise the Leg 1 engine and the journey's `AltgardLeg1`
+  mode to a leg id (`AF_ALTGARD=l2`). The hub is the crossroad; rests and restocks go back
+  to the fortress; grounds are batched as above; the endpoint is checked across a relog.
+- [ ] **AM-08 — One SIM run of Leg 2** from `altgard-l12`, saved as the snapshot `altgard-l2`.
+- [ ] **AM-09 — The full `CLAUDE.md` checklist and a checkpoint.** LIVE stays at the end of the
+  Altgard leg (AF-Q3).
+
+**Endpoint (proposed):** Q2210–Q2215, Q2218–Q2220 and Q24012 completed, alive, standing
+where AM-Q1 decides (Manir's Campsite or the crossroad). No level target: level 14–15 is
+expected.
+
 ## Blocked / questions for the operator
+
+**Open for Leg 2 (proposed 2026-09-29):**
+- **AM-Q1 — Where does Leg 2 end?** Q2215 is a Moslan quest, but it is handed in to Manir at
+  Manir's Campsite, Stop 3's hub, about 310 m south-west of the crossroad. Options:
+  - (a) deliver it as Leg 2's last step, so Leg 2 ends at Manir's Campsite, where Leg 3 starts;
+  - (b) take it in Leg 2 and hand it in at the start of Leg 3;
+  - (c) leave it for Leg 3.
+
+  **Recommendation: (a).**
+- **AM-Q2 — Rests and restocks without a vendor at the crossroad.** Options:
+  - (a) rest in the field, as in Ishalgen, and walk back to the fortress (365 m) only when
+    the potion or powder policy runs low;
+  - (b) go back to the fortress after each ground.
+
+  **Recommendation: (a).**
+- **AM-Q3 — The SEASONED black claw patrols.** Q24012's hairpins also drop from ordinary MuMu
+  patrols and highsitters. Options:
+  - (a) fight black claws only when they block the way or the pull planner calls the fight
+    winnable;
+  - (b) seek them out, to exercise the shield, Salvation and the serums on purpose.
+
+  **Recommendation: (a)**, recording the first real uses of those tools whenever they happen.
 
 **All three were answered on 2026-09-29:**
 - AF-Q1: **approved** (D26). The report and patch for the Java project are in
