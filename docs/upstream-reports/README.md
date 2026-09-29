@@ -22,14 +22,18 @@ The evidence and the dialog-dispatch explanation that apply to all of them are i
 `q2209-the-scribbler.md`, whose appendix lists every handler the scan found.
 The scan tool and its output are in `scan/` (`scan_unregistered_talk.py`, read-only; `scan-ce54b7931.txt`).
 
-## Handoff: fix the other quests with this defect (in progress)
+## Handoff: fix the other quests with this defect (done in C#; PR ready to open)
 
 **Status 2026-09-29.** Q2209 (Borender) is fixed in C# (D26, AF-00, commit `cfdebc04a`),
 and its Java patch and report are ready here. Q2223 (Lamir) is fixed in C# (D27, commit
-`8a8e54354`), and Q2916 (Annju) too (D28, `64eaf0b28`). Steps 1 and 2 are done. Step 3:
-the Java branch `fix/unregistered-quest-talk-npcs` is built in `../aion-server` (not
-pushed) and described in `pull-request.md`. D29 and D30 are approved; D31 awaits
-re-confirmation (see its row). Nothing has been submitted upstream. The
+`8a8e54354`). Steps 1–5 are done. The Java branch `fix/unregistered-quest-talk-npcs` is
+built in `../aion-server` and described in `pull-request.md`; it is not pushed, and
+nothing has been submitted upstream. The approved C# fixes are committed: Q2916 (D28,
+`64eaf0b28`), Q14031 (D29, `f5e60dc45`), Q24031 (D30, `390cd18aa`) and Q18400 (D31,
+`99ae75a2a`). At the maintainer's request, D28–D31 have no new test. Their `run-fast.ps1`
+runs had two failures that also fail without them: `AltgardMoslanCrossroadTalksWithThePlumaAlive`
+and `AltgardScriptedQuestsPlayThroughTheContractSteps` ("too far to talk", from the Altgard
+Leg 2 work, first seen at `2f6278b08`). The
 operator asked for a separate session to fix **the other quests** that have the same
 defect, in both directions:
 - **Upstream Java:** **one** combined pull request to `beyond-aion/aion-server` (`4.8`)
