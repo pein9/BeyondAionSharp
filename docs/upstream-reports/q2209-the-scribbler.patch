@@ -1,0 +1,12 @@
+diff --git a/game-server/data/handlers/quest/altgard/_2209TheScribbler.java b/game-server/data/handlers/quest/altgard/_2209TheScribbler.java
+index 149b3e9..363231c 100644
+--- a/game-server/data/handlers/quest/altgard/_2209TheScribbler.java
++++ b/game-server/data/handlers/quest/altgard/_2209TheScribbler.java
+@@ -23,6 +23,7 @@ public class _2209TheScribbler extends AbstractQuestHandler {
+ 		qe.registerQuestNpc(203555).addOnQuestStart(questId);
+ 		qe.registerQuestNpc(203555).addOnTalkEvent(questId);
+ 		qe.registerQuestNpc(203562).addOnTalkEvent(questId);
++		qe.registerQuestNpc(203572).addOnTalkEvent(questId);
+ 		qe.registerQuestNpc(203592).addOnTalkEvent(questId);
+ 	}
+ 

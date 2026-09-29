@@ -384,11 +384,21 @@ with "AF" in place of "NA").
 ## Blocked / questions for the operator
 
 **All three were answered on 2026-09-29:**
-- AF-Q1: **approved** (D26). A report and patch for the Java project are being prepared
-  under `docs/upstream-reports/`.
+- AF-Q1: **approved** (D26). The report and patch for the Java project are in
+  `docs/upstream-reports/q2209-the-scribbler.{md,patch}` (prepared 2026-09-29, not yet
+  submitted; the operator submits it).
 - AF-Q2: **exclude** Q2210 and Q24012 from Leg 1; the bot does not leave the fortress area
   for them.
 - AF-Q3: **LIVE once, at the end** of the Altgard leg.
+
+**Open, not blocking Leg 1:**
+- **AL-Q6 — Q2223 "A Mythical Monster" has the same defect.** The upstream scan found that
+  its handler never registers Lamir (203620), whose talk is the var 0 → 1 step (retail step
+  1, "Talk with Lamir"). While Q2231 is startable or active, Lamir's quest page can mask it;
+  after that the quest stalls. Q2223 is on the approved list at Stop 4 (level 12). D26 covers
+  only Q2209. Options: (a) approve the same one-line C# correction as D27 when the bot
+  reaches Stop 4; (b) skip Q2223 as a recorded boundary. **Recommendation: (a)**, with the
+  fix added to the upstream report.
 
 The original questions follow.
 
