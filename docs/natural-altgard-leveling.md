@@ -467,10 +467,39 @@ with "AF" in place of "NA").
     5.7 s of shooting each (two Smites), no death and no fall.
   - The policy test covers the reserve edge and the no-target wait. The warning, logger and
     clock-read checks pass.
-- [ ] **AF-07 — Leg 1 quest mechanics.** Talk chains (Q2207), item use in the dungeon
+- [x] **AF-07 — Leg 1 quest mechanics.** Talk chains (Q2207), item use in the dungeon
   (Q2208, Mau Secret Remedy), Q2209's chain (Thrud → Tulberg → Borender → Noroia), and the
   template kill and collect quests (Q2201–2206, including the crystal stone objects for
   Q2203). It reuses the Ishalgen quest machinery where it fits.
+  - *Done 2026-09-29.* `NaturalAltgardQuestSteps`:
+    - `TalkAsync` plays any contract step: it opens the dialog, sends the step's actions,
+      waits for each page, finishes a movie, and checks that the quest moved on (offer to
+      START, var + 1 or REWARD, reward to complete).
+    - `UseQuestItemAsync` uses the Mau Secret Remedy and waits for var 1.
+    - The AF-06 air loop moved into `NaturalAirCombat.RunAsync`, shared with the runner;
+      it reads flight time from `SM_FLY_TIME`.
+  - SIM probe `AltgardScriptedQuestsPlayThroughTheContractSteps` (`run/af07/af07-sim.log`
+    and its trace): a level 10 Daeva Cleric set up like the `altgard` snapshot (Q24010
+    done, Q24011 LOCKED; GM setup) plays all 15 scripted steps in the contract's order.
+    - Q2209: Thrud, Tulberg, Borender by flight, Noroia down the dungeon ramp, Thrud.
+    - Level 11 is set in place of the Ice Lake hunting, and Q24011 unlocks by itself.
+    - Q2207: Emgata, Itu, Suthran, Itu.
+    - Q2208: Itu hands over the remedy; it is used; Mumu Bon puts the quest to REWARD; Itu.
+    - Q24011: Valurion; Borender with his movie; 5 air kills in 2 sorties; Valurion pays
+      the Altgard Legionary Brogans (REWARD4).
+    - All four quests complete, alive, at level 11.
+  - **Findings for AF-08.**
+    - **Tulberg walks:** he was met at (1697, 1778), not at his spawn point, so NPCs must be
+      approached where the client sees them.
+    - **Itu has no interaction approach point** from Suthran (NA-04 finding a), so the
+      approach falls back to open ground within talk range.
+    - **No fungus is visible from the ground:** the air fight starts from Borender's rock.
+  - **The template quests (Q2201–2206) run on the Ishalgen runner unchanged.** It already
+    handles `quest_use_item` sources such as Q2203's crystal stones (700055, through
+    `UseAndLootQuestObjectAsync`), and AF-01 checked that their run books use only
+    supported operations. The runner needs the journey's navigator for Altgard, so they
+    are exercised in AF-09's run once AF-08 adds that map context.
+  - The warning, logger and clock-read checks pass; all 292 Natural unit tests pass.
 - [ ] **AF-08 — The Leg 1 runner and decision engine.** From the `altgard` snapshot: an
   Altgard map context, the decision engine over the contract (eligibility, level gates,
   "come back later"), rests and restocks at the fortress, help items (NA-21), and the
@@ -532,3 +561,4 @@ The original questions follow.
 - 2026-09-29 AF-04: pure flight policy (takeoff, water, reuse, FP budget and reserve, zone bounds, landing, restore) with five tests.
 - 2026-09-29 AF-05: flight protocol; the bot flies around the floating island to Borender's rock, talks, and flies back (FP 60 → 37, 40 → 17).
 - 2026-09-29 AF-06: air combat; Q24011 reached REWARD in SIM with 5 fungus kills in 3 sorties, refilling on Borender's rock.
+- 2026-09-29 AF-07: contract talk steps and the remedy use; SIM played Q2209, Q2207, Q2208 and Q24011 to completion (15 steps, air kills, dungeon, flight).

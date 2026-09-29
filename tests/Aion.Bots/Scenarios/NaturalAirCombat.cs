@@ -120,6 +120,89 @@ public static class NaturalAirCombat
 	public static byte QuestStatus(INaturalJourneySession session, int questId) =>
 		session.Api.World.Quests.TryGetValue(questId, out BotQuestState? quest) ? quest.Status : (byte)0;
 
+	/// <summary>How an air-combat run went.</summary>
+	public sealed record Outcome(int Kills, int Sorties, int Missed, IReadOnlyList<double> ShootingSeconds, int LandedFp);
+
+	/// <summary>
+	/// Shoot fungus down until the quest leaves START, refilling on <paramref name="landing"/> whenever the policy says so,
+	/// and end landed there. The bot may start on the ground or on the landing; flight time is read from SM_FLY_TIME.
+	/// </summary>
+	public static async Task<Outcome> RunAsync(INaturalJourneySession session, BotNavigationGeometry geometry, int mapId,
+		IReadOnlyList<NaturalFlyZone> zones, float waterLevel, NaturalLandingTarget landing, float cruiseZ, int questId,
+		Func<BotPosition, ushort, byte, int, SpellCastData> createCast, Func<long> nowMillis, CancellationToken token,
+		int maximumSorties = 6)
+	{
+		BotWorldModel world = session.Api.World;
+		bool airborne = false;
+		long? lastTakeoff = null;
+		float speed = 0;
+		int sorties = 0, kills = 0, missed = 0;
+		var shooting = new List<double>();
+		var shotDown = new HashSet<int>();
+		while (QuestStatus(session, questId) == 3)
+		{
+			if (world.IsDead) throw new InvalidDataException("The bot died during the air fight.");
+			if (!airborne)
+			{
+				if (++sorties > maximumSorties) throw new InvalidDataException($"More than {maximumSorties} sorties for Q{questId}.");
+				long wait = NaturalFlightPolicy.RestoreMillis(world.CurrentFlightTime, world.MaxFlightTime, world.MaxFlightTime);
+				if (lastTakeoff is { } last) wait = Math.Max(wait, last + NaturalFlightPolicy.TakeoffReuseMillis - nowMillis());
+				if (wait > 0) await session.AdvanceAsync(TimeSpan.FromMilliseconds(wait + 100), token);
+				await session.SynchronizeAsync(token);
+				NaturalFlightDecision ready = NaturalFlightPolicy.CanTakeOff(new NaturalTakeoffObservation(true, session.CurrentPosition, false,
+					waterLevel, nowMillis(), lastTakeoff, false, false, false), zones);
+				if (!ready.Allowed) throw new InvalidDataException($"Cannot take off for the air fight: {ready.Reason}");
+				lastTakeoff = nowMillis();
+				speed = await NaturalFlightProtocol.TakeOffAsync(session, token);
+				airborne = true;
+			}
+			await session.SynchronizeAsync(token);
+			var observation = new NaturalAirCombatObservation(session.CurrentPosition, world.CurrentFlightTime, speed,
+				VisibleFungus(session, shotDown), landing);
+			NaturalAirCombatDecision decision = NaturalAirCombatPolicy.Decide(observation);
+			session.TraceDiagnostic("air-combat-decision", new Dictionary<string, object?>
+			{
+				["action"] = decision.Action, ["target"] = decision.Target, ["reason"] = decision.Reason, ["fp"] = observation.Fp,
+				["var"] = QuestVar(session, questId),
+			});
+			if (decision.Action == "attack")
+			{
+				BotPosition fungus = observation.Targets.Single(target => target.ObjectId == decision.Target).Position;
+				(BotPosition _, NaturalFlightRoute route) = FindHover(geometry, mapId, zones, session.CurrentPosition, fungus, cruiseZ)
+					?? throw new InvalidDataException($"No hover point in sight of fungus {decision.Target} at {fungus}.");
+				await NaturalFlightProtocol.FlyAsync(session, mapId, session.CurrentPosition, route.Waypoints, speed, token);
+				long started = nowMillis();
+				bool killed = await ShootDownAsync(session, decision.Target!.Value, questId, createCast, token);
+				shotDown.Add(decision.Target.Value);
+				if (!killed)
+				{
+					if (++missed > 2) throw new InvalidDataException($"Fungus {decision.Target} was not shot down.");
+					continue;
+				}
+				kills++;
+				shooting.Add((nowMillis() - started) / 1000.0);
+			}
+			else
+			{
+				await LandAsync(session, geometry, mapId, landing, cruiseZ, speed, token);
+				airborne = false;
+			}
+		}
+		if (airborne) await LandAsync(session, geometry, mapId, landing, cruiseZ, speed, token);
+		await session.SynchronizeAsync(token);
+		return new(kills, sorties, missed, shooting, world.CurrentFlightTime);
+	}
+
+	private static async Task LandAsync(INaturalJourneySession session, BotNavigationGeometry geometry, int mapId,
+		NaturalLandingTarget landing, float cruiseZ, float speed, CancellationToken token)
+	{
+		NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, mapId, session.CurrentPosition, landing.Position, cruiseZ);
+		if (!route.IsUsable) throw new InvalidDataException($"No flight to the landing: {route.Refusal}");
+		await NaturalFlightProtocol.FlyAsync(session, mapId, session.CurrentPosition, route.Waypoints, speed, token);
+		await NaturalFlightProtocol.LandAsync(session, token);
+		if (session.Api.World.CurrentFlightTime < 1) throw new InvalidDataException("Flight time ran out before the landing.");
+	}
+
 	private static bool IsInvalidTarget(DecodedBotServerPacket packet) =>
 		packet.PacketType == typeof(SM_SYSTEM_MESSAGE) && packet.Get<object>("name") is "STR_SKILL_TARGET_IS_NOT_VALID";
 
