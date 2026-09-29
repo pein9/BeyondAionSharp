@@ -1532,7 +1532,7 @@ OD-11, a development item is verified by **one** run.
       - It was level 9 at the Pandaemonium steps, below the event scrolls' tier 10, so
         nothing was used there.
 
-- [ ] **NA-21 — Supply the approved help items.**
+- [x] **NA-21 — Supply the approved help items.**
   - **Depends:** NA-20, **plus operator approval of its list (OD-13)**.
   - **Do:**
     - Implement the approved supply mechanism for SIM and for the isolated LIVE stack.
@@ -1542,6 +1542,48 @@ OD-11, a development item is verified by **one** run.
   - **Done when:** tests cover the allowlist, the counts and the profile record. One
     snapshot run shows the items arriving and NA-19 using them.
   - **Verify:** the focused tests and that one run.
+  - **Evidence (2026-09-28):**
+    - **The supply rule, `NaturalHelpItemSupply`.**
+      - Every approved id whose level band holds the character's level is topped up to N
+        when fewer than M are owned. A new band's tier is supplied and the old stock runs
+        out.
+      - Anything else is refused, and so is any count above its N.
+      - `NA_HELP_ITEMS=0` turns supply off.
+      - The run profile's `helpItems` block is written to `help-items.json` beside the
+        run's evidence.
+    - **Journey (Cleric only).** Stock is checked at bridge start or resume, at each
+      level-up, at the Altgard shop stop (a town visit) and at the endpoint checkpoint.
+      Each supply is verified from the client's inventory and traced as
+      `help-item-supplied`.
+    - **Mechanism.**
+      - SIM: `ItemService.AddItem` in the natural-journey fixture, allowlisted.
+      - LIVE: `LiveNaturalHelpItemSupplier`, the seeded director's `//add`. It logs in on
+        first use and refuses any profile other than the isolated `docker-bots-natural`.
+      - The attach mode for the operator's `aion` world has no supplier.
+    - **Combat.** It knows every Life Potion tier (the heal over time from OD-13, highest
+      tier first; skills 9889, 9890 and 9891) and drinks the instant Mana Serums first for
+      mana. The Priest's potion order is unchanged.
+    - **Found by the first run** (`run/snapshots/_verify/na21-bridge-sold-supplies`): the
+      Altgard shop stop sold the freshly supplied 30 Anti-Shock and 40 Mana Serums as junk.
+      The Cleric's inventory rules now keep every approved help item, every NA-19 help
+      scroll and every potion tier as combat supplies (new test).
+    - **Run `run/snapshots/_verify/na21-bridge`.**
+      - At level 10, just after the ceremony, the bot received 30 Anti-Shock 164000067,
+        40 Minor Mana Serum 162000017, 8 Zeller Aether Jelly and 200 Lesser Odella
+        Powder.
+      - No Minor Life Potion was supplied: it owned 32, which is not below 10.
+      - At Doman it used Castafodin, Accelerox and a jelly (NA-19/20a).
+      - The shop stop sold only loot and junk, bought 12 Lesser Life Elixirs, and bought
+        no powder (it already had 200).
+      - At the endpoint it held 30 Anti-Shock, 40 serums, 12 jellies and 200 powder. The
+        checkpoint needed no resupply.
+      - The bridge completed and was verified across the relog, with no deaths.
+      - The Anti-Shock and serums are combat items. The bridge has no Cleric fight, so
+        NA-23 is where their use shows.
+    - **Tests.** `NaturalHelpItemSupplyTests` (12) and a new inventory test. Focused
+      `Natural*` suite: 282 of 282 passed. The warning, null-logger and clock-read checks
+      pass.
+    - No dashboard badge yet. The profile file and the trace are the record.
 
 - [x] **NA-22 — Patrol timing as a Cleric: wait and retry, or take the fight (OD-14).**
   - **Depends:** NA-18, NA-19.
@@ -1885,6 +1927,7 @@ has examples.
 - 2026-09-28 — Operator: the D.2 help-item list is approved (OD-13), with changes: the heal-over-time Life Potion instead of the Life Serum, no Revival Stones, and powder supplied too. NA-21 is unblocked.
 - 2026-09-28 — Loop: NA-20a done. The Cleric now uses its owned veteran scrolls (Castafodin, Accelerox), drinks a Zeller jelly for Salvation's DP, and recognizes all its potions. The "unworn belt" was a checkpoint slot truncation; the belt was always worn. Next is NA-22, since NA-21 waits for approval.
 - 2026-09-28 — Loop: NA-22 done. When a patrol blocks a pull, the Cleric waits 15 s up to four times, then fights if the assessment says it can win, or pulls anyway (deaths recorded). The Priest is unchanged. Next is NA-23, the first Cleric fights.
+- 2026-09-28 — Loop: NA-21 done. The approved help items are supplied to the Cleric: ItemService in SIM, the director's //add on the isolated LIVE stack, NA_HELP_ITEMS=0 for off. They are recorded in help-items.json and the trace. The first run caught the shop stop selling them; now they are protected. Next is NA-23 with the items in the bag.
 
 ## Appendix A: Altgard shops and consumables
 

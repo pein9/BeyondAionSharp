@@ -59,13 +59,26 @@ public sealed partial class SimulationFastScenarioTests
 		var runtime = new NaturalJourneyRuntime(Aion.GameServer.TestKit.RealStaticData.RepoRoot(),
 			"SIM-natural-ishalgen", fixture.Seed, fixture.DataManager.StaticData, () => fixture.Clock.NowMillis, fixture.Epoch,
 			() => BotNavigationGeometry.ForServerWorld(fixture.World.GetPlayer(session.CharacterId).GetInstanceId(), Race.ASMODIANS),
-			EnterAsync, policy.AssertClean, () => policy.SnapshotProblems(), combatTrace, dashboard);
+			EnterAsync, policy.AssertClean, () => policy.SnapshotProblems(), combatTrace, dashboard)
+		{
+			// NA-21: the approved help items (OD-13), unless NA_HELP_ITEMS=0 asks for a clean natural run.
+			SupplyHelpItemAsync = NaturalHelpItemSupply.Enabled(Environment.GetEnvironmentVariable(NaturalHelpItemSupply.Switch))
+				? SupplyHelpItemAsync : null,
+		};
 		await new NaturalIshalgenJourney(session, runtime, new NaturalJourneyOptions(
 			stopAfterQ2004 ? 2004 : stopAfterQ2005 ? 2005 : stopAfterQ2006 ? 2006 : stopAfterQ2007 ? 2007 : null,
 			Environment.GetEnvironmentVariable("NI08_RELOG_AT"), Environment.GetEnvironmentVariable("NI08_STOP_AT"),
 			Environment.GetEnvironmentVariable("NI07_STOP_ON_DEATH") == "1",
 			Environment.GetEnvironmentVariable("NI07_OPTIMIZE_HUBS") == "1",
 			AscensionBridge: Environment.GetEnvironmentVariable("NA_ASCENSION") == "1")).RunAsync(token);
+
+		async Task SupplyHelpItemAsync(int itemId, long count, CancellationToken supplyToken)
+		{
+			NaturalHelpItemSupply.RequireApproved(itemId, count);
+			var player = fixture.World.GetPlayer(session.CharacterId);
+			Assert.Equal(0, Aion.GameServer.Services.Items.ItemService.AddItem(player, itemId, count, allowInventoryOverflow: true));
+			await session.SynchronizeAsync(supplyToken);
+		}
 
 		async Task<bool> EnterAsync(CancellationToken token)
 		{

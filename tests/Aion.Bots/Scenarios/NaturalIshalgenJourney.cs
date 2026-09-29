@@ -183,6 +183,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			var refusedGear = new HashSet<int>();
 			PlayerClass? gearClass = null;
 			bool bridgeShopVisited = false; // NA-16: the Altgard shop stop is done
+			var helpSupplied = new List<NaturalHelpSupplied>(); // NA-21: every approved help item supplied
+			int helpCheckedAtLevel = -1;
 
 			// Wear the best gear in the bag (the recorded human put on four unused quest rewards at Nalto).
 			// The client knows each item's slots, level and class/race limits from its tooltip; the server
@@ -760,12 +762,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			async Task RunAscensionBridgeAsync()
 			{
 				NaturalAscensionContract bridge = NaturalAscensionContract.LoadDefault();
+				await TopUpHelpItemsAsync("run-start");
 				await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token); // NA-19: a fresh login or a resume
 				string? previous = null;
 				int repeats = 0;
 				for (int sequence = 1; sequence <= 80; sequence++)
 				{
 					await session.SynchronizeAsync(token);
+					if (session.Api.World.Level != helpCheckedAtLevel) await TopUpHelpItemsAsync("level-up");
 					NaturalAscensionDecision next = NaturalAscensionDecisionEngine.Decide(bridge,
 						NaturalAscensionObservation.Observe(session.Api.World, bridgeShopVisited), sequence);
 					session.TraceDiagnostic("ascension-bridge-decision", new Dictionary<string, object?>
@@ -839,6 +843,36 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				finally { combat.ScriptedTrial = false; }
 			}
 
+			// NA-21: the stock check for the approved help items (OD-13): the Cleric only, and only when the runtime may
+			// supply (SIM, or the isolated LIVE stack's director). Every supply is checked from the client's inventory,
+			// traced, and listed in help-items.json beside the run's other evidence.
+			async Task TopUpHelpItemsAsync(string trigger)
+			{
+				BotWorldModel world = session.Api.World;
+				helpCheckedAtLevel = world.Level;
+				if (runtime.SupplyHelpItemAsync is not { } supply || !combat.IsCleric || world.IsDead) return;
+				var owned = world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count));
+				IReadOnlyList<NaturalHelpTopUp> plan = NaturalHelpItemSupply.Plan(world.Level, owned);
+				foreach (NaturalHelpTopUp topUp in plan)
+				{
+					NaturalHelpItemSupply.RequireApproved(topUp.ItemId, topUp.Count);
+					await supply(topUp.ItemId, topUp.Count, token);
+					await session.SynchronizeAsync(token);
+					long after = ItemCount(world, topUp.ItemId);
+					Require.True(after >= topUp.Owned + topUp.Count, $"Help item {topUp.ItemId} did not arrive: {topUp.Owned} -> {after}.");
+					helpSupplied.Add(new NaturalHelpSupplied(trigger, topUp.ItemId, topUp.Family, topUp.Count, topUp.Owned, after,
+						world.Level, runtime.NowMillis));
+					session.TraceDiagnostic("help-item-supplied", new Dictionary<string, object?>
+					{
+						["trigger"] = trigger, ["itemId"] = topUp.ItemId, ["family"] = topUp.Family, ["count"] = topUp.Count,
+						["before"] = topUp.Owned, ["after"] = after, ["level"] = world.Level,
+					});
+				}
+				if (plan.Count > 0)
+					await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "help-items.json"),
+						NaturalHelpItemSupply.ProfileJson(helpSupplied), token);
+			}
+
 			bool AscensionBridgeStarted()
 			{
 				BotWorldModel world = session.Api.World;
@@ -853,6 +887,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			async Task CompleteAscensionLegAsync(NaturalAscensionContract bridge)
 			{
 				session.BeginStep("na-endpoint", "verify-and-relog-at-the-bridge-endpoint");
+				await TopUpHelpItemsAsync("checkpoint");
 				if (relogAt != null) Require.True(relogInjected, "A requested bridge interruption was never exercised.");
 				BotWorldModel world = session.Api.World;
 				Require.True(NaturalJourneyIdentityRules.Classify(world.Objects[session.CharacterId].PlayerClass ?? 0, world.Level, world.MapId)
@@ -893,6 +928,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			async Task ShopInAltgardAsync(NaturalAscensionContract bridge)
 			{
 				session.BeginStep("na-shop-altgard", "altgard-shop-stop");
+				await TopUpHelpItemsAsync("town");
 				BotWorldModel world = session.Api.World;
 				await EquipUpgradesAsync(token);
 				await session.SynchronizeAsync(token);

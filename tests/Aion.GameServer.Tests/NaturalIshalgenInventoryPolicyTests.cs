@@ -54,6 +54,18 @@ public sealed class NaturalIshalgenInventoryPolicyTests
 	}
 
 	[Fact]
+	public void TheClericNeverSellsItsSuppliedHelpItems()
+	{
+		// NA-21: every approved help item, help scroll and potion tier is a combat supply, never shop fodder.
+		int[] ids = NaturalHelpItemAllowlist.Approved.Select(supply => supply.ItemId)
+			.Concat(NaturalHelpItemPolicy.All.Select(help => help.ItemId)).Distinct().ToArray();
+		BotInventoryItem[] bag = ids.Select((id, index) => Item(index + 1, id, 10)).ToArray();
+		NaturalInventoryPlan plan = Bridge.Value.Decide(bag, 10, 60, cleric: true);
+		Assert.Empty(plan.Sales);
+		Assert.All(plan.Decisions, decision => Assert.Equal("combat-supply", decision.Reason));
+	}
+
+	[Fact]
 	public void AnUnwornStaffIsTheClericsUpgradeButNotThePriests()
 	{
 		BotInventoryItem[] bag = [Item(1, 100100025, equipped: 1), Item(2, 101500498)];

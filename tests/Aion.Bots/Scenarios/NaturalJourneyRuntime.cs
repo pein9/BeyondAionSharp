@@ -20,6 +20,10 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 {
 	/// <summary>SIM-only benchmark preparation. Runs after ordinary login, before policy decisions.</summary>
 	public Func<CancellationToken, Task>? PrepareCourseAsync { get; init; }
+	/// <summary>NA-21: supplies one approved help item (OD-13) to the natural character: ItemService in SIM, the
+	/// director's //add on the isolated LIVE stack. Null when supply is off (NA_HELP_ITEMS=0) or not allowed
+	/// (the operator's own world).</summary>
+	public Func<int, long, CancellationToken, Task>? SupplyHelpItemAsync { get; init; }
 	private readonly Lazy<BotMotionTiming> motions = new(() => BotMotionTiming.Load(
 		Path.Combine(RepoRoot, "game-server/data/static_data/skills/motion_times.xml")));
 	public long NowMillis => ElapsedMilliseconds();

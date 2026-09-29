@@ -114,7 +114,13 @@ public sealed class NaturalIshalgenInventoryPolicy
 				!node.Name.LocalName.EndsWith("selectable_reward", StringComparison.Ordinal)).Attributes("item_id"))
 				questItems.Add((int)item);
 		questItems.UnionWith([182203009, 182203010, 182203011]); // handed out by Q2008's handler, not its data
-		var clericSupplies = bridge.ProtectedItemIds.Concat(Supplies).ToHashSet();
+		// NA-21: the approved help items (OD-13), every help scroll NA-19 knows and every potion combat drinks are the
+		// Cleric's supplies too; the NA-21 run found the shop stop selling the freshly supplied Anti-Shock and serums.
+		var clericSupplies = bridge.ProtectedItemIds.Concat(Supplies)
+			.Concat(NaturalHelpItemAllowlist.Approved.Select(supply => supply.ItemId))
+			.Concat(NaturalHelpItemPolicy.All.Select(help => help.ItemId))
+			.Concat(NaturalIshalgenPotionPolicy.ManaPotionIds)
+			.Concat([NaturalIshalgenPotionPolicy.LesserLifePotionId, NaturalIshalgenPotionPolicy.LifePotionId]).ToHashSet();
 		var needed = observedItemIds.Concat(rewards.Values.SelectMany(value => value)).Concat(clericSupplies).ToHashSet();
 		var catalog = new Dictionary<int, NaturalItem>();
 		using XmlReader reader = XmlReader.Create(Path.Combine(root, "game-server/data/static_data/items/item_templates.xml"),

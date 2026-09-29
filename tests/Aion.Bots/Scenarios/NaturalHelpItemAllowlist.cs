@@ -40,3 +40,47 @@ public static class NaturalHelpItemAllowlist
 	/// <summary>Owned natural substitutes the proposal relies on (veteran rewards, VeteranRewardService months 26/30).</summary>
 	public static readonly int[] OwnedEventScrolls = [164002118, 164002116];
 }
+
+/// <summary>One help item supplied, as the run profile (help-items.json) and the trace record it.</summary>
+public sealed record NaturalHelpSupplied(string Trigger, int ItemId, string Family, long Count, long Before, long After,
+	int Level, long GameMillis);
+
+/// <summary>One top-up: bring an approved id from <paramref name="Owned"/> up to its band's N.</summary>
+public sealed record NaturalHelpTopUp(int ItemId, string Family, long Owned, long Count);
+
+/// <summary>
+/// NA-21: the supply rule for the approved help items (OD-13). At each stock check (run start, level-up, town
+/// visit, checkpoint) every approved id whose level band holds the character's level is topped up to N when fewer
+/// than M are owned; a new tier's id is supplied when its band starts and the old tier's stock simply runs out.
+/// Anything else is refused. <c>NA_HELP_ITEMS=0</c> turns supply off for a clean natural run.
+/// </summary>
+public static class NaturalHelpItemSupply
+{
+	public const string Switch = "NA_HELP_ITEMS";
+
+	/// <summary>On unless the switch is exactly "0".</summary>
+	public static bool Enabled(string? value) => value != "0";
+
+	public static IReadOnlyList<NaturalHelpTopUp> Plan(int level, IReadOnlyDictionary<int, long> owned) =>
+		NaturalHelpItemAllowlist.Approved
+			.Where(supply => supply.FromLevel <= level && level <= supply.ToLevel &&
+				owned.GetValueOrDefault(supply.ItemId) < supply.Below)
+			.Select(supply => new NaturalHelpTopUp(supply.ItemId, supply.Family, owned.GetValueOrDefault(supply.ItemId),
+				supply.TopUpTo - owned.GetValueOrDefault(supply.ItemId)))
+			.ToArray();
+
+	/// <summary>The run profile's <c>helpItems</c> block: supply is on, and every item supplied, in order.</summary>
+	public static string ProfileJson(IReadOnlyList<NaturalHelpSupplied> supplied) =>
+		System.Text.Json.JsonSerializer.Serialize(new { helpItems = new { enabled = true, supplied } },
+			new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+
+	/// <summary>Refuse any id that is not approved, or a count above its band's N.</summary>
+	public static void RequireApproved(int itemId, long count)
+	{
+		NaturalHelpSupply[] entries = NaturalHelpItemAllowlist.Approved.Where(supply => supply.ItemId == itemId).ToArray();
+		if (entries.Length == 0)
+			throw new InvalidOperationException($"Item {itemId} is not an approved help item (OD-13); refusing to supply it.");
+		if (count <= 0 || count > entries.Max(supply => supply.TopUpTo))
+			throw new InvalidOperationException($"Refusing to supply {count} of help item {itemId}: outside 1..{entries.Max(supply => supply.TopUpTo)}.");
+	}
+}

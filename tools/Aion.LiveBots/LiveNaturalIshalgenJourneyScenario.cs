@@ -23,6 +23,8 @@ public static partial class LiveBotRunner
 			account: identity.AccountName, characterName: identity.CharacterName);
 		LiveBotSession session = actor.Session;
 		session.EnableNaturalJourney();
+		// NA-21: the approved help items (OD-13) come from the director's //add, unless NA_HELP_ITEMS=0.
+		await using var helpItems = LiveNaturalHelpItemSupplier.CreateFor(options, problems, identity.CharacterName);
 		actor.Trace.WriteAction("ni09", "scenario:start", new Dictionary<string, object?> { ["scenario"] = "NI-09" });
 		try
 		{
@@ -32,7 +34,10 @@ public static partial class LiveBotRunner
 			var runtime = new NaturalJourneyRuntime(root, options.Profile, options.Seed, assets.Data,
 				() => elapsed.ElapsedMilliseconds, epoch,
 				() => assets.NaturalJourneyGeometry(identity.Race, (session.Api.World.ChannelInfo?.Index ?? 0) + 1),
-				EnterAsync, AssertClean, () => problems.Snapshot(), actor.Trace, options.Dashboard);
+				EnterAsync, AssertClean, () => problems.Snapshot(), actor.Trace, options.Dashboard)
+			{
+				SupplyHelpItemAsync = helpItems == null ? null : helpItems.SupplyAsync,
+			};
 			await new NaturalIshalgenJourney(session, runtime, new NaturalJourneyOptions()).RunAsync(token);
 			// The shared driver proves all 41 completions, level 9, Munin proximity and untouched Ascension before quitting.
 			await session.VerifyOfflineAsync(token);
