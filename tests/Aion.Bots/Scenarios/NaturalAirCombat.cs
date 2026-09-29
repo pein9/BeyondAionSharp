@@ -87,6 +87,8 @@ public static class NaturalAirCombat
 		await session.SendPacketAsync(session.Api.Target(target), token);
 		for (int cast = 0; cast < maximumCasts; cast++)
 		{
+			if (session.Api.World.IsDead) return false;
+			if (!session.Api.World.Objects.ContainsKey(target)) return cast > 0; // gone: killed and deleted, or out of view
 			TimeSpan gate = session.Api.Timing.TimeUntilCast(skillId);
 			if (gate > TimeSpan.Zero) await session.AdvanceAsync(gate + TimeSpan.FromMilliseconds(1), token);
 			await session.SendPacketAsync(session.Api.Cast(createCast(session.CurrentPosition, skillId, level, target)), token);

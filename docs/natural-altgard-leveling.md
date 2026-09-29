@@ -775,9 +775,34 @@ The same loop protocol, with "AM" in place of "NA".
     regeneration seems to keep up with 20 HP per 6 s at level 13. Resting stops at 90%
     HP, so a rest cannot stall on it, and nothing in the rest policy needed changing.
   - The warning, logger and clock-read checks and 301 Natural tests pass.
-- [ ] **AM-05 — Q24012's mechanics.** Loriniah with movie 61, the farmland zone step, three
+- [x] **AM-05 — Q24012's mechanics.** Loriniah with movie 61, the farmland zone step, three
   cart uses on three different carts, the drops from var 5, CHECK_USER_HAS_QUEST_ITEM and
   the hauberk reward. **Done when:** a SIM probe completes Q24012.
+  - *Done 2026-09-29.* SIM probe `AltgardOminousCropUsesTheCartsCollectsAndIsRewarded`
+    (`run/am05/am05-sim.log` and its trace, account 142). A level 13 Cleric with the Karmic
+    Staff and Q24012 at START var 0, as in the snapshot (GM setup), plays the quest:
+    - Loriniah with movie 61: var 0 → 1;
+    - the walk into the farmland: the zone step takes var 1 → 2 on entry (the crossroad
+      NPCs stand outside the zone polygon);
+    - three carts, three different ones: var 2 → 5;
+    - 3 Hairpins from three MuMu patrols, and 5 Waist Bands from farmers and gatherers:
+      **every kill dropped its item**, the 100% that Java's `QuestDrop.getChance()` gives
+      when `chance` is absent, and the drops come only at var 5;
+    - Loriniah's hand-in (`CHECK_USER_HAS_QUEST_ITEM`, the reward window, REWARD4): the
+      quest completes, the items are taken, and the hauberk is in the bag.
+  - **GM setup, on the monsters and never on the bot:** each target was set to 1 HP and
+    killed with one Smite, and the farmland monsters within 25 m of it were despawned. This
+    probe is about the mechanics; AM-06 is about the fights.
+  - **Findings:**
+    - A used cart dies but stays in view. The next cart must be chosen among the living
+      ones.
+    - A MuMu farmer joined the first patrol fight, as AM-03's support relations predicted.
+      With no gear and Smite alone the bot died there (the attempt before the GM setup).
+    - Probe lessons for the runner: never pick a corpse as a target (the client keeps it
+      in view until it decays), and never despawn or disturb one before looting.
+    - `TalkAsync` now counts completion as progress for a START step that ends the quest.
+    - `ShootDownAsync` stops when the bot dies or the target leaves view.
+  - The warning, logger and clock-read checks and 301 Natural tests pass.
 - [ ] **AM-06 — Farmland and tog combat.** Mixed farmer and patrol groups, highsitters, SEASONED
   black claw patrols (fight them only when the pull planner calls it winnable, as NA-22 does),
   wild tog packs. Trace the first shield, Salvation and serum uses. **Done when:** a SIM probe
@@ -885,3 +910,4 @@ The original questions follow.
 - 2026-09-29 AM-02: all 12 Leg 2 travel legs route and walk in SIM; the danger on each is recorded.
 - 2026-09-29 AM-03: guarded talk spots; SIM handed Q2210 in and took Q2211 at the crossroad with no attack; the pluma are passive to Asmodians.
 - 2026-09-29 AM-04: Q2213 played in SIM: the Okaru log looted, the poison seen and removed at Tigg; the drain is covered by natural regeneration.
+- 2026-09-29 AM-05: Q24012 played in SIM: movie, zone step, three carts, var-5 drops at 100%, hauberk reward.

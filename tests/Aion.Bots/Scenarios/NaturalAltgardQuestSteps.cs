@@ -46,7 +46,7 @@ public static class NaturalAltgardQuestSteps
 			"OFFER" => after is (3, 0),
 			"REWARD" => completed,
 			_ when step.Actions.Contains("SELECT_QUEST_REWARD") => completed,
-			_ => after is (3, int advanced) && advanced == step.Var + 1 || after is (4, _),
+			_ => completed || after is (3, int advanced) && advanced == step.Var + 1 || after is (4, _),
 		};
 		if (!moved)
 			throw new InvalidDataException($"{step.Key} did not move Q{step.QuestId} on: {Describe(before)} -> {(completed ? "complete" : Describe(after))}.");
@@ -92,6 +92,11 @@ public static class NaturalAltgardQuestSteps
 		if (finish != null && finish.Get<int>("durationMs") <= 0) return false;
 		return lootItemId is not int item || await NaturalIshalgenJourney.TryLootCorpseItemAsync(session, objectId, item, token, start);
 	}
+
+	/// <summary>Loot <paramref name="itemId"/> from a corpse in reach (AM-05: the Q24012 collections), through the journey's
+	/// loot routine. False when the drop list does not hold it.</summary>
+	public static Task<bool> LootItemAsync(INaturalJourneySession session, int objectId, int itemId, CancellationToken token) =>
+		NaturalIshalgenJourney.TryLootCorpseItemAsync(session, objectId, itemId, token);
 
 	/// <summary>An effect of <paramref name="skillId"/> on the bot, as the client sees it.</summary>
 	public static bool HasEffect(BotWorldModel world, int skillId) =>
