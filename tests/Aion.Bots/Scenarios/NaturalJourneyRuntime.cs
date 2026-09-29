@@ -24,6 +24,9 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 	/// director's //add on the isolated LIVE stack. Null when supply is off (NA_HELP_ITEMS=0) or not allowed
 	/// (the operator's own world).</summary>
 	public Func<int, long, CancellationToken, Task>? SupplyHelpItemAsync { get; init; }
+
+	/// <summary>NA-23: diagnostic SIM setup before each Cleric encounter stage (single, pair, patrol).</summary>
+	public Func<string, CancellationToken, Task>? PrepareEncounterStageAsync { get; init; }
 	private readonly Lazy<BotMotionTiming> motions = new(() => BotMotionTiming.Load(
 		Path.Combine(RepoRoot, "game-server/data/static_data/skills/motion_times.xml")));
 	public long NowMillis => ElapsedMilliseconds();
@@ -72,4 +75,4 @@ public enum NaturalMauEncounter
 public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? RelogAt = null,
 	string? StopAt = null, bool StopOnDeath = false, bool OptimizeHubs = false,
 	NaturalMauCourse? Course = null, NaturalMauEncounter? Encounter = null,
-	NaturalMauPolicyParameters? MauPolicy = null, bool AscensionBridge = false);
+	NaturalMauPolicyParameters? MauPolicy = null, bool AscensionBridge = false, bool ClericEncounter = false);

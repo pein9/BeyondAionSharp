@@ -1638,7 +1638,7 @@ OD-11, a development item is verified by **one** run.
       passed. The warning, null-logger and clock-read checks pass.
     - No run: nothing pulls as a Cleric yet. NA-23 exercises it.
 
-- [ ] **NA-23 — Focused Cleric encounter check (diagnostic, one run).**
+- [x] **NA-23 — Focused Cleric encounter check (diagnostic, one run).**
   - **Depends:** NA-22 (and NA-21 if the help items are approved by then).
   - **Do:**
     - Add a GM-prepared SIM encounter in the style of the Mau short starts. Diagnostic setup
@@ -1658,6 +1658,73 @@ OD-11, a development item is verified by **one** run.
   - **Done when:** it runs cleanly once, and the findings are written here as the starting
     point for the Altgard milestone.
   - **Verify:** that run.
+  - **Evidence (2026-09-28):**
+    - **What was built.**
+      - `SimulationClericEncounterTests.NaturalClericEncounterRunsOnce`, run with
+        `NA23_CLERIC_ENCOUNTER=1`.
+      - The fixture makes a level 10 Cleric through the class change (which completes
+        Q2008 and makes a Daeva), with the Karmic Staff, the bridge endpoint's supplies
+        and the approved help items (NA-21), bound at Altgard Fortress.
+      - Per stage it clears aggressive monsters within 60 m of open ground at
+        (1622, 1948), spawns Lehpar goons 210715 (level 10) and places the Cleric 28 m
+        away, on the stage's own navmesh island and in sight of them.
+      - The journey's `ClericEncounter` mode (`RunClericEncounterAsync`) rebinds the
+        navigator, geometry, combat and map it captures to Altgard. It then plays each
+        stage with the ordinary code: the pull planner and patrol decision
+        (`MoveToPullSpotAsync`), `TryKillAsync`, the defense, and resting.
+    - **Setup iterations, kept under `run/na23/`.** None of these was a bot run.
+      1. `run1-level9-setup`: a level set before the class change stays at 9 (the
+         non-Daeva cap).
+      2. `run2-passive-lobnites`: tentacled lobnites (tribe MONSTER) never aggro
+         Asmodians, so the bot rightly ignored them. The stages use goons.
+      3. `run3-ishalgen-geometry`: the journey's geometry was bound to the Ishalgen
+         instance. The encounter now makes its own.
+      4. `run4-rock-start`: the snapped start stood on a rock top.
+      5. `run5`: a route from the obelisk to the stage was rejected by geometry (below).
+    - **The run: `run/na23/na23-run6`.**
+      - Passed cleanly with **no deaths**: single stage 1 kill in 12 game seconds; the pair
+        2 goons in 84 s, including 60 s of patrol waits; the patrol stage 2 kills in 58 s.
+      - **Skills.** 41 combat decisions: Smite 11, Earth's Wrath 6, Flashbolt 5, Hallowed
+        Strike 5, Slashing Wind 4, Infernal Blaze 3, Light of Rejuvenation 3, timed
+        potion 2, staff swing 2, wait 1.
+      - **Chain.** Every Smite opened the chain (P_CHAINA_1TH_1 observed), and **each
+        opening Smite at range was followed at once by Flashbolt (5 of 5)**. The other
+        Smites fell inside Flashbolt's 10 s cooldown.
+      - **Opener order.** Earth's Wrath, then Slashing Wind at range, then Infernal and
+        Hallowed at melee. That matches NA-18's rotation.
+      - **Heal over time.** Light of Rejuvenation went up once per fight, on the first hit.
+        The Minor Life Potion's heal over time was used twice, at 90% HP.
+      - **Buffs and scrolls.** Castafodin was kept up, and a Zeller jelly was drunk before
+        the first stage (DP 0 → 2000; it reached 2100 by the end).
+      - **Shield scroll, Salvation and mana potions: not triggered.** HP never fell below
+        592/690 (86%) and MP stayed above 550, so no 50% or emergency threshold was
+        reached.
+      - **Powder rest.** After the patrol stage: MP Recovery at 554 MP, then a sit while
+        the shared 1153 cooldown ran, then done at 1169 MP. Herb Treatment was not needed
+        (HP was full).
+      - **Patrol decisions.**
+        - Pair: the two goons are each other's helpers, so it waited 4 × 15 s, then
+          assessed the fight as winnable and fought.
+        - Patrol: after one 15 s wait the roaming goon had moved off, so the target was
+          pulled alone. The roamer came later and was the second kill.
+    - **Findings for the Altgard milestone.**
+      1. **Level 10 goons are too weak to test the Cleric's emergency tools.** Use harder
+         pulls (level 11–12 karnifs, or three attackers) to exercise the Anti-Shock
+         shield, Salvation, the serums and Herb Treatment.
+      2. **The patrol wait is spent on static helpers.** A stationary pair gets four 15 s
+         waits it cannot benefit from. Wait only when a helper moves (a patrol path or a
+         random walk), and fight a winnable static group at once.
+      3. **The way out of the fortress is rejected by geometry.** A navmesh route from
+         the Altgard obelisk (island 25) to open ground south-west was
+         `GeometryRejected`, probably at the gate. The Altgard leveling leg must check
+         the fortress exit first. The bridge never left the fortress.
+      4. **Earth's Wrath was cast twice in a row at melee once.** The first 1.5 s cast was
+         probably interrupted by a hit, so no cooldown was recorded. A melee Wrath costs
+         85 MP; consider it only at range, or when the monster is stunned.
+      5. **The Cleric's max HP is 690 at level 10**, against about 1.3k MP, so its heals
+         are cheap relative to its HP pool.
+    - **Checks.** The warning, null-logger and clock-read checks pass; focused `Natural*`
+      suite 282 of 282.
 
 ### Phase 6: Acceptance (once each; OD-11)
 
@@ -1928,6 +1995,7 @@ has examples.
 - 2026-09-28 — Loop: NA-20a done. The Cleric now uses its owned veteran scrolls (Castafodin, Accelerox), drinks a Zeller jelly for Salvation's DP, and recognizes all its potions. The "unworn belt" was a checkpoint slot truncation; the belt was always worn. Next is NA-22, since NA-21 waits for approval.
 - 2026-09-28 — Loop: NA-22 done. When a patrol blocks a pull, the Cleric waits 15 s up to four times, then fights if the assessment says it can win, or pulls anyway (deaths recorded). The Priest is unchanged. Next is NA-23, the first Cleric fights.
 - 2026-09-28 — Loop: NA-21 done. The approved help items are supplied to the Cleric: ItemService in SIM, the director's //add on the isolated LIVE stack, NA_HELP_ITEMS=0 for off. They are recorded in help-items.json and the trace. The first run caught the shop stop selling them; now they are protected. Next is NA-23 with the items in the bag.
+- 2026-09-28 — Loop: NA-23 done. The first Cleric fights (SIM, GM-prepared, goons outside Altgard Fortress) ran with no deaths: Smite → Flashbolt every time at range, the heal over time, the timed potion, powder rest, and the patrol wait-then-fight. Five findings are recorded for the Altgard milestone. **Phase 5 is complete.**
 
 ## Appendix A: Altgard shops and consumables
 

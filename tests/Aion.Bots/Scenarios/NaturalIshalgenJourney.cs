@@ -74,10 +74,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		try
 		{
 			bool resuming = await runtime.EnterAsync(token);
-			if (options.Course != null)
+			if (options.Course != null || options.ClericEncounter)
 			{
 				if (resuming || runtime.PrepareCourseAsync == null)
-					throw new InvalidOperationException("A Mau course requires a fresh SIM character and explicit preparation.");
+					throw new InvalidOperationException("A Mau course or Cleric encounter requires a fresh SIM character and explicit preparation.");
 				await runtime.PrepareCourseAsync(token);
 			}
 			// The LIVE movie-end reply can arrive after the first time-check barrier: the
@@ -98,7 +98,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			Require.All(templatePlans.Keys, id => Require.Contains(id, contract.Quests.Select(quest => quest.Id)));
 			NaturalDecision decision = NaturalIshalgenDecisionEngine.Decide(contract,
 				ObserveNaturalJourney(session), 1);
-			if (!resuming && options.Course == null)
+			if (!resuming && options.Course == null && !options.ClericEncounter)
 			{
 				Require.Equal("find-quest-starter", decision.SelectedAction);
 				Require.Equal(2101, decision.SelectedQuestId);
@@ -399,6 +399,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					throw new EndOfStreamException($"NI-08 injected connection interruption at Q{at[0]} status {at[1]} vars {at[2]}.");
 				}
 			};
+			if (options.ClericEncounter)
+			{
+				await RunClericEncounterAsync();
+				session.PublishDashboard("completed", force: true);
+				await session.QuitAsync(token);
+				runtime.AssertClean();
+				return;
+			}
 			if (options.Course is NaturalMauCourse course)
 			{
 				navigator.AvoidHostileAggro = true;
@@ -871,6 +879,63 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				if (plan.Count > 0)
 					await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "help-items.json"),
 						NaturalHelpItemSupply.ProfileJson(helpSupplied), token);
+			}
+
+			// NA-23: the focused Cleric encounter (diagnostic, SIM only). The fixture prepares a level 10 Cleric outside
+			// Altgard Fortress and, per stage, the monsters. The journey's own pull, patrol, combat and rest code then
+			// plays each stage on the Altgard map: the navigator, combat and map it captures are rebound to Altgard here.
+			async Task RunClericEncounterAsync()
+			{
+				Require.True(combat.IsCleric, "The NA-23 encounter needs the level 10 Cleric.");
+				Require.True(runtime.PrepareEncounterStageAsync != null, "The NA-23 encounter needs its stage setup.");
+				NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World));
+				here.DefendOnAttackAsync = navigator.DefendOnAttackAsync;
+				here.AvoidHostileAggro = true;
+				navigator = here;
+				// The journey's geometry was made for the world instance it started in (Ishalgen); line of sight and
+				// routes for the pull planner must come from the instance the Cleric now stands in.
+				geometry = runtime.CreateGeometry();
+				contract = contract with { MapId = session.Api.World.MapId!.Value };
+				combat = new NaturalJourneyCombat(session, here, runtime, geometry, stopOnDeath: false, options.OptimizeHubs, mauPolicy)
+				{
+					ApproachMapId = contract.MapId,
+				};
+				navigationDefense = combat;
+				await TopUpHelpItemsAsync("run-start"); // NA-21: the approved help items
+				var stages = new List<Dictionary<string, object?>>();
+				foreach (string stage in new[] { "single", "pair", "patrol" })
+				{
+					session.BeginStep($"na23-{stage}", "cleric-encounter-stage");
+					await runtime.PrepareEncounterStageAsync!(stage, token);
+					await session.SynchronizeAsync(token);
+					BotPosition origin = session.CurrentPosition;
+					int revivesBefore = combat.ReviveCount, kills = 0, plans = 0;
+					long start = runtime.NowMillis;
+					for (int pull = 0; pull < 6; pull++)
+					{
+						await DefendAgainstEngagedAsync($"na23-{stage}");
+						NaturalNavigationObject[] targets = ObservedPullMonsters()
+							.Where(monster => Distance(origin, monster.Npc.Position) < 60)
+							.OrderBy(monster => Distance(session.CurrentPosition, monster.Npc.Position))
+							.Select(monster => monster.Npc).ToArray();
+						if (targets.Length == 0) break;
+						NaturalPullPlan? plan = await MoveToPullSpotAsync(targets, [], $"na23-{stage}");
+						if (plan == null) break;
+						plans++;
+						if (await combat.TryKillAsync(plan.Target.Npc.ObjectId, token, retreatAnchor: session.CurrentPosition)) kills++;
+					}
+					await DefendAgainstEngagedAsync($"na23-{stage}-after");
+					await RestSafelyAsync(token);
+					stages.Add(new()
+					{
+						["stage"] = stage, ["plans"] = plans, ["kills"] = kills, ["deaths"] = combat.ReviveCount - revivesBefore,
+						["gameSeconds"] = (runtime.NowMillis - start) / 1000, ["hp"] = session.Api.World.CurrentHp,
+						["mp"] = session.Api.World.CurrentMp, ["dp"] = session.Api.World.CurrentDp,
+					});
+					session.TraceDiagnostic("na23-stage-complete", stages[^1]);
+				}
+				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "na23-summary.json"),
+					System.Text.Json.JsonSerializer.Serialize(stages, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }), token);
 			}
 
 			bool AscensionBridgeStarted()
@@ -4636,6 +4701,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		private int obstacleRepositions;
 		private int rangeRejections;
 		public int ReviveCount => revives;
+		/// <summary>The map a far target is approached on (NA-23 fights in Altgard); Ishalgen for the journey.</summary>
+		public int ApproachMapId { get; init; } = 220010000;
 
 		/// <summary>NA-18: the observed class chooses the catalog (the Cleric adds its level 10 skills).</summary>
 		private NaturalPriestSkill[] Catalog => NaturalClericSkills.ForClass(
@@ -4974,7 +5041,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							break;
 						}
 						NaturalNavigationResult approach = await NaturalIshalgenNavigator.ApproachNpcAsync(
-							220010000, npc.TemplateId!.Value, destination, navigator, token);
+							ApproachMapId, npc.TemplateId!.Value, destination, navigator, token);
 						if (!approach.Arrived)
 							throw new NaturalCombatApproachBlockedException(approach.Reason);
 						break;
