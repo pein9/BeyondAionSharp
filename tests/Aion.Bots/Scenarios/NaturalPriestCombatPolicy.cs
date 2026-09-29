@@ -49,6 +49,8 @@ public static class NaturalPriestSkills
 /// position lags; its swings do not).</param>
 /// <param name="InEmergency">HP fell to <see cref="NaturalPriestCombatPolicy.EmergencyPercent"/> and has not
 /// recovered to <see cref="NaturalPriestCombatPolicy.EmergencyClearPercent"/> yet: sustain only.</param>
+/// <param name="ShieldScrollReady">NA-19: <see cref="NaturalHelpItemPolicy.DecideShield"/> chose an owned, ready
+/// Anti-Shock tier (HP at or below 50%, no shield active, not casting).</param>
 public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int Mp, int MaxMp,
 	bool Dead, bool Aggro, float? TargetDistance, int? TargetObjectId,
 	IReadOnlyDictionary<int, BotSkill> Learned, IReadOnlyDictionary<int, DateTimeOffset> Cooldowns,
@@ -58,7 +60,8 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	int? TargetHpPercent = null, bool HasHealedThisFight = false,
 	bool HasHotPotion = false, bool HotPotionReady = false, bool HotPotionActive = false,
 	bool Cornered = false, bool TargetAdjacent = false, bool InEmergency = false, bool TargetSeasoned = false,
-	bool TargetRanged = false, bool ConservativeRangedHold = false, int Dp = 0, bool? HasRejuvenation = null);
+	bool TargetRanged = false, bool ConservativeRangedHold = false, int Dp = 0, bool? HasRejuvenation = null,
+	bool ShieldScrollReady = false);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);
@@ -129,6 +132,8 @@ public static class NaturalPriestCombatPolicy
 		Simple("rest", !state.Dead && !fighting, "A fight or target is active.");
 		Simple("retreat", !state.Dead && fighting && !state.Cornered,
 			"No active fight or no checked escape from this corner.", navigation: true);
+		Simple("shield-scroll", !state.Dead && state.ShieldScrollReady,
+			"No owned, ready Anti-Shock tier at or below 50% HP, or a shield is active.");
 		Simple("hot-potion", !state.Dead && state.HasHotPotion && state.HotPotionReady && !state.HotPotionActive,
 			"Timed healing potion is absent, cooling down, or already active.");
 		Simple("life-potion", !state.Dead && state.HasLifePotion && state.LifePotionReady,
@@ -216,6 +221,10 @@ public static class NaturalPriestCombatPolicy
 			? policy.HealMultiplePercent : policy.HealSinglePercent;
 		bool urgent = fighting && state.Hp * 100 <= state.MaxHp * healPercent;
 		bool critical = state.Hp * 100 <= state.MaxHp * 25;
+		// NA-19: the Anti-Shock shield at 50% HP comes after the 30% retreat rule and before Salvation (which spends
+		// DP) and the potions; it is an item, so it never interrupts a cast (the caller only offers it between casts).
+		if (fighting && state.ShieldScrollReady)
+			return Choice("shield-scroll", null, "HP is at or below 50% in a fight: use the owned Anti-Shock damage shield.");
 		if (salvationReady && (state.InEmergency || critical))
 			return Choice("cast-self", salvation, $"Emergency with {state.Dp} observed DP: Salvation restores half of MP and HP at once.");
 		// A selected target can make this a "fight" before any monster has attacked.

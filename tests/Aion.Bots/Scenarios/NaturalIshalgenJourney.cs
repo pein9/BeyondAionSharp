@@ -4,6 +4,7 @@ using Aion.Bots.Navigation.NavMesh;
 using Aion.Bots.Movement;
 using Aion.Bots.Protocol;
 using Aion.Bots.Reflexes;
+using Aion.Bots.Timing;
 using Aion.Bots.Tracing;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
@@ -759,6 +760,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			async Task RunAscensionBridgeAsync()
 			{
 				NaturalAscensionContract bridge = NaturalAscensionContract.LoadDefault();
+				await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token); // NA-19: a fresh login or a resume
 				string? previous = null;
 				int repeats = 0;
 				for (int sequence = 1; sequence <= 80; sequence++)
@@ -1090,6 +1092,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 			async Task<int> ApproachBridgeNpcAsync(NaturalAscensionStep step, BotPosition anchor, NaturalJourneyNavigator here)
 			{
+				// NA-19: a travel leg starts; the straight line is a lower bound of the planned route.
+				await combat.BuffOurselfAsync(NaturalHelpTrigger.TravelLeg, token, Distance(session.CurrentPosition, anchor));
 				NaturalNavigationResult approach = await NaturalIshalgenNavigator.ApproachNpcAsync(step.MapId, step.NpcId, anchor, here, token);
 				Require.True(approach.Arrived, $"{step.Key}: {approach.Reason}");
 				return Require.IsType<int>(approach.TargetObjectId);
@@ -1526,7 +1530,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						session.Api.World.CurrentMp * 100 < session.Api.World.MaxMp * 40)
 						await RestSafelyAsync(token);
 					else
-						await combat.MaintainBuffsAsync(token);
+						await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
 				}
 				if (cleared && objectiveObjectId != null && !session.Api.World.IsDead)
 					await NaturalIshalgenNavigator.ApproachNpcAsync(contract.MapId,
@@ -1606,7 +1610,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			{
 				if (!await DefendAgainstEngagedAsync(purpose)) return null;
 				if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 80) await RestSafelyAsync(token);
-				await combat.MaintainBuffsAsync(token);
+				await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
 				NaturalPullPlan? plan = null;
 				for (int wait = 0; wait <= mauPolicy.PatrolWaitCycles; wait++)
 				{
@@ -3999,7 +4003,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								session.Api.World.CurrentMp * 100 < session.Api.World.MaxMp * 40)
 								await RestSafelyAsync(token);
 							else
-								await combat.MaintainBuffsAsync(token);
+								await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
 						}
 						npc = navigator.Observe().Npcs.FirstOrDefault(n => n.ObjectId == target);
 						if (npc == null) return false;
@@ -4036,7 +4040,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						session.Api.World.CurrentMp * 100 < session.Api.World.MaxMp * 40)
 						await RestSafelyAsync(token);
 					else
-						await combat.MaintainBuffsAsync(token);
+						await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
 				}
 				// A named is engaged rested: full heals in reserve matter more than the respawn window's last seconds.
 				if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 80 ||
@@ -4536,6 +4540,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		// NA-18: the chain the last chain skill opened, from its SM_CASTSPELL_RESULT chain flag (Java ChainSkills).
 		private (string Category, int Target, DateTimeOffset ExpiresAt)? openChain;
 		private ushort? lastPowderSkill;
+		// NA-19: when the current visible-effect snapshot was first seen (its remaining times are as of then).
+		private IReadOnlyList<BotVisibleEffect>? effectsSnapshot;
+		private long effectsSeenAtMillis;
 		private int revives;
 		private int completedRetreats;
 		private int? engagedTarget;
@@ -4707,6 +4714,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				var hotTemplate = hotPotion == null ? null :
 					runtime.Data.ItemDataDh.GetItemTemplate(hotPotion.ItemId);
 				bool hotReady = hotTemplate != null && session.Api.Timing.TimeUntilItemUse(hotTemplate) == TimeSpan.Zero;
+				NaturalHelpItemChoice? shieldChoice = IsCleric ? NaturalHelpItemPolicy.DecideShield(ObserveHelpItems(), now) : null;
 				var observation = new NaturalCombatObservation(
 					world.Level, world.CurrentHp, world.MaxHp, world.CurrentMp, world.MaxMp, world.IsDead,
 					nearbyAttackers > 0 || recentAttacks.Length > 0,
@@ -4720,7 +4728,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					ConservativeRangedHold: conservativeRangedHold,
 					OpenChainCategory: openChain?.Category, OpenChainTargetId: openChain?.Target, ChainExpiresAt: openChain?.ExpiresAt,
 					Dp: world.CurrentDp,
-					HasRejuvenation: world.VisibleEffects?.Any(effect => rejuvenationIds.Contains(effect.SkillId)));
+					HasRejuvenation: world.VisibleEffects?.Any(effect => rejuvenationIds.Contains(effect.SkillId)),
+					ShieldScrollReady: shieldChoice?.Item != null);
 				NaturalPriestSkill[] catalog = Catalog;
 				NaturalCombatChoice choice = NaturalPriestCombatPolicy.Decide(observation, now, catalog, parameters: mauPolicy);
 				NaturalCombatCandidate[] candidates = NaturalPriestCombatPolicy.CandidateActions(observation, now, choice,
@@ -4768,9 +4777,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					["hotPotionItemId"] = hotPotion?.ItemId,
 					["hotPotionReady"] = hotReady,
 					["hotPotionActive"] = NaturalIshalgenPotionPolicy.HasActiveHealing(world.VisibleEffects),
+					["shieldScroll"] = shieldChoice?.Item?.ItemId,
 				});
 				switch (choice.Action)
 				{
+					case "shield-scroll":
+						if (!await UseHelpItemAsync(shieldChoice!.Item!, token))
+							await session.AdvanceAsync(TimeSpan.FromMilliseconds(1000), token); // refused (stunned): decide again
+						break;
 					case "hot-potion":
 					{
 						if (hotPotion == null || hotTemplate == null)
@@ -5107,6 +5121,74 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			await CastAsync(blessing, session.CharacterId, token);
 		}
 
+		private bool IsCleric => session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass ==
+			PlayerClass.CLERIC.GetClassId();
+
+		/// <summary>NA-19: the client-observed state the help-item policy reads.</summary>
+		private NaturalHelpItemObservation ObserveHelpItems(float travelMeters = 0, bool crossMap = false)
+		{
+			BotWorldModel world = session.Api.World;
+			if (!ReferenceEquals(world.VisibleEffects, effectsSnapshot))
+			{
+				effectsSnapshot = world.VisibleEffects;
+				effectsSeenAtMillis = runtime.NowMillis;
+			}
+			DateTimeOffset now = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
+			var counts = world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count));
+			var delays = new Dictionary<int, DateTimeOffset>();
+			foreach (NaturalHelpItem help in NaturalHelpItemPolicy.All.Where(help => counts.GetValueOrDefault(help.ItemId) > 0))
+				if (runtime.Data.ItemDataDh.GetItemTemplate(help.ItemId) is { } template)
+					delays[help.UseDelayId] = now + session.Api.Timing.TimeUntilItemUse(template);
+			IReadOnlySet<BotBlockingActivity> blocking = session.Api.Timing.BlockingActivities;
+			return new(world.Level, world.CurrentHp, world.MaxHp, world.IsDead || world.CurrentHp <= 0,
+				blocking.Contains(BotBlockingActivity.Casting), blocking.Contains(BotBlockingActivity.Cutscene),
+				Flying: false, Disabled: false, world.VisibleEffects, runtime.NowMillis - effectsSeenAtMillis, counts, delays,
+				travelMeters, crossMap);
+		}
+
+		/// <summary>NA-19: the buff-ourself check. Class buffs as before (pre-pull, after rest); then, for the Cleric,
+		/// the help scrolls the policy names, one at a time, each decision traced. With nothing owned it uses nothing.</summary>
+		public async Task BuffOurselfAsync(NaturalHelpTrigger trigger, CancellationToken token, float travelMeters = 0, bool crossMap = false)
+		{
+			if (trigger is NaturalHelpTrigger.PrePull or NaturalHelpTrigger.AfterRest) await MaintainBuffsAsync(token);
+			if (!IsCleric || InCombat) return;
+			for (int use = 0; use < 3; use++)
+			{
+				await session.SynchronizeAsync(token);
+				DateTimeOffset now = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
+				NaturalHelpItemChoice choice = NaturalHelpItemPolicy.DecideBuffs(ObserveHelpItems(travelMeters, crossMap), now, trigger);
+				session.TraceDiagnostic("buff-ourself", new Dictionary<string, object?>
+				{
+					["trigger"] = trigger.ToString(), ["itemId"] = choice.Item?.ItemId, ["reason"] = choice.Reason,
+					["checks"] = choice.Checks.Select(check => $"{check.Rule}:{check.Verdict}:{check.Reason}").ToArray(),
+				});
+				if (choice.Item == null || !await UseHelpItemAsync(choice.Item, token)) return;
+			}
+		}
+
+		/// <summary>Use one help scroll between casts; false when the server refused it (it stays in the bag).</summary>
+		private async Task<bool> UseHelpItemAsync(NaturalHelpItem help, CancellationToken token)
+		{
+			BotWorldModel world = session.Api.World;
+			BotInventoryItem? owned = world.Inventory.Values.Where(item => item.ItemId == help.ItemId && item.Count > 0)
+				.OrderBy(item => item.ObjectId).FirstOrDefault();
+			var template = runtime.Data.ItemDataDh.GetItemTemplate(help.ItemId);
+			if (owned == null || template == null) return false;
+			long before = ItemCount(world, help.ItemId);
+			int useStart = session.PacketHistory.Count;
+			await session.SendPacketAsync(session.Api.UseItem(owned.ObjectId, template), token);
+			await session.SynchronizeAsync(token);
+			long after = ItemCount(world, help.ItemId);
+			session.TraceDiagnostic("help-item-used", new Dictionary<string, object?>
+			{
+				["itemId"] = help.ItemId, ["family"] = help.Family, ["before"] = before, ["after"] = after,
+				["hp"] = world.CurrentHp, ["useDelayId"] = help.UseDelayId,
+				["refused"] = session.PacketHistory.Skip(useStart).Where(packet => packet.PacketType == typeof(SM_SYSTEM_MESSAGE))
+					.Select(packet => packet.Get<object>("name")?.ToString()).FirstOrDefault(),
+			});
+			return after == before - 1;
+		}
+
 		public async Task RestAsync(CancellationToken token)
 		{
 			// Heal while there is mana to spend. Sitting solely for missing HP leaves the Priest exposed to
@@ -5190,7 +5272,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						await session.SynchronizeAsync(token);
 						continue;
 					}
-					await MaintainBuffsAsync(token);
+					await BuffOurselfAsync(NaturalHelpTrigger.AfterRest, token);
 					if (MaintainInventoryAsync is { } maintain)
 						await maintain(token);
 					return;
@@ -5337,6 +5419,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			await session.SynchronizeAsync(token);
 			if (session.Api.World.IsDead) throw new InvalidDataException("Bind revive did not clear client-observed death.");
 			session.AcceptTeleportPosition();
+			await BuffOurselfAsync(NaturalHelpTrigger.AfterRevive, token);
 		}
 
 		/// <summary>Walk up to 8 m toward the target's last-known position (never nearer than 10 m), on a

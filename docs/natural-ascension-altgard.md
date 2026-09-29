@@ -1328,7 +1328,7 @@ OD-11, a development item is verified by **one** run.
     - No SIM run: none of this can fire before the bridge ends. NA-23 is the first run
       that fights as a Cleric.
 
-- [ ] **NA-19 — A "buff ourself" check and help-item use.**
+- [x] **NA-19 — A "buff ourself" check and help-item use.**
   - **Depends:** NA-18.
   - **Do:** add one **buff-ourself check**.
     - **When it runs:** before each pull or engage, after each rest, after a revive or
@@ -1393,6 +1393,36 @@ OD-11, a development item is verified by **one** run.
     - no use during cutscenes or flight;
     - unchanged behavior when nothing is owned.
   - **Verify:** the focused tests.
+  - **Evidence (2026-09-28):**
+    - `NaturalHelpItemPolicy` freezes the 15 Appendix D scrolls: item level, skill,
+      use-delay group and time, duration, and the Java effect id that decides replacement.
+      A test checks them against the shipped item and skill templates.
+    - `DecideBuffs` keeps Awakening up (refreshed inside the last 20 s, with the snapshot's
+      time aged) and never uses Courage, letting an active one expire. It uses Running only
+      before a leg of 150 m or more, or to another map, and never on top of another speed
+      effect.
+    - `DecideShield` picks the Anti-Shock tier at or below level + 10, at 50% HP or lower,
+      when no shield is active.
+    - Every rule honors the use-delay groups and refuses mid-cast, in a cutscene, in flight,
+      dead, stunned, or with effects unobserved. Each decision records one check per rule.
+    - `NaturalPriestCombatPolicy` has a `shield-scroll` action. It comes after the swarm and
+      30% retreats and before Salvation and the potions.
+    - Runtime (Cleric only; the Priest's calls are identical): `BuffOurselfAsync` runs
+      before pulls and after rest (with the Blessing upkeep, as before), after a revive, on
+      a login or resume into the bridge, and at each bridge travel leg (the straight line is
+      a lower bound of the route).
+      - Each decision is traced as `buff-ourself` and each use as `help-item-used`.
+      - The combat turn offers the shield when the policy chose one.
+      - No flight or stun flag is observed yet: flights are scripted, and a stunned use is
+        refused by the server and retried.
+    - Tests: `NaturalHelpItemPolicyTests`, 15 of 15. Focused `Natural*` suite: 249 of 249
+      passed. The warning, null-logger and clock-read checks pass.
+    - Regression run from the Munin snapshot, `run/snapshots/_verify/na19-bridge`: the bridge
+      completed and was verified across the relog (a level 10 Cleric bound in Altgard), with
+      no deaths. There were eight `buff-ourself` TravelLeg decisions, and none used an item
+      because none is owned. The login check is silent because the bot is still a Priest
+      when the bridge starts.
+    - Appendix D is corrected: Fine Anti-Shock has a required level of 50.
 
 - [ ] **NA-20 — Propose the help-item allowlist and how it is supplied (from the research).**
   - **Depends:** none.
@@ -1743,6 +1773,8 @@ has examples.
 
 - 2026-09-28 — Loop: NA-18 done. The Cleric has a level 10 catalog and rotation (Smite → Flashbolt, Earth's Wrath, Slashing Wind), Salvation, the heal over time, Root before a retreat, and powder rest. The Priest's choices are unchanged. Phase 5 has started.
 
+- 2026-09-28 — Loop: NA-19 done. The buff-ourself check keeps Awakening up, uses Running before long legs, and the Anti-Shock shield at 50% HP in combat (ordered before Salvation and potions). All are Cleric-only and do nothing when no scrolls are owned.
+
 ## Appendix A: Altgard shops and consumables
 
 **Merchants.** The fortress merchants below are all GENERAL, level 10 and Asmodian, with
@@ -1887,8 +1919,9 @@ straight after Smite. Heals do not touch the chain.
 ## Appendix D: Help items (scrolls)
 
 These are from the shipped data, and C# matches Java.
-- **Required level:** none of these scrolls has a `restrict`, so the required level
-  defaults to 1. The tier names still map to intended levels (Lesser 10, plain 20, Greater
+- **Required level:** only the Fine Anti-Shock Scroll (164000131) has a `restrict`, of
+  level 50. That matches the level + 10 rule, which first picks it at level 50. The others
+  default to 1 (corrected by NA-19). The tier names still map to intended levels (Lesser 10, plain 20, Greater
   30). NA-19 picks the highest tier whose item level is at or below the character's level.
   NA-20 confirms that choice and the stacking.
 - **Use delay:** 15 s per use, shared within its use-delay group.
