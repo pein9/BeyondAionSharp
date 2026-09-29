@@ -593,7 +593,7 @@ fortress, and so do rests in town and restocks.
 
 | Ground | Where | Distance from the obelisk | What lives there |
 |---|---|---|---|
-| The crossroad itself | around (1628, 1452) | 365 m | **aggressive grove pluma (L10–11) 21–56 m from the three NPCs**, elroco (L1), needletail karnifs |
+| The crossroad itself | around (1628, 1452) | 365 m | grove pluma (L10–11) 21–56 m from the three NPCs, **passive to Asmodians** (AM-03); **needletail karnifs 43–57 m away, which do attack** (6 m circles); elroco (L1) |
 | Karnif and pluma slopes | x 1400–1705, y 1125–1524 | 380–520 m | needletail karnifs (L10–11), grove pluma (L10–11) |
 | Okaru Tree | (1413, 1442, 282) | about 215 m west of the crossroad | the tree only |
 | MuMu Farmland (zone `MUMU_FARMLAND`, x 1624–1997, y 889–1475) | farmers, carts and frightcorn at y 1000–1400 | 470–810 m | MuMu farmers and gatherers (non-aggressive), **aggressive MuMu patrols (L11–13, 46 spots)**, **SEASONED black claw patrols (L11–13, 15 spots)**, MuMu highsitters (L13, aggro range 15 m), six MuMu Carts, 20 frightcorn stalks |
@@ -652,8 +652,9 @@ Q2218, Q2219 and Q2220, so the farmland is best worked once, with all four in ha
 
 1. **A hub without an obelisk or vendor**, 365 m from town. Long legs (365–950 m) use the
    Altgard travel planner. A death revives at the fortress, and the bot must run back.
-2. **Aggressive monsters beside the quest NPCs.** Pluma 21–56 m from Olenja, Tigg and
-   Loriniah can join a talk. The Ishalgen hubs had none this close.
+2. **Monsters near the quest NPCs.** Needletail karnifs 43–57 m from Olenja, Tigg and
+   Loriniah attack Asmodians within 6 m. The grove pluma 21–56 m away do not: their tribe
+   is MONSTER, which, like NA-23's lobnites, never aggroes Asmodians (AM-03).
 3. **A poison that lasts 10 minutes** (Q2213). The rest policy must not wait for full HP
    against a damage-over-time it cannot remove; the heals and potions handle it, and Tigg
    ends it.
@@ -723,9 +724,34 @@ The same loop protocol, with "AM" in place of "NA".
     - Blackpaw karnifs (L12–13) and fierce togs (L11) are extra aggressive species that
       the quest data does not name.
     - The warning, logger and clock-read checks pass.
-- [ ] **AM-03 — Talking at a guarded hub.** Clear or avoid the pluma near the three NPCs before
+- [x] **AM-03 — Talking at a guarded hub.** Clear or avoid the pluma near the three NPCs before
   a talk, with the NA-22 patrol and pull policy. **Done when:** a SIM probe takes and hands in
   a quest at the crossroad with no pluma joining.
+  - *Done 2026-09-29.*
+    - `NaturalGuardedTalkPolicy` (pure) picks a talk spot within talk range and at least
+      3 m outside every observed aggro circle. When every spot is covered, it names the
+      monster covering the most spots to pull first.
+    - The route to the spot keeps out of the circles (`FindJourneyPathAvoiding`). Java
+      aggroes a monster only on a player less than 10 levels above it
+      (`CreatureEventHandler.validateAggro`), so level 10–11 monsters still aggro a level 13
+      Cleric.
+    - Three policy tests pass.
+  - SIM probe `AltgardMoslanCrossroadTalksWithThePlumaAlive` (`run/am03/am03-sim.log`,
+    account 140), with nothing despawned:
+    - a level 13 Cleric (GM setup) takes Q2210 from Rion and travels to a staging point
+      30 m short of the crossroad;
+    - it hands Q2210 in to Loriniah and takes Q2211 from Olenja;
+    - **no attack reached the bot.**
+  - **Correction: the grove pluma do not attack Asmodians.** Their tribe is MONSTER, whose
+    relations aggro nobody but YUN_GUARD. The only attackers in view within 60 m were four
+    needletail karnifs (tribe KALNIF_AMINX), 43–57 m out with 6 m circles, and the talk
+    spots cleared them by 41–45 m.
+  - **For AM-06:** in the farmland,
+    - MuMu patrols (RATMAN) and highsitters (TOWERMAN) attack;
+    - MuMu farmers and gatherers (RATMANWORKER) do not, but they support RATMAN and LYCAN;
+    - black claw patrols (LYCAN) call RATMANWORKER and TOWERMAN for support.
+    A pull there can bring a group.
+  - The warning, logger and clock-read checks pass.
 - [ ] **AM-04 — Q2213 and the poison.** Loot the Okaru Tree, observe skill 255 on the bot, keep
   resting sane under the damage-over-time (heal, never wait for full HP while poisoned), hand in
   to Tigg, and see the poison removed. **Done when:** a SIM probe completes Q2213.
@@ -837,3 +863,4 @@ The original questions follow.
 - 2026-09-29 AF-10: full checklist green after regenerating the quest drafts and moving the AF probes to their own SIM accounts; Leg 1 is done.
 - 2026-09-29 AM-01: Leg 2 contract, eight template plans, the loader by leg, and three contract tests.
 - 2026-09-29 AM-02: all 12 Leg 2 travel legs route and walk in SIM; the danger on each is recorded.
+- 2026-09-29 AM-03: guarded talk spots; SIM handed Q2210 in and took Q2211 at the crossroad with no attack; the pluma are passive to Asmodians.
