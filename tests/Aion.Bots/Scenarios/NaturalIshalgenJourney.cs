@@ -900,6 +900,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			async Task RunAltgardLeg1Async()
 			{
 				NaturalAltgardContract leg = altgardLeg ?? throw new InvalidOperationException("Altgard Leg 1 needs its contract.");
+				NaturalAltgardItemUse itemUse = leg.ItemUse ?? throw new InvalidDataException("Altgard Leg 1 needs its remedy use.");
+				NaturalAltgardAirKills airKills = leg.AirKills ?? throw new InvalidDataException("Altgard Leg 1 needs its air kills.");
+				NaturalAltgardFlight flight = leg.Flight ?? throw new InvalidDataException("Altgard Leg 1 needs its flight rules.");
 				Require.True(combat.IsCleric, "Altgard Leg 1 needs the Cleric.");
 				Require.Equal(leg.Hub.MapId, session.Api.World.MapId ?? 0);
 				NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World));
@@ -1014,15 +1017,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							break;
 						}
 						case "use-item":
-							await NaturalAltgardQuestSteps.UseQuestItemAsync(session, leg.ItemUse,
-								runtime.Data.ItemDataDh.GetItemTemplate(leg.ItemUse.ItemId), token);
+							await NaturalAltgardQuestSteps.UseQuestItemAsync(session, itemUse,
+								runtime.Data.ItemDataDh.GetItemTemplate(itemUse.ItemId), token);
 							break;
 						case "air-kills":
 						{
 							// No fungus is visible from the ground: the fight starts from Borender's rock (AF-06).
 							await FlyToAsync(rock);
 							NaturalAirCombat.Outcome outcome = await NaturalAirCombat.RunAsync(session, geometry, leg.Hub.MapId, zones,
-								leg.Flight.WaterLevel, new NaturalLandingTarget("platform", rock), cruise, leg.AirKills.QuestId,
+								flight.WaterLevel, new NaturalLandingTarget("platform", rock), cruise, airKills.QuestId,
 								(origin, skill, level, target) => runtime.CreateSpellCast(session.Api.World, origin, skill, level, target),
 								() => runtime.NowMillis, token);
 							lastTakeoff = runtime.NowMillis;
@@ -1068,7 +1071,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					if (wait > 0) await session.AdvanceAsync(TimeSpan.FromMilliseconds(wait + 100), token);
 					await session.SynchronizeAsync(token);
 					NaturalFlightDecision ready = NaturalFlightPolicy.CanTakeOff(new NaturalTakeoffObservation(true, from, false,
-						leg.Flight.WaterLevel, runtime.NowMillis, lastTakeoff, false, false, false), zones);
+						flight.WaterLevel, runtime.NowMillis, lastTakeoff, false, false, false), zones);
 					Require.True(ready.Allowed, $"Cannot take off: {ready.Reason}");
 					NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, leg.Hub.MapId, from, destination, cruise);
 					Require.True(route.IsUsable, $"No flight to {destination}: {route.Refusal}");

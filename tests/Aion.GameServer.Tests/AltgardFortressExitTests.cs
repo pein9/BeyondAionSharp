@@ -99,7 +99,7 @@ public sealed class AltgardFortressExitTests
 			Assert.True(route.IsUsable, route.Refusal);
 			Assert.Equal(5, route.Waypoints.Count);
 			Assert.Equal(end, route.Waypoints[^1]);
-			NaturalFlightDecision go = NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, start, 9), contract.Flight.MaxFlightTime, zones);
+			NaturalFlightDecision go = NaturalFlightPolicy.CanFly(NaturalFlightProtocol.ToPlan(route, start, 9), contract.RequiredFlight.MaxFlightTime, zones);
 			Assert.True(go.Allowed, go.Reason);
 			BotPosition previous = start;
 			foreach (BotPosition point in route.Waypoints)

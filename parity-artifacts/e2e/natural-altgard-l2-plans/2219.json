@@ -1,0 +1,375 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2219,
+    "name": "Ripened Frightcorn",
+    "nameId": 1103319,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 11,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2218
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2219,
+        "start_npc_ids": 203604
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203604,
+        "name": "tigg",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1634.42,
+            "y": 1450.84,
+            "z": 256.0,
+            "heading": 118,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203604,
+      "name": "tigg",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1634.42,
+          "y": 1450.84,
+          "z": 256.0,
+          "heading": 118,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203604,
+      "name": "tigg",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1634.42,
+          "y": 1450.84,
+          "z": 256.0,
+          "heading": 118,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182203214,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182203214,
+          "npc_id": 700052,
+          "npc": {
+            "id": 700052,
+            "name": "well-ripened frightcorn stalk",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1657.17,
+                "y": 1281.54,
+                "z": 276.52,
+                "heading": 86,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1662.06,
+                "y": 1266.52,
+                "z": 274.41,
+                "heading": 108,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1683.77,
+                "y": 1280.47,
+                "z": 276.66,
+                "heading": 23,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1707.64,
+                "y": 1148.36,
+                "z": 278.47,
+                "heading": 79,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1710.36,
+                "y": 1326.75,
+                "z": 292.39,
+                "heading": 68,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1711.82,
+                "y": 1210.44,
+                "z": 270.47,
+                "heading": 46,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1714.24,
+                "y": 1318.27,
+                "z": 289.88,
+                "heading": 61,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1721.15,
+                "y": 1337.81,
+                "z": 291.48,
+                "heading": 46,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1725.28,
+                "y": 1334.22,
+                "z": 289.35,
+                "heading": 112,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1748.18,
+                "y": 1118.19,
+                "z": 273.51,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1773.56,
+                "y": 1394.86,
+                "z": 292.02,
+                "heading": 110,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1792.29,
+                "y": 1381.38,
+                "z": 292.09,
+                "heading": 37,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1793.71,
+                "y": 1371.76,
+                "z": 288.62,
+                "heading": 78,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1796.34,
+                "y": 1290.12,
+                "z": 277.3,
+                "heading": 57,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1803.77,
+                "y": 1203.81,
+                "z": 280.01,
+                "heading": 100,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1804.82,
+                "y": 1284.38,
+                "z": 277.95,
+                "heading": 47,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1826.27,
+                "y": 1077.03,
+                "z": 267.55,
+                "heading": 36,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1848.23,
+                "y": 1082.22,
+                "z": 265.88,
+                "heading": 116,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1928.2,
+                "y": 1105.78,
+                "z": 268.38,
+                "heading": 87,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1942.37,
+                "y": 1102.33,
+                "z": 269.89,
+                "heading": 79,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203604,
+          "name": "tigg",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1634.42,
+              "y": 1450.84,
+              "z": 256.0,
+              "heading": 118,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 10605,
+        "rewardItems": [
+          {
+            "count": 5,
+            "item_id": 164000036
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2219,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 11,
+      "name": "Ripened Frightcorn",
+      "nameId": 1103319,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182203214
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 10605
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 164000036
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182203214,
+          "npc_id": 700052
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2218
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

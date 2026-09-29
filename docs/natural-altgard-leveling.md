@@ -669,10 +669,33 @@ Q2218, Q2219 and Q2220, so the farmland is best worked once, with all four in ha
 
 The same loop protocol, with "AM" in place of "NA".
 
-- [ ] **AM-01 — The Leg 2 contract and plans.** `parity-artifacts/e2e/natural-altgard-l2-contract.json`
+- [x] **AM-01 — The Leg 2 contract and plans.** `parity-artifacts/e2e/natural-altgard-l2-contract.json`
   (the Leg 1 schema, generalised to name its hub and grounds), the eight template plans
   (Q2210, 2211, 2212, 2214, 2215, 2218, 2219, 2220), the scripted steps of Q2213 and Q24012,
   and contract tests like AF-01's. The loader takes a leg id instead of one default file.
+  - *Done 2026-09-29.*
+    - `natural-altgard-l2-contract.json` holds:
+      - the ten quests and their order: Q2210 is taken at the fortress on the way out,
+        and every chain goes in order;
+      - the crossroad hub and the fortress as the town;
+      - six areas (the crossroad, the karnif slopes, the Okaru Tree, the farmland, the tog
+        grounds, and Manir's Campsite);
+      - the four scripted steps of Q2213 and Q24012;
+      - two object uses: the Okaru Tree loot, and the three cart uses of six respawning
+        carts;
+      - the farmland zone step, the var-5 collections, the Okaru poison, and the
+        hauberk reward;
+      - the endpoint at Manir's Campsite (AM-Q1).
+    - `compile-quest-plans.py --runnable-only` wrote the eight template plans to
+      `natural-altgard-l2-plans/`.
+    - `NaturalAltgardContract` now loads by leg (`LoadLeg("l1")` or `"l2"`,
+      `LoadPlans(leg)`). Leg 1's flight, remedy and air kills are optional, and Leg 1
+      code reads them through `Required…` accessors.
+  - Three `NaturalAltgardLeg2ContractTests` check the contract against quest data, spawns,
+    zones, the skill template of poison 255, and the C# handlers of Q2213 and Q24012.
+    They found that the waist bands also drop from the level 13 MuMu farmer (210469). All
+    298 Natural tests pass, and so do the warning, logger and clock checks and
+    `test-quest-plan-compiler.py`.
 - [ ] **AM-02 — Travel to the crossroad and its grounds.** Fortress ↔ crossroad ↔ Okaru Tree,
   farmland, tog grounds and Manir, on the Altgard navmesh and travel planner. **Done when:**
   a SIM probe walks each leg and back, and reports what aggroes on the way.
@@ -788,3 +811,4 @@ The original questions follow.
 - 2026-09-29 AF-08: Leg 1 decision engine and journey mode; smoke run completed Leg 1 from the snapshot at level 13 with no death.
 - 2026-09-29 AF-09: SIM run af09-l1-s1 completed Leg 1 with no death (level 13); snapshot altgard-l12 captured and restore-checked.
 - 2026-09-29 AF-10: full checklist green after regenerating the quest drafts and moving the AF probes to their own SIM accounts; Leg 1 is done.
+- 2026-09-29 AM-01: Leg 2 contract, eight template plans, the loader by leg, and three contract tests.

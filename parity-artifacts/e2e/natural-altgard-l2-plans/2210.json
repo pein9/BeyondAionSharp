@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2210,
+    "name": "Retrieving the Report",
+    "nameId": 1103310,
+    "zone": "Altgard",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 12,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 203605,
+        "id": 2210,
+        "start_npc_ids": 203603
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203603,
+        "name": "rion",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1724.35,
+            "y": 1676.75,
+            "z": 254.30313,
+            "heading": 118,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203603,
+      "name": "rion",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1724.35,
+          "y": 1676.75,
+          "z": 254.30313,
+          "heading": 118,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203605,
+      "name": "loriniah",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1624.73,
+          "y": 1451.12,
+          "z": 256.0,
+          "heading": 117,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203605,
+          "name": "loriniah",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1624.73,
+              "y": 1451.12,
+              "z": 256.0,
+              "heading": 117,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 16283,
+        "gold": 1610,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000006
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 2210,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 12,
+      "name": "Retrieving the Report",
+      "nameId": 1103310,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 16283,
+          "gold": 1610
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000006
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

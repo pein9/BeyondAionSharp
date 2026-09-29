@@ -63,14 +63,14 @@ public sealed partial class SimulationFastScenarioTests
 			() => fixture.Clock.NowMillis, fixture.Epoch, () => geometry, _ => Task.FromResult(false), policy.AssertClean,
 			() => policy.SnapshotProblems(), trace, new LiveBotDashboardState());
 		session.BeginStep("s01", "air-combat");
-		NaturalAirCombat.Outcome outcome = await NaturalAirCombat.RunAsync(session, geometry, altgard, zones, contract.Flight.WaterLevel,
+		NaturalAirCombat.Outcome outcome = await NaturalAirCombat.RunAsync(session, geometry, altgard, zones, contract.RequiredFlight.WaterLevel,
 			landing, rock.Z + 8, fungusQuest,
 			(origin, skill, level, target) => runtime.CreateSpellCast(session.Api.World, origin, skill, level, target),
 			() => fixture.Clock.NowMillis, token);
 		Assert.Equal(QuestStatus.REWARD, player.GetQuestStateList().GetQuestState(fungusQuest).GetStatus());
 		Assert.False(player.IsDead());
 		Assert.False(player.IsFlying());
-		Assert.Equal(contract.AirKills.KillsAfterBorender, outcome.Kills);
+		Assert.Equal(contract.RequiredAirKills.KillsAfterBorender, outcome.Kills);
 		Console.WriteLine($"AF-06 done: {outcome.Kills} kills in {outcome.Sorties} sorties, {outcome.Missed} missed; shooting times " +
 			$"{string.Join(", ", outcome.ShootingSeconds.Select(value => value.ToString("F1")))} s; lands with FP {outcome.LandedFp} at " +
 			$"({player.GetX():F1}, {player.GetY():F1}, {player.GetZ():F1})");

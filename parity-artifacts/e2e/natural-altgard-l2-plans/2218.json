@@ -1,0 +1,622 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2218,
+    "name": "Frightcorn Seeds",
+    "nameId": 1103318,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 11,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2213
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2218,
+        "start_npc_ids": 203604
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203604,
+        "name": "tigg",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1634.42,
+            "y": 1450.84,
+            "z": 256.0,
+            "heading": 118,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203604,
+      "name": "tigg",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1634.42,
+          "y": 1450.84,
+          "z": 256.0,
+          "heading": 118,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203604,
+      "name": "tigg",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1634.42,
+          "y": 1450.84,
+          "z": 256.0,
+          "heading": 118,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 5,
+      "item_id": 182203212,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203212,
+          "npc_id": 210467,
+          "npc": {
+            "id": 210467,
+            "name": "mumu farmer",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1671.04,
+                "y": 1255.86,
+                "z": 273.496,
+                "heading": 10,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1674.54,
+                "y": 1270.07,
+                "z": 275.643,
+                "heading": 51,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1692.53,
+                "y": 1273.19,
+                "z": 277.84,
+                "heading": 4,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1723.31,
+                "y": 1333.21,
+                "z": 290.321,
+                "heading": 4,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1783.4,
+                "y": 1358.39,
+                "z": 284.574,
+                "heading": 21,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1789.1,
+                "y": 1364.63,
+                "z": 287.755,
+                "heading": 32,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1793.21,
+                "y": 1392.99,
+                "z": 293.639,
+                "heading": 21,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1796.41,
+                "y": 1385.2,
+                "z": 292.576,
+                "heading": 98,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203212,
+          "npc_id": 210468,
+          "npc": {
+            "id": 210468,
+            "name": "mumu farmer",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1656.87,
+                "y": 1255.5,
+                "z": 274.743,
+                "heading": 120,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1695.28,
+                "y": 1210.54,
+                "z": 273.374,
+                "heading": 8,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1707.8,
+                "y": 1195.74,
+                "z": 273.455,
+                "heading": 40,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1715.0,
+                "y": 1168.38,
+                "z": 275.914,
+                "heading": 35,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1726.94,
+                "y": 1116.25,
+                "z": 275.09,
+                "heading": 78,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1756.43,
+                "y": 1137.04,
+                "z": 271.79,
+                "heading": 58,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1797.28,
+                "y": 1244.67,
+                "z": 277.064,
+                "heading": 83,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1800.9,
+                "y": 1273.25,
+                "z": 276.988,
+                "heading": 23,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1803.72,
+                "y": 1211.72,
+                "z": 279.823,
+                "heading": 23,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203212,
+          "npc_id": 210469,
+          "npc": {
+            "id": 210469,
+            "name": "mumu farmer",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1827.96,
+                "y": 1089.68,
+                "z": 265.125,
+                "heading": 17,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1835.91,
+                "y": 1076.1,
+                "z": 267.726,
+                "heading": 74,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1845.58,
+                "y": 1092.7,
+                "z": 264.331,
+                "heading": 28,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1869.61,
+                "y": 1146.62,
+                "z": 268.165,
+                "heading": 107,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1912.59,
+                "y": 1109.8,
+                "z": 268.474,
+                "heading": 114,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1913.82,
+                "y": 1016.6,
+                "z": 259.853,
+                "heading": 85,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1919.04,
+                "y": 1004.66,
+                "z": 260.521,
+                "heading": 61,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1919.71,
+                "y": 1099.4,
+                "z": 265.865,
+                "heading": 83,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1922.96,
+                "y": 1026.88,
+                "z": 262.999,
+                "heading": 106,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1924.56,
+                "y": 996.341,
+                "z": 262.139,
+                "heading": 86,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1926.53,
+                "y": 1113.79,
+                "z": 270.619,
+                "heading": 4,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1926.76,
+                "y": 1034.58,
+                "z": 264.663,
+                "heading": 10,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1938.23,
+                "y": 1095.33,
+                "z": 267.236,
+                "heading": 58,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203212,
+          "npc_id": 210570,
+          "npc": {
+            "id": 210570,
+            "name": "mumu gatherer",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1729.53,
+                "y": 1317.6,
+                "z": 284.657,
+                "heading": 89,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203212,
+          "npc_id": 210571,
+          "npc": {
+            "id": 210571,
+            "name": "mumu gatherer",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1680.9,
+                "y": 1186.16,
+                "z": 277.276,
+                "heading": 88,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1732.83,
+                "y": 1150.58,
+                "z": 272.984,
+                "heading": 94,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1811.55,
+                "y": 1233.3,
+                "z": 279.488,
+                "heading": 112,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1821.33,
+                "y": 1184.07,
+                "z": 283.708,
+                "heading": 6,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203212,
+          "npc_id": 210572,
+          "npc": {
+            "id": 210572,
+            "name": "veteran mumu gatherer",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1851.97,
+                "y": 1079.22,
+                "z": 265.998,
+                "heading": 82,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1923.13,
+                "y": 979.705,
+                "z": 261.018,
+                "heading": 49,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1957.14,
+                "y": 1086.83,
+                "z": 271.573,
+                "heading": 25,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203604,
+          "name": "tigg",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1634.42,
+              "y": 1450.84,
+              "z": 256.0,
+              "heading": 118,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 15750,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2218,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 11,
+      "name": "Frightcorn Seeds",
+      "nameId": 1103318,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 182203212
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 15750
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203212,
+          "npc_id": 210467
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203212,
+          "npc_id": 210468
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203212,
+          "npc_id": 210469
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203212,
+          "npc_id": 210570
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203212,
+          "npc_id": 210571
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203212,
+          "npc_id": 210572
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2213
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

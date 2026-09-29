@@ -88,7 +88,7 @@ public sealed class NaturalAltgardDecisionEngineTests
 		Assert.Equal("q24011-v0-valurion", journal.Decide().StepKey);
 		journal.Set(24011, 3, 1);
 		Assert.Equal("q24011-v1-borender", journal.Decide().StepKey);
-		foreach (int var in Enumerable.Range(Contract.AirKills.FromVar, Contract.AirKills.RewardVar - Contract.AirKills.FromVar + 1))
+		foreach (int var in Enumerable.Range(Contract.RequiredAirKills.FromVar, Contract.RequiredAirKills.RewardVar - Contract.RequiredAirKills.FromVar + 1))
 		{
 			journal.Set(24011, 3, var);
 			Assert.Equal("air-kills", journal.Decide().Action);

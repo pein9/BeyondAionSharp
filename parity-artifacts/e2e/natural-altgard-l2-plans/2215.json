@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2215,
+    "name": "A Long-Lost Friend",
+    "nameId": 1103315,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 11,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2212
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 203607,
+        "id": 2215,
+        "start_npc_ids": 203606
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203606,
+        "name": "olenja",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1628.28,
+            "y": 1453.05,
+            "z": 256.0,
+            "heading": 91,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203606,
+      "name": "olenja",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1628.28,
+          "y": 1453.05,
+          "z": 256.0,
+          "heading": 91,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203607,
+      "name": "manir",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1459.56,
+          "y": 1192.68,
+          "z": 259.0,
+          "heading": 28,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203607,
+          "name": "manir",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1459.56,
+              "y": 1192.68,
+              "z": 259.0,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 8355,
+        "gold": 2490,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2215,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 11,
+      "name": "A Long-Lost Friend",
+      "nameId": 1103315,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 8355,
+          "gold": 2490
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2212
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

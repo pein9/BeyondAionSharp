@@ -97,10 +97,10 @@ public static class NaturalAltgardDecisionEngine
 					: Plan("talk", quest.Id, $"Q{quest.Id}: claim the reward.", claim.Key);
 			}
 			int var = Var(quest.Id);
-			if (quest.Id == contract.ItemUse.QuestId && var == contract.ItemUse.Var)
-				return Plan("use-item", quest.Id, $"Q{quest.Id}: use item {contract.ItemUse.ItemId} (anywhere).");
-			if (quest.Id == contract.AirKills.QuestId && var >= contract.AirKills.FromVar && var <= contract.AirKills.RewardVar)
-				return Plan("air-kills", quest.Id, $"Q{quest.Id}: shoot the Abyss Fungus down (var {var} of {contract.AirKills.RewardVar}).");
+			if (contract.ItemUse is { } use && quest.Id == use.QuestId && var == use.Var)
+				return Plan("use-item", quest.Id, $"Q{quest.Id}: use item {use.ItemId} (anywhere).");
+			if (contract.AirKills is { } air && quest.Id == air.QuestId && var >= air.FromVar && var <= air.RewardVar)
+				return Plan("air-kills", quest.Id, $"Q{quest.Id}: shoot the Abyss Fungus down (var {var} of {air.RewardVar}).");
 			NaturalAltgardStep? next = contract.StepsFor(quest.Id).SingleOrDefault(step => step.ExpectedStatus == "START" && step.Var == var);
 			return next == null
 				? Stop("unexpected-var", "blocked", $"Q{quest.Id} var {var} has no contract step.", quest.Id)

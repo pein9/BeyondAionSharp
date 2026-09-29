@@ -109,7 +109,7 @@ public sealed class NaturalAltgardContractTests
 	{
 		NaturalAltgardContract contract = NaturalAltgardContract.LoadDefault();
 		XElement templates = XDocument.Load(Data("npcs", "npc_templates.xml")).Root!;
-		XElement[] flyZone = FlyZonePoints(contract.Flight.Zones[0].Name);
+		XElement[] flyZone = FlyZonePoints(contract.RequiredFlight.Zones[0].Name);
 		foreach (NaturalAltgardStep step in contract.Steps)
 		{
 			NaturalAltgardQuest quest = contract.Quest(step.QuestId);
@@ -137,7 +137,7 @@ public sealed class NaturalAltgardContractTests
 			// Flight steps are above the fortress inside its FLY zone; nothing else needs a flight.
 			Assert.Equal(step.Area == "borender-rock", step.Flight);
 			if (step.Flight)
-				Assert.True(InPolygon(flyZone, step.Position[0], step.Position[1]) && step.Position[2] <= contract.Flight.Zones[0].Top);
+				Assert.True(InPolygon(flyZone, step.Position[0], step.Position[1]) && step.Position[2] <= contract.RequiredFlight.Zones[0].Top);
 		}
 
 		// Every scripted quest is offered by an NPC except the campaign, and every one is finished at an NPC.
@@ -154,7 +154,7 @@ public sealed class NaturalAltgardContractTests
 		Assert.Contains("qe.RegisterQuestNpc(203572).AddOnTalkEvent(questId);", Handler("altgard/_2209TheScribbler.cs"), StringComparison.Ordinal);
 
 		// The dungeon lies below the FLY zone's floor, so no dungeon step can be flown to.
-		Assert.True(contract.Area("fortress-dungeon").Max[2] < contract.Flight.Zones[0].Bottom);
+		Assert.True(contract.Area("fortress-dungeon").Max[2] < contract.RequiredFlight.Zones[0].Bottom);
 	}
 
 	[Fact]
@@ -163,24 +163,24 @@ public sealed class NaturalAltgardContractTests
 		NaturalAltgardContract contract = NaturalAltgardContract.LoadDefault();
 
 		// Q2208: the Mau Secret Remedy is handed out on acceptance and works anywhere, three seconds, var 0 -> 1.
-		string mau = Handler(contract.Quest(contract.ItemUse.QuestId).Handler);
-		Assert.Contains($"GiveQuestItem(env, {contract.ItemUse.ItemId}, 1)", mau, StringComparison.Ordinal);
-		Assert.Contains($"qe.RegisterQuestItem({contract.ItemUse.ItemId}, questId)", mau, StringComparison.Ordinal);
-		Assert.Contains($"}}, {contract.ItemUse.UseMillis}L);", mau, StringComparison.Ordinal);
-		Assert.Contains($"qs.SetQuestVarById(0, {contract.ItemUse.NextVar})", mau, StringComparison.Ordinal);
-		Assert.True(contract.ItemUse.Anywhere);
+		string mau = Handler(contract.Quest(contract.RequiredItemUse.QuestId).Handler);
+		Assert.Contains($"GiveQuestItem(env, {contract.RequiredItemUse.ItemId}, 1)", mau, StringComparison.Ordinal);
+		Assert.Contains($"qe.RegisterQuestItem({contract.RequiredItemUse.ItemId}, questId)", mau, StringComparison.Ordinal);
+		Assert.Contains($"}}, {contract.RequiredItemUse.UseMillis}L);", mau, StringComparison.Ordinal);
+		Assert.Contains($"qs.SetQuestVarById(0, {contract.RequiredItemUse.NextVar})", mau, StringComparison.Ordinal);
+		Assert.True(contract.RequiredItemUse.Anywhere);
 		Assert.DoesNotContain("IsInsideZone", mau, StringComparison.Ordinal);
 
 		// Q24011: every Abyss Fungus floats over the fortress; the kills from var 2 run to the reward at var 6.
-		string fungus = Handler(contract.Quest(contract.AirKills.QuestId).Handler);
-		Assert.Contains($"qe.RegisterQuestNpc({contract.AirKills.NpcId}).AddOnKillEvent(questId)", fungus, StringComparison.Ordinal);
-		Assert.Contains($"var > 0 && var < {contract.AirKills.RewardVar}", fungus, StringComparison.Ordinal);
-		Assert.Contains($"ChangeQuestStep(env, {contract.AirKills.RewardVar}, {contract.AirKills.RewardVar}, true)", fungus, StringComparison.Ordinal);
-		Assert.Equal(contract.AirKills.RewardVar - contract.AirKills.FromVar + 1, contract.AirKills.KillsAfterBorender);
-		Assert.Equal(contract.AirKills.FromVar, contract.Steps.Single(step => step.Key == "q24011-v1-borender").Var + 1);
-		XElement[] spots = Spawns().Descendants("spawn").Where(spawn => (int?)spawn.Attribute("npc_id") == contract.AirKills.NpcId).Elements("spot").ToArray();
-		Assert.Equal(contract.AirKills.SpawnCount, spots.Length);
-		XElement[] flyZone = FlyZonePoints(contract.Flight.Zones[0].Name);
+		string fungus = Handler(contract.Quest(contract.RequiredAirKills.QuestId).Handler);
+		Assert.Contains($"qe.RegisterQuestNpc({contract.RequiredAirKills.NpcId}).AddOnKillEvent(questId)", fungus, StringComparison.Ordinal);
+		Assert.Contains($"var > 0 && var < {contract.RequiredAirKills.RewardVar}", fungus, StringComparison.Ordinal);
+		Assert.Contains($"ChangeQuestStep(env, {contract.RequiredAirKills.RewardVar}, {contract.RequiredAirKills.RewardVar}, true)", fungus, StringComparison.Ordinal);
+		Assert.Equal(contract.RequiredAirKills.RewardVar - contract.RequiredAirKills.FromVar + 1, contract.RequiredAirKills.KillsAfterBorender);
+		Assert.Equal(contract.RequiredAirKills.FromVar, contract.Steps.Single(step => step.Key == "q24011-v1-borender").Var + 1);
+		XElement[] spots = Spawns().Descendants("spawn").Where(spawn => (int?)spawn.Attribute("npc_id") == contract.RequiredAirKills.NpcId).Elements("spot").ToArray();
+		Assert.Equal(contract.RequiredAirKills.SpawnCount, spots.Length);
+		XElement[] flyZone = FlyZonePoints(contract.RequiredFlight.Zones[0].Name);
 		Assert.All(spots, spot =>
 		{
 			(float x, float y, float z) = ((float)spot.Attribute("x")!, (float)spot.Attribute("y")!, (float)spot.Attribute("z")!);
@@ -208,19 +208,19 @@ public sealed class NaturalAltgardContractTests
 		// Flight: the only two FLY zones in Altgard, the map's water level, the reuse delay and the base flight time.
 		XElement[] zones = XDocument.Load(Data("zones", "zones_220030000.xml")).Root!.Elements("zone")
 			.Where(zone => (string?)zone.Attribute("zone_type") == "FLY").ToArray();
-		Assert.Equal(contract.Flight.Zones.Select(zone => zone.Name).Order(), zones.Select(zone => (string)zone.Attribute("name")!).Order());
-		foreach (NaturalAltgardFlightZone expected in contract.Flight.Zones)
+		Assert.Equal(contract.RequiredFlight.Zones.Select(zone => zone.Name).Order(), zones.Select(zone => (string)zone.Attribute("name")!).Order());
+		foreach (NaturalAltgardFlightZone expected in contract.RequiredFlight.Zones)
 		{
 			XElement points = zones.Single(zone => (string?)zone.Attribute("name") == expected.Name).Element("points")!;
 			Assert.Equal((expected.Bottom, expected.Top), ((float)points.Attribute("bottom")!, (float)points.Attribute("top")!));
 		}
-		Assert.True(InPolygon(flyZone, contract.Hub.Anchor[0], contract.Hub.Anchor[1]) && contract.Hub.Anchor[2] >= contract.Flight.Zones[0].Bottom);
+		Assert.True(InPolygon(flyZone, contract.Hub.Anchor[0], contract.Hub.Anchor[1]) && contract.Hub.Anchor[2] >= contract.RequiredFlight.Zones[0].Bottom);
 		XElement map = Assert.Single(XDocument.Load(Data("world_maps.xml")).Root!.Elements("map"), node => (int?)node.Attribute("id") == contract.Hub.MapId);
-		Assert.Equal(contract.Flight.WaterLevel, (float)map.Attribute("water_level")!);
-		Assert.Contains($"FLY_REUSE_TIME = {contract.Flight.ReuseMillis};",
+		Assert.Equal(contract.RequiredFlight.WaterLevel, (float)map.Attribute("water_level")!);
+		Assert.Contains($"FLY_REUSE_TIME = {contract.RequiredFlight.ReuseMillis};",
 			File.ReadAllText(Path.Combine(Root(), "src/Aion.GameServer/Controllers/FlyController.cs")), StringComparison.Ordinal);
-		Assert.Equal(contract.Flight.MaxFlightTime, CustomConfig.BASE_FLYTIME);
-		Assert.Contains($"gameserver.base.flytime = {contract.Flight.MaxFlightTime}",
+		Assert.Equal(contract.RequiredFlight.MaxFlightTime, CustomConfig.BASE_FLYTIME);
+		Assert.Contains($"gameserver.base.flytime = {contract.RequiredFlight.MaxFlightTime}",
 			File.ReadAllText(Path.Combine(Root(), "game-server/config/main/custom.properties")), StringComparison.Ordinal);
 	}
 

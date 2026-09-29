@@ -1,0 +1,375 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2211,
+    "name": "Karnif Threat",
+    "nameId": 1103311,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 11,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2211,
+        "start_npc_ids": 203606
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203606,
+        "name": "olenja",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1628.28,
+            "y": 1453.05,
+            "z": 256.0,
+            "heading": 91,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203606,
+      "name": "olenja",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1628.28,
+          "y": 1453.05,
+          "z": 256.0,
+          "heading": 91,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203606,
+      "name": "olenja",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1628.28,
+          "y": 1453.05,
+          "z": 256.0,
+          "heading": 91,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 10,
+      "npc_ids": "210421 210422",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210421,
+          "name": "needletail karnif",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1544.63,
+              "y": 1495.79,
+              "z": 264.364,
+              "heading": 82,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1544.64,
+              "y": 1476.6,
+              "z": 262.25,
+              "heading": 117,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1547.29,
+              "y": 1410.73,
+              "z": 266.124,
+              "heading": 51,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1563.1,
+              "y": 1491.47,
+              "z": 265.901,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1575.99,
+              "y": 1432.23,
+              "z": 257.862,
+              "heading": 11,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1583.7,
+              "y": 1416.96,
+              "z": 259.343,
+              "heading": 64,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1606.4,
+              "y": 1412.18,
+              "z": 263.453,
+              "heading": 66,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1637.29,
+              "y": 1397.44,
+              "z": 264.723,
+              "heading": 73,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210422,
+          "name": "needletail karnif",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1399.17,
+              "y": 1430.24,
+              "z": 285.007,
+              "heading": 66,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1441.47,
+              "y": 1456.23,
+              "z": 280.775,
+              "heading": 35,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1451.59,
+              "y": 1524.37,
+              "z": 279.342,
+              "heading": 16,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1452.34,
+              "y": 1491.84,
+              "z": 278.445,
+              "heading": 35,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1462.47,
+              "y": 1399.46,
+              "z": 276.713,
+              "heading": 68,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1465.06,
+              "y": 1506.93,
+              "z": 275.543,
+              "heading": 101,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1477.63,
+              "y": 1491.4,
+              "z": 275.7,
+              "heading": 105,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1486.44,
+              "y": 1406.63,
+              "z": 278.305,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1516.33,
+              "y": 1516.56,
+              "z": 269.854,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1526.25,
+              "y": 1356.82,
+              "z": 260.132,
+              "heading": 87,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1529.95,
+              "y": 1510.11,
+              "z": 268.389,
+              "heading": 88,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1530.97,
+              "y": 1442.04,
+              "z": 265.815,
+              "heading": 94,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1556.27,
+              "y": 1434.44,
+              "z": 265.04,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1604.22,
+              "y": 1342.73,
+              "z": 264.236,
+              "heading": 2,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1626.56,
+              "y": 1350.03,
+              "z": 265.031,
+              "heading": 39,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203606,
+          "name": "olenja",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1628.28,
+              "y": 1453.05,
+              "z": 256.0,
+              "heading": 91,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 16950,
+        "gold": 7220,
+        "rewardItems": [
+          {
+            "count": 45,
+            "item_id": 169300003
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2211,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 11,
+      "name": "Karnif Threat",
+      "nameId": 1103311,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 16950,
+          "gold": 7220
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 45,
+              "item_id": 169300003
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 10,
+          "npc_ids": "210421 210422",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

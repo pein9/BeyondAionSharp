@@ -14,15 +14,15 @@ public sealed class NaturalFlightPolicyTests
 	private static readonly BotPosition BorenderRock = new(1618.5f, 1806.66f, 406f, 0);
 
 	private static NaturalTakeoffObservation Ready(BotPosition? at = null) =>
-		new(Daeva: true, at ?? BesideObelisk, OnWaterArea: false, WaterLevel: Contract.Flight.WaterLevel, NowMillis: 100_000,
+		new(Daeva: true, at ?? BesideObelisk, OnWaterArea: false, WaterLevel: Contract.RequiredFlight.WaterLevel, NowMillis: 100_000,
 			LastTakeoffMillis: null, NoFlyEffect: false, Transformed: false, PrivateStore: false);
 
 	[Fact]
 	public void AltgardHasExactlyTheContractsTwoFlyZonesAndNoNoFlyZone()
 	{
-		Assert.Equal(Contract.Flight.Zones.Select(zone => zone.Name).Order(), Zones.Value.Select(zone => zone.Name).Order());
+		Assert.Equal(Contract.RequiredFlight.Zones.Select(zone => zone.Name).Order(), Zones.Value.Select(zone => zone.Name).Order());
 		Assert.All(Zones.Value, zone => Assert.False(zone.Forbids));
-		NaturalFlyZone fortress = Zones.Value.Single(zone => zone.Name == Contract.Flight.Zones[0].Name);
+		NaturalFlyZone fortress = Zones.Value.Single(zone => zone.Name == Contract.RequiredFlight.Zones[0].Name);
 		Assert.True(fortress.Contains(BesideObelisk.X, BesideObelisk.Y, BesideObelisk.Z));
 		Assert.True(fortress.Contains(BorenderRock.X, BorenderRock.Y, BorenderRock.Z));
 		Assert.False(fortress.Contains(BesideObelisk.X, BesideObelisk.Y, 441), "above the ceiling");
@@ -44,13 +44,13 @@ public sealed class NaturalFlightPolicyTests
 		NaturalFlightDecision wet = NaturalFlightPolicy.CanTakeOff(Ready() with { OnWaterArea = true }, Zones.Value);
 		Assert.False(wet.Allowed);
 		Assert.Contains("water", wet.Reason, StringComparison.Ordinal);
-		var lakeBed = new BotPosition(1430, 1740, Contract.Flight.WaterLevel + 41, 0);
+		var lakeBed = new BotPosition(1430, 1740, Contract.RequiredFlight.WaterLevel + 41, 0);
 		Assert.True(NaturalFlightPolicy.CanTakeOff(Ready(lakeBed), Zones.Value).Allowed);
 		var fortressZone = new NaturalFlyZone("low", false, [(0, 0), (0, 100), (100, 100), (100, 0)], 0, 440);
 		Assert.False(NaturalFlightPolicy.CanTakeOff(Ready(new BotPosition(50, 50, 199, 0)), [fortressZone]).Allowed);
 
 		// Java: the next takeoff is allowed FLY_REUSE_TIME - 100 ms after the last.
-		Assert.Equal(NaturalFlightPolicy.TakeoffReuseMillis, Contract.Flight.ReuseMillis - 100);
+		Assert.Equal(NaturalFlightPolicy.TakeoffReuseMillis, Contract.RequiredFlight.ReuseMillis - 100);
 		Assert.False(NaturalFlightPolicy.CanTakeOff(Ready() with { LastTakeoffMillis = 100_000 - 9_899 }, Zones.Value).Allowed);
 		Assert.True(NaturalFlightPolicy.CanTakeOff(Ready() with { LastTakeoffMillis = 100_000 - 9_900 }, Zones.Value).Allowed);
 	}
@@ -62,7 +62,7 @@ public sealed class NaturalFlightPolicyTests
 		float up = NaturalFlightPolicy.Distance(BesideObelisk, BorenderRock);
 		var toRock = new NaturalFlightPlan([BesideObelisk with { Z = 300 }, BorenderRock], [up], speed, 0);
 		Assert.Equal((int)MathF.Ceiling(up / speed), NaturalFlightPolicy.FlightCost(toRock));
-		Assert.True(NaturalFlightPolicy.CanFly(toRock, Contract.Flight.MaxFlightTime, Zones.Value).Allowed);
+		Assert.True(NaturalFlightPolicy.CanFly(toRock, Contract.RequiredFlight.MaxFlightTime, Zones.Value).Allowed);
 
 		// The FP reserve: with only the cost plus 9 FP the flight is refused; with the cost plus 10 it is taken.
 		int cost = NaturalFlightPolicy.FlightCost(toRock);
@@ -101,7 +101,7 @@ public sealed class NaturalFlightPolicyTests
 		// From empty to full: 20 ticks, the first at 3 s: 117 s on the ground.
 		Assert.Equal(117_000, NaturalFlightPolicy.RestoreMillis(0, 60, 60));
 		Assert.Equal(117_000, NaturalFlightPolicy.RestoreMillis(0, 90, 60));
-		Assert.Equal(60, Contract.Flight.MaxFlightTime);
+		Assert.Equal(60, Contract.RequiredFlight.MaxFlightTime);
 	}
 
 	[Fact]

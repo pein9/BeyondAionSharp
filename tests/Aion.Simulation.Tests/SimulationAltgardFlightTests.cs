@@ -51,7 +51,7 @@ public sealed partial class SimulationFastScenarioTests
 			?? throw new InvalidDataException("No rock top beside Borender.");
 		Assert.True(contract.Area("borender-rock").Contains(rock.X, rock.Y, rock.Z), $"rock top {rock}");
 		int maxFp = session.Api.World.MaxFlightTime;
-		Assert.Equal(contract.Flight.MaxFlightTime, maxFp);
+		Assert.Equal(contract.RequiredFlight.MaxFlightTime, maxFp);
 		long? lastTakeoff = null;
 
 		int leg = 0;
@@ -60,7 +60,7 @@ public sealed partial class SimulationFastScenarioTests
 			session.BeginStep($"s{++leg:00}", $"fly-{name}");
 			// Takeoff reuse and flight time on the ground: wait them out as a player would.
 			long now = fixture.Clock.NowMillis;
-			var takeoff = new NaturalTakeoffObservation(true, from, OnWaterArea: false, contract.Flight.WaterLevel, now, lastTakeoff,
+			var takeoff = new NaturalTakeoffObservation(true, from, OnWaterArea: false, contract.RequiredFlight.WaterLevel, now, lastTakeoff,
 				NoFlyEffect: false, Transformed: false, PrivateStore: false);
 			if (lastTakeoff is { } last && now < last + NaturalFlightPolicy.TakeoffReuseMillis)
 				await session.AdvanceAsync(TimeSpan.FromMilliseconds(last + NaturalFlightPolicy.TakeoffReuseMillis - now), token);

@@ -117,7 +117,7 @@ public sealed partial class SimulationFastScenarioTests
 			if (wait > 0) await session.AdvanceAsync(TimeSpan.FromMilliseconds(wait + 100), token);
 			await session.SynchronizeAsync(token);
 			NaturalFlightDecision ready = NaturalFlightPolicy.CanTakeOff(new NaturalTakeoffObservation(true, from, false,
-				contract.Flight.WaterLevel, fixture.Clock.NowMillis, lastTakeoff, false, false, false), zones);
+				contract.RequiredFlight.WaterLevel, fixture.Clock.NowMillis, lastTakeoff, false, false, false), zones);
 			Assert.True(ready.Allowed, ready.Reason);
 			NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, altgard, from, to, cruise);
 			Assert.True(route.IsUsable, route.Refusal);
@@ -144,13 +144,13 @@ public sealed partial class SimulationFastScenarioTests
 		foreach (string key in new[] { "q2207-offer-emgata", "q2207-v0-itu", "q2207-v1-suthran", "q2207-v2-itu", "q2208-offer-itu" })
 			await PlayAsync(key);
 		session.BeginStep($"s{++stepNumber:00}", "use-the-mau-secret-remedy");
-		await NaturalAltgardQuestSteps.UseQuestItemAsync(session, contract.ItemUse,
-			fixture.DataManager.StaticData.ItemDataDh.GetItemTemplate(contract.ItemUse.ItemId), token);
+		await NaturalAltgardQuestSteps.UseQuestItemAsync(session, contract.RequiredItemUse,
+			fixture.DataManager.StaticData.ItemDataDh.GetItemTemplate(contract.RequiredItemUse.ItemId), token);
 		foreach (string key in new[] { "q2208-v1-mumu-bon", "q2208-reward-itu", "q24011-v0-valurion", "q24011-v1-borender" })
 			await PlayAsync(key);
 
 		session.BeginStep($"s{++stepNumber:00}", "q24011-air-kills");
-		NaturalAirCombat.Outcome kills = await NaturalAirCombat.RunAsync(session, geometry, altgard, zones, contract.Flight.WaterLevel,
+		NaturalAirCombat.Outcome kills = await NaturalAirCombat.RunAsync(session, geometry, altgard, zones, contract.RequiredFlight.WaterLevel,
 			new NaturalLandingTarget("platform", rock), cruise, 24011,
 			(origin, skill, level, target) => runtime.CreateSpellCast(session.Api.World, origin, skill, level, target),
 			() => fixture.Clock.NowMillis, token);
