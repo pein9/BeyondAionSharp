@@ -103,4 +103,22 @@ public sealed class NaturalFlightPolicyTests
 		Assert.Equal(117_000, NaturalFlightPolicy.RestoreMillis(0, 90, 60));
 		Assert.Equal(60, Contract.Flight.MaxFlightTime);
 	}
+
+	[Fact]
+	public void AirCombatTakesAFungusOnlyWhenTheKillAndTheWayToTheLandingLeaveTheReserve()
+	{
+		var rock = new NaturalLandingTarget("platform", BorenderRock);
+		var hovering = new BotPosition(1640, 1830, 370, 0);
+		(int, BotPosition) near = (1, new BotPosition(1642.47f, 1845.79f, 368.275f, 0));
+		(int, BotPosition) far = (2, new BotPosition(1720, 1770, 380, 0));
+		NaturalAirCombatDecision attack = NaturalAirCombatPolicy.Decide(new(hovering, 60, 9, [far, near], rock));
+		Assert.Equal(("attack", 1), (attack.Action, attack.Target));
+		// The same fungus with too little flight time left: land and refill first.
+		int toTarget = (int)MathF.Ceiling(MathF.Max(0, NaturalFlightPolicy.Distance(hovering, near.Item2) - NaturalAirCombatPolicy.HoverDistance) / 9);
+		int back = (int)MathF.Ceiling(NaturalFlightPolicy.Distance(near.Item2, BorenderRock) / 9);
+		int cost = toTarget + NaturalAirCombatPolicy.KillSeconds + back;
+		Assert.Equal("attack", NaturalAirCombatPolicy.Decide(new(hovering, cost + NaturalFlightPolicy.LandingReserveFp, 9, [near], rock)).Action);
+		Assert.Equal("land", NaturalAirCombatPolicy.Decide(new(hovering, cost + NaturalFlightPolicy.LandingReserveFp - 1, 9, [near], rock)).Action);
+		Assert.Equal("wait", NaturalAirCombatPolicy.Decide(new(hovering, 60, 9, [], rock)).Action);
+	}
 }

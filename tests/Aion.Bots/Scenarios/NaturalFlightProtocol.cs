@@ -35,6 +35,9 @@ public static class NaturalFlightProtocol
 	public static NaturalFlightRoute Plan(BotNavigationGeometry geometry, int mapId, BotPosition start, BotPosition end, float cruiseZ)
 	{
 		float cruise = MathF.Max(cruiseZ, MathF.Max(start.Z, end.Z));
+		// Air to air (or any clear line): fly straight.
+		NaturalFlightRoute straight = Check(geometry, mapId, start, [end]);
+		if (straight.IsUsable) return straight;
 		NaturalFlightRoute direct = Check(geometry, mapId, start, [start with { Z = cruise }, end with { Z = cruise }, end]);
 		if (direct.IsUsable) return direct;
 		bool startIsLow = start.Z <= end.Z;

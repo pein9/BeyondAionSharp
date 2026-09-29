@@ -445,9 +445,28 @@ with "AF" in place of "NA").
   - The offline test `FlightToBorenderGoesAroundTheFloatingIsland`
     (`run/af05/af05-offline.log`) pins the blocked straight climb and the clear detour
     both ways. The warning, logger and clock-read checks pass.
-- [ ] **AF-06 — Air combat for Q24011.** Kill the Abyss Fungus from the air within the FP
+- [x] **AF-06 — Air combat for Q24011.** Kill the Abyss Fungus from the air within the FP
   budget: fly to one, kill it, land to refill as needed. A fall or death is recorded
   (OD-12). **Done when:** a SIM probe completes Q24011's six kills.
+  - *Done 2026-09-29.* The Abyss Fungus never fight back (`ai="noaction"`, 240 HP,
+    respawn 20 s), so flight time is the only danger.
+    - `NaturalAirCombatPolicy` takes the nearest fungus only when flying to it, killing it
+      (8 s) and flying on to the landing still leaves the 10 FP reserve; otherwise the bot
+      lands and refills.
+    - `NaturalAirCombat` finds a hover point within Smite range, in sight of the fungus and
+      reachable by the flight planner (fungus under the island's edge are seen from few
+      angles). It shoots with Smite and counts a kill from the 0% status, the object's
+      removal or the quest counter. Corpses stay visible until `SM_DELETE`, so shot-down
+      fungus are skipped.
+    - Air-to-air legs now fly straight when clear.
+  - SIM probe `AltgardAirCombatCompletesTheFungusKills` (`run/af06/af06-sim.log` and its
+    trace): a level 10 Daeva Cleric with Q24011 at var 2 (GM setup; Borender's talk is
+    AF-07's) finds no fungus visible from the ground and lands on Borender's rock, where
+    they come into view. It kills four, lands to refill (the fifth would have cost 16 of
+    25 FP), and kills a respawned fifth. Q24011 goes to REWARD with 5 kills in 3 sorties,
+    5.7 s of shooting each (two Smites), no death and no fall.
+  - The policy test covers the reserve edge and the no-target wait. The warning, logger and
+    clock-read checks pass.
 - [ ] **AF-07 — Leg 1 quest mechanics.** Talk chains (Q2207), item use in the dungeon
   (Q2208, Mau Secret Remedy), Q2209's chain (Thrud → Tulberg → Borender → Noroia), and the
   template kill and collect quests (Q2201–2206, including the crystal stone objects for
@@ -512,3 +531,4 @@ The original questions follow.
 - 2026-09-29 AF-03: the Fortress Dungeon is a ramp walk; SIM probe talked to Noroia and Mumu Bon and walked back.
 - 2026-09-29 AF-04: pure flight policy (takeoff, water, reuse, FP budget and reserve, zone bounds, landing, restore) with five tests.
 - 2026-09-29 AF-05: flight protocol; the bot flies around the floating island to Borender's rock, talks, and flies back (FP 60 → 37, 40 → 17).
+- 2026-09-29 AF-06: air combat; Q24011 reached REWARD in SIM with 5 fungus kills in 3 sorties, refilling on Borender's rock.
