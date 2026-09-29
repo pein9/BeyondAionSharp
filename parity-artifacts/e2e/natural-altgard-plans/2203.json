@@ -1,0 +1,343 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2203,
+    "name": "Ice Lake Crystals",
+    "nameId": 1103303,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 10,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2203,
+        "start_npc_ids": 203556
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203556,
+        "name": "nemnef",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1658.57,
+            "y": 1818.39,
+            "z": 253.72,
+            "heading": 110,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203556,
+      "name": "nemnef",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1658.57,
+          "y": 1818.39,
+          "z": 253.72,
+          "heading": 110,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203556,
+      "name": "nemnef",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1658.57,
+          "y": 1818.39,
+          "z": 253.72,
+          "heading": 110,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 6,
+      "item_id": 182203201,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182203201,
+          "npc_id": 700055,
+          "npc": {
+            "id": 700055,
+            "name": "crystal stone",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1483.49,
+                "y": 1888.72,
+                "z": 247.25,
+                "heading": 12,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1495.68,
+                "y": 1872.14,
+                "z": 247.25,
+                "heading": 26,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1514.41,
+                "y": 1943.01,
+                "z": 247.25,
+                "heading": 90,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1530.55,
+                "y": 1634.34,
+                "z": 247.38,
+                "heading": 71,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1542.66,
+                "y": 1684.72,
+                "z": 248.12,
+                "heading": 46,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1554.42,
+                "y": 1945.73,
+                "z": 248.16,
+                "heading": 22,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1598.83,
+                "y": 1636.27,
+                "z": 247.25,
+                "heading": 31,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1613.43,
+                "y": 1975.94,
+                "z": 248.48,
+                "heading": 38,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1621.99,
+                "y": 1623.88,
+                "z": 247.25,
+                "heading": 28,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1654.51,
+                "y": 1623.63,
+                "z": 247.25,
+                "heading": 113,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1679.16,
+                "y": 1633.03,
+                "z": 247.43,
+                "heading": 31,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1702.21,
+                "y": 1609.37,
+                "z": 247.89,
+                "heading": 96,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1717.55,
+                "y": 1630.74,
+                "z": 248.51,
+                "heading": 112,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1736.07,
+                "y": 1618.45,
+                "z": 247.81,
+                "heading": 50,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1818.33,
+                "y": 1627.9,
+                "z": 247.38,
+                "heading": 105,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1828.3,
+                "y": 1546.39,
+                "z": 248.98,
+                "heading": 18,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1844.17,
+                "y": 1567.97,
+                "z": 247.38,
+                "heading": 29,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1847.44,
+                "y": 1644.55,
+                "z": 247.38,
+                "heading": 32,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1851.79,
+                "y": 1602.88,
+                "z": 247.38,
+                "heading": 75,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1865.0,
+                "y": 1808.93,
+                "z": 247.38,
+                "heading": 32,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203556,
+          "name": "nemnef",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1658.57,
+              "y": 1818.39,
+              "z": 253.72,
+              "heading": 110,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 5715,
+        "gold": 4370,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2203,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 10,
+      "name": "Ice Lake Crystals",
+      "nameId": 1103303,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 6,
+              "item_id": 182203201
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 5715,
+          "gold": 4370
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182203201,
+          "npc_id": 700055
+        }
+      }
+    ]
+  }
+}

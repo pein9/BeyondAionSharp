@@ -1,0 +1,390 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2204,
+    "name": "Sparkie Sap Polish",
+    "nameId": 1103304,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 10,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2204,
+        "start_npc_ids": 203576
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203576,
+        "name": "nirmirn",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1618.83,
+            "y": 1916.97,
+            "z": 262.936,
+            "heading": 98,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203576,
+      "name": "nirmirn",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1618.83,
+          "y": 1916.97,
+          "z": 262.936,
+          "heading": 98,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203576,
+      "name": "nirmirn",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1618.83,
+          "y": 1916.97,
+          "z": 262.936,
+          "heading": 98,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 5,
+      "item_id": 182203202,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203202,
+          "npc_id": 210411,
+          "npc": {
+            "id": 210411,
+            "name": "ice lake sparkie",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1482.99,
+                "y": 1801.25,
+                "z": 247.39,
+                "heading": 104,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1523.81,
+                "y": 1605.69,
+                "z": 247.105,
+                "heading": 53,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1531.93,
+                "y": 2006.33,
+                "z": 247.125,
+                "heading": 43,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1625.06,
+                "y": 1607.43,
+                "z": 247.184,
+                "heading": 93,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1635.6,
+                "y": 1617.24,
+                "z": 247.25,
+                "heading": 20,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1832.29,
+                "y": 1604.76,
+                "z": 247.375,
+                "heading": 119,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1833.73,
+                "y": 1590.97,
+                "z": 247.375,
+                "heading": 75,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1866.17,
+                "y": 1955.04,
+                "z": 247.375,
+                "heading": 51,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1877.82,
+                "y": 1960.01,
+                "z": 247.375,
+                "heading": 80,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1882.19,
+                "y": 1773.2,
+                "z": 247.375,
+                "heading": 12,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1898.63,
+                "y": 1767.36,
+                "z": 247.375,
+                "heading": 120,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203202,
+          "npc_id": 210412,
+          "npc": {
+            "id": 210412,
+            "name": "ice lake sparkie",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1476.81,
+                "y": 1812.73,
+                "z": 247.426,
+                "heading": 52,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1482.49,
+                "y": 1825.09,
+                "z": 247.531,
+                "heading": 11,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1510.29,
+                "y": 1614.38,
+                "z": 247.25,
+                "heading": 34,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1517.93,
+                "y": 2012.97,
+                "z": 247.25,
+                "heading": 19,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1521.42,
+                "y": 2023.95,
+                "z": 247.375,
+                "heading": 4,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1609.76,
+                "y": 1627.16,
+                "z": 247.25,
+                "heading": 114,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1817.55,
+                "y": 1594.05,
+                "z": 247.375,
+                "heading": 5,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1861.76,
+                "y": 1970.53,
+                "z": 247.375,
+                "heading": 57,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1870.58,
+                "y": 1972.25,
+                "z": 247.375,
+                "heading": 80,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1894.16,
+                "y": 1785.16,
+                "z": 247.375,
+                "heading": 79,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203576,
+          "name": "nirmirn",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1618.83,
+              "y": 1916.97,
+              "z": 262.936,
+              "heading": 98,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 10080,
+        "gold": 4540,
+        "rewardItems": [
+          {
+            "count": 6,
+            "item_id": 162000002
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2204,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 10,
+      "name": "Sparkie Sap Polish",
+      "nameId": 1103304,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 182203202
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 10080,
+          "gold": 4540
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 6,
+              "item_id": 162000002
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203202,
+          "npc_id": 210411
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203202,
+          "npc_id": 210412
+        }
+      }
+    ]
+  }
+}

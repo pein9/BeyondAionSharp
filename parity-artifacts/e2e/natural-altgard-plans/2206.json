@@ -1,0 +1,524 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2206,
+    "name": "Slinking About",
+    "nameId": 1103306,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 10,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2206,
+        "start_npc_ids": 203562
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203562,
+        "name": "tulberg",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1684.45,
+            "y": 1755.38,
+            "z": 259.1421,
+            "heading": 120,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203562,
+      "name": "tulberg",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1684.45,
+          "y": 1755.38,
+          "z": 259.1421,
+          "heading": 120,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203562,
+      "name": "tulberg",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1684.45,
+          "y": 1755.38,
+          "z": 259.1421,
+          "heading": 120,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 5,
+      "item_id": 182203204,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203204,
+          "npc_id": 210416,
+          "npc": {
+            "id": 210416,
+            "name": "frost slink",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1476.33,
+                "y": 1751.05,
+                "z": 247.375,
+                "heading": 82,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1518.25,
+                "y": 1885.73,
+                "z": 248.422,
+                "heading": 21,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1536.29,
+                "y": 1760.29,
+                "z": 258.641,
+                "heading": 30,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1538.78,
+                "y": 1666.2,
+                "z": 247.375,
+                "heading": 107,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1539.27,
+                "y": 1749.86,
+                "z": 259.524,
+                "heading": 77,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1547.0,
+                "y": 1692.47,
+                "z": 248.654,
+                "heading": 102,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1572.65,
+                "y": 1923.9,
+                "z": 257.875,
+                "heading": 111,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1573.15,
+                "y": 1663.56,
+                "z": 248.044,
+                "heading": 116,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1592.05,
+                "y": 1645.47,
+                "z": 247.25,
+                "heading": 61,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1596.96,
+                "y": 1978.75,
+                "z": 248.454,
+                "heading": 115,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1653.49,
+                "y": 1990.34,
+                "z": 248.968,
+                "heading": 63,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1676.38,
+                "y": 1633.78,
+                "z": 247.597,
+                "heading": 110,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1749.19,
+                "y": 1591.69,
+                "z": 248.531,
+                "heading": 10,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1757.46,
+                "y": 1667.46,
+                "z": 248.365,
+                "heading": 82,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1769.19,
+                "y": 1970.56,
+                "z": 248.84,
+                "heading": 15,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1777.31,
+                "y": 1741.59,
+                "z": 257.957,
+                "heading": 69,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1796.49,
+                "y": 1682.84,
+                "z": 248.824,
+                "heading": 66,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1829.15,
+                "y": 1731.36,
+                "z": 247.838,
+                "heading": 73,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1834.95,
+                "y": 1878.01,
+                "z": 248.452,
+                "heading": 7,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1845.9,
+                "y": 1822.54,
+                "z": 247.388,
+                "heading": 45,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203204,
+          "npc_id": 210417,
+          "npc": {
+            "id": 210417,
+            "name": "frost slink",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1520.2,
+                "y": 1814.86,
+                "z": 257.875,
+                "heading": 69,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1522.11,
+                "y": 1710.57,
+                "z": 248.257,
+                "heading": 80,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1526.42,
+                "y": 1780.95,
+                "z": 257.875,
+                "heading": 34,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1533.56,
+                "y": 1706.35,
+                "z": 249.027,
+                "heading": 79,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1547.79,
+                "y": 1681.29,
+                "z": 247.911,
+                "heading": 38,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1560.32,
+                "y": 1919.79,
+                "z": 257.875,
+                "heading": 46,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1600.77,
+                "y": 1647.85,
+                "z": 247.25,
+                "heading": 74,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1667.01,
+                "y": 2005.06,
+                "z": 247.375,
+                "heading": 107,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1698.75,
+                "y": 1623.87,
+                "z": 247.375,
+                "heading": 82,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1724.72,
+                "y": 1511.97,
+                "z": 250.579,
+                "heading": 55,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1749.86,
+                "y": 1608.53,
+                "z": 248.417,
+                "heading": 20,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1754.59,
+                "y": 1524.07,
+                "z": 248.591,
+                "heading": 117,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1789.32,
+                "y": 1766.42,
+                "z": 257.875,
+                "heading": 25,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1811.78,
+                "y": 1939.95,
+                "z": 248.172,
+                "heading": 10,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1812.2,
+                "y": 1695.03,
+                "z": 248.79,
+                "heading": 17,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1816.18,
+                "y": 1913.09,
+                "z": 249.375,
+                "heading": 58,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1835.65,
+                "y": 1776.34,
+                "z": 248.68,
+                "heading": 19,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1844.7,
+                "y": 1858.79,
+                "z": 248.402,
+                "heading": 75,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203562,
+          "name": "tulberg",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1684.45,
+              "y": 1755.38,
+              "z": 259.1421,
+              "heading": 120,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 6015,
+        "rewardItems": [
+          {
+            "count": 8,
+            "item_id": 164000067
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2206,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 10,
+      "name": "Slinking About",
+      "nameId": 1103306,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 182203204
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 6015
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 8,
+              "item_id": 164000067
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203204,
+          "npc_id": 210416
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203204,
+          "npc_id": 210417
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "altgard-l1-fortress",
+  "start": {
+    "contract": "natural-ascension-contract.json",
+    "snapshot": "altgard",
+    "mapId": 220030000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 10,
+    "bindNpcId": 700065,
+    "completedQuestIds": [2008, 2009, 2904, 24010],
+    "lockedQuestIds": [24011]
+  },
+  "hub": {
+    "key": "altgard-fortress",
+    "mapId": 220030000,
+    "anchor": [1658.44, 1815.301, 254.099],
+    "radius": 160
+  },
+  "areas": [
+    { "key": "ice-lake", "note": "the Q2201-2206 targets on the frozen lake around the fortress, mostly west of it", "min": [1400, 1500, 240], "max": [1910, 2030, 262] },
+    { "key": "fortress-dungeon", "note": "Mumu Bon and Noroia, below the fortress floor", "min": [1650, 1780, 195], "max": [1720, 1840, 215] },
+    { "key": "borender-rock", "note": "Borender's floating rock; reached only by flight", "min": [1610, 1795, 400], "max": [1632, 1818, 412] },
+    { "key": "fungus-air", "note": "the Abyss Fungus float over the fortress", "min": [1600, 1750, 360], "max": [1730, 1860, 405] }
+  ],
+  "quests": [
+    { "id": 2201, "category": "QUEST", "minimumLevel": 10, "rewardExperience": 14700, "prerequisite": null, "handler": "template", "template": "monster_hunt", "startNpcId": 203563, "area": "ice-lake" },
+    { "id": 2202, "category": "QUEST", "minimumLevel": 10, "rewardExperience": 13185, "prerequisite": null, "handler": "template", "template": "monster_hunt", "startNpcId": 203560, "area": "ice-lake" },
+    { "id": 2203, "category": "QUEST", "minimumLevel": 10, "rewardExperience": 5715, "prerequisite": null, "handler": "template", "template": "item_collecting", "startNpcId": 203556, "area": "ice-lake" },
+    { "id": 2204, "category": "QUEST", "minimumLevel": 10, "rewardExperience": 10080, "prerequisite": null, "handler": "template", "template": "item_collecting", "startNpcId": 203576, "area": "ice-lake" },
+    { "id": 2205, "category": "QUEST", "minimumLevel": 10, "rewardExperience": 9315, "prerequisite": null, "handler": "template", "template": "item_collecting", "startNpcId": 203582, "area": "ice-lake" },
+    { "id": 2206, "category": "QUEST", "minimumLevel": 10, "rewardExperience": 6015, "prerequisite": null, "handler": "template", "template": "item_collecting", "startNpcId": 203562, "area": "ice-lake" },
+    { "id": 2209, "category": "QUEST", "minimumLevel": 10, "rewardExperience": 9780, "prerequisite": null, "handler": "altgard/_2209TheScribbler.cs", "template": null, "startNpcId": 203555, "area": null },
+    { "id": 2207, "category": "IMPORTANT", "minimumLevel": 11, "rewardExperience": 15635, "prerequisite": null, "handler": "altgard/_2207ConversingWithaSkurv.cs", "template": null, "startNpcId": 203590, "area": null },
+    { "id": 2208, "category": "IMPORTANT", "minimumLevel": 11, "rewardExperience": 16283, "prerequisite": 2207, "handler": "altgard/_2208MauInTenMinutesADay.cs", "template": null, "startNpcId": 203591, "area": "fortress-dungeon" },
+    { "id": 24011, "category": "MISSION", "minimumLevel": 11, "rewardExperience": 31309, "prerequisite": null, "handler": "altgard/_24011FunnyFloatingFungus.cs", "template": null, "startNpcId": null, "area": "fungus-air" }
+  ],
+  "order": [2201, 2202, 2203, 2204, 2205, 2206, 2209, 2207, 2208, 24011],
+  "steps": [
+    { "key": "q2209-offer-thrud", "questId": 2209, "status": "OFFER", "npcId": 203555, "position": [1614.32, 1797.54, 256.488], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "QUEST_ACCEPT_1"], "pages": [1011] },
+    { "key": "q2209-v0-tulberg", "questId": 2209, "var": 0, "npcId": 203562, "position": [1684.45, 1755.38, 259.1421], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO1"], "pages": [1352] },
+    { "key": "q2209-v1-borender", "questId": 2209, "var": 1, "npcId": 203572, "position": [1620.69, 1806.66, 406], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO2"], "pages": [1693], "area": "borender-rock", "flight": true, "correction": "D26" },
+    { "key": "q2209-v2-noroia", "questId": 2209, "var": 2, "npcId": 203592, "position": [1703.96, 1792.58, 205.093], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO3"], "pages": [2034], "area": "fortress-dungeon" },
+    { "key": "q2209-v3-thrud", "questId": 2209, "var": 3, "npcId": 203555, "position": [1614.32, 1797.54, 256.488], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_NOREWARD"], "pages": [2375] },
+    { "key": "q2207-offer-emgata", "questId": 2207, "status": "OFFER", "npcId": 203590, "position": [1736, 1691, 256.75], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "QUEST_ACCEPT_1"], "pages": [1011] },
+    { "key": "q2207-v0-itu", "questId": 2207, "var": 0, "npcId": 203591, "position": [1737.92, 1692.01, 257.226], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO1"], "pages": [1352] },
+    { "key": "q2207-v1-suthran", "questId": 2207, "var": 1, "npcId": 203557, "position": [1662.63, 1748.56, 260.236], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO2"], "pages": [1693] },
+    { "key": "q2207-v2-itu", "questId": 2207, "var": 2, "npcId": 203591, "position": [1737.92, 1692.01, 257.226], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_NOREWARD"], "pages": [2375] },
+    { "key": "q2208-offer-itu", "questId": 2208, "status": "OFFER", "npcId": 203591, "position": [1737.92, 1692.01, 257.226], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "QUEST_ACCEPT_1"], "pages": [1011], "receivesItemId": 182203205 },
+    { "key": "q2208-v1-mumu-bon", "questId": 2208, "var": 1, "npcId": 203589, "position": [1666.14, 1827.12, 203.398], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO1"], "pages": [1352], "area": "fortress-dungeon" },
+    { "key": "q2208-reward-itu", "questId": 2208, "status": "REWARD", "npcId": 203591, "position": [1737.92, 1692.01, 257.226], "talkRange": 6,
+      "actions": ["USE_OBJECT", "SELECTED_QUEST_NOREWARD"], "pages": [] },
+    { "key": "q24011-v0-valurion", "questId": 24011, "var": 0, "npcId": 203558, "position": [1674.39, 1900.04, 256.849], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO1"], "pages": [1011] },
+    { "key": "q24011-v1-borender", "questId": 24011, "var": 1, "npcId": 203572, "position": [1620.69, 1806.66, 406], "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SELECT2_1", "SETPRO2"], "pages": [1352, 1353], "movieId": 60, "area": "borender-rock", "flight": true },
+    { "key": "q24011-reward-valurion", "questId": 24011, "status": "REWARD", "npcId": 203558, "position": [1674.39, 1900.04, 256.849], "talkRange": 6,
+      "actions": ["USE_OBJECT", "SELECTED_QUEST_REWARD4"], "pages": [] }
+  ],
+  "itemUse": { "questId": 2208, "itemId": 182203205, "var": 0, "nextVar": 1, "useMillis": 3000, "anywhere": true },
+  "airKills": {
+    "questId": 24011,
+    "npcId": 700092,
+    "spawnCount": 12,
+    "fromVar": 2,
+    "rewardVar": 6,
+    "killsAfterBorender": 5,
+    "note": "Java counts kills from var 1 as well, so a fungus killed before Borender's talk skips that step; the bot talks to Borender first"
+  },
+  "rewardChoice": { "questId": 24011, "action": "SELECTED_QUEST_REWARD4", "itemId": 114501726, "itemGroup": "CH_SHOES" },
+  "unhandedWorkItemIds": { "2207": 182203257, "2209": 182203206 },
+  "flight": {
+    "zones": [
+      { "name": "DF1_FZ_VERTERRON_220030000", "bottom": 240, "top": 440 },
+      { "name": "DF1A_FZ_TOWN3_220030000", "bottom": 200, "top": 440 }
+    ],
+    "waterLevel": 200,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [
+    { "id": 2210, "reason": "ends at Moslan Crossroad, outside the fortress (AF-Q2)", "leg": 2 },
+    { "id": 24012, "reason": "Moslan Crossroad and MuMu Farmland, outside the fortress (AF-Q2)", "leg": 2 }
+  ],
+  "endpoint": {
+    "mapId": 220030000,
+    "completedQuestIds": [2201, 2202, 2203, 2204, 2205, 2206, 2207, 2208, 2209, 24011],
+    "inHub": true,
+    "alive": true,
+    "minimumLevel": 11,
+    "snapshot": "altgard-l12"
+  }
+}

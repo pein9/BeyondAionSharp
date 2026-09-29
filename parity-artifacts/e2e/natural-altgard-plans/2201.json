@@ -1,0 +1,457 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2201,
+    "name": "The Crasaur Threat",
+    "nameId": 1103301,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 10,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2201,
+        "start_npc_ids": 203563
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203563,
+        "name": "heidunn",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1730.67,
+            "y": 1705.43,
+            "z": 257.06,
+            "heading": 92,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203563,
+      "name": "heidunn",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1730.67,
+          "y": 1705.43,
+          "z": 257.06,
+          "heading": 92,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203563,
+      "name": "heidunn",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1730.67,
+          "y": 1705.43,
+          "z": 257.06,
+          "heading": 92,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 10,
+      "npc_ids": "210414 210415",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210414,
+          "name": "ice crasaur",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1427.56,
+              "y": 1819.49,
+              "z": 247.375,
+              "heading": 39,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1443.19,
+              "y": 1716.38,
+              "z": 247.375,
+              "heading": 37,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1459.08,
+              "y": 1882.34,
+              "z": 247.375,
+              "heading": 113,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1461.02,
+              "y": 1728.74,
+              "z": 247.375,
+              "heading": 31,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1461.05,
+              "y": 1654.92,
+              "z": 246.935,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1468.9,
+              "y": 1946.69,
+              "z": 247.375,
+              "heading": 105,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1471.31,
+              "y": 1998.18,
+              "z": 247.375,
+              "heading": 71,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1479.7,
+              "y": 1719.82,
+              "z": 247.375,
+              "heading": 35,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1494.67,
+              "y": 1763.06,
+              "z": 248.426,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1499.12,
+              "y": 1893.38,
+              "z": 247.25,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1499.46,
+              "y": 1906.39,
+              "z": 247.25,
+              "heading": 44,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1505.69,
+              "y": 1931.51,
+              "z": 247.125,
+              "heading": 6,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1538.07,
+              "y": 1980.96,
+              "z": 247.25,
+              "heading": 38,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1556.88,
+              "y": 1627.53,
+              "z": 247.25,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1573.46,
+              "y": 1645.86,
+              "z": 247.25,
+              "heading": 94,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1615.5,
+              "y": 2007.36,
+              "z": 247.375,
+              "heading": 113,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1620.5,
+              "y": 1982.49,
+              "z": 248.376,
+              "heading": 38,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1647.96,
+              "y": 1643.96,
+              "z": 248.368,
+              "heading": 21,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1653.69,
+              "y": 1620.11,
+              "z": 247.25,
+              "heading": 31,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210415,
+          "name": "ice crasaur",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1442.9,
+              "y": 1850.4,
+              "z": 247.375,
+              "heading": 50,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1443.75,
+              "y": 1883.97,
+              "z": 247.375,
+              "heading": 40,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1446.8,
+              "y": 1921.9,
+              "z": 247.375,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1461.65,
+              "y": 1810.65,
+              "z": 247.375,
+              "heading": 20,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1467.1,
+              "y": 1849.02,
+              "z": 247.25,
+              "heading": 14,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1473.24,
+              "y": 1786.06,
+              "z": 247.375,
+              "heading": 55,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1476.38,
+              "y": 1697.69,
+              "z": 247.375,
+              "heading": 31,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1480.42,
+              "y": 1651.17,
+              "z": 247.25,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1481.12,
+              "y": 1869.55,
+              "z": 247.25,
+              "heading": 2,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1483.2,
+              "y": 1680.13,
+              "z": 247.375,
+              "heading": 53,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1494.7,
+              "y": 1978.27,
+              "z": 247.375,
+              "heading": 86,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1497.7,
+              "y": 2024.07,
+              "z": 247.375,
+              "heading": 110,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1499.36,
+              "y": 1955.72,
+              "z": 247.25,
+              "heading": 96,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1551.04,
+              "y": 1987.94,
+              "z": 247.31,
+              "heading": 24,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1554.49,
+              "y": 1620.09,
+              "z": 247.25,
+              "heading": 49,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1573.91,
+              "y": 2014.53,
+              "z": 247.375,
+              "heading": 88,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203563,
+          "name": "heidunn",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1730.67,
+              "y": 1705.43,
+              "z": 257.06,
+              "heading": 92,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 14700,
+        "gold": 8740,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2201,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 10,
+      "name": "The Crasaur Threat",
+      "nameId": 1103301,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 14700,
+          "gold": 8740
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 10,
+          "npc_ids": "210414 210415",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

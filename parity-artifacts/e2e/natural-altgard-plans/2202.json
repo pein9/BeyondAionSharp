@@ -1,0 +1,415 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2202,
+    "name": "The Lobnite Problem",
+    "nameId": 1103302,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 10,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2202,
+        "start_npc_ids": 203560
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203560,
+        "name": "morn",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1660.88,
+            "y": 1813.21,
+            "z": 253.722,
+            "heading": 15,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203560,
+      "name": "morn",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1660.88,
+          "y": 1813.21,
+          "z": 253.722,
+          "heading": 15,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203560,
+      "name": "morn",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1660.88,
+          "y": 1813.21,
+          "z": 253.722,
+          "heading": 15,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 10,
+      "npc_ids": "210413 210496",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210413,
+          "name": "tentacled lobnite",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1516.67,
+              "y": 1837.07,
+              "z": 257.459,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1521.27,
+              "y": 1851.96,
+              "z": 257.83,
+              "heading": 41,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1584.98,
+              "y": 1699.23,
+              "z": 257.923,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1588.02,
+              "y": 1933.35,
+              "z": 257.635,
+              "heading": 117,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1607.05,
+              "y": 1690.2,
+              "z": 258.016,
+              "heading": 93,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1650.74,
+              "y": 1679.19,
+              "z": 258.115,
+              "heading": 37,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1667.17,
+              "y": 1963.05,
+              "z": 258.693,
+              "heading": 71,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1712.51,
+              "y": 1633.76,
+              "z": 248.267,
+              "heading": 82,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1754.52,
+              "y": 1917.77,
+              "z": 257.875,
+              "heading": 52,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1762.44,
+              "y": 1655.99,
+              "z": 247.348,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1785.1,
+              "y": 1590.02,
+              "z": 247.375,
+              "heading": 11,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1785.67,
+              "y": 1895.12,
+              "z": 257.875,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1796.55,
+              "y": 1874.33,
+              "z": 257.875,
+              "heading": 94,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1805.89,
+              "y": 1807.78,
+              "z": 258.007,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210496,
+          "name": "tentacled lobnite",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1540.02,
+              "y": 1936.58,
+              "z": 248.054,
+              "heading": 42,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1557.13,
+              "y": 1731.96,
+              "z": 257.875,
+              "heading": 98,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1561.79,
+              "y": 1956.85,
+              "z": 248.349,
+              "heading": 11,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1563.27,
+              "y": 1718.34,
+              "z": 257.925,
+              "heading": 96,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1615.49,
+              "y": 1686.83,
+              "z": 257.875,
+              "heading": 112,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1622.13,
+              "y": 1947.95,
+              "z": 258.355,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1653.66,
+              "y": 1948.33,
+              "z": 257.875,
+              "heading": 114,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1716.16,
+              "y": 1605.76,
+              "z": 247.375,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1719.38,
+              "y": 1643.0,
+              "z": 248.75,
+              "heading": 108,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1769.83,
+              "y": 1923.29,
+              "z": 257.875,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1785.15,
+              "y": 1878.89,
+              "z": 258.122,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1785.21,
+              "y": 1659.9,
+              "z": 247.25,
+              "heading": 47,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1786.55,
+              "y": 1968.2,
+              "z": 248.032,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1800.87,
+              "y": 1844.94,
+              "z": 257.75,
+              "heading": 115,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203560,
+          "name": "morn",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1660.88,
+              "y": 1813.21,
+              "z": 253.722,
+              "heading": 15,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 13185,
+        "gold": 3260,
+        "rewardItems": [
+          {
+            "count": 6,
+            "item_id": 162000007
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2202,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 10,
+      "name": "The Lobnite Problem",
+      "nameId": 1103302,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 13185,
+          "gold": 3260
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 6,
+              "item_id": 162000007
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 10,
+          "npc_ids": "210413 210496",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

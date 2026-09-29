@@ -73,8 +73,9 @@ The operator approved every recommendation. Their notes:
 Flight is needed from the very first sub-leg:
 - **Q24011 "Funny Floating Fungus"** (campaign, level 11) has you talk to **Borender**
   (203572), who stands on a floating rock at **z 406** above the fortress, whose floor is about
-  z 254. You then kill six **Abyss Fungus** (700092), which float at **z 367–400** over the
-  fortress (12 spawns).
+  z 254. You then kill five **Abyss Fungus** (700092), which float at **z 367–400** over the
+  fortress (12 spawns). The handler counts kills from var 2 to its reward at var 6; it also
+  counts a kill at var 1, which would skip Borender, so the bot talks to him first.
 - **Q2209 "The Scribbler"** also has a Borender step (but see AF-Q1).
 
 What the Java spec says (4.8, `ce54b7931`; C# matches):
@@ -312,16 +313,16 @@ TODO items.
 
 The operator's current focus is the fortress quests. **The bot does not go south
 for Q2210 or Q24012 in this leg** (AF-Q2, decided 2026-09-29); they move to Leg 2 at Moslan
-Crossroad. Their targets on the Ice Lake just west of the fortress are part of the fortress
-area. It starts from the `altgard` snapshot, a level 10 Cleric bound at the fortress.
+Crossroad. The fortress quests' targets on the Ice Lake around the fortress (mostly west of
+it) count as the fortress area. It starts from the `altgard` snapshot, a level 10 Cleric bound at the fortress.
 
 | Quest | Name | Level | Where it is done | Notes |
 |---|---|---|---|---|
-| 2201–2206 | Crasaur, Lobnite, Crystals, Sparkie Sap, Airon, Slink | 10 | fortress NPCs; targets on the **Ice Lake** just west (z ≈ 247) | The first thing the bot needs is a way **out of the fortress** (NA-23: the route out was GeometryRejected). |
+| 2201–2206 | Crasaur, Lobnite, Crystals, Sparkie Sap, Airon, Slink | 10 | fortress NPCs; targets on the **Ice Lake** around it, mostly west (z ≈ 247) | The first thing the bot needs is a way **out of the fortress** (NA-23: the route out was GeometryRejected). |
 | 2207 | Conversing With a Skurv | 11 | fortress (Emgata, Itu, Suthran) | |
 | 2208 | Mau in Ten Minutes a Day | 11 | Itu; **Mumu Bon in the Fortress Dungeon (z 203)** | Needs the dungeon route and the Mau Secret Remedy item use. |
 | 2209 | The Scribbler | 10 | Thrud, Tulberg, **Borender (z 406, flight)**, **Noroia (dungeon, z 205)** | Needs the D26 correction (AF-Q1, approved): Java never registers Borender. |
-| 24011 | Funny Floating Fungus (campaign) | 11 | Valurion, **Borender**, **6 Abyss Fungus in the air** | Flight. |
+| 24011 | Funny Floating Fungus (campaign) | 11 | Valurion, **Borender**, **5 Abyss Fungus in the air** | Flight. |
 | ~~2210~~ | Retrieving the Report | 12 | Rion → Loriniah at Moslan Crossroad | **Moved to Leg 2** (AF-Q2). |
 | ~~24012~~ | An Ominous Crop (campaign) | 12 | Moslan Crossroad and MuMu Farmland | **Moved to Leg 2** (AF-Q2). |
 
@@ -347,11 +348,21 @@ with "AF" in place of "NA").
     chat (`run/af00/af00-sim-without-fix.log`). The warning, logger, clock-read and fidelity
     checks pass; `run-fast.ps1` passed 24, skipped 3 (`run/af00/run-fast.log`). Recorded as
     deviation 57 in `docs/e2e-player-simulation-plan.md`.
-- [ ] **AF-01 — The Leg 1 contract and quest plans.** Write
+- [x] **AF-01 — The Leg 1 contract and quest plans.** Write
   `parity-artifacts/e2e/natural-altgard-contract.json`: the Leg 1 quests, their order, level
   gates, hubs and endpoint. Compile the template quests' plans (`compile-quest-plans.py`)
   into `parity-artifacts/e2e/natural-altgard-plans/`. Add a loader and contract tests like
   NA-01's.
+  - *Done 2026-09-29.* The contract holds the ten quests and their order, the fortress hub
+    (160 m around the obelisk), four areas (Ice Lake, Fortress Dungeon, Borender's rock, the
+    fungus air), the 15 scripted dialog steps of Q2207/2208/2209/24011, Q2208's remedy use,
+    Q24011's air kills and reward (the Cleric's Altgard Legionary Brogans, 114501726), the
+    two FLY zones, and the endpoint. `compile-quest-plans.py --zone Altgard --runnable-only`
+    produced the six template plans (Q2201–2206). Loader `NaturalAltgardContract`; five
+    `NaturalAltgardContractTests` pass against quest data, spawns, zones, world maps, config
+    and the C# handlers, and all 291 Natural and plan tests pass. Findings: the level 10
+    quests alone reach level 11; all ten quests give 132,017 XP, short of level 12; the Ice
+    Lake targets surround the fortress, not only the west side.
 - [ ] **AF-02 — Leave and re-enter the fortress on foot.** Diagnose NA-23's
   `GeometryRejected` route (obelisk → Ice Lake / open ground): a gate, a static door, or a
   navmesh/geo mismatch. Fix it bot-side, with checked navigation data, never by editing
@@ -434,3 +445,4 @@ The original questions follow.
 
 - 2026-09-29 AF-00: the D26 Q2209 correction is in the C# handler, with a SIM regression test
   that fails without it (page 1011) and passes with it (var 1 → 2).
+- 2026-09-29 AF-01: Leg 1 contract, six compiled template plans, loader and five contract tests.
