@@ -5,6 +5,8 @@
 #            With -Bridge (NA-25) the journey continues over the Ascension bridge and the dump is taken at the
 #            verified bridge endpoint in Altgard (the `altgard` snapshot).
 #            With -AltgardLeg1 (AF-09) the capture starts from a restored `altgard` snapshot instead of a new character,
+#            plays an Altgard leg (-Leg l1, the default; -Leg l2 -From altgard-l12 for Leg 2, AM-08) and dumps its endpoint.
+#            The Leg 1 form:
 #            plays Altgard Leg 1 (docs/natural-altgard-leveling.md) and dumps its verified endpoint (`altgard-l12`).
 #   Restore: load a snapshot into a fresh owned schema and print the environment a resumed run needs.
 #   Verify:  restore, resume the retained character once and require the journey endpoint to be reached again
@@ -29,6 +31,8 @@ param(
 	[switch]$Bridge,
 	[switch]$AltgardLeg1,
 	[string]$From = 'altgard',
+	[ValidateSet('l1', 'l2')]
+	[string]$Leg = 'l1',
 	[switch]$NoBuild
 )
 
@@ -134,14 +138,14 @@ try {
 				$base = Restore-Snapshot $From
 				$db = $base.database
 				try {
-					$extra = @{ AF_ALTGARD = '1' }
+					$extra = @{ AF_ALTGARD = $(if ($Leg -eq 'l1') { '1' } else { $Leg }) }
 					foreach ($key in $base.environment.Keys) { $extra[$key] = $base.environment[$key] }
 					Invoke-NaturalJourney $db $Run $evidence $extra
-					$legFile = Join-Path $evidence 'altgard-l1-completion.json'
-					if (-not (Test-Path -LiteralPath $legFile)) { throw 'Altgard Leg 1 did not complete; nothing was captured.' }
-					$leg = Get-Content -Raw -LiteralPath $legFile | ConvertFrom-Json
-					if (-not $leg.verified -or $leg.CharacterId -ne $base.characterId) {
-						throw 'The Altgard Leg 1 endpoint was not verified for the restored character; nothing was captured.'
+					$legFile = Join-Path $evidence "altgard-$Leg-completion.json"
+					if (-not (Test-Path -LiteralPath $legFile)) { throw "Altgard leg $Leg did not complete; nothing was captured." }
+					$legResult = Get-Content -Raw -LiteralPath $legFile | ConvertFrom-Json
+					if (-not $legResult.verified -or $legResult.CharacterId -ne $base.characterId) {
+						throw "The Altgard leg $Leg endpoint was not verified for the restored character; nothing was captured."
 					}
 					New-Item -ItemType Directory -Path $directory | Out-Null
 					$remote = "/tmp/$db.sql.gz"
@@ -153,17 +157,17 @@ try {
 					[ordered]@{
 						schemaVersion = 1
 						name = $Name
-						source = 'natural-altgard-leg-1'
+						source = "natural-altgard-$Leg"
 						from = $From
 						run = $Run
 						seed = $Seed
 						gitSha = (& git -C $repoRoot rev-parse HEAD).Trim()
 						capturedUtc = (Get-Date).ToUniversalTime().ToString('o')
-						characterId = [int]$leg.CharacterId
-						elapsedMillis = [long]$base.environment.AION_SIM_NI08_ELAPSED_MS + [long]$leg.ElapsedMillis
+						characterId = [int]$legResult.CharacterId
+						elapsedMillis = [long]$base.environment.AION_SIM_NI08_ELAPSED_MS + [long]$legResult.ElapsedMillis
 						dumpSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $directory 'dump.sql.gz')).Hash.ToLowerInvariant()
 					} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $directory 'snapshot.json') -Encoding utf8
-					Write-Host "Captured snapshot $Name (character $($leg.CharacterId)) in $directory"
+					Write-Host "Captured snapshot $Name (character $($legResult.CharacterId)) in $directory"
 				}
 				finally {
 					Remove-OwnedDatabase $db

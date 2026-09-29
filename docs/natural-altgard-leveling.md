@@ -854,7 +854,23 @@ The same loop protocol, with "AM" in place of "NA".
     - 71 fights, **no death**, one retreat. It ends at level 15 beside Manir, with the
       endpoint verified across the relog (`altgard-l2-completion.json`).
   - The warning, logger and clock-read checks and 303 Natural tests pass.
-- [ ] **AM-08 — One SIM run of Leg 2** from `altgard-l12`, saved as the snapshot `altgard-l2`.
+- [x] **AM-08 — One SIM run of Leg 2** from `altgard-l12`, saved as the snapshot `altgard-l2`.
+  - *Done 2026-09-29.* `sim-snapshot.ps1 -Action Capture -Name altgard-l2 -AltgardLeg1 -Leg l2
+    -From altgard-l12` restores `altgard-l12`, resumes character 133297 with `AF_ALTGARD=l2`,
+    and dumps only a verified `altgard-l2-completion.json` for that character. The new
+    `-Leg` parameter selects the leg; the script's local result variable was renamed, since
+    PowerShell names ignore case and `$leg` would have overwritten `$Leg`.
+  - Run `am08-l2-s1` (`run/snapshots/_capture/am08-l2-s1`, seed 1) passed in 6 m 37 s real
+    time:
+    - all ten Leg 2 quests: 34 decisions, 4 scripted steps, 4 object uses;
+    - 71 fights, **no death**, one retreat;
+    - it ends at level 15 at Manir's Campsite, with the endpoint verified across the relog.
+    It repeats the AM-07 smoke run, as a deterministic SIM should.
+  - Snapshot `altgard-l2`: `run/snapshots/altgard-l2` (git-ignored), character 133297,
+    elapsed 22,689,001 ms, dump SHA-256 `fd4e57cc…fc`.
+    - A test restore showed the Cleric at XP 778,817 at (1459.56, 1192.68) in Altgard, with
+      Q2210–2215, Q2218–2220 and Q24012 COMPLETE, and was dropped.
+    - Every owned schema was dropped.
 - [ ] **AM-09 — The full `CLAUDE.md` checklist and a checkpoint.** LIVE stays at the end of the
   Altgard leg (AF-Q3).
 
@@ -957,3 +973,4 @@ The original questions follow.
 - 2026-09-29 AM-05: Q24012 played in SIM: movie, zone step, three carts, var-5 drops at 100%, hauberk reward.
 - 2026-09-29 AM-06: real Cleric combat for Q2211/2212/2220 from altgard-l12: 29 fights, no death; fixed the chain reset on non-chain casts.
 - 2026-09-29 AM-07: the Leg 2 runner; the smoke run completed Leg 2 from altgard-l12 with no death, level 15, at Manir.
+- 2026-09-29 AM-08: SIM run am08-l2-s1 completed Leg 2 with no death (level 15); snapshot altgard-l2 captured and restore-checked.
