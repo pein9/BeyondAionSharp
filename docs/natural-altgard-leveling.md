@@ -310,22 +310,24 @@ TODO items.
 
 ## Leg 1: Altgard Fortress (level 10–12)
 
-The operator's current focus: the fortress quests, plus the campaign missions ("golds")
-up to level 12. It starts from the `altgard` snapshot, a level 10 Cleric bound at the
-fortress.
+The operator's current focus is the fortress quests. **The bot does not go south
+for Q2210 or Q24012 in this leg** (AF-Q2, decided 2026-09-29); they move to Leg 2 at Moslan
+Crossroad. Their targets on the Ice Lake just west of the fortress are part of the fortress
+area. It starts from the `altgard` snapshot, a level 10 Cleric bound at the fortress.
 
 | Quest | Name | Level | Where it is done | Notes |
 |---|---|---|---|---|
 | 2201–2206 | Crasaur, Lobnite, Crystals, Sparkie Sap, Airon, Slink | 10 | fortress NPCs; targets on the **Ice Lake** just west (z ≈ 247) | The first thing the bot needs is a way **out of the fortress** (NA-23: the route out was GeometryRejected). |
 | 2207 | Conversing With a Skurv | 11 | fortress (Emgata, Itu, Suthran) | |
 | 2208 | Mau in Ten Minutes a Day | 11 | Itu; **Mumu Bon in the Fortress Dungeon (z 203)** | Needs the dungeon route and the Mau Secret Remedy item use. |
-| 2209 | The Scribbler | 10 | Thrud, Tulberg, **Borender (z 406, flight)**, **Noroia (dungeon, z 205)** | **Blocked by a Java-shared defect (AF-Q1).** |
+| 2209 | The Scribbler | 10 | Thrud, Tulberg, **Borender (z 406, flight)**, **Noroia (dungeon, z 205)** | Needs the D26 correction (AF-Q1, approved): Java never registers Borender. |
 | 24011 | Funny Floating Fungus (campaign) | 11 | Valurion, **Borender**, **6 Abyss Fungus in the air** | Flight. |
-| 2210 | Retrieving the Report | 12 | Rion (fortress) → Loriniah at **Moslan Crossroad** (1625, 1451), about 370 m south | Outside the fortress (AF-Q2). |
-| 24012 | An Ominous Crop (campaign) | 12 | Loriniah (Moslan Crossroad), the MuMu cart and farmers at **MuMu Farmland** (y ≈ 1100–1400) | Not around the fortress (AF-Q2). |
+| ~~2210~~ | Retrieving the Report | 12 | Rion → Loriniah at Moslan Crossroad | **Moved to Leg 2** (AF-Q2). |
+| ~~24012~~ | An Ominous Crop (campaign) | 12 | Moslan Crossroad and MuMu Farmland | **Moved to Leg 2** (AF-Q2). |
 
-**XP:** the fortress quests and Q24011 give about 138k, and Q24012 36k. With kills that
-should reach level 12 (360,825 XP), which Q2210 and Q24012 need.
+**Endpoint:** Q2201–Q2209 and Q24011 completed, back in the fortress, alive. These quests
+give about 132k XP; with kills the Cleric should end around level 11–12. Leg 1 sets no level
+target.
 
 ### Leg 1 TODO list
 
@@ -334,6 +336,10 @@ verify it once, commit it on main, never push (the [loop
 protocol](natural-ascension-altgard.md#how-to-work-this-list-loop-protocol) applies,
 with "AF" in place of "NA").
 
+- [ ] **AF-00 — The Q2209 correction (D26).** Apply the fix the upstream report prepared
+  (`docs/upstream-reports/q2209-the-scribbler.patch`) to the C# handler, with a regression
+  test that a registered Borender dialog advances var 1 → 2. Record it as a shared-defect
+  correction.
 - [ ] **AF-01 — The Leg 1 contract and quest plans.** Write
   `parity-artifacts/e2e/natural-altgard-contract.json`: the Leg 1 quests, their order, level
   gates, hubs and endpoint. Compile the template quests' plans (`compile-quest-plans.py`)
@@ -363,9 +369,9 @@ with "AF" in place of "NA").
   budget: fly to one, kill it, land to refill as needed. A fall or death is recorded
   (OD-12). **Done when:** a SIM probe completes Q24011's six kills.
 - [ ] **AF-07 — Leg 1 quest mechanics.** Talk chains (Q2207), item use in the dungeon
-  (Q2208, Mau Secret Remedy), the template kill and collect quests (Q2201–2206, including
-  the crystal stone objects for Q2203), report quests (Q2210), and Q24012's MuMu cart and
-  collections. It reuses the Ishalgen quest machinery where it fits.
+  (Q2208, Mau Secret Remedy), Q2209's chain (Thrud → Tulberg → Borender → Noroia), and the
+  template kill and collect quests (Q2201–2206, including the crystal stone objects for
+  Q2203). It reuses the Ishalgen quest machinery where it fits.
 - [ ] **AF-08 — The Leg 1 runner and decision engine.** From the `altgard` snapshot: an
   Altgard map context, the decision engine over the contract (eligibility, level gates,
   "come back later"), rests and restocks at the fortress, help items (NA-21), and the
@@ -373,9 +379,18 @@ with "AF" in place of "NA").
 - [ ] **AF-09 — One SIM run of Leg 1** from the `altgard` snapshot to the Leg 1 endpoint,
   saved as the `altgard-l12` snapshot. Deaths are recorded (OD-12).
 - [ ] **AF-10 — The full `CLAUDE.md` checklist and a checkpoint.** The isolated LIVE run comes
-  at the end of the Altgard leg, not after each sub-leg (**AF-Q3**).
+  at the end of the Altgard leg, not after each sub-leg (AF-Q3, decided).
 
 ## Blocked / questions for the operator
+
+**All three were answered on 2026-09-29:**
+- AF-Q1: **approved** (D26). A report and patch for the Java project are being prepared
+  under `docs/upstream-reports/`.
+- AF-Q2: **exclude** Q2210 and Q24012 from Leg 1; the bot does not leave the fortress area
+  for them.
+- AF-Q3: **LIVE once, at the end** of the Altgard leg.
+
+The original questions follow.
 
 - **AF-Q1 — Q2209 "The Scribbler" is broken in Java too.** Its handler's dialogue code has
   a Borender (203572) step at var 1, but `register()` never registers Borender as a talk NPC

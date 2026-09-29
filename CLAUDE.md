@@ -31,7 +31,9 @@ Java-shared character-transfer and Chat-gag defects (§7/118–119). The Chat-ga
 correction remains approved and must not be silently ported back. D20 supersedes
 the transfer half: this is a single-server emulator and character transfer is not
 a supported product journey, so do not extend or runtime-validate that dormant
-path. These decisions are not a general exemption from parity or authorization to
+path. D26 approves one more: registering Borender (203572) for Q2209 "The Scribbler",
+whose Java handler never registers him (reported upstream, `docs/upstream-reports/`).
+These decisions are not a general exemption from parity or authorization to
 reopen other deferred behavior.
 
 ## Always watch for Java ↔ C# semantic gaps
