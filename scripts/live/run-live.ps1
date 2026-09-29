@@ -434,10 +434,10 @@ try {
 		}
 		Stop-Watcher
 		if ($botExitCode -ne 0) { throw "Live bots failed with exit code $botExitCode." }
-		if ($watcherExitCode -ne 0) { throw "Log watcher failed with exit code $watcherExitCode." }
 		if ($AscensionBridge) {
 			# NA-27: keep this run's own databases at the bridge endpoint as the LIVE starting point in Altgard. Only this
-			# run's isolated compose project is read; the operator's `aion` stack is never touched.
+			# run's isolated compose project is read; the operator's `aion` stack is never touched. It runs before the
+			# watcher verdict so a finished bridge keeps its database even when the watcher fails the run.
 			$dumpPassword = if ([string]::IsNullOrWhiteSpace($env:AION_BOT_DB_PASSWORD)) { 'aion-bots' } else { $env:AION_BOT_DB_PASSWORD }
 			$databases = (& docker @composeArgs exec -T -e "MYSQL_PWD=$dumpPassword" mysql mysql -uroot -Nse "SHOW DATABASES LIKE 'aion%'" | Out-String).Trim() -split '\s+'
 			if ($LASTEXITCODE -ne 0 -or $databases.Count -eq 0) { throw 'NA-27 could not list the endpoint databases.' }
@@ -452,6 +452,7 @@ try {
 				dumpSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $dumpPath).Hash.ToLowerInvariant()
 			} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $runPath 'altgard-live-dump.json') -Encoding utf8
 		}
+		if ($watcherExitCode -ne 0) { throw "Log watcher failed with exit code $watcherExitCode." }
 		if (@($Scenario | Where-Object { $_ -match '^G[1-6]$' }).Count -gt 0) {
 			# Independent post-logout persistence invariant, inside this run's Docker DB only.
 			# The bot never reads this data to decide an action or to populate its world model.

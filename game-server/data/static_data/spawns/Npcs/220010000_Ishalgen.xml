@@ -998,7 +998,7 @@
 			<spot x="648.128" y="2790.16" z="296.399" h="1"/>
 		</spawn>
 		<!-- Hulker -->
-		<spawn npc_id="210590" respawn_time="1800" pool="1">
+		<spawn npc_id="210590" respawn_time="1800">
 			<spot x="556.937" y="2242.813" z="247.500"/>
 		</spawn>
 		<!-- Incinerator -->

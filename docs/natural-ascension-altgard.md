@@ -1889,6 +1889,34 @@ OD-11, a development item is verified by **one** run.
         attempt. A dead bot revives at its bind (`RestSafelyAsync`), which is where
         Return goes, instead of casting.
       - The isolated stack was removed by the runner. The `aion` stack was untouched.
+    - **`na27-live-a2` (2026-09-29): the scenario passed; the run failed on its watcher.**
+      Evidence: `run/na27-live/na27-live-a2/`.
+      - **The bot's side passed** (report: 1 passed) in 5 h 14 min of wall time. The fresh
+        Priest completed all 41 Ishalgen quests, then the whole bridge. The endpoint was
+        verified across the relog (`bots/bridge-completion.json`): a level 10 Cleric in
+        Altgard with Q2008, Q2009, Q2904 and Q24010 done, and 45 completions in all. The
+        final identity relog checked an ordinary access-level-0 Cleric
+        (`natural-ascension-complete.json`).
+      - **6 deaths**, all in Ishalgen: 4 at the Q2005 stalkers (one of them during a bind
+        revive) and 2 at the Q2007 generators. Each was recovered by a bind revive, and
+        the a1 fix was exercised.
+      - 11 movies were skipped. The help items were supplied by the director's `//add`
+        (`bots/gm.trace.jsonl`) and used: Castafodin, Accelerox and a jelly.
+      - **The watcher (enforce) failed the run** on a NEW startup warning, `3aae81d7`
+        ("Spawn pool size must be smaller than spots to take effect, npcId: 210590"). The
+        dump step came after the watcher verdict, so no dump was kept.
+      - **Fixes:**
+        - `pool="1"` is removed from Lake Hulker 210590's single spot. NI-09 made the same
+          correction (see `natural-ishalgen-status.md`), and the 2026-09-26 5.8 placement
+          pass (49663a7a8) put it back. With one spot, Java `SpawnEngine.checkPool`
+          already ignores the pool, so coordinates, count and respawn are unchanged. No
+          warning exemption was added.
+        - The golden geo fixture was regenerated through Java
+          (`scripts/parity/regen-geo-golden.ps1`): only the input hash changed, all
+          4,275 points and their queries are identical, and the Java checkout is back on
+          `4.8`.
+        - `run-live.ps1` now takes the endpoint dump before the watcher verdict.
+      - `known-problems.json` carries the ledger updates the runs made.
 
 - [ ] **NA-28 — (Optional) watch it in the real client.**
   - With the authorized Computer Use workflow (NI-11 style), follow a LIVE bridge run
