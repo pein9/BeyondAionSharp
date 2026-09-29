@@ -2,6 +2,8 @@
 #
 #   Capture: play the natural Ishalgen journey once (NI-07, seed N) against an owned throwaway schema, then dump
 #            that schema at the journey's natural endpoint into run/snapshots/<name>/ (git-ignored).
+#            With -Bridge (NA-25) the journey continues over the Ascension bridge and the dump is taken at the
+#            verified bridge endpoint in Altgard (the `altgard` snapshot).
 #   Restore: load a snapshot into a fresh owned schema and print the environment a resumed run needs.
 #   Verify:  restore, resume the retained character once and require the journey endpoint to be reached again
 #            (for `munin`: 41 quests, level 9 at Munin, Q2008 START/0), then drop the schema.
@@ -22,6 +24,7 @@ param(
 	[string]$ContainerName = 'aion-mysql',
 	[string]$RootPassword = 'aion',
 	[string]$SnapshotRoot,
+	[switch]$Bridge,
 	[switch]$NoBuild
 )
 
@@ -124,11 +127,21 @@ try {
 			& pwsh -NoProfile -File (Join-Path $PSScriptRoot 'new-sim-db.ps1') -Action Create -DatabaseName $db | Out-Null
 			if ($LASTEXITCODE -ne 0) { throw 'Could not create the owned capture schema.' }
 			try {
-				Invoke-NaturalJourney $db $Run $evidence @{}
+				Invoke-NaturalJourney $db $Run $evidence $(if ($Bridge) { @{ NA_ASCENSION = '1' } } else { @{} })
 				$clock = Get-Content -Raw -LiteralPath (Join-Path $evidence 'completion-clock.json') | ConvertFrom-Json
 				$completion = Get-Content -Raw -LiteralPath (Join-Path $evidence 'completion.json') | ConvertFrom-Json
 				if ($completion.Next.Outcome -ne 'complete' -or $clock.CharacterId -ne $completion.CharacterId) {
 					throw 'The journey did not reach its natural endpoint; nothing was captured.'
+				}
+				if ($Bridge) {
+					# NA-25: the dump must be the verified bridge endpoint, with the bridge's own clock.
+					$bridgeFile = Join-Path $evidence 'bridge-completion.json'
+					if (-not (Test-Path -LiteralPath $bridgeFile)) { throw 'The Ascension bridge did not complete; nothing was captured.' }
+					$bridgeCompletion = Get-Content -Raw -LiteralPath $bridgeFile | ConvertFrom-Json
+					if (-not $bridgeCompletion.verified -or $bridgeCompletion.CharacterId -ne $completion.CharacterId) {
+						throw 'The Ascension bridge endpoint was not verified; nothing was captured.'
+					}
+					$clock = $bridgeCompletion
 				}
 				New-Item -ItemType Directory -Path $directory | Out-Null
 				$remote = "/tmp/$db.sql.gz"
@@ -137,10 +150,11 @@ try {
 				Invoke-Docker @('cp', "${ContainerName}:$remote", (Join-Path $directory 'dump.sql.gz'))
 				Invoke-Docker @('exec', $ContainerName, 'rm', '-f', $remote)
 				Copy-Item -LiteralPath (Join-Path $evidence 'completion.json') -Destination $directory
+				if ($Bridge) { Copy-Item -LiteralPath (Join-Path $evidence 'bridge-completion.json') -Destination $directory }
 				[ordered]@{
 					schemaVersion = 1
 					name = $Name
-					source = 'natural-ishalgen-journey'
+					source = $(if ($Bridge) { 'natural-journey-ascension-bridge' } else { 'natural-ishalgen-journey' })
 					run = $Run
 					seed = $Seed
 					gitSha = (& git -C $repoRoot rev-parse HEAD).Trim()

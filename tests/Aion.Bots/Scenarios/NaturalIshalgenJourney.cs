@@ -938,14 +938,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					System.Text.Json.JsonSerializer.Serialize(stages, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }), token);
 			}
 
-			bool AscensionBridgeStarted()
-			{
-				BotWorldModel world = session.Api.World;
-				if (world.CompletedQuestIds.Contains(2008)) return true;
-				if (world.Quests.TryGetValue(2008, out BotQuestState? ascension) && (ascension.Status != 3 || (ascension.StepAndFlags & 0x00FFFFFF) != 0))
-					return true;
-				return world.MapId is 320020000 or 120010000 or 220030000;
-			}
+			bool AscensionBridgeStarted() => NaturalAscensionDecisionEngine.BridgeStarted(session.Api.World.CompletedQuestIds,
+				session.Api.World.Quests, session.Api.World.MapId);
 
 			// NA-17: the bridge endpoint. Assert the contract from the client's view, then quit, log back in and require
 			// that class, level, quests, bind point, equipment, inventory and position all survived.
@@ -980,7 +974,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.ConnectionGeneration, contract, session.CurrentPosition);
 				NaturalJourneyPersistence.Verify(before, after);
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "bridge-completion.json"),
-					System.Text.Json.JsonSerializer.Serialize(new { before, after, verified = true }), token);
+					System.Text.Json.JsonSerializer.Serialize(new
+					{
+						before, after, verified = true,
+						// NA-25: an `altgard` snapshot restores with this clock so game time keeps moving forward.
+						session.CharacterId, ElapsedMillis = runtime.NowMillis,
+					}), token);
 				session.TraceDiagnostic("ascension-bridge-complete", new Dictionary<string, object?>
 				{
 					["level"] = after.Level, ["class"] = after.PlayerClass, ["map"] = after.MapId, ["bind"] = after.BindPoint?.MapId,

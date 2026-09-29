@@ -862,3 +862,24 @@ list (NA-00..NA-28, worked in Loop mode, one commit per item, each step proved o
 against Java `ce54b7931` and matches; the work is bot-side (multi-map context, class-aware
 identity/gear, the leg handlers), plus checked-in navigation for 320020000, 120010000 and
 220030000.
+
+## Ascension bridge acceptance in SIM (NA-25, 2026-09-28)
+
+The natural journey now runs from character creation to Altgard in one SIM run with the bridge on
+(`NA_ASCENSION=1 bash scripts/sim/run-natural-batch.sh <prefix> <seed>`). Seed 1 (`run/natural-batch/na25-full-s1`)
+took 12 min of wall time and 4 h 26 min of game time:
+- all 41 Ishalgen quests, then Q2008 (Cleric), Q2009 (Karmic Staff, level 10), Q2904, the Altgard Fortress
+  bind, Q24010 and the shop stop;
+- the endpoint verified across a relog;
+- 3 deaths, all at the Q2007 generators, each recovered by a bind revive;
+- 11 movies skipped;
+- the approved help items supplied (OD-13).
+
+The Altgard start is saved as the SIM snapshot `altgard` (`scripts/sim/sim-snapshot.ps1 -Action Restore -Name
+altgard`, character 133297). Use it as the starting point for Altgard play instead of replaying 4 hours.
+
+One bug surfaced only in this full run: Java lists Q2008 LOCKED from about level 8. The bridge's resume check must
+not treat that as a start (fixed in NA-25).
+
+Details, findings and the remaining acceptance items (NA-26 full checklist, NA-27 isolated LIVE run) are in
+[natural-ascension-altgard.md](natural-ascension-altgard.md).

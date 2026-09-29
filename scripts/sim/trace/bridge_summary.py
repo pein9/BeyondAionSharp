@@ -14,7 +14,8 @@ for event in events(source):
     if kind == 'SM_DIE' or step.startswith('ni07-bind-revive'):
         if kind == 'SM_DIE':
             deaths.append((stamp(event), step))
-    if kind in ('natural-resume-observation', 'ascension-bridge-resume') or 'injected connection interruption' in json.dumps(fields):
+    # A recovery is a login (fresh, resumed or after an interruption) or a bind revive, counted once per step.
+    if ('login' in step or 'bind-revive' in step or 'relog' in step) and (not recoveries or recoveries[-1][1] != step):
         recoveries.append((stamp(event), step, kind))
     if kind in ('movie-watched', 'movie-skipped'):
         movies.append((stamp(event), step, kind, fields.get('movieId'), fields.get('questId')))
@@ -27,7 +28,7 @@ for event in events(source):
     if kind == 'ascension-bridge-decision':
         decisions.append(fields.get('action'))
 print(f'deaths: {len(deaths)} {deaths}')
-print(f'recoveries (logins, resumes, relogs): {len(recoveries)}')
+print(f'recoveries (logins, relogs, bind revives): {len(recoveries)}')
 for row in recoveries:
     print('  ', row)
 print(f'movies: {len(movies)}')

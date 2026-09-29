@@ -113,5 +113,22 @@ public sealed class NaturalAscensionDecisionEngineTests
 		Assert.Equal(("wrong-map", "blocked"), Outcome(Decide(State(Pandaemonium, Cleric, 10, all, [], 247_000, Fortress, shop: true))));
 	}
 
+	[Theory]
+	[InlineData(6, 0, Ishalgen, false)]  // LOCKED mid-Ishalgen (Java lists it from about level 8): not a start
+	[InlineData(0, 0, Ishalgen, false)]
+	[InlineData(3, 0, Ishalgen, false)]  // START/0: the Munin stop itself; the Ishalgen leg finishes first
+	[InlineData(3, 1, Ishalgen, true)]
+	[InlineData(3, 52, Ataxiar, true)]
+	[InlineData(4, 6, Ataxiar, true)]
+	[InlineData(3, 0, Pandaemonium, true)]
+	[InlineData(3, 0, Altgard, true)]
+	public void TheBridgeResumesOnlyOnceAscensionIsUnderway(byte status, int var, int map, bool started) =>
+		Assert.Equal(started, NaturalAscensionDecisionEngine.BridgeStarted(new HashSet<int>(),
+			new Dictionary<int, BotQuestState> { [2008] = new(2008, status, var, 0, null) }, map));
+
+	[Fact]
+	public void ACompletedAscensionAlwaysResumesTheBridge() =>
+		Assert.True(NaturalAscensionDecisionEngine.BridgeStarted(new HashSet<int> { 2008 }, new Dictionary<int, BotQuestState>(), Ishalgen));
+
 	private static (string, string) Outcome(NaturalAscensionDecision decision) => (decision.Action, decision.Outcome);
 }

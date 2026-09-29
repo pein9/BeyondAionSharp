@@ -1772,7 +1772,7 @@ OD-11, a development item is verified by **one** run.
     - **Checks.** Focused `Natural*` and `BotReflexes*` tests pass (a new test covers the
       skipped-movie record). The warning, null-logger and clock-read checks pass.
 
-- [ ] **NA-25 — One full SIM journey from creation to Altgard, saved as the `altgard` snapshot.**
+- [x] **NA-25 — One full SIM journey from creation to Altgard, saved as the `altgard` snapshot.**
   - **Depends:** NA-24.
   - **Do:**
     - Extend `scripts/sim/run-natural-batch.sh`, or add a flag, so it runs with the bridge
@@ -1787,6 +1787,49 @@ OD-11, a development item is verified by **one** run.
     The results go into the status handoff.
   - **Verify:** `bash scripts/sim/run-natural-batch.sh na25 1` (or the new flag), and one
     restore of `altgard`.
+  - **Evidence (2026-09-28):**
+    - **Flags.**
+      - `NA_ASCENSION=1 bash scripts/sim/run-natural-batch.sh na25 1` adds the bridge's
+        outcome, the endpoint verification, the class, level and map, and the movie and
+        help-item counts to the summary line.
+      - `sim-snapshot.ps1 -Action Capture -Bridge` captures only at a verified bridge
+        endpoint, using the bridge's own clock (`bridge-completion.json` now carries
+        `ElapsedMillis`).
+    - **Bug found and fixed by the first run** (`run/natural-batch/na25-full-s1-locked-q2008`).
+      - Java lists Q2008 as LOCKED (status 6) in the journal from about level 8. NA-17's
+        resume check read any status other than START as "the bridge has started", so at
+        the Q2003 turn-in the bot left Ishalgen for Munin, where Q2008's handler refused
+        the dialogue.
+      - `NaturalAscensionDecisionEngine.BridgeStarted` now requires Q2008 completed, START
+        with a var set, REWARD, or a bridge map (9 new test cases).
+      - Snapshot runs could not show this: they begin with Q2008 already START.
+    - **The run: `run/natural-batch/na25-full-s1`, seed 1.** It passed in 12 min 13 s of wall
+      time and about 4 h 26 min of game time.
+      - **Ishalgen:** all 41 quests at level 9 (`completion.json`: complete). 156 pulls,
+        119 of them clean single pulls; 37 defends, 5 retreats, 1 cornered, 27 close-ins.
+      - **3 deaths**, all in Ishalgen and recorded, not failed (OD-12): at the Q2007 blue
+        generator, during the second bind revive, and at the violet generator. Each was
+        recovered by a bind revive.
+      - **Bridge:** complete, and the endpoint was verified across the relog. The result
+        is a level 10 Cleric (class 10) in Altgard (220030000) with Q2008, Q2009, Q2904
+        and Q24010 done.
+      - **Movies:** 11 skipped: the 7 from Ishalgen (recorded when the bridge's first step
+        drained them) and 57, 152, 121 and 122.
+      - **Help items:** 4 supplied at level 10, and 3 used (Castafodin, Accelerox, a jelly).
+      - **Game seconds on the bridge's steps:** Munin approach 325, Q2008 109, Q2009 58,
+        Q2904 60, bind 12, Q24010 3, shop 62.
+    - **The snapshot.**
+      - `run/snapshots/altgard` (git-ignored) was captured by
+        `sim-snapshot.ps1 -Action Capture -Name altgard -Bridge -Seed 1` (run
+        `snapshot-altgard-s1`, a second natural play of seed 1 from creation): character
+        133297, `elapsedMillis` 15,976,256, dump sha256 `bc825f6c…`.
+      - `-Action Restore -Name altgard` restored it into an owned schema (resume clock
+        15,996,256 ms), and that schema was dropped.
+      - Its `gitSha` names the commit it was built on (9e631a8c7) plus this item's
+        uncommitted changes.
+    - **Checks.** Focused suite 288 of 288. The warning, null-logger and clock-read checks
+      pass. `bridge_summary.py` now counts logins, relogs and bind revives as recoveries,
+      not every quest checkpoint.
 
 - [ ] **NA-26 — Full checklist and checkpoint.**
   - **Depends:** NA-25.
@@ -2033,6 +2076,7 @@ has examples.
 - 2026-09-28 — Loop: NA-21 done. The approved help items are supplied to the Cleric: ItemService in SIM, the director's //add on the isolated LIVE stack, NA_HELP_ITEMS=0 for off. They are recorded in help-items.json and the trace. The first run caught the shop stop selling them; now they are protected. Next is NA-23 with the items in the bag.
 - 2026-09-28 — Loop: NA-23 done. The first Cleric fights (SIM, GM-prepared, goons outside Altgard Fortress) ran with no deaths: Smite → Flashbolt every time at range, the heal over time, the timed potion, powder rest, and the patrol wait-then-fight. Five findings are recorded for the Altgard milestone. **Phase 5 is complete.**
 - 2026-09-28 — Loop: NA-24 done. A clean bridge run from Munin reached the verified endpoint in 300 game seconds with no deaths, four skipped movies and the help items supplied and used. Movies and per-quest times are now on the run record.
+- 2026-09-28 — Loop: NA-25 done. One full SIM journey from creation (seed 1) completed Ishalgen's 41 quests and the bridge (3 deaths in Ishalgen, recorded). The `altgard` snapshot is captured and restores. The first run caught Q2008's LOCKED journal state pulling the bot into the bridge early; now fixed and tested.
 
 ## Appendix A: Altgard shops and consumables
 

@@ -5,6 +5,10 @@
 #
 #   bash scripts/sim/run-natural-batch.sh <prefix> <seed>...
 #   bash scripts/sim/run-natural-batch.sh smart43 1 3 4 5
+#   NA_ASCENSION=1 bash scripts/sim/run-natural-batch.sh na25 1   # continue over the Ascension bridge (NA-25)
+#
+# With NA_ASCENSION=1 the summary also names the bridge's final outcome, whether its endpoint was verified across
+# the relog, and the movies, help items and deaths the bridge recorded (docs/natural-ascension-altgard.md).
 #
 # Runs land in $AION_NI07_BATCH_DIR (default run/natural-batch): <prefix>-full-s<seed>.log and the combat
 # trace <prefix>-full-s<seed>/*.trace.jsonl (every packet and decision; see docs/natural-ishalgen-status.md
@@ -41,6 +45,27 @@ except Exception: pass
 print(f"pulls={c['pull-plan']} clean={clean} defends={c['defend-before-pull']} retreats={c['combat-retreat-route']} cornered={c['combat-retreat-cornered']} closeIns={c['combat-range-close-in']} deaths={c['SM_DIE']} quests={c['SM_QUEST_ACTION']} last=\"step\":\"{last}\"")
 EOF
 )
+  if [ "${NA_ASCENSION:-}" = "1" ]; then
+    stats="$stats $(python - "$S/$run" <<'EOF'
+import json,sys,pathlib
+d=pathlib.Path(sys.argv[1])
+def load(name):
+    try: return json.loads((d/name).read_text(encoding='utf-8'))
+    except Exception: return None
+stop=load('bridge-stop.json') or {}; done=load('bridge-completion.json') or {}; help=load('help-items.json') or {}
+movies=supplied=used=0
+for p in d.glob('*.trace.jsonl'):
+    for l in open(p,encoding='utf-8'):
+        k=json.loads(l).get('packet')
+        movies+=k in ('movie-skipped','movie-watched'); used+=k=='help-item-used'
+supplied=len((help.get('helpItems') or {}).get('supplied') or [])
+after=done.get('after') or {}
+print(f"bridge={(stop.get('stop') or {}).get('Outcome','none')} endpointVerified={bool(done.get('verified'))} "
+      f"class={after.get('PlayerClass')} level={after.get('Level')} map={after.get('MapId')} "
+      f"movies={movies} helpSupplied={supplied} helpUsed={used}")
+EOF
+)"
+  fi
   echo "$run: $sum  $stats"
   grep -m1 -o "Exception : .\{0,400\}" "$S/$run.log" | sed 's/^/   /'
 done

@@ -35,6 +35,20 @@ public static class NaturalAscensionDecisionEngine
 	public const byte Start = 3, Reward = 4, Complete = 5;
 	private const int Ishalgen = 220010000, Ataxiar = 320020000, Pandaemonium = 120010000, Altgard = 220030000;
 
+	/// <summary>
+	/// NA-17/25: true once a login lands past the Munin stop, so the bridge runner resumes: Q2008 completed, past its
+	/// start (START with a var set, or REWARD), or the character on a bridge map. Q2008 shown LOCKED (6) or NONE is
+	/// not a start: Java lists it LOCKED in the journal from about level 8, mid-Ishalgen (the NA-25 full run).
+	/// </summary>
+	public static bool BridgeStarted(IReadOnlySet<int> completedQuestIds, IReadOnlyDictionary<int, BotQuestState> quests, int? mapId)
+	{
+		if (completedQuestIds.Contains(2008)) return true;
+		if (quests.TryGetValue(2008, out BotQuestState? ascension) &&
+			(ascension.Status == Reward || ascension.Status == Start && (ascension.StepAndFlags & 0x00FFFFFF) != 0))
+			return true;
+		return mapId is Ataxiar or Pandaemonium or Altgard;
+	}
+
 	public static NaturalAscensionDecision Decide(NaturalAscensionContract contract, NaturalAscensionObservation state, int sequence)
 	{
 		var checks = new List<NaturalDecisionCheck>();
