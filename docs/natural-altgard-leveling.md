@@ -7,7 +7,7 @@ The zone is worked in **sub-legs**. The first one is
 [Leg 1: Altgard Fortress, level 10–12](#leg-1-altgard-fortress-level-1012). It has its own
 TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-altgard.md).
 
-**Leg 1 is done (AF-00..AF-10, 2026-09-29).** [Leg 2: Moslan Crossroad](#leg-2-moslan-crossroad-level-1315--proposal) is proposed and waits for AM-Q1..AM-Q3.
+**Leg 1 is done (AF-00..AF-10, 2026-09-29).** [Leg 2: Moslan Crossroad](#leg-2-moslan-crossroad-level-1315--proposal) is approved and worked in Loop mode (AM-01..AM-09).
 
 ## Goal
 
@@ -578,7 +578,8 @@ with "AF" in place of "NA").
 
 ## Leg 2: Moslan Crossroad (level 13–15) — proposal
 
-**Status (2026-09-29): proposal, awaiting the operator's answers to AM-Q1..AM-Q3.** It
+**Status (2026-09-29): approved** (AM-Q1..AM-Q3 as recommended; see "Blocked /
+questions"). It
 starts from the `altgard-l12` snapshot: character 133297, a level 13 Cleric at 432,438 XP,
 bound at Altgard Fortress, beside Valurion. Q24012 is already at START var 0 in that
 snapshot (it followed Q24011's completion at level 12+).
@@ -695,13 +696,19 @@ The same loop protocol, with "AM" in place of "NA".
 - [ ] **AM-09 — The full `CLAUDE.md` checklist and a checkpoint.** LIVE stays at the end of the
   Altgard leg (AF-Q3).
 
-**Endpoint (proposed):** Q2210–Q2215, Q2218–Q2220 and Q24012 completed, alive, standing
-where AM-Q1 decides (Manir's Campsite or the crossroad). No level target: level 14–15 is
+**Endpoint:** Q2210–Q2215, Q2218–Q2220 and Q24012 completed, alive, at Manir's Campsite
+(AM-Q1). No level target: level 14–15 is
 expected.
 
 ## Blocked / questions for the operator
 
-**Open for Leg 2 (proposed 2026-09-29):**
+**Leg 2, answered 2026-09-29:** AM-Q1 **(a)**, AM-Q2 **(a)** and AM-Q3 **(a)**, all as
+recommended. Leg 2 ends at Manir's Campsite after Q2215 is handed in. It rests in the
+field and restocks at the fortress only when the potion or powder policy runs low. It
+fights black claw patrols only when they block the way or the pull planner calls the
+fight winnable.
+
+The original questions follow.
 - **AM-Q1 — Where does Leg 2 end?** Q2215 is a Moslan quest, but it is handed in to Manir at
   Manir's Campsite, Stop 3's hub, about 310 m south-west of the crossroad. Options:
   - (a) deliver it as Leg 2's last step, so Leg 2 ends at Manir's Campsite, where Leg 3 starts;
