@@ -72,7 +72,7 @@ public sealed partial class SimulationFastScenarioTests
 		using var policy = NewPolicy("D27", includeHistory: false);
 		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));
 		CancellationToken token = timeout.Token;
-		await using var session = new SimulationL0Session(fixture, policy, "b01", 139, "Asimlamir", Race.ASMODIANS);
+		await using var session = new SimulationL0Session(fixture, policy, "b01", 150, "Asimlamir", Race.ASMODIANS);
 		session.BeginStep("s00", "login-create-enter-and-setup");
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token, PlayerClass.PRIEST);
