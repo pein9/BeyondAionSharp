@@ -1,10 +1,12 @@
 using Aion.Bots.Movement;
+using Aion.Bots.Protocol;
 using Aion.Bots.Navigation;
 using Aion.Bots.Navigation.NavMesh;
 using Aion.Bots.Scenarios;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
+using Aion.GameServer.Network.Aion.ServerPackets;
 
 namespace Aion.Simulation.Tests;
 
@@ -89,5 +91,70 @@ public sealed partial class SimulationFastScenarioTests
 				route.Any(point => MathF.Pow(npc.GetX() - point.X, 2) + MathF.Pow(npc.GetY() - point.Y, 2) <= 30 * 30)).ToArray())
 				fixture.World.Despawn(npc);
 		}
+	}
+
+	/// <summary>
+	/// AF-03 (docs/natural-altgard-leveling.md): the Fortress Dungeon on foot. From beside the obelisk the bot walks down the
+	/// ramp to Mumu Bon (Q2208) and to Noroia (Q2209) on interaction routes planned on the live server's geometry, opens
+	/// each one's dialog, and walks back up. The dungeon holds no aggressive monsters, so nothing is despawned.
+	/// </summary>
+	[SkippableFact]
+	public async Task AltgardFortressDungeonNpcsAreReachedAndTalkedTo()
+	{
+		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
+		const int altgard = 220030000;
+		using var policy = NewPolicy("AF03", includeHistory: false);
+		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+		CancellationToken token = timeout.Token;
+		NaturalAltgardContract contract = NaturalAltgardContract.LoadDefault();
+		await using var session = new SimulationL0Session(fixture, policy, "b01", 70, "Asimdungeon", Race.ASMODIANS);
+		session.BeginStep("s00", "login-create-enter-and-setup");
+		await session.LoginAndAuthenticateAsync(token);
+		await session.CreateCharacterAsync(token, PlayerClass.PRIEST);
+		await session.EnterWorldAsync(token);
+		await session.SynchronizeAsync(token);
+		Player player = fixture.World.GetPlayer(session.CharacterId);
+		BotNavigationGeometry geometry = BotNavigationGeometry.ForServerWorld(
+			fixture.World.GetWorldMap(altgard).GetMainWorldMapInstance().GetInstanceId(), Race.ASMODIANS);
+		BotPosition obelisk = geometry.SnapToGround(altgard,
+			new BotPosition(contract.Hub.Anchor[0] - 3, contract.Hub.Anchor[1], contract.Hub.Anchor[2] + 1, 0))
+			?? throw new InvalidDataException("No ground beside the Altgard obelisk.");
+		await TeleportForSetupAsync(session, player, altgard, obelisk.X, obelisk.Y, obelisk.Z, token);
+		await session.SynchronizeAsync(token);
+		NaturalAltgardArea dungeon = contract.Area("fortress-dungeon");
+		Assert.DoesNotContain(fixture.World.GetWorldMap(altgard).GetMainWorldMapInstance().GetNpcs(), npc =>
+			dungeon.Contains(npc.GetX(), npc.GetY(), npc.GetZ()) &&
+			NaturalHostility.IsAggressive(npc.GetObjectTemplate(), fixture.DataManager.StaticData.TribeRelations, TribeClass.PC_DARK));
+
+		int leg = 0;
+		foreach (NaturalAltgardStep step in contract.Steps.Where(step => step.Area == dungeon.Key))
+		{
+			var npcAt = new BotPosition(step.Position[0], step.Position[1], step.Position[2], 0);
+			float speed = session.Api.World.MovementSpeed ?? throw new InvalidOperationException("No movement speed.");
+			session.BeginStep($"s{++leg:00}", $"walk-down-{step.Key}");
+			IReadOnlyList<BotPosition> down = geometry.FindInteractionPath(altgard, obelisk, npcAt);
+			Assert.True(down.Count > 0, $"{step.Key}: {Aion.Bots.Navigation.NavMesh.BotNavMeshRouter.LastOutcome}");
+			await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing).CreateGroundPlan(down, obelisk, speed), token);
+			await session.SynchronizeAsync(token);
+			Assert.True(dungeon.Contains(player.GetX(), player.GetY(), player.GetZ()), $"{step.Key}: the server has the player at ({player.GetX()}, {player.GetY()}, {player.GetZ()})");
+
+			session.BeginStep($"s{++leg:00}", $"talk-{step.Key}");
+			int npcObject = await session.WaitForNpcAsync(step.NpcId, token);
+			await NaturalDialogProtocol.OpenAsync(session, npcObject, token);
+			DecodedBotServerPacket opened = await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
+				packet => packet.Get<int>("targetObjectId") == npcObject);
+			Console.WriteLine($"AF-03 {step.Key}: at ({player.GetX():F1}, {player.GetY():F1}, {player.GetZ():F1}), {down.Count} waypoints, page {opened.Get<ushort>("dialogPageId")}");
+			await session.SendPacketAsync(session.Api.CloseDialog(npcObject), token);
+
+			session.BeginStep($"s{++leg:00}", $"walk-up-from-{step.Key}");
+			BotPosition here = session.CurrentPosition;
+			IReadOnlyList<BotPosition> up = geometry.FindJourneyPath(altgard, here, obelisk);
+			Assert.True(up.Count > 0, $"{step.Key} back: {Aion.Bots.Navigation.NavMesh.BotNavMeshRouter.LastOutcome}");
+			await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing).CreateGroundPlan(up, here, speed), token);
+			await session.SynchronizeAsync(token);
+			Assert.True(MathF.Sqrt(MathF.Pow(player.GetX() - obelisk.X, 2) + MathF.Pow(player.GetY() - obelisk.Y, 2)) <= 3, $"{step.Key} back ends at ({player.GetX()}, {player.GetY()})");
+		}
+		Assert.Equal(2, leg / 3);
+		policy.AssertClean();
 	}
 }

@@ -381,8 +381,20 @@ with "AF" in place of "NA").
     (`AION_SOAK_NAV_INTEGRATION=1`, `run/af02/af02-offline.log`) pins the cause: from the
     obelisk's spot there is no route to NA-23's stage or the western Ice Lake, and from
     beside it there is, both ways. The warning, logger and clock-read checks pass.
-- [ ] **AF-03 — The Fortress Dungeon.** A route to Mumu Bon (z 203) and Noroia (z 205):
+- [x] **AF-03 — The Fortress Dungeon.** A route to Mumu Bon (z 203) and Noroia (z 205):
   the entrance, navmesh coverage, map context. **Done when:** a SIM probe talks to both.
+  - *Done 2026-09-29.* The dungeon is on the Altgard map itself (no new map context), under
+    the fortress, reached on foot down a ramp that starts south-west of the obelisk (about
+    (1606, 1743, 251)) and ends at z 204. It lies below the FLY zone's floor (240).
+  - SIM probe `AltgardFortressDungeonNpcsAreReachedAndTalkedTo` (`run/af03/af03-sim.log`):
+    from beside the obelisk, interaction routes on the live server's geometry reach Noroia
+    (218 waypoints) and Mumu Bon (245); both open their dialog (page 1011), and the bot walks
+    back to the obelisk. No aggressive monster stands in the dungeon.
+  - Mumu Bon stands on his own scrap of mesh: a plain journey route to him is
+    `NotConnected`, and only interaction routing reaches him (as NA-04 found for Heimdall).
+    The offline test `DungeonNpcsAreReachedOnFootDownTheRamp` (`run/af03/af03-offline.log`)
+    checks every step of both routes and the way back. The warning, logger and clock-read
+    checks pass.
 - [ ] **AF-04 — Flight policy (pure).** Covers:
   - the two FLY zones;
   - takeoff checks: a Daeva, inside a FLY zone and not NO_FLY, the 10 s reuse, and **not
@@ -460,3 +472,4 @@ The original questions follow.
   that fails without it (page 1011) and passes with it (var 1 → 2).
 - 2026-09-29 AF-01: Leg 1 contract, six compiled template plans, loader and five contract tests.
 - 2026-09-29 AF-02: the fortress exit works; NA-23 started inside the obelisk. SIM probe walked 22 legs to the Ice Lake targets and back.
+- 2026-09-29 AF-03: the Fortress Dungeon is a ramp walk; SIM probe talked to Noroia and Mumu Bon and walked back.
