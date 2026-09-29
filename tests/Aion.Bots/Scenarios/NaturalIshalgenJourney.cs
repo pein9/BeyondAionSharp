@@ -4533,6 +4533,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		NaturalMauPolicyParameters mauPolicy)
 	{
 		private readonly Dictionary<int, DateTimeOffset> cooldowns = [];
+		// NA-18: the chain the last chain skill opened, from its SM_CASTSPELL_RESULT chain flag (Java ChainSkills).
+		private (string Category, int Target, DateTimeOffset ExpiresAt)? openChain;
+		private ushort? lastPowderSkill;
 		private int revives;
 		private int completedRetreats;
 		private int? engagedTarget;
@@ -4541,6 +4544,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		private int obstacleRepositions;
 		private int rangeRejections;
 		public int ReviveCount => revives;
+
+		/// <summary>NA-18: the observed class chooses the catalog (the Cleric adds its level 10 skills).</summary>
+		private NaturalPriestSkill[] Catalog => NaturalClericSkills.ForClass(
+			session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass);
 		public int CompletedRetreats => completedRetreats;
 		public bool InCombat { get; private set; }
 		public Func<CancellationToken, Task>? MaintainInventoryAsync { get; set; }
@@ -4645,6 +4652,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			bool targetRanged = targetTemplate != null && targetTemplate.GetAttackRange() > NaturalPriestCombatPolicy.MeleeReach + 1;
 			long? lastHitByTargetMillis = null;
 			IReadOnlySet<int> blessingIds = NaturalPriestSkills.Ids("blessing");
+			IReadOnlySet<int> rejuvenationIds = NaturalClericSkills.Cleric.Where(skill => skill.Role == "rejuvenation")
+				.Select(skill => (int)skill.Id).ToHashSet();
 			var incomingAttackers = new HashSet<int>();
 			// Fights may run long: a cornered Priest alternates heals and damage, and respawns or chain
 			// aggro can keep adding monsters. The bound only stops a genuine stall (every action rejected
@@ -4708,10 +4717,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					HotPotionActive: NaturalIshalgenPotionPolicy.HasActiveHealing(world.VisibleEffects),
 					Cornered: cornered || ScriptedTrial, TargetAdjacent: targetAdjacent, InEmergency: inEmergency, HasBlessing: hasBlessing,
 					TargetSeasoned: targetSeasoned, TargetRanged: targetRanged,
-					ConservativeRangedHold: conservativeRangedHold);
-				NaturalCombatChoice choice = NaturalPriestCombatPolicy.Decide(observation, now, parameters: mauPolicy);
+					ConservativeRangedHold: conservativeRangedHold,
+					OpenChainCategory: openChain?.Category, OpenChainTargetId: openChain?.Target, ChainExpiresAt: openChain?.ExpiresAt,
+					Dp: world.CurrentDp,
+					HasRejuvenation: world.VisibleEffects?.Any(effect => rejuvenationIds.Contains(effect.SkillId)));
+				NaturalPriestSkill[] catalog = Catalog;
+				NaturalCombatChoice choice = NaturalPriestCombatPolicy.Decide(observation, now, catalog, parameters: mauPolicy);
 				NaturalCombatCandidate[] candidates = NaturalPriestCombatPolicy.CandidateActions(observation, now, choice,
-					parameters: mauPolicy);
+					catalog, parameters: mauPolicy);
 				if (!candidates.Any(candidate => candidate.Action == choice.Action &&
 					candidate.SkillId == choice.Skill?.Id && candidate.Legal))
 					throw new InvalidDataException($"Baseline chose an action absent from the legal candidate list: {choice.Action}/{choice.Skill?.Id}.");
@@ -4734,7 +4747,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						observation.HasHotPotion, observation.HotPotionReady, observation.HotPotionActive,
 						observation.Cornered, observation.TargetAdjacent, observation.InEmergency,
 						observation.HasBlessing, observation.TargetSeasoned, observation.TargetRanged,
-						observation.ConservativeRangedHold,
+						observation.ConservativeRangedHold, observation.OpenChainCategory, observation.Dp,
+						observation.HasRejuvenation,
 					},
 					["candidateActions"] = candidates,
 					["action"] = choice.Action,
@@ -5115,6 +5129,44 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					recoveringMana = false;
 					locatedForManaRest = false;
 				}
+				// NA-18 (OD-9): a Cleric rests with powder first. Sitting and Healing Light stay the fallback below.
+				if (Catalog.Any(skill => skill.IsPowderRest && world.Skills.ContainsKey(skill.Id)))
+				{
+					DateTimeOffset restNow = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
+					NaturalPowderRestChoice powder = NaturalPowderRestPolicy.Decide(new NaturalPowderRestObservation(
+						world.Level, world.CurrentHp, world.MaxHp, world.CurrentMp, world.MaxMp, recoveringMana, world.Skills,
+						cooldowns, world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
+						LastPowderSkillId: lastPowderSkill), restNow, Catalog);
+					session.TraceDiagnostic("powder-rest-decision", new Dictionary<string, object?>
+					{
+						["action"] = powder.Action, ["skillId"] = powder.Skill?.Id, ["reason"] = powder.Reason,
+						["hp"] = world.CurrentHp, ["maxHp"] = world.MaxHp, ["mp"] = world.CurrentMp, ["maxMp"] = world.MaxMp,
+						["powder"] = ItemCount(world, NaturalClericSkills.LesserOdellaPowder),
+					});
+					if (powder.Skill is { IsPowderRest: true } restSkill)
+					{
+						TimeSpan gate = session.Api.Timing.TimeUntilCast(restSkill.Id);
+						if (gate > TimeSpan.Zero) await session.AdvanceAsync(gate + TimeSpan.FromMilliseconds(1), token);
+						int castStart = session.PacketHistory.Count;
+						if (!await CastAsync(restSkill, session.CharacterId, token)) return;
+						lastPowderSkill = restSkill.Id;
+						await session.SynchronizeAsync(token);
+						int[] hitBy = session.PacketHistory.Skip(castStart)
+							.Where(packet => packet.PacketType == typeof(SM_ATTACK) && packet.Get<int>("targetObjId") == session.CharacterId)
+							.Select(packet => packet.Get<int>("attackerObjId")).Distinct().ToArray();
+						if (hitBy.Length > 0)
+						{
+							// The hit cancelled the cast: never cast or sit under attack, fight first.
+							session.TraceDiagnostic("powder-rest-interrupted", new Dictionary<string, object?>
+							{
+								["skillId"] = restSkill.Id, ["attackers"] = hitBy, ["hp"] = world.CurrentHp,
+							});
+							await DefendDuringRestAsync(hitBy, castStart, token);
+							locatedForManaRest = false;
+						}
+						continue;
+					}
+				}
 				if (!recoveringMana)
 				{
 					if (world.CurrentHp * 100 < world.MaxHp * 90)
@@ -5172,39 +5224,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					async (attackers, defendToken) =>
 					{
 						interrupted = true;
-						session.TraceDiagnostic("rest-interrupted-by-attack", new Dictionary<string, object?>
-						{
-							["attackers"] = attackers,
-							["hp"] = world.CurrentHp,
-							["position"] = session.CurrentPosition,
-						});
-						if (navigator.DefendOnAttackAsync is { } defend)
-							await defend(attackers.ToArray(), navigator.LastMovementStart ?? session.CurrentPosition,
-								attackHistoryStart, defendToken);
-						// Never sit under attack: fight whatever is still on the Priest, nearest first. A fight that
-						// ends in a retreat re-observes; attackers left more than 30 m behind are no longer a threat.
-						for (int fight = 0; fight < MaximumCombatActions && !world.IsDead && world.CurrentHp > 0; fight++)
-						{
-							int[] remaining = attackers.Distinct()
-								.Where(attacker => !navigator.UnavailableObjects.Contains(attacker) &&
-									world.Objects.TryGetValue(attacker, out BotKnownObject? observed) &&
-									Distance(session.CurrentPosition, observed.Position) < 30)
-								.OrderBy(attacker => Distance(session.CurrentPosition, world.Objects[attacker].Position))
-								.ToArray();
-							if (remaining.Length == 2 && mauPolicy.PreferWoundedWhenTwoAttackers)
-								remaining = remaining.OrderBy(attacker => PriorityForEngagedTarget(attacker,
-									remaining.Length, session, preferWounded: true)).ToArray();
-							if (remaining.Length == 0) break;
-							session.TraceDiagnostic("rest-defend", new Dictionary<string, object?>
-							{
-								["attacker"] = remaining[0],
-								["remaining"] = remaining,
-								["hp"] = world.CurrentHp,
-								["position"] = session.CurrentPosition,
-							});
-							if (await TryKillAsync(remaining[0], defendToken, session.CurrentPosition))
-								navigator.UnavailableObjects.Add(remaining[0]);
-						}
+						await DefendDuringRestAsync(attackers, attackHistoryStart, defendToken);
 					}, token);
 				if (outcome == NaturalRestOutcome.Dead)
 				{
@@ -5216,6 +5236,45 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await session.SynchronizeAsync(token);
 			}
 			throw new InvalidDataException("Priest could not recover HP/MP before the next pull within bounded healing and mana-rest attempts.");
+		}
+
+		/// <summary>Fight the attackers that interrupted a sit or a powder cast (NA-18 shares it with the sit).</summary>
+		private async Task DefendDuringRestAsync(IReadOnlyList<int> attackers, int attackHistoryStart, CancellationToken defendToken)
+		{
+			BotWorldModel world = session.Api.World;
+			session.TraceDiagnostic("rest-interrupted-by-attack", new Dictionary<string, object?>
+			{
+				["attackers"] = attackers,
+				["hp"] = world.CurrentHp,
+				["position"] = session.CurrentPosition,
+			});
+			if (navigator.DefendOnAttackAsync is { } defend)
+				await defend(attackers.ToArray(), navigator.LastMovementStart ?? session.CurrentPosition,
+					attackHistoryStart, defendToken);
+			// Never sit under attack: fight whatever is still on the Priest, nearest first. A fight that
+			// ends in a retreat re-observes; attackers left more than 30 m behind are no longer a threat.
+			for (int fight = 0; fight < MaximumCombatActions && !world.IsDead && world.CurrentHp > 0; fight++)
+			{
+				int[] remaining = attackers.Distinct()
+					.Where(attacker => !navigator.UnavailableObjects.Contains(attacker) &&
+						world.Objects.TryGetValue(attacker, out BotKnownObject? observed) &&
+						Distance(session.CurrentPosition, observed.Position) < 30)
+					.OrderBy(attacker => Distance(session.CurrentPosition, world.Objects[attacker].Position))
+					.ToArray();
+				if (remaining.Length == 2 && mauPolicy.PreferWoundedWhenTwoAttackers)
+					remaining = remaining.OrderBy(attacker => PriorityForEngagedTarget(attacker,
+						remaining.Length, session, preferWounded: true)).ToArray();
+				if (remaining.Length == 0) break;
+				session.TraceDiagnostic("rest-defend", new Dictionary<string, object?>
+				{
+					["attacker"] = remaining[0],
+					["remaining"] = remaining,
+					["hp"] = world.CurrentHp,
+					["position"] = session.CurrentPosition,
+				});
+				if (await TryKillAsync(remaining[0], defendToken, session.CurrentPosition))
+					navigator.UnavailableObjects.Add(remaining[0]);
+			}
 		}
 
 		private async Task ReviveAtBindAsync(CancellationToken token)
@@ -5412,6 +5471,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				int deciseconds = result.Get<int>("cooldown");
 				if (deciseconds > 0)
 					cooldowns[skill.CooldownId] = runtime.Epoch.AddMilliseconds(runtime.NowMillis + deciseconds * 100L);
+				// NA-18: flag 32 is a successful chain step (Java SM_CASTSPELL_RESULT); anything else resets it.
+				// Smite's chain has no time limit; a stepped chain lasts its template window.
+				if (skill.ChainCategory != null)
+					openChain = (result.Get<byte>("flags") & 32) != 0
+						? (skill.ChainCategory, target, skill.RequiresChainCategory == null || skill.ChainWindowMillis == 0
+							? DateTimeOffset.MaxValue : runtime.Epoch.AddMilliseconds(runtime.NowMillis + skill.ChainWindowMillis))
+						: null;
 			}
 			await session.AdvanceAsync(BotCastProtocol.RecoveryDelay(result), token);
 			return true;

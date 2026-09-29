@@ -2,9 +2,19 @@ using Aion.Bots.World;
 
 namespace Aion.Bots.Scenarios;
 
+/// <param name="DpCost">DP the skill needs and spends (Salvation: startconditions/dp).</param>
+/// <param name="ReagentItemId">Item the skill consumes (Herb Treatment, MP Recovery: actions/itemuse).</param>
 public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role, int ManaCost,
 	float Range, int CooldownId, int CooldownDeciseconds, string? ChainCategory = null,
-	string? RequiresChainCategory = null, int ChainWindowMillis = 0);
+	string? RequiresChainCategory = null, int ChainWindowMillis = 0, int DpCost = 0,
+	int ReagentItemId = 0, int ReagentCount = 0)
+{
+	/// <summary>Skills cast on the bot itself; every other role targets the monster.</summary>
+	public bool TargetsSelf => Role is "heal" or "blessing" or "rejuvenation" or "salvation" or "herb" or "mp-recovery";
+
+	/// <summary>Powder rest skills (4 s cast, cancelled by any hit): only the rest policy casts them.</summary>
+	public bool IsPowderRest => Role is "herb" or "mp-recovery";
+}
 
 /// <summary>
 /// Frozen 4.8 Priest level 1-9 active skills. The learned SM_SKILL_LIST is still the authority:
@@ -48,7 +58,7 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	int? TargetHpPercent = null, bool HasHealedThisFight = false,
 	bool HasHotPotion = false, bool HotPotionReady = false, bool HotPotionActive = false,
 	bool Cornered = false, bool TargetAdjacent = false, bool InEmergency = false, bool TargetSeasoned = false,
-	bool TargetRanged = false, bool ConservativeRangedHold = false);
+	bool TargetRanged = false, bool ConservativeRangedHold = false, int Dp = 0, bool? HasRejuvenation = null);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);
@@ -135,10 +145,14 @@ public static class NaturalPriestCombatPolicy
 
 		foreach (NaturalPriestSkill skill in skills.OrderBy(skill => skill.Id))
 		{
-			string action = skill.Role is "heal" or "blessing" ? "cast-self" : "cast-target";
+			string action = skill.TargetsSelf ? "cast-self" : "cast-target";
 			int? target = action == "cast-target" ? state.TargetObjectId : null;
 			var reasons = new List<string>();
 			if (state.Dead) reasons.Add("Client reported death.");
+			if (skill.IsPowderRest) reasons.Add("Powder rest skill: any hit cancels its 4 s cast, so only the rest policy casts it.");
+			if (state.Dp < skill.DpCost) reasons.Add("Observed DP is below the skill's cost.");
+			if (skill.Role == "rejuvenation" && state.HasRejuvenation != false)
+				reasons.Add("The heal over time is already observed, or effects are unobserved.");
 			if (state.Level < skill.MinimumLevel || !state.Learned.ContainsKey(skill.Id))
 				reasons.Add("Skill is not in the client-observed learned list at this level.");
 			if (action == "cast-target" && (target == null || state.TargetDistance == null))
@@ -176,7 +190,7 @@ public static class NaturalPriestCombatPolicy
 		bool fighting = state.Aggro || state.TargetObjectId != null || state.NearbyAggressors > 0;
 		bool adjacent = state.TargetAdjacent || state.TargetDistance is float near && near <= MeleeReach;
 		if (!state.Cornered && state.NearbyAggressors >= SwarmedAttackers)
-			return Choice("retreat", null, $"{state.NearbyAggressors} client-observed attackers; disengage from the whole pack.");
+			return Retreat($"{state.NearbyAggressors} client-observed attackers; disengage from the whole pack.");
 		if (!fighting && state.Mp * 100 < state.MaxMp * 50 &&
 			!(state.Hp * 100 <= state.MaxHp * 25 && state.HasLifePotion && state.LifePotionReady) &&
 			!(state.Mp < (heal?.ManaCost ?? 0) + 10 && state.HasManaPotion && state.ManaPotionReady))
@@ -185,18 +199,25 @@ public static class NaturalPriestCombatPolicy
 		// recorded human run kept chaining Healing Light down to 24% and won). Retreat when nothing is left
 		// to heal with. Cornered: no checked
 		// escape leads away from the pack, so fight it out regardless.
+		// NA-18: the Cleric's Salvation (instant, 50% MP then 50% HP) is the emergency heal whenever observed DP
+		// pays for it; it goes before potions and Healing Light.
+		NaturalPriestSkill? salvation = NaturalPriestSkills.Best("salvation", state.Level, state.Learned, catalog);
+		bool salvationReady = salvation != null && fighting && state.Dp >= salvation.DpCost &&
+			Eligible(salvation, null, 0, state, now, reserveHeal: false);
 		if (!state.Cornered && fighting && state.Hp * 100 <= state.MaxHp * 30)
 		{
-			bool canHeal = heal != null && Eligible(heal, state.TargetObjectId, 0, state, now, reserveHeal: false);
+			bool canHeal = heal != null && Eligible(heal, state.TargetObjectId, 0, state, now, reserveHeal: false) || salvationReady;
 			bool canPotion = state.HasLifePotion && state.LifePotionReady ||
 				state.HasHotPotion && state.HotPotionReady && !state.HotPotionActive;
 			if (!canHeal && !canPotion)
-				return Choice("retreat", null, "HP is at or below 30% and no self-heal or potion is available.");
+				return Retreat("HP is at or below 30% and no self-heal or potion is available.");
 		}
 		int healPercent = state.InEmergency ? 100 : state.NearbyAggressors >= 2
 			? policy.HealMultiplePercent : policy.HealSinglePercent;
 		bool urgent = fighting && state.Hp * 100 <= state.MaxHp * healPercent;
 		bool critical = state.Hp * 100 <= state.MaxHp * 25;
+		if (salvationReady && (state.InEmergency || critical))
+			return Choice("cast-self", salvation, $"Emergency with {state.Dp} observed DP: Salvation restores half of MP and HP at once.");
 		// A selected target can make this a "fight" before any monster has attacked.
 		// Earlier-than-baseline potion tuning applies only after an attacker is observed.
 		int hotPotionPercent = state.NearbyAggressors > 0 ? policy.HotPotionPercent
@@ -240,7 +261,12 @@ public static class NaturalPriestCombatPolicy
 		if (state.Mp < (heal?.ManaCost ?? 0) + 10 && state.HasManaPotion && state.ManaPotionReady)
 			return Choice("mana-potion", null, "Mana is below the healing reserve; consume an owned mana potion.");
 		if (critical && state.Aggro && !state.Cornered)
-			return Choice("retreat", null, "Critical HP and no legal self-heal; leave the aggressor.");
+			return Retreat("Critical HP and no legal self-heal; leave the aggressor.");
+		// NA-18: keep the Cleric's heal over time (Light of Rejuvenation, 450 HP over 30 s) up while being hit.
+		NaturalPriestSkill? rejuvenation = NaturalPriestSkills.Best("rejuvenation", state.Level, state.Learned, catalog);
+		if (state.Aggro && state.HasRejuvenation == false && rejuvenation != null &&
+			Eligible(rejuvenation, null, 0, state, now, reserveHeal: true))
+			return Choice("cast-self", rejuvenation, "Under attack without the observed heal over time; keep it up.");
 		NaturalPriestSkill? blessing = NaturalPriestSkills.Best("blessing", state.Level, state.Learned, catalog);
 		if (!state.Aggro && state.TargetObjectId == null && state.HasBlessing == false && blessing != null &&
 			state.Mp >= blessing.ManaCost + (heal?.ManaCost ?? 0) &&
@@ -258,7 +284,17 @@ public static class NaturalPriestCombatPolicy
 			return Choice("approach", null, "Target is outside Priest spell range.");
 		// The rotation. Adjacent: instants first (they cannot be interrupted and each buys time: the stun, the
 		// slow), then Smite. At range: Smite is the pull and the filler while the monster closes.
-		string[] rotation = adjacent ? ["followup", "infernal", "hallowed", "smite"] : ["followup", "smite"];
+		// NA-18, the Cleric: every other _1TH opener resets an open Smite chain (Java ChainCondition.shouldReset), so
+		// while Flashbolt is ready Smite opens first and Flashbolt follows at once; then Slashing Wind and Earth's
+		// Wrath (a 1.5 s cast, last at melee where a hit can cancel it). The Priest catalog has none of these roles.
+		var rotation = new List<string> { "followup" };
+		NaturalPriestSkill? followup = NaturalPriestSkills.Best("followup", state.Level, state.Learned, catalog);
+		NaturalPriestSkill? opener = NaturalPriestSkills.Best("smite", state.Level, state.Learned, catalog);
+		if (followup != null && opener != null && followup.RequiresChainCategory == opener.ChainCategory &&
+			!(state.Cooldowns.TryGetValue(followup.CooldownId, out DateTimeOffset followupReadyAt) && followupReadyAt > now) &&
+			state.Mp >= opener.ManaCost + followup.ManaCost + (heal?.ManaCost ?? 0) + policy.ManaReserveExtra)
+			rotation.Add("smite");
+		rotation.AddRange(adjacent ? ["infernal", "hallowed", "wind", "wrath", "smite"] : ["wrath", "wind", "smite"]);
 		foreach (string role in rotation)
 		{
 			NaturalPriestSkill? skill = NaturalPriestSkills.Best(role, state.Level, state.Learned, catalog);
@@ -279,6 +315,17 @@ public static class NaturalPriestCombatPolicy
 
 		NaturalCombatChoice Choice(string action, NaturalPriestSkill? skill, string reason) =>
 			new(action, skill, state.TargetObjectId, reason, checks.ToArray());
+
+		// NA-18: a Cleric roots the monster it is leaving (instant, about 10 s) before retreating; Root is on its
+		// own cooldown afterwards, so the next decision retreats.
+		NaturalCombatChoice Retreat(string reason)
+		{
+			NaturalPriestSkill? root = NaturalPriestSkills.Best("root", state.Level, state.Learned, catalog);
+			if (root != null && state.TargetObjectId is int rootTarget && state.TargetDistance is float rootDistance &&
+				Eligible(root, rootTarget, rootDistance, state, now, reserveHeal: true))
+				return Choice("cast-target", root, "Root the target before retreating: " + reason);
+			return Choice("retreat", null, reason);
+		}
 
 		bool Eligible(NaturalPriestSkill skill, int? candidateTarget, float range,
 			NaturalCombatObservation observed, DateTimeOffset instant, bool reserveHeal)

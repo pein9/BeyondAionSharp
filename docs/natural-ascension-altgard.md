@@ -1265,7 +1265,7 @@ OD-11, a development item is verified by **one** run.
 
 ### Phase 5: Level 10 Cleric play (the start of that work)
 
-- [ ] **NA-18 — Cleric skill catalog, combat policy and resting with powder.**
+- [x] **NA-18 — Cleric skill catalog, combat policy and resting with powder.**
   - **Depends:** NA-09.
   - **Do:** build on [Appendix C](#appendix-c-level-910-cleric-skills). Every effect type
     it needs already exists in C# and matches Java.
@@ -1304,6 +1304,29 @@ OD-11, a development item is verified by **one** run.
     - avoiding cast cancels;
     - Priest behavior unchanged.
   - **Verify:** the focused tests.
+  - **Evidence (2026-09-28):**
+    - `NaturalClericSkills` holds the eight level 10 actives, with ids, cooldown groups,
+      ranges, MP, chains, DP and reagents checked against the shipped tree and templates.
+      `ForClass` picks the catalog from the observed class; the Priest keeps
+      `NaturalPriestSkills.All`.
+    - `NaturalPriestCombatPolicy` gains, only for roles the Priest catalog lacks:
+      - Salvation at an emergency when observed DP ≥ 2000;
+      - Light of Rejuvenation kept up while being hit;
+      - Smite opening for a ready Flashbolt, and Flashbolt first on an open chain;
+      - Slashing Wind and Earth's Wrath (last at melee: a 1.5 s cast);
+      - Root before a retreat.
+    - The journey's combat tracks the chain from the cast result's chain flag (32; Java
+      `SM_CASTSPELL_RESULT`) and observes DP and the heal-over-time effect.
+    - `NaturalPowderRestPolicy` runs first in `RestAsync` for a Cleric. Herb Treatment and
+      MP Recovery alternate on group 1153, starting with the larger deficit. The bot sits on
+      the shared cooldown or without powder, and fights first when a hit cancels the cast
+      (the defend code is shared with sitting).
+    - Tests: `NaturalClericCombatPolicyTests`, 10 of 10. They include a Priest grid of 576
+      states with identical choices, reasons and checks under both catalogs. Focused
+      `Natural*` suite: 234 of 234 passed. The warning, null-logger and clock-read checks
+      pass.
+    - No SIM run: none of this can fire before the bridge ends. NA-23 is the first run
+      that fights as a Cleric.
 
 - [ ] **NA-19 — A "buff ourself" check and help-item use.**
   - **Depends:** NA-18.
@@ -1717,6 +1740,8 @@ has examples.
 - 2026-09-28 — Loop: NA-16 done. **The bridge completes end to end from the Munin snapshot**: a level 10 Cleric bound in Altgard, all four quests done, staff and accessories worn, junk sold, 12 elixirs and 30 powder bought, and the tea drunk.
 
 - 2026-09-28 — Loop: NA-17 done. The bridge endpoint is verified across a relog. The bridge resumed after interruptions inside the trial and mid-ceremony, then finished. **Phase 4 is complete.**
+
+- 2026-09-28 — Loop: NA-18 done. The Cleric has a level 10 catalog and rotation (Smite → Flashbolt, Earth's Wrath, Slashing Wind), Salvation, the heal over time, Root before a retreat, and powder rest. The Priest's choices are unchanged. Phase 5 has started.
 
 ## Appendix A: Altgard shops and consumables
 
