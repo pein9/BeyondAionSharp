@@ -9,7 +9,7 @@ Patches are kept with LF line endings (`.gitattributes`), as the Java repository
 |---|---|---|---|
 | 2209 The Scribbler (Altgard) | Borender 203572 is never registered for the talk event; var 1 → 2 is unreachable | `q2209-the-scribbler.patch`, report `q2209-the-scribbler.md` | D26 |
 | 2223 A Mythical Monster (Altgard) | Lamir 203620 is never registered for the talk event; var 0 → 1 (which gives item 182203217) is unreachable through the talk path. Masked while Q2231 or Q2224 is startable or active, because Lamir starts both and so opens the quest page. Retail step 1 is "Talk with Lamir" (https://aioncodex.com/enc/quest/2223/?sl=1) | `q2223-a-mythical-monster.patch` | D27, applied (deviation 141) |
-| 2916 Man in the Long Black Robe (Pandaemonium) | Annju 204151 is never registered for the talk event; var 2 → 3 (`SETPRO3`) is unreachable. No other quest registers 204151. Retail step 3 is "Interrogate Annju" (https://aioncodex.com/enc/quest/2916/?sl=1) | `q2916-man-in-the-long-black-robe.patch` | none (not on the bot's route) |
+| 2916 Man in the Long Black Robe (Pandaemonium) | Annju 204151 is never registered for the talk event; var 2 → 3 (`SETPRO3`) is unreachable. No other quest registers 204151. Retail step 3 is "Interrogate Annju" (https://aioncodex.com/enc/quest/2916/?sl=1) | `q2916-man-in-the-long-black-robe.patch` | D28, applied (deviation 142) |
 
 The evidence and the dialog-dispatch explanation that apply to all three are in
 `q2209-the-scribbler.md`, whose appendix lists every handler the scan found.
@@ -56,7 +56,7 @@ removed (11060 is level 99 there; 14031, 24031 and 26960 have no page).
 |---|---|---|---|---|---|
 | `altgard/_2209TheScribbler` | 203572 Borender | var 1 → 2 | **Confirmed** | include (patch ready) | fixed (D26, §7/57) |
 | `altgard/_2223AMythicalMonster` | 203620 Lamir | var 0 → 1 (gives 182203217) | **Confirmed** (retail step 1 "Talk with Lamir") | include (patch ready) | fixed (D27, §7/141) |
-| `pandaemonium/_2916ManInTheLongBlackRobe` | 204151 Annju | var 2 → 3 (`SETPRO3`) | **Confirmed** (retail step 3 "Interrogate Annju") | include (patch ready) | proposed D28 |
+| `pandaemonium/_2916ManInTheLongBlackRobe` | 204151 Annju | var 2 → 3 (`SETPRO3`) | **Confirmed** (retail step 3 "Interrogate Annju") | include (patch ready) | fixed (D28, §7/142) |
 | `bare_truth/_14031AHyperVention` | 730888, 730898 (spawned by the handler in 320040000) | var 10 → 11 → REWARD after the captain kill; the quest cannot finish | **Confirmed** (4.8 retail steps 11 "Operate the Large Dimension Teleport Device" and 12 "Check the Shattered Large Dimension Teleport Device"). Both NPCs are `ai="general"` and no other handler registers them, so a click opens page 1011 | include | proposed D29 |
 | `clash_of_destiny/_24031EnemyAtTheDoorstep` | 730888, 730898 | same as 14031 | **Confirmed** (4.8 retail steps 11 and 12, same text) | include | proposed D30 |
 | `ishalgen/_2002WheresRae` | 790002 Verdandi, 205020 Hagen | Verdandi's var 2 → 3, 10 → 11, 11 → 12, 12 → 99 (instance) and 13 → 14 steps; Hagen's flight back from Ataxiar | **Confirmed** (4.8 retail steps 3, 5 and 8 "Talk with Verdandi"). Can be masked while Q2008 Ascension, which registers both, is in the quest list and not complete | include | already registered (deviation 33, P7-09) |

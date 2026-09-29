@@ -35,6 +35,7 @@ path. D26 and D27 approve two more: registering Borender (203572) for Q2209 "The
 Scribbler" and Lamir (203620) for Q2223 "A Mythical Monster", whose Java handlers never
 register them (reported upstream, `docs/upstream-reports/`). Both are applied in C#
 (§7/57 and §7/141, tests in `SimulationQuestCorrectionTests.cs`) and must not be ported back.
+D28 adds Annju (204151) for Q2916 "Man in the Long Black Robe" (§7/142).
 These decisions are not a general exemption from parity or authorization to
 reopen other deferred behavior.
 
