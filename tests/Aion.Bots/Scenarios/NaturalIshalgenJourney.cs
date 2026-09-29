@@ -1616,7 +1616,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 80) await RestSafelyAsync(token);
 				await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
 				NaturalPullPlan? plan = null;
-				for (int wait = 0; wait <= mauPolicy.PatrolWaitCycles; wait++)
+				// NA-22: the Cleric waits 15 s at a time, up to four times, then decides (NaturalPatrolPolicy); the Priest
+				// keeps its baseline of short waits.
+				bool cleric = combat.IsCleric;
+				int waitCycles = cleric ? NaturalPatrolPolicy.MaximumWaits : mauPolicy.PatrolWaitCycles;
+				for (int wait = 0; wait <= waitCycles; wait++)
 				{
 					NaturalPullMonster[] monsters = ObservedPullMonsters();
 					var observed = navigator.Observe().Npcs.ToDictionary(npc => npc.ObjectId);
@@ -1671,7 +1675,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						["seed"] = runtime.Seed,
 						["candidateScope"] = "spots-evaluated-before-baseline-rank-cutoff",
 						["chosenAction"] = plan == null ? "no-plan" :
-							plan.Helpers.Count > 0 && wait < mauPolicy.PatrolWaitCycles ? "wait" : "pull",
+							plan.Helpers.Count > 0 && wait < waitCycles ? "wait" : "pull",
 						["observedState"] = new
 						{
 							position = session.CurrentPosition,
@@ -1694,7 +1698,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							candidate.ExpectedHelperObjectIds, candidate.ClearanceFromOthers,
 							candidate.Legal, candidate.IllegalReason,
 							BaselineRejection = !candidate.Legal ? candidate.IllegalReason :
-								plan != null && plan.Helpers.Count > 0 && wait < mauPolicy.PatrolWaitCycles ?
+								plan != null && plan.Helpers.Count > 0 && wait < waitCycles ?
 								"Baseline waits for helpers to move." :
 								plan?.Target.Npc.ObjectId == candidate.TargetObjectId &&
 								plan.FiringPosition == candidate.FiringPosition ? null :
@@ -1708,7 +1712,23 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						["expectedHelpers"] = plan?.Helpers.Select(h => $"{h.Npc.TemplateId}/{h.Npc.ObjectId}").ToArray(),
 						["clearance"] = plan?.ClearanceFromOthers,
 					});
-					if (plan == null || plan.Helpers.Count == 0 || wait == mauPolicy.PatrolWaitCycles) break;
+					if (plan == null || plan.Helpers.Count == 0) break;
+					if (cleric)
+					{
+						NaturalPatrolDecision patrol = NaturalPatrolPolicy.Decide(ObservePatrol(plan, wait));
+						session.TraceDiagnostic("patrol-decision", new Dictionary<string, object?>
+						{
+							["purpose"] = purpose, ["action"] = patrol.Action, ["wait"] = wait, ["winnable"] = patrol.Winnable,
+							["reason"] = patrol.Reason, ["assessment"] = patrol.Assessment,
+							["helpers"] = plan.Helpers.Select(h => $"{h.Npc.TemplateId}/{h.Npc.ObjectId}").ToArray(),
+						});
+						if (patrol.Action == "reroute") return null;
+						if (patrol.Action != "wait") break; // fight, or pull anyway
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(patrol.WaitMillis), token);
+						await session.SynchronizeAsync(token);
+						continue;
+					}
+					if (wait == waitCycles) break;
 					// A helper stands in range: patrols move, so give it a few seconds before accepting a chain pull.
 					await session.AdvanceAsync(TimeSpan.FromSeconds(3), token);
 					await session.SynchronizeAsync(token);
@@ -1730,6 +1750,31 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					}
 				}
 				return plan;
+			}
+
+			// NA-22: the client's view of a blocked pull for the Cleric's patrol decision.
+			NaturalPatrolObservation ObservePatrol(NaturalPullPlan plan, int completedWaits)
+			{
+				BotWorldModel world = session.Api.World;
+				bool Learned(string role, out NaturalPriestSkill? skill)
+				{
+					skill = NaturalPriestSkills.Best(role, world.Level, world.Skills, NaturalClericSkills.All);
+					return skill != null;
+				}
+				bool heal = Learned("heal", out NaturalPriestSkill? healSkill) && world.CurrentMp >= healSkill!.ManaCost;
+				bool hot = Learned("rejuvenation", out NaturalPriestSkill? hotSkill) && world.CurrentMp >= hotSkill!.ManaCost;
+				bool salvation = Learned("salvation", out NaturalPriestSkill? salvationSkill) && world.CurrentDp >= salvationSkill!.DpCost;
+				var effects = world.VisibleEffects ?? [];
+				bool buffs = effects.Any(effect => NaturalPriestSkills.Ids("blessing").Contains(effect.SkillId)) &&
+					effects.Any(effect => NaturalHelpItemPolicy.All.Any(item => item.SkillId == effect.SkillId &&
+						item.EffectSlot == NaturalHelpItemPolicy.AwakeningSlot));
+				int[] levels = plan.Helpers.Prepend(plan.Target)
+					.Select(member => (int)(runtime.Data.NpcDataDh.GetNpcTemplate(member.Npc.TemplateId)?.GetLevel() ?? 0)).ToArray();
+				// Rerouting through another corridor belongs to the route planner; the pull planner already chose the
+				// spot with the fewest helpers, so here no other way is known.
+				return new(combat.IsCleric, completedWaits, world.Level, world.CurrentHp, world.MaxHp, world.CurrentMp, world.MaxMp,
+					levels, heal, hot, salvation, buffs, NaturalIshalgenPotionPolicy.TotalHealingCount(world.Inventory.Values),
+					RerouteAvailable: false);
 			}
 
 			// Fight your way in: when observed monsters close every hostile-free route, take the route that fights
@@ -5144,7 +5189,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			await CastAsync(blessing, session.CharacterId, token);
 		}
 
-		private bool IsCleric => session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass ==
+		public bool IsCleric => session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass ==
 			PlayerClass.CLERIC.GetClassId();
 
 		/// <summary>NA-19: the client-observed state the help-item policy reads.</summary>

@@ -1543,7 +1543,7 @@ OD-11, a development item is verified by **one** run.
     snapshot run shows the items arriving and NA-19 using them.
   - **Verify:** the focused tests and that one run.
 
-- [ ] **NA-22 — Patrol timing as a Cleric: wait and retry, or take the fight (OD-14).**
+- [x] **NA-22 — Patrol timing as a Cleric: wait and retry, or take the fight (OD-14).**
   - **Depends:** NA-18, NA-19.
   - **Do:** replace the rule "wait up to a minute, then clear adds or walk in" with an
     explicit, traced decision whenever a patrol blocks a route, a pull spot or an
@@ -1572,6 +1572,29 @@ OD-11, a development item is verified by **one** run.
     - the order of escalation;
     - Priest unchanged.
   - **Verify:** the focused tests.
+  - **Evidence (2026-09-28):**
+    - `NaturalPatrolPolicy` is pure.
+      - A Cleric blocked by a patrol holds for 15 s of game time, at most four times per
+        blockage.
+      - Then it fights at the planned spot when winnable, reroutes when another way is
+        known, and otherwise pulls anyway (a death is recorded, not failed; OD-12).
+      - A pull is winnable when it brings at most 2 monsters, none more than 2 levels above
+        the Cleric, with HP ≥ 70%, MP ≥ 50% and Healing Light affordable. For two monsters
+        it also needs the heal over time or Salvation, and the buffs up or at least three
+        potions.
+      - The Priest gets `baseline`.
+    - `MoveToPullSpotAsync` uses it for the Cleric: 15 s holds on the game clock
+      (`AdvanceAsync`), a `patrol-decision` trace for each blockage, and `reroute` returns
+      no plan. The Priest's loop (3 s waits, `PatrolWaitCycles`) is unchanged.
+    - **Honest limit:** the pull planner already picks the spot with the fewest helpers, so
+      it passes `RerouteAvailable: false`. Rerouting through another corridor stays with the
+      route planner (`TryFightThroughAsync`).
+    - The runtime observes the heal over time as learned and affordable (its 5 s cooldown is
+      not visible there). Buffs up means the Blessing plus an effect in the Courage/Awakening
+      slot (30184).
+    - Tests: `NaturalPatrolPolicyTests`, 7 of 7. Focused `Natural*` suite: 263 of 263
+      passed. The warning, null-logger and clock-read checks pass.
+    - No run: nothing pulls as a Cleric yet. NA-23 exercises it.
 
 - [ ] **NA-23 — Focused Cleric encounter check (diagnostic, one run).**
   - **Depends:** NA-22 (and NA-21 if the help items are approved by then).
@@ -1860,6 +1883,7 @@ has examples.
   - It also owns potions and jellies it never uses, and Munin's Belt is unworn.
   - These gaps became NA-20a, which needs no approval and is next.
 - 2026-09-28 — Loop: NA-20a done. The Cleric now uses its owned veteran scrolls (Castafodin, Accelerox), drinks a Zeller jelly for Salvation's DP, and recognizes all its potions. The "unworn belt" was a checkpoint slot truncation; the belt was always worn. Next is NA-22, since NA-21 waits for approval.
+- 2026-09-28 — Loop: NA-22 done. When a patrol blocks a pull, the Cleric waits 15 s up to four times, then fights if the assessment says it can win, or pulls anyway (deaths recorded). The Priest is unchanged. Next is NA-23, the first Cleric fights.
 
 ## Appendix A: Altgard shops and consumables
 
