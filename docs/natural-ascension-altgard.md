@@ -1424,7 +1424,7 @@ OD-11, a development item is verified by **one** run.
       when the bridge starts.
     - Appendix D is corrected: Fine Anti-Shock has a required level of 50.
 
-- [ ] **NA-20 — Propose the help-item allowlist and how it is supplied (from the research).**
+- [x] **NA-20 — Propose the help-item allowlist and how it is supplied (from the research).**
   - **Depends:** none.
   - **Research done:** [aion-4.8-consumables.md](aion-4.8-consumables.md) (2026-09-28)
     surveyed every consumable in the Java and C# data (they match byte for byte), the retail
@@ -1466,6 +1466,45 @@ OD-11, a development item is verified by **one** run.
     counts and mechanism is requested under "Blocked / questions for the operator".
   - **Verify:** a focused test pins the proposed ids against the static data: each exists,
     and its skill, delay group and item level match.
+  - **Evidence (2026-09-28):**
+    - The proposal is [Appendix D.2](#appendix-d2-proposed-help-items-na-20-awaiting-approval),
+      and the approval request is under "Blocked / questions for the operator".
+    - The ids are data in `NaturalHelpItemAllowlist.Proposed`. Nothing supplies them yet.
+    - `NaturalHelpItemAllowlistTests` (3 of 3) pins each id's existence, skill, delay
+      group, item level and required level. It also checks that the tier bands match the
+      NA-19 tier rule and never overlap, and that Courage is absent.
+    - **Found while checking the natural Cleric's endpoint inventory (`na19-bridge`):**
+      - it already owns 50 **[Event] Rx: Castafodin** (casting speed) and 50 **Accelerox**
+        (run speed) from the server's veteran rewards (Java `VeteranRewardService`, months
+        26 and 30). They have the Lesser tiers' effect, last 30 min and need no level. That
+        removes the need to supply Awakening or Running at levels 10–19.
+      - It also owns things nothing uses yet: 106 Minor Mana Potions, 5 Zeller Aether
+        Jellies (the Q2904 reward) and the 12 Lesser Life Elixirs the shop stop bought (the
+        potion policy only knows 162000052).
+      - Munin's Belt is listed as a kept accessory but is not worn.
+      - All of these are about what the bot already owns, so they need no approval. They
+        are the new item NA-20a.
+
+- [ ] **NA-20a — Use what the natural Cleric already owns (found by NA-20).**
+  - **Depends:** NA-19.
+  - **Do:** Cleric only; the Ishalgen Priest is unchanged.
+    - Add the veteran-reward event scrolls to the NA-19 catalog as the Awakening and Running
+      families: Castafodin 164002118 (skill 10467, group 34, 30 min) and Accelerox
+      164002116 (10465, group 35, 30 min).
+      - They have the Lesser tiers' effect and no required level, so they count as the
+        Lesser tier at any level.
+      - A real tier at or below the level beats them from level 20.
+      - Blitzopan (attack speed) is Courage's twin and is never used.
+    - Recognize every owned life potion or elixir tier the bot bought, including Lesser
+      Life Elixir 162000053. Use the owned Minor Mana Potions through the policy's existing
+      `mana-potion` action.
+    - Drink a Zeller Aether Jelly (group 23, 30 min delay) out of combat when observed DP is
+      below 2000 and Salvation is learned, so that Salvation has its DP.
+    - Wear Munin's Belt (the contract's `keptAccessories`): find why the gear code leaves
+      the belt slot empty, and require every kept accessory to be worn at the endpoint.
+  - **Done when:** policy tests cover each of these, and one Munin-snapshot bridge run
+    shows the belt worn and the endpoint unchanged otherwise.
+  - **Verify:** the focused tests and that one run.
 
 - [ ] **NA-21 — Supply the approved help items.**
   - **Depends:** NA-20, **plus operator approval of its list (OD-13)**.
@@ -1682,7 +1721,22 @@ has examples.
 
 ## Blocked / questions for the operator
 
-- **NA-20 → OD-13:** once NA-20 has written its proposal, you approve the help-item list, counts and supply mechanism. NA-21 waits for that approval.
+- **NA-20 → OD-13 (asked 2026-09-28):** please approve, change or reject [Appendix D.2](#appendix-d2-proposed-help-items-na-20-awaiting-approval):
+  1. **The list and bands:**
+     - Anti-Shock from level 10;
+     - Life and Mana Serums;
+     - Zeller Aether Jelly;
+     - Awakening and Running from level 20 only, because the owned event scrolls cover 10–19;
+     - optional: powder and Revival Stones.
+  2. **The counts:** "top up to N when below M", checked at run start, level-up, town
+     visits and checkpoints.
+  3. **The mechanism:**
+     - SIM: `ItemService.AddItem` in the fixture;
+     - isolated LIVE: the director's `//add`;
+     - never on `aion`.
+  4. **The switch:** `NA_HELP_ITEMS=0` for a clean natural run.
+
+  NA-21 waits for this. NA-20a needs no approval.
 - The defaults for OD-8 and OD-10 stand unless the operator vetoes them.
 
 ## Progress log
@@ -1774,6 +1828,11 @@ has examples.
 - 2026-09-28 — Loop: NA-18 done. The Cleric has a level 10 catalog and rotation (Smite → Flashbolt, Earth's Wrath, Slashing Wind), Salvation, the heal over time, Root before a retreat, and powder rest. The Priest's choices are unchanged. Phase 5 has started.
 
 - 2026-09-28 — Loop: NA-19 done. The buff-ourself check keeps Awakening up, uses Running before long legs, and the Anti-Shock shield at 50% HP in combat (ordered before Salvation and potions). All are Cleric-only and do nothing when no scrolls are owned.
+
+- 2026-09-28 — Loop: NA-20 done. The help-item proposal is Appendix D.2, and approval is asked under "Blocked". NA-21 waits for it.
+  - The Cleric already owns veteran-reward event scrolls equivalent to Lesser Awakening and Running.
+  - It also owns potions and jellies it never uses, and Munin's Belt is unworn.
+  - These gaps became NA-20a, which needs no approval and is next.
 
 ## Appendix A: Altgard shops and consumables
 
@@ -1955,3 +2014,59 @@ Notes:
 - **Timed and event variants.** The Legion-reward, Coliseum, Blackstar, Abbey and Stamp
   variants exist with other ids and limits. NA-20 decides whether any of them is a better
   supply choice.
+
+## Appendix D.2: Proposed help items (NA-20, awaiting approval)
+
+**Status: proposed, not approved (OD-13).** Nothing supplies these items until the operator
+approves them. The ids are pinned in `NaturalHelpItemAllowlist.Proposed` and its test.
+
+**What the natural Cleric already owns at the bridge endpoint** (`na19-bridge`), without any
+cheating:
+- 50 [Event] Rx: Castafodin 164002118: casting speed +3% for 30 min, group 34, the same
+  effect as Lesser Awakening.
+- 50 [Event] Rx: Accelerox 164002116: run +10% for 30 min, group 35, the same effect as
+  Lesser Running.
+- 50 [Event] Rx: Blitzopan 164002117: attack speed, the Courage twin; unused under OD-15.
+
+These all come from the Java veteran rewards, and together they cover 25 hours of each
+buff. It also owns 106 Minor Mana Potions, 32 Minor Life Potions, 10 Minor and 12 Lesser
+Life Elixirs, 5 Zeller Aether Jellies (from Q2904) and 30 Lesser Odella Powder. NA-20a
+makes the bot use these.
+
+**1. Allowlist and counts.** Stock is checked at run start, after each level-up, at each
+town visit and at each checkpoint. Each id is topped up to N when the bot owns fewer than M.
+When a band changes, the new tier is supplied and the old stock is left to run out.
+
+| Family | 10–19 | 20–29 | 30–39 | Top up to N / when below M | Why |
+|---|---|---|---|---|---|
+| Awakening (OD-15) | — (use Castafodin) | 164000133 | 164000134 | 60 / 15 | +6% and +9% beat the event scroll's +3% |
+| Running | — (use Accelerox) | 164000075 | 164000076 | 20 / 5 | +20% and +30% beat +10% |
+| Anti-Shock | 164000067 | 164000068 | 164000069 | 30 / 8 | The 50% HP shield; no vendor sells it |
+| Life Serum (instant, 30 s delay) | 162000012 | 162000013 | 162000014 | 30 / 10 | Drops only |
+| Mana Serum (instant, 30 s delay) | 162000017 | 162000018 | 162000019 | 40 / 10 | MP gates a Cleric's damage; drops only |
+| Zeller Aether Jelly (DP +2000, 30 min delay) | 160002273 | 160002273 | 160002273 | 8 / 2 | Salvation's DP; Q2904 gives only 5 |
+| *Optional:* powder | 169300003 | 169300003, then 169300004 from 25 | 169300004 | 200 / 50 | Vendors sell it (OD-9 buys it); supply only to save shop trips |
+| *Optional:* Revival Stone | 161001001 | 161001001 | 161001001 | 3 / 1 | Not recommended: bind revive is fine (OD-12) |
+
+Not proposed:
+- Courage (OD-15).
+- Foods and elixirs: they are bought on the route.
+- The defense, crit and resist scrolls.
+- The Kisks, candies and Tea of Repose.
+- The other event, cash and timed variants.
+
+**2. Mechanism.**
+- **SIM:** after login, the fixture calls `ItemService.AddItem(player, id, count,
+  allowInventoryOverflow: true)` for the allowlisted ids only, in the same way the Mau
+  course fixture does.
+- **LIVE, isolated stack only:** the director account runs `//add <player> <itemId>
+  [count]` (access level 8). This leaves the director's trace step, the gmaudit line and
+  the subject's "received" message.
+- **Never on the operator's `aion` stack.** Any id outside the approved list is refused.
+- **Switch:** `NA_HELP_ITEMS=0` gives a clean natural run with no supply.
+
+**3. Recording.**
+- A `helpItems` block in the run profile: each supplied id, the count, the level and the
+  trigger.
+- A `help-item-supplied` trace line for each top-up.
+- A dashboard badge showing "supplied help items: on".
