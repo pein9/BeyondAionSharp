@@ -3,7 +3,7 @@ using Aion.Bots.Scenarios;
 
 namespace Aion.GameServer.Tests;
 
-/// <summary>NA-20: the proposed help-item allowlist is pinned against the shipped item data.</summary>
+/// <summary>NA-20: the approved help-item allowlist is pinned against the shipped item data.</summary>
 public sealed class NaturalHelpItemAllowlistTests
 {
 	private static readonly Lazy<XDocument> Items = new(() => XDocument.Load(Path.Combine(
@@ -11,9 +11,9 @@ public sealed class NaturalHelpItemAllowlistTests
 		"game-server/data/static_data/items/item_templates.xml")));
 
 	[Fact]
-	public void EveryProposedIdExistsWithItsSkillDelayGroupAndItemLevel()
+	public void EveryApprovedIdExistsWithItsSkillDelayGroupAndItemLevel()
 	{
-		foreach (NaturalHelpSupply supply in NaturalHelpItemAllowlist.Proposed)
+		foreach (NaturalHelpSupply supply in NaturalHelpItemAllowlist.Approved)
 		{
 			XElement item = Item(supply.ItemId);
 			Assert.Equal(supply.ItemLevel, (int?)item.Attribute("level"));
@@ -29,7 +29,7 @@ public sealed class NaturalHelpItemAllowlistTests
 	[Fact]
 	public void ScrollTiersMatchTheHelpPolicyAndNeverIncludeCourage()
 	{
-		foreach (NaturalHelpSupply supply in NaturalHelpItemAllowlist.Proposed.Where(s => s.Family is "awakening" or "running" or "anti-shock"))
+		foreach (NaturalHelpSupply supply in NaturalHelpItemAllowlist.Approved.Where(s => s.Family is "awakening" or "running" or "anti-shock"))
 		{
 			NaturalHelpItem help = Assert.Single(NaturalHelpItemPolicy.All, item => item.ItemId == supply.ItemId);
 			Assert.Equal(supply.Family, help.Family);
@@ -37,10 +37,24 @@ public sealed class NaturalHelpItemAllowlistTests
 			int allowance = help.Family == "anti-shock" ? NaturalHelpItemPolicy.ShieldLevelAllowance : 0;
 			Assert.Equal(supply.FromLevel, Math.Max(10, help.ItemLevel - allowance));
 		}
-		Assert.DoesNotContain(NaturalHelpItemAllowlist.Proposed, supply => supply.Family == "courage");
+		Assert.DoesNotContain(NaturalHelpItemAllowlist.Approved, supply => supply.Family == "courage");
 		// Bands of one family never overlap, so one tier is supplied at a time.
-		foreach (var family in NaturalHelpItemAllowlist.Proposed.GroupBy(supply => supply.Family))
+		foreach (var family in NaturalHelpItemAllowlist.Approved.GroupBy(supply => supply.Family))
 			Assert.All(family.Zip(family.Skip(1)), pair => Assert.True(pair.First.ToLevel < pair.Second.FromLevel));
+	}
+
+	[Fact]
+	public void TheApprovedHealIsTheHealOverTimePotionAndThereAreNoRevivalStones()
+	{
+		// OD-13 (2026-09-28): the Life Potion heals over time (a 2 s tick for 20 s), more in total than the instant serum.
+		XDocument skills = XDocument.Load(Path.Combine(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../")),
+			"game-server/data/static_data/skills/skill_templates.xml"));
+		foreach (NaturalHelpSupply potion in NaturalHelpItemAllowlist.Approved.Where(s => s.Family == "life-potion"))
+		{
+			XElement skill = Assert.Single(skills.Descendants("skill_template"), node => (int?)node.Attribute("skill_id") == potion.SkillId);
+			Assert.Contains(skill.Element("effects")!.Elements("heal"), heal => (int?)heal.Attribute("checktime") == 2000);
+		}
+		Assert.DoesNotContain(NaturalHelpItemAllowlist.Approved, s => s.Family is "life-serum" or "revival-stone");
 	}
 
 	[Fact]

@@ -148,7 +148,7 @@ The Ishalgen leg's contract (`parity-artifacts/e2e/natural-ishalgen-contract.jso
 | OD-10 | Movies: watch or skip? | **Skip by default**, the way a player who presses Esc does. That is the bot's current behavior (an immediate `CM_PLAY_MOVIE_END`). A `watch` mode that holds for the movie's length exists for real-client observation (NA-28). | Default |
 | OD-11 | How many runs prove it? | **One each**: one snapshot run per development item, then one clean snapshot run, one full SIM run and one isolated LIVE run for acceptance. | Decided 2026-09-28 |
 | OD-12 | Are deaths failures? | **No.** "Zero deaths" is not a goal. A death is recorded and recovered from, and is never a pass/fail criterion by itself. What fails a run: an unmet objective, a stall, an exhausted bounded recovery, or a server defect. | Decided 2026-09-28 (rule for all natural runs from now on) |
-| OD-13 | Help items by cheating | **Allowed, after exploration.** NA-20 proposes the consumables and the supply mechanism. Only consumables the operator approves are supplied (no gear, quest items, XP or levels), and every run lists them in its profile. This amends D25's "no GM input" rule for those items only. | Decided in principle 2026-09-28; the item list needs approval at NA-20 |
+| OD-13 | Help items by cheating | **Allowed, after exploration.** NA-20 proposes the consumables and the supply mechanism. Only consumables the operator approves are supplied (no gear, quest items, XP or levels), and every run lists them in its profile. This amends D25's "no GM input" rule for those items only. **The Appendix D.2 list is approved**, with these changes: the heal is the heal-over-time **Life Potion** instead of the instant Life Serum (it gives more HP in total, and pairs with the shield and the Cleric's own heals); no Revival Stones; and "GM them anything they need", so powder is supplied too. | Decided 2026-09-28 (the list approved the same day) |
 | OD-14 | Patrols in the way | **Cleric:** wait 15 s (game time) and path again; or decide to take on the patrol when the fight is winnable (NA-22). Both are bounded and traced. The frozen Ishalgen Priest keeps its current rules unless a later decision changes them. | Decided 2026-09-28 |
 | OD-15 | Which speed scroll stays up: Courage (attack speed) or Awakening (casting speed)? | **Awakening** for the Cleric. The two scrolls **replace each other** (both use effect id 30184), so only one can be up. Awakening shortens the casts of Smite, Healing Light and Earth's Wrath; Courage mostly speeds up the staff swing. The bot never uses Courage. | Decided 2026-09-28 |
 
@@ -1770,7 +1770,7 @@ has examples.
 
 ## Blocked / questions for the operator
 
-- **NA-20 → OD-13 (asked 2026-09-28):** please approve, change or reject [Appendix D.2](#appendix-d2-proposed-help-items-na-20-awaiting-approval):
+- ~~**NA-20 → OD-13 (asked 2026-09-28):**~~ **Answered 2026-09-28:** approved with changes (see OD-13). NA-21 is unblocked. The original question was: please approve, change or reject [Appendix D.2](#appendix-d2-proposed-help-items-na-20-awaiting-approval):
   1. **The list and bands:**
      - Anti-Shock from level 10;
      - Life and Mana Serums;
@@ -1882,6 +1882,7 @@ has examples.
   - The Cleric already owns veteran-reward event scrolls equivalent to Lesser Awakening and Running.
   - It also owns potions and jellies it never uses, and Munin's Belt is unworn.
   - These gaps became NA-20a, which needs no approval and is next.
+- 2026-09-28 — Operator: the D.2 help-item list is approved (OD-13), with changes: the heal-over-time Life Potion instead of the Life Serum, no Revival Stones, and powder supplied too. NA-21 is unblocked.
 - 2026-09-28 — Loop: NA-20a done. The Cleric now uses its owned veteran scrolls (Castafodin, Accelerox), drinks a Zeller jelly for Salvation's DP, and recognizes all its potions. The "unworn belt" was a checkpoint slot truncation; the belt was always worn. Next is NA-22, since NA-21 waits for approval.
 - 2026-09-28 — Loop: NA-22 done. When a patrol blocks a pull, the Cleric waits 15 s up to four times, then fights if the assessment says it can win, or pulls anyway (deaths recorded). The Priest is unchanged. Next is NA-23, the first Cleric fights.
 
@@ -2068,8 +2069,20 @@ Notes:
 
 ## Appendix D.2: Proposed help items (NA-20, awaiting approval)
 
-**Status: proposed, not approved (OD-13).** Nothing supplies these items until the operator
-approves them. The ids are pinned in `NaturalHelpItemAllowlist.Proposed` and its test.
+**Status: approved 2026-09-28 (OD-13), with changes.** The approved list is
+`NaturalHelpItemAllowlist.Approved`, pinned by its test. The changes against the table below:
+- **Life Potion instead of Life Serum.** Minor, Lesser and Life Potion 162000002, 162000003
+  and 162000004 heal over time: 37, 67 and 97 HP every 2 s for 20 s, plus the instant part,
+  for 407, 737 and 1067 HP. The instant serums give 340, 610 and 890. They share group 11
+  and a 30 s delay. Top up to 30 when below 10.
+- **No Revival Stones.**
+- **Powder is supplied too** ("GM them anything they need"): Lesser Odella Powder
+  169300003 at levels 10–24, then Odella Powder 169300004. Top up to 200 when below 50.
+- NA-21 must teach combat each Life Potion tier, not just the Minor one (002) it knows
+  today. The operator asks that combat use the heal over time together with the shield
+  and the Cleric's own heals.
+
+The table below is the proposal as asked.
 
 **What the natural Cleric already owns at the bridge endpoint** (`na19-bridge`), without any
 cheating:
