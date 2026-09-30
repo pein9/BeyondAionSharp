@@ -1642,9 +1642,33 @@ The same loop protocol, with "AB" in place of "NA".
   - The D32 quests that now exist (Q24110, Q24111, Q24113, Q24115, Q24232 and Q24233) do not
     start in Basfelt: they start at the fortress, Moslan Crossroad, Idun's Lake, Trader's
     Berth and the Observatory. So Leg 4's scope is unchanged; their stops' legs take them in.
-- [ ] **AB-02 — Travel.** Every ground above, from the hub and back, in SIM, with the danger
+- [x] **AB-02 — Travel.** Every ground above, from the hub and back, in SIM, with the danger
   recorded. **Done when:** every leg walks. That includes Sumarhon's height (z 333) and the
   beehive grove, whose navmesh is not proven yet.
+  - *Done 2026-09-30.* `SimulationAltgardLeg4TravelTests` (account 149, `run/ab02/travel.log`) plans
+    each leg with the Altgard travel planner at level 16 and walks it on the live SIM server.
+    All **19 legs** arrive within 5 m:
+
+    | Trip | Legs (metres) | Live aggressive within 30 m of the route |
+    |---|---|---|
+    | South | Basfelt → Gornak 273, → starved mosbears 53, → Basfelt 227 | starved mosbears |
+    | East | → Vovetirn 297, → amphas 26, → Basfelt 305 | poisonsac amphas |
+    | West, near | → swamp mosbears 463, → the burner 255, → Basfelt 621 | swamp mosbears and cubs, rainbow slimes, wild togs |
+    | West, far | → Karl 236, → Gunmarson 291, → a beehive 365, → Komu 127, → Kaibech 85, → Basfelt 935 | brownbristle, tusked, ruthless, angry (L17) and bigfoot (L16) mosbears, grove malodors, nimble arachnas, **Komu** |
+    | South-west | → Brodir 545, → Sumarhon's camp 269 (**ends at z 333.2**, on the height), → the Q24013 zone 1,107, → Basfelt 879 | Sumarhon's 16 fencers and 13 sentries; around the Q24013 zone, **11 Feral Black Claw Sharpeyes (L17, SEASONED) already spawned**, black claws, and MuMu looklooks, lookouts, herb gatherers and a highsitter (L15–16) |
+
+  - **The beehive grove, Kaibech and Sumarhon's height are on the navmesh.**
+  - Two findings for the runner (AB-08):
+    - A leg should start where the last walk ended. A ground spot planned beside the burner
+      was rejected as a start (`GeometryRejected`); the real stopping point was not.
+    - The Q24013 ground is crowded with SEASONED Feral Sharpeyes even before the poison adds
+      two more, and it lies 1.1 km from Sumarhon's camp by road. The poison step will be the
+      hardest fight of the leg.
+  - The probe character is raised to level 30 (GM, probe only). Java's aggro rule
+    (`CreatureEventHandler`: a monster attacks only a player fewer than 10 levels above it) then
+    leaves it alone, so **nothing is despawned**. The shared Fast world keeps Komu (hourly
+    respawn) and Sumarhon for AB-05..AB-07.
+  - The warning baseline and the logger and clock checks pass.
 - [ ] **AB-03 — `NaturalTimedQuestPolicy`.** A pure policy and tests: when to start a timer,
   the kill and drop budget against the seconds left (client `TimerSeconds`), actions forbidden
   while a timer runs, when to turn back, and the expiry paths (Q2288 retake; Q2230 new chance
@@ -1897,3 +1921,4 @@ The original questions follow.
 - 2026-09-29 AC-07: SIM run snapshot-altgard-l3-s1 completed Leg 3 with no death (level 16); snapshot altgard-l3 captured and restore-checked.
 - 2026-09-30 AC-08: full checklist green after run-fast's walker-dependent probes learned to follow or skip, and the air-combat cast gate is released on a refusal; Leg 3 is done.
 - 2026-09-30 AB-01: the Leg 4 contract (hunts, timers, the Infernus spawn, Komu, the zone-bound poison, the Basfelt bind), five template plans, and five contract tests.
+- 2026-09-30 AB-02: all 19 Leg 4 travel legs route and walk in SIM, Sumarhon's height and the beehive grove included; the Q24013 ground holds 11 Feral Sharpeyes.
