@@ -1,6 +1,6 @@
 # Retail 4.8 quest completion (D32)
 
-**Status (2026-09-30): RQ-01 to RQ-04 done and approved; the per-quest review is done. The work list is [retail-quest-worklist.md](retail-quest-worklist.md); RQ-05 (the Altgard pilot) is in progress.** This is the handoff for a separate session.
+**Status (2026-09-30): RQ-01 to RQ-04 done and approved; the per-quest review is done. The work list is [retail-quest-worklist.md](retail-quest-worklist.md); RQ-05 (the Altgard pilot) is done for its six class A quests.** This is the handoff for a separate session.
 Read this file, then `CLAUDE.md`, before doing anything.
 
 ## Goals (the maintainer, 2026-09-30)
@@ -231,7 +231,7 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
     campaign), the 4.8 client keeps them switched on, and their Java roots Q1701 and Q2701 are
     one-step "report to the Governor" stubs that once led into them.
   - **Classes now:** A **129**, B **63**, C **139**, D **109**, E **0**: 192 to implement.
-- [ ] **RQ-05 — The pilot: Altgard's seven.** Those of Q24110, Q24111, Q24113, Q24114,
+- [x] **RQ-05 — The pilot: Altgard's seven.** Those of Q24110, Q24111, Q24113, Q24114,
   Q24115, Q24232 and Q24233 that land in class A. Each needs:
   - a handler;
   - a SIM test that plays it;
@@ -240,7 +240,7 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
   - an update to the natural leveling doc, whose exclusion list names them. Q24113, Q24232
     and Q24233 follow Q24112, which Leg 4 completes.
 
-  **Progress (RQ-05, 2026-09-30).** Done: Q24113, Q24110, Q24111, Q24115, Q24232; next: Q24233.
+  **Progress (RQ-05, 2026-09-30).** Done: Q24113, Q24110, Q24111, Q24115, Q24232, Q24233; all six class A quests are done.
   Q24114 is class B (below).
   - **Form.** All six are `quest_script_data` template entries in `altgard.xml`; no C# handler is
     needed. Retail 5.8 runs each as a simple quest (`Quest_SimpleHunt.xml`, `Quest_SimpleTalk.xml`
@@ -258,7 +258,7 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
     that each plan is current, and that each registered quest now has a handler.
   - **Evidence.** All six pass (`run/rq05/rq05-sim-b.log`); with the pre-D32 `altgard.xml`, Q24113
     fails at its start step, because Aurtri offers no quest (`run/rq05/rq05-sim-without-entry.log`).
-  - **Records.** Deviations 146–150, the register table below, the patches in
+  - **Records.** Deviations 146–151, the register table below, the patches in
     `docs/upstream-reports/` (cumulative, applied in order), and Done lines in the work list.
   - **Q24114 "You Gotta Stop Umkata" (class B), for approval.** Not a template quest: retail 5.8
     has no simple-quest entry for it. The client steps are: kill 3 Hero Spirits (210588, 210722;
@@ -418,4 +418,5 @@ a row keeps the rules' own verdict beside an override.
 | Q24110 | Control Altgard, Delete Revolutions | Altgard | A | `monster_hunt` template | the 4.8 client ships it (level 12, excluding Q2200 and Q2012); aioncodex `/48/quest/24110` names Meiyer as giver; retail 5.8 runs it as a SimpleHunt quest, Meiyer to Meiyer, 4 of LehparAsD_9_An and LehparWaD_10_An | `RetailQuestPlaysEndToEnd(24110)` | 147 | `0a477551c` |
 | Q24111 | What's Up, Dock? | Altgard | A | `item_collecting` template | the 4.8 client ships it (level 10, excluding Q2200 and Q2014); aioncodex `/48/quest/24111` names Olenja as giver and Nokir as the end; retail 5.8 runs it as a SimpleCollectItem quest, Olenja to Nokir, from the object DF1A_Lehpar_Order | `RetailQuestPlaysEndToEnd(24111)` | 148 | `4d53b805f` |
 | Q24115 | A Shugo Apropos | Altgard | A | `monster_hunt` template | the 4.8 client ships it (level 13, excluding Q2200 and Q2019, work item quest_24115a); aioncodex `/48/quest/24115` names Neparinerk as giver and Banatisai as the end; retail 5.8 runs it as a SimpleHunt quest, Neparinerk to Banatisai, giving ITEM_QUEST_24115A at the start | `RetailQuestPlaysEndToEnd(24115)` | 149 | `da53a752a` |
-| Q24232 | Little Help from a Daeva | Altgard | A | `monster_hunt` template | the 4.8 client ships it (level 14, after Q24112); aioncodex `/48/quest/24232` names Anmurnerk as giver; retail 5.8 runs it as a SimpleHunt quest, Anmurnerk to Anmurnerk, 9 of the four MuMu devnames | `RetailQuestPlaysEndToEnd(24232)` | 150 | (next commit) |
+| Q24232 | Little Help from a Daeva | Altgard | A | `monster_hunt` template | the 4.8 client ships it (level 14, after Q24112); aioncodex `/48/quest/24232` names Anmurnerk as giver; retail 5.8 runs it as a SimpleHunt quest, Anmurnerk to Anmurnerk, 9 of the four MuMu devnames | `RetailQuestPlaysEndToEnd(24232)` | 150 | `4eb77e807` |
+| Q24233 | Adieu to You, Manumumu | Altgard | A | `monster_hunt` template | the 4.8 client ships it (level 14, after Q24112); aioncodex `/48/quest/24233` names Brodir as giver and Suthran as the end; retail 5.8 runs it as a SimpleHunt quest, Brodir to Suthran, 1 of RatmanChief_17_An | `RetailQuestPlaysEndToEnd(24233)` | 151 | (next commit) |

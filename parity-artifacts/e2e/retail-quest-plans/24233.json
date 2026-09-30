@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 24233,
+    "name": "Adieu to You, Manumumu",
+    "nameId": 1800205,
+    "zone": "Altgard",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 14,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 24112
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "end_npc_ids": 203557,
+        "id": 24233,
+        "start_npc_ids": 832821
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 832821,
+        "name": "brodir",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1512.307,
+            "y": 527.6995,
+            "z": 283.405,
+            "heading": 90,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 832821,
+      "name": "brodir",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1512.307,
+          "y": 527.6995,
+          "z": 283.405,
+          "heading": 90,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203557,
+      "name": "suthran",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1662.63,
+          "y": 1748.56,
+          "z": 260.236,
+          "heading": 68,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 1,
+      "npc_ids": 210598,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210598,
+          "name": "chieftain manumumu",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1581.9,
+              "y": 217.534,
+              "z": 284.221,
+              "heading": 93,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203557,
+          "name": "suthran",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1662.63,
+              "y": 1748.56,
+              "z": 260.236,
+              "heading": 68,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 16495,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 188053405
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 24233,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 14,
+      "name": "Adieu to You, Manumumu",
+      "nameId": 1800205,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 16495
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 188053405
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 1,
+          "npc_ids": 210598,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 24112
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

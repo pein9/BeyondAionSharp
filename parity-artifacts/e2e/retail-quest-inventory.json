@@ -7,8 +7,8 @@
   "javaCommit": "ce54b7931"
  },
  "counts": {
-  "noHandler": 435,
-  "implemented": 5,
+  "noHandler": 434,
+  "implemented": 6,
   "inClient": 440,
   "javaHandlerFound": 0,
   "clientDialog": 421,
@@ -76742,6 +76742,16 @@
    "race": "ASMODIANS",
    "javaHandler": false,
    "clientDialog": true,
+   "implemented": {
+    "name": "Adieu to You, Manumumu",
+    "form": "monster_hunt template (quest_script_data/altgard.xml)",
+    "test": "RetailQuestPlaysEndToEnd(24233)",
+    "deviation": 151,
+    "patch": "docs/upstream-reports/q24233-adieu-to-you-manumumu.patch",
+    "batch": "RQ-05 Altgard pilot",
+    "simAccount": 50,
+    "simCharacter": "Asimrqf"
+   },
    "client": {
     "clientLevel": 15,
     "minLevel": 14,

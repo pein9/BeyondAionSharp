@@ -50,6 +50,16 @@
    "batch": "RQ-05 Altgard pilot",
    "simAccount": 49,
    "simCharacter": "Asimrqe"
+  },
+  "24233": {
+   "name": "Adieu to You, Manumumu",
+   "form": "monster_hunt template (quest_script_data/altgard.xml)",
+   "test": "RetailQuestPlaysEndToEnd(24233)",
+   "deviation": 151,
+   "patch": "docs/upstream-reports/q24233-adieu-to-you-manumumu.patch",
+   "batch": "RQ-05 Altgard pilot",
+   "simAccount": 50,
+   "simCharacter": "Asimrqf"
   }
  }
 }
