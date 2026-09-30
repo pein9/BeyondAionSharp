@@ -1,0 +1,19 @@
+diff --git a/game-server/data/static_data/quest_script_data/altgard.xml b/game-server/data/static_data/quest_script_data/altgard.xml
+index 59505e4..c8abbca 100644
+--- a/game-server/data/static_data/quest_script_data/altgard.xml
++++ b/game-server/data/static_data/quest_script_data/altgard.xml
+@@ -134,6 +134,7 @@
+ 			24115 [XML] A Shugo Apropos
+ 			24230 [XML] A Grave Situation
+ 			24231 [XML] Take Back, Sword!
++			24232 [XML] Little Help from a Daeva
+ 			80005 [XML] [Event] Heart Headband Pursuit
+ 			80142 [XML] [Event] Lost in Altgard
+ 			80143 [TODO] [Event] Warped Rift Blocking
+@@ -235,4 +236,5 @@
+ 	<monster_hunt id="24110" start_npc_ids="203559"/>
+ 	<monster_hunt id="24115" start_npc_ids="798033" end_npc_ids="203673"/>
+ 	<monster_hunt id="24230" start_npc_ids="832821" end_reward="true"/>
++	<monster_hunt id="24232" start_npc_ids="832822"/>
+ </quest_scripts>
+\ No newline at end of file

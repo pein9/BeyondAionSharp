@@ -30,6 +30,7 @@ cumulative: **apply them in the order of the table**. Checked in sequence agains
 | 24110 Control Altgard, Delete Revolutions (Altgard) | `<monster_hunt id="24110" start_npc_ids="203559"/>` | `q24110-control-altgard-delete-revolutions.patch` | D32, applied (deviation 147) |
 | 24111 What's Up, Dock? (Altgard) | `<item_collecting id="24111" start_npc_ids="203606" end_npc_ids="203631"/>` | `q24111-whats-up-dock.patch` | D32, applied (deviation 148) |
 | 24115 A Shugo Apropos (Altgard) | `<monster_hunt id="24115" start_npc_ids="798033" end_npc_ids="203673"/>` | `q24115-a-shugo-apropos.patch` | D32, applied (deviation 149) |
+| 24232 Little Help from a Daeva (Altgard) | `<monster_hunt id="24232" start_npc_ids="832822"/>` | `q24232-little-help-from-a-daeva.patch` | D32, applied (deviation 150) |
 
 The Java branch, the checks and the PR text are in `pull-request.md`.
 The evidence and the dialog-dispatch explanation that apply to all of them are in

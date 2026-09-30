@@ -1,0 +1,745 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 24232,
+    "name": "Little Help from a Daeva",
+    "nameId": 1800194,
+    "zone": "Altgard",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 14,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 24112
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 24232,
+        "start_npc_ids": 832822
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 832822,
+        "name": "anmurnerk",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1515.267,
+            "y": 527.4506,
+            "z": 282.9554,
+            "heading": 90,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 832822,
+      "name": "anmurnerk",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1515.267,
+          "y": 527.4506,
+          "z": 282.9554,
+          "heading": 90,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 832822,
+      "name": "anmurnerk",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1515.267,
+          "y": 527.4506,
+          "z": 282.9554,
+          "heading": 90,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 9,
+      "npc_ids": "210451 210452 210453 210454",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210451,
+          "name": "mumu looklook",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1443.37,
+              "y": 340.282,
+              "z": 298.824,
+              "heading": 109,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1473.29,
+              "y": 186.287,
+              "z": 295.937,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1482.2,
+              "y": 192.233,
+              "z": 293.458,
+              "heading": 97,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1484.46,
+              "y": 320.035,
+              "z": 290.605,
+              "heading": 94,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1485.71,
+              "y": 245.648,
+              "z": 290.139,
+              "heading": 108,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1490.51,
+              "y": 287.206,
+              "z": 289.849,
+              "heading": 65,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1491.54,
+              "y": 303.985,
+              "z": 289.746,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1517.33,
+              "y": 276.439,
+              "z": 285.834,
+              "heading": 47,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1520.7,
+              "y": 298.933,
+              "z": 285.427,
+              "heading": 82,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1526.6,
+              "y": 150.271,
+              "z": 288.875,
+              "heading": 46,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1526.8,
+              "y": 311.858,
+              "z": 285.123,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1539.37,
+              "y": 405.399,
+              "z": 279.087,
+              "heading": 82,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1540.29,
+              "y": 278.507,
+              "z": 284.888,
+              "heading": 93,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1548.22,
+              "y": 415.046,
+              "z": 279.278,
+              "heading": 20,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1556.7,
+              "y": 304.637,
+              "z": 283.221,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1557.09,
+              "y": 282.002,
+              "z": 289.363,
+              "heading": 25,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1566.71,
+              "y": 294.476,
+              "z": 287.457,
+              "heading": 96,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1576.96,
+              "y": 206.075,
+              "z": 284.435,
+              "heading": 5,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1577.36,
+              "y": 228.467,
+              "z": 285.154,
+              "heading": 4,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1600.9,
+              "y": 151.847,
+              "z": 289.625,
+              "heading": 14,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1613.65,
+              "y": 276.131,
+              "z": 285.891,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1620.06,
+              "y": 265.153,
+              "z": 288.234,
+              "heading": 84,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1621.57,
+              "y": 251.905,
+              "z": 292.995,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1634.75,
+              "y": 264.494,
+              "z": 290.782,
+              "heading": 114,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210452,
+          "name": "mumu looklook",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1346.05,
+              "y": 329.392,
+              "z": 306.418,
+              "heading": 99,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1352.75,
+              "y": 340.058,
+              "z": 306.82,
+              "heading": 6,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1355.29,
+              "y": 296.401,
+              "z": 305.838,
+              "heading": 7,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1360.75,
+              "y": 154.597,
+              "z": 314.572,
+              "heading": 83,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1372.46,
+              "y": 150.802,
+              "z": 312.311,
+              "heading": 2,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1372.68,
+              "y": 367.379,
+              "z": 306.375,
+              "heading": 87,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1373.66,
+              "y": 375.893,
+              "z": 306.125,
+              "heading": 105,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1373.89,
+              "y": 164.035,
+              "z": 312.905,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1378.22,
+              "y": 182.262,
+              "z": 310.53,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1381.76,
+              "y": 264.901,
+              "z": 303.221,
+              "heading": 77,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1385.8,
+              "y": 397.83,
+              "z": 310.411,
+              "heading": 9,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1386.08,
+              "y": 139.949,
+              "z": 311.498,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1386.55,
+              "y": 129.07,
+              "z": 311.83,
+              "heading": 52,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1400.39,
+              "y": 305.932,
+              "z": 298.017,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1401.36,
+              "y": 270.374,
+              "z": 299.37,
+              "heading": 3,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1402.79,
+              "y": 182.999,
+              "z": 308.706,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1413.48,
+              "y": 304.123,
+              "z": 299.469,
+              "heading": 65,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1413.56,
+              "y": 342.077,
+              "z": 302.841,
+              "heading": 62,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1425.73,
+              "y": 252.62,
+              "z": 296.676,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1436.87,
+              "y": 203.332,
+              "z": 303.526,
+              "heading": 103,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1437.68,
+              "y": 225.447,
+              "z": 298.033,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1438.91,
+              "y": 250.128,
+              "z": 294.492,
+              "heading": 62,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1440.16,
+              "y": 120.35,
+              "z": 311.3075,
+              "heading": 81,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1440.2,
+              "y": 274.099,
+              "z": 291.601,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1443.79,
+              "y": 302.211,
+              "z": 292.264,
+              "heading": 92,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1455.58,
+              "y": 325.047,
+              "z": 296.309,
+              "heading": 5,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1463.14,
+              "y": 144.517,
+              "z": 312.007,
+              "heading": 68,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1466.56,
+              "y": 319.27,
+              "z": 295.916,
+              "heading": 71,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1529.7,
+              "y": 228.05,
+              "z": 285.378,
+              "heading": 11,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1529.88,
+              "y": 238.481,
+              "z": 285.345,
+              "heading": 89,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1548.94,
+              "y": 245.558,
+              "z": 285.375,
+              "heading": 72,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1551.27,
+              "y": 210.787,
+              "z": 285.375,
+              "heading": 113,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1556.91,
+              "y": 229.635,
+              "z": 284.693,
+              "heading": 37,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210453,
+          "name": "mumu lookout",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1493.86,
+              "y": 202.81,
+              "z": 291.60687,
+              "heading": 41,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1545.59,
+              "y": 158.01,
+              "z": 300.1,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1586.87,
+              "y": 284.82,
+              "z": 285.112,
+              "heading": 118,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1607.77,
+              "y": 268.12,
+              "z": 287.4046,
+              "heading": 114,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210454,
+          "name": "mumu lookout",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1368.13,
+              "y": 282.35,
+              "z": 302.91,
+              "heading": 2,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1373.18,
+              "y": 351.23,
+              "z": 304.31064,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1571.85,
+              "y": 217.71,
+              "z": 284.375,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 832822,
+          "name": "anmurnerk",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1515.267,
+              "y": 527.4506,
+              "z": 282.9554,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 17552,
+        "rewardItems": [
+          {
+            "count": 5,
+            "item_id": 162000004
+          },
+          {
+            "count": 5,
+            "item_id": 162000009
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 24232,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 14,
+      "name": "Little Help from a Daeva",
+      "nameId": 1800194,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 17552
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 162000004
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 162000009
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 9,
+          "npc_ids": "210451 210452 210453 210454",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 24112
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

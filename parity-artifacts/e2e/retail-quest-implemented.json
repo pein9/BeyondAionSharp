@@ -40,6 +40,16 @@
    "batch": "RQ-05 Altgard pilot",
    "simAccount": 48,
    "simCharacter": "Asimrqd"
+  },
+  "24232": {
+   "name": "Little Help from a Daeva",
+   "form": "monster_hunt template (quest_script_data/altgard.xml)",
+   "test": "RetailQuestPlaysEndToEnd(24232)",
+   "deviation": 150,
+   "patch": "docs/upstream-reports/q24232-little-help-from-a-daeva.patch",
+   "batch": "RQ-05 Altgard pilot",
+   "simAccount": 49,
+   "simCharacter": "Asimrqe"
   }
  }
 }

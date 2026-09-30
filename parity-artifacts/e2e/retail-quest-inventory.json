@@ -7,8 +7,8 @@
   "javaCommit": "ce54b7931"
  },
  "counts": {
-  "noHandler": 436,
-  "implemented": 4,
+  "noHandler": 435,
+  "implemented": 5,
   "inClient": 440,
   "javaHandlerFound": 0,
   "clientDialog": 421,
@@ -76518,6 +76518,16 @@
    "race": "ASMODIANS",
    "javaHandler": false,
    "clientDialog": true,
+   "implemented": {
+    "name": "Little Help from a Daeva",
+    "form": "monster_hunt template (quest_script_data/altgard.xml)",
+    "test": "RetailQuestPlaysEndToEnd(24232)",
+    "deviation": 150,
+    "patch": "docs/upstream-reports/q24232-little-help-from-a-daeva.patch",
+    "batch": "RQ-05 Altgard pilot",
+    "simAccount": 49,
+    "simCharacter": "Asimrqe"
+   },
    "client": {
     "clientLevel": 14,
     "minLevel": 14,
