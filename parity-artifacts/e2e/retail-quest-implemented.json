@@ -30,6 +30,16 @@
    "batch": "RQ-05 Altgard pilot",
    "simAccount": 47,
    "simCharacter": "Asimrqc"
+  },
+  "24115": {
+   "name": "A Shugo Apropos",
+   "form": "monster_hunt template (quest_script_data/altgard.xml)",
+   "test": "RetailQuestPlaysEndToEnd(24115)",
+   "deviation": 149,
+   "patch": "docs/upstream-reports/q24115-a-shugo-apropos.patch",
+   "batch": "RQ-05 Altgard pilot",
+   "simAccount": 48,
+   "simCharacter": "Asimrqd"
   }
  }
 }

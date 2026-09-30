@@ -7,8 +7,8 @@
   "javaCommit": "ce54b7931"
  },
  "counts": {
-  "noHandler": 437,
-  "implemented": 3,
+  "noHandler": 436,
+  "implemented": 4,
   "inClient": 440,
   "javaHandlerFound": 0,
   "clientDialog": 421,
@@ -18641,7 +18641,7 @@
    "excludedBy": [
     {
      "id": 24115,
-     "availability": "no_handler",
+     "availability": "obtainable",
      "mutual": false
     }
    ],
@@ -34511,7 +34511,7 @@
     },
     {
      "id": 24115,
-     "availability": "no_handler",
+     "availability": "obtainable",
      "mutual": false
     }
    ],
@@ -73384,6 +73384,16 @@
    "race": "ASMODIANS",
    "javaHandler": false,
    "clientDialog": true,
+   "implemented": {
+    "name": "A Shugo Apropos",
+    "form": "monster_hunt template (quest_script_data/altgard.xml)",
+    "test": "RetailQuestPlaysEndToEnd(24115)",
+    "deviation": 149,
+    "patch": "docs/upstream-reports/q24115-a-shugo-apropos.patch",
+    "batch": "RQ-05 Altgard pilot",
+    "simAccount": 48,
+    "simCharacter": "Asimrqd"
+   },
    "client": {
     "clientLevel": 18,
     "minLevel": 13,
