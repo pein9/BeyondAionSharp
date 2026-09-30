@@ -1697,12 +1697,35 @@ The same loop protocol, with "AB" in place of "NA".
     - the forbidden actions and the rest gate.
   - All 330 Natural tests pass, and so do the warning baseline, the logger and clock checks and
     the fidelity check.
-- [ ] **AB-04 — The timed quests in SIM** (a level 16 probe, account 146):
+- [x] **AB-04 — The timed quests in SIM** (a level 16 probe, account 146):
   - Q2288 done inside 600 s;
   - Q2288 let expire, so the quest is abandoned, then retaken;
   - Q2230 done inside 1,800 s;
   - Q2230 let expire, so the late check takes the tusks (page 3057), then a SETPRO1 new chance;
   - a logout while timed abandons the quest.
+  - *Done 2026-09-30.* `SimulationAltgardTimedQuestTests` (account 146, `run/ab04/timed.log`) is a
+    level 16 probe Cleric; GM on the probe only, with the level and each target set to 1 HP. It
+    proves every path:
+    1. **Q2288, logout:** SETPRO1 starts the timer (the client sees 600 s in `SM_QUEST_ACTION`).
+       A relog abandons the quest.
+    2. **Q2288, expiry:** the quest is abandoned at 605 game s after SETPRO1.
+    3. **Q2288, success:** three mosbear kills move var 1 → 4. Shania's reward came 50 game s
+       after SETPRO1, and the Crystal Ring is in the bag.
+    4. **Q2230, expiry:** the accept starts 1,800 s. It expired with 2 tusks; the check took
+       them (page 3057), and SETPRO1 started a new timer.
+    5. **Q2230, success:** 10 tusks from 10 kills in 157 game s, then COMPLETE with the tusks
+       taken.
+  - Shania walks, so the hand-in follows her to where the client sees her.
+  - **A defect found (AB-Q6):** the timer vanished mid-hunt in the first runs. Any
+    `CM_LEVEL_READY` (sent after a login, a respawn-style teleport or a revive) runs every
+    enter-world quest hook. Q1044's and Q2042's hooks, and their death hooks, call
+    `QuestService.questTimerEnd` unconditionally. The timer is one slot per player, so they end
+    whatever timed quest is running, even for a player who never took Q1044 or Q2042. Java has
+    the same code (`abyss_entry/_1044TestingFlightSkills.java`, `_2042TheLastCheckpoint.java`).
+    Evidence: `run/ab04/timed-debug.log`, where a same-map setup teleport ended Q2230's timer
+    and the server sent timer-0 packets for Q1044 and Q2042. The probe now walks instead of
+    teleporting while a timer runs, as the bot will.
+  - The warning baseline and the logger and clock checks pass.
 - [ ] **AB-05 — Q2223 in SIM** (account 147):
   - Lamir's step with Q2231 **still open**, to settle the masking question;
   - the burner (the use, movie 67);
@@ -1749,6 +1772,29 @@ recommended:
   ends at Basfelt.
 - The timed quests and Infernus get three tries each.
 - Komu is left alone until Q2289 var 7.
+
+**Leg 4, open (2026-09-30):**
+- **AB-Q6 — Q1044 and Q2042 end any quest timer** (found in AB-04). Their enter-world and death
+  hooks call `questTimerEnd` for every player, with no check that the player is on those
+  quests. The timer is one slot per player, so a revive, a relog, or a teleport that respawns
+  the player ends Q2288's or Q2230's timer. This is shared with Java.
+
+  For the bot, a death during a timed quest costs:
+  - Q2230's tusks, at the next check;
+  - Q2288's timer, which then never runs out, so the quest sits at its var with no timer.
+    Worse, a new SETPRO1 would reset its kills to var 1.
+
+  Options:
+  - (a) approve a narrowly scoped C# correction, as D26–D31 were: Q1044 and Q2042 end the
+    timer only while their own quest is START. The same fix goes into the upstream report.
+  - (b) keep the shared behaviour. The bot then treats a death during a timed quest as the
+    timer's end, and AB-03's policy learns to spot a timer that is gone while its quest is
+    still START.
+
+  **Recommendation: (a).** A timer that belongs to another quest should not end because a
+  flight-training quest the player never took runs its hooks. That is what the 4.8 retail
+  goal asks for. Either way, AB-08 makes the policy tell "timer gone" from "timer running" by
+  the client's view, and never sends SETPRO1 to Q2288 past var 0.
 
 **Answered 2026-09-30:** AB-Q4 **(a)** and AB-Q5 **(a)**.
 
@@ -1947,3 +1993,4 @@ The original questions follow.
 - 2026-09-30 AB-01: the Leg 4 contract (hunts, timers, the Infernus spawn, Komu, the zone-bound poison, the Basfelt bind), five template plans, and five contract tests.
 - 2026-09-30 AB-02: all 19 Leg 4 travel legs route and walk in SIM, Sumarhon's height and the beehive grove included; the Q24013 ground holds 11 Feral Sharpeyes.
 - 2026-09-30 AB-03: the pure timed-quest policy (readiness gate, budget, turn-in, abandon/new-chance, three tries, forbidden actions) with five tests.
+- 2026-09-30 AB-04: both timed quests proven in SIM (logout, expiry, success; Q2230's new chance); found the Q1044/Q2042 timer defect (AB-Q6).
