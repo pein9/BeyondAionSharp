@@ -10,7 +10,8 @@ TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-alt
 **Leg 1 is done (AF-00..AF-10, 2026-09-29).** [Leg 2: Moslan Crossroad](#leg-2-moslan-crossroad-level-1315--proposal) is done (AM-01..AM-09, 2026-09-29): `altgard-l2` starts Leg 3.
 [Leg 3: Manir's Campsite and Dock](#leg-3-manirs-campsite-and-dock-level-15--proposal) is done (AC-00..AC-08,
 2026-09-30): `altgard-l3` starts Leg 4 at Basfelt.
-[Leg 4: Basfelt Village](#leg-4-basfelt-village-level-1617--proposal) is proposed and waits for AB-Q1..AB-Q3.
+[Leg 4: Basfelt Village](#leg-4-basfelt-village-level-1617--proposal) is proposed: AB-Q1..AB-Q3 are approved, and
+AB-Q4..AB-Q5 (its follow-ups and the bind) are open.
 
 ## Goal
 
@@ -1417,14 +1418,16 @@ The escort trace shows at least one successful attempt.
 
 ## Leg 4: Basfelt Village (level 16–17) — proposal
 
-**Status (2026-09-30): proposed**, waiting for AB-Q1..AB-Q3 (see "Blocked / questions").
+**Status (2026-09-30): AB-Q1..AB-Q3 approved as recommended; AB-Q4 and AB-Q5 open** (see "Blocked /
+questions").
 It starts from the `altgard-l3` snapshot: character 133297, a level 16 Cleric at 848,030 XP,
 beside Nokir in Basfelt Village, bound at Altgard Fortress. Q24013 (Stop 6's campaign) is
 started and stays outside this leg.
 
 ### The hub and its grounds
 
-Basfelt Village (zone `BASFELT_VILLAGE`) has guards and no obelisk.
+Basfelt Village (zone `BASFELT_VILLAGE`) has guards, vendors and **an obelisk (700066)**, so the bot
+can bind here (AB-Q5).
 
 - **Within 55 m of Nokir** (1780, 690): Hunmir, Garuntat, Gilungk and Gefion.
 - **Further out:**
@@ -1520,6 +1523,37 @@ registers. The one exception is the approved D27 correction: Lamir is registered
 - **Q24112:** Nokir starts it. Killing Sumarhon (210510) → var 1. Brodir (832821) at var 1:
   QUEST_SELECT shows page 2375, and SELECT_QUEST_REWARD sets REWARD.
 
+### Follow-ups, level gates, and what this port does not have
+
+The operator recalled that Basfelt has many follow-up quests, which open after turn-ins or at
+a level, especially the gold (IMPORTANT) and campaign quests. A sweep found them. It covered
+every quest in the shipped data whose giver stands within 130 m of Nokir (any zone), and every
+quest whose prerequisite is a Stop 4 quest.
+
+| Opens after | Quest | Giver | Where the work is | Where it sits |
+|---|---|---|---|---|
+| Q2288 | Q2230, Q2289 | Shania, Gefion | the mosbears | Leg 4 |
+| Q2226 (at Gornak) | **Q2227** A Crazy Request (IMPORTANT, L13) | Gornak, 115 m | 3 Spirit Crystals, 100%, from lake spirits (L13, tribe MONSTER, so passive to Asmodians; 22 spots at (1747, 510), beside the starved mosbears) | Stop 6; **AB-Q4** |
+| Q2227 | **Q2291** Report to Garuntat (IMPORTANT, L13) | Gornak | deliver to Garuntat in Basfelt | Stop 6; **AB-Q4** |
+| Q2231 (at Kaibech) | Q2235 Clearing the Path | Kaibech, 649 m | bigfoot mosbears | Stop 5, Leg 5 |
+| Q24112 (at Brodir) | Q2236, Q2237, Q2292 (Anmurnerk); Q2238 (Brodir) | Idun's Lake, 311 m | MuMu at L15–16 | Stop 6, Leg 6 |
+| Q24012 (already started) | **Q24013** Poison In the Waters (campaign, L14; 55,537 XP and a weapon) | automatic | 1. Nokir; 2. Shania gives the Hunter's Poison; 3. use it in zone `DF1A_ITEMUSEAREA_Q2016` (1675, 234), 468 m south: two Feral Black Claw Sharpeyes (L17, SEASONED) spawn; 4. four kills of SEASONED black claws (L15–16, LYCAN) there; 5. Nokir | Stop 6; **AB-Q4** |
+
+**Level gates:** nothing at Basfelt opens at a level between 16 and 20. The campaign's next
+missions, Q24014–Q24016, open at level 20, and AL-1 puts them in the next leg. Q2289 (13),
+Q24112 (14) and Q24013 (14) are already open.
+
+**Not in this port: boundaries, not gaps.** The data names more Basfelt follow-ups than the
+server has handlers for. Neither Java nor C# has them, so they are excluded, and `CLAUDE.md`
+forbids adding them:
+- **Q24113** Sword to Secrecy, **Q24232** Little Help from a Daeva and **Q24233** Adieu to You,
+  Manumumu, all after Q24112;
+- Q24110, Q24114 and Q24115;
+- the older campaign missions Q2011–Q2022.
+
+These are probably much of what the operator remembers. As before, the hub-style engine looks
+again after every hand-in, so a follow-up inside the leg's scope is taken as soon as it opens.
+
 ### What is new for the bot
 
 1. **Timed quests** (Q2288, Q2230). The timer runs on the server, and the client sees it in
@@ -1550,7 +1584,7 @@ The same loop protocol, with "AB" in place of "NA".
 
 - [ ] **AB-01 — The Leg 4 contract and plans.** `natural-altgard-l4-contract.json` with:
   - the hub (Basfelt, Nokir), the fortress as town, and the grounds above as areas;
-  - the eleven quests and their order;
+  - the eleven quests and their order, plus AB-Q4's if approved;
   - the three compiled template plans (Q2225, Q2224, Q2226);
   - the scripted steps of the eight custom quests, including Q2239's page-10 SETPRO1;
   - the object uses: the beehives, and the incense burner with its movie;
@@ -1606,14 +1640,43 @@ The same loop protocol, with "AB" in place of "NA".
   altgard-l3` captures `altgard-l4` after a clean run, with a restore check.
 - [ ] **AB-10 — The full `CLAUDE.md` checklist and a checkpoint.**
 
-**Endpoint (proposed, AB-Q1 (a)):**
-- all eleven quests completed;
+**Endpoint (AB-Q1 (a)):**
+- all eleven quests completed, plus AB-Q4's if approved;
 - alive, at Basfelt Village within 60 m of Nokir;
 - the endpoint verified across a relog.
 
 ## Blocked / questions for the operator
 
-**Leg 4, open (2026-09-30):**
+**Leg 4, answered 2026-09-30:** AB-Q1 **(a)**, AB-Q2 **(a)** and AB-Q3 **(a)**, all as
+recommended:
+- All eleven quests are done in Leg 4, the three hand-ins at other hubs included, and the leg
+  ends at Basfelt.
+- The timed quests and Infernus get three tries each.
+- Komu is left alone until Q2289 var 7.
+
+**Leg 4, open (2026-09-30), from the follow-up sweep:**
+- **AB-Q4 — Pull Basfelt's own follow-ups into Leg 4?** Q2227 → Q2291 open at Gornak once Q2226
+  is handed in there. Their crystals come from passive lake spirits beside the south
+  mosbears, and Q2291 ends at Garuntat in Basfelt. The campaign Q24013 is already started.
+  Its talks are Nokir and Shania in Basfelt, but its fights are four SEASONED black claws
+  (L15–16) and two spawned Feral Sharpeyes (L17, SEASONED), 430–540 m south. Options:
+  - (a) both: Q2227, Q2291 and the whole of Q24013 in Leg 4;
+  - (b) Q2227 and Q2291 only; Q24013 stays at Stop 6;
+  - (c) neither.
+
+  **Recommendation: (a).** A player does the campaign as soon as it is in the journal. Every
+  step but the fight is in Basfelt. The black claw ground is next to Sumarhon's, which Leg 4
+  visits anyway. AL-2 already accepts SEASONED fights solo, with deaths recorded.
+- **AB-Q5 — Bind at Basfelt?** The bind is still the fortress obelisk, about 1.1 km north. A
+  death in the west or south then means a long walk back. Options:
+  - (a) bind at the Basfelt obelisk on arrival. The bot has bound at an obelisk before, for
+    the bridge.
+  - (b) keep the fortress bind.
+
+  **Recommendation: (a)**, as a player would. Rests and restocks can then use Basfelt's
+  vendors too.
+
+The original questions follow.
 - **AB-Q1 — The hand-ins at other hubs, and where Leg 4 ends.** Q2231 ends at Kaibech (Stop 5,
   649 m west). Q2226 ends at Gornak and Q24112 at Brodir (Stop 6, 115 m and 313 m south).
   Options:
