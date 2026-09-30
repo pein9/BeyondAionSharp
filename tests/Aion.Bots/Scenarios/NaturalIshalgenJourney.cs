@@ -1315,7 +1315,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				navigationDefense = combat;
 				await TopUpHelpItemsAsync("run-start"); // NA-21: the approved help items
 				var stages = new List<Dictionary<string, object?>>();
-				foreach (string stage in new[] { "single", "pair", "patrol" })
+				foreach (string stage in runtime.EncounterStages ?? ["single", "pair", "patrol"])
 				{
 					session.BeginStep($"na23-{stage}", "cleric-encounter-stage");
 					await runtime.PrepareEncounterStageAsync!(stage, token);

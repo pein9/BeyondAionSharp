@@ -27,6 +27,8 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 
 	/// <summary>NA-23: diagnostic SIM setup before each Cleric encounter stage (single, pair, patrol).</summary>
 	public Func<string, CancellationToken, Task>? PrepareEncounterStageAsync { get; init; }
+	/// <summary>AB-07: the encounter's stages, in order; NA-23's single, pair and patrol when not given.</summary>
+	public IReadOnlyList<string>? EncounterStages { get; init; }
 	private readonly Lazy<BotMotionTiming> motions = new(() => BotMotionTiming.Load(
 		Path.Combine(RepoRoot, "game-server/data/static_data/skills/motion_times.xml")));
 	public long NowMillis => ElapsedMilliseconds();

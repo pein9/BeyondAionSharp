@@ -1776,7 +1776,7 @@ The same loop protocol, with "AB" in place of "NA".
   - The shared `TalkAsync` now accepts a step that moves the var by more than one (Q2239's
     check), and a movie on any `SELECTn_n…` action (Q2289's SELECT2_1_1).
   - All 330 Natural tests pass, and so do the warning baseline and the logger and clock checks.
-- [ ] **AB-07 — Combat at level 16–17.** A focused SIM encounter (the NA-23/AC-00 harness)
+- [x] **AB-07 — Combat at level 16–17.** A focused SIM encounter (the NA-23/AC-00 harness)
   against the Leg 4 groups:
   - a bigfoot mosbear with a malodor;
   - Komu Silverclaw;
@@ -1786,6 +1786,33 @@ The same loop protocol, with "AB" in place of "NA".
 
   Record the shield, Salvation, Divine Touch and every death. **Done when:** each fight runs
   once and the findings are written here. Deaths are recorded, not failed.
+  - *Done 2026-09-30.* The NA-23/AC-00 encounter takes `AB07_STAGES=1`. The runtime's new
+    `EncounterStages` names five Leg 4 stages on the open ground outside the fortress, spawned by
+    GM on the probe world. The Cleric fights with the journey's own combat, pull planner, rests
+    and help items. Runs `run/ab07/ab07-cleric-encounter-l16-s1` and `…-l17-s1b`:
+
+    | Stage | Level 16 | Level 17 |
+    |---|---|---|
+    | bigfoot mosbear + grove malodor (L16) | 2 kills, lowest HP 80% | 2 kills, 81% |
+    | Komu Silverclaw (SEASONED L17) | 1 kill, 69% | 1 kill, 76%, Divine Touch |
+    | Sumarhon (SEASONED L15) + 2 fencers | 6 kills, 58% | 6 kills, 47%: **Salvation** (the first real use), the shield, Divine Touch ×2 |
+    | Infernus (EXPERT L13) | 1 kill, 91% | 1 kill, 80%, Divine Touch |
+    | 2 Feral Sharpeyes (SEASONED L17) + a black claw warrior (SEASONED L16) | 5 kills in 283 s, 22%: **the Anti-Shock shield** (the first real use), then Root and a retreat | 1 kill, **1 death** at 19%; the shield and Divine Touch ×2 |
+
+  - **Findings:**
+    - The shield and Salvation finally fired in real fights, and Divine Touch arrived at
+      level 17 (AC-00).
+    - Komu, Sumarhon's camp and Infernus are safe at level 16–17.
+    - **The Sharpeye group is the dangerous one**: a retreat at level 16, a death at level 17.
+      Q24013's poison spawns two Sharpeyes 13 m away, among the 11 already standing there, so
+      the runner (AB-08) should pull them apart where it can. Deaths there are expected and
+      recorded (OD-12).
+  - **A probe fix:** the encounter set the bind point on the server only. The client still
+    believed its bind was in Ishalgen, and after the level 17 death the revive waited for a
+    world reload that never came. The test now sends `SendObeliskBindPoint`, as binding at an
+    obelisk does. The natural bot binds through the obelisk dialog, so it never had this
+    problem.
+  - All 330 Natural tests pass, and so do the warning baseline and the logger and clock checks.
 - [ ] **AB-08 — The Leg 4 runner.** Engine actions for:
   - timed hunts (AB-03's policy);
   - the spawn-and-kill (burn when ready, fight inside the window);
@@ -2035,3 +2062,4 @@ The original questions follow.
 - 2026-09-30 AB-04: both timed quests proven in SIM (logout, expiry, success; Q2230's new chance); found the Q1044/Q2042 timer defect (AB-Q6).
 - 2026-09-30 AB-05: Q2223 in SIM: no masking by Lamir's own quests; the burner, movie 67, Infernus for 300 s, the refill incense, the second burn and the reward.
 - 2026-09-30 AB-06: Q2231, Q2232 (nine beehives), Q2239 (var 1->3), Q2289 (movie 62, Komu's Horn) and Q24013's poison in its zone played in SIM.
+- 2026-09-30 AB-07: Leg 4 combat at L16 and L17: first real Anti-Shock shield and Salvation, Divine Touch at L17; the Feral Sharpeye group retreats the L16 Cleric and kills the L17 one.

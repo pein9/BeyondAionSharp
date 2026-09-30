@@ -26,6 +26,9 @@ public sealed partial class SimulationFastScenarioTests
 	/// AC-00 (docs/natural-altgard-leveling.md): with AC00_CLERIC_LEVEL=15 the same encounter is fought by a Cleric of that
 	/// level, with every skill the server auto-learns up to it, against Leg 3's grave robbing fencers (level 14), so the
 	/// combat trace shows which ranks the rotation casts.
+	/// AB-07: with AB07_STAGES=1 (level 16, or AC00_CLERIC_LEVEL) the stages are Leg 4's groups instead: a bigfoot mosbear with
+	/// a grove malodor, Komu Silverclaw (SEASONED L17), Comrade Sumarhon (SEASONED L15) with two fencers, Infernus (EXPERT L13),
+	/// and two Feral Black Claw Sharpeyes (SEASONED L17) with a black claw warrior (SEASONED L16).
 	/// </summary>
 	[SkippableFact]
 	public async Task NaturalClericEncounterRunsOnce()
@@ -34,10 +37,11 @@ public sealed partial class SimulationFastScenarioTests
 		Skip.IfNot(Environment.GetEnvironmentVariable("NA23_CLERIC_ENCOUNTER") == "1",
 			"Set NA23_CLERIC_ENCOUNTER=1 for the NA-23 Cleric encounter diagnostic.");
 		string root = Aion.GameServer.TestKit.RealStaticData.RepoRoot();
-		int level = int.TryParse(Environment.GetEnvironmentVariable("AC00_CLERIC_LEVEL"), out int asked) ? asked : 10;
+		bool basfelt = Environment.GetEnvironmentVariable("AB07_STAGES") == "1";
+		int level = int.TryParse(Environment.GetEnvironmentVariable("AC00_CLERIC_LEVEL"), out int asked) ? asked : basfelt ? 16 : 10;
 		Assert.InRange(level, 10, 20);
 		int monsterId = level == 10 ? Goon : GraveRobbingFencer;
-		string item = level == 10 ? "na23" : "ac00";
+		string item = basfelt ? "ab07" : level == 10 ? "na23" : "ac00";
 		string run = Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? $"{item}-cleric-encounter-l{level}-s{fixture.Seed}";
 		string directory = Path.Combine(root, "run", item, run);
 		Directory.CreateDirectory(directory);
@@ -62,6 +66,7 @@ public sealed partial class SimulationFastScenarioTests
 		{
 			PrepareCourseAsync = PrepareAsync,
 			PrepareEncounterStageAsync = PrepareStageAsync,
+			EncounterStages = basfelt ? ["mosbear-pair", "komu", "sumarhon-camp", "infernus", "sharpeyes"] : null,
 			// NA-21: the approved help items (OD-13), unless NA_HELP_ITEMS=0.
 			SupplyHelpItemAsync = NaturalHelpItemSupply.Enabled(Environment.GetEnvironmentVariable(NaturalHelpItemSupply.Switch))
 				? SupplyHelpItemAsync : null,
@@ -107,6 +112,9 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.NotNull(player.GetEquipment().EquipItem(staff.GetObjectId(), 1));
 			player.SetBindPoint(new BindPointPosition(bridge.Bind.MapId, bridge.Bind.Position[0], bridge.Bind.Position[1],
 				bridge.Bind.Position[2], 0));
+			// AB-07: tell the client, as binding at the obelisk does; otherwise it still believes its bind is in Ishalgen and a
+			// revive waits for a world reload that never comes.
+			Aion.GameServer.Services.Teleport.TeleportService.SendObeliskBindPoint(player);
 			await TeleportForSetupAsync(session, player, Altgard, bridge.Bind.Position[0] + 3, bridge.Bind.Position[1],
 				bridge.Bind.Position[2], prepareToken);
 			session.AcceptTeleportPosition();
@@ -135,18 +143,24 @@ public sealed partial class SimulationFastScenarioTests
 					TribeClass.PC_DARK)).ToArray())
 				fixture.World.Despawn(npc);
 			BotNavigationGeometry geometry = Geometry();
-			(float Dx, float Dy, int RandomWalk)[] monsters = stage switch
+			(float Dx, float Dy, int RandomWalk, int NpcId)[] monsters = stage switch
 			{
-				"single" => [(0, 0, 0)],
-				"pair" => [(-2.5f, 0, 0), (2.5f, 0, 0)],
-				"patrol" => [(0, 0, 0), (8, 7, 10)],
+				"single" => [(0, 0, 0, monsterId)],
+				"pair" => [(-2.5f, 0, 0, monsterId), (2.5f, 0, 0, monsterId)],
+				"patrol" => [(0, 0, 0, monsterId), (8, 7, 10, monsterId)],
+				// AB-07: Leg 4's groups.
+				"mosbear-pair" => [(-2.5f, 0, 0, 210441), (2.5f, 0, 0, 210444)],
+				"komu" => [(0, 0, 0, 210442)],
+				"sumarhon-camp" => [(0, 0, 0, 210510), (-4, 2, 0, GraveRobbingFencer), (4, 2, 0, GraveRobbingFencer)],
+				"infernus" => [(0, 0, 0, 211621)],
+				"sharpeyes" => [(-3, 0, 0, 210457), (3, 0, 0, 210457), (0, 5, 0, 214039)],
 				_ => throw new ArgumentOutOfRangeException(nameof(stage)),
 			};
-			foreach ((float dx, float dy, int randomWalk) in monsters)
+			foreach ((float dx, float dy, int randomWalk, int npcId) in monsters)
 			{
 				BotPosition ground = geometry.SnapToGround(Altgard, new BotPosition(centerX + dx, centerY + dy, 258.4f, 0))
 					?? throw new InvalidDataException($"No ground for the {stage} goon.");
-				var template = new SpawnTemplate(new SpawnGroup(Altgard, monsterId, 0, null), ground.X, ground.Y, ground.Z, 30,
+				var template = new SpawnTemplate(new SpawnGroup(Altgard, npcId, 0, null), ground.X, ground.Y, ground.Z, 30,
 					randomWalk, null, 0);
 				Assert.True(Aion.GameServer.SpawnEngine.SpawnEngine.SpawnObject(template, instance.GetInstanceId())?.IsSpawned());
 			}
