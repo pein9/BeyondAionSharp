@@ -62,6 +62,7 @@ CLASSIFIER = REPO_ROOT / "parity-artifacts/e2e/obtainable-quests.json"
 OUTPUT = REPO_ROOT / "parity-artifacts/e2e/retail-quest-inventory.json"
 SUMMARY = REPO_ROOT / "parity-artifacts/e2e/retail-quest-inventory.md"
 RETAIL_EVIDENCE = REPO_ROOT / "parity-artifacts/e2e/retail-quest-evidence.json"
+OVERRIDES = REPO_ROOT / "parity-artifacts/e2e/retail-quest-class-overrides.json"
 DEFAULT_CLIENT = Path(r"C:\Program Files (x86)\Beyond Aion")
 
 SCHEMA_VERSION = 1
@@ -148,10 +149,14 @@ def parse_client_quests(root: ET.Element) -> dict[int, dict[str, Any]]:
     return quests
 
 
-def quest_ref(value: str) -> Any:
-    """`Q24112` -> 24112. Conditions can hold several quests (`Q1 Q2`); keep those as a list."""
-    ids = [int(part[1:]) if part[:1] in "Qq" and part[1:].isdigit() else part for part in value.split()]
-    return ids[0] if len(ids) == 1 else ids
+def quest_ref(value: str) -> list[Any]:
+    """`Q24112` -> [24112]; `Q2007,Q2022` -> [2007, 2022].
+
+    One numbered condition is an AND group: the server carries `Q2007,Q2022,...` (Q2096) as a single
+    `start_conditions` block with several `finished` entries. Separate numbered conditions are
+    alternatives, carried as separate blocks (Q1365: Q1036 or Q14024)."""
+    return [int(part[1:]) if part[:1] in "Qq" and part[1:].isdigit() else part
+            for part in re.split(r"[\s,]+", value.strip()) if part]
 
 
 def parse_quest_csv(text: str, source: str) -> dict[int, list[dict[str, Any]]]:
@@ -326,6 +331,38 @@ class World:
         return {"devname": devname, "itemId": item_id, "template": item_id is not None}
 
 
+# quest_monster.csv / quest_script_monster.csv source types. Only these name npcs. `itemUseArea` and
+# `sensoryArea` name client areas; `goodsList` (a shop), `gatherSource` (a gather node) and `commonDrop`
+# (hundreds of ordinary monsters) are other ways to get the item, not an npc the quest needs.
+NPC_SOURCES = {"killedByUser", "questItemDropMonster", "dropMonster", "simpleQuest", "etcByNpc"}
+OTHER_SUPPLY = {"goodsList", "gatherSource", "commonDrop"}
+
+
+def unmet_sources(client_quest: dict[str, Any], steps: list[dict[str, Any]], npcs: dict[str, dict]) -> list[list[str]]:
+    """Kill and drop sources with no spawned npc among their alternatives.
+
+    A kill row is one source: any of its devnames spawned is enough, like the classifier's groups. An
+    item is one source across quest.xml's drop and every csv row for it; it is met when any npc for it
+    is spawned, or when the client names a shop, gather node or common drop for it as well."""
+    by_item: dict[str, set[str]] = defaultdict(set)
+    supplied: set[str] = set()
+    kills: list[set[str]] = []
+    for drop in client_quest["drops"]:
+        by_item[(drop["item"] or drop["monster"]).lower()].add(drop["monster"].lower())
+    for step in steps:
+        names = {n.lower() for n in step["devnames"]}
+        if step["sourceType"] in OTHER_SUPPLY and step["item"]:
+            supplied.add(step["item"].lower())
+        elif step["sourceType"] in NPC_SOURCES and names:
+            if step["item"]:
+                by_item[step["item"].lower()].update(names)
+            else:
+                kills.append(names)
+    groups = [names for item, names in by_item.items() if item not in supplied] + kills
+    unmet = {tuple(sorted(g)) for g in groups if not any(npcs[n]["spawned"] for n in g if n in npcs)}
+    return sorted(list(g) for g in unmet)
+
+
 def spellings(names: Iterable[str]) -> dict[str, str]:
     """lower-cased name -> one spelling. The client spells a devname differently from file to file
     (`LehparWaChD_18_An`, `lehparwachd_18_an`); the lookup ignores case, so keep the first in sort order."""
@@ -393,9 +430,49 @@ def differences(client_quest: dict[str, Any], server: dict[str, Any] | None, npc
     return diffs
 
 
+def exclusions(quests: dict[int, dict[str, Any]]) -> dict[int, list[int]]:
+    """quest -> the client quests that require it both unfinished and not acquired.
+
+    That pair is how NCSoft retired a quest when a newer one replaced it: Q24113 needs Q2017 and Q2200
+    neither done nor taken, so a character who ran the old mission is never offered the new quest.
+    Two quests that name each other are alternatives (pick one), not a replacement; `mutual` says so.
+    """
+    out: dict[int, list[int]] = defaultdict(list)
+    for quest_id, quest in quests.items():
+        for excluded in set(flat_ids(quest["unfinished"])) & set(flat_ids(quest["noacquired"])):
+            if excluded != quest_id:
+                out[excluded].append(quest_id)
+    return {k: sorted(v) for k, v in out.items()}
+
+
+def disabled_chain(quest_id: int, quests: dict[int, dict[str, Any]], seen: frozenset = frozenset()) -> list[int]:
+    """A chain of `finished` prerequisites from this quest to one the client sets to level 99.
+
+    Level 99 is how the 4.8 client switches a quest off; everything after it in a chain can never be
+    offered. Empty when no such chain exists. The numbered conditions are alternatives and each is an
+    AND group (see `quest_ref`), so a quest is cut off only when every group holds a disabled quest."""
+    quest = quests.get(quest_id)
+    if quest is None or quest_id in seen:
+        return []
+    if quest["minLevel"] == 99:
+        return [quest_id]
+    groups = [[q for q in group if isinstance(q, int)] for group in quest["finished"]]
+    if not groups:
+        return []
+    first = []
+    for group in groups:
+        chain = next((c for c in (disabled_chain(q, quests, seen | {quest_id}) for q in group) if c), [])
+        if not chain:
+            return []
+        first = first or chain
+    return [quest_id] + first
+
+
 def build(client: dict[str, Any], classifier: dict[str, Any], server_quests: dict[int, ET.Element],
-          world: World, java_ids: set[int] | None, evidence: dict[str, Any]) -> dict[str, Any]:
+          world: World, java_ids: set[int] | None, evidence: dict[str, Any],
+          overrides: dict[str, Any] | None = None) -> dict[str, Any]:
     availability = {entry["id"]: entry["availability"] for entry in classifier["quests"]}
+    excluded_by = exclusions(client["quests"])
     targets = [entry for entry in classifier["quests"] if entry["availability"] == "no_handler"]
     entries = []
     for entry in targets:
@@ -419,47 +496,59 @@ def build(client: dict[str, Any], classifier: dict[str, Any], server_quests: dic
         devnames = {d["monster"] for d in client_quest["drops"]}
         steps = client["rows"].get(quest_id, [])
         for step in steps:
-            devnames.update(step["devnames"])
+            if step["sourceType"] in NPC_SOURCES:
+                devnames.update(step["devnames"])
         npcs = {key: npc_entry(name, client, world) for key, name in spellings(devnames).items()}
         item_names = {c["devname"] for c in client_quest["collectItems"]}
         item_names.update(d["item"] for d in client_quest["drops"] if d["item"])
         item_names.update(s["item"] for s in steps if s["item"])
         items = {key: world.item(name) for key, name in spellings(item_names).items()}
         prerequisites = [
-            {"id": q, "availability": availability.get(q, "absent")}
+            {"id": q, "availability": availability.get(q, "absent"),
+             "clientMinLevel": client["quests"][q]["minLevel"] if q in client["quests"] else None,
+             "disabledChain": disabled_chain(q, client["quests"])}
             for q in flat_ids(client_quest["finished"])
         ]
-        # A kill or drop source counts as met when any alternative of it is spawned: the client lists
-        # several devnames per row, of which one spawned is enough, exactly like the classifier's groups.
-        # quest.xml's drop and the csv row for the same drop are one source, not two.
-        sources = {frozenset(n.lower() for n in group)
-                   for group in [[d["monster"]] for d in client_quest["drops"]] + [s["devnames"] for s in steps]
-                   if group}
-        unmet = [group for group in sources if not any(npcs[n]["spawned"] for n in group)]
+        unmet = unmet_sources(client_quest, steps, npcs)
         readiness = {
             "npcs": len(npcs),
             "npcsWithoutClientId": sorted(n["devname"] for n in npcs.values() if n["clientId"] is None),
             "npcsWithoutTemplate": sorted(n["clientId"] for n in npcs.values() if n["clientId"] and not n["template"]),
             "npcsNotSpawned": sorted(n["npcId"] for n in npcs.values() if n["template"] and not n["spawned"]),
             "sourceGroupsUnmet": len(unmet),
+            "sourcesUnmet": unmet,
             "itemsWithoutTemplate": sorted(i["devname"] for i in items.values() if not i["template"]),
             "prerequisitesWithoutHandler": [p["id"] for p in prerequisites if p["availability"] in ("no_handler", "absent")],
         }
-        readiness["worldReady"] = not (readiness["npcsWithoutClientId"] or readiness["npcsWithoutTemplate"]
-                                       or readiness["sourceGroupsUnmet"] or readiness["itemsWithoutTemplate"])
+        # A templateless alternative does not matter while a sibling of it is spawned, so readiness is
+        # the unmet sources and the missing items, not every templateless devname.
+        readiness["worldReady"] = not (readiness["sourceGroupsUnmet"] or readiness["itemsWithoutTemplate"])
         row["client"] = {
             key: client_quest[key]
             for key in ("clientLevel", "minLevel", "maxLevel", "maxRepeat", "race", "finished", "unfinished",
                         "noacquired", "acquired", "collectItems", "drops", "flags")
         }
         row["prerequisites"] = prerequisites
+        row["excludedBy"] = [
+            {"id": other, "availability": availability.get(other, "absent"),
+             "mutual": quest_id in excluded_by.get(other, [])}
+            for other in excluded_by.get(quest_id, [])
+        ]
         row["steps"] = [{k: v for k, v in s.items() if k != "sourceName" or v} for s in steps]
         row["npcs"] = list(npcs.values())
         row["items"] = list(items.values())
         row["serverDiffs"] = differences(client_quest, server, npcs, world.items_by_devname)
         row["readiness"] = readiness
         if str(quest_id) in evidence:
-            row["retail"] = evidence[str(quest_id)]
+            retail = row["retail"] = evidence[str(quest_id)]
+            talk = [(npc_id, "giver") for npc_id in retail.get("questGivers", [])]
+            talk += [(link["id"], "description") for link in retail.get("descriptionLinks", []) if link["kind"] == "npc"]
+            seen = set()
+            row["retailNpcs"] = []
+            for npc_id, role in talk:
+                if npc_id not in seen:
+                    seen.add(npc_id)
+                    row["retailNpcs"].append({"role": role, **world.npc(npc_id)})
         entries.append(row)
 
     known = set(server_quests)
@@ -478,7 +567,151 @@ def build(client: dict[str, Any], classifier: dict[str, Any], server_quests: dic
             "clientDialog": quest_id in client["dialogs"],
         })
 
+    classify(entries, client["quests"], overrides or {})
     return {"quests": entries, "clientOnly": client_only}
+
+
+# ----------------------------------------------------------------------------------------------
+# RQ-04: classes A-E (docs/retail-quest-completion.md, "Classification")
+# ----------------------------------------------------------------------------------------------
+
+TEST_MARK = re.compile(r"\[test\]|data driven empty", re.IGNORECASE)
+HIDDEN_MARK = re.compile(r"hidden quest", re.IGNORECASE)
+# aioncodex prints "Player" before the player-facing summary, so a bare "Player" is an empty task text.
+STUB_TEXT = re.compile(r"^\s*(?:Player)?\s*$|XXX|XP Test|View Cutscene|Quest Description Summary")
+
+
+def classify(rows: list[dict[str, Any]], client_quests: dict[int, dict[str, Any]], overrides: dict[str, Any]) -> None:
+    """Give each row `class` and `classReasons`. Rules first, in the order D, C, E, B, A; then the
+    reviewed overrides in `retail-quest-class-overrides.json`, which always say why."""
+    by_id = {row["id"]: row for row in rows}
+    for row in rows:
+        row["class"], row["classReasons"] = rule_class(row, client_quests)
+    # A quest whose only way in is a superseded or out-of-scope quest is itself never offered.
+    # The 2.x campaigns were retired whole: the 4.x quests name the missions they replace, and the
+    # rest of the same campaign (same zone, a four-digit mission id) goes with them.
+    retired: dict[str, list[int]] = defaultdict(list)
+    for row in rows:
+        if is_old_mission(row) and row["class"] == "C" and row["classReasons"][0].startswith("excluded"):
+            retired[row["zone"]].append(row["id"])
+    for row in rows:
+        if is_old_mission(row) and row["class"] not in ("C", "D") and retired.get(row["zone"]):
+            row["class"] = "C"
+            row["classReasons"] = [f"part of the 2.x {row['zone']} campaign, retired with "
+                                   f"Q{', Q'.join(map(str, retired[row['zone']][:6]))}"
+                                   + (" and others" if len(retired[row["zone"]]) > 6 else "")]
+    # A quest whose every way in passes a superseded or out-of-scope quest is never offered either.
+    changed = True
+    while changed:
+        changed = False
+        for row in rows:
+            if row["class"] in ("C", "D"):
+                continue
+            blocker = blocking(row, lambda q: by_id.get(q, {}).get("class") in ("C", "D"))
+            if blocker:
+                row["class"] = by_id[blocker]["class"]
+                row["classReasons"] = [f"every prerequisite group needs Q{blocker} or another class C/D quest"
+                                       f" (Q{blocker} is class {row['class']})"]
+                changed = True
+    for row in rows:
+        override = overrides.get(str(row["id"]))
+        if override:
+            row["classReasons"] = [f"reviewed: {override['reason']}"] + (
+                [f"rules said {row['class']}: " + "; ".join(row["classReasons"])] if row["class"] != override["class"] else [])
+            row["class"] = override["class"]
+
+
+def is_old_mission(row: dict[str, Any]) -> bool:
+    return row["id"] < 10000 and (row.get("client") or {}).get("flags", {}).get("category1") == "mission"
+
+
+def blocking(row: dict[str, Any], blocked) -> int | None:
+    """A quest that blocks every `finished` group of this one, or None. Groups are alternatives and
+    each is an AND (see `quest_ref`), so one blocked member closes a group."""
+    groups = [[q for q in group if isinstance(q, int)] for group in (row.get("client") or {}).get("finished", [])]
+    if not groups:
+        return None
+    first = None
+    for group in groups:
+        member = next((q for q in group if blocked(q)), None)
+        if member is None:
+            return None
+        first = first or member
+    return first
+
+
+def rule_class(row: dict[str, Any], client_quests: dict[int, dict[str, Any]]) -> tuple[str, list[str]]:
+    client = row.get("client")
+    retail = row.get("retail")
+    names = " / ".join(filter(None, (row.get("name"), row.get("clientName"), (retail or {}).get("title"))))
+    if client is None:
+        return "E", ["not in the 4.8 client's quest.xml"]
+
+    # D: out of scope.
+    if row["zone"] == "Test zone" or (retail or {}).get("category") == "Test zone":
+        return "D", ["test zone"]
+    if TEST_MARK.search(names):
+        return "D", [f"test quest ({names})"]
+    if client["minLevel"] == 99:
+        return "D", ["level 99 in the client"]
+    if client["flags"].get("mobile_event") or client["flags"].get("category1") == "event":
+        return "D", ["event quest"]
+
+    # C: superseded in 4.8.
+    replaced = [e["id"] for e in row.get("excludedBy", []) if not e["mutual"] and e["id"] > row["id"]]
+    if replaced and row["id"] < 10000:
+        return "C", [f"excluded (unfinished and not acquired) by Q{', Q'.join(map(str, replaced))}"]
+    if replaced:
+        # Among 4.x quests a one-way exclusion can be a branch (take this or that), not a retirement.
+        return "E", [f"a 4.x quest excluded one way by Q{', Q'.join(map(str, replaced))}: replaced, or a branch?"]
+    chains = {p["id"]: p["disabledChain"] for p in row.get("prerequisites", [])}
+    cut = blocking(row, lambda q: bool(chains.get(q)))
+    if cut:
+        chain = " -> ".join(f"Q{q}" for q in chains[cut])
+        return "C", [f"prerequisite chain ends at a quest the client sets to level 99 ({chain})"]
+
+    # E: the evidence is missing or disagrees.
+    if HIDDEN_MARK.search(names):
+        return "E", [f"hidden client quest, no player-facing steps ({names})"]
+    description = (retail or {}).get("description")
+    if retail and retail.get("found") and (description is None or STUB_TEXT.search(description)):
+        return "E", [f"aioncodex /48/ task text is a stub or placeholder ({description!r}): an unfinished or internal client entry"]
+    reasons = []
+    if retail is None:
+        reasons.append("no aioncodex /48/ evidence stored yet")
+    elif not retail.get("found"):
+        reasons.append(f"aioncodex /48/ has no page (HTTP {retail.get('status')})")
+    if not row["clientDialog"]:
+        reasons.append("the client ships no dialog file for it")
+    if reasons:
+        return "E", reasons
+
+    # B: live, but something it needs is missing.
+    ready = row["readiness"]
+    ids = {n["devname"].lower(): n for n in row.get("npcs", [])}
+    missing = []
+    for group in ready["sourcesUnmet"]:
+        described = ", ".join(
+            f"{name}={ids[name]['clientId']}" + ("" if ids[name]["template"] else " (no template)")
+            if name in ids and ids[name]["clientId"] else f"{name} (not in the client npc tables)"
+            for name in group)
+        missing.append(f"kill/drop source with nothing spawned: {described}")
+    if ready["itemsWithoutTemplate"]:
+        missing.append("items without a template: " + ", ".join(ready["itemsWithoutTemplate"]))
+    for npc in row.get("retailNpcs", []):
+        # A giver must stand somewhere. An npc merely named in the task text is weaker evidence: it
+        # may be spawned by an instance, a siege or another handler, so it is marked as such.
+        where = "quest giver" if npc["role"] == "giver" else "npc named in the task text"
+        if not npc["template"]:
+            missing.append(f"{where} {npc['npcId']} has no template")
+        elif not npc["spawned"]:
+            missing.append(f"{where} {npc['npcId']} ({npc.get('name')}) has no static spawn")
+    for diff in row.get("serverDiffs", []):
+        if diff["field"] in ("questDrops", "collectItems", "quest_data"):
+            missing.append(f"quest_data.xml {diff['field']} differs from the client")
+    if missing:
+        return "B", missing
+    return "A", ["live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"]
 
 
 def summarize(document: dict[str, Any]) -> dict[str, Any]:
@@ -492,6 +725,8 @@ def summarize(document: dict[str, Any]) -> dict[str, Any]:
         "withServerDiffs": sum(1 for q in quests if q.get("serverDiffs")),
         "clientOnly": len(document["clientOnly"]),
         "clientOnlyWithDialog": sum(1 for q in document["clientOnly"] if q["clientDialog"]),
+        "retailEvidence": sum(1 for q in quests if q.get("retail", {}).get("found")),
+        "classes": {c: sum(1 for q in quests if q.get("class") == c) for c in "ABCDE"},
     }
 
 
@@ -501,7 +736,7 @@ def markdown(document: dict[str, Any]) -> str:
     for quest in document["quests"]:
         by_zone[quest["zone"] or "?"].append(quest)
     lines = [
-        "# Retail quest inventory (RQ-01)",
+        "# Retail quest inventory (RQ-01, RQ-03, RQ-04)",
         "",
         "Generated by `tools/client-extract/retail_quest_inventory.py`; do not hand-edit. The data is",
         "`retail-quest-inventory.json` beside this file. What each column means and what it does not decide:",
@@ -509,20 +744,22 @@ def markdown(document: dict[str, Any]) -> str:
         "",
         f"- **{counts['noHandler']}** no-handler quests (classifier), **{counts['inClient']}** of them in the 4.8 client's `quest.xml`.",
         f"- Java handler found after all: **{counts['javaHandlerFound']}**. Client dialog file shipped: **{counts['clientDialog']}**.",
-        f"- World ready (every client npc and item has a template, every kill/drop source has a spawn): **{counts['worldReady']}**.",
+        f"- World ready (every item has a template, every kill/drop source has a spawned alternative): **{counts['worldReady']}**.",
         f"- `quest_data.xml` disagrees with the client somewhere: **{counts['withServerDiffs']}**.",
         f"- Client quests `quest_data.xml` does not carry at all: **{counts['clientOnly']}** "
         f"({counts['clientOnlyWithDialog']} with a dialog file).",
+        f"- aioncodex `/48/` page found: **{counts['retailEvidence']}**.",
+        "- Classes: " + ", ".join(f"**{c}** {n}" for c, n in counts["classes"].items()) + ".",
         "",
         "## By zone",
         "",
-        "| Zone | Quests | Elyos | Asmo | Both | World ready | Missing template | Source unspawned | Missing item | Prereq has no handler | Data diffs |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Zone | Quests | A | B | C | D | E | Elyos | Asmo | Both | World ready | Missing template | Source unspawned | Missing item | Prereq has no handler | Data diffs |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for zone, quests in sorted(by_zone.items(), key=lambda kv: (-len(kv[1]), kv[0])):
         ready = [q.get("readiness", {}) for q in quests]
-        lines.append("| {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
-            zone, len(quests),
+        lines.append("| {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
+            zone, len(quests), *(sum(q.get("class") == c for q in quests) for c in "ABCDE"),
             sum(q["race"] == "ELYOS" for q in quests),
             sum(q["race"] == "ASMODIANS" for q in quests),
             sum(q["race"] not in ("ELYOS", "ASMODIANS") for q in quests),
@@ -543,6 +780,22 @@ def markdown(document: dict[str, Any]) -> str:
     ]
     for zone, count in sorted(zones.items(), key=lambda kv: (-kv[1], str(kv[0]))):
         lines.append(f"| {zone} | {count} |")
+    titles = {
+        "A": "Class A: live, and everything it names exists and is spawned",
+        "B": "Class B: live, something it needs is missing",
+        "C": "Class C: superseded in 4.8",
+        "E": "Class E: the evidence disagrees or is missing",
+    }
+    for cls, title in titles.items():
+        rows = sorted((q for q in document["quests"] if q.get("class") == cls), key=lambda q: (q["zone"] or "", q["id"]))
+        lines += ["", f"## {title} ({len(rows)})", "", "| Quest | Name | Zone | Race | Level | Why |", "|---|---|---|---|---:|---|"]
+        for q in rows:
+            why = "; ".join(q["classReasons"]).replace("|", "/")
+            level = (q.get("client") or {}).get("minLevel", "")
+            lines.append(f"| {q['id']} | {q['name']} | {q['zone']} | {q['race'] or ''} | {level} | {why} |")
+    d_reasons = Counter(q["classReasons"][0].split(" (")[0] for q in document["quests"] if q.get("class") == "D")
+    lines += ["", f"## Class D: out of scope ({sum(d_reasons.values())})", ""]
+    lines += [f"- {reason}: {count}" for reason, count in sorted(d_reasons.items(), key=lambda kv: (-kv[1], kv[0]))]
     return "\n".join(lines) + "\n"
 
 
@@ -558,7 +811,8 @@ def generate(client_root: Path, java_root: Path) -> tuple[str, str]:
     world = World(load_npc_templates(), spawned, positions, dynamic, items_by_devname, item_ids)
     java_ids = java_handler_ids(java_root)
     evidence = json.loads(RETAIL_EVIDENCE.read_text(encoding="utf-8")) if RETAIL_EVIDENCE.exists() else {}
-    body = build(client, classifier, server_quests, world, java_ids, evidence.get("quests", {}))
+    overrides = json.loads(OVERRIDES.read_text(encoding="utf-8"))["quests"] if OVERRIDES.exists() else {}
+    body = build(client, classifier, server_quests, world, java_ids, evidence.get("quests", {}), overrides)
     document = {
         "schemaVersion": SCHEMA_VERSION,
         "generatedBy": "tools/client-extract/retail_quest_inventory.py",

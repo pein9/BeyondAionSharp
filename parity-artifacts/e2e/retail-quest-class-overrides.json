@@ -1,0 +1,105 @@
+{
+ "note": "RQ-04 reviewed class decisions that the rules in tools/client-extract/retail_quest_inventory.py cannot make. Every entry says why; the inventory keeps the rules' own verdict beside it.",
+ "quests": {
+  "9572": {
+   "class": "D",
+   "reason": "test quest: client name 'SimpleTalk function expansion test', level 1, 255 repeats, beside the [Test] Q9570 and Q9571"
+  },
+  "16984": {
+   "class": "E",
+   "reason": "twin of Q26984, whose aioncodex /48/ task text is empty; this one only says 'Talk with Alkatron' and names no quest giver"
+  },
+  "41600": {
+   "class": "C",
+   "reason": "Tiamaranta (Land of Fissure) sank in the 4.8 Upheaval and was no longer accessible (aion.fandom.com/wiki/Tiamaranta, archived; read 2026-09-30); this server has no Tiamaranta map"
+  },
+  "41601": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41602": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41603": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41604": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41605": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41606": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41607": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41608": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41609": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41610": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41611": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41612": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41613": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41614": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41615": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41616": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41617": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41618": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41619": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41620": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41621": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "41622": {
+   "class": "C",
+   "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  }
+ }
+}

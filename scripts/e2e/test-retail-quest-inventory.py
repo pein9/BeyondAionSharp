@@ -19,6 +19,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BUILDER = REPO_ROOT / "tools/client-extract/retail_quest_inventory.py"
+EVIDENCE_READER = REPO_ROOT / "tools/client-extract/retail_quest_evidence.py"
 INVENTORY = REPO_ROOT / "parity-artifacts/e2e/retail-quest-inventory.json"
 SUMMARY = REPO_ROOT / "parity-artifacts/e2e/retail-quest-inventory.md"
 CLASSIFIER = REPO_ROOT / "parity-artifacts/e2e/obtainable-quests.json"
@@ -28,6 +29,27 @@ assert spec is not None and spec.loader is not None
 inventory = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = inventory
 spec.loader.exec_module(inventory)
+
+evidence_spec = importlib.util.spec_from_file_location("retail_quest_evidence", EVIDENCE_READER)
+assert evidence_spec is not None and evidence_spec.loader is not None
+evidence = importlib.util.module_from_spec(evidence_spec)
+evidence_spec.loader.exec_module(evidence)
+
+# The shape of an aioncodex /48/ quest page, reduced to the parts the reader uses.
+CODEX_PAGE = """<html><body><table><tr><td colspan="2">ID: 24113</td></tr>
+<tr><td colspan="2" class="item_title_cell"><span class="item_title" id="item_name"><b>Sword to Secrecy</b></span></td></tr>
+<tr><td class="titles_cell"> Quest <br>Type: Quest <br>Category: Altgard <br>Level: 12 <br>Asmodian Only </td></tr>
+<tr><td colspan="2"> <hr class="hr_long"> <b>Description</b>:<br>Seize [%dic:STR_DIC_I_QUEST_24113A] and take it to
+<a href="/48/npc/203654/" class="qtooltip diclink" data-id="npc--203654">Aurtri</a>. <hr class="hr_long">
+<b>Summary</b>:<br>Text <a href="/48/npc/203654/">Aurtri</a> more.<br> <hr class="hr_long">
+<span class="bind_type"><b>Full quest's text</b>:</span> Basic Reward<br>
+<a href="/48/item/162000044/" class="qtooltip">x</a> <a href="/48/item/188050880/">y</a> </td></tr></table>
+<table class="item_grade_1"><tr><td colspan="2" class="align_center"><b>Additional info</b></td></tr>
+<tr><td>Quest giver</td><td width="60%"><a href="/48/npc/203654/" class="qtooltip diclink">Aurtri</a></td></tr>
+<tr><td>Level</td><td width="60%">12+</td></tr><tr><td>Class</td><td width="60%">Warrior</td></tr>
+<tr><td colspan="2"><hr class="hr_long"> <div class="stretch center_text"><b>Quest requirements</b></div> Finished quests:<br>
+<a href="/48/quest/24112/">No Laissez-faire</a> <br>Not accepted quests:<br> <a href="/48/quest/2200/">A</a> <br>
+<a href="/48/quest/2017/">B</a> </td></tr></table></body></html>"""
 
 CLIENT_QUEST = """<quests><quest><id>24113</id><name>Q24113</name><desc>STR_QUEST_NAME_Q24113</desc>
 <category1>quest</category1><category2>STR_QUEST_ZONE06</category2><max_repeat_count>1</max_repeat_count>
@@ -87,15 +109,16 @@ class ParsingTests(unittest.TestCase):
     def test_client_quest_fields(self) -> None:
         quest = inventory.parse_client_quests(ET.fromstring(CLIENT_QUEST))[24113]
         self.assertEqual((17, 12, "ASMODIANS"), (quest["clientLevel"], quest["minLevel"], quest["race"]))
-        self.assertEqual([24112], quest["finished"])
-        self.assertEqual([2200, 2017], quest["unfinished"])
+        self.assertEqual([[24112]], quest["finished"])
+        self.assertEqual([[2200], [2017]], quest["unfinished"])
         self.assertEqual([{"devname": "quest_24113a", "count": 1}], quest["collectItems"])
         self.assertEqual([{"monster": "LehparWaChD_18_An", "item": "quest_24113a", "prob": 100, "eachMember": True}],
                          quest["drops"])
         self.assertEqual({"category1": "quest", "category2": "STR_QUEST_ZONE06"}, quest["flags"])
 
-    def test_condition_with_several_quests_stays_a_list(self) -> None:
-        self.assertEqual(24112, inventory.quest_ref("Q24112"))
+    def test_one_condition_is_an_and_group(self) -> None:
+        self.assertEqual([24112], inventory.quest_ref("Q24112"))
+        self.assertEqual([2007, 2022, 2041], inventory.quest_ref("Q2007,Q2022,Q2041"))
         self.assertEqual([1, 2], inventory.quest_ref("Q1 Q2"))
 
     def test_csv_rows_keep_every_alternative_and_raw_progress(self) -> None:
@@ -119,12 +142,15 @@ class JoinTests(unittest.TestCase):
 
     def test_ready_quest_joins_npc_item_and_prerequisite(self) -> None:
         row = self.build(fixture_world())["quests"][0]
+        self.assertEqual("E", row["class"])  # no retail evidence in the fixture
         self.assertEqual("Tiamat's Sword", row["clientName"])
         self.assertIs(False, row["javaHandler"])
         self.assertEqual(210532, row["npcs"][0]["npcId"])
         self.assertEqual([220030000], row["npcs"][0]["maps"])
         self.assertEqual(182215473, row["items"][0]["itemId"])
-        self.assertEqual([{"id": 24112, "availability": "obtainable"}], row["prerequisites"])
+        self.assertEqual([{"id": 24112, "availability": "obtainable", "clientMinLevel": None, "disabledChain": []}],
+                         row["prerequisites"])
+        self.assertEqual([], row["excludedBy"])
         self.assertEqual([], row["serverDiffs"])
         self.assertTrue(row["readiness"]["worldReady"])
 
@@ -147,6 +173,128 @@ class JoinTests(unittest.TestCase):
         self.assertEqual([99001], [q["id"] for q in document["clientOnly"]])
 
 
+def client_quest(quest_id: int, **fields) -> dict:
+    quest = {"id": quest_id, "desc": None, "clientLevel": 10, "minLevel": 10, "maxLevel": 0, "maxRepeat": 1,
+             "race": "ASMODIANS", "classPermitted": None, "finished": [], "unfinished": [], "noacquired": [],
+             "acquired": [], "collectItems": [], "drops": [], "flags": {"category1": "quest"}}
+    quest.update(fields)
+    return quest
+
+
+class ClassRuleTests(unittest.TestCase):
+    def test_level_99_anywhere_in_every_group_cuts_the_chain(self) -> None:
+        quests = {
+            1: client_quest(1, minLevel=99),
+            2: client_quest(2, finished=[[1]]),
+            3: client_quest(3, finished=[[2, 4]]),
+            4: client_quest(4),
+            5: client_quest(5, finished=[[2], [4]]),
+        }
+        self.assertEqual([3, 2, 1], inventory.disabled_chain(3, quests))
+        self.assertEqual([], inventory.disabled_chain(5, quests))  # Q4 is an open alternative
+
+    def test_replacement_is_one_way_and_alternatives_are_mutual(self) -> None:
+        quests = {
+            2017: client_quest(2017),
+            24113: client_quest(24113, unfinished=[[2200], [2017]], noacquired=[[2200], [2017]]),
+            14260: client_quest(14260, unfinished=[[14261]], noacquired=[[14261]]),
+            14261: client_quest(14261, unfinished=[[14260]], noacquired=[[14260]]),
+        }
+        excluded = inventory.exclusions(quests)
+        self.assertEqual([24113], excluded[2017])
+        self.assertEqual([14261], excluded[14260])
+        self.assertEqual([14260], excluded[14261])
+
+    def rows(self, *specs) -> list:
+        rows = []
+        for quest_id, zone, category, extra in specs:
+            row = {"id": quest_id, "name": f"Q{quest_id}", "clientName": None, "zone": zone, "race": "ASMODIANS",
+                   "clientDialog": True, "client": client_quest(quest_id, flags={"category1": category}),
+                   "prerequisites": [], "excludedBy": [], "serverDiffs": [], "retailNpcs": [],
+                   "retail": {"found": True, "title": f"Q{quest_id}", "description": "Talk with Aurtri."},
+                   "readiness": {"npcsWithoutTemplate": [], "npcsWithoutClientId": [], "sourceGroupsUnmet": 0,
+                                 "sourcesUnmet": [], "itemsWithoutTemplate": []}}
+            for key, value in extra.items():
+                if key == "finished":
+                    row["client"]["finished"] = value
+                else:
+                    row[key] = value
+            rows.append(row)
+        return rows
+
+    def test_campaign_siblings_and_followers_of_a_replaced_mission_are_superseded(self) -> None:
+        rows = self.rows(
+            (2012, "Altgard", "mission", {"excludedBy": [{"id": 24110, "availability": "no_handler", "mutual": False}]}),
+            (2011, "Altgard", "mission", {}),
+            (2071, "Reshanta", "mission", {}),
+            (4963, "Pandaemonium", "quest", {"finished": [[2011]]}),
+            (24110, "Altgard", "important", {}),
+        )
+        inventory.classify(rows, {}, {})
+        classes = {row["id"]: row["class"] for row in rows}
+        self.assertEqual({2012: "C", 2011: "C", 2071: "A", 4963: "C", 24110: "A"}, classes)
+
+    def test_test_zone_and_test_names_are_out_of_scope(self) -> None:
+        rows = self.rows((9600, "Test zone", "quest", {}), (9612, "Poeta", "quest", {"clientName": "[Test] Talk"}))
+        inventory.classify(rows, {}, {})
+        self.assertEqual(["D", "D"], [row["class"] for row in rows])
+
+    def test_missing_evidence_is_e_and_missing_spawn_is_b(self) -> None:
+        rows = self.rows(
+            (1, "Altgard", "quest", {"clientDialog": False}),
+            (2, "Altgard", "quest", {"retailNpcs": [{"role": "giver", "npcId": 7, "template": True, "spawned": False}]}),
+            (3, "Altgard", "quest", {"retail": {"found": True, "title": "Q3", "description": "Player"}}),
+        )
+        inventory.classify(rows, {}, {})
+        self.assertEqual(["E", "B", "E"], [row["class"] for row in rows])
+        self.assertIn("quest giver 7", rows[1]["classReasons"][0])
+
+    def test_one_way_exclusion_of_a_4x_quest_is_a_question(self) -> None:
+        rows = self.rows(
+            (14251, "Heiron", "important", {"excludedBy": [{"id": 14270, "availability": "no_handler", "mutual": False}]}),
+        )
+        inventory.classify(rows, {}, {})
+        self.assertEqual("E", rows[0]["class"])
+
+    def test_a_shop_or_gather_source_meets_an_item_with_no_spawned_dropper(self) -> None:
+        quest = client_quest(1, drops=[{"monster": "Mob_1", "item": "quest_1a", "prob": 100, "eachMember": True}])
+        steps = [
+            {"sourceType": "questItemDropMonster", "item": "quest_1a", "devnames": ["mob_1", "mob_2"]},
+            {"sourceType": "killedByUser", "item": None, "devnames": ["boss_1"]},
+            {"sourceType": "itemUseArea", "item": "quest_1b", "devnames": ["usearea_x"]},
+        ]
+        npcs = {"mob_1": {"spawned": False}, "mob_2": {"spawned": False}, "boss_1": {"spawned": False}}
+        self.assertEqual([["boss_1"], ["mob_1", "mob_2"]], inventory.unmet_sources(quest, steps, npcs))
+        steps.append({"sourceType": "goodsList", "item": "quest_1a", "devnames": ["shop"]})
+        self.assertEqual([["boss_1"]], inventory.unmet_sources(quest, steps, npcs))
+
+    def test_reviewed_override_wins_and_keeps_the_rule_verdict(self) -> None:
+        rows = self.rows((2071, "Reshanta", "mission", {}))
+        inventory.classify(rows, {}, {"2071": {"class": "E", "reason": "ask the maintainer"}})
+        self.assertEqual("E", rows[0]["class"])
+        self.assertEqual("reviewed: ask the maintainer", rows[0]["classReasons"][0])
+        self.assertTrue(rows[0]["classReasons"][1].startswith("rules said A"))
+
+
+class EvidenceReaderTests(unittest.TestCase):
+    def test_codex_page_facts(self) -> None:
+        row = evidence.parse(24113, 200, CODEX_PAGE)
+        self.assertTrue(row["found"])
+        self.assertEqual("https://aioncodex.com/48/quest/24113/?sl=1", row["url"])
+        self.assertEqual(("Sword to Secrecy", "Altgard", "12"), (row["title"], row["category"], row["level"]))
+        self.assertEqual([203654], row["questGivers"])
+        self.assertEqual([{"kind": "npc", "id": 203654, "name": "Aurtri"}], row["descriptionLinks"])
+        self.assertIn("[STR_DIC_I_QUEST_24113A]", row["description"])
+        self.assertEqual({"Finished quests": [24112], "Not accepted quests": [2200, 2017]}, row["requirements"])
+        self.assertEqual([162000044, 188050880], row["rewardItems"])
+        self.assertNotIn("Class", row["info"])
+        self.assertTrue(row["hasDialogText"])
+
+    def test_page_for_another_id_or_an_error_is_not_found(self) -> None:
+        self.assertFalse(evidence.parse(24114, 200, CODEX_PAGE)["found"])
+        self.assertEqual({"url": evidence.URL.format(1), "status": 404}, evidence.parse(1, 404, None))
+
+
 class CheckedInInventoryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -165,7 +313,7 @@ class CheckedInInventoryTests(unittest.TestCase):
     def test_worked_example_q24113(self) -> None:
         row = next(q for q in self.document["quests"] if q["id"] == 24113)
         self.assertEqual(17, row["client"]["clientLevel"])
-        self.assertEqual([24112], row["client"]["finished"])
+        self.assertEqual([[24112]], row["client"]["finished"])
         self.assertEqual([210532], [n["npcId"] for n in row["npcs"]])
         self.assertTrue(row["readiness"]["worldReady"])
         self.assertIs(False, row["javaHandler"])

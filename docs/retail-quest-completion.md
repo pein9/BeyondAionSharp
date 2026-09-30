@@ -1,6 +1,6 @@
 # Retail 4.8 quest completion (D32)
 
-**Status (2026-09-30): RQ-01 and RQ-02 done; RQ-03 next.** This is the handoff for a separate session.
+**Status (2026-09-30): RQ-01 to RQ-04 done; stopped for the maintainer's review (RQ-04 report below).** This is the handoff for a separate session.
 Read this file, then `CLAUDE.md`, before doing anything.
 
 ## Goals (the maintainer, 2026-09-30)
@@ -177,11 +177,28 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
     cleanup"), which moves 63 existing handlers from `ZoneName` to `ZoneInstance`. None of the
     440 ids appears anywhere in its diff. It belongs to the ordinary upstream queue, not to D32.
   - So all 440 stay D32 candidates. Repeat this check before each RQ-06 batch; upstream moves.
-- [ ] **RQ-03 — Retail evidence.** For each quest, the aioncodex `/48/` facts (start and end
+- [x] **RQ-03 — Retail evidence.** For each quest, the aioncodex `/48/` facts (start and end
   NPC, steps, live or not), cached in the inventory with the URL. Fetch politely: one page at
   a time, cached, never re-fetched once stored.
-- [ ] **RQ-04 — Classify and report.** Assign classes A–E, write the report, and **stop for
+
+  **Done (2026-09-30).** `tools/client-extract/retail_quest_evidence.py` fetched all 440 pages,
+  one every ~4.5 s. **All 440 have a `/48/` page.** The raw HTML is kept in `run/aioncodex-48/`
+  (ignored by git); the parsed facts, each with its URL, are in
+  `parity-artifacts/e2e/retail-quest-evidence.json`, which the inventory merges into each row
+  as `retail` (title, category, level, quest givers, the task text with its npc and item links,
+  prerequisites, reward items). A stored page is never fetched again; `--reparse` rebuilds the
+  facts from the local HTML. The summary and the full dialog text are not kept.
+  - The quest giver comes from aioncodex; the end npc is the one the task text names last
+    (`descriptionLinks`, `retailNpcs`). Missions have no giver: the game grants them.
+  - aioncodex `/48/` is built from the 4.8 client, so a page proves the client shipped the
+    quest, not that retail offered it. "Live" is therefore judged from the client's own
+    retirement marks (below), the task text, and the fandom wiki where those are silent.
+- [x] **RQ-04 — Classify and report.** Assign classes A–E, write the report, and **stop for
   the maintainer's review** of classes B, C and E and of the batch order.
+
+  **Done (2026-09-30); waiting for review.** The report is below; every quest's class and reasons
+  are in the inventory rows and in the per-class tables of
+  `parity-artifacts/e2e/retail-quest-inventory.md`.
 - [ ] **RQ-05 — The pilot: Altgard's seven.** Those of Q24110, Q24111, Q24113, Q24114,
   Q24115, Q24232 and Q24233 that land in class A. Each needs:
   - a handler;
@@ -192,6 +209,92 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
     and Q24233 follow Q24112, which Leg 4 completes.
 - [ ] **RQ-06 — Batches.** Zone by zone in the maintainer's order, the classifier regenerated
   after each batch.
+
+## RQ-04 report (2026-09-30)
+
+**Classes:** A **127**, B **73**, C **129**, D **95**, E **16** (440).
+
+The rules live in `retail_quest_inventory.py` (`rule_class`, `classify`). Decisions the rules
+cannot make are in `parity-artifacts/e2e/retail-quest-class-overrides.json`, each with its reason;
+a row keeps the rules' own verdict beside an override.
+
+### How the classes were decided
+
+- **D** (95): the "Test zone" category (83), `[Test]` or "Data Driven Empty" in a client or
+  aioncodex name (11), and Q9572 by review (a level-1 "SimpleTalk function expansion test" beside
+  the `[Test]` Q9570 and Q9571). No no-handler quest is an event or level 99 in the client.
+  - Q9688–Q9690 (Legion Mission) are "Eliminate High Priest Esras" and so on in
+    `quest_data.xml`, but "[Test] Legion Mission Number 1–3" in the client. D on that evidence.
+- **C** (129): three kinds of client evidence and one of wiki evidence.
+  - **Retired by a newer quest** (64): another client quest requires this one *both* unfinished
+    and not acquired, one way, and this one is an old four-digit quest. That is how the 4.x
+    campaigns retired the 2.x ones: Q24113 excludes Q2017 and Q2200; Q14010–Q14016 and
+    Q14110–Q14114 exclude Verteron's root Q1130.
+  - **The rest of the same 2.x campaign** (25): the other four-digit missions of a zone whose
+    missions were retired, such as Q2015 in Altgard or Q1014 in Verteron. Their roots (Q1130,
+    Q1300, Q1500, Q2200, Q2300, Q2500) are all retired. Reshanta is the exception: its roots
+    Q1701 and Q2701 have handlers and nothing retires its missions, so they are not C.
+  - **Prerequisite chain disabled in the client** (17): every way in passes a quest the 4.8
+    client sets to level 99. These are the Tiamat Stronghold missions Q10070–Q10073 and
+    Q20070–Q20073 after Q10064 and Q20064; Tiamaranta's Q14080, Q14081, Q24080 and Q24081 after
+    Q14071 and Q24071, and the Q14090, Q14091, Q24090 and Q24091 that follow them; and Q4963,
+    which needs the retired Q2099.
+  - **Tiamaranta was gone in 4.8** (23, by review): the "Sandstorm" quests Q41600–Q41622 are set
+    in Tiamaranta's Land of Fissure (devnames `LDF4b_*`). aion.fandom.com/wiki/Tiamaranta
+    (archived) says the map was destroyed and sank in the 4.8 Upheaval and was no longer
+    accessible. This server has no Tiamaranta map either.
+- **E** (16): the questions below.
+- **B** (73): live, but something is missing here. By kind:
+  - 41 only have an npc **named in the task text** without a static spawn. That is weak
+    evidence: many are spawned by an instance, a siege or another handler (Kromede, Kahrun,
+    Pashid, the Hero-quest bosses). Each needs a look, not necessarily data.
+  - 7 have a **quest giver** without a spawn: Q2150 and Q2151 in Ishalgen (Rian 801034, Nowlan
+    801035), Q18917 (Tribunus Pippus 801026), Q39600 and Q49600 (Silverine), Q39700 and Q49700
+    (Merry and Green).
+  - 15 have a **kill or drop source** with nothing spawned, such as Q24114's Lycan and elemental
+    targets, Q16942 and Q26942's Linkgate bosses, and Q16976 and Q26976's Ophidan boss variants.
+  - 12 have a `quest_data.xml` **drop or collect item** that differs from the client: evidence
+    for a data correction, never a correction by itself.
+- **A** (127): live (a `/48/` page with real task text, a client dialog, not retired), and every
+  giver, task-text npc, kill or drop source and item exists and is spawned.
+
+### What I need from the maintainer
+
+1. **Class B (73):** approve per batch which missing pieces to add, or send a quest to E. The
+   per-quest reasons, with npc ids and devnames, are in the Class B table of
+   `retail-quest-inventory.md`.
+2. **Class C (129):** confirm the three client rules and the Tiamaranta decision above. The
+   whole list is in the Class C table.
+3. **Class E (16), the open questions:**
+   - **Stub or internal client entries** (14): the aioncodex task text is empty, "Player", a
+     placeholder ("Collect XXX and take them to XXX", "Talk again. XP Test") or "View
+     Cutscene": Q1489, Q2010, Q2590, Q3959, Q12999, Q15097, Q16984 (by review, twin of Q26984),
+     Q16989, Q18744, Q26984, Q28744; and the "Hidden Quest to Play Cut Scenes" Q11295, Q18412
+     and Q28412. Recommendation: out of scope (treat as D) unless you know one was offered.
+   - **Replaced, or a branch?** (2): Q14251 (Heiron, "[Instance] The Balaur Headquarters") is
+     excluded one way by Q14270 (Draupnir Cave), and Q11319 ("Tour de Cygnea") by
+     Q11320–Q11322. Between 4.x quests that can be a choice rather than a retirement.
+4. **A race asymmetry:** the Asmodian "Carving out a Fortune" missions Q2096–Q2099 are retired by
+   Q24030 and Q24031 (C), but the Elyos "The Hidden Truth" missions Q1096–Q1099 are retired by
+   nothing in the client and need only Q1929, so they are B (their Elyos epilogue Q3959 is a
+   stub, E). Keep the Elyos chain in scope?
+5. **Scope: 327 client quests that `quest_data.xml` does not carry at all** (86 with a dialog
+   file). They are outside the 440, and the classifier cannot see them: Reshanta 89, Test zone
+   54, Sanctum 33, Pandaemonium 23, Alabaster Order 24, Field Wardens 24, Blood Crusade 12,
+   Radiant Ops 12 and others. Should RQ-01 to RQ-04 run on them too, or are they outside D32?
+6. **The batch order** (a proposal):
+   1. **RQ-05, the Altgard pilot:** Q24110, Q24111, Q24113, Q24115, Q24232 and Q24233 are A.
+      **Q24114 is B**: its Lycan (`LycanWarriorS_18/19_Ae`, `LycanHunterS_17_An`) and elemental
+      (`AElemental1stD/2ndD_18/19_An`) targets have no template here. Pilot the six and bring
+      Q24114 as a B item.
+   2. The Asmodian leveling path the natural bot walks next: Morheim (Q24120, Q24240), Beluslan
+      (7 A), Brusthonin (Q24200, Q24201).
+   3. The Elyos counterparts: Verteron, Eltnen, Heiron, Theobomos.
+   4. The instance-entry quests: Fire Temple, Nochsana, Dark Poeta, Draupnir Cave, Theobomos
+      Lab, and Beshmundir (Q30250 and Q30350; Q30250 needs Q30041, also A).
+   5. The crafting and city quests (Sanctum, Pandaemonium), then the Reshanta missions.
+   6. The 4.x level-cap content: Inggison and Gelkmaros, Hero (22 A), Cygnea and Enshar,
+      Wisplight and Fatebound Abbey, Ophidan Bridge, Sauro, and the rest.
 
 ## How to implement one quest
 

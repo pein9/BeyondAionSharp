@@ -47,7 +47,8 @@ explicitly on still-encoded `0x81` input.
 | `triage_missing_adds.py` | Bucket the missing adds by how retail spawns them, which decides what each costs. |
 | `summarize_pattern.py` | Print one pattern as a dense digest, branches in evaluation order. |
 | `rotation_table.py` | Print a timer-driven boss's rotation as one row per branch, ready to transcribe. |
-| `retail_quest_inventory.py` | RQ-01 (D32): join every no-handler quest against the 4.8 client's `Quest.pak`, `Npcs.pak` and dialogs and this server's templates and spawns. `--write` / `--check`; output `parity-artifacts/e2e/retail-quest-inventory.{json,md}`. |
+| `retail_quest_inventory.py` | RQ-01/RQ-04 (D32): join every no-handler quest against the 4.8 client's `Quest.pak`, `Npcs.pak` and dialogs, this server's templates and spawns and the RQ-03 evidence, and assign classes A–E (reviewed overrides in `retail-quest-class-overrides.json`). `--write` / `--check`; output `parity-artifacts/e2e/retail-quest-inventory.{json,md}`. |
+| `retail_quest_evidence.py` | RQ-03 (D32): fetch the aioncodex `/48/` page of every inventory quest, one at a time, never twice (HTML in `run/aioncodex-48/`); facts to `parity-artifacts/e2e/retail-quest-evidence.json`. `--reparse` works offline. |
 
 `aionpak.py` and `bxml.py` are importable libraries as well as CLIs.
 
