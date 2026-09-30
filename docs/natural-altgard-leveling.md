@@ -1726,11 +1726,29 @@ The same loop protocol, with "AB" in place of "NA".
     and the server sent timer-0 packets for Q1044 and Q2042. The probe now walks instead of
     teleporting while a timer runs, as the bot will.
   - The warning baseline and the logger and clock checks pass.
-- [ ] **AB-05 — Q2223 in SIM** (account 147):
+- [x] **AB-05 — Q2223 in SIM** (account 147):
   - Lamir's step with Q2231 **still open**, to settle the masking question;
   - the burner (the use, movie 67);
   - Infernus appearing at (1547.1, 894.3) and gone after 300 s untouched;
   - a second incense from Lamir, and a real kill of Infernus → REWARD → Gefion.
+  - *Done 2026-09-30.* `SimulationAltgardMythicalMonsterTests` (account 147, `run/ab05/infernus.log`) is a
+    level 16 probe Cleric:
+    1. **The masking question is settled: there is none.** With Q2231 taken from Lamir and left
+       open, Lamir's Q2223 step (QUEST_SELECT for Q2223, page 1352, SETPRO1) still moves var 0
+       → 1 and gives the Bundle of Incense. The client picks the quest on Lamir's list, so his
+       own quests do not hide it. Q2223 need not wait for Q2231 and Q2224.
+    2. **The burner:** the use plays movie 67 and takes the incense. The burner dies, and
+       Infernus spawns **at the handler's point** (1547.1, 894.3); two seconds later he is
+       walking to the probe (aggro 15 m). Left alone, he is **gone after 305 game s**, and the
+       quest stays at var 1.
+    3. **The refill:** at var 1 with no incense, Lamir's QUEST_SELECT gives a new one
+       (page 1779).
+    4. **The second burn:** the burner was back (295 s respawn), movie 67 played, and Infernus
+       spawned again. His HP was set low (GM on the monster, the fight is AB-07's), and a
+       Smite killed him → REWARD.
+    5. **Gefion:** USE_OBJECT (page 2375), SELECT_QUEST_REWARD (page 5), SELECTED_QUEST_REWARD2
+       → COMPLETE, with the Crystal Earrings in the bag.
+  - The warning baseline and the logger and clock checks pass.
 - [ ] **AB-06 — The other scripted quests in SIM** (account 148):
   - Q2232's Tatural step and a beehive loot;
   - Q2239's Vovetirn page-10 SETPRO1 and the antidote check;
@@ -1994,3 +2012,4 @@ The original questions follow.
 - 2026-09-30 AB-02: all 19 Leg 4 travel legs route and walk in SIM, Sumarhon's height and the beehive grove included; the Q24013 ground holds 11 Feral Sharpeyes.
 - 2026-09-30 AB-03: the pure timed-quest policy (readiness gate, budget, turn-in, abandon/new-chance, three tries, forbidden actions) with five tests.
 - 2026-09-30 AB-04: both timed quests proven in SIM (logout, expiry, success; Q2230's new chance); found the Q1044/Q2042 timer defect (AB-Q6).
+- 2026-09-30 AB-05: Q2223 in SIM: no masking by Lamir's own quests; the burner, movie 67, Infernus for 300 s, the refill incense, the second burn and the reward.
