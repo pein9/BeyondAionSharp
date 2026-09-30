@@ -1,6 +1,6 @@
 # Retail 4.8 quest completion (D32)
 
-**Status (2026-09-30): authorized, not started.** This is the handoff for a separate session.
+**Status (2026-09-30): RQ-01 done; RQ-02 next.** This is the handoff for a separate session.
 Read this file, then `CLAUDE.md`, before doing anything.
 
 ## Goals (the maintainer, 2026-09-30)
@@ -132,7 +132,7 @@ Each no-handler quest lands in exactly one class:
 The same loop discipline as the natural legs: one item at a time, verify, then commit on
 `main` with the evidence.
 
-- [ ] **RQ-01 — The inventory (read-only).** A script under `tools/client-extract/` (or
+- [x] **RQ-01 — The inventory (read-only).** A script under `tools/client-extract/` (or
   `scripts/e2e/`) that joins, for every `no_handler` quest:
   - the classifier;
   - the client's `quest.xml` entry;
@@ -141,6 +141,30 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
 
   Output: `parity-artifacts/e2e/retail-quest-inventory.json`, plus a short Markdown summary
   by zone and class, with a Python test like the others.
+
+  **Done (2026-09-30).** `tools/client-extract/retail_quest_inventory.py --write` (or `--check`)
+  builds `parity-artifacts/e2e/retail-quest-inventory.json` and `.md`; the test is
+  `scripts/e2e/test-retail-quest-inventory.py` (its staleness check skips without the client).
+  The Markdown summary is by zone and readiness; the class columns arrive with RQ-04.
+  - **All 440** no-handler quests are in the client's `quest.xml`; **none** has a Java handler
+    at `ce54b7931` (the inventory re-checks `../aion-server`, so the classifier's C#-only view
+    holds for Java too).
+  - **421** ship a client dialog file. The 19 that do not are Q2010 (Ascension), Q9615 and
+    Q9673–Q9684 (Test zone), Q11295 (Inggison), Q12999 (Katalam), Q16989 (Danuar Sanctuary),
+    Q18412 and Q28412 (Esoterrace): a strong hint that 4.8 never offered them.
+  - **328** are *world ready*: every client npc and item has a template here, and every kill or
+    drop source has at least one spawned alternative. Not a class: RQ-03 still has to show retail
+    ran them, and a talk-only quest is trivially ready.
+  - **53** disagree with `quest_data.xml`: 42 on the quest drop (npc or item), 6 on the finished
+    prerequisite, 5 on the collect items. Evidence for class B, not corrections.
+  - **327 client quests are absent from `quest_data.xml` altogether** (86 of them with a dialog
+    file), so the classifier cannot see them: Reshanta 89, Test zone 54, Sanctum 33,
+    Pandaemonium 23, Alabaster Order 24, Field Wardens 24, Blood Crusade 12, Radiant Ops 12 and
+    others. They are outside the 440 and are a scope question for the maintainer (RQ-04).
+  - The client carries no start or end npc for a quest outside the dialogs, whose second
+    encryption layer this repository cannot decode; RQ-03 takes them from aioncodex.
+  - `client_npc_names.py` reads the 5.8 server's `Map/XML`, not the 4.8 client. The inventory
+    maps devnames through the 4.8 client's own `Npcs.pak` instead.
 - [ ] **RQ-02 — The upstream check.** List the quests that `upstream/4.8` gained handlers for
   after `ce54b7931`. Those go through the upstream queue, not D32.
 - [ ] **RQ-03 — Retail evidence.** For each quest, the aioncodex `/48/` facts (start and end

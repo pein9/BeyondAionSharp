@@ -105,6 +105,7 @@ pwsh -NoProfile -File scripts/ci/check-clock-reads.ps1        # direct game cloc
 pwsh -NoProfile -File scripts/ci/check-custom-quest-drafts.ps1 # Roslyn custom-quest draft drift
 python scripts/parity/check_fidelity.py                        # structural-fidelity check
 python scripts/e2e/test-quest-plan-compiler.py                 # quest plan/classifier drift and contract
+python scripts/e2e/test-retail-quest-inventory.py             # D32 retail quest inventory joins and drift (client optional)
 python scripts/e2e/test-data-sweep-report.py                   # exhaustive sweep evidence/baseline contract
 python scripts/e2e/test-soak-telemetry.py                      # capacity heartbeat/plateau/latency evidence gate
 python scripts/e2e/test-soak-acceptance.py                     # all soak evidence gates must agree
