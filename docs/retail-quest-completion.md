@@ -1,6 +1,6 @@
 # Retail 4.8 quest completion (D32)
 
-**Status (2026-09-30): RQ-01 done; RQ-02 next.** This is the handoff for a separate session.
+**Status (2026-09-30): RQ-01 and RQ-02 done; RQ-03 next.** This is the handoff for a separate session.
 Read this file, then `CLAUDE.md`, before doing anything.
 
 ## Goals (the maintainer, 2026-09-30)
@@ -165,8 +165,18 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
     encryption layer this repository cannot decode; RQ-03 takes them from aioncodex.
   - `client_npc_names.py` reads the 5.8 server's `Map/XML`, not the 4.8 client. The inventory
     maps devnames through the 4.8 client's own `Npcs.pak` instead.
-- [ ] **RQ-02 — The upstream check.** List the quests that `upstream/4.8` gained handlers for
+- [x] **RQ-02 — The upstream check.** List the quests that `upstream/4.8` gained handlers for
   after `ce54b7931`. Those go through the upstream queue, not D32.
+
+  **Done (2026-09-30): none.** `upstream/4.8` was fetched in `../aion-server` and is `267ce6033`,
+  18 commits past `ce54b7931` (one past the `a31c1dfcb` the upstream reports checked against).
+  - `git diff --diff-filter=ADR ce54b7931 upstream/4.8 -- game-server/data/handlers/quest
+    game-server/data/static_data/quest_script_data game-server/data/static_data/quest_data` is
+    empty: no handler, template entry or quest data was added, renamed or removed.
+  - The only commit touching quest handlers is `4617c9fd2` ("ZoneName & zone templates
+    cleanup"), which moves 63 existing handlers from `ZoneName` to `ZoneInstance`. None of the
+    440 ids appears anywhere in its diff. It belongs to the ordinary upstream queue, not to D32.
+  - So all 440 stay D32 candidates. Repeat this check before each RQ-06 batch; upstream moves.
 - [ ] **RQ-03 — Retail evidence.** For each quest, the aioncodex `/48/` facts (start and end
   NPC, steps, live or not), cached in the inventory with the URL. Fetch politely: one page at
   a time, cached, never re-fetched once stored.
