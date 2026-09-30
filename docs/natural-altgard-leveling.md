@@ -1669,10 +1669,34 @@ The same loop protocol, with "AB" in place of "NA".
     leaves it alone, so **nothing is despawned**. The shared Fast world keeps Komu (hourly
     respawn) and Sumarhon for AB-05..AB-07.
   - The warning baseline and the logger and clock checks pass.
-- [ ] **AB-03 — `NaturalTimedQuestPolicy`.** A pure policy and tests: when to start a timer,
+- [x] **AB-03 — `NaturalTimedQuestPolicy`.** A pure policy and tests: when to start a timer,
   the kill and drop budget against the seconds left (client `TimerSeconds`), actions forbidden
   while a timer runs, when to turn back, and the expiry paths (Q2288 retake; Q2230 new chance
   after the tusks are taken). Also the retry budget (AB-Q2).
+  - *Done 2026-09-30.* `tests/Aion.Bots/Scenarios/NaturalTimedQuestPolicy.cs`, pure, over the contract's
+    `NaturalAltgardTimer`. `Decide` returns one of:
+    - **take**: for Q2230 only when ready, since its accept starts the timer;
+    - **start-timer**: Q2288's SETPRO1, only when ready;
+    - **hunt**: while the budget fits, and on after it runs short, since stopping gains nothing;
+    - **turn-in**: as soon as the work is done;
+    - **new-chance**: after Q2230 expires, the check takes the tusks (page 3057), then SETPRO1;
+    - **wait-for-journal**: after Q2288 expires, the server abandons the quest;
+    - **wait-until-ready**, **give-up** (after three timers, AB-Q2) and **done**.
+  - `Slack` is the time left minus the remaining work (units ÷ units per kill × seconds per kill),
+    the walk back and a 30 s margin. `MayRest` lets a rest happen only inside that slack.
+  - While a timer runs, the policy forbids logout, relog, a return scroll, teleport, and rest
+    or restock trips.
+  - A Java quirk, noted but not used: after Q2230 expires, pressing SETPRO1 **before** the
+    check would start a new timer and keep the tusks. The page flow (check → 3057 → new
+    chance) is what a player follows, so the bot does too.
+  - Five `NaturalTimedQuestPolicyTests` cover:
+    - one attempt fitting each timer (Q2288: 3 kills and the walk back in 600 s, over 300 s
+      spare; Q2230: 10 tusks at 80% in 1,800 s, over 1,000 s spare);
+    - Q2288's start, hunt, turn-in, expiry, retake and give-up;
+    - Q2230's readiness gate, hunt, turn-in, new chance and give-up;
+    - the forbidden actions and the rest gate.
+  - All 330 Natural tests pass, and so do the warning baseline, the logger and clock checks and
+    the fidelity check.
 - [ ] **AB-04 — The timed quests in SIM** (a level 16 probe, account 146):
   - Q2288 done inside 600 s;
   - Q2288 let expire, so the quest is abandoned, then retaken;
@@ -1922,3 +1946,4 @@ The original questions follow.
 - 2026-09-30 AC-08: full checklist green after run-fast's walker-dependent probes learned to follow or skip, and the air-combat cast gate is released on a refusal; Leg 3 is done.
 - 2026-09-30 AB-01: the Leg 4 contract (hunts, timers, the Infernus spawn, Komu, the zone-bound poison, the Basfelt bind), five template plans, and five contract tests.
 - 2026-09-30 AB-02: all 19 Leg 4 travel legs route and walk in SIM, Sumarhon's height and the beehive grove included; the Q24013 ground holds 11 Feral Sharpeyes.
+- 2026-09-30 AB-03: the pure timed-quest policy (readiness gate, budget, turn-in, abandon/new-chance, three tries, forbidden actions) with five tests.
