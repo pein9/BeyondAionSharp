@@ -93,6 +93,32 @@ public static class NaturalAltgardQuestSteps
 		return lootItemId is not int item || await NaturalIshalgenJourney.TryLootCorpseItemAsync(session, objectId, item, token, start);
 	}
 
+	/// <summary>
+	/// AC-05: a contract object use. Some objects open a dialog as they are used (Q2221's safe: page 1693, Java
+	/// <c>QuestItemNpcAI.handleUseItemFinish</c> sends it before the drop); the client answers it with the contract's close
+	/// action after the loot, as a player clicks it away. False when the use was interrupted or the loot missed.
+	/// </summary>
+	public static async Task<bool> UseContractObjectAsync(INaturalJourneySession session, NaturalAltgardObjectUse use, int objectId,
+		CancellationToken token)
+	{
+		int start = session.PacketHistory.Count;
+		bool used = await UseObjectAsync(session, objectId, use.LootItemId, token);
+		bool opened = use.DialogPage is int page && session.PacketHistory.Skip(Math.Min(start, session.PacketHistory.Count)).Any(packet =>
+			packet.PacketType == typeof(SM_DIALOG_WINDOW) && packet.Get<int>("targetObjectId") == objectId && packet.Get<ushort>("dialogPageId") == page);
+		if (opened && use.CloseAction is string close)
+		{
+			ushort action = checked((ushort)NaturalAscensionContract.DialogActionId(close));
+			await session.SendPacketAsync(session.Api.SelectDialog(objectId, action, questId: use.QuestId), token);
+			await session.SendPacketAsync(session.Api.CloseDialog(objectId), token);
+			await session.SynchronizeAsync(token);
+		}
+		session.TraceDiagnostic("object-use", new Dictionary<string, object?>
+		{
+			["use"] = use.Key, ["object"] = objectId, ["used"] = used, ["dialog"] = opened, ["quest"] = State(session.Api.World, use.QuestId)?.ToString(),
+		});
+		return used;
+	}
+
 	/// <summary>Loot <paramref name="itemId"/> from a corpse in reach (AM-05: the Q24012 collections), through the journey's
 	/// loot routine. False when the drop list does not hold it.</summary>
 	public static Task<bool> LootItemAsync(INaturalJourneySession session, int objectId, int itemId, CancellationToken token) =>

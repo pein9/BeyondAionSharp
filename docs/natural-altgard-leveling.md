@@ -1296,9 +1296,27 @@ The same loop protocol, with "AC" in place of "NA".
        var 3 and movie 69, and Groken gone.
     5. Manir's hand-in completed Q2290.
   - All 319 Natural tests pass, and so do the warning baseline and the logger and clock checks.
-- [ ] **AC-05 — Q2221 at the safe, probed in SIM** (account 145). Groken's talk, the safe's
+- [x] **AC-05 — Q2221 at the safe, probed in SIM** (account 145). Groken's talk, the safe's
   USE_OBJECT, the loot (182203215 at 100%), and the hand-in, with the camp's robbers set
   to 1 HP as in AM-05. **Done when:** Q2221 is COMPLETE and Q2290 is offered.
+  - *Done 2026-09-29.* `NaturalAltgardQuestSteps.UseContractObjectAsync` uses a contract object.
+    When the object opens its dialog as it is used (Java `QuestItemNpcAI.handleUseItemFinish`
+    sends it before the drop), the client answers it after the loot with the contract's close
+    action (SETPRO2), as a player clicks it away.
+  - SIM `SimulationAltgardGrokensSafeTests` (account 145, `run/ac05/safe.log`) is a level 15
+    probe Cleric:
+    1. the offer at Manir, var 0;
+    2. Groken, var 1;
+    3. **the safe:** a 3,000 ms use bar, page 1693, 182203215 looted, var 2, and the safe gone on
+       the server;
+    4. Groken's hand-in: COMPLETE, the item taken back;
+    5. Groken's QUEST_SELECT for Q2290 opens page 1011, so **the escort is offered**. It is not
+       taken.
+  - A deviation from the item text: the 11 robbers in the camp and around Groken were
+    **despawned** (GM, probe only), not set to 1 HP. The camp fight, Commander Mohen
+    included, is played for real in AC-06. The travel was a setup teleport, since AC-02 walked
+    it.
+  - The warning baseline and the logger and clock checks pass.
 - [ ] **AC-06 — The Leg 3 runner.** Engine action `escort` and its executor (the protocol).
   Also the talk chain to Karl and Nokir, with Nokir's guarded spot (AM-03's policy). A
   smoke run from `altgard-l2` with real combat:
@@ -1455,3 +1473,4 @@ The original questions follow.
 - 2026-09-29 AC-02: all eight Leg 3 travel legs route and walk in SIM; the dock is on the navmesh and the escort line is 111 m.
 - 2026-09-29 AC-03: the pure escort policy (hops, leash bands, forbidden actions, clear/respawn/restart/give-up) and six tests pinning Java's follow check.
 - 2026-09-29 AC-04: the escort protocol in SIM: logout and leash losses reset var 0 and delete Groken (295 s); the protocol restarted and delivered him in 19 s, gap 6.3 m, movie 69.
+- 2026-09-29 AC-05: Q2221 in SIM: the safe (3 s bar, page 1693, loot, var 2, gone), Groken's hand-in, and Q2290 offered.
