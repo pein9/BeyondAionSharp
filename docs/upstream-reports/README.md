@@ -17,6 +17,17 @@ Patches are kept with LF line endings (`.gitattributes`), as the Java repository
 | 26960 Face the Commander (Iron Wall Warfront) | Copy slip from the Elyos twin 16960: 802055 registered for talk and 802054 for kill, instead of 802054 for talk and 233544 for kill. Untestable: Pashid 233544 has no spawn in 4.8 | `q26960-face-the-commander.patch` | none |
 | 2209 (work item) | Thrud does not hand out the quest work item 182203206; cosmetic | `q2209-the-scribbler-work-item.patch` | none |
 
+## D32: retail 4.8 quests Java lacks
+
+Quests the 4.8 client ships and 4.8 retail ran, which Java 4.8 never implemented (`docs/retail-quest-completion.md`). These are additions, not fixes: each patch adds the quest's
+`quest_script_data` entry and its summary line. The Altgard patches touch the same file and are
+cumulative: **apply them in the order of the table**. Checked in sequence against the
+`altgard.xml` blob `b7c967b`, which is the same at `ce54b7931` and at `upstream/4.8` `267ce6033`.
+
+| Quest | Entry | Patch | C# decision |
+|---|---|---|---|
+| 24113 Sword to Secrecy (Altgard) | `<item_collecting id="24113" start_npc_ids="203654"/>` | `q24113-sword-to-secrecy.patch` | D32, applied (deviation 146) |
+
 The Java branch, the checks and the PR text are in `pull-request.md`.
 The evidence and the dialog-dispatch explanation that apply to all of them are in
 `q2209-the-scribbler.md`, whose appendix lists every handler the scan found.

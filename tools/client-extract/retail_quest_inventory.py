@@ -63,6 +63,9 @@ OUTPUT = REPO_ROOT / "parity-artifacts/e2e/retail-quest-inventory.json"
 SUMMARY = REPO_ROOT / "parity-artifacts/e2e/retail-quest-inventory.md"
 RETAIL_EVIDENCE = REPO_ROOT / "parity-artifacts/e2e/retail-quest-evidence.json"
 OVERRIDES = REPO_ROOT / "parity-artifacts/e2e/retail-quest-class-overrides.json"
+# The D32 register: quests D32 has implemented. They leave the classifier's no_handler set once they have a
+# handler, and are kept here so the inventory and the work list still show them, as done.
+IMPLEMENTED = REPO_ROOT / "parity-artifacts/e2e/retail-quest-implemented.json"
 DEFAULT_CLIENT = Path(r"C:\Program Files (x86)\Beyond Aion")
 
 SCHEMA_VERSION = 1
@@ -470,10 +473,12 @@ def disabled_chain(quest_id: int, quests: dict[int, dict[str, Any]], seen: froze
 
 def build(client: dict[str, Any], classifier: dict[str, Any], server_quests: dict[int, ET.Element],
           world: World, java_ids: set[int] | None, evidence: dict[str, Any],
-          overrides: dict[str, Any] | None = None) -> dict[str, Any]:
+          overrides: dict[str, Any] | None = None, implemented: dict[str, Any] | None = None) -> dict[str, Any]:
     availability = {entry["id"]: entry["availability"] for entry in classifier["quests"]}
     excluded_by = exclusions(client["quests"])
-    targets = [entry for entry in classifier["quests"] if entry["availability"] == "no_handler"]
+    implemented = implemented or {}
+    targets = [entry for entry in classifier["quests"]
+               if entry["availability"] == "no_handler" or str(entry["id"]) in implemented]
     entries = []
     for entry in targets:
         quest_id = entry["id"]
@@ -488,6 +493,8 @@ def build(client: dict[str, Any], classifier: dict[str, Any], server_quests: dic
             "javaHandler": None if java_ids is None else quest_id in java_ids,
             "clientDialog": quest_id in client["dialogs"],
         }
+        if str(quest_id) in implemented:
+            row["implemented"] = implemented[str(quest_id)]
         if client_quest is None:
             row["client"] = None
             entries.append(row)
@@ -731,7 +738,8 @@ def live_class(row: dict[str, Any]) -> tuple[str, list[str]]:
 def summarize(document: dict[str, Any]) -> dict[str, Any]:
     quests = document["quests"]
     return {
-        "noHandler": len(quests),
+        "noHandler": sum(1 for q in quests if not q.get("implemented")),
+        "implemented": sum(1 for q in quests if q.get("implemented")),
         "inClient": sum(1 for q in quests if q.get("client")),
         "javaHandlerFound": sum(1 for q in quests if q["javaHandler"]),
         "clientDialog": sum(1 for q in quests if q["clientDialog"]),
@@ -756,7 +764,8 @@ def markdown(document: dict[str, Any]) -> str:
         "`retail-quest-inventory.json` beside this file. What each column means and what it does not decide:",
         "`docs/retail-quest-completion.md`.",
         "",
-        f"- **{counts['noHandler']}** no-handler quests (classifier), **{counts['inClient']}** of them in the 4.8 client's `quest.xml`.",
+        f"- **{counts['noHandler']}** no-handler quests (classifier) and **{counts['implemented']}** D32 has implemented; "
+        f"**{counts['inClient']}** of them in the 4.8 client's `quest.xml`.",
         f"- Java handler found after all: **{counts['javaHandlerFound']}**. Client dialog file shipped: **{counts['clientDialog']}**.",
         f"- World ready (every item has a template, every kill/drop source has a spawned alternative): **{counts['worldReady']}**.",
         f"- `quest_data.xml` disagrees with the client somewhere: **{counts['withServerDiffs']}**.",
@@ -826,7 +835,8 @@ def generate(client_root: Path, java_root: Path) -> tuple[str, str]:
     java_ids = java_handler_ids(java_root)
     evidence = json.loads(RETAIL_EVIDENCE.read_text(encoding="utf-8")) if RETAIL_EVIDENCE.exists() else {}
     overrides = json.loads(OVERRIDES.read_text(encoding="utf-8"))["quests"] if OVERRIDES.exists() else {}
-    body = build(client, classifier, server_quests, world, java_ids, evidence.get("quests", {}), overrides)
+    implemented = json.loads(IMPLEMENTED.read_text(encoding="utf-8"))["quests"] if IMPLEMENTED.exists() else {}
+    body = build(client, classifier, server_quests, world, java_ids, evidence.get("quests", {}), overrides, implemented)
     document = {
         "schemaVersion": SCHEMA_VERSION,
         "generatedBy": "tools/client-extract/retail_quest_inventory.py",

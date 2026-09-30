@@ -12,6 +12,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -24,6 +25,9 @@ WORKLIST_BUILDER = REPO_ROOT / "tools/client-extract/retail_quest_worklist.py"
 INVENTORY = REPO_ROOT / "parity-artifacts/e2e/retail-quest-inventory.json"
 SUMMARY = REPO_ROOT / "parity-artifacts/e2e/retail-quest-inventory.md"
 CLASSIFIER = REPO_ROOT / "parity-artifacts/e2e/obtainable-quests.json"
+IMPLEMENTED = REPO_ROOT / "parity-artifacts/e2e/retail-quest-implemented.json"
+PLANS = REPO_ROOT / "parity-artifacts/e2e/retail-quest-plans"
+PLAN_COMPILER = REPO_ROOT / "scripts/e2e/compile-quest-plans.py"
 
 spec = importlib.util.spec_from_file_location("retail_quest_inventory", BUILDER)
 assert spec is not None and spec.loader is not None
@@ -343,6 +347,41 @@ class EvidenceReaderTests(unittest.TestCase):
         self.assertEqual({"url": evidence.URL.format(1), "status": 404}, evidence.parse(1, 404, None))
 
 
+class RegisterTests(unittest.TestCase):
+    """The D32 register drives the SIM theory `RetailQuestPlaysEndToEnd`; these keep it and its plans honest."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.register = json.loads(IMPLEMENTED.read_text(encoding="utf-8"))["quests"]
+
+    def test_every_entry_has_a_plan_a_patch_and_its_own_fixture_account(self) -> None:
+        accounts = [entry["simAccount"] for entry in self.register.values()]
+        self.assertEqual(len(accounts), len(set(accounts)), "two D32 quests share a SIM account")
+        for quest_id, entry in self.register.items():
+            self.assertTrue((PLANS / f"{quest_id}.json").exists(), quest_id)
+            self.assertTrue((REPO_ROOT / entry["patch"]).exists(), entry["patch"])
+            account = entry["simAccount"]
+            self.assertTrue(1 <= account <= 94 or 101 <= account <= 150, account)
+            self.assertFalse(133 <= account <= 148, "133-148 belong to the natural legs")
+        self.assertEqual(sorted(self.register), sorted(path.stem for path in PLANS.glob("*.json")))
+
+    def test_every_registered_quest_now_has_a_handler(self) -> None:
+        classifier = {q["id"]: q for q in json.loads(CLASSIFIER.read_text(encoding="utf-8-sig"))["quests"]}
+        for quest_id in self.register:
+            self.assertNotEqual("no_handler", classifier[int(quest_id)]["availability"], quest_id)
+            self.assertNotEqual("none", classifier[int(quest_id)]["handlerKind"], quest_id)
+
+    def test_checked_in_plans_are_current(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            command = [sys.executable, str(PLAN_COMPILER), "--output", temp]
+            for quest_id in self.register:
+                command += ["--quest", quest_id]
+            subprocess.run(command, cwd=REPO_ROOT, check=True, capture_output=True)
+            for quest_id in self.register:
+                fresh = (Path(temp) / f"{quest_id}.json").read_text(encoding="utf-8")
+                self.assertEqual(fresh, (PLANS / f"{quest_id}.json").read_text(encoding="utf-8"), quest_id)
+
+
 class CheckedInInventoryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -350,7 +389,10 @@ class CheckedInInventoryTests(unittest.TestCase):
         cls.classifier = json.loads(CLASSIFIER.read_text(encoding="utf-8-sig"))
 
     def test_covers_exactly_the_classifier_no_handler_set(self) -> None:
-        expected = sorted(q["id"] for q in self.classifier["quests"] if q["availability"] == "no_handler")
+        implemented = json.loads((REPO_ROOT / "parity-artifacts/e2e/retail-quest-implemented.json").read_text(
+            encoding="utf-8"))["quests"]
+        expected = sorted(q["id"] for q in self.classifier["quests"]
+                          if q["availability"] == "no_handler" or str(q["id"]) in implemented)
         self.assertEqual(expected, [q["id"] for q in self.document["quests"]])
 
     def test_counts_and_summary_are_derived_from_the_rows(self) -> None:

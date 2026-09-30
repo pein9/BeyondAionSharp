@@ -1,0 +1,280 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 24113,
+    "name": "Sword to Secrecy",
+    "nameId": 1129974,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 12,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 24112
+          }
+        ],
+        "unfinished": [
+          2200
+        ],
+        "noacquired": [
+          2200
+        ]
+      },
+      {
+        "finished": [],
+        "unfinished": [
+          2017
+        ],
+        "noacquired": [
+          2017
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 24113,
+        "start_npc_ids": 203654
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203654,
+        "name": "aurtri",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1459.94,
+            "y": 2540.22,
+            "z": 306.002,
+            "heading": 120,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203654,
+      "name": "aurtri",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1459.94,
+          "y": 2540.22,
+          "z": 306.002,
+          "heading": 120,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203654,
+      "name": "aurtri",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1459.94,
+          "y": 2540.22,
+          "z": 306.002,
+          "heading": 120,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182215473,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182215473,
+          "npc_id": 210532,
+          "npc": {
+            "id": 210532,
+            "name": "commander gattban",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1721.12,
+                "y": 2636.07,
+                "z": 291.18,
+                "heading": 24,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203654,
+          "name": "aurtri",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1459.94,
+              "y": 2540.22,
+              "z": 306.002,
+              "heading": 120,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 16066,
+        "gold": 21600,
+        "rewardItems": [
+          {
+            "count": 5,
+            "item_id": 162000044
+          },
+          {
+            "count": 3,
+            "item_id": 188050880
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 24113,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 12,
+      "name": "Sword to Secrecy",
+      "nameId": 1129974,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182215473
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 16066,
+          "gold": 21600
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 162000044
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 188050880
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182215473,
+          "npc_id": 210532
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 24112
+            }
+          },
+          {
+            "tag": "unfinished",
+            "text": [
+              2200
+            ]
+          },
+          {
+            "tag": "noacquired",
+            "text": [
+              2200
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "unfinished",
+            "text": [
+              2017
+            ]
+          },
+          {
+            "tag": "noacquired",
+            "text": [
+              2017
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

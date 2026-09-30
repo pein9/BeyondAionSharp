@@ -7,7 +7,8 @@
   "javaCommit": "ce54b7931"
  },
  "counts": {
-  "noHandler": 440,
+  "noHandler": 439,
+  "implemented": 1,
   "inClient": 440,
   "javaHandlerFound": 0,
   "clientDialog": 421,
@@ -17952,7 +17953,7 @@
    "excludedBy": [
     {
      "id": 24113,
-     "availability": "no_handler",
+     "availability": "obtainable",
      "mutual": false
     }
    ],
@@ -34500,7 +34501,7 @@
     },
     {
      "id": 24113,
-     "availability": "no_handler",
+     "availability": "obtainable",
      "mutual": false
     },
     {
@@ -72701,6 +72702,16 @@
    "race": "ASMODIANS",
    "javaHandler": false,
    "clientDialog": true,
+   "implemented": {
+    "name": "Sword to Secrecy",
+    "form": "item_collecting template (quest_script_data/altgard.xml)",
+    "test": "RetailQuestPlaysEndToEnd(24113)",
+    "deviation": 146,
+    "patch": "docs/upstream-reports/q24113-sword-to-secrecy.patch",
+    "batch": "RQ-05 Altgard pilot",
+    "simAccount": 47,
+    "simCharacter": "Asimrqc"
+   },
    "client": {
     "clientLevel": 17,
     "minLevel": 12,

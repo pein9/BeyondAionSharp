@@ -98,11 +98,11 @@ class QuestPlanCompilerTests(unittest.TestCase):
     def test_classifier_keeps_unimplemented_distinct(self) -> None:
         classifier = json.loads(CLASSIFIER.read_text(encoding="utf-8"))
         self.assertEqual(
-            {"obtainable": 4315, "disabled": 3008, "unreachable": 280, "no_handler": 440},
+            {"obtainable": 4316, "disabled": 3008, "unreachable": 280, "no_handler": 439},
             classifier["counts"],
         )
         self.assertEqual(
-            {"template": 2964, "template_incomplete": 424, "custom": 927, "none": 2824, "unavailable": 904},
+            {"template": 2965, "template_incomplete": 424, "custom": 927, "none": 2823, "unavailable": 904},
             classifier["plannerCounts"],
         )
         by_id = {quest["id"]: quest for quest in classifier["quests"]}
@@ -149,7 +149,7 @@ class QuestPlanCompilerTests(unittest.TestCase):
 
             self.assertEqual([], errors)
             self.assertTrue(report["baselineComparison"]["passed"])
-            self.assertEqual(440, report["excluded"]["noHandler"]["total"])
+            self.assertEqual(439, report["excluded"]["noHandler"]["total"])
             self.assertEqual(280, report["excluded"]["unreachable"]["total"])
             for mode in report["modes"]:
                 self.assertEqual(61, mode["totals"]["accepted"])

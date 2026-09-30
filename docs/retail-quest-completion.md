@@ -1,6 +1,6 @@
 # Retail 4.8 quest completion (D32)
 
-**Status (2026-09-30): RQ-01 to RQ-04 done and approved; the per-quest review is done. The work list is [retail-quest-worklist.md](retail-quest-worklist.md); RQ-05 (the Altgard pilot) is next.** This is the handoff for a separate session.
+**Status (2026-09-30): RQ-01 to RQ-04 done and approved; the per-quest review is done. The work list is [retail-quest-worklist.md](retail-quest-worklist.md); RQ-05 (the Altgard pilot) is in progress.** This is the handoff for a separate session.
 Read this file, then `CLAUDE.md`, before doing anything.
 
 ## Goals (the maintainer, 2026-09-30)
@@ -239,6 +239,45 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
   - an upstream patch;
   - an update to the natural leveling doc, whose exclusion list names them. Q24113, Q24232
     and Q24233 follow Q24112, which Leg 4 completes.
+
+  **Progress (RQ-05, 2026-09-30).** Done: Q24113; next: Q24110, Q24111, Q24115, Q24232, Q24233.
+  Q24114 is class B (below).
+  - **Form.** All six are `quest_script_data` template entries in `altgard.xml`; no C# handler is
+    needed. Retail 5.8 runs each as a simple quest (`Quest_SimpleHunt.xml`, `Quest_SimpleTalk.xml`
+    with an item check, `Quest_SimpleCollectItem.xml`), and of the Java template quests retail runs
+    the same way, SimpleHunt ones are `monster_hunt` (990 of 991) and SimpleTalk-with-item and
+    SimpleCollectItem ones `item_collecting`. `quest_data.xml` already carried each quest's kills,
+    drops and work item. The default ending (talk to report) is kept: most 4.x SimpleHunt quests in
+    Java use it, and the client does not mark the `end_reward` exceptions.
+  - **Test.** `RetailQuestPlaysEndToEnd` (`tests/Aion.Simulation.Tests/SimulationRetailQuestTests.cs`)
+    plays each quest from its compiled plan (`parity-artifacts/e2e/retail-quest-plans/`) with the
+    quest-plan driver: accept at the giver, kill or loot, report, reward. Its cases are the D32
+    register `parity-artifacts/e2e/retail-quest-implemented.json`, which also gives each quest its
+    fixture account: **42, 43 and 47–50 are D32's** (see there). The probe is ascended first,
+    since a non-Daeva is capped at level 9. `test-retail-quest-inventory.py` checks the register,
+    that each plan is current, and that each registered quest now has a handler.
+  - **Evidence.** All six pass (`run/rq05/rq05-sim-b.log`); with the pre-D32 `altgard.xml`, Q24113
+    fails at its start step, because Aurtri offers no quest (`run/rq05/rq05-sim-without-entry.log`).
+  - **Records.** Deviation 146, the register table below, the patches in
+    `docs/upstream-reports/` (cumulative, applied in order), and Done lines in the work list.
+  - **Q24114 "You Gotta Stop Umkata" (class B), for approval.** Not a template quest: retail 5.8
+    has no simple-quest entry for it. The client steps are: kill 3 Hero Spirits (210588, 210722;
+    vars 0-2), report to Gulkalla (203649), collect Umkata's three tokens (182215474-182215476,
+    already in `quest_data.xml` as step-4 drops from the Black Claw lycans, Umkata's Jewel Box
+    700097 and the wind spirits), use them at Umkata's Grave (700098) to wake **Umkata the
+    Restless (210752)**, kill him, report to Gulkalla. What is missing is a custom C# handler and
+    Umkata's summon: 210752 has a template but no spawn, because the quest spawns him. Java's own
+    2.x version of the same quest, Q2018 "Reconstructing Impetusium" (deleted in Java commit
+    `b4b01f75d`, 2016, with the other 2.x campaigns), does exactly this: `CHECK_USER_HAS_QUEST_ITEM`
+    at the grave spawns 210752 at (2889.98, 1741.31, 254.75) in 220030000, and his kill ends the
+    step. Proposal: write `_24114YouGottaStopUmkata` from that handler, with Q24114's own variable
+    layout from the client (kills at 0-2, Umkata at 4), and test it like the others.
+  - **Question raised by the same Java commit: the 2.x Reshanta missions.** `b4b01f75d` deleted the
+    handlers of Q1071-Q1077 and Q2071-Q2076 together with the retired Altgard, Morheim, Beluslan,
+    Verteron, Eltnen and Heiron campaigns, and kept only the one-step Governor quests Q1701 and
+    Q2701. So aionemu treated the Reshanta campaign as retired in 4.x too, although the 4.8 client
+    still has it switched on and nothing in the client excludes it. The review kept them (batch 5);
+    this is new evidence the other way. Nothing is implemented there yet; the maintainer decides.
 - [ ] **RQ-06 — Batches.** Zone by zone in the maintainer's order, the classifier regenerated
   after each batch.
 
@@ -375,4 +414,4 @@ a row keeps the rules' own verdict beside an override.
 
 | Quest | Name | Zone | Class | Form | Evidence | Test | Deviation | Commit |
 |---|---|---|---|---|---|---|---|---|
-| | | | | | | | | |
+| Q24113 | Sword to Secrecy | Altgard | A | `item_collecting` template | the 4.8 client ships it (level 12, after Q24112, excluding Q2200 and Q2017); aioncodex `/48/quest/24113` names Aurtri as giver; retail 5.8 runs it as a SimpleTalk quest with an item check, Aurtri to Aurtri | `RetailQuestPlaysEndToEnd(24113)` | 146 | (next commit) |

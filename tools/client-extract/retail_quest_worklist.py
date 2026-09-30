@@ -177,8 +177,12 @@ def links(row: dict[str, Any], cross: dict[str, Any]) -> str:
 
 def line(row: dict[str, Any], cross: dict[str, Any], status: str) -> str:
     rejected = status == "Rejected" or row["class"] in ("C", "D")
-    verdict = (next((r[len("reviewed: "):] for r in row["classReasons"] if r.startswith("reviewed:")), "")
-               if rejected else needs(row) or "ready: every npc and item it names is here")
+    done = row.get("implemented")
+    if done and not rejected:
+        verdict = f"done: {done['form']}; SIM test {done['test']}; deviation {done['deviation']}"
+    else:
+        verdict = (next((r[len("reviewed: "):] for r in row["classReasons"] if r.startswith("reviewed:")), "")
+                   if rejected else needs(row) or "ready: every npc and item it names is here")
     return "| {} | Q{} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
         status, row["id"], cell(row["name"] or row["clientName"]), cell(row["zone"]),
         {"ELYOS": "Elyos", "ASMODIANS": "Asmo"}.get(row["race"], "Both"), row["client"]["minLevel"],
@@ -196,6 +200,8 @@ def render(document: dict[str, Any], crosscheck: dict[str, Any], statuses: dict[
     def status(row):
         if row["id"] in statuses:
             return statuses[row["id"]]
+        if row.get("implemented"):
+            return "Done"
         return "Rejected" if row["class"] in ("C", "D") else ""
 
     sections = [
