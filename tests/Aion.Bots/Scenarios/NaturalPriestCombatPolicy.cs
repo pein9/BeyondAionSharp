@@ -10,10 +10,14 @@ public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role
 	int ReagentItemId = 0, int ReagentCount = 0)
 {
 	/// <summary>Skills cast on the bot itself; every other role targets the monster.</summary>
-	public bool TargetsSelf => Role is "heal" or "blessing" or "rejuvenation" or "salvation" or "herb" or "mp-recovery";
+	public bool TargetsSelf => Role is "heal" or "blessing" or "rejuvenation" or "salvation" or "herb" or "mp-recovery"
+		or "penance" or "grace";
 
 	/// <summary>Powder rest skills (4 s cast, cancelled by any hit): only the rest policy casts them.</summary>
 	public bool IsPowderRest => Role is "herb" or "mp-recovery";
+
+	/// <summary>AC-00: skills only the rest policy casts: the powder skills and Penance (it spends HP for mana).</summary>
+	public bool IsRestSkill => IsPowderRest || Role == "penance";
 }
 
 /// <summary>
@@ -90,6 +94,9 @@ public static class NaturalPriestCombatPolicy
 	/// <summary>Client distance at which a monster is on the bot (its bound radius plus the swing reach).</summary>
 	public const float MeleeReach = 3f;
 
+	/// <summary>AC-00: the Holy Servant is not summoned onto a target at or below this HP.</summary>
+	public const int ServantMinimumTargetHpPercent = 50;
+
 	public const int HealPercentSingle = 55, HealPercentMultiple = 70, EmergencyPercent = 35, EmergencyClearPercent = 45;
 
 	/// <summary>The HP percentage at which a fight becomes an emergency (heal chain and potions until
@@ -155,6 +162,7 @@ public static class NaturalPriestCombatPolicy
 			var reasons = new List<string>();
 			if (state.Dead) reasons.Add("Client reported death.");
 			if (skill.IsPowderRest) reasons.Add("Powder rest skill: any hit cancels its 4 s cast, so only the rest policy casts it.");
+			else if (skill.IsRestSkill) reasons.Add("Rest skill: it spends HP for mana, so only the rest policy casts it.");
 			if (state.Dp < skill.DpCost) reasons.Add("Observed DP is below the skill's cost.");
 			if (skill.Role == "rejuvenation" && state.HasRejuvenation != false)
 				reasons.Add("The heal over time is already observed, or effects are unobserved.");
@@ -261,6 +269,10 @@ public static class NaturalPriestCombatPolicy
 				return Choice("cast-target", finisher,
 					$"Client-observed target is at or below {policy.FinishTargetHpPercent}% HP after this fight already received a self-heal.");
 		}
+		// AC-00: Healing Grace (3 s, 1,298 HP) is the urgent heal while it is ready; Healing Light covers its cooldown.
+		NaturalPriestSkill? grace = NaturalPriestSkills.Best("grace", state.Level, state.Learned, catalog);
+		if (urgent && grace != null && Eligible(grace, null, 0, state, now, reserveHeal: false))
+			return Choice("cast-self", grace, $"HP is at or below {healPercent}% in a fight: Healing Grace, the larger heal.");
 		if (urgent && heal != null && Eligible(heal, state.TargetObjectId, 0, state, now, reserveHeal: false))
 			return Choice("cast-self", heal, state.InEmergency
 				? $"Emergency: HP fell to {EmergencyEnterPercent(state.NearbyAggressors, state.TargetSeasoned)}% and has not recovered to {EmergencyExitPercent(state.NearbyAggressors, state.TargetSeasoned)}%."
@@ -296,13 +308,16 @@ public static class NaturalPriestCombatPolicy
 		// NA-18, the Cleric: every other _1TH opener resets an open Smite chain (Java ChainCondition.shouldReset), so
 		// while Flashbolt is ready Smite opens first and Flashbolt follows at once; then Slashing Wind and Earth's
 		// Wrath (a 1.5 s cast, last at melee where a hit can cancel it). The Priest catalog has none of these roles.
-		var rotation = new List<string> { "followup" };
+		// AC-00: Divine Touch follows Slashing Wind's chain the same way, so it is checked with Flashbolt.
+		var rotation = new List<string> { "followup", "touch" };
 		NaturalPriestSkill? followup = NaturalPriestSkills.Best("followup", state.Level, state.Learned, catalog);
 		NaturalPriestSkill? opener = NaturalPriestSkills.Best("smite", state.Level, state.Learned, catalog);
 		if (followup != null && opener != null && followup.RequiresChainCategory == opener.ChainCategory &&
 			!(state.Cooldowns.TryGetValue(followup.CooldownId, out DateTimeOffset followupReadyAt) && followupReadyAt > now) &&
 			state.Mp >= opener.ManaCost + followup.ManaCost + (heal?.ManaCost ?? 0) + policy.ManaReserveExtra)
 			rotation.Add("smite");
+		// AC-00: the Holy Servant fights beside the bot for 17 s; summon it on a monster that is not nearly dead.
+		if (state.TargetHpPercent is null or > ServantMinimumTargetHpPercent) rotation.Add("servant");
 		rotation.AddRange(adjacent ? ["infernal", "hallowed", "wind", "wrath", "smite"] : ["wrath", "wind", "smite"]);
 		foreach (string role in rotation)
 		{

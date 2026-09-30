@@ -5,7 +5,8 @@ using Aion.GameServer.Model;
 
 namespace Aion.GameServer.Tests;
 
-/// <summary>NA-18: the Cleric's level 10 catalog, rotation, emergency heal and powder rest.</summary>
+/// <summary>NA-18: the Cleric's level 10 catalog, rotation, emergency heal and powder rest. AC-00: the ranks and skills
+/// up to level 20, and the ratchet that keeps the catalog level with skill_tree.xml.</summary>
 public sealed class NaturalClericCombatPolicyTests
 {
 	private static readonly DateTimeOffset Now = new(2026, 9, 28, 12, 0, 0, TimeSpan.Zero);
@@ -25,7 +26,7 @@ public sealed class NaturalClericCombatPolicyTests
 			// Herb Treatment and MP Recovery rows repeat per class; the Cleric's own row is the one that counts.
 			XElement entry = Assert.Single(tree.Descendants("skill"), node => (int?)node.Attribute("skillId") == skill.Id &&
 				(string?)node.Attribute("classId") == "CLERIC");
-			Assert.Null(entry.Attribute("race"));
+			Assert.Contains((string?)entry.Attribute("race"), new string?[] { null, "ASMODIANS" });
 			Assert.Equal(skill.MinimumLevel, (int?)entry.Attribute("minLevel"));
 			Assert.Equal("true", (string?)entry.Attribute("autolearn"));
 			XElement template = Assert.Single(templates.Descendants("skill_template"),
@@ -42,6 +43,141 @@ public sealed class NaturalClericCombatPolicyTests
 			XElement? reagent = template.Element("actions")?.Element("itemuse");
 			Assert.Equal(skill.ReagentItemId, (int?)reagent?.Attribute("itemid") ?? 0);
 			Assert.Equal(skill.ReagentCount, (int?)reagent?.Attribute("count") ?? 0);
+		}
+	}
+
+	[Fact]
+	public void EveryAutoLearnedActiveClericSkillToLevel20IsCastOrExcludedWithAReason()
+	{
+		string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
+		XDocument tree = XDocument.Load(Path.Combine(root, "game-server/data/static_data/skill_tree/skill_tree.xml"));
+		XDocument templates = XDocument.Load(Path.Combine(root, "game-server/data/static_data/skills/skill_templates.xml"));
+		Dictionary<int, string?> activation = templates.Descendants("skill_template")
+			.ToDictionary(node => (int)node.Attribute("skill_id")!, node => (string?)node.Attribute("activation"));
+		int[] learnable = tree.Descendants("skill")
+			.Where(node => (string?)node.Attribute("classId") is "CLERIC" or "PRIEST" &&
+				(string?)node.Attribute("race") is null or "ASMODIANS" &&
+				(string?)node.Attribute("autolearn") == "true" && (int)node.Attribute("minLevel")! <= 20)
+			.Select(node => (int)node.Attribute("skillId")!)
+			.Where(id => activation.GetValueOrDefault(id) == "ACTIVE").Distinct().Order().ToArray();
+		HashSet<int> cast = NaturalClericSkills.All.Select(skill => (int)skill.Id).ToHashSet();
+		Assert.DoesNotContain(learnable, id => !cast.Contains(id) && !NaturalClericSkills.Excluded.ContainsKey(id));
+		// No stale or double entries: an exclusion names a learnable skill the catalog does not cast.
+		Assert.All(NaturalClericSkills.Excluded, pair =>
+		{
+			Assert.Contains(pair.Key, learnable);
+			Assert.DoesNotContain(pair.Key, cast);
+			Assert.False(string.IsNullOrWhiteSpace(pair.Value));
+		});
+		Assert.Equal(cast.Count, NaturalClericSkills.All.Length);
+	}
+
+	[Fact]
+	public void TheBotMovesToEachNewRankAsItIsLearned()
+	{
+		NaturalCombatObservation ranged = Cleric(1500, 20) with { Level = 15, Learned = Learn(LearnedAt(15)) };
+		// Smite III opens for Flashbolt II.
+		Assert.Equal((ushort)4014, Decide(ranged).Skill?.Id);
+		Assert.Equal((ushort)4026, Decide(ranged with
+		{
+			OpenChainCategory = "P_CHAINA_1TH_1", OpenChainTargetId = Target, ChainExpiresAt = DateTimeOffset.MaxValue,
+			Cooldowns = Cool((1229, 2)),
+		}).Skill?.Id);
+		NaturalCombatObservation melee = ranged with { TargetDistance = 2, TargetAdjacent = true, Cooldowns = Cool((1230, 8), (1066, 20)) };
+		Assert.Equal((ushort)1815, Decide(melee).Skill?.Id);
+		Assert.Equal((ushort)1616, Decide(melee with { Cooldowns = Cool((1230, 8), (1066, 20), (1549, 20)) }).Skill?.Id);
+		Assert.Equal((ushort)4062, Decide(melee with { Cooldowns = Cool((1230, 8), (1066, 20), (1549, 20), (1512, 6)) }).Skill?.Id);
+		NaturalCombatObservation hurt = melee with { Hp = 500, Aggro = true, NearbyAggressors = 1 };
+		Assert.Equal((ushort)1840, Decide(hurt).Skill?.Id);
+		Assert.Equal((ushort)3940, Decide(melee with { Aggro = true, NearbyAggressors = 1, HasRejuvenation = false }).Skill?.Id);
+		// A rank is used only once it is observed: without Smite III learned, Smite II.
+		int[] withoutRank3 = LearnedAt(15).Where(id => id != 4014).ToArray();
+		Assert.Equal((ushort)4013, Decide(ranged with { Learned = Learn(withoutRank3) }).Skill?.Id);
+		Assert.Equal((ushort)1841, NaturalPriestSkills.Best("heal", 16, Learn(LearnedAt(16)), Catalog)?.Id);
+		Assert.Equal((ushort)247, NaturalPriestSkills.Best("herb", 15, Learn(LearnedAt(15)), Catalog)?.Id);
+		Assert.Equal((ushort)252, NaturalPriestSkills.Best("mp-recovery", 20, Learn(LearnedAt(20)), Catalog)?.Id);
+	}
+
+	[Fact]
+	public void DivineTouchFollowsTheSlashingWindChain()
+	{
+		NaturalCombatObservation ranged = Cleric(1500, 20) with
+		{
+			Level = 17, Learned = Learn(LearnedAt(17)), Cooldowns = Cool((1230, 8), (1066, 20)),
+		};
+		NaturalCombatObservation opened = ranged with
+		{
+			OpenChainCategory = "C_CHAINC_1TH_1", OpenChainTargetId = Target, ChainExpiresAt = DateTimeOffset.MaxValue,
+			Cooldowns = Cool((1230, 8), (1066, 20), (1234, 16)),
+		};
+		NaturalCombatChoice touch = Decide(opened);
+		Assert.Equal(("cast-target", (ushort?)4073), (touch.Action, touch.Skill?.Id));
+		AssertLegal(opened, touch);
+		// Without the open chain, or on another monster's chain, it is never chosen.
+		Assert.NotEqual((ushort)4073, Decide(ranged).Skill?.Id);
+		Assert.NotEqual((ushort)4073, Decide(opened with { OpenChainTargetId = 99 }).Skill?.Id);
+	}
+
+	[Fact]
+	public void TheHolyServantIsSummonedOnAFreshTargetAfterTheChains()
+	{
+		NaturalCombatObservation ranged = Cleric(1500, 20) with
+		{
+			Level = 15, Learned = Learn(LearnedAt(15)), Cooldowns = Cool((1230, 8)),
+		};
+		NaturalCombatChoice servant = Decide(ranged);
+		Assert.Equal(("cast-target", (ushort?)4106), (servant.Action, servant.Skill?.Id));
+		AssertLegal(ranged, servant);
+		// Not onto a monster at half HP or less, and not while it is cooling down.
+		Assert.Equal((ushort)4084, Decide(ranged with { TargetHpPercent = 50 }).Skill?.Id);
+		Assert.Equal((ushort)4084, Decide(ranged with { Cooldowns = Cool((1230, 8), (1066, 20)) }).Skill?.Id);
+		// Flashbolt ready: Smite opens for it first.
+		Assert.Equal((ushort)4014, Decide(ranged with { Cooldowns = Cool() }).Skill?.Id);
+	}
+
+	[Fact]
+	public void HealingGraceIsTheUrgentHealWhileReady()
+	{
+		NaturalCombatObservation hurt = Cleric(1500, 2) with
+		{
+			Level = 19, Learned = Learn(LearnedAt(19)), Hp = 500, Aggro = true, NearbyAggressors = 1, TargetAdjacent = true,
+			HasRejuvenation = true,
+		};
+		NaturalCombatChoice grace = Decide(hurt);
+		Assert.Equal(("cast-self", (ushort?)4203), (grace.Action, grace.Skill?.Id));
+		AssertLegal(hurt, grace);
+		Assert.Equal((ushort)1841, Decide(hurt with { Cooldowns = Cool((1257, 5)) }).Skill?.Id);
+		Assert.Equal((ushort)1841, Decide(hurt with { Mp = 100 }).Skill?.Id);
+		Assert.NotEqual((ushort)4203, Decide(hurt with { Hp = 1200 }).Skill?.Id);
+	}
+
+	[Fact]
+	public void PenanceBuysManaAtRestButNeverInAFight()
+	{
+		var learned = Learn(LearnedAt(15));
+		NaturalPowderRestChoice RestAt(int hp, int mp, bool recovering, int penanceCooling = 0, bool engaged = false) =>
+			NaturalPowderRestPolicy.Decide(new NaturalPowderRestObservation(15, hp, 1300, mp, 1300, recovering, learned,
+				penanceCooling > 0 ? Cool((1200, penanceCooling)) : Cool(),
+				new Dictionary<int, long> { [NaturalClericSkills.LesserOdellaPowder] = 30 }, engaged), Now);
+		Assert.Equal(("penance", (ushort?)3867), (RestAt(1300, 300, true).Action, RestAt(1300, 300, true).Skill?.Id));
+		// HP below 70%: no Penance; the larger deficit's powder skill instead. Penance cooling: MP Recovery II.
+		Assert.Equal(("mp-recovery", (ushort?)250), (RestAt(800, 300, true).Action, RestAt(800, 300, true).Skill?.Id));
+		Assert.Equal(("herb", (ushort?)247), (RestAt(500, 600, true).Action, RestAt(500, 600, true).Skill?.Id));
+		Assert.Equal(("mp-recovery", (ushort?)250), (RestAt(1300, 300, true, 60).Action, RestAt(1300, 300, true, 60).Skill?.Id));
+		Assert.Equal("done", RestAt(1300, 1200, false).Action);
+		Assert.Equal("defend", RestAt(1300, 300, true, engaged: true).Action);
+		NaturalCombatObservation fight = Cleric(100, 2) with
+		{
+			Level = 15, Learned = learned, Aggro = true, NearbyAggressors = 1, TargetAdjacent = true,
+		};
+		for (int hp = 50; hp <= 1300; hp += 125)
+		for (int mp = 0; mp <= 1300; mp += 260)
+		{
+			NaturalCombatObservation state = fight with { Hp = hp, Mp = mp };
+			NaturalCombatChoice choice = Decide(state);
+			Assert.False(choice.Skill?.IsRestSkill == true, $"hp={hp} mp={mp} chose {choice.Skill?.Id}");
+			Assert.All(NaturalPriestCombatPolicy.CandidateActions(state, Now, choice, Catalog)
+				.Where(candidate => candidate.SkillId is 3867 or 247 or 250), candidate => Assert.False(candidate.Legal));
 		}
 	}
 
@@ -209,6 +345,10 @@ public sealed class NaturalClericCombatPolicyTests
 
 	private static NaturalCombatObservation Cleric(int mp, float distance) =>
 		new(10, 1300, 1300, mp, 1300, false, false, distance, Target, Learn(ClericLevel10), Cool());
+
+	/// <summary>Every catalog skill the server would have auto-learned by this level.</summary>
+	private static int[] LearnedAt(int level) =>
+		Catalog.Where(skill => skill.MinimumLevel <= level).Select(skill => (int)skill.Id).ToArray();
 
 	private static IReadOnlyDictionary<int, DateTimeOffset> Cool(params (int Group, int Seconds)[] groups) =>
 		groups.ToDictionary(group => group.Group, group => Now.AddSeconds(group.Seconds));

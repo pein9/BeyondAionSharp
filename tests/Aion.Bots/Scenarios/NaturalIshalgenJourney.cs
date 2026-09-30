@@ -5729,7 +5729,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						["hp"] = world.CurrentHp, ["maxHp"] = world.MaxHp, ["mp"] = world.CurrentMp, ["maxMp"] = world.MaxMp,
 						["powder"] = ItemCount(world, NaturalClericSkills.LesserOdellaPowder),
 					});
-					if (powder.Skill is { IsPowderRest: true } restSkill)
+					if (powder.Skill is { IsRestSkill: true } restSkill)
 					{
 						TimeSpan gate = session.Api.Timing.TimeUntilCast(restSkill.Id);
 						if (gate > TimeSpan.Zero) await session.AdvanceAsync(gate + TimeSpan.FromMilliseconds(1), token);
@@ -5757,7 +5757,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					if (world.CurrentHp * 100 < world.MaxHp * 90)
 					{
-						NaturalPriestSkill? heal = NaturalPriestSkills.Best("heal", world.Level, world.Skills);
+						NaturalPriestSkill? heal = NaturalPriestSkills.Best("heal", world.Level, world.Skills, Catalog);
 						if (heal == null || world.CurrentMp < heal.ManaCost)
 							throw new InvalidDataException("Priest has mana but no client-observed usable self-heal between fights.");
 						TimeSpan gate = session.Api.Timing.TimeUntilCast(heal.Id);

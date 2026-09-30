@@ -14,7 +14,7 @@ namespace Aion.Simulation.Tests;
 
 public sealed partial class SimulationFastScenarioTests
 {
-	private const int Altgard = 220030000, Goon = 210715;
+	private const int Altgard = 220030000, Goon = 210715, GraveRobbingFencer = 210506;
 
 	/// <summary>
 	/// NA-23 (docs/natural-ascension-altgard.md): a focused, GM-prepared Cleric encounter, diagnostic only. A level 10
@@ -23,6 +23,9 @@ public sealed partial class SimulationFastScenarioTests
 	/// the tentacled lobnites there are MONSTER tribe and never aggro), a pair, and a target with a random-walking
 	/// goon beside it (Altgard has no aggressive level 9-12 walker near the fortress, and the only walker route there
 	/// is the guards'). Deaths are recorded, not failed (OD-12).
+	/// AC-00 (docs/natural-altgard-leveling.md): with AC00_CLERIC_LEVEL=15 the same encounter is fought by a Cleric of that
+	/// level, with every skill the server auto-learns up to it, against Leg 3's grave robbing fencers (level 14), so the
+	/// combat trace shows which ranks the rotation casts.
 	/// </summary>
 	[SkippableFact]
 	public async Task NaturalClericEncounterRunsOnce()
@@ -31,8 +34,12 @@ public sealed partial class SimulationFastScenarioTests
 		Skip.IfNot(Environment.GetEnvironmentVariable("NA23_CLERIC_ENCOUNTER") == "1",
 			"Set NA23_CLERIC_ENCOUNTER=1 for the NA-23 Cleric encounter diagnostic.");
 		string root = Aion.GameServer.TestKit.RealStaticData.RepoRoot();
-		string run = Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? $"na23-cleric-encounter-s{fixture.Seed}";
-		string directory = Path.Combine(root, "run", "na23", run);
+		int level = int.TryParse(Environment.GetEnvironmentVariable("AC00_CLERIC_LEVEL"), out int asked) ? asked : 10;
+		Assert.InRange(level, 10, 20);
+		int monsterId = level == 10 ? Goon : GraveRobbingFencer;
+		string item = level == 10 ? "na23" : "ac00";
+		string run = Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? $"{item}-cleric-encounter-l{level}-s{fixture.Seed}";
+		string directory = Path.Combine(root, "run", item, run);
 		Directory.CreateDirectory(directory);
 		string tracePath = Path.Combine(directory, $"{run}.trace.jsonl");
 		if (File.Exists(tracePath)) throw new IOException($"Preserving existing NA-23 trace: {tracePath}");
@@ -87,8 +94,8 @@ public sealed partial class SimulationFastScenarioTests
 			Player player = fixture.World.GetPlayer(session.CharacterId);
 			// Ascend first (it completes Q2008 and makes a Daeva, as SETPRO14 does); a non-Daeva is capped at level 9.
 			Assert.True(ClassChangeService.SetClass(player, PlayerClass.CLERIC, validate: false, updateDaevaStatus: true));
-			player.GetCommonData().SetLevel(10);
-			SkillLearnService.LearnNewSkills(player, 1, 10);
+			player.GetCommonData().SetLevel(level);
+			SkillLearnService.LearnNewSkills(player, 1, level);
 			(int Id, long Count)[] supplies =
 			[
 				(101500498, 1), (162000002, 32), (162000007, 106), (162000052, 10), (162000053, 12),
@@ -106,7 +113,7 @@ public sealed partial class SimulationFastScenarioTests
 			player.GetLifeStats().SetCurrentHp(player.GetLifeStats().GetMaxHp());
 			player.GetLifeStats().SetCurrentMp(player.GetLifeStats().GetMaxMp());
 			await session.SynchronizeAsync(prepareToken);
-			Assert.Equal(10, session.Api.World.Level);
+			Assert.Equal(level, session.Api.World.Level);
 			Assert.Equal(Altgard, session.Api.World.MapId);
 			session.TraceDiagnostic("na23-prepared", new Dictionary<string, object?>
 			{
@@ -139,7 +146,7 @@ public sealed partial class SimulationFastScenarioTests
 			{
 				BotPosition ground = geometry.SnapToGround(Altgard, new BotPosition(centerX + dx, centerY + dy, 258.4f, 0))
 					?? throw new InvalidDataException($"No ground for the {stage} goon.");
-				var template = new SpawnTemplate(new SpawnGroup(Altgard, Goon, 0, null), ground.X, ground.Y, ground.Z, 30,
+				var template = new SpawnTemplate(new SpawnGroup(Altgard, monsterId, 0, null), ground.X, ground.Y, ground.Z, 30,
 					randomWalk, null, 0);
 				Assert.True(Aion.GameServer.SpawnEngine.SpawnEngine.SpawnObject(template, instance.GetInstanceId())?.IsSpawned());
 			}

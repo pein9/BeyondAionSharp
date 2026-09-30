@@ -45,8 +45,8 @@ public static class NaturalAirCombatPolicy
 public static class NaturalAirCombat
 {
 	public const int AbyssFungusNpcId = 700092;
-	/// <summary>Smite ranks: the Priest's level 6 rank first, then the level 1 rank.</summary>
-	private static readonly ushort[] SmiteIds = [4013, 4012];
+	/// <summary>Smite ranks, the highest learned first (AC-00: the Cleric's level 11 and 16 ranks).</summary>
+	private static readonly ushort[] SmiteIds = [4015, 4014, 4013, 4012];
 
 	/// <summary>
 	/// Where to shoot a fungus from, and the flight there: a point within Smite range of it, in sight of it, inside the FLY

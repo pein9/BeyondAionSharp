@@ -1078,7 +1078,7 @@ It returns one of **Advance**, **WaitForFollower**, **HoldAndFight**, **WaitForR
 
 The same loop protocol, with "AC" in place of "NA".
 
-- [ ] **AC-00 — Cleric skills through level 20.** The operator asked on 2026-09-29 whether the
+- [x] **AC-00 — Cleric skills through level 20.** The operator asked on 2026-09-29 whether the
   combat and healing rotation keeps up as the bot levels. **It does not.**
   - The catalog (`NaturalClericSkills.Cleric` and `NaturalPriestSkills.All`) is a fixed
     list of ids up to level 10. `Best` only filters it by the learned `SM_SKILL_LIST`.
@@ -1107,6 +1107,48 @@ The same loop protocol, with "AC" in place of "NA".
 
   **Done when:** the test passes, and a SIM fight from `altgard-l2` casts the level 15
   ranks (seen in the combat trace).
+  - *Done 2026-09-29.* `NaturalClericSkills.Cleric` now holds every auto-learned Asmodian Cleric
+    rank up to level 20, with the MP, cooldown group, range, chain and reagent of each template:
+    - new ranks of the Priest roles: Healing Light III/IV, Smite III/IV, Infernal Blaze II/III and
+      Hallowed Strike III/IV. The Priest catalog stays frozen, so Ishalgen is unchanged;
+    - new ranks of the Cleric roles at 15 and 20: Herb Treatment, MP Recovery, Light of
+      Rejuvenation, Flashbolt, Slashing Wind and Earth's Wrath. Ranks 2 and 3 of the powder
+      skills still use Lesser Odella Powder;
+    - four new roles:
+      - **servant**: Summon Holy Servant I/II, summoned on a target above 50% HP, after the
+        chains;
+      - **touch**: Divine Touch, which follows Slashing Wind's chain like Flashbolt follows
+        Smite;
+      - **grace**: Healing Grace, the urgent heal while it is ready (1,298 HP for 114 MP);
+      - **penance**: Penance I/II, a rest-only skill. When mana is needed and HP is at or above
+        70%, it trades about 570 HP for about 1,150 MP over 30 s. It is never cast in a fight.
+    - `NaturalClericSkills.Excluded` names the four left out, each with a reason: Light of
+      Resurrection, Cleanse I/II (the client cannot tell which debuffs can be dispelled, and
+      the Okaru poison cannot) and Stability (enmity, for a group tank).
+    - The skill books (Summon Divine Mirror and Summon Divine Crystal, level 16) and the level
+      20 stigmas are not auto-learned, so they stay out.
+    - The class-less auto-learned skills (Return, Bandage Heal, Escape) are outside the ratchet
+      and unchanged.
+  - Also fixed: the between-fights heal in `RestSafelyAsync` looked only at the Priest catalog,
+    so it stayed on Healing Light II. The air combat now takes the highest learned Smite rank.
+  - The ratchet `EveryAutoLearnedActiveClericSkillToLevel20IsCastOrExcludedWithAReason` reads
+    `skill_tree.xml` and `skill_templates.xml`. Five more tests cover:
+    - the rank pick-up (including a rank not yet observed);
+    - Divine Touch;
+    - Holy Servant;
+    - Healing Grace;
+    - Penance at rest and never in a fight.
+    All 309 Natural tests pass.
+  - **SIM** (`run/ac00/ac00-cleric-encounter-l15-s1`): the NA-23 encounter takes a new
+    `AC00_CLERIC_LEVEL=15`. It prepares a level 15 probe Cleric (GM on the probe only) against
+    Leg 3's grave robbing fencers (L14): 14 kills, **no death**. The server confirmed every
+    level 15 cast:
+    - Smite III ×8, Flashbolt II ×5 and Hallowed Strike III ×5;
+    - Earth's Wrath II ×4, **Holy Servant ×3**, Infernal Blaze II ×3;
+    - Slashing Wind II ×2 and Light of Rejuvenation II ×2.
+    Healing Light III and Penance were not needed in this run: HP never fell below the heal
+    line (one timed potion covered it), and mana never below 50%.
+  - The warning baseline and the null-logger and clock-read checks pass.
 - [ ] **AC-01 — The Leg 3 contract.** `parity-artifacts/e2e/natural-altgard-l3-contract.json`,
   with:
   - the hub (Manir) and the fortress as town;
@@ -1306,3 +1348,4 @@ The original questions follow.
 - 2026-09-29 AM-07: the Leg 2 runner; the smoke run completed Leg 2 from altgard-l12 with no death, level 15, at Manir.
 - 2026-09-29 AM-08: SIM run am08-l2-s1 completed Leg 2 with no death (level 15); snapshot altgard-l2 captured and restore-checked.
 - 2026-09-29 AM-09: full checklist green after the two probes learned to follow walking NPCs; Leg 2 is done.
+- 2026-09-29 AC-00: the Cleric catalog covers every auto-learned rank to level 20 (ratchet test); a level 15 SIM encounter cast every level 15 rank and the Holy Servant, no death.
