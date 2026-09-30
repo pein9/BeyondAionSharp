@@ -86,7 +86,7 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.True(movie);
 			Assert.NotNull(spawned);
 			// He spawns at the handler's point (aggro 15 m, he is already walking to the probe two seconds later).
-			var home = spawned!.GetSpawn();
+			var home = Assert.IsType<Aion.GameServer.Model.Templates.Spawns.SpawnTemplate>(spawned!.GetSpawn(), exactMatch: false);
 			Assert.InRange(MathF.Sqrt(MathF.Pow(home.GetX() - infernus.Position[0], 2) + MathF.Pow(home.GetY() - infernus.Position[1], 2)), 0, 0.5f);
 		}
 
