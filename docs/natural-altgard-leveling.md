@@ -10,8 +10,8 @@ TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-alt
 **Leg 1 is done (AF-00..AF-10, 2026-09-29).** [Leg 2: Moslan Crossroad](#leg-2-moslan-crossroad-level-1315--proposal) is done (AM-01..AM-09, 2026-09-29): `altgard-l2` starts Leg 3.
 [Leg 3: Manir's Campsite and Dock](#leg-3-manirs-campsite-and-dock-level-15--proposal) is done (AC-00..AC-08,
 2026-09-30): `altgard-l3` starts Leg 4 at Basfelt.
-[Leg 4: Basfelt Village](#leg-4-basfelt-village-level-1617--proposal) is proposed: AB-Q1..AB-Q3 are approved, and
-AB-Q4..AB-Q5 (its follow-ups and the bind) are open.
+[Leg 4: Basfelt Village](#leg-4-basfelt-village-level-1617--proposal) is approved (AB-Q1..AB-Q5 as recommended)
+and ready for Loop mode (AB-01..AB-10).
 
 ## Goal
 
@@ -1418,8 +1418,9 @@ The escort trace shows at least one successful attempt.
 
 ## Leg 4: Basfelt Village (level 16–17) — proposal
 
-**Status (2026-09-30): AB-Q1..AB-Q3 approved as recommended; AB-Q4 and AB-Q5 open** (see "Blocked /
-questions").
+**Status (2026-09-30): approved** (AB-Q1..AB-Q5 as recommended; see "Blocked / questions"). Leg 4
+also takes in Q2227, Q2291 and the Q24013 campaign (AB-Q4). It binds at Basfelt on arrival
+(AB-Q5, the standing bind policy).
 It starts from the `altgard-l3` snapshot: character 133297, a level 16 Cleric at 848,030 XP,
 beside Nokir in Basfelt Village, bound at Altgard Fortress. Q24013 (Stop 6's campaign) is
 started and stays outside this leg.
@@ -1584,7 +1585,8 @@ The same loop protocol, with "AB" in place of "NA".
 
 - [ ] **AB-01 — The Leg 4 contract and plans.** `natural-altgard-l4-contract.json` with:
   - the hub (Basfelt, Nokir), the fortress as town, and the grounds above as areas;
-  - the eleven quests and their order, plus AB-Q4's if approved;
+  - the eleven quests, Q2227, Q2291 and the Q24013 campaign (AB-Q4), and their order;
+  - the bind at the Basfelt obelisk on arrival (AB-Q5);
   - the three compiled template plans (Q2225, Q2224, Q2226);
   - the scripted steps of the eight custom quests, including Q2239's page-10 SETPRO1;
   - the object uses: the beehives, and the incense burner with its movie;
@@ -1625,7 +1627,8 @@ The same loop protocol, with "AB" in place of "NA".
   - a bigfoot mosbear with a malodor;
   - Komu Silverclaw;
   - Comrade Sumarhon with his camp;
-  - Infernus.
+  - Infernus;
+  - Q24013's two spawned Feral Sharpeyes (L17 SEASONED) and a SEASONED black claw.
 
   Record the shield, Salvation, Divine Touch and every death. **Done when:** each fight runs
   once and the findings are written here. Deaths are recorded, not failed.
@@ -1641,7 +1644,8 @@ The same loop protocol, with "AB" in place of "NA".
 - [ ] **AB-10 — The full `CLAUDE.md` checklist and a checkpoint.**
 
 **Endpoint (AB-Q1 (a)):**
-- all eleven quests completed, plus AB-Q4's if approved;
+- all eleven quests, Q2227, Q2291 and Q24013 completed (AB-Q4);
+- bound at the Basfelt obelisk (AB-Q5);
 - alive, at Basfelt Village within 60 m of Nokir;
 - the endpoint verified across a relog.
 
@@ -1654,7 +1658,13 @@ recommended:
 - The timed quests and Infernus get three tries each.
 - Komu is left alone until Q2289 var 7.
 
-**Leg 4, open (2026-09-30), from the follow-up sweep:**
+**Answered 2026-09-30:** AB-Q4 **(a)** and AB-Q5 **(a)**.
+
+**The standing bind policy (the operator, 2026-09-30):** bind at the obelisk of the quest hub
+the bot is working out of. A return scroll or a death respawn then brings it back to the
+work, not to a town it has left. It applies to every leg from Leg 4 on.
+
+The original questions, from the follow-up sweep:
 - **AB-Q4 — Pull Basfelt's own follow-ups into Leg 4?** Q2227 → Q2291 open at Gornak once Q2226
   is handed in there. Their crystals come from passive lake spirits beside the south
   mosbears, and Q2291 ends at Garuntat in Basfelt. The campaign Q24013 is already started.
