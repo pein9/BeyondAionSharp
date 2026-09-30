@@ -1219,7 +1219,7 @@ The same loop protocol, with "AC" in place of "NA".
   - The aggressive monsters were despawned before each walk: GM setup on a probe character.
     This item is the routes, not the fights.
   - The warning baseline and the logger and clock checks pass.
-- [ ] **AC-03 — `NaturalEscortPolicy`.** The pure policy and its tests:
+- [x] **AC-03 — `NaturalEscortPolicy`.** The pure policy and its tests:
   - leash bands;
   - hops;
   - the goal stand point;
@@ -1230,6 +1230,31 @@ The same loop protocol, with "AC" in place of "NA".
 
   Also one test per Java rule it relies on (50 m, 20 m, fail before success in the same
   tick).
+  - *Done 2026-09-29.* `tests/Aion.Bots/Scenarios/NaturalEscortPolicy.cs`, pure. `Decide`
+    takes a `NaturalEscortObservation`: the player, the follower's last seen position (null once
+    he is gone), the quest status and var, attackers, whether death is predicted, the clear
+    areas, the first cleared respawn, the route and the speed. It returns one of:
+    - while following: **advance** (the next hop, 10 m or less along the route, while he is
+      within 8 m), **wait-for-follower**, **close-gap** (beyond 25 m), **hold-and-fight**,
+      **retreat** (only when death is predicted), **wait-at-goal**;
+    - before a start: **clear** (aggressors in the clear areas, or a cleared monster back
+      before the escort would end, with 30 s margin), **wait-for-respawn** (295 s after he
+      was seen to go), **approach-follower**, **start** (the offer step, or the var 0 restart
+      step), **give-up** after three attempts;
+    - **done** at var 3, REWARD or COMPLETE; **revive**; **blocked** on any other state.
+  - The actions that would lose Groken are forbidden while he follows: logout, relog,
+    return scroll, teleport, fly, glide, rest trip and restock trip.
+  - `JavaCheck` mirrors `FollowingNpcCheckTask`: 3-D and strictly inside (Java
+    `PositionUtil.isInRange`, `<`), and the loss wins when both fire in one tick.
+  - Six `NaturalEscortPolicyTests` pin:
+    - the bands: 8 + 10 ≤ 25, 25 × 2 ≤ 50, and stand 10 + gap 8 < 20;
+    - Java's check at exactly 50 m, 50 m in 3-D, 20 m, and a loss and an arrival in one tick;
+    - the following moves;
+    - the forbidden actions;
+    - the start: steps, clear, respawn window, respawn wait, give-up;
+    - the end states.
+    A walk of the 111 m line with the follower close takes 14 hops of at most 10 m.
+  - All 319 Natural tests pass, and so do the warning baseline and the logger and clock checks.
 - [ ] **AC-04 — The escort protocol, probed in SIM** (account 144; a probe character with
   Q2221 set COMPLETE server-side, like the earlier probes; no GM on the natural character).
   **Done when** one test shows:
@@ -1398,3 +1423,4 @@ The original questions follow.
 - 2026-09-29 AC-00: the Cleric catalog covers every auto-learned rank to level 20 (ratchet test); a level 15 SIM encounter cast every level 15 rank and the Holy Servant, no death.
 - 2026-09-29 AC-01: Leg 3 contract with the escort block, the loader by leg, and four contract tests against data, handlers and the follow engine.
 - 2026-09-29 AC-02: all eight Leg 3 travel legs route and walk in SIM; the dock is on the navmesh and the escort line is 111 m.
+- 2026-09-29 AC-03: the pure escort policy (hops, leash bands, forbidden actions, clear/respawn/restart/give-up) and six tests pinning Java's follow check.
