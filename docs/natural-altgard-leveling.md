@@ -8,8 +8,8 @@ The zone is worked in **sub-legs**. The first one is
 TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-altgard.md).
 
 **Leg 1 is done (AF-00..AF-10, 2026-09-29).** [Leg 2: Moslan Crossroad](#leg-2-moslan-crossroad-level-1315--proposal) is done (AM-01..AM-09, 2026-09-29): `altgard-l2` starts Leg 3.
-[Leg 3: Manir's Campsite and Dock](#leg-3-manirs-campsite-and-dock-level-15--proposal) is proposed, with its own
-escort handler, and waits for AC-Q1..AC-Q3.
+[Leg 3: Manir's Campsite and Dock](#leg-3-manirs-campsite-and-dock-level-15--proposal) is approved (AC-Q1..AC-Q3 as
+recommended) and worked in Loop mode (AC-00..AC-08).
 
 ## Goal
 
@@ -900,7 +900,8 @@ expected.
 
 ## Leg 3: Manir's Campsite and Dock (level 15) — proposal
 
-**Status (2026-09-29): proposed**, waiting for AC-Q1..AC-Q3 (see "Blocked / questions").
+**Status (2026-09-29): approved** (AC-Q1..AC-Q3 as recommended; see "Blocked /
+questions").
 It starts from the `altgard-l2` snapshot: character 133297, a level 15 Cleric at
 778,817 XP, standing beside Manir, bound at Altgard Fortress. Q2215 is COMPLETE, so all
 three Stop 3 quests are open (minimum level 12). No other quest starts at Manir, Groken or
@@ -1073,10 +1074,39 @@ It returns one of **Advance**, **WaitForFollower**, **HoldAndFight**, **WaitForR
 4. **The trip to Basfelt** (if AC-Q1 (a)): 624 m through the tog grounds that Leg 2 already
    crossed, ending among Basfelt's guards.
 
-### Leg 3 TODO list (proposed)
+### Leg 3 TODO list
 
 The same loop protocol, with "AC" in place of "NA".
 
+- [ ] **AC-00 — Cleric skills through level 20.** The operator asked on 2026-09-29 whether the
+  combat and healing rotation keeps up as the bot levels. **It does not.**
+  - The catalog (`NaturalClericSkills.Cleric` and `NaturalPriestSkills.All`) is a fixed
+    list of ids up to level 10. `Best` only filters it by the learned `SM_SKILL_LIST`.
+  - The server auto-learns every new rank on level-up (Java `SkillLearnService.learnNewSkills`
+    from `skill_tree.xml`), and keeps the old ids. So the level 15 bot still casts its
+    level 6–10 ranks. It has never cast:
+    - the level 11–15 ranks: Healing Light III 1840, Smite III 4014, Infernal Blaze II 1815,
+      Hallowed Strike III 1616;
+    - the level 15 second ranks of Flashbolt, Slashing Wind, Earth's Wrath, Light of
+      Rejuvenation, Herb Treatment and MP Recovery;
+    - the new skills: Cleanse 3935 (13), Penance 3867 (15) and Summon Holy Servant 4106 (15).
+
+  The work:
+  - Add every autolearn Asmodian Cleric rank up to level 20 to the catalog under its
+    existing role. For each rank, take the MP, cooldown group, range, chain and reagent
+    from `skill_templates.xml`. `Best` already prefers the highest learned rank.
+  - Decide from the templates whether each new skill is used (a role in `Decide`) or
+    excluded, and record the reason. The skills are Cleanse, Penance, Summon Holy Servant,
+    Stability (16), Divine Touch (17) and Healing Grace (19).
+  - The level 16 skill books (Summon Divine Mirror and Summon Divine Crystal) and the
+    level 20 stigmas are not auto-learned. They stay out unless the operator says
+    otherwise.
+  - Add a **ratchet test**. Every autolearn Cleric skill at or below level 20 in
+    `skill_tree.xml` must be either in the catalog or on a recorded exclusion list. The
+    rotation then cannot fall behind again as the leveling legs go on.
+
+  **Done when:** the test passes, and a SIM fight from `altgard-l2` casts the level 15
+  ranks (seen in the combat trace).
 - [ ] **AC-01 — The Leg 3 contract.** `parity-artifacts/e2e/natural-altgard-l3-contract.json`,
   with:
   - the hub (Manir) and the fortress as town;
@@ -1137,7 +1167,7 @@ The same loop protocol, with "AC" in place of "NA".
   altgard-l2` captures `altgard-l3` after a clean completion, and a restore check.
 - [ ] **AC-08 — The full `CLAUDE.md` checklist and a checkpoint.**
 
-**Endpoint (proposed, AC-Q1 (a)):**
+**Endpoint (AC-Q1 (a)):**
 - Q2221, Q2290 and Q2222 completed;
 - alive, at Basfelt Village beside Nokir;
 - the endpoint verified across a relog.
@@ -1146,7 +1176,16 @@ The escort trace shows at least one successful attempt.
 
 ## Blocked / questions for the operator
 
-**Leg 3, open (2026-09-29):**
+**Leg 3, answered 2026-09-29:** AC-Q1 **(a)**, AC-Q2 **(a)** and AC-Q3 **(a)**, all as
+recommended:
+- Leg 3 ends at Basfelt after Q2222 is handed in to Nokir.
+- The escort gets up to three attempts, each after Groken's respawn and a fresh clear.
+- The dock and the line are cleared before each start.
+
+The operator also asked that the combat and healing rotation keep up with the new skills;
+that is AC-00.
+
+The original questions follow.
 - **AC-Q1 — Where does Leg 3 end?** Q2222 is a Stop 3 quest, but it is handed in to Nokir at
   Basfelt Village, Stop 4's hub, about 624 m from Manir, by way of Karl. Options:
   - (a) deliver it as Leg 3's last step, so Leg 3 ends at Basfelt, where Leg 4 starts (like
