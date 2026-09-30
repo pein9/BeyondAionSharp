@@ -18,9 +18,9 @@
   "clientOnlyWithDialog": 86,
   "retailEvidence": 440,
   "classes": {
-   "A": 129,
-   "B": 63,
-   "C": 139,
+   "A": 122,
+   "B": 57,
+   "C": 152,
    "D": 109,
    "E": 0
   }
@@ -10838,9 +10838,10 @@
      ]
     }
    ],
-   "class": "A",
+   "class": "C",
    "classReasons": [
-    "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
+    "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14043. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
+    "rules said A: live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
    ],
    "ruleClass": "A"
   },
@@ -11048,9 +11049,10 @@
      ]
     }
    ],
-   "class": "A",
+   "class": "C",
    "classReasons": [
-    "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
+    "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14041. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
+    "rules said A: live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
    ],
    "ruleClass": "A"
   },
@@ -11214,9 +11216,10 @@
      ]
     }
    ],
-   "class": "A",
+   "class": "C",
    "classReasons": [
-    "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
+    "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14042. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
+    "rules said A: live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
    ],
    "ruleClass": "A"
   },
@@ -11359,9 +11362,10 @@
      ]
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "npc named in the task text 831738 (pernos) has no static spawn"
+    "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14044. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
+    "rules said B: npc named in the task text 831738 (pernos) has no static spawn"
    ],
    "ruleClass": "B"
   },
@@ -11528,9 +11532,10 @@
      "maps": []
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "npc named in the task text 214102 (ranx archer) has no static spawn"
+    "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14045. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
+    "rules said B: npc named in the task text 214102 (ranx archer) has no static spawn"
    ],
    "ruleClass": "B"
   },
@@ -13365,9 +13370,10 @@
      "maps": []
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "npc named in the task text 205415 (boreas) has no static spawn"
+    "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14046. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
+    "rules said B: npc named in the task text 205415 (boreas) has no static spawn"
    ],
    "ruleClass": "B"
   },
@@ -13595,12 +13601,10 @@
      ]
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "kill/drop source with nothing spawned: idlf3cl_testresulticaronixq_45_ah=214599",
-    "npc named in the task text 205415 (boreas) has no static spawn",
-    "npc named in the task text 833030 (azoturan fortress passage) has no static spawn",
-    "npc named in the task text 284919 (betrayer icaronix) has no static spawn"
+    "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14047. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
+    "rules said B: kill/drop source with nothing spawned: idlf3cl_testresulticaronixq_45_ah=214599; npc named in the task text 205415 (boreas) has no static spawn; npc named in the task text 833030 (azoturan fortress passage) has no static spawn; npc named in the task text 284919 (betrayer icaronix) has no static spawn"
    ],
    "ruleClass": "B"
   },
@@ -25210,9 +25214,10 @@
      ]
     }
    ],
-   "class": "A",
+   "class": "C",
    "classReasons": [
-    "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
+    "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q24043. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
+    "rules said A: live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
    ],
    "ruleClass": "A"
   },
@@ -25420,9 +25425,10 @@
      ]
     }
    ],
-   "class": "A",
+   "class": "C",
    "classReasons": [
-    "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
+    "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q24041. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
+    "rules said A: live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
    ],
    "ruleClass": "A"
   },
@@ -25586,9 +25592,10 @@
      ]
     }
    ],
-   "class": "A",
+   "class": "C",
    "classReasons": [
-    "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
+    "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q24042. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
+    "rules said A: live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
    ],
    "ruleClass": "A"
   },
@@ -25747,9 +25754,10 @@
      ]
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "npc named in the task text 831739 (munin) has no static spawn"
+    "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q24044. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
+    "rules said B: npc named in the task text 831739 (munin) has no static spawn"
    ],
    "ruleClass": "B"
   },
@@ -25909,9 +25917,10 @@
      ]
     }
    ],
-   "class": "A",
+   "class": "C",
    "classReasons": [
-    "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
+    "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q24045. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
+    "rules said A: live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
    ],
    "ruleClass": "A"
   },
@@ -26083,9 +26092,10 @@
      "maps": []
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "npc named in the task text 831739 (munin) has no static spawn"
+    "reviewed: the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q24046. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)",
+    "rules said B: npc named in the task text 831739 (munin) has no static spawn"
    ],
    "ruleClass": "B"
   },

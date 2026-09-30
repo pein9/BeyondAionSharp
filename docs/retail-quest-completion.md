@@ -226,11 +226,46 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
       Asmodian ones);
     - the 23 Tiamaranta quests and Q9572, as before.
   - **Kept by the review:** Q14251 and Q11319 (the two E questions) are live: retail 5.8 still runs
-    them (Q14251 as a simple talk quest; Q11319 is the Elyos twin of the 4.8 guide quest Q21320). The
-    2.x Reshanta missions stay: nothing in 4.x replaced them (the client has no newer Reshanta
-    campaign), the 4.8 client keeps them switched on, and their Java roots Q1701 and Q2701 are
-    one-step "report to the Governor" stubs that once led into them.
-  - **Classes now:** A **129**, B **63**, C **139**, D **109**, E **0**: 192 to implement.
+    them (Q14251 as a simple talk quest; Q11319 is the Elyos twin of the 4.8 guide quest Q21320).
+    The 2.x Reshanta missions were first kept too; the online check below rejected them.
+  - **Classes now:** A **122**, B **57**, C **152**, D **109**, E **0**: 179 to implement (6 done).
+- [x] **RQ-04c — The online 4.8 check** (asked by the maintainer after RQ-05, 2026-09-30): Q24114 and
+  the 2.x Reshanta missions, and every other listed quest whose Java handler once existed.
+  - **Sources.** The NA patch notes for 4.7 (`static.ncsoft.com/aion/store/PatchNotes/AION_Patch_Notes_110514.pdf`)
+    and for 4.8, the Upheaval (`.../AION_Patch_Notes_061715.pdf`); the fandom wiki (API); Java's own
+    history in `../aion-server` (`git log --all --diff-filter=D` over the quest handlers, run for every
+    A, B and E quest); the 5.8 retail server data. Aion PowerBook shows a bot check and was not used;
+    aioncodex `/us/`, PowerBook and aiondatabase show today's game, where Altgard is gone (removed
+    in 6.0, per the fandom wiki), so their "level 999" says nothing about 4.8.
+  - **Q24114 is live in 4.8.** The 4.7 notes say the campaigns and quests of Verteron/Altgard,
+    Eltnen/Morheim and Heiron/Beluslan were revised for non-Aethertech classes; NCSoft's own note
+    for Q24114 is "Rebuilding Impetusium (4.7)", one of that revision; aioncodex `/48/` has it with
+    Gulkalla; retail 5.8 still runs it at level 13; the 4.8 notes remove nothing in Altgard. It stays
+    class B, waiting for approval of its handler (RQ-05 below).
+  - **The 2.x Reshanta missions were replaced: now class C** (13 quests, Q1071–Q1077 and
+    Q2071–Q2076). The 4.8 client ships a 4.x Reshanta campaign that retells them one for one:
+    Q14040–Q14047 (Elyos) and Q24040–Q24046 (Asmodian), "Learning the Balaur language", "Mission to
+    free the captives", "Fragment of Remembrance 1–3", "Test flight", and so on. This server already
+    runs them. Java added that campaign in its 4.8 branch (`c403357ec`, 2016-01-18, "new Quests
+    Reshanta") and deleted the 2.x handlers afterwards (`b4b01f75d`, 2016-07-03); retail 5.8 has the
+    2.x ones switched off. The review's "nothing replaced them" was wrong: the replacement does not
+    exclude the old quests in the client, so the rules could not see it.
+  - **The Hero quests stay** (22 A, 10 B). Java marked all 32 `[REMOVED]` in `70e03ffce` (2016-05-04:
+    "first quest seems to be removed", "NPC-Dialogs are missing"). The 4.7 notes added them ("New
+    Lv. 65 Hero quests"), with Tirins, who stood in Katalam, starting the chain; Katalam sank in 4.8.
+    But in 4.8 the chain starts at **Atmis (804699) in Cygnea** and **Haldor (804719) in Enshar**
+    (aioncodex `/48/`), both 4.8 zones, and retail 5.8 runs the same chain from the same NPCs
+    (`LF5_Atmos_E`, `DF5_Haldor_E`). Java's data simply lacked the new givers' dialogs. The Katalam
+    Hero quests Java removed "with 4.8" (`ec1e88769`, Q135xx/Q235xx) are other quests and not on
+    the list.
+  - **Q2611 and Q26908 stay.** Java deleted their handlers in its 4.8 work (`9007977ce`, 2016-01-15)
+    and relabelled them `[SCRIPT]` without writing the scripts: a gap, not a removal. Retail 5.8
+    runs both. Java's earlier templates are a head start for batch 2: Q2611 a `report_to_many`
+    (Freyja → 204783, 204784, 204700 → Freyja), Q26908 a `monster_hunt` (204702 → 204817).
+  - **Confirmed:** Java also deleted Q1096–Q1099 (`515e53056`) and Q12999 (`ec2625207`), both
+    already rejected. The 4.7 notes delete "Project Drakanhammer" (Q1094) and "The Secret of Adma
+    Stronghold" (Q2094), and the 4.8 notes delete the quests of the removed zones (Tiamaranta,
+    Sarpan, Katalam): all already class C.
 - [x] **RQ-05 — The pilot: Altgard's seven.** Those of Q24110, Q24111, Q24113, Q24114,
   Q24115, Q24232 and Q24233 that land in class A. Each needs:
   - a handler;
@@ -256,7 +291,7 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
     fixture account: **42, 43 and 47–50 are D32's** (see there). The probe is ascended first,
     since a non-Daeva is capped at level 9. `test-retail-quest-inventory.py` checks the register,
     that each plan is current, and that each registered quest now has a handler.
-  - **Evidence.** All six pass (`run/rq05/rq05-sim-b.log`); with the pre-D32 `altgard.xml`, Q24113
+  - **Evidence.** All six pass (`run/rq05/rq05-sim-b.log`, and `run/rq05/sim-after-q24233.log` with every commit); with the pre-D32 `altgard.xml`, Q24113
     fails at its start step, because Aurtri offers no quest (`run/rq05/rq05-sim-without-entry.log`).
   - **Records.** Deviations 146–151, the register table below, the patches in
     `docs/upstream-reports/` (cumulative, applied in order), and Done lines in the work list.
@@ -272,12 +307,9 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
     at the grave spawns 210752 at (2889.98, 1741.31, 254.75) in 220030000, and his kill ends the
     step. Proposal: write `_24114YouGottaStopUmkata` from that handler, with Q24114's own variable
     layout from the client (kills at 0-2, Umkata at 4), and test it like the others.
-  - **Question raised by the same Java commit: the 2.x Reshanta missions.** `b4b01f75d` deleted the
-    handlers of Q1071-Q1077 and Q2071-Q2076 together with the retired Altgard, Morheim, Beluslan,
-    Verteron, Eltnen and Heiron campaigns, and kept only the one-step Governor quests Q1701 and
-    Q2701. So aionemu treated the Reshanta campaign as retired in 4.x too, although the 4.8 client
-    still has it switched on and nothing in the client excludes it. The review kept them (batch 5);
-    this is new evidence the other way. Nothing is implemented there yet; the maintainer decides.
+  - **The 2.x Reshanta missions** (raised by the same Java commit): resolved by RQ-04c above,
+    rejected as replaced by the 4.x Reshanta campaign.
+  - **Q24114 is live in 4.8** (RQ-04c): the approval above is all it waits for.
 - [ ] **RQ-06 — Batches.** Zone by zone in the maintainer's order, the classifier regenerated
   after each batch.
 

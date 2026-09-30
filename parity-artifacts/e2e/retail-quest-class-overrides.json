@@ -1,6 +1,34 @@
 {
  "note": "RQ-04 reviewed class decisions that the rules in tools/client-extract/retail_quest_inventory.py cannot make. Every entry says why; the inventory keeps the rules' own verdict beside it. Class 'live' means: reviewed as live in 4.8, so the A/B rules decide. The 5.8 dev notes quoted are NCSoft's own dev_name in the 5.8 retail server's quest.xml, translated.",
  "quests": {
+  "1071": {
+   "class": "C",
+   "reason": "the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14043. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)"
+  },
+  "1072": {
+   "class": "C",
+   "reason": "the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14041. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)"
+  },
+  "1073": {
+   "class": "C",
+   "reason": "the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14042. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)"
+  },
+  "1074": {
+   "class": "C",
+   "reason": "the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14044. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)"
+  },
+  "1075": {
+   "class": "C",
+   "reason": "the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14045. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)"
+  },
+  "1076": {
+   "class": "C",
+   "reason": "the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14046. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)"
+  },
+  "1077": {
+   "class": "C",
+   "reason": "the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q14047. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)"
+  },
   "1096": {
    "class": "C",
    "reason": "the 2.x Elyos final missions ('The Hidden Truth'; 5.8 dev note 'final mission 0-3'), replaced in 4.x by Q14030 'Regained Memory' and Q14031, as the Asmodian twins Q2096-Q2099 were by Q24030/Q24031, which exclude Q2096 explicitly. Q1096's dialog retells Q14030's story (the lost memory of the Mirage Legion)"
@@ -24,6 +52,30 @@
   "2010": {
    "class": "D",
    "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; no task text or dialog; 5.8 dev note 'Asmodian quest', level 1: an ascension placeholder"
+  },
+  "2071": {
+   "class": "C",
+   "reason": "the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q24043. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)"
+  },
+  "2072": {
+   "class": "C",
+   "reason": "the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q24041. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)"
+  },
+  "2073": {
+   "class": "C",
+   "reason": "the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q24042. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)"
+  },
+  "2074": {
+   "class": "C",
+   "reason": "the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q24044. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)"
+  },
+  "2075": {
+   "class": "C",
+   "reason": "the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q24045. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)"
+  },
+  "2076": {
+   "class": "C",
+   "reason": "the 2.x Reshanta campaign, replaced in 4.x by the Reshanta missions Q14040-Q14047 (Elyos) and Q24040-Q24046 (Asmodian), which the 4.8 client ships and this server already runs; this one's 4.x retelling is Q24046. Java added that campaign in its 4.8 branch (c403357ec, 2016-01-18, 'new Quests Reshanta') and then deleted the 2.x handlers (b4b01f75d, 2016-07-03) with the other retired campaigns; retail 5.8 has them switched off (level 999)"
   },
   "2150": {
    "class": "C",
