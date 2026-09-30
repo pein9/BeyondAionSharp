@@ -5,7 +5,7 @@
 #            With -Bridge (NA-25) the journey continues over the Ascension bridge and the dump is taken at the
 #            verified bridge endpoint in Altgard (the `altgard` snapshot).
 #            With -AltgardLeg1 (AF-09) the capture starts from a restored `altgard` snapshot instead of a new character,
-#            plays an Altgard leg (-Leg l1, the default; -Leg l2 -From altgard-l12 for Leg 2, AM-08) and dumps its endpoint.
+#            plays an Altgard leg (-Leg l1, the default; -Leg l2 -From altgard-l12 for Leg 2, AM-08; -Leg l3 -From altgard-l2 for Leg 3, AC-07) and dumps its endpoint.
 #            The Leg 1 form:
 #            plays Altgard Leg 1 (docs/natural-altgard-leveling.md) and dumps its verified endpoint (`altgard-l12`).
 #   Restore: load a snapshot into a fresh owned schema and print the environment a resumed run needs.
@@ -31,7 +31,7 @@ param(
 	[switch]$Bridge,
 	[switch]$AltgardLeg1,
 	[string]$From = 'altgard',
-	[ValidateSet('l1', 'l2')]
+	[ValidateSet('l1', 'l2', 'l3')]
 	[string]$Leg = 'l1',
 	[switch]$NoBuild
 )

@@ -1356,8 +1356,25 @@ The same loop protocol, with "AC" in place of "NA".
     **Commander Mohen was never fought.** His aggro range is 6 m (`srange`), and the bot used
     the safe from outside it.
   - The warning baseline and the logger and clock checks pass.
-- [ ] **AC-07 — One SIM run of Leg 3 and the snapshot.** `sim-snapshot.ps1 -Leg l3 -From
+- [x] **AC-07 — One SIM run of Leg 3 and the snapshot.** `sim-snapshot.ps1 -Leg l3 -From
   altgard-l2` captures `altgard-l3` after a clean completion, and a restore check.
+  - *Done 2026-09-29.* `sim-snapshot.ps1` accepts `-Leg l3`.
+    `-Action Capture -Name altgard-l3 -AltgardLeg1 -Leg l3 -From altgard-l2` restored
+    `altgard-l2`, resumed character 133297 with `AF_ALTGARD=l3`, and dumped only a verified
+    `altgard-l3-completion.json`.
+  - Run `snapshot-altgard-l3-s1` (`run/snapshots/_capture/snapshot-altgard-l3-s1`, seed 1) repeats
+    the AC-06 smoke run exactly, as a deterministic SIM should:
+    - all three quests;
+    - 21 fights, **no death**, no retreat;
+    - the clear killed 16 robbers, and the escort succeeded on attempt 1 (18 s, gap 5.8 m,
+      movie 69);
+    - level 16 beside Nokir, the endpoint verified across the relog, 911 game s.
+  - Snapshot `altgard-l3`: `run/snapshots/altgard-l3` (git-ignored), character 133297, elapsed
+    23,620,001 ms, dump SHA-256 `47992b37…f3`.
+    - A test restore into an owned schema succeeded and was dropped; no owned schema is left.
+    - The dump shows Q2221, Q2290 and Q2222 COMPLETE, Q24013 START, 848,030 XP, at
+      (1779.88, 690.477) in Altgard.
+  - The warning baseline and the logger and clock checks pass.
 - [ ] **AC-08 — The full `CLAUDE.md` checklist and a checkpoint.**
 
 **Endpoint (AC-Q1 (a)):**
@@ -1506,3 +1523,4 @@ The original questions follow.
 - 2026-09-29 AC-04: the escort protocol in SIM: logout and leash losses reset var 0 and delete Groken (295 s); the protocol restarted and delivered him in 19 s, gap 6.3 m, movie 69.
 - 2026-09-29 AC-05: Q2221 in SIM: the safe (3 s bar, page 1693, loot, var 2, gone), Groken's hand-in, and Q2290 offered.
 - 2026-09-29 AC-06: the Leg 3 runner; the smoke run completed Leg 3 from altgard-l2 with no death (level 16, at Nokir); the escort succeeded on attempt 1 after clearing 16 robbers.
+- 2026-09-29 AC-07: SIM run snapshot-altgard-l3-s1 completed Leg 3 with no death (level 16); snapshot altgard-l3 captured and restore-checked.
