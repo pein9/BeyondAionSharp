@@ -91,6 +91,11 @@ public static class NaturalAltgardDecisionEngine
 				checks.Add(new("campaign", "wait", $"Q{quest.Id} is not in the journal as started yet."));
 				continue;
 			}
+			// AC-06: an escort is one action from its offer to the follower's arrival, restarts included; the var the
+			// success sets is handed in by its own talk step.
+			if (contract.EscortList.FirstOrDefault(escort => escort.QuestId == quest.Id) is { } escortEntry &&
+				(status is not (Start or Reward) || status == Start && (Var(quest.Id) == escortEntry.LostVar || Var(quest.Id) == escortEntry.FollowVar)))
+				return Plan("escort", quest.Id, $"Q{quest.Id}: escort ({(status == Start ? $"var {Var(quest.Id)}" : "not taken")}).", escortEntry.Key);
 			if (status is null || status is not (Start or Reward))
 			{
 				NaturalAltgardStep? offer = contract.StepsFor(quest.Id).SingleOrDefault(step => step.ExpectedStatus == "OFFER");

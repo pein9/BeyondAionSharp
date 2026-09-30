@@ -194,4 +194,53 @@ public sealed class NaturalAltgardDecisionEngineTests
 		NaturalAltgardDecision done = Decide();
 		Assert.Equal(("leg-complete", "complete"), (done.Action, done.Outcome));
 	}
+
+	[Fact]
+	public void Leg3OpensTheSafeEscortsGrokenAndEndsWithTheHandInAtNokir()
+	{
+		// AC-06: Leg 3 from the altgard-l2 snapshot (level 15, Q24013 started and outside the leg).
+		NaturalAltgardContract leg3 = NaturalAltgardContract.LoadLeg("l3");
+		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(NaturalAltgardContract.LoadPlans("l3"));
+		var quests = new Dictionary<int, BotQuestState> { [24013] = new(24013, 3, 0, 0, null) };
+		var completed = new HashSet<int>(leg3.Start.CompletedQuestIds);
+		var at = new BotPosition(1459.56f, 1192.68f, 259, 0);
+		NaturalAltgardDecision Decide() => NaturalAltgardDecisionEngine.Decide(leg3,
+			new NaturalAltgardObservation(true, 220030000, 15, false, quests, completed, at, new Dictionary<int, long>()), objectives, 1);
+		void Set(int quest, byte status, int var = 0) => quests[quest] = new(quest, status, var, 0, null);
+		void Complete(int quest) { quests.Remove(quest); completed.Add(quest); }
+
+		Assert.Equal(("talk", "q2221-offer-manir"), (Decide().Action, Decide().StepKey));
+		Set(2221, 3, 0);
+		Assert.Equal("q2221-v0-groken", Decide().StepKey);
+		Set(2221, 3, 1);
+		Assert.Equal(("use-object", "q2221-grokens-safe"), (Decide().Action, Decide().StepKey));
+		Set(2221, 3, 2);
+		Assert.Equal("q2221-v2-groken", Decide().StepKey);
+		Complete(2221);
+
+		// The escort covers the offer, following (var 1) and a loss (var 0); var 3 is Manir's hand-in.
+		NaturalAltgardEscort escort = leg3.EscortList.Single();
+		Assert.Equal(("escort", escort.Key, 2290), (Decide().Action, Decide().StepKey, Decide().QuestId));
+		foreach (int var in new[] { escort.FollowVar, escort.LostVar })
+		{
+			Set(2290, 3, var);
+			Assert.Equal(("escort", escort.Key), (Decide().Action, Decide().StepKey));
+		}
+		Set(2290, 3, escort.SuccessVar);
+		Assert.Equal(("talk", "q2290-v3-manir"), (Decide().Action, Decide().StepKey));
+		Complete(2290);
+
+		Assert.Equal("q2222-offer-manir", Decide().StepKey);
+		Set(2222, 3, 0);
+		Assert.Equal("q2222-v0-karl", Decide().StepKey);
+		Set(2222, 3, 1);
+		Assert.Equal("q2222-v1-nokir", Decide().StepKey);
+		Complete(2222);
+
+		// AC-Q1: the leg ends beside Nokir at Basfelt; the campaign Q24013 stays open for a later leg.
+		Assert.Equal("return-to-endpoint", Decide().Action);
+		at = new BotPosition(leg3.Endpoint.Anchor![0] + 5, leg3.Endpoint.Anchor[1], leg3.Endpoint.Anchor[2], 0);
+		NaturalAltgardDecision done = Decide();
+		Assert.Equal(("leg-complete", "complete"), (done.Action, done.Outcome));
+	}
 }

@@ -11,7 +11,10 @@ public sealed record NaturalEscortAttempt(int Number, string Outcome, long Start
 	string? LossReason);
 
 /// <param name="Outcome">done, give-up or dead (the caller revives and runs the protocol again).</param>
-public sealed record NaturalEscortResult(string Outcome, int Attempts, NaturalEscortAttempt[] Log, bool MovieSeen, float? FollowerSpeed);
+/// <param name="EndedFollowers">Follower objects whose attempt ended (deleted by the server): pass them to the next run.</param>
+/// <param name="FollowerGoneAtMillis">When the follower was last seen to go, for the next run's respawn wait.</param>
+public sealed record NaturalEscortResult(string Outcome, int Attempts, NaturalEscortAttempt[] Log, bool MovieSeen, float? FollowerSpeed,
+	int[]? EndedFollowers = null, long? FollowerGoneAtMillis = null);
 
 /// <summary>
 /// AC-04 (docs/natural-altgard-leveling.md, "The escort handler"): the executor of <see cref="NaturalEscortPolicy"/>. Each tick
@@ -125,13 +128,16 @@ public sealed class NaturalEscortProtocol(INaturalJourneySession session, Natura
 						Record(new(attempts, "done", began, nowMillis(), longestGap, hops, null));
 					if (!movieSeen && !completed && status != "REWARD")
 						throw new InvalidDataException($"{escort.Key}: var {escort.SuccessVar} without movie {escort.MovieId}.");
-					return new("done", attempts, log.ToArray(), movieSeen, speed);
+					return new("done", attempts, log.ToArray(), movieSeen, speed, [.. ended], goneAt);
 				case "give-up":
-					return new("give-up", attempts, log.ToArray(), movieSeen, speed);
+					return new("give-up", attempts, log.ToArray(), movieSeen, speed, [.. ended], goneAt);
 				case "revive":
 					if (attemptStart is long lost)
+					{
 						Record(new(attempts, "lost", lost, nowMillis(), longestGap, hops, "death"));
-					return new("dead", attempts, log.ToArray(), movieSeen, speed);
+						End();
+					}
+					return new("dead", attempts, log.ToArray(), movieSeen, speed, [.. ended], goneAt);
 				case "blocked":
 					throw new InvalidDataException($"{escort.Key}: {choice.Reason}");
 				case "advance":

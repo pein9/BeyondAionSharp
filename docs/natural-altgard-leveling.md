@@ -1317,7 +1317,7 @@ The same loop protocol, with "AC" in place of "NA".
     included, is played for real in AC-06. The travel was a setup teleport, since AC-02 walked
     it.
   - The warning baseline and the logger and clock checks pass.
-- [ ] **AC-06 — The Leg 3 runner.** Engine action `escort` and its executor (the protocol).
+- [x] **AC-06 — The Leg 3 runner.** Engine action `escort` and its executor (the protocol).
   Also the talk chain to Karl and Nokir, with Nokir's guarded spot (AM-03's policy). A
   smoke run from `altgard-l2` with real combat:
   - the safe camp and Commander Mohen;
@@ -1325,6 +1325,37 @@ The same loop protocol, with "AC" in place of "NA".
   - the escort, and Q2222.
 
   Record every fight, death, escort attempt, and first use of the shield or Salvation.
+  - *Done 2026-09-29.* The decision engine plans **`escort`** for a quest with an escort
+    entry: from the offer, while following (var 1), and after a loss (var 0). The success var
+    (3) goes to its own talk step at Manir.
+  - The runner's `RunEscortAsync` gives `NaturalEscortProtocol` the navigator's walk, the
+    engaged-attacker fight, and the **clear** (AC-Q3). The clear approaches the boat and then
+    Groken, and pulls and kills every aggressive monster seen in the dock and escort-line
+    areas. It reports the first kill's 295 s respawn, so the policy keeps the escort inside
+    that window.
+  - The attempts, the ended followers and the last loss carry across protocol runs, since a
+    death ends a run. Three attempts write `altgard-l3-escort-given-up.json` and stop the
+    leg (AC-Q2).
+  - Object uses now go through `UseContractObjectAsync`.
+  - A new engine test walks Leg 3 from the offer to `leg-complete` at Nokir.
+  - **Smoke run `ac06-l3-smoke`** (`run/af-l1/ac06-l3-smoke`, from `altgard-l2`, seed 1) passed
+    in 39 s real time, 15 game minutes:
+    - Q2221: the safe was used after the camp fights. Page 1693 was answered and the loot
+      taken.
+    - **Q2290:** the clear killed **16 robbers** at the dock and along the line (the first
+      respawn at 594.7 s). Then **escort attempt 1 succeeded**: 18 game s, largest gap
+      **5.8 m**, 11 hops, movie 69. Manir handed it in.
+    - Q2222: Karl, then Nokir at Basfelt.
+    - **21 fights, no death, no retreat:** 16 smugglers, 3 fencers and 2 duellists. The
+      lowest HP was 1,017 of 1,122.
+    - It ends at **level 16** beside Nokir, with the endpoint verified across the relog.
+  - The level 15 ranks carried the fighting: Smite III, Flashbolt II, Hallowed Strike III,
+    Earth's Wrath II, Infernal Blaze II, Slashing Wind II, Holy Servant ×3 and Light of
+    Rejuvenation II.
+  - Not needed, so still unexercised: the Anti-Shock shield, Salvation and any help item.
+    **Commander Mohen was never fought.** His aggro range is 6 m (`srange`), and the bot used
+    the safe from outside it.
+  - The warning baseline and the logger and clock checks pass.
 - [ ] **AC-07 — One SIM run of Leg 3 and the snapshot.** `sim-snapshot.ps1 -Leg l3 -From
   altgard-l2` captures `altgard-l3` after a clean completion, and a restore check.
 - [ ] **AC-08 — The full `CLAUDE.md` checklist and a checkpoint.**
@@ -1474,3 +1505,4 @@ The original questions follow.
 - 2026-09-29 AC-03: the pure escort policy (hops, leash bands, forbidden actions, clear/respawn/restart/give-up) and six tests pinning Java's follow check.
 - 2026-09-29 AC-04: the escort protocol in SIM: logout and leash losses reset var 0 and delete Groken (295 s); the protocol restarted and delivered him in 19 s, gap 6.3 m, movie 69.
 - 2026-09-29 AC-05: Q2221 in SIM: the safe (3 s bar, page 1693, loot, var 2, gone), Groken's hand-in, and Q2290 offered.
+- 2026-09-29 AC-06: the Leg 3 runner; the smoke run completed Leg 3 from altgard-l2 with no death (level 16, at Nokir); the escort succeeded on attempt 1 after clearing 16 robbers.

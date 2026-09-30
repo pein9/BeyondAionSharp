@@ -23,6 +23,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	private sealed class NaturalCombatApproachBlockedException(string message) : IOException(message);
 	private sealed class NaturalGuardedObjectiveRevivedException(string message) : IOException(message);
 
+	/// <summary>AC-06: the Leg 3 escort's clear areas hold grave robbers with respawn_time 295 s (the Altgard spawn data);
+	/// a clear holds that long after its first kill.</summary>
+	private const long EscortClearRespawnMillis = 295_000;
+
 	public async Task RunAsync(CancellationToken token)
 	{
 		if (options.MauPolicy != null && options.Course == null)
@@ -934,6 +938,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token);
 				string? previous = null;
 				int repeats = 0;
+				// AC-06: the escort's state across protocol runs (a death ends a run; the attempts and ended followers stay).
+				int escortAttempts = 0;
+				var escortEndedFollowers = new HashSet<int>();
+				long? escortFollowerGoneAt = null, escortClearedUntil = null;
 				for (int sequence = 1; sequence <= 400; sequence++)
 				{
 					await session.SynchronizeAsync(token);
@@ -1068,7 +1076,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							await EnsureOnGroundAsync();
 							NaturalAltgardObjectUse use = leg.ObjectUseList.Single(candidate => candidate.Key == next.StepKey);
 							int item = await ApproachShippedSpawnAsync(use.NpcId, skipBlockedTarget: true);
-							bool used = await NaturalAltgardQuestSteps.UseObjectAsync(session, item, use.LootItemId, token);
+							// AC-05: the use may open a dialog first (Q2221's safe), answered with the contract's close action.
+							bool used = await NaturalAltgardQuestSteps.UseContractObjectAsync(session, use, item, token);
 							// A used cart dies but stays in view (AM-05): never pick it again.
 							if (use.Disappears) navigator.UnavailableObjects.Add(item);
 							session.TraceDiagnostic($"altgard-{altgardLegId}-object", new Dictionary<string, object?>
@@ -1078,6 +1087,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							});
 							break;
 						}
+						case "escort":
+							await EnsureOnGroundAsync();
+							await RunEscortAsync(leg.EscortList.Single(candidate => candidate.Key == next.StepKey));
+							break;
 						case "enter-zone":
 						{
 							// Q24012's farmland step: the quest's own objects stand inside the zone, so walking to the nearest one
@@ -1159,6 +1172,89 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				async Task EnsureOnGroundAsync()
 				{
 					if (rockTop is { } top && session.CurrentPosition.Z > top.Z - 20) await FlyToAsync(ground);
+				}
+
+				// AC-06: the escort (docs/natural-altgard-leveling.md, "The escort handler"). NaturalEscortProtocol runs it; this
+				// gives it the walk, the fight, and the clear: before each start the clear areas are cleared (AC-Q3), the dock
+				// end first (121 m from the follower, out of sight from him), then back along the line. A death ends the
+				// protocol run; the next decision revives and the escort resumes with the attempts and ended followers kept.
+				async Task RunEscortAsync(NaturalAltgardEscort escort)
+				{
+					int map = leg.Hub.MapId;
+					NaturalAltgardStep restart = leg.Steps.Single(step => step.Key == escort.RestartStep);
+					BotPosition followerStart = geometry.SnapToGround(map, new BotPosition(restart.Position[0], restart.Position[1], restart.Position[2] + 1, 0))
+						?? throw new InvalidDataException($"No ground at the {escort.Key} follower.");
+					BotPosition standPoint = NaturalEscortPolicy.GoalStand(escort.Goal, followerStart);
+					BotPosition stand = geometry.SnapToGround(map, standPoint with { Z = standPoint.Z + 1 })
+						?? throw new InvalidDataException($"No ground at the {escort.Key} goal stand.");
+					IReadOnlyList<BotPosition> escortRoute = geometry.FindJourneyPath(map, followerStart, stand);
+					Require.True(escortRoute.Count > 0, $"No route for the {escort.Key} escort.");
+					bool InClearArea(BotPosition at) => escort.ClearAreas.Any(key => leg.Area(key).Contains(at.X, at.Y, at.Z));
+					var protocol = new NaturalEscortProtocol(session, leg, escort, () => runtime.NowMillis)
+					{
+						WalkToAsync = async (to, walkToken) =>
+						{
+							IReadOnlyList<BotPosition> path = geometry.FindJourneyPath(map, session.CurrentPosition, to);
+							await navigator.MoveAsync(path.Count > 0 ? path : [to], walkToken);
+							await session.SynchronizeAsync(walkToken);
+						},
+						Route = () => escortRoute,
+						FightAsync = async _ => await DefendAgainstEngagedAsync($"escort-{escort.Key}"),
+						RetreatAsync = async _ => await DefendAgainstEngagedAsync($"escort-{escort.Key}-retreat"),
+						Threat = () => (Engaged().Attackers.Length, false),
+						ClearAreasHaveAggressors = () => escortClearedUntil is not long until || until <= runtime.NowMillis ||
+							ObservedPullMonsters().Any(monster => InClearArea(monster.Npc.Position)),
+						ClearAsync = async _ =>
+						{
+							long? firstKill = null;
+							int kills = 0;
+							foreach (int anchorNpc in new[] { escort.GoalNpcId, escort.FollowerNpcId })
+							{
+								await ApproachShippedSpawnAsync(anchorNpc, withinRange: 15);
+								for (int round = 0; round < 16; round++)
+								{
+									if (!await DefendAgainstEngagedAsync($"escort-{escort.Key}-clear") || session.Api.World.IsDead) return null;
+									NaturalPullMonster? robber = ObservedPullMonsters().Where(monster => InClearArea(monster.Npc.Position))
+										.OrderBy(monster => Distance(session.CurrentPosition, monster.Npc.Position)).FirstOrDefault();
+									if (robber == null) break;
+									if (await PullAndKillAsync(robber.Npc.ObjectId, $"escort-{escort.Key}-clear"))
+									{
+										firstKill ??= runtime.NowMillis;
+										kills++;
+									}
+									else if (session.Api.World.IsDead) return null;
+									else navigator.UnavailableObjects.Add(robber.Npc.ObjectId);
+								}
+							}
+							escortClearedUntil = (firstKill ?? runtime.NowMillis) + EscortClearRespawnMillis;
+							session.TraceDiagnostic($"altgard-{altgardLegId}-escort-clear", new Dictionary<string, object?>
+							{
+								["escort"] = escort.Key, ["kills"] = kills, ["firstRespawn"] = firstKill is long kill ? kill + EscortClearRespawnMillis : null,
+							});
+							return firstKill is long first ? first + EscortClearRespawnMillis : null;
+						},
+						PriorAttempts = escortAttempts,
+						EndedFollowerObjectIds = escortEndedFollowers,
+						FollowerGoneAtMillis = escortFollowerGoneAt,
+					};
+					NaturalEscortResult result = await protocol.RunAsync(token);
+					escortAttempts = result.Attempts;
+					escortEndedFollowers.UnionWith(result.EndedFollowers ?? []);
+					escortFollowerGoneAt = result.FollowerGoneAtMillis;
+					session.TraceDiagnostic($"altgard-{altgardLegId}-escort", new Dictionary<string, object?>
+					{
+						["escort"] = escort.Key, ["outcome"] = result.Outcome, ["attempts"] = result.Attempts, ["movie"] = result.MovieSeen,
+						["followerSpeed"] = result.FollowerSpeed,
+						["log"] = result.Log.Select(attempt => $"#{attempt.Number} {attempt.Outcome} {(attempt.EndMillis - attempt.StartMillis) / 1000.0:F0}s " +
+							$"gap {attempt.LongestGap:F1} hops {attempt.Hops} {attempt.LossReason}").ToArray(),
+					});
+					if (result.Outcome == "give-up")
+					{
+						// AC-Q2: three failed attempts end the leg without the escort (and Q2222, which follows it): a finding to fix.
+						await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, $"altgard-{altgardLegId}-escort-given-up.json"),
+							System.Text.Json.JsonSerializer.Serialize(result), token);
+						throw new InvalidDataException($"Altgard leg {altgardLegId}: the {escort.Key} escort failed {result.Attempts} times (AC-Q2).");
+					}
 				}
 			}
 
