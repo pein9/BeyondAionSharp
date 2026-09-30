@@ -1749,12 +1749,33 @@ The same loop protocol, with "AB" in place of "NA".
     5. **Gefion:** USE_OBJECT (page 2375), SELECT_QUEST_REWARD (page 5), SELECTED_QUEST_REWARD2
        → COMPLETE, with the Crystal Earrings in the bag.
   - The warning baseline and the logger and clock checks pass.
-- [ ] **AB-06 — The other scripted quests in SIM** (account 148):
+- [x] **AB-06 — The other scripted quests in SIM** (account 148):
   - Q2232's Tatural step and a beehive loot;
   - Q2239's Vovetirn page-10 SETPRO1 and the antidote check;
   - Q2289's movie 62, Skanin's remedy, and the horn at var 7 (Komu's HP set low; the fight is
     AB-08's);
   - Q2231's three talks.
+  - *Done 2026-09-30.* `SimulationAltgardBasfeltScriptTests` (account 148, `run/ab06/scripts.log`) is a
+    level 16 probe Cleric. Every contract step moved its quest:
+    - **Q2231:** Lamir → Karl (var 1) → Gunmarson (var 2) → Kaibech → COMPLETE.
+    - **Q2232:** Tatural (var 1), then **nine beehives**, each a 3 s use and a loot at 100%, then
+      Gilungk's check → COMPLETE.
+    - **Q2239:** Vovetirn's SETPRO1 (page 10, not a close) → var 1. Three Ampha Membranes
+      came from 4 kills (80%). The check sets **var 1 → 3** and gives the antidote, and
+      Gilungk's SETPRO3 → COMPLETE.
+    - **Q2289:** five starved or fierce mosbears (var 0 → 5), then Gefion's SELECT2_1_1 with
+      **movie 62** (var 6), then Skanin's SETPRO3 (var 7 and the Hunter's Secret Remedy).
+      **Komu Silverclaw** was killed at var 7 and **dropped the horn**, and Gefion's check →
+      COMPLETE.
+    - **Q24013:** Nokir (var 1), then Shania (var 2, the Hunter's Poison). The poison used
+      inside `DF1A_ITEMUSEAREA_Q2016` sets **var 3**, and the Feral Black Claw Sharpeyes within
+      20 m went from 5 to 7: the handler's two.
+  - GM on the probe only: its level, Q2288 set COMPLETE, targets set to 1 HP, and setup
+    teleports. Q24013 was started server-side and sent with `SM_QUEST_ACTION` ADD, as the
+    snapshot has it started.
+  - The shared `TalkAsync` now accepts a step that moves the var by more than one (Q2239's
+    check), and a movie on any `SELECTn_n…` action (Q2289's SELECT2_1_1).
+  - All 330 Natural tests pass, and so do the warning baseline and the logger and clock checks.
 - [ ] **AB-07 — Combat at level 16–17.** A focused SIM encounter (the NA-23/AC-00 harness)
   against the Leg 4 groups:
   - a bigfoot mosbear with a malodor;
@@ -2013,3 +2034,4 @@ The original questions follow.
 - 2026-09-30 AB-03: the pure timed-quest policy (readiness gate, budget, turn-in, abandon/new-chance, three tries, forbidden actions) with five tests.
 - 2026-09-30 AB-04: both timed quests proven in SIM (logout, expiry, success; Q2230's new chance); found the Q1044/Q2042 timer defect (AB-Q6).
 - 2026-09-30 AB-05: Q2223 in SIM: no masking by Lamir's own quests; the burner, movie 67, Infernus for 300 s, the refill incense, the second burn and the reward.
+- 2026-09-30 AB-06: Q2231, Q2232 (nine beehives), Q2239 (var 1->3), Q2289 (movie 62, Komu's Horn) and Q24013's poison in its zone played in SIM.

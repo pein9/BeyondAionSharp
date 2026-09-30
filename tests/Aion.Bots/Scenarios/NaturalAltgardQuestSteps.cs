@@ -28,7 +28,8 @@ public static class NaturalAltgardQuestSteps
 		{
 			ushort action = checked((ushort)NaturalAscensionContract.DialogActionId(actions[i]));
 			await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npc, action, questId: step.QuestId), token);
-			if (step.MovieId != null && actions[i] is "SELECT2_1" or "SELECT3_1" or "SELECT5_1")
+			// A movie plays on a SELECTn_n dialog action (SELECT2_1; Q2289's SELECT2_1_1, AB-06).
+			if (step.MovieId != null && System.Text.RegularExpressions.Regex.IsMatch(actions[i], @"^SELECT\d_\d"))
 				await NaturalMovieGate.FinishAsync(session, token);
 			if (pages + i < step.Pages.Length)
 			{
@@ -46,7 +47,8 @@ public static class NaturalAltgardQuestSteps
 			"OFFER" => after is (3, _), // an escort offer (Q2290 SELECT1_1) takes the quest straight to its follow var
 			"REWARD" => completed,
 			_ when step.Actions.Contains("SELECT_QUEST_REWARD") => completed,
-			_ => completed || after is (3, int advanced) && advanced == step.Var + 1 || after is (4, _),
+			// A step may move the var by more than one (Q2239's check: var 1 -> 3, AB-06).
+			_ => completed || after is (3, int advanced) && advanced > step.Var || after is (4, _),
 		};
 		if (!moved)
 			throw new InvalidDataException($"{step.Key} did not move Q{step.QuestId} on: {Describe(before)} -> {(completed ? "complete" : Describe(after))}.");
