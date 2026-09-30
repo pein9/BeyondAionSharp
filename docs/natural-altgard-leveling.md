@@ -285,7 +285,7 @@ quest must be finished first.
 | 2217, 2285 | | Unreachable: the classifier finds their prerequisites unobtainable. |
 | 2229, 2240, 2294, 2295, 80172–80210 | | Disabled: level 99 gate. |
 | 80005, 80142, 80143, 80262 | | Event quests. |
-| 2011–2022, 2200, 24110, 24111, 24113–24115, 24232, 24233 | | No handler (unimplemented). Not to be added. |
+| 2011–2022, 2200, 24110, 24111, 24113–24115, 24232, 24233 | | No handler in Java or C#. Q2011–Q2022 (and Q2200) are superseded pre-4.0 missions. The others were live in 4.8 retail, and D32 (`docs/retail-quest-completion.md`, pilot RQ-05) may add them; a leg takes them in once they exist. |
 | 24010 | Suthran's Orders | Already done by the bridge. |
 
 ## What the bot has to learn for this leg
@@ -1544,13 +1544,15 @@ quest whose prerequisite is a Stop 4 quest.
 missions, Q24014–Q24016, open at level 20, and AL-1 puts them in the next leg. Q2289 (13),
 Q24112 (14) and Q24013 (14) are already open.
 
-**Not in this port: boundaries, not gaps.** The data names more Basfelt follow-ups than the
-server has handlers for. Neither Java nor C# has them, so they are excluded, and `CLAUDE.md`
-forbids adding them:
+**Not in this port yet.** The data names more Basfelt follow-ups than the server has handlers
+for. Neither Java nor C# has them, so they are excluded for now. D32
+(`docs/retail-quest-completion.md`, 2026-09-30) authorizes adding the ones 4.8 retail ran, in a
+separate session; a leg takes them in once they exist:
 - **Q24113** Sword to Secrecy, **Q24232** Little Help from a Daeva and **Q24233** Adieu to You,
   Manumumu, all after Q24112;
 - Q24110, Q24114 and Q24115;
-- the older campaign missions Q2011–Q2022.
+- the older campaign missions Q2011–Q2022. These stay out: they are pre-4.0, and the 4.x
+  quests exclude a character who did them.
 
 These are probably much of what the operator remembers. As before, the hub-style engine looks
 again after every hand-in, so a follow-up inside the leg's scope is taken as soon as it opens.

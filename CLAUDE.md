@@ -3,6 +3,12 @@
 This is a **Java → C# port** of the Aion server (the `aionemu` codebase). The Java
 source is the reference implementation; the C# port exists to match its behavior 1:1.
 
+**The project goal (the maintainer, 2026-09-30): parity with Aion 4.8 retail as it was
+historically.** The Java source is the base this port started from, not the target; it has
+bugs and missing content of its own. Java stays the default reference below, because it is
+usually right and the port was checked against it. Where 4.8 retail evidence shows Java wrong
+or missing, retail wins, under a logged decision: the retail AI exception, D19, D26–D31, or D32.
+
 ## Golden rule: the Java source is the spec
 
 - **Before fixing or porting anything, read the corresponding Java implementation first**
@@ -40,6 +46,11 @@ Q14031 and Q24031, and Koray (799585) in Q18400. All six are applied in C# (§7/
 be ported back.
 These decisions are not a general exemption from parity or authorization to
 reopen other deferred behavior.
+
+**Retail 4.8 quest completion (D32):** quests that the 4.8 client ships and 4.8 retail ran,
+but that Java has no handler for, may get C# handlers (and the data they cannot run without).
+Each is tested, logged as a deviation, and offered upstream. The plan, sources, rules and
+register are in `docs/retail-quest-completion.md`; read it before adding any quest.
 
 ## Always watch for Java ↔ C# semantic gaps
 
@@ -79,6 +90,7 @@ when it lives elsewhere.
 | Natural Ishalgen Priest: current state, batch runner, open items | `docs/natural-ishalgen-status.md`; `scripts/sim/run-natural-batch.sh <prefix> <seeds>`; trace analysis `scripts/sim/trace/`; play it on your running world: `scripts/live/attach-live.ps1 -Target aion` (NI-10, D24) |
 | Natural Ascension → Altgard (Cleric) leg: route spec, hazards, TODO list and loop protocol | `docs/natural-ascension-altgard.md` — read it first when working that list (D25) |
 | Natural Altgard leveling leg: approved quest list and route, flight rules, Leg 1 (fortress) TODO list | `docs/natural-altgard-leveling.md` — read it first when working the AF list |
+| Retail 4.8 quest completion (D32): the quests Java lacks, sources, TODO list and register | `docs/retail-quest-completion.md` — read it first when adding a quest |
 | Bot navigation (navmesh, roads, travel graph; generated, do not hand-edit) | `docs/bot-navigation.md`; data in `game-server/data/nav/`; tools `tools/Aion.NavBake`, `tools/nav/` |
 | Session recording (every packet of chosen accounts, for replay) | `docs/session-recording.md`; `AION_RECORD`; reader `tools/recording/recording.py` |
 

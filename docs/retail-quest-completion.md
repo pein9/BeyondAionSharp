@@ -1,0 +1,209 @@
+# Retail 4.8 quest completion (D32)
+
+**Status (2026-09-30): authorized, not started.** This is the handoff for a separate session.
+Read this file, then `CLAUDE.md`, before doing anything.
+
+## Goals (the maintainer, 2026-09-30)
+
+- **Playtest every quest and mechanic of Aion** as the game had them. The natural bots
+  (`docs/natural-altgard-leveling.md` and the legs before it) play the quests the way a player
+  does. A quest the server cannot run is a quest nobody can playtest.
+- **Parity with Aion 4.8 retail, as it was historically.** The Java `aionemu` 4.8 source
+  (`../aion-server`, branch `4.8`) is the base this port started from, **not the target**. It
+  has bugs and missing content of its own. Where 4.8 retail evidence shows Java wrong or
+  missing, retail wins, under a logged decision.
+- **This workstream:** every quest that the 4.8 client ships and 4.8 retail ran, and that has
+  no handler here, gets one. Each is tested, logged, and offered upstream.
+
+## The decision
+
+**D32** (`docs/e2e-player-simulation-plan.md`, decision table), authorized by the maintainer
+on 2026-09-30.
+
+**In scope:** C# quest handlers, or `quest_script_data` template entries, for quests that
+meet all three of:
+- the 4.8 client ships the quest (`Data\Quest\Quest.pak`, `quest.xml`);
+- 4.8 retail ran it (aioncodex `/48/`, or the fandom wiki);
+- Java 4.8 has no handler for it.
+
+Quest data corrections and quest-specific spawns or NPC templates are in scope when a quest
+cannot run without them and 4.8 evidence shows them. They are listed per batch so the
+maintainer sees them.
+
+**Out of scope:**
+- **Superseded quests.** The pre-4.0 Altgard missions Q2011–Q2022 are an example: the 4.x
+  quests exclude a character who did them (Q24013 needs Q2016 and Q2200 unfinished and not
+  acquired; Q24113 the same for Q2017 and Q2200), so a new 4.8 character was never offered
+  them.
+- Test-zone, event and level-99 quests.
+- Anything only 5.8 or later has. The `CLAUDE.md` 5.8 boundary still holds.
+
+**Every quest added:**
+- a deviation row in §7 of `docs/e2e-player-simulation-plan.md`, with the evidence;
+- a SIM test that plays it;
+- a Java patch in `docs/upstream-reports/`, for the maintainer's combined upstream PR.
+
+## What is known (2026-09-30)
+
+- **440 quests have no handler** in Java or C# (the checked-in classifier
+  `parity-artifacts/e2e/obtainable-quests.json`, availability `no_handler`):
+  - 83 are "Test zone" entries;
+  - of the rest, 164 are Asmodian-only, 214 Elyos-only and 62 for both races.
+  - The largest zones: Eltnen 26, Beluslan 23, Sandstorm 23, Altgard 20, Verteron 19,
+    Heiron 18, Morheim 17, Inggison 17, Gelkmaros 15; "Hero" has 32.
+- **Altgard's 20** (found while planning the natural bot's Leg 4, Basfelt Village):
+  - **Q24113** Sword to Secrecy (after Q24112), **Q24232** Little Help from a Daeva and
+    **Q24233** Adieu to You, Manumumu (both IMPORTANT, after Q24112);
+  - **Q24110** Control Altgard, Delete Revolutions (IMPORTANT), **Q24111** What's Up, Dock?,
+    **Q24114** You Gotta Stop Umkata, **Q24115** A Shugo Apropos;
+  - the missions Q2011–Q2022, which are superseded (above).
+- **A worked example, Q24113.**
+  - The client's `quest.xml` has it: level 12 (client level 17), after Q24112, excluding Q2200
+    and Q2017. It collects `quest_24113a`, 100% from `LehparWaChD_18_An`. The reward is 16,066
+    XP, 21,600 Kinah, 5 `remedy_hp_mp_40a` and 3 `wrap_d_coin_copper_10_0`.
+  - aioncodex `/48/quest/24113` gives the rest: it starts and ends with **Aurtri** (Altgard
+    Observatory). Kill Lepharist Revolutionaries, take Tiamat's Sword from their leader, and
+    return.
+  - The world is ready: Aurtri (203654) and Commander Gattban (210532, level 18) are both
+    spawned in `220030000_Altgard.xml`. **Only the handler is missing.**
+  - The server's `quest_data.xml` already carries the quest's facts.
+
+## Sources
+
+**The 4.8 client (local, the strongest evidence).** It is at
+`C:\Program Files (x86)\Beyond Aion`. The tools are in `tools/client-extract/`: `aionpak.py`
+(the `.pak` layer) and `bxml.py` (the binary-XML layer); the formats are in its `README.md`.
+- **`Data\Quest\Quest.pak`** has six entries:
+  - **`quest.xml`** (8,370 quests): `id`, `category1` (quest, important, mission), `category2`
+    (the zone string), `client_level`, `minlevel_permitted`, `finished_quest_cond*`,
+    `unfinished_quest_cond*`, `noacquired_quest_cond*`, `collect_item*`, `drop_monster_*` (client
+    NPC names), `drop_prob_*`, the rewards, `class_permitted` and `race_permitted`;
+  - **`quest_monster.csv`** and **`quest_script_monster.csv`**: per quest and progress step,
+    the kill targets (`killedByUser`), drop sources (`questItemDropMonster`) and gather sources,
+    as client NPC names;
+  - `challenge_task.xml`, `combine_task.xml` and `data_driven_quest.xml`.
+- **Client NPC names map to ids** through `Data\Npcs\Npcs.pak`
+  (`client_npcs_npc.xml`, `client_npcs_monster.xml`). `tools/client-extract/client_npc_names.py`
+  already reads them.
+- **The quest dialogs** (`quest_q<ID>.html`) give each dialog page and its buttons: the step
+  topology. After the `.pak` layer they have a second encryption layer (they start with
+  `0x81`), keyed by the original file name. `tools/client-extract/extract_quest_dialog_map.py`
+  parses them once decoded. Find the `.pak` with `index_paks.py`.
+- **The strings** (`Data\Strings`) have the quest names and the journal step texts
+  (`STR_QUEST_*`).
+
+**aioncodex `/48/` (online):** `https://aioncodex.com/48/quest/<id>/?sl=1`.
+- It gives the start and end NPCs with their places, the steps in order, the prerequisites and
+  the rewards.
+- Use `/48/`, never `/enc/`, which is today's live game: some quests were rewritten or
+  removed.
+- WebFetch reads it.
+
+**The fandom wiki (online):** aion.fandom.com answers HTTP 402 to WebFetch. Read it in the
+built-in browser pane (`get_page_text`). The maintainer cites it as a retail source.
+
+**Upstream Java (online):** `beyond-aion/aion-server`, branch `4.8`.
+- This port's base is `ce54b7931`. `docs/upstream-reports/` already checked patches against an
+  export of `upstream/4.8` at `a31c1dfcb`, which is newer.
+- Before writing a handler, check whether upstream has added it since. If it has, port it
+  through the upstream queue instead (`docs/upstream-porting.md`, `docs/upstream-port-log.md`;
+  one Java commit at a time, with an `Upstream-Java-SHA` trailer).
+
+**This server's own data:**
+- `game-server/data/static_data/quest_data/quest_data.xml` (the quest facts);
+- `quest_script_data/*.xml` (template quests);
+- `spawns/`, `npcs/` and `items/`;
+- the classifier `scripts/e2e/compile-quest-plans.py`.
+
+## Classification
+
+Each no-handler quest lands in exactly one class:
+
+| Class | Meaning | What happens |
+|---|---|---|
+| **A** | Live in 4.8 retail; every NPC, monster and item it needs exists and is spawned | Implement: a template entry when a template fits, else a C# handler |
+| **B** | Live in 4.8 retail; something it needs is missing (a spawn, a template, an item or drop) | List the missing pieces with their evidence; the maintainer approves per batch |
+| **C** | Superseded in 4.8 (a 4.x quest excludes it, or retail no longer offered it) | Exclude, with the evidence |
+| **D** | Test zone, event, level 99, or 5.8-only | Out of scope |
+| **E** | The evidence disagrees or is missing | Ask the maintainer |
+
+## TODO list
+
+The same loop discipline as the natural legs: one item at a time, verify, then commit on
+`main` with the evidence.
+
+- [ ] **RQ-01 — The inventory (read-only).** A script under `tools/client-extract/` (or
+  `scripts/e2e/`) that joins, for every `no_handler` quest:
+  - the classifier;
+  - the client's `quest.xml` entry;
+  - its `quest_monster.csv` and `quest_script_monster.csv` rows, mapped to NPC ids;
+  - whether each NPC, monster and item exists and is spawned in this server's data.
+
+  Output: `parity-artifacts/e2e/retail-quest-inventory.json`, plus a short Markdown summary
+  by zone and class, with a Python test like the others.
+- [ ] **RQ-02 — The upstream check.** List the quests that `upstream/4.8` gained handlers for
+  after `ce54b7931`. Those go through the upstream queue, not D32.
+- [ ] **RQ-03 — Retail evidence.** For each quest, the aioncodex `/48/` facts (start and end
+  NPC, steps, live or not), cached in the inventory with the URL. Fetch politely: one page at
+  a time, cached, never re-fetched once stored.
+- [ ] **RQ-04 — Classify and report.** Assign classes A–E, write the report, and **stop for
+  the maintainer's review** of classes B, C and E and of the batch order.
+- [ ] **RQ-05 — The pilot: Altgard's seven.** Those of Q24110, Q24111, Q24113, Q24114,
+  Q24115, Q24232 and Q24233 that land in class A. Each needs:
+  - a handler;
+  - a SIM test that plays it;
+  - a deviation row;
+  - an upstream patch;
+  - an update to the natural leveling doc, whose exclusion list names them. Q24113, Q24232
+    and Q24233 follow Q24112, which Leg 4 completes.
+- [ ] **RQ-06 — Batches.** Zone by zone in the maintainer's order, the classifier regenerated
+  after each batch.
+
+## How to implement one quest
+
+1. **Read the evidence:** the inventory row, the client dialog map, and the aioncodex page. The
+   dialog map's pages (1011, 1352, 1693, 2034, 2375, 2716, …) and buttons (SETPRO*,
+   SELECT_QUEST_REWARD, CHECK_USER_HAS_QUEST_ITEM, …) are the step topology. The handler
+   should follow them.
+2. **Choose the form:**
+   - if a `quest_script_data` template fits (`report_to`, `monster_hunt`, `item_collecting`,
+     …), add a template entry;
+   - otherwise, write a custom handler in `src/Aion.GameServer/Handlers/Quest/<zone>/` in the
+     style of the Java handlers around it, using the `AbstractQuestHandler` helpers.
+
+   **Register every NPC, object and item the steps use.** D26–D31 were all quests whose
+   handler forgot one.
+3. **Data:** the quest is usually already in `quest_data.xml`. Check its drops, collect items
+   and start conditions against the client, and correct them only with evidence.
+4. **Test:** a SIM test that plays the quest end to end on a probe character, like
+   `SimulationQuestCorrectionTests.cs`. Use a free fixture account (1–94, 101–150); the
+   natural legs use 133–148.
+5. **Record:**
+   - a §7 deviation row (the evidence and the test);
+   - the D32 register table below;
+   - a Java patch in `docs/upstream-reports/`, with a line in its README.
+6. **Check:** the whole `CLAUDE.md` build-and-test list. Two checks are likely to move:
+   - `check-custom-quest-drafts.ps1` compares `parity-artifacts/e2e/custom-quest-handler-drafts.json`,
+     which new handlers change. Regenerate it as a reviewed change.
+   - `test-quest-plan-compiler.py` and the classifier output, since a quest leaves `no_handler`.
+
+   `check_fidelity.py` only rejects banned words in new type names (Plan, Policy, Executor
+   and the like). Quest handler names like `_24113SwordToSecrecy` pass.
+
+## Rules
+
+- Never create a branch or a worktree; commit on `main`. Never push; the maintainer opens the
+  upstream PR.
+- Another session shares this checkout (the natural bot's leveling legs). Stage only your own
+  files, never `git add -A`, and expect concurrent builds. Never build while a SIM run holds
+  the DLLs.
+- Never touch the operator's `aion` compose stack.
+- One quest, or a small family that only works together, per commit.
+- Keep the Java-shipped handlers as they are unless a separate decision says otherwise. D32
+  adds missing quests; it does not rewrite existing ones.
+
+## D32 register
+
+| Quest | Name | Zone | Class | Form | Evidence | Test | Deviation | Commit |
+|---|---|---|---|---|---|---|---|---|
+| | | | | | | | | |
