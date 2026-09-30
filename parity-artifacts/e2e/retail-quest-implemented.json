@@ -11,6 +11,16 @@
    "simAccount": 42,
    "simCharacter": "Asimrqa"
   },
+  "24111": {
+   "name": "What's Up, Dock?",
+   "form": "item_collecting template (quest_script_data/altgard.xml)",
+   "test": "RetailQuestPlaysEndToEnd(24111)",
+   "deviation": 148,
+   "patch": "docs/upstream-reports/q24111-whats-up-dock.patch",
+   "batch": "RQ-05 Altgard pilot",
+   "simAccount": 43,
+   "simCharacter": "Asimrqb"
+  },
   "24113": {
    "name": "Sword to Secrecy",
    "form": "item_collecting template (quest_script_data/altgard.xml)",

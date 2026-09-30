@@ -5,7 +5,7 @@ One line per quest that D32 implements. **The Status column is yours**: leave it
 (`python tools/client-extract/retail_quest_worklist.py`; the plan and rules are in
 [retail-quest-completion.md](retail-quest-completion.md)).
 
-**129** class A and **63** class B to implement, **2** done; **48** rejected by the per-quest review.
+**129** class A and **63** class B to implement, **3** done; **48** rejected by the per-quest review.
 
 How each quest was checked for 4.8:
 
@@ -30,7 +30,7 @@ evidence is in `parity-artifacts/e2e/retail-quest-class-overrides.json`.
 | Status | Quest | Name | Zone | Race | Lvl | Batch | Verdict / what it needs | 4.8 evidence | Review |
 |---|---|---|---|---|---:|---|---|---|---|
 | Done | Q24110 | Control Altgard, Delete Revolutions | Altgard | Asmo | 12 | 1 Altgard pilot | done: monster_hunt template (quest_script_data/altgard.xml); SIM test RetailQuestPlaysEndToEnd(24110); deviation 147 | 4.8 client L12, dialog; /48/ giver Meiyer (203559); 5.8 retail: still live, SimpleHunt, NCSoft note tagged 4.7 | [aioncodex](https://aioncodex.com/48/quest/24110/?sl=1) |
-|  | Q24111 | What's Up, Dock? | Altgard | Asmo | 10 | 1 Altgard pilot | ready: every npc and item it names is here | 4.8 client L10, dialog; /48/ giver Olenja (203606); 5.8 retail: still live, SimpleCollectItem, NCSoft note tagged 4.7 | [aioncodex](https://aioncodex.com/48/quest/24111/?sl=1) |
+| Done | Q24111 | What's Up, Dock? | Altgard | Asmo | 10 | 1 Altgard pilot | done: item_collecting template (quest_script_data/altgard.xml); SIM test RetailQuestPlaysEndToEnd(24111); deviation 148 | 4.8 client L10, dialog; /48/ giver Olenja (203606); 5.8 retail: still live, SimpleCollectItem, NCSoft note tagged 4.7 | [aioncodex](https://aioncodex.com/48/quest/24111/?sl=1) |
 | Done | Q24113 | Sword to Secrecy | Altgard | Asmo | 12 | 1 Altgard pilot | done: item_collecting template (quest_script_data/altgard.xml); SIM test RetailQuestPlaysEndToEnd(24113); deviation 146 | 4.8 client L12, dialog; /48/ giver Aurtri (203654); 5.8 retail: still live, SimpleTalk, NCSoft note tagged 4.7 | [aioncodex](https://aioncodex.com/48/quest/24113/?sl=1) |
 |  | Q24115 | A Shugo Apropos | Altgard | Asmo | 13 | 1 Altgard pilot | ready: every npc and item it names is here | 4.8 client L13, dialog; /48/ giver Neparinerk (798033); 5.8 retail: still live, SimpleHunt, NCSoft note tagged 4.7 | [aioncodex](https://aioncodex.com/48/quest/24115/?sl=1) |
 |  | Q24232 | Little Help from a Daeva | Altgard | Asmo | 14 | 1 Altgard pilot | ready: every npc and item it names is here | 4.8 client L14, dialog; /48/ giver Anmurnerk (832822); 5.8 retail: still live, SimpleHunt | [aioncodex](https://aioncodex.com/48/quest/24232/?sl=1) |

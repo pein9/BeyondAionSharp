@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 24111,
+    "name": "What's Up, Dock?",
+    "nameId": 1129972,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 10,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [],
+        "unfinished": [
+          2200
+        ],
+        "noacquired": [
+          2200
+        ]
+      },
+      {
+        "finished": [],
+        "unfinished": [
+          2014
+        ],
+        "noacquired": [
+          2014
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "end_npc_ids": 203631,
+        "id": 24111,
+        "start_npc_ids": 203606
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203606,
+        "name": "olenja",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1628.28,
+            "y": 1453.05,
+            "z": 256.0,
+            "heading": 91,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203606,
+      "name": "olenja",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1628.28,
+          "y": 1453.05,
+          "z": 256.0,
+          "heading": 91,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203631,
+      "name": "nokir",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1779.88,
+          "y": 690.477,
+          "z": 264.309,
+          "heading": 13,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182215472,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182215472,
+          "npc_id": 700136,
+          "npc": {
+            "id": 700136,
+            "name": "suspicious document",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1263.29,
+                "y": 1116.12,
+                "z": 254.152,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203631,
+          "name": "nokir",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1779.88,
+              "y": 690.477,
+              "z": 264.309,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 2691,
+        "gold": 5220,
+        "rewardItems": [
+          {
+            "count": 2,
+            "item_id": 188053058
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 24111,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 10,
+      "name": "What's Up, Dock?",
+      "nameId": 1129972,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182215472
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 2691,
+          "gold": 5220
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 188053058
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182215472,
+          "npc_id": 700136
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "unfinished",
+            "text": [
+              2200
+            ]
+          },
+          {
+            "tag": "noacquired",
+            "text": [
+              2200
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "unfinished",
+            "text": [
+              2014
+            ]
+          },
+          {
+            "tag": "noacquired",
+            "text": [
+              2014
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

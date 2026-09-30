@@ -2,16 +2,16 @@
   "schemaVersion": 1,
   "generatedBy": "scripts/e2e/compile-quest-plans.py",
   "counts": {
-    "obtainable": 4317,
+    "obtainable": 4318,
     "disabled": 3008,
     "unreachable": 280,
-    "no_handler": 438
+    "no_handler": 437
   },
   "plannerCounts": {
-    "template": 2966,
+    "template": 2967,
     "template_incomplete": 424,
     "custom": 927,
-    "none": 2822,
+    "none": 2821,
     "unavailable": 904
   },
   "quests": [
@@ -71332,15 +71332,11 @@
       "id": 24111,
       "zone": "Altgard",
       "race": "ASMODIANS",
-      "handlerKind": "none",
-      "template": null,
-      "availability": "no_handler",
-      "reasons": [
-        {
-          "code": "no-handler"
-        }
-      ],
-      "planSupport": "none",
+      "handlerKind": "template",
+      "template": "item_collecting",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {

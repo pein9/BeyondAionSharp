@@ -7,8 +7,8 @@
   "javaCommit": "ce54b7931"
  },
  "counts": {
-  "noHandler": 438,
-  "implemented": 2,
+  "noHandler": 437,
+  "implemented": 3,
   "inClient": 440,
   "javaHandlerFound": 0,
   "clientDialog": 421,
@@ -17118,7 +17118,7 @@
    "excludedBy": [
     {
      "id": 24111,
-     "availability": "no_handler",
+     "availability": "obtainable",
      "mutual": false
     }
    ],
@@ -34496,7 +34496,7 @@
     },
     {
      "id": 24111,
-     "availability": "no_handler",
+     "availability": "obtainable",
      "mutual": false
     },
     {
@@ -72533,6 +72533,16 @@
    "race": "ASMODIANS",
    "javaHandler": false,
    "clientDialog": true,
+   "implemented": {
+    "name": "What's Up, Dock?",
+    "form": "item_collecting template (quest_script_data/altgard.xml)",
+    "test": "RetailQuestPlaysEndToEnd(24111)",
+    "deviation": 148,
+    "patch": "docs/upstream-reports/q24111-whats-up-dock.patch",
+    "batch": "RQ-05 Altgard pilot",
+    "simAccount": 43,
+    "simCharacter": "Asimrqb"
+   },
    "client": {
     "clientLevel": 12,
     "minLevel": 10,
