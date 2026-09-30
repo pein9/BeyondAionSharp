@@ -43,7 +43,7 @@ public static class NaturalAltgardQuestSteps
 		bool completed = world.CompletedQuestIds.Contains(step.QuestId);
 		bool moved = step.ExpectedStatus switch
 		{
-			"OFFER" => after is (3, 0),
+			"OFFER" => after is (3, _), // an escort offer (Q2290 SELECT1_1) takes the quest straight to its follow var
 			"REWARD" => completed,
 			_ when step.Actions.Contains("SELECT_QUEST_REWARD") => completed,
 			_ => completed || after is (3, int advanced) && advanced == step.Var + 1 || after is (4, _),

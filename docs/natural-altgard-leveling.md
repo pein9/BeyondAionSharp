@@ -962,7 +962,9 @@ Quest XP is 43,290, plus the robbers' kills. The leg stays at level 15.
      registration.
 4. Success (`onNpcReachTarget`): var 1 → 3 and **movie 69**.
    Failure (`onNpcLostTarget`): var 1 → 0.
-   **A logout at var 1 also sets var 0.**
+   **A logout at var 1 also sets var 0**, and it costs Groken too (AC-04): the logout clears his
+   target (`CreatureController.notSee`), and the next `CREATURE_MOVED` near him takes `FollowingNpcAI`'s
+   no-target branch, `stopFollow`, so he is deleted and respawns 295 s later.
 5. Either way `FollowEventHandler.stopFollow` **deletes Groken and schedules his respawn**
    (295 s). After a failure the bot has to wait for Groken at his spawn. At START var 0, a
    QUEST_SELECT on Groken restarts the follow directly; there is no dialog to click
@@ -1255,7 +1257,7 @@ The same loop protocol, with "AC" in place of "NA".
     - the end states.
     A walk of the 111 m line with the follower close takes 14 hops of at most 10 m.
   - All 319 Natural tests pass, and so do the warning baseline and the logger and clock checks.
-- [ ] **AC-04 — The escort protocol, probed in SIM** (account 144; a probe character with
+- [x] **AC-04 — The escort protocol, probed in SIM** (account 144; a probe character with
   Q2221 set COMPLETE server-side, like the earlier probes; no GM on the natural character).
   **Done when** one test shows:
   - **success:** SELECT1_1, Groken follows (his speed and the largest gap are recorded),
@@ -1266,6 +1268,34 @@ The same loop protocol, with "AC" in place of "NA".
   - **loss by logout:** a relog at var 1 → var 0.
 
   The robbers at the boat are removed for this probe, so it tests the escort alone.
+  - *Done 2026-09-29.* `tests/Aion.Bots/Scenarios/NaturalEscortProtocol.cs` drives
+    `NaturalEscortPolicy` from the client's own packets. Each tick it reads:
+    - Groken's `SM_MOVE` position;
+    - the quest status and var;
+    - `SM_PLAY_MOVIE` cutscene 69.
+
+    It then walks a hop, waits, talks through the contract's start or restart step, fights,
+    clears, or waits out his respawn on the game clock. Success needs var 3 and the movie.
+    Every tick and attempt is traced (`escort-tick`, `escort-attempt`).
+  - **A fix the probe found:** Java deletes the follower at every end, so the protocol retires
+    the ended follower's object id. The probe's GM teleport away and back never refreshed the
+    client's view, so the client kept a deleted Groken, and the first run talked to it and
+    stalled.
+  - The shared `TalkAsync` now accepts an escort offer that lands at START var 1.
+  - SIM `SimulationAltgardEscortTests` (account 144, `run/ac04/`) is a level 15 probe Cleric
+    with Q2221 set COMPLETE. The 6 robbers on the line and at the dock were despawned (GM,
+    probe only). The run:
+    1. **The offer** (QUEST_SELECT, QUEST_ACCEPT_1, SELECT1_1) takes the quest to var 1. Groken
+       follows at 6 m/s, 1.6 m behind after an 8 m walk.
+    2. **Loss by logout:** after the relog, var 0 on the client and the server, and Groken
+       deleted. He was back after 290 game s. This is Java's behaviour (see Q2290 above).
+    3. **Loss by distance:** the restart (QUEST_SELECT at var 0) follows again. The probe
+       teleported 111 m away: var 0 within 3 s, and Groken deleted on the server.
+    4. **The protocol** (attempt 3 of 3): it waited out the 295 s respawn, restarted, and walked
+       Groken to the goal stand in **19 game s**, largest gap **6.3 m**, **12 hops**. That gave
+       var 3 and movie 69, and Groken gone.
+    5. Manir's hand-in completed Q2290.
+  - All 319 Natural tests pass, and so do the warning baseline and the logger and clock checks.
 - [ ] **AC-05 — Q2221 at the safe, probed in SIM** (account 145). Groken's talk, the safe's
   USE_OBJECT, the loot (182203215 at 100%), and the hand-in, with the camp's robbers set
   to 1 HP as in AM-05. **Done when:** Q2221 is COMPLETE and Q2290 is offered.
@@ -1424,3 +1454,4 @@ The original questions follow.
 - 2026-09-29 AC-01: Leg 3 contract with the escort block, the loader by leg, and four contract tests against data, handlers and the follow engine.
 - 2026-09-29 AC-02: all eight Leg 3 travel legs route and walk in SIM; the dock is on the navmesh and the escort line is 111 m.
 - 2026-09-29 AC-03: the pure escort policy (hops, leash bands, forbidden actions, clear/respawn/restart/give-up) and six tests pinning Java's follow check.
+- 2026-09-29 AC-04: the escort protocol in SIM: logout and leash losses reset var 0 and delete Groken (295 s); the protocol restarted and delivered him in 19 s, gap 6.3 m, movie 69.
