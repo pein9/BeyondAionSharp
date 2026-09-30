@@ -10,6 +10,7 @@ TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-alt
 **Leg 1 is done (AF-00..AF-10, 2026-09-29).** [Leg 2: Moslan Crossroad](#leg-2-moslan-crossroad-level-1315--proposal) is done (AM-01..AM-09, 2026-09-29): `altgard-l2` starts Leg 3.
 [Leg 3: Manir's Campsite and Dock](#leg-3-manirs-campsite-and-dock-level-15--proposal) is done (AC-00..AC-08,
 2026-09-30): `altgard-l3` starts Leg 4 at Basfelt.
+[Leg 4: Basfelt Village](#leg-4-basfelt-village-level-1617--proposal) is proposed and waits for AB-Q1..AB-Q3.
 
 ## Goal
 
@@ -1414,7 +1415,230 @@ The same loop protocol, with "AC" in place of "NA".
 
 The escort trace shows at least one successful attempt.
 
+## Leg 4: Basfelt Village (level 16–17) — proposal
+
+**Status (2026-09-30): proposed**, waiting for AB-Q1..AB-Q3 (see "Blocked / questions").
+It starts from the `altgard-l3` snapshot: character 133297, a level 16 Cleric at 848,030 XP,
+beside Nokir in Basfelt Village, bound at Altgard Fortress. Q24013 (Stop 6's campaign) is
+started and stays outside this leg.
+
+### The hub and its grounds
+
+Basfelt Village (zone `BASFELT_VILLAGE`) has guards and no obelisk.
+
+- **Within 55 m of Nokir** (1780, 690): Hunmir, Garuntat, Gilungk and Gefion.
+- **Further out:**
+  - **Lamir** (75 m) and **Shania** (102 m) are **walkers**: talk to them where the client sees
+    them, as with Tulberg and Rion.
+  - Tatural stands 106 m east and Skanin 168 m east.
+
+The quests reach out in four directions:
+
+| Ground | Where (distance from Nokir) | Quest use | What lives there |
+|---|---|---|---|
+| East: Vovetirn and the amphas | Vovetirn (1990, 640), 216 m; poisonsac amphas (L15–16, 30 spots) 160–620 m | Q2239 | sprigg outlaws (L15) beside Vovetirn |
+| South: the starved and fierce mosbears | (1732, 526) and (1702, 488), 60–460 m | Q2288, Q2230, Q2289, Q2224 | lake spirits (L13) |
+| South-west: Gornak, Brodir and Sumarhon | Gornak (1790, 576), 115 m; Brodir (1512, 528), 313 m; **Comrade Sumarhon** (SEASONED L15) at (1305, 483), on a height (z 333), 518 m | Q2226, Q24112 | Sumarhon's camp: 5 grave robbing fencers and 4 sentries (L14, LEHPAR); soil spirits (L13) by Brodir |
+| West, near: the swamp and tusked mosbears and cubs | centred at (1565, 670) and (1426, 772), 160–440 m | Q2224, Q2230, Q2288 | mosbears L13–15 (MOSBEARFATHER), cubs (MOSBEARBABY) |
+| West, middle: the rainbow slimes and the Old Incense Burner | slimes (L14, 11 spots) about (1515, 863); burner (1543, 882); Infernus spawns at (1547, 894); about 300 m | Q2225, Q2223 | rainbow slimes (3 beside the burner) |
+| West, far: the beehives, Komu and Kaibech | 20 beehives (1148–1261, 873–922), 475–660 m; **Komu Silverclaw** (SEASONED L17, **respawn 1 hour**) at (1287, 987); Kaibech (1201, 985), 649 m, Stop 5's hub | Q2232, Q2289, Q2231 | angry mosbears (L17), bigfoot mosbears (L16), ruthless mosbears (L15), grove malodors (L16), crested pluma (L16), nimble arachnalings (L15) |
+| North-west: Karl and Gunmarson | Karl (1749, 901), 213 m; Gunmarson (1621, 747), 168 m | Q2231 | wild togs on the way (AC-02) |
+
+Almost everything in the west is level 15–17 and aggressive to a level 16 Cleric. This is the
+first leg where most fights are at or above the bot's level.
+
+### Quests
+
+| Quest | Name | Kind | From → to | Objective | XP |
+|---|---|---|---|---|---|
+| 2226 | A Cure for Crazy | template `report_to` | Garuntat → **Gornak** (Stop 6, 115 m) | deliver the Memory Quartz | 17,678 |
+| 2225 | No-Good Slime | template `monster_hunt` | Hunmir | kill 5 rainbow slimes (L14) | 19,950 |
+| 2224 | Lamir's New Clothes | template `item_collecting` | Lamir | 6 Mosbear's Leather, 100% from cubs and from starved and fierce mosbears | 17,678 |
+| 2232 | The Broken Honey Jar | custom | Gilungk; Tatural; beehives | 9 Beehives (`quest_use_item`, 100% from var 1) | 48,600 |
+| 2239 | Malodor Antidote | custom | Gilungk; Vovetirn | 3 Ampha Membranes (80%) | 12,810 |
+| 2231 | Sibling Rivalry | custom | Lamir → Karl → Gunmarson → **Kaibech** (Stop 5, 649 m) | talk | 30,450 |
+| 2288 | Money Where Your Mouth Is | custom, **timed 10 min** | Shania | kill 3 mosbears | 23,700 |
+| 2230 | A Friendly Wager | custom, **timed 30 min**, after 2288 | Shania | 10 Mosbear Tusks (80–85%) | 37,200 |
+| 2289 | Rampaging Mosbears | custom, after 2288 | Gefion; Skanin; Komu | kill 5 starved or fierce mosbears; movie 62; Skanin; Komu's Horn | 43,350 |
+| 2223 | A Mythical Monster | custom (D27) | Gefion; Lamir; burner | burn the incense: **Infernus** (EXPERT L13) for 5 minutes | 23,250 |
+| 24112 | No Laissez-faire for Lepharists | custom | Nokir → **Brodir** (Stop 6, 313 m) | kill Comrade Sumarhon (SEASONED L15) | 17,552 |
+
+Quest XP is 292,218, so the Cleric ends at about 1.14M XP plus kills. That is **level 17**
+(1,083,018), where Divine Touch and Infernal Blaze III arrive; AC-00's catalog already covers
+them.
+
+**The custom handlers (Java, read 2026-09-30).** The C# ports register exactly what Java
+registers. The one exception is the approved D27 correction: Lamir is registered for Q2223.
+
+- **Q2232:**
+  - Tatural at var 0: SETPRO1 → var 1.
+  - The beehives drop only from var 1 (`collecting_step` 1, no chance, so 100%). Each hive is
+    a `quest_use_item` object that dies when used and respawns after 295 s. 20 stand in the
+    far west.
+  - Gilungk at var 1: CHECK_USER_HAS_QUEST_ITEM → REWARD (page 5); the item reward is 5
+    Tempering Solutions.
+- **Q2239:**
+  - Vovetirn at var 0: SETPRO1 sets var 1 and re-sends page 10. It is **not** a dialog close.
+  - At var 1, CHECK_USER_HAS_QUEST_ITEM takes the 3 membranes, gives the Ampha Antidote
+    (182203227), sets var 3 and shows page 1779.
+  - Gilungk at var 3: SETPRO3 → REWARD.
+- **Q2231:** Karl var 0 → SETPRO1; Gunmarson var 1 → SETPRO2; Kaibech → SELECT_QUEST_REWARD
+  sets REWARD. As in Q2222, the last NPC does not check the var; the bot talks to all three
+  anyway.
+- **Q2288, timed:**
+  - Take it from Shania.
+  - At var 0, QUEST_SELECT shows page 1003, and **SETPRO1 starts a 600 s timer** and sets var 1.
+  - Each kill of 210436/437/440/564/581/584 moves var 1 → 4.
+  - At var 4, QUEST_SELECT shows page 1352, and SELECT_QUEST_REWARD sets REWARD and ends the
+    timer.
+  - **The timer's end or a logout abandons the quest.**
+  - A Java quirk, kept: SELECT_QUEST_REWARD is not gated by the var. The bot does the kills.
+- **Q2230, timed:**
+  - **QUEST_ACCEPT_1 starts a 1,800 s timer.**
+  - 10 Mosbear Tusks drop at 80% from 210564/581/584 and 85% from 210436/437/440.
+  - CHECK_USER_HAS_QUEST_ITEM with the timer running and the tusks gives REWARD.
+  - **After the timer ends**, the check takes every tusk away and shows page 3057. SETPRO1 then
+    starts a new 1,800 s chance.
+  - A logout takes the tusks and abandons the quest.
+- **Q2289:**
+  - Kills of 210564/210584 move var 0 → 5.
+  - Gefion at var 5: SELECT2_1_1 plays **movie 62** (page 1354), and SETPRO2 → var 6.
+  - Skanin at var 6: SETPRO3 → var 7 and gives the Hunter's Secret Remedy (182203017).
+  - **Komu's Horn drops only from var 7** (`collecting_step` 7, 100%) from Komu Silverclaw.
+    He respawns only once an hour.
+  - Gefion at var 7: CHECK_USER_HAS_QUEST_ITEM → REWARD.
+- **Q2223 (D27):**
+  - Gefion starts it.
+  - Lamir at var 0: SETPRO1 gives the Bundle of Incense (182203217) and sets var 1. At var 1
+    without incense, Lamir gives another (page 1779).
+  - The Old Incense Burner (700134) with the incense: `useQuestObject(…, movie 67, die)`.
+  - The movie's end **spawns Infernus (211621, EXPERT L13, aggro 15 m) at (1547.1, 894.3) for
+    five minutes**. Killing him sets REWARD.
+  - At REWARD, Gefion's talk shows page 2375, then page 5.
+  - The shipped data has no start condition. The D27 test ran with Q2231 and Q2224 COMPLETE.
+    AL-Q6 noted that Lamir's own quests can mask Q2223's page; AB-05 settles it.
+- **Q24112:** Nokir starts it. Killing Sumarhon (210510) → var 1. Brodir (832821) at var 1:
+  QUEST_SELECT shows page 2375, and SELECT_QUEST_REWARD sets REWARD.
+
+### What is new for the bot
+
+1. **Timed quests** (Q2288, Q2230). The timer runs on the server, and the client sees it in
+   `SM_QUEST_ACTION`. Nothing may lose the quest: no logout, relog, long rest, or restock trip
+   while a timer runs. The bot:
+   - starts a timer only at the edge of its grounds (Q2288's SETPRO1) or with everything else
+     ready (Q2230's accept);
+   - hunts to a budget: the kills or drops still needed, times the expected seconds per fight
+     and rest, plus the walk back, must fit the time left;
+   - on Q2230's expiry, spends the "new chance" deliberately (AB-Q2).
+2. **A spawned EXPERT** (Q2223): burn only at full HP and MP, buffed, with the shield ready,
+   then fight Infernus inside his five minutes. A timeout or death means fresh incense from
+   Lamir and 295 s for the burner. This is the most likely first real use of the Anti-Shock
+   shield and Salvation.
+3. **Kill counters and var-gated drops** shared across quests. The south mosbears serve Q2288,
+   Q2230, Q2289 and Q2224 at once, so they are hunted as one batch after Q2288.
+4. **A monster to leave alone** (AB-Q3): Komu Silverclaw's horn only drops at Q2289 var 7, and
+   he respawns hourly. Killing him early costs an hour.
+5. **Hand-ins at other hubs** (AB-Q1): Kaibech (Stop 5), Gornak and Brodir (Stop 6).
+6. **SEASONED targets in camps:**
+   - Comrade Sumarhon (L15) among 9 Lehpar on a height;
+   - Komu (L17) among level 16 bigfoot mosbears and malodors.
+7. **Walking NPCs at the hub:** Lamir and Shania.
+
+### Leg 4 TODO list (proposed)
+
+The same loop protocol, with "AB" in place of "NA".
+
+- [ ] **AB-01 — The Leg 4 contract and plans.** `natural-altgard-l4-contract.json` with:
+  - the hub (Basfelt, Nokir), the fortress as town, and the grounds above as areas;
+  - the eleven quests and their order;
+  - the three compiled template plans (Q2225, Q2224, Q2226);
+  - the scripted steps of the eight custom quests, including Q2239's page-10 SETPRO1;
+  - the object uses: the beehives, and the incense burner with its movie;
+  - the var-gated collections: the membranes, and Komu's Horn at var 7;
+  - a new **`timers`** block (Q2288: 600 s from SETPRO1, abandoned on expiry or logout; Q2230:
+    1,800 s from the accept, a new chance by SETPRO1, the tusks taken at the late check);
+  - a new **`spawns`** block (Q2223: Infernus at (1547.1, 894.3) for 300 s after movie 67);
+  - an **`avoid`** entry (Komu until Q2289 var 7);
+  - the endpoint (AB-Q1).
+
+  Contract tests against quest data, spawns, NPC templates and the eight C# handlers.
+- [ ] **AB-02 — Travel.** Every ground above, from the hub and back, in SIM, with the danger
+  recorded. **Done when:** every leg walks. That includes Sumarhon's height (z 333) and the
+  beehive grove, whose navmesh is not proven yet.
+- [ ] **AB-03 — `NaturalTimedQuestPolicy`.** A pure policy and tests: when to start a timer,
+  the kill and drop budget against the seconds left (client `TimerSeconds`), actions forbidden
+  while a timer runs, when to turn back, and the expiry paths (Q2288 retake; Q2230 new chance
+  after the tusks are taken). Also the retry budget (AB-Q2).
+- [ ] **AB-04 — The timed quests in SIM** (a level 16 probe, account 146):
+  - Q2288 done inside 600 s;
+  - Q2288 let expire, so the quest is abandoned, then retaken;
+  - Q2230 done inside 1,800 s;
+  - Q2230 let expire, so the late check takes the tusks (page 3057), then a SETPRO1 new chance;
+  - a logout while timed abandons the quest.
+- [ ] **AB-05 — Q2223 in SIM** (account 147):
+  - Lamir's step with Q2231 **still open**, to settle the masking question;
+  - the burner (the use, movie 67);
+  - Infernus appearing at (1547.1, 894.3) and gone after 300 s untouched;
+  - a second incense from Lamir, and a real kill of Infernus → REWARD → Gefion.
+- [ ] **AB-06 — The other scripted quests in SIM** (account 148):
+  - Q2232's Tatural step and a beehive loot;
+  - Q2239's Vovetirn page-10 SETPRO1 and the antidote check;
+  - Q2289's movie 62, Skanin's remedy, and the horn at var 7 (Komu's HP set low; the fight is
+    AB-08's);
+  - Q2231's three talks.
+- [ ] **AB-07 — Combat at level 16–17.** A focused SIM encounter (the NA-23/AC-00 harness)
+  against the Leg 4 groups:
+  - a bigfoot mosbear with a malodor;
+  - Komu Silverclaw;
+  - Comrade Sumarhon with his camp;
+  - Infernus.
+
+  Record the shield, Salvation, Divine Touch and every death. **Done when:** each fight runs
+  once and the findings are written here. Deaths are recorded, not failed.
+- [ ] **AB-08 — The Leg 4 runner.** Engine actions for:
+  - timed hunts (AB-03's policy);
+  - the spawn-and-kill (burn when ready, fight inside the window);
+  - the Komu avoidance;
+  - the batches: the mosbears after Q2288, the west trip, the south-west trip.
+
+  A smoke run from `altgard-l3` with real combat, recording every timer, spawn, fight and death.
+- [ ] **AB-09 — One SIM run of Leg 4 and the snapshot.** `sim-snapshot.ps1 -Leg l4 -From
+  altgard-l3` captures `altgard-l4` after a clean run, with a restore check.
+- [ ] **AB-10 — The full `CLAUDE.md` checklist and a checkpoint.**
+
+**Endpoint (proposed, AB-Q1 (a)):**
+- all eleven quests completed;
+- alive, at Basfelt Village within 60 m of Nokir;
+- the endpoint verified across a relog.
+
 ## Blocked / questions for the operator
+
+**Leg 4, open (2026-09-30):**
+- **AB-Q1 — The hand-ins at other hubs, and where Leg 4 ends.** Q2231 ends at Kaibech (Stop 5,
+  649 m west). Q2226 ends at Gornak and Q24112 at Brodir (Stop 6, 115 m and 313 m south).
+  Options:
+  - (a) do all eleven in Leg 4, hand-ins included, and end back at Basfelt. Each hand-in lies
+    on a trip Leg 4 makes anyway: Kaibech beside the beehives and Komu, Gornak 115 m away,
+    Brodir beside Sumarhon.
+  - (b) do Basfelt's own work, and leave those three hand-ins to Legs 5 and 6;
+  - (c) (a), but end at Kaibech, where Leg 5 starts.
+
+  **Recommendation: (a).**
+- **AB-Q2 — Retry budgets for the timed quests and Infernus.** A lost timer abandons Q2288;
+  Q2230 loses its tusks and needs a new chance. An Infernus timeout or death needs fresh
+  incense and the burner's 295 s respawn. Options:
+  - (a) up to three tries each, recorded like deaths (OD-12); three failures stop the leg as a
+    finding, as AC-Q2 does for the escort;
+  - (b) keep trying.
+
+  **Recommendation: (a).**
+- **AB-Q3 — Komu Silverclaw respawns once an hour**, and his horn only drops at Q2289 var 7.
+  Options:
+  - (a) leave him alone until var 7. If he is killed early (he aggroes 7 m), hunt the west
+    grounds until he respawns, up to the hour.
+  - (b) if he is dead when needed, record Q2289 as not done and move on.
+
+  **Recommendation: (a).** An hour of game time is cheap in SIM, and the hunting pays XP.
 
 **Leg 3, answered 2026-09-29:** AC-Q1 **(a)**, AC-Q2 **(a)** and AC-Q3 **(a)**, all as
 recommended:
