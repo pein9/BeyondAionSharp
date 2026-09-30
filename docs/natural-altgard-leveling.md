@@ -1190,13 +1190,35 @@ The same loop protocol, with "AC" in place of "NA".
     three C# handlers and the C# follow engine: 50 m, 20 m, 1,000 ms, and the goal as the
     first spawn. All 313 Natural tests pass, and so do the warning baseline, the logger and
     clock checks, and `test-quest-plan-compiler.py`.
-- [ ] **AC-02 — Travel.** Route and walk in SIM (a new account, 143):
+- [x] **AC-02 — Travel.** Route and walk in SIM (a new account, 143):
   - Manir ↔ safe ↔ Groken ↔ goal stand ↔ Manir;
   - Manir ↔ Karl ↔ Nokir.
 
   Record the danger on each, as AM-02 did. **Done when:** the dock at z 247 is on the
   navmesh, and the Groken → boat line has a walkable route with no leg longer than the
   10 m hop.
+  - *Done 2026-09-29.* `SimulationAltgardLeg3TravelTests` (account 143, `run/ac02/travel.log`)
+    plans each leg with the Altgard travel planner at level 15 and walks it on the live SIM
+    server. All eight arrive within 5 m:
+
+    | Leg | Metres | Plan crosses | Live aggressive within 30 m |
+    |---|---|---|---|
+    | Manir → safe | 245 | one each of the smuggler L12/13, duellist, **Mohen**, fencer | 23 robbers, among them Mohen, 7 duellists and 5 fencers |
+    | safe → Groken | 149 | (navmesh route) | none |
+    | **Groken → goal stand** (the escort) | 111 | none | a duellist, a fencer, 2 smugglers (the dock, AC-Q3) |
+    | goal stand → Manir | 245 | a smuggler, a duellist | 3 robbers |
+    | Manir → Karl | 467 | a wild tog | 13 wild togs |
+    | Karl → Nokir | 242 | a wild tog | 4 wild togs |
+    | Nokir → Karl → Manir | 236 + 470 | wild togs | none (already cleared) |
+
+  - **The dock is on the navmesh:** ground at z 247.75, against the boat's 247.375.
+  - **The goal stand** is 10 m from the boat, on Groken's side, at (1219.9, 1207.0, 247.5).
+    A Groken trailing within 2 m ends well inside the 20 m radius.
+  - **The escort line** is 56 navmesh waypoints no more than 2 m apart, so it cuts into
+    hops of 10 m or less anywhere.
+  - The aggressive monsters were despawned before each walk: GM setup on a probe character.
+    This item is the routes, not the fights.
+  - The warning baseline and the logger and clock checks pass.
 - [ ] **AC-03 — `NaturalEscortPolicy`.** The pure policy and its tests:
   - leash bands;
   - hops;
@@ -1375,3 +1397,4 @@ The original questions follow.
 - 2026-09-29 AM-09: full checklist green after the two probes learned to follow walking NPCs; Leg 2 is done.
 - 2026-09-29 AC-00: the Cleric catalog covers every auto-learned rank to level 20 (ratchet test); a level 15 SIM encounter cast every level 15 rank and the Holy Servant, no death.
 - 2026-09-29 AC-01: Leg 3 contract with the escort block, the loader by leg, and four contract tests against data, handlers and the follow engine.
+- 2026-09-29 AC-02: all eight Leg 3 travel legs route and walk in SIM; the dock is on the navmesh and the escort line is 111 m.
