@@ -2,16 +2,16 @@
   "schemaVersion": 1,
   "generatedBy": "scripts/e2e/compile-quest-plans.py",
   "counts": {
-    "obtainable": 4316,
+    "obtainable": 4317,
     "disabled": 3008,
     "unreachable": 280,
-    "no_handler": 439
+    "no_handler": 438
   },
   "plannerCounts": {
-    "template": 2965,
+    "template": 2966,
     "template_incomplete": 424,
     "custom": 927,
-    "none": 2823,
+    "none": 2822,
     "unavailable": 904
   },
   "quests": [
@@ -71321,15 +71321,11 @@
       "id": 24110,
       "zone": "Altgard",
       "race": "ASMODIANS",
-      "handlerKind": "none",
-      "template": null,
-      "availability": "no_handler",
-      "reasons": [
-        {
-          "code": "no-handler"
-        }
-      ],
-      "planSupport": "none",
+      "handlerKind": "template",
+      "template": "monster_hunt",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {

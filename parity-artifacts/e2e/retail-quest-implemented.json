@@ -1,6 +1,16 @@
 {
  "note": "The D32 register as data: quests D32 has implemented. retail_quest_inventory.py keeps them in the inventory after they leave the classifier's no_handler set; the work list marks them Done.",
  "quests": {
+  "24110": {
+   "name": "Control Altgard, Delete Revolutions",
+   "form": "monster_hunt template (quest_script_data/altgard.xml)",
+   "test": "RetailQuestPlaysEndToEnd(24110)",
+   "deviation": 147,
+   "patch": "docs/upstream-reports/q24110-control-altgard-delete-revolutions.patch",
+   "batch": "RQ-05 Altgard pilot",
+   "simAccount": 42,
+   "simCharacter": "Asimrqa"
+  },
   "24113": {
    "name": "Sword to Secrecy",
    "form": "item_collecting template (quest_script_data/altgard.xml)",

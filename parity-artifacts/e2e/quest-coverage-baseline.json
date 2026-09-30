@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "classifierCounts": {
-    "obtainable": 4316,
+    "obtainable": 4317,
     "disabled": 3008,
     "unreachable": 280,
-    "no_handler": 439
+    "no_handler": 438
   },
   "expectedScenariosByMode": {
     "SIM": ["Q1", "Q2", "Q3", "Q4I", "Q4P"],

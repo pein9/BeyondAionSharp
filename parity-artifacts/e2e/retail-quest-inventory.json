@@ -7,8 +7,8 @@
   "javaCommit": "ce54b7931"
  },
  "counts": {
-  "noHandler": 439,
-  "implemented": 1,
+  "noHandler": 438,
+  "implemented": 2,
   "inClient": 440,
   "javaHandlerFound": 0,
   "clientDialog": 421,
@@ -16455,7 +16455,7 @@
    "excludedBy": [
     {
      "id": 24110,
-     "availability": "no_handler",
+     "availability": "obtainable",
      "mutual": false
     }
    ],
@@ -34491,7 +34491,7 @@
     },
     {
      "id": 24110,
-     "availability": "no_handler",
+     "availability": "obtainable",
      "mutual": false
     },
     {
@@ -72359,6 +72359,16 @@
    "race": "ASMODIANS",
    "javaHandler": false,
    "clientDialog": true,
+   "implemented": {
+    "name": "Control Altgard, Delete Revolutions",
+    "form": "monster_hunt template (quest_script_data/altgard.xml)",
+    "test": "RetailQuestPlaysEndToEnd(24110)",
+    "deviation": 147,
+    "patch": "docs/upstream-reports/q24110-control-altgard-delete-revolutions.patch",
+    "batch": "RQ-05 Altgard pilot",
+    "simAccount": 42,
+    "simCharacter": "Asimrqa"
+   },
    "client": {
     "clientLevel": 12,
     "minLevel": 12,

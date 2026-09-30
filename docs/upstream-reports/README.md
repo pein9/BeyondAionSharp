@@ -27,6 +27,7 @@ cumulative: **apply them in the order of the table**. Checked in sequence agains
 | Quest | Entry | Patch | C# decision |
 |---|---|---|---|
 | 24113 Sword to Secrecy (Altgard) | `<item_collecting id="24113" start_npc_ids="203654"/>` | `q24113-sword-to-secrecy.patch` | D32, applied (deviation 146) |
+| 24110 Control Altgard, Delete Revolutions (Altgard) | `<monster_hunt id="24110" start_npc_ids="203559"/>` | `q24110-control-altgard-delete-revolutions.patch` | D32, applied (deviation 147) |
 
 The Java branch, the checks and the PR text are in `pull-request.md`.
 The evidence and the dialog-dispatch explanation that apply to all of them are in

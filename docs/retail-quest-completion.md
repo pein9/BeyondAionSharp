@@ -240,7 +240,7 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
   - an update to the natural leveling doc, whose exclusion list names them. Q24113, Q24232
     and Q24233 follow Q24112, which Leg 4 completes.
 
-  **Progress (RQ-05, 2026-09-30).** Done: Q24113; next: Q24110, Q24111, Q24115, Q24232, Q24233.
+  **Progress (RQ-05, 2026-09-30).** Done: Q24113, Q24110; next: Q24111, Q24115, Q24232, Q24233.
   Q24114 is class B (below).
   - **Form.** All six are `quest_script_data` template entries in `altgard.xml`; no C# handler is
     needed. Retail 5.8 runs each as a simple quest (`Quest_SimpleHunt.xml`, `Quest_SimpleTalk.xml`
@@ -258,7 +258,7 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
     that each plan is current, and that each registered quest now has a handler.
   - **Evidence.** All six pass (`run/rq05/rq05-sim-b.log`); with the pre-D32 `altgard.xml`, Q24113
     fails at its start step, because Aurtri offers no quest (`run/rq05/rq05-sim-without-entry.log`).
-  - **Records.** Deviation 146, the register table below, the patches in
+  - **Records.** Deviations 146–147, the register table below, the patches in
     `docs/upstream-reports/` (cumulative, applied in order), and Done lines in the work list.
   - **Q24114 "You Gotta Stop Umkata" (class B), for approval.** Not a template quest: retail 5.8
     has no simple-quest entry for it. The client steps are: kill 3 Hero Spirits (210588, 210722;
@@ -414,4 +414,5 @@ a row keeps the rules' own verdict beside an override.
 
 | Quest | Name | Zone | Class | Form | Evidence | Test | Deviation | Commit |
 |---|---|---|---|---|---|---|---|---|
-| Q24113 | Sword to Secrecy | Altgard | A | `item_collecting` template | the 4.8 client ships it (level 12, after Q24112, excluding Q2200 and Q2017); aioncodex `/48/quest/24113` names Aurtri as giver; retail 5.8 runs it as a SimpleTalk quest with an item check, Aurtri to Aurtri | `RetailQuestPlaysEndToEnd(24113)` | 146 | (next commit) |
+| Q24113 | Sword to Secrecy | Altgard | A | `item_collecting` template | the 4.8 client ships it (level 12, after Q24112, excluding Q2200 and Q2017); aioncodex `/48/quest/24113` names Aurtri as giver; retail 5.8 runs it as a SimpleTalk quest with an item check, Aurtri to Aurtri | `RetailQuestPlaysEndToEnd(24113)` | 146 | `e73e2d425` |
+| Q24110 | Control Altgard, Delete Revolutions | Altgard | A | `monster_hunt` template | the 4.8 client ships it (level 12, excluding Q2200 and Q2012); aioncodex `/48/quest/24110` names Meiyer as giver; retail 5.8 runs it as a SimpleHunt quest, Meiyer to Meiyer, 4 of LehparAsD_9_An and LehparWaD_10_An | `RetailQuestPlaysEndToEnd(24110)` | 147 | (next commit) |
