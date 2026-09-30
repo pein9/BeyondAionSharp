@@ -17,11 +17,11 @@
   "clientOnlyWithDialog": 86,
   "retailEvidence": 440,
   "classes": {
-   "A": 127,
-   "B": 73,
-   "C": 129,
-   "D": 95,
-   "E": 16
+   "A": 129,
+   "B": 63,
+   "C": 139,
+   "D": 109,
+   "E": 0
   }
  },
  "quests": [
@@ -186,7 +186,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Verteron campaign, retired with Q1012, Q1013, Q1016, Q1017, Q1023, Q1130"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1012,
@@ -405,7 +406,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14110"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1013,
@@ -684,7 +686,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14111"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1014,
@@ -1140,7 +1143,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Verteron campaign, retired with Q1012, Q1013, Q1016, Q1017, Q1023, Q1130"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1015,
@@ -1627,7 +1631,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Verteron campaign, retired with Q1012, Q1013, Q1016, Q1017, Q1023, Q1130"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1016,
@@ -1886,7 +1891,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14112"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1017,
@@ -2224,7 +2230,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14113"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1018,
@@ -2770,7 +2777,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Verteron campaign, retired with Q1012, Q1013, Q1016, Q1017, Q1023, Q1130"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1019,
@@ -2994,7 +3002,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Verteron campaign, retired with Q1012, Q1013, Q1016, Q1017, Q1023, Q1130"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1020,
@@ -3153,7 +3162,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Verteron campaign, retired with Q1012, Q1013, Q1016, Q1017, Q1023, Q1130"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1021,
@@ -3313,7 +3323,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Verteron campaign, retired with Q1012, Q1013, Q1016, Q1017, Q1023, Q1130"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1022,
@@ -3547,7 +3558,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Verteron campaign, retired with Q1012, Q1013, Q1016, Q1017, Q1023, Q1130"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1023,
@@ -3760,7 +3772,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14114"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1031,
@@ -4066,7 +4079,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Eltnen campaign, retired with Q1032, Q1034, Q1035, Q1038, Q1039, Q1300"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1032,
@@ -4279,7 +4293,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14120"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1033,
@@ -4468,7 +4483,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Eltnen campaign, retired with Q1032, Q1034, Q1035, Q1038, Q1039, Q1300"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1034,
@@ -4682,7 +4698,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14121"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1035,
@@ -5017,7 +5034,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14122"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1036,
@@ -5275,7 +5293,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Eltnen campaign, retired with Q1032, Q1034, Q1035, Q1038, Q1039, Q1300"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1037,
@@ -5834,7 +5853,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Eltnen campaign, retired with Q1032, Q1034, Q1035, Q1038, Q1039, Q1300"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1038,
@@ -6217,7 +6237,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14123"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1039,
@@ -6510,7 +6531,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14124"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1040,
@@ -6746,7 +6768,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Eltnen campaign, retired with Q1032, Q1034, Q1035, Q1038, Q1039, Q1300"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1041,
@@ -7042,7 +7065,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Eltnen campaign, retired with Q1032, Q1034, Q1035, Q1038, Q1039, Q1300"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1042,
@@ -7407,7 +7431,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Eltnen campaign, retired with Q1032, Q1034, Q1035, Q1038, Q1039, Q1300"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1043,
@@ -7570,7 +7595,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Eltnen campaign, retired with Q1032, Q1034, Q1035, Q1038, Q1039, Q1300"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1051,
@@ -7796,7 +7822,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14150"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1052,
@@ -8098,7 +8125,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Heiron campaign, retired with Q1051, Q1053, Q1054, Q1056, Q1057, Q1059 and others"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1053,
@@ -8442,7 +8470,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14151"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1054,
@@ -8757,7 +8786,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q3547"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1055,
@@ -9040,7 +9070,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Heiron campaign, retired with Q1051, Q1053, Q1054, Q1056, Q1057, Q1059 and others"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1056,
@@ -9299,7 +9330,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14152"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1057,
@@ -9584,7 +9616,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q3548"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1058,
@@ -10064,7 +10097,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Heiron campaign, retired with Q1051, Q1053, Q1054, Q1056, Q1057, Q1059 and others"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1059,
@@ -10221,7 +10255,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14153"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1062,
@@ -10476,7 +10511,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Heiron campaign, retired with Q1051, Q1053, Q1054, Q1056, Q1057, Q1059 and others"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1063,
@@ -10660,7 +10696,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Heiron campaign, retired with Q1051, Q1053, Q1054, Q1056, Q1057, Q1059 and others"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1071,
@@ -10803,7 +10840,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 1072,
@@ -11012,7 +11050,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 1073,
@@ -11177,7 +11216,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 1074,
@@ -11321,7 +11361,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 831738 (pernos) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 1075,
@@ -11489,7 +11530,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 214102 (ranx archer) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 1076,
@@ -13325,7 +13367,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 205415 (boreas) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 1077,
@@ -13557,7 +13600,8 @@
     "npc named in the task text 205415 (boreas) has no static spawn",
     "npc named in the task text 833030 (azoturan fortress passage) has no static spawn",
     "npc named in the task text 284919 (betrayer icaronix) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 1091,
@@ -13679,7 +13723,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q3121, Q14200, Q14201, Q14202"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1092,
@@ -13913,7 +13958,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14200"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1093,
@@ -14183,7 +14229,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14201"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1094,
@@ -14504,7 +14551,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q3121"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1096,
@@ -14638,10 +14686,12 @@
      "maps": []
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "npc named in the task text 831738 (pernos) has no static spawn"
-   ]
+    "reviewed: the 2.x Elyos final missions ('The Hidden Truth'; 5.8 dev note 'final mission 0-3'), replaced in 4.x by Q14030 'Regained Memory' and Q14031, as the Asmodian twins Q2096-Q2099 were by Q24030/Q24031, which exclude Q2096 explicitly. Q1096's dialog retells Q14030's story (the lost memory of the Mirage Legion)",
+    "rules said B: npc named in the task text 831738 (pernos) has no static spawn"
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 1097,
@@ -14893,10 +14943,12 @@
      ]
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "npc named in the task text 831738 (pernos) has no static spawn"
-   ]
+    "reviewed: the 2.x Elyos final missions ('The Hidden Truth'; 5.8 dev note 'final mission 0-3'), replaced in 4.x by Q14030 'Regained Memory' and Q14031, as the Asmodian twins Q2096-Q2099 were by Q24030/Q24031, which exclude Q2096 explicitly. Q1096's dialog retells Q14030's story (the lost memory of the Mirage Legion)",
+    "rules said B: npc named in the task text 831738 (pernos) has no static spawn"
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 1098,
@@ -15208,10 +15260,12 @@
      ]
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "npc named in the task text 831738 (pernos) has no static spawn"
-   ]
+    "reviewed: the 2.x Elyos final missions ('The Hidden Truth'; 5.8 dev note 'final mission 0-3'), replaced in 4.x by Q14030 'Regained Memory' and Q14031, as the Asmodian twins Q2096-Q2099 were by Q24030/Q24031, which exclude Q2096 explicitly. Q1096's dialog retells Q14030's story (the lost memory of the Mirage Legion)",
+    "rules said B: npc named in the task text 831738 (pernos) has no static spawn"
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 1099,
@@ -15480,11 +15534,12 @@
      ]
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "npc named in the task text 831738 (pernos) has no static spawn",
-    "npc named in the task text 236273 (orissan) has no static spawn"
-   ]
+    "reviewed: the 2.x Elyos final missions ('The Hidden Truth'; 5.8 dev note 'final mission 0-3'), replaced in 4.x by Q14030 'Regained Memory' and Q14031, as the Asmodian twins Q2096-Q2099 were by Q24030/Q24031, which exclude Q2096 explicitly. Q1096's dialog retells Q14030's story (the lost memory of the Mirage Legion)",
+    "rules said B: npc named in the task text 831738 (pernos) has no static spawn; npc named in the task text 236273 (orissan) has no static spawn"
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 1130,
@@ -15646,7 +15701,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14010, Q14011, Q14012, Q14013, Q14014, Q14015, Q14016, Q14110, Q14111, Q14112, Q14113, Q14114"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1300,
@@ -15810,7 +15866,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q14020, Q14021, Q14022, Q14023, Q14024, Q14025, Q14026, Q14120, Q14121, Q14122, Q14123, Q14124"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1489,
@@ -15882,10 +15939,12 @@
     "fetched": "2026-09-30"
    },
    "retailNpcs": [],
-   "class": "E",
+   "class": "D",
    "classReasons": [
-    "aioncodex /48/ task text is a stub or placeholder ('Collect XXX and take them to XXX. PlayerTalk with % Talk with % Talk with % Quest Description Summary (keep it short in one line if possible)'): an unfinished or internal client entry"
-   ]
+    "reviewed: maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; aioncodex /48/ text is a template placeholder ('Collect XXX and take them to XXX'); 5.8 dev note 'kill the one rampaging in Jumping Gorossian'",
+    "rules said E: aioncodex /48/ task text is a stub or placeholder ('Collect XXX and take them to XXX. PlayerTalk with % Talk with % Talk with % Quest Description Summary (keep it short in one line if possible)'): an unfinished or internal client entry"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 1500,
@@ -16010,7 +16069,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q3547, Q3548, Q14150, Q14151, Q14152, Q14153"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 1919,
@@ -16121,7 +16181,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 2010,
@@ -16189,10 +16250,12 @@
     "fetched": "2026-09-30"
    },
    "retailNpcs": [],
-   "class": "E",
+   "class": "D",
    "classReasons": [
-    "aioncodex /48/ task text is a stub or placeholder (None): an unfinished or internal client entry"
-   ]
+    "reviewed: maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; no task text or dialog; 5.8 dev note 'Asmodian quest', level 1: an ascension placeholder",
+    "rules said E: aioncodex /48/ task text is a stub or placeholder (None): an unfinished or internal client entry"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 2011,
@@ -16358,7 +16421,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24011"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2012,
@@ -16524,7 +16588,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24110"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2013,
@@ -17007,7 +17072,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24012"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2014,
@@ -17215,7 +17281,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24111"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2015,
@@ -17501,7 +17568,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Altgard campaign, retired with Q2011, Q2012, Q2013, Q2014, Q2016, Q2017 and others"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2016,
@@ -17828,7 +17896,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24013"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2017,
@@ -18069,7 +18138,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24113"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2018,
@@ -18537,7 +18607,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24114"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2019,
@@ -18725,7 +18796,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24115"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2020,
@@ -19012,7 +19084,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24014"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2021,
@@ -19198,7 +19271,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24015"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2022,
@@ -19351,7 +19425,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24016"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2031,
@@ -19616,7 +19691,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24120"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2032,
@@ -19969,7 +20045,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24021"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2033,
@@ -20200,7 +20277,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q4338"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2034,
@@ -20522,7 +20600,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24022"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2035,
@@ -20770,7 +20849,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24023"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2036,
@@ -21031,7 +21111,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24121"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2037,
@@ -21219,7 +21300,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24024"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2038,
@@ -21410,7 +21492,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24122"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2039,
@@ -21591,7 +21674,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24123"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2040,
@@ -21841,7 +21925,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24025"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2041,
@@ -22001,7 +22086,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24026"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2051,
@@ -22323,7 +22409,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24150"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2052,
@@ -22756,7 +22843,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24151"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2053,
@@ -23099,7 +23187,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24051"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2054,
@@ -23290,7 +23379,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24152"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2055,
@@ -23497,7 +23587,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q4542"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2056,
@@ -23707,7 +23798,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24052"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2057,
@@ -24045,7 +24137,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24153"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2058,
@@ -24283,7 +24376,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24154"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2059,
@@ -24505,7 +24599,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24053"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2060,
@@ -24721,7 +24816,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24155"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2061,
@@ -24940,7 +25036,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24054"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2071,
@@ -25115,7 +25212,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 2072,
@@ -25324,7 +25422,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 2073,
@@ -25489,7 +25588,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 2074,
@@ -25649,7 +25749,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 831739 (munin) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 2075,
@@ -25810,7 +25911,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 2076,
@@ -25983,7 +26085,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 831739 (munin) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 2091,
@@ -26101,7 +26204,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q4120, Q24200, Q24201, Q24202, Q24203"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2092,
@@ -32424,7 +32528,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24201"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2093,
@@ -32835,7 +32940,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24202"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2094,
@@ -33080,7 +33186,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q4120, Q24203"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2096,
@@ -33282,7 +33389,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24030, Q24031"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2097,
@@ -33537,7 +33645,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Carving out a Fortune Mission campaign, retired with Q2096"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2098,
@@ -33868,7 +33977,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Carving out a Fortune Mission campaign, retired with Q2096"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2099,
@@ -34120,7 +34230,8 @@
    "class": "C",
    "classReasons": [
     "part of the 2.x Carving out a Fortune Mission campaign, retired with Q2096"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2150,
@@ -34213,10 +34324,12 @@
      "maps": []
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "quest giver 801034 (rian) has no static spawn"
-   ]
+    "reviewed: a server-transfer quest, not content: 5.8 dev note 'to the integrated beginner server (Asmodian)'; its giver Rian says he and his brother 'used to manage the Fast-Track Server' (aioncodex /48/ npc 801034). This emulator is one server (D20)",
+    "rules said B: quest giver 801034 (rian) has no static spawn"
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 2151,
@@ -34305,10 +34418,12 @@
      "maps": []
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "quest giver 801035 (nowlan) has no static spawn"
-   ]
+    "reviewed: a server-transfer quest, not content: 5.8 dev note 'to the normal server (Asmodian)'; the pair of Q2150 (Fast-Track Server brothers Rian and Nowlan). This emulator is one server (D20)",
+    "rules said B: quest giver 801035 (nowlan) has no static spawn"
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 2200,
@@ -34461,7 +34576,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q24010, Q24011, Q24012, Q24013, Q24014, Q24015, Q24016, Q24110, Q24111, Q24113, Q24114, Q24115"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2300,
@@ -34625,7 +34741,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q4338, Q24020, Q24021, Q24022, Q24023, Q24024, Q24025, Q24026, Q24120, Q24121, Q24122, Q24123"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2500,
@@ -34780,7 +34897,8 @@
    "class": "C",
    "classReasons": [
     "excluded (unfinished and not acquired) by Q4542, Q24050, Q24051, Q24052, Q24053, Q24054, Q24150, Q24151, Q24152, Q24153, Q24154, Q24155"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 2549,
@@ -34898,7 +35016,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 2590,
@@ -34989,10 +35108,12 @@
      ]
     }
    ],
-   "class": "E",
+   "class": "D",
    "classReasons": [
-    "aioncodex /48/ task text is a stub or placeholder ('Talk again. XP Test'): an unfinished or internal client entry"
-   ]
+    "reviewed: maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; the dialog text on aioncodex /48/ is a test script ('Test start', 'Umbara Umbara Buraburaboom'); no retail steps exist to implement",
+    "rules said E: aioncodex /48/ task text is a stub or placeholder ('Talk again. XP Test'): an unfinished or internal client entry"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 2611,
@@ -35142,7 +35263,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 2929,
@@ -35253,7 +35375,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 3732,
@@ -35458,7 +35581,8 @@
    "classReasons": [
     "npc named in the task text 290162 (nochsana fortress gate) has no static spawn",
     "npc named in the task text 290161 (nochsana general) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 3959,
@@ -35577,10 +35701,12 @@
      ]
     }
    ],
-   "class": "E",
+   "class": "D",
    "classReasons": [
-    "aioncodex /48/ task text is a stub or placeholder ('Player'): an unfinished or internal client entry"
-   ]
+    "reviewed: maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; empty task text; the epilogue of the replaced Elyos final missions Q1096-Q1099",
+    "rules said E: aioncodex /48/ task text is a stub or placeholder ('Player'): an unfinished or internal client entry"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 4338,
@@ -35811,7 +35937,8 @@
    "class": "B",
    "classReasons": [
     "quest_data.xml questDrops differs from the client"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 4732,
@@ -36016,7 +36143,8 @@
    "classReasons": [
     "npc named in the task text 290162 (nochsana fortress gate) has no static spawn",
     "npc named in the task text 290161 (nochsana general) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 4963,
@@ -36117,7 +36245,8 @@
    "class": "C",
    "classReasons": [
     "every prerequisite group needs Q2099 or another class C/D quest (Q2099 is class C)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 9570,
@@ -36208,7 +36337,8 @@
    "class": "D",
    "classReasons": [
     "test quest ([Test] SimpleTalk Expansion Test / [Test] SimpleTalk expansion test / [Test] SimpleTalk Expansion Test)"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9571,
@@ -36411,7 +36541,8 @@
    "class": "D",
    "classReasons": [
     "test quest ([Test] Excess Object Count Test Part 2 / [Test] Number of surplus objects test 2 / [Test] Excess Object Count Test Part 2)"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9572,
@@ -36500,7 +36631,8 @@
    "classReasons": [
     "reviewed: test quest: client name 'SimpleTalk function expansion test', level 1, 255 repeats, beside the [Test] Q9570 and Q9571",
     "rules said E: aioncodex /48/ task text is a stub or placeholder (None): an unfinished or internal client entry"
-   ]
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 9573,
@@ -36800,7 +36932,8 @@
    "class": "D",
    "classReasons": [
     "test quest ([Test] Hunting for Condition Spawn Test / [Test] Hunting Quest for Spawn Test / [Test] Hunting for Condition Spawn Test)"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9600,
@@ -36875,7 +37008,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9601,
@@ -36950,7 +37084,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9602,
@@ -37025,7 +37160,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9603,
@@ -37100,7 +37236,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9604,
@@ -37175,7 +37312,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9605,
@@ -37250,7 +37388,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9606,
@@ -37325,7 +37464,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9607,
@@ -37400,7 +37540,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9608,
@@ -37519,7 +37660,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9609,
@@ -37638,7 +37780,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9610,
@@ -37757,7 +37900,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9611,
@@ -37876,7 +38020,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9612,
@@ -37949,7 +38094,8 @@
    "class": "D",
    "classReasons": [
     "test quest ([Test] Talk / [Test] Talk / [Test] Talk)"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9613,
@@ -38043,7 +38189,8 @@
    "class": "D",
    "classReasons": [
     "test quest ([Test] Hunt / [Test] Hunt / [Test] Hunt)"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9614,
@@ -38158,7 +38305,8 @@
    "class": "D",
    "classReasons": [
     "test quest ([Test] CollectItem / [Test] CollectItem / [Test] CollectItem)"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9615,
@@ -38227,7 +38375,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9616,
@@ -38302,7 +38451,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9617,
@@ -38385,7 +38535,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9618,
@@ -38459,7 +38610,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9619,
@@ -38542,7 +38694,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9620,
@@ -38663,7 +38816,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9621,
@@ -38763,7 +38917,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9622,
@@ -38947,7 +39102,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9623,
@@ -39019,7 +39175,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9624,
@@ -39091,7 +39248,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9625,
@@ -39163,7 +39321,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9626,
@@ -39235,7 +39394,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9627,
@@ -39307,7 +39467,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9628,
@@ -39379,7 +39540,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9629,
@@ -39451,7 +39613,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9630,
@@ -39523,7 +39686,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9631,
@@ -39595,7 +39759,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9632,
@@ -39667,7 +39832,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9633,
@@ -39739,7 +39905,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9634,
@@ -39811,7 +39978,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9635,
@@ -39883,7 +40051,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9636,
@@ -39955,7 +40124,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9637,
@@ -40027,7 +40197,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9638,
@@ -40099,7 +40270,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9639,
@@ -40299,7 +40471,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9640,
@@ -40374,7 +40547,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9641,
@@ -40449,7 +40623,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9642,
@@ -40525,7 +40700,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9643,
@@ -40600,7 +40776,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9644,
@@ -40673,7 +40850,8 @@
    "class": "D",
    "classReasons": [
     "test quest ([Test] First-come, First-serve Preset / [Test] Quest in Order of the Missions - Primary Quest / [Test] First-come, First-serve Preset)"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9645,
@@ -40783,7 +40961,8 @@
    "class": "D",
    "classReasons": [
     "test quest ([Test] First-come, First-serve Quest / [Test] Quest in Order of the Missions / [Test] First-come, First-serve Quest)"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9646,
@@ -40876,7 +41055,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9647,
@@ -40951,7 +41131,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9648,
@@ -41026,7 +41207,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9649,
@@ -41101,7 +41283,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9650,
@@ -41176,7 +41359,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9651,
@@ -41253,7 +41437,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9652,
@@ -41328,7 +41513,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9653,
@@ -41404,7 +41590,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9654,
@@ -41479,7 +41666,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9655,
@@ -41554,7 +41742,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9656,
@@ -41629,7 +41818,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9657,
@@ -41840,7 +42030,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9658,
@@ -41917,7 +42108,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9659,
@@ -41994,7 +42186,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9660,
@@ -42201,7 +42394,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9661,
@@ -42276,7 +42470,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9662,
@@ -42351,7 +42546,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9663,
@@ -42426,7 +42622,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9664,
@@ -42545,7 +42742,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9665,
@@ -42664,7 +42862,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9666,
@@ -42783,7 +42982,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9667,
@@ -42856,7 +43056,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9668,
@@ -42929,7 +43130,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9669,
@@ -43002,7 +43204,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9670,
@@ -43121,7 +43324,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9671,
@@ -43240,7 +43444,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9672,
@@ -43359,7 +43564,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9673,
@@ -43429,7 +43635,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9674,
@@ -43499,7 +43706,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9675,
@@ -43569,7 +43777,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9676,
@@ -43639,7 +43848,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9677,
@@ -43709,7 +43919,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9678,
@@ -43779,7 +43990,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9679,
@@ -43849,7 +44061,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9680,
@@ -43919,7 +44132,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9681,
@@ -43989,7 +44203,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9682,
@@ -44059,7 +44274,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9683,
@@ -44129,7 +44345,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9684,
@@ -44199,7 +44416,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9685,
@@ -44461,7 +44679,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9686,
@@ -44534,7 +44753,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9687,
@@ -44641,7 +44861,8 @@
    "class": "D",
    "classReasons": [
     "test zone"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9688,
@@ -44771,7 +44992,8 @@
    "class": "D",
    "classReasons": [
     "test quest (Eliminate High Priest Esras / [Test] Legion Mission Number 1 / Eliminate High Priest Esras)"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9689,
@@ -44902,7 +45124,8 @@
    "class": "D",
    "classReasons": [
     "test quest (Eliminate Vanktrist / [Test] Legion Mission Number 2 / Eliminate Vanktrist)"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 9690,
@@ -45034,7 +45257,8 @@
    "class": "D",
    "classReasons": [
     "test quest (Eliminate Golden Tatar / [Test] Legion Mission Number 3 / Eliminate Golden Tatar)"
-   ]
+   ],
+   "ruleClass": "D"
   },
   {
    "id": 10070,
@@ -45236,7 +45460,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q10064)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 10071,
@@ -45410,7 +45635,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q10070 -> Q10064)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 10072,
@@ -45615,7 +45841,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q10071 -> Q10070 -> Q10064)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 10073,
@@ -45831,7 +46058,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q10072 -> Q10071 -> Q10070 -> Q10064)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 10100,
@@ -45981,7 +46209,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 833485 (kahrun) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 10101,
@@ -46293,7 +46522,8 @@
     "npc named in the task text 833485 (kahrun) has no static spawn",
     "npc named in the task text 731532 (secret zone invasion corridor) has no static spawn",
     "npc named in the task text 234678 (commander gartacia) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 11150,
@@ -46496,7 +46726,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 216784 (basrasa worker) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 11151,
@@ -46677,7 +46908,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 11152,
@@ -46822,7 +47054,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 11287,
@@ -46948,7 +47181,8 @@
    "classReasons": [
     "npc named in the task text 281433 (enraged veille) has no static spawn",
     "npc named in the task text 799094 (yushin) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 11288,
@@ -47041,7 +47275,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 799094 (yushin) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 11295,
@@ -47116,10 +47351,12 @@
     "fetched": "2026-09-30"
    },
    "retailNpcs": [],
-   "class": "E",
+   "class": "D",
    "classReasons": [
-    "hidden client quest, no player-facing steps (Hidden Quest to Play Cut Scenes / Hidden Quest to Play Cut Scenes / Hidden Quest to Play Cut Scenes)"
-   ]
+    "reviewed: maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'hidden quest for playing a cutscene'",
+    "rules said E: hidden client quest, no player-facing steps (Hidden Quest to Play Cut Scenes / Hidden Quest to Play Cut Scenes / Hidden Quest to Play Cut Scenes)"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 11305,
@@ -47716,7 +47953,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 11306,
@@ -47963,7 +48201,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 11307,
@@ -48559,7 +48798,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 11308,
@@ -48806,7 +49046,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 11319,
@@ -48946,10 +49187,13 @@
      ]
     }
    ],
-   "class": "E",
+   "class": "A",
    "classReasons": [
-    "a 4.x quest excluded one way by Q11320, Q11321, Q11322: replaced, or a branch?"
-   ]
+    "reviewed: not replaced: 5.8 dev note '[4.8 LF5 guide quest] discovery of a new continent', the Elyos twin of Q21320; retail 5.8 still offers it at level 55",
+    "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned",
+    "rules said E: a 4.x quest excluded one way by Q11320, Q11321, Q11322: replaced, or a branch?"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 11323,
@@ -49113,7 +49357,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 11324,
@@ -49218,7 +49463,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 11325,
@@ -49323,7 +49569,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 12999,
@@ -49390,10 +49637,12 @@
     "fetched": "2026-09-30"
    },
    "retailNpcs": [],
-   "class": "E",
+   "class": "D",
    "classReasons": [
-    "aioncodex /48/ task text is a stub or placeholder (None): an unfinished or internal client entry"
-   ]
+    "reviewed: maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'for playing the 4.0 intro movie'; no dialog",
+    "rules said E: aioncodex /48/ task text is a stub or placeholder (None): an unfinished or internal client entry"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 13403,
@@ -49596,7 +49845,8 @@
     "npc named in the task text 805265 (reported invasion site) has no static spawn",
     "npc named in the task text 731643 (damaged invasion generator) has no static spawn",
     "npc named in the task text 731644 (inoperable invasion generator) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 13900,
@@ -49739,7 +49989,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 13901,
@@ -49944,7 +50195,8 @@
    "classReasons": [
     "kill/drop source with nothing spawned: idf5_u3_hard_boss_n_65_ah=234686",
     "kill/drop source with nothing spawned: ldf5_under_rune_frostnmd_2_n_ma_65_ah_ver47=234691"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 13902,
@@ -50072,7 +50324,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 13903,
@@ -50213,7 +50466,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 13904,
@@ -50354,7 +50608,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 13905,
@@ -50577,7 +50832,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 13906,
@@ -50800,7 +51056,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 13907,
@@ -51023,7 +51280,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 13908,
@@ -51246,7 +51504,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 13909,
@@ -51544,7 +51803,8 @@
     "npc named in the task text 855369 (cruel lamia) has no static spawn",
     "npc named in the task text 855370 (destroyer feld) has no static spawn",
     "npc named in the task text 855371 (ruthless tyrannica) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 13910,
@@ -52227,7 +52487,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 13914,
@@ -52359,7 +52620,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 13915,
@@ -52492,7 +52754,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 13916,
@@ -52669,7 +52932,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 832831 (empowered mastarius) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 13917,
@@ -52866,7 +53130,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 13918,
@@ -53196,7 +53461,8 @@
     "npc named in the task text 235561 (drakan elite ambusher) has no static spawn",
     "npc named in the task text 235324 (archon elite raider) has no static spawn",
     "npc named in the task text 235325 (archon elite bladesman) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 14080,
@@ -53617,7 +53883,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q14071)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 14081,
@@ -53841,7 +54108,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q14080 -> Q14071)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 14090,
@@ -53998,7 +54266,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q14081 -> Q14080 -> Q14071)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 14091,
@@ -54205,7 +54474,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q14090 -> Q14081 -> Q14080 -> Q14071)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 14110,
@@ -54415,7 +54685,8 @@
    "class": "B",
    "classReasons": [
     "quest_data.xml questDrops differs from the client"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 14111,
@@ -54619,7 +54890,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14112,
@@ -54810,7 +55082,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 203195 (kato) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 14113,
@@ -55160,7 +55433,8 @@
    "class": "B",
    "classReasons": [
     "quest_data.xml questDrops differs from the client"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 14114,
@@ -55392,7 +55666,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14120,
@@ -55607,7 +55882,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14121,
@@ -55854,7 +56130,8 @@
    "class": "B",
    "classReasons": [
     "quest_data.xml questDrops differs from the client"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 14122,
@@ -56037,7 +56314,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14123,
@@ -56216,7 +56494,8 @@
    "class": "B",
    "classReasons": [
     "kill/drop source with nothing spawned: hippolyta_q14123=206360"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 14124,
@@ -56457,7 +56736,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 210968 (scout vaegir) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 14150,
@@ -56635,7 +56915,8 @@
    "class": "B",
    "classReasons": [
     "kill/drop source with nothing spawned: lf3_fobj_q14150=702423"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 14151,
@@ -56823,7 +57104,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14152,
@@ -57018,7 +57300,8 @@
    "classReasons": [
     "npc named in the task text 205416 (jumentis) has no static spawn",
     "npc named in the task text 280792 (chairman garnis) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 14153,
@@ -57203,7 +57486,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14200,
@@ -57385,7 +57669,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14201,
@@ -57612,7 +57897,8 @@
    "classReasons": [
     "kill/drop source with nothing spawned: lf2a_calydonmagenamed_50_q_an=234671",
     "npc named in the task text 234671 (chieftain dadum) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 14202,
@@ -57747,7 +58033,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14240,
@@ -57928,7 +58215,8 @@
    "classReasons": [
     "npc named in the task text 217512 (blaze spirit) has no static spawn",
     "npc named in the task text 217520 (flame spirit) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 14241,
@@ -58057,7 +58345,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14242,
@@ -58212,7 +58501,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14243,
@@ -58356,7 +58646,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14244,
@@ -58510,7 +58801,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14250,
@@ -58718,7 +59010,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14251,
@@ -58836,10 +59129,13 @@
      ]
     }
    ],
-   "class": "E",
+   "class": "A",
    "classReasons": [
-    "a 4.x quest excluded one way by Q14270: replaced, or a branch?"
-   ]
+    "reviewed: not replaced: retail 5.8 still runs it as a simple talk quest (Atalante to Anaxa, 5.8 dev note '[Instance] the Balaur main base'); Q14270 is the alternative Draupnir entry quest for a character who has not done it",
+    "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned",
+    "rules said E: a 4.x quest excluded one way by Q14270: replaced, or a branch?"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 14260,
@@ -58993,7 +59289,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14261,
@@ -59147,7 +59444,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14270,
@@ -59277,7 +59575,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14271,
@@ -59399,7 +59698,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14275,
@@ -59543,7 +59843,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 14276,
@@ -59787,7 +60088,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 15000,
@@ -59969,7 +60271,8 @@
    "class": "B",
    "classReasons": [
     "quest_data.xml questDrops differs from the client"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 15042,
@@ -60073,7 +60376,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 15097,
@@ -60142,10 +60446,12 @@
     "fetched": "2026-09-30"
    },
    "retailNpcs": [],
-   "class": "E",
+   "class": "D",
    "classReasons": [
-    "aioncodex /48/ task text is a stub or placeholder ('View Cutscene View Cutscene'): an unfinished or internal client entry"
-   ]
+    "reviewed: maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; task text 'View Cutscene'; 5.8 dev note 'shared ship video quest'",
+    "rules said E: aioncodex /48/ task text is a stub or placeholder ('View Cutscene View Cutscene'): an unfinished or internal client entry"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 15098,
@@ -60239,7 +60545,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 15101,
@@ -60407,7 +60714,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 16942,
@@ -60681,7 +60989,8 @@
    "class": "B",
    "classReasons": [
     "quest_data.xml questDrops differs from the client"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 16974,
@@ -60838,7 +61147,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 16975,
@@ -60931,7 +61241,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 16976,
@@ -61155,7 +61466,8 @@
    "class": "B",
    "classReasons": [
     "quest_data.xml questDrops differs from the client"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 16984,
@@ -61243,11 +61555,12 @@
      ]
     }
    ],
-   "class": "E",
+   "class": "D",
    "classReasons": [
-    "reviewed: twin of Q26984, whose aioncodex /48/ task text is empty; this one only says 'Talk with Alkatron' and names no quest giver",
+    "reviewed: maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'hidden quest for playing the Danuar Sanctuary cutscene (Elyos)'",
     "rules said A: live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 16989,
@@ -61332,10 +61645,12 @@
      "maps": []
     }
    ],
-   "class": "E",
+   "class": "D",
    "classReasons": [
-    "aioncodex /48/ task text is a stub or placeholder (None): an unfinished or internal client entry"
-   ]
+    "reviewed: maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'hidden quest for playing the Sarpan opening movie'; no dialog",
+    "rules said E: aioncodex /48/ task text is a stub or placeholder (None): an unfinished or internal client entry"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 18037,
@@ -61497,7 +61812,8 @@
    "classReasons": [
     "npc named in the task text 284698 (grand commander pashid) has no static spawn",
     "npc named in the task text 802055 (demades) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 18412,
@@ -61593,10 +61909,12 @@
      ]
     }
    ],
-   "class": "E",
+   "class": "D",
    "classReasons": [
-    "hidden client quest, no player-facing steps (Hidden Quest to Play Cut Scenes (Elyos) / Hidden Quest to Play Cut Scenes (Elyos) / Hidden Quest to Play Cut Scenes (Elyos))"
-   ]
+    "reviewed: maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'hidden quest for playing a cutscene (Elyos)'",
+    "rules said E: hidden client quest, no player-facing steps (Hidden Quest to Play Cut Scenes (Elyos) / Hidden Quest to Play Cut Scenes (Elyos) / Hidden Quest to Play Cut Scenes (Elyos))"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 18744,
@@ -61685,10 +62003,12 @@
      "maps": []
     }
    ],
-   "class": "E",
+   "class": "D",
    "classReasons": [
-    "aioncodex /48/ task text is a stub or placeholder ('Player'): an unfinished or internal client entry"
-   ]
+    "reviewed: maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'for playing the Tames cutscene'",
+    "rules said E: aioncodex /48/ task text is a stub or placeholder ('Player'): an unfinished or internal client entry"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 18917,
@@ -61813,7 +62133,8 @@
    "class": "B",
    "classReasons": [
     "quest giver 801026 (tribunus pippus) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 19049,
@@ -61942,7 +62263,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 19051,
@@ -62070,7 +62392,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 19059,
@@ -62181,7 +62504,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 19078,
@@ -62272,7 +62596,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 19643,
@@ -62398,7 +62723,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 19644,
@@ -62527,7 +62853,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 19645,
@@ -62737,7 +63064,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 19646,
@@ -62866,7 +63194,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 19647,
@@ -63091,7 +63420,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 19648,
@@ -63220,7 +63550,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 20070,
@@ -63422,7 +63753,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q20064)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 20071,
@@ -63596,7 +63928,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q20070 -> Q20064)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 20072,
@@ -63815,7 +64148,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q20071 -> Q20070 -> Q20064)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 20073,
@@ -64031,7 +64365,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q20072 -> Q20071 -> Q20070 -> Q20064)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 20100,
@@ -64181,7 +64516,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 833485 (kahrun) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 20101,
@@ -64492,7 +64828,8 @@
     "npc named in the task text 731531 (stonepike invasion corridor) has no static spawn",
     "npc named in the task text 731532 (secret zone invasion corridor) has no static spawn",
     "npc named in the task text 234679 (commander virca) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 21289,
@@ -64618,7 +64955,8 @@
    "classReasons": [
     "npc named in the task text 281440 (enraged mastarius) has no static spawn",
     "npc named in the task text 799095 (mijien) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 21290,
@@ -64711,7 +65049,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 799095 (mijien) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 21291,
@@ -64836,7 +65175,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 21303,
@@ -65259,7 +65599,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 21304,
@@ -65398,7 +65739,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 21305,
@@ -65560,7 +65902,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 281540 (isbariya the resolute) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 21306,
@@ -65864,7 +66207,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 21307,
@@ -66112,7 +66456,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 21308,
@@ -66417,7 +66762,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 21309,
@@ -66665,7 +67011,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 21320,
@@ -66776,7 +67123,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 21323,
@@ -66940,7 +67288,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 21324,
@@ -67036,7 +67385,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 21325,
@@ -67141,7 +67491,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 23403,
@@ -67340,7 +67691,8 @@
     "npc named in the task text 805265 (reported invasion site) has no static spawn",
     "npc named in the task text 731645 (ruined invasion generator) has no static spawn",
     "npc named in the task text 731646 (malfunctioning invasion generator) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 23900,
@@ -67481,7 +67833,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 800802 (halia) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 23901,
@@ -67696,7 +68049,8 @@
     "kill/drop source with nothing spawned: idf5_u3_hard_boss_n_65_ah=234686",
     "kill/drop source with nothing spawned: ldf5_under_rune_frostnmd_2_n_ma_65_ah_ver47=234691",
     "npc named in the task text 800802 (halia) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 23902,
@@ -67824,7 +68178,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 23903,
@@ -67965,7 +68320,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 23904,
@@ -68106,7 +68462,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 23905,
@@ -68329,7 +68686,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 23906,
@@ -68552,7 +68910,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 23907,
@@ -68775,7 +69134,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 23908,
@@ -68998,7 +69358,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 23909,
@@ -69296,7 +69657,8 @@
     "npc named in the task text 855369 (cruel lamia) has no static spawn",
     "npc named in the task text 855370 (destroyer feld) has no static spawn",
     "npc named in the task text 855371 (ruthless tyrannica) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 23910,
@@ -69988,7 +70350,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 800802 (halia) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 23914,
@@ -70120,7 +70483,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 23915,
@@ -70253,7 +70617,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 23916,
@@ -70430,7 +70795,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 832830 (empowered veille) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 23917,
@@ -70611,7 +70977,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 23918,
@@ -70945,7 +71312,8 @@
     "npc named in the task text 235560 (drakan elite bladesman) has no static spawn",
     "npc named in the task text 235561 (drakan elite ambusher) has no static spawn",
     "npc named in the task text 235327 (guardian elite bladesman) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 24080,
@@ -71348,7 +71716,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q24071)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 24081,
@@ -71640,7 +72009,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q24071)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 24090,
@@ -71782,7 +72152,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q24081 -> Q24071)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 24091,
@@ -71976,7 +72347,8 @@
    "class": "C",
    "classReasons": [
     "prerequisite chain ends at a quest the client sets to level 99 (Q24090 -> Q24081 -> Q24071)"
-   ]
+   ],
+   "ruleClass": "C"
   },
   {
    "id": 24110,
@@ -72139,7 +72511,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24111,
@@ -72317,7 +72690,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24113,
@@ -72499,7 +72873,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24114,
@@ -72967,7 +73342,8 @@
    "classReasons": [
     "kill/drop source with nothing spawned: lycanfightersq_18_an=210752",
     "quest_data.xml questDrops differs from the client"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 24115,
@@ -73157,7 +73533,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24120,
@@ -73294,7 +73671,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24121,
@@ -73533,7 +73911,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 833029 (fire temple entrance) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 24122,
@@ -73705,7 +74084,8 @@
    "class": "B",
    "classReasons": [
     "kill/drop source with nothing spawned: df2_book_q24122=702425"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 24123,
@@ -73856,7 +74236,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 802442 (ishidanti) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 24150,
@@ -74017,7 +74398,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24151,
@@ -74217,7 +74599,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24152,
@@ -74426,7 +74809,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 802364 (dojer) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 24153,
@@ -74760,7 +75144,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24154,
@@ -75003,7 +75388,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 833031 (alquimia entrance) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 24155,
@@ -75182,7 +75568,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 700292 (field suppressor) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 24200,
@@ -75317,7 +75704,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24201,
@@ -75530,7 +75918,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24202,
@@ -75811,7 +76200,8 @@
    "class": "B",
    "classReasons": [
     "quest_data.xml questDrops differs from the client"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 24203,
@@ -76076,7 +76466,8 @@
    "classReasons": [
     "kill/drop source with nothing spawned: adma_undeadlightranamedreal_50_ae=214701",
     "npc named in the task text 205420 (sigyn) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 24232,
@@ -76289,7 +76680,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24233,
@@ -76457,7 +76849,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24240,
@@ -76570,7 +76963,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24241,
@@ -76722,7 +77116,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24242,
@@ -76945,7 +77340,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 833029 (fire temple entrance) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 24250,
@@ -77080,7 +77476,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24260,
@@ -77234,7 +77631,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24261,
@@ -77388,7 +77786,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24270,
@@ -77523,7 +77922,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 24275,
@@ -77723,7 +78123,8 @@
    "classReasons": [
     "npc named in the task text 217588 (kromede the corrupt) has no static spawn",
     "npc named in the task text 833029 (fire temple entrance) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 25082,
@@ -77960,7 +78361,8 @@
     "kill/drop source with nothing spawned: df5_h2_questshellizard_63_an=220037",
     "npc named in the task text 220037 (scalecrest kullatu) has no static spawn",
     "quest_data.xml questDrops differs from the client"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 25084,
@@ -78154,7 +78556,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 25085,
@@ -78313,7 +78716,8 @@
    "class": "B",
    "classReasons": [
     "kill/drop source with nothing spawned: df5_h1_questvritra_transport_ri_65_an=220039"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 25094,
@@ -78489,7 +78893,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 731560 (hot balaur bone) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 25099,
@@ -78583,7 +78988,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 26908,
@@ -78731,7 +79137,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 26942,
@@ -79005,7 +79412,8 @@
    "class": "B",
    "classReasons": [
     "quest_data.xml questDrops differs from the client"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 26974,
@@ -79162,7 +79570,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 26975,
@@ -79255,7 +79664,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 26976,
@@ -79479,7 +79889,8 @@
    "class": "B",
    "classReasons": [
     "quest_data.xml questDrops differs from the client"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 26984,
@@ -79549,10 +79960,12 @@
     "fetched": "2026-09-30"
    },
    "retailNpcs": [],
-   "class": "E",
+   "class": "D",
    "classReasons": [
-    "aioncodex /48/ task text is a stub or placeholder ('Player'): an unfinished or internal client entry"
-   ]
+    "reviewed: maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'hidden quest for playing the Danuar Sanctuary cutscene (Asmodian)'",
+    "rules said E: aioncodex /48/ task text is a stub or placeholder ('Player'): an unfinished or internal client entry"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 28037,
@@ -79695,7 +80108,8 @@
    "class": "B",
    "classReasons": [
     "npc named in the task text 284698 (grand commander pashid) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 28412,
@@ -79791,10 +80205,12 @@
      ]
     }
    ],
-   "class": "E",
+   "class": "D",
    "classReasons": [
-    "hidden client quest, no player-facing steps (Hidden Quest to Play Cut Scenes (Asmodian) / Hidden Quest to Play Cut Scenes (Asmodian) / Hidden Quest to Play Cut Scenes (Asmodian))"
-   ]
+    "reviewed: maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'hidden quest for playing a cutscene (Asmodian)'",
+    "rules said E: hidden client quest, no player-facing steps (Hidden Quest to Play Cut Scenes (Asmodian) / Hidden Quest to Play Cut Scenes (Asmodian) / Hidden Quest to Play Cut Scenes (Asmodian))"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 28744,
@@ -79864,10 +80280,12 @@
     "fetched": "2026-09-30"
    },
    "retailNpcs": [],
-   "class": "E",
+   "class": "D",
    "classReasons": [
-    "aioncodex /48/ task text is a stub or placeholder ('Player'): an unfinished or internal client entry"
-   ]
+    "reviewed: maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'for playing the Tames cutscene'",
+    "rules said E: aioncodex /48/ task text is a stub or placeholder ('Player'): an unfinished or internal client entry"
+   ],
+   "ruleClass": "E"
   },
   {
    "id": 28917,
@@ -79994,7 +80412,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 29049,
@@ -80123,7 +80542,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 29051,
@@ -80251,7 +80671,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 29059,
@@ -80342,7 +80763,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 29078,
@@ -80433,7 +80855,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 29643,
@@ -80559,7 +80982,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 29644,
@@ -80688,7 +81112,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 29645,
@@ -80900,7 +81325,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 29646,
@@ -81029,7 +81455,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 29647,
@@ -81254,7 +81681,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 29648,
@@ -81383,7 +81811,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 30040,
@@ -81494,7 +81923,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 30041,
@@ -81628,7 +82058,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 30042,
@@ -81779,7 +82210,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 30142,
@@ -81930,7 +82362,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 30250,
@@ -82145,7 +82578,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 30350,
@@ -82358,7 +82792,8 @@
    "class": "A",
    "classReasons": [
     "live in 4.8 (aioncodex /48/, client dialog); every npc and item it names exists and is spawned"
-   ]
+   ],
+   "ruleClass": "A"
   },
   {
    "id": 39600,
@@ -82462,11 +82897,12 @@
      "maps": []
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "quest giver 800921 (moolinerk) has no static spawn",
-    "npc named in the task text 800939 (danurinerk) has no static spawn"
-   ]
+    "reviewed: a Katalam faction entry quest, Silverine Ltd. (giver Moolinerk: 'Welcome to Katalam office of Silverine Ltd.'). Katalam was destroyed and sank in the 4.8 Upheaval (aion.fandom.com/wiki/Katalam); this server has no Katalam map",
+    "rules said B: quest giver 800921 (moolinerk) has no static spawn; npc named in the task text 800939 (danurinerk) has no static spawn"
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 39700,
@@ -82570,11 +83006,12 @@
      "maps": []
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "quest giver 800930 (tahir) has no static spawn",
-    "npc named in the task text 800945 (manurunerk) has no static spawn"
-   ]
+    "reviewed: a Katalam faction entry quest, The Merry and Green (5.8 dev note 'Katalam environment guardians'; giver Tahir: 'Katalam used to be lush'). Katalam was destroyed and sank in the 4.8 Upheaval (aion.fandom.com/wiki/Katalam); this server has no Katalam map",
+    "rules said B: quest giver 800930 (tahir) has no static spawn; npc named in the task text 800945 (manurunerk) has no static spawn"
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41600,
@@ -82754,7 +83191,8 @@
    "classReasons": [
     "reviewed: Tiamaranta (Land of Fissure) sank in the 4.8 Upheaval and was no longer accessible (aion.fandom.com/wiki/Tiamaranta, archived; read 2026-09-30); this server has no Tiamaranta map",
     "rules said B: kill/drop source with nothing spawned: ldf4b_t1_fungy_named_58_an=218255, ldf4b_t1_sandshark_named_58_an=218252, ldf4b_t1_shadowstalker_named_58_an=218256, ldf4b_t1_skeleton_named_58_an=218253, ldf4b_t1_twister_named_58_an=218249; quest giver 205913 (solteria) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41601,
@@ -82934,7 +83372,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: kill/drop source with nothing spawned: ldf4b_t2_guardian_named_59_an=218329, ldf4b_t2_rottentree_flower_named_59_an=218328, ldf4b_t2_unicorn_named_59_an=218330, ldf4b_t2_yun_named_59_an=218333, ldf4b_t2_yunas_named_58_an=218332; quest giver 205910 (ur) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41602,
@@ -83114,7 +83553,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: kill/drop source with nothing spawned: ldf4b_t3_displacerbeast_rage_named_59_an=218747, ldf4b_t3_elementalfire4_named_59_an=218746, ldf4b_t3_elementalfire_named_59_an=218416, ldf4b_t3_fanatic_named_59_an=218421, ldf4b_t3_mosbear_named_59_an=218415; quest giver 205965 (rador) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41603,
@@ -83294,7 +83734,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: kill/drop source with nothing spawned: ldf4b_t4_aurora_named_60_an=218467, ldf4b_t4_fungus_named_60_an=218462, ldf4b_t4_fungy_crystal_named_60_an=218461, ldf4b_t4_tauric_named_60_an=218753, ldf4b_t4_yun_ghost_named_60_an=218464; quest giver 205912 (wesley) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41604,
@@ -83435,7 +83876,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: kill/drop source with nothing spawned: ldf4b_t1_drakanclaw_named_58_an=218250, ldf4b_t1_drakanwhip_named_58_an=218251; quest giver 205913 (solteria) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41605,
@@ -83576,7 +84018,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: kill/drop source with nothing spawned: ldf4b_t2_drakanfi_tiamat_named_59_an=218336, ldf4b_t2_drakanwi_tiamat_named_59_an=218337; quest giver 205910 (ur) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41606,
@@ -83717,7 +84160,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: kill/drop source with nothing spawned: ldf4b_t3_drakanfi_tiamat_named_59_an=218423, ldf4b_t3_drakanwi_tiamat_named_59_an=218424; quest giver 205965 (rador) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41607,
@@ -83858,7 +84302,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: kill/drop source with nothing spawned: ldf4b_t4_drakanfi_tiamat_named_60_an=218468, ldf4b_t4_drakanwi_tiamat_named_60_an=218469; quest giver 205912 (wesley) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41608,
@@ -84007,7 +84452,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: quest giver 205910 (ur) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41609,
@@ -84182,7 +84628,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: quest giver 205965 (rador) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41610,
@@ -84319,7 +84766,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: quest giver 205912 (wesley) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41611,
@@ -84481,7 +84929,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: quest giver 205912 (wesley) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41612,
@@ -84632,7 +85081,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: quest giver 205913 (solteria) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41613,
@@ -84795,7 +85245,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: quest giver 205912 (wesley) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41614,
@@ -85171,7 +85622,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: kill/drop source with nothing spawned: ldf4b_4011_boss_dr_1=259010, ldf4b_4011_boss_dr_2=259011, ldf4b_4011_boss_dr_3=259012, ldf4b_4011_boss_dr_4=259013, ldf4b_4011_boss_dr_5=259014, ldf4b_4021_boss_dr_1=259210, ldf4b_4021_boss_dr_2=259211, ldf4b_4021_boss_dr_3=259212, ldf4b_4021_boss_dr_4=259213, ldf4b_4021_boss_dr_5=259214, ldf4b_4031_boss_dr_1=259410, ldf4b_4031_boss_dr_2=259411, ldf4b_4031_boss_dr_3=259412, ldf4b_4031_boss_dr_4=259413, ldf4b_4031_boss_dr_5=259414, ldf4b_4041_boss_dr_1=259610, ldf4b_4041_boss_dr_2=259611, ldf4b_4041_boss_dr_3=259612, ldf4b_4041_boss_dr_4=259613, ldf4b_4041_boss_dr_5=259614; quest giver 205913 (solteria) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41615,
@@ -85418,7 +85870,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: kill/drop source with nothing spawned: ldf4b_t1_fungy_named_58_an=218255, ldf4b_t1_sandshark_named_58_an=218252, ldf4b_t1_shadowstalker_named_58_an=218256, ldf4b_t1_skeleton_named_58_an=218253, ldf4b_t1_twister_named_58_an=218249, ldf4b_t2_guardian_named_59_an=218329, ldf4b_t2_rottentree_flower_named_59_an=218328, ldf4b_t2_unicorn_named_59_an=218330, ldf4b_t2_yun_named_59_an=218333, ldf4b_t2_yunas_named_58_an=218332; quest giver 800328 (jupitor) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41616,
@@ -85665,7 +86118,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: kill/drop source with nothing spawned: ldf4b_t3_displacerbeast_rage_named_59_an=218747, ldf4b_t3_elementalfire4_named_59_an=218746, ldf4b_t3_elementalfire_named_59_an=218416, ldf4b_t3_fanatic_named_59_an=218421, ldf4b_t3_mosbear_named_59_an=218415, ldf4b_t4_aurora_named_60_an=218467, ldf4b_t4_fungus_named_60_an=218462, ldf4b_t4_fungy_crystal_named_60_an=218461, ldf4b_t4_tauric_named_60_an=218753, ldf4b_t4_yun_ghost_named_60_an=218464; quest giver 800328 (jupitor) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41617,
@@ -85808,7 +86262,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: kill/drop source with nothing spawned: ldf4b_t1_drakanclaw_named_58_an=218250, ldf4b_t1_drakanwhip_named_58_an=218251; quest giver 800329 (daisha) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41618,
@@ -86001,7 +86456,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: kill/drop source with nothing spawned: ldf4b_t2_drakanfi_tiamat_named_59_an=218336, ldf4b_t2_drakanwi_tiamat_named_59_an=218337, ldf4b_t3_drakanfi_tiamat_named_59_an=218423, ldf4b_t3_drakanwi_tiamat_named_59_an=218424, ldf4b_t4_drakanfi_tiamat_named_60_an=218468, ldf4b_t4_drakanwi_tiamat_named_60_an=218469; quest giver 800329 (daisha) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41619,
@@ -86215,7 +86671,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: quest giver 800328 (jupitor) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41620,
@@ -86404,7 +86861,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: quest giver 800329 (daisha) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41621,
@@ -86570,7 +87028,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: quest giver 800329 (daisha) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 41622,
@@ -86946,7 +87405,8 @@
    "classReasons": [
     "reviewed: Tiamaranta quest; the map was gone in 4.8 (see Q41600)",
     "rules said B: kill/drop source with nothing spawned: ldf4b_4011_boss_dr_1=259010, ldf4b_4011_boss_dr_2=259011, ldf4b_4011_boss_dr_3=259012, ldf4b_4011_boss_dr_4=259013, ldf4b_4011_boss_dr_5=259014, ldf4b_4021_boss_dr_1=259210, ldf4b_4021_boss_dr_2=259211, ldf4b_4021_boss_dr_3=259212, ldf4b_4021_boss_dr_4=259213, ldf4b_4021_boss_dr_5=259214, ldf4b_4031_boss_dr_1=259410, ldf4b_4031_boss_dr_2=259411, ldf4b_4031_boss_dr_3=259412, ldf4b_4031_boss_dr_4=259413, ldf4b_4031_boss_dr_5=259414, ldf4b_4041_boss_dr_1=259610, ldf4b_4041_boss_dr_2=259611, ldf4b_4041_boss_dr_3=259612, ldf4b_4041_boss_dr_4=259613, ldf4b_4041_boss_dr_5=259614; quest giver 800329 (daisha) has no static spawn"
-   ]
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 49600,
@@ -87050,11 +87510,12 @@
      "maps": []
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "quest giver 800924 (jirlinerk) has no static spawn",
-    "npc named in the task text 800942 (dumurinerk) has no static spawn"
-   ]
+    "reviewed: a Katalam faction entry quest, Silverine Ltd. (the Asmodian twin of Q39600). Katalam was destroyed and sank in the 4.8 Upheaval (aion.fandom.com/wiki/Katalam); this server has no Katalam map",
+    "rules said B: quest giver 800924 (jirlinerk) has no static spawn; npc named in the task text 800942 (dumurinerk) has no static spawn"
+   ],
+   "ruleClass": "B"
   },
   {
    "id": 49700,
@@ -87158,11 +87619,12 @@
      "maps": []
     }
    ],
-   "class": "B",
+   "class": "C",
    "classReasons": [
-    "quest giver 800933 (guniaro) has no static spawn",
-    "npc named in the task text 800948 (sununnerk) has no static spawn"
-   ]
+    "reviewed: a Katalam faction entry quest, The Merry and Green (the Asmodian twin of Q39700). Katalam was destroyed and sank in the 4.8 Upheaval (aion.fandom.com/wiki/Katalam); this server has no Katalam map",
+    "rules said B: quest giver 800933 (guniaro) has no static spawn; npc named in the task text 800948 (sununnerk) has no static spawn"
+   ],
+   "ruleClass": "B"
   }
  ],
  "clientOnly": [

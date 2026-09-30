@@ -1,6 +1,6 @@
 # Retail 4.8 quest completion (D32)
 
-**Status (2026-09-30): RQ-01 to RQ-04 done; stopped for the maintainer's review (RQ-04 report below).** This is the handoff for a separate session.
+**Status (2026-09-30): RQ-01 to RQ-04 done and approved; the per-quest review is done. The work list is [retail-quest-worklist.md](retail-quest-worklist.md); RQ-05 (the Altgard pilot) is next.** This is the handoff for a separate session.
 Read this file, then `CLAUDE.md`, before doing anything.
 
 ## Goals (the maintainer, 2026-09-30)
@@ -196,9 +196,41 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
 - [x] **RQ-04 — Classify and report.** Assign classes A–E, write the report, and **stop for
   the maintainer's review** of classes B, C and E and of the batch order.
 
-  **Done (2026-09-30); waiting for review.** The report is below; every quest's class and reasons
-  are in the inventory rows and in the per-class tables of
+  **Done (2026-09-30); approved as proposed by the maintainer the same day.** The report is below;
+  every quest's class and reasons are in the inventory rows and in the per-class tables of
   `parity-artifacts/e2e/retail-quest-inventory.md`.
+- [x] **RQ-04b — The per-quest review and the work list** (asked by the maintainer with the approval).
+  Every A, B and E quest was checked on its own for 4.8, and the result is
+  **[retail-quest-worklist.md](retail-quest-worklist.md)**: one line per quest with a Status column
+  the maintainer owns (blank, `Rejected`, `Done`), a link to its aioncodex `/48/` page, its batch, what
+  it still needs and its 4.8 evidence. `tools/client-extract/retail_quest_worklist.py` builds it and
+  keeps the Status marks; `--check` is in the test.
+  - **The sources, per quest:** the 4.8 client; aioncodex `/48/`; the **5.8 retail server** (its
+    `quest.xml` and `Quest_Simple*.xml`: still live in 5.8 or not, NCSoft's own Korean `dev_name`
+    note, and the simple-quest type retail used), cached in
+    `parity-artifacts/e2e/retail-quest-crosscheck.json`; the fandom wiki (API; its pages on removed
+    maps give their removal version, and 8 quests have pages); and the aioncodex `/48/` npc pages of
+    the unspawned givers.
+  - **Maps gone in 4.8** (fandom removal pages): Tiamaranta, Sarpan, North and South Katalam
+    (Katalam, Danaria), the Idian Depths, Idgel Research Center, Void Cube, Argent Manor (back in
+    4.9) and Muada's Trencher. Every other removed map or instance went in 6.0 or later. No A or B
+    quest needs an npc that stands only in one of them.
+  - **Rejected by the review** (listed in the work list, with reasons):
+    - the 14 stub or cutscene entries of class E, as approved; Q2590 by its dialog, a test script;
+    - Q2150 and Q2151: server-transfer quests (5.8 note "to the integrated beginner server"; the
+      Fast-Track Server brothers), which a single server has no use for;
+    - Q39600, Q49600 (Silverine Ltd.) and Q39700, Q49700 (The Merry and Green): Katalam faction
+      quests, and Katalam sank in the 4.8 Upheaval;
+    - Q1096–Q1099, the Elyos "Hidden Truth" final missions: replaced by Q14030 "Regained Memory" and
+      Q14031, as their Asmodian twins were by Q24030 and Q24031 (the client excludes only the
+      Asmodian ones);
+    - the 23 Tiamaranta quests and Q9572, as before.
+  - **Kept by the review:** Q14251 and Q11319 (the two E questions) are live: retail 5.8 still runs
+    them (Q14251 as a simple talk quest; Q11319 is the Elyos twin of the 4.8 guide quest Q21320). The
+    2.x Reshanta missions stay: nothing in 4.x replaced them (the client has no newer Reshanta
+    campaign), the 4.8 client keeps them switched on, and their Java roots Q1701 and Q2701 are
+    one-step "report to the Governor" stubs that once led into them.
+  - **Classes now:** A **129**, B **63**, C **139**, D **109**, E **0**: 192 to implement.
 - [ ] **RQ-05 — The pilot: Altgard's seven.** Those of Q24110, Q24111, Q24113, Q24114,
   Q24115, Q24232 and Q24233 that land in class A. Each needs:
   - a handler;

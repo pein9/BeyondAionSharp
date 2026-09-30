@@ -20,6 +20,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BUILDER = REPO_ROOT / "tools/client-extract/retail_quest_inventory.py"
 EVIDENCE_READER = REPO_ROOT / "tools/client-extract/retail_quest_evidence.py"
+WORKLIST_BUILDER = REPO_ROOT / "tools/client-extract/retail_quest_worklist.py"
 INVENTORY = REPO_ROOT / "parity-artifacts/e2e/retail-quest-inventory.json"
 SUMMARY = REPO_ROOT / "parity-artifacts/e2e/retail-quest-inventory.md"
 CLASSIFIER = REPO_ROOT / "parity-artifacts/e2e/obtainable-quests.json"
@@ -34,6 +35,11 @@ evidence_spec = importlib.util.spec_from_file_location("retail_quest_evidence", 
 assert evidence_spec is not None and evidence_spec.loader is not None
 evidence = importlib.util.module_from_spec(evidence_spec)
 evidence_spec.loader.exec_module(evidence)
+
+worklist_spec = importlib.util.spec_from_file_location("retail_quest_worklist", WORKLIST_BUILDER)
+assert worklist_spec is not None and worklist_spec.loader is not None
+worklist = importlib.util.module_from_spec(worklist_spec)
+worklist_spec.loader.exec_module(worklist)
 
 # The shape of an aioncodex /48/ quest page, reduced to the parts the reader uses.
 CODEX_PAGE = """<html><body><table><tr><td colspan="2">ID: 24113</td></tr>
@@ -274,6 +280,48 @@ class ClassRuleTests(unittest.TestCase):
         self.assertEqual("E", rows[0]["class"])
         self.assertEqual("reviewed: ask the maintainer", rows[0]["classReasons"][0])
         self.assertTrue(rows[0]["classReasons"][1].startswith("rules said A"))
+
+
+    def test_reviewed_live_override_lets_the_b_rules_decide(self) -> None:
+        rows = self.rows(
+            (14251, "Heiron", "important", {"excludedBy": [{"id": 14270, "availability": "no_handler", "mutual": False}],
+                                             "retailNpcs": [{"role": "giver", "npcId": 7, "template": True, "spawned": False}]}),
+        )
+        inventory.classify(rows, {}, {"14251": {"class": "live", "reason": "retail 5.8 still runs it"}})
+        self.assertEqual(("E", "B"), (rows[0]["ruleClass"], rows[0]["class"]))
+        self.assertIn("quest giver 7", rows[0]["classReasons"][1])
+
+
+class WorklistTests(unittest.TestCase):
+    def row(self, quest_id, cls, rule_cls, zone="Altgard"):
+        return {"id": quest_id, "name": f"Quest {quest_id}", "clientName": None, "zone": zone, "race": "ASMODIANS",
+                "class": cls, "ruleClass": rule_cls, "clientDialog": True,
+                "classReasons": ["reviewed: gone in 4.8"] if cls == "C" else ["live"],
+                "client": {"minLevel": 12, "flags": {"category1": "quest"}}, "retailNpcs": [],
+                "retail": {"found": True, "url": evidence.URL.format(quest_id)}}
+
+    def test_statuses_survive_and_rejections_start_rejected(self) -> None:
+        document = {"quests": [self.row(1, "A", "A"), self.row(2, "A", "A"), self.row(3, "C", "B"), self.row(4, "C", "C")]}
+        crosscheck = {"quests": {}}
+        first = worklist.render(document, crosscheck, {})
+        self.assertIn("| Rejected | Q3 |", first)
+        self.assertNotIn("Q4 |", first)  # the rules already excluded it; it was never a candidate
+        edited = first.replace("|  | Q2 |", "| Done | Q2 |")
+        self.assertEqual({2: "Done", 3: "Rejected"}, worklist.existing_statuses(edited))
+        again = worklist.render(document, crosscheck, worklist.existing_statuses(edited))
+        self.assertIn("| Done | Q2 |", again)
+        self.assertIn("https://aioncodex.com/48/quest/1/?sl=1", again)
+
+    def test_batches_follow_the_approved_order(self) -> None:
+        self.assertEqual("1 Altgard pilot", worklist.batch_of("Altgard"))
+        self.assertEqual("2 Asmodian path", worklist.batch_of("Beluslan"))
+        self.assertEqual("4 Instance entry", worklist.batch_of("Fire Temple"))
+        self.assertEqual("6 Level cap", worklist.batch_of("Inggison"))
+
+    def test_checked_in_worklist_is_current(self) -> None:
+        result = subprocess.run([sys.executable, str(WORKLIST_BUILDER), "--check"], cwd=REPO_ROOT,
+                                capture_output=True, text=True)
+        self.assertEqual(0, result.returncode, result.stderr)
 
 
 class EvidenceReaderTests(unittest.TestCase):

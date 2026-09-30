@@ -614,11 +614,18 @@ def classify(rows: list[dict[str, Any]], client_quests: dict[int, dict[str, Any]
                                        f" (Q{blocker} is class {row['class']})"]
                 changed = True
     for row in rows:
+        row["ruleClass"] = row["class"]
         override = overrides.get(str(row["id"]))
-        if override:
-            row["classReasons"] = [f"reviewed: {override['reason']}"] + (
-                [f"rules said {row['class']}: " + "; ".join(row["classReasons"])] if row["class"] != override["class"] else [])
-            row["class"] = override["class"]
+        if not override:
+            continue
+        if override["class"] == "live":
+            # Reviewed as live in 4.8: the A/B rules decide what it still needs.
+            cls, reasons = rule_class(row, client_quests, reviewed_live=True)
+        else:
+            cls, reasons = override["class"], []
+        row["classReasons"] = [f"reviewed: {override['reason']}"] + reasons + (
+            [f"rules said {row['class']}: " + "; ".join(row["classReasons"])] if row["class"] != cls else [])
+        row["class"] = cls
 
 
 def is_old_mission(row: dict[str, Any]) -> bool:
@@ -640,7 +647,8 @@ def blocking(row: dict[str, Any], blocked) -> int | None:
     return first
 
 
-def rule_class(row: dict[str, Any], client_quests: dict[int, dict[str, Any]]) -> tuple[str, list[str]]:
+def rule_class(row: dict[str, Any], client_quests: dict[int, dict[str, Any]],
+               reviewed_live: bool = False) -> tuple[str, list[str]]:
     client = row.get("client")
     retail = row.get("retail")
     names = " / ".join(filter(None, (row.get("name"), row.get("clientName"), (retail or {}).get("title"))))
@@ -661,7 +669,7 @@ def rule_class(row: dict[str, Any], client_quests: dict[int, dict[str, Any]]) ->
     replaced = [e["id"] for e in row.get("excludedBy", []) if not e["mutual"] and e["id"] > row["id"]]
     if replaced and row["id"] < 10000:
         return "C", [f"excluded (unfinished and not acquired) by Q{', Q'.join(map(str, replaced))}"]
-    if replaced:
+    if replaced and not reviewed_live:
         # Among 4.x quests a one-way exclusion can be a branch (take this or that), not a retirement.
         return "E", [f"a 4.x quest excluded one way by Q{', Q'.join(map(str, replaced))}: replaced, or a branch?"]
     chains = {p["id"]: p["disabledChain"] for p in row.get("prerequisites", [])}
@@ -671,6 +679,8 @@ def rule_class(row: dict[str, Any], client_quests: dict[int, dict[str, Any]]) ->
         return "C", [f"prerequisite chain ends at a quest the client sets to level 99 ({chain})"]
 
     # E: the evidence is missing or disagrees.
+    if reviewed_live:
+        return live_class(row)
     if HIDDEN_MARK.search(names):
         return "E", [f"hidden client quest, no player-facing steps ({names})"]
     description = (retail or {}).get("description")
@@ -686,7 +696,11 @@ def rule_class(row: dict[str, Any], client_quests: dict[int, dict[str, Any]]) ->
     if reasons:
         return "E", reasons
 
-    # B: live, but something it needs is missing.
+    return live_class(row)
+
+
+def live_class(row: dict[str, Any]) -> tuple[str, list[str]]:
+    """B or A for a quest already judged live: what, if anything, it still needs here."""
     ready = row["readiness"]
     ids = {n["devname"].lower(): n for n in row.get("npcs", [])}
     missing = []

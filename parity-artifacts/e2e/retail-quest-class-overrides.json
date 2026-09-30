@@ -1,13 +1,105 @@
 {
- "note": "RQ-04 reviewed class decisions that the rules in tools/client-extract/retail_quest_inventory.py cannot make. Every entry says why; the inventory keeps the rules' own verdict beside it.",
+ "note": "RQ-04 reviewed class decisions that the rules in tools/client-extract/retail_quest_inventory.py cannot make. Every entry says why; the inventory keeps the rules' own verdict beside it. Class 'live' means: reviewed as live in 4.8, so the A/B rules decide. The 5.8 dev notes quoted are NCSoft's own dev_name in the 5.8 retail server's quest.xml, translated.",
  "quests": {
+  "1096": {
+   "class": "C",
+   "reason": "the 2.x Elyos final missions ('The Hidden Truth'; 5.8 dev note 'final mission 0-3'), replaced in 4.x by Q14030 'Regained Memory' and Q14031, as the Asmodian twins Q2096-Q2099 were by Q24030/Q24031, which exclude Q2096 explicitly. Q1096's dialog retells Q14030's story (the lost memory of the Mirage Legion)"
+  },
+  "1097": {
+   "class": "C",
+   "reason": "the 2.x Elyos final missions ('The Hidden Truth'; 5.8 dev note 'final mission 0-3'), replaced in 4.x by Q14030 'Regained Memory' and Q14031, as the Asmodian twins Q2096-Q2099 were by Q24030/Q24031, which exclude Q2096 explicitly. Q1096's dialog retells Q14030's story (the lost memory of the Mirage Legion)"
+  },
+  "1098": {
+   "class": "C",
+   "reason": "the 2.x Elyos final missions ('The Hidden Truth'; 5.8 dev note 'final mission 0-3'), replaced in 4.x by Q14030 'Regained Memory' and Q14031, as the Asmodian twins Q2096-Q2099 were by Q24030/Q24031, which exclude Q2096 explicitly. Q1096's dialog retells Q14030's story (the lost memory of the Mirage Legion)"
+  },
+  "1099": {
+   "class": "C",
+   "reason": "the 2.x Elyos final missions ('The Hidden Truth'; 5.8 dev note 'final mission 0-3'), replaced in 4.x by Q14030 'Regained Memory' and Q14031, as the Asmodian twins Q2096-Q2099 were by Q24030/Q24031, which exclude Q2096 explicitly. Q1096's dialog retells Q14030's story (the lost memory of the Mirage Legion)"
+  },
+  "1489": {
+   "class": "D",
+   "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; aioncodex /48/ text is a template placeholder ('Collect XXX and take them to XXX'); 5.8 dev note 'kill the one rampaging in Jumping Gorossian'"
+  },
+  "2010": {
+   "class": "D",
+   "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; no task text or dialog; 5.8 dev note 'Asmodian quest', level 1: an ascension placeholder"
+  },
+  "2150": {
+   "class": "C",
+   "reason": "a server-transfer quest, not content: 5.8 dev note 'to the integrated beginner server (Asmodian)'; its giver Rian says he and his brother 'used to manage the Fast-Track Server' (aioncodex /48/ npc 801034). This emulator is one server (D20)"
+  },
+  "2151": {
+   "class": "C",
+   "reason": "a server-transfer quest, not content: 5.8 dev note 'to the normal server (Asmodian)'; the pair of Q2150 (Fast-Track Server brothers Rian and Nowlan). This emulator is one server (D20)"
+  },
+  "2590": {
+   "class": "D",
+   "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; the dialog text on aioncodex /48/ is a test script ('Test start', 'Umbara Umbara Buraburaboom'); no retail steps exist to implement"
+  },
+  "3959": {
+   "class": "D",
+   "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; empty task text; the epilogue of the replaced Elyos final missions Q1096-Q1099"
+  },
   "9572": {
    "class": "D",
    "reason": "test quest: client name 'SimpleTalk function expansion test', level 1, 255 repeats, beside the [Test] Q9570 and Q9571"
   },
+  "11295": {
+   "class": "D",
+   "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'hidden quest for playing a cutscene'"
+  },
+  "11319": {
+   "class": "live",
+   "reason": "not replaced: 5.8 dev note '[4.8 LF5 guide quest] discovery of a new continent', the Elyos twin of Q21320; retail 5.8 still offers it at level 55"
+  },
+  "12999": {
+   "class": "D",
+   "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'for playing the 4.0 intro movie'; no dialog"
+  },
+  "14251": {
+   "class": "live",
+   "reason": "not replaced: retail 5.8 still runs it as a simple talk quest (Atalante to Anaxa, 5.8 dev note '[Instance] the Balaur main base'); Q14270 is the alternative Draupnir entry quest for a character who has not done it"
+  },
+  "15097": {
+   "class": "D",
+   "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; task text 'View Cutscene'; 5.8 dev note 'shared ship video quest'"
+  },
   "16984": {
-   "class": "E",
-   "reason": "twin of Q26984, whose aioncodex /48/ task text is empty; this one only says 'Talk with Alkatron' and names no quest giver"
+   "class": "D",
+   "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'hidden quest for playing the Danuar Sanctuary cutscene (Elyos)'"
+  },
+  "16989": {
+   "class": "D",
+   "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'hidden quest for playing the Sarpan opening movie'; no dialog"
+  },
+  "18412": {
+   "class": "D",
+   "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'hidden quest for playing a cutscene (Elyos)'"
+  },
+  "18744": {
+   "class": "D",
+   "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'for playing the Tames cutscene'"
+  },
+  "26984": {
+   "class": "D",
+   "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'hidden quest for playing the Danuar Sanctuary cutscene (Asmodian)'"
+  },
+  "28412": {
+   "class": "D",
+   "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'hidden quest for playing a cutscene (Asmodian)'"
+  },
+  "28744": {
+   "class": "D",
+   "reason": "maintainer approved (2026-09-30) treating stub and cutscene-only client entries as out of scope; 5.8 dev note 'for playing the Tames cutscene'"
+  },
+  "39600": {
+   "class": "C",
+   "reason": "a Katalam faction entry quest, Silverine Ltd. (giver Moolinerk: 'Welcome to Katalam office of Silverine Ltd.'). Katalam was destroyed and sank in the 4.8 Upheaval (aion.fandom.com/wiki/Katalam); this server has no Katalam map"
+  },
+  "39700": {
+   "class": "C",
+   "reason": "a Katalam faction entry quest, The Merry and Green (5.8 dev note 'Katalam environment guardians'; giver Tahir: 'Katalam used to be lush'). Katalam was destroyed and sank in the 4.8 Upheaval (aion.fandom.com/wiki/Katalam); this server has no Katalam map"
   },
   "41600": {
    "class": "C",
@@ -100,6 +192,14 @@
   "41622": {
    "class": "C",
    "reason": "Tiamaranta quest; the map was gone in 4.8 (see Q41600)"
+  },
+  "49600": {
+   "class": "C",
+   "reason": "a Katalam faction entry quest, Silverine Ltd. (the Asmodian twin of Q39600). Katalam was destroyed and sank in the 4.8 Upheaval (aion.fandom.com/wiki/Katalam); this server has no Katalam map"
+  },
+  "49700": {
+   "class": "C",
+   "reason": "a Katalam faction entry quest, The Merry and Green (the Asmodian twin of Q39700). Katalam was destroyed and sank in the 4.8 Upheaval (aion.fandom.com/wiki/Katalam); this server has no Katalam map"
   }
  }
 }

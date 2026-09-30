@@ -1,0 +1,2871 @@
+{
+ "generatedBy": "tools/client-extract/retail_quest_worklist.py --refresh",
+ "sources": {
+  "retail58": "5.8 retail server Map/XML: quest.xml, Quest_Simple*.xml",
+  "fandom": "aion.fandom.com MediaWiki API, pages whose infobox number is the quest id"
+ },
+ "quests": {
+  "1071": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "천족 용족어 배우기"
+   }
+  },
+  "1072": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "어비스 튜토리얼"
+   },
+   "fandom": {
+    "title": "Abyss Training",
+    "archived": false
+   }
+  },
+  "1073": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "천족 포로들을 구해라!"
+   }
+  },
+  "1074": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "기억의 단편"
+   }
+  },
+  "1075": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "쾌속 질주"
+   }
+  },
+  "1076": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "기억의 단편 2"
+   }
+  },
+  "1077": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "기억의 단편 3(파이널)"
+   },
+   "fandom": {
+    "title": "Fragment of Memory 3",
+    "archived": false
+   }
+  },
+  "1096": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "최종파이널미션0"
+   }
+  },
+  "1097": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "최종파이널미션1"
+   }
+  },
+  "1098": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "최종파이널미션2"
+   }
+  },
+  "1099": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "최종파이널미션3"
+   }
+  },
+  "1489": {
+   "retail58": {
+    "minLevel": 24,
+    "devNote": "점핑고로시안에서 난리치는 놈을 죽여라"
+   }
+  },
+  "1919": {
+   "retail58": {
+    "minLevel": 10,
+    "devNote": "[4.8 제작 유도 퀘스트] 명인의 전당으로"
+   }
+  },
+  "2010": {
+   "retail58": {
+    "minLevel": 1,
+    "devNote": "마족 퀘스트"
+   }
+  },
+  "2071": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "용족어 학습"
+   },
+   "fandom": {
+    "title": "Speaking Balaur (Asmodian)",
+    "archived": false
+   }
+  },
+  "2072": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "어비스 개념 교육"
+   },
+   "fandom": {
+    "title": "Abyss Battle Training",
+    "archived": false
+   }
+  },
+  "2073": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "포로를 구출하라!"
+   },
+   "fandom": {
+    "title": "Captured Comrades",
+    "archived": false
+   }
+  },
+  "2074": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "예언"
+   },
+   "fandom": {
+    "title": "Looking for Leibo",
+    "archived": false
+   }
+  },
+  "2075": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "어비스 질주"
+   },
+   "fandom": {
+    "title": "Putting on the Speed",
+    "archived": false
+   }
+  },
+  "2076": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "반란"
+   },
+   "fandom": {
+    "title": "The Shadow Summons",
+    "archived": false
+   }
+  },
+  "2150": {
+   "retail58": {
+    "minLevel": 3,
+    "devNote": "초보자 통합 서버로(마)",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "DF1_Riam_E_DHM",
+      "reward_npc_name": "DF1_Noelen_DHM"
+     }
+    ]
+   }
+  },
+  "2151": {
+   "retail58": {
+    "minLevel": 3,
+    "devNote": "일반 서버로(마)",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "DF1_Noelen_DHM",
+      "reward_npc_name": "DF1_Riam_E_DHM"
+     }
+    ]
+   }
+  },
+  "2549": {
+   "retail58": {
+    "minLevel": 34,
+    "devNote": "드레이키 피규어",
+    "simple": [
+     {
+      "type": "UseItem",
+      "use_item_name": "ITEM_QUEST_2549A",
+      "talk_npc1": "Shugo_DF3_12",
+      "reward_npc_name": "Ai"
+     }
+    ]
+   }
+  },
+  "2590": {
+   "retail58": {
+    "minLevel": 39,
+    "devNote": "[일일/39Lv. 은 주화] 마을 주변 안전을 위해"
+   }
+  },
+  "2611": {
+   "retail58": {
+    "minLevel": 42,
+    "devNote": "윗분들께 인사",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Freyja",
+      "talk_npc1": "Mostin",
+      "talk_npc2": "Delris",
+      "talk_npc3": "Thor",
+      "reward_npc_name": "Freyja"
+     }
+    ]
+   }
+  },
+  "2929": {
+   "retail58": {
+    "minLevel": 10,
+    "devNote": "장인의 회랑 안내"
+   }
+  },
+  "3732": {
+   "retail58": {
+    "minLevel": 25,
+    "devNote": "노흐사나_보스 처치_스크립트"
+   }
+  },
+  "3959": {
+   "retail58": {
+    "minLevel": 50,
+    "devNote": "파이널 미션 에필로그"
+   }
+  },
+  "4338": {
+   "retail58": {
+    "minLevel": 22,
+    "devNote": "저주받은 목걸이"
+   }
+  },
+  "4732": {
+   "retail58": {
+    "minLevel": 25,
+    "devNote": "노흐사나_보스 처치_스크립트"
+   }
+  },
+  "9572": {
+   "retail58": {
+    "minLevel": 1,
+    "devNote": "[테스트] SimpleTalk 기능 확장 테스트",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "TEST_SimpleTalk_01",
+      "give_item": "ITEM_QUEST_80016A 5",
+      "talk_npc1": "TEST_SimpleTalk_02, TEST_SimpleTalk_03, TEST_SimpleTalk_04, TEST_SimpleTalk_05, TEST_SimpleTalk_06",
+      "give_item1": "ITEM_QUEST_80017A 1",
+      "remove_item1": "ITEM_QUEST_80016A 1",
+      "talk_npc2": "TEST_SimpleTalk_07, TEST_SimpleTalk_08, TEST_SimpleTalk_09, TEST_SimpleTalk_10, TEST_SimpleTalk_11",
+      "give_item2": "ITEM_QUEST_80018A 1",
+      "remove_item2": "ITEM_QUEST_80017A 1",
+      "talk_npc3": "TEST_SimpleTalk_12, TEST_SimpleTalk_13, TEST_SimpleTalk_14, TEST_SimpleTalk_15, TEST_SimpleTalk_16",
+      "give_item3": "ITEM_QUEST_80019A 1",
+      "remove_item3": "ITEM_QUEST_80018A 1",
+      "reward_npc_name": "TEST_SimpleTalk_17"
+     }
+    ]
+   }
+  },
+  "10100": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[4.7 신규 미션] 신규미션1 (천족)"
+   }
+  },
+  "10101": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "신규미션2 (천족)"
+   }
+  },
+  "11150": {
+   "retail58": {
+    "minLevel": 54,
+    "devNote": "[4.8 성장퀘스트] 붉은 드라나 농장의 용족 사냥",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Iaetia",
+      "count1": "10",
+      "monster1": "LF4_B4_DrakanWorkerFi_54_An",
+      "count2": "10",
+      "monster2": "LF4_B4_LizardAs_54_An, LF4_B4_LizardRa_54_An",
+      "reward_npc_name": "Iaetia"
+     }
+    ]
+   }
+  },
+  "11151": {
+   "retail58": {
+    "minLevel": 54,
+    "devNote": "[4.8 성장퀘스트] 농장에 확산되는 오염 제거",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Harmonia",
+      "count1": "4",
+      "monster1": "LF4_B_BAT_Drana_54_An",
+      "count2": "4",
+      "monster2": "LF4_B_Merdion_Drana_54_An",
+      "reward_npc_name": "Harmonia"
+     }
+    ]
+   }
+  },
+  "11152": {
+   "retail58": {
+    "minLevel": 54,
+    "devNote": "[4.8 성장퀘스트] 허리에 잘 듣는 약재",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Harmonia",
+      "reward_npc_name": "Harmonia",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "11287": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "잉기스온의 위기"
+   }
+  },
+  "11288": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "헤레나스의 축복",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Yushin",
+      "reward_npc_name": "Yushin"
+     }
+    ]
+   }
+  },
+  "11295": {
+   "retail58": {
+    "minLevel": 50,
+    "devNote": "컷신 재생용 히든 퀘스트(천족)"
+   }
+  },
+  "11305": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "[포스] 다급한 임무2",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Elios",
+      "count1": "10",
+      "monster1": "LF4_2021_guardS_Da, LF4_2021_guardA_Da, LF4_2021_guard_Da, LF4_2021_guardS_Dr, LF4_2021_guardA_Dr, LF4_2021_guard_Dr",
+      "reward_npc_name": "Ingnie"
+     }
+    ]
+   }
+  },
+  "11306": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "[연합] 요새 탈환 작전2",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Elios",
+      "count1": "1",
+      "monster1": "LF4_2021_Boss_Da, LF4_2021_Boss_Dr",
+      "reward_npc_name": "Ingnie"
+     }
+    ]
+   }
+  },
+  "11307": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "[포스] 모라스의 냉정한 판단2",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Moras",
+      "count1": "10",
+      "monster1": "LF4_2011_guardS_Da, LF4_2011_guardA_Da, LF4_2011_guard_Da, LF4_2011_guardS_Dr, LF4_2011_guardA_Dr, LF4_2011_guard_Dr",
+      "reward_npc_name": "Queesia"
+     }
+    ]
+   }
+  },
+  "11308": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "[연합] 전세 역전의 계기2",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Moras",
+      "count1": "1",
+      "monster1": "LF4_2011_Boss_Da, LF4_2011_Boss_Dr",
+      "reward_npc_name": "Queesia"
+     }
+    ]
+   }
+  },
+  "11319": {
+   "retail58": {
+    "minLevel": 55,
+    "devNote": "[4.8 LF5 유도 퀘스트] 새로운 대륙 발견"
+   }
+  },
+  "11323": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "잉기스온으로 모여드는 데바들"
+   }
+  },
+  "11324": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[일일/잠입] 겔크마로스 침투 작전"
+   }
+  },
+  "11325": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[일일] 잉기스온 침입 세력 처치"
+   }
+  },
+  "12999": {
+   "retail58": {
+    "minLevel": 10,
+    "devNote": "4.0 인트로 무비 재생용"
+   }
+  },
+  "13403": {
+   "retail58": {
+    "minLevel": 20,
+    "devNote": "대침공 대비 조사"
+   }
+  },
+  "13900": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅] 주신의 부름",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "LF5_Atmos_E",
+      "talk_npc1": "Cainus",
+      "talk_npc2": "Polyidus",
+      "reward_npc_name": "Corridor_L_MainQuest_E"
+     }
+    ]
+   }
+  },
+  "13901": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/파티] 용사의 자격",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Corridor_L_MainQuest_E",
+      "reward_npc_name": "Corridor_L_MainQuest_E",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "13902": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅] 용계 정복의 첫걸음",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Corridor_L_MainQuest_E",
+      "reward_npc_name": "Cainus"
+     }
+    ]
+   }
+  },
+  "13903": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅] 용계 정복의 위업",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Cainus",
+      "reward_npc_name": "Cainus",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "13904": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/일일] 용계 정복",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Cainus",
+      "reward_npc_name": "Cainus",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "13905": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/일일] 게르하 북부 기지 토벌",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "LDF4_Advance_Elger_E",
+      "count1": "1",
+      "monster1": "LDF4_Advance_SS_v02Chief_Dr_65_An, LDF4_Advance_SS_v02Chief_Da_65_Ab",
+      "count2": "1",
+      "monster2": "LDF4_Advance_S_v03Chief_Dr_65_Ae, LDF4_Advance_S_v03Chief_Da_65_Ae",
+      "count3": "1",
+      "monster3": "LDF4_Advance_M_v04Chief_Dr_65_Ae, LDF4_Advance_M_v04Chief_Da_65_Ae",
+      "reward_npc_name": "LDF4_Advance_Elger_E"
+     }
+    ]
+   }
+  },
+  "13906": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/일일] 게르하 동부 기지 토벌",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "LDF4_Advance_Elger_E",
+      "count1": "1",
+      "monster1": "LDF4_Advance_S_v05Chief_Dr_65_Ae, LDF4_Advance_S_v05Chief_Da_65_Ae",
+      "count2": "1",
+      "monster2": "LDF4_Advance_S_v06Chief_Dr_65_Ae, LDF4_Advance_S_v06Chief_Da_65_Ae",
+      "count3": "1",
+      "monster3": "LDF4_Advance_S_v07Chief_Dr_65_Ae, LDF4_Advance_S_v07Chief_Da_65_Ae",
+      "reward_npc_name": "LDF4_Advance_Elger_E"
+     }
+    ]
+   }
+  },
+  "13907": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/일일] 게르하 남부 기지 토벌",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "LDF4_Advance_Elger_E",
+      "count1": "1",
+      "monster1": "LDF4_Advance_SS_v08Chief_Dr_65_An, LDF4_Advance_SS_v08Chief_Da_65_An",
+      "count2": "1",
+      "monster2": "LDF4_Advance_S_v09Chief_Dr_65_Ae, LDF4_Advance_S_v09Chief_Da_65_Ae",
+      "count3": "1",
+      "monster3": "LDF4_Advance_M_v12Chief_Dr_65_Ae, LDF4_Advance_M_v12Chief_Da_65_Ae",
+      "reward_npc_name": "LDF4_Advance_Elger_E"
+     }
+    ]
+   }
+  },
+  "13908": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/일일] 게르하 서부 기지 토벌",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "LDF4_Advance_Elger_E",
+      "count1": "1",
+      "monster1": "LDF4_Advance_S_v10Chief_Dr_65_Ae, LDF4_Advance_S_v10Chief_Da_65_Ae",
+      "count2": "1",
+      "monster2": "LDF4_Advance_S_v11Chief_Dr_65_Ae, LDF4_Advance_S_v11Chief_Da_65_Ae",
+      "count3": "1",
+      "monster3": "LDF4_Advance_S_v01Chief_Dr_65_Ae, LDF4_Advance_S_v01Chief_Da_65_Ae",
+      "reward_npc_name": "LDF4_Advance_Elger_E"
+     }
+    ]
+   }
+  },
+  "13909": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/파티] 게르하를 위협하는 세력 토벌",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "LDF4_Advance_Elger_E",
+      "count1": "1",
+      "monster1": "LDF4_Advance_Summon_Named_01",
+      "count2": "1",
+      "monster2": "LDF4_Advance_Summon_Named_02",
+      "count3": "1",
+      "monster3": "LDF4_Advance_Summon_Named_03",
+      "count4": "1",
+      "monster4": "LDF4_Advance_Summon_Named_04",
+      "reward_npc_name": "LDF4_Advance_Elger_E"
+     }
+    ]
+   }
+  },
+  "13910": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/포스] 갈라진 카탈람 토벌",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Corridor_L_MainQuest_E",
+      "count1": "1",
+      "monster1": "LDF5_Fortress_7011_Boss_Da, LDF5_Fortress_7011_Boss_Dr",
+      "count2": "1",
+      "monster2": "LDF5_Fortress_7012_Boss_Da, LDF5_Fortress_7012_Boss_Dr",
+      "count3": "1",
+      "monster3": "LDF5_Fortress_7013_Boss_Da, LDF5_Fortress_7013_Boss_Dr",
+      "count4": "1",
+      "monster4": "LDF5_Fortress_7014_Boss_Da, LDF5_Fortress_7014_Boss_Dr",
+      "count5": "1",
+      "monster5": "BLDF5_Fortress_Anoha_N_65_Al",
+      "reward_npc_name": "Corridor_L_MainQuest_E"
+     }
+    ]
+   }
+  },
+  "13914": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/포스] 브리트라 대침공 저지",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Corridor_L_PangeaQuest_E",
+      "reward_npc_name": "Corridor_L_PangeaQuest_E",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "13915": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/주간/포스] 브리트라 대침공 저지",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Corridor_L_PangeaQuest_E",
+      "reward_npc_name": "Corridor_L_PangeaQuest_E",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "13916": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/포스] 게르하 마군 대행자 처치",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "LDF4_Advance_Elger_E",
+      "reward_npc_name": "LDF4_Advance_Elger_E",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "13917": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/파티] 게르하 대형 기지 방어전1",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "LDF4_Advance_Elger_E",
+      "count1": "1",
+      "monster1": "LDF4_Advance_B_v13Chief_Dr_65_Ae, LDF4_Advance_B_v13Chief_Da_65_Ae",
+      "reward_npc_name": "LDF4_Advance_Village_Guard09_L",
+      "con_quest": "0"
+     }
+    ]
+   }
+  },
+  "13918": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/파티] 게르하 대형 기지 방어전2",
+    "simple": [
+     {
+      "type": "SerialHunt",
+      "acquired_npc_name": "LDF4_Advance_Village_Guard09_L",
+      "count_first": "1",
+      "monster_first": "LDF4_Advance_B_Killer_Dr_65_Ae",
+      "count_second": "1",
+      "monster_second": "LDF4_Advance_B_Killer_Dr_65_Ah",
+      "count_third": "1",
+      "monster_third": "LDF4_Advance_B1_Killer_Dr_65_Ah",
+      "count_fourth": "1",
+      "monster_fourth": "LDF4_Advance_B_Killer_Da_65_Al",
+      "count_fifth": "1",
+      "monster_fifth": "LDF4_Advance_B1_Killer_Da_65_Al",
+      "reward_npc_name": "LDF4_Advance_Elger_E"
+     }
+    ]
+   }
+  },
+  "14110": {
+   "retail58": {
+    "minLevel": 11,
+    "devNote": "[4.7 미션 튜닝 LF1a 지역] 요새 주변 정찰",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Spiros",
+      "reward_npc_name": "Spiros",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "14111": {
+   "retail58": {
+    "minLevel": 13,
+    "devNote": "레파르 혁명단 처단",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Abolos",
+      "count1": "9",
+      "monster1": "LehparAs_11_An",
+      "count2": "1",
+      "monster2": "LehparWaNamed_12_An",
+      "reward_npc_name": "Abolos"
+     }
+    ]
+   }
+  },
+  "14112": {
+   "retail58": {
+    "minLevel": 17,
+    "devNote": "오염의 원인",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Gogohas",
+      "talk_npc1": "Lepios",
+      "give_item1": "ITEM_QUEST_14112A 1",
+      "count1": "1",
+      "monster1": "SlimeQ_18_An",
+      "reward_npc_name": "Soul_Kato"
+     }
+    ]
+   }
+  },
+  "14113": {
+   "retail58": {
+    "minLevel": 18,
+    "devNote": "축복의 선물 되찾기",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Lunax",
+      "reward_npc_name": "Lunax",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "14114": {
+   "retail58": {
+    "minLevel": 20,
+    "devNote": "레파르 혁명단의 음모 분쇄"
+   }
+  },
+  "14120": {
+   "retail58": {
+    "minLevel": 24,
+    "devNote": "진정한 숲의 주인",
+    "simple": [
+     {
+      "type": "CollectItem",
+      "acquired_npc_name": "Phomona",
+      "talk_npc1": "Tree_Move_Demro",
+      "party_drop": "1",
+      "object1": "LF2_Cherubim_Basket",
+      "reward_npc_name": "Tree_NoMove_Lodas"
+     }
+    ]
+   }
+  },
+  "14121": {
+   "retail58": {
+    "minLevel": 21,
+    "devNote": "사라진 아티팩트",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "valerius",
+      "talk_npc1": "Lakaias",
+      "reward_npc_name": "Lakaias",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "14122": {
+   "retail58": {
+    "minLevel": 26,
+    "devNote": "신비샘 되살리기",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Gaia",
+      "give_item": "ITEM_QUEST_14122A 1",
+      "talk_npc1": "Ophelos",
+      "talk_npc2": "Heratos",
+      "reward_npc_name": "Sirinks"
+     }
+    ]
+   }
+  },
+  "14123": {
+   "retail58": {
+    "minLevel": 29,
+    "devNote": "아티팩트 수호자의 조언",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Actaeon",
+      "talk_npc1": "dionera",
+      "count1": "1",
+      "monster1": "hippolyta_Q14123",
+      "reward_npc_name": "dionera"
+     }
+    ]
+   }
+  },
+  "14124": {
+   "retail58": {
+    "minLevel": 33,
+    "devNote": "아게이론 마을의 식수원",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Asclepius",
+      "count1": "3",
+      "monster1": "LehparAs_33_An, LehparAs_34_An",
+      "count2": "3",
+      "monster2": "LehparWa_33_An, LehparWa_34_An",
+      "reward_npc_name": "Asclepius"
+     }
+    ]
+   }
+  },
+  "14150": {
+   "retail58": {
+    "minLevel": 30,
+    "devNote": "[4.7 미션 튜닝 LF3 지역] 수페르스 유적 조사",
+    "simple": [
+     {
+      "type": "CollectItem",
+      "acquired_npc_name": "Sarantus",
+      "talk_npc1": "Ibelia",
+      "object1": "LF3_FOBJ_Q14150",
+      "reward_npc_name": "Sarantus"
+     }
+    ]
+   }
+  },
+  "14151": {
+   "retail58": {
+    "minLevel": 33,
+    "devNote": "증식하는 뉴트",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Senemonea",
+      "count1": "1",
+      "monster1": "NeutL2NamedQ_39_An",
+      "reward_npc_name": "Barsita"
+     }
+    ]
+   }
+  },
+  "14152": {
+   "retail58": {
+    "minLevel": 35,
+    "devNote": "혁명단의 독 연구",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "sofne",
+      "talk_npc1": "Kalendros",
+      "give_item1": "ITEM_QUEST_14152A 1",
+      "talk_npc2": "Juventus",
+      "remove_item2": "ITEM_QUEST_14152A 1",
+      "count1": "1",
+      "monster1": "LabPo_LehparAsNamed_43_Ae",
+      "reward_npc_name": "sofne"
+     }
+    ]
+   }
+  },
+  "14153": {
+   "retail58": {
+    "minLevel": 36,
+    "devNote": "폭풍의 아칸"
+   }
+  },
+  "14200": {
+   "retail58": {
+    "minLevel": 45,
+    "devNote": "[4.7 미션 튜닝 LF2a 지역] 테오보모스의 상흔",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Atropos",
+      "talk_npc1": "Pygmalion",
+      "count1": "3",
+      "monster1": "LF2a_FOBJ_Q1092",
+      "reward_npc_name": "Atropos",
+      "con_quest": "0"
+     }
+    ]
+   }
+  },
+  "14201": {
+   "retail58": {
+    "minLevel": 46,
+    "devNote": "칼리돈의 유적",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Atropos",
+      "talk_npc1": "honglas",
+      "talk_npc2": "Serimnir",
+      "reward_npc_name": "Atropos",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "14202": {
+   "retail58": {
+    "minLevel": 46,
+    "devNote": "결계 수호자의 부탁",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Perento",
+      "reward_npc_name": "Atropos"
+     }
+    ]
+   }
+  },
+  "14240": {
+   "retail58": {
+    "minLevel": 27,
+    "devNote": "화재 진압은 작은 불꽃부터",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Radamanthys",
+      "count1": "9",
+      "monster1": "ElementalFire2_26_An, ElementalFire2_27_An, ElementalFire1_26_An",
+      "reward_npc_name": "Radamanthys"
+     }
+    ]
+   }
+  },
+  "14241": {
+   "retail58": {
+    "minLevel": 27,
+    "devNote": "신성 보호자의 임무",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Kimeia",
+      "reward_npc_name": "Diomedes"
+     }
+    ]
+   }
+  },
+  "14242": {
+   "retail58": {
+    "minLevel": 28,
+    "devNote": "네 명의 우두머리",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Gardugu",
+      "count1": "9",
+      "monster1": "KeC_KrallKnightK_New_29_Ae, KeC_KrallKnightK_New_30_Ae, AeC_KrallAssassinK_New_29_Ae, AeC_KrallAssassinK_New_30_Ae, KeB_KrallKnightK_New_29_Ae, KrallPriest_New_30_An, AeB_KrallAssassinK_New_29_Ae, AeB_KrallAssassinK_New_30_Ae",
+      "reward_npc_name": "Gardugu"
+     }
+    ]
+   }
+  },
+  "14243": {
+   "retail58": {
+    "minLevel": 30,
+    "devNote": "[인던] 아들을 찾는 어미의 슬픔",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Castor",
+      "reward_npc_name": "Hagne"
+     }
+    ]
+   }
+  },
+  "14244": {
+   "retail58": {
+    "minLevel": 25,
+    "devNote": "[인던] 엘테넨 요새에 전할 내용",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Tree_NoMove_Lodas",
+      "reward_npc_name": "LF2_Brando_E_LHM"
+     }
+    ]
+   }
+  },
+  "14250": {
+   "retail58": {
+    "minLevel": 44,
+    "devNote": "하누만의 정예부대 제거",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Javlantia",
+      "count1": "10",
+      "monster1": "LF3E3_FeA_NagaFiD_New_A_45_Ae, LF3E3_FeA_NagaFiTalk_New_45_Ae, LF3E3_FeA_NagaFiD_New_B_45_Ae, LF3E3_KeA_NagaKnD_New_A_45_Ae, LF3E3_KeA_NagaKnTalk_New_45_Ae, LF3E3_KeA_NagaKnD_New_B_45_Ae",
+      "reward_npc_name": "Javlantia"
+     }
+    ]
+   }
+  },
+  "14251": {
+   "retail58": {
+    "minLevel": 45,
+    "devNote": "[인던] 토벌대 대장의 부탁",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Atalante",
+      "reward_npc_name": "LF3_Anaxa_E"
+     }
+    ]
+   }
+  },
+  "14260": {
+   "retail58": {
+    "minLevel": 48,
+    "devNote": "[인던] 예언자의 부름",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Danais",
+      "reward_npc_name": "Maloren"
+     }
+    ]
+   }
+  },
+  "14261": {
+   "retail58": {
+    "minLevel": 48,
+    "devNote": "[인던] 포에타의 어둠",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Atropos",
+      "reward_npc_name": "Maloren"
+     }
+    ]
+   }
+  },
+  "14270": {
+   "retail58": {
+    "minLevel": 45,
+    "devNote": "[인던/파티] 드라웁니르 동굴 신규 입장 유도 퀘스트",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Perento",
+      "reward_npc_name": "LF3_Anaxa_E"
+     }
+    ]
+   }
+  },
+  "14271": {
+   "retail58": {
+    "minLevel": 46,
+    "devNote": "[인던/파티] 테오보모스 비밀 연구소 신규 입장 유도 퀘스트",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Atropos",
+      "reward_npc_name": "Pyrrha"
+     }
+    ]
+   }
+  },
+  "14275": {
+   "retail58": {
+    "minLevel": 30,
+    "devNote": "[인던] 아들의 행방 (신규 퀘스트 추가)",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Telemachus",
+      "reward_npc_name": "Hagne",
+      "con_quest": "1469"
+     }
+    ]
+   }
+  },
+  "14276": {
+   "retail58": {
+    "minLevel": 30,
+    "devNote": "[인던] 신규 불의 신전 반복 퀘스트",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Hagne",
+      "count1": "5",
+      "monster1": "GargoyleDF2_34_Ae, GargoyleDF2_35_Ae",
+      "count2": "3",
+      "monster2": "SAMD_34_Ae, SAMD_35_Ae",
+      "count3": "2",
+      "monster3": "SouledstoneAReD_35_Ae",
+      "reward_npc_name": "Hagne"
+     }
+    ]
+   }
+  },
+  "15000": {
+   "retail58": {
+    "minLevel": 55,
+    "devNote": "[4.8 LF5 필드 퀘스트] [성장] 오드 영역 확장"
+   }
+  },
+  "15042": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[성장] 주신의 행방"
+   }
+  },
+  "15097": {
+   "retail58": {
+    "minLevel": 10,
+    "devNote": "(공용 함선 영상 퀘스트) 용계의 비극"
+   }
+  },
+  "15098": {
+   "retail58": {
+    "minLevel": 10,
+    "devNote": "(함선퀘스트 대화) 용계의 비극"
+   }
+  },
+  "15101": {
+   "retail58": {
+    "minLevel": 64,
+    "devNote": "[성장] 최소한의 자격 증명"
+   }
+  },
+  "16942": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[인던] 용족의 차원 연구소"
+   }
+  },
+  "16974": {
+   "retail58": {
+    "minLevel": 63,
+    "devNote": "[인던] 벨쿠르 군단장 처치"
+   }
+  },
+  "16975": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[인던] 도망자가 가진 조각"
+   }
+  },
+  "16976": {
+   "retail58": {
+    "minLevel": 63,
+    "devNote": "[인던] 요르문간드의 조사원"
+   }
+  },
+  "16984": {
+   "retail58": {
+    "minLevel": 63,
+    "devNote": "룬의 안식처 컷신 재생용 히든 퀘스트 (천)"
+   }
+  },
+  "16989": {
+   "retail58": {
+    "minLevel": 1,
+    "devNote": "사르판OP 무비 재생용 히든 퀘스트"
+   }
+  },
+  "18037": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "철벽의 보루 GP 보상 추가 반복 퀘스트 (천)",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "LDF5b_Demades_E",
+      "count1": "1",
+      "monster1": "IDF5_TD_DragonRider_Chief_N_65_Al",
+      "reward_npc_name": "LDF5b_Demades_E"
+     }
+    ]
+   }
+  },
+  "18412": {
+   "retail58": {
+    "minLevel": 50,
+    "devNote": "컷신 재생용 히든 퀘스트(천족)"
+   }
+  },
+  "18744": {
+   "retail58": {
+    "minLevel": 60,
+    "devNote": "타메스 컷신 재생용(천)"
+   }
+  },
+  "18917": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "잠입 작전 명령",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "LDF5a_Pepe_E",
+      "talk_npc1": "LDF4_Advance_Elger_E",
+      "reward_npc_name": "LDF5_Kanix_E"
+     }
+    ]
+   }
+  },
+  "19049": {
+   "retail58": {
+    "minLevel": 10,
+    "devNote": "[제작] 나만의 공간(가구 제작)",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Undin",
+      "reward_npc_name": "Undin",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "19051": {
+   "retail58": {
+    "minLevel": 25,
+    "devNote": "선물하고 싶은 가구",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Undin",
+      "give_item": "ITEM_QUEST_19051A 1",
+      "reward_npc_name": "Lucius"
+     }
+    ]
+   }
+  },
+  "19059": {
+   "retail58": {
+    "minLevel": 15,
+    "devNote": "[반복] 어비스에 보낼 가구",
+    "simple": [
+     {
+      "type": "UseItem",
+      "use_item_name": "ITEM_QUEST_19059A",
+      "reward_npc_name": "Cymaon"
+     }
+    ]
+   }
+  },
+  "19078": {
+   "retail58": {
+    "minLevel": 31,
+    "devNote": "기갑성 스승의 과제"
+   }
+  },
+  "19643": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "특별한 임무 소개"
+   }
+  },
+  "19644": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "신규필드 OP1 안내"
+   }
+  },
+  "19645": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "[일일] 신규필드 OP1 몬스터 처치"
+   }
+  },
+  "19646": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "신규필드 OP2 안내"
+   }
+  },
+  "19647": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "[일일] 신규필드 OP2 몬스터 처치"
+   }
+  },
+  "19648": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "신규필드 OP3 안내"
+   }
+  },
+  "20100": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "신규미션1 (마족)"
+   }
+  },
+  "20101": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "신규미션2 (마족)"
+   }
+  },
+  "21289": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "겔크마로스의 위기"
+   }
+  },
+  "21290": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "테그라크의 축복",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Mijien",
+      "reward_npc_name": "Mijien"
+     }
+    ]
+   }
+  },
+  "21291": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "테그라크의 선물",
+    "simple": [
+     {
+      "type": "UseItem",
+      "use_item_name": "ITEM_DOC_QUEST_21291A",
+      "reward_npc_name": "Vedrfonir"
+     }
+    ]
+   }
+  },
+  "21303": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "주신부하 무기 업글퀘 (키블레이드)"
+   }
+  },
+  "21304": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "주신부하 무기 업글퀘2 (키블레이드 - 마)",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Vedrfonir",
+      "give_item": "ITEM_QUEST_21304A 1",
+      "reward_npc_name": "Usener",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "21305": {
+   "retail58": {
+    "minLevel": 55,
+    "devNote": "티아마트 군단 추적",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Herka",
+      "count1": "1",
+      "monster1": "IDCatacombsN_DrakanMonkBossNmd_55_Ah",
+      "reward_npc_name": "Hler"
+     }
+    ]
+   }
+  },
+  "21306": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "[포스] 적의 방어선을 무너뜨려라2",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Linar",
+      "count1": "10",
+      "monster1": "DF4_3011_guardS_Li_Fi_1, DF4_3011_guardS_Li_As_1, DF4_3011_guard_Li_Fi_1, DF4_3011_guard_Li_As_1, DF4_3011_guard_Li_Ra_1, DF4_3011_guard_Li_Wi_1, DF4_3011_guard_Li_Pr_1, DF4_3011_guardA_Li_As_1, DF4_3011_guardA_Li_Fi_1, DF4_3011_guardA_Li_Pr_1, DF4_3011_guardA_Li_Wi_1, DF4_3011_guardS_Dr_Fi_1, DF4_3011_guardS_Dr_As_1, DF4_3011_guard_Dr_Fi_1, DF4_3011_guard_Dr_As_1, DF4_3011_guard_Dr_Ra_1, DF4_3011_guard_Dr_Wi_1, DF4_3011_guard_Dr_Pr_1, DF4_3011_guardA_Dr_As_1, DF4_3011_guardA_Dr_Fi_1, DF4_3011_guardA_Dr_Pr_1, DF4_3011_guardA_Dr_Wi_1",
+      "reward_npc_name": "Krizarid"
+     }
+    ]
+   }
+  },
+  "21307": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "[연합] 바가바탐 봉인탑을 탈환하라2",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Linar",
+      "count1": "1",
+      "monster1": "DF4_3011_Boss_Li, DF4_3011_Boss_Dr",
+      "reward_npc_name": "Krizarid"
+     }
+    ]
+   }
+  },
+  "21308": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "[포스] 적의 경비병을 교란하라2",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Marty",
+      "count1": "10",
+      "monster1": "DF4_3021_guardS_Li_As_1, DF4_3021_guardS_Li_Pr_1, DF4_3021_guard_Li_Fi_1, DF4_3021_guard_Li_As_1, DF4_3021_guard_Li_Ra_1, DF4_3021_guard_Li_Wi_1, DF4_3021_guard_Li_Pr_1, DF4_3021_guardA_Li_As_1, DF4_3021_guardA_Li_Fi_1, DF4_3021_guardA_Li_Wi_1,DF4_3021_guardS_Dr_As_1, DF4_3021_guardS_Dr_Pr_1, DF4_3021_guard_Dr_Fi_1, DF4_3021_guard_Dr_As_1, DF4_3021_guard_Dr_Ra_1, DF4_3021_guard_Dr_Wi_1, DF4_3021_guard_Dr_Pr_1, DF4_3021_guardA_Dr_As_1, DF4_3021_guardA_Dr_Fi_1, DF4_3021_guardA_Dr_Wi_1",
+      "reward_npc_name": "Cozett"
+     }
+    ]
+   }
+  },
+  "21309": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "[연합] 붉은 대지 신전을 되찾아라2",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Marty",
+      "count1": "1",
+      "monster1": "DF4_3021_Boss_Li, DF4_3021_Boss_Dr",
+      "reward_npc_name": "Cozett"
+     }
+    ]
+   }
+  },
+  "21320": {
+   "retail58": {
+    "minLevel": 55,
+    "devNote": "[4.8 DF5유도퀘] 새로운 대륙의 개척자"
+   }
+  },
+  "21323": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "겔크마로스로 모여드는 데바들"
+   }
+  },
+  "21324": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[일일/잠입] 잉기스온 침투 작전"
+   }
+  },
+  "21325": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[일일] 겔크마로스 침입 세력 처치"
+   }
+  },
+  "23403": {
+   "retail58": {
+    "minLevel": 20,
+    "devNote": "대침공 대비 탐사"
+   }
+  },
+  "23900": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅] 운명의 부름",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "DF5_Haldor_E",
+      "talk_npc1": "Hler",
+      "talk_npc2": "Heimdall",
+      "reward_npc_name": "Corridor_D_MainQuest_E"
+     }
+    ]
+   }
+  },
+  "23901": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/파티] 용사의 시험",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Corridor_D_MainQuest_E",
+      "reward_npc_name": "Corridor_D_MainQuest_E",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "23902": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅] 용계 평정의 첫걸음",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Corridor_D_MainQuest_E",
+      "reward_npc_name": "Hler"
+     }
+    ]
+   }
+  },
+  "23903": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅] 용계 평정의 위업",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Hler",
+      "reward_npc_name": "Hler",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "23904": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/일일] 용계 평정",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Hler",
+      "reward_npc_name": "Hler",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "23905": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/일일] 게르하 북부 기지 정벌",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "LDF4_Advance_Helgund_E",
+      "count1": "1",
+      "monster1": "LDF4_Advance_SS_v02Chief_Dr_65_An, LDF4_Advance_SS_v02Chief_Li_65_An",
+      "count2": "1",
+      "monster2": "LDF4_Advance_S_v03Chief_Dr_65_Ae, LDF4_Advance_S_v03Chief_Li_65_Ae",
+      "count3": "1",
+      "monster3": "LDF4_Advance_M_v04Chief_Dr_65_Ae, LDF4_Advance_M_v04Chief_Li_65_Ae",
+      "reward_npc_name": "LDF4_Advance_Helgund_E"
+     }
+    ]
+   }
+  },
+  "23906": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/일일] 게르하 동부 기지 정벌",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "LDF4_Advance_Helgund_E",
+      "count1": "1",
+      "monster1": "LDF4_Advance_S_v05Chief_Dr_65_Ae, LDF4_Advance_S_v05Chief_Li_65_Ae",
+      "count2": "1",
+      "monster2": "LDF4_Advance_S_v06Chief_Dr_65_Ae, LDF4_Advance_S_v06Chief_Li_65_Ae",
+      "count3": "1",
+      "monster3": "LDF4_Advance_S_v07Chief_Dr_65_Ae, LDF4_Advance_S_v07Chief_Li_65_Ae",
+      "reward_npc_name": "LDF4_Advance_Helgund_E"
+     }
+    ]
+   }
+  },
+  "23907": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/일일] 게르하 남부 기지 정벌",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "LDF4_Advance_Helgund_E",
+      "count1": "1",
+      "monster1": "LDF4_Advance_SS_v08Chief_Dr_65_An, LDF4_Advance_SS_v08Chief_Li_65_An",
+      "count2": "1",
+      "monster2": "LDF4_Advance_S_v09Chief_Dr_65_Ae, LDF4_Advance_S_v09Chief_Li_65_Ae",
+      "count3": "1",
+      "monster3": "LDF4_Advance_M_v12Chief_Dr_65_Ae, LDF4_Advance_M_v12Chief_Li_65_Ae",
+      "reward_npc_name": "LDF4_Advance_Helgund_E"
+     }
+    ]
+   }
+  },
+  "23908": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/일일] 게르하 서부 기지 정벌",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "LDF4_Advance_Helgund_E",
+      "count1": "1",
+      "monster1": "LDF4_Advance_S_v10Chief_Dr_65_Ae, LDF4_Advance_S_v10Chief_Li_65_Ae",
+      "count2": "1",
+      "monster2": "LDF4_Advance_S_v11Chief_Dr_65_Ae, LDF4_Advance_S_v11Chief_Li_65_Ae",
+      "count3": "1",
+      "monster3": "LDF4_Advance_S_v01Chief_Dr_65_Ae, LDF4_Advance_S_v01Chief_Li_65_Ae",
+      "reward_npc_name": "LDF4_Advance_Helgund_E"
+     }
+    ]
+   }
+  },
+  "23909": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/파티] 게르하를 위협하는 무리 정벌",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "LDF4_Advance_Helgund_E",
+      "count1": "1",
+      "monster1": "LDF4_Advance_Summon_Named_01",
+      "count2": "1",
+      "monster2": "LDF4_Advance_Summon_Named_02",
+      "count3": "1",
+      "monster3": "LDF4_Advance_Summon_Named_03",
+      "count4": "1",
+      "monster4": "LDF4_Advance_Summon_Named_04",
+      "reward_npc_name": "LDF4_Advance_Helgund_E"
+     }
+    ]
+   }
+  },
+  "23910": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/포스] 갈라진 카탈람 정벌",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Corridor_D_MainQuest_E",
+      "count1": "1",
+      "monster1": "LDF5_Fortress_7011_Boss_Li, LDF5_Fortress_7011_Boss_Dr",
+      "count2": "1",
+      "monster2": "LDF5_Fortress_7012_Boss_Li, LDF5_Fortress_7012_Boss_Dr",
+      "count3": "1",
+      "monster3": "LDF5_Fortress_7013_Boss_Li, LDF5_Fortress_7013_Boss_Dr",
+      "count4": "1",
+      "monster4": "LDF5_Fortress_7014_Boss_Li, LDF5_Fortress_7014_Boss_Dr",
+      "count5": "1",
+      "monster5": "BLDF5_Fortress_Anoha_N_65_Al",
+      "reward_npc_name": "Corridor_D_MainQuest_E"
+     }
+    ]
+   }
+  },
+  "23914": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/포스] 브리트라 대침공 막기",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Corridor_D_PangeaQuest_E",
+      "reward_npc_name": "Corridor_D_PangeaQuest_E",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "23915": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/주간/포스] 브리트라 대침공 막기",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Corridor_D_PangeaQuest_E",
+      "reward_npc_name": "Corridor_D_PangeaQuest_E",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "23916": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/포스] 게르하 천군 대행자 처치",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "LDF4_Advance_Helgund_E",
+      "reward_npc_name": "LDF4_Advance_Helgund_E",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "23917": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/파티] 게르하 대형 기지 수비전1",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "LDF4_Advance_Helgund_E",
+      "count1": "1",
+      "monster1": "LDF4_Advance_B_v13Chief_Dr_65_Ae, LDF4_Advance_B_v13Chief_Li_65_Ae",
+      "reward_npc_name": "LDF4_Advance_Village_Guard09_D",
+      "con_quest": "0"
+     }
+    ]
+   }
+  },
+  "23918": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[영웅/파티] 게르하 대형 기지 수비전2",
+    "simple": [
+     {
+      "type": "SerialHunt",
+      "acquired_npc_name": "LDF4_Advance_Village_Guard09_D",
+      "count_first": "1",
+      "monster_first": "LDF4_Advance_B_Killer_Dr_01_65_Ae",
+      "count_second": "1",
+      "monster_second": "LDF4_Advance_B_Killer_Dr_01_65_Ah",
+      "count_third": "1",
+      "monster_third": "LDF4_Advance_B1_Killer_Dr_01_65_Ah",
+      "count_fourth": "1",
+      "monster_fourth": "LDF4_Advance_B_Killer_Li_65_Al",
+      "count_fifth": "1",
+      "monster_fifth": "LDF4_Advance_B1_Killer_Li_65_Al",
+      "reward_npc_name": "LDF4_Advance_Helgund_E"
+     }
+    ]
+   }
+  },
+  "24110": {
+   "retail58": {
+    "minLevel": 11,
+    "devNote": "[4.7 미션 튜닝 DF1A 지역] 얼음호수 정찰(4.7)",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Meibjar",
+      "count1": "4",
+      "monster1": "LehparAsD_9_An, LehparWaD_10_An",
+      "reward_npc_name": "Meibjar"
+     }
+    ]
+   }
+  },
+  "24111": {
+   "retail58": {
+    "minLevel": 10,
+    "devNote": "혁명단 토벌 임무(4.7)",
+    "simple": [
+     {
+      "type": "CollectItem",
+      "acquired_npc_name": "Okkolenja",
+      "party_drop": "1",
+      "object1": "DF1A_Lehpar_Order",
+      "reward_npc_name": "Nokirjar"
+     }
+    ]
+   }
+  },
+  "24113": {
+   "retail58": {
+    "minLevel": 12,
+    "devNote": "결계탑 수호(4.7)",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Aurtri",
+      "reward_npc_name": "Aurtri",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "24114": {
+   "retail58": {
+    "minLevel": 13,
+    "devNote": "임페투시움 재건(4.7)"
+   }
+  },
+  "24115": {
+   "retail58": {
+    "minLevel": 13,
+    "devNote": "임페투시움 보급로 확보(4.7)",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Shugo_DF1_6",
+      "give_item": "ITEM_QUEST_24115A 1",
+      "count1": "3",
+      "monster1": "WormD_18_An,WormBabyD_17_An",
+      "reward_npc_name": "Banatisai"
+     }
+    ]
+   }
+  },
+  "24120": {
+   "retail58": {
+    "minLevel": 19,
+    "devNote": "[4.7 미션 튜닝 DF2 지역] 돌로 변한 엘림(4.7)",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Vili",
+      "talk_npc1": "Tree_Move_Nabalu",
+      "give_item1": "ITEM_QUEST_24120A 1",
+      "talk_npc2": "DF2_Tree_Bellumus_Q24120A",
+      "remove_item2": "ITEM_QUEST_24120A 1",
+      "reward_npc_name": "Tree_Move_Nabalu"
+     }
+    ]
+   }
+  },
+  "24121": {
+   "retail58": {
+    "minLevel": 30,
+    "devNote": "불의 데바 아그니타(4.7)",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Aegir",
+      "talk_npc1": "Bulagan",
+      "talk_npc2": "DF2_Flamyar_E",
+      "reward_npc_name": "DF2_Flamyar_E",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "24122": {
+   "retail58": {
+    "minLevel": 33,
+    "devNote": "실종된 데바(4.7)",
+    "simple": [
+     {
+      "type": "CollectItem",
+      "acquired_npc_name": "Mirka",
+      "party_drop": "1",
+      "object1": "DF2_Book_Q24122",
+      "reward_npc_name": "Mirka"
+     }
+    ]
+   }
+  },
+  "24123": {
+   "retail58": {
+    "minLevel": 32,
+    "devNote": "은빛갈기 라이칸 구출(4.7)",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Rikesh",
+      "talk_npc1": "DF2_NPC_Ananta",
+      "talk_npc2": "DF2_LycanPrisoner_Q24123A",
+      "reward_npc_name": "DF2_NPC_Ananta"
+     }
+    ]
+   }
+  },
+  "24150": {
+   "retail58": {
+    "minLevel": 36,
+    "devNote": "[4.7 미션 튜닝 DF3 지역] 무너지는 요새",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Nerthus",
+      "talk_npc1": "Bestla",
+      "give_item1": "ITEM_QUEST_24150A 1",
+      "talk_npc2": "Horu",
+      "remove_item2": "ITEM_QUEST_24150A 1",
+      "reward_npc_name": "Nerthus"
+     }
+    ]
+   }
+  },
+  "24151": {
+   "retail58": {
+    "minLevel": 30,
+    "devNote": "벨루스란 정화의 시작",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Grundt",
+      "talk_npc1": "Gigrite",
+      "count1": "5",
+      "monster1": "ZombieD_35_An, ZombieD_36_An, DF3C2_ZombieCurseD_35_An, DF3C2_ZombieCurseD_36_An",
+      "reward_npc_name": "Gigrite"
+     }
+    ]
+   }
+  },
+  "24152": {
+   "retail58": {
+    "minLevel": 35,
+    "devNote": "유령 선장과 수정 렌즈",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Sleipnirr",
+      "talk_npc1": "Baugi",
+      "reward_npc_name": "DF3_Zoser_E",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "24153": {
+   "retail58": {
+    "minLevel": 43,
+    "devNote": "얼음 사이클롭스 처치",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "DF3_NPC_Akigatan",
+      "talk_npc1": "Delris",
+      "give_item1": "ITEM_QUEST_24153A 1",
+      "count1": "1",
+      "monster1": "CyclopsReStatueDQ_43_An",
+      "count2": "1",
+      "monster2": "CyclopsReStatueDQ_43_An_2",
+      "count3": "1",
+      "monster3": "CyclopsReStatueDQ_43_An_3",
+      "count4": "1",
+      "monster4": "CyclopsReStatueDQ_43_An_4",
+      "count5": "1",
+      "monster5": "CyclopsReStatueDQ_43_An_5",
+      "reward_npc_name": "DF3_NPC_Akigatan"
+     }
+    ]
+   }
+  },
+  "24154": {
+   "retail58": {
+    "minLevel": 35,
+    "devNote": "레파르 혁명단 본진 침투"
+   }
+  },
+  "24155": {
+   "retail58": {
+    "minLevel": 39,
+    "devNote": "결계 수호자 그웬돌렌",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Hod",
+      "talk_npc1": "Gwendolin",
+      "count1": "3",
+      "monster1": "DF3_DragonObelisk_Q2060A",
+      "reward_npc_name": "Hod"
+     }
+    ]
+   }
+  },
+  "24200": {
+   "retail58": {
+    "minLevel": 46,
+    "devNote": "[4.7 미션 튜닝 DF2A 지역] 언데드 토벌대장과의 만남",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Nerthus",
+      "reward_npc_name": "Surt"
+     }
+    ]
+   }
+  },
+  "24201": {
+   "retail58": {
+    "minLevel": 45,
+    "devNote": "붉은 라이제 레기온 이야기",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Surt",
+      "talk_npc1": "DF2a_Ghost_Theia",
+      "count1": "12",
+      "monster1": "DF2A_UndeadLizardmanFi_47_An, DF2A_UndeadLizardmanFi_48_An",
+      "reward_npc_name": "Surt"
+     }
+    ]
+   }
+  },
+  "24202": {
+   "retail58": {
+    "minLevel": 46,
+    "devNote": "성채에 잠입할 방법",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Surt",
+      "talk_npc1": "Tree_Moving_Neligor",
+      "talk_npc2": "Cairon",
+      "reward_npc_name": "Surt",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "24203": {
+   "retail58": {
+    "minLevel": 46,
+    "devNote": "브루스트호닌 오염의 비밀"
+   }
+  },
+  "24232": {
+   "retail58": {
+    "minLevel": 14,
+    "devNote": "무역 물품 확보 지원 -신규 무무 부락 퀘스트",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "DF1A_Anmuring_E",
+      "count1": "9",
+      "monster1": "RatmanWarriorM_15_An, RatmanWarriorM_16_An, RatmanScoutM_15_An, RatmanScoutM_16_An",
+      "reward_npc_name": "DF1A_Anmuring_E"
+     }
+    ]
+   }
+  },
+  "24233": {
+   "retail58": {
+    "minLevel": 14,
+    "devNote": "무무 부족의 지도자 -신규 무무 부락 퀘스트",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "DF1A_Brodir_E",
+      "count1": "1",
+      "monster1": "RatmanChief_17_An",
+      "reward_npc_name": "Sueron"
+     }
+    ]
+   }
+  },
+  "24240": {
+   "retail58": {
+    "minLevel": 24,
+    "devNote": "스프리그에 대한 근본 해결법",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Legalus",
+      "reward_npc_name": "Lif"
+     }
+    ]
+   }
+  },
+  "24241": {
+   "retail58": {
+    "minLevel": 25,
+    "devNote": "[인던] 모르헤임 요새에 전할 내용",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Lif",
+      "reward_npc_name": "DF2_Kelmar_E_DHM"
+     }
+    ]
+   }
+  },
+  "24242": {
+   "retail58": {
+    "minLevel": 30,
+    "devNote": "[인던] 아그니타의 충복",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Gangleri",
+      "talk_npc1": "Bulagan",
+      "talk_npc2": "DF2_Flamyar_E",
+      "reward_npc_name": "DF2_Flamyar_E",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "24250": {
+   "retail58": {
+    "minLevel": 45,
+    "devNote": "[인던] 적의 본진을 공격할 준비",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "DF3_Fafner_E",
+      "reward_npc_name": "DF3_Alberihi_E"
+     }
+    ]
+   }
+  },
+  "24260": {
+   "retail58": {
+    "minLevel": 48,
+    "devNote": "[인던] 신관의 요청",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Ivar",
+      "reward_npc_name": "Hresvelgr"
+     }
+    ]
+   }
+  },
+  "24261": {
+   "retail58": {
+    "minLevel": 48,
+    "devNote": "[인던] 암흑의 지역 해방",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Heintz",
+      "reward_npc_name": "Hresvelgr"
+     }
+    ]
+   }
+  },
+  "24270": {
+   "retail58": {
+    "minLevel": 45,
+    "devNote": "[인던/파티] 신규 드라웁니르 동굴 입장 유도 퀘스트",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Nerthus",
+      "reward_npc_name": "DF3_Alberihi_E"
+     }
+    ]
+   }
+  },
+  "24275": {
+   "retail58": {
+    "minLevel": 30,
+    "devNote": "[인던] 불의 신전 신규 보스 처치 퀘스트",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "DF2_Flamyar_E",
+      "count1": "1",
+      "monster1": "FireSanctuaryQueenBoss_37_Ae",
+      "reward_npc_name": "DF2_Flamyar_E"
+     }
+    ]
+   }
+  },
+  "25082": {
+   "retail58": {
+    "minLevel": 62,
+    "devNote": "사막의 무법자"
+   }
+  },
+  "25084": {
+   "retail58": {
+    "minLevel": 62,
+    "devNote": "함정인가?"
+   }
+  },
+  "25085": {
+   "retail58": {
+    "minLevel": 62,
+    "devNote": "브리트라군의 이드 수송 저지"
+   }
+  },
+  "25094": {
+   "retail58": {
+    "minLevel": 64,
+    "devNote": "슈고들이란"
+   }
+  },
+  "25099": {
+   "retail58": {
+    "minLevel": 10,
+    "devNote": "(함선퀘스트 대화) 용계의 비극"
+   }
+  },
+  "26908": {
+   "retail58": {
+    "minLevel": 39,
+    "devNote": "서리눈썹 전초기지 1",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Nerthus",
+      "talk_npc1": "Svafnir",
+      "count1": "1",
+      "monster1": "DF3_2_Lycanl_Chief_41_An, DF3_2_Light_Chief_41_An",
+      "reward_npc_name": "Svafnir"
+     }
+    ]
+   }
+  },
+  "26942": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[인던] 차원 연구소 강습"
+   }
+  },
+  "26974": {
+   "retail58": {
+    "minLevel": 63,
+    "devNote": "[인던] 벨쿠르 군단장"
+   }
+  },
+  "26975": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "[인던] 도망자가 흘린 조각"
+   }
+  },
+  "26976": {
+   "retail58": {
+    "minLevel": 63,
+    "devNote": "[인던] 요르문간드의 조사원을 찾아라"
+   }
+  },
+  "26984": {
+   "retail58": {
+    "minLevel": 63,
+    "devNote": "룬의 안식처 컷신 재생용 히든 퀘스트 (마)"
+   }
+  },
+  "28037": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "철벽의 보루 GP 보상 추가 반복 퀘스트 (마)",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "LDF5b_Latkel_E",
+      "count1": "1",
+      "monster1": "IDF5_TD_DragonRider_Chief_N_65_Al",
+      "reward_npc_name": "LDF5b_Latkel_E"
+     }
+    ]
+   }
+  },
+  "28412": {
+   "retail58": {
+    "minLevel": 50,
+    "devNote": "컷신 재생용 히든 퀘스트(마족)"
+   }
+  },
+  "28744": {
+   "retail58": {
+    "minLevel": 60,
+    "devNote": "타메스 컷신 재생용(천)"
+   }
+  },
+  "28917": {
+   "retail58": {
+    "minLevel": 65,
+    "devNote": "군수기지에 잠입하라",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "LDF5a_Phone_E",
+      "talk_npc1": "LDF4_Advance_Helgund_E",
+      "reward_npc_name": "LDF5_Giriltia_E"
+     }
+    ]
+   }
+  },
+  "29049": {
+   "retail58": {
+    "minLevel": 10,
+    "devNote": "[제작] 나만의 공간(가구 제작)",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Darfen",
+      "reward_npc_name": "Darfen",
+      "item_check": "1"
+     }
+    ]
+   }
+  },
+  "29051": {
+   "retail58": {
+    "minLevel": 25,
+    "devNote": "[반복] 시아나에게 전할 꾸러미",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Darfen",
+      "give_item": "ITEM_QUEST_29051A 1",
+      "reward_npc_name": "Siana"
+     }
+    ]
+   }
+  },
+  "29059": {
+   "retail58": {
+    "minLevel": 15,
+    "devNote": "[반복] 어비스에 보낼 가구",
+    "simple": [
+     {
+      "type": "UseItem",
+      "use_item_name": "ITEM_QUEST_29059A",
+      "reward_npc_name": "Blir"
+     }
+    ]
+   }
+  },
+  "29078": {
+   "retail58": {
+    "minLevel": 31,
+    "devNote": "기갑성 스승의 시험"
+   }
+  },
+  "29643": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "중요한 임무 소개"
+   }
+  },
+  "29644": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "신규필드 OP1 안내"
+   }
+  },
+  "29645": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "[일일] 신규필드 OP1 몬스터 처치"
+   }
+  },
+  "29646": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "신규필드 OP2 안내"
+   }
+  },
+  "29647": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "[일일] 신규필드 OP2 몬스터 처치"
+   }
+  },
+  "29648": {
+   "retail58": {
+    "minLevel": 999,
+    "devNote": "신규필드 OP3 안내"
+   }
+  },
+  "30040": {
+   "retail58": {
+    "minLevel": 52,
+    "devNote": "시엘 무기 업글퀘 동선 유도 (키블레이드)",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Drenia",
+      "reward_npc_name": "Gefeios"
+     }
+    ]
+   }
+  },
+  "30041": {
+   "retail58": {
+    "minLevel": 52,
+    "devNote": "시엘 무기 업글퀘1 (키블레이드)",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Gefeios",
+      "reward_npc_name": "Gefeios",
+      "item_check": "1",
+      "con_quest": "30250"
+     }
+    ]
+   }
+  },
+  "30042": {
+   "retail58": {
+    "minLevel": 53,
+    "devNote": "[4.8 성장퀘스트] 협력의 사절",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Lausus",
+      "talk_npc1": "Versetti",
+      "reward_npc_name": "Honeus",
+      "con_quest": "30002"
+     }
+    ]
+   }
+  },
+  "30142": {
+   "retail58": {
+    "minLevel": 53,
+    "devNote": "[4.8 성장퀘스트] 협력 사절",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "Raniwu",
+      "talk_npc1": "Barretta",
+      "reward_npc_name": "aglauros",
+      "con_quest": "30102"
+     }
+    ]
+   }
+  },
+  "30250": {
+   "retail58": {
+    "minLevel": 52,
+    "devNote": "시엘 무기 업글퀘2 (키블레이드)"
+   }
+  },
+  "30350": {
+   "retail58": {
+    "minLevel": 52,
+    "devNote": "시엘 무기 업글퀘2 (키블레이드)"
+   }
+  },
+  "39600": {
+   "retail58": {
+    "minLevel": 60,
+    "devNote": "실버린 주식회사 취직",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "LDF5a_Mooling_Silverlin",
+      "reward_npc_name": "LDF5a_Lop_Silverlin_Join"
+     }
+    ]
+   }
+  },
+  "39700": {
+   "retail58": {
+    "minLevel": 60,
+    "devNote": "카탈람 환경 지킴이",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "LDF5a_Taureun_Greenhat",
+      "reward_npc_name": "LDF5a_Lop_Greenhat_Join"
+     }
+    ]
+   }
+  },
+  "41600": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 일일 솔로 1",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Solteria",
+      "count1": "1",
+      "monster1": "LDF4b_T1_Twister_Named_58_An, LDF4b_T1_Sandshark_Named_58_An, LDF4b_T1_Skeleton_Named_58_An, LDF4b_T1_Fungy_Named_58_An, LDF4b_T1_Shadowstalker_Named_58_An",
+      "reward_npc_name": "Solteria"
+     }
+    ]
+   }
+  },
+  "41601": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 일일 솔로 2",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Ur",
+      "count1": "1",
+      "monster1": "LDF4b_T2_Rottentree_Flower_Named_59_An, LDF4b_T2_Guardian_Named_59_An, LDF4b_T2_Unicorn_Named_59_An, LDF4b_T2_YunAs_Named_58_An, LDF4b_T2_Yun_Named_59_An",
+      "reward_npc_name": "Ur"
+     }
+    ]
+   }
+  },
+  "41602": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 일일 솔로 3",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Rador",
+      "count1": "1",
+      "monster1": "LDF4b_T3_Mosbear_Named_59_An, LDF4b_T3_Elementalfire_Named_59_An, LDF4b_T3_Elementalfire4_Named_59_An, LDF4b_T3_Displacerbeast_Rage_Named_59_An, LDF4b_T3_Fanatic_Named_59_An",
+      "reward_npc_name": "Rador"
+     }
+    ]
+   }
+  },
+  "41603": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 일일 솔로 4",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "West",
+      "count1": "1",
+      "monster1": "LDF4b_T4_Fungy_Crystal_Named_60_An, LDF4b_T4_Fungus_Named_60_An, LDF4b_T4_Tauric_Named_60_An, LDF4b_T4_Yun_Ghost_Named_60_An, LDF4b_T4_Aurora_Named_60_An",
+      "reward_npc_name": "West"
+     }
+    ]
+   }
+  },
+  "41604": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 주간 솔로 1",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Solteria",
+      "count1": "1",
+      "monster1": "LDF4b_T1_DrakanClaw_Named_58_An, LDF4b_T1_DrakanWhip_Named_58_An",
+      "reward_npc_name": "Solteria"
+     }
+    ]
+   }
+  },
+  "41605": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 주간 솔로 2",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Ur",
+      "count1": "1",
+      "monster1": "LDF4b_T2_DrakanFi_Tiamat_Named_59_An, LDF4b_T2_DrakanWi_Tiamat_Named_59_An",
+      "reward_npc_name": "Ur"
+     }
+    ]
+   }
+  },
+  "41606": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 주간 솔로 3",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Rador",
+      "count1": "1",
+      "monster1": "LDF4b_T3_DrakanFi_Tiamat_Named_59_An, LDF4b_T3_DrakanWi_Tiamat_Named_59_An",
+      "reward_npc_name": "Rador"
+     }
+    ]
+   }
+  },
+  "41607": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 주간 솔로 4",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "West",
+      "count1": "1",
+      "monster1": "LDF4b_T4_DrakanFi_Tiamat_Named_60_An, LDF4b_T4_DrakanWi_Tiamat_Named_60_An",
+      "reward_npc_name": "West"
+     }
+    ]
+   }
+  },
+  "41608": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 일일 파티 1",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Ur",
+      "count1": "1",
+      "monster1": "LDF4b_T2_Dragon_General_Named_59_Ae, LDF4b_T3_Dragon_General_Named_60_Ae, LDF4b_T4_Dragon_General_Named_60_Ae",
+      "reward_npc_name": "Ur"
+     }
+    ]
+   }
+  },
+  "41609": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 일일 파티 2",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Rador",
+      "count1": "1",
+      "monster1": "LDF4b_C1_Cellatu_Named_58_Ae, LDF4b_C1_GururuAs_Named_58_Ae, LDF4b_C2_Enos_Named_60_Ae, LDF4b_C2_Mammoth_Named_60_Ae, LDF4b_T1_SiegeWeapon_Named_59_Ae",
+      "reward_npc_name": "Rador"
+     }
+    ]
+   }
+  },
+  "41610": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 주간 파티 1",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "West",
+      "count1": "1",
+      "monster1": "LDF4b_C3_Dragon_General1_Named_60_Ae, LDF4b_C3_Dragon_General2_Named_60_Ae",
+      "reward_npc_name": "West"
+     }
+    ]
+   }
+  },
+  "41611": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 주간 파티 2",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "West",
+      "count1": "1",
+      "monster1": "TDown_Drakan_Pagati_Named_60_Ae, TDown_DrakanWi_Noble_Named_60_Ae, TDown_Drakan_Sikara_Named_60_Ae, TDown_DrakanCl_Noble_Named_60_Ae",
+      "reward_npc_name": "West"
+     }
+    ]
+   }
+  },
+  "41612": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 주간 포스 1",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Solteria",
+      "count1": "1",
+      "monster1": "LDF4b_T1_Drakan_Pagati_Named_60_Af, LDF4b_T2_Naga_Named_60_Af, LDF4b_C2_Elementalking_Crystal_Named_60_Af",
+      "reward_npc_name": "Solteria"
+     }
+    ]
+   }
+  },
+  "41613": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 주간 포스 2",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "West",
+      "count1": "1",
+      "monster1": "LDF4b_T3_Troll_Named_60_Af, LDF4b_T4_TempestElemental_Crystal_Named_60_Af, LDF4b_C1_Gururu_Gold_Named_60_Af, TDown_Dragon_General_Named_60_Af",
+      "reward_npc_name": "West"
+     }
+    ]
+   }
+  },
+  "41614": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[통합 보상] LF4b 주간 포스 3 (4포스)",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Solteria",
+      "count1": "1",
+      "monster1": "ldf4b_4011_Boss_Dr_1, ldf4b_4021_Boss_Dr_1, ldf4b_4031_Boss_Dr_1, ldf4b_4041_Boss_Dr_1",
+      "reward_npc_name": "Solteria"
+     }
+    ]
+   }
+  },
+  "41615": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[일일] 균열과 중력의 생명체",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Yuphilion",
+      "count1": "1",
+      "monster1": "LDF4b_T1_Twister_Named_58_An, LDF4b_T1_Sandshark_Named_58_An, LDF4b_T1_Skeleton_Named_58_An, LDF4b_T1_Fungy_Named_58_An, LDF4b_T1_Shadowstalker_Named_58_An, LDF4b_T2_Rottentree_Flower_Named_59_An, LDF4b_T2_Guardian_Named_59_An, LDF4b_T2_Unicorn_Named_59_An, LDF4b_T2_YunAs_Named_58_An, LDF4b_T2_Yun_Named_59_An",
+      "reward_npc_name": "Yuphilion"
+     }
+    ]
+   }
+  },
+  "41616": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[주간] 분노와 석화의 생명체",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Yuphilion",
+      "count1": "1",
+      "monster1": "LDF4b_T3_Mosbear_Named_59_An, LDF4b_T3_Elementalfire_Named_59_An, LDF4b_T3_Elementalfire4_Named_59_An, LDF4b_T3_Displacerbeast_Rage_Named_59_An, LDF4b_T3_Fanatic_Named_59_An, LDF4b_T4_Fungy_Crystal_Named_60_An, LDF4b_T4_Fungus_Named_60_An, LDF4b_T4_Tauric_Named_60_An, LDF4b_T4_Yun_Ghost_Named_60_An, LDF4b_T4_Aurora_Named_60_An",
+      "reward_npc_name": "Yuphilion"
+     }
+    ]
+   }
+  },
+  "41617": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[주간] 훈련소 교관 처치",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Daisha",
+      "count1": "1",
+      "monster1": "LDF4b_T1_DrakanClaw_Named_58_An, LDF4b_T1_DrakanWhip_Named_58_An",
+      "reward_npc_name": "Daisha"
+     }
+    ]
+   }
+  },
+  "41618": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[주간] 용족 군단의 우두머리",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Daisha",
+      "count1": "1",
+      "monster1": "LDF4b_T2_DrakanFi_Tiamat_Named_59_An, LDF4b_T2_DrakanWi_Tiamat_Named_59_An, LDF4b_T3_DrakanFi_Tiamat_Named_59_An, LDF4b_T3_DrakanWi_Tiamat_Named_59_An, LDF4b_T4_DrakanFi_Tiamat_Named_60_An, LDF4b_T4_DrakanWi_Tiamat_Named_60_An",
+      "reward_npc_name": "Daisha"
+     }
+    ]
+   }
+  },
+  "41619": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[주간/파티] 위협적인 생명체",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Yuphilion",
+      "count1": "1",
+      "monster1": "LDF4b_T2_Dragon_General_Named_59_Ae, LDF4b_T3_Dragon_General_Named_60_Ae, LDF4b_T4_Dragon_General_Named_60_Ae, LDF4b_C1_Cellatu_Named_58_Ae, LDF4b_C1_GururuAs_Named_58_Ae, LDF4b_C2_Enos_Named_60_Ae, LDF4b_C2_Mammoth_Named_60_Ae, LDF4b_T1_SiegeWeapon_Named_59_Ae",
+      "reward_npc_name": "Yuphilion"
+     }
+    ]
+   }
+  },
+  "41620": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[주간/파티] 수호군단의 우두머리",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Daisha",
+      "count1": "1",
+      "monster1": "LDF4b_C3_Dragon_General1_Named_60_Ae, LDF4b_C3_Dragon_General2_Named_60_Ae, TDown_Drakan_Pagati_Named_60_Ae, TDown_DrakanWi_Noble_Named_60_Ae, TDown_Drakan_Sikara_Named_60_Ae, TDown_DrakanCl_Noble_Named_60_Ae",
+      "reward_npc_name": "Daisha"
+     }
+    ]
+   }
+  },
+  "41621": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[주간/포스] 거대한 생명체",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Daisha",
+      "count1": "1",
+      "monster1": "LDF4b_T1_Drakan_Pagati_Named_60_Af, LDF4b_T2_Naga_Named_60_Af, LDF4b_T3_Troll_Named_60_Af, LDF4b_T4_TempestElemental_Crystal_Named_60_Af",
+      "reward_npc_name": "Daisha"
+     }
+    ]
+   }
+  },
+  "41622": {
+   "retail58": {
+    "minLevel": 58,
+    "devNote": "[주간/포스] 티아마트의 현신",
+    "simple": [
+     {
+      "type": "Hunt",
+      "acquired_npc_name": "Daisha",
+      "count1": "1",
+      "monster1": "ldf4b_4011_Boss_Dr_1, ldf4b_4021_Boss_Dr_1, ldf4b_4031_Boss_Dr_1, ldf4b_4041_Boss_Dr_1",
+      "reward_npc_name": "Daisha"
+     }
+    ]
+   }
+  },
+  "49600": {
+   "retail58": {
+    "minLevel": 60,
+    "devNote": "실버린 주식회사 취직",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "LDF5a_Joongling_Silverlin",
+      "reward_npc_name": "LDF5a_Dop_Silverlin_Join"
+     }
+    ]
+   }
+  },
+  "49700": {
+   "retail58": {
+    "minLevel": 60,
+    "devNote": "카탈람 환경 지킴이",
+    "simple": [
+     {
+      "type": "Talk",
+      "acquired_npc_name": "LDF5a_Guniaro_Greenhat",
+      "reward_npc_name": "LDF5a_Dop_Greenhat_Join"
+     }
+    ]
+   }
+  }
+ }
+}
