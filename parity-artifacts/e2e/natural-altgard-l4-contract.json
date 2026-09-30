@@ -1,0 +1,774 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "altgard-l4-basfelt",
+  "start": {
+    "contract": "natural-altgard-l3-contract.json",
+    "snapshot": "altgard-l3",
+    "mapId": 220030000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 16,
+    "bindNpcId": 700065,
+    "completedQuestIds": [2008, 2009, 2904, 24010, 2201, 2202, 2203, 2204, 2205, 2206, 2207, 2208, 2209, 24011, 2210, 2211, 2212, 2213, 2214, 2215, 2218, 2219, 2220, 24012, 2221, 2290, 2222],
+    "lockedQuestIds": [24014, 24015, 24016],
+    "startedQuestIds": [24013]
+  },
+  "hub": {
+    "key": "basfelt",
+    "mapId": 220030000,
+    "anchor": [1779.88, 690.477, 264.309],
+    "radius": 60
+  },
+  "town": {
+    "key": "basfelt",
+    "mapId": 220030000,
+    "anchor": [1779.88, 690.477, 264.309],
+    "radius": 120
+  },
+  "bind": {
+    "npcId": 700066,
+    "position": [1800.357, 711.373, 262.399],
+    "onArrival": true
+  },
+  "areas": [
+    {
+      "key": "basfelt",
+      "note": "Basfelt Village: Nokir, Hunmir, Gilungk, Garuntat, Gefion, the walkers Lamir and Shania, Tatural, Skanin, the obelisk",
+      "min": [1760, 670, 243],
+      "max": [1964, 748, 280]
+    },
+    {
+      "key": "gornak",
+      "note": "Gornak at Idun's Lake's north shore (Stop 6): Q2226's end, Q2227 and Q2291",
+      "min": [1775, 561, 243],
+      "max": [1805, 591, 273]
+    },
+    {
+      "key": "south-mosbears",
+      "note": "starved (210564) and fierce (210584) mosbears, and the passive lake spirits (210660) for Q2227",
+      "min": [1303, 313, 232],
+      "max": [1944, 788, 305]
+    },
+    {
+      "key": "west-mosbears",
+      "note": "swamp, tusked and brownbristle mosbears (210436/437/440) and their cubs (210438/439/503)",
+      "min": [1319, 558, 232],
+      "max": [1646, 882, 301]
+    },
+    {
+      "key": "vovetirn-amphas",
+      "note": "Vovetirn and the poisonsac amphas (210482, L15) for Q2239",
+      "min": [1887, 407, 237],
+      "max": [2092, 660, 302]
+    },
+    {
+      "key": "slimes-burner",
+      "note": "rainbow slimes (Q2225), the Old Incense Burner and where Infernus appears (Q2223)",
+      "min": [1432, 803, 232],
+      "max": [1585, 924, 268]
+    },
+    {
+      "key": "beehives",
+      "note": "the 20 beehives (Q2232) among angry, bigfoot and ruthless mosbears and grove malodors",
+      "min": [1128, 803, 235],
+      "max": [1382, 1036, 296]
+    },
+    {
+      "key": "komu",
+      "note": "Komu Silverclaw (SEASONED L17, respawn 1 hour): left alone until Q2289 var 7 (AB-Q3)",
+      "min": [1257, 957, 232],
+      "max": [1317, 1017, 262]
+    },
+    {
+      "key": "kaibech",
+      "note": "Kaibech's Campsite (Stop 5): Q2231's end",
+      "min": [1186, 970, 239],
+      "max": [1216, 1000, 269]
+    },
+    {
+      "key": "karl",
+      "note": "Karl: Q2231's first talk",
+      "min": [1734, 886, 246],
+      "max": [1764, 916, 276]
+    },
+    {
+      "key": "gunmarson",
+      "note": "Gunmarson: Q2231's second talk",
+      "min": [1606, 732, 240],
+      "max": [1636, 762, 270]
+    },
+    {
+      "key": "idun-brodir",
+      "note": "Brodir and Anmurnerk at Idun's Lake (Stop 6): Q24112's end",
+      "min": [1492, 507, 268],
+      "max": [1535, 548, 298]
+    },
+    {
+      "key": "sumarhon-camp",
+      "note": "Comrade Sumarhon (SEASONED L15) among 5 fencers and 4 sentries on a height (z 333)",
+      "min": [1265, 443, 318],
+      "max": [1345, 523, 348]
+    },
+    {
+      "key": "black-claws",
+      "note": "zone DF1A_ITEMUSEAREA_Q2016 and the SEASONED black claws of Q24013",
+      "min": [1321, 119, 265],
+      "max": [1727, 341, 325]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2226,
+      "category": "IMPORTANT",
+      "minimumLevel": 13,
+      "rewardExperience": 17678,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 203617,
+      "area": "gornak"
+    },
+    {
+      "id": 2227,
+      "category": "IMPORTANT",
+      "minimumLevel": 13,
+      "rewardExperience": 17678,
+      "prerequisite": 2226,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 203639,
+      "area": "south-mosbears"
+    },
+    {
+      "id": 2291,
+      "category": "IMPORTANT",
+      "minimumLevel": 13,
+      "rewardExperience": 17678,
+      "prerequisite": 2227,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 203639,
+      "area": "basfelt"
+    },
+    {
+      "id": 2225,
+      "category": "QUEST",
+      "minimumLevel": 12,
+      "rewardExperience": 19950,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 203633,
+      "area": "slimes-burner"
+    },
+    {
+      "id": 2224,
+      "category": "IMPORTANT",
+      "minimumLevel": 13,
+      "rewardExperience": 17678,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 203620,
+      "area": "west-mosbears"
+    },
+    {
+      "id": 24013,
+      "category": "MISSION",
+      "minimumLevel": 14,
+      "rewardExperience": 55537,
+      "prerequisite": null,
+      "handler": "altgard/_24013PoisonInTheWaters.cs",
+      "template": null,
+      "startNpcId": null,
+      "area": "black-claws"
+    },
+    {
+      "id": 2288,
+      "category": "QUEST",
+      "minimumLevel": 12,
+      "rewardExperience": 23700,
+      "prerequisite": null,
+      "handler": "altgard/_2288MoneyWhereYourMouthIs.cs",
+      "template": null,
+      "startNpcId": 203621,
+      "area": "south-mosbears"
+    },
+    {
+      "id": 2230,
+      "category": "QUEST",
+      "minimumLevel": 12,
+      "rewardExperience": 37200,
+      "prerequisite": 2288,
+      "handler": "altgard/_2230AFriendlyWager.cs",
+      "template": null,
+      "startNpcId": 203621,
+      "area": "south-mosbears"
+    },
+    {
+      "id": 2289,
+      "category": "QUEST",
+      "minimumLevel": 13,
+      "rewardExperience": 43350,
+      "prerequisite": 2288,
+      "handler": "altgard/_2289RampagingMosbears.cs",
+      "template": null,
+      "startNpcId": 203616,
+      "area": "south-mosbears"
+    },
+    {
+      "id": 2232,
+      "category": "QUEST",
+      "minimumLevel": 12,
+      "rewardExperience": 48600,
+      "prerequisite": null,
+      "handler": "altgard/_2232TheBrokenHoneyJar.cs",
+      "template": null,
+      "startNpcId": 203613,
+      "area": "beehives"
+    },
+    {
+      "id": 2239,
+      "category": "QUEST",
+      "minimumLevel": 12,
+      "rewardExperience": 12810,
+      "prerequisite": null,
+      "handler": "altgard/_2239MalodorAntidote.cs",
+      "template": null,
+      "startNpcId": 203613,
+      "area": "vovetirn-amphas"
+    },
+    {
+      "id": 2231,
+      "category": "QUEST",
+      "minimumLevel": 12,
+      "rewardExperience": 30450,
+      "prerequisite": null,
+      "handler": "altgard/_2231SiblingRivalry.cs",
+      "template": null,
+      "startNpcId": 203620,
+      "area": "kaibech"
+    },
+    {
+      "id": 2223,
+      "category": "QUEST",
+      "minimumLevel": 12,
+      "rewardExperience": 23250,
+      "prerequisite": null,
+      "handler": "altgard/_2223AMythicalMonster.cs",
+      "template": null,
+      "startNpcId": 203616,
+      "area": "slimes-burner"
+    },
+    {
+      "id": 24112,
+      "category": "IMPORTANT",
+      "minimumLevel": 14,
+      "rewardExperience": 17552,
+      "prerequisite": null,
+      "handler": "altgard/_24112NoLaissezFaireForLepharists.cs",
+      "template": null,
+      "startNpcId": 203631,
+      "area": "sumarhon-camp"
+    }
+  ],
+  "order": [2226, 2227, 2291, 2225, 2224, 24013, 2288, 2230, 2289, 2232, 2239, 2231, 2223, 24112],
+  "steps": [
+    {
+      "key": "q2232-offer-gilungk",
+      "questId": 2232,
+      "status": "OFFER",
+      "npcId": 203613,
+      "position": [1805.24, 724.171, 261.588],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "QUEST_ACCEPT_1"],
+      "pages": [1011],
+      "area": "basfelt"
+    },
+    {
+      "key": "q2232-v0-tatural",
+      "questId": 2232,
+      "var": 0,
+      "npcId": 203622,
+      "position": [1883.27, 711.888, 258.368],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO1"],
+      "pages": [1352],
+      "area": "basfelt"
+    },
+    {
+      "key": "q2232-v1-gilungk",
+      "questId": 2232,
+      "var": 1,
+      "npcId": 203613,
+      "position": [1805.24, 724.171, 261.588],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "CHECK_USER_HAS_QUEST_ITEM", "SELECTED_QUEST_NOREWARD"],
+      "pages": [2375, 5],
+      "area": "basfelt"
+    },
+    {
+      "key": "q2239-offer-gilungk",
+      "questId": 2239,
+      "status": "OFFER",
+      "npcId": 203613,
+      "position": [1805.24, 724.171, 261.588],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "QUEST_ACCEPT_1"],
+      "pages": [1011],
+      "area": "basfelt"
+    },
+    {
+      "key": "q2239-v0-vovetirn",
+      "questId": 2239,
+      "var": 0,
+      "npcId": 203630,
+      "position": [1989.95, 640.053, 269.0],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO1"],
+      "pages": [1352, 10],
+      "area": "vovetirn-amphas"
+    },
+    {
+      "key": "q2239-v1-vovetirn",
+      "questId": 2239,
+      "var": 1,
+      "npcId": 203630,
+      "position": [1989.95, 640.053, 269.0],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "CHECK_USER_HAS_QUEST_ITEM"],
+      "pages": [1693, 1779],
+      "receivesItemId": 182203227,
+      "area": "vovetirn-amphas"
+    },
+    {
+      "key": "q2239-v3-gilungk",
+      "questId": 2239,
+      "var": 3,
+      "npcId": 203613,
+      "position": [1805.24, 724.171, 261.588],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO3", "SELECTED_QUEST_NOREWARD"],
+      "pages": [2034, 5],
+      "area": "basfelt"
+    },
+    {
+      "key": "q2231-offer-lamir",
+      "questId": 2231,
+      "status": "OFFER",
+      "npcId": 203620,
+      "position": [1844.54, 728.43, 258.25],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "QUEST_ACCEPT_1"],
+      "pages": [1011],
+      "area": "basfelt"
+    },
+    {
+      "key": "q2231-v0-karl",
+      "questId": 2231,
+      "var": 0,
+      "npcId": 203609,
+      "position": [1749.42, 901.445, 261.0],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO1"],
+      "pages": [1352],
+      "area": "karl"
+    },
+    {
+      "key": "q2231-v1-gunmarson",
+      "questId": 2231,
+      "var": 1,
+      "npcId": 203612,
+      "position": [1621.12, 746.88, 255.18],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO2"],
+      "pages": [1693],
+      "area": "gunmarson"
+    },
+    {
+      "key": "q2231-v2-kaibech",
+      "questId": 2231,
+      "var": 2,
+      "npcId": 203610,
+      "position": [1201.16, 984.619, 254.0],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_NOREWARD"],
+      "pages": [2375],
+      "area": "kaibech"
+    },
+    {
+      "key": "q2288-offer-shania",
+      "questId": 2288,
+      "status": "OFFER",
+      "npcId": 203621,
+      "position": [1880.24, 706.68, 258.21],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "QUEST_ACCEPT_1"],
+      "pages": [1011],
+      "area": "basfelt"
+    },
+    {
+      "key": "q2288-v0-shania",
+      "questId": 2288,
+      "var": 0,
+      "npcId": 203621,
+      "position": [1880.24, 706.68, 258.21],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO1"],
+      "pages": [1003],
+      "area": "basfelt"
+    },
+    {
+      "key": "q2288-v4-shania",
+      "questId": 2288,
+      "var": 4,
+      "npcId": 203621,
+      "position": [1880.24, 706.68, 258.21],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_REWARD2"],
+      "pages": [1352, 5],
+      "area": "basfelt"
+    },
+    {
+      "key": "q2230-offer-shania",
+      "questId": 2230,
+      "status": "OFFER",
+      "npcId": 203621,
+      "position": [1880.24, 706.68, 258.21],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "QUEST_ACCEPT_1"],
+      "pages": [1011, 1003],
+      "area": "basfelt"
+    },
+    {
+      "key": "q2230-v0-shania",
+      "questId": 2230,
+      "var": 0,
+      "npcId": 203621,
+      "position": [1880.24, 706.68, 258.21],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "CHECK_USER_HAS_QUEST_ITEM", "SELECTED_QUEST_NOREWARD"],
+      "pages": [2375, 5],
+      "area": "basfelt"
+    },
+    {
+      "key": "q2289-offer-gefion",
+      "questId": 2289,
+      "status": "OFFER",
+      "npcId": 203616,
+      "position": [1828.85, 712.294, 260.0],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "QUEST_ACCEPT_1"],
+      "pages": [1011],
+      "area": "basfelt"
+    },
+    {
+      "key": "q2289-v5-gefion",
+      "questId": 2289,
+      "var": 5,
+      "npcId": 203616,
+      "position": [1828.85, 712.294, 260.0],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SELECT2_1_1", "SETPRO2"],
+      "pages": [1352, 1354],
+      "movieId": 62,
+      "area": "basfelt"
+    },
+    {
+      "key": "q2289-v6-skanin",
+      "questId": 2289,
+      "var": 6,
+      "npcId": 203618,
+      "position": [1943.76, 727.997, 263.518],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO3"],
+      "pages": [1693],
+      "receivesItemId": 182203017,
+      "area": "basfelt"
+    },
+    {
+      "key": "q2289-v7-gefion",
+      "questId": 2289,
+      "var": 7,
+      "npcId": 203616,
+      "position": [1828.85, 712.294, 260.0],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "CHECK_USER_HAS_QUEST_ITEM", "SELECTED_QUEST_NOREWARD"],
+      "pages": [2034, 5],
+      "area": "basfelt"
+    },
+    {
+      "key": "q2223-offer-gefion",
+      "questId": 2223,
+      "status": "OFFER",
+      "npcId": 203616,
+      "position": [1828.85, 712.294, 260.0],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "QUEST_ACCEPT_1"],
+      "pages": [1011],
+      "area": "basfelt"
+    },
+    {
+      "key": "q2223-v0-lamir",
+      "questId": 2223,
+      "var": 0,
+      "npcId": 203620,
+      "position": [1844.54, 728.43, 258.25],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO1"],
+      "pages": [1352],
+      "receivesItemId": 182203217,
+      "area": "basfelt"
+    },
+    {
+      "key": "q2223-reward-gefion",
+      "questId": 2223,
+      "status": "REWARD",
+      "npcId": 203616,
+      "position": [1828.85, 712.294, 260.0],
+      "talkRange": 6,
+      "actions": ["USE_OBJECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_REWARD2"],
+      "pages": [2375, 5],
+      "area": "basfelt"
+    },
+    {
+      "key": "q24112-offer-nokir",
+      "questId": 24112,
+      "status": "OFFER",
+      "npcId": 203631,
+      "position": [1779.88, 690.477, 264.309],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "QUEST_ACCEPT_1"],
+      "pages": [1011],
+      "area": "basfelt"
+    },
+    {
+      "key": "q24112-v1-brodir",
+      "questId": 24112,
+      "var": 1,
+      "npcId": 832821,
+      "position": [1512.307, 527.6995, 283.405],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_NOREWARD"],
+      "pages": [2375],
+      "area": "idun-brodir"
+    },
+    {
+      "key": "q24013-v0-nokir",
+      "questId": 24013,
+      "var": 0,
+      "npcId": 203631,
+      "position": [1779.88, 690.477, 264.309],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO1"],
+      "pages": [1011],
+      "area": "basfelt"
+    },
+    {
+      "key": "q24013-v1-shania",
+      "questId": 24013,
+      "var": 1,
+      "npcId": 203621,
+      "position": [1880.24, 706.68, 258.21],
+      "talkRange": 6,
+      "actions": ["QUEST_SELECT", "SETPRO2"],
+      "pages": [1352],
+      "receivesItemId": 182215359,
+      "area": "basfelt"
+    },
+    {
+      "key": "q24013-reward-nokir",
+      "questId": 24013,
+      "status": "REWARD",
+      "npcId": 203631,
+      "position": [1779.88, 690.477, 264.309],
+      "talkRange": 6,
+      "actions": ["USE_OBJECT", "SELECTED_QUEST_REWARD8"],
+      "pages": [],
+      "area": "basfelt"
+    }
+  ],
+  "objectUses": [
+    {
+      "key": "q2232-beehives",
+      "questId": 2232,
+      "npcId": 700061,
+      "fromVar": 1,
+      "toVar": 2,
+      "uses": 9,
+      "lootItemId": 182203224,
+      "disappears": true,
+      "spawnCount": 20,
+      "respawnSeconds": 295,
+      "area": "beehives"
+    }
+  ],
+  "collections": [
+    {
+      "questId": 2232,
+      "atVar": 1,
+      "items": [
+        {
+          "itemId": 182203224,
+          "count": 9,
+          "sourceNpcIds": [700061]
+        }
+      ]
+    },
+    {
+      "questId": 2239,
+      "atVar": 1,
+      "items": [
+        {
+          "itemId": 182203228,
+          "count": 3,
+          "sourceNpcIds": [210482, 210483]
+        }
+      ]
+    },
+    {
+      "questId": 2230,
+      "atVar": 0,
+      "items": [
+        {
+          "itemId": 182203223,
+          "count": 10,
+          "sourceNpcIds": [210436, 210437, 210440, 210564, 210581, 210584]
+        }
+      ]
+    },
+    {
+      "questId": 2289,
+      "atVar": 7,
+      "items": [
+        {
+          "itemId": 182203016,
+          "count": 1,
+          "sourceNpcIds": [210442]
+        }
+      ]
+    }
+  ],
+  "hunts": [
+    {
+      "questId": 2288,
+      "npcIds": [210436, 210437, 210440, 210564, 210581, 210584],
+      "fromVar": 1,
+      "toVar": 4,
+      "area": "south-mosbears"
+    },
+    {
+      "questId": 2289,
+      "npcIds": [210564, 210584],
+      "fromVar": 0,
+      "toVar": 5,
+      "area": "south-mosbears"
+    },
+    {
+      "questId": 24112,
+      "npcIds": [210510],
+      "fromVar": 0,
+      "toVar": 1,
+      "area": "sumarhon-camp"
+    },
+    {
+      "questId": 24013,
+      "npcIds": [210455, 210456, 214039, 210458, 214032],
+      "fromVar": 3,
+      "toVar": 8,
+      "area": "black-claws",
+      "note": "var 3 -> 7 on four kills, then a fifth kill at var 7 sets REWARD (defaultOnKillEvent(env, mobs, 7, true))"
+    }
+  ],
+  "timers": [
+    {
+      "questId": 2288,
+      "seconds": 600,
+      "startStep": "q2288-v0-shania",
+      "onExpiry": "abandon",
+      "onLogout": "abandon",
+      "lostItemIds": []
+    },
+    {
+      "questId": 2230,
+      "seconds": 1800,
+      "startStep": "q2230-offer-shania",
+      "onExpiry": "new-chance",
+      "onLogout": "abandon",
+      "lostItemIds": [182203223],
+      "newChanceAction": "SETPRO1",
+      "expiredPage": 3057
+    }
+  ],
+  "spawns": [
+    {
+      "key": "q2223-infernus",
+      "questId": 2223,
+      "atVar": 1,
+      "triggerNpcId": 700134,
+      "requiresItemId": 182203217,
+      "movieId": 67,
+      "npcId": 211621,
+      "position": [1547.1047, 894.2969, 248.019],
+      "lifetimeSeconds": 300,
+      "triggerRespawnSeconds": 295,
+      "refillPage": 1779,
+      "refillNpcId": 203620,
+      "area": "slimes-burner"
+    }
+  ],
+  "avoid": [
+    {
+      "npcId": 210442,
+      "questId": 2289,
+      "untilVar": 7,
+      "respawnSeconds": 3600,
+      "area": "komu"
+    }
+  ],
+  "itemUse": {
+    "questId": 24013,
+    "itemId": 182215359,
+    "var": 2,
+    "nextVar": 3,
+    "useMillis": 3000,
+    "anywhere": false,
+    "zone": "DF1A_ITEMUSEAREA_Q2016_220030000",
+    "spawnsNpcId": 210457,
+    "spawnCount": 2
+  },
+  "airKills": null,
+  "rewardChoice": {
+    "questId": 24013,
+    "action": "SELECTED_QUEST_REWARD8",
+    "itemId": 101501355,
+    "itemGroup": "STAFF"
+  },
+  "rewardChoices": [
+    {
+      "questId": 2288,
+      "action": "SELECTED_QUEST_REWARD2",
+      "itemId": 122001285,
+      "itemGroup": "RING"
+    },
+    {
+      "questId": 2223,
+      "action": "SELECTED_QUEST_REWARD2",
+      "itemId": 120001132,
+      "itemGroup": "EARRING"
+    }
+  ],
+  "unhandedWorkItemIds": {},
+  "flight": null,
+  "excluded": [],
+  "endpoint": {
+    "mapId": 220030000,
+    "completedQuestIds": [2226, 2227, 2291, 2225, 2224, 24013, 2288, 2230, 2289, 2232, 2239, 2231, 2223, 24112],
+    "inHub": true,
+    "alive": true,
+    "minimumLevel": 16,
+    "snapshot": "altgard-l4",
+    "bindNpcId": 700066
+  }
+}

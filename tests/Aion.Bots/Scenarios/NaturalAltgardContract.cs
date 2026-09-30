@@ -6,7 +6,9 @@ namespace Aion.Bots.Scenarios;
 /// One leg of the Altgard leveling leg (docs/natural-altgard-leveling.md). Leg 1 (<c>l1</c>) is the fortress: Q2201-Q2209
 /// and the Q24011 campaign, from the <c>altgard</c> snapshot to <c>altgard-l12</c>. Leg 2 (<c>l2</c>) is Moslan Crossroad:
 /// Q2210-Q2215, Q2218-Q2220 and the Q24012 campaign, from <c>altgard-l12</c> to <c>altgard-l2</c>. Leg 3 (<c>l3</c>) is
-/// Manir's Campsite: Q2221, the Q2290 escort and Q2222, from <c>altgard-l2</c> to <c>altgard-l3</c> at Basfelt. Static walkthrough
+/// Manir's Campsite: Q2221, the Q2290 escort and Q2222, from <c>altgard-l2</c> to <c>altgard-l3</c> at Basfelt. Leg 4 (<c>l4</c>)
+/// is Basfelt Village: fourteen quests with two timers, a spawned EXPERT, custom kill counters, a zone-bound item use, a monster
+/// to leave alone and a bind at the hub, from <c>altgard-l3</c> to <c>altgard-l4</c>. Static walkthrough
 /// knowledge only; at run time every step is still driven by what the client observes. Each leg's template-quest plans
 /// live beside its contract. Sections a leg does not need (Leg 1's flight, remedy and air kills; Leg 2's town, object
 /// uses, zone steps, collections and poisons) are left out of its file.
@@ -33,7 +35,13 @@ public sealed record NaturalAltgardContract(
 	NaturalAltgardZoneStep[]? ZoneSteps = null,
 	NaturalAltgardCollection[]? Collections = null,
 	NaturalAltgardPoison[]? Poisons = null,
-	NaturalAltgardEscort[]? Escorts = null)
+	NaturalAltgardEscort[]? Escorts = null,
+	NaturalAltgardBind? Bind = null,
+	NaturalAltgardHunt[]? Hunts = null,
+	NaturalAltgardTimer[]? Timers = null,
+	NaturalAltgardSpawn[]? Spawns = null,
+	NaturalAltgardAvoid[]? Avoid = null,
+	NaturalAltgardRewardChoice[]? RewardChoices = null)
 {
 	/// <summary>The contract file and plan directory of each leg (none when the leg has no template quests).</summary>
 	public static readonly IReadOnlyDictionary<string, (string Contract, string? Plans)> Legs = new Dictionary<string, (string, string?)>
@@ -41,6 +49,7 @@ public sealed record NaturalAltgardContract(
 		["l1"] = ("natural-altgard-contract.json", "natural-altgard-plans"),
 		["l2"] = ("natural-altgard-l2-contract.json", "natural-altgard-l2-plans"),
 		["l3"] = ("natural-altgard-l3-contract.json", null),
+		["l4"] = ("natural-altgard-l4-contract.json", "natural-altgard-l4-plans"),
 	};
 
 	public NaturalAltgardObjectUse[] ObjectUseList => ObjectUses ?? [];
@@ -48,6 +57,12 @@ public sealed record NaturalAltgardContract(
 	public NaturalAltgardCollection[] CollectionList => Collections ?? [];
 	public NaturalAltgardPoison[] PoisonList => Poisons ?? [];
 	public NaturalAltgardEscort[] EscortList => Escorts ?? [];
+	public NaturalAltgardHunt[] HuntList => Hunts ?? [];
+	public NaturalAltgardTimer[] TimerList => Timers ?? [];
+	public NaturalAltgardSpawn[] SpawnList => Spawns ?? [];
+	public NaturalAltgardAvoid[] AvoidList => Avoid ?? [];
+	/// <summary>Every chosen reward of the leg: the campaign's (<see cref="RewardChoice"/>) and the others'.</summary>
+	public NaturalAltgardRewardChoice[] RewardChoiceList => [.. RewardChoice is { } choice ? [choice] : Array.Empty<NaturalAltgardRewardChoice>(), .. RewardChoices ?? []];
 
 	/// <summary>Leg 1 sections, for code that only runs Leg 1.</summary>
 	public NaturalAltgardFlight RequiredFlight => Flight ?? throw new InvalidDataException($"{Leg} has no flight rules.");
@@ -84,7 +99,7 @@ public sealed record NaturalAltgardContract(
 			foreach (string action in step.Actions)
 				NaturalAscensionContract.DialogActionId(action);
 		}
-		if (contract.RewardChoice is { } choice) NaturalAscensionContract.DialogActionId(choice.Action);
+		foreach (NaturalAltgardRewardChoice choice in contract.RewardChoiceList) NaturalAscensionContract.DialogActionId(choice.Action);
 		foreach (string action in contract.ObjectUseList.Select(use => use.CloseAction).OfType<string>())
 			NaturalAscensionContract.DialogActionId(action);
 		int[] scripted = contract.ObjectUseList.Select(use => use.QuestId).Concat(contract.ZoneStepList.Select(zone => zone.QuestId))
@@ -100,6 +115,18 @@ public sealed record NaturalAltgardContract(
 				!stepKeys.Contains(escort.RestartStep) || !areas.Contains(escort.Area) || escort.ClearAreas.Any(area => !areas.Contains(area)) ||
 				escort.MaxAttempts < 1 || escort.GoalRadius <= 0 || escort.Leash <= escort.GoalRadius || escort.Goal.Length != 3))
 			throw new InvalidDataException("Natural Altgard escorts disagree with the quests, steps or areas, or have no attempts, radius or leash.");
+		// AB-01: Leg 4's hunts, timers, spawns and monsters to leave alone.
+		if (contract.HuntList.Any(hunt => !questIds.Contains(hunt.QuestId) || !areas.Contains(hunt.Area) || hunt.NpcIds.Length == 0 || hunt.ToVar <= hunt.FromVar) ||
+			contract.TimerList.Any(timer => !questIds.Contains(timer.QuestId) || !stepKeys.Contains(timer.StartStep) || timer.Seconds <= 0 ||
+				timer.OnExpiry is not ("abandon" or "new-chance") || timer.OnLogout is not "abandon" ||
+				timer.OnExpiry == "new-chance" && timer.NewChanceAction == null) ||
+			contract.SpawnList.Any(spawn => !questIds.Contains(spawn.QuestId) || !areas.Contains(spawn.Area) || spawn.LifetimeSeconds <= 0 ||
+				spawn.Position.Length != 3) ||
+			contract.AvoidList.Any(avoid => !questIds.Contains(avoid.QuestId) || !areas.Contains(avoid.Area)) ||
+			contract.RewardChoiceList.Any(choice => !questIds.Contains(choice.QuestId)))
+			throw new InvalidDataException("Natural Altgard hunts, timers, spawns, avoidances or reward choices disagree with the quests, steps or areas.");
+		foreach (string action in contract.TimerList.Select(timer => timer.NewChanceAction).OfType<string>())
+			NaturalAscensionContract.DialogActionId(action);
 		return contract;
 	}
 
@@ -129,6 +156,9 @@ public sealed record NaturalAltgardContract(
 				.Select(npc => npc.Id)))
 			.Concat(ObjectUseList.Select(use => use.NpcId))
 			.Concat(EscortList.SelectMany(escort => new[] { escort.FollowerNpcId, escort.GoalNpcId }))
+			.Concat(HuntList.SelectMany(hunt => hunt.NpcIds))
+			.Concat(SpawnList.Select(spawn => spawn.TriggerNpcId))
+			.Concat(Bind is { } bind ? [bind.NpcId] : [])
 			.Concat(CollectionList.SelectMany(collection => collection.Items.SelectMany(item => item.SourceNpcIds)))
 			.Append(Start.BindNpcId).Concat(AirKills is { } air ? [air.NpcId] : [])
 			.Distinct().Order().ToArray();
@@ -165,7 +195,10 @@ public sealed record NaturalAltgardStep(string Key, int QuestId, int? Var, strin
 	public string ExpectedStatus => Status ?? "START";
 }
 
-public sealed record NaturalAltgardItemUse(int QuestId, int ItemId, int Var, int NextVar, int UseMillis, bool Anywhere);
+/// <param name="Zone">AB-01: where the item must be used when not <paramref name="Anywhere"/> (Q24013's poison), and the
+/// monsters the use spawns (Java <c>onItemUseEvent</c>: two Feral Black Claw Sharpeyes).</param>
+public sealed record NaturalAltgardItemUse(int QuestId, int ItemId, int Var, int NextVar, int UseMillis, bool Anywhere,
+	string? Zone = null, int? SpawnsNpcId = null, int SpawnCount = 0);
 
 public sealed record NaturalAltgardAirKills(int QuestId, int NpcId, int SpawnCount, int FromVar, int RewardVar, int KillsAfterBorender,
 	string Note);
@@ -179,8 +212,33 @@ public sealed record NaturalAltgardFlight(NaturalAltgardFlightZone[] Zones, floa
 public sealed record NaturalAltgardExclusion(int Id, string Reason, int Leg);
 
 /// <param name="Anchor">Where the leg ends when that is not its hub (Leg 2: Manir's Campsite), within <paramref name="Radius"/>.</param>
+/// <param name="BindNpcId">AB-01: the obelisk the character must be bound at when the leg ends (the standing bind policy).</param>
 public sealed record NaturalAltgardEndpoint(int MapId, int[] CompletedQuestIds, bool InHub, bool Alive, int MinimumLevel, string Snapshot,
-	float[]? Anchor = null, float Radius = 0);
+	float[]? Anchor = null, float Radius = 0, int? BindNpcId = null);
+
+/// <summary>AB-01, the standing bind policy (AB-Q5): bind at the obelisk of the hub the leg works out of, on arrival.</summary>
+public sealed record NaturalAltgardBind(int NpcId, float[] Position, bool OnArrival);
+
+/// <summary>AB-01: a custom handler's kill counter: each kill of <paramref name="NpcIds"/> moves the var from
+/// <paramref name="FromVar"/> toward <paramref name="ToVar"/> (Q2288, Q2289, Q24112, Q24013).</summary>
+public sealed record NaturalAltgardHunt(int QuestId, int[] NpcIds, int FromVar, int ToVar, string Area, string? Note = null);
+
+/// <summary>AB-01: a timed quest. The server's QUEST_TIMER starts at <paramref name="StartStep"/>; at its end the quest is
+/// abandoned or, for a new chance, the next check takes <paramref name="LostItemIds"/> (page <paramref name="ExpiredPage"/>)
+/// and <paramref name="NewChanceAction"/> starts another. A logout abandons either.</summary>
+public sealed record NaturalAltgardTimer(int QuestId, int Seconds, string StartStep, string OnExpiry, string OnLogout, int[] LostItemIds,
+	string? NewChanceAction = null, int? ExpiredPage = null);
+
+/// <summary>AB-01: a monster a quest spawns: using <paramref name="TriggerNpcId"/> with <paramref name="RequiresItemId"/> at
+/// <paramref name="AtVar"/> plays <paramref name="MovieId"/>, whose end spawns <paramref name="NpcId"/> at
+/// <paramref name="Position"/> for <paramref name="LifetimeSeconds"/> (Q2223's Infernus). The used trigger respawns after
+/// <paramref name="TriggerRespawnSeconds"/>; <paramref name="RefillNpcId"/> gives a new item (page <paramref name="RefillPage"/>).</summary>
+public sealed record NaturalAltgardSpawn(string Key, int QuestId, int AtVar, int TriggerNpcId, int RequiresItemId, int MovieId, int NpcId,
+	float[] Position, int LifetimeSeconds, int TriggerRespawnSeconds, int RefillPage, int RefillNpcId, string Area);
+
+/// <summary>AB-01, AB-Q3: a monster left alone until a quest reaches <paramref name="UntilVar"/> (Komu Silverclaw: his horn drops
+/// only then, and he respawns after <paramref name="RespawnSeconds"/>).</summary>
+public sealed record NaturalAltgardAvoid(int NpcId, int QuestId, int UntilVar, int RespawnSeconds, string Area);
 
 /// <summary>A quest object used by hand: a loot (Q2213's Okaru Tree) or a step per use (Q24012's MuMu Carts, each gone once
 /// used; <paramref name="SpawnCount"/> spawns respawn after <paramref name="RespawnSeconds"/>).</summary>

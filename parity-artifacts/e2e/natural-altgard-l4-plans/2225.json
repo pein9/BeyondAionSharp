@@ -1,0 +1,283 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2225,
+    "name": "No-Good Slime",
+    "nameId": 1103325,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 12,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2225,
+        "start_npc_ids": 203633
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203633,
+        "name": "hunmir",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1801.17,
+            "y": 703.91,
+            "z": 265.0,
+            "heading": 17,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203633,
+      "name": "hunmir",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1801.17,
+          "y": 703.91,
+          "z": 265.0,
+          "heading": 17,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203633,
+      "name": "hunmir",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1801.17,
+          "y": 703.91,
+          "z": 265.0,
+          "heading": 17,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": 210435,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210435,
+          "name": "rainbow slime",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1452.42,
+              "y": 877.644,
+              "z": 247.375,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1461.67,
+              "y": 864.205,
+              "z": 247.375,
+              "heading": 40,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1492.14,
+              "y": 829.665,
+              "z": 247.658,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1508.51,
+              "y": 889.499,
+              "z": 247.468,
+              "heading": 104,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1515.01,
+              "y": 834.408,
+              "z": 247.5,
+              "heading": 50,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1523.02,
+              "y": 854.391,
+              "z": 247.375,
+              "heading": 39,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1523.6,
+              "y": 878.155,
+              "z": 247.675,
+              "heading": 88,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1532.71,
+              "y": 822.553,
+              "z": 247.375,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1542.08,
+              "y": 851.507,
+              "z": 247.375,
+              "heading": 52,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1551.08,
+              "y": 888.975,
+              "z": 248.122,
+              "heading": 23,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1564.57,
+              "y": 903.577,
+              "z": 247.25,
+              "heading": 43,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203633,
+          "name": "hunmir",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1801.17,
+              "y": 703.91,
+              "z": 265.0,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 19950,
+        "gold": 8370,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "count": 1,
+            "item_id": 123001109
+          },
+          {
+            "count": 1,
+            "item_id": 123001110
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2225,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 12,
+      "name": "No-Good Slime",
+      "nameId": 1103325,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 19950,
+          "gold": 8370
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 123001109
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 123001110
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": 210435,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

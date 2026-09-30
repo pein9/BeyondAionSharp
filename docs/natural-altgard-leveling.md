@@ -1587,7 +1587,7 @@ again after every hand-in, so a follow-up inside the leg's scope is taken as soo
 
 The same loop protocol, with "AB" in place of "NA".
 
-- [ ] **AB-01 — The Leg 4 contract and plans.** `natural-altgard-l4-contract.json` with:
+- [x] **AB-01 — The Leg 4 contract and plans.** `natural-altgard-l4-contract.json` with:
   - the hub (Basfelt, Nokir), the fortress as town, and the grounds above as areas;
   - the eleven quests, Q2227, Q2291 and the Q24013 campaign (AB-Q4), and their order;
   - the bind at the Basfelt obelisk on arrival (AB-Q5);
@@ -1602,6 +1602,46 @@ The same loop protocol, with "AB" in place of "NA".
   - the endpoint (AB-Q1).
 
   Contract tests against quest data, spawns, NPC templates and the eight C# handlers.
+  - *Done 2026-09-30.* `parity-artifacts/e2e/natural-altgard-l4-contract.json` is generated from the
+    shipped spawn and NPC data, so positions and talk ranges (6 m) are copied, not typed. It holds:
+    - the start (`altgard-l3`, level 16, Q24013 started);
+    - Basfelt as hub **and** town, and the bind at the Basfelt obelisk 700066 on arrival (AB-Q5);
+    - 14 areas;
+    - the 14 quests in order: Q2226 → Q2227 → Q2291 first, then Q2225, Q2224, Q24013, the Q2288
+      batch, Q2232, Q2239, Q2231, Q2223 (after Q2231 and Q2224) and Q24112;
+    - 28 dialog steps for the 9 custom quests;
+    - the beehive object use;
+    - four var-gated collections, among them Komu's Horn at var 7;
+    - the new sections:
+      - **`hunts`**: the custom kill counters of Q2288 (vars 1→4), Q2289 (0→5), Q24112 (0→1)
+        and Q24013 (3→7, then a fifth kill);
+      - **`timers`**: Q2288 600 s from SETPRO1, abandoned; Q2230 1,800 s from the accept, with
+        a SETPRO1 new chance and the tusks taken at page 3057; both abandoned on logout;
+      - **`spawns`**: Infernus 211621 for 300 s after movie 67 at the burner, and Lamir's
+        refill incense;
+      - **`avoid`**: Komu 210442 until Q2289 var 7, with a 3,600 s respawn;
+      - the Q24013 poison as an item use bound to zone `DF1A_ITEMUSEAREA_Q2016_220030000`,
+        which spawns two 210457;
+    - three reward choices (see below);
+    - the endpoint: every quest, in the hub, bound at 700066.
+  - **The reward choices:**
+    - Q24013: the Altgard Legionary Staff (the Cleric's weapon kind), SELECTED_QUEST_REWARD8;
+    - Q2288: Shania's Crystal Ring (+28 MP);
+    - Q2223: Gefion's Crystal Earrings (+10 magic boost).
+    Q2225's belt is left to the template runner's own choice.
+  - The five template plans (Q2226, Q2227, Q2291, Q2225, Q2224) are compiled into
+    `natural-altgard-l4-plans/`.
+  - `NaturalAltgardContract` loads `l4` with new records, each checked on load against the
+    quests, steps and areas: `Bind`, `Hunt`, `Timer`, `Spawn` and `Avoid`, a zone-bound
+    `ItemUse`, `Endpoint.BindNpcId`, and a list of reward choices.
+  - Five `NaturalAltgardLeg4ContractTests` check it against quest data, spawns, NPC templates, zones,
+    items and the nine C# handlers: registrations (constants included), pages, movies,
+    given items, timers, kill counters, the Infernus spawn, the poison's zone and spawns,
+    drops and chances, and the beehives. All 325 Natural tests pass, and so do the warning
+    baseline, the logger and clock checks, and `test-quest-plan-compiler.py`.
+  - The D32 quests that now exist (Q24110, Q24111, Q24113, Q24115, Q24232 and Q24233) do not
+    start in Basfelt: they start at the fortress, Moslan Crossroad, Idun's Lake, Trader's
+    Berth and the Observatory. So Leg 4's scope is unchanged; their stops' legs take them in.
 - [ ] **AB-02 — Travel.** Every ground above, from the hub and back, in SIM, with the danger
   recorded. **Done when:** every leg walks. That includes Sumarhon's height (z 333) and the
   beehive grove, whose navmesh is not proven yet.
@@ -1856,3 +1896,4 @@ The original questions follow.
 - 2026-09-29 AC-06: the Leg 3 runner; the smoke run completed Leg 3 from altgard-l2 with no death (level 16, at Nokir); the escort succeeded on attempt 1 after clearing 16 robbers.
 - 2026-09-29 AC-07: SIM run snapshot-altgard-l3-s1 completed Leg 3 with no death (level 16); snapshot altgard-l3 captured and restore-checked.
 - 2026-09-30 AC-08: full checklist green after run-fast's walker-dependent probes learned to follow or skip, and the air-combat cast gate is released on a refusal; Leg 3 is done.
+- 2026-09-30 AB-01: the Leg 4 contract (hunts, timers, the Infernus spawn, Komu, the zone-bound poison, the Basfelt bind), five template plans, and five contract tests.
