@@ -101,6 +101,7 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.Equal(((byte)3, carts.ToVar), NaturalAltgardQuestSteps.State(session.Api.World, quest));
 
 		// The collections, from var 5.
+		var unseen = new HashSet<int>();
 		foreach (NaturalAltgardCollectedItem item in collection.Items)
 		{
 			int kills = 0;
@@ -117,14 +118,30 @@ public sealed partial class SimulationFastScenarioTests
 					target = Nearest(item.SourceNpcIds) ?? throw new InvalidDataException($"No source of {item.ItemId} in view near {spawn}.");
 				}
 				ClearAggressiveAround(target.Position, target.ObjectId);
-				await WalkToAsync(target.Position, 18f, target.ObjectId);
 				// GM setup on the monster, never on the bot: one Smite kills, so the probe tests the var-5 drops and
 				// the loot, not the fight (AM-06's).
 				var victim = instance.GetNpcs().Single(npc => npc.GetObjectId() == target.ObjectId);
 				victim.GetLifeStats().SetCurrentHp(1);
-				bool killed = await NaturalAirCombat.ShootDownAsync(session, target.ObjectId, quest,
-					(origin, skill, level, victim) => runtime.CreateSpellCast(session.Api.World, origin, skill, level, victim), token, maximumCasts: 20);
-				Assert.True(killed, $"{target.TemplateId} {target.ObjectId} was not killed");
+				// The hairpin sources are walking patrols: in a long shared SIM world one may stand out of sight
+				// (STR_SKILL_OBSTACLE) or walk off (AC-08), so follow it, closer each time, and shoot again, as a player does.
+				bool killed = false;
+				float[] reach = [18f, 8f, 3f];
+				for (int chase = 0; chase < reach.Length && !killed; chase++)
+				{
+					BotPosition now = session.Api.World.Objects.TryGetValue(target.ObjectId, out BotKnownObject? seen) ? seen.Position : target.Position;
+					await WalkToAsync(now, reach[chase], target.ObjectId);
+					killed = await NaturalAirCombat.ShootDownAsync(session, target.ObjectId, quest,
+						(origin, skill, level, victim) => runtime.CreateSpellCast(session.Api.World, origin, skill, level, victim), token, maximumCasts: 20);
+				}
+				if (!killed)
+				{
+					// Out of sight from every ground spot below it (a MuMu highsitter on its platform): a player picks
+					// another source, and so does the probe.
+					Assert.True(unseen.Add(target.ObjectId) && unseen.Count <= 3, $"{target.TemplateId} {target.ObjectId} was not killed");
+					Console.WriteLine($"AM-05 {target.TemplateId} {target.ObjectId}: out of sight from the ground, another source instead");
+					kills--;
+					continue;
+				}
 				await WalkToAsync(session.Api.World.Objects.TryGetValue(target.ObjectId, out BotKnownObject? corpse) ? corpse.Position : target.Position, 2f, target.ObjectId);
 				bool looted = await NaturalAltgardQuestSteps.LootItemAsync(session, target.ObjectId, item.ItemId, token);
 				Console.WriteLine($"AM-05 {target.TemplateId}: {(looted ? "dropped" : "no drop")}, {ItemCount(item.ItemId)} of {item.Count}; HP {session.Api.World.CurrentHp}/{session.Api.World.MaxHp}");
@@ -149,6 +166,7 @@ public sealed partial class SimulationFastScenarioTests
 		// Living ones only: the client keeps a corpse in view until it decays.
 		BotKnownObject? Nearest(int[] templates) => session.Api.World.Objects.Values
 			.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId is int id && templates.Contains(id) && !known.IsCorpse &&
+				!unseen.Contains(known.ObjectId) &&
 				instance.GetNpcs().Any(npc => npc.GetObjectId() == known.ObjectId && !npc.IsDead()))
 			.OrderBy(known => NaturalGuardedTalkPolicy.Distance(known.Position, session.CurrentPosition)).FirstOrDefault();
 

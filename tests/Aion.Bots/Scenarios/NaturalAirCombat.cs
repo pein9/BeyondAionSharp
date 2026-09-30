@@ -96,6 +96,13 @@ public static class NaturalAirCombat
 				(predicate, waitToken) => session.WaitForPacketAsync(packet => predicate(packet) || BotCastProtocol.IsStartRejection(packet) ||
 					IsInvalidTarget(packet), waitToken),
 				session.CharacterId, skillId, token);
+			// A refused cast never starts on the server: release the local casting gate, as the journey's CastAsync does
+			// (AC-08: without it the next cast threw). Out of range or sight, the caller has to move first.
+			if (started.PacketType == typeof(SM_SYSTEM_MESSAGE))
+			{
+				session.Api.Timing.RecordCastCancelled();
+				if (started.Get<object>("name") is "STR_SKILL_NOT_ENOUGH_DISTANCE" or "STR_SKILL_OBSTACLE") return false;
+			}
 			// The target is dead or gone (its corpse lingers until SM_DELETE): the attempt is over.
 			if (IsInvalidTarget(started)) return false;
 			if (started.PacketType == typeof(SM_CASTSPELL))

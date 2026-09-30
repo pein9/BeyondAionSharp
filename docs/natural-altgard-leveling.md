@@ -8,8 +8,8 @@ The zone is worked in **sub-legs**. The first one is
 TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-altgard.md).
 
 **Leg 1 is done (AF-00..AF-10, 2026-09-29).** [Leg 2: Moslan Crossroad](#leg-2-moslan-crossroad-level-1315--proposal) is done (AM-01..AM-09, 2026-09-29): `altgard-l2` starts Leg 3.
-[Leg 3: Manir's Campsite and Dock](#leg-3-manirs-campsite-and-dock-level-15--proposal) is approved (AC-Q1..AC-Q3 as
-recommended) and worked in Loop mode (AC-00..AC-08).
+[Leg 3: Manir's Campsite and Dock](#leg-3-manirs-campsite-and-dock-level-15--proposal) is done (AC-00..AC-08,
+2026-09-30): `altgard-l3` starts Leg 4 at Basfelt.
 
 ## Goal
 
@@ -1375,7 +1375,37 @@ The same loop protocol, with "AC" in place of "NA".
     - The dump shows Q2221, Q2290 and Q2222 COMPLETE, Q24013 START, 848,030 XP, at
       (1779.88, 690.477) in Altgard.
   - The warning baseline and the logger and clock checks pass.
-- [ ] **AC-08 — The full `CLAUDE.md` checklist and a checkpoint.**
+- [x] **AC-08 — The full `CLAUDE.md` checklist and a checkpoint.**
+  - *Done 2026-09-30.* The whole `CLAUDE.md` build-and-test list ran in order
+    (`run/ac08/summary.txt`, one log per check). 31 of 32 passed at first:
+    - the build and `dotnet test AionServer.slnx`: GameServer 4,399 passed and 16 skipped,
+      Commons 303, LoginServer 135 (7 skipped), ChatServer 41 (1 skipped), Simulation 145
+      (41 skipped);
+    - the warning baseline, the logger, clock-read and custom-quest-drafts checks, fidelity,
+      every Python and PowerShell contract test, and the NavBake check.
+  - **`run-fast` failed at first.** Three reruns found and fixed, in turn, tests that assumed
+    a walking or perched NPC stood where they expected. The new Leg 3 probes add game time to
+    the shared Fast world, so the patrols had moved on. Each test passed alone:
+    - **A real bug:** `NaturalAirCombat.ShootDownAsync` (AF-06) never released the client's
+      casting gate after a refused cast, so the next cast threw. It now does, as the journey's
+      `CastAsync` does, and it returns on an out-of-range or out-of-sight refusal so the caller
+      can move.
+    - The AM-05 crop probe follows a walking patrol, closer each time. It sets aside a
+      source it cannot see from the ground (a MuMu highsitter, 210610, 7 m up on its
+      platform) and takes another.
+    - The Q2223 correction test (D27, another session's) stands beside where the client sees
+      Lamir on his route, instead of at his spawn point.
+    - The AM-03 crossroad probe's setup teleport goes beside Rion's current position; he
+      walks the fortress.
+  - The fourth `run-fast` passed: 37 passed and 3 skipped (`run/fast-20260930-001408`). So did
+    the warning baseline and the logger and clock checks.
+  - **Checkpoint.** Leg 3 is done in SIM:
+    - Q2221, the Q2290 escort (first attempt) and Q2222;
+    - 21 fights, no death, level 16 beside Nokir at Basfelt;
+    - snapshot `altgard-l3` starts Leg 4, Stop 4: Basfelt Village.
+    LIVE is still run once, at the end of the Altgard leg (AF-Q3). The Anti-Shock shield,
+    Salvation and the help items have still never been needed in a real fight. The escort
+    handler is ready for Q2284 (Stop 8).
 
 **Endpoint (AC-Q1 (a)):**
 - Q2221, Q2290 and Q2222 completed;
@@ -1524,3 +1554,4 @@ The original questions follow.
 - 2026-09-29 AC-05: Q2221 in SIM: the safe (3 s bar, page 1693, loot, var 2, gone), Groken's hand-in, and Q2290 offered.
 - 2026-09-29 AC-06: the Leg 3 runner; the smoke run completed Leg 3 from altgard-l2 with no death (level 16, at Nokir); the escort succeeded on attempt 1 after clearing 16 robbers.
 - 2026-09-29 AC-07: SIM run snapshot-altgard-l3-s1 completed Leg 3 with no death (level 16); snapshot altgard-l3 captured and restore-checked.
+- 2026-09-30 AC-08: full checklist green after run-fast's walker-dependent probes learned to follow or skip, and the air-combat cast gate is released on a refusal; Leg 3 is done.

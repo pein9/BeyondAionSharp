@@ -44,7 +44,11 @@ public sealed partial class SimulationFastScenarioTests
 		BotTravelPlanner planner = BotTravelPlanner.For(altgard, geometry, fixture.DataManager.StaticData)
 			?? throw new InvalidDataException("Altgard has no travel planner.");
 		QuestRunPosition rion = Assert.Single(Assert.Single(plans[report].StartNpcs).Positions);
-		BotPosition nearRion = geometry.GroundAround(altgard, new BotPosition(rion.X, rion.Y, rion.Z, 0), [2.5f, 3.5f]).First();
+		// Rion walks a route through the fortress: in a long shared SIM world he can be out of view of his spawn point
+		// (AC-08), so the setup teleport goes beside where the server has him now.
+		var rionNow = instance.GetNpcs().FirstOrDefault(npc => npc.GetNpcId() == 203603);
+		BotPosition rionAt = rionNow != null ? new BotPosition(rionNow.GetX(), rionNow.GetY(), rionNow.GetZ(), 0) : new BotPosition(rion.X, rion.Y, rion.Z, 0);
+		BotPosition nearRion = geometry.GroundAround(altgard, rionAt, [2.5f, 3.5f, 5f]).First();
 		await TeleportForSetupAsync(session, player, altgard, nearRion.X, nearRion.Y, nearRion.Z, token);
 		await session.SynchronizeAsync(token);
 		Assert.Equal(13, session.Api.World.Level);

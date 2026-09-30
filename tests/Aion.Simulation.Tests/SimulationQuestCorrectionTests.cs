@@ -1,4 +1,5 @@
 using Aion.Bots.Protocol;
+using Aion.Bots.World;
 using Aion.Bots.Scenarios;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
@@ -86,6 +87,13 @@ public sealed partial class SimulationFastScenarioTests
 		await TeleportForSetupAsync(session, player, altgard, 1842.5f, 728.43f, 258.25f, token);
 		await session.SynchronizeAsync(token);
 		int lamirObject = await session.WaitForNpcAsync(lamir, token);
+		// In a long shared SIM world Lamir may be anywhere on his route (AC-08): stand beside where the client sees him.
+		BotPosition seen = session.Api.World.Objects[lamirObject].Position;
+		if (MathF.Sqrt(MathF.Pow(seen.X - player.GetX(), 2) + MathF.Pow(seen.Y - player.GetY(), 2)) > 3)
+		{
+			await TeleportForSetupAsync(session, player, altgard, seen.X - 1.5f, seen.Y, seen.Z, token);
+			await session.SynchronizeAsync(token);
+		}
 
 		session.BeginStep("s01", "talk-to-lamir");
 		await NaturalDialogProtocol.OpenAsync(session, lamirObject, token);
