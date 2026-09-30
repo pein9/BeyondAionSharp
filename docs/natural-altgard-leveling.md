@@ -8,6 +8,8 @@ The zone is worked in **sub-legs**. The first one is
 TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-altgard.md).
 
 **Leg 1 is done (AF-00..AF-10, 2026-09-29).** [Leg 2: Moslan Crossroad](#leg-2-moslan-crossroad-level-1315--proposal) is done (AM-01..AM-09, 2026-09-29): `altgard-l2` starts Leg 3.
+[Leg 3: Manir's Campsite and Dock](#leg-3-manirs-campsite-and-dock-level-15--proposal) is proposed, with its own
+escort handler, and waits for AC-Q1..AC-Q3.
 
 ## Goal
 
@@ -896,7 +898,279 @@ The same loop protocol, with "AM" in place of "NA".
 (AM-Q1). No level target: level 14–15 is
 expected.
 
+## Leg 3: Manir's Campsite and Dock (level 15) — proposal
+
+**Status (2026-09-29): proposed**, waiting for AC-Q1..AC-Q3 (see "Blocked / questions").
+It starts from the `altgard-l2` snapshot: character 133297, a level 15 Cleric at
+778,817 XP, standing beside Manir, bound at Altgard Fortress. Q2215 is COMPLETE, so all
+three Stop 3 quests are open (minimum level 12). No other quest starts at Manir, Groken or
+Karl.
+
+### The hub and its grounds
+
+Manir's Campsite is Manir (203607) at (1460, 1193, 259). There is no obelisk and no
+vendor. Everything else in the leg lies west, at the grave robbers' camp, or
+east, on the way to Basfelt.
+
+| Ground | Where | From Manir | What lives there |
+|---|---|---|---|
+| Manir's Campsite | Manir (1460, 1193, 259) | — | qooqoo (L1), grove pluma (L11, passive), ice airons (L10) |
+| Groken's Safe (700214) | (1266, 1110, 254) | 210 m west | **Commander Mohen, EXPERT L13, 5 m from the safe** (respawn 1,200 s); four grave robbing fencers (L14) 14–23 m away; smugglers (L13) 25–31 m; a duellist (L12) 40 m |
+| Groken (203608) | (1224, 1096, 248) | 250 m west | one fencer 31 m away; the safe's group 41–57 m |
+| Groken's Sailing Boat (700178), the escort's goal | (1216, 1217, 247) | 245 m west | **a duellist (L12) 7 m from the boat**; three fencers (L14) 19–32 m; two smugglers (L13) 23–25 m; ice airons |
+| Karl (203609) | (1749, 901, 261) | 411 m south-east, at the south edge of the tog grounds | wild togs (L11–13, aggressive) on the way |
+| Nokir (203631), Basfelt Village | (1780, 690, 264) | 213 m south of Karl | Basfelt's guards (Hunmir, Mirokin, a tamed worg); striped gumi (L2) |
+
+All the grave robbers are tribe **LEHPAR**. It aggroes `PC_DARK` and supports every
+LEHPAR tribe, so a pull near the safe or the boat brings the group. Level 12–14 is within
+the Java aggro gap for a level 15 player. Groken is `GENERAL_DARK`, which LEHPAR does not
+aggro, and the escort makes him PEACE, so **the robbers attack the player, never Groken**.
+Every robber but Mohen respawns after 295 s. No FLY zone covers any of this; Leg 3 is on
+foot.
+
+### Quests
+
+| Quest | Name | Kind | From → to | Objective | XP |
+|---|---|---|---|---|---|
+| 2221 | Manir's Uncle | custom | Manir → Groken | Groken; open Groken's Safe and loot the item; back to Groken | 8,910 |
+| 2290 | Groken's Escape | custom, **escort**, after 2221 | Groken → Manir | escort Groken to his boat; report to Manir | 21,300 |
+| 2222 | Manir's Message | custom, after 2290 | Manir → Karl → **Nokir** | talk; Nokir is at Basfelt (AC-Q1) | 13,080 |
+
+Quest XP is 43,290, plus the robbers' kills. The leg stays at level 15.
+
+**Q2221 (Java `_2221ManirsUncle`):**
+1. Manir starts it (page 1011).
+2. Groken, var 0: QUEST_SELECT (page 1352), SETPRO1 → var 1.
+3. Groken's Safe, var 1: USE_OBJECT (page 1693), SETPRO2 closes the dialog. The safe is a
+   `quest_use_item` object. It drops item 182203215 (`quest_drop`, `collecting_step` 1, no
+   chance, so 100%), and `onGetItem` moves var 1 → 2. This is AM-04's use-and-loot shape.
+4. Groken, var 2: QUEST_SELECT (page 2375). SELECT_QUEST_REWARD takes the item and sets
+   REWARD (page 5); the end dialog follows.
+
+**Q2290 (Java `_2290GrokensEscape`), the escort:**
+1. Groken offers it: QUEST_SELECT 1011, ASK_QUEST_ACCEPT 4, QUEST_ACCEPT_1 1003.
+2. **SELECT1_1** starts the quest and calls `defaultStartFollowEvent(env, Groken, 700178, 0, 1)`:
+   - Groken becomes PEACE and receives FOLLOW_ME;
+   - var 0 → 1;
+   - a `QUEST_FOLLOW` task starts: `FollowingNpcCheckTask`, every 1,000 ms.
+3. Each check, in this order:
+   - **fail** if the player or Groken is dead;
+   - **fail** if the player and Groken are more than **50 m** apart;
+   - **succeed** if Groken is within **20 m of the first spawn of 700178** (the boat).
+     The player does not have to reach or use the boat, although 700178 has a talk
+     registration.
+4. Success (`onNpcReachTarget`): var 1 → 3 and **movie 69**.
+   Failure (`onNpcLostTarget`): var 1 → 0.
+   **A logout at var 1 also sets var 0.**
+5. Either way `FollowEventHandler.stopFollow` **deletes Groken and schedules his respawn**
+   (295 s). After a failure the bot has to wait for Groken at his spawn. At START var 0, a
+   QUEST_SELECT on Groken restarts the follow directly; there is no dialog to click
+   through.
+6. Manir, var 3: QUEST_SELECT (page 1693). SELECT_QUEST_REWARD sets REWARD; then page 5 and
+   the end dialog.
+
+How Groken follows (Java `FollowingNpcAI` and `FollowManager`):
+- he moves only when the player moves (CREATURE_MOVED);
+- he closes to 2 m;
+- outside walk mode his speed is his template run speed, 6 m/s (AC-04 measures it).
+
+A running player therefore does not outpace him on open ground. Obstacles, a fight, or a
+path he cannot follow can.
+
+**Q2222 (Java `_2222ManirsMessage`):**
+1. Manir starts it (page 1011).
+2. Karl, var 0: QUEST_SELECT (page 1352), SETPRO1 → var 1.
+3. Nokir: QUEST_SELECT (page 2375), SELECT_QUEST_REWARD → var 2, REWARD, end dialog.
+
+Nokir does not check var 1, so Java would let a player skip Karl. **This quirk is kept.**
+The bot talks to Karl anyway, as the quest text asks.
+
+The C# handlers of all three register exactly what Java registers:
+- Q2221: Manir, Groken, the safe, and the get-item event;
+- Q2290: Groken, the boat, Manir, logout, and reach/lost target;
+- Q2222: Manir, Karl and Nokir.
+
+`FollowingNpcCheckTask`, `FollowingNpcAI` and the destination checker are line-for-line
+ports. **No Borender-style defect** in Leg 3.
+
+### The escort handler
+
+The operator asked for a dedicated escort handler. Q2290 is the first escort. Q2284
+(Germir to Babarunerk, Stop 8, target npc 798034, steps 1 → 2 with the reward on reach) is
+the second, and has the same shape. The handler is therefore **data-driven, not written
+for Q2290 alone**.
+
+Each escort has one entry in a new contract block, `escorts`:
+
+| Field | What it holds | Q2290 |
+|---|---|---|
+| quest, follower | the quest and the follower npc | 2290, Groken 203608 |
+| goal | the target npc, resolved to its first spawn, and the success radius | 700178 (1216, 1217, 247.4), 20 m |
+| start | the dialog that starts the follow, and the var it expects | SELECT1_1 on offer; QUEST_SELECT at START var 0 |
+| steps | the var while following, on success, and on loss | 1 / 3 / 0 |
+| leash | the Java fail distance and the check period | 50 m, 1,000 ms |
+| movie | the success movie, if any | 69 |
+| follower respawn | from the spawn data | 295 s |
+| goal stand | where the player stops, so the follower ends inside the radius | computed; see the policy |
+| clear | the grounds to clear before starting | the boat's robbers and the line (AC-Q3) |
+
+The handler has two parts, like flight (AF-04 and AF-05).
+
+**`NaturalEscortPolicy`** is pure and unit-tested. Each tick it takes:
+- the player's position and HP;
+- the follower's last seen position and whether it is visible;
+- the goal, the leash, threats, and the virtual time.
+
+It returns one of **Advance**, **WaitForFollower**, **HoldAndFight**, **WaitForRespawn**,
+**Restart**, **Done** or **GiveUp**. Its rules:
+1. **Leash.** Advance only while the follower is within 8 m. Stop and wait beyond 8 m.
+   Beyond 25 m, walk back toward him. This leaves a wide margin under Java's 50 m.
+2. **Hops.** The route is cut into hops of at most 10 m, so the gap is checked often.
+   Groken moves only on CREATURE_MOVED, so a standing player does not pull him along.
+3. **Goal.** Stop at a stand point on Groken's side of the boat, at most 12 m from the
+   goal. A trailing Groken is then inside 20 m, and the player stays out of the duellist's
+   reach at the boat.
+4. **Forbidden while following** (they reset or fail the quest):
+   - logout or relog;
+   - a return scroll, a teleport, flight or gliding;
+   - rest trips and restock trips.
+5. **Fights.** Fight in place: Groken cannot be hit, and he waits within 2 m. Heal
+   through Salvation and the Anti-Shock shield first. A retreat must stay inside the leash.
+   Retreat past it only when death is predicted; that fails the escort, and the failure is
+   recorded, not hidden.
+6. **Respawn window.** Clearing, the walk back to Groken, and the escort itself must all
+   fit before the first cleared robber respawns (295 s). If they would not, clear again
+   first.
+7. **After a loss:**
+   - var back at 0, Groken gone: go to his spawn and wait for his respawn on the virtual
+     clock;
+   - clear again;
+   - QUEST_SELECT restarts the follow.
+
+   After the attempt budget (AC-Q2), return **GiveUp**.
+
+**`NaturalEscortProtocol`** is the executor. It:
+- drives the policy from real packets: the follower's `SM_MOVE`, the `SM_QUEST_ACTION`
+  var updates, and `SM_PLAY_MOVIE` 69;
+- detects success by **var 3 plus the movie**, never by distance alone;
+- confirms the follower is gone and records it;
+- writes an `escort` trace: per tick, the gap, the goal distance and the action; plus
+  every attempt, its outcome, and the longest gap seen.
+
+### What is new for the bot
+
+1. **The escort** (above).
+2. **An EXPERT at a quest object.** Commander Mohen (L13, EXPERT, 1,200 s respawn) stands
+   5 m from Groken's Safe, with four fencers within 23 m, all supporting each other. The
+   pull planner has to take the camp one or two at a time from the outside in:
+   - the smugglers and outer fencers first;
+   - then Mohen, alone.
+
+   This is the likeliest first real use of the Anti-Shock shield, Salvation and the
+   serums. Deaths are recorded, not failures (OD-12).
+3. **A hub with nothing at it.** Manir has no vendor. Rests are in the field
+   (AM-Q2 (a)). A death revives at the fortress, about 650 m away.
+4. **The trip to Basfelt** (if AC-Q1 (a)): 624 m through the tog grounds that Leg 2 already
+   crossed, ending among Basfelt's guards.
+
+### Leg 3 TODO list (proposed)
+
+The same loop protocol, with "AC" in place of "NA".
+
+- [ ] **AC-01 — The Leg 3 contract.** `parity-artifacts/e2e/natural-altgard-l3-contract.json`,
+  with:
+  - the hub (Manir) and the fortress as town;
+  - areas: the campsite, the safe camp, Groken, the dock, Karl, and Basfelt;
+  - the three quests and their order;
+  - the scripted steps of Q2221 and Q2222, and the safe as an object use with its loot;
+  - the new `escorts` block for Q2290;
+  - the endpoint (AC-Q1).
+
+  `NaturalAltgardContract.LoadLeg("l3")` adds an `Escorts` record. Contract tests check
+  it against:
+  - quest data and the spawns: the goal is the *first* spawn of 700178;
+  - Groken's template: AI `following`, respawn 295 s;
+  - the C# handlers' registrations and follow call.
+
+  There are no template plans: all three quests are custom.
+- [ ] **AC-02 — Travel.** Route and walk in SIM (a new account, 143):
+  - Manir ↔ safe ↔ Groken ↔ goal stand ↔ Manir;
+  - Manir ↔ Karl ↔ Nokir.
+
+  Record the danger on each, as AM-02 did. **Done when:** the dock at z 247 is on the
+  navmesh, and the Groken → boat line has a walkable route with no leg longer than the
+  10 m hop.
+- [ ] **AC-03 — `NaturalEscortPolicy`.** The pure policy and its tests:
+  - leash bands;
+  - hops;
+  - the goal stand point;
+  - the forbidden actions at var 1;
+  - fight-in-place and the retreat limit;
+  - the respawn-window budget;
+  - loss, then respawn wait, then restart, then the attempt budget.
+
+  Also one test per Java rule it relies on (50 m, 20 m, fail before success in the same
+  tick).
+- [ ] **AC-04 — The escort protocol, probed in SIM** (account 144; a probe character with
+  Q2221 set COMPLETE server-side, like the earlier probes; no GM on the natural character).
+  **Done when** one test shows:
+  - **success:** SELECT1_1, Groken follows (his speed and the largest gap are recorded),
+    var 1 → 3, movie 69, Groken deleted, and the hand-in to Manir gives REWARD then
+    COMPLETE;
+  - **loss by distance:** run past 50 m, var → 0, Groken gone, his respawn after 295
+    virtual seconds, the QUEST_SELECT restart, then success;
+  - **loss by logout:** a relog at var 1 → var 0.
+
+  The robbers at the boat are removed for this probe, so it tests the escort alone.
+- [ ] **AC-05 — Q2221 at the safe, probed in SIM** (account 145). Groken's talk, the safe's
+  USE_OBJECT, the loot (182203215 at 100%), and the hand-in, with the camp's robbers set
+  to 1 HP as in AM-05. **Done when:** Q2221 is COMPLETE and Q2290 is offered.
+- [ ] **AC-06 — The Leg 3 runner.** Engine action `escort` and its executor (the protocol).
+  Also the talk chain to Karl and Nokir, with Nokir's guarded spot (AM-03's policy). A
+  smoke run from `altgard-l2` with real combat:
+  - the safe camp and Commander Mohen;
+  - the dock clear (AC-Q3);
+  - the escort, and Q2222.
+
+  Record every fight, death, escort attempt, and first use of the shield or Salvation.
+- [ ] **AC-07 — One SIM run of Leg 3 and the snapshot.** `sim-snapshot.ps1 -Leg l3 -From
+  altgard-l2` captures `altgard-l3` after a clean completion, and a restore check.
+- [ ] **AC-08 — The full `CLAUDE.md` checklist and a checkpoint.**
+
+**Endpoint (proposed, AC-Q1 (a)):**
+- Q2221, Q2290 and Q2222 completed;
+- alive, at Basfelt Village beside Nokir;
+- the endpoint verified across a relog.
+
+The escort trace shows at least one successful attempt.
+
 ## Blocked / questions for the operator
+
+**Leg 3, open (2026-09-29):**
+- **AC-Q1 — Where does Leg 3 end?** Q2222 is a Stop 3 quest, but it is handed in to Nokir at
+  Basfelt Village, Stop 4's hub, about 624 m from Manir, by way of Karl. Options:
+  - (a) deliver it as Leg 3's last step, so Leg 3 ends at Basfelt, where Leg 4 starts (like
+    AM-Q1);
+  - (b) take it and talk to Karl in Leg 3, and hand it in at the start of Leg 4;
+  - (c) end at Manir, and leave Q2222 to Leg 4.
+
+  **Recommendation: (a).**
+- **AC-Q2 — How many escort attempts?** A failure resets Q2290 to var 0 and removes Groken
+  for 295 s. Options:
+  - (a) up to three attempts, each after Groken's respawn and a fresh clear. Then stop and
+    record the escort as not done; Q2222 is locked behind it, so the leg ends at Manir
+    without either;
+  - (b) keep trying until it succeeds.
+
+  **Recommendation: (a).** A failed attempt is recorded like a death (OD-12). Three failures
+  are a finding to fix, not something to wait out.
+- **AC-Q3 — The robbers at the boat.** A duellist stands 7 m from the boat, and three
+  fencers and two smugglers stand within 32 m. Options:
+  - (a) clear the dock and the line before each start, inside the 295 s respawn window;
+  - (b) start the escort and fight whatever comes, in place.
+
+  **Recommendation: (a).** A careful player does this, and it keeps the leash and death
+  failures for real surprises.
 
 **Leg 2, answered 2026-09-29:** AM-Q1 **(a)**, AM-Q2 **(a)** and AM-Q3 **(a)**, all as
 recommended. Leg 2 ends at Manir's Campsite after Q2215 is handed in. It rests in the
