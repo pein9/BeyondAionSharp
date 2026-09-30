@@ -1149,7 +1149,7 @@ The same loop protocol, with "AC" in place of "NA".
     Healing Light III and Penance were not needed in this run: HP never fell below the heal
     line (one timed potion covered it), and mana never below 50%.
   - The warning baseline and the null-logger and clock-read checks pass.
-- [ ] **AC-01 — The Leg 3 contract.** `parity-artifacts/e2e/natural-altgard-l3-contract.json`,
+- [x] **AC-01 — The Leg 3 contract.** `parity-artifacts/e2e/natural-altgard-l3-contract.json`,
   with:
   - the hub (Manir) and the fortress as town;
   - areas: the campsite, the safe camp, Groken, the dock, Karl, and Basfelt;
@@ -1165,6 +1165,31 @@ The same loop protocol, with "AC" in place of "NA".
   - the C# handlers' registrations and follow call.
 
   There are no template plans: all three quests are custom.
+  - *Done 2026-09-29.* `parity-artifacts/e2e/natural-altgard-l3-contract.json` holds:
+    - the start: `altgard-l2`, level 15, with Q24013 START and Q24014–24016 LOCKED, as the
+      snapshot has them;
+    - Manir as the hub and the fortress as town;
+    - seven areas: the campsite, the safe camp, Groken, the escort line, the dock, Karl and
+      Basfelt;
+    - the three quests in order, and nine dialog steps: the two offers at Manir, the Q2290
+      offer ending in SELECT1_1, the var 0 restart at Groken, and the three hand-ins;
+    - the safe as a one-shot object use: page 1693 closed with SETPRO2, loot 182203215 at
+      100%, the safe gone for 295 s;
+    - the `escorts` entry for Q2290: goal 700178 at its only spawn, 20 m radius, 50 m leash,
+      1,000 ms checks, vars 1/3/0, movie 69, 295 s respawn, 6 m/s, the dock and the line to
+      clear, three attempts;
+    - the endpoint beside Nokir at Basfelt (AC-Q1), snapshot `altgard-l3`.
+  - `NaturalAltgardContract`:
+    - loads `l3`;
+    - adds the `NaturalAltgardEscort` record, checked on load against the quests, steps and
+      areas;
+    - gives object uses an optional dialog page and close action;
+    - makes the reward choice optional (Leg 3 has none), read through `RequiredRewardChoice`;
+    - lets a leg have no plan directory, since all three quests are custom.
+  - Four `NaturalAltgardLeg3ContractTests` check it against quest data, spawns, NPC templates, the
+    three C# handlers and the C# follow engine: 50 m, 20 m, 1,000 ms, and the goal as the
+    first spawn. All 313 Natural tests pass, and so do the warning baseline, the logger and
+    clock checks, and `test-quest-plan-compiler.py`.
 - [ ] **AC-02 — Travel.** Route and walk in SIM (a new account, 143):
   - Manir ↔ safe ↔ Groken ↔ goal stand ↔ Manir;
   - Manir ↔ Karl ↔ Nokir.
@@ -1349,3 +1374,4 @@ The original questions follow.
 - 2026-09-29 AM-08: SIM run am08-l2-s1 completed Leg 2 with no death (level 15); snapshot altgard-l2 captured and restore-checked.
 - 2026-09-29 AM-09: full checklist green after the two probes learned to follow walking NPCs; Leg 2 is done.
 - 2026-09-29 AC-00: the Cleric catalog covers every auto-learned rank to level 20 (ratchet test); a level 15 SIM encounter cast every level 15 rank and the Holy Servant, no death.
+- 2026-09-29 AC-01: Leg 3 contract with the escort block, the loader by leg, and four contract tests against data, handlers and the follow engine.

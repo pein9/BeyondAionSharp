@@ -170,7 +170,7 @@ public sealed partial class SimulationFastScenarioTests
 		await session.SynchronizeAsync(token);
 		foreach (int quest in new[] { 2207, 2208, 2209, 24011 })
 			Assert.Contains(quest, session.Api.World.CompletedQuestIds);
-		Assert.Contains(session.Api.World.Inventory.Values, item => item.ItemId == contract.RewardChoice.ItemId);
+		Assert.Contains(session.Api.World.Inventory.Values, item => item.ItemId == contract.RequiredRewardChoice.ItemId);
 		Assert.False(player.IsDead());
 		Console.WriteLine($"AF-07 done: level {session.Api.World.Level}, {log.Count} talk steps, at ({player.GetX():F1}, {player.GetY():F1}, {player.GetZ():F1})");
 		policy.AssertClean();

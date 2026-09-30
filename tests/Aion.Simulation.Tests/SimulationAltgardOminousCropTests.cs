@@ -139,7 +139,7 @@ public sealed partial class SimulationFastScenarioTests
 		Console.WriteLine($"AM-05 {await NaturalAltgardQuestSteps.TalkAsync(session, handIn, await session.WaitForNpcAsync(handIn.NpcId, token), token)}");
 		await session.SynchronizeAsync(token);
 		Assert.Contains(quest, session.Api.World.CompletedQuestIds);
-		Assert.Contains(session.Api.World.Inventory.Values, owned => owned.ItemId == leg.RewardChoice.ItemId);
+		Assert.Contains(session.Api.World.Inventory.Values, owned => owned.ItemId == leg.RequiredRewardChoice.ItemId);
 		Assert.All(collection.Items, item => Assert.Equal(0, ItemCount(item.ItemId)));
 		Assert.False(player.IsDead());
 		policy.AssertClean();

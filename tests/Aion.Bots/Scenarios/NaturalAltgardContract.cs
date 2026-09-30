@@ -5,7 +5,8 @@ namespace Aion.Bots.Scenarios;
 /// <summary>
 /// One leg of the Altgard leveling leg (docs/natural-altgard-leveling.md). Leg 1 (<c>l1</c>) is the fortress: Q2201-Q2209
 /// and the Q24011 campaign, from the <c>altgard</c> snapshot to <c>altgard-l12</c>. Leg 2 (<c>l2</c>) is Moslan Crossroad:
-/// Q2210-Q2215, Q2218-Q2220 and the Q24012 campaign, from <c>altgard-l12</c> to <c>altgard-l2</c>. Static walkthrough
+/// Q2210-Q2215, Q2218-Q2220 and the Q24012 campaign, from <c>altgard-l12</c> to <c>altgard-l2</c>. Leg 3 (<c>l3</c>) is
+/// Manir's Campsite: Q2221, the Q2290 escort and Q2222, from <c>altgard-l2</c> to <c>altgard-l3</c> at Basfelt. Static walkthrough
 /// knowledge only; at run time every step is still driven by what the client observes. Each leg's template-quest plans
 /// live beside its contract. Sections a leg does not need (Leg 1's flight, remedy and air kills; Leg 2's town, object
 /// uses, zone steps, collections and poisons) are left out of its file.
@@ -22,7 +23,7 @@ public sealed record NaturalAltgardContract(
 	NaturalAltgardStep[] Steps,
 	NaturalAltgardItemUse? ItemUse,
 	NaturalAltgardAirKills? AirKills,
-	NaturalAltgardRewardChoice RewardChoice,
+	NaturalAltgardRewardChoice? RewardChoice,
 	Dictionary<int, int> UnhandedWorkItemIds,
 	NaturalAltgardFlight? Flight,
 	NaturalAltgardExclusion[] Excluded,
@@ -31,24 +32,29 @@ public sealed record NaturalAltgardContract(
 	NaturalAltgardObjectUse[]? ObjectUses = null,
 	NaturalAltgardZoneStep[]? ZoneSteps = null,
 	NaturalAltgardCollection[]? Collections = null,
-	NaturalAltgardPoison[]? Poisons = null)
+	NaturalAltgardPoison[]? Poisons = null,
+	NaturalAltgardEscort[]? Escorts = null)
 {
-	/// <summary>The contract file and plan directory of each leg.</summary>
-	public static readonly IReadOnlyDictionary<string, (string Contract, string Plans)> Legs = new Dictionary<string, (string, string)>
+	/// <summary>The contract file and plan directory of each leg (none when the leg has no template quests).</summary>
+	public static readonly IReadOnlyDictionary<string, (string Contract, string? Plans)> Legs = new Dictionary<string, (string, string?)>
 	{
 		["l1"] = ("natural-altgard-contract.json", "natural-altgard-plans"),
 		["l2"] = ("natural-altgard-l2-contract.json", "natural-altgard-l2-plans"),
+		["l3"] = ("natural-altgard-l3-contract.json", null),
 	};
 
 	public NaturalAltgardObjectUse[] ObjectUseList => ObjectUses ?? [];
 	public NaturalAltgardZoneStep[] ZoneStepList => ZoneSteps ?? [];
 	public NaturalAltgardCollection[] CollectionList => Collections ?? [];
 	public NaturalAltgardPoison[] PoisonList => Poisons ?? [];
+	public NaturalAltgardEscort[] EscortList => Escorts ?? [];
 
 	/// <summary>Leg 1 sections, for code that only runs Leg 1.</summary>
 	public NaturalAltgardFlight RequiredFlight => Flight ?? throw new InvalidDataException($"{Leg} has no flight rules.");
 	public NaturalAltgardItemUse RequiredItemUse => ItemUse ?? throw new InvalidDataException($"{Leg} has no item use.");
 	public NaturalAltgardAirKills RequiredAirKills => AirKills ?? throw new InvalidDataException($"{Leg} has no air kills.");
+	/// <summary>Legs 1 and 2 each end a campaign with a chosen reward; Leg 3's quests have none.</summary>
+	public NaturalAltgardRewardChoice RequiredRewardChoice => RewardChoice ?? throw new InvalidDataException($"{Leg} has no reward choice.");
 
 	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -78,7 +84,9 @@ public sealed record NaturalAltgardContract(
 			foreach (string action in step.Actions)
 				NaturalAscensionContract.DialogActionId(action);
 		}
-		NaturalAscensionContract.DialogActionId(contract.RewardChoice.Action);
+		if (contract.RewardChoice is { } choice) NaturalAscensionContract.DialogActionId(choice.Action);
+		foreach (string action in contract.ObjectUseList.Select(use => use.CloseAction).OfType<string>())
+			NaturalAscensionContract.DialogActionId(action);
 		int[] scripted = contract.ObjectUseList.Select(use => use.QuestId).Concat(contract.ZoneStepList.Select(zone => zone.QuestId))
 			.Concat(contract.CollectionList.Select(collection => collection.QuestId)).Concat(contract.PoisonList.Select(poison => poison.QuestId))
 			.ToArray();
@@ -86,6 +94,12 @@ public sealed record NaturalAltgardContract(
 			contract.ObjectUseList.Any(use => use.Area != null && !areas.Contains(use.Area)) ||
 			contract.PoisonList.Any(poison => !contract.Steps.Any(step => step.Key == poison.RemovedByStep)))
 			throw new InvalidDataException("Natural Altgard object uses, zone steps, collections or poisons disagree with the quests and steps.");
+		string[] stepKeys = contract.Steps.Select(step => step.Key).ToArray();
+		if (contract.EscortList.Select(escort => escort.Key).Distinct().Count() != contract.EscortList.Length ||
+			contract.EscortList.Any(escort => !questIds.Contains(escort.QuestId) || !stepKeys.Contains(escort.StartStep) ||
+				!stepKeys.Contains(escort.RestartStep) || !areas.Contains(escort.Area) || escort.ClearAreas.Any(area => !areas.Contains(area)) ||
+				escort.MaxAttempts < 1 || escort.GoalRadius <= 0 || escort.Leash <= escort.GoalRadius || escort.Goal.Length != 3))
+			throw new InvalidDataException("Natural Altgard escorts disagree with the quests, steps or areas, or have no attempts, radius or leash.");
 		return contract;
 	}
 
@@ -100,8 +114,9 @@ public sealed record NaturalAltgardContract(
 	public static IReadOnlyDictionary<int, QuestRunPlan> LoadPlans() => LoadPlans("l1");
 
 	/// <summary>A leg's compiled template-quest plans, keyed by quest id.</summary>
-	public static IReadOnlyDictionary<int, QuestRunPlan> LoadPlans(string leg) =>
-		QuestRunPlan.LoadDirectory(Path.Combine(RepoRoot(), "parity-artifacts/e2e", Legs[leg].Plans)).ToDictionary(plan => plan.Id);
+	public static IReadOnlyDictionary<int, QuestRunPlan> LoadPlans(string leg) => Legs[leg].Plans is { } plans
+		? QuestRunPlan.LoadDirectory(Path.Combine(RepoRoot(), "parity-artifacts/e2e", plans)).ToDictionary(plan => plan.Id)
+		: new Dictionary<int, QuestRunPlan>();
 
 	public NaturalAltgardQuest Quest(int questId) => Quests.Single(quest => quest.Id == questId);
 
@@ -113,6 +128,7 @@ public sealed record NaturalAltgardContract(
 				.Concat(plan.Steps.SelectMany(step => step.Npcs.Concat(step.Sources.Select(source => source.Npc).OfType<QuestRunNpc>())))
 				.Select(npc => npc.Id)))
 			.Concat(ObjectUseList.Select(use => use.NpcId))
+			.Concat(EscortList.SelectMany(escort => new[] { escort.FollowerNpcId, escort.GoalNpcId }))
 			.Concat(CollectionList.SelectMany(collection => collection.Items.SelectMany(item => item.SourceNpcIds)))
 			.Append(Start.BindNpcId).Concat(AirKills is { } air ? [air.NpcId] : [])
 			.Distinct().Order().ToArray();
@@ -168,8 +184,24 @@ public sealed record NaturalAltgardEndpoint(int MapId, int[] CompletedQuestIds, 
 
 /// <summary>A quest object used by hand: a loot (Q2213's Okaru Tree) or a step per use (Q24012's MuMu Carts, each gone once
 /// used; <paramref name="SpawnCount"/> spawns respawn after <paramref name="RespawnSeconds"/>).</summary>
+/// <param name="DialogPage">A dialog the use opens before the loot (Q2221's safe: page 1693), closed with
+/// <paramref name="CloseAction"/>.</param>
 public sealed record NaturalAltgardObjectUse(string Key, int QuestId, int NpcId, int FromVar, int ToVar, int Uses, int? LootItemId,
-	bool Disappears, string? Area, int SpawnCount = 1, int RespawnSeconds = 0);
+	bool Disappears, string? Area, int SpawnCount = 1, int RespawnSeconds = 0, int? DialogPage = null, string? CloseAction = null);
+
+/// <summary>
+/// AC-01: an escort (docs/natural-altgard-leveling.md, "The escort handler"). The start step's last action makes the follower
+/// follow the player (Java <c>defaultStartFollowEvent</c>: var <paramref name="FollowVar"/>); <c>FollowingNpcCheckTask</c> then
+/// checks every <paramref name="CheckMillis"/> ms, failing on a death or beyond <paramref name="Leash"/> m apart (var back to
+/// <paramref name="LostVar"/>) and succeeding once the follower is within <paramref name="GoalRadius"/> m of the goal npc's
+/// first spawn (var <paramref name="SuccessVar"/>, <paramref name="MovieId"/>). Either end deletes the follower, which respawns
+/// after <paramref name="FollowerRespawnSeconds"/>; at <paramref name="LostVar"/> the restart step starts the follow again.
+/// A logout while following also sets <paramref name="LostVar"/>. <paramref name="ClearAreas"/> are cleared before each start
+/// (AC-Q3), and <paramref name="MaxAttempts"/> bounds the tries (AC-Q2).
+/// </summary>
+public sealed record NaturalAltgardEscort(string Key, int QuestId, int FollowerNpcId, int GoalNpcId, float[] Goal, float GoalRadius,
+	string StartStep, string RestartStep, int FollowVar, int SuccessVar, int LostVar, float Leash, int CheckMillis, int? MovieId,
+	int FollowerRespawnSeconds, float FollowerRunSpeed, string[] ClearAreas, int MaxAttempts, string Area);
 
 /// <summary>A quest step the server takes when the player enters a zone.</summary>
 public sealed record NaturalAltgardZoneStep(int QuestId, string Zone, int FromVar, int ToVar);

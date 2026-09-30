@@ -188,14 +188,14 @@ public sealed class NaturalAltgardContractTests
 		});
 
 		// The reward: the Cleric's chain boots, found by its position in the selectable list.
-		XElement quest = Quest(XDocument.Load(Data("quest_data", "quest_data.xml")).Root!, contract.RewardChoice.QuestId);
+		XElement quest = Quest(XDocument.Load(Data("quest_data", "quest_data.xml")).Root!, contract.RequiredRewardChoice.QuestId);
 		int[] selectable = quest.Descendants("selectable_reward_item").Select(node => (int)node.Attribute("item_id")!).ToArray();
-		int index = NaturalAscensionContract.DialogActionId(contract.RewardChoice.Action) - DialogAction.SELECTED_QUEST_REWARD1;
-		Assert.Equal(contract.RewardChoice.ItemId, selectable[index]);
+		int index = NaturalAscensionContract.DialogActionId(contract.RequiredRewardChoice.Action) - DialogAction.SELECTED_QUEST_REWARD1;
+		Assert.Equal(contract.RequiredRewardChoice.ItemId, selectable[index]);
 		XElement item = Assert.Single(XDocument.Load(Data("items", "item_templates.xml")).Root!.Elements("item_template"),
-			node => (int?)node.Attribute("id") == contract.RewardChoice.ItemId);
-		Assert.Equal(contract.RewardChoice.ItemGroup, (string?)item.Attribute("item_group"));
-		Assert.Contains(contract.RewardChoice.Action, contract.Steps.Single(step => step.Key == "q24011-reward-valurion").Actions);
+			node => (int?)node.Attribute("id") == contract.RequiredRewardChoice.ItemId);
+		Assert.Equal(contract.RequiredRewardChoice.ItemGroup, (string?)item.Attribute("item_group"));
+		Assert.Contains(contract.RequiredRewardChoice.Action, contract.Steps.Single(step => step.Key == "q24011-reward-valurion").Actions);
 
 		// Work items the handlers declare but never hand out.
 		foreach ((int questId, int workItem) in contract.UnhandedWorkItemIds)

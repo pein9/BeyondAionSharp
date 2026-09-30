@@ -168,11 +168,11 @@ public sealed class NaturalAltgardLeg2ContractTests
 
 		// The reward: the Cleric's chain hauberk, found by its place in the selectable list.
 		int[] selectable = quest.Descendants("selectable_reward_item").Select(node => (int)node.Attribute("item_id")!).ToArray();
-		int index = NaturalAscensionContract.DialogActionId(Leg2.RewardChoice.Action) - DialogAction.SELECTED_QUEST_REWARD1;
-		Assert.Equal(Leg2.RewardChoice.ItemId, selectable[index]);
-		Assert.Equal(Leg2.RewardChoice.ItemGroup, (string?)Assert.Single(XDocument.Load(Data("items", "item_templates.xml")).Root!
-			.Elements("item_template"), node => (int?)node.Attribute("id") == Leg2.RewardChoice.ItemId).Attribute("item_group"));
-		Assert.Contains(Leg2.RewardChoice.Action, Leg2.Steps.Single(step => step.Key == "q24012-v5-loriniah").Actions);
+		int index = NaturalAscensionContract.DialogActionId(Leg2.RequiredRewardChoice.Action) - DialogAction.SELECTED_QUEST_REWARD1;
+		Assert.Equal(Leg2.RequiredRewardChoice.ItemId, selectable[index]);
+		Assert.Equal(Leg2.RequiredRewardChoice.ItemGroup, (string?)Assert.Single(XDocument.Load(Data("items", "item_templates.xml")).Root!
+			.Elements("item_template"), node => (int?)node.Attribute("id") == Leg2.RequiredRewardChoice.ItemId).Attribute("item_group"));
+		Assert.Contains(Leg2.RequiredRewardChoice.Action, Leg2.Steps.Single(step => step.Key == "q24012-v5-loriniah").Actions);
 	}
 
 	private static float Distance(float[] a, float[] b) => MathF.Sqrt(MathF.Pow(a[0] - b[0], 2) + MathF.Pow(a[1] - b[1], 2));
