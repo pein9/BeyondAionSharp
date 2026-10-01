@@ -1862,8 +1862,20 @@ The same loop protocol, with "AB" in place of "NA".
     run out (01:42:52), and no death fell inside a running timer.
   - All 332 Natural tests pass, and so do the warning baseline and the logger, clock and
     fidelity checks.
-- [ ] **AB-09 — One SIM run of Leg 4 and the snapshot.** `sim-snapshot.ps1 -Leg l4 -From
+- [x] **AB-09 — One SIM run of Leg 4 and the snapshot.** `sim-snapshot.ps1 -Leg l4 -From
   altgard-l3` captures `altgard-l4` after a clean run, with a restore check.
+  - *Done 2026-09-30.* `sim-snapshot.ps1` accepts `-Leg l4`.
+    `-Action Capture -Name altgard-l4 -AltgardLeg1 -Leg l4 -From altgard-l3` restored `altgard-l3`,
+    resumed character 133297 with `AF_ALTGARD=l4`, and dumped only a verified
+    `altgard-l4-completion.json`.
+  - Run `snapshot-altgard-l4-s1` (seed 1) repeats the AB-08 smoke run exactly, as a deterministic SIM
+    should: all 14 quests, level 19, 10 recorded deaths, bound at Basfelt, 16,358 game s, and the
+    endpoint verified across the relog.
+  - Snapshot `altgard-l4`: `run/snapshots/altgard-l4` (git-ignored), character 133297, elapsed
+    39,998,229 ms, dump SHA-256 `04107500…7e427`, from commit `9864edc7f`.
+    - A test restore into an owned schema succeeded and was dropped; no owned schema is left.
+    - `-Action Verify` does not apply here: it replays the Ishalgen journey, so it fails on any
+      Altgard snapshot. Altgard legs are checked by Restore and Drop, as AC-07 was.
 - [ ] **AB-10 — The full `CLAUDE.md` checklist and a checkpoint.**
 
 **Endpoint (AB-Q1 (a)):**
@@ -2106,3 +2118,4 @@ The original questions follow.
 - 2026-09-30 AB-06: Q2231, Q2232 (nine beehives), Q2239 (var 1->3), Q2289 (movie 62, Komu's Horn) and Q24013's poison in its zone played in SIM.
 - 2026-09-30 AB-07: Leg 4 combat at L16 and L17: first real Anti-Shock shield and Salvation, Divine Touch at L17; the Feral Sharpeye group retreats the L16 Cleric and kills the L17 one.
 - 2026-09-30 AB-08: Leg 4 runs end to end in SIM from altgard-l3: 14 quests, L16 to L19, 10 recorded deaths, both timers handed in (Q2230 on its new chance), Infernus on the first try.
+- 2026-09-30 AB-09: SIM run snapshot-altgard-l4-s1 repeated the AB-08 run exactly (14 quests, L19, 10 deaths); snapshot altgard-l4 captured and restore-checked.
