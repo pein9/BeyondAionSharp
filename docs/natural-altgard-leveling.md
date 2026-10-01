@@ -2293,10 +2293,39 @@ The same loop protocol, with "AK" in place of "NA".
     - `help-item-used`'s `refused: STR_USE_ITEM` is the client's "you used" message, not a refusal (the
       count drops by one).
   - The warning baseline and the logger, clock and fidelity checks pass.
-- [ ] **AK-08 — The Leg 5 runner.** The engine and runner for the carriers' hours (AK-03),
+- [x] **AK-08 — The Leg 5 runner.** The engine and runner for the carriers' hours (AK-03),
   batches by ground and the held hand-ins. A smoke run from `altgard-l4` with real combat,
   recording every fight and death.
-  - *In progress 2026-10-01; blocked on AK-Q4 (the cube).* What is built and proven so far:
+  - *Done 2026-10-01.* **Smoke run 8** (`run/af-l1/ak08-l5-smoke8`, seed 1, from `altgard-l4`) plays the whole leg
+    in 46 decisions and 2 h 31 min of game time. It ends at Basfelt at level 20 (from 19), with 1 death (Q24231's
+    fencers), and the relog check passes.
+    - **The cube errand (AK-Q4 (a)):**
+      - the road to the fortress teleporter (203581), then Pandaemonium for 706 Kinah (the 500 base after
+        `SM_PRICES`);
+      - expansion levels 1–4 at 798058: 27 → 36 → 45 → 54 → 63 slots for 273,000 Kinah of the Cleric's own;
+      - Return to the Basfelt bind.
+    - **All eleven claims**, and Q2234 and Q2242 taken as Q2233 and Q2241 finished.
+    - **Q2292 by the clock:** Lu (Passion) at 09:08 and Ang (Jealousy) at 09:40 game time. Then five hour-long
+      waits at Basfelt from 16:53, and Zoo (Love) at 22:45. The claim took the Turquoise Earrings (120001521).
+    - **Held, as AK-Q2 asks:** Q2242 at (START, 0) with its work item, and Q24233 at (START, 1), Manumumu killed.
+      The endpoint check requires both.
+    - Level 20 opened Q2900, Q24014 and Q24015 (the campaign).
+  - What the smoke runs before it found (below) and what was fixed. Smoke run 8 also ran with the separate
+    investigation's fix for the fleeing sentry in `PatternAi.cs`, uncommitted at the time and not this item's.
+    - Smoke run 5: the 1.1 km to the fortress exceeded the navigator's segment budget. The errand takes the travel
+      planner's road to the teleporter.
+    - Smoke run 6: a Return to a bind on another map gets `SM_PLAYER_INFO` only after the client enters the
+      map. `UseLearnedReturnToBindAsync` now waits for it when it sees `SM_PLAYER_SPAWN`.
+    - Smoke run 7: a fight left the Cleric 20 m above MuMu Village, where no sack had a route. When no hint has a
+      route at all, the approach casts Return once and tries again from the bind.
+    - **AK-Q4 (b):** an accessory still in the cube after the upgrades are worn is sold, unless the Cleric is not
+      yet the level to wear it. Items an open quest needs are never worn and never sold. The gear routine had worn
+      Q2292's rings.
+  - All 384 Natural and decoder tests pass, and so do the warning baseline and the logger, clock and fidelity
+    checks.
+    - `run-fast`: every AK probe passes. Its one failure is the separate investigation's untracked, unfinished
+      `FleeingUphillEndsOnTheGroundInSight`.
+  - The work, in the order it was built:
     - **The engine** (`NaturalAltgardDecisionEngine`, tests in `Leg5HuntsTheRingCarriersByTheHourAndHoldsTwoHandIns`):
       - `carrier-hunt` when `NaturalCarrierPolicy` finds a ring carrier present long enough to reach;
       - a carrier wait gives way to other work, and becomes `wait-for-carrier` only when nothing else is left;
@@ -2325,8 +2354,14 @@ The same loop protocol, with "AK" in place of "NA".
        - The sentry chased the Cleric and stopped 2.8 m under the ground the Cleric stood on, at the same
          XY. Its `SM_MOVE` `targetZ` was its own starting z, 284.67.
        - Every cast was refused with `STR_SKILL_OBSTACLE`.
-       - The C# `NpcMoveController` matches Java's line for line here. The server question is a separate
-         task.
+       - The C# `NpcMoveController` matches Java's line for line here. **The cause was elsewhere, and is
+         fixed (2026-10-01).** It was not a chase. At 11% HP the sentry *fled* (retail `flee_from`, the
+         C#-only `PatternAi.FleeFrom`). The flee aimed at the sentry's own starting z, up a slope that rises
+         from 284.67 to 288.2 (one terrain surface; C# `GetZ` finds it). The move controller snaps z to the
+         ground only once a second, searching 2 m above the height it is moving towards, so it lost the
+         ground for the last 6 m. The bot sent no FALL bit (0x08); its masks were 0xC0, 0x80 and 0x00. The
+         flee now ends where `GeoService.FindMovementCollision` puts it, as Java's FearTask and ConfuseTask
+         do. Test: `FleeingUphillEndsOnTheGroundInSight`; the old code aims at 284.67206 there.
     3. A step to sighted ground found no spot (the sentry is under the terrain), so that idea was dropped.
     4. The sentry was abandoned, and the leg ran 24 decisions:
        - Q24230, Q24231, the MuMu batch, the hairpins and the sacks;
@@ -2349,7 +2384,17 @@ The same loop protocol, with "AK" in place of "NA".
 
 ## Blocked / questions for the operator
 
-**Leg 5, open 2026-10-01:**
+**Leg 5, answered 2026-10-01:** AK-Q4 **(a) and (b)**. The maintainer approved buying the expansions and asked
+that extra gear the Cleric does not need be sold.
+- The Cleric buys the four Pandaemonium cube expansions with its own kinah, at the start of Leg 5.
+- An accessory still in the cube once the upgrades are worn is sold, unless the Cleric is not yet the level to wear it.
+  NA-09 had kept every accessory, because the inventory rules compared only weapons and armor; the gear
+  routine already wore the better accessories, but nothing sold the outgrown ones (the Spirit Ring, Munin's Belt).
+- **Found while answering:** the gear routine had worn Q2292's level 16 Passion and Jealousy Rings as upgrades.
+  Java's hand-in counts the cube, not what is worn, so the claim would have failed. Items an open quest still
+  needs are now never worn and never sold.
+
+The question:
 - **AK-Q4 — The cube is full of things the Cleric keeps.** The fourth AK-08 smoke run reached level 20.
   It then had 1 free slot of 27 (no expansions) and nothing the rules sell. A loot of any normal item
   (Q2292's rings, drops) is refused when the cube is full. What fills it:
@@ -2658,3 +2703,4 @@ The original questions follow.
 - 2026-10-01 AK-06: Kaibech, the outlaws and Sumarhon's camp in SIM (Q2233-Q2235, Q2241, Q24230, Q24231 claimed; Q2242 held).
 - 2026-10-01 AK-07: Leg 5 combat at level 18 and 19 (MuMu pull, Manumumu, sentry and fencers): no deaths; Manumumu reached 25% at level 18.
 - 2026-10-01 AK-08 (in progress): the carrier, held and town-service engine and runner; four smoke runs reach level 20 with both day rings; blocked on AK-Q4 (the full cube).
+- 2026-10-01 AK-08: the whole of Leg 5 in SIM (smoke run 8): the Pandaemonium cube expansions, all eleven claims, Q2292 by the clock, Q2242 and Q24233 held; level 20, 1 death.

@@ -43,7 +43,8 @@ public sealed record NaturalAltgardContract(
 	NaturalAltgardAvoid[]? Avoid = null,
 	NaturalAltgardRewardChoice[]? RewardChoices = null,
 	NaturalAltgardTimedSpawn[]? TimedSpawns = null,
-	NaturalAltgardHeld[]? Held = null)
+	NaturalAltgardHeld[]? Held = null,
+	NaturalAltgardCubeExpansion? CubeExpansion = null)
 {
 	/// <summary>The contract file and plan directory of each leg (none when the leg has no template quests).</summary>
 	public static readonly IReadOnlyDictionary<string, (string Contract, string? Plans)> Legs = new Dictionary<string, (string, string?)>
@@ -172,6 +173,7 @@ public sealed record NaturalAltgardContract(
 			.Concat(HuntList.SelectMany(hunt => hunt.NpcIds))
 			.Concat(SpawnList.Select(spawn => spawn.TriggerNpcId))
 			.Concat(TimedSpawnList.Select(spawn => spawn.NpcId))
+			.Concat(CubeExpansion is { } cube ? [cube.TeleporterNpcId] : [])
 			.Concat(Bind is { } bind ? [bind.NpcId] : [])
 			.Concat(CollectionList.SelectMany(collection => collection.Items.SelectMany(item => item.SourceNpcIds)))
 			.Append(Start.BindNpcId).Concat(AirKills is { } air ? [air.NpcId] : [])
@@ -284,6 +286,13 @@ public sealed record NaturalAltgardTimedSpawn(int QuestId, int ItemId, int NpcId
 
 /// <summary>AK-01, AK-Q2: a quest finished in this leg but handed in at <paramref name="EndNpcId"/> in a later leg's hub.</summary>
 public sealed record NaturalAltgardHeld(int QuestId, int EndNpcId, string Hub);
+
+/// <summary>AK-Q4 (a): buy the NPC cube expansions before the leg's work. The Cleric walks to the teleporter, travels to the
+/// expander's map, buys each level with its own kinah (Java CubeExpandService.expandCube: EXTEND_INVENTORY, then the
+/// STR_WAREHOUSE_EXPAND_WARNING question), and casts Return to its bind.</summary>
+/// <param name="Prices">The kinah for each NPC expansion level from 1 (cube_expander.xml for the expander).</param>
+public sealed record NaturalAltgardCubeExpansion(int Levels, long[] Prices, int TeleporterNpcId, float TeleporterTalkRange,
+	int LocationId, long Fare, int MapId, int ExpanderNpcId, float[] ExpanderPosition);
 
 /// <summary>AB-01, AB-Q3: a monster left alone until a quest reaches <paramref name="UntilVar"/> (Komu Silverclaw: his horn drops
 /// only then, and he respawns after <paramref name="RespawnSeconds"/>).</summary>

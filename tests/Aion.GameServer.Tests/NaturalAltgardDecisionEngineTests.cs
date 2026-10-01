@@ -268,8 +268,11 @@ public sealed class NaturalAltgardDecisionEngineTests
 		var at = new BotPosition(leg5.Hub.Anchor[0] + 3, leg5.Hub.Anchor[1], leg5.Hub.Anchor[2], 0);
 		long? minutes = 367 * NaturalGameClock.MinutesPerDay + 12 * 60;
 		int? free = 10;
+		long kinah = 437_720;
+		int? expansions = 0;
 		NaturalAltgardDecision Decide() => NaturalAltgardDecisionEngine.Decide(leg5,
-			new NaturalAltgardObservation(true, 220030000, 19, false, quests, completed, at, items, bound, minutes, new HashSet<int>(), free), objectives, 1);
+			new NaturalAltgardObservation(true, 220030000, 19, false, quests, completed, at, items, bound, minutes, new HashSet<int>(), free,
+				kinah, expansions), objectives, 1);
 		void Set(int quest, byte status, int var = 0) => quests[quest] = new(quest, status, var, 0, null);
 		void Complete(int quest) { quests.Remove(quest); completed.Add(quest); }
 		void MeetObjective(int quest)
@@ -278,6 +281,20 @@ public sealed class NaturalAltgardDecisionEngineTests
 			else Set(quest, 3, objectives[quest].KillCount);
 		}
 		const int passion = 122000039, jealousy = 122000040, love = 122000041;
+
+		// AK-Q4 (a): the four Pandaemonium expansions come first (273,000 Kinah of the Cleric's 437,720), one decision a level.
+		for (int level = 0; level < 4; level++)
+		{
+			expansions = level;
+			Assert.Equal("cube-expansion", Decide().Action);
+			Assert.Contains($"expansion {level + 1} of 4", Decide().Reason, StringComparison.Ordinal);
+		}
+		expansions = 2;
+		kinah = 50_000; // short of level 3's 80,000: the leg goes on, and says why
+		Assert.NotEqual("cube-expansion", Decide().Action);
+		Assert.Contains(Decide().Checks, check => check.Rule == "cube");
+		expansions = 4;
+		kinah = 437_720;
 
 		// A cube too full to loot (the AK-08 smoke run: 35 stacks against 27) is emptied at Gilungk in Basfelt first.
 		free = 2;

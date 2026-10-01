@@ -163,8 +163,9 @@ public sealed class NaturalIshalgenInventoryPolicy
 		return new(catalog, questItems, rewards, clericSupplies, (bridge.CeremonyReward.QuestId, bridge.CeremonyReward.ItemId));
 	}
 
-	public NaturalInventoryPlan Decide(BotWorldModel world) => Decide(world.Inventory.Values, world.Level,
-		world.CubeExpansion?.Capacity ?? 27, IsCleric(world));
+	/// <param name="questNeeded">AK-08: items an open quest still needs (Q2292's rings): never sold.</param>
+	public NaturalInventoryPlan Decide(BotWorldModel world, IReadOnlySet<int>? questNeeded = null) => Decide(world.Inventory.Values,
+		world.Level, world.CubeExpansion?.Capacity ?? 27, IsCleric(world), questNeeded);
 
 	/// <summary>The client-observed class of the player: Cleric after Ascension (D25), else the Priest rules.</summary>
 	public static bool IsCleric(BotWorldModel world) => world.SelfObjectId is int self &&
@@ -173,9 +174,10 @@ public sealed class NaturalIshalgenInventoryPolicy
 	public NaturalItem Item(int itemId) => items.TryGetValue(itemId, out NaturalItem? item) ? item
 		: throw new InvalidDataException($"Shipped item template {itemId} was not found.");
 
-	public NaturalInventoryPlan Decide(IEnumerable<BotInventoryItem> inventory, int level, int capacity, bool cleric = false)
+	public NaturalInventoryPlan Decide(IEnumerable<BotInventoryItem> inventory, int level, int capacity, bool cleric = false,
+		IReadOnlySet<int>? questNeeded = null)
 	{
-		if (cleric) return DecideCleric(inventory, level, capacity);
+		if (cleric) return DecideCleric(inventory, level, capacity, questNeeded ?? new HashSet<int>());
 		BotInventoryItem[] observed = inventory.Where(item => item.ItemId != BotWorldModel.KinahItemId).ToArray();
 		int occupied = Occupied(observed);
 		var best = observed.Where(item => items.TryGetValue(item.ItemId, out var template) && template.UsableAt(level))
@@ -200,9 +202,10 @@ public sealed class NaturalIshalgenInventoryPolicy
 		return new(capacity, occupied, decisions);
 	}
 
-	/// <summary>NA-09: the Cleric keeps every usable armor/weapon upgrade and all accessories, and protects the
-	/// bridge's supplies (Lesser Life Elixirs, mana elixirs, powder, Zeller jelly, Tea of Repose, Destiny Cards).</summary>
-	private NaturalInventoryPlan DecideCleric(IEnumerable<BotInventoryItem> inventory, int level, int capacity)
+	/// <summary>NA-09: the Cleric keeps every usable armor/weapon upgrade, and protects the bridge's supplies (Lesser Life
+	/// Elixirs, mana elixirs, powder, Zeller jelly, Tea of Repose, Destiny Cards). AK-Q4 (b): an accessory still in the cube
+	/// once the upgrades are worn is surplus and sold, unless the Cleric is not yet the level to wear it.</summary>
+	private NaturalInventoryPlan DecideCleric(IEnumerable<BotInventoryItem> inventory, int level, int capacity, IReadOnlySet<int> questNeeded)
 	{
 		BotInventoryItem[] observed = inventory.Where(item => item.ItemId != BotWorldModel.KinahItemId).ToArray();
 		int occupied = Occupied(observed);
@@ -216,9 +219,11 @@ public sealed class NaturalIshalgenInventoryPolicy
 			string action, reason;
 			if (!items.TryGetValue(item.ItemId, out NaturalItem? template)) (action, reason) = ("hold", "unknown-static-item");
 			else if (questItems.Contains(item.ItemId) || template.Group is "QUEST" or "KEY") (action, reason) = ("hold", "quest-protected");
+			else if (questNeeded.Contains(item.ItemId)) (action, reason) = ("hold", "quest-needed");
 			else if (item.Details.EquippedSlot.GetValueOrDefault() != 0) (action, reason) = ("hold", "currently-equipped");
 			else if (template.Group == "CL_MULTISLOT") (action, reason) = ("hold", "multi-slot-needs-separate-equip-review");
-			else if (template.IsAccessory) (action, reason) = ("hold", "accessory-kept");
+			else if (template.IsAccessory && template.ClericLevel > level) (action, reason) = ("hold", "accessory-for-later");
+			else if (template.IsAccessory && (item.ItemMask & 4) != 0 && template.Sellable) (action, reason) = ("sell", "surplus-accessory");
 			else if (best.TryGetValue(template.ClericGearSlot ?? "", out int winner) && winner == item.ObjectId)
 				(action, reason) = ("equip", "best-usable-cleric-upgrade");
 			else if (clericSupplies.Contains(item.ItemId)) (action, reason) = ("hold", "combat-supply");

@@ -7,10 +7,12 @@ namespace Aion.Bots.Scenarios;
 /// <param name="GameMinutes">AK-08: the client's game clock now (<c>SM_GAME_TIME</c> run on; <see cref="NaturalGameClock"/>).</param>
 /// <param name="VisibleNpcIds">AK-08: the template ids of the NPCs in the client's view.</param>
 /// <param name="FreeCubeSlots">AK-08: the cube's free slots as the inventory policy counts them (null when not counted).</param>
+/// <param name="Kinah">AK-Q4: the kinah the client holds.</param>
+/// <param name="CubeNpcExpansions">AK-Q4: the cube's NPC expansion level from SM_CUBE_UPDATE (null before one is seen).</param>
 public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, int Level, bool IsDead,
 	IReadOnlyDictionary<int, BotQuestState> Quests, IReadOnlySet<int> CompletedQuestIds, BotPosition Position,
 	IReadOnlyDictionary<int, long> ItemCounts, BotBindPoint? Bind = null, long? GameMinutes = null, IReadOnlySet<int>? VisibleNpcIds = null,
-	int? FreeCubeSlots = null)
+	int? FreeCubeSlots = null, long Kinah = 0, int? CubeNpcExpansions = null)
 {
 	public static NaturalAltgardObservation Observe(BotWorldModel world, BotPosition position, DateTimeOffset? now = null, int? freeCubeSlots = null) =>
 		new(world.LoginStateObserved && world.QuestJournalObserved && world.CompletedJournalObserved, world.MapId, world.Level,
@@ -18,7 +20,7 @@ public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, in
 			world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
 			world.ObeliskBindPoint, now is DateTimeOffset at ? world.GameMinutesAt(at) : world.GameMinutes,
 			world.Objects.Values.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId != null)
-				.Select(known => known.TemplateId!.Value).ToHashSet(), freeCubeSlots);
+				.Select(known => known.TemplateId!.Value).ToHashSet(), freeCubeSlots, world.Kinah, world.CubeExpansion?.Npc);
 }
 
 /// <summary>What a template quest's objectives need, from its compiled plan: items in the inventory, or a kill counter.
@@ -87,6 +89,16 @@ public static class NaturalAltgardDecisionEngine
 			return Plan("bind", null, $"Bind at the {contract.Hub.Key} obelisk ({bind.NpcId}) before working out of it.");
 
 		// AK-08: a held quest (AK-Q2) is done for this leg once it is taken and its objective is met; its hand-in is a later leg's.
+		// AK-Q4 (a): the NPC cube expansions come first, bought with the Cleric's own kinah while it has enough.
+		if (contract.CubeExpansion is { } cube && (state.CubeNpcExpansions ?? 0) < cube.Levels)
+		{
+			int bought = state.CubeNpcExpansions ?? 0;
+			if (state.Kinah >= cube.Prices[bought] + cube.Fare)
+				return Plan("cube-expansion", null,
+					$"Buy cube expansion {bought + 1} of {cube.Levels} ({cube.Prices[bought]} Kinah) from {cube.ExpanderNpcId} on map {cube.MapId}.");
+			checks.Add(new("cube", "wait", $"Expansion {bought + 1} costs {cube.Prices[bought]} Kinah; the Cleric has {state.Kinah}."));
+		}
+
 		// AK-08: a cube too full to take a loot (Java refuses it with STR_MSG_DICE_INVEN_ERROR) is emptied at the town's merchant.
 		if (contract.Town?.VendorNpcId is int vendor && state.FreeCubeSlots is int free && free < NaturalInventoryPlan.QuestFreeSlotReserve)
 			return Plan("town-service", null, $"The cube has {free} free slots: sell the surplus at {vendor} in {contract.Town.Key}.");

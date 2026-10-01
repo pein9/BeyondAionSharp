@@ -135,6 +135,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			IReadOnlyDictionary<int, QuestRunPlan> altgardPlans = altgardLegId is { } planLeg
 				? NaturalAltgardContract.LoadPlans(planLeg) : new Dictionary<int, QuestRunPlan>();
 			int[] altgardNpcs = altgardLeg?.GraphNpcIds(altgardPlans) ?? [];
+			// AK-08: items an open Altgard quest still needs (its collect items, the ring carriers' rings): never worn as gear and
+			// never sold. The leg 5 smoke run wore Q2292's level 16 rings as upgrades, which its hand-in would not have found.
+			IReadOnlySet<int> QuestNeededItems() => altgardLeg == null ? new HashSet<int>() : altgardPlans.Values
+				.Where(plan => !session.Api.World.CompletedQuestIds.Contains(plan.Id))
+				.SelectMany(plan => plan.Steps.Where(step => step.Kind == "collect").Select(step => step.ItemId))
+				.Concat(altgardLeg.TimedSpawnList.Where(carrier => !session.Api.World.CompletedQuestIds.Contains(carrier.QuestId))
+					.Select(carrier => carrier.ItemId))
+				.Where(item => item > 0).ToHashSet();
 			BotNavigationGraph graph = BotNavigationGraphFactory.Build(runtime.Data, altgardNpcs.Concat(new[] {
 				203500, 203504, 203501, 203502, 203516, 203518,
 				203519, 203534, 790002, 210377, 210378, 700045, 203538,
@@ -243,7 +251,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						(template.GetRace() == Aion.GameServer.Model.Race.PC_ALL || template.GetRace() == race) &&
 						(genderLimit == null || genderLimit == gender));
 				}
-				foreach (NaturalGearUpgrade upgrade in NaturalGearPolicy.SelectUpgrades(world.Inventory.Values, world.Level,
+				IReadOnlySet<int> questNeeded = QuestNeededItems();
+				foreach (NaturalGearUpgrade upgrade in NaturalGearPolicy.SelectUpgrades(
+					world.Inventory.Values.Where(item => !questNeeded.Contains(item.ItemId)), world.Level,
 					Describe, (long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, refusedGear))
 				{
 					await session.SendPacketAsync(session.Api.Equip(0, upgrade.Slot, upgrade.ObjectId), gearToken);
@@ -299,7 +309,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					string root = runtime.RepoRoot;
 					var inventoryPolicy = NaturalIshalgenInventoryPolicy.Load(root,
 						world.Inventory.Values.Select(item => item.ItemId));
-					NaturalInventoryPlan plan = inventoryPolicy.Decide(world);
+					NaturalInventoryPlan plan = inventoryPolicy.Decide(world, QuestNeededItems());
 					long basePrice = runtime.Data.ItemDataDh
 						.GetItemTemplate(NaturalIshalgenPotionPolicy.VendorLifeElixirId).GetPrice();
 					if (world.Kinah < basePrice && plan.Sales.Count == 0)
@@ -971,7 +981,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				// AK-08: the cube's free slots as the inventory policy counts them, for a leg whose town has a merchant.
 				int? FreeCubeSlots() => leg.Town?.VendorNpcId == null ? null
 					: NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, session.Api.World.Inventory.Values.Select(item => item.ItemId))
-						.Decide(session.Api.World).FreeSlots;
+						.Decide(session.Api.World, QuestNeededItems()).FreeSlots;
 				for (int sequence = 1; sequence <= 400; sequence++)
 				{
 					await session.SynchronizeAsync(token);
@@ -1245,6 +1255,57 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							await ApproachShippedSpawnAsync(endNpc);
 							break;
 						}
+						case "cube-expansion":
+						{
+							// AK-Q4 (a): the Pandaemonium cube expansions, with the Cleric's own kinah. Walk to the fortress teleporter,
+							// travel, buy each level as Java CubeExpandService.expandCube offers it (EXTEND_INVENTORY, then the
+							// STR_WAREHOUSE_EXPAND_WARNING question with the price), and cast Return to the Basfelt bind.
+							await EnsureOnGroundAsync();
+							NaturalAltgardCubeExpansion cube = leg.CubeExpansion!;
+							BotWorldModel world = session.Api.World;
+							var steps = new NaturalServiceSteps(session);
+							// The fortress is 1.1 km from Basfelt, past the navigator's segment budget (smoke run 5): take the travel
+							// planner's road to the teleporter's square, then approach it.
+							BotPosition teleporterSpawn = graph.GetMap(contract.MapId)!.Waypoints
+								.First(waypoint => waypoint.TemplateId == cube.TeleporterNpcId).Position;
+							await WalkRoadDefendingAsync(teleporterSpawn, "cube-teleporter-road", within: 15);
+							int teleporter = await ApproachShippedSpawnAsync(cube.TeleporterNpcId);
+							NaturalServiceOutcome travelled = await steps.TeleportAsync(teleporter, world.Objects[teleporter].Position,
+								cube.TeleporterTalkRange, cube.LocationId, cube.Fare, cube.MapId, token);
+							Require.True(travelled.IsDone, travelled.Reason);
+							NaturalJourneyNavigator city = mapNavigators.Enter(NaturalMapKey.Observe(world));
+							NaturalNavigationResult reached = await NaturalIshalgenNavigator.ApproachNpcAsync(cube.MapId, cube.ExpanderNpcId,
+								new BotPosition(cube.ExpanderPosition[0], cube.ExpanderPosition[1], cube.ExpanderPosition[2], 0), city, token);
+							Require.True(reached.Arrived, $"Cube expander {cube.ExpanderNpcId}: {reached.Reason}");
+							int expander = Require.IsType<int>(reached.TargetObjectId);
+							for (int level = world.CubeExpansion?.Npc ?? 0; level < cube.Levels && world.Kinah >= cube.Prices[level];
+								level = world.CubeExpansion?.Npc ?? 0)
+							{
+								long before = world.Kinah;
+								await NaturalDialogProtocol.OpenAsync(session, expander, token);
+								await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet => packet.Get<int>("targetObjectId") == expander);
+								await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(expander,
+									checked((ushort)DialogAction.EXTEND_INVENTORY)), token);
+								DecodedBotServerPacket question = await session.WaitForPacketAsync(typeof(SM_QUESTION_WINDOW), token,
+									packet => packet.Get<int>("code") == SM_QUESTION_WINDOW.STR_WAREHOUSE_EXPAND_WARNING);
+								await session.SendPacketAsync(GameClientPackets.QuestionResponse(question.Get<int>("code"), 1,
+									question.Get<int>("senderId")), token);
+								await session.WaitForPacketAsync(typeof(SM_CUBE_UPDATE), token);
+								await session.SynchronizeAsync(token);
+								await session.SendPacketAsync(session.Api.CloseDialog(expander), token);
+								session.TraceDiagnostic("cube-expanded", new Dictionary<string, object?>
+								{
+									["expander"] = cube.ExpanderNpcId, ["npcExpansions"] = world.CubeExpansion?.Npc,
+									["capacity"] = world.CubeExpansion?.Capacity, ["kinahBefore"] = before, ["kinahAfter"] = world.Kinah,
+								});
+								Require.True((world.CubeExpansion?.Npc ?? 0) == level + 1 && before - world.Kinah == cube.Prices[level],
+									$"Cube expansion {level + 1} not observed (level {world.CubeExpansion?.Npc}, Kinah {before} -> {world.Kinah}).");
+							}
+							await UseLearnedReturnToBindAsync();
+							navigator = mapNavigators.Enter(NaturalMapKey.Observe(world));
+							Require.Equal(leg.Hub.MapId, world.MapId ?? 0);
+							break;
+						}
 						case "town-service":
 						{
 							// AK-08: the cube is too full to loot. At the town's merchant: wear the upgrades, then sell what the inventory
@@ -1254,7 +1315,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							await session.SynchronizeAsync(token);
 							BotWorldModel world = session.Api.World;
 							NaturalInventoryPlan plan = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId))
-								.Decide(world);
+								.Decide(world, QuestNeededItems());
 							var sales = plan.Sales.Select(sale => new NaturalSale(sale.ObjectId, sale.ItemId, sale.Count)).ToList();
 							int vendor = await ApproachShippedSpawnAsync(leg.Town!.VendorNpcId!.Value);
 							NaturalVendorResult trade = await new NaturalServiceSteps(session).TradeAsync(vendor, sales, [],
@@ -2153,7 +2214,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 			/// <param name="withinRange">Stop this far from the observed NPC instead of at arm's reach, outside its
 			/// aggro circle, so the fight can be planned (a pull) rather than started by walking into it.</param>
-			async Task<int> ApproachShippedSpawnAsync(int templateId, bool skipBlockedTarget = false, float? withinRange = null)
+			async Task<int> ApproachShippedSpawnAsync(int templateId, bool skipBlockedTarget = false, float? withinRange = null,
+				bool returnedFromStrand = false)
 			{
 				// Dead on entry (a use bar or a walk ended in a death nobody handled): revive and recover first.
 				if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0) await RestSafelyAsync(token);
@@ -2254,6 +2316,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget, withinRange);
 				}
 				emptySpawnWaits = 0;
+				// AK-08: no hint has a route from here at all: a fight left the Cleric on ground the navmesh does not connect (smoke
+				// run 7: 20 m above MuMu Village). Cast Return, as the road walk does, and try once more from the bind.
+				if (!returnedFromStrand && reasons.Count > 0 && session.Api.World.Skills.ContainsKey(243) &&
+					reasons.All(reason => reason == "No collision-checked route to the current destination."))
+				{
+					session.TraceDiagnostic("stranded-return", new Dictionary<string, object?>
+					{
+						["templateId"] = templateId, ["position"] = session.CurrentPosition,
+					});
+					await UseLearnedReturnToBindAsync();
+					await RestSafelyAsync(token);
+					return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget, withinRange, returnedFromStrand: true);
+				}
 				throw new InvalidDataException($"No client-observed NPC {templateId} at twelve shipped spawn hints " +
 					$"from {session.CurrentPosition}: {string.Join(" | ", reasons)}");
 			}
@@ -3277,6 +3352,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await session.AdvanceAsync(TimeSpan.FromMilliseconds(result.Get<ushort>("hitTime") + 1), token);
 				await session.SynchronizeAsync(token);
 				lastReturnMillis = runtime.NowMillis;
+				// AK-Q4: a Return to a bind on another map (Pandaemonium to Basfelt) spawns the player on the new map first;
+				// SM_PLAYER_INFO follows once the client has entered it, as after a teleporter's map change.
+				if (session.PacketHistory.Skip(packetStart).Any(packet => packet.PacketType == typeof(SM_PLAYER_SPAWN)) &&
+					!session.PacketHistory.Skip(packetStart).Any(packet => packet.PacketType == typeof(SM_PLAYER_INFO) &&
+						packet.Get<int>("objectId") == session.CharacterId))
+				{
+					await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+					await session.SynchronizeAsync(token);
+				}
 				Require.Contains(session.PacketHistory.Skip(packetStart), packet =>
 					packet.PacketType == typeof(SM_CHANNEL_INFO));
 				Require.Contains(session.PacketHistory.Skip(packetStart), packet =>

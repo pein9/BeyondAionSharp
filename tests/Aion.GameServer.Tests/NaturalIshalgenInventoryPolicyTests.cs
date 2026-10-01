@@ -22,7 +22,7 @@ public sealed class NaturalIshalgenInventoryPolicyTests
 		string root = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ScenarioManifest.FindDefaultPath())!, "../.."));
 		return NaturalIshalgenInventoryPolicy.Load(root,
 			[100100025, 101500498, 122000869, 121000749, 123000864, 182203009, 162000053, 169300003, 160002273,
-			162001057, 169300002]);
+			162001057, 169300002, 122001285, 122000039]);
 	});
 
 	[Fact]
@@ -34,23 +34,40 @@ public sealed class NaturalIshalgenInventoryPolicyTests
 	}
 
 	[Fact]
-	public void TheClericKeepsTheStaffAccessoriesAndBridgeSuppliesAndSellsTheReplacedMace()
+	public void TheClericKeepsTheStaffWornAccessoriesAndBridgeSuppliesAndSellsTheReplacedMace()
 	{
 		BotInventoryItem[] bag =
 		[
-			Item(1, 101500498, equipped: 1), Item(2, 100100025), Item(3, 122000869), Item(4, 182203009, mask: 0),
+			Item(1, 101500498, equipped: 1), Item(2, 100100025), Item(3, 122000869, equipped: 256), Item(4, 182203009, mask: 0),
 			Item(5, 162000053, 12), Item(6, 169300003, 30), Item(7, 160002273, 5), Item(8, 162001057, 4, mask: 0),
 			Item(9, 169300002, 20),
 		];
 		NaturalInventoryPlan plan = Bridge.Value.Decide(bag, 10, 27, cleric: true);
 		string Reason(int obj) => plan.Decisions.Single(d => d.ObjectId == obj).Reason;
 		Assert.Equal("currently-equipped", Reason(1));
-		Assert.Equal("accessory-kept", Reason(3));
+		Assert.Equal("currently-equipped", Reason(3));
 		Assert.Equal("quest-protected", Reason(4));
 		Assert.All(new[] { 5, 6, 7 }, obj => Assert.Equal("combat-supply", Reason(obj)));
 		// The replaced Aldelle Mace and ordinary loot go to the vendor; nothing protected does.
 		Assert.Equal(new[] { 2, 9 }, plan.Sales.Select(d => d.ObjectId).ToArray());
 		Assert.Equal("surplus-gear", Reason(2));
+	}
+
+	[Fact]
+	public void TheClericSellsOutgrownAccessoriesButNotAQuestsRingOrOneForLater()
+	{
+		// AK-Q4 (b): with the upgrades worn, an accessory still in the cube is surplus (the Spirit Ring and Shania's Crystal
+		// Ring wear at any level). Q2292's Passion Ring needs level 16, so at 12 it waits; at 19 an open Q2292 still needs it
+		// (AK-08: the runner wore it as an upgrade and the claim would have failed).
+		BotInventoryItem[] bag = [Item(1, 122000869), Item(2, 122000039), Item(3, 122001285)];
+		NaturalInventoryPlan early = Bridge.Value.Decide(bag, 12, 27, cleric: true);
+		string Reason(NaturalInventoryPlan plan, int obj) => plan.Decisions.Single(d => d.ObjectId == obj).Reason;
+		Assert.Equal("surplus-accessory", Reason(early, 1));
+		Assert.Equal("accessory-for-later", Reason(early, 2));
+		Assert.Equal(new[] { 1, 3 }, early.Sales.Select(d => d.ObjectId).ToArray());
+		NaturalInventoryPlan questing = Bridge.Value.Decide(bag, 19, 27, cleric: true, questNeeded: new HashSet<int> { 122000039 });
+		Assert.Equal("quest-needed", Reason(questing, 2));
+		Assert.Equal(new[] { 1, 3 }, questing.Sales.Select(d => d.ObjectId).ToArray());
 	}
 
 	[Fact]

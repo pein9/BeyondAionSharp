@@ -125,6 +125,28 @@ public sealed class NaturalAltgardLeg5ContractTests
 		Assert.Equal(choice.ItemId, (int)ringQuest.Descendants("selectable_reward_item").ElementAt(1).Attribute("item_id")!);
 	}
 
+	[Fact]
+	public void TheCubeExpansionsMatchTheExpanderTheTeleporterAndTheirPrices()
+	{
+		// AK-Q4 (a): Pandaemonium's expander sells NPC levels 1-4; the fortress teleporter's location 7 is Pandaemonium.
+		NaturalAltgardCubeExpansion cube = Leg5.CubeExpansion!;
+		XElement expander = XDocument.Load(Data("storage_expander", "cube_expander.xml")).Root!.Elements("expansion_npc")
+			.Single(npc => ((string)npc.Attribute("ids")!).Split(' ').Contains($"{cube.ExpanderNpcId}"));
+		Assert.Equal(cube.Prices, expander.Elements("expand").OrderBy(level => (int)level.Attribute("level")!)
+			.Take(cube.Levels).Select(level => (long)level.Attribute("price")!));
+		Assert.Equal(Enumerable.Range(1, cube.Levels), expander.Elements("expand").Select(level => (int)level.Attribute("level")!).Take(cube.Levels));
+		XElement teleporter = XDocument.Load(Data("npc_teleporter.xml")).Root!.Elements("teleporter_template")
+			.Single(template => (string?)template.Attribute("npc_ids") == $"{cube.TeleporterNpcId}");
+		Assert.Equal(cube.Fare, (long)teleporter.Descendants("telelocation").Single(loc => (int)loc.Attribute("loc_id")! == cube.LocationId).Attribute("price")!);
+		XElement location = XDocument.Load(Data("teleport_location.xml")).Root!.Elements("teleloc_template")
+			.Single(loc => (int)loc.Attribute("loc_id")! == cube.LocationId);
+		Assert.Equal(cube.MapId, (int)location.Attribute("mapid")!);
+		Assert.Single(Spots(cube.TeleporterNpcId));
+		float[] spot = Assert.Single(XDocument.Load(Data("spawns", "Npcs/120010000_Pandaemonium.xml")).Root!.Descendants("spawn")
+			.Where(spawn => (int?)spawn.Attribute("npc_id") == cube.ExpanderNpcId).Elements("spot").Select(Spot));
+		Assert.Equal(cube.ExpanderPosition, spot);
+	}
+
 	private static float[] Spot(XElement spot) => [(float)spot.Attribute("x")!, (float)spot.Attribute("y")!, (float)spot.Attribute("z")!];
 
 	private static IEnumerable<float[]> Spots(int npcId) =>
