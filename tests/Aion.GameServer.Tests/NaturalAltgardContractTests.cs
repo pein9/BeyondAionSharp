@@ -50,13 +50,14 @@ public sealed class NaturalAltgardContractTests
 		}
 
 		// Level gates: the level 10 quests alone lift a level 10 Cleric to 11, the level of Q2207, Q2208 and Q24011.
-		// Every Leg 1 quest together does not reach 12, so Leg 1 sets no level target beyond 11.
+		// Q24110 (D32, level 12) needs kill XP on top: the quests alone do not reach 12, and AF-09 ended Leg 1 at 13.
 		long[] levels = XDocument.Load(Data("player_experience_table.xml")).Root!.Elements("exp").Select(node => (long)node).ToArray();
 		long levelTen = levels[contract.Start.Level - 1];
 		long levelTenQuests = contract.Quests.Where(quest => quest.MinimumLevel == contract.Start.Level).Sum(quest => (long)quest.RewardExperience);
-		Assert.True(levelTen + levelTenQuests >= levels[contract.Endpoint.MinimumLevel - 1]);
+		Assert.True(levelTen + levelTenQuests >= levels[11 - 1]);
 		Assert.Equal(contract.Endpoint.MinimumLevel, contract.Quests.Max(quest => quest.MinimumLevel));
-		Assert.True(levelTen + contract.Quests.Sum(quest => (long)quest.RewardExperience) < levels[contract.Endpoint.MinimumLevel]);
+		Assert.Equal(24110, Assert.Single(contract.Quests, quest => quest.MinimumLevel == 12).Id);
+		Assert.True(levelTen + contract.Quests.Where(quest => quest.MinimumLevel < 12).Sum(quest => (long)quest.RewardExperience) < levels[12 - 1]);
 
 		// Q24011 is the campaign that follows Q24010; the snapshot holds it LOCKED until level 11.
 		NaturalAltgardQuest campaign = Assert.Single(contract.Quests, quest => quest.Category == "MISSION");

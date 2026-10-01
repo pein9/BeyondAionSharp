@@ -48,7 +48,7 @@ public sealed record NaturalAltgardContract(
 	{
 		["l1"] = ("natural-altgard-contract.json", "natural-altgard-plans"),
 		["l2"] = ("natural-altgard-l2-contract.json", "natural-altgard-l2-plans"),
-		["l3"] = ("natural-altgard-l3-contract.json", null),
+		["l3"] = ("natural-altgard-l3-contract.json", "natural-altgard-l3-plans"),
 		["l4"] = ("natural-altgard-l4-contract.json", "natural-altgard-l4-plans"),
 	};
 

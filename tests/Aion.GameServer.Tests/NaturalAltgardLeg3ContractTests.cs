@@ -36,10 +36,17 @@ public sealed class NaturalAltgardLeg3ContractTests
 			int[] finished = quest.Element("start_conditions")?.Elements("finished").Select(node => (int)node.Attribute("quest_id")!).ToArray() ?? [];
 			Assert.Equal(expected.Prerequisite is { } prerequisite ? [prerequisite] : [], finished);
 			Assert.True(expected.MinimumLevel <= Leg3.Start.Level);
-			Assert.False(expected.IsTemplate);
+			Assert.Equal(expected.Id == 24111, expected.IsTemplate);
 		}
-		Assert.Equal([2221, 2290, 2222], Leg3.Order);
-		Assert.Empty(NaturalAltgardContract.LoadPlans("l3"));
+		Assert.Equal([24111, 2221, 2290, 2222], Leg3.Order);
+		// Q24111 (D32): taken from Olenja at Moslan Crossroad, the primer from the suspicious document at Manir's Dock,
+		// handed in to Nokir where Leg 3 ends, so it is held for the end like a hand-in there (area "basfelt").
+		QuestRunPlan dock = Assert.Single(NaturalAltgardContract.LoadPlans("l3")).Value;
+		Assert.Equal(24111, dock.Id);
+		Assert.Equal("item_collecting", dock.Template);
+		NaturalAltgardQuest primer = Leg3.Quest(24111);
+		Assert.Equal((primer.StartNpcId, primer.Area), (Assert.Single(dock.StartNpcs).Id, "basfelt"));
+		Assert.Equal(203631, Assert.Single(dock.EndNpcs).Id);
 
 		// The snapshot's open campaign (Q24013, Idun's Lake) and the locked ones stay outside Leg 3.
 		Assert.All(Leg3.Start.StartedQuestIds!.Concat(Leg3.Start.LockedQuestIds), id =>

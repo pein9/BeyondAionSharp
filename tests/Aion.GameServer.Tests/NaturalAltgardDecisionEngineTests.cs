@@ -31,7 +31,9 @@ public sealed class NaturalAltgardDecisionEngineTests
 	public void FromTheSnapshotTheTemplateQuestsAreAcceptedWorkedAndClaimedHubStyle()
 	{
 		var journal = new Journal();
-		int[] templates = Contract.Order.Where(id => Contract.Quest(id).IsTemplate).ToArray();
+		// Q24110 (D32) is a template too, but needs level 12; it waits for the level, after the level 11 quests.
+		int[] templates = Contract.Order.Where(id => Contract.Quest(id).IsTemplate && Contract.Quest(id).MinimumLevel <= journal.Level).ToArray();
+		Assert.Contains(24110, Contract.Order);
 		foreach (int quest in templates)
 		{
 			Assert.Equal(("template-accept", quest), (journal.Decide().Action, journal.Decide().QuestId));
@@ -203,12 +205,18 @@ public sealed class NaturalAltgardDecisionEngineTests
 		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(NaturalAltgardContract.LoadPlans("l3"));
 		var quests = new Dictionary<int, BotQuestState> { [24013] = new(24013, 3, 0, 0, null) };
 		var completed = new HashSet<int>(leg3.Start.CompletedQuestIds);
+		var items = new Dictionary<int, long>();
 		var at = new BotPosition(1459.56f, 1192.68f, 259, 0);
 		NaturalAltgardDecision Decide() => NaturalAltgardDecisionEngine.Decide(leg3,
-			new NaturalAltgardObservation(true, 220030000, 15, false, quests, completed, at, new Dictionary<int, long>()), objectives, 1);
+			new NaturalAltgardObservation(true, 220030000, 15, false, quests, completed, at, items), objectives, 1);
 		void Set(int quest, byte status, int var = 0) => quests[quest] = new(quest, status, var, 0, null);
 		void Complete(int quest) { quests.Remove(quest); completed.Add(quest); }
 
+		// Q24111 (D32): accepted and worked first (the primer at Manir's Dock), handed in to Nokir at the end.
+		Assert.Equal(("template-accept", 24111), (Decide().Action, Decide().QuestId));
+		Set(24111, 3);
+		Assert.Equal(("template-work", 24111), (Decide().Action, Decide().QuestId));
+		items[objectives[24111].ItemId!.Value] = objectives[24111].ItemCount;
 		Assert.Equal(("talk", "q2221-offer-manir"), (Decide().Action, Decide().StepKey));
 		Set(2221, 3, 0);
 		Assert.Equal("q2221-v0-groken", Decide().StepKey);
@@ -236,6 +244,8 @@ public sealed class NaturalAltgardDecisionEngineTests
 		Set(2222, 3, 1);
 		Assert.Equal("q2222-v1-nokir", Decide().StepKey);
 		Complete(2222);
+		Assert.Equal(("template-claim", 24111), (Decide().Action, Decide().QuestId));
+		Complete(24111);
 
 		// AC-Q1: the leg ends beside Nokir at Basfelt; the campaign Q24013 stays open for a later leg.
 		Assert.Equal("return-to-endpoint", Decide().Action);
