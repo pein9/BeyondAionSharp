@@ -94,6 +94,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_QUEST_ACTION)] = DecodeQuestAction,
 			[typeof(SM_QUEST_COMPLETED_LIST)] = DecodeQuestCompletedList,
 			[typeof(SM_LOOT_STATUS)] = DecodeLootStatus,
+			[typeof(SM_GAME_TIME)] = DecodeGameTime,
 			[typeof(SM_LOOT_ITEMLIST)] = DecodeLootItemList,
 			[typeof(SM_TRADELIST)] = DecodeTradeList,
 			[typeof(SM_TRADE_IN_LIST)] = DecodeTradeInList,
@@ -881,6 +882,13 @@ public sealed partial class BotServerPacketDecoder
 		for (var i = 0; i < count; i++)
 			quests.Add(Fields(("questId", r.ReadInt32()), ("completeCount", r.ReadByte()), ("nonRepeatable", r.ReadByte() != 0)));
 		return Fields(("updateMode", updateMode), ("quests", quests));
+	}
+
+	// AK-00: Java SM_GAME_TIME writes the game time as minutes since 01.01.0000 00:00 (writeD).
+	private static IReadOnlyDictionary<string, object?> DecodeGameTime(ReadOnlySpan<byte> body)
+	{
+		var r = new PacketBodyReader(body);
+		return Fields(("minutes", r.ReadInt32()));
 	}
 
 	private static IReadOnlyDictionary<string, object?> DecodeLootStatus(ReadOnlySpan<byte> body)

@@ -21,6 +21,13 @@ public sealed partial class BotWorldModel
 	private int systemMessageHistoryLimit = int.MaxValue;
 	private readonly Dictionary<int, byte> lootStatuses = [];
 	public IReadOnlyDictionary<int, byte> LootStatuses => lootStatuses;
+	/// <summary>AK-00: the game time from the last SM_GAME_TIME, in minutes since 01.01.0000 00:00 (Java GameTime.getTime()).
+	/// The server sends it on entering the world and on its periodic broadcast; the clock runs one game minute per 5 s.</summary>
+	public int? GameMinutes { get; private set; }
+	/// <summary>How many SM_GAME_TIME packets were seen, so a caller can note when a new one arrived.</summary>
+	public int GameTimeUpdates { get; private set; }
+	/// <summary>The game hour (0-23) of the last SM_GAME_TIME (Java GameTime.getHour()).</summary>
+	public int? GameHour => GameMinutes is int minutes ? minutes / 60 % 24 : null;
 
 	public IReadOnlyDictionary<int, BotKnownObject> Objects => objects;
 	public IReadOnlyDictionary<int, BotInventoryItem> Inventory => inventory;
@@ -228,6 +235,11 @@ public sealed partial class BotWorldModel
 			Question = null;
 		else if (type == typeof(SM_LOOT_STATUS))
 			ApplyLootStatus(packet);
+		else if (type == typeof(SM_GAME_TIME))
+		{
+			GameMinutes = packet.Get<int>("minutes");
+			GameTimeUpdates++;
+		}
 		else if (type == typeof(SM_LOOT_ITEMLIST))
 			ApplyLootItems(packet);
 		else if (type == typeof(SM_TRADELIST))

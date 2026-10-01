@@ -2111,10 +2111,33 @@ the 30 workers north-east of Basfelt, which is a quieter choice. The general que
 
 The same loop protocol, with "AK" in place of "NA".
 
-- [ ] **AK-00 — The game clock in SIM and in the bot.** Decode `SM_GAME_TIME` into the world
+- [x] **AK-00 — The game clock in SIM and in the bot.** Decode `SM_GAME_TIME` into the world
   model. A SIM probe advances the virtual clock and shows the carriers appear and despawn at
   their hours: MuMu Lu by day, MuMu Zoo by night. If the SIM clock does not drive the hour
   change, fix the fixture (infrastructure), not the server.
+  - *Done 2026-10-01.* The Java spec:
+    - `SM_GAME_TIME` writes one `writeD`, the minutes since 01.01.0000;
+    - `GameTime.getHour()` is (minutes % 1440) / 60;
+    - `GameTimeService` adds a minute every 5 s and broadcasts the time every 3 minutes;
+    - an hour change runs `TemporarySpawnEngine` (`TemporarySpawn.isInSpawnTime`).
+  - **The bot:**
+    - `BotServerPacketDecoder` decodes `SM_GAME_TIME`.
+    - `BotWorldModel` keeps `GameMinutes`, `GameHour` and `GameTimeUpdates`.
+    - There is no Java fixture: Java's packet reads the database-backed singleton. As for `SM_PRICES`,
+      `GameTimePacketIsTheMinutesSinceYearZero` pins the one-field layout, and the probe checks the
+      value against the running server.
+  - **The SIM needed no fixture change.** `GameServerBootstrapService` starts the clock on the virtual
+    thread pool and hooks `TemporarySpawnEngine.OnHourChange`.
+  - **Probe `GameClockDrivesTheHourlyRingCarriers`** (account 72):
+    - On entering the world, the client's minutes match the server's (within 1) and its hour is the
+      server's.
+    - Advanced through the clock: at 22:00 MuMu Zoo is alive and MuMu Lu is gone; at 05:00 they swap; at
+      22:00 they swap back.
+    - Teleported into the village, the client sees Zoo and not Lu. 77 `SM_GAME_TIME` packets arrived.
+  - **Checks:**
+    - `run-fast` passes 11 of 11 with the probe, which moves the shared world's clock about 43 game hours.
+    - The GameServer suite passes (4,412), and so do the warning baseline and the logger, clock and
+      fidelity checks.
 - [ ] **AK-01 — The Leg 5 contract and plans.** `natural-altgard-l5-contract.json` with:
   - the hub (Basfelt, bound), and the grounds above as areas;
   - the thirteen quests and their order;
@@ -2430,3 +2453,4 @@ The original questions follow.
 - 2026-09-30 AB-10: full checklist green except run-fast E1 (D32 register gives Q24110 account 42, E1's); AB-04 probe fixed to wait out Q2230 in the village. Leg 4 done in SIM.
 - 2026-10-01 Leg 5 planned (Kaibech, Idun's Lake, MuMu Village; AK-00..AK-10); AK-Q1..AK-Q3 approved as recommended.
 - 2026-10-01 D32 catch-up: Q24110 in Leg 1, Q24111 in Leg 3; Legs 1–4 replayed from `altgard` on 5083bb385 (stale-route refusal, death-spot hazards, hunt road fallback); levels 13/15/16/19; Leg 5 starts at 19.
+- 2026-10-01 AK-00: the bot decodes SM_GAME_TIME (GameMinutes, GameHour); the SIM clock drives the hourly ring carriers (MuMu Zoo at 22:00, Lu at 05:00).

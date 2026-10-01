@@ -41,7 +41,8 @@ public sealed class BotServerPacketDecoderTests
 	[Fact]
 	public void DecoderInventoryContainsExpectedBotPerceptionPackets()
 	{
-		Assert.Equal(116, decoder.PacketTypes.Count);
+		Assert.Equal(117, decoder.PacketTypes.Count);
+		Assert.Contains(typeof(SM_GAME_TIME), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_ATTACK), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_RECONNECT_KEY), decoder.PacketTypes);
 		Assert.Contains(typeof(SM_BIND_POINT_INFO), decoder.PacketTypes);
@@ -361,6 +362,14 @@ public sealed class BotServerPacketDecoderTests
 				BotPlayerCommandPacketTests.AssertAppearanceWireContract();
 				continue;
 			}
+			if (packetType == typeof(SM_GAME_TIME))
+			{
+				// AK-00: no Java-generated fixture, since Java's SM_GAME_TIME reads GameTimeService's singleton, which loads
+				// from the database. Pin its audited one-field layout here; the AK-00 SIM probe checks the value against the
+				// running GameTimeService.
+				AssertGameTimeWireContract();
+				continue;
+			}
 			if (packetType == typeof(SM_PRICES))
 			{
 				// No existing Java-generated fixture for this connection-dependent packet. Pin its complete,
@@ -433,6 +442,19 @@ public sealed class BotServerPacketDecoderTests
 		System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(body, 5_000_000_000L);
 		world.Apply(decoder.Decode(typeof(SM_ABYSS_RANK), body));
 		Assert.Equal(5_000_000_000L, world.AbyssRank!.Ap);
+	}
+
+	[Fact]
+	public void GameTimePacketIsTheMinutesSinceYearZero() => AssertGameTimeWireContract();
+
+	// Java SM_GAME_TIME.writeImpl: writeD(GameTimeService.getInstance().getGameTime().getTime()), the minutes since
+	// 01.01.0000 00:00. 529,803 minutes is 22:03 on day 367.
+	private void AssertGameTimeWireContract()
+	{
+		var packet = decoder.Decode(typeof(SM_GAME_TIME), BitConverter.GetBytes(529_803));
+		Assert.Equal(529_803, packet.Get<int>("minutes"));
+		Assert.Equal(22, 529_803 / 60 % 24);
+		Assert.Throws<InvalidDataException>(() => decoder.Decode(typeof(SM_GAME_TIME), [1, 2, 3]));
 	}
 
 	private void AssertPricesWireContract()
