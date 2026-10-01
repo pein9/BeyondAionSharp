@@ -2226,8 +2226,28 @@ The same loop protocol, with "AK" in place of "NA".
     passed a spot that the server refused with `STR_SKILL_OBSTACLE`. A refused spot is skipped on the next try.
   - The decoder, world and Natural tests (425) pass, and so do `run-fast`, the warning baseline and the
     logger, clock and fidelity checks.
-- [ ] **AK-05 — MuMu Village and Manumumu in SIM.** One batch for Q24232 and Q2238; Q2236
-  hairpins; Q2237 sacks; Manumumu killed and Q24233 at REWARD.
+- [x] **AK-05 — MuMu Village and Manumumu in SIM.** One batch for Q24232 and Q2238; Q2236
+  hairpins; Q2237 sacks; Manumumu killed and Q24233's kill made (see below: it stays at START).
+  - *Done 2026-10-01.* `MumuVillageQuestsAndManumumuPlayThroughTheirPlans` (account 75, a level 19 Cleric probe)
+    works the five quests from their compiled plans:
+    - **The batch:** nine looklooks and lookouts filled Q24232's counter (9). The first five each dropped a
+      MuMu Belt for Q2238 (100%).
+    - **Q2236:** five herb gatherers and workers, five MuMu Hairpins (100%).
+    - **Q2237:** three Fertilizer Sacks, each used and looted on the first try.
+    - **Manumumu** was shot down. Q24232, Q2236 and Q2237 were then claimed at Anmurnerk, and Q2238 at Gefion;
+      the quest items were taken.
+  - **Q24232 and Q24233 stay at START with their counters full; they are not at REWARD.**
+    - Neither is data-driven, and neither has the `reward` flag. For such quests, Java
+      `MonsterHunt.onKillEvent` only fills the counter.
+    - The end NPC's `SELECT_QUEST_REWARD` then moves the quest to REWARD (`onDialogEvent`), as in the
+      other legs.
+    - So the held Q24233 is (START, var 1). The endpoint below now says so. AK-08's endpoint check must use
+      `NaturalTemplateObjective.IsDone`, not the status.
+  - GM on the probe only: its level, Q24112 complete, setup teleports, and targets set to 1 HP with their
+    aggressive neighbours despawned.
+    - **Manumumu is spared from that clearing.** An earlier try despawned him with the looklooks around him.
+      He is unique, with a 1,800 s respawn.
+  - The warning baseline and the logger, clock and fidelity checks pass.
 - [ ] **AK-06 — Stop 5 and the east in SIM.** Q2233, Q2234 and Q2235 at Kaibech; Q2241 at the
   outlaws; Q2242 taken. Sumarhon's camp: Q24230 and Q24231.
 - [ ] **AK-07 — Combat at level 18–19.** The AB-07 encounter harness, staged:
@@ -2245,7 +2265,8 @@ The same loop protocol, with "AK" in place of "NA".
 
 **Endpoint (AK-Q1 (b), AK-Q2 (a)):**
 - Q2233–Q2235, Q2241, Q24230, Q24231, Q2238, Q24232, Q2236, Q2237 and Q2292 completed;
-- Q2242 started and Q24233 at REWARD, held for their hubs;
+- Q2242 started (a report_to, carrying its work item), and Q24233 started with Manumumu killed (its counter full; an old-style
+  MonsterHunt stays at START until its end NPC, AK-05), both held for their hubs;
 - bound at the Basfelt obelisk;
 - alive, in Basfelt within 60 m of Nokir;
 - the endpoint verified across a relog.
@@ -2529,3 +2550,4 @@ The original questions follow.
 - 2026-10-01 AK-02: Leg 5's 20 travel legs walked in SIM; the AK-00 and AB-05 probes made robust in run-fast.
 - 2026-10-01 AK-03: the pure carrier policy and the client game clock (NaturalGameClock, NaturalCarrierPolicy) with unit tests.
 - 2026-10-01 AK-04: Q2292 taken by the game clock in SIM (Ring and Di at 00:00, a wait for Zen at 04:00); the client stamps SM_GAME_TIME on arrival.
+- 2026-10-01 AK-05: MuMu Village's five quests in SIM (batch, hairpins, sacks, Manumumu); Q24233 is held at START with its counter full, as Java has it.
