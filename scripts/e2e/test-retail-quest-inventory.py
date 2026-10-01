@@ -13,7 +13,6 @@ import os
 import re
 import subprocess
 import sys
-import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -28,7 +27,6 @@ SUMMARY = REPO_ROOT / "parity-artifacts/e2e/retail-quest-inventory.md"
 CLASSIFIER = REPO_ROOT / "parity-artifacts/e2e/obtainable-quests.json"
 IMPLEMENTED = REPO_ROOT / "parity-artifacts/e2e/retail-quest-implemented.json"
 PLANS = REPO_ROOT / "parity-artifacts/e2e/retail-quest-plans"
-PLAN_COMPILER = REPO_ROOT / "scripts/e2e/compile-quest-plans.py"
 SIM_TESTS = REPO_ROOT / "tests/Aion.Simulation.Tests"
 SIM_FIXTURE = SIM_TESTS / "SimulationWorldFixture.cs"
 D32_ACCOUNTS = range(151, 201)
@@ -381,6 +379,12 @@ class RegisterTests(unittest.TestCase):
         self.assertEqual({}, {account: where for account, where in used.items() if account in D32_ACCOUNTS},
                          "accounts 151-200 belong to the D32 register")
 
+    def test_every_registered_quest_now_has_a_handler(self) -> None:
+        classifier = {q["id"]: q for q in json.loads(CLASSIFIER.read_text(encoding="utf-8-sig"))["quests"]}
+        for quest_id in self.register:
+            self.assertNotEqual("no_handler", classifier[int(quest_id)]["availability"], quest_id)
+            self.assertNotEqual("none", classifier[int(quest_id)]["handlerKind"], quest_id)
+
 
 def sim_test_accounts() -> dict[int, list[str]]:
     """The fixture accounts other SIM tests name: literals on a line about a session or an account, or right before a
@@ -395,22 +399,6 @@ def sim_test_accounts() -> dict[int, list[str]]:
                 if about_accounts or match.group(2):
                     found.setdefault(int(match.group(1)), []).append(f"{path.name}:{number}")
     return found
-
-    def test_every_registered_quest_now_has_a_handler(self) -> None:
-        classifier = {q["id"]: q for q in json.loads(CLASSIFIER.read_text(encoding="utf-8-sig"))["quests"]}
-        for quest_id in self.register:
-            self.assertNotEqual("no_handler", classifier[int(quest_id)]["availability"], quest_id)
-            self.assertNotEqual("none", classifier[int(quest_id)]["handlerKind"], quest_id)
-
-    def test_checked_in_plans_are_current(self) -> None:
-        with tempfile.TemporaryDirectory() as temp:
-            command = [sys.executable, str(PLAN_COMPILER), "--output", temp]
-            for quest_id in self.register:
-                command += ["--quest", quest_id]
-            subprocess.run(command, cwd=REPO_ROOT, check=True, capture_output=True)
-            for quest_id in self.register:
-                fresh = (Path(temp) / f"{quest_id}.json").read_text(encoding="utf-8")
-                self.assertEqual(fresh, (PLANS / f"{quest_id}.json").read_text(encoding="utf-8"), quest_id)
 
 
 class CheckedInInventoryTests(unittest.TestCase):

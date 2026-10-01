@@ -19,6 +19,7 @@ CLIENT_MAP = REPO_ROOT / "parity-artifacts/e2e/custom-quest-client-dialogs.json"
 CLIENT_EXTRACTOR = REPO_ROOT / "tools/client-extract/extract_quest_dialog_map.py"
 COVERAGE_REPORTER = REPO_ROOT / "scripts/e2e/report-quest-coverage.py"
 COVERAGE_BASELINE = REPO_ROOT / "parity-artifacts/e2e/quest-coverage-baseline.json"
+E2E_ARTIFACTS = REPO_ROOT / "parity-artifacts/e2e"
 
 extractor_spec = importlib.util.spec_from_file_location("extract_quest_dialog_map", CLIENT_EXTRACTOR)
 assert extractor_spec is not None and extractor_spec.loader is not None
@@ -218,6 +219,44 @@ class QuestPlanCompilerTests(unittest.TestCase):
                     + "\n",
                     encoding="utf-8",
                 )
+
+
+class CheckedInPlanDriftTests(unittest.TestCase):
+    """The checked-in plans the D32 SIM theory and the natural Altgard legs load must match a fresh compile, so a
+    data change (a spawn refinement, a new handler) cannot leave a plan pointing at the old world."""
+
+    def test_checked_in_plans_match_a_fresh_compile(self) -> None:
+        folders = [E2E_ARTIFACTS / "retail-quest-plans", *sorted(E2E_ARTIFACTS.glob("natural-altgard*-plans"))]
+        plans = {folder.name: sorted(folder.glob("*.json")) for folder in folders}
+        # An emptied or renamed folder would otherwise pass with nothing to compare.
+        self.assertGreaterEqual(len(folders), 6, "expected retail-quest-plans and the natural-altgard leg folders")
+        for name, paths in plans.items():
+            self.assertTrue(paths, f"{name} holds no plans")
+
+        quest_ids = sorted({int(path.stem) for paths in plans.values() for path in paths})
+        with tempfile.TemporaryDirectory() as directory:
+            command = [sys.executable, str(COMPILER), "--output", directory]
+            for quest_id in quest_ids:
+                command.extend(("--quest", str(quest_id)))
+            result = subprocess.run(command, cwd=REPO_ROOT, capture_output=True, text=True)
+            self.assertEqual(0, result.returncode, result.stderr)
+            fresh = {
+                quest_id: json.loads((Path(directory) / f"{quest_id}.json").read_text(encoding="utf-8"))
+                for quest_id in quest_ids
+            }
+
+        stale = [
+            f"Q{path.stem} in {name}"
+            for name, paths in plans.items()
+            for path in paths
+            if json.loads(path.read_text(encoding="utf-8-sig")) != fresh[int(path.stem)]
+        ]
+        self.assertEqual(
+            [],
+            stale,
+            "checked-in quest plans differ from a fresh compile; regenerate each with "
+            "python scripts/e2e/compile-quest-plans.py --output parity-artifacts/e2e/<folder> --quest <id>",
+        )
 
 
 if __name__ == "__main__":
