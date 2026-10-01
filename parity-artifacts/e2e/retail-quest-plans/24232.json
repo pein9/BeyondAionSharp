@@ -331,14 +331,6 @@
             },
             {
               "mapId": 220030000,
-              "x": 1360.75,
-              "y": 154.597,
-              "z": 314.572,
-              "heading": 83,
-              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
-            },
-            {
-              "mapId": 220030000,
               "x": 1372.46,
               "y": 150.802,
               "z": 312.311,
@@ -351,14 +343,6 @@
               "y": 367.379,
               "z": 306.375,
               "heading": 87,
-              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
-            },
-            {
-              "mapId": 220030000,
-              "x": 1373.66,
-              "y": 375.893,
-              "z": 306.125,
-              "heading": 105,
               "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
             },
             {
@@ -588,7 +572,7 @@
               "mapId": 220030000,
               "x": 1545.59,
               "y": 158.01,
-              "z": 300.1,
+              "z": 286.999,
               "heading": 59,
               "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
             },

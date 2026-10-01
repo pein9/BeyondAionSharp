@@ -109,10 +109,10 @@
           "positions": [
             {
               "mapId": 220030000,
-              "x": 1581.9,
+              "x": 1575.824,
               "y": 217.534,
-              "z": 284.221,
-              "heading": 93,
+              "z": 284.375,
+              "heading": 60,
               "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
             }
           ],
