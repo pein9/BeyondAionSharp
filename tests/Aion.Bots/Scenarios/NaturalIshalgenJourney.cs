@@ -938,6 +938,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					ApproachMapId = leg.Hub.MapId,
 				};
+				here.AvoidSpots = combat.DeathSpots;
 				navigationDefense = combat;
 				WithQuestLoot(combat);
 				IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(altgardPlans);
@@ -1094,7 +1095,24 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							bool Counted() => (NaturalAltgardQuestSteps.State(session.Api.World, next.QuestId!.Value)?.Var ?? 0) != var;
 							try
 							{
-								int target = await KillShippedSpawnAsync(hunt.NpcIds.First(SpawnsOnMap));
+								int huntKind = hunt.NpcIds.First(SpawnsOnMap);
+								int target;
+								try { target = await KillShippedSpawnAsync(huntKind); }
+								catch (InvalidDataException noRoute) when (!Counted() && !session.Api.World.IsDead &&
+									noRoute.Message.Contains("No collision-checked route", StringComparison.Ordinal))
+								{
+									// The navigator found no route from where the last fight or revive left the Cleric (the Leg 4
+									// catch-up, toward Sumarhon). Take the planner's road to the nearest spawn, as talk steps do.
+									BotPosition spawn = graph.GetMap(leg.Hub.MapId)!.Waypoints.Where(waypoint => waypoint.TemplateId == huntKind)
+										.Select(waypoint => waypoint.Position).MinBy(position => Distance(position, session.CurrentPosition));
+									session.TraceDiagnostic($"altgard-{altgardLegId}-hunt-road", new Dictionary<string, object?>
+									{
+										["quest"] = next.QuestId, ["kind"] = huntKind, ["spawn"] = spawn, ["reason"] = noRoute.Message,
+									});
+									if (!await WalkRoadDefendingAsync(spawn, $"hunt-road-{huntKind}", within: 40) && !session.Api.World.IsDead)
+										await UseLearnedReturnToBindAsync();
+									target = await KillShippedSpawnAsync(huntKind);
+								}
 								navigator.UnavailableObjects.Add(target);
 							}
 							catch (InvalidDataException exception) when (Counted())
@@ -5452,6 +5470,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			return route;
 		}
 
+		/// <summary>Places to keep clear of on routes: where the Cleric died (the combat's death spots). A swamp mosbear family
+		/// senses only 6 m, so its circles are small, but brushing one brings all six: the Leg 4 catch-up died on the same
+		/// spot six times walking the same tight route back to Sumarhon.</summary>
+		public IReadOnlyList<BotPosition> AvoidSpots { get; set; } = [];
+		private const float AvoidSpotRadius = 20f;
+		private const float StaleSegmentDistance = 30f;
+
 		private BotNavigationHazard[] ObservedHazards(BotPosition? destination,
 			int? targetObjectId = null) => !AvoidHostileAggro ? [] : Observe().Npcs
 			.Where(npc => npc.ObjectId != targetObjectId &&
@@ -5460,10 +5485,25 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				template: runtime.Data.NpcDataDh.GetNpcTemplate(npc.TemplateId)))
 			.Where(entry => runtime.IsAggressive(entry.template) &&
 				entry.template.GetAggroRange() > 0)
-			.SelectMany(entry => entry.npc.Hazards(entry.template!.GetAggroRange() + 1f, BotPatrolPath.PassingReach)).ToArray();
+			.SelectMany(entry => entry.npc.Hazards(entry.template!.GetAggroRange() + 1f, BotPatrolPath.PassingReach))
+			// A death spot is avoided unless the destination itself lies there (a target the Cleric died beside).
+			.Concat(AvoidSpots.Where(spot => destination == null || Distance(spot, destination.Value) > AvoidSpotRadius)
+				.Select(spot => new BotNavigationHazard(spot, AvoidSpotRadius))).ToArray();
 
 		public async Task MoveAsync(IReadOnlyList<BotPosition> segment, CancellationToken token)
 		{
+			// A segment planned before a revive or a teleport starts where the Cleric no longer is. Walking it would cross
+			// straight from the obelisk to the old route (the Leg 4 catch-up walked 270 m that way, back into the mosbears
+			// that had just killed it, six times). Refuse it; the caller sees no progress and plans a new route from here.
+			if (segment.Count > 0 && Distance(session.CurrentPosition, segment[0]) > StaleSegmentDistance)
+			{
+				session.TraceDiagnostic("stale-segment-refused", new Dictionary<string, object?>
+				{
+					["position"] = session.CurrentPosition, ["firstPoint"] = segment[0],
+					["distance"] = Distance(session.CurrentPosition, segment[0]),
+				});
+				return;
+			}
 			// The regular client closes an NPC window before walking away. This also delivers
 			// DIALOG_FINISH to the NPC AI, so it can resume its idle movement and facing.
 			if (segment.Count > 0 && session.Api.OpenDialogTargetId is int dialogTarget)

@@ -94,10 +94,13 @@ public sealed partial class SimulationFastScenarioTests
 			for (int attempt = 1; ; attempt++)
 			{
 				try { change = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token); break; }
-				catch (NaturalDialogTooFarException) when (attempt < 3 && !step.Flight)
+				catch (NaturalDialogTooFarException) when (attempt < 6 && !step.Flight)
 				{
+					// Follow the walker to where the server has it now: the client's last report lags a moving NPC, and in
+					// run-fast three follows to it fell short of Tulberg (AF-07 probe, setup knowledge, not the bot's).
 					await session.SynchronizeAsync(token);
-					await WalkAsync(session.Api.World.Objects[npc].Position);
+					var walker = fixture.World.GetWorldMap(altgard).GetMainWorldMapInstance().GetNpcs().FirstOrDefault(candidate => candidate.GetObjectId() == npc);
+					await WalkAsync(walker != null ? new BotPosition(walker.GetX(), walker.GetY(), walker.GetZ(), 0) : session.Api.World.Objects[npc].Position);
 				}
 			}
 			log.Add(change);

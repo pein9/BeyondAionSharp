@@ -244,11 +244,12 @@ public sealed partial class SimulationFastScenarioTests
 		for (int attempt = 1; ; attempt++)
 		{
 			try { Console.WriteLine($"AB-04 {await NaturalAltgardQuestSteps.TalkAsync(session, Step("q2230-v0-shania"), shaniaSeen, token)}"); break; }
-			catch (NaturalDialogTooFarException) when (attempt < 4)
+			catch (NaturalDialogTooFarException) when (attempt < 6)
 			{
-				// Shania walks her route: follow her to where the client sees her now.
+				// Shania walks her route: follow her to where the server has her now (the client's report lags a walker).
 				await session.SynchronizeAsync(token);
-				await WalkToAsync(session.Api.World.Objects[shaniaSeen].Position, 2f);
+				var walking = instance.GetNpcs().FirstOrDefault(candidate => candidate.GetObjectId() == shaniaSeen);
+				await WalkToAsync(walking != null ? new BotPosition(walking.GetX(), walking.GetY(), walking.GetZ(), 0) : session.Api.World.Objects[shaniaSeen].Position, 2f);
 			}
 		}
 		Assert.Contains(wager, session.Api.World.CompletedQuestIds);
