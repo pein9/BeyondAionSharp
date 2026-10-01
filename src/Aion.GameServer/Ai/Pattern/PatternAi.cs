@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aion.GameServer.Ai.Event;
 using Aion.GameServer.Commons.Utils;
+using Aion.GameServer.Configs.Main;
 using Aion.GameServer.Controllers.Attack;
 using Aion.GameServer.Handlers.AI;
 using Aion.GameServer.Model.GameObjects;
@@ -18,6 +19,8 @@ using Aion.GameServer.Model.Templates.Npcskill;
 using Aion.GameServer.Model.Templates.Walker;
 using Aion.GameServer.Utils;
 using Aion.GameServer.World;
+using Aion.GameServer.World.Geo;
+using Aion.GameServer.GeoEngine.Math;
 using Spawns = Aion.GameServer.World.Spawns;
 
 namespace Aion.GameServer.Ai.Pattern;
@@ -2122,10 +2125,21 @@ public abstract class PatternAi : AggressiveNpcAI, INpcMessageListener
             float distance = GetOwner().GetGameStats().GetMovementSpeedFloat() * seconds;
             float x = here.GetX() + (dx / length * distance);
             float y = here.GetY() + (dy / length * distance);
+            float z = here.GetZ();
+            // Walk the run over the ground, as Java's FearTask/ConfuseTask do with the same call, and as
+            // WalkManager guards it: the destination's z is the terrain at the end, and a wall or a cliff
+            // edge on the way stops it short. Aiming at the start height instead sent a sentry fleeing
+            // uphill into the slope (2.8 m under the player standing over it), out of line of sight.
+            if (GeoDataConfig.GEO_ENABLE && GeoDataConfig.GEO_NPC_MOVE)
+            {
+                float angle = (float)(Math.Atan2(dy, dx) * 180.0 / Math.PI);
+                Vector3f end = GeoService.GetInstance().FindMovementCollision(GetOwner(), angle, distance);
+                (x, y, z) = (end.GetX(), end.GetY(), end.GetZ());
+            }
 
             FleeingTo = (x, y);
             FledFrom = from;
-            GetOwner().GetMoveController().MoveToPoint(x, y, here.GetZ());
+            GetOwner().GetMoveController().MoveToPoint(x, y, z);
 
             fleeing = ThreadPoolManager.GetInstance().Schedule(_ =>
             {

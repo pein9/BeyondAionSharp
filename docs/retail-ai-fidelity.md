@@ -41513,3 +41513,21 @@ cause**. The running old-image diagnostic remains untouched; a corrected image
 and new LIVE evidence are required. A separate open discrepancy was recorded in
 simulation-plan §7 #89: spot branch chances/lifetime also differ from raw retail;
 the old comments are not an audited distribution contract.
+
+## `flee_from` now runs over the ground
+
+Found in the natural bot's AK-08 smoke run (`run/af-l1/ak08-l5-smoke2`, 2026-10-01). A grave robbing
+sentry (210504, `Lehpar_FnQ_F1`) fled at 11% HP up the slope west of Sumarhon's camp in Altgard.
+`PatternAi.FleeFrom` sent it to a point at its own starting z (284.67), but the ground at the far end was
+at 288.2. `NpcMoveController.MoveToLocation` matches Java here. It snaps z to the terrain once a second,
+searching from 2 m above the interpolated height, so on a steady rise it lost the ground for the last
+6 m. The sentry stopped 2.8 m inside the hill, below the player standing over it, and every cast at it
+failed with `STR_SKILL_OBSTACLE`.
+
+Retail gives only a duration, so a destination has to be computed. It is now taken from
+`GeoService.FindMovementCollision`, the call Java's `FearEffect.FearTask` and `ConfuseEffect.ConfuseTask`
+use to run a creature away over the terrain. It stops at walls and cliff edges, and its z is the ground
+at the end. Following Java's `WalkManager`, it applies only with `GEO_ENABLE` and `GEO_NPC_MOVE` on;
+otherwise the flat point is kept, which is what the geo-less AI unit tests use. Pinned by the SIM test
+`FleeingUphillEndsOnTheGroundInSight`, on the real geo at the trace's coordinates. The old code aims
+at z 284.67206 there, the trace's exact value.
