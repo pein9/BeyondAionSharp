@@ -6517,6 +6517,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			}
 			catch (TimeoutException exception)
 			{
+				// The cast never started: release the local casting gate, or the next walk is refused ("CM_MOVE is blocked
+				// while Casting") even when the caller recovers from this.
+				session.Api.Timing.RecordCastCancelled();
 				string[] recent = session.PacketHistory.TakeLast(15).Select(packet =>
 					packet.PacketType == typeof(SM_SYSTEM_MESSAGE)
 						? $"{packet.PacketType.Name}:{packet.Get<object>("name") ?? packet.Get<int>("msgId")}" : packet.PacketType.Name).ToArray();

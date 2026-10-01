@@ -122,7 +122,13 @@ public sealed partial class SimulationFastScenarioTests
 				if (!session.Api.World.Objects.ContainsKey(next.GetObjectId())) { unusable.Add(next.GetObjectId()); continue; }
 				if (await NaturalAirCombat.ShootDownAsync(session, next.GetObjectId(), 0,
 					(origin, skill, skillLevel, aim) => runtime.CreateSpellCast(session.Api.World, origin, skill, skillLevel, aim), token, maximumCasts: 10))
-					return next.GetObjectId();
+				{
+					// The shoot-down can report a kill the server never made (run-fast: Komu stayed alive at full health,
+					// so there was no horn to loot). A kill counts only when the server has the monster dead; else try it again.
+					await session.SynchronizeAsync(token);
+					if (next.IsDead()) return next.GetObjectId();
+					continue;
+				}
 				unusable.Add(next.GetObjectId());
 			}
 			throw new InvalidDataException($"No {string.Join("/", kinds)} could be shot down.");
@@ -189,8 +195,14 @@ public sealed partial class SimulationFastScenarioTests
 		NaturalAltgardAvoid komu = leg.AvoidList.Single();
 		Assert.Equal(((byte)3, komu.UntilVar), State(2289));
 		NaturalAltgardCollectedItem horn = leg.CollectionList.Single(collection => collection.QuestId == 2289).Items.Single();
-		await LootAsync(await KillOneAsync([komu.NpcId]), horn.ItemId);
-		Assert.Equal(1, ItemCount(horn.ItemId));
+		int komuKilled = await KillOneAsync([komu.NpcId]);
+		int lootStart = session.PacketHistory.Count;
+		await LootAsync(komuKilled, horn.ItemId);
+		string dropList = string.Join(",", session.PacketHistory.Skip(lootStart).Where(packet => packet.PacketType == typeof(Aion.GameServer.Network.Aion.ServerPackets.SM_LOOT_ITEMLIST))
+			.SelectMany(packet => packet.Get<List<IReadOnlyDictionary<string, object?>>>("items")).Select(item => item["itemId"]));
+		Assert.True(ItemCount(horn.ItemId) == 1, $"No Komu's Horn from Komu {komuKilled} (live Komus {instance.GetNpcs().Count(npc => npc.GetNpcId() == komu.NpcId)}, " +
+			$"Q2289 {State(2289)}); drop list [{dropList}]; Komus in the world: " +
+			string.Join("; ", instance.GetNpcs().Where(npc => npc.GetNpcId() == komu.NpcId).Select(npc => $"{npc.GetObjectId()} dead {npc.IsDead()} at {npc.GetX():F0},{npc.GetY():F0}")));
 		await TalkAsync("q2289-v7-gefion");
 		Assert.Contains(2289, session.Api.World.CompletedQuestIds);
 

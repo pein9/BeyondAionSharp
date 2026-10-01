@@ -1934,8 +1934,28 @@ and the slow Q2230. Each was fixed in the runner, then all three were proven tog
   - 2 h 27 m of game time (AB-08: 4 h 32 m), ending at level 18.
   - On the way: the revive fix alone took a run to 3 deaths, and the general sweep plus the
     nearest kind finished Q2230 on its first timer in a focused run.
-- **The `altgard-l4` snapshot is from the AB-09 run** (level 19, before these fixes). It is still a
-  valid Leg 4 endpoint for Leg 5; recapture it if Leg 5 should start from this run's endpoint.
+- **`altgard-l4` recaptured (2026-10-01)**, after the maintainer's Altgard spawn refinements
+  (`fd4b2a3cb`, MuMu Village and Mohen). The Altgard travel graph and geo golden were regenerated
+  for them in `70ec513b7`.
+  - The capture found one more bot defect. Smite on a grave-robber fencer that had just stopped
+    being a valid target was refused with `STR_SKILL_TARGET_IS_NOT_VALID`, which the cast code did
+    not know. The cast timed out, and the client's casting gate stayed shut, so the next walk threw
+    "CM_MOVE is blocked while Casting".
+  - The fix: `BotCastProtocol` counts that message as a refusal, and a cast that times out always
+    releases the gate.
+  - Run `snapshot-altgard-l4-s1` (seed 1, from `altgard-l3`):
+    - all 14 quests, level 18, bound at Basfelt, the endpoint verified across the relog;
+    - 3 deaths, all in Q24112: one in Sumarhon's camp, two on the way back past the swamp mosbears
+      and shade togs, each followed by a rest at the obelisk;
+    - Q2288 and Q2230 on their first timer;
+    - 2 h 49 m of game time.
+  - Snapshot `altgard-l4` (git-ignored): character 133297, elapsed 33,774,001 ms, dump SHA-256
+    `ddc5accc…0720f`, from `70ec513b7`. A test restore succeeded and was dropped. The AB-09 snapshot is
+    kept locally as `altgard-l4-ab09`.
+  - `run-fast` (`fast-20261001-093208`) passes: 11 of 11, E1 included after the D32 account fix.
+    - Its AB-06 probe needed one change: its shoot-down reported Komu killed while the server still
+      had him alive, so there was no horn to loot.
+    - The probe now counts a kill only when the server has the monster dead.
 
 **Endpoint (AB-Q1 (a)):**
 - all eleven quests, Q2227, Q2291 and Q24013 completed (AB-Q4);
