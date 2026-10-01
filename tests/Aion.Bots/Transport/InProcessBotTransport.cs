@@ -199,7 +199,7 @@ public sealed class InProcessBotTransport : IBotTransport
 			DecodedGamePacket gamePacket = Codec.HasKey
 				? Codec.DecodeServerFrame(frame)
 				: Codec.RecoverKeyFromSmKeyFrame(frame);
-			DecodedBotServerPacket packet = decoder.DecodeOrRaw(gamePacket);
+			DecodedBotServerPacket packet = decoder.DecodeOrRaw(gamePacket) with { ReceivedAt = Aion.GameServer.Utils.SystemClock.UtcNow() };
 			if (!received.Writer.TryWrite(packet))
 				throw new InvalidOperationException("The in-process receive stream is already closed.");
 		}

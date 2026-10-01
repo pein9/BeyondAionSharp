@@ -1123,6 +1123,10 @@ public sealed record BotDecomposableChoice(byte Index, int ItemId, int MinCount,
 
 public sealed record DecodedBotServerPacket(Type PacketType, IReadOnlyDictionary<string, object?> Fields)
 {
+	/// <summary>AK-04: when the transport received the packet (the virtual clock in SIM, wall time live), so state that runs on
+	/// from a packet (the game clock) is not dated by when the bot got round to applying it.</summary>
+	public DateTimeOffset? ReceivedAt { get; init; }
+
 	public T Get<T>(string name) => Fields.TryGetValue(name, out var value)
 		? (T)value!
 		: throw new KeyNotFoundException($"{PacketType.Name} did not decode a '{name}' field.");

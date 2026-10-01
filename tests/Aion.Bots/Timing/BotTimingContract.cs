@@ -72,6 +72,9 @@ public sealed class BotTimingContract
 		return Remaining(due);
 	}
 
+	/// <summary>The bot's clock (virtual in SIM): AK-04 stamps SM_GAME_TIME with it.</summary>
+	public DateTimeOffset Now => timeProvider.GetUtcNow();
+
 	public void RecordCastStarted(int skillId, int? targetObjectId)
 	{
 		if (targetObjectId != null && SelectedTargetId != targetObjectId)

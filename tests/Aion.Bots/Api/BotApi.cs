@@ -389,6 +389,7 @@ public sealed class BotApi
 	public BotClientPacket? Observe(DecodedBotServerPacket packet, int animationLastHitMillis = 0)
 	{
 		World.Apply(packet);
+		if (packet.PacketType == typeof(SM_GAME_TIME)) World.GameTimeObservedAt = packet.ReceivedAt ?? Timing.Now;
 		QuestDialogEchoes.Observe(packet);
 		if (packet.PacketType == typeof(SM_SKILL_COOLDOWN))
 			Timing.ApplySkillCooldowns(packet);

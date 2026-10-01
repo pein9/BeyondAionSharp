@@ -99,7 +99,7 @@ public sealed class TcpBotTransport : IBotTransport
 			var packet = Codec.HasKey
 				? Codec.DecodeServerFrame(frame)
 				: Codec.RecoverKeyFromSmKeyFrame(frame);
-			yield return decoder.DecodeOrRaw(packet);
+			yield return decoder.DecodeOrRaw(packet) with { ReceivedAt = DateTimeOffset.UtcNow };
 		}
 	}
 

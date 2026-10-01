@@ -28,6 +28,13 @@ public sealed partial class BotWorldModel
 	public int GameTimeUpdates { get; private set; }
 	/// <summary>The game hour (0-23) of the last SM_GAME_TIME (Java GameTime.getHour()).</summary>
 	public int? GameHour => GameMinutes is int minutes ? minutes / 60 % 24 : null;
+	/// <summary>AK-04: when the last SM_GAME_TIME arrived, on the bot's clock (the transport's receive time). Dating it by when the
+	/// bot applied it put the client's estimate 25 game minutes behind after a long wait in SIM.</summary>
+	public DateTimeOffset? GameTimeObservedAt { get; set; }
+
+	/// <summary>The game minutes at <paramref name="now"/>: the last SM_GAME_TIME run on at one minute per real 5 s.</summary>
+	public long? GameMinutesAt(DateTimeOffset now) => GameMinutes is int minutes && GameTimeObservedAt is DateTimeOffset at
+		? minutes + (long)Math.Max(0, (now - at).TotalMilliseconds) / 5000 : GameMinutes;
 
 	public IReadOnlyDictionary<int, BotKnownObject> Objects => objects;
 	public IReadOnlyDictionary<int, BotInventoryItem> Inventory => inventory;

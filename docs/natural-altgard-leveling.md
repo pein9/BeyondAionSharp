@@ -2156,8 +2156,8 @@ The same loop protocol, with "AK" in place of "NA".
   - **Plans:** `natural-altgard-l5-plans/` holds the 13 compiled plans. The compiler reproduces the committed
     Leg 4 plans exactly.
   - **Two D32 plans were stale.** Q24232 and Q24233 still had the MuMu positions from before the spawn
-    refinements, so they were regenerated (`f1e7cddbf`). No drift test covers `retail-quest-plans/`; a
-    separate task to add one was offered.
+    refinements, so they were regenerated (`f1e7cddbf`). `test-quest-plan-compiler.py` now fails when a plan in
+    `retail-quest-plans/` or a `natural-altgard*-plans/` folder differs from a fresh compile.
   - **The loader** accepts a leg with no scripted steps when every quest is a template, and it validates the
     new blocks. `NaturalAltgardTimedSpawn.PresentAt` copies Java `TemporarySpawn.checkHour`.
   - **Correction to the plan above:** the nearest MuMu workers are on the village's west edge (480–525 m), not
@@ -2205,8 +2205,27 @@ The same loop protocol, with "AK" in place of "NA".
     - a carrier in view is hunted even at its window's edge;
     - every ring has a plan at every hour.
   - All Natural tests pass, and so do the warning baseline and the logger, clock and fidelity checks.
-- [ ] **AK-04 — Q2292 in SIM.** A probe takes all three rings at their hours (day carriers,
+- [x] **AK-04 — Q2292 in SIM.** A probe takes all three rings at their hours (day carriers,
   then night), claims the chosen reward, and records what each carrier drops.
+  - *Done 2026-10-01.* `RingCarriersByTheHourCompleteMakingANewStart` (account 74, a level 19 Cleric probe)
+    accepts Q2292 at Anmurnerk and asks `NaturalCarrierPolicy` what to do from the client's own game clock.
+    - The probe reached the rings at 00:00 game time. Ring (210620) and Di (210624) were present and were
+      shot down; they dropped the Jealousy and Love Rings.
+    - At 00:01, no Passion carrier was present, so the policy waited 239 game minutes for Zen (210622) at
+      04:00. The probe advanced the virtual clock through the wait. Zen was there at 04:02 and dropped the
+      Passion Ring.
+    - Each carrier dropped its ring on the first kill (100%, as the data says). The probe then claimed the
+      contract's choice (REWARD2, Turquoise Earrings 120001521), and the three rings were taken.
+    - **For AK-08:** the runner's own reward chooser (`NaturalIshalgenInventoryPolicy.ChooseReward`) would
+      take index 0 here. The runner must honour the contract's `rewardChoices` instead.
+  - **Fixed: the client's game clock lagged by 25 game minutes.** The bot applied `SM_GAME_TIME` only when
+    it next read its packets, and stamped it then.
+    - Both transports now stamp each packet as it arrives (`DecodedBotServerPacket.ReceivedAt`).
+    - The probe asserts that the client's clock is within one advance slice (8 game minutes) of the server's.
+  - Line-of-sight checks for the shooting spots now look from eye height (1.6 m). A ground-level check had
+    passed a spot that the server refused with `STR_SKILL_OBSTACLE`. A refused spot is skipped on the next try.
+  - The decoder, world and Natural tests (425) pass, and so do `run-fast`, the warning baseline and the
+    logger, clock and fidelity checks.
 - [ ] **AK-05 — MuMu Village and Manumumu in SIM.** One batch for Q24232 and Q2238; Q2236
   hairpins; Q2237 sacks; Manumumu killed and Q24233 at REWARD.
 - [ ] **AK-06 — Stop 5 and the east in SIM.** Q2233, Q2234 and Q2235 at Kaibech; Q2241 at the
@@ -2509,3 +2528,4 @@ The original questions follow.
 - 2026-10-01 AK-01: the Leg 5 contract (13 template quests, timedSpawns, held) and its 13 plans; the stale D32 plans for Q24232/Q24233 regenerated.
 - 2026-10-01 AK-02: Leg 5's 20 travel legs walked in SIM; the AK-00 and AB-05 probes made robust in run-fast.
 - 2026-10-01 AK-03: the pure carrier policy and the client game clock (NaturalGameClock, NaturalCarrierPolicy) with unit tests.
+- 2026-10-01 AK-04: Q2292 taken by the game clock in SIM (Ring and Di at 00:00, a wait for Zen at 04:00); the client stamps SM_GAME_TIME on arrival.
