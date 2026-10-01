@@ -13,7 +13,7 @@ TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-alt
 [Leg 4: Basfelt Village](#leg-4-basfelt-village-level-1617--proposal) is done (AB-01..AB-10, 2026-09-30; recaptured
 2026-10-01): `altgard-l4` starts Leg 5.
 [Leg 5: Kaibech's Campsite, Idun's Lake and MuMu Village](#leg-5-kaibechs-campsite-iduns-lake-and-mumu-village-level-1819--proposal)
-is proposed (2026-10-01), waiting for AK-Q1..AK-Q3.
+is approved (AK-Q1..AK-Q3 as recommended, 2026-10-01) and ready for Loop mode (AK-00..AK-10).
 
 ## Goal
 
@@ -1967,7 +1967,9 @@ and the slow Q2230. Each was fixed in the runner, then all three were proven tog
 
 ## Leg 5: Kaibech's Campsite, Idun's Lake and MuMu Village (level 18–19) — proposal
 
-**Status (2026-10-01): proposed, waiting for AK-Q1..AK-Q3.**
+**Status (2026-10-01): approved** (AK-Q1..AK-Q3 as recommended; see "Blocked / questions").
+Leg 5 covers Stops 5 and 6 together (AK-Q1 (b)). Q2242 and Q24233 are held for Gerger and the
+fortress (AK-Q2 (a)). The bot waits for the game's night for Q2292's Love Ring (AK-Q3 (a)).
 
 **Where it starts.** It starts from the `altgard-l4` snapshot (recaptured 2026-10-01 on the
 refined spawns): character 133297, a level 18 Cleric at 384,315 of 407,257 XP, at the Basfelt
@@ -2062,7 +2064,7 @@ the 30 workers north-east of Basfelt, which is a quieter choice. The general que
 5. **Fertilizer sacks**: quest objects like Leg 4's beehives.
 6. **A reward choice** for Q2292, as for Q2227 and Q24013.
 
-### Leg 5 TODO list (proposed)
+### Leg 5 TODO list
 
 The same loop protocol, with "AK" in place of "NA".
 
@@ -2104,7 +2106,7 @@ The same loop protocol, with "AK" in place of "NA".
   altgard-l4` captures `altgard-l5` after a clean run, with a restore check.
 - [ ] **AK-10 — The full `CLAUDE.md` checklist and a checkpoint.**
 
-**Endpoint (if AK-Q1 (b) and AK-Q2 (a)):**
+**Endpoint (AK-Q1 (b), AK-Q2 (a)):**
 - Q2233–Q2235, Q2241, Q24230, Q24231, Q2238, Q24232, Q2236, Q2237 and Q2292 completed;
 - Q2242 started and Q24233 at REWARD, held for their hubs;
 - bound at the Basfelt obelisk;
@@ -2113,7 +2115,13 @@ The same loop protocol, with "AK" in place of "NA".
 
 ## Blocked / questions for the operator
 
-**Leg 5, open (2026-10-01):**
+**Leg 5, answered 2026-10-01:** AK-Q1 **(b)**, AK-Q2 **(a)** and AK-Q3 **(a)**, all as recommended:
+- Leg 5 does Stops 5 and 6 together, thirteen quests, worked from the Basfelt bind.
+- Q2242 (Gemyu) and Q24233 (Suthran) are finished but held. They are handed in when the route
+  reaches Gerger Village and the fortress.
+- The bot waits for the game's night for the Love Ring, doing other work meanwhile.
+
+The original questions:
 - **AK-Q1 — How big is Leg 5?**
   - (a) Stop 5 only: five quests, 63k XP, mostly at Kaibech, 650 m west.
   - (b) Stops 5 and 6 together: thirteen quests, 199k XP, all worked from the Basfelt bind.
@@ -2377,3 +2385,4 @@ The original questions follow.
 - 2026-09-30 AB-08: Leg 4 runs end to end in SIM from altgard-l3: 14 quests, L16 to L19, 10 recorded deaths, both timers handed in (Q2230 on its new chance), Infernus on the first try.
 - 2026-09-30 AB-09: SIM run snapshot-altgard-l4-s1 repeated the AB-08 run exactly (14 quests, L19, 10 deaths); snapshot altgard-l4 captured and restore-checked.
 - 2026-09-30 AB-10: full checklist green except run-fast E1 (D32 register gives Q24110 account 42, E1's); AB-04 probe fixed to wait out Q2230 in the village. Leg 4 done in SIM.
+- 2026-10-01 Leg 5 planned (Kaibech, Idun's Lake, MuMu Village; AK-00..AK-10); AK-Q1..AK-Q3 approved as recommended.
