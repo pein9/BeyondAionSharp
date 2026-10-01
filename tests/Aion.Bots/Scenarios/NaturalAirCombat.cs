@@ -76,7 +76,10 @@ public static class NaturalAirCombat
 		return best;
 	}
 
-	/// <summary>Shoot the fungus down from where the bot hovers. True when its death or the quest's counter was observed.</summary>
+	/// <summary>Shoot the fungus down from where the bot hovers. True when its death (0% HP) or, for a real quest, the
+	/// quest's counter was observed. A target that only leaves view is not a kill, and quest id 0 (the SIM probes) has no
+	/// counter: before, <c>QuestStatus(0)</c> was 0, so "status left START" held after the first cast and a live target
+	/// (Komu, in run-fast) was reported killed.</summary>
 	public static async Task<bool> ShootDownAsync(INaturalJourneySession session, int target, int questId,
 		Func<BotPosition, ushort, byte, int, SpellCastData> createCast, CancellationToken token, int maximumCasts = 12)
 	{
@@ -85,10 +88,14 @@ public static class NaturalAirCombat
 		int varBefore = QuestVar(session, questId);
 		int watched = session.PacketHistory.Count;
 		await session.SendPacketAsync(session.Api.Target(target), token);
+		bool DeathSeen() => session.PacketHistory.Skip(watched).Any(packet =>
+			packet.PacketType == typeof(SmAttackStatus) && packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0);
+		bool CounterMoved() => questId > 0 && (QuestVar(session, questId) != varBefore || QuestStatus(session, questId) != 3);
 		for (int cast = 0; cast < maximumCasts; cast++)
 		{
 			if (session.Api.World.IsDead) return false;
-			if (!session.Api.World.Objects.ContainsKey(target)) return cast > 0; // gone: killed and deleted, or out of view
+			// Gone from view: a kill only if its death or the quest's counter was seen (it may just have left view).
+			if (!session.Api.World.Objects.ContainsKey(target)) return DeathSeen() || CounterMoved();
 			TimeSpan gate = session.Api.Timing.TimeUntilCast(skillId);
 			if (gate > TimeSpan.Zero) await session.AdvanceAsync(gate + TimeSpan.FromMilliseconds(1), token);
 			await session.SendPacketAsync(session.Api.Cast(createCast(session.CurrentPosition, skillId, level, target)), token);
@@ -114,10 +121,7 @@ public static class NaturalAirCombat
 			else
 				await session.AdvanceAsync(TimeSpan.FromMilliseconds(BotCastProtocol.ReactionMillis), token);
 			await session.SynchronizeAsync(token);
-			bool dead = session.PacketHistory.Skip(watched).Any(packet =>
-				packet.PacketType == typeof(SmAttackStatus) && packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0) ||
-				!session.Api.World.Objects.ContainsKey(target);
-			if (dead || QuestVar(session, questId) != varBefore || QuestStatus(session, questId) != 3) return true;
+			if (DeathSeen() || CounterMoved()) return true;
 		}
 		return false;
 	}
