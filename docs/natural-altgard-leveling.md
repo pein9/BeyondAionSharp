@@ -2248,8 +2248,23 @@ The same loop protocol, with "AK" in place of "NA".
     - **Manumumu is spared from that clearing.** An earlier try despawned him with the looklooks around him.
       He is unique, with a 1,800 s respawn.
   - The warning baseline and the logger, clock and fidelity checks pass.
-- [ ] **AK-06 — Stop 5 and the east in SIM.** Q2233, Q2234 and Q2235 at Kaibech; Q2241 at the
+- [x] **AK-06 — Stop 5 and the east in SIM.** Q2233, Q2234 and Q2235 at Kaibech; Q2241 at the
   outlaws; Q2242 taken. Sumarhon's camp: Q24230 and Q24231.
+  - *Done 2026-10-01.* `EastAndSumarhonQuestsPlayThroughTheirPlans` (account 76, a level 19 Cleric probe at
+    the Leg 5 start) works the seven quests from their compiled plans:
+    - **Kaibech:** Q2233 took 3 kills (210597) and Q2235 took 3 (210441). Both were claimed, then Q2234 (it
+      needs Q2233) took 5 kills (210446).
+    - **The outlaws:** Q2241 took 6 kills (210484) for 5 Glowing Mushrooms. One missed its 80% drop.
+    - **Q2242** was taken at Vovetirn and is held at (START, 0), with its work item 182203258, for Gemyu.
+    - **Sumarhon's camp:** Q24230 took 9 kills (210504). Q24231 took 8 kills (210506) for 8 Grave Robber
+      Band's Amalgam Swords (100%). Both were claimed at Brodir.
+  - Q24230 went to REWARD on its ninth kill. Its `monster_hunt` has `end_reward="true"`, unlike Q24232 and
+    Q24233 (AK-05), so Java's `onKillEvent` sets REWARD.
+    - The other monster hunts stayed at START with their counters full until their end NPC's
+      `SELECT_QUEST_REWARD`.
+  - The probe clears aggressive neighbours, but no longer the kinds it hunts. Clearing them had emptied
+    Sumarhon's camp of its 210504s, since every camp member is aggressive.
+  - The warning baseline and the logger, clock and fidelity checks pass.
 - [ ] **AK-07 — Combat at level 18–19.** The AB-07 encounter harness, staged:
   - MuMu Village pulls (a looklook pair with a lookout);
   - Manumumu with what assists him;
@@ -2551,3 +2566,4 @@ The original questions follow.
 - 2026-10-01 AK-03: the pure carrier policy and the client game clock (NaturalGameClock, NaturalCarrierPolicy) with unit tests.
 - 2026-10-01 AK-04: Q2292 taken by the game clock in SIM (Ring and Di at 00:00, a wait for Zen at 04:00); the client stamps SM_GAME_TIME on arrival.
 - 2026-10-01 AK-05: MuMu Village's five quests in SIM (batch, hairpins, sacks, Manumumu); Q24233 is held at START with its counter full, as Java has it.
+- 2026-10-01 AK-06: Kaibech, the outlaws and Sumarhon's camp in SIM (Q2233-Q2235, Q2241, Q24230, Q24231 claimed; Q2242 held).
