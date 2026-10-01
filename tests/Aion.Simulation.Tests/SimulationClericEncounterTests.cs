@@ -29,6 +29,9 @@ public sealed partial class SimulationFastScenarioTests
 	/// AB-07: with AB07_STAGES=1 (level 16, or AC00_CLERIC_LEVEL) the stages are Leg 4's groups instead: a bigfoot mosbear with
 	/// a grove malodor, Komu Silverclaw (SEASONED L17), Comrade Sumarhon (SEASONED L15) with two fencers, Infernus (EXPERT L13),
 	/// and two Feral Black Claw Sharpeyes (SEASONED L17) with a black claw warrior (SEASONED L16).
+	/// AK-07: with AK07_STAGES=1 (level 19, or AC00_CLERIC_LEVEL) the stages are Leg 5's groups, placed as the spawn file has
+	/// them: a MuMu Village pull (a looklook pair with a lookout); Chieftain Manumumu (EXPERT L17) with his lookout 4 m away and
+	/// two looklooks 11 m away; and a grave robbing sentry with two fencers (L14) from Sumarhon's ground.
 	/// </summary>
 	[SkippableFact]
 	public async Task NaturalClericEncounterRunsOnce()
@@ -38,10 +41,11 @@ public sealed partial class SimulationFastScenarioTests
 			"Set NA23_CLERIC_ENCOUNTER=1 for the NA-23 Cleric encounter diagnostic.");
 		string root = Aion.GameServer.TestKit.RealStaticData.RepoRoot();
 		bool basfelt = Environment.GetEnvironmentVariable("AB07_STAGES") == "1";
-		int level = int.TryParse(Environment.GetEnvironmentVariable("AC00_CLERIC_LEVEL"), out int asked) ? asked : basfelt ? 16 : 10;
+		bool mumu = Environment.GetEnvironmentVariable("AK07_STAGES") == "1";
+		int level = int.TryParse(Environment.GetEnvironmentVariable("AC00_CLERIC_LEVEL"), out int asked) ? asked : mumu ? 19 : basfelt ? 16 : 10;
 		Assert.InRange(level, 10, 20);
 		int monsterId = level == 10 ? Goon : GraveRobbingFencer;
-		string item = basfelt ? "ab07" : level == 10 ? "na23" : "ac00";
+		string item = mumu ? "ak07" : basfelt ? "ab07" : level == 10 ? "na23" : "ac00";
 		string run = Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? $"{item}-cleric-encounter-l{level}-s{fixture.Seed}";
 		string directory = Path.Combine(root, "run", item, run);
 		Directory.CreateDirectory(directory);
@@ -66,7 +70,8 @@ public sealed partial class SimulationFastScenarioTests
 		{
 			PrepareCourseAsync = PrepareAsync,
 			PrepareEncounterStageAsync = PrepareStageAsync,
-			EncounterStages = basfelt ? ["mosbear-pair", "komu", "sumarhon-camp", "infernus", "sharpeyes"] : null,
+			EncounterStages = mumu ? ["mumu-pull", "manumumu", "sentry-fencers"]
+				: basfelt ? ["mosbear-pair", "komu", "sumarhon-camp", "infernus", "sharpeyes"] : null,
 			// NA-21: the approved help items (OD-13), unless NA_HELP_ITEMS=0.
 			SupplyHelpItemAsync = NaturalHelpItemSupply.Enabled(Environment.GetEnvironmentVariable(NaturalHelpItemSupply.Switch))
 				? SupplyHelpItemAsync : null,
@@ -154,6 +159,10 @@ public sealed partial class SimulationFastScenarioTests
 				"sumarhon-camp" => [(0, 0, 0, 210510), (-4, 2, 0, GraveRobbingFencer), (4, 2, 0, GraveRobbingFencer)],
 				"infernus" => [(0, 0, 0, 211621)],
 				"sharpeyes" => [(-3, 0, 0, 210457), (3, 0, 0, 210457), (0, 5, 0, 214039)],
+				// AK-07: Leg 5's groups (looklooks 210451 L15 and 210452 SEASONED L16, lookout 210454 L16, sentry 210504).
+				"mumu-pull" => [(-2.5f, 0, 0, 210452), (2.5f, 0, 0, 210451), (0, 5, 0, 210454)],
+				"manumumu" => [(0, 0, 0, 210598), (0, 4, 0, 210454), (-7.8f, 7.8f, 0, 210451), (7.8f, 7.8f, 0, 210451)],
+				"sentry-fencers" => [(0, 0, 0, 210504), (-4, 2, 0, GraveRobbingFencer), (4, 2, 0, GraveRobbingFencer)],
 				_ => throw new ArgumentOutOfRangeException(nameof(stage)),
 			};
 			foreach ((float dx, float dy, int randomWalk, int npcId) in monsters)

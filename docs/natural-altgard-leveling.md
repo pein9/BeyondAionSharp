@@ -2265,12 +2265,34 @@ The same loop protocol, with "AK" in place of "NA".
   - The probe clears aggressive neighbours, but no longer the kinds it hunts. Clearing them had emptied
     Sumarhon's camp of its 210504s, since every camp member is aggressive.
   - The warning baseline and the logger, clock and fidelity checks pass.
-- [ ] **AK-07 — Combat at level 18–19.** The AB-07 encounter harness, staged:
+- [x] **AK-07 — Combat at level 18–19.** The AB-07 encounter harness, staged:
   - MuMu Village pulls (a looklook pair with a lookout);
   - Manumumu with what assists him;
   - a sentry and fencer group.
 
   Record deaths and retreats.
+  - *Done 2026-10-01.* The NA-23/AC-00 encounter takes `AK07_STAGES=1` (level 19, or `AC00_CLERIC_LEVEL`).
+    Its three Leg 5 stages are GM-spawned on the AB-07 ground and placed as the spawn file has them. The
+    Cleric fights with the journey's own combat, pull planner, rests and help items, wearing the bridge's
+    Karmic Staff as in AB-07. Runs `run/ak07/ak07-cleric-encounter-l19-s1` and `…-l18-s1`:
+
+    | Stage | Level 19 | Level 18 |
+    |---|---|---|
+    | MuMu pull: looklooks 210452 (SEASONED L16) and 210451 (L15), lookout 210454 (L16) | 3 kills, lowest HP 77% | 3 kills, 75% |
+    | Manumumu (EXPERT L17), his lookout 4 m away, two looklooks 11 m away | 4 kills, 44%: **Salvation**, the Anti-Shock scroll, 3 potions | 3 kills (one looklook never joined), **25%**: Salvation, Healing Light ×4 |
+    | A sentry (210504) and two fencers (L14) | 3 kills, 64% | 3 kills, 51% |
+
+  - **Findings:**
+    - No deaths and no retreats at either level.
+    - **Manumumu is the dangerous fight.** At level 18 he took the Cleric to 25%; at 19, to 44%. The runner
+      (AK-08) should take him at level 19 if it can, and pull his lookout first.
+    - The MuMu Village pulls and Sumarhon's sentries and fencers are safe at level 18–19.
+    - Awakening and a DP jelly were used before the first pull.
+  - **How to read the trace:**
+    - Each kill ends two nested encounters with the same target; count kills by target.
+    - `help-item-used`'s `refused: STR_USE_ITEM` is the client's "you used" message, not a refusal (the
+      count drops by one).
+  - The warning baseline and the logger, clock and fidelity checks pass.
 - [ ] **AK-08 — The Leg 5 runner.** The engine and runner for the carriers' hours (AK-03),
   batches by ground and the held hand-ins. A smoke run from `altgard-l4` with real combat,
   recording every fight and death.
@@ -2567,3 +2589,4 @@ The original questions follow.
 - 2026-10-01 AK-04: Q2292 taken by the game clock in SIM (Ring and Di at 00:00, a wait for Zen at 04:00); the client stamps SM_GAME_TIME on arrival.
 - 2026-10-01 AK-05: MuMu Village's five quests in SIM (batch, hairpins, sacks, Manumumu); Q24233 is held at START with its counter full, as Java has it.
 - 2026-10-01 AK-06: Kaibech, the outlaws and Sumarhon's camp in SIM (Q2233-Q2235, Q2241, Q24230, Q24231 claimed; Q2242 held).
+- 2026-10-01 AK-07: Leg 5 combat at level 18 and 19 (MuMu pull, Manumumu, sentry and fencers): no deaths; Manumumu reached 25% at level 18.
