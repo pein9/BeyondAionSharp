@@ -255,6 +255,93 @@ public sealed class NaturalAltgardDecisionEngineTests
 	}
 
 	[Fact]
+	public void Leg5HuntsTheRingCarriersByTheHourAndHoldsTwoHandIns()
+	{
+		// AK-08: Leg 5 from the altgard-l4 snapshot (level 19, bound at Basfelt), at noon game time.
+		NaturalAltgardContract leg5 = NaturalAltgardContract.LoadLeg("l5");
+		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(NaturalAltgardContract.LoadPlans("l5"));
+		var quests = new Dictionary<int, BotQuestState>();
+		var completed = new HashSet<int>(leg5.Start.CompletedQuestIds);
+		var items = new Dictionary<int, long>();
+		NaturalAltgardBind bind = leg5.Bind!;
+		BotBindPoint bound = new(220030000, new BotPosition(bind.Position[0], bind.Position[1], bind.Position[2], 0), 0);
+		var at = new BotPosition(leg5.Hub.Anchor[0] + 3, leg5.Hub.Anchor[1], leg5.Hub.Anchor[2], 0);
+		long? minutes = 367 * NaturalGameClock.MinutesPerDay + 12 * 60;
+		int? free = 10;
+		NaturalAltgardDecision Decide() => NaturalAltgardDecisionEngine.Decide(leg5,
+			new NaturalAltgardObservation(true, 220030000, 19, false, quests, completed, at, items, bound, minutes, new HashSet<int>(), free), objectives, 1);
+		void Set(int quest, byte status, int var = 0) => quests[quest] = new(quest, status, var, 0, null);
+		void Complete(int quest) { quests.Remove(quest); completed.Add(quest); }
+		void MeetObjective(int quest)
+		{
+			if (objectives[quest].ItemId is int item) items[item] = objectives[quest].ItemCount;
+			else Set(quest, 3, objectives[quest].KillCount);
+		}
+		const int passion = 122000039, jealousy = 122000040, love = 122000041;
+
+		// A cube too full to loot (the AK-08 smoke run: 35 stacks against 27) is emptied at Gilungk in Basfelt first.
+		free = 2;
+		Assert.Equal("town-service", Decide().Action);
+		Assert.Contains("203613", Decide().Reason, StringComparison.Ordinal);
+		free = 10;
+
+		// Every template whose prerequisite is met is accepted first; Q2234 and Q2242 wait for Q2233 and Q2241.
+		foreach (int quest in leg5.Order.Where(id => id is not (2234 or 2242)))
+		{
+			Assert.Equal(("template-accept", quest), (Decide().Action, Decide().QuestId));
+			Set(quest, 3);
+		}
+		// Q2292 by day: a day carrier is hunted while no ring is held.
+		foreach (int quest in leg5.Order.TakeWhile(id => id != 2292))
+		{
+			Assert.Equal(("template-work", quest), (Decide().Action, Decide().QuestId));
+			MeetObjective(quest);
+		}
+		NaturalAltgardDecision ring = Decide();
+		Assert.Equal(("carrier-hunt", 2292), (ring.Action, ring.QuestId));
+		Assert.Contains(int.Parse(ring.StepKey!), new[] { 210599, 210622, 210623 });
+		// With Passion and Jealousy held, the Love Ring waits for the night, and the wait goes to the work after it.
+		items[passion] = items[jealousy] = 1;
+		Assert.Equal(("template-work", 24233), (Decide().Action, Decide().QuestId));
+		Assert.Contains(Decide().Checks, check => check.Rule == "carrier" && check.Verdict == "wait");
+		foreach (int quest in new[] { 24233, 2233, 2235, 2241 }) MeetObjective(quest);
+		// The claims (and the follow-ups they open, Q2234 and Q2242) come before the wait; Q2292 is not claimed without its Love
+		// Ring, nor Q24233 (held for Suthran), nor Q2242 (held for Gemyu).
+		var claimed = new List<int>();
+		for (NaturalAltgardDecision next = Decide(); next.Action is "template-accept" or "template-work" or "template-claim"; next = Decide())
+		{
+			int quest = next.QuestId!.Value;
+			if (next.Action == "template-accept") Set(quest, 3);
+			else if (next.Action == "template-work") MeetObjective(quest);
+			else { claimed.Add(quest); Complete(quest); }
+		}
+		Assert.Equal(new[] { 24230, 24231, 24232, 2238, 2236, 2237, 2233, 2234, 2235, 2241 }.Order(), claimed.Order());
+		Assert.Equal(new[] { 24230, 24231, 24232, 2238, 2236, 2237, 2233 }, claimed.Take(7));
+		// Only the Love Ring is left: wait for 22:00 (10 game hours), then hunt Zoo or Di.
+		NaturalAltgardDecision wait = Decide();
+		Assert.Equal(("wait-for-carrier", 2292), (wait.Action, wait.QuestId));
+		Assert.Contains("Wait 600 game minutes", wait.Reason, StringComparison.Ordinal);
+		minutes += 11 * 60;
+		ring = Decide();
+		Assert.Equal(("carrier-hunt", 2292), (ring.Action, ring.QuestId));
+		Assert.Contains(int.Parse(ring.StepKey!), new[] { 210621, 210624 });
+		items[love] = 1;
+		Assert.Equal(("template-claim", 2292), (Decide().Action, Decide().QuestId));
+		Complete(2292);
+		// Q2242 (taken, a report_to) and Q24233 (Manumumu killed) are held: the leg is complete at Basfelt without them.
+		NaturalAltgardDecision end = Decide();
+		Assert.Equal(("leg-complete", "complete"), (end.Action, end.Outcome));
+		Assert.Equal(leg5.Endpoint.CompletedQuestIds.Order(), completed.Intersect(leg5.Order).Order());
+		Assert.Equal(new[] { 2242, 24233 }, quests.Keys.Order());
+		// Without the client's game clock, a carrier quest is not guessed at: the run stops and says why.
+		completed.Remove(2292);
+		Set(2292, 3);
+		items.Remove(love);
+		minutes = null;
+		Assert.Equal(("no-game-clock", "blocked"), (Decide().Action, Decide().Outcome));
+	}
+
+	[Fact]
 	public void Leg4BindsFirstThenRunsTimersSpawnsHuntsObjectsAndTheHornAtVar7()
 	{
 		// AB-08: Leg 4 from the altgard-l3 snapshot (level 16, Q24013 started, bound at the fortress).

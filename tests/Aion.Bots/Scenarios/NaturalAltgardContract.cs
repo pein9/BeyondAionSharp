@@ -188,7 +188,8 @@ public sealed record NaturalAltgardContract(
 public sealed record NaturalAltgardStart(string Contract, string Snapshot, int MapId, string Race, string Class, int Level,
 	int BindNpcId, int[] CompletedQuestIds, int[] LockedQuestIds, int[]? StartedQuestIds = null);
 
-public sealed record NaturalAltgardHub(string Key, int MapId, float[] Anchor, float Radius);
+/// <param name="VendorNpcId">AK-08: a town's merchant, where the Cleric sells what the inventory policy calls surplus.</param>
+public sealed record NaturalAltgardHub(string Key, int MapId, float[] Anchor, float Radius, int? VendorNpcId = null);
 
 public sealed record NaturalAltgardArea(string Key, string Note, float[] Min, float[] Max)
 {

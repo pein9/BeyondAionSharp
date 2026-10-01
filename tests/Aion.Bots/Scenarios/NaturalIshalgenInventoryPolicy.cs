@@ -8,8 +8,11 @@ namespace Aion.Bots.Scenarios;
 /// <summary>Static, shipped-item knowledge used with packet-observed inventory; no server-state oracle.</summary>
 public sealed record NaturalItem(int Id, string Group, int RequiredLevel, int MaximumLevel, string Race,
 	int Price, int Quality, int MinimumDamage, int MaximumDamage, int MagicBoost, int Mask,
-	int ClericLevel = 0, int ClericMaximumLevel = 0, int ItemLevel = 0)
+	int ClericLevel = 0, int ClericMaximumLevel = 0, int ItemLevel = 0, int ExtraInventory = 0)
 {
+	/// <summary>AK-08: Java <c>ItemStorage.getCubeItems</c>: an item counts against the cube's limit unless its template names an
+	/// extra inventory (<c>&lt;inventory id="2"/&gt;</c>, the quest tab).</summary>
+	public bool InMainCube => ExtraInventory < 1;
 	public bool Sellable => (Mask & 4) != 0;
 	public bool IsPriestGear => Group is "MACE" or "RB_TORSO" or "RB_GLOVE" or "RB_SHOULDER" or "RB_PANTS" or "RB_SHOES"
 		or "CL_TORSO" or "CL_GLOVE" or "CL_SHOULDER" or "CL_PANTS" or "CL_SHOES" or "CL_HEADS"
@@ -153,7 +156,8 @@ public sealed class NaturalIshalgenInventoryPolicy
 				priestMaximum, (string?)element.Attribute("race") ?? "PC_ALL", (int?)element.Attribute("price") ?? 0,
 				Quality((string?)element.Attribute("quality")), (int?)weapon?.Attribute("min_damage") ?? 0,
 				(int?)weapon?.Attribute("max_damage") ?? 0, (int?)weapon?.Attribute("boost_magical_skill") ?? 0,
-				(int?)element.Attribute("mask") ?? 0, clericLevel, clericMaximum, (int?)element.Attribute("level") ?? 0);
+				(int?)element.Attribute("mask") ?? 0, clericLevel, clericMaximum, (int?)element.Attribute("level") ?? 0,
+				(int?)element.Element("inventory")?.Attribute("id") ?? 0);
 			if (catalog.Count == needed.Count) break;
 		}
 		return new(catalog, questItems, rewards, clericSupplies, (bridge.CeremonyReward.QuestId, bridge.CeremonyReward.ItemId));
@@ -173,7 +177,7 @@ public sealed class NaturalIshalgenInventoryPolicy
 	{
 		if (cleric) return DecideCleric(inventory, level, capacity);
 		BotInventoryItem[] observed = inventory.Where(item => item.ItemId != BotWorldModel.KinahItemId).ToArray();
-		int occupied = observed.Count(item => item.Details.EquippedSlot.GetValueOrDefault() == 0);
+		int occupied = Occupied(observed);
 		var best = observed.Where(item => items.TryGetValue(item.ItemId, out var template) && template.UsableAt(level))
 			.GroupBy(item => items[item.ItemId].GearSlot)
 			.ToDictionary(group => group.Key!, group => group.OrderByDescending(item => items[item.ItemId].GearScore)
@@ -201,7 +205,7 @@ public sealed class NaturalIshalgenInventoryPolicy
 	private NaturalInventoryPlan DecideCleric(IEnumerable<BotInventoryItem> inventory, int level, int capacity)
 	{
 		BotInventoryItem[] observed = inventory.Where(item => item.ItemId != BotWorldModel.KinahItemId).ToArray();
-		int occupied = observed.Count(item => item.Details.EquippedSlot.GetValueOrDefault() == 0);
+		int occupied = Occupied(observed);
 		var best = observed.Where(item => items.TryGetValue(item.ItemId, out var template) && template.UsableByClericAt(level) && !template.IsAccessory)
 			.GroupBy(item => items[item.ItemId].ClericGearSlot)
 			.ToDictionary(group => group.Key!, group => group.OrderByDescending(item => items[item.ItemId].ClericGearScore)
@@ -224,6 +228,10 @@ public sealed class NaturalIshalgenInventoryPolicy
 		}
 		return new(capacity, occupied, decisions);
 	}
+
+	/// <summary>The stacks in the cube that count against its limit: not worn, and not in the quest tab.</summary>
+	private int Occupied(IEnumerable<BotInventoryItem> observed) => observed.Count(item => item.Details.EquippedSlot.GetValueOrDefault() == 0 &&
+		(!items.TryGetValue(item.ItemId, out NaturalItem? template) || template.InMainCube));
 
 	public int ChooseReward(int questId, int level, IEnumerable<BotInventoryItem> inventory)
 	{

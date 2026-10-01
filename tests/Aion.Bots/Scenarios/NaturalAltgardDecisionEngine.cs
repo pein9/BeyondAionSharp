@@ -4,15 +4,21 @@ namespace Aion.Bots.Scenarios;
 
 /// <summary>A copied client observation for Altgard Leg 1; no server oracle enters the decision.</summary>
 /// <param name="Bind">AB-08: the obelisk bind point the client last saw (<c>SM_BIND_POINT_INFO</c>).</param>
+/// <param name="GameMinutes">AK-08: the client's game clock now (<c>SM_GAME_TIME</c> run on; <see cref="NaturalGameClock"/>).</param>
+/// <param name="VisibleNpcIds">AK-08: the template ids of the NPCs in the client's view.</param>
+/// <param name="FreeCubeSlots">AK-08: the cube's free slots as the inventory policy counts them (null when not counted).</param>
 public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, int Level, bool IsDead,
 	IReadOnlyDictionary<int, BotQuestState> Quests, IReadOnlySet<int> CompletedQuestIds, BotPosition Position,
-	IReadOnlyDictionary<int, long> ItemCounts, BotBindPoint? Bind = null)
+	IReadOnlyDictionary<int, long> ItemCounts, BotBindPoint? Bind = null, long? GameMinutes = null, IReadOnlySet<int>? VisibleNpcIds = null,
+	int? FreeCubeSlots = null)
 {
-	public static NaturalAltgardObservation Observe(BotWorldModel world, BotPosition position) =>
+	public static NaturalAltgardObservation Observe(BotWorldModel world, BotPosition position, DateTimeOffset? now = null, int? freeCubeSlots = null) =>
 		new(world.LoginStateObserved && world.QuestJournalObserved && world.CompletedJournalObserved, world.MapId, world.Level,
 			world.IsDead, new Dictionary<int, BotQuestState>(world.Quests), world.CompletedQuestIds.ToHashSet(), position,
 			world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
-			world.ObeliskBindPoint);
+			world.ObeliskBindPoint, now is DateTimeOffset at ? world.GameMinutesAt(at) : world.GameMinutes,
+			world.Objects.Values.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId != null)
+				.Select(known => known.TemplateId!.Value).ToHashSet(), freeCubeSlots);
 }
 
 /// <summary>What a template quest's objectives need, from its compiled plan: items in the inventory, or a kill counter.
@@ -51,6 +57,10 @@ public static class NaturalAltgardDecisionEngine
 	/// <summary>How far the client's bind point may lie from the contract's obelisk and still be that bind.</summary>
 	public const float BindTolerance = 10;
 
+	/// <summary>AK-08: game minutes to walk <paramref name="metres"/> (about 6 m/s, a game minute per 5 s), with a margin for the
+	/// road's bends and a fight on the way.</summary>
+	public static int TravelGameMinutes(float metres) => (int)MathF.Ceiling(metres / 6f / 5f) + 5;
+
 	public static bool BoundAt(NaturalAltgardBind bind, int mapId, BotBindPoint? bound) =>
 		bound is { } point && point.MapId == mapId &&
 		MathF.Sqrt(MathF.Pow(point.Position.X - bind.Position[0], 2) + MathF.Pow(point.Position.Y - bind.Position[1], 2)) <= BindTolerance;
@@ -76,8 +86,13 @@ public static class NaturalAltgardDecisionEngine
 		if (contract.Bind is { OnArrival: true } bind && !BoundAt(bind, contract.Hub.MapId, state.Bind))
 			return Plan("bind", null, $"Bind at the {contract.Hub.Key} obelisk ({bind.NpcId}) before working out of it.");
 
+		// AK-08: a held quest (AK-Q2) is done for this leg once it is taken and its objective is met; its hand-in is a later leg's.
+		// AK-08: a cube too full to take a loot (Java refuses it with STR_MSG_DICE_INVEN_ERROR) is emptied at the town's merchant.
+		if (contract.Town?.VendorNpcId is int vendor && state.FreeCubeSlots is int free && free < NaturalInventoryPlan.QuestFreeSlotReserve)
+			return Plan("town-service", null, $"The cube has {free} free slots: sell the surplus at {vendor} in {contract.Town.Key}.");
+
 		NaturalAltgardQuest[] open = contract.Order.Select(contract.Quest)
-			.Where(quest => !Done(quest.Id) && (only == null || only.Contains(quest.Id))).ToArray();
+			.Where(quest => !Done(quest.Id) && !HeldReady(quest.Id) && (only == null || only.Contains(quest.Id))).ToArray();
 		NaturalAltgardQuest[] eligible = open.Where(Eligible).ToArray();
 		// A hand-in where the leg ends (Leg 2: Q2215 at Manir's Campsite, AM-Q1) waits until everything else is done.
 		string? endArea = contract.Endpoint.Anchor is { } end
@@ -88,9 +103,27 @@ public static class NaturalAltgardDecisionEngine
 		// Template quests, hub-style: accept, work, claim.
 		foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate && Status(quest.Id) is not (Start or Reward)))
 			return Plan("template-accept", quest.Id, $"Q{quest.Id}: accept at the hub with the other hub quests.");
+		NaturalCarrierChoice? carrierWait = null;
 		foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate && Status(quest.Id) == Start && !WorkDone(quest.Id)))
-			return Plan("template-work", quest.Id, $"Q{quest.Id}: work the objectives on {quest.Area ?? "its ground"}.");
-		foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate && !AtTheEnd(quest)))
+		{
+			// AK-08: items that drop only from monsters that exist by the hour (Q2292's ring carriers) are hunted when a carrier
+			// can be reached in its window; otherwise the wait goes to the other work (AK-Q3).
+			NaturalAltgardTimedSpawn[] carriers = contract.TimedSpawnList.Where(carrier => carrier.QuestId == quest.Id).ToArray();
+			if (carriers.Length == 0)
+				return Plan("template-work", quest.Id, $"Q{quest.Id}: work the objectives on {quest.Area ?? "its ground"}.");
+			if (state.GameMinutes is not long minutes)
+				return Stop("no-game-clock", "blocked", $"Q{quest.Id}'s carriers keep hours, and the client has no game time.", quest.Id);
+			var rings = carriers.Select(carrier => carrier.ItemId).Where(ring => state.ItemCounts.GetValueOrDefault(ring) < 1).ToHashSet();
+			float farthest = carriers.Where(carrier => rings.Contains(carrier.ItemId)).Max(carrier => MathF.Sqrt(
+				MathF.Pow(state.Position.X - carrier.Position[0], 2) + MathF.Pow(state.Position.Y - carrier.Position[1], 2)));
+			NaturalCarrierChoice choice = NaturalCarrierPolicy.Decide(new NaturalCarrierObservation(rings, minutes,
+				state.VisibleNpcIds ?? new HashSet<int>(), TravelGameMinutes(farthest)), carriers);
+			if (choice.Action == "hunt")
+				return Plan("carrier-hunt", quest.Id, $"Q{quest.Id}: {choice.Reason}", $"{choice.Carrier!.NpcId}");
+			checks.Add(new("carrier", "wait", $"Q{quest.Id}: {choice.Reason}"));
+			carrierWait ??= choice with { Reason = $"Q{quest.Id}: {choice.Reason}" };
+		}
+		foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate && WorkDone(quest.Id) && !Held(quest.Id) && !AtTheEnd(quest)))
 			return Plan("template-claim", quest.Id, $"Q{quest.Id}: objectives done; claim it.");
 
 		// Scripted quests, in the contract's order.
@@ -153,9 +186,14 @@ public static class NaturalAltgardDecisionEngine
 				: Plan("talk", quest.Id, $"Q{quest.Id} var {var}: {next.Key}.", next.Key);
 		}
 
+		// AK-08: nothing else to do before a carrier's window opens: wait for it (the runner rests at the hub meanwhile).
+		if (carrierWait != null)
+			return Plan("wait-for-carrier", carrierWait.Carrier!.QuestId, $"{carrierWait.Reason} Wait {carrierWait.WaitGameMinutes} game minutes.",
+				$"{carrierWait.Carrier.NpcId}");
+
 		// The hand-ins held back for the end, once only they are left.
 		if (open.Length > 0 && open.All(AtTheEnd))
-			foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate))
+			foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate && !Held(quest.Id)))
 				return Plan("template-claim", quest.Id, $"Q{quest.Id}: the last hand-in, where the leg ends.");
 
 		// Only gated quests are left: hunt for the level they need, or wait for the campaign to unlock.
@@ -202,7 +240,12 @@ public static class NaturalAltgardDecisionEngine
 			}
 			return true;
 		}
-		bool WorkDone(int questId) => objectives.TryGetValue(questId, out NaturalTemplateObjective? objective) &&
-			objective.IsDone(state.Quests.GetValueOrDefault(questId), state.ItemCounts);
+		// A carrier quest's work is every carrier's item held (Q2292: one of each ring); its plan lists one collect step per ring.
+		bool WorkDone(int questId) => contract.TimedSpawnList.Any(carrier => carrier.QuestId == questId)
+			? contract.TimedSpawnList.Where(carrier => carrier.QuestId == questId).All(carrier => state.ItemCounts.GetValueOrDefault(carrier.ItemId) >= 1)
+			: objectives.TryGetValue(questId, out NaturalTemplateObjective? objective) &&
+				objective.IsDone(state.Quests.GetValueOrDefault(questId), state.ItemCounts);
+		bool Held(int questId) => contract.HeldList.Any(held => held.QuestId == questId);
+		bool HeldReady(int questId) => Held(questId) && Status(questId) is Start or Reward && WorkDone(questId);
 	}
 }

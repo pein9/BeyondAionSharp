@@ -2296,6 +2296,45 @@ The same loop protocol, with "AK" in place of "NA".
 - [ ] **AK-08 — The Leg 5 runner.** The engine and runner for the carriers' hours (AK-03),
   batches by ground and the held hand-ins. A smoke run from `altgard-l4` with real combat,
   recording every fight and death.
+  - *In progress 2026-10-01; blocked on AK-Q4 (the cube).* What is built and proven so far:
+    - **The engine** (`NaturalAltgardDecisionEngine`, tests in `Leg5HuntsTheRingCarriersByTheHourAndHoldsTwoHandIns`):
+      - `carrier-hunt` when `NaturalCarrierPolicy` finds a ring carrier present long enough to reach;
+      - a carrier wait gives way to other work, and becomes `wait-for-carrier` only when nothing else is left;
+      - held quests (Q2242, Q24233) count as done once taken and worked, and are never claimed;
+      - a claim needs the work done, and the leg stops (`no-game-clock`) rather than guess without the clock;
+      - `town-service` when the cube has fewer than 3 free slots and the town names a merchant.
+    - **The runner** executes those actions:
+      - it reads the observation's game clock from `SM_GAME_TIME` as it arrived;
+      - for `carrier-hunt` it kills the carrier with the journey's combat and loots its ring;
+      - for `wait-for-carrier` it rests at the Basfelt obelisk, five real minutes (an hour of game time) at a time;
+      - for `town-service` it sells to Gilungk (203613), the Basfelt merchant the l5 town now names, and wears
+        upgrades;
+      - it claims with the contract's reward choice (Q2292's earrings) over the inventory policy's;
+      - and the endpoint check requires the held quests taken and worked.
+    - **The cube count now follows Java.** `ItemStorage.getCubeItems` leaves out items whose template names
+      an extra inventory (`<inventory id="2"/>`, the quest tab). The inventory policy's free slots now count
+      only the main cube.
+    - **An unreachable monster is left alone.** One that fails twice with no death or retreat goes on the
+      navigator's unavailable list, and another of its kind is pulled.
+  - **Smoke runs from `altgard-l4`** (`run/af-l1/ak08-l5-smoke`…`smoke4`, seed 1):
+    1. Stopped at the first carrier: Lu's Passion Ring was refused with `STR_MSG_DICE_INVEN_ERROR`. The
+       main cube held 35 stacks against its 27 (no expansions). Quest rewards and the help-item supply add
+       past the limit; a loot does not. This led to the cube count and `town-service`.
+    2. `town-service` worked: the Cleric wore its reward gear and sold 12 stacks, going from −5 to 7 free
+       slots. The run then stopped in Sumarhon's camp on sentry 70357.
+       - The sentry chased the Cleric and stopped 2.8 m under the ground the Cleric stood on, at the same
+         XY. Its `SM_MOVE` `targetZ` was its own starting z, 284.67.
+       - Every cast was refused with `STR_SKILL_OBSTACLE`.
+       - The C# `NpcMoveController` matches Java's line for line here. The server question is a separate
+         task.
+    3. A step to sighted ground found no spot (the sentry is under the terrain), so that idea was dropped.
+    4. The sentry was abandoned, and the leg ran 24 decisions:
+       - Q24230, Q24231, the MuMu batch, the hairpins and the sacks;
+       - **both day rings at their hours**: Lu at 05:16 game time, Ang at 05:54;
+       - Manumumu, and the Kaibech and outlaw work;
+       - **level 20**, no deaths up to there.
+       - At decision 25 the cube was down to 1 free slot, with nothing the Cleric rules sell, and the run
+         stopped (AK-Q4).
 - [ ] **AK-09 — One SIM run of Leg 5 and the snapshot.** `sim-snapshot.ps1 -Leg l5 -From
   altgard-l4` captures `altgard-l5` after a clean run, with a restore check.
 - [ ] **AK-10 — The full `CLAUDE.md` checklist and a checkpoint.**
@@ -2309,6 +2348,34 @@ The same loop protocol, with "AK" in place of "NA".
 - the endpoint verified across a relog.
 
 ## Blocked / questions for the operator
+
+**Leg 5, open 2026-10-01:**
+- **AK-Q4 — The cube is full of things the Cleric keeps.** The fourth AK-08 smoke run reached level 20.
+  It then had 1 free slot of 27 (no expansions) and nothing the rules sell. A loot of any normal item
+  (Q2292's rings, drops) is refused when the cube is full. What fills it:
+  - the approved help items in two tiers: the level 20 top-up added the Awakening, Running and Anti-Shock
+    Scrolls, Lesser Life Potions and Lesser Mana Serum, while the older tiers still hold slots;
+  - six unsellable event stacks;
+  - five unworn accessories, which the Cleric rules keep (NA-09);
+  - the protected supplies and the Karmic Staff.
+
+  The options:
+  - (a) **Buy cube expansions**, the maintainer's suggestion. Pandaemonium sells levels 1–4 (798011,
+    798012, 798058, 798059) for 1,000, 12,000, 80,000 and 180,000 kinah: 273,000 in all, for 36 more
+    slots. Ishalgen sells only level 1.
+    - The Cleric has 437,720 kinah of its own, so no GM kinah is needed.
+    - It is one errand at the start of Leg 5: walk to the fortress, teleport to Pandaemonium, buy, come
+      back, and bind again at Basfelt.
+    - Replaying from Leg 1 is not needed: Legs 1–4 never hit the limit.
+  - (b) **Sell surplus accessories**: those no better than the ones worn (5 slots here). This changes
+    NA-09's "keep every accessory".
+  - (c) **Use up the older help-item tier first, and stop topping it up** once a newer tier is supplied.
+  - (d) Several of these.
+
+  **Recommendation: (a), with (b).** A 4.8 player at level 20 has bought the cheap expansions and sells
+  rings they will never wear. (a) alone gives the room for Legs 6+; (b) keeps the cube from filling again.
+  The expansion is spending kinah on something new, which the standing rule (never buy gear or skill
+  books) does not cover, so it needs a yes.
 
 **Leg 5, answered 2026-10-01:** AK-Q1 **(b)**, AK-Q2 **(a)** and AK-Q3 **(a)**, all as recommended:
 - Leg 5 does Stops 5 and 6 together, thirteen quests, worked from the Basfelt bind.
@@ -2590,3 +2657,4 @@ The original questions follow.
 - 2026-10-01 AK-05: MuMu Village's five quests in SIM (batch, hairpins, sacks, Manumumu); Q24233 is held at START with its counter full, as Java has it.
 - 2026-10-01 AK-06: Kaibech, the outlaws and Sumarhon's camp in SIM (Q2233-Q2235, Q2241, Q24230, Q24231 claimed; Q2242 held).
 - 2026-10-01 AK-07: Leg 5 combat at level 18 and 19 (MuMu pull, Manumumu, sentry and fencers): no deaths; Manumumu reached 25% at level 18.
+- 2026-10-01 AK-08 (in progress): the carrier, held and town-service engine and runner; four smoke runs reach level 20 with both day rings; blocked on AK-Q4 (the full cube).

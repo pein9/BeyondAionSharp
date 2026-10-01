@@ -24,7 +24,8 @@
     "key": "basfelt",
     "mapId": 220030000,
     "anchor": [1779.88, 690.477, 264.309],
-    "radius": 120
+    "radius": 120,
+    "vendorNpcId": 203613
   },
   "bind": {
     "npcId": 700066,

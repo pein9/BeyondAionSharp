@@ -968,12 +968,16 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				var timedAttempts = new Dictionary<int, int>();
 				var timedEnds = new Dictionary<int, long>();
 				var spawnAttempts = new Dictionary<string, int>();
+				// AK-08: the cube's free slots as the inventory policy counts them, for a leg whose town has a merchant.
+				int? FreeCubeSlots() => leg.Town?.VendorNpcId == null ? null
+					: NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, session.Api.World.Inventory.Values.Select(item => item.ItemId))
+						.Decide(session.Api.World).FreeSlots;
 				for (int sequence = 1; sequence <= 400; sequence++)
 				{
 					await session.SynchronizeAsync(token);
 					if (session.Api.World.Level != helpCheckedAtLevel) await TopUpHelpItemsAsync("level-up");
 					NaturalAltgardDecision next = NaturalAltgardDecisionEngine.Decide(leg,
-						NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition), objectives, sequence, only);
+						NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition, session.Api.Timing.Now, FreeCubeSlots()), objectives, sequence, only);
 					session.TraceDiagnostic($"altgard-{altgardLegId}-decision", new Dictionary<string, object?>
 					{
 						["sequence"] = sequence, ["action"] = next.Action, ["step"] = next.StepKey, ["quest"] = next.QuestId,
@@ -1239,6 +1243,75 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							int endNpc = altgardPlans.Values.SelectMany(plan => plan.EndNpcs)
 								.First(npc => npc.Positions.Any(at => MathF.Sqrt(MathF.Pow(at.X - end[0], 2) + MathF.Pow(at.Y - end[1], 2)) <= leg.Endpoint.Radius)).Id;
 							await ApproachShippedSpawnAsync(endNpc);
+							break;
+						}
+						case "town-service":
+						{
+							// AK-08: the cube is too full to loot. At the town's merchant: wear the upgrades, then sell what the inventory
+							// policy calls surplus (never buying anything, OD-7), as the bridge's shop stop does.
+							await EnsureOnGroundAsync();
+							await EquipUpgradesAsync(token);
+							await session.SynchronizeAsync(token);
+							BotWorldModel world = session.Api.World;
+							NaturalInventoryPlan plan = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId))
+								.Decide(world);
+							var sales = plan.Sales.Select(sale => new NaturalSale(sale.ObjectId, sale.ItemId, sale.Count)).ToList();
+							int vendor = await ApproachShippedSpawnAsync(leg.Town!.VendorNpcId!.Value);
+							NaturalVendorResult trade = await new NaturalServiceSteps(session).TradeAsync(vendor, sales, [],
+								id => runtime.Data.GoodsListDataDh.GetGoodsListById(id)?.GetItemIdList() ?? [],
+								item => runtime.Data.ItemDataDh.GetItemTemplate(item).GetPrice(), token);
+							session.TraceDiagnostic("town-service", new Dictionary<string, object?>
+							{
+								["vendor"] = leg.Town.VendorNpcId, ["freeBefore"] = plan.FreeSlots, ["freeAfter"] = FreeCubeSlots(),
+								["sold"] = trade.Sold.Select(sold => $"{sold.ItemId}x{sold.Count}").ToArray(), ["kinah"] = world.Kinah,
+							});
+							break;
+						}
+						case "carrier-hunt":
+						{
+							// AK-08: a ring carrier present in its hours (Q2292): walk to its spawn, kill it with the journey's combat,
+							// and loot its ring. Gone or dead when the Cleric arrives (another player, a respawn), the next decision
+							// asks the policy again with the clock moved on.
+							await EnsureOnGroundAsync();
+							NaturalAltgardTimedSpawn carrier = leg.TimedSpawnList.Single(candidate => $"{candidate.NpcId}" == next.StepKey);
+							int target;
+							try { target = await KillShippedSpawnAsync(carrier.NpcId); }
+							catch (InvalidDataException missing) when (missing.Message.Contains("No client-observed NPC", StringComparison.Ordinal))
+							{
+								session.TraceDiagnostic("carrier-missed", new Dictionary<string, object?>
+								{
+									["carrier"] = carrier.NpcId, ["ring"] = carrier.ItemId, ["gameMinutes"] = session.Api.World.GameMinutesAt(session.Api.Timing.Now),
+									["reason"] = missing.Message,
+								});
+								break;
+							}
+							navigator.UnavailableObjects.Add(target);
+							bool looted = ItemCount(session.Api.World, carrier.ItemId) > 0 ||
+								await TryLootCorpseItemAsync(session, target, carrier.ItemId, token);
+							session.TraceDiagnostic("carrier-killed", new Dictionary<string, object?>
+							{
+								["carrier"] = carrier.NpcId, ["ring"] = carrier.ItemId, ["looted"] = looted,
+								["gameMinutes"] = session.Api.World.GameMinutesAt(session.Api.Timing.Now),
+							});
+							await RestSafelyAsync(token);
+							break;
+						}
+						case "wait-for-carrier":
+						{
+							// AK-08 (AK-Q3): nothing else is left before a carrier's window opens. Wait at the hub's obelisk, an hour of
+							// game time (5 real minutes) per decision, so the clock is read again as it runs.
+							await EnsureOnGroundAsync();
+							float[] hub = leg.Hub.Anchor;
+							if (MathF.Sqrt(MathF.Pow(session.CurrentPosition.X - hub[0], 2) + MathF.Pow(session.CurrentPosition.Y - hub[1], 2)) > leg.Hub.Radius)
+								await ApproachShippedSpawnAsync(leg.Endpoint.BindNpcId ?? leg.Bind?.NpcId ?? leg.Start.BindNpcId);
+							await RestSafelyAsync(token);
+							long before = session.Api.World.GameMinutesAt(session.Api.Timing.Now) ?? 0;
+							await session.AdvanceAsync(TimeSpan.FromMinutes(5), token);
+							await session.SynchronizeAsync(token);
+							session.TraceDiagnostic("carrier-wait", new Dictionary<string, object?>
+							{
+								["carrier"] = next.StepKey, ["from"] = before, ["to"] = session.Api.World.GameMinutesAt(session.Api.Timing.Now),
+							});
 							break;
 						}
 						case "return-to-hub":
@@ -1624,6 +1697,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await TopUpHelpItemsAsync("checkpoint");
 				BotWorldModel world = session.Api.World;
 				Require.All(leg.Endpoint.CompletedQuestIds, quest => Require.Contains(quest, world.CompletedQuestIds));
+				// AK-08 (AK-Q2): the held hand-ins are taken, not handed in, and their objectives are met.
+				IReadOnlyDictionary<int, NaturalTemplateObjective> heldObjectives = NaturalTemplateObjective.From(altgardPlans);
+				var heldItems = world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count));
+				Require.All(leg.HeldList, held => Require.True(!world.CompletedQuestIds.Contains(held.QuestId) &&
+					world.Quests.TryGetValue(held.QuestId, out BotQuestState? state) && state.Status is 3 or 4 &&
+					heldObjectives[held.QuestId].IsDone(state, heldItems), $"Q{held.QuestId} is not held ready for {held.EndNpcId}."));
 				Require.Equal(leg.Endpoint.MapId, world.MapId!.Value);
 				Require.True(world.Level >= leg.Endpoint.MinimumLevel, $"Endpoint level {world.Level} is below {leg.Endpoint.MinimumLevel}.");
 				Require.True(!world.IsDead, "The endpoint character is dead.");
@@ -4873,7 +4952,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							}
 							int recipient = await ApproachShippedSpawnAsync(recipientId);
 							int rewardAction = DialogAction.SELECTED_QUEST_NOREWARD;
-							if (plan.HasSelectableReward)
+							// AK-08: a leg's contract may fix the choice (Q2292's Turquoise Earrings); it outranks the inventory policy.
+							if (altgardLeg?.RewardChoiceList.FirstOrDefault(choice => choice.QuestId == plan.Id) is { } chosen)
+								rewardAction = NaturalAscensionContract.DialogActionId(chosen.Action);
+							else if (plan.HasSelectableReward)
 							{
 								string root = runtime.RepoRoot;
 								var inventory = NaturalIshalgenInventoryPolicy.Load(root,
@@ -4911,6 +4993,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			async Task<int> KillShippedSpawnAsync(int templateId)
 			{
 				int unsuccessfulKills = 0, tacticalRetreats = 0;
+				var failedTargets = new Dictionary<int, int>();
 				for (int attempt = 1; ; attempt++)
 				{
 					// Stop at pull range, outside the target's circle: the fight is planned from there, not started
@@ -4929,6 +5012,18 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						return target;
 					bool died = combat.ReviveCount > revives;
 					bool retreated = !died && combat.CompletedRetreats > retreats;
+					// AK-08: the same monster failing twice with no death or retreat cannot be fought from anywhere the bot reaches
+					// (the Leg 5 smoke run: a Sumarhon sentry 2.8 m below the Cleric's ledge, every cast STR_SKILL_OBSTACLE). Leave it,
+					// as a player does, and pull another of its kind.
+					if (!died && !retreated && failedTargets.TryGetValue(target, out int failures) && failures >= 1)
+					{
+						navigator.UnavailableObjects.Add(target);
+						session.TraceDiagnostic("kill-target-abandoned", new Dictionary<string, object?>
+						{
+							["template"] = templateId, ["target"] = target, ["position"] = session.CurrentPosition,
+						});
+					}
+					if (!died && !retreated) failedTargets[target] = failedTargets.GetValueOrDefault(target) + 1;
 					session.TraceDiagnostic(died ? "kill-retry-after-death" : retreated ? "kill-retry-after-retreat" : "kill-target-vanished", new Dictionary<string, object?>
 					{
 						["template"] = templateId,
