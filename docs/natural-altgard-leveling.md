@@ -2388,8 +2388,25 @@ The same loop protocol, with "AK" in place of "NA".
        - **level 20**, no deaths up to there.
        - At decision 25 the cube was down to 1 free slot, with nothing the Cleric rules sell, and the run
          stopped (AK-Q4).
-- [ ] **AK-09 — One SIM run of Leg 5 and the snapshot.** `sim-snapshot.ps1 -Leg l5 -From
+- [x] **AK-09 — One SIM run of Leg 5 and the snapshot.** `sim-snapshot.ps1 -Leg l5 -From
   altgard-l4` captures `altgard-l5` after a clean run, with a restore check.
+  - *Done 2026-10-01.* `sim-snapshot.ps1` accepts `-Leg l5`.
+    `-Action Capture -Name altgard-l5 -AltgardLeg1 -Leg l5 -From altgard-l4` restored `altgard-l4`, resumed
+    character 133297 with `AF_ALTGARD=l5`, and dumped only a verified `altgard-l5-completion.json`.
+  - Run `snapshot-altgard-l5-s1` (seed 1) repeats smoke run 9 to the millisecond: 6,295,045 ms of game time,
+    level 20, no deaths. The two Q2292 night carriers and Zen came with no wait, and Q2242 (START, 0) and
+    Q24233 (START, 1) are held.
+  - Snapshot `altgard-l5`: `run/snapshots/altgard-l5` (git-ignored), character 133297, elapsed 40,374,309 ms,
+    dump SHA-256 `d5230906…2de9ce`, from commit `53d488402`.
+    - The cube has 63 slots (four NPC expansions); the Cleric has 199,603 Kinah.
+    - A test restore into an owned schema succeeded and was dropped; no owned schema is left.
+  - **The `PatternAi` dependency (the maintainer asked for it to be noted):**
+    - Smoke runs 8 and 9 ran with the separate investigation's fleeing-sentry fix in `PatternAi.cs` still
+      uncommitted in the shared checkout.
+    - It was committed as `c379a18e1` ("Run flee_from over the ground, not at its starting height") before
+      `53d488402`, so this snapshot is reproducible from its commit.
+    - Without the fix, a Sumarhon sentry fled into the slope, out of sight (smoke runs 2–4). The runner then
+      abandoned it and finished Q24230 on other sentries.
 - [ ] **AK-10 — The full `CLAUDE.md` checklist and a checkpoint.**
 
 **Endpoint (AK-Q1 (b), AK-Q2 (a)):**
@@ -2723,3 +2740,4 @@ The original questions follow.
 - 2026-10-01 AK-08 (in progress): the carrier, held and town-service engine and runner; four smoke runs reach level 20 with both day rings; blocked on AK-Q4 (the full cube).
 - 2026-10-01 AK-08: the whole of Leg 5 in SIM (smoke run 8): the Pandaemonium cube expansions, all eleven claims, Q2292 by the clock, Q2242 and Q24233 held; level 20, 1 death.
 - 2026-10-01 AK-08 (flights): hub flight transporters from the client routes; smoke run 9 flies Basfelt to the fortress and plays Leg 5 with no deaths.
+- 2026-10-01 AK-09: `altgard-l5` captured from `altgard-l4` at 53d488402 (level 20, no deaths, Q2242/Q24233 held), restore-checked; it includes the PatternAi flee fix c379a18e1.
