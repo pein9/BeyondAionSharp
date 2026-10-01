@@ -1971,6 +1971,36 @@ and the slow Q2230. Each was fixed in the runner, then all three were proven tog
       had him alive, so there was no horn to loot.
     - The probe now counts a kill only when the server has the monster dead.
 
+**The D32 catch-up (2026-10-01, the maintainer).** The six D32 quests were added to the route. Two of
+them belonged to legs that were already done, so those legs were replayed:
+- Q24110 joined Leg 1 (`c0a54fd8f`);
+- Q24111 joined Leg 3 (`c0a54fd8f`);
+- every leg was then replayed in order from the `altgard` snapshot on one commit, `5083bb385`.
+
+The replay of Leg 4 found three more bot defects, fixed in `5083bb385`:
+- **A revive in the middle of a walk** left the movement on its old route. It then crossed 270 m in a
+  straight line from the obelisk, back into the swamp mosbear family that had just killed the
+  Cleric: six deaths on one spot. The navigator now refuses a segment that starts more than 30 m
+  from the bot, and plans again from where it stands.
+- **The places the Cleric died** are now 20 m hazards on that leg's routes.
+- **A hunt whose approach finds no route** takes the planner road, as talk steps do.
+
+Two `run-fast` probes now follow a walking NPC to its server position. `run-fast` passes 11 of 11.
+
+| Snapshot | Level | Deaths | Leg game time | Quests added | Elapsed (ms) | Dump SHA-256 |
+|---|---|---|---|---|---|---|
+| `altgard-l12` (Leg 1) | 13 (was 13) | 0 | 2,392 s (was 1,740) | Q24110 | 18,388,001 | `e439e7d6…1091b` |
+| `altgard-l2` (Leg 2) | 15 (was 15) | 0 | 4,530 s (was 4,933) | — | 22,938,122 | `3c823d24…3c9a8` |
+| `altgard-l3` (Leg 3) | 16 (was 16) | 0 | 1,291 s (was 911) | Q24111 | 24,249,169 | `7c9564f1…e21e9` |
+| `altgard-l4` (Leg 4) | **19** (was 18) | 3 (2 in Q2224, 1 at Q24013) | 9,790 s (was 10,134) | — | 34,059,264 | `4a974165…9c128` |
+
+What the catch-up changed:
+- Each snapshot was verified across the relog, restored and dropped.
+- The earlier snapshots are kept locally with `-pre-d32`, and the first catch-up round with `-catchup1`.
+- **Leg 5 now starts at level 19**, at 30,020 of 506,158 XP, with Healing Grace (4203). It started at
+  level 18 before.
+- Legs 1–3 end at the same levels and with the same skills as before.
+
 **Endpoint (AB-Q1 (a)):**
 - all eleven quests, Q2227, Q2291 and Q24013 completed (AB-Q4);
 - bound at the Basfelt obelisk (AB-Q5);
@@ -1983,9 +2013,10 @@ and the slow Q2230. Each was fixed in the runner, then all three were proven tog
 Leg 5 covers Stops 5 and 6 together (AK-Q1 (b)). Q2242 and Q24233 are held for Gerger and the
 fortress (AK-Q2 (a)). The bot waits for the game's night for Q2292's Love Ring (AK-Q3 (a)).
 
-**Where it starts.** It starts from the `altgard-l4` snapshot (recaptured 2026-10-01 on the
-refined spawns): character 133297, a level 18 Cleric at 384,315 of 407,257 XP, at the Basfelt
-obelisk and bound there. Leg 4 already did Stop 6's Q2227, Q2291 and Q24013.
+**Where it starts.** It starts from the `altgard-l4` snapshot, as replayed in the D32 catch-up
+(2026-10-01): character 133297, a **level 19** Cleric at 30,020 of 506,158 XP, with Healing Grace.
+It stands at the Basfelt obelisk and is bound there. Leg 4 already did Stop 6's Q2227, Q2291 and
+Q24013.
 
 **What it covers (if AK-Q1 (b)).** Stop 5, Kaibech's Campsite and Gribade Canyon, has only five
 quests worth 63k XP. So this proposal also takes in the rest of Stop 6, Idun's Lake: eight
@@ -2009,7 +2040,7 @@ everything below.
 | East: Vovetirn and the sprigg outlaws | Vovetirn (1990, 640), 216 m; outlaws at (2024, 542), 285 m, and (2312, 585), 542 m | Q2241 (5 Glowing Mushrooms, 80%), Q2242 | the poisonsac amphas of Q2239 |
 | Far hand-ins | **Gemyu** in Gerger Village (2360, 916), 622 m east (Stop 7); **Suthran** in the fortress (1663, 1749), 1,065 m north | Q2242, Q24233 (AK-Q2) | |
 
-**Monster levels.** Every target is level 14–17, below the level 18 Cleric. This is the first
+**Monster levels.** Every target is level 14–17, below the level 19 Cleric. This is the first
 leg where that is true. The danger is density, not level:
 - MuMu Village packs dozens of RATMAN that assist each other;
 - Sumarhon's camp packs LEHPAR the same way;
@@ -2037,7 +2068,7 @@ no custom handler for any of them; the C# templates match. Q24232 and Q24233 are
 | 2292 | Making a New Start | 14 | Anmurnerk | 24112 (done) | the Passion, Jealousy and Love Rings from six named MuMu; a choice of two rewards (120001520, 120001521) | 16,495 |
 | 24233 | Adieu to You, Manumumu (D32) | 14 | Brodir → **Suthran** (fortress) | 24112 (done) | kill Chieftain Manumumu (L17, respawn 1,800 s) | 16,495 |
 
-Quest XP is 198,611. With kills the Cleric reaches **level 19** and most of the way to 20.
+Quest XP is 198,611. With kills the level 19 Cleric gets most of the way to 20, or reaches it.
 AL-1's "hunt to 20" belongs to the end of the zone, not to this leg.
 
 **Q2292's rings come by the game clock.** Each ring drops (100%) from either of two named MuMu
@@ -2398,3 +2429,4 @@ The original questions follow.
 - 2026-09-30 AB-09: SIM run snapshot-altgard-l4-s1 repeated the AB-08 run exactly (14 quests, L19, 10 deaths); snapshot altgard-l4 captured and restore-checked.
 - 2026-09-30 AB-10: full checklist green except run-fast E1 (D32 register gives Q24110 account 42, E1's); AB-04 probe fixed to wait out Q2230 in the village. Leg 4 done in SIM.
 - 2026-10-01 Leg 5 planned (Kaibech, Idun's Lake, MuMu Village; AK-00..AK-10); AK-Q1..AK-Q3 approved as recommended.
+- 2026-10-01 D32 catch-up: Q24110 in Leg 1, Q24111 in Leg 3; Legs 1–4 replayed from `altgard` on 5083bb385 (stale-route refusal, death-spot hazards, hunt road fallback); levels 13/15/16/19; Leg 5 starts at 19.
