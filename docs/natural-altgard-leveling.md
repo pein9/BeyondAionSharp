@@ -1905,6 +1905,38 @@ The same loop protocol, with "AB" in place of "NA".
     - AB-Q6 is still open for the operator (answered 2026-10-01: D33).
     - LIVE runs once, at the end of the whole Altgard leg.
 
+**Leg 4 follow-ups (2026-10-01, the maintainer).** Three bot defects behind most of the AB-08 deaths
+and the slow Q2230. Each was fixed in the runner, then all three were proven together in one run.
+
+- **Rest after every bind revive.**
+  - The defect: `RestAsync` revived a dead Cleric and returned without resting. The walk then
+    carried on at 25% HP, with soul sickness lowering the maximum. Deaths 7–10 of AB-08 came this
+    way, all at (1580, 575): one loop against level 13 swamp mosbears.
+  - The fix: `ReviveAtBindAsync` now rests at the obelisk before it returns (`rest-after-revive`
+    in the trace).
+- **The general quest-loot rule** (the maintainer's).
+  - After any kill, once nothing is attacking, the bot opens every nearby corpse the server
+    marked lootable for it (`SM_LOOT_STATUS` LOOT_ENABLE, within 35 m, on a safe path).
+  - It takes every QUEST-group item. A quest item drops only while its quest needs it.
+  - It covers the target, adds, fight-throughs, patrols and navigation defence, on every leg.
+  - The defect it fixes: only the monster a step aimed at was looted. Q2230 got 6 tusks from 21
+    mosbears that drop them 85% of the time, and gave up after three timers.
+  - `TryLootCorpseItemAsync` counts an item the sweep already took.
+- **A timed hunt goes for the nearest source kind.** It takes a live one in view, otherwise the
+  kind whose spawn is nearest, not always the first of Q2230's six mosbear kinds.
+- **A timed quest waits for mana before the timer starts.** The powder rest stops at 65% mana and
+  the timer wants 80%. The wait spun 300 rounds without the clock moving; it now lets mana come
+  back.
+- **Evidence: run `run/af-l1/ab08-l4-smoke`** (seed 1, from `altgard-l3`):
+  - all 14 quests done, the endpoint verified across the relog;
+  - **0 deaths** (AB-08: 10);
+  - Q2288 and Q2230 each on their first timer, Q2230 in 5 game min;
+  - 2 h 27 m of game time (AB-08: 4 h 32 m), ending at level 18.
+  - On the way: the revive fix alone took a run to 3 deaths, and the general sweep plus the
+    nearest kind finished Q2230 on its first timer in a focused run.
+- **The `altgard-l4` snapshot is from the AB-09 run** (level 19, before these fixes). It is still a
+  valid Leg 4 endpoint for Leg 5; recapture it if Leg 5 should start from this run's endpoint.
+
 **Endpoint (AB-Q1 (a)):**
 - all eleven quests, Q2227, Q2291 and Q24013 completed (AB-Q4);
 - bound at the Basfelt obelisk (AB-Q5);

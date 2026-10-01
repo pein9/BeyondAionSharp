@@ -26,6 +26,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	/// <summary>AC-06: the Leg 3 escort's clear areas hold grave robbers with respawn_time 295 s (the Altgard spawn data);
 	/// a clear holds that long after its first kill.</summary>
 	private const long EscortClearRespawnMillis = 295_000;
+	// The general quest-loot sweep opens lootable corpses this close after a kill (a Cleric fights at spell range, 25 m).
+	private const float LootSweepReach = 35f;
 	// AB-08: how far inside the Q24013 poison zone's edge the poison is used.
 	private const float ZoneMargin = 3f;
 
@@ -189,6 +191,20 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry,
 				options.StopOnDeath, options.OptimizeHubs, mauPolicy);
 			navigationDefense = combat;
+			// The general quest-loot rule: after any kill, open every corpse near the Cleric that the server marked lootable
+			// for it, and take its quest items, as a player does. A quest item drops only while its quest needs it, so every
+			// one is wanted. Before this only the monster a step aimed at was looted: in Leg 4, Q2230 got 6 tusks from 21
+			// mosbears (85% drop) and spent three timers, because the mosbears that died as adds or on the way were left.
+			var lootSwept = new HashSet<int>();
+			bool sweeping = false;
+			void WithQuestLoot(NaturalJourneyCombat fighter) => fighter.AfterKillAsync = async sweepToken =>
+			{
+				if (sweeping || Engaged().Attackers.Length > 0) return;
+				sweeping = true;
+				try { await LootQuestItemsAroundAsync(sweepToken); }
+				finally { sweeping = false; }
+			};
+			WithQuestLoot(combat);
 			bool maintainingInventory = false;
 			var workedTemplates = new HashSet<int>();
 			long lastReturnMillis = long.MinValue / 2;
@@ -923,6 +939,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					ApproachMapId = leg.Hub.MapId,
 				};
 				navigationDefense = combat;
+				WithQuestLoot(combat);
 				IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(altgardPlans);
 				IReadOnlyList<NaturalFlyZone> zones = NaturalFlyZone.Load(Path.Combine(runtime.RepoRoot,
 					$"game-server/data/static_data/zones/zones_{leg.Hub.MapId}.xml"));
@@ -1435,7 +1452,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							{
 								await EnsureOnGroundAsync();
 								int[] kinds = hunt?.NpcIds ?? item!.SourceNpcIds;
-								int target = await KillShippedSpawnAsync(kinds.First(SpawnsOnMap));
+								int target = await KillShippedSpawnAsync(NearestKind(kinds));
 								if (item != null) await TryLootCorpseItemAsync(session, target, item.ItemId, token);
 								navigator.UnavailableObjects.Add(target);
 								break;
@@ -1451,6 +1468,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								break;
 							case "wait-until-ready":
 								await RestSafelyAsync(token);
+								// The powder rest calls 65% mana recovered; the timer wants 80%. Let it come back, as a player waits.
+								await session.AdvanceAsync(TimeSpan.FromSeconds(10), token);
 								break;
 							default: // wait-for-journal
 								await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
@@ -1634,6 +1653,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					ApproachMapId = contract.MapId,
 				};
 				navigationDefense = combat;
+				WithQuestLoot(combat);
 				await TopUpHelpItemsAsync("run-start"); // NA-21: the approved help items
 				var stages = new List<Dictionary<string, object?>>();
 				foreach (string stage in runtime.EncounterStages ?? ["single", "pair", "patrol"])
@@ -2019,6 +2039,20 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 			bool SpawnsOnMap(int templateId) =>
 				graph.GetMap(contract.MapId)!.Waypoints.Any(waypoint => waypoint.TemplateId == templateId);
+
+			// Of several kinds that serve the same objective, the one to hunt next: a live one in view first, else the kind whose
+			// shipped spawn lies nearest (Q2230's tusks drop from six mosbear kinds; always the first meant long walks past others).
+			int NearestKind(IReadOnlyList<int> kinds)
+			{
+				BotKnownObject? seen = session.Api.World.Objects.Values
+					.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId is int id && kinds.Contains(id) && !known.IsCorpse &&
+						!navigator.UnavailableObjects.Contains(known.ObjectId))
+					.OrderBy(known => Distance(known.Position, session.CurrentPosition)).FirstOrDefault();
+				if (seen?.TemplateId is int visible) return visible;
+				return graph.GetMap(contract.MapId)!.Waypoints.Where(waypoint => waypoint.TemplateId is int id && kinds.Contains(id))
+					.OrderBy(waypoint => Distance(waypoint.Position, session.CurrentPosition)).Select(waypoint => waypoint.TemplateId!.Value)
+					.DefaultIfEmpty(kinds.First(SpawnsOnMap)).First();
+			}
 
 			/// <param name="withinRange">Stop this far from the observed NPC instead of at arm's reach, outside its
 			/// aggro circle, so the fight can be planned (a pull) rather than started by walking into it.</param>
@@ -2446,6 +2480,55 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					else return true; // combat decided otherwise (retreat); let the caller re-plan
 				}
 				throw new InvalidDataException("Priest could not clear engaged attackers before resting or pulling.");
+			}
+
+			async Task LootQuestItemsAroundAsync(CancellationToken lootToken)
+			{
+				BotWorldModel world = session.Api.World;
+				int[] lootable = world.LootStatuses.Where(entry => entry.Value == 0 && !lootSwept.Contains(entry.Key))
+					.Select(entry => entry.Key).ToArray();
+				foreach (int corpse in lootable)
+				{
+					if (world.IsDead || Engaged().Attackers.Length > 0) return;
+					string? skipped = null;
+					if (!world.Objects.TryGetValue(corpse, out BotKnownObject? seen) || seen.Kind != BotKnownObjectKind.Npc)
+					{
+						lootSwept.Add(corpse); // gone (despawned or out of sight for good)
+						skipped = "gone";
+					}
+					else if (Distance(seen.Position, session.CurrentPosition) > LootSweepReach)
+					{
+						// A ranged fight can end far from the first kill; leave it for a later sweep unless it is far behind.
+						if (Distance(seen.Position, session.CurrentPosition) > 60) lootSwept.Add(corpse);
+						skipped = "far";
+					}
+					else if (Distance(seen.Position, session.CurrentPosition) > 4 && world.MapId is int map &&
+						geometry.SnapToGround(map, seen.Position with { Z = seen.Position.Z + 2 }) is { } ground)
+					{
+						IReadOnlyList<BotPosition> path = geometry.FindLocalPath(map, session.CurrentPosition, ground);
+						if (path.Count == 0 || !navigator.IsSegmentSafe(path, corpse)) skipped = "no-safe-path"; // try again later
+						else
+						{
+							await navigator.MoveAsync(path, lootToken);
+							await session.SynchronizeAsync(lootToken);
+						}
+					}
+					if (skipped != null)
+					{
+						session.TraceDiagnostic("quest-loot-skip", new Dictionary<string, object?>
+						{
+							["corpse"] = corpse, ["npcId"] = seen?.TemplateId, ["reason"] = skipped,
+							["distance"] = seen == null ? null : Distance(seen.Position, session.CurrentPosition),
+						});
+						continue;
+					}
+					lootSwept.Add(corpse);
+					IReadOnlyList<int> taken = await LootQuestItemsAsync(session, corpse, runtime.Data, lootToken);
+					session.TraceDiagnostic("quest-loot-sweep", new Dictionary<string, object?>
+					{
+						["corpse"] = corpse, ["npcId"] = seen!.TemplateId, ["taken"] = taken, ["position"] = session.CurrentPosition,
+					});
+				}
 			}
 
 			async Task RestSafelyAsync(CancellationToken restToken)
@@ -5517,8 +5600,18 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				throw new InvalidDataException($"Engaged NPC {target} disappeared without client-observed kill evidence.");
 		}
 
+		/// <summary>Runs after every fight that ends in a kill, outside the fight (the general quest-loot sweep).</summary>
+		public Func<CancellationToken, Task>? AfterKillAsync { get; set; }
+
 		public async Task<bool> TryKillAsync(int target, CancellationToken token,
 			BotPosition? retreatAnchor = null, int? attackHistoryStart = null)
+		{
+			bool killed = await FightAsync(target, token, retreatAnchor, attackHistoryStart);
+			if (killed && AfterKillAsync is { } afterKill && !session.Api.World.IsDead) await afterKill(token);
+			return killed;
+		}
+
+		private async Task<bool> FightAsync(int target, CancellationToken token, BotPosition? retreatAnchor, int? attackHistoryStart)
 		{
 			if (InCombat) throw new InvalidOperationException("Natural Priest combat cannot nest another fight.");
 			int attemptId = ++combatAttemptId;
@@ -6360,6 +6453,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			if (session.Api.World.IsDead) throw new InvalidDataException("Bind revive did not clear client-observed death.");
 			session.AcceptTeleportPosition();
 			await BuffOurselfAsync(NaturalHelpTrigger.AfterRevive, token);
+			// A bind revive leaves a quarter of HP and MP (and soul sickness lowers the maximum). Rest at the obelisk before
+			// anything else, as a player does: in Leg 4 the walk back out at 25% HP met three swamp mosbears and died three
+			// more times in five minutes, because RestAsync returned straight after the revive that it ran.
+			session.TraceDiagnostic("rest-after-revive", new Dictionary<string, object?>
+			{
+				["hp"] = session.Api.World.CurrentHp, ["maxHp"] = session.Api.World.MaxHp,
+				["mp"] = session.Api.World.CurrentMp, ["maxMp"] = session.Api.World.MaxMp, ["revives"] = revives,
+			});
+			await RestAsync(token);
 		}
 
 		/// <summary>Walk up to 8 m toward the target's last-known position (never nearer than 10 m), on a
@@ -6510,9 +6612,63 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		}
 	}
 
+	// What the general quest-loot sweep took from each corpse, so a later TryLootCorpseItemAsync on that corpse counts it.
+	private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<BotWorldModel, Dictionary<int, List<int>>> SweptQuestItems = new();
+
+	/// <summary>Open a corpse's drop list and take every QUEST-group item in it. Returns the item ids taken.</summary>
+	internal static async Task<IReadOnlyList<int>> LootQuestItemsAsync(INaturalJourneySession session, int objectId,
+		Aion.GameServer.Dataholders.StaticData data, CancellationToken token)
+	{
+		await session.SendPacketAsync(session.Api.Loot(objectId), token);
+		DecodedBotServerPacket list;
+		using (var lootTimeout = CancellationTokenSource.CreateLinkedTokenSource(token))
+		{
+			lootTimeout.CancelAfter(TimeSpan.FromSeconds(5));
+			try
+			{
+				list = await session.WaitForPacketAsync(typeof(SM_LOOT_ITEMLIST), lootTimeout.Token,
+					packet => packet.Get<int>("targetObjectId") == objectId);
+			}
+			catch (OperationCanceledException) when (!token.IsCancellationRequested) { return []; }
+		}
+		var taken = new List<int>();
+		foreach (IReadOnlyDictionary<string, object?> entry in list.Get<List<IReadOnlyDictionary<string, object?>>>("items"))
+		{
+			int itemId = Get<int>(entry, "itemId");
+			if (data.ItemDataDh.GetItemTemplate(itemId)?.itemGroup != Aion.GameServer.Model.Templates.Items.Enums.ItemGroup.QUEST) continue;
+			BotInventoryItem? existing = session.Api.World.Inventory.Values.FirstOrDefault(owned => owned.ItemId == itemId);
+			await session.SendPacketAsync(session.Api.Loot(objectId, Get<byte>(entry, "index")), token);
+			if (existing == null)
+				await session.WaitForPacketAsync(typeof(SM_INVENTORY_ADD_ITEM), token,
+					packet => packet.Get<List<IReadOnlyDictionary<string, object?>>>("items").Any(item => Get<int>(item, "itemId") == itemId));
+			else
+				await session.WaitForPacketAsync(typeof(SM_INVENTORY_UPDATE_ITEM), token, packet => packet.Get<int>("objectId") == existing.ObjectId);
+			taken.Add(itemId);
+		}
+		await session.SendPacketAsync(session.Api.Loot(objectId, close: true), token);
+		if (taken.Count > 0)
+		{
+			Dictionary<int, List<int>> swept = SweptQuestItems.GetOrCreateValue(session.Api.World);
+			if (!swept.TryGetValue(objectId, out List<int>? items)) swept[objectId] = items = [];
+			items.AddRange(taken);
+		}
+		return taken;
+	}
+
 	internal static async Task<bool> TryLootCorpseItemAsync(INaturalJourneySession session,
 		int objectId, int itemId, CancellationToken token, int preopenedPacketStart = -1)
 	{
+		// The general sweep may have taken it already, right after the kill.
+		if (SweptQuestItems.TryGetValue(session.Api.World, out Dictionary<int, List<int>>? sweptItems) &&
+			sweptItems.TryGetValue(objectId, out List<int>? sweptFromCorpse) && sweptFromCorpse.Contains(itemId))
+		{
+			session.TraceDiagnostic("quest-drop-attempt", new Dictionary<string, object?>
+			{
+				["objectId"] = objectId, ["itemId"] = itemId, ["dropped"] = true, ["sweptAfterKill"] = true,
+				["inventoryCount"] = ItemCount(session.Api.World, itemId),
+			});
+			return true;
+		}
 		long beforeCount = ItemCount(session.Api.World, itemId);
 		// Quest-use objects open their drop list on completion. Reopening that list sends a second
 		// START_LOOT/END_LOOT cycle within the same client frame and can leave observers in a loot pose.

@@ -16,6 +16,7 @@ Patches are kept with LF line endings (`.gitattributes`), as the Java repository
 | 2493 Bringing up Tayga (Morheim) | The "Purra?" decoy spots 204436–204438 are never registered; cosmetic | `q2493-bringing-up-tayga.patch` | none |
 | 26960 Face the Commander (Iron Wall Warfront) | Copy slip from the Elyos twin 16960: 802055 registered for talk and 802054 for kill, instead of 802054 for talk and 233544 for kill. Untestable: Pashid 233544 has no spawn in 4.8 | `q26960-face-the-commander.patch` | none |
 | 2209 (work item) | Thrud does not hand out the quest work item 182203206; cosmetic | `q2209-the-scribbler-work-item.patch` | none |
+| 1044 Testing Flight Skills (Elyos) and 2042 The Last Checkpoint (Asmodian) | `onDieEvent` and `onEnterWorldEvent` call `questTimerEnd` for every player who dies or enters the world, and the quest timer is one per player, so a death, relog or respawning teleport ends any other quest's running timer (Q2288, Q2230) and sends two stray timer resets. The fix acts only for a player on the ring course (START, var 2–7), who still fails it | `q1044-q2042-ring-course-timer.patch` | D33, applied (deviation 152) |
 
 ## D32: retail 4.8 quests Java lacks
 
