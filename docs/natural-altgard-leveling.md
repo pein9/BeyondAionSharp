@@ -2187,9 +2187,24 @@ The same loop protocol, with "AK" in place of "NA".
       first cast landed first.
       - It now shoots from 16–20 m with line of sight, at the Infernus the client targets, and logs each try.
   - `run-fast` passes 11 of 11, and so do the warning baseline and the logger, clock and fidelity checks.
-- [ ] **AK-03 — The carrier policy (pure).** Given the game time and what is in view, choose the
+- [x] **AK-03 — The carrier policy (pure).** Given the game time and what is in view, choose the
   carrier to hunt, or the work to do while waiting for the night. Unit tests at day, night and
   the hour edges.
+  - *Done 2026-10-01.* `tests/Aion.Bots/Scenarios/NaturalCarrierPolicy.cs`:
+    - `NaturalGameClock` keeps the client's game time: the last `SM_GAME_TIME` plus one minute per real 5 s.
+      `HourOf` is Java's `getHour`. It also gives the minutes until an hour and the minutes left in a window.
+    - `NaturalCarrierPolicy.Decide` hunts a carrier of a needed ring that is present now. It prefers one in
+      view, and otherwise one whose window outlasts the walk there.
+    - When none fits, it waits for the soonest window of a needed ring and says so, so the runner can spend
+      the wait on other work.
+  - `NaturalCarrierPolicyTests` (5 tests, on the Leg 5 contract's carriers):
+    - the clock's arithmetic;
+    - by day, Lu or Zen for Passion and Ang for Jealousy, while Love waits 10 game hours for 22:00;
+    - by night, Zoo or Di for Love and Ring for Jealousy;
+    - at 21:30, Lu's 30 minutes are too short for a 40-minute walk, so it waits for Zen at 04:00;
+    - a carrier in view is hunted even at its window's edge;
+    - every ring has a plan at every hour.
+  - All Natural tests pass, and so do the warning baseline and the logger, clock and fidelity checks.
 - [ ] **AK-04 — Q2292 in SIM.** A probe takes all three rings at their hours (day carriers,
   then night), claims the chosen reward, and records what each carrier drops.
 - [ ] **AK-05 — MuMu Village and Manumumu in SIM.** One batch for Q24232 and Q2238; Q2236
@@ -2493,3 +2508,4 @@ The original questions follow.
 - 2026-10-01 AK-00: the bot decodes SM_GAME_TIME (GameMinutes, GameHour); the SIM clock drives the hourly ring carriers (MuMu Zoo at 22:00, Lu at 05:00).
 - 2026-10-01 AK-01: the Leg 5 contract (13 template quests, timedSpawns, held) and its 13 plans; the stale D32 plans for Q24232/Q24233 regenerated.
 - 2026-10-01 AK-02: Leg 5's 20 travel legs walked in SIM; the AK-00 and AB-05 probes made robust in run-fast.
+- 2026-10-01 AK-03: the pure carrier policy and the client game clock (NaturalGameClock, NaturalCarrierPolicy) with unit tests.
