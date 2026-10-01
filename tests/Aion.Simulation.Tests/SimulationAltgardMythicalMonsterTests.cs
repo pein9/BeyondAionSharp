@@ -126,14 +126,42 @@ public sealed partial class SimulationFastScenarioTests
 
 		// 4. The burner is back (295 s < 300 s), a second burn, and a kill (Infernus's HP set low: the fight is AB-07's).
 		await BurnAsync("second");
-		var target = instance.GetNpcs().First(npc => npc.GetNpcId() == infernus.NpcId && !npc.IsDead());
-		target.GetLifeStats().SetCurrentHp(1);
+		// The Infernus the client sees and targets, set low on the server: in the shared run-fast world another Infernus can
+		// still be alive, and lowering a different one let a full-health Infernus kill the probe (AK-02's run-fast).
 		await session.SynchronizeAsync(token);
 		int infernusObject = await session.WaitForNpcAsync(infernus.NpcId, token);
-		bool killed = await NaturalAirCombat.ShootDownAsync(session, infernusObject, quest,
-			(origin, skill, skillLevel, aim) => runtime.CreateSpellCast(session.Api.World, origin, skill, skillLevel, aim), token, maximumCasts: 10);
+		var target = instance.GetNpcs().Single(npc => npc.GetObjectId() == infernusObject);
+		target.GetLifeStats().SetCurrentHp(1);
 		await session.SynchronizeAsync(token);
-		Assert.True(killed, "Infernus was not killed.");
+		bool killed = false;
+		// Shoot from spell range, not beside him: next to him, his hits cancel the Smite cast (STR_SKILL_CANCELED) and kill the
+		// probe before it lands, and he is back to full health by the next try (run-fast, AK-02). A miss or a refusal is
+		// retried from a fresh stand-off, up to three times.
+		async Task StandOffAsync()
+		{
+			BotPosition at = new(target.GetX(), target.GetY(), target.GetZ(), 0);
+			BotPosition spot = geometry.GroundAround(altgard, at, [18f, 16f, 20f])
+				.First(point => geometry.HasLineOfSight(altgard, point, at with { Z = at.Z + 1 }));
+			await TeleportForSetupAsync(session, Server(), altgard, spot.X, spot.Y, spot.Z, token);
+			session.AcceptTeleportPosition();
+			await session.SynchronizeAsync(token);
+		}
+		for (int attempt = 1; attempt <= 3 && !killed && !target.IsDead(); attempt++)
+		{
+			await StandOffAsync();
+			int hpBefore = target.GetLifeStats().GetCurrentHp(), watch = session.PacketHistory.Count;
+			killed = await NaturalAirCombat.ShootDownAsync(session, infernusObject, quest,
+				(origin, skill, skillLevel, aim) => runtime.CreateSpellCast(session.Api.World, origin, skill, skillLevel, aim), token, maximumCasts: 10);
+			await session.SynchronizeAsync(token);
+			Console.WriteLine($"AB-05 shot {attempt}: Infernus HP {hpBefore} -> {target.GetLifeStats().GetCurrentHp()} (dead {target.IsDead()}); " +
+				$"hits seen {string.Join(" ", session.PacketHistory.Skip(watch).Where(packet => packet.PacketType == typeof(SmAttackStatus) && packet.Get<int>("objectId") == infernusObject).Select(packet => $"{packet.Get<int>("writtenValue")}/{packet.Get<byte>("hpOrMp")}%"))}; " +
+				$"messages {string.Join(" ", session.PacketHistory.Skip(watch).Where(packet => packet.PacketType == typeof(SM_SYSTEM_MESSAGE)).Select(packet => packet.Get<object>("name")))}");
+		}
+		Assert.True(killed, $"Infernus was not killed: dead {target.IsDead()}, HP {target.GetLifeStats().GetCurrentHp()}, Q2223 {State(quest)}, " +
+			$"probe HP {Server().GetLifeStats().GetCurrentHp()} dead {Server().IsDead()}, distance " +
+			$"{MathF.Sqrt(MathF.Pow(target.GetX() - Server().GetX(), 2) + MathF.Pow(target.GetY() - Server().GetY(), 2)):F1} m; last: " +
+			string.Join(", ", session.PacketHistory.TakeLast(25).Select(packet => packet.PacketType == typeof(SM_SYSTEM_MESSAGE)
+				? $"MSG:{packet.Get<object>("name")}" : packet.PacketType.Name)));
 		Assert.Equal((byte)4, State(quest)?.Status);
 		Console.WriteLine($"AB-05 Infernus killed: Q2223 {State(quest)}");
 

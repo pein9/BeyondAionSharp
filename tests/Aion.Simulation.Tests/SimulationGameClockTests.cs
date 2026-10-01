@@ -43,7 +43,9 @@ public sealed partial class SimulationFastScenarioTests
 		{
 			int minutes = ((hour * 60 - clock.GetTime() % 1440) + 1440) % 1440;
 			if (minutes == 0) minutes = 1440;
-			await session.AdvanceAsync(TimeSpan.FromSeconds(minutes * 5 + 10), token);
+			// In 30 s slices: one long advance can run past the virtual pool's timer-tick budget in a busy shared world.
+			for (int seconds = minutes * 5 + 10; seconds > 0; seconds -= 30)
+				await session.AdvanceAsync(TimeSpan.FromSeconds(Math.Min(30, seconds)), token);
 			await session.SynchronizeAsync(token);
 			Assert.Equal(hour, clock.GetHour());
 		}

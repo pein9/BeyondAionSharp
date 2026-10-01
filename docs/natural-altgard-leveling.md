@@ -2169,9 +2169,24 @@ The same loop protocol, with "AK" in place of "NA".
     - the carriers' hours, drops and positions, and that both Love Ring carriers are night-only;
     - the reward choice, and the held quests' end NPCs.
   - All 335 Natural tests pass, and so do the warning baseline and the logger, clock and fidelity checks.
-- [ ] **AK-02 — Walk every Leg 5 route in SIM.** As AB-02 did: Basfelt to Brodir, to each
+- [x] **AK-02 — Walk every Leg 5 route in SIM.** As AB-02 did: Basfelt to Brodir, to each
   MuMu Village ground, to the sentries and the fencers, to Kaibech's grounds, and to Vovetirn
   and both outlaw grounds. A level 30 probe, so nothing aggroes and nothing is despawned.
+  - *Done 2026-10-01.* `AltgardLeg5TravelWalksEveryGroundAndBack` (account 73, a level 30 probe; plans at
+    level 19) walks 20 legs in four round trips from Nokir. Every leg ends within 5 m of its ground. Notable:
+    - Basfelt to Brodir is 543 m; the sentries and fencers lie 17–52 m beyond Brodir.
+    - Basfelt to MuMu Village is 596 m. Inside the village, the plans cross up to seven aggressive kinds, and
+      10 or more MuMu stand within 30 m. Manumumu's ground has black claws (214032, 214039) close by.
+    - Basfelt to Kaibech is 902 m, across the bigfoot (210441), ruthless (210443) and angry (210444) mosbears.
+    - Basfelt to Vovetirn is 297 m. The L16 outlaw ground is 583 m further, among 14 L16 poisonsac amphas.
+  - **`run-fast` found two probe defects**, both fixed:
+    - **The AK-00 clock probe** advanced 400 s in one call. That can exceed the virtual pool's
+      100,000-tick budget in a busy shared world, so it now advances in 30 s slices.
+    - **The AB-05 probe** shot Infernus from beside him. His hits cancelled each Smite while it was cast,
+      killed the probe, and he was back to full health by the next try. It had passed only when the
+      first cast landed first.
+      - It now shoots from 16–20 m with line of sight, at the Infernus the client targets, and logs each try.
+  - `run-fast` passes 11 of 11, and so do the warning baseline and the logger, clock and fidelity checks.
 - [ ] **AK-03 — The carrier policy (pure).** Given the game time and what is in view, choose the
   carrier to hunt, or the work to do while waiting for the night. Unit tests at day, night and
   the hour edges.
@@ -2477,3 +2492,4 @@ The original questions follow.
 - 2026-10-01 D32 catch-up: Q24110 in Leg 1, Q24111 in Leg 3; Legs 1–4 replayed from `altgard` on 5083bb385 (stale-route refusal, death-spot hazards, hunt road fallback); levels 13/15/16/19; Leg 5 starts at 19.
 - 2026-10-01 AK-00: the bot decodes SM_GAME_TIME (GameMinutes, GameHour); the SIM clock drives the hourly ring carriers (MuMu Zoo at 22:00, Lu at 05:00).
 - 2026-10-01 AK-01: the Leg 5 contract (13 template quests, timedSpawns, held) and its 13 plans; the stale D32 plans for Q24232/Q24233 regenerated.
+- 2026-10-01 AK-02: Leg 5's 20 travel legs walked in SIM; the AK-00 and AB-05 probes made robust in run-fast.
