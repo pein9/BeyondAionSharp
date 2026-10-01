@@ -10,8 +10,10 @@ TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-alt
 **Leg 1 is done (AF-00..AF-10, 2026-09-29).** [Leg 2: Moslan Crossroad](#leg-2-moslan-crossroad-level-1315--proposal) is done (AM-01..AM-09, 2026-09-29): `altgard-l2` starts Leg 3.
 [Leg 3: Manir's Campsite and Dock](#leg-3-manirs-campsite-and-dock-level-15--proposal) is done (AC-00..AC-08,
 2026-09-30): `altgard-l3` starts Leg 4 at Basfelt.
-[Leg 4: Basfelt Village](#leg-4-basfelt-village-level-1617--proposal) is approved (AB-Q1..AB-Q5 as recommended)
-and ready for Loop mode (AB-01..AB-10).
+[Leg 4: Basfelt Village](#leg-4-basfelt-village-level-1617--proposal) is done (AB-01..AB-10, 2026-09-30; recaptured
+2026-10-01): `altgard-l4` starts Leg 5.
+[Leg 5: Kaibech's Campsite, Idun's Lake and MuMu Village](#leg-5-kaibechs-campsite-iduns-lake-and-mumu-village-level-1819--proposal)
+is proposed (2026-10-01), waiting for AK-Q1..AK-Q3.
 
 ## Goal
 
@@ -1963,7 +1965,177 @@ and the slow Q2230. Each was fixed in the runner, then all three were proven tog
 - alive, at Basfelt Village within 60 m of Nokir;
 - the endpoint verified across a relog.
 
+## Leg 5: Kaibech's Campsite, Idun's Lake and MuMu Village (level 18–19) — proposal
+
+**Status (2026-10-01): proposed, waiting for AK-Q1..AK-Q3.**
+
+**Where it starts.** It starts from the `altgard-l4` snapshot (recaptured 2026-10-01 on the
+refined spawns): character 133297, a level 18 Cleric at 384,315 of 407,257 XP, at the Basfelt
+obelisk and bound there. Leg 4 already did Stop 6's Q2227, Q2291 and Q24013.
+
+**What it covers (if AK-Q1 (b)).** Stop 5, Kaibech's Campsite and Gribade Canyon, has only five
+quests worth 63k XP. So this proposal also takes in the rest of Stop 6, Idun's Lake: eight
+quests that opened when Leg 4 finished Q24112. Two of them are D32 quests (RQ-05).
+
+**The bind.** Neither hub has an obelisk. The only ones in Altgard are the fortress, Basfelt,
+Heart of Impetusium (700067), the east (700821) and the north (700822). So **the bot stays bound
+at Basfelt**: it is the working hub under the standing bind policy, and it sits in the middle of
+everything below.
+
+### The hubs and their grounds
+
+| Ground | Where (distance from Nokir) | Quests | What lives there |
+|---|---|---|---|
+| Idun's Lake: Brodir and Anmurnerk | (1512, 528), 313 m south-west | gives Q24230, Q24231, Q2238, Q24233 (Brodir); Q2236, Q2237, Q2292, Q24232 (Anmurnerk) | soil spirits (L13) |
+| Sumarhon's camp: grave robbing sentries | 22 spots around (1391, 486), 439 m | Q24230 (9 kills) | Comrade Sumarhon (SEASONED L15) is back after 295 s; **3 deaths here in the Leg 4 recapture** |
+| Grave robbing fencers | 31 spots around (1350, 663), 431 m | Q24231 (8 Amalgam Swords, 100%) | |
+| **MuMu Village** | (1360–1650, 150–380), 480–680 m south | Q24232 (9 looklooks or lookouts), Q2238 (5 MuMu Belts, 100%, from the same), Q2236 (5 Hairpins), Q2237 (3 Fertilizer Sacks), Q2292 (three rings), Q24233 (Manumumu) | **55 looklooks** (L15–16), lookouts, herb gatherers, the six ring carriers; **Chieftain Manumumu** (L17, respawn 30 min) at (1576, 218), only **64 m from the Q24013 black claw zone** (Feral Sharpeyes, SEASONED L17) |
+| MuMu workers | 30 spots around (1739, 925), 239 m north-east | Q2236 (Hairpins drop here too) | |
+| Kaibech's Campsite and Gribade Canyon | Kaibech and Mantigar (1201, 983), 650 m west; plumas, arachnas and bigfoot mosbears 570 m | Q2233, Q2234, Q2235 | Komu Silverclaw (SEASONED L17, hourly) at (1287, 987); angry and ruthless mosbears; grove malodors |
+| East: Vovetirn and the sprigg outlaws | Vovetirn (1990, 640), 216 m; outlaws at (2024, 542), 285 m, and (2312, 585), 542 m | Q2241 (5 Glowing Mushrooms, 80%), Q2242 | the poisonsac amphas of Q2239 |
+| Far hand-ins | **Gemyu** in Gerger Village (2360, 916), 622 m east (Stop 7); **Suthran** in the fortress (1663, 1749), 1,065 m north | Q2242, Q24233 (AK-Q2) | |
+
+**Monster levels.** Every target is level 14–17, below the level 18 Cleric. This is the first
+leg where that is true. The danger is density, not level:
+- MuMu Village packs dozens of RATMAN that assist each other;
+- Sumarhon's camp packs LEHPAR the same way;
+- Manumumu stands beside the black claws.
+
+### Quests
+
+All thirteen are **template quests**: `monster_hunt`, `item_collecting` and `report_to`. Java has
+no custom handler for any of them; the C# templates match. Q24232 and Q24233 are D32's
+(`docs/retail-quest-completion.md`, deviations 150 and 151, SIM test `RetailQuestPlaysEndToEnd`).
+
+| Quest | Name | Level | From → to | After | Objective | XP |
+|---|---|---|---|---|---|---|
+| 2233 | Mantigar's Request | 13 | Mantigar | | kill 3 crested plumas (L15–16) | 8,010 |
+| 2234 | An Irritating Problem | 13 | Mantigar | 2233 | kill 5 nimble arachnas (L15–16) | 11,850 |
+| 2235 | Clearing the Path | 13 | Kaibech | 2231 (done) | kill 3 bigfoot mosbears (L16) | 7,920 |
+| 2241 | Glowing Mushroom | 13 | Vovetirn | | 5 Glowing Mushrooms, 80%, from sprigg outlaws (L15–16) | 19,350 |
+| 2242 | A Nice Gesture | 13 | Vovetirn → **Gemyu** (Gerger) | 2241 | deliver the work item 182203258 | 16,350 |
+| 24230 | A Grave Situation | 14 | Brodir | | kill 9 grave robbing sentries (L14) | 17,552 |
+| 24231 | Take Back, Sword! | 14 | Brodir | | 8 Amalgam Swords, 100%, from fencers (L14) | 17,552 |
+| 2238 | A Matter of Pride | 14 | Brodir → **Gefion** (Basfelt) | 24112 (done) | 5 MuMu Belts, 100%, from looklooks and lookouts | 16,495 |
+| 24232 | Little Help from a Daeva (D32) | 14 | Anmurnerk | 24112 (done) | kill 9 looklooks or lookouts | 17,552 |
+| 2236 | Rarified Tastes | 14 | Anmurnerk | 24112 (done) | 5 MuMu Hairpins, 100%, from herb gatherers and workers | 16,495 |
+| 2237 | A Fertile Field | 14 | Anmurnerk | 24112 (done) | 3 Fertilizer Sacks from the sack objects (700145, 20 spots, respawn 295 s) | 16,495 |
+| 2292 | Making a New Start | 14 | Anmurnerk | 24112 (done) | the Passion, Jealousy and Love Rings from six named MuMu; a choice of two rewards (120001520, 120001521) | 16,495 |
+| 24233 | Adieu to You, Manumumu (D32) | 14 | Brodir → **Suthran** (fortress) | 24112 (done) | kill Chieftain Manumumu (L17, respawn 1,800 s) | 16,495 |
+
+Quest XP is 198,611. With kills the Cleric reaches **level 19** and most of the way to 20.
+AL-1's "hunt to 20" belongs to the end of the zone, not to this leg.
+
+**Q2292's rings come by the game clock.** Each ring drops (100%) from either of two named MuMu
+(BROWNIE, L16), and each named one is a single spawn that exists only in its own game hours
+(`temporary_spawn`, Java `TemporarySpawnEngine`, ported):
+
+| Ring | Carrier, hours | Carrier, hours |
+|---|---|---|
+| Passion | MuMu Lu (1496, 272), 05:00–22:00 | MuMu Zen (1374, 376), 04:00–21:00 |
+| Jealousy | MuMu Ang (1361, 155), 05:00–22:00 | MuMu Ring (1531, 233), 22:00–05:00 |
+| Love | MuMu Zoo (1643, 270), 22:00–05:00 | MuMu Di (1467, 204), 22:00–05:00 |
+
+**The Love Ring exists only at night**:
+- The game clock runs at 1 game minute per real 5 s, so night is 22:00–05:00, about 35 real minutes.
+- The server announces the time in `SM_GAME_TIME`. **The bot does not decode it yet.**
+- Four of the six carriers were moved in the maintainer's spawn refinement (`fd4b2a3cb`).
+
+**Shared kills.** Looklooks and lookouts count for Q24232 and drop Q2238's belts on the same
+kill, so one batch does both. Q2236's hairpins come from herb gatherers in the village, or from
+the 30 workers north-east of Basfelt, which is a quieter choice. The general quest-loot sweep
+(`6688ba04d`) picks up every drop on the way.
+
+### What is new for the bot
+
+1. **Spawns by the hour** (Q2292).
+   - Decode `SM_GAME_TIME`, and know which carriers exist now.
+   - Hunt the day ones by day. Wait for night for the Love Ring, using the wait for other work.
+   - First prove that the SIM's virtual clock drives `TemporarySpawnEngine` hour changes.
+2. **A rare named target in a dense village** (Q24233). Manumumu respawns every 30 minutes,
+   among RATMAN that assist each other, 64 m from the Feral Sharpeyes. Pull him away from the
+   village edge.
+3. **Batches by ground across quests.** For example: MuMu Village is one trip for Q24232,
+   Q2238, Q2236, Q2237 and the day rings, and Sumarhon's camp is one trip for Q24230 and Q24231.
+4. **Held hand-ins** (AK-Q2): a quest finished but not handed in at the leg's end, for Gemyu and
+   Suthran in a later leg.
+5. **Fertilizer sacks**: quest objects like Leg 4's beehives.
+6. **A reward choice** for Q2292, as for Q2227 and Q24013.
+
+### Leg 5 TODO list (proposed)
+
+The same loop protocol, with "AK" in place of "NA".
+
+- [ ] **AK-00 — The game clock in SIM and in the bot.** Decode `SM_GAME_TIME` into the world
+  model. A SIM probe advances the virtual clock and shows the carriers appear and despawn at
+  their hours: MuMu Lu by day, MuMu Zoo by night. If the SIM clock does not drive the hour
+  change, fix the fixture (infrastructure), not the server.
+- [ ] **AK-01 — The Leg 5 contract and plans.** `natural-altgard-l5-contract.json` with:
+  - the hub (Basfelt, bound), and the grounds above as areas;
+  - the thirteen quests and their order;
+  - compiled template plans for all of them;
+  - a new **`timedSpawns`** block for Q2292's carriers and their hours;
+  - the reward choice for Q2292;
+  - the held hand-ins (AK-Q2).
+
+  Contract tests check every position, drop, count and hour against the shipped data.
+- [ ] **AK-02 — Walk every Leg 5 route in SIM.** As AB-02 did: Basfelt to Brodir, to each
+  MuMu Village ground, to the sentries and the fencers, to Kaibech's grounds, and to Vovetirn
+  and both outlaw grounds. A level 30 probe, so nothing aggroes and nothing is despawned.
+- [ ] **AK-03 — The carrier policy (pure).** Given the game time and what is in view, choose the
+  carrier to hunt, or the work to do while waiting for the night. Unit tests at day, night and
+  the hour edges.
+- [ ] **AK-04 — Q2292 in SIM.** A probe takes all three rings at their hours (day carriers,
+  then night), claims the chosen reward, and records what each carrier drops.
+- [ ] **AK-05 — MuMu Village and Manumumu in SIM.** One batch for Q24232 and Q2238; Q2236
+  hairpins; Q2237 sacks; Manumumu killed and Q24233 at REWARD.
+- [ ] **AK-06 — Stop 5 and the east in SIM.** Q2233, Q2234 and Q2235 at Kaibech; Q2241 at the
+  outlaws; Q2242 taken. Sumarhon's camp: Q24230 and Q24231.
+- [ ] **AK-07 — Combat at level 18–19.** The AB-07 encounter harness, staged:
+  - MuMu Village pulls (a looklook pair with a lookout);
+  - Manumumu with what assists him;
+  - a sentry and fencer group.
+
+  Record deaths and retreats.
+- [ ] **AK-08 — The Leg 5 runner.** The engine and runner for the carriers' hours (AK-03),
+  batches by ground and the held hand-ins. A smoke run from `altgard-l4` with real combat,
+  recording every fight and death.
+- [ ] **AK-09 — One SIM run of Leg 5 and the snapshot.** `sim-snapshot.ps1 -Leg l5 -From
+  altgard-l4` captures `altgard-l5` after a clean run, with a restore check.
+- [ ] **AK-10 — The full `CLAUDE.md` checklist and a checkpoint.**
+
+**Endpoint (if AK-Q1 (b) and AK-Q2 (a)):**
+- Q2233–Q2235, Q2241, Q24230, Q24231, Q2238, Q24232, Q2236, Q2237 and Q2292 completed;
+- Q2242 started and Q24233 at REWARD, held for their hubs;
+- bound at the Basfelt obelisk;
+- alive, in Basfelt within 60 m of Nokir;
+- the endpoint verified across a relog.
+
 ## Blocked / questions for the operator
+
+**Leg 5, open (2026-10-01):**
+- **AK-Q1 — How big is Leg 5?**
+  - (a) Stop 5 only: five quests, 63k XP, mostly at Kaibech, 650 m west.
+  - (b) Stops 5 and 6 together: thirteen quests, 199k XP, all worked from the Basfelt bind.
+
+  **Recommendation: (b).** Stop 5 alone is a short trip. Stop 6's quests opened with Q24112 in
+  Leg 4, and Leg 4 already did three of them.
+- **AK-Q2 — The two hand-ins at far hubs.** Q2242 ends at Gemyu in Gerger Village (622 m east,
+  Stop 7). Q24233 ends at Suthran in the fortress (1,065 m north, Stop 11).
+  - (a) Take both, finish the work, and hand them in when the route reaches those hubs: Gerger
+    next, the fortress at Stop 11.
+  - (b) Walk to both during this leg.
+  - (c) (a) for Q24233, (b) for Q2242.
+
+  **Recommendation: (a).** A held quest loses nothing, and Gerger is the next stop anyway. The
+  fortress round trip costs about 2 km of walking through the Moslan ground for 16k XP.
+- **AK-Q3 — Q2292's night-only Love Ring.**
+  - (a) Wait for the game's night (22:00–05:00, about 35 real minutes after it starts), doing
+    other Leg 5 work meanwhile.
+  - (b) Skip Q2292.
+
+  **Recommendation: (a).** It is a real 4.8 mechanic worth proving, the carriers are in data
+  the maintainer just refined, and the wait costs nothing if it overlaps other work.
 
 **Leg 4, answered 2026-09-30:** AB-Q1 **(a)**, AB-Q2 **(a)** and AB-Q3 **(a)**, all as
 recommended:
