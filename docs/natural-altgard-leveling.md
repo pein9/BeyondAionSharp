@@ -1876,7 +1876,34 @@ The same loop protocol, with "AB" in place of "NA".
     - A test restore into an owned schema succeeded and was dropped; no owned schema is left.
     - `-Action Verify` does not apply here: it replays the Ishalgen journey, so it fails on any
       Altgard snapshot. Altgard legs are checked by Restore and Drop, as AC-07 was.
-- [ ] **AB-10 — The full `CLAUDE.md` checklist and a checkpoint.**
+- [x] **AB-10 — The full `CLAUDE.md` checklist and a checkpoint.**
+  - *Done 2026-09-30.* Every command in the `CLAUDE.md` checklist was run in order, on `09dd6c8df`:
+    - `dotnet build` passed.
+    - `dotnet test` passed: GameServer 4,411 (16 skipped), Commons 303, LoginServer 135, ChatServer 41,
+      Simulation 145.
+    - The warning baseline passed, and so did the logger, clock-read, custom-quest-draft and
+      fidelity checks.
+    - All twelve Python e2e contract tests and all twelve PowerShell contract tests passed.
+    - The NavBake `check --maps baked` passed.
+  - **`run-fast` found one AB-04 probe defect, fixed here.**
+    - In the shared Fast world the probe waited out Q2230's 1,805 s timer on the mosbear
+      grounds. The mosbears it had killed respawned beside it and killed it, so step 5 could
+      not shoot anything down.
+    - The probe now walks to Shania before the wait (a walk, not a teleport, because of AB-Q6).
+      Each failed kill try now says why.
+    - Run `fast-20260930-232231`: AB-04 passed, with 10 tusks from 14 kills in 123 game s.
+  - **`run-fast` still fails one scenario, which is not Leg 4's.**
+    - E1 fails: "Fresh simulation account sim-player-42 already has a character."
+    - The D32 register `parity-artifacts/e2e/retail-quest-implemented.json` gives Q24110
+      `simAccount` 42. That is E1's gathering account, and `RetailQuestPlaysEndToEnd` runs
+      first in the same shard.
+    - It is left to the D32 work, which owns that register; a separate task was offered for
+      it. Every other Fast test passed (8 passed, 1 failed, 2 not started after E1).
+  - **Checkpoint:**
+    - Leg 4 plays end to end in SIM from `altgard-l3`.
+    - Snapshot `altgard-l4` is the start of the next leg: level 19, bound at Basfelt.
+    - AB-Q6 is still open for the operator.
+    - LIVE runs once, at the end of the whole Altgard leg.
 
 **Endpoint (AB-Q1 (a)):**
 - all eleven quests, Q2227, Q2291 and Q24013 completed (AB-Q4);
@@ -2119,3 +2146,4 @@ The original questions follow.
 - 2026-09-30 AB-07: Leg 4 combat at L16 and L17: first real Anti-Shock shield and Salvation, Divine Touch at L17; the Feral Sharpeye group retreats the L16 Cleric and kills the L17 one.
 - 2026-09-30 AB-08: Leg 4 runs end to end in SIM from altgard-l3: 14 quests, L16 to L19, 10 recorded deaths, both timers handed in (Q2230 on its new chance), Infernus on the first try.
 - 2026-09-30 AB-09: SIM run snapshot-altgard-l4-s1 repeated the AB-08 run exactly (14 quests, L19, 10 deaths); snapshot altgard-l4 captured and restore-checked.
+- 2026-09-30 AB-10: full checklist green except run-fast E1 (D32 register gives Q24110 account 42, E1's); AB-04 probe fixed to wait out Q2230 in the village. Leg 4 done in SIM.

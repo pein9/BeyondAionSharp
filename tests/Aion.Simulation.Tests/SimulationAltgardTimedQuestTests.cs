@@ -99,7 +99,10 @@ public sealed partial class SimulationFastScenarioTests
 		// One mosbear of the given kinds, set to 1 HP with its aggressive neighbours cleared, shot down with Smite. Returns its object.
 		async Task<int> KillOneAsync(int[] kinds)
 		{
-			for (int tries = 0; tries < 16; tries++)
+			// In run-fast the world is shared: earlier tests leave the nearest mosbears dead or despawned, so a walk to a farther
+			// one is a try too (AB-10). Each failed try says why.
+			var why = new List<string>();
+			for (int tries = 0; tries < 40; tries++)
 			{
 				BotKnownObject? target = session.Api.World.Objects.Values
 					.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId is int id && kinds.Contains(id) && !known.IsCorpse &&
@@ -111,7 +114,8 @@ public sealed partial class SimulationFastScenarioTests
 						.OrderBy(npc => MathF.Pow(npc.GetX() - session.CurrentPosition.X, 2) + MathF.Pow(npc.GetY() - session.CurrentPosition.Y, 2)).First();
 					BotPosition near = geometry.GroundAround(altgard, new BotPosition(next.GetX(), next.GetY(), next.GetZ(), 0), [10f, 14f, 6f])
 						.FirstOrDefault(point => geometry.HasLineOfSight(altgard, point, new BotPosition(next.GetX(), next.GetY(), next.GetZ() + 1, 0)));
-					if (near == default) { unseen.Add(next.GetObjectId()); continue; }
+					if (near == default) { unseen.Add(next.GetObjectId()); why.Add($"{next.GetNpcId()}/{next.GetObjectId()}: no ground in sight"); continue; }
+					why.Add($"walk toward {next.GetNpcId()}/{next.GetObjectId()}");
 					// Walk, never teleport: a setup teleport that respawns the player sends CM_LEVEL_READY, whose quest hooks
 					// (Q1044, Q2042) end any running quest timer (the AB-Q6 defect).
 					await WalkToAsync(near, 3f);
@@ -132,8 +136,10 @@ public sealed partial class SimulationFastScenarioTests
 						return target.ObjectId;
 				}
 				unseen.Add(target.ObjectId);
+				why.Add($"{target.TemplateId}/{target.ObjectId}: not shot down (dead {Server().IsDead()}, HP {session.Api.World.CurrentHp}, " +
+					$"MP {session.Api.World.CurrentMp}, {NaturalGuardedTalkPolicy.Distance(target.Position, session.CurrentPosition):F0} m)");
 			}
-			throw new InvalidDataException("No mosbear could be shot down.");
+			throw new InvalidDataException($"No mosbear could be shot down: {string.Join("; ", why)}.");
 		}
 
 		// 1. Q2288: the timer starts with SETPRO1; a logout abandons the quest.
@@ -186,8 +192,13 @@ public sealed partial class SimulationFastScenarioTests
 			await NaturalAltgardQuestSteps.LootItemAsync(session, killed, tusk, token);
 		}
 		long tusksBefore = ItemCount(tusk);
+		// Wait out the timer in the village, not on the grounds: there the mosbears killed above respawn beside the idle probe and
+		// kill it (AB-10's run-fast). Walk, never teleport: a respawning teleport ends the timer (AB-Q6).
+		var shaniaBeforeWait = instance.GetNpcs().First(candidate => candidate.GetNpcId() == shania);
+		await WalkToAsync(new BotPosition(shaniaBeforeWait.GetX(), shaniaBeforeWait.GetY(), shaniaBeforeWait.GetZ(), 0), 5f);
 		await session.AdvanceAsync(TimeSpan.FromSeconds(wagerTimer.Seconds + 5), token);
 		await session.SynchronizeAsync(token);
+		Assert.False(Server().IsDead(), "The probe died while Q2230's timer ran out.");
 		Assert.Equal(((byte)3, 0), State(wager));
 		var shaniaNpc = instance.GetNpcs().First(candidate => candidate.GetNpcId() == shania);
 		await TeleportBesideAsync(shaniaNpc.GetX(), shaniaNpc.GetY(), shaniaNpc.GetZ());
@@ -213,6 +224,7 @@ public sealed partial class SimulationFastScenarioTests
 			$"(client timer {TimerSeen(wager)} s, {session.PacketHistory.Skip(timerPackets).Count(packet => packet.PacketType == typeof(SM_QUEST_ACTION))} quest packets)");
 
 		// 5. Q2230: ten tusks inside the new timer, then the reward.
+		Assert.False(Server().IsDead(), "The probe died before Q2230's second timer.");
 		started = fixture.Clock.NowMillis;
 		int kills = 0;
 		while (ItemCount(tusk) < 10)
