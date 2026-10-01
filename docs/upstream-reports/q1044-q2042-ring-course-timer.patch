@@ -1,0 +1,65 @@
+diff --git a/game-server/data/handlers/quest/abyss_entry/_1044TestingFlightSkills.java b/game-server/data/handlers/quest/abyss_entry/_1044TestingFlightSkills.java
+index 87ca764d4..f65dd7b6e 100644
+--- a/game-server/data/handlers/quest/abyss_entry/_1044TestingFlightSkills.java
++++ b/game-server/data/handlers/quest/abyss_entry/_1044TestingFlightSkills.java
+@@ -164,13 +164,26 @@ public class _1044TestingFlightSkills extends AbstractQuestHandler {
+ 
+ 	@Override
+ 	public boolean onDieEvent(QuestEnv env) {
++		if (!isOnTheRingCourse(env))
++			return false;
+ 		QuestService.questTimerEnd(env);
+ 		return onQuestTimerEndEvent(env);
+ 	}
+ 
+ 	@Override
+ 	public boolean onEnterWorldEvent(QuestEnv env) {
++		if (!isOnTheRingCourse(env))
++			return false;
+ 		QuestService.questTimerEnd(env);
+ 		return onQuestTimerEndEvent(env);
+ 	}
++
++	/**
++	 * These hooks run for every player who dies or enters the world, and the quest timer is one per player: without this check,
++	 * they end any other quest's running timer.
++	 */
++	private boolean isOnTheRingCourse(QuestEnv env) {
++		QuestState qs = env.getPlayer().getQuestStateList().getQuestState(questId);
++		return qs != null && qs.getStatus() == QuestStatus.START && qs.getQuestVarById(0) > 1 && qs.getQuestVarById(0) < 8;
++	}
+ }
+diff --git a/game-server/data/handlers/quest/abyss_entry/_2042TheLastCheckpoint.java b/game-server/data/handlers/quest/abyss_entry/_2042TheLastCheckpoint.java
+index b735d4638..52e5f0bb3 100644
+--- a/game-server/data/handlers/quest/abyss_entry/_2042TheLastCheckpoint.java
++++ b/game-server/data/handlers/quest/abyss_entry/_2042TheLastCheckpoint.java
+@@ -159,16 +159,29 @@ public class _2042TheLastCheckpoint extends AbstractQuestHandler {
+ 
+ 	@Override
+ 	public boolean onDieEvent(QuestEnv env) {
++		if (!isOnTheRingCourse(env))
++			return false;
+ 		QuestService.questTimerEnd(env);
+ 		return onQuestTimerEndEvent(env);
+ 	}
+ 
+ 	@Override
+ 	public boolean onEnterWorldEvent(QuestEnv env) {
++		if (!isOnTheRingCourse(env))
++			return false;
+ 		QuestService.questTimerEnd(env);
+ 		return onQuestTimerEndEvent(env);
+ 	}
+ 
++	/**
++	 * These hooks run for every player who dies or enters the world, and the quest timer is one per player: without this check,
++	 * they end any other quest's running timer.
++	 */
++	private boolean isOnTheRingCourse(QuestEnv env) {
++		QuestState qs = env.getPlayer().getQuestStateList().getQuestState(questId);
++		return qs != null && qs.getStatus() == QuestStatus.START && qs.getQuestVarById(0) > 1 && qs.getQuestVarById(0) < 8;
++	}
++
+ 	@Override
+ 	public void onQuestCompletedEvent(QuestEnv env) {
+ 		defaultOnQuestCompletedEvent(env, 2947);

@@ -44,6 +44,9 @@ one-line fix for Annju (204151) in Q2916, the teleport devices (730888, 730898) 
 Q14031 and Q24031, and Koray (799585) in Q18400. All six are applied in C# (§7/57 and
 §7/141–145; D26 and D27 have tests in `SimulationQuestCorrectionTests.cs`) and must not
 be ported back.
+D33 approves guarding Q1044's and Q2042's die and enter-world hooks so they end
+only their own ring-course timer, not every player's running quest timer (§7/152,
+`SimulationQuestTimerCorrectionTests.cs`); it must not be ported back either.
 These decisions are not a general exemption from parity or authorization to
 reopen other deferred behavior.
 

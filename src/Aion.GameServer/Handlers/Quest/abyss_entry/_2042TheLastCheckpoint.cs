@@ -193,16 +193,29 @@ public class _2042TheLastCheckpoint : AbstractQuestHandler
         return false;
     }
 
+    // D33 (deviation 152): Java calls questTimerEnd here for every player who dies or enters the world, whether or not
+    // they are on this quest. The timer is one slot per player, so that ended any other quest's running timer (Q2288,
+    // Q2230). Only a player flying this quest's ring course (var 2-7, the timer's span) loses the timer here.
     public override bool OnDieEvent(QuestEnv env)
     {
+        if (!IsOnTheRingCourse(env))
+            return false;
         QuestService.QuestTimerEnd(env);
         return OnQuestTimerEndEvent(env);
     }
 
     public override bool OnEnterWorldEvent(QuestEnv env)
     {
+        if (!IsOnTheRingCourse(env))
+            return false;
         QuestService.QuestTimerEnd(env);
         return OnQuestTimerEndEvent(env);
+    }
+
+    private bool IsOnTheRingCourse(QuestEnv env)
+    {
+        QuestState qs = env.GetPlayer().GetQuestStateList().GetQuestState(questId);
+        return qs != null && qs.GetStatus() == QuestStatus.START && qs.GetQuestVarById(0) > 1 && qs.GetQuestVarById(0) < 8;
     }
 
     public override void OnQuestCompletedEvent(QuestEnv env)

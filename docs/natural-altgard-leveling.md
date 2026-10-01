@@ -1902,7 +1902,7 @@ The same loop protocol, with "AB" in place of "NA".
   - **Checkpoint:**
     - Leg 4 plays end to end in SIM from `altgard-l3`.
     - Snapshot `altgard-l4` is the start of the next leg: level 19, bound at Basfelt.
-    - AB-Q6 is still open for the operator.
+    - AB-Q6 is still open for the operator (answered 2026-10-01: D33).
     - LIVE runs once, at the end of the whole Altgard leg.
 
 **Endpoint (AB-Q1 (a)):**
@@ -1920,7 +1920,13 @@ recommended:
 - The timed quests and Infernus get three tries each.
 - Komu is left alone until Q2289 var 7.
 
-**Leg 4, open (2026-09-30):**
+**Leg 4, answered 2026-10-01:** AB-Q6 **(a)**, narrowed. The maintainer asked for the narrow fix
+(D33): Q1044 and Q2042 end the timer only for a player flying their own ring course (var 2–7, the
+timer's span), so a death or world entry still fails that course as in Java. Applied in C# with
+the SIM test `RingCourseQuestsEndOnlyTheirOwnTimer` (deviation 152) and reported upstream
+(`docs/upstream-reports/q1044-q2042-ring-course-timer.patch`). What 4.8 retail did to a timed
+quest's own timer on a death is not known and is not changed.
+
 - **AB-Q6 — Q1044 and Q2042 end any quest timer** (found in AB-04). Their enter-world and death
   hooks call `questTimerEnd` for every player, with no check that the player is on those
   quests. The timer is one slot per player, so a revive, a relog, or a teleport that respawns
