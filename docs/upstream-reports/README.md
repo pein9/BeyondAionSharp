@@ -143,11 +143,11 @@ the quest has a commit on the Java branch and a patch here.
 
 ### Traps found on the way
 
-- **SIM test accounts:** the fixture accepts accounts 1–94 and 101–140. Accounts 133–138
-  belong to the Altgard AF probes. Many scenarios pick accounts in tuples, loops or
-  variables, so a text search for a literal misses them; 139 and 140 are free. To add more,
-  widen `SimulationWorldFixture`'s range again. A clash shows up as "Fresh simulation account
-  sim-player-N already has a character" in `run-fast.ps1`.
+- **SIM test accounts:** the fixture accepts accounts 1–94 and 101–200. Accounts 133–150
+  belong to the Altgard probes and the D26/D27 tests, and 151–200 to the D32 register alone.
+  Many scenarios pick accounts in tuples, loops or variables, so a text search for a literal
+  misses them. To add more, widen `SimulationWorldFixture`'s range again. A clash shows up as
+  "Fresh simulation account sim-player-N already has a character" in `run-fast.ps1`.
 - **A SIM test that adds a quest server-side** must also send `SM_QUEST_ACTION` (ADD) to the
   client, or the bot never sees it (AF-06).
 - **Bash heredocs with apostrophes** break in this environment. Write scripts to files

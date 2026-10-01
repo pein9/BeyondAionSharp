@@ -10,6 +10,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -28,6 +29,9 @@ CLASSIFIER = REPO_ROOT / "parity-artifacts/e2e/obtainable-quests.json"
 IMPLEMENTED = REPO_ROOT / "parity-artifacts/e2e/retail-quest-implemented.json"
 PLANS = REPO_ROOT / "parity-artifacts/e2e/retail-quest-plans"
 PLAN_COMPILER = REPO_ROOT / "scripts/e2e/compile-quest-plans.py"
+SIM_TESTS = REPO_ROOT / "tests/Aion.Simulation.Tests"
+SIM_FIXTURE = SIM_TESTS / "SimulationWorldFixture.cs"
+D32_ACCOUNTS = range(151, 201)
 
 spec = importlib.util.spec_from_file_location("retail_quest_inventory", BUILDER)
 assert spec is not None and spec.loader is not None
@@ -360,10 +364,37 @@ class RegisterTests(unittest.TestCase):
         for quest_id, entry in self.register.items():
             self.assertTrue((PLANS / f"{quest_id}.json").exists(), quest_id)
             self.assertTrue((REPO_ROOT / entry["patch"]).exists(), entry["patch"])
-            account = entry["simAccount"]
-            self.assertTrue(1 <= account <= 94 or 101 <= account <= 150, account)
-            self.assertFalse(133 <= account <= 148, "133-148 belong to the natural legs")
+            self.assertIn(entry["simAccount"], D32_ACCOUNTS, f"{quest_id}: D32 accounts are 151-200")
         self.assertEqual(sorted(self.register), sorted(path.stem for path in PLANS.glob("*.json")))
+
+    def test_the_fixture_accepts_the_d32_accounts_and_no_other_sim_test_uses_them(self) -> None:
+        # A SIM test needs its account fresh, and RetailQuestPlaysEndToEnd shares a process with the scenarios, so a
+        # clash fails whichever runs second ("Fresh simulation account sim-player-N already has a character").
+        line = next(line for line in SIM_FIXTURE.read_text(encoding="utf-8").splitlines() if "var accounts =" in line)
+        accepted = {account for start, count in re.findall(r"Enumerable\.Range\((\d+), (\d+)\)", line)
+                    for account in range(int(start), int(start) + int(count))}
+        self.assertTrue(set(D32_ACCOUNTS) <= accepted, "SimulationWorldFixture must accept accounts 151-200")
+        used = sim_test_accounts()
+        # The scan must still see each way the scenarios name an account, or an empty result would pass.
+        for account in (16, 27, 41, 42, 47, 77, 91, 101, 117, 133):
+            self.assertIn(account, used, f"the account scan no longer finds sim-player-{account}")
+        self.assertEqual({}, {account: where for account, where in used.items() if account in D32_ACCOUNTS},
+                         "accounts 151-200 belong to the D32 register")
+
+
+def sim_test_accounts() -> dict[int, list[str]]:
+    """The fixture accounts other SIM tests name: literals on a line about a session or an account, or right before a
+    character name. Accounts computed from a literal (101 + index, account + 1) are found by their literal."""
+    found: dict[int, list[str]] = {}
+    for path in sorted(SIM_TESTS.glob("*.cs")):
+        if path.name == "SimulationRetailQuestTests.cs":
+            continue
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            about_accounts = re.search(r"SimulationL0Session|EnterCombatWorldAsync|sim-player-|account", line, re.I)
+            for match in re.finditer(r"(?<![\w.])(\d+)(?![\w.])(?=(, \"[A-Z])?)", line):
+                if about_accounts or match.group(2):
+                    found.setdefault(int(match.group(1)), []).append(f"{path.name}:{number}")
+    return found
 
     def test_every_registered_quest_now_has_a_handler(self) -> None:
         classifier = {q["id"]: q for q in json.loads(CLASSIFIER.read_text(encoding="utf-8-sig"))["quests"]}

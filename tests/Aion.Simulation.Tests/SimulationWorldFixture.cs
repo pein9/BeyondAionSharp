@@ -173,7 +173,9 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			services.AddSingleton<IStaticDataLoader>(new SimulationStaticDataLoader(cacheDirectory));
 			services.RemoveAll<IHostedService>();
 
-			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 50))
+			// 151-200 belong to the D32 register (parity-artifacts/e2e/retail-quest-implemented.json), one per quest;
+			// test-retail-quest-inventory.py keeps every other SIM test out of them.
+			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100))
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();

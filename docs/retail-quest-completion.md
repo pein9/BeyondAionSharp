@@ -288,9 +288,14 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
     plays each quest from its compiled plan (`parity-artifacts/e2e/retail-quest-plans/`) with the
     quest-plan driver: accept at the giver, kill or loot, report, reward. Its cases are the D32
     register `parity-artifacts/e2e/retail-quest-implemented.json`, which also gives each quest its
-    fixture account: **42, 43 and 47–50 are D32's** (see there). The probe is ascended first,
+    fixture account: **151–156 are D32's** (see there). The probe is ascended first,
     since a non-Daeva is capped at level 9. `test-retail-quest-inventory.py` checks the register,
     that each plan is current, and that each registered quest now has a handler.
+  - **Accounts (2026-10-01).** The register first used 42, 43 and 47–50, which E1 (gathering) and
+    E4/E5 (cooking) already used, so `run-fast.ps1` failed E1 with "Fresh simulation account
+    sim-player-42 already has a character". `SimulationWorldFixture` now accepts 101–200, and
+    151–200 belong to the register alone. `test-retail-quest-inventory.py` fails if a register
+    account is outside that block or another SIM test names an account in it.
   - **Evidence.** All six pass (`run/rq05/rq05-sim-b.log`, and `run/rq05/sim-after-q24233.log` with every commit); with the pre-D32 `altgard.xml`, Q24113
     fails at its start step, because Aurtri offers no quest (`run/rq05/rq05-sim-without-entry.log`).
   - **Records.** Deviations 146–151, the register table below, the patches in
@@ -416,8 +421,9 @@ a row keeps the rules' own verdict beside an override.
 3. **Data:** the quest is usually already in `quest_data.xml`. Check its drops, collect items
    and start conditions against the client, and correct them only with evidence.
 4. **Test:** a SIM test that plays the quest end to end on a probe character, like
-   `SimulationQuestCorrectionTests.cs`. Use a free fixture account (1–94, 101–150); the
-   natural legs use 133–148.
+   `SimulationQuestCorrectionTests.cs`. A quest in the D32 register takes the next free
+   account in 151–200, which is the register's alone. A separate test uses a free fixture
+   account (1–94, 101–150); the natural legs use 133–150.
 5. **Record:**
    - a §7 deviation row (the evidence and the test);
    - the D32 register table below;
