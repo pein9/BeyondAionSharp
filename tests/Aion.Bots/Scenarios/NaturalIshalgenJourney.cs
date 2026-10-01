@@ -134,7 +134,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			NaturalAltgardContract? altgardLeg = altgardLegId is { } legId ? NaturalAltgardContract.LoadLeg(legId) : null;
 			IReadOnlyDictionary<int, QuestRunPlan> altgardPlans = altgardLegId is { } planLeg
 				? NaturalAltgardContract.LoadPlans(planLeg) : new Dictionary<int, QuestRunPlan>();
-			int[] altgardNpcs = altgardLeg?.GraphNpcIds(altgardPlans) ?? [];
+			// The maintainer's 2026-10-01 note: hubs have flight transporters; their routes come from the client (generated).
+			IReadOnlyList<NaturalAirlineRoute> airlines = NaturalAirlineRoutes.Load(runtime.RepoRoot);
+			int[] altgardNpcs = altgardLeg == null ? [] : altgardLeg.GraphNpcIds(altgardPlans)
+				.Concat(airlines.Where(route => route.MapId == altgardLeg.Hub.MapId).Select(route => route.NpcId)).Distinct().ToArray();
 			// AK-08: items an open Altgard quest still needs (its collect items, the ring carriers' rings): never worn as gear and
 			// never sold. The leg 5 smoke run wore Q2292's level 16 rings as upgrades, which its hand-in would not have found.
 			IReadOnlySet<int> QuestNeededItems() => altgardLeg == null ? new HashSet<int>() : altgardPlans.Values
@@ -1268,7 +1271,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							// planner's road to the teleporter's square, then approach it.
 							BotPosition teleporterSpawn = graph.GetMap(contract.MapId)!.Waypoints
 								.First(waypoint => waypoint.TemplateId == cube.TeleporterNpcId).Position;
-							await WalkRoadDefendingAsync(teleporterSpawn, "cube-teleporter-road", within: 15);
+							if (!await FlyTowardAsync(teleporterSpawn))
+								await WalkRoadDefendingAsync(teleporterSpawn, "cube-teleporter-road", within: 15);
 							int teleporter = await ApproachShippedSpawnAsync(cube.TeleporterNpcId);
 							NaturalServiceOutcome travelled = await steps.TeleportAsync(teleporter, world.Objects[teleporter].Position,
 								cube.TeleporterTalkRange, cube.LocationId, cube.Fare, cube.MapId, token);
@@ -1422,6 +1426,32 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 				// AB-08: walk the Altgard travel planner's road to a point (the navmesh path when it has none), one section of 16 points
 				// at a time, defending against whatever engages between sections.
+				// The maintainer's 2026-10-01 note: fly between hubs rather than walk. Take the flight transporter whose route lands
+				// near the destination, when walking to its pad and on from its landing is shorter; false when none is.
+				async Task<bool> FlyTowardAsync(BotPosition destination)
+				{
+					NaturalAirlineRoute? route = NaturalAirlineRoutes.Toward(airlines, leg.Hub.MapId, session.CurrentPosition, destination);
+					if (route == null) return false;
+					session.TraceDiagnostic("airline-chosen", new Dictionary<string, object?>
+					{
+						["route"] = route.Route, ["npc"] = route.NpcId, ["location"] = route.LocationId, ["from"] = session.CurrentPosition,
+						["destination"] = destination,
+					});
+					if (Distance(session.CurrentPosition, route.Departure) > 60)
+						await WalkRoadDefendingAsync(route.Departure, "airline-road", within: 15);
+					int transporter = await ApproachShippedSpawnAsync(route.NpcId);
+					if (Distance(session.CurrentPosition, route.Departure) > 3)
+					{
+						NaturalNavigationResult atPad = await NaturalIshalgenNavigator.ExploreAnchorAsync(
+							contract.MapId, -1, route.Departure, navigator, "airline-departure", token);
+						Require.True(atPad.Arrived, atPad.Reason);
+					}
+					NaturalServiceOutcome flown = await new NaturalServiceSteps(session).FlyAsync(transporter,
+						session.Api.World.Objects[transporter].Position, 6, route, token);
+					Require.True(flown.IsDone, flown.Reason);
+					return true;
+				}
+
 				async Task<bool> WalkRoadDefendingAsync(BotPosition destination, string purpose, float within = 12,
 					Func<BotPosition, bool>? stopAt = null)
 				{

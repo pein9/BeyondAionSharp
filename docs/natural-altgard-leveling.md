@@ -2310,6 +2310,24 @@ The same loop protocol, with "AK" in place of "NA".
     - **Held, as AK-Q2 asks:** Q2242 at (START, 0) with its work item, and Q24233 at (START, 1), Manumumu killed.
       The endpoint check requires both.
     - Level 20 opened Q2900, Q24014 and Q24015 (the campaign).
+  - **Flight transporters (the maintainer's 2026-10-01 note: hubs have them, so do not walk).** Smoke run 9
+    (`ak08-l5-smoke9`) flies Basfelt to the fortress on Hrold's route (203683, location 19, 40 s, 565 Kinah
+    after `SM_PRICES`) instead of walking the 1.1 km road.
+    - It plays the leg in 41 decisions and 1 h 45 min of game time: level 20, **no deaths**.
+    - Arriving earlier put it in MuMu Village at 04:16 game time. Ring and Di, the night carriers, were still
+      out and Zen had appeared at 04:00, so all three rings came with no wait.
+    - **How it works.** Java's `TeleportService` sends `START_FLYTELEPORT`. The client flies a route from its
+      own data, reporting `CM_MOVE_IN_AIR`, and lands with `LAND_FLYTELEPORT`.
+      - The server's `flypath_template.xml` has no 4.8 Altgard entry (its id 19 is an Eltnen path), so the
+        routes come from the client: `tools/client-extract/extract_flight_routes.py` reads the
+        `FlightPath.pak` sequences.
+      - It matches each route to a server FLIGHT location by its origin pad and landing teleporter, and
+        writes `parity-artifacts/e2e/natural-flight-routes.json`: 140 routes, 2 locations refused.
+      - Altgard has 8: the fortress (203561) to Urtumheim, Basfelt, Impetusium and the Sanctuary, and each
+        back.
+    - The runner takes a flight when walking to its pad and on from its landing is shorter than walking
+      (`NaturalAirlineRoutes.Toward`). `NaturalServiceSteps.FlyAsync` flies the route's keys every 500 ms and
+      checks the fare and the landing. `NaturalAirlineRoutesTests` pins the routes, the choice and the timing.
   - What the smoke runs before it found (below) and what was fixed. Smoke run 8 also ran with the separate
     investigation's fix for the fleeing sentry in `PatternAi.cs`, uncommitted at the time and not this item's.
     - Smoke run 5: the 1.1 km to the fortress exceeded the navigator's segment budget. The errand takes the travel
@@ -2704,3 +2722,4 @@ The original questions follow.
 - 2026-10-01 AK-07: Leg 5 combat at level 18 and 19 (MuMu pull, Manumumu, sentry and fencers): no deaths; Manumumu reached 25% at level 18.
 - 2026-10-01 AK-08 (in progress): the carrier, held and town-service engine and runner; four smoke runs reach level 20 with both day rings; blocked on AK-Q4 (the full cube).
 - 2026-10-01 AK-08: the whole of Leg 5 in SIM (smoke run 8): the Pandaemonium cube expansions, all eleven claims, Q2292 by the clock, Q2242 and Q24233 held; level 20, 1 death.
+- 2026-10-01 AK-08 (flights): hub flight transporters from the client routes; smoke run 9 flies Basfelt to the fortress and plays Leg 5 with no deaths.

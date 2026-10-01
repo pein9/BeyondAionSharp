@@ -151,7 +151,37 @@ public sealed class NaturalServiceSteps(INaturalJourneySession session)
 		return result;
 	}
 
-	/// <summary>Sell, then buy what the observed trade window offers, verifying the observed stock of each purchase.</summary>
+	/// <summary>The maintainer's 2026-10-01 note: take a flight transporter between hubs. Open the airline service, choose the
+	/// route's location, fly the client route after START_FLYTELEPORT (CM_MOVE_IN_AIR), land with LAND_FLYTELEPORT, and verify
+	/// the fare Java charges (as SM_PRICES shows it) and the landing.</summary>
+	public async Task<NaturalServiceOutcome> FlyAsync(int npcObjectId, BotPosition npc, float talkRange, NaturalAirlineRoute route,
+		CancellationToken token)
+	{
+		long fare = World.VendorPrices?.ServicePrice(route.Price) ?? route.Price;
+		NaturalServiceOutcome check = NaturalServicePolicy.Teleport(session.CurrentPosition, npc, talkRange, World.Kinah, fare, flying: false);
+		Trace("service-flight", check, new() { ["npc"] = npcObjectId, ["location"] = route.LocationId, ["route"] = route.Route, ["fare"] = fare });
+		if (!check.IsReady) return check;
+		long before = World.Kinah;
+		await NaturalDialogProtocol.OpenAsync(session, npcObjectId, token);
+		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet => packet.Get<int>("targetObjectId") == npcObjectId);
+		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npcObjectId, DialogAction.AIRLINE_SERVICE), token);
+		await session.WaitForPacketAsync(typeof(SM_TELEPORT_MAP), token);
+		await session.SendPacketAsync(session.Api.Teleport(npcObjectId, route.LocationId), token);
+		await session.WaitForPacketAsync(typeof(SM_EMOTION), token, packet =>
+			packet.Get<int>("senderObjectId") == session.CharacterId &&
+			packet.Get<byte>("emotionType") == (byte)EmotionType.START_FLYTELEPORT && packet.Get<int>("teleportId") == route.TeleportId);
+		await session.ExecuteMovementAsync(NaturalAirlineRoutes.Plan(route), token);
+		await session.SendPacketAsync(GameClientPackets.Emotion((byte)EmotionType.LAND_FLYTELEPORT), token);
+		await session.SynchronizeAsync(token);
+		float landed = NaturalServicePolicy.Distance(session.CurrentPosition, route.Landing);
+		NaturalServiceOutcome result = landed < 8 && before - World.Kinah == fare
+			? new("done", $"Flew {route.Route} for {fare} Kinah.")
+			: new("refused", $"Flight not observed (landed {landed:F1} m from {route.Landing}, Kinah {before} -> {World.Kinah}, fare {fare}).");
+		Trace("service-flight-result", result, new() { ["kinahBefore"] = before, ["kinahAfter"] = World.Kinah });
+		return result;
+	}
+
+	/// <summary>Sell, then buy what the observed trade window offers, verifying the observed stock of each purchase.</summary>	/// <summary>Sell, then buy what the observed trade window offers, verifying the observed stock of each purchase.</summary>
 	/// <param name="tabItems">Static goods-list contents by tab id.</param>
 	/// <param name="basePrice">Static template price by item id; the vendor's modifiers are applied from SM_PRICES.</param>
 	public async Task<NaturalVendorResult> TradeAsync(int vendorObjectId, IReadOnlyList<NaturalSale> sales,
