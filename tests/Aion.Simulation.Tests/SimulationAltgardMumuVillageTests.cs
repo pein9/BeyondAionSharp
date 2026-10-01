@@ -3,6 +3,7 @@ using Aion.Bots.Scenarios;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
+using Aion.GameServer.Model.Templates.Spawns;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services;
 
@@ -62,9 +63,23 @@ public sealed partial class SimulationFastScenarioTests
 			session.AcceptTeleportPosition();
 			await session.SynchronizeAsync(token);
 		}
-		Aion.GameServer.Model.GameObjects.Npc Nearest(int[] kinds) => instance.GetNpcs()
+		IEnumerable<Aion.GameServer.Model.GameObjects.Npc> Candidates(int[] kinds) => instance.GetNpcs()
 			.Where(npc => kinds.Contains(npc.GetNpcId()) && !npc.IsDead() && !unusable.Contains(npc.GetObjectId()))
-			.OrderBy(npc => MathF.Pow(npc.GetX() - session.CurrentPosition.X, 2) + MathF.Pow(npc.GetY() - session.CurrentPosition.Y, 2)).First();
+			.OrderBy(npc => MathF.Pow(npc.GetX() - session.CurrentPosition.X, 2) + MathF.Pow(npc.GetY() - session.CurrentPosition.Y, 2));
+		// The shared Fast world keeps what earlier probes despawned (AB-06 clears Sumarhon's camp), and a despawned monster
+		// never returns: spawn a fresh one at the nearest shipped spot of its kind (GM setup on the probe world).
+		Aion.GameServer.Model.GameObjects.Npc RespawnShipped(int[] kinds)
+		{
+			SpawnGroup group = fixture.DataManager.StaticData.SpawnsDh.GetSpawnsByWorldId(instance.GetMapId())
+				.First(candidate => kinds.Contains(candidate.GetNpcId()));
+			var spot = group.GetSpawnTemplates().OrderBy(template =>
+				MathF.Pow(template.GetX() - session.CurrentPosition.X, 2) + MathF.Pow(template.GetY() - session.CurrentPosition.Y, 2)).First();
+			var spawned = Aion.GameServer.SpawnEngine.SpawnEngine.SpawnObject(new SpawnTemplate(new SpawnGroup(instance.GetMapId(),
+				group.GetNpcId(), 0, null), spot.GetX(), spot.GetY(), spot.GetZ(), spot.GetHeading(), 0, null, 0), instance.GetInstanceId());
+			Assert.True(spawned is Aion.GameServer.Model.GameObjects.Npc, $"No {group.GetNpcId()} could be spawned.");
+			return (Aion.GameServer.Model.GameObjects.Npc)spawned!;
+		}
+		Aion.GameServer.Model.GameObjects.Npc Nearest(int[] kinds) => Candidates(kinds).FirstOrDefault() ?? RespawnShipped(kinds);
 		// Aggressive neighbours are cleared, except Manumumu: he is unique (one spawn, 1,800 s respawn) and stands in the village.
 		void ClearAround(Aion.GameServer.Model.GameObjects.Npc target)
 		{

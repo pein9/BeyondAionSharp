@@ -3,6 +3,7 @@ using Aion.Bots.Scenarios;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
+using Aion.GameServer.Model.Templates.Spawns;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services;
 
@@ -51,12 +52,14 @@ public sealed partial class SimulationFastScenarioTests
 		long ItemCount(int itemId) => session.Api.World.Inventory.Values.Where(owned => owned.ItemId == itemId).Sum(owned => owned.Count);
 		(byte Status, int Var)? State(int id) => NaturalAltgardQuestSteps.State(session.Api.World, id);
 		var unusable = new HashSet<int>();
+		int respawns = 0;
 		var log = new List<string>();
 
-		async Task TeleportNearAsync(BotPosition at, float[] radii, bool sighted = false)
+		async Task TeleportNearAsync(BotPosition at, float[] radii, bool sighted = false, int skip = 0)
 		{
 			BotPosition ground = geometry.GroundAround(altgard, at, radii)
-				.First(point => !sighted || geometry.HasLineOfSight(altgard, point with { Z = point.Z + 1.6f }, at with { Z = at.Z + 1 }));
+				.Where(point => !sighted || geometry.HasLineOfSight(altgard, point with { Z = point.Z + 1.6f }, at with { Z = at.Z + 1 }))
+				.Skip(skip).First();
 			await TeleportForSetupAsync(session, Server(), altgard, ground.X, ground.Y, ground.Z, token);
 			session.AcceptTeleportPosition();
 			await session.SynchronizeAsync(token);
@@ -65,33 +68,68 @@ public sealed partial class SimulationFastScenarioTests
 		int[] Kinds(int quest) => plans[quest].Steps.Where(step => step.Kind is "kill" or "collect").SelectMany(step =>
 			step.Sources.Select(source => source.NpcId ?? 0).Concat(step.Npcs.Select(npc => npc.Id)))
 			.Where(id => id > 0).Distinct().ToArray();
+		IEnumerable<Aion.GameServer.Model.GameObjects.Npc> Candidates(int[] kinds) => instance.GetNpcs()
+			.Where(npc => kinds.Contains(npc.GetNpcId()) && !npc.IsDead() && !unusable.Contains(npc.GetObjectId()))
+			.OrderBy(npc => MathF.Pow(npc.GetX() - session.CurrentPosition.X, 2) + MathF.Pow(npc.GetY() - session.CurrentPosition.Y, 2));
+		// The shared Fast world keeps what earlier probes despawned (AB-06 clears Sumarhon's camp), and a despawned monster
+		// never returns: spawn a fresh one at the nearest shipped spot of its kind (GM setup on the probe world).
+		Aion.GameServer.Model.GameObjects.Npc RespawnShipped(int[] kinds)
+		{
+			SpawnGroup group = fixture.DataManager.StaticData.SpawnsDh.GetSpawnsByWorldId(instance.GetMapId())
+				.First(candidate => kinds.Contains(candidate.GetNpcId()));
+			var spot = group.GetSpawnTemplates().OrderBy(template =>
+				MathF.Pow(template.GetX() - session.CurrentPosition.X, 2) + MathF.Pow(template.GetY() - session.CurrentPosition.Y, 2))
+				.Skip(respawns++ % group.GetSpawnTemplates().Count).First();
+			var spawned = Aion.GameServer.SpawnEngine.SpawnEngine.SpawnObject(new SpawnTemplate(new SpawnGroup(instance.GetMapId(),
+				group.GetNpcId(), 0, null), spot.GetX(), spot.GetY(), spot.GetZ(), spot.GetHeading(), 0, null, 0), instance.GetInstanceId());
+			Assert.True(spawned is Aion.GameServer.Model.GameObjects.Npc, $"No {group.GetNpcId()} could be spawned.");
+			return (Aion.GameServer.Model.GameObjects.Npc)spawned!;
+		}
 		// One monster of the given kinds at 1 HP, shot down with Smite from a sighted stand-off; a kill counts only when the server
 		// has it dead. Then its corpse is looted for the item, when one is wanted.
 		async Task KillAndLootAsync(int[] kinds, int quest, int? item)
 		{
+			var reasons = new List<string>();
 			for (int tries = 0; tries < 16; tries++)
 			{
-				var next = instance.GetNpcs()
-					.Where(npc => kinds.Contains(npc.GetNpcId()) && !npc.IsDead() && !unusable.Contains(npc.GetObjectId()))
-					.OrderBy(npc => MathF.Pow(npc.GetX() - session.CurrentPosition.X, 2) + MathF.Pow(npc.GetY() - session.CurrentPosition.Y, 2)).First();
+				var next = Candidates(kinds).FirstOrDefault() ?? RespawnShipped(kinds);
 				unusable.Add(next.GetObjectId());
 				var at = new BotPosition(next.GetX(), next.GetY(), next.GetZ(), 0);
 				if (!geometry.GroundAround(altgard, at, [12f, 14f, 10f, 16f])
 					.Any(point => geometry.HasLineOfSight(altgard, point with { Z = point.Z + 1.6f }, at with { Z = at.Z + 1 })))
+				{
+					reasons.Add($"{next.GetObjectId()}: no sighted ground");
 					continue;
+				}
 				// Aggressive neighbours are cleared, but not the kinds being hunted: a dense camp would otherwise be emptied of them.
 				foreach (var npc in instance.GetNpcs().Where(npc => !kinds.Contains(npc.GetNpcId()) && !npc.IsDead() &&
 					NaturalHostility.IsAggressive(npc.GetObjectTemplate(), fixture.DataManager.StaticData.TribeRelations, TribeClass.PC_DARK) &&
 					MathF.Pow(npc.GetX() - next.GetX(), 2) + MathF.Pow(npc.GetY() - next.GetY(), 2) <= 25 * 25).ToArray())
 					fixture.World.Despawn(npc);
-				await TeleportNearAsync(at, [12f, 14f, 10f, 16f], sighted: true);
-				next.GetLifeStats().SetCurrentHp(1);
-				await session.SynchronizeAsync(token);
-				if (!session.Api.World.Objects.ContainsKey(next.GetObjectId())) continue;
-				await NaturalAirCombat.ShootDownAsync(session, next.GetObjectId(), quest,
-					(origin, skill, skillLevel, aim) => runtime.CreateSpellCast(session.Api.World, origin, skill, skillLevel, aim), token, maximumCasts: 6);
-				await session.SynchronizeAsync(token);
-				if (!next.IsDead()) continue;
+				// A spot the bot's geometry calls sighted can still be refused by the server (STR_SKILL_OBSTACLE): try up to three.
+				for (int spot = 0; spot < 3 && !next.IsDead(); spot++)
+				{
+					await TeleportNearAsync(at, [12f, 14f, 10f, 16f], sighted: true, skip: spot);
+					next.GetLifeStats().SetCurrentHp(1);
+					await session.SynchronizeAsync(token);
+					if (!session.Api.World.Objects.ContainsKey(next.GetObjectId())) break;
+					await NaturalAirCombat.ShootDownAsync(session, next.GetObjectId(), quest,
+						(origin, skill, skillLevel, aim) => runtime.CreateSpellCast(session.Api.World, origin, skill, skillLevel, aim), token, maximumCasts: 6);
+					await session.SynchronizeAsync(token);
+				}
+				if (!session.Api.World.Objects.ContainsKey(next.GetObjectId()) && !next.IsDead())
+				{
+					reasons.Add($"{next.GetObjectId()}: not in the client's view");
+					continue;
+				}
+				if (!next.IsDead())
+				{
+					reasons.Add($"{next.GetObjectId()}: alive at {next.GetLifeStats().GetCurrentHp()} HP, probe HP {Server().GetLifeStats().GetCurrentHp()}" +
+						$"{(Server().IsDead() ? " (dead)" : "")}, last messages " + string.Join("/", session.PacketHistory.TakeLast(40)
+						.Where(packet => packet.PacketType == typeof(Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE))
+						.Select(packet => packet.Get<object>("name")).TakeLast(3)));
+					continue;
+				}
 				if (item is int wanted)
 				{
 					await TeleportNearAsync(new BotPosition(next.GetX(), next.GetY(), next.GetZ(), 0), [2f, 3f, 4f]);
@@ -101,7 +139,7 @@ public sealed partial class SimulationFastScenarioTests
 				else log.Add($"{next.GetNpcId()} killed");
 				return;
 			}
-			throw new InvalidDataException($"No {string.Join("/", kinds)} could be shot down.");
+			throw new InvalidDataException($"No {string.Join("/", kinds)} could be shot down: {string.Join("; ", reasons)}");
 		}
 		async Task<int> NpcObjectAsync(int npcId)
 		{
