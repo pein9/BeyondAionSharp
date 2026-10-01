@@ -116,6 +116,12 @@ order is a plan, not a script: at run time the decision engine chooses from the 
 view, as in Ishalgen. Levels are the shipped `minlevel_permitted`. "After" means another
 quest must be finished first.
 
+**The D32 quests (2026-10-01).** D32 (`docs/retail-quest-completion.md`, RQ-05) added six Altgard quests that 4.8 retail ran and Java lacks. They are marked **D32** in the stops below:
+- Q24110 (Stop 1) and Q24111 (Stops 2–3) belonged to legs that were already done. They were added to Leg 1 and Leg 3, and Legs 1–4 were replayed from the `altgard` snapshot (the catch-up).
+- Q24232 and Q24233 are in Leg 5.
+- Q24115 (Stop 8) and Q24113 (Stop 10) wait for their legs.
+- Q24114 still needs the maintainer's approval (RQ-05).
+
 ### Stop 1: Altgard Fortress, the main town (arrive at level 10)
 
 | Quest | Name | Level | Starter | After | Objective | XP |
@@ -131,6 +137,7 @@ quest must be finished first.
 | 2208 | Mau in Ten Minutes a Day | 11 | Itu | 2207 | use the Mau Secret Remedy, talk to Mumu Bon | 16,283 |
 | 2210 | Retrieving the Report | 12 | Rion | | deliver to Loriniah (Moslan Crossroad) | 16,283 |
 | 24011 | Funny Floating Fungus (campaign) | 11 | auto | 24010 | kill Abyss Fungus | 31,309 |
+| 24110 | Control Altgard, Delete Revolutions (**D32**) | 12 | Meiyer | | kill 4 secret agents and goons (L9–10), west of the fortress | 16,283 |
 
 ### Stop 2: Moslan Crossroad (level 11–12)
 
@@ -153,6 +160,7 @@ quest must be finished first.
 | 2221 | Manir's Uncle | 12 | Manir | | Groken, Groken's Safe | 8,910 |
 | 2290 | Groken's Escape | 12 | Groken | 2221 | **escort** Groken to his boat, back to Manir | 21,300 |
 | 2222 | Manir's Message | 12 | Manir | 2290 | talk: Manir → Karl → Nokir | 13,080 |
+| 24111 | What's Up, Dock? (**D32**) | 10 | Olenja (Moslan Crossroad) | | the Lepharist Primer from the suspicious document at Manir's Dock; to Nokir (Basfelt) | 2,691 |
 
 ### Stop 4: Basfelt Village (level 12–14)
 
@@ -193,6 +201,8 @@ quest must be finished first.
 | 2238 | A Matter of Pride | 14 | Brodir | 24112 | collect 5 MuMu Belts (L15–16) | 16,495 |
 | 2292 | Making a New Start | 14 | Anmurnerk | 24112 | collect the Passion, Jealousy and Love Rings (MuMu L16) | 16,495 |
 | 24013 | Poison In the Waters (campaign) | 14 | auto | 24012 | Nokir, Shania; use the Hunter's Poison | 55,537 |
+| 24232 | Little Help from a Daeva (**D32**) | 14 | Anmurnerk | 24112 | kill 9 MuMu looklooks or lookouts | 17,552 |
+| 24233 | Adieu to You, Manumumu (**D32**) | 14 | Brodir | 24112 | kill Chieftain Manumumu (L17); to Suthran (fortress) | 16,495 |
 
 ### Stop 7: Gerger Village (level 14–17)
 
@@ -213,6 +223,7 @@ quest must be finished first.
 | 2251 | Securing the Trade Route | 14 | Babarunerk | | collect 5 Pecku Tail Feathers (L18) | 22,350 |
 | 2262 | A Sneaky Delivery | 14 | Japayerk | | deliver to Mabrunerk (East Gate) | 45,750 |
 | 2252 | Chasing the Legend | 14 | Sinood | | the Bone of Minushan spawns Minushan's Spirit or Drakie (L17–18); kill it | 45,255 |
+| 24115 | A Shugo Apropos (**D32**) | 13 | Neparinerk | | kill 3 crimsontail amphas (L17–18); to Banatisai (Heart of Impetusium, Stop 12) | 16,066 |
 
 ### Stop 9: Altgard East Gate (level 14–17)
 
@@ -234,6 +245,7 @@ quest must be finished first.
 | 2269 | Neifenmer's Reasoning | 15 | Neifenmer | | collect the Lepharists' Operation Order | 11,265 |
 | 2270 | Creating a Delay | 15 | Neifenmer | 2269 | collect 3 Lepharist Insignia (watch L17–18) | 25,800 |
 | 2271 | Aurtri's Letter | 15 | Neifenmer | 2270 | talk: Aurtri → Suthran | 23,100 |
+| 24113 | Sword to Secrecy (**D32**) | 12 | Aurtri | 24112 | Tiamat's Sword from Commander Gattban (L18) | 16,066 |
 
 ### Stop 11: back to Altgard Fortress, and to Pandaemonium (level 15–20)
 
