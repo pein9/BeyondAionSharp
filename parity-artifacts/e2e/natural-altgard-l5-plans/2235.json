@@ -1,0 +1,310 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2235,
+    "name": "Clearing the Path",
+    "nameId": 1103335,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 13,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2231
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2235,
+        "start_npc_ids": 203610
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203610,
+        "name": "kaibech",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1201.16,
+            "y": 984.619,
+            "z": 254.0,
+            "heading": 5,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203610,
+      "name": "kaibech",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1201.16,
+          "y": 984.619,
+          "z": 254.0,
+          "heading": 5,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203610,
+      "name": "kaibech",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1201.16,
+          "y": 984.619,
+          "z": 254.0,
+          "heading": 5,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 3,
+      "npc_ids": 210441,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210441,
+          "name": "bigfoot mosbear",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1206.26,
+              "y": 931.232,
+              "z": 261.482,
+              "heading": 69,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1223.25,
+              "y": 912.698,
+              "z": 259.803,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1228.59,
+              "y": 946.413,
+              "z": 257.212,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1234.54,
+              "y": 975.958,
+              "z": 252.602,
+              "heading": 62,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1237.35,
+              "y": 1003.66,
+              "z": 247.586,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1239.39,
+              "y": 911.281,
+              "z": 256.598,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1254.98,
+              "y": 978.584,
+              "z": 251.188,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1277.68,
+              "y": 1003.99,
+              "z": 248.17,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1290.36,
+              "y": 1019.31,
+              "z": 254.139,
+              "heading": 52,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1302.3,
+              "y": 946.236,
+              "z": 249.36,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1309.74,
+              "y": 921.96,
+              "z": 251.331,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1311.71,
+              "y": 897.678,
+              "z": 253.004,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1312.09,
+              "y": 992.349,
+              "z": 252.44,
+              "heading": 51,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1320.53,
+              "y": 997.848,
+              "z": 253.073,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1348.79,
+              "y": 893.092,
+              "z": 251.117,
+              "heading": 108,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203610,
+          "name": "kaibech",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1201.16,
+              "y": 984.619,
+              "z": 254.0,
+              "heading": 5,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 7920,
+        "gold": 7600,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2235,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 13,
+      "name": "Clearing the Path",
+      "nameId": 1103335,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 7920,
+          "gold": 7600
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 3,
+          "npc_ids": 210441,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2231
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

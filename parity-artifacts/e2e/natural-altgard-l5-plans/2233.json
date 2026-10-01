@@ -1,0 +1,305 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2233,
+    "name": "Mantigar's Request",
+    "nameId": 1103333,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 13,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2233,
+        "start_npc_ids": 203611
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203611,
+        "name": "mantigar",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1200.63,
+            "y": 980.802,
+            "z": 255.0,
+            "heading": 111,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203611,
+      "name": "mantigar",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1200.63,
+          "y": 980.802,
+          "z": 255.0,
+          "heading": 111,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203611,
+      "name": "mantigar",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1200.63,
+          "y": 980.802,
+          "z": 255.0,
+          "heading": 111,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 3,
+      "npc_ids": "210587 210597",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210587,
+          "name": "crested pluma",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1266.29,
+              "y": 826.72,
+              "z": 255.303,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1267.59,
+              "y": 834.911,
+              "z": 254.307,
+              "heading": 113,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1325.83,
+              "y": 923.767,
+              "z": 251.304,
+              "heading": 119,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1333.75,
+              "y": 919.204,
+              "z": 252.675,
+              "heading": 89,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1360.87,
+              "y": 902.587,
+              "z": 253.056,
+              "heading": 107,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1368.74,
+              "y": 914.272,
+              "z": 255.129,
+              "heading": 118,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210597,
+          "name": "crested pluma",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1183.7,
+              "y": 969.194,
+              "z": 261.343,
+              "heading": 66,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1194.94,
+              "y": 962.139,
+              "z": 260.999,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1223.56,
+              "y": 926.132,
+              "z": 259.547,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1226.02,
+              "y": 941.769,
+              "z": 258.901,
+              "heading": 92,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1279.03,
+              "y": 876.919,
+              "z": 248.747,
+              "heading": 19,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1281.49,
+              "y": 892.556,
+              "z": 250.472,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1288.2,
+              "y": 803.934,
+              "z": 254.396,
+              "heading": 1,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1290.44,
+              "y": 797.165,
+              "z": 254.708,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1306.12,
+              "y": 1014.83,
+              "z": 253.775,
+              "heading": 41,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1306.36,
+              "y": 1006.49,
+              "z": 252.37,
+              "heading": 93,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203611,
+          "name": "mantigar",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1200.63,
+              "y": 980.802,
+              "z": 255.0,
+              "heading": 111,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 8010,
+        "gold": 3830,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2233,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 13,
+      "name": "Mantigar's Request",
+      "nameId": 1103333,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 8010,
+          "gold": 3830
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 3,
+          "npc_ids": "210587 210597",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

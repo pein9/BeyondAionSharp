@@ -1,0 +1,337 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "altgard-l5-kaibech-idun-mumu",
+  "start": {
+    "contract": "natural-altgard-l4-contract.json",
+    "snapshot": "altgard-l4",
+    "mapId": 220030000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 19,
+    "bindNpcId": 700066,
+    "completedQuestIds": [2008, 2009, 2904, 24010, 2201, 2202, 2203, 2204, 2205, 2206, 2207, 2208, 2209, 24011, 24110, 2210, 2211, 2212, 2213, 2214, 2215, 2218, 2219, 2220, 24012, 2221, 2290, 2222, 24111, 2226, 2227, 2291, 2225, 2224, 24013, 2288, 2230, 2289, 2232, 2239, 2231, 2223, 24112],
+    "lockedQuestIds": [24014, 24015, 24016],
+    "startedQuestIds": []
+  },
+  "hub": {
+    "key": "basfelt",
+    "mapId": 220030000,
+    "anchor": [1779.88, 690.477, 264.309],
+    "radius": 60
+  },
+  "town": {
+    "key": "basfelt",
+    "mapId": 220030000,
+    "anchor": [1779.88, 690.477, 264.309],
+    "radius": 120
+  },
+  "bind": {
+    "npcId": 700066,
+    "position": [1800.357, 711.373, 262.399],
+    "onArrival": true,
+    "price": 632,
+    "acceptRange": 5
+  },
+  "areas": [
+    {
+      "key": "basfelt",
+      "note": "Basfelt Village: Nokir, Gefion and the obelisk, the hub and bind (AK-Q1)",
+      "min": [1760, 670, 245],
+      "max": [1849, 732, 279]
+    },
+    {
+      "key": "idun-brodir",
+      "note": "Brodir and Anmurnerk at Idun's Lake (Stop 6): every Stop 6 quest's giver",
+      "min": [1492, 507, 268],
+      "max": [1535, 548, 298]
+    },
+    {
+      "key": "sumarhon-sentries",
+      "note": "grave robbing sentries (210504, L14) around Comrade Sumarhon's camp: Q24230",
+      "min": [1278, 429, 270],
+      "max": [1512, 558, 350]
+    },
+    {
+      "key": "fencers",
+      "note": "grave robbing fencers (210506, L14) within 450 m of Basfelt: Q24231's Amalgam Swords",
+      "min": [1373, 430, 271],
+      "max": [1505, 552, 337]
+    },
+    {
+      "key": "mumu-village",
+      "note": "MuMu Village: looklooks and lookouts (Q24232, Q2238), herb gatherers and workers (Q2236), the fertilizer sacks (Q2237), the six hourly ring carriers (Q2292) and Chieftain Manumumu (Q24233); only spots within 700 m of Basfelt",
+      "min": [1288, 105, 264],
+      "max": [1658, 430, 330]
+    },
+    {
+      "key": "kaibech-grounds",
+      "note": "Kaibech's Campsite and Gribade Canyon: Kaibech, Mantigar, crested plumas, nimble arachnas, bigfoot mosbears",
+      "min": [1146, 782, 233],
+      "max": [1397, 1051, 295]
+    },
+    {
+      "key": "vovetirn-outlaws",
+      "note": "Vovetirn and the sprigg outlaws (210484/210485): Q2241's Glowing Mushrooms",
+      "min": [1877, 404, 234],
+      "max": [2394, 695, 351]
+    },
+    {
+      "key": "gerger",
+      "note": "Gemyu at Gerger Village (Stop 7): Q2242's end, held (AK-Q2)",
+      "min": [2345, 901, 311],
+      "max": [2375, 931, 341]
+    },
+    {
+      "key": "fortress-suthran",
+      "note": "Suthran in Altgard Fortress (Stop 11): Q24233's end, held (AK-Q2)",
+      "min": [1648, 1734, 245],
+      "max": [1678, 1764, 275]
+    }
+  ],
+  "quests": [
+    {
+      "id": 24230,
+      "category": "IMPORTANT",
+      "minimumLevel": 14,
+      "rewardExperience": 17552,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 832821,
+      "area": "sumarhon-sentries"
+    },
+    {
+      "id": 24231,
+      "category": "IMPORTANT",
+      "minimumLevel": 14,
+      "rewardExperience": 17552,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 832821,
+      "area": "fencers"
+    },
+    {
+      "id": 24232,
+      "category": "IMPORTANT",
+      "minimumLevel": 14,
+      "rewardExperience": 17552,
+      "prerequisite": 24112,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 832822,
+      "area": "mumu-village"
+    },
+    {
+      "id": 2238,
+      "category": "IMPORTANT",
+      "minimumLevel": 14,
+      "rewardExperience": 16495,
+      "prerequisite": 24112,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 832821,
+      "area": "mumu-village"
+    },
+    {
+      "id": 2236,
+      "category": "IMPORTANT",
+      "minimumLevel": 14,
+      "rewardExperience": 16495,
+      "prerequisite": 24112,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 832822,
+      "area": "mumu-village"
+    },
+    {
+      "id": 2237,
+      "category": "IMPORTANT",
+      "minimumLevel": 14,
+      "rewardExperience": 16495,
+      "prerequisite": 24112,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 832822,
+      "area": "mumu-village"
+    },
+    {
+      "id": 2292,
+      "category": "IMPORTANT",
+      "minimumLevel": 14,
+      "rewardExperience": 16495,
+      "prerequisite": 24112,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 832822,
+      "area": "mumu-village"
+    },
+    {
+      "id": 24233,
+      "category": "IMPORTANT",
+      "minimumLevel": 14,
+      "rewardExperience": 16495,
+      "prerequisite": 24112,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 832821,
+      "area": "mumu-village"
+    },
+    {
+      "id": 2233,
+      "category": "QUEST",
+      "minimumLevel": 13,
+      "rewardExperience": 8010,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 203611,
+      "area": "kaibech-grounds"
+    },
+    {
+      "id": 2234,
+      "category": "QUEST",
+      "minimumLevel": 13,
+      "rewardExperience": 11850,
+      "prerequisite": 2233,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 203611,
+      "area": "kaibech-grounds"
+    },
+    {
+      "id": 2235,
+      "category": "QUEST",
+      "minimumLevel": 13,
+      "rewardExperience": 7920,
+      "prerequisite": 2231,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 203610,
+      "area": "kaibech-grounds"
+    },
+    {
+      "id": 2241,
+      "category": "QUEST",
+      "minimumLevel": 13,
+      "rewardExperience": 19350,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 203630,
+      "area": "vovetirn-outlaws"
+    },
+    {
+      "id": 2242,
+      "category": "QUEST",
+      "minimumLevel": 13,
+      "rewardExperience": 16350,
+      "prerequisite": 2241,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 203630,
+      "area": "gerger"
+    }
+  ],
+  "order": [24230, 24231, 24232, 2238, 2236, 2237, 2292, 24233, 2233, 2234, 2235, 2241, 2242],
+  "steps": [],
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "rewardChoices": [
+    {
+      "questId": 2292,
+      "action": "SELECTED_QUEST_REWARD2",
+      "itemId": 120001521,
+      "itemGroup": "EARRING"
+    }
+  ],
+  "timedSpawns": [
+    {
+      "questId": 2292,
+      "itemId": 122000039,
+      "npcId": 210599,
+      "spawnHour": 5,
+      "despawnHour": 22,
+      "position": [1495.923, 271.997, 288.88],
+      "respawnSeconds": 295,
+      "area": "mumu-village"
+    },
+    {
+      "questId": 2292,
+      "itemId": 122000040,
+      "npcId": 210620,
+      "spawnHour": 22,
+      "despawnHour": 5,
+      "position": [1531.368, 233.24, 285.577],
+      "respawnSeconds": 295,
+      "area": "mumu-village"
+    },
+    {
+      "questId": 2292,
+      "itemId": 122000041,
+      "npcId": 210621,
+      "spawnHour": 22,
+      "despawnHour": 5,
+      "position": [1642.57, 269.93, 294.428],
+      "respawnSeconds": 295,
+      "area": "mumu-village"
+    },
+    {
+      "questId": 2292,
+      "itemId": 122000039,
+      "npcId": 210622,
+      "spawnHour": 4,
+      "despawnHour": 21,
+      "position": [1373.66, 375.893, 306.125],
+      "respawnSeconds": 295,
+      "area": "mumu-village"
+    },
+    {
+      "questId": 2292,
+      "itemId": 122000040,
+      "npcId": 210623,
+      "spawnHour": 5,
+      "despawnHour": 22,
+      "position": [1360.753, 154.597, 314.572],
+      "respawnSeconds": 295,
+      "area": "mumu-village"
+    },
+    {
+      "questId": 2292,
+      "itemId": 122000041,
+      "npcId": 210624,
+      "spawnHour": 22,
+      "despawnHour": 5,
+      "position": [1467.499, 203.5875, 293.4128],
+      "respawnSeconds": 295,
+      "area": "mumu-village"
+    }
+  ],
+  "held": [
+    {
+      "questId": 2242,
+      "endNpcId": 203643,
+      "hub": "gerger"
+    },
+    {
+      "questId": 24233,
+      "endNpcId": 203557,
+      "hub": "fortress"
+    }
+  ],
+  "unhandedWorkItemIds": {},
+  "flight": null,
+  "excluded": [],
+  "endpoint": {
+    "mapId": 220030000,
+    "completedQuestIds": [24230, 24231, 24232, 2238, 2236, 2237, 2292, 2233, 2234, 2235, 2241],
+    "inHub": true,
+    "alive": true,
+    "minimumLevel": 19,
+    "snapshot": "altgard-l5",
+    "bindNpcId": 700066,
+    "heldQuestIds": [2242, 24233]
+  }
+}

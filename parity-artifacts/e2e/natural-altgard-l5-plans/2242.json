@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2242,
+    "name": "A Nice Gesture",
+    "nameId": 1103342,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 13,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2241
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 203643,
+        "id": 2242,
+        "start_npc_ids": 203630
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203630,
+        "name": "vovetirn",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1989.95,
+            "y": 640.053,
+            "z": 269.0,
+            "heading": 78,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203630,
+      "name": "vovetirn",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1989.95,
+          "y": 640.053,
+          "z": 269.0,
+          "heading": 78,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203643,
+      "name": "gemyu",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2359.64,
+          "y": 916.004,
+          "z": 326.0,
+          "heading": 80,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203643,
+          "name": "gemyu",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2359.64,
+              "y": 916.004,
+              "z": 326.0,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 16350,
+        "gold": 5120,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000006
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2242,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 13,
+      "name": "A Nice Gesture",
+      "nameId": 1103342,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 16350,
+          "gold": 5120
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000006
+            }
+          }
+        ]
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2241
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182203258
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

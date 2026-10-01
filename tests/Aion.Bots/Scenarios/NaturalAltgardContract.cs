@@ -41,7 +41,9 @@ public sealed record NaturalAltgardContract(
 	NaturalAltgardTimer[]? Timers = null,
 	NaturalAltgardSpawn[]? Spawns = null,
 	NaturalAltgardAvoid[]? Avoid = null,
-	NaturalAltgardRewardChoice[]? RewardChoices = null)
+	NaturalAltgardRewardChoice[]? RewardChoices = null,
+	NaturalAltgardTimedSpawn[]? TimedSpawns = null,
+	NaturalAltgardHeld[]? Held = null)
 {
 	/// <summary>The contract file and plan directory of each leg (none when the leg has no template quests).</summary>
 	public static readonly IReadOnlyDictionary<string, (string Contract, string? Plans)> Legs = new Dictionary<string, (string, string?)>
@@ -50,6 +52,7 @@ public sealed record NaturalAltgardContract(
 		["l2"] = ("natural-altgard-l2-contract.json", "natural-altgard-l2-plans"),
 		["l3"] = ("natural-altgard-l3-contract.json", "natural-altgard-l3-plans"),
 		["l4"] = ("natural-altgard-l4-contract.json", "natural-altgard-l4-plans"),
+		["l5"] = ("natural-altgard-l5-contract.json", "natural-altgard-l5-plans"),
 	};
 
 	public NaturalAltgardObjectUse[] ObjectUseList => ObjectUses ?? [];
@@ -61,6 +64,8 @@ public sealed record NaturalAltgardContract(
 	public NaturalAltgardTimer[] TimerList => Timers ?? [];
 	public NaturalAltgardSpawn[] SpawnList => Spawns ?? [];
 	public NaturalAltgardAvoid[] AvoidList => Avoid ?? [];
+	public NaturalAltgardTimedSpawn[] TimedSpawnList => TimedSpawns ?? [];
+	public NaturalAltgardHeld[] HeldList => Held ?? [];
 	/// <summary>Every chosen reward of the leg: the campaign's (<see cref="RewardChoice"/>) and the others'.</summary>
 	public NaturalAltgardRewardChoice[] RewardChoiceList => [.. RewardChoice is { } choice ? [choice] : Array.Empty<NaturalAltgardRewardChoice>(), .. RewardChoices ?? []];
 
@@ -79,7 +84,9 @@ public sealed record NaturalAltgardContract(
 			?? throw new InvalidDataException("Empty Natural Altgard contract.");
 		if (contract.SchemaVersion != 1)
 			throw new InvalidDataException("Unsupported Natural Altgard contract schema.");
-		if (contract.Steps.Length == 0 || contract.Steps.Select(step => step.Key).Distinct().Count() != contract.Steps.Length)
+		// A leg of template quests only (Leg 5) has no scripted steps.
+		if (contract.Steps.Length == 0 && contract.Quests.Any(quest => !quest.IsTemplate) ||
+			contract.Steps.Select(step => step.Key).Distinct().Count() != contract.Steps.Length)
 			throw new InvalidDataException("Natural Altgard steps are missing or have duplicate keys.");
 		int[] questIds = contract.Quests.Select(quest => quest.Id).ToArray();
 		if (questIds.Distinct().Count() != questIds.Length || !contract.Order.Order().SequenceEqual(questIds.Order()))
@@ -125,6 +132,12 @@ public sealed record NaturalAltgardContract(
 			contract.AvoidList.Any(avoid => !questIds.Contains(avoid.QuestId) || !areas.Contains(avoid.Area)) ||
 			contract.RewardChoiceList.Any(choice => !questIds.Contains(choice.QuestId)))
 			throw new InvalidDataException("Natural Altgard hunts, timers, spawns, avoidances or reward choices disagree with the quests, steps or areas.");
+		// AK-01: Leg 5's carriers by the hour, and the hand-ins held for later hubs.
+		if (contract.TimedSpawnList.Any(spawn => !questIds.Contains(spawn.QuestId) || !areas.Contains(spawn.Area) || spawn.Position.Length != 3 ||
+				spawn.SpawnHour is < 0 or > 23 || spawn.DespawnHour is < 0 or > 23 || spawn.SpawnHour == spawn.DespawnHour) ||
+			contract.HeldList.Any(held => !questIds.Contains(held.QuestId)) ||
+			contract.HeldList.Any(held => !(contract.Endpoint.HeldQuestIds ?? []).Contains(held.QuestId)))
+			throw new InvalidDataException("Natural Altgard timed spawns or held hand-ins disagree with the quests, areas or endpoint.");
 		foreach (string action in contract.TimerList.Select(timer => timer.NewChanceAction).OfType<string>())
 			NaturalAscensionContract.DialogActionId(action);
 		return contract;
@@ -158,6 +171,7 @@ public sealed record NaturalAltgardContract(
 			.Concat(EscortList.SelectMany(escort => new[] { escort.FollowerNpcId, escort.GoalNpcId }))
 			.Concat(HuntList.SelectMany(hunt => hunt.NpcIds))
 			.Concat(SpawnList.Select(spawn => spawn.TriggerNpcId))
+			.Concat(TimedSpawnList.Select(spawn => spawn.NpcId))
 			.Concat(Bind is { } bind ? [bind.NpcId] : [])
 			.Concat(CollectionList.SelectMany(collection => collection.Items.SelectMany(item => item.SourceNpcIds)))
 			.Append(Start.BindNpcId).Concat(AirKills is { } air ? [air.NpcId] : [])
@@ -233,8 +247,9 @@ public sealed record NaturalAltgardExclusion(int Id, string Reason, int Leg);
 
 /// <param name="Anchor">Where the leg ends when that is not its hub (Leg 2: Manir's Campsite), within <paramref name="Radius"/>.</param>
 /// <param name="BindNpcId">AB-01: the obelisk the character must be bound at when the leg ends (the standing bind policy).</param>
+/// <param name="HeldQuestIds">AK-01: quests whose work is done but whose hand-in waits for a later leg's hub (AK-Q2).</param>
 public sealed record NaturalAltgardEndpoint(int MapId, int[] CompletedQuestIds, bool InHub, bool Alive, int MinimumLevel, string Snapshot,
-	float[]? Anchor = null, float Radius = 0, int? BindNpcId = null);
+	float[]? Anchor = null, float Radius = 0, int? BindNpcId = null, int[]? HeldQuestIds = null);
 
 /// <summary>AB-01, the standing bind policy (AB-Q5): bind at the obelisk of the hub the leg works out of, on arrival.</summary>
 public sealed record NaturalAltgardBind(int NpcId, float[] Position, bool OnArrival, int Price, float AcceptRange);
@@ -255,6 +270,19 @@ public sealed record NaturalAltgardTimer(int QuestId, int Seconds, string StartS
 /// <paramref name="TriggerRespawnSeconds"/>; <paramref name="RefillNpcId"/> gives a new item (page <paramref name="RefillPage"/>).</summary>
 public sealed record NaturalAltgardSpawn(string Key, int QuestId, int AtVar, int TriggerNpcId, int RequiresItemId, int MovieId, int NpcId,
 	float[] Position, int LifetimeSeconds, int TriggerRespawnSeconds, int RefillPage, int RefillNpcId, string Area);
+
+/// <summary>AK-01: a named monster that exists only in its game hours (Java <c>temporary_spawn</c>), from
+/// <paramref name="SpawnHour"/> to <paramref name="DespawnHour"/> (wrapping past midnight when the first is larger), and drops
+/// <paramref name="ItemId"/> for <paramref name="QuestId"/> (Q2292's ring carriers).</summary>
+public sealed record NaturalAltgardTimedSpawn(int QuestId, int ItemId, int NpcId, int SpawnHour, int DespawnHour, float[] Position,
+	int RespawnSeconds, string Area)
+{
+	/// <summary>Java TemporarySpawn.checkHour: present from the spawn hour up to (not including) the despawn hour.</summary>
+	public bool PresentAt(int hour) => SpawnHour < DespawnHour ? hour >= SpawnHour && hour < DespawnHour : hour >= SpawnHour || hour < DespawnHour;
+}
+
+/// <summary>AK-01, AK-Q2: a quest finished in this leg but handed in at <paramref name="EndNpcId"/> in a later leg's hub.</summary>
+public sealed record NaturalAltgardHeld(int QuestId, int EndNpcId, string Hub);
 
 /// <summary>AB-01, AB-Q3: a monster left alone until a quest reaches <paramref name="UntilVar"/> (Komu Silverclaw: his horn drops
 /// only then, and he respawns after <paramref name="RespawnSeconds"/>).</summary>

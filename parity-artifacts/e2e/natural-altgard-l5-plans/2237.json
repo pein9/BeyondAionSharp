@@ -1,0 +1,376 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2237,
+    "name": "A Fertile Field",
+    "nameId": 1103337,
+    "zone": "Altgard",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 14,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 24112
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2237,
+        "start_npc_ids": 832822
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 832822,
+        "name": "anmurnerk",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1515.267,
+            "y": 527.4506,
+            "z": 282.9554,
+            "heading": 90,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 832822,
+      "name": "anmurnerk",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1515.267,
+          "y": 527.4506,
+          "z": 282.9554,
+          "heading": 90,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 832822,
+      "name": "anmurnerk",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1515.267,
+          "y": 527.4506,
+          "z": 282.9554,
+          "heading": 90,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182203226,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182203226,
+          "npc_id": 700145,
+          "npc": {
+            "id": 700145,
+            "name": "fertilizer sack",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1311.69,
+                "y": 299.587,
+                "z": 307.964,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1360.942,
+                "y": 150.937,
+                "z": 314.667,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1362.056,
+                "y": 356.458,
+                "z": 306.918,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1367.43,
+                "y": 372.95,
+                "z": 307.067,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1383.509,
+                "y": 137.273,
+                "z": 311.792,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1413.45,
+                "y": 287.38,
+                "z": 299.603,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1435.941,
+                "y": 181.915,
+                "z": 308.496,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1459.81,
+                "y": 353.424,
+                "z": 298.699,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1462.693,
+                "y": 221.395,
+                "z": 291.28,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1484.833,
+                "y": 191.434,
+                "z": 293.394,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1525.193,
+                "y": 150.143,
+                "z": 288.879,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1527.459,
+                "y": 239.357,
+                "z": 285.347,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1551.743,
+                "y": 205.787,
+                "z": 285.362,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1562.03,
+                "y": 275.72,
+                "z": 289.64,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1575.853,
+                "y": 210.957,
+                "z": 284.366,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1582.159,
+                "y": 222.752,
+                "z": 284.6,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1590.312,
+                "y": 284.198,
+                "z": 285.105,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1607.539,
+                "y": 133.908,
+                "z": 291.359,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1625.903,
+                "y": 146.275,
+                "z": 291.102,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1630.107,
+                "y": 284.169,
+                "z": 287.76,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 832822,
+          "name": "anmurnerk",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1515.267,
+              "y": 527.4506,
+              "z": 282.9554,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 16495,
+        "gold": 9420,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000006
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "IMPORTANT",
+      "id": 2237,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 14,
+      "name": "A Fertile Field",
+      "nameId": 1103337,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182203226
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 16495,
+          "gold": 9420
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000006
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182203226,
+          "npc_id": 700145
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 24112
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -2035,7 +2035,6 @@ everything below.
 | Sumarhon's camp: grave robbing sentries | 22 spots around (1391, 486), 439 m | Q24230 (9 kills) | Comrade Sumarhon (SEASONED L15) is back after 295 s; **3 deaths here in the Leg 4 recapture** |
 | Grave robbing fencers | 31 spots around (1350, 663), 431 m | Q24231 (8 Amalgam Swords, 100%) | |
 | **MuMu Village** | (1360–1650, 150–380), 480–680 m south | Q24232 (9 looklooks or lookouts), Q2238 (5 MuMu Belts, 100%, from the same), Q2236 (5 Hairpins), Q2237 (3 Fertilizer Sacks), Q2292 (three rings), Q24233 (Manumumu) | **55 looklooks** (L15–16), lookouts, herb gatherers, the six ring carriers; **Chieftain Manumumu** (L17, respawn 30 min) at (1576, 218), only **64 m from the Q24013 black claw zone** (Feral Sharpeyes, SEASONED L17) |
-| MuMu workers | 30 spots around (1739, 925), 239 m north-east | Q2236 (Hairpins drop here too) | |
 | Kaibech's Campsite and Gribade Canyon | Kaibech and Mantigar (1201, 983), 650 m west; plumas, arachnas and bigfoot mosbears 570 m | Q2233, Q2234, Q2235 | Komu Silverclaw (SEASONED L17, hourly) at (1287, 987); angry and ruthless mosbears; grove malodors |
 | East: Vovetirn and the sprigg outlaws | Vovetirn (1990, 640), 216 m; outlaws at (2024, 542), 285 m, and (2312, 585), 542 m | Q2241 (5 Glowing Mushrooms, 80%), Q2242 | the poisonsac amphas of Q2239 |
 | Far hand-ins | **Gemyu** in Gerger Village (2360, 916), 622 m east (Stop 7); **Suthran** in the fortress (1663, 1749), 1,065 m north | Q2242, Q24233 (AK-Q2) | |
@@ -2087,8 +2086,8 @@ AL-1's "hunt to 20" belongs to the end of the zone, not to this leg.
 - Four of the six carriers were moved in the maintainer's spawn refinement (`fd4b2a3cb`).
 
 **Shared kills.** Looklooks and lookouts count for Q24232 and drop Q2238's belts on the same
-kill, so one batch does both. Q2236's hairpins come from herb gatherers in the village, or from
-the 30 workers north-east of Basfelt, which is a quieter choice. The general quest-loot sweep
+kill, so one batch does both. Q2236's hairpins come from the herb gatherers and the MuMu workers, both
+inside the village; the nearest workers are on its west edge, 480–525 m from Basfelt. The general quest-loot sweep
 (`6688ba04d`) picks up every drop on the way.
 
 ### What is new for the bot
@@ -2138,7 +2137,7 @@ The same loop protocol, with "AK" in place of "NA".
     - `run-fast` passes 11 of 11 with the probe, which moves the shared world's clock about 43 game hours.
     - The GameServer suite passes (4,412), and so do the warning baseline and the logger, clock and
       fidelity checks.
-- [ ] **AK-01 — The Leg 5 contract and plans.** `natural-altgard-l5-contract.json` with:
+- [x] **AK-01 — The Leg 5 contract and plans.** `natural-altgard-l5-contract.json` with:
   - the hub (Basfelt, bound), and the grounds above as areas;
   - the thirteen quests and their order;
   - compiled template plans for all of them;
@@ -2147,6 +2146,29 @@ The same loop protocol, with "AK" in place of "NA".
   - the held hand-ins (AK-Q2).
 
   Contract tests check every position, drop, count and hour against the shipped data.
+  - *Done 2026-10-01.* `parity-artifacts/e2e/natural-altgard-l5-contract.json` is generated from the shipped data.
+    It starts where Leg 4 ends, at level 19 and bound at Basfelt, and holds:
+    - 9 areas; the fencer and MuMu Village areas are cut to the spots near Basfelt;
+    - the 13 quests in ground order: Idun's Lake and Sumarhon's camp, then MuMu Village, then Kaibech, then the east;
+    - Q2292's choice: the Turquoise Earrings, `SELECTED_QUEST_REWARD2`, the magic-boost one;
+    - a new **`timedSpawns`** block: the six carriers, with hours, drops and positions read from the spawns;
+    - a new **`held`** block, with the endpoint's `heldQuestIds` [2242, 24233] (AK-Q2).
+  - **Plans:** `natural-altgard-l5-plans/` holds the 13 compiled plans. The compiler reproduces the committed
+    Leg 4 plans exactly.
+  - **Two D32 plans were stale.** Q24232 and Q24233 still had the MuMu positions from before the spawn
+    refinements, so they were regenerated (`f1e7cddbf`). No drift test covers `retail-quest-plans/`; a
+    separate task to add one was offered.
+  - **The loader** accepts a leg with no scripted steps when every quest is a template, and it validates the
+    new blocks. `NaturalAltgardTimedSpawn.PresentAt` copies Java `TemporarySpawn.checkHour`.
+  - **Correction to the plan above:** the nearest MuMu workers are on the village's west edge (480–525 m), not
+    a quiet ground north-east of Basfelt. They are part of the MuMu Village area.
+  - **`NaturalAltgardLeg5ContractTests`** pins:
+    - the start against Leg 4's endpoint;
+    - every quest's data, its template and start NPC, and its plan;
+    - each target's spawn inside its area;
+    - the carriers' hours, drops and positions, and that both Love Ring carriers are night-only;
+    - the reward choice, and the held quests' end NPCs.
+  - All 335 Natural tests pass, and so do the warning baseline and the logger, clock and fidelity checks.
 - [ ] **AK-02 — Walk every Leg 5 route in SIM.** As AB-02 did: Basfelt to Brodir, to each
   MuMu Village ground, to the sentries and the fencers, to Kaibech's grounds, and to Vovetirn
   and both outlaw grounds. A level 30 probe, so nothing aggroes and nothing is despawned.
@@ -2454,3 +2476,4 @@ The original questions follow.
 - 2026-10-01 Leg 5 planned (Kaibech, Idun's Lake, MuMu Village; AK-00..AK-10); AK-Q1..AK-Q3 approved as recommended.
 - 2026-10-01 D32 catch-up: Q24110 in Leg 1, Q24111 in Leg 3; Legs 1–4 replayed from `altgard` on 5083bb385 (stale-route refusal, death-spot hazards, hunt road fallback); levels 13/15/16/19; Leg 5 starts at 19.
 - 2026-10-01 AK-00: the bot decodes SM_GAME_TIME (GameMinutes, GameHour); the SIM clock drives the hourly ring carriers (MuMu Zoo at 22:00, Lu at 05:00).
+- 2026-10-01 AK-01: the Leg 5 contract (13 template quests, timedSpawns, held) and its 13 plans; the stale D32 plans for Q24232/Q24233 regenerated.

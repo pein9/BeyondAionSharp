@@ -1,0 +1,365 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2234,
+    "name": "An Irritating Problem",
+    "nameId": 1103334,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 13,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2233
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2234,
+        "start_npc_ids": 203611
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203611,
+        "name": "mantigar",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1200.63,
+            "y": 980.802,
+            "z": 255.0,
+            "heading": 111,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203611,
+      "name": "mantigar",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1200.63,
+          "y": 980.802,
+          "z": 255.0,
+          "heading": 111,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203611,
+      "name": "mantigar",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1200.63,
+          "y": 980.802,
+          "z": 255.0,
+          "heading": 111,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": "210445 210446",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210445,
+          "name": "nimble arachna",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1268.17,
+              "y": 840.056,
+              "z": 253.937,
+              "heading": 108,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1272.47,
+              "y": 851.763,
+              "z": 252.911,
+              "heading": 91,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1287.39,
+              "y": 799.116,
+              "z": 254.229,
+              "heading": 71,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1288.56,
+              "y": 831.579,
+              "z": 252.212,
+              "heading": 16,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1288.69,
+              "y": 811.431,
+              "z": 254.454,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1305.66,
+              "y": 815.063,
+              "z": 256.641,
+              "heading": 53,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1355.42,
+              "y": 1014.33,
+              "z": 261.74,
+              "heading": 108,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1363.39,
+              "y": 1036.04,
+              "z": 271.122,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210446,
+          "name": "nimble arachna",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1161.48,
+              "y": 901.268,
+              "z": 280.374,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1174.74,
+              "y": 896.402,
+              "z": 279.204,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1186.34,
+              "y": 881.903,
+              "z": 278.159,
+              "heading": 74,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1189.52,
+              "y": 856.098,
+              "z": 277.246,
+              "heading": 79,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1205.61,
+              "y": 865.906,
+              "z": 276.173,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1220.88,
+              "y": 855.134,
+              "z": 274.927,
+              "heading": 24,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1229.4,
+              "y": 881.364,
+              "z": 268.784,
+              "heading": 113,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1232.77,
+              "y": 859.69,
+              "z": 272.962,
+              "heading": 58,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1259.61,
+              "y": 813.83,
+              "z": 255.357,
+              "heading": 82,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1270.93,
+              "y": 806.022,
+              "z": 252.512,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1272.01,
+              "y": 824.126,
+              "z": 254.006,
+              "heading": 108,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1368.79,
+              "y": 1013.06,
+              "z": 266.989,
+              "heading": 99,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1382.39,
+              "y": 1017.64,
+              "z": 272.03,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203611,
+          "name": "mantigar",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1200.63,
+              "y": 980.802,
+              "z": 255.0,
+              "heading": 111,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 11850,
+        "gold": 5520,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2234,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 13,
+      "name": "An Irritating Problem",
+      "nameId": 1103334,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 11850,
+          "gold": 5520
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": "210445 210446",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2233
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
