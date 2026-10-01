@@ -243,4 +243,87 @@ public sealed class NaturalAltgardDecisionEngineTests
 		NaturalAltgardDecision done = Decide();
 		Assert.Equal(("leg-complete", "complete"), (done.Action, done.Outcome));
 	}
+
+	[Fact]
+	public void Leg4BindsFirstThenRunsTimersSpawnsHuntsObjectsAndTheHornAtVar7()
+	{
+		// AB-08: Leg 4 from the altgard-l3 snapshot (level 16, Q24013 started, bound at the fortress).
+		NaturalAltgardContract leg4 = NaturalAltgardContract.LoadLeg("l4");
+		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(NaturalAltgardContract.LoadPlans("l4"));
+		var quests = new Dictionary<int, BotQuestState> { [24013] = new(24013, 3, 0, 0, null) };
+		var completed = new HashSet<int>(leg4.Start.CompletedQuestIds);
+		var items = new Dictionary<int, long>();
+		BotBindPoint? bound = new(220030000, new BotPosition(1658.44f, 1815.301f, 254.099f, 0), 0);
+		var at = new BotPosition(leg4.Hub.Anchor[0] + 3, leg4.Hub.Anchor[1], leg4.Hub.Anchor[2], 0);
+		NaturalAltgardDecision Decide() => NaturalAltgardDecisionEngine.Decide(leg4,
+			new NaturalAltgardObservation(true, 220030000, 16, false, quests, completed, at, items, bound), objectives, 1);
+		void Set(int quest, byte status, int var = 0) => quests[quest] = new(quest, status, var, 0, null);
+		void Complete(int quest) { quests.Remove(quest); completed.Add(quest); }
+
+		// Bound at the fortress: bind at Basfelt first (AB-Q5).
+		Assert.Equal("bind", Decide().Action);
+		NaturalAltgardBind bind = leg4.Bind!;
+		bound = new(220030000, new BotPosition(bind.Position[0], bind.Position[1], bind.Position[2], 0), 0);
+		Assert.Equal(("template-accept", 2226), (Decide().Action, Decide().QuestId));
+		foreach (int quest in leg4.Quests.Where(quest => quest.IsTemplate).Select(quest => quest.Id)) Complete(quest);
+
+		// The campaign's Basfelt steps, its poison in the zone, then its kill counter.
+		Assert.Equal("q24013-v0-nokir", Decide().StepKey);
+		Set(24013, 3, 2);
+		Assert.Equal(("use-item", 24013), (Decide().Action, Decide().QuestId));
+		foreach (int var in new[] { 3, 5, 7 })
+		{
+			Set(24013, 3, var);
+			Assert.Equal(("hunt", 24013), (Decide().Action, Decide().QuestId));
+		}
+		Complete(24013);
+
+		// The timed quests stay with the timed executor from the offer to the hand-in.
+		Assert.Equal(("timed", 2288), (Decide().Action, Decide().QuestId));
+		Set(2288, 3, 2);
+		Assert.Equal(("timed", 2288), (Decide().Action, Decide().QuestId));
+		Complete(2288);
+		Assert.Equal(("timed", 2230), (Decide().Action, Decide().QuestId));
+		Complete(2230);
+
+		// Q2289: the counter, then the talks, then the horn at var 7 (a collection), then the hand-in.
+		Set(2289, 3, 2);
+		Assert.Equal(("hunt", 2289), (Decide().Action, Decide().QuestId));
+		Set(2289, 3, 5);
+		Assert.Equal("q2289-v5-gefion", Decide().StepKey);
+		Set(2289, 3, 7);
+		Assert.Equal(("collect", 2289), (Decide().Action, Decide().QuestId));
+		items[182203016] = 1;
+		Assert.Equal("q2289-v7-gefion", Decide().StepKey);
+		Complete(2289);
+
+		// Q2232: beehives until nine are in the bag, then Gilungk.
+		Set(2232, 3, 1);
+		Assert.Equal(("use-object", "q2232-beehives"), (Decide().Action, Decide().StepKey));
+		// Each use is progress the runner can see: the reason carries the looted count, so it differs from the last one.
+		string first = Decide().Reason;
+		items[182203224] = 3;
+		Assert.NotEqual(first, Decide().Reason);
+		Assert.Contains("3 of 182203224", Decide().Reason, StringComparison.Ordinal);
+		items[182203224] = 9;
+		Assert.Equal("q2232-v1-gilungk", Decide().StepKey);
+		Complete(2232);
+		foreach (int quest in new[] { 2239, 2231 }) Complete(quest);
+
+		// Q2223: the spawn at var 1.
+		Set(2223, 3, 1);
+		Assert.Equal(("spawn-kill", "q2223-infernus"), (Decide().Action, Decide().StepKey));
+		Complete(2223);
+
+		// Q24112: the Sumarhon kill, then Brodir.
+		Set(24112, 3, 0);
+		Assert.Equal(("hunt", 24112), (Decide().Action, Decide().QuestId));
+		Set(24112, 3, 1);
+		Assert.Equal("q24112-v1-brodir", Decide().StepKey);
+		Complete(24112);
+
+		// Everything done, in the hub, bound at Basfelt.
+		NaturalAltgardDecision done = Decide();
+		Assert.Equal(("leg-complete", "complete"), (done.Action, done.Outcome));
+	}
 }

@@ -86,6 +86,14 @@ public static class NaturalTimedQuestPolicy
 				return new("give-up", $"{state.Attempts} timers spent on Q{timer.QuestId} (AB-Q2); stop the leg on it as a finding.", slack);
 			return new("new-chance", $"The timer ran out: the check takes the items (page {timer.ExpiredPage}), then {timer.NewChanceAction} starts another.", slack);
 		}
+		if (!running && timer.OnExpiry == "abandon" && state.QuestVar > 0)
+		{
+			// AB-Q6: a revive or relog ended the timer (Q1044's and Q2042's hooks), but the quest was not abandoned, so its kill
+			// counter still counts and nothing can expire it. Never restart the timer: SETPRO1 would set the var back to 1.
+			return state.UnitsLeft <= 0
+				? new("turn-in", "The work is done and the timer is gone: turn in.", slack)
+				: new("hunt", $"The timer is gone (AB-Q6) but the counter still counts: {state.UnitsLeft} to go.", slack);
+		}
 		if (!running)
 		{
 			// Q2288 at var 0: taken, the timer not yet started.

@@ -197,8 +197,28 @@ public sealed record NaturalAltgardStep(string Key, int QuestId, int? Var, strin
 
 /// <param name="Zone">AB-01: where the item must be used when not <paramref name="Anywhere"/> (Q24013's poison), and the
 /// monsters the use spawns (Java <c>onItemUseEvent</c>: two Feral Black Claw Sharpeyes).</param>
+/// <param name="ZonePolygon">AB-08: the zone's points and height band from <c>zones_220030000.xml</c>, so the bot can tell when it
+/// has stepped inside.</param>
 public sealed record NaturalAltgardItemUse(int QuestId, int ItemId, int Var, int NextVar, int UseMillis, bool Anywhere,
-	string? Zone = null, int? SpawnsNpcId = null, int SpawnCount = 0);
+	string? Zone = null, int? SpawnsNpcId = null, int SpawnCount = 0, float[]? ZoneAnchor = null, float[][]? ZonePolygon = null,
+	float[]? ZoneBand = null)
+{
+	/// <summary>Whether a point lies inside the zone, at least <paramref name="margin"/> metres from every edge.</summary>
+	public bool InZone(float x, float y, float z, float margin = 0)
+	{
+		if (ZonePolygon is not { Length: >= 3 } polygon || ZoneBand is not [float bottom, float top] || z < bottom || z > top) return false;
+		bool inside = false;
+		for (int i = 0, j = polygon.Length - 1; i < polygon.Length; j = i++)
+		{
+			float[] a = polygon[i], b = polygon[j];
+			if ((a[1] > y) != (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside;
+			float dx = b[0] - a[0], dy = b[1] - a[1];
+			float t = Math.Clamp(((x - a[0]) * dx + (y - a[1]) * dy) / (dx * dx + dy * dy), 0, 1);
+			if (MathF.Sqrt(MathF.Pow(a[0] + t * dx - x, 2) + MathF.Pow(a[1] + t * dy - y, 2)) < margin) return false;
+		}
+		return inside;
+	}
+}
 
 public sealed record NaturalAltgardAirKills(int QuestId, int NpcId, int SpawnCount, int FromVar, int RewardVar, int KillsAfterBorender,
 	string Note);
@@ -217,7 +237,7 @@ public sealed record NaturalAltgardEndpoint(int MapId, int[] CompletedQuestIds, 
 	float[]? Anchor = null, float Radius = 0, int? BindNpcId = null);
 
 /// <summary>AB-01, the standing bind policy (AB-Q5): bind at the obelisk of the hub the leg works out of, on arrival.</summary>
-public sealed record NaturalAltgardBind(int NpcId, float[] Position, bool OnArrival);
+public sealed record NaturalAltgardBind(int NpcId, float[] Position, bool OnArrival, int Price, float AcceptRange);
 
 /// <summary>AB-01: a custom handler's kill counter: each kill of <paramref name="NpcIds"/> moves the var from
 /// <paramref name="FromVar"/> toward <paramref name="ToVar"/> (Q2288, Q2289, Q24112, Q24013).</summary>

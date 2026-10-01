@@ -1813,13 +1813,55 @@ The same loop protocol, with "AB" in place of "NA".
     obelisk does. The natural bot binds through the obelisk dialog, so it never had this
     problem.
   - All 330 Natural tests pass, and so do the warning baseline and the logger and clock checks.
-- [ ] **AB-08 — The Leg 4 runner.** Engine actions for:
+- [x] **AB-08 — The Leg 4 runner.** Engine actions for:
   - timed hunts (AB-03's policy);
   - the spawn-and-kill (burn when ready, fight inside the window);
   - the Komu avoidance;
   - the batches: the mosbears after Q2288, the west trip, the south-west trip.
 
   A smoke run from `altgard-l3` with real combat, recording every timer, spawn, fight and death.
+  - *Done 2026-09-30.* Run `run/af-l1/ab08-l4-smoke` (seed 1, from `altgard-l3`) plays the whole leg in
+    67 decisions and 4 h 32 min of game time. It binds at Basfelt first (AB-Q5), then does
+    all 14 quests. It ends at the Basfelt obelisk at level 19 (from 16), and the relog check passes.
+
+    | What | Outcome |
+    |---|---|
+    | Q2288 (600 s) | handed in on the first timer, 3 s to spare |
+    | Q2230 (1,800 s) | the first timer ran out at 7 tusks to go; the new chance (page 3057, SETPRO1) started a second, handed in with 89 s to spare |
+    | Q2223 Infernus | burned and killed on the first try |
+    | Q24013 poison | used inside the zone on the second walk in |
+    | Q24112 Sumarhon | killed on the seventh try, in a fight-through in his camp |
+    | Deaths (recorded, OD-12) | 10: Sumarhon's camp 6, the Q24013 black claws 3, the Q2230 grounds 1 |
+
+  - **What the runner does:**
+    - binds at the hub;
+    - drives both timers through `NaturalTimedQuestPolicy`;
+    - burns and kills Infernus;
+    - counts the custom kills;
+    - waits out Komu (the avoid list);
+    - uses Q2232's beehives until nine jars are looted;
+    - claims Q2227's and Q24013's chosen rewards.
+  - **What the smoke runs found, and fixed:**
+    - **The Q24013 zone is packed with Feral Sharpeyes**: 18 spawns, 295 s respawn, and no route
+      keeps clear of them. The contract now carries the zone's polygon and height band, exactly
+      as in `zones_220030000.xml`, with a test. The runner walks the travel planner's road,
+      fights what engages, and uses the poison at the first step 3 m inside the zone.
+    - **A decision repeated because the Cleric died on it is a retry, not a stall**: up to six per
+      decision.
+    - **Each beehive use is progress**: the reason now carries the looted count.
+    - **A kill that counts in a fight-through ends the hunt**: Sumarhon fell as an attacker on
+      the way to his spawn.
+    - **An attacker a retreat left out of reach is waited for, then left to the next plan.**
+    - **No navigator route to a talk NPC**: the runner takes the planner's road. When the ground
+      the fight left it on has no road at all, it casts Return to the bound obelisk first.
+    - **The leg ends at the hub's own obelisk**, not the one it started bound at.
+    - **The inventory policy now knows every Asmodian quest's selectable rewards**: Q2227's
+      claim had failed without them.
+  - **AB-Q6 in practice:** every revive sent the Q1044/Q2042 timer reset. Neither timed quest
+    lost its timer that way: the Q2230 death came at 01:45:00, after its first timer had already
+    run out (01:42:52), and no death fell inside a running timer.
+  - All 332 Natural tests pass, and so do the warning baseline and the logger, clock and
+    fidelity checks.
 - [ ] **AB-09 — One SIM run of Leg 4 and the snapshot.** `sim-snapshot.ps1 -Leg l4 -From
   altgard-l3` captures `altgard-l4` after a clean run, with a restore check.
 - [ ] **AB-10 — The full `CLAUDE.md` checklist and a checkpoint.**
@@ -2063,3 +2105,4 @@ The original questions follow.
 - 2026-09-30 AB-05: Q2223 in SIM: no masking by Lamir's own quests; the burner, movie 67, Infernus for 300 s, the refill incense, the second burn and the reward.
 - 2026-09-30 AB-06: Q2231, Q2232 (nine beehives), Q2239 (var 1->3), Q2289 (movie 62, Komu's Horn) and Q24013's poison in its zone played in SIM.
 - 2026-09-30 AB-07: Leg 4 combat at L16 and L17: first real Anti-Shock shield and Salvation, Divine Touch at L17; the Feral Sharpeye group retreats the L16 Cleric and kills the L17 one.
+- 2026-09-30 AB-08: Leg 4 runs end to end in SIM from altgard-l3: 14 quests, L16 to L19, 10 recorded deaths, both timers handed in (Q2230 on its new chance), Infernus on the first try.

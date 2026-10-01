@@ -39,6 +39,15 @@ public sealed class NaturalTimedQuestPolicyTests
 	}
 
 	[Fact]
+	public void Q2288WhoseTimerAReviveEndedHuntsOnAndNeverRestartsTheTimer()
+	{
+		// AB-Q6: a death ended the timer but not the quest: keep counting, never SETPRO1 (it would reset the var to 1).
+		Assert.Equal("hunt", Decide(Money, Observation("START", 2, null, 2, attempts: 1)).Action);
+		Assert.Equal("turn-in", Decide(Money, Observation("START", 4, null, 0, attempts: 1)).Action);
+		Assert.Equal("start-timer", Decide(Money, Observation("START", 0, null, 3, attempts: 0)).Action);
+	}
+
+	[Fact]
 	public void Q2288ExpiryAbandonsRetakesAndGivesUpAfterThreeTimers()
 	{
 		// The timer ran out: the server abandons the quest; the bot waits for the journal, then retakes it.

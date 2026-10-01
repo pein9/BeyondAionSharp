@@ -30,6 +30,9 @@ public sealed class NaturalAltgardLeg4ContractTests
 		Assert.Equal("obelisk", (string?)Template(bind.NpcId).Attribute("name"));
 		Assert.True(Leg4.Area("basfelt").Contains(bind.Position[0], bind.Position[1], bind.Position[2]));
 		Assert.Equal(bind.NpcId, Leg4.Endpoint.BindNpcId);
+		XElement bindPoint = Assert.Single(XDocument.Load(Data("bind_points", "bind_points.xml")).Root!.Descendants("bind_point"),
+			node => (int?)node.Attribute("npcid") == bind.NpcId);
+		Assert.Equal(bind.Price, (int)bindPoint.Attribute("price")!);
 
 		XElement questData = XDocument.Load(Data("quest_data", "quest_data.xml")).Root!;
 		foreach (NaturalAltgardQuest expected in Leg4.Quests)
@@ -187,7 +190,20 @@ public sealed class NaturalAltgardLeg4ContractTests
 		Assert.Contains($"ZoneName.Get(\"{poison.Zone}\")", campaign, StringComparison.Ordinal);
 		Assert.Contains($"UseQuestItem(env, item, {poison.Var}, {poison.NextVar}, false)", campaign, StringComparison.Ordinal);
 		Assert.Equal(poison.SpawnCount, CountOf(campaign, $"Spawn({poison.SpawnsNpcId}, player"));
-		Assert.Contains(XDocument.Load(Data("zones", "zones_220030000.xml")).Root!.Elements("zone"), node => (string?)node.Attribute("name") == poison.Zone);
+		XElement zone = Assert.Single(XDocument.Load(Data("zones", "zones_220030000.xml")).Root!.Elements("zone"),
+			node => (string?)node.Attribute("name") == poison.Zone);
+		Assert.True(Leg4.Area("black-claws").Contains(poison.ZoneAnchor![0], poison.ZoneAnchor[1], poison.ZoneAnchor[2]));
+		// AB-08: the contract carries the zone's polygon and height band exactly, and the anchor lies inside them.
+		XElement points = zone.Element("points")!;
+		Assert.Equal(points.Elements("point").Select(point => $"{(float)point.Attribute("x")!},{(float)point.Attribute("y")!}"),
+			poison.ZonePolygon!.Select(point => $"{point[0]},{point[1]}"));
+		Assert.Equal([(float)points.Attribute("bottom")!, (float)points.Attribute("top")!], poison.ZoneBand!);
+		Assert.True(poison.InZone(poison.ZoneAnchor[0], poison.ZoneAnchor[1], poison.ZoneAnchor[2], margin: 3));
+		// Where the run-7 road first stood inside the zone, and points outside it (east, north, above the band).
+		Assert.True(poison.InZone(1688.3f, 242.7f, 285.9f, margin: 2));
+		Assert.False(poison.InZone(1738, 236, 287));
+		Assert.False(poison.InZone(1688, 262, 286));
+		Assert.False(poison.InZone(1688.3f, 242.7f, 361));
 	}
 
 	[Fact]

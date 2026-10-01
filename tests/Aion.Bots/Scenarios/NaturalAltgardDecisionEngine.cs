@@ -3,14 +3,16 @@ using Aion.Bots.World;
 namespace Aion.Bots.Scenarios;
 
 /// <summary>A copied client observation for Altgard Leg 1; no server oracle enters the decision.</summary>
+/// <param name="Bind">AB-08: the obelisk bind point the client last saw (<c>SM_BIND_POINT_INFO</c>).</param>
 public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, int Level, bool IsDead,
 	IReadOnlyDictionary<int, BotQuestState> Quests, IReadOnlySet<int> CompletedQuestIds, BotPosition Position,
-	IReadOnlyDictionary<int, long> ItemCounts)
+	IReadOnlyDictionary<int, long> ItemCounts, BotBindPoint? Bind = null)
 {
 	public static NaturalAltgardObservation Observe(BotWorldModel world, BotPosition position) =>
 		new(world.LoginStateObserved && world.QuestJournalObserved && world.CompletedJournalObserved, world.MapId, world.Level,
 			world.IsDead, new Dictionary<int, BotQuestState>(world.Quests), world.CompletedQuestIds.ToHashSet(), position,
-			world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)));
+			world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
+			world.ObeliskBindPoint);
 }
 
 /// <summary>What a template quest's objectives need, from its compiled plan: items in the inventory, or a kill counter.
@@ -46,6 +48,12 @@ public sealed record NaturalAltgardDecision(int Sequence, string Action, string?
 public static class NaturalAltgardDecisionEngine
 {
 	public const byte Start = 3, Reward = 4, Locked = 6;
+	/// <summary>How far the client's bind point may lie from the contract's obelisk and still be that bind.</summary>
+	public const float BindTolerance = 10;
+
+	public static bool BoundAt(NaturalAltgardBind bind, int mapId, BotBindPoint? bound) =>
+		bound is { } point && point.MapId == mapId &&
+		MathF.Sqrt(MathF.Pow(point.Position.X - bind.Position[0], 2) + MathF.Pow(point.Position.Y - bind.Position[1], 2)) <= BindTolerance;
 
 	/// <param name="only">A diagnostic run limited to these quests (AM-06): the rest of the leg is left alone, and the run is
 	/// complete once these are done, wherever the bot stands.</param>
@@ -64,6 +72,9 @@ public static class NaturalAltgardDecisionEngine
 			return Plan("revive-at-bind", null, "Dead: revive at the Altgard Fortress obelisk.");
 		if (state.MapId != contract.Hub.MapId)
 			return Stop("wrong-map", "blocked", $"{contract.Leg} is on map {contract.Hub.MapId}; the Cleric is on {state.MapId}.");
+		// AB-08, the standing bind policy (AB-Q5): bind at the hub's obelisk first.
+		if (contract.Bind is { OnArrival: true } bind && !BoundAt(bind, contract.Hub.MapId, state.Bind))
+			return Plan("bind", null, $"Bind at the {contract.Hub.Key} obelisk ({bind.NpcId}) before working out of it.");
 
 		NaturalAltgardQuest[] open = contract.Order.Select(contract.Quest)
 			.Where(quest => !Done(quest.Id) && (only == null || only.Contains(quest.Id))).ToArray();
@@ -96,6 +107,9 @@ public static class NaturalAltgardDecisionEngine
 			if (contract.EscortList.FirstOrDefault(escort => escort.QuestId == quest.Id) is { } escortEntry &&
 				(status is not (Start or Reward) || status == Start && (Var(quest.Id) == escortEntry.LostVar || Var(quest.Id) == escortEntry.FollowVar)))
 				return Plan("escort", quest.Id, $"Q{quest.Id}: escort ({(status == Start ? $"var {Var(quest.Id)}" : "not taken")}).", escortEntry.Key);
+			// AB-08: a timed quest is driven by NaturalTimedQuestPolicy from its offer to its hand-in.
+			if (contract.TimerList.FirstOrDefault(timer => timer.QuestId == quest.Id) is { } timed && status != Reward)
+				return Plan("timed", quest.Id, $"Q{quest.Id}: a timed quest ({timed.Seconds} s from {timed.StartStep}).");
 			if (status is null || status is not (Start or Reward))
 			{
 				NaturalAltgardStep? offer = contract.StepsFor(quest.Id).SingleOrDefault(step => step.ExpectedStatus == "OFFER");
@@ -111,12 +125,22 @@ public static class NaturalAltgardDecisionEngine
 			}
 			int var = Var(quest.Id);
 			if (contract.ItemUse is { } use && quest.Id == use.QuestId && var == use.Var)
-				return Plan("use-item", quest.Id, $"Q{quest.Id}: use item {use.ItemId} (anywhere).");
+				return Plan("use-item", quest.Id, $"Q{quest.Id}: use item {use.ItemId} ({(use.Anywhere ? "anywhere" : $"inside {use.Zone}")}).");
 			if (contract.AirKills is { } air && quest.Id == air.QuestId && var >= air.FromVar && var <= air.RewardVar)
 				return Plan("air-kills", quest.Id, $"Q{quest.Id}: shoot the Abyss Fungus down (var {var} of {air.RewardVar}).");
-			// AM-07: quest objects, a zone to enter, and items that drop only from a var.
-			if (contract.ObjectUseList.FirstOrDefault(use => use.QuestId == quest.Id && var >= use.FromVar && var < use.ToVar) is { } objectUse)
-				return Plan("use-object", quest.Id, $"Q{quest.Id} var {var}: use {objectUse.Key}.", objectUse.Key);
+			// AB-08: a monster the quest spawns (Q2223's Infernus), and a custom kill counter (Q2289, Q24112, Q24013).
+			if (contract.SpawnList.FirstOrDefault(spawn => spawn.QuestId == quest.Id && var == spawn.AtVar) is { } spawned)
+				return Plan("spawn-kill", quest.Id, $"Q{quest.Id} var {var}: {spawned.Key}.", spawned.Key);
+			if (contract.HuntList.FirstOrDefault(hunt => hunt.QuestId == quest.Id && var >= hunt.FromVar && var < hunt.ToVar) is { } hunt)
+				return Plan("hunt", quest.Id, $"Q{quest.Id} var {var}: kill {string.Join("/", hunt.NpcIds)} toward var {hunt.ToVar}.");
+			// AM-07: quest objects, a zone to enter, and items that drop only from a var. AB-08: an object that only loots (Q2232's
+			// beehives) is done once the collection holds enough of its item.
+			if (contract.ObjectUseList.FirstOrDefault(use => use.QuestId == quest.Id && var >= use.FromVar && var < use.ToVar &&
+				!LootCollected(use)) is { } objectUse)
+				return Plan("use-object", quest.Id, objectUse.LootItemId is int loot
+					// AB-08: each use loots one more item at the same var, so the count is the progress the runner sees.
+					? $"Q{quest.Id} var {var}: use {objectUse.Key} ({state.ItemCounts.GetValueOrDefault(loot)} of {loot} looted)."
+					: $"Q{quest.Id} var {var}: use {objectUse.Key}.", objectUse.Key);
 			if (contract.ZoneStepList.FirstOrDefault(zone => zone.QuestId == quest.Id && var == zone.FromVar) is { } zoneStep)
 				return Plan("enter-zone", quest.Id, $"Q{quest.Id} var {var}: walk into {zoneStep.Zone}.");
 			if (contract.CollectionList.FirstOrDefault(collection => collection.QuestId == quest.Id && var == collection.AtVar) is { } collect &&
@@ -160,6 +184,8 @@ public static class NaturalAltgardDecisionEngine
 		return Stop("leg-complete", "complete", $"The {contract.Leg} endpoint is reached.");
 
 		bool Done(int questId) => state.CompletedQuestIds.Contains(questId);
+		bool LootCollected(NaturalAltgardObjectUse use) => use.LootItemId is int loot && contract.CollectionList.Any(collection =>
+			collection.QuestId == use.QuestId && collection.Items.Any(item => item.ItemId == loot && state.ItemCounts.GetValueOrDefault(loot) >= item.Count));
 		byte? Status(int questId) => state.Quests.TryGetValue(questId, out BotQuestState? quest) ? quest.Status : null;
 		int Var(int questId) => state.Quests.TryGetValue(questId, out BotQuestState? quest) ? quest.StepAndFlags & 0x3F : 0;
 		bool Eligible(NaturalAltgardQuest quest)

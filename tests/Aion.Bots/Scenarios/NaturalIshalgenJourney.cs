@@ -26,6 +26,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	/// <summary>AC-06: the Leg 3 escort's clear areas hold grave robbers with respawn_time 295 s (the Altgard spawn data);
 	/// a clear holds that long after its first kill.</summary>
 	private const long EscortClearRespawnMillis = 295_000;
+	// AB-08: how far inside the Q24013 poison zone's edge the poison is used.
+	private const float ZoneMargin = 3f;
 
 	public async Task RunAsync(CancellationToken token)
 	{
@@ -938,10 +940,16 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token);
 				string? previous = null;
 				int repeats = 0;
+				// AB-08: a decision repeated because the Cleric died on it is a retry, not a stall (OD-12): up to six of them.
+				int revivesAtPrevious = combat.ReviveCount, deathRetries = 0;
 				// AC-06: the escort's state across protocol runs (a death ends a run; the attempts and ended followers stay).
 				int escortAttempts = 0;
 				var escortEndedFollowers = new HashSet<int>();
 				long? escortFollowerGoneAt = null, escortClearedUntil = null;
+				// AB-08: timers started and when the client expects each to end; Infernus attempts.
+				var timedAttempts = new Dictionary<int, int>();
+				var timedEnds = new Dictionary<int, long>();
+				var spawnAttempts = new Dictionary<string, int>();
 				for (int sequence = 1; sequence <= 400; sequence++)
 				{
 					await session.SynchronizeAsync(token);
@@ -957,9 +965,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					});
 					session.PublishDashboard();
 					string signature = $"{next.Action}/{next.StepKey}/{next.QuestId}/{next.Reason}";
-					repeats = signature == previous ? repeats + 1 : 0;
+					bool diedSincePrevious = combat.ReviveCount > revivesAtPrevious;
+					revivesAtPrevious = combat.ReviveCount;
+					if (signature != previous) { repeats = 0; deathRetries = 0; }
+					else if (diedSincePrevious) deathRetries++;
+					else repeats++;
 					previous = signature;
-					Require.True(repeats < 3, $"Altgard leg {altgardLegId} made no progress on {signature}");
+					Require.True(repeats < 3 && deathRetries <= 6, $"Altgard leg {altgardLegId} made no progress on {signature}");
 					if (next.Outcome == "complete")
 					{
 						if (only != null)
@@ -1011,34 +1023,80 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							await TopUpHelpItemsAsync("town");
 							break;
 						case "talk":
+							await PlayContractStepAsync(leg.Steps.Single(candidate => candidate.Key == next.StepKey));
+							break;
+						case "use-item":
 						{
-							NaturalAltgardStep step = leg.Steps.Single(candidate => candidate.Key == next.StepKey);
-							int npc;
-							if (step.Flight)
+							NaturalAltgardItemUse use = leg.RequiredItemUse;
+							if (!use.Anywhere && use.ZoneAnchor is { } zone)
 							{
-								await FlyToAsync(Rock());
-								npc = await session.WaitForNpcAsync(step.NpcId, token);
-							}
-							else
-							{
+								// AB-08: Q24013's poison works only inside its zone, and the zone is packed with Feral Sharpeyes (18
+								// spawns, 295 s respawn): no route keeps clear of every circle. Do what a player does: take the road toward
+								// the anchor, fighting what engages, and use the poison at the first step that is well inside the zone,
+								// before the next Sharpeye walks up. A death or a retreat leaves the quest at its var, and the next
+								// decision starts again from the bind.
 								await EnsureOnGroundAsync();
-								npc = await ApproachShippedSpawnAsync(step.NpcId);
-							}
-							for (int attempt = 1; ; attempt++)
-							{
-								try
+								BotPosition anchor = new(zone[0], zone[1], zone[2], 0);
+								bool Inside(BotPosition at) => use.InZone(at.X, at.Y, at.Z, ZoneMargin);
+								if (!Inside(session.CurrentPosition) && !await WalkRoadDefendingAsync(anchor, "item-use-zone-road", stopAt: Inside))
+									break;
+								if (!await DefendAgainstEngagedAsync("item-use-zone") || session.Api.World.IsDead || !Inside(session.CurrentPosition))
 								{
-									string change = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token);
-									session.TraceDiagnostic($"altgard-{altgardLegId}-step", new Dictionary<string, object?> { ["step"] = step.Key, ["change"] = change });
+									await RestSafelyAsync(token);
 									break;
 								}
-								catch (NaturalDialogTooFarException) when (attempt < 3 && !step.Flight) { await ReapproachForDialogAsync(npc); }
+								session.TraceDiagnostic($"altgard-{altgardLegId}-item-zone", new Dictionary<string, object?>
+								{
+									["zone"] = use.Zone, ["position"] = session.CurrentPosition, ["hp"] = session.Api.World.CurrentHp,
+								});
 							}
+							await NaturalAltgardQuestSteps.UseQuestItemAsync(session, use, runtime.Data.ItemDataDh.GetItemTemplate(use.ItemId), token);
+							// The use may spawn monsters (Q24013: two Feral Black Claw Sharpeyes): deal with them first.
+							await session.AdvanceAsync(TimeSpan.FromSeconds(4), token);
+							await DefendAgainstEngagedAsync("item-use-spawns");
+							await RestSafelyAsync(token);
 							break;
 						}
-						case "use-item":
-							await NaturalAltgardQuestSteps.UseQuestItemAsync(session, leg.RequiredItemUse,
-								runtime.Data.ItemDataDh.GetItemTemplate(leg.RequiredItemUse.ItemId), token);
+						case "bind":
+						{
+							// AB-08, the standing bind policy: bind at the obelisk of the hub the leg works out of.
+							await EnsureOnGroundAsync();
+							NaturalAltgardBind bind = leg.Bind ?? throw new InvalidDataException($"{leg.Leg} has no bind.");
+							int stone = await ApproachShippedSpawnAsync(bind.NpcId);
+							NaturalServiceOutcome bound = await new NaturalServiceSteps(session).BindAsync(stone, session.Api.World.Objects[stone].Position,
+								leg.Hub.MapId, bind.Price, bind.AcceptRange, token);
+							Require.True(bound.IsDone, bound.Reason);
+							break;
+						}
+						case "hunt":
+						{
+							// AB-08: a custom kill counter, one kill per decision (the var moves, so the next decision differs).
+							await EnsureOnGroundAsync();
+							int var = NaturalAltgardQuestSteps.State(session.Api.World, next.QuestId!.Value)?.Var ?? 0;
+							NaturalAltgardHunt hunt = leg.HuntList.First(entry => entry.QuestId == next.QuestId && var >= entry.FromVar && var < entry.ToVar);
+							bool Counted() => (NaturalAltgardQuestSteps.State(session.Api.World, next.QuestId!.Value)?.Var ?? 0) != var;
+							try
+							{
+								int target = await KillShippedSpawnAsync(hunt.NpcIds.First(SpawnsOnMap));
+								navigator.UnavailableObjects.Add(target);
+							}
+							catch (InvalidDataException exception) when (Counted())
+							{
+								// The kill counted on the way, in a fight-through (Q24112: Sumarhon fell as an attacker in his own
+								// camp), and the search then waited for a spawn that was already dead. The var is what counts.
+								session.TraceDiagnostic($"altgard-{altgardLegId}-hunt-counted-on-the-way", new Dictionary<string, object?>
+								{
+									["quest"] = next.QuestId, ["from"] = var, ["reason"] = exception.Message,
+								});
+							}
+							await RestSafelyAsync(token);
+							break;
+						}
+						case "timed":
+							await RunTimedQuestAsync(next.QuestId!.Value);
+							break;
+						case "spawn-kill":
+							await RunSpawnKillAsync(leg.SpawnList.Single(spawn => spawn.Key == next.StepKey));
 							break;
 						case "air-kills":
 						{
@@ -1110,7 +1168,25 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							int[] sources = wanted.SourceNpcIds.Where(SpawnsOnMap)
 								.Where(id => runtime.Data.NpcDataDh.GetNpcTemplate(id)?.GetRank() != Aion.GameServer.Model.Templates.Npc.NpcRank.SEASONED)
 								.ToArray();
+							// AB-08: Komu's Horn has one source, a SEASONED one; take it. If he is dead (an hourly respawn, AB-Q3), hunt
+							// the grounds around him until he is back.
+							if (sources.Length == 0) sources = wanted.SourceNpcIds.Where(SpawnsOnMap).ToArray();
 							Require.True(sources.Length > 0, $"No source of item {wanted.ItemId} spawns here.");
+							if (leg.AvoidList.FirstOrDefault(avoid => sources.Contains(avoid.NpcId)) is { } boss)
+							{
+								await ApproachShippedSpawnAsync(boss.NpcId, skipBlockedTarget: true, withinRange: NaturalPullPlanner.SpellRange + 3);
+								long waitUntil = runtime.NowMillis + boss.RespawnSeconds * 1000L;
+								while (!session.Api.World.Objects.Values.Any(known => known.TemplateId == boss.NpcId && !known.IsCorpse) && runtime.NowMillis < waitUntil)
+								{
+									session.TraceDiagnostic($"altgard-{altgardLegId}-wait-for-respawn", new Dictionary<string, object?> { ["npc"] = boss.NpcId });
+									// Komu's neighbours (AB-02): bigfoot and ruthless mosbears and grove malodors.
+									int[] around = [210441, 210581, 210444];
+									int prey = await KillShippedSpawnAsync(around.First(SpawnsOnMap));
+									navigator.UnavailableObjects.Add(prey);
+									await RestSafelyAsync(token);
+									await ApproachShippedSpawnAsync(boss.NpcId, skipBlockedTarget: true, withinRange: NaturalPullPlanner.SpellRange + 3);
+								}
+							}
 							for (int kill = 0; kill < 6 && ItemCount(session.Api.World, wanted.ItemId) < wanted.Count; kill++)
 							{
 								int source = await KillShippedSpawnAsync(sources[kill % sources.Length]);
@@ -1132,7 +1208,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						}
 						case "return-to-hub":
 							await EnsureOnGroundAsync();
-							await ApproachShippedSpawnAsync(leg.Start.BindNpcId);
+							// AB-08: the hub's own obelisk when the leg binds there (Basfelt), not the one the leg started bound at.
+							await ApproachShippedSpawnAsync(leg.Endpoint.BindNpcId ?? leg.Bind?.NpcId ?? leg.Start.BindNpcId);
 							break;
 						default:
 							throw new InvalidDataException($"The Altgard leg runner has no executor for {next.Action}.");
@@ -1172,6 +1249,250 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				async Task EnsureOnGroundAsync()
 				{
 					if (rockTop is { } top && session.CurrentPosition.Z > top.Z - 20) await FlyToAsync(ground);
+				}
+
+				// AB-08: walk the Altgard travel planner's road to a point (the navmesh path when it has none), one section of 16 points
+				// at a time, defending against whatever engages between sections.
+				async Task<bool> WalkRoadDefendingAsync(BotPosition destination, string purpose, float within = 12,
+					Func<BotPosition, bool>? stopAt = null)
+				{
+					int map = leg.Hub.MapId;
+					// The ground nearest the point, as AB-02 found it: a spot on a slope may not snap where it stands.
+					BotPosition goal = geometry.GroundAround(map, destination, [3f, 5f, 8f, 12f]).FirstOrDefault() is { } ground &&
+						ground != default ? ground : geometry.SnapToGround(map, destination with { Z = destination.Z + 2 }) ?? destination;
+					BotTravelPlanner? planner = BotTravelPlanner.For(map, geometry, runtime.Data);
+					IReadOnlyList<BotPosition> road = planner?.PlanJourney(map, session.CurrentPosition, goal, session.Api.World.Level, [])?.Route
+						?? geometry.FindJourneyPath(map, session.CurrentPosition, goal);
+					if (road.Count == 0)
+					{
+						// The Cleric stands on ground the navmesh does not connect to the goal (a ledge a fight left it on).
+						session.TraceDiagnostic($"altgard-{altgardLegId}-no-road", new Dictionary<string, object?>
+						{
+							["purpose"] = purpose, ["goal"] = goal, ["outcome"] = BotNavMeshRouter.LastOutcome.ToString(),
+							["position"] = session.CurrentPosition,
+						});
+						return false;
+					}
+					// Walk the road only as far as its first point where the caller wants to stop.
+					if (stopAt != null && road.Select((point, index) => (point, index)).FirstOrDefault(entry => stopAt(entry.point)) is
+						{ point: var stop, index: var cut } && stopAt(stop))
+						road = road.Take(cut + 1).ToArray();
+					for (int at = 0; at < road.Count; at += 16)
+					{
+						await navigator.MoveAsync(road.Skip(at).Take(16).ToArray(), token);
+						await session.SynchronizeAsync(token);
+						if (!await DefendAgainstEngagedAsync(purpose) || session.Api.World.IsDead)
+						{
+							await RestSafelyAsync(token);
+							return false;
+						}
+						// A fight on the road leaves the Cleric short: rest before the next section, not at the end of a chain.
+						if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 80) await RestSafelyAsync(token);
+					}
+					bool reached = stopAt?.Invoke(session.CurrentPosition) ?? Distance(session.CurrentPosition, goal) <= within;
+					session.TraceDiagnostic($"altgard-{altgardLegId}-road", new Dictionary<string, object?>
+					{
+						["purpose"] = purpose, ["points"] = road.Count, ["position"] = session.CurrentPosition,
+						["miss"] = Distance(session.CurrentPosition, goal), ["reached"] = reached,
+					});
+					return reached;
+				}
+
+				// AB-08: one contract talk step: approach the NPC (flying for a flight step), talk, and follow a walking NPC.
+				async Task PlayContractStepAsync(NaturalAltgardStep step)
+				{
+					int npc;
+					if (step.Flight)
+					{
+						await FlyToAsync(Rock());
+						npc = await session.WaitForNpcAsync(step.NpcId, token);
+					}
+					else
+					{
+						await EnsureOnGroundAsync();
+						try { npc = await ApproachShippedSpawnAsync(step.NpcId); }
+						catch (InvalidDataException exception)
+						{
+							// The navigator found no route from where the last fight ended (Q24112: off Sumarhon's height toward
+							// Brodir). Take the travel planner's road to the NPC, as AB-02 walked it, and look again from there.
+							session.TraceDiagnostic($"altgard-{altgardLegId}-talk-road", new Dictionary<string, object?>
+							{
+								["step"] = step.Key, ["reason"] = exception.Message, ["position"] = session.CurrentPosition,
+							});
+							BotPosition at = new(step.Position[0], step.Position[1], step.Position[2], 0);
+							if (!await WalkRoadDefendingAsync(at, $"talk-road-{step.Key}") && !session.Api.World.IsDead)
+							{
+								// No road from this ground at all: Return to the hub's obelisk, as a player does (the bind policy,
+								// AB-Q5), and walk from there.
+								await UseLearnedReturnToBindAsync();
+								await WalkRoadDefendingAsync(at, $"talk-road-{step.Key}-after-return");
+							}
+							npc = await ApproachShippedSpawnAsync(step.NpcId);
+						}
+					}
+					for (int attempt = 1; ; attempt++)
+					{
+						try
+						{
+							string change = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token);
+							session.TraceDiagnostic($"altgard-{altgardLegId}-step", new Dictionary<string, object?> { ["step"] = step.Key, ["change"] = change });
+							return;
+						}
+						catch (NaturalDialogTooFarException) when (attempt < 3 && !step.Flight) { await ReapproachForDialogAsync(npc); }
+					}
+				}
+
+				// AB-08: open an NPC's dialog for a quest and send actions, waiting for each page (the steps that move no var:
+				// Q2230's expired check and new chance, Lamir's refill incense).
+				async Task DialogAsync(int npcId, int questId, (string Action, int? Page)[] actions)
+				{
+					await EnsureOnGroundAsync();
+					int npc = await ApproachShippedSpawnAsync(npcId);
+					for (int attempt = 1; ; attempt++)
+					{
+						try
+						{
+							await NaturalDialogProtocol.OpenAsync(session, npc, token);
+							await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet => packet.Get<int>("targetObjectId") == npc);
+							break;
+						}
+						catch (NaturalDialogTooFarException) when (attempt < 3) { await ReapproachForDialogAsync(npc); }
+					}
+					foreach ((string action, int? page) in actions)
+					{
+						await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npc,
+							checked((ushort)NaturalAscensionContract.DialogActionId(action)), questId: questId), token);
+						if (page is int expected)
+							await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet =>
+								packet.Get<int>("targetObjectId") == npc && packet.Get<ushort>("dialogPageId") == expected);
+					}
+					await session.SynchronizeAsync(token);
+					await session.SendPacketAsync(session.Api.CloseDialog(npc), token);
+				}
+
+				// AB-08: a timed quest (Q2288, Q2230) from its offer to its hand-in, on NaturalTimedQuestPolicy. The client sees each
+				// timer's length in SM_QUEST_ACTION and the bot notes when it should end. A death ends the timer on the server (AB-Q6:
+				// Q1044's and Q2042's hooks), so after a revive Q2230's timer counts as ended and Q2288's as gone.
+				async Task RunTimedQuestAsync(int questId)
+				{
+					NaturalAltgardTimer timer = leg.TimerList.Single(entry => entry.QuestId == questId);
+					NaturalAltgardQuest quest = leg.Quest(questId);
+					NaturalAltgardHunt? hunt = leg.HuntList.FirstOrDefault(entry => entry.QuestId == questId);
+					NaturalAltgardCollectedItem? item = leg.CollectionList.FirstOrDefault(entry => entry.QuestId == questId)?.Items.Single();
+					NaturalAltgardStep offer = leg.StepsFor(questId).Single(step => step.ExpectedStatus == "OFFER");
+					for (int round = 0; round < 300; round++)
+					{
+						await session.SynchronizeAsync(token);
+						BotWorldModel world = session.Api.World;
+						if (world.IsDead || world.CurrentHp <= 0)
+						{
+							await RestSafelyAsync(token);
+							if (timedEnds.ContainsKey(questId)) timedEnds[questId] = timer.OnExpiry == "new-chance" ? runtime.NowMillis : long.MinValue;
+							continue;
+						}
+						(byte Status, int Var)? state = NaturalAltgardQuestSteps.State(world, questId);
+						bool completed = world.CompletedQuestIds.Contains(questId);
+						string? status = completed ? "COMPLETE" : state switch { (3, _) => "START", (4, _) => "REWARD", null => null, _ => "OTHER" };
+						int var = state?.Var ?? 0;
+						if (status == null) timedEnds.Remove(questId); // abandoned: its timer is gone with it
+						long? endsAt = timedEnds.TryGetValue(questId, out long ends) && ends != long.MinValue ? ends : null;
+						int unitsLeft = hunt != null ? hunt.ToVar - Math.Max(var, hunt.FromVar) : item!.Count - (int)ItemCount(world, item.ItemId);
+						double perKill = hunt != null ? 1 : 0.8;
+						BotPosition giver = new(offer.Position[0], offer.Position[1], offer.Position[2], 0);
+						bool ready = world.CurrentHp * 100 >= world.MaxHp * 90 && world.CurrentMp * 100 >= world.MaxMp * 80 && Engaged().Attackers.Length == 0;
+						NaturalTimedChoice choice = NaturalTimedQuestPolicy.Decide(new NaturalTimedObservation(status, var, runtime.NowMillis, endsAt,
+							Math.Max(unitsLeft, 0), perKill, 45, Distance(session.CurrentPosition, giver) / 6, timedAttempts.GetValueOrDefault(questId), ready), timer);
+						session.TraceDiagnostic($"altgard-{altgardLegId}-timed", new Dictionary<string, object?>
+						{
+							["quest"] = questId, ["action"] = choice.Action, ["reason"] = choice.Reason, ["status"] = status, ["var"] = var,
+							["slack"] = double.IsFinite(choice.SlackSeconds) ? choice.SlackSeconds : null, ["attempts"] = timedAttempts.GetValueOrDefault(questId),
+							["unitsLeft"] = unitsLeft,
+						});
+						void TimerStarted()
+						{
+							timedAttempts[questId] = timedAttempts.GetValueOrDefault(questId) + 1;
+							int seconds = session.Api.World.Quests.TryGetValue(questId, out BotQuestState? quest) && quest.TimerSeconds is int seen && seen > 0
+								? seen : timer.Seconds;
+							timedEnds[questId] = runtime.NowMillis + seconds * 1000L;
+						}
+						switch (choice.Action)
+						{
+							case "done":
+								return;
+							case "give-up":
+								await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, $"altgard-{altgardLegId}-timed-{questId}-given-up.json"),
+									System.Text.Json.JsonSerializer.Serialize(choice), token);
+								throw new InvalidDataException($"Altgard leg {altgardLegId}: Q{questId}'s timer ran out {timedAttempts.GetValueOrDefault(questId)} times (AB-Q2).");
+							case "take":
+								await PlayContractStepAsync(offer);
+								if (NaturalTimedQuestPolicy.TimerStartsAtAccept(timer)) TimerStarted();
+								break;
+							case "start-timer":
+								await PlayContractStepAsync(leg.Steps.Single(step => step.Key == timer.StartStep));
+								TimerStarted();
+								break;
+							case "hunt":
+							{
+								await EnsureOnGroundAsync();
+								int[] kinds = hunt?.NpcIds ?? item!.SourceNpcIds;
+								int target = await KillShippedSpawnAsync(kinds.First(SpawnsOnMap));
+								if (item != null) await TryLootCorpseItemAsync(session, target, item.ItemId, token);
+								navigator.UnavailableObjects.Add(target);
+								break;
+							}
+							case "turn-in":
+								await PlayContractStepAsync(leg.StepsFor(questId).Single(step => step.ExpectedStatus == "START" && step.Var == var &&
+									step.Key != timer.StartStep));
+								break;
+							case "new-chance":
+								await DialogAsync(quest.StartNpcId!.Value, questId,
+									[("QUEST_SELECT", null), ("CHECK_USER_HAS_QUEST_ITEM", timer.ExpiredPage), (timer.NewChanceAction!, null)]);
+								TimerStarted();
+								break;
+							case "wait-until-ready":
+								await RestSafelyAsync(token);
+								break;
+							default: // wait-for-journal
+								await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+								break;
+						}
+					}
+					throw new InvalidDataException($"Q{questId}'s timed run exceeded 300 rounds.");
+				}
+
+				// AB-08: Q2223's Infernus. Without incense, Lamir gives another (page 1779). With it: rest to full, burn it at the Old
+				// Incense Burner (movie 67), and fight Infernus inside his five minutes. Three tries (AB-Q2).
+				async Task RunSpawnKillAsync(NaturalAltgardSpawn spawn)
+				{
+					int tries = spawnAttempts.GetValueOrDefault(spawn.Key);
+					if (tries >= NaturalTimedQuestPolicy.MaxAttempts)
+						throw new InvalidDataException($"Altgard leg {altgardLegId}: {spawn.Key} failed {tries} times (AB-Q2).");
+					if (ItemCount(session.Api.World, spawn.RequiresItemId) == 0)
+					{
+						await DialogAsync(spawn.RefillNpcId, spawn.QuestId, [("QUEST_SELECT", spawn.RefillPage)]);
+						return;
+					}
+					await RestSafelyAsync(token);
+					await EnsureOnGroundAsync();
+					int burner = await ApproachShippedSpawnAsync(spawn.TriggerNpcId, skipBlockedTarget: true);
+					if (!session.Api.World.Objects.ContainsKey(burner))
+					{
+						await session.AdvanceAsync(TimeSpan.FromSeconds(30), token); // the burner respawns 295 s after a use
+						return;
+					}
+					await RestSafelyAsync(token);
+					spawnAttempts[spawn.Key] = tries + 1;
+					bool used = await NaturalAltgardQuestSteps.UseObjectAsync(session, burner, null, token);
+					await NaturalMovieGate.FinishAsync(session, token);
+					int monster = await session.WaitForNpcAsync(spawn.NpcId, token);
+					bool killed = await combat.TryKillAsync(monster, token, session.CurrentPosition);
+					await session.SynchronizeAsync(token);
+					session.TraceDiagnostic($"altgard-{altgardLegId}-spawn-kill", new Dictionary<string, object?>
+					{
+						["spawn"] = spawn.Key, ["try"] = tries + 1, ["used"] = used, ["monster"] = monster, ["killed"] = killed,
+						["quest"] = NaturalAltgardQuestSteps.State(session.Api.World, spawn.QuestId)?.ToString(),
+					});
+					await RestSafelyAsync(token);
 				}
 
 				// AC-06: the escort (docs/natural-altgard-leveling.md, "The escort handler"). NaturalEscortProtocol runs it; this
@@ -2060,7 +2381,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			{
 				// No cap on how many attackers are fought: chain aggro and respawns can keep them coming. Only the
 				// wait for pursuers that never arrive is bounded (they gave up and walked home).
-				int pursuerWaits = 0;
+				int pursuerWaits = 0, blockedWaits = 0;
 				for (int round = 0; round < NaturalJourneyCombat.MaximumCombatActions; round++)
 				{
 					var (attackers, pursuers) = Engaged();
@@ -2097,6 +2418,25 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					{
 						// A ranged aggressor can be in Smite range across a blocked seam. Wait
 						// for the spell cooldown instead of ending the whole quest or entering adds.
+						await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
+						await session.SynchronizeAsync(token);
+						continue;
+					}
+					catch (NaturalCombatApproachBlockedException exception)
+					{
+						// AB-08: a retreat left the attacker out of range behind its pack (Sumarhon's camp): no checked way back.
+						// Let it come to us, as a pursuer, and when it does not, leave it to the caller's next plan.
+						session.TraceDiagnostic("defend-approach-blocked", new Dictionary<string, object?>
+						{
+							["purpose"] = purpose, ["attacker"] = attacker, ["waits"] = blockedWaits, ["reason"] = exception.Message,
+							["position"] = session.CurrentPosition,
+						});
+						if (combat.ReviveCount > revivesBefore || session.Api.World.IsDead) return false;
+						if (++blockedWaits >= 3)
+						{
+							quietNeighbours.Add(attacker);
+							return true;
+						}
 						await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
 						await session.SynchronizeAsync(token);
 						continue;

@@ -101,6 +101,16 @@ public sealed class NaturalIshalgenInventoryPolicy
 			rewards[id] = quest.Elements("rewards").FirstOrDefault()?.Elements("selectable_reward_item")
 				.Select(element => (int)element.Attribute("item_id")!).ToArray() ?? [];
 		}
+		// AB-08: every other Asmodian quest's selectable rewards, so a template hand-in beyond Ishalgen (Altgard's Q2225 and
+		// Q2227) can choose one. Only the choice list is added; the protected quest items stay the contract's.
+		foreach (XElement quest in quests.Elements("quest").Where(q => (string?)q.Attribute("race_permitted") is null or "ASMODIANS" or "PC_ALL"))
+		{
+			int id = (int)quest.Attribute("id")!;
+			if (rewards.ContainsKey(id)) continue;
+			int[] choices = quest.Elements("rewards").FirstOrDefault()?.Elements("selectable_reward_item")
+				.Select(element => (int)element.Attribute("item_id")!).ToArray() ?? [];
+			if (choices.Length > 0) rewards[id] = choices;
+		}
 		// NA-09: the Ascension bridge (docs/natural-ascension-altgard.md): its protected items and the ceremony
 		// weapon the operator chose (OD-5), from the reviewed contract.
 		var bridge = NaturalAscensionContract.Load(Path.Combine(root, "parity-artifacts/e2e/natural-ascension-contract.json"));

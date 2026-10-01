@@ -29,7 +29,9 @@
   "bind": {
     "npcId": 700066,
     "position": [1800.357, 711.373, 262.399],
-    "onArrival": true
+    "onArrival": true,
+    "price": 632,
+    "acceptRange": 5
   },
   "areas": [
     {
@@ -736,7 +738,20 @@
     "anywhere": false,
     "zone": "DF1A_ITEMUSEAREA_Q2016_220030000",
     "spawnsNpcId": 210457,
-    "spawnCount": 2
+    "spawnCount": 2,
+    "zoneAnchor": [1716, 236, 287],
+    "zonePolygon": [
+      [1687.2004, 248.435],
+      [1674.0039, 258.64365],
+      [1660.3093, 258.64365],
+      [1639.6431, 243.95316],
+      [1639.6431, 209.09433],
+      [1653.5865, 199.13467],
+      [1679.6914, 221.10106],
+      [1720.1907, 221.28383],
+      [1720.1907, 248.28806]
+    ],
+    "zoneBand": [260.19998, 360.19998]
   },
   "airKills": null,
   "rewardChoice": {
