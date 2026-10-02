@@ -57,6 +57,7 @@ public sealed record NaturalAltgardContract(
 		["l5"] = ("natural-altgard-l5-contract.json", "natural-altgard-l5-plans"),
 		["l6"] = ("natural-altgard-l6-contract.json", "natural-altgard-l6-plans"),
 		["l7"] = ("natural-altgard-l7-contract.json", "natural-altgard-l7-plans"),
+		["l8"] = ("natural-altgard-l8-contract.json", "natural-altgard-l8-plans"),
 	};
 
 	public NaturalAltgardObjectUse[] ObjectUseList => ObjectUses ?? [];
@@ -125,6 +126,9 @@ public sealed record NaturalAltgardContract(
 			contract.PoisonList.Any(poison => !contract.Steps.Any(step => step.Key == poison.RemovedByStep)))
 			throw new InvalidDataException("Natural Altgard object uses, zone steps, collections or poisons disagree with the quests and steps.");
 		string[] stepKeys = contract.Steps.Select(step => step.Key).ToArray();
+		if (contract.Bind?.BeforeStep is { } before &&
+			!contract.Steps.Any(step => step.Key == before && step.ExpectedStatus == "OFFER" && contract.StepMap(step) == contract.Hub.MapId))
+			throw new InvalidDataException("Natural Altgard bind prerequisite must name an offer on the hub map.");
 		if (contract.EscortList.Select(escort => escort.Key).Distinct().Count() != contract.EscortList.Length ||
 			contract.EscortList.Any(escort => !questIds.Contains(escort.QuestId) || !stepKeys.Contains(escort.StartStep) ||
 				!stepKeys.Contains(escort.RestartStep) || !areas.Contains(escort.Area) || escort.ClearAreas.Any(area => !areas.Contains(area)) ||
@@ -267,7 +271,7 @@ public sealed record NaturalAltgardEndpoint(int MapId, int[] CompletedQuestIds, 
 	float[]? Anchor = null, float Radius = 0, int? BindNpcId = null, int[]? HeldQuestIds = null);
 
 /// <summary>AB-01, the standing bind policy (AB-Q5): bind at the obelisk of the hub the leg works out of, on arrival.</summary>
-public sealed record NaturalAltgardBind(int NpcId, float[] Position, bool OnArrival, int Price, float AcceptRange);
+public sealed record NaturalAltgardBind(int NpcId, float[] Position, bool OnArrival, int Price, float AcceptRange, string? BeforeStep = null);
 
 /// <summary>AB-01: a custom handler's kill counter: each kill of <paramref name="NpcIds"/> moves the var from
 /// <paramref name="FromVar"/> toward <paramref name="ToVar"/> (Q2288, Q2289, Q24112, Q24013).</summary>

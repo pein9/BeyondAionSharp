@@ -1,0 +1,234 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2267,
+    "name": "A Monster in a Box",
+    "nameId": 1103367,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 15,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2267,
+        "start_npc_ids": 203656
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203656,
+        "name": "urnir",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1484.9,
+            "y": 2539.83,
+            "z": 300.0,
+            "heading": 13,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203656,
+      "name": "urnir",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1484.9,
+          "y": 2539.83,
+          "z": 300.0,
+          "heading": 13,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203656,
+      "name": "urnir",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1484.9,
+          "y": 2539.83,
+          "z": 300.0,
+          "heading": 13,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": 210525,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210525,
+          "name": "big cargo box",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1480.21,
+              "y": 2458.69,
+              "z": 247.375,
+              "heading": 76,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1481.32,
+              "y": 2428.84,
+              "z": 247.207,
+              "heading": 25,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1490.85,
+              "y": 2495.56,
+              "z": 247.375,
+              "heading": 86,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1492.49,
+              "y": 2432.44,
+              "z": 247.485,
+              "heading": 45,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1517.14,
+              "y": 2434.14,
+              "z": 247.375,
+              "heading": 31,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1518.68,
+              "y": 2437.67,
+              "z": 247.375,
+              "heading": 49,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1519.37,
+              "y": 2491.98,
+              "z": 247.291,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1565.53,
+              "y": 2205.52,
+              "z": 247.375,
+              "heading": 55,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203656,
+          "name": "urnir",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1484.9,
+              "y": 2539.83,
+              "z": 300.0,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 26370,
+        "gold": 8540,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2267,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 15,
+      "name": "A Monster in a Box",
+      "nameId": 1103367,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 26370,
+          "gold": 8540
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": 210525,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

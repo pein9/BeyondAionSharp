@@ -1,0 +1,221 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2269,
+    "name": "Neifenmer's Reasoning",
+    "nameId": 1103369,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 15,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2269,
+        "start_npc_ids": 203655
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203655,
+        "name": "neifenmer",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1482.53,
+            "y": 2546.96,
+            "z": 298.655,
+            "heading": 6,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203655,
+      "name": "neifenmer",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1482.53,
+          "y": 2546.96,
+          "z": 298.655,
+          "heading": 6,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203655,
+      "name": "neifenmer",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1482.53,
+          "y": 2546.96,
+          "z": 298.655,
+          "heading": 6,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182203245,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182203245,
+          "npc_id": 700010,
+          "npc": {
+            "id": 700010,
+            "name": "lepharist operation order",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1692.4,
+                "y": 2649.05,
+                "z": 288.381,
+                "heading": 67,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1698.31,
+                "y": 2657.3,
+                "z": 292.045,
+                "heading": 38,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1706.03,
+                "y": 2646.5,
+                "z": 290.736,
+                "heading": 70,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1709.78,
+                "y": 2589.45,
+                "z": 287.592,
+                "heading": 95,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1716.3,
+                "y": 2613.0,
+                "z": 287.457,
+                "heading": 82,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203655,
+          "name": "neifenmer",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1482.53,
+              "y": 2546.96,
+              "z": 298.655,
+              "heading": 6,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 11265,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2269,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 15,
+      "name": "Neifenmer's Reasoning",
+      "nameId": 1103369,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182203245
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 11265
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182203245,
+          "npc_id": 700010
+        }
+      }
+    ]
+  }
+}

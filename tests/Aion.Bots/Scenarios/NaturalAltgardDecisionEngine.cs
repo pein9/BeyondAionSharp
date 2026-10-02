@@ -101,7 +101,15 @@ public static class NaturalAltgardDecisionEngine
 			return Stop("wrong-map", "blocked", $"{contract.Leg} is on map {contract.Hub.MapId}; the Cleric is on {state.MapId}.");
 		// AB-08, the standing bind policy (AB-Q5): bind at the hub's obelisk first.
 		if (!offHub && contract.Bind is { OnArrival: true } bind && !BoundAt(bind, contract.Hub.MapId, state.Bind))
+		{
+			// AO-00: take the departure hub's message before flying to the next hub to bind (Q2266 at Valurion).
+			if (bind.BeforeStep is { } key && contract.Steps.Single(step => step.Key == key) is { } before &&
+				!state.CompletedQuestIds.Contains(before.QuestId) &&
+				(!state.Quests.TryGetValue(before.QuestId, out BotQuestState? quest) || quest.Status is not (Start or Reward or 5)) &&
+				state.Level >= contract.Quest(before.QuestId).MinimumLevel && (only == null || only.Contains(before.QuestId)))
+				return Plan("talk", before.QuestId, "Take the departure message before changing the working bind.", key);
 			return Plan("bind", null, $"Bind at the {contract.Hub.Key} obelisk ({bind.NpcId}) before working out of it.");
+		}
 
 		// AK-08: a held quest (AK-Q2) is done for this leg once it is taken and its objective is met; its hand-in is a later leg's.
 		// AK-Q4 (a): the NPC cube expansions come first, bought with the Cleric's own kinah while it has enough.

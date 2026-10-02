@@ -1,0 +1,313 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2268,
+    "name": "Urnir's Reasoning",
+    "nameId": 1103368,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 15,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2268,
+        "start_npc_ids": 203656
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203656,
+        "name": "urnir",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1484.9,
+            "y": 2539.83,
+            "z": 300.0,
+            "heading": 13,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203656,
+      "name": "urnir",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1484.9,
+          "y": 2539.83,
+          "z": 300.0,
+          "heading": 13,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203656,
+      "name": "urnir",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1484.9,
+          "y": 2539.83,
+          "z": 300.0,
+          "heading": 13,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": "210526 210527",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210526,
+          "name": "longnecked pecku",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1560.39,
+              "y": 2375.3,
+              "z": 267.69,
+              "heading": 7,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1564.86,
+              "y": 2410.44,
+              "z": 258.963,
+              "heading": 82,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1569.25,
+              "y": 2433.05,
+              "z": 259.636,
+              "heading": 7,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1574.13,
+              "y": 2375.42,
+              "z": 264.54,
+              "heading": 49,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1574.86,
+              "y": 2346.63,
+              "z": 264.973,
+              "heading": 43,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1593.14,
+              "y": 2485.09,
+              "z": 272.265,
+              "heading": 76,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1593.45,
+              "y": 2317.54,
+              "z": 267.961,
+              "heading": 119,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1598.02,
+              "y": 2392.07,
+              "z": 260.517,
+              "heading": 43,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1601.33,
+              "y": 2637.84,
+              "z": 280.813,
+              "heading": 106,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1619.02,
+              "y": 2460.28,
+              "z": 269.884,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1629.35,
+              "y": 2442.38,
+              "z": 269.293,
+              "heading": 11,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1664.72,
+              "y": 2545.05,
+              "z": 279.354,
+              "heading": 105,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210527,
+          "name": "longnecked pecku",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1583.54,
+              "y": 2540.85,
+              "z": 284.788,
+              "heading": 16,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1605.14,
+              "y": 2669.23,
+              "z": 282.582,
+              "heading": 104,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1624.77,
+              "y": 2673.28,
+              "z": 282.615,
+              "heading": 46,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1629.26,
+              "y": 2642.17,
+              "z": 279.204,
+              "heading": 109,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1641.81,
+              "y": 2669.96,
+              "z": 282.849,
+              "heading": 65,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203656,
+          "name": "urnir",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1484.9,
+              "y": 2539.83,
+              "z": 300.0,
+              "heading": 13,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 25335,
+        "gold": 8540,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2268,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 15,
+      "name": "Urnir's Reasoning",
+      "nameId": 1103368,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 25335,
+          "gold": 8540
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": "210526 210527",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

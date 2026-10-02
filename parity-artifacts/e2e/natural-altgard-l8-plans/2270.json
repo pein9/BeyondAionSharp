@@ -1,0 +1,462 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2270,
+    "name": "Creating a Delay",
+    "nameId": 1103370,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 15,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2269
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2270,
+        "start_npc_ids": 203655
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203655,
+        "name": "neifenmer",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1482.53,
+            "y": 2546.96,
+            "z": 298.655,
+            "heading": 6,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203655,
+      "name": "neifenmer",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1482.53,
+          "y": 2546.96,
+          "z": 298.655,
+          "heading": 6,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203655,
+      "name": "neifenmer",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1482.53,
+          "y": 2546.96,
+          "z": 298.655,
+          "heading": 6,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182203246,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203246,
+          "npc_id": 210528,
+          "npc": {
+            "id": 210528,
+            "name": "watch bodyguard",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1625.86,
+                "y": 2592.8,
+                "z": 279.70874,
+                "heading": 65,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1670.66,
+                "y": 2611.36,
+                "z": 283.588,
+                "heading": 105,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1671.88,
+                "y": 2607.34,
+                "z": 282.994,
+                "heading": 72,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1682.63,
+                "y": 2620.05,
+                "z": 286.631,
+                "heading": 84,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1693.13,
+                "y": 2518.22,
+                "z": 285.53,
+                "heading": 65,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1693.33,
+                "y": 2643.15,
+                "z": 288.197,
+                "heading": 83,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1700.12,
+                "y": 2617.78,
+                "z": 288.334,
+                "heading": 87,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1717.14,
+                "y": 2610.2,
+                "z": 287.293,
+                "heading": 74,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1717.51,
+                "y": 2598.9,
+                "z": 287.026,
+                "heading": 52,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1717.69,
+                "y": 2630.36,
+                "z": 290.9,
+                "heading": 88,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203246,
+          "npc_id": 210529,
+          "npc": {
+            "id": 210529,
+            "name": "watch bodyguard",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203246,
+          "npc_id": 210530,
+          "npc": {
+            "id": 210530,
+            "name": "watch shaman",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1625.86,
+                "y": 2592.8,
+                "z": 279.70874,
+                "heading": 65,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1670.86,
+                "y": 2596.24,
+                "z": 281.074,
+                "heading": 58,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1678.43,
+                "y": 2655.49,
+                "z": 290.395,
+                "heading": 70,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1681.16,
+                "y": 2486.38,
+                "z": 280.5,
+                "heading": 112,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1689.43,
+                "y": 2621.94,
+                "z": 287.057,
+                "heading": 58,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1690.17,
+                "y": 2551.45,
+                "z": 282.987,
+                "heading": 35,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1698.92,
+                "y": 2639.26,
+                "z": 288.262,
+                "heading": 2,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1701.02,
+                "y": 2655.11,
+                "z": 290.57,
+                "heading": 33,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1710.7,
+                "y": 2592.83,
+                "z": 286.5,
+                "heading": 10,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1718.57,
+                "y": 2604.29,
+                "z": 287.304,
+                "heading": 37,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1735.79,
+                "y": 2506.42,
+                "z": 288.776,
+                "heading": 94,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1738.37,
+                "y": 2534.73,
+                "z": 291.171,
+                "heading": 26,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203246,
+          "npc_id": 210531,
+          "npc": {
+            "id": 210531,
+            "name": "watch shaman",
+            "positions": [],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203655,
+          "name": "neifenmer",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1482.53,
+              "y": 2546.96,
+              "z": 298.655,
+              "heading": 6,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 25800,
+        "gold": 6490,
+        "rewardItems": [
+          {
+            "count": 75,
+            "item_id": 169000004
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2270,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 15,
+      "name": "Creating a Delay",
+      "nameId": 1103370,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182203246
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 25800,
+          "gold": 6490
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 75,
+              "item_id": 169000004
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203246,
+          "npc_id": 210528
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203246,
+          "npc_id": 210529
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203246,
+          "npc_id": 210530
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203246,
+          "npc_id": 210531
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2269
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

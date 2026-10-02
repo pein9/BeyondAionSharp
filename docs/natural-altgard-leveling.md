@@ -18,6 +18,8 @@ is done (AK-00..AK-10, 2026-10-01): `altgard-l5` starts Leg 6.
 (AG-00..AG-09, 2026-10-02): `altgard-l6` starts Leg 7.
 [Leg 7: Altgard Fortress and the East Gate](#leg-7-altgard-fortress-and-the-east-gate-level-21--proposal) is done
 (AE-00..AE-08, 2026-10-02; AE-Q1..AE-Q3 as recommended): `altgard-l7` starts Leg 8 at the fortress.
+[Leg 8: Altgard Observatory and Mahindel Swamp](#leg-8-altgard-observatory-and-mahindel-swamp-level-21)
+is authorized and in progress (AO-00..AO-06, 2026-10-02).
 
 ## Goal
 
@@ -3058,6 +3060,76 @@ The same loop protocol, with "AE" in place of "NA".
 - alive, within 60 m of it;
 - the endpoint verified across a relog.
 
+## Leg 8: Altgard Observatory and Mahindel Swamp (level 21)
+
+**Status (2026-10-02): implementation authorized** by the maintainer's "Implement Leg 8 as needed."
+This works the seven-quest outline approved with AE-Q3 (a), using the existing loop protocol with **AO** in place
+of NA. The standing bind, hub-flight, held-quest, help-item and death policies apply. No new server content is needed.
+
+**Start:** `altgard-l7`, character 133297, level 21, alive and bound at the fortress, 264,842 Kinah and a 63-slot cube.
+The previous 77 quests are completed; Q2146 START/0 and Q24115 START/3 remain held for the Heart of Impetusium.
+Q2900/Q24014/Q24015 remain START/0, Q24016 LOCKED/0. Leg 9 and the later Black Claw work stay outside this leg.
+
+**Route and bind.** Take Q2266 at Valurion before departure. The fortress transporter 203561 flies
+`df1a_altgardtosanctuary` (34 s, 250 Kinah base) to the Observatory; bind at 700822
+(1461.822, 2553.606, 299.214), 2,035 Kinah. Urnir, Neifenmer and Aurtri are within 40 m; Sarad (203657) is the
+town merchant. Work the swamp and Lepharist camp from this hub. Q2271 goes to Suthran: take the Observatory
+transporter 205259 (`df1a_sanctuarytoaltgard`, 34 s, 250 base), report, then fly back to the Observatory endpoint.
+Prices are observed after SM_PRICES. Do not walk between hubs.
+
+| Quest | Source and objective | XP |
+|---|---|---|
+| Q2266 | Java script: Valurion gives 182203244; Neifenmer at var 0 (SETPRO1), Aurtri at var 1, reward | 27,630 |
+| Q2267 | Java MonsterHunt: Urnir, five big cargo boxes 210525 (L17) | 26,370 |
+| Q2268 | Java MonsterHunt: Urnir, five longnecked peckus 210526/210527 (L17–18) | 25,335 |
+| Q2269 | Java ItemCollecting: Neifenmer, one Operation Order 182203245 from object 700010 | 11,265 |
+| Q2270 | After Q2269: three insignia 182203246, 80% from watch bodyguards/shamans | 25,800 |
+| Q24113 | Existing D32 template, after Q24112: Aurtri, Tiamat's Sword 182215473 from Commander Gattban | 16,066 |
+| Q2271 | After Q2270: Neifenmer gives 182203247; Aurtri at var 0 (SETPRO1), Suthran at var 1, reward | 23,100 |
+
+**Java and retail evidence.** Java `ce54b7931`: `_2266ATrustworthyMessenger`, `_2271AurtrisLetter`,
+`quest_script_data/altgard.xml`, MonsterHunt, ItemCollecting, QuestItemNpcAI and TeleportService. Q24113 retains
+the approved D32 register, compiled plan and upstream patch; the local 4.8 client and evidence described in
+`retail-quest-completion.md` remain its spec. No new deviation is introduced.
+
+**Grounds and hazards.** Eight cargo boxes lie at x 1480–1566, y 2205–2496, z 247, below the Observatory.
+Seventeen peckus lie at x 1560–1665, y 2317–2674, z 259–285; some walk randomly. The Operation Order has five
+spots at x 1692–1717, y 2589–2658, z 287–293 and a three-second use bar, then a drop list. The Lepharist camp is
+crowded with L17 bodyguards/shamans; Q2270's 210529/210531 alternatives have no shipped spots, so hunt 210528/210530.
+Gattban (210532) is EXPERT L18, 3,383 HP, patrolling from (1721.12, 2636.07, 291.18), with a bodyguard 6.7 m away
+and another three bodyguards/four shamans within 35 m. The bot fights ordinary blockers and clears around an
+object before using it. Deaths, retreats and interrupted uses are recorded outcomes.
+
+### Leg 8 TODO list
+
+- [x] **AO-00 — Contract and plans.** Seven quests, five compiled template plans, Java scripted dialog steps;
+  Q2266 before the new bind, Observatory town service, retained held quests and endpoint. Verify shipped-data and
+  decision tests, plan recompilation and pre-commit checks; Fast for the decision change.
+  - *Done 2026-10-02.* The l8 contract starts from AE-08's `734f82eae`, preserves the 77 completions, both held
+    quests and campaign states, and ends at Observatory 700822. Five compiled plans and eight script steps cover
+    the seven quests. A bind prerequisite offer takes Q2266 before leaving Valurion; already taken/rewarded/completed
+    states proceed directly to the new bind. Six shipped-data/decision cases pass (`ao00-contract-fixed.log`).
+    The initial build's undefined completion constant was corrected; its log is retained. Plan recompilation,
+    D32 inventory, warning/logger/clock/custom-draft/fidelity checks pass. `ao00-fast`: 65 passed, three switch
+    skips, all eleven scenarios passed. Q24113's plan matches the existing D32 plan byte for byte.
+- [ ] **AO-01 — Travel in SIM.** Free probe account, level-21 plans; walk every hub, objective ground and camp/object
+  route, including Gattban's spawn, and the fortress/Observatory flight round trip. Record geometry and hazards.
+- [ ] **AO-02 — Quests in SIM.** A free controlled probe plays both scripted chains and all five templates,
+  including the three-second Operation Order use/loot and Gattban's sword. Preserve shared-world probe isolation.
+- [ ] **AO-03 — Combat at level 21.** The encounter harness: pecku mix, bodyguard/shaman, Gattban alone and his nearby
+  camp at shipped relative spacing. Record distinct kills, deaths and retreats; verify once plus pre-commit checks.
+- [ ] **AO-04 — Natural runner and smoke.** Restore `altgard-l7`; play `AF_ALTGARD=l8` with the snapshot runner's
+  environment, ordinary combat, hub flights and relog verification; drop the owned schema. Fix only demonstrated
+  runner gaps. Pre-commit checks and Fast before committing gameplay changes. Never capture uncommitted code.
+- [ ] **AO-05 — Snapshot.** Enable `-Leg l8`, commit before capture, then capture `altgard-l8` from `altgard-l7` and
+  hash-check/restore-check it in an owned schema. Record the exact state, source commit and drop both schemas.
+- [ ] **AO-06 — Full CLAUDE checklist and checkpoint.** Run every listed command, retain any failures and their
+  correction evidence, tick the item and commit on main. Stop here.
+
+**Endpoint:** all seven quests COMPLETE; Q2146 START/0 and Q24115 START/3 held; campaign states preserved;
+alive, level at least 21, bound at Observatory 700822 and within 60 m, verified across relog. `altgard-l8` starts
+Leg 9. LIVE acceptance remains once at the end of the whole Altgard area.
+
 ## Blocked / questions for the operator
 
 **Leg 7, answered 2026-10-02:** AE-Q1 **(a)**, AE-Q2 **(a)** and AE-Q3 **(a)**, all as recommended:
@@ -3469,3 +3541,4 @@ The original questions follow.
 - 2026-10-02 AE-06: Leg 7 smoke and relog pass from altgard-l6; 35 distinct kills, no deaths/retreats, first pollen timer, all hub flights; earlier failures/outcomes retained; Fast and pre-commit checks pass.
 - 2026-10-02 AE-07: altgard-l7 captured from committed code 2df0d2cad and restored successfully; level 21, fortress bind, 264,842 Kinah, thirteen completions and two held quests; owned schemas dropped.
 - 2026-10-02 AE-08: all 33 CLAUDE checklist commands completed; the D32 account reservation failure corrected with free accounts 201–206; inventory, affected encounters, Fast and pre-commit checks pass. Leg 7 is done; altgard-l7 starts Leg 8.
+- 2026-10-02 AO-00: Leg 8 contract, five plans and eight scripted steps; Q2266 precedes the Observatory bind; six contract/decision cases, Fast and pre-commit checks pass, from 734f82eae.
