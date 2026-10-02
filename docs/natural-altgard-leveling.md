@@ -2407,7 +2407,30 @@ The same loop protocol, with "AK" in place of "NA".
       `53d488402`, so this snapshot is reproducible from its commit.
     - Without the fix, a Sumarhon sentry fled into the slope, out of sight (smoke runs 2–4). The runner then
       abandoned it and finished Q24230 on other sentries.
-- [ ] **AK-10 — The full `CLAUDE.md` checklist and a checkpoint.**
+- [x] **AK-10 — The full `CLAUDE.md` checklist and a checkpoint.**
+  - *Done 2026-10-01.* Every command in the `CLAUDE.md` checklist was run in order, on `72824ee0f`:
+    - `dotnet build` passed, and so did `dotnet test` (GameServer 4,426 passed, 16 skipped).
+    - The warning baseline passed, and so did the logger, clock-read, custom-quest-draft and fidelity checks.
+    - All twelve PowerShell contract tests passed, and so did the NavBake `check --maps baked`.
+    - Eleven of the twelve Python e2e contract tests passed.
+  - **Two failures, both one defect that is not Leg 5's:**
+    - The flee probe `FleeingUphillEndsOnTheGroundInSight` (`SimulationFleeGeoTests.cs`) came with the separate
+      investigation's `c379a18e1`. It logs in as simulation account 151, which belongs to the D32 register
+      (151–200, Q24110's).
+    - `test-retail-quest-inventory.py` therefore fails its "no other SIM test uses the D32 accounts" check.
+    - In `run-fast`, `RetailQuestPlaysEndToEnd` makes the account's character first, so the flee probe fails
+      with "Fresh simulation account sim-player-151 already has a character".
+    - All 11 `run-fast` scenarios and every AK probe passed.
+    - The fix is a free account for the flee probe. It is left to that file's owner, as AB-10 left E1's clash
+      to the D32 work.
+  - **Checkpoint:**
+    - Leg 5 plays end to end in SIM from `altgard-l4`.
+    - Snapshot `altgard-l5` (AK-09) is the start of the next leg: level 20, bound at Basfelt, with a 63-slot
+      cube and 199,603 Kinah.
+    - Q2242 (Gemyu, Gerger Village) and Q24233 (Suthran, the fortress) are held for their hubs (AK-Q2). Basfelt
+      flies to the fortress, and the fortress's flight to Urtumheim lands about 340 m from Gerger Village.
+    - Q2900, Q24014 and Q24015 (the campaign) opened at level 20.
+    - LIVE runs once, at the end of the whole Altgard leg.
 
 **Endpoint (AK-Q1 (b), AK-Q2 (a)):**
 - Q2233–Q2235, Q2241, Q24230, Q24231, Q2238, Q24232, Q2236, Q2237 and Q2292 completed;
@@ -2741,3 +2764,4 @@ The original questions follow.
 - 2026-10-01 AK-08: the whole of Leg 5 in SIM (smoke run 8): the Pandaemonium cube expansions, all eleven claims, Q2292 by the clock, Q2242 and Q24233 held; level 20, 1 death.
 - 2026-10-01 AK-08 (flights): hub flight transporters from the client routes; smoke run 9 flies Basfelt to the fortress and plays Leg 5 with no deaths.
 - 2026-10-01 AK-09: `altgard-l5` captured from `altgard-l4` at 53d488402 (level 20, no deaths, Q2242/Q24233 held), restore-checked; it includes the PatternAi flee fix c379a18e1.
+- 2026-10-01 AK-10: the full checklist on 72824ee0f; everything passes except the flee probe's D32 account clash (c379a18e1, not Leg 5's). Leg 5 is done.
