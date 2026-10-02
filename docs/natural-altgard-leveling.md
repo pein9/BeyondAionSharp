@@ -2944,8 +2944,19 @@ The same loop protocol, with "AE" in place of "NA".
     transport data. `test-quest-plan-compiler.py` passes all eleven tests, including identical recompilation of the
     new plans. `ae01-fast` passes 61 tests (three switch skips), all eleven scenarios. The warning, logger, clock
     and fidelity checks pass. The code base for this item is AE-00's `62863fcca`.
-- [ ] **AE-02 — Walk every Leg 7 route in SIM:** from the fortress obelisk to the East Gate, each swamp ground, Taora
+- [x] **AE-02 — Walk every Leg 7 route in SIM:** from the fortress obelisk to the East Gate, each swamp ground, Taora
   and Chagarinerk, and the Berth round trip by flight.
+  - *Done 2026-10-02.* `AltgardLeg7TravelWalksTheGateSwampAndBothSpiritSpotsAndFliesToTheBerth` (`ae02-travel`, free
+    account 199) walks 27 ground legs from AE-01's `be166588c` contract. The probe is level 30; plans are level 21.
+    Each server endpoint is within 5 m of its goal (0.0 m reported in this run).
+    - The fortress circuit visits Suthran, Meiyer, Emgata, Morn, Valurion, Donabe and Chagarinerk.
+    - The gate/swamp circuit visits Mabrunerk, Eggther and Dellalont, both arachna kinds, both malodor kinds, both
+      feral warrior kinds, sleekpaws and Taora, then both Zemurru's Spirit pool spots and the fortress.
+    - The flight round trip uses 203561 to Trader's Berth, walks to Kagorinerk and the pad, and uses 203678 back.
+      Each fare is 791 Kinah after `SM_PRICES`. The last walk ends at (1661.44, 1815.30, 253.72), by the obelisk.
+    - Aggressive monsters within 30 m of each walk are retained in the route log; these are AE-05/AE-06's fights.
+  - Warning baseline, logger, clock-read and fidelity checks pass. `ae02-fast` passes all eleven scenarios and
+    62 tests (three switch-dependent skips).
 - [ ] **AE-03 — The scripted quests in SIM:** Q2278 with the Pandaemonium trip, Q2279 with Zemurru's Spirit at either
   spot, and Q2263 twice: once in time, once with the timer running out.
 - [ ] **AE-04 — The template quests in SIM:**
@@ -3375,3 +3386,4 @@ The original questions follow.
 - 2026-10-02 Leg 7 approved: AE-Q1..AE-Q3 as recommended; ready for Loop mode (AE-00..AE-08).
 - 2026-10-02 AE-00: quest steps carry their map; Q2278's Pandaemonium teleporter trip, city talks and Return pass in SIM; Fast and pre-commit checks pass (`62863fcca`).
 - 2026-10-02 AE-01: the Leg 7 contract and eleven plans; fortress bind, held hand-ins, Q2146 held, Q2263 timer and cross-map/pool steps; contract, compiler, Fast and pre-commit checks pass.
+- 2026-10-02 AE-02: 27 Leg 7 ground legs and the fortress–Berth hub flights pass in SIM; both Spirit spots route; Fast and pre-commit checks pass.
