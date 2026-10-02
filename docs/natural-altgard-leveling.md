@@ -2440,7 +2440,143 @@ The same loop protocol, with "AK" in place of "NA".
 - alive, in Basfelt within 60 m of Nokir;
 - the endpoint verified across a relog.
 
+## Leg 6: Gerger Village and Trader's Berth (level 20) — proposal
+
+**Status (2026-10-01): proposed.** The questions are AG-Q1 to AG-Q3 under "Blocked / questions for the operator".
+
+**Where it starts.** From the `altgard-l5` snapshot (AK-09):
+- character 133297, a **level 20** Cleric at 139,699 of 627,122 XP, bound at Basfelt;
+- 63 cube slots and 199,603 Kinah;
+- Q2242 held for Gemyu here, and Q24233 held for Suthran in the fortress.
+
+**What it covers (if AG-Q1 (a)).** The east: Stop 7, Gerger Village, and Stop 8, Trader's Berth.
+- Their quests chain: Q2248 runs from Gemyu to Neparinerk, and Q2284's escort runs from Germir to Babarunerk.
+- Stop 9, the East Gate, stands at the fortress gate (1,000 m from the Berth). It belongs with the
+  fortress-side Stops 10 and 11 in Leg 7, together with Q24233 (Suthran) and Q2262 (Mabrunerk at the East Gate).
+
+**The bind.** Gerger has no obelisk. **Trader's Berth does**: 700821 at (2687, 1021), 345 m from Gerger and
+within 400 m of every ground below. The bot binds there on arrival (the standing bind policy).
+
+**Getting there: the hub flights.** The maintainer's 2026-10-01 note: fly between hubs, do not walk.
+- Basfelt to the fortress is Hrold's flight (203683, 40 s, 400 Kinah base).
+- The fortress to Trader's Berth is 203561's flight to "Urtumheim" (location 20, 48.5 s, 560 base). It
+  lands by Trader's Berth's own transporter, 203678.
+- So the trip is **two flights**, about 90 s and about 1,200 Kinah after `SM_PRICES`. Walking is 1 km by
+  road (Basfelt to Gerger is 625 m), through the ksellid and ribbit grounds.
+
+### The hubs and their grounds
+
+| Ground | Where (from the Berth obelisk) | Quests | What lives there |
+|---|---|---|---|
+| **Trader's Berth** | (2676–2708, 1019–1048) | Neparinerk: Q2249, Q24115; Babarunerk: Q2251, end of Q2284; Japayerk: Q2262 (also the merchant); Sinood: Q2252 | obelisk 700821, flight transporter 203678 |
+| **Gerger Village** | (2350–2395, 889–916), 345 m west | Gemyu: Q2245, Q2248, **Q2242's hand-in**; Gercus: Q2244; Germir: Q2246, Q2247, Q2284 | |
+| Green ribbits | 8 + 6 spots around (2455, 795), 130 m from Gerger | Q2244 (5 kills) | L16–17, aggressive |
+| Star metal ksellids | 27 spots around (2419, 686), 220 m from Gerger | Q2245 (5 kills) | L16, aggressive |
+| Insignia box | (2377, 792), 108 m from Gerger | Q2246 (an object use) | |
+| Gogaerunerk | (2459, 667), 230 m from Gerger | Q2247 (the disguise) | |
+| Blackened angolems | 14 + 9 spots around (2550, 955), 160 m | Q2249 (5 Angolem Crystals, 80%) | L17; the shardlings (`angolem_fragment` AI) split off |
+| Peckus | 34 spots around (2510, 1193), 240 m | Q2251 (5 Pecku Tail Feathers, 80%) | L18, aggressive |
+| Crimsontail amphas | 10 + 7 spots, (2488, 1312) and (2517, 1120), 190–350 m | Q24115 (3 kills) | L17–18 |
+| Bones of Minushan | (2407, 1268), 400 m | Q2252: Sinood's item, used at the bones, spawns Minushan's Spirit (SEASONED L18, 95%) or Drakie (L17, 5%) for 3 minutes | |
+| The escort | from the disguised Germir 798041 at (2588, 953) to Babarunerk, 120 m | Q2284 | **798041 exists only 04:00–21:00** game time (`temporary_spawn`) |
+
+Every target is level 16–18 against a level 20 Cleric: this leg is about mechanics, not danger.
+
+### Quests
+
+All are in Java; the C# templates and handlers are ports.
+
+| Quest | Name | Handler | From → to | After | Objective | XP |
+|---|---|---|---|---|---|---|
+| 2242 | A Nice Gesture (held, Leg 5) | report_to | → **Gemyu** | | hand it in | 16,350 |
+| 2244 | A Drinking Problem | monster_hunt | Gercus | | kill 5 green ribbits | 16,050 |
+| 2245 | Ksellid Control | monster_hunt | Gemyu | | kill 5 star metal ksellids | 17,550 |
+| 2248 | The Secret Letter | report_to | Gemyu → Neparinerk | 2245 | deliver | 13,095 |
+| 2246 | The Gerger's Insignia | item_collecting | Germir | | the insignia box (700147) | 6,000 |
+| 2247 | The Gerger's Disguise | custom | Germir → Gogaerunerk → Germir | 2246 | SETPRO1 gives the disguise (182203231); Germir takes it back | 16,050 |
+| 2284 | Escaping Asmodae | custom (escort) | Germir; disguised Germir 798040 (SETPRO2), then 798041 (SETPRO3, the follow) → Babarunerk | 2247 | **escort**; a lost follower sets var 1 back, a logout too | 50,130 |
+| 2249 | The Blue Crystals | item_collecting | Neparinerk | | 5 Angolem Crystals, 80% | 21,300 |
+| 2251 | Securing the Trade Route | item_collecting | Babarunerk | | 5 Pecku Tail Feathers, 80% | 22,350 |
+| 2252 | Chasing the Legend | custom (spawn) | Sinood | | the bones spawn Minushan's Spirit or Drakie; the kill picks the reward group | 24,900 / 20,355 |
+| 24115 | A Shugo Apropos (D32) | monster_hunt | Neparinerk → **Banatisai** (Heart of Impetusium, Stop 12) | | kill 3 crimsontail amphas; **held** (AG-Q2) | 16,066 |
+
+The ten hand-ins are worth 203,775 XP (33% of level 20; Q2252 at its Spirit reward). Kills of grey monsters add little.
+
+**Not in this leg:**
+- Q2900 "No Escaping Destiny" (Pandaemonium) and the missions Q24014–Q24016 opened at level 20. AL-1 puts
+  them after the zone.
+- Q2262 starts at Japayerk here but ends at Mabrunerk at the East Gate. Under AG-Q1 (a) it is taken and
+  held for Leg 7, like Q2242 in Leg 5.
+
+### What is new for the bot
+
+1. **Chained flights.** The planner has only taken one flight so far. Basfelt to the Berth is two
+   (`NaturalAirlineRoutes` gains a route search over the 140 routes).
+2. **An escort whose follower keeps hours.** The AC-06 escort executor (Q2290), started from a
+   `temporary_spawn` follower. It is present 04:00–21:00, so outside that window the bot works other
+   quests first, as Q2292's carriers did (`NaturalCarrierPolicy`'s clock).
+3. **A spawn from an item at an object** (Q2252): use the Bones of Minushan with Sinood's item,
+   then kill what appears inside its 3 minutes. Sinood gives the item again on a miss (page 1693). This is
+   the Q2223 Infernus executor with an object in place of an item use.
+4. **A disguise** (Q2247) is a quest item handed over by a talk, then taken back. It is contract steps, not
+   a transformation.
+5. **Template quests at a new hub**, with Japayerk as the town merchant for the cube service.
+
+### Leg 6 TODO list (proposed)
+
+The same loop protocol, with "AG" in place of "NA".
+
+- [ ] **AG-00 — Chained hub flights.** A route search over `natural-flight-routes.json` (flights plus the
+  walks between landings and pads), with unit tests. A SIM probe flies Basfelt → fortress → Trader's Berth.
+- [ ] **AG-01 — The Leg 6 contract and plans.** `natural-altgard-l6-contract.json` from the l5 endpoint:
+  - bind 700821, the town and its merchant (Japayerk);
+  - the escort (Q2284) with the follower's hours, the Q2252 spawn, and the Q2247 and Q2246 steps;
+  - held quests (Q24115, and Q2262 under AG-Q1 (a)), the order and the endpoint.
+- [ ] **AG-02 — Walk every Leg 6 route in SIM**, from the Berth obelisk to each ground and Gerger, and back.
+- [ ] **AG-03 — Gerger's scripted quests in SIM:** Q2246's insignia box, Q2247's disguise, and Q2284's two
+  Germirs and the follow to Babarunerk. Include a run started after 21:00, which must wait for 798041.
+- [ ] **AG-04 — Q2252 in SIM:** Sinood, the bones, the spawn, the kill and the reward group, and the new
+  item after a miss.
+- [ ] **AG-05 — The template quests in SIM:** Q2244, Q2245, Q2249 (with the shardlings), Q2251, Q24115
+  held, and Q2242's hand-in at Gemyu.
+- [ ] **AG-06 — Combat at level 20.** The encounter harness against Minushan's Spirit (SEASONED L18), a
+  pecku pack and an angolem with its shardlings. Record deaths and retreats.
+- [ ] **AG-07 — The Leg 6 runner.** The engine and runner for the chained flights, the escort's hours, the
+  spawn and the held quests. A smoke run from `altgard-l5` with real combat, recording every fight and death.
+- [ ] **AG-08 — One SIM run of Leg 6 and the snapshot.** `sim-snapshot.ps1 -Leg l6 -From altgard-l5`
+  captures `altgard-l6` after a clean run, with a restore check.
+- [ ] **AG-09 — The full `CLAUDE.md` checklist and a checkpoint.**
+
+**Endpoint (if AG-Q1 (a), AG-Q2 (a)):**
+- Q2242, Q2244–Q2249, Q2251, Q2252 and Q2284 completed;
+- Q24115 (Banatisai) and Q2262 (Mabrunerk) taken and held, Q24233 still held;
+- bound at the Trader's Berth obelisk (700821);
+- alive, within 60 m of it;
+- the endpoint verified across a relog.
+
 ## Blocked / questions for the operator
+
+**Leg 6, open 2026-10-01:**
+- **AG-Q1 — How big is Leg 6?**
+  - (a) Stops 7 and 8: Gerger Village and Trader's Berth, twelve quests (ten handed in, two held), worked from the Berth bind. Q2262
+    is taken and held for the East Gate.
+  - (b) Stops 7, 8 and 9: the East Gate quests too (Q2263 timed, Q2264, Q2265, Q2146). That means a second
+    working hub at the fortress gate, 1,000 m away by flight, with a bind move.
+
+  **Recommendation: (a).** One working hub with everything inside 400 m. The East Gate is at the fortress,
+  beside Stops 10 and 11, where Leg 7 also hands in Q24233 and Q2262.
+- **AG-Q2 — The held hand-ins.** Q24115 ends at Banatisai in the Heart of Impetusium (Stop 12), and Q2262 at
+  Mabrunerk at the East Gate.
+  - (a) Take them, finish the work, and hand them in when the route reaches those hubs (as AK-Q2).
+  - (b) Fly there during this leg.
+
+  **Recommendation: (a).** A held quest loses nothing, and each hub is a later leg's.
+- **AG-Q3 — Q2284's day-only follower.** The second disguised Germir exists only 04:00–21:00 game time.
+  - (a) Outside those hours, do the other quests first, then wait for 04:00 if nothing else is left (as
+    Q2292, AK-Q3).
+  - (b) Skip Q2284 if the hour is wrong.
+
+  **Recommendation: (a).** It is the leg's biggest quest (50,130 XP), and the waiting machinery exists.
 
 **Leg 5, answered 2026-10-01:** AK-Q4 **(a) and (b)**. The maintainer approved buying the expansions and asked
 that extra gear the Cleric does not need be sold.
