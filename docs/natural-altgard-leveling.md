@@ -2752,8 +2752,19 @@ The same loop protocol, with "AG" in place of "NA".
   - New tests: `Leg6BindsAtTheBerthAndEscortsGermirOnlyInsideHisHours`, and the escort policy's far-follower case.
   - All 354 Natural tests pass, and so do `run-fast` (every test), the warning baseline and the logger, clock and
     fidelity checks.
-- [ ] **AG-08 — One SIM run of Leg 6 and the snapshot.** `sim-snapshot.ps1 -Leg l6 -From altgard-l5`
+- [x] **AG-08 — One SIM run of Leg 6 and the snapshot.** `sim-snapshot.ps1 -Leg l6 -From altgard-l5`
   captures `altgard-l6` after a clean run, with a restore check.
+  - *Done 2026-10-02.* `sim-snapshot.ps1` accepts `-Leg l6` (`7d10ef4c1`).
+    `-Action Capture -Name altgard-l6 -AltgardLeg1 -Leg l6 -From altgard-l5` restored `altgard-l5`, resumed
+    character 133297 with `AF_ALTGARD=l6`, and dumped only a verified `altgard-l6-completion.json`.
+  - Run `snapshot-altgard-l6-s1` (seed 1) repeats AG-07's smoke run 5 to the millisecond: 6,042,068 ms, level 21, one
+    death (at Gogaerunerk) and 16 retreats.
+  - Snapshot `altgard-l6`: `run/snapshots/altgard-l6` (git-ignored), character 133297, elapsed 46,436,377 ms,
+    dump SHA-256 `79a2667e…b61b82`, from commit `7d10ef4c1`.
+    - Level 21 at 143,590 of 827,364 XP, bound at the Trader's Berth obelisk, with 228,032 Kinah.
+    - Held: Q24115 (START, 3) for Banatisai, Q2262 (START, 0) for Mabrunerk, and Q24233 (START, 1) for Suthran.
+      Q2900, Q24014 and Q24015 are started, and Q24016 is locked.
+    - A test restore into an owned schema succeeded and was dropped; no owned schema is left.
 - [ ] **AG-09 — The full `CLAUDE.md` checklist and a checkpoint.**
 
 **Endpoint (if AG-Q1 (a), AG-Q2 (a)):**
@@ -3130,3 +3141,4 @@ The original questions follow.
 - 2026-10-02 AG-05: Leg 6's template quests played from their plans in SIM, with Q24115 and Q2262 held.
 - 2026-10-02 AG-06: Leg 6's fights at level 20; no deaths, and one retreat at the Bones of Minushan.
 - 2026-10-02 AG-07: the Leg 6 runner; smoke run 5 plays the whole leg from altgard-l5 to level 21 with one death.
+- 2026-10-02 AG-08: snapshot altgard-l6 captured from 7d10ef4c1 (level 21, bound at the Trader's Berth).
