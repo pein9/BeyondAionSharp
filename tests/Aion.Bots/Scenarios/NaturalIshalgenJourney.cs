@@ -990,8 +990,16 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				// AG-07: far approaches take the leg's road first. A walk cut short by a fight (a retreat, or a death and the
 				// revive at the bind) walks again from where it left the Cleric, three walks at most; no road at all leaves the
 				// approach to the navigator.
+				bool approachingAirline = false;
 				farApproach = async (at, templateId) =>
 				{
+					// AE-06: the Berth delivery legs take hub flights; approaching the flight pad must not plan another flight.
+					if (altgardLegId == "l7" && session.Api.World.MapId == leg.Hub.MapId && !approachingAirline)
+					{
+						approachingAirline = true;
+						try { await FlyTowardAsync(at); }
+						finally { approachingAirline = false; }
+					}
 					for (int walk = 0; walk < 3 && Distance(session.CurrentPosition, at) > FarApproachStop; walk++)
 					{
 						BotPosition before = session.CurrentPosition;
@@ -1634,6 +1642,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				// Q1044's and Q2042's hooks), so after a revive Q2230's timer counts as ended and Q2288's as gone.
 				async Task RunTimedQuestAsync(int questId)
 				{
+					int preparedAttempt = -1;
 					NaturalAltgardTimer timer = leg.TimerList.Single(entry => entry.QuestId == questId);
 					NaturalAltgardQuest quest = leg.Quest(questId);
 					NaturalAltgardHunt? hunt = leg.HuntList.FirstOrDefault(entry => entry.QuestId == questId);
@@ -1683,6 +1692,29 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 									System.Text.Json.JsonSerializer.Serialize(choice), token);
 								throw new InvalidDataException($"Altgard leg {altgardLegId}: Q{questId}'s timer ran out {timedAttempts.GetValueOrDefault(questId)} times (AB-Q2).");
 							case "take":
+								if (questId == 2263 && preparedAttempt != timedAttempts.GetValueOrDefault(questId))
+								{
+									// AE-06: clear companions around the three nearest local pollen spots before accepting. Keep the
+									// malodors for the collection; all clearing and travel use ordinary movement and combat.
+									NaturalAltgardArea area = leg.Area(quest.Area!);
+									await FlyTowardAsync(giver); // Q2253 leaves the Cleric at the Berth; return by its hub transporter.
+									BotPosition[] spots = graph.GetMap(leg.Hub.MapId)!.Waypoints
+										.Where(at => at.TemplateId is int id && item!.SourceNpcIds.Contains(id) && area.Contains(at.Position.X, at.Position.Y, at.Position.Z))
+										.Select(at => at.Position).Distinct().OrderBy(at => Distance(at, giver)).Take(3).ToArray();
+									int revives = combat.ReviveCount;
+									foreach (BotPosition spot in spots)
+									{
+										if (Distance(session.CurrentPosition, spot) > 45)
+											await WalkRoadDefendingAsync(spot, "pollen-preparation", stopAt: at => Distance(at, spot) <= 45);
+										await ClearAroundSpotAsync(spot, null, "pollen-preparation", item!.SourceNpcIds);
+										if (combat.ReviveCount != revives || session.Api.World.IsDead) break;
+									}
+									if (combat.ReviveCount != revives || session.Api.World.IsDead) continue;
+									await ApproachShippedSpawnAsync(offer.NpcId);
+									await RestSafelyAsync(token);
+									preparedAttempt = timedAttempts.GetValueOrDefault(questId);
+									continue; // re-observe HP/mana before acceptance starts the timer
+								}
 								await PlayContractStepAsync(offer);
 								if (NaturalTimedQuestPolicy.TimerStartsAtAccept(timer)) TimerStarted();
 								break;
@@ -2664,7 +2696,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// The same, around a position (a shipped spawn hint) before walking onto it: the recorded human pulled the
 			// Stalker beside the blue generator from 20 m out first, instead of stepping onto the generator and being
 			// jumped there. With an object id, walks back to it afterwards.
-			async Task ClearAroundSpotAsync(BotPosition? objective, int? objectiveObjectId, string purpose)
+			async Task ClearAroundSpotAsync(BotPosition? objective, int? objectiveObjectId, string purpose, IReadOnlyCollection<int>? preservedKinds = null)
 			{
 				if (objective is not BotPosition spot) return;
 				// Clear the camp only once the bot has rejoined it. After a bind revive, old camp NPCs
@@ -2675,6 +2707,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					// A patrol counts wherever on its observed path it is now: it walks past the objective sooner or later.
 					NaturalNavigationObject[] near = ObservedPullMonsters(objectiveObjectId)
+						.Where(m => preservedKinds == null || !preservedKinds.Contains(m.Npc.TemplateId))
 						.Where(m => m.Npc.PossiblePositions().Any(at =>
 							Distance(at, spot) <= m.AggroRadius + NaturalPullPlanner.SupportRangeOffset + 20))
 						.OrderBy(m => Distance(m.Npc.Position, session.CurrentPosition))
@@ -5128,7 +5161,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 									continue;
 								}
 								int source = await KillShippedSpawnAsync(sourceId);
-								await TryLootCorpseItemAsync(session, source, operation.ItemId, token);
+								// Defense and the general quest sweep may finish the collection during the kill's approach.
+								if (ItemCount(session.Api.World, operation.ItemId) < operation.Count)
+									await TryLootCorpseItemAsync(session, source, operation.ItemId, token);
 								await RestSafelyAsync(token);
 								navigator.UnavailableObjects.Add(source);
 							}
@@ -6987,8 +7022,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		foreach (IReadOnlyDictionary<string, object?> entry in list.Get<List<IReadOnlyDictionary<string, object?>>>("items"))
 		{
 			int itemId = Get<int>(entry, "itemId");
-			if (data.ItemDataDh.GetItemTemplate(itemId)?.itemGroup != Aion.GameServer.Model.Templates.Items.Enums.ItemGroup.QUEST) continue;
+			var template = data.ItemDataDh.GetItemTemplate(itemId);
+			if (template?.itemGroup != Aion.GameServer.Model.Templates.Items.Enums.ItemGroup.QUEST) continue;
 			BotInventoryItem? existing = session.Api.World.Inventory.Values.FirstOrDefault(owned => owned.ItemId == itemId);
+			// Java DropService rejects a second limit-one item; there will be no inventory update to wait for.
+			if (existing != null && template.HasLimitOne()) continue;
 			await session.SendPacketAsync(session.Api.Loot(objectId, Get<byte>(entry, "index")), token);
 			if (existing == null)
 				await session.WaitForPacketAsync(typeof(SM_INVENTORY_ADD_ITEM), token,

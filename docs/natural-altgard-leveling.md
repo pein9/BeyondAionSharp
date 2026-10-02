@@ -2993,12 +2993,30 @@ The same loop protocol, with "AE" in place of "NA".
   - `ae05-fast` found an older Basfelt probe assuming a surviving outlaw in the shared world. Its controlled kill helper
     now replenishes a shipped kind at a shipped spot, as Leg 6's does. `ae05-fast-fixed` passes 65 tests (three switch
     skips) and all eleven scenarios. Warning, logger, clock-read and fidelity checks pass. Base commit `95c9bf58d`.
-- [ ] **AE-06 — The Leg 7 runner.** The engine and runner for:
+- [x] **AE-06 — The Leg 7 runner.** The engine and runner for:
   - the steps on another map;
   - the timed quest in the swamp;
   - the delivery flights.
 
   Then a smoke run from `altgard-l6` with real combat, recording every fight and death.
+  - *Done 2026-10-02.* `ae06-smoke-final` restores `altgard-l6`, resumes 133297 through the real journey with
+    `AF_ALTGARD=l7`, and verifies all thirteen completions plus Q2146/Q24115 held across relog. Alive at the fortress
+    bind, level 21; 52 min 17 game seconds, 35 distinct confirmed kills, zero deaths and zero retreats.
+  - The route audit confirms three hub flights (791 Kinah each): Berth to fortress, fortress to Berth for Q2243,
+    Berth to fortress after taking Q2253. Q2278 takes the fortress teleporter to Pandaemonium, talks to both NPCs,
+    and Returns to the fortress bind. Q2279 searches the shipped Spirit pool hints.
+  - Q2263 clears companions around three local pollen spots with ordinary combat, preserves the malodors, and rests
+    before acceptance. Its offer key now matches the timer policy's accept convention (contract check added). The first
+    timer completes in about 59 game seconds. Java Q2263/Q2278/Q2279 and TeleportService were read first.
+  - Java DropService rejects a second limit-one item. The smoke exposed the bot waiting for an inventory update after
+    attempting a second Archon Sword; its general quest sweep now skips owned limit-one items, and the template loop
+    rechecks collection after defensive combat. No server behavior or content changed.
+  - Earlier evidence is retained: `ae06-smoke` was stopped to correct the leg identifier in the flight guard;
+    `ae06-smoke-flight` was stopped at the duplicate-sword loot stall. `ae06-smoke-loot` completed the quests with one
+    death and two retreats, but walked from the Berth during pollen preparation, so it is not checkpoint evidence.
+    The final run corrects that approach with the return flight. Each restore's owned schema was dropped.
+  - Three contract checks, warning/logger/clock-read/fidelity checks, and `ae06-fast-final` pass (65 tests, three
+    switch skips, all eleven scenarios). Base commit `0ae28ce36`; no snapshot was captured from this uncommitted work.
 - [ ] **AE-07 — One SIM run of Leg 7 and the snapshot.** `sim-snapshot.ps1 -Leg l7 -From altgard-l6` captures
   `altgard-l7` after a clean run, with a restore check.
 - [ ] **AE-08 — The full `CLAUDE.md` checklist and a checkpoint.**
@@ -3418,3 +3436,4 @@ The original questions follow.
 - 2026-10-02 AE-03: both Spirit spots, the pollen timer's expiry/cleanup and successful retake pass; Q2278 retained; Fast and pre-commit checks pass.
 - 2026-10-02 AE-04: eleven template plans pass, including both incoming hand-ins, Q2146 held, and the Berth round trip by flight; pre-commit checks pass.
 - 2026-10-02 AE-05: level-21 swamp encounters record nine distinct kills, no deaths or retreats; corpse overcount and a shared-probe assumption corrected; Fast and pre-commit checks pass.
+- 2026-10-02 AE-06: Leg 7 smoke and relog pass from altgard-l6; 35 distinct kills, no deaths/retreats, first pollen timer, all hub flights; earlier failures/outcomes retained; Fast and pre-commit checks pass.

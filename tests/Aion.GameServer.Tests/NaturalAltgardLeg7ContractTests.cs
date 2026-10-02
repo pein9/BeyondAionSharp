@@ -88,6 +88,7 @@ public sealed class NaturalAltgardLeg7ContractTests
 		NaturalAltgardTimer timer = Assert.Single(Leg.TimerList);
 		Assert.Equal((2263, 300, "abandon", "abandon"), (timer.QuestId, timer.Seconds, timer.OnExpiry, timer.OnLogout));
 		Assert.Equal("OFFER", Leg.Steps.Single(step => step.Key == timer.StartStep).ExpectedStatus);
+		Assert.True(NaturalTimedQuestPolicy.TimerStartsAtAccept(timer));
 		NaturalAltgardCollectedItem pollen = Assert.Single(Assert.Single(Leg.CollectionList).Items);
 		Assert.Equal((182203242, 3), (pollen.ItemId, pollen.Count));
 		Assert.Equal([210444, 210500], pollen.SourceNpcIds);

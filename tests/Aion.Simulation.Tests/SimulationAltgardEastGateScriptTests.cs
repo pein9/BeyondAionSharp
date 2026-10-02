@@ -102,7 +102,7 @@ public sealed partial class SimulationFastScenarioTests
 				bool looted = await NaturalAltgardQuestSteps.LootItemAsync(session, victim.GetObjectId(), pollen, token);
 				log.Add($"210500 {(looted ? "dropped pollen" : "no pollen")}; {Items()} held");
 			}
-			await TalkAsync("q2263-offer");
+			await TalkAsync("q2263-offer-mabrunerk");
 			Assert.Equal(300, session.Api.World.Quests[2263].TimerSeconds);
 			for (int tries = 0; Items() == 0 && tries < 12; tries++) await KillAndLootAsync();
 			Assert.True(Items() > 0);
@@ -114,7 +114,7 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.NotEqual(QuestStatus.START, player.GetQuestStateList().GetQuestState(2263)?.GetStatus());
 			Assert.Equal(0, Items());
 			log.Add("Q2263 missed its 300 s timer: abandoned, pollen removed (recorded outcome)");
-			await TalkAsync("q2263-offer");
+			await TalkAsync("q2263-offer-mabrunerk");
 			long began = fixture.Clock.NowMillis;
 			for (int tries = 0; Items() < 3 && tries < 20; tries++) await KillAndLootAsync();
 			Assert.Equal(3, Items());
@@ -127,3 +127,4 @@ public sealed partial class SimulationFastScenarioTests
 		policy.AssertClean();
 	}
 }
+

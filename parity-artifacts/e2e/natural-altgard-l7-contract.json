@@ -720,7 +720,7 @@
       "area": "fortress"
     },
     {
-      "key": "q2263-offer",
+      "key": "q2263-offer-mabrunerk",
       "questId": 2263,
       "var": null,
       "status": "OFFER",
@@ -790,7 +790,7 @@
     {
       "questId": 2263,
       "seconds": 300,
-      "startStep": "q2263-offer",
+      "startStep": "q2263-offer-mabrunerk",
       "onExpiry": "abandon",
       "onLogout": "abandon",
       "lostItemIds": [
@@ -870,3 +870,4 @@
     "bindNpcId": 700065
   }
 }
+
