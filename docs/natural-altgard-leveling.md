@@ -3160,8 +3160,18 @@ object before using it. Deaths, retreats and interrupted uses are recorded outco
     delivery uses the existing hub flight selection. No server content or behavior changed. Base `d49a8c722`.
   - Warning/logger/clock/custom-draft/fidelity/compiler/inventory checks pass (`ao04-checks`); `ao04-fast` passes
     67 tests with three switch skips and all eleven scenarios. The read-only bot dashboard was enabled on 17880.
-- [ ] **AO-05 — Snapshot.** Enable `-Leg l8`, commit before capture, then capture `altgard-l8` from `altgard-l7` and
+- [x] **AO-05 — Snapshot.** Enable `-Leg l8`, commit before capture, then capture `altgard-l8` from `altgard-l7` and
   hash-check/restore-check it in an owned schema. Record the exact state, source commit and drop both schemas.
+  - *Done 2026-10-02.* `ao05-capture`, seed 1, plays from `altgard-l7` on committed code
+    `81774eeca11db81c1d34a3bc4948aa89fda8d9fb` and saves the relog-verified `altgard-l8` endpoint.
+    Character 133297: Cleric 21, EXP 3,719,444, alive at (1484.9, 2539.83, 298.988), HP/MP/FP 1,568/2,633/60,
+    Observatory bind (1462.8, 2553.61, 298.875), 317,511 Kinah, 63-slot cube. All seven quests COMPLETE;
+    the 125-entry completed journal, held Q2146 START/0 and Q24115 START/3 with 182215477, and campaign states
+    persist in the restored database (`ao05-restore-state.tsv`). One death and two retreats are recorded outcomes.
+  - Capture UTC `2026-10-02T16:56:21.2176500Z`, elapsed 51,496,246 ms. SHA256
+    `180091adb55d194c11fd846e713018951b7866ef74d7ade65d1b972afa1ae7f7` matches on restore; the snapshot runner's
+    resume clock is 51,516,246 ms. Both owned capture/restore schemas are dropped. Pre-commit checks pass
+    (`ao05-checks`); the evidence amendment changes only this document, retaining the captured code.
 - [ ] **AO-06 — Full CLAUDE checklist and checkpoint.** Run every listed command, retain any failures and their
   correction evidence, tick the item and commit on main. Stop here.
 
@@ -3585,3 +3595,4 @@ The original questions follow.
 - 2026-10-02 AO-02: seven quests, Operation Order use/loot and three hub flights pass on free account 208; Java helper pages and guard setup corrected; the Drakie reward probe correction, six contract cases, Fast and pre-commit checks pass.
 - 2026-10-02 AO-03: level-21 Observatory encounters on free account 209 record eight distinct kills, zero deaths/retreats; all four stages and pre-commit checks pass.
 - 2026-10-02 AO-04: natural Leg 8 smoke and relog pass from altgard-l7; seven completions, three flights, 23 distinct kills, one death/two retreats; deferred corpse loot and completed-source recovery fixed; Fast and pre-commit checks pass, failed runs retained.
+- 2026-10-02 AO-05: altgard-l8 captured from committed 81774eeca, hash-checked and restored; Cleric 21 alive at Observatory, seven completions/two held quests, 317,511 Kinah, campaigns unchanged; both owned schemas dropped.
