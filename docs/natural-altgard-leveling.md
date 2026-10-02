@@ -3145,9 +3145,21 @@ object before using it. Deaths, retreats and interrupted uses are recorded outco
     Setup clears aggressive neighbours and drops the client view. The read-only dashboard was enabled on 17880.
     Java skills/data and the retail-AI exception were read; no server behavior or content changed.
     Warning/logger/clock/custom-draft/fidelity/compiler/inventory checks pass (`ao03-checks`). Base `0c31a66e6`.
-- [ ] **AO-04 — Natural runner and smoke.** Restore `altgard-l7`; play `AF_ALTGARD=l8` with the snapshot runner's
+- [x] **AO-04 — Natural runner and smoke.** Restore `altgard-l7`; play `AF_ALTGARD=l8` with the snapshot runner's
   environment, ordinary combat, hub flights and relog verification; drop the owned schema. Fix only demonstrated
   runner gaps. Pre-commit checks and Fast before committing gameplay changes. Never capture uncommitted code.
+  - *Done 2026-10-02.* `ao04-smoke-collection` restores `altgard-l7`, completes all seven quests in 1,882,850 game ms
+    and verifies the endpoint across relog: level 21, alive at (1484.9, 2539.83, 298.988), Observatory bind 700822,
+    317,511 Kinah. Q2146 START/0, Q24115 START/3 with 182215477, and all four campaign states are preserved.
+    Q2266 is taken before the first flight; the three actual hub flights cost 352 Kinah each; the Order's observed
+    use bar is 3,000 ms. The trace records 23 distinct confirmed kills, one death and two retreats. Schema dropped.
+  - `ao04-smoke` and `ao04-smoke-loot` retain the failed source searches. Gattban died during camp clearing; his
+    corpse fell outside the 35 m sweep, and the runner searched for a live source until its wait budget expired
+    before Java's 295 s respawn. Recovery now revisits deferred corpses on checked safe paths within 60 m, and an
+    approach stops when client inventory and its ordinary loot record complete the collection. The natural letter
+    delivery uses the existing hub flight selection. No server content or behavior changed. Base `d49a8c722`.
+  - Warning/logger/clock/custom-draft/fidelity/compiler/inventory checks pass (`ao04-checks`); `ao04-fast` passes
+    67 tests with three switch skips and all eleven scenarios. The read-only bot dashboard was enabled on 17880.
 - [ ] **AO-05 — Snapshot.** Enable `-Leg l8`, commit before capture, then capture `altgard-l8` from `altgard-l7` and
   hash-check/restore-check it in an owned schema. Record the exact state, source commit and drop both schemas.
 - [ ] **AO-06 — Full CLAUDE checklist and checkpoint.** Run every listed command, retain any failures and their
@@ -3572,3 +3584,4 @@ The original questions follow.
 - 2026-10-02 AO-01: 23 Observatory/camp/object ground legs and three fortress/Observatory flights pass on free account 207; maximum miss 2.5 m, pre-commit checks pass.
 - 2026-10-02 AO-02: seven quests, Operation Order use/loot and three hub flights pass on free account 208; Java helper pages and guard setup corrected; the Drakie reward probe correction, six contract cases, Fast and pre-commit checks pass.
 - 2026-10-02 AO-03: level-21 Observatory encounters on free account 209 record eight distinct kills, zero deaths/retreats; all four stages and pre-commit checks pass.
+- 2026-10-02 AO-04: natural Leg 8 smoke and relog pass from altgard-l7; seven completions, three flights, 23 distinct kills, one death/two retreats; deferred corpse loot and completed-source recovery fixed; Fast and pre-commit checks pass, failed runs retained.

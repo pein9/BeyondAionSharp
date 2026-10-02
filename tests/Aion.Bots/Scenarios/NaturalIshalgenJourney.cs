@@ -27,7 +27,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	/// a clear holds that long after its first kill.</summary>
 	private const long EscortClearRespawnMillis = 295_000;
 	// The general quest-loot sweep opens lootable corpses this close after a kill (a Cleric fights at spell range, 25 m).
-	private const float LootSweepReach = 35f;
+	private const float LootSweepReach = 60f;
 	// AB-08: how far inside the Q24013 poison zone's edge the poison is used.
 	private const float ZoneMargin = 3f;
 	// AG-07: an Altgard leg walks its road toward an approach from farther than this, and leaves the last stretch to the navigator.
@@ -213,13 +213,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// mosbears (85% drop) and spent three timers, because the mosbears that died as adds or on the way were left.
 			var lootSwept = new HashSet<int>();
 			bool sweeping = false;
-			void WithQuestLoot(NaturalJourneyCombat fighter) => fighter.AfterKillAsync = async sweepToken =>
+			void WithQuestLoot(NaturalJourneyCombat fighter) => fighter.AfterKillAsync = SweepQuestItemsWhenSafeAsync;
+			async Task SweepQuestItemsWhenSafeAsync(CancellationToken sweepToken)
 			{
 				if (sweeping || Engaged().Attackers.Length > 0) return;
 				sweeping = true;
 				try { await LootQuestItemsAroundAsync(sweepToken); }
 				finally { sweeping = false; }
-			};
+			}
 			WithQuestLoot(combat);
 			bool maintainingInventory = false;
 			var workedTemplates = new HashSet<int>();
@@ -993,8 +994,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				bool approachingAirline = false;
 				farApproach = async (at, templateId) =>
 				{
-					// AE-06: the Berth delivery legs take hub flights; approaching the flight pad must not plan another flight.
-					if (altgardLegId == "l7" && session.Api.World.MapId == leg.Hub.MapId && !approachingAirline)
+					// AE-06/AO-04: delivery legs take hub flights; approaching the flight pad must not plan another flight.
+					if (altgardLegId is "l7" or "l8" && session.Api.World.MapId == leg.Hub.MapId && !approachingAirline)
 					{
 						approachingAirline = true;
 						try { await FlyTowardAsync(at); }
@@ -2363,7 +2364,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			/// <param name="withinRange">Stop this far from the observed NPC instead of at arm's reach, outside its
 			/// aggro circle, so the fight can be planned (a pull) rather than started by walking into it.</param>
 			async Task<int> ApproachShippedSpawnAsync(int templateId, bool skipBlockedTarget = false, float? withinRange = null,
-				bool returnedFromStrand = false)
+				bool returnedFromStrand = false, Func<int?>? completedSource = null)
 			{
 				// Dead on entry (a use bar or a walk ended in a death nobody handled): revive and recover first.
 				if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0) await RestSafelyAsync(token);
@@ -2392,6 +2393,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						NaturalNavigationResult result = withinRange is float range
 							? await NaturalIshalgenNavigator.ExploreWithinRangeAsync(contract.MapId, templateId, anchor.Position, range, navigator, "NPC", token)
 							: await NaturalIshalgenNavigator.ApproachNpcAsync(contract.MapId, templateId, anchor.Position, navigator, token);
+						if (completedSource?.Invoke() is int collectedFrom) return collectedFrom;
 						if (result.Arrived && result.TargetObjectId is int objectId) { emptySpawnWaits = 0; return objectId; }
 						if (result.Arrived) // explore mode reached the hint with nothing in view: same as an empty hint
 							result = new(false, $"Reached the spawn hint but no NPC was observed within {withinRange:F0} m.", null, result.RouteSearches, result.Segments);
@@ -2409,10 +2411,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								// A death moved the client back to its bind point. None of this hint's
 								// failed route observations apply there; recover and plan the journey again.
 								await RestSafelyAsync(token);
-								return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget, withinRange);
+								return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget, withinRange, completedSource: completedSource);
 							}
 							bool progressed = progress.Observe(Distance(beforeApproach, session.CurrentPosition),
 								navigator.UnavailableObjects.Count > killsBeforeApproach);
+							if (completedSource?.Invoke() is int clearedSource) return clearedSource;
 							if (cleared || progressed)
 							{
 								// Returning from bind may need more than eight guards. Count stalls, not successful
@@ -2469,9 +2472,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						["templateId"] = templateId, ["wait"] = emptySpawnWaits, ["position"] = session.CurrentPosition,
 					});
 					await RestSafelyAsync(token);
+					if (completedSource?.Invoke() is int sweptSource) return sweptSource;
 					await session.AdvanceAsync(TimeSpan.FromSeconds(60), token);
 					await session.SynchronizeAsync(token);
-					return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget, withinRange);
+					return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget, withinRange, completedSource: completedSource);
 				}
 				emptySpawnWaits = 0;
 				// AK-08: no hint has a route from here at all: a fight left the Cleric on ground the navmesh does not connect (smoke
@@ -2485,7 +2489,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					});
 					await UseLearnedReturnToBindAsync();
 					await RestSafelyAsync(token);
-					return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget, withinRange, returnedFromStrand: true);
+					return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget, withinRange, returnedFromStrand: true, completedSource: completedSource);
 				}
 				throw new InvalidDataException($"No client-observed NPC {templateId} at twelve shipped spawn hints " +
 					$"from {session.CurrentPosition}: {string.Join(" | ", reasons)}");
@@ -2868,6 +2872,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				if (!session.Api.World.IsDead && session.Api.World.CurrentHp > 0)
 					await DefendAgainstEngagedAsync("before-rest");
 				await combat.RestAsync(restToken);
+				// AO-04: a camp fight can defer every kill's loot while another attacker is engaged. Revisit those
+				// corpses once recovery settles, before leaving or searching for a drop source already killed as an add.
+				if (!session.Api.World.IsDead) await SweepQuestItemsWhenSafeAsync(restToken);
 			}
 
 			// Pull like a player: choose, among the given targets (earlier ones preferred on ties), the one and the
@@ -5160,7 +5167,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 										await UseAndLootQuestObjectAsync(sourceId, operation.ItemId, skipBlockedTarget: true));
 									continue;
 								}
-								int source = await KillShippedSpawnAsync(sourceId);
+								int source = await KillShippedSpawnAsync(sourceId, operation);
 								// Defense and the general quest sweep may finish the collection during the kill's approach.
 								if (ItemCount(session.Api.World, operation.ItemId) < operation.Count)
 									await TryLootCorpseItemAsync(session, source, operation.ItemId, token);
@@ -5235,15 +5242,23 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// evidence (the monster resets while the bot revives at the obelisk): walk back and fight again,
 			// as a player does, rather than treating the vanished target as an error. A target that despawns
 			// or walks out of view for another reason is simply looked for again.
-			async Task<int> KillShippedSpawnAsync(int templateId)
+			async Task<int> KillShippedSpawnAsync(int templateId, QuestRunOperation? collection = null)
 			{
+				// AO-04: defense can kill and loot the requested source while navigation is still approaching it.
+				// Client inventory plus the ordinary loot record completes that objective; do not wait for another live spawn.
+				int? CompletedCollectionSource() => collection != null && ItemCount(session.Api.World, collection.ItemId) >= collection.Count &&
+					SweptQuestItems.TryGetValue(session.Api.World, out Dictionary<int, List<int>>? swept)
+					? swept.Where(entry => entry.Value.Contains(collection.ItemId)).Select(entry => (int?)entry.Key).LastOrDefault()
+					: null;
 				int unsuccessfulKills = 0, tacticalRetreats = 0;
 				var failedTargets = new Dictionary<int, int>();
 				for (int attempt = 1; ; attempt++)
 				{
 					// Stop at pull range, outside the target's circle: the fight is planned from there, not started
 					// by walking into it (which is how every add reached the bot at Hatata's cave).
-					int target = await ApproachShippedSpawnAsync(templateId, withinRange: NaturalPullPlanner.SpellRange + 3);
+					int target = await ApproachShippedSpawnAsync(templateId, withinRange: NaturalPullPlanner.SpellRange + 3,
+						completedSource: collection == null ? null : CompletedCollectionSource);
+					if (CompletedCollectionSource() is int collectedFrom) return collectedFrom;
 					int revives = combat.ReviveCount;
 					int retreats = combat.CompletedRetreats;
 					int evidenceStart = session.PacketHistory.Count;
