@@ -19,7 +19,7 @@ is done (AK-00..AK-10, 2026-10-01): `altgard-l5` starts Leg 6.
 [Leg 7: Altgard Fortress and the East Gate](#leg-7-altgard-fortress-and-the-east-gate-level-21--proposal) is done
 (AE-00..AE-08, 2026-10-02; AE-Q1..AE-Q3 as recommended): `altgard-l7` starts Leg 8 at the fortress.
 [Leg 8: Altgard Observatory and Mahindel Swamp](#leg-8-altgard-observatory-and-mahindel-swamp-level-21)
-is authorized and in progress (AO-00..AO-06, 2026-10-02).
+is done (AO-00..AO-06, 2026-10-02): `altgard-l8` starts Leg 9 at the Observatory.
 
 ## Goal
 
@@ -3062,7 +3062,7 @@ The same loop protocol, with "AE" in place of "NA".
 
 ## Leg 8: Altgard Observatory and Mahindel Swamp (level 21)
 
-**Status (2026-10-02): implementation authorized** by the maintainer's "Implement Leg 8 as needed."
+**Status (2026-10-02): done (AO-00..AO-06).** Implementation was authorized by the maintainer's "Implement Leg 8 as needed."
 This works the seven-quest outline approved with AE-Q3 (a), using the existing loop protocol with **AO** in place
 of NA. The standing bind, hub-flight, held-quest, help-item and death policies apply. No new server content is needed.
 
@@ -3172,8 +3172,17 @@ object before using it. Deaths, retreats and interrupted uses are recorded outco
     `180091adb55d194c11fd846e713018951b7866ef74d7ade65d1b972afa1ae7f7` matches on restore; the snapshot runner's
     resume clock is 51,516,246 ms. Both owned capture/restore schemas are dropped. Pre-commit checks pass
     (`ao05-checks`); the evidence amendment changes only this document, retaining the captured code.
-- [ ] **AO-06 — Full CLAUDE checklist and checkpoint.** Run every listed command, retain any failures and their
+- [x] **AO-06 — Full CLAUDE checklist and checkpoint.** Run every listed command, retain any failures and their
   correction evidence, tick the item and commit on main. Stop here.
+  - *Done 2026-10-02.* All 33 CLAUDE checklist commands exit 0 on `23537bb24` (`run/ao06-checklist/results.json`).
+    Each command has its own indexed log, including separate Python/PowerShell report, coverage and flake checks.
+    Solution: 5,074 passed, 95 reported skips; GameServer 4,450 passed/16 skipped, Simulation 145 passed/71 skipped.
+    Warning/logger/clock/custom-draft/fidelity, quest compiler/inventory, evidence/report/coverage/flake/soak checks
+    and controller contract tests pass. The live controller checks use their mock Docker harnesses.
+    NavBake validates all five baked maps. `ao06-fast`: 67 passed, three switch skips, all eleven scenarios passed.
+  - No checklist failures; AO-02's failed drafts and AO-04's failed smoke traces remain retained with their
+    correction evidence. The committed `altgard-l8` capture and owned restore check remain valid. Leg 8 is done;
+    Leg 9 starts from that snapshot and hands in Q2146/Q24115 at the Heart of Impetusium. Stop at this checkpoint.
 
 **Endpoint:** all seven quests COMPLETE; Q2146 START/0 and Q24115 START/3 held; campaign states preserved;
 alive, level at least 21, bound at Observatory 700822 and within 60 m, verified across relog. `altgard-l8` starts
@@ -3596,3 +3605,4 @@ The original questions follow.
 - 2026-10-02 AO-03: level-21 Observatory encounters on free account 209 record eight distinct kills, zero deaths/retreats; all four stages and pre-commit checks pass.
 - 2026-10-02 AO-04: natural Leg 8 smoke and relog pass from altgard-l7; seven completions, three flights, 23 distinct kills, one death/two retreats; deferred corpse loot and completed-source recovery fixed; Fast and pre-commit checks pass, failed runs retained.
 - 2026-10-02 AO-05: altgard-l8 captured from committed 81774eeca, hash-checked and restored; Cleric 21 alive at Observatory, seven completions/two held quests, 317,511 Kinah, campaigns unchanged; both owned schemas dropped.
+- 2026-10-02 AO-06: all 33 CLAUDE commands pass on 23537bb24, solution 5,074 passed/95 skips, Fast 67 passed/three switch skips/all eleven scenarios; five baked maps validate. Leg 8 is done; altgard-l8 starts Leg 9. No push.
