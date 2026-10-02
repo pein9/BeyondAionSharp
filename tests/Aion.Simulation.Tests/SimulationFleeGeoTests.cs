@@ -31,7 +31,7 @@ public sealed partial class SimulationFastScenarioTests
 		using var policy = NewPolicy("FLEE-GEO", includeHistory: true);
 		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
 		CancellationToken token = timeout.Token;
-		await using var session = new SimulationL0Session(fixture, policy, "b01", 151, "Asimflee", Race.ASMODIANS);
+		await using var session = new SimulationL0Session(fixture, policy, "b01", 69, "Asimflee", Race.ASMODIANS);
 		session.BeginStep("s00", "login-create-enter-and-setup");
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token, PlayerClass.PRIEST);
@@ -60,31 +60,41 @@ public sealed partial class SimulationFastScenarioTests
 			sentry.SetTarget(player);
 			session.BeginStep("s01", "flee-uphill");
 			int packetStart = session.PacketHistory.Count;
+			string fleeStart = $"sentry at ({sentry.GetX()}, {sentry.GetY()}, {sentry.GetZ()}), player at ({player.GetX()}, {player.GetY()}, " +
+				$"{player.GetZ()}), speed {sentry.GetGameStats().GetMovementSpeedFloat()}";
 			ai.Flee(8);
 			Assert.NotNull(ai.FleeingTo);
 			// Read where it stopped as the flee ends, before on_stop_to_flee turns it back to the fight.
 			for (int tick = 0; tick < 120 && ai.FleeingTo != null; tick++)
 				await session.AdvanceAsync(TimeSpan.FromMilliseconds(100), token);
 			Assert.Null(ai.FleeingTo);
+			DateTimeOffset fleeEnded = Aion.GameServer.Utils.SystemClock.UtcNow();
 			(float X, float Y, float Z) stop = (sentry.GetX(), sentry.GetY(), sentry.GetZ());
+			// Sight between bodies, taken now, before it turns back to the fight: from the sentry where it stopped to the ground
+			// 6 m back along its run, where a player chasing it stands. A sentry inside the hill (the bug) is hidden even from
+			// there. The earlier check, a ray from the trace's spot 15 m away to its feet, grazed the hill's crest, so a stop a
+			// tenth of a metre further (as other Fast tests' clock left it) flipped the result.
+			float back = MathF.Sqrt(MathF.Pow(1497.6562f - stop.X, 2) + MathF.Pow(464.37634f - stop.Y, 2));
+			float behindX = stop.X + (1497.6562f - stop.X) / back * 6, behindY = stop.Y + (464.37634f - stop.Y) / back * 6;
+			float behindZ = GeoService.GetInstance().GetZ(altgard, behindX, behindY, stop.Z + 10, stop.Z - 10, instance.GetInstanceId());
+			bool inSight = GeoService.GetInstance().CanSee(sentry, behindX, behindY, behindZ,
+				Aion.GameServer.GeoEngine.Collision.IgnoreProperties.ANY_RACE);
 			await session.SynchronizeAsync(token);
 
+			// The flee's own moves: once it ends, on_stop_to_flee turns the sentry back to the fight, and its next move aims at the
+			// player (run-fast, where the shared world's clock let one arrive before the read).
 			var aimed = session.PacketHistory.Skip(packetStart).Where(p => p.PacketType == typeof(SM_MOVE)
-				&& p.Get<int>("objectId") == sentry.GetObjectId() && p.Fields.ContainsKey("targetZ")).ToList();
+				&& p.Get<int>("objectId") == sentry.GetObjectId() && p.Fields.ContainsKey("targetZ")
+				&& (p.ReceivedAt is not DateTimeOffset at || at <= fleeEnded)).ToList();
 			Assert.NotEmpty(aimed);
 			float targetX = aimed[^1].Get<float>("targetX"), targetY = aimed[^1].Get<float>("targetY"), targetZ = aimed[^1].Get<float>("targetZ");
 			float groundAtTarget = GeoService.GetInstance().GetZ(altgard, targetX, targetY, targetZ + 10, targetZ - 10, instance.GetInstanceId());
 			Assert.True(MathF.Abs(targetZ - groundAtTarget) < 0.5f, $"Flee aimed at z {targetZ}; the ground there is {groundAtTarget}.");
-			Assert.True(targetX < 1480, $"The flee should still run up the slope to the west; it aimed at ({targetX}, {targetY}).");
+			Assert.True(targetX < 1480, $"The flee should still run up the slope to the west; it aimed at ({targetX}, {targetY}) from {fleeStart}.");
 
 			float ground = GeoService.GetInstance().GetZ(altgard, stop.X, stop.Y, stop.Z + 10, stop.Z - 10, instance.GetInstanceId());
 			Assert.True(MathF.Abs(stop.Z - ground) < 0.75f, $"The sentry stopped at {stop}; the ground there is {ground}.");
-			// Stand where the natural Cleric stood in the trace, beside where the sentry stopped: it must be in sight.
-			await TeleportForSetupAsync(session, player, altgard, 1475.4f, 455.1f, 287.96f, token);
-			session.AcceptTeleportPosition();
-			await session.SynchronizeAsync(token);
-			Assert.True(GeoService.GetInstance().CanSee(player, stop.X, stop.Y, stop.Z, Aion.GameServer.GeoEngine.Collision.IgnoreProperties.ANY_RACE),
-				$"The sentry, stopped at {stop}, is out of the player's line of sight.");
+			Assert.True(inSight, $"The sentry, stopped at {stop}, is out of sight of the ground 6 m back ({behindX}, {behindY}, {behindZ}).");
 			policy.AssertClean();
 		}
 		finally
