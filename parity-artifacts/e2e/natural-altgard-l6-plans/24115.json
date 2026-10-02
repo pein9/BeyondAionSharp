@@ -1,0 +1,405 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 24115,
+    "name": "A Shugo Apropos",
+    "nameId": 1129976,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 13,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [],
+        "unfinished": [
+          2200
+        ],
+        "noacquired": [
+          2200
+        ]
+      },
+      {
+        "finished": [],
+        "unfinished": [
+          2019
+        ],
+        "noacquired": [
+          2019
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "end_npc_ids": 203673,
+        "id": 24115,
+        "start_npc_ids": 798033
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 798033,
+        "name": "neparinerk",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 2693.71,
+            "y": 1026.61,
+            "z": 313.0,
+            "heading": 48,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 798033,
+      "name": "neparinerk",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2693.71,
+          "y": 1026.61,
+          "z": 313.0,
+          "heading": 48,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203673,
+      "name": "banatisai",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2614.59,
+          "y": 1642.29,
+          "z": 254.0,
+          "heading": 105,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 3,
+      "npc_ids": "210492 210493",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210492,
+          "name": "crimsontail ampha",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2449.01,
+              "y": 1170.31,
+              "z": 269.854,
+              "heading": 14,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2456.94,
+              "y": 1229.92,
+              "z": 257.38,
+              "heading": 109,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2457.27,
+              "y": 1373.1,
+              "z": 261.407,
+              "heading": 79,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2466.01,
+              "y": 1393.21,
+              "z": 259.307,
+              "heading": 21,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2479.1,
+              "y": 1293.17,
+              "z": 257.585,
+              "heading": 19,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2493.49,
+              "y": 1266.24,
+              "z": 258.902,
+              "heading": 16,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2494.98,
+              "y": 1344.07,
+              "z": 257.995,
+              "heading": 11,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2500.81,
+              "y": 1440.19,
+              "z": 258.819,
+              "heading": 73,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2515.66,
+              "y": 1451.76,
+              "z": 260.491,
+              "heading": 15,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2567.71,
+              "y": 1158.84,
+              "z": 287.282,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210493,
+          "name": "crimsontail ampha",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2426.81,
+              "y": 1095.97,
+              "z": 273.529,
+              "heading": 108,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2459.89,
+              "y": 1105.32,
+              "z": 281.128,
+              "heading": 117,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2493.53,
+              "y": 1111.17,
+              "z": 285.221,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2521.76,
+              "y": 1152.42,
+              "z": 286.314,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2535.3,
+              "y": 1119.34,
+              "z": 286.667,
+              "heading": 104,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2577.48,
+              "y": 1108.76,
+              "z": 287.213,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2602.57,
+              "y": 1144.01,
+              "z": 289.841,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203673,
+          "name": "banatisai",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2614.59,
+              "y": 1642.29,
+              "z": 254.0,
+              "heading": 105,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 16066,
+        "gold": 21600,
+        "rewardItems": [
+          {
+            "count": 5,
+            "item_id": 162000044
+          },
+          {
+            "count": 1,
+            "item_id": 188053061
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 24115,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 13,
+      "name": "A Shugo Apropos",
+      "nameId": 1129976,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 16066,
+          "gold": 21600
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 162000044
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 188053061
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 3,
+          "npc_ids": "210492 210493",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "unfinished",
+            "text": [
+              2200
+            ]
+          },
+          {
+            "tag": "noacquired",
+            "text": [
+              2200
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "unfinished",
+            "text": [
+              2019
+            ]
+          },
+          {
+            "tag": "noacquired",
+            "text": [
+              2019
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182215477
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2244,
+    "name": "A Drinking Problem",
+    "nameId": 1103344,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 14,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2244,
+        "start_npc_ids": 203644
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203644,
+        "name": "gercus",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 2393.22,
+            "y": 891.427,
+            "z": 322.0,
+            "heading": 85,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203644,
+      "name": "gercus",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2393.22,
+          "y": 891.427,
+          "z": 322.0,
+          "heading": 85,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203644,
+      "name": "gercus",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2393.22,
+          "y": 891.427,
+          "z": 322.0,
+          "heading": 85,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": "210573 210574",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210573,
+          "name": "green ribbit",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2376.89,
+              "y": 800.306,
+              "z": 309.75,
+              "heading": 57,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2425.1,
+              "y": 823.503,
+              "z": 309.594,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2439.22,
+              "y": 726.078,
+              "z": 309.75,
+              "heading": 43,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2442.94,
+              "y": 864.746,
+              "z": 309.691,
+              "heading": 35,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2458.81,
+              "y": 828.446,
+              "z": 310.87,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2495.66,
+              "y": 892.546,
+              "z": 309.75,
+              "heading": 88,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2497.71,
+              "y": 733.295,
+              "z": 309.768,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2540.76,
+              "y": 782.942,
+              "z": 309.625,
+              "heading": 108,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210574,
+          "name": "green ribbit",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2399.04,
+              "y": 737.848,
+              "z": 309.75,
+              "heading": 96,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2402.8,
+              "y": 771.974,
+              "z": 310.774,
+              "heading": 108,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2439.45,
+              "y": 776.561,
+              "z": 310.534,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2475.05,
+              "y": 751.548,
+              "z": 310.028,
+              "heading": 105,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2494.2,
+              "y": 808.799,
+              "z": 309.8,
+              "heading": 20,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2500.42,
+              "y": 856.86,
+              "z": 309.625,
+              "heading": 84,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203644,
+          "name": "gercus",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2393.22,
+              "y": 891.427,
+              "z": 322.0,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 16050,
+        "gold": 1700,
+        "rewardItems": [
+          {
+            "count": 2,
+            "item_id": 164000090
+          },
+          {
+            "count": 1,
+            "item_id": 186000006
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2244,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 14,
+      "name": "A Drinking Problem",
+      "nameId": 1103344,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 16050,
+          "gold": 1700
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 164000090
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000006
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": "210573 210574",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

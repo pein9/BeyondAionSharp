@@ -54,6 +54,7 @@ public sealed record NaturalAltgardContract(
 		["l3"] = ("natural-altgard-l3-contract.json", "natural-altgard-l3-plans"),
 		["l4"] = ("natural-altgard-l4-contract.json", "natural-altgard-l4-plans"),
 		["l5"] = ("natural-altgard-l5-contract.json", "natural-altgard-l5-plans"),
+		["l6"] = ("natural-altgard-l6-contract.json", "natural-altgard-l6-plans"),
 	};
 
 	public NaturalAltgardObjectUse[] ObjectUseList => ObjectUses ?? [];
@@ -271,8 +272,11 @@ public sealed record NaturalAltgardTimer(int QuestId, int Seconds, string StartS
 /// <paramref name="AtVar"/> plays <paramref name="MovieId"/>, whose end spawns <paramref name="NpcId"/> at
 /// <paramref name="Position"/> for <paramref name="LifetimeSeconds"/> (Q2223's Infernus). The used trigger respawns after
 /// <paramref name="TriggerRespawnSeconds"/>; <paramref name="RefillNpcId"/> gives a new item (page <paramref name="RefillPage"/>).</summary>
-public sealed record NaturalAltgardSpawn(string Key, int QuestId, int AtVar, int TriggerNpcId, int RequiresItemId, int MovieId, int NpcId,
-	float[] Position, int LifetimeSeconds, int TriggerRespawnSeconds, int RefillPage, int RefillNpcId, string Area);
+/// <param name="MovieId">The movie the trigger plays, when it plays one (Q2223's 67; Q2252 has none).</param>
+/// <param name="AlternateNpcIds">AG-01: what may appear instead of <paramref name="NpcId"/> (Q2252: Minushan's Spirit at 95%,
+/// else Minushan Drakie).</param>
+public sealed record NaturalAltgardSpawn(string Key, int QuestId, int AtVar, int TriggerNpcId, int RequiresItemId, int? MovieId, int NpcId,
+	float[] Position, int LifetimeSeconds, int TriggerRespawnSeconds, int RefillPage, int RefillNpcId, string Area, int[]? AlternateNpcIds = null);
 
 /// <summary>AK-01: a named monster that exists only in its game hours (Java <c>temporary_spawn</c>), from
 /// <paramref name="SpawnHour"/> to <paramref name="DespawnHour"/> (wrapping past midnight when the first is larger), and drops
@@ -315,9 +319,14 @@ public sealed record NaturalAltgardObjectUse(string Key, int QuestId, int NpcId,
 /// A logout while following also sets <paramref name="LostVar"/>. <paramref name="ClearAreas"/> are cleared before each start
 /// (AC-Q3), and <paramref name="MaxAttempts"/> bounds the tries (AC-Q2).
 /// </summary>
+/// <param name="StartVar">AG-01: the var at which the escort starts, when not at the offer (Q2284: var 1, after the talk to the
+/// first disguised Germir); null for an escort started by the offer itself (Q2290).</param>
+/// <param name="FollowerSpawnHour">AG-01: the follower exists only from this game hour (Java <c>temporary_spawn</c>; Q2284's
+/// second disguised Germir, 04:00) to <paramref name="FollowerDespawnHour"/> (21:00).</param>
 public sealed record NaturalAltgardEscort(string Key, int QuestId, int FollowerNpcId, int GoalNpcId, float[] Goal, float GoalRadius,
 	string StartStep, string RestartStep, int FollowVar, int SuccessVar, int LostVar, float Leash, int CheckMillis, int? MovieId,
-	int FollowerRespawnSeconds, float FollowerRunSpeed, string[] ClearAreas, int MaxAttempts, string Area);
+	int FollowerRespawnSeconds, float FollowerRunSpeed, string[] ClearAreas, int MaxAttempts, string Area, int? StartVar = null,
+	int? FollowerSpawnHour = null, int? FollowerDespawnHour = null);
 
 /// <summary>A quest step the server takes when the player enters a zone.</summary>
 public sealed record NaturalAltgardZoneStep(int QuestId, string Zone, int FromVar, int ToVar);

@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2248,
+    "name": "The Secret Letter",
+    "nameId": 1103348,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 14,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2245
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 798033,
+        "id": 2248,
+        "start_npc_ids": 203643
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203643,
+        "name": "gemyu",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 2359.64,
+            "y": 916.004,
+            "z": 326.0,
+            "heading": 80,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203643,
+      "name": "gemyu",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2359.64,
+          "y": 916.004,
+          "z": 326.0,
+          "heading": 80,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 798033,
+      "name": "neparinerk",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2693.71,
+          "y": 1026.61,
+          "z": 313.0,
+          "heading": 48,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 798033,
+          "name": "neparinerk",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2693.71,
+              "y": 1026.61,
+              "z": 313.0,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 13095,
+        "gold": 2220,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000006
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2248,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 14,
+      "name": "The Secret Letter",
+      "nameId": 1103348,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 13095,
+          "gold": 2220
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000006
+            }
+          }
+        ]
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2245
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182203232
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -2558,10 +2558,41 @@ The same loop protocol, with "AG" in place of "NA".
       follow and talk again.
   - All 347 Natural tests pass, and so do `run-fast` (every test), the warning baseline and the logger, clock and
     fidelity checks.
-- [ ] **AG-01 — The Leg 6 contract and plans.** `natural-altgard-l6-contract.json` from the l5 endpoint:
+- [x] **AG-01 — The Leg 6 contract and plans.** `natural-altgard-l6-contract.json` from the l5 endpoint:
   - bind 700821, the town and its merchant (Japayerk);
   - the escort (Q2284) with the follower's hours, the Q2252 spawn, and the Q2247 and Q2246 steps;
   - held quests (Q24115, and Q2262 under AG-Q1 (a)), the order and the endpoint.
+  - *Done 2026-10-02.* `natural-altgard-l6-contract.json` (generated from the shipped data) starts from the l5 endpoint:
+    - level 20, bound at Basfelt;
+    - Q2242, Q24233, Q2900, Q24014 and Q24015 started, and Q24016 locked.
+  - **The hub:** the bind is the Trader's Berth obelisk 700821 (2,035 Kinah, `bind_points.xml`). Japayerk (798030) is
+    the town's merchant.
+  - **Areas:** 15, from the Berth and Gerger to each ground. Three are for held hand-ins: the Heart of Impetusium, the
+    East Gate and Suthran, still held since Leg 5.
+  - **Quests:** twelve, in the order Q2242, Q2245, Q2244, Q2246, Q2247, Q2284, Q2248, Q2249, Q2251, Q24115, Q2252,
+    Q2262.
+    - The nine template quests have compiled plans in `natural-altgard-l6-plans/`.
+    - The three scripted quests have contract steps read from their C# handlers (Java ports):
+      - **Q2247:** Gogaerunerk's SETPRO1 gives the disguise 182203231; Germir sets REWARD at var 1 and takes it back.
+      - **Q2284:** the first disguised Germir's SETPRO2 sets var 1; the second's SETPRO3 starts the follow.
+      - **Q2252:** Sinood's QUEST_ACCEPT_1 gives the Bones of Minushan; the kill sets REWARD; Sinood takes it.
+  - **The escort `q2284-germir`:**
+    - The second disguised Germir (798041) follows to Babarunerk from var 1 (`startVar`, new); the follow sets var 2.
+    - It succeeds within 20 m of Babarunerk's spawn (REWARD at var 2), and is lost beyond 50 m (var 1). Those are the
+      Java values: `CoordinateDestinationChecker` and `FollowingNpcCheckTask`.
+    - The follower exists only 04:00–21:00 (`followerSpawnHour`/`followerDespawnHour`, new).
+  - **The spawn `q2252-minushan`:** the bones (700060) spawn Minushan's Spirit (210634) or Drakie (210635,
+    `alternateNpcIds`, new) for 180 s.
+    - It has no movie: `MovieId` is now optional. Sinood's page 1693 is the new item.
+  - **Held:** Q24115 (Banatisai) and Q2262 (Mabrunerk), as AG-Q2 asks. The endpoint is the ten other quests completed,
+    bound at the Berth.
+  - **`NaturalAltgardLeg6ContractTests`** (5 tests) pins:
+    - the start against Leg 5's endpoint;
+    - quest data, the bind price, the merchant and the targets in their areas;
+    - every scripted step against its handler (its NPC, dialog pages, SETPRO actions and items);
+    - the escort and spawn against their handlers and `temporary_spawn`;
+    - the two hub flights from the Basfelt bind.
+  - All 352 Natural tests pass, and so do the warning baseline and the logger, clock and fidelity checks.
 - [ ] **AG-02 — Walk every Leg 6 route in SIM**, from the Berth obelisk to each ground and Gerger, and back.
 - [ ] **AG-03 — Gerger's scripted quests in SIM:** Q2246's insignia box, Q2247's disguise, and Q2284's two
   Germirs and the follow to Babarunerk. Include a run started after 21:00, which must wait for 798041.
@@ -2944,3 +2975,4 @@ The original questions follow.
 - 2026-10-01 AK-10: the full checklist on 72824ee0f; everything passes except the flee probe's D32 account clash (c379a18e1, not Leg 5's). Leg 5 is done.
 - 2026-10-01 AK-10 follow-up (the maintainer asked): the flee probe moved to account 69 (5297762ce); bisecting its run-fast failure found a server gap, a flee counted as arrived while its target was in reach, fixed in PatternAi (6cc174b33). run-fast passes in full.
 - 2026-10-01 AG-00: chained hub flights (NaturalAirlineRoutes.Journey); a SIM probe flies Basfelt to the fortress to Trader's Berth; TalkAsync waits for a walking NPC to stop.
+- 2026-10-02 AG-01: the Leg 6 contract (12 quests, the Q2284 escort from var 1 with its follower's hours, the Q2252 spawn, Q24115 and Q2262 held) and its 9 template plans.

@@ -1,0 +1,400 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2245,
+    "name": "Ksellid Control",
+    "nameId": 1103345,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 14,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2245,
+        "start_npc_ids": 203643
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203643,
+        "name": "gemyu",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 2359.64,
+            "y": 916.004,
+            "z": 326.0,
+            "heading": 80,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203643,
+      "name": "gemyu",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2359.64,
+          "y": 916.004,
+          "z": 326.0,
+          "heading": 80,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203643,
+      "name": "gemyu",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2359.64,
+          "y": 916.004,
+          "z": 326.0,
+          "heading": 80,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": 210490,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210490,
+          "name": "star metal ksellid",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2245.34,
+              "y": 489.537,
+              "z": 312.625,
+              "heading": 39,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2250.77,
+              "y": 447.269,
+              "z": 312.5,
+              "heading": 54,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2252.75,
+              "y": 463.332,
+              "z": 312.578,
+              "heading": 62,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2265.97,
+              "y": 467.832,
+              "z": 312.498,
+              "heading": 68,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2309.05,
+              "y": 502.711,
+              "z": 313.002,
+              "heading": 37,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2331.5,
+              "y": 510.499,
+              "z": 312.629,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2353.42,
+              "y": 509.052,
+              "z": 312.625,
+              "heading": 41,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2369.52,
+              "y": 840.874,
+              "z": 321.195,
+              "heading": 104,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2391.51,
+              "y": 834.488,
+              "z": 318.467,
+              "heading": 97,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2391.6,
+              "y": 851.138,
+              "z": 315.964,
+              "heading": 83,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2401.52,
+              "y": 792.435,
+              "z": 309.875,
+              "heading": 29,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2408.76,
+              "y": 802.599,
+              "z": 309.665,
+              "heading": 23,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2412.61,
+              "y": 843.282,
+              "z": 312.304,
+              "heading": 38,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2430.62,
+              "y": 693.773,
+              "z": 318.384,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2441.32,
+              "y": 736.308,
+              "z": 309.75,
+              "heading": 114,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2446.45,
+              "y": 752.316,
+              "z": 309.77,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2448.01,
+              "y": 806.195,
+              "z": 310.876,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2455.94,
+              "y": 857.329,
+              "z": 309.913,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2491.45,
+              "y": 665.496,
+              "z": 319.435,
+              "heading": 102,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2505.38,
+              "y": 650.291,
+              "z": 322.302,
+              "heading": 66,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2510.77,
+              "y": 791.95,
+              "z": 310.0,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2516.53,
+              "y": 667.323,
+              "z": 322.441,
+              "heading": 26,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2530.36,
+              "y": 680.353,
+              "z": 324.045,
+              "heading": 35,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2530.4,
+              "y": 688.933,
+              "z": 323.9,
+              "heading": 85,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2533.04,
+              "y": 742.444,
+              "z": 322.908,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2540.13,
+              "y": 707.427,
+              "z": 324.375,
+              "heading": 47,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2554.9,
+              "y": 713.6,
+              "z": 325.431,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203643,
+          "name": "gemyu",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2359.64,
+              "y": 916.004,
+              "z": 326.0,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 17550,
+        "gold": 5470,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000006
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2245,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 14,
+      "name": "Ksellid Control",
+      "nameId": 1103345,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 17550,
+          "gold": 5470
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000006
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": 210490,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

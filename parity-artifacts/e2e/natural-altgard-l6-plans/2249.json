@@ -1,0 +1,406 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2249,
+    "name": "The Blue Crystals",
+    "nameId": 1103349,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 14,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2249,
+        "start_npc_ids": 798033
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 798033,
+        "name": "neparinerk",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 2693.71,
+            "y": 1026.61,
+            "z": 313.0,
+            "heading": 48,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 798033,
+      "name": "neparinerk",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2693.71,
+          "y": 1026.61,
+          "z": 313.0,
+          "heading": 48,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 798033,
+      "name": "neparinerk",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2693.71,
+          "y": 1026.61,
+          "z": 313.0,
+          "heading": 48,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 5,
+      "item_id": 182203233,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203233,
+          "npc_id": 210487,
+          "npc": {
+            "id": 210487,
+            "name": "blackened angolem",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 2373.9458,
+                "y": 788.0637,
+                "z": 309.75,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2425.8887,
+                "y": 853.48535,
+                "z": 309.83765,
+                "heading": 90,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2458.4646,
+                "y": 910.78,
+                "z": 312.36414,
+                "heading": 90,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2472.9624,
+                "y": 881.1693,
+                "z": 310.26868,
+                "heading": 73,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2495.8494,
+                "y": 775.4386,
+                "z": 309.63177,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2504.9526,
+                "y": 830.85406,
+                "z": 309.71866,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2549.5051,
+                "y": 858.8409,
+                "z": 316.6122,
+                "heading": 45,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2570.7039,
+                "y": 969.896,
+                "z": 308.71054,
+                "heading": 105,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2603.1133,
+                "y": 1031.7888,
+                "z": 325.32544,
+                "heading": 50,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2605.1633,
+                "y": 1085.8718,
+                "z": 291.48367,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2627.942,
+                "y": 1062.7279,
+                "z": 305.57166,
+                "heading": 10,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2645.6519,
+                "y": 1034.1183,
+                "z": 313.27493,
+                "heading": 33,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2653.7979,
+                "y": 1112.1439,
+                "z": 298.10873,
+                "heading": 83,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2688.6226,
+                "y": 1098.5331,
+                "z": 307.9632,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203233,
+          "npc_id": 210489,
+          "npc": {
+            "id": 210489,
+            "name": "blackened angolem shardling",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 2391.4766,
+                "y": 792.31934,
+                "z": 309.75,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2483.6697,
+                "y": 870.15063,
+                "z": 309.76907,
+                "heading": 73,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2493.2822,
+                "y": 827.77515,
+                "z": 309.82642,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2536.527,
+                "y": 873.1958,
+                "z": 312.69257,
+                "heading": 45,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2571.398,
+                "y": 1018.917,
+                "z": 328.51212,
+                "heading": 46,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2591.6016,
+                "y": 1030.2275,
+                "z": 325.89093,
+                "heading": 96,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2612.579,
+                "y": 1095.677,
+                "z": 292.66663,
+                "heading": 20,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2633.9412,
+                "y": 1030.2489,
+                "z": 314.20377,
+                "heading": 43,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2665.8955,
+                "y": 1108.6382,
+                "z": 301.0569,
+                "heading": 90,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 798033,
+          "name": "neparinerk",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2693.71,
+              "y": 1026.61,
+              "z": 313.0,
+              "heading": 48,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 21300,
+        "gold": 3420,
+        "rewardItems": [
+          {
+            "count": 8,
+            "item_id": 160003503
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2249,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 14,
+      "name": "The Blue Crystals",
+      "nameId": 1103349,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 182203233
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 21300,
+          "gold": 3420
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 8,
+              "item_id": 160003503
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203233,
+          "npc_id": 210487
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203233,
+          "npc_id": 210489
+        }
+      }
+    ]
+  }
+}
