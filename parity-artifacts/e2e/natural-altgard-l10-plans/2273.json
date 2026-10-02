@@ -1,0 +1,404 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2273,
+    "name": "Emergency Rations",
+    "nameId": 1103373,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 15,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2272
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2273,
+        "start_npc_ids": 203669
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203669,
+        "name": "taora",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1719.56,
+            "y": 2167.43,
+            "z": 256.31,
+            "heading": 79,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203669,
+      "name": "taora",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1719.56,
+          "y": 2167.43,
+          "z": 256.31,
+          "heading": 79,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203669,
+      "name": "taora",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1719.56,
+          "y": 2167.43,
+          "z": 256.31,
+          "heading": 79,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 182203252,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203252,
+          "npc_id": 210499,
+          "npc": {
+            "id": 210499,
+            "name": "veteran mumu lookout",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 2054.16,
+                "y": 2537.71,
+                "z": 339.36688,
+                "heading": 65,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2087.0,
+                "y": 2398.9,
+                "z": 329.93124,
+                "heading": 76,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2265.12,
+                "y": 2327.9,
+                "z": 293.53372,
+                "heading": 108,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2269.13,
+                "y": 2184.05,
+                "z": 275.62073,
+                "heading": 62,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2315.65,
+                "y": 2260.24,
+                "z": 280.41187,
+                "heading": 32,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203252,
+          "npc_id": 210498,
+          "npc": {
+            "id": 210498,
+            "name": "veteran mumu looklook",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1970.9,
+                "y": 2554.0,
+                "z": 338.0,
+                "heading": 91,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1984.69,
+                "y": 2686.74,
+                "z": 352.558,
+                "heading": 110,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2054.16,
+                "y": 2537.71,
+                "z": 339.36688,
+                "heading": 65,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2067.04,
+                "y": 2418.22,
+                "z": 334.902,
+                "heading": 59,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2072.57,
+                "y": 2418.73,
+                "z": 334.727,
+                "heading": 57,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2076.72,
+                "y": 2421.82,
+                "z": 335.0,
+                "heading": 94,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2087.0,
+                "y": 2398.9,
+                "z": 329.93124,
+                "heading": 76,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2265.12,
+                "y": 2327.9,
+                "z": 293.53372,
+                "heading": 108,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2269.13,
+                "y": 2184.05,
+                "z": 275.62073,
+                "heading": 62,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2315.65,
+                "y": 2260.24,
+                "z": 280.41187,
+                "heading": 32,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2383.74,
+                "y": 2216.88,
+                "z": 268.792,
+                "heading": 74,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2387.66,
+                "y": 2213.48,
+                "z": 268.89,
+                "heading": 15,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2406.88,
+                "y": 2104.39,
+                "z": 282.057,
+                "heading": 24,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2418.48,
+                "y": 2119.87,
+                "z": 275.665,
+                "heading": 20,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2462.63,
+                "y": 2059.08,
+                "z": 285.529,
+                "heading": 113,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2470.23,
+                "y": 2084.97,
+                "z": 278.208,
+                "heading": 28,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2484.22,
+                "y": 2120.15,
+                "z": 278.0,
+                "heading": 116,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203669,
+          "name": "taora",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1719.56,
+              "y": 2167.43,
+              "z": 256.31,
+              "heading": 79,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 14220,
+        "gold": 4440,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2273,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 15,
+      "name": "Emergency Rations",
+      "nameId": 1103373,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 182203252
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 14220,
+          "gold": 4440
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203252,
+          "npc_id": 210499
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 80,
+          "drop_each_member": 1,
+          "item_id": 182203252,
+          "npc_id": 210498
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2272
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

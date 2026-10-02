@@ -1,0 +1,242 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2277,
+    "name": "[Group] A Lucrative Endeavor",
+    "nameId": 1103377,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2277,
+        "start_npc_ids": 203556
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203556,
+        "name": "nemnef",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1658.57,
+            "y": 1818.39,
+            "z": 253.72,
+            "heading": 110,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203556,
+      "name": "nemnef",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1658.57,
+          "y": 1818.39,
+          "z": 253.72,
+          "heading": 110,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203556,
+      "name": "nemnef",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1658.57,
+          "y": 1818.39,
+          "z": 253.72,
+          "heading": 110,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 10,
+      "item_id": 182203251,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182203251,
+          "npc_id": 210551,
+          "npc": {
+            "id": 210551,
+            "name": "brutal black claw hunter",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1934.74,
+                "y": 2332.28,
+                "z": 307.37125,
+                "heading": 91,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182203251,
+          "npc_id": 210552,
+          "npc": {
+            "id": 210552,
+            "name": "brutal black claw hunter",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1933.38,
+                "y": 2554.77,
+                "z": 323.21188,
+                "heading": 59,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1941.87,
+                "y": 2417.13,
+                "z": 303.08685,
+                "heading": 1,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203556,
+          "name": "nemnef",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1658.57,
+              "y": 1818.39,
+              "z": 253.72,
+              "heading": 110,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 39600,
+        "gold": 33850,
+        "rewardItems": [
+          {
+            "count": 5,
+            "item_id": 164000071
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2277,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "[Group] A Lucrative Endeavor",
+      "nameId": 1103377,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 182203251
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 39600,
+          "gold": 33850
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 164000071
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182203251,
+          "npc_id": 210551
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182203251,
+          "npc_id": 210552
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,371 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2280,
+    "name": "[Group] Killing the Shamans",
+    "nameId": 1103380,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2286
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2280,
+        "start_npc_ids": 203560
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203560,
+        "name": "morn",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1660.88,
+            "y": 1813.21,
+            "z": 253.722,
+            "heading": 15,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203560,
+      "name": "morn",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1660.88,
+          "y": 1813.21,
+          "z": 253.722,
+          "heading": 15,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203560,
+      "name": "morn",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1660.88,
+          "y": 1813.21,
+          "z": 253.722,
+          "heading": 15,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 4,
+      "npc_ids": "210508 210509",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210508,
+          "name": "brutal black claw spellshifter",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1900.94,
+              "y": 2489.05,
+              "z": 316.375,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1910.49,
+              "y": 2587.99,
+              "z": 326.345,
+              "heading": 55,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1915.57,
+              "y": 2488.21,
+              "z": 316.277,
+              "heading": 87,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1958.17,
+              "y": 2681.49,
+              "z": 346.646,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 1983.57,
+              "y": 2505.48,
+              "z": 319.973,
+              "heading": 54,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2017.48,
+              "y": 2463.02,
+              "z": 309.033,
+              "heading": 17,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2044.85,
+              "y": 2323.77,
+              "z": 325.578,
+              "heading": 74,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2047.3,
+              "y": 2341.91,
+              "z": 324.668,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210509,
+          "name": "brutal black claw spellshifter",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2058.0,
+              "y": 2442.71,
+              "z": 335.54437,
+              "heading": 75,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2099.4,
+              "y": 2563.26,
+              "z": 341.375,
+              "heading": 8,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2106.57,
+              "y": 2501.81,
+              "z": 342.035,
+              "heading": 46,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2138.72,
+              "y": 2381.25,
+              "z": 341.297,
+              "heading": 25,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2149.77,
+              "y": 2494.02,
+              "z": 334.626,
+              "heading": 42,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2188.72,
+              "y": 2480.02,
+              "z": 333.67,
+              "heading": 84,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2195.83,
+              "y": 2510.74,
+              "z": 331.0,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2220.3,
+              "y": 2338.17,
+              "z": 300.971,
+              "heading": 34,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2227.09,
+              "y": 2380.81,
+              "z": 302.267,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2228.77,
+              "y": 2411.35,
+              "z": 303.584,
+              "heading": 2,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2231.86,
+              "y": 2457.46,
+              "z": 314.451,
+              "heading": 39,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2237.91,
+              "y": 2436.9,
+              "z": 314.554,
+              "heading": 89,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203560,
+          "name": "morn",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1660.88,
+              "y": 1813.21,
+              "z": 253.722,
+              "heading": 15,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 33690,
+        "gold": 28770,
+        "rewardItems": [
+          {
+            "count": 8,
+            "item_id": 160003012
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2280,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "[Group] Killing the Shamans",
+      "nameId": 1103380,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 33690,
+          "gold": 28770
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 8,
+              "item_id": 160003012
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 4,
+          "npc_ids": "210508 210509",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2286
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

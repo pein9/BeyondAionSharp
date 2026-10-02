@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2283,
+    "name": "Report to Pandaemonium",
+    "nameId": 1103383,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2282
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 204052,
+        "id": 2283,
+        "start_npc_ids": 203557
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203557,
+        "name": "suthran",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1662.63,
+            "y": 1748.56,
+            "z": 260.236,
+            "heading": 68,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203557,
+      "name": "suthran",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1662.63,
+          "y": 1748.56,
+          "z": 260.236,
+          "heading": 68,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204052,
+      "name": "vidar",
+      "positions": [
+        {
+          "mapId": 120010000,
+          "x": 1275.37,
+          "y": 1168.61,
+          "z": 215.215,
+          "heading": 30,
+          "source": "game-server/data/static_data/spawns/Npcs/120010000_Pandaemonium.xml"
+        },
+        {
+          "mapId": 120010000,
+          "x": 1392.6545,
+          "y": 1197.1063,
+          "z": 209.89325,
+          "heading": 44,
+          "source": "game-server/data/static_data/events/timed_events/custom_events.xml",
+          "conditionalEvent": true
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204052,
+          "name": "vidar",
+          "positions": [
+            {
+              "mapId": 120010000,
+              "x": 1275.37,
+              "y": 1168.61,
+              "z": 215.215,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Npcs/120010000_Pandaemonium.xml"
+            },
+            {
+              "mapId": 120010000,
+              "x": 1392.6545,
+              "y": 1197.1063,
+              "z": 209.89325,
+              "heading": 44,
+              "source": "game-server/data/static_data/events/timed_events/custom_events.xml",
+              "conditionalEvent": true
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 36000,
+        "gold": 6440,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2283,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "Report to Pandaemonium",
+      "nameId": 1103383,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 36000,
+          "gold": 6440
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2282
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182203255
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

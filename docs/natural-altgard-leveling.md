@@ -3383,9 +3383,16 @@ Gathering, coin loops and unapproved D32 quests stay deferred.
     after all five preceding campaigns. Existing Altgard sources avoid a mandatory Haramel trip. The portal
     uses the Java minimum-step gate; death/leave resets the Cleric's instance branch to var 1. Scope and
     BC-01..BC-08 are recorded; no server changes. All pre-commit checks pass (`run/bc00-checks`).
-- [ ] **BC-01 — Contract, plans and decisions.** Register l10, six compiled template plans, all campaign
+- [x] **BC-01 — Contract, plans and decisions.** Register l10, six compiled template plans, all campaign
   steps, collections, kill/zone/instance transitions and rewards. Prove Q2281 requires all three counters,
   Q24016's complete gate and map transitions, preserved Q2900 and fortress endpoint. Depends: BC-00.
+  - *Done 2026-10-02.* From `cabc7fb6e`: l10 contract and six reproducible template plans; all nine quests,
+    independent six-bit Q2281 counters, all five Q24016 prerequisites, ordinary city and instance trips,
+    gated Orb, zone sphere, guardian/gate use and movie facts, three chosen rewards and fortress endpoint.
+    Thirty-six scoped contract/decision cases pass (`run/bc01-contract-final.log`); the earlier nullable-count
+    compile error and conditional Vidar-spawn test assumption are corrected, with both draft logs retained.
+    Every pre-commit check passes (`run/bc01-checks`); `bc01-fast` passes all eleven scenarios, 69 tests and
+    three switch skips. No server changes. Travel and real portal behavior remain BC-02's proof.
 - [ ] **BC-02 — Travel in SIM.** Free controlled probe, level-22 route plans: every giver/objective kind,
   campaign source, totem, city recipient and Bregirun gate; actual Heart-to-fortress flight. Prove real portal
   entry/exit and the instance's checked ground routes. Clear aggressive neighbours only in the probe;
@@ -3833,3 +3840,4 @@ The original questions follow.
 - 2026-10-02 AH-05: altgard-l9 captured from committed 96545cd84, hash-checked and restored; Cleric 22 alive at Heart, nine completions/no held quests, work items consumed, 378,680 Kinah, campaigns unchanged; both owned schemas dropped. Full checklist is next.
 - 2026-10-02 AH-06: all 33 CLAUDE commands pass on da427b420, solution 5,080 passed/97 skips, Fast 69 passed/three switch skips/all eleven scenarios; five baked maps validate. Temporary runner argument typo corrected with invalid attempt retained. Leg 9 is done; altgard-l9 starts Leg 10. No push.
 - 2026-10-02 BC-00: Leg 10 scope and Java/data audit complete from 63d23d4d1; six templates/three campaigns, 959,700 XP, Q2281's three counters, real Bregirun entry/recovery/movie exit, fortress bind/endpoint and retained Q2900; pre-commit checks pass. Contract and plans are next.
+- 2026-10-02 BC-01: l10 contract and six plans, all independent Q2281 counters and Q24016 prerequisites/map decisions; 36 scoped cases, Fast and pre-commit checks pass, earlier drafts retained. Travel is next.

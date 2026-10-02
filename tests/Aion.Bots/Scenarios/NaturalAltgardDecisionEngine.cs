@@ -23,9 +23,13 @@ public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, in
 				.Select(known => known.TemplateId!.Value).ToHashSet(), freeCubeSlots, world.Kinah, world.CubeExpansion?.Npc);
 }
 
-/// <summary>What a template quest's objectives need, from its compiled plan: items in the inventory, or a kill counter.
-/// Java's monster_hunt keeps the quest at START with the counter full until it is turned in.</summary>
-public sealed record NaturalTemplateObjective(int QuestId, int? ItemId, int ItemCount, int KillVar, int KillCount, int? ClaimMapId = null)
+/// <summary>One independent kill counter in a template quest's compiled plan.</summary>
+public sealed record NaturalTemplateKill(int Var, int Count);
+
+/// <summary>What a template quest needs: inventory items or every independent kill counter. Java keeps monster_hunt
+/// at START with the counters full until it is turned in.</summary>
+public sealed record NaturalTemplateObjective(int QuestId, int? ItemId, int ItemCount, int KillVar, int KillCount, int? ClaimMapId = null,
+	NaturalTemplateKill[]? Kills = null)
 {
 	public static IReadOnlyDictionary<int, NaturalTemplateObjective> From(IReadOnlyDictionary<int, QuestRunPlan> plans) =>
 		plans.Values.ToDictionary(plan => plan.Id, plan =>
@@ -34,12 +38,15 @@ public sealed record NaturalTemplateObjective(int QuestId, int? ItemId, int Item
 			QuestRunStep? kill = plan.Steps.FirstOrDefault(step => step.Kind == "kill");
 			return new NaturalTemplateObjective(plan.Id, collect?.ItemId, collect?.Count ?? 0,
 				kill?.Data.GetProperty("var").GetInt32() ?? 0, kill?.Count ?? 0,
-				plan.EndNpcs.SelectMany(npc => npc.Positions).FirstOrDefault(position => !position.ConditionalEvent)?.MapId);
+				plan.EndNpcs.SelectMany(npc => npc.Positions).FirstOrDefault(position => !position.ConditionalEvent)?.MapId,
+				plan.Steps.Where(step => step.Kind == "kill").Select(step =>
+					new NaturalTemplateKill(step.Data.GetProperty("var").GetInt32(), step.Count)).ToArray());
 		});
 
 	public bool IsDone(BotQuestState? quest, IReadOnlyDictionary<int, long> items) =>
 		ItemId is int item ? items.GetValueOrDefault(item) >= ItemCount
-			: quest is { } state && (state.Status >= 4 || ((state.StepAndFlags >> (KillVar * 6)) & 0x3F) >= KillCount);
+			: quest is { } state && (state.Status >= 4 ||
+				(Kills ?? [new(KillVar, KillCount)]).All(kill => ((state.StepAndFlags >> (kill.Var * 6)) & 0x3F) >= kill.Count));
 }
 
 /// <summary>One next action in Leg 1: a template phase, a contract step (by key), the remedy, the air kills, a hunt for
@@ -88,8 +95,12 @@ public static class NaturalAltgardDecisionEngine
 		{
 			int map = action == "talk" && stepKey != null ? contract.StepMap(contract.Steps.Single(step => step.Key == stepKey))
 				: action == "template-claim" && questId is int id ? objectives.GetValueOrDefault(id)?.ClaimMapId ?? contract.Hub.MapId
+				: action == "enter-instance" ? contract.InstanceTripList.Single(trip => trip.QuestId == questId).MapId
+				: action == "use-object" ? contract.ObjectUseList.Single(use => use.Key == stepKey).MapId ?? contract.Hub.MapId
+				: action == "hunt" ? contract.HuntList.First(hunt => hunt.QuestId == questId &&
+					Var(questId!.Value) >= hunt.FromVar && Var(questId.Value) < hunt.ToVar).MapId ?? contract.Hub.MapId
 				: contract.Hub.MapId;
-			return new(sequence, state.MapId != map && action != "revive-at-bind" ? "travel-to-map" : action,
+			return new(sequence, state.MapId != map && action is not ("revive-at-bind" or "enter-instance") ? "travel-to-map" : action,
 				stepKey, questId, "planned", reason, [.. checks], map);
 		}
 		NaturalAltgardDecision Stop(string action, string outcome, string reason, int? questId = null) =>
@@ -100,7 +111,7 @@ public static class NaturalAltgardDecisionEngine
 		if (state.IsDead)
 			return Plan("revive-at-bind", null, "Dead: revive at the Altgard Fortress obelisk.");
 		bool offHub = state.MapId != contract.Hub.MapId;
-		if (offHub && !contract.MapTripList.Any(trip => trip.MapId == state.MapId))
+		if (offHub && !contract.MapTripList.Any(trip => trip.MapId == state.MapId) && !contract.InstanceTripList.Any(trip => trip.MapId == state.MapId))
 			return Stop("wrong-map", "blocked", $"{contract.Leg} is on map {contract.Hub.MapId}; the Cleric is on {state.MapId}.");
 		// AB-08, the standing bind policy (AB-Q5): bind at the hub's obelisk first.
 		if (!offHub && contract.Bind is { OnArrival: true } bind && !BoundAt(bind, contract.Hub.MapId, state.Bind))
@@ -132,7 +143,8 @@ public static class NaturalAltgardDecisionEngine
 		NaturalAltgardQuest[] open = contract.Order.Select(contract.Quest)
 			.Where(quest => !Done(quest.Id) && !HeldReady(quest.Id) && (only == null || only.Contains(quest.Id))).ToArray();
 		NaturalAltgardQuest[] eligible = open.Where(Eligible).OrderByDescending(quest => offHub && Status(quest.Id) == Start &&
-			contract.StepsFor(quest.Id).Any(step => contract.StepMap(step) == state.MapId)).ToArray();
+			(contract.StepsFor(quest.Id).Any(step => contract.StepMap(step) == state.MapId) ||
+			 contract.InstanceTripList.Any(trip => trip.QuestId == quest.Id && trip.MapId == state.MapId))).ToArray();
 		// A hand-in where the leg ends (Leg 2: Q2215 at Manir's Campsite, AM-Q1) waits until everything else is done.
 		string? endArea = contract.Endpoint.Anchor is { } end
 			? contract.Areas.Where(area => area.Contains(end[0], end[1], end[2]))
@@ -220,6 +232,8 @@ public static class NaturalAltgardDecisionEngine
 					: Plan("talk", quest.Id, $"Q{quest.Id}: claim the reward.", claim.Key);
 			}
 			int var = Var(quest.Id);
+			if (contract.InstanceTripList.Any(trip => trip.QuestId == quest.Id && var == trip.FromVar && state.MapId != trip.MapId))
+				return Plan("enter-instance", quest.Id, $"Q{quest.Id} var {var}: use its ordinary quest portal.");
 			if (contract.ItemUse is { } use && quest.Id == use.QuestId && var == use.Var)
 				return Plan("use-item", quest.Id, $"Q{quest.Id}: use item {use.ItemId} ({(use.Anywhere ? "anywhere" : $"inside {use.Zone}")}).");
 			if (contract.AirKills is { } air && quest.Id == air.QuestId && var >= air.FromVar && var <= air.RewardVar)
@@ -300,10 +314,13 @@ public static class NaturalAltgardDecisionEngine
 				checks.Add(new("level", "wait", $"Q{quest.Id} needs level {quest.MinimumLevel}; come back at it."));
 				return false;
 			}
-			if (quest.Prerequisite is int before && !Done(before))
+			foreach (int before in quest.PrerequisiteList)
 			{
-				checks.Add(new("prerequisite", "wait", $"Q{quest.Id} needs Q{before} first."));
-				return false;
+				if (!Done(before))
+				{
+					checks.Add(new("prerequisite", "wait", $"Q{quest.Id} needs Q{before} first."));
+					return false;
+				}
 			}
 			return true;
 		}

@@ -1,0 +1,297 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2282,
+    "name": "[Group] Killing Kumbaron's Followers",
+    "nameId": 1103382,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2279
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2282,
+        "start_npc_ids": 203557
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203557,
+        "name": "suthran",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1662.63,
+            "y": 1748.56,
+            "z": 260.236,
+            "heading": 68,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203557,
+      "name": "suthran",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1662.63,
+          "y": 1748.56,
+          "z": 260.236,
+          "heading": 68,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203557,
+      "name": "suthran",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1662.63,
+          "y": 1748.56,
+          "z": 260.236,
+          "heading": 68,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 3,
+      "npc_ids": "210538 210539",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210538,
+          "name": "brutal black claw warlock",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2300.89,
+              "y": 2191.86,
+              "z": 277.172,
+              "heading": 22,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2343.31,
+              "y": 2155.26,
+              "z": 276.625,
+              "heading": 37,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2400.88,
+              "y": 2171.88,
+              "z": 270.328,
+              "heading": 2,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2413.07,
+              "y": 2535.3,
+              "z": 260.058,
+              "heading": 108,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2458.0,
+              "y": 2553.49,
+              "z": 253.843,
+              "heading": 114,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2478.48,
+              "y": 2627.51,
+              "z": 256.156,
+              "heading": 7,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2484.08,
+              "y": 2590.29,
+              "z": 251.759,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2488.91,
+              "y": 2542.14,
+              "z": 250.443,
+              "heading": 39,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2524.5,
+              "y": 2557.77,
+              "z": 313.579,
+              "heading": 67,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210539,
+          "name": "brutal black claw warlock",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2522.12,
+              "y": 2605.16,
+              "z": 315.68146,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2529.32,
+              "y": 2612.25,
+              "z": 250.199,
+              "heading": 118,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203557,
+          "name": "suthran",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1662.63,
+              "y": 1748.56,
+              "z": 260.236,
+              "heading": 68,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 66150,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 121000751
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2282,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "[Group] Killing Kumbaron's Followers",
+      "nameId": 1103382,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 66150
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 121000751
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 3,
+          "npc_ids": "210538 210539",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2279
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

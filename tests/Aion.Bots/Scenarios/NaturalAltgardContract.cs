@@ -46,7 +46,8 @@ public sealed record NaturalAltgardContract(
 	NaturalAltgardHeld[]? Held = null,
 	NaturalAltgardCubeExpansion? CubeExpansion = null,
 	NaturalAltgardMapTrip[]? MapTrips = null,
-	NaturalAltgardPillarFlight? PillarFlight = null)
+	NaturalAltgardPillarFlight? PillarFlight = null,
+	NaturalAltgardInstanceTrip[]? InstanceTrips = null)
 {
 	/// <summary>The contract file and plan directory of each leg (none when the leg has no template quests).</summary>
 	public static readonly IReadOnlyDictionary<string, (string Contract, string? Plans)> Legs = new Dictionary<string, (string, string?)>
@@ -60,6 +61,7 @@ public sealed record NaturalAltgardContract(
 		["l7"] = ("natural-altgard-l7-contract.json", "natural-altgard-l7-plans"),
 		["l8"] = ("natural-altgard-l8-contract.json", "natural-altgard-l8-plans"),
 		["l9"] = ("natural-altgard-l9-contract.json", "natural-altgard-l9-plans"),
+		["l10"] = ("natural-altgard-l10-contract.json", "natural-altgard-l10-plans"),
 	};
 
 	public NaturalAltgardObjectUse[] ObjectUseList => ObjectUses ?? [];
@@ -74,6 +76,7 @@ public sealed record NaturalAltgardContract(
 	public NaturalAltgardTimedSpawn[] TimedSpawnList => TimedSpawns ?? [];
 	public NaturalAltgardHeld[] HeldList => Held ?? [];
 	public NaturalAltgardMapTrip[] MapTripList => MapTrips ?? [];
+	public NaturalAltgardInstanceTrip[] InstanceTripList => InstanceTrips ?? [];
 	public int StepMap(NaturalAltgardStep step) => step.MapId ?? Hub.MapId;
 	/// <summary>Every chosen reward of the leg: the campaign's (<see cref="RewardChoice"/>) and the others'.</summary>
 	public NaturalAltgardRewardChoice[] RewardChoiceList => [.. RewardChoice is { } choice ? [choice] : Array.Empty<NaturalAltgardRewardChoice>(), .. RewardChoices ?? []];
@@ -110,7 +113,8 @@ public sealed record NaturalAltgardContract(
 			throw new InvalidDataException("Natural Altgard names an unknown area.");
 		foreach (NaturalAltgardStep step in contract.Steps)
 		{
-			if (contract.StepMap(step) != contract.Hub.MapId && !contract.MapTripList.Any(trip => trip.MapId == contract.StepMap(step)))
+			if (contract.StepMap(step) != contract.Hub.MapId && !contract.MapTripList.Any(trip => trip.MapId == contract.StepMap(step)) &&
+				!contract.InstanceTripList.Any(trip => trip.MapId == contract.StepMap(step)))
 				throw new InvalidDataException($"Natural Altgard step {step.Key} has no trip to its map.");
 			if (step.ExpectedStatus is not ("OFFER" or "START" or "REWARD"))
 				throw new InvalidDataException($"Natural Altgard step {step.Key} has an unknown status.");
@@ -157,6 +161,14 @@ public sealed record NaturalAltgardContract(
 		if (contract.PillarFlight is { } pillar && (contract.Flight == null || pillar.Upper.Length != 3 || pillar.Lower.Length != 3 ||
 			pillar.Upper[2] - pillar.Lower[2] < 40))
 			throw new InvalidDataException("A pillar flight needs flight rules and distinct upper/lower landings.");
+		if (contract.InstanceTripList.Any(trip => !questIds.Contains(trip.QuestId) || trip.MapId == contract.Hub.MapId ||
+			trip.EnterVar <= trip.FromVar || trip.ResetVar != trip.FromVar || trip.KillVar <= trip.SpawnVar ||
+			trip.PortalPosition.Length != 3 || trip.Arrival.Length != 3 || trip.ExitPosition.Length != 3 ||
+			trip.BossPosition.Length != 3 || trip.MovieExitPosition.Length != 3 || trip.UseMillis < 0 || trip.ExitUseMillis < 0))
+			throw new InvalidDataException("Natural Altgard instance trips disagree with the quests, maps or transitions.");
+		int[] otherMaps = contract.HuntList.Select(hunt => hunt.MapId).Concat(contract.ObjectUseList.Select(use => use.MapId)).OfType<int>().ToArray();
+		if (otherMaps.Any(map => map != contract.Hub.MapId && !contract.InstanceTripList.Any(trip => trip.MapId == map)))
+			throw new InvalidDataException("A hunt or object use has no instance trip to its map.");
 		return contract;
 	}
 
@@ -191,6 +203,7 @@ public sealed record NaturalAltgardContract(
 			.Concat(TimedSpawnList.Select(spawn => spawn.NpcId))
 			.Concat(CubeExpansion is { } cube ? [cube.TeleporterNpcId] : [])
 			.Concat(MapTripList.Select(trip => trip.TeleporterNpcId))
+			.Concat(InstanceTripList.SelectMany(trip => new[] { trip.PortalNpcId, trip.ExitNpcId, trip.BossNpcId }))
 			.Concat(Bind is { } bind ? [bind.NpcId] : [])
 			.Concat(CollectionList.SelectMany(collection => collection.Items.SelectMany(item => item.SourceNpcIds)))
 			.Append(Start.BindNpcId).Concat(AirKills is { } air ? [air.NpcId] : [])
@@ -217,9 +230,10 @@ public sealed record NaturalAltgardArea(string Key, string Note, float[] Min, fl
 }
 
 public sealed record NaturalAltgardQuest(int Id, string Category, int MinimumLevel, int RewardExperience, int? Prerequisite,
-	string Handler, string? Template, int? StartNpcId, string? Area)
+	string Handler, string? Template, int? StartNpcId, string? Area, int[]? Prerequisites = null)
 {
 	public bool IsTemplate => Handler == "template";
+	public IEnumerable<int> PrerequisiteList => (Prerequisite is int before ? new[] { before } : []).Concat(Prerequisites ?? []).Distinct();
 }
 
 /// <summary>One scripted dialog step. <c>OFFER</c> is a quest the player has not taken yet.</summary>
@@ -232,6 +246,11 @@ public sealed record NaturalAltgardStep(string Key, int QuestId, int? Var, strin
 
 /// <summary>AE-00: a quest trip from the hub map by teleporter; Return brings the Cleric back to its hub bind.</summary>
 public sealed record NaturalAltgardMapTrip(int MapId, int TeleporterNpcId, int LocationId, int Fare, float TalkRange);
+
+/// <summary>BC-01: an ordinary solo quest portal, its instance branch and recovery/exit facts from Java and shipped data.</summary>
+public sealed record NaturalAltgardInstanceTrip(int QuestId, int MapId, int FromVar, int EnterVar, int PortalNpcId,
+	float[] PortalPosition, int UseMillis, float[] Arrival, int ExitNpcId, float[] ExitPosition, int ExitUseMillis, int ResetVar,
+	int BossNpcId, float[] BossPosition, int SpawnVar, int KillVar, int MovieId, float[] MovieExitPosition);
 
 /// <param name="Zone">AB-01: where the item must be used when not <paramref name="Anywhere"/> (Q24013's poison), and the
 /// monsters the use spawns (Java <c>onItemUseEvent</c>: two Feral Black Claw Sharpeyes).</param>
@@ -286,7 +305,7 @@ public sealed record NaturalAltgardBind(int NpcId, float[] Position, bool OnArri
 
 /// <summary>AB-01: a custom handler's kill counter: each kill of <paramref name="NpcIds"/> moves the var from
 /// <paramref name="FromVar"/> toward <paramref name="ToVar"/> (Q2288, Q2289, Q24112, Q24013).</summary>
-public sealed record NaturalAltgardHunt(int QuestId, int[] NpcIds, int FromVar, int ToVar, string Area, string? Note = null);
+public sealed record NaturalAltgardHunt(int QuestId, int[] NpcIds, int FromVar, int ToVar, string Area, string? Note = null, int? MapId = null);
 
 /// <summary>AB-01: a timed quest. The server's QUEST_TIMER starts at <paramref name="StartStep"/>; at its end the quest is
 /// abandoned or, for a new chance, the next check takes <paramref name="LostItemIds"/> (page <paramref name="ExpiredPage"/>)
@@ -333,7 +352,8 @@ public sealed record NaturalAltgardAvoid(int NpcId, int QuestId, int UntilVar, i
 /// <param name="DialogPage">A dialog the use opens before the loot (Q2221's safe: page 1693), closed with
 /// <paramref name="CloseAction"/>.</param>
 public sealed record NaturalAltgardObjectUse(string Key, int QuestId, int NpcId, int FromVar, int ToVar, int Uses, int? LootItemId,
-	bool Disappears, string? Area, int SpawnCount = 1, int RespawnSeconds = 0, int? DialogPage = null, string? CloseAction = null);
+	bool Disappears, string? Area, int SpawnCount = 1, int RespawnSeconds = 0, int? DialogPage = null, string? CloseAction = null,
+	int? MapId = null, int? MovieId = null);
 
 /// <summary>
 /// AC-01: an escort (docs/natural-altgard-leveling.md, "The escort handler"). The start step's last action makes the follower
@@ -355,7 +375,7 @@ public sealed record NaturalAltgardEscort(string Key, int QuestId, int FollowerN
 	int? FollowerSpawnHour = null, int? FollowerDespawnHour = null);
 
 /// <summary>A quest step the server takes when the player enters a zone.</summary>
-public sealed record NaturalAltgardZoneStep(int QuestId, string Zone, int FromVar, int ToVar);
+public sealed record NaturalAltgardZoneStep(int QuestId, string Zone, int FromVar, int ToVar, float[]? Anchor = null, float Radius = 0);
 
 public sealed record NaturalAltgardCollectedItem(int ItemId, int Count, int[] SourceNpcIds);
 
