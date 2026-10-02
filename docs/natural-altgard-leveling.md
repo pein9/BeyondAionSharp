@@ -2967,10 +2967,19 @@ The same loop protocol, with "AE" in place of "NA".
     and their shipped spawn/drop data were read first. Probe setup clears hostile neighbours and uses `BeginWorldReload`.
   - Three contract tests and warning, logger, clock-read and fidelity checks pass. `ae03-fast` passes all eleven
     scenarios, 64 tests with three switch-dependent skips. Base commit: AE-02's `b119b5eb6`.
-- [ ] **AE-04 — The template quests in SIM:**
+- [x] **AE-04 — The template quests in SIM:**
   - Q2264, Q2265, Q2272, Q2261, Q2286 and Q2287;
   - Q2243, then Q2253, by flight;
   - the hand-ins of Q24233 and Q2262, and Q2146 taken and held.
+  - *Done 2026-10-02.* `FortressAndEastGateTemplateQuestsPlayThroughTheirPlans` (`ae04-templates`, free account 196)
+    passes all eleven plans: ten completions and Q2146 START/0 held for Lateni (203659). Incoming Q24233 START/1 and
+    Q2262 START/0 are set up as Leg 6 left them, with Q2262's work item; both hand-ins pass and consume their work items.
+  - Q2264 counts three arachnas; Q2265's sword and Q2272's cube each drop on the first controlled kill. Q2261, Q2286
+    and Q2287 report correctly. Q2243 finishes at Kagorinerk, then Q2253 returns to Chagarinerk, using 203561/203678
+    hub flights (791 Kinah each). All collections are consumed on completion; Q2146 is not handed in.
+  - Java MonsterHunt, ItemCollecting, ReportTo and Altgard template registrations were read first; Q24233 retains D32.
+    Probe-only setup clears hostile neighbours and drops the client view before teleports. Warning, logger, clock-read
+    and fidelity checks pass. This item changes only the probe; base commit `f41204c9d`.
 - [ ] **AE-05 — Combat at level 21.** The encounter harness against the swamp's mixes: feral black claw warriors
   (SEASONED) with sleekpaws and arachnas, and Shaman Gabacha (EXPERT L19). Record deaths and retreats.
 - [ ] **AE-06 — The Leg 7 runner.** The engine and runner for:
@@ -3396,3 +3405,4 @@ The original questions follow.
 - 2026-10-02 AE-01: the Leg 7 contract and eleven plans; fortress bind, held hand-ins, Q2146 held, Q2263 timer and cross-map/pool steps; contract, compiler, Fast and pre-commit checks pass.
 - 2026-10-02 AE-02: 27 Leg 7 ground legs and the fortress–Berth hub flights pass in SIM; both Spirit spots route; Fast and pre-commit checks pass.
 - 2026-10-02 AE-03: both Spirit spots, the pollen timer's expiry/cleanup and successful retake pass; Q2278 retained; Fast and pre-commit checks pass.
+- 2026-10-02 AE-04: eleven template plans pass, including both incoming hand-ins, Q2146 held, and the Berth round trip by flight; pre-commit checks pass.
