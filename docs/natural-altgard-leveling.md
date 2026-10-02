@@ -3240,9 +3240,21 @@ Heart obelisk and bound there. Relog and save `altgard-l9` from committed code; 
     clock, draft, fidelity, compiler and inventory checks pass (`run/ah00-checks`). `ah00-fast`: all eleven
     scenarios, 67 tests pass with three switch-dependent skips. Pillar travel and city template routing await
     AH-01/AH-04; neither is claimed as proved by the contract tests.
-- [ ] **AH-01 — Travel in SIM.** Free controlled probe; prove upper/lower pillar travel, every objective kind,
+- [x] **AH-01 — Travel in SIM.** Free controlled probe; prove upper/lower pillar travel, every objective kind,
   all four debris spots, both hand-ins, merchant and teleporter approaches, and ordinary hub flights.
   Level-21 route plans, logged hazards; no setup teleport used as route evidence. Depends: AH-00.
+  - *Done 2026-10-02.* `ah01-travel-final`, free account 210, level-30 probe with level-21 route plans: 30 route legs,
+    four actual hub flights (352 Kinah Observatory–fortress; 565 each for the three Heart/fortress flights),
+    two ordinary pillar flights, alive endpoint (2659.192, 1660.59, 324.690). Maximum ground miss 2.5 m.
+    Upper/lower transition: use the debris landing (2564.68, 1559.74, 249.920), then walk to Banatisai; both
+    roughly 240 m free flights land with 40 FP. All four debris spots, all seven spirit/tayga kinds, every
+    giver/held recipient, Suthran, Donabe and the city teleporter route. Hazards logged before controlled clearing.
+  - Failed drafts `run/ah01-travel*.log` are retained: direct descent to Banatisai is blocked by the upper structure,
+    even at higher cruise heights; land outside it first. The nearest L19 sorcerer can be on a disconnected ledge;
+    select a shipped source on the current ground island. Applying that source filter to fortress NPCs was too
+    strict, so ordinary NPC approaches use their tested ground routes. No natural teleport or server change.
+    The fixture accepts free accounts 210–212 for Leg 9. All pre-commit checks and D32 inventory pass
+    (`run/ah01-checks`); base `9099d021c`. The natural runner uses this proven landing in AH-04.
 - [ ] **AH-02 — Quests in SIM.** Free controlled probe; all seven new quests, held Q2146/Q24115, debris use/loot
   and ordinary respawn, Q2260 delivery and Q2258's real city trip/Return. Clear hostiles only in the probe,
   drop the client view before setup teleports and retain any failed drafts. Depends: AH-00, AH-01.
@@ -3676,3 +3688,4 @@ The original questions follow.
 - 2026-10-02 AO-05: altgard-l8 captured from committed 81774eeca, hash-checked and restored; Cleric 21 alive at Observatory, seven completions/two held quests, 317,511 Kinah, campaigns unchanged; both owned schemas dropped.
 - 2026-10-02 AO-06: all 33 CLAUDE commands pass on 23537bb24, solution 5,074 passed/95 skips, Fast 67 passed/three switch skips/all eleven scenarios; five baked maps validate. Leg 8 is done; altgard-l8 starts Leg 9. No push.
 - 2026-10-02 AH-00: Leg 9 contract and nine compiled plans from 37146605b; seven new quests and two held hand-ins, 254,866 XP, Heart bind and city recipient; three contract cases, Fast and pre-commit checks pass. Travel is next.
+- 2026-10-02 AH-01: 30 Heart travel legs, four hub flights and two pillar flights pass on free account 210; debris landing avoids the pillar structure, source selection avoids disconnected ledges; failed drafts retained, pre-commit checks pass. Quests are next.
