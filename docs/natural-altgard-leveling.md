@@ -13,7 +13,11 @@ TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-alt
 [Leg 4: Basfelt Village](#leg-4-basfelt-village-level-1617--proposal) is done (AB-01..AB-10, 2026-09-30; recaptured
 2026-10-01): `altgard-l4` starts Leg 5.
 [Leg 5: Kaibech's Campsite, Idun's Lake and MuMu Village](#leg-5-kaibechs-campsite-iduns-lake-and-mumu-village-level-1819--proposal)
-is approved (AK-Q1..AK-Q3 as recommended, 2026-10-01) and ready for Loop mode (AK-00..AK-10).
+is done (AK-00..AK-10, 2026-10-01): `altgard-l5` starts Leg 6.
+[Leg 6: Gerger Village and Trader's Berth](#leg-6-gerger-village-and-traders-berth-level-20--proposal) is done
+(AG-00..AG-09, 2026-10-02): `altgard-l6` starts Leg 7.
+[Leg 7: Altgard Fortress and the East Gate](#leg-7-altgard-fortress-and-the-east-gate-level-21--proposal) is proposed
+(AE-Q1..AE-Q3 open).
 
 ## Goal
 
@@ -2799,7 +2803,172 @@ The same loop protocol, with "AG" in place of "NA".
 - alive, within 60 m of it;
 - the endpoint verified across a relog.
 
+## Leg 7: Altgard Fortress and the East Gate (level 21) — proposal
+
+**Status (2026-10-02): proposed.** The questions are AE-Q1 to AE-Q3 under "Blocked / questions for the operator".
+
+**Where it starts.** From the `altgard-l6` snapshot (AG-08):
+- character 133297, a **level 21** Cleric at 143,590 of 827,364 XP, bound at the Trader's Berth;
+- 63 cube slots and 228,032 Kinah;
+- three hand-ins held: Q24233 for Suthran in the fortress (since Leg 5), Q2262 for Mabrunerk at the East Gate (since
+  Leg 6) and Q24115 for Banatisai in the Heart of Impetusium;
+- the campaign's Q2900, Q24014 and Q24015 started.
+
+**What it covers (if AE-Q1 (a)).** Stop 9, the East Gate, and Stop 11's fortress quests, worked from the fortress bind.
+- **The East Gate is not a hub of its own.** Mabrunerk, Eggther and Dellalont stand at the fortress's south gate, 200 m
+  from the flight pad.
+- Their quests are worked in the swamp beyond the gate, where Taora (Stop 10's Q2272) stands, 160 m further south.
+- **Two held hand-ins come home:** Q24233 at Suthran and Q2262 at Mabrunerk.
+
+**The bind.** The fortress obelisk 700065 at (1658, 1815), 94 m from the flight pad, for 451 Kinah. Every ground of
+the leg lies within 450 m of it.
+
+**Getting there.** The Berth's transporter (203678, "DF1A_SUB_Urtumheim", 43.5 s, 560 Kinah base) lands on the
+fortress pad.
+
+### The hubs and their grounds
+
+| Ground | Where | Quests | What lives there |
+|---|---|---|---|
+| **Altgard Fortress** | the obelisk (1658, 1815); Suthran, Meiyer, Morn, Nemnef, Valurion and Emgata 90–120 m from the pad; Chagarinerk 200 m | Suthran: Q24233's hand-in, Q2279, Q2286, Q2287, and Q2278's turns; Emgata: Q2278; Meiyer: Q2261; Chagarinerk: Q2243, and Q2253's end | the teleporter to Pandaemonium (203581) and the flight transporter (203561) |
+| **The East Gate** | (1744–1755, 2007–2010), 200 m south of the pad | Mabrunerk: Q2262's hand-in, Q2263; Eggther: Q2264, Q2146; Dellalont: Q2265, Q2261's end | one grove malodor within 40 m |
+| **The swamp south of the gate** | around Taora at (1720, 2167) | Taora: Q2272. Swamp malodors (Q2263, 6 spots, 230 m from Mabrunerk), poison arachnas (Q2264, 23), feral black claw warriors (Q2265, 14, SEASONED L16–17), black claw sleekpaws (Q2272, 5, SEASONED L16), Zemurru's Spirit (Q2279, at one of two spots) | all mixed within 35 m of each other, with MuMu lookouts and looklooks, a black claw secret patrol (SEASONED), and **Shaman Gabacha (EXPERT L19)**, Q24014's target |
+| **Pandaemonium** | the fortress teleporter (location 7, 500 Kinah base), as the cube errand (AK-08) | Q2278: Cavalorn (1369, 1051) and Balder (1469, 1466) | back by Return to the fortress bind |
+| **Trader's Berth** | the flight, about 45 s each way | Kagorinerk (2702, 1022): Q2243's end, Q2253's start | |
+
+Every target is level 16–17, some of them SEASONED, against a level 21 Cleric. The swamp is crowded, though, and
+Gabacha is EXPERT.
+
+### Quests
+
+All are in Java; the C# templates and handlers are ports.
+
+| Quest | Name | Handler | From → to | After | Objective | XP |
+|---|---|---|---|---|---|---|
+| 24233 | Adieu to You, Manumumu (held, Leg 5) | monster_hunt | → **Suthran** | | hand it in (Manumumu was killed) | 16,495 |
+| 2262 | A Sneaky Delivery (held, Leg 6) | report_to | → **Mabrunerk** | | hand it in | 45,750 |
+| 2261 | Failure to Report | report_to | Meiyer → Dellalont | | deliver | 5,070 |
+| 2263 | Shugo Potion | custom | Mabrunerk | | **timed, 300 s** from the offer: 3 Malodor Pollen (80%) from swamp malodors (L17); a logout or the timer abandons it | 27,750 |
+| 2264 | The Sting of Poison | monster_hunt | Eggther | | kill 3 poison arachnas (L16–17) | 15,075 |
+| 2265 | A Lost Sword | item_collecting | Dellalont | | the Archon Sword (85%) from feral black claw warriors (SEASONED L16–17) | 31,050 |
+| 2146 | Pass the Message | report_to | Eggther → Lateni (Heart of Impetusium) | | **held** for Stop 12 (AE-Q2) | (7,500) |
+| 2272 | The Lost Cube | item_collecting | Taora | | Taora's Cube from black claw sleekpaws (SEASONED L16) | 14,625 |
+| 2243 | A Crystal Hand Mirror | report_to | Chagarinerk → Kagorinerk (Trader's Berth) | | deliver, by flight | 4,305 |
+| 2253 | Kagorinerk's Gift | report_to | Kagorinerk → Chagarinerk | 2243 | deliver back, by flight | 3,810 |
+| 2278 | A Secret Proposal | custom | Emgata; Suthran (SETPRO1); Cavalorn (SETPRO2) and Balder (SETPRO3) in **Pandaemonium**; Suthran | 2208 | talks | 48,600 |
+| 2279 | Solid Proof | custom | Suthran; Emgata (SETPRO1); Zemurru's Spirit (SETPRO2); Suthran | 2278 | talks | 38,100 |
+| 2286 | The Brigade General's Order | report_to | Suthran → Morn | 2279 | deliver | 4,785 |
+| 2287 | Order to Valurion | report_to | Suthran → Valurion | 2279 | deliver | 6,405 |
+
+The thirteen hand-ins are worth 261,820 XP, 32% of level 21.
+
+**Not in this leg:**
+- **Q2273** "Emergency Rations" (Taora, after Q2272). Its veteran MuMus (SEASONED L17) stand inside the Black Claw
+  ground, 530 m east of Taora: twelve brutal black claw bodyguards and 35 other EXPERT spawns (L17–19) stand within
+  35 m of its spots. It goes with the [Group] quests (AE-Q3).
+- **The [Group] quests:** Q2277 (Nemnef, nothing first), Q2280 (Morn, after Q2286), Q2281 (Valurion, after Q2287),
+  Q2282 (Suthran, after Q2279) and Q2283 (to Vidar in Pandaemonium, after Q2282). Their EXPERT targets (L16–20) stand
+  550–1,100 m southeast of the pad (AE-Q3). Leg 7 opens Q2280–Q2282 without taking them.
+- **Q2266** (Valurion, then Neifenmer and Aurtri at the Observatory) belongs with Stop 10. That leg starts at the
+  fortress and takes it there.
+- **The missions Q24014–Q24016** (Q24014 and Q24015 started): one of the last Altgard legs, the maintainer's
+  placement. Q24014's Shaman Gabacha stands in this leg's swamp.
+- **Q2900**, at the very end of the Altgard area. **Q24114** (Neparinerk) still waits for the D32 approval.
+
+### The rest of Altgard
+
+After Leg 7, four groups of work are left. The fortress pad flies to each hub (`natural-flight-routes.json`), and
+each has an obelisk:
+
+| Leg (if AE-Q3 (a)) | Where | Bind | From the fortress pad | Quests | XP |
+|---|---|---|---|---|---|
+| 8 | the Altgard Observatory and Mahindel Swamp (Stop 10) | 700822 (2,035 Kinah) | "df1a_altgardtosanctuary", 34 s, 250 Kinah | Q2266 (from Valurion), Q2267–Q2270, Q2271 (to Suthran), and Q24113 (**D32**, Commander Gattban, EXPERT L18) | 155,566 |
+| 9 | the Heart of Impetusium (Stop 12) | 700067 (813) | "df1a_altgardtoimpetosium", 52.8 s, 400 | Q2254–Q2257, Q2259, Q2260 (to Suthran) and Q2258 (to Pandaemonium); the hand-ins of Q24115 and Q2146 | 254,866 |
+| 10 | the Black Claw ground, southeast of the gate | the fortress | | the [Group] quests Q2277 and Q2280–Q2283, Q2273, and the missions Q24014–Q24016 | about 960,000 |
+| — | Pandaemonium | | | Q2900, the very end | 228,880 |
+
+On quest XP alone, the Cleric ends Leg 9 about 11,500 XP short of level 22, and Leg 10 about 90% of the way
+through level 22. Kills make up the rest, and Q2900 passes level 23. That puts the missions near the highest level
+of the area, as the maintainer placed them.
+
+### What is new for the bot
+
+1. **A quest step on another map.** Q2278's Cavalorn and Balder stand in Pandaemonium.
+   - The cube errand (AK-08) already goes there and back, by the fortress teleporter and Return.
+   - Now a contract step names its map, and the runner makes the trip for it.
+2. **A timed collection in a crowded swamp.** Q2263 gives 300 s from the offer, and its malodors stand among SEASONED
+   lycans and near Gabacha.
+   - The bot clears around them before it takes the quest, then rests (AB-08's timed policy: rest and mana first).
+   - A timer that runs out is recorded and retried, not failed (AB-Q2's three tries).
+3. **A delivery round trip by flight.** Q2243 and Q2253 go to the Trader's Berth and back on the fortress's
+   transporter (AG-00's chained flights).
+4. **An NPC in a pool.** Zemurru's Spirit stands at one of two spots (`pool="1"`). The bot looks at both.
+
+### Leg 7 TODO list (proposed)
+
+The same loop protocol, with "AE" in place of "NA".
+
+- [ ] **AE-00 — Quest steps on another map.** The contract carries a step's map, and the engine plans it. The runner
+  travels to Pandaemonium by the fortress teleporter, as the cube errand does, talks there, and comes back by Return.
+  Unit tests, and a SIM probe of Q2278 end to end.
+- [ ] **AE-01 — The Leg 7 contract and plans.** `natural-altgard-l7-contract.json` from the l6 endpoint:
+  - the fortress bind (700065) and a fortress merchant for the town service;
+  - the held hand-ins Q24233 and Q2262, and Q2146 held for Lateni;
+  - the timed Q2263, and the Pandaemonium and Zemurru's Spirit steps;
+  - the order and the endpoint.
+- [ ] **AE-02 — Walk every Leg 7 route in SIM:** from the fortress obelisk to the East Gate, each swamp ground, Taora
+  and Chagarinerk, and the Berth round trip by flight.
+- [ ] **AE-03 — The scripted quests in SIM:** Q2278 with the Pandaemonium trip, Q2279 with Zemurru's Spirit at either
+  spot, and Q2263 twice: once in time, once with the timer running out.
+- [ ] **AE-04 — The template quests in SIM:**
+  - Q2264, Q2265, Q2272, Q2261, Q2286 and Q2287;
+  - Q2243, then Q2253, by flight;
+  - the hand-ins of Q24233 and Q2262, and Q2146 taken and held.
+- [ ] **AE-05 — Combat at level 21.** The encounter harness against the swamp's mixes: feral black claw warriors
+  (SEASONED) with sleekpaws and arachnas, and Shaman Gabacha (EXPERT L19). Record deaths and retreats.
+- [ ] **AE-06 — The Leg 7 runner.** The engine and runner for:
+  - the steps on another map;
+  - the timed quest in the swamp;
+  - the delivery flights.
+
+  Then a smoke run from `altgard-l6` with real combat, recording every fight and death.
+- [ ] **AE-07 — One SIM run of Leg 7 and the snapshot.** `sim-snapshot.ps1 -Leg l7 -From altgard-l6` captures
+  `altgard-l7` after a clean run, with a restore check.
+- [ ] **AE-08 — The full `CLAUDE.md` checklist and a checkpoint.**
+
+**Endpoint (if AE-Q1 (a), AE-Q2 (a)):**
+- Q24233, Q2262, Q2261, Q2263, Q2264, Q2265, Q2272, Q2243, Q2253, Q2278, Q2279, Q2286 and Q2287 completed;
+- Q2146 taken and held for Lateni, and Q24115 still held;
+- bound at the fortress obelisk (700065);
+- alive, within 60 m of it;
+- the endpoint verified across a relog.
+
 ## Blocked / questions for the operator
+
+**Leg 7, open (2026-10-02):**
+- **AE-Q1 — How big is Leg 7?**
+  - (a) The fortress and the East Gate: thirteen quests, two of them the held hand-ins, worked from the fortress bind.
+    Q2273 and the [Group] quests wait for the Black Claw leg (AE-Q3).
+  - (b) (a), plus the Observatory (Stop 10): a second working hub 800 m south, with its own obelisk (2,035 Kinah) and
+    flight. That is seven more quests and 155,566 XP.
+
+  **Recommendation: (a).** Every ground lies within 450 m of one obelisk. The Observatory makes a short leg of its own
+  (Leg 8).
+- **AE-Q2 — Q2146's hand-in at the Heart of Impetusium.** Eggther's message goes to Lateni, 922 m east of the pad.
+  - (a) Take it, hold it, and hand it in on the Impetusium leg (as AG-Q2).
+  - (b) Fly there during Leg 7 (52.8 s and 400 Kinah each way).
+
+  **Recommendation: (a).** It is worth 7,500 XP, and Lateni's hub is a later leg.
+- **AE-Q3 — The Black Claw ground.** Three sets of work share the EXPERT-thick ground southeast of the gate: Q2273's
+  veteran MuMus, the [Group] quests' targets (Q2277 and Q2280–Q2283), and the targets of the missions Q24014–Q24016.
+  - (a) One later leg for all of them, as one of the last Altgard legs, with the missions near the highest level (the
+    maintainer's placement for Q24014–Q24016). The order for the rest: Leg 8 the Observatory, Leg 9 the Heart of
+    Impetusium, Leg 10 the Black Claw ground with the missions, then Q2900.
+  - (b) Q2273 and Q2277 in Leg 7. Their givers are in the fortress and at Taora, and Q2277 needs nothing first.
+
+  **Recommendation: (a).** 47 EXPERT spawns stand within 35 m of the MuMus' spots. After Legs 8 and 9 the Cleric is
+  about level 22, and the [Group] quests are then done in one sweep (AL-2: solo, at the target's level or above).
+
 
 **Leg 6, answered 2026-10-01:** AG-Q1 **(a)**, AG-Q2 **(a)** and AG-Q3 **(a)**, all as recommended:
 - Leg 6 does Stops 7 and 8, worked from the Trader's Berth bind; the East Gate goes to the fortress-side leg.
@@ -3168,3 +3337,4 @@ The original questions follow.
 - 2026-10-02 AG-07: the Leg 6 runner; smoke run 5 plays the whole leg from altgard-l5 to level 21 with one death.
 - 2026-10-02 AG-08: snapshot altgard-l6 captured from 7d10ef4c1 (level 21, bound at the Trader's Berth).
 - 2026-10-02 AG-09: the full checklist passes on f0f364b60; Leg 6 is done, and Leg 7 is next to plan.
+- 2026-10-02 Leg 7 proposed: Altgard Fortress and the East Gate, thirteen quests from the fortress bind (AE-Q1..AE-Q3 open).
