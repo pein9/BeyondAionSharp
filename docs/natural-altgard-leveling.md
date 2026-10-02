@@ -3120,8 +3120,21 @@ object before using it. Deaths, retreats and interrupted uses are recorded outco
     fortress to Observatory, Observatory to Suthran's fortress, then back. Alive at (1464.822, 2553.606, 298.875).
     Route hazards are retained in `run/ao01-travel.log`. The fixture reserves unused 207–209 for Leg 8 probes;
     D32 inventory and warning/logger/clock/custom-draft/fidelity/compiler checks pass. Base `bd7ab9f8c`.
-- [ ] **AO-02 — Quests in SIM.** A free controlled probe plays both scripted chains and all five templates,
+- [x] **AO-02 — Quests in SIM.** A free controlled probe plays both scripted chains and all five templates,
   including the three-second Operation Order use/loot and Gattban's sword. Preserve shared-world probe isolation.
+  - *Done 2026-10-02.* `ao02-quests-guard-fixed`, free account 208: both scripts and five templates COMPLETE;
+    Q2267/Q2268 five kills each, Q2270 three insignia from four kills, Q24113 Gattban's sword from one kill.
+    Operation Order uses the observed 3,000 ms bar and ordinary loot; items are consumed on template hand-in.
+    Three actual hub flights cost 352 Kinah each. Q2146 START/0, Q24115 START/3 with 182215477, and all four
+    campaign states are preserved. Six contract cases pass (`ao02-contract.log`). Base `4f60569bf`.
+  - The failed drafts and setup/dialog attempts are retained under `run/ao02-quests*.log`: reuse campaign states
+    already created by class change; Java's shared acceptance page is 1003 and Aurtri's close page is 0.
+    Neifenmer is a guard: Java refuses talks during FIGHT/RETURNING. Controlled setup clears his hostile target
+    and lets him return before positioning the probe. The packet trace and bounded dialog wait retain the evidence.
+  - `ao02-fast` exposed AG-04's assumption that Minushan always pays the Spirit reward page. Its probe now expects
+    page 6 for Java's rare Drakie outcome. `ao02-final-fast` exercises that branch (REWARD/2, group 1, 1,900 Kinah)
+    and passes all eleven scenarios: 67 tests, three switch skips. Warning/logger/clock/custom-draft/fidelity,
+    compiler and D32 inventory checks pass (`ao02-final-checks`). No server content or handler changes.
 - [ ] **AO-03 — Combat at level 21.** The encounter harness: pecku mix, bodyguard/shaman, Gattban alone and his nearby
   camp at shipped relative spacing. Record distinct kills, deaths and retreats; verify once plus pre-commit checks.
 - [ ] **AO-04 — Natural runner and smoke.** Restore `altgard-l7`; play `AF_ALTGARD=l8` with the snapshot runner's
@@ -3549,3 +3562,4 @@ The original questions follow.
 - 2026-10-02 AE-08: all 33 CLAUDE checklist commands completed; the D32 account reservation failure corrected with free accounts 201–206; inventory, affected encounters, Fast and pre-commit checks pass. Leg 7 is done; altgard-l7 starts Leg 8.
 - 2026-10-02 AO-00: Leg 8 contract, five plans and eight scripted steps; Q2266 precedes the Observatory bind; six contract/decision cases, Fast and pre-commit checks pass, from 734f82eae.
 - 2026-10-02 AO-01: 23 Observatory/camp/object ground legs and three fortress/Observatory flights pass on free account 207; maximum miss 2.5 m, pre-commit checks pass.
+- 2026-10-02 AO-02: seven quests, Operation Order use/loot and three hub flights pass on free account 208; Java helper pages and guard setup corrected; the Drakie reward probe correction, six contract cases, Fast and pre-commit checks pass.

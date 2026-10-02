@@ -88,6 +88,9 @@ public sealed partial class SimulationFastScenarioTests
 		async Task TalkAsync(string key)
 		{
 			NaturalAltgardStep step = Step(key);
+			// The shared SIM random sequence can choose the 5% Drakie; Java pays reward group var - 1, whose page is 6.
+			if (key == "q2252-reward-sinood" && State(quest) is (4, 2))
+				step = step with { Pages = [1352, 6] };
 			await TeleportNearAsync(step.Position, "Sinood");
 			session.BeginStep($"s-{key}", key);
 			log.Add(await NaturalAltgardQuestSteps.TalkAsync(session, step, await session.WaitForNpcAsync(step.NpcId, token), token));

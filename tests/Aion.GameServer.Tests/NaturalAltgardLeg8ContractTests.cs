@@ -62,7 +62,7 @@ public sealed class NaturalAltgardLeg8ContractTests
 			string source = File.ReadAllText(Directory.GetFiles(Path.Combine(RealStaticData.RepoRoot(), "src/Aion.GameServer/Handlers/Quest/altgard"), $"_{step.QuestId}*.cs").Single());
 			Assert.Contains($"{step.NpcId}", source);
 			Assert.Contains(Spots(step.NpcId), at => at.SequenceEqual(step.Position));
-			foreach (int page in step.Pages.Where(page => page is not (5 or 10))) Assert.Contains($"SendQuestDialog(env, {page})", source);
+			foreach (int page in step.Pages.Where(page => page is not (0 or 5 or 10 or 1003))) Assert.Contains($"SendQuestDialog(env, {page})", source);
 		}
 	}
 
