@@ -1,0 +1,330 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2255,
+    "name": "Turbulent Mist Spirits",
+    "nameId": 1103355,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2255,
+        "start_npc_ids": 203650
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203650,
+        "name": "grak",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 2647.06,
+            "y": 1656.31,
+            "z": 325.0,
+            "heading": 18,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203650,
+      "name": "grak",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2647.06,
+          "y": 1656.31,
+          "z": 325.0,
+          "heading": 18,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203650,
+      "name": "grak",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2647.06,
+          "y": 1656.31,
+          "z": 325.0,
+          "heading": 18,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 3,
+      "npc_ids": 210575,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210575,
+          "name": "mist spirit",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2614.59,
+              "y": 1553.03,
+              "z": 247.375,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2635.28,
+              "y": 1586.05,
+              "z": 247.375,
+              "heading": 53,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2649.29,
+              "y": 1564.07,
+              "z": 247.375,
+              "heading": 72,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2662.88,
+              "y": 1628.06,
+              "z": 247.64,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2677.87,
+              "y": 1735.58,
+              "z": 247.375,
+              "heading": 68,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2679.52,
+              "y": 1560.83,
+              "z": 247.375,
+              "heading": 6,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2681.36,
+              "y": 1639.42,
+              "z": 247.867,
+              "heading": 6,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2695.02,
+              "y": 1540.88,
+              "z": 247.375,
+              "heading": 110,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2699.88,
+              "y": 1724.89,
+              "z": 247.423,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2706.62,
+              "y": 1646.08,
+              "z": 247.99,
+              "heading": 115,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2714.3,
+              "y": 1686.3,
+              "z": 247.375,
+              "heading": 103,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2719.52,
+              "y": 1552.35,
+              "z": 247.802,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2737.97,
+              "y": 1523.91,
+              "z": 247.375,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2739.04,
+              "y": 1502.48,
+              "z": 247.375,
+              "heading": 56,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2744.18,
+              "y": 1589.11,
+              "z": 247.672,
+              "heading": 99,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2754.76,
+              "y": 1545.91,
+              "z": 247.939,
+              "heading": 105,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2775.52,
+              "y": 1578.23,
+              "z": 248.182,
+              "heading": 1,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2843.23,
+              "y": 1655.83,
+              "z": 248.634,
+              "heading": 9,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2851.72,
+              "y": 1630.56,
+              "z": 247.375,
+              "heading": 87,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2867.43,
+              "y": 1611.38,
+              "z": 247.375,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203650,
+          "name": "grak",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2647.06,
+              "y": 1656.31,
+              "z": 325.0,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 14880,
+        "gold": 4040,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2255,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "Turbulent Mist Spirits",
+      "nameId": 1103355,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 14880,
+          "gold": 4040
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 3,
+          "npc_ids": 210575,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      }
+    ]
+  }
+}

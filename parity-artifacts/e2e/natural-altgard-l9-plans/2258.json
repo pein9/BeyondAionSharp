@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2258,
+    "name": "An Important Announcement",
+    "nameId": 1103358,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2256
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 204190,
+        "id": 2258,
+        "start_npc_ids": 203650
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203650,
+        "name": "grak",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 2647.06,
+            "y": 1656.31,
+            "z": 325.0,
+            "heading": 18,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203650,
+      "name": "grak",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2647.06,
+          "y": 1656.31,
+          "z": 325.0,
+          "heading": 18,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 204190,
+      "name": "lindhelm",
+      "positions": [
+        {
+          "mapId": 120010000,
+          "x": 950.58936,
+          "y": 1125.4768,
+          "z": 206.84688,
+          "heading": 6,
+          "source": "game-server/data/static_data/events/timed_events/custom_events.xml",
+          "conditionalEvent": true
+        },
+        {
+          "mapId": 120010000,
+          "x": 1275.69,
+          "y": 1290.25,
+          "z": 209.052,
+          "heading": 30,
+          "source": "game-server/data/static_data/spawns/Npcs/120010000_Pandaemonium.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 204190,
+          "name": "lindhelm",
+          "positions": [
+            {
+              "mapId": 120010000,
+              "x": 950.58936,
+              "y": 1125.4768,
+              "z": 206.84688,
+              "heading": 6,
+              "source": "game-server/data/static_data/events/timed_events/custom_events.xml",
+              "conditionalEvent": true
+            },
+            {
+              "mapId": 120010000,
+              "x": 1275.69,
+              "y": 1290.25,
+              "z": 209.052,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Npcs/120010000_Pandaemonium.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 53850,
+        "gold": 8540,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2258,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "An Important Announcement",
+      "nameId": 1103358,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 53850,
+          "gold": 8540
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2256
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182203239
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

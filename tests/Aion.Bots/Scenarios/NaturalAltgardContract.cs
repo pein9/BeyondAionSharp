@@ -58,6 +58,7 @@ public sealed record NaturalAltgardContract(
 		["l6"] = ("natural-altgard-l6-contract.json", "natural-altgard-l6-plans"),
 		["l7"] = ("natural-altgard-l7-contract.json", "natural-altgard-l7-plans"),
 		["l8"] = ("natural-altgard-l8-contract.json", "natural-altgard-l8-plans"),
+		["l9"] = ("natural-altgard-l9-contract.json", "natural-altgard-l9-plans"),
 	};
 
 	public NaturalAltgardObjectUse[] ObjectUseList => ObjectUses ?? [];

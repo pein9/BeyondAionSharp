@@ -1,0 +1,357 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2256,
+    "name": "Turbulent Splash Spirits",
+    "nameId": 1103356,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2255
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 2256,
+        "start_npc_ids": 203650
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203650,
+        "name": "grak",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 2647.06,
+            "y": 1656.31,
+            "z": 325.0,
+            "heading": 18,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203650,
+      "name": "grak",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2647.06,
+          "y": 1656.31,
+          "z": 325.0,
+          "heading": 18,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203650,
+      "name": "grak",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2647.06,
+          "y": 1656.31,
+          "z": 325.0,
+          "heading": 18,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 5,
+      "npc_ids": "210577 210522",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 210522,
+          "name": "splash spirit",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2716.74,
+              "y": 1707.55,
+              "z": 247.375,
+              "heading": 50,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2746.91,
+              "y": 1724.42,
+              "z": 247.375,
+              "heading": 38,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2856.52,
+              "y": 1683.53,
+              "z": 247.375,
+              "heading": 5,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2878.87,
+              "y": 1696.43,
+              "z": 247.5,
+              "heading": 107,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2895.65,
+              "y": 1560.98,
+              "z": 247.774,
+              "heading": 51,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2918.43,
+              "y": 1598.21,
+              "z": 247.995,
+              "heading": 22,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2940.11,
+              "y": 1719.86,
+              "z": 249.348,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2946.83,
+              "y": 1678.94,
+              "z": 248.757,
+              "heading": 63,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2949.61,
+              "y": 1583.36,
+              "z": 249.049,
+              "heading": 112,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2952.37,
+              "y": 1547.14,
+              "z": 249.025,
+              "heading": 52,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 210577,
+          "name": "splash spirit",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2672.59,
+              "y": 1713.28,
+              "z": 248.177,
+              "heading": 19,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2719.78,
+              "y": 1515.87,
+              "z": 247.375,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2735.86,
+              "y": 1671.32,
+              "z": 248.58,
+              "heading": 61,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2744.45,
+              "y": 1697.57,
+              "z": 247.375,
+              "heading": 5,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2753.57,
+              "y": 1479.85,
+              "z": 247.375,
+              "heading": 39,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2782.44,
+              "y": 1552.27,
+              "z": 248.217,
+              "heading": 12,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2830.07,
+              "y": 1618.13,
+              "z": 247.375,
+              "heading": 104,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2846.91,
+              "y": 1594.85,
+              "z": 247.268,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2883.87,
+              "y": 1672.43,
+              "z": 248.18,
+              "heading": 35,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            },
+            {
+              "mapId": 220030000,
+              "x": 2907.27,
+              "y": 1682.95,
+              "z": 247.566,
+              "heading": 29,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203650,
+          "name": "grak",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2647.06,
+              "y": 1656.31,
+              "z": 325.0,
+              "heading": 18,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 24720,
+        "gold": 6420,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2256,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "Turbulent Splash Spirits",
+      "nameId": 1103356,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 24720,
+          "gold": 6420
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 5,
+          "npc_ids": "210577 210522",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2255
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

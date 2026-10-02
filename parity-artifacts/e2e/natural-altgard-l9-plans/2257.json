@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2257,
+    "name": "Rebuilding the Pillar",
+    "nameId": 1103357,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2257,
+        "start_npc_ids": 203673
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203673,
+        "name": "banatisai",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 2614.59,
+            "y": 1642.29,
+            "z": 254.0,
+            "heading": 105,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203673,
+      "name": "banatisai",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2614.59,
+          "y": 1642.29,
+          "z": 254.0,
+          "heading": 105,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203673,
+      "name": "banatisai",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2614.59,
+          "y": 1642.29,
+          "z": 254.0,
+          "heading": 105,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 9,
+      "item_id": 182203238,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182203238,
+          "npc_id": 700144,
+          "npc": {
+            "id": 700144,
+            "name": "building debris",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 2561.68,
+                "y": 1559.74,
+                "z": 249.48,
+                "heading": 72,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2569.53,
+                "y": 1591.43,
+                "z": 248.25,
+                "heading": 115,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2580.09,
+                "y": 1612.69,
+                "z": 249.174,
+                "heading": 94,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 2585.83,
+                "y": 1623.07,
+                "z": 249.625,
+                "heading": 114,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203673,
+          "name": "banatisai",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2614.59,
+              "y": 1642.29,
+              "z": 254.0,
+              "heading": 105,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 19500,
+        "gold": 10150,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2257,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "Rebuilding the Pillar",
+      "nameId": 1103357,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 9,
+              "item_id": 182203238
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 19500,
+          "gold": 10150
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182203238,
+          "npc_id": 700144
+        }
+      }
+    ]
+  }
+}

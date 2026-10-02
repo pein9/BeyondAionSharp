@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2260,
+    "name": "Reconstruction Supplies",
+    "nameId": 1103360,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2259
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 203557,
+        "id": 2260,
+        "start_npc_ids": 203649
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203649,
+        "name": "gulkalla",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 2666.17,
+            "y": 1661.87,
+            "z": 325.0,
+            "heading": 13,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203649,
+      "name": "gulkalla",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2666.17,
+          "y": 1661.87,
+          "z": 325.0,
+          "heading": 13,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203557,
+      "name": "suthran",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1662.63,
+          "y": 1748.56,
+          "z": 260.236,
+          "heading": 68,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203557,
+          "name": "suthran",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1662.63,
+              "y": 1748.56,
+              "z": 260.236,
+              "heading": 68,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 51000,
+        "gold": 6840,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2260,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "Reconstruction Supplies",
+      "nameId": 1103360,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 51000,
+          "gold": 6840
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2259
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

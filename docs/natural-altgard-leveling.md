@@ -3188,6 +3188,75 @@ object before using it. Deaths, retreats and interrupted uses are recorded outco
 alive, level at least 21, bound at Observatory 700822 and within 60 m, verified across relog. `altgard-l8` starts
 Leg 9. LIVE acceptance remains once at the end of the whole Altgard area.
 
+## Leg 9: Heart of Impetusium (level 21)
+
+**Status (2026-10-02): approved; implementation in progress.** The maintainer's goal, "Implement Leg 9 as needed",
+works Stop 12 as approved with AE-Q3 (a). Use the loop protocol with **AH** in place of NA. The existing
+bind, hub-flight, help-item, inventory and death policies apply. No new server content is needed.
+
+**Start:** `altgard-l8`, character 133297, Cleric 21 alive and bound at the Observatory; 317,511 Kinah, a 63-slot
+cube and 84 contract completions. Q2146 is START/0; Q24115 START/3 with its work item 182215477, held for
+Lateni and Banatisai. Q2900/Q24014/Q24015 remain START/0 and Q24016 LOCKED/0.
+
+**Route and bind.** Fly Observatory to fortress (205259, 34 s, 250 base), then fortress to the Heart
+(203561, `df1a_altgardtoimpetosium`, 52.8 s, 400 base). Bind at 700067 (2656.192, 1660.590, 325.052), 813 Kinah.
+The upper pillar holds Andgar, Grak, Gulkalla and Lateni. Banatisai stands below at (2614.59, 1642.29, 254).
+Travel verification must prove the height transition before the natural runner uses it. Work the spirit grounds,
+four debris objects and wild taygas. Q2260 reports to Suthran: take 205258's Heart-to-fortress flight
+(`df1a_impetosiumtoaltgard`, 61.4 s, 400 base). Q2258 uses the existing fortress teleporter 203581, location 7,
+500 base, to reach Lindhelm's ordinary Pandaemonium spawn (1275.69, 1290.25, 209.052); learned Return goes to
+the Heart bind. Prices are observed after SM_PRICES. Use fortress merchant Donabe (203579) for surplus sales
+if needed; the Heart's two merchants take quest coins. Take transporters between hubs.
+
+| Quest | Source and objective | XP |
+|---|---|---|
+| Q2146 | Held Java ReportTo: report to Lateni | 7,500 |
+| Q24115 | Held approved D32 MonsterHunt: report to Banatisai; consume the work item | 16,066 |
+| Q2254 | Java ItemCollecting: Andgar, five Soul Essence 182203237, 80% from hero/sorcerer spirits L18–19 | 30,720 |
+| Q2255 | Java MonsterHunt: Grak, three mist spirits 210575, L18 | 14,880 |
+| Q2256 | After Q2255: Grak, five splash spirits 210577/210522, L18–19 | 24,720 |
+| Q2257 | Java ItemCollecting: Banatisai, nine Metallic Fragments 182203238 from debris 700144 | 19,500 |
+| Q2259 | Java ItemCollecting: Gulkalla, one Wild Tayga Fang 182203240, 80% from wild tayga 210547, L18 | 36,630 |
+| Q2260 | After Q2259: Java ReportTo, Gulkalla to Suthran | 51,000 |
+| Q2258 | After Q2256: Java ReportTo, Grak to Lindhelm in Pandaemonium | 53,850 |
+
+**Spec.** Java `ce54b7931`, `quest_script_data/altgard.xml`, ReportTo, ItemCollecting, MonsterHunt,
+QuestItemNpcAI, ResurrectAI and TeleportService. Q24115 keeps its approved D32 plan and evidence unchanged.
+Debris has a three-second use bar, followed by a drop list; four objects must supply nine fragments through
+their ordinary respawns. Hostile L18–19 spirits and taygas patrol the work grounds. Guard NPCs must finish
+their fights before dialogs. Q2147/coin loops, gathering, Q2273/[Group], Q24014–Q24016 and Q2900 stay deferred.
+
+**Endpoint:** all nine hand-ins complete, no held quests, campaigns unchanged, alive on Altgard near the
+Heart obelisk and bound there. Relog and save `altgard-l9` from committed code; Leg 10 follows from it.
+
+### Leg 9 TODO list
+
+- [x] **AH-00 — Contract and plans.** Register l9, compile all nine template plans, preserve the incoming states,
+  bind and city trip; prove shipped source/gate/reward facts and retain Q24115's D32 plan. Depends: AO-06.
+  - *Done 2026-10-02.* From AO-06's `37146605b`: 84 incoming completions, seven new quests and both held hand-ins,
+    254,866 quest XP, Heart bind 700067 and Lindhelm's ordinary city spawn. All nine plans compile identically;
+    Q24115 is byte-identical to its D32 plan. Three contract cases pass (`run/ah00-contract-corrected.log`); an
+    analyzer warning in the first passing draft was corrected, with the original log retained. Warning, logger,
+    clock, draft, fidelity, compiler and inventory checks pass (`run/ah00-checks`). `ah00-fast`: all eleven
+    scenarios, 67 tests pass with three switch-dependent skips. Pillar travel and city template routing await
+    AH-01/AH-04; neither is claimed as proved by the contract tests.
+- [ ] **AH-01 — Travel in SIM.** Free controlled probe; prove upper/lower pillar travel, every objective kind,
+  all four debris spots, both hand-ins, merchant and teleporter approaches, and ordinary hub flights.
+  Level-21 route plans, logged hazards; no setup teleport used as route evidence. Depends: AH-00.
+- [ ] **AH-02 — Quests in SIM.** Free controlled probe; all seven new quests, held Q2146/Q24115, debris use/loot
+  and ordinary respawn, Q2260 delivery and Q2258's real city trip/Return. Clear hostiles only in the probe,
+  drop the client view before setup teleports and retain any failed drafts. Depends: AH-00, AH-01.
+- [ ] **AH-03 — Combat at level 21.** Encounter harness against hero/sorcerer and mist/splash mixes plus wild
+  taygas; use the natural combat policy and approved help items, record kills/deaths/retreats. Depends: AH-01.
+- [ ] **AH-04 — Natural runner and smoke.** Extend template hand-ins to another map, implement only proven
+  travel needs, restore `altgard-l8` and run `AF_ALTGARD=l9` once through relog. All nine completions, consumed
+  Q24115 work item, campaigns unchanged, transporter hub travel and alive Heart endpoint. Drop owned schema;
+  retain failed runs and recorded outcomes. Depends: AH-02, AH-03.
+- [ ] **AH-05 — Snapshot.** Enable `-Leg l9`, commit before capture, then capture `altgard-l9` from `altgard-l8`;
+  check dump hash, relog endpoint and owned restore, then drop owned schemas. Depends: AH-04.
+- [ ] **AH-06 — Full CLAUDE checklist and checkpoint.** Every listed command, evidence and correction of any
+  failures, then checkpoint and stop. LIVE acceptance stays at the end of the Altgard area. Depends: AH-05.
+
 ## Blocked / questions for the operator
 
 **Leg 7, answered 2026-10-02:** AE-Q1 **(a)**, AE-Q2 **(a)** and AE-Q3 **(a)**, all as recommended:
@@ -3606,3 +3675,4 @@ The original questions follow.
 - 2026-10-02 AO-04: natural Leg 8 smoke and relog pass from altgard-l7; seven completions, three flights, 23 distinct kills, one death/two retreats; deferred corpse loot and completed-source recovery fixed; Fast and pre-commit checks pass, failed runs retained.
 - 2026-10-02 AO-05: altgard-l8 captured from committed 81774eeca, hash-checked and restored; Cleric 21 alive at Observatory, seven completions/two held quests, 317,511 Kinah, campaigns unchanged; both owned schemas dropped.
 - 2026-10-02 AO-06: all 33 CLAUDE commands pass on 23537bb24, solution 5,074 passed/95 skips, Fast 67 passed/three switch skips/all eleven scenarios; five baked maps validate. Leg 8 is done; altgard-l8 starts Leg 9. No push.
+- 2026-10-02 AH-00: Leg 9 contract and nine compiled plans from 37146605b; seven new quests and two held hand-ins, 254,866 XP, Heart bind and city recipient; three contract cases, Fast and pre-commit checks pass. Travel is next.
