@@ -23,7 +23,7 @@ public sealed partial class SimulationFastScenarioTests
 		CancellationToken token = timeout.Token;
 		NaturalAltgardContract leg = NaturalAltgardContract.Load(Path.Combine(RealStaticData.RepoRoot(),
 			"parity-artifacts", "e2e", "natural-altgard-q2278-probe-contract.json"));
-		await using var session = new SimulationL0Session(fixture, policy, "b01", 200, "Asimproposal", Race.ASMODIANS);
+		await using var session = new SimulationL0Session(fixture, policy, "b01", 201, "Asimproposal", Race.ASMODIANS);
 		session.BeginStep("s00", "setup-probe");
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token, PlayerClass.PRIEST);

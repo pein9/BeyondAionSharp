@@ -11,7 +11,7 @@ namespace Aion.Simulation.Tests;
 
 public sealed partial class SimulationFastScenarioTests
 {
-	/// <summary>AE-04: all eleven Leg 7 template plans, incoming hand-ins, Lateni held, and the Berth delivery flights. GM setup on free account 196 only.</summary>
+	/// <summary>AE-04: all eleven Leg 7 template plans, incoming hand-ins, Lateni held, and the Berth delivery flights. GM setup on free account 205 only.</summary>
 	[SkippableFact]
 	public async Task FortressAndEastGateTemplateQuestsPlayThroughTheirPlans()
 	{
@@ -23,7 +23,7 @@ public sealed partial class SimulationFastScenarioTests
 		NaturalAltgardContract leg = NaturalAltgardContract.LoadLeg("l7");
 		IReadOnlyDictionary<int, QuestRunPlan> plans = NaturalAltgardContract.LoadPlans("l7");
 		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(plans);
-		await using var session = new SimulationL0Session(fixture, policy, "b01", 196, "Asimeastgate", Race.ASMODIANS);
+		await using var session = new SimulationL0Session(fixture, policy, "b01", 205, "Asimeastgate", Race.ASMODIANS);
 		session.BeginStep("s00", "login-create-enter-and-setup");
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token, PlayerClass.PRIEST);

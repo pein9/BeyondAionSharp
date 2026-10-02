@@ -22,7 +22,7 @@ public sealed partial class SimulationFastScenarioTests
 		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(20));
 		CancellationToken token = timeout.Token;
 		NaturalAltgardContract leg = NaturalAltgardContract.LoadLeg("l7");
-		await using var session = new SimulationL0Session(fixture, policy, "b01", 199, "Asimfortroute", Race.ASMODIANS);
+		await using var session = new SimulationL0Session(fixture, policy, "b01", 202, "Asimfortroute", Race.ASMODIANS);
 		session.BeginStep("s00", "setup-route-probe");
 		await session.LoginAndAuthenticateAsync(token);
 		await session.CreateCharacterAsync(token, PlayerClass.PRIEST);

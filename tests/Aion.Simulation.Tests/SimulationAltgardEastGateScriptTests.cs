@@ -16,8 +16,8 @@ public sealed partial class SimulationFastScenarioTests
 {
 	/// <summary>AE-03: both Spirit pool spots; one expired and one completed Q2263 timer. GM setup stays on free probe accounts.</summary>
 	[SkippableTheory]
-	[InlineData(198, 0)]
-	[InlineData(197, 1)]
+	[InlineData(203, 0)]
+	[InlineData(204, 1)]
 	public async Task EastGateSpiritDialogsAndPollenTimerPlayThroughTheContract(int account, int poolSpot)
 	{
 		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);

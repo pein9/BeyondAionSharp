@@ -61,13 +61,14 @@ public sealed partial class SimulationFastScenarioTests
 		Directory.CreateDirectory(directory);
 		string tracePath = Path.Combine(directory, $"{run}.trace.jsonl");
 		if (File.Exists(tracePath)) throw new IOException($"Preserving existing NA-23 trace: {tracePath}");
-		using var trace = BotActionTraceWriter.Open(tracePath, run, "b01", "sim-player-41",
+		int accountId = eastGate ? 206 : 41;
+		using var trace = BotActionTraceWriter.Open(tracePath, run, "b01", $"sim-player-{accountId}",
 			virtualTime: () => TimeSpan.FromMilliseconds(fixture.Clock.NowMillis));
 		Console.WriteLine($"NA-23 trace: {tracePath}");
 		using var policy = NewPolicy("NA23", includeHistory: true);
 		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(20));
 		CancellationToken token = timeout.Token;
-		await using var session = new SimulationL0Session(fixture, policy, "b01", accountId: eastGate ? 195 : 41,
+		await using var session = new SimulationL0Session(fixture, policy, "b01", accountId,
 			"Asimclric", Race.ASMODIANS, trace, tracePath);
 		var dashboard = new LiveBotDashboardState();
 		int dashboardPort = eastGate ? int.Parse(Environment.GetEnvironmentVariable("AION_BOT_DASHBOARD_PORT") ?? "17880") : 0;

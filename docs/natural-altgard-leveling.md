@@ -16,8 +16,8 @@ TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-alt
 is done (AK-00..AK-10, 2026-10-01): `altgard-l5` starts Leg 6.
 [Leg 6: Gerger Village and Trader's Berth](#leg-6-gerger-village-and-traders-berth-level-20--proposal) is done
 (AG-00..AG-09, 2026-10-02): `altgard-l6` starts Leg 7.
-[Leg 7: Altgard Fortress and the East Gate](#leg-7-altgard-fortress-and-the-east-gate-level-21--proposal) is approved
-(AE-Q1..AE-Q3 as recommended, 2026-10-02) and in progress in Loop mode (AE-00..AE-08).
+[Leg 7: Altgard Fortress and the East Gate](#leg-7-altgard-fortress-and-the-east-gate-level-21--proposal) is done
+(AE-00..AE-08, 2026-10-02; AE-Q1..AE-Q3 as recommended): `altgard-l7` starts Leg 8 at the fortress.
 
 ## Goal
 
@@ -2917,7 +2917,7 @@ The same loop protocol, with "AE" in place of "NA".
   - *Done 2026-10-02.* Steps have an optional `mapId` (the hub map by default), and the contract names its teleporter
     trips. The engine plans `travel-to-map`, keeps a started quest's city talks together, and returns for the hub talk.
     The runner uses the existing teleporter, per-map navigator and learned Return.
-  - `SecretProposalTravelsToPandaemoniumAndReturnsToSuthran` (`ae00-proposal200`, free account 200) completes Q2278:
+  - `SecretProposalTravelsToPandaemoniumAndReturnsToSuthran` (`ae00-proposal200`, account 200) completes Q2278:
     Emgata, Suthran, Cavalorn and Balder in Pandaemonium, Return to the fortress bind, and Suthran's reward.
     The fare is 706 Kinah after `SM_PRICES`. Local approaches are setup teleports on the probe only, with hostile
     neighbours cleared and `BeginWorldReload` before each; the map trip and Return are ordinary client actions.
@@ -2925,7 +2925,8 @@ The same loop protocol, with "AE" in place of "NA".
     three switch-dependent skips). Warning baseline, logger, clock-read and fidelity checks pass.
   - Initial probe failures are retained in `run/ae00-probe*.log`: missing client prerequisite evidence (including
     Q2208 in the probe fixture), then a missing reward confirmation. Both were probe setup/contract defects, fixed
-    before the passing run. The initial account 63 overlapped Full's alliance scenario; the final probe uses 200.
+    before the passing run. The initial account 63 overlapped Full's alliance scenario; the passing probe used 200.
+    AE-08 found that 195–200 were also reserved for D32 and moved all Leg 7 probes to unused accounts 201–206.
 - [x] **AE-01 — The Leg 7 contract and plans.** `natural-altgard-l7-contract.json` from the l6 endpoint:
   - the fortress bind (700065) and a fortress merchant for the town service;
   - the held hand-ins Q24233 and Q2262, and Q2146 held for Lateni;
@@ -2946,7 +2947,7 @@ The same loop protocol, with "AE" in place of "NA".
     and fidelity checks pass. The code base for this item is AE-00's `62863fcca`.
 - [x] **AE-02 — Walk every Leg 7 route in SIM:** from the fortress obelisk to the East Gate, each swamp ground, Taora
   and Chagarinerk, and the Berth round trip by flight.
-  - *Done 2026-10-02.* `AltgardLeg7TravelWalksTheGateSwampAndBothSpiritSpotsAndFliesToTheBerth` (`ae02-travel`, free
+  - *Done 2026-10-02.* `AltgardLeg7TravelWalksTheGateSwampAndBothSpiritSpotsAndFliesToTheBerth` (`ae02-travel`,
     account 199) walks 27 ground legs from AE-01's `be166588c` contract. The probe is level 30; plans are level 21.
     Each server endpoint is within 5 m of its goal (0.0 m reported in this run).
     - The fortress circuit visits Suthran, Meiyer, Emgata, Morn, Valurion, Donabe and Chagarinerk.
@@ -2960,7 +2961,7 @@ The same loop protocol, with "AE" in place of "NA".
 - [x] **AE-03 — The scripted quests in SIM:** Q2278 with the Pandaemonium trip, Q2279 with Zemurru's Spirit at either
   spot, and Q2263 twice: once in time, once with the timer running out.
   - *Done 2026-10-02.* `ae03-scripts` passes both Spirit pool spots through offer, Emgata, Spirit and Suthran's reward
-    on free accounts 197/198. Q2263 expires after 305 game seconds with one pollen: abandonment and item removal verified;
+    on accounts 197/198. Q2263 expires after 305 game seconds with one pollen: abandonment and item removal verified;
     the retake collects three pollen in four kills and completes in 18 game seconds. Expiry is a recorded outcome.
   - Q2278's end-to-end city trip remains covered by AE-00's probe, also passing in `ae03-fast`. The pollen area now
     covers the local grove/swamp spawns, excluding distant grove grounds. No server behavior changed; Java Q2263/Q2279
@@ -2971,7 +2972,7 @@ The same loop protocol, with "AE" in place of "NA".
   - Q2264, Q2265, Q2272, Q2261, Q2286 and Q2287;
   - Q2243, then Q2253, by flight;
   - the hand-ins of Q24233 and Q2262, and Q2146 taken and held.
-  - *Done 2026-10-02.* `FortressAndEastGateTemplateQuestsPlayThroughTheirPlans` (`ae04-templates`, free account 196)
+  - *Done 2026-10-02.* `FortressAndEastGateTemplateQuestsPlayThroughTheirPlans` (`ae04-templates`, account 196)
     passes all eleven plans: ten completions and Q2146 START/0 held for Lateni (203659). Incoming Q24233 START/1 and
     Q2262 START/0 are set up as Leg 6 left them, with Q2262's work item; both hand-ins pass and consume their work items.
   - Q2264 counts three arachnas; Q2265's sword and Q2272's cube each drop on the first controlled kill. Q2261, Q2286
@@ -2982,7 +2983,7 @@ The same loop protocol, with "AE" in place of "NA".
     and fidelity checks pass. This item changes only the probe; base commit `f41204c9d`.
 - [x] **AE-05 — Combat at level 21.** The encounter harness against the swamp's mixes: feral black claw warriors
   (SEASONED) with sleekpaws and arachnas, and Shaman Gabacha (EXPERT L19). Record deaths and retreats.
-  - *Done 2026-10-02.* `AE05_STAGES=1` uses free account 195, a level-21 Cleric and the journey's existing combat code,
+  - *Done 2026-10-02.* `AE05_STAGES=1` used account 195, a level-21 Cleric and the journey's existing combat code,
     with shipped relative spawn spacing. `ae05-encounter-distinct` records warrior + two arachnas (3 kills, 186 game s),
     warrior + sleekpaw (2, 98 s), Gabacha alone (1, 32 s), and Gabacha with his nearby camp (3, 65 s). Nine distinct
     client-confirmed kills, zero deaths and zero retreats. The camp's L16 warrior was not selected; that kind was fought
@@ -3032,7 +3033,23 @@ The same loop protocol, with "AE" in place of "NA".
     - A hash-checked restore into a fresh owned schema verifies the retained character, position, bind, life stats,
       inventory currency and quest states (`run/ae07-restore-state.tsv`); counts are 1 character / 13 complete / 2 held.
       Both the capture and restore schemas were dropped. Warning, logger and clock-read checks pass.
-- [ ] **AE-08 — The full `CLAUDE.md` checklist and a checkpoint.**
+- [x] **AE-08 — The full `CLAUDE.md` checklist and a checkpoint.**
+  - *Done 2026-10-02.* All 33 checklist commands ran from base commit `a0383c37e`; build, solution tests, all
+    ratchets, fidelity, Python/PowerShell contracts, navmesh checks and Fast pass after the account correction below.
+    Solution tests: 5,068 passed and 93 optional skips (GameServer 4,444/16, Commons 303/0, Login 135/7, Chat 41/1,
+    Simulation 145/69). Logs and original results are retained under `run/ae08-checklist`, with separate indexed logs
+    for Python/PowerShell commands sharing a name. `ae08-fast` passes 65 tests, three switch skips, all eleven scenarios.
+  - The initial retail-inventory check failed because the Leg 7 probes used 195–200, which D32 reserves even before
+    its register allocates them. The fixture now accepts six unused accounts: Q2278 201, travel 202, Spirit spots
+    203/204, templates 205 and combat 206. Historical run accounts above remain unchanged. The encounter trace now
+    names its actual account. No natural-character state, server behavior or content changed.
+  - The corrected inventory check passes all 29 tests (`run/ae08-account-reservation.log`).
+    `ae08-encounter-accounts` passes on 206 with nine distinct kills, zero deaths/retreats and the same stage timings.
+    `ae08-fast-accounts` verifies the other five accounts in the shared suite: 65 tests passed, three switch skips,
+    eleven scenarios passed, zero failures/flakes. Warning, logger, clock-read, custom-draft and fidelity checks
+    pass again (`run/ae08-accounts`). The original failed check is retained; there are no unblocked AE items left.
+  - `altgard-l7` remains the committed-code, hash-checked, relog-verified and restore-checked endpoint from AE-07.
+    Leg 7 is done; Leg 8 is the Observatory, from the fortress bind, with Q2146 and Q24115 held.
 
 **Endpoint (AE-Q1 (a), AE-Q2 (a)):**
 - Q24233, Q2262, Q2261, Q2263, Q2264, Q2265, Q2272, Q2243, Q2253, Q2278, Q2279, Q2286 and Q2287 completed;
@@ -3451,3 +3468,4 @@ The original questions follow.
 - 2026-10-02 AE-05: level-21 swamp encounters record nine distinct kills, no deaths or retreats; corpse overcount and a shared-probe assumption corrected; Fast and pre-commit checks pass.
 - 2026-10-02 AE-06: Leg 7 smoke and relog pass from altgard-l6; 35 distinct kills, no deaths/retreats, first pollen timer, all hub flights; earlier failures/outcomes retained; Fast and pre-commit checks pass.
 - 2026-10-02 AE-07: altgard-l7 captured from committed code 2df0d2cad and restored successfully; level 21, fortress bind, 264,842 Kinah, thirteen completions and two held quests; owned schemas dropped.
+- 2026-10-02 AE-08: all 33 CLAUDE checklist commands completed; the D32 account reservation failure corrected with free accounts 201–206; inventory, affected encounters, Fast and pre-commit checks pass. Leg 7 is done; altgard-l7 starts Leg 8.
