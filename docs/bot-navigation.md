@@ -236,8 +236,15 @@ All of these are generated. Never hand-edit them. Change the inputs or settings 
 | Ataxiar instance (320020000) | 1,052 polygons, 66 KiB | 9 nodes |
 | Pandaemonium (120010000) | 1.2 MB | 260 nodes, 985 links, 7 exits |
 | Altgard (220030000) | 86,537 polygons, 5.5 MiB | 649 nodes, 2,601 links |
+| Bregirun (320030000) | 823 polygons, 48 KiB | none |
 
-None of the three has roads. They were baked with `bake --maps 320020000,120010000,220030000`.
+The three bridge maps have no roads and were baked with `bake --maps 320020000,120010000,220030000`.
+
+Leg 10's BC-02 adds Bregirun with `bake --maps 320030000`, verified by `check --maps 320030000 --rebake`.
+It previously loaded an ignored `run/nav` mesh. The committed mesh makes its route inputs reproducible.
+The return walk from the Abyss Gate goes through the guardian and entry checkpoints. Dimension Exit's
+shipped talk distance is 7 m: a checked approach at 6.1 m works, while the generic 3 m interaction route
+cannot reach it. Java dialog requests check talk range without a spell's line-of-sight requirement.
 
 **After a spawn placement pass** (retail-accuracy edits to `spawns/Npcs`, `Gather` or `Statics`
 on a starter map): run the height audit above — a heightmap-derived placement puts anything under

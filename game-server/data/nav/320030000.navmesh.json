@@ -1,0 +1,40 @@
+{
+  "mapId": 320030000,
+  "mapName": "Bregirun",
+  "bakerVersion": 4,
+  "settingsFingerprint": "5db8e45a00557337",
+  "settings": {
+    "cellSize": 0.3,
+    "cellHeight": 0.2,
+    "agentHeight": 1.6,
+    "agentRadius": 0.5,
+    "agentMaxClimb": 0.8,
+    "agentMaxSlope": 45,
+    "tileSizeCells": 128,
+    "regionMinSize": 8,
+    "regionMergeSize": 20,
+    "edgeMaxLength": 12,
+    "edgeMaxError": 1.3,
+    "vertsPerPoly": 6,
+    "detailSampleDistance": 6,
+    "detailSampleMaxError": 1,
+    "flagMergeVoxels": 1,
+    "swimDepth": 1.5,
+    "roadHalfWidth": 3
+  },
+  "sourceFingerprint": "016e85aae61e1bb8",
+  "waterLevel": 16,
+  "tilesX": 27,
+  "tilesY": 27,
+  "tilesWithPolygons": 20,
+  "polygons": 823,
+  "polygonsByArea": {
+    "ground": 823
+  },
+  "doors": 0,
+  "roads": 0,
+  "maskSectors": 73,
+  "modelTriangles": 34708,
+  "terrainTriangles": 0,
+  "navMeshSha256": "49c4bcec324e1daf756aa9313c7bc1a1f750e4618ff70cc60187b6ec46d5b1e4"
+}

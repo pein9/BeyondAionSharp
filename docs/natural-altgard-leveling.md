@@ -3393,10 +3393,28 @@ Gathering, coin loops and unapproved D32 quests stay deferred.
     compile error and conditional Vidar-spawn test assumption are corrected, with both draft logs retained.
     Every pre-commit check passes (`run/bc01-checks`); `bc01-fast` passes all eleven scenarios, 69 tests and
     three switch skips. No server changes. Travel and real portal behavior remain BC-02's proof.
-- [ ] **BC-02 — Travel in SIM.** Free controlled probe, level-22 route plans: every giver/objective kind,
+- [x] **BC-02 — Travel in SIM.** Free controlled probe, level-22 route plans: every giver/objective kind,
   campaign source, totem, city recipient and Bregirun gate; actual Heart-to-fortress flight. Prove real portal
   entry/exit and the instance's checked ground routes. Clear aggressive neighbours only in the probe;
   drop the client view before setup teleports. Record failed routes and hazards. Depends: BC-01.
+  - *Done 2026-10-02.* From `b41e1b19f`, `bc02-travel-city` passes on free account 213, Cleric 22: 54 ground legs,
+    all eight givers/services, 20 shipped source kinds (including Q2281's three alternate kinds), the sensory
+    sphere and all ten totems. One actual Heart-to-fortress flight costs 565 Kinah, followed by fortress bind.
+    Suthran's ordinary dialog/movie/quest teleport reaches the gate ground; portal 700089 has its three-second
+    bar and enters Bregirun at var 2. Both enemy kinds, guardian and Abyss Gate route; return through the
+    guardian/entry checkpoints reaches Dimension Exit at 6.1 m, within its shipped 7 m talk distance. Its
+    five-second use returns to Altgard and resets the quest to var 1. Learned Return reaches the fortress.
+  - The city teleporter costs 706 Kinah; 304 checked points reach ordinary Vidar within his 5 m talk distance
+    (4.0 m observed), open his dialog and Return again after respecting the 1,200-second reuse. Alive endpoint
+    (1660.44, 1815.301, 253.724), fortress bind; ordinary ground miss at most 3.0 m. Hazards logged before probe
+    clearing; no natural-character setup. Bregirun's 823-polygon mesh is generated into the repository and
+    passes a rebake check (`run/bc02-navbake.log`, `bc02-navcheck.log`), replacing reliance on ignored `run/nav`.
+  - Earlier `run/bc02-travel*.log` drafts are retained: the L20 warlock's ground is disconnected from the
+    general camp but routes after the quest teleport; spell-range approaches replace the six-metre source
+    assumption. A small final-position sight change is recorded separately from reachability. Already-in-range
+    interaction, the exit/recipient talk ranges, a misplaced spell sight requirement and an incorrect static
+    data accessor were corrected. All pre-commit checks and `bc02-fast` pass (70 tests, three switch skips,
+    all eleven scenarios). The fixture reserves free accounts 213–216 for Leg 10. No server behavior/content changes.
 - [ ] **BC-03 — Template quests in SIM.** Free controlled probe: all six templates, all three Q2281 counters,
   work-item consumption, real Vidar trip/Return and ordinary source respawns when needed. Depends: BC-02.
 - [ ] **BC-04 — Campaigns in SIM.** Free controlled probe: Q24014's kills and gated Orb, Q24015 zone and three
@@ -3841,3 +3859,4 @@ The original questions follow.
 - 2026-10-02 AH-06: all 33 CLAUDE commands pass on da427b420, solution 5,080 passed/97 skips, Fast 69 passed/three switch skips/all eleven scenarios; five baked maps validate. Temporary runner argument typo corrected with invalid attempt retained. Leg 9 is done; altgard-l9 starts Leg 10. No push.
 - 2026-10-02 BC-00: Leg 10 scope and Java/data audit complete from 63d23d4d1; six templates/three campaigns, 959,700 XP, Q2281's three counters, real Bregirun entry/recovery/movie exit, fortress bind/endpoint and retained Q2900; pre-commit checks pass. Contract and plans are next.
 - 2026-10-02 BC-01: l10 contract and six plans, all independent Q2281 counters and Q24016 prerequisites/map decisions; 36 scoped cases, Fast and pre-commit checks pass, earlier drafts retained. Travel is next.
+- 2026-10-02 BC-02: 54 level-22 travel legs, 20 source kinds/ten totems, actual Heart flight, quest teleport, both Bregirun portals, Vidar dialog and learned Returns pass on free account 213; generated Bregirun mesh rebakes identically. Earlier drafts retained; Fast and pre-commit checks pass. Template quests are next.
