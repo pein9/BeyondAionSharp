@@ -3363,8 +3363,12 @@ and admits Q24016 at var 1 or above (or COMPLETE); the natural entry is at var 1
 setting var 2 on enter-world. Guardian stone 700140
 at (261.418, 229.531, 213.918) spawns Kuninasha 210753 at (260.12, 234.93, 216), moving the Cleric branch
 to var 13; its kill gives var 14. Gate 700141 at (250.91148, 270.45502, 230.087) sets REWARD and movie 154
-returns to the fortress. A death, or leaving the instance while START at var 2 or above, resets to var 1;
-record it and re-enter through the ordinary portal. Dimension Exit 700184 is the ordinary fallback exit.
+returns to the fortress. A death, or leaving the instance while START at var 2 or above, resets to var 1.
+The level-22 Cleric pre-casts auto-learned Hand of Reincarnation (4005): after a death, self revive in place,
+leave through Dimension Exit 700184 and re-enter the ordinary portal for var 2. Respect its ten-minute reuse
+before another protected attempt; its buff lasts thirty minutes. The instance offers no instance-revive button.
+An unprotected bind revival returns to the fortress, whose ground cannot currently route to the gate; retain
+that recovery boundary rather than inventing a repeat Suthran teleport. Dimension Exit is also the fallback exit.
 Instance ground routes, local enemies and movie acknowledgements must be proved before the natural run.
 
 **Endpoint:** all nine quests COMPLETE, their work/collection items consumed, Q2900 START/0, no held quests,
@@ -3427,9 +3431,25 @@ Gathering, coin loops and unapproved D32 quests stay deferred.
     the existing explicit expected-rejection API and asserts the exact response; server behavior is unchanged.
     The passing corrected draft's nullable spawn warnings are fixed and the final probe passes without new
     warnings. Logs/traces retained under `run/bc03-templates*`; all pre-commit checks pass (`run/bc03-checks`).
-- [ ] **BC-04 — Campaigns in SIM.** Free controlled probe: Q24014's kills and gated Orb, Q24015 zone and three
+- [x] **BC-04 — Campaigns in SIM.** Free controlled probe: Q24014's kills and gated Orb, Q24015 zone and three
   totems, Q24016 unlock, quest teleport, real instance portal, guardian use/spawn, kill, movie exit and reward.
   Prove death/leave recovery and retained Q2900; setup is never route evidence. Depends: BC-02.
+  - *Done 2026-10-02.* From `9a4fdceb2`, `bc04-campaigns-rebirth-final` passes on free account 215, Cleric 22:
+    nine controlled 1-HP kills, all three server/client campaign completions, consumed Orb and retained Q2900
+    START/0. Abija drops no Orb at var 2 and an ordinary shipped source drops it at var 5. Three stalker kills,
+    the sensory zone and three totems complete Q24014/Q24015, naturally unlocking Q24016 only after all five
+    prerequisites. Suthran's dialog/movie 66/quest teleport, three-second portal, guardian use and spawned
+    Kuninasha, kill to var 14, gate/movie 154/fortress exit and chosen reward all pass. No source replenishment.
+  - Ordinary leave/re-entry is proved, plus one controlled death after casting auto-learned 4005. The real die
+    hook resets to var 1; the client offers self revival and no instance revival. Rebirth revives in place,
+    Dimension Exit's five-second use returns to the gate, and ordinary portal re-entry restores var 2 before
+    completing the campaign. The natural runner must protect instance attempts with this learned skill.
+  - Earlier bind-recovery probes (`bc04-campaigns`, `bc04-campaigns-ground`) retain the fortress/gate mesh
+    disconnection and three empty bounded geometry searches via Taora. Java only teleports at var 0, so no
+    repeat teleport or server change is added. A passing completion-only probe is retained separately; the
+    first Rebirth draft's pre-death availability assertion was corrected to observe the buff (Java stores its
+    revival information on death). The analyzer warning is fixed. Logs/traces: `run/bc04-campaigns*`; every
+    final pre-commit check passes (`run/bc04-final-checks`). Deaths remain recorded outcomes, not failures.
 - [ ] **BC-05 — Combat at level 22.** Encounter harness at shipped relative spacing against the group target
   mixes, campaign sources and Bregirun enemies/Kuninasha. Natural combat, learned skills and approved supplies;
   record distinct kills, deaths and retreats. Read Java and retail AI evidence first. Depends: BC-02.
@@ -3871,3 +3891,4 @@ The original questions follow.
 - 2026-10-02 BC-01: l10 contract and six plans, all independent Q2281 counters and Q24016 prerequisites/map decisions; 36 scoped cases, Fast and pre-commit checks pass, earlier drafts retained. Travel is next.
 - 2026-10-02 BC-02: 54 level-22 travel legs, 20 source kinds/ten totems, actual Heart flight, quest teleport, both Bregirun portals, Vidar dialog and learned Returns pass on free account 213; generated Bregirun mesh rebakes identically. Earlier drafts retained; Fast and pre-commit checks pass. Template quests are next.
 - 2026-10-02 BC-03: six template hand-ins/work items consumed, both partial Q2281 hand-ins rejected, 34 controlled kills/three ordinary respawn waits and real Vidar delivery/Return pass on free account 214; expected-rejection labeling and nullable warnings corrected, draft evidence retained; pre-commit checks pass. Campaigns are next.
+- 2026-10-02 BC-04: all three campaigns, gated/consumed Orb, natural unlock, real portals/guardian/boss/movies and ordinary self-revival/exit/re-entry pass on free account 215; bind-route boundary and assertion drafts retained, pre-commit checks pass. Learned Hand of Reincarnation protects Bregirun attempts; no server changes. Combat is next.
