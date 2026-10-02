@@ -3135,8 +3135,16 @@ object before using it. Deaths, retreats and interrupted uses are recorded outco
     page 6 for Java's rare Drakie outcome. `ao02-final-fast` exercises that branch (REWARD/2, group 1, 1,900 Kinah)
     and passes all eleven scenarios: 67 tests, three switch skips. Warning/logger/clock/custom-draft/fidelity,
     compiler and D32 inventory checks pass (`ao02-final-checks`). No server content or handler changes.
-- [ ] **AO-03 — Combat at level 21.** The encounter harness: pecku mix, bodyguard/shaman, Gattban alone and his nearby
+- [x] **AO-03 — Combat at level 21.** The encounter harness: pecku mix, bodyguard/shaman, Gattban alone and his nearby
   camp at shipped relative spacing. Record distinct kills, deaths and retreats; verify once plus pre-commit checks.
+  - *Done 2026-10-02.* `AO03_STAGES=1`, `ao03-encounter`, free account 209, level 21, ordinary journey combat and
+    approved help supplies. Four stages at shipped relative spacing: closest L17/L18 peckus (27.93, 4.33 m offset),
+    the bodyguard/shaman sharing a patrol origin, Gattban alone, then his nearest bodyguard (-3.43, -5.71) and shaman
+    (-22.2, 3.19). Eight distinct confirmed kills in the packet trace (2/2/1/3), zero deaths and retreats; stage times
+    55/86/33/99 game seconds. The summary's six kills count planned pulls; two more are defensive kills in the trace.
+    Setup clears aggressive neighbours and drops the client view. The read-only dashboard was enabled on 17880.
+    Java skills/data and the retail-AI exception were read; no server behavior or content changed.
+    Warning/logger/clock/custom-draft/fidelity/compiler/inventory checks pass (`ao03-checks`). Base `0c31a66e6`.
 - [ ] **AO-04 — Natural runner and smoke.** Restore `altgard-l7`; play `AF_ALTGARD=l8` with the snapshot runner's
   environment, ordinary combat, hub flights and relog verification; drop the owned schema. Fix only demonstrated
   runner gaps. Pre-commit checks and Fast before committing gameplay changes. Never capture uncommitted code.
@@ -3563,3 +3571,4 @@ The original questions follow.
 - 2026-10-02 AO-00: Leg 8 contract, five plans and eight scripted steps; Q2266 precedes the Observatory bind; six contract/decision cases, Fast and pre-commit checks pass, from 734f82eae.
 - 2026-10-02 AO-01: 23 Observatory/camp/object ground legs and three fortress/Observatory flights pass on free account 207; maximum miss 2.5 m, pre-commit checks pass.
 - 2026-10-02 AO-02: seven quests, Operation Order use/loot and three hub flights pass on free account 208; Java helper pages and guard setup corrected; the Drakie reward probe correction, six contract cases, Fast and pre-commit checks pass.
+- 2026-10-02 AO-03: level-21 Observatory encounters on free account 209 record eight distinct kills, zero deaths/retreats; all four stages and pre-commit checks pass.

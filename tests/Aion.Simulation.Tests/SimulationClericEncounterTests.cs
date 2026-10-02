@@ -39,6 +39,8 @@ public sealed partial class SimulationFastScenarioTests
 	/// the bones, the fight Q2252 brings.
 	/// AE-05: AE05_STAGES=1 uses a free account at level 21 for warrior/arachna and warrior/sleekpaw mixes, Gabacha alone,
 	/// and Gabacha's nearby warriors and sleekpaw. Relative placement comes from the shipped swamp spots.
+	/// AO-03: AO03_STAGES=1 uses account 209 at level 21 for both pecku kinds, a bodyguard/shaman pair, Gattban alone,
+	/// and Gattban with the nearest bodyguard and shaman, at the shipped relative spacing.
 	/// </summary>
 	[SkippableFact]
 	public async Task NaturalClericEncounterRunsOnce()
@@ -51,17 +53,18 @@ public sealed partial class SimulationFastScenarioTests
 		bool mumu = Environment.GetEnvironmentVariable("AK07_STAGES") == "1";
 		bool berth = Environment.GetEnvironmentVariable("AG06_STAGES") == "1";
 		bool eastGate = Environment.GetEnvironmentVariable("AE05_STAGES") == "1";
+		bool observatory = Environment.GetEnvironmentVariable("AO03_STAGES") == "1";
 		int level = int.TryParse(Environment.GetEnvironmentVariable("AC00_CLERIC_LEVEL"), out int asked) ? asked
-			: eastGate ? 21 : berth ? 20 : mumu ? 19 : basfelt ? 16 : 10;
+			: observatory || eastGate ? 21 : berth ? 20 : mumu ? 19 : basfelt ? 16 : 10;
 		Assert.InRange(level, 10, 21);
 		int monsterId = level == 10 ? Goon : GraveRobbingFencer;
-		string item = eastGate ? "ae05" : berth ? "ag06" : mumu ? "ak07" : basfelt ? "ab07" : level == 10 ? "na23" : "ac00";
+		string item = observatory ? "ao03" : eastGate ? "ae05" : berth ? "ag06" : mumu ? "ak07" : basfelt ? "ab07" : level == 10 ? "na23" : "ac00";
 		string run = Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? $"{item}-cleric-encounter-l{level}-s{fixture.Seed}";
 		string directory = Path.Combine(root, "run", item, run);
 		Directory.CreateDirectory(directory);
 		string tracePath = Path.Combine(directory, $"{run}.trace.jsonl");
 		if (File.Exists(tracePath)) throw new IOException($"Preserving existing NA-23 trace: {tracePath}");
-		int accountId = eastGate ? 206 : 41;
+		int accountId = observatory ? 209 : eastGate ? 206 : 41;
 		using var trace = BotActionTraceWriter.Open(tracePath, run, "b01", $"sim-player-{accountId}",
 			virtualTime: () => TimeSpan.FromMilliseconds(fixture.Clock.NowMillis));
 		Console.WriteLine($"NA-23 trace: {tracePath}");
@@ -71,8 +74,8 @@ public sealed partial class SimulationFastScenarioTests
 		await using var session = new SimulationL0Session(fixture, policy, "b01", accountId,
 			"Asimclric", Race.ASMODIANS, trace, tracePath);
 		var dashboard = new LiveBotDashboardState();
-		int dashboardPort = eastGate ? int.Parse(Environment.GetEnvironmentVariable("AION_BOT_DASHBOARD_PORT") ?? "17880") : 0;
-		await using var dashboardHost = new LiveBotDashboardHost(run, ["AE-05"], dashboard, dashboardPort);
+		int dashboardPort = observatory || eastGate ? int.Parse(Environment.GetEnvironmentVariable("AION_BOT_DASHBOARD_PORT") ?? "17880") : 0;
+		await using var dashboardHost = new LiveBotDashboardHost(run, [observatory ? "AO-03" : "AE-05"], dashboard, dashboardPort);
 		session.Dashboard = dashboard;
 		if (dashboardHost.Enabled) Console.WriteLine($"Cleric encounter dashboard: {dashboardHost.Url}");
 		NaturalAscensionContract bridge = NaturalAscensionContract.LoadDefault();
@@ -86,7 +89,8 @@ public sealed partial class SimulationFastScenarioTests
 		{
 			PrepareCourseAsync = PrepareAsync,
 			PrepareEncounterStageAsync = PrepareStageAsync,
-			EncounterStages = eastGate ? ["warrior-arachnas", "warrior-sleekpaw", "gabacha", "gabacha-camp"]
+			EncounterStages = observatory ? ["observatory-peckus", "bodyguard-shaman", "gattban", "gattban-camp"]
+				: eastGate ? ["warrior-arachnas", "warrior-sleekpaw", "gabacha", "gabacha-camp"]
 				: berth ? ["minushan-spirit", "pecku-pack", "angolem-shardling", "minushan-bones"]
 				: mumu ? ["mumu-pull", "manumumu", "sentry-fencers"]
 				: basfelt ? ["mosbear-pair", "komu", "sumarhon-camp", "infernus", "sharpeyes"] : null,
@@ -192,6 +196,12 @@ public sealed partial class SimulationFastScenarioTests
 				"warrior-sleekpaw" => [(0, 0, 0, 210460), (-8.7f, 6, 0, 210502)],
 				"gabacha" => [(0, 0, 0, 216893)],
 				"gabacha-camp" => [(0, 0, 0, 216893), (4.9f, -13.5f, 0, 210459), (-11.6f, 11.1f, 0, 210460), (-20.3f, 17, 0, 210502)],
+				// AO-03: closest mixed pecku spots (1601.33,2637.84)/(1629.26,2642.17); shared guard/shaman patrol origin
+				// (1625.86,2592.8); Gattban (1721.12,2636.07) and the nearest guard (1717.69,2630.36)/shaman (1698.92,2639.26).
+				"observatory-peckus" => [(0, 0, 0, 210526), (27.93f, 4.33f, 0, 210527)],
+				"bodyguard-shaman" => [(0, 0, 0, 210528), (0, 0, 0, 210530)],
+				"gattban" => [(0, 0, 0, 210532)],
+				"gattban-camp" => [(0, 0, 0, 210532), (-3.43f, -5.71f, 0, 210528), (-22.2f, 3.19f, 0, 210530)],
 				_ => throw new ArgumentOutOfRangeException(nameof(stage)),
 			};
 			foreach ((float dx, float dy, int randomWalk, int npcId) in monsters)
