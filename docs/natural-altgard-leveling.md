@@ -2765,7 +2765,32 @@ The same loop protocol, with "AG" in place of "NA".
     - Held: Q24115 (START, 3) for Banatisai, Q2262 (START, 0) for Mabrunerk, and Q24233 (START, 1) for Suthran.
       Q2900, Q24014 and Q24015 are started, and Q24016 is locked.
     - A test restore into an owned schema succeeded and was dropped; no owned schema is left.
-- [ ] **AG-09 — The full `CLAUDE.md` checklist and a checkpoint.**
+- [x] **AG-09 — The full `CLAUDE.md` checklist and a checkpoint.**
+  - *Done 2026-10-02.* Every command in the `CLAUDE.md` checklist was run in order, on `f0f364b60`:
+    - `dotnet build` passed, and so did `dotnet test`, with no failures:
+      - GameServer: 4,435 passed, 16 skipped.
+      - Simulation: 145 passed, 64 skipped (they need their switches).
+      - LoginServer: 135 passed. Commons: 303 passed. ChatServer: 41 passed.
+    - The warning baseline passed, and so did the logger, clock-read, custom-quest-draft and fidelity checks.
+    - All twelve Python e2e contract tests passed.
+      - The quest plan compiler recompiles the Leg 6 plans identically.
+      - The D32 inventory's account check passes, now that the flee probe uses account 69.
+    - All twelve PowerShell contract tests passed, and so did the NavBake `check --maps baked`.
+    - `run-fast` passed: 60 tests (3 skipped by their switches), all 11 scenarios.
+  - **Checkpoint:**
+    - Leg 6 plays end to end in SIM from `altgard-l5`.
+    - Snapshot `altgard-l6` (AG-08) is the start of the next leg. The Cleric is level 21, bound at the Trader's Berth
+      obelisk (700821), with a 63-slot cube and 228,032 Kinah.
+    - Three hand-ins are held for their hubs: Q24233 (Suthran, the fortress), Q2262 (Mabrunerk, the East Gate) and
+      Q24115 (Banatisai, the Heart of Impetusium).
+    - Q2900, Q24014 and Q24015 (the campaign) are started.
+      - Q2900 comes at the very end of the Altgard area.
+      - Q24014–Q24016 come as one of its last legs.
+    - Next is Leg 7, still to be planned: the East Gate (Stop 9) with the fortress-side Stops 10 and 11 (AG-Q1 (a)).
+      The Berth's transporter (203678) flies to the fortress.
+    - LIVE runs once, at the end of the whole Altgard area.
+    - **Carried forward:** the runner does not drop its view on a bind revive on the same map (AG-04). The spawn
+      kill no longer depends on that, but another target could still meet a ghost of an object gone while away.
 
 **Endpoint (if AG-Q1 (a), AG-Q2 (a)):**
 - Q2242, Q2244–Q2249, Q2251, Q2252 and Q2284 completed;
@@ -3142,3 +3167,4 @@ The original questions follow.
 - 2026-10-02 AG-06: Leg 6's fights at level 20; no deaths, and one retreat at the Bones of Minushan.
 - 2026-10-02 AG-07: the Leg 6 runner; smoke run 5 plays the whole leg from altgard-l5 to level 21 with one death.
 - 2026-10-02 AG-08: snapshot altgard-l6 captured from 7d10ef4c1 (level 21, bound at the Trader's Berth).
+- 2026-10-02 AG-09: the full checklist passes on f0f364b60; Leg 6 is done, and Leg 7 is next to plan.
