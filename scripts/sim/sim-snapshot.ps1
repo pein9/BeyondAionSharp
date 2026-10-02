@@ -7,6 +7,7 @@
 #            With -AltgardLeg1 (AF-09) the capture starts from a restored `altgard` snapshot instead of a new character,
 #            plays an Altgard leg (-Leg l1, the default; -Leg l2 -From altgard-l12 for Leg 2, AM-08; -Leg l3 -From altgard-l2 for Leg 3, AC-07; -Leg l4 -From altgard-l3 for Leg 4, AB-09; -Leg l5 -From altgard-l4 for Leg 5, AK-09; -Leg l6 -From altgard-l5 for Leg 6, AG-08) and dumps its endpoint.
 #            The Leg 1 form:
+#            Leg 7 (AE-07): -AltgardLeg1 -Leg l7 -From altgard-l6 -Name altgard-l7.
 #            plays Altgard Leg 1 (docs/natural-altgard-leveling.md) and dumps its verified endpoint (`altgard-l12`).
 #   Restore: load a snapshot into a fresh owned schema and print the environment a resumed run needs.
 #   Verify:  restore, resume the retained character once and require the journey endpoint to be reached again
@@ -31,7 +32,7 @@ param(
 	[switch]$Bridge,
 	[switch]$AltgardLeg1,
 	[string]$From = 'altgard',
-	[ValidateSet('l1', 'l2', 'l3', 'l4', 'l5', 'l6')]
+	[ValidateSet('l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7')]
 	[string]$Leg = 'l1',
 	[switch]$NoBuild
 )

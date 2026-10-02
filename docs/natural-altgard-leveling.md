@@ -3017,8 +3017,21 @@ The same loop protocol, with "AE" in place of "NA".
     The final run corrects that approach with the return flight. Each restore's owned schema was dropped.
   - Three contract checks, warning/logger/clock-read/fidelity checks, and `ae06-fast-final` pass (65 tests, three
     switch skips, all eleven scenarios). Base commit `0ae28ce36`; no snapshot was captured from this uncommitted work.
-- [ ] **AE-07 — One SIM run of Leg 7 and the snapshot.** `sim-snapshot.ps1 -Leg l7 -From altgard-l6` captures
+- [x] **AE-07 — One SIM run of Leg 7 and the snapshot.** `sim-snapshot.ps1 -Leg l7 -From altgard-l6` captures
   `altgard-l7` after a clean run, with a restore check.
+  - *Done 2026-10-02.* The script accepts `l7`. Its implementation was committed as `2df0d2cad` before capture;
+    `-Action Capture -Name altgard-l7 -AltgardLeg1 -Leg l7 -From altgard-l6 -Run ae07-capture` plays from the committed
+    AE-06 runner and dumps only the relog-verified endpoint. This evidence is added to the same checkpoint commit.
+  - `ae07-capture` (seed 1) repeats the final smoke to the millisecond: 3,137,019 ms, 35 distinct confirmed kills,
+    zero deaths/retreats, all three hub flights, first pollen timer, thirteen completions and both held quests.
+  - Snapshot `run/snapshots/altgard-l7` (git-ignored): retained character 133297, elapsed 49,593,396 ms,
+    dump SHA-256 `f0f91c60…15f6d12`, captured from committed code `2df0d2cad`.
+    - Level 21, alive at (1662.09, 1811.69, 253.84), bound at the fortress, 264,842 Kinah, 63-slot cube.
+    - Q2146 START/0 for Lateni and Q24115 START/3 for Banatisai; the thirteen endpoint quests COMPLETE.
+      Q2900/Q24014/Q24015 remain START/0, Q24016 LOCKED/0.
+    - A hash-checked restore into a fresh owned schema verifies the retained character, position, bind, life stats,
+      inventory currency and quest states (`run/ae07-restore-state.tsv`); counts are 1 character / 13 complete / 2 held.
+      Both the capture and restore schemas were dropped. Warning, logger and clock-read checks pass.
 - [ ] **AE-08 — The full `CLAUDE.md` checklist and a checkpoint.**
 
 **Endpoint (AE-Q1 (a), AE-Q2 (a)):**
@@ -3437,3 +3450,4 @@ The original questions follow.
 - 2026-10-02 AE-04: eleven template plans pass, including both incoming hand-ins, Q2146 held, and the Berth round trip by flight; pre-commit checks pass.
 - 2026-10-02 AE-05: level-21 swamp encounters record nine distinct kills, no deaths or retreats; corpse overcount and a shared-probe assumption corrected; Fast and pre-commit checks pass.
 - 2026-10-02 AE-06: Leg 7 smoke and relog pass from altgard-l6; 35 distinct kills, no deaths/retreats, first pollen timer, all hub flights; earlier failures/outcomes retained; Fast and pre-commit checks pass.
+- 2026-10-02 AE-07: altgard-l7 captured from committed code 2df0d2cad and restored successfully; level 21, fortress bind, 264,842 Kinah, thirteen completions and two held quests; owned schemas dropped.
