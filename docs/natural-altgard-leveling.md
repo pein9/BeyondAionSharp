@@ -2442,7 +2442,9 @@ The same loop protocol, with "AK" in place of "NA".
 
 ## Leg 6: Gerger Village and Trader's Berth (level 20) — proposal
 
-**Status (2026-10-01): proposed.** The questions are AG-Q1 to AG-Q3 under "Blocked / questions for the operator".
+**Status (2026-10-01): approved** (AG-Q1..AG-Q3 as recommended; see "Blocked / questions"). Leg 6 covers
+Stops 7 and 8 from the Trader's Berth bind (AG-Q1 (a)). Q24115 and Q2262 are held for their hubs (AG-Q2 (a)). Outside
+04:00–21:00 the bot works other quests before Q2284's escort, then waits for 04:00 (AG-Q3 (a)).
 
 **Where it starts.** From the `altgard-l5` snapshot (AK-09):
 - character 133297, a **level 20** Cleric at 139,699 of 627,122 XP, bound at Basfelt;
@@ -2503,8 +2505,11 @@ All are in Java; the C# templates and handlers are ports.
 The ten hand-ins are worth 203,775 XP (33% of level 20; Q2252 at its Spirit reward). Kills of grey monsters add little.
 
 **Not in this leg:**
-- Q2900 "No Escaping Destiny" (Pandaemonium) and the missions Q24014–Q24016 opened at level 20. AL-1 puts
-  them after the zone.
+- Q2900 "No Escaping Destiny" (Pandaemonium) opened at level 20. **The maintainer (2026-10-01): it is done at the
+  very end of the Altgard area.**
+- The missions Q24014–Q24016 (the Haramel and Bregirun instances) opened at level 20 too. **The maintainer
+  (2026-10-01): they are done in Altgard when convenient, as one of its last legs, near the highest level the
+  Cleric reaches here.** This refines AL-1, which had put them after the zone.
 - Q2262 starts at Japayerk here but ends at Mabrunerk at the East Gate. Under AG-Q1 (a) it is taken and
   held for Leg 7, like Q2242 in Leg 5.
 
@@ -2522,7 +2527,7 @@ The ten hand-ins are worth 203,775 XP (33% of level 20; Q2252 at its Spirit rewa
    a transformation.
 5. **Template quests at a new hub**, with Japayerk as the town merchant for the cube service.
 
-### Leg 6 TODO list (proposed)
+### Leg 6 TODO list
 
 The same loop protocol, with "AG" in place of "NA".
 
@@ -2556,7 +2561,18 @@ The same loop protocol, with "AG" in place of "NA".
 
 ## Blocked / questions for the operator
 
-**Leg 6, open 2026-10-01:**
+**Leg 6, answered 2026-10-01:** AG-Q1 **(a)**, AG-Q2 **(a)** and AG-Q3 **(a)**, all as recommended:
+- Leg 6 does Stops 7 and 8, worked from the Trader's Berth bind; the East Gate goes to the fortress-side leg.
+- Q24115 (Banatisai) and Q2262 (Mabrunerk) are taken, worked and held for their hubs.
+- Outside 04:00–21:00 the bot does the other quests first, then waits for Q2284's follower.
+
+Two more decisions from the maintainer the same day:
+- **Q2900** "No Escaping Destiny" is done at the very end of the Altgard area.
+- **Q24014–Q24016**, the level 20 missions with the Haramel and Bregirun instances, are done when
+  convenient, as one of the last Altgard legs, near the highest level the Cleric reaches here. This refines
+  AL-1 (b), which had put them after the zone.
+
+The original questions:
 - **AG-Q1 — How big is Leg 6?**
   - (a) Stops 7 and 8: Gerger Village and Trader's Berth, twelve quests (ten handed in, two held), worked from the Berth bind. Q2262
     is taken and held for the East Gate.
