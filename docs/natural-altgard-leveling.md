@@ -3295,8 +3295,18 @@ Heart obelisk and bound there. Relog and save `altgard-l9` from committed code; 
     Twenty-one contract/decision cases pass (`run/ah04-decisions.log`); smoke trace and completion record are
     under `run/ah04-smoke`, dashboard 17880. All pre-commit checks and Fast pass (`run/ah04-checks`, `ah04-fast`:
     all eleven scenarios, 69 passes/three switch skips). No server behavior/content changes or natural GM setup.
-- [ ] **AH-05 — Snapshot.** Enable `-Leg l9`, commit before capture, then capture `altgard-l9` from `altgard-l8`;
+- [x] **AH-05 — Snapshot.** Enable `-Leg l9`, commit before capture, then capture `altgard-l9` from `altgard-l8`;
   check dump hash, relog endpoint and owned restore, then drop owned schemas. Depends: AH-04.
+  - *Done 2026-10-02.* `ah05-capture`, seed 1, plays from `altgard-l8` on committed code
+    `96545cd84beeae8b1c050c49d25f2e353c9b376e` and saves the relog-verified `altgard-l9` endpoint.
+    Character 133297: Cleric 22, EXP 4,122,844, alive at (2663, 1663, 324.69), HP/MP/FP 1,649/2,738/60;
+    Heart bind (2656.19, 1660.59, 325.052), 378,680 Kinah, 63-slot cube and 134 completed journal entries.
+    All nine quests COMPLETE, work/collection items absent, Q2900/Q24014/Q24015 START/0 and Q24016 LOCKED/0
+    in the restored database (`run/ah05-restore-state.tsv`). No deaths and one retreat are recorded outcomes.
+  - Capture UTC `2026-10-02T18:52:32.6647466Z`, elapsed 53,984,074 ms. SHA256
+    `8520730dd512758a5c419bd569606f0e6e73c5de9c2f12b4285dc2ba9454793e` matches on restore; resume clock
+    54,004,074 ms. Both owned capture/restore schemas are dropped. Pre-commit checks pass (`run/ah05-checks`,
+    `run/ah05-evidence-checks`); the evidence amendment changes only this document, retaining the captured code.
 - [ ] **AH-06 — Full CLAUDE checklist and checkpoint.** Every listed command, evidence and correction of any
   failures, then checkpoint and stop. LIVE acceptance stays at the end of the Altgard area. Depends: AH-05.
 
@@ -3723,3 +3733,4 @@ The original questions follow.
 - 2026-10-02 AH-02: nine hand-ins, consumed work/collection items, nine debris uses and two ordinary respawn rounds pass on free account 211; three hub flights, real city delivery and learned Return, campaigns unchanged; first run and pre-commit checks pass. Combat is next.
 - 2026-10-02 AH-03: four level-21 Heart combat stages record nine distinct kills, no deaths/retreats on free account 212; neutral diagnostic targeting and a zero-time moving-target approach stall corrected, earlier traces retained; final encounter, Fast and pre-commit checks pass. Natural runner is next.
 - 2026-10-02 AH-04: first natural l9 smoke from altgard-l8 passes through relog, nine completions/work items consumed/campaigns unchanged; Cleric 22 alive at Heart, 35 distinct kills, no deaths/one retreat, three hub/eight pillar flights and nine debris uses; 21 decision cases, Fast and pre-commit checks pass, owned schema dropped. Snapshot is next.
+- 2026-10-02 AH-05: altgard-l9 captured from committed 96545cd84, hash-checked and restored; Cleric 22 alive at Heart, nine completions/no held quests, work items consumed, 378,680 Kinah, campaigns unchanged; both owned schemas dropped. Full checklist is next.

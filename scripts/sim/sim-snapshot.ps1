@@ -9,6 +9,7 @@
 #            The Leg 1 form:
 #            Leg 7 (AE-07): -AltgardLeg1 -Leg l7 -From altgard-l6 -Name altgard-l7.
 #            Leg 8 (AO-05): -AltgardLeg1 -Leg l8 -From altgard-l7 -Name altgard-l8.
+#            Leg 9 (AH-05): -AltgardLeg1 -Leg l9 -From altgard-l8 -Name altgard-l9.
 #            plays Altgard Leg 1 (docs/natural-altgard-leveling.md) and dumps its verified endpoint (`altgard-l12`).
 #   Restore: load a snapshot into a fresh owned schema and print the environment a resumed run needs.
 #   Verify:  restore, resume the retained character once and require the journey endpoint to be reached again
@@ -33,7 +34,7 @@ param(
 	[switch]$Bridge,
 	[switch]$AltgardLeg1,
 	[string]$From = 'altgard',
-	[ValidateSet('l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8')]
+	[ValidateSet('l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9')]
 	[string]$Leg = 'l1',
 	[switch]$NoBuild
 )
