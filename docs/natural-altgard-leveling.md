@@ -3324,6 +3324,89 @@ Heart obelisk and bound there. Relog and save `altgard-l9` from committed code; 
     earlier seven-kind evidence count. The committed `altgard-l9` capture and owned restore remain valid.
     Leg 9 is done; Leg 10 starts from that snapshot. Stop at this checkpoint; Q2900 remains last.
 
+## Leg 10: Black Claw ground and the remaining campaigns (level 22)
+
+**Status (2026-10-02): approved; implementation in progress.** The maintainer's goal, "Implement Leg 10 as needed",
+works AE-Q3 (a) and AL-2's solo group quests. Use the loop protocol with **BC** in place of NA, one item and
+one commit at a time on main. The existing hub-flight, bind, help-item, inventory and recorded-outcome policies
+apply. Q2900 remains the last Altgard work, after this leg. LIVE acceptance remains at the end of the area.
+
+**Start:** `altgard-l9`, character 133297, Cleric 22, alive and bound at Heart 700067; 378,680 Kinah, 63-slot cube,
+93 contract completions and 134 completed journal entries. Q2900/Q24014/Q24015 START/0; Q24016 LOCKED/0.
+Fly Heart transporter 205258 to the fortress (`df1a_impetosiumtoaltgard`, 61.4 seconds, 400 Kinah base), then
+bind at fortress 700065. Donabe remains the surplus merchant. Accept every eligible fortress quest before
+working the Black Claw ground; Taora, Dellalont and Jolk's campaign dialogs are reached on their ordinary
+ground routes. Q2283 takes the fortress teleporter to Vidar in Pandaemonium, then learned Return to the bind.
+
+| Quest | Java objective and gate | XP |
+|---|---|---|
+| Q2273 | After Q2272: Taora; three Emergency Provisions 182203252, 80% from veteran MuMus 210498/210499 | 14,220 |
+| Q2277 | Nemnef; ten Mau Feather Trinkets 182203251 from brutal hunters 210551/210552 | 39,600 |
+| Q2280 | After Q2286: Morn; four brutal spellshifters 210508/210509 | 33,690 |
+| Q2281 | After Q2287: Valurion; all three counters: three seekers, five bodyguards and five scratchers | 83,400 |
+| Q2282 | After Q2279: Suthran; three brutal warlocks 210538/210539 | 66,150 |
+| Q2283 | After Q2282: Suthran's work item 182203255 to Vidar 204052 in Pandaemonium | 36,000 |
+| Q24014 | Dellalont 203665, Jolk 203668; var 2 to 5 through three 210562/216914 kills; at var 5 collect one 182215360 from 210751/216893, return to Jolk | 228,880 |
+| Q24015 | Taora; movie 218, var 1; enter `DF1A_SENSORYAREA_Q2021_206013_2_220030000` for var 2, kill three Zemurru's Totems 700099, Suthran reward | 228,880 |
+| Q24016 | Opens after Q24011–Q24015; Suthran's Cleric dialog/movie 66 teleports to the Altgard gate; ordinary portal into Bregirun, guardian stone, spawned Kuninasha, Abyss Gate/movie 154 and Suthran reward | 228,880 |
+
+Total: **959,700 quest XP**, six templates and three existing campaign handlers. Java `ce54b7931` is the spec:
+`quest_script_data/altgard.xml`, ReportTo, ItemCollecting, MonsterHunt, `_24014StompOutThePlot`,
+`_24015TotemPlowed`, `_24016AStrangeNewThread`, PortalAI, ActionItemNpcAI and PortalService.
+The older outline describes Haramel with these campaigns: shipped 216914 is there, but 210562 is a shipped
+Altgard alternative and both Orb sources are on Altgard. Q24014 can therefore finish entirely on Altgard.
+Q24015 is on Altgard; Q24016 requires Bregirun 320030000. No new server content is planned.
+
+**Bregirun contract to prove.** Suthran SETPRO1 puts the quest at var 1 and teleports to
+(2467.6052, 2548.0076, 316.12375). Portal 700089 at (2451.53, 2546.45, 317.129) has a three-second use bar
+and admits Q24016 at var 1 or above (or COMPLETE); the natural entry is at var 1. Entry is (274.2, 171.7, 204.3),
+setting var 2 on enter-world. Guardian stone 700140
+at (261.418, 229.531, 213.918) spawns Kuninasha 210753 at (260.12, 234.93, 216), moving the Cleric branch
+to var 13; its kill gives var 14. Gate 700141 at (250.91148, 270.45502, 230.087) sets REWARD and movie 154
+returns to the fortress. A death, or leaving the instance while START at var 2 or above, resets to var 1;
+record it and re-enter through the ordinary portal. Dimension Exit 700184 is the ordinary fallback exit.
+Instance ground routes, local enemies and movie acknowledgements must be proved before the natural run.
+
+**Endpoint:** all nine quests COMPLETE, their work/collection items consumed, Q2900 START/0, no held quests,
+alive on Altgard within 60 m of fortress 700065 and bound there, level at least 22, verified across relog.
+Capture `altgard-l10` only from committed code, restore-check the dump in an owned schema and drop it.
+Gathering, coin loops and unapproved D32 quests stay deferred.
+
+### Leg 10 TODO list
+
+- [x] **BC-00 — Scope and Java/data audit.** Pin the nine quests, campaign gates, portal/instance/death/movie
+  behavior, start, endpoint and exclusions; establish this list. Read Java first, inspect shipped data and
+  Leg 9 evidence; verify the facts once and run the pre-commit checks. Depends: AH-06.
+  - *Done 2026-10-02.* From AH-06's `63d23d4d1`: audited Java `ce54b7931`, all nine shipped quest definitions,
+    sources/spawns, bind, portal paths/locations and the Bregirun solo restriction (`run/bc00-spec.txt`).
+    Six templates and three campaigns, 959,700 XP; Q2281 has three independent counters and Q24016 opens
+    after all five preceding campaigns. Existing Altgard sources avoid a mandatory Haramel trip. The portal
+    uses the Java minimum-step gate; death/leave resets the Cleric's instance branch to var 1. Scope and
+    BC-01..BC-08 are recorded; no server changes. All pre-commit checks pass (`run/bc00-checks`).
+- [ ] **BC-01 — Contract, plans and decisions.** Register l10, six compiled template plans, all campaign
+  steps, collections, kill/zone/instance transitions and rewards. Prove Q2281 requires all three counters,
+  Q24016's complete gate and map transitions, preserved Q2900 and fortress endpoint. Depends: BC-00.
+- [ ] **BC-02 — Travel in SIM.** Free controlled probe, level-22 route plans: every giver/objective kind,
+  campaign source, totem, city recipient and Bregirun gate; actual Heart-to-fortress flight. Prove real portal
+  entry/exit and the instance's checked ground routes. Clear aggressive neighbours only in the probe;
+  drop the client view before setup teleports. Record failed routes and hazards. Depends: BC-01.
+- [ ] **BC-03 — Template quests in SIM.** Free controlled probe: all six templates, all three Q2281 counters,
+  work-item consumption, real Vidar trip/Return and ordinary source respawns when needed. Depends: BC-02.
+- [ ] **BC-04 — Campaigns in SIM.** Free controlled probe: Q24014's kills and gated Orb, Q24015 zone and three
+  totems, Q24016 unlock, quest teleport, real instance portal, guardian use/spawn, kill, movie exit and reward.
+  Prove death/leave recovery and retained Q2900; setup is never route evidence. Depends: BC-02.
+- [ ] **BC-05 — Combat at level 22.** Encounter harness at shipped relative spacing against the group target
+  mixes, campaign sources and Bregirun enemies/Kuninasha. Natural combat, learned skills and approved supplies;
+  record distinct kills, deaths and retreats. Read Java and retail AI evidence first. Depends: BC-02.
+- [ ] **BC-06 — Natural runner and smoke.** Implement the proven gaps only; restore `altgard-l9` and run
+  `AF_ALTGARD=l10` with the snapshot runner environment through all nine quests and relog. Hub transporter,
+  ordinary city/instance travel, campaign recovery, consumed items and unchanged Q2900; dashboard enabled.
+  Retain failures/outcomes and drop the owned schema. Depends: BC-03, BC-04, BC-05.
+- [ ] **BC-07 — Snapshot.** Enable `-Leg l10`, commit before capture, then capture `altgard-l10` from `altgard-l9`.
+  Verify hash, relog endpoint and owned restore; drop both schemas. Depends: BC-06.
+- [ ] **BC-08 — Full CLAUDE checklist and checkpoint.** Every listed command with retained evidence and
+  corrections; tick, commit on main and stop. Q2900 and end-of-area LIVE follow later. Depends: BC-07.
+
 ## Blocked / questions for the operator
 
 **Leg 7, answered 2026-10-02:** AE-Q1 **(a)**, AE-Q2 **(a)** and AE-Q3 **(a)**, all as recommended:
@@ -3749,3 +3832,4 @@ The original questions follow.
 - 2026-10-02 AH-04: first natural l9 smoke from altgard-l8 passes through relog, nine completions/work items consumed/campaigns unchanged; Cleric 22 alive at Heart, 35 distinct kills, no deaths/one retreat, three hub/eight pillar flights and nine debris uses; 21 decision cases, Fast and pre-commit checks pass, owned schema dropped. Snapshot is next.
 - 2026-10-02 AH-05: altgard-l9 captured from committed 96545cd84, hash-checked and restored; Cleric 22 alive at Heart, nine completions/no held quests, work items consumed, 378,680 Kinah, campaigns unchanged; both owned schemas dropped. Full checklist is next.
 - 2026-10-02 AH-06: all 33 CLAUDE commands pass on da427b420, solution 5,080 passed/97 skips, Fast 69 passed/three switch skips/all eleven scenarios; five baked maps validate. Temporary runner argument typo corrected with invalid attempt retained. Leg 9 is done; altgard-l9 starts Leg 10. No push.
+- 2026-10-02 BC-00: Leg 10 scope and Java/data audit complete from 63d23d4d1; six templates/three campaigns, 959,700 XP, Q2281's three counters, real Bregirun entry/recovery/movie exit, fortress bind/endpoint and retained Q2900; pre-commit checks pass. Contract and plans are next.
