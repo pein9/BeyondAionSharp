@@ -1049,6 +1049,23 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep($"af-{sequence:000}-{next.Action}", next.StepKey ?? next.Action);
 					switch (next.Action)
 					{
+						case "travel-to-map":
+						{
+							if (next.MapId == leg.Hub.MapId)
+								await UseLearnedReturnToBindAsync();
+							else
+							{
+								NaturalAltgardMapTrip trip = leg.MapTripList.Single(entry => entry.MapId == next.MapId);
+								await EnsureOnGroundAsync();
+								int teleporter = await ApproachShippedSpawnAsync(trip.TeleporterNpcId);
+								NaturalServiceOutcome travelled = await new NaturalServiceSteps(session).TeleportAsync(teleporter,
+									session.Api.World.Objects[teleporter].Position, trip.TalkRange, trip.LocationId, trip.Fare, trip.MapId, token);
+								Require.True(travelled.IsDone, travelled.Reason);
+							}
+							navigator = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World));
+							Require.Equal(next.MapId, session.Api.World.MapId);
+							break;
+						}
 						case "refresh-observation":
 							await session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
 							break;
@@ -1535,7 +1552,16 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				async Task PlayContractStepAsync(NaturalAltgardStep step)
 				{
 					int npc;
-					if (step.Flight)
+					int stepMap = leg.StepMap(step);
+					Require.Equal(stepMap, session.Api.World.MapId);
+					if (stepMap != leg.Hub.MapId)
+					{
+						NaturalNavigationResult reached = await NaturalIshalgenNavigator.ApproachNpcAsync(stepMap, step.NpcId,
+							new BotPosition(step.Position[0], step.Position[1], step.Position[2], 0), navigator, token);
+						Require.True(reached.Arrived, $"{step.Key}: {reached.Reason}");
+						npc = Require.IsType<int>(reached.TargetObjectId);
+					}
+					else if (step.Flight)
 					{
 						await FlyToAsync(Rock());
 						npc = await session.WaitForNpcAsync(step.NpcId, token);

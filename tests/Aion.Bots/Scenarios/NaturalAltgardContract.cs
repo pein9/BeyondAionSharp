@@ -44,7 +44,8 @@ public sealed record NaturalAltgardContract(
 	NaturalAltgardRewardChoice[]? RewardChoices = null,
 	NaturalAltgardTimedSpawn[]? TimedSpawns = null,
 	NaturalAltgardHeld[]? Held = null,
-	NaturalAltgardCubeExpansion? CubeExpansion = null)
+	NaturalAltgardCubeExpansion? CubeExpansion = null,
+	NaturalAltgardMapTrip[]? MapTrips = null)
 {
 	/// <summary>The contract file and plan directory of each leg (none when the leg has no template quests).</summary>
 	public static readonly IReadOnlyDictionary<string, (string Contract, string? Plans)> Legs = new Dictionary<string, (string, string?)>
@@ -68,6 +69,8 @@ public sealed record NaturalAltgardContract(
 	public NaturalAltgardAvoid[] AvoidList => Avoid ?? [];
 	public NaturalAltgardTimedSpawn[] TimedSpawnList => TimedSpawns ?? [];
 	public NaturalAltgardHeld[] HeldList => Held ?? [];
+	public NaturalAltgardMapTrip[] MapTripList => MapTrips ?? [];
+	public int StepMap(NaturalAltgardStep step) => step.MapId ?? Hub.MapId;
 	/// <summary>Every chosen reward of the leg: the campaign's (<see cref="RewardChoice"/>) and the others'.</summary>
 	public NaturalAltgardRewardChoice[] RewardChoiceList => [.. RewardChoice is { } choice ? [choice] : Array.Empty<NaturalAltgardRewardChoice>(), .. RewardChoices ?? []];
 
@@ -103,6 +106,8 @@ public sealed record NaturalAltgardContract(
 			throw new InvalidDataException("Natural Altgard names an unknown area.");
 		foreach (NaturalAltgardStep step in contract.Steps)
 		{
+			if (contract.StepMap(step) != contract.Hub.MapId && !contract.MapTripList.Any(trip => trip.MapId == contract.StepMap(step)))
+				throw new InvalidDataException($"Natural Altgard step {step.Key} has no trip to its map.");
 			if (step.ExpectedStatus is not ("OFFER" or "START" or "REWARD"))
 				throw new InvalidDataException($"Natural Altgard step {step.Key} has an unknown status.");
 			foreach (string action in step.Actions)
@@ -208,10 +213,14 @@ public sealed record NaturalAltgardQuest(int Id, string Category, int MinimumLev
 
 /// <summary>One scripted dialog step. <c>OFFER</c> is a quest the player has not taken yet.</summary>
 public sealed record NaturalAltgardStep(string Key, int QuestId, int? Var, string? Status, int NpcId, float[] Position,
-	int TalkRange, string[] Actions, int[] Pages, int? MovieId, int? ReceivesItemId, string? Area, bool Flight, string? Correction)
+	int TalkRange, string[] Actions, int[] Pages, int? MovieId, int? ReceivesItemId, string? Area, bool Flight, string? Correction,
+	int? MapId = null)
 {
 	public string ExpectedStatus => Status ?? "START";
 }
+
+/// <summary>AE-00: a quest trip from the hub map by teleporter; Return brings the Cleric back to its hub bind.</summary>
+public sealed record NaturalAltgardMapTrip(int MapId, int TeleporterNpcId, int LocationId, int Fare, float TalkRange);
 
 /// <param name="Zone">AB-01: where the item must be used when not <paramref name="Anywhere"/> (Q24013's poison), and the
 /// monsters the use spawns (Java <c>onItemUseEvent</c>: two Feral Black Claw Sharpeyes).</param>

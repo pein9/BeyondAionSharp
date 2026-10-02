@@ -44,7 +44,7 @@ public sealed record NaturalTemplateObjective(int QuestId, int? ItemId, int Item
 /// <summary>One next action in Leg 1: a template phase, a contract step (by key), the remedy, the air kills, a hunt for
 /// level, the way back to the hub, or a stop.</summary>
 public sealed record NaturalAltgardDecision(int Sequence, string Action, string? StepKey, int? QuestId, string Outcome, string Reason,
-	NaturalDecisionCheck[] Checks);
+	NaturalDecisionCheck[] Checks, int? MapId = null);
 
 /// <summary>
 /// AF-08 (docs/natural-altgard-leveling.md): Leg 1's pure decision rule over the contract. Template quests are worked
@@ -83,8 +83,12 @@ public static class NaturalAltgardDecisionEngine
 		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives, int sequence, IReadOnlySet<int>? only = null)
 	{
 		var checks = new List<NaturalDecisionCheck>();
-		NaturalAltgardDecision Plan(string action, int? questId, string reason, string? stepKey = null) =>
-			new(sequence, action, stepKey, questId, "planned", reason, [.. checks]);
+		NaturalAltgardDecision Plan(string action, int? questId, string reason, string? stepKey = null)
+		{
+			int map = action == "talk" && stepKey != null ? contract.StepMap(contract.Steps.Single(step => step.Key == stepKey)) : contract.Hub.MapId;
+			return new(sequence, state.MapId != map && action != "revive-at-bind" ? "travel-to-map" : action,
+				stepKey, questId, "planned", reason, [.. checks], map);
+		}
 		NaturalAltgardDecision Stop(string action, string outcome, string reason, int? questId = null) =>
 			new(sequence, action, null, questId, outcome, reason, [.. checks]);
 
@@ -92,15 +96,16 @@ public static class NaturalAltgardDecisionEngine
 			return Stop("refresh-observation", "planned", "Wait for a synchronized client view.");
 		if (state.IsDead)
 			return Plan("revive-at-bind", null, "Dead: revive at the Altgard Fortress obelisk.");
-		if (state.MapId != contract.Hub.MapId)
+		bool offHub = state.MapId != contract.Hub.MapId;
+		if (offHub && !contract.MapTripList.Any(trip => trip.MapId == state.MapId))
 			return Stop("wrong-map", "blocked", $"{contract.Leg} is on map {contract.Hub.MapId}; the Cleric is on {state.MapId}.");
 		// AB-08, the standing bind policy (AB-Q5): bind at the hub's obelisk first.
-		if (contract.Bind is { OnArrival: true } bind && !BoundAt(bind, contract.Hub.MapId, state.Bind))
+		if (!offHub && contract.Bind is { OnArrival: true } bind && !BoundAt(bind, contract.Hub.MapId, state.Bind))
 			return Plan("bind", null, $"Bind at the {contract.Hub.Key} obelisk ({bind.NpcId}) before working out of it.");
 
 		// AK-08: a held quest (AK-Q2) is done for this leg once it is taken and its objective is met; its hand-in is a later leg's.
 		// AK-Q4 (a): the NPC cube expansions come first, bought with the Cleric's own kinah while it has enough.
-		if (contract.CubeExpansion is { } cube && (state.CubeNpcExpansions ?? 0) < cube.Levels)
+		if (!offHub && contract.CubeExpansion is { } cube && (state.CubeNpcExpansions ?? 0) < cube.Levels)
 		{
 			int bought = state.CubeNpcExpansions ?? 0;
 			if (state.Kinah >= cube.Prices[bought] + cube.Fare)
@@ -110,12 +115,13 @@ public static class NaturalAltgardDecisionEngine
 		}
 
 		// AK-08: a cube too full to take a loot (Java refuses it with STR_MSG_DICE_INVEN_ERROR) is emptied at the town's merchant.
-		if (contract.Town?.VendorNpcId is int vendor && state.FreeCubeSlots is int free && free < NaturalInventoryPlan.QuestFreeSlotReserve)
+		if (!offHub && contract.Town?.VendorNpcId is int vendor && state.FreeCubeSlots is int free && free < NaturalInventoryPlan.QuestFreeSlotReserve)
 			return Plan("town-service", null, $"The cube has {free} free slots: sell the surplus at {vendor} in {contract.Town.Key}.");
 
 		NaturalAltgardQuest[] open = contract.Order.Select(contract.Quest)
 			.Where(quest => !Done(quest.Id) && !HeldReady(quest.Id) && (only == null || only.Contains(quest.Id))).ToArray();
-		NaturalAltgardQuest[] eligible = open.Where(Eligible).ToArray();
+		NaturalAltgardQuest[] eligible = open.Where(Eligible).OrderByDescending(quest => offHub && Status(quest.Id) == Start &&
+			contract.StepsFor(quest.Id).Any(step => contract.StepMap(step) == state.MapId)).ToArray();
 		// A hand-in where the leg ends (Leg 2: Q2215 at Manir's Campsite, AM-Q1) waits until everything else is done.
 		string? endArea = contract.Endpoint.Anchor is { } end
 			? contract.Areas.Where(area => area.Contains(end[0], end[1], end[2]))
@@ -123,11 +129,11 @@ public static class NaturalAltgardDecisionEngine
 		bool AtTheEnd(NaturalAltgardQuest quest) => endArea != null && quest.Area == endArea;
 
 		// Template quests, hub-style: accept, work, claim.
-		foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate && Status(quest.Id) is not (Start or Reward)))
+		foreach (NaturalAltgardQuest quest in eligible.Where(quest => !offHub && quest.IsTemplate && Status(quest.Id) is not (Start or Reward)))
 			return Plan("template-accept", quest.Id, $"Q{quest.Id}: accept at the hub with the other hub quests.");
 		NaturalCarrierChoice? carrierWait = null;
 		(int QuestId, string Key, int Minutes, string Reason)? escortWait = null;
-		foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate && Status(quest.Id) == Start && !WorkDone(quest.Id)))
+		foreach (NaturalAltgardQuest quest in eligible.Where(quest => !offHub && quest.IsTemplate && Status(quest.Id) == Start && !WorkDone(quest.Id)))
 		{
 			// AK-08: items that drop only from monsters that exist by the hour (Q2292's ring carriers) are hunted when a carrier
 			// can be reached in its window; otherwise the wait goes to the other work (AK-Q3).
@@ -146,7 +152,7 @@ public static class NaturalAltgardDecisionEngine
 			checks.Add(new("carrier", "wait", $"Q{quest.Id}: {choice.Reason}"));
 			carrierWait ??= choice with { Reason = $"Q{quest.Id}: {choice.Reason}" };
 		}
-		foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate && WorkDone(quest.Id) && !Held(quest.Id) && !AtTheEnd(quest)))
+		foreach (NaturalAltgardQuest quest in eligible.Where(quest => !offHub && quest.IsTemplate && WorkDone(quest.Id) && !Held(quest.Id) && !AtTheEnd(quest)))
 			return Plan("template-claim", quest.Id, $"Q{quest.Id}: objectives done; claim it.");
 
 		// Scripted quests, in the contract's order.
@@ -232,6 +238,7 @@ public static class NaturalAltgardDecisionEngine
 		}
 
 		// AK-08: nothing else to do before a carrier's window opens: wait for it (the runner rests at the hub meanwhile).
+		if (offHub) return Plan("return-to-hub", null, "The work on this map is done; Return to the hub bind.");
 		if (carrierWait != null)
 			return Plan("wait-for-carrier", carrierWait.Carrier!.QuestId, $"{carrierWait.Reason} Wait {carrierWait.WaitGameMinutes} game minutes.",
 				$"{carrierWait.Carrier.NpcId}");

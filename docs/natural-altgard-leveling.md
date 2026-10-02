@@ -2911,9 +2911,21 @@ of the area, as the maintainer placed them.
 
 The same loop protocol, with "AE" in place of "NA".
 
-- [ ] **AE-00 — Quest steps on another map.** The contract carries a step's map, and the engine plans it. The runner
+- [x] **AE-00 — Quest steps on another map.** The contract carries a step's map, and the engine plans it. The runner
   travels to Pandaemonium by the fortress teleporter, as the cube errand does, talks there, and comes back by Return.
   Unit tests, and a SIM probe of Q2278 end to end.
+  - *Done 2026-10-02.* Steps have an optional `mapId` (the hub map by default), and the contract names its teleporter
+    trips. The engine plans `travel-to-map`, keeps a started quest's city talks together, and returns for the hub talk.
+    The runner uses the existing teleporter, per-map navigator and learned Return.
+  - `SecretProposalTravelsToPandaemoniumAndReturnsToSuthran` (`ae00-proposal200`, free account 200) completes Q2278:
+    Emgata, Suthran, Cavalorn and Balder in Pandaemonium, Return to the fortress bind, and Suthran's reward.
+    The fare is 706 Kinah after `SM_PRICES`. Local approaches are setup teleports on the probe only, with hostile
+    neighbours cleared and `BeginWorldReload` before each; the map trip and Return are ordinary client actions.
+  - Six map-step unit cases pass; all 41 NaturalAltgard tests pass. `ae00-fast` passes all 11 scenarios (61 tests,
+    three switch-dependent skips). Warning baseline, logger, clock-read and fidelity checks pass.
+  - Initial probe failures are retained in `run/ae00-probe*.log`: missing client prerequisite evidence (including
+    Q2208 in the probe fixture), then a missing reward confirmation. Both were probe setup/contract defects, fixed
+    before the passing run. The initial account 63 overlapped Full's alliance scenario; the final probe uses 200.
 - [ ] **AE-01 — The Leg 7 contract and plans.** `natural-altgard-l7-contract.json` from the l6 endpoint:
   - the fortress bind (700065) and a fortress merchant for the town service;
   - the held hand-ins Q24233 and Q2262, and Q2146 held for Lateni;
@@ -3348,3 +3360,4 @@ The original questions follow.
 - 2026-10-02 AG-09: the full checklist passes on f0f364b60; Leg 6 is done, and Leg 7 is next to plan.
 - 2026-10-02 Leg 7 proposed: Altgard Fortress and the East Gate, thirteen quests from the fortress bind (AE-Q1..AE-Q3 open).
 - 2026-10-02 Leg 7 approved: AE-Q1..AE-Q3 as recommended; ready for Loop mode (AE-00..AE-08).
+- 2026-10-02 AE-00: quest steps carry their map; Q2278's Pandaemonium teleporter trip, city talks and Return pass in SIM; Fast and pre-commit checks pass (implementation in this AE-00 commit).

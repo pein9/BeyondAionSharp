@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "ae00-secret-proposal-probe",
+  "start": {
+    "contract": "natural-ascension-contract.json",
+    "snapshot": "altgard",
+    "mapId": 220030000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 21,
+    "bindNpcId": 700065,
+    "completedQuestIds": [
+      2008,
+      2009,
+      2904,
+      24010,
+      2208
+    ],
+    "lockedQuestIds": [
+      24011
+    ]
+  },
+  "hub": {
+    "key": "altgard-fortress",
+    "mapId": 220030000,
+    "anchor": [
+      1658.44,
+      1815.301,
+      254.099
+    ],
+    "radius": 160
+  },
+  "areas": [],
+  "quests": [
+    {
+      "id": 2278,
+      "category": "NORMAL",
+      "minimumLevel": 21,
+      "rewardExperience": 48600,
+      "prerequisite": 2208,
+      "handler": "custom",
+      "template": null,
+      "startNpcId": 203590,
+      "area": null
+    }
+  ],
+  "order": [
+    2278
+  ],
+  "steps": [
+    {
+      "key": "q2278-offer",
+      "questId": 2278,
+      "var": null,
+      "status": "OFFER",
+      "npcId": 203590,
+      "position": [
+        1736.0,
+        1691.0,
+        256.75
+      ],
+      "talkRange": 5,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1"
+      ],
+      "pages": [
+        1011
+      ],
+      "movieId": null,
+      "receivesItemId": null,
+      "area": null,
+      "flight": false,
+      "correction": null,
+      "mapId": 220030000
+    },
+    {
+      "key": "q2278-suthran",
+      "questId": 2278,
+      "var": 0,
+      "status": null,
+      "npcId": 203557,
+      "position": [
+        1662.63,
+        1748.56,
+        260.236
+      ],
+      "talkRange": 5,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1352,
+        10
+      ],
+      "movieId": null,
+      "receivesItemId": null,
+      "area": null,
+      "flight": false,
+      "correction": null,
+      "mapId": 220030000
+    },
+    {
+      "key": "q2278-cavalorn",
+      "questId": 2278,
+      "var": 1,
+      "status": null,
+      "npcId": 204206,
+      "position": [
+        1368.77,
+        1051.26,
+        206.533
+      ],
+      "talkRange": 5,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1693,
+        10
+      ],
+      "movieId": null,
+      "receivesItemId": null,
+      "area": null,
+      "flight": false,
+      "correction": null,
+      "mapId": 120010000
+    },
+    {
+      "key": "q2278-balder",
+      "questId": 2278,
+      "var": 2,
+      "status": null,
+      "npcId": 204075,
+      "position": [
+        1469.1,
+        1466.08,
+        177.816
+      ],
+      "talkRange": 5,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO3"
+      ],
+      "pages": [
+        2034,
+        10
+      ],
+      "movieId": null,
+      "receivesItemId": null,
+      "area": null,
+      "flight": false,
+      "correction": null,
+      "mapId": 120010000
+    },
+    {
+      "key": "q2278-end",
+      "questId": 2278,
+      "var": 3,
+      "status": null,
+      "npcId": 203557,
+      "position": [
+        1662.63,
+        1748.56,
+        260.236
+      ],
+      "talkRange": 5,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        2375,
+        5
+      ],
+      "movieId": null,
+      "receivesItemId": null,
+      "area": null,
+      "flight": false,
+      "correction": null,
+      "mapId": 220030000
+    },
+    {
+      "key": "q2278-reward",
+      "questId": 2278,
+      "var": null,
+      "status": "REWARD",
+      "npcId": 203557,
+      "position": [
+        1662.63,
+        1748.56,
+        260.236
+      ],
+      "talkRange": 5,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECTED_QUEST_NOREWARD"
+      ],
+      "pages": [
+        5
+      ],
+      "movieId": null,
+      "receivesItemId": null,
+      "area": null,
+      "flight": false,
+      "correction": null,
+      "mapId": 220030000
+    }
+  ],
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "unhandedWorkItemIds": {},
+  "flight": null,
+  "excluded": [],
+  "endpoint": {
+    "mapId": 220030000,
+    "completedQuestIds": [
+      2278
+    ],
+    "inHub": true,
+    "alive": true,
+    "minimumLevel": 21,
+    "snapshot": "ae00-probe"
+  },
+  "bind": {
+    "npcId": 700065,
+    "position": [
+      1658.44,
+      1815.301,
+      254.099
+    ],
+    "onArrival": true,
+    "price": 451,
+    "acceptRange": 5
+  },
+  "mapTrips": [
+    {
+      "mapId": 120010000,
+      "teleporterNpcId": 203581,
+      "locationId": 7,
+      "fare": 500,
+      "talkRange": 5
+    }
+  ]
+}
