@@ -3415,8 +3415,18 @@ Gathering, coin loops and unapproved D32 quests stay deferred.
     interaction, the exit/recipient talk ranges, a misplaced spell sight requirement and an incorrect static
     data accessor were corrected. All pre-commit checks and `bc02-fast` pass (70 tests, three switch skips,
     all eleven scenarios). The fixture reserves free accounts 213–216 for Leg 10. No server behavior/content changes.
-- [ ] **BC-03 — Template quests in SIM.** Free controlled probe: all six templates, all three Q2281 counters,
+- [x] **BC-03 — Template quests in SIM.** Free controlled probe: all six templates, all three Q2281 counters,
   work-item consumption, real Vidar trip/Return and ordinary source respawns when needed. Depends: BC-02.
+  - *Done 2026-10-02.* From `86c76155b`, `bc03-templates-final` passes on free account 214, Cleric 22:
+    all six server/client hand-ins complete and every collection/work item is consumed. Q2281 refuses hand-in
+    at (3, 0, 0) and (3, 5, 0), preserving its packed counters and START status, then completes at (3, 5, 5).
+    Thirty-four controlled 1-HP kills, three ordinary source waits and no controlled replenishments; the first
+    hunter returns at its shipped spot after 301 seconds. Paid Pandaemonium transport costs 706 Kinah,
+    Vidar consumes 182203255 and learned Return reaches the fortress bind alive. Campaign states are preserved.
+  - The first probe's deliberate partial rejection tripped the unexpected-dialog-echo detector. It now uses
+    the existing explicit expected-rejection API and asserts the exact response; server behavior is unchanged.
+    The passing corrected draft's nullable spawn warnings are fixed and the final probe passes without new
+    warnings. Logs/traces retained under `run/bc03-templates*`; all pre-commit checks pass (`run/bc03-checks`).
 - [ ] **BC-04 — Campaigns in SIM.** Free controlled probe: Q24014's kills and gated Orb, Q24015 zone and three
   totems, Q24016 unlock, quest teleport, real instance portal, guardian use/spawn, kill, movie exit and reward.
   Prove death/leave recovery and retained Q2900; setup is never route evidence. Depends: BC-02.
@@ -3860,3 +3870,4 @@ The original questions follow.
 - 2026-10-02 BC-00: Leg 10 scope and Java/data audit complete from 63d23d4d1; six templates/three campaigns, 959,700 XP, Q2281's three counters, real Bregirun entry/recovery/movie exit, fortress bind/endpoint and retained Q2900; pre-commit checks pass. Contract and plans are next.
 - 2026-10-02 BC-01: l10 contract and six plans, all independent Q2281 counters and Q24016 prerequisites/map decisions; 36 scoped cases, Fast and pre-commit checks pass, earlier drafts retained. Travel is next.
 - 2026-10-02 BC-02: 54 level-22 travel legs, 20 source kinds/ten totems, actual Heart flight, quest teleport, both Bregirun portals, Vidar dialog and learned Returns pass on free account 213; generated Bregirun mesh rebakes identically. Earlier drafts retained; Fast and pre-commit checks pass. Template quests are next.
+- 2026-10-02 BC-03: six template hand-ins/work items consumed, both partial Q2281 hand-ins rejected, 34 controlled kills/three ordinary respawn waits and real Vidar delivery/Return pass on free account 214; expected-rejection labeling and nullable warnings corrected, draft evidence retained; pre-commit checks pass. Campaigns are next.
