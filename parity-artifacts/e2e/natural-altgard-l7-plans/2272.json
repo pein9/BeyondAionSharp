@@ -1,0 +1,223 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2272,
+    "name": "The Lost Cube",
+    "nameId": 1103372,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 15,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2272,
+        "start_npc_ids": 203669
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203669,
+        "name": "taora",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1719.56,
+            "y": 2167.43,
+            "z": 256.31,
+            "heading": 79,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203669,
+      "name": "taora",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1719.56,
+          "y": 2167.43,
+          "z": 256.31,
+          "heading": 79,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203669,
+      "name": "taora",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1719.56,
+          "y": 2167.43,
+          "z": 256.31,
+          "heading": 79,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182203248,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "drop_each_member": 1,
+          "item_id": 182203248,
+          "npc_id": 210502,
+          "npc": {
+            "id": 210502,
+            "name": "black claw sleekpaw",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1632.31,
+                "y": 2242.53,
+                "z": 251.138,
+                "heading": 72,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1681.44,
+                "y": 2198.23,
+                "z": 251.396,
+                "heading": 91,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1699.34,
+                "y": 2173.07,
+                "z": 253.376,
+                "heading": 55,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1743.76,
+                "y": 2223.59,
+                "z": 249.941,
+                "heading": 2,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1774.09,
+                "y": 2205.54,
+                "z": 270.137,
+                "heading": 100,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203669,
+          "name": "taora",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1719.56,
+              "y": 2167.43,
+              "z": 256.31,
+              "heading": 79,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 14625,
+        "gold": 2380,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2272,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 15,
+      "name": "The Lost Cube",
+      "nameId": 1103372,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182203248
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 14625,
+          "gold": 2380
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "drop_each_member": 1,
+          "item_id": 182203248,
+          "npc_id": 210502
+        }
+      }
+    ]
+  }
+}

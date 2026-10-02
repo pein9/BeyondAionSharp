@@ -56,6 +56,7 @@ public sealed record NaturalAltgardContract(
 		["l4"] = ("natural-altgard-l4-contract.json", "natural-altgard-l4-plans"),
 		["l5"] = ("natural-altgard-l5-contract.json", "natural-altgard-l5-plans"),
 		["l6"] = ("natural-altgard-l6-contract.json", "natural-altgard-l6-plans"),
+		["l7"] = ("natural-altgard-l7-contract.json", "natural-altgard-l7-plans"),
 	};
 
 	public NaturalAltgardObjectUse[] ObjectUseList => ObjectUses ?? [];
@@ -180,6 +181,7 @@ public sealed record NaturalAltgardContract(
 			.Concat(SpawnList.Select(spawn => spawn.TriggerNpcId))
 			.Concat(TimedSpawnList.Select(spawn => spawn.NpcId))
 			.Concat(CubeExpansion is { } cube ? [cube.TeleporterNpcId] : [])
+			.Concat(MapTripList.Select(trip => trip.TeleporterNpcId))
 			.Concat(Bind is { } bind ? [bind.NpcId] : [])
 			.Concat(CollectionList.SelectMany(collection => collection.Items.SelectMany(item => item.SourceNpcIds)))
 			.Append(Start.BindNpcId).Concat(AirKills is { } air ? [air.NpcId] : [])

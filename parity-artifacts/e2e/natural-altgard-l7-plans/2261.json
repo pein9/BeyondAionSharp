@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2261,
+    "name": "Failure to Report",
+    "nameId": 1103361,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 15,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 203665,
+        "id": 2261,
+        "start_npc_ids": 203559
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203559,
+        "name": "meiyer",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1667.09,
+            "y": 1747.48,
+            "z": 260.282,
+            "heading": 39,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203559,
+      "name": "meiyer",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1667.09,
+          "y": 1747.48,
+          "z": 260.282,
+          "heading": 39,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203665,
+      "name": "dellalont",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1751.53,
+          "y": 2006.95,
+          "z": 250.0,
+          "heading": 32,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203665,
+          "name": "dellalont",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1751.53,
+              "y": 2006.95,
+              "z": 250.0,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 5070,
+        "gold": 1020,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000006
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2261,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 15,
+      "name": "Failure to Report",
+      "nameId": 1103361,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 5070,
+          "gold": 1020
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000006
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

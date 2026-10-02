@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2243,
+    "name": "A Crystal Hand Mirror",
+    "nameId": 1103343,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 15,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 798035,
+        "id": 2243,
+        "start_npc_ids": 798031
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 798031,
+        "name": "chagarinerk",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1558.5,
+            "y": 1865.05,
+            "z": 272.609,
+            "heading": 115,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 798031,
+      "name": "chagarinerk",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1558.5,
+          "y": 1865.05,
+          "z": 272.609,
+          "heading": 115,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 798035,
+      "name": "kagorinerk",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2702.0,
+          "y": 1022.0,
+          "z": 313.0,
+          "heading": 30,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 798035,
+          "name": "kagorinerk",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2702.0,
+              "y": 1022.0,
+              "z": 313.0,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 4305,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000006
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2243,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 15,
+      "name": "A Crystal Hand Mirror",
+      "nameId": 1103343,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 4305
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000006
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2286,
+    "name": "The Brigade General's Order",
+    "nameId": 1103386,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2279
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 203560,
+        "id": 2286,
+        "start_npc_ids": 203557
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203557,
+        "name": "suthran",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1662.63,
+            "y": 1748.56,
+            "z": 260.236,
+            "heading": 68,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203557,
+      "name": "suthran",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1662.63,
+          "y": 1748.56,
+          "z": 260.236,
+          "heading": 68,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203560,
+      "name": "morn",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1660.88,
+          "y": 1813.21,
+          "z": 253.722,
+          "heading": 15,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203560,
+          "name": "morn",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1660.88,
+              "y": 1813.21,
+              "z": 253.722,
+              "heading": 15,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 4785,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "QUEST",
+      "id": 2286,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "The Brigade General's Order",
+      "nameId": 1103386,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 4785
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2279
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_work_items",
+        "children": [
+          {
+            "tag": "quest_work_item",
+            "attributes": {
+              "item_id": 182203259
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,345 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2265,
+    "name": "A Lost Sword",
+    "nameId": 1103365,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 14,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 2265,
+        "start_npc_ids": 203665
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203665,
+        "name": "dellalont",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1751.53,
+            "y": 2006.95,
+            "z": 250.0,
+            "heading": 32,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203665,
+      "name": "dellalont",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1751.53,
+          "y": 2006.95,
+          "z": 250.0,
+          "heading": 32,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203665,
+      "name": "dellalont",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1751.53,
+          "y": 2006.95,
+          "z": 250.0,
+          "heading": 32,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182203243,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "chance": 85,
+          "drop_each_member": 1,
+          "item_id": 182203243,
+          "npc_id": 210459,
+          "npc": {
+            "id": 210459,
+            "name": "feral black claw warrior",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1657.49,
+                "y": 2212.02,
+                "z": 249.94,
+                "heading": 101,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1673.02,
+                "y": 2151.74,
+                "z": 248.604,
+                "heading": 83,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1695.83,
+                "y": 2186.49,
+                "z": 250.564,
+                "heading": 81,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1703.96,
+                "y": 2032.24,
+                "z": 249.975,
+                "heading": 25,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1704.02,
+                "y": 2034.44,
+                "z": 249.484,
+                "heading": 36,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1710.51,
+                "y": 2201.15,
+                "z": 251.742,
+                "heading": 13,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1729.78,
+                "y": 2211.2,
+                "z": 253.3975,
+                "heading": 99,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1747.76,
+                "y": 2099.09,
+                "z": 254.399,
+                "heading": 68,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        },
+        {
+          "kind": "questDrop",
+          "chance": 85,
+          "drop_each_member": 1,
+          "item_id": 182203243,
+          "npc_id": 210460,
+          "npc": {
+            "id": 210460,
+            "name": "feral black claw warrior",
+            "positions": [
+              {
+                "mapId": 220030000,
+                "x": 1640.96,
+                "y": 2236.54,
+                "z": 250.43,
+                "heading": 23,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1660.42,
+                "y": 2200.65,
+                "z": 250.0,
+                "heading": 19,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1676.1,
+                "y": 2232.36,
+                "z": 250.568,
+                "heading": 17,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1682.95,
+                "y": 2252.4,
+                "z": 250.347,
+                "heading": 91,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1685.35,
+                "y": 2219.02,
+                "z": 250.396,
+                "heading": 30,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              },
+              {
+                "mapId": 220030000,
+                "x": 1729.2,
+                "y": 2245.94,
+                "z": 249.946,
+                "heading": 15,
+                "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203665,
+          "name": "dellalont",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 1751.53,
+              "y": 2006.95,
+              "z": 250.0,
+              "heading": 32,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 31050,
+        "gold": 3420,
+        "rewardItems": [
+          {
+            "count": 5,
+            "item_id": 160003511
+          },
+          {
+            "count": 1,
+            "item_id": 186000006
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2265,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 14,
+      "name": "A Lost Sword",
+      "nameId": 1103365,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182203243
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 31050,
+          "gold": 3420
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 160003511
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000006
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 85,
+          "drop_each_member": 1,
+          "item_id": 182203243,
+          "npc_id": 210459
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "chance": 85,
+          "drop_each_member": 1,
+          "item_id": 182203243,
+          "npc_id": 210460
+        }
+      }
+    ]
+  }
+}

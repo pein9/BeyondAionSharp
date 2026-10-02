@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2146,
+    "name": "Pass the Message",
+    "nameId": 1129730,
+    "zone": "Altgard",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/altgard.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 203659,
+        "id": 2146,
+        "start_npc_ids": 203664
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 203664,
+        "name": "eggther",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 1743.62,
+            "y": 2007.72,
+            "z": 250.0,
+            "heading": 32,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 203664,
+      "name": "eggther",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 1743.62,
+          "y": 2007.72,
+          "z": 250.0,
+          "heading": 32,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 203659,
+      "name": "lateni",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2663.0,
+          "y": 1663.0,
+          "z": 325.0,
+          "heading": 28,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 203659,
+          "name": "lateni",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2663.0,
+              "y": 1663.0,
+              "z": 325.0,
+              "heading": 28,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 7500,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000006
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 2146,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "Pass the Message",
+      "nameId": 1129730,
+      "quest_zone": "Altgard",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 7500
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000006
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

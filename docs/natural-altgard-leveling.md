@@ -17,7 +17,7 @@ is done (AK-00..AK-10, 2026-10-01): `altgard-l5` starts Leg 6.
 [Leg 6: Gerger Village and Trader's Berth](#leg-6-gerger-village-and-traders-berth-level-20--proposal) is done
 (AG-00..AG-09, 2026-10-02): `altgard-l6` starts Leg 7.
 [Leg 7: Altgard Fortress and the East Gate](#leg-7-altgard-fortress-and-the-east-gate-level-21--proposal) is approved
-(AE-Q1..AE-Q3 as recommended, 2026-10-02) and ready for Loop mode (AE-00..AE-08).
+(AE-Q1..AE-Q3 as recommended, 2026-10-02) and in progress in Loop mode (AE-00..AE-08).
 
 ## Goal
 
@@ -2926,11 +2926,24 @@ The same loop protocol, with "AE" in place of "NA".
   - Initial probe failures are retained in `run/ae00-probe*.log`: missing client prerequisite evidence (including
     Q2208 in the probe fixture), then a missing reward confirmation. Both were probe setup/contract defects, fixed
     before the passing run. The initial account 63 overlapped Full's alliance scenario; the final probe uses 200.
-- [ ] **AE-01 — The Leg 7 contract and plans.** `natural-altgard-l7-contract.json` from the l6 endpoint:
+- [x] **AE-01 — The Leg 7 contract and plans.** `natural-altgard-l7-contract.json` from the l6 endpoint:
   - the fortress bind (700065) and a fortress merchant for the town service;
   - the held hand-ins Q24233 and Q2262, and Q2146 held for Lateni;
   - the timed Q2263, and the Pandaemonium and Zemurru's Spirit steps;
   - the order and the endpoint.
+  - *Done 2026-10-02.* The contract starts at level 21, bound at Trader's Berth, with Leg 6's 64 completed quests;
+    Q24233, Q2262 and Q24115 are held, the three campaign quests are started, and Q24016 is locked.
+  - Fourteen quests: thirteen hand-ins and Q2146 held for Lateni. Eleven compiled template plans, fourteen scripted
+    dialog steps, and eleven areas cover the fortress, East Gate, swamp grounds, both Spirit spots, Berth and city.
+    The bind is 700065 (451 Kinah); Donabe (203579) is the town merchant. The endpoint is alive within 60 m of the
+    fortress bind, with Q2146 and Q24115 still held.
+  - Q2263 has its Java 300-second timer from QUEST_ACCEPT_1, three Malodor Pollen (182203242), abandonment on expiry
+    or logout, and its check/reward dialogs. Q2278 uses AE-00's map steps; Q2279 searches the two-spot Spirit pool.
+    Q24233's existing D32 template is retained (4.8 evidence in the D32 register, deviation 151).
+  - `NaturalAltgardLeg7ContractTests` passes all three checks against shipped quest, NPC, bind, dialog, pool and
+    transport data. `test-quest-plan-compiler.py` passes all eleven tests, including identical recompilation of the
+    new plans. `ae01-fast` passes 61 tests (three switch skips), all eleven scenarios. The warning, logger, clock
+    and fidelity checks pass. The code base for this item is AE-00's `62863fcca`.
 - [ ] **AE-02 — Walk every Leg 7 route in SIM:** from the fortress obelisk to the East Gate, each swamp ground, Taora
   and Chagarinerk, and the Berth round trip by flight.
 - [ ] **AE-03 — The scripted quests in SIM:** Q2278 with the Pandaemonium trip, Q2279 with Zemurru's Spirit at either
@@ -3360,4 +3373,5 @@ The original questions follow.
 - 2026-10-02 AG-09: the full checklist passes on f0f364b60; Leg 6 is done, and Leg 7 is next to plan.
 - 2026-10-02 Leg 7 proposed: Altgard Fortress and the East Gate, thirteen quests from the fortress bind (AE-Q1..AE-Q3 open).
 - 2026-10-02 Leg 7 approved: AE-Q1..AE-Q3 as recommended; ready for Loop mode (AE-00..AE-08).
-- 2026-10-02 AE-00: quest steps carry their map; Q2278's Pandaemonium teleporter trip, city talks and Return pass in SIM; Fast and pre-commit checks pass (implementation in this AE-00 commit).
+- 2026-10-02 AE-00: quest steps carry their map; Q2278's Pandaemonium teleporter trip, city talks and Return pass in SIM; Fast and pre-commit checks pass (`62863fcca`).
+- 2026-10-02 AE-01: the Leg 7 contract and eleven plans; fortress bind, held hand-ins, Q2146 held, Q2263 timer and cross-map/pool steps; contract, compiler, Fast and pre-commit checks pass.
