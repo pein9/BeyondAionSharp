@@ -3112,8 +3112,14 @@ object before using it. Deaths, retreats and interrupted uses are recorded outco
     The initial build's undefined completion constant was corrected; its log is retained. Plan recompilation,
     D32 inventory, warning/logger/clock/custom-draft/fidelity checks pass. `ao00-fast`: 65 passed, three switch
     skips, all eleven scenarios passed. Q24113's plan matches the existing D32 plan byte for byte.
-- [ ] **AO-01 — Travel in SIM.** Free probe account, level-21 plans; walk every hub, objective ground and camp/object
+- [x] **AO-01 — Travel in SIM.** Free probe account, level-21 plans; walk every hub, objective ground and camp/object
   route, including Gattban's spawn, and the fortress/Observatory flight round trip. Record geometry and hazards.
+  - *Done 2026-10-02.* `ao01-travel`, free account 207, level-30 controlled probe with level-21 plans: 23 ground legs
+    pass, maximum miss 2.5 m. All five Operation Order spots, both pecku kinds, boxes, bodyguards/shamans, Gattban,
+    Urnir/Neifenmer/Aurtri/Sarad and both fortress givers route. Three actual flights (352 Kinah each after prices):
+    fortress to Observatory, Observatory to Suthran's fortress, then back. Alive at (1464.822, 2553.606, 298.875).
+    Route hazards are retained in `run/ao01-travel.log`. The fixture reserves unused 207–209 for Leg 8 probes;
+    D32 inventory and warning/logger/clock/custom-draft/fidelity/compiler checks pass. Base `bd7ab9f8c`.
 - [ ] **AO-02 — Quests in SIM.** A free controlled probe plays both scripted chains and all five templates,
   including the three-second Operation Order use/loot and Gattban's sword. Preserve shared-world probe isolation.
 - [ ] **AO-03 — Combat at level 21.** The encounter harness: pecku mix, bodyguard/shaman, Gattban alone and his nearby
@@ -3542,3 +3548,4 @@ The original questions follow.
 - 2026-10-02 AE-07: altgard-l7 captured from committed code 2df0d2cad and restored successfully; level 21, fortress bind, 264,842 Kinah, thirteen completions and two held quests; owned schemas dropped.
 - 2026-10-02 AE-08: all 33 CLAUDE checklist commands completed; the D32 account reservation failure corrected with free accounts 201–206; inventory, affected encounters, Fast and pre-commit checks pass. Leg 7 is done; altgard-l7 starts Leg 8.
 - 2026-10-02 AO-00: Leg 8 contract, five plans and eight scripted steps; Q2266 precedes the Observatory bind; six contract/decision cases, Fast and pre-commit checks pass, from 734f82eae.
+- 2026-10-02 AO-01: 23 Observatory/camp/object ground legs and three fortress/Observatory flights pass on free account 207; maximum miss 2.5 m, pre-commit checks pass.
