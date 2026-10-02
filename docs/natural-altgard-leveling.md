@@ -2656,8 +2656,28 @@ The same loop protocol, with "AG" in place of "NA".
       the first Spirit in view at the bones. So AG-07's spawn kill must take the monster whose SM_NPC_INFO follows the use.
   - All 353 Natural tests pass, and so do `run-fast` (every test), the warning baseline and the logger, clock and
     fidelity checks.
-- [ ] **AG-05 — The template quests in SIM:** Q2244, Q2245, Q2249 (with the shardlings), Q2251, Q24115
+- [x] **AG-05 — The template quests in SIM:** Q2244, Q2245, Q2249 (with the shardlings), Q2251, Q24115
   held, and Q2242's hand-in at Gemyu.
+  - *Done 2026-10-02.* `GergerAndBerthTemplateQuestsPlayThroughTheirPlans` (account 64, a level 20 Cleric) plays every
+    template quest of the leg from its plan. Each target is set to 1 HP and shot from a stand-off (the fights are AG-06's).
+    - **Gerger.** Q2242 is handed in at Gemyu (the probe takes it at Vovetirn first, as Leg 5 left it).
+      - Q2245 (star metal ksellids) and Q2244 (green ribbits) take five kills each.
+      - Then Gemyu gives Q2248's letter (it needs Q2245), and Neparinerk takes it.
+    - **Trader's Berth.**
+      - Q2249: five Angolem Crystals in six kills, four from blackened angolems (210487) and one from a shardling
+        (210489); the other shardling dropped none.
+      - Q2251: five Pecku Tail Feathers in five or six kills.
+    - **Held (AG-Q2 (a)).**
+      - Q24115: three crimsontail amphas leave it at START with the counter full (3 of 3). It is held for Banatisai
+        with its work item (182215477).
+      - Its two start conditions both hold at the Leg 6 start: Q2200 and Q2019 are neither started nor finished.
+        Java needs both, since neither condition names a finished quest (`QuestTemplate.getRequiredConditionCount`).
+      - Q2262 is taken from Japayerk and held for Mabrunerk with its delivery (182203241).
+    - Q2248 and Q2262 are not on the item's list. They are the leg's other two template quests, so the probe plays them
+      too.
+  - The probe drops the client's view before each setup teleport, as AG-04 found it must.
+  - All 353 Natural tests pass, and so do `run-fast` (every test), the warning baseline and the logger, clock and
+    fidelity checks.
 - [ ] **AG-06 — Combat at level 20.** The encounter harness against Minushan's Spirit (SEASONED L18), a
   pecku pack and an angolem with its shardlings. Record deaths and retreats.
 - [ ] **AG-07 — The Leg 6 runner.** The engine and runner for the chained flights, the escort's hours, the
@@ -3037,3 +3057,4 @@ The original questions follow.
 - 2026-10-02 AG-02: Leg 6's 16 travel legs walked in SIM from the Trader's Berth obelisk.
 - 2026-10-02 AG-03: Gerger's scripted quests and the night wait for Q2284's escort played in SIM.
 - 2026-10-02 AG-04: Q2252's bones, a miss, new bones and the kill played in SIM.
+- 2026-10-02 AG-05: Leg 6's template quests played from their plans in SIM, with Q24115 and Q2262 held.
