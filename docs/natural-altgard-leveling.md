@@ -2917,3 +2917,4 @@ The original questions follow.
 - 2026-10-01 AK-08 (flights): hub flight transporters from the client routes; smoke run 9 flies Basfelt to the fortress and plays Leg 5 with no deaths.
 - 2026-10-01 AK-09: `altgard-l5` captured from `altgard-l4` at 53d488402 (level 20, no deaths, Q2242/Q24233 held), restore-checked; it includes the PatternAi flee fix c379a18e1.
 - 2026-10-01 AK-10: the full checklist on 72824ee0f; everything passes except the flee probe's D32 account clash (c379a18e1, not Leg 5's). Leg 5 is done.
+- 2026-10-01 AK-10 follow-up (the maintainer asked): the flee probe moved to account 69 (5297762ce); bisecting its run-fast failure found a server gap, a flee counted as arrived while its target was in reach, fixed in PatternAi (6cc174b33). run-fast passes in full.
