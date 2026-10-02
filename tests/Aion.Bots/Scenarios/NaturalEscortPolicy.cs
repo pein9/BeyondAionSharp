@@ -58,7 +58,10 @@ public static class NaturalEscortPolicy
 
 	public static NaturalEscortChoice Decide(NaturalEscortObservation state, NaturalAltgardEscort escort)
 	{
-		if (state.QuestStatus is "REWARD" or "COMPLETE" || state.QuestStatus == "START" && state.QuestVar == escort.SuccessVar)
+		// AG-03: an escort whose success keeps the follow var (Q2284: DefaultFollowEndEvent(env, 2, 2, true)) is told by REWARD
+		// alone; at START that var means following.
+		if (state.QuestStatus is "REWARD" or "COMPLETE" ||
+			state.QuestStatus == "START" && state.QuestVar == escort.SuccessVar && escort.SuccessVar != escort.FollowVar)
 			return new("done", null, $"The follower reached the goal: var {escort.SuccessVar}{(state.MovieSeen ? " and the movie" : "")}.");
 		if (state.Dead)
 			return new("revive", null, "Dead: Java loses the follower on the player's death; revive and come back.");

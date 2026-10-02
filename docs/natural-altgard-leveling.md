@@ -2607,8 +2607,30 @@ The same loop protocol, with "AG" in place of "NA".
     - **The far grounds.** The peckus are 63 m from the obelisk and the crimsontails 95–146 m. The Bones of Minushan
       are 365 m beyond them, and the way back is 520 m through the pecku ground (21 peckus within 30 m).
   - `run-fast` passes (every test), and so do the warning baseline and the logger, clock and fidelity checks.
-- [ ] **AG-03 — Gerger's scripted quests in SIM:** Q2246's insignia box, Q2247's disguise, and Q2284's two
+- [x] **AG-03 — Gerger's scripted quests in SIM:** Q2246's insignia box, Q2247's disguise, and Q2284's two
   Germirs and the follow to Babarunerk. Include a run started after 21:00, which must wait for 798041.
+  - *Done 2026-10-02.* `GergerScriptedQuestsAndTheNightEscortPlayThroughTheContract` (account 66, a level 20 Cleric)
+    plays all three on their contract steps:
+    - **Q2246:** Germir, the insignia box (700147), then Germir's check. Java lets a quest use any object among its
+      quest drops (`AbstractQuestHandler.loadActionItems`), so the box needs no script entry.
+    - **Q2247:** Gogaerunerk's SETPRO1 gives the disguise (182203231). Germir takes it back and ends the quest.
+    - **Q2284:** the first disguised Germir sets var 1.
+      - The clock is run on to 21:00, and the second disguised Germir (798041) is gone. At 04:00 he is back.
+      - The escort protocol restarts the follow at var 1 (SETPRO3). Germir reaches Babarunerk in 47 s, on the first
+        attempt, never more than 11.2 m behind. That sets REWARD at var 2, and Babarunerk ends the quest.
+  - **The escort policy, fixed here.** Q2284 follows at var 2 and succeeds at var 2 (`DefaultFollowEndEvent(env, 2, 2,
+    true)`), so the policy called the escort done as soon as it started. An escort whose success var is its follow
+    var is now done only at REWARD. `AnEscortWhoseSuccessKeepsTheFollowVarEndsOnlyOnReward` pins it.
+  - **For AG-06 and AG-07: every Gerger spot has aggressive monsters.**
+    - On the first try an attack cancelled the box's use bar.
+    - The fights are AG-06's, so the probe now clears each spot first (within 40 m) and logs what it cleared:
+      - at the insignia box: four angolem fragments (280100), two blackened angolems (210486, 210487), a shardling
+        (210489) and two green ribbits (210573, 210574);
+      - at Gogaerunerk: two fragments and two blackened angolems (210486);
+      - on the escort line: five;
+      - at Babarunerk: a blackened angolem (210487), one or two shardlings and two peckus (212345).
+  - All 353 Natural tests pass, and so do `run-fast` (every test), the warning baseline and the logger, clock and
+    fidelity checks.
 - [ ] **AG-04 — Q2252 in SIM:** Sinood, the bones, the spawn, the kill and the reward group, and the new
   item after a miss.
 - [ ] **AG-05 — The template quests in SIM:** Q2244, Q2245, Q2249 (with the shardlings), Q2251, Q24115
@@ -2990,3 +3012,4 @@ The original questions follow.
 - 2026-10-01 AG-00: chained hub flights (NaturalAirlineRoutes.Journey); a SIM probe flies Basfelt to the fortress to Trader's Berth; TalkAsync waits for a walking NPC to stop.
 - 2026-10-02 AG-01: the Leg 6 contract (12 quests, the Q2284 escort from var 1 with its follower's hours, the Q2252 spawn, Q24115 and Q2262 held) and its 9 template plans.
 - 2026-10-02 AG-02: Leg 6's 16 travel legs walked in SIM from the Trader's Berth obelisk.
+- 2026-10-02 AG-03: Gerger's scripted quests and the night wait for Q2284's escort played in SIM.

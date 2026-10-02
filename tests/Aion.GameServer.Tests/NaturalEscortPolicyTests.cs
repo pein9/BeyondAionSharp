@@ -117,6 +117,23 @@ public sealed class NaturalEscortPolicyTests
 		Assert.Equal("blocked", NaturalEscortPolicy.Decide(following with { QuestVar = 2 }, Escort).Action);
 	}
 
+	[Fact]
+	public void AnEscortWhoseSuccessKeepsTheFollowVarEndsOnlyOnReward()
+	{
+		// AG-03: Q2284's follow is var 2 (SETPRO3 at var 1), and reaching Babarunerk sets REWARD at var 2
+		// (DefaultFollowEndEvent(env, 2, 2, true)). At START, var 2 is following, not done.
+		NaturalAltgardEscort germir = NaturalAltgardContract.LoadLeg("l6").EscortList.Single();
+		Assert.Equal((2, 2, 1, 1), (germir.FollowVar, germir.SuccessVar, germir.LostVar, germir.StartVar!.Value));
+		var following = new NaturalEscortObservation(Route[10], false, Route[9], "START", germir.FollowVar, false, 1, 1_000_000, 0, false,
+			false, null, null, Route, 6);
+		Assert.NotEqual("done", NaturalEscortPolicy.Decide(following, germir).Action);
+		Assert.Equal("done", NaturalEscortPolicy.Decide(following with { QuestStatus = "REWARD" }, germir).Action);
+		// At var 1 (lost, or the first time) the restart step is the second disguised Germir's SETPRO3.
+		var start = following with { QuestVar = germir.LostVar, Follower = Route[0], Player = Route[0], Attempts = 0 };
+		NaturalEscortChoice begin = NaturalEscortPolicy.Decide(start, germir);
+		Assert.Equal(("start", germir.RestartStep), (begin.Action, begin.StepKey));
+	}
+
 	private static (bool Lost, bool Reached) Check(BotPosition player, BotPosition follower, float[] goal) =>
 		NaturalEscortPolicy.JavaCheck(player, false, follower, false, goal, Escort.GoalRadius, Escort.Leash);
 
