@@ -91,6 +91,8 @@ public sealed class NaturalAltgardLeg7ContractTests
 		NaturalAltgardCollectedItem pollen = Assert.Single(Assert.Single(Leg.CollectionList).Items);
 		Assert.Equal((182203242, 3), (pollen.ItemId, pollen.Count));
 		Assert.Equal([210444, 210500], pollen.SourceNpcIds);
+		foreach (int source in pollen.SourceNpcIds)
+			Assert.Contains(Spots(source), at => Leg.Area("malodors").Contains(at[0], at[1], at[2]));
 		XElement pool = Spawns(220030000).Descendants("spawn").Single(node => (int?)node.Attribute("npc_id") == 203682);
 		Assert.Equal(1, (int)pool.Attribute("pool")!);
 		Assert.Equal(2, pool.Elements("spot").Count());

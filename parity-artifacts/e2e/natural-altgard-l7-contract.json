@@ -165,16 +165,16 @@
     },
     {
       "key": "malodors",
-      "note": "malodors",
+      "note": "Local grove and swamp malodors for Q2263; distant grove spawns are outside this leg",
       "min": [
-        1219.34,
-        889.116,
+        1592.11,
+        2021.083,
         237.366
       ],
       "max": [
         1799.946,
         2272.1,
-        269.875
+        269.371
       ]
     },
     {

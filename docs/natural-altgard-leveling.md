@@ -2957,8 +2957,16 @@ The same loop protocol, with "AE" in place of "NA".
     - Aggressive monsters within 30 m of each walk are retained in the route log; these are AE-05/AE-06's fights.
   - Warning baseline, logger, clock-read and fidelity checks pass. `ae02-fast` passes all eleven scenarios and
     62 tests (three switch-dependent skips).
-- [ ] **AE-03 — The scripted quests in SIM:** Q2278 with the Pandaemonium trip, Q2279 with Zemurru's Spirit at either
+- [x] **AE-03 — The scripted quests in SIM:** Q2278 with the Pandaemonium trip, Q2279 with Zemurru's Spirit at either
   spot, and Q2263 twice: once in time, once with the timer running out.
+  - *Done 2026-10-02.* `ae03-scripts` passes both Spirit pool spots through offer, Emgata, Spirit and Suthran's reward
+    on free accounts 197/198. Q2263 expires after 305 game seconds with one pollen: abandonment and item removal verified;
+    the retake collects three pollen in four kills and completes in 18 game seconds. Expiry is a recorded outcome.
+  - Q2278's end-to-end city trip remains covered by AE-00's probe, also passing in `ae03-fast`. The pollen area now
+    covers the local grove/swamp spawns, excluding distant grove grounds. No server behavior changed; Java Q2263/Q2279
+    and their shipped spawn/drop data were read first. Probe setup clears hostile neighbours and uses `BeginWorldReload`.
+  - Three contract tests and warning, logger, clock-read and fidelity checks pass. `ae03-fast` passes all eleven
+    scenarios, 64 tests with three switch-dependent skips. Base commit: AE-02's `b119b5eb6`.
 - [ ] **AE-04 — The template quests in SIM:**
   - Q2264, Q2265, Q2272, Q2261, Q2286 and Q2287;
   - Q2243, then Q2253, by flight;
@@ -3387,3 +3395,4 @@ The original questions follow.
 - 2026-10-02 AE-00: quest steps carry their map; Q2278's Pandaemonium teleporter trip, city talks and Return pass in SIM; Fast and pre-commit checks pass (`62863fcca`).
 - 2026-10-02 AE-01: the Leg 7 contract and eleven plans; fortress bind, held hand-ins, Q2146 held, Q2263 timer and cross-map/pool steps; contract, compiler, Fast and pre-commit checks pass.
 - 2026-10-02 AE-02: 27 Leg 7 ground legs and the fortress–Berth hub flights pass in SIM; both Spirit spots route; Fast and pre-commit checks pass.
+- 2026-10-02 AE-03: both Spirit spots, the pollen timer's expiry/cleanup and successful retake pass; Q2278 retained; Fast and pre-commit checks pass.
