@@ -32,6 +32,11 @@ public sealed partial class SimulationFastScenarioTests
 	/// AK-07: with AK07_STAGES=1 (level 19, or AC00_CLERIC_LEVEL) the stages are Leg 5's groups, placed as the spawn file has
 	/// them: a MuMu Village pull (a looklook pair with a lookout); Chieftain Manumumu (EXPERT L17) with his lookout 4 m away and
 	/// two looklooks 11 m away; and a grave robbing sentry with two fencers (L14) from Sumarhon's ground.
+	/// AG-06: with AG06_STAGES=1 (level 20, or AC00_CLERIC_LEVEL) the stages are Leg 6's: Minushan's Spirit (SEASONED L18) alone,
+	/// as Q2252 raises it; three peckus (L18) placed as the three around the Bones of Minushan, walking as the spawn file has
+	/// them (a pecku below 35% calls those within 15 m of its target); a blackened angolem (L17) with the shardling the
+	/// spawn file puts 11.6 m from it; and the Spirit at the bones with those three peckus where the spawn file has them around
+	/// the bones, the fight Q2252 brings.
 	/// </summary>
 	[SkippableFact]
 	public async Task NaturalClericEncounterRunsOnce()
@@ -42,10 +47,12 @@ public sealed partial class SimulationFastScenarioTests
 		string root = Aion.GameServer.TestKit.RealStaticData.RepoRoot();
 		bool basfelt = Environment.GetEnvironmentVariable("AB07_STAGES") == "1";
 		bool mumu = Environment.GetEnvironmentVariable("AK07_STAGES") == "1";
-		int level = int.TryParse(Environment.GetEnvironmentVariable("AC00_CLERIC_LEVEL"), out int asked) ? asked : mumu ? 19 : basfelt ? 16 : 10;
+		bool berth = Environment.GetEnvironmentVariable("AG06_STAGES") == "1";
+		int level = int.TryParse(Environment.GetEnvironmentVariable("AC00_CLERIC_LEVEL"), out int asked) ? asked
+			: berth ? 20 : mumu ? 19 : basfelt ? 16 : 10;
 		Assert.InRange(level, 10, 20);
 		int monsterId = level == 10 ? Goon : GraveRobbingFencer;
-		string item = mumu ? "ak07" : basfelt ? "ab07" : level == 10 ? "na23" : "ac00";
+		string item = berth ? "ag06" : mumu ? "ak07" : basfelt ? "ab07" : level == 10 ? "na23" : "ac00";
 		string run = Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? $"{item}-cleric-encounter-l{level}-s{fixture.Seed}";
 		string directory = Path.Combine(root, "run", item, run);
 		Directory.CreateDirectory(directory);
@@ -70,7 +77,8 @@ public sealed partial class SimulationFastScenarioTests
 		{
 			PrepareCourseAsync = PrepareAsync,
 			PrepareEncounterStageAsync = PrepareStageAsync,
-			EncounterStages = mumu ? ["mumu-pull", "manumumu", "sentry-fencers"]
+			EncounterStages = berth ? ["minushan-spirit", "pecku-pack", "angolem-shardling", "minushan-bones"]
+				: mumu ? ["mumu-pull", "manumumu", "sentry-fencers"]
 				: basfelt ? ["mosbear-pair", "komu", "sumarhon-camp", "infernus", "sharpeyes"] : null,
 			// NA-21: the approved help items (OD-13), unless NA_HELP_ITEMS=0.
 			SupplyHelpItemAsync = NaturalHelpItemSupply.Enabled(Environment.GetEnvironmentVariable(NaturalHelpItemSupply.Switch))
@@ -163,6 +171,11 @@ public sealed partial class SimulationFastScenarioTests
 				"mumu-pull" => [(-2.5f, 0, 0, 210452), (2.5f, 0, 0, 210451), (0, 5, 0, 210454)],
 				"manumumu" => [(0, 0, 0, 210598), (0, 4, 0, 210454), (-7.8f, 7.8f, 0, 210451), (7.8f, 7.8f, 0, 210451)],
 				"sentry-fencers" => [(0, 0, 0, 210504), (-4, 2, 0, GraveRobbingFencer), (4, 2, 0, GraveRobbingFencer)],
+				// AG-06: Leg 6's groups (the peckus around the bones are spawn-file spots with random_walk 8, about their centre).
+				"minushan-spirit" => [(0, 0, 0, 210634)],
+				"pecku-pack" => [(-8.5f, -9.3f, 8, 212345), (-2.8f, 9.9f, 8, 212345), (11.3f, -0.6f, 8, 212345)],
+				"angolem-shardling" => [(0, 0, 0, 210487), (-11.5f, -1.6f, 0, 210489)],
+				"minushan-bones" => [(0, 0, 0, 210634), (4.7f, -7.4f, 8, 212345), (-9.4f, 3.1f, 8, 212345), (-15.1f, -16.0f, 8, 212345)],
 				_ => throw new ArgumentOutOfRangeException(nameof(stage)),
 			};
 			foreach ((float dx, float dy, int randomWalk, int npcId) in monsters)

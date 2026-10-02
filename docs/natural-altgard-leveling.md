@@ -2678,8 +2678,35 @@ The same loop protocol, with "AG" in place of "NA".
   - The probe drops the client's view before each setup teleport, as AG-04 found it must.
   - All 353 Natural tests pass, and so do `run-fast` (every test), the warning baseline and the logger, clock and
     fidelity checks.
-- [ ] **AG-06 — Combat at level 20.** The encounter harness against Minushan's Spirit (SEASONED L18), a
+- [x] **AG-06 — Combat at level 20.** The encounter harness against Minushan's Spirit (SEASONED L18), a
   pecku pack and an angolem with its shardlings. Record deaths and retreats.
+  - *Done 2026-10-02.* The NA-23/AC-00 encounter takes `AG06_STAGES=1` (level 20, or `AC00_CLERIC_LEVEL`). Its four Leg 6
+    stages are GM-spawned on the AB-07 ground, placed as the spawn file has them. The Cleric fights with the journey's
+    own combat, pull planner, rests and help items, with the bridge's Karmic Staff as in AK-07. Run
+    `run/ag06/ag06-cleric-encounter-l20-s1`:
+
+    | Stage | Level 20 |
+    |---|---|
+    | Minushan's Spirit (210634, SEASONED L18) alone | 1 kill, lowest HP 79%: Awakening and a DP jelly before the first pull, 1 potion |
+    | Three peckus (L18) placed as the three around the bones, walking (random_walk 8) | 3 kills, one at a time, 82% |
+    | A blackened angolem (L17) with the shardling 11.6 m from it | 2 kills, 87%, 1 potion |
+    | The Spirit at the bones with those three peckus around it, as Q2252 brings it | the Spirit and 2 peckus (the third never joined), **48%, one retreat**: Salvation, Root, Awakening, 2 potions |
+
+  - **Findings:**
+    - No deaths at level 20.
+    - **The bones are the dangerous fight.**
+      - The Spirit (aggro 16 m) and two of the peckus that walk around the bones (8 m) came at once. The Cleric
+        retreated 150 m, killed a pecku that followed, then the Spirit and the other pecku, at 48% at worst.
+      - AG-07 should clear the peckus around the bones before the use, and use them on full HP and MP. The peckus
+        respawn 295 s after a kill, and the Spirit stays 180 s, so the window is tight.
+    - **The pecku pack does not form on its own.** Peckus stand at least 17.6 m apart. Below 35% a pecku casts 16546
+      and sends message 1001 to the npcs within 15 m of its target (`battle_cycles.xml` variant 99). No pecku got
+      there in either stage: the Cleric's burst killed each first.
+    - **The shardling is only a neighbour.** Its `angolem_fragment` AI answers a stoneskin stoffu's call, and the
+      spawn file gives each blackened angolem at most one shardling, 11.6–19.4 m away.
+  - **How to read the trace.** `combat-encounter-end`'s `retreats` is the run's running total, not the encounter's:
+    this stage's nine encounters each say 1. Count kills by target, as AK-07 notes.
+  - The warning baseline and the logger, clock and fidelity checks pass.
 - [ ] **AG-07 — The Leg 6 runner.** The engine and runner for the chained flights, the escort's hours, the
   spawn and the held quests. A smoke run from `altgard-l5` with real combat, recording every fight and death.
 - [ ] **AG-08 — One SIM run of Leg 6 and the snapshot.** `sim-snapshot.ps1 -Leg l6 -From altgard-l5`
@@ -3058,3 +3085,4 @@ The original questions follow.
 - 2026-10-02 AG-03: Gerger's scripted quests and the night wait for Q2284's escort played in SIM.
 - 2026-10-02 AG-04: Q2252's bones, a miss, new bones and the kill played in SIM.
 - 2026-10-02 AG-05: Leg 6's template quests played from their plans in SIM, with Q24115 and Q2262 held.
+- 2026-10-02 AG-06: Leg 6's fights at level 20; no deaths, and one retreat at the Bones of Minushan.
