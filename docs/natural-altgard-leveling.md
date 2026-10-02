@@ -16,8 +16,8 @@ TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-alt
 is done (AK-00..AK-10, 2026-10-01): `altgard-l5` starts Leg 6.
 [Leg 6: Gerger Village and Trader's Berth](#leg-6-gerger-village-and-traders-berth-level-20--proposal) is done
 (AG-00..AG-09, 2026-10-02): `altgard-l6` starts Leg 7.
-[Leg 7: Altgard Fortress and the East Gate](#leg-7-altgard-fortress-and-the-east-gate-level-21--proposal) is proposed
-(AE-Q1..AE-Q3 open).
+[Leg 7: Altgard Fortress and the East Gate](#leg-7-altgard-fortress-and-the-east-gate-level-21--proposal) is approved
+(AE-Q1..AE-Q3 as recommended, 2026-10-02) and ready for Loop mode (AE-00..AE-08).
 
 ## Goal
 
@@ -2805,7 +2805,10 @@ The same loop protocol, with "AG" in place of "NA".
 
 ## Leg 7: Altgard Fortress and the East Gate (level 21) — proposal
 
-**Status (2026-10-02): proposed.** The questions are AE-Q1 to AE-Q3 under "Blocked / questions for the operator".
+**Status (2026-10-02): approved** (AE-Q1..AE-Q3 as recommended; see "Blocked / questions").
+- Leg 7 covers Stop 9 and Stop 11's fortress quests, from the fortress bind (AE-Q1 (a)).
+- Q2146 is held for Lateni (AE-Q2 (a)).
+- Q2273, the [Group] quests and the missions wait for the Black Claw leg, Leg 10 (AE-Q3 (a)).
 
 **Where it starts.** From the `altgard-l6` snapshot (AG-08):
 - character 133297, a **level 21** Cleric at 143,590 of 827,364 XP, bound at the Trader's Berth;
@@ -2814,7 +2817,7 @@ The same loop protocol, with "AG" in place of "NA".
   Leg 6) and Q24115 for Banatisai in the Heart of Impetusium;
 - the campaign's Q2900, Q24014 and Q24015 started.
 
-**What it covers (if AE-Q1 (a)).** Stop 9, the East Gate, and Stop 11's fortress quests, worked from the fortress bind.
+**What it covers (AE-Q1 (a)).** Stop 9, the East Gate, and Stop 11's fortress quests, worked from the fortress bind.
 - **The East Gate is not a hub of its own.** Mabrunerk, Eggther and Dellalont stand at the fortress's south gate, 200 m
   from the flight pad.
 - Their quests are worked in the swamp beyond the gate, where Taora (Stop 10's Q2272) stands, 160 m further south.
@@ -2880,7 +2883,7 @@ The thirteen hand-ins are worth 261,820 XP, 32% of level 21.
 After Leg 7, four groups of work are left. The fortress pad flies to each hub (`natural-flight-routes.json`), and
 each has an obelisk:
 
-| Leg (if AE-Q3 (a)) | Where | Bind | From the fortress pad | Quests | XP |
+| Leg (AE-Q3 (a)) | Where | Bind | From the fortress pad | Quests | XP |
 |---|---|---|---|---|---|
 | 8 | the Altgard Observatory and Mahindel Swamp (Stop 10) | 700822 (2,035 Kinah) | "df1a_altgardtosanctuary", 34 s, 250 Kinah | Q2266 (from Valurion), Q2267–Q2270, Q2271 (to Suthran), and Q24113 (**D32**, Commander Gattban, EXPERT L18) | 155,566 |
 | 9 | the Heart of Impetusium (Stop 12) | 700067 (813) | "df1a_altgardtoimpetosium", 52.8 s, 400 | Q2254–Q2257, Q2259, Q2260 (to Suthran) and Q2258 (to Pandaemonium); the hand-ins of Q24115 and Q2146 | 254,866 |
@@ -2904,7 +2907,7 @@ of the area, as the maintainer placed them.
    transporter (AG-00's chained flights).
 4. **An NPC in a pool.** Zemurru's Spirit stands at one of two spots (`pool="1"`). The bot looks at both.
 
-### Leg 7 TODO list (proposed)
+### Leg 7 TODO list
 
 The same loop protocol, with "AE" in place of "NA".
 
@@ -2936,7 +2939,7 @@ The same loop protocol, with "AE" in place of "NA".
   `altgard-l7` after a clean run, with a restore check.
 - [ ] **AE-08 — The full `CLAUDE.md` checklist and a checkpoint.**
 
-**Endpoint (if AE-Q1 (a), AE-Q2 (a)):**
+**Endpoint (AE-Q1 (a), AE-Q2 (a)):**
 - Q24233, Q2262, Q2261, Q2263, Q2264, Q2265, Q2272, Q2243, Q2253, Q2278, Q2279, Q2286 and Q2287 completed;
 - Q2146 taken and held for Lateni, and Q24115 still held;
 - bound at the fortress obelisk (700065);
@@ -2945,7 +2948,13 @@ The same loop protocol, with "AE" in place of "NA".
 
 ## Blocked / questions for the operator
 
-**Leg 7, open (2026-10-02):**
+**Leg 7, answered 2026-10-02:** AE-Q1 **(a)**, AE-Q2 **(a)** and AE-Q3 **(a)**, all as recommended:
+- Leg 7 does Stop 9 and Stop 11's fortress quests, worked from the fortress bind. The Observatory is Leg 8.
+- Q2146 is taken and held for Lateni, and handed in on the Heart of Impetusium leg (Leg 9).
+- Q2273, the [Group] quests and the missions Q24014–Q24016 make one later leg on the Black Claw ground (Leg 10), after
+  the Observatory (Leg 8) and the Heart of Impetusium (Leg 9). Q2900 comes last.
+
+The original questions:
 - **AE-Q1 — How big is Leg 7?**
   - (a) The fortress and the East Gate: thirteen quests, two of them the held hand-ins, worked from the fortress bind.
     Q2273 and the [Group] quests wait for the Black Claw leg (AE-Q3).
@@ -3338,3 +3347,4 @@ The original questions follow.
 - 2026-10-02 AG-08: snapshot altgard-l6 captured from 7d10ef4c1 (level 21, bound at the Trader's Berth).
 - 2026-10-02 AG-09: the full checklist passes on f0f364b60; Leg 6 is done, and Leg 7 is next to plan.
 - 2026-10-02 Leg 7 proposed: Altgard Fortress and the East Gate, thirteen quests from the fortress bind (AE-Q1..AE-Q3 open).
+- 2026-10-02 Leg 7 approved: AE-Q1..AE-Q3 as recommended; ready for Loop mode (AE-00..AE-08).
