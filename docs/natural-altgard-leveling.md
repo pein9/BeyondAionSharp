@@ -3255,9 +3255,17 @@ Heart obelisk and bound there. Relog and save `altgard-l9` from committed code; 
     strict, so ordinary NPC approaches use their tested ground routes. No natural teleport or server change.
     The fixture accepts free accounts 210–212 for Leg 9. All pre-commit checks and D32 inventory pass
     (`run/ah01-checks`); base `9099d021c`. The natural runner uses this proven landing in AH-04.
-- [ ] **AH-02 — Quests in SIM.** Free controlled probe; all seven new quests, held Q2146/Q24115, debris use/loot
+- [x] **AH-02 — Quests in SIM.** Free controlled probe; all seven new quests, held Q2146/Q24115, debris use/loot
   and ordinary respawn, Q2260 delivery and Q2258's real city trip/Return. Clear hostiles only in the probe,
   drop the client view before setup teleports and retain any failed drafts. Depends: AH-00, AH-01.
+  - *Done 2026-10-02.* `ah02-quests`, free account 211, passes on its first run from `a742d86ca`.
+    All nine server/client hand-ins complete; Q24115's work item and collection items are consumed. Fourteen
+    controlled 1-HP kills prove the collection/counter contracts. Nine debris uses show three-second bars;
+    two 296-second waits restore all four shipped objects through their ordinary 295-second respawns.
+    Three actual hub flights cost 352/565/565 Kinah; the city teleporter costs 706. Q2258 completes at Lindhelm's
+    ordinary Pandaemonium spawn, then learned Return reaches the Heart bind alive. Campaign states remain
+    START/0 for Q2900/Q24014/Q24015 and LOCKED/0 for Q24016. Log and packet trace:
+    `run/ah02-quests.log`, `run/ah02-quests.trace.jsonl`. All pre-commit checks pass (`run/ah02-checks`).
 - [ ] **AH-03 — Combat at level 21.** Encounter harness against hero/sorcerer and mist/splash mixes plus wild
   taygas; use the natural combat policy and approved help items, record kills/deaths/retreats. Depends: AH-01.
 - [ ] **AH-04 — Natural runner and smoke.** Extend template hand-ins to another map, implement only proven
@@ -3689,3 +3697,4 @@ The original questions follow.
 - 2026-10-02 AO-06: all 33 CLAUDE commands pass on 23537bb24, solution 5,074 passed/95 skips, Fast 67 passed/three switch skips/all eleven scenarios; five baked maps validate. Leg 8 is done; altgard-l8 starts Leg 9. No push.
 - 2026-10-02 AH-00: Leg 9 contract and nine compiled plans from 37146605b; seven new quests and two held hand-ins, 254,866 XP, Heart bind and city recipient; three contract cases, Fast and pre-commit checks pass. Travel is next.
 - 2026-10-02 AH-01: 30 Heart travel legs, four hub flights and two pillar flights pass on free account 210; debris landing avoids the pillar structure, source selection avoids disconnected ledges; failed drafts retained, pre-commit checks pass. Quests are next.
+- 2026-10-02 AH-02: nine hand-ins, consumed work/collection items, nine debris uses and two ordinary respawn rounds pass on free account 211; three hub flights, real city delivery and learned Return, campaigns unchanged; first run and pre-commit checks pass. Combat is next.
