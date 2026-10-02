@@ -41531,3 +41531,32 @@ at the end. Following Java's `WalkManager`, it applies only with `GEO_ENABLE` an
 otherwise the flat point is kept, which is what the geo-less AI unit tests use. Pinned by the SIM test
 `FleeingUphillEndsOnTheGroundInSight`, on the real geo at the trace's coordinates. The old code aims
 at z 284.67206 there, the trace's exact value.
+
+## A flee is not over while its target is still in reach
+
+Found by bisecting why `FleeingUphillEndsOnTheGroundInSight` failed in `run-fast` and passed alone (2026-10-01).
+Run after any one of several Fast tests, `AltgardFortressExitWalksToTheIceLakeTargetsAndBack` first among
+them, the sentry's flee stopped 100 ms after it started. Its first `SM_MOVE` aimed at its own position,
+and it stood for the whole eight seconds, attacking.
+
+The stop came from the move task, not the attack.
+- `MoveTaskManager.Move` asks the AI `IsDestinationReached()` every tick.
+- The NPC stays in FIGHT through `flee_from`: `push_state` is not translated, as the entry on `flee_from`
+  records.
+- For FIGHT the destination is "the target is in attack range" (Java `NpcAI.isDestinationReached`; C#
+  matches).
+- So a run that began with its target in reach counted as arrived on its first tick, and the arrival
+  handler (`TargetEventHandler.onTargetReached`) aborted the move.
+- Whether that tick came before the first step left the reach depended on the 100 ms tick's phase against
+  the flee's start. The earlier tests only moved the virtual clock's sub-second phase (.694 against .000).
+
+Standing in reach, the sentry attacked instead of running. Retail's `flee_from` is a run of a set
+duration.
+
+**The fix:** while a flee runs, `PatternAi.IsDestinationReached` judges arrival by the move's own target
+point within 1 m. That is how Java judges its own runs, FEAR and CONFUSE. Outside a flee, nothing changes.
+
+**Verification:**
+- The pin `KrallTrapperAiTests.TheEscapeIsNotArrivedWhileTheQuarryIsStillInReach` fails without the fix.
+- The SIM flee test passes after the fortress-exit test and after all 42 Fast tests that precede it.
+- The GameServer suite passes (4,427, 16 skipped).

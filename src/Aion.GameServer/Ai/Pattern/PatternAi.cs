@@ -2149,6 +2149,23 @@ public abstract class PatternAi : AggressiveNpcAI, INpcMessageListener
         }
     }
 
+    /// <summary>
+    /// While a flee runs, its destination is the point it runs to. The NPC stays in FIGHT through
+    /// <c>flee_from</c> (<c>push_state</c> is not translated), and FIGHT's destination is "the target is in
+    /// attack range" (Java <c>NpcAI.isDestinationReached</c>), so a run that began with its target still in
+    /// reach counted as arrived on the move task's first tick and stood still. Whether that tick came before
+    /// the first step left the reach depended on the clock's phase: a Sumarhon sentry fled 37 m in one run and
+    /// not at all in the next. Java judges its own runs, FEAR and CONFUSE, by the move's target point within
+    /// 1 m; a flee is judged the same way.
+    /// </summary>
+    public override bool IsDestinationReached()
+    {
+        if (FleeingTo == null)
+            return base.IsDestinationReached();
+        var move = GetOwner().GetMoveController();
+        return PositionUtil.IsInRange(GetOwner(), move.GetTargetX2(), move.GetTargetY2(), move.GetTargetZ2(), 1);
+    }
+
     private void StopFleeing()
     {
         lock (gate)

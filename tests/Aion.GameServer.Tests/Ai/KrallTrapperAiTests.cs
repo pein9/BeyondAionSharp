@@ -268,6 +268,34 @@ public sealed class KrallTrapperAiTests
 			$"it aimed at x={aim.Value.X} with the player at x={quarry.GetX()} — that is towards them");
 	}
 
+	/// <summary>
+	/// <b>The run is not over just because the quarry is still in reach.</b> The krall stays in FIGHT while
+	/// it flees, and FIGHT counts as arrived once the target is in attack range: the move task then aborted
+	/// the run on its first tick whenever that tick came before the first step left the reach (a Sumarhon
+	/// sentry in the Fast SIM world stood still for the whole flee). While fleeing, arrival is the run's own
+	/// point, as Java judges FEAR and CONFUSE.
+	/// </summary>
+	[Fact]
+	public void TheEscapeIsNotArrivedWhileTheQuarryIsStillInReach()
+	{
+		var (harness, krall, quarry) = Engaged(Loudmouth);
+		using BossAiHarness _h = harness;
+
+		var ai = (Aion.GameServer.Ai.Pattern.PatternAi)krall.GetAi();
+		Assert.True(Aion.GameServer.Ai.Manager.SimpleAttackManager.IsTargetInAttackRange(krall), "the quarry should start in reach");
+		Assert.True(ai.IsDestinationReached(), "fighting, a target in reach is the destination");
+
+		BossAiHarness.SetExactPercent(krall, 20);
+		Advance(harness, krall, quarry, 8);
+		Assert.NotNull(ai.FleeingTo);
+		Assert.True(Aion.GameServer.Ai.Manager.SimpleAttackManager.IsTargetInAttackRange(krall), "the quarry should still be in reach");
+		Assert.False(ai.IsDestinationReached(), "the escape counted as arrived before it had run anywhere");
+
+		Advance(harness, krall, quarry, 6);
+		Assert.Null(ai.FleeingTo);
+		Assert.True(ai.IsDestinationReached(), "once the escape ends, a target in reach is the destination again");
+	}
+
 	/// <summary>And it stops after five seconds, not before and not never.</summary>
 	[Fact]
 	public void TheEscapeLastsFiveSeconds()
