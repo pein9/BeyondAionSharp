@@ -1969,10 +1969,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					for (int pull = 0; pull < 6; pull++)
 					{
 						await DefendAgainstEngagedAsync($"na23-{stage}");
-						NaturalNavigationObject[] targets = ObservedPullMonsters()
-							.Where(monster => !defeated.Contains(monster.Npc.ObjectId) && Distance(origin, monster.Npc.Position) < 60)
-							.OrderBy(monster => Distance(session.CurrentPosition, monster.Npc.Position))
-							.Select(monster => monster.Npc).ToArray();
+						IEnumerable<NaturalNavigationObject> encounterTargets = runtime.EncounterNpcIds is { } kinds
+							? navigator.Observe().Npcs.Where(npc => kinds.Contains(npc.TemplateId))
+							: ObservedPullMonsters().Select(monster => monster.Npc);
+						NaturalNavigationObject[] targets = encounterTargets
+							.Where(npc => !defeated.Contains(npc.ObjectId) && Distance(origin, npc.Position) < 60)
+							.OrderBy(npc => Distance(session.CurrentPosition, npc.Position)).ToArray();
 						if (targets.Length == 0) break;
 						NaturalPullPlan? plan = await MoveToPullSpotAsync(targets, [], $"na23-{stage}");
 						if (plan == null) break;
@@ -6296,10 +6298,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 									$"Client position did not advance toward {npc.TemplateId}/{target}.");
 							break;
 						}
+						long approachStarted = runtime.NowMillis;
 						NaturalNavigationResult approach = await NaturalIshalgenNavigator.ApproachNpcAsync(
 							ApproachMapId, npc.TemplateId!.Value, destination, navigator, token);
 						if (!approach.Arrived)
 							throw new NaturalCombatApproachBlockedException(approach.Reason);
+						// Navigation can already be at a walking NPC's announced destination while combat still
+						// sees its last reported position. Let motion and cooldowns advance before re-observing.
+						if (runtime.NowMillis == approachStarted)
+							await session.AdvanceAsync(TimeSpan.FromMilliseconds(350), token);
 						break;
 					case "wait":
 						await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);

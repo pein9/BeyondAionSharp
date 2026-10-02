@@ -29,6 +29,8 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 	public Func<string, CancellationToken, Task>? PrepareEncounterStageAsync { get; init; }
 	/// <summary>AB-07: the encounter's stages, in order; NA-23's single, pair and patrol when not given.</summary>
 	public IReadOnlyList<string>? EncounterStages { get; init; }
+	/// <summary>Diagnostic encounter targets, including neutral quest monsters; null selects ordinary aggressive targets.</summary>
+	public IReadOnlyList<int>? EncounterNpcIds { get; init; }
 	private readonly Lazy<BotMotionTiming> motions = new(() => BotMotionTiming.Load(
 		Path.Combine(RepoRoot, "game-server/data/static_data/skills/motion_times.xml")));
 	public long NowMillis => ElapsedMilliseconds();

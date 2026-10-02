@@ -3266,8 +3266,18 @@ Heart obelisk and bound there. Relog and save `altgard-l9` from committed code; 
     ordinary Pandaemonium spawn, then learned Return reaches the Heart bind alive. Campaign states remain
     START/0 for Q2900/Q24014/Q24015 and LOCKED/0 for Q24016. Log and packet trace:
     `run/ah02-quests.log`, `run/ah02-quests.trace.jsonl`. All pre-commit checks pass (`run/ah02-checks`).
-- [ ] **AH-03 — Combat at level 21.** Encounter harness against hero/sorcerer and mist/splash mixes plus wild
+- [x] **AH-03 — Combat at level 21.** Encounter harness against hero/sorcerer and mist/splash mixes plus wild
   taygas; use the natural combat policy and approved help items, record kills/deaths/retreats. Depends: AH-01.
+  - *Done 2026-10-02.* `ah03-encounter-final`, free account 212, Cleric 21 with the Karmic Staff, learned skills
+    and approved supplies: both L18/L19 hero–sorcerer pairs, the mist/L18/L19 splash mix and two wild taygas.
+    Shipped relative spots and random walks; four stages, nine distinct client-observed kills, zero deaths and
+    retreats. Summary and packet trace are under `run/ah03/ah03-encounter-final`; the dashboard ran at 17880.
+  - Retained `ah03-encounter` omitted the neutral mist spirit, so diagnostics now nominate their target kinds
+    explicitly. `ah03-encounter-corrected` killed it but stalled against a moving splash spirit: navigation had
+    reached its announced destination while combat used its last reported position, repeatedly spending no
+    game time. A 350 ms tick on an already-arrived combat approach lets motion/cooldowns advance before the
+    next observation; the final probe covers this correction. Base `1af1532a7`; all pre-commit checks and Fast
+    pass (`run/ah03-corrected-checks`, `ah03-corrected-fast`: all eleven scenarios, 69 passes/three switch skips).
 - [ ] **AH-04 — Natural runner and smoke.** Extend template hand-ins to another map, implement only proven
   travel needs, restore `altgard-l8` and run `AF_ALTGARD=l9` once through relog. All nine completions, consumed
   Q24115 work item, campaigns unchanged, transporter hub travel and alive Heart endpoint. Drop owned schema;
@@ -3698,3 +3708,4 @@ The original questions follow.
 - 2026-10-02 AH-00: Leg 9 contract and nine compiled plans from 37146605b; seven new quests and two held hand-ins, 254,866 XP, Heart bind and city recipient; three contract cases, Fast and pre-commit checks pass. Travel is next.
 - 2026-10-02 AH-01: 30 Heart travel legs, four hub flights and two pillar flights pass on free account 210; debris landing avoids the pillar structure, source selection avoids disconnected ledges; failed drafts retained, pre-commit checks pass. Quests are next.
 - 2026-10-02 AH-02: nine hand-ins, consumed work/collection items, nine debris uses and two ordinary respawn rounds pass on free account 211; three hub flights, real city delivery and learned Return, campaigns unchanged; first run and pre-commit checks pass. Combat is next.
+- 2026-10-02 AH-03: four level-21 Heart combat stages record nine distinct kills, no deaths/retreats on free account 212; neutral diagnostic targeting and a zero-time moving-target approach stall corrected, earlier traces retained; final encounter, Fast and pre-commit checks pass. Natural runner is next.
