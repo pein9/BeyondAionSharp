@@ -37,6 +37,8 @@ public sealed partial class SimulationFastScenarioTests
 	/// them (a pecku below 35% calls those within 15 m of its target); a blackened angolem (L17) with the shardling the
 	/// spawn file puts 11.6 m from it; and the Spirit at the bones with those three peckus where the spawn file has them around
 	/// the bones, the fight Q2252 brings.
+	/// AE-05: AE05_STAGES=1 uses a free account at level 21 for warrior/arachna and warrior/sleekpaw mixes, Gabacha alone,
+	/// and Gabacha's nearby warriors and sleekpaw. Relative placement comes from the shipped swamp spots.
 	/// </summary>
 	[SkippableFact]
 	public async Task NaturalClericEncounterRunsOnce()
@@ -48,11 +50,12 @@ public sealed partial class SimulationFastScenarioTests
 		bool basfelt = Environment.GetEnvironmentVariable("AB07_STAGES") == "1";
 		bool mumu = Environment.GetEnvironmentVariable("AK07_STAGES") == "1";
 		bool berth = Environment.GetEnvironmentVariable("AG06_STAGES") == "1";
+		bool eastGate = Environment.GetEnvironmentVariable("AE05_STAGES") == "1";
 		int level = int.TryParse(Environment.GetEnvironmentVariable("AC00_CLERIC_LEVEL"), out int asked) ? asked
-			: berth ? 20 : mumu ? 19 : basfelt ? 16 : 10;
-		Assert.InRange(level, 10, 20);
+			: eastGate ? 21 : berth ? 20 : mumu ? 19 : basfelt ? 16 : 10;
+		Assert.InRange(level, 10, 21);
 		int monsterId = level == 10 ? Goon : GraveRobbingFencer;
-		string item = berth ? "ag06" : mumu ? "ak07" : basfelt ? "ab07" : level == 10 ? "na23" : "ac00";
+		string item = eastGate ? "ae05" : berth ? "ag06" : mumu ? "ak07" : basfelt ? "ab07" : level == 10 ? "na23" : "ac00";
 		string run = Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? $"{item}-cleric-encounter-l{level}-s{fixture.Seed}";
 		string directory = Path.Combine(root, "run", item, run);
 		Directory.CreateDirectory(directory);
@@ -64,8 +67,13 @@ public sealed partial class SimulationFastScenarioTests
 		using var policy = NewPolicy("NA23", includeHistory: true);
 		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(20));
 		CancellationToken token = timeout.Token;
-		await using var session = new SimulationL0Session(fixture, policy, "b01", accountId: 41,
+		await using var session = new SimulationL0Session(fixture, policy, "b01", accountId: eastGate ? 195 : 41,
 			"Asimclric", Race.ASMODIANS, trace, tracePath);
+		var dashboard = new LiveBotDashboardState();
+		int dashboardPort = eastGate ? int.Parse(Environment.GetEnvironmentVariable("AION_BOT_DASHBOARD_PORT") ?? "17880") : 0;
+		await using var dashboardHost = new LiveBotDashboardHost(run, ["AE-05"], dashboard, dashboardPort);
+		session.Dashboard = dashboard;
+		if (dashboardHost.Enabled) Console.WriteLine($"Cleric encounter dashboard: {dashboardHost.Url}");
 		NaturalAscensionContract bridge = NaturalAscensionContract.LoadDefault();
 		// The stage ground: open ground south-west of the fortress, 40 m east of a natural goon camp (cleared per stage).
 		const float centerX = 1622.13f, centerY = 1947.95f;
@@ -73,11 +81,12 @@ public sealed partial class SimulationFastScenarioTests
 			fixture.World.GetPlayer(session.CharacterId).GetInstanceId(), Race.ASMODIANS);
 		var runtime = new NaturalJourneyRuntime(root, "SIM-na23", fixture.Seed,
 			fixture.DataManager.StaticData, () => fixture.Clock.NowMillis, fixture.Epoch,
-			Geometry, EnterAsync, policy.AssertClean, () => policy.SnapshotProblems(), trace, new LiveBotDashboardState())
+			Geometry, EnterAsync, policy.AssertClean, () => policy.SnapshotProblems(), trace, dashboard)
 		{
 			PrepareCourseAsync = PrepareAsync,
 			PrepareEncounterStageAsync = PrepareStageAsync,
-			EncounterStages = berth ? ["minushan-spirit", "pecku-pack", "angolem-shardling", "minushan-bones"]
+			EncounterStages = eastGate ? ["warrior-arachnas", "warrior-sleekpaw", "gabacha", "gabacha-camp"]
+				: berth ? ["minushan-spirit", "pecku-pack", "angolem-shardling", "minushan-bones"]
 				: mumu ? ["mumu-pull", "manumumu", "sentry-fencers"]
 				: basfelt ? ["mosbear-pair", "komu", "sumarhon-camp", "infernus", "sharpeyes"] : null,
 			// NA-21: the approved help items (OD-13), unless NA_HELP_ITEMS=0.
@@ -128,6 +137,7 @@ public sealed partial class SimulationFastScenarioTests
 			// AB-07: tell the client, as binding at the obelisk does; otherwise it still believes its bind is in Ishalgen and a
 			// revive waits for a world reload that never comes.
 			Aion.GameServer.Services.Teleport.TeleportService.SendObeliskBindPoint(player);
+			session.Api.World.BeginWorldReload();
 			await TeleportForSetupAsync(session, player, Altgard, bridge.Bind.Position[0] + 3, bridge.Bind.Position[1],
 				bridge.Bind.Position[2], prepareToken);
 			session.AcceptTeleportPosition();
@@ -176,6 +186,11 @@ public sealed partial class SimulationFastScenarioTests
 				"pecku-pack" => [(-8.5f, -9.3f, 8, 212345), (-2.8f, 9.9f, 8, 212345), (11.3f, -0.6f, 8, 212345)],
 				"angolem-shardling" => [(0, 0, 0, 210487), (-11.5f, -1.6f, 0, 210489)],
 				"minushan-bones" => [(0, 0, 0, 210634), (4.7f, -7.4f, 8, 212345), (-9.4f, 3.1f, 8, 212345), (-15.1f, -16.0f, 8, 212345)],
+				// AE-05: offsets from (1673.02,2151.74), (1640.96,2236.54) and Gabacha (1652.6,2225.49).
+				"warrior-arachnas" => [(0, 0, 0, 210459), (9.6f, -15.6f, 0, 210754), (-8, -21.2f, 0, 210447)],
+				"warrior-sleekpaw" => [(0, 0, 0, 210460), (-8.7f, 6, 0, 210502)],
+				"gabacha" => [(0, 0, 0, 216893)],
+				"gabacha-camp" => [(0, 0, 0, 216893), (4.9f, -13.5f, 0, 210459), (-11.6f, 11.1f, 0, 210460), (-20.3f, 17, 0, 210502)],
 				_ => throw new ArgumentOutOfRangeException(nameof(stage)),
 			};
 			foreach ((float dx, float dy, int randomWalk, int npcId) in monsters)
@@ -196,6 +211,7 @@ public sealed partial class SimulationFastScenarioTests
 					geometry.FindJourneyPath(Altgard, point, stageCenter).Count > 0)
 				.OrderBy(point => point.Y).FirstOrDefault();
 			if (start == default) throw new InvalidDataException("No open ground 28 m from the NA-23 stage.");
+			session.Api.World.BeginWorldReload();
 			await TeleportForSetupAsync(session, player, Altgard, start.X, start.Y, start.Z, stageToken, heading: 30);
 			session.AcceptTeleportPosition();
 			await session.SynchronizeAsync(stageToken);

@@ -108,7 +108,20 @@ public sealed partial class SimulationFastScenarioTests
 			for (int tries = 0; tries < 16; tries++)
 			{
 				var next = instance.GetNpcs().Where(npc => kinds.Contains(npc.GetNpcId()) && !npc.IsDead() && !unusable.Contains(npc.GetObjectId()))
-					.OrderBy(npc => MathF.Pow(npc.GetX() - session.CurrentPosition.X, 2) + MathF.Pow(npc.GetY() - session.CurrentPosition.Y, 2)).First();
+					.OrderBy(npc => MathF.Pow(npc.GetX() - session.CurrentPosition.X, 2) + MathF.Pow(npc.GetY() - session.CurrentPosition.Y, 2)).FirstOrDefault();
+				// The shared Fast world keeps earlier probes' kills and despawns. Replenish only a shipped kind at a shipped
+				// spot on this controlled probe, as AG-05 does, rather than requiring a particular test order.
+				if (next == null)
+				{
+					var group = fixture.DataManager.StaticData.SpawnsDh.GetSpawnsByWorldId(altgard).First(spawn => kinds.Contains(spawn.GetNpcId()));
+					var spot = group.GetSpawnTemplates().OrderBy(spawn => MathF.Pow(spawn.GetX() - session.CurrentPosition.X, 2) +
+						MathF.Pow(spawn.GetY() - session.CurrentPosition.Y, 2)).First();
+					next = Assert.IsType<Aion.GameServer.Model.GameObjects.Npc>(Aion.GameServer.SpawnEngine.SpawnEngine.SpawnObject(
+						new Aion.GameServer.Model.Templates.Spawns.SpawnTemplate(new Aion.GameServer.Model.Templates.Spawns.SpawnGroup(
+							altgard, group.GetNpcId(), 0, null), spot.GetX(), spot.GetY(), spot.GetZ(), spot.GetHeading(), 0, null, 0),
+						instance.GetInstanceId()), exactMatch: false);
+					Console.WriteLine($"AB-06 replenished {group.GetNpcId()} at its shipped spot for the shared probe world");
+				}
 				BotPosition near = geometry.GroundAround(altgard, new BotPosition(next.GetX(), next.GetY(), next.GetZ(), 0), [10f, 14f, 6f])
 					.FirstOrDefault(point => geometry.HasLineOfSight(altgard, point, new BotPosition(next.GetX(), next.GetY(), next.GetZ() + 1, 0)));
 				if (near == default) { unusable.Add(next.GetObjectId()); continue; }

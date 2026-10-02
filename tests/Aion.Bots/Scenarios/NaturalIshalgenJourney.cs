@@ -1930,26 +1930,32 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await runtime.PrepareEncounterStageAsync!(stage, token);
 					await session.SynchronizeAsync(token);
 					BotPosition origin = session.CurrentPosition;
-					int revivesBefore = combat.ReviveCount, kills = 0, plans = 0;
+					int revivesBefore = combat.ReviveCount, retreatsBefore = combat.CompletedRetreats, kills = 0, plans = 0;
+					var defeated = new HashSet<int>();
 					long start = runtime.NowMillis;
 					for (int pull = 0; pull < 6; pull++)
 					{
 						await DefendAgainstEngagedAsync($"na23-{stage}");
 						NaturalNavigationObject[] targets = ObservedPullMonsters()
-							.Where(monster => Distance(origin, monster.Npc.Position) < 60)
+							.Where(monster => !defeated.Contains(monster.Npc.ObjectId) && Distance(origin, monster.Npc.Position) < 60)
 							.OrderBy(monster => Distance(session.CurrentPosition, monster.Npc.Position))
 							.Select(monster => monster.Npc).ToArray();
 						if (targets.Length == 0) break;
 						NaturalPullPlan? plan = await MoveToPullSpotAsync(targets, [], $"na23-{stage}");
 						if (plan == null) break;
 						plans++;
-						if (await combat.TryKillAsync(plan.Target.Npc.ObjectId, token, retreatAnchor: session.CurrentPosition)) kills++;
+						if (await combat.TryKillAsync(plan.Target.Npc.ObjectId, token, retreatAnchor: session.CurrentPosition))
+						{
+							defeated.Add(plan.Target.Npc.ObjectId);
+							kills++;
+						}
 					}
 					await DefendAgainstEngagedAsync($"na23-{stage}-after");
 					await RestSafelyAsync(token);
 					stages.Add(new()
 					{
 						["stage"] = stage, ["plans"] = plans, ["kills"] = kills, ["deaths"] = combat.ReviveCount - revivesBefore,
+						["retreats"] = combat.CompletedRetreats - retreatsBefore,
 						["gameSeconds"] = (runtime.NowMillis - start) / 1000, ["hp"] = session.Api.World.CurrentHp,
 						["mp"] = session.Api.World.CurrentMp, ["dp"] = session.Api.World.CurrentDp,
 					});

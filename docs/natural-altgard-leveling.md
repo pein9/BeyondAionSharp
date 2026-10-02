@@ -2980,8 +2980,19 @@ The same loop protocol, with "AE" in place of "NA".
   - Java MonsterHunt, ItemCollecting, ReportTo and Altgard template registrations were read first; Q24233 retains D32.
     Probe-only setup clears hostile neighbours and drops the client view before teleports. Warning, logger, clock-read
     and fidelity checks pass. This item changes only the probe; base commit `f41204c9d`.
-- [ ] **AE-05 — Combat at level 21.** The encounter harness against the swamp's mixes: feral black claw warriors
+- [x] **AE-05 — Combat at level 21.** The encounter harness against the swamp's mixes: feral black claw warriors
   (SEASONED) with sleekpaws and arachnas, and Shaman Gabacha (EXPERT L19). Record deaths and retreats.
+  - *Done 2026-10-02.* `AE05_STAGES=1` uses free account 195, a level-21 Cleric and the journey's existing combat code,
+    with shipped relative spawn spacing. `ae05-encounter-distinct` records warrior + two arachnas (3 kills, 186 game s),
+    warrior + sleekpaw (2, 98 s), Gabacha alone (1, 32 s), and Gabacha with his nearby camp (3, 65 s). Nine distinct
+    client-confirmed kills, zero deaths and zero retreats. The camp's L16 warrior was not selected; that kind was fought
+    in the first stage. Java NPC stats/AI and the retained retail AI exception were read first; no server data changed.
+  - The harness now excludes already defeated targets and records retreats. The initial `ae05-encounter` is retained:
+    its older summary counted repeated corpse selections, so its kill count is not evidence of distinct kills.
+    Setup teleports drop the client view; the read-only dashboard runs while AE-05 is active.
+  - `ae05-fast` found an older Basfelt probe assuming a surviving outlaw in the shared world. Its controlled kill helper
+    now replenishes a shipped kind at a shipped spot, as Leg 6's does. `ae05-fast-fixed` passes 65 tests (three switch
+    skips) and all eleven scenarios. Warning, logger, clock-read and fidelity checks pass. Base commit `95c9bf58d`.
 - [ ] **AE-06 — The Leg 7 runner.** The engine and runner for:
   - the steps on another map;
   - the timed quest in the swamp;
@@ -3406,3 +3417,4 @@ The original questions follow.
 - 2026-10-02 AE-02: 27 Leg 7 ground legs and the fortress–Berth hub flights pass in SIM; both Spirit spots route; Fast and pre-commit checks pass.
 - 2026-10-02 AE-03: both Spirit spots, the pollen timer's expiry/cleanup and successful retake pass; Q2278 retained; Fast and pre-commit checks pass.
 - 2026-10-02 AE-04: eleven template plans pass, including both incoming hand-ins, Q2146 held, and the Berth round trip by flight; pre-commit checks pass.
+- 2026-10-02 AE-05: level-21 swamp encounters record nine distinct kills, no deaths or retreats; corpse overcount and a shared-probe assumption corrected; Fast and pre-commit checks pass.
