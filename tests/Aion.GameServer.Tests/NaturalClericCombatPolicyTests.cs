@@ -47,7 +47,7 @@ public sealed class NaturalClericCombatPolicyTests
 	}
 
 	[Fact]
-	public void EveryAutoLearnedActiveClericSkillToLevel20IsCastOrExcludedWithAReason()
+	public void EveryAutoLearnedActiveClericSkillToLevel22IsCastOrExcludedWithAReason()
 	{
 		string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
 		XDocument tree = XDocument.Load(Path.Combine(root, "game-server/data/static_data/skill_tree/skill_tree.xml"));
@@ -57,7 +57,7 @@ public sealed class NaturalClericCombatPolicyTests
 		int[] learnable = tree.Descendants("skill")
 			.Where(node => (string?)node.Attribute("classId") is "CLERIC" or "PRIEST" &&
 				(string?)node.Attribute("race") is null or "ASMODIANS" &&
-				(string?)node.Attribute("autolearn") == "true" && (int)node.Attribute("minLevel")! <= 20)
+				(string?)node.Attribute("autolearn") == "true" && (int)node.Attribute("minLevel")! <= 22)
 			.Select(node => (int)node.Attribute("skillId")!)
 			.Where(id => activation.GetValueOrDefault(id) == "ACTIVE").Distinct().Order().ToArray();
 		HashSet<int> cast = NaturalClericSkills.All.Select(skill => (int)skill.Id).ToHashSet();
@@ -70,6 +70,28 @@ public sealed class NaturalClericCombatPolicyTests
 			Assert.False(string.IsNullOrWhiteSpace(pair.Value));
 		});
 		Assert.Equal(cast.Count, NaturalClericSkills.All.Length);
+	}
+
+	[Fact]
+	public void Level22UsesItsLearnedRanksAndCompletesOnlyItsOwnFlashboltChain()
+	{
+		var learned = Learn(LearnedAt(22));
+		foreach ((string role, ushort id) in new[] { ("heal", (ushort)1842), ("smite", (ushort)4016),
+			("infernal", (ushort)1817), ("touch", (ushort)4074) })
+			Assert.Equal(id, NaturalPriestSkills.Best(role, 22, learned, Catalog)?.Id);
+		NaturalCombatObservation opened = Cleric(1500, 20) with
+		{
+			Level = 22, Learned = learned, OpenChainCategory = "P_CHAINA_2TH_1", OpenChainTargetId = Target,
+			ChainExpiresAt = Now.AddSeconds(3),
+		};
+		Assert.Equal((ushort)4037, Decide(opened).Skill?.Id);
+		AssertLegal(opened, Decide(opened));
+		Assert.NotEqual((ushort)4037, Decide(opened with { OpenChainTargetId = 99 }).Skill?.Id);
+		Assert.NotEqual((ushort)4037, Decide(opened with { ChainExpiresAt = Now }).Skill?.Id);
+		Assert.NotEqual((ushort)4037, Decide(opened with { OpenChainCategory = "P_CHAINA_1TH_1" }).Skill?.Id);
+		Assert.NotEqual((ushort)4037, Decide(opened with { Cooldowns = Cool((1231, 1)) }).Skill?.Id);
+		Assert.NotEqual((ushort)4037, Decide(opened with { Learned = Learn(LearnedAt(21)) }).Skill?.Id);
+		Assert.NotEqual((ushort)4037, Decide(opened with { Mp = 132 }).Skill?.Id); // 68 + 65 healing reserve.
 	}
 
 	[Fact]

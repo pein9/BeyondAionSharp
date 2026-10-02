@@ -41,6 +41,7 @@ public sealed partial class SimulationFastScenarioTests
 	/// and Gabacha's nearby warriors and sleekpaw. Relative placement comes from the shipped swamp spots.
 	/// AO-03: AO03_STAGES=1 uses account 209 at level 21 for both pecku kinds, a bodyguard/shaman pair, Gattban alone,
 	/// and Gattban with the nearest bodyguard and shaman, at the shipped relative spacing.
+	/// BC-05: BC05_STAGES=1 uses free account 216 at level 22 for the Black Claw groups, both Orb sources and Bregirun enemies/Kuninasha.
 	/// AH-03: AH03_STAGES=1 uses account 212 at level 21 for both hero/sorcerer pairs, a mist/splash mix and a wild
 	/// tayga pair, with shipped relative spacing and random walks.
 	/// </summary>
@@ -56,18 +57,19 @@ public sealed partial class SimulationFastScenarioTests
 		bool berth = Environment.GetEnvironmentVariable("AG06_STAGES") == "1";
 		bool eastGate = Environment.GetEnvironmentVariable("AE05_STAGES") == "1";
 		bool observatory = Environment.GetEnvironmentVariable("AO03_STAGES") == "1";
+		bool blackClaw = Environment.GetEnvironmentVariable("BC05_STAGES") == "1";
 		bool heart = Environment.GetEnvironmentVariable("AH03_STAGES") == "1";
 		int level = int.TryParse(Environment.GetEnvironmentVariable("AC00_CLERIC_LEVEL"), out int asked) ? asked
-			: heart || observatory || eastGate ? 21 : berth ? 20 : mumu ? 19 : basfelt ? 16 : 10;
-		Assert.InRange(level, 10, 21);
+			: blackClaw ? 22 : heart || observatory || eastGate ? 21 : berth ? 20 : mumu ? 19 : basfelt ? 16 : 10;
+		Assert.InRange(level, 10, 22);
 		int monsterId = level == 10 ? Goon : GraveRobbingFencer;
-		string item = heart ? "ah03" : observatory ? "ao03" : eastGate ? "ae05" : berth ? "ag06" : mumu ? "ak07" : basfelt ? "ab07" : level == 10 ? "na23" : "ac00";
+		string item = blackClaw ? "bc05" : heart ? "ah03" : observatory ? "ao03" : eastGate ? "ae05" : berth ? "ag06" : mumu ? "ak07" : basfelt ? "ab07" : level == 10 ? "na23" : "ac00";
 		string run = Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? $"{item}-cleric-encounter-l{level}-s{fixture.Seed}";
 		string directory = Path.Combine(root, "run", item, run);
 		Directory.CreateDirectory(directory);
 		string tracePath = Path.Combine(directory, $"{run}.trace.jsonl");
 		if (File.Exists(tracePath)) throw new IOException($"Preserving existing NA-23 trace: {tracePath}");
-		int accountId = heart ? 212 : observatory ? 209 : eastGate ? 206 : 41;
+		int accountId = blackClaw ? 216 : heart ? 212 : observatory ? 209 : eastGate ? 206 : 41;
 		using var trace = BotActionTraceWriter.Open(tracePath, run, "b01", $"sim-player-{accountId}",
 			virtualTime: () => TimeSpan.FromMilliseconds(fixture.Clock.NowMillis));
 		Console.WriteLine($"NA-23 trace: {tracePath}");
@@ -77,8 +79,8 @@ public sealed partial class SimulationFastScenarioTests
 		await using var session = new SimulationL0Session(fixture, policy, "b01", accountId,
 			"Asimclric", Race.ASMODIANS, trace, tracePath);
 		var dashboard = new LiveBotDashboardState();
-		int dashboardPort = heart || observatory || eastGate ? int.Parse(Environment.GetEnvironmentVariable("AION_BOT_DASHBOARD_PORT") ?? "17880") : 0;
-		await using var dashboardHost = new LiveBotDashboardHost(run, [heart ? "AH-03" : observatory ? "AO-03" : "AE-05"], dashboard, dashboardPort);
+		int dashboardPort = blackClaw || heart || observatory || eastGate ? int.Parse(Environment.GetEnvironmentVariable("AION_BOT_DASHBOARD_PORT") ?? "17880") : 0;
+		await using var dashboardHost = new LiveBotDashboardHost(run, [blackClaw ? "BC-05" : heart ? "AH-03" : observatory ? "AO-03" : "AE-05"], dashboard, dashboardPort);
 		session.Dashboard = dashboard;
 		if (dashboardHost.Enabled) Console.WriteLine($"Cleric encounter dashboard: {dashboardHost.Url}");
 		NaturalAscensionContract bridge = NaturalAscensionContract.LoadDefault();
@@ -92,8 +94,9 @@ public sealed partial class SimulationFastScenarioTests
 		{
 			PrepareCourseAsync = PrepareAsync,
 			PrepareEncounterStageAsync = PrepareStageAsync,
-			EncounterNpcIds = heart ? [210588, 210722, 210723, 210724, 210575, 210577, 210522, 210547] : null,
-			EncounterStages = heart ? ["hero-sorcerer-l18", "hero-sorcerer-l19", "mist-splash", "wild-taygas"]
+			EncounterNpcIds = blackClaw ? [210498, 210499, 210508, 210509, 210533, 210535, 210538, 210539, 210551, 210552, 210560, 210562, 210751, 210753, 211624, 211625, 216893] : heart ? [210588, 210722, 210723, 210724, 210575, 210577, 210522, 210547] : null,
+			EncounterStages = blackClaw ? ["veteran-mumus", "hunter-l16", "hunter-l17", "spellshifter-pair", "spellshifter-l18", "seeker-camp", "warlock-l19", "warlock-l20", "stalker-pair", "abija", "gabacha-l22", "bregirun-pair", "kuninasha"]
+				: heart ? ["hero-sorcerer-l18", "hero-sorcerer-l19", "mist-splash", "wild-taygas"]
 				: observatory ? ["observatory-peckus", "bodyguard-shaman", "gattban", "gattban-camp"]
 				: eastGate ? ["warrior-arachnas", "warrior-sleekpaw", "gabacha", "gabacha-camp"]
 				: berth ? ["minushan-spirit", "pecku-pack", "angolem-shardling", "minushan-bones"]
@@ -214,6 +217,32 @@ public sealed partial class SimulationFastScenarioTests
 				"hero-sorcerer-l19" => [(0, 0, 0, 210722), (2.62f, 9.63f, 0, 210724)],
 				"mist-splash" => [(0, 0, 10, 210575), (30.15f, 11.27f, 10, 210577), (2.44f, 21.25f, 10, 210522)],
 				"wild-taygas" => [(0, 0, 0, 210547), (14.67f, 11.11f, 0, 210547)],
+				// BC-05: shipped relative positions from (2054.16, 2537.71, 339.36688); waypoint paths remain the natural run's proof.
+				"veteran-mumus" => [(0.00f, 0.00f, 0, 210498), (0.00f, 0.00f, 0, 210499)],
+				// BC-05: shipped relative positions from (1934.74, 2332.28, 307.37125); waypoint paths remain the natural run's proof.
+				"hunter-l16" => [(0.00f, 0.00f, 0, 210551)],
+				// BC-05: shipped relative positions from (1933.38, 2554.77, 323.21188); waypoint paths remain the natural run's proof.
+				"hunter-l17" => [(0.00f, 0.00f, 0, 210552)],
+				// BC-05: shipped relative positions from (1900.94, 2489.05, 316.375); waypoint paths remain the natural run's proof.
+				"spellshifter-pair" => [(0.00f, 0.00f, 0, 210508), (14.63f, -0.84f, 0, 210508)],
+				// BC-05: shipped relative positions from (2058.0, 2442.71, 335.54437); waypoint paths remain the natural run's proof.
+				"spellshifter-l18" => [(0.00f, 0.00f, 0, 210509)],
+				// BC-05: shipped relative positions from (2099.26, 2506.95, 341.329); waypoint paths remain the natural run's proof.
+				"seeker-camp" => [(0.00f, 0.00f, 0, 210560), (-15.45f, 21.52f, 0, 210533), (7.93f, -2.09f, 0, 210535)],
+				// BC-05: shipped relative positions from (2300.89, 2191.86, 277.172); waypoint paths remain the natural run's proof.
+				"warlock-l19" => [(0.00f, 0.00f, 0, 210538)],
+				// BC-05: shipped relative positions from (2522.12, 2605.16, 315.68146); waypoint paths remain the natural run's proof.
+				"warlock-l20" => [(0.00f, 0.00f, 0, 210539)],
+				// BC-05: shipped relative positions from (1888.83, 2363.0, 302.64624); waypoint paths remain the natural run's proof.
+				"stalker-pair" => [(0.00f, 0.00f, 0, 210562), (10.34f, 21.19f, 0, 210562)],
+				// BC-05: shipped relative positions from (1931.98, 2389.17, 301.07062); waypoint paths remain the natural run's proof.
+				"abija" => [(0.00f, 0.00f, 0, 210751)],
+				// BC-05: shipped relative positions from (1652.6, 2225.49, 250.875); waypoint paths remain the natural run's proof.
+				"gabacha-l22" => [(0.00f, 0.00f, 0, 216893)],
+				// BC-05: shipped relative positions from (264.054, 215.517, 210.201); waypoint paths remain the natural run's proof.
+				"bregirun-pair" => [(0.00f, 0.00f, 0, 211625), (0.37f, -1.51f, 0, 211624)],
+				// BC-05: shipped relative positions from (260.12, 234.93, 216); waypoint paths remain the natural run's proof.
+				"kuninasha" => [(0.00f, 0.00f, 0, 210753)],
 				_ => throw new ArgumentOutOfRangeException(nameof(stage)),
 			};
 			foreach ((float dx, float dy, int randomWalk, int npcId) in monsters)

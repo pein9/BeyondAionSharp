@@ -309,7 +309,8 @@ public static class NaturalPriestCombatPolicy
 		// while Flashbolt is ready Smite opens first and Flashbolt follows at once; then Slashing Wind and Earth's
 		// Wrath (a 1.5 s cast, last at melee where a hit can cancel it). The Priest catalog has none of these roles.
 		// AC-00: Divine Touch follows Slashing Wind's chain the same way, so it is checked with Flashbolt.
-		var rotation = new List<string> { "followup", "touch" };
+		// BC-05: Divine Spark completes Flashbolt's observed chain before another opener resets it.
+		var rotation = new List<string> { "spark", "followup", "touch" };
 		NaturalPriestSkill? followup = NaturalPriestSkills.Best("followup", state.Level, state.Learned, catalog);
 		NaturalPriestSkill? opener = NaturalPriestSkills.Best("smite", state.Level, state.Learned, catalog);
 		if (followup != null && opener != null && followup.RequiresChainCategory == opener.ChainCategory &&

@@ -3450,9 +3450,18 @@ Gathering, coin loops and unapproved D32 quests stay deferred.
     first Rebirth draft's pre-death availability assertion was corrected to observe the buff (Java stores its
     revival information on death). The analyzer warning is fixed. Logs/traces: `run/bc04-campaigns*`; every
     final pre-commit check passes (`run/bc04-final-checks`). Deaths remain recorded outcomes, not failures.
-- [ ] **BC-05 — Combat at level 22.** Encounter harness at shipped relative spacing against the group target
+- [x] **BC-05 — Combat at level 22.** Encounter harness at shipped relative spacing against the group target
   mixes, campaign sources and Bregirun enemies/Kuninasha. Natural combat, learned skills and approved supplies;
   record distinct kills, deaths and retreats. Read Java and retail AI evidence first. Depends: BC-02.
+  - *Done 2026-10-02.* From `298cfb918`, free account 216 completes thirteen stages at shipped relative spacing:
+    both veteran/hunter/spellshifter/warlock ranks, the seeker/bodyguard/scratcher camp, stalkers, Abija,
+    Gabacha, Bregirun's pair and Kuninasha. Nineteen distinct monsters reach client-observed zero HP; no deaths
+    or retreats (`run/bc05/bc05-encounter-final`). Natural attacks and approved supplies, with no 1-HP targets.
+  - Java skills/AI and the retail hunter/battle-cycle evidence were read first. The bot catalog now includes
+    the observed auto-learned level 21–22 ranks and Divine Spark's third chain step; the final encounter casts
+    all five additions. Seventeen policy/catalog tests pass (`bc05-skills-final.log`). The first passing
+    encounter is retained; an incorrect extra-mana-reserve assertion is corrected with its failed log retained.
+    All pre-commit checks and `bc05-fast` pass. No server changes; actual walking routes remain the natural smoke.
 - [ ] **BC-06 — Natural runner and smoke.** Implement the proven gaps only; restore `altgard-l9` and run
   `AF_ALTGARD=l10` with the snapshot runner environment through all nine quests and relog. Hub transporter,
   ordinary city/instance travel, campaign recovery, consumed items and unchanged Q2900; dashboard enabled.
@@ -3892,3 +3901,4 @@ The original questions follow.
 - 2026-10-02 BC-02: 54 level-22 travel legs, 20 source kinds/ten totems, actual Heart flight, quest teleport, both Bregirun portals, Vidar dialog and learned Returns pass on free account 213; generated Bregirun mesh rebakes identically. Earlier drafts retained; Fast and pre-commit checks pass. Template quests are next.
 - 2026-10-02 BC-03: six template hand-ins/work items consumed, both partial Q2281 hand-ins rejected, 34 controlled kills/three ordinary respawn waits and real Vidar delivery/Return pass on free account 214; expected-rejection labeling and nullable warnings corrected, draft evidence retained; pre-commit checks pass. Campaigns are next.
 - 2026-10-02 BC-04: all three campaigns, gated/consumed Orb, natural unlock, real portals/guardian/boss/movies and ordinary self-revival/exit/re-entry pass on free account 215; bind-route boundary and assertion drafts retained, pre-commit checks pass. Learned Hand of Reincarnation protects Bregirun attempts; no server changes. Combat is next.
+- 2026-10-02 BC-05: thirteen level-22 combat stages record 19 distinct kills, no deaths/retreats on free account 216; learned 21–22 ranks/Divine Spark added after Java audit, seventeen policy tests and final encounter pass; reserve-assertion draft retained, Fast and pre-commit checks pass. Natural runner is next.
