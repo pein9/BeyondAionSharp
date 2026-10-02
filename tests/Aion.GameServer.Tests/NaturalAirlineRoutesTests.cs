@@ -44,6 +44,31 @@ public sealed class NaturalAirlineRoutesTests
 	}
 
 	[Fact]
+	public void BasfeltToTradersBerthIsTwoFlightsAndBackAgain()
+	{
+		// AG-00: Leg 6 works out of Trader's Berth (obelisk 700821). From Nokir it is Hrold's flight to the fortress, then the
+		// fortress transporter's flight to "Urtumheim", which lands by Trader's Berth's own transporter (203678).
+		var nokir = new BotPosition(1779.88f, 690.477f, 264.309f, 0);
+		var berthObelisk = new BotPosition(2687f, 1021f, 312f, 0);
+		NaturalAirlineJourney there = Assert.IsType<NaturalAirlineJourney>(NaturalAirlineRoutes.Journey(Routes, Altgard, nokir, berthObelisk));
+		Assert.Equal([(203683, 19), (203561, 20)], there.Flights.Select(flight => (flight.NpcId, flight.LocationId)));
+		Assert.Equal(400 + 560, there.Fares);
+		Assert.True(there.Seconds + 20 <= there.WalkAllSeconds, $"{there.Seconds} s flying against {there.WalkAllSeconds} s walking");
+		// The legs join up: a walk to Hrold's pad, the flight, the short walk at the fortress to the next pad, the flight, a walk.
+		Assert.Equal(nokir, there.Legs[0].From);
+		Assert.Equal(berthObelisk, there.Legs[^1].To);
+		for (int i = 1; i < there.Legs.Count; i++) Assert.Equal(there.Legs[i - 1].To, there.Legs[i].From);
+
+		NaturalAirlineJourney back = Assert.IsType<NaturalAirlineJourney>(NaturalAirlineRoutes.Journey(Routes, Altgard, berthObelisk, nokir));
+		Assert.Equal([(203678, 19), (203561, 32)], back.Flights.Select(flight => (flight.NpcId, flight.LocationId)));
+		// From the fortress, Basfelt is one flight; and Gerger, 345 m from the Berth, is a walk.
+		var fortressObelisk = new BotPosition(1758f, 1815f, 254f, 0);
+		Assert.Equal([(203561, 32)], NaturalAirlineRoutes.Journey(Routes, Altgard, fortressObelisk, nokir)!.Flights
+			.Select(flight => (flight.NpcId, flight.LocationId)));
+		Assert.Null(NaturalAirlineRoutes.Journey(Routes, Altgard, berthObelisk, new BotPosition(2370f, 900f, 320f, 0)));
+	}
+
+	[Fact]
 	public void TheFlightFollowsTheRouteKeysInTheirTime()
 	{
 		NaturalAirlineRoute basfelt = Routes.Single(route => route.NpcId == 203683 && route.LocationId == 19);

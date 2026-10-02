@@ -2531,8 +2531,33 @@ The ten hand-ins are worth 203,775 XP (33% of level 20; Q2252 at its Spirit rewa
 
 The same loop protocol, with "AG" in place of "NA".
 
-- [ ] **AG-00 — Chained hub flights.** A route search over `natural-flight-routes.json` (flights plus the
+- [x] **AG-00 — Chained hub flights.** A route search over `natural-flight-routes.json` (flights plus the
   walks between landings and pads), with unit tests. A SIM probe flies Basfelt → fortress → Trader's Berth.
+  - *Done 2026-10-01.* `NaturalAirlineRoutes.Journey` finds the quickest way on a map by walks and flight transporters.
+    - It is a shortest-time search: straight-line walks at 6 m/s (a road is never shorter, so this favours walking),
+      and a flight costs its route's time plus 10 s for the dialog and fare.
+    - It returns no journey unless the flights save at least 20 s over walking all the way.
+    - `Toward` is now the journey's first flight. The runner's `FlyTowardAsync` flies one leg at a time and plans
+      again from each landing (at most four flights).
+  - `BasfeltToTradersBerthIsTwoFlightsAndBackAgain`:
+    - Nokir to the Berth obelisk is Hrold's flight (203683, location 19), then the fortress transporter's flight
+      to "Urtumheim" (203561, location 20), 960 Kinah at base prices.
+    - Back is 203678 (location 19), then 203561 (location 32). The fortress to Basfelt is one flight. Gerger, 345 m
+      from the Berth, is a walk.
+  - **SIM probe `BasfeltToTradersBerthTakesTwoHubFlights`** (account 68, a level 20 Cleric):
+    - The journey picks each hop: `df1a_sub_basfelt` for 565 Kinah and `DF1A_SUB_Altgard` for 791 (`SM_PRICES`).
+    - It lands 8.0 m from the Trader's Berth obelisk, where the search then says walk. The server agrees with each
+      landing.
+  - **`run-fast` found a talk defect, fixed here.** The new probe shifts the shared world's clock, and after it
+    `AltgardScriptedQuestsPlayThroughTheContractSteps` timed out on Q2209's Tulberg, a walking NPC.
+    - The dialog opened while he walked on; he stopped 6.6 m from the Cleric, outside talk range.
+    - Java `NpcController.onDialogSelect` drops a choice made from out of range without a word, so the talk waited
+      for page 1352 until it timed out.
+    - `NaturalAltgardQuestSteps.TalkAsync`, which the runner shares, now waits up to 3 s for a moving NPC to stop.
+      If it stopped beyond the step's talk range, it raises `NaturalDialogTooFarException`, and the callers already
+      follow and talk again.
+  - All 347 Natural tests pass, and so do `run-fast` (every test), the warning baseline and the logger, clock and
+    fidelity checks.
 - [ ] **AG-01 — The Leg 6 contract and plans.** `natural-altgard-l6-contract.json` from the l5 endpoint:
   - bind 700821, the town and its merchant (Japayerk);
   - the escort (Q2284) with the follower's hours, the Q2252 spawn, and the Q2247 and Q2246 steps;
@@ -2918,3 +2943,4 @@ The original questions follow.
 - 2026-10-01 AK-09: `altgard-l5` captured from `altgard-l4` at 53d488402 (level 20, no deaths, Q2242/Q24233 held), restore-checked; it includes the PatternAi flee fix c379a18e1.
 - 2026-10-01 AK-10: the full checklist on 72824ee0f; everything passes except the flee probe's D32 account clash (c379a18e1, not Leg 5's). Leg 5 is done.
 - 2026-10-01 AK-10 follow-up (the maintainer asked): the flee probe moved to account 69 (5297762ce); bisecting its run-fast failure found a server gap, a flee counted as arrived while its target was in reach, fixed in PatternAi (6cc174b33). run-fast passes in full.
+- 2026-10-01 AG-00: chained hub flights (NaturalAirlineRoutes.Journey); a SIM probe flies Basfelt to the fortress to Trader's Berth; TalkAsync waits for a walking NPC to stop.

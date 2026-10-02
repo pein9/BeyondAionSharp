@@ -21,6 +21,17 @@ public static class NaturalAltgardQuestSteps
 		Expect(step, before);
 		await NaturalDialogProtocol.OpenAsync(session, npc, token);
 		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet => packet.Get<int>("targetObjectId") == npc);
+		// A walking NPC (Tulberg) walks on until the talk stops it. Java NpcController.onDialogSelect drops a choice made from out of
+		// talk range without a word, so a walker that stopped beyond reach left the talk waiting for a page that never came (run-fast,
+		// AG-00: 6.6 m away). Wait for it to stop, as a player watches it turn round, and step closer when it is out of reach.
+		for (int wait = 0; wait < 12 && world.Objects.TryGetValue(npc, out BotKnownObject? walking) && walking.MoveTarget != null; wait++)
+		{
+			await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+			await session.SynchronizeAsync(token);
+		}
+		if (world.Objects.TryGetValue(npc, out BotKnownObject? stood) &&
+			MathF.Sqrt(MathF.Pow(session.CurrentPosition.X - stood.SettledPosition.X, 2) + MathF.Pow(session.CurrentPosition.Y - stood.SettledPosition.Y, 2)) > step.TalkRange)
+			throw new NaturalDialogTooFarException();
 		// USE_OBJECT is the talk itself: its page is the dialog just opened.
 		string[] actions = step.Actions[0] == "USE_OBJECT" ? step.Actions[1..] : step.Actions;
 		int pages = step.Actions[0] == "USE_OBJECT" ? 1 : 0;

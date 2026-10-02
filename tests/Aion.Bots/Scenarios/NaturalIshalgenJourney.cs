@@ -1426,30 +1426,38 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 				// AB-08: walk the Altgard travel planner's road to a point (the navmesh path when it has none), one section of 16 points
 				// at a time, defending against whatever engages between sections.
-				// The maintainer's 2026-10-01 note: fly between hubs rather than walk. Take the flight transporter whose route lands
-				// near the destination, when walking to its pad and on from its landing is shorter; false when none is.
+				// The maintainer's 2026-10-01 note: fly between hubs rather than walk. AG-00: take the quickest journey by walks and
+				// flight transporters (NaturalAirlineRoutes.Journey), one flight at a time, planning again from each landing, so
+				// Basfelt to Trader's Berth is two flights. False when walking is better from the start.
 				async Task<bool> FlyTowardAsync(BotPosition destination)
 				{
-					NaturalAirlineRoute? route = NaturalAirlineRoutes.Toward(airlines, leg.Hub.MapId, session.CurrentPosition, destination);
-					if (route == null) return false;
-					session.TraceDiagnostic("airline-chosen", new Dictionary<string, object?>
+					int flown = 0;
+					for (NaturalAirlineJourney? journey = NaturalAirlineRoutes.Journey(airlines, leg.Hub.MapId, session.CurrentPosition, destination);
+						journey != null && flown < 4;
+						journey = NaturalAirlineRoutes.Journey(airlines, leg.Hub.MapId, session.CurrentPosition, destination))
 					{
-						["route"] = route.Route, ["npc"] = route.NpcId, ["location"] = route.LocationId, ["from"] = session.CurrentPosition,
-						["destination"] = destination,
-					});
-					if (Distance(session.CurrentPosition, route.Departure) > 60)
-						await WalkRoadDefendingAsync(route.Departure, "airline-road", within: 15);
-					int transporter = await ApproachShippedSpawnAsync(route.NpcId);
-					if (Distance(session.CurrentPosition, route.Departure) > 3)
-					{
-						NaturalNavigationResult atPad = await NaturalIshalgenNavigator.ExploreAnchorAsync(
-							contract.MapId, -1, route.Departure, navigator, "airline-departure", token);
-						Require.True(atPad.Arrived, atPad.Reason);
+						NaturalAirlineRoute route = journey.Flights.First();
+						session.TraceDiagnostic("airline-chosen", new Dictionary<string, object?>
+						{
+							["route"] = route.Route, ["npc"] = route.NpcId, ["location"] = route.LocationId, ["from"] = session.CurrentPosition,
+							["destination"] = destination, ["flights"] = journey.Flights.Select(flight => flight.Route).ToArray(),
+							["seconds"] = journey.Seconds, ["walkAllSeconds"] = journey.WalkAllSeconds,
+						});
+						if (Distance(session.CurrentPosition, route.Departure) > 60)
+							await WalkRoadDefendingAsync(route.Departure, "airline-road", within: 15);
+						int transporter = await ApproachShippedSpawnAsync(route.NpcId);
+						if (Distance(session.CurrentPosition, route.Departure) > 3)
+						{
+							NaturalNavigationResult atPad = await NaturalIshalgenNavigator.ExploreAnchorAsync(
+								contract.MapId, -1, route.Departure, navigator, "airline-departure", token);
+							Require.True(atPad.Arrived, atPad.Reason);
+						}
+						NaturalServiceOutcome outcome = await new NaturalServiceSteps(session).FlyAsync(transporter,
+							session.Api.World.Objects[transporter].Position, 6, route, token);
+						Require.True(outcome.IsDone, outcome.Reason);
+						flown++;
 					}
-					NaturalServiceOutcome flown = await new NaturalServiceSteps(session).FlyAsync(transporter,
-						session.Api.World.Objects[transporter].Position, 6, route, token);
-					Require.True(flown.IsDone, flown.Reason);
-					return true;
+					return flown > 0;
 				}
 
 				async Task<bool> WalkRoadDefendingAsync(BotPosition destination, string purpose, float within = 12,
