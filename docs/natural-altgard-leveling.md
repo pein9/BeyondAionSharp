@@ -2631,8 +2631,31 @@ The same loop protocol, with "AG" in place of "NA".
       - at Babarunerk: a blackened angolem (210487), one or two shardlings and two peckus (212345).
   - All 353 Natural tests pass, and so do `run-fast` (every test), the warning baseline and the logger, clock and
     fidelity checks.
-- [ ] **AG-04 — Q2252 in SIM:** Sinood, the bones, the spawn, the kill and the reward group, and the new
+- [x] **AG-04 — Q2252 in SIM:** Sinood, the bones, the spawn, the kill and the reward group, and the new
   item after a miss.
+  - *Done 2026-10-02.* `ChasingTheLegendMissesOnceRefillsAndPaysTheKillsRewardGroup` (account 65, a level 20 Cleric):
+    - **The start.** Sinood's QUEST_ACCEPT_1 starts Q2252 and gives the Bones of Minushan (182203235).
+    - **The first use and a miss.** The bones (700060) take the item and raise Minushan's Spirit (210634) on their own
+      spot, with the shout 1100630.
+      - Left alone, the Spirit is gone after its 180 s (185 s seen), and Q2252 stays at var 0.
+      - The bones object stays for the next try.
+    - **New bones.** Sinood's QUEST_SELECT at var 0 gives new bones (page 1693). Java's `giveQuestItem` returns true
+      even when the bones are already in the bag (with STR_CAN_NOT_GET_LORE_ITEM), so page 2034 never shows.
+    - **The kill and the reward group.** A second Spirit, set to 1 HP on the server (the fight is AG-06's), is shot
+      down from 18 m: REWARD at var 1. Sinood pays reward group 0: three Drake's Memory (164000041) and 24,900 XP.
+      - The Drakie (210635, 5%) did not come up in this run. When it does, the probe checks that branch the same way:
+        var 2, reward group 1 and its 1,900 Kinah (the XP is only logged).
+    - Cleared first (within 40 m): one or two peckus (212345) by Sinood, and six at the bones.
+  - **For AG-07: a ghost Spirit.** Java sends the client no SM_DELETE for what it saw while it teleports
+    (`PlayerController.notSee`).
+    - The probe met it on its first run. Its setup teleport kept the first Spirit in the client's view, and
+      `WaitForNpcAsync` took that long-gone Spirit for the second. The probe now drops the client's view before each
+      setup teleport, as the client does.
+    - The runner drops the view for a Return and for a bind on another map. It does not for a bind revive on the same
+      map, though Java's `moveToBindLocation` is the same teleport. After a miss and a death, the Berth revive would leave
+      the first Spirit in view at the bones. So AG-07's spawn kill must take the monster whose SM_NPC_INFO follows the use.
+  - All 353 Natural tests pass, and so do `run-fast` (every test), the warning baseline and the logger, clock and
+    fidelity checks.
 - [ ] **AG-05 — The template quests in SIM:** Q2244, Q2245, Q2249 (with the shardlings), Q2251, Q24115
   held, and Q2242's hand-in at Gemyu.
 - [ ] **AG-06 — Combat at level 20.** The encounter harness against Minushan's Spirit (SEASONED L18), a
@@ -3013,3 +3036,4 @@ The original questions follow.
 - 2026-10-02 AG-01: the Leg 6 contract (12 quests, the Q2284 escort from var 1 with its follower's hours, the Q2252 spawn, Q24115 and Q2262 held) and its 9 template plans.
 - 2026-10-02 AG-02: Leg 6's 16 travel legs walked in SIM from the Trader's Berth obelisk.
 - 2026-10-02 AG-03: Gerger's scripted quests and the night wait for Q2284's escort played in SIM.
+- 2026-10-02 AG-04: Q2252's bones, a miss, new bones and the kill played in SIM.
