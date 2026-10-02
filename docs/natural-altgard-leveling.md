@@ -2593,7 +2593,20 @@ The same loop protocol, with "AG" in place of "NA".
     - the escort and spawn against their handlers and `temporary_spawn`;
     - the two hub flights from the Basfelt bind.
   - All 352 Natural tests pass, and so do the warning baseline and the logger, clock and fidelity checks.
-- [ ] **AG-02 — Walk every Leg 6 route in SIM**, from the Berth obelisk to each ground and Gerger, and back.
+- [x] **AG-02 — Walk every Leg 6 route in SIM**, from the Berth obelisk to each ground and Gerger, and back.
+  - *Done 2026-10-02.* `AltgardLeg6TravelWalksEveryGroundAndBack` (account 67, a level 30 probe; plans at level 20) walks
+    16 legs in three round trips from the Trader's Berth obelisk. Every leg ends within 5 m of its ground. Notable:
+    - **Gerger by road.** The Berth to Gemyu is 466 m by road (345 m straight), across the angolem ground (seven
+      blackened angolems within 30 m).
+      - Around Gerger the grounds are close together: the ribbits 120 m away, the insignia box 98 m, the first
+        disguised Germir 134 m.
+      - Gogaerunerk is 306 m from that Germir, among angolem fragments (280100, NOVICE L18), as are the ksellids
+        beyond him: ten fragments within 30 m.
+    - **The escort line.** The second disguised Germir is 165 m from the angolems, and the line on to Babarunerk is
+      197 m, across the same angolem ground (four angolems and three shardlings within 30 m).
+    - **The far grounds.** The peckus are 63 m from the obelisk and the crimsontails 95–146 m. The Bones of Minushan
+      are 365 m beyond them, and the way back is 520 m through the pecku ground (21 peckus within 30 m).
+  - `run-fast` passes (every test), and so do the warning baseline and the logger, clock and fidelity checks.
 - [ ] **AG-03 — Gerger's scripted quests in SIM:** Q2246's insignia box, Q2247's disguise, and Q2284's two
   Germirs and the follow to Babarunerk. Include a run started after 21:00, which must wait for 798041.
 - [ ] **AG-04 — Q2252 in SIM:** Sinood, the bones, the spawn, the kill and the reward group, and the new
@@ -2976,3 +2989,4 @@ The original questions follow.
 - 2026-10-01 AK-10 follow-up (the maintainer asked): the flee probe moved to account 69 (5297762ce); bisecting its run-fast failure found a server gap, a flee counted as arrived while its target was in reach, fixed in PatternAi (6cc174b33). run-fast passes in full.
 - 2026-10-01 AG-00: chained hub flights (NaturalAirlineRoutes.Journey); a SIM probe flies Basfelt to the fortress to Trader's Berth; TalkAsync waits for a walking NPC to stop.
 - 2026-10-02 AG-01: the Leg 6 contract (12 quests, the Q2284 escort from var 1 with its follower's hours, the Q2252 spawn, Q24115 and Q2262 held) and its 9 template plans.
+- 2026-10-02 AG-02: Leg 6's 16 travel legs walked in SIM from the Trader's Berth obelisk.
