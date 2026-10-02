@@ -20,6 +20,8 @@ is done (AK-00..AK-10, 2026-10-01): `altgard-l5` starts Leg 6.
 (AE-00..AE-08, 2026-10-02; AE-Q1..AE-Q3 as recommended): `altgard-l7` starts Leg 8 at the fortress.
 [Leg 8: Altgard Observatory and Mahindel Swamp](#leg-8-altgard-observatory-and-mahindel-swamp-level-21)
 is done (AO-00..AO-06, 2026-10-02): `altgard-l8` starts Leg 9 at the Observatory.
+[Leg 9: Heart of Impetusium](#leg-9-heart-of-impetusium-level-21) is done (AH-00..AH-06, 2026-10-02):
+`altgard-l9` starts Leg 10, the Black Claw ground, with a level-22 Cleric bound at the Heart.
 
 ## Goal
 
@@ -3190,7 +3192,7 @@ Leg 9. LIVE acceptance remains once at the end of the whole Altgard area.
 
 ## Leg 9: Heart of Impetusium (level 21)
 
-**Status (2026-10-02): approved; implementation in progress.** The maintainer's goal, "Implement Leg 9 as needed",
+**Status (2026-10-02): done (AH-00..AH-06).** The maintainer's goal, "Implement Leg 9 as needed",
 works Stop 12 as approved with AE-Q3 (a). Use the loop protocol with **AH** in place of NA. The existing
 bind, hub-flight, help-item, inventory and death policies apply. No new server content is needed.
 
@@ -3247,7 +3249,7 @@ Heart obelisk and bound there. Relog and save `altgard-l9` from committed code; 
     four actual hub flights (352 Kinah Observatory–fortress; 565 each for the three Heart/fortress flights),
     two ordinary pillar flights, alive endpoint (2659.192, 1660.59, 324.690). Maximum ground miss 2.5 m.
     Upper/lower transition: use the debris landing (2564.68, 1559.74, 249.920), then walk to Banatisai; both
-    roughly 240 m free flights land with 40 FP. All four debris spots, all seven spirit/tayga kinds, every
+    roughly 240 m free flights land with 40 FP. All four debris spots, all eight spirit/tayga kinds, every
     giver/held recipient, Suthran, Donabe and the city teleporter route. Hazards logged before controlled clearing.
   - Failed drafts `run/ah01-travel*.log` are retained: direct descent to Banatisai is blocked by the upper structure,
     even at higher cruise heights; land outside it first. The nearest L19 sorcerer can be on a disconnected ledge;
@@ -3307,8 +3309,20 @@ Heart obelisk and bound there. Relog and save `altgard-l9` from committed code; 
     `8520730dd512758a5c419bd569606f0e6e73c5de9c2f12b4285dc2ba9454793e` matches on restore; resume clock
     54,004,074 ms. Both owned capture/restore schemas are dropped. Pre-commit checks pass (`run/ah05-checks`,
     `run/ah05-evidence-checks`); the evidence amendment changes only this document, retaining the captured code.
-- [ ] **AH-06 — Full CLAUDE checklist and checkpoint.** Every listed command, evidence and correction of any
+- [x] **AH-06 — Full CLAUDE checklist and checkpoint.** Every listed command, evidence and correction of any
   failures, then checkpoint and stop. LIVE acceptance stays at the end of the Altgard area. Depends: AH-05.
+  - *Done 2026-10-02.* All 33 CLAUDE checklist commands exit 0 on `da427b420`
+    (`run/ah06-final-checklist/results.json`), with indexed command logs. Solution: 5,080 passed, 97 reported
+    skips; GameServer 4,456 passed/16 skipped, Simulation 145 passed/73 skipped. Warning/logger/clock/draft,
+    fidelity, quest compiler/inventory, evidence/report/coverage/flake/soak and controller contract checks pass.
+    Controller tests use their mock Docker harnesses. NavBake validates all five baked maps.
+    `ah06-final-fast`: 69 passed, three switch skips, all eleven scenarios passed.
+  - The first temporary checklist runner dropped command arguments; its invalid attempt and runner are retained
+    under `run/ah06-checklist` and `run/ah06-checklist-draft.ps1`. The corrected runner uses strict mode and
+    commands checked against CLAUDE; no actual checklist failures. AH-01's travel and AH-03's combat failures
+    remain retained with their correction evidence. The travel log covers eight source kinds, correcting the
+    earlier seven-kind evidence count. The committed `altgard-l9` capture and owned restore remain valid.
+    Leg 9 is done; Leg 10 starts from that snapshot. Stop at this checkpoint; Q2900 remains last.
 
 ## Blocked / questions for the operator
 
@@ -3734,3 +3748,4 @@ The original questions follow.
 - 2026-10-02 AH-03: four level-21 Heart combat stages record nine distinct kills, no deaths/retreats on free account 212; neutral diagnostic targeting and a zero-time moving-target approach stall corrected, earlier traces retained; final encounter, Fast and pre-commit checks pass. Natural runner is next.
 - 2026-10-02 AH-04: first natural l9 smoke from altgard-l8 passes through relog, nine completions/work items consumed/campaigns unchanged; Cleric 22 alive at Heart, 35 distinct kills, no deaths/one retreat, three hub/eight pillar flights and nine debris uses; 21 decision cases, Fast and pre-commit checks pass, owned schema dropped. Snapshot is next.
 - 2026-10-02 AH-05: altgard-l9 captured from committed 96545cd84, hash-checked and restored; Cleric 22 alive at Heart, nine completions/no held quests, work items consumed, 378,680 Kinah, campaigns unchanged; both owned schemas dropped. Full checklist is next.
+- 2026-10-02 AH-06: all 33 CLAUDE commands pass on da427b420, solution 5,080 passed/97 skips, Fast 69 passed/three switch skips/all eleven scenarios; five baked maps validate. Temporary runner argument typo corrected with invalid attempt retained. Leg 9 is done; altgard-l9 starts Leg 10. No push.
