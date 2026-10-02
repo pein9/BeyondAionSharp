@@ -44,6 +44,9 @@ public sealed class NaturalEscortProtocol(INaturalJourneySession session, Natura
 	/// <summary>Follower objects of attempts that ended before this run. Java deletes the follower at every end
 	/// (<c>FollowEventHandler.stopFollow</c>), so such an object is gone even if the client missed its delete.</summary>
 	public IReadOnlyCollection<int> EndedFollowerObjectIds { get; init; } = [];
+	/// <summary>AG-07: true while a follower that keeps hours (Q2284's, 04:00-21:00) is outside them. An escort not under way
+	/// then ends with <c>off-hours</c>, and the leg's decisions wait for the window (AG-Q3 (a)).</summary>
+	public Func<bool>? OffHours { get; init; }
 	public TimeSpan WaitTick { get; init; } = TimeSpan.FromMilliseconds(500);
 	public int MaxTicks { get; init; } = 4000;
 
@@ -121,6 +124,8 @@ public sealed class NaturalEscortProtocol(INaturalJourneySession session, Natura
 					new BotPosition(escort.Goal[0], escort.Goal[1], escort.Goal[2], 0)) : null,
 				["movie"] = movieSeen,
 			});
+			if (choice.Action != "done" && !(state is (3, int on) && on == escort.FollowVar) && OffHours?.Invoke() == true)
+				return new("off-hours", attempts, log.ToArray(), movieSeen, speed, [.. ended], goneAt);
 			switch (choice.Action)
 			{
 				case "done":

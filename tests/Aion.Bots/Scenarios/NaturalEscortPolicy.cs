@@ -42,6 +42,8 @@ public static class NaturalEscortPolicy
 	/// <summary>Headroom on the respawn window: clearing ends, then the walk to the follower and the escort must finish
 	/// this long before the first cleared monster comes back.</summary>
 	public const long RespawnMarginMillis = 30_000;
+	/// <summary>AG-07: only this close to where the follower starts does not seeing him mean he is gone.</summary>
+	public const float FollowerSpotRadius = 30;
 
 	/// <summary>Actions that reset or lose the escort while the follower follows (logout sets the lost var; the others
 	/// break the 50 m leash or leave the map).</summary>
@@ -99,6 +101,9 @@ public static class NaturalEscortPolicy
 			return new("hold-and-fight", null, "Attacked before the start: fight first.");
 		if (state.Follower is not { } follower)
 		{
+			// AG-07: from afar he is out of view (Q2284's follower stands 150 m from the Berth): walk to where he starts first.
+			if (state.Route.Count > 0 && Distance2(state.Player, state.Route[0]) > FollowerSpotRadius)
+				return new("approach-follower", state.Route[0], "The follower is not in view from here: walk to where he starts.");
 			long respawnAt = (state.FollowerGoneAtMillis ?? state.NowMillis) + escort.FollowerRespawnSeconds * 1000L;
 			return new("wait-for-respawn", null, $"The follower is gone; the server respawns him {escort.FollowerRespawnSeconds} s after the last end.",
 				WaitUntilMillis: Math.Max(respawnAt, state.NowMillis));

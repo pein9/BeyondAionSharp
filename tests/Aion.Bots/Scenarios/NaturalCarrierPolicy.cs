@@ -21,6 +21,14 @@ public static class NaturalGameClock
 		return ((hour * 60 - ofDay) % MinutesPerDay + MinutesPerDay) % MinutesPerDay;
 	}
 
+	/// <summary>AG-07: whether <paramref name="minutes"/> falls in the hours from <paramref name="opens"/> up to <paramref name="closes"/>
+	/// (Java TemporarySpawn: present from the spawn hour until the despawn hour starts; a window may run past midnight).</summary>
+	public static bool Within(long minutes, int opens, int closes)
+	{
+		int hour = HourOf(minutes);
+		return opens < closes ? hour >= opens && hour < closes : hour >= opens || hour < closes;
+	}
+
 	/// <summary>Game minutes left in the window of a carrier present now (until its despawn hour starts).</summary>
 	public static int MinutesLeftInWindow(long minutes, NaturalAltgardTimedSpawn carrier) => MinutesUntilHour(minutes, carrier.DespawnHour);
 }

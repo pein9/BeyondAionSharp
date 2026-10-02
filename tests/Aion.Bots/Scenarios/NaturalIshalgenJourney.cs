@@ -30,6 +30,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	private const float LootSweepReach = 35f;
 	// AB-08: how far inside the Q24013 poison zone's edge the poison is used.
 	private const float ZoneMargin = 3f;
+	// AG-07: an Altgard leg walks its road toward an approach from farther than this, and leaves the last stretch to the navigator.
+	private const float FarApproachMetres = 100f, FarApproachStop = 40f;
 
 	public async Task RunAsync(CancellationToken token)
 	{
@@ -136,6 +138,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				? NaturalAltgardContract.LoadPlans(planLeg) : new Dictionary<int, QuestRunPlan>();
 			// The maintainer's 2026-10-01 note: hubs have flight transporters; their routes come from the client (generated).
 			IReadOnlyList<NaturalAirlineRoute> airlines = NaturalAirlineRoutes.Load(runtime.RepoRoot);
+			// AG-07: an Altgard leg's road walk toward a far approach (set by the leg's runner; see ApproachShippedSpawnAsync).
+			Func<BotPosition, int, Task>? farApproach = null;
+			bool farApproachUnderway = false;
 			int[] altgardNpcs = altgardLeg == null ? [] : altgardLeg.GraphNpcIds(altgardPlans)
 				.Concat(airlines.Where(route => route.MapId == altgardLeg.Hub.MapId).Select(route => route.NpcId)).Distinct().ToArray();
 			// AK-08: items an open Altgard quest still needs (its collect items, the ring carriers' rings): never worn as gear and
@@ -982,6 +987,21 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				var timedEnds = new Dictionary<int, long>();
 				var spawnAttempts = new Dictionary<string, int>();
 				// AK-08: the cube's free slots as the inventory policy counts them, for a leg whose town has a merchant.
+				// AG-07: far approaches take the leg's road first. A walk cut short by a fight (a retreat, or a death and the
+				// revive at the bind) walks again from where it left the Cleric, three walks at most; no road at all leaves the
+				// approach to the navigator.
+				farApproach = async (at, templateId) =>
+				{
+					for (int walk = 0; walk < 3 && Distance(session.CurrentPosition, at) > FarApproachStop; walk++)
+					{
+						BotPosition before = session.CurrentPosition;
+						int revives = combat.ReviveCount;
+						if (await WalkRoadDefendingAsync(at, $"approach-road-{templateId}", stopAt: point => Distance(point, at) <= FarApproachStop))
+							return;
+						if (combat.ReviveCount == revives && Distance(before, session.CurrentPosition) < 1)
+							return;
+					}
+				};
 				int? FreeCubeSlots() => leg.Town?.VendorNpcId == null ? null
 					: NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, session.Api.World.Inventory.Values.Select(item => item.ItemId))
 						.Decide(session.Api.World, QuestNeededItems()).FreeSlots;
@@ -1094,9 +1114,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						}
 						case "bind":
 						{
-							// AB-08, the standing bind policy: bind at the obelisk of the hub the leg works out of.
+							// AB-08, the standing bind policy: bind at the obelisk of the hub the leg works out of. AG-07: a hub the
+							// Cleric does not stand at (Leg 6: Trader's Berth, from the Basfelt bind) is reached by the hub flights.
 							await EnsureOnGroundAsync();
 							NaturalAltgardBind bind = leg.Bind ?? throw new InvalidDataException($"{leg.Leg} has no bind.");
+							await FlyTowardAsync(new BotPosition(bind.Position[0], bind.Position[1], bind.Position[2], 0));
 							int stone = await ApproachShippedSpawnAsync(bind.NpcId);
 							NaturalServiceOutcome bound = await new NaturalServiceSteps(session).BindAsync(stone, session.Api.World.Objects[stone].Position,
 								leg.Hub.MapId, bind.Price, bind.AcceptRange, token);
@@ -1362,9 +1384,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							break;
 						}
 						case "wait-for-carrier":
+						case "wait-for-escort":
 						{
-							// AK-08 (AK-Q3): nothing else is left before a carrier's window opens. Wait at the hub's obelisk, an hour of
-							// game time (5 real minutes) per decision, so the clock is read again as it runs.
+							// AK-08 (AK-Q3): nothing else is left before a carrier's window opens (AG-07, AG-Q3 (a): or an escort
+							// follower's). Wait at the hub's obelisk, an hour of game time (5 real minutes) per decision, so the clock is
+							// read again as it runs.
 							await EnsureOnGroundAsync();
 							float[] hub = leg.Hub.Anchor;
 							if (MathF.Sqrt(MathF.Pow(session.CurrentPosition.X - hub[0], 2) + MathF.Pow(session.CurrentPosition.Y - hub[1], 2)) > leg.Hub.Radius)
@@ -1373,9 +1397,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							long before = session.Api.World.GameMinutesAt(session.Api.Timing.Now) ?? 0;
 							await session.AdvanceAsync(TimeSpan.FromMinutes(5), token);
 							await session.SynchronizeAsync(token);
-							session.TraceDiagnostic("carrier-wait", new Dictionary<string, object?>
+							bool escortWait = next.Action == "wait-for-escort";
+							session.TraceDiagnostic(escortWait ? "escort-wait" : "carrier-wait", new Dictionary<string, object?>
 							{
-								["carrier"] = next.StepKey, ["from"] = before, ["to"] = session.Api.World.GameMinutesAt(session.Api.Timing.Now),
+								[escortWait ? "escort" : "carrier"] = next.StepKey, ["from"] = before,
+								["to"] = session.Api.World.GameMinutesAt(session.Api.Timing.Now),
 							});
 							break;
 						}
@@ -1671,6 +1697,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 				// AB-08: Q2223's Infernus. Without incense, Lamir gives another (page 1779). With it: rest to full, burn it at the Old
 				// Incense Burner (movie 67), and fight Infernus inside his five minutes. Three tries (AB-Q2).
+				// AG-07: Q2252's bones raise Minushan's Spirit or Drakie (no movie). AG-06 found the bones' peckus joining the Spirit
+				// (48% HP and a retreat), so whatever walks around the trigger is cleared first, and the kill takes the monster whose
+				// SM_NPC_INFO follows the use: AG-04 found a gone one can stay in view after a teleport.
 				async Task RunSpawnKillAsync(NaturalAltgardSpawn spawn)
 				{
 					int tries = spawnAttempts.GetValueOrDefault(spawn.Key);
@@ -1689,16 +1718,29 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						await session.AdvanceAsync(TimeSpan.FromSeconds(30), token); // the burner respawns 295 s after a use
 						return;
 					}
+					await ClearAroundObjectiveAsync(burner, $"spawn-{spawn.Key}");
 					await RestSafelyAsync(token);
+					burner = await ApproachShippedSpawnAsync(spawn.TriggerNpcId, skipBlockedTarget: true);
 					spawnAttempts[spawn.Key] = tries + 1;
+					int start = session.PacketHistory.Count;
 					bool used = await NaturalAltgardQuestSteps.UseObjectAsync(session, burner, null, token);
 					await NaturalMovieGate.FinishAsync(session, token);
-					int monster = await session.WaitForNpcAsync(spawn.NpcId, token);
-					bool killed = await combat.TryKillAsync(monster, token, session.CurrentPosition);
+					int[] raised = [spawn.NpcId, .. spawn.AlternateNpcIds ?? []];
+					int? monster = null;
+					for (int wait = 0; wait < 10 && monster == null; wait++)
+					{
+						monster = session.PacketHistory.Skip(Math.Min(start, session.PacketHistory.Count)).LastOrDefault(packet =>
+							packet.PacketType == typeof(SM_NPC_INFO) && raised.Contains(packet.Get<int>("npcId")))?.Get<int>("objectId");
+						if (monster != null) break;
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
+						await session.SynchronizeAsync(token);
+					}
+					bool killed = monster is int raisedId && await combat.TryKillAsync(raisedId, token, session.CurrentPosition);
 					await session.SynchronizeAsync(token);
 					session.TraceDiagnostic($"altgard-{altgardLegId}-spawn-kill", new Dictionary<string, object?>
 					{
-						["spawn"] = spawn.Key, ["try"] = tries + 1, ["used"] = used, ["monster"] = monster, ["killed"] = killed,
+						["spawn"] = spawn.Key, ["try"] = tries + 1, ["used"] = used, ["monster"] = monster,
+						["template"] = monster is int seen ? session.Api.World.Objects.GetValueOrDefault(seen)?.TemplateId : null, ["killed"] = killed,
 						["quest"] = NaturalAltgardQuestSteps.State(session.Api.World, spawn.QuestId)?.ToString(),
 					});
 					await RestSafelyAsync(token);
@@ -1766,6 +1808,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						PriorAttempts = escortAttempts,
 						EndedFollowerObjectIds = escortEndedFollowers,
 						FollowerGoneAtMillis = escortFollowerGoneAt,
+						OffHours = escort.FollowerSpawnHour is int opens && escort.FollowerDespawnHour is int closes
+							? () => session.Api.World.GameMinutesAt(session.Api.Timing.Now) is long minutes &&
+								!NaturalGameClock.Within(minutes, opens, closes)
+							: null,
 					};
 					NaturalEscortResult result = await protocol.RunAsync(token);
 					escortAttempts = result.Attempts;
@@ -2261,6 +2307,16 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					.Where(waypoint => waypoint.TemplateId == templateId)
 					.OrderBy(waypoint => Distance(session.CurrentPosition, waypoint.Position)).ToArray();
 				if (anchors.Length == 0) throw new InvalidDataException($"Shipped spawn graph has no NPC {templateId}.");
+				// AG-07: from far off, the navigator's hazard replanning can circle over monster ground for its whole budget (the
+				// Leg 6 smoke run: 1,000 segments between Trader's Berth and Gerger, across the angolems). An Altgard leg walks its
+				// road there first, fighting what engages, as its talk steps and hunts do when the navigator gives up.
+				if (farApproach != null && !farApproachUnderway && Distance(session.CurrentPosition, anchors[0].Position) > FarApproachMetres)
+				{
+					farApproachUnderway = true;
+					try { await farApproach(anchors[0].Position, templateId); }
+					finally { farApproachUnderway = false; }
+					anchors = [.. anchors.OrderBy(waypoint => Distance(session.CurrentPosition, waypoint.Position))];
+				}
 				var reasons = new List<string>();
 				foreach (BotWaypoint anchor in anchors.Take(12))
 				{
@@ -6851,6 +6907,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				}
 				throw new InvalidDataException($"Cast {skill.Id} rejected: {started.Get<object>("name")}.");
 			}
+			// AG-07: Java ChainCondition.shouldReset clears the chain when an opener starts while its own chain is used up (Smite's
+			// selfcount is 1), and only a completed cast opens it again (Skill.endCast). A Smite cut short (STR_SKILL_CANCELED)
+			// leaves no chain, and the server refuses the Flashbolt after it without a word (the Leg 6 smoke run).
+			if (skill.ChainCategory != null && skill.RequiresChainCategory == null) openChain = null;
 			await session.AdvanceAsync(TimeSpan.FromMilliseconds(started.Get<ushort>("castDuration") + 1), token);
 			DecodedBotServerPacket result = await BotCastProtocol.WaitForCompletionAsync(
 				session.WaitForPacketAsync, session.CharacterId, skill.Id, token);

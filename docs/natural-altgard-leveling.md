@@ -2707,8 +2707,51 @@ The same loop protocol, with "AG" in place of "NA".
   - **How to read the trace.** `combat-encounter-end`'s `retreats` is the run's running total, not the encounter's:
     this stage's nine encounters each say 1. Count kills by target, as AK-07 notes.
   - The warning baseline and the logger, clock and fidelity checks pass.
-- [ ] **AG-07 — The Leg 6 runner.** The engine and runner for the chained flights, the escort's hours, the
+- [x] **AG-07 — The Leg 6 runner.** The engine and runner for the chained flights, the escort's hours, the
   spawn and the held quests. A smoke run from `altgard-l5` with real combat, recording every fight and death.
+  - *Done 2026-10-02.* **Smoke run 5** (`run/af-l1/ag07-l6-smoke5`, seed 1, from `altgard-l5`) plays the whole leg in 33
+    decisions and 1 h 41 min of simulated time. It ends at Trader's Berth at level 21 (from 20), with 1 death, and the
+    relog check passes.
+    - **The hub flights (AG-00):** Hrold's flight from Basfelt to the fortress (203683), then 203561's to the Berth. The
+      Cleric binds at the Berth obelisk for 2,035 Kinah.
+    - **The templates, hub-style:** seven accepted, six worked, then seven claimed. Q2242 is handed in at Gemyu, and
+      Q2248 is taken once Q2245 is claimed.
+    - **Q2247 and Q2284 by their talk steps.** The escort clears 17 monsters off the line, then 2 more, and brings
+      Germir to Babarunerk on the first attempt: 46 s, 19 hops, never more than 11.2 m behind.
+    - **Q2252:** the bones raise the Spirit, killed on the first try; Sinood pays reward group 0.
+    - **Held:** Q24115 at 3 of 3 for Banatisai, Q2262 for Mabrunerk, and Q24233 for Suthran (from Leg 5).
+    - **Fights:** 82 kills, 16 retreats and 1 death, with 39 potions, 11 Awakenings and a DP jelly.
+      - The kills: 22 shardlings and 20 blackened angolems, 18 peckus, 9 ribbits, 6 crimsontails, 5 ksellids, an
+        angolem fragment and the Spirit.
+      - Six retreats on the road from the Berth to Gemyu for Q2242's hand-in (angolems, shardlings, peckus and
+        crimsontails).
+      - Six around Gogaerunerk (Q2247), five of them from angolem fragments four or five at a time, and the death there.
+      - One while clearing the escort line, two at the bones, and one on the way back to Sinood (three peckus).
+    - **Germir's hours (AG-Q3 (a)), from smoke run 3.** At decision 28 the escort could not end inside his window, so
+      Q2252 was taken, worked and claimed first (`escort-hours:wait`). The escort came at decision 31, inside the
+      window. Smoke run 5 reached the escort inside it, so `wait-for-escort` runs only in the engine test.
+  - **What changed:**
+    - **The engine.** An escort with a start var (Q2284 at var 1) takes its talk steps until then.
+      - A follower that keeps hours is fetched only when the escort can end inside them. The estimate is the walk
+        there plus the escort line at half speed (`EscortGameMinutes`).
+      - Otherwise the other quests come first, then `wait-for-escort` at the hub.
+      - The protocol ends with `off-hours` if the window closes while nobody follows.
+    - **The bind** flies to a hub the Cleric is not at (`FlyTowardAsync`).
+    - **Far approaches** (over 100 m) walk the leg's road first, to 40 m short, then the navigator takes over.
+      - Smoke run 1: the navigator's hazard replanning circled for its 1,000 segments on the angolem ground between
+        the Berth and Gerger.
+      - Smoke run 4: the same after a retreat cut a road walk short. A walk cut short by a fight is now walked again,
+        three walks at most.
+    - **The spawn kill** clears around the trigger first (AG-06), rests, and fights the monster whose SM_NPC_INFO
+      follows the use: the Spirit or the Drakie, not AG-04's ghost.
+    - **The escort policy** walks to where an unseen follower starts before waiting for him. In smoke run 3, Germir was
+      out of view 150 m from the Berth, and the bot waited an hour for a respawn.
+    - **Combat:** a Smite cut short leaves no chain. Java's `ChainCondition.shouldReset` clears the chain when an
+      opener starts, and only a completed cast opens it again. In smoke run 2 the server refused the Flashbolt after a
+      cancelled Smite without a word, and the cast timed out.
+  - New tests: `Leg6BindsAtTheBerthAndEscortsGermirOnlyInsideHisHours`, and the escort policy's far-follower case.
+  - All 354 Natural tests pass, and so do `run-fast` (every test), the warning baseline and the logger, clock and
+    fidelity checks.
 - [ ] **AG-08 — One SIM run of Leg 6 and the snapshot.** `sim-snapshot.ps1 -Leg l6 -From altgard-l5`
   captures `altgard-l6` after a clean run, with a restore check.
 - [ ] **AG-09 — The full `CLAUDE.md` checklist and a checkpoint.**
@@ -3086,3 +3129,4 @@ The original questions follow.
 - 2026-10-02 AG-04: Q2252's bones, a miss, new bones and the kill played in SIM.
 - 2026-10-02 AG-05: Leg 6's template quests played from their plans in SIM, with Q24115 and Q2262 held.
 - 2026-10-02 AG-06: Leg 6's fights at level 20; no deaths, and one retreat at the Bones of Minushan.
+- 2026-10-02 AG-07: the Leg 6 runner; smoke run 5 plays the whole leg from altgard-l5 to level 21 with one death.

@@ -103,6 +103,9 @@ public sealed class NaturalEscortPolicyTests
 			QuestStatus = "START", Follower = null, Attempts = 1, FollowerGoneAtMillis = offer.NowMillis - 5_000,
 		}, Escort);
 		Assert.Equal(("wait-for-respawn", offer.NowMillis + 290_000), (gone.Action, gone.WaitUntilMillis));
+		// AG-07: from afar the follower is merely out of view: walk to where he starts before waiting for him.
+		NaturalEscortChoice far = NaturalEscortPolicy.Decide(offer with { Follower = null, Player = Route[^1] }, Escort);
+		Assert.Equal(("approach-follower", Route[0]), (far.Action, far.MoveTo!.Value));
 		Assert.Equal("give-up", NaturalEscortPolicy.Decide(offer with { QuestStatus = "START", Attempts = Escort.MaxAttempts }, Escort).Action);
 	}
 

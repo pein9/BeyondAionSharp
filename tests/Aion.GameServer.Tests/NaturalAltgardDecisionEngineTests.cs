@@ -359,6 +359,105 @@ public sealed class NaturalAltgardDecisionEngineTests
 	}
 
 	[Fact]
+	public void Leg6BindsAtTheBerthAndEscortsGermirOnlyInsideHisHours()
+	{
+		// AG-07: Leg 6 from the altgard-l5 snapshot (level 20, bound at Basfelt), at 22:00 game time.
+		NaturalAltgardContract leg6 = NaturalAltgardContract.LoadLeg("l6");
+		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(NaturalAltgardContract.LoadPlans("l6"));
+		var quests = new Dictionary<int, BotQuestState>();
+		var completed = new HashSet<int>(leg6.Start.CompletedQuestIds);
+		var items = new Dictionary<int, long>();
+		float[] basfelt = NaturalAltgardContract.LoadLeg("l5").Bind!.Position, berth = leg6.Bind!.Position;
+		BotBindPoint? bound = new(220030000, new BotPosition(basfelt[0], basfelt[1], basfelt[2], 0), 0);
+		var at = new BotPosition(basfelt[0] + 3, basfelt[1], basfelt[2], 0);
+		long day = 367 * NaturalGameClock.MinutesPerDay;
+		long? minutes = day + 22 * 60;
+		NaturalAltgardDecision Decide() => NaturalAltgardDecisionEngine.Decide(leg6,
+			new NaturalAltgardObservation(true, 220030000, 20, false, quests, completed, at, items, bound, minutes, new HashSet<int>(), 20,
+				199_603, 4), objectives, 1);
+		void Set(int quest, byte status, int var = 0) => quests[quest] = new(quest, status, var, 0, null);
+		void Complete(int quest) { quests.Remove(quest); completed.Add(quest); }
+		foreach (int quest in leg6.Start.StartedQuestIds ?? []) Set(quest, 3);
+		foreach (int quest in leg6.Start.LockedQuestIds) Set(quest, 6);
+
+		// The Trader's Berth obelisk first (the runner flies there, AG-00); the cube was expanded in Leg 5.
+		Assert.Equal("bind", Decide().Action);
+		bound = new(220030000, new BotPosition(berth[0], berth[1], berth[2], 0), 0);
+		at = new BotPosition(berth[0] + 3, berth[1], berth[2], 0);
+
+		// Hub-style templates: every eligible one accepted (Q2248 waits for Q2245), worked, then claimed; Q24115 and Q2262 are held.
+		var accepted = new List<int>();
+		var claimed = new List<int>();
+		for (NaturalAltgardDecision next = Decide(); next.Action is "template-accept" or "template-work" or "template-claim"; next = Decide())
+		{
+			int quest = next.QuestId!.Value;
+			if (next.Action == "template-accept") { accepted.Add(quest); Set(quest, 3); }
+			else if (next.Action == "template-work")
+			{
+				if (objectives[quest].ItemId is int item) items[item] = objectives[quest].ItemCount;
+				else Set(quest, 3, objectives[quest].KillCount);
+			}
+			else { claimed.Add(quest); Complete(quest); }
+		}
+		Assert.Equal([2245, 2244, 2246, 2249, 2251, 24115, 2262, 2248], accepted);
+		Assert.Equal([2242, 2245, 2244, 2246, 2248, 2249, 2251], claimed);
+
+		// Q2247's disguise, then Q2284's offer and the first disguised Germir by their talk steps: the escort starts at var 1.
+		foreach ((string key, int var) in new[] { ("q2247-offer-germir", -1), ("q2247-v0-gogaerunerk", 0), ("q2247-v1-germir", 1) })
+		{
+			if (var >= 0) Set(2247, 3, var);
+			Assert.Equal(("talk", key), (Decide().Action, Decide().StepKey));
+		}
+		Complete(2247);
+		NaturalAltgardEscort escort = leg6.EscortList.Single();
+		Assert.Equal(("talk", "q2284-offer-germir"), (Decide().Action, Decide().StepKey));
+		Set(2284, 3, 0);
+		Assert.Equal(("talk", "q2284-v0-disguised-germir"), (Decide().Action, Decide().StepKey));
+		Set(2284, 3, escort.StartVar!.Value);
+
+		// At 22:00 the second disguised Germir is gone (04:00-21:00): Q2252 is done meanwhile.
+		Assert.Equal(("talk", "q2252-offer-sinood"), (Decide().Action, Decide().StepKey));
+		Assert.Contains(Decide().Checks, check => check.Rule == "escort-hours" && check.Verdict == "wait");
+		Set(2252, 3, 0);
+		Assert.Equal(("spawn-kill", "q2252-minushan"), (Decide().Action, Decide().StepKey));
+		Set(2252, 4, 1);
+		Assert.Equal(("talk", "q2252-reward-sinood"), (Decide().Action, Decide().StepKey));
+		Complete(2252);
+
+		// Only the escort is left: wait for 04:00 at the hub.
+		NaturalAltgardDecision wait = Decide();
+		Assert.Equal(("wait-for-escort", 2284, escort.Key), (wait.Action, wait.QuestId, wait.StepKey));
+		Assert.Contains("Wait 360 game minutes", wait.Reason, StringComparison.Ordinal);
+		// From the Berth: 122 m to the follower (10 game minutes) and 136 m of escort line at half speed (15).
+		Assert.Equal(25, NaturalAltgardDecisionEngine.EscortGameMinutes(leg6, escort, at));
+		foreach ((int hour, int minute, string action) in new[] { (4, 0, "escort"), (20, 0, "escort"), (20, 40, "wait-for-escort"), (3, 59, "wait-for-escort") })
+		{
+			minutes = day + hour * 60 + minute;
+			Assert.Equal((action, 2284), (Decide().Action, Decide().QuestId));
+		}
+		minutes = day + 20 * 60 + 40;
+		Assert.Contains("Wait 440 game minutes", Decide().Reason, StringComparison.Ordinal);
+		// Following (var 2) is the escort whatever the hour; REWARD at var 2 is Babarunerk's hand-in.
+		Set(2284, 3, escort.FollowVar);
+		minutes = day + 21 * 60 + 30;
+		Assert.Equal(("escort", escort.Key), (Decide().Action, Decide().StepKey));
+		Set(2284, 4, escort.SuccessVar);
+		Assert.Equal(("talk", "q2284-reward-babarunerk"), (Decide().Action, Decide().StepKey));
+		Complete(2284);
+
+		// The endpoint: the ten quests done, Q24115 and Q2262 held, bound at the Berth and standing there.
+		NaturalAltgardDecision end = Decide();
+		Assert.Equal(("leg-complete", "complete"), (end.Action, end.Outcome));
+		Assert.Equal(leg6.Endpoint.CompletedQuestIds.Order(), completed.Intersect(leg6.Order).Order());
+		Assert.Equal([2262, 24115], quests.Keys.Intersect(leg6.Order).Order());
+		// Without the client's game clock, the follower's hours are not guessed at.
+		completed.Remove(2284);
+		Set(2284, 3, escort.StartVar.Value);
+		minutes = null;
+		Assert.Equal(("no-game-clock", "blocked"), (Decide().Action, Decide().Outcome));
+	}
+
+	[Fact]
 	public void Leg4BindsFirstThenRunsTimersSpawnsHuntsObjectsAndTheHornAtVar7()
 	{
 		// AB-08: Leg 4 from the altgard-l3 snapshot (level 16, Q24013 started, bound at the fortress).

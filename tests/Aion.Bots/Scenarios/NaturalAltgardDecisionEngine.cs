@@ -63,6 +63,16 @@ public static class NaturalAltgardDecisionEngine
 	/// road's bends and a fight on the way.</summary>
 	public static int TravelGameMinutes(float metres) => (int)MathF.Ceiling(metres / 6f / 5f) + 5;
 
+	/// <summary>AG-07: game minutes to walk to an escort's follower from <paramref name="from"/> and bring him to the goal: the
+	/// walk there, then the escort line at half walking speed (the hops and the waits for the follower).</summary>
+	public static int EscortGameMinutes(NaturalAltgardContract contract, NaturalAltgardEscort escort, BotPosition from)
+	{
+		float[] follower = contract.Steps.Single(step => step.Key == escort.RestartStep).Position;
+		float there = MathF.Sqrt(MathF.Pow(from.X - follower[0], 2) + MathF.Pow(from.Y - follower[1], 2));
+		float line = MathF.Sqrt(MathF.Pow(escort.Goal[0] - follower[0], 2) + MathF.Pow(escort.Goal[1] - follower[1], 2));
+		return TravelGameMinutes(there) + TravelGameMinutes(2 * line);
+	}
+
 	public static bool BoundAt(NaturalAltgardBind bind, int mapId, BotBindPoint? bound) =>
 		bound is { } point && point.MapId == mapId &&
 		MathF.Sqrt(MathF.Pow(point.Position.X - bind.Position[0], 2) + MathF.Pow(point.Position.Y - bind.Position[1], 2)) <= BindTolerance;
@@ -116,6 +126,7 @@ public static class NaturalAltgardDecisionEngine
 		foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate && Status(quest.Id) is not (Start or Reward)))
 			return Plan("template-accept", quest.Id, $"Q{quest.Id}: accept at the hub with the other hub quests.");
 		NaturalCarrierChoice? carrierWait = null;
+		(int QuestId, string Key, int Minutes, string Reason)? escortWait = null;
 		foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate && Status(quest.Id) == Start && !WorkDone(quest.Id)))
 		{
 			// AK-08: items that drop only from monsters that exist by the hour (Q2292's ring carriers) are hunted when a carrier
@@ -148,10 +159,32 @@ public static class NaturalAltgardDecisionEngine
 				continue;
 			}
 			// AC-06: an escort is one action from its offer to the follower's arrival, restarts included; the var the
-			// success sets is handed in by its own talk step.
+			// success sets is handed in by its own talk step. AG-07: an escort that starts later (Q2284 at var 1, after Germir's
+			// offer and the first disguised Germir) takes its talk steps until then.
 			if (contract.EscortList.FirstOrDefault(escort => escort.QuestId == quest.Id) is { } escortEntry &&
-				(status is not (Start or Reward) || status == Start && (Var(quest.Id) == escortEntry.LostVar || Var(quest.Id) == escortEntry.FollowVar)))
+				(status is not (Start or Reward) && escortEntry.StartVar is null ||
+				status == Start && (Var(quest.Id) == escortEntry.LostVar || Var(quest.Id) == escortEntry.FollowVar)))
+			{
+				// AG-07 (AG-Q3 (a)): a follower that keeps hours (Q2284's, 04:00-21:00) is fetched only when the escort can end
+				// inside them; otherwise the other quests come first, then a wait for the window.
+				if (status == Start && Var(quest.Id) == escortEntry.LostVar &&
+					escortEntry.FollowerSpawnHour is int opens && escortEntry.FollowerDespawnHour is int closes)
+				{
+					if (state.GameMinutes is not long minutes)
+						return Stop("no-game-clock", "blocked", $"Q{quest.Id}'s follower keeps hours, and the client has no game time.", quest.Id);
+					int needed = EscortGameMinutes(contract, escortEntry, state.Position);
+					if (!NaturalGameClock.Within(minutes, opens, closes) || NaturalGameClock.MinutesUntilHour(minutes, closes) < needed)
+					{
+						string reason = $"Q{quest.Id}: {escortEntry.FollowerNpcId} keeps {opens:00}:00-{closes:00}:00, and at " +
+							$"{NaturalGameClock.HourOf(minutes):00}:{minutes % 60:00} the escort ({needed} game minutes) cannot end inside it: " +
+							"do other work meanwhile.";
+						checks.Add(new("escort-hours", "wait", reason));
+						escortWait ??= (quest.Id, escortEntry.Key, NaturalGameClock.MinutesUntilHour(minutes, opens), reason);
+						continue;
+					}
+				}
 				return Plan("escort", quest.Id, $"Q{quest.Id}: escort ({(status == Start ? $"var {Var(quest.Id)}" : "not taken")}).", escortEntry.Key);
+			}
 			// AB-08: a timed quest is driven by NaturalTimedQuestPolicy from its offer to its hand-in.
 			if (contract.TimerList.FirstOrDefault(timer => timer.QuestId == quest.Id) is { } timed && status != Reward)
 				return Plan("timed", quest.Id, $"Q{quest.Id}: a timed quest ({timed.Seconds} s from {timed.StartStep}).");
@@ -202,6 +235,9 @@ public static class NaturalAltgardDecisionEngine
 		if (carrierWait != null)
 			return Plan("wait-for-carrier", carrierWait.Carrier!.QuestId, $"{carrierWait.Reason} Wait {carrierWait.WaitGameMinutes} game minutes.",
 				$"{carrierWait.Carrier.NpcId}");
+		// AG-07: the same for an escort's follower.
+		if (escortWait is { } hold)
+			return Plan("wait-for-escort", hold.QuestId, $"{hold.Reason} Wait {hold.Minutes} game minutes.", hold.Key);
 
 		// The hand-ins held back for the end, once only they are left.
 		if (open.Length > 0 && open.All(AtTheEnd))
