@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using Aion.Bots.Scenarios;
+using Aion.Bots.World;
 using Aion.GameServer.TestKit;
 
 namespace Aion.GameServer.Tests;
@@ -63,5 +64,24 @@ public sealed class NaturalAltgardLeg9ContractTests
 		Assert.Equal((120010000, 1275.69f, 1290.25f, 209.052f), (at.MapId, at.X, at.Y, at.Z));
 		NaturalAltgardMapTrip trip = Assert.Single(Leg.MapTripList);
 		Assert.Equal((at.MapId, 203581, 7, 500), (trip.MapId, trip.TeleporterNpcId, trip.LocationId, trip.Fare));
+	}
+
+	[Theory]
+	[InlineData(220030000, false, "travel-to-map", 120010000)]
+	[InlineData(120010000, false, "template-claim", 120010000)]
+	[InlineData(120010000, true, "travel-to-map", 220030000)]
+	public void CityTemplateClaimTravelsHandsInAndReturns(int map, bool delivered, string action, int targetMap)
+	{
+		HashSet<int> completed = Leg.Start.CompletedQuestIds.Concat(Leg.Order.Where(id => delivered || id != 2258)).ToHashSet();
+		var quests = new Dictionary<int, BotQuestState> { [2258] = new(2258, delivered ? (byte)5 : (byte)3, 0, 0, null) };
+		float[] home = Leg.Hub.Anchor;
+		var at = new BotPosition(home[0], home[1], home[2], 0);
+		var state = new NaturalAltgardObservation(true, map, 21, false, quests, completed, at,
+			new Dictionary<int, long>(), Bind: new BotBindPoint(Leg.Hub.MapId, at, 0));
+		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(Plans);
+		Assert.Equal(120010000, objectives[2258].ClaimMapId);
+		NaturalAltgardDecision next = NaturalAltgardDecisionEngine.Decide(Leg, state, objectives, 1);
+		Assert.Equal((action, targetMap), (next.Action, next.MapId));
+		if (!delivered) Assert.Equal(2258, next.QuestId);
 	}
 }

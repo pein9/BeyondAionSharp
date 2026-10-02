@@ -25,7 +25,7 @@ public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, in
 
 /// <summary>What a template quest's objectives need, from its compiled plan: items in the inventory, or a kill counter.
 /// Java's monster_hunt keeps the quest at START with the counter full until it is turned in.</summary>
-public sealed record NaturalTemplateObjective(int QuestId, int? ItemId, int ItemCount, int KillVar, int KillCount)
+public sealed record NaturalTemplateObjective(int QuestId, int? ItemId, int ItemCount, int KillVar, int KillCount, int? ClaimMapId = null)
 {
 	public static IReadOnlyDictionary<int, NaturalTemplateObjective> From(IReadOnlyDictionary<int, QuestRunPlan> plans) =>
 		plans.Values.ToDictionary(plan => plan.Id, plan =>
@@ -33,7 +33,8 @@ public sealed record NaturalTemplateObjective(int QuestId, int? ItemId, int Item
 			QuestRunStep? collect = plan.Steps.FirstOrDefault(step => step.Kind == "collect");
 			QuestRunStep? kill = plan.Steps.FirstOrDefault(step => step.Kind == "kill");
 			return new NaturalTemplateObjective(plan.Id, collect?.ItemId, collect?.Count ?? 0,
-				kill?.Data.GetProperty("var").GetInt32() ?? 0, kill?.Count ?? 0);
+				kill?.Data.GetProperty("var").GetInt32() ?? 0, kill?.Count ?? 0,
+				plan.EndNpcs.SelectMany(npc => npc.Positions).FirstOrDefault(position => !position.ConditionalEvent)?.MapId);
 		});
 
 	public bool IsDone(BotQuestState? quest, IReadOnlyDictionary<int, long> items) =>
@@ -85,7 +86,9 @@ public static class NaturalAltgardDecisionEngine
 		var checks = new List<NaturalDecisionCheck>();
 		NaturalAltgardDecision Plan(string action, int? questId, string reason, string? stepKey = null)
 		{
-			int map = action == "talk" && stepKey != null ? contract.StepMap(contract.Steps.Single(step => step.Key == stepKey)) : contract.Hub.MapId;
+			int map = action == "talk" && stepKey != null ? contract.StepMap(contract.Steps.Single(step => step.Key == stepKey))
+				: action == "template-claim" && questId is int id ? objectives.GetValueOrDefault(id)?.ClaimMapId ?? contract.Hub.MapId
+				: contract.Hub.MapId;
 			return new(sequence, state.MapId != map && action != "revive-at-bind" ? "travel-to-map" : action,
 				stepKey, questId, "planned", reason, [.. checks], map);
 		}
@@ -160,7 +163,8 @@ public static class NaturalAltgardDecisionEngine
 			checks.Add(new("carrier", "wait", $"Q{quest.Id}: {choice.Reason}"));
 			carrierWait ??= choice with { Reason = $"Q{quest.Id}: {choice.Reason}" };
 		}
-		foreach (NaturalAltgardQuest quest in eligible.Where(quest => !offHub && quest.IsTemplate && WorkDone(quest.Id) && !Held(quest.Id) && !AtTheEnd(quest)))
+		foreach (NaturalAltgardQuest quest in eligible.Where(quest => quest.IsTemplate && WorkDone(quest.Id) && !Held(quest.Id) && !AtTheEnd(quest) &&
+			(!offHub || objectives.GetValueOrDefault(quest.Id)?.ClaimMapId == state.MapId)))
 			return Plan("template-claim", quest.Id, $"Q{quest.Id}: objectives done; claim it.");
 
 		// Scripted quests, in the contract's order.

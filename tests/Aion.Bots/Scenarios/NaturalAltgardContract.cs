@@ -45,7 +45,8 @@ public sealed record NaturalAltgardContract(
 	NaturalAltgardTimedSpawn[]? TimedSpawns = null,
 	NaturalAltgardHeld[]? Held = null,
 	NaturalAltgardCubeExpansion? CubeExpansion = null,
-	NaturalAltgardMapTrip[]? MapTrips = null)
+	NaturalAltgardMapTrip[]? MapTrips = null,
+	NaturalAltgardPillarFlight? PillarFlight = null)
 {
 	/// <summary>The contract file and plan directory of each leg (none when the leg has no template quests).</summary>
 	public static readonly IReadOnlyDictionary<string, (string Contract, string? Plans)> Legs = new Dictionary<string, (string, string?)>
@@ -153,6 +154,9 @@ public sealed record NaturalAltgardContract(
 			throw new InvalidDataException("Natural Altgard timed spawns or held hand-ins disagree with the quests, areas or endpoint.");
 		foreach (string action in contract.TimerList.Select(timer => timer.NewChanceAction).OfType<string>())
 			NaturalAscensionContract.DialogActionId(action);
+		if (contract.PillarFlight is { } pillar && (contract.Flight == null || pillar.Upper.Length != 3 || pillar.Lower.Length != 3 ||
+			pillar.Upper[2] - pillar.Lower[2] < 40))
+			throw new InvalidDataException("A pillar flight needs flight rules and distinct upper/lower landings.");
 		return contract;
 	}
 
@@ -262,6 +266,12 @@ public sealed record NaturalAltgardRewardChoice(int QuestId, string Action, int 
 public sealed record NaturalAltgardFlightZone(string Name, float Bottom, float Top);
 
 public sealed record NaturalAltgardFlight(NaturalAltgardFlightZone[] Zones, float WaterLevel, int ReuseMillis, int MaxFlightTime);
+
+/// <summary>AH-01's checked upper/lower landings; land outside the pillar structure before walking below it.</summary>
+public sealed record NaturalAltgardPillarFlight(float[] Upper, float[] Lower)
+{
+	public bool IsUpper(float z) => z >= Upper[2] - 20;
+}
 
 public sealed record NaturalAltgardExclusion(int Id, string Reason, int Leg);
 

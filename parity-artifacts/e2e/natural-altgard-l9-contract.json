@@ -416,5 +416,29 @@
     ],
     "radius": 60,
     "bindNpcId": 700067
+  },
+  "flight": {
+    "zones": [
+      {
+        "name": "DF1A_FZ_TOWN3_220030000",
+        "bottom": 200,
+        "top": 440
+      }
+    ],
+    "waterLevel": 200,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "pillarFlight": {
+    "upper": [
+      2659.192,
+      1660.59,
+      324.88315
+    ],
+    "lower": [
+      2564.68,
+      1559.74,
+      249.92017
+    ]
   }
 }

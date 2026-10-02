@@ -961,6 +961,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				navigationDefense = combat;
 				WithQuestLoot(combat);
 				IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(altgardPlans);
+				var preservedQuests = (leg.Start.StartedQuestIds ?? []).Concat(leg.Start.LockedQuestIds).Except(leg.Order)
+					.ToDictionary(id => id, id => session.Api.World.Quests.TryGetValue(id, out BotQuestState? state)
+						? (state.Status, state.StepAndFlags) : throw new InvalidDataException($"Incoming Q{id} is missing."));
 				IReadOnlyList<NaturalFlyZone> zones = NaturalFlyZone.Load(Path.Combine(runtime.RepoRoot,
 					$"game-server/data/static_data/zones/zones_{leg.Hub.MapId}.xml"));
 				// Leg 1's flight: Borender's rock is the landing (AF-05); a leg with no flight step never flies.
@@ -995,12 +998,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				farApproach = async (at, templateId) =>
 				{
 					// AE-06/AO-04: delivery legs take hub flights; approaching the flight pad must not plan another flight.
-					if (altgardLegId is "l7" or "l8" && session.Api.World.MapId == leg.Hub.MapId && !approachingAirline)
+					if (altgardLegId is "l7" or "l8" or "l9" && session.Api.World.MapId == leg.Hub.MapId && !approachingAirline)
 					{
 						approachingAirline = true;
 						try { await FlyTowardAsync(at); }
 						finally { approachingAirline = false; }
 					}
+					await ReachPillarLevelAsync(at);
 					for (int walk = 0; walk < 3 && Distance(session.CurrentPosition, at) > FarApproachStop; walk++)
 					{
 						BotPosition before = session.CurrentPosition;
@@ -1046,6 +1050,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							});
 							return;
 						}
+						foreach (var (id, expected) in preservedQuests)
+							Require.True(session.Api.World.Quests.TryGetValue(id, out BotQuestState? state) &&
+								(state.Status, state.StepAndFlags) == expected, $"Deferred Q{id} changed during {leg.Leg}.");
 						await CompleteAltgardLeg1Async(leg);
 						return;
 					}
@@ -1443,7 +1450,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				throw new InvalidDataException("An Altgard leg exceeded 400 decisions.");
 
 				// Fly from wherever the Cleric stands (AF-05): wait out the takeoff reuse and a refill, check the policy first.
-				async Task FlyToAsync(BotPosition destination)
+				async Task FlyToAsync(BotPosition destination, float? cruiseHeight = null)
 				{
 					BotPosition from = session.CurrentPosition;
 					if (Distance(from, destination) < 3) return;
@@ -1455,7 +1462,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					NaturalFlightDecision ready = NaturalFlightPolicy.CanTakeOff(new NaturalTakeoffObservation(true, from, false,
 						leg.RequiredFlight.WaterLevel, runtime.NowMillis, lastTakeoff, false, false, false), zones);
 					Require.True(ready.Allowed, $"Cannot take off: {ready.Reason}");
-					NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, leg.Hub.MapId, from, destination, cruise);
+					NaturalFlightRoute route = NaturalFlightProtocol.Plan(geometry, leg.Hub.MapId, from, destination, cruiseHeight ?? cruise);
 					Require.True(route.IsUsable, $"No flight to {destination}: {route.Refusal}");
 					lastTakeoff = runtime.NowMillis;
 					float speed = await NaturalFlightProtocol.TakeOffAsync(session, token);
@@ -1474,6 +1481,26 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				async Task EnsureOnGroundAsync()
 				{
 					if (rockTop is { } top && session.CurrentPosition.Z > top.Z - 20) await FlyToAsync(ground);
+				}
+
+				async Task ReachPillarLevelAsync(BotPosition destination)
+				{
+					if (leg.PillarFlight is not { } pillar || session.Api.World.MapId != leg.Hub.MapId ||
+						pillar.IsUpper(session.CurrentPosition.Z) == pillar.IsUpper(destination.Z)) return;
+					bool goingUp = pillar.IsUpper(destination.Z);
+					float[] departure = goingUp ? pillar.Lower : pillar.Upper;
+					float[] arrival = goingUp ? pillar.Upper : pillar.Lower;
+					BotPosition start = new(departure[0], departure[1], departure[2], 0);
+					BotPosition landing = new(arrival[0], arrival[1], arrival[2], 0);
+					if (Distance(session.CurrentPosition, start) > 5)
+						await WalkRoadDefendingAsync(start, "pillar-takeoff-road", within: 5);
+					NaturalNavigationResult atStart = await NaturalIshalgenNavigator.ExploreAnchorAsync(
+						leg.Hub.MapId, -1, start, navigator, "pillar-takeoff", token);
+					Require.True(atStart.Arrived, atStart.Reason);
+					await DefendAgainstEngagedAsync("pillar-takeoff");
+					await RestSafelyAsync(token);
+					if (pillar.IsUpper(session.CurrentPosition.Z) == goingUp) return; // a revive can already reach the upper bind
+					await FlyToAsync(landing, MathF.Max(start.Z, landing.Z) + 12);
 				}
 
 				// AB-08: walk the Altgard travel planner's road to a point (the navmesh path when it has none), one section of 16 points
@@ -1901,6 +1928,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await TopUpHelpItemsAsync("checkpoint");
 				BotWorldModel world = session.Api.World;
 				Require.All(leg.Endpoint.CompletedQuestIds, quest => Require.Contains(quest, world.CompletedQuestIds));
+				foreach (int id in leg.Endpoint.CompletedQuestIds)
+					foreach (var item in runtime.Data.Quests.GetQuestById(id).GetQuestWorkItems()?.GetQuestWorkItem() ?? [])
+						Require.Equal(0L, ItemCount(world, item.GetItemId()));
 				// AK-08 (AK-Q2): the held hand-ins are taken, not handed in, and their objectives are met.
 				IReadOnlyDictionary<int, NaturalTemplateObjective> heldObjectives = NaturalTemplateObjective.From(altgardPlans);
 				var heldItems = world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count));
@@ -2353,12 +2383,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// shipped spawn lies nearest (Q2230's tusks drop from six mosbear kinds; always the first meant long walks past others).
 			int NearestKind(IReadOnlyList<int> kinds)
 			{
+				bool Connected(BotPosition at) => altgardLeg?.PillarFlight is not { } pillar || pillar.IsUpper(session.CurrentPosition.Z) ||
+					geometry.GroundAround(contract.MapId, at, [3f, 5f, 8f, 12f]).Any(point => Distance(point, at) <= 6 &&
+						geometry.OnSameIsland(contract.MapId, session.CurrentPosition, point));
 				BotKnownObject? seen = session.Api.World.Objects.Values
 					.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId is int id && kinds.Contains(id) && !known.IsCorpse &&
-						!navigator.UnavailableObjects.Contains(known.ObjectId))
+						!navigator.UnavailableObjects.Contains(known.ObjectId) && Connected(known.Position))
 					.OrderBy(known => Distance(known.Position, session.CurrentPosition)).FirstOrDefault();
 				if (seen?.TemplateId is int visible) return visible;
-				return graph.GetMap(contract.MapId)!.Waypoints.Where(waypoint => waypoint.TemplateId is int id && kinds.Contains(id))
+				return graph.GetMap(contract.MapId)!.Waypoints.Where(waypoint => waypoint.TemplateId is int id && kinds.Contains(id) && Connected(waypoint.Position))
 					.OrderBy(waypoint => Distance(waypoint.Position, session.CurrentPosition)).Select(waypoint => waypoint.TemplateId!.Value)
 					.DefaultIfEmpty(kinds.First(SpawnsOnMap)).First();
 			}
@@ -2370,19 +2403,24 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			{
 				// Dead on entry (a use bar or a walk ended in a death nobody handled): revive and recover first.
 				if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0) await RestSafelyAsync(token);
+				bool Connected(BotWaypoint waypoint) => templateId is < 210000 or >= 700000 ||
+					altgardLeg?.PillarFlight is not { } pillar || pillar.IsUpper(session.CurrentPosition.Z) ||
+					geometry.GroundAround(contract.MapId, waypoint.Position, [3f, 5f, 8f, 12f]).Any(point => Distance(point, waypoint.Position) <= 6 &&
+						geometry.OnSameIsland(contract.MapId, session.CurrentPosition, point));
 				BotWaypoint[] anchors = graph.GetMap(contract.MapId)!.Waypoints
 					.Where(waypoint => waypoint.TemplateId == templateId)
-					.OrderBy(waypoint => Distance(session.CurrentPosition, waypoint.Position)).ToArray();
+					.OrderByDescending(Connected).ThenBy(waypoint => Distance(session.CurrentPosition, waypoint.Position)).ToArray();
 				if (anchors.Length == 0) throw new InvalidDataException($"Shipped spawn graph has no NPC {templateId}.");
 				// AG-07: from far off, the navigator's hazard replanning can circle over monster ground for its whole budget (the
 				// Leg 6 smoke run: 1,000 segments between Trader's Berth and Gerger, across the angolems). An Altgard leg walks its
 				// road there first, fighting what engages, as its talk steps and hunts do when the navigator gives up.
-				if (farApproach != null && !farApproachUnderway && Distance(session.CurrentPosition, anchors[0].Position) > FarApproachMetres)
+				if (farApproach != null && !farApproachUnderway && (Distance(session.CurrentPosition, anchors[0].Position) > FarApproachMetres ||
+					altgardLeg?.PillarFlight is { } pillar && pillar.IsUpper(session.CurrentPosition.Z) != pillar.IsUpper(anchors[0].Position.Z)))
 				{
 					farApproachUnderway = true;
 					try { await farApproach(anchors[0].Position, templateId); }
 					finally { farApproachUnderway = false; }
-					anchors = [.. anchors.OrderBy(waypoint => Distance(session.CurrentPosition, waypoint.Position))];
+					anchors = [.. anchors.OrderByDescending(Connected).ThenBy(waypoint => Distance(session.CurrentPosition, waypoint.Position))];
 				}
 				var reasons = new List<string>();
 				foreach (BotWaypoint anchor in anchors.Take(12))
@@ -2464,10 +2502,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						break;
 					}
 				}
-				// Every hint empty: the monsters were killed (by the bot itself, clearing) and respawn in up to 180 s.
-				// A player waits at the spot; do the same, resting, up to four times, then try the hints again.
+				// Every hint empty: wait through the shipped respawn, including the Heart debris's 295 s.
+				int respawnSeconds = runtime.Data.SpawnsDh.GetSpawnsByWorldId(contract.MapId)
+					.Where(group => group.GetNpcId() == templateId).Select(group => group.GetRespawnTime()).DefaultIfEmpty(180).Max();
+				int waitRounds = Math.Max(4, (int)Math.Ceiling(respawnSeconds / 60d) + 1);
 				if (reasons.Count > 0 && reasons.All(reason => reason.Contains("no NPC was observed", StringComparison.Ordinal)) &&
-					++emptySpawnWaits <= 4)
+					++emptySpawnWaits <= waitRounds)
 				{
 					session.TraceDiagnostic("spawn-wait", new Dictionary<string, object?>
 					{
@@ -5162,7 +5202,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							for (int attempt = 0; ItemCount(session.Api.World, operation.ItemId) < operation.Count;
 								attempt++)
 							{
-								int sourceId = sourceIds[attempt % sourceIds.Length];
+								int sourceId = altgardLeg?.PillarFlight != null ? NearestKind(sourceIds) : sourceIds[attempt % sourceIds.Length];
 								if (sourceId >= 700000)
 								{
 									navigator.UnavailableObjects.Add(
@@ -5204,7 +5244,17 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 										returnReady: true, flightFareAffordable: false) == NaturalTravelChoice.Return)
 									await UseLearnedReturnToBindAsync();
 							}
-							int recipient = await ApproachShippedSpawnAsync(recipientId);
+							QuestRunPosition? recipientAt = operation.Npcs?.FirstOrDefault()?.Positions.FirstOrDefault(position => !position.ConditionalEvent);
+							int recipient;
+							if (recipientAt is { } at && at.MapId != contract.MapId)
+							{
+								Require.Equal(at.MapId, session.Api.World.MapId);
+								NaturalNavigationResult reached = await NaturalIshalgenNavigator.ApproachNpcAsync(at.MapId, recipientId,
+									new BotPosition(at.X, at.Y, at.Z, 0), navigator, token);
+								Require.True(reached.Arrived, reached.Reason);
+								recipient = Require.IsType<int>(reached.TargetObjectId);
+							}
+							else recipient = await ApproachShippedSpawnAsync(recipientId);
 							int rewardAction = DialogAction.SELECTED_QUEST_NOREWARD;
 							// AK-08: a leg's contract may fix the choice (Q2292's Turquoise Earrings); it outranks the inventory policy.
 							if (altgardLeg?.RewardChoiceList.FirstOrDefault(choice => choice.QuestId == plan.Id) is { } chosen)

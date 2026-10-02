@@ -3278,10 +3278,23 @@ Heart obelisk and bound there. Relog and save `altgard-l9` from committed code; 
     game time. A 350 ms tick on an already-arrived combat approach lets motion/cooldowns advance before the
     next observation; the final probe covers this correction. Base `1af1532a7`; all pre-commit checks and Fast
     pass (`run/ah03-corrected-checks`, `ah03-corrected-fast`: all eleven scenarios, 69 passes/three switch skips).
-- [ ] **AH-04 — Natural runner and smoke.** Extend template hand-ins to another map, implement only proven
+- [x] **AH-04 — Natural runner and smoke.** Extend template hand-ins to another map, implement only proven
   travel needs, restore `altgard-l8` and run `AF_ALTGARD=l9` once through relog. All nine completions, consumed
   Q24115 work item, campaigns unchanged, transporter hub travel and alive Heart endpoint. Drop owned schema;
   retain failed runs and recorded outcomes. Depends: AH-02, AH-03.
+  - *Done 2026-10-02.* `ah04-smoke` restores `altgard-l8` and passes on its first run from `179017b7a` plus the
+    AH-04 runner changes. All nine hand-ins and consumed quest work items are verified; Q2900/Q24014/Q24015
+    stay START/0 and Q24016 LOCKED/0. Relog preserves Cleric 22, alive at (2663, 1663, 324.69), Heart bind 700067,
+    378,680 Kinah and 134 completed journal entries. Elapsed 2,467,828 game ms; 35 distinct confirmed kills
+    (each also has a zero-HP status), no deaths and one retreat. The owned restore schema is dropped.
+  - Template objectives carry their ordinary recipient's map: travel, hand in Q2258 in Pandaemonium, then
+    learned Return to the Heart. Three actual hub flights, eight pillar flights through AH-01's upper/debris
+    landings (60 FP, about 27 cost each), nine three-second debris uses and bounded waits through shipped
+    respawns. Ground sources prefer connected islands; the runner keeps AO-04's deferred-corpse recovery.
+    Deferred incoming quests and completed work-item consumption are checked before the endpoint relog.
+    Twenty-one contract/decision cases pass (`run/ah04-decisions.log`); smoke trace and completion record are
+    under `run/ah04-smoke`, dashboard 17880. All pre-commit checks and Fast pass (`run/ah04-checks`, `ah04-fast`:
+    all eleven scenarios, 69 passes/three switch skips). No server behavior/content changes or natural GM setup.
 - [ ] **AH-05 — Snapshot.** Enable `-Leg l9`, commit before capture, then capture `altgard-l9` from `altgard-l8`;
   check dump hash, relog endpoint and owned restore, then drop owned schemas. Depends: AH-04.
 - [ ] **AH-06 — Full CLAUDE checklist and checkpoint.** Every listed command, evidence and correction of any
@@ -3709,3 +3722,4 @@ The original questions follow.
 - 2026-10-02 AH-01: 30 Heart travel legs, four hub flights and two pillar flights pass on free account 210; debris landing avoids the pillar structure, source selection avoids disconnected ledges; failed drafts retained, pre-commit checks pass. Quests are next.
 - 2026-10-02 AH-02: nine hand-ins, consumed work/collection items, nine debris uses and two ordinary respawn rounds pass on free account 211; three hub flights, real city delivery and learned Return, campaigns unchanged; first run and pre-commit checks pass. Combat is next.
 - 2026-10-02 AH-03: four level-21 Heart combat stages record nine distinct kills, no deaths/retreats on free account 212; neutral diagnostic targeting and a zero-time moving-target approach stall corrected, earlier traces retained; final encounter, Fast and pre-commit checks pass. Natural runner is next.
+- 2026-10-02 AH-04: first natural l9 smoke from altgard-l8 passes through relog, nine completions/work items consumed/campaigns unchanged; Cleric 22 alive at Heart, 35 distinct kills, no deaths/one retreat, three hub/eight pillar flights and nine debris uses; 21 decision cases, Fast and pre-commit checks pass, owned schema dropped. Snapshot is next.
