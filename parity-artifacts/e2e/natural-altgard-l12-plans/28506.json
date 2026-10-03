@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 28506,
+    "name": "Guess Who",
+    "nameId": 1135018,
+    "zone": "Haramel",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 28501
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/haramel.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 799524,
+        "id": 28506,
+        "start_npc_ids": 799523
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 799523,
+        "name": "moofrenerk",
+        "positions": [
+          {
+            "mapId": 300200000,
+            "x": 228.416,
+            "y": 160.876,
+            "z": 137.059,
+            "heading": 60,
+            "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 799523,
+      "name": "moofrenerk",
+      "positions": [
+        {
+          "mapId": 300200000,
+          "x": 228.416,
+          "y": 160.876,
+          "z": 137.059,
+          "heading": 60,
+          "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 799524,
+      "name": "gestanerk",
+      "positions": [
+        {
+          "mapId": 300200000,
+          "x": 289.776,
+          "y": 422.453,
+          "z": 89.5563,
+          "heading": 90,
+          "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 799524,
+          "name": "gestanerk",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 289.776,
+              "y": 422.453,
+              "z": 89.5563,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 75359,
+        "rewardItems": [
+          {
+            "count": 10,
+            "item_id": 162000004
+          },
+          {
+            "count": 10,
+            "item_id": 162000009
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 28506,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "Guess Who",
+      "nameId": 1135018,
+      "quest_zone": "Haramel",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 75359
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 162000004
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 162000009
+            }
+          }
+        ]
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 28501
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -28,6 +28,12 @@ public static class NaturalJourneyPersistence
 				before.CoinGearProgress.Reward == after.CoinGearProgress.Reward &&
 				before.CoinGearProgress.Purchases.SequenceEqual(after.CoinGearProgress.Purchases), "coin gear receipts");
 		Require(ActiveQuests(before).SequenceEqual(ActiveQuests(after)), "active journal");
+		if (before.HaramelProgress is { } haramel)
+			Require(after.HaramelProgress is { } resumed && haramel.CharacterId == resumed.CharacterId &&
+				haramel.StartedAtMillis == resumed.StartedAtMillis && haramel.Revives == resumed.Revives &&
+				haramel.FreshEntryAfterMillis == resumed.FreshEntryAfterMillis && haramel.StallBudget == resumed.StallBudget && haramel.SoupPayment == resumed.SoupPayment &&
+				haramel.EntryObservation?.EntriesUsed == resumed.EntryObservation?.EntriesUsed &&
+				haramel.Visits.SequenceEqual(resumed.Visits) && haramel.IncomingEquipment.SequenceEqual(resumed.IncomingEquipment), "Haramel receipts and budgets");
 		Require(before.Inventory.OrderBy(i => i.ObjectId).SequenceEqual(after.Inventory.OrderBy(i => i.ObjectId)), "inventory");
 		Require(Skills(before).SequenceEqual(Skills(after)), "skills");
 

@@ -1,0 +1,224 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 28507,
+    "name": "Hammertime",
+    "nameId": 1135019,
+    "zone": "Haramel",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 28506
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/haramel.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "end_npc_ids": 804605,
+        "id": 28507,
+        "start_npc_ids": 799524
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 799524,
+        "name": "gestanerk",
+        "positions": [
+          {
+            "mapId": 300200000,
+            "x": 289.776,
+            "y": 422.453,
+            "z": 89.5563,
+            "heading": 90,
+            "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 799524,
+      "name": "gestanerk",
+      "positions": [
+        {
+          "mapId": 300200000,
+          "x": 289.776,
+          "y": 422.453,
+          "z": 89.5563,
+          "heading": 90,
+          "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 804605,
+      "name": "shezen",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2892.2,
+          "y": 1485.3,
+          "z": 249.24,
+          "heading": 36,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 1,
+      "npc_ids": 216922,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 216922,
+          "name": "hamerun the bleeder",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 224.127,
+              "y": 275.123,
+              "z": 144.776,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 804605,
+          "name": "shezen",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2892.2,
+              "y": 1485.3,
+              "z": 249.24,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 91051,
+        "gold": 26890,
+        "rewardItems": [],
+        "selectableItems": [
+          {
+            "count": 1,
+            "item_id": 123001439
+          },
+          {
+            "count": 1,
+            "item_id": 123001440
+          }
+        ]
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 28507,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "Hammertime",
+      "nameId": 1135019,
+      "quest_zone": "Haramel",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 91051,
+          "gold": 26890
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 123001439
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 123001440
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 1,
+          "npc_ids": 216922,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 28506
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

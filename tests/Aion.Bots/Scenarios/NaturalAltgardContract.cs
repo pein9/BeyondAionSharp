@@ -50,7 +50,8 @@ public sealed record NaturalAltgardContract(
 	NaturalAltgardPillarFlight? PillarFlight = null,
 	NaturalAltgardInstanceTrip[]? InstanceTrips = null,
 	NaturalAltgardDestiny? Destiny = null,
-	NaturalCoinGear? CoinGear = null)
+	NaturalCoinGear? CoinGear = null,
+	NaturalHaramel? Haramel = null)
 {
 	/// <summary>The contract file and plan directory of each leg (none when the leg has no template quests).</summary>
 	public static readonly IReadOnlyDictionary<string, (string Contract, string? Plans)> Legs = new Dictionary<string, (string, string?)>
@@ -67,6 +68,7 @@ public sealed record NaturalAltgardContract(
 		["l10"] = ("natural-altgard-l10-contract.json", "natural-altgard-l10-plans"),
 		["l11"] = ("natural-altgard-l11-contract.json", null),
 		["cg"] = ("natural-altgard-cg-contract.json", "natural-altgard-cg-plans"),
+		["l12"] = ("natural-altgard-l12-contract.json", "natural-altgard-l12-plans"),
 	};
 
 	public NaturalAltgardObjectUse[] ObjectUseList => ObjectUses ?? [];
@@ -122,6 +124,7 @@ public sealed record NaturalAltgardContract(
 		{
 			if (contract.StepMap(step) != contract.Hub.MapId && !contract.MapTripList.Any(trip => trip.MapId == contract.StepMap(step)) &&
 				!contract.InstanceTripList.Any(trip => trip.MapId == contract.StepMap(step)) &&
+				contract.Haramel?.MapId != contract.StepMap(step) &&
 				contract.Destiny?.AllowedMaps.Contains(contract.StepMap(step)) != true)
 				throw new InvalidDataException($"Natural Altgard step {step.Key} has no trip to its map.");
 			if (step.ExpectedStatus is not ("OFFER" or "START" or "REWARD"))
@@ -175,7 +178,7 @@ public sealed record NaturalAltgardContract(
 			trip.BossPosition.Length != 3 || trip.MovieExitPosition.Length != 3 || trip.UseMillis < 0 || trip.ExitUseMillis < 0))
 			throw new InvalidDataException("Natural Altgard instance trips disagree with the quests, maps or transitions.");
 		int[] otherMaps = contract.HuntList.Select(hunt => hunt.MapId).Concat(contract.ObjectUseList.Select(use => use.MapId)).OfType<int>().ToArray();
-		if (otherMaps.Any(map => map != contract.Hub.MapId && !contract.InstanceTripList.Any(trip => trip.MapId == map)))
+		if (otherMaps.Any(map => map != contract.Hub.MapId && !contract.InstanceTripList.Any(trip => trip.MapId == map) && contract.Haramel?.MapId != map))
 			throw new InvalidDataException("A hunt or object use has no instance trip to its map.");
 		if (contract.Destiny is { } destiny && (contract.Leg != "l11" || destiny.QuestId != 2900 || destiny.MapId != 320070000 ||
 			!questIds.Contains(destiny.QuestId) || destiny.AllowedMaps.Distinct().Count() != 4 ||
@@ -185,6 +188,7 @@ public sealed record NaturalAltgardContract(
 				step.ExpectedStatus == "START" && step.NextVar == null)))
 			throw new InvalidDataException("The Destiny campaign needs four maps and explicit full-var transitions.");
 		contract.CoinGear?.Validate(contract);
+		contract.Haramel?.Validate(contract);
 		return contract;
 	}
 
@@ -222,6 +226,7 @@ public sealed record NaturalAltgardContract(
 			.Concat(InstanceTripList.SelectMany(trip => new[] { trip.PortalNpcId, trip.ExitNpcId, trip.BossNpcId }))
 			.Concat(Destiny is { } destiny ? [destiny.EnemyNpcId, 203545, 203513] : [])
 			.Concat(CoinGear is { } gear ? [gear.VendorNpcId] : [])
+			.Concat(Haramel?.GraphNpcIds ?? [])
 			.Concat(Bind is { } bind ? [bind.NpcId] : [])
 			.Concat(CollectionList.SelectMany(collection => collection.Items.SelectMany(item => item.SourceNpcIds)))
 			.Append(Start.BindNpcId).Concat(AirKills is { } air ? [air.NpcId] : [])

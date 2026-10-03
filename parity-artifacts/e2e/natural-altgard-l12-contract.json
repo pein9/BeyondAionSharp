@@ -1,0 +1,1248 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "l12",
+  "start": {
+    "contract": "natural-altgard-cg-contract.json",
+    "snapshot": "altgard-coingear",
+    "mapId": 220030000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 24,
+    "bindNpcId": 700067,
+    "completedQuestIds": [
+      2000,
+      2001,
+      2002,
+      2003,
+      2004,
+      2005,
+      2006,
+      2007,
+      2008,
+      2009,
+      2100,
+      2101,
+      2102,
+      2103,
+      2104,
+      2105,
+      2106,
+      2108,
+      2109,
+      2110,
+      2112,
+      2113,
+      2114,
+      2115,
+      2116,
+      2117,
+      2118,
+      2119,
+      2120,
+      2121,
+      2123,
+      2124,
+      2125,
+      2126,
+      2127,
+      2128,
+      2129,
+      2131,
+      2132,
+      2133,
+      2134,
+      2135,
+      2137,
+      2146,
+      2201,
+      2202,
+      2203,
+      2204,
+      2205,
+      2206,
+      2207,
+      2208,
+      2209,
+      2210,
+      2211,
+      2212,
+      2213,
+      2214,
+      2215,
+      2218,
+      2219,
+      2220,
+      2221,
+      2222,
+      2223,
+      2224,
+      2225,
+      2226,
+      2227,
+      2230,
+      2231,
+      2232,
+      2233,
+      2234,
+      2235,
+      2236,
+      2237,
+      2238,
+      2239,
+      2241,
+      2242,
+      2243,
+      2244,
+      2245,
+      2246,
+      2247,
+      2248,
+      2249,
+      2251,
+      2252,
+      2253,
+      2254,
+      2255,
+      2256,
+      2257,
+      2258,
+      2259,
+      2260,
+      2261,
+      2262,
+      2263,
+      2264,
+      2265,
+      2266,
+      2267,
+      2268,
+      2269,
+      2270,
+      2271,
+      2272,
+      2273,
+      2277,
+      2278,
+      2279,
+      2280,
+      2281,
+      2282,
+      2283,
+      2284,
+      2286,
+      2287,
+      2288,
+      2289,
+      2290,
+      2291,
+      2292,
+      2293,
+      2900,
+      2904,
+      24010,
+      24011,
+      24012,
+      24013,
+      24014,
+      24015,
+      24016,
+      24110,
+      24111,
+      24112,
+      24113,
+      24115,
+      24230,
+      24231,
+      24232,
+      24233
+    ],
+    "lockedQuestIds": [
+      2945
+    ]
+  },
+  "hub": {
+    "key": "fortress",
+    "mapId": 220030000,
+    "anchor": [
+      1658.44,
+      1815.301,
+      254.099
+    ],
+    "radius": 60
+  },
+  "town": {
+    "key": "fortress",
+    "mapId": 220030000,
+    "anchor": [
+      1758.07,
+      1779.11,
+      256.174
+    ],
+    "radius": 100,
+    "vendorNpcId": 203579
+  },
+  "areas": [
+    {
+      "key": "fortress",
+      "note": "Morn, Chagarinerk and final obelisk",
+      "min": [
+        1500,
+        1740,
+        245
+      ],
+      "max": [
+        1820,
+        1950,
+        290
+      ]
+    },
+    {
+      "key": "heart",
+      "note": "Working bind and hub flight; descend locally for entrance",
+      "min": [
+        2500,
+        1500,
+        300
+      ],
+      "max": [
+        2730,
+        1780,
+        350
+      ]
+    },
+    {
+      "key": "passage",
+      "note": "Discarded objects, Shezen and ordinary entrance",
+      "min": [
+        2740,
+        1420,
+        240
+      ],
+      "max": [
+        2940,
+        1650,
+        270
+      ]
+    },
+    {
+      "key": "refinery",
+      "note": "High entrance and Odium Refinery; accept both quests before kills",
+      "min": [
+        100,
+        0,
+        135
+      ],
+      "max": [
+        280,
+        210,
+        155
+      ]
+    },
+    {
+      "key": "tower",
+      "note": "Rusted box after actual lift and stairs",
+      "min": [
+        190,
+        195,
+        110
+      ],
+      "max": [
+        250,
+        245,
+        145
+      ]
+    },
+    {
+      "key": "processing",
+      "note": "Lower processing/carts/ginseng/cauldron",
+      "min": [
+        240,
+        200,
+        80
+      ],
+      "max": [
+        410,
+        345,
+        110
+      ]
+    },
+    {
+      "key": "plantation",
+      "note": "Lower Odella sources and Gestanerk",
+      "min": [
+        190,
+        335,
+        80
+      ],
+      "max": [
+        345,
+        490,
+        110
+      ]
+    },
+    {
+      "key": "office",
+      "note": "High boss approach, movie, Cleric chest and spawned exit",
+      "min": [
+        190,
+        260,
+        135
+      ],
+      "max": [
+        265,
+        340,
+        155
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 28500,
+      "category": "IMPORTANT",
+      "minimumLevel": 16,
+      "rewardExperience": 75359,
+      "prerequisite": null,
+      "handler": "_28500OdellaOdellaWhereArtThou",
+      "template": null,
+      "startNpcId": 203560,
+      "area": "fortress"
+    },
+    {
+      "id": 28501,
+      "category": "IMPORTANT",
+      "minimumLevel": 16,
+      "rewardExperience": 75359,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 799522,
+      "area": "refinery"
+    },
+    {
+      "id": 28503,
+      "category": "IMPORTANT",
+      "minimumLevel": 16,
+      "rewardExperience": 91051,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 799523,
+      "area": "tower"
+    },
+    {
+      "id": 28504,
+      "category": "IMPORTANT",
+      "minimumLevel": 16,
+      "rewardExperience": 110845,
+      "prerequisite": 28507,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 804605,
+      "area": "passage"
+    },
+    {
+      "id": 28505,
+      "category": "IMPORTANT",
+      "minimumLevel": 16,
+      "rewardExperience": 91051,
+      "prerequisite": 28507,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 804605,
+      "area": "passage"
+    },
+    {
+      "id": 28506,
+      "category": "IMPORTANT",
+      "minimumLevel": 16,
+      "rewardExperience": 75359,
+      "prerequisite": 28501,
+      "handler": "template",
+      "template": "report_to",
+      "startNpcId": 799523,
+      "area": "tower"
+    },
+    {
+      "id": 28507,
+      "category": "IMPORTANT",
+      "minimumLevel": 16,
+      "rewardExperience": 91051,
+      "prerequisite": 28506,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 799524,
+      "area": "plantation"
+    },
+    {
+      "id": 28508,
+      "category": "IMPORTANT",
+      "minimumLevel": 16,
+      "rewardExperience": 91051,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "monster_hunt",
+      "startNpcId": 799522,
+      "area": "refinery"
+    },
+    {
+      "id": 28509,
+      "category": "IMPORTANT",
+      "minimumLevel": 16,
+      "rewardExperience": 75359,
+      "prerequisite": null,
+      "handler": "template",
+      "template": "item_collecting",
+      "startNpcId": 799523,
+      "area": "tower"
+    },
+    {
+      "id": 28510,
+      "category": "IMPORTANT",
+      "minimumLevel": 16,
+      "rewardExperience": 91051,
+      "prerequisite": 28507,
+      "handler": "_28510DestroytheHaramelFacilities",
+      "template": null,
+      "startNpcId": 804605,
+      "area": "passage"
+    },
+    {
+      "id": 28511,
+      "category": "IMPORTANT",
+      "minimumLevel": 16,
+      "rewardExperience": 91051,
+      "prerequisite": 28507,
+      "handler": "_28511TheSoupNutsy",
+      "template": null,
+      "startNpcId": 799522,
+      "area": "refinery"
+    }
+  ],
+  "order": [
+    28500,
+    28501,
+    28508,
+    28503,
+    28509,
+    28506,
+    28507,
+    28504,
+    28505,
+    28510,
+    28511
+  ],
+  "steps": [
+    {
+      "key": "q28500-accept",
+      "questId": 28500,
+      "var": null,
+      "status": "OFFER",
+      "npcId": 203560,
+      "position": [
+        1660.88,
+        1813.21,
+        253.722
+      ],
+      "talkRange": 5,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT"
+      ],
+      "pages": [
+        4762
+      ],
+      "mapId": 220030000,
+      "nextVar": 0,
+      "movieId": null,
+      "receivesItemId": null,
+      "flight": false
+    },
+    {
+      "key": "q28500-gulkalla",
+      "questId": 28500,
+      "var": 0,
+      "status": "START",
+      "npcId": 203649,
+      "position": [
+        2666.17,
+        1661.87,
+        325.0
+      ],
+      "talkRange": 5,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1011
+      ],
+      "mapId": 220030000,
+      "nextVar": 1,
+      "movieId": null,
+      "receivesItemId": null,
+      "flight": false
+    },
+    {
+      "key": "q28500-piece",
+      "questId": 28500,
+      "var": 1,
+      "status": "START",
+      "npcId": 730306,
+      "position": [
+        2789.07,
+        1581.89,
+        248.858
+      ],
+      "talkRange": 5,
+      "actions": [
+        "USE_OBJECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1352
+      ],
+      "mapId": 220030000,
+      "nextVar": 2,
+      "movieId": null,
+      "receivesItemId": null,
+      "flight": false
+    },
+    {
+      "key": "q28500-pile",
+      "questId": 28500,
+      "var": 2,
+      "status": "START",
+      "npcId": 730307,
+      "position": [
+        2877.55,
+        1534.87,
+        250.333
+      ],
+      "talkRange": 5,
+      "actions": [
+        "USE_OBJECT",
+        "SETPRO3"
+      ],
+      "pages": [
+        1693
+      ],
+      "mapId": 220030000,
+      "nextVar": 3,
+      "movieId": 217,
+      "receivesItemId": null,
+      "flight": false
+    },
+    {
+      "key": "q28500-movie",
+      "questId": 28500,
+      "var": 3,
+      "status": "START",
+      "npcId": 730307,
+      "position": [
+        2877.55,
+        1534.87,
+        250.333
+      ],
+      "talkRange": 5,
+      "actions": [],
+      "pages": [],
+      "mapId": 220030000,
+      "nextVar": 3,
+      "movieId": 217,
+      "receivesItemId": null,
+      "flight": false
+    },
+    {
+      "key": "q28500-reward",
+      "questId": 28500,
+      "var": 3,
+      "status": "REWARD",
+      "npcId": 799522,
+      "position": [
+        141.776,
+        21.4674,
+        144.245
+      ],
+      "talkRange": 5,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_REWARD4"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "mapId": 300200000,
+      "nextVar": null,
+      "movieId": null,
+      "receivesItemId": null,
+      "flight": false
+    },
+    {
+      "key": "q28510-accept",
+      "questId": 28510,
+      "var": null,
+      "status": "OFFER",
+      "npcId": 804605,
+      "position": [
+        2892.2,
+        1485.3,
+        249.24
+      ],
+      "talkRange": 5,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT"
+      ],
+      "pages": [
+        4762
+      ],
+      "mapId": 220030000,
+      "nextVar": 0,
+      "movieId": null,
+      "receivesItemId": 182212021,
+      "flight": false
+    },
+    {
+      "key": "q28510-odella-3",
+      "questId": 28510,
+      "var": 3,
+      "status": "START",
+      "npcId": 700953,
+      "position": [
+        294.047,
+        250.026,
+        90.1643
+      ],
+      "talkRange": 5,
+      "actions": [
+        "USE_OBJECT"
+      ],
+      "pages": [],
+      "mapId": 300200000,
+      "nextVar": 4,
+      "movieId": null,
+      "receivesItemId": null,
+      "flight": false
+    },
+    {
+      "key": "q28510-odella-4",
+      "questId": 28510,
+      "var": 4,
+      "status": "START",
+      "npcId": 700953,
+      "position": [
+        294.047,
+        250.026,
+        90.1643
+      ],
+      "talkRange": 5,
+      "actions": [
+        "USE_OBJECT"
+      ],
+      "pages": [],
+      "mapId": 300200000,
+      "nextVar": 5,
+      "movieId": null,
+      "receivesItemId": null,
+      "flight": false
+    },
+    {
+      "key": "q28510-odella-5",
+      "questId": 28510,
+      "var": 5,
+      "status": "START",
+      "npcId": 700953,
+      "position": [
+        294.047,
+        250.026,
+        90.1643
+      ],
+      "talkRange": 5,
+      "actions": [
+        "USE_OBJECT"
+      ],
+      "pages": [],
+      "mapId": 300200000,
+      "nextVar": 6,
+      "movieId": null,
+      "receivesItemId": null,
+      "flight": false
+    },
+    {
+      "key": "q28510-reward",
+      "questId": 28510,
+      "var": 6,
+      "status": "REWARD",
+      "npcId": 203560,
+      "position": [
+        1660.88,
+        1813.21,
+        253.722
+      ],
+      "talkRange": 5,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_REWARD1"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "mapId": 220030000,
+      "nextVar": null,
+      "movieId": null,
+      "receivesItemId": null,
+      "flight": false
+    },
+    {
+      "key": "q28511-accept",
+      "questId": 28511,
+      "var": null,
+      "status": "OFFER",
+      "npcId": 799522,
+      "position": [
+        141.776,
+        21.4674,
+        144.245
+      ],
+      "talkRange": 5,
+      "actions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT"
+      ],
+      "pages": [
+        4762
+      ],
+      "mapId": 300200000,
+      "nextVar": 0,
+      "movieId": null,
+      "receivesItemId": null,
+      "flight": false
+    },
+    {
+      "key": "q28511-soup",
+      "questId": 28511,
+      "var": 0,
+      "status": "START",
+      "npcId": 730359,
+      "position": [
+        293.999,
+        295.611,
+        90.6128
+      ],
+      "talkRange": 5,
+      "actions": [
+        "USE_OBJECT",
+        "CHECK_USER_HAS_QUEST_ITEM",
+        "SETPRO2"
+      ],
+      "pages": [
+        1011,
+        1352
+      ],
+      "mapId": 300200000,
+      "nextVar": 1,
+      "movieId": null,
+      "receivesItemId": null,
+      "flight": false
+    },
+    {
+      "key": "q28511-reward",
+      "questId": 28511,
+      "var": 1,
+      "status": "REWARD",
+      "npcId": 798031,
+      "position": [
+        1558.5,
+        1865.05,
+        272.609
+      ],
+      "talkRange": 5,
+      "actions": [
+        "USE_OBJECT",
+        "SELECT_QUEST_REWARD",
+        "SELECTED_QUEST_REWARD1"
+      ],
+      "pages": [
+        10002,
+        5
+      ],
+      "mapId": 220030000,
+      "nextVar": null,
+      "movieId": null,
+      "receivesItemId": null,
+      "flight": false
+    }
+  ],
+  "itemUse": null,
+  "airKills": null,
+  "rewardChoice": null,
+  "unhandedWorkItemIds": {},
+  "flight": {
+    "zones": [
+      {
+        "name": "DF1A_FZ_TOWN3_220030000",
+        "bottom": 200,
+        "top": 440
+      }
+    ],
+    "waterLevel": 200,
+    "reuseMillis": 10000,
+    "maxFlightTime": 60
+  },
+  "excluded": [
+    {
+      "id": 28502,
+      "reason": "Restricted unused level-99 quest",
+      "leg": 12
+    }
+  ],
+  "rewardChoices": [
+    {
+      "questId": 28500,
+      "action": "SELECTED_QUEST_REWARD4",
+      "itemId": 112501641,
+      "itemGroup": "CH_SHOULDER"
+    },
+    {
+      "questId": 28505,
+      "action": "SELECTED_QUEST_REWARD4",
+      "itemId": 113501720,
+      "itemGroup": "CH_PANTS"
+    },
+    {
+      "questId": 28507,
+      "action": "SELECTED_QUEST_REWARD2",
+      "itemId": 123001440,
+      "itemGroup": "BELT"
+    }
+  ],
+  "bind": {
+    "npcId": 700065,
+    "position": [
+      1658.44,
+      1815.301,
+      254.099
+    ],
+    "onArrival": false,
+    "price": 451,
+    "acceptRange": 5
+  },
+  "endpoint": {
+    "mapId": 220030000,
+    "completedQuestIds": [
+      28500,
+      28501,
+      28503,
+      28504,
+      28505,
+      28506,
+      28507,
+      28508,
+      28509,
+      28510,
+      28511
+    ],
+    "inHub": true,
+    "alive": true,
+    "minimumLevel": 24,
+    "snapshot": "altgard-l12",
+    "bindNpcId": 700065
+  },
+  "haramel": {
+    "mapId": 300200000,
+    "cooldownId": 46,
+    "maxEntries": 16,
+    "resetHour": 9,
+    "emptyExpiryMillis": 600000,
+    "cleanupPeriodMillis": 60000,
+    "anchorNpcId": 799522,
+    "portalNpcId": 730319,
+    "portalPosition": [
+      2909.833,
+      1456.15,
+      252.593
+    ],
+    "arrival": [
+      172,
+      20,
+      144.22548
+    ],
+    "entryExitNpcId": 730320,
+    "bossExitNpcId": 700852,
+    "exitArrival": [
+      2907.624,
+      1464.1887,
+      252.59264
+    ],
+    "liftNpcId": 730321,
+    "liftDialog": 10000,
+    "liftArrival": [
+      220,
+      213,
+      126.68472
+    ],
+    "bossNpcId": 216922,
+    "bossMovieId": 457,
+    "chestNpcId": 700832,
+    "workingBindNpcId": 700067,
+    "workingBindPosition": [
+      2656.192,
+      1660.59,
+      325.052
+    ],
+    "staffItemId": 101501357,
+    "staffObjectId": 137763,
+    "ironItemId": 186000006,
+    "ironCount": 19,
+    "bronzeItemId": 186000007,
+    "bronzeCount": 7,
+    "protectedItemIds": [
+      101501357,
+      110551139,
+      114501726,
+      111501065,
+      112501015,
+      113501074,
+      111101650,
+      188053787,
+      186000006,
+      186000007,
+      125004139,
+      122001664,
+      122000871,
+      120001521,
+      120001132,
+      121000751,
+      123001109
+    ],
+    "cleanupItemIds": [
+      182212012,
+      182212013,
+      182212014,
+      182212016,
+      182212017,
+      182212018,
+      182212019,
+      182212020,
+      182212021,
+      182212022,
+      182212023
+    ],
+    "killNpcIds": [
+      216897,
+      216899,
+      216900,
+      216903,
+      216904,
+      216905,
+      216906,
+      217025,
+      217108,
+      216907,
+      216908,
+      216909,
+      216910,
+      216911,
+      216912,
+      216913,
+      216914,
+      216915,
+      216916,
+      216917,
+      216918,
+      216919,
+      216920,
+      216921,
+      217065,
+      217067,
+      216922,
+      216898,
+      216901,
+      216902
+    ],
+    "killSpawnCount": 74,
+    "firstVisit": [
+      {
+        "action": "talk",
+        "mapId": 220030000,
+        "questId": 28500,
+        "stepKey": "q28500-accept"
+      },
+      {
+        "action": "talk",
+        "mapId": 220030000,
+        "questId": 28500,
+        "stepKey": "q28500-gulkalla"
+      },
+      {
+        "action": "talk",
+        "mapId": 220030000,
+        "questId": 28500,
+        "stepKey": "q28500-piece"
+      },
+      {
+        "action": "talk",
+        "mapId": 220030000,
+        "questId": 28500,
+        "stepKey": "q28500-pile"
+      },
+      {
+        "action": "haramel-movie",
+        "mapId": 220030000,
+        "questId": 28500,
+        "stepKey": "q28500-movie"
+      },
+      {
+        "action": "talk",
+        "mapId": 300200000,
+        "questId": 28500,
+        "stepKey": "q28500-reward"
+      },
+      {
+        "action": "template-accept",
+        "mapId": 300200000,
+        "questId": 28501,
+        "stepKey": null
+      },
+      {
+        "action": "template-accept",
+        "mapId": 300200000,
+        "questId": 28508,
+        "stepKey": null
+      },
+      {
+        "action": "template-work",
+        "mapId": 300200000,
+        "questId": 28501,
+        "stepKey": null
+      },
+      {
+        "action": "template-work",
+        "mapId": 300200000,
+        "questId": 28508,
+        "stepKey": null
+      },
+      {
+        "action": "template-claim",
+        "mapId": 300200000,
+        "questId": 28501,
+        "stepKey": null
+      },
+      {
+        "action": "template-claim",
+        "mapId": 300200000,
+        "questId": 28508,
+        "stepKey": null
+      },
+      {
+        "action": "template-accept",
+        "mapId": 300200000,
+        "questId": 28503,
+        "stepKey": null
+      },
+      {
+        "action": "template-accept",
+        "mapId": 300200000,
+        "questId": 28509,
+        "stepKey": null
+      },
+      {
+        "action": "template-accept",
+        "mapId": 300200000,
+        "questId": 28506,
+        "stepKey": null
+      },
+      {
+        "action": "template-work",
+        "mapId": 300200000,
+        "questId": 28509,
+        "stepKey": null
+      },
+      {
+        "action": "template-work",
+        "mapId": 300200000,
+        "questId": 28503,
+        "stepKey": null
+      },
+      {
+        "action": "template-claim",
+        "mapId": 300200000,
+        "questId": 28506,
+        "stepKey": null
+      },
+      {
+        "action": "template-claim",
+        "mapId": 300200000,
+        "questId": 28509,
+        "stepKey": null
+      },
+      {
+        "action": "template-accept",
+        "mapId": 300200000,
+        "questId": 28507,
+        "stepKey": null
+      },
+      {
+        "action": "template-work",
+        "mapId": 300200000,
+        "questId": 28507,
+        "stepKey": null
+      },
+      {
+        "action": "haramel-boss",
+        "mapId": 300200000,
+        "questId": null,
+        "stepKey": null
+      },
+      {
+        "action": "haramel-loot",
+        "mapId": 300200000,
+        "questId": null,
+        "stepKey": null
+      },
+      {
+        "action": "leave-haramel",
+        "mapId": 300200000,
+        "questId": null,
+        "stepKey": null
+      },
+      {
+        "action": "template-claim",
+        "mapId": 220030000,
+        "questId": 28503,
+        "stepKey": null
+      },
+      {
+        "action": "template-claim",
+        "mapId": 220030000,
+        "questId": 28507,
+        "stepKey": null
+      }
+    ],
+    "betweenVisits": [
+      {
+        "action": "template-accept",
+        "mapId": 220030000,
+        "questId": 28504,
+        "stepKey": null
+      },
+      {
+        "action": "template-accept",
+        "mapId": 220030000,
+        "questId": 28505,
+        "stepKey": null
+      },
+      {
+        "action": "talk",
+        "mapId": 220030000,
+        "questId": 28510,
+        "stepKey": "q28510-accept"
+      }
+    ],
+    "secondVisit": [
+      {
+        "action": "talk",
+        "mapId": 300200000,
+        "questId": 28511,
+        "stepKey": "q28511-accept"
+      },
+      {
+        "action": "haramel-carts",
+        "mapId": 300200000,
+        "questId": 28510,
+        "stepKey": null
+      },
+      {
+        "action": "template-work",
+        "mapId": 300200000,
+        "questId": 28505,
+        "stepKey": null
+      },
+      {
+        "action": "haramel-object",
+        "mapId": 300200000,
+        "questId": 28510,
+        "stepKey": "q28510-odella-3"
+      },
+      {
+        "action": "haramel-object",
+        "mapId": 300200000,
+        "questId": 28510,
+        "stepKey": "q28510-odella-4"
+      },
+      {
+        "action": "haramel-object",
+        "mapId": 300200000,
+        "questId": 28510,
+        "stepKey": "q28510-odella-5"
+      },
+      {
+        "action": "haramel-ginseng",
+        "mapId": 300200000,
+        "questId": 28511,
+        "stepKey": null
+      },
+      {
+        "action": "haramel-soup",
+        "mapId": 300200000,
+        "questId": 28511,
+        "stepKey": "q28511-soup"
+      },
+      {
+        "action": "template-work",
+        "mapId": 300200000,
+        "questId": 28504,
+        "stepKey": null
+      },
+      {
+        "action": "haramel-boss",
+        "mapId": 300200000,
+        "questId": null,
+        "stepKey": null
+      },
+      {
+        "action": "haramel-loot",
+        "mapId": 300200000,
+        "questId": null,
+        "stepKey": null
+      },
+      {
+        "action": "leave-haramel",
+        "mapId": 300200000,
+        "questId": null,
+        "stepKey": null
+      }
+    ],
+    "finish": [
+      {
+        "action": "template-claim",
+        "mapId": 220030000,
+        "questId": 28504,
+        "stepKey": null
+      },
+      {
+        "action": "template-claim",
+        "mapId": 220030000,
+        "questId": 28505,
+        "stepKey": null
+      },
+      {
+        "action": "talk",
+        "mapId": 220030000,
+        "questId": 28510,
+        "stepKey": "q28510-reward"
+      },
+      {
+        "action": "talk",
+        "mapId": 220030000,
+        "questId": 28511,
+        "stepKey": "q28511-reward"
+      }
+    ]
+  }
+}

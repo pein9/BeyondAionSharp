@@ -164,8 +164,9 @@ public sealed class NaturalIshalgenInventoryPolicy
 	}
 
 	/// <param name="questNeeded">AK-08: items an open quest still needs (Q2292's rings): never sold.</param>
-	public NaturalInventoryPlan Decide(BotWorldModel world, IReadOnlySet<int>? questNeeded = null, NaturalCoinGear? coinGear = null) => Decide(world.Inventory.Values,
-		world.Level, world.CubeExpansion?.Capacity ?? 27, IsCleric(world), questNeeded, coinGear);
+	public NaturalInventoryPlan Decide(BotWorldModel world, IReadOnlySet<int>? questNeeded = null, NaturalCoinGear? coinGear = null,
+		NaturalHaramel? haramel = null) => Decide(world.Inventory.Values,
+		world.Level, world.CubeExpansion?.Capacity ?? 27, IsCleric(world), questNeeded, coinGear, haramel);
 
 	/// <summary>The client-observed class of the player: Cleric after Ascension (D25), else the Priest rules.</summary>
 	public static bool IsCleric(BotWorldModel world) => world.SelfObjectId is int self &&
@@ -175,9 +176,9 @@ public sealed class NaturalIshalgenInventoryPolicy
 		: throw new InvalidDataException($"Shipped item template {itemId} was not found.");
 
 	public NaturalInventoryPlan Decide(IEnumerable<BotInventoryItem> inventory, int level, int capacity, bool cleric = false,
-		IReadOnlySet<int>? questNeeded = null, NaturalCoinGear? coinGear = null)
+		IReadOnlySet<int>? questNeeded = null, NaturalCoinGear? coinGear = null, NaturalHaramel? haramel = null)
 	{
-		if (cleric) return DecideCleric(inventory, level, capacity, questNeeded ?? new HashSet<int>(), coinGear);
+		if (cleric) return DecideCleric(inventory, level, capacity, questNeeded ?? new HashSet<int>(), coinGear, haramel);
 		BotInventoryItem[] observed = inventory.Where(item => item.ItemId != BotWorldModel.KinahItemId).ToArray();
 		int occupied = Occupied(observed);
 		var best = observed.Where(item => items.TryGetValue(item.ItemId, out var template) && template.UsableAt(level))
@@ -206,7 +207,7 @@ public sealed class NaturalIshalgenInventoryPolicy
 	/// Elixirs, mana elixirs, powder, Zeller jelly, Tea of Repose, Destiny Cards). AK-Q4 (b): an accessory still in the cube
 	/// once the upgrades are worn is surplus and sold, unless the Cleric is not yet the level to wear it.</summary>
 	private NaturalInventoryPlan DecideCleric(IEnumerable<BotInventoryItem> inventory, int level, int capacity, IReadOnlySet<int> questNeeded,
-		NaturalCoinGear? coinGear)
+		NaturalCoinGear? coinGear, NaturalHaramel? haramel)
 	{
 		BotInventoryItem[] observed = inventory.Where(item => item.ItemId != BotWorldModel.KinahItemId).ToArray();
 		int occupied = Occupied(observed);
@@ -218,9 +219,10 @@ public sealed class NaturalIshalgenInventoryPolicy
 		foreach (BotInventoryItem item in observed.OrderBy(item => item.ObjectId))
 		{
 			string action, reason;
-			if (coinGear?.ProtectedItemIds.Contains(item.ItemId) == true) (action, reason) = ("hold", "coin-gear-protected");
+			if (haramel?.ProtectedItemIds.Contains(item.ItemId) == true) (action, reason) = ("hold", "haramel-retained-item");
+			else if (coinGear?.ProtectedItemIds.Contains(item.ItemId) == true) (action, reason) = ("hold", "coin-gear-protected");
 			else if (!items.TryGetValue(item.ItemId, out NaturalItem? template)) (action, reason) = ("hold", "unknown-static-item");
-			else if (coinGear != null && template.ClericGearSlot is "WEAPON" or "SUB") (action, reason) = ("hold", "retained-staff-no-weapon-swap");
+			else if ((coinGear != null || haramel != null) && template.ClericGearSlot is "WEAPON" or "SUB") (action, reason) = ("hold", "retained-staff-no-weapon-swap");
 			else if (questItems.Contains(item.ItemId) || template.Group is "QUEST" or "KEY") (action, reason) = ("hold", "quest-protected");
 			else if (questNeeded.Contains(item.ItemId)) (action, reason) = ("hold", "quest-needed");
 			else if (item.Details.EquippedSlot.GetValueOrDefault() != 0) (action, reason) = ("hold", "currently-equipped");

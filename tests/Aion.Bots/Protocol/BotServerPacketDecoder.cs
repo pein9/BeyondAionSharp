@@ -32,6 +32,7 @@ public sealed partial class BotServerPacketDecoder
 			[typeof(SM_ENTER_WORLD_CHECK)] = DecodeEnterWorldCheck,
 			[typeof(SM_PLAYER_SPAWN)] = DecodePlayerSpawn,
 			[typeof(SM_CHANNEL_INFO)] = DecodeChannelInfo,
+			[typeof(SM_INSTANCE_INFO)] = DecodeInstanceInfo,
 			[typeof(SM_PLAY_MOVIE)] = DecodePlayMovie,
 			[typeof(SM_CHAT_INIT)] = DecodeChatInit,
 			[typeof(SM_PLAYER_INFO)] = DecodePlayerInfo,

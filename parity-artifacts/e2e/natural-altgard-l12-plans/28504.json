@@ -1,0 +1,995 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 28504,
+    "name": "Follow the Leaders--and Kill 'em",
+    "nameId": 1135016,
+    "zone": "Haramel",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 5,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 28507
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/haramel.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "id": 28504,
+        "start_npc_ids": 804605
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 804605,
+        "name": "shezen",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 2892.2,
+            "y": 1485.3,
+            "z": 249.24,
+            "heading": 36,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 804605,
+      "name": "shezen",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2892.2,
+          "y": 1485.3,
+          "z": 249.24,
+          "heading": 36,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 804605,
+      "name": "shezen",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2892.2,
+          "y": 1485.3,
+          "z": 249.24,
+          "heading": 36,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 65,
+      "npc_ids": "216897 216899 216900 216903 216904 216905 216906 217025 217108 216907 216908 216909 216910 216911 216912 216913 216914 216915 216916 216917 216918 216919 216920 216921 217065 217067 216922 216898 216901 216902",
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 216897,
+          "name": "drudgelord kakiti",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 181.139,
+              "y": 81.2397,
+              "z": 145.429,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216898,
+          "name": "dukaki peon",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 175.217,
+              "y": 63.6435,
+              "z": 144.308,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 175.233,
+              "y": 101.93,
+              "z": 144.313,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 183.685,
+              "y": 96.1323,
+              "z": 150.772,
+              "heading": 15,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 183.75,
+              "y": 52.0294,
+              "z": 148.541,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216899,
+          "name": "dukaki seeker",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 129.478,
+              "y": 96.9962,
+              "z": 144.311,
+              "heading": 110,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 177.61,
+              "y": 146.19,
+              "z": 141.70174,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 178.505,
+              "y": 50.813,
+              "z": 145.889,
+              "heading": 59,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216900,
+          "name": "dukaki seeker",
+          "positions": [],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216901,
+          "name": "dukaki watchman",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 141.76,
+              "y": 104.12,
+              "z": 144.38634,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 150.24,
+              "y": 58.04,
+              "z": 143.79619,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 221.29,
+              "y": 148.12,
+              "z": 137.05313,
+              "heading": 88,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216902,
+          "name": "dukaki protector",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 129.022,
+              "y": 71.781,
+              "z": 144.309,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 147.36,
+              "y": 83.88,
+              "z": 143.79619,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 151.61,
+              "y": 144.946,
+              "z": 144.246,
+              "heading": 103,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 201.425,
+              "y": 222.132,
+              "z": 87.6821,
+              "heading": 55,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 242.784,
+              "y": 206.224,
+              "z": 87.7082,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216903,
+          "name": "dukaki weakarm",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 73.997,
+              "y": 102.104,
+              "z": 138.384,
+              "heading": 43,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 86.141,
+              "y": 124.877,
+              "z": 140.008,
+              "heading": 23,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 88.8624,
+              "y": 78.1367,
+              "z": 142.724,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 100.371,
+              "y": 102.102,
+              "z": 139.299,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216904,
+          "name": "dukaki digger",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 70.9049,
+              "y": 99.98,
+              "z": 138.129,
+              "heading": 40,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 81.2197,
+              "y": 124.55,
+              "z": 139.811,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 97.8194,
+              "y": 109.461,
+              "z": 139.051,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216905,
+          "name": "dukaki lifter",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 225.498,
+              "y": 217.759,
+              "z": 139.82,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216906,
+          "name": "mumu carrier",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 225.246,
+              "y": 209.263,
+              "z": 139.82,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216907,
+          "name": "mumu ham the grey",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 283.064,
+              "y": 275.719,
+              "z": 90.1018,
+              "heading": 116,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216908,
+          "name": "mumu assistant",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 289.982,
+              "y": 289.979,
+              "z": 90.0806,
+              "heading": 106,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 298.11,
+              "y": 299.039,
+              "z": 90.0806,
+              "heading": 106,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216909,
+          "name": "mumu fighter",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 207.996,
+              "y": 205.162,
+              "z": 87.2759,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 242.943,
+              "y": 221.758,
+              "z": 87.7079,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 293.468,
+              "y": 258.486,
+              "z": 90.0806,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 308.855,
+              "y": 258.71,
+              "z": 89.0267,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 314.645,
+              "y": 300.667,
+              "z": 89.0267,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 325.82,
+              "y": 254.05,
+              "z": 90.08059,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 333.249,
+              "y": 287.606,
+              "z": 90.0806,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216910,
+          "name": "mumu lookout",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 308.636,
+              "y": 283.63,
+              "z": 89.0267,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 332.975,
+              "y": 271.731,
+              "z": 90.0806,
+              "heading": 53,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216911,
+          "name": "mumu farmer",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 331.292,
+              "y": 336.776,
+              "z": 87.5671,
+              "heading": 97,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 337.775,
+              "y": 323.904,
+              "z": 88.1384,
+              "heading": 94,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 343.938,
+              "y": 337.597,
+              "z": 86.6425,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 348.173,
+              "y": 367.7,
+              "z": 90.02,
+              "heading": 95,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 348.676,
+              "y": 312.354,
+              "z": 86.6947,
+              "heading": 76,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 372.928,
+              "y": 295.157,
+              "z": 87.9714,
+              "heading": 78,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 379.785,
+              "y": 338.845,
+              "z": 86.3768,
+              "heading": 106,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 387.258,
+              "y": 309.637,
+              "z": 88.6193,
+              "heading": 77,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216912,
+          "name": "mumu porter",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 303.61,
+              "y": 214.87,
+              "z": 88.145256,
+              "heading": 73,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 311.55,
+              "y": 401.41,
+              "z": 86.48563,
+              "heading": 38,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 357.66,
+              "y": 341.56,
+              "z": 86.195,
+              "heading": 44,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216913,
+          "name": "captured tursin guard",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 186.95,
+              "y": 332.899,
+              "z": 142.766,
+              "heading": 113,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 261.397,
+              "y": 305.369,
+              "z": 142.766,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 262.251,
+              "y": 310.862,
+              "z": 142.766,
+              "heading": 73,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216914,
+          "name": "captured black claw informer",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 184.019,
+              "y": 303.546,
+              "z": 142.766,
+              "heading": 10,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 187.39,
+              "y": 307.816,
+              "z": 142.766,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 262.291,
+              "y": 332.48,
+              "z": 142.766,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216915,
+          "name": "bossman nukiti",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 220.945,
+              "y": 298.836,
+              "z": 141.892,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216916,
+          "name": "dukaki screamer",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 200.24,
+              "y": 307.32,
+              "z": 142.7657,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216917,
+          "name": "idnovice_zone7_koboldscoutfemale_prisonguard_20_an",
+          "positions": [],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216918,
+          "name": "idnovice_zone7_koboldwarriormale_prisonguard_20_an",
+          "positions": [],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216919,
+          "name": "dukaki jailer",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 224.14,
+              "y": 348.689,
+              "z": 141.692,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 246.77,
+              "y": 306.45,
+              "z": 142.7657,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216920,
+          "name": "brainwashed dukaki weakarm",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 216.867,
+              "y": 318.527,
+              "z": 141.892,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 220.562,
+              "y": 314.492,
+              "z": 141.892,
+              "heading": 93,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 220.814,
+              "y": 323.291,
+              "z": 141.892,
+              "heading": 93,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 233.462,
+              "y": 312.915,
+              "z": 141.892,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216921,
+          "name": "brainwashed dukaki peon",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 214.353,
+              "y": 322.118,
+              "z": 141.892,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 223.632,
+              "y": 318.622,
+              "z": 141.892,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 227.035,
+              "y": 314.607,
+              "z": 141.892,
+              "heading": 86,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 232.062,
+              "y": 322.117,
+              "z": 141.892,
+              "heading": 80,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 216922,
+          "name": "hamerun the bleeder",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 224.127,
+              "y": 275.123,
+              "z": 144.776,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 217025,
+          "name": "keymaster mumu dang",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 218.062,
+              "y": 213.348,
+              "z": 89.2787,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 217065,
+          "name": "brainwashed dukaki peon",
+          "positions": [],
+          "handlerSpawned": false
+        },
+        {
+          "id": 217067,
+          "name": "brainwashed mumu worker",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 215.002,
+              "y": 313.186,
+              "z": 141.892,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 226.562,
+              "y": 323.022,
+              "z": 141.892,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 230.758,
+              "y": 317.672,
+              "z": 141.892,
+              "heading": 76,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        },
+        {
+          "id": 217108,
+          "name": "mumu mechanic",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 222.4,
+              "y": 235.52,
+              "z": 87.69642,
+              "heading": 64,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 229.41,
+              "y": 191.03,
+              "z": 87.68485,
+              "heading": 115,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 235.771,
+              "y": 214.002,
+              "z": 89.2787,
+              "heading": 4,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 804605,
+          "name": "shezen",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2892.2,
+              "y": 1485.3,
+              "z": 249.24,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 110845,
+        "gold": 4000,
+        "rewardItems": [
+          {
+            "count": 3,
+            "item_id": 186000007
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 28504,
+      "max_repeat_count": 5,
+      "minlevel_permitted": 16,
+      "name": "Follow the Leaders--and Kill 'em",
+      "nameId": 1135016,
+      "quest_zone": "Haramel",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 110845,
+          "gold": 4000
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 186000007
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 65,
+          "npc_ids": "216897 216899 216900 216903 216904 216905 216906 217025 217108 216907 216908 216909 216910 216911 216912 216913 216914 216915 216916 216917 216918 216919 216920 216921 217065 217067 216922 216898 216901 216902",
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 28507
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

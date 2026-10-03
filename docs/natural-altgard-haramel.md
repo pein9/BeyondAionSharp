@@ -1,6 +1,6 @@
 # Leg 12: Haramel after the coin gear preparation
 
-**Status (2026-10-03): CG-00..CG-06 and HM-00 complete; HM-01 is next.** Follow
+**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-01 complete; HM-02 is next.** Follow
 [coin gear preparation CG-00..CG-06](natural-altgard-coin-gear.md) first, then do the Haramel lead-in,
 every active Asmodian Haramel quest once, and the clears needed to finish them. Haramel remains
 **Leg 12**; the preparation is a separate `cg` section. Recommended scope is **two fresh solo clears**,
@@ -195,11 +195,28 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
     No authority gap or server/content correction is established. The initial audit draft compared
     the numeric client class with a string; corrected against Java ID 10, original log retained.
     Seven prechecks pass (`run/hm00-audit/`); documentation/audit only, no natural instance run.
-- [ ] **HM-01 — Leg 12 contract, plans and decisions.** Depends: HM-00. Add `l12` to every shared
+- [x] **HM-01 — Leg 12 contract, plans and decisions.** Depends: HM-00. Add `l12` to every shared
   registry/runner/snapshot selector; compile the eight template quests and encode the three custom
   protocols, two visits, fresh-instance wait, packed 65 counter, quest reward choices, protected items
   and final bind/ledger assertions. Explicit checkpoints must resume after a lost connection without
   duplicate accept/reward/purchase. Keep original recovery/time budgets across visits.
+  - 2026-10-03: shared `l12` selectors, eight compiled plans, three custom protocols and two-visit
+    decisions are frozen in `natural-altgard-l12-contract.json`. Q28501/Q28505 require every item
+    set; Q28504 reads consecutive six-bit vars through 63/64/65 without wire flags. Reward choices,
+    the equipped original staff, retained armour/accessories/cloth gloves, sealed bundle, 19 Iron,
+    seven endpoint Bronze, 156 journals and final fortress bind are pinned.
+  - Read Java custom/template handlers, `SM_INSTANCE_INFO`, `SM_CHANNEL_INFO`, `PortalService`,
+    `PortalCooldownList` and `IDFactory` first. The channel packet carries instance ID minus one;
+    NPC IDs can recycle. Receipts therefore retain actual copy/anchor IDs, entry use/reset deadline
+    and fresh live-spawn evidence. Re-entry, daily reset and cold lost-copy handling preserve the
+    original sixty-minute stall/twenty-revive budgets and ordinary expiry deadline. Q28511's
+    successful five-ginseng payment is retained separately from soup receipt; new login state
+    selects remaining work without duplicate accept/reward/purchase. Full belt slot 65536 is retained.
+  - Fourteen Haramel contract cases plus earlier-leg/persistence/packet-fixture regressions pass
+    (81 total); all seven prechecks pass. `hm01-fast-a2`: 78 passed, four existing skips, all eleven
+    scenarios passed. Earlier compile/fixture/identity drafts and passing pre-refinement Fast are
+    retained (`run/hm01-support/audit.json`). Runtime travel/quest/combat/recovery proof remains
+    HM-02..HM-06; no server content or snapshot change. Base `a39b80dc0`.
 - [ ] **HM-02 — Navigation and travel probe.** Depends: HM-01. Generate/rebake Haramel mesh/graph,
   prove all outdoor objects, portal entry, every floor/quest source/boss, tower box, actual lift,
   both exits, hub flights/binds and Heart recovery. Use unused access-0 probe accounts, clear
@@ -275,6 +292,11 @@ be corrected under existing authority, record it here and continue the remaining
 
 ## Progress log
 
+- 2026-10-03 HM-01 complete: l12 contract/selectors, eight plans, three custom protocols, two visits,
+  packed/multiple objectives and retained cold receipts/budgets are implemented. Java channel-ID and
+  recyclable-NPC-ID semantics are accounted for; soup payment and full belt slot persist. 81 focused/
+  regression cases, seven prechecks and revised Fast pass (`run/hm01-support/audit.json`). Next HM-02
+  generates navigation and proves ordinary travel; the natural Haramel smoke remains HM-06.
 - 2026-10-03 HM-00 complete: verified CG incoming state and all eleven Java/C# quest/gate/reward,
   entrance/lift/exit, instance lifetime/configuration and 74-source facts. Inactive class weapons
   stay inactive; selected armour/belt indexes and packed counters are frozen. Initial audit class-ID

@@ -16,11 +16,18 @@ public static class NaturalQuestProgress
 			throw new InvalidDataException("Natural kill reconstruction requires a frozen monster_hunt operation.");
 		QuestRunStep step = plan.Steps.Single(s => s.Kind == "kill" && s.Sequence == operation.Sequence);
 		int varId = step.Data.GetProperty("var").GetInt32();
+		return Math.Max(0, operation.Count - KillCount(quest, varId, operation.Count));
+	}
+
+	/// <summary>Java MonsterHunt reads consecutive six-bit QuestVars until the required count fits.
+	/// The high flag byte is never part of the counter (Haramel Q28504 needs twelve bits for 65).</summary>
+	public static int KillCount(BotQuestState quest, int varId, int requiredCount)
+	{
+		if (requiredCount < 0) throw new ArgumentOutOfRangeException(nameof(requiredCount));
 		int bits = 6;
-		for (int count = operation.Count >> 6; count > 0; count >>= 6) bits += 6;
+		for (int count = requiredCount >> 6; count > 0; count >>= 6) bits += 6;
 		if (varId < 0 || varId * 6 + bits > 24)
-			throw new InvalidDataException($"Q{plan.Id} kill counter overlaps the wire quest flags.");
-		int observed = (quest.StepAndFlags >> (varId * 6)) & ((1 << bits) - 1);
-		return Math.Max(0, operation.Count - observed);
+			throw new InvalidDataException($"Q{quest.QuestId} kill counter overlaps the wire quest flags.");
+		return (quest.StepAndFlags >> (varId * 6)) & ((1 << bits) - 1);
 	}
 }

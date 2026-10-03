@@ -357,6 +357,7 @@ public sealed class BotServerPacketDecoderTests
 			if (BotPrivateStorePacketTests.AssertAuditedWireContract(packetType)) continue;
 			if (BotTradeInPacketTests.AssertAuditedWireContract(packetType)) continue;
 			if (BotResurrectionPacketTests.AssertAuditedWireContract(packetType)) continue;
+			if (NaturalAltgardHaramelContractTests.AssertAuditedWireContract(packetType)) continue;
 			if (packetType == typeof(SM_UPDATE_PLAYER_APPEARANCE))
 			{
 				BotPlayerCommandPacketTests.AssertAppearanceWireContract();

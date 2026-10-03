@@ -77,7 +77,8 @@ public sealed partial class SimulationFastScenarioTests
 			AltgardLegId: Environment.GetEnvironmentVariable("AF_ALTGARD") is { Length: > 1 } legId ? legId : null,
 			AltgardOnlyQuests: Environment.GetEnvironmentVariable("AF_ONLY") is { Length: > 0 } onlyList
 				? onlyList.Split(',').Select(int.Parse).ToArray() : null,
-			CoinGearReceiptPath: Environment.GetEnvironmentVariable("AF_CG_RECEIPTS"))).RunAsync(token);
+			CoinGearReceiptPath: Environment.GetEnvironmentVariable("AF_CG_RECEIPTS"),
+			HaramelProgressPath: Environment.GetEnvironmentVariable("AF_HM_PROGRESS"))).RunAsync(token);
 
 		async Task SupplyHelpItemAsync(int itemId, long count, CancellationToken supplyToken)
 		{

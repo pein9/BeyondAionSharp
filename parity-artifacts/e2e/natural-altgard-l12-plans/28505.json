@@ -1,0 +1,681 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 28505,
+    "name": "Overseers Under Attack",
+    "nameId": 1135017,
+    "zone": "Haramel",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 28507
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/haramel.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 28505,
+        "start_npc_ids": 804605
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 804605,
+        "name": "shezen",
+        "positions": [
+          {
+            "mapId": 220030000,
+            "x": 2892.2,
+            "y": 1485.3,
+            "z": 249.24,
+            "heading": 36,
+            "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 804605,
+      "name": "shezen",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2892.2,
+          "y": 1485.3,
+          "z": 249.24,
+          "heading": 36,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 804605,
+      "name": "shezen",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2892.2,
+          "y": 1485.3,
+          "z": 249.24,
+          "heading": 36,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182212017,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182212017,
+          "npc_id": 216897,
+          "npc": {
+            "id": 216897,
+            "name": "drudgelord kakiti",
+            "positions": [
+              {
+                "mapId": 300200000,
+                "x": 181.139,
+                "y": 81.2397,
+                "z": 145.429,
+                "heading": 60,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182212018,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182212018,
+          "npc_id": 216907,
+          "npc": {
+            "id": 216907,
+            "name": "mumu ham the grey",
+            "positions": [
+              {
+                "mapId": 300200000,
+                "x": 283.064,
+                "y": 275.719,
+                "z": 90.1018,
+                "heading": 116,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182212019,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182212019,
+          "npc_id": 216915,
+          "npc": {
+            "id": 216915,
+            "name": "bossman nukiti",
+            "positions": [
+              {
+                "mapId": 300200000,
+                "x": 220.945,
+                "y": 298.836,
+                "z": 141.892,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 804605,
+          "name": "shezen",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2892.2,
+              "y": 1485.3,
+              "z": 249.24,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 91051,
+        "gold": 3340,
+        "rewardItems": [
+          {
+            "count": 2,
+            "item_id": 188053406
+          }
+        ],
+        "selectableItems": [
+          {
+            "count": 1,
+            "item_id": 113101664
+          },
+          {
+            "count": 1,
+            "item_id": 113301784
+          },
+          {
+            "count": 1,
+            "item_id": 113301786
+          },
+          {
+            "count": 1,
+            "item_id": 113501720
+          },
+          {
+            "count": 1,
+            "item_id": 113501722
+          },
+          {
+            "count": 1,
+            "item_id": 113601570
+          }
+        ]
+      }
+    ],
+    "classSelectable": {
+      "fighter": [
+        {
+          "count": 1,
+          "item_id": 100200939
+        },
+        {
+          "count": 1,
+          "item_id": 100001059
+        },
+        {
+          "count": 1,
+          "item_id": 100900802
+        },
+        {
+          "count": 1,
+          "item_id": 101300774
+        }
+      ],
+      "knight": [
+        {
+          "count": 1,
+          "item_id": 100001059
+        },
+        {
+          "count": 1,
+          "item_id": 100900802
+        },
+        {
+          "count": 1,
+          "item_id": 115001093
+        }
+      ],
+      "ranger": [
+        {
+          "count": 1,
+          "item_id": 100200939
+        },
+        {
+          "count": 1,
+          "item_id": 100001059
+        },
+        {
+          "count": 1,
+          "item_id": 101700847
+        }
+      ],
+      "assassin": [
+        {
+          "count": 1,
+          "item_id": 100200939
+        },
+        {
+          "count": 1,
+          "item_id": 100001059
+        },
+        {
+          "count": 1,
+          "item_id": 101700847
+        }
+      ],
+      "wizard": [
+        {
+          "count": 1,
+          "item_id": 100600880
+        },
+        {
+          "count": 1,
+          "item_id": 100500825
+        }
+      ],
+      "elementalist": [
+        {
+          "count": 1,
+          "item_id": 100600880
+        },
+        {
+          "count": 1,
+          "item_id": 100500825
+        }
+      ],
+      "priest": [
+        {
+          "count": 1,
+          "item_id": 100100804
+        },
+        {
+          "count": 1,
+          "item_id": 101500830
+        },
+        {
+          "count": 1,
+          "item_id": 115001093
+        }
+      ],
+      "chanter": [
+        {
+          "count": 1,
+          "item_id": 100100804
+        },
+        {
+          "count": 1,
+          "item_id": 101500830
+        },
+        {
+          "count": 1,
+          "item_id": 115001093
+        }
+      ],
+      "bard": [
+        {
+          "count": 1,
+          "item_id": 102000739
+        }
+      ],
+      "gunner": [
+        {
+          "count": 1,
+          "item_id": 101800701
+        }
+      ],
+      "rider": [
+        {
+          "count": 1,
+          "item_id": 102100619
+        }
+      ]
+    }
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 28505,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "Overseers Under Attack",
+      "nameId": 1135017,
+      "quest_zone": "Haramel",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182212017
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182212018
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182212019
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 91051,
+          "gold": 3340
+        },
+        "children": [
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 113101664
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 113301784
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 113301786
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 113501720
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 113501722
+            }
+          },
+          {
+            "tag": "selectable_reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 113601570
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 2,
+              "item_id": 188053406
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182212017,
+          "npc_id": 216897
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182212018,
+          "npc_id": 216907
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182212019,
+          "npc_id": 216915
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 28507
+            }
+          }
+        ]
+      },
+      {
+        "tag": "fighter_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100200939
+        }
+      },
+      {
+        "tag": "fighter_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100001059
+        }
+      },
+      {
+        "tag": "fighter_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100900802
+        }
+      },
+      {
+        "tag": "fighter_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 101300774
+        }
+      },
+      {
+        "tag": "knight_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100001059
+        }
+      },
+      {
+        "tag": "knight_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100900802
+        }
+      },
+      {
+        "tag": "knight_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 115001093
+        }
+      },
+      {
+        "tag": "ranger_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100200939
+        }
+      },
+      {
+        "tag": "ranger_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100001059
+        }
+      },
+      {
+        "tag": "ranger_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 101700847
+        }
+      },
+      {
+        "tag": "assassin_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100200939
+        }
+      },
+      {
+        "tag": "assassin_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100001059
+        }
+      },
+      {
+        "tag": "assassin_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 101700847
+        }
+      },
+      {
+        "tag": "wizard_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100600880
+        }
+      },
+      {
+        "tag": "wizard_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100500825
+        }
+      },
+      {
+        "tag": "elementalist_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100600880
+        }
+      },
+      {
+        "tag": "elementalist_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100500825
+        }
+      },
+      {
+        "tag": "priest_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100100804
+        }
+      },
+      {
+        "tag": "priest_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 101500830
+        }
+      },
+      {
+        "tag": "priest_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 115001093
+        }
+      },
+      {
+        "tag": "chanter_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 100100804
+        }
+      },
+      {
+        "tag": "chanter_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 101500830
+        }
+      },
+      {
+        "tag": "chanter_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 115001093
+        }
+      },
+      {
+        "tag": "bard_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 102000739
+        }
+      },
+      {
+        "tag": "gunner_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 101800701
+        }
+      },
+      {
+        "tag": "rider_selectable_reward",
+        "attributes": {
+          "count": 1,
+          "item_id": 102100619
+        }
+      }
+    ]
+  }
+}

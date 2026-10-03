@@ -1,0 +1,321 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 28501,
+    "name": "The Price of Loyalty",
+    "nameId": 1135013,
+    "zone": "Haramel",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/haramel.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "end_npc_ids": 799523,
+        "id": 28501,
+        "start_npc_ids": 799522
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 799522,
+        "name": "moorilerk",
+        "positions": [
+          {
+            "mapId": 300200000,
+            "x": 141.776,
+            "y": 21.4674,
+            "z": 144.245,
+            "heading": 0,
+            "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 799522,
+      "name": "moorilerk",
+      "positions": [
+        {
+          "mapId": 300200000,
+          "x": 141.776,
+          "y": 21.4674,
+          "z": 144.245,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 799523,
+      "name": "moofrenerk",
+      "positions": [
+        {
+          "mapId": 300200000,
+          "x": 228.416,
+          "y": 160.876,
+          "z": 137.059,
+          "heading": 60,
+          "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 5,
+      "item_id": 182212013,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182212013,
+          "npc_id": 700833,
+          "npc": {
+            "id": 700833,
+            "name": "fine odium",
+            "positions": [
+              {
+                "mapId": 300200000,
+                "x": 121.647,
+                "y": 100.535,
+                "z": 146.297,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              },
+              {
+                "mapId": 300200000,
+                "x": 122.496,
+                "y": 60.7915,
+                "z": 145.661,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              },
+              {
+                "mapId": 300200000,
+                "x": 122.983,
+                "y": 111.513,
+                "z": 148.111,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              },
+              {
+                "mapId": 300200000,
+                "x": 132.386,
+                "y": 112.438,
+                "z": 146.053,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              },
+              {
+                "mapId": 300200000,
+                "x": 135.407,
+                "y": 60.9233,
+                "z": 145.661,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "collect",
+      "count": 5,
+      "item_id": 182212014,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182212014,
+          "npc_id": 700951,
+          "npc": {
+            "id": 700951,
+            "name": "raw odium",
+            "positions": [
+              {
+                "mapId": 300200000,
+                "x": 82.9601,
+                "y": 88.3994,
+                "z": 141.745,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              },
+              {
+                "mapId": 300200000,
+                "x": 87.2192,
+                "y": 99.919,
+                "z": 138.926,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              },
+              {
+                "mapId": 300200000,
+                "x": 90.2555,
+                "y": 112.174,
+                "z": 139.197,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              },
+              {
+                "mapId": 300200000,
+                "x": 95.8721,
+                "y": 76.1201,
+                "z": 143.515,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              },
+              {
+                "mapId": 300200000,
+                "x": 116.283,
+                "y": 83.0092,
+                "z": 144.198,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 799523,
+          "name": "moofrenerk",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 228.416,
+              "y": 160.876,
+              "z": 137.059,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 75359,
+        "gold": 10150,
+        "rewardItems": [
+          {
+            "count": 20,
+            "item_id": 162000048
+          },
+          {
+            "count": 200,
+            "item_id": 169000004
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 28501,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "The Price of Loyalty",
+      "nameId": 1135013,
+      "quest_zone": "Haramel",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 182212013
+            }
+          },
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 182212014
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 75359,
+          "gold": 10150
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 20,
+              "item_id": 162000048
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 200,
+              "item_id": 169000004
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182212013,
+          "npc_id": 700833
+        }
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182212014,
+          "npc_id": 700951
+        }
+      }
+    ]
+  }
+}

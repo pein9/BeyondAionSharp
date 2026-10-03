@@ -14,6 +14,8 @@ public sealed partial class BotWorldModel
 	private readonly Dictionary<int, BotSkill> skills = [];
 	private readonly HashSet<int> recipes = [];
 	private readonly Dictionary<int, BotSkillCooldown> cooldowns = [];
+	private readonly Dictionary<(int PlayerId, int CooldownId), BotInstanceEntry> instanceEntries = [];
+	public IReadOnlyDictionary<(int PlayerId, int CooldownId), BotInstanceEntry> InstanceEntries => instanceEntries;
 	private readonly Dictionary<int, BotQuestState> quests = [];
 	private readonly Dictionary<int, BotCompletedQuest> completedQuests = [];
 	private readonly HashSet<int> acceptedQuestIds = [];
@@ -157,6 +159,12 @@ public sealed partial class BotWorldModel
 			ApplyPlayerSpawn(packet);
 		else if (type == typeof(SM_CHANNEL_INFO))
 			ChannelInfo = (packet.Get<int>("currentChannel"), packet.Get<int>("instanceCount"));
+		else if (type == typeof(SM_INSTANCE_INFO))
+		{
+			if (packet.Get<byte>("updateType") == 0) instanceEntries.Clear();
+			foreach (BotInstanceEntry entry in packet.Get<List<BotInstanceEntry>>("entries"))
+				instanceEntries[(entry.PlayerId, entry.CooldownId)] = entry;
+		}
 		else if (type == typeof(SM_PLAYER_INFO))
 			ApplyPlayerInfo(packet);
 		else if (type == typeof(SM_EMOTION))

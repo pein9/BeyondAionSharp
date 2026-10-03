@@ -1,0 +1,237 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 28503,
+    "name": "Odella for Shybanz",
+    "nameId": 1135015,
+    "zone": "Haramel",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/haramel.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "end_npc_ids": 804605,
+        "id": 28503,
+        "start_npc_ids": 799523
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 799523,
+        "name": "moofrenerk",
+        "positions": [
+          {
+            "mapId": 300200000,
+            "x": 228.416,
+            "y": 160.876,
+            "z": 137.059,
+            "heading": 60,
+            "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 799523,
+      "name": "moofrenerk",
+      "positions": [
+        {
+          "mapId": 300200000,
+          "x": 228.416,
+          "y": 160.876,
+          "z": 137.059,
+          "heading": 60,
+          "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 804605,
+      "name": "shezen",
+      "positions": [
+        {
+          "mapId": 220030000,
+          "x": 2892.2,
+          "y": 1485.3,
+          "z": 249.24,
+          "heading": 36,
+          "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 5,
+      "item_id": 182212016,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182212016,
+          "npc_id": 700834,
+          "npc": {
+            "id": 700834,
+            "name": "odella",
+            "positions": [
+              {
+                "mapId": 300200000,
+                "x": 333.817,
+                "y": 345.084,
+                "z": 86.9499,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              },
+              {
+                "mapId": 300200000,
+                "x": 339.157,
+                "y": 323.219,
+                "z": 88.0086,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              },
+              {
+                "mapId": 300200000,
+                "x": 350.922,
+                "y": 366.013,
+                "z": 90.1839,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              },
+              {
+                "mapId": 300200000,
+                "x": 365.372,
+                "y": 357.365,
+                "z": 89.4211,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              },
+              {
+                "mapId": 300200000,
+                "x": 373.48,
+                "y": 330.55,
+                "z": 85.4616,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 804605,
+          "name": "shezen",
+          "positions": [
+            {
+              "mapId": 220030000,
+              "x": 2892.2,
+              "y": 1485.3,
+              "z": 249.24,
+              "heading": 36,
+              "source": "game-server/data/static_data/spawns/Npcs/220030000_Altgard.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 91051,
+        "gold": 33480,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 188053405
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 28503,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "Odella for Shybanz",
+      "nameId": 1135015,
+      "quest_zone": "Haramel",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 5,
+              "item_id": 182212016
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 91051,
+          "gold": 33480
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 188053405
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182212016,
+          "npc_id": 700834
+        }
+      }
+    ]
+  }
+}

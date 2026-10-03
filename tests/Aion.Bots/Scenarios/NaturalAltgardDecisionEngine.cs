@@ -14,10 +14,11 @@ public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, in
 	IReadOnlyDictionary<int, long> ItemCounts, BotBindPoint? Bind = null, long? GameMinutes = null, IReadOnlySet<int>? VisibleNpcIds = null,
 	int? FreeCubeSlots = null, long Kinah = 0, int? CubeNpcExpansions = null, bool CanRebirth = false,
 	IReadOnlySet<int>? SkillIds = null, IReadOnlyDictionary<int, byte>? CompletedQuestCounts = null,
-	NaturalJourneyItem[]? Inventory = null, NaturalCoinGearProgress? CoinGearProgress = null)
+	NaturalJourneyItem[]? Inventory = null, NaturalCoinGearProgress? CoinGearProgress = null,
+	NaturalHaramelProgress? HaramelProgress = null, long? NowMillis = null, int? InstanceAnchorObjectId = null, int? InstanceId = null)
 {
 	public static NaturalAltgardObservation Observe(BotWorldModel world, BotPosition position, DateTimeOffset? now = null, int? freeCubeSlots = null,
-		NaturalCoinGearProgress? coinGearProgress = null) =>
+		NaturalCoinGearProgress? coinGearProgress = null, NaturalHaramelProgress? haramelProgress = null, long? nowMillis = null) =>
 		new(world.LoginStateObserved && world.QuestJournalObserved && world.CompletedJournalObserved, world.MapId, world.Level,
 			world.IsDead, new Dictionary<int, BotQuestState>(world.Quests), world.CompletedQuestIds.ToHashSet(), position,
 			world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
@@ -25,16 +26,19 @@ public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, in
 			world.Objects.Values.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId != null)
 				.Select(known => known.TemplateId!.Value).ToHashSet(), freeCubeSlots, world.Kinah, world.CubeExpansion?.Npc,
 			world.ReviveOptions?.BySkill == true, world.Skills.Keys.ToHashSet(), new Dictionary<int, byte>(world.CompletedQuestCounts),
-			world.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(), coinGearProgress);
+			world.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(), coinGearProgress,
+			haramelProgress, nowMillis, world.Objects.Values.FirstOrDefault(i => i.TemplateId == 799522 && !i.IsCorpse)?.ObjectId,
+			world.ChannelInfo is { } channel ? checked(channel.Index + 1) : null);
 }
 
 /// <summary>One independent kill counter in a template quest's compiled plan.</summary>
 public sealed record NaturalTemplateKill(int Var, int Count);
+public sealed record NaturalTemplateCollect(int ItemId, int Count);
 
 /// <summary>What a template quest needs: inventory items or every independent kill counter. Java keeps monster_hunt
 /// at START with the counters full until it is turned in.</summary>
 public sealed record NaturalTemplateObjective(int QuestId, int? ItemId, int ItemCount, int KillVar, int KillCount, int? ClaimMapId = null,
-	NaturalTemplateKill[]? Kills = null)
+	NaturalTemplateKill[]? Kills = null, NaturalTemplateCollect[]? Collections = null)
 {
 	public static IReadOnlyDictionary<int, NaturalTemplateObjective> From(IReadOnlyDictionary<int, QuestRunPlan> plans) =>
 		plans.Values.ToDictionary(plan => plan.Id, plan =>
@@ -45,13 +49,16 @@ public sealed record NaturalTemplateObjective(int QuestId, int? ItemId, int Item
 				kill?.Data.GetProperty("var").GetInt32() ?? 0, kill?.Count ?? 0,
 				plan.EndNpcs.SelectMany(npc => npc.Positions).FirstOrDefault(position => !position.ConditionalEvent)?.MapId,
 				plan.Steps.Where(step => step.Kind == "kill").Select(step =>
-					new NaturalTemplateKill(step.Data.GetProperty("var").GetInt32(), step.Count)).ToArray());
+					new NaturalTemplateKill(step.Data.GetProperty("var").GetInt32(), step.Count)).ToArray(),
+				plan.Steps.Where(step => step.Kind == "collect" && step.ItemId > 0)
+					.Select(step => new NaturalTemplateCollect(step.ItemId, step.Count)).ToArray());
 		});
 
 	public bool IsDone(BotQuestState? quest, IReadOnlyDictionary<int, long> items) =>
-		ItemId is int item ? items.GetValueOrDefault(item) >= ItemCount
+		Collections is { Length: > 0 } collects ? collects.All(c => items.GetValueOrDefault(c.ItemId) >= c.Count)
+			: ItemId is int item ? items.GetValueOrDefault(item) >= ItemCount
 			: quest is { } state && (state.Status >= 4 ||
-				(Kills ?? [new(KillVar, KillCount)]).All(kill => ((state.StepAndFlags >> (kill.Var * 6)) & 0x3F) >= kill.Count));
+				(Kills ?? [new(KillVar, KillCount)]).All(kill => NaturalQuestProgress.KillCount(state, kill.Var, kill.Count) >= kill.Count));
 }
 
 /// <summary>One next action in Leg 1: a template phase, a contract step (by key), the remedy, the air kills, a hunt for
@@ -95,6 +102,7 @@ public static class NaturalAltgardDecisionEngine
 	public static NaturalAltgardDecision Decide(NaturalAltgardContract contract, NaturalAltgardObservation state,
 		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives, int sequence, IReadOnlySet<int>? only = null)
 	{
+		if (contract.Haramel != null) return NaturalHaramelDecisionEngine.Decide(contract, state, objectives, sequence);
 		var checks = new List<NaturalDecisionCheck>();
 		NaturalAltgardDecision Plan(string action, int? questId, string reason, string? stepKey = null)
 		{

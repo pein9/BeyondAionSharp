@@ -1,0 +1,347 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 28508,
+    "name": "Securing Moofrenerk's Retreat",
+    "nameId": 1135020,
+    "zone": "Haramel",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/haramel.xml",
+    "template": "monster_hunt",
+    "templateData": {
+      "tag": "monster_hunt",
+      "attributes": {
+        "end_npc_ids": 799523,
+        "id": 28508,
+        "start_npc_ids": 799522
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 799522,
+        "name": "moorilerk",
+        "positions": [
+          {
+            "mapId": 300200000,
+            "x": 141.776,
+            "y": 21.4674,
+            "z": 144.245,
+            "heading": 0,
+            "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 799522,
+      "name": "moorilerk",
+      "positions": [
+        {
+          "mapId": 300200000,
+          "x": 141.776,
+          "y": 21.4674,
+          "z": 144.245,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 799523,
+      "name": "moofrenerk",
+      "positions": [
+        {
+          "mapId": 300200000,
+          "x": 228.416,
+          "y": 160.876,
+          "z": 137.059,
+          "heading": 60,
+          "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "kill",
+      "count": 2,
+      "npc_ids": 216898,
+      "seq": 0,
+      "step": 0,
+      "var": 0,
+      "npcs": [
+        {
+          "id": 216898,
+          "name": "dukaki peon",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 175.217,
+              "y": 63.6435,
+              "z": 144.308,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 175.233,
+              "y": 101.93,
+              "z": 144.313,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 183.685,
+              "y": 96.1323,
+              "z": 150.772,
+              "heading": 15,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 183.75,
+              "y": 52.0294,
+              "z": 148.541,
+              "heading": 27,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 3,
+      "npc_ids": 216901,
+      "seq": 1,
+      "step": 0,
+      "var": 1,
+      "npcs": [
+        {
+          "id": 216901,
+          "name": "dukaki watchman",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 141.76,
+              "y": 104.12,
+              "z": 144.38634,
+              "heading": 30,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 150.24,
+              "y": 58.04,
+              "z": 143.79619,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 221.29,
+              "y": 148.12,
+              "z": 137.05313,
+              "heading": 88,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "kill",
+      "count": 3,
+      "npc_ids": 216902,
+      "seq": 2,
+      "step": 0,
+      "var": 2,
+      "npcs": [
+        {
+          "id": 216902,
+          "name": "dukaki protector",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 129.022,
+              "y": 71.781,
+              "z": 144.309,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 147.36,
+              "y": 83.88,
+              "z": 143.79619,
+              "heading": 100,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 151.61,
+              "y": 144.946,
+              "z": 144.246,
+              "heading": 103,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 201.425,
+              "y": 222.132,
+              "z": 87.6821,
+              "heading": 55,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            },
+            {
+              "mapId": 300200000,
+              "x": 242.784,
+              "y": 206.224,
+              "z": 87.7082,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 799523,
+          "name": "moofrenerk",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 228.416,
+              "y": 160.876,
+              "z": 137.059,
+              "heading": 60,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 91051,
+        "gold": 3340,
+        "rewardItems": [
+          {
+            "count": 10,
+            "item_id": 162000004
+          },
+          {
+            "count": 10,
+            "item_id": 162000009
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 28508,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 16,
+      "name": "Securing Moofrenerk's Retreat",
+      "nameId": 1135020,
+      "quest_zone": "Haramel",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 91051,
+          "gold": 3340
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 162000004
+            }
+          },
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 10,
+              "item_id": 162000009
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 2,
+          "npc_ids": 216898,
+          "seq": 0,
+          "step": 0,
+          "var": 0
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 3,
+          "npc_ids": 216901,
+          "seq": 1,
+          "step": 0,
+          "var": 1
+        }
+      },
+      {
+        "tag": "quest_kill",
+        "attributes": {
+          "count": 3,
+          "npc_ids": 216902,
+          "seq": 2,
+          "step": 0,
+          "var": 2
+        }
+      }
+    ]
+  }
+}

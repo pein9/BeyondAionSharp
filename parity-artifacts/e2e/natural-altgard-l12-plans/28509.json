@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 28509,
+    "name": "What is Inside the Box?",
+    "nameId": 1135021,
+    "zone": "Haramel",
+    "category": "IMPORTANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 16,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 5,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/haramel.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "end_npc_ids": 799524,
+        "id": 28509,
+        "start_npc_ids": 799523
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 799523,
+        "name": "moofrenerk",
+        "positions": [
+          {
+            "mapId": 300200000,
+            "x": 228.416,
+            "y": 160.876,
+            "z": 137.059,
+            "heading": 60,
+            "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 799523,
+      "name": "moofrenerk",
+      "positions": [
+        {
+          "mapId": 300200000,
+          "x": 228.416,
+          "y": 160.876,
+          "z": 137.059,
+          "heading": 60,
+          "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 799524,
+      "name": "gestanerk",
+      "positions": [
+        {
+          "mapId": 300200000,
+          "x": 289.776,
+          "y": 422.453,
+          "z": 89.5563,
+          "heading": 90,
+          "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 1,
+      "item_id": 182212020,
+      "sources": [
+        {
+          "kind": "questDrop",
+          "item_id": 182212020,
+          "npc_id": 700853,
+          "npc": {
+            "id": 700853,
+            "name": "severely rusted box",
+            "positions": [
+              {
+                "mapId": 300200000,
+                "x": 231.031,
+                "y": 223.091,
+                "z": 139.82,
+                "heading": 0,
+                "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+              }
+            ],
+            "handlerSpawned": false
+          }
+        }
+      ]
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 799524,
+          "name": "gestanerk",
+          "positions": [
+            {
+              "mapId": 300200000,
+              "x": 289.776,
+              "y": 422.453,
+              "z": 89.5563,
+              "heading": 90,
+              "source": "game-server/data/static_data/spawns/Instances/300200000_Haramel.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 75359,
+        "gold": 2000,
+        "rewardItems": [
+          {
+            "count": 1,
+            "item_id": 186000007
+          }
+        ],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "cannot_share": true,
+      "category": "IMPORTANT",
+      "id": 28509,
+      "max_repeat_count": 5,
+      "minlevel_permitted": 16,
+      "name": "What is Inside the Box?",
+      "nameId": 1135021,
+      "quest_zone": "Haramel",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 182212020
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 75359,
+          "gold": 2000
+        },
+        "children": [
+          {
+            "tag": "reward_item",
+            "attributes": {
+              "count": 1,
+              "item_id": 186000007
+            }
+          }
+        ]
+      },
+      {
+        "tag": "quest_drop",
+        "attributes": {
+          "item_id": 182212020,
+          "npc_id": 700853
+        }
+      }
+    ]
+  }
+}
