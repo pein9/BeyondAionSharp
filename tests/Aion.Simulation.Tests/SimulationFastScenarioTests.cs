@@ -1349,7 +1349,7 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			policy.ObserveSent(bot, accountName, currentStep, packet);
 			if (combatTrace != null && packet.PacketType.Name is
 				"CM_MOVE" or "CM_TARGET_SELECT" or "CM_ATTACK" or "CM_CASTSPELL" or "CM_USE_ITEM" or
-				"CM_SHOW_DIALOG" or "CM_DIALOG_SELECT" or "CM_LOOT")
+				"CM_SHOW_DIALOG" or "CM_DIALOG_SELECT" or "CM_LOOT" or "CM_BUY_ITEM" or "CM_EQUIP_ITEM")
 				combatTrace.WriteSent(currentStep, packet);
 			return active.SendAsync(encoded, cancellationToken).AsTask();
 		}

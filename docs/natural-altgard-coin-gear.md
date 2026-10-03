@@ -1,6 +1,6 @@
 # Altgard coin gear preparation before Leg 12
 
-**Status (2026-10-03): CG-00..CG-02 complete; CG-03..CG-06 remain.** The operator requested Q2293,
+**Status (2026-10-03): CG-00..CG-03 complete; CG-04..CG-06 remain.** The operator requested Q2293,
 binding at Heart of Impetusium, the best available coin chain gear and weapon, then Haramel as Leg 12.
 The operator amended the weapon scope on 2026-10-03: **keep the equipped level-21 staff; do not switch
 it or buy a coin weapon**. A shield cannot be worn with that two-handed staff and is excluded too.
@@ -222,11 +222,27 @@ plus `run-fast.ps1` before gameplay-change commits. Retain failures; do not reru
     77 tests passed, four explicit skips). Retain build, wrong-pad, platform approach, five-metre
     bind-range and missing-live-count failures plus their corrections in `run/cg02-quest/`.
     Base commit `0f7fdeba8`; no server/content change or natural-character setup.
-- [ ] **CG-03 — Coin purchase and equipment probe.** Depends: CG-02. Prove the real reward-shop
+- [x] **CG-03 — Coin purchase and equipment probe.** Depends: CG-02. Prove the real reward-shop
   offer, three armour purchases, exact debit, insufficient-funds refusal without partial equipment,
   all five final chain body slots and unchanged two-handed staff across endpoint relog. Prove no
   weapon/shield purchase or weapon swap, and protect currencies/armour/old cloth gloves/staff.
   Keep probe-created items separate from the natural journey; do not change the server's catalogue.
+  - 2026-10-03 evidence: `run/cg03-equipment/probe-journal-fixed.log` and
+    `run/cg03-probe-a2-cg03.trace.summary.json`, disposable account 222. Real Lohaban trade type 4
+    (Java `index()`, not ordinal), observed tab 985 and acquisition counts 1/1/2 match the manifest.
+    A real action-15 batch with only three coins refuses all three pieces, leaving inventory,
+    equipment, Kinah and coins unchanged. A labelled hunt-counter setup follows normal acceptance;
+    the real reward produces 18 -> 23, then three single purchases produce 23 -> 22 -> 21 -> 19
+    without a Kinah debit. Shared SIM/LIVE `NaturalCoinGearSteps` verifies each debit/object and
+    action-0 armour equip. Five final chain slots, old cloth gloves, sealed bundle, protected
+    inventory, unchanged staff object/mask 3 and completion count 1 survive actual endpoint relog.
+  - `run/cg03-equipment/packet-audit.json` decodes Fast's real outgoing packets: one refused
+    three-piece order, three approved single buys, only slots 16/2048/4096, no weapon/shield
+    purchases or weapon swaps. SIM's trace allowlist now includes buy/equip packets. Seven
+    prechecks pass; `run/cg03-fast/` passes 11/11 scenarios, 78 tests, four explicit skips.
+    Retain the initial compile failure, probe-only partial-journal setup failure and missing
+    buy/equip trace diagnostic with their corrections in `run/cg03-equipment/`. Base `520062b73`;
+    no server/catalogue change or natural-character setup/purchase. CG-04 is next.
 - [ ] **CG-04 — Natural runner and one smoke.** Depends: CG-03. Restore `altgard-l11` with
   `sim-snapshot.ps1 -Action Restore`; run `NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup`
   using `AF_ALTGARD=cg` and every variable set by the script's `Invoke-NaturalJourney`.
@@ -261,6 +277,10 @@ not permission to invent higher equipment. Record any new shared defect or unsup
 
 ## Progress log
 
+- 2026-10-03 CG-03: real reward offer, atomic underfunded-order refusal, three exact four-coin
+  purchases/equips and endpoint relog pass on free account 222. Outgoing packet audit proves
+  armour-only requests and no weapon swap. Shared coin steps and buy/equip trace support,
+  all seven prechecks and Fast 11/11 pass; failed drafts remain. Next: CG-04 natural smoke.
 - 2026-10-03 CG-02: normal spirit combat, both counters, reward/relog/repeat reset and ordinary Heart
   revival pass on account 221; shared live completion-count bookkeeping corrected from Java and
   verified against login. Zero combat deaths/retreats, one controlled recovery death. Seven prechecks,
