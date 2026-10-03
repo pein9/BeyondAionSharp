@@ -25,6 +25,8 @@ is done (AO-00..AO-06, 2026-10-02): `altgard-l8` starts Leg 9 at the Observatory
 [Leg 10: Black Claw ground and the remaining campaigns](#leg-10-black-claw-ground-and-the-remaining-campaigns-level-22)
 is done (BC-00..BC-08, 2026-10-02): `altgard-l10` holds the level-24 Cleric alive and bound at the fortress,
 all nine quests complete. Q2900 is next; end-of-area LIVE acceptance follows later.
+[Leg 11: No Escaping Destiny](#leg-11-no-escaping-destiny-and-the-altgard-endpoint-level-24--proposal)
+is proposed below, including all four maps, loss recovery and the full-area acceptance handoff.
 
 ## Goal
 
@@ -3523,6 +3525,201 @@ Gathering, coin loops and unapproved D32 quests stay deferred.
     are dropped. This checkpoint changes only the document. Leg 10 is done; stop here, with Q2900 still
     START/0 and end-of-area LIVE acceptance later. No push.
 
+## Leg 11: No Escaping Destiny and the Altgard endpoint (level 24 — proposal)
+
+**Status (2026-10-02): proposed, not implemented.** Finish Q2900 last, as the maintainer decided on
+2026-10-01. This is one existing campaign across four maps. Work the loop protocol with **ND** in place of NA,
+one item and one commit on main. Keep the fortress bind throughout, then return there for the area endpoint.
+Permanent stigma selection is deferred: retain the reward bundle unopened and protect the class reward.
+This proposal adds no quests, server content, gear purchases, skill books or natural-character setup.
+
+**Start:** `altgard-l10`, character 133297, Cleric 24, EXP 6,136,722, HP/MP/FP 1,817/2,949/60,
+alive at (1658.57, 1818.39, 253.72), fortress bind (1660.43, 1813.49, 253.726), 495,028 Kinah,
+63-slot cube, 143 completed journal entries. All Leg 10 quests COMPLETE; Q2900 START/0, no held quests.
+The snapshot was captured from committed `6986e3539`; BC-08's `de432d7ba` is the completed-leg checkpoint.
+Level 20 and Asmodian are Q2900's shipped gates; it cannot be abandoned. There is no gathering,
+coin, shard or level grind in this leg. Q2008 COMPLETE also permits Doman's ordinary Ishalgen service.
+
+### Areas, paths and transport
+
+| Area | Required ground and destination | Transport and route policy |
+|---|---|---|
+| Altgard 220030000 | Fortress endpoint to Teleporter **Ukin 203581**, (1754.08, 1805.14, 255.917), about 97 m horizontally | AIRLINE_SERVICE, location 7: Pandaemonium, 500 Kinah base. **Lenat 203561 is the hub-flight NPC**, not the capital teleporter. Preserve fortress 700065 bind. |
+| Pandaemonium 120010000, first visit | Landing (1685.7, 1400.5, 195.486) to **Heimdall 204182**, (1614, 1397.96, 193.127), about 72 m | Reuse the proved city approach; his Q2900 dialog teleports to Munin's prison. No Doman trip is needed on the successful first pass. |
+| Ishalgen 220010000: Munin/prison and cemetery | Arrival (389, 1896, 327.5); approach **Munin 203550**, (378.74, 1895.46, 328.838), then the connected cemetery road to **Garhara 203545** at Anturoon (942.12, 1707.24, 259.8) | Saved graph estimates about **676 m** from Munin to Garhara. Fly Anturoon to Aldelle: location 17, `DF1_SUB_Anturn`, 34 s, 160 Kinah base. Do not walk between these hubs. |
+| Ishalgen: Aldelle and Urd | Flight lands (526.25, 2449.65, 281.599); **Urd 790003**, (587.621, 2412.88, 278.557), about 77 m by saved graph from Sheofin's pad | Checked ground approach through Aldelle. Munin to Urd is 558 m straight but **1,947 m by graph**; the flight avoids that long ground circuit. Q2900 does not provide Q2008's inter-NPC teleports. |
+| Ishalgen: Verdandi and the Mau farm ground | Urd to **Verdandi 790002**, (938, 2298, 266.125): saved graph about **774 m** to Blabbermouth Angmu, whose node is 2.3 m from Verdandi | Follow the connected road, then prove Verdandi's own interaction approach. She has no named graph node. An NPC position or a neighbouring node is not proof of a usable talk point. This quest-NPC leg is ground travel, not an Aldelle–Anturoon hub crossing. |
+| Ishalgen: Skuld east of Anturoon | Verdandi to **Skuld 203546**, (1114.31, 1718.32, 271.179): saved graph about **782 m** | Guarded ground through the road network, actual observed hostiles and checked height/LOS. Her dialog creates the Space of Destiny instance. On returning from the fight, the quest puts the player just beside her. |
+| Space of Destiny 320070000 | Entry (270.8424, 249.1182, 125.8369); **instance Skuld 204264**, (245.815, 248.099, 125.837); spawned **Hellion 204263**, (257.5, 245, 125) | Quest teleport, not a portal use bar. Solo instance, shipped entry cooldown 0; no static Hellion or ordinary exit NPC. Generate its navmesh from shipped geometry/mask. Keep inside the platform; map death level is 42. |
+| Ishalgen, after the fight | Kill teleport (1112.492, 1718.974, 270.45917) to Skuld; then her quest teleport (383, 1896, 327.625) to Munin | Reacquire the world view even for these same-map moves; approach both NPCs afresh. The killed enemy is not a loot objective. |
+| Pandaemonium, reward visit | Munin teleports to (1294.8, 1213.8, 214.34), next to **Aud 204061**, (1294.67, 1216.62, 214.355) | Aud, not Heimdall or Skuld, completes the quest. Claim the first class reward normally, then learned Return to the fortress bind. If Return is cooling down, wait safely or walk to Doman for location 9 (500 Kinah base); prove that alternative before relying on it. |
+
+The Ishalgen figures are shortest-length estimates over the existing undirected, checked travel graph
+(`run/nd-route-audit.txt`), not a new SIM travel proof or a claim that the straight segment is walkable.
+The Munin/Anturoon corridor crosses graph-recorded level 6–8 monsters (210389, 210592–210594, 210404);
+the Verdandi/Skuld and Anturoon/Skuld links record 210389. Reuse guarded approaches, defend against real
+aggro, rest and re-plan after any revive. Grey monsters can still attack: use observed aggression and LOS,
+not expected XP, to decide whether the road is clear. Hub flights send real timed flight frames and land normally.
+All fares use observed `SM_PRICES`; earlier SIM capital trips charged 706 for a 500-base service.
+The tutorial install below is another service charge, so measure actual Kinah deltas rather than pinning totals.
+
+**Offline planning evidence:** the Space of Destiny bake in `run/nd-plan-nav` has 35 polygons in nine tiles,
+SHA256 `c9243fbbc4f11b20d2debc8e8f8801b7bfa5b2ea56be64c1c88ac214c89b2b89`.
+Entry to Skuld routes in 13 checked points; entry to Hellion and Skuld to Hellion in seven, all on island 0
+(`run/nd-space-entry-routes.log`, `run/nd-space-fight-route.log`). This is geometry evidence only.
+No nav files were added to the checked-in folder. The first `points` invocation omitted NAV_FROM/NAV_TO;
+its invalid diagnostic is retained at `run/nd-space-points.log` and excluded from route evidence.
+
+### The campaign's unusual state and equipment requirements
+
+Java `ce54b7931` is the default spec: `_2900NoEscapingDestiny`, AbstractQuestHandler, Equipment,
+CM_EQUIP_ITEM, StigmaService, QuestService, TeleportService, InstanceService, GeneralInstanceHandler,
+SM_DIE, PlayerReviveService and AggressiveNpcAI. The C# quest handler mirrors the Java flow.
+Use **full quest vars** for 95–99; the low six-bit var is not their value.
+
+| Observed state | Actual client action | Expected result |
+|---|---|---|
+| START/0, Heimdall | QUEST_SELECT → 1011; SETPRO1 | START/1 and quest teleport to Ishalgen, channel 1, beside Munin |
+| START/1, Munin | QUEST_SELECT → 1352; SETPRO2 | START/2; stay on Ishalgen |
+| START/2, Urd | QUEST_SELECT → 1693; SETPRO3 | START/3; stay on Ishalgen |
+| START/3, Verdandi | QUEST_SELECT → 2034; SETPRO4 | START/4; stay on Ishalgen |
+| START/4, outdoor Skuld | QUEST_SELECT → 2375; SETPRO5 | START/95; new registered solo instance, quest teleport to its entry |
+| START/95, instance Skuld | QUEST_SELECT → 2716; SETPRO6; finish/skip **movie 156** with CM_PLAY_MOVIE_END | START/96 only after the movie-end event; movement remains gated while watching |
+| START/96, instance Skuld | QUEST_SELECT → 3057; **SELECT7_1** | One temporary Cleric stone **140000001**, Healing Light II; START/99 and page 3058 |
+| START/99 | SETPRO7 to open the STIGMA dialog; **CM_EQUIP_ITEM**, action 0, actual item object id, **STIGMA1 = 1L << 30** | Observe inventory-to-equipment move, service charge, skill **11504** and START/97. Sending the dialog alone does not satisfy the equip event. |
+| START/97, instance Skuld | QUEST_SELECT → 3398; SETPRO8, after resting/buffing | START/98 and real Hellion spawn, **five-minute lifetime** |
+| START/98 | Ordinary learned-skill fight against the observed 204263 | Kill credit gives START/9 and immediately teleports beside outdoor Skuld |
+| START/9, outdoor Skuld | QUEST_SELECT → 3739; SETPRO9 | START/10; quest teleport to Munin |
+| START/10, Munin | QUEST_SELECT → 4080; SETPRO10 | REWARD/10 and quest teleport beside Aud |
+| REWARD, Aud | Ordinary reward selection and first class reward, SELECTED_QUEST_REWARD1 | COMPLETE; class reward, bundle and fixed rewards observed; first permanent stigma slot usable |
+
+The level-24 Cleric temporarily qualifies for **one normal stigma slot at START/99**, despite not having
+completed Q2900. Installation in Space of Destiny has a **1,000 Kinah base fee**, price-modified by the service.
+No Stigma Shards are supplied or consumed. The temporary stone grants 11504; it is separate from the
+ordinary learned Healing Light ranks. Protect it from junk selling and automatic equipment rules, equip it
+once from observed inventory, and keep enough cube space for cleanup and all reward types (six free slots
+is a conservative readiness gate; consolidate/sell genuine surplus at the fortress before leaving).
+Do not repeatedly send SELECT7_1: Java's item-give branch is not guarded against duplicate requests.
+
+On departure from the instance at START/9, the enter-world hook unequips and removes the temporary stone.
+Prove both inventory and equipment absence and **11504 removal**, while ordinary learned healing remains.
+The fight target is level 21, NORMAL/DISCIPLINED, 3,169 HP, ordinary aggressive AI and real damage;
+it is **not** Ascension's one-damage Hellion 205041. No extra movie on its kill is specified here.
+Rest/buff before SETPRO8, record the spawn deadline, target the current observed object id and react to the
+map change immediately after kill credit. Do not wait for loot or approach the old instance corpse.
+
+The shipped reward is 228,880 XP and 25,000 Kinah before configured quest rates, ten Life Potions 162000004,
+ten Mana Potions 162000009, Stigma Support Bundle 188053787 and five Tea of Repose 162001057 (Java's
+marked custom reward). The Cleric's additional class reward is 140000098. It has no `<stigma>` metadata
+in the shipped data; retain this Java/data boundary, protect the item and **do not try to install it**.
+The bundle has class-filtered selectable inert stigmas; retain it sealed for a later permanent-stigma choice.
+Do not turn this quest into a stigma shopping/build-selection leg or silently repair the legacy reward.
+
+**Retail version guard:** [NCSoft's 4.8 Upheaval notes](https://static.ncsoft.com/aion/store/PatchNotes/AION_Patch_Notes_061715.pdf),
+Stigmas on printed page 26, and [Gameforge's 4.8 notes](https://cmsstatic.aion.gameforge.com/AION_4_8v_Patch%20Notes_EN_30092015.pdf),
+pages 21 and 32, confirm the level-20 mission gate, one normal slot at 20, Kinah replacing shards, and the
+need to visit a Stigma Master. They do not establish a replacement for Java's tutorial stone; Java's TODO
+about class stone ids is not permission to invent one. D32 does not authorize rewriting this existing handler.
+Any blocking shared defect needs exact 4.8 evidence and a separate logged decision.
+
+### Deaths, missed spawns and interrupted trips
+
+- **Death at full vars 95–99:** Java removes the temporary stone/skill and resets Q2900 to START/4.
+  Prefer the ordinary **fortress bind revival** for this quest. The generic instance policy's in-place
+  Hand of Reincarnation does not restore var 95 and cannot resume at the instance Skuld; if a controlled
+  probe exercises it, prove the subsequent ordinary exit and new outdoor-Skuld entry separately.
+  GeneralInstanceHandler supplies no instance-revive button; do not manufacture one.
+- **Leave or cold re-entry outside Space of Destiny at 95–99:** the enter-world hook cleans the stone
+  and resets to 4. At 9 outside, cleanup happens but progression stays 9. Relogging within a still-existing
+  instance must be observed separately from restarting the server, which loses that ephemeral instance.
+- **Recovery from the fortress:** Ukin location 7 → Pandaemonium; checked approach to Doman 204191 →
+  location 8 (100 Kinah base, Q2008 COMPLETE) → Aldelle. Use **Sheofin 203513**, location 18,
+  `DF1_SUB_Alder`, 41 s, 160 Kinah base, to Anturoon, then its roughly 178 m checked ground to Skuld.
+  Repeat her var-4 quest dialog for a new instance. Never replay Heimdall's var-0 teleport at later vars,
+  skip directly to var 95, bind in Ishalgen or use a setup teleport on the natural character.
+- **Hellion expires:** Java leaves START/98 and its SETPRO8 only works at 97, so a repeat click cannot
+  resummon it. Record the missed five-minute window, use learned Return out of combat (respect its real
+  cooldown), observe the outside reset to 4, and take the recovery trip. No abandoned-quest shortcut exists.
+- **Restart at vars 1–3:** from the ordinary Doman/Aldelle entry, route to the recipient for the observed
+  var; use the hub flight when the route crosses Anturoon/Aldelle. At var 10 reach Munin through the same
+  checked prison road; at REWARD reach Aud normally. A failed relog must not restart already-completed talks.
+- At every teleport, clear the client's old view before the initiating action, perform actual movie/world/
+  channel acknowledgements, rebind navigator/geometry/combat to the observed map and instance, and reacquire
+  targets. Preserve counters and death spots. Keep all existing revive, progress and approach limits.
+  Deaths, expired spawns and lost attempts are recorded outcomes; stalls/unmet objectives remain failures.
+
+**Endpoint:** Q2900 COMPLETE, all 143 incoming completed quests preserved (144 journal completions),
+all Leg 10 quests still COMPLETE, no held Q2900 work, temporary 140000001 and 11504 absent, reward bundle
+and class reward retained, permanent first normal stigma slot available, Cleric level at least 24, alive
+on Altgard within 60 m of fortress 700065 and still bound there. Verify across relog, including learned
+skills, inventory/equipment, quest and completed journals. Pin the actual EXP/Kinah deltas, not an invented
+level or an exact fee copied from another service. Capture `altgard-l11` only from committed code.
+
+### Leg 11 TODO list — proposed
+
+- [ ] **ND-00 — Confirm scope and spec.** Re-read decisions, BC-00..BC-08 and the sources above; confirm the
+  start dump, endpoint, reward boundary and every recovery branch. Log any decision under Blocked; no
+  server-content authority beyond D26–D33. Depends: BC-08 and approval of this proposal.
+- [ ] **ND-01 — Contract and decisions.** Register l11 with Q2900's full vars, four allowed maps, named
+  transitions, movie, actual stigma equip event, timed dynamic enemy, cleanup and fortress endpoint.
+  Cover late-var and REWARD resumes. Add only narrowly scoped Cleric identity support for the quest instance;
+  the current identity rules do not accept 320070000. Preserve Ishalgen/Ascension and l1–l10 decisions.
+  Depends: ND-00.
+- [ ] **ND-02 — Paths and map protocol.** Generate/check in/rebake the Space navmesh from existing inputs;
+  prove city approaches, prison/cemetery road, Urd, Verdandi's own talk point, Skuld and all instance ground.
+  Actually fly Anturoon→Aldelle and recovery Aldelle→Anturoon. Prove Ukin→capital, Doman→Ishalgen,
+  Doman→Altgard fallback and all five quest teleports with view invalidation. Free probe account, clear
+  aggressive monsters at setup spots, BeginWorldReload before setup teleport; setup is not travel evidence.
+  Depends: ND-01.
+- [ ] **ND-03 — Movie, stigma and campaign protocol.** Controlled probe plays every dialog, movie 156,
+  SELECT7_1, STIGMA dialog and CM_EQUIP_ITEM. Observe full vars 95→96→99→97, real fee and 11504;
+  summon/kill the real enemy with controlled HP, cleanup, Skuld/Munin teleports and Aud's actual reward.
+  Prove complete journals and cleanup. On the probe only, use a valid inert stigma from its real reward
+  bundle to demonstrate the one-slot post-quest rule; the natural endpoint keeps its bundle unopened.
+  Depends: ND-02.
+- [ ] **ND-04 — Loss and resume recovery.** Controlled probes record a five-minute miss, death before/after
+  equip, outside exit, live-instance relog and cold restart. Verify resets, no leaked stone/skill, and
+  recover through the ordinary Doman/flight/outdoor-Skuld route. Test safe resumes at 1–4, 9, 10 and REWARD;
+  no fast-forwarding the natural character. Keep each failure and correction. Depends: ND-03.
+- [ ] **ND-05 — Normal combat.** One level-24 probe fights normal-HP Hellion, learned skills/approved
+  supplies, temporary skill available, real deadline, no invulnerability or damage edits. Exercise cleanup
+  while preserving ordinary heals. Record kills, deaths/retreats and duration; prove no stale corpse action
+  after kill teleport. Depends: ND-03 and ND-04.
+- [ ] **ND-06 — Natural runner and smoke.** Implement only the required l11 behavior, inventory protection,
+  normal reward and observed-var recovery. Restore `altgard-l10` with sim-snapshot.ps1 -Action Restore;
+  run NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup with `AF_ALTGARD=l11` and Invoke-NaturalJourney's
+  environment, dashboard enabled; play once through endpoint relog and drop the owned schema in finally.
+  No setup on character 133297 beyond OD-13 supplies. Depends: ND-01..ND-05.
+- [ ] **ND-07 — Snapshot.** Enable `-Leg l11`, commit before capture, then capture `altgard-l11` from
+  `altgard-l10`; hash-check, owned restore, SQL state and actual endpoint relog; drop both owned schemas.
+  Depends: ND-06.
+- [ ] **ND-08 — Full CLAUDE checklist and checkpoint.** Retain every listed command/verdict and corrections,
+  tick and commit on main, then stop. Pre-commit checks on every item; Fast before gameplay-change commits.
+  No push. Depends: ND-07.
+
+### End-of-area acceptance after ND-08
+
+One complete SIM Altgard journey must then play **l1 through l11 in order from the original level-10
+`altgard` snapshot**, retaining one character, database, clock, journals and aggregate outcomes between
+legs. A chain of endpoint snapshots is development evidence, not that full-area acceptance. Establish
+the orchestration as its own item first; validate every hub flight, bind, timed quest, escort, city errand,
+pillar flight, Bregirun and Space of Destiny transition without administrative progress. Retain all
+failures and the first complete passing run; preserve the existing limits rather than resetting counters
+to hide an exhausted recovery. Do not run builds while its DLLs are held.
+
+Then run the area **once on an owned isolated LIVE stack**, starting with a copy of the retained
+NA-27 level-10 Altgard LIVE endpoint (`run/na27-live/na27-live-a3/altgard-live-dump.sql.gz`), not importing
+the SIM character. Verify source ownership/identity and keep the original dump and world untouched.
+The existing shared SIM/LIVE session must support every new map, stigma action and reset before launch;
+keep the read-only monitor running and announce its URL. No operator `aion` stack, GM progression, gear
+or skill-book purchases. Stop at the same relog-verified fortress endpoint and retain its LIVE evidence
+and snapshot. These acceptance items need their own concrete run plan after the SIM implementation is
+committed; this planning request does not launch either run.
+
+Gathering AL-3, Q2147/coin loops, unapproved D32 quests, a capital quest sweep, permanent stigma selection,
+Morheim and Abyss entry stay outside this completion leg. No operator decision blocks the proposed Q2900
+scope; a shared Java/retail defect discovered by a probe is recorded for a separate decision before correction.
+
 ## Blocked / questions for the operator
 
 **Leg 7, answered 2026-10-02:** AE-Q1 **(a)**, AE-Q2 **(a)** and AE-Q3 **(a)**, all as recommended:
@@ -3957,3 +4154,4 @@ The original questions follow.
 - 2026-10-02 BC-06: natural l10 smoke and relog from altgard-l9 complete all nine quests at Cleric 24, alive/bound at fortress, work items consumed and Q2900 START/0; 185 distinct kills, three deaths/eight retreat choices, three hub/two pillar flights and real city/Bregirun trips. Fifteen failed/eight stopped drafts retained; 41 scoped cases, pre-commit checks and Fast pass, owned schemas dropped. Snapshot is next.
 - 2026-10-02 BC-07: altgard-l10 captured from committed 6986e3539, hash-checked and restored through an actual endpoint relog; Cleric 24 alive at fortress bind, all nine quests complete, work items absent, 495,028 Kinah and Q2900 START/0. Both owned schemas dropped; pre-commit checks pass. Full checklist is next.
 - 2026-10-02 BC-08: all 33 CLAUDE commands pass on e43228041, solution 5,105 passed/100 skips, Fast 72 passed/three switch skips/all eleven scenarios; six baked maps validate. Leg 10 is done; altgard-l10 is retained for Q2900, then end-of-area LIVE acceptance. Stop at this checkpoint. No push.
+- 2026-10-02 Leg 11 proposed: Q2900 from altgard-l10, four maps, Anturoon/Aldelle hub flights, movie/equip/spawn/cleanup and ordinary bind recovery; ND-00..ND-08 and full-area SIM/LIVE handoff planned. Java/data and official 4.8 stigma audit; Space offline mesh/three routes pass, initial diagnostic omission retained. Seven pre-commit checks pass (`run/nd-plan-checks`). No gameplay implementation or natural run; no push.
