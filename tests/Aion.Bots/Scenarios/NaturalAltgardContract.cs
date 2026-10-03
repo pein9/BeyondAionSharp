@@ -239,7 +239,7 @@ public sealed record NaturalAltgardQuest(int Id, string Category, int MinimumLev
 /// <summary>One scripted dialog step. <c>OFFER</c> is a quest the player has not taken yet.</summary>
 public sealed record NaturalAltgardStep(string Key, int QuestId, int? Var, string? Status, int NpcId, float[] Position,
 	int TalkRange, string[] Actions, int[] Pages, int? MovieId, int? ReceivesItemId, string? Area, bool Flight, string? Correction,
-	int? MapId = null)
+	int? MapId = null, NaturalAscensionTeleport? Teleport = null)
 {
 	public string ExpectedStatus => Status ?? "START";
 }

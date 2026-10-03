@@ -174,6 +174,23 @@ public sealed class NaturalClericCombatPolicyTests
 	}
 
 	[Fact]
+	public void CancelledGraceFallsBackToShorterLearnedHealWithoutInventingACooldown()
+	{
+		NaturalCombatObservation hurt = Cleric(1807, 2) with
+		{
+			Level = 22, Learned = Learn(LearnedAt(22)), Hp = 476, MaxHp = 1649, Aggro = true,
+			NearbyAggressors = 2, Cornered = true, TargetAdjacent = true, InEmergency = true,
+			HasRejuvenation = true, LastCancelledSkillId = 4203,
+		};
+		NaturalCombatChoice heal = Decide(hurt);
+		Assert.Equal(("cast-self", (ushort?)1842), (heal.Action, heal.Skill?.Id));
+		AssertLegal(hurt, heal);
+		Assert.Empty(hurt.Cooldowns);
+		Assert.Equal((ushort)4203, Decide(hurt with { LastCancelledSkillId = null }).Skill?.Id);
+		Assert.Equal((ushort)4203, Decide(hurt with { LastCancelledSkillId = 4016 }).Skill?.Id);
+	}
+
+	[Fact]
 	public void PenanceBuysManaAtRestButNeverInAFight()
 	{
 		var learned = Learn(LearnedAt(15));

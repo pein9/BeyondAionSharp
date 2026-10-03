@@ -3462,10 +3462,36 @@ Gathering, coin loops and unapproved D32 quests stay deferred.
     all five additions. Seventeen policy/catalog tests pass (`bc05-skills-final.log`). The first passing
     encounter is retained; an incorrect extra-mana-reserve assertion is corrected with its failed log retained.
     All pre-commit checks and `bc05-fast` pass. No server changes; actual walking routes remain the natural smoke.
-- [ ] **BC-06 — Natural runner and smoke.** Implement the proven gaps only; restore `altgard-l9` and run
+- [x] **BC-06 — Natural runner and smoke.** Implement the proven gaps only; restore `altgard-l9` and run
   `AF_ALTGARD=l10` with the snapshot runner environment through all nine quests and relog. Hub transporter,
   ordinary city/instance travel, campaign recovery, consumed items and unchanged Q2900; dashboard enabled.
   Retain failures/outcomes and drop the owned schema. Depends: BC-03, BC-04, BC-05.
+  - *Done 2026-10-02.* From `efb97ae58` plus the runner changes, `bc06-smoke-guardian-defense` restores
+    `altgard-l9` with the snapshot runner environment and completes all nine quests through relog in
+    12,035,927 game ms. The trace records 185 distinct zero-HP monsters, three deaths and eight retreat
+    choices. Alive Cleric 24, HP 1,817/MP 2,949, (1658.57, 1818.39, 253.72), fortress bind and 495,028 Kinah;
+    143 completed journal entries, no held quests, all collection/work items consumed and Q2900 START/0.
+  - Three actual hub flights (Heart to fortress, then two fortress-to-Heart approaches) and two checked
+    pillar descents reuse Leg 9's route; each descent costs 27 of 60 FP and lands with 33. After a bind death,
+    the runner waits for the observed Soul Sickness icon to expire before flying. Two successful learned
+    Returns, paid Pandaemonium travel and Vidar's ordinary dialog deliver and consume the work item.
+    Suthran's quest teleport/movie 66, the three-second Bregirun portal, learned 4005 protection, local
+    combat, guardian use/spawn, Kuninasha's kill, gate/movie 154 and fortress reward all succeed. This final
+    run has no instance death; BC-04 remains the controlled self-revival/ordinary exit/re-entry proof.
+  - The runner now rebinds navigation/combat to the observed map, reloads its view before same-map bind
+    revival, and follows real instance use bars and movie returns. Defensive approaches hand actual kills
+    and looted items back to their objectives, including the Orb; roads stop once that source is earned
+    and replan after revival. The lower hunter/spellshifter/warlock sources avoid disconnected upper camps.
+    Observed engagement history, shorter Healing Light after a cancelled Grace, responsive patrol/respawn
+    waits, consistent destination hazards and defense before guardian use correct the proven stalls.
+    Collection checks follow Java's at-least count and avoid extra deferred corpse loot. Limits are unchanged.
+  - All 24 draft traces are retained: fifteen failed and eight deliberately stopped attempts precede the
+    passing run (`run/bc06-trial-history.json`). They preserve camp/route stalls, partial source recovery,
+    cancelled-heal loops, surplus deferred loot, stale bind views, depleted-flight recovery, Return assertions,
+    the already-looted Orb search and the guardian's attack-interrupted bars. No server behavior/content
+    changes or natural-character setup. Every owned smoke schema is dropped. Forty-one scoped cases pass
+    (`run/bc06-contract-final.log`), all pre-commit checks pass (`run/bc06-checks`), and `bc06-fast` passes
+    72 tests, three switch skips and all eleven scenarios.
 - [ ] **BC-07 — Snapshot.** Enable `-Leg l10`, commit before capture, then capture `altgard-l10` from `altgard-l9`.
   Verify hash, relog endpoint and owned restore; drop both schemas. Depends: BC-06.
 - [ ] **BC-08 — Full CLAUDE checklist and checkpoint.** Every listed command with retained evidence and
@@ -3902,3 +3928,4 @@ The original questions follow.
 - 2026-10-02 BC-03: six template hand-ins/work items consumed, both partial Q2281 hand-ins rejected, 34 controlled kills/three ordinary respawn waits and real Vidar delivery/Return pass on free account 214; expected-rejection labeling and nullable warnings corrected, draft evidence retained; pre-commit checks pass. Campaigns are next.
 - 2026-10-02 BC-04: all three campaigns, gated/consumed Orb, natural unlock, real portals/guardian/boss/movies and ordinary self-revival/exit/re-entry pass on free account 215; bind-route boundary and assertion drafts retained, pre-commit checks pass. Learned Hand of Reincarnation protects Bregirun attempts; no server changes. Combat is next.
 - 2026-10-02 BC-05: thirteen level-22 combat stages record 19 distinct kills, no deaths/retreats on free account 216; learned 21–22 ranks/Divine Spark added after Java audit, seventeen policy tests and final encounter pass; reserve-assertion draft retained, Fast and pre-commit checks pass. Natural runner is next.
+- 2026-10-02 BC-06: natural l10 smoke and relog from altgard-l9 complete all nine quests at Cleric 24, alive/bound at fortress, work items consumed and Q2900 START/0; 185 distinct kills, three deaths/eight retreat choices, three hub/two pillar flights and real city/Bregirun trips. Fifteen failed/eight stopped drafts retained; 41 scoped cases, pre-commit checks and Fast pass, owned schemas dropped. Snapshot is next.

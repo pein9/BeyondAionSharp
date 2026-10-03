@@ -441,6 +441,7 @@
         260.236
       ],
       "talkRange": 5,
+      "teleport": { "mapId": 220030000, "position": [2467.6052, 2548.0076, 316.12375] },
       "actions": [
         "QUEST_SELECT",
         "SELECT3_1_1",

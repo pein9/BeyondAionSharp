@@ -37,16 +37,25 @@ public static class NaturalAltgardQuestSteps
 		int pages = step.Actions[0] == "USE_OBJECT" ? 1 : 0;
 		for (int i = 0; i < actions.Length; i++)
 		{
+			bool teleports = i == actions.Length - 1 && step.Teleport != null;
+			bool otherMap = teleports && step.Teleport!.MapId != world.MapId;
+			if (teleports) world.BeginWorldReload();
 			ushort action = checked((ushort)NaturalAscensionContract.DialogActionId(actions[i]));
 			await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npc, action, questId: step.QuestId), token);
 			// A movie plays on a SELECTn_n dialog action (SELECT2_1; Q2289's SELECT2_1_1, AB-06).
 			if (step.MovieId != null && System.Text.RegularExpressions.Regex.IsMatch(actions[i], @"^SELECT\d_\d"))
 				await NaturalMovieGate.FinishAsync(session, token);
-			if (pages + i < step.Pages.Length)
+			if (pages + i < step.Pages.Length && !teleports)
 			{
 				int page = step.Pages[pages + i];
 				await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet =>
 					packet.Get<int>("targetObjectId") == npc && packet.Get<ushort>("dialogPageId") == page);
+			}
+			if (teleports)
+			{
+				await session.WaitForPacketAsync(otherMap ? typeof(SM_PLAYER_SPAWN) : typeof(SM_CHANNEL_INFO), token);
+				await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+				session.AcceptTeleportPosition();
 			}
 		}
 		await session.SynchronizeAsync(token);
@@ -90,7 +99,8 @@ public static class NaturalAltgardQuestSteps
 	/// and for a loot take <paramref name="lootItemId"/> from the drop list it opens. False when the use was interrupted or
 	/// the loot held no such item.
 	/// </summary>
-	public static async Task<bool> UseObjectAsync(INaturalJourneySession session, int objectId, int? lootItemId, CancellationToken token)
+	public static async Task<bool> UseObjectAsync(INaturalJourneySession session, int objectId, int? lootItemId, CancellationToken token,
+		bool reloadWorld = false)
 	{
 		int start = session.PacketHistory.Count;
 		await NaturalDialogProtocol.OpenAsync(session, objectId, token);
@@ -98,6 +108,9 @@ public static class NaturalAltgardQuestSteps
 		DecodedBotServerPacket? started = session.PacketHistory.Skip(start).LastOrDefault(packet =>
 			packet.PacketType == typeof(SM_USE_OBJECT) && packet.Get<int>("targetObjectId") == objectId && packet.Get<byte>("actionType") != 2);
 		int durationMs = started?.Get<int>("durationMs") ?? 3000;
+		// BC-06: the gate's movie can be acknowledged by the skip reflex during the next synchronization.
+		// Clear the old view before the use finishes and that acknowledgement teleports the player.
+		if (reloadWorld) session.Api.World.BeginWorldReload();
 		await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Max(durationMs, 1) + 1), token);
 		await session.SynchronizeAsync(token);
 		DecodedBotServerPacket? finish = session.PacketHistory.Skip(start).LastOrDefault(packet =>
@@ -115,7 +128,8 @@ public static class NaturalAltgardQuestSteps
 		CancellationToken token)
 	{
 		int start = session.PacketHistory.Count;
-		bool used = await UseObjectAsync(session, objectId, use.LootItemId, token);
+		bool used = await UseObjectAsync(session, objectId, use.LootItemId, token, reloadWorld: use.MovieId != null);
+		if (use.MovieId != null) await NaturalMovieGate.FinishAsync(session, token);
 		bool opened = use.DialogPage is int page && session.PacketHistory.Skip(Math.Min(start, session.PacketHistory.Count)).Any(packet =>
 			packet.PacketType == typeof(SM_DIALOG_WINDOW) && packet.Get<int>("targetObjectId") == objectId && packet.Get<ushort>("dialogPageId") == page);
 		if (opened && use.CloseAction is string close)

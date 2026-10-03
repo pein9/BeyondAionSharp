@@ -65,7 +65,7 @@ public sealed record NaturalCombatObservation(int Level, int Hp, int MaxHp, int 
 	bool HasHotPotion = false, bool HotPotionReady = false, bool HotPotionActive = false,
 	bool Cornered = false, bool TargetAdjacent = false, bool InEmergency = false, bool TargetSeasoned = false,
 	bool TargetRanged = false, bool ConservativeRangedHold = false, int Dp = 0, bool? HasRejuvenation = null,
-	bool ShieldScrollReady = false);
+	bool ShieldScrollReady = false, ushort? LastCancelledSkillId = null);
 
 public sealed record NaturalCombatChoice(string Action, NaturalPriestSkill? Skill, int? TargetObjectId,
 	string Reason, NaturalDecisionCheck[] Checks);
@@ -271,7 +271,10 @@ public static class NaturalPriestCombatPolicy
 		}
 		// AC-00: Healing Grace (3 s, 1,298 HP) is the urgent heal while it is ready; Healing Light covers its cooldown.
 		NaturalPriestSkill? grace = NaturalPriestSkills.Best("grace", state.Level, state.Learned, catalog);
-		if (urgent && grace != null && Eligible(grace, null, 0, state, now, reserveHeal: false))
+		// BC-06: a cancelled Grace did not heal or start its cooldown (Java Skill.endCast).
+		// Try the shorter learned Healing Light next instead of repeatedly attempting the same long cast.
+		if (urgent && grace != null && state.LastCancelledSkillId != grace.Id &&
+			Eligible(grace, null, 0, state, now, reserveHeal: false))
 			return Choice("cast-self", grace, $"HP is at or below {healPercent}% in a fight: Healing Grace, the larger heal.");
 		if (urgent && heal != null && Eligible(heal, state.TargetObjectId, 0, state, now, reserveHeal: false))
 			return Choice("cast-self", heal, state.InEmergency

@@ -146,17 +146,29 @@ public sealed class NaturalAltgardLeg10ContractTests
 	[InlineData(220030000, 3, 0, false, "talk", "q24016-v0-suthran", 220030000)]
 	[InlineData(220030000, 3, 1, false, "enter-instance", null, 320030000)]
 	[InlineData(320030000, 3, 2, false, "use-object", "q24016-guardian", 320030000)]
+	[InlineData(320030000, 3, 1, false, "leave-instance", null, 320030000)]
 	[InlineData(320030000, 3, 13, false, "hunt", null, 320030000)]
 	[InlineData(320030000, 3, 14, false, "use-object", "q24016-gate", 320030000)]
 	[InlineData(220030000, 4, 14, false, "talk", "q24016-reward-suthran", 220030000)]
 	[InlineData(320030000, 4, 14, false, "travel-to-map", "q24016-reward-suthran", 220030000)]
 	[InlineData(320030000, 3, 13, true, "revive-at-bind", null, 220030000)]
-	public void InstanceBranchStaysOnItsMapAndDeathReturnsToTheWorkingBind(int map, byte status, int var, bool dead,
+	public void InstanceBranchStaysOnItsMapAndUnprotectedDeathReturnsToTheWorkingBind(int map, byte status, int var, bool dead,
 		string action, string? key, int targetMap)
 	{
 		NaturalAltgardObservation state = Observe(24016, map, status, var) with { IsDead = dead };
 		NaturalAltgardDecision next = NaturalAltgardDecisionEngine.Decide(Leg, state, Objectives, 1);
 		Assert.Equal((action, key, targetMap), (next.Action, next.StepKey, next.MapId));
+	}
+
+	[Fact]
+	public void LearnedSelfRevivalKeepsTheClericInTheInstanceThenRequiresOrdinaryExitAndReentry()
+	{
+		NaturalAltgardObservation dead = Observe(24016, 320030000, 3, 1) with { IsDead = true, CanRebirth = true };
+		NaturalAltgardDecision revive = NaturalAltgardDecisionEngine.Decide(Leg, dead, Objectives, 1);
+		Assert.Equal(("revive-in-place", 320030000), (revive.Action, revive.MapId));
+		Assert.Equal("leave-instance", NaturalAltgardDecisionEngine.Decide(Leg, dead with { IsDead = false }, Objectives, 2).Action);
+		Assert.Equal("enter-instance", NaturalAltgardDecisionEngine.Decide(Leg, dead with { IsDead = false, MapId = 220030000 }, Objectives, 3).Action);
+		Assert.Equal(new[] { 2467.6052f, 2548.0076f, 316.12375f }, Leg.Steps.Single(step => step.Key == "q24016-v0-suthran").Teleport!.Position);
 	}
 
 	private static NaturalAltgardObservation Observe(int pending, int map, byte status, int packed)

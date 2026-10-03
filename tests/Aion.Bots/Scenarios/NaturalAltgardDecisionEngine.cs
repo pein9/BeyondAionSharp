@@ -12,7 +12,7 @@ namespace Aion.Bots.Scenarios;
 public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, int Level, bool IsDead,
 	IReadOnlyDictionary<int, BotQuestState> Quests, IReadOnlySet<int> CompletedQuestIds, BotPosition Position,
 	IReadOnlyDictionary<int, long> ItemCounts, BotBindPoint? Bind = null, long? GameMinutes = null, IReadOnlySet<int>? VisibleNpcIds = null,
-	int? FreeCubeSlots = null, long Kinah = 0, int? CubeNpcExpansions = null)
+	int? FreeCubeSlots = null, long Kinah = 0, int? CubeNpcExpansions = null, bool CanRebirth = false)
 {
 	public static NaturalAltgardObservation Observe(BotWorldModel world, BotPosition position, DateTimeOffset? now = null, int? freeCubeSlots = null) =>
 		new(world.LoginStateObserved && world.QuestJournalObserved && world.CompletedJournalObserved, world.MapId, world.Level,
@@ -20,7 +20,8 @@ public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, in
 			world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
 			world.ObeliskBindPoint, now is DateTimeOffset at ? world.GameMinutesAt(at) : world.GameMinutes,
 			world.Objects.Values.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId != null)
-				.Select(known => known.TemplateId!.Value).ToHashSet(), freeCubeSlots, world.Kinah, world.CubeExpansion?.Npc);
+				.Select(known => known.TemplateId!.Value).ToHashSet(), freeCubeSlots, world.Kinah, world.CubeExpansion?.Npc,
+			world.ReviveOptions?.BySkill == true);
 }
 
 /// <summary>One independent kill counter in a template quest's compiled plan.</summary>
@@ -95,12 +96,13 @@ public static class NaturalAltgardDecisionEngine
 		{
 			int map = action == "talk" && stepKey != null ? contract.StepMap(contract.Steps.Single(step => step.Key == stepKey))
 				: action == "template-claim" && questId is int id ? objectives.GetValueOrDefault(id)?.ClaimMapId ?? contract.Hub.MapId
-				: action == "enter-instance" ? contract.InstanceTripList.Single(trip => trip.QuestId == questId).MapId
+				: action is "enter-instance" or "leave-instance" ? contract.InstanceTripList.Single(trip => trip.QuestId == questId).MapId
+				: action == "revive-in-place" ? state.MapId!.Value
 				: action == "use-object" ? contract.ObjectUseList.Single(use => use.Key == stepKey).MapId ?? contract.Hub.MapId
 				: action == "hunt" ? contract.HuntList.First(hunt => hunt.QuestId == questId &&
 					Var(questId!.Value) >= hunt.FromVar && Var(questId.Value) < hunt.ToVar).MapId ?? contract.Hub.MapId
 				: contract.Hub.MapId;
-			return new(sequence, state.MapId != map && action is not ("revive-at-bind" or "enter-instance") ? "travel-to-map" : action,
+			return new(sequence, state.MapId != map && action is not ("revive-at-bind" or "revive-in-place" or "enter-instance") ? "travel-to-map" : action,
 				stepKey, questId, "planned", reason, [.. checks], map);
 		}
 		NaturalAltgardDecision Stop(string action, string outcome, string reason, int? questId = null) =>
@@ -109,7 +111,9 @@ public static class NaturalAltgardDecisionEngine
 		if (!state.Synchronized || state.MapId == null)
 			return Stop("refresh-observation", "planned", "Wait for a synchronized client view.");
 		if (state.IsDead)
-			return Plan("revive-at-bind", null, "Dead: revive at the Altgard Fortress obelisk.");
+			return state.CanRebirth && contract.InstanceTripList.Any(trip => trip.MapId == state.MapId)
+				? Plan("revive-in-place", null, "Dead in the quest instance: accept the client's learned self-revival option.")
+				: Plan("revive-at-bind", null, "Dead: revive at the working hub's obelisk.");
 		bool offHub = state.MapId != contract.Hub.MapId;
 		if (offHub && !contract.MapTripList.Any(trip => trip.MapId == state.MapId) && !contract.InstanceTripList.Any(trip => trip.MapId == state.MapId))
 			return Stop("wrong-map", "blocked", $"{contract.Leg} is on map {contract.Hub.MapId}; the Cleric is on {state.MapId}.");
@@ -232,6 +236,8 @@ public static class NaturalAltgardDecisionEngine
 					: Plan("talk", quest.Id, $"Q{quest.Id}: claim the reward.", claim.Key);
 			}
 			int var = Var(quest.Id);
+			if (contract.InstanceTripList.Any(trip => trip.QuestId == quest.Id && var == trip.ResetVar && state.MapId == trip.MapId))
+				return Plan("leave-instance", quest.Id, $"Q{quest.Id} reset to var {var}: leave through Dimension Exit before re-entry.");
 			if (contract.InstanceTripList.Any(trip => trip.QuestId == quest.Id && var == trip.FromVar && state.MapId != trip.MapId))
 				return Plan("enter-instance", quest.Id, $"Q{quest.Id} var {var}: use its ordinary quest portal.");
 			if (contract.ItemUse is { } use && quest.Id == use.QuestId && var == use.Var)
