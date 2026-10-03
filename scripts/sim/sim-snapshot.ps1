@@ -12,6 +12,7 @@
 #            Leg 9 (AH-05): -AltgardLeg1 -Leg l9 -From altgard-l8 -Name altgard-l9.
 #            Leg 10 (BC-07): -AltgardLeg1 -Leg l10 -From altgard-l9 -Name altgard-l10.
 #            Leg 11 (ND-07): -AltgardLeg1 -Leg l11 -From altgard-l10 -Name altgard-l11.
+#            Leg 12 (HM-07): -AltgardLeg1 -Leg l12 -From altgard-coingear -Name altgard-haramel-l12.
 #            plays Altgard Leg 1 (docs/natural-altgard-leveling.md) and dumps its verified endpoint (`altgard-l12`).
 #   Restore: load a snapshot into a fresh owned schema and print the environment a resumed run needs.
 #   Verify:  restore, resume the retained character once and require the journey endpoint to be reached again
@@ -96,6 +97,17 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 	$dump = Join-Path $directory 'dump.sql.gz'
 	$hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $dump).Hash.ToLowerInvariant()
 	if ($hash -ne $metadata.dumpSha256) { throw "Snapshot $Name dump hash changed; refusing to restore an edited snapshot." }
+	$haramelProgress = $null
+	if ($metadata.PSObject.Properties.Name -contains 'source' -and $metadata.source -eq 'natural-altgard-l12') {
+		$haramelProgress = Join-Path $directory 'haramel-progress.json'
+		if (-not (Test-Path -LiteralPath $haramelProgress) -or
+			$metadata.PSObject.Properties.Name -notcontains 'haramelProgressSha256') {
+			throw "Snapshot $SnapshotName is missing its Haramel receipt or hash; refusing to reset its journey budget."
+		}
+		if ((Get-FileHash -Algorithm SHA256 -LiteralPath $haramelProgress).Hash.ToLowerInvariant() -ne $metadata.haramelProgressSha256) {
+			throw "Snapshot $SnapshotName Haramel receipt hash changed; refusing to restore edited receipts."
+		}
+	}
 	$db = New-OwnedDatabaseName
 	$remote = "/tmp/$db.sql.gz"
 	Invoke-Docker @('exec', '-e', "MYSQL_PWD=$RootPassword", $ContainerName, 'mysql', '-uroot', '-e', "CREATE DATABASE ``$db``;")
@@ -107,17 +119,22 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 		Remove-OwnedDatabase $db
 		throw
 	}
+	$environment = [ordered]@{
+		AION_SIM_NI08_DATABASE = $db
+		NI08_RESUME_CHARACTER = "$($metadata.characterId)"
+		AION_SIM_NI08_ELAPSED_MS = "$([long]$metadata.elapsedMillis + 20000)"
+	}
+	if ($haramelProgress) {
+		$environment.AF_ALTGARD = 'l12'
+		$environment.AF_HM_PROGRESS = $haramelProgress
+	}
 	[pscustomobject]@{
 		snapshot = $SnapshotName
 		database = $db
 		characterId = [int]$metadata.characterId
 		elapsedMillis = [long]$metadata.elapsedMillis
 		# Environment for a resumed natural run on this copy (game time moves forward past the capture).
-		environment = [ordered]@{
-			AION_SIM_NI08_DATABASE = $db
-			NI08_RESUME_CHARACTER = "$($metadata.characterId)"
-			AION_SIM_NI08_ELAPSED_MS = "$([long]$metadata.elapsedMillis + 20000)"
-		}
+		environment = $environment
 	}
 }
 
@@ -152,6 +169,11 @@ try {
 					if (-not $legResult.verified -or $legResult.CharacterId -ne $base.characterId) {
 						throw "The Altgard leg $Leg endpoint was not verified for the restored character; nothing was captured."
 					}
+					$haramelProgressFile = Join-Path $evidence 'haramel-progress.json'
+					if ($Leg -eq 'l12' -and (-not (Test-Path -LiteralPath $haramelProgressFile) -or
+						(Get-Content -Raw -LiteralPath $haramelProgressFile | ConvertFrom-Json).characterId -ne $base.characterId)) {
+						throw 'The verified Haramel endpoint needs its original receipt; nothing was captured.'
+					}
 					New-Item -ItemType Directory -Path $directory | Out-Null
 					$remote = "/tmp/$db.sql.gz"
 					Invoke-Docker @('exec', '-e', "MYSQL_PWD=$RootPassword", $ContainerName, 'sh', '-c',
@@ -159,7 +181,7 @@ try {
 					Invoke-Docker @('cp', "${ContainerName}:$remote", (Join-Path $directory 'dump.sql.gz'))
 					Invoke-Docker @('exec', $ContainerName, 'rm', '-f', $remote)
 					Copy-Item -LiteralPath $legFile -Destination $directory
-					[ordered]@{
+					$legMetadata = [ordered]@{
 						schemaVersion = 1
 						name = $Name
 						source = "natural-altgard-$Leg"
@@ -171,7 +193,12 @@ try {
 						characterId = [int]$legResult.CharacterId
 						elapsedMillis = [long]$base.environment.AION_SIM_NI08_ELAPSED_MS + [long]$legResult.ElapsedMillis
 						dumpSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $directory 'dump.sql.gz')).Hash.ToLowerInvariant()
-					} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $directory 'snapshot.json') -Encoding utf8
+					}
+					if ($Leg -eq 'l12') {
+						Copy-Item -LiteralPath $haramelProgressFile -Destination $directory
+						$legMetadata.haramelProgressSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $haramelProgressFile).Hash.ToLowerInvariant()
+					}
+					$legMetadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $directory 'snapshot.json') -Encoding utf8
 					Write-Host "Captured snapshot $Name (character $($legResult.CharacterId)) in $directory"
 				}
 				finally {
@@ -236,8 +263,11 @@ try {
 				$extra = @{}
 				foreach ($key in $restored.environment.Keys) { $extra[$key] = $restored.environment[$key] }
 				Invoke-NaturalJourney $restored.database $Run $evidence $extra
-				$completion = Get-Content -Raw -LiteralPath (Join-Path $evidence 'completion.json') | ConvertFrom-Json
-				if ($completion.CharacterId -ne $restored.characterId -or $completion.Next.Outcome -ne 'complete') {
+				$haramel = $extra.ContainsKey('AF_ALTGARD') -and $extra.AF_ALTGARD -eq 'l12'
+				$completionFile = if ($haramel) { 'altgard-l12-completion.json' } else { 'completion.json' }
+				$completion = Get-Content -Raw -LiteralPath (Join-Path $evidence $completionFile) | ConvertFrom-Json
+				if ($completion.CharacterId -ne $restored.characterId -or
+					$(if ($haramel) { -not $completion.verified } else { $completion.Next.Outcome -ne 'complete' })) {
 					throw 'The restored character did not reach the snapshot endpoint.'
 				}
 				Write-Host "Verified snapshot ${Name}: character $($restored.characterId) resumed at its endpoint. Evidence: $evidence"

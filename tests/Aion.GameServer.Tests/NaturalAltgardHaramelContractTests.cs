@@ -34,6 +34,7 @@ public sealed class NaturalAltgardHaramelContractTests
 		Assert.Equal([112501641,113501720,123001440], Leg.RewardChoiceList.Select(c => c.ItemId).Order());
 		Assert.Equal((16,9,600000,60000,74), (Rules.MaxEntries,Rules.ResetHour,Rules.EmptyExpiryMillis,Rules.CleanupPeriodMillis,Rules.KillSpawnCount));
 		Assert.False(Leg.Bind!.OnArrival);
+		Assert.Equal("altgard-haramel-l12", Leg.Endpoint.Snapshot);
 		Assert.Equal(700067, Rules.WorkingBindNpcId);
 		Assert.Contains(700832, Leg.GraphNpcIds(Plans));
 		Assert.Contains(730321, Leg.GraphNpcIds(Plans));

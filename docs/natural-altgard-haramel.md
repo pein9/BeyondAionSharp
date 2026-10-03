@@ -371,6 +371,14 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
   shared endpoint contract/runner selectors to the resolved distinct name before capture. Record its actual
   capture SHA, metadata/hash, coin/quest/equipment/skill/bind ledger and completed count, restore and
   prove actual endpoint relog, then drop owned schemas. Preserve both earlier snapshots unedited.
+  - *Capture support verified 2026-10-03, snapshot pending.* Shared l12 validation/endpoint now use
+    `altgard-haramel-l12`. Capture keeps `haramel-progress.json` and its SHA256; restore checks
+    both dump and receipt hashes before creating a schema and supplies the l12 selector/original
+    receipt. Endpoint Verify reads the l12 completion proof. Historical snapshots keep their
+    existing selectors. Missing/edited receipts, historical restore/time and ownership contracts
+    pass, as do 22 Haramel cases, seven prechecks and `hm07-fast` (82 passed/five switch skips/
+    eleven scenarios). The fixture log-cleanup draft and overlapping-build DLL/warning failures
+    remain retained; sequential reruns pass (`run/hm07-support`). Commit this support before capture.
 - [ ] **HM-08 — Final checklist and handoff.** Depends: HM-07. Run the full CLAUDE checklist once
   on the committed implementation (including Fast and the now-eight baked maps), reconcile both new
   snapshots, retained equipped staff/no weapon purchase and all outcomes, tick only proven
@@ -426,6 +434,10 @@ be corrected under existing authority, record it here and continue the remaining
 
 ## Progress log
 
+- 2026-10-03 HM-07 support: distinct endpoint naming and immutable original Haramel receipt
+  capture/restore pass the snapshot contract, 22 scoped cases, seven sequential prechecks and
+  Fast (82 passed/five switch skips/all eleven scenarios). Failed fixture/build drafts retained.
+  Commit support before the natural capture; HM-07 remains unchecked until capture/SQL/relog pass.
 - 2026-10-03 HM-06 complete: natural two-clear smoke `hm06-smoke-a22` and fortress relog pass;
   level 25, 156 journals, zero deaths, 19 Iron/7 Bronze, retained staff/armour/sealed bundle.
   Six cage-route misses and all earlier failures remain recorded. Sixty-nine focused cases,

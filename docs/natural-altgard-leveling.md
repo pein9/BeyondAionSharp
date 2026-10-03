@@ -3927,7 +3927,7 @@ do not buy a coin weapon/shield or switch the staff for reward/loot weapons.
 The [Haramel plan](natural-altgard-haramel.md) covers eleven active Asmodian quests once, including
 the outside lead-in and four quests that unlock after Q28507. Plan two fresh clears, ordinary empty
 instance expiry, all floors/lift/objects, the 65-kill packed counter and Cleric boss chest. Its incoming
-snapshot will be `altgard-coingear`; its final snapshot will be `altgard-l12`, alive/bound at the fortress.
+snapshot is `altgard-coingear`; its final snapshot is `altgard-haramel-l12`, alive/bound at the fortress.
 CG-00..CG-06 then HM-00..HM-08 form one goal; stop at HM-08 or when nothing is unblocked.
 
 ### End-of-area acceptance after HM-08

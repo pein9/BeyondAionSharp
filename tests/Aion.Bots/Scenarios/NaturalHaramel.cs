@@ -26,7 +26,7 @@ public sealed record NaturalHaramel(int MapId, int CooldownId, int MaxEntries, i
 			EmptyExpiryMillis != 600000 || CleanupPeriodMillis != 60000 || KillSpawnCount != 74 ||
 			StaffItemId != 101501357 || StaffObjectId != 137763 || IronCount != 19 || BronzeCount != 7 ||
 			WorkingBindNpcId != 700067 || leg.Start.Snapshot != "altgard-coingear" || leg.Start.CompletedQuestIds.Length != 145 ||
-			leg.Endpoint.Snapshot != "altgard-l12" || leg.Endpoint.BindNpcId != 700065 ||
+			leg.Endpoint.Snapshot != "altgard-haramel-l12" || leg.Endpoint.BindNpcId != 700065 ||
 			!leg.Order.Order().SequenceEqual(new[] { 28500, 28501, 28503, 28504, 28505, 28506, 28507, 28508, 28509, 28510, 28511 }))
 			throw new InvalidDataException("Haramel contract disagrees with the approved incoming state, two visits or shipped rules.");
 		if (TowerChestKeys == null || !TowerChestKeys.SequenceEqual(new NaturalHaramelKey[] { new(185000103,1,217025), new(185000107,3,217108) }))
