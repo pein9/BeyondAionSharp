@@ -7,11 +7,13 @@ using Aion.Bots.Scenarios;
 using Aion.Bots.Tracing;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
+using Aion.GameServer.GeoEngine.Collision;
 using Aion.GameServer.Model.GameObjects;
 using Aion.GameServer.Model.Templates.Spawns;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.TestKit;
+using Aion.GameServer.World.Geo;
 
 namespace Aion.Simulation.Tests;
 
@@ -173,18 +175,26 @@ public sealed partial class SimulationFastScenarioTests
 		public int SetupRespawns { get; private set; }
 		public int TowerChestRefusals { get; private set; }
 		public List<string> Log { get; } = [];
+		public HashSet<int> PreserveNpcIds { get; } = [];
 		public long Count(int item) => session.Api.World.Inventory.Values.Where(i => i.ItemId == item).Sum(i => i.Count);
 		public int Counter(int quest, int variable) => NaturalQuestProgress.KillCount(session.Api.World.Quests[quest], variable, 63);
 		private BotNavigationGeometry Geometry() => BotNavigationGeometry.ForServerWorld(Server.GetInstanceId(), Race.ASMODIANS);
 		private static BotPosition At(Npc npc) => new(npc.GetX(), npc.GetY(), npc.GetZ(), 0);
 
-		private async Task SetupNearAsync(Npc npc, bool combat = false)
+		public async Task SetupNearAsync(Npc npc, bool combat = false, bool closeCombat = false)
 		{
 			BotNavigationGeometry geo = Geometry();
+			// Java GeoService.canSee ignores only the targeted placeable's own static model.
+			// Ground/path checks keep their normal collision properties.
+			var sight = new BotNavigationGeometry(GeoService.GetInstance().GetMap, Server.GetInstanceId(),
+			IgnoreProperties.Of(Race.ASMODIANS, npc.GetSpawn()?.GetStaticId() ?? -1));
 			BotPosition target = At(npc);
-			BotPosition ground = geo.GroundAround(Server.GetWorldId(), target, combat ? [7f, 6f, 8f] : [2f, 3f, 1f])
-				.First(p => !combat || geo.HasLineOfSight(Server.GetWorldId(), p with { Z = p.Z + 1.6f }, target with { Z = target.Z + 1 }));
-			Npc[] neighbours = Server.GetWorldMapInstance().GetNpcs().Where(n => n != npc && n.GetNpcId() != 216922 && !n.IsDead() &&
+			float upper = npc.GetObjectTemplate().GetBoundRadius().GetUpper();
+			float eye = upper > 2.5f ? upper / 2 : 1.25f; // Java GeoService.getSeeCheckOffset.
+			// HasLineOfSight already adds 1.25 m at both ends; do not add a second eye height.
+			BotPosition ground = geo.GroundAround(Server.GetWorldId(), target, closeCombat ? [2f, 3f, 1f, 0f, 4f] : combat ? [7f, 6f, 8f, 3f, 2f, 4f, 1f, 0f] : [2f, 3f, 1f])
+				.First(p => !combat || sight.HasLineOfSight(Server.GetWorldId(), p, target with { Z = target.Z + eye - 1.25f }));
+			Npc[] neighbours = Server.GetWorldMapInstance().GetNpcs().Where(n => n != npc && n.GetNpcId() != 216922 && !PreserveNpcIds.Contains(n.GetNpcId()) && !n.IsDead() &&
 				NaturalHostility.IsAggressive(n.GetObjectTemplate(), fixture.DataManager.StaticData.TribeRelations, TribeClass.PC_DARK) &&
 				MathF.Pow(n.GetX() - ground.X, 2) + MathF.Pow(n.GetY() - ground.Y, 2) <= 900).ToArray();
 			foreach (Npc neighbour in neighbours) fixture.World.Despawn(neighbour);
@@ -271,7 +281,20 @@ public sealed partial class SimulationFastScenarioTests
 			await SelectAsync(npc, quest, plans[quest].Template == "item_collecting" ? DialogAction.CHECK_USER_HAS_QUEST_ITEM : DialogAction.SELECT_QUEST_REWARD);
 			Assert.Equal(QuestStatus.REWARD, Server.GetQuestStateList().GetQuestState(quest).GetStatus());
 			NaturalAltgardRewardChoice? choice = contract.RewardChoiceList.FirstOrDefault(c => c.QuestId == quest);
-			await SelectAsync(npc, quest, choice == null ? DialogAction.SELECTED_QUEST_NOREWARD : NaturalAscensionContract.DialogActionId(choice.Action));
+			int rewardAction = choice == null ? DialogAction.SELECTED_QUEST_NOREWARD : NaturalAscensionContract.DialogActionId(choice.Action);
+			try { await SelectAsync(npc, quest, rewardAction); }
+			catch (QuestDialogEchoException followUp) when (quest is 28504 or 28505 &&
+				followUp.Action == new PendingQuestDialogAction(npc, rewardAction, quest) &&
+				session.Api.World.CompletedQuestIds.Contains(quest) &&
+				Server.GetQuestStateList().GetQuestState(quest).GetCompleteCount() == 1)
+			{
+				// Java SendQuestEndDialog finishes this quest before forwarding USE_OBJECT to
+				// another REWARD quest registered at Shezen, even when its end NPC is Morn.
+				// Q28510 refuses that follow-up; require the preceding actual COMPLETE update.
+				Log.Add($"Q{quest} completed; Java's Q28510 follow-up at Shezen was refused");
+				Console.WriteLine(Log[^1]);
+				await session.SynchronizeAsync(token);
+			}
 			await session.SendPacketAsync(session.Api.CloseDialog(npc), token);
 			Assert.Equal(QuestStatus.COMPLETE, Server.GetQuestStateList().GetQuestState(quest).GetStatus());
 			foreach (NaturalTemplateCollect collect in NaturalTemplateObjective.From(plans)[quest].Collections ?? []) Assert.Equal(0, Count(collect.ItemId));

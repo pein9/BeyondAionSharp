@@ -1,6 +1,6 @@
 # Leg 12: Haramel after the coin gear preparation
 
-**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-04 complete; HM-05 is next.** Follow
+**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-05 complete; HM-06 is next.** Follow
 [coin gear preparation CG-00..CG-06](natural-altgard-coin-gear.md) first, then do the Haramel lead-in,
 every active Asmodian Haramel quest once, and the clears needed to finish them. Haramel remains
 **Leg 12**; the preparation is a separate `cg` section. Recommended scope is **two fresh solo clears**,
@@ -310,11 +310,34 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
     and the failed native-tag draft remain: that draft attempted a higher Smite rank before the
     shared lower-rank cooldown expired. The probe now observes the actual cooldown before ordinary
     combat. Owned schemas are gone and the incoming snapshot hash is unchanged.
-- [ ] **HM-05 — Fresh-clear and post-boss protocols/recovery in SIM.** Depends: HM-04. Prove
+- [x] **HM-05 — Fresh-clear and post-boss protocols/recovery in SIM.** Depends: HM-04. Prove
   ordinary exit/empty expiry/fresh entry, Q28504 count 63/64/65 and the attainable 74-spawn set,
   Q28505's three overseer drops, Q28510 kill/use ordering and Q28511 ginseng/cauldron/soup. Include
   death, same-instance re-entry and saved-state/cold-restart recovery, actual entry count, lost-instance
   fallback and preserved counters/items. Allow another genuine fresh visit if evidence requires it.
+  - *Done 2026-10-03.* Unused access-0 account 226 in `hm05-matrix-a9` credits all 74
+    original qualifying spawns without replacements, preserves the packed 63/64/65 boundaries
+    across real relogs, and completes Q28504/Q28505/Q28510/Q28511. The preliminary copy expires
+    normally; same-copy re-entry spends no extra entry, fresh entry spends one. There are 78 native
+    kills including the preliminary boss and three carts, 79 retained combat attempts, zero combat
+    deaths and one controlled death with native Heart recovery. Java kill/use ordering, all three
+    overseer drops, the actual chain-pants reward, six Bronze Coins and quest-item cleanup pass.
+  - `hm05-cold-a2` uses actual processes 56452 and 20328. The inside-instance quit retains a
+    partial packed count, overseer drop, cart work item and paid five-ginseng receipt without soup.
+    Login after process loss uses the configured Altgard exit, takes a genuine fresh entry, retains
+    the original revive/stall budget and receives/delivers soup without paying twice. Both owned
+    cold schemas are dropped; numeric copy IDs can be reused and are not asserted to differ.
+  - Java `SM_CHANNEL_INFO` can send its unspawned default before teleport spawn. This corrects
+    HM-01/HM-02's earlier channel-based identity assumption: the bot observes the actual copy from
+    `SM_PLAYER_SPAWN.worldChannel`, including personal-map sign and same-copy reload semantics.
+    The server wire behavior is unchanged. All 34 focused world-model/Haramel contract cases and
+    all seven current prechecks pass. The original eight matrix failures and original Fast failure
+    remain retained. Refreshed `hm05-fast-a2` passes 82 tests/five explicit switch skips/all eleven
+    scenarios, including the complete recovery matrix and corrected old travel probe. The final
+    audit passes (`run/hm05-support/audit.json`, base `3df3643d5`): owned schemas are gone and both
+    the CG incoming dump and preserved Leg 1 dump are unchanged. No natural character or snapshot
+    writes; labelled probe setup clears and BeginWorldReload remain explicit. Normal shared-budget
+    natural recovery remains HM-06; the probe's saved stall fingerprint is synthetic and retained.
 - [ ] **HM-06 — Natural Leg 12 runner and one smoke.** Depends: HM-05. Restore `altgard-coingear`
   with `sim-snapshot.ps1 -Action Restore`, run
   `NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup` with `AF_ALTGARD=l12` and the variables
@@ -381,6 +404,11 @@ be corrected under existing authority, record it here and continue the remaining
 
 ## Progress log
 
+- 2026-10-03 HM-05 complete: natural expiry/fresh entry, all 74 original sources, packed 63/64/65,
+  four post-boss completions and actual death/relog/two-process recovery pass. Actual spawn packet
+  identity replaces the unspawned channel fallback. Thirty-four scoped cases, seven checks and
+  Fast (82 passed/five switch skips/all eleven scenarios) pass; failures retained, schemas dropped,
+  incoming snapshots unchanged (`run/hm05-support/audit.json`). HM-06 natural runner is next.
 - 2026-10-03 HM-04 complete: actual full-health bosses, neighbouring two-attacker pull, regular
   healing/potions, summons/movie/class chest/all offered loot/exit/relog pass without HP edits or
   natural setup. Seven fresh prechecks and Fast 81 tests/eleven scenarios pass; draft failures and

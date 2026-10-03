@@ -56,7 +56,7 @@ public sealed partial class SimulationFastScenarioTests
 		int firstCopy = probe.Server.GetInstanceId();
 		int firstAnchor = await probe.WalkNpcAsync(799522);
 		int firstEntries = probe.EntriesUsed;
-		Assert.Equal(firstCopy, session.Api.World.ChannelInfo!.Value.Index + 1);
+		Assert.Equal(firstCopy, session.Api.World.InstanceId);
 		Assert.Equal(1, firstEntries);
 		// Prove the entrance exit and actual same-copy re-entry before the floor circuit.
 		await probe.PortalAsync(730320, 220030000);
@@ -125,6 +125,7 @@ public sealed partial class SimulationFastScenarioTests
 		public int OfficeElevators { get; private set; }
 		public int MissedBoardingWindows { get; private set; }
 		public int Cleared { get; private set; }
+		public HashSet<int> PreserveNpcIds { get; } = [];
 		private int sequence;
 		private long? lastTakeoff;
 		private readonly Dictionary<int, BotPosition> bossSites = [];
@@ -175,7 +176,7 @@ public sealed partial class SimulationFastScenarioTests
 		private void ClearNeighbours(IEnumerable<Npc> npcs, IEnumerable<BotPosition> points)
 		{
 			BotPosition[] path = points.ToArray();
-			Npc[] cleared = npcs.Where(n => n.GetNpcId() != 216922 && !n.IsDead() &&
+			Npc[] cleared = npcs.Where(n => n.GetNpcId() != 216922 && !PreserveNpcIds.Contains(n.GetNpcId()) && !n.IsDead() &&
 				NaturalHostility.IsAggressive(n.GetObjectTemplate(), fixture.DataManager.StaticData.TribeRelations, TribeClass.PC_DARK) &&
 				path.Any(p => MathF.Pow(n.GetX() - p.X, 2) + MathF.Pow(n.GetY() - p.Y, 2) <= 900)).ToArray();
 			foreach (Npc npc in cleared) fixture.World.Despawn(npc);

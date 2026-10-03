@@ -28,7 +28,7 @@ public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, in
 			world.ReviveOptions?.BySkill == true, world.Skills.Keys.ToHashSet(), new Dictionary<int, byte>(world.CompletedQuestCounts),
 			world.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(), coinGearProgress,
 			haramelProgress, nowMillis, world.Objects.Values.FirstOrDefault(i => i.TemplateId == 799522 && !i.IsCorpse)?.ObjectId,
-			world.ChannelInfo is { } channel ? checked(channel.Index + 1) : null);
+			world.InstanceId);
 }
 
 /// <summary>One independent kill counter in a template quest's compiled plan.</summary>

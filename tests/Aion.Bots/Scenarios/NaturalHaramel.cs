@@ -48,7 +48,8 @@ public sealed record NaturalHaramel(int MapId, int CooldownId, int MaxEntries, i
 public sealed record NaturalHaramelTask(string Action, int MapId, int? QuestId = null, string? StepKey = null);
 public sealed record NaturalHaramelKey(int ItemId, int Count, int NpcId);
 public sealed record NaturalHaramelEquipment(int ObjectId, int ItemId, long Slot);
-/// <summary>SM_CHANNEL_INFO sends instanceId minus one, including on solo maps. IDs may repeat
+/// <summary>SM_PLAYER_SPAWN's worldChannel carries the actual instance; SM_CHANNEL_INFO can use
+/// its unspawned default during teleport. IDs may repeat
 /// after server restart, and IDFactory reuses NPC IDs. Pair the packet ID/anchor with actual entry
 /// use and live-spawn evidence; cooldown ID 46 identifies the map, never the copy.</summary>
 public sealed record NaturalHaramelVisit(int InstanceId, int AnchorObjectId, int EntriesUsed, long EnteredAtMillis,

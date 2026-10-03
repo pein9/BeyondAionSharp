@@ -87,6 +87,11 @@ public sealed partial class BotWorldModel
 	public int? SelfObjectId { get; private set; }
 	public int? MapId { get; private set; }
 	public (int Index, int Count)? ChannelInfo { get; private set; }
+	private (int MapId, int InstanceId)? spawnIdentity;
+	/// <summary>Java SM_PLAYER_SPAWN carries worldId + instanceId - 1 (negative on personal maps).
+	/// SM_CHANNEL_INFO can instead carry its unspawned default during teleport. A same-map reload
+	/// retains the last actual spawn identity; a different destination cannot use it.</summary>
+	public int? InstanceId => spawnIdentity is { } spawn && spawn.MapId == MapId ? spawn.InstanceId : null;
 	public BotPosition? Position { get; private set; }
 	public ushort Level { get; private set; }
 	public int CurrentHp { get; private set; }
@@ -297,6 +302,8 @@ public sealed partial class BotWorldModel
 		if (pendingMapReload || MapId is int previous && previous != worldId) ForgetWorldObjects();
 		pendingMapReload = false;
 		MapId = worldId;
+		spawnIdentity = packet.Fields.GetValueOrDefault("worldChannel") is int channel
+			? (worldId, checked((int)(Math.Abs((long)channel) - worldId + 1))) : null;
 		Position = ReadPosition(packet.Fields);
 		UpdateSelfObjectPosition();
 	}

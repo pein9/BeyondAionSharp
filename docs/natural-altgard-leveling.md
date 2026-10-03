@@ -33,7 +33,7 @@ The operator's 2026-10-03 next request is [coin gear preparation](natural-altgar
 Coin preparation is done (CG-00..CG-06, 2026-10-03): verified `altgard-coingear` holds the level-24
 Cleric alive at Heart bind, 145 journals, 19 Iron Coins, three purchased chain pieces and the original
 staff still equipped. Haramel scope/eligibility, shared contract, travel, first-clear quest protocols
-and normal combat/class loot are complete (HM-00..HM-04; HM-05..HM-08 unchecked). Full-area SIM and isolated LIVE
+and normal combat/class loot/recovery are complete (HM-00..HM-05; HM-06..HM-08 unchecked). Full-area SIM and isolated LIVE
 acceptance follow those checkpoints.
 
 ## Goal
@@ -4314,6 +4314,11 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-03 HM-05: ordinary expiry/fresh entry, 74 original qualifying sources, packed 63/64/65,
+  four follow-up quests and native death/relog/cold recovery pass. Java's unspawned channel default
+  is retained; actual spawn identity drives copy observation. Scoped cases, seven checks and Fast
+  (82 passed/five switch skips/eleven scenarios) pass; failed drafts retained, owned schemas gone,
+  both incoming snapshot dumps unchanged. HM-06 implements the natural Haramel runner.
 - 2026-10-03 HM-04: actual full-health bosses, native neighbouring pair, regular heals/potions,
   summons/movie/Cleric chest/loot/exit/relog pass. Seven prechecks and Fast 81 tests/eleven scenarios
   pass; retained drafts/cleanup in `run/hm04-support/audit.json`. Fresh post-boss recovery is next.

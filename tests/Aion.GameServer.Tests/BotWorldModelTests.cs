@@ -9,6 +9,29 @@ namespace Aion.GameServer.Tests;
 
 public sealed class BotWorldModelTests
 {
+	[Theory]
+	[InlineData(300200000, 300200003, 4)]
+	[InlineData(320070000, -320070002, 3)]
+	[InlineData(220030000, 220030000, 1)]
+	public void SpawnIdentitySurvivesTheTeleportChannelDefaultAndSameMapReload(int map, int channel, int instance)
+	{
+		var world = new BotWorldModel();
+		world.Apply(Packet<SM_CHANNEL_INFO>(("currentChannel", 1), ("instanceCount", 1)));
+		world.Apply(Packet<SM_PLAYER_SPAWN>(("worldId", map), ("worldChannel", channel),
+			("x", 172f), ("y", 20f), ("z", 144f), ("heading", (byte)0)));
+		Assert.Equal(instance, world.InstanceId);
+		Assert.Equal(instance, NaturalAltgardObservation.Observe(world, world.Position!.Value).InstanceId);
+		world.BeginWorldReload();
+		world.Apply(Packet<SM_CHANNEL_INFO>(("currentChannel", 1), ("instanceCount", 1)));
+		Assert.Equal(instance, world.InstanceId); // The tower lift stays in this actual copy.
+		world.Apply(Packet<SM_TELEPORT_LOC>(("mapId", 120010000),
+			("x", 1600f), ("y", 1400f), ("z", 190f), ("heading", (byte)0)));
+		Assert.Null(world.InstanceId); // The previous map's copy is not a destination observation.
+		world.Apply(Packet<SM_PLAYER_SPAWN>(("worldId", 120010000), ("worldChannel", 120010000),
+			("x", 1600f), ("y", 1400f), ("z", 190f), ("heading", (byte)0)));
+		Assert.Equal(1, world.InstanceId);
+	}
+
 	[Fact]
 	public void CompletedStatusCountsTheRewardOnceAndTheNextRepeatPreservesThatCount()
 	{

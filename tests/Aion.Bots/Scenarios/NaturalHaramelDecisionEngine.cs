@@ -39,7 +39,7 @@ public static class NaturalHaramelDecisionEngine
 		if (state.MapId == rules.MapId && (progress.NeedsInstanceObservation || progress.CurrentVisit == null || progress.CurrentVisit.LeftAtMillis != null))
 			return Plan("observe-haramel-entry", rules.MapId, reason: "Reconcile Moorilerk's actual object ID and the self entry-count row after entry/reconnect.");
 		if (state.MapId == rules.MapId && (state.InstanceId == null || state.InstanceId != progress.CurrentVisit?.InstanceId))
-			return Plan("observe-haramel-entry", rules.MapId, reason: "Reconcile the actual SM_CHANNEL_INFO instance ID before using this visit's receipts.");
+			return Plan("observe-haramel-entry", rules.MapId, reason: "Reconcile the actual SM_PLAYER_SPAWN instance ID before using this visit's receipts.");
 		if (Status(28511) == 3 && state.ItemCounts.GetValueOrDefault(182212023) > 0)
 			return Stop("refresh-observation", "Soup is already owned; wait for its reward journal transition instead of giving it twice.", "planned");
 
