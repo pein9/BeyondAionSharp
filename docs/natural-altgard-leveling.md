@@ -27,8 +27,10 @@ is done (BC-00..BC-08, 2026-10-02): `altgard-l10` holds the level-24 Cleric aliv
 all nine quests complete. Q2900 is completed in Leg 11 below; end-of-area acceptance follows later.
 [Leg 11: No Escaping Destiny](#leg-11-no-escaping-destiny-and-the-altgard-endpoint-level-24--proposal)
 is done (ND-00..ND-08, 2026-10-03): `altgard-l11` holds the relog-verified level-24 Cleric alive and bound
-at the fortress, Q2900 complete, 144 completed journals and the stigma reward bundle sealed. Continuous
-full-area SIM and isolated LIVE acceptance are the later handoff below.
+at the fortress, Q2900 complete, 144 completed journals and the stigma reward bundle sealed.
+The operator's 2026-10-03 next request is [coin gear preparation](natural-altgard-coin-gear.md)
+(CG-00..CG-06), then [Leg 12: Haramel](natural-altgard-haramel.md) (HM-00..HM-08).
+Both are planned and unchecked. Full-area SIM and isolated LIVE acceptance follow those checkpoints.
 
 ## Goal
 
@@ -3902,13 +3904,32 @@ records the map, instance, full quest var, temporary item/skill, fees and outcom
 setup, and the recovery journey itself uses ordinary packets. Keep existing revive/progress/approach
 limits. ND-05 then proves the normal-HP fight; ND-06 runs the natural character only after these proofs.
 
-### End-of-area acceptance after ND-08
+### Coin gear preparation and Leg 12: Haramel (planned 2026-10-03)
 
-One complete SIM Altgard journey must then play **l1 through l11 in order from the original level-10
+The operator requested Q2293 at the Heart while bound there, the better-tier coin chain gear and
+weapon, then the quests for Haramel and the dungeon as **Leg 12**. This narrowly authorizes the
+audited coin gear purchases; other shopping and permanent stigma selection remain excluded.
+
+The [coin plan](natural-altgard-coin-gear.md) audits the saved **18 Iron Coins** against eighteen
+completed quest rewards. Lohaban's available rare chain set, mace and scale shield cost **12**;
+**zero funding repeats** are needed. Recommend one natural Q2293 completion for coverage, leaving
+**11 Iron Coins** after purchase. There is no higher-priced Heart chain tier in shipped data and no
+coin helmet/accessories there. The existing level-21 staff is a stronger damage weapon than the
+level-16 coin staff; keep it as backup when equipping the defensive mace/shield loadout.
+
+The [Haramel plan](natural-altgard-haramel.md) covers eleven active Asmodian quests once, including
+the outside lead-in and four quests that unlock after Q28507. Plan two fresh clears, ordinary empty
+instance expiry, all floors/lift/objects, the 65-kill packed counter and Cleric boss chest. Its incoming
+snapshot will be `altgard-coingear`; its final snapshot will be `altgard-l12`, alive/bound at the fortress.
+CG-00..CG-06 then HM-00..HM-08 form one goal; stop at HM-08 or when nothing is unblocked.
+
+### End-of-area acceptance after HM-08
+
+One complete SIM Altgard journey must then play **l1 through l11, cg and l12 in order from the original level-10
 `altgard` snapshot**, retaining one character, database, clock, journals and aggregate outcomes between
 legs. A chain of endpoint snapshots is development evidence, not that full-area acceptance. Establish
 the orchestration as its own item first; validate every hub flight, bind, timed quest, escort, city errand,
-pillar flight, Bregirun and Space of Destiny transition without administrative progress. Retain all
+pillar flight, coin repeat/purchases, Bregirun, Space of Destiny and both Haramel visits without administrative progress. Retain all
 failures and the first complete passing run; preserve the existing limits rather than resetting counters
 to hide an exhausted recovery. Do not run builds while its DLLs are held.
 
@@ -3916,14 +3937,16 @@ Then run the area **once on an owned isolated LIVE stack**, starting with a copy
 NA-27 level-10 Altgard LIVE endpoint (`run/na27-live/na27-live-a3/altgard-live-dump.sql.gz`), not importing
 the SIM character. Verify source ownership/identity and keep the original dump and world untouched.
 The existing shared SIM/LIVE session must support every new map, stigma action and reset before launch;
-keep the read-only monitor running and announce its URL. No operator `aion` stack, GM progression, gear
-or skill-book purchases. Stop at the same relog-verified fortress endpoint and retain its LIVE evidence
+keep the read-only monitor running and announce its URL. No operator `aion` stack or GM progression;
+gear purchases are limited to the approved coin manifest, and skill-book purchases remain excluded.
+Stop at the same relog-verified fortress endpoint and retain its LIVE evidence
 and snapshot. These acceptance items need their own concrete run plan after the SIM implementation is
 committed; this planning request does not launch either run.
 
-Gathering AL-3, Q2147/coin loops, unapproved D32 quests, a capital quest sweep, permanent stigma selection,
-Morheim and Abyss entry stay outside this completion leg. No operator decision blocks the proposed Q2900
-scope; a shared Java/retail defect discovered by a probe is recorded for a separate decision before correction.
+Gathering AL-3, Q2147, coin loops beyond CG's selected limit, unapproved D32 quests, a capital quest sweep,
+permanent stigma selection, Morheim and Abyss entry remain outside this completion scope. The old
+Q2293 exclusion below Stop 12 described the original leveling list; the new request adds only the
+coin preparation above. Record a shared Java/retail defect for a separate decision before correction.
 
 ## Blocked / questions for the operator
 
@@ -4396,3 +4419,4 @@ The original questions follow.
 - 2026-10-03 ND-06: natural l11 smoke passes once from altgard-l10; normal Hellion kill in 12.021 seconds, nine distinct kills, no deaths/retreats, real hub flight and movie/socket/reward/Return, 144 completed journals and fortress endpoint relog. Tutorial stigma removed, regular skills preserved, reward bundle sealed. Build, 81 scoped cases, seven pre-commit checks and Fast (76 passed/four switch skips/all eleven scenarios) pass; owned schema dropped. Snapshot is next.
 - 2026-10-03 ND-07: altgard-l11 captured from committed e23d5a511, hash-checked and restored through actual endpoint relog; Cleric 24 alive at fortress bind, Q2900/all prior quests complete, 144 journals, sealed bundle, no temporary stigma/legacy item, ordinary skills preserved and 536,193 Kinah. Both owned schemas dropped; PowerShell parse and pre-commit checks pass. Full checklist is next.
 - 2026-10-03 ND-08: all 33 CLAUDE commands pass on 7f3289b4f; solution 5,144 passed/105 skips, final Fast 76 passed/four switch skips/all eleven scenarios, seven baked maps valid. Launcher diagnostic retained with its correction; committed altgard-l11 capture/hash/SQL/endpoint relog remain verified, owned schemas dropped. Leg 11 done; stop at this checkpoint. Continuous full-area SIM, isolated LIVE and permanent stigma choice remain later work. No push.
+- 2026-10-03 coin/Haramel plan: the operator requested Q2293/better coin chain gear before Haramel as Leg 12. Verified altgard-l11 holds 18 Iron Coins from eighteen prior rewards; the seven-item rare Cleric chain/mace/scale-shield manifest costs 12 in all seven catalogues, zero funding repeats, recommended one quest completion leaves 11. CG-00..CG-06 and HM-00..HM-08 are planned and unchecked; Haramel covers eleven active quests in two fresh clears, 65 packed kills, lift/class chest/ordinary expiry, then fortress endpoint. Machine audit and seven pre-commit checks pass (`run/cg-hm-plan`); the shared-build collision and sequential retry are retained. No natural run or push.
