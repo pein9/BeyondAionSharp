@@ -3492,8 +3492,20 @@ Gathering, coin loops and unapproved D32 quests stay deferred.
     changes or natural-character setup. Every owned smoke schema is dropped. Forty-one scoped cases pass
     (`run/bc06-contract-final.log`), all pre-commit checks pass (`run/bc06-checks`), and `bc06-fast` passes
     72 tests, three switch skips and all eleven scenarios.
-- [ ] **BC-07 — Snapshot.** Enable `-Leg l10`, commit before capture, then capture `altgard-l10` from `altgard-l9`.
+- [x] **BC-07 — Snapshot.** Enable `-Leg l10`, commit before capture, then capture `altgard-l10` from `altgard-l9`.
   Verify hash, relog endpoint and owned restore; drop both schemas. Depends: BC-06.
+  - *Done 2026-10-02.* From BC-06's `55f1a9d0d`, snapshot support was committed as
+    `6986e3539b70a2dea518072cf05b65f6807b7950` before `bc07-capture`, seed 1, played from `altgard-l9`.
+    The relog-verified `altgard-l10` endpoint is character 133297, Cleric 24, EXP 6,136,722, alive at
+    (1658.57, 1818.39, 253.72), HP/MP/FP 1,817/2,949/60; fortress bind (1660.43, 1813.49, 253.726),
+    495,028 Kinah, 63-slot cube and 143 completed journal entries. All nine quests COMPLETE, collection/work
+    items absent, Q2900 START/0 and no held quests. Three deaths/eight retreat choices remain recorded outcomes.
+  - Capture UTC `2026-10-03T02:08:57.8037837Z`, elapsed 66,040,001 ms. SHA256
+    `e8a5b75b92b03ca4fffe5dd42b17cf0382fc51b005944f2b5a37cd0ced832d16` matches the dump and passes restore;
+    resume clock 66,060,001 ms. The owned restore's SQL state and an actual endpoint relog both pass
+    (`run/bc07-restore-state.tsv`, `run/bc07-restore-relog`). Capture and restore schemas are dropped, verified
+    by read-only schema queries. Pre-commit checks pass (`run/bc07-checks`, `run/bc07-evidence-checks`);
+    this evidence amendment changes only the document, preserving the captured code.
 - [ ] **BC-08 — Full CLAUDE checklist and checkpoint.** Every listed command with retained evidence and
   corrections; tick, commit on main and stop. Q2900 and end-of-area LIVE follow later. Depends: BC-07.
 
@@ -3929,3 +3941,4 @@ The original questions follow.
 - 2026-10-02 BC-04: all three campaigns, gated/consumed Orb, natural unlock, real portals/guardian/boss/movies and ordinary self-revival/exit/re-entry pass on free account 215; bind-route boundary and assertion drafts retained, pre-commit checks pass. Learned Hand of Reincarnation protects Bregirun attempts; no server changes. Combat is next.
 - 2026-10-02 BC-05: thirteen level-22 combat stages record 19 distinct kills, no deaths/retreats on free account 216; learned 21–22 ranks/Divine Spark added after Java audit, seventeen policy tests and final encounter pass; reserve-assertion draft retained, Fast and pre-commit checks pass. Natural runner is next.
 - 2026-10-02 BC-06: natural l10 smoke and relog from altgard-l9 complete all nine quests at Cleric 24, alive/bound at fortress, work items consumed and Q2900 START/0; 185 distinct kills, three deaths/eight retreat choices, three hub/two pillar flights and real city/Bregirun trips. Fifteen failed/eight stopped drafts retained; 41 scoped cases, pre-commit checks and Fast pass, owned schemas dropped. Snapshot is next.
+- 2026-10-02 BC-07: altgard-l10 captured from committed 6986e3539, hash-checked and restored through an actual endpoint relog; Cleric 24 alive at fortress bind, all nine quests complete, work items absent, 495,028 Kinah and Q2900 START/0. Both owned schemas dropped; pre-commit checks pass. Full checklist is next.
