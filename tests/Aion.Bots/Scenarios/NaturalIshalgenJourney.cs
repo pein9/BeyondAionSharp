@@ -166,7 +166,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			string? altgardLegId = options.AltgardLegId ?? (options.AltgardLeg1 ? "l1" : null);
 			NaturalAltgardContract? altgardLeg = altgardLegId is { } legId ? NaturalAltgardContract.LoadLeg(legId) : null;
 			coinGearProgress = altgardLeg?.CoinGear == null ? null : NaturalCoinGearProgress.Empty;
-			if (options.CoinGearReceiptPath is { } receiptPath)
+			if (options.CoinGearReceiptPath is { Length: > 0 } receiptPath)
 			{
 				NaturalCoinGear gear = altgardLeg?.CoinGear ?? throw new InvalidDataException("Coin receipts require the CG leg.");
 				coinGearProgress = NaturalCoinGearProgress.ReadVerifiedEndpoint(receiptPath, session.CharacterId, gear,

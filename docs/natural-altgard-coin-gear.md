@@ -277,6 +277,12 @@ plus `run-fast.ps1` before gameplay-change commits. Retain failures; do not reru
     receipt settings. Eight focused contract tests, seven prechecks and `cg05-fast` pass (78 tests,
     four explicit skips, 11/11 scenarios). Evidence: `run/cg05-support/`, base `c904afd75`.
     Commit this support before capture; CG-05 remains unchecked until hash/SQL/restore/relog proof.
+  - 2026-10-03 capture draft: `cg05-capture` on committed `4bb64981b` failed at receipt loading
+    before natural actions because the cleared environment option arrived as an empty string.
+    Ignore the empty optional path just as the existing selectors do. Failure log/trace/package
+    remain in `run/snapshots/_capture/cg05-capture/`; no snapshot was created and the owned schema
+    was dropped in finally. All seven fresh prechecks and `cg05-fast-a2` pass (78 tests,
+    four explicit skips, 11/11 scenarios); commit the correction before the capture retry.
 - [ ] **CG-06 — Preparation checkpoint.** Depends: CG-05. Reconcile evidence, chosen tier, journal,
   coins, actual equipped slots, unchanged staff, retained cloth gloves, protected stigma bundle and outcomes.
   Mark only demonstrated objectives complete; commit the handoff to HM-00. The combined goal
@@ -300,6 +306,9 @@ not permission to invent higher equipment. Record any new shared defect or unsup
 
 ## Progress log
 
+- 2026-10-03 CG-05 correction: the first committed capture exposed the empty optional environment
+  path at login, before any hunt or transaction. The guard now ignores an empty option; seven fresh
+  prechecks and Fast pass. Original evidence and cleanup retained; committed capture retry is next.
 - 2026-10-03 CG-05 support: verified-endpoint receipt loading passes identity/inventory/count refusal
   cases, eight focused tests, seven prechecks and Fast. Commit support before natural capture;
   the snapshot, owned SQL audit and actual restore/relog are still pending.
