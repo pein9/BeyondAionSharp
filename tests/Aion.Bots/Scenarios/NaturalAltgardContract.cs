@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Aion.Bots.World;
 
 namespace Aion.Bots.Scenarios;
 
@@ -47,7 +48,8 @@ public sealed record NaturalAltgardContract(
 	NaturalAltgardCubeExpansion? CubeExpansion = null,
 	NaturalAltgardMapTrip[]? MapTrips = null,
 	NaturalAltgardPillarFlight? PillarFlight = null,
-	NaturalAltgardInstanceTrip[]? InstanceTrips = null)
+	NaturalAltgardInstanceTrip[]? InstanceTrips = null,
+	NaturalAltgardDestiny? Destiny = null)
 {
 	/// <summary>The contract file and plan directory of each leg (none when the leg has no template quests).</summary>
 	public static readonly IReadOnlyDictionary<string, (string Contract, string? Plans)> Legs = new Dictionary<string, (string, string?)>
@@ -62,6 +64,7 @@ public sealed record NaturalAltgardContract(
 		["l8"] = ("natural-altgard-l8-contract.json", "natural-altgard-l8-plans"),
 		["l9"] = ("natural-altgard-l9-contract.json", "natural-altgard-l9-plans"),
 		["l10"] = ("natural-altgard-l10-contract.json", "natural-altgard-l10-plans"),
+		["l11"] = ("natural-altgard-l11-contract.json", null),
 	};
 
 	public NaturalAltgardObjectUse[] ObjectUseList => ObjectUses ?? [];
@@ -78,6 +81,8 @@ public sealed record NaturalAltgardContract(
 	public NaturalAltgardMapTrip[] MapTripList => MapTrips ?? [];
 	public NaturalAltgardInstanceTrip[] InstanceTripList => InstanceTrips ?? [];
 	public int StepMap(NaturalAltgardStep step) => step.MapId ?? Hub.MapId;
+	// SM_QUEST_LIST/SM_QUEST_ACTION reserve the high byte for flags, separate from the quest's full value.
+	public int QuestVar(BotQuestState quest) => Destiny?.QuestId == quest.QuestId ? quest.StepAndFlags & 0xFFFFFF : quest.StepAndFlags & 0x3F;
 	/// <summary>Every chosen reward of the leg: the campaign's (<see cref="RewardChoice"/>) and the others'.</summary>
 	public NaturalAltgardRewardChoice[] RewardChoiceList => [.. RewardChoice is { } choice ? [choice] : Array.Empty<NaturalAltgardRewardChoice>(), .. RewardChoices ?? []];
 
@@ -114,7 +119,8 @@ public sealed record NaturalAltgardContract(
 		foreach (NaturalAltgardStep step in contract.Steps)
 		{
 			if (contract.StepMap(step) != contract.Hub.MapId && !contract.MapTripList.Any(trip => trip.MapId == contract.StepMap(step)) &&
-				!contract.InstanceTripList.Any(trip => trip.MapId == contract.StepMap(step)))
+				!contract.InstanceTripList.Any(trip => trip.MapId == contract.StepMap(step)) &&
+				contract.Destiny?.AllowedMaps.Contains(contract.StepMap(step)) != true)
 				throw new InvalidDataException($"Natural Altgard step {step.Key} has no trip to its map.");
 			if (step.ExpectedStatus is not ("OFFER" or "START" or "REWARD"))
 				throw new InvalidDataException($"Natural Altgard step {step.Key} has an unknown status.");
@@ -169,6 +175,13 @@ public sealed record NaturalAltgardContract(
 		int[] otherMaps = contract.HuntList.Select(hunt => hunt.MapId).Concat(contract.ObjectUseList.Select(use => use.MapId)).OfType<int>().ToArray();
 		if (otherMaps.Any(map => map != contract.Hub.MapId && !contract.InstanceTripList.Any(trip => trip.MapId == map)))
 			throw new InvalidDataException("A hunt or object use has no instance trip to its map.");
+		if (contract.Destiny is { } destiny && (contract.Leg != "l11" || destiny.QuestId != 2900 || destiny.MapId != 320070000 ||
+			!questIds.Contains(destiny.QuestId) || destiny.AllowedMaps.Distinct().Count() != 4 ||
+			!destiny.AllowedMaps.Contains(contract.Hub.MapId) || !destiny.AllowedMaps.Contains(destiny.MapId) ||
+			destiny.Arrival.Length != 3 || destiny.EnemyPosition.Length != 3 || destiny.KillTeleport.Position.Length != 3 || destiny.LifetimeSeconds <= 0 ||
+			!stepKeys.Contains(destiny.SpawnStep) || contract.Steps.Any(step => step.QuestId == destiny.QuestId &&
+				step.ExpectedStatus == "START" && step.NextVar == null)))
+			throw new InvalidDataException("The Destiny campaign needs four maps and explicit full-var transitions.");
 		return contract;
 	}
 
@@ -204,6 +217,7 @@ public sealed record NaturalAltgardContract(
 			.Concat(CubeExpansion is { } cube ? [cube.TeleporterNpcId] : [])
 			.Concat(MapTripList.Select(trip => trip.TeleporterNpcId))
 			.Concat(InstanceTripList.SelectMany(trip => new[] { trip.PortalNpcId, trip.ExitNpcId, trip.BossNpcId }))
+			.Concat(Destiny is { } destiny ? [destiny.EnemyNpcId, 203545, 203513] : [])
 			.Concat(Bind is { } bind ? [bind.NpcId] : [])
 			.Concat(CollectionList.SelectMany(collection => collection.Items.SelectMany(item => item.SourceNpcIds)))
 			.Append(Start.BindNpcId).Concat(AirKills is { } air ? [air.NpcId] : [])
@@ -239,13 +253,22 @@ public sealed record NaturalAltgardQuest(int Id, string Category, int MinimumLev
 /// <summary>One scripted dialog step. <c>OFFER</c> is a quest the player has not taken yet.</summary>
 public sealed record NaturalAltgardStep(string Key, int QuestId, int? Var, string? Status, int NpcId, float[] Position,
 	int TalkRange, string[] Actions, int[] Pages, int? MovieId, int? ReceivesItemId, string? Area, bool Flight, string? Correction,
-	int? MapId = null, NaturalAscensionTeleport? Teleport = null)
+	int? MapId = null, NaturalAscensionTeleport? Teleport = null, int? NextVar = null)
 {
 	public string ExpectedStatus => Status ?? "START";
 }
 
 /// <summary>AE-00: a quest trip from the hub map by teleporter; Return brings the Cleric back to its hub bind.</summary>
-public sealed record NaturalAltgardMapTrip(int MapId, int TeleporterNpcId, int LocationId, int Fare, float TalkRange);
+public sealed record NaturalAltgardMapTrip(int MapId, int TeleporterNpcId, int LocationId, int Fare, float TalkRange,
+	int? FromMapId = null);
+
+/// <summary>ND-01: Q2900's full-variable solo campaign, actual temporary stigma and five-minute enemy.
+/// Entry and exits are quest events, rather than a portal or an ordered kill counter.</summary>
+public sealed record NaturalAltgardDestiny(int QuestId, int MapId, int[] AllowedMaps, float[] Arrival,
+	int MovieId, int StoneItemId, int StigmaSkillId, long StigmaSlot, int InstallationBaseFee,
+	string SpawnStep, int EnemyNpcId, int EnemyHp, float[] EnemyPosition, int FightVar, int KillVar,
+	int LifetimeSeconds, int ResetVar, int RewardBundleId, int LegacyRewardId, int FreeSlotReserve,
+	NaturalAscensionTeleport KillTeleport);
 
 /// <summary>BC-01: an ordinary solo quest portal, its instance branch and recovery/exit facts from Java and shipped data.</summary>
 public sealed record NaturalAltgardInstanceTrip(int QuestId, int MapId, int FromVar, int EnterVar, int PortalNpcId,

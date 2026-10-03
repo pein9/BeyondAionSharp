@@ -12,7 +12,8 @@ namespace Aion.Bots.Scenarios;
 public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, int Level, bool IsDead,
 	IReadOnlyDictionary<int, BotQuestState> Quests, IReadOnlySet<int> CompletedQuestIds, BotPosition Position,
 	IReadOnlyDictionary<int, long> ItemCounts, BotBindPoint? Bind = null, long? GameMinutes = null, IReadOnlySet<int>? VisibleNpcIds = null,
-	int? FreeCubeSlots = null, long Kinah = 0, int? CubeNpcExpansions = null, bool CanRebirth = false)
+	int? FreeCubeSlots = null, long Kinah = 0, int? CubeNpcExpansions = null, bool CanRebirth = false,
+	IReadOnlySet<int>? SkillIds = null)
 {
 	public static NaturalAltgardObservation Observe(BotWorldModel world, BotPosition position, DateTimeOffset? now = null, int? freeCubeSlots = null) =>
 		new(world.LoginStateObserved && world.QuestJournalObserved && world.CompletedJournalObserved, world.MapId, world.Level,
@@ -21,7 +22,7 @@ public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, in
 			world.ObeliskBindPoint, now is DateTimeOffset at ? world.GameMinutesAt(at) : world.GameMinutes,
 			world.Objects.Values.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId != null)
 				.Select(known => known.TemplateId!.Value).ToHashSet(), freeCubeSlots, world.Kinah, world.CubeExpansion?.Npc,
-			world.ReviveOptions?.BySkill == true);
+			world.ReviveOptions?.BySkill == true, world.Skills.Keys.ToHashSet());
 }
 
 /// <summary>One independent kill counter in a template quest's compiled plan.</summary>
@@ -95,6 +96,7 @@ public static class NaturalAltgardDecisionEngine
 		NaturalAltgardDecision Plan(string action, int? questId, string reason, string? stepKey = null)
 		{
 			int map = action == "talk" && stepKey != null ? contract.StepMap(contract.Steps.Single(step => step.Key == stepKey))
+				: action is "equip-stigma" or "destiny-fight" ? contract.Destiny!.MapId
 				: action == "template-claim" && questId is int id ? objectives.GetValueOrDefault(id)?.ClaimMapId ?? contract.Hub.MapId
 				: action is "enter-instance" or "leave-instance" ? contract.InstanceTripList.Single(trip => trip.QuestId == questId).MapId
 				: action == "revive-in-place" ? state.MapId!.Value
@@ -102,7 +104,7 @@ public static class NaturalAltgardDecisionEngine
 				: action == "hunt" ? contract.HuntList.First(hunt => hunt.QuestId == questId &&
 					Var(questId!.Value) >= hunt.FromVar && Var(questId.Value) < hunt.ToVar).MapId ?? contract.Hub.MapId
 				: contract.Hub.MapId;
-			return new(sequence, state.MapId != map && action is not ("revive-at-bind" or "revive-in-place" or "enter-instance") ? "travel-to-map" : action,
+			return new(sequence, state.MapId != map && action is not ("revive-at-bind" or "revive-in-place" or "enter-instance" or "recover-destiny") ? "travel-to-map" : action,
 				stepKey, questId, "planned", reason, [.. checks], map);
 		}
 		NaturalAltgardDecision Stop(string action, string outcome, string reason, int? questId = null) =>
@@ -111,11 +113,12 @@ public static class NaturalAltgardDecisionEngine
 		if (!state.Synchronized || state.MapId == null)
 			return Stop("refresh-observation", "planned", "Wait for a synchronized client view.");
 		if (state.IsDead)
-			return state.CanRebirth && contract.InstanceTripList.Any(trip => trip.MapId == state.MapId)
+			return contract.Destiny == null && state.CanRebirth && contract.InstanceTripList.Any(trip => trip.MapId == state.MapId)
 				? Plan("revive-in-place", null, "Dead in the quest instance: accept the client's learned self-revival option.")
 				: Plan("revive-at-bind", null, "Dead: revive at the working hub's obelisk.");
 		bool offHub = state.MapId != contract.Hub.MapId;
-		if (offHub && !contract.MapTripList.Any(trip => trip.MapId == state.MapId) && !contract.InstanceTripList.Any(trip => trip.MapId == state.MapId))
+		if (offHub && !contract.MapTripList.Any(trip => trip.MapId == state.MapId) && !contract.InstanceTripList.Any(trip => trip.MapId == state.MapId) &&
+			contract.Destiny?.AllowedMaps.Contains(state.MapId.Value) != true)
 			return Stop("wrong-map", "blocked", $"{contract.Leg} is on map {contract.Hub.MapId}; the Cleric is on {state.MapId}.");
 		// AB-08, the standing bind policy (AB-Q5): bind at the hub's obelisk first.
 		if (!offHub && contract.Bind is { OnArrival: true } bind && !BoundAt(bind, contract.Hub.MapId, state.Bind))
@@ -141,7 +144,8 @@ public static class NaturalAltgardDecisionEngine
 		}
 
 		// AK-08: a cube too full to take a loot (Java refuses it with STR_MSG_DICE_INVEN_ERROR) is emptied at the town's merchant.
-		if (!offHub && contract.Town?.VendorNpcId is int vendor && state.FreeCubeSlots is int free && free < NaturalInventoryPlan.QuestFreeSlotReserve)
+		if (!offHub && contract.Town?.VendorNpcId is int vendor && state.FreeCubeSlots is int free &&
+			free < (contract.Destiny?.FreeSlotReserve ?? NaturalInventoryPlan.QuestFreeSlotReserve))
 			return Plan("town-service", null, $"The cube has {free} free slots: sell the surplus at {vendor} in {contract.Town.Key}.");
 
 		NaturalAltgardQuest[] open = contract.Order.Select(contract.Quest)
@@ -236,6 +240,20 @@ public static class NaturalAltgardDecisionEngine
 					: Plan("talk", quest.Id, $"Q{quest.Id}: claim the reward.", claim.Key);
 			}
 			int var = Var(quest.Id);
+			if (contract.Destiny is { } destiny && quest.Id == destiny.QuestId)
+			{
+				if (state.MapId == destiny.MapId && var == destiny.ResetVar ||
+					state.MapId != destiny.MapId && var is >= 95 and <= 99)
+					return Plan("recover-destiny", quest.Id, "Leave the lost attempt through learned Return and observe the outside reset before a new Skuld entry.");
+				if (var == 96 && state.ItemCounts.GetValueOrDefault(destiny.StoneItemId) > 0)
+					return Plan("recover-destiny", quest.Id, "The tutorial stone is already owned: recover rather than repeating Java's unguarded item-give request.");
+				if (var == 99)
+					return state.ItemCounts.GetValueOrDefault(destiny.StoneItemId) == 1
+						? Plan("equip-stigma", quest.Id, "Open Skuld's stigma service and equip the actual tutorial stone once.", "q2900-equip")
+						: Plan("recover-destiny", quest.Id, "The equip state needs exactly one observed tutorial stone; recover the attempt.");
+				if (var == destiny.FightVar)
+					return Plan("destiny-fight", quest.Id, "Fight the current timed Hellion; a lost window requires ordinary outside recovery.");
+			}
 			if (contract.InstanceTripList.Any(trip => trip.QuestId == quest.Id && var == trip.ResetVar && state.MapId == trip.MapId))
 				return Plan("leave-instance", quest.Id, $"Q{quest.Id} reset to var {var}: leave through Dimension Exit before re-entry.");
 			if (contract.InstanceTripList.Any(trip => trip.QuestId == quest.Id && var == trip.FromVar && state.MapId != trip.MapId))
@@ -297,6 +315,15 @@ public static class NaturalAltgardDecisionEngine
 			checks.Add(new("only", "pass", $"The chosen quests {string.Join(", ", only)} are done."));
 			return Stop("only-complete", "complete", "The chosen quests are done (a limited run).");
 		}
+		if (contract.Destiny is { } finished)
+		{
+			if (contract.Start.CompletedQuestIds.Any(id => !state.CompletedQuestIds.Contains(id)))
+				return Stop("lost-journal", "blocked", "An incoming completed quest is missing at the Destiny endpoint.");
+			if (state.ItemCounts.GetValueOrDefault(finished.StoneItemId) != 0 || state.SkillIds?.Contains(finished.StigmaSkillId) == true)
+				return Stop("stigma-cleanup", "blocked", "The temporary tutorial stone or skill remains after the instance exit.");
+			if (state.ItemCounts.GetValueOrDefault(finished.RewardBundleId) < 1 || state.ItemCounts.GetValueOrDefault(finished.LegacyRewardId) < 1)
+				return Stop("missing-reward", "blocked", "Retain the sealed stigma bundle and the legacy class reward at the endpoint.");
+		}
 
 		// The endpoint: every quest of the leg done, alive, where the leg ends (its own anchor, else the hub).
 		float[] anchor = contract.Endpoint.Anchor ?? contract.Hub.Anchor;
@@ -312,7 +339,7 @@ public static class NaturalAltgardDecisionEngine
 		bool LootCollected(NaturalAltgardObjectUse use) => use.LootItemId is int loot && contract.CollectionList.Any(collection =>
 			collection.QuestId == use.QuestId && collection.Items.Any(item => item.ItemId == loot && state.ItemCounts.GetValueOrDefault(loot) >= item.Count));
 		byte? Status(int questId) => state.Quests.TryGetValue(questId, out BotQuestState? quest) ? quest.Status : null;
-		int Var(int questId) => state.Quests.TryGetValue(questId, out BotQuestState? quest) ? quest.StepAndFlags & 0x3F : 0;
+		int Var(int questId) => state.Quests.TryGetValue(questId, out BotQuestState? quest) ? contract.QuestVar(quest) : 0;
 		bool Eligible(NaturalAltgardQuest quest)
 		{
 			if (state.Level < quest.MinimumLevel)

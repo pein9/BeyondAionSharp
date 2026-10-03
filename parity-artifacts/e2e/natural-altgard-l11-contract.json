@@ -1,0 +1,609 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "leg": "l11",
+  "start": {
+    "contract": "natural-altgard-l10-contract.json",
+    "snapshot": "altgard-l10",
+    "mapId": 220030000,
+    "race": "ASMODIANS",
+    "class": "CLERIC",
+    "level": 24,
+    "bindNpcId": 700065,
+    "completedQuestIds": [
+      2000,
+      2001,
+      2002,
+      2003,
+      2004,
+      2005,
+      2006,
+      2007,
+      2008,
+      2009,
+      2100,
+      2101,
+      2102,
+      2103,
+      2104,
+      2105,
+      2106,
+      2108,
+      2109,
+      2110,
+      2112,
+      2113,
+      2114,
+      2115,
+      2116,
+      2117,
+      2118,
+      2119,
+      2120,
+      2121,
+      2123,
+      2124,
+      2125,
+      2126,
+      2127,
+      2128,
+      2129,
+      2131,
+      2132,
+      2133,
+      2134,
+      2135,
+      2137,
+      2146,
+      2201,
+      2202,
+      2203,
+      2204,
+      2205,
+      2206,
+      2207,
+      2208,
+      2209,
+      2210,
+      2211,
+      2212,
+      2213,
+      2214,
+      2215,
+      2218,
+      2219,
+      2220,
+      2221,
+      2222,
+      2223,
+      2224,
+      2225,
+      2226,
+      2227,
+      2230,
+      2231,
+      2232,
+      2233,
+      2234,
+      2235,
+      2236,
+      2237,
+      2238,
+      2239,
+      2241,
+      2242,
+      2243,
+      2244,
+      2245,
+      2246,
+      2247,
+      2248,
+      2249,
+      2251,
+      2252,
+      2253,
+      2254,
+      2255,
+      2256,
+      2257,
+      2258,
+      2259,
+      2260,
+      2261,
+      2262,
+      2263,
+      2264,
+      2265,
+      2266,
+      2267,
+      2268,
+      2269,
+      2270,
+      2271,
+      2272,
+      2273,
+      2277,
+      2278,
+      2279,
+      2280,
+      2281,
+      2282,
+      2283,
+      2284,
+      2286,
+      2287,
+      2288,
+      2289,
+      2290,
+      2291,
+      2292,
+      2904,
+      24010,
+      24011,
+      24012,
+      24013,
+      24014,
+      24015,
+      24016,
+      24110,
+      24111,
+      24112,
+      24113,
+      24115,
+      24230,
+      24231,
+      24232,
+      24233
+    ],
+    "lockedQuestIds": [],
+    "startedQuestIds": [
+      2900
+    ]
+  },
+  "hub": {
+    "key": "fortress",
+    "mapId": 220030000,
+    "anchor": [
+      1658.44,
+      1815.301,
+      254.099
+    ],
+    "radius": 160
+  },
+  "town": {
+    "key": "fortress",
+    "mapId": 220030000,
+    "anchor": [
+      1658.44,
+      1815.301,
+      254.099
+    ],
+    "radius": 160,
+    "vendorNpcId": 203579
+  },
+  "bind": {
+    "npcId": 700065,
+    "position": [
+      1658.44,
+      1815.301,
+      254.099
+    ],
+    "onArrival": true,
+    "price": 451,
+    "acceptRange": 5
+  },
+  "areas": [
+    {
+      "key": "destiny",
+      "note": "Space of Destiny solo platform",
+      "min": [
+        240,
+        230,
+        120
+      ],
+      "max": [
+        280,
+        270,
+        130
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": 2900,
+      "category": "MISSION",
+      "minimumLevel": 20,
+      "rewardExperience": 228880,
+      "handler": "_2900NoEscapingDestiny"
+    }
+  ],
+  "order": [
+    2900
+  ],
+  "steps": [
+    {
+      "key": "q2900-heimdall",
+      "questId": 2900,
+      "var": 0,
+      "npcId": 204182,
+      "position": [
+        1614,
+        1397.96,
+        193.127
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO1"
+      ],
+      "pages": [
+        1011
+      ],
+      "mapId": 120010000,
+      "nextVar": 1,
+      "teleport": {
+        "mapId": 220010000,
+        "position": [
+          389,
+          1896,
+          327.5
+        ]
+      }
+    },
+    {
+      "key": "q2900-munin",
+      "questId": 2900,
+      "var": 1,
+      "npcId": 203550,
+      "position": [
+        378.74,
+        1895.46,
+        328.838
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO2"
+      ],
+      "pages": [
+        1352
+      ],
+      "mapId": 220010000,
+      "nextVar": 2
+    },
+    {
+      "key": "q2900-urd",
+      "questId": 2900,
+      "var": 2,
+      "npcId": 790003,
+      "position": [
+        587.621,
+        2412.88,
+        278.557
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO3"
+      ],
+      "pages": [
+        1693
+      ],
+      "mapId": 220010000,
+      "nextVar": 3
+    },
+    {
+      "key": "q2900-verdandi",
+      "questId": 2900,
+      "var": 3,
+      "npcId": 790002,
+      "position": [
+        938,
+        2298,
+        266.125
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO4"
+      ],
+      "pages": [
+        2034
+      ],
+      "mapId": 220010000,
+      "nextVar": 4
+    },
+    {
+      "key": "q2900-enter",
+      "questId": 2900,
+      "var": 4,
+      "npcId": 203546,
+      "position": [
+        1114.31,
+        1718.32,
+        271.179
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO5"
+      ],
+      "pages": [
+        2375
+      ],
+      "mapId": 220010000,
+      "nextVar": 95,
+      "teleport": {
+        "mapId": 320070000,
+        "position": [
+          270.8424,
+          249.1182,
+          125.8369
+        ]
+      }
+    },
+    {
+      "key": "q2900-movie",
+      "questId": 2900,
+      "var": 95,
+      "npcId": 204264,
+      "position": [
+        245.815,
+        248.099,
+        125.837
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO6"
+      ],
+      "pages": [
+        2716
+      ],
+      "mapId": 320070000,
+      "nextVar": 96,
+      "movieId": 156
+    },
+    {
+      "key": "q2900-stone",
+      "questId": 2900,
+      "var": 96,
+      "npcId": 204264,
+      "position": [
+        245.815,
+        248.099,
+        125.837
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SELECT7_1"
+      ],
+      "pages": [
+        3057,
+        3058
+      ],
+      "mapId": 320070000,
+      "nextVar": 99,
+      "receivesItemId": 140000001
+    },
+    {
+      "key": "q2900-equip",
+      "questId": 2900,
+      "var": 99,
+      "npcId": 204264,
+      "position": [
+        245.815,
+        248.099,
+        125.837
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO7"
+      ],
+      "pages": [
+        3057,
+        1
+      ],
+      "mapId": 320070000,
+      "nextVar": 97
+    },
+    {
+      "key": "q2900-spawn",
+      "questId": 2900,
+      "var": 97,
+      "npcId": 204264,
+      "position": [
+        245.815,
+        248.099,
+        125.837
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO8"
+      ],
+      "pages": [
+        3398
+      ],
+      "mapId": 320070000,
+      "nextVar": 98
+    },
+    {
+      "key": "q2900-skuld-return",
+      "questId": 2900,
+      "var": 9,
+      "npcId": 203546,
+      "position": [
+        1114.31,
+        1718.32,
+        271.179
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO9"
+      ],
+      "pages": [
+        3739
+      ],
+      "mapId": 220010000,
+      "nextVar": 10,
+      "teleport": {
+        "mapId": 220010000,
+        "position": [
+          383,
+          1896,
+          327.625
+        ]
+      }
+    },
+    {
+      "key": "q2900-munin-return",
+      "questId": 2900,
+      "var": 10,
+      "npcId": 203550,
+      "position": [
+        378.74,
+        1895.46,
+        328.838
+      ],
+      "talkRange": 6,
+      "actions": [
+        "QUEST_SELECT",
+        "SETPRO10"
+      ],
+      "pages": [
+        4080
+      ],
+      "mapId": 220010000,
+      "nextVar": 10,
+      "teleport": {
+        "mapId": 120010000,
+        "position": [
+          1294.8,
+          1213.8,
+          214.34
+        ]
+      }
+    },
+    {
+      "key": "q2900-reward",
+      "questId": 2900,
+      "var": null,
+      "npcId": 204061,
+      "position": [
+        1294.67,
+        1216.62,
+        214.355
+      ],
+      "talkRange": 6,
+      "actions": [
+        "USE_OBJECT",
+        "SELECTED_QUEST_REWARD1"
+      ],
+      "pages": [
+        5
+      ],
+      "mapId": 120010000,
+      "nextVar": null,
+      "status": "REWARD"
+    }
+  ],
+  "unhandedWorkItemIds": {},
+  "excluded": [],
+  "rewardChoice": {
+    "questId": 2900,
+    "action": "SELECTED_QUEST_REWARD1",
+    "itemId": 140000098,
+    "itemGroup": "STIGMA"
+  },
+  "mapTrips": [
+    {
+      "mapId": 120010000,
+      "fromMapId": 220030000,
+      "teleporterNpcId": 203581,
+      "locationId": 7,
+      "fare": 500,
+      "talkRange": 4
+    },
+    {
+      "mapId": 220010000,
+      "fromMapId": 120010000,
+      "teleporterNpcId": 204191,
+      "locationId": 8,
+      "fare": 100,
+      "talkRange": 4
+    },
+    {
+      "mapId": 220030000,
+      "fromMapId": 120010000,
+      "teleporterNpcId": 204191,
+      "locationId": 9,
+      "fare": 500,
+      "talkRange": 4
+    }
+  ],
+  "destiny": {
+    "questId": 2900,
+    "mapId": 320070000,
+    "allowedMaps": [
+      220030000,
+      120010000,
+      220010000,
+      320070000
+    ],
+    "arrival": [
+      270.8424,
+      249.1182,
+      125.8369
+    ],
+    "movieId": 156,
+    "stoneItemId": 140000001,
+    "stigmaSkillId": 11504,
+    "stigmaSlot": 1073741824,
+    "installationBaseFee": 1000,
+    "spawnStep": "q2900-spawn",
+    "enemyNpcId": 204263,
+    "enemyHp": 3169,
+    "enemyPosition": [
+      257.5,
+      245,
+      125
+    ],
+    "fightVar": 98,
+    "killVar": 9,
+    "lifetimeSeconds": 300,
+    "resetVar": 4,
+    "rewardBundleId": 188053787,
+    "legacyRewardId": 140000098,
+    "freeSlotReserve": 6,
+    "killTeleport": {
+      "mapId": 220010000,
+      "position": [
+        1112.492,
+        1718.974,
+        270.45917
+      ]
+    }
+  },
+  "endpoint": {
+    "mapId": 220030000,
+    "completedQuestIds": [
+      2900
+    ],
+    "inHub": true,
+    "alive": true,
+    "minimumLevel": 24,
+    "snapshot": "altgard-l11",
+    "anchor": [
+      1658.44,
+      1815.301,
+      254.099
+    ],
+    "radius": 60,
+    "bindNpcId": 700065,
+    "heldQuestIds": []
+  }
+}

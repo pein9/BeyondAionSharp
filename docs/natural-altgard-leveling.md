@@ -3670,11 +3670,23 @@ level or an exact fee copied from another service. Capture `altgard-l11` only fr
     No new server-content authority or blocking decision. The first audit assertion used names instead of
     the checkpoint's numeric status/StepAndFlags representation; corrected without changing the dump,
     with the draft retained (`run/nd00-audit-draft.log`). All seven pre-commit checks pass (`run/nd00-checks`).
-- [ ] **ND-01 — Contract and decisions.** Register l11 with Q2900's full vars, four allowed maps, named
+- [x] **ND-01 — Contract and decisions.** Register l11 with Q2900's full vars, four allowed maps, named
   transitions, movie, actual stigma equip event, timed dynamic enemy, cleanup and fortress endpoint.
   Cover late-var and REWARD resumes. Add only narrowly scoped Cleric identity support for the quest instance;
   the current identity rules do not accept 320070000. Preserve Ishalgen/Ascension and l1–l10 decisions.
   Depends: ND-00.
+  - *Done 2026-10-02.* From `588f15ea3`: l11 registers Q2900, all 143 incoming completions, four allowed
+    maps, twelve named dialog/equip steps, four dialog teleports plus the kill teleport, movie 156,
+    actual stigma slot/stone/skill/fee, the five-minute Hellion and fortress/reward/cleanup endpoint.
+    Its full-variable reader strips the wire flag byte; other quests retain six-bit counters. Decisions
+    cover every phase, late-var/REWARD trips, bind death, inside/outside reset and duplicate/missing stone
+    recovery. Space identity requires an explicit l11 scope and a level-20 Cleric; default bridge maps stay
+    unchanged. No server behavior or content changes.
+  - Eighty-one scoped contract/decision/Leg 10/identity cases pass (`run/nd01-contract-final.log`). Two
+    draft assertions counted every teleport as a dialog and expected a different existing return action;
+    corrected with the kill destination explicit, draft retained (`run/nd01-contract.log`). All seven
+    pre-commit checks pass (`run/nd01-checks`); `nd01-fast` passes 72 tests, three switch skips and all eleven
+    scenarios. Actual travel and packet protocol remain ND-02/ND-03's proof.
 - [ ] **ND-02 — Paths and map protocol.** Generate/check in/rebake the Space navmesh from existing inputs;
   prove city approaches, prison/cemetery road, Urd, Verdandi's own talk point, Skuld and all instance ground.
   Actually fly Anturoon→Aldelle and recovery Aldelle→Anturoon. Prove Ukin→capital, Doman→Ishalgen,
@@ -4166,3 +4178,4 @@ The original questions follow.
 - 2026-10-02 BC-08: all 33 CLAUDE commands pass on e43228041, solution 5,105 passed/100 skips, Fast 72 passed/three switch skips/all eleven scenarios; six baked maps validate. Leg 10 is done; altgard-l10 is retained for Q2900, then end-of-area LIVE acceptance. Stop at this checkpoint. No push.
 - 2026-10-02 Leg 11 proposed: Q2900 from altgard-l10, four maps, Anturoon/Aldelle hub flights, movie/equip/spawn/cleanup and ordinary bind recovery; ND-00..ND-08 and full-area SIM/LIVE handoff planned. Java/data and official 4.8 stigma audit; Space offline mesh/three routes pass, initial diagnostic omission retained. Seven pre-commit checks pass (`run/nd-plan-checks`). No gameplay implementation or natural run; no push.
 - 2026-10-02 ND-00: implementation approved; Java/full-var/stigma and snapshot audit pass from eebceefa7, reward boundary and ordinary recovery pinned, numeric checkpoint assertion draft retained. Seven pre-commit checks pass; contract and decisions are next.
+- 2026-10-02 ND-01: l11 contract/full vars/four maps and phase/recovery decisions committed from 588f15ea3; explicit l11 Cleric instance identity, protected reward/cleanup endpoint and all 143 incoming completions. Eighty-one scoped cases, seven pre-commit checks and Fast pass; two assertion drafts retained. Paths and map protocol are next.
