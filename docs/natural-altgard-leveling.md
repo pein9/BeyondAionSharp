@@ -3687,12 +3687,29 @@ level or an exact fee copied from another service. Capture `altgard-l11` only fr
     corrected with the kill destination explicit, draft retained (`run/nd01-contract.log`). All seven
     pre-commit checks pass (`run/nd01-checks`); `nd01-fast` passes 72 tests, three switch skips and all eleven
     scenarios. Actual travel and packet protocol remain ND-02/ND-03's proof.
-- [ ] **ND-02 — Paths and map protocol.** Generate/check in/rebake the Space navmesh from existing inputs;
+- [x] **ND-02 — Paths and map protocol.** Generate/check in/rebake the Space navmesh from existing inputs;
   prove city approaches, prison/cemetery road, Urd, Verdandi's own talk point, Skuld and all instance ground.
   Actually fly Anturoon→Aldelle and recovery Aldelle→Anturoon. Prove Ukin→capital, Doman→Ishalgen,
   Doman→Altgard fallback and all five quest teleports with view invalidation. Free probe account, clear
   aggressive monsters at setup spots, BeginWorldReload before setup teleport; setup is not travel evidence.
   Depends: ND-01.
+  - *Done 2026-10-03.* From `da332d249`, free account 217 passes `nd02-travel`: 24 checked ground legs,
+    fortress/Ukin/Heimdall, Munin's connected prison/cemetery road in both directions, Urd, Verdandi's own
+    talk point, both Skulds, Aud/Doman and the instance entry/boss ground. Actual Anturoon→Aldelle (34 s)
+    and Aldelle→Anturoon (41 s) flights cost 226 Kinah each. Ukin→capital twice costs 706 each, Doman→Ishalgen
+    costs 141 and Doman→Altgard costs 706; learned Return preserves the fortress bind. Five quest teleports
+    and full vars pass, including same-map Skuld return and no old Hellion object after kill teleport.
+    Alive endpoint (1665.44, 1815.301, 253.6685), with no probe deaths.
+  - The controlled var-97 setup and 1-HP enemy prepare transport triggers only; movie/equip progression
+    remains ND-03's proof. Aggressive route neighbours are cleared, setup teleports invalidate the client
+    view first, and setup is not route evidence. The actual solo instance registers only this probe.
+    Generated Space mesh: 35 polygons, nine occupied tiles, SHA256
+    `c9243fbbc4f11b20d2debc8e8f8801b7bfa5b2ea56be64c1c88ac214c89b2b89`; rebake check passes
+    (`run/nd02-navbake.log`, `run/nd02-navcheck.log`). Two compile drafts corrected private-member/owner
+    access and the object callback's array type, retained as `run/nd02-build*.log`; travel passes on its
+    first run. Every pre-commit check and `nd02-fast` pass: 73 tests, three switch skips, all eleven scenarios;
+    Fast also verifies explicit solo registration. Owned probe/Fast schemas are dropped, confirmed by the
+    empty read-only schema query (`run/nd02-schema-check.log`). No server changes or new content.
 - [ ] **ND-03 — Movie, stigma and campaign protocol.** Controlled probe plays every dialog, movie 156,
   SELECT7_1, STIGMA dialog and CM_EQUIP_ITEM. Observe full vars 95→96→99→97, real fee and 11504;
   summon/kill the real enemy with controlled HP, cleanup, Skuld/Munin teleports and Aud's actual reward.
@@ -4179,3 +4196,4 @@ The original questions follow.
 - 2026-10-02 Leg 11 proposed: Q2900 from altgard-l10, four maps, Anturoon/Aldelle hub flights, movie/equip/spawn/cleanup and ordinary bind recovery; ND-00..ND-08 and full-area SIM/LIVE handoff planned. Java/data and official 4.8 stigma audit; Space offline mesh/three routes pass, initial diagnostic omission retained. Seven pre-commit checks pass (`run/nd-plan-checks`). No gameplay implementation or natural run; no push.
 - 2026-10-02 ND-00: implementation approved; Java/full-var/stigma and snapshot audit pass from eebceefa7, reward boundary and ordinary recovery pinned, numeric checkpoint assertion draft retained. Seven pre-commit checks pass; contract and decisions are next.
 - 2026-10-02 ND-01: l11 contract/full vars/four maps and phase/recovery decisions committed from 588f15ea3; explicit l11 Cleric instance identity, protected reward/cleanup endpoint and all 143 incoming completions. Eighty-one scoped cases, seven pre-commit checks and Fast pass; two assertion drafts retained. Paths and map protocol are next.
+- 2026-10-03 ND-02: generated/rebaked Space mesh and free-account-217 travel pass: 24 ground legs, both Ishalgen flights, four paid city trips, five quest teleports and learned Return, alive fortress endpoint. Compile drafts retained; seven pre-commit checks and Fast pass, owned schemas dropped. Movie/stigma/campaign protocol is next.

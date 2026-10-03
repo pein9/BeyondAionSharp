@@ -175,8 +175,8 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 
 			// 151-200 belong to the D32 register (parity-artifacts/e2e/retail-quest-implemented.json), one per quest;
 			// test-retail-quest-inventory.py keeps every other SIM test out of them.
-			// 201-216 are Leg 7/8/9/10's controlled probes, outside D32's reserved accounts.
-			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100)).Concat(Enumerable.Range(201, 16))
+			// 201-220 are Leg 7-11's controlled probes, outside D32's reserved accounts.
+			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100)).Concat(Enumerable.Range(201, 20))
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();
