@@ -270,6 +270,13 @@ plus `run-fast.ps1` before gameplay-change commits. Retain failures; do not reru
   before capture; capture `altgard-coingear` from `altgard-l11` through `cg`, hash-verify and prove
   restore/relog with the same receipts/equipment/bind/balances. Record the actual capture SHA and
   drop owned schemas. Never capture from an uncommitted gameplay tree or edit a dump.
+  - 2026-10-03 support checkpoint: `AF_CG_RECEIPTS` restores only verified endpoint diagnostics
+    belonging to the actual logged-in character. The existing coin policy requires every purchased
+    object/slot, exact balance, original staff and single quest completion before accepting them;
+    it grants no state and cannot authorize another purchase. Snapshot invocation clears inherited
+    receipt settings. Eight focused contract tests, seven prechecks and `cg05-fast` pass (78 tests,
+    four explicit skips, 11/11 scenarios). Evidence: `run/cg05-support/`, base `c904afd75`.
+    Commit this support before capture; CG-05 remains unchecked until hash/SQL/restore/relog proof.
 - [ ] **CG-06 — Preparation checkpoint.** Depends: CG-05. Reconcile evidence, chosen tier, journal,
   coins, actual equipped slots, unchanged staff, retained cloth gloves, protected stigma bundle and outcomes.
   Mark only demonstrated objectives complete; commit the handoff to HM-00. The combined goal
@@ -293,6 +300,9 @@ not permission to invent higher equipment. Record any new shared defect or unsup
 
 ## Progress log
 
+- 2026-10-03 CG-05 support: verified-endpoint receipt loading passes identity/inventory/count refusal
+  cases, eight focused tests, seven prechecks and Fast. Commit support before natural capture;
+  the snapshot, owned SQL audit and actual restore/relog are still pending.
 - 2026-10-03 CG-04: natural CG smoke passes from altgard-l11, one completion and three purchases,
   145 journals/19 Iron, original staff and retained equipment, sealed bundle and Heart bind through
   relog. Thirty-three successful encounters, no deaths, four silence refusals; the first failure

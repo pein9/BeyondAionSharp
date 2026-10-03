@@ -76,7 +76,8 @@ public sealed partial class SimulationFastScenarioTests
 			// AM-06/07: AF_ALTGARD=l2 plays Leg 2 from `altgard-l12`; AF_ONLY limits a diagnostic run to the listed quests.
 			AltgardLegId: Environment.GetEnvironmentVariable("AF_ALTGARD") is { Length: > 1 } legId ? legId : null,
 			AltgardOnlyQuests: Environment.GetEnvironmentVariable("AF_ONLY") is { Length: > 0 } onlyList
-				? onlyList.Split(',').Select(int.Parse).ToArray() : null)).RunAsync(token);
+				? onlyList.Split(',').Select(int.Parse).ToArray() : null,
+			CoinGearReceiptPath: Environment.GetEnvironmentVariable("AF_CG_RECEIPTS"))).RunAsync(token);
 
 		async Task SupplyHelpItemAsync(int itemId, long count, CancellationToken supplyToken)
 		{

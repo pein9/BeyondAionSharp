@@ -166,6 +166,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			string? altgardLegId = options.AltgardLegId ?? (options.AltgardLeg1 ? "l1" : null);
 			NaturalAltgardContract? altgardLeg = altgardLegId is { } legId ? NaturalAltgardContract.LoadLeg(legId) : null;
 			coinGearProgress = altgardLeg?.CoinGear == null ? null : NaturalCoinGearProgress.Empty;
+			if (options.CoinGearReceiptPath is { } receiptPath)
+			{
+				NaturalCoinGear gear = altgardLeg?.CoinGear ?? throw new InvalidDataException("Coin receipts require the CG leg.");
+				coinGearProgress = NaturalCoinGearProgress.ReadVerifiedEndpoint(receiptPath, session.CharacterId, gear,
+					NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition));
+			}
 			NaturalJourneyItem[] coinIncomingLoadout = altgardLeg?.CoinGear == null ? [] : session.Api.World.Inventory.Values
 				.Where(i => i.EquipmentSlot is > 0 and < 65535 && i.EquipmentSlot is not (16 or 4096 or 8192 or 16384))
 				.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray();

@@ -134,6 +134,41 @@ public sealed class NaturalAltgardCoinGearContractTests
 	}
 
 	private static NaturalAltgardDecision Decide(NaturalAltgardObservation state) => NaturalAltgardDecisionEngine.Decide(Leg, state, Objectives, 1);
+	[Fact]
+	public void VerifiedEndpointReceiptsRequireCharacterIdentityAndAllActuallyOwnedObjects()
+	{
+		NaturalAltgardObservation state = Rewarded();
+		NaturalCoinGearProgress progress = NaturalCoinGearProgress.Empty.ObserveReward(Gear, Incoming(), state);
+		foreach (NaturalCoinGearPurchase purchase in Gear.Purchases)
+		{
+			NaturalAltgardObservation bought = Purchased(state, purchase);
+			progress = progress.ObservePurchase(Gear, purchase.ItemId, state, bought);
+			state = bought with { Inventory = bought.Inventory!.Select(i => i.ItemId == purchase.ItemId
+				? i with { EquipmentSlot = purchase.Slot } : i.EquipmentSlot == purchase.Slot
+					? i with { EquipmentSlot = 0 } : i).ToArray() };
+		}
+		string path = Path.GetTempFileName();
+		try
+		{
+			void Write(bool verified) => File.WriteAllText(path, JsonSerializer.Serialize(new
+				{ verified, CharacterId = 133297, after = new { CoinGearProgress = progress } }));
+			Write(true);
+			NaturalCoinGearProgress loaded = NaturalCoinGearProgress.ReadVerifiedEndpoint(path, 133297, Gear, state);
+			Assert.Equal(progress.Reward, loaded.Reward);
+			Assert.Equal(progress.Purchases, loaded.Purchases);
+			Assert.Equal(progress.StaffObjectId, loaded.StaffObjectId);
+			Assert.Equal("coin-gear-complete", NaturalCoinGearPolicy.Decide(Gear, state with { CoinGearProgress = loaded }).Action);
+			Assert.Throws<InvalidDataException>(() => NaturalCoinGearProgress.ReadVerifiedEndpoint(path, 999, Gear, state));
+			Assert.Throws<InvalidDataException>(() => NaturalCoinGearProgress.ReadVerifiedEndpoint(path, 133297, Gear,
+				state with { Inventory = state.Inventory!.Where(i => i.ItemId != Gear.Purchases[0].ItemId).ToArray() }));
+			Assert.Throws<InvalidDataException>(() => NaturalCoinGearProgress.ReadVerifiedEndpoint(path, 133297, Gear,
+				state with { CompletedQuestCounts = new Dictionary<int, byte> { [2293] = 2 } }));
+			Write(false);
+			Assert.Throws<InvalidDataException>(() => NaturalCoinGearProgress.ReadVerifiedEndpoint(path, 133297, Gear, state));
+		}
+		finally { File.Delete(path); }
+	}
+
 	private static NaturalAltgardObservation Incoming()
 	{
 		float[] at = Leg.Bind!.Position;

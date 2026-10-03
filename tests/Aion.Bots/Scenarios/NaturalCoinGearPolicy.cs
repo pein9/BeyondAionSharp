@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Aion.Bots.World;
 
 namespace Aion.Bots.Scenarios;
@@ -38,6 +39,24 @@ public sealed record NaturalCoinPurchaseReceipt(int ItemId, int ObjectId, long B
 public sealed record NaturalCoinGearProgress(NaturalCoinRewardReceipt? Reward, NaturalCoinPurchaseReceipt[] Purchases, int StaffObjectId = 0)
 {
 	public static NaturalCoinGearProgress Empty => new(null, []);
+
+	/// <summary>Restore diagnostic receipts only after an actual login observes the complete purchased endpoint.
+	/// This never grants items, applies saved state or authorizes another transaction.</summary>
+	public static NaturalCoinGearProgress ReadVerifiedEndpoint(string path, int characterId,
+		NaturalCoinGear gear, NaturalAltgardObservation state)
+	{
+		using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
+		JsonElement root = document.RootElement;
+		if (!root.TryGetProperty("verified", out JsonElement verified) || verified.ValueKind != JsonValueKind.True ||
+			!root.TryGetProperty("CharacterId", out JsonElement identity) || identity.GetInt32() != characterId)
+			throw new InvalidDataException("Coin endpoint receipts are unverified or belong to another character.");
+		NaturalCoinGearProgress progress = root.GetProperty("after").GetProperty("CoinGearProgress")
+			.Deserialize<NaturalCoinGearProgress>() ?? throw new InvalidDataException("Coin endpoint has no receipts.");
+		NaturalCoinGearDecision check = NaturalCoinGearPolicy.Decide(gear, state with { CoinGearProgress = progress });
+		if (check.Action != "coin-gear-complete")
+			throw new InvalidDataException($"Restored coin receipts disagree with the actual endpoint: {check.Reason}");
+		return progress;
+	}
 
 	public NaturalCoinGearProgress ObserveReward(NaturalCoinGear gear, NaturalAltgardObservation before, NaturalAltgardObservation after)
 	{
