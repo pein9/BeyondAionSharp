@@ -1,11 +1,11 @@
 # Leg 12: Haramel after the coin gear preparation
 
-**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-07 complete; HM-08 is next.** Follow
+**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-08 complete in SIM. The combined goal stops here.** Follow
 [coin gear preparation CG-00..CG-06](natural-altgard-coin-gear.md) first, then do the Haramel lead-in,
 every active Asmodian Haramel quest once, and the clears needed to finish them. Haramel remains
 **Leg 12**; the preparation is a separate `cg` section. Recommended scope is **two fresh solo clears**,
-with additional ordinary recovery visits only if an objective remains. No natural or LIVE run was
-launched when this plan was written. HM-06 now proves the natural SIM journey; LIVE remains later work.
+with additional ordinary recovery visits only if an objective remains. Natural SIM, snapshot restore
+and endpoint relog are verified. Continuous full-area SIM and isolated LIVE acceptance remain later work.
 
 ## Authority, start and finish
 
@@ -394,7 +394,7 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
     purchase. Both natural capture and restore finish with zero deaths. Seven fresh proof prechecks
     and the audit pass (`run/hm07-support/audit.json`); owned schemas are dropped, dump/receipt
     hashes remain intact and both incoming CG and historical Leg 1 snapshots are unchanged.
-- [ ] **HM-08 — Final checklist and handoff.** Depends: HM-07. Run the full CLAUDE checklist once
+- [x] **HM-08 — Final checklist and handoff.** Depends: HM-07. Run the full CLAUDE checklist once
   on the committed implementation (including Fast and the now-eight baked maps), reconcile both new
   snapshots, retained equipped staff/no weapon purchase and all outcomes, tick only proven
   objectives and commit the completion checkpoint.
@@ -408,6 +408,26 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
     corrections; commit them before rerunning the failed full solution command. HM-08 stays
     unchecked until the corrected solution run and final handoff audit pass. Original results
     remain in `run/hm08-final-checklist`.
+  - *Done 2026-10-03.* All **33 CLAUDE gates pass** after those test-only corrections. The
+    committed `dca2081ae` full solution rerun passes **5,184 tests/112 guarded skips/zero failures**;
+    original failures remain untouched. The other 32 commands passed on the identical runtime
+    implementation in `5f3e979b7`, including **eight baked maps** and `hm08-final-fast`
+    (**82 passed/five explicit switch skips/all eleven scenarios**). Seven additional final
+    prechecks pass. The handoff audit joins the original run with the committed solution repair,
+    verifies only test/docs changed and preserves every command's source SHA (`run/hm08-audit.json`).
+  - Both committed captures and actual restore/relog proofs remain verified: CG buys only the
+    three rare chain pieces for four Iron Coins, after one Q2293 coverage completion and zero
+    funding repeats; Haramel completes all eleven quests in two fresh clears. The endpoint is
+    Cleric 25, alive at fortress, 156 completed journals, 19 Iron/7 Bronze/662,739 Kinah,
+    original staff equipped, original/coin armour retained and the stigma bundle sealed. No
+    permanent stigma skill, coin weapon/shield or other gear/book purchase is introduced.
+  - `altgard-coingear`, `altgard-haramel-l12` and historical Leg 1 `altgard-l12` hashes remain
+    intact; original Haramel budgets and receipts persist. Natural successful capture/relog has
+    zero deaths; earlier death/route/assertion outcomes remain recorded. No owned GUID snapshot
+    schemas or active journey remain. The audit's initial TRX aggregate skip-counter assumption
+    is retained and corrected using the five actual skipped test results, without editing the TRX.
+    **Stop here:** continuous full-area SIM, isolated LIVE, later zones and permanent stigma
+    selection need their own subsequent work. No push or operator-stack action occurred.
   **Stop the combined goal here.** Full-area continuous SIM and isolated LIVE acceptance are later work.
 
 For every commit run the seven current pre-commit checks: warning baseline, null loggers, clock reads,
@@ -459,6 +479,12 @@ be corrected under existing authority, record it here and continue the remaining
 
 ## Progress log
 
+- 2026-10-03 HM-08 complete: all 33 checklist gates pass after two Java-checked stale test
+  expectations are corrected; committed solution rerun 5,184 passed/112 skips, final Fast 82
+  passed/five switch skips/eleven scenarios, eight baked maps and seven final prechecks pass.
+  Original failures/audit draft retained; combined snapshot/gear/coin/stigma/recovery handoff
+  reconciled (`run/hm08-audit.json`, runtime base `5f3e979b7`, test repair `dca2081ae`). All CG/HM
+  items complete; stop at `altgard-haramel-l12`. Continuous full-area SIM/LIVE remain later work.
 - 2026-10-03 HM-08 correction: all 33 checklist commands executed; 32 pass, while the solution
   suite catches two outdated packet-inventory/completion-count expectations. Java-checked test
   corrections, duplicate-update regression and both focused cases/seven fresh prechecks pass.

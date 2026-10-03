@@ -3908,7 +3908,7 @@ records the map, instance, full quest var, temporary item/skill, fees and outcom
 setup, and the recovery journey itself uses ordinary packets. Keep existing revive/progress/approach
 limits. ND-05 then proves the normal-HP fight; ND-06 runs the natural character only after these proofs.
 
-### Coin gear preparation and Leg 12: Haramel (planned 2026-10-03)
+### Coin gear preparation and Leg 12: Haramel (SIM complete 2026-10-03)
 
 The operator requested Q2293 at the Heart while bound there, the better-tier coin chain gear,
 then the quests for Haramel and the dungeon as **Leg 12**. The later armour review instruction
@@ -3924,11 +3924,14 @@ stats for defence/healing; retain the old cloth gloves. There is no higher-price
 or coin helmet/accessories. Keep staff 101501357 equipped throughout preparation and Haramel;
 do not buy a coin weapon/shield or switch the staff for reward/loot weapons.
 
-The [Haramel plan](natural-altgard-haramel.md) covers eleven active Asmodian quests once, including
-the outside lead-in and four quests that unlock after Q28507. Plan two fresh clears, ordinary empty
+The [Haramel plan](natural-altgard-haramel.md) completes eleven active Asmodian quests once, including
+the outside lead-in and four quests that unlock after Q28507. Two fresh clears prove ordinary empty
 instance expiry, all floors/lift/objects, the 65-kill packed counter and Cleric boss chest. Its incoming
 snapshot is `altgard-coingear`; its final snapshot is `altgard-haramel-l12`, alive/bound at the fortress.
-CG-00..CG-06 then HM-00..HM-08 form one goal; stop at HM-08 or when nothing is unblocked.
+CG-00..CG-06 and HM-00..HM-08 are complete in SIM. Stop at this verified checkpoint: Cleric 25,
+156 journals, 19 Iron/7 Bronze, retained equipped staff/coin chain, sealed bundle and no stigma skills.
+Both captures and actual endpoint restore/relog are verified; historical Leg 1 `altgard-l12` is unchanged.
+The continuous full-area SIM and isolated LIVE acceptance below remain subsequent work.
 
 ### End-of-area acceptance after HM-08
 
@@ -4314,6 +4317,13 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-03 HM-08: all 33 checklist gates pass, including the committed solution repair
+  (5,184 passed/112 guarded skips), final Fast (82 passed/five switch skips/eleven scenarios)
+  and eight baked maps. Two outdated packet/count test expectations were corrected from Java;
+  original failures and audit draft remain. Seven final checks and the combined snapshot/coin/
+  gear/stigma/recovery audit pass (`run/hm08-audit.json`, runtime `5f3e979b7`, test repair `dca2081ae`).
+  All CG/HM items complete. Stop at verified `altgard-haramel-l12`; full-area continuous SIM,
+  isolated LIVE acceptance and permanent stigma selection remain later work. No push.
 - 2026-10-03 HM-07: distinct `altgard-haramel-l12` captured from committed `aea035881`; dump and
   original receipt hashes, owned SQL and actual restore/relog pass. Cleric 25 alive at fortress,
   156 journals, 19 Iron/7 Bronze/662,739 Kinah, unchanged staff/coin armour and no stigma skills.
