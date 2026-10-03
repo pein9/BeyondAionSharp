@@ -1,6 +1,6 @@
 # Leg 12: Haramel after the coin gear preparation
 
-**Status (2026-10-03): planned; HM-00..HM-08 are not implemented.** Follow
+**Status (2026-10-03): CG-00..CG-06 complete; HM-00 is next, HM-00..HM-08 unchecked.** Follow
 [coin gear preparation CG-00..CG-06](natural-altgard-coin-gear.md) first, then do the Haramel lead-in,
 every active Asmodian Haramel quest once, and the clears needed to finish them. Haramel remains
 **Leg 12**; the preparation is a separate `cg` section. Recommended scope is **two fresh solo clears**,
@@ -20,8 +20,12 @@ Start from **`altgard-coingear`**, character 133297, at least level 24, 145 comp
 Q2293 completed once, **19 Iron Coins**, coin chain gloves/shoulders/legs equipped alongside the
 retained Altgard Legionary chest/boots, and **staff 101501357 still equipped in both hands**.
 Retain the old cloth gloves and existing helmet/accessories; no coin weapon or shield was bought.
-Bound at Heart obelisk 700067. CG-05 must supply actual hash/capture metadata;
-this snapshot does not exist yet. Preserve all eleven earlier legs and their completions.
+Bound at Heart obelisk 700067. CG-05 captured it from committed
+`3afda849b006d02d0014b182e9a22e1b50cc7d5b`, UTC `2026-10-03T15:37:22.7117265Z`,
+elapsed 67,800,001 ms, dump SHA256
+`38e263f3fb9e95d5f500cce13ef7117e36401bc177098deba7991661085e953f`.
+Owned SQL/hash and actual restore/relog pass (`run/cg05-support/audit.json`); no surviving owned
+schemas. Preserve all eleven earlier legs and their completions.
 
 Finish alive in Altgard, normally rebound at **fortress 700065**, all eleven active quests below
 complete, all earlier journal entries preserved (**156 distinct completions** with recommended CG),
@@ -249,6 +253,9 @@ be corrected under existing authority, record it here and continue the remaining
 
 ## Progress log
 
+- 2026-10-03 CG-06 handoff: actual committed `altgard-coingear` hash/SQL/restore/relog and tier/gear/
+  currency/stigma ledger are reconciled in `run/cg06-handoff/audit.json`. All CG items complete;
+  Haramel implementation begins with HM-00. No HM quest or natural instance run has happened yet.
 - 2026-10-03: plan audited on `76c699cdc` against Java `ce54b7931`: eleven active Asmodian quests,
   four post-Q28507 unlocks, 65-kill packed counter, 74 qualifying spawn spots, two fresh clears,
   level-16 minimum/no maximum, 16 daily entries with 09:00 reset, 600-second empty expiry and

@@ -1,6 +1,6 @@
 # Altgard coin gear preparation before Leg 12
 
-**Status (2026-10-03): CG-00..CG-05 complete; CG-06 remains.** The operator requested Q2293,
+**Status (2026-10-03): CG-00..CG-06 complete.** The operator requested Q2293,
 binding at Heart of Impetusium, the best available coin chain gear and weapon, then Haramel as Leg 12.
 The operator amended the weapon scope on 2026-10-03: **keep the equipped level-21 staff; do not switch
 it or buy a coin weapon**. A shield cannot be worn with that two-handed staff and is excluded too.
@@ -297,10 +297,19 @@ plus `run-fast.ps1` before gameplay-change commits. Retain failures; do not reru
     `run/cg05-support/audit.json` proves exactly three approved buys/equips at capture and none
     on restore. Capture/restore schemas are dropped in finally; the read-only schema check is empty.
     Seven fresh proof prechecks pass; support gameplay already passes `cg05-fast-a2`.
-- [ ] **CG-06 — Preparation checkpoint.** Depends: CG-05. Reconcile evidence, chosen tier, journal,
+- [x] **CG-06 — Preparation checkpoint.** Depends: CG-05. Reconcile evidence, chosen tier, journal,
   coins, actual equipped slots, unchanged staff, retained cloth gloves, protected stigma bundle and outcomes.
   Mark only demonstrated objectives complete; commit the handoff to HM-00. The combined goal
   continues directly into Leg 12; this item does not launch full-area SIM or LIVE acceptance.
+  - 2026-10-03 evidence: `run/cg06-handoff/audit.json` reconciles CG-00..CG-05 on base `491118a11`.
+    Verified `altgard-coingear` (capture `3afda849b`) starts HM-00: Cleric 24, alive at Heart bind,
+    145 journals, one Q2293 completion, 18 + 5 - 4 = 19 Iron/0 Bronze, no funding repeats.
+    The shop's single level-16 RARE tier supplies gloves/shoulders/legs; equivalent chest/boots,
+    all accessories, cloth gloves and original staff 137763/mask 3 remain. Bundle 188053787 is
+    sealed; no permanent stigma acquisition or socketing. Natural smoke/capture/restore have no
+    deaths; four normal silence refusals in the smoke are handled. Controlled probe losses and
+    failed draft evidence remain recorded above. Seven handoff prechecks pass; this checkpoint
+    changes documentation only and continues the combined goal directly into Haramel.
 
 ## Sources read for this plan
 
@@ -320,6 +329,10 @@ not permission to invent higher equipment. Record any new shared defect or unsup
 
 ## Progress log
 
+- 2026-10-03 CG-06 complete: reconciled the tier, three armour receipts/four-coin debit, retained
+  loadout and sealed-stigma ledger with the verified snapshot; seven handoff prechecks pass.
+  Updated the parent and HM start to the actual capture/hash. Coin preparation is complete;
+  the combined goal continues with HM-00, keeping the equipped staff throughout Haramel.
 - 2026-10-03 CG-05 complete: committed `3afda849b` capture/hash, owned SQL and actual restore/relog
   pass with 145 journals, 19 Iron, unchanged staff, chain body/retained accessories and sealed bundle.
   Three exact buys/equips at capture, zero on restore, no deaths and no surviving owned schemas.
