@@ -76,6 +76,8 @@ public sealed class BotCastProtocolTests
 		Assert.True(BotCastProtocol.IsStartRejection(range));
 		Assert.True(BotCastProtocol.IsStartRejection(new(typeof(SM_SYSTEM_MESSAGE),
 			new Dictionary<string, object?> { ["name"] = "STR_SKILL_CAN_NOT_ATTACK_WHILE_IN_ABNORMAL_STATE" })));
+		Assert.True(BotCastProtocol.IsStartRejection(new(typeof(SM_SYSTEM_MESSAGE),
+			new Dictionary<string, object?> { ["name"] = "STR_SKILL_CANT_CAST_MAGIC_SKILL_WHILE_SILENCED" })));
 		Assert.False(BotCastProtocol.IsStartRejection(new(typeof(SM_SYSTEM_MESSAGE),
 			new Dictionary<string, object?> { ["name"] = "STR_GET_EXP" })));
 		Assert.False(BotCastProtocol.IsStartRejection(new(typeof(SM_MOVE),

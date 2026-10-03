@@ -1,6 +1,6 @@
 # Altgard coin gear preparation before Leg 12
 
-**Status (2026-10-03): CG-00..CG-03 complete; CG-04..CG-06 remain.** The operator requested Q2293,
+**Status (2026-10-03): CG-00..CG-04 complete; CG-05..CG-06 remain.** The operator requested Q2293,
 binding at Heart of Impetusium, the best available coin chain gear and weapon, then Haramel as Leg 12.
 The operator amended the weapon scope on 2026-10-03: **keep the equipped level-21 staff; do not switch
 it or buy a coin weapon**. A shield cannot be worn with that two-handed staff and is excluded too.
@@ -11,8 +11,8 @@ The operator explicitly confirmed the revised three-piece, four-coin scope on 20
 combined goal was active. This supersedes the pasted goal's older five-piece/mace/shield clause.
 
 Continue with [Leg 12: Haramel](natural-altgard-haramel.md) only after CG-06. This preparation has the
-separate selector `cg`, with contract and snapshot selection in place; its natural runner remains
-CG-04. Haramel keeps `l12`, to be implemented in HM-01. No natural gameplay run has been launched yet.
+separate selector `cg`, with its natural runner and owned SIM smoke verified in CG-04. Its committed
+snapshot is next in CG-05. Haramel keeps `l12`, to be implemented in HM-01.
 
 ## Authority and incoming state
 
@@ -243,13 +243,29 @@ plus `run-fast.ps1` before gameplay-change commits. Retain failures; do not reru
     Retain the initial compile failure, probe-only partial-journal setup failure and missing
     buy/equip trace diagnostic with their corrections in `run/cg03-equipment/`. Base `520062b73`;
     no server/catalogue change or natural-character setup/purchase. CG-04 is next.
-- [ ] **CG-04 — Natural runner and one smoke.** Depends: CG-03. Restore `altgard-l11` with
+- [x] **CG-04 — Natural runner and one smoke.** Depends: CG-03. Restore `altgard-l11` with
   `sim-snapshot.ps1 -Action Restore`; run `NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup`
   using `AF_ALTGARD=cg` and every variable set by the script's `Invoke-NaturalJourney`.
   One Q2293 completion, three observed armour purchases/equips, **19 Iron Coins**, 145 distinct
   completed journals, alive/bound at the Heart, sealed stigma bundle and unchanged equipped staff
   through relog. Keep the
   dashboard at http://127.0.0.1:17880/ running and announce it; drop only the owned schema in finally.
+  - 2026-10-03 evidence: `run/cg04-smoke/journey-a2/altgard-cg-completion.json` and
+    `run/cg04-smoke/audit.json`, `cg04-smoke-a2`, seed 1, character 133297 restored by the snapshot
+    script with every Invoke-NaturalJourney variable. Real hub flight costs 565, Heart bind 813;
+    one normal 6/16 hunt and real reward produce 18 -> 23, exact approved purchases produce
+    23 -> 22 -> 21 -> 19 with Kinah fixed at 534,815. Thirty-three encounters are successful,
+    no deaths, four ordinary silence refusals handled; elapsed game time 1,127,000 ms.
+    Actual endpoint relog verifies 145 journals, Q2293 count 1, 19 Iron/0 Bronze, five chain body
+    slots, old cloth gloves, sealed bundle, retained helmet/accessory/torso/boot objects and
+    original staff 137763/mask 3. Outgoing audit has only the three armour buys/equips.
+  - Shared runner uses receipts in decisions/checkpoints, protected inventory, explicit CG-only
+    armour equips, hub flights and ordinary bind-view reload. The initial smoke completed the hunt
+    but exposed an unrecognized silence refusal on its return path; Java PlayerRestrictions/SilenceEffect
+    confirms no cast starts. BotCastProtocol now recognizes that refusal and combat advances/re-evaluates
+    normally. Fourteen cast tests, seven prechecks and Fast 11/11 pass (`run/cg04-fast`: 78 passed,
+    four explicit skips). Original failure/trace and correction logs remain; both owned smoke schemas
+    are dropped in finally. Base `16d276d51`; no server/content correction or natural setup.
 - [ ] **CG-05 — Committed-code snapshot.** Depends: CG-04. Commit any capture-support changes
   before capture; capture `altgard-coingear` from `altgard-l11` through `cg`, hash-verify and prove
   restore/relog with the same receipts/equipment/bind/balances. Record the actual capture SHA and
@@ -277,6 +293,11 @@ not permission to invent higher equipment. Record any new shared defect or unsup
 
 ## Progress log
 
+- 2026-10-03 CG-04: natural CG smoke passes from altgard-l11, one completion and three purchases,
+  145 journals/19 Iron, original staff and retained equipment, sealed bundle and Heart bind through
+  relog. Thirty-three successful encounters, no deaths, four silence refusals; the first failure
+  exposed missing client-side refusal handling, now corrected from Java. Cast tests, seven prechecks
+  and Fast pass; both owned schemas cleaned up. Next: committed altgard-coingear capture/restore.
 - 2026-10-03 CG-03: real reward offer, atomic underfunded-order refusal, three exact four-coin
   purchases/equips and endpoint relog pass on free account 222. Outgoing packet audit proves
   armour-only requests and no weapon swap. Shared coin steps and buy/equip trace support,

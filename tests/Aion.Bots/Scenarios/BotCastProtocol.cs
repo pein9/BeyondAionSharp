@@ -26,6 +26,8 @@ public static class BotCastProtocol
 			"STR_SKILL_OBSTACLE" or "STR_SKILL_NOT_ENOUGH_DISTANCE" or
 			// Java PlayerRestrictions.canUseSkill: stunned, knocked down or otherwise unable to act.
 			"STR_SKILL_CAN_NOT_ATTACK_WHILE_IN_ABNORMAL_STATE" or
+			// Java PlayerRestrictions.canUseSkill: silence refuses magical skills before any cast starts.
+			"STR_SKILL_CANT_CAST_MAGIC_SKILL_WHILE_SILENCED" or
 			// Java PlayerRestrictions.canUseSkill and TargetCondition: the target died or cannot be targeted any more.
 			"STR_SKILL_TARGET_IS_NOT_VALID";
 

@@ -80,6 +80,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		var dashboard = runtime.Dashboard;
 		NaturalIshalgenContract contract = NaturalIshalgenContract.LoadDefault();
 		NaturalJourneyCheckpoint? checkpoint = null;
+		NaturalCoinGearProgress? coinGearProgress = null;
 		NaturalJourneyRunContext RunContext() => new(combatTrace.Run, runtime.Profile, runtime.Seed,
 			typeof(NaturalIshalgenJourney).Assembly.GetCustomAttributes(false)
 				.OfType<System.Reflection.AssemblyInformationalVersionAttribute>().Single().InformationalVersion,
@@ -98,7 +99,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			{
 				if (session.Api.World.LoginStateObserved && session.Api.World.SelfObjectId == session.CharacterId)
 					checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-						session.ConnectionGeneration, contract, session.CurrentPosition);
+						session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress);
 				string path = new NaturalJourneyFailure(kind, session.CurrentStep, session.CurrentAction,
 					session.ConnectionGeneration, failure.GetType().FullName!, failure.Message, failure.StackTrace,
 					checkpoint, combatTracePath, session.PacketHistory.TakeLast(64).Select(p => p.PacketType.Name).ToArray(), RunContext())
@@ -126,7 +127,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await session.WaitForPacketAsync(typeof(SM_QUEST_ACTION), token,
 					packet => packet.Get<int>("questId") == 2000 && packet.Get<byte>("status") == 5);
 			checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-				session.ConnectionGeneration, contract, session.CurrentPosition);
+				session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress);
 			await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "login-observation.json"),
 				System.Text.Json.JsonSerializer.Serialize(checkpoint), token);
 			Require.Contains(2000, session.Api.World.CompletedQuestIds);
@@ -164,6 +165,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// AM-06/07: the same runner plays any Altgard leg ("l1" the fortress, "l2" Moslan Crossroad).
 			string? altgardLegId = options.AltgardLegId ?? (options.AltgardLeg1 ? "l1" : null);
 			NaturalAltgardContract? altgardLeg = altgardLegId is { } legId ? NaturalAltgardContract.LoadLeg(legId) : null;
+			coinGearProgress = altgardLeg?.CoinGear == null ? null : NaturalCoinGearProgress.Empty;
+			NaturalJourneyItem[] coinIncomingLoadout = altgardLeg?.CoinGear == null ? [] : session.Api.World.Inventory.Values
+				.Where(i => i.EquipmentSlot is > 0 and < 65535 && i.EquipmentSlot is not (16 or 4096 or 8192 or 16384))
+				.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray();
 			int[] destinyIncomingSkills = altgardLeg?.Destiny is { } incomingDestiny
 				? session.Api.World.Skills.Keys.Where(id => id != incomingDestiny.StigmaSkillId).ToArray() : [];
 			IReadOnlyDictionary<int, QuestRunPlan> altgardPlans = altgardLegId is { } planLeg
@@ -190,6 +195,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				.Concat(altgardLeg.TimedSpawnList.Where(carrier => !session.Api.World.CompletedQuestIds.Contains(carrier.QuestId))
 					.Select(carrier => carrier.ItemId))
 				.Concat(altgardLeg.Destiny is { } destiny ? new[] { destiny.StoneItemId, destiny.RewardBundleId, destiny.LegacyRewardId } : [])
+				.Concat(altgardLeg.CoinGear?.ProtectedItemIds ?? [])
 				.Where(item => item > 0).ToHashSet();
 			BotNavigationGraph graph = BotNavigationGraphFactory.Build(runtime.Data, altgardNpcs.Concat(new[] {
 				203500, 203504, 203501, 203502, 203516, 203518,
@@ -277,6 +283,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// still checks every equip, and an item it refuses is never asked for again.
 			async Task EquipUpgradesAsync(CancellationToken gearToken)
 			{
+				// CG authorizes exactly three explicit armour equips and freezes the incoming loadout.
+				if (altgardLeg?.CoinGear != null) return;
 				BotWorldModel world = session.Api.World;
 				if (world.IsDead) return;
 				// NA-09: the observed class and race decide what can be worn; after Ascension the Cleric's new
@@ -358,7 +366,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					string root = runtime.RepoRoot;
 					var inventoryPolicy = NaturalIshalgenInventoryPolicy.Load(root,
 						world.Inventory.Values.Select(item => item.ItemId));
-					NaturalInventoryPlan plan = inventoryPolicy.Decide(world, QuestNeededItems());
+					NaturalInventoryPlan plan = inventoryPolicy.Decide(world, QuestNeededItems(), altgardLeg?.CoinGear);
 					long basePrice = runtime.Data.ItemDataDh
 						.GetItemTemplate(NaturalIshalgenPotionPolicy.VendorLifeElixirId).GetPrice();
 					if (world.Kinah < basePrice && plan.Sales.Count == 0)
@@ -451,7 +459,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				if (!session.Api.World.LoginStateObserved || runtime.NowMillis - lastProgressObservation < 1000) return;
 				lastProgressObservation = runtime.NowMillis;
 				checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-					session.ConnectionGeneration, contract, session.CurrentPosition);
+					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress);
 				progress.Observe(checkpoint, TimeSpan.FromMilliseconds(runtime.NowMillis - journeyStart));
 			};
 			const float DeathSpotAvoidance = 12f;
@@ -518,7 +526,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					["course"] = course.ToString(), ["encounter"] = encounter?.ToString(),
 					["seed"] = runtime.Seed,
 					["checkpoint"] = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-						session.ConnectionGeneration, contract, session.CurrentPosition),
+						session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress),
 				});
 				if (encounter != null)
 				{
@@ -569,7 +577,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					Position = session.CurrentPosition, Quest = session.Api.World.Quests[questId],
 					Deaths = combat.ReviveCount, Disengaged = true,
 					Checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-						session.ConnectionGeneration, contract, session.CurrentPosition),
+						session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress),
 				}), token);
 				session.TraceDiagnostic("phase0-course-complete", new Dictionary<string, object?>
 				{
@@ -715,7 +723,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeforeSend = null;
 					await session.QuitAsync(token);
 					checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-						session.ConnectionGeneration, contract, session.CurrentPosition);
+						session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress);
 					string receipt = Path.Combine(Path.GetDirectoryName(combatTracePath)!, "resume-receipt.json");
 					await File.WriteAllTextAsync(receipt, System.Text.Json.JsonSerializer.Serialize(new
 					{
@@ -849,7 +857,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				Require.Equal("complete", decision.Outcome);
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "completion.json"),
 					System.Text.Json.JsonSerializer.Serialize(NaturalJourneyCheckpoint.Capture(session.Api.World,
-						session.CharacterId, session.ConnectionGeneration, contract, session.CurrentPosition)), token);
+						session.CharacterId, session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress)), token);
 				// NA-03: a saved Munin snapshot restores with this clock so game time keeps moving forward.
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "completion-clock.json"),
 					System.Text.Json.JsonSerializer.Serialize(new { session.CharacterId, ElapsedMillis = runtime.NowMillis }), token);
@@ -997,7 +1005,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				combat = new NaturalJourneyCombat(session, here, runtime, geometry, stopOnDeath: false, options.OptimizeHubs, mauPolicy)
 				{
 					ApproachMapId = contract.MapId,
-					ReloadViewOnBindRevive = altgardLegId is "l10" or "l11",
+					ReloadViewOnBindRevive = altgardLegId is "l10" or "l11" or "cg",
 				};
 				if (leg.Destiny != null) combat.AfterBindRevive = () => EnterLegMap(newEntry: true);
 				here.AvoidSpots = combat.DeathSpots;
@@ -1043,7 +1051,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				farApproach = async (at, templateId, sourceComplete) =>
 				{
 					// AE-06/AO-04: delivery legs take hub flights; approaching the flight pad must not plan another flight.
-					if (altgardLegId is "l7" or "l8" or "l9" or "l10" && session.Api.World.MapId == leg.Hub.MapId && !approachingAirline)
+					if (altgardLegId is "l7" or "l8" or "l9" or "l10" or "cg" && session.Api.World.MapId == leg.Hub.MapId && !approachingAirline)
 					{
 						approachingAirline = true;
 						try { await FlyTowardAsync(at); }
@@ -1089,14 +1097,17 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				};
 				int? FreeCubeSlots() => leg.Town?.VendorNpcId == null ? null
 					: NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, session.Api.World.Inventory.Values.Select(item => item.ItemId))
-						.Decide(session.Api.World, QuestNeededItems()).FreeSlots;
+						.Decide(session.Api.World, QuestNeededItems(), leg.CoinGear).FreeSlots;
+				async Task SaveCoinProgressAsync() => await File.WriteAllTextAsync(
+					Path.Combine(Path.GetDirectoryName(combatTracePath)!, "coin-gear-progress.json"),
+					System.Text.Json.JsonSerializer.Serialize(new { session.CharacterId, ElapsedMillis = runtime.NowMillis, coinGearProgress }), token);
 				for (int sequence = 1; sequence <= 400; sequence++)
 				{
 					await session.SynchronizeAsync(token);
 					EnterLegMap();
 					if (session.Api.World.Level != helpCheckedAtLevel) await TopUpHelpItemsAsync("level-up");
 					NaturalAltgardDecision next = NaturalAltgardDecisionEngine.Decide(leg,
-						NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition, session.Api.Timing.Now, FreeCubeSlots()), objectives, sequence, only);
+						NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition, session.Api.Timing.Now, FreeCubeSlots(), coinGearProgress), objectives, sequence, only);
 					session.TraceDiagnostic($"altgard-{altgardLegId}-decision", new Dictionary<string, object?>
 					{
 						["sequence"] = sequence, ["action"] = next.Action, ["step"] = next.StepKey, ["quest"] = next.QuestId,
@@ -1220,10 +1231,38 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							await CompleteTemplateQuestAsync(altgardPlans[next.QuestId!.Value], TemplatePhase.Work);
 							break;
 						case "template-claim":
+						{
 							await EnsureOnGroundAsync();
+							NaturalAltgardObservation? beforeCoinReward = leg.CoinGear == null ? null :
+								NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition);
 							await CompleteTemplateQuestAsync(altgardPlans[next.QuestId!.Value], TemplatePhase.Claim);
+							if (leg.CoinGear is { } rewardGear)
+							{
+								coinGearProgress = coinGearProgress!.ObserveReward(rewardGear, beforeCoinReward!,
+									NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition));
+								await SaveCoinProgressAsync();
+							}
 							await TopUpHelpItemsAsync("town");
 							break;
+						}
+						case "coin-purchase":
+						case "coin-equip":
+						{
+							NaturalCoinGear gear = leg.CoinGear!;
+							int item = int.Parse(next.StepKey!);
+							await EnsureOnGroundAsync();
+							var inventory = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot,
+								session.Api.World.Inventory.Values.Select(i => i.ItemId).Concat(gear.ProtectedItemIds));
+							var shopping = new NaturalCoinGearSteps(session, runtime.Data, gear, inventory);
+							if (next.Action == "coin-purchase")
+							{
+								int vendor = await ApproachShippedSpawnAsync(gear.VendorNpcId, withinRange: TalkRange(gear.VendorNpcId));
+								coinGearProgress = await shopping.PurchaseAsync(vendor, item, coinGearProgress!, token);
+								await SaveCoinProgressAsync();
+							}
+							else await shopping.EquipAsync(item, coinGearProgress!, token);
+							break;
+						}
 						case "talk":
 							await PlayContractStepAsync(leg.Steps.Single(candidate => candidate.Key == next.StepKey));
 							break;
@@ -1531,7 +1570,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							await session.SynchronizeAsync(token);
 							BotWorldModel world = session.Api.World;
 							NaturalInventoryPlan plan = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId))
-								.Decide(world, QuestNeededItems());
+								.Decide(world, QuestNeededItems(), leg.CoinGear);
 							var sales = plan.Sales.Select(sale => new NaturalSale(sale.ObjectId, sale.ItemId, sale.Count)).ToList();
 							int vendor = await ApproachShippedSpawnAsync(leg.Town!.VendorNpcId!.Value);
 							NaturalVendorResult trade = await new NaturalServiceSteps(session).TradeAsync(vendor, sales, [],
@@ -2364,8 +2403,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				Require.True(world.Level >= leg.Endpoint.MinimumLevel, $"Endpoint level {world.Level} is below {leg.Endpoint.MinimumLevel}.");
 				Require.True(!world.IsDead, "The endpoint character is dead.");
 				VerifyDestinyEndpoint();
+				VerifyCoinEndpoint();
 				NaturalJourneyCheckpoint before = NaturalJourneyCheckpoint.Capture(world, session.CharacterId,
-					session.ConnectionGeneration, contract, session.CurrentPosition);
+					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress);
 				session.BeforeSend = null;
 				await session.QuitAsync(token);
 				await session.WaitForReentryAsync(token);
@@ -2373,9 +2413,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await session.EnterWorldAsync(token);
 				await session.SynchronizeAsync(token);
 				NaturalJourneyCheckpoint after = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-					session.ConnectionGeneration, contract, session.CurrentPosition);
+					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress);
 				NaturalJourneyPersistence.Verify(before, after);
 				VerifyDestinyEndpoint();
+				VerifyCoinEndpoint();
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, $"altgard-{altgardLegId}-completion.json"),
 					System.Text.Json.JsonSerializer.Serialize(new
 					{
@@ -2402,6 +2443,29 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					NaturalAltgardDecision endpoint = NaturalAltgardDecisionEngine.Decide(leg,
 						NaturalAltgardObservation.Observe(observed, session.CurrentPosition, session.Api.Timing.Now),
 						new Dictionary<int, NaturalTemplateObjective>(), 1);
+					Require.Equal("complete", endpoint.Outcome);
+				}
+
+				void VerifyCoinEndpoint()
+				{
+					if (leg.CoinGear is not { } gear) return;
+					BotWorldModel observed = session.Api.World;
+					Require.Equal(leg.Start.CompletedQuestIds.Length + 1, observed.CompletedQuestIds.Count);
+					Require.All(leg.Start.CompletedQuestIds, id => Require.Contains(id, observed.CompletedQuestIds));
+					Require.Equal(1, observed.CompletedQuestCounts.GetValueOrDefault(gear.QuestId));
+					Require.Equal((long)gear.EndpointCoins, ItemCount(observed, gear.CoinItemId));
+					Require.Equal(0L, ItemCount(observed, 186000007));
+					Require.Equal(1L, ItemCount(observed, gear.SealedBundleId));
+					Require.True(!observed.Skills.ContainsKey(gear.ForbiddenStigmaSkillId), "Keep the stigma reward sealed.");
+					foreach (NaturalJourneyItem original in coinIncomingLoadout)
+						Require.True(observed.Inventory.TryGetValue(original.ObjectId, out BotInventoryItem? item) &&
+							item.ItemId == original.ItemId && item.EquipmentSlot == original.EquipmentSlot,
+							$"CG changed retained equipped object {original.ObjectId}/{original.ItemId}.");
+					NaturalInventoryPlan bag = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot,
+						observed.Inventory.Values.Select(i => i.ItemId)).Decide(observed, QuestNeededItems(), gear);
+					NaturalAltgardDecision endpoint = NaturalAltgardDecisionEngine.Decide(leg,
+						NaturalAltgardObservation.Observe(observed, session.CurrentPosition, session.Api.Timing.Now, bag.FreeSlots, coinGearProgress),
+						NaturalTemplateObjective.From(altgardPlans), 1);
 					Require.Equal("complete", endpoint.Outcome);
 				}
 			}
@@ -2497,7 +2561,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					(owned.Details.EquippedSlot ?? 0) > 0), $"Kept accessory {item} is not worn at the endpoint."));
 				Require.True(!world.IsDead, "The endpoint character is dead.");
 				NaturalJourneyCheckpoint before = NaturalJourneyCheckpoint.Capture(world, session.CharacterId,
-					session.ConnectionGeneration, contract, session.CurrentPosition);
+					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress);
 				session.BeforeSend = null;
 				await session.QuitAsync(token);
 				await session.WaitForReentryAsync(token);
@@ -2505,7 +2569,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await session.EnterWorldAsync(token);
 				await session.SynchronizeAsync(token);
 				NaturalJourneyCheckpoint after = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-					session.ConnectionGeneration, contract, session.CurrentPosition);
+					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress);
 				NaturalJourneyPersistence.Verify(before, after);
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "bridge-completion.json"),
 					System.Text.Json.JsonSerializer.Serialize(new
@@ -7626,12 +7690,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					return true; // Re-evaluate the visible target and healing state before recasting.
 				}
 				if (started.Get<object>("name") is "STR_SKILL_OBSTACLE") return false;
-				if (started.Get<object>("name") is "STR_SKILL_CAN_NOT_ATTACK_WHILE_IN_ABNORMAL_STATE")
+				if (started.Get<object>("name") is "STR_SKILL_CAN_NOT_ATTACK_WHILE_IN_ABNORMAL_STATE" or
+					"STR_SKILL_CANT_CAST_MAGIC_SKILL_WHILE_SILENCED")
 				{
-					// Stunned or knocked down: the state wears off in a second or two. Re-evaluate then.
+					// Stun/knockdown or silence is an ordinary refusal. Let the clock/effects advance,
+					// then re-evaluate health, consumables and the target rather than waiting for a cast.
 					session.TraceDiagnostic("combat-cast-while-disabled", new Dictionary<string, object?>
 					{
 						["skillId"] = skill.Id,
+						["reason"] = started.Get<object>("name"),
 						["hp"] = session.Api.World.CurrentHp,
 						["position"] = session.CurrentPosition,
 					});
