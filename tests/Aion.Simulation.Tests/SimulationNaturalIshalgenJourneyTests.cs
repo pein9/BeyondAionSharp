@@ -105,7 +105,7 @@ public sealed partial class SimulationFastScenarioTests
 					throw new InvalidDataException($"NI-08 retained character {retainedId} identity changed.");
 				// The Priest, or the Cleric it became at Ascension (NA-07).
 				NaturalJourneyIdentityRules.Classify(Get<int>(retained, "playerClass"), Get<ushort>(retained, "level"),
-					Get<int>(retained, "mapId"));
+					Get<int>(retained, "mapId"), session.IdentityAltgardLegId);
 				session.SelectCharacter(retainedId, "Asimnjour");
 			}
 			else
@@ -117,7 +117,7 @@ public sealed partial class SimulationFastScenarioTests
 			if (!resuming) await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
 			await session.SynchronizeAsync(token);
 			var entered = fixture.World.GetPlayer(session.CharacterId);
-			NaturalJourneyIdentityRules.Classify(entered.GetPlayerClass(), entered.GetLevel(), entered.GetWorldId());
+			NaturalJourneyIdentityRules.Classify(entered.GetPlayerClass(), entered.GetLevel(), entered.GetWorldId(), session.IdentityAltgardLegId);
 			if (!resuming) Assert.Equal(PlayerClass.PRIEST, entered.GetPlayerClass());
 			return resuming;
 		}

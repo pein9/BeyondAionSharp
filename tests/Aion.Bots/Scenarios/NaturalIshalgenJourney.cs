@@ -64,6 +64,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 	public async Task RunAsync(CancellationToken token)
 	{
+		session.IdentityAltgardLegId = options.AltgardLegId;
 		if (options.MauPolicy != null && options.Course == null)
 			throw new InvalidOperationException("A tuned Mau policy is restricted to the focused SIM course.");
 		NaturalMauPolicyParameters mauPolicy = options.MauPolicy ?? NaturalMauPolicyParameters.Baseline;
@@ -163,6 +164,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// AM-06/07: the same runner plays any Altgard leg ("l1" the fortress, "l2" Moslan Crossroad).
 			string? altgardLegId = options.AltgardLegId ?? (options.AltgardLeg1 ? "l1" : null);
 			NaturalAltgardContract? altgardLeg = altgardLegId is { } legId ? NaturalAltgardContract.LoadLeg(legId) : null;
+			int[] destinyIncomingSkills = altgardLeg?.Destiny is { } incomingDestiny
+				? session.Api.World.Skills.Keys.Where(id => id != incomingDestiny.StigmaSkillId).ToArray() : [];
 			IReadOnlyDictionary<int, QuestRunPlan> altgardPlans = altgardLegId is { } planLeg
 				? NaturalAltgardContract.LoadPlans(planLeg) : new Dictionary<int, QuestRunPlan>();
 			var collectionLimits = altgardPlans.Values.SelectMany(plan => plan.Steps
@@ -186,6 +189,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				.SelectMany(plan => plan.Steps.Where(step => step.Kind == "collect").Select(step => step.ItemId))
 				.Concat(altgardLeg.TimedSpawnList.Where(carrier => !session.Api.World.CompletedQuestIds.Contains(carrier.QuestId))
 					.Select(carrier => carrier.ItemId))
+				.Concat(altgardLeg.Destiny is { } destiny ? new[] { destiny.StoneItemId, destiny.RewardBundleId, destiny.LegacyRewardId } : [])
 				.Where(item => item > 0).ToHashSet();
 			BotNavigationGraph graph = BotNavigationGraphFactory.Build(runtime.Data, altgardNpcs.Concat(new[] {
 				203500, 203504, 203501, 203502, 203516, 203518,
@@ -982,18 +986,20 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				NaturalAltgardContract leg = altgardLeg ?? throw new InvalidOperationException("An Altgard leg needs its contract.");
 				IReadOnlySet<int>? only = options.AltgardOnlyQuests?.ToHashSet();
 				Require.True(combat.IsCleric, "An Altgard leg needs the Cleric.");
-				Require.Equal(leg.Hub.MapId, session.Api.World.MapId ?? 0);
+				Require.True(session.Api.World.MapId == leg.Hub.MapId || leg.Destiny?.AllowedMaps.Contains(session.Api.World.MapId ?? 0) == true,
+					"The retained character is outside the approved leg maps.");
 				NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World));
 				here.DefendOnAttackAsync = navigator.DefendOnAttackAsync;
 				here.AvoidHostileAggro = true;
 				navigator = here;
 				geometry = runtime.CreateGeometry();
-				contract = contract with { MapId = leg.Hub.MapId };
+				contract = contract with { MapId = session.Api.World.MapId!.Value };
 				combat = new NaturalJourneyCombat(session, here, runtime, geometry, stopOnDeath: false, options.OptimizeHubs, mauPolicy)
 				{
-					ApproachMapId = leg.Hub.MapId,
-					ReloadViewOnBindRevive = altgardLegId == "l10",
+					ApproachMapId = contract.MapId,
+					ReloadViewOnBindRevive = altgardLegId is "l10" or "l11",
 				};
+				if (leg.Destiny != null) combat.AfterBindRevive = () => EnterLegMap(newEntry: true);
 				here.AvoidSpots = combat.DeathSpots;
 				navigationDefense = combat;
 				WithQuestLoot(combat);
@@ -1027,6 +1033,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				var timedAttempts = new Dictionary<int, int>();
 				var timedEnds = new Dictionary<int, long>();
 				var spawnAttempts = new Dictionary<string, int>();
+				long? destinySpawnedAt = null;
 				// AK-08: the cube's free slots as the inventory policy counts them, for a leg whose town has a merchant.
 				// AG-07: far approaches take the leg's road first. A walk cut short by a fight (a retreat, or a death and the
 				// revive at the bind) walks again from where it left the Cleric, three walks at most; no road at all leaves the
@@ -1133,6 +1140,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					{
 						case "travel-to-map":
 						{
+							if (leg.Destiny != null)
+							{
+								await TravelDestinyMapAsync(next.MapId!.Value);
+								break;
+							}
 							if (next.MapId == leg.Hub.MapId)
 								await UseLearnedReturnToBindAsync();
 							else
@@ -1150,6 +1162,20 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						}
 						case "refresh-observation":
 							await session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+							break;
+						case "recover-destiny":
+							await RecoverDestinyAsync("observed-state");
+							break;
+						case "equip-stigma":
+						{
+							NaturalAltgardStep stoneStep = leg.Steps.Single(step => step.Key == "q2900-stone");
+							int skuld = await ApproachDestinyNpcAsync(stoneStep);
+							if (skuld == 0 || NaturalAltgardQuestSteps.State(session.Api.World, leg.Destiny!.QuestId) is not (3, 99)) break;
+							await NaturalAltgardQuestSteps.EquipDestinyStigmaAsync(session, leg.Destiny!, skuld, token);
+							break;
+						}
+						case "destiny-fight":
+							await FightDestinyAsync();
 							break;
 						case "revive-at-bind":
 						case "revive-in-place":
@@ -1692,7 +1718,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				async Task<bool> WalkRoadDefendingAsync(BotPosition destination, string purpose, float within = 12,
 					Func<BotPosition, bool>? stopAt = null, Func<bool>? sourceComplete = null)
 				{
-					int map = leg.Hub.MapId;
+					int map = session.Api.World.MapId ?? leg.Hub.MapId;
 					// The ground nearest the point, as AB-02 found it: a spot on a slope may not snap where it stands.
 					BotPosition goal = geometry.GroundAround(map, destination, [3f, 5f, 8f, 12f]).FirstOrDefault() is { } ground &&
 						ground != default ? ground : geometry.SnapToGround(map, destination with { Z = destination.Z + 2 }) ?? destination;
@@ -1720,7 +1746,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						if (sourceComplete?.Invoke() == true) return true;
 						BotPosition[] segment = road.Skip(at).Take(16).ToArray();
 						int roadRevives = combat.ReviveCount;
-						if (altgardLegId == "l10")
+						if (altgardLegId is "l10" or "l11")
 						{
 							// BC-06: the first Heart descent succeeded, but the unchecked road walked
 							// into a pack before defense ran. Clear observed blockers before crossing it.
@@ -1743,7 +1769,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						if (sourceComplete?.Invoke() == true) return true;
 						// Synchronize can defend and bind-revive before the explicit defense below. Its old
 						// road no longer starts here; return to the caller so it plans from the new position.
-						if (altgardLegId == "l10" && combat.ReviveCount != roadRevives) return false;
+						if (altgardLegId is "l10" or "l11" && combat.ReviveCount != roadRevives) return false;
 						if (!await DefendAgainstEngagedAsync(purpose) || session.Api.World.IsDead)
 						{
 							await RestSafelyAsync(token);
@@ -1763,6 +1789,148 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 				// AB-08: one contract talk step: approach the NPC (flying for a flight step), talk, and follow a walking NPC.
 				float TalkRange(int npcId) => runtime.Data.NpcDataDh.GetNpcTemplate(npcId)?.GetTalkDistance() ?? 3;
+
+				async Task TravelDestinyMapAsync(int destination)
+				{
+					if (session.Api.World.MapId == destination) return;
+					if (destination == leg.Hub.MapId)
+					{
+						// ND-02 proved Doman's ordinary fallback when the learned Return is cooling down.
+						if (session.Api.World.MapId != 120010000 || session.Api.Timing.TimeUntilCast(243) <= TimeSpan.FromSeconds(5))
+						{
+							await UseLearnedReturnToBindAsync();
+							EnterLegMap(newEntry: true);
+							return;
+						}
+					}
+					else if (session.Api.World.MapId is 220010000 or 320070000)
+					{
+						await UseLearnedReturnToBindAsync();
+						EnterLegMap(newEntry: true);
+					}
+					NaturalAltgardMapTrip trip = leg.MapTripList.Single(entry => entry.MapId == destination);
+					if (trip.FromMapId is int source && session.Api.World.MapId != source) await TravelDestinyMapAsync(source);
+					if (trip.FromMapId is int required && session.Api.World.MapId != required) return; // Re-plan after a road death.
+					int revives = combat.ReviveCount;
+					int teleporter = await ApproachShippedSpawnAsync(trip.TeleporterNpcId, withinRange: trip.TalkRange);
+					if (combat.ReviveCount != revives) return;
+					NaturalServiceOutcome result = await new NaturalServiceSteps(session).TeleportAsync(teleporter,
+						session.Api.World.Objects[teleporter].Position, trip.TalkRange, trip.LocationId, trip.Fare, trip.MapId, token);
+					Require.True(result.IsDone, result.Reason);
+					EnterLegMap(newEntry: true);
+				}
+
+				async Task<bool> FlyDestinyHubAsync(int transporterId)
+				{
+					if (session.Api.World.VisibleEffects?.FirstOrDefault(effect => effect.SkillId == 8291) is { } sickness)
+					{
+						Require.True(sickness.RemainingMillis > 0, "Soul Sickness has no observed expiry for the hub flight wait.");
+						long until = runtime.NowMillis + sickness.RemainingMillis + 1000L;
+						while (NaturalAltgardQuestSteps.HasEffect(session.Api.World, 8291) && runtime.NowMillis < until)
+						{
+							await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Min(1000, until - runtime.NowMillis)), token);
+							await session.SynchronizeAsync(token);
+							if (session.Api.World.IsDead) { await RestSafelyAsync(token); return false; }
+						}
+						Require.True(!NaturalAltgardQuestSteps.HasEffect(session.Api.World, 8291), "Soul Sickness did not expire before the hub flight.");
+					}
+					NaturalAirlineRoute route = airlines.Single(entry => entry.MapId == 220010000 && entry.NpcId == transporterId);
+					int revives = combat.ReviveCount;
+					if (Distance(session.CurrentPosition, route.Departure) > 40 &&
+						!await WalkRoadDefendingAsync(route.Departure, "destiny-airline-road", within: 30)) return false;
+					int transporter = await ApproachShippedSpawnAsync(transporterId, withinRange: 6);
+					if (combat.ReviveCount != revives || session.Api.World.MapId != route.MapId) return false;
+					NaturalNavigationResult pad = await NaturalIshalgenNavigator.ExploreAnchorAsync(route.MapId, -1,
+						route.Departure, navigator, "destiny-flight-pad", token);
+					Require.True(pad.Arrived, pad.Reason);
+					NaturalServiceOutcome result = await new NaturalServiceSteps(session).FlyAsync(transporter,
+						session.Api.World.Objects[transporter].Position, 6, route, token);
+					Require.True(result.IsDone, result.Reason);
+					session.TraceDiagnostic("destiny-hub-flight", new Dictionary<string, object?>
+					{
+						["npc"] = transporterId, ["route"] = route.Route, ["position"] = session.CurrentPosition,
+					});
+					return true;
+				}
+
+				async Task<int> ApproachDestinyNpcAsync(NaturalAltgardStep step)
+				{
+					int map = leg.StepMap(step), revives = combat.ReviveCount;
+					BotPosition at = new(step.Position[0], step.Position[1], step.Position[2], 0);
+					Require.Equal(map, session.Api.World.MapId);
+					if (map == 220010000)
+					{
+						NaturalAirlineRoute alder = airlines.Single(route => route.MapId == map && route.NpcId == 203513);
+						// The prison-to-Urd ground graph is 1,947 m: force the proved Anturoon/Aldelle flight.
+						if (step.NpcId == 790003 && Distance(session.CurrentPosition, at) > 200)
+						{
+							if (!await FlyDestinyHubAsync(203545)) return 0;
+						}
+						else if (step.NpcId is 203546 or 203550 && Distance(session.CurrentPosition, alder.Departure) < 200)
+						{
+							if (!await FlyDestinyHubAsync(203513)) return 0;
+						}
+					}
+					if (Distance(session.CurrentPosition, at) > 40 &&
+						!await WalkRoadDefendingAsync(at, $"destiny-road-{step.Key}", within: 30)) return 0;
+					if (combat.ReviveCount != revives || session.Api.World.MapId != map) return 0;
+					NaturalNavigationResult reached = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(map, step.NpcId,
+						at, step.TalkRange, navigator, "destiny-recipient", token);
+					Require.True(reached.Arrived, $"{step.Key}: {reached.Reason}");
+					return reached.TargetObjectId ?? await session.WaitForNpcAsync(step.NpcId, token);
+				}
+
+				async Task RecoverDestinyAsync(string reason)
+				{
+					NaturalAltgardDestiny destiny = leg.Destiny!;
+					session.TraceDiagnostic("destiny-attempt-lost", new Dictionary<string, object?>
+					{
+						["reason"] = reason, ["quest"] = NaturalAltgardQuestSteps.State(session.Api.World, destiny.QuestId),
+						["map"] = session.Api.World.MapId, ["position"] = session.CurrentPosition, ["deaths"] = combat.ReviveCount,
+					});
+					if (session.Api.World.MapId == destiny.MapId) await TravelDestinyMapAsync(leg.Hub.MapId);
+					await session.SynchronizeAsync(token);
+					Require.Equal((byte)3, NaturalAltgardQuestSteps.State(session.Api.World, destiny.QuestId)?.Status);
+					// Ordinary defense while Return is interrupted can earn real kill credit. Preserve that progress.
+					Require.True(NaturalAltgardQuestSteps.State(session.Api.World, destiny.QuestId)?.Var is var observed &&
+						(observed == destiny.ResetVar || observed == destiny.KillVar), "Lost attempt neither reset nor earned kill credit.");
+					Require.Equal(0L, ItemCount(session.Api.World, destiny.StoneItemId));
+					Require.True(!session.Api.World.Skills.ContainsKey(destiny.StigmaSkillId), "Lost attempt retained the tutorial skill.");
+					destinySpawnedAt = null;
+				}
+
+				async Task FightDestinyAsync()
+				{
+					NaturalAltgardDestiny destiny = leg.Destiny!;
+					int? enemy = session.Api.World.Objects.Values.FirstOrDefault(npc => npc.TemplateId == destiny.EnemyNpcId && !npc.IsCorpse)?.ObjectId;
+					if (enemy == null || destinySpawnedAt is long spawn && runtime.NowMillis - spawn >= destiny.LifetimeSeconds * 1000L)
+					{
+						await RecoverDestinyAsync("five-minute-window-missed");
+						return;
+					}
+					long started = runtime.NowMillis;
+					int revives = combat.ReviveCount, retreats = combat.CompletedRetreats;
+					bool killed = await combat.TryKillAsync(enemy.Value, token, session.CurrentPosition,
+						Math.Max(0, session.PacketHistory.Count - 400));
+					session.TraceDiagnostic("destiny-combat-outcome", new Dictionary<string, object?>
+					{
+						["killed"] = killed, ["deaths"] = combat.ReviveCount - revives, ["retreats"] = combat.CompletedRetreats - retreats,
+						["durationMillis"] = runtime.NowMillis - started, ["target"] = enemy.Value,
+					});
+					if (NaturalAltgardQuestSteps.State(session.Api.World, destiny.QuestId) is (3, 9))
+					{
+						await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token, packet => packet.Get<int>("worldId") == destiny.KillTeleport.MapId);
+						await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+						session.AcceptTeleportPosition();
+						await session.SynchronizeAsync(token);
+						EnterLegMap(newEntry: true);
+						Require.True(!session.Api.World.Objects.ContainsKey(enemy.Value) && !session.Api.World.LootStatuses.ContainsKey(enemy.Value), "Old Hellion survived the kill teleport.");
+						Require.Equal(0L, ItemCount(session.Api.World, destiny.StoneItemId));
+						Require.True(!session.Api.World.Skills.ContainsKey(destiny.StigmaSkillId), "Kill exit retained the tutorial skill.");
+						destinySpawnedAt = null;
+					}
+					else if (session.Api.World.MapId == destiny.MapId) await RecoverDestinyAsync(killed ? "missing-kill-credit" : "retreat-or-expired-target");
+				}
 
 				void EnterLegMap(bool newEntry = false)
 				{
@@ -1826,6 +1994,22 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 				async Task PlayContractStepAsync(NaturalAltgardStep step)
 				{
+					if (leg.Destiny is { } destiny)
+					{
+						if (step.Key == destiny.SpawnStep)
+						{
+							await RestSafelyAsync(token);
+							if (NaturalAltgardQuestSteps.State(session.Api.World, destiny.QuestId) is not (3, 97)) return;
+						}
+						int recipient = await ApproachDestinyNpcAsync(step);
+						if (recipient == 0 || session.Api.World.MapId != leg.StepMap(step) ||
+							NaturalAltgardQuestSteps.State(session.Api.World, destiny.QuestId)?.Var != step.Var && step.ExpectedStatus == "START") return;
+						string change = await NaturalAltgardQuestSteps.TalkAsync(session, step, recipient, token);
+						if (step.Key == destiny.SpawnStep) destinySpawnedAt = runtime.NowMillis;
+						EnterLegMap(newEntry: step.Teleport != null);
+						session.TraceDiagnostic($"altgard-{altgardLegId}-step", new Dictionary<string, object?> { ["step"] = step.Key, ["change"] = change });
+						return;
+					}
 					int npc;
 					int stepMap = leg.StepMap(step);
 					Require.Equal(stepMap, session.Api.World.MapId);
@@ -2179,6 +2363,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				Require.Equal(leg.Endpoint.MapId, world.MapId!.Value);
 				Require.True(world.Level >= leg.Endpoint.MinimumLevel, $"Endpoint level {world.Level} is below {leg.Endpoint.MinimumLevel}.");
 				Require.True(!world.IsDead, "The endpoint character is dead.");
+				VerifyDestinyEndpoint();
 				NaturalJourneyCheckpoint before = NaturalJourneyCheckpoint.Capture(world, session.CharacterId,
 					session.ConnectionGeneration, contract, session.CurrentPosition);
 				session.BeforeSend = null;
@@ -2190,6 +2375,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				NaturalJourneyCheckpoint after = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
 					session.ConnectionGeneration, contract, session.CurrentPosition);
 				NaturalJourneyPersistence.Verify(before, after);
+				VerifyDestinyEndpoint();
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, $"altgard-{altgardLegId}-completion.json"),
 					System.Text.Json.JsonSerializer.Serialize(new
 					{
@@ -2201,6 +2387,23 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					["level"] = after.Level, ["map"] = after.MapId, ["completed"] = leg.Endpoint.CompletedQuestIds,
 					["deaths"] = combat.ReviveCount, ["kinah"] = session.Api.World.Kinah,
 				});
+
+				void VerifyDestinyEndpoint()
+				{
+					if (leg.Destiny is not { } destiny) return;
+					BotWorldModel observed = session.Api.World;
+					Require.All(leg.Start.CompletedQuestIds, id => Require.Contains(id, observed.CompletedQuestIds));
+					Require.Equal(leg.Start.CompletedQuestIds.Length + 1, observed.CompletedQuestIds.Count);
+					Require.Equal(0L, ItemCount(observed, destiny.StoneItemId));
+					Require.Equal(0L, ItemCount(observed, destiny.LegacyRewardId));
+					Require.Equal(1L, ItemCount(observed, destiny.RewardBundleId));
+					Require.True(!observed.Skills.ContainsKey(destiny.StigmaSkillId), "The tutorial stigma skill survived cleanup.");
+					Require.All(destinyIncomingSkills, id => Require.Contains(id, observed.Skills.Keys));
+					NaturalAltgardDecision endpoint = NaturalAltgardDecisionEngine.Decide(leg,
+						NaturalAltgardObservation.Observe(observed, session.CurrentPosition, session.Api.Timing.Now),
+						new Dictionary<int, NaturalTemplateObjective>(), 1);
+					Require.Equal("complete", endpoint.Outcome);
+				}
 			}
 
 			// NA-23: the focused Cleric encounter (diagnostic, SIM only). The fixture prepares a level 10 Cleric outside
@@ -6368,11 +6571,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		/// <summary>The map a far target is approached on (NA-23 fights in Altgard); Ishalgen for the journey.</summary>
 		public int ApproachMapId { get; set; } = 220010000;
 		public bool ReloadViewOnBindRevive { get; init; }
+		public Action? AfterBindRevive { get; set; }
 
 		/// <summary>BC-06: retain combat/revival counters while switching to the new map's checked navigation.</summary>
 		public void EnterMap(NaturalJourneyNavigator currentNavigator, BotNavigationGeometry currentGeometry, int mapId)
 		{
+			navigator.InCombat = false;
 			navigator = currentNavigator;
+			navigator.InCombat = InCombat;
 			geometry = currentGeometry;
 			ApproachMapId = mapId;
 			openChain = null;
@@ -7297,6 +7503,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			await session.SynchronizeAsync(token);
 			if (session.Api.World.IsDead) throw new InvalidDataException("Bind revive did not clear client-observed death.");
 			session.AcceptTeleportPosition();
+			AfterBindRevive?.Invoke();
 			await BuffOurselfAsync(NaturalHelpTrigger.AfterRevive, token);
 			// A bind revive leaves a quarter of HP and MP (and soul sickness lowers the maximum). Rest at the obelisk before
 			// anything else, as a player does: in Leg 4 the walk back out at 25% HP met three swamp mosbears and died three

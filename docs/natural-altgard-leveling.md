@@ -3804,11 +3804,30 @@ level or an exact fee copied from another service. Capture `altgard-l11` only fr
     checks pass (33 cases, `run/nd05-unit-final.log`). Seven pre-commit checks pass (`run/nd05-final-checks`);
     Fast passes (76 tests/four switch skips, all eleven scenarios, `run/nd05-final-fast/report.md`).
     All owned ND-05 schemas are gone (`run/nd05-schema-check.log`). ND-06's natural runner is next.
-- [ ] **ND-06 — Natural runner and smoke.** Implement only the required l11 behavior, inventory protection,
+- [x] **ND-06 — Natural runner and smoke.** Implement only the required l11 behavior, inventory protection,
   normal reward and observed-var recovery. Restore `altgard-l10` with sim-snapshot.ps1 -Action Restore;
   run NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup with `AF_ALTGARD=l11` and Invoke-NaturalJourney's
   environment, dashboard enabled; play once through endpoint relog and drop the owned schema in finally.
   No setup on character 133297 beyond OD-13 supplies. Depends: ND-01..ND-05.
+  - *Done 2026-10-03.* From `25ee13686`, l11 executes the proved dialog/movie/socket/fight/reward sequence,
+    forces the Anturoon–Aldelle hub flight, protects the tutorial stone and sealed bundle, and rebinds navigation
+    after quest teleports and bind revival. Observed vars drive ordinary Return/capital recovery; missing
+    socketed skill at 97/98 leaves normally rather than treating a stigma as a learned skill. SIM and LIVE
+    relog identity validation receives the explicit leg scope; ordinary identity guards remain scoped.
+  - `run/nd06-smoke/journey.log` passes once from an owned `altgard-l10` restore with Invoke-NaturalJourney's
+    environment and the dashboard enabled. Character 133297 completes all 144 journal entries and relogs alive,
+    level 24, at fortress 700065 with its bind preserved. Nine distinct kills, no deaths/retreats, one paid hub
+    flight, actual movie 156, one tutorial socket (1,412 Kinah), normal Hellion kill in 12.021 game seconds,
+    immediate exit without corpse looting, Aud's normal reward and learned Return are retained in the trace.
+    Elapsed process clock 593,000 ms; the restored clock offset is 66,060,001 ms. EXP increases 239,148
+    (wire progress 26,524 → 265,672); Kinah 495,028 → 536,193 includes ordinary sales, fares and fixed reward.
+  - Endpoint checks before/after relog preserve incoming skills and all 143 incoming completions, require
+    bundle 188053787 ×1 sealed and temporary stone/skill plus inactive legacy item absent. Regular learned
+    heals 1842/4204/3951 remain available. No gear or skill-book purchases, permanent stigma choice, server
+    change or natural setup beyond OD-13. Owned schema dropped in finally and read-only SQL confirms absence
+    (`run/nd06-schema-check.log`). Build and 81 scoped cases pass (`run/nd06-build.log`, `run/nd06-unit.log`);
+    seven pre-commit checks pass (`run/nd06-checks`); Fast passes 76/four switch skips/all eleven scenarios
+    (`run/nd06-fast/report.md`). ND-07 committed snapshot capture is next.
 - [ ] **ND-07 — Snapshot.** Enable `-Leg l11`, commit before capture, then capture `altgard-l11` from
   `altgard-l10`; hash-check, owned restore, SQL state and actual endpoint relog; drop both owned schemas.
   Depends: ND-06.
@@ -4344,3 +4363,4 @@ The original questions follow.
 - 2026-10-03 ND-03: the amended contract's exact reward path, movie/equip/cleanup and 144 journal completions pass; probe-only bundle installation confirms the normal slot. Eighty-one scoped tests, seven pre-commit checks and Fast (74 passed/three switch skips/all eleven scenarios) pass; failed drafts retained and owned schemas dropped. ND-04 loss/resume recovery is next.
 - 2026-10-03 ND-04: free-account-219 loss/resume matrix and two-process cold restart pass; two controlled deaths, one real missed spawn, 65 ground legs, seven saved-state resumes and fortress recovery. Java's older-instance selection, stigma-login audit and missing-exit fallback are recorded. Duplicate pending map-load acknowledgements are coalesced; 39 scoped tests, seven pre-commit checks and Fast (75 passed/four switch skips/all eleven scenarios) pass. Failed drafts retained, owned schemas dropped. Normal-HP Hellion combat is next.
 - 2026-10-03 ND-05: free-account-220 normal-HP Hellion fight passes in 16.371 seconds, zero deaths/retreats, real 175–200 damage, actual tutorial socket/cleanup and ordinary heals preserved. Regular level-23/24 skill catalog and late quest-kill loot-state invalidation verified; 33 scoped tests, seven pre-commit checks and Fast (76 passed/four switch skips/all eleven scenarios) pass. Failed drafts retained, owned schemas dropped. Natural l11 runner and smoke are next.
+- 2026-10-03 ND-06: natural l11 smoke passes once from altgard-l10; normal Hellion kill in 12.021 seconds, nine distinct kills, no deaths/retreats, real hub flight and movie/socket/reward/Return, 144 completed journals and fortress endpoint relog. Tutorial stigma removed, regular skills preserved, reward bundle sealed. Build, 81 scoped cases, seven pre-commit checks and Fast (76 passed/four switch skips/all eleven scenarios) pass; owned schema dropped. Snapshot is next.

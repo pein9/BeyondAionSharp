@@ -247,6 +247,9 @@ public static class NaturalAltgardDecisionEngine
 					return Plan("recover-destiny", quest.Id, "Leave the lost attempt through learned Return and observe the outside reset before a new Skuld entry.");
 				if (var == 96 && state.ItemCounts.GetValueOrDefault(destiny.StoneItemId) > 0)
 					return Plan("recover-destiny", quest.Id, "The tutorial stone is already owned: recover rather than repeating Java's unguarded item-give request.");
+				if (var is 97 or 98 && (state.ItemCounts.GetValueOrDefault(destiny.StoneItemId) != 1 ||
+					state.SkillIds?.Contains(destiny.StigmaSkillId) != true))
+					return Plan("recover-destiny", quest.Id, "The interrupted tutorial lost its actual socketed skill: leave normally before a new entry.");
 				if (var == 99)
 					return state.ItemCounts.GetValueOrDefault(destiny.StoneItemId) == 1
 						? Plan("equip-stigma", quest.Id, "Open Skuld's stigma service and equip the actual tutorial stone once.", "q2900-equip")

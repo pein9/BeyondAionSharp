@@ -13,6 +13,7 @@ internal sealed partial class LiveBotSession : INaturalJourneySession
 	public string CurrentAction => currentAction;
 	public string? CombatTracePath => Path.Combine(options.OutputDirectory, "bots", $"{bot}.trace.jsonl");
 	public Action? BeforeSend { get; set; }
+	public string? IdentityAltgardLegId { get; set; }
 	public Action? AfterSynchronize { get; set; }
 	public Func<BotPosition, BotPosition>? ResolveForcedLanding { get; set; }
 	/// <summary>Sees every game packet after the world model has applied it, on the reading flow.</summary>
@@ -66,7 +67,7 @@ internal sealed partial class LiveBotSession : INaturalJourneySession
 			throw new InvalidDataException("Retained natural character identity changed.");
 		// A Priest, or the Cleric it became at Ascension (NA-07).
 		NaturalJourneyIdentityRules.Classify(Get<int>(character, "playerClass"), Get<ushort>(character, "level"),
-			Get<int>(character, "mapId"));
+			Get<int>(character, "mapId"), IdentityAltgardLegId);
 		if (verifySavedPosition)
 			AssertPersistedPosition(Get<int>(character, "mapId"), Get<float>(character, "x"),
 				Get<float>(character, "y"), Get<float>(character, "z"));

@@ -92,6 +92,15 @@ public sealed class NaturalAltgardLeg11ContractTests
 		Assert.Equal("town-service", Decide(State(220030000, 3, 0) with { FreeCubeSlots = 5 }).Action);
 	}
 
+	[Theory]
+	[InlineData(97)]
+	[InlineData(98)]
+	public void LoginRemovalOfTheTutorialSkillRequiresOrdinaryRecovery(int var)
+	{
+		Assert.Equal("recover-destiny", Decide(State(320070000, 3, var) with { SkillIds = new HashSet<int> { 1842 } }).Action);
+		Assert.Equal("recover-destiny", Decide(State(320070000, 3, var) with { ItemCounts = new Dictionary<int, long>() }).Action);
+	}
+
 	[Fact]
 	public void EndpointRequiresRetainedRewardsCleanupAndEveryIncomingCompletion()
 	{
@@ -140,7 +149,7 @@ public sealed class NaturalAltgardLeg11ContractTests
 		var position = new BotPosition(at[0], at[1], at[2], 0);
 		return new(true, map, 24, false, new Dictionary<int, BotQuestState> { [2900] = new(2900, status, var, 0, null) },
 			Leg.Start.CompletedQuestIds.ToHashSet(), position,
-			var == 99 ? new Dictionary<int, long> { [140000001] = 1 } : new Dictionary<int, long>(),
-			new BotBindPoint(220030000, position, 0));
+			var is 99 or 97 or 98 ? new Dictionary<int, long> { [140000001] = 1 } : new Dictionary<int, long>(),
+			new BotBindPoint(220030000, position, 0), SkillIds: var is 97 or 98 ? new HashSet<int> { 1842, 11504 } : new HashSet<int> { 1842 });
 	}
 }

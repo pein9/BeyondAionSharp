@@ -12,6 +12,8 @@ public interface INaturalJourneySession
 	BotApi Api { get; }
 	int CharacterId { get; }
 	int ConnectionGeneration { get; }
+	/// <summary>Explicit journey scope for retained-character map validation; ordinary sessions leave it unset.</summary>
+	string? IdentityAltgardLegId { get; set; }
 	BotPosition CurrentPosition { get; }
 	string CurrentStep { get; }
 	string CurrentAction { get; }
