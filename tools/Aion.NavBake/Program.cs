@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 using Aion.Bots.Navigation.NavMesh;
+using Aion.GameServer.Model;
 
 namespace Aion.NavBake;
 
@@ -44,8 +45,9 @@ internal static class Program
 				"bake" => Bake(world, maps, navDir, options),
 				"check" => Check(world, maps, navDir, options),
 				"render" => NavRender.Run(world, maps, navDir, options.Output ?? Path.Combine(root, "run", "nav-render")),
-				"graph" => NavGraphCommand.Run(world, maps, navDir),
+				"graph" => NavGraphCommand.Run(world, maps, navDir, options.Race),
 				"points" => NavDiag.Points(world, maps[0], navDir),
+				"glide" => NavDiag.Glide(world, maps[0], navDir),
 				"gap" => NavDiag.Gap(world, maps[0], navDir),
 				"island" => NavDiag.Island(world, maps[0], navDir),
 				"profile" => NavDiag.Profile(world, maps[0], navDir),
@@ -143,7 +145,7 @@ internal static class Program
 	}
 }
 
-internal sealed record Options(string Command, string? Maps, string? Output, string? RepoRoot, int Threads, bool Rebake, string? NavDir, bool Legacy, string? Bin, IReadOnlyList<string> Set, bool Quick)
+internal sealed record Options(string Command, string? Maps, string? Output, string? RepoRoot, int Threads, bool Rebake, string? NavDir, bool Legacy, string? Bin, IReadOnlyList<string> Set, bool Quick, Race? Race)
 {
 	public static Options Parse(string[] args)
 	{
@@ -151,6 +153,7 @@ internal sealed record Options(string Command, string? Maps, string? Output, str
 		string? maps = null, output = null, root = null, navDir = null, bin = null;
 		int threads = 0;
 		bool rebake = false, legacy = false, quick = false;
+		Race? race = null;
 		var set = new List<string>();
 		for (int i = 1; i < args.Length; i++)
 		{
@@ -159,6 +162,7 @@ internal sealed record Options(string Command, string? Maps, string? Output, str
 				case "--maps": maps = args[++i]; break;
 				case "--out": output = args[++i]; break;
 				case "--root": root = args[++i]; break;
+				case "--race": race = Enum.Parse<Race>(args[++i], ignoreCase: true); break;
 				case "--nav": navDir = args[++i]; break;
 				case "--bin": bin = args[++i]; break;
 				case "--set": set.Add(args[++i]); break;
@@ -169,6 +173,6 @@ internal sealed record Options(string Command, string? Maps, string? Output, str
 				default: throw new ArgumentException("Unknown option " + args[i]);
 			}
 		}
-		return new Options(args[0], maps, output, root, threads, rebake, navDir, legacy, bin, set, quick);
+		return new Options(args[0], maps, output, root, threads, rebake, navDir, legacy, bin, set, quick, race);
 	}
 }

@@ -237,6 +237,7 @@ All of these are generated. Never hand-edit them. Change the inputs or settings 
 | Pandaemonium (120010000) | 1.2 MB | 260 nodes, 985 links, 7 exits |
 | Altgard (220030000) | 86,537 polygons, 5.5 MiB | 649 nodes, 2,601 links |
 | Bregirun (320030000) | 823 polygons, 48 KiB | none |
+| Haramel (300200000) | 9,834 polygons, 529 KiB | Asmodian graph; regenerate with `--race ASMODIANS` |
 
 The three bridge maps have no roads and were baked with `bake --maps 320020000,120010000,220030000`.
 
@@ -245,6 +246,21 @@ It previously loaded an ignored `run/nav` mesh. The committed mesh makes its rou
 The return walk from the Abyss Gate goes through the guardian and entry checkpoints. Dimension Exit's
 shipped talk distance is 7 m: a checked approach at 6.1 m works, while the generic 3 m interaction route
 cannot reach it. Java dialog requests check talk range without a spell's line-of-sight requirement.
+
+Haramel's HM-02 mesh is generated with `bake --maps 300200000`; use
+`graph --maps 300200000 --race ASMODIANS` because the neutral instance serves both races and its exit
+must select Altgard for this journey. `check --maps 300200000 --rebake` compares the generated mesh.
+The static mesh does not connect every floor: ordinary Tower Lift dialog 10000 reaches the stairs to
+the Rusty Box, and a checked jump/glide returns to the lower connecting ramp. The separate automatic
+wooden elevator behind Gesta is animated client geometry, absent from the server's static bake.
+`tools/client-extract/extract_haramel_elevator.py` reads its shipped 4.8 mission/CGA controller and
+floor mesh into `parity-artifacts/e2e/natural-haramel-elevator.json`: a twenty-second loop, 1.7-second
+bottom stop, ascent to 8.667 seconds and upper stop through 11.333 seconds. The SIM bot carries its
+ordinary CM_MOVE positions at that pace and checks a small hop from the platform to the static upper
+landing. It does not create server transport metadata from the client entity ID. Rendered-client
+phase/vehicle metadata remains part of later LIVE acceptance. Haramel portal exits land east of the
+Heart flight zone: walk to the approved lower pillar launch before flying back to the hub, and use
+actual static ground at the approved upper landing before walking to the flight transporter.
 
 **After a spawn placement pass** (retail-accuracy edits to `spawns/Npcs`, `Gather` or `Statics`
 on a starter map): run the height audit above — a heightmap-derived placement puts anything under

@@ -8,9 +8,62 @@ namespace Aion.NavBake;
 /// <summary>Explains why the server geometry rejects a navmesh route between two NPC templates.</summary>
 internal static class NavDiag
 {
+	/// <summary>Finds checked downhill air links from the start's walkable platform to lower ground.</summary>
+	public static int Glide(BotNavWorld world, int mapId, string navDir)
+	{
+		float[] v = Environment.GetEnvironmentVariable("NAV_FROM")!.Split(',').Select(p => float.Parse(p, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+		var from = new BotPosition(v[0], v[1], v[2], 0);
+		var set = new BotNavMeshSet(navDir);
+		var geometry = world.Geometry(BotNavSites.RaceFor(world, mapId));
+		var router = new BotNavMeshRouter(set, geometry);
+		BotNavMesh mesh = set.Get(mapId)!;
+		int island = mesh.IslandOf(from, BotNavQuery.Default with { SnapHorizontal = 2 });
+		BotPosition[] centers = mesh.Polygons().Select(p => new BotPosition(p.Ring.Average(x => x.X), p.Ring.Average(x => x.Y), p.Ring.Average(x => x.Z), 0)).ToArray();
+		var takeoffs = new[] { from }.Concat(centers.Where(p => mesh.IslandOf(p) == island)).ToArray();
+		var landings = centers.Where(p => from.Z - p.Z is > 20 and < 65 && Aion.Bots.Scenarios.NaturalFlightPolicy.Distance(from, p) < 170).ToArray();
+		int count = 0;
+		foreach (var pair in takeoffs.SelectMany(a => landings.Select(b => (a, b))).Where(p =>
+			p.a.Z > p.b.Z && MathF.Sqrt(MathF.Pow(p.a.X - p.b.X, 2) + MathF.Pow(p.a.Y - p.b.Y, 2)) >= p.a.Z - p.b.Z)
+			.OrderBy(p => Aion.Bots.Scenarios.NaturalFlightPolicy.Distance(from, p.a) + Aion.Bots.Scenarios.NaturalFlightPolicy.Distance(p.a, p.b)))
+		{
+			float horizontal = MathF.Sqrt(MathF.Pow(pair.b.X - pair.a.X, 2) + MathF.Pow(pair.b.Y - pair.a.Y, 2));
+			BotPosition launch = pair.a with { X = pair.a.X + (pair.b.X - pair.a.X) / horizontal * 6,
+				Y = pair.a.Y + (pair.b.Y - pair.a.Y) / horizontal * 6, Z = pair.a.Z + 1.5f };
+			if (!Aion.Bots.Scenarios.NaturalFlightProtocol.IsClear(geometry, mapId, pair.a, launch) ||
+				!Aion.Bots.Scenarios.NaturalFlightProtocol.IsClear(geometry, mapId, launch, pair.b)) continue;
+			var approach = router.FindPath(mapId, from, pair.a);
+			if (approach.Count == 0 && Aion.Bots.Scenarios.NaturalFlightPolicy.Distance(from, pair.a) > 1) continue;
+			Console.WriteLine($"glide {pair.a} -> launch {launch} -> {pair.b}; approach {approach.Count} points; landing island {mesh.IslandOf(pair.b)}");
+			if (++count == 8) break;
+		}
+		Console.WriteLine($"checked glide candidates: {count}");
+		return count > 0 ? 0 : 1;
+	}
+
 	/// <summary>Routes from a fixed position (NAV_FROM="x,y,z") to fixed destinations (NAV_TO="x,y,z;x,y,z").</summary>
 	public static int Points(BotNavWorld world, int mapId, string navDir)
 	{
+		if (Environment.GetEnvironmentVariable("NAV_ELEVATOR") == "1")
+		{
+			var elevator = Aion.Bots.Scenarios.NaturalHaramelElevator.Load(world.RepoRoot);
+			var geo = world.Geometry(BotNavSites.RaceFor(world, mapId));
+			BotPosition previous = elevator.Top;
+			for (float dx = 0; dx <= 4; dx += .5f)
+			{
+				BotPosition point = elevator.Top with { X = elevator.Top.X - dx };
+				BotPosition? ground = geo.StaticGroundAt(mapId, point);
+				Console.WriteLine($"elevator dx {dx}: {point}; static {ground}; ray {geo.HasLineOfSight(mapId, previous with { Z = previous.Z - .25f }, point with { Z = point.Z - .25f })}");
+				previous = point;
+			}
+			Console.WriteLine($"elevator connector {elevator.Disembark(geo, elevator.Top with { X = elevator.Top.X - 3.75f }).Count}");
+		}
+		// Spawn-state diagnostics must match the live NPC's placeable model (Java DespawnableNode).
+		if (Environment.GetEnvironmentVariable("NAV_ACTIVE") is string active)
+			foreach (int id in active.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse))
+			{
+				world.Map(mapId).SpawnPlaceableObject(1, id);
+				Console.WriteLine($"active placeable {id} in instance 1");
+			}
 		static BotPosition Parse(string text)
 		{
 			float[] v = text.Split(',').Select(p => float.Parse(p, System.Globalization.CultureInfo.InvariantCulture)).ToArray();

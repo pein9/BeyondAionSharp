@@ -177,7 +177,8 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			// test-retail-quest-inventory.py keeps every other SIM test out of them.
 			// 201-220 are Leg 7-11's controlled probes, outside D32's reserved accounts.
 			// 221-222 are CG-02/03's unused travel/quest and purchase probes (CG-01 audit).
-			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100)).Concat(Enumerable.Range(201, 22))
+			// 223 is HM-02's Haramel travel probe; no earlier probe or D32 register uses it.
+			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100)).Concat(Enumerable.Range(201, 23))
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();

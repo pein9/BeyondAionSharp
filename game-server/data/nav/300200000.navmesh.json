@@ -1,0 +1,40 @@
+{
+  "mapId": 300200000,
+  "mapName": "Haramel",
+  "bakerVersion": 4,
+  "settingsFingerprint": "5db8e45a00557337",
+  "settings": {
+    "cellSize": 0.3,
+    "cellHeight": 0.2,
+    "agentHeight": 1.6,
+    "agentRadius": 0.5,
+    "agentMaxClimb": 0.8,
+    "agentMaxSlope": 45,
+    "tileSizeCells": 128,
+    "regionMinSize": 8,
+    "regionMergeSize": 20,
+    "edgeMaxLength": 12,
+    "edgeMaxError": 1.3,
+    "vertsPerPoly": 6,
+    "detailSampleDistance": 6,
+    "detailSampleMaxError": 1,
+    "flagMergeVoxels": 1,
+    "swimDepth": 1.5,
+    "roadHalfWidth": 3
+  },
+  "sourceFingerprint": "f97eeec465768ed4",
+  "waterLevel": 16,
+  "tilesX": 14,
+  "tilesY": 14,
+  "tilesWithPolygons": 81,
+  "polygons": 9834,
+  "polygonsByArea": {
+    "ground": 9834
+  },
+  "doors": 0,
+  "roads": 0,
+  "maskSectors": 226,
+  "modelTriangles": 191721,
+  "terrainTriangles": 130050,
+  "navMeshSha256": "53ede1f7be57b7fd23f679aac53c54d4d29459239f791d79b7d55d382d81de80"
+}

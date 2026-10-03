@@ -26,12 +26,12 @@ public static class BotNavSites
 		return type.Contains("ASMODAE", StringComparison.OrdinalIgnoreCase) ? Race.ASMODIANS : Race.ELYOS;
 	}
 
-	public static IReadOnlyList<BotNavSite> Load(BotNavWorld world, int mapId) => Load(world.Data, mapId);
+	public static IReadOnlyList<BotNavSite> Load(BotNavWorld world, int mapId, Race? playerRace = null) => Load(world.Data, mapId, playerRace);
 
 	/// <summary>Sites from any loaded static data (the offline tools' or a running SIM server's).</summary>
-	public static IReadOnlyList<BotNavSite> Load(StaticData data, int mapId)
+	public static IReadOnlyList<BotNavSite> Load(StaticData data, int mapId, Race? playerRace = null)
 	{
-		Race race = RaceFor(data, mapId);
+		Race race = playerRace ?? RaceFor(data, mapId);
 		TribeClass player = race == Race.ASMODIANS ? TribeClass.PC_DARK : TribeClass.PC;
 		var sites = new List<BotNavSite>();
 		foreach (var group in data.SpawnsDh.GetSpawnsByWorldId(mapId).OrderBy(g => g.GetNpcId()))

@@ -1,6 +1,6 @@
 # Leg 12: Haramel after the coin gear preparation
 
-**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-01 complete; HM-02 is next.** Follow
+**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-02 complete; HM-03 is next.** Follow
 [coin gear preparation CG-00..CG-06](natural-altgard-coin-gear.md) first, then do the Haramel lead-in,
 every active Asmodian Haramel quest once, and the clears needed to finish them. Haramel remains
 **Leg 12**; the preparation is a separate `cg` section. Recommended scope is **two fresh solo clears**,
@@ -59,13 +59,23 @@ socketed stones, and are outside this goal. Do not redo Q24014-Q24016: Leg 10 al
   Both lead to Altgard (2907.624, 1464.1887, 252.59264). Learned Return goes to the Heart while bound
   there. Prove death/relog/re-entry against the actual existing or expired instance; preserve quest
   counters/items and entry use, and record lost work or recovery visits honestly.
-- Haramel already has `.geo`, a walk mask and zone/spawn data, but **no checked-in navmesh/graph**.
-  Generate/bake those from their inputs; never hand-edit generated navigation or fake a reachable
-  path. Separate the refinery/high entrance, tower, lower processing/plantation and high boss office.
-  Prove ramps/stairs between floors and the lift, not straight-line movement through overlapping XY.
+- HM-02 generates Haramel's mesh/Asmodian graph from the shipped `.geo`, walk mask and zone/spawn
+  data; never hand-edit generated navigation. Keep the refinery/high entrance, tower, lower
+  processing/plantation and high boss office separate. Static ground alone cannot connect every floor.
 - Tower lift **730321** has a `portal_dialog` path, dialog **10000**, to (220, 213, 126.68472)
   in the same map. Read `PortalDialogAI`/portal data and observe the normal transition/acknowledgement.
   It does not directly put the character at the rusted box (z139.82). Prove the remaining tower path.
+- The tower return is a checked **jump/glide** onto its lower connecting ramp, followed by ordinary
+  ground movement. The office uses a different **automatic wooden elevator behind Gestanerk**.
+  Its shipped 4.8 mission/CGA floor controller has a twenty-second cycle: board during the 1.7-second
+  bottom stop, ride the real ascent, and leave during the upper stop with a checked hop across the
+  small landing gap. Retain missed boarding windows and wait for the next cycle. SIM uses ordinary
+  CM_MOVE samples from the extracted controller; rendered-client phase/vehicle metadata is later
+  LIVE acceptance. Never invent a vehicle ID from the client entity ID or grant server flight here.
+- The outdoor exit is east of the Heart FLY zone. Walk to the approved lower pillar launch before
+  ascending; land on actual static ground at the approved upper point before walking to the hub
+  transporter. After bind revival, wait for observed soul sickness to expire when its speed penalty
+  would exhaust the flight reserve.
 - Bind stays at the **Heart throughout both clears**, with ordinary Heart recovery. Take hub flight
   transporters for fortress/Heart trips; walk only the local ground/object/portal routes. After the
   final Morn hand-in at the fortress, bind at 700065 and check it across relog.
@@ -134,13 +144,15 @@ prize or switch the current staff for it.
    five cart objects, count the 2/3/3 required monsters separately, then kill Drudgelord Kakiti 216897
    normally and loot. The three destructible 700950 carts belong to the later Q28510; avoid spending
    time killing those for quest progress while that quest is unavailable.
-3. **Clear one: tower -> processing -> plantation.** At Moofrenerk (228.416, 160.876, 137.059),
-   hand in Q28501/Q28508, accept Q28503/Q28509 and now-available Q28506. Take the tower side route
-   to rusted box 700853 at (231.031, 223.091, 139.82) after accepting Q28509; respect the stairs/lift.
-   Clear MuMu Ham the Grey 216907 in processing, collect the five odella objects 700834 for Q28503
-   in plantation, and visit Gestanerk (289.776, 422.453, 89.5563). Hand in Q28506/Q28509 and accept
-   Q28507 **before** Hamerun. Clear Bossman Nukiti 216915 as needed on the office approach, then
-   reach the high office through proved stairs/lift paths.
+3. **Clear one: processing/plantation, tower detour, office.** At Moofrenerk
+   (228.416, 160.876, 137.059), hand in Q28501/Q28508 and accept Q28503/Q28509 and now-available
+   Q28506. Clear MuMu Ham the Grey 216907 in processing, collect the five odella objects 700834
+   in plantation, and visit Gestanerk (289.776, 422.453, 89.5563). Hand in Q28506 and accept Q28507
+   **before** Hamerun. From the lower floor, walk to Tower Lift 730321, take dialog 10000, and walk
+   the remaining stairs to rusted box 700853 at (231.031, 223.091, 139.82). Loot it for Q28509,
+   jump/glide down to the connecting ramp and return to Gestanerk to hand it in. Board the automatic
+   wooden elevator behind him, ride to the upper office and hop onto its checked landing. Clear
+   Bossman Nukiti 216915 as needed before approaching Hamerun's raised stage.
 4. **Clear one: Hamerun and outside unlocks.** Kill Hamerun the Bleeder **216922**, handle movie
    **457**, observe and loot the **Cleric chest 700832** and use spawned exit 700852. Java's instance
    handler selects the chest by class; it is not interchangeable with warrior/scout/mage chests.
@@ -217,11 +229,30 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
     scenarios passed. Earlier compile/fixture/identity drafts and passing pre-refinement Fast are
     retained (`run/hm01-support/audit.json`). Runtime travel/quest/combat/recovery proof remains
     HM-02..HM-06; no server content or snapshot change. Base `a39b80dc0`.
-- [ ] **HM-02 — Navigation and travel probe.** Depends: HM-01. Generate/rebake Haramel mesh/graph,
+- [x] **HM-02 — Navigation and travel probe.** Depends: HM-01. Generate/rebake Haramel mesh/graph,
   prove all outdoor objects, portal entry, every floor/quest source/boss, tower box, actual lift,
   both exits, hub flights/binds and Heart recovery. Use unused access-0 probe accounts, clear
   aggressive neighbours for setup and `BeginWorldReload` before setup teleports. Label setup paths;
   ordinary travel evidence must use real packets. Run the affected-map NavBake check.
+  - 2026-10-03: Haramel's generated/rebaked mesh has 9,834 polygons; its Asmodian graph has 32
+    nodes, 132 links and both static exits. Java portal/dialog/lift, movement/glide, instance and
+    revive services were read first. The shipped 4.8 mission/CGA supplies the separate office
+    elevator's twenty-second cycle and floor; regeneration is identical. Static navigation's
+    tower/office gaps use checked ordinary glide/carry/hop packets, without server content changes.
+  - `hm02-fast-a3` proves 62 checked ground legs, all 26 collection-source spots, actual tower lift
+    and stairs/box, one tower glide, one office elevator, both exits, two hub flights, three pillar
+    flights, same-copy re-entry without extra entry use, Heart revival and alive fortress bind.
+    Account 223 is an unused access-0 probe. Class/level/Kinah/staff, 109 aggressive-neighbour
+    clears, one controlled death and HP=1 Hamerun solely to expose travel endpoints are labelled
+    setup; normal combat remains HM-04. No natural character or quest was modified.
+  - Forty-six focused cases, affected-map rebake and all seven fresh prechecks pass; Fast passes
+    79 tests/four existing skips and all eleven scenarios (`run/hm02-support/audit.json`, base
+    `d2c3331c8`). Route failures and both earlier Fast drafts remain retained. The temporary glide
+    log allowance/history experiment was reverted after reporter rejection; final CM_MOVE(GLIDE)
+    enters actual glide state directly, omitting Java's unhandled optional animation emotion.
+    Recovery waits for observed soul sickness; boarding misses remain recorded outcomes (zero in
+    the final run). Owned schemas are gone, incoming snapshot hash unchanged. Rendered elevator
+    phase/vehicle metadata still require later LIVE acceptance; no invented vehicle ID.
 - [ ] **HM-03 — Lead-in and first-clear quest protocols in SIM.** Depends: HM-02. Play Q28500's
   dialogue/movie/reward; Q28501/Q28508 sources and independent counters; Q28503/Q28509 loot;
   Q28506 -> Q28507 hand-ins. Prove all required start gates and selected Cleric rewards, including
@@ -292,6 +323,10 @@ be corrected under existing authority, record it here and continue the remaining
 
 ## Progress log
 
+- 2026-10-03 HM-02 complete: generated/rebaked Haramel navigation and actual portal/lift/tower
+  glide/wooden elevator/exits/hub-flight/Heart-recovery travel pass. Forty-six focused cases,
+  seven prechecks and Fast 79 tests/11 scenarios pass; retained drafts and cleanup are recorded
+  in `run/hm02-support/audit.json`. HM-03 now proves first-clear quest protocols.
 - 2026-10-03 HM-01 complete: l12 contract/selectors, eight plans, three custom protocols, two visits,
   packed/multiple objectives and retained cold receipts/budgets are implemented. Java channel-ID and
   recyclable-NPC-ID semantics are accounted for; soup payment and full belt slot persist. 81 focused/

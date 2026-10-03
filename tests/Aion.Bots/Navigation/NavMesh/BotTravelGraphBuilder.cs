@@ -15,9 +15,9 @@ public static class BotTravelGraphBuilder
 	private const float SnapRadius = 6f;
 
 	public static BotTravelGraph Build(BotNavWorld world, int mapId, BotNavMesh mesh, BotNavMeshRouter router,
-		Action<string>? log = null)
+		Action<string>? log = null, Race? race = null)
 	{
-		IReadOnlyList<BotNavSite> sites = BotNavSites.Load(world, mapId);
+		IReadOnlyList<BotNavSite> sites = BotNavSites.Load(world, mapId, race);
 		BotNavRoadFile? roads = BotNavRoads.Load(world.RepoRoot, mapId);
 		var candidates = new List<(BotTravelNodeKind Kind, string Name, int Template, BotPosition Position, int Priority)>();
 
@@ -122,7 +122,7 @@ public static class BotTravelGraphBuilder
 			NavMeshSha256 = mesh.Manifest.NavMeshSha256,
 			Nodes = nodes,
 			Edges = edgeList.OrderBy(e => e.From).ThenBy(e => e.To).ToList(),
-			Exits = Exits(world, mapId, nodes, sites),
+			Exits = Exits(world, mapId, nodes, sites, race ?? BotNavSites.RaceFor(world, mapId)),
 		};
 	}
 
@@ -157,10 +157,10 @@ public static class BotTravelGraphBuilder
 
 	/// <summary>Teleports offered by portal NPCs near a node, read from the shipped
 	/// <c>portals/portal_template2.xml</c> (the loaded holder keeps them private after unmarshalling).</summary>
-	private static List<BotTravelExit> Exits(BotNavWorld world, int mapId, List<BotTravelNode> nodes, IReadOnlyList<BotNavSite> sites)
+	private static List<BotTravelExit> Exits(BotNavWorld world, int mapId, List<BotTravelNode> nodes, IReadOnlyList<BotNavSite> sites, Race playerRace)
 	{
 		var exits = new List<BotTravelExit>();
-		string raceName = BotNavSites.RaceFor(world, mapId).ToString();
+		string raceName = playerRace.ToString();
 		string path = Path.Combine(world.RepoRoot, "game-server", "data", "static_data", "portals", "portal_template2.xml");
 		if (!File.Exists(path)) return exits;
 		var document = System.Xml.Linq.XDocument.Load(path);
