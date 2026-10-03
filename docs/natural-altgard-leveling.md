@@ -26,7 +26,7 @@ is done (AO-00..AO-06, 2026-10-02): `altgard-l8` starts Leg 9 at the Observatory
 is done (BC-00..BC-08, 2026-10-02): `altgard-l10` holds the level-24 Cleric alive and bound at the fortress,
 all nine quests complete. Q2900 is next; end-of-area LIVE acceptance follows later.
 [Leg 11: No Escaping Destiny](#leg-11-no-escaping-destiny-and-the-altgard-endpoint-level-24--proposal)
-is proposed below, including all four maps, loss recovery and the full-area acceptance handoff.
+is approved for implementation below, including all four maps, loss recovery and the full-area acceptance handoff.
 
 ## Goal
 
@@ -3527,7 +3527,8 @@ Gathering, coin loops and unapproved D32 quests stay deferred.
 
 ## Leg 11: No Escaping Destiny and the Altgard endpoint (level 24 — proposal)
 
-**Status (2026-10-02): proposed, not implemented.** Finish Q2900 last, as the maintainer decided on
+**Status (2026-10-02): approved; implementation in progress.** The maintainer's goal, "Implement the No
+Escaping Destiny", approves ND-00..ND-08. Finish Q2900 last, as the maintainer decided on
 2026-10-01. This is one existing campaign across four maps. Work the loop protocol with **ND** in place of NA,
 one item and one commit on main. Keep the fortress bind throughout, then return there for the area endpoint.
 Permanent stigma selection is deferred: retain the reward bundle unopened and protect the class reward.
@@ -3655,11 +3656,20 @@ on Altgard within 60 m of fortress 700065 and still bound there. Verify across r
 skills, inventory/equipment, quest and completed journals. Pin the actual EXP/Kinah deltas, not an invented
 level or an exact fee copied from another service. Capture `altgard-l11` only from committed code.
 
-### Leg 11 TODO list — proposed
+### Leg 11 TODO list
 
-- [ ] **ND-00 — Confirm scope and spec.** Re-read decisions, BC-00..BC-08 and the sources above; confirm the
+- [x] **ND-00 — Confirm scope and spec.** Re-read decisions, BC-00..BC-08 and the sources above; confirm the
   start dump, endpoint, reward boundary and every recovery branch. Log any decision under Blocked; no
   server-content authority beyond D26–D33. Depends: BC-08 and approval of this proposal.
+  - *Done 2026-10-02.* From `eebceefa7`, the implementation goal approves this scope. Re-read AL-1..AL-5,
+    BC-00..BC-08, the loop protocol, Java `ce54b7931` Q2900 and the full-var/stigma helpers; C# preserves
+    the handler's transitions, death/outside cleanup and unguarded dialog quirks. The `altgard-l10` dump
+    hash matches; its verified endpoint is Cleric 24, 143 completed quests, all nine Leg 10 quests complete,
+    Q2900 START/0 and fortress bind (`run/nd00-audit-final.log`). Four maps, five quest teleports, actual
+    movie/equip events, five-minute enemy, ordinary bind recovery and sealed/legacy rewards are pinned above.
+    No new server-content authority or blocking decision. The first audit assertion used names instead of
+    the checkpoint's numeric status/StepAndFlags representation; corrected without changing the dump,
+    with the draft retained (`run/nd00-audit-draft.log`). All seven pre-commit checks pass (`run/nd00-checks`).
 - [ ] **ND-01 — Contract and decisions.** Register l11 with Q2900's full vars, four allowed maps, named
   transitions, movie, actual stigma equip event, timed dynamic enemy, cleanup and fortress endpoint.
   Cover late-var and REWARD resumes. Add only narrowly scoped Cleric identity support for the quest instance;
@@ -4155,3 +4165,4 @@ The original questions follow.
 - 2026-10-02 BC-07: altgard-l10 captured from committed 6986e3539, hash-checked and restored through an actual endpoint relog; Cleric 24 alive at fortress bind, all nine quests complete, work items absent, 495,028 Kinah and Q2900 START/0. Both owned schemas dropped; pre-commit checks pass. Full checklist is next.
 - 2026-10-02 BC-08: all 33 CLAUDE commands pass on e43228041, solution 5,105 passed/100 skips, Fast 72 passed/three switch skips/all eleven scenarios; six baked maps validate. Leg 10 is done; altgard-l10 is retained for Q2900, then end-of-area LIVE acceptance. Stop at this checkpoint. No push.
 - 2026-10-02 Leg 11 proposed: Q2900 from altgard-l10, four maps, Anturoon/Aldelle hub flights, movie/equip/spawn/cleanup and ordinary bind recovery; ND-00..ND-08 and full-area SIM/LIVE handoff planned. Java/data and official 4.8 stigma audit; Space offline mesh/three routes pass, initial diagnostic omission retained. Seven pre-commit checks pass (`run/nd-plan-checks`). No gameplay implementation or natural run; no push.
+- 2026-10-02 ND-00: implementation approved; Java/full-var/stigma and snapshot audit pass from eebceefa7, reward boundary and ordinary recovery pinned, numeric checkpoint assertion draft retained. Seven pre-commit checks pass; contract and decisions are next.
