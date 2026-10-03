@@ -10,7 +10,7 @@ public sealed record NaturalJourneyCheckpoint(
 	int CurrentHp, int MaxHp, int CurrentMp, int MaxMp, bool IsDead,
 	BotQuestState[] Quests, int[] CompletedQuestIds, NaturalJourneyItem[] Inventory,
 	BotSkill[] Skills, NaturalDecision Next, byte PlayerClass = 0, BotBindPoint? BindPoint = null,
-	BotCompletedQuest[]? CompletedQuests = null, NaturalCoinGearProgress? CoinGearProgress = null)
+	NaturalJourneyCompletedQuest[]? CompletedQuests = null, NaturalCoinGearProgress? CoinGearProgress = null)
 {
 	public static NaturalJourneyCheckpoint Capture(BotWorldModel world, int expectedCharacterId,
 		int generation, NaturalIshalgenContract contract, BotPosition? currentPosition = null, int sequence = 1,
@@ -31,7 +31,7 @@ public sealed record NaturalJourneyCheckpoint(
 			NaturalIshalgenDecisionEngine.Decide(contract, observation, sequence),
 			// NA-07: the class survives relog (a Cleric stays a Cleric), and so does the obelisk bind.
 			world.Objects.TryGetValue(expectedCharacterId, out BotKnownObject? self) ? self.PlayerClass ?? 0 : (byte)0,
-			world.ObeliskBindPoint, world.CompletedQuests.Values.OrderBy(q => q.QuestId).ToArray(), coinGearProgress);
+			world.ObeliskBindPoint, world.CompletedQuestCounts.OrderBy(q => q.Key).Select(q => new NaturalJourneyCompletedQuest(q.Key, q.Value)).ToArray(), coinGearProgress);
 	}
 
 	public static NaturalIshalgenObservation Observe(BotWorldModel world, BotPosition? currentPosition = null) =>
@@ -41,6 +41,7 @@ public sealed record NaturalJourneyCheckpoint(
 }
 
 public sealed record NaturalJourneyItem(int ObjectId, int ItemId, long Count, ushort EquipmentSlot);
+public sealed record NaturalJourneyCompletedQuest(int QuestId, byte CompleteCount);
 
 public sealed record NaturalJourneyFailure(
 	string Kind, string Step, string Action, int ConnectionGeneration,

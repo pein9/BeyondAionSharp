@@ -10,6 +10,42 @@ namespace Aion.GameServer.Tests;
 public sealed class BotWorldModelTests
 {
 	[Fact]
+	public void CompletedStatusCountsTheRewardOnceAndTheNextRepeatPreservesThatCount()
+	{
+		var world = new BotWorldModel();
+		Update(3); Update(4); Update(5); Update(5);
+		Assert.Equal(1, world.CompletedQuestCounts[2293]);
+		Assert.False(world.CompletedQuests.ContainsKey(2293)); // The server has not sent a repeatability packet.
+		Update(3);
+		Assert.Equal(1, world.Quests[2293].CompleteCount);
+		Update(4); Update(5); Update(5);
+		Assert.Equal(2, world.CompletedQuestCounts[2293]);
+		var relogged = new BotWorldModel();
+		relogged.Apply(Packet<SM_QUEST_COMPLETED_LIST>(("updateMode", (byte)0),
+			("quests", Items(Item(("questId", 2293), ("completeCount", (byte)2), ("nonRepeatable", false))))));
+		relogged.Apply(Packet<SM_QUEST_ACTION>(("action", (byte)2), ("questId", 2293), ("status", (byte)5), ("stepAndFlags", 0)));
+		Assert.Equal(2, relogged.CompletedQuestCounts[2293]); // A late duplicate cannot become a third reward.
+		Assert.Equal(world.CompletedQuestCounts[2293], relogged.CompletedQuestCounts[2293]);
+		void Update(byte status) => world.Apply(Packet<SM_QUEST_ACTION>(("action", (byte)2),
+			("questId", 2293), ("status", status), ("stepAndFlags", 0)));
+	}
+
+	[Fact]
+	public void ARepeatStartedAfterLoginUsesItsActualSavedCountAndTheWireCeiling()
+	{
+		var world = new BotWorldModel();
+		world.Apply(Packet<SM_QUEST_COMPLETED_LIST>(("updateMode", (byte)0),
+			("quests", Items(Item(("questId", 2293), ("completeCount", (byte)254), ("nonRepeatable", false))))));
+		world.Apply(Packet<SM_QUEST_ACTION>(("action", (byte)1), ("questId", 2293), ("status", (byte)3), ("stepAndFlags", 0)));
+		Assert.Equal(254, world.Quests[2293].CompleteCount);
+		world.Apply(Packet<SM_QUEST_ACTION>(("action", (byte)2), ("questId", 2293), ("status", (byte)5), ("stepAndFlags", 0)));
+		Assert.Equal(255, world.CompletedQuestCounts[2293]);
+		world.Apply(Packet<SM_QUEST_ACTION>(("action", (byte)1), ("questId", 2293), ("status", (byte)3), ("stepAndFlags", 0)));
+		world.Apply(Packet<SM_QUEST_ACTION>(("action", (byte)2), ("questId", 2293), ("status", (byte)5), ("stepAndFlags", 0)));
+		Assert.Equal(255, world.CompletedQuestCounts[2293]);
+	}
+
+	[Fact]
 	public void UnsolicitedQuestKillTeleportForgetsTheInstanceBeforeDestinationSpawn()
 	{
 		var world = new BotWorldModel();

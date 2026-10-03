@@ -58,8 +58,8 @@ public sealed class NaturalAltgardCoinGearContractTests
 	{
 		NaturalAltgardObservation done = Rewarded();
 		Assert.Equal("coin-receipts-missing", Decide(done).Action);
-		Assert.Equal("coin-repeat-count", Decide(done with { CompletedQuests = new Dictionary<int, BotCompletedQuest>() }).Action);
-		Assert.Equal("coin-repeat-count", Decide(done with { CompletedQuests = new Dictionary<int, BotCompletedQuest> { [2293] = new(2293, 2, false) } }).Action);
+		Assert.Equal("coin-repeat-count", Decide(done with { CompletedQuestCounts = new Dictionary<int, byte>() }).Action);
+		Assert.Equal("coin-repeat-count", Decide(done with { CompletedQuestCounts = new Dictionary<int, byte> { [2293] = 2 } }).Action);
 		Assert.Equal("coin-repeat-count", Decide(done with { Quests = new Dictionary<int, BotQuestState> { [2293] = new(2293, 3, 0, 1, null) } }).Action);
 		NaturalCoinGearProgress progress = NaturalCoinGearProgress.Empty.ObserveReward(Gear, Incoming(), done);
 		Assert.Equal("coin-purchase", Decide(done with { CoinGearProgress = progress }).Action);
@@ -125,10 +125,10 @@ public sealed class NaturalAltgardCoinGearContractTests
 	{
 		var checkpoint = new NaturalJourneyCheckpoint(42, 1, 220030000, new(2656, 1660, 325, 0), 24, 1, 1, 1, 1, false,
 			[], [2293], [], [], new(1, "journey-complete", null, "complete", "done", [], []),
-			CompletedQuests: [new(2293, 1, false)]);
+			CompletedQuests: [new(2293, 1)]);
 		NaturalJourneyPersistence.Verify(checkpoint, checkpoint with { ConnectionGeneration = 2 });
 		Assert.Throws<InvalidDataException>(() => NaturalJourneyPersistence.Verify(checkpoint,
-			checkpoint with { ConnectionGeneration = 2, CompletedQuests = [new(2293, 2, false)] }));
+			checkpoint with { ConnectionGeneration = 2, CompletedQuests = [new(2293, 2)] }));
 		Assert.Throws<InvalidDataException>(() => NaturalJourneyPersistence.Verify(checkpoint,
 			checkpoint with { ConnectionGeneration = 2, CompletedQuests = null }));
 	}
@@ -143,13 +143,13 @@ public sealed class NaturalAltgardCoinGearContractTests
 		var position = new BotPosition(at[0], at[1], at[2], 0);
 		return new(true, 220030000, 24, false, new Dictionary<int, BotQuestState>(), Leg.Start.CompletedQuestIds.ToHashSet(),
 			position, inventory.ToDictionary(i => i.ItemId, i => i.Count), new(220030000, position, 0),
-			FreeCubeSlots: 30, Kinah: 536193, SkillIds: new HashSet<int> { 1842 }, CompletedQuests: new Dictionary<int, BotCompletedQuest>(), Inventory: inventory);
+			FreeCubeSlots: 30, Kinah: 536193, SkillIds: new HashSet<int> { 1842 }, CompletedQuestCounts: new Dictionary<int, byte>(), Inventory: inventory);
 	}
 	private static NaturalAltgardObservation Rewarded()
 	{
 		NaturalAltgardObservation state = Incoming();
 		return state with { CompletedQuestIds = state.CompletedQuestIds.Append(2293).ToHashSet(),
-			CompletedQuests = new Dictionary<int, BotCompletedQuest> { [2293] = new(2293, 1, false) },
+			CompletedQuestCounts = new Dictionary<int, byte> { [2293] = 1 },
 			ItemCounts = new Dictionary<int, long>(state.ItemCounts) { [Gear.CoinItemId] = 23 },
 			Inventory = state.Inventory!.Select(i => i.ItemId == Gear.CoinItemId ? i with { Count = 23 } : i).ToArray() };
 	}

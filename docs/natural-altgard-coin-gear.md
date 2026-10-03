@@ -1,6 +1,6 @@
 # Altgard coin gear preparation before Leg 12
 
-**Status (2026-10-03): CG-00/CG-01 complete; CG-02..CG-06 remain.** The operator requested Q2293,
+**Status (2026-10-03): CG-00..CG-02 complete; CG-03..CG-06 remain.** The operator requested Q2293,
 binding at Heart of Impetusium, the best available coin chain gear and weapon, then Haramel as Leg 12.
 The operator amended the weapon scope on 2026-10-03: **keep the equipped level-21 staff; do not switch
 it or buy a coin weapon**. A shield cannot be worn with that two-handed staff and is excluded too.
@@ -11,8 +11,8 @@ The operator explicitly confirmed the revised three-piece, four-coin scope on 20
 combined goal was active. This supersedes the pasted goal's older five-piece/mace/shield clause.
 
 Continue with [Leg 12: Haramel](natural-altgard-haramel.md) only after CG-06. This preparation has the
-separate selector `cg`; Haramel keeps `l12`. Both selectors and their snapshot support still need
-implementation of the natural runner and probes. No natural gameplay run has been launched yet.
+separate selector `cg`, with contract and snapshot selection in place; its natural runner remains
+CG-04. Haramel keeps `l12`, to be implemented in HM-01. No natural gameplay run has been launched yet.
 
 ## Authority and incoming state
 
@@ -200,10 +200,28 @@ plus `run-fast.ps1` before gameplay-change commits. Retain failures; do not reru
     scenarios passing (76 tests passed, four explicitly skipped). The initial full-cube test expected
     a direct block instead of existing town service; failure/detail logs and corrected verification
     are retained. No server content, natural purchases or snapshot capture. Base `f58ccfce0`.
-- [ ] **CG-02 — Heart travel and Q2293 probe.** Depends: CG-01. Prove the actual hub flight, bind,
+- [x] **CG-02 — Heart travel and Q2293 probe.** Depends: CG-01. Prove the actual hub flight, bind,
   lower-ground loop, return to the upper vendors and ordinary Heart recovery at level 24. Complete
   both distinct kill counters with normal combat, reward, reaccept and reset on the probe. Clear
   aggressive neighbours only for labelled setup; call `BeginWorldReload` before setup teleports.
+  - 2026-10-03 evidence: `run/cg02-quest/probe-counts.log` and
+    `run/cg02-probe-a5-cg02.trace.summary.json`, free account 221, level-24 incoming equipment and
+    actual learned skills. Normal fortress flight from 203561 costs 565 Kinah; Heart bind costs
+    813. Three checked pillar flights and 29 travel action legs cover the upper vendors, full lower
+    spirit fields and bind recovery. Both counters finish at 6/16, including both Cyclone variants;
+    22 combat attempts have 21 successful targeted kills, zero deaths/retreats, and the complete
+    22-credit objective. Targets' normal HP is retained. Twenty-six aggressive neighbours were
+    cleared as labelled probe setup, preserving quest spirits. Reward 18 -> 23 coins, actual relog
+    confirms CompleteCount 1/repeatable, reaccept resets both counters without another reward.
+    One controlled death uses real CM_REVIVE to the upper Heart bind; staff object remains equipped.
+  - Java `QuestService.finishQuest` sends completion status without a fresh completed-list count.
+    Corrected the shared bot to count observed transitions once, retain repeat counts, saturate the
+    wire count at 255 and reconcile against login; repeatability is still taken only from its own
+    packet. Checkpoints now record counts for newly completed quests too. Thirty-five focused
+    count/contract/persistence tests, all seven prechecks and Fast 11/11 pass (`run/cg02-fast/`:
+    77 tests passed, four explicit skips). Retain build, wrong-pad, platform approach, five-metre
+    bind-range and missing-live-count failures plus their corrections in `run/cg02-quest/`.
+    Base commit `0f7fdeba8`; no server/content change or natural-character setup.
 - [ ] **CG-03 — Coin purchase and equipment probe.** Depends: CG-02. Prove the real reward-shop
   offer, three armour purchases, exact debit, insufficient-funds refusal without partial equipment,
   all five final chain body slots and unchanged two-handed staff across endpoint relog. Prove no
@@ -243,6 +261,10 @@ not permission to invent higher equipment. Record any new shared defect or unsup
 
 ## Progress log
 
+- 2026-10-03 CG-02: normal spirit combat, both counters, reward/relog/repeat reset and ordinary Heart
+  revival pass on account 221; shared live completion-count bookkeeping corrected from Java and
+  verified against login. Zero combat deaths/retreats, one controlled recovery death. Seven prechecks,
+  focused 35/35 and Fast 11/11 pass. Next CG-03 proves real coin purchases and equipment persistence.
 - 2026-10-03 CG-01: committed the cg contract/selector, compiled Q2293, shared transaction and
   repeat-count state, protected loadout policy and free accounts 221/222. Focused 65/65, seven
   prechecks and Fast 11/11 pass. Next CG-02 proves travel/bind, both counters and ordinary recovery.

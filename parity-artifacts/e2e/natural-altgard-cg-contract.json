@@ -207,16 +207,16 @@
     },
     {
       "key": "spirits",
-      "note": "Lower ground Bladestorm and both Cyclone variants; reachable sources are observed.",
+      "note": "All shipped lower-ground Bladestorm and both Cyclone fields; CG-02 traverses the east circuit at normal HP.",
       "min": [
-        2300,
+        2400,
         1400,
         240
       ],
       "max": [
-        2700,
-        1710,
-        270
+        2940,
+        1880,
+        275
       ]
     }
   ],

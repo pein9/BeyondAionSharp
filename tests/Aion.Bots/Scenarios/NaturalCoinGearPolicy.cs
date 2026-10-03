@@ -67,7 +67,7 @@ public sealed record NaturalCoinGearProgress(NaturalCoinRewardReceipt? Reward, N
 		return this with { Purchases = [.. Purchases, new(itemId, added[0].ObjectId, oldCoins, newCoins, before.Kinah)] };
 	}
 
-	internal static byte Count(NaturalAltgardObservation state, int questId) => state.CompletedQuests?.GetValueOrDefault(questId)?.CompleteCount ?? 0;
+	internal static byte Count(NaturalAltgardObservation state, int questId) => state.CompletedQuestCounts?.GetValueOrDefault(questId) ?? 0;
 	internal static long Coins(NaturalAltgardObservation state, NaturalCoinGear gear) => state.ItemCounts.GetValueOrDefault(gear.CoinItemId);
 }
 

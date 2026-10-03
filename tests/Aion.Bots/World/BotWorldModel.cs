@@ -44,6 +44,18 @@ public sealed partial class BotWorldModel
 	public IReadOnlyDictionary<int, BotSkillCooldown> Cooldowns => cooldowns;
 	public IReadOnlyDictionary<int, BotQuestState> Quests => quests;
 	public IReadOnlyDictionary<int, BotCompletedQuest> CompletedQuests => completedQuests;
+	/// <summary>Login counts plus completed transitions observed since login. Java finishQuest sends
+	/// SM_QUEST_ACTION, not a new completed-list packet; repeatability remains known only from its own packet.</summary>
+	public IReadOnlyDictionary<int, byte> CompletedQuestCounts
+	{
+		get
+		{
+			var counts = completedQuests.ToDictionary(q => q.Key, q => q.Value.CompleteCount);
+			foreach (BotQuestState quest in quests.Values.Where(q => q.CompleteCount > 0 || q.Status == 5))
+				counts[quest.QuestId] = Math.Max(counts.GetValueOrDefault(quest.QuestId), quest.CompleteCount);
+			return counts;
+		}
+	}
 	public IReadOnlySet<int> AcceptedQuestIds => acceptedQuestIds;
 	public IReadOnlySet<int> CompletedQuestIds => completedQuestIds;
 	public IReadOnlyList<BotSystemMessage> SystemMessages => systemMessages;
@@ -531,8 +543,13 @@ public sealed partial class BotWorldModel
 		{
 			case 1:
 			case 2:
-				var completeCount = quests.TryGetValue(questId, out var existing) ? existing.CompleteCount : (byte)0;
+				quests.TryGetValue(questId, out var existing);
+				byte completeCount = Math.Max(existing?.CompleteCount ?? 0, completedQuests.GetValueOrDefault(questId)?.CompleteCount ?? 0);
 				byte status = packet.Get<byte>("status");
+				// Java QuestState.setStatus increments only on a transition to COMPLETE. Duplicate updates
+				// must not count twice; the wire count saturates at 255 (SM_QUEST_LIST/COMPLETED_LIST).
+				if (status == 5 && existing?.Status != 5 && (existing != null || !completedQuests.ContainsKey(questId)))
+					completeCount = (byte)Math.Min(255, completeCount + 1);
 				TrackQuestStatus(questId, status);
 				quests[questId] = new BotQuestState(questId, status,
 					packet.Get<int>("stepAndFlags"), completeCount, existing?.TimerSeconds);

@@ -13,7 +13,7 @@ public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, in
 	IReadOnlyDictionary<int, BotQuestState> Quests, IReadOnlySet<int> CompletedQuestIds, BotPosition Position,
 	IReadOnlyDictionary<int, long> ItemCounts, BotBindPoint? Bind = null, long? GameMinutes = null, IReadOnlySet<int>? VisibleNpcIds = null,
 	int? FreeCubeSlots = null, long Kinah = 0, int? CubeNpcExpansions = null, bool CanRebirth = false,
-	IReadOnlySet<int>? SkillIds = null, IReadOnlyDictionary<int, BotCompletedQuest>? CompletedQuests = null,
+	IReadOnlySet<int>? SkillIds = null, IReadOnlyDictionary<int, byte>? CompletedQuestCounts = null,
 	NaturalJourneyItem[]? Inventory = null, NaturalCoinGearProgress? CoinGearProgress = null)
 {
 	public static NaturalAltgardObservation Observe(BotWorldModel world, BotPosition position, DateTimeOffset? now = null, int? freeCubeSlots = null,
@@ -24,7 +24,7 @@ public sealed record NaturalAltgardObservation(bool Synchronized, int? MapId, in
 			world.ObeliskBindPoint, now is DateTimeOffset at ? world.GameMinutesAt(at) : world.GameMinutes,
 			world.Objects.Values.Where(known => known.Kind == BotKnownObjectKind.Npc && known.TemplateId != null)
 				.Select(known => known.TemplateId!.Value).ToHashSet(), freeCubeSlots, world.Kinah, world.CubeExpansion?.Npc,
-			world.ReviveOptions?.BySkill == true, world.Skills.Keys.ToHashSet(), new Dictionary<int, BotCompletedQuest>(world.CompletedQuests),
+			world.ReviveOptions?.BySkill == true, world.Skills.Keys.ToHashSet(), new Dictionary<int, byte>(world.CompletedQuestCounts),
 			world.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(), coinGearProgress);
 }
 
@@ -116,7 +116,7 @@ public static class NaturalAltgardDecisionEngine
 		if (!state.Synchronized || state.MapId == null)
 			return Stop("refresh-observation", "planned", "Wait for a synchronized client view.");
 		if (contract.CoinGear is { } repeat && state.CompletedQuestIds.Contains(repeat.QuestId) &&
-			(state.CompletedQuests?.GetValueOrDefault(repeat.QuestId)?.CompleteCount is not 1 ||
+			(state.CompletedQuestCounts?.GetValueOrDefault(repeat.QuestId) is not 1 ||
 			 state.Quests.GetValueOrDefault(repeat.QuestId)?.Status is Start or Reward))
 			return Stop("coin-repeat-count", "blocked", "Reconcile the exact completion count; never accept a second natural repeat.");
 		if (state.IsDead)
@@ -359,7 +359,7 @@ public static class NaturalAltgardDecisionEngine
 		return Stop("leg-complete", "complete", $"The {contract.Leg} endpoint is reached.");
 
 		bool Done(int questId) => contract.CoinGear is { } gear && questId == gear.QuestId
-			? state.CompletedQuests?.GetValueOrDefault(questId)?.CompleteCount >= gear.Completions
+			? state.CompletedQuestCounts?.GetValueOrDefault(questId) >= gear.Completions
 			: state.CompletedQuestIds.Contains(questId);
 		bool LootCollected(NaturalAltgardObjectUse use) => use.LootItemId is int loot && contract.CollectionList.Any(collection =>
 			collection.QuestId == use.QuestId && collection.Items.Any(item => item.ItemId == loot && state.ItemCounts.GetValueOrDefault(loot) >= item.Count));
