@@ -11,7 +11,7 @@ namespace Aion.GameServer.Tests;
 public sealed class StarterSoakQuestTests
 {
 	[Fact]
-	public void ImmediateQuestActionDoesNotInventCompletionCountAndRelogPrologueUsesCompletedList()
+	public void ObservedQuestCompletionCountsOnceAndRelogPrologueUsesCompletedList()
 	{
 		var world = new BotWorldModel();
 		var quest = StarterSoakQuest.ForRace(ScenarioRace.Elyos)[0];
@@ -19,7 +19,10 @@ public sealed class StarterSoakQuestTests
 		{ ["action"] = (byte)2, ["questId"] = quest.Id, ["status"] = (byte)5, ["stepAndFlags"] = 1 }));
 		world.Apply(new(typeof(SM_STATUPDATE_EXP), new Dictionary<string, object?>
 		{ ["currentExp"] = 130L, ["recoverableExp"] = 0L, ["maxExp"] = 43087L }));
-		Assert.Equal(0, world.Quests[quest.Id].CompleteCount);
+		Assert.Equal(1, world.Quests[quest.Id].CompleteCount);
+		world.Apply(new(typeof(SM_QUEST_ACTION), new Dictionary<string, object?>
+		{ ["action"] = (byte)2, ["questId"] = quest.Id, ["status"] = (byte)5, ["stepAndFlags"] = 1 }));
+		Assert.Equal(1, world.CompletedQuestCounts[quest.Id]);
 		quest.AssertImmediateReward(world, 0);
 		Assert.Throws<InvalidDataException>(() => quest.AssertImmediateReward(world, 1));
 		Assert.True(StarterSoakQuest.ObservedComplete(world, quest.Id));

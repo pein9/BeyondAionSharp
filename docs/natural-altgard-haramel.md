@@ -398,6 +398,16 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
   on the committed implementation (including Fast and the now-eight baked maps), reconcile both new
   snapshots, retained equipped staff/no weapon purchase and all outcomes, tick only proven
   objectives and commit the completion checkpoint.
+  - *Checklist correction 2026-10-03, completion pending.* All 33 commands ran on `5f3e979b7`;
+    32 pass, including all eight baked maps and final Fast (82 tests/five switch skips/eleven
+    scenarios). The solution suite retains two failed old expectations: its decoder count was
+    still 117 before HM-01 added `SM_INSTANCE_INFO`, and the soak quest test expected zero live
+    completions before CG's Java-based transition bookkeeping. Java `QuestState.setStatus` counts
+    COMPLETE once; the corrected test also rejects double counting a duplicate update. Both
+    focused cases and seven fresh prechecks pass (`run/hm08-testfix`). These are test-only
+    corrections; commit them before rerunning the failed full solution command. HM-08 stays
+    unchecked until the corrected solution run and final handoff audit pass. Original results
+    remain in `run/hm08-final-checklist`.
   **Stop the combined goal here.** Full-area continuous SIM and isolated LIVE acceptance are later work.
 
 For every commit run the seven current pre-commit checks: warning baseline, null loggers, clock reads,
@@ -449,6 +459,10 @@ be corrected under existing authority, record it here and continue the remaining
 
 ## Progress log
 
+- 2026-10-03 HM-08 correction: all 33 checklist commands executed; 32 pass, while the solution
+  suite catches two outdated packet-inventory/completion-count expectations. Java-checked test
+  corrections, duplicate-update regression and both focused cases/seven fresh prechecks pass.
+  Commit the test-only fixes, then rerun the full solution command; HM-08 remains unchecked.
 - 2026-10-03 HM-07 complete: `altgard-haramel-l12` captured from committed `aea035881`, hash/SQL/
   actual endpoint relog verified, original receipts retained and owned schemas dropped. Cleric 25,
   156 journals, zero deaths, 19 Iron/7 Bronze/662,739 Kinah, equipped original staff/coin chain and
