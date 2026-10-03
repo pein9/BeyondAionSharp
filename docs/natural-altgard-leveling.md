@@ -22,6 +22,9 @@ is done (AK-00..AK-10, 2026-10-01): `altgard-l5` starts Leg 6.
 is done (AO-00..AO-06, 2026-10-02): `altgard-l8` starts Leg 9 at the Observatory.
 [Leg 9: Heart of Impetusium](#leg-9-heart-of-impetusium-level-21) is done (AH-00..AH-06, 2026-10-02):
 `altgard-l9` starts Leg 10, the Black Claw ground, with a level-22 Cleric bound at the Heart.
+[Leg 10: Black Claw ground and the remaining campaigns](#leg-10-black-claw-ground-and-the-remaining-campaigns-level-22)
+is done (BC-00..BC-08, 2026-10-02): `altgard-l10` holds the level-24 Cleric alive and bound at the fortress,
+all nine quests complete. Q2900 is next; end-of-area LIVE acceptance follows later.
 
 ## Goal
 
@@ -3326,7 +3329,7 @@ Heart obelisk and bound there. Relog and save `altgard-l9` from committed code; 
 
 ## Leg 10: Black Claw ground and the remaining campaigns (level 22)
 
-**Status (2026-10-02): approved; implementation in progress.** The maintainer's goal, "Implement Leg 10 as needed",
+**Status (2026-10-02): done (BC-00..BC-08).** The maintainer's goal, "Implement Leg 10 as needed",
 works AE-Q3 (a) and AL-2's solo group quests. Use the loop protocol with **BC** in place of NA, one item and
 one commit at a time on main. The existing hub-flight, bind, help-item, inventory and recorded-outcome policies
 apply. Q2900 remains the last Altgard work, after this leg. LIVE acceptance remains at the end of the area.
@@ -3506,8 +3509,19 @@ Gathering, coin loops and unapproved D32 quests stay deferred.
     (`run/bc07-restore-state.tsv`, `run/bc07-restore-relog`). Capture and restore schemas are dropped, verified
     by read-only schema queries. Pre-commit checks pass (`run/bc07-checks`, `run/bc07-evidence-checks`);
     this evidence amendment changes only the document, preserving the captured code.
-- [ ] **BC-08 — Full CLAUDE checklist and checkpoint.** Every listed command with retained evidence and
+- [x] **BC-08 — Full CLAUDE checklist and checkpoint.** Every listed command with retained evidence and
   corrections; tick, commit on main and stop. Q2900 and end-of-area LIVE follow later. Depends: BC-07.
+  - *Done 2026-10-02.* All 33 CLAUDE checklist commands exit 0 on `e43228041`
+    (`run/bc08-final-checklist/results.json`), with the exact arguments, source SHA and indexed command logs.
+    Solution: 5,105 passed, 100 reported skips; GameServer 4,481 passed/16 skipped, Simulation 145 passed/76
+    skipped. Warning/logger/clock/draft, fidelity, quest compiler/inventory, evidence/report/coverage/flake/soak
+    and controller contract checks pass. Controller tests use their mock Docker harnesses; the warning baseline
+    is unchanged. NavBake validates all six baked maps. `bc08-final-fast`: 72 passed, three switch skips,
+    all eleven scenarios passed (`run/bc08-final-fast/report.md`). No checklist failures or corrections.
+  - BC-06's failed and stopped trials remain retained with their correction evidence. The committed
+    `altgard-l10` capture, hash check, owned restore and endpoint relog remain valid; both snapshot schemas
+    are dropped. This checkpoint changes only the document. Leg 10 is done; stop here, with Q2900 still
+    START/0 and end-of-area LIVE acceptance later. No push.
 
 ## Blocked / questions for the operator
 
@@ -3942,3 +3956,4 @@ The original questions follow.
 - 2026-10-02 BC-05: thirteen level-22 combat stages record 19 distinct kills, no deaths/retreats on free account 216; learned 21–22 ranks/Divine Spark added after Java audit, seventeen policy tests and final encounter pass; reserve-assertion draft retained, Fast and pre-commit checks pass. Natural runner is next.
 - 2026-10-02 BC-06: natural l10 smoke and relog from altgard-l9 complete all nine quests at Cleric 24, alive/bound at fortress, work items consumed and Q2900 START/0; 185 distinct kills, three deaths/eight retreat choices, three hub/two pillar flights and real city/Bregirun trips. Fifteen failed/eight stopped drafts retained; 41 scoped cases, pre-commit checks and Fast pass, owned schemas dropped. Snapshot is next.
 - 2026-10-02 BC-07: altgard-l10 captured from committed 6986e3539, hash-checked and restored through an actual endpoint relog; Cleric 24 alive at fortress bind, all nine quests complete, work items absent, 495,028 Kinah and Q2900 START/0. Both owned schemas dropped; pre-commit checks pass. Full checklist is next.
+- 2026-10-02 BC-08: all 33 CLAUDE commands pass on e43228041, solution 5,105 passed/100 skips, Fast 72 passed/three switch skips/all eleven scenarios; six baked maps validate. Leg 10 is done; altgard-l10 is retained for Q2900, then end-of-area LIVE acceptance. Stop at this checkpoint. No push.
