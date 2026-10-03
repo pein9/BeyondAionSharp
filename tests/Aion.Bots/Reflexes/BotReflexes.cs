@@ -46,6 +46,10 @@ public sealed class BotReflexes
 	public BotPendingMovie? PendingMovie { get; private set; }
 
 	private readonly Queue<BotPendingMovie> skippedMovies = new();
+	private (int World, int Channel, float X, float Y, float Z, byte Heading)? pendingLoad;
+
+	/// <summary>A new connection starts a new map load even if its destination matches the interrupted login.</summary>
+	public void BeginLoginObservation() => pendingLoad = null;
 
 	/// <summary>NA-24: the next movie the skip policy answered at once, for the run record; null when none is left.</summary>
 	public BotPendingMovie? TakeSkippedMovie() => skippedMovies.TryDequeue(out BotPendingMovie? movie) ? movie : null;
@@ -61,9 +65,26 @@ public sealed class BotReflexes
 	public BotClientPacket? RespondTo(DecodedBotServerPacket packet)
 	{
 		if (packet.PacketType == typeof(SM_PLAYER_SPAWN))
+		{
+			// Java's cold-instance login fallback and PlayerEnterWorldService can announce the same
+			// destination twice before CM_LEVEL_READY's SM_PLAYER_INFO. Load that map once: a second
+			// acknowledgement attempts to spawn the already-spawned player. Different destinations
+			// still need their own acknowledgement, as does a later load after the first completes.
+			if (packet.Fields.ContainsKey("worldId"))
+			{
+				var destination = (packet.Get<int>("worldId"), packet.Fields.GetValueOrDefault("worldChannel") is int channel ? channel : 0,
+					packet.Get<float>("x"), packet.Get<float>("y"), packet.Get<float>("z"), packet.Get<byte>("heading"));
+				if (pendingLoad == destination) return null;
+				pendingLoad = destination;
+			}
 			return GameClientPackets.LevelReady();
+		}
+		if (packet.PacketType == typeof(SM_PLAYER_INFO)) pendingLoad = null;
 		if (packet.PacketType == typeof(SM_TELEPORT_LOC))
+		{
+			pendingLoad = null;
 			return GameClientPackets.TeleportAnimationDone();
+		}
 		if (packet.PacketType == typeof(SM_PLAY_MOVIE))
 		{
 			bool canSkip = packet.Get<bool>("canSkip");

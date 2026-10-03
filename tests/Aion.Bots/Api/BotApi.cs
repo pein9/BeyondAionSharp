@@ -36,6 +36,7 @@ public sealed class BotApi
 		OpenDialogTargetId = null;
 		Timing.BeginLoginObservation();
 		QuestDialogEchoes.BeginLoginObservation();
+		Reflexes.BeginLoginObservation();
 	}
 	public BotTimingContract Timing { get; }
 	public BotReflexes Reflexes { get; }

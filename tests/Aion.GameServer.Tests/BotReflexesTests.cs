@@ -56,6 +56,36 @@ public sealed class BotReflexesTests
 	}
 
 	[Fact]
+	public void DuplicateColdLoginSpawnLoadsOnceUntilThePlayerInfoAcknowledgement()
+	{
+		var reflexes = new BotReflexes();
+		var spawn = Packet<SM_PLAYER_SPAWN>(("worldId", 220030000), ("worldChannel", 1),
+			("x", 1658.44f), ("y", 1817.3f), ("z", 253.723f), ("heading", (byte)87));
+		Assert.Equal(typeof(CM_LEVEL_READY), reflexes.RespondTo(spawn)!.PacketType);
+		Assert.Null(reflexes.RespondTo(Packet<SM_CHANNEL_INFO>()));
+		Assert.Null(reflexes.RespondTo(spawn));
+		Assert.Null(reflexes.RespondTo(Packet<SM_PLAYER_INFO>()));
+		Assert.Equal(typeof(CM_LEVEL_READY), reflexes.RespondTo(spawn)!.PacketType);
+	}
+
+	[Fact]
+	public void DistinctDestinationsTeleportAndNewLoginStillAcknowledgeMapLoads()
+	{
+		var api = new BotApi();
+		var first = Packet<SM_PLAYER_SPAWN>(("worldId", 220030000), ("worldChannel", 1),
+			("x", 1658.44f), ("y", 1817.3f), ("z", 253.723f), ("heading", (byte)87));
+		var otherChannel = Packet<SM_PLAYER_SPAWN>(("worldId", 220030000), ("worldChannel", 2),
+			("x", 1658.44f), ("y", 1817.3f), ("z", 253.723f), ("heading", (byte)87));
+		Assert.NotNull(api.Reflexes.RespondTo(first));
+		Assert.NotNull(api.Reflexes.RespondTo(otherChannel));
+		Assert.Null(api.Reflexes.RespondTo(otherChannel));
+		Assert.Equal(typeof(CM_TELEPORT_ANIMATION_DONE), api.Reflexes.RespondTo(Packet<SM_TELEPORT_LOC>())!.PacketType);
+		Assert.NotNull(api.Reflexes.RespondTo(otherChannel));
+		api.BeginLoginObservation();
+		Assert.NotNull(api.Reflexes.RespondTo(otherChannel));
+	}
+
+	[Fact]
 	public void AcknowledgesSpawnTeleportAndMovieWithTheirMatchingClientPackets()
 	{
 		var reflexes = new BotReflexes();

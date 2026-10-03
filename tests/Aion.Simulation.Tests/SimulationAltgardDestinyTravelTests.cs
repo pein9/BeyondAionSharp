@@ -110,13 +110,13 @@ public sealed partial class SimulationFastScenarioTests
 			await SetupVarAsync(0);
 		}
 
-		public async Task SetupVarAsync(int var)
+		public async Task SetupVarAsync(int var, QuestStatus status = QuestStatus.START)
 		{
 			QuestState quest = Server.GetQuestStateList().GetQuestState(2900);
-			quest.SetStatus(QuestStatus.START); quest.SetQuestVar(var);
+			quest.SetStatus(status); quest.SetQuestVar(var);
 			PacketSendUtility.SendPacket(Server, new SM_QUEST_ACTION(SM_QUEST_ACTION.ActionType.ADD, quest));
 			await session.SynchronizeAsync(token);
-			Console.WriteLine($"ND controlled setup: Q2900 START/{var}; not quest progression evidence");
+			Console.WriteLine($"ND controlled setup: Q2900 {status}/{var}; not quest progression evidence");
 		}
 
 		public async Task SetupAtFortressAsync()
@@ -171,7 +171,7 @@ public sealed partial class SimulationFastScenarioTests
 		private void ClearHostiles(IEnumerable<Aion.GameServer.Model.GameObjects.Npc> npcs, IEnumerable<BotPosition> points)
 		{
 			BotPosition[] route = points.ToArray();
-			var cleared = npcs.Where(n => !n.IsDead() && NaturalHostility.IsAggressive(n.GetObjectTemplate(),
+			var cleared = npcs.Where(n => n.GetNpcId() != Leg.Destiny!.EnemyNpcId && !n.IsDead() && NaturalHostility.IsAggressive(n.GetObjectTemplate(),
 				fixture.DataManager.StaticData.TribeRelations, TribeClass.PC_DARK) && route.Any(at =>
 					MathF.Pow(n.GetX() - at.X, 2) + MathF.Pow(n.GetY() - at.Y, 2) <= 900)).ToArray();
 			foreach (var npc in cleared) fixture.World.Despawn(npc);

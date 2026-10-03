@@ -3745,10 +3745,42 @@ level or an exact fee copied from another service. Capture `altgard-l11` only fr
     pre-commit checks pass (`run/nd03-checks`), and Fast passes 74 tests, three switch skips and all eleven
     scenarios (`run/nd03-fast/report.md`). Owned ND-03 schemas are gone (`run/nd03-schema-check.log`).
     This draft preceded the ND-Q1(a) approval below; its failed attempts and evidence remain retained.
-- [ ] **ND-04 — Loss and resume recovery.** Controlled probes record a five-minute miss, death before/after
+- [x] **ND-04 — Loss and resume recovery.** Controlled probes record a five-minute miss, death before/after
   equip, outside exit, live-instance relog and cold restart. Verify resets, no leaked stone/skill, and
   recover through the ordinary Doman/flight/outdoor-Skuld route. Test safe resumes at 1–4, 9, 10 and REWARD;
   no fast-forwarding the natural character. Keep each failure and correction. Depends: ND-03.
+  - *Done 2026-10-03.* From `8737b6b66`, free account 219 passes
+    `nd04-recovery-a5`: two controlled deaths before/after equip reset to 4, remove the temporary stone/skill
+    and revive by the actual fortress bind; observed Soul Sickness expires before recovery flights. Real
+    outside exits, Ukin/Doman services, Aldelle→Anturoon flights and fresh Skuld entries recover every loss.
+    The real five-minute Hellion remains before its deadline and disappears afterward during an offline
+    interruption; START/98 persists, SETPRO8 is refused, and ordinary Return/reset/re-entry recovers it.
+    Saved START/1–4, 9, 10 and REWARD resume only the remaining recipient; 65 ground legs, all 144 journal
+    completions, sealed bundle and fortress bind retained. No Hellion immunity, HP edits or natural setup.
+  - The var-97 live relog preserves progression but unequips the stone, removes 11504 and emits Java's
+    slot-gate audit. After several attempts, it selects registered instance 2 from saved instance 4:
+    Java/C# `getRegisteredInstance` returns the first still-registered instance, including an older attempt.
+    The probe records that observed instance and then proves outside cleanup and a fresh attempt; no server
+    correction is needed or authorized. Known audit/warning boundaries are explicitly asserted and recorded.
+    Two wrong-property compile drafts, a stale generic persistence expectation and a same-instance assumption
+    are corrected with all evidence retained (`run/nd04-recovery.log`, `nd04-recovery-a2.log`,
+    `nd04-recovery-a3.log`, `nd04-recovery-a4.log`). The ground-position assertion now uses the actual walked
+    position; it does not weaken the saved-position comparison.
+  - `nd04-cold-a2` passes in two actual server/test-host processes against one owned GUID schema. The same
+    character 133276 persists equipped at START/97 inside Space, then observes the missing-exit warning,
+    stigma-login audit, fortress fallback and START/4 cleanup in the new process. Ordinary Ukin/Doman/flight/
+    outdoor-Skuld recovery reaches a new START/95 attempt. Both phases' logs and packet traces are retained;
+    the schema is dropped in finally. The first cold run reached/recovered correctly but failed log policy
+    because the bot acknowledged two identical spawn announcements, causing AlreadySpawnedException.
+    Java emits both announcements on this fallback; the bot now coalesces an identical pending map load
+    until SM_PLAYER_INFO confirms it, while distinct destinations, later loads and new logins still acknowledge.
+    Thirty-nine reflex/API cases pass (`run/nd04-reflexes.log`); no server fix or allowlist change.
+    Failed cold evidence and its cleanup remain at `run/nd04-cold`, `run/nd04-cold-runner.log`.
+  - Every pre-commit check passes (`run/nd04-final-checks`); `nd04-final-fast` passes 75 tests, four
+    switch skips and all eleven scenarios. Its restart guard skip is covered by the separate two-process
+    proof above. Fast re-verifies both earlier Destiny probes and the full recovery matrix with the new
+    acknowledgement behavior. The empty read-only query confirms all owned matrix/Fast/cold schemas are
+    dropped (`run/nd04-schema-check.log`). No server changes or new content; ND-05 normal combat is next.
 - [ ] **ND-05 — Normal combat.** One level-24 probe fights normal-HP Hellion, learned skills/approved
   supplies, temporary skill available, real deadline, no invulnerability or damage edits. Exercise cleanup
   while preserving ordinary heals. Record kills, deaths/retreats and duration; prove no stale corpse action
@@ -3765,9 +3797,9 @@ level or an exact fee copied from another service. Capture `altgard-l11` only fr
   tick and commit on main, then stop. Pre-commit checks on every item; Fast before gameplay-change commits.
   No push. Depends: ND-07.
 
-### Next iteration: ND-04 recovery proof
+### ND-04 recovery coverage
 
-After ND-03 is committed, use free probe account 219 for the loss/resume matrix. Read Java's
+ND-04 uses free probe account 219 for the loss/resume matrix. Read Java's
 die, revival, enter-world, instance lifetime and saved-position rules before preparing each case. Keep
 the fortress bind, complete the controlled prerequisites on the probe, and preserve the client view
 invalidation and real acknowledgements already proved in ND-02/ND-03.
@@ -3782,16 +3814,16 @@ invalidation and real acknowledgements already proved in ND-02/ND-03.
 | Late vars 1–4 | Recipient is Munin, Urd, Verdandi or outdoor Skuld for the observed var; completed talks stay completed | Doman to Aldelle; for Munin or Skuld take Sheofin to Anturoon and the checked ground; Urd/Verdandi use their proved ground approaches |
 | Vars 9, 10 and REWARD | Var 9 reaches outdoor Skuld; var 10 reaches Munin; REWARD reaches Aud; no early dialog replay | Doman/Aldelle flight and Skuld/prison ground as needed, then only the remaining quest teleports; reach Aud normally when already at REWARD |
 
-Two source-level traps need explicit runtime evidence in these cases. Space has no `instance_exit.xml`
-row; Java's `InstanceService.onPlayerLogin`/`TeleportService.moveToInstanceExit` therefore imply a bind
+Two Java login boundaries are proved by ND-04. Space has no `instance_exit.xml`
+row; `InstanceService.onPlayerLogin`/`TeleportService.moveToInstanceExit` produce the observed bind
 fallback, with a missing-exit warning, after a cold restart. Also `PlayerEnterWorldService` calls
 `StigmaService.onPlayerLogin` before instance relocation: its quest-slot gate accepts START/99 or
 COMPLETE, while the actual equip changes Q2900 to 97. Its revalidation consequently implies an
-unequip/audit on a var-97 relog, even when the old instance survives. These are source findings, not
-passing probes or authority to change the server. Compare the runtime result with Java, record any
-warning/audit boundary honestly, and test ordinary outside reset/new-entry recovery rather than
-assuming the equipped temporary skill survives login. Any necessary server correction goes to a
-separate operator decision.
+observed unequip/audit on a var-97 relog, even when an instance survives. After multiple attempts, login
+can also choose an older registered instance, as Java's first-match lookup specifies. These behaviors
+are recorded boundaries, not authority to change the server. The bot observes the resulting map/instance
+and uses the proved ordinary outside reset/new-entry recovery when its temporary skill is lost.
+Any necessary server correction goes to a separate operator decision.
 
 The recovery circuit is **fortress → Ukin → Pandaemonium → Doman → Aldelle → Sheofin's 41-second
 flight → Anturoon → outdoor Skuld → new Space of Destiny**. The successful first trip is already
@@ -4291,3 +4323,4 @@ The original questions follow.
 - 2026-10-03 ND-03 partial: free-account-218 movie/equip/cleanup/Aud reward and real bundle installation pass; the inactive legacy class reward contradicts the approved endpoint, recorded as pending ND-Q1. Seven pre-commit checks and Fast (74 passed/three switch skips/all eleven scenarios) pass; failed drafts retained and owned schemas dropped. ND-04's four-map loss/resume plan includes cold-restart exit and stigma-login traps. Stop with ND-03 unticked/uncommitted; every later ND item depends on the pending decision.
 - 2026-10-03 ND-Q1 answered: the maintainer chose Option A. Correct the approved reward action and endpoint to shipped Java/C#, keep the bundle sealed and inactive legacy item absent, then finish ND-03 and continue the remaining items. No server correction is authorized or required for this reward boundary.
 - 2026-10-03 ND-03: the amended contract's exact reward path, movie/equip/cleanup and 144 journal completions pass; probe-only bundle installation confirms the normal slot. Eighty-one scoped tests, seven pre-commit checks and Fast (74 passed/three switch skips/all eleven scenarios) pass; failed drafts retained and owned schemas dropped. ND-04 loss/resume recovery is next.
+- 2026-10-03 ND-04: free-account-219 loss/resume matrix and two-process cold restart pass; two controlled deaths, one real missed spawn, 65 ground legs, seven saved-state resumes and fortress recovery. Java's older-instance selection, stigma-login audit and missing-exit fallback are recorded. Duplicate pending map-load acknowledgements are coalesced; 39 scoped tests, seven pre-commit checks and Fast (75 passed/four switch skips/all eleven scenarios) pass. Failed drafts retained, owned schemas dropped. Normal-HP Hellion combat is next.
