@@ -3828,9 +3828,23 @@ level or an exact fee copied from another service. Capture `altgard-l11` only fr
     (`run/nd06-schema-check.log`). Build and 81 scoped cases pass (`run/nd06-build.log`, `run/nd06-unit.log`);
     seven pre-commit checks pass (`run/nd06-checks`); Fast passes 76/four switch skips/all eleven scenarios
     (`run/nd06-fast/report.md`). ND-07 committed snapshot capture is next.
-- [ ] **ND-07 — Snapshot.** Enable `-Leg l11`, commit before capture, then capture `altgard-l11` from
+- [x] **ND-07 — Snapshot.** Enable `-Leg l11`, commit before capture, then capture `altgard-l11` from
   `altgard-l10`; hash-check, owned restore, SQL state and actual endpoint relog; drop both owned schemas.
   Depends: ND-06.
+  - *Done 2026-10-03.* After ND-06's `3201d79c4`, snapshot support was committed as
+    `e23d5a5112b852b1481fe6cc665ab9dd9a3e4979` before `nd07-capture`, seed 1, played from `altgard-l10`.
+    `run/snapshots/altgard-l11` retains character 133297, Cleric 24, EXP 6,375,870, alive at fortress bind
+    (1660.43, 1813.49, 253.726), HP/MP/FP 1,929/2,446/60, 536,193 Kinah, 63-slot cube and 144 completed
+    journal entries. Q2900 and all nine Leg 10 quests are COMPLETE, work items absent, temporary stone/11504
+    and inactive legacy item absent; bundle 188053787 ×1 remains sealed. No deaths or retreats in capture.
+  - Capture UTC `2026-10-03T05:34:22.0081713Z`, elapsed 66,653,001 ms. Dump SHA256
+    `3be190f37f9c39f716de7ab1fac6a655a9da5ea80f553c399f009cddb2bd4029` matches metadata and passes restore
+    (`run/nd07-hash-check.json`); resume offset 66,673,001 ms. Owned restore SQL and actual endpoint relog pass
+    (`run/nd07-restore-state.tsv`, `run/nd07-restore-relog/journey.log`), including ordinary learned skills and
+    inventory/equipment/journal/bind persistence. Both owned schemas are dropped; read-only schema query is
+    empty (`run/nd07-schema-check.log`). Java quest/skill persistence and stigma login gates were re-read.
+    PowerShell parse and all seven pre-commit checks pass (`run/nd07-support-checks`, `nd07-evidence-checks`).
+    This evidence amendment changes only the document, preserving captured code. ND-08 full checklist is next.
 - [ ] **ND-08 — Full CLAUDE checklist and checkpoint.** Retain every listed command/verdict and corrections,
   tick and commit on main, then stop. Pre-commit checks on every item; Fast before gameplay-change commits.
   No push. Depends: ND-07.
@@ -4364,3 +4378,4 @@ The original questions follow.
 - 2026-10-03 ND-04: free-account-219 loss/resume matrix and two-process cold restart pass; two controlled deaths, one real missed spawn, 65 ground legs, seven saved-state resumes and fortress recovery. Java's older-instance selection, stigma-login audit and missing-exit fallback are recorded. Duplicate pending map-load acknowledgements are coalesced; 39 scoped tests, seven pre-commit checks and Fast (75 passed/four switch skips/all eleven scenarios) pass. Failed drafts retained, owned schemas dropped. Normal-HP Hellion combat is next.
 - 2026-10-03 ND-05: free-account-220 normal-HP Hellion fight passes in 16.371 seconds, zero deaths/retreats, real 175–200 damage, actual tutorial socket/cleanup and ordinary heals preserved. Regular level-23/24 skill catalog and late quest-kill loot-state invalidation verified; 33 scoped tests, seven pre-commit checks and Fast (76 passed/four switch skips/all eleven scenarios) pass. Failed drafts retained, owned schemas dropped. Natural l11 runner and smoke are next.
 - 2026-10-03 ND-06: natural l11 smoke passes once from altgard-l10; normal Hellion kill in 12.021 seconds, nine distinct kills, no deaths/retreats, real hub flight and movie/socket/reward/Return, 144 completed journals and fortress endpoint relog. Tutorial stigma removed, regular skills preserved, reward bundle sealed. Build, 81 scoped cases, seven pre-commit checks and Fast (76 passed/four switch skips/all eleven scenarios) pass; owned schema dropped. Snapshot is next.
+- 2026-10-03 ND-07: altgard-l11 captured from committed e23d5a511, hash-checked and restored through actual endpoint relog; Cleric 24 alive at fortress bind, Q2900/all prior quests complete, 144 journals, sealed bundle, no temporary stigma/legacy item, ordinary skills preserved and 536,193 Kinah. Both owned schemas dropped; PowerShell parse and pre-commit checks pass. Full checklist is next.
