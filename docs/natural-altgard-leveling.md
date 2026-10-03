@@ -24,9 +24,11 @@ is done (AO-00..AO-06, 2026-10-02): `altgard-l8` starts Leg 9 at the Observatory
 `altgard-l9` starts Leg 10, the Black Claw ground, with a level-22 Cleric bound at the Heart.
 [Leg 10: Black Claw ground and the remaining campaigns](#leg-10-black-claw-ground-and-the-remaining-campaigns-level-22)
 is done (BC-00..BC-08, 2026-10-02): `altgard-l10` holds the level-24 Cleric alive and bound at the fortress,
-all nine quests complete. Q2900 is next; end-of-area LIVE acceptance follows later.
+all nine quests complete. Q2900 is completed in Leg 11 below; end-of-area acceptance follows later.
 [Leg 11: No Escaping Destiny](#leg-11-no-escaping-destiny-and-the-altgard-endpoint-level-24--proposal)
-is approved for implementation below, including all four maps, loss recovery and the full-area acceptance handoff.
+is done (ND-00..ND-08, 2026-10-03): `altgard-l11` holds the relog-verified level-24 Cleric alive and bound
+at the fortress, Q2900 complete, 144 completed journals and the stigma reward bundle sealed. Continuous
+full-area SIM and isolated LIVE acceptance are the later handoff below.
 
 ## Goal
 
@@ -3527,7 +3529,7 @@ Gathering, coin loops and unapproved D32 quests stay deferred.
 
 ## Leg 11: No Escaping Destiny and the Altgard endpoint (level 24 — proposal)
 
-**Status (2026-10-02): approved; implementation in progress.** The maintainer's goal, "Implement the No
+**Status (2026-10-03): done (ND-00..ND-08).** The maintainer's goal, "Implement the No
 Escaping Destiny", approves ND-00..ND-08. Finish Q2900 last, as the maintainer decided on
 2026-10-01. This is one existing campaign across four maps. Work the loop protocol with **ND** in place of NA,
 one item and one commit on main. Keep the fortress bind throughout, then return there for the area endpoint.
@@ -3845,9 +3847,23 @@ level or an exact fee copied from another service. Capture `altgard-l11` only fr
     empty (`run/nd07-schema-check.log`). Java quest/skill persistence and stigma login gates were re-read.
     PowerShell parse and all seven pre-commit checks pass (`run/nd07-support-checks`, `nd07-evidence-checks`).
     This evidence amendment changes only the document, preserving captured code. ND-08 full checklist is next.
-- [ ] **ND-08 — Full CLAUDE checklist and checkpoint.** Retain every listed command/verdict and corrections,
+- [x] **ND-08 — Full CLAUDE checklist and checkpoint.** Retain every listed command/verdict and corrections,
   tick and commit on main, then stop. Pre-commit checks on every item; Fast before gameplay-change commits.
   No push. Depends: ND-07.
+  - *Done 2026-10-03.* All 33 CLAUDE checklist commands exit 0 on `7f3289b4f`
+    (`run/nd08-final-checklist/results.json`), retaining exact arguments, source SHA and indexed logs.
+    Solution: 5,144 passed, 105 reported skips; GameServer 4,520 passed/16 skipped, Simulation 145 passed/81
+    skipped. Warning/logger/clock/draft, fidelity, quest compiler/inventory, reporting/coverage/flake/soak
+    and controller contract checks pass. Controller tests use mock Docker; warning baseline unchanged.
+    NavBake validates all seven baked maps, including Space of Destiny. `nd08-final-fast` passes 76 tests,
+    four explicit switch skips and all eleven scenarios (`run/nd08-final-fast/report.md`).
+  - The initial checklist launcher failed before dispatching any command because a copied PowerShell splat
+    name was not renamed; corrected launcher passes the complete list, retaining the original diagnostic
+    (`run/nd08-checklist-launch-draft.log`). Earlier ND-03..ND-05 failed drafts and their correction evidence
+    remain retained. ND-06's first natural smoke and ND-07's committed capture/hash/SQL/restore/relog all pass.
+    Owned snapshot and final Fast schemas are gone (`run/nd08-schema-check.log`). This checkpoint changes
+    only the document. Leg 11 is done; stop here. Permanent stigma selection and full-area acceptance remain
+    the separate later work described below. No push.
 
 ### ND-04 recovery coverage
 
@@ -4379,3 +4395,4 @@ The original questions follow.
 - 2026-10-03 ND-05: free-account-220 normal-HP Hellion fight passes in 16.371 seconds, zero deaths/retreats, real 175–200 damage, actual tutorial socket/cleanup and ordinary heals preserved. Regular level-23/24 skill catalog and late quest-kill loot-state invalidation verified; 33 scoped tests, seven pre-commit checks and Fast (76 passed/four switch skips/all eleven scenarios) pass. Failed drafts retained, owned schemas dropped. Natural l11 runner and smoke are next.
 - 2026-10-03 ND-06: natural l11 smoke passes once from altgard-l10; normal Hellion kill in 12.021 seconds, nine distinct kills, no deaths/retreats, real hub flight and movie/socket/reward/Return, 144 completed journals and fortress endpoint relog. Tutorial stigma removed, regular skills preserved, reward bundle sealed. Build, 81 scoped cases, seven pre-commit checks and Fast (76 passed/four switch skips/all eleven scenarios) pass; owned schema dropped. Snapshot is next.
 - 2026-10-03 ND-07: altgard-l11 captured from committed e23d5a511, hash-checked and restored through actual endpoint relog; Cleric 24 alive at fortress bind, Q2900/all prior quests complete, 144 journals, sealed bundle, no temporary stigma/legacy item, ordinary skills preserved and 536,193 Kinah. Both owned schemas dropped; PowerShell parse and pre-commit checks pass. Full checklist is next.
+- 2026-10-03 ND-08: all 33 CLAUDE commands pass on 7f3289b4f; solution 5,144 passed/105 skips, final Fast 76 passed/four switch skips/all eleven scenarios, seven baked maps valid. Launcher diagnostic retained with its correction; committed altgard-l11 capture/hash/SQL/endpoint relog remain verified, owned schemas dropped. Leg 11 done; stop at this checkpoint. Continuous full-area SIM, isolated LIVE and permanent stigma choice remain later work. No push.
