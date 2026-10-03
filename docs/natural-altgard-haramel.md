@@ -1,11 +1,11 @@
 # Leg 12: Haramel after the coin gear preparation
 
-**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-05 complete; HM-06 is next.** Follow
+**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-06 complete; HM-07 is next.** Follow
 [coin gear preparation CG-00..CG-06](natural-altgard-coin-gear.md) first, then do the Haramel lead-in,
 every active Asmodian Haramel quest once, and the clears needed to finish them. Haramel remains
 **Leg 12**; the preparation is a separate `cg` section. Recommended scope is **two fresh solo clears**,
 with additional ordinary recovery visits only if an objective remains. No natural or LIVE run was
-launched for this plan. The operator requested this next; the combined goal starts implementation.
+launched when this plan was written. HM-06 now proves the natural SIM journey; LIVE remains later work.
 
 ## Authority, start and finish
 
@@ -338,12 +338,34 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
     the CG incoming dump and preserved Leg 1 dump are unchanged. No natural character or snapshot
     writes; labelled probe setup clears and BeginWorldReload remain explicit. Normal shared-budget
     natural recovery remains HM-06; the probe's saved stall fingerprint is synthetic and retained.
-- [ ] **HM-06 — Natural Leg 12 runner and one smoke.** Depends: HM-05. Restore `altgard-coingear`
+- [x] **HM-06 — Natural Leg 12 runner and one smoke.** Depends: HM-05. Restore `altgard-coingear`
   with `sim-snapshot.ps1 -Action Restore`, run
   `NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup` with `AF_ALTGARD=l12` and the variables
   from `Invoke-NaturalJourney`. Prove both clears and all eleven first completions, 156 completed
   journals, ordinary transitions/loot/hand-ins and fortress bind through relog. Announce the read-only
   http://127.0.0.1:17880/ monitor; retain failures/outcomes and drop only the owned schema in finally.
+  - *Done 2026-10-03.* `hm06-smoke-a22` passes from the untouched CG snapshot on base `83b715930`:
+    two actual fresh copies (entry count 1→2), ordinary empty expiry, both bosses/movies/class
+    chests, all eleven first completions and 156 journals. The level-25 Cleric finishes alive and
+    bound at fortress 700065 through actual quit/login, with zero deaths, 19 Iron/7 Bronze Coins,
+    the original staff equipped in both hands, incoming armour retained, sealed bundle and no
+    unacquired stigma skill. No gear/book purchase or natural setup occurs; only OD-13 supplies.
+  - Ordinary checked movement covers the tower lift/glide, wooden elevator ascent/descent and
+    pillar ascent before the final hub flight. Three hub flights and 129 distinct native zero-HP
+    monster objects are observed. Six unreachable cage firing approaches are retained outcomes;
+    other shipped sources finish the actual packed 65-kill objective. Boss and handler-spawned
+    chest observations remain scoped to the current entry's real packets.
+  - Java automatically starts Q2945 at level 25; its zero counter/completion count remains
+    deferred. Login omits completed entries from the active journal, so the stall fingerprint
+    uses the completed journal consistently. Relog advances observation time while preserving
+    the original progress time/fingerprint, revive budget, visits and soup payment. All 69 scoped
+    world-model, Haramel, elevator, checkpoint and persistence cases pass.
+  - All seven prechecks and `hm06-fast-a1` pass (82 tests/five explicit switch skips/all eleven
+    scenarios). The audit passes (`run/hm06-support/audit.json`). Original failed/interrupted
+    attempts a1..a21 are retained, including two earlier one-death recovery outcomes and the
+    endpoint assertion drafts. Every owned smoke schema is dropped; incoming CG and preserved
+    Leg 1 dump hashes are unchanged. No server code/content or snapshot was changed. HM-07
+    captures the endpoint only after committing the runner and capture support.
 - [ ] **HM-07 — Committed-code Leg 12 snapshot.** Depends: HM-06. Commit capture-support changes
   before capture, then capture `altgard-haramel-l12` from `altgard-coingear` through `l12`. Update the
   shared endpoint contract/runner selectors to the resolved distinct name before capture. Record its actual
@@ -404,6 +426,11 @@ be corrected under existing authority, record it here and continue the remaining
 
 ## Progress log
 
+- 2026-10-03 HM-06 complete: natural two-clear smoke `hm06-smoke-a22` and fortress relog pass;
+  level 25, 156 journals, zero deaths, 19 Iron/7 Bronze, retained staff/armour/sealed bundle.
+  Six cage-route misses and all earlier failures remain recorded. Sixty-nine focused cases,
+  seven prechecks and Fast (82 passed/five switch skips/eleven scenarios) pass; schemas dropped
+  and incoming dumps unchanged (`run/hm06-support/audit.json`, base `83b715930`). HM-07 is next.
 - 2026-10-03 HM-05 complete: natural expiry/fresh entry, all 74 original sources, packed 63/64/65,
   four post-boss completions and actual death/relog/two-process recovery pass. Actual spawn packet
   identity replaces the unspawned channel fallback. Thirty-four scoped cases, seven checks and

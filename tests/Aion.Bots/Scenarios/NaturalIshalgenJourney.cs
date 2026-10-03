@@ -22,6 +22,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	private sealed class NaturalJourneyCheckpointStopException : Exception;
 	private sealed class NaturalCombatApproachBlockedException(string message) : IOException(message);
 	private sealed class NaturalGuardedObjectiveRevivedException(string message) : IOException(message);
+	private sealed class NaturalHaramelSourcesExhaustedException(string message) : IOException(message);
+	private sealed class NaturalHaramelGroundApproachUnavailableException(string message) : IOException(message);
 
 	/// <summary>AC-06: the Leg 3 escort's clear areas hold grave robbers with respawn_time 295 s (the Altgard spawn data);
 	/// a clear holds that long after its first kill.</summary>
@@ -198,6 +200,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			IReadOnlyList<NaturalAirlineRoute> airlines = NaturalAirlineRoutes.Load(runtime.RepoRoot);
 			// AG-07: an Altgard leg's road walk toward a far approach (set by the leg's runner; see ApproachShippedSpawnAsync).
 			Func<BotPosition, int, Func<bool>?, Task>? farApproach = null;
+			Func<int, float, Func<int?>?, Task<int>>? haramelApproach = null;
+			Func<IReadOnlyList<int>, int>? haramelKind = null;
 			bool farApproachUnderway = false;
 			int[] altgardNpcs = altgardLeg == null ? [] : altgardLeg.GraphNpcIds(altgardPlans)
 				.Concat(airlines.Where(route => route.MapId == altgardLeg.Hub.MapId).Select(route => route.NpcId)).Distinct().ToArray();
@@ -210,6 +214,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					.Select(carrier => carrier.ItemId))
 				.Concat(altgardLeg.Destiny is { } destiny ? new[] { destiny.StoneItemId, destiny.RewardBundleId, destiny.LegacyRewardId } : [])
 				.Concat(altgardLeg.CoinGear?.ProtectedItemIds ?? [])
+				.Concat(altgardLeg.Haramel?.ProtectedItemIds ?? [])
+				.Concat(altgardLeg.Haramel?.CleanupItemIds ?? [])
+				.Concat(altgardLeg.Haramel?.TowerChestKeys?.Select(key => key.ItemId) ?? [])
 				.Where(item => item > 0).ToHashSet();
 			BotNavigationGraph graph = BotNavigationGraphFactory.Build(runtime.Data, altgardNpcs.Concat(new[] {
 				203500, 203504, 203501, 203502, 203516, 203518,
@@ -259,9 +266,18 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						["position"] = session.CurrentPosition,
 						["retreatAnchor"] = refuge,
 					});
-					if (await navigationDefense.TryKillAsync(attacker, defendToken, refuge, packetStart))
-						navigator.UnavailableObjects.Add(attacker);
-					else return; // Re-observe after a retreat or lost target before another pull.
+					try
+					{
+						if (await navigationDefense.TryKillAsync(attacker, defendToken, refuge, packetStart))
+							navigator.UnavailableObjects.Add(attacker);
+						else return; // Re-observe after a retreat or lost target before another pull.
+					}
+					catch (NaturalCombatApproachBlockedException blocked) when (altgardLeg?.Haramel?.MapId == session.Api.World.MapId)
+					{
+						session.TraceDiagnostic("haramel-navigation-defense-replan", new Dictionary<string, object?>
+						{ ["attacker"] = attacker, ["position"] = session.CurrentPosition, ["reason"] = blocked.Message });
+						return;
+					}
 				}
 			};
 			var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry,
@@ -1019,7 +1035,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				Require.True(combat.IsCleric, "An Altgard leg needs the Cleric.");
 				Require.True(session.Api.World.MapId == leg.Hub.MapId || leg.Haramel?.MapId == session.Api.World.MapId || leg.Destiny?.AllowedMaps.Contains(session.Api.World.MapId ?? 0) == true,
 					"The retained character is outside the approved leg maps.");
-				NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World));
+				NaturalJourneyNavigator here = mapNavigators.Enter(LegMapKey());
 				here.DefendOnAttackAsync = navigator.DefendOnAttackAsync;
 				here.AvoidHostileAggro = true;
 				navigator = here;
@@ -1030,10 +1046,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					ApproachMapId = contract.MapId,
 					ReloadViewOnBindRevive = altgardLegId is "l10" or "l11" or "cg" or "l12",
 				};
-				if (leg.Destiny != null) combat.AfterBindRevive = () => EnterLegMap(newEntry: true);
+				if (leg.Destiny != null || leg.Haramel != null) combat.AfterBindRevive = () => EnterLegMap(newEntry: true);
 				here.AvoidSpots = combat.DeathSpots;
 				navigationDefense = combat;
 				WithQuestLoot(combat);
+				var haramelHints = new HashSet<(int Id, BotPosition At)>();
+				int haramelKillHistoryStart = session.PacketHistory.Count;
+				int haramelEntryHistoryStart = haramelKillHistoryStart;
 				IReadOnlyDictionary<int, NaturalTemplateObjective> objectives = NaturalTemplateObjective.From(altgardPlans);
 				var preservedQuests = (leg.Start.StartedQuestIds ?? []).Concat(leg.Start.LockedQuestIds).Except(leg.Order)
 					.ToDictionary(id => id, id => session.Api.World.Quests.TryGetValue(id, out BotQuestState? state)
@@ -1050,6 +1069,18 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				float cruise = (rockTop?.Z ?? 0) + 8;
 				BotPosition Rock() => rockTop ?? throw new InvalidDataException($"{leg.Leg} has no flight landing.");
 				long? lastTakeoff = null;
+				var haramelTravel = new NaturalHaramelTravel(session, runtime, () => geometry,
+					async (at, range) =>
+					{
+						for (int retry = 0; retry < 100 && session.Api.World.MapId == leg.Haramel?.MapId; retry++)
+							if (await WalkHaramelAsync(at, range)) return;
+						Require.True(session.Api.World.MapId != leg.Haramel?.MapId, "Haramel floor approach exceeded its bounded replans.");
+					});
+				if (leg.Haramel != null)
+				{
+					haramelApproach = ApproachHaramelAsync;
+					haramelKind = HaramelKind;
+				}
 				await TopUpHelpItemsAsync("run-start");
 				await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token);
 				string? previous = null;
@@ -1128,6 +1159,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					await session.SynchronizeAsync(token);
 					EnterLegMap();
+					if (haramelProgress != null) SaveHaramelProgress();
 					if (session.Api.World.Level != helpCheckedAtLevel) await TopUpHelpItemsAsync("level-up");
 					NaturalAltgardDecision next = NaturalAltgardDecisionEngine.Decide(leg,
 						NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition, session.Api.Timing.Now, FreeCubeSlots(), coinGearProgress, haramelProgress, HaramelNow()), objectives, sequence, only);
@@ -1140,6 +1172,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					});
 					session.PublishDashboard();
 					string signature = $"{next.Action}/{next.StepKey}/{next.QuestId}/{next.Reason}";
+					if (leg.Haramel != null) signature += "/" + string.Join(',', leg.Order.Select(id => $"{id}:{QuestStatus(id)}:{QuestVar(id)}")) +
+						"/" + string.Join(',', leg.Haramel.CleanupItemIds.Select(id => ItemCount(session.Api.World, id)));
 					bool diedSincePrevious = combat.ReviveCount > revivesAtPrevious;
 					revivesAtPrevious = combat.ReviveCount;
 					if (signature != previous) { repeats = 0; deathRetries = 0; }
@@ -1159,7 +1193,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						}
 						foreach (var (id, expected) in preservedQuests)
 							Require.True(session.Api.World.Quests.TryGetValue(id, out BotQuestState? state) &&
-								(state.Status, state.StepAndFlags) == expected, $"Deferred Q{id} changed during {leg.Leg}.");
+								(altgardLegId == "l12" ? NaturalHaramelDecisionEngine.PreservesDeferredQuest(id, expected, state, session.Api.World.Level)
+									: (state.Status, state.StepAndFlags) == expected), $"Deferred Q{id} changed during {leg.Leg}.");
 						await CompleteAltgardLeg1Async(leg);
 						return;
 					}
@@ -1172,6 +1207,55 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.BeginStep($"af-{sequence:000}-{next.Action}", next.StepKey ?? next.Action);
 					switch (next.Action)
 					{
+						case "enter-haramel":
+							await EnterHaramelAsync();
+							break;
+						case "observe-haramel-entry":
+							await ObserveHaramelEntryAsync();
+							break;
+						case "leave-haramel":
+							await LeaveHaramelAsync();
+							break;
+						case "wait-haramel-expiry":
+							while (HaramelNow() < haramelProgress!.FreshEntryAfterMillis)
+							{
+								await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Min(1000, haramelProgress.FreshEntryAfterMillis!.Value - HaramelNow())), token);
+								await session.SynchronizeAsync(token);
+								await DefendAgainstEngagedAsync("haramel-empty-expiry");
+							}
+							break;
+						case "haramel-movie":
+							await NaturalHaramelQuestSteps.FinishLeadInMovieAsync(session, token);
+							break;
+						case "haramel-carts":
+							while (QuestVar(28510) < 3 && session.Api.World.MapId == leg.Haramel!.MapId)
+							{
+								await KillShippedSpawnAsync(700950);
+								await RestSafelyAsync(token);
+							}
+							break;
+						case "haramel-ginseng":
+							while (ItemCount(session.Api.World, 182212022) < 5 && session.Api.World.MapId == leg.Haramel!.MapId)
+								await UseAndLootQuestObjectAsync(700954, 182212022, skipBlockedTarget: true);
+							break;
+						case "haramel-object":
+						{
+							NaturalAltgardStep use = leg.Steps.Single(step => step.Key == next.StepKey);
+							int source = await ApproachShippedSpawnAsync(use.NpcId, withinRange: TalkRange(use.NpcId));
+							await NaturalAltgardQuestSteps.UseObjectAsync(session, source, null, token);
+							await session.SynchronizeAsync(token);
+							break;
+						}
+						case "haramel-soup":
+							await MakeHaramelSoupAsync();
+							break;
+						case "haramel-boss":
+							await KillShippedSpawnAsync(leg.Haramel!.BossNpcId);
+							await ObserveHaramelBossAsync();
+							break;
+						case "haramel-loot":
+							await LootHaramelChestAsync();
+							break;
 						case "travel-to-map":
 						{
 							if (leg.Destiny != null)
@@ -1250,9 +1334,28 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							break;
 						}
 						case "template-work":
+						{
 							await EnsureOnGroundAsync();
-							await CompleteTemplateQuestAsync(altgardPlans[next.QuestId!.Value], TemplatePhase.Work);
+							try
+							{
+								if (next.QuestId == 28509 && leg.Haramel != null) await CollectHaramelKeysAsync();
+								if (next.QuestId == 28507 && leg.Haramel != null)
+									foreach (int boss in new[] { 216897, 216907, 216915 })
+									{
+										RecordHaramelDeadHints();
+										if (graph.GetMap(leg.Haramel.MapId)!.Waypoints.Any(w => w.TemplateId == boss && !haramelHints.Contains((boss, w.Position))))
+											await KillShippedSpawnAsync(boss);
+									}
+								await CompleteTemplateQuestAsync(altgardPlans[next.QuestId!.Value], TemplatePhase.Work);
+								if (leg.Haramel != null) await ObserveHaramelBossAsync();
+							}
+							catch (NaturalHaramelSourcesExhaustedException source) when (leg.Haramel != null)
+							{
+								session.TraceDiagnostic("haramel-exhausted-sources-outcome", new Dictionary<string, object?> { ["quest"] = next.QuestId, ["reason"] = source.Message });
+								await LeaveHaramelAsync();
+							}
 							break;
+						}
 						case "template-claim":
 						{
 							await EnsureOnGroundAsync();
@@ -1673,7 +1776,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					// Java PlayerController.updateSoulSickness applies 8291 on bind revival. Its speed penalty
 					// doubles the pillar descent's FP cost; wait for the real icon removal before taking off.
-					if (altgardLegId == "l10" && session.Api.World.VisibleEffects?.FirstOrDefault(effect => effect.SkillId == 8291) is { } sickness)
+					if (altgardLegId is "l10" or "l12" && session.Api.World.VisibleEffects?.FirstOrDefault(effect => effect.SkillId == 8291) is { } sickness)
 					{
 						Require.True(sickness.RemainingMillis > 0, "Soul Sickness has no observed expiry for the flight wait.");
 						long until = runtime.NowMillis + sickness.RemainingMillis + 1000L;
@@ -1760,6 +1863,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							["destination"] = destination, ["flights"] = journey.Flights.Select(flight => flight.Route).ToArray(),
 							["seconds"] = journey.Seconds, ["walkAllSeconds"] = journey.WalkAllSeconds,
 						});
+						if (altgardLegId == "l12") await ReachPillarLevelAsync(route.Departure);
 						if (Distance(session.CurrentPosition, route.Departure) > 60)
 							await WalkRoadDefendingAsync(route.Departure, "airline-road", within: 15);
 						int transporter = await ApproachShippedSpawnAsync(route.NpcId);
@@ -1808,7 +1912,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						if (sourceComplete?.Invoke() == true) return true;
 						BotPosition[] segment = road.Skip(at).Take(16).ToArray();
 						int roadRevives = combat.ReviveCount;
-						if (altgardLegId is "l10" or "l11")
+						if (altgardLegId is "l10" or "l11" or "l12")
 						{
 							// BC-06: the first Heart descent succeeded, but the unchecked road walked
 							// into a pack before defense ran. Clear observed blockers before crossing it.
@@ -1831,7 +1935,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						if (sourceComplete?.Invoke() == true) return true;
 						// Synchronize can defend and bind-revive before the explicit defense below. Its old
 						// road no longer starts here; return to the caller so it plans from the new position.
-						if (altgardLegId is "l10" or "l11" && combat.ReviveCount != roadRevives) return false;
+						if (altgardLegId is "l10" or "l11" or "l12" && combat.ReviveCount != roadRevives) return false;
 						if (!await DefendAgainstEngagedAsync(purpose) || session.Api.World.IsDead)
 						{
 							await RestSafelyAsync(token);
@@ -1996,7 +2100,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 				void EnterLegMap(bool newEntry = false)
 				{
-					NaturalMapKey key = NaturalMapKey.Observe(session.Api.World);
+					NaturalMapKey key = LegMapKey();
 					if (!newEntry && mapNavigators.Current == key && contract.MapId == key.MapId) return;
 					var defend = navigator.DefendOnAttackAsync;
 					navigator = mapNavigators.Enter(key, newEntry);
@@ -2006,6 +2110,309 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					contract = contract with { MapId = key.MapId };
 					combat.EnterMap(navigator, geometry, key.MapId);
 					navigator.AvoidSpots = combat.DeathSpots;
+				}
+
+				NaturalMapKey LegMapKey() => leg.Haramel?.MapId == session.Api.World.MapId
+					? new(session.Api.World.MapId!.Value, (session.Api.World.InstanceId ?? throw new InvalidDataException("No actual Haramel copy observed.")) - 1)
+					: NaturalMapKey.Observe(session.Api.World);
+				void SaveHaramelProgress()
+				{
+					RecordHaramelDeadHints();
+					haramelProgress = haramelProgress! with { Revives = combat.ReviveCount, StallBudget = progress.State, LastObservedAtMillis = HaramelNow() };
+					haramelProgress.Write(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "haramel-progress.json"));
+				}
+				async Task EnterHaramelAsync()
+				{
+					NaturalHaramel rules = leg.Haramel!;
+					BotPosition entrance = new(rules.PortalPosition[0], rules.PortalPosition[1], rules.PortalPosition[2], 0);
+					await ReachPillarLevelAsync(entrance);
+					while (!await WalkHaramelAsync(entrance, MathF.Min(5, TalkRange(rules.PortalNpcId)))) await RestSafelyAsync(token);
+					int portal = await session.WaitForNpcAsync(rules.PortalNpcId, token);
+					int start = session.PacketHistory.Count;
+					haramelEntryHistoryStart = start;
+					Require.True(await NaturalAltgardQuestSteps.UseObjectAsync(session, portal, null, token, reloadWorld: true), "Haramel entrance use interrupted.");
+					await AcceptHaramelTransitionAsync(changedMap: true, start);
+					await ObserveHaramelEntryAsync();
+				}
+				async Task AcceptHaramelTransitionAsync(bool changedMap, int start)
+				{
+					Type arrival = changedMap ? typeof(SM_PLAYER_SPAWN) : typeof(SM_CHANNEL_INFO);
+					if (!session.PacketHistory.Skip(start).Any(packet => packet.PacketType == arrival)) await session.WaitForPacketAsync(arrival, token);
+					if (!session.PacketHistory.Skip(start).Any(packet => packet.PacketType == typeof(SM_PLAYER_INFO) && packet.Get<int>("objectId") == session.CharacterId))
+						await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+					session.AcceptTeleportPosition();
+					await session.SynchronizeAsync(token);
+					EnterLegMap(newEntry: true);
+				}
+				async Task ObserveHaramelEntryAsync()
+				{
+					NaturalHaramel rules = leg.Haramel!;
+					int anchor = await ApproachShippedSpawnAsync(rules.AnchorNpcId, withinRange: 5);
+					BotInstanceEntry entry = session.Api.World.InstanceEntries[(session.CharacterId, rules.CooldownId)];
+					NaturalHaramelVisit? previousVisit = haramelProgress!.CurrentVisit;
+					bool fresh = previousVisit == null || previousVisit.AnchorObjectId != anchor ||
+						previousVisit.EntriesUsed != entry.EntriesUsed || haramelProgress.NeedsInstanceObservation &&
+						session.Api.World.Objects.Values.Any(n => n.TemplateId == 216897 && !n.IsCorpse);
+					if (fresh) { haramelHints.Clear(); haramelKillHistoryStart = haramelEntryHistoryStart; }
+					haramelProgress = haramelProgress.ObserveEntry(session.Api.World.InstanceId!.Value, anchor, entry, HaramelNow(),
+						session.Api.World.CompletedQuestIds.Contains(28507), fresh);
+					SaveHaramelProgress();
+					session.TraceDiagnostic("haramel-entry-receipt", new Dictionary<string, object?> { ["visit"] = haramelProgress.CurrentVisit, ["fresh"] = fresh });
+				}
+				async Task LeaveHaramelAsync()
+				{
+					NaturalHaramel rules = leg.Haramel!;
+					int exitId = haramelProgress!.CurrentVisit?.BossMovieObserved == true ? rules.BossExitNpcId : rules.EntryExitNpcId;
+					int exit = await ApproachShippedSpawnAsync(exitId, withinRange: TalkRange(exitId));
+					int start = session.PacketHistory.Count;
+					Require.True(await NaturalAltgardQuestSteps.UseObjectAsync(session, exit, null, token, reloadWorld: true), "Haramel exit use interrupted.");
+					await AcceptHaramelTransitionAsync(changedMap: true, start);
+					haramelProgress = haramelProgress.ObserveExit(HaramelNow(), rules);
+					SaveHaramelProgress();
+				}
+				async Task ObserveHaramelBossAsync()
+				{
+					if (session.Api.World.MapId != leg.Haramel!.MapId) return;
+					await NaturalMovieGate.FinishAsync(session, token);
+					bool movie = session.PacketHistory.Skip(haramelKillHistoryStart).Any(packet => packet.PacketType == typeof(SM_PLAY_MOVIE) &&
+						packet.Get<int>("cutsceneId") == leg.Haramel.BossMovieId) &&
+						session.PacketHistory.Skip(haramelKillHistoryStart).Any(packet => packet.PacketType == typeof(SM_NPC_INFO) &&
+							packet.Get<int>("npcId") == leg.Haramel.BossExitNpcId);
+					haramelProgress = haramelProgress!.ObserveBoss(movie, false, HaramelNow());
+					SaveHaramelProgress();
+				}
+				async Task LootHaramelChestAsync()
+				{
+					int chest = await ApproachShippedSpawnAsync(leg.Haramel!.ChestNpcId, withinRange: TalkRange(leg.Haramel.ChestNpcId));
+					int chestStart = session.PacketHistory.Count;
+					Require.True(await NaturalAltgardQuestSteps.UseObjectAsync(session, chest, null, token), "Haramel class chest use interrupted.");
+					await session.SynchronizeAsync(token);
+					Require.True(session.PacketHistory.Skip(chestStart).Any(packet => packet.PacketType == typeof(SM_LOOT_ITEMLIST) &&
+						packet.Get<int>("targetObjectId") == chest), "Haramel class chest did not produce its actual loot list.");
+					BotLootItem[] offered = session.Api.World.Loot?.Items.ToArray() ?? [];
+					foreach (BotLootItem item in offered)
+					{
+						long before = ItemCount(session.Api.World, item.ItemId);
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(450), token);
+						await session.SendPacketAsync(session.Api.Loot(chest, item.Index), token);
+						await session.SynchronizeAsync(token);
+						session.TraceDiagnostic("haramel-class-chest-loot", new Dictionary<string, object?> { ["item"] = item, ["before"] = before, ["after"] = ItemCount(session.Api.World, item.ItemId) });
+					}
+					await session.SendPacketAsync(session.Api.Loot(chest, close: true), token);
+					haramelProgress = haramelProgress!.ObserveBoss(true, true, HaramelNow());
+					SaveHaramelProgress();
+				}
+				async Task MakeHaramelSoupAsync()
+				{
+					int cauldron = await ApproachShippedSpawnAsync(730359, withinRange: 5);
+					await NaturalDialogProtocol.OpenAsync(session, cauldron, token);
+					if (haramelProgress!.SoupPayment == null)
+					{
+						long before = ItemCount(session.Api.World, 182212022);
+						await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(cauldron, DialogAction.CHECK_USER_HAS_QUEST_ITEM, questId: 28511), token);
+						await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet => packet.Get<int>("targetObjectId") == cauldron && packet.Get<ushort>("dialogPageId") == 1352);
+						await session.SynchronizeAsync(token);
+						haramelProgress = haramelProgress.ObserveSoupPayment(cauldron, before, ItemCount(session.Api.World, 182212022), 1352, HaramelNow());
+						SaveHaramelProgress(); // Persist payment before the item-give action.
+					}
+					if (ItemCount(session.Api.World, 182212023) == 0 && QuestStatus(28511) == 3)
+						await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(cauldron, DialogAction.SETPRO2, questId: 28511), token);
+					await session.SynchronizeAsync(token);
+					Require.Equal(1L, ItemCount(session.Api.World, 182212023));
+					Require.Equal(4, QuestStatus(28511));
+					SaveHaramelProgress();
+				}
+				async Task CollectHaramelKeysAsync()
+				{
+					foreach (NaturalHaramelKey key in leg.Haramel!.TowerChestKeys!)
+						while (ItemCount(session.Api.World, key.ItemId) < key.Count)
+						{
+							int npc = await KillShippedSpawnAsync(key.NpcId, new(QuestRunOperationKind.CollectQuestDrop, ItemId: key.ItemId, Count: key.Count));
+							await TryLootCorpseItemAsync(session, npc, key.ItemId, token);
+							await RestSafelyAsync(token);
+						}
+				}
+				int HaramelKind(IReadOnlyList<int> kinds)
+				{
+					RecordHaramelDeadHints();
+					NaturalNavigationObject? live = navigator.Observe().Npcs.Where(n => kinds.Contains(n.TemplateId))
+						.OrderByDescending(n => Distance(session.CurrentPosition, n.Position) <= NaturalPullPlanner.SpellRange + 3 &&
+							geometry.HasLineOfSight(leg.Haramel!.MapId, session.CurrentPosition, n.Position))
+						.ThenByDescending(n => geometry.OnSameIsland(leg.Haramel!.MapId, session.CurrentPosition, n.Position))
+						.ThenBy(n => Distance(session.CurrentPosition, n.Position)).FirstOrDefault();
+					if (live != null) return live.TemplateId;
+					int kind = graph.GetMap(leg.Haramel!.MapId)!.Waypoints.Where(w => w.TemplateId is int id && kinds.Contains(id) && !haramelHints.Contains((id, w.Position)))
+						.OrderByDescending(w => geometry.OnSameIsland(leg.Haramel.MapId, session.CurrentPosition, w.Position))
+						.ThenBy(w => w.TemplateId == leg.Haramel.BossNpcId).ThenBy(w => Distance(session.CurrentPosition, w.Position))
+						.Select(w => w.TemplateId!.Value).FirstOrDefault();
+					return kind > 0 ? kind : throw new NaturalHaramelSourcesExhaustedException("All original qualifying hints in this copy are exhausted.");
+				}
+				async Task<int> ApproachHaramelAsync(int templateId, float range, Func<int?>? completed)
+				{
+					NaturalHaramel rules = leg.Haramel!;
+					for (int search = 0; search < 100; search++)
+					{
+						RecordHaramelDeadHints();
+						if (completed?.Invoke() is int done) return done;
+						if (session.Api.World.IsDead) await RestSafelyAsync(token);
+						if (session.Api.World.MapId != rules.MapId) await EnterHaramelAsync();
+						NaturalNavigationObject? live = navigator.Observe().Npcs.Where(n => n.TemplateId == templateId)
+							.OrderByDescending(n => geometry.OnSameIsland(rules.MapId, session.CurrentPosition, n.Position)).ThenBy(n => Distance(session.CurrentPosition, n.Position)).FirstOrDefault();
+						BotWaypoint? hint = graph.GetMap(rules.MapId)!.Waypoints.Where(w => w.TemplateId == templateId && !haramelHints.Contains((templateId, w.Position)))
+							.OrderByDescending(w => geometry.OnSameIsland(rules.MapId, session.CurrentPosition, w.Position)).ThenBy(w => Distance(session.CurrentPosition, w.Position)).FirstOrDefault();
+						// Handler-spawned chest/exit have no static waypoint. Their actual spawn packet remains
+						// an observed location after the bot walks out of sight, scoped to this copy's entry.
+						DecodedBotServerPacket? seen = hint == null ? session.PacketHistory.Skip(haramelKillHistoryStart).LastOrDefault(packet =>
+							packet.PacketType == typeof(SM_NPC_INFO) && packet.Get<int>("npcId") == templateId &&
+							!navigator.UnavailableObjects.Contains(packet.Get<int>("objectId"))) : null;
+						if (live == null && hint == null && seen == null) throw new NaturalHaramelSourcesExhaustedException($"Haramel source {templateId} is exhausted in this copy.");
+						BotPosition at = live?.Position ?? hint?.Position ?? new(seen!.Get<float>("x"), seen.Get<float>("y"), seen.Get<float>("z"), seen.Get<byte>("heading"));
+						session.TraceDiagnostic("haramel-source-search", new Dictionary<string, object?>
+						{ ["template"] = templateId, ["search"] = search, ["object"] = live?.ObjectId, ["from"] = session.CurrentPosition, ["to"] = at, ["range"] = range });
+						await ReachHaramelFloorAsync(at, templateId);
+						if (session.Api.World.MapId != rules.MapId || session.Api.World.IsDead) continue;
+						try { if (!await WalkHaramelAsync(at, range, live?.ObjectId)) continue; }
+						catch (NaturalHaramelGroundApproachUnavailableException missing)
+						{
+							if (live != null) navigator.UnavailableObjects.Add(live.ObjectId);
+							BotWaypoint? unavailable = graph.GetMap(rules.MapId)!.Waypoints.Where(w => w.TemplateId == templateId)
+								.OrderBy(w => Distance(w.Position, at)).FirstOrDefault();
+							if (unavailable != null) haramelHints.Add((templateId, unavailable.Position));
+							session.TraceDiagnostic("haramel-source-unreachable", new Dictionary<string, object?>
+							{ ["template"] = templateId, ["object"] = live?.ObjectId, ["position"] = at, ["reason"] = missing.Message });
+							continue;
+						}
+						if (completed?.Invoke() is int collected) return collected;
+						NaturalNavigationObject? arrived = navigator.Observe().Npcs.Where(n => n.TemplateId == templateId && Distance(session.CurrentPosition, n.Position) <= range + 1)
+							.OrderBy(n => Distance(session.CurrentPosition, n.Position)).FirstOrDefault();
+						if (arrived != null) return arrived.ObjectId;
+						if (hint != null) haramelHints.Add((templateId, hint.Position));
+					}
+					throw new InvalidDataException($"Haramel source {templateId} exceeded its bounded observation search.");
+				}
+				async Task ReachHaramelFloorAsync(BotPosition at, int templateId)
+				{
+					int map = leg.Haramel!.MapId;
+					BotPosition tower = new(231.031f, 223.091f, 139.82f, 0);
+					bool TowerFloor(BotPosition p) => p.Z > 115 && p.X is > 195 and < 250 && p.Y is > 190 and < 250;
+					bool onTower = TowerFloor(session.CurrentPosition), onOffice = session.CurrentPosition.Z > 120 && session.CurrentPosition.Y >= 260;
+					// Some shipped workers stand above their floor's mesh snap (216913 is at 142.766).
+					// Their audited room and elevation still require the same ordinary lift/elevator.
+					bool targetTower = TowerFloor(at), targetOffice = at.Z > 120 && at.Y >= 260;
+					async Task FinishTowerAscentAsync()
+					{
+						for (int retry = 0; retry < 100 && session.Api.World.MapId == map && !session.Api.World.IsDead; retry++)
+							if (await WalkHaramelAsync(tower, 3)) return;
+						Require.True(session.Api.World.MapId != map || session.Api.World.IsDead, "Haramel tower ascent exceeded its guarded route budget.");
+					}
+					if (onTower && targetTower)
+					{
+						if (session.CurrentPosition.Z < 134) await FinishTowerAscentAsync();
+						return;
+					}
+					if (onOffice && targetOffice || geometry.NavMesh!.FindInteractionPath(map, session.CurrentPosition, at).Count > 0) return;
+					if (onTower && session.CurrentPosition.Z < 134) await FinishTowerAscentAsync();
+					if (onTower) await haramelTravel.GlideToLowerFloorAsync(token);
+					else if (onOffice) await haramelTravel.RideOfficeElevatorDownAsync(token);
+					if (session.Api.World.MapId != map) return;
+					if (templateId == 700853 || targetTower)
+					{
+						int lift = await ApproachHaramelAsync(leg.Haramel.LiftNpcId, 5, null);
+						int start = session.PacketHistory.Count;
+						await NaturalDialogProtocol.OpenAsync(session, lift, token);
+						session.Api.World.BeginWorldReload();
+						await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(lift, checked((ushort)leg.Haramel.LiftDialog)), token);
+						await AcceptHaramelTransitionAsync(changedMap: false, start);
+						await FinishTowerAscentAsync();
+					}
+					else if (targetOffice) await haramelTravel.RideOfficeElevatorAsync(token);
+				}
+				async Task<bool> WalkHaramelAsync(BotPosition target, float range, int? objective = null)
+				{
+					int map = session.Api.World.MapId!.Value, revives = combat.ReviveCount;
+					if (Distance(session.CurrentPosition, target) <= range && (range <= 5 || geometry.HasLineOfSight(map, session.CurrentPosition, target))) return true;
+					BotPosition from = session.CurrentPosition;
+					IReadOnlyList<BotPosition> route = range <= 1 ? geometry.NavMesh!.FindPath(map, from, target)
+						: range <= 5 ? geometry.NavMesh!.FindInteractionPath(map, from, target) : [];
+					if (route.Count > 0 && Distance(route[^1], target) > range) route = [];
+					IEnumerable<BotPosition> InteractionGround()
+					{
+						BotNavMesh mesh = geometry.NavMesh!.NavMeshes.Get(map)!;
+						// HM-02: a portal can block its own tiny island. The adjacent floor is an ordinary
+						// dialog approach; it does not need a sight ray through the portal's placeable model.
+						foreach (float radius in new[] { MathF.Max(1, range - 1), MathF.Max(1, range - 2), 1f })
+							for (int sector = 0; sector < 16; sector++)
+							{
+								float angle = sector * MathF.PI / 8;
+								BotPosition sample = target with { X = target.X + radius * MathF.Cos(angle), Y = target.Y + radius * MathF.Sin(angle) };
+								if (mesh.Snap(sample, BotNavQuery.Default with { SnapHorizontal = 1, SnapVertical = 3 }) is BotPosition ground &&
+									Distance(ground, target) <= range - .5f) yield return ground;
+							}
+					}
+					// Ranged targets can also occupy a tiny isolated mesh island (the office cages).
+					// Keep checked firing points on any reachable neighbouring floor, as for portal dialogs.
+					BotPosition[] approaches = new[] { target }.Concat(InteractionGround()).Concat(range > 5 ?
+						geometry.GroundAround(map, target, [MathF.Max(1, range - 1), MathF.Max(1, range - 2), 3f, 2f, 1f]) : [])
+						.Where(p => Distance(p, target) <= range - MathF.Min(.5f, range / 2) && (range <= 5 || geometry.HasLineOfSight(map, p, target)))
+						.OrderBy(p => Distance(from, p)).Distinct().ToArray();
+					BotTravelPlanner? planner = BotTravelPlanner.For(map, geometry, runtime.Data);
+					foreach (BotPosition point in approaches)
+					{
+						if (route.Count > 0) break;
+						route = range > 1 ? planner?.PlanJourney(map, from, point, session.Api.World.Level, [])?.Route ??
+							geometry.NavMesh!.FindPath(map, from, point) : geometry.NavMesh!.FindPath(map, from, point);
+					}
+					if (route.Count == 0 && approaches.Length > 0) route = geometry.FindJourneyPath(map, from, approaches[0]);
+					if (route.Count == 0 && range > 5) throw new NaturalHaramelGroundApproachUnavailableException($"No checked firing approach {from} -> {target}, range {range}.");
+					Require.True(route.Count > 0, $"No checked Haramel ground route {from} -> {target}, range {range}.");
+					session.TraceDiagnostic("haramel-ground-route", new Dictionary<string, object?>
+					{ ["map"] = map, ["from"] = from, ["target"] = target, ["range"] = range, ["points"] = route.Count, ["last"] = route[^1] });
+					for (int index = 0; index < route.Count; index += 8)
+					{
+						BotPosition[] segment = route.Skip(index).Take(8).ToArray();
+						if (!navigator.IsSegmentSafe(segment, objective))
+						{
+							BotPosition before = session.CurrentPosition;
+							int killsBefore = navigator.UnavailableObjects.Count;
+							float Aggro(int id)
+							{
+								var npc = runtime.Data.NpcDataDh.GetNpcTemplate(id);
+								return runtime.IsAggressive(npc) ? npc.GetAggroRange() + 1 : 0;
+							}
+							NaturalNavigationObject? guard = NaturalGuardedObjectivePolicy.SelectBlockerOnRoute(before, segment,
+								navigator.Observe().Npcs, Aggro, objective);
+							bool cleared = guard != null && await PullAndKillAsync(guard.ObjectId, "haramel-route-guard");
+							if (cleared) navigator.UnavailableObjects.Add(guard!.ObjectId);
+							if (!cleared && navigator.UnavailableObjects.Count == killsBefore && Distance(before, session.CurrentPosition) < 2)
+								cleared = await TryClearObservedBlockerAsync(segment[^1], objective);
+							if (combat.ReviveCount != revives || session.Api.World.MapId != map) return false;
+							Require.True(cleared || navigator.UnavailableObjects.Count > killsBefore || Distance(before, session.CurrentPosition) >= 2,
+								"Haramel ground route remains guarded.");
+							return false; // Fight/approach moved us: rebuild the route instead of walking stale points behind us.
+						}
+						if (Distance(session.CurrentPosition, segment[^1]) > .25f) await navigator.MoveAsync(segment, token);
+						await session.SynchronizeAsync(token);
+						await DefendAgainstEngagedAsync("haramel-ground");
+						if (combat.ReviveCount != revives || session.Api.World.MapId != map) return false;
+					}
+					return Distance(session.CurrentPosition, target) <= range + 1;
+				}
+				void RecordHaramelDeadHints()
+				{
+					if (leg.Haramel == null || session.Api.World.MapId != leg.Haramel.MapId) return;
+					var killed = session.PacketHistory.Skip(haramelKillHistoryStart).Where(packet => packet.PacketType == typeof(SmAttackStatus) &&
+						packet.Get<byte>("typeId") is not (19 or 20 or 21 or 22 or 23) && packet.Get<byte>("hpOrMp") == 0)
+						.Select(packet => packet.Get<int>("objectId")).ToHashSet();
+					foreach (int deadObject in killed) navigator.UnavailableObjects.Add(deadObject);
+					foreach (DecodedBotServerPacket spawn in session.PacketHistory.Skip(haramelKillHistoryStart).Where(packet =>
+						packet.PacketType == typeof(SM_NPC_INFO) && (killed.Contains(packet.Get<int>("objectId")) ||
+							session.Api.World.Objects.GetValueOrDefault(packet.Get<int>("objectId"))?.IsCorpse == true)))
+					{
+						int id = spawn.Get<int>("npcId");
+						BotPosition at = new(spawn.Get<float>("x"), spawn.Get<float>("y"), spawn.Get<float>("z"), 0);
+						BotWaypoint? hint = graph.GetMap(leg.Haramel.MapId)!.Waypoints.Where(w => w.TemplateId == id).OrderBy(w => Distance(w.Position, at)).FirstOrDefault();
+						if (hint != null) haramelHints.Add((id, hint.Position));
+					}
 				}
 
 				async Task UseInstancePortalAsync(int objectId, int duration, int destination)
@@ -2056,6 +2463,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 				async Task PlayContractStepAsync(NaturalAltgardStep step)
 				{
+					if (leg.Haramel != null && step.NpcId is 730306 or 730307)
+					{
+						int source = await ApproachShippedSpawnAsync(step.NpcId, withinRange: step.TalkRange);
+						await NaturalHaramelQuestSteps.UseLeadInObjectAsync(session, step, source, token);
+						return;
+					}
 					if (leg.Destiny is { } destiny)
 					{
 						if (step.Key == destiny.SpawnStep)
@@ -2075,7 +2488,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					int npc;
 					int stepMap = leg.StepMap(step);
 					Require.Equal(stepMap, session.Api.World.MapId);
-					if (stepMap != leg.Hub.MapId)
+					if (stepMap != leg.Hub.MapId && leg.Haramel == null)
 					{
 						NaturalNavigationResult reached = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(stepMap, step.NpcId,
 							new BotPosition(step.Position[0], step.Position[1], step.Position[2], 0), step.TalkRange, navigator, "NPC", token);
@@ -2427,6 +2840,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				Require.True(!world.IsDead, "The endpoint character is dead.");
 				VerifyDestinyEndpoint();
 				VerifyCoinEndpoint();
+				VerifyHaramelEndpoint();
 				NaturalJourneyCheckpoint before = NaturalJourneyCheckpoint.Capture(world, session.CharacterId,
 					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress);
 				session.BeforeSend = null;
@@ -2437,9 +2851,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await session.SynchronizeAsync(token);
 				NaturalJourneyCheckpoint after = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
 					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress);
+				if (leg.Haramel != null)
+					await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "haramel-endpoint-relog.json"),
+						System.Text.Json.JsonSerializer.Serialize(new { before, after }), token);
 				NaturalJourneyPersistence.Verify(before, after);
 				VerifyDestinyEndpoint();
 				VerifyCoinEndpoint();
+				VerifyHaramelEndpoint();
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, $"altgard-{altgardLegId}-completion.json"),
 					System.Text.Json.JsonSerializer.Serialize(new
 					{
@@ -2490,6 +2908,24 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						NaturalAltgardObservation.Observe(observed, session.CurrentPosition, session.Api.Timing.Now, bag.FreeSlots, coinGearProgress, haramelProgress, HaramelNow()),
 						NaturalTemplateObjective.From(altgardPlans), 1);
 					Require.Equal("complete", endpoint.Outcome);
+				}
+				void VerifyHaramelEndpoint()
+				{
+					if (leg.Haramel is not { } rules) return;
+					BotWorldModel observed = session.Api.World;
+					Require.Equal(156, observed.CompletedQuestIds.Count);
+					Require.All(leg.Order, id => Require.Equal(1, observed.CompletedQuestCounts.GetValueOrDefault(id)));
+					Require.All(leg.Start.CompletedQuestIds, id => Require.Contains(id, observed.CompletedQuestIds));
+					Require.Equal((long)rules.IronCount, ItemCount(observed, rules.IronItemId));
+					Require.Equal((long)rules.BronzeCount, ItemCount(observed, rules.BronzeItemId));
+					Require.All(rules.CleanupItemIds, id => Require.Equal(0L, ItemCount(observed, id)));
+					Require.True(observed.Inventory.TryGetValue(rules.StaffObjectId, out BotInventoryItem? staff) && staff.ItemId == rules.StaffItemId && staff.Details.EquippedSlot == 3, "Haramel replaced the retained staff.");
+					Require.True(haramelProgress!.Visits.Count(visit => visit.BossMovieObserved && visit.ChestResolved) >= 2 &&
+						haramelProgress.Visits.Any(visit => visit.PostBossQuests && visit.FreshSpawnsObserved), "Two actual fresh clears and their class chest outcomes must be retained.");
+					Require.Equal(combat.ReviveCount, haramelProgress.Revives);
+					Require.Equal("complete", NaturalAltgardDecisionEngine.Decide(leg,
+						NaturalAltgardObservation.Observe(observed, session.CurrentPosition, session.Api.Timing.Now, haramelProgress: haramelProgress, nowMillis: HaramelNow()),
+						NaturalTemplateObjective.From(altgardPlans), 1).Outcome);
 				}
 			}
 
@@ -2912,6 +3348,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// shipped spawn lies nearest (Q2230's tusks drop from six mosbear kinds; always the first meant long walks past others).
 			int NearestKind(IReadOnlyList<int> kinds)
 			{
+				if (haramelKind != null && altgardLeg?.Haramel?.MapId == session.Api.World.MapId) return haramelKind(kinds);
 				bool Connected(BotPosition at) => altgardLeg?.PillarFlight is not { } pillar || pillar.IsUpper(session.CurrentPosition.Z) ||
 					geometry.GroundAround(contract.MapId, at, [3f, 5f, 8f, 12f]).Any(point => Distance(point, at) <= 6 &&
 						geometry.OnSameIsland(contract.MapId, session.CurrentPosition, point));
@@ -2964,6 +3401,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					}
 					return null;
 				}
+				if (haramelApproach != null && altgardLeg?.Haramel?.MapId == session.Api.World.MapId)
+					return await haramelApproach(templateId, withinRange ?? MathF.Min(5, runtime.Data.NpcDataDh.GetNpcTemplate(templateId)?.GetTalkDistance() ?? 3), CompletedApproachSource);
 				// Dead on entry (a use bar or a walk ended in a death nobody handled): revive and recover first.
 				if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0) await RestSafelyAsync(token);
 				bool Connected(BotWaypoint waypoint) => templateId is < 210000 or >= 700000 ||
@@ -3492,7 +3931,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					// BC-06: several corpses can receive a drop while the bag is below its required count.
 					// Check the current stack before each take rather than collecting an extra from an older corpse.
 					IReadOnlyList<int> taken = await LootQuestItemsAsync(session, corpse, runtime.Data, lootToken,
-						altgardLegId == "l10" ? QuestDropStillNeeded : null);
+						altgardLegId == "l10" ? QuestDropStillNeeded : null,
+						altgardLeg?.Haramel?.TowerChestKeys?.Select(key => key.ItemId).ToHashSet());
 					session.TraceDiagnostic("quest-loot-sweep", new Dictionary<string, object?>
 					{
 						["corpse"] = corpse, ["npcId"] = seen!.TemplateId, ["taken"] = taken, ["position"] = session.CurrentPosition,
@@ -5804,11 +6244,21 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							// gate ground reached only by Q24016's later teleport; it is not a pre-campaign hunt route.
 							if (altgardLegId == "l10" && plan.Id == 2282) targetIds = targetIds.Where(id => id != 210539).ToArray();
 							if (targetIds.Length == 0) throw new InvalidDataException($"Q{plan.Id} kill has no shipped target.");
+							var exhaustedKinds = new HashSet<int>();
 							for (int kill = 0; NaturalQuestProgress.RemainingKills(plan, operation, session.Api.World) > 0; kill++)
 							{
 								// BC-06: Q2281's alternatives occupy different camps. Stay with an observed nearby
 								// valid source rather than crossing the camps after every counter increment.
-								int target = await KillShippedSpawnAsync(altgardLegId == "l10" ? NearestKind(targetIds) : targetIds[kill % targetIds.Length]);
+								int[] available = targetIds.Where(id => !exhaustedKinds.Contains(id)).ToArray();
+								if (available.Length == 0) throw new NaturalHaramelSourcesExhaustedException($"Q{plan.Id} has no remaining reachable sources in this copy.");
+								int kind = altgardLegId is "l10" or "l12" ? NearestKind(available) : available[kill % available.Length];
+								int target;
+								try { target = await KillShippedSpawnAsync(kind); }
+								catch (NaturalHaramelSourcesExhaustedException) when (altgardLegId == "l12" && available.Length > 1)
+								{
+									exhaustedKinds.Add(kind);
+									continue; // Another qualifying kind may still meet this counter without a new entry.
+								}
 								navigator.UnavailableObjects.Add(target);
 								await RestSafelyAsync(token);
 							}
@@ -5882,7 +6332,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							}
 							QuestRunPosition? recipientAt = operation.Npcs?.FirstOrDefault()?.Positions.FirstOrDefault(position => !position.ConditionalEvent);
 							int recipient;
-							if (recipientAt is { } at && at.MapId != (altgardLeg?.Hub.MapId ?? contract.MapId))
+							if (recipientAt is { } at && at.MapId != (altgardLeg?.Hub.MapId ?? contract.MapId) && altgardLeg?.Haramel == null)
 							{
 								Require.Equal(at.MapId, session.Api.World.MapId);
 								float talkRange = runtime.Data.NpcDataDh.GetNpcTemplate(recipientId)?.GetTalkDistance() ?? 3;
@@ -5917,6 +6367,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 									break;
 								}
 								catch (NaturalDialogTooFarException) when (attempt < 3) { await ReapproachForDialogAsync(recipient); }
+								catch (QuestDialogEchoException followUp) when (altgardLeg?.Haramel != null && plan.Id is 28504 or 28505 &&
+									followUp.Action == new PendingQuestDialogAction(recipient, rewardAction, plan.Id) &&
+									session.Api.World.CompletedQuestIds.Contains(plan.Id) && session.Api.World.CompletedQuestCounts.GetValueOrDefault(plan.Id) == 1)
+								{
+									session.TraceDiagnostic("haramel-completed-reward-followup-refused", new Dictionary<string, object?> { ["quest"] = plan.Id, ["action"] = rewardAction });
+									await session.SynchronizeAsync(token);
+									break;
+								}
 							}
 							Require.Contains(plan.Id, session.Api.World.CompletedQuestIds);
 							break;
@@ -5947,9 +6405,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					// by walking into it (which is how every add reached the bot at Hatata's cave).
 					int approachEvidenceStart = session.PacketHistory.Count;
 					int target = await ApproachShippedSpawnAsync(templateId, withinRange: NaturalPullPlanner.SpellRange + 3,
-						completedSource: collection == null ? null : CompletedCollectionSource, acceptObservedKill: altgardLegId == "l10");
+						completedSource: collection == null ? null : CompletedCollectionSource, acceptObservedKill: altgardLegId is "l10" or "l12");
 					if (CompletedCollectionSource() is int collectedFrom) return collectedFrom;
-					if (altgardLegId == "l10" && session.PacketHistory.Skip(approachEvidenceStart).Any(packet =>
+					if (altgardLegId is "l10" or "l12" && session.PacketHistory.Skip(approachEvidenceStart).Any(packet =>
 						packet.PacketType == typeof(SmAttackStatus) && packet.Get<byte>("typeId") is not (19 or 20 or 21 or 22 or 23) &&
 						packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0))
 						return target;
@@ -7765,9 +8223,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	// What the general quest-loot sweep took from each corpse, so a later TryLootCorpseItemAsync on that corpse counts it.
 	private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<BotWorldModel, Dictionary<int, List<int>>> SweptQuestItems = new();
 
-	/// <summary>Open a corpse's drop list and take every QUEST-group item in it. Returns the item ids taken.</summary>
+	/// <summary>Take QUEST-group drops and explicitly required non-quest keys. Returns the item ids taken.</summary>
 	internal static async Task<IReadOnlyList<int>> LootQuestItemsAsync(INaturalJourneySession session, int objectId,
-		Aion.GameServer.Dataholders.StaticData data, CancellationToken token, Func<int, bool>? itemNeeded = null)
+		Aion.GameServer.Dataholders.StaticData data, CancellationToken token, Func<int, bool>? itemNeeded = null,
+		IReadOnlySet<int>? additionalItemIds = null)
 	{
 		await session.SendPacketAsync(session.Api.Loot(objectId), token);
 		DecodedBotServerPacket list;
@@ -7786,7 +8245,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		{
 			int itemId = Get<int>(entry, "itemId");
 			var template = data.ItemDataDh.GetItemTemplate(itemId);
-			if (template?.itemGroup != Aion.GameServer.Model.Templates.Items.Enums.ItemGroup.QUEST) continue;
+			if (template == null || template.itemGroup != Aion.GameServer.Model.Templates.Items.Enums.ItemGroup.QUEST && additionalItemIds?.Contains(itemId) != true) continue;
 			if (itemNeeded?.Invoke(itemId) == false) continue;
 			BotInventoryItem? existing = session.Api.World.Inventory.Values.FirstOrDefault(owned => owned.ItemId == itemId);
 			// Java DropService rejects a second limit-one item; there will be no inventory update to wait for.

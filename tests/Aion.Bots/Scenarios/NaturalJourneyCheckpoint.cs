@@ -82,7 +82,9 @@ public sealed class NaturalJourneyProgress(TimeSpan maximumWithoutProgress, IRea
 		string fingerprint = JsonSerializer.Serialize(new
 		{
 			checkpoint.Level,
-			Quests = checkpoint.Quests.OrderBy(q => q.QuestId).Select(q => new { q.QuestId, q.Status, q.StepAndFlags }),
+			// Completed entries can remain in the live journal until login rebuilds its separate lists.
+			Quests = checkpoint.Quests.Where(q => !checkpoint.CompletedQuestIds.Contains(q.QuestId)).OrderBy(q => q.QuestId)
+				.Select(q => new { q.QuestId, q.Status, q.StepAndFlags }),
 			Completed = checkpoint.CompletedQuestIds.Order(),
 			Skills = checkpoint.Skills.OrderBy(s => s.SkillId).Select(s => new { s.SkillId, s.Level }),
 			Items = checkpoint.Inventory.Where(i => i.ItemId is >= 182200000 and < 182300000 || objectiveItemIds?.Contains(i.ItemId) == true)

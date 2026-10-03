@@ -25,6 +25,8 @@ public sealed record NaturalHaramelElevator(int MapId, long PeriodMillis, Natura
 	public BotPosition Top => Keys[2].Position;
 	public long AscentStarts => Keys[1].Millis;
 	public long AscentEnds => Keys[2].Millis;
+	public long DescentStarts => Keys[3].Millis;
+	public long DescentEnds => Keys[4].Millis;
 
 	public static NaturalHaramelElevator Load(string root)
 	{
@@ -115,5 +117,23 @@ public sealed record NaturalHaramelElevator(int MapId, long PeriodMillis, Natura
 			previous = t;
 		}
 		return new(frames, TimeSpan.FromMilliseconds(AscentEnds - elapsed), Top.Z - Bottom.Z);
+	}
+
+	/// <summary>Ride the same shipped controller back down after boarding during its upper stop.</summary>
+	public BotMovementPlan Descent(long cycleStartMillis, long nowMillis)
+	{
+		long elapsed = nowMillis - cycleStartMillis;
+		if (elapsed < AscentEnds || elapsed >= DescentStarts) throw new InvalidOperationException("Missed the real upper boarding window.");
+		List<BotMovementFrame> frames = [];
+		long previous = elapsed;
+		for (long t = elapsed; ; t = Math.Min(DescentEnds, t + 100))
+		{
+			BotPosition at = At(t);
+			frames.Add(new(TimeSpan.FromMilliseconds(t - previous), GameClientPackets.Move(new MovementPacketData(
+				at.X, at.Y, at.Z, at.Heading, (byte)(MovementMask.POSITION | MovementMask.ABSOLUTE))), at));
+			if (t == DescentEnds) break;
+			previous = t;
+		}
+		return new(frames, TimeSpan.FromMilliseconds(DescentEnds - elapsed), Top.Z - Bottom.Z);
 	}
 }

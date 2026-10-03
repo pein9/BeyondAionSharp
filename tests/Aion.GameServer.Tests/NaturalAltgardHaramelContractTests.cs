@@ -40,6 +40,18 @@ public sealed class NaturalAltgardHaramelContractTests
 		Assert.DoesNotContain(28502, Leg.Order);
 	}
 
+	[Theory]
+	[InlineData(2945, 24, 3, 0, 0, false)]
+	[InlineData(2945, 25, 3, 0, 0, true)]
+	[InlineData(2945, 25, 3, 1, 0, false)]
+	[InlineData(2945, 25, 4, 0, 0, false)]
+	[InlineData(2945, 25, 3, 0, 1, false)]
+	[InlineData(2946, 25, 3, 0, 0, false)]
+	public void DeferredCampaignAllowsOnlyItsActualLevelUnlock(int id, int level, byte status, int flags, byte count, bool preserved)
+	{
+		Assert.Equal(preserved, NaturalHaramelDecisionEngine.PreservesDeferredQuest(id, (6, 0), new(id, status, flags, count, null), level));
+	}
+
 	[Fact]
 	public void TowerSuppliesMatchTheRealChestRequirementsAndAttainableDrops()
 	{
@@ -135,6 +147,20 @@ public sealed class NaturalAltgardHaramelContractTests
 	}
 
 	[Fact]
+	public void ExhaustedPartialCopiesWaitForTheirRetainedExpiryBeforeRecoveryEntry()
+	{
+		NaturalHaramelProgress first = Progress().ObserveEntry(2,100,Entry(1),1000).ObserveExit(2000,Rules);
+		NaturalAltgardObservation partial = Quest(State(),28500,3,4) with { HaramelProgress=first,NowMillis=661999 };
+		Assert.Equal("wait-haramel-expiry",Decide(partial).Action);
+		Assert.Equal("enter-haramel",Decide(partial with { NowMillis=662000 }).Action);
+		NaturalHaramelProgress second = first.ObserveEntry(3,200,Entry(2),662001,postBossQuests:true,freshSpawnsObserved:true)
+			.ObserveExit(663000,Rules);
+		partial = Quest(PostBoss(State()),28511,3,0) with { HaramelProgress=second,NowMillis=1322999 };
+		Assert.Equal("wait-haramel-expiry",Decide(partial).Action);
+		Assert.Equal("enter-haramel",Decide(partial with { NowMillis=1323000 }).Action);
+	}
+
+	[Fact]
 	public void SoupPaymentAndOwnedSoupPreventDuplicateIngredientCheckOrGive()
 	{
 		NaturalHaramelProgress progress=Progress().ObserveEntry(3,200,Entry(2),1000,postBossQuests:true,freshSpawnsObserved:true)
@@ -202,6 +228,14 @@ public sealed class NaturalAltgardHaramelContractTests
 		NaturalJourneyPersistence.Verify(checkpoint,checkpoint with { ConnectionGeneration=2 });
 		Assert.Throws<InvalidDataException>(() => NaturalJourneyPersistence.Verify(checkpoint,checkpoint with
 			{ ConnectionGeneration=2,HaramelProgress=Progress() with { StartedAtMillis=1 } }));
+		checkpoint=checkpoint with { HaramelProgress=Progress() with { StallBudget=first.State } };
+		NaturalJourneyProgressState later=first.State with { LastObserved=TimeSpan.FromMinutes(60) };
+		NaturalJourneyPersistence.Verify(checkpoint,checkpoint with { ConnectionGeneration=2,
+			HaramelProgress=checkpoint.HaramelProgress with { StallBudget=later } });
+		foreach (var changed in new[] { later with { Fingerprint="changed" }, later with { LastProgress=TimeSpan.FromSeconds(1) },
+			later with { LastObserved=TimeSpan.FromMinutes(58) } })
+			Assert.Throws<InvalidDataException>(() => NaturalJourneyPersistence.Verify(checkpoint,checkpoint with
+				{ ConnectionGeneration=2,HaramelProgress=checkpoint.HaramelProgress with { StallBudget=changed } }));
 	}
 
 	[Fact]

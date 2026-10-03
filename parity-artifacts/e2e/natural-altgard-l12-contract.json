@@ -686,7 +686,7 @@
       "actions": [
         "USE_OBJECT",
         "SELECT_QUEST_REWARD",
-        "SELECTED_QUEST_REWARD1"
+        "SELECTED_QUEST_NOREWARD"
       ],
       "pages": [
         10002,
@@ -765,7 +765,7 @@
       "actions": [
         "USE_OBJECT",
         "SELECT_QUEST_REWARD",
-        "SELECTED_QUEST_REWARD1"
+        "SELECTED_QUEST_NOREWARD"
       ],
       "pages": [
         10002,
@@ -793,6 +793,10 @@
     "waterLevel": 200,
     "reuseMillis": 10000,
     "maxFlightTime": 60
+  },
+  "pillarFlight": {
+    "upper": [2659.192, 1660.59, 324.88315],
+    "lower": [2564.68, 1559.74, 249.92017]
   },
   "excluded": [
     {
@@ -1162,12 +1166,6 @@
         "stepKey": null
       },
       {
-        "action": "template-work",
-        "mapId": 300200000,
-        "questId": 28505,
-        "stepKey": null
-      },
-      {
         "action": "haramel-object",
         "mapId": 300200000,
         "questId": 28510,
@@ -1201,6 +1199,12 @@
         "action": "template-work",
         "mapId": 300200000,
         "questId": 28504,
+        "stepKey": null
+      },
+      {
+        "action": "template-work",
+        "mapId": 300200000,
+        "questId": 28505,
         "stepKey": null
       },
       {

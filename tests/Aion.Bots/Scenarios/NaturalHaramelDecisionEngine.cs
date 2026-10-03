@@ -6,6 +6,11 @@ namespace Aion.Bots.Scenarios;
 /// from the new client observation. A saved receipt can require a wait, never a quest replay.</summary>
 public static class NaturalHaramelDecisionEngine
 {
+	/// <summary>Java starts Q2945 automatically at level 25; its deferred objective must remain untouched.</summary>
+	public static bool PreservesDeferredQuest(int id, (byte Status, int StepAndFlags) incoming, BotQuestState current, int level) =>
+		(current.Status, current.StepAndFlags) == incoming ||
+		(id == 2945 && incoming == (6, 0) && level >= 25 && current is { Status: 3, StepAndFlags: 0, CompleteCount: 0 });
+
 	public static NaturalAltgardDecision Decide(NaturalAltgardContract leg, NaturalAltgardObservation state,
 		IReadOnlyDictionary<int, NaturalTemplateObjective> objectives, int sequence)
 	{
@@ -80,7 +85,12 @@ public static class NaturalHaramelDecisionEngine
 				if (task.QuestId is int gated && !leg.Quest(gated).PrerequisiteList.All(Done))
 					return Stop("quest-gate", $"Q{gated} awaits its observed prerequisite completion.");
 				if (state.MapId != task.MapId)
+				{
+					if (task.MapId == rules.MapId && progress.CurrentVisit?.LeftAtMillis != null &&
+						progress.FreshEntryAfterMillis is long retryAfter && state.NowMillis < retryAfter)
+						return Plan("wait-haramel-expiry", leg.Hub.MapId, reason: $"Preserve remaining counters/items and wait for ordinary cleanup deadline {retryAfter}.");
 					return Plan(task.MapId == rules.MapId ? "enter-haramel" : "leave-haramel", rules.MapId, task.QuestId, task.StepKey);
+				}
 				return Plan(task.Action, task.MapId, task.QuestId, task.StepKey);
 			}
 			return null;

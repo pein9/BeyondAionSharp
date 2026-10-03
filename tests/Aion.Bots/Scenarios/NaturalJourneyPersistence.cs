@@ -31,11 +31,15 @@ public static class NaturalJourneyPersistence
 		if (before.HaramelProgress is { } haramel)
 			Require(after.HaramelProgress is { } resumed && haramel.CharacterId == resumed.CharacterId &&
 				haramel.StartedAtMillis == resumed.StartedAtMillis && haramel.Revives == resumed.Revives &&
-				haramel.FreshEntryAfterMillis == resumed.FreshEntryAfterMillis && haramel.StallBudget == resumed.StallBudget && haramel.SoupPayment == resumed.SoupPayment &&
+				haramel.FreshEntryAfterMillis == resumed.FreshEntryAfterMillis && SameStallBudget(haramel.StallBudget, resumed.StallBudget) && haramel.SoupPayment == resumed.SoupPayment &&
 				haramel.EntryObservation?.EntriesUsed == resumed.EntryObservation?.EntriesUsed &&
 				haramel.Visits.SequenceEqual(resumed.Visits) && haramel.IncomingEquipment.SequenceEqual(resumed.IncomingEquipment), "Haramel receipts and budgets");
 		Require(before.Inventory.OrderBy(i => i.ObjectId).SequenceEqual(after.Inventory.OrderBy(i => i.ObjectId)), "inventory");
 		Require(Skills(before).SequenceEqual(Skills(after)), "skills");
+		// Synchronizing a fresh login advances observation time without replenishing the stall budget.
+		static bool SameStallBudget(NaturalJourneyProgressState? original, NaturalJourneyProgressState? resumed) =>
+			original == null ? resumed == null : resumed != null && original.Fingerprint == resumed.Fingerprint &&
+				original.LastProgress == resumed.LastProgress && resumed.LastObserved >= original.LastObserved;
 
 		static IEnumerable<(int, byte, int, byte)> ActiveQuests(NaturalJourneyCheckpoint checkpoint) =>
 			checkpoint.Quests.Where(q => q.Status is 3 or 4).OrderBy(q => q.QuestId)

@@ -4314,6 +4314,12 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-03 HM-06: natural two-fresh-clear Haramel smoke and fortress endpoint relog pass;
+  level 25, 156 journals, zero deaths, 19 Iron/7 Bronze, retained staff/armour/sealed bundle.
+  Six unreachable cage approaches and failed drafts a1..a21 remain recorded. Sixty-nine scoped
+  tests, seven prechecks and Fast (82 passed/five switch skips/all eleven scenarios) pass;
+  all owned smoke schemas dropped and incoming dumps unchanged (`run/hm06-support/audit.json`).
+  The runner now awaits the committed-code `altgard-haramel-l12` capture in HM-07.
 - 2026-10-03 HM-05: ordinary expiry/fresh entry, 74 original qualifying sources, packed 63/64/65,
   four follow-up quests and native death/relog/cold recovery pass. Java's unspawned channel default
   is retained; actual spawn identity drives copy observation. Scoped cases, seven checks and Fast

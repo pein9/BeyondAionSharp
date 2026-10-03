@@ -50,6 +50,20 @@ public sealed class NaturalHaramelElevatorTests
 	}
 
 	[Fact]
+	public void UpperStopBoardsTheActualDescentAndLateBoardingIsRefused()
+	{
+		Assert.Throws<InvalidOperationException>(() => Elevator.Descent(20000,28666));
+		Assert.Throws<InvalidOperationException>(() => Elevator.Descent(20000,31333));
+		var plan = Elevator.Descent(20000,29000);
+		Assert.Equal(TimeSpan.FromMilliseconds(9667),plan.Duration);
+		Assert.Equal(plan.Duration,TimeSpan.FromTicks(plan.Frames.Sum(f => f.DelayBefore.Ticks)));
+		Assert.Equal(Elevator.Top,plan.Frames[0].Position);
+		Assert.Equal(Elevator.Bottom,plan.Frames[^1].Position);
+		Assert.All(plan.Frames,frame => Assert.Equal(typeof(CM_MOVE),frame.Packet.PacketType));
+		Assert.True(plan.Frames.Zip(plan.Frames.Skip(1)).All(pair => pair.First.Position.Z >= pair.Second.Position.Z));
+	}
+
+	[Fact]
 	public void AnUnprovenUpperLandingCannotBecomeAWalkOrHopConnector()
 	{
 		var geometry = new BotNavigationGeometry(_ => new GeoMap(Elevator.MapId), 1, IgnoreProperties.ANY_RACE).WithNavMesh(null);

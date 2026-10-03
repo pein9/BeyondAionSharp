@@ -117,6 +117,21 @@ public sealed class NaturalJourneyCheckpointTests
 	}
 
 	[Fact]
+	public void LoginDroppingCompletedActiveEntriesCannotReplenishStallBudget()
+	{
+		var world = Login();
+		world.Apply(Packet<SM_INVENTORY_INFO>(("firstPacket", false), ("items", Rows())));
+		var checkpoint = Capture(world);
+		checkpoint = checkpoint with { Quests = [..checkpoint.Quests, new(2101, 5, 0, 1, null)] };
+		var progress = new NaturalJourneyProgress(TimeSpan.FromMinutes(5));
+		progress.Observe(checkpoint, TimeSpan.Zero);
+		var relogged = checkpoint with { ConnectionGeneration = 2, Quests = checkpoint.Quests.Where(q => q.Status != 5).ToArray() };
+		progress.Observe(relogged, TimeSpan.FromMinutes(4));
+		Assert.Equal(TimeSpan.Zero, progress.State.LastProgress);
+		Assert.Throws<TimeoutException>(() => progress.Observe(relogged, TimeSpan.FromMinutes(5)));
+	}
+
+	[Fact]
 	public void FailurePackageRetainsOriginalObservationAndDoesNotOverwriteIncidents()
 	{
 		string directory = Path.Combine(Path.GetTempPath(), "ni08-" + Guid.NewGuid().ToString("N"));
