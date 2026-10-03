@@ -1,6 +1,6 @@
 # Leg 12: Haramel after the coin gear preparation
 
-**Status (2026-10-03): CG-00..CG-06 complete; HM-00 is next, HM-00..HM-08 unchecked.** Follow
+**Status (2026-10-03): CG-00..CG-06 and HM-00 complete; HM-01 is next.** Follow
 [coin gear preparation CG-00..CG-06](natural-altgard-coin-gear.md) first, then do the Haramel lead-in,
 every active Asmodian Haramel quest once, and the clears needed to finish them. Haramel remains
 **Leg 12**; the preparation is a separate `cg` section. Recommended scope is **two fresh solo clears**,
@@ -116,8 +116,9 @@ concentration and reduced hate), **123001440** (Q28507's magical-accuracy cloth 
 and **113501720** (Q28505's level-21 chain chausses with concentration and reduced hate).
 The "cloth band" name refers to the belt slot, not cloth body armour. The matching higher-hate
 chain alternatives are not a more expensive/stronger quality tier. Q28505 also lists historical
-class weapon rewards; audit Java `QuestService` and the actual reward dialogue before asserting
-whether any is active, as ND-Q1 required for Q2900. Choose by the genuinely offered reward list.
+class weapon rewards, but HM-00 confirms `use_class_reward` is absent/default 0 in matching Java/C#
+data. Java `QuestTemplate` enables that list only at 1 or 2 and `QuestService` therefore uses the
+ordinary selectable armour list. Verify the actual dialogue in HM-03; choose the genuinely offered reward.
 If a Lateni weapon is actually offered, it may be retained, but the operator's equipped-staff
 instruction still applies. Do not grant an inactive XML class reward, presume a second selectable
 prize or switch the current staff for it.
@@ -169,10 +170,31 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
 
 ## TODO list
 
-- [ ] **HM-00 — Freeze scope and eligibility.** Depends: CG-06. Audit the verified coin snapshot,
+- [x] **HM-00 — Freeze scope and eligibility.** Depends: CG-06. Audit the verified coin snapshot,
   eleven quest gates/handlers/items/rewards, level/solo/entry-cycle restrictions, the current server
   configuration, ordinary instance lifetime, exits/recovery, sealed stigma state and full quest vars.
   Read relevant Java and the parent decisions; record any authority gap before changing shared content.
+  - 2026-10-03 evidence: `run/hm00-audit/audit.json` on base `91be42c07` independently verifies the
+    incoming dump hash, Cleric client ID 10 / SQL CLERIC, level 24, 145 journals, equipped staff,
+    sealed bundle and no existing Haramel journal or stored entry row. Java `ce54b7931` and C# XML
+    agree on all eleven active quest nodes, eight registrations, gates, items/rewards, portal/lift/
+    exit paths, restrictions, selected item definitions and all 74 qualifying spawn spots.
+    The four post-Q28507 gates, Q28501 -> Q28506 -> Q28507, separate Q28508 counters and packed
+    Q28504 var0 + (var1 << 6) are frozen. First rewards total 958,587 XP and seven Bronze Coins.
+  - Read/compare the three custom handlers, template and reward services, quest vars, Haramel
+    instance handler, portal/entry-count/expiry services and actual configuration. Normal same-instance
+    re-entry does not spend a new entry; fresh entry does. DAILY/900 means 09:00, 16 entries, solo,
+    minimum 16/no maximum. Haramel is non-personal; empty expiry uses 600 seconds and a 60-second
+    checker. SIM copies the shipped instance configuration without changing those values; scaling
+    is disabled. The lift still needs the upper stairs, and normal Hamerun death produces movie 457,
+    Cleric chest 700832 and exit 700852. Those paths/credits/combat remain runtime proof in HM-02..HM-06.
+  - Q28505's class-weapon list is inactive/default 0; zero-based selectable indexes are Q28500=3
+    (112501641), Q28507=1 (123001440) and Q28505=3 (113501720). Q28500 declares work item 182212012
+    but its handler gives none; do not invent a grant. Q28510 supplies 182212021 and removes it on
+    completion; Q28511 checks/consumes five ginseng, gives soup and removes its work item at hand-in.
+    No authority gap or server/content correction is established. The initial audit draft compared
+    the numeric client class with a string; corrected against Java ID 10, original log retained.
+    Seven prechecks pass (`run/hm00-audit/`); documentation/audit only, no natural instance run.
 - [ ] **HM-01 — Leg 12 contract, plans and decisions.** Depends: HM-00. Add `l12` to every shared
   registry/runner/snapshot selector; compile the eight template quests and encode the three custom
   protocols, two visits, fresh-instance wait, packed 65 counter, quest reward choices, protected items
@@ -253,6 +275,11 @@ be corrected under existing authority, record it here and continue the remaining
 
 ## Progress log
 
+- 2026-10-03 HM-00 complete: verified CG incoming state and all eleven Java/C# quest/gate/reward,
+  entrance/lift/exit, instance lifetime/configuration and 74-source facts. Inactive class weapons
+  stay inactive; selected armour/belt indexes and packed counters are frozen. Initial audit class-ID
+  draft retained, corrected audit and seven prechecks pass. Next HM-01 adds the shared l12 contract
+  and persistent two-visit decisions; no Haramel runtime or content change has occurred.
 - 2026-10-03 CG-06 handoff: actual committed `altgard-coingear` hash/SQL/restore/relog and tier/gear/
   currency/stigma ledger are reconciled in `run/cg06-handoff/audit.json`. All CG items complete;
   Haramel implementation begins with HM-00. No HM quest or natural instance run has happened yet.

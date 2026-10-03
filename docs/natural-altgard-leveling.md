@@ -32,7 +32,7 @@ The operator's 2026-10-03 next request is [coin gear preparation](natural-altgar
 (CG-00..CG-06), then [Leg 12: Haramel](natural-altgard-haramel.md) (HM-00..HM-08).
 Coin preparation is done (CG-00..CG-06, 2026-10-03): verified `altgard-coingear` holds the level-24
 Cleric alive at Heart bind, 145 journals, 19 Iron Coins, three purchased chain pieces and the original
-staff still equipped. Haramel is next (HM-00..HM-08 unchecked). Full-area SIM and isolated LIVE
+staff still equipped. Haramel scope/eligibility is audited (HM-00 done; HM-01..HM-08 unchecked). Full-area SIM and isolated LIVE
 acceptance follow those checkpoints.
 
 ## Goal
