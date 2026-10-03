@@ -1,6 +1,6 @@
 # Altgard coin gear preparation before Leg 12
 
-**Status (2026-10-03): CG-00 audited; CG-01..CG-06 remain.** The operator requested Q2293,
+**Status (2026-10-03): CG-00/CG-01 complete; CG-02..CG-06 remain.** The operator requested Q2293,
 binding at Heart of Impetusium, the best available coin chain gear and weapon, then Haramel as Leg 12.
 The operator amended the weapon scope on 2026-10-03: **keep the equipped level-21 staff; do not switch
 it or buy a coin weapon**. A shield cannot be worn with that two-handed staff and is excluded too.
@@ -12,7 +12,7 @@ combined goal was active. This supersedes the pasted goal's older five-piece/mac
 
 Continue with [Leg 12: Haramel](natural-altgard-haramel.md) only after CG-06. This preparation has the
 separate selector `cg`; Haramel keeps `l12`. Both selectors and their snapshot support still need
-implementation. No gameplay run was launched to write this plan.
+implementation of the natural runner and probes. No natural gameplay run has been launched yet.
 
 ## Authority and incoming state
 
@@ -184,11 +184,22 @@ plus `run-fast.ps1` before gameplay-change commits. Retain failures; do not reru
     19 Iron/0 Bronze Coins, three new chain slots, alive and bound at 700067 through actual relog.
     All seven pre-commit checks pass; no gameplay or Fast required for this audit-only item.
     Base commit `86eb2e021`; snapshot capture `e23d5a511` remains unchanged.
-- [ ] **CG-01 — Contract, decisions and owned probe support.** Depends: CG-00. Add `cg` to the leg
+- [x] **CG-01 — Contract, decisions and owned probe support.** Depends: CG-00. Add `cg` to the leg
   registry, environment selector and snapshot script; compile Q2293's plan. Add the explicit shopping
   manifest and repeat completion/receipt state to shared SIM/LIVE decisions and persistence. Provision
   genuinely unused probe accounts starting at 221 after auditing all tests; current fixture stops at
   220, so extend it deliberately. Never borrow D32's reserved 151-200 or collide with another run.
+  - 2026-10-03 evidence: `natural-altgard-cg-contract.json`, compiled `2293.json`, shared coin
+    policy/decision observation, protected inventory policy and checkpoint/relog counts/receipts.
+    Accounts 221/222 were absent from all SIM account uses and are provisioned at access level 0
+    for CG-02/03 only. Java MonsterHunt, QuestState, completed-list packet and CG-00 trade/equip
+    rules govern the two counters, one-completion limit, exact debit receipts and unchanged staff
+    object. A completed ID without its count cannot restart Q2293 or authorize shopping; an owned
+    piece without its debit receipt cannot cause a duplicate purchase. `run/cg01-contract/`:
+    65 focused tests pass and all seven pre-commit checks pass; `run/cg01-fast/` has 11/11 Fast
+    scenarios passing (76 tests passed, four explicitly skipped). The initial full-cube test expected
+    a direct block instead of existing town service; failure/detail logs and corrected verification
+    are retained. No server content, natural purchases or snapshot capture. Base `f58ccfce0`.
 - [ ] **CG-02 — Heart travel and Q2293 probe.** Depends: CG-01. Prove the actual hub flight, bind,
   lower-ground loop, return to the upper vendors and ordinary Heart recovery at level 24. Complete
   both distinct kill counters with normal combat, reward, reaccept and reset on the probe. Clear
@@ -232,6 +243,9 @@ not permission to invent higher equipment. Record any new shared defect or unsup
 
 ## Progress log
 
+- 2026-10-03 CG-01: committed the cg contract/selector, compiled Q2293, shared transaction and
+  repeat-count state, protected loadout policy and free accounts 221/222. Focused 65/65, seven
+  prechecks and Fast 11/11 pass. Next CG-02 proves travel/bind, both counters and ordinary recovery.
 - 2026-10-03 CG-00: froze the incoming SQL/packet audit, exact three-piece purchase manifest and
   endpoint receipts under `run/cg00-audit/`. The operator explicitly chose four coins and retaining
   the staff, superseding the older goal clause. Java trade/equipment and configured region audited;

@@ -19,6 +19,14 @@ public static class NaturalJourneyPersistence
 			Math.Abs(before.Position.Z - after.Position.Z) <= 0.05f &&
 			before.Position.Heading == after.Position.Heading, "position");
 		Require(before.CompletedQuestIds.Order().SequenceEqual(after.CompletedQuestIds.Order()), "completed journal");
+		if (before.CompletedQuests != null)
+			Require(after.CompletedQuests != null && before.CompletedQuests.OrderBy(q => q.QuestId)
+				.Select(q => (q.QuestId, q.CompleteCount))
+				.SequenceEqual(after.CompletedQuests.OrderBy(q => q.QuestId).Select(q => (q.QuestId, q.CompleteCount))), "completed quest counts");
+		if (before.CoinGearProgress != null)
+			Require(after.CoinGearProgress != null && before.CoinGearProgress.StaffObjectId == after.CoinGearProgress.StaffObjectId &&
+				before.CoinGearProgress.Reward == after.CoinGearProgress.Reward &&
+				before.CoinGearProgress.Purchases.SequenceEqual(after.CoinGearProgress.Purchases), "coin gear receipts");
 		Require(ActiveQuests(before).SequenceEqual(ActiveQuests(after)), "active journal");
 		Require(before.Inventory.OrderBy(i => i.ObjectId).SequenceEqual(after.Inventory.OrderBy(i => i.ObjectId)), "inventory");
 		Require(Skills(before).SequenceEqual(Skills(after)), "skills");

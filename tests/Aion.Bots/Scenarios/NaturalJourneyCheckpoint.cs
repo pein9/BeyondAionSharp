@@ -9,10 +9,12 @@ public sealed record NaturalJourneyCheckpoint(
 	int CharacterId, int ConnectionGeneration, int MapId, BotPosition Position, ushort Level,
 	int CurrentHp, int MaxHp, int CurrentMp, int MaxMp, bool IsDead,
 	BotQuestState[] Quests, int[] CompletedQuestIds, NaturalJourneyItem[] Inventory,
-	BotSkill[] Skills, NaturalDecision Next, byte PlayerClass = 0, BotBindPoint? BindPoint = null)
+	BotSkill[] Skills, NaturalDecision Next, byte PlayerClass = 0, BotBindPoint? BindPoint = null,
+	BotCompletedQuest[]? CompletedQuests = null, NaturalCoinGearProgress? CoinGearProgress = null)
 {
 	public static NaturalJourneyCheckpoint Capture(BotWorldModel world, int expectedCharacterId,
-		int generation, NaturalIshalgenContract contract, BotPosition? currentPosition = null, int sequence = 1)
+		int generation, NaturalIshalgenContract contract, BotPosition? currentPosition = null, int sequence = 1,
+		NaturalCoinGearProgress? coinGearProgress = null)
 	{
 		if (!world.LoginStateObserved)
 			throw new InvalidDataException("Natural journey login is incomplete: wait for position, stats, both journals, inventory and skills.");
@@ -29,7 +31,7 @@ public sealed record NaturalJourneyCheckpoint(
 			NaturalIshalgenDecisionEngine.Decide(contract, observation, sequence),
 			// NA-07: the class survives relog (a Cleric stays a Cleric), and so does the obelisk bind.
 			world.Objects.TryGetValue(expectedCharacterId, out BotKnownObject? self) ? self.PlayerClass ?? 0 : (byte)0,
-			world.ObeliskBindPoint);
+			world.ObeliskBindPoint, world.CompletedQuests.Values.OrderBy(q => q.QuestId).ToArray(), coinGearProgress);
 	}
 
 	public static NaturalIshalgenObservation Observe(BotWorldModel world, BotPosition? currentPosition = null) =>

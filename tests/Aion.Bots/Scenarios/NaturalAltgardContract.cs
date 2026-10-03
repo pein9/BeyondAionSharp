@@ -49,7 +49,8 @@ public sealed record NaturalAltgardContract(
 	NaturalAltgardMapTrip[]? MapTrips = null,
 	NaturalAltgardPillarFlight? PillarFlight = null,
 	NaturalAltgardInstanceTrip[]? InstanceTrips = null,
-	NaturalAltgardDestiny? Destiny = null)
+	NaturalAltgardDestiny? Destiny = null,
+	NaturalCoinGear? CoinGear = null)
 {
 	/// <summary>The contract file and plan directory of each leg (none when the leg has no template quests).</summary>
 	public static readonly IReadOnlyDictionary<string, (string Contract, string? Plans)> Legs = new Dictionary<string, (string, string?)>
@@ -65,6 +66,7 @@ public sealed record NaturalAltgardContract(
 		["l9"] = ("natural-altgard-l9-contract.json", "natural-altgard-l9-plans"),
 		["l10"] = ("natural-altgard-l10-contract.json", "natural-altgard-l10-plans"),
 		["l11"] = ("natural-altgard-l11-contract.json", null),
+		["cg"] = ("natural-altgard-cg-contract.json", "natural-altgard-cg-plans"),
 	};
 
 	public NaturalAltgardObjectUse[] ObjectUseList => ObjectUses ?? [];
@@ -182,6 +184,7 @@ public sealed record NaturalAltgardContract(
 			!stepKeys.Contains(destiny.SpawnStep) || contract.Steps.Any(step => step.QuestId == destiny.QuestId &&
 				step.ExpectedStatus == "START" && step.NextVar == null)))
 			throw new InvalidDataException("The Destiny campaign needs four maps and explicit full-var transitions.");
+		contract.CoinGear?.Validate(contract);
 		return contract;
 	}
 
@@ -218,6 +221,7 @@ public sealed record NaturalAltgardContract(
 			.Concat(MapTripList.Select(trip => trip.TeleporterNpcId))
 			.Concat(InstanceTripList.SelectMany(trip => new[] { trip.PortalNpcId, trip.ExitNpcId, trip.BossNpcId }))
 			.Concat(Destiny is { } destiny ? [destiny.EnemyNpcId, 203545, 203513] : [])
+			.Concat(CoinGear is { } gear ? [gear.VendorNpcId] : [])
 			.Concat(Bind is { } bind ? [bind.NpcId] : [])
 			.Concat(CollectionList.SelectMany(collection => collection.Items.SelectMany(item => item.SourceNpcIds)))
 			.Append(Start.BindNpcId).Concat(AirKills is { } air ? [air.NpcId] : [])

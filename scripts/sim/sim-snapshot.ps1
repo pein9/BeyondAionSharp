@@ -36,7 +36,7 @@ param(
 	[switch]$Bridge,
 	[switch]$AltgardLeg1,
 	[string]$From = 'altgard',
-	[ValidateSet('l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11')]
+	[ValidateSet('l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'cg')]
 	[string]$Leg = 'l1',
 	[switch]$NoBuild
 )
