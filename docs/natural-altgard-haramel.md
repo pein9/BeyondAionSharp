@@ -1,6 +1,6 @@
 # Leg 12: Haramel after the coin gear preparation
 
-**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-03 complete; HM-04 is next.** Follow
+**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-04 complete; HM-05 is next.** Follow
 [coin gear preparation CG-00..CG-06](natural-altgard-coin-gear.md) first, then do the Haramel lead-in,
 every active Asmodian Haramel quest once, and the clears needed to finish them. Haramel remains
 **Leg 12**; the preparation is a separate `cg` section. Recommended scope is **two fresh solo clears**,
@@ -289,10 +289,27 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
     reuse disabled only in the new verification shell; the failed result remains failed. Both
     incoming/Leg 1 dump hashes remain unchanged and owned schemas are gone. The operator resolved
     the endpoint name to `altgard-haramel-l12`; HM-07 applies the capture-selector change.
-- [ ] **HM-04 — Normal combat and class loot in SIM.** Depends: HM-03. Level/gear/regular-skill
+- [x] **HM-04 — Normal combat and class loot in SIM.** Depends: HM-03. Level/gear/regular-skill
   appropriate fights against Kakiti, MuMu Ham, Nukiti, Hamerun and their neighbouring pulls; actual
   HP/AI, ordinary healing/retreat/death/revive. Prove movie 457, Cleric chest 700832, real loot and
   spawned exit. Record loot misses as outcomes; do not make random equipment drops a pass requirement.
+  - 2026-10-03: `hm04-combat-a3`, unused access-0 account 225, proves four bosses at their shipped
+    HP (2,030/2,138/2,223/2,223), six original neighbours and a native two-attacker pull. Two
+    brainwashed workers really ship at 2 HP in Java/C#; their values were retained. Ordinary learned
+    Cleric skills produce ten kills, four Rejuvenation choices and four confirmed approved potion
+    debits, with zero combat deaths/retreats. Hamerun's two actual adds, movie 457, Cleric chest
+    700832, every offered loot index, spawned exit 700852 and quit/login persistence are observed.
+    Original staff/mask 3, sealed bundle and no unacquired stigma skill persist.
+  - Read Java AI/aggro, HaramelInstance, DropService and shared skill-cooldown semantics first,
+    retaining the existing retail AI exception. Class/level/loadout, aggressive clears and setup
+    moves belong only to the disposable probe; BeginWorldReload precedes setup teleports. No
+    HP/damage/server/content or natural-character writes. Diagnostic fights use separate combat
+    budgets; natural shared-budget recovery remains HM-05/HM-06. Random equipment is not required.
+  - All seven fresh prechecks and Fast pass (`hm04-fast`: 81 passed, four existing skips, eleven
+    scenarios; `run/hm04-support/audit.json`, base `fc8a36791`). Initial single-attacker coverage
+    and the failed native-tag draft remain: that draft attempted a higher Smite rank before the
+    shared lower-rank cooldown expired. The probe now observes the actual cooldown before ordinary
+    combat. Owned schemas are gone and the incoming snapshot hash is unchanged.
 - [ ] **HM-05 — Fresh-clear and post-boss protocols/recovery in SIM.** Depends: HM-04. Prove
   ordinary exit/empty expiry/fresh entry, Q28504 count 63/64/65 and the attainable 74-spawn set,
   Q28505's three overseer drops, Q28510 kill/use ordering and Q28511 ginseng/cauldron/soup. Include
@@ -364,6 +381,10 @@ be corrected under existing authority, record it here and continue the remaining
 
 ## Progress log
 
+- 2026-10-03 HM-04 complete: actual full-health bosses, neighbouring two-attacker pull, regular
+  healing/potions, summons/movie/class chest/all offered loot/exit/relog pass without HP edits or
+  natural setup. Seven fresh prechecks and Fast 81 tests/eleven scenarios pass; draft failures and
+  cleanup retained in `run/hm04-support/audit.json`. HM-05 proves fresh-copy post-boss recovery.
 - 2026-10-03 HM-03 complete: seven first-clear completions/movie/collections/counters/gates/rewards
   and actual tower key/oil consumption survive relog. Forty-four focused cases, seven prechecks
   and Fast 80 tests/11 scenarios pass (`run/hm03-support/audit.json`); original probe/resource

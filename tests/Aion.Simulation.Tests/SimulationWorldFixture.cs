@@ -179,7 +179,8 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			// 221-222 are CG-02/03's unused travel/quest and purchase probes (CG-01 audit).
 			// 223 is HM-02's Haramel travel probe; no earlier probe or D32 register uses it.
 			// 224 is HM-03's first-clear protocol probe; it starts with no completed Haramel quests.
-			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100)).Concat(Enumerable.Range(201, 24))
+			// 225 is HM-04's normal-HP Haramel combat probe, outside every earlier/D32 account.
+			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100)).Concat(Enumerable.Range(201, 25))
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();
