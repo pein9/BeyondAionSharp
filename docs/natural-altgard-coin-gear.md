@@ -2,9 +2,12 @@
 
 **Status (2026-10-03): planned; CG-00..CG-06 are not implemented.** The operator requested Q2293,
 binding at Heart of Impetusium, the best available coin chain gear and weapon, then Haramel as Leg 12.
-This plan recommends one natural Q2293 completion for coverage, followed by the full Cleric coin
-loadout below. The saved character already has enough coins: **zero repeats are needed to fund it**.
-Starting this plan through the combined goal accepts that recommended loadout and single completion.
+The operator amended the weapon scope on 2026-10-03: **keep the equipped level-21 staff; do not switch
+it or buy a coin weapon**. A shield cannot be worn with that two-handed staff and is excluded too.
+After auditing the worn armour, this plan recommends one natural Q2293 completion for coverage and
+three chain purchases: gloves, shoulders and legs, **4 coins**. Keep the equivalent chest/boots,
+helmet/accessories and the old cloth gloves as an alternative. **Zero funding repeats are needed**.
+Starting this plan through the revised combined goal accepts that recommended armour scope and single completion.
 
 Continue with [Leg 12: Haramel](natural-altgard-haramel.md) only after CG-06. This preparation has the
 separate selector `cg`; Haramel keeps `l12`. Both selectors and their snapshot support still need
@@ -14,9 +17,9 @@ implementation. No gameplay run was launched to write this plan.
 
 - Work in the existing checkout on `main`, following the loop in
   [natural-ascension-altgard.md](natural-ascension-altgard.md#how-to-work-this-list-loop-protocol).
-- The 2026-10-03 request authorizes the listed coin equipment purchases. This is a narrow exception
+- The 2026-10-03 request authorizes the listed coin armour purchases. This is a narrow exception
   to the natural journey's earlier gear-purchase ban. It does not authorize skill books, other gear,
-  random coin chests, Lohaban's Treasure/Q2147, enchantment purchases or coin conversion.
+  coin weapons/shields, random coin chests, Lohaban's Treasure/Q2147, enchantment purchases or coin conversion.
 - Reuse ordinary travel, combat, bind, Return, inventory and recovery. No natural-character GM
   progression, no operator `aion` stack, branches, worktrees or push. OD-13 help remains the only GM exception.
 - Java `../aion-server`, branch `4.8`, SHA `ce54b7931546cddafb970d20c9f71fec6d48c83b` is the default spec.
@@ -60,30 +63,54 @@ with healing/concentration bonuses for this Cleric. If a later coin shop offers 
 quality tiers, choose its better tier; never substitute a cheaper tier to shorten a grind. Any
 unexpected Heart catalogue/price difference must be reconciled before spending, not filled with new content.
 
-| Slot | Recommended item | ID | Iron Coins |
-|---|---|---:|---:|
-| Torso | Rank 9 Asmodian Hauberk | 110501096 | 2 |
-| Gloves | Rank 9 Asmodian Handguards | 111501065 | 1 |
-| Shoulders | Rank 9 Asmodian Spaulders | 112501015 | 1 |
-| Legs | Rank 9 Asmodian Chausses | 113501074 | 2 |
-| Feet | Rank 9 Asmodian Brogans | 114501081 | 1 |
-| Main hand | Rank 9 Asmodian Mace | 100100785 | 3 |
-| Off hand | Rank 9 Asmodian Scale Shield | 115001118 | 2 |
-| **Total** | **Five chain pieces, mace and scale shield** | | **12** |
+| Slot | Available coin armour | ID | Iron Coins | Revised recommendation |
+|---|---|---:|---:|---|
+| Torso | Rank 9 Asmodian Hauberk | 110501096 | 2 | Keep current equivalent chest |
+| Gloves | Rank 9 Asmodian Handguards | 111501065 | 1 | Buy for the requested chain set; retain cloth gloves |
+| Shoulders | Rank 9 Asmodian Spaulders | 112501015 | 1 | Buy; current slot is empty |
+| Legs | Rank 9 Asmodian Chausses | 113501074 | 2 | Buy; replaces level-8 cloth |
+| Feet | Rank 9 Asmodian Brogans | 114501081 | 1 | Keep current equivalent boots |
+| **Selected total** | **Gloves, shoulders and legs** | | **4** | **No weapon or shield** |
+
+Buying all five body pieces would cost 7 coins, but the extra chest/boot purchases would add only
+socket capacity. They are excluded from the revised manifest; this goal does not install manastones.
+
+## Equipped armour versus coin armour
+
+`altgard-l11-completion.json` records these worn IDs/slots. The saved SQL independently confirms
+`is_equipped=1`, enchant 0, no random/enchant/fusion bonuses and no installed manastones on these
+pieces or the staff. Java and C# item definitions match, so the unsocketed comparison is direct.
+
+| Slot | Currently worn | Type / level | Current -> coin physical defence | Assessment |
+|---|---|---|---|---|
+| Torso | Altgard Legionary Hauberk 110551139 | Chain / 16 rare | 112 -> 112 | Identical modifiers; coin has 2 sockets instead of 1 |
+| Gloves | Altgard Legionary Gloves 111101650 | Cloth / 16 rare | 27 -> 67 | Chain trades casting/mana stats for defence and healing boost |
+| Shoulders | Nothing | Empty | 0 -> 67 | Clear gain; adds 3 healing boost and 3 physical attack |
+| Legs | Anturoon Leggings 113100773 | Cloth / 8 common | 18 -> 90 | Clear gain; more defence, resistance, evasion, MP and 5 healing boost |
+| Feet | Altgard Legionary Brogans 114501726 | Chain / 16 rare | 67 -> 67 | Identical modifiers; coin has 2 sockets instead of 1 |
+| Head | Altgard Dark Legionary Chain Helm 125004139 | Chain helm / 18 common | 45 -> no coin equivalent | Keep it |
+
+The glove trade is explicit: **+40 physical defence, +3 healing boost, +10 parry**, but
+**-6 magic boost, -27 HP, -63 MP, -8 magical resistance and -8 evasion** compared with the cloth
+pair. Concentration and hate reduction are unchanged. Recommend chain gloves for the operator's
+chain preference, not because they improve every stat; retain the cloth pair rather than sell it.
+
+With the three purchases and retained chest/boots, five body slots total **403 physical defence
+instead of 224** (+179; the helmet stays separate). Combined body-item changes are +11 healing
+boost, +27 magical resistance, +44 evasion and +7 concentration, with -6 magic boost, -27 HP and
+-55 MP. These are item totals before character/skill modifiers, not a promised damage/healing rate.
 
 The Heart sells no Iron Coin helmet, belt, earrings, rings, necklace, wings or plume. Keep the owned
 items in those slots and record their actual equipment state. Do not describe this as replacement of
-every character slot. The five chain pieces replace the mixed body armour, including cloth gloves,
-level-8 cloth legs and the empty shoulder slot. Their base physical defence totals 403 versus the
-incoming body's 224, before other equipment and character modifiers.
+every character slot. Replacing just the three selected slots achieves the same body defence as
+buying all five, while preserving the equivalent owned torso and boots.
 
 The current **Altgard Dark Legionary Staff 101501357 (level 21)** has 370 magic boost and 88-132 weapon
 damage. The coin staff 101500810 (level 16, 3 coins) has 320 and 74-112; it would downgrade that weapon.
-Recommend mace plus scale shield to fulfil the coin-weapon request and gain an off-hand shield; this
-is a defensive choice, not a damage upgrade. The mace has 280 magic boost and 56-84 weapon damage.
-Keep the current staff as a protected damage backup. Do not buy the coin staff as well.
-The torso and boots have essentially the existing quest pieces' base bonuses; their extra socket
-capacity is not an installed manastone bonus. No new manastone or stigma socketing is included.
+The coin mace has 280 magic boost and 56-84 weapon damage. **Keep staff 101501357 equipped in both
+hands throughout CG and HM**, as the operator instructed. No coin mace, staff or shield purchase,
+weapon swap, or weapon auto-equipping is allowed. Ordinary loot may be retained without replacing
+the staff. Extra socket capacity is not an installed bonus; no manastone or stigma socketing is included.
 
 Prices come from `item_templates.xml` acquisition `REWARD`, item 186000006 and count, not the
 templates' Kinah `price`. Java `TradeService` charges reward shops without Kinah; `TradeList`
@@ -100,12 +127,12 @@ sums the token requirements. `CM_BUY_ITEM` action **15** is the reward-shop purc
   Q2293 has no timed repeat cycle. Prove normal reacceptance and both reset counters on a probe.
 
 For observed balance B and remaining shopping cost C, funding repeats are
-`ceil(max(0, C - B) / 5)`. Here `ceil(max(0, 12 - 18) / 5) = 0`.
+`ceil(max(0, C - B) / 5)`. Here `ceil(max(0, 4 - 18) / 5) = 0`.
 
-| Natural scope | Quest completions | Required kills | Before shopping | After spending 12 |
+| Natural scope | Quest completions | Required kills | Before shopping | After spending 4 |
 |---|---:|---:|---:|---:|
-| Funding only | 0 | 0 | 18 | 6 |
-| **Recommended: exercise Q2293 once** | **1** | **6 + 16 = 22** | **23** | **11** |
+| Funding only | 0 | 0 | 18 | 14 |
+| **Recommended: exercise Q2293 once** | **1** | **6 + 16 = 22** | **23** | **19** |
 
 The selected natural scope is the second row. Do not grind extra coins after that completion.
 Unexpected restored funds or catalogue changes require updating CG-00's audit first. Resume a saved
@@ -123,14 +150,14 @@ take ordinary respawns if a local pool is exhausted (shipped respawn 295 seconds
 back using the proved route. Do not move to a distant hub on foot. Stay bound at the Heart through
 the grind, purchases, endpoint relog and coin snapshot. Deaths/retreats are recorded outcomes.
 
-Buy one copy of each of the seven IDs from Lohaban, using the observed NPC object ID, real shop
-dialogue, reward purchase and inventory receipts. Require sufficient cube space and a confirmed
-12-coin debit, with no gear-related Kinah debit. Equip the mace in main hand and shield in off hand,
-replacing the two-handed staff; equip all five chain body pieces through ordinary item packets.
-Read Java `CM_EQUIP_ITEM`, item restrictions and `ItemSlot` first: the staff's mask 3 occupies both
-hands, while mace and shield must end in masks 1 and 2. Protect the purchased set and old staff from
-auto-selling/re-equipping during this endpoint check. Check the seven IDs/slots, stats and remaining
-coins again across an actual relog; a sent packet alone is not proof of purchase or equipment.
+Buy one copy each of **111501065, 112501015 and 113501074** from Lohaban using the observed NPC
+object ID, real shop dialogue, reward purchase and inventory receipts. Require sufficient cube space
+and a confirmed **4-coin debit**, with no gear-related Kinah debit. Equip only those three armour
+pieces through ordinary item packets. Read Java `CM_EQUIP_ITEM`, restrictions and `ItemSlot` first;
+the retained staff's mask 3 occupies both hands. Protect the purchased pieces, retained torso/boots,
+old cloth gloves and equipped staff from selling or unwanted auto-equipping. Check all five body
+slots, the unchanged staff, stats and remaining coins across an actual relog; a sent packet alone
+is not proof. Retain the existing accessories and helmet too.
 
 ## TODO list
 
@@ -142,7 +169,8 @@ plus `run-fast.ps1` before gameplay-change commits. Retain failures; do not reru
 
 - [ ] **CG-00 — Freeze the incoming audit and shopping manifest.** Depends: ND-08. Hash/metadata,
   observed inventory/journals, Java reward/repeat/trade/equip rules, all active regional catalogues,
-  exact seven IDs/costs, protected items, one-completion limit and endpoint assertions. Save machine
+  exact three purchase IDs/costs, worn armour comparison, protected/equipped items, one-completion
+  limit and endpoint assertions. Save machine
   readable audit evidence; any conflict with the above becomes a named operator question.
 - [ ] **CG-01 — Contract, decisions and owned probe support.** Depends: CG-00. Add `cg` to the leg
   registry, environment selector and snapshot script; compile Q2293's plan. Add the explicit shopping
@@ -154,21 +182,23 @@ plus `run-fast.ps1` before gameplay-change commits. Retain failures; do not reru
   both distinct kill counters with normal combat, reward, reaccept and reset on the probe. Clear
   aggressive neighbours only for labelled setup; call `BeginWorldReload` before setup teleports.
 - [ ] **CG-03 — Coin purchase and equipment probe.** Depends: CG-02. Prove the real reward-shop
-  offer, seven purchases, exact debit, insufficient-funds refusal without partial equipment, correct
-  two-hand to mace/shield change, all five chain slots and endpoint relog. Protect currencies/set/staff.
+  offer, three armour purchases, exact debit, insufficient-funds refusal without partial equipment,
+  all five final chain body slots and unchanged two-handed staff across endpoint relog. Prove no
+  weapon/shield purchase or weapon swap, and protect currencies/armour/old cloth gloves/staff.
   Keep probe-created items separate from the natural journey; do not change the server's catalogue.
 - [ ] **CG-04 — Natural runner and one smoke.** Depends: CG-03. Restore `altgard-l11` with
   `sim-snapshot.ps1 -Action Restore`; run `NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup`
   using `AF_ALTGARD=cg` and every variable set by the script's `Invoke-NaturalJourney`.
-  One Q2293 completion, seven observed purchases/equips, **11 Iron Coins**, 145 distinct completed
-  journals, alive/bound at the Heart, sealed stigma bundle and backup staff through relog. Keep the
+  One Q2293 completion, three observed armour purchases/equips, **19 Iron Coins**, 145 distinct
+  completed journals, alive/bound at the Heart, sealed stigma bundle and unchanged equipped staff
+  through relog. Keep the
   dashboard at http://127.0.0.1:17880/ running and announce it; drop only the owned schema in finally.
 - [ ] **CG-05 — Committed-code snapshot.** Depends: CG-04. Commit any capture-support changes
   before capture; capture `altgard-coingear` from `altgard-l11` through `cg`, hash-verify and prove
   restore/relog with the same receipts/equipment/bind/balances. Record the actual capture SHA and
   drop owned schemas. Never capture from an uncommitted gameplay tree or edit a dump.
 - [ ] **CG-06 — Preparation checkpoint.** Depends: CG-05. Reconcile evidence, chosen tier, journal,
-  coins, actual equipped slots, backup staff, protected stigma bundle and all retained outcomes.
+  coins, actual equipped slots, unchanged staff, retained cloth gloves, protected stigma bundle and outcomes.
   Mark only demonstrated objectives complete; commit the handoff to HM-00. The combined goal
   continues directly into Leg 12; this item does not launch full-area SIM or LIVE acceptance.
 
@@ -196,3 +226,10 @@ not permission to invent higher equipment. Record any new shared defect or unsup
   `run/cg-hm-plan/audit.json` verifies the snapshot hash, selected Java item/price parity and all seven
   regional catalogues. All seven pre-commit checks pass. An initial quest-draft check collided with
   the warning build's extractor DLL; its failure log and the passing sequential retry are retained.
+- 2026-10-03 armour review: the operator instructed retaining the equipped staff and excluding the
+  coin weapon. The revised recommended manifest is chain gloves/shoulders/legs only (4 coins),
+  retaining equal-stat torso/boots, helmet/accessories, staff and old cloth gloves. SQL confirms
+  no enchantments/socketed stones; the glove casting-stat tradeoff and whole-body changes are
+  recorded above. One Q2293 completion now leaves 19 Iron Coins. Machine-readable evidence is
+  `run/cg-hm-armor-review/audit.json`; all seven pre-commit checks pass. Base commit `5fef285bd`.
+  No gameplay run or purchase.

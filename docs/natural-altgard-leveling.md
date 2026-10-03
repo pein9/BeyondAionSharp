@@ -3906,16 +3906,19 @@ limits. ND-05 then proves the normal-HP fight; ND-06 runs the natural character 
 
 ### Coin gear preparation and Leg 12: Haramel (planned 2026-10-03)
 
-The operator requested Q2293 at the Heart while bound there, the better-tier coin chain gear and
-weapon, then the quests for Haramel and the dungeon as **Leg 12**. This narrowly authorizes the
-audited coin gear purchases; other shopping and permanent stigma selection remain excluded.
+The operator requested Q2293 at the Heart while bound there, the better-tier coin chain gear,
+then the quests for Haramel and the dungeon as **Leg 12**. The later armour review instruction
+retains the equipped level-21 staff and excludes coin weapons; shields are excluded because the
+staff occupies both hands. Only the revised three-item coin armour manifest is recommended;
+other shopping and permanent stigma selection remain excluded.
 
 The [coin plan](natural-altgard-coin-gear.md) audits the saved **18 Iron Coins** against eighteen
-completed quest rewards. Lohaban's available rare chain set, mace and scale shield cost **12**;
-**zero funding repeats** are needed. Recommend one natural Q2293 completion for coverage, leaving
-**11 Iron Coins** after purchase. There is no higher-priced Heart chain tier in shipped data and no
-coin helmet/accessories there. The existing level-21 staff is a stronger damage weapon than the
-level-16 coin staff; keep it as backup when equipping the defensive mace/shield loadout.
+completed quest rewards. Recommend Lohaban's **chain gloves, shoulders and legs for 4 coins**,
+retaining the equal-stat chest and boots; **zero funding repeats** are needed. One natural Q2293
+completion for coverage leaves **19 Iron Coins** after purchase. Chain gloves trade some casting
+stats for defence/healing; retain the old cloth gloves. There is no higher-priced Heart chain tier
+or coin helmet/accessories. Keep staff 101501357 equipped throughout preparation and Haramel;
+do not buy a coin weapon/shield or switch the staff for reward/loot weapons.
 
 The [Haramel plan](natural-altgard-haramel.md) covers eleven active Asmodian quests once, including
 the outside lead-in and four quests that unlock after Q28507. Plan two fresh clears, ordinary empty
@@ -4420,3 +4423,4 @@ The original questions follow.
 - 2026-10-03 ND-07: altgard-l11 captured from committed e23d5a511, hash-checked and restored through actual endpoint relog; Cleric 24 alive at fortress bind, Q2900/all prior quests complete, 144 journals, sealed bundle, no temporary stigma/legacy item, ordinary skills preserved and 536,193 Kinah. Both owned schemas dropped; PowerShell parse and pre-commit checks pass. Full checklist is next.
 - 2026-10-03 ND-08: all 33 CLAUDE commands pass on 7f3289b4f; solution 5,144 passed/105 skips, final Fast 76 passed/four switch skips/all eleven scenarios, seven baked maps valid. Launcher diagnostic retained with its correction; committed altgard-l11 capture/hash/SQL/endpoint relog remain verified, owned schemas dropped. Leg 11 done; stop at this checkpoint. Continuous full-area SIM, isolated LIVE and permanent stigma choice remain later work. No push.
 - 2026-10-03 coin/Haramel plan: the operator requested Q2293/better coin chain gear before Haramel as Leg 12. Verified altgard-l11 holds 18 Iron Coins from eighteen prior rewards; the seven-item rare Cleric chain/mace/scale-shield manifest costs 12 in all seven catalogues, zero funding repeats, recommended one quest completion leaves 11. CG-00..CG-06 and HM-00..HM-08 are planned and unchecked; Haramel covers eleven active quests in two fresh clears, 65 packed kills, lift/class chest/ordinary expiry, then fortress endpoint. Machine audit and seven pre-commit checks pass (`run/cg-hm-plan`); the shared-build collision and sequential retry are retained. No natural run or push.
+- 2026-10-03 armour review: verified actual worn IDs and unenchanted/unsocketed snapshot SQL against matching Java/C# item stats. Keep the equipped level-21 staff as instructed; exclude weapon/shield purchases and swaps. Revised recommendation buys chain gloves/shoulders/legs for 4 coins, keeps identical-stat chest/boots and old cloth gloves, and records the glove casting-stat tradeoff. One Q2293 completion leaves 19 coins. Both plans and combined prompt amended; machine audit and seven pre-commit checks pass (`run/cg-hm-armor-review`), base `5fef285bd`. No natural run or purchase.

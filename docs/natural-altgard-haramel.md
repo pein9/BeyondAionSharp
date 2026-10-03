@@ -17,16 +17,20 @@ evidence and commit on `main`. Stop when HM-08 is done or no item is unblocked. 
 use a worktree, touch the operator `aion` stack or use natural-character GM except OD-13 help.
 
 Start from **`altgard-coingear`**, character 133297, at least level 24, 145 completed journals,
-Q2293 completed once, 11 Iron Coins, the five coin chain pieces/mace/scale shield equipped,
-current staff protected, bound at Heart obelisk 700067. CG-05 must supply actual hash/capture metadata;
+Q2293 completed once, **19 Iron Coins**, coin chain gloves/shoulders/legs equipped alongside the
+retained Altgard Legionary chest/boots, and **staff 101501357 still equipped in both hands**.
+Retain the old cloth gloves and existing helmet/accessories; no coin weapon or shield was bought.
+Bound at Heart obelisk 700067. CG-05 must supply actual hash/capture metadata;
 this snapshot does not exist yet. Preserve all eleven earlier legs and their completions.
 
 Finish alive in Altgard, normally rebound at **fortress 700065**, all eleven active quests below
 complete, all earlier journal entries preserved (**156 distinct completions** with recommended CG),
 quest work/collection items consumed as Java specifies, actual coin and gear ledger retained across
-relog. Snapshot **`altgard-l12`**. The coin set must have been bought/equipped before entry; during
-Haramel allow genuinely better owned class-compatible chain/weapon/accessory quest rewards or loot,
-record equipment changes and retain the purchased set/backup staff. No extra shopping is authorized.
+relog. Snapshot **`altgard-l12`**. The three coin armour pieces must have been bought/equipped before
+entry; during Haramel allow genuinely better owned class-compatible chain/accessory quest rewards
+or loot, record armour changes and retain the purchased pieces/old cloth gloves. **Keep staff
+101501357 equipped throughout, including the endpoint; do not auto-equip a looted/reward weapon.**
+No extra shopping, coin weapon or shield purchase is authorized.
 Keep Q2900's bundle 188053787 sealed, no temporary tutorial stigma, and no invented permanent stigma
 skills. Regular automatic skill learning is allowed; stigma skills require their actual acquired and
 socketed stones, and are outside this goal. Do not redo Q24014-Q24016: Leg 10 already completed them.
@@ -110,8 +114,9 @@ The "cloth band" name refers to the belt slot, not cloth body armour. The matchi
 chain alternatives are not a more expensive/stronger quality tier. Q28505 also lists historical
 class weapon rewards; audit Java `QuestService` and the actual reward dialogue before asserting
 whether any is active, as ND-Q1 required for Q2900. Choose by the genuinely offered reward list.
-If an offered Lateni weapon is a real upgrade to the equipped coin weapon, retain/equip it normally;
-do not grant an inactive XML class reward or presume a second selectable prize.
+If a Lateni weapon is actually offered, it may be retained, but the operator's equipped-staff
+instruction still applies. Do not grant an inactive XML class reward, presume a second selectable
+prize or switch the current staff for it.
 
 ## Recommended itinerary
 
@@ -199,7 +204,8 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
   prove actual endpoint relog, then drop owned schemas. Preserve both earlier snapshots unedited.
 - [ ] **HM-08 — Final checklist and handoff.** Depends: HM-07. Run the full CLAUDE checklist once
   on the committed implementation (including Fast and the now-eight baked maps), reconcile both new
-  snapshots and all outcomes, tick only proven objectives and commit the completion checkpoint.
+  snapshots, retained equipped staff/no weapon purchase and all outcomes, tick only proven
+  objectives and commit the completion checkpoint.
   **Stop the combined goal here.** Full-area continuous SIM and isolated LIVE acceptance are later work.
 
 For every commit run the seven current pre-commit checks: warning baseline, null loggers, clock reads,
@@ -213,7 +219,7 @@ The combined goal prompt is:
 ```text
 /goal Work CG-00..CG-06 in docs/natural-altgard-coin-gear.md, then HM-00..HM-08 in docs/natural-altgard-haramel.md, as one goal. Follow docs/natural-ascension-altgard.md's loop with CG/HM in place of NA. Start from the verified altgard-l11 SIM snapshot; cg produces altgard-coingear, which starts Haramel as l12 and produces altgard-l12.
 
-Use the recommended scope: bind at Heart of Impetusium, complete Q2293 once for coverage, then buy and equip Lohaban's five rare Cleric chain pieces, mace and scale shield (12 Iron Coins; expected remainder 11). Always select the better genuine coin tier where a shop offers tiers. Preserve the stronger existing level-21 staff as backup and retain unsupported equipment slots. This authorizes only that audited coin-gear purchase manifest. Keep the stigma reward bundle sealed; never confuse regular skills with unacquired/unsocketed stigma skills.
+Use the revised armour scope: bind at Heart of Impetusium, complete Q2293 once for coverage, then buy and equip Lohaban's rare Cleric chain gloves, shoulders and legs (4 Iron Coins; expected remainder 19). Keep the equivalent current chest and boots, helmet/accessories and old cloth gloves. Keep the stronger existing level-21 staff 101501357 equipped throughout CG and HM; do not buy a coin weapon/shield or switch/auto-equip any other weapon. Always select the better genuine coin tier where a shop offers tiers. This authorizes only the three-item armour manifest. Keep the stigma reward bundle sealed; never confuse regular skills with unacquired/unsocketed stigma skills.
 
 Then complete all eleven active Asmodian Haramel quests once, including the lead-in and post-Q28507 quests, using two fresh solo clears and ordinary instance expiry/recovery. Finish alive and rebound at Altgard Fortress, with journals, currencies, equipment and skills verified through relog. Do not redo completed Leg 10 campaigns.
 
@@ -249,3 +255,8 @@ be corrected under existing authority, record it here and continue the remaining
   actual lift/Cleric chest/exits. No gameplay implementation or natural run; all HM items unchecked.
   Machine-readable audit and all seven passing pre-commit checks are in `run/cg-hm-plan`;
   the initial shared-build DLL collision and passing sequential quest-draft retry are retained.
+- 2026-10-03 armour review: incoming balance amended to 19 Iron Coins and three purchased chain
+  pieces with retained chest/boots. The operator's current-staff instruction applies throughout both
+  sections, including reward/loot auto-equipping. No coin weapon/shield purchase or staff swap.
+  Snapshot SQL/item-stat audit and seven pre-commit checks pass (`run/cg-hm-armor-review`);
+  base commit `5fef285bd`, planning only.
