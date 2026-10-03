@@ -1,6 +1,6 @@
 # Leg 12: Haramel after the coin gear preparation
 
-**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-02 complete; HM-03 is next.** Follow
+**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-03 complete; HM-04 is next.** Follow
 [coin gear preparation CG-00..CG-06](natural-altgard-coin-gear.md) first, then do the Haramel lead-in,
 every active Asmodian Haramel quest once, and the clears needed to finish them. Haramel remains
 **Leg 12**; the preparation is a separate `cg` section. Recommended scope is **two fresh solo clears**,
@@ -30,7 +30,7 @@ schemas. Preserve all eleven earlier legs and their completions.
 Finish alive in Altgard, normally rebound at **fortress 700065**, all eleven active quests below
 complete, all earlier journal entries preserved (**156 distinct completions** with recommended CG),
 quest work/collection items consumed as Java specifies, actual coin and gear ledger retained across
-relog. Snapshot **`altgard-l12`**. The three coin armour pieces must have been bought/equipped before
+relog. Snapshot **`altgard-haramel-l12`** (operator choice 2026-10-03; preserves Leg 1's `altgard-l12`). The three coin armour pieces must have been bought/equipped before
 entry; during Haramel allow genuinely better owned class-compatible chain/accessory quest rewards
 or loot, record armour changes and retain the purchased pieces/old cloth gloves. **Keep staff
 101501357 equipped throughout, including the endpoint; do not auto-equip a looted/reward weapon.**
@@ -94,7 +94,7 @@ is restricted, level 99 and unused; exclude it. Elyos Q18500-Q18511 are outside 
 | Q28508 Securing Moofrenerk's Retreat | none | Moorilerk -> Moofrenerk | 2 x216898, 3 x216901, 3 x216902; independent counters |
 | Q28503 Odella for Shybanz | none | Moofrenerk -> Shezen 804605 outside | 5 x182212016 from 700834 |
 | Q28506 Guess Who | Q28501 complete | Moofrenerk -> Gestanerk 799524 | report to Gestanerk in lower plantation |
-| Q28509 What is Inside the Box? | none | Moofrenerk -> Gestanerk | 1 x182212020 from rusted box 700853 on tower |
+| Q28509 What is Inside the Box? | none | Moofrenerk -> Gestanerk | Rusty Key + 3 Lubricating Oils; open tower box 700853 for 1 x182212020 |
 | Q28507 Hammertime | Q28506 complete | Gestanerk -> Shezen outside | kill Hamerun 216922 |
 | Q28504 Follow the Leaders--and Kill 'em | **Q28507 complete** | Shezen -> Shezen | **65** qualifying monsters; use the full shipped ID set |
 | Q28505 Overseers Under Attack | **Q28507 complete** | Shezen -> Shezen | 1 each x182212017/18/19 from 216897/216907/216915 |
@@ -117,6 +117,16 @@ used in order after the three kills. Q28511 checks/consumes the five ginseng at 
 gives the soup, whose item event moves the quest to reward. These are custom protocols, not gathering:
 none of the container/ginseng/odium steps require raising Essencetapping to 85.
 
+The rusted tower box uses Java `ChestAI`, rather than the collection objects' `QuestItemNpcAI`.
+Its `chest_templates.xml` requires **both** one Rusty Key **185000103** from Keymaster Mumu Dang
+**217025** and three Lubricating Oils **185000107** from the three Mumu Mechanics **217108**.
+The matching Java/C# Haramel global-drop rules supply those items from real kills/loot (base chance
+100, no level-based reduction in these rules). An incomplete set receives monologue 1111301 and
+consumes nothing; a successful opening consumes both sets before registering the quest drop.
+Acquire them on the lower tower grounds before the lift/stairs detour. Do not grant keys or mistake
+an alive chest's refusal for a random quest-item drop miss. Retain any actual drop misses and use
+ordinary recovery if supplies remain missing.
+
 Fixed rewards for the eleven first completions total **958,587 quest XP**, plus ordinary kill XP,
 and **7 Bronze Coins** (3 from Q28504, 1 from Q28509, 3 from Q28511). These are distinct from Iron
 Coins; do not spend/convert them during this goal. Final level can rise naturally; do not pin it to 24.
@@ -128,7 +138,8 @@ The "cloth band" name refers to the belt slot, not cloth body armour. The matchi
 chain alternatives are not a more expensive/stronger quality tier. Q28505 also lists historical
 class weapon rewards, but HM-00 confirms `use_class_reward` is absent/default 0 in matching Java/C#
 data. Java `QuestTemplate` enables that list only at 1 or 2 and `QuestService` therefore uses the
-ordinary selectable armour list. Verify the actual dialogue in HM-03; choose the genuinely offered reward.
+ordinary selectable armour list. Q28500/Q28507 dialogue is proved in HM-03; verify Q28505 in HM-05
+and choose the genuinely offered reward.
 If a Lateni weapon is actually offered, it may be retained, but the operator's equipped-staff
 instruction still applies. Do not grant an inactive XML class reward, presume a second selectable
 prize or switch the current staff for it.
@@ -148,7 +159,8 @@ prize or switch the current staff for it.
    (228.416, 160.876, 137.059), hand in Q28501/Q28508 and accept Q28503/Q28509 and now-available
    Q28506. Clear MuMu Ham the Grey 216907 in processing, collect the five odella objects 700834
    in plantation, and visit Gestanerk (289.776, 422.453, 89.5563). Hand in Q28506 and accept Q28507
-   **before** Hamerun. From the lower floor, walk to Tower Lift 730321, take dialog 10000, and walk
+   **before** Hamerun. On the lower tower grounds, kill/loot Keymaster Mumu Dang and three Mumu
+   Mechanics for the complete key/oil set. Walk to Tower Lift 730321, take dialog 10000, and walk
    the remaining stairs to rusted box 700853 at (231.031, 223.091, 139.82). Loot it for Q28509,
    jump/glide down to the connecting ramp and return to Gestanerk to hand it in. Board the automatic
    wooden elevator behind him, ride to the upper office and hop onto its checked landing. Clear
@@ -253,10 +265,30 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
     Recovery waits for observed soul sickness; boarding misses remain recorded outcomes (zero in
     the final run). Owned schemas are gone, incoming snapshot hash unchanged. Rendered elevator
     phase/vehicle metadata still require later LIVE acceptance; no invented vehicle ID.
-- [ ] **HM-03 — Lead-in and first-clear quest protocols in SIM.** Depends: HM-02. Play Q28500's
+- [x] **HM-03 — Lead-in and first-clear quest protocols in SIM.** Depends: HM-02. Play Q28500's
   dialogue/movie/reward; Q28501/Q28508 sources and independent counters; Q28503/Q28509 loot;
   Q28506 -> Q28507 hand-ins. Prove all required start gates and selected Cleric rewards, including
   quest-item cleanup. No administrative completion of the natural character.
+  - 2026-10-03: `hm03-quests-a5`, unused access-0 account 224, proves movie 217's separate
+    acknowledgement, seven first completions, eight real start-gate refusals, three incomplete
+    reward refusals, independent 2/3/3 counters, both collection sets, chain shoulders 112501641,
+    belt 123001440, one Bronze Coin and exact item cleanup through a normal quit/login/world enter.
+    Post-Q28507 accepts retain their work item and same-copy re-entry spends no extra entry.
+  - Read Java custom/templates/start/reward gates, ChestAI, actual chest/global-drop data and
+    default level-reduction semantics first. The rusted chest refuses twice without consuming
+    incomplete supplies; actual Keymaster/Mechanic kills and loot supply one Rusty Key plus three
+    Lubricating Oils, consumed only by successful opening. Sixteen actual source uses and twelve
+    labelled HP=1 protocol kills are recorded; normal HP/AI remains HM-04. Probe-only level/class/
+    staff, 54 aggressive clears and seven source replacements at shipped spots never modify the
+    natural character or directly complete a quest. New shared helpers encode only Q28500's
+    timed-object and movie protocol; no server/content or log-policy changes.
+  - Forty-four focused regressions and all seven prechecks pass. `hm03-fast-a2` passes 80 tests,
+    four existing skips and all eleven scenarios (`run/hm03-support/audit.json`, base `d630d8512`).
+    Keep all probe drafts and original Fast: HM-03 passed there, but an earlier escort trace write
+    failed with Windows insufficient system resources. Idle build servers were shut down and
+    reuse disabled only in the new verification shell; the failed result remains failed. Both
+    incoming/Leg 1 dump hashes remain unchanged and owned schemas are gone. The operator resolved
+    the endpoint name to `altgard-haramel-l12`; HM-07 applies the capture-selector change.
 - [ ] **HM-04 — Normal combat and class loot in SIM.** Depends: HM-03. Level/gear/regular-skill
   appropriate fights against Kakiti, MuMu Ham, Nukiti, Hamerun and their neighbouring pulls; actual
   HP/AI, ordinary healing/retreat/death/revive. Prove movie 457, Cleric chest 700832, real loot and
@@ -273,7 +305,8 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
   journals, ordinary transitions/loot/hand-ins and fortress bind through relog. Announce the read-only
   http://127.0.0.1:17880/ monitor; retain failures/outcomes and drop only the owned schema in finally.
 - [ ] **HM-07 — Committed-code Leg 12 snapshot.** Depends: HM-06. Commit capture-support changes
-  before capture, then capture `altgard-l12` from `altgard-coingear` through `l12`. Record its actual
+  before capture, then capture `altgard-haramel-l12` from `altgard-coingear` through `l12`. Update the
+  shared endpoint contract/runner selectors to the resolved distinct name before capture. Record its actual
   capture SHA, metadata/hash, coin/quest/equipment/skill/bind ledger and completed count, restore and
   prove actual endpoint relog, then drop owned schemas. Preserve both earlier snapshots unedited.
 - [ ] **HM-08 — Final checklist and handoff.** Depends: HM-07. Run the full CLAUDE checklist once
@@ -291,7 +324,7 @@ changes; do not build or run checks while a journey holds DLLs. Keep pass eviden
 The combined goal prompt is:
 
 ```text
-/goal Work CG-00..CG-06 in docs/natural-altgard-coin-gear.md, then HM-00..HM-08 in docs/natural-altgard-haramel.md, as one goal. Follow docs/natural-ascension-altgard.md's loop with CG/HM in place of NA. Start from the verified altgard-l11 SIM snapshot; cg produces altgard-coingear, which starts Haramel as l12 and produces altgard-l12.
+/goal Work CG-00..CG-06 in docs/natural-altgard-coin-gear.md, then HM-00..HM-08 in docs/natural-altgard-haramel.md, as one goal. Follow docs/natural-ascension-altgard.md's loop with CG/HM in place of NA. Start from the verified altgard-l11 SIM snapshot; cg produces altgard-coingear, which starts Haramel as l12 and produces altgard-haramel-l12. Preserve the earlier Leg 1 snapshot altgard-l12.
 
 Use the revised armour scope: bind at Heart of Impetusium, complete Q2293 once for coverage, then buy and equip Lohaban's rare Cleric chain gloves, shoulders and legs (4 Iron Coins; expected remainder 19). Keep the equivalent current chest and boots, helmet/accessories and old cloth gloves. Keep the stronger existing level-21 staff 101501357 equipped throughout CG and HM; do not buy a coin weapon/shield or switch/auto-equip any other weapon. Always select the better genuine coin tier where a shop offers tiers. This authorizes only the three-item armour manifest. Keep the stigma reward bundle sealed; never confuse regular skills with unacquired/unsocketed stigma skills.
 
@@ -317,12 +350,24 @@ Any proposed retail correction needs specific 4.8 evidence and an applicable D26
 
 ## Blocked / questions for the operator
 
-None currently. Two clears and natural expiry are a dependency requirement, not a request to bypass
+- 2026-10-03, HM-07 naming: `run/snapshots/altgard-l12/snapshot.json` already identifies the preserved
+  **Leg 1** capture (`source: natural-altgard-l1`, SHA `5083bb385`, 2026-10-01,
+  dump SHA256 `e439e7d604df626cc316c7ea9799fece5b944be15ec020f41c31fd9b1011091b`).
+  The Haramel plan reused that historical level-12 name. Never overwrite or rename the earlier
+  snapshot while existing legs depend on it. **Answered 2026-10-03:** the operator chose
+  **`altgard-haramel-l12`**. HM-07 updates the endpoint contract/runner selectors before capture;
+  HM-03..HM-06 can proceed independently. No decision remains pending.
+
+Two clears and natural expiry are a dependency requirement, not a request to bypass
 instance rules. If a probe finds a shared handler, quest-drop, packed-var or geometry defect that cannot
 be corrected under existing authority, record it here and continue the remaining independent items.
 
 ## Progress log
 
+- 2026-10-03 HM-03 complete: seven first-clear completions/movie/collections/counters/gates/rewards
+  and actual tower key/oil consumption survive relog. Forty-four focused cases, seven prechecks
+  and Fast 80 tests/11 scenarios pass (`run/hm03-support/audit.json`); original probe/resource
+  failures retained, owned schemas dropped. HM-04 proves actual full-health combat and class loot.
 - 2026-10-03 HM-02 complete: generated/rebaked Haramel navigation and actual portal/lift/tower
   glide/wooden elevator/exits/hub-flight/Heart-recovery travel pass. Forty-six focused cases,
   seven prechecks and Fast 79 tests/11 scenarios pass; retained drafts and cleanup are recorded

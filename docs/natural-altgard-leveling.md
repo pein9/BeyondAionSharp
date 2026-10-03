@@ -32,8 +32,8 @@ The operator's 2026-10-03 next request is [coin gear preparation](natural-altgar
 (CG-00..CG-06), then [Leg 12: Haramel](natural-altgard-haramel.md) (HM-00..HM-08).
 Coin preparation is done (CG-00..CG-06, 2026-10-03): verified `altgard-coingear` holds the level-24
 Cleric alive at Heart bind, 145 journals, 19 Iron Coins, three purchased chain pieces and the original
-staff still equipped. Haramel scope/eligibility, shared contract and travel are complete (HM-00..HM-02;
-HM-03..HM-08 unchecked). Full-area SIM and isolated LIVE
+staff still equipped. Haramel scope/eligibility, shared contract, travel and first-clear quest protocols
+are complete (HM-00..HM-03; HM-04..HM-08 unchecked). Full-area SIM and isolated LIVE
 acceptance follow those checkpoints.
 
 ## Goal
@@ -4314,6 +4314,10 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-03 HM-03: seven Haramel first-clear completions/movie/collections/counters/gates/rewards
+  and actual tower key/oil consumption pass through relog; 44 focused cases, seven prechecks and
+  Fast 80 tests/11 scenarios pass. Original probe/Windows resource failures retained, schemas
+  dropped; normal combat is next. New endpoint name approved as altgard-haramel-l12, preserving Leg 1.
 - 2026-10-03 HM-02: Haramel navigation/rebake, both elevators, tower glide, all sources/exits,
   hub flights and Heart recovery pass on free probe 223; 46 focused cases, seven prechecks and
   Fast 79 tests/11 scenarios pass (`run/hm02-support/audit.json`). First-clear protocols are next.

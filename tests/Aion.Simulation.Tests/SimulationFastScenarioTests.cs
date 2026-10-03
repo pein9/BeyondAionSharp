@@ -5,6 +5,7 @@ using Aion.Bots.Api;
 using Aion.Bots.Movement;
 using Aion.Bots.Navigation;
 using Aion.Bots.Protocol;
+using Aion.Bots.Reflexes;
 using Aion.Bots.Scenarios;
 using Aion.Bots.Timing;
 using Aion.Bots.Tracing;
@@ -872,7 +873,8 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			string characterName,
 			Race race = Race.ELYOS,
 			BotActionTraceWriter? combatTrace = null,
-			string? combatTracePath = null)
+			string? combatTracePath = null,
+			BotMoviePolicy? moviePolicy = null)
 		{
 			this.fixture = fixture;
 			this.policy = policy;
@@ -884,7 +886,8 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			this.combatTrace = combatTrace;
 			CombatTracePath = combatTracePath;
 			macAddress = $"02-00-00-00-00-{accountId:X2}";
-			api = new BotApi(timing: new BotTimingContract(new SimulationTimeProvider()));
+			api = new BotApi(timing: new BotTimingContract(new SimulationTimeProvider()),
+				reflexes: new BotReflexes(moviePolicy: moviePolicy));
 		}
 
 		public List<string> PacketTypes { get; } = [];

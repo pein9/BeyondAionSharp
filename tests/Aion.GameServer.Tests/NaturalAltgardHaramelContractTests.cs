@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Xml.Linq;
 using Aion.Bots.Protocol;
 using Aion.Bots.Scenarios;
 using Aion.Bots.World;
@@ -37,6 +38,26 @@ public sealed class NaturalAltgardHaramelContractTests
 		Assert.Contains(700832, Leg.GraphNpcIds(Plans));
 		Assert.Contains(730321, Leg.GraphNpcIds(Plans));
 		Assert.DoesNotContain(28502, Leg.Order);
+	}
+
+	[Fact]
+	public void TowerSuppliesMatchTheRealChestRequirementsAndAttainableDrops()
+	{
+		string data = Path.Combine(RealStaticData.RepoRoot(), "game-server/data/static_data");
+		XElement chest = XDocument.Load(Path.Combine(data, "chests/chest_templates.xml")).Descendants("chest")
+			.Single(e => (int?)e.Attribute("npc_id") == 700853);
+		Assert.Equal(chest.Elements("key_item").Select(e => (Item: int.Parse(e.Attribute("item_ids")!.Value), Count: (int)e.Attribute("count")!)),
+			Rules.TowerChestKeys!.Select(k => (Item: k.ItemId, k.Count)));
+		XDocument drops = XDocument.Load(Path.Combine(data, "global_drops/rules/instances/rules_map_haramel.xml"));
+		XDocument spawns = XDocument.Load(Path.Combine(data, "spawns/Instances/300200000_Haramel.xml"));
+		foreach (NaturalHaramelKey key in Rules.TowerChestKeys!)
+		{
+			XElement rule = drops.Descendants("gd_rule").Single(e => e.Descendants("gd_item").Any(i => (int?)i.Attribute("id") == key.ItemId));
+			Assert.Equal(100, (int)rule.Attribute("chance")!);
+			Assert.Null(rule.Attribute("level_based_chance_reduction"));
+			Assert.Equal(key.NpcId, (int)rule.Descendants("gd_npc").Single().Attribute("npc_id")!);
+			Assert.True(spawns.Descendants("spawn").Single(e => (int?)e.Attribute("npc_id") == key.NpcId).Elements("spot").Count() >= key.Count);
+		}
 	}
 
 	[Theory]

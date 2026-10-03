@@ -854,6 +854,10 @@
     "bindNpcId": 700065
   },
   "haramel": {
+    "towerChestKeys": [
+      { "itemId": 185000103, "count": 1, "npcId": 217025 },
+      { "itemId": 185000107, "count": 3, "npcId": 217108 }
+    ],
     "mapId": 300200000,
     "cooldownId": 46,
     "maxEntries": 16,

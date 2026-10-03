@@ -12,7 +12,8 @@ public sealed record NaturalHaramel(int MapId, int CooldownId, int MaxEntries, i
 	int WorkingBindNpcId, float[] WorkingBindPosition, int StaffItemId, int StaffObjectId,
 	int IronItemId, int IronCount, int BronzeItemId, int BronzeCount, int[] ProtectedItemIds,
 	int[] CleanupItemIds, int[] KillNpcIds, int KillSpawnCount, NaturalHaramelTask[] FirstVisit,
-	NaturalHaramelTask[] BetweenVisits, NaturalHaramelTask[] SecondVisit, NaturalHaramelTask[] Finish)
+	NaturalHaramelTask[] BetweenVisits, NaturalHaramelTask[] SecondVisit, NaturalHaramelTask[] Finish,
+	NaturalHaramelKey[]? TowerChestKeys = null)
 {
 	public int[] GraphNpcIds => [AnchorNpcId, PortalNpcId, EntryExitNpcId, BossExitNpcId, LiftNpcId,
 		BossNpcId, ChestNpcId, WorkingBindNpcId, 700950, 700953, 700954, 730359];
@@ -28,6 +29,8 @@ public sealed record NaturalHaramel(int MapId, int CooldownId, int MaxEntries, i
 			leg.Endpoint.Snapshot != "altgard-l12" || leg.Endpoint.BindNpcId != 700065 ||
 			!leg.Order.Order().SequenceEqual(new[] { 28500, 28501, 28503, 28504, 28505, 28506, 28507, 28508, 28509, 28510, 28511 }))
 			throw new InvalidDataException("Haramel contract disagrees with the approved incoming state, two visits or shipped rules.");
+		if (TowerChestKeys == null || !TowerChestKeys.SequenceEqual(new NaturalHaramelKey[] { new(185000103,1,217025), new(185000107,3,217108) }))
+			throw new InvalidDataException("The rusted tower chest requires one Rusty Key and three Lubricating Oils from their shipped sources.");
 		foreach (NaturalHaramelTask task in FirstVisit.Concat(BetweenVisits).Concat(SecondVisit).Concat(Finish))
 		{
 			if (task.QuestId is int id && !leg.Order.Contains(id) || task.StepKey != null && !leg.Steps.Any(s => s.Key == task.StepKey) ||
@@ -43,6 +46,7 @@ public sealed record NaturalHaramel(int MapId, int CooldownId, int MaxEntries, i
 }
 
 public sealed record NaturalHaramelTask(string Action, int MapId, int? QuestId = null, string? StepKey = null);
+public sealed record NaturalHaramelKey(int ItemId, int Count, int NpcId);
 public sealed record NaturalHaramelEquipment(int ObjectId, int ItemId, long Slot);
 /// <summary>SM_CHANNEL_INFO sends instanceId minus one, including on solo maps. IDs may repeat
 /// after server restart, and IDFactory reuses NPC IDs. Pair the packet ID/anchor with actual entry
