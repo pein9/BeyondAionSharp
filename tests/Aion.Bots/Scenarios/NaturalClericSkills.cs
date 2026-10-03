@@ -7,7 +7,7 @@ namespace Aion.Bots.Scenarios;
 /// NA-18: frozen 4.8 Cleric active skills on top of the Priest's, which carry over at Ascension
 /// (docs/natural-ascension-altgard.md Appendix C). Java skill_tree.xml and skill_templates.xml at ce54b7931.
 /// The learned SM_SKILL_LIST is still the authority: this catalog never grants a skill.
-/// AC-00, BC-05: every auto-learned Asmodian Cleric rank up to level 22. The server adds each new rank on level-up and keeps
+/// AC-00, BC-05, ND-05: every auto-learned Asmodian Cleric rank up to level 24. The server adds each new rank on level-up and keeps
 /// the old one (Java SkillLearnService.learnNewSkills), and <see cref="NaturalPriestSkills.Best"/> takes the highest
 /// learned rank of a role, so the bot moves to a new rank the moment it is observed. Every active auto-learned skill
 /// that is not here is in <see cref="Excluded"/> with its reason; the passives need no casting.
@@ -68,15 +68,20 @@ public static class NaturalClericSkills
 		new(1817, 22, "infernal", 53, 25, 1549, 240, "C_CHAINB_1TH_1"),
 		new(4074, 22, "touch", 53, 25, 1235, 140, "P_CHAINC_2TH_1", "C_CHAINC_1TH_1", 3000),
 		new(4037, 22, "spark", 68, 25, 1231, 160, "P_CHAINA_3TH_1", "P_CHAINA_2TH_1", 3000),
+		// ND-05: shipped level-23/24 ranks, and the instant emergency heal.
+		new(1618, 23, "hallowed", 25, 1, 1512, 80, "C_CHAINJ_1TH_1"),
+		new(4204, 24, "grace", 134, 23, 1257, 60),
+		new(3951, 24, "flash-recovery", 127, 23, 1218, 300),
 	];
 
-	/// <summary>AC-00, BC-05: auto-learned active Cleric skills up to level 22 outside the combat/rest rotation, and why. The ratchet
+	/// <summary>AC-00, BC-05, ND-05: auto-learned active Cleric skills up to level 24 outside the combat/rest rotation, and why. The ratchet
 	/// test fails when skill_tree.xml has one that is neither here nor in the catalog.</summary>
 	public static readonly IReadOnlyDictionary<int, string> Excluded = new Dictionary<int, string>
 	{
 		[1699] = "Light of Resurrection revives another player; the bot plays solo.",
 		[3935] = "Cleanse I removes dispellable debuffs, but the client's effect list does not say which are; the one lasting debuff met so far, the Okaru poison, cannot be dispelled (req_dispel_level 99).",
 		[3936] = "Cleanse II: as Cleanse I.",
+		[3937] = "Cleanse III: as Cleanse I.",
 		[3878] = "Stability raises a target's enmity, a group tank's tool; solo it changes nothing.",
 		[3879] = "Stability II: as Stability I.",
 		[4005] = "Hand of Reincarnation is prepared for the Bregirun quest attempt (BC-04/BC-06); it is a recovery buff, outside the combat/rest rotation.",

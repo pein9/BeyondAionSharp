@@ -3781,10 +3781,29 @@ level or an exact fee copied from another service. Capture `altgard-l11` only fr
     proof above. Fast re-verifies both earlier Destiny probes and the full recovery matrix with the new
     acknowledgement behavior. The empty read-only query confirms all owned matrix/Fast/cold schemas are
     dropped (`run/nd04-schema-check.log`). No server changes or new content; ND-05 normal combat is next.
-- [ ] **ND-05 — Normal combat.** One level-24 probe fights normal-HP Hellion, learned skills/approved
+- [x] **ND-05 — Normal combat.** One level-24 probe fights normal-HP Hellion, learned skills/approved
   supplies, temporary skill available, real deadline, no invulnerability or damage edits. Exercise cleanup
   while preserving ordinary heals. Record kills, deaths/retreats and duration; prove no stale corpse action
   after kill teleport. Depends: ND-03 and ND-04.
+  - *Done 2026-10-03.* From `809f304dd`, free account 220 copies the seven worn `altgard-l10` items and
+    receives only the approved level-24 supplies; its HP/MP are 1,809/2,935. The actual movie, stone,
+    socket, Skuld spawn and the journey's ordinary rest/buff/combat policy kill unmodified 3,169-HP
+    Hellion in 16,371 ms from the spawn dialog, with zero deaths/retreats. Ordinary attacks deal
+    175–200 damage. Kill credit gives Ishalgen START/9, no corpse sweep, no old object/loot state,
+    tutorial item/equipment/11504 cleanup, all regular learned skills preserved, then real Skuld START/10
+    (`run/nd05-combat-a4.log`, its trace/summary/packet evidence). No immunity, damage edits or natural setup.
+  - The Java level-23/24 audit adds regular auto-learned Hallowed Strike 1618, Healing Grace 4204 and
+    instant Flash of Recovery 3951; Cleanse III 3937 is explicitly excluded like the earlier ranks.
+    These are regular skills, not stigma grants. Tutorial 11504 is available only through the actual
+    140000001 socket and disappears on cleanup; the natural reward bundle stays sealed.
+    Java NpcController sends quest-kill teleport before finishing drop registration, so the client must
+    clear old map objects on the teleport announcement and again on destination spawn to discard a late
+    loot-status packet. Combat skips its ordinary corpse sweep when the kill changes maps.
+  - Retained failed drafts: `run/nd05-combat.log` omitted the ItemService namespace; a2/a3 killed
+    normally but caught the late old-corpse loot status. The final view regression and level-24 skill
+    checks pass (33 cases, `run/nd05-unit-final.log`). Seven pre-commit checks pass (`run/nd05-final-checks`);
+    Fast passes (76 tests/four switch skips, all eleven scenarios, `run/nd05-final-fast/report.md`).
+    All owned ND-05 schemas are gone (`run/nd05-schema-check.log`). ND-06's natural runner is next.
 - [ ] **ND-06 — Natural runner and smoke.** Implement only the required l11 behavior, inventory protection,
   normal reward and observed-var recovery. Restore `altgard-l10` with sim-snapshot.ps1 -Action Restore;
   run NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup with `AF_ALTGARD=l11` and Invoke-NaturalJourney's
@@ -4324,3 +4343,4 @@ The original questions follow.
 - 2026-10-03 ND-Q1 answered: the maintainer chose Option A. Correct the approved reward action and endpoint to shipped Java/C#, keep the bundle sealed and inactive legacy item absent, then finish ND-03 and continue the remaining items. No server correction is authorized or required for this reward boundary.
 - 2026-10-03 ND-03: the amended contract's exact reward path, movie/equip/cleanup and 144 journal completions pass; probe-only bundle installation confirms the normal slot. Eighty-one scoped tests, seven pre-commit checks and Fast (74 passed/three switch skips/all eleven scenarios) pass; failed drafts retained and owned schemas dropped. ND-04 loss/resume recovery is next.
 - 2026-10-03 ND-04: free-account-219 loss/resume matrix and two-process cold restart pass; two controlled deaths, one real missed spawn, 65 ground legs, seven saved-state resumes and fortress recovery. Java's older-instance selection, stigma-login audit and missing-exit fallback are recorded. Duplicate pending map-load acknowledgements are coalesced; 39 scoped tests, seven pre-commit checks and Fast (75 passed/four switch skips/all eleven scenarios) pass. Failed drafts retained, owned schemas dropped. Normal-HP Hellion combat is next.
+- 2026-10-03 ND-05: free-account-220 normal-HP Hellion fight passes in 16.371 seconds, zero deaths/retreats, real 175–200 damage, actual tutorial socket/cleanup and ordinary heals preserved. Regular level-23/24 skill catalog and late quest-kill loot-state invalidation verified; 33 scoped tests, seven pre-commit checks and Fast (76 passed/four switch skips/all eleven scenarios) pass. Failed drafts retained, owned schemas dropped. Natural l11 runner and smoke are next.

@@ -47,7 +47,7 @@ public sealed class NaturalClericCombatPolicyTests
 	}
 
 	[Fact]
-	public void EveryAutoLearnedActiveClericSkillToLevel22IsCastOrExcludedWithAReason()
+	public void EveryAutoLearnedActiveClericSkillToLevel24IsCastOrExcludedWithAReason()
 	{
 		string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
 		XDocument tree = XDocument.Load(Path.Combine(root, "game-server/data/static_data/skill_tree/skill_tree.xml"));
@@ -57,7 +57,7 @@ public sealed class NaturalClericCombatPolicyTests
 		int[] learnable = tree.Descendants("skill")
 			.Where(node => (string?)node.Attribute("classId") is "CLERIC" or "PRIEST" &&
 				(string?)node.Attribute("race") is null or "ASMODIANS" &&
-				(string?)node.Attribute("autolearn") == "true" && (int)node.Attribute("minLevel")! <= 22)
+				(string?)node.Attribute("autolearn") == "true" && (int)node.Attribute("minLevel")! <= 24)
 			.Select(node => (int)node.Attribute("skillId")!)
 			.Where(id => activation.GetValueOrDefault(id) == "ACTIVE").Distinct().Order().ToArray();
 		HashSet<int> cast = NaturalClericSkills.All.Select(skill => (int)skill.Id).ToHashSet();
@@ -373,6 +373,20 @@ public sealed class NaturalClericCombatPolicyTests
 		var rest = new NaturalPowderRestObservation(9, 300, 669, 900, 1211, false, learned, Cool(), new Dictionary<int, long>());
 		Assert.Equal(("light-heal", (ushort?)1839), (NaturalPowderRestPolicy.Decide(rest, Now).Action, NaturalPowderRestPolicy.Decide(rest, Now).Skill?.Id));
 		Assert.Equal("sit", NaturalPowderRestPolicy.Decide(rest with { Mp = 300, RecoveringMana = true }, Now).Action);
+	}
+
+	[Fact]
+	public void Level24EmergencyUsesObservedInstantRecoveryThenTheLearnedGraceRank()
+	{
+		NaturalCombatObservation hurt = Cleric(1000, 2) with
+		{
+			Level = 24, Learned = Learn(LearnedAt(24)), Hp = 250, Aggro = true,
+			NearbyAggressors = 1, InEmergency = true, HasRejuvenation = true,
+		};
+		Assert.Equal((ushort)3951, Decide(hurt).Skill?.Id);
+		AssertLegal(hurt, Decide(hurt));
+		Assert.Equal((ushort)4204, Decide(hurt with { Cooldowns = Cool((1218, 30)) }).Skill?.Id);
+		Assert.Equal((ushort)4204, Decide(hurt with { Learned = Learn(LearnedAt(24).Where(id => id != 3951).ToArray()) }).Skill?.Id);
 	}
 
 	private static NaturalCombatChoice Decide(NaturalCombatObservation state) =>

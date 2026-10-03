@@ -6,6 +6,7 @@ namespace Aion.Bots.World;
 /// <summary>A client-side view of the world derived exclusively from decoded server packets.</summary>
 public sealed partial class BotWorldModel
 {
+	private bool pendingMapReload;
 	public const int KinahItemId = 182_400_001;
 
 	private readonly Dictionary<int, BotKnownObject> objects = [];
@@ -273,7 +274,8 @@ public sealed partial class BotWorldModel
 		int worldId = packet.Get<int>("worldId");
 		// Arriving on another map invalidates every object of the old one, even when no caller announced the
 		// transition (a bind revive, a quest teleport or a disconnect back to another world).
-		if (MapId is int previous && previous != worldId) ForgetWorldObjects();
+		if (pendingMapReload || MapId is int previous && previous != worldId) ForgetWorldObjects();
+		pendingMapReload = false;
 		MapId = worldId;
 		Position = ReadPosition(packet.Fields);
 		UpdateSelfObjectPosition();
@@ -363,7 +365,15 @@ public sealed partial class BotWorldModel
 
 	private void ApplyTeleport(DecodedBotServerPacket packet)
 	{
-		MapId = packet.Get<int>("mapId");
+		int destination = packet.Get<int>("mapId");
+		// A quest kill can teleport without a caller preparing a reload. Its destination is
+		// announced before SM_PLAYER_SPAWN, so forget the old map before changing its id.
+		if (MapId is int previous && previous != destination)
+		{
+			BeginWorldReload();
+			pendingMapReload = true;
+		}
+		MapId = destination;
 		Position = ReadPosition(packet.Fields);
 		UpdateSelfObjectPosition();
 	}

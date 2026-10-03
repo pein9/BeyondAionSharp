@@ -11,7 +11,7 @@ public sealed record NaturalPriestSkill(ushort Id, int MinimumLevel, string Role
 {
 	/// <summary>Skills cast on the bot itself; every other role targets the monster.</summary>
 	public bool TargetsSelf => Role is "heal" or "blessing" or "rejuvenation" or "salvation" or "herb" or "mp-recovery"
-		or "penance" or "grace";
+		or "penance" or "grace" or "flash-recovery";
 
 	/// <summary>Powder rest skills (4 s cast, cancelled by any hit): only the rest policy casts them.</summary>
 	public bool IsPowderRest => Role is "herb" or "mp-recovery";
@@ -269,7 +269,11 @@ public static class NaturalPriestCombatPolicy
 				return Choice("cast-target", finisher,
 					$"Client-observed target is at or below {policy.FinishTargetHpPercent}% HP after this fight already received a self-heal.");
 		}
-		// AC-00: Healing Grace (3 s, 1,298 HP) is the urgent heal while it is ready; Healing Light covers its cooldown.
+		// ND-05: the level-24 instant heal avoids another interruptible cast at emergency HP.
+		NaturalPriestSkill? flash = NaturalPriestSkills.Best("flash-recovery", state.Level, state.Learned, catalog);
+		if (urgent && state.InEmergency && flash != null && Eligible(flash, null, 0, state, now, reserveHeal: false))
+			return Choice("cast-self", flash, "Emergency HP: use the observed instant Flash of Recovery while it is ready.");
+		// AC-00: Healing Grace is the larger urgent heal; Healing Light covers its cooldown.
 		NaturalPriestSkill? grace = NaturalPriestSkills.Best("grace", state.Level, state.Learned, catalog);
 		// BC-06: a cancelled Grace did not heal or start its cooldown (Java Skill.endCast).
 		// Try the shorter learned Healing Light next instead of repeatedly attempting the same long cast.

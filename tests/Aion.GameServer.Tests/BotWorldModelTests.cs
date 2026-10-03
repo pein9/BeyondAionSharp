@@ -10,6 +10,26 @@ namespace Aion.GameServer.Tests;
 public sealed class BotWorldModelTests
 {
 	[Fact]
+	public void UnsolicitedQuestKillTeleportForgetsTheInstanceBeforeDestinationSpawn()
+	{
+		var world = new BotWorldModel();
+		world.Apply(Packet<SM_PLAYER_SPAWN>(("worldId", 320070000), ("x", 257f), ("y", 245f), ("z", 125f), ("heading", (byte)0)));
+		world.Apply(Packet<SM_NPC_INFO>(("objectId", 200), ("npcId", 204263), ("visualNpcId", 204263),
+			("x", 257f), ("y", 245f), ("z", 125f), ("heading", (byte)0), ("creatureType", (byte)1)));
+		world.Apply(Packet<SM_LOOT_STATUS>(("targetObjectId", 200), ("status", (byte)2), ("lootEffectId", 0)));
+		world.Apply(Packet<SM_TELEPORT_LOC>(("mapId", 220010000), ("x", 1112f), ("y", 1719f), ("z", 270f), ("heading", (byte)113)));
+		Assert.Equal(220010000, world.MapId);
+		Assert.Empty(world.Objects);
+		Assert.Empty(world.LootStatuses);
+		Assert.Null(world.Loot);
+		// The kill's drop notification arrives after scheduling the teleport, before its spawn acknowledgement.
+		world.Apply(Packet<SM_LOOT_STATUS>(("targetObjectId", 200), ("status", (byte)0), ("lootEffectId", 0)));
+		world.Apply(Packet<SM_PLAYER_SPAWN>(("worldId", 220010000), ("x", 1112f), ("y", 1719f), ("z", 270f), ("heading", (byte)113)));
+		Assert.DoesNotContain(200, world.Objects);
+		Assert.Empty(world.LootStatuses);
+	}
+
+	[Fact]
 	public void SoakSystemMessageLookbackIsOptInBoundedAndKeepsTheNewestMessageAcrossReloads()
 	{
 		var world = new BotWorldModel();

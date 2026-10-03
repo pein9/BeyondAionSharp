@@ -65,6 +65,8 @@ public sealed record NaturalJourneyRuntime(string RepoRoot, string Profile, int 
 /// <summary>SIM diagnostic checkpoints are explicit; LIVE acceptance uses the complete default.</summary>
 public enum NaturalMauCourse { GeneratorToRae, RaeToHatata }
 
+public sealed record NaturalCombatDiagnosticResult(bool Killed, int Deaths, int Retreats, long ElapsedMillis);
+
 /// <summary>Short Phase 1 SIM starts use the same navigation and combat paths as the area legs.</summary>
 public enum NaturalMauEncounter
 {

@@ -33,6 +33,35 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	// AG-07: an Altgard leg walks its road toward an approach from farther than this, and leaves the last stretch to the navigator.
 	private const float FarApproachMetres = 100f, FarApproachStop = 40f;
 
+	/// <summary>ND-05: a controlled probe uses the journey's ordinary rest, buffs and combat against
+	/// a target produced by a real quest dialog. No loot action follows a kill that leaves this map.</summary>
+	public async Task<NaturalCombatDiagnosticResult> RunObservedCombatAsync(
+		Func<CancellationToken, Task<int>> startEncounter, CancellationToken token,
+		Func<CancellationToken, Task>? afterKill = null)
+	{
+		int map = session.Api.World.MapId ?? throw new InvalidDataException("Combat map unobserved.");
+		BotNavigationGeometry geometry = runtime.CreateGeometry();
+		var graph = BotNavigationGraphFactory.Build(runtime.Data, [], geometry);
+		var navigator = new NaturalJourneyNavigator(session, graph, geometry, runtime, stopOnDeath: false);
+		var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry, stopOnDeath: false,
+			conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline)
+		{
+			ApproachMapId = map, ReloadViewOnBindRevive = true, AfterKillAsync = afterKill,
+		};
+		await combat.RestAsync(token);
+		long started = runtime.NowMillis;
+		int target = await startEncounter(token);
+		bool killed = await combat.TryKillAsync(target, token, session.CurrentPosition);
+		if (killed && session.Api.World.MapId != map)
+		{
+			await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token,
+				packet => packet.Get<int>("objectId") == session.CharacterId);
+			session.AcceptTeleportPosition();
+			await session.SynchronizeAsync(token);
+		}
+		return new(killed, combat.ReviveCount, combat.CompletedRetreats, runtime.NowMillis - started);
+	}
+
 	public async Task RunAsync(CancellationToken token)
 	{
 		if (options.MauPolicy != null && options.Course == null)
@@ -6400,8 +6429,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		public async Task<bool> TryKillAsync(int target, CancellationToken token,
 			BotPosition? retreatAnchor = null, int? attackHistoryStart = null)
 		{
+			int? fightMap = session.Api.World.MapId;
 			bool killed = await FightAsync(target, token, retreatAnchor, attackHistoryStart);
-			if (killed && AfterKillAsync is { } afterKill && !session.Api.World.IsDead) await afterKill(token);
+			if (killed && session.Api.World.MapId == fightMap && AfterKillAsync is { } afterKill && !session.Api.World.IsDead)
+				await afterKill(token);
 			return killed;
 		}
 
