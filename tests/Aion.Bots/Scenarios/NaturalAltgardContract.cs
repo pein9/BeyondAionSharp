@@ -7,7 +7,9 @@ namespace Aion.Bots.Scenarios;
 /// One leg of the Altgard leveling leg (docs/natural-altgard-leveling.md). Leg 1 (<c>l1</c>) is the fortress: Q2201-Q2209
 /// and the Q24011 campaign, from the <c>altgard</c> snapshot to <c>altgard-l12</c>. Leg 2 (<c>l2</c>) is Moslan Crossroad:
 /// Q2210-Q2215, Q2218-Q2220 and the Q24012 campaign, from <c>altgard-l12</c> to <c>altgard-l2</c>. Leg 3 (<c>l3</c>) is
-/// Manir's Campsite: Q2221, the Q2290 escort and Q2222, from <c>altgard-l2</c> to <c>altgard-l3</c> at Basfelt. Leg 4 (<c>l4</c>)
+/// Manir's Campsite: Q2221, the Q2290 escort and Q2222, plus Q24111 and Q2217 from Olenja to Basfelt,
+/// from <c>altgard-l2</c> to the Basfelt endpoint. The corrected snapshot is <c>altgard-l3-q2217</c>;
+/// historical <c>altgard-l3</c> predates Q2217. Leg 4 (<c>l4</c>)
 /// is Basfelt Village: fourteen quests with two timers, a spawned EXPERT, custom kill counters, a zone-bound item use, a monster
 /// to leave alone and a bind at the hub, from <c>altgard-l3</c> to <c>altgard-l4</c>. Static walkthrough
 /// knowledge only; at run time every step is still driven by what the client observes. Each leg's template-quest plans

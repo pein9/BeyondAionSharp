@@ -9,7 +9,8 @@ TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-alt
 
 **Leg 1 is done (AF-00..AF-10, 2026-09-29).** [Leg 2: Moslan Crossroad](#leg-2-moslan-crossroad-level-1315--proposal) is done (AM-01..AM-09, 2026-09-29): `altgard-l2` starts Leg 3.
 [Leg 3: Manir's Campsite and Dock](#leg-3-manirs-campsite-and-dock-level-15--proposal) is done (AC-00..AC-08,
-2026-09-30): `altgard-l3` starts Leg 4 at Basfelt.
+2026-09-30): `altgard-l3` starts Leg 4 at Basfelt. The newly authorized Q2217 correction is tracked in
+[AC-C1..AC-C2](#leg-3-correction-q2217-approved-2026-10-03); historical downstream snapshots omit it.
 [Leg 4: Basfelt Village](#leg-4-basfelt-village-level-1617--proposal) is done (AB-01..AB-10, 2026-09-30; recaptured
 2026-10-01): `altgard-l4` starts Leg 5.
 [Leg 5: Kaibech's Campsite, Idun's Lake and MuMu Village](#leg-5-kaibechs-campsite-iduns-lake-and-mumu-village-level-1819--proposal)
@@ -182,6 +183,7 @@ quest must be finished first.
 | 2290 | Groken's Escape | 12 | Groken | 2221 | **escort** Groken to his boat, back to Manir | 21,300 |
 | 2222 | Manir's Message | 12 | Manir | 2290 | talk: Manir → Karl → Nokir | 13,080 |
 | 24111 | What's Up, Dock? (**D32**) | 10 | Olenja (Moslan Crossroad) | | the Lepharist Primer from the suspicious document at Manir's Dock; to Nokir (Basfelt) | 2,691 |
+| 2217 | Gleaning the Meaning (**IMPORTANT**) | 12 | Olenja (Moslan Crossroad) | 24012 **or** legacy 2013 | deliver Olenja's Letter to Gefion (Basfelt); included in the Leg 3 correction approved 2026-10-03 | 17,678 |
 
 ### Stop 4: Basfelt Village (level 12–14)
 
@@ -317,7 +319,7 @@ quest must be finished first.
 | 2216 | Knot Your Average Message | Starts from a random drop: the MuMu Grass Knot drops at 3% from MuMu Farmers ("Named Quest-Start Item" rule). Excluded as in Ishalgen; the drop is left alone. |
 | 2228, 2274, 2296 | A Thorn in Its Side, Black Claw Baton, A Bill Found in a Box | Each starts from an item (the Tanning Knife, Chieftain's Baton, A Bill Found in a Box) that **nothing** in Java or C# produces. Unobtainable, like Ishalgen's Q2107. |
 | 2293 | [Coin] Mutated Spirits | Repeatable 255 times and gives no XP (a coin loop). |
-| 2217, 2285 | | Unreachable: the classifier finds their prerequisites unobtainable. |
+| 2285 | Leinolz's Request | Unreachable: Q2240 is disabled at level 99. Q2217's former exclusion was a classifier defect: Java accepts either Q24012 or legacy Q2013; the Leg 3 correction below includes it. |
 | 2229, 2240, 2294, 2295, 80172–80210 | | Disabled: level 99 gate. |
 | 80005, 80142, 80143, 80262 | | Event quests. |
 | 2011–2022, 2200, 24114 | | No handler in Java or C#. Q2011–Q2022 (and Q2200) are superseded pre-4.0 missions. Q24114 was live in 4.8 retail; it needs a custom handler and Umkata's summon, which D32 (`docs/retail-quest-completion.md`, RQ-05) has proposed and the maintainer has yet to approve. **Q24110, Q24111, Q24113, Q24115, Q24232 and Q24233 exist since RQ-05 (2026-09-30)**: a leg can take them in now. |
@@ -973,8 +975,11 @@ foot.
 | 2221 | Manir's Uncle | custom | Manir → Groken | Groken; open Groken's Safe and loot the item; back to Groken | 8,910 |
 | 2290 | Groken's Escape | custom, **escort**, after 2221 | Groken → Manir | escort Groken to his boat; report to Manir | 21,300 |
 | 2222 | Manir's Message | custom, after 2290 | Manir → Karl → **Nokir** | talk; Nokir is at Basfelt (AC-Q1) | 13,080 |
+| 24111 | What's Up, Dock? | template (D32) | Olenja → **Nokir** | the suspicious document at Manir's Dock gives the Lepharist Primer; hand in at Basfelt | 2,691 |
+| 2217 | Gleaning the Meaning | template **IMPORTANT**, after 24012 or legacy 2013 | Olenja → **Gefion** | take the letter alongside Q24111 at Moslan; deliver at the final Basfelt visit | 17,678 |
 
-Quest XP is 43,290, plus the robbers' kills. The leg stays at level 15.
+The original three quests give 43,290 XP. Including Q24111 and the Q2217 correction, all five give
+63,659 XP, plus combat XP. The endpoint requires at least level 15.
 
 **Q2221 (Java `_2221ManirsUncle`):**
 1. Manir starts it (page 1011).
@@ -1450,6 +1455,34 @@ The same loop protocol, with "AC" in place of "NA".
 - the endpoint verified across a relog.
 
 The escort trace shows at least one successful attempt.
+
+### Leg 3 correction: Q2217 (approved 2026-10-03)
+
+The operator authorized modifying and rerunning only the individual owning leg. Leg 3 already visits
+Olenja for Q24111 and ends in Basfelt, where Gefion receives Q2217. The incoming `altgard-l2` has Q24012
+COMPLETE. Java `QuestTemplate.getRequiredConditionCount` requires one of the finished-quest condition
+groups, and `XMLStartCondition.checkFinishedQuests` requires every quest inside that chosen group.
+Q2217 therefore accepts Q24012 **or** legacy Q2013; the old classifier incorrectly required both groups.
+The shipped handler, data and C# runtime already match Java and need no server correction.
+
+- [x] **AC-C1 — Correct the classifier and Leg 3 route.** Regenerate the classifier and Q2217's plan;
+  accept beside Q24111, retain the final Basfelt hand-in order, and require all five Leg 3 completions.
+  Verify prerequisite alternatives, the contract/decision sequence, pre-commit checks and Fast.
+  - *Done 2026-10-03, from `8fc13fd68`.* Q2217 is an obtainable `report_to` plan, accepted alongside
+    Q24111 and held until the final Basfelt visit; all five completions are required. Classifier conditions
+    now mirror Java (OR between finished groups, AND inside each); 4,351 quests are obtainable and 250
+    unreachable. Dependent coverage counts and the custom-handler drafts are regenerated (11 added,
+    every existing draft identical). Twelve compiler/drift tests and 149 Altgard/dialog unit cases pass;
+    all seven pre-commit checks pass (`run/ac-q2217/checks-a2`), and Fast passes 82 cases/five explicit
+    switch skips/all eleven scenarios (`run/ac-q2217-fast`). Initial stale-count/compiler and stale-draft
+    check failures are retained under `run/ac-q2217`. No server behavior, quest data or historical snapshot
+    changed. The isolated committed-code replay is AC-C2.
+- [ ] **AC-C2 — Rerun only Leg 3.** Restore `altgard-l2`, run the natural journey with `AF_ALTGARD=l3`
+  and the snapshot runner's environment, verify Q2217 once, consumed letter, all incoming quests and
+  the Basfelt endpoint/relog, then drop the owned schema. Capture from committed code under the distinct
+  name `altgard-l3-q2217`, restore-check it, and record results. Never overwrite historical snapshots or
+  rerun other legs. The historical `altgard-l3` and downstream/Haramel snapshots still omit Q2217; this
+  correction supplies separate Leg 3 proof, not a rebased downstream character.
 
 ## Leg 4: Basfelt Village (level 16–17) — proposal
 
@@ -4316,6 +4349,11 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-03 AC-C1: Q2217's Java prerequisite alternatives correct the classifier's false exclusion;
+  regenerated plan and Leg 3 contract/decision sequence include Olenja's pickup and Gefion's final delivery.
+  Twelve compiler tests, 149 focused unit cases, seven pre-commit checks and Fast (82 passed/five switch
+  skips/all eleven scenarios) pass. Original draft failures retained; committed-code isolated replay is next.
 
 - 2026-10-03 HM-08: all 33 checklist gates pass, including the committed solution repair
   (5,184 passed/112 guarded skips), final Fast (82 passed/five switch skips/eleven scenarios)

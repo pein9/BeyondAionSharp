@@ -3,11 +3,11 @@
   "generatedBy": "tools/Aion.QuestPlanExtractor",
   "javaCommit": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
   "counts": {
-    "customQuests": 927,
-    "withDialogActions": 917,
+    "customQuests": 938,
+    "withDialogActions": 928,
     "specialHandlers": 105,
-    "registrations": 3570,
-    "decisions": 9949
+    "registrations": 3603,
+    "decisions": 10048
   },
   "quests": [
     {
@@ -17388,6 +17388,211 @@
           "resultMethod": null,
           "result": "false",
           "line": 94
+        }
+      ],
+      "specialOperations": []
+    },
+    {
+      "questId": 1467,
+      "zone": "Eltnen",
+      "race": "ELYOS",
+      "source": "src/Aion.GameServer/Handlers/Quest/eltnen/_1467TheFourLeaders.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [],
+          "expression": "qe.RegisterQuestNpc(npcId).AddOnQuestStart(questId)",
+          "line": 20
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [],
+          "expression": "qe.RegisterQuestNpc(npcId).AddOnTalkEvent(questId)",
+          "line": 21
+        },
+        {
+          "methods": [
+            "AddOnKillEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [],
+          "expression": "qe.RegisterQuestNpc(mobId).AddOnKillEvent(questId)",
+          "line": 23
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT",
+        "QUEST_ACCEPT_1",
+        "SETPRO1",
+        "SETPRO2",
+        "SETPRO3",
+        "SETPRO4"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == npcId",
+            "dialogActionId case DialogAction.QUEST_SELECT:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4762)",
+          "line": 40
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_ACCEPT_1"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == npcId",
+            "dialogActionId case DialogAction.QUEST_ACCEPT_1:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1011)",
+          "line": 43
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == npcId",
+            "dialogActionId default:"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 46
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == npcId",
+            "dialogActionId case DialogAction.QUEST_SELECT:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1011)",
+          "line": 58
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO1"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == npcId",
+            "dialogActionId case DialogAction.SETPRO1:"
+          ],
+          "resultMethod": "DefaultCloseDialog",
+          "result": "DefaultCloseDialog(env, 0, 1)",
+          "line": 61
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO2"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == npcId",
+            "dialogActionId case DialogAction.SETPRO2:"
+          ],
+          "resultMethod": "DefaultCloseDialog",
+          "result": "DefaultCloseDialog(env, 0, 2)",
+          "line": 64
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO3"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == npcId",
+            "dialogActionId case DialogAction.SETPRO3:"
+          ],
+          "resultMethod": "DefaultCloseDialog",
+          "result": "DefaultCloseDialog(env, 0, 3)",
+          "line": 67
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO4"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == npcId",
+            "dialogActionId case DialogAction.SETPRO4:"
+          ],
+          "resultMethod": "DefaultCloseDialog",
+          "result": "DefaultCloseDialog(env, 0, 4)",
+          "line": 70
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [
+            "REWARD",
+            "START"
+          ],
+          "dialogActions": [],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "else !(qs.GetStatus() == QuestStatus.START)",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == npcId"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 77
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 79
         }
       ],
       "specialOperations": []
@@ -46222,6 +46427,156 @@
           "resultMethod": null,
           "result": "false",
           "line": 78
+        }
+      ],
+      "specialOperations": []
+    },
+    {
+      "questId": 1987,
+      "zone": "Sanctum",
+      "race": "ELYOS",
+      "source": "src/Aion.GameServer/Handlers/Quest/sanctum/_1987ABiggerWarehouse.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            203700
+          ],
+          "expression": "qe.RegisterQuestNpc(203700).AddOnQuestStart(questId)",
+          "line": 16
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            203700
+          ],
+          "expression": "qe.RegisterQuestNpc(203700).AddOnTalkEvent(questId)",
+          "line": 17
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            203749
+          ],
+          "expression": "qe.RegisterQuestNpc(203749).AddOnTalkEvent(questId)",
+          "line": 18
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [
+            203700
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null",
+            "targetId == 203700",
+            "dialogActionId == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4762)",
+          "line": 34
+        },
+        {
+          "targetNpcIds": [
+            203700
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null",
+            "targetId == 203700",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 38
+        },
+        {
+          "targetNpcIds": [
+            203749
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null)",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == 203749",
+            "dialogActionId case DialogAction.QUEST_SELECT:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 2375)",
+          "line": 49
+        },
+        {
+          "targetNpcIds": [
+            203749
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SELECT_QUEST_REWARD"
+          ],
+          "conditions": [
+            "else !(qs == null)",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == 203749",
+            "dialogActionId case DialogAction.SELECT_QUEST_REWARD:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 5)",
+          "line": 52
+        },
+        {
+          "targetNpcIds": [
+            203749
+          ],
+          "questStatuses": [
+            "REWARD",
+            "START"
+          ],
+          "dialogActions": [],
+          "conditions": [
+            "else !(qs == null)",
+            "else !(qs.GetStatus() == QuestStatus.START)",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 203749"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 60
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 63
         }
       ],
       "specialOperations": []
@@ -98015,6 +98370,156 @@
       "specialOperations": []
     },
     {
+      "questId": 2985,
+      "zone": "Pandaemonium",
+      "race": "ASMODIANS",
+      "source": "src/Aion.GameServer/Handlers/Quest/pandaemonium/_2985AnExpertsReward.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            204052
+          ],
+          "expression": "qe.RegisterQuestNpc(204052).AddOnQuestStart(questId)",
+          "line": 16
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            204052
+          ],
+          "expression": "qe.RegisterQuestNpc(204052).AddOnTalkEvent(questId)",
+          "line": 17
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            204072
+          ],
+          "expression": "qe.RegisterQuestNpc(204072).AddOnTalkEvent(questId)",
+          "line": 18
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [
+            204052
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 204052",
+            "dialogActionId == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4762)",
+          "line": 34
+        },
+        {
+          "targetNpcIds": [
+            204052
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 204052",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 38
+        },
+        {
+          "targetNpcIds": [
+            204072
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == 204072",
+            "dialogActionId case DialogAction.QUEST_SELECT:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 2375)",
+          "line": 49
+        },
+        {
+          "targetNpcIds": [
+            204072
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SELECT_QUEST_REWARD"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == 204072",
+            "dialogActionId case DialogAction.SELECT_QUEST_REWARD:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 5)",
+          "line": 52
+        },
+        {
+          "targetNpcIds": [
+            204072
+          ],
+          "questStatuses": [
+            "REWARD",
+            "START"
+          ],
+          "dialogActions": [],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "else !(qs.GetStatus() == QuestStatus.START)",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 204072"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 60
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 63
+        }
+      ],
+      "specialOperations": []
+    },
+    {
       "questId": 2988,
       "zone": "Daevanion Quest",
       "race": "ASMODIANS",
@@ -110350,6 +110855,428 @@
           "resultMethod": null,
           "result": "false",
           "line": 86
+        }
+      ],
+      "specialOperations": []
+    },
+    {
+      "questId": 3102,
+      "zone": "Theobomos",
+      "race": "ELYOS",
+      "source": "src/Aion.GameServer/Handlers/Quest/theobomos/_3102TheDisappearingStatue.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            798206
+          ],
+          "expression": "qe.RegisterQuestNpc(798206).AddOnQuestStart(questId)",
+          "line": 19
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            798206
+          ],
+          "expression": "qe.RegisterQuestNpc(798206).AddOnTalkEvent(questId)",
+          "line": 20
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            798167
+          ],
+          "expression": "qe.RegisterQuestNpc(798167).AddOnTalkEvent(questId)",
+          "line": 21
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            798177
+          ],
+          "expression": "qe.RegisterQuestNpc(798177).AddOnTalkEvent(questId)",
+          "line": 22
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            798225
+          ],
+          "expression": "qe.RegisterQuestNpc(798225).AddOnTalkEvent(questId)",
+          "line": 23
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT",
+        "SETPRO1",
+        "SETPRO2",
+        "SELECT_QUEST_REWARD"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [
+            798206
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 798206",
+            "env.GetDialogActionId() case DialogAction.QUEST_SELECT:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1011)",
+          "line": 42
+        },
+        {
+          "targetNpcIds": [
+            798206
+          ],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 798206",
+            "env.GetDialogActionId() default:"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 44
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [
+            "qs == null"
+          ],
+          "resultMethod": null,
+          "result": "false",
+          "line": 50
+        },
+        {
+          "targetNpcIds": [
+            798167
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798167:",
+            "env.GetDialogActionId() case DialogAction.QUEST_SELECT:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1352)",
+          "line": 61
+        },
+        {
+          "targetNpcIds": [
+            798167
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO1"
+          ],
+          "conditions": [
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798167:",
+            "env.GetDialogActionId() case DialogAction.SETPRO1:"
+          ],
+          "resultMethod": null,
+          "result": "true",
+          "line": 68
+        },
+        {
+          "targetNpcIds": [
+            798167
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [],
+          "conditions": [
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798167:"
+          ],
+          "resultMethod": null,
+          "result": "false",
+          "line": 71
+        },
+        {
+          "targetNpcIds": [
+            798177
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798177:",
+            "env.GetDialogActionId() case DialogAction.QUEST_SELECT:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1693)",
+          "line": 77
+        },
+        {
+          "targetNpcIds": [
+            798177
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO2"
+          ],
+          "conditions": [
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798177:",
+            "env.GetDialogActionId() case DialogAction.SETPRO2:"
+          ],
+          "resultMethod": null,
+          "result": "true",
+          "line": 85
+        },
+        {
+          "targetNpcIds": [
+            798225
+          ],
+          "questStatuses": [
+            "REWARD",
+            "START"
+          ],
+          "dialogActions": [
+            "SELECT_QUEST_REWARD"
+          ],
+          "conditions": [
+            "else !(qs.GetStatus() == QuestStatus.START)",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 798225",
+            "env.GetDialogActionId() == DialogAction.SELECT_QUEST_REWARD"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 5)",
+          "line": 96
+        },
+        {
+          "targetNpcIds": [
+            798225
+          ],
+          "questStatuses": [
+            "REWARD",
+            "START"
+          ],
+          "dialogActions": [
+            "SELECT_QUEST_REWARD"
+          ],
+          "conditions": [
+            "else !(qs.GetStatus() == QuestStatus.START)",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 798225",
+            "else !(env.GetDialogActionId() == DialogAction.SELECT_QUEST_REWARD)"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 98
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 101
+        }
+      ],
+      "specialOperations": []
+    },
+    {
+      "questId": 3103,
+      "zone": "Theobomos",
+      "race": "ELYOS",
+      "source": "src/Aion.GameServer/Handlers/Quest/theobomos/_3103KyprosDesire.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            798225
+          ],
+          "expression": "qe.RegisterQuestNpc(798225).AddOnQuestStart(questId)",
+          "line": 19
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            798226
+          ],
+          "expression": "qe.RegisterQuestNpc(798226).AddOnTalkEvent(questId)",
+          "line": 20
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD",
+        "USE_OBJECT"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [
+            798225
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 798225",
+            "dialogActionId == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1011)",
+          "line": 36
+        },
+        {
+          "targetNpcIds": [
+            798225
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 798225",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 40
+        },
+        {
+          "targetNpcIds": [
+            798226
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == 798226",
+            "dialogActionId == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 2375)",
+          "line": 50
+        },
+        {
+          "targetNpcIds": [
+            798226
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SELECT_QUEST_REWARD",
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == 798226",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)",
+            "dialogActionId == DialogAction.SELECT_QUEST_REWARD"
+          ],
+          "resultMethod": "DefaultCloseDialog",
+          "result": "DefaultCloseDialog(env, 0, 1, true, true)",
+          "line": 54
+        },
+        {
+          "targetNpcIds": [
+            798226
+          ],
+          "questStatuses": [
+            "REWARD",
+            "START"
+          ],
+          "dialogActions": [
+            "USE_OBJECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "else !(qs.GetStatus() == QuestStatus.START)",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 798226",
+            "dialogActionId == DialogAction.USE_OBJECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 5)",
+          "line": 64
+        },
+        {
+          "targetNpcIds": [
+            798226
+          ],
+          "questStatuses": [
+            "REWARD",
+            "START"
+          ],
+          "dialogActions": [],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "else !(qs.GetStatus() == QuestStatus.START)",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 798226"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 66
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 69
         }
       ],
       "specialOperations": []
@@ -180463,6 +181390,148 @@
       "specialOperations": []
     },
     {
+      "questId": 19047,
+      "zone": "Sanctum",
+      "race": "ELYOS",
+      "source": "src/Aion.GameServer/Handlers/Quest/sanctum/_19047JustBetweenMeAndFasimedes.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            203700
+          ],
+          "expression": "qe.RegisterQuestNpc(203700).AddOnQuestStart(questId)",
+          "line": 16
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            203700
+          ],
+          "expression": "qe.RegisterQuestNpc(203700).AddOnTalkEvent(questId)",
+          "line": 17
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD",
+        "USE_OBJECT"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [
+            203700
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 203700",
+            "dialogActionId == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1011)",
+          "line": 33
+        },
+        {
+          "targetNpcIds": [
+            203700
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 203700",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 37
+        },
+        {
+          "targetNpcIds": [
+            203700
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SELECT_QUEST_REWARD"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == 203700",
+            "dialogActionId == DialogAction.SELECT_QUEST_REWARD"
+          ],
+          "resultMethod": "DefaultCloseDialog",
+          "result": "DefaultCloseDialog(env, 0, 0, true, true)",
+          "line": 46
+        },
+        {
+          "targetNpcIds": [
+            203700
+          ],
+          "questStatuses": [
+            "REWARD",
+            "START"
+          ],
+          "dialogActions": [
+            "USE_OBJECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "else !(qs.GetStatus() == QuestStatus.START)",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 203700",
+            "dialogActionId == DialogAction.USE_OBJECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 2375)",
+          "line": 55
+        },
+        {
+          "targetNpcIds": [
+            203700
+          ],
+          "questStatuses": [
+            "REWARD",
+            "START"
+          ],
+          "dialogActions": [],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "else !(qs.GetStatus() == QuestStatus.START)",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 203700"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 57
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 60
+        }
+      ],
+      "specialOperations": []
+    },
+    {
       "questId": 19048,
       "zone": "Sanctum",
       "race": "ELYOS",
@@ -180931,6 +182000,400 @@
           "resultMethod": null,
           "result": "false",
           "line": 76
+        }
+      ],
+      "specialOperations": []
+    },
+    {
+      "questId": 19057,
+      "zone": "Sanctum",
+      "race": "ELYOS",
+      "source": "src/Aion.GameServer/Handlers/Quest/crafting/_19057MasterConstructorsPotential.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            798450
+          ],
+          "expression": "qe.RegisterQuestNpc(798450).AddOnQuestStart(questId)",
+          "line": 25
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            798450
+          ],
+          "expression": "qe.RegisterQuestNpc(798450).AddOnTalkEvent(questId)",
+          "line": 26
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            798451
+          ],
+          "expression": "qe.RegisterQuestNpc(798451).AddOnTalkEvent(questId)",
+          "line": 27
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT",
+        "SETPRO10",
+        "SETPRO20",
+        "CHECK_USER_HAS_QUEST_ITEM"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "dialogActionId == DialogAction.QUEST_SELECT \u0026\u0026 !Aion.GameServer.Services.Craft.CraftSkillUpdateService.GetInstance().CanLearnMoreMasterCraftingSkill(player)"
+          ],
+          "resultMethod": "SendQuestSelectionDialog",
+          "result": "SendQuestSelectionDialog(env)",
+          "line": 39
+        },
+        {
+          "targetNpcIds": [
+            798450
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 798450",
+            "dialogActionId == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4762)",
+          "line": 47
+        },
+        {
+          "targetNpcIds": [
+            798450
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 798450",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 49
+        },
+        {
+          "targetNpcIds": [
+            798451
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798451:",
+            "dialogActionId case DialogAction.QUEST_SELECT:",
+            "var case 0:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1011)",
+          "line": 65
+        },
+        {
+          "targetNpcIds": [
+            798451
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798451:",
+            "dialogActionId case DialogAction.QUEST_SELECT:",
+            "var case 2:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4080)",
+          "line": 67
+        },
+        {
+          "targetNpcIds": [
+            798451
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798451:",
+            "dialogActionId case DialogAction.QUEST_SELECT:"
+          ],
+          "resultMethod": null,
+          "result": "false",
+          "line": 69
+        },
+        {
+          "targetNpcIds": [
+            798451
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO10"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798451:",
+            "dialogActionId case DialogAction.SETPRO10:",
+            "kinah \u003E= 167500",
+            "!GiveQuestItem(env, 152203543, 1)"
+          ],
+          "resultMethod": null,
+          "result": "true",
+          "line": 74
+        },
+        {
+          "targetNpcIds": [
+            798451
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO10"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798451:",
+            "dialogActionId case DialogAction.SETPRO10:",
+            "kinah \u003E= 167500"
+          ],
+          "resultMethod": null,
+          "result": "true",
+          "line": 79
+        },
+        {
+          "targetNpcIds": [
+            798451
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO10"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798451:",
+            "dialogActionId case DialogAction.SETPRO10:",
+            "else !(kinah \u003E= 167500)"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4400)",
+          "line": 82
+        },
+        {
+          "targetNpcIds": [
+            798451
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO20"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798451:",
+            "dialogActionId case DialogAction.SETPRO20:",
+            "kinah \u003E= 223000",
+            "!GiveQuestItem(env, 152203544, 1)"
+          ],
+          "resultMethod": null,
+          "result": "true",
+          "line": 87
+        },
+        {
+          "targetNpcIds": [
+            798451
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO20"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798451:",
+            "dialogActionId case DialogAction.SETPRO20:",
+            "kinah \u003E= 223000"
+          ],
+          "resultMethod": null,
+          "result": "true",
+          "line": 92
+        },
+        {
+          "targetNpcIds": [
+            798451
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO20"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798451:",
+            "dialogActionId case DialogAction.SETPRO20:",
+            "else !(kinah \u003E= 223000)"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4400)",
+          "line": 95
+        },
+        {
+          "targetNpcIds": [
+            798451
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798451:"
+          ],
+          "resultMethod": null,
+          "result": "false",
+          "line": 97
+        },
+        {
+          "targetNpcIds": [
+            798450
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798450:",
+            "dialogActionId case DialogAction.QUEST_SELECT:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1352)",
+          "line": 102
+        },
+        {
+          "targetNpcIds": [
+            798450
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "CHECK_USER_HAS_QUEST_ITEM"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798450:",
+            "dialogActionId case DialogAction.CHECK_USER_HAS_QUEST_ITEM:",
+            "QuestService.CollectItemCheck(env, true)"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 5)",
+          "line": 108
+        },
+        {
+          "targetNpcIds": [
+            798450
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "CHECK_USER_HAS_QUEST_ITEM"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798450:",
+            "dialogActionId case DialogAction.CHECK_USER_HAS_QUEST_ITEM:",
+            "else !(QuestService.CollectItemCheck(env, true))"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, checkFailId)",
+          "line": 124
+        },
+        {
+          "targetNpcIds": [
+            798450
+          ],
+          "questStatuses": [
+            "REWARD",
+            "START"
+          ],
+          "dialogActions": [],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "else !(qs.GetStatus() == QuestStatus.START)",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 798450"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 133
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 135
         }
       ],
       "specialOperations": []
@@ -220857,6 +222320,400 @@
       "specialOperations": []
     },
     {
+      "questId": 29057,
+      "zone": "Pandaemonium",
+      "race": "ASMODIANS",
+      "source": "src/Aion.GameServer/Handlers/Quest/crafting/_29057MasterConstructorsPotential.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            798452
+          ],
+          "expression": "qe.RegisterQuestNpc(798452).AddOnQuestStart(questId)",
+          "line": 25
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            798452
+          ],
+          "expression": "qe.RegisterQuestNpc(798452).AddOnTalkEvent(questId)",
+          "line": 26
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            798453
+          ],
+          "expression": "qe.RegisterQuestNpc(798453).AddOnTalkEvent(questId)",
+          "line": 27
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT",
+        "SETPRO10",
+        "SETPRO20",
+        "CHECK_USER_HAS_QUEST_ITEM"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "dialogActionId == DialogAction.QUEST_SELECT \u0026\u0026 !Aion.GameServer.Services.Craft.CraftSkillUpdateService.GetInstance().CanLearnMoreMasterCraftingSkill(player)"
+          ],
+          "resultMethod": "SendQuestSelectionDialog",
+          "result": "SendQuestSelectionDialog(env)",
+          "line": 39
+        },
+        {
+          "targetNpcIds": [
+            798452
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 798452",
+            "dialogActionId == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4762)",
+          "line": 47
+        },
+        {
+          "targetNpcIds": [
+            798452
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 798452",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 49
+        },
+        {
+          "targetNpcIds": [
+            798453
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798453:",
+            "dialogActionId case DialogAction.QUEST_SELECT:",
+            "var case 0:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1011)",
+          "line": 65
+        },
+        {
+          "targetNpcIds": [
+            798453
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798453:",
+            "dialogActionId case DialogAction.QUEST_SELECT:",
+            "var case 2:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4080)",
+          "line": 67
+        },
+        {
+          "targetNpcIds": [
+            798453
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798453:",
+            "dialogActionId case DialogAction.QUEST_SELECT:"
+          ],
+          "resultMethod": null,
+          "result": "false",
+          "line": 69
+        },
+        {
+          "targetNpcIds": [
+            798453
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO10"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798453:",
+            "dialogActionId case DialogAction.SETPRO10:",
+            "kinah \u003E= 167500",
+            "!GiveQuestItem(env, 152208541, 1)"
+          ],
+          "resultMethod": null,
+          "result": "true",
+          "line": 74
+        },
+        {
+          "targetNpcIds": [
+            798453
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO10"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798453:",
+            "dialogActionId case DialogAction.SETPRO10:",
+            "kinah \u003E= 167500"
+          ],
+          "resultMethod": null,
+          "result": "true",
+          "line": 79
+        },
+        {
+          "targetNpcIds": [
+            798453
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO10"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798453:",
+            "dialogActionId case DialogAction.SETPRO10:",
+            "else !(kinah \u003E= 167500)"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4400)",
+          "line": 82
+        },
+        {
+          "targetNpcIds": [
+            798453
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO20"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798453:",
+            "dialogActionId case DialogAction.SETPRO20:",
+            "kinah \u003E= 223000",
+            "!GiveQuestItem(env, 152208542, 1)"
+          ],
+          "resultMethod": null,
+          "result": "true",
+          "line": 87
+        },
+        {
+          "targetNpcIds": [
+            798453
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO20"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798453:",
+            "dialogActionId case DialogAction.SETPRO20:",
+            "kinah \u003E= 223000"
+          ],
+          "resultMethod": null,
+          "result": "true",
+          "line": 92
+        },
+        {
+          "targetNpcIds": [
+            798453
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SETPRO20"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798453:",
+            "dialogActionId case DialogAction.SETPRO20:",
+            "else !(kinah \u003E= 223000)"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 4400)",
+          "line": 95
+        },
+        {
+          "targetNpcIds": [
+            798453
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798453:"
+          ],
+          "resultMethod": null,
+          "result": "false",
+          "line": 97
+        },
+        {
+          "targetNpcIds": [
+            798452
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798452:",
+            "dialogActionId case DialogAction.QUEST_SELECT:"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1352)",
+          "line": 102
+        },
+        {
+          "targetNpcIds": [
+            798452
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "CHECK_USER_HAS_QUEST_ITEM"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798452:",
+            "dialogActionId case DialogAction.CHECK_USER_HAS_QUEST_ITEM:",
+            "QuestService.CollectItemCheck(env, true)"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 5)",
+          "line": 108
+        },
+        {
+          "targetNpcIds": [
+            798452
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "CHECK_USER_HAS_QUEST_ITEM"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId case 798452:",
+            "dialogActionId case DialogAction.CHECK_USER_HAS_QUEST_ITEM:",
+            "else !(QuestService.CollectItemCheck(env, true))"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, checkFailId)",
+          "line": 124
+        },
+        {
+          "targetNpcIds": [
+            798452
+          ],
+          "questStatuses": [
+            "REWARD",
+            "START"
+          ],
+          "dialogActions": [],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "else !(qs.GetStatus() == QuestStatus.START)",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 798452"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 133
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 135
+        }
+      ],
+      "specialOperations": []
+    },
+    {
       "questId": 29064,
       "zone": "Fenris\u0027s Fang Quest",
       "race": "ASMODIANS",
@@ -222973,6 +224830,284 @@
       "specialOperations": []
     },
     {
+      "questId": 30003,
+      "zone": "Udas Temple",
+      "race": "ELYOS",
+      "source": "src/Aion.GameServer/Handlers/Quest/udas_temple/_30003SecretOfTheUdasTemple.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            799029
+          ],
+          "expression": "qe.RegisterQuestNpc(799029).AddOnQuestStart(questId)",
+          "line": 16
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            799029
+          ],
+          "expression": "qe.RegisterQuestNpc(799029).AddOnTalkEvent(questId)",
+          "line": 17
+        },
+        {
+          "methods": [
+            "RegisterOnGetItem"
+          ],
+          "npcIds": [],
+          "expression": "qe.RegisterOnGetItem(182209161, questId)",
+          "line": 18
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [
+            799029
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 799029",
+            "dialogActionId == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1011)",
+          "line": 34
+        },
+        {
+          "targetNpcIds": [
+            799029
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 799029",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 38
+        },
+        {
+          "targetNpcIds": [
+            799029
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == 799029",
+            "dialogActionId == DialogAction.QUEST_SELECT",
+            "var == 1"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 2375)",
+          "line": 51
+        },
+        {
+          "targetNpcIds": [
+            799029
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SELECT_QUEST_REWARD",
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == 799029",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)",
+            "dialogActionId == DialogAction.SELECT_QUEST_REWARD"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 5)",
+          "line": 57
+        },
+        {
+          "targetNpcIds": [
+            799029
+          ],
+          "questStatuses": [
+            "REWARD",
+            "START"
+          ],
+          "dialogActions": [],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "else !(qs.GetStatus() == QuestStatus.START)",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 799029"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 66
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 69
+        }
+      ],
+      "specialOperations": []
+    },
+    {
+      "questId": 30005,
+      "zone": "Udas Temple",
+      "race": "ELYOS",
+      "source": "src/Aion.GameServer/Handlers/Quest/udas_temple/_30005HealMeKillMe.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            799029
+          ],
+          "expression": "qe.RegisterQuestNpc(799029).AddOnQuestStart(questId)",
+          "line": 18
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            799029
+          ],
+          "expression": "qe.RegisterQuestNpc(799029).AddOnTalkEvent(questId)",
+          "line": 19
+        },
+        {
+          "methods": [
+            "AddOnKillEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [],
+          "expression": "qe.RegisterQuestNpc(mob).AddOnKillEvent(questId)",
+          "line": 22
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [
+            799029
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "env.GetTargetId() == 799029",
+            "env.GetDialogActionId() == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1011)",
+          "line": 36
+        },
+        {
+          "targetNpcIds": [
+            799029
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "env.GetTargetId() == 799029",
+            "else !(env.GetDialogActionId() == DialogAction.QUEST_SELECT)"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 40
+        },
+        {
+          "targetNpcIds": [
+            799029
+          ],
+          "questStatuses": [
+            "REWARD"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "env.GetTargetId() == 799029",
+            "env.GetDialogActionId() == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1352)",
+          "line": 50
+        },
+        {
+          "targetNpcIds": [
+            799029
+          ],
+          "questStatuses": [
+            "REWARD"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "env.GetTargetId() == 799029",
+            "else !(env.GetDialogActionId() == DialogAction.QUEST_SELECT)"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 54
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 58
+        }
+      ],
+      "specialOperations": []
+    },
+    {
       "questId": 30011,
       "zone": "Lower Udas Temple",
       "race": "ELYOS",
@@ -224259,6 +226394,156 @@
           "resultMethod": null,
           "result": "false",
           "line": 64
+        }
+      ],
+      "specialOperations": []
+    },
+    {
+      "questId": 30103,
+      "zone": "Udas Temple",
+      "race": "ASMODIANS",
+      "source": "src/Aion.GameServer/Handlers/Quest/udas_temple/_30103LairOfTheDragonbound.cs",
+      "registrations": [
+        {
+          "methods": [
+            "AddOnQuestStart",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            799333
+          ],
+          "expression": "qe.RegisterQuestNpc(799333).AddOnQuestStart(questId)",
+          "line": 16
+        },
+        {
+          "methods": [
+            "AddOnTalkEvent",
+            "RegisterQuestNpc"
+          ],
+          "npcIds": [
+            799333
+          ],
+          "expression": "qe.RegisterQuestNpc(799333).AddOnTalkEvent(questId)",
+          "line": 17
+        },
+        {
+          "methods": [
+            "RegisterOnGetItem"
+          ],
+          "npcIds": [],
+          "expression": "qe.RegisterOnGetItem(182209189, questId)",
+          "line": 18
+        }
+      ],
+      "dialogCandidateActions": [
+        "QUEST_SELECT",
+        "SELECT_QUEST_REWARD"
+      ],
+      "decisions": [
+        {
+          "targetNpcIds": [
+            799333
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 799333",
+            "dialogActionId == DialogAction.QUEST_SELECT"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 1011)",
+          "line": 34
+        },
+        {
+          "targetNpcIds": [
+            799333
+          ],
+          "questStatuses": [],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "qs == null || qs.IsStartable()",
+            "targetId == 799333",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)"
+          ],
+          "resultMethod": "SendQuestStartDialog",
+          "result": "SendQuestStartDialog(env)",
+          "line": 38
+        },
+        {
+          "targetNpcIds": [
+            799333
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == 799333",
+            "dialogActionId == DialogAction.QUEST_SELECT",
+            "var == 1"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 2375)",
+          "line": 51
+        },
+        {
+          "targetNpcIds": [
+            799333
+          ],
+          "questStatuses": [
+            "START"
+          ],
+          "dialogActions": [
+            "SELECT_QUEST_REWARD",
+            "QUEST_SELECT"
+          ],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "qs.GetStatus() == QuestStatus.START",
+            "targetId == 799333",
+            "else !(dialogActionId == DialogAction.QUEST_SELECT)",
+            "dialogActionId == DialogAction.SELECT_QUEST_REWARD"
+          ],
+          "resultMethod": "SendQuestDialog",
+          "result": "SendQuestDialog(env, 5)",
+          "line": 57
+        },
+        {
+          "targetNpcIds": [
+            799333
+          ],
+          "questStatuses": [
+            "REWARD",
+            "START"
+          ],
+          "dialogActions": [],
+          "conditions": [
+            "else !(qs == null || qs.IsStartable())",
+            "else !(qs.GetStatus() == QuestStatus.START)",
+            "qs.GetStatus() == QuestStatus.REWARD",
+            "targetId == 799333"
+          ],
+          "resultMethod": "SendQuestEndDialog",
+          "result": "SendQuestEndDialog(env)",
+          "line": 66
+        },
+        {
+          "targetNpcIds": [],
+          "questStatuses": [],
+          "dialogActions": [],
+          "conditions": [],
+          "resultMethod": null,
+          "result": "false",
+          "line": 69
         }
       ],
       "specialOperations": []

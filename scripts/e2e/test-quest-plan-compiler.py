@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
@@ -30,6 +31,12 @@ coverage_spec = importlib.util.spec_from_file_location("report_quest_coverage", 
 assert coverage_spec is not None and coverage_spec.loader is not None
 coverage = importlib.util.module_from_spec(coverage_spec)
 coverage_spec.loader.exec_module(coverage)
+
+compiler_spec = importlib.util.spec_from_file_location("compile_quest_plans", COMPILER)
+assert compiler_spec is not None and compiler_spec.loader is not None
+compiler = importlib.util.module_from_spec(compiler_spec)
+sys.modules[compiler_spec.name] = compiler
+compiler_spec.loader.exec_module(compiler)
 
 
 class QuestPlanCompilerTests(unittest.TestCase):
@@ -99,16 +106,36 @@ class QuestPlanCompilerTests(unittest.TestCase):
     def test_classifier_keeps_unimplemented_distinct(self) -> None:
         classifier = json.loads(CLASSIFIER.read_text(encoding="utf-8"))
         self.assertEqual(
-            {"obtainable": 4321, "disabled": 3008, "unreachable": 280, "no_handler": 434},
+            {"obtainable": 4351, "disabled": 3008, "unreachable": 250, "no_handler": 434},
             classifier["counts"],
         )
         self.assertEqual(
-            {"template": 2970, "template_incomplete": 424, "custom": 927, "none": 2818, "unavailable": 904},
+            {"template": 2993, "template_incomplete": 420, "custom": 938, "none": 2818, "unavailable": 874},
             classifier["plannerCounts"],
         )
         by_id = {quest["id"]: quest for quest in classifier["quests"]}
         self.assertEqual("obtainable", by_id[1101]["availability"])
         self.assertEqual("obtainable", by_id[2101]["availability"])
+        self.assertEqual("obtainable", by_id[2217]["availability"])
+        self.assertEqual("unreachable", by_id[2285]["availability"])
+
+    def test_finished_quest_conditions_accept_one_complete_alternative(self) -> None:
+        # Modern/legacy alternatives, an AND inside one alternative, and a
+        # downstream quest whose prerequisite becomes unreachable on this pass.
+        quests = {quest_id: ET.fromstring(xml) for quest_id, xml in {
+            1: '<quest id="1"/>',
+            2: '<quest id="2"/>',  # absent handler
+            3: '<quest id="3"><start_conditions><finished quest_id="1"/></start_conditions>'
+               '<start_conditions><finished quest_id="2"/></start_conditions></quest>',
+            4: '<quest id="4"><start_conditions><finished quest_id="1"/><finished quest_id="2"/></start_conditions></quest>',
+            5: '<quest id="5"><start_conditions><finished quest_id="4"/></start_conditions></quest>',
+        }.items()}
+        handler = compiler.Handler("custom", "fixture", None, None)
+        inputs = compiler.Inputs(quests, {quest_id: handler for quest_id in quests if quest_id != 2}, {}, {}, {}, set(), set(), set())
+        by_id = {quest["id"]: quest for quest in compiler.compile_classifier(inputs)["quests"]}
+        self.assertEqual("obtainable", by_id[3]["availability"])
+        self.assertEqual("unreachable", by_id[4]["availability"])
+        self.assertEqual("unreachable", by_id[5]["availability"])
 
     def test_checked_in_client_dialog_map_covers_custom_quests(self) -> None:
         dialog_map = json.loads(CLIENT_MAP.read_text(encoding="utf-8"))
@@ -151,7 +178,7 @@ class QuestPlanCompilerTests(unittest.TestCase):
             self.assertEqual([], errors)
             self.assertTrue(report["baselineComparison"]["passed"])
             self.assertEqual(434, report["excluded"]["noHandler"]["total"])
-            self.assertEqual(280, report["excluded"]["unreachable"]["total"])
+            self.assertEqual(250, report["excluded"]["unreachable"]["total"])
             for mode in report["modes"]:
                 self.assertEqual(61, mode["totals"]["accepted"])
                 self.assertEqual(57, mode["totals"]["completed"])

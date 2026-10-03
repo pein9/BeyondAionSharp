@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "classifierCounts": {
-    "obtainable": 4321,
+    "obtainable": 4351,
     "disabled": 3008,
-    "unreachable": 280,
+    "unreachable": 250,
     "no_handler": 434
   },
   "expectedScenariosByMode": {

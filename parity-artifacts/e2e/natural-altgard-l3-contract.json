@@ -38,11 +38,12 @@
   ],
   "quests": [
     { "id": 24111, "category": "QUEST", "minimumLevel": 10, "rewardExperience": 2691, "prerequisite": null, "handler": "template", "template": "item_collecting", "startNpcId": 203606, "area": "basfelt" },
+    { "id": 2217, "category": "IMPORTANT", "minimumLevel": 12, "rewardExperience": 17678, "prerequisite": 24012, "handler": "template", "template": "report_to", "startNpcId": 203606, "area": "basfelt" },
     { "id": 2221, "category": "QUEST", "minimumLevel": 12, "rewardExperience": 8910, "prerequisite": null, "handler": "altgard/_2221ManirsUncle.cs", "template": null, "startNpcId": 203607, "area": "safe-camp" },
     { "id": 2290, "category": "QUEST", "minimumLevel": 12, "rewardExperience": 21300, "prerequisite": 2221, "handler": "altgard/_2290GrokensEscape.cs", "template": null, "startNpcId": 203608, "area": "escort-line" },
     { "id": 2222, "category": "QUEST", "minimumLevel": 12, "rewardExperience": 13080, "prerequisite": 2290, "handler": "altgard/_2222ManirsMessage.cs", "template": null, "startNpcId": 203607, "area": "basfelt" }
   ],
-  "order": [24111, 2221, 2290, 2222],
+  "order": [24111, 2217, 2221, 2290, 2222],
   "steps": [
     { "key": "q2221-offer-manir", "questId": 2221, "status": "OFFER", "npcId": 203607, "position": [1459.56, 1192.68, 259], "talkRange": 6,
       "actions": ["QUEST_SELECT", "QUEST_ACCEPT_1"], "pages": [1011], "area": "manirs-campsite" },
@@ -81,7 +82,7 @@
   "excluded": [],
   "endpoint": {
     "mapId": 220030000,
-    "completedQuestIds": [24111, 2221, 2290, 2222],
+    "completedQuestIds": [24111, 2217, 2221, 2290, 2222],
     "inHub": false,
     "alive": true,
     "minimumLevel": 15,

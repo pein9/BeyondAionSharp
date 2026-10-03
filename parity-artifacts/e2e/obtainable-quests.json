@@ -2,17 +2,17 @@
   "schemaVersion": 1,
   "generatedBy": "scripts/e2e/compile-quest-plans.py",
   "counts": {
-    "obtainable": 4321,
+    "obtainable": 4351,
     "disabled": 3008,
-    "unreachable": 280,
+    "unreachable": 250,
     "no_handler": 434
   },
   "plannerCounts": {
-    "template": 2970,
-    "template_incomplete": 424,
-    "custom": 927,
+    "template": 2993,
+    "template_incomplete": 420,
+    "custom": 938,
     "none": 2818,
-    "unavailable": 904
+    "unavailable": 874
   },
   "quests": [
     {
@@ -3186,16 +3186,9 @@
       "race": "ELYOS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            1036
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -3204,16 +3197,9 @@
       "race": "ELYOS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            1365
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -4373,16 +4359,9 @@
       "race": "ELYOS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            1036
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -4981,16 +4960,9 @@
       "race": "ELYOS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            1062
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -4999,16 +4971,9 @@
       "race": "ELYOS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            1062
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -9981,16 +9946,9 @@
       "race": "ELYOS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            19056
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -11851,16 +11809,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "report_to",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2013
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -13610,16 +13561,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2035
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -14300,16 +14244,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "report_to",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2039
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -14318,16 +14255,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2433
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -14916,7 +14846,8 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            2038
+            2038,
+            24122
           ]
         }
       ],
@@ -16103,16 +16034,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2055
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -16121,16 +16045,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2055
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -16139,16 +16056,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2055
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -16157,16 +16067,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2055
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -16899,19 +16802,19 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "obtainable",
-      "reasons": [],
-      "planSupport": "template_incomplete",
-      "planIssues": [
+      "availability": "unreachable",
+      "reasons": [
         {
-          "code": "unresolved-item-source",
-          "itemIds": [
-            186000034,
-            186000035,
-            186000036
+          "code": "unobtainable-prerequisites",
+          "questIds": [
+            2677,
+            2678,
+            2679
           ]
         }
-      ]
+      ],
+      "planSupport": "unavailable",
+      "planIssues": []
     },
     {
       "id": 2658,
@@ -17151,18 +17054,17 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "obtainable",
-      "reasons": [],
-      "planSupport": "template_incomplete",
-      "planIssues": [
+      "availability": "unreachable",
+      "reasons": [
         {
-          "code": "unresolved-item-source",
-          "itemIds": [
-            186000035,
-            186000036
+          "code": "unobtainable-prerequisites",
+          "questIds": [
+            2675
           ]
         }
-      ]
+      ],
+      "planSupport": "unavailable",
+      "planIssues": []
     },
     {
       "id": 2678,
@@ -17170,19 +17072,17 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "obtainable",
-      "reasons": [],
-      "planSupport": "template_incomplete",
-      "planIssues": [
+      "availability": "unreachable",
+      "reasons": [
         {
-          "code": "unresolved-item-source",
-          "itemIds": [
-            186000034,
-            186000035,
-            186000036
+          "code": "unobtainable-prerequisites",
+          "questIds": [
+            2675
           ]
         }
-      ]
+      ],
+      "planSupport": "unavailable",
+      "planIssues": []
     },
     {
       "id": 2679,
@@ -17190,19 +17090,17 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "obtainable",
-      "reasons": [],
-      "planSupport": "template_incomplete",
-      "planIssues": [
+      "availability": "unreachable",
+      "reasons": [
         {
-          "code": "unresolved-item-source",
-          "itemIds": [
-            186000034,
-            186000035,
-            186000036
+          "code": "unobtainable-prerequisites",
+          "questIds": [
+            2675
           ]
         }
-      ]
+      ],
+      "planSupport": "unavailable",
+      "planIssues": []
     },
     {
       "id": 2680,
@@ -17415,16 +17313,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "report_to",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2053
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -17433,16 +17324,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2697
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -17451,16 +17335,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2698
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -20426,16 +20303,9 @@
       "race": "ASMODIANS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            29056
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -21742,16 +21612,9 @@
       "race": "ELYOS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            1094
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -21760,16 +21623,9 @@
       "race": "ELYOS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            3102
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -21778,16 +21634,9 @@
       "race": "ELYOS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            3103
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -25351,7 +25200,8 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            2092
+            2092,
+            24201
           ]
         }
       ],
@@ -26630,16 +26480,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2585
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -39535,7 +39378,9 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            11129
+            11129,
+            11131,
+            11287
           ]
         }
       ],
@@ -39571,7 +39416,9 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            11134
+            11134,
+            11135,
+            11287
           ]
         }
       ],
@@ -39607,7 +39454,9 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            11132
+            11132,
+            11133,
+            11287
           ]
         }
       ],
@@ -39643,7 +39492,10 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            11129
+            11129,
+            11132,
+            11133,
+            11287
           ]
         }
       ],
@@ -39679,7 +39531,11 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            11129
+            11129,
+            11131,
+            11136,
+            11137,
+            11287
           ]
         }
       ],
@@ -39715,7 +39571,9 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            11134
+            11134,
+            11135,
+            11287
           ]
         }
       ],
@@ -39751,7 +39609,8 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            11129
+            11129,
+            11287
           ]
         }
       ],
@@ -39787,7 +39646,9 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            11136
+            11136,
+            11137,
+            11287
           ]
         }
       ],
@@ -39823,7 +39684,11 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            11129
+            11129,
+            11131,
+            11132,
+            11133,
+            11287
           ]
         }
       ],
@@ -57128,7 +56993,8 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            18910
+            18910,
+            18917
           ]
         }
       ],
@@ -57146,7 +57012,8 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            18910
+            18910,
+            18917
           ]
         }
       ],
@@ -57164,7 +57031,8 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            18910
+            18910,
+            18917
           ]
         }
       ],
@@ -57693,16 +57561,9 @@
       "race": "ELYOS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            1099
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -57836,16 +57697,9 @@
       "race": "ELYOS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            19056
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -57854,16 +57708,9 @@
       "race": "ELYOS",
       "handlerKind": "template",
       "template": "crafting_rewards",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            19057
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -59999,7 +59846,8 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            20021
+            20021,
+            24061
           ]
         }
       ],
@@ -61712,7 +61560,9 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            21127
+            21127,
+            21128,
+            21289
           ]
         }
       ],
@@ -61748,7 +61598,9 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            21131
+            21131,
+            21132,
+            21289
           ]
         }
       ],
@@ -61784,7 +61636,9 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            21129
+            21129,
+            21130,
+            21289
           ]
         }
       ],
@@ -61820,7 +61674,10 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            21127
+            21127,
+            21129,
+            21130,
+            21289
           ]
         }
       ],
@@ -61856,7 +61713,11 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            21127
+            21127,
+            21128,
+            21133,
+            21134,
+            21289
           ]
         }
       ],
@@ -61892,7 +61753,9 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            21131
+            21131,
+            21132,
+            21289
           ]
         }
       ],
@@ -61928,7 +61791,8 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            21127
+            21127,
+            21289
           ]
         }
       ],
@@ -61964,7 +61828,9 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            21133
+            21133,
+            21134,
+            21289
           ]
         }
       ],
@@ -62000,7 +61866,11 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            21127
+            21127,
+            21128,
+            21129,
+            21130,
+            21289
           ]
         }
       ],
@@ -77979,7 +77849,8 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            28910
+            28910,
+            28917
           ]
         }
       ],
@@ -77997,7 +77868,8 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            28910
+            28910,
+            28917
           ]
         }
       ],
@@ -78015,7 +77887,8 @@
         {
           "code": "unobtainable-prerequisites",
           "questIds": [
-            28910
+            28910,
+            28917
           ]
         }
       ],
@@ -78544,16 +78417,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "report_to",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2099
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -78687,16 +78553,9 @@
       "race": "ASMODIANS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            29056
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -78705,16 +78564,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "crafting_rewards",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            29057
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -79744,16 +79596,9 @@
       "race": "ELYOS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            30042
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -79762,16 +79607,9 @@
       "race": "ELYOS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            30002
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -79795,16 +79633,9 @@
       "race": "ELYOS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            30002
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -80457,16 +80288,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            30142
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -80475,16 +80299,9 @@
       "race": "ASMODIANS",
       "handlerKind": "custom",
       "template": null,
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            30102
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "custom",
       "planIssues": []
     },
     {
@@ -80508,16 +80325,9 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "monster_hunt",
-      "availability": "unreachable",
-      "reasons": [
-        {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            30102
-          ]
-        }
-      ],
-      "planSupport": "unavailable",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {

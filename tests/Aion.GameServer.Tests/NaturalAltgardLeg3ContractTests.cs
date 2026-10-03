@@ -36,17 +36,30 @@ public sealed class NaturalAltgardLeg3ContractTests
 			int[] finished = quest.Element("start_conditions")?.Elements("finished").Select(node => (int)node.Attribute("quest_id")!).ToArray() ?? [];
 			Assert.Equal(expected.Prerequisite is { } prerequisite ? [prerequisite] : [], finished);
 			Assert.True(expected.MinimumLevel <= Leg3.Start.Level);
-			Assert.Equal(expected.Id == 24111, expected.IsTemplate);
+			Assert.Equal(expected.Id is 24111 or 2217, expected.IsTemplate);
 		}
-		Assert.Equal([24111, 2221, 2290, 2222], Leg3.Order);
+		Assert.Equal([24111, 2217, 2221, 2290, 2222], Leg3.Order);
 		// Q24111 (D32): taken from Olenja at Moslan Crossroad, the primer from the suspicious document at Manir's Dock,
 		// handed in to Nokir where Leg 3 ends, so it is held for the end like a hand-in there (area "basfelt").
-		QuestRunPlan dock = Assert.Single(NaturalAltgardContract.LoadPlans("l3")).Value;
+		IReadOnlyDictionary<int, QuestRunPlan> plans = NaturalAltgardContract.LoadPlans("l3");
+		Assert.Equal([2217, 24111], plans.Keys.Order());
+		QuestRunPlan dock = plans[24111];
 		Assert.Equal(24111, dock.Id);
 		Assert.Equal("item_collecting", dock.Template);
 		NaturalAltgardQuest primer = Leg3.Quest(24111);
 		Assert.Equal((primer.StartNpcId, primer.Area), (Assert.Single(dock.StartNpcs).Id, "basfelt"));
 		Assert.Equal(203631, Assert.Single(dock.EndNpcs).Id);
+		// Q2217 shares Olenja's pickup and finishes at Gefion in Basfelt. The
+		// modern Q24012 already in the incoming snapshot satisfies one of the
+		// two optional Java finished-quest conditions; Q2013 is retired.
+		QuestRunPlan letter = plans[2217];
+		Assert.Equal("report_to", letter.Template);
+		Assert.Equal(203606, Assert.Single(letter.StartNpcs).Id);
+		Assert.Equal(203616, Assert.Single(letter.EndNpcs).Id);
+		Assert.Equal(new[] { 24012, 2013 }, letter.FinishedQuestGroups.SelectMany(group => group));
+		Assert.Contains(Leg3.Quest(2217).Prerequisite!.Value, Leg3.Start.CompletedQuestIds);
+		Assert.DoesNotContain(2013, Leg3.Start.CompletedQuestIds);
+		Assert.Equal("basfelt", Leg3.Quest(2217).Area);
 
 		// The snapshot's open campaign (Q24013, Idun's Lake) and the locked ones stay outside Leg 3.
 		Assert.All(Leg3.Start.StartedQuestIds!.Concat(Leg3.Start.LockedQuestIds), id =>

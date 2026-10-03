@@ -15,7 +15,10 @@ public sealed class NaturalAltgardLeg4ContractTests
 		NaturalAltgardContract leg3 = NaturalAltgardContract.LoadLeg("l3");
 		Assert.Equal(leg3.JavaReference, Leg4.JavaReference);
 		Assert.Equal((Leg4.Start.Contract, Leg4.Start.Snapshot), ("natural-altgard-l3-contract.json", leg3.Endpoint.Snapshot));
-		Assert.Equal(leg3.Start.CompletedQuestIds.Concat(leg3.Endpoint.CompletedQuestIds).Order(), Leg4.Start.CompletedQuestIds.Order());
+		// Q2217 was added by the isolated Leg 3 correction on 2026-10-03.
+		// Leg 4 still supports its immutable historical altgard-l3 input,
+		// captured before that correction; newer input preserves Q2217 too.
+		Assert.Equal(leg3.Start.CompletedQuestIds.Concat(leg3.Endpoint.CompletedQuestIds).Except([2217]).Order(), Leg4.Start.CompletedQuestIds.Order());
 		Assert.Equal((leg3.Start.MapId, leg3.Start.Race, leg3.Start.Class, leg3.Start.BindNpcId),
 			(Leg4.Start.MapId, Leg4.Start.Race, Leg4.Start.Class, Leg4.Start.BindNpcId));
 		Assert.True(Leg4.Start.Level >= leg3.Endpoint.MinimumLevel);

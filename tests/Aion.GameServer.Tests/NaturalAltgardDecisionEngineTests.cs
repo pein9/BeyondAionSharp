@@ -215,6 +215,8 @@ public sealed class NaturalAltgardDecisionEngineTests
 		// Q24111 (D32): accepted and worked first (the primer at Manir's Dock), handed in to Nokir at the end.
 		Assert.Equal(("template-accept", 24111), (Decide().Action, Decide().QuestId));
 		Set(24111, 3);
+		Assert.Equal(("template-accept", 2217), (Decide().Action, Decide().QuestId));
+		Set(2217, 3);
 		Assert.Equal(("template-work", 24111), (Decide().Action, Decide().QuestId));
 		items[objectives[24111].ItemId!.Value] = objectives[24111].ItemCount;
 		Assert.Equal(("talk", "q2221-offer-manir"), (Decide().Action, Decide().StepKey));
@@ -246,6 +248,8 @@ public sealed class NaturalAltgardDecisionEngineTests
 		Complete(2222);
 		Assert.Equal(("template-claim", 24111), (Decide().Action, Decide().QuestId));
 		Complete(24111);
+		Assert.Equal(("template-claim", 2217), (Decide().Action, Decide().QuestId));
+		Complete(2217);
 
 		// AC-Q1: the leg ends beside Nokir at Basfelt; the campaign Q24013 stays open for a later leg.
 		Assert.Equal("return-to-endpoint", Decide().Action);

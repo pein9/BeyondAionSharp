@@ -640,15 +640,16 @@ def compile_classifier(inputs: Inputs) -> dict[str, Any]:
         for quest_id in sorted(inputs.quests):
             if status[quest_id] != "obtainable":
                 continue
-            for group in prerequisite_groups[quest_id]:
-                unavailable = [required for required in group if status.get(required) != "obtainable"]
-                if group and len(unavailable) == len(group):
-                    status[quest_id] = "unreachable"
-                    reasons[quest_id].append(
-                        {"code": "unobtainable-prerequisites", "questIds": sorted(group)}
-                    )
-                    changed = True
-                    break
+            # Java QuestTemplate.getRequiredConditionCount requires one optional
+            # finished-quest condition. XMLStartCondition.checkFinishedQuests
+            # requires every quest within that condition: OR between groups,
+            # AND within a group (Q2217 accepts modern Q24012 or legacy Q2013).
+            groups = prerequisite_groups[quest_id]
+            if groups and not any(all(status.get(required) == "obtainable" for required in group) for group in groups):
+                unavailable = sorted({required for group in groups for required in group if status.get(required) != "obtainable"})
+                status[quest_id] = "unreachable"
+                reasons[quest_id].append({"code": "unobtainable-prerequisites", "questIds": unavailable})
+                changed = True
 
     entries = []
     planner_counts: Counter[str] = Counter()
