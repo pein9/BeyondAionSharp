@@ -1,13 +1,14 @@
 # Altgard coin gear preparation before Leg 12
 
-**Status (2026-10-03): planned; CG-00..CG-06 are not implemented.** The operator requested Q2293,
+**Status (2026-10-03): CG-00 audited; CG-01..CG-06 remain.** The operator requested Q2293,
 binding at Heart of Impetusium, the best available coin chain gear and weapon, then Haramel as Leg 12.
 The operator amended the weapon scope on 2026-10-03: **keep the equipped level-21 staff; do not switch
 it or buy a coin weapon**. A shield cannot be worn with that two-handed staff and is excluded too.
 After auditing the worn armour, this plan recommends one natural Q2293 completion for coverage and
 three chain purchases: gloves, shoulders and legs, **4 coins**. Keep the equivalent chest/boots,
 helmet/accessories and the old cloth gloves as an alternative. **Zero funding repeats are needed**.
-Starting this plan through the revised combined goal accepts that recommended armour scope and single completion.
+The operator explicitly confirmed the revised three-piece, four-coin scope on 2026-10-03 while the
+combined goal was active. This supersedes the pasted goal's older five-piece/mace/shield clause.
 
 Continue with [Leg 12: Haramel](natural-altgard-haramel.md) only after CG-06. This preparation has the
 separate selector `cg`; Haramel keeps `l12`. Both selectors and their snapshot support still need
@@ -167,11 +168,22 @@ Before building, inspect any running SIM and its result; never contend for DLLs.
 pre-commit checks (warning, null logger, clock, quest drafts, fidelity, plan compiler, retail inventory),
 plus `run-fast.ps1` before gameplay-change commits. Retain failures; do not rerun a passing check without cause.
 
-- [ ] **CG-00 — Freeze the incoming audit and shopping manifest.** Depends: ND-08. Hash/metadata,
+- [x] **CG-00 — Freeze the incoming audit and shopping manifest.** Depends: ND-08. Hash/metadata,
   observed inventory/journals, Java reward/repeat/trade/equip rules, all active regional catalogues,
   exact three purchase IDs/costs, worn armour comparison, protected/equipped items, one-completion
   limit and endpoint assertions. Save machine
   readable audit evidence; any conflict with the above becomes a named operator question.
+  - 2026-10-03 evidence: `run/cg00-audit/audit.json` and `audit.py` independently verify the dump hash,
+    actual SQL/packet inventory, 144 completed journals, absent Q2293, 18 fixed Iron Coin rewards,
+    seven regional catalogues, matching Java/C# item and quest data and the approved three-item
+    manifest costing 4. Country code 99 selects `goodslists.xml`; Java reward purchase action 15,
+    pre-debit funds validation, equip action 0/64-bit slots and unlimited-repeat sentinel were read.
+    All 13 worn SQL rows (including accessories and power shards) have no enchant/fusion/random
+    bonuses or installed stones. Freeze staff object 137763/mask 3, torso/boots/helmet/accessories,
+    old cloth gloves and sealed 188053787. Endpoint: Q2293 CompleteCount 1, 145 distinct journals,
+    19 Iron/0 Bronze Coins, three new chain slots, alive and bound at 700067 through actual relog.
+    All seven pre-commit checks pass; no gameplay or Fast required for this audit-only item.
+    Base commit `86eb2e021`; snapshot capture `e23d5a511` remains unchanged.
 - [ ] **CG-01 — Contract, decisions and owned probe support.** Depends: CG-00. Add `cg` to the leg
   registry, environment selector and snapshot script; compile Q2293's plan. Add the explicit shopping
   manifest and repeat completion/receipt state to shared SIM/LIVE decisions and persistence. Provision
@@ -220,6 +232,10 @@ not permission to invent higher equipment. Record any new shared defect or unsup
 
 ## Progress log
 
+- 2026-10-03 CG-00: froze the incoming SQL/packet audit, exact three-piece purchase manifest and
+  endpoint receipts under `run/cg00-audit/`. The operator explicitly chose four coins and retaining
+  the staff, superseding the older goal clause. Java trade/equipment and configured region audited;
+  seven pre-commit checks pass. Next: CG-01 shared contract, decisions, persistence and free probes.
 - 2026-10-03: plan audited on `76c699cdc` against Java `ce54b7931` and the verified `altgard-l11`
   inventory. Eighteen prior fixed coin rewards reconcile to 18 Iron Coins; seven-item manifest costs
   12, zero funding repeats, recommended one natural completion leaves 11. Implementation remains unchecked.
