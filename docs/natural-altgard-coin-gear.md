@@ -1,6 +1,6 @@
 # Altgard coin gear preparation before Leg 12
 
-**Status (2026-10-03): CG-00..CG-04 complete; CG-05..CG-06 remain.** The operator requested Q2293,
+**Status (2026-10-03): CG-00..CG-05 complete; CG-06 remains.** The operator requested Q2293,
 binding at Heart of Impetusium, the best available coin chain gear and weapon, then Haramel as Leg 12.
 The operator amended the weapon scope on 2026-10-03: **keep the equipped level-21 staff; do not switch
 it or buy a coin weapon**. A shield cannot be worn with that two-handed staff and is excluded too.
@@ -12,7 +12,7 @@ combined goal was active. This supersedes the pasted goal's older five-piece/mac
 
 Continue with [Leg 12: Haramel](natural-altgard-haramel.md) only after CG-06. This preparation has the
 separate selector `cg`, with its natural runner and owned SIM smoke verified in CG-04. Its committed
-snapshot is next in CG-05. Haramel keeps `l12`, to be implemented in HM-01.
+snapshot and actual restore/relog are verified in CG-05. Haramel keeps `l12`, to be implemented in HM-01.
 
 ## Authority and incoming state
 
@@ -266,7 +266,7 @@ plus `run-fast.ps1` before gameplay-change commits. Retain failures; do not reru
     normally. Fourteen cast tests, seven prechecks and Fast 11/11 pass (`run/cg04-fast`: 78 passed,
     four explicit skips). Original failure/trace and correction logs remain; both owned smoke schemas
     are dropped in finally. Base `16d276d51`; no server/content correction or natural setup.
-- [ ] **CG-05 — Committed-code snapshot.** Depends: CG-04. Commit any capture-support changes
+- [x] **CG-05 — Committed-code snapshot.** Depends: CG-04. Commit any capture-support changes
   before capture; capture `altgard-coingear` from `altgard-l11` through `cg`, hash-verify and prove
   restore/relog with the same receipts/equipment/bind/balances. Record the actual capture SHA and
   drop owned schemas. Never capture from an uncommitted gameplay tree or edit a dump.
@@ -283,6 +283,20 @@ plus `run-fast.ps1` before gameplay-change commits. Retain failures; do not reru
     remain in `run/snapshots/_capture/cg05-capture/`; no snapshot was created and the owned schema
     was dropped in finally. All seven fresh prechecks and `cg05-fast-a2` pass (78 tests,
     four explicit skips, 11/11 scenarios); commit the correction before the capture retry.
+  - 2026-10-03 complete: `cg05-capture-a2`, seed 1, captures `run/snapshots/altgard-coingear/`
+    from committed `3afda849b006d02d0014b182e9a22e1b50cc7d5b`, UTC
+    `2026-10-03T15:37:22.7117265Z`, total elapsed 67,800,001 ms. Dump SHA256
+    `38e263f3fb9e95d5f500cce13ef7117e36401bc177098deba7991661085e953f` is independently verified.
+    `cg05-restore-relog` restores through the snapshot script, audits owned SQL and performs a real
+    endpoint relog: 145 journals, Q2293 count 1, 19 Iron/0 Bronze, Kinah 534,815, all five chain
+    body pieces, retained cloth gloves/bundle and original staff 137763/mask 3 persist. Full item
+    blobs and SQL also verify every equipped accessory, including belt 134334/slot 65536: Java's
+    separate short slot field masks it to zero. The initial audit drafts missed that mask and
+    expected bought objects at the pre-purchase login; corrected audit evidence is retained.
+    Capture takes 1,127,000 game ms with zero deaths; restore takes 10,001 ms with zero deaths.
+    `run/cg05-support/audit.json` proves exactly three approved buys/equips at capture and none
+    on restore. Capture/restore schemas are dropped in finally; the read-only schema check is empty.
+    Seven fresh proof prechecks pass; support gameplay already passes `cg05-fast-a2`.
 - [ ] **CG-06 — Preparation checkpoint.** Depends: CG-05. Reconcile evidence, chosen tier, journal,
   coins, actual equipped slots, unchanged staff, retained cloth gloves, protected stigma bundle and outcomes.
   Mark only demonstrated objectives complete; commit the handoff to HM-00. The combined goal
@@ -306,6 +320,11 @@ not permission to invent higher equipment. Record any new shared defect or unsup
 
 ## Progress log
 
+- 2026-10-03 CG-05 complete: committed `3afda849b` capture/hash, owned SQL and actual restore/relog
+  pass with 145 journals, 19 Iron, unchanged staff, chain body/retained accessories and sealed bundle.
+  Three exact buys/equips at capture, zero on restore, no deaths and no surviving owned schemas.
+  Corrected Java short-slot audit drafts and the earlier empty-option capture failure remain retained;
+  seven proof prechecks pass. Next: CG-06 handoff, then continue directly with HM-00.
 - 2026-10-03 CG-05 correction: the first committed capture exposed the empty optional environment
   path at login, before any hunt or transaction. The guard now ignores an empty option; seven fresh
   prechecks and Fast pass. Original evidence and cleanup retained; committed capture retry is next.
