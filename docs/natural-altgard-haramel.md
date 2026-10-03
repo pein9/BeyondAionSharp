@@ -1,6 +1,6 @@
 # Leg 12: Haramel after the coin gear preparation
 
-**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-06 complete; HM-07 is next.** Follow
+**Status (2026-10-03): CG-00..CG-06 and HM-00..HM-07 complete; HM-08 is next.** Follow
 [coin gear preparation CG-00..CG-06](natural-altgard-coin-gear.md) first, then do the Haramel lead-in,
 every active Asmodian Haramel quest once, and the clears needed to finish them. Haramel remains
 **Leg 12**; the preparation is a separate `cg` section. Recommended scope is **two fresh solo clears**,
@@ -366,7 +366,7 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
     endpoint assertion drafts. Every owned smoke schema is dropped; incoming CG and preserved
     Leg 1 dump hashes are unchanged. No server code/content or snapshot was changed. HM-07
     captures the endpoint only after committing the runner and capture support.
-- [ ] **HM-07 — Committed-code Leg 12 snapshot.** Depends: HM-06. Commit capture-support changes
+- [x] **HM-07 — Committed-code Leg 12 snapshot.** Depends: HM-06. Commit capture-support changes
   before capture, then capture `altgard-haramel-l12` from `altgard-coingear` through `l12`. Update the
   shared endpoint contract/runner selectors to the resolved distinct name before capture. Record its actual
   capture SHA, metadata/hash, coin/quest/equipment/skill/bind ledger and completed count, restore and
@@ -379,6 +379,21 @@ objective, unsafe route or exhausted recovery still prevents claiming the endpoi
     pass, as do 22 Haramel cases, seven prechecks and `hm07-fast` (82 passed/five switch skips/
     eleven scenarios). The fixture log-cleanup draft and overlapping-build DLL/warning failures
     remain retained; sequential reruns pass (`run/hm07-support`). Commit this support before capture.
+  - *Done 2026-10-03.* `hm07-capture` produces **`altgard-haramel-l12`** from committed
+    `aea03588164bbf38f00b7b8a208d5e7623c7ca45`, UTC `2026-10-03T23:05:54.2740790Z`, elapsed
+    **73,584,031 ms**. Dump SHA256
+    `804c2a34b6c1b679fabf2539609602f261e74a62c7f2e8cc36719ff0c24dc075`; original receipt SHA256
+    `72cd99980a4523666b2dce595350c847097878155e14fe9352e78eea438c74a1`.
+  - Owned SQL and `hm07-restore-a1` actual endpoint quit/login pass: character 133297, Cleric 25,
+    XP 7,647,849, alive at fortress bind (1660.4301,1813.4900,253.7260), 156 journals, all eleven
+    Haramel first completions, Q2293 once, **19 Iron/7 Bronze/662,739 Kinah**. Staff object 137763
+    stays in full slot 3; the three coin pieces and incoming armour/accessories remain equipped,
+    including belt slot 65536. Old cloth gloves and sealed bundle remain owned. Every saved skill
+    is checked against the shipped stigma entries: none are present; regular skills persist.
+  - The original visit/payment/revive/stall receipts survive restore without another entry or
+    purchase. Both natural capture and restore finish with zero deaths. Seven fresh proof prechecks
+    and the audit pass (`run/hm07-support/audit.json`); owned schemas are dropped, dump/receipt
+    hashes remain intact and both incoming CG and historical Leg 1 snapshots are unchanged.
 - [ ] **HM-08 — Final checklist and handoff.** Depends: HM-07. Run the full CLAUDE checklist once
   on the committed implementation (including Fast and the now-eight baked maps), reconcile both new
   snapshots, retained equipped staff/no weapon purchase and all outcomes, tick only proven
@@ -434,6 +449,11 @@ be corrected under existing authority, record it here and continue the remaining
 
 ## Progress log
 
+- 2026-10-03 HM-07 complete: `altgard-haramel-l12` captured from committed `aea035881`, hash/SQL/
+  actual endpoint relog verified, original receipts retained and owned schemas dropped. Cleric 25,
+  156 journals, zero deaths, 19 Iron/7 Bronze/662,739 Kinah, equipped original staff/coin chain and
+  sealed bundle, no stigma skills. Seven proof prechecks pass; prior snapshots unchanged
+  (`run/hm07-support/audit.json`). HM-08 runs the full checklist and stops at the handoff.
 - 2026-10-03 HM-07 support: distinct endpoint naming and immutable original Haramel receipt
   capture/restore pass the snapshot contract, 22 scoped cases, seven sequential prechecks and
   Fast (82 passed/five switch skips/all eleven scenarios). Failed fixture/build drafts retained.

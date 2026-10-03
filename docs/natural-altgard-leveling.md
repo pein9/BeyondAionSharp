@@ -4314,6 +4314,11 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-03 HM-07: distinct `altgard-haramel-l12` captured from committed `aea035881`; dump and
+  original receipt hashes, owned SQL and actual restore/relog pass. Cleric 25 alive at fortress,
+  156 journals, 19 Iron/7 Bronze/662,739 Kinah, unchanged staff/coin armour and no stigma skills.
+  Seven proof checks pass, owned schemas dropped and CG/historical Leg 1 snapshots unchanged
+  (`run/hm07-support/audit.json`). HM-08 is the final checklist and handoff.
 - 2026-10-03 HM-06: natural two-fresh-clear Haramel smoke and fortress endpoint relog pass;
   level 25, 156 journals, zero deaths, 19 Iron/7 Bronze, retained staff/armour/sealed bundle.
   Six unreachable cage approaches and failed drafts a1..a21 remain recorded. Sixty-nine scoped
