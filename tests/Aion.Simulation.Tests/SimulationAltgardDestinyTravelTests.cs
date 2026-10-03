@@ -50,25 +50,7 @@ public sealed partial class SimulationFastScenarioTests
 		// Controlled state prepares only the transport trigger. ND-03 proves movie/stone/equip progression.
 		await probe.SetupVarAsync(97);
 		await probe.TalkAsync("spawn");
-		var enemy = probe.Server.GetWorldMapInstance().GetNpcs(204263).Single(n => !n.IsDead());
-		enemy.GetLifeStats().SetCurrentHp(1);
-		await session.SynchronizeAsync(token);
-		ushort skill = new ushort[] { 4015, 4014, 4013, 4012 }.First(id => session.Api.World.Skills.ContainsKey(id));
-		SpellCastData cast = probe.Runtime.CreateSpellCast(session.Api.World, session.CurrentPosition, skill,
-			checked((byte)session.Api.World.Skills[skill].Level), enemy.GetObjectId());
-		await session.SendPacketAsync(session.Api.Target(enemy.GetObjectId()), token);
-		session.Api.World.BeginWorldReload(); // The damage/kill event teleports immediately; invalidate before the cast.
-		await session.SendPacketAsync(session.Api.Cast(cast), token);
-		var started = await BotCastProtocol.WaitForStartAsync((predicate, waitToken) => session.WaitForPacketAsync(
-			p => predicate(p) || BotCastProtocol.IsStartRejection(p), waitToken), session.CharacterId, skill, token);
-		Assert.Equal(typeof(SM_CASTSPELL), started.PacketType);
-		await session.AdvanceAsync(TimeSpan.FromMilliseconds(started.Get<ushort>("castDuration") + 1), token);
-		var result = await BotCastProtocol.WaitForCompletionAsync(session.WaitForPacketAsync, session.CharacterId, skill, token);
-		await session.AdvanceAsync(BotCastProtocol.RecoveryDelay(result), token);
-		await probe.AcceptTeleportAsync(220010000, true);
-		Assert.True(enemy.IsDead());
-		Assert.Equal(9, probe.Var);
-		Assert.False(session.Api.World.Objects.ContainsKey(enemy.GetObjectId()));
+		await probe.KillControlledAsync();
 		Console.WriteLine($"ND-02 kill teleport: map {probe.Server.GetWorldId()}, var {probe.Var}, old enemy absent");
 		await probe.TalkAsync("skuld-return");
 		await probe.TalkAsync("munin-return");
@@ -99,7 +81,7 @@ public sealed partial class SimulationFastScenarioTests
 		public NaturalJourneyRuntime Runtime => new(RealStaticData.RepoRoot(), "SIM-destiny-probe", fixture.Seed, fixture.DataManager.StaticData,
 			() => fixture.Clock.NowMillis, fixture.Epoch, Geometry, _ => Task.FromResult(false), () => { }, () => Array.Empty<object>(), null!, new());
 
-		public async Task InitializeAsync()
+		public async Task InitializeAsync(long kinah = 10000)
 		{
 			session.BeginStep("s00", "controlled-level-24-cleric-setup");
 			await session.LoginAndAuthenticateAsync(token);
@@ -109,11 +91,22 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.True(ClassChangeService.SetClass(Server, PlayerClass.CLERIC, validate: false, updateDaevaStatus: true));
 			Server.GetCommonData().SetLevel(24);
 			SkillLearnService.LearnNewSkills(Server, 1, 24);
-			Server.GetInventory().IncreaseKinah(10000);
-			foreach (int id in Leg.Start.CompletedQuestIds.Where(id => Server.GetQuestStateList().GetQuestState(id) == null))
-				Assert.True(Server.GetQuestStateList().AddQuest(id, new QuestState(id, QuestStatus.COMPLETE)));
+			Server.GetInventory().IncreaseKinah(kinah);
+			foreach (int id in Leg.Start.CompletedQuestIds)
+			{
+				QuestState? incoming = Server.GetQuestStateList().GetQuestState(id);
+				if (incoming == null)
+					Assert.True(Server.GetQuestStateList().AddQuest(id, new QuestState(id, QuestStatus.COMPLETE)));
+				else
+				{
+					incoming.SetStatus(QuestStatus.COMPLETE);
+					incoming.SetQuestVar(0);
+				}
+			}
 			if (Server.GetQuestStateList().GetQuestState(2900) == null)
 				Assert.True(Server.GetQuestStateList().AddQuest(2900, new QuestState(2900, QuestStatus.START)));
+			PacketSendUtility.SendPacket(Server, new SM_QUEST_COMPLETED_LIST(0,
+				Leg.Start.CompletedQuestIds.Select(id => Server.GetQuestStateList().GetQuestState(id)).ToList()));
 			await SetupVarAsync(0);
 		}
 
@@ -200,25 +193,31 @@ public sealed partial class SimulationFastScenarioTests
 		{
 			NaturalAltgardStep step = Leg.Steps.Single(s => s.Key == "q2900-" + key);
 			int npc = await WalkNpcAsync(step.NpcId);
-			Assert.Equal(step.Var, Var);
-			await NaturalDialogProtocol.OpenAsync(session, npc, token);
-			await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, p => p.Get<int>("targetObjectId") == npc);
-			for (int i = 0; i < step.Actions.Length; i++)
-			{
-				bool teleports = i == step.Actions.Length - 1 && step.Teleport != null;
-				bool otherMap = teleports && step.Teleport!.MapId != Server.GetWorldId();
-				if (teleports) session.Api.World.BeginWorldReload();
-				await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npc,
-					checked((ushort)NaturalAscensionContract.DialogActionId(step.Actions[i])), questId: 2900), token);
-				if (i < step.Pages.Length) await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token,
-					p => p.Get<int>("targetObjectId") == npc && p.Get<ushort>("dialogPageId") == step.Pages[i]);
-				if (step.MovieId != null && i == step.Actions.Length - 1) await NaturalMovieGate.FinishAsync(session, token);
-				if (teleports) await AcceptTeleportAsync(step.Teleport!.MapId, otherMap);
-			}
+			string result = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token);
+			Console.WriteLine($"ND {result}, map {Server.GetWorldId()}");
+		}
+
+		public async Task KillControlledAsync()
+		{
+			var enemy = Server.GetWorldMapInstance().GetNpcs(204263).Single(n => !n.IsDead());
+			enemy.GetLifeStats().SetCurrentHp(1);
 			await session.SynchronizeAsync(token);
-			Assert.Equal(step.NextVar, Var);
-			await session.SendPacketAsync(session.Api.CloseDialog(npc), token);
-			Console.WriteLine($"ND {step.Key}: {step.Var} -> {Var}, map {Server.GetWorldId()}");
+			ushort skill = new ushort[] { 4015, 4014, 4013, 4012 }.First(id => session.Api.World.Skills.ContainsKey(id));
+			SpellCastData cast = Runtime.CreateSpellCast(session.Api.World, session.CurrentPosition, skill,
+				checked((byte)session.Api.World.Skills[skill].Level), enemy.GetObjectId());
+			await session.SendPacketAsync(session.Api.Target(enemy.GetObjectId()), token);
+			session.Api.World.BeginWorldReload();
+			await session.SendPacketAsync(session.Api.Cast(cast), token);
+			var started = await BotCastProtocol.WaitForStartAsync((predicate, waitToken) => session.WaitForPacketAsync(
+				p => predicate(p) || BotCastProtocol.IsStartRejection(p), waitToken), session.CharacterId, skill, token);
+			Assert.Equal(typeof(SM_CASTSPELL), started.PacketType);
+			await session.AdvanceAsync(TimeSpan.FromMilliseconds(started.Get<ushort>("castDuration") + 1), token);
+			var result = await BotCastProtocol.WaitForCompletionAsync(session.WaitForPacketAsync, session.CharacterId, skill, token);
+			await session.AdvanceAsync(BotCastProtocol.RecoveryDelay(result), token);
+			await AcceptTeleportAsync(220010000, true);
+			Assert.True(enemy.IsDead());
+			Assert.Equal(9, Var);
+			Assert.False(session.Api.World.Objects.ContainsKey(enemy.GetObjectId()));
 		}
 
 		public async Task TransportAsync(int destination)

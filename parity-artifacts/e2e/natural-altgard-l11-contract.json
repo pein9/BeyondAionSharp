@@ -501,7 +501,7 @@
       "talkRange": 6,
       "actions": [
         "USE_OBJECT",
-        "SELECTED_QUEST_REWARD1"
+        "SELECTED_QUEST_NOREWARD"
       ],
       "pages": [
         5
@@ -513,12 +513,6 @@
   ],
   "unhandedWorkItemIds": {},
   "excluded": [],
-  "rewardChoice": {
-    "questId": 2900,
-    "action": "SELECTED_QUEST_REWARD1",
-    "itemId": 140000098,
-    "itemGroup": "STIGMA"
-  },
   "mapTrips": [
     {
       "mapId": 120010000,

@@ -321,8 +321,10 @@ public static class NaturalAltgardDecisionEngine
 				return Stop("lost-journal", "blocked", "An incoming completed quest is missing at the Destiny endpoint.");
 			if (state.ItemCounts.GetValueOrDefault(finished.StoneItemId) != 0 || state.SkillIds?.Contains(finished.StigmaSkillId) == true)
 				return Stop("stigma-cleanup", "blocked", "The temporary tutorial stone or skill remains after the instance exit.");
-			if (state.ItemCounts.GetValueOrDefault(finished.RewardBundleId) < 1 || state.ItemCounts.GetValueOrDefault(finished.LegacyRewardId) < 1)
-				return Stop("missing-reward", "blocked", "Retain the sealed stigma bundle and the legacy class reward at the endpoint.");
+			if (state.ItemCounts.GetValueOrDefault(finished.RewardBundleId) < 1)
+				return Stop("missing-reward", "blocked", "Retain the sealed stigma bundle at the endpoint.");
+			if (state.ItemCounts.GetValueOrDefault(finished.LegacyRewardId) != 0)
+				return Stop("unexpected-legacy-reward", "blocked", "Q2900's inactive legacy class reward must be absent at the endpoint.");
 		}
 
 		// The endpoint: every quest of the leg done, alive, where the leg ends (its own anchor, else the hub).

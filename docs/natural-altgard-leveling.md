@@ -3531,7 +3531,8 @@ Gathering, coin loops and unapproved D32 quests stay deferred.
 Escaping Destiny", approves ND-00..ND-08. Finish Q2900 last, as the maintainer decided on
 2026-10-01. This is one existing campaign across four maps. Work the loop protocol with **ND** in place of NA,
 one item and one commit on main. Keep the fortress bind throughout, then return there for the area endpoint.
-Permanent stigma selection is deferred: retain the reward bundle unopened and protect the class reward.
+Permanent stigma selection is deferred: retain the reward bundle unopened; the inactive legacy class item
+must remain absent (ND-Q1(a), approved 2026-10-03).
 This proposal adds no quests, server content, gear purchases, skill books or natural-character setup.
 
 **Start:** `altgard-l10`, character 133297, Cleric 24, EXP 6,136,722, HP/MP/FP 1,817/2,949/60,
@@ -3553,7 +3554,7 @@ coin, shard or level grind in this leg. Q2008 COMPLETE also permits Doman's ordi
 | Ishalgen: Skuld east of Anturoon | Verdandi to **Skuld 203546**, (1114.31, 1718.32, 271.179): saved graph about **782 m** | Guarded ground through the road network, actual observed hostiles and checked height/LOS. Her dialog creates the Space of Destiny instance. On returning from the fight, the quest puts the player just beside her. |
 | Space of Destiny 320070000 | Entry (270.8424, 249.1182, 125.8369); **instance Skuld 204264**, (245.815, 248.099, 125.837); spawned **Hellion 204263**, (257.5, 245, 125) | Quest teleport, not a portal use bar. Solo instance, shipped entry cooldown 0; no static Hellion or ordinary exit NPC. Generate its navmesh from shipped geometry/mask. Keep inside the platform; map death level is 42. |
 | Ishalgen, after the fight | Kill teleport (1112.492, 1718.974, 270.45917) to Skuld; then her quest teleport (383, 1896, 327.625) to Munin | Reacquire the world view even for these same-map moves; approach both NPCs afresh. The killed enemy is not a loot objective. |
-| Pandaemonium, reward visit | Munin teleports to (1294.8, 1213.8, 214.34), next to **Aud 204061**, (1294.67, 1216.62, 214.355) | Aud, not Heimdall or Skuld, completes the quest. Claim the first class reward normally, then learned Return to the fortress bind. If Return is cooling down, wait safely or walk to Doman for location 9 (500 Kinah base); prove that alternative before relying on it. |
+| Pandaemonium, reward visit | Munin teleports to (1294.8, 1213.8, 214.34), next to **Aud 204061**, (1294.67, 1216.62, 214.355) | Aud, not Heimdall or Skuld, completes the quest. Claim the fixed rewards normally, then learned Return to the fortress bind. If Return is cooling down, wait safely or walk to Doman for location 9 (500 Kinah base); prove that alternative before relying on it. |
 
 The Ishalgen figures are shortest-length estimates over the existing undirected, checked travel graph
 (`run/nd-route-audit.txt`), not a new SIM travel proof or a claim that the straight segment is walkable.
@@ -3592,7 +3593,7 @@ Use **full quest vars** for 95–99; the low six-bit var is not their value.
 | START/98 | Ordinary learned-skill fight against the observed 204263 | Kill credit gives START/9 and immediately teleports beside outdoor Skuld |
 | START/9, outdoor Skuld | QUEST_SELECT → 3739; SETPRO9 | START/10; quest teleport to Munin |
 | START/10, Munin | QUEST_SELECT → 4080; SETPRO10 | REWARD/10 and quest teleport beside Aud |
-| REWARD, Aud | Ordinary reward selection and first class reward, SELECTED_QUEST_REWARD1 | COMPLETE; class reward, bundle and fixed rewards observed; first permanent stigma slot usable |
+| REWARD, Aud | Ordinary fixed-reward claim, SELECTED_QUEST_NOREWARD | COMPLETE; bundle and fixed rewards observed, inactive legacy item absent; first permanent stigma slot usable |
 
 The level-24 Cleric temporarily qualifies for **one normal stigma slot at START/99**, despite not having
 completed Q2900. Installation in Space of Destiny has a **1,000 Kinah base fee**, price-modified by the service.
@@ -3611,8 +3612,9 @@ map change immediately after kill credit. Do not wait for loot or approach the o
 
 The shipped reward is 228,880 XP and 25,000 Kinah before configured quest rates, ten Life Potions 162000004,
 ten Mana Potions 162000009, Stigma Support Bundle 188053787 and five Tea of Repose 162001057 (Java's
-marked custom reward). The Cleric's additional class reward is 140000098. It has no `<stigma>` metadata
-in the shipped data; retain this Java/data boundary, protect the item and **do not try to install it**.
+marked custom reward). The listed Cleric legacy item 140000098 is inactive: Q2900 omits `use_class_reward`,
+whose default is 0. It is not granted and must be absent at the endpoint. It also has no `<stigma>` metadata;
+retain this Java/data boundary without enabling the list or inventing metadata (ND-Q1(a)).
 The bundle has class-filtered selectable inert stigmas; retain it sealed for a later permanent-stigma choice.
 Do not turn this quest into a stigma shopping/build-selection leg or silently repair the legacy reward.
 
@@ -3651,7 +3653,7 @@ Any blocking shared defect needs exact 4.8 evidence and a separate logged decisi
 
 **Endpoint:** Q2900 COMPLETE, all 143 incoming completed quests preserved (144 journal completions),
 all Leg 10 quests still COMPLETE, no held Q2900 work, temporary 140000001 and 11504 absent, reward bundle
-and class reward retained, permanent first normal stigma slot available, Cleric level at least 24, alive
+retained and inactive legacy item 140000098 absent, permanent first normal stigma slot available, Cleric level at least 24, alive
 on Altgard within 60 m of fortress 700065 and still bound there. Verify across relog, including learned
 skills, inventory/equipment, quest and completed journals. Pin the actual EXP/Kinah deltas, not an invented
 level or an exact fee copied from another service. Capture `altgard-l11` only from committed code.
@@ -3710,12 +3712,39 @@ level or an exact fee copied from another service. Capture `altgard-l11` only fr
     first run. Every pre-commit check and `nd02-fast` pass: 73 tests, three switch skips, all eleven scenarios;
     Fast also verifies explicit solo registration. Owned probe/Fast schemas are dropped, confirmed by the
     empty read-only schema query (`run/nd02-schema-check.log`). No server changes or new content.
-- [ ] **ND-03 — Movie, stigma and campaign protocol.** Controlled probe plays every dialog, movie 156,
+- [x] **ND-03 — Movie, stigma and campaign protocol.** Controlled probe plays every dialog, movie 156,
   SELECT7_1, STIGMA dialog and CM_EQUIP_ITEM. Observe full vars 95→96→99→97, real fee and 11504;
   summon/kill the real enemy with controlled HP, cleanup, Skuld/Munin teleports and Aud's actual reward.
   Prove complete journals and cleanup. On the probe only, use a valid inert stigma from its real reward
   bundle to demonstrate the one-slot post-quest rule; the natural endpoint keeps its bundle unopened.
   Depends: ND-02.
+  - *Done 2026-10-03.* From `ffd33ce5e`, ND-Q1(a) corrects the contract, normal Aud action and endpoint:
+    SELECTED_QUEST_NOREWARD claims the shipped fixed rewards and sealed bundle; inactive 140000098 must
+    be absent. The campaign now uses that exact contract without a probe-only reward override. Movie,
+    equip, fee, full vars, cleanup, 144 journal completions, actual rewards and the probe-only normal-slot
+    installation all pass in `nd03-approved-fast`. Eighty-one scoped contract/decision/Leg 10/identity
+    cases pass (`run/nd03-approved-contract.log`), all seven pre-commit checks pass
+    (`run/nd03-approved-checks`), and Fast passes 74 tests, three switch skips and all eleven scenarios
+    (`run/nd03-approved-fast/report.md`). The owned schemas are dropped (`run/nd03-approved-schema-check.log`).
+    Earlier failures and their corrections below remain retained. No server code/data or natural-character setup changes.
+  - *Initial draft 2026-10-03; reward blocker resolved by ND-Q1(a).* From `ffd33ce5e`, free account 218 proves movie 156's real
+    acknowledgement, full vars 95→96→99→97, actual STIGMA1 equipment/skill 11504 and the 1,412-Kinah
+    tutorial fee. A controlled-HP real kill triggers var 9 and the normal exit cleanup; temporary item,
+    equipment and skill are absent while learned healing remains. Skuld/Munin's teleports and Aud's reward
+    preserve the 143 incoming completed journal entries and add Q2900 (`nd03-campaign-a4`). Actual rewards
+    are +228,880 EXP, +25,000 Kinah, ten Life/Mana Potions each, five Tea and the sealed bundle. On this
+    probe only, the actual bundle yields Saving Grace (Inert) 140001431, equipped in the normal slot for
+    35,312 Kinah. The expected legacy class item is absent; Java and C# both disable that list. The
+    approved endpoint and contract cannot pass as written; see ND-Q1. No natural character was run.
+  - The first probe checked the var before its movie-end acknowledgement was processed; now the helper
+    observes the movie before the synchronization barrier. The second exposed the inactive class reward;
+    the third had a wrong static-data property name. All attempts remain retained (`run/nd03-campaign.log`,
+    `nd03-campaign-a2.log`, `nd03-campaign-a3.log`); the fourth claims the actual fixed reward without a
+    class selection. Controlled prerequisites now also complete existing starter quest rows, with both
+    server and client journal assertions; both Destiny probes pass again in `nd03-fast`. All seven
+    pre-commit checks pass (`run/nd03-checks`), and Fast passes 74 tests, three switch skips and all eleven
+    scenarios (`run/nd03-fast/report.md`). Owned ND-03 schemas are gone (`run/nd03-schema-check.log`).
+    This draft preceded the ND-Q1(a) approval below; its failed attempts and evidence remain retained.
 - [ ] **ND-04 — Loss and resume recovery.** Controlled probes record a five-minute miss, death before/after
   equip, outside exit, live-instance relog and cold restart. Verify resets, no leaked stone/skill, and
   recover through the ordinary Doman/flight/outdoor-Skuld route. Test safe resumes at 1–4, 9, 10 and REWARD;
@@ -3735,6 +3764,43 @@ level or an exact fee copied from another service. Capture `altgard-l11` only fr
 - [ ] **ND-08 — Full CLAUDE checklist and checkpoint.** Retain every listed command/verdict and corrections,
   tick and commit on main, then stop. Pre-commit checks on every item; Fast before gameplay-change commits.
   No push. Depends: ND-07.
+
+### Next iteration: ND-04 recovery proof
+
+After ND-03 is committed, use free probe account 219 for the loss/resume matrix. Read Java's
+die, revival, enter-world, instance lifetime and saved-position rules before preparing each case. Keep
+the fortress bind, complete the controlled prerequisites on the probe, and preserve the client view
+invalidation and real acknowledgements already proved in ND-02/ND-03.
+
+| Case | State to observe | Ordinary path back to progression |
+|---|---|---|
+| Five-minute Hellion miss | A real SETPRO8 spawn remains before its deadline and expires afterward; START/98 remains and SETPRO8 cannot spawn again | Learned Return out of combat, respecting cooldown; outside entry cleans to START/4; take the fortress recovery circuit below |
+| Death before equip and after equip | Die hook resets 95–99 to START/4; no temporary stone in inventory/equipment and no 11504; learned heals remain | Actual fortress bind revival, then the recovery circuit; record the death, never count it as a failed quest |
+| Ordinary outside exit at 95–99 | Enter-world cleanup resets to 4 exactly once; no duplicate stone or leaked skill | Return, recovery circuit, fresh outdoor-Skuld entry; the indoor var-4 dialog cannot repair the old attempt |
+| Relog with a live instance | Observe the real registered instance, retained var and item/skill consistency across quit/login; distinguish it from an instance that has already expired | Continue only from the observed map/var; if outside, use the reset/recovery rule |
+| Cold restart | Two real SIM processes against one owned probe schema; persist inside, stop the first process, then reload without the old ephemeral instance | Observe Java's saved-position fallback and quest cleanup, then recover by normal transport; no setup teleport on resume |
+| Late vars 1–4 | Recipient is Munin, Urd, Verdandi or outdoor Skuld for the observed var; completed talks stay completed | Doman to Aldelle; for Munin or Skuld take Sheofin to Anturoon and the checked ground; Urd/Verdandi use their proved ground approaches |
+| Vars 9, 10 and REWARD | Var 9 reaches outdoor Skuld; var 10 reaches Munin; REWARD reaches Aud; no early dialog replay | Doman/Aldelle flight and Skuld/prison ground as needed, then only the remaining quest teleports; reach Aud normally when already at REWARD |
+
+Two source-level traps need explicit runtime evidence in these cases. Space has no `instance_exit.xml`
+row; Java's `InstanceService.onPlayerLogin`/`TeleportService.moveToInstanceExit` therefore imply a bind
+fallback, with a missing-exit warning, after a cold restart. Also `PlayerEnterWorldService` calls
+`StigmaService.onPlayerLogin` before instance relocation: its quest-slot gate accepts START/99 or
+COMPLETE, while the actual equip changes Q2900 to 97. Its revalidation consequently implies an
+unequip/audit on a var-97 relog, even when the old instance survives. These are source findings, not
+passing probes or authority to change the server. Compare the runtime result with Java, record any
+warning/audit boundary honestly, and test ordinary outside reset/new-entry recovery rather than
+assuming the equipped temporary skill survives login. Any necessary server correction goes to a
+separate operator decision.
+
+The recovery circuit is **fortress → Ukin → Pandaemonium → Doman → Aldelle → Sheofin's 41-second
+flight → Anturoon → outdoor Skuld → new Space of Destiny**. The successful first trip is already
+proved: **Ukin → Heimdall → Munin → Anturoon flight → Aldelle/Urd → Verdandi → Skuld → Space →
+Skuld → Munin → Aud → fortress**. These use the paid services and checked ground, retaining the
+fortress bind. Cold-restart schemas belong only to the probe and are dropped in finally. Each case
+records the map, instance, full quest var, temporary item/skill, fees and outcome; setup is labelled as
+setup, and the recovery journey itself uses ordinary packets. Keep existing revive/progress/approach
+limits. ND-05 then proves the normal-HP fight; ND-06 runs the natural character only after these proofs.
 
 ### End-of-area acceptance after ND-08
 
@@ -3760,6 +3826,31 @@ Morheim and Abyss entry stay outside this completion leg. No operator decision b
 scope; a shared Java/retail defect discovered by a probe is recorded for a separate decision before correction.
 
 ## Blocked / questions for the operator
+
+**ND-Q1 — Correct the Leg 11 reward endpoint (answered 2026-10-03: Option (a)).** The maintainer chose
+Option A: amend the contract, normal reward action and endpoint to match shipped Java, retain the sealed
+bundle and fixed rewards, require the inactive legacy item absent, and keep server behavior unchanged.
+The original approved plan assumed that
+Aud gives the listed Cleric legacy item 140000098. In both Java `ce54b7931` and this checkout, Q2900
+omits `use_class_reward`; its schema/default is 0, and `QuestTemplate` enables class rewards only at
+1 or 2. `QuestService.getRewardItems` therefore does not grant that list. The ordinary fixed-reward
+claim is SELECTED_QUEST_NOREWARD, not SELECTED_QUEST_REWARD1. Probe `nd03-campaign-a4` confirms the
+bundle, all fixed rewards, completion and actual normal-stigma installation; the legacy item stays absent.
+This is a mismatch in the approved plan, with no C#/Java divergence to fix. The old item also has no
+stigma metadata. [NCSoft's 4.8 notes](https://static.ncsoft.com/aion/store/PatchNotes/AION_Patch_Notes_061715.pdf),
+printed pages 26–29, establish the new mission/slot rules and unusable older stigmas; they do not authorize
+enabling Q2900's inactive legacy reward list.
+
+- **(a), recommended:** amend the contract, normal reward action and endpoint to match shipped Java:
+  retain the sealed bundle and fixed rewards, require no temporary stone/11504, and expect the inactive
+  legacy item to be absent. Keep the server data and handler unchanged; permanent stigma selection still
+  waits for a later leg. Then complete ND-03 and continue ND-04..ND-08.
+- **(b):** keep the legacy-item endpoint requirement and stop this leg while a separate, narrowly scoped
+  retail-evidence/decision task establishes whether a server correction is wanted. D26–D33 do not approve
+  enabling this reward or inventing stigma metadata.
+
+The choice resolves the reward blocker. Finish and verify ND-03 against the amended contract, commit it,
+then continue ND-04..ND-08 in dependency order.
 
 **Leg 7, answered 2026-10-02:** AE-Q1 **(a)**, AE-Q2 **(a)** and AE-Q3 **(a)**, all as recommended:
 - Leg 7 does Stop 9 and Stop 11's fortress quests, worked from the fortress bind. The Observatory is Leg 8.
@@ -4197,3 +4288,6 @@ The original questions follow.
 - 2026-10-02 ND-00: implementation approved; Java/full-var/stigma and snapshot audit pass from eebceefa7, reward boundary and ordinary recovery pinned, numeric checkpoint assertion draft retained. Seven pre-commit checks pass; contract and decisions are next.
 - 2026-10-02 ND-01: l11 contract/full vars/four maps and phase/recovery decisions committed from 588f15ea3; explicit l11 Cleric instance identity, protected reward/cleanup endpoint and all 143 incoming completions. Eighty-one scoped cases, seven pre-commit checks and Fast pass; two assertion drafts retained. Paths and map protocol are next.
 - 2026-10-03 ND-02: generated/rebaked Space mesh and free-account-217 travel pass: 24 ground legs, both Ishalgen flights, four paid city trips, five quest teleports and learned Return, alive fortress endpoint. Compile drafts retained; seven pre-commit checks and Fast pass, owned schemas dropped. Movie/stigma/campaign protocol is next.
+- 2026-10-03 ND-03 partial: free-account-218 movie/equip/cleanup/Aud reward and real bundle installation pass; the inactive legacy class reward contradicts the approved endpoint, recorded as pending ND-Q1. Seven pre-commit checks and Fast (74 passed/three switch skips/all eleven scenarios) pass; failed drafts retained and owned schemas dropped. ND-04's four-map loss/resume plan includes cold-restart exit and stigma-login traps. Stop with ND-03 unticked/uncommitted; every later ND item depends on the pending decision.
+- 2026-10-03 ND-Q1 answered: the maintainer chose Option A. Correct the approved reward action and endpoint to shipped Java/C#, keep the bundle sealed and inactive legacy item absent, then finish ND-03 and continue the remaining items. No server correction is authorized or required for this reward boundary.
+- 2026-10-03 ND-03: the amended contract's exact reward path, movie/equip/cleanup and 144 journal completions pass; probe-only bundle installation confirms the normal slot. Eighty-one scoped tests, seven pre-commit checks and Fast (74 passed/three switch skips/all eleven scenarios) pass; failed drafts retained and owned schemas dropped. ND-04 loss/resume recovery is next.

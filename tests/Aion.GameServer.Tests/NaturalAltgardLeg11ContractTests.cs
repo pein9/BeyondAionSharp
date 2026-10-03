@@ -36,6 +36,9 @@ public sealed class NaturalAltgardLeg11ContractTests
 			n => (int?)n.Attribute("id") == 2900);
 		Assert.Equal((20, "MISSION", 228880), ((int)q.Attribute("minlevel_permitted")!, (string)q.Attribute("category")!,
 			(int)q.Element("rewards")!.Attribute("exp")!));
+		Assert.Null(q.Attribute("use_class_reward")); // Missing defaults to 0: the legacy class list is inactive.
+		Assert.Null(Leg.RewardChoice);
+		Assert.Equal(["USE_OBJECT", "SELECTED_QUEST_NOREWARD"], Leg.Steps.Single(s => s.Key == "q2900-reward").Actions);
 		XElement items = XDocument.Load(Data("items", "item_templates.xml")).Root!;
 		Assert.NotNull(Assert.Single(items.Elements(), n => (int?)n.Attribute("id") == d.StoneItemId).Element("stigma"));
 		Assert.Null(Assert.Single(items.Elements(), n => (int?)n.Attribute("id") == d.LegacyRewardId).Element("stigma"));
@@ -95,13 +98,14 @@ public sealed class NaturalAltgardLeg11ContractTests
 		NaturalAltgardObservation done = State(220030000, 5, 10) with
 		{
 			CompletedQuestIds = Leg.Start.CompletedQuestIds.Append(2900).ToHashSet(),
-			ItemCounts = new Dictionary<int, long> { [188053787] = 1, [140000098] = 1 }, SkillIds = new HashSet<int> { 1842 },
+			ItemCounts = new Dictionary<int, long> { [188053787] = 1 }, SkillIds = new HashSet<int> { 1842 },
 		};
 		Assert.Equal("leg-complete", Decide(done).Action);
 		Assert.Equal("lost-journal", Decide(done with { CompletedQuestIds = done.CompletedQuestIds.Where(id => id != 24016).ToHashSet() }).Action);
 		Assert.Equal("stigma-cleanup", Decide(done with { SkillIds = new HashSet<int> { 1842, 11504 } }).Action);
 		Assert.Equal("stigma-cleanup", Decide(done with { ItemCounts = new Dictionary<int, long> { [140000001] = 1 } }).Action);
 		Assert.Equal("missing-reward", Decide(done with { ItemCounts = new Dictionary<int, long>() }).Action);
+		Assert.Equal("unexpected-legacy-reward", Decide(done with { ItemCounts = new Dictionary<int, long> { [188053787] = 1, [140000098] = 1 } }).Action);
 		NaturalAltgardDecision back = Decide(done with { MapId = 120010000 });
 		Assert.Equal(("travel-to-map", 220030000), (back.Action, back.MapId));
 	}

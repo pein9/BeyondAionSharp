@@ -42,8 +42,14 @@ public static class NaturalAltgardQuestSteps
 			if (teleports) world.BeginWorldReload();
 			ushort action = checked((ushort)NaturalAscensionContract.DialogActionId(actions[i]));
 			await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npc, action, questId: step.QuestId), token);
-			// A movie plays on a SELECTn_n dialog action (SELECT2_1; Q2289's SELECT2_1_1, AB-06).
-			if (step.MovieId != null && System.Text.RegularExpressions.Regex.IsMatch(actions[i], @"^SELECT\d_\d"))
+			// Q2900 starts its movie on SETPRO6. Observe it before the final synchronization so the
+			// skip reflex's acknowledgement is processed before checking the movie-end quest transition.
+			if (step.MovieId is int movie && step.QuestId == 2900 && i == actions.Length - 1)
+			{
+				await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token, packet => packet.Get<int>("cutsceneId") == movie);
+				await NaturalMovieGate.FinishAsync(session, token);
+			}
+			else if (step.MovieId != null && System.Text.RegularExpressions.Regex.IsMatch(actions[i], @"^SELECT\d_\d"))
 				await NaturalMovieGate.FinishAsync(session, token);
 			if (pages + i < step.Pages.Length && !teleports)
 			{
@@ -67,6 +73,8 @@ public static class NaturalAltgardQuestSteps
 			"OFFER" => after is (3, _), // an escort offer (Q2290 SELECT1_1) takes the quest straight to its follow var
 			"REWARD" => completed,
 			_ when step.Actions.Contains("SELECT_QUEST_REWARD") => completed,
+			// ND-03: full vars can decrease (99 -> 97) or remain at 10 when Munin changes the status to REWARD.
+			_ when step.NextVar is int expected => after is (3 or 4, int current) && current == expected,
 			// A step may move the var by more than one (Q2239's check: var 1 -> 3, AB-06).
 			_ => completed || after is (3, int advanced) && advanced > step.Var || after is (4, _),
 		};
@@ -76,6 +84,39 @@ public static class NaturalAltgardQuestSteps
 			throw new InvalidDataException($"{step.Key} did not hand over item {item}.");
 		await session.SendPacketAsync(session.Api.CloseDialog(npc), token);
 		return $"{step.Key}: {Describe(before)} -> {(completed ? "complete" : Describe(after))}";
+	}
+
+	/// <summary>ND-03: Skuld's dialog opens the service; only the real equipment packet grants the skill and moves 99 to 97.</summary>
+	public static async Task<long> EquipDestinyStigmaAsync(INaturalJourneySession session, NaturalAltgardDestiny destiny, int npc,
+		CancellationToken token)
+	{
+		BotWorldModel world = session.Api.World;
+		if (State(world, destiny.QuestId) is not (3, 99) || world.MapId != destiny.MapId)
+			throw new InvalidDataException("The Destiny tutorial stigma requires START/99 in its quest instance.");
+		BotInventoryItem stone = world.Inventory.Values.Single(item => item.ItemId == destiny.StoneItemId);
+		if (stone.Count != 1 || stone.Details.EquippedSlot == destiny.StigmaSlot)
+			throw new InvalidDataException("Equip exactly one observed, unequipped tutorial stone.");
+		await NaturalDialogProtocol.OpenAsync(session, npc, token);
+		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, p => p.Get<int>("targetObjectId") == npc);
+		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npc,
+			checked((ushort)NaturalAscensionContract.DialogActionId("QUEST_SELECT")), questId: destiny.QuestId), token);
+		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, p => p.Get<ushort>("dialogPageId") == 3057);
+		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npc,
+			checked((ushort)NaturalAscensionContract.DialogActionId("SETPRO7")), questId: destiny.QuestId), token);
+		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, p => p.Get<ushort>("dialogPageId") == 1);
+		long before = world.Kinah;
+		long expectedFee = world.VendorPrices?.ServicePrice(destiny.InstallationBaseFee) ?? destiny.InstallationBaseFee;
+		await session.SendPacketAsync(GameClientPackets.EquipItem(0, destiny.StigmaSlot, stone.ObjectId), token);
+		await session.SynchronizeAsync(token);
+		if (State(world, destiny.QuestId) is not (3, 97) || !world.Skills.ContainsKey(destiny.StigmaSkillId) ||
+			world.Inventory.GetValueOrDefault(stone.ObjectId)?.Details.EquippedSlot != destiny.StigmaSlot || before - world.Kinah != expectedFee)
+			throw new InvalidDataException("The actual tutorial equip, skill, quest step or service fee was not observed.");
+		session.TraceDiagnostic("destiny-stigma-equipped", new Dictionary<string, object?>
+		{
+			["itemObjectId"] = stone.ObjectId, ["slot"] = destiny.StigmaSlot, ["skill"] = destiny.StigmaSkillId,
+			["fee"] = before - world.Kinah, ["var"] = 97,
+		});
+		return before - world.Kinah;
 	}
 
 	/// <summary>Q2208: use the Mau Secret Remedy (anywhere); three seconds later the quest moves to var 1.</summary>
@@ -155,9 +196,9 @@ public static class NaturalAltgardQuestSteps
 	public static bool HasEffect(BotWorldModel world, int skillId) =>
 		world.VisibleEffects?.Any(effect => effect.SkillId == skillId) == true;
 
-	/// <summary>The quest's status and first variable as the client sees it.</summary>
+	/// <summary>The quest's status and first variable; Q2900 uses the full value, excluding the wire flag byte.</summary>
 	public static (byte Status, int Var)? State(BotWorldModel world, int questId) =>
-		world.Quests.TryGetValue(questId, out BotQuestState? quest) ? (quest.Status, quest.StepAndFlags & 0x3F) : null;
+		world.Quests.TryGetValue(questId, out BotQuestState? quest) ? (quest.Status, quest.StepAndFlags & (questId == 2900 ? 0xFFFFFF : 0x3F)) : null;
 
 	private static void Expect(NaturalAltgardStep step, (byte Status, int Var)? state)
 	{
