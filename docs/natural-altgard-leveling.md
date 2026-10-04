@@ -3994,7 +3994,7 @@ snapshot is `altgard-coingear`; its final snapshot is `altgard-haramel-l12`, ali
 CG-00..CG-06 and HM-00..HM-08 are complete in SIM. Stop at this verified checkpoint: Cleric 25,
 156 journals, 19 Iron/7 Bronze, retained equipped staff/coin chain, sealed bundle and no stigma skills.
 Both captures and actual endpoint restore/relog are verified; historical Leg 1 `altgard-l12` is unchanged.
-The continuous full-area SIM and isolated LIVE acceptance below remain subsequent work.
+The continuous full-area SIM is verified below; isolated LIVE acceptance remains later work.
 
 ### End-of-area acceptance after HM-08
 
@@ -4016,7 +4016,7 @@ is authorized by this request.
   proofs plus a continuous stage report. Focused continuation/Altgard/Haramel tests: 150 passed.
   All seven pre-commit checks passed (`run/as01-checks`); Fast: 82 passed / five explicit switch skips,
   all eleven scenarios passed (`run/as01-continuation-fast`, base `8a531614f`).
-- [ ] **AS-02 — One complete SIM run.** Run `scripts/sim/run-natural-complete.ps1` once with seed 1,
+- [x] **AS-02 — One complete SIM run.** Run `scripts/sim/run-natural-complete.ps1` once with seed 1,
   from committed code, with dashboard 17880. Retain stage/relog reports, the full journey trace,
   every recorded outcome and any original failure. Verify the final staff/coin/stigma ledger,
   Q2217, campaigns, both Haramel clears, one character and monotonic clock; audit schema cleanup.
@@ -4081,14 +4081,40 @@ is authorized by this request.
   runs keep 45 minutes, and every in-game stall, navigation and cumulative revival limit is unchanged.
   The scoped smoke records one bind death; its normal recovery and final reward both pass.
   All seven checks pass again after the aggregate-watchdog adjustment (`run/as02-complete-timeout-checks`).
+  Final evidence (2026-10-04): `run/natural-complete/as02-full-create-s1-a6` passes from committed
+  `1d5dad7a04518c472a6d9f3095f1f9364ae7620d`, seed 1. One newly created Priest (133276) becomes a
+  Cleric and completes Ishalgen, Ascension, l1–l11, CG and l12 in the same SIM world/schema/clock;
+  all fourteen stages and thirteen Altgard endpoint relogs pass, with no snapshot restores.
+  Final fortress endpoint: level 25, alive at full HP/MP, 157 completed quests, 666,444 Kinah,
+  19 Iron Coins and 7 Bronze Coins. Q2217 completes exactly once in l3 and remains complete;
+  Q24010–Q24016, Q2900 and all eleven scoped Haramel quests complete exactly once. Q24114 stays
+  intentionally excluded; level-25 Q2945 is automatically START/0 outside this scope.
+  Q2293 completes once: 18 incoming Iron becomes 23, then the three approved better-tier chain
+  pieces cost 1 + 1 + 2 and are equipped, leaving 19. Zero extra repeats; no weapon/shield purchase.
+  The earned staff 101501357/object 155674 is acquired in l10, equipped by l11 and retained through
+  CG/Haramel. Both distinct Haramel copies prove fresh spawns, boss movie and class chest; the
+  second includes the post-boss quests. Tutorial stone/skill 11504 is removed, the sealed reward
+  bundle remains unopened, and no permanent stigma is installed.
+  Eleven cumulative deaths are recorded (Ishalgen/bridge 1, l4 3, l5 2, l10 5); ordinary recovery
+  succeeds within the original twenty-revive limit. Both escorts succeed on attempt one; Q2288
+  and Q2230 finish on their first timed attempt, Q2263 on its second, and all three ring carriers
+  are looted. `recorded-outcomes.json` retains the timed, escort and carrier decisions, including waits.
+  The run advances 70,210,001 game ms
+  (19h 30m 10.001s) in 55.8720 real minutes. `audit.json` verifies create-once/build identity,
+  ordered stages, retained journals/staff, coin/stigma ledger and both clears against the full trace;
+  `schema-cleanup.json` confirms no owned AS-02 schemas remain. The audit's draft expectation that
+  the new staff was already equipped at l10 is retained with its correction to the observed l11
+  equip timing. All earlier failed runs and their outcomes remain intact. Seven final pre-commit
+  checks pass (`run/as02-final-checks`). No LIVE run, snapshot capture or push.
 
-One complete SIM Altgard journey must then play **l1 through l11, cg and l12 in order from the original level-10
-`altgard` snapshot**, retaining one character, database, clock, journals and aggregate outcomes between
-legs. A chain of endpoint snapshots is development evidence, not that full-area acceptance. Establish
-the orchestration as its own item first; validate every hub flight, bind, timed quest, escort, city errand,
-pillar flight, coin repeat/purchases, Bregirun, Space of Destiny and both Haramel visits without administrative progress. Retain all
-failures and the first complete passing run; preserve the existing limits rather than resetting counters
-to hide an exhausted recovery. Do not run builds while its DLLs are held.
+The complete SIM journey starts at character creation and plays Ishalgen/Ascension, then **l1 through
+l11, cg and l12 in order**, retaining one character, database, clock, journals and aggregate outcomes
+between legs. The operator's fresh-character scope supersedes the original level-10 `altgard` snapshot
+start. AS-02 proves hub flights, binds, timed quests, escorts, city errands, pillar flights, coin preparation,
+Bregirun, Space of Destiny and both Haramel visits without administrative progress. Its full trace and
+first complete passing run are retained alongside the original failures; the existing gameplay limits
+remain cumulative. Historical endpoint snapshots are unchanged. Do not run builds while a journey
+holds its DLLs.
 
 Then run the area **once on an owned isolated LIVE stack**, starting with a copy of the retained
 NA-27 level-10 Altgard LIVE endpoint (`run/na27-live/na27-live-a3/altgard-live-dump.sql.gz`), not importing
@@ -4098,7 +4124,7 @@ keep the read-only monitor running and announce its URL. No operator `aion` stac
 gear purchases are limited to the approved coin manifest, and skill-book purchases remain excluded.
 Stop at the same relog-verified fortress endpoint and retain its LIVE evidence
 and snapshot. These acceptance items need their own concrete run plan after the SIM implementation is
-committed; this planning request does not launch either run.
+committed; LIVE remains a later task requiring its own authorization.
 
 Gathering AL-3, Q2147, coin loops beyond CG's selected limit, unapproved D32 quests, a capital quest sweep,
 permanent stigma selection, Morheim and Abyss entry remain outside this completion scope. The old
@@ -4463,6 +4489,15 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-04 AS-02: the fresh-create continuous seed-1 SIM passes on committed `1d5dad7a0` in
+  55.8720 real minutes (19h 30m 10.001s game time): all fourteen stages, one character/schema/clock,
+  level 25 alive at fortress, 157 quests including corrected Q2217 and all scoped campaigns, two fresh
+  Haramel clears, eleven recorded deaths and thirteen endpoint relogs. The earned staff is retained,
+  three approved chain pieces cost 4 Iron, Q2293 runs once with zero extra repeats, and the endpoint
+  holds 19 Iron/7 Bronze, 666,444 Kinah, a sealed stigma bundle and no permanent stigma. Full audit,
+  schema cleanup and seven final pre-commit checks pass (`run/natural-complete/as02-full-create-s1-a6`,
+  `run/as02-final-checks`); all earlier failures remain. AS-01/AS-02 complete; no LIVE, capture or push.
 
 - 2026-10-03: confirmed Q2217's pickup and first-arrival delivery from the retained natural Leg 3
   trace: accepted at Olenja, held through Manir/Groken/Karl, completed at Gefion during the first
