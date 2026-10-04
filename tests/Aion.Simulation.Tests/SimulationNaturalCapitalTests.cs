@@ -203,8 +203,8 @@ public sealed partial class SimulationFastScenarioTests
 				if (state == null) Assert.True(Server.GetQuestStateList().AddQuest(id, new QuestState(id, QuestStatus.COMPLETE)));
 				else state.SetStatus(QuestStatus.COMPLETE);
 			}
-			// The real ceremony chooses the Cleric's Karmic Staff (reward group 2).
-			Server.GetQuestStateList().GetQuestState(2009).SetRewardGroup(2);
+			// Java uses the Priest-born reward group 3; REWARD2 selects its staff within that group.
+			Server.GetQuestStateList().GetQuestState(2009).SetRewardGroup(3);
 			QuestState? dispatch = Server.GetQuestStateList().GetQuestState(Contract.DispatchQuestId);
 			if (dispatch == null) Assert.True(Server.GetQuestStateList().AddQuest(Contract.DispatchQuestId, new QuestState(Contract.DispatchQuestId, QuestStatus.START)));
 			else { dispatch.SetStatus(QuestStatus.START); dispatch.SetQuestVar(0); }

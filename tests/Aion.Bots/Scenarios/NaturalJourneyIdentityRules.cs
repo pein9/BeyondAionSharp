@@ -34,6 +34,7 @@ public static class NaturalJourneyIdentityRules
 		if (playerClass == PlayerClass.PRIEST && level is >= 1 and <= 9 && (worldId is null || PriestMaps.Contains(worldId.Value)))
 			return NaturalJourneyStage.IshalgenPriest;
 		if (playerClass == PlayerClass.CLERIC && level >= 9 && (worldId is null || ClericMaps.Contains(worldId.Value) ||
+			level >= 10 && worldId == 120020000 || // PC-06: ordinary Convent visit after the ceremony.
 			altgardLeg == "l11" && level >= 20 && worldId == 320070000 ||
 			altgardLeg == "l12" && level >= 16 && worldId == 300200000))
 			return NaturalJourneyStage.AscensionCleric;

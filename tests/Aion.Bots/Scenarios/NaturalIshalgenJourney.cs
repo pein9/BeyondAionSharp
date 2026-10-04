@@ -21,6 +21,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	private enum TemplatePhase { Full, Work, Claim }
 	private sealed class NaturalJourneyCheckpointStopException : Exception;
 	private sealed class NaturalEarlyAscensionRequiredException : Exception;
+	private sealed class NaturalCapitalCheckpointStopException(string stage) : Exception
+	{
+		public string Stage { get; } = stage;
+	}
+	private sealed record CapitalPayment(int QuestId, long Experience, long Kinah);
 	private sealed class NaturalCombatApproachBlockedException(string message) : IOException(message);
 	private sealed class NaturalGuardedObjectiveRevivedException(string message) : IOException(message);
 	private sealed class NaturalHaramelSourcesExhaustedException(string message) : IOException(message);
@@ -67,6 +72,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 	public async Task RunAsync(CancellationToken token)
 	{
+		NaturalCapitalDecisionEngine.ValidateScope(options, runtime.Profile);
 		bool continuousAltgard = options.AltgardLegId == "all";
 		if (continuousAltgard && (!runtime.Profile.StartsWith("SIM-", StringComparison.Ordinal) || !options.AscensionBridge ||
 			options.StopAfterQuest != null || options.StopAt != null || options.RelogAt != null || options.AltgardOnlyQuests != null ||
@@ -87,6 +93,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		string combatTracePath = session.CombatTracePath ?? throw new InvalidOperationException("Natural journey requires a trace path.");
 		var dashboard = runtime.Dashboard;
 		NaturalIshalgenContract contract = NaturalIshalgenContract.LoadDefault();
+		NaturalCapitalContract capitalContract = NaturalCapitalContract.LoadDefault();
 		NaturalJourneyCheckpoint? checkpoint = null;
 		NaturalCoinGearProgress? coinGearProgress = null;
 		NaturalHaramelProgress? haramelProgress = null;
@@ -125,6 +132,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		try
 		{
 			bool resuming = await runtime.EnterAsync(token);
+			if (options.CapitalStage == "first")
+				Require.True(resuming && session.Api.World.CompletedQuestIds.IsSupersetOf(new[] { 2008, 2009 }),
+					"The contained capital pass must resume the retained post-ceremony character.");
 			Require.True(!continuousAltgard || !resuming, "The complete SIM journey must create a fresh character.");
 			if (options.Course != null || options.ClericEncounter)
 			{
@@ -217,7 +227,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					.Concat(airlines.Where(route => route.MapId == altgardLeg.Hub.MapId).Select(route => route.NpcId)).Distinct().ToArray();
 			// AK-08: items an open Altgard quest still needs (its collect items, the ring carriers' rings): never worn as gear and
 			// never sold. The leg 5 smoke run wore Q2292's level 16 rings as upgrades, which its hand-in would not have found.
-			IReadOnlySet<int> QuestNeededItems() => altgardLeg == null ? new HashSet<int>() : altgardPlans.Values
+			IReadOnlySet<int> QuestNeededItems() => (altgardLeg == null ? Enumerable.Empty<int>() : altgardPlans.Values
 				.Where(plan => !session.Api.World.CompletedQuestIds.Contains(plan.Id))
 				.SelectMany(plan => plan.Steps.Where(step => step.Kind == "collect").Select(step => step.ItemId))
 				.Concat(altgardLeg.TimedSpawnList.Where(carrier => !session.Api.World.CompletedQuestIds.Contains(carrier.QuestId))
@@ -227,7 +237,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				.Concat(altgardLeg.Haramel?.ProtectedItemIds ?? [])
 				.Concat(altgardLeg.Haramel?.CleanupItemIds ?? [])
 				.Concat(altgardLeg.Haramel?.TowerChestKeys?.Select(key => key.ItemId) ?? [])
-				.Where(item => item > 0).ToHashSet();
+				.Where(item => item > 0)).Concat(capitalContract.ProtectedItemIds).ToHashSet();
 			BotNavigationGraph graph = BotNavigationGraphFactory.Build(runtime.Data, altgardNpcs.Concat(new[] {
 				203500, 203504, 203501, 203502, 203516, 203518,
 				203519, 203534, 790002, 210377, 210378, 700045, 203538,
@@ -318,10 +328,16 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			var helpSupplied = new List<NaturalHelpSupplied>(); // NA-21: every approved help item supplied
 			int helpCheckedAtLevel = -1;
 			bool earlyAscensionUnderway = false;
+			NaturalJourneyCheckpoint? capitalBefore = null;
+			var capitalPayments = new Dictionary<int, CapitalPayment>();
+			int capitalSequences = 0;
+			long capitalFares = 0;
+			var capitalTravel = new NaturalCapitalTravel(session, runtime.RepoRoot, () => runtime.NowMillis);
+			bool CapitalPending() => capitalContract.CompletedQuestIds.Any(id => !session.Api.World.CompletedQuestIds.Contains(id));
 			bool IshalgenPending() => contract.Quests.Any(quest => !session.Api.World.CompletedQuestIds.Contains(quest.Id));
 			bool EarlyAscensionNeeded() => options.AscensionBridge && altgardLegId == null && IshalgenPending() &&
 				(session.Api.World.Level >= contract.AscensionLevel || AscensionBridgeStarted()) &&
-				(!session.Api.World.CompletedQuestIds.Contains(2009) || session.Api.World.MapId == 120010000);
+				(!session.Api.World.CompletedQuestIds.Contains(2009) || CapitalPending() || session.Api.World.MapId is 120010000 or 120020000);
 
 			// Wear the best gear in the bag (the recorded human put on four unused quest rewards at Nalto).
 			// The client knows each item's slots, level and class/race limits from its tooltip; the server
@@ -654,7 +670,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			{
 				try
 				{
-					if (EarlyAscensionNeeded())
+					if (options.CapitalStage == "first" || EarlyAscensionNeeded())
 					{
 						await RunEarlyAscensionAsync();
 						continue;
@@ -793,6 +809,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					// This is a route interruption, not a failure or a reset of the quest/revival budgets.
 					continue;
+				}
+				catch (NaturalCapitalCheckpointStopException stop)
+				{
+					await CompleteCapitalCheckpointAsync(stop.Stage);
+					await session.QuitAsync(token);
+					runtime.AssertClean();
+					return;
 				}
 				catch (NaturalJourneyCheckpointStopException)
 				{
@@ -973,6 +996,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				for (int sequence = 1; sequence <= 80; sequence++)
 				{
 					await session.SynchronizeAsync(token);
+					if (!ceremonyOnly && CapitalPending() && session.Api.World.CompletedQuestIds.Contains(2009) &&
+						session.Api.World.MapId == capitalContract.MapId && AtQuestStep(capitalContract.DispatchQuestId, 0))
+						await RunCapitalPassAsync();
 					if (session.Api.World.Level != helpCheckedAtLevel) await TopUpHelpItemsAsync("level-up");
 					NaturalAscensionDecision next = NaturalAscensionDecisionEngine.Decide(bridge,
 						NaturalAscensionObservation.Observe(session.Api.World, bridgeShopVisited), sequence, ceremonyOnly);
@@ -1015,6 +1041,159 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				throw new InvalidDataException("The Ascension bridge exceeded 80 decisions.");
 			}
 
+			long ObservedExperience() => session.Api.World.CurrentExperience +
+				runtime.Data.PlayerExperienceTable.GetStartExpForLevel(session.Api.World.Level);
+
+			async Task<int> ApproachCapitalNpcAsync(int npcId)
+			{
+				int map = session.Api.World.MapId!.Value;
+				BotPosition anchor = runtime.Data.SpawnsDh.GetSpawnsByWorldId(map).Where(group => group.GetNpcId() == npcId)
+					.SelectMany(group => group.GetSpawnTemplates()).Select(spot => new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), spot.GetHeading()))
+					.OrderBy(at => Distance(session.CurrentPosition, at)).First();
+				BotNavigationGeometry mapGeometry = runtime.CreateGeometry();
+				NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World), newEntry: false);
+				combat.EnterMap(here, mapGeometry, map);
+				await combat.BuffOurselfAsync(NaturalHelpTrigger.TravelLeg, token, Distance(session.CurrentPosition, anchor));
+				if (Distance(session.CurrentPosition, anchor) > 5 &&
+					mapGeometry.FindInteractionPath(map, session.CurrentPosition, anchor).Count == 0)
+					await capitalTravel.ConnectColiseumAsync(mapGeometry, anchor, token);
+				NaturalNavigationResult approach = await NaturalIshalgenNavigator.ApproachNpcAsync(map, npcId, anchor, here, token);
+				Require.True(approach.Arrived, $"Capital NPC {npcId}: {approach.Reason}");
+				return Require.IsType<int>(approach.TargetObjectId);
+			}
+
+			async Task RunCapitalPassAsync()
+			{
+				capitalBefore ??= NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
+					session.ConnectionGeneration, contract, session.CurrentPosition, earlyAscension: true);
+				while (++capitalSequences <= 80)
+				{
+					await session.SynchronizeAsync(token);
+					NaturalCapitalDecision next = NaturalCapitalDecisionEngine.Decide(capitalContract,
+						NaturalAscensionObservation.Observe(session.Api.World, false));
+					session.BeginStep(next.Step?.Key ?? $"pc-{next.Action}", next.Action);
+					session.TraceDiagnostic("capital-decision", new Dictionary<string, object?>
+					{ ["sequence"] = capitalSequences, ["decision"] = next, ["map"] = session.Api.World.MapId });
+					session.PublishDashboard();
+					try
+					{
+						switch (next.Action)
+						{
+							case "complete": VerifyCapitalPass(); return;
+							case "recover": await RestSafelyAsync(token); break;
+							case "travel-city": await TakeCeremonyTeleporterAsync(toIshalgen: false); break;
+							case "observe": await session.AdvanceAsync(TimeSpan.FromMilliseconds(100), token); break;
+							case "read-book":
+								await NaturalCapitalSteps.ReadBookAsync(session, runtime.Data.ItemDataDh.GetItemTemplate(182212217), token);
+								break;
+							case "portal":
+								await NaturalCapitalSteps.PortalAsync(session, next.Portal!, await ApproachCapitalNpcAsync(next.Portal!.NpcId), token);
+								break;
+							case "talk":
+								NaturalAltgardStep step = next.Step!;
+								long? xp = null;
+								long kinah = 0;
+								try
+								{
+									for (int attempt = 1; ; attempt++)
+									{
+										try
+										{
+											int npc = await ApproachCapitalNpcAsync(step.NpcId);
+											xp = ObservedExperience();
+											kinah = session.Api.World.Kinah;
+											string outcome = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token);
+											session.TraceDiagnostic("capital-talk", new Dictionary<string, object?> { ["outcome"] = outcome });
+											break;
+										}
+										catch (NaturalDialogTooFarException) when (attempt < 3) { }
+									}
+								}
+								finally
+								{
+									// Even an injected disconnect on closing the reward dialog keeps the observed payment.
+									if (xp != null && session.Api.World.CompletedQuestIds.Contains(step.QuestId) && !capitalPayments.ContainsKey(step.QuestId))
+									{
+										var payment = new CapitalPayment(step.QuestId, ObservedExperience() - xp.Value, session.Api.World.Kinah - kinah);
+										capitalPayments.Add(step.QuestId, payment);
+										session.TraceDiagnostic("capital-payment", new Dictionary<string, object?> { ["payment"] = payment });
+									}
+								}
+								await EquipUpgradesAsync(token);
+								break;
+							default: throw new InvalidDataException(next.Reason);
+						}
+						if (session.Api.World.Level != helpCheckedAtLevel) await TopUpHelpItemsAsync("level-up");
+					}
+					catch (Exception) when (session.Api.World.IsDead && !token.IsCancellationRequested)
+					{
+						await RestSafelyAsync(token); // Record/recover the outcome; keep the shared counters and clock.
+					}
+				}
+				throw new TimeoutException("The capital pass exceeded 80 decisions across recovery attempts.");
+			}
+
+			void VerifyCapitalPass()
+			{
+				Require.NotNull(capitalBefore);
+				BotWorldModel world = session.Api.World;
+				Require.All(capitalContract.CompletedQuestIds, id => Require.Contains(id, world.CompletedQuestIds));
+				Require.All(capitalBefore.CompletedQuestIds, id => Require.Contains(id, world.CompletedQuestIds));
+				Require.All(capitalBefore.Quests.Where(q => contract.Quests.Any(entry => entry.Id == q.QuestId) && q.Status is 3 or 4), old =>
+					Require.True(world.Quests.TryGetValue(old.QuestId, out BotQuestState? current) &&
+						current.Status == old.Status && current.StepAndFlags == old.StepAndFlags, $"Capital pass changed retained Ishalgen Q{old.QuestId}."));
+				Require.True(AtQuestStep(capitalContract.DispatchQuestId, 0), "The capital pass advanced Q2904.");
+				NaturalJourneyItem staff = capitalBefore.Inventory.Single(item => item.ItemId == 101500498 && item.EquipmentSlot > 0);
+				Require.True(world.Inventory.TryGetValue(staff.ObjectId, out BotInventoryItem? stillWorn) &&
+					stillWorn.ItemId == staff.ItemId && stillWorn.Details.EquippedSlot is > 0, "The capital pass replaced the ceremony staff.");
+				Require.True(capitalBefore.BindPoint == null || world.ObeliskBindPoint is { } bound &&
+					bound.MapId == capitalBefore.BindPoint.MapId && Distance(bound.Position, capitalBefore.BindPoint.Position) < .1f,
+					"The capital pass changed the bind point.");
+				Require.All(world.Skills.Values.Where(skill => skill.SkillType is 1 or 3), skill =>
+					Require.Contains(skill.SkillId, capitalBefore.Skills.Where(old => old.SkillType is 1 or 3).Select(old => old.SkillId)));
+				NaturalCapitalQuest[] paid = capitalContract.Quests.Where(q => !capitalBefore.CompletedQuestIds.Contains(q.Id)).ToArray();
+				Require.True(paid.Select(q => q.Id).Order().SequenceEqual(capitalPayments.Keys.Order()), "A capital reward payment was not observed.");
+				Require.All(paid, quest =>
+				{
+					Require.Equal((long)quest.Experience, capitalPayments[quest.Id].Experience);
+					Require.Equal(quest.Kinah, capitalPayments[quest.Id].Kinah);
+				});
+				Require.All(new[] { 122000870, 188508000, 169600066, 169600084, 169600085, 190000055 }, id => Require.True(ItemCount(world, id) > 0,
+					$"Optional capital reward {id} was not retained."));
+				Require.True(ItemCount(world, 164000074) >= 2, "The Lost Love running scrolls were not retained.");
+				Require.True(ItemCount(world, 182207039) == 0 && ItemCount(world, 182212217) == 0,
+					"The supply request or manual was not consumed at its proper hand-in.");
+			}
+
+			async Task CompleteCapitalCheckpointAsync(string stage)
+			{
+				if (relogAt != null) Require.True(relogInjected, "Requested capital interruption was not exercised.");
+				if (stage == "first") { VerifyCapitalPass(); Require.Equal(contract.MapId, session.Api.World.MapId!.Value); }
+				else Require.True(session.Api.World.Level == 10 && session.Api.World.MapId == capitalContract.MapId &&
+					AtQuestStep(capitalContract.DispatchQuestId, 0), "The post-ceremony capital start is outside its contract.");
+				NaturalJourneyCheckpoint before = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
+					session.ConnectionGeneration, contract, session.CurrentPosition, earlyAscension: true);
+				session.BeforeSend = null;
+				await session.QuitAsync(token);
+				await session.WaitForReentryAsync(token);
+				await session.ReloginExistingCharacterAsync(token);
+				await session.EnterWorldAsync(token);
+				await session.SynchronizeAsync(token);
+				NaturalJourneyCheckpoint after = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
+					session.ConnectionGeneration, contract, session.CurrentPosition, earlyAscension: true);
+				NaturalJourneyPersistence.Verify(before, after);
+				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "capital-stage-completion.json"),
+					System.Text.Json.JsonSerializer.Serialize(new
+					{
+						Stage = stage, before, after, verified = true, session.CharacterId, ElapsedMillis = runtime.NowMillis,
+						CapitalBefore = capitalBefore, Payments = capitalPayments.Values.OrderBy(p => p.QuestId).ToArray(),
+						TransportFares = capitalFares, Deaths = combat.ReviveCount, Retreats = combat.CompletedRetreats,
+						Reconnects = reconnects, StigmaSkills = after.Skills.Where(skill => skill.SkillType is 1 or 3).ToArray(),
+						RegularSkills = after.Skills.Where(skill => skill.SkillType == 0).ToArray(),
+					}), token);
+				session.PublishDashboard("capital-checkpoint-complete", force: true);
+			}
+
 			async Task RunEarlyAscensionAsync()
 			{
 				earlyAscensionUnderway = true;
@@ -1024,9 +1203,17 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						session.ConnectionGeneration, contract, session.CurrentPosition, earlyAscension: true);
 					session.TraceDiagnostic("early-ascension-start", new Dictionary<string, object?>
 					{ ["level"] = before.Level, ["completed"] = before.CompletedQuestIds, ["position"] = before.Position });
-					await RunAscensionBridgeAsync(ceremonyOnly: true);
+					if (!session.Api.World.CompletedQuestIds.Contains(2009)) await RunAscensionBridgeAsync(ceremonyOnly: true);
 					Require.True(session.Api.World.Level >= 10 && combat.IsCleric &&
 						session.Api.World.CompletedQuestIds.IsSupersetOf(new[] { 2008, 2009 }), "The early ceremony did not complete.");
+					if (options.CapitalStage == "start")
+					{
+						Require.True(IshalgenPending() && session.Api.World.MapId == capitalContract.MapId &&
+							capitalContract.CompletedQuestIds.All(id => !session.Api.World.CompletedQuestIds.Contains(id)),
+							"The capital start must retain unfinished Ishalgen and precede every first-pass completion.");
+						throw new NaturalCapitalCheckpointStopException("start");
+					}
+					await RunCapitalPassAsync();
 					if (session.Api.World.MapId == 120010000) await TakeCeremonyTeleporterAsync(toIshalgen: true);
 					Require.Equal(contract.MapId, session.Api.World.MapId!.Value);
 					geometry = runtime.CreateGeometry();
@@ -1045,6 +1232,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "early-ascension-completion.json"),
 						System.Text.Json.JsonSerializer.Serialize(new { before, after, verified = true, session.CharacterId,
 							ElapsedMillis = runtime.NowMillis, Deaths = combat.ReviveCount }), token);
+					if (options.CapitalStage == "first") throw new NaturalCapitalCheckpointStopException("first");
 				}
 				finally { earlyAscensionUnderway = false; }
 			}
@@ -1067,10 +1255,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await UseFasterTravelAsync(anchor, forceHubFlight: true);
 					npc = await ApproachShippedSpawnAsync(203679);
 				}
+				long fareBefore = session.Api.World.Kinah;
 				NaturalServiceOutcome result = await new NaturalServiceSteps(session).TeleportAsync(npc,
 					session.Api.World.Objects[npc].Position, 5, toIshalgen ? 8 : 7, 100,
 					toIshalgen ? contract.MapId : 120010000, token);
 				Require.True(result.IsDone, result.Reason);
+				if (capitalBefore != null) capitalFares += fareBefore - session.Api.World.Kinah;
 				mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World));
 			}
 

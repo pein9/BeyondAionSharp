@@ -83,4 +83,4 @@ public sealed record NaturalJourneyOptions(int? StopAfterQuest = null, string? R
 	NaturalMauCourse? Course = null, NaturalMauEncounter? Encounter = null,
 	NaturalMauPolicyParameters? MauPolicy = null, bool AscensionBridge = false, bool ClericEncounter = false,
 	bool AltgardLeg1 = false, string? AltgardLegId = null, int[]? AltgardOnlyQuests = null,
-	string? CoinGearReceiptPath = null, string? HaramelProgressPath = null);
+	string? CoinGearReceiptPath = null, string? HaramelProgressPath = null, string? CapitalStage = null);

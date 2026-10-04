@@ -19,6 +19,7 @@ public sealed class NaturalJourneyIdentityRulesTests
 	[InlineData(9, 320020000)]  // chosen in Ataxiar, still at the level-10 cap
 	[InlineData(9, 220010000)]  // back at Munin for Q2009
 	[InlineData(10, 120010000)] // Pandaemonium
+	[InlineData(10, 120020000)] // ordinary Convent visit after the ceremony
 	[InlineData(10, 220030000)] // Altgard
 	public void TheClericLivesOnTheBridgeMaps(int level, int map) =>
 		Assert.Equal(NaturalJourneyStage.AscensionCleric, NaturalJourneyIdentityRules.Classify(PlayerClass.CLERIC, level, map));
@@ -26,6 +27,8 @@ public sealed class NaturalJourneyIdentityRulesTests
 	[Theory]
 	[InlineData(PlayerClass.PRIEST, 10, 220010000)] // a Priest past the cap cannot exist naturally
 	[InlineData(PlayerClass.PRIEST, 9, 120010000)]  // nor a Priest in Pandaemonium
+	[InlineData(PlayerClass.PRIEST, 9, 120020000)]
+	[InlineData(PlayerClass.CLERIC, 9, 120020000)] // wait for the level-10 ceremony
 	[InlineData(PlayerClass.CHANTER, 10, 220030000)] // the other Priest ascension is not ours
 	[InlineData(PlayerClass.CLERIC, 10, 210010000)] // nor a Cleric in Poeta
 	[InlineData(PlayerClass.WARRIOR, 1, 220010000)]

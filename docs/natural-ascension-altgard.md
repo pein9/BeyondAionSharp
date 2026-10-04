@@ -4,6 +4,8 @@ Status (2026-09-28): **planned. NA-00 is done and the operator decisions are ans
 
 OD-16 status (2026-10-04): **EA-01/EA-02 complete.** The revised fresh Ishalgen/bridge
 SIM passes, with the original failed attempt retained and final checks passed.
+Capital status (2026-10-04): **PC-00..PC-06 complete.** The natural integration is
+ready for the committed-code starting snapshot and contained PC-07 proof.
 
 **Current leveling order (OD-16, approved 2026-10-04).** On the first observed level 9,
 Ascension-enabled journeys finish Q2008 with Munin and Q2009 in Pandaemonium before any
@@ -2261,9 +2263,24 @@ Work with **PC** in place of **NA** in the loop protocol:
     `run/capital-pass/pc05-convent-a.log` passes; original tuple-assertion build error
     retained in `pc05-build.log`, corrected build in `pc05-build-b.log`. Seven checks
     pass in `pc05-checks`; `run/pc05-capital-fast` passes 89 tests, five opt-in skips.
-- [ ] **PC-06 — Integrate the capital checkpoint.** Depends PC-05. Enter after Q2009 COMPLETE;
+    Commit: `3497b2293`.
+- [x] **PC-06 — Integrate the capital checkpoint.** Depends PC-05. Enter after Q2009 COMPLETE;
   finish these quests before Doman's Ishalgen return. Preserve in-progress Ishalgen quests,
   Q2904 at step 0, owned equipment and regular/stigma distinctions across relog/recovery.
+  - 2026-10-04: Java contacts, interrupted rewards, Q2009's Priest-born group 3,
+    PlayerSkillEntry and ordinary portal/gear behavior read. The copied-client-state
+    engine batches the ten quests after the ceremony, reads the supplied manual,
+    follows every Ribbon contact, defers Doman until the Convent return and skips
+    completed repeatables. Death/reconnect keeps shared budgets and resumes the observed
+    contact; retained Ishalgen steps/bind, Q2904 START/0 and the same staff are required.
+    Per-quest XP/Kinah payments are observed separately from travel, optional rewards
+    stay owned and no new stigma is allowed. SIM-only `PC_CAPITAL=start/first` stops
+    at real relog checkpoints without claiming unfinished Ishalgen is complete.
+    54 focused recovery/identity/Ascension tests pass (`pc06-focused-a.log`), solution
+    tests pass 5,219 with 119 skips (`pc06-suite.log`), seven pre-commit checks pass
+    (`pc06-checks`), and `run/pc06-capital-fast` passes 89 tests/five opt-in skips and
+    all eleven scenarios. These prove integration and its existing primitives;
+    the natural segment and snapshots remain PC-07.
 - [ ] **PC-07 — Contained SIM smoke and evidence.** Depends PC-06. Capture the level-10
   starting snapshot only from committed code; restore via sim-snapshot.ps1, run just this
   capital segment once, assert ten completions/rewards and the Ishalgen return, record
@@ -2365,6 +2382,10 @@ has examples.
 - The defaults for OD-8 and OD-10 stand unless the operator vetoes them.
 
 ## Progress log
+
+- 2026-10-04 — PC-06: default early capital integration, interrupted-contact decisions,
+  protected rewards and two SIM relog checkpoints added. Focused/solution tests,
+  seven checks and Fast pass; PC-07's natural snapshot proof is next.
 
 - 2026-10-04 — PC-05: Veldina's Call, actual Convent statues, rewards and unchanged
   bind pass; seven checks and Fast (89 tests, five opt-in skips) pass. Integration is next.
