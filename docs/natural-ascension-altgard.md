@@ -2063,6 +2063,149 @@ The next milestone applies the Ishalgen method to Altgard:
 Pandaemonium's optional quests fit a later capital pass. Each area milestone moves the
 all-quests, account-to-endgame goal forward.
 
+## Proposed Pandaemonium capital passes (2026-10-04)
+
+**Planning only; not an approved change to OD-6 or OD-16.** The operator requested a
+capital quest plan after approving immediate level-9 Ascension. Recommend a contained
+first capital pass **after Q2009 completes and before Doman returns us to Ishalgen**.
+Then finish the retained Ishalgen contract and proceed with Q2904/Altgard as usual.
+Later capital visits take the higher-level and cross-region quests below. This proposal
+does not authorize server content, purchases, early stigmas or a full journey rerun.
+
+The retained full-create evidence `run/natural-complete/as02-full-create-s1-a6/`
+completed Q2009, Q2904, Q2258, Q2278, Q2283 and Q2900; none of the nine proposed first-pass
+quests appears in its endpoint's completed list. The revised early-Ascension proof
+`run/early-ascension/ea02-create-s1-a2/` covered Ishalgen and the existing bridge only.
+Both remain historical; new capital work needs its own evidence.
+
+### First visit: nine level-10 quests
+
+| Quests | Required route / action | Listed XP | Listed Kinah |
+|---|---|---:|---:|
+| Q2911 Song of Blessing -> Q2912 Follow the Ribbon -> Q2914 A Token of Lost Love | Grimhild -> Agamo; choose Q2911 reward group 0. Then Agamo -> Garm -> Therf -> Talmenu -> Frana; accept the follow-up at Arlion, visit Frana and return to Arlion. | 15,465 | 0 |
+| Q2953 Delivering Supply Request | Doman -> Veldina -> Doman; carry the supplied request. | 150 | 500 |
+| Q29048 Seriphim's Teachings | Seriphim -> use the supplied book 182212217 -> Seriphim. | 11,237 | 0 |
+| Q29040 Mane's Best Friend -> Q29044 Pet Perceptions -> Q29045 A Passion for Pets | Ninis -> Silke -> Katin -> Erdil. Three report-to quests; no purchased or summoned pet is required. | 33,711 | 0 |
+| Q29004 Veldina's Call | Veldina -> Balder -> Kvasir -> Angulof in the Convent of Marchutan; use the ordinary statue portals for entry and return. | 3,000 | 9,830 |
+| **Total: nine quests** | No combat or required purchases in these handlers. Transport charges, if incurred, are separate from gross rewards. | **63,563** | **10,330** |
+
+The eight quests entirely inside Pandaemonium total **60,563 XP and 500 Kinah**; Q29004
+adds the Convent visit. These are additional rewards, not an assertion about the final
+character level. Observe actual XP, level, class and learned regular skills on completion.
+Rewards include Arlion's Ring 122000870, two Lesser Running Scrolls, pet-interaction items,
+a Purple Ribbit Egg and the one-day Ninja motion item. Retain optional items; acquiring
+them does not require activating them. Equip an owned quest reward only if the ordinary
+equipment policy finds an upgrade; keep the staff and do not buy gear or skill books.
+
+**Recommended Q2911 branch:** reward group 0, the Ribbon/Lost Love route. It needs no
+crafting or purchased delivery items and gives 615 more XP across its three quests than
+the other branch. Reward group 1 instead unlocks Q2913 A Chain of Debt -> Q2915 Helping
+Apellbine: 14,850 XP and 13,680 gross Kinah, but Q2915 consumes two Roast Conide 160002001.
+The shipped recipe produces two at Cooking skill 1; do not silently start a profession
+or conjure the food. The unchosen branch must be recorded as mutually exclusive, never
+as a missing completion. This branch recommendation is pending the operator's choice.
+
+**City areas and ordering.** Start in the Great Temple with Grimhild after the ceremony.
+Pick up Q2953 at Doman and Q29040 at nearby Ninis on Vifrost Bridge. Visit Veldina at the
+Temple of Gold and Balder at the Great Temple. Continue through Pandaemonium Plaza for
+Agamo and the pet NPCs, then Triniel Coliseum (Garm/Therf), Vanahal District
+(Talmenu/Frana) and Prosperity Road (Arlion). Finish the required Lost Love return visits;
+the follow-up cannot be accepted at Arlion before Q2912 completes. Visit the Capitol
+Building for Kvasir and Apellbine Tavern for Seriphim, then return east for the Convent
+and Doman. This is a proposed batching order, not a straight-line movement script:
+route on the navmesh and approach each NPC within ordinary interaction range.
+
+The Convent statue 730268 at (1600.8, 1389.3, 193.1) uses portal dialog **10000** to
+location 1200200 on map 120020000. Angulof is at (1516.7, 1402.1, 271.8239); statue 730269
+returns through dialog 10000 to Pandaemonium location 1200104. Do not choose the separate
+Marchutan Priory destination. Both portals are shipped and have no listed fee or level
+gate. The Convent has a navigation mask but no checked-in travel graph; prove the
+approach/return in a focused probe and generate navigation through the existing tools
+if needed. Do not add or hand-edit server spawns or teleports to make the route pass.
+
+### Later visits and quests requiring other areas
+
+| Gate | Quests | Where the work belongs |
+|---|---|---|
+| 10; first Altgard visit | Q2917 Arekedil's Heritage -> Q2918 Deep Maternal Love | Start at **Arekedil 203574**, then Chauminerk, both in Altgard. Visit Lanse and Annemari in Pandaemonium; Q2917 rewards the Ornate Jewelry Box 182207009. Use the box to accept Q2918 and return to Arekedil in Altgard. Protect the box from sale. Batch the city half with an existing capital return. |
+| 13 | Q2919 Book of Oblivion | Accept/advance Cavalorn -> Gantrug -> Araison -> book object 700212 -> Cavalorn **before collecting**. Its step-4 drops require three Malodor items, two Ampha items and one Rainbow Slime item, with naturally spawned sources in Altgard and Ishalgen. Then Neusa -> book -> Cavalorn. This requires a small Ishalgen collection return as well as Altgard work; it is not a city-only errand or a reason to replay all Ishalgen. |
+| 15 | Q2916 Man in the Long Black Robe | Deyla -> Zerpi -> Osvi -> Annju in the city, then Neparinerk, Banatisai and Suspicious Clothing 700211 in Altgard, then Deyla. Use the distance trigger and ordinary object loot. Annju's registration is already corrected under D28. |
+| 16 plus **both** Q2268 and Q2269 | Q2920 Elementary, My Dear Daeva | Conversation/answer at Deyla; choose from the actual client dialog, retain the selected reward group. The retained Altgard run completed both prerequisites. |
+| 17; Cleric | Q4933 Intention of Lord Marchutan | Twenty qualifying resurrection casts, not a talking quest. Defer until an ordinary cooperating character/death setup is authorized. Do not exploit the Java template's premature reward dialog. Q4931 excludes Cleric. A regular resurrection skill does not imply a stigma has been obtained or socketed. |
+| 19 | Q2954 Delivering Odella Juice | Doman -> Haven in Crandale District -> Doman. Repeatable up to ten completions; recommend one on an existing visit, not a grind. |
+| 20 and Altgard campaign finish | Q2938 Secret Library Access | Oubliette at the Temple of Knowledge -> Suthran in Altgard -> Oubliette. For the new campaign path, require Q24016 COMPLETE before obtaining Suthran's permission; do not bypass that check through a permissive handler action. |
+| 20 | Q2959 You Never Call, You Never Write; Q2984 Ingredients for Dye | Two report-to errands: Moreinen -> Eramir at the Airship Dock, and Lusena -> Kinot. Batch these with the Temple of Knowledge/Prosperity Road visit. |
+| After Q2959, at 20 | Q2960 Peace Offering | Eramir needs one Salix Oil, one Greater Odella Powder and one Aether Crystal. Source them normally and retain observed shop costs/material provenance. The natural endpoint owns no Aether Crystal; this is not a free talking quest. |
+| 21 | Q2921 Love at First Sight -> Q2922 Fascinating Gift | City conversations, then a second exclusive branch: Q2923 A Rose Will Bloom or Q2924 Siel's Tears requires field items. Choose that branch with the Morheim route plan; Q2925 A Heartfelt Confession closes it at 25. |
+| 21 | Q2955 A Feast for a Son -> Q2956 Preparing the Banquet -> Q2957 Flowers for the Banquet -> Q2958 Last Minute Worries | City chain interrupted by Q2956's six field drops and one shop material. Pair collection with the next region's route, then do the remaining city deliveries. |
+| 21 | Q28800 [Housing] Give My Regards to Pernon | An introduction that leaves the capital for Pernon; keep as a separate housing visit. |
+| 25 | Q2945 Honing Your Skills -> Q2946 Abyss General Knowledge -> Q2947 Following Through | A contained Abyss-access campaign leg, not part of the level-10 capital pass. The historical full-create endpoint has Q2945 START, not completed. |
+
+For level-13/15 additions, pick up the capital quest **before** the relevant Altgard
+segment, collect in that individual segment and turn in on a planned city return.
+Re-run only the affected contained segments to prove the change. Q2258, Q2278 and Q2283
+already provide Altgard-to-capital errands; Q2900's completed stigma tutorial remains its
+own leg and must not be replayed or interpreted as ownership of a permanent stigma.
+
+### Missing content, professional gates and false city-only candidates
+
+- **Q2929 Welcome to the Temple of Artisans** has no handler. This blocks the six
+  level-10 craft introductions Q2905-2910. Q29049 Construction Basics is also unhandled
+  and depends on Q2929. Keep them in the D32 work list; the capital proposal does not
+  authorize implementing them. Q29059 Possession Isn't Integrity (15) and Q29051 Running
+  the Tables (25) are further unhandled candidates.
+- The numerous level-9 crafting work orders require professional skill, materials,
+  purchases and crafting actions. Their nominal character-level gate is not proof they
+  were missed during Ascension. Q2966-2971 need crafted order items and Abyss delivery;
+  Q2939-2944 require completed work orders. Plan professional training separately.
+- **Fashion chain correction:** Q4970 The Fashionistas is listed under Pandaemonium
+  at level 10, but its starter Cozett 799315 spawns in Gelkmaros. Male Q4973 Marra's Worry
+  visits Lidorasa, Lapion in Beluslan and Frenai in Morheim; Q4974 follows it. Female
+  Q4971 Project Runway visits Beluslan and Brusthonin; Q4972 follows it. Do not count
+  all five as available level-10 city conversations or relocate their NPCs. The natural
+  character is male; the female pair is intentionally ineligible.
+- Morheim return quests, Nochsana, Reshanta, inactive events and other classes' dispatches
+  are not first-pass omissions. Later lists are scheduling candidates, not a claim that
+  every entry is immediately completable on the current character.
+
+### Proposed implementation sequence
+
+Work with **PC** in place of **NA** in the loop protocol, only after the scope is approved:
+
+- [ ] **PC-00 — Freeze the contract and decisions.** Nine first-pass quests, Q2911 branch,
+  later-pass exclusions, unchanged Ishalgen/Altgard contracts, precise endpoint and a
+  distinct snapshot name. Record the revision to OD-6/OD-16 before changing the journey.
+- [ ] **PC-01 — Prove NPC approaches and the Convent route.** Depends PC-00. Read Java;
+  use a free probe account, clear aggressive monsters only at scripted probe spots and
+  call BeginWorldReload before setup teleports. Prove the actual dialogs/quest variables,
+  book use, reward groups, statue entry/return and natural gates. No natural-character GM.
+- [ ] **PC-02 — Supply request and Seriphim book.** Depends PC-01. Implement/verify only
+  Q2953 and Q29048, protect carried quest items and retain packet evidence.
+- [ ] **PC-03 — Three pet introductions.** Depends PC-02. Implement report-to transitions;
+  prove rewards without requiring a pet purchase, egg activation or automatic pet use.
+- [ ] **PC-04 — Blessing and the selected branch.** Depends PC-03. Follow every required
+  NPC and record the other branch as mutually exclusive. Check reward equipment normally.
+- [ ] **PC-05 — Veldina's Call.** Depends PC-04. Ordinary Convent portals; prove the return
+  to Pandaemonium and retained bind point.
+- [ ] **PC-06 — Integrate the capital checkpoint.** Depends PC-05. Enter after Q2009 COMPLETE;
+  finish these quests before Doman's Ishalgen return. Preserve in-progress Ishalgen quests,
+  Q2904 at step 0, owned equipment and regular/stigma distinctions across relog/recovery.
+- [ ] **PC-07 — Contained SIM smoke and evidence.** Depends PC-06. Capture the level-10
+  starting snapshot only from committed code; restore via sim-snapshot.ps1, run just this
+  capital segment once, assert nine completions/rewards and the Ishalgen return, record
+  deaths/losses and drop the owned schema. Run the required checks and run-fast before
+  gameplay-change commits. No whole character-create rerun is required for this proof.
+- [ ] **PC-08 — Schedule the higher-level passes.** Depends PC-07. Add the approved
+  cross-region quests to their individual Altgard/capital segments, with source items
+  acquired after acceptance; obtain separate decisions for materials, professions,
+  resurrection partner and the level-21 branch. Do not silently expand the first pass.
+
+Planning sources: the corresponding Java Pandaemonium handlers, Java ReportTo/SkillUse
+templates, shipped quest/start-condition/reward data, NPC spawns, zone polygons and portal
+definitions. Compiled candidate plans and location inventory are retained under
+`run/pandaemonium-planning/`. No runtime completion or retail correction is claimed by
+this inventory.
+
 ## How to work this list (loop protocol)
 
 Each iteration:
@@ -2125,6 +2268,12 @@ has examples.
 
 ## Blocked / questions for the operator
 
+- **PC scope / branch (proposed 2026-10-04):** the capital plan above awaits approval
+  before implementation. Recommend all nine first-pass quests immediately after Q2009,
+  including the Convent visit, and Q2911 reward group 0 (Ribbon/Lost Love). This would
+  revise OD-6's deferral and insert the pass into OD-16 before the Ishalgen return.
+  Higher-level material purchases, professions, a resurrection partner and the Q2922
+  branch remain separate future decisions; no missing-handler content is authorized here.
 - ~~**NA-20 → OD-13 (asked 2026-09-28):**~~ **Answered 2026-09-28:** approved with changes (see OD-13). NA-21 is unblocked. The original question was: please approve, change or reject [Appendix D.2](#appendix-d2-proposed-help-items-na-20-awaiting-approval):
   1. **The list and bands:**
      - Anti-Shock from level 10;
@@ -2249,6 +2398,13 @@ has examples.
   - a1 found a Return cast attempted while dead.
   - a2 passed the bot's side but lost to a restored ineffective spawn pool warning.
   - Both are fixed. **The Ascension bridge is accepted in SIM and LIVE.** Only the optional NA-28 (watching in the real client) remains.
+
+- 2026-10-04 — Capital planning: inventoried the Java/shipped-data candidates and the
+  retained full-create endpoint. Proposed nine level-10 quests after Q2009 (63,563 listed
+  XP, 10,330 gross Kinah), the Ribbon/Lost Love branch, higher-level capital returns and
+  PC-00..PC-08. Recorded craft-handler gaps, external fashion routes and resurrection
+  requirements. Planning only; OD-6/OD-16 and gameplay unchanged. Seven pre-commit checks
+  passed; no natural SIM run or new snapshot was needed for this documentation change.
 
 ## Appendix A: Altgard shops and consumables
 
