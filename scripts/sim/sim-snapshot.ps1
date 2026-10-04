@@ -7,6 +7,8 @@
 #            With -AltgardLeg1 (AF-09) the capture starts from a restored `altgard` snapshot instead of a new character,
 #            plays an Altgard leg (-Leg l1, the default; -Leg l2 -From altgard-l12 for Leg 2, AM-08; -Leg l3 -From altgard-l2 for Leg 3, AC-07; -Leg l4 -From altgard-l3 for Leg 4, AB-09; -Leg l5 -From altgard-l4 for Leg 5, AK-09; -Leg l6 -From altgard-l5 for Leg 6, AG-08) and dumps its endpoint.
 #            The Leg 1 form:
+#            Capital (PC-07): -CapitalStage start -Name pandaemonium-capital-start;
+#            then -CapitalStage first -From pandaemonium-capital-start -Name pandaemonium-capital-first.
 #            Leg 7 (AE-07): -AltgardLeg1 -Leg l7 -From altgard-l6 -Name altgard-l7.
 #            Leg 8 (AO-05): -AltgardLeg1 -Leg l8 -From altgard-l7 -Name altgard-l8.
 #            Leg 9 (AH-05): -AltgardLeg1 -Leg l9 -From altgard-l8 -Name altgard-l9.
@@ -39,6 +41,10 @@ param(
 	[string]$From = 'altgard',
 	[ValidateSet('l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'cg', 'l12')]
 	[string]$Leg = 'l1',
+	[ValidateSet('start', 'first')]
+	[string]$CapitalStage,
+	[ValidatePattern('^\d+:[34]:\d+$')]
+	[string]$CapitalRelogAt,
 	[switch]$NoBuild
 )
 
@@ -47,6 +53,10 @@ Set-StrictMode -Version Latest
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 if (-not $SnapshotRoot) { $SnapshotRoot = Join-Path $repoRoot 'run/snapshots' }
 $ownedPattern = '^aion_gs_sim_ni08_[a-z0-9_]+$'
+if ($CapitalStage -and ($Bridge -or $AltgardLeg1 -or $Action -ne 'Capture')) {
+	throw 'CapitalStage is a contained Capture scope and cannot be combined with Bridge or AltgardLeg1.'
+}
+if ($CapitalRelogAt -and $CapitalStage -ne 'first') { throw 'CapitalRelogAt requires CapitalStage first.' }
 
 function Invoke-Docker([string[]]$Arguments) {
 	& $Docker @Arguments
@@ -67,7 +77,9 @@ function Get-SnapshotDirectory {
 
 function Invoke-NaturalJourney([string]$Db, [string]$RunId, [string]$Evidence, [hashtable]$Extra) {
 	$names = @('AION_SIM_DB_INTEGRATION', 'AION_SIM_NI08_DATABASE', 'AION_SIM_NI08_ELAPSED_MS', 'AION_SIM_RUN_ID',
-		'AION_SIM_SEED', 'AION_NI07_COMBAT_DIR', 'NI07_FULL_JOURNEY', 'NI08_STOP_AT', 'NI08_RELOG_AT', 'NI08_RESUME_CHARACTER', 'NA_ASCENSION', 'AF_ALTGARD', 'AF_CG_RECEIPTS', 'AF_HM_PROGRESS')
+		'AION_SIM_SEED', 'AION_NI07_COMBAT_DIR', 'NI07_FULL_JOURNEY', 'NI08_STOP_AT', 'NI08_RELOG_AT', 'NI08_RESUME_CHARACTER',
+		'NA_ASCENSION', 'AF_ALTGARD', 'AF_ONLY', 'AF_CG_RECEIPTS', 'AF_HM_PROGRESS', 'PC_CAPITAL',
+		'NI07_STOP_AFTER_Q2004', 'NI07_STOP_AFTER_Q2005', 'NI07_STOP_AFTER_Q2006', 'NI07_STOP_AFTER_Q2007', 'NI07_STOP_ON_DEATH', 'NI07_OPTIMIZE_HUBS')
 	$prior = @{}
 	foreach ($variable in $names) { $prior[$variable] = [Environment]::GetEnvironmentVariable($variable); [Environment]::SetEnvironmentVariable($variable, $null) }
 	try {
@@ -98,6 +110,21 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 	$hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $dump).Hash.ToLowerInvariant()
 	if ($hash -ne $metadata.dumpSha256) { throw "Snapshot $Name dump hash changed; refusing to restore an edited snapshot." }
 	$haramelProgress = $null
+	if ($metadata.PSObject.Properties.Name -contains 'source' -and $metadata.source -like 'natural-capital-*') {
+		$capitalReceipt = Join-Path $directory 'capital-stage-completion.json'
+		if ($metadata.source -notin @('natural-capital-start', 'natural-capital-first') -or
+			-not (Test-Path -LiteralPath $capitalReceipt) -or $metadata.PSObject.Properties.Name -notcontains 'capitalReceiptSha256') {
+			throw "Snapshot $SnapshotName is missing its capital receipt; refusing to restore."
+		}
+		if ((Get-FileHash -Algorithm SHA256 -LiteralPath $capitalReceipt).Hash.ToLowerInvariant() -ne $metadata.capitalReceiptSha256) {
+			throw "Snapshot $SnapshotName capital receipt hash changed; refusing to restore."
+		}
+		$capitalResult = Get-Content -Raw -LiteralPath $capitalReceipt | ConvertFrom-Json
+		if (-not $capitalResult.verified -or $capitalResult.CharacterId -ne $metadata.characterId -or
+			"natural-capital-$($capitalResult.Stage)" -ne $metadata.source) {
+			throw "Snapshot $SnapshotName capital receipt has the wrong identity or stage; refusing to restore."
+		}
+	}
 	if ($metadata.PSObject.Properties.Name -contains 'source' -and $metadata.source -eq 'natural-altgard-l12') {
 		$haramelProgress = Join-Path $directory 'haramel-progress.json'
 		if (-not (Test-Path -LiteralPath $haramelProgress) -or
@@ -128,6 +155,10 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 		$environment.AF_ALTGARD = 'l12'
 		$environment.AF_HM_PROGRESS = $haramelProgress
 	}
+	if ($metadata.PSObject.Properties.Name -contains 'source' -and $metadata.source -like 'natural-capital-*') {
+		$environment.NA_ASCENSION = '1'
+		$environment.PC_CAPITAL = 'first'
+	}
 	[pscustomobject]@{
 		snapshot = $SnapshotName
 		database = $db
@@ -148,11 +179,58 @@ try {
 		'Capture' {
 			$directory = Get-SnapshotDirectory
 			if (Test-Path -LiteralPath $directory) { throw "Snapshot already exists: $directory (snapshots are never overwritten)" }
+			$runtimeChanges = @(& git -C $repoRoot status --porcelain -- src tests game-server parity-artifacts scripts/sim/sim-snapshot.ps1)
+			if ($runtimeChanges.Count) { throw 'Capture requires committed runtime and snapshot code; commit those changes first.' }
 			if (-not $Run) { $Run = "snapshot-$Name-s$Seed" }
 			$evidence = Join-Path $repoRoot "run/snapshots/_capture/$Run"
 			if (-not $NoBuild) {
 				& dotnet build (Join-Path $repoRoot 'tests/Aion.Simulation.Tests') -v quiet *> $null
 				if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
+			}
+			if ($CapitalStage) {
+				# A new natural prefix stops at the ceremony. The first pass restores that immutable
+				# start through the public Restore action and captures the same contained run's endpoint.
+				$extra = @{ NA_ASCENSION = '1'; PC_CAPITAL = $CapitalStage }
+				$baseElapsed = 0L
+				if ($CapitalStage -eq 'first') {
+					$base = & $PSCommandPath -Action Restore -Name $From -Docker $Docker -ContainerName $ContainerName `
+						-RootPassword $RootPassword -SnapshotRoot $SnapshotRoot | ConvertFrom-Json
+					$db = $base.database
+					foreach ($property in $base.environment.PSObject.Properties) { $extra[$property.Name] = [string]$property.Value }
+					$baseElapsed = [long]$base.environment.AION_SIM_NI08_ELAPSED_MS
+					if ($CapitalRelogAt) { $extra.NI08_RELOG_AT = $CapitalRelogAt }
+				} else {
+					$db = New-OwnedDatabaseName
+					& pwsh -NoProfile -File (Join-Path $PSScriptRoot 'new-sim-db.ps1') -Action Create -DatabaseName $db | Out-Null
+					if ($LASTEXITCODE -ne 0) { throw 'Could not create the owned capital capture schema.' }
+				}
+				try {
+					Invoke-NaturalJourney $db $Run $evidence $extra
+					$capitalFile = Join-Path $evidence 'capital-stage-completion.json'
+					$capitalResult = Get-Content -Raw -LiteralPath $capitalFile | ConvertFrom-Json
+					if (-not $capitalResult.verified -or $capitalResult.Stage -ne $CapitalStage -or
+						($CapitalStage -eq 'first' -and $capitalResult.CharacterId -ne $base.characterId)) {
+						throw 'The capital checkpoint was not verified for its stage and retained identity; nothing was captured.'
+					}
+					New-Item -ItemType Directory -Path $directory | Out-Null
+					$remote = "/tmp/$db.sql.gz"
+					Invoke-Docker @('exec', '-e', "MYSQL_PWD=$RootPassword", $ContainerName, 'sh', '-c',
+						"mysqldump -uroot --single-transaction --no-tablespaces --routines --triggers $db | gzip > $remote")
+					Invoke-Docker @('cp', "${ContainerName}:$remote", (Join-Path $directory 'dump.sql.gz'))
+					Invoke-Docker @('exec', $ContainerName, 'rm', '-f', $remote)
+					Copy-Item -LiteralPath $capitalFile -Destination $directory
+					[ordered]@{
+						schemaVersion = 1; name = $Name; source = "natural-capital-$CapitalStage"
+						from = $(if ($CapitalStage -eq 'first') { $From } else { $null })
+						run = $Run; seed = $Seed; gitSha = (& git -C $repoRoot rev-parse HEAD).Trim()
+						capturedUtc = (Get-Date).ToUniversalTime().ToString('o'); characterId = [int]$capitalResult.CharacterId
+						elapsedMillis = $baseElapsed + [long]$capitalResult.ElapsedMillis
+						dumpSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $directory 'dump.sql.gz')).Hash.ToLowerInvariant()
+						capitalReceiptSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $capitalFile).Hash.ToLowerInvariant()
+					} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $directory 'snapshot.json') -Encoding utf8
+					Write-Host "Captured capital $CapitalStage snapshot $Name (character $($capitalResult.CharacterId)) in $directory"
+				} finally { Remove-OwnedDatabase $db }
+				break
 			}
 			if ($AltgardLeg1) {
 				# AF-09: Altgard Leg 1 resumes the character of a restored `altgard` snapshot; the new dump is taken at the
@@ -264,10 +342,11 @@ try {
 				foreach ($key in $restored.environment.Keys) { $extra[$key] = $restored.environment[$key] }
 				Invoke-NaturalJourney $restored.database $Run $evidence $extra
 				$haramel = $extra.ContainsKey('AF_ALTGARD') -and $extra.AF_ALTGARD -eq 'l12'
-				$completionFile = if ($haramel) { 'altgard-l12-completion.json' } else { 'completion.json' }
+				$capital = $extra.ContainsKey('PC_CAPITAL')
+				$completionFile = if ($haramel) { 'altgard-l12-completion.json' } elseif ($capital) { 'capital-stage-completion.json' } else { 'completion.json' }
 				$completion = Get-Content -Raw -LiteralPath (Join-Path $evidence $completionFile) | ConvertFrom-Json
 				if ($completion.CharacterId -ne $restored.characterId -or
-					$(if ($haramel) { -not $completion.verified } else { $completion.Next.Outcome -ne 'complete' })) {
+					$(if ($haramel -or $capital) { -not $completion.verified } else { $completion.Next.Outcome -ne 'complete' })) {
 					throw 'The restored character did not reach the snapshot endpoint.'
 				}
 				Write-Host "Verified snapshot ${Name}: character $($restored.characterId) resumed at its endpoint. Evidence: $evidence"

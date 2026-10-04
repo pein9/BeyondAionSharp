@@ -2281,11 +2281,20 @@ Work with **PC** in place of **NA** in the loop protocol:
     (`pc06-checks`), and `run/pc06-capital-fast` passes 89 tests/five opt-in skips and
     all eleven scenarios. These prove integration and its existing primitives;
     the natural segment and snapshots remain PC-07.
+    Commit: `89785a70a`.
 - [ ] **PC-07 — Contained SIM smoke and evidence.** Depends PC-06. Capture the level-10
   starting snapshot only from committed code; restore via sim-snapshot.ps1, run just this
   capital segment once, assert ten completions/rewards and the Ishalgen return, record
   deaths/losses and drop the owned schema. Run the required checks and run-fast before
   gameplay-change commits. No whole character-create rerun is required for this proof.
+  - 2026-10-04, tooling preparation: `sim-snapshot.ps1 -CapitalStage start/first`
+    captures only committed runtime/snapshot code. The contained first run calls the
+    public Restore action, selects `NA_ASCENSION=1 PC_CAPITAL=first`, optionally
+    injects a mid-contact relog and drops its owned schema. Both dumps retain hashed
+    relog receipts and elapsed time; restore refuses changed/missing evidence or
+    mismatched identity/stage. Snapshot mock contract passes
+    (`run/capital-pass/pc07-snapshot-contract.log`); seven pre-commit checks pass
+    (`pc07-tools-checks`). Natural capture/proof is still pending.
 - [ ] **PC-08 — Schedule the higher-level passes.** Depends PC-07. Add the approved
   cross-region quests to their individual Altgard/capital segments, with source items
   acquired after acceptance; obtain separate decisions for materials, professions,

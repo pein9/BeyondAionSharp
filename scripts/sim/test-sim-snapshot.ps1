@@ -40,6 +40,35 @@ try {
 	$again = & $script -Action Restore -Name munin -Docker $fake -SnapshotRoot $snapshots | ConvertFrom-Json
 	Assert-True ($again.database -ne $restored.database) 'Every restore must be a fresh copy.'
 	Assert-True ($restored.environment.PSObject.Properties.Name -notcontains 'AF_HM_PROGRESS') 'Historical snapshots gained a Haramel selector.'
+	Assert-True ($restored.environment.PSObject.Properties.Name -notcontains 'PC_CAPITAL') 'Historical snapshots gained a capital selector.'
+
+	# Both capital endpoints require immutable relog evidence and select only the capital segment.
+	foreach ($stage in @('start', 'first')) {
+		$capitalName = "pandaemonium-capital-$stage"
+		$capital = Join-Path $snapshots $capitalName
+		New-Item -ItemType Directory -Path $capital | Out-Null
+		Copy-Item -LiteralPath (Join-Path $munin 'dump.sql.gz') -Destination $capital
+		$capitalReceipt = Join-Path $capital 'capital-stage-completion.json'
+		[ordered]@{ Stage=$stage; CharacterId=4242; verified=$true } | ConvertTo-Json | Set-Content -LiteralPath $capitalReceipt
+		$capitalMetadata = [ordered]@{ schemaVersion=1; name=$capitalName; source="natural-capital-$stage"; characterId=4242;
+			elapsedMillis=3000; dumpSha256=$hash; capitalReceiptSha256=(Get-FileHash -Algorithm SHA256 $capitalReceipt).Hash.ToLowerInvariant() }
+		$capitalMetadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $capital 'snapshot.json')
+		$capitalRestored = & $script -Action Restore -Name $capitalName -Docker $fake -SnapshotRoot $snapshots | ConvertFrom-Json
+		Assert-True ($capitalRestored.environment.NA_ASCENSION -eq '1' -and $capitalRestored.environment.PC_CAPITAL -eq 'first') 'Capital restore selected the whole journey.'
+		Assert-True ($capitalRestored.environment.AION_SIM_NI08_ELAPSED_MS -eq '23000') 'Capital restore rewound game time.'
+		Remove-Item -LiteralPath $log
+		$capitalMetadata.characterId = 4243
+		$capitalMetadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $capital 'snapshot.json')
+		Assert-Throws { & $script -Action Restore -Name $capitalName -Docker $fake -SnapshotRoot $snapshots } '*wrong identity or stage*' 'Capital restore accepted a different identity.'
+		Assert-True (-not (Test-Path -LiteralPath $log)) 'Rejected capital identity touched MySQL.'
+		Set-Content -LiteralPath $capitalReceipt -Value '{"Stage":"first","CharacterId":4242,"verified":false}'
+		Assert-Throws { & $script -Action Restore -Name $capitalName -Docker $fake -SnapshotRoot $snapshots } '*receipt hash changed*' 'Edited capital evidence was restored.'
+		Assert-True (-not (Test-Path -LiteralPath $log)) 'Edited capital evidence touched MySQL.'
+		Remove-Item -LiteralPath $capitalReceipt
+		Assert-Throws { & $script -Action Restore -Name $capitalName -Docker $fake -SnapshotRoot $snapshots } '*missing its capital receipt*' 'Missing capital evidence was restored.'
+	}
+	Assert-Throws { & $script -Action Capture -Name capital-conflict -CapitalStage first -AltgardLeg1 -Docker $fake -SnapshotRoot $snapshots -NoBuild } '*cannot be combined*' 'Capital capture combined unrelated scopes.'
+	Assert-Throws { & $script -Action Capture -Name capital-conflict -CapitalStage start -CapitalRelogAt '2912:3:1' -Docker $fake -SnapshotRoot $snapshots -NoBuild } '*requires CapitalStage first*' 'Starting capture injected a capital-only interruption.'
 
 	# Haramel requires its immutable receipt and resumes the endpoint with its original budgets.
 	$haramel = Join-Path $snapshots 'altgard-haramel-l12'
@@ -81,5 +110,8 @@ try {
 	Write-Host 'sim-snapshot contract passed.'
 }
 finally {
+	$resolvedRoot = [IO.Path]::GetFullPath($root)
+	if ((Split-Path -Parent $resolvedRoot) -ne [IO.Path]::GetTempPath().TrimEnd([IO.Path]::DirectorySeparatorChar) -or
+		(Split-Path -Leaf $resolvedRoot) -notmatch '^aion-sim-snapshot-[a-f0-9]{32}$') { throw 'Refusing unsafe snapshot-test cleanup.' }
 	Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
 }
