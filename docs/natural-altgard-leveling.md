@@ -5,6 +5,8 @@ now ascends at the first level 9, returns to finish Ishalgen, then enters Altgar
 AS-02 and the retained snapshots below record the earlier late Ascension order.
 EA-02 tracks fresh proof of the revised Ishalgen/bridge segment; it does not replace
 the historical full Altgard/Haramel acceptance evidence.
+The revised segment's `ea02-create-s1-a2` SIM completes all 41 Ishalgen quests and the
+bridge, entering Altgard at level 13 with zero recorded deaths and endpoint relog proved.
 
 **Status (2026-09-29): the list, the order and AL-1..AL-5 are approved**, with the
 recommendations and the operator's notes below.

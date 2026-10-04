@@ -2,11 +2,17 @@
 
 Status (2026-09-28): **planned. NA-00 is done and the operator decisions are answered.**
 
+OD-16 status (2026-10-04): **EA-01/EA-02 complete.** The revised fresh Ishalgen/bridge
+SIM passes, with the original failed attempt retained and final checks passed.
+
 **Current leveling order (OD-16, approved 2026-10-04).** On the first observed level 9,
 Ascension-enabled journeys finish Q2008 with Munin and Q2009 in Pandaemonium before any
 further Ishalgen quest work. Choose Cleric and the Karmic Staff, equip owned upgrades and
 use the learned regular skills. Return through Doman's shipped Ishalgen teleporter,
 finish the same 41 Ishalgen quests, then return to Pandaemonium for Q2904 and Altgard.
+Complete the human-only Collecting quests Q2133 (level 2) and Q2134 (level 7) when
+eligible: their nodes require skill 30001, which is replaced by Essencetapping 30002
+at level 10. This preparation must precede the level-9 departure.
 Use hub flight transporters where the route crosses hubs. This changes the leveling
 order for fresh SIM/LIVE journeys; the Priest-only diagnostics and existing snapshots
 retain their historical frozen boundary. No additional server content or stigma is authorized.
@@ -178,9 +184,41 @@ Cleric; OD-16 supersedes the late Ascension order for fresh leveling.
     (`run/early-ascension-focused-tests-a2.log`); the corrected first test-fixture failure
     is retained. Seven pre-commit checks pass (`run/early-ascension-checks`), and Fast
     passes all 11 scenario gates (`run/early-ascension-fast`). EA-02 proves the actual route.
-- [ ] **EA-02 — One fresh SIM proof.** From character creation, verify the first-level-9
+- [x] **EA-02 — One fresh SIM proof.** From character creation, verify the first-level-9
   departure, the ceremony's level/skills/staff, return to Ishalgen, all 41 quests, final
   Altgard bridge persistence and owned-schema cleanup. Record deaths; preserve failures.
+  - 2026-10-04 failed `ea02-create-s1-a1` on committed `d2ead83db`: the first level-9
+    packet and `early-ascension-start` both occur at 00:44:43.185, after Q2005 and before
+    Q2006/Q2007. The ordinary ceremony/return receipt proves level 10, Cleric, equipped
+    Karmic Staff, 16→36 observed skills, retained completions, Q2904 START/0 and zero
+    deaths. Later Q2133 stopped at the bot's Collecting check. Java `SkillLearnService`
+    removes Collecting 30001 at level 10; `GatherableController` and the shipped Young
+    Azpha/Impure Iron templates require that exact skill, so Essencetapping cannot replace
+    it on these nodes. Fix the route by completing Q2133/Q2134 at their eligible levels
+    before Ascension, preserving the immediate level-9 rule and all recovery budgets.
+    Original evidence remains in `run/early-ascension/ea02-create-s1-a1`; its schema was dropped.
+  - 2026-10-04 `ea02-create-s1-a2` passes one fresh seed-1 SIM, from creation through
+    Ishalgen and the Altgard bridge, with the human-gathering scheduling correction.
+    Q2133 and Q2134 are complete before the departure; Collecting is 16. The first level-9
+    packet and departure share 01:01:14.664, during Q2005's first Stalker, with **no sent
+    action between them**. The Q2005 START/1 receipt is identical across the detour.
+    Return is level-10 Cleric, Karmic Staff equipped, 36 observed skills and Essencetapping
+    16; Q2904 remains START/0. All 41 Ishalgen quests finish at level 13; Q2904/Q24010 then
+    complete, leaving 45 total, level 13, bound at Altgard Fortress with an ordinary
+    endpoint relog verified. **Zero SM_DIE packets and zero bind revives.** Game time
+    11,738,001 ms (3h 15m 38.001s); test wall time 9.2213 min. Both owned SIM schemas are
+    gone. Receipts, raw trace, `route-audit.json`, `schema-cleanup.json`, `run-identity.json`
+    and the tested source patch remain in `run/early-ascension/ea02-create-s1-a2`.
+    This proves the revised Ishalgen/bridge segment; historical Altgard/Haramel AS-02
+    remains the previous route's evidence. No snapshot was captured and no LIVE run was started.
+  - 2026-10-04 final validation: 59 focused tests pass, including the rule that optional
+    hub optimization cannot reorder human gathering or the level-9 departure. A2 used
+    the default unoptimized runner; the later safeguard changes only the optional hub
+    selection and is unit-tested. Seven pre-commit checks pass in
+    `run/early-ascension-final-checks`; Fast passes 82 tests, five expected switch skips
+    and all 11 scenario gates in `run/early-ascension-final-fast`. Earlier Fast passes
+    and the first SIM failure remain. Read-only final schema audit confirms no owned
+    EA-02 or these Fast schemas remain (`run/early-ascension-final-schema-cleanup.json`).
 
 ## Route at a glance (Java spec, verified in C#)
 
@@ -262,10 +300,11 @@ The C# twins live under `src/Aion.GameServer/Handlers/Quest/ascension/` and `…
 
 1. **The character stays level 9 through Q2008.**
    - Q2008's 73,200 XP is paid before Daeva status is set.
-   - A non-Daeva is capped at the start of level 10 (182,252 XP), which the client shows as
+   - A non-Daeva is capped at the start of level 10 (126,069 XP), which the client shows as
      a full bar at level 9. Nothing past Ascension is capped.
-     The shipped level-9 threshold is 126,069 XP. Earlier evidence below mislabeled that
-     threshold as the cap; OD-16 checks the current shipped XP table and Java `addExp`.
+     Level 9 starts at 82,982 XP. Java `PlayerExperienceTable.getStartExpForLevel` uses
+     `experience[level - 1]`; the XML comments label the level that ends at each entry.
+     Thus 182,252 XP starts level 11, and the earlier cap evidence below is correct.
    - Level 10 comes only with the Q2009 payout.
    - The frozen Priest diagnostic keeps its level ≥ 10 guard. OD-16 permits the returned
      Cleric only with completed Q2008/Q2009 receipts. Q2008's own reward can still be

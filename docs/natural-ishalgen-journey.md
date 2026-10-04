@@ -6,6 +6,8 @@ soon as level 9 is observed. Return as a level-10 Cleric with the ceremony staff
 learned regular skills, finish the same 41 Ishalgen quests, then dispatch to Altgard.
 No extra Ishalgen quests or stigmas are added. Historical Priest-only diagnostics and
 their Munin snapshots retain the boundary described below.
+Q2133 and Q2134 are prioritized at levels 2 and 7 while Collecting is still available;
+Ishalgen's starter nodes cannot be harvested with the Daeva's Essencetapping skill.
 
 Status (2026-09-26): NI-00 through NI-09 are complete in their documented scope.
 The integrated NI-07 SIM journey passed smart46 seeds 1/3/4/5: all 41 quests,
@@ -79,8 +81,9 @@ three Young Azpha items at gathering skill 1 for Nobekk.
 
 The quest-reward lower bound for the 41 included quests is 155,234 XP (maximum
 156,219 XP), before ordinary kill and gathering XP. The shipped absolute level-9
-threshold is 126,069 XP and the level-10 threshold is 182,252 XP. For an online
-non-Daeva Priest, `PlayerCommonData.setExp` caps stored XP at 182,252 and displayed
+threshold is 82,982 XP and the level-10 threshold is 126,069 XP. Java indexes the
+table by `level - 1`; the XML's level comments label each ending threshold. For an online
+non-Daeva Priest, `PlayerCommonData.setExp` caps stored XP at 126,069 and displayed
 level at 9, even with a full XP bar. Ordinary combat, gathering, and quest rewards
 may reach that cap before all 41 quests are complete; this is expected and must
 not cause route pruning, XP avoidance, or a false level-10 failure. Route ordering
@@ -825,7 +828,7 @@ correctness by themselves.
    still a Priest, with Ascension Q2008 at START, step/var 0. Its automatic journal
    activation is expected; do not interact with Munin for Q2008, perform its
    objectives, or choose a class (that is the D25 leg). Earlier Munin interactions for included quests
-   are allowed. Reaching level 9 or the 182,252-XP cap early does not excuse any
+   are allowed. Reaching level 9 or the 126,069-XP cap early does not excuse any
    remaining eligible Ishalgen quests; a full XP bar is acceptable.
 4. Relog and verify that completed quests, character class/level, inventory, and
    location persisted. Resume normal play from observed state across interruptions.

@@ -124,18 +124,24 @@ public static class NaturalIshalgenDecisionEngine
 				quests.Add(new(quest.Id, "blocked", [.. checks]));
 				continue;
 			}
+			// Java removes Collecting 30001 at level 10. Ishalgen's Young Azpha and Impure
+			// Iron require it, so finish their quests while human, at their eligible levels.
+			bool humanGathering = earlyAscension && state.Level < contract.AscensionLevel &&
+				!state.CompletedQuestIds.Contains(contract.AscensionQuestId) && quest.Id is 2133 or 2134;
+			if (humanGathering)
+				checks.Add(new("pre-ascension-gathering", "pass", "Collecting-only nodes must be harvested before becoming a Daeva."));
 			if (state.Quests.TryGetValue(quest.Id, out BotQuestState? active) && active.Status is >= 3 and < 5)
 			{
 				checks.Add(new("client-journal", "pass", $"Active status {active.Status}, step/flags {active.StepAndFlags}."));
 				checks.Add(new("objective-handler", "unknown", "Natural quest objective handling arrives in NI-03 through NI-07."));
 				quests.Add(new(quest.Id, "active", [.. checks]));
-				candidates.Add((0, quest.MinimumLevel, quest.Id, "continue-quest"));
+				candidates.Add((humanGathering ? -1 : 0, quest.MinimumLevel, quest.Id, "continue-quest"));
 			}
 			else
 			{
 				checks.Add(new("starter-observation", "unknown", "Contract gates pass; no starter interaction has been observed."));
 				quests.Add(new(quest.Id, "candidate", [.. checks]));
-				candidates.Add((1, quest.MinimumLevel, quest.Id, "find-quest-starter"));
+				candidates.Add((humanGathering ? -1 : 1, quest.MinimumLevel, quest.Id, "find-quest-starter"));
 			}
 		}
 		if (quests.All(quest => quest.Verdict == "complete"))
@@ -169,7 +175,7 @@ public static class NaturalIshalgenDecisionEngine
 			return new(sequence, "await-progression", null, "awaiting-capability",
 				"No quest passes the current level and prerequisite gates.", [.. global], [.. quests]);
 		return new(sequence, selected.Action, selected.Id, "awaiting-capability",
-			$"Q{selected.Id} wins by active-journal priority, then minimum level, then quest ID. " +
+			$"Q{selected.Id} wins by {(selected.Priority == -1 ? "pre-Ascension gathering" : "active-journal")} priority, then minimum level, then quest ID. " +
 			"Execution needs the corresponding natural gameplay capability.", [.. global], [.. quests]);
 
 		NaturalDecision Stop(string action, string reason, string outcome)

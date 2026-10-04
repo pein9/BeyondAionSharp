@@ -117,6 +117,28 @@ public sealed class NaturalIshalgenDecisionLoopTests
 		Assert.Equal("blocked", NaturalIshalgenDecisionEngine.Decide(Contract, returned, 3).Outcome);
 	}
 
+	[Fact]
+	public void CollectingOnlyQuestsRunAtTheirEligibleLevelsBeforeAscension()
+	{
+		NaturalIshalgenContract full = NaturalIshalgenContract.LoadDefault();
+		var state = Observe(level: 2, active: [new(2000, 3, 0, 0, null)]);
+		NaturalDecision azpha = NaturalIshalgenDecisionEngine.Decide(full, state, 1, earlyAscension: true);
+		Assert.Equal(2133, azpha.SelectedQuestId);
+		Assert.False(NaturalIshalgenHubPolicy.MayReorder(azpha));
+		state = state with { Level = 6, CompletedQuestIds = new HashSet<int> { 2133 } };
+		Assert.Equal(2000, NaturalIshalgenDecisionEngine.Decide(full, state, 2, earlyAscension: true).SelectedQuestId);
+		state = state with { Level = 7 };
+		NaturalDecision iron = NaturalIshalgenDecisionEngine.Decide(full, state, 3, earlyAscension: true);
+		Assert.Equal(2134, iron.SelectedQuestId);
+		Assert.Contains(iron.Quests.Single(q => q.QuestId == 2134).Checks, c => c.Rule == "pre-ascension-gathering");
+		Assert.False(NaturalIshalgenHubPolicy.MayReorder(iron));
+		Assert.True(NaturalIshalgenHubPolicy.MayReorder(NaturalIshalgenDecisionEngine.Decide(full, state, 4)));
+		Assert.Equal(2000, NaturalIshalgenDecisionEngine.Decide(full, state, 4).SelectedQuestId);
+		NaturalDecision depart = NaturalIshalgenDecisionEngine.Decide(full, state with { Level = 9 }, 5, earlyAscension: true);
+		Assert.Equal("ascend-now", depart.SelectedAction);
+		Assert.False(NaturalIshalgenHubPolicy.MayReorder(depart));
+	}
+
 	[Theory]
 	[InlineData(null, true, true)]
 	[InlineData((byte)3, true, true)]

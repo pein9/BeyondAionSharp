@@ -6,6 +6,13 @@ Ascension-enabled journeys return to finish the retained Ishalgen quests as a Cl
 the Priest-only batch diagnostics below keep their historical endpoint. Fresh proof
 is tracked as EA-01/EA-02 in the Ascension document.
 
+Fresh proof `ea02-create-s1-a2` (2026-10-04) completed the revised Ishalgen/bridge segment:
+Q2133/Q2134 while human, immediate level-9 departure during Q2005, ceremony and return
+with staff and learned skills, all 41 Ishalgen quests at level 13, then the Altgard bridge
+and endpoint relog. Zero deaths were recorded; both SIM schemas were dropped. Evidence:
+`run/early-ascension/ea02-create-s1-a2/route-audit.json`. The first failed attempt is retained
+and explained under EA-02. Full Altgard/Haramel evidence remains the prior AS-02 route.
+
 The automated Priest plays Ishalgen 1–9 like a human: the frozen NI-07 journey
 (`NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup`, Q2001 through Q2134 and Munin,
 205 quest updates). This page is the running state of that work: what the bot does now, how to

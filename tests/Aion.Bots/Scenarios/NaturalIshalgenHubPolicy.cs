@@ -27,6 +27,11 @@ public static class NaturalIshalgenHubPolicy
 	public static int[] CurrentSafeGroup(IReadOnlySet<int> completedQuestIds) =>
 		SafeWorkGroups.FirstOrDefault(group => group.Any(id => !completedQuestIds.Contains(id))) ?? [];
 
+	/// <summary>OD-16's human gathering and level-9 departure outrank the historical hub order.</summary>
+	public static bool MayReorder(NaturalDecision decision) => decision.SelectedAction != "ascend-now" &&
+		!decision.Quests.Any(quest => quest.QuestId == decision.SelectedQuestId &&
+			quest.Checks.Any(check => check.Rule == "pre-ascension-gathering"));
+
 	public static readonly Hub[] Hubs =
 	[
 		new("starter", new(530, 2780, 296, 0), [2101, 2102, 2103]),

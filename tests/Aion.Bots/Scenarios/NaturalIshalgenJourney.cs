@@ -679,7 +679,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						session.ConnectionGeneration, contract, session.CurrentPosition, sequence, earlyAscension: options.AscensionBridge);
 					progress.Observe(checkpoint, TimeSpan.FromMilliseconds(runtime.NowMillis - journeyStart));
 					decision = checkpoint.Next;
-					if (options.OptimizeHubs && session.Api.World.MapId == contract.MapId &&
+					if (options.OptimizeHubs && NaturalIshalgenHubPolicy.MayReorder(decision) && session.Api.World.MapId == contract.MapId &&
 						!session.Api.World.IsDead)
 					{
 						await AcceptAllAtCurrentHubAsync();
@@ -6771,7 +6771,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 			// A collect step served by gatherable nodes: Q2133's Young Azpha (skill 1) and Q2134's Impure Iron Ore
 			// (skill 15). The plan lists every node template that yields the item on every map; only the spots on
-			// this map count. When Essencetapping is below the node's level the bot first skills up on Young Azpha,
+			// this map count. Both require human Collecting 30001, not the Daeva's Essencetapping 30002:
+			// OD-16 schedules them before Ascension. When Collecting is below the node's level, skill up on Young Azpha,
 			// as a player does (Java GatherableController.OnStartUse refuses a node above the skill level, and
 			// PlayerSkillList.AddSkillXp raises the skill one point per ~76-224 xp at 91 xp a harvest).
 			async Task GatherAsync(QuestRunOperation operation)
