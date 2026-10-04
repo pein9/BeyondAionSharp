@@ -8,6 +8,13 @@ the historical full Altgard/Haramel acceptance evidence.
 The revised segment's `ea02-create-s1-a2` SIM completes all 41 Ishalgen quests and the
 bridge, entering Altgard at level 13 with zero recorded deaths and endpoint relog proved.
 
+**2026-10-04 capital revision:** [PC-00..PC-08](natural-ascension-altgard.md#pandaemonium-capital-passes-approved-2026-10-04)
+adds the ten-quest city/Convent pass immediately after Q2009, before retained Ishalgen
+work. Its contained SIM and snapshots are proved at Cleric 11. The nine later additions
+[scheduled by PC-08](natural-ascension-altgard.md#scheduled-additions-to-individual-legs-pc-08-2026-10-04)
+are assigned to the individual legs below; their executors and segment proofs are still
+pending. The completed TODOs and historical snapshots below describe their original scopes.
+
 **Status (2026-09-29): the list, the order and AL-1..AL-5 are approved**, with the
 recommendations and the operator's notes below.
 
@@ -365,6 +372,12 @@ TODO items.
    checklist, then one isolated LIVE run from the LIVE dump.
 
 ## Leg 1: Altgard Fortress (level 10–12)
+
+**PC-08 scheduled addition:** on the first eligible fortress visit, pick up Q2917
+at Arekedil 203574 and visit Chauminerk 798029 to START/1. Protect supplied 182207008
+until Lanse/Annemari's city half during Leg 5 preparation. Its Q2918 box delivery
+returns to Arekedil afterward. Keep the original leg endpoint and prove this addition
+in its own contained Leg 1 segment; the historical contract does not yet include it.
 
 The operator's current focus is the fortress quests. **The bot does not go south
 for Q2210 or Q24012 in this leg** (AF-Q2, decided 2026-09-29); they move to Leg 2 at Moslan
@@ -2100,6 +2113,22 @@ What the catch-up changed:
 
 ## Leg 5: Kaibech's Campsite, Idun's Lake and MuMu Village (level 18–19) — proposal
 
+**PC-08 scheduled additions:** before field work, batch a capital preparation visit
+with the existing cube errand (still make the quest visit if the cube is expanded).
+Finish Q2917 at Lanse/Annemari, use its box to accept Q2918, return by Doman and hand
+the box in at Arekedil before the hub flight back to Basfelt; preserve the Basfelt bind.
+At observed level >=15, prepare Q2916 through Deyla/Zerpi/Osvi/Annju to START/3 for
+Neparinerk in Leg 6. At >=19, do Q2954 once through Doman/Haven/Doman; defer it to
+Leg 7 if below its gate. These executors and contained proofs are pending.
+
+Q2919 should already be START/4 from the post-Ishalgen city/Ishalgen preparation in
+[PC-08](natural-ascension-altgard.md#scheduled-additions-to-individual-legs-pc-08-2026-10-04).
+If not, prepare it and collect two Thorned Ampha Tails in Ishalgen before this field
+segment. Then collect three Malodor Stamens 182207010 from Grove Malodors 210443/210444
+on Kaibech's grounds and one Slime Sap 182207012 from Rainbow Slime 210435 at Idun's
+Lake. Obtain every drop after acceptance at START/4. Protect all items until the
+Neusa/book/Cavalorn finish in Leg 7; do not confuse these sources with Mahindel Swamp.
+
 **Status (2026-10-01): approved** (AK-Q1..AK-Q3 as recommended; see "Blocked / questions").
 Leg 5 covers Stops 5 and 6 together (AK-Q1 (b)). Q2242 and Q24233 are held for Gerger and the
 fortress (AK-Q2 (a)). The bot waits for the game's night for Q2292's Love Ring (AK-Q3 (a)).
@@ -2533,6 +2562,11 @@ The same loop protocol, with "AK" in place of "NA".
 
 ## Leg 6: Gerger Village and Trader's Berth (level 20) — proposal
 
+**PC-08 scheduled addition:** with Q2916 START/3 from Leg 5 city preparation, visit
+Neparinerk 798033 at (2693.71,1026.61,313) beside the Berth work and retain START/4
+for Banatisai in Leg 9. It belongs alongside the existing Neparinerk deliveries,
+not at Manir. Executor, updated contract and contained proof are pending.
+
 **Status (2026-10-01): approved** (AG-Q1..AG-Q3 as recommended; see "Blocked / questions"). Leg 6 covers
 Stops 7 and 8 from the Trader's Berth bind (AG-Q1 (a)). Q24115 and Q2262 are held for their hubs (AG-Q2 (a)). Outside
 04:00–21:00 the bot works other quests before Q2284's escort, then waits for 04:00 (AG-Q3 (a)).
@@ -2892,6 +2926,14 @@ The same loop protocol, with "AG" in place of "NA".
 
 ## Leg 7: Altgard Fortress and the East Gate (level 21) — proposal
 
+**PC-08 scheduled capital additions:** batch Q2919's Neusa/book/Cavalorn finish with
+Q2278's Cavalorn/Balder visit once all three item types are owned. At >=20, do Q2959
+Moreinen 204211 -> Eramir 204164 and Q2984 Lusena 204138 -> Kinot 204121; keep the dyes
+unapplied. Accept Q2938 at Oubliette and carry START/0 until Q24016 is complete in
+Leg 10. Do Q2954's single completion here if it was below its gate in Leg 5.
+Q2920 waits: its two prerequisites belong to Leg 8. These additions are scheduled,
+not completions in the historical Leg 7 contract/snapshot.
+
 **Status (2026-10-02): approved** (AE-Q1..AE-Q3 as recommended; see "Blocked / questions").
 - Leg 7 covers Stop 9 and Stop 11's fortress quests, from the fortress bind (AE-Q1 (a)).
 - Q2146 is held for Lateni (AE-Q2 (a)).
@@ -3148,6 +3190,10 @@ The same loop protocol, with "AE" in place of "NA".
 
 ## Leg 8: Altgard Observatory and Mahindel Swamp (level 21)
 
+**PC-08 scheduling gate:** this leg completes Q2268 and Q2269, opening Q2920 at
+level >=16. Hand that conversation to the next capital visit, Leg 9's Q2258 trip.
+Q2919's Rainbow Slime Sap belongs to Idun's Lake in Leg 5, not this swamp.
+
 **Status (2026-10-02): done (AO-00..AO-06).** Implementation was authorized by the maintainer's "Implement Leg 8 as needed."
 This works the seven-quest outline approved with AE-Q3 (a), using the existing loop protocol with **AO** in place
 of NA. The standing bind, hub-flight, held-quest, help-item and death policies apply. No new server content is needed.
@@ -3275,6 +3321,15 @@ alive, level at least 21, bound at Observatory 700822 and within 60 m, verified 
 Leg 9. LIVE acceptance remains once at the end of the whole Altgard area.
 
 ## Leg 9: Heart of Impetusium (level 21)
+
+**PC-08 scheduled additions:** resume Q2916 START/4 with Banatisai 203673 at
+(2614.59,1642.29,254), then approach Suspicious Clothing 700211 at
+(2579.04,2190,284.75). Its distance event changes START/5 -> START/6; obtain item
+182207007 through ordinary object loot and keep it for Deyla in Leg 10's city visit.
+Use the existing Heart bind/recovery and hub flight transporters. During the Q2258
+Lindhelm trip, do Q2920 only with both Q2268/Q2269 complete and level >=16; follow the
+actual client answer sequence and record its reward group/payout. Executors and
+contained Leg 9 proofs are pending.
 
 **Status (2026-10-02): done (AH-00..AH-06).** The maintainer's goal, "Implement Leg 9 as needed",
 works Stop 12 as approved with AE-Q3 (a). Use the loop protocol with **AH** in place of NA. The existing
@@ -3409,6 +3464,12 @@ Heart obelisk and bound there. Relog and save `altgard-l9` from committed code; 
     Leg 9 is done; Leg 10 starts from that snapshot. Stop at this checkpoint; Q2900 remains last.
 
 ## Leg 10: Black Claw ground and the remaining campaigns (level 22)
+
+**PC-08 scheduled additions:** finish Q2916 at Deyla with clothing 182207007 during
+Q2283's existing Vidar/capital trip. After Q24016 COMPLETE, obtain Q2938 permission
+from Suthran only after seeing page 1011; page 1097 refuses permission. Protect the
+granted 182207026 at REWARD/0 for Leg 11. Keep the original campaigns/recovery and
+fortress endpoint; these executors and contained proofs are pending.
 
 **Status (2026-10-02): done (BC-00..BC-08).** The maintainer's goal, "Implement Leg 10 as needed",
 works AE-Q3 (a) and AL-2's solo group quests. Use the loop protocol with **BC** in place of NA, one item and
@@ -3605,6 +3666,13 @@ Gathering, coin loops and unapproved D32 quests stay deferred.
     START/0 and end-of-area LIVE acceptance later. No push.
 
 ## Leg 11: No Escaping Destiny and the Altgard endpoint (level 24 — proposal)
+
+**PC-08 scheduled addition:** turn Q2938 REWARD/0 in at Oubliette with permission
+182207026 during Q2900's capital reward visit, then complete the existing fortress
+return/relog. Avoid reopening completed Q2938, which teleports to the secret library.
+Keep Q2900's stigma bundle sealed; unlocked slots and an owned/socketed stone remain
+necessary. The Q2938 executor/contained proof is pending; the historical Destiny
+completion remains valid for its original scope.
 
 **Status (2026-10-03): done (ND-00..ND-08).** The maintainer's goal, "Implement the No
 Escaping Destiny", approves ND-00..ND-08. Finish Q2900 last, as the maintainer decided on

@@ -4,8 +4,9 @@ Status (2026-09-28): **planned. NA-00 is done and the operator decisions are ans
 
 OD-16 status (2026-10-04): **EA-01/EA-02 complete.** The revised fresh Ishalgen/bridge
 SIM passes, with the original failed attempt retained and final checks passed.
-Capital status (2026-10-04): **PC-00..PC-07 complete.** The contained natural capital
-pass and both committed-code snapshots are proved; later-pass scheduling is PC-08.
+Capital status (2026-10-04): **PC-00..PC-08 complete.** The contained natural capital
+pass and both committed-code snapshots are proved. The later additions below are
+scheduled for their individual legs; their execution and segment proofs remain future work.
 
 **Current leveling order (OD-16, approved 2026-10-04).** On the first observed level 9,
 Ascension-enabled journeys finish Q2008 with Munin and Q2009 in Pandaemonium before any
@@ -2153,6 +2154,37 @@ Re-run only the affected contained segments to prove the change. Q2258, Q2278 an
 already provide Altgard-to-capital errands; Q2900's completed stigma tutorial remains its
 own leg and must not be replayed or interpreted as ownership of a permanent stigma.
 
+### Scheduled additions to individual legs (PC-08, 2026-10-04)
+
+These are nine approved later quest completions, assigned to the route rather than
+added to the ten-quest checkpoint. Historical leg completion counts and snapshots
+remain evidence for their original scopes. Implement and prove each affected segment
+separately when working these additions; do not replay character creation or all Altgard.
+The corresponding leg sections in `natural-altgard-leveling.md` carry these assignments.
+
+| Segment | Pickups, field work and hand-ins |
+|---|---|
+| After retained Ishalgen, before Q2904 | At observed level >=13, accept Q2919 at Cavalorn 204206 and advance Gantrug 204215 -> Araison 204192 -> book 700212 -> Cavalorn to **START/4**. Then make a contained Ishalgen return for two Ampha Tails 182207011 from naturally spawned **Thorned Ampha 210404**, level 7, around (433,1937) to (547,1891). Use ordinary transport/hub flights and combat/loot, then return for Q2904. If still below 13, perform this preparation at the later city visit before Leg 5 field work. Do not collect before START/4 or repeat completed Ishalgen quests. |
+| Leg 1, first fortress visit | Accept Q2917 at Arekedil 203574, carry supplied 182207008, then visit Chauminerk 798029 and leave START/1 for the city. Do not use Arekedil's permissive early reward action. |
+| Leg 5, city preparation and lake/grove work | Batch city preparation with the existing cube errand; still make the preparation visit if the cube is already expanded. Complete Q2917 through Lanse 204108 -> Annemari 204241, use its Ornate Jewelry Box 182207009 to accept Q2918, then return by Doman to Altgard and finish Q2918 at Arekedil before the hub flight back to Basfelt. At >=15 prepare Q2916 through Deyla 204141 -> Zerpi 204152 -> Osvi 204150 -> Annju 204151 to START/3. At >=19 do Q2954 once, Doman -> Haven 204221 -> Doman, retaining its supplied juice 182207040 until hand-in. If Q2919 is not yet prepared, do the city/Ishalgen preparation above now. After START/4, collect **three Malodor Stamens 182207010** from Grove Malodors 210443/210444 near Kaibech (1229–1381,869–995), and **one Slime Sap 182207012** from Rainbow Slime 210435 at Idun's Lake (1452–1523,829–889). These sources belong to Leg 5, not Moslan or Mahindel. Keep all three item types for the later city finish. |
+| Leg 6, Trader's Berth | Q2916 START/3 -> Neparinerk **798033** at (2693.71,1026.61,313) -> START/4, alongside the existing Berth deliveries. This is separate from its later Banatisai contact. |
+| Leg 7, Q2278's capital return | Finish Q2919 through Neusa 204224's item check -> book 700212 -> Cavalorn; the book supplies 182207013 only after the collection check. At >=20 complete Q2959 Moreinen **204211** -> Eramir **204164** and Q2984 Lusena **204138** -> Kinot **204121**, carrying supplied 182207064 and retaining both dye rewards without applying them. Accept Q2938 at Oubliette 204267 and retain START/0 for Suthran after the campaigns. If Q2954 was below its gate during Leg 5, do its one completion here. |
+| Leg 8 -> Leg 9's Q2258 capital return | Q2268 and Q2269 are completed in **Leg 8**. Only after both and observed level >=16, do Q2920 at Deyla during the **Leg 9 Lindhelm visit**. Follow the shipped client dialog/answer sequence, observe its reward group and accept the corresponding payout (group 0: 2,380 Kinah; group 1: 700). The checked client topology includes both answer paths; do not jump straight to a permissive SETPRO reward. |
+| Leg 9, Heart of Impetusium | Q2916 START/4 -> Banatisai 203673 at (2614.59,1642.29,254) -> START/5, then approach Suspicious Clothing **700211** at (2579.04,2190,284.75) to fire its distance transition to START/6 and loot **182207007** ordinarily. Use the Heart bind and hub flight transporters; record deaths/recovery rather than treating them as quest failures. |
+| Leg 10, Q2283 city visit and campaign endpoint | Finish Q2916 at Deyla with the clothing item during the existing **Q2283/Vidar** trip. Separately, after **Q24016 COMPLETE**, ask Suthran about Q2938: require the actual permission page **1011** before SET_SUCCEED. Keep the granted 182207026 at REWARD/0 for the next city visit. Page 1097 is a refusal; never bypass it. |
+| Leg 11, Q2900 capital reward visit | Turn Q2938 in at Oubliette with its permission item, then preserve the existing Q2900 reward and fortress endpoint. Do not reopen completed Q2938 unintentionally: Java's subsequent USE_OBJECT teleports into the secret library. The stigma bundle remains sealed pending an ordinary slot/stone/socket decision. |
+
+Protect the carried items **182207008/009/010/011/012/013/007/026/040/064** across
+inventory service and relog when adding these executors. Carry state into the affected
+segment snapshot; a historical snapshot lacking the accepted quest/items cannot prove
+its downstream addition. Capture only committed code under distinct names, preserve
+existing snapshots and replay only the affected segments. Retain all observed fares,
+ordinary loot provenance, dialog steps, reward groups, deaths and recovery budgets.
+
+Q2960 materials, professions/crafted introductions, Q4933's cooperating character,
+Q2922's exclusive branch and the later region visits remain operator decisions below.
+Their absence is intentional; this schedule authorizes no new server content or purchases.
+
 ### Missing content, professional gates and false city-only candidates
 
 - **Q2929 Welcome to the Temple of Artisans and Q29049 Construction Basics** have D32
@@ -2331,10 +2363,21 @@ Work with **PC** in place of **NA** in the loop protocol:
     Solution/Fast and the remaining checklist evidence are PC-06's unchanged runtime
     checks; snapshot contract and corrected runner checks pass as recorded above.
     Seven final proof pre-commit checks pass (`pc07-proof-checks`).
-- [ ] **PC-08 — Schedule the higher-level passes.** Depends PC-07. Add the approved
+- [x] **PC-08 — Schedule the higher-level passes.** Depends PC-07. Add the approved
   cross-region quests to their individual Altgard/capital segments, with source items
   acquired after acceptance; obtain separate decisions for materials, professions,
   resurrection partner and the level-21 branch. Do not silently expand the first pass.
+  - 2026-10-04: Java Q2916–2920/Q2938/Q2954 and ReportTo, quest gates/drop steps,
+    actual spawn locations and the shipped Q2920 client topology read. Nine later
+    quests are assigned above and in the individual Altgard leg sections: preparation
+    before collection, Leg 5 lake/grove sources, Leg 6 Neparinerk, Leg 9 Banatisai/clothing,
+    Leg 7/9/10/11 city returns and Q2938 permission only after Q24016. Q2268/Q2269 belong
+    to Leg 8; Q2278 and Q2283 return in Legs 7 and 10, respectively. Separate material,
+    profession, partner and level-21 decisions remain recorded below. This completes
+    scheduling; the later executors/segment smoke proofs are not claimed complete.
+    Static schedule audit passes (`run/capital-pass/pc08-schedule-audit.log`): nine
+    level gates, both quiz prerequisites, the step-4 drops and three field anchors.
+    Seven pre-commit checks pass (`pc08-checks`); this item changes documentation only.
 
 Planning sources: the corresponding Java Pandaemonium handlers, Java ReportTo/SkillUse
 templates, shipped quest/start-condition/reward data, NPC spawns, zone polygons and portal
@@ -2408,6 +2451,17 @@ has examples.
   partner and the Q2922 branch remain separate future decisions. Pernon and Abyss access
   need their own contained route specifications. The ten-quest first pass and later
   Altgard/capital scheduling were approved on 2026-10-04; PC-00 records the decision.
+- **Q2960:** authorize a normal source/cost plan for one Salix Oil, Greater Odella Powder
+  and Aether Crystal before implementing this delivery. No crystal or material is conjured.
+- **Professions:** choose the professions and training/material budget before Q2905–2910,
+  Q29049, work orders or professional delivery chains. The completed Q2929 introduction
+  does not grant those skills or crafted products.
+- **Q4933:** authorize an ordinary cooperating character/death setup for twenty qualifying
+  resurrection casts, with a regular learned resurrection skill. No stigma or premature
+  reward dialog substitutes for those casts.
+- **Level 21 / next region:** choose Q2922's Q2923 versus Q2924 branch with the Morheim route,
+  and a source/shop-material plan for Q2956 before the banquet chain. Pernon and Abyss
+  access still need their own contained route specifications.
 - ~~**NA-20 → OD-13 (asked 2026-09-28):**~~ **Answered 2026-09-28:** approved with changes (see OD-13). NA-21 is unblocked. The original question was: please approve, change or reject [Appendix D.2](#appendix-d2-proposed-help-items-na-20-awaiting-approval):
   1. **The list and bands:**
      - Anti-Shock from level 10;
@@ -2428,6 +2482,11 @@ has examples.
 
 ## Progress log
 
+- 2026-10-04 — PC-08: nine later capital quests scheduled in their specific preparation,
+  field and city-return segments. Source coordinates/gates checked against shipped data
+  and Java; later execution remains future work, with material/profession/partner/branch
+  decisions recorded separately. Static audit and seven pre-commit checks pass.
+  The ten-quest first pass is complete and proved.
 - 2026-10-04 — PC-07: committed-code natural start and one restored capital segment
   pass; ten payments, injected Garm/Therf recovery, Ishalgen return and endpoint relog
   proved at Cleric 11. Both snapshots/hash checks and endpoint SQL pass; owned schemas
