@@ -2251,8 +2251,16 @@ Work with **PC** in place of **NA** in the loop protocol:
     The initial new xUnit assertion warning was fixed without raising the baseline;
     seven checks pass in `pc04-final-checks`. `run/pc04-capital-fast` passes 88 tests
     with five opt-in skips. Q2913/Q2915 are mutually exclusive, not missing quests.
-- [ ] **PC-05 — Veldina's Call.** Depends PC-04. Ordinary Convent portals; prove the return
+    Commit: `80a34b547`.
+- [x] **PC-05 — Veldina's Call.** Depends PC-04. Ordinary Convent portals; prove the return
   to Pandaemonium and retained bind point.
+  - 2026-10-04: Java Q29004/PortalDialogAI and shipped statue paths read. Free account
+    244 follows Veldina -> Balder -> Kvasir, enters the Convent through statue 730268
+    dialog 10000, receives Angulof's +3,000 XP/+9,830 Kinah and uses statue 730269 to
+    return to Pandaemonium with incoming bind unchanged. Focused probe
+    `run/capital-pass/pc05-convent-a.log` passes; original tuple-assertion build error
+    retained in `pc05-build.log`, corrected build in `pc05-build-b.log`. Seven checks
+    pass in `pc05-checks`; `run/pc05-capital-fast` passes 89 tests, five opt-in skips.
 - [ ] **PC-06 — Integrate the capital checkpoint.** Depends PC-05. Enter after Q2009 COMPLETE;
   finish these quests before Doman's Ishalgen return. Preserve in-progress Ishalgen quests,
   Q2904 at step 0, owned equipment and regular/stigma distinctions across relog/recovery.
@@ -2358,6 +2366,8 @@ has examples.
 
 ## Progress log
 
+- 2026-10-04 — PC-05: Veldina's Call, actual Convent statues, rewards and unchanged
+  bind pass; seven checks and Fast (89 tests, five opt-in skips) pass. Integration is next.
 - 2026-10-04 — PC-04: group-0 Blessing/Ribbon/Lost Love protocols and ordinary ring
   equip pass; seven checks and Fast (88 tests, five opt-in skips) pass. PC-05 is next.
 - 2026-10-04 — PC-03: three pet introductions pay their four items without activating

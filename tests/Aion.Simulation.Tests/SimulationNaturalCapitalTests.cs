@@ -17,6 +17,31 @@ namespace Aion.Simulation.Tests;
 
 public sealed partial class SimulationFastScenarioTests
 {
+	/// <summary>PC-05: proper Veldina/Balder/Kvasir progression and the actual Convent entry/return.</summary>
+	[SkippableFact]
+	public async Task CapitalVeldinasCallPaysThroughAngulofAndReturnsWithTheBindUnchanged()
+	{
+		await RunCapitalProbeAsync("PC05", 244, "Asimcapconvent", async (probe, session, token) =>
+		{
+			long xp = probe.Server.GetCommonData().GetExp(), kinah = session.Api.World.Kinah;
+			foreach (NaturalAltgardStep step in NaturalCapitalSteps.Convent.Take(3)) await probe.TalkAsync(step);
+			Assert.True(NaturalAltgardQuestSteps.State(session.Api.World, 29004) is (4, 2));
+			NaturalCapitalPortal entry = probe.Contract.Portals.Single(portal => portal.MapId == 120010000);
+			int statue = await probe.WalkNpcAsync(entry.NpcId);
+			await NaturalCapitalSteps.PortalAsync(session, entry, statue, token);
+			await probe.TalkAsync(NaturalCapitalSteps.Convent[3]);
+			NaturalCapitalPortal exit = probe.Contract.Portals.Single(portal => portal.MapId == 120020000);
+			statue = await probe.WalkNpcAsync(exit.NpcId);
+			await NaturalCapitalSteps.PortalAsync(session, exit, statue, token);
+			Assert.Contains(29004, session.Api.World.CompletedQuestIds);
+			Assert.Equal(3000, probe.Server.GetCommonData().GetExp() - xp);
+			Assert.Equal(9830, session.Api.World.Kinah - kinah);
+			Assert.Equal(120010000, session.Api.World.MapId);
+			Assert.Equal(probe.IncomingBind, session.Api.World.ObeliskBindPoint);
+			Console.WriteLine("PC-05: real statue entry/return, Angulof reward, XP +3000, Kinah +9830, incoming bind retained.");
+		});
+	}
+
 	/// <summary>PC-04: the actual group-0 branch, every Ribbon contact and Lost Love return.</summary>
 	[SkippableFact]
 	public async Task CapitalBlessingUnlocksOnlyTheSelectedRibbonBranchAndPaysLostLoveRewards()

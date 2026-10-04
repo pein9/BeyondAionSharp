@@ -39,6 +39,14 @@ public static class NaturalCapitalSteps
 		Progress(2914, 0, 204236, "SETPRO1", 1352, 10, 1),
 		Finish(2914, 1, 204147, rewardPage: 10),
 	];
+	public static readonly NaturalAltgardStep[] Convent =
+	[
+		Offer(29004, 204071),
+		Progress(29004, 0, 204075, "SETPRO1", 1352, 0, 1),
+		Progress(29004, 1, 204053, "SETPRO2", 1693, 0, 2),
+		Step("q29004-angulof-reward", 29004, 2, "REWARD", 798700,
+			["USE_OBJECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_REWARD1"], [2375, 5]) with { MapId = 120020000 },
+	];
 	public static NaturalAltgardStep BookOffer => Offer(29048, 798304, item: 182212217);
 	public static NaturalAltgardStep BookReward => Step("q29048-book-reward", 29048, 1, "REWARD", 798304,
 		["USE_OBJECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_REWARD1"], [2375, 5]);
