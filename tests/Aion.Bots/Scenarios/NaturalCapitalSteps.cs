@@ -25,6 +25,20 @@ public static class NaturalCapitalSteps
 		Offer(29044, 798443), Finish(29044, 0, 798441),
 		Offer(29045, 798441), Finish(29045, 0, 798442),
 	];
+	public static readonly NaturalAltgardStep[] Blessing =
+	[
+		Offer(2911, 204079),
+		Step("q2911-ribbon-branch", 2911, 0, "START", 204193,
+			["QUEST_SELECT", "SETPRO1", "SELECTED_QUEST_REWARD1"], [1352, 5]),
+		Offer(2912, 204193),
+		Progress(2912, 0, 204089, "SETPRO1", 1352, 10, 1),
+		Progress(2912, 1, 204088, "SETPRO3", 2034, 10, 2),
+		Progress(2912, 2, 204240, "SETPRO2", 1693, 10, 3),
+		Finish(2912, 3, 204236),
+		Offer(2914, 204147),
+		Progress(2914, 0, 204236, "SETPRO1", 1352, 10, 1),
+		Finish(2914, 1, 204147, rewardPage: 10),
+	];
 	public static NaturalAltgardStep BookOffer => Offer(29048, 798304, item: 182212217);
 	public static NaturalAltgardStep BookReward => Step("q29048-book-reward", 29048, 1, "REWARD", 798304,
 		["USE_OBJECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_REWARD1"], [2375, 5]);

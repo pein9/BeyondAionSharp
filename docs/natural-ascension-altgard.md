@@ -2239,8 +2239,18 @@ Work with **PC** in place of **NA** in the loop protocol:
     `run/capital-pass/pc03-hamerun-boundary.log`. Seven pre-commit checks pass in
     `run/capital-pass/pc03-final-checks`; fresh `run/pc03-capital-fast-b` passes
     87 tests with five opt-in skips. Original failed evidence remains available.
-- [ ] **PC-04 — Blessing and the selected branch.** Depends PC-03. Follow every required
+    Commit: `c092fdf57`.
+- [x] **PC-04 — Blessing and the selected branch.** Depends PC-03. Follow every required
   NPC and record the other branch as mutually exclusive. Check reward equipment normally.
+  - 2026-10-04: Java Q2911/Q2912/Q2914, reward/start data and equipment checks read.
+    Free account 243 chooses group 0, proves Q2912 eligible/Q2913 ineligible and visits
+    Garm, Therf, Talmenu and Frana before the Lost Love return circuit. +15,465 XP,
+    no Kinah change, two running scrolls and Arlion's Ring; ordinary gear policy equips
+    the ring with a real equip packet. No manufactured ribbon/token or shortcut reward.
+    Focused probe `run/capital-pass/pc04-ribbon-a.log` passes; Fast adds the equip proof.
+    The initial new xUnit assertion warning was fixed without raising the baseline;
+    seven checks pass in `pc04-final-checks`. `run/pc04-capital-fast` passes 88 tests
+    with five opt-in skips. Q2913/Q2915 are mutually exclusive, not missing quests.
 - [ ] **PC-05 — Veldina's Call.** Depends PC-04. Ordinary Convent portals; prove the return
   to Pandaemonium and retained bind point.
 - [ ] **PC-06 — Integrate the capital checkpoint.** Depends PC-05. Enter after Q2009 COMPLETE;
@@ -2348,6 +2358,8 @@ has examples.
 
 ## Progress log
 
+- 2026-10-04 — PC-04: group-0 Blessing/Ribbon/Lost Love protocols and ordinary ring
+  equip pass; seven checks and Fast (88 tests, five opt-in skips) pass. PC-05 is next.
 - 2026-10-04 — PC-03: three pet introductions pay their four items without activating
   the egg. Focused probe and seven checks pass; Fast passes 87 tests with five opt-in
   skips after correcting the Hamerun probe's Java death-before-summon expectation.

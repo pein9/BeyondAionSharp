@@ -17,6 +17,47 @@ namespace Aion.Simulation.Tests;
 
 public sealed partial class SimulationFastScenarioTests
 {
+	/// <summary>PC-04: the actual group-0 branch, every Ribbon contact and Lost Love return.</summary>
+	[SkippableFact]
+	public async Task CapitalBlessingUnlocksOnlyTheSelectedRibbonBranchAndPaysLostLoveRewards()
+	{
+		await RunCapitalProbeAsync("PC04", 243, "Asimcapribbon", async (probe, session, token) =>
+		{
+			long xp = probe.Server.GetCommonData().GetExp(), kinah = session.Api.World.Kinah;
+			foreach (NaturalAltgardStep step in NaturalCapitalSteps.Blessing)
+			{
+				await probe.TalkAsync(step);
+				if (step.Key == "q2911-ribbon-branch")
+				{
+					Assert.Equal(0, probe.Server.GetQuestStateList().GetQuestState(2911).GetRewardGroup());
+					Assert.True(QuestService.CheckStartConditions(probe.Server, 2912, false));
+					Assert.False(QuestService.CheckStartConditions(probe.Server, 2913, false));
+				}
+			}
+			Assert.True(session.Api.World.CompletedQuestIds.IsSupersetOf(new[] { 2911, 2912, 2914 }));
+			Assert.DoesNotContain(2913, session.Api.World.CompletedQuestIds);
+			Assert.DoesNotContain(2915, session.Api.World.CompletedQuestIds);
+			Assert.Equal(15465, probe.Server.GetCommonData().GetExp() - xp);
+			Assert.Equal(kinah, session.Api.World.Kinah);
+			Assert.Contains(session.Api.World.Inventory.Values, item => item.ItemId == 122000870);
+			Assert.Equal(2, session.Api.World.Inventory.Values.Where(item => item.ItemId == 164000074).Sum(item => item.Count));
+			NaturalGearInfo? Describe(int id)
+			{
+				var template = fixture.DataManager.StaticData.ItemDataDh.GetItemTemplate(id);
+				return template.GetItemSlot() == 0 ? null : new(template.GetItemSlot(),
+					template.GetRequiredLevel(PlayerClass.CLERIC), template.GetLevel(),
+					template.GetRace() is Race.PC_ALL or Race.ASMODIANS);
+			}
+			NaturalGearUpgrade ring = Assert.Single(NaturalGearPolicy.SelectUpgrades(session.Api.World.Inventory.Values,
+				session.Api.World.Level, Describe, (long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF),
+				upgrade => upgrade.ItemId == 122000870);
+			await session.SendPacketAsync(session.Api.Equip(0, ring.Slot, ring.ObjectId), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(ring.Slot, session.Api.World.Inventory[ring.ObjectId].EquipmentSlot);
+			Console.WriteLine("PC-04: group 0, all Ribbon/Lost Love visits, XP +15465, ring equipped by ordinary gear policy and two scrolls; group-1 branch excluded.");
+		});
+	}
+
 	/// <summary>PC-03: complete the introductions with no bought, activated or summoned pet.</summary>
 	[SkippableFact]
 	public async Task CapitalPetIntroductionsPayAllFourItemsWithoutActivatingTheEgg()
@@ -137,6 +178,8 @@ public sealed partial class SimulationFastScenarioTests
 				if (state == null) Assert.True(Server.GetQuestStateList().AddQuest(id, new QuestState(id, QuestStatus.COMPLETE)));
 				else state.SetStatus(QuestStatus.COMPLETE);
 			}
+			// The real ceremony chooses the Cleric's Karmic Staff (reward group 2).
+			Server.GetQuestStateList().GetQuestState(2009).SetRewardGroup(2);
 			QuestState? dispatch = Server.GetQuestStateList().GetQuestState(Contract.DispatchQuestId);
 			if (dispatch == null) Assert.True(Server.GetQuestStateList().AddQuest(Contract.DispatchQuestId, new QuestState(Contract.DispatchQuestId, QuestStatus.START)));
 			else { dispatch.SetStatus(QuestStatus.START); dispatch.SetQuestVar(0); }
