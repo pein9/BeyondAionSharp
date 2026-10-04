@@ -41,6 +41,34 @@ try {
 	Assert-True ($again.database -ne $restored.database) 'Every restore must be a fresh copy.'
 	Assert-True ($restored.environment.PSObject.Properties.Name -notcontains 'AF_HM_PROGRESS') 'Historical snapshots gained a Haramel selector.'
 	Assert-True ($restored.environment.PSObject.Properties.Name -notcontains 'PC_CAPITAL') 'Historical snapshots gained a capital selector.'
+	Assert-True ($restored.environment.PSObject.Properties.Name -notcontains 'RC_CAPITAL') 'Historical snapshots gained later capital scope.'
+
+	# Later capital prefixes retain explicit scope and an immutable packet-state receipt.
+	$later = Join-Path $snapshots 'altgard-rc-prefix'
+	New-Item -ItemType Directory -Path $later | Out-Null
+	Copy-Item -LiteralPath (Join-Path $munin 'dump.sql.gz') -Destination $later
+	$laterReceipt = Join-Path $later 'later-capital-checkpoint.json'
+	[ordered]@{ schemaVersion=1; segment='l1'; characterId=4242; verified=$true;
+		before=@{ characterId=4242 }; after=@{ characterId=4242 } } |
+		ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $laterReceipt
+	$laterMetadata = [ordered]@{ schemaVersion=1; name='altgard-rc-prefix'; source='natural-altgard-l1';
+		characterId=4242; elapsedMillis=3000; dumpSha256=$hash; laterCapital=$true;
+		laterCapitalCheckpointSha256=(Get-FileHash -Algorithm SHA256 $laterReceipt).Hash.ToLowerInvariant() }
+	$laterMetadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $later 'snapshot.json')
+	$laterRestored = & $script -Action Restore -Name altgard-rc-prefix -Docker $fake -SnapshotRoot $snapshots | ConvertFrom-Json
+	Assert-True ($laterRestored.environment.RC_CAPITAL -eq '1' -and $laterRestored.environment.NA_ASCENSION -eq '1') 'Later capital restore lost its explicit scope.'
+	Assert-True ($laterRestored.environment.PSObject.Properties.Name -notcontains 'PC_CAPITAL') 'Later capital restore selected the first-pass diagnostic.'
+	Remove-Item -LiteralPath $log
+	$laterMetadata.source = 'natural-altgard-l5'
+	$laterMetadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $later 'snapshot.json')
+	Assert-Throws { & $script -Action Restore -Name altgard-rc-prefix -Docker $fake -SnapshotRoot $snapshots } '*wrong identity or segment*' 'Later capital restore accepted the wrong segment.'
+	Assert-True (-not (Test-Path -LiteralPath $log)) 'Rejected later capital segment touched MySQL.'
+	Set-Content -LiteralPath $laterReceipt -Value '{}'
+	Assert-Throws { & $script -Action Restore -Name altgard-rc-prefix -Docker $fake -SnapshotRoot $snapshots } '*receipt hash changed*' 'Edited later capital state was restored.'
+	Remove-Item -LiteralPath $laterReceipt
+	Assert-Throws { & $script -Action Restore -Name altgard-rc-prefix -Docker $fake -SnapshotRoot $snapshots } '*missing its later capital receipt*' 'Missing later capital state was restored.'
+	Assert-True (-not (Test-Path -LiteralPath $log)) 'Edited/missing later capital state touched MySQL.'
+	Assert-Throws { & $script -Action Capture -Name later-conflict -LaterCapital -CapitalStage first -Docker $fake -SnapshotRoot $snapshots -NoBuild } '*LaterCapital requires*' 'Later capital capture combined unrelated scopes.'
 
 	# Both capital endpoints require immutable relog evidence and select only the capital segment.
 	foreach ($stage in @('start', 'first')) {
@@ -83,21 +111,27 @@ try {
 	function dotnet {
 		[ordered]@{ capital=[Environment]::GetEnvironmentVariable('PC_CAPITAL'); ascension=[Environment]::GetEnvironmentVariable('NA_ASCENSION');
 			altgard=[Environment]::GetEnvironmentVariable('AF_ALTGARD'); coin=[Environment]::GetEnvironmentVariable('AF_CG_RECEIPTS');
-			haramel=[Environment]::GetEnvironmentVariable('AF_HM_PROGRESS'); stop=[Environment]::GetEnvironmentVariable('NI08_STOP_AT') } |
+			haramel=[Environment]::GetEnvironmentVariable('AF_HM_PROGRESS'); stop=[Environment]::GetEnvironmentVariable('NI08_STOP_AT');
+			later=[Environment]::GetEnvironmentVariable('RC_CAPITAL') } |
 			ConvertTo-Json | Set-Content -LiteralPath $pcMockEnvPath
 		$global:LASTEXITCODE = 0
 	}
 	$env:AF_ALTGARD = 'l12'
 	$env:AF_CG_RECEIPTS = 'old-coins'
 	$env:AF_HM_PROGRESS = 'old-haramel'
+	$env:RC_CAPITAL = '1'
 	Remove-Item -LiteralPath Env:NI08_STOP_AT -ErrorAction SilentlyContinue
 	try {
 		Invoke-NaturalJourney 'aion_gs_sim_ni08_mock' 'mock-capital' (Join-Path $root 'runner') @{ NA_ASCENSION='1'; PC_CAPITAL='start' }
 		$child = Get-Content -Raw -LiteralPath $pcMockEnvPath | ConvertFrom-Json
 		Assert-True ($child.capital -eq 'start' -and $child.ascension -eq '1') 'Runner lost its explicit capital scope.'
-		Assert-True ($null -eq $child.altgard -and $null -eq $child.coin -and $null -eq $child.haramel -and $null -eq $child.stop) 'Runner left non-null conflicting Windows scopes.'
+		Assert-True ($null -eq $child.altgard -and $null -eq $child.coin -and $null -eq $child.haramel -and $null -eq $child.stop -and $null -eq $child.later) 'Runner left non-null conflicting Windows scopes.'
 		Assert-True ($env:AF_ALTGARD -eq 'l12' -and $env:AF_CG_RECEIPTS -eq 'old-coins' -and $env:AF_HM_PROGRESS -eq 'old-haramel') 'Runner did not restore existing environment values.'
 		Assert-True ($null -eq [Environment]::GetEnvironmentVariable('NI08_STOP_AT')) 'Runner restored an absent scope as an empty string.'
+		Assert-True ($env:RC_CAPITAL -eq '1') 'Runner did not restore the parent later capital scope.'
+		Invoke-NaturalJourney 'aion_gs_sim_ni08_mock' 'mock-later' (Join-Path $root 'runner-later') @{ AF_ALTGARD='l5'; RC_CAPITAL='1' }
+		$child = Get-Content -Raw -LiteralPath $pcMockEnvPath | ConvertFrom-Json
+		Assert-True ($child.later -eq '1' -and $child.altgard -eq 'l5' -and $null -eq $child.capital) 'Runner combined later capital with the first-pass checkpoint.'
 	} finally { Remove-Item Function:dotnet }
 
 	# Haramel requires its immutable receipt and resumes the endpoint with its original budgets.

@@ -4264,11 +4264,19 @@ monitor enabled and announce its URL when a journey starts.
     Java Q2042 and the shipped portal requirements confirm the full Abyss chain. Source
     and whitespace review plus all seven pre-commit checks pass on base b66d83242
     (`run/rc00-plan-checks/`). RC-01 is the first implementation item.
-- [ ] **RC-01 - Carry later capital state across natural segments.** Depends RC-00.
+- [x] **RC-01 - Carry later capital state across natural segments.** Depends RC-00.
   Freeze the nine additions, protected work/reward items and completion inventory in
   the revised continuation contract. Support unfinished pickups, actual level gates,
   per-leg/city-return decisions, relog and immutable prefix checkpoints while preserving
   historical contained scopes. Do not synthesize accepted quests/items on restore.
+  - 2026-10-04: the opt-in SIM continuation freezes nine quests, their level/prerequisite
+    gates, twenty segment assignments and protected items. Ordinary endpoint relogs write
+    verified carried-state receipts; committed prefix captures hash them and restore refuses
+    missing, changed or wrong-segment receipts before touching MySQL. Historical scopes retain
+    their selectors. Forty-six focused tests, the snapshot contract (including Windows child
+    environment isolation), all seven pre-commit checks and Fast (89 passed/five guarded skips,
+    all eleven scenarios) pass on base 51bb43048 (`run/rc01-carry/`,
+    `run/rc01-capital-fast/rc01-capital-carry/`). No later quest executor runs yet.
 - [ ] **RC-02 - Start Arekedil's Heritage in Leg 1.** Depends RC-01. Advance Q2917
   through Arekedil and Chauminerk to START/1 and preserve the supplied item for the city.
 - [ ] **RC-03 - Prepare Book of Oblivion before its field collections.** Depends
@@ -4694,6 +4702,11 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-04 RC-01: nine-quest continuation, protected items, observed gates and immutable
+  prefix receipt support pass 46 focused tests, snapshot contract, seven prechecks and Fast
+  (89 passed/five guarded skips/all eleven scenarios). Evidence in `run/rc01-carry/` and
+  `run/rc01-capital-fast/rc01-capital-carry/`; historical selectors preserved. RC-02 is next.
 
 - 2026-10-04 RC-00: prepared the revised journey's RC-00..RC-12 working checklist in
   this existing document: nine scheduled capital additions, contained segment evidence,

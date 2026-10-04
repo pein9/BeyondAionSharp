@@ -83,7 +83,8 @@ public sealed partial class SimulationFastScenarioTests
 				? onlyList.Split(',').Select(int.Parse).ToArray() : null,
 			CoinGearReceiptPath: Environment.GetEnvironmentVariable("AF_CG_RECEIPTS"),
 			HaramelProgressPath: Environment.GetEnvironmentVariable("AF_HM_PROGRESS"),
-			CapitalStage: Environment.GetEnvironmentVariable("PC_CAPITAL"))).RunAsync(token);
+			CapitalStage: Environment.GetEnvironmentVariable("PC_CAPITAL"),
+			LaterCapital: Environment.GetEnvironmentVariable("RC_CAPITAL") == "1")).RunAsync(token);
 
 		async Task SupplyHelpItemAsync(int itemId, long count, CancellationToken supplyToken)
 		{

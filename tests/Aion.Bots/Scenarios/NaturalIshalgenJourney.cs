@@ -73,6 +73,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	public async Task RunAsync(CancellationToken token)
 	{
 		NaturalCapitalDecisionEngine.ValidateScope(options, runtime.Profile);
+		NaturalLaterCapitalContract? laterCapital = options.LaterCapital ? NaturalLaterCapitalContract.LoadDefault() : null;
+		laterCapital?.ValidateScope(options, runtime.Profile);
 		bool continuousAltgard = options.AltgardLegId == "all";
 		if (continuousAltgard && (!runtime.Profile.StartsWith("SIM-", StringComparison.Ordinal) || !options.AscensionBridge ||
 			options.StopAfterQuest != null || options.StopAt != null || options.RelogAt != null || options.AltgardOnlyQuests != null ||
@@ -186,6 +188,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// AM-06/07: the same runner plays any Altgard leg ("l1" the fortress, "l2" Moslan Crossroad).
 			string? altgardLegId = continuousAltgard ? null : options.AltgardLegId ?? (options.AltgardLeg1 ? "l1" : null);
 			NaturalAltgardContract? altgardLeg = altgardLegId is { } legId ? NaturalAltgardContract.LoadLeg(legId) : null;
+			if (laterCapital != null && altgardLeg != null)
+				altgardLeg = NaturalAltgardContinuation.BindIncoming(altgardLeg, session.Api.World.CompletedQuestIds,
+					session.Api.World.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray());
 			coinGearProgress = altgardLeg?.CoinGear == null ? null : NaturalCoinGearProgress.Empty;
 			if (altgardLeg?.Haramel is { } haramel)
 				haramelProgress = options.HaramelProgressPath is { Length: > 0 } savedHaramel
@@ -237,7 +242,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				.Concat(altgardLeg.Haramel?.ProtectedItemIds ?? [])
 				.Concat(altgardLeg.Haramel?.CleanupItemIds ?? [])
 				.Concat(altgardLeg.Haramel?.TowerChestKeys?.Select(key => key.ItemId) ?? [])
-				.Where(item => item > 0)).Concat(capitalContract.ProtectedItemIds).ToHashSet();
+				.Where(item => item > 0)).Concat(capitalContract.ProtectedItemIds)
+				.Concat(laterCapital?.ProtectedItemIds ?? new HashSet<int>()).ToHashSet();
 			BotNavigationGraph graph = BotNavigationGraphFactory.Build(runtime.Data, altgardNpcs.Concat(new[] {
 				203500, 203504, 203501, 203502, 203516, 203518,
 				203519, 203534, 790002, 210377, 210378, 700045, 203538,
@@ -3225,6 +3231,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						System.Text.Json.JsonSerializer.Serialize(new { before, after }), token);
 				NaturalJourneyPersistence.Verify(before, after);
 				VerifyDestinyEndpoint();
+				if (laterCapital != null) await laterCapital.WriteCheckpointAsync(Path.GetDirectoryName(combatTracePath)!,
+					leg.Leg, before, after, token);
 				VerifyCoinEndpoint();
 				VerifyHaramelEndpoint();
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, $"altgard-{altgardLegId}-completion.json"),
@@ -3399,6 +3407,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				NaturalJourneyCheckpoint after = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
 					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge);
 				NaturalJourneyPersistence.Verify(before, after);
+				if (laterCapital != null) await laterCapital.WriteCheckpointAsync(Path.GetDirectoryName(combatTracePath)!,
+					"bridge", before, after, token);
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "bridge-completion.json"),
 					System.Text.Json.JsonSerializer.Serialize(new
 					{

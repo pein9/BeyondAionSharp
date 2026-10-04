@@ -38,6 +38,7 @@ param(
 	[string]$SnapshotRoot,
 	[switch]$Bridge,
 	[switch]$AltgardLeg1,
+	[switch]$LaterCapital,
 	[string]$From = 'altgard',
 	[ValidateSet('l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'cg', 'l12')]
 	[string]$Leg = 'l1',
@@ -57,6 +58,9 @@ if ($CapitalStage -and ($Bridge -or $AltgardLeg1 -or $Action -ne 'Capture')) {
 	throw 'CapitalStage is a contained Capture scope and cannot be combined with Bridge or AltgardLeg1.'
 }
 if ($CapitalRelogAt -and $CapitalStage -ne 'first') { throw 'CapitalRelogAt requires CapitalStage first.' }
+if ($LaterCapital -and ($Action -ne 'Capture' -or $CapitalStage -or (-not $Bridge -and -not $AltgardLeg1))) {
+	throw 'LaterCapital requires a bridge or Altgard Capture, without a contained capital checkpoint.'
+}
 
 function Invoke-Docker([string[]]$Arguments) {
 	& $Docker @Arguments
@@ -78,7 +82,7 @@ function Get-SnapshotDirectory {
 function Invoke-NaturalJourney([string]$Db, [string]$RunId, [string]$Evidence, [hashtable]$Extra) {
 	$names = @('AION_SIM_DB_INTEGRATION', 'AION_SIM_NI08_DATABASE', 'AION_SIM_NI08_ELAPSED_MS', 'AION_SIM_RUN_ID',
 		'AION_SIM_SEED', 'AION_NI07_COMBAT_DIR', 'NI07_FULL_JOURNEY', 'NI08_STOP_AT', 'NI08_RELOG_AT', 'NI08_RESUME_CHARACTER',
-		'NA_ASCENSION', 'AF_ALTGARD', 'AF_ONLY', 'AF_CG_RECEIPTS', 'AF_HM_PROGRESS', 'PC_CAPITAL',
+		'NA_ASCENSION', 'AF_ALTGARD', 'AF_ONLY', 'AF_CG_RECEIPTS', 'AF_HM_PROGRESS', 'PC_CAPITAL', 'RC_CAPITAL',
 		'NI07_STOP_AFTER_Q2004', 'NI07_STOP_AFTER_Q2005', 'NI07_STOP_AFTER_Q2006', 'NI07_STOP_AFTER_Q2007', 'NI07_STOP_ON_DEATH', 'NI07_OPTIMIZE_HUBS')
 	$prior = @{}
 	foreach ($variable in $names) {
@@ -118,6 +122,25 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 	$hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $dump).Hash.ToLowerInvariant()
 	if ($hash -ne $metadata.dumpSha256) { throw "Snapshot $Name dump hash changed; refusing to restore an edited snapshot." }
 	$haramelProgress = $null
+	$laterCapital = $metadata.PSObject.Properties.Name -contains 'laterCapital' -and $metadata.laterCapital
+	if ($laterCapital) {
+		$laterReceipt = Join-Path $directory 'later-capital-checkpoint.json'
+		if (-not (Test-Path -LiteralPath $laterReceipt) -or $metadata.PSObject.Properties.Name -notcontains 'laterCapitalCheckpointSha256') {
+			throw "Snapshot $SnapshotName is missing its later capital receipt; refusing to restore."
+		}
+		if ((Get-FileHash -Algorithm SHA256 -LiteralPath $laterReceipt).Hash.ToLowerInvariant() -ne $metadata.laterCapitalCheckpointSha256) {
+			throw "Snapshot $SnapshotName later capital receipt hash changed; refusing to restore."
+		}
+		$expectedSegment = if ($metadata.source -eq 'natural-journey-ascension-bridge') { 'bridge' }
+			elseif ($metadata.source -match '^natural-altgard-(l(?:[1-9]|1[0-2])|cg)$') { $Matches[1] }
+			else { throw 'Later capital snapshot has an unsupported source.' }
+		$retained = Get-Content -Raw -LiteralPath $laterReceipt | ConvertFrom-Json
+		if (-not $retained.verified -or $retained.schemaVersion -ne 1 -or $retained.segment -ne $expectedSegment -or
+			$retained.characterId -ne $metadata.characterId -or $retained.before.characterId -ne $metadata.characterId -or
+			$retained.after.characterId -ne $metadata.characterId) {
+			throw "Snapshot $SnapshotName later capital receipt has the wrong identity or segment."
+		}
+	}
 	if ($metadata.PSObject.Properties.Name -contains 'source' -and $metadata.source -like 'natural-capital-*') {
 		$capitalReceipt = Join-Path $directory 'capital-stage-completion.json'
 		if ($metadata.source -notin @('natural-capital-start', 'natural-capital-first') -or
@@ -167,6 +190,10 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 		$environment.NA_ASCENSION = '1'
 		$environment.PC_CAPITAL = 'first'
 	}
+	if ($laterCapital) {
+		$environment.NA_ASCENSION = '1'
+		$environment.RC_CAPITAL = '1'
+	}
 	[pscustomobject]@{
 		snapshot = $SnapshotName
 		database = $db
@@ -175,6 +202,19 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 		# Environment for a resumed natural run on this copy (game time moves forward past the capture).
 		environment = $environment
 	}
+}
+
+# Preserve packet-observed state as an immutable receipt, never as SQL/quest setup instructions.
+function Save-LaterCapitalCheckpoint([string]$Directory, [string]$Evidence, [Collections.IDictionary]$Metadata) {
+	$receipt = Join-Path $Evidence 'later-capital-checkpoint.json'
+	if (-not (Test-Path -LiteralPath $receipt)) { throw 'Later capital capture requires its verified checkpoint receipt.' }
+	$retained = Get-Content -Raw -LiteralPath $receipt | ConvertFrom-Json
+	if (-not $retained.verified -or $retained.characterId -ne $Metadata.characterId) {
+		throw 'Later capital capture has an unverified or different character receipt.'
+	}
+	Copy-Item -LiteralPath $receipt -Destination $Directory
+	$Metadata.laterCapital = $true
+	$Metadata.laterCapitalCheckpointSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $receipt).Hash.ToLowerInvariant()
 }
 
 Push-Location $repoRoot
@@ -248,6 +288,7 @@ try {
 				try {
 					$extra = @{ AF_ALTGARD = $(if ($Leg -eq 'l1') { '1' } else { $Leg }) }
 					foreach ($key in $base.environment.Keys) { $extra[$key] = $base.environment[$key] }
+					if ($LaterCapital) { $extra.RC_CAPITAL = '1' }
 					Invoke-NaturalJourney $db $Run $evidence $extra
 					$legFile = Join-Path $evidence "altgard-$Leg-completion.json"
 					if (-not (Test-Path -LiteralPath $legFile)) { throw "Altgard leg $Leg did not complete; nothing was captured." }
@@ -284,6 +325,9 @@ try {
 						Copy-Item -LiteralPath $haramelProgressFile -Destination $directory
 						$legMetadata.haramelProgressSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $haramelProgressFile).Hash.ToLowerInvariant()
 					}
+					if ($extra.ContainsKey('RC_CAPITAL') -and $extra.RC_CAPITAL -eq '1') {
+						Save-LaterCapitalCheckpoint $directory $evidence $legMetadata
+					}
 					$legMetadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $directory 'snapshot.json') -Encoding utf8
 					Write-Host "Captured snapshot $Name (character $($legResult.CharacterId)) in $directory"
 				}
@@ -296,7 +340,9 @@ try {
 			& pwsh -NoProfile -File (Join-Path $PSScriptRoot 'new-sim-db.ps1') -Action Create -DatabaseName $db | Out-Null
 			if ($LASTEXITCODE -ne 0) { throw 'Could not create the owned capture schema.' }
 			try {
-				Invoke-NaturalJourney $db $Run $evidence $(if ($Bridge) { @{ NA_ASCENSION = '1' } } else { @{} })
+				$prefixExtra = if ($Bridge) { @{ NA_ASCENSION = '1' } } else { @{} }
+				if ($LaterCapital) { $prefixExtra.RC_CAPITAL = '1' }
+				Invoke-NaturalJourney $db $Run $evidence $prefixExtra
 				$clock = Get-Content -Raw -LiteralPath (Join-Path $evidence 'completion-clock.json') | ConvertFrom-Json
 				$completion = Get-Content -Raw -LiteralPath (Join-Path $evidence 'completion.json') | ConvertFrom-Json
 				if ($completion.Next.Outcome -ne 'complete' -or $clock.CharacterId -ne $completion.CharacterId) {
@@ -320,7 +366,7 @@ try {
 				Invoke-Docker @('exec', $ContainerName, 'rm', '-f', $remote)
 				Copy-Item -LiteralPath (Join-Path $evidence 'completion.json') -Destination $directory
 				if ($Bridge) { Copy-Item -LiteralPath (Join-Path $evidence 'bridge-completion.json') -Destination $directory }
-				[ordered]@{
+				$prefixMetadata = [ordered]@{
 					schemaVersion = 1
 					name = $Name
 					source = $(if ($Bridge) { 'natural-journey-ascension-bridge' } else { 'natural-ishalgen-journey' })
@@ -331,7 +377,9 @@ try {
 					characterId = [int]$completion.CharacterId
 					elapsedMillis = [long]$clock.ElapsedMillis
 					dumpSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $directory 'dump.sql.gz')).Hash.ToLowerInvariant()
-				} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $directory 'snapshot.json') -Encoding utf8
+				}
+				if ($LaterCapital) { Save-LaterCapitalCheckpoint $directory $evidence $prefixMetadata }
+				$prefixMetadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $directory 'snapshot.json') -Encoding utf8
 				Write-Host "Captured snapshot $Name (character $($completion.CharacterId)) in $directory"
 			}
 			finally {
