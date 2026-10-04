@@ -241,7 +241,7 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
     Eltnen/Morheim and Heiron/Beluslan were revised for non-Aethertech classes; NCSoft's own note
     for Q24114 is "Rebuilding Impetusium (4.7)", one of that revision; aioncodex `/48/` has it with
     Gulkalla; retail 5.8 still runs it at level 13; the 4.8 notes remove nothing in Altgard. It stays
-    class B, waiting for approval of its handler (RQ-05 below).
+    class B. The maintainer declined implementation on 2026-10-03 (RQ-05 below); the retail evidence is unchanged.
   - **The 2.x Reshanta missions were replaced: now class C** (13 quests, Q1071–Q1077 and
     Q2071–Q2076). The 4.8 client ships a 4.x Reshanta campaign that retells them one for one:
     Q14040–Q14047 (Elyos) and Q24040–Q24046 (Asmodian), "Learning the Balaur language", "Mission to
@@ -300,7 +300,10 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
     fails at its start step, because Aurtri offers no quest (`run/rq05/rq05-sim-without-entry.log`).
   - **Records.** Deviations 146–151, the register table below, the patches in
     `docs/upstream-reports/` (cumulative, applied in order), and Done lines in the work list.
-  - **Q24114 "You Gotta Stop Umkata" (class B), for approval.** Not a template quest: retail 5.8
+  - **Q24114 "You Gotta Stop Umkata" (class B), implementation declined 2026-10-03.** The maintainer
+    chose not to implement it; the work list records Rejected and Altgard intentionally excludes it.
+    The retained assessment and proposal below are historical evidence, not pending authorization.
+    Not a template quest: retail 5.8
     has no simple-quest entry for it. The client steps are: kill 3 Hero Spirits (210588, 210722;
     vars 0-2), report to Gulkalla (203649), collect Umkata's three tokens (182215474-182215476,
     already in `quest_data.xml` as step-4 drops from the Black Claw lycans, Umkata's Jewel Box
@@ -314,7 +317,8 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
     layout from the client (kills at 0-2, Umkata at 4), and test it like the others.
   - **The 2.x Reshanta missions** (raised by the same Java commit): resolved by RQ-04c above,
     rejected as replaced by the 4.x Reshanta campaign.
-  - **Q24114 is live in 4.8** (RQ-04c): the approval above is all it waits for.
+  - **Q24114 is live in 4.8** (RQ-04c), but intentionally excluded by the maintainer's
+    2026-10-03 decision not to implement it. It no longer waits for approval.
 - [ ] **RQ-06 — Batches.** Zone by zone in the maintainer's order, the classifier regenerated
   after each batch.
 
@@ -394,7 +398,8 @@ a row keeps the rules' own verdict beside an override.
    1. **RQ-05, the Altgard pilot:** Q24110, Q24111, Q24113, Q24115, Q24232 and Q24233 are A.
       **Q24114 is B**: its Lycan (`LycanWarriorS_18/19_Ae`, `LycanHunterS_17_An`) and elemental
       (`AElemental1stD/2ndD_18/19_An`) targets have no template here. Pilot the six and bring
-      Q24114 as a B item.
+      Q24114 as a B item. **Update 2026-10-03:** the maintainer declined Q24114's implementation;
+      exclude it from future batches unless the maintainer explicitly reopens it.
    2. The Asmodian leveling path the natural bot walks next: Morheim (Q24120, Q24240), Beluslan
       (7 A), Brusthonin (Q24200, Q24201).
    3. The Elyos counterparts: Verteron, Eltnen, Heiron, Theobomos.

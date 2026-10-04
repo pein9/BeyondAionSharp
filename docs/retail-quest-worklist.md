@@ -156,7 +156,7 @@ evidence is in `parity-artifacts/e2e/retail-quest-class-overrides.json`.
 
 | Status | Quest | Name | Zone | Race | Lvl | Batch | Verdict / what it needs | 4.8 evidence | Review |
 |---|---|---|---|---|---:|---|---|---|---|
-|  | Q24114 | You Gotta Stop Umkata | Altgard | Asmo | 13 | 1 Altgard pilot | no spawn for: lycanfightersq_18_an=210752; quest_data.xml questDrops differs from the client | 4.8 client L13, dialog; /48/ giver Neparinerk (798033); 5.8 retail: still live, NCSoft note tagged 4.7 | [aioncodex](https://aioncodex.com/48/quest/24114/?sl=1) |
+| Rejected | Q24114 | You Gotta Stop Umkata | Altgard | Asmo | 13 | 1 Altgard pilot |  | 4.8 client L13, dialog; /48/ giver Neparinerk (798033); 5.8 retail: still live, NCSoft note tagged 4.7 | [aioncodex](https://aioncodex.com/48/quest/24114/?sl=1) |
 |  | Q24152 | Through the Looking Glass | Beluslan | Asmo | 35 | 2 Asmodian path | task-text npc 802364 (dojer) has no static spawn | 4.8 client L35, dialog; /48/ giver Sleipnir (204768); 5.8 retail: still live, SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/24152/?sl=1) |
 |  | Q24154 | Better than Last Time | Beluslan | Asmo | 35 | 2 Asmodian path | task-text npc 833031 (alquimia entrance) has no static spawn | 4.8 client L35, dialog; /48/ giver Tristran (204774); 5.8 retail: still live | [aioncodex](https://aioncodex.com/48/quest/24154/?sl=1) |
 |  | Q24155 | Leather Wings and Shiny Things | Beluslan | Asmo | 39 | 2 Asmodian path | task-text npc 700292 (field suppressor) has no static spawn | 4.8 client L39, dialog; /48/ giver Hod (204701); 5.8 retail: still live, SimpleHunt | [aioncodex](https://aioncodex.com/48/quest/24155/?sl=1) |

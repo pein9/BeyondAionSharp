@@ -90,6 +90,8 @@ The operator approved every recommendation. Their notes:
   Impetusium** at (2665, 1660), about 1 km east of the fortress. Coins only matter at that
   stop. Q2147 stays skipped, and can be looked at again at Stop 12.
 - **Flight** is a mechanic the bot does not have yet; see [Flight in Altgard](#flight-in-altgard).
+- **Q24114 (2026-10-03):** the operator chose not to implement "You Gotta Stop Umkata".
+  It is intentionally excluded and no longer an open Altgard blocker. Its 4.8 retail evidence remains valid.
 
 | # | Question | Options | Decided |
 |---|---|---|---|
@@ -143,7 +145,7 @@ quest must be finished first.
 - Q24110 (Stop 1) and Q24111 (Stops 2–3) belonged to legs that were already done. They were added to Leg 1 and Leg 3, and Legs 1–4 were replayed from the `altgard` snapshot (the catch-up).
 - Q24232 and Q24233 are in Leg 5.
 - Q24115 (Stop 8) and Q24113 (Stop 10) wait for their legs.
-- Q24114 still needs the maintainer's approval (RQ-05).
+- Q24114 is intentionally excluded: the maintainer chose not to implement it (2026-10-03; RQ-05).
 
 ### Stop 1: Altgard Fortress, the main town (arrive at level 10)
 
@@ -323,7 +325,8 @@ quest must be finished first.
 | 2285 | Leinolz's Request | Unreachable: Q2240 is disabled at level 99. Q2217's former exclusion was a classifier defect: Java accepts either Q24012 or legacy Q2013; the Leg 3 correction below includes it. |
 | 2229, 2240, 2294, 2295, 80172–80210 | | Disabled: level 99 gate. |
 | 80005, 80142, 80143, 80262 | | Event quests. |
-| 2011–2022, 2200, 24114 | | No handler in Java or C#. Q2011–Q2022 (and Q2200) are superseded pre-4.0 missions. Q24114 was live in 4.8 retail; it needs a custom handler and Umkata's summon, which D32 (`docs/retail-quest-completion.md`, RQ-05) has proposed and the maintainer has yet to approve. **Q24110, Q24111, Q24113, Q24115, Q24232 and Q24233 exist since RQ-05 (2026-09-30)**: a leg can take them in now. |
+| 2011–2022, 2200 | | No handler in Java or C#. Superseded pre-4.0 missions. |
+| 24114 | You Gotta Stop Umkata | Live in 4.8 retail, but missing its custom handler and Umkata summon. **Intentionally excluded by the maintainer on 2026-10-03: do not implement.** RQ-05's proposal is declined; this is no longer an open Altgard blocker. |
 | 24010 | Suthran's Orders | Already done by the bridge. |
 
 ## What the bot has to learn for this leg
@@ -1637,8 +1640,8 @@ ones 4.8 retail ran:
   **Q24232** Little Help from a Daeva and **Q24233** Adieu to You, Manumumu, all after Q24112;
   and Q24110, Q24111 and Q24115. Each is a template quest with a SIM test
   (`RetailQuestPlaysEndToEnd`) and a compiled plan in `parity-artifacts/e2e/retail-quest-plans/`.
-- **Still missing:** Q24114 needs a custom handler and Umkata's summon, proposed in RQ-05 and
-  waiting for the maintainer's approval.
+- **Intentionally excluded (2026-10-03):** the maintainer chose not to implement Q24114's
+  missing custom handler and Umkata summon. RQ-05's proposal is declined.
 - The older campaign missions Q2011–Q2022 stay out: they are pre-4.0, and the 4.x quests exclude
   a character who did them.
 
@@ -2944,7 +2947,8 @@ The thirteen hand-ins are worth 261,820 XP, 32% of level 21.
   fortress and takes it there.
 - **The missions Q24014–Q24016** (Q24014 and Q24015 started): one of the last Altgard legs, the maintainer's
   placement. Q24014's Shaman Gabacha stands in this leg's swamp.
-- **Q2900**, at the very end of the Altgard area. **Q24114** (Neparinerk) still waits for the D32 approval.
+- **Q2900**, at the very end of the Altgard area. **Q24114** (Neparinerk) is intentionally excluded
+  by the maintainer's 2026-10-03 decision not to implement it.
 
 ### The rest of Altgard
 
@@ -4367,6 +4371,10 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-03: the maintainer chose not to implement Q24114 "You Gotta Stop Umkata". Recorded as
+  intentionally excluded here and Rejected in the D32 work list; its retail evidence and missing-content
+  assessment remain intact. No server content or natural-character state changed.
 
 - 2026-10-03 AC-C2: the isolated committed-code Leg 3 replay and corrected snapshot restore/relog pass
   first try. Q2217 once, consumed letter/100 shards, all five leg quests and 66 prior completions (71 total),
