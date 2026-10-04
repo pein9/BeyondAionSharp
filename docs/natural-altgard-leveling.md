@@ -980,7 +980,7 @@ foot.
 | 2290 | Groken's Escape | custom, **escort**, after 2221 | Groken → Manir | escort Groken to his boat; report to Manir | 21,300 |
 | 2222 | Manir's Message | custom, after 2290 | Manir → Karl → **Nokir** | talk; Nokir is at Basfelt (AC-Q1) | 13,080 |
 | 24111 | What's Up, Dock? | template (D32) | Olenja → **Nokir** | the suspicious document at Manir's Dock gives the Lepharist Primer; hand in at Basfelt | 2,691 |
-| 2217 | Gleaning the Meaning | template **IMPORTANT**, after 24012 or legacy 2013 | Olenja → **Gefion** | take the letter alongside Q24111 at Moslan; deliver at the final Basfelt visit | 17,678 |
+| 2217 | Gleaning the Meaning | template **IMPORTANT**, after 24012 or legacy 2013 | Olenja → **Gefion** | take the letter alongside Q24111 at Moslan in Leg 3; deliver on the first arrival in Basfelt, before Leg 4 starts | 17,678 |
 
 The original three quests give 43,290 XP. Including Q24111 and the Q2217 correction, all five give
 63,659 XP, plus combat XP. The endpoint requires at least level 15.
@@ -1468,6 +1468,14 @@ COMPLETE. Java `QuestTemplate.getRequiredConditionCount` requires one of the fin
 groups, and `XMLStartCondition.checkFinishedQuests` requires every quest inside that chosen group.
 Q2217 therefore accepts Q24012 **or** legacy Q2013; the old classifier incorrectly required both groups.
 The shipped handler, data and C# runtime already match Java and need no server correction.
+
+**Pickup and first village arrival (confirmed 2026-10-03).** Leg 3 takes Q2217 from Olenja at
+Moslan alongside Q24111, carries the letter through the Manir/Groken work, and delivers it to
+Gefion on the first planned arrival in Basfelt. This is Leg 3's endpoint visit, before Leg 4
+starts; "final Basfelt visit" in the original correction evidence means the end of Leg 3,
+not a later return to the village. The retained `ac-q2217-capture-a1` trace confirms the first
+Basfelt entry during `af-012-talk`, followed by Nokir's Q2222/Q24111 hand-ins and Gefion's
+Q2217 COMPLETE during that same visit. The existing route already meets the requested order.
 
 - [x] **AC-C1 — Correct the classifier and Leg 3 route.** Regenerate the classifier and Q2217's plan;
   accept beside Q24111, retain the final Basfelt hand-in order, and require all five Leg 3 completions.
@@ -4371,6 +4379,11 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-03: confirmed Q2217's pickup and first-arrival delivery from the retained natural Leg 3
+  trace: accepted at Olenja, held through Manir/Groken/Karl, completed at Gefion during the first
+  Basfelt visit, before Leg 4. Clarified route wording; the implementation and proven snapshot are unchanged.
+  Q2217 remains COMPLETE exactly once across the endpoint relog; all seven pre-commit checks pass.
 
 - 2026-10-03: the maintainer chose not to implement Q24114 "You Gotta Stop Umkata". Recorded as
   intentionally excluded here and Rejected in the D32 work list; its retail evidence and missing-content
