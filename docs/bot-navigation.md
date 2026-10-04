@@ -515,6 +515,16 @@ raised Essencetapping from 3 to 16 with 29-30 practice harvests before the ore.
 
 ## Known limits
 
+PC-01 (2026-10-04) adds the generated Convent of Marchutan mesh, map 120020000,
+for the capital pass. Triniel Coliseum's lower court is disconnected from the
+upper city ring in both the mesh and underlying ground search. The capital driver
+uses a checked ordinary glide into the court; on departure it flies upward within
+the shipped city FLY zone and glides onto the upper ring. These are explicit
+journey connectors, subject to collision checks, flight-point reserve and cooldown,
+rather than additional ground edges. The contained route probe
+`run/capital-pass/pc01-travel-e.trace.jsonl` reached all 24 planned NPC approaches
+and used both shipped Convent statues, retaining the incoming bind point.
+
 - **Doors and dynamic objects** are baked open. Door footprints become door areas, and
   `AllowDoors = false` excludes them. The per-step collision check rejects a closed door at run
   time, so the bot re-plans.

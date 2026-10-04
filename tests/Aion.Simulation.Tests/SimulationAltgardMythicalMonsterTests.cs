@@ -56,6 +56,10 @@ public sealed partial class SimulationFastScenarioTests
 		{
 			var npc = instance.GetNpcs().First(candidate => candidate.GetNpcId() == npcId && !candidate.IsDead());
 			BotPosition ground = geometry.GroundAround(altgard, new BotPosition(npc.GetX(), npc.GetY(), npc.GetZ(), 0), [2f, 3f, 5f]).First();
+			foreach (var hostile in instance.GetNpcs().Where(n => !n.IsDead() && runtime.IsAggressive(n.GetObjectTemplate()) &&
+				MathF.Pow(n.GetX() - ground.X, 2) + MathF.Pow(n.GetY() - ground.Y, 2) <= 900).ToArray())
+				fixture.World.Despawn(hostile);
+			session.Api.World.BeginWorldReload();
 			await TeleportForSetupAsync(session, Server(), altgard, ground.X, ground.Y, ground.Z, token);
 			session.AcceptTeleportPosition();
 			await session.SynchronizeAsync(token);

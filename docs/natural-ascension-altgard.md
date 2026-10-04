@@ -2191,10 +2191,25 @@ Work with **PC** in place of **NA** in the loop protocol:
     ReportTo, PortalDialogAI and shipped 4.8 data read; no gameplay changed. Inventory
     rewards cross-checked against quest XML; seven pre-commit checks pass in
     `run/capital-pass/pc00-checks`. Commit: `Approve the early Pandaemonium capital contract`.
-- [ ] **PC-01 — Prove NPC approaches and the Convent route.** Depends PC-00. Read Java;
+- [x] **PC-01 — Prove NPC approaches and the Convent route.** Depends PC-00. Read Java;
   use a free probe account, clear aggressive monsters only at scripted probe spots and
-  call BeginWorldReload before setup teleports. Prove the actual dialogs/quest variables,
-  book use, reward groups, statue entry/return and natural gates. No natural-character GM.
+  call BeginWorldReload before setup teleports. Prove statue entry/return; the actual
+  quest dialogs/variables, book use, reward groups and gates follow in PC-02..05.
+  No natural-character GM.
+  - 2026-10-04: free account 240 completed 24 checked NPC approaches and both actual
+    Convent statues; city return and incoming bind retained. Java PortalDialogAI,
+    FlyController and CM_MOVE read. Generated map 120020000 through NavBake; rebake
+    check passes. Triniel's lower court has no underlying ground connection: use an
+    ordinary collision-checked glide inward and FLY-zone flight/glide outward, with
+    FP reserve/cooldown. Probe: `run/capital-pass/pc01-travel-e.trace.jsonl`.
+    Initial failed route attempts remain in that directory. First Fast run retained
+    three probe failures: a resisted Destiny spell mistaken for a kill, an uncleared
+    burner setup and a critical hit killing the cooldown target. Corrected only
+    those harness assumptions (observed kill transition, setup clearing/view reset,
+    C3's sturdier cooldown target). Focused repaired probes pass; the ad-hoc manifest
+    invocation's missing receipt environment is retained in `pc01-probe-fixes.log`.
+    Seven checks pass in `pc01-final-checks`; fresh `run/pc01-capital-fast-b` passes
+    85 tests with five opt-in skips. No server behavior or natural character changed.
 - [ ] **PC-02 — Supply request, Seriphim book and artisan introduction.** Depends PC-01.
   Implement/verify Q2953, Q29048 and Q2929 in the natural route, protect carried quest
   items and retain packet evidence. Accepting crafting follow-ups is not completion.

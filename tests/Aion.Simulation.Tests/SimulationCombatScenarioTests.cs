@@ -63,7 +63,9 @@ public sealed partial class SimulationFastScenarioTests
 		await using SimulationL0Session session = await EnterCombatWorldAsync(
 			policy, accountId: 18, "Asimcab", Race.ASMODIANS, PlayerClass.WARRIOR, token);
 		Player player = fixture.World.GetPlayer(session.CharacterId);
-		Npc target = fixture.World.GetWorldMap(220010000).GetMainWorldMapInstance().GetNpcs(210365)
+		// As in C3, use the level-2 snuffler: a critical Ferocious Strike can kill
+		// the 143-HP level-1 target before the ten-second cooldown can be measured.
+		Npc target = fixture.World.GetWorldMap(220010000).GetMainWorldMapInstance().GetNpcs(210366)
 			.First(npc => npc.IsSpawned() && !npc.IsDead());
 		string DescribeTarget() => $"target={target.GetObjectId()}/{target.GetNpcId()}, hp={target.GetLifeStats().GetCurrentHp()}/{target.GetLifeStats().GetMaxHp()}, ai={target.GetAi().GetState()}, " +
 			"damage=[" + string.Join(", ", target.GetAggroList().GetFinalDamageList().GetCreatureDamages().Select(damage =>

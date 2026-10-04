@@ -205,15 +205,25 @@ public sealed partial class SimulationFastScenarioTests
 			ushort skill = new ushort[] { 4015, 4014, 4013, 4012 }.First(id => session.Api.World.Skills.ContainsKey(id));
 			SpellCastData cast = Runtime.CreateSpellCast(session.Api.World, session.CurrentPosition, skill,
 				checked((byte)session.Api.World.Skills[skill].Level), enemy.GetObjectId());
-			await session.SendPacketAsync(session.Api.Target(enemy.GetObjectId()), token);
-			session.Api.World.BeginWorldReload();
-			await session.SendPacketAsync(session.Api.Cast(cast), token);
-			var started = await BotCastProtocol.WaitForStartAsync((predicate, waitToken) => session.WaitForPacketAsync(
-				p => predicate(p) || BotCastProtocol.IsStartRejection(p), waitToken), session.CharacterId, skill, token);
-			Assert.Equal(typeof(SM_CASTSPELL), started.PacketType);
-			await session.AdvanceAsync(TimeSpan.FromMilliseconds(started.Get<ushort>("castDuration") + 1), token);
-			var result = await BotCastProtocol.WaitForCompletionAsync(session.WaitForPacketAsync, session.CharacterId, skill, token);
-			await session.AdvanceAsync(BotCastProtocol.RecoveryDelay(result), token);
+			// Even a one-HP target can resist an ordinary spell. Observe the quest's kill
+			// transition before waiting for its teleport; a cast result alone is not a kill.
+			for (int attempt = 0; attempt < 5 && Var == 98; attempt++)
+			{
+				TimeSpan ready = session.Api.Timing.TimeUntilCast(skill);
+				if (ready > TimeSpan.Zero) await session.AdvanceAsync(ready + TimeSpan.FromMilliseconds(1), token);
+				await session.SendPacketAsync(session.Api.Target(enemy.GetObjectId()), token);
+				session.Api.World.BeginWorldReload();
+				await session.SendPacketAsync(session.Api.Cast(cast), token);
+				var started = await BotCastProtocol.WaitForStartAsync((predicate, waitToken) => session.WaitForPacketAsync(
+					p => predicate(p) || BotCastProtocol.IsStartRejection(p), waitToken), session.CharacterId, skill, token);
+				Assert.Equal(typeof(SM_CASTSPELL), started.PacketType);
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(started.Get<ushort>("castDuration") + 1), token);
+				var result = await BotCastProtocol.WaitForCompletionAsync(session.WaitForPacketAsync, session.CharacterId, skill, token);
+				await session.AdvanceAsync(BotCastProtocol.RecoveryDelay(result), token);
+				await session.SynchronizeAsync(token);
+				Console.WriteLine($"ND controlled target cast {attempt + 1}: quest var {Var}");
+			}
+			Assert.Equal(9, Var);
 			await AcceptTeleportAsync(220010000, true);
 			Assert.True(enemy.IsDead());
 			Assert.Equal(9, Var);
