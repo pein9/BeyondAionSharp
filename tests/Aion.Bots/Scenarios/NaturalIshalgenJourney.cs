@@ -20,6 +20,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 {
 	private enum TemplatePhase { Full, Work, Claim }
 	private sealed class NaturalJourneyCheckpointStopException : Exception;
+	private sealed class NaturalEarlyAscensionRequiredException : Exception;
 	private sealed class NaturalCombatApproachBlockedException(string message) : IOException(message);
 	private sealed class NaturalGuardedObjectiveRevivedException(string message) : IOException(message);
 	private sealed class NaturalHaramelSourcesExhaustedException(string message) : IOException(message);
@@ -108,7 +109,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			{
 				if (session.Api.World.LoginStateObserved && session.Api.World.SelfObjectId == session.CharacterId)
 					checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-						session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress);
+						session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge);
 				string path = new NaturalJourneyFailure(kind, session.CurrentStep, session.CurrentAction,
 					session.ConnectionGeneration, failure.GetType().FullName!, failure.Message, failure.StackTrace,
 					checkpoint, combatTracePath, session.PacketHistory.TakeLast(64).Select(p => p.PacketType.Name).ToArray(), RunContext())
@@ -137,7 +138,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await session.WaitForPacketAsync(typeof(SM_QUEST_ACTION), token,
 					packet => packet.Get<int>("questId") == 2000 && packet.Get<byte>("status") == 5);
 			checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-				session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress);
+				session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge);
 			await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "login-observation.json"),
 				System.Text.Json.JsonSerializer.Serialize(checkpoint), token);
 			Require.Contains(2000, session.Api.World.CompletedQuestIds);
@@ -148,7 +149,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			Require.Equal(26, templatePlans.Count);
 			Require.All(templatePlans.Keys, id => Require.Contains(id, contract.Quests.Select(quest => quest.Id)));
 			NaturalDecision decision = NaturalIshalgenDecisionEngine.Decide(contract,
-				ObserveNaturalJourney(session), 1);
+				ObserveNaturalJourney(session), 1, earlyAscension: options.AscensionBridge);
 			if (!resuming && options.Course == null && !options.ClericEncounter)
 			{
 				Require.Equal("find-quest-starter", decision.SelectedAction);
@@ -235,7 +236,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				203552, 203554, 700085, 700086, 700087, 203517,
 				203533, 210734, 203514, 203543, 203532, 203531, 700128,
 					210363, 210367, 210369, 700124, 700093,
-					700063, 203513, 203545}),
+					700063, 203513, 203545, 203679}),
 				geometry);
 			var navigator = new NaturalJourneyNavigator(session, graph, geometry, runtime, options.StopOnDeath)
 			{
@@ -316,6 +317,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			bool bridgeShopVisited = false; // NA-16: the Altgard shop stop is done
 			var helpSupplied = new List<NaturalHelpSupplied>(); // NA-21: every approved help item supplied
 			int helpCheckedAtLevel = -1;
+			bool earlyAscensionUnderway = false;
+			bool IshalgenPending() => contract.Quests.Any(quest => !session.Api.World.CompletedQuestIds.Contains(quest.Id));
+			bool EarlyAscensionNeeded() => options.AscensionBridge && altgardLegId == null && IshalgenPending() &&
+				(session.Api.World.Level >= contract.AscensionLevel || AscensionBridgeStarted()) &&
+				(!session.Api.World.CompletedQuestIds.Contains(2009) || session.Api.World.MapId == 120010000);
 
 			// Wear the best gear in the bag (the recorded human put on four unused quest rewards at Nalto).
 			// The client knows each item's slots, level and class/race limits from its tooltip; the server
@@ -502,7 +508,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				if (!session.Api.World.LoginStateObserved || runtime.NowMillis - lastProgressObservation < 1000) return;
 				lastProgressObservation = runtime.NowMillis;
 				checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress);
+					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge);
 				progress.Observe(checkpoint, TimeSpan.FromMilliseconds(runtime.NowMillis - journeyStart));
 				if (haramelProgress != null)
 				{
@@ -542,6 +548,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					relogInjected = relogsInjected.Count == relogBoundaries.Length;
 					throw new EndOfStreamException($"NI-08 injected connection interruption at Q{at[0]} status {at[1]} vars {at[2]}.");
 				}
+				// Stop before the next ordinary action once level 9 is observed. Finish any current
+				// combat/cast/movie first; the outer loop reconstructs the interrupted quest from its journal.
+				if (!earlyAscensionUnderway && options.StopAfterQuest == null && EarlyAscensionNeeded() &&
+					session.Api.World.MapId == contract.MapId && !session.Api.World.IsDead && !combat.InCombat &&
+					session.Api.Timing.BlockingActivities.Count == 0 && Engaged() is var engaged &&
+					engaged.Attackers.Length == 0 && engaged.Pursuers.Length == 0)
+					throw new NaturalEarlyAscensionRequiredException();
 			};
 			if (altgardLegId != null)
 			{
@@ -574,7 +587,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					["course"] = course.ToString(), ["encounter"] = encounter?.ToString(),
 					["seed"] = runtime.Seed,
 					["checkpoint"] = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-						session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress),
+						session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge),
 				});
 				if (encounter != null)
 				{
@@ -625,7 +638,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					Position = session.CurrentPosition, Quest = session.Api.World.Quests[questId],
 					Deaths = combat.ReviveCount, Disengaged = true,
 					Checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-						session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress),
+						session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge),
 				}), token);
 				session.TraceDiagnostic("phase0-course-complete", new Dictionary<string, object?>
 				{
@@ -641,10 +654,21 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			{
 				try
 				{
-					if (options.AscensionBridge && AscensionBridgeStarted())
+					if (EarlyAscensionNeeded())
 					{
+						await RunEarlyAscensionAsync();
+						continue;
+					}
+					if (options.AscensionBridge && !IshalgenPending() && AscensionBridgeStarted())
+					{
+						if (session.Api.World.CompletedQuestIds.Contains(2009) && session.Api.World.MapId == contract.MapId)
+						{
+							await CompleteJourneyAsync();
+							return;
+						}
 						// NA-17: a login (fresh, or after an interruption) past the Munin stop resumes the bridge.
 						await RunAscensionBridgeAsync();
+						if (continuousAltgard) await RunAllAltgardLegsAsync();
 						session.PublishDashboard("completed", force: true);
 						await session.QuitAsync(token);
 						runtime.AssertClean();
@@ -652,7 +676,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					}
 					if (session.Api.World.IsDead) await RestSafelyAsync(token);
 					checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-						session.ConnectionGeneration, contract, session.CurrentPosition, sequence);
+						session.ConnectionGeneration, contract, session.CurrentPosition, sequence, earlyAscension: options.AscensionBridge);
 					progress.Observe(checkpoint, TimeSpan.FromMilliseconds(runtime.NowMillis - journeyStart));
 					decision = checkpoint.Next;
 					if (options.OptimizeHubs && session.Api.World.MapId == contract.MapId &&
@@ -660,7 +684,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					{
 						await AcceptAllAtCurrentHubAsync();
 						checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-							session.ConnectionGeneration, contract, session.CurrentPosition, sequence);
+							session.ConnectionGeneration, contract, session.CurrentPosition, sequence, earlyAscension: options.AscensionBridge);
 						decision = checkpoint.Next;
 						int[] safeGroup = NaturalIshalgenHubPolicy.CurrentSafeGroup(
 							session.Api.World.CompletedQuestIds);
@@ -765,13 +789,18 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						return;
 					}
 				}
+				catch (NaturalEarlyAscensionRequiredException)
+				{
+					// This is a route interruption, not a failure or a reset of the quest/revival budgets.
+					continue;
+				}
 				catch (NaturalJourneyCheckpointStopException)
 				{
 					if (relogAt != null) Require.True(relogInjected, "Requested NI-08 interruption was never exercised before checkpoint.");
 					session.BeforeSend = null;
 					await session.QuitAsync(token);
 					checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-						session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress);
+						session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge);
 					string receipt = Path.Combine(Path.GetDirectoryName(combatTracePath)!, "resume-receipt.json");
 					await File.WriteAllTextAsync(receipt, System.Text.Json.JsonSerializer.Serialize(new
 					{
@@ -894,24 +923,38 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				if (relogAt != null && !options.AscensionBridge) Require.True(relogInjected, "Requested NI-08 interruption was never exercised.");
 				Require.Equal(41, contract.Quests.Length);
 				Require.All(contract.Quests, quest => Require.Contains(quest.Id, session.Api.World.CompletedQuestIds));
-				Require.Equal((ushort)9, session.Api.World.Level);
-				Require.DoesNotContain(contract.AscensionQuestId, session.Api.World.CompletedQuestIds);
-				Require.Equal(3, session.Api.World.Quests[contract.AscensionQuestId].Status);
-				Require.Equal(0, session.Api.World.Quests[contract.AscensionQuestId].StepAndFlags);
-				session.BeginStep("ni07-munin-stop", "stand-at-munin-without-ascension-dialogue");
-				await ApproachShippedSpawnAsync(contract.AscensionNpcId);
-				decision = NaturalIshalgenDecisionEngine.Decide(contract, ObserveNaturalJourney(session), 57);
+				if (options.AscensionBridge && session.Api.World.CompletedQuestIds.Contains(2009))
+				{
+					Require.True(session.Api.World.Level >= 10 && combat.IsCleric, "Ishalgen must finish as the ceremony-proven Cleric.");
+					Require.Contains(2008, session.Api.World.CompletedQuestIds);
+					session.BeginStep("ni07-ascended-ishalgen-complete", "finish-all-ishalgen-quests-after-the-early-ceremony");
+				}
+				else
+				{
+					Require.Equal((ushort)9, session.Api.World.Level);
+					Require.DoesNotContain(contract.AscensionQuestId, session.Api.World.CompletedQuestIds);
+					Require.Equal(3, session.Api.World.Quests[contract.AscensionQuestId].Status);
+					Require.Equal(0, session.Api.World.Quests[contract.AscensionQuestId].StepAndFlags);
+					session.BeginStep("ni07-munin-stop", "stand-at-munin-without-ascension-dialogue");
+					await ApproachShippedSpawnAsync(contract.AscensionNpcId);
+				}
+				decision = NaturalIshalgenDecisionEngine.Decide(contract, ObserveNaturalJourney(session), 57, earlyAscension: options.AscensionBridge);
 				Require.Equal("journey-complete", decision.SelectedAction);
 				Require.Equal("complete", decision.Outcome);
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "completion.json"),
 					System.Text.Json.JsonSerializer.Serialize(NaturalJourneyCheckpoint.Capture(session.Api.World,
-						session.CharacterId, session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress)), token);
+						session.CharacterId, session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge)), token);
 				// NA-03: a saved Munin snapshot restores with this clock so game time keeps moving forward.
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "completion-clock.json"),
 					System.Text.Json.JsonSerializer.Serialize(new { session.CharacterId, ElapsedMillis = runtime.NowMillis }), token);
 				// NA-11/12: with the bridge enabled, the Ascension bridge (docs/natural-ascension-altgard.md) starts where
 				// Ishalgen ends instead of quitting here.
-				if (options.AscensionBridge) await RunAscensionBridgeAsync();
+				if (options.AscensionBridge)
+				{
+					if (session.Api.World.CompletedQuestIds.Contains(2009) && session.Api.World.MapId == contract.MapId)
+						await TakeCeremonyTeleporterAsync(toIshalgen: false);
+					await RunAscensionBridgeAsync();
+				}
 				if (continuousAltgard) await RunAllAltgardLegsAsync();
 				session.PublishDashboard("completed", force: true);
 				await session.QuitAsync(token);
@@ -920,7 +963,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 			// NA-12: the Ascension bridge runner. The NA-11 engine picks each move from the client's view; contract "talk"
 			// steps are played by one generic handler; moves not built yet stop the run with a precise receipt.
-			async Task RunAscensionBridgeAsync()
+			async Task RunAscensionBridgeAsync(bool ceremonyOnly = false)
 			{
 				NaturalAscensionContract bridge = NaturalAscensionContract.LoadDefault();
 				await TopUpHelpItemsAsync("run-start");
@@ -932,7 +975,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await session.SynchronizeAsync(token);
 					if (session.Api.World.Level != helpCheckedAtLevel) await TopUpHelpItemsAsync("level-up");
 					NaturalAscensionDecision next = NaturalAscensionDecisionEngine.Decide(bridge,
-						NaturalAscensionObservation.Observe(session.Api.World, bridgeShopVisited), sequence);
+						NaturalAscensionObservation.Observe(session.Api.World, bridgeShopVisited), sequence, ceremonyOnly);
 					session.TraceDiagnostic("ascension-bridge-decision", new Dictionary<string, object?>
 					{
 						["sequence"] = sequence, ["action"] = next.Action, ["step"] = next.StepKey, ["quest"] = next.QuestId,
@@ -947,7 +990,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					if (next.Outcome != "planned")
 					{
 						await WriteBridgeStopAsync(next);
-						if (next.Outcome == "complete") await CompleteAscensionLegAsync(bridge);
+						if (next.Outcome == "complete" && !ceremonyOnly) await CompleteAscensionLegAsync(bridge);
 						return;
 					}
 					NaturalAscensionStep? step = next.StepKey is string key ? bridge.Steps.Single(s => s.Key == key) : null;
@@ -970,6 +1013,65 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					}
 				}
 				throw new InvalidDataException("The Ascension bridge exceeded 80 decisions.");
+			}
+
+			async Task RunEarlyAscensionAsync()
+			{
+				earlyAscensionUnderway = true;
+				try
+				{
+					NaturalJourneyCheckpoint before = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
+						session.ConnectionGeneration, contract, session.CurrentPosition, earlyAscension: true);
+					session.TraceDiagnostic("early-ascension-start", new Dictionary<string, object?>
+					{ ["level"] = before.Level, ["completed"] = before.CompletedQuestIds, ["position"] = before.Position });
+					await RunAscensionBridgeAsync(ceremonyOnly: true);
+					Require.True(session.Api.World.Level >= 10 && combat.IsCleric &&
+						session.Api.World.CompletedQuestIds.IsSupersetOf(new[] { 2008, 2009 }), "The early ceremony did not complete.");
+					if (session.Api.World.MapId == 120010000) await TakeCeremonyTeleporterAsync(toIshalgen: true);
+					Require.Equal(contract.MapId, session.Api.World.MapId!.Value);
+					geometry = runtime.CreateGeometry();
+					combat.EnterMap(navigator, geometry, contract.MapId);
+					navigator.UnavailableObjects.Clear();
+					quietNeighbours.Clear();
+					fightRouteOpen = false;
+					fightRouteOpenAt = null;
+					await TopUpHelpItemsAsync("level-up");
+					await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token);
+					NaturalJourneyCheckpoint after = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
+						session.ConnectionGeneration, contract, session.CurrentPosition, earlyAscension: true);
+					Require.All(before.CompletedQuestIds, id => Require.Contains(id, after.CompletedQuestIds));
+					Require.Equal(3, session.Api.World.Quests[2904].Status);
+					Require.Equal(0, QuestVar(2904));
+					await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "early-ascension-completion.json"),
+						System.Text.Json.JsonSerializer.Serialize(new { before, after, verified = true, session.CharacterId,
+							ElapsedMillis = runtime.NowMillis, Deaths = combat.ReviveCount }), token);
+				}
+				finally { earlyAscensionUnderway = false; }
+			}
+
+			async Task TakeCeremonyTeleporterAsync(bool toIshalgen)
+			{
+				NaturalAscensionContract bridge = NaturalAscensionContract.LoadDefault();
+				int npc;
+				if (toIshalgen)
+				{
+					session.BeginStep("early-ascension-return", "doman-teleporter-back-to-unfinished-ishalgen");
+					NaturalAscensionStep doman = bridge.Steps.Single(step => step.Key == "q2904-v0-doman");
+					NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World), newEntry: false);
+					npc = await ApproachBridgeNpcAsync(doman, new(doman.Position[0], doman.Position[1], doman.Position[2], 0), here);
+				}
+				else
+				{
+					session.BeginStep("early-ascension-dispatch", "ishalgen-teleporter-to-pandaemonium-after-all-ishalgen-quests");
+					BotPosition anchor = graph.GetMap(contract.MapId)!.Waypoints.First(waypoint => waypoint.TemplateId == 203679).Position;
+					await UseFasterTravelAsync(anchor, forceHubFlight: true);
+					npc = await ApproachShippedSpawnAsync(203679);
+				}
+				NaturalServiceOutcome result = await new NaturalServiceSteps(session).TeleportAsync(npc,
+					session.Api.World.Objects[npc].Position, 5, toIshalgen ? 8 : 7, 100,
+					toIshalgen ? contract.MapId : 120010000, token);
+				Require.True(result.IsDone, result.Reason);
+				mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World));
 			}
 
 			// NA-13: Q2008's trial in Ataxiar. Its NPCs deal 1 damage (AscensationNpcAI) and the instance has no exit, so the
@@ -1082,7 +1184,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					System.Text.Json.JsonSerializer.Serialize(new { verified = true, CreatedCharacter = true, CharacterId = characterId,
 						ElapsedMillis = runtime.NowMillis, Deaths = combat.ReviveCount, stages,
 						Endpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, characterId, session.ConnectionGeneration,
-							contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress) }), token);
+							contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge) }), token);
 			}
 
 			// AF-08: Altgard Leg 1 (docs/natural-altgard-leveling.md), from the `altgard` snapshot to the fortress endpoint.
@@ -2919,7 +3021,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				VerifyCoinEndpoint();
 				VerifyHaramelEndpoint();
 				NaturalJourneyCheckpoint before = NaturalJourneyCheckpoint.Capture(world, session.CharacterId,
-					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress);
+					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge);
 				session.BeforeSend = null;
 				await session.QuitAsync(token);
 				await session.WaitForReentryAsync(token);
@@ -2927,7 +3029,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await session.EnterWorldAsync(token);
 				await session.SynchronizeAsync(token);
 				NaturalJourneyCheckpoint after = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress);
+					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge);
 				if (leg.Haramel != null)
 					await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "haramel-endpoint-relog.json"),
 						System.Text.Json.JsonSerializer.Serialize(new { before, after }), token);
@@ -3097,7 +3199,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					(owned.Details.EquippedSlot ?? 0) > 0), $"Kept accessory {item} is not worn at the endpoint."));
 				Require.True(!world.IsDead, "The endpoint character is dead.");
 				NaturalJourneyCheckpoint before = NaturalJourneyCheckpoint.Capture(world, session.CharacterId,
-					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress);
+					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge);
 				session.BeforeSend = null;
 				await session.QuitAsync(token);
 				await session.WaitForReentryAsync(token);
@@ -3105,7 +3207,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await session.EnterWorldAsync(token);
 				await session.SynchronizeAsync(token);
 				NaturalJourneyCheckpoint after = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
-					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress);
+					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge);
 				NaturalJourneyPersistence.Verify(before, after);
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "bridge-completion.json"),
 					System.Text.Json.JsonSerializer.Serialize(new
@@ -3364,14 +3466,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					Distance(registered.Position, session.CurrentPosition) < 20);
 			}
 
-			async Task UseFasterTravelAsync(BotPosition destination)
+			async Task UseFasterTravelAsync(BotPosition destination, bool forceHubFlight = false)
 			{
-				if (!options.OptimizeHubs || session.Api.World.MapId != contract.MapId ||
+				if ((!options.OptimizeHubs && !forceHubFlight) || session.Api.World.MapId != contract.MapId ||
 					session.Api.World.IsDead) return;
 				long fare = session.Api.World.VendorPrices?.ServicePrice(160) ?? 160;
 				NaturalTravelChoice choice = NaturalJourneyTravelPolicy.Choose(
 					session.CurrentPosition, destination, session.Api.World.ObeliskBindPoint,
-					session.Api.World.Skills.ContainsKey(243) &&
+					!forceHubFlight && session.Api.World.Skills.ContainsKey(243) &&
 						session.Api.Timing.TimeUntilCast(243) <= TimeSpan.FromSeconds(1) &&
 						runtime.NowMillis - lastReturnMillis >= TimeSpan.FromMinutes(20).TotalMilliseconds + 1000,
 					session.Api.World.Kinah >= fare);
@@ -6869,7 +6971,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			world.QuestJournalObserved, world.CompletedJournalObserved,
 			world.MapId, world.Level, world.IsDead,
 			new Dictionary<int, BotQuestState>(world.Quests), world.CompletedQuestIds.ToHashSet(),
-			session.CurrentPosition, world.Objects.Values.ToArray());
+			session.CurrentPosition, world.Objects.Values.ToArray())
+		{
+			PlayerClass = world.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass,
+		};
 	}
 
 	private sealed class NaturalJourneyNavigator(INaturalJourneySession session,

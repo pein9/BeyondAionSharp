@@ -1,5 +1,11 @@
 # Natural Ishalgen Priest: status and handoff (2026-09-27)
 
+**2026-10-04 route revision:** [OD-16](natural-ascension-altgard.md#operator-decisions)
+prioritizes Ascension Q2008 and the Pandaemonium ceremony Q2009 at the first level 9.
+Ascension-enabled journeys return to finish the retained Ishalgen quests as a Cleric;
+the Priest-only batch diagnostics below keep their historical endpoint. Fresh proof
+is tracked as EA-01/EA-02 in the Ascension document.
+
 The automated Priest plays Ishalgen 1–9 like a human: the frozen NI-07 journey
 (`NaturalIshalgenPriestCompletesFrozenJourneyWithoutSetup`, Q2001 through Q2134 and Munin,
 205 quest updates). This page is the running state of that work: what the bot does now, how to

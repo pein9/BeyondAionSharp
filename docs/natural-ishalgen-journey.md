@@ -1,5 +1,12 @@
 # Natural Ishalgen Journey
 
+**Leveling rule (2026-10-04, [OD-16](natural-ascension-altgard.md#operator-decisions)).**
+With Ascension enabled, leave for Munin's Q2008 and the Pandaemonium ceremony Q2009 as
+soon as level 9 is observed. Return as a level-10 Cleric with the ceremony staff and
+learned regular skills, finish the same 41 Ishalgen quests, then dispatch to Altgard.
+No extra Ishalgen quests or stigmas are added. Historical Priest-only diagnostics and
+their Munin snapshots retain the boundary described below.
+
 Status (2026-09-26): NI-00 through NI-09 are complete in their documented scope.
 The integrated NI-07 SIM journey passed smart46 seeds 1/3/4/5: all 41 quests,
 level 9 at Munin, zero deaths. NI-08 now rebuilds state from each login and resumes

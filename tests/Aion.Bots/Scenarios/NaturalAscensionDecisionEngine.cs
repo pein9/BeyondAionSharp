@@ -49,7 +49,8 @@ public static class NaturalAscensionDecisionEngine
 		return mapId is Ataxiar or Pandaemonium or Altgard;
 	}
 
-	public static NaturalAscensionDecision Decide(NaturalAscensionContract contract, NaturalAscensionObservation state, int sequence)
+	public static NaturalAscensionDecision Decide(NaturalAscensionContract contract, NaturalAscensionObservation state, int sequence,
+		bool ceremonyOnly = false)
 	{
 		var checks = new List<NaturalDecisionCheck>();
 		NaturalAscensionDecision Plan(string action, string? stepKey, int? questId, string reason) =>
@@ -127,6 +128,11 @@ public static class NaturalAscensionDecisionEngine
 				int other => Stop("unexpected-var", "blocked", $"Q2009 var {other} is not a bridge state.", 2009),
 			};
 		}
+
+		if (ceremonyOnly)
+			return state.Level >= contract.Endpoint.MinimumLevel
+				? Stop("ceremony-complete", "complete", "Q2008/Q2009 complete: return to Ishalgen before the Altgard dispatch.")
+				: Stop("level", "blocked", "The ceremony did not unlock level 10.", 2009);
 
 		// Q2904 Dispatch to Altgard, travel and the bind.
 		if (!Done(2904))

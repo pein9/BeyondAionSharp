@@ -90,6 +90,50 @@ public sealed class NaturalIshalgenDecisionLoopTests
 	}
 
 	[Fact]
+	public void LevelNinePrioritizesAscensionOverUnfinishedIshalgenWork()
+	{
+		var unfinished = Observe(level: 9, active: [new(2001, 3, 1, 0, null), new(2008, 3, 0, 0, null)]);
+		NaturalDecision next = NaturalIshalgenDecisionEngine.Decide(Contract, unfinished, 1, earlyAscension: true);
+		Assert.Equal(("ascend-now", 2008, "planned"), (next.SelectedAction, next.SelectedQuestId, next.Outcome));
+		Assert.Equal(2009, NaturalIshalgenDecisionEngine.Decide(Contract,
+			unfinished with { CompletedQuestIds = new HashSet<int> { 2008 } }, 2, earlyAscension: true).SelectedQuestId);
+		Assert.Equal("continue-quest", NaturalIshalgenDecisionEngine.Decide(Contract,
+			unfinished with { Level = 8 }, 3, earlyAscension: true).SelectedAction);
+		Assert.Equal("continue-quest", NaturalIshalgenDecisionEngine.Decide(Contract, unfinished, 4).SelectedAction);
+	}
+
+	[Fact]
+	public void CeremonyProvenClericReturnsToTheSameQuestSet()
+	{
+		var returned = Observe(level: 11, completed: [2008, 2009, 2101], active: [new(2001, 3, 1, 0, null)])
+			with { PlayerClass = 10 };
+		NaturalDecision next = NaturalIshalgenDecisionEngine.Decide(Contract, returned, 1, earlyAscension: true);
+		Assert.Equal(("continue-quest", 2001), (next.SelectedAction, next.SelectedQuestId));
+		Assert.Equal("candidate", next.Quests.Single(q => q.QuestId == 2103).Verdict);
+		Assert.Equal("complete", NaturalIshalgenDecisionEngine.Decide(Contract, returned with
+		{
+			CompletedQuestIds = Contract.Quests.Select(q => q.Id).Concat([2008, 2009]).ToHashSet(),
+		}, 2, earlyAscension: true).Outcome);
+		Assert.Equal("blocked", NaturalIshalgenDecisionEngine.Decide(Contract, returned, 3).Outcome);
+	}
+
+	[Theory]
+	[InlineData(null, true, true)]
+	[InlineData((byte)3, true, true)]
+	[InlineData((byte)11, true, true)]
+	[InlineData((byte)10, false, true)]
+	[InlineData((byte)10, true, false)]
+	public void PostCeremonyIshalgenRequiresClericAndBothQuestReceipts(byte? playerClass, bool ascended, bool ceremony)
+	{
+		var completed = new List<int>();
+		if (ascended) completed.Add(2008);
+		if (ceremony) completed.Add(2009);
+		Assert.Equal("blocked", NaturalIshalgenDecisionEngine.Decide(Contract,
+			Observe(level: 10, completed: completed.ToArray()) with { PlayerClass = playerClass }, 1,
+			earlyAscension: true).Outcome);
+	}
+
+	[Fact]
 	public async Task RefreshIsBoundedAndEveryDecisionIsRecorded()
 	{
 		var driver = new FakeDriver(Observe() with { JournalObserved = false });

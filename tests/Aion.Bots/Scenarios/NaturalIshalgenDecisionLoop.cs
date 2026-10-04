@@ -46,7 +46,10 @@ public sealed record NaturalIshalgenObservation(
 	bool Fresh, bool JournalObserved, bool CompletedJournalObserved,
 	int? MapId, ushort Level, bool IsDead,
 	IReadOnlyDictionary<int, BotQuestState> Quests, IReadOnlySet<int> CompletedQuestIds,
-	BotPosition? Position = null, IReadOnlyList<BotKnownObject>? ObservedObjects = null);
+	BotPosition? Position = null, IReadOnlyList<BotKnownObject>? ObservedObjects = null)
+{
+	public byte? PlayerClass { get; init; }
+}
 
 public sealed record NaturalDecisionCheck(string Rule, string Verdict, string Reason);
 public sealed record NaturalQuestDecision(int QuestId, string Verdict, NaturalDecisionCheck[] Checks);
@@ -56,7 +59,8 @@ public sealed record NaturalDecision(
 
 public static class NaturalIshalgenDecisionEngine
 {
-	public static NaturalDecision Decide(NaturalIshalgenContract contract, NaturalIshalgenObservation state, int sequence)
+	public static NaturalDecision Decide(NaturalIshalgenContract contract, NaturalIshalgenObservation state, int sequence,
+		bool earlyAscension = false)
 	{
 		var global = new List<NaturalDecisionCheck>();
 		if (!state.Fresh || !state.JournalObserved || !state.CompletedJournalObserved || state.MapId == null)
@@ -74,17 +78,27 @@ public static class NaturalIshalgenDecisionEngine
 			return Stop("wrong-map", $"Observed map {state.MapId}, expected {contract.MapId}.", "blocked");
 		if (inRaeInstance)
 			global.Add(new("quest-transport", "pass", "Q2002 START/99 authorizes temporary Ataxiar map 320010000; return to Ishalgen by quest dialogue."));
-		if (state.Level >= 10)
+		// OD-16: Ascension-enabled leveling interrupts Ishalgen at level 9, then returns as a
+		// ceremony-proven Cleric. The original Priest-only contract remains the diagnostic default.
+		bool returnedCleric = earlyAscension && state.Level >= 10 && state.PlayerClass == 10 &&
+			state.CompletedQuestIds.Contains(contract.AscensionQuestId) && state.CompletedQuestIds.Contains(2009);
+		if (earlyAscension && !state.IsDead && state.Level == contract.AscensionLevel &&
+			!state.CompletedQuestIds.Contains(2009))
+			return new(sequence, "ascend-now", state.CompletedQuestIds.Contains(contract.AscensionQuestId) ? 2009 : contract.AscensionQuestId,
+				"planned", "Level 9: complete Munin's Ascension and the Pandaemonium ceremony before further Ishalgen work.", [.. global], []);
+		if (state.Level >= 10 && !returnedCleric)
 			return Stop("pre-ascension-level", $"Observed level {state.Level}; the journey must stop below level 10.", "blocked");
-		if (state.CompletedQuestIds.Contains(contract.AscensionQuestId))
+		if (state.CompletedQuestIds.Contains(contract.AscensionQuestId) && !returnedCleric)
 			return Stop("ascension-boundary", "Ascension is already completed in the client journal.", "blocked");
 		if (state.IsDead)
 			return Stop("survival", "Death recovery requires NI-04.", "awaiting-capability");
-		if (state.Level >= contract.AscensionLevel &&
+		if (!returnedCleric && state.Level >= contract.AscensionLevel &&
 			state.Quests.TryGetValue(contract.AscensionQuestId, out BotQuestState? ascension) &&
 			(ascension.Status != 3 || ascension.StepAndFlags != 0))
 			return Stop("ascension-boundary", "Ascension advanced beyond START/0.", "blocked");
-		global.Add(new("journey-boundary", "pass", $"Map {state.MapId}, level {state.Level}, Ascension untouched."));
+		global.Add(new("journey-boundary", "pass", returnedCleric
+			? $"Map {state.MapId}, level {state.Level}, Cleric with Q2008/Q2009 complete; finish the retained Ishalgen quests."
+			: $"Map {state.MapId}, level {state.Level}, Ascension untouched."));
 
 		var candidates = new List<(int Priority, int MinimumLevel, int Id, string Action)>();
 		var quests = new List<NaturalQuestDecision>(contract.Quests.Length);
@@ -126,6 +140,9 @@ public static class NaturalIshalgenDecisionEngine
 		}
 		if (quests.All(quest => quest.Verdict == "complete"))
 		{
+			if (returnedCleric)
+				return new(sequence, "journey-complete", null, "complete",
+					"All included Ishalgen quests and the early Ascension ceremony are complete.", [.. global], [.. quests]);
 			if (state.Level == contract.AscensionLevel &&
 				state.Quests.TryGetValue(contract.AscensionQuestId, out BotQuestState? stop) &&
 				stop.Status == 3 && stop.StepAndFlags == 0)

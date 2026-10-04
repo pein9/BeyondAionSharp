@@ -1,5 +1,11 @@
 # Natural Altgard leveling leg
 
+**2026-10-04 starting-route revision:** [OD-16](natural-ascension-altgard.md#operator-decisions)
+now ascends at the first level 9, returns to finish Ishalgen, then enters Altgard.
+AS-02 and the retained snapshots below record the earlier late Ascension order.
+EA-02 tracks fresh proof of the revised Ishalgen/bridge segment; it does not replace
+the historical full Altgard/Haramel acceptance evidence.
+
 **Status (2026-09-29): the list, the order and AL-1..AL-5 are approved**, with the
 recommendations and the operator's notes below.
 

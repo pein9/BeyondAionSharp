@@ -81,6 +81,25 @@ public sealed class NaturalAscensionDecisionEngineTests
 	}
 
 	[Fact]
+	public void EarlyCeremonyStopsBeforeDispatchWithoutRequiringAllIshalgenQuests()
+	{
+		var partial = State(Ishalgen, Priest, 9, [], [(2008, 3, 0)]) with
+		{ CompletedQuestIds = new HashSet<int> { 2000, 2001, 2005 } };
+		Assert.Equal("q2008-v0-munin", NaturalAscensionDecisionEngine.Decide(Contract.Value, partial, 1,
+			ceremonyOnly: true).StepKey);
+		var ceremony = State(Pandaemonium, Cleric, 10, [2008, 2009], [(2904, 3, 0)]);
+		Assert.Equal(("ceremony-complete", "complete"), Outcome(NaturalAscensionDecisionEngine.Decide(
+			Contract.Value, ceremony, 2, ceremonyOnly: true)));
+		Assert.Equal("q2904-v0-doman", Decide(ceremony).StepKey);
+		Assert.Equal("q2009-v1-heimdall", NaturalAscensionDecisionEngine.Decide(Contract.Value,
+			State(Pandaemonium, Cleric, 9, [2008], [(2009, 3, 1)]), 3, ceremonyOnly: true).StepKey);
+		Assert.Equal(("level", "blocked"), Outcome(NaturalAscensionDecisionEngine.Decide(Contract.Value,
+			ceremony with { Level = 9 }, 4, ceremonyOnly: true)));
+		Assert.Equal(("identity", "blocked"), Outcome(NaturalAscensionDecisionEngine.Decide(Contract.Value,
+			ceremony with { ClassId = Priest }, 5, ceremonyOnly: true)));
+	}
+
+	[Fact]
 	public void MissingKinahAndAutoStartedQuestsStopPrecisely()
 	{
 		Assert.Equal(("not-enough-kinah", "blocked"),

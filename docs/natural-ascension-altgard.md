@@ -2,6 +2,15 @@
 
 Status (2026-09-28): **planned. NA-00 is done and the operator decisions are answered.**
 
+**Current leveling order (OD-16, approved 2026-10-04).** On the first observed level 9,
+Ascension-enabled journeys finish Q2008 with Munin and Q2009 in Pandaemonium before any
+further Ishalgen quest work. Choose Cleric and the Karmic Staff, equip owned upgrades and
+use the learned regular skills. Return through Doman's shipped Ishalgen teleporter,
+finish the same 41 Ishalgen quests, then return to Pandaemonium for Q2904 and Altgard.
+Use hub flight transporters where the route crosses hubs. This changes the leveling
+order for fresh SIM/LIVE journeys; the Priest-only diagnostics and existing snapshots
+retain their historical frozen boundary. No additional server content or stigma is authorized.
+
 This is the Ascension bridge. It takes the natural player bot from the end of
 [the Ishalgen journey](natural-ishalgen-journey.md) to the start of Altgard. The list is
 worked one TODO at a time in Loop mode; read
@@ -59,8 +68,10 @@ This is bot work; see [Readiness](#readiness-what-exists-and-what-is-missing).
 
 ## Goal
 
-The retained natural Priest finishes Ishalgen at Munin. Per the NI contract, that means 41
-quests done, level 9, and Q2008 at START/0. From there, using only ordinary client actions:
+The retained Munin baseline has 41 quests done, level 9 and Q2008 at START/0. It remains
+a valid snapshot starting point. Fresh leveling follows OD-16: play steps 1–2 at the
+first level 9, return to complete unfinished Ishalgen quests, then play steps 3–7.
+Use only ordinary client actions:
 
 1. **Ascension (Q2008).** Talk to Munin and complete Q2008, choosing **Cleric**. This
    covers the three Norns, the Ataxiar instance, Hagen's flight and the scripted trial
@@ -130,7 +141,8 @@ quests done, level 9, and Q2008 at START/0. From there, using only ordinary clie
   run's database).
 
 The Ishalgen leg's contract (`parity-artifacts/e2e/natural-ishalgen-contract.json`) stays
-**frozen** as the regression baseline. This leg starts exactly where it ends.
+**frozen** as the regression baseline. Its 41-quest scope also applies to the returned
+Cleric; OD-16 supersedes the late Ascension order for fresh leveling.
 
 ## Operator decisions
 
@@ -151,6 +163,24 @@ The Ishalgen leg's contract (`parity-artifacts/e2e/natural-ishalgen-contract.jso
 | OD-13 | Help items by cheating | **Allowed, after exploration.** NA-20 proposes the consumables and the supply mechanism. Only consumables the operator approves are supplied (no gear, quest items, XP or levels), and every run lists them in its profile. This amends D25's "no GM input" rule for those items only. **The Appendix D.2 list is approved**, with these changes: the heal is the heal-over-time **Life Potion** instead of the instant Life Serum (it gives more HP in total, and pairs with the shield and the Cleric's own heals); no Revival Stones; and "GM them anything they need", so powder is supplied too. | Decided 2026-09-28 (the list approved the same day) |
 | OD-14 | Patrols in the way | **Cleric:** wait 15 s (game time) and path again; or decide to take on the patrol when the fight is winnable (NA-22). Both are bounded and traced. The frozen Ishalgen Priest keeps its current rules unless a later decision changes them. | Decided 2026-09-28 |
 | OD-15 | Which speed scroll stays up: Courage (attack speed) or Awakening (casting speed)? | **Awakening** for the Cleric. The two scrolls **replace each other** (both use effect id 30184), so only one can be up. Awakening shortens the casts of Smite, Healing Light and Earth's Wrath; Courage mostly speeds up the staff swing. The bot never uses Courage. | Decided 2026-09-28 |
+| OD-16 | When to ascend? | **Immediately at level 9:** prioritize Q2008 and Q2009, choose Cleric, receive/equip the Karmic Staff and use learned regular skills. Return naturally to Ishalgen and finish its retained 41 quests before Q2904/Altgard. Preserve recovery budgets and record deaths. Stigmas still require unlocked slots, an owned stone and ordinary socketing; no early stigma is supplied. Existing snapshots and Priest-only diagnostics remain historical. | Decided 2026-10-04 |
+
+### OD-16 implementation and proof
+
+- [x] **EA-01 — Early ceremony and return.** Share the route in SIM/LIVE, retain unfinished
+  quests and recovery budgets, and verify decision rules plus Fast and pre-commit checks.
+  - 2026-10-04: implemented first-level-9 priority and a ceremony-only bridge prefix,
+    Doman's ordinary return (template 50/location 8, base fare 100), the returned Cleric
+    journal gate, and the later Ishalgen city teleport (template 51/location 7, base fare
+    100). Q2904 remains START/0 during the detour. Java Q2008/Q2009/Q2904, Q2006/Q2007,
+    Q2132, `PlayerCommonData` and teleporter data were read; no server content changed.
+    Recovery and stall budgets stay shared. Focused tests pass 51/51
+    (`run/early-ascension-focused-tests-a2.log`); the corrected first test-fixture failure
+    is retained. Seven pre-commit checks pass (`run/early-ascension-checks`), and Fast
+    passes all 11 scenario gates (`run/early-ascension-fast`). EA-02 proves the actual route.
+- [ ] **EA-02 — One fresh SIM proof.** From character creation, verify the first-level-9
+  departure, the ceremony's level/skills/staff, return to Ishalgen, all 41 quests, final
+  Altgard bridge persistence and owned-schema cleanup. Record deaths; preserve failures.
 
 ## Route at a glance (Java spec, verified in C#)
 
@@ -232,11 +262,14 @@ The C# twins live under `src/Aion.GameServer/Handlers/Quest/ascension/` and `…
 
 1. **The character stays level 9 through Q2008.**
    - Q2008's 73,200 XP is paid before Daeva status is set.
-   - A non-Daeva is capped at the start of level 10 (126,069 XP), which the client shows as
+   - A non-Daeva is capped at the start of level 10 (182,252 XP), which the client shows as
      a full bar at level 9. Nothing past Ascension is capped.
+     The shipped level-9 threshold is 126,069 XP. Earlier evidence below mislabeled that
+     threshold as the cap; OD-16 checks the current shipped XP table and Java `addExp`.
    - Level 10 comes only with the Q2009 payout.
-   - The Ishalgen engine's `pre-ascension-level` guard (level ≥ 10 → blocked) must keep
-     applying to the Ishalgen leg, and must not apply to this one.
+   - The frozen Priest diagnostic keeps its level ≥ 10 guard. OD-16 permits the returned
+     Cleric only with completed Q2008/Q2009 receipts. Q2008's own reward can still be
+     clamped before Daeva status; early Ascension prevents later Ishalgen XP being capped.
 2. **Only NOREWARD (23) leaves the Ascension instance.** Any other reward action completes
    the quest inside 320020000 and strands the bot. The instance has no exit, portal or
    instance handler.
