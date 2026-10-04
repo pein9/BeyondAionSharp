@@ -2190,7 +2190,7 @@ Work with **PC** in place of **NA** in the loop protocol:
     and `pandaemonium-capital-first` for committed-code snapshots. Java handlers,
     ReportTo, PortalDialogAI and shipped 4.8 data read; no gameplay changed. Inventory
     rewards cross-checked against quest XML; seven pre-commit checks pass in
-    `run/capital-pass/pc00-checks`. Commit: `Approve the early Pandaemonium capital contract`.
+    `run/capital-pass/pc00-checks`. Commit: `9c203cf1d`.
 - [x] **PC-01 — Prove NPC approaches and the Convent route.** Depends PC-00. Read Java;
   use a free probe account, clear aggressive monsters only at scripted probe spots and
   call BeginWorldReload before setup teleports. Prove statue entry/return; the actual
@@ -2210,9 +2210,19 @@ Work with **PC** in place of **NA** in the loop protocol:
     invocation's missing receipt environment is retained in `pc01-probe-fixes.log`.
     Seven checks pass in `pc01-final-checks`; fresh `run/pc01-capital-fast-b` passes
     85 tests with five opt-in skips. No server behavior or natural character changed.
-- [ ] **PC-02 — Supply request, Seriphim book and artisan introduction.** Depends PC-01.
+    Commit: `1b89f02c1`.
+- [x] **PC-02 — Supply request, Seriphim book and artisan introduction.** Depends PC-01.
   Implement/verify Q2953, Q29048 and Q2929 in the natural route, protect carried quest
   items and retain packet evidence. Accepting crafting follow-ups is not completion.
+  - 2026-10-04: reusable driver dialogs mirror Java Q2953/Q29048 and ReportTo (D32
+    Q2929). Free account 241 uses real CM_USE_ITEM on the supplied manual, observes
+    REWARD/1 and completes all three quests: +12,885 XP, +4,340 Kinah. Request
+    182207039 and manual 182212217 are consumed; optional motion item 188508000 is
+    retained/protected, Q29049 remains unfinished. Probe:
+    `run/capital-pass/pc02-items-a.log` and `pc02-items-a-pc02.trace.jsonl`.
+    Default journey integration follows in PC-06. Seven pre-commit checks pass
+    in `run/capital-pass/pc02-checks`; `run/pc02-capital-fast` passes 86 tests with
+    five opt-in skips. Commit: `Implement the capital supply book and artisan dialogs`.
 - [ ] **PC-03 — Three pet introductions.** Depends PC-02. Implement report-to transitions;
   prove rewards without requiring a pet purchase, egg activation or automatic pet use.
 - [ ] **PC-04 — Blessing and the selected branch.** Depends PC-03. Follow every required
@@ -2324,6 +2334,12 @@ has examples.
 
 ## Progress log
 
+- 2026-10-04 — PC-02: Q2953/Q29048/Q2929 protocols proved with actual supplied items
+  and exact +12,885 XP/+4,340 Kinah; optional motion reward retained. Seven checks and
+  Fast pass (86 tests, five opt-in skips); default integration waits for PC-06.
+- 2026-10-04 — PC-01 (`1b89f02c1`): all 24 city/Convent approaches and both statues
+  proved; generated Convent mesh, ordinary Coliseum connector, three probe assumptions
+  corrected after retained Fast failures. Fresh Fast: 85 passed, five opt-in skips.
 - 2026-10-04 — PC-00: approved early ten-quest capital pass and Ribbon/Lost Love branch;
   froze start/endpoint, retained Ishalgen/dispatch/bind rules and snapshot names. Reward
   inventory and seven pre-commit checks pass (`run/capital-pass/pc00-checks`).

@@ -17,6 +17,51 @@ namespace Aion.Simulation.Tests;
 
 public sealed partial class SimulationFastScenarioTests
 {
+	/// <summary>PC-02: supplied request, real manual use and D32 artisan report; no crafting setup.</summary>
+	[SkippableFact]
+	public async Task CapitalSupplyManualAndArtisansConsumeTheirActualQuestItemsAndPayRewards()
+	{
+		await RunCapitalProbeAsync("PC02", 241, "Asimcapitems", async (probe, session, token) =>
+		{
+			long xp = probe.Server.GetCommonData().GetExp(), kinah = session.Api.World.Kinah;
+			foreach (NaturalAltgardStep step in NaturalCapitalSteps.Supply) await probe.TalkAsync(step);
+			Assert.DoesNotContain(session.Api.World.Inventory.Values, item => item.ItemId == 182207039);
+			await probe.TalkAsync(NaturalCapitalSteps.BookOffer);
+			await NaturalCapitalSteps.ReadBookAsync(session, fixture.DataManager.StaticData.ItemDataDh.GetItemTemplate(182212217), token);
+			Assert.Contains(session.Api.World.Inventory.Values, item => item.ItemId == 182212217);
+			await probe.TalkAsync(NaturalCapitalSteps.BookReward);
+			Assert.DoesNotContain(session.Api.World.Inventory.Values, item => item.ItemId == 182212217);
+			Assert.Contains(session.Api.World.Inventory.Values, item => item.ItemId == 188508000);
+			foreach (NaturalAltgardStep step in NaturalCapitalSteps.Artisans) await probe.TalkAsync(step);
+			Assert.True(session.Api.World.CompletedQuestIds.IsSupersetOf(new[] { 2953, 29048, 2929 }));
+			Assert.Equal(12885, probe.Server.GetCommonData().GetExp() - xp);
+			Assert.Equal(4340, session.Api.World.Kinah - kinah);
+			Assert.False(session.Api.World.CompletedQuestIds.Contains(29049));
+			Console.WriteLine("PC-02: three completions, XP +12885, Kinah +4340, supplied items consumed, optional motion item retained.");
+		});
+	}
+
+	private async Task RunCapitalProbeAsync(string item, int account, string name,
+		Func<CapitalProbe, SimulationL0Session, CancellationToken, Task> runProbe)
+	{
+		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
+		using var policy = NewPolicy(item, includeHistory: false);
+		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(12));
+		CancellationToken token = timeout.Token;
+		string run = Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? item.ToLowerInvariant();
+		string path = Path.Combine(RealStaticData.RepoRoot(), "run", "capital-pass", run + "-" + item.ToLowerInvariant() + ".trace.jsonl");
+		using var trace = BotActionTraceWriter.Open(path, run, "b01", $"sim-player-{account}", virtualTime: () => TimeSpan.FromMilliseconds(fixture.Clock.NowMillis));
+		await using var session = new SimulationL0Session(fixture, policy, "b01", account, name, Race.ASMODIANS, trace, path);
+		var dashboard = new LiveBotDashboardState();
+		await using var monitor = new LiveBotDashboardHost(run, [item], dashboard,
+			int.Parse(Environment.GetEnvironmentVariable("AION_BOT_DASHBOARD_PORT") ?? "17880"));
+		session.Dashboard = dashboard;
+		var probe = new CapitalProbe(this, fixture, session, token);
+		await probe.InitializeAsync();
+		await runProbe(probe, session, token);
+		policy.AssertClean();
+	}
+
 	/// <summary>PC-01: free account 240, checked city circuit and actual Convent statues; all setup stays in this probe.</summary>
 	[SkippableFact]
 	public async Task CapitalPassWalksEveryCityAreaAndReturnsThroughConventStatues()
@@ -93,6 +138,14 @@ public sealed partial class SimulationFastScenarioTests
 			await owner.TeleportForSetupAsync(session, Server, map, at.X, at.Y, at.Z, token);
 			session.AcceptTeleportPosition();
 			await session.SynchronizeAsync(token);
+		}
+
+		public async Task TalkAsync(NaturalAltgardStep step)
+		{
+			await SetupNearAsync(step.MapId ?? Contract.MapId, step.NpcId);
+			int npc = await WalkNpcAsync(step.NpcId);
+			session.BeginStep(step.Key, "capital-quest-dialog");
+			Console.WriteLine("PC " + await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token));
 		}
 
 		public async Task<int> WalkNpcAsync(int npcId)
