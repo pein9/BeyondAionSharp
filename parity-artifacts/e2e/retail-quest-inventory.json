@@ -7,8 +7,8 @@
   "javaCommit": "ce54b7931"
  },
  "counts": {
-  "noHandler": 434,
-  "implemented": 6,
+  "noHandler": 432,
+  "implemented": 8,
   "inClient": 440,
   "javaHandlerFound": 0,
   "clientDialog": 421,
@@ -35285,6 +35285,16 @@
    "race": "ASMODIANS",
    "javaHandler": false,
    "clientDialog": true,
+   "implemented": {
+    "name": "Welcome to the Temple of Artisans",
+    "form": "report_to template (quest_script_data/pandaemonium.xml)",
+    "test": "RetailQuestPlaysEndToEnd(2929)",
+    "deviation": 153,
+    "patch": "docs/upstream-reports/q2929-temple-of-artisans.patch",
+    "batch": "RQ-06 Pandaemonium introductions",
+    "simAccount": 157,
+    "simCharacter": "Asimrqg"
+   },
    "client": {
     "clientLevel": 10,
     "minLevel": 10,
@@ -80494,6 +80504,16 @@
    "race": "ASMODIANS",
    "javaHandler": false,
    "clientDialog": true,
+   "implemented": {
+    "name": "[Craft] Construction Basics",
+    "form": "item_collecting template (quest_script_data/pandaemonium.xml)",
+    "test": "RetailQuestPlaysEndToEnd(29049)",
+    "deviation": 154,
+    "patch": "docs/upstream-reports/q29049-construction-basics.patch",
+    "batch": "RQ-06 Pandaemonium introductions",
+    "simAccount": 158,
+    "simCharacter": "Asimrqh"
+   },
    "client": {
     "clientLevel": 10,
     "minLevel": 10,
@@ -80523,7 +80543,7 @@
    "prerequisites": [
     {
      "id": 2929,
-     "availability": "no_handler",
+     "availability": "obtainable",
      "clientMinLevel": 10,
      "disabledChain": []
     }
@@ -80547,9 +80567,7 @@
     "sourceGroupsUnmet": 0,
     "sourcesUnmet": [],
     "itemsWithoutTemplate": [],
-    "prerequisitesWithoutHandler": [
-     2929
-    ],
+    "prerequisitesWithoutHandler": [],
     "worldReady": true
    },
    "retail": {

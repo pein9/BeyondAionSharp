@@ -2073,23 +2073,24 @@ Later capital visits take the higher-level and cross-region quests below. This p
 does not authorize server content, purchases, early stigmas or a full journey rerun.
 
 The retained full-create evidence `run/natural-complete/as02-full-create-s1-a6/`
-completed Q2009, Q2904, Q2258, Q2278, Q2283 and Q2900; none of the nine proposed first-pass
+completed Q2009, Q2904, Q2258, Q2278, Q2283 and Q2900; none of the ten proposed first-pass
 quests appears in its endpoint's completed list. The revised early-Ascension proof
 `run/early-ascension/ea02-create-s1-a2/` covered Ishalgen and the existing bridge only.
 Both remain historical; new capital work needs its own evidence.
 
-### First visit: nine level-10 quests
+### First visit: ten level-10 quests
 
 | Quests | Required route / action | Listed XP | Listed Kinah |
 |---|---|---:|---:|
 | Q2911 Song of Blessing -> Q2912 Follow the Ribbon -> Q2914 A Token of Lost Love | Grimhild -> Agamo; choose Q2911 reward group 0. Then Agamo -> Garm -> Therf -> Talmenu -> Frana; accept the follow-up at Arlion, visit Frana and return to Arlion. | 15,465 | 0 |
 | Q2953 Delivering Supply Request | Doman -> Veldina -> Doman; carry the supplied request. | 150 | 500 |
 | Q29048 Seriphim's Teachings | Seriphim -> use the supplied book 182212217 -> Seriphim. | 11,237 | 0 |
+| Q2929 Welcome to the Temple of Artisans | Talon -> Usener in the Temple of Artisans. No profession training or crafting required; D32 handler added 2026-10-04. | 1,498 | 3,840 |
 | Q29040 Mane's Best Friend -> Q29044 Pet Perceptions -> Q29045 A Passion for Pets | Ninis -> Silke -> Katin -> Erdil. Three report-to quests; no purchased or summoned pet is required. | 33,711 | 0 |
 | Q29004 Veldina's Call | Veldina -> Balder -> Kvasir -> Angulof in the Convent of Marchutan; use the ordinary statue portals for entry and return. | 3,000 | 9,830 |
-| **Total: nine quests** | No combat or required purchases in these handlers. Transport charges, if incurred, are separate from gross rewards. | **63,563** | **10,330** |
+| **Total: ten quests** | No combat or required purchases in these handlers. Transport charges, if incurred, are separate from gross rewards. | **65,061** | **14,170** |
 
-The eight quests entirely inside Pandaemonium total **60,563 XP and 500 Kinah**; Q29004
+The nine quests entirely inside Pandaemonium total **62,061 XP and 4,340 Kinah**; Q29004
 adds the Convent visit. These are additional rewards, not an assertion about the final
 character level. Observe actual XP, level, class and learned regular skills on completion.
 Rewards include Arlion's Ring 122000870, two Lesser Running Scrolls, pet-interaction items,
@@ -2110,8 +2111,9 @@ Pick up Q2953 at Doman and Q29040 at nearby Ninis on Vifrost Bridge. Visit Veldi
 Temple of Gold and Balder at the Great Temple. Continue through Pandaemonium Plaza for
 Agamo and the pet NPCs, then Triniel Coliseum (Garm/Therf), Vanahal District
 (Talmenu/Frana) and Prosperity Road (Arlion). Finish the required Lost Love return visits;
-the follow-up cannot be accepted at Arlion before Q2912 completes. Visit the Capitol
-Building for Kvasir and Apellbine Tavern for Seriphim, then return east for the Convent
+the follow-up cannot be accepted at Arlion before Q2912 completes. Visit Talon and Usener
+in the Temple of Artisans for Q2929, then the Capitol Building for Kvasir and Apellbine
+Tavern for Seriphim, then return east for the Convent
 and Doman. This is a proposed batching order, not a straight-line movement script:
 route on the navmesh and approach each NPC within ordinary interaction range.
 
@@ -2149,11 +2151,14 @@ own leg and must not be replayed or interpreted as ownership of a permanent stig
 
 ### Missing content, professional gates and false city-only candidates
 
-- **Q2929 Welcome to the Temple of Artisans** has no handler. This blocks the six
-  level-10 craft introductions Q2905-2910. Q29049 Construction Basics is also unhandled
-  and depends on Q2929. Keep them in the D32 work list; the capital proposal does not
-  authorize implementing them. Q29059 Possession Isn't Integrity (15) and Q29051 Running
-  the Tables (25) are further unhandled candidates.
+- **Q2929 Welcome to the Temple of Artisans and Q29049 Construction Basics** have D32
+  handlers as of 2026-10-04, authorized by the operator's request to implement the missing
+  quest and follow-up fixes. Q2929 is a Talon -> Usener conversation and belongs in the
+  proposed first city pass. It unlocks the six existing introductions Q2905-2910 plus
+  Q29049; their completions require crafted products, so profession training and materials
+  remain a separate natural-play decision. Q29049 requires three Iron Clamps at Darfen,
+  not just a conversation. Q29059 Possession Isn't Integrity (15) and Q29051 Running
+  the Tables (25) remain unhandled candidates.
 - The numerous level-9 crafting work orders require professional skill, materials,
   purchases and crafting actions. Their nominal character-level gate is not proof they
   were missed during Ascension. Q2966-2971 need crafted order items and Abyss delivery;
@@ -2172,15 +2177,16 @@ own leg and must not be replayed or interpreted as ownership of a permanent stig
 
 Work with **PC** in place of **NA** in the loop protocol, only after the scope is approved:
 
-- [ ] **PC-00 — Freeze the contract and decisions.** Nine first-pass quests, Q2911 branch,
+- [ ] **PC-00 — Freeze the contract and decisions.** Ten first-pass quests, Q2911 branch,
   later-pass exclusions, unchanged Ishalgen/Altgard contracts, precise endpoint and a
   distinct snapshot name. Record the revision to OD-6/OD-16 before changing the journey.
 - [ ] **PC-01 — Prove NPC approaches and the Convent route.** Depends PC-00. Read Java;
   use a free probe account, clear aggressive monsters only at scripted probe spots and
   call BeginWorldReload before setup teleports. Prove the actual dialogs/quest variables,
   book use, reward groups, statue entry/return and natural gates. No natural-character GM.
-- [ ] **PC-02 — Supply request and Seriphim book.** Depends PC-01. Implement/verify only
-  Q2953 and Q29048, protect carried quest items and retain packet evidence.
+- [ ] **PC-02 — Supply request, Seriphim book and artisan introduction.** Depends PC-01.
+  Implement/verify Q2953, Q29048 and Q2929 in the natural route, protect carried quest
+  items and retain packet evidence. Accepting crafting follow-ups is not completion.
 - [ ] **PC-03 — Three pet introductions.** Depends PC-02. Implement report-to transitions;
   prove rewards without requiring a pet purchase, egg activation or automatic pet use.
 - [ ] **PC-04 — Blessing and the selected branch.** Depends PC-03. Follow every required
@@ -2192,7 +2198,7 @@ Work with **PC** in place of **NA** in the loop protocol, only after the scope i
   Q2904 at step 0, owned equipment and regular/stigma distinctions across relog/recovery.
 - [ ] **PC-07 — Contained SIM smoke and evidence.** Depends PC-06. Capture the level-10
   starting snapshot only from committed code; restore via sim-snapshot.ps1, run just this
-  capital segment once, assert nine completions/rewards and the Ishalgen return, record
+  capital segment once, assert ten completions/rewards and the Ishalgen return, record
   deaths/losses and drop the owned schema. Run the required checks and run-fast before
   gameplay-change commits. No whole character-create rerun is required for this proof.
 - [ ] **PC-08 — Schedule the higher-level passes.** Depends PC-07. Add the approved
@@ -2269,11 +2275,12 @@ has examples.
 ## Blocked / questions for the operator
 
 - **PC scope / branch (proposed 2026-10-04):** the capital plan above awaits approval
-  before implementation. Recommend all nine first-pass quests immediately after Q2009,
+  before journey implementation. Recommend all ten first-pass quests immediately after Q2009,
   including the Convent visit, and Q2911 reward group 0 (Ribbon/Lost Love). This would
   revise OD-6's deferral and insert the pass into OD-16 before the Ishalgen return.
   Higher-level material purchases, professions, a resurrection partner and the Q2922
-  branch remain separate future decisions; no missing-handler content is authorized here.
+  branch remain separate future decisions. The 2026-10-04 request authorizes the separate
+  D32 Q2929/Q29049 content fixes; the full PC journey scope still awaits approval.
 - ~~**NA-20 → OD-13 (asked 2026-09-28):**~~ **Answered 2026-09-28:** approved with changes (see OD-13). NA-21 is unblocked. The original question was: please approve, change or reject [Appendix D.2](#appendix-d2-proposed-help-items-na-20-awaiting-approval):
   1. **The list and bands:**
      - Anti-Shock from level 10;

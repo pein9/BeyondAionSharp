@@ -13,7 +13,7 @@ A quest is on this list when all of these hold:
 4. **Real task text:** aioncodex `/48/` shows real steps, not a placeholder or a cutscene trigger.
 5. **Everything is here:** every npc and item it names exists and is spawned in this server (class A).
 
-**99** quests, **6** done. Skipped from class A by these checks: **23** (listed at the end, with the check each fails).
+**99** quests, **8** done. Skipped from class A by these checks: **23** (listed at the end, with the check each fails).
 
 | Status | Quest | Name | Zone | Race | Lvl | Batch | Retail 5.8 form | Review |
 |---|---|---|---|---|---:|---|---|---|
@@ -60,8 +60,8 @@ A quest is on this list when all of these hold:
 |  | Q14244 | Eltnen Job | Nochsana Training Camp | Elyos | 25 | 4 Instance entry | SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/14244/?sl=1) |
 |  | Q24241 | You Have a Choice... | Nochsana Training Camp | Asmo | 25 | 4 Instance entry | SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/24241/?sl=1) |
 |  | Q14271 | [Group] Research Party | Theobomos Lab | Elyos | 46 | 4 Instance entry | SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/14271/?sl=1) |
-|  | Q2929 | Welcome to the Temple of Artisans | Pandaemonium | Asmo | 10 | 5 Cities, Reshanta | scripted | [aioncodex](https://aioncodex.com/48/quest/2929/?sl=1) |
-|  | Q29049 | [Craft] Construction Basics | Pandaemonium | Asmo | 10 | 5 Cities, Reshanta | SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/29049/?sl=1) |
+| Done | Q2929 | Welcome to the Temple of Artisans | Pandaemonium | Asmo | 10 | 5 Cities, Reshanta | scripted | [aioncodex](https://aioncodex.com/48/quest/2929/?sl=1) |
+| Done | Q29049 | [Craft] Construction Basics | Pandaemonium | Asmo | 10 | 5 Cities, Reshanta | SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/29049/?sl=1) |
 |  | Q29051 | Running the Tables | Pandaemonium | Asmo | 25 | 5 Cities, Reshanta | SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/29051/?sl=1) |
 |  | Q29059 | Possession Isn't Integrity | Pandaemonium | Asmo | 15 | 5 Cities, Reshanta | SimpleUseItem | [aioncodex](https://aioncodex.com/48/quest/29059/?sl=1) |
 |  | Q29078 | Aethertech Master's Test | Pandaemonium | Asmo | 31 | 5 Cities, Reshanta | scripted | [aioncodex](https://aioncodex.com/48/quest/29078/?sl=1) |

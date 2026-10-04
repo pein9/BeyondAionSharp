@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 29049,
+    "name": "[Craft] Construction Basics",
+    "nameId": 1130016,
+    "zone": "Pandaemonium",
+    "category": "QUEST",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 10,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": [
+      {
+        "finished": [
+          {
+            "quest_id": 2929
+          }
+        ]
+      }
+    ]
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/pandaemonium.xml",
+    "template": "item_collecting",
+    "templateData": {
+      "tag": "item_collecting",
+      "attributes": {
+        "id": 29049,
+        "start_npc_ids": 798452
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 798452,
+        "name": "darfen",
+        "positions": [
+          {
+            "mapId": 120010000,
+            "x": 987.63086,
+            "y": 1603.2782,
+            "z": 233.48817,
+            "heading": 76,
+            "source": "game-server/data/static_data/events/timed_events/custom_events.xml",
+            "conditionalEvent": true
+          },
+          {
+            "mapId": 120010000,
+            "x": 1253.41,
+            "y": 1494.98,
+            "z": 214.222,
+            "heading": 40,
+            "source": "game-server/data/static_data/spawns/Npcs/120010000_Pandaemonium.xml"
+          },
+          {
+            "mapId": 900020000,
+            "x": 135.18025,
+            "y": 155.35149,
+            "z": 23.056122,
+            "heading": 0,
+            "source": "game-server/data/static_data/spawns/Npcs/900020000_TestBasic.xml"
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 798452,
+      "name": "darfen",
+      "positions": [
+        {
+          "mapId": 120010000,
+          "x": 987.63086,
+          "y": 1603.2782,
+          "z": 233.48817,
+          "heading": 76,
+          "source": "game-server/data/static_data/events/timed_events/custom_events.xml",
+          "conditionalEvent": true
+        },
+        {
+          "mapId": 120010000,
+          "x": 1253.41,
+          "y": 1494.98,
+          "z": 214.222,
+          "heading": 40,
+          "source": "game-server/data/static_data/spawns/Npcs/120010000_Pandaemonium.xml"
+        },
+        {
+          "mapId": 900020000,
+          "x": 135.18025,
+          "y": 155.35149,
+          "z": 23.056122,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/900020000_TestBasic.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 798452,
+      "name": "darfen",
+      "positions": [
+        {
+          "mapId": 120010000,
+          "x": 987.63086,
+          "y": 1603.2782,
+          "z": 233.48817,
+          "heading": 76,
+          "source": "game-server/data/static_data/events/timed_events/custom_events.xml",
+          "conditionalEvent": true
+        },
+        {
+          "mapId": 120010000,
+          "x": 1253.41,
+          "y": 1494.98,
+          "z": 214.222,
+          "heading": 40,
+          "source": "game-server/data/static_data/spawns/Npcs/120010000_Pandaemonium.xml"
+        },
+        {
+          "mapId": 900020000,
+          "x": 135.18025,
+          "y": 155.35149,
+          "z": 23.056122,
+          "heading": 0,
+          "source": "game-server/data/static_data/spawns/Npcs/900020000_TestBasic.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "collect",
+      "count": 3,
+      "item_id": 152025175,
+      "sources": []
+    },
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 798452,
+          "name": "darfen",
+          "positions": [
+            {
+              "mapId": 120010000,
+              "x": 987.63086,
+              "y": 1603.2782,
+              "z": 233.48817,
+              "heading": 76,
+              "source": "game-server/data/static_data/events/timed_events/custom_events.xml",
+              "conditionalEvent": true
+            },
+            {
+              "mapId": 120010000,
+              "x": 1253.41,
+              "y": 1494.98,
+              "z": 214.222,
+              "heading": 40,
+              "source": "game-server/data/static_data/spawns/Npcs/120010000_Pandaemonium.xml"
+            },
+            {
+              "mapId": 900020000,
+              "x": 135.18025,
+              "y": 155.35149,
+              "z": 23.056122,
+              "heading": 0,
+              "source": "game-server/data/static_data/spawns/Npcs/900020000_TestBasic.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 7500,
+        "gold": 10940,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "QUEST",
+      "id": 29049,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 10,
+      "name": "[Craft] Construction Basics",
+      "nameId": 1130016,
+      "quest_zone": "Pandaemonium",
+      "race_permitted": "ASMODIANS"
+    },
+    "children": [
+      {
+        "tag": "collect_items",
+        "children": [
+          {
+            "tag": "collect_item",
+            "attributes": {
+              "count": 3,
+              "item_id": 152025175
+            }
+          }
+        ]
+      },
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 7500,
+          "gold": 10940
+        }
+      },
+      {
+        "tag": "start_conditions",
+        "children": [
+          {
+            "tag": "finished",
+            "attributes": {
+              "quest_id": 2929
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

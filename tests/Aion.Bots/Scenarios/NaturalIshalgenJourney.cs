@@ -7286,7 +7286,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		BotNavigationGeometry geometry, bool stopOnDeath, bool conservativeRangedHold,
 		NaturalMauPolicyParameters mauPolicy, int initialRevives = 0)
 	{
-		private readonly Dictionary<int, DateTimeOffset> cooldowns = [];
+		// A contained encounter or map segment may create another observer for the same client.
+		// Java Skill.setCooldowns belongs to the player, not that observer: retain the packet-derived
+		// group deadlines (Herb Treatment and MP Recovery share 1153) across those boundaries.
+		private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<BotWorldModel,
+			Dictionary<int, DateTimeOffset>> CooldownsByWorld = new();
+		private readonly Dictionary<int, DateTimeOffset> cooldowns = CooldownsByWorld.GetValue(session.Api.World, _ => new());
 		// NA-18: the chain the last chain skill opened, from its SM_CASTSPELL_RESULT chain flag (Java ChainSkills).
 		private (string Category, int Target, DateTimeOffset ExpiresAt)? openChain;
 		private ushort? lastCancelledSkillId;

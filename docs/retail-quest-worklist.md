@@ -5,7 +5,7 @@ One line per quest that D32 implements. **The Status column is yours**: leave it
 (`python tools/client-extract/retail_quest_worklist.py`; the plan and rules are in
 [retail-quest-completion.md](retail-quest-completion.md)).
 
-**122** class A and **57** class B to implement, **6** done; **61** rejected by the per-quest review.
+**122** class A and **57** class B to implement, **8** done; **61** rejected by the per-quest review.
 
 How each quest was checked for 4.8:
 
@@ -72,8 +72,8 @@ evidence is in `parity-artifacts/e2e/retail-quest-class-overrides.json`.
 |  | Q14244 | Eltnen Job | Nochsana Training Camp | Elyos | 25 | 4 Instance entry | ready: every npc and item it names is here | 4.8 client L25, dialog; /48/ giver Lodas (730019); 5.8 retail: still live, SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/14244/?sl=1) |
 |  | Q24241 | You Have a Choice... | Nochsana Training Camp | Asmo | 25 | 4 Instance entry | ready: every npc and item it names is here | 4.8 client L25, dialog; /48/ giver Lif (204379); 5.8 retail: still live, SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/24241/?sl=1) |
 |  | Q14271 | [Group] Research Party | Theobomos Lab | Elyos | 46 | 4 Instance entry | ready: every npc and item it names is here | 4.8 client L46, dialog; /48/ giver Atropos (798155); 5.8 retail: still live, SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/14271/?sl=1) |
-|  | Q2929 | Welcome to the Temple of Artisans | Pandaemonium | Asmo | 10 | 5 Cities, Reshanta | ready: every npc and item it names is here | 4.8 client L10, dialog; /48/ giver Talon (204092); 5.8 retail: still live | [aioncodex](https://aioncodex.com/48/quest/2929/?sl=1) |
-|  | Q29049 | [Craft] Construction Basics | Pandaemonium | Asmo | 10 | 5 Cities, Reshanta | ready: every npc and item it names is here | 4.8 client L10, dialog; /48/ giver Darfen (798452); 5.8 retail: still live, SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/29049/?sl=1) |
+| Done | Q2929 | Welcome to the Temple of Artisans | Pandaemonium | Asmo | 10 | 5 Cities, Reshanta | done: report_to template (quest_script_data/pandaemonium.xml); SIM test RetailQuestPlaysEndToEnd(2929); deviation 153 | 4.8 client L10, dialog; /48/ giver Talon (204092); 5.8 retail: still live | [aioncodex](https://aioncodex.com/48/quest/2929/?sl=1) |
+| Done | Q29049 | [Craft] Construction Basics | Pandaemonium | Asmo | 10 | 5 Cities, Reshanta | done: item_collecting template (quest_script_data/pandaemonium.xml); SIM test RetailQuestPlaysEndToEnd(29049); deviation 154 | 4.8 client L10, dialog; /48/ giver Darfen (798452); 5.8 retail: still live, SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/29049/?sl=1) |
 |  | Q29051 | Running the Tables | Pandaemonium | Asmo | 25 | 5 Cities, Reshanta | ready: every npc and item it names is here | 4.8 client L25, dialog; /48/ giver Darfen (798452); 5.8 retail: still live, SimpleTalk | [aioncodex](https://aioncodex.com/48/quest/29051/?sl=1) |
 |  | Q29059 | Possession Isn't Integrity | Pandaemonium | Asmo | 15 | 5 Cities, Reshanta | ready: every npc and item it names is here | 4.8 client L15, dialog; /48/ page; 5.8 retail: still live, SimpleUseItem | [aioncodex](https://aioncodex.com/48/quest/29059/?sl=1) |
 |  | Q29078 | Aethertech Master's Test | Pandaemonium | Asmo | 31 | 5 Cities, Reshanta | ready: every npc and item it names is here | 4.8 client L31, dialog; /48/ page; 5.8 retail: still live | [aioncodex](https://aioncodex.com/48/quest/29078/?sl=1) |

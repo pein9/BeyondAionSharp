@@ -60,6 +60,26 @@
    "batch": "RQ-05 Altgard pilot",
    "simAccount": 156,
    "simCharacter": "Asimrqf"
+  },
+  "2929": {
+   "name": "Welcome to the Temple of Artisans",
+   "form": "report_to template (quest_script_data/pandaemonium.xml)",
+   "test": "RetailQuestPlaysEndToEnd(2929)",
+   "deviation": 153,
+   "patch": "docs/upstream-reports/q2929-temple-of-artisans.patch",
+   "batch": "RQ-06 Pandaemonium introductions",
+   "simAccount": 157,
+   "simCharacter": "Asimrqg"
+  },
+  "29049": {
+   "name": "[Craft] Construction Basics",
+   "form": "item_collecting template (quest_script_data/pandaemonium.xml)",
+   "test": "RetailQuestPlaysEndToEnd(29049)",
+   "deviation": 154,
+   "patch": "docs/upstream-reports/q29049-construction-basics.patch",
+   "batch": "RQ-06 Pandaemonium introductions",
+   "simAccount": 158,
+   "simCharacter": "Asimrqh"
   }
  }
 }

@@ -1,0 +1,19 @@
+diff --git a/game-server/data/static_data/quest_script_data/pandaemonium.xml b/game-server/data/static_data/quest_script_data/pandaemonium.xml
+--- a/game-server/data/static_data/quest_script_data/pandaemonium.xml
++++ b/game-server/data/static_data/quest_script_data/pandaemonium.xml
+@@ -27,6 +27,7 @@
+ 			2926 [XML] Heart in Love
+ 			2927 [XML] A Many-Splendored Ring
+ 			2928 [SCRIPT] Power of Love
++			2929 [XML] Welcome to the Temple of Artisans
+ 			2931 [XML] [Expert] Weaponsmithing Expert
+ 			2932 [XML] [Expert] Armorsmithing Expert
+ 			2933 [XML] [Expert] Handicrafting Expert
+@@ -301,6 +302,7 @@
+ 	-->
+ 	
+ 	<!-- REPORTING QUESTS -->
++	<report_to id="2929" start_npc_ids="204092" end_npc_ids="798317"/>
+ 	<report_to id="2939" start_npc_ids="204104" end_npc_ids="278010"/>
+ 	<report_to id="2940" start_npc_ids="204106" end_npc_ids="278011"/>
+ 	<report_to id="2941" start_npc_ids="204108" end_npc_ids="278010"/>

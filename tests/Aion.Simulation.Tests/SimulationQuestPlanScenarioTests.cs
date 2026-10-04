@@ -428,6 +428,7 @@ public sealed partial class SimulationFastScenarioTests
 			if (selected.Positions.Count != 0)
 			{
 				QuestRunPosition position = selected.Positions[ordinal % selected.Positions.Count];
+				session.Api.World.BeginWorldReload();
 				await owner.TeleportForSetupAsync(session, player, position.MapId, position.X - 1, position.Y, position.Z, token);
 			}
 			Npc npc = FindLivingNpc(player, selected.Id);

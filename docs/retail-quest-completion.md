@@ -1,6 +1,6 @@
 # Retail 4.8 quest completion (D32)
 
-**Status (2026-09-30): RQ-01 to RQ-04 done and approved; the per-quest review is done. The work list is [retail-quest-worklist.md](retail-quest-worklist.md); RQ-05 (the Altgard pilot) is done for its six class A quests.** This is the handoff for a separate session.
+**Status (2026-10-04): RQ-01 to RQ-04 done and approved; the per-quest review is done. The work list is [retail-quest-worklist.md](retail-quest-worklist.md); RQ-05 (the Altgard pilot) is done for its six class A quests. RQ-06's Pandaemonium introduction family adds Q2929 and Q29049; eight D32 quests are implemented.** This is the handoff for a separate session.
 Read this file, then `CLAUDE.md`, before doing anything.
 
 ## Goals (the maintainer, 2026-09-30)
@@ -322,6 +322,56 @@ The same loop discipline as the natural legs: one item at a time, verify, then c
 - [ ] **RQ-06 — Batches.** Zone by zone in the maintainer's order, the classifier regenerated
   after each batch.
 
+  **Pandaemonium introductions (2026-10-04).** The operator requested implementation of
+  the missing Q2929 and follow-up fixes. Q2929 now uses `report_to` (Talon 204092 -> Usener
+  798317), and its missing seventh follow-up Q29049 uses `item_collecting` (Darfen 798452,
+  three Iron Clamps 152025175). Both are class A, active in the shipped 4.8 client and
+  retained retail evidence. Latest upstream `7840be30d` still lacks both; the Java templates
+  `ReportTo` and `ItemCollecting` are reused unchanged. No quest data/spawns/recipes changed.
+
+  - **Follow-up gates:** the six existing Q2905-2910 introductions and Q29049 require
+    completed Q2929. The SIM probe checks them locked beforehand, then actually accepts
+    all seven after Q2929's ordinary Talon/Usener dialogs. This proves acceptance, not
+    completion of the six professions' quests.
+  - **Construction proof:** account 158 completes Q2929 normally first, accepts at Darfen,
+    and crafts four Iron Clamps through `CM_CRAFT` using shipped recipe 155008883 and
+    Construction station 150000023. Darfen rejects two clamps without consuming them;
+    completion consumes exactly three, leaves the fourth, and pays 7,500 XP / 10,940 Kinah.
+    Profession, recipe and four sets of Iron Ore / Lesser Whetstone are probe setup;
+    craft failure chance is temporarily zero and restored. This is not natural profession
+    training, material purchasing or a grant of crafted quest products.
+  - **Planner limit:** the generic item-source compiler does not infer recipes for crafted
+    collections. Q29049's current compiled plan therefore remains `template_incomplete`;
+    the focused proof uses its NPC/count data and the explicit shipped recipe. Q2905-2910
+    likewise have crafted-item source gaps in the generic planner, not missing server handlers.
+    The classifier now records eight newly obtainable quests, including those six.
+  - **Accounts / records:** 157 `Asimrqg` and 158 `Asimrqh`; deviations 153-154 and the two
+    cumulative Pandaemonium patches listed in `docs/upstream-reports/README.md`. The plan
+    driver drops its client view with `BeginWorldReload` before NPC setup teleports.
+  - **Evidence:** Q2929 and the six existing D32 cases passed in
+    `run/rq06-pandaemonium/sim-a.log`; that run retained a Q29049 test assertion failure
+    (the compiled plan has a collection and a report step). Corrected Q29049 passed once
+    in `run/rq06-pandaemonium/sim-b.log`, `sim-b/construction.trx`.
+  - **Fast follow-up:** `rq06-pandaemonium-fast` passed all eight D32 cases but failed the
+    existing HM-04 normal-combat probe: a fresh combat observer forgot Herb Treatment's
+    shared powder cooldown before MP Recovery. The retained trace identifies regular
+    skills 251/252, not stigmas. The bot now retains its observed group deadlines across
+    observers for the same client; no server cooldown, cast-rejection gate or loadout changed
+    (harness deviation 155). The failed Fast receipt remains intact.
+    The corrected contained HM-04 case passed in
+    `run/rq06-pandaemonium/haramel-cooldown.log` and `haramel-cooldown/haramel.trx`;
+    all 513 natural/timing/cast-protocol unit cases passed in
+    `run/rq06-pandaemonium/check-natural-unit-final.log`.
+  - [x] **RQ-06a — Pandaemonium introduction family, verified 2026-10-04.** Fresh
+    `rq06-pandaemonium-fast-b` passes all eight D32 cases and HM-04: **84 passed, 0 failed,
+    5 skipped** test cases; all **11 scenario reports** passed. Evidence:
+    `run/rq06-pandaemonium/fast-b.log`, `run/rq06-pandaemonium-fast-b/simulation.trx`
+    and `run/rq06-pandaemonium-fast-b/report.md`. The full solution suite passed;
+    all commands in the CLAUDE.md checklist passed, including the warning baseline,
+    null logger / clock ratchets, custom drafts, fidelity, current compiler/inventory,
+    runner contracts and baked navigation. Only classifier population counts changed
+    in the quest coverage baseline; the accepted/completed floors remain unchanged.
+
 ## RQ-04 report (2026-09-30)
 
 **Classes:** A **127**, B **73**, C **129**, D **95**, E **16** (440).
@@ -463,3 +513,5 @@ a row keeps the rules' own verdict beside an override.
 | Q24115 | A Shugo Apropos | Altgard | A | `monster_hunt` template | the 4.8 client ships it (level 13, excluding Q2200 and Q2019, work item quest_24115a); aioncodex `/48/quest/24115` names Neparinerk as giver and Banatisai as the end; retail 5.8 runs it as a SimpleHunt quest, Neparinerk to Banatisai, giving ITEM_QUEST_24115A at the start | `RetailQuestPlaysEndToEnd(24115)` | 149 | `da53a752a` |
 | Q24232 | Little Help from a Daeva | Altgard | A | `monster_hunt` template | the 4.8 client ships it (level 14, after Q24112); aioncodex `/48/quest/24232` names Anmurnerk as giver; retail 5.8 runs it as a SimpleHunt quest, Anmurnerk to Anmurnerk, 9 of the four MuMu devnames | `RetailQuestPlaysEndToEnd(24232)` | 150 | `4eb77e807` |
 | Q24233 | Adieu to You, Manumumu | Altgard | A | `monster_hunt` template | the 4.8 client ships it (level 14, after Q24112); aioncodex `/48/quest/24233` names Brodir as giver and Suthran as the end; retail 5.8 runs it as a SimpleHunt quest, Brodir to Suthran, 1 of RatmanChief_17_An | `RetailQuestPlaysEndToEnd(24233)` | 151 | `e5cb677d9` |
+| Q2929 | Welcome to the Temple of Artisans | Pandaemonium | A | `report_to` template | Shipped 4.8 level-10 quest/dialog; cached `/48/quest/2929`: Talon -> Usener, 1,498 XP / 3,840 Kinah; retail 5.8 retains the active level-10 quest (no SimpleTalk entry); latest Java `7840be30d` has no handler | `RetailQuestPlaysEndToEnd(2929)` | 153 | RQ-06 Pandaemonium family, 2026-10-04 |
+| Q29049 | [Craft] Construction Basics | Pandaemonium | A | `item_collecting` template | Shipped 4.8 quest requires Q2929 and three Iron Clamps; cached `/48/quest/29049`: craft and return to Darfen; retail 5.8 retains simple talk with item check; latest Java `7840be30d` has no handler | `RetailQuestPlaysEndToEnd(29049)` | 154 | RQ-06 Pandaemonium family, 2026-10-04 |

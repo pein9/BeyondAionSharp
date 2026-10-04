@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "quest": {
+    "id": 2929,
+    "name": "Welcome to the Temple of Artisans",
+    "nameId": 1104129,
+    "zone": "Pandaemonium",
+    "category": "SIGNIFICANT",
+    "race": "ASMODIANS"
+  },
+  "gates": {
+    "minimumLevel": 10,
+    "maximumLevel": 0,
+    "classes": [],
+    "gender": null,
+    "maximumRepeats": 1,
+    "rewardRepeatCount": 0,
+    "repeatCycle": [],
+    "npcFactionId": 0,
+    "startConditions": []
+  },
+  "handler": {
+    "kind": "template",
+    "source": "game-server/data/static_data/quest_script_data/pandaemonium.xml",
+    "template": "report_to",
+    "templateData": {
+      "tag": "report_to",
+      "attributes": {
+        "end_npc_ids": 798317,
+        "id": 2929,
+        "start_npc_ids": 204092
+      }
+    }
+  },
+  "startTrigger": {
+    "kind": "npc",
+    "npcs": [
+      {
+        "id": 204092,
+        "name": "talon",
+        "positions": [
+          {
+            "mapId": 120010000,
+            "x": 1199.5,
+            "y": 1528.21,
+            "z": 213.836,
+            "heading": 97,
+            "source": "game-server/data/static_data/spawns/Npcs/120010000_Pandaemonium.xml"
+          },
+          {
+            "mapId": 120010000,
+            "x": 1269.6295,
+            "y": 1266.1985,
+            "z": 208.88037,
+            "heading": 29,
+            "source": "game-server/data/static_data/events/timed_events/custom_events.xml",
+            "conditionalEvent": true
+          }
+        ],
+        "handlerSpawned": false
+      }
+    ]
+  },
+  "startNpcs": [
+    {
+      "id": 204092,
+      "name": "talon",
+      "positions": [
+        {
+          "mapId": 120010000,
+          "x": 1199.5,
+          "y": 1528.21,
+          "z": 213.836,
+          "heading": 97,
+          "source": "game-server/data/static_data/spawns/Npcs/120010000_Pandaemonium.xml"
+        },
+        {
+          "mapId": 120010000,
+          "x": 1269.6295,
+          "y": 1266.1985,
+          "z": 208.88037,
+          "heading": 29,
+          "source": "game-server/data/static_data/events/timed_events/custom_events.xml",
+          "conditionalEvent": true
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "endNpcs": [
+    {
+      "id": 798317,
+      "name": "usener",
+      "positions": [
+        {
+          "mapId": 120010000,
+          "x": 925.03827,
+          "y": 1552.7167,
+          "z": 233.42613,
+          "heading": 15,
+          "source": "game-server/data/static_data/events/timed_events/custom_events.xml",
+          "conditionalEvent": true
+        },
+        {
+          "mapId": 120010000,
+          "x": 1204.96,
+          "y": 1505.43,
+          "z": 213.963,
+          "heading": 6,
+          "source": "game-server/data/static_data/spawns/Npcs/120010000_Pandaemonium.xml"
+        }
+      ],
+      "handlerSpawned": false
+    }
+  ],
+  "steps": [
+    {
+      "kind": "report",
+      "npcs": [
+        {
+          "id": 798317,
+          "name": "usener",
+          "positions": [
+            {
+              "mapId": 120010000,
+              "x": 925.03827,
+              "y": 1552.7167,
+              "z": 233.42613,
+              "heading": 15,
+              "source": "game-server/data/static_data/events/timed_events/custom_events.xml",
+              "conditionalEvent": true
+            },
+            {
+              "mapId": 120010000,
+              "x": 1204.96,
+              "y": 1505.43,
+              "z": 213.963,
+              "heading": 6,
+              "source": "game-server/data/static_data/spawns/Npcs/120010000_Pandaemonium.xml"
+            }
+          ],
+          "handlerSpawned": false
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "standard": [
+      {
+        "exp": 1498,
+        "gold": 3840,
+        "rewardItems": [],
+        "selectableItems": []
+      }
+    ],
+    "classSelectable": {}
+  },
+  "questData": {
+    "tag": "quest",
+    "attributes": {
+      "category": "SIGNIFICANT",
+      "data_driven": true,
+      "id": 2929,
+      "max_repeat_count": 1,
+      "minlevel_permitted": 10,
+      "name": "Welcome to the Temple of Artisans",
+      "nameId": 1104129,
+      "quest_zone": "Pandaemonium",
+      "race_permitted": "ASMODIANS",
+      "restricted": true
+    },
+    "children": [
+      {
+        "tag": "rewards",
+        "attributes": {
+          "exp": 1498,
+          "gold": 3840
+        }
+      }
+    ]
+  }
+}

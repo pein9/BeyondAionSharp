@@ -106,11 +106,11 @@ class QuestPlanCompilerTests(unittest.TestCase):
     def test_classifier_keeps_unimplemented_distinct(self) -> None:
         classifier = json.loads(CLASSIFIER.read_text(encoding="utf-8"))
         self.assertEqual(
-            {"obtainable": 4351, "disabled": 3008, "unreachable": 250, "no_handler": 434},
+            {"obtainable": 4359, "disabled": 3008, "unreachable": 244, "no_handler": 432},
             classifier["counts"],
         )
         self.assertEqual(
-            {"template": 2993, "template_incomplete": 420, "custom": 938, "none": 2818, "unavailable": 874},
+            {"template": 2994, "template_incomplete": 427, "custom": 938, "none": 2816, "unavailable": 868},
             classifier["plannerCounts"],
         )
         by_id = {quest["id"]: quest for quest in classifier["quests"]}
@@ -118,6 +118,11 @@ class QuestPlanCompilerTests(unittest.TestCase):
         self.assertEqual("obtainable", by_id[2101]["availability"])
         self.assertEqual("obtainable", by_id[2217]["availability"])
         self.assertEqual("unreachable", by_id[2285]["availability"])
+        self.assertEqual("template", by_id[2929]["planSupport"])
+        for quest_id in [2905, 2906, 2907, 2908, 2909, 2910, 29049]:
+            self.assertEqual("obtainable", by_id[quest_id]["availability"])
+            self.assertEqual("template_incomplete", by_id[quest_id]["planSupport"])
+            self.assertEqual("unresolved-item-source", by_id[quest_id]["planIssues"][0]["code"])
 
     def test_finished_quest_conditions_accept_one_complete_alternative(self) -> None:
         # Modern/legacy alternatives, an AND inside one alternative, and a
@@ -177,8 +182,8 @@ class QuestPlanCompilerTests(unittest.TestCase):
 
             self.assertEqual([], errors)
             self.assertTrue(report["baselineComparison"]["passed"])
-            self.assertEqual(434, report["excluded"]["noHandler"]["total"])
-            self.assertEqual(250, report["excluded"]["unreachable"]["total"])
+            self.assertEqual(432, report["excluded"]["noHandler"]["total"])
+            self.assertEqual(244, report["excluded"]["unreachable"]["total"])
             for mode in report["modes"]:
                 self.assertEqual(61, mode["totals"]["accepted"])
                 self.assertEqual(57, mode["totals"]["completed"])

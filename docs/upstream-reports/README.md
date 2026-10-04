@@ -33,6 +33,14 @@ cumulative: **apply them in the order of the table**. Checked in sequence agains
 | 24115 A Shugo Apropos (Altgard) | `<monster_hunt id="24115" start_npc_ids="798033" end_npc_ids="203673"/>` | `q24115-a-shugo-apropos.patch` | D32, applied (deviation 149) |
 | 24232 Little Help from a Daeva (Altgard) | `<monster_hunt id="24232" start_npc_ids="832822"/>` | `q24232-little-help-from-a-daeva.patch` | D32, applied (deviation 150) |
 | 24233 Adieu to You, Manumumu (Altgard) | `<monster_hunt id="24233" start_npc_ids="832821" end_npc_ids="203557"/>` | `q24233-adieu-to-you-manumumu.patch` | D32, applied (deviation 151) |
+| 2929 Welcome to the Temple of Artisans (Pandaemonium) | `<report_to id="2929" start_npc_ids="204092" end_npc_ids="798317"/>` | `q2929-temple-of-artisans.patch` | D32, applied (deviation 153) |
+| 29049 [Craft] Construction Basics (Pandaemonium) | `<item_collecting id="29049" start_npc_ids="798452"/>` | `q29049-construction-basics.patch` | D32, applied (deviation 154) |
+
+The two Pandaemonium patches also apply in table order. Checked with `git apply --check`
+and actual application to an ordinary file export of latest `upstream/4.8` `7840be30d`
+on 2026-10-04; its Pandaemonium XML matches `ce54b7931`. Both use the existing Java
+templates unchanged; no new quest data, NPCs or recipes are needed. The SIM proofs are
+`RetailQuestPlaysEndToEnd(2929)` and `(29049)`; see the D32 completion document for receipts.
 
 The Java branch, the checks and the PR text are in `pull-request.md`.
 The evidence and the dialog-dispatch explanation that apply to all of them are in

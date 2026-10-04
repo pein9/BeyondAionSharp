@@ -2,17 +2,17 @@
   "schemaVersion": 1,
   "generatedBy": "scripts/e2e/compile-quest-plans.py",
   "counts": {
-    "obtainable": 4351,
+    "obtainable": 4359,
     "disabled": 3008,
-    "unreachable": 250,
-    "no_handler": 434
+    "unreachable": 244,
+    "no_handler": 432
   },
   "plannerCounts": {
-    "template": 2993,
-    "template_incomplete": 420,
+    "template": 2994,
+    "template_incomplete": 427,
     "custom": 938,
-    "none": 2818,
-    "unavailable": 874
+    "none": 2816,
+    "unavailable": 868
   },
   "quests": [
     {
@@ -19347,17 +19347,17 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template_incomplete",
+      "planIssues": [
         {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2929
+          "code": "unresolved-item-source",
+          "itemIds": [
+            152025001
           ]
         }
-      ],
-      "planSupport": "unavailable",
-      "planIssues": []
+      ]
     },
     {
       "id": 2906,
@@ -19365,17 +19365,17 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template_incomplete",
+      "planIssues": [
         {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2929
+          "code": "unresolved-item-source",
+          "itemIds": [
+            152025001
           ]
         }
-      ],
-      "planSupport": "unavailable",
-      "planIssues": []
+      ]
     },
     {
       "id": 2907,
@@ -19383,17 +19383,17 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template_incomplete",
+      "planIssues": [
         {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2929
+          "code": "unresolved-item-source",
+          "itemIds": [
+            160002001
           ]
         }
-      ],
-      "planSupport": "unavailable",
-      "planIssues": []
+      ]
     },
     {
       "id": 2908,
@@ -19401,17 +19401,17 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template_incomplete",
+      "planIssues": [
         {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2929
+          "code": "unresolved-item-source",
+          "itemIds": [
+            152025087
           ]
         }
-      ],
-      "planSupport": "unavailable",
-      "planIssues": []
+      ]
     },
     {
       "id": 2909,
@@ -19419,17 +19419,17 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template_incomplete",
+      "planIssues": [
         {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2929
+          "code": "unresolved-item-source",
+          "itemIds": [
+            152025112
           ]
         }
-      ],
-      "planSupport": "unavailable",
-      "planIssues": []
+      ]
     },
     {
       "id": 2910,
@@ -19437,17 +19437,17 @@
       "race": "ASMODIANS",
       "handlerKind": "template",
       "template": "item_collecting",
-      "availability": "unreachable",
-      "reasons": [
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template_incomplete",
+      "planIssues": [
         {
-          "code": "unobtainable-prerequisites",
-          "questIds": [
-            2929
+          "code": "unresolved-item-source",
+          "itemIds": [
+            152025033
           ]
         }
-      ],
-      "planSupport": "unavailable",
-      "planIssues": []
+      ]
     },
     {
       "id": 2911,
@@ -19658,15 +19658,11 @@
       "id": 2929,
       "zone": "Pandaemonium",
       "race": "ASMODIANS",
-      "handlerKind": "none",
-      "template": null,
-      "availability": "no_handler",
-      "reasons": [
-        {
-          "code": "no-handler"
-        }
-      ],
-      "planSupport": "none",
+      "handlerKind": "template",
+      "template": "report_to",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template",
       "planIssues": []
     },
     {
@@ -78437,16 +78433,19 @@
       "id": 29049,
       "zone": "Pandaemonium",
       "race": "ASMODIANS",
-      "handlerKind": "none",
-      "template": null,
-      "availability": "no_handler",
-      "reasons": [
+      "handlerKind": "template",
+      "template": "item_collecting",
+      "availability": "obtainable",
+      "reasons": [],
+      "planSupport": "template_incomplete",
+      "planIssues": [
         {
-          "code": "no-handler"
+          "code": "unresolved-item-source",
+          "itemIds": [
+            152025175
+          ]
         }
-      ],
-      "planSupport": "none",
-      "planIssues": []
+      ]
     },
     {
       "id": 29050,
