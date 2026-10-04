@@ -42,6 +42,7 @@ public interface INaturalNavigationDriver
 /// <summary>Client-observed, bounded ground approach. Its position is a paced client estimate, not a server echo.</summary>
 public static class NaturalIshalgenNavigator
 {
+	public const string RepeatedRouteReason = "Navigation returned to the same route start after bounded replans.";
 	/// <summary>Thin actual client-estimated progress into reverse-route checkpoints.
 	/// Planned routes are intentionally excluded: only walked positions may guide
 	/// a return, and every reverse leg is routed and hazard-checked again.</summary>
@@ -134,7 +135,8 @@ public static class NaturalIshalgenNavigator
 		float arrivalRadius, CancellationToken token)
 	{
 		ArgumentNullException.ThrowIfNull(driver);
-		int routeSearches = 0, segments = 0, replans = 0, targetWaits = 0, targetMoves = 0, sequence = 0;
+		int routeSearches = 0, segments = 0, advancedSegments = 0, replans = 0, targetWaits = 0, targetMoves = 0, sequence = 0;
+		var routeStarts = new List<(BotPosition Start, BotPosition Goal, int? Target, int Advanced)>();
 		int? targetId = null;
 		BotPosition destination = staticAnchor;
 		IReadOnlyList<BotPosition> route = [];
@@ -206,6 +208,13 @@ public static class NaturalIshalgenNavigator
 
 			if (route.Count == 0 || routeIndex >= route.Count)
 			{
+				// Moving around an avoidance loop is not progress toward a stationary goal. Hand back to
+				// ordinary blocker recovery when checked walks repeatedly return to the same route start.
+				// Actual stalls retain their existing consecutive-replan check, and moving targets keep theirs.
+				if (routeStarts.Count(visit => visit.Target == targetId && visit.Advanced < advancedSegments &&
+					Distance(visit.Start, start) <= 0.5f && Distance(visit.Goal, destination) <= TargetMovementThreshold) >= MaximumReplans)
+					return Fail(RepeatedRouteReason, observed);
+				routeStarts.Add((start, destination, targetId, advancedSegments));
 				route = await driver.FindRouteAsync(start, destination, token);
 				routeSearches++;
 				routeIndex = 0;
@@ -244,6 +253,7 @@ public static class NaturalIshalgenNavigator
 				continue;
 			}
 			routeIndex += segment.Length;
+			advancedSegments++;
 			// The replan budget counts replans in a row without progress (a real stall), not every new
 			// hostile met on a long walk that keeps advancing.
 			replans = 0;

@@ -4038,6 +4038,18 @@ is authorized by this request.
   activation, changed flags, reward status, completion credit and Q24016. Focused tests: 158 passed;
   all seven pre-commit checks passed (`run/as02-unlock-checks`). Both failed attempts' owned schemas
   were dropped by the fixture, as verified through `INFORMATION_SCHEMA`.
+  Attempt (2026-10-03): `run/natural-complete/as02-full-create-s1-a3`, code `5ae693c23`,
+  passed l5 and entered l6, then exhausted navigation's 1,000 segments on Q2242's Gemyu hand-in.
+  Java and C# ship the same stationary Gemyu spawn (2359.64, 916.004, 326). The trace records
+  80 route searches and repeated returns to (2585.6, 1118.2357, 288.46027), not a missing NPC or
+  an escort/timer loss (`run/as02-gemyu-audit.json`). Detect repeated route starts after actual
+  movement and hand back to the existing observed-blocker recovery. Keep all segment, replan,
+  guard-clear and cumulative revival limits; preserve the original failed trace and package.
+  Route correction evidence (2026-10-03): cycle detection returns repeated checked walks to the
+  existing blocker recovery. Regression cases preserve short forward routes and moving targets;
+  focused navigation/Altgard/Haramel tests: 178 passed. All seven pre-commit checks passed
+  (`run/as02-route-checks`); Fast: 82 passed / five explicit switch skips, all eleven scenarios
+  passed (`run/as02-route-fast`). The failed attempt's owned schema was dropped.
 
 One complete SIM Altgard journey must then play **l1 through l11, cg and l12 in order from the original level-10
 `altgard` snapshot**, retaining one character, database, clock, journals and aggregate outcomes between

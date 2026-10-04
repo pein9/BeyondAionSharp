@@ -178,6 +178,32 @@ public sealed class NaturalIshalgenNavigatorTests
 	}
 
 	[Fact]
+	public async Task ACheckedAvoidanceLoopReturnsToBlockerRecoveryBeforeTheSegmentBudgetIsExhausted()
+	{
+		var driver = new FakeDriver([new(77, 203500, At(20))])
+		{
+			RouteOverride = (start, _) => [At(start.X == 0 ? 10 : 0)],
+		};
+		NaturalNavigationResult result = await NaturalIshalgenNavigator.ApproachNpcAsync(220010000,
+			203500, At(20), driver);
+		Assert.False(result.Arrived);
+		Assert.Equal(NaturalIshalgenNavigator.RepeatedRouteReason, result.Reason);
+		Assert.InRange(result.Segments, 1, 10);
+		Assert.Equal(0, driver.Position.X);
+		Assert.Contains(driver.Events, item => item.Action == "navigation-failed");
+	}
+
+	[Fact]
+	public async Task ShortPartialRoutesThatKeepAdvancingAreNotAnAvoidanceLoop()
+	{
+		var driver = new FakeDriver([new(77, 203500, At(30))]) { MaxRoutePoints = 1 };
+		NaturalNavigationResult result = await NaturalIshalgenNavigator.ApproachNpcAsync(220010000,
+			203500, At(30), driver);
+		Assert.True(result.Arrived, result.Reason);
+		Assert.True(result.RouteSearches > 20);
+	}
+
+	[Fact]
 	public async Task AWalkingTargetIsFollowedWithoutAReplanLimit()
 	{
 		// A town NPC that keeps walking ahead: every step the bot takes, it has moved on again. A player keeps
@@ -252,6 +278,7 @@ public sealed class NaturalIshalgenNavigatorTests
 		public HashSet<float> BlockedDestinations { get; init; } = [];
 		public bool Stall { get; init; }
 		public int MaxRoutePoints { get; init; } = int.MaxValue;
+		public Func<BotPosition, BotPosition, IReadOnlyList<BotPosition>>? RouteOverride { get; init; }
 		public bool RejectNextSegment { get; set; }
 		public int Synchronizations { get; private set; }
 		public Action<FakeDriver, int>? AfterMove { get; init; }
@@ -262,6 +289,7 @@ public sealed class NaturalIshalgenNavigatorTests
 		public NaturalNavigationObservation Observe() => new(220010000, Position, false, Targets.ToArray());
 		public Task<IReadOnlyList<BotPosition>> FindRouteAsync(BotPosition start, BotPosition destination, CancellationToken token)
 		{
+			if (RouteOverride != null) return Task.FromResult(RouteOverride(start, destination));
 			if (NoRoute || BlockedDestinations.Contains(destination.X))
 				return Task.FromResult<IReadOnlyList<BotPosition>>([]);
 			int step = Math.Sign(destination.X - start.X);

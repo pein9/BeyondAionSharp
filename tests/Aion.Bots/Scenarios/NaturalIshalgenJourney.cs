@@ -3507,7 +3507,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						// Monsters on the way are not a wall: fight through to the objective (observed or its
 						// shipped anchor) one pull at a time before giving up on this spawn hint.
 						if (progress.CanRetry(guardClears) && result.Reason is "No collision-checked route to the current destination." or
-								"New client-observed hazards exceeded the bounded replan budget.")
+								"New client-observed hazards exceeded the bounded replan budget." or NaturalIshalgenNavigator.RepeatedRouteReason)
 						{
 							NaturalNavigationObject? seen = result.TargetObjectId is int blockedObjectId
 								? navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == blockedObjectId) : null;
