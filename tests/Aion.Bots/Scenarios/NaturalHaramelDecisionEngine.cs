@@ -28,7 +28,7 @@ public static class NaturalHaramelDecisionEngine
 
 		if (!state.Synchronized || state.MapId == null) return Stop("refresh-observation", "Wait for a synchronized client view.", "planned");
 		if (state.MapId != rules.MapId && state.MapId != leg.Hub.MapId) return Stop("wrong-map", "Haramel permits only Altgard and its ordinary solo instance.");
-		if (leg.Start.CompletedQuestIds.Any(id => !Done(id))) return Stop("lost-journal", "Preserve all 145 incoming completed journals.");
+		if (leg.Start.CompletedQuestIds.Any(id => !Done(id))) return Stop("lost-journal", $"Preserve all {leg.Start.CompletedQuestIds.Length} incoming completed journals.");
 		if (state.CompletedQuestCounts?.GetValueOrDefault(2293) != 1 || leg.Order.Any(id => Done(id) && state.CompletedQuestCounts?.GetValueOrDefault(id) != 1))
 			return Stop("quest-repeat-count", "Reconcile first completions; never take another natural coin or Haramel repeat.");
 		if (state.ItemCounts.GetValueOrDefault(188053787) != 1 || state.ItemCounts.GetValueOrDefault(140000001) != 0 ||
@@ -53,14 +53,14 @@ public static class NaturalHaramelDecisionEngine
 			return Stop("working-bind", "Both clears and ordinary recovery retain the Heart bind.");
 		if (allDone)
 		{
-			if (state.CompletedQuestIds.Count != 156 || state.ItemCounts.GetValueOrDefault(rules.IronItemId) != rules.IronCount || state.ItemCounts.GetValueOrDefault(rules.BronzeItemId) != rules.BronzeCount ||
+			if (state.CompletedQuestIds.Count != leg.Start.CompletedQuestIds.Union(leg.Endpoint.CompletedQuestIds).Count() || state.ItemCounts.GetValueOrDefault(rules.IronItemId) != rules.IronCount || state.ItemCounts.GetValueOrDefault(rules.BronzeItemId) != rules.BronzeCount ||
 				rules.CleanupItemIds.Any(id => state.ItemCounts.GetValueOrDefault(id) != 0))
 				return Stop("haramel-ledger", "Reconcile 19 Iron, seven Bronze and Java quest-item cleanup.");
 			if (state.MapId == rules.MapId) return Plan("leave-haramel", rules.MapId);
 			if (!NaturalAltgardDecisionEngine.BoundAt(leg.Bind!, leg.Hub.MapId, state.Bind)) return Plan("bind", leg.Hub.MapId);
 			if (MathF.Sqrt(MathF.Pow(state.Position.X - leg.Hub.Anchor[0], 2) + MathF.Pow(state.Position.Y - leg.Hub.Anchor[1], 2)) > leg.Hub.Radius)
 				return Plan("return-to-hub", leg.Hub.MapId);
-			return Stop("leg-complete", "Eleven first completions, 156 retained journals, staff/currency/stigma ledger and fortress bind are observed.", "complete");
+			return Stop("leg-complete", $"Eleven first completions, {state.CompletedQuestIds.Count} retained journals, staff/currency/stigma ledger and fortress bind are observed.", "complete");
 		}
 
 		NaturalAltgardDecision? Tasks(IEnumerable<NaturalHaramelTask> tasks)

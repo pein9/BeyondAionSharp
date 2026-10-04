@@ -31,6 +31,7 @@ public sealed partial class SimulationFastScenarioTests
 		bool stopAfterQ2006 = Environment.GetEnvironmentVariable("NI07_STOP_AFTER_Q2006") == "1";
 		bool stopAfterQ2007 = Environment.GetEnvironmentVariable("NI07_STOP_AFTER_Q2007") == "1";
 		bool fullJourney = Environment.GetEnvironmentVariable("NI07_FULL_JOURNEY") == "1";
+		bool continuousAltgard = Environment.GetEnvironmentVariable("AF_ALTGARD") == "all";
 		Skip.IfNot(stopAfterQ2004 || stopAfterQ2005 || stopAfterQ2006 || stopAfterQ2007 || fullJourney,
 			"Set NI07_STOP_AFTER_Q2004=1, NI07_STOP_AFTER_Q2005=1, NI07_STOP_AFTER_Q2006=1 " +
 			"or NI07_STOP_AFTER_Q2007=1 " +
@@ -70,7 +71,7 @@ public sealed partial class SimulationFastScenarioTests
 			Environment.GetEnvironmentVariable("NI08_RELOG_AT"), Environment.GetEnvironmentVariable("NI08_STOP_AT"),
 			Environment.GetEnvironmentVariable("NI07_STOP_ON_DEATH") == "1",
 			Environment.GetEnvironmentVariable("NI07_OPTIMIZE_HUBS") == "1",
-			AscensionBridge: Environment.GetEnvironmentVariable("NA_ASCENSION") == "1",
+			AscensionBridge: continuousAltgard || Environment.GetEnvironmentVariable("NA_ASCENSION") == "1",
 			// AF-08/09: Altgard Leg 1 from a restored `altgard` snapshot (docs/natural-altgard-leveling.md).
 			AltgardLeg1: Environment.GetEnvironmentVariable("AF_ALTGARD") == "1",
 			// AM-06/07: AF_ALTGARD=l2 plays Leg 2 from `altgard-l12`; AF_ONLY limits a diagnostic run to the listed quests.

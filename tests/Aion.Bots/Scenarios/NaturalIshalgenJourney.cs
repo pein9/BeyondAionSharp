@@ -66,6 +66,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 	public async Task RunAsync(CancellationToken token)
 	{
+		bool continuousAltgard = options.AltgardLegId == "all";
+		if (continuousAltgard && (!runtime.Profile.StartsWith("SIM-", StringComparison.Ordinal) || !options.AscensionBridge ||
+			options.StopAfterQuest != null || options.StopAt != null || options.RelogAt != null || options.AltgardOnlyQuests != null ||
+			options.Course != null || options.ClericEncounter || options.CoinGearReceiptPath != null || options.HaramelProgressPath != null))
+			throw new InvalidOperationException("The complete SIM journey requires creation, Ascension and every approved leg without diagnostic shortcuts or saved receipts.");
 		session.IdentityAltgardLegId = options.AltgardLegId;
 		if (options.MauPolicy != null && options.Course == null)
 			throw new InvalidOperationException("A tuned Mau policy is restricted to the focused SIM course.");
@@ -119,6 +124,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		try
 		{
 			bool resuming = await runtime.EnterAsync(token);
+			Require.True(!continuousAltgard || !resuming, "The complete SIM journey must create a fresh character.");
 			if (options.Course != null || options.ClericEncounter)
 			{
 				if (resuming || runtime.PrepareCourseAsync == null)
@@ -167,7 +173,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			};
 			// AF-08: Altgard Leg 1 walks to its own NPCs and hunts on the Ice Lake; they join the waypoint graph.
 			// AM-06/07: the same runner plays any Altgard leg ("l1" the fortress, "l2" Moslan Crossroad).
-			string? altgardLegId = options.AltgardLegId ?? (options.AltgardLeg1 ? "l1" : null);
+			string? altgardLegId = continuousAltgard ? null : options.AltgardLegId ?? (options.AltgardLeg1 ? "l1" : null);
 			NaturalAltgardContract? altgardLeg = altgardLegId is { } legId ? NaturalAltgardContract.LoadLeg(legId) : null;
 			coinGearProgress = altgardLeg?.CoinGear == null ? null : NaturalCoinGearProgress.Empty;
 			if (altgardLeg?.Haramel is { } haramel)
@@ -203,8 +209,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			Func<int, float, Func<int?>?, Task<int>>? haramelApproach = null;
 			Func<IReadOnlyList<int>, int>? haramelKind = null;
 			bool farApproachUnderway = false;
-			int[] altgardNpcs = altgardLeg == null ? [] : altgardLeg.GraphNpcIds(altgardPlans)
-				.Concat(airlines.Where(route => route.MapId == altgardLeg.Hub.MapId).Select(route => route.NpcId)).Distinct().ToArray();
+			int[] altgardNpcs = continuousAltgard ? NaturalAltgardContinuation.Order.SelectMany(id =>
+				NaturalAltgardContract.LoadLeg(id).GraphNpcIds(NaturalAltgardContract.LoadPlans(id)))
+				.Concat(airlines.Select(route => route.NpcId)).Distinct().ToArray()
+				: altgardLeg == null ? [] : altgardLeg.GraphNpcIds(altgardPlans)
+					.Concat(airlines.Where(route => route.MapId == altgardLeg.Hub.MapId).Select(route => route.NpcId)).Distinct().ToArray();
 			// AK-08: items an open Altgard quest still needs (its collect items, the ring carriers' rings): never worn as gear and
 			// never sold. The leg 5 smoke run wore Q2292's level 16 rings as upgrades, which its hand-in would not have found.
 			IReadOnlySet<int> QuestNeededItems() => altgardLeg == null ? new HashSet<int>() : altgardPlans.Values
@@ -241,7 +250,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				if (key.MapId == contract.MapId) return navigator;
 				BotNavigationGeometry mapGeometry = runtime.CreateGeometry();
 				BotNavigationGraph mapGraph = BotNavigationGraphFactory.Build(runtime.Data,
-					key.MapId == 320010000 ? [205020] : altgardLeg != null ? altgardNpcs : [], mapGeometry);
+					key.MapId == 320010000 ? [205020] : altgardLeg != null || continuousAltgard ? altgardNpcs : [], mapGeometry);
 				return new NaturalJourneyNavigator(session, mapGraph, mapGeometry, runtime, options.StopOnDeath)
 				{
 					Planner = BotTravelPlanner.For(key.MapId, mapGeometry, runtime.Data),
@@ -903,6 +912,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				// NA-11/12: with the bridge enabled, the Ascension bridge (docs/natural-ascension-altgard.md) starts where
 				// Ishalgen ends instead of quitting here.
 				if (options.AscensionBridge) await RunAscensionBridgeAsync();
+				if (continuousAltgard) await RunAllAltgardLegsAsync();
 				session.PublishDashboard("completed", force: true);
 				await session.QuitAsync(token);
 				runtime.AssertClean();
@@ -1024,6 +1034,57 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						NaturalHelpItemSupply.ProfileJson(helpSupplied), token);
 			}
 
+			async Task RunAllAltgardLegsAsync()
+			{
+				int characterId = session.CharacterId;
+				var stages = new List<object>();
+				stages.Add(new { Stage = "ishalgen-ascension", CharacterId = characterId, ElapsedMillis = runtime.NowMillis,
+					Deaths = combat.ReviveCount, Completed = session.Api.World.CompletedQuestIds.Count });
+				foreach (string id in NaturalAltgardContinuation.Order)
+				{
+					await session.SynchronizeAsync(token);
+					Require.Equal(characterId, session.CharacterId);
+					altgardLegId = id;
+					session.IdentityAltgardLegId = id;
+					NaturalAltgardContract shipped = NaturalAltgardContract.LoadLeg(id);
+					altgardLeg = NaturalAltgardContinuation.BindIncoming(shipped, session.Api.World.CompletedQuestIds,
+						session.Api.World.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray());
+					altgardPlans = NaturalAltgardContract.LoadPlans(id);
+					collectionLimits = altgardPlans.Values.SelectMany(plan => plan.Steps
+						.Where(step => step.Kind == "collect" && step.ItemId > 0 && step.Count > 0)
+						.Select(step => (plan.Id, step.ItemId, step.Count)))
+						.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.ToArray());
+					coinGearProgress = altgardLeg.CoinGear == null ? null : NaturalCoinGearProgress.Empty;
+					coinIncomingLoadout = altgardLeg.CoinGear == null ? [] : session.Api.World.Inventory.Values
+						.Where(i => i.EquipmentSlot is > 0 and < 65535 && i.EquipmentSlot is not (16 or 4096 or 8192 or 16384))
+						.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray();
+					destinyIncomingSkills = altgardLeg.Destiny is { } destiny
+						? session.Api.World.Skills.Keys.Where(skill => skill != destiny.StigmaSkillId).ToArray() : [];
+					haramelProgress = altgardLeg.Haramel is { } rules
+						? NaturalHaramelProgress.Begin(characterId, HaramelNow(), session.Api.World, rules) with { Revives = combat.ReviveCount }
+						: null;
+					haramelApproach = null;
+					haramelKind = null;
+					long started = runtime.NowMillis;
+					int deathsBefore = combat.ReviveCount;
+					session.TraceDiagnostic("continuous-leg-start", new Dictionary<string, object?>
+					{ ["leg"] = id, ["characterId"] = characterId, ["elapsedMillis"] = started, ["deaths"] = deathsBefore });
+					Console.WriteLine($"Continuous SIM: starting {id}, level {session.Api.World.Level}, {session.Api.World.CompletedQuestIds.Count} completions.");
+					await RunAltgardLeg1Async();
+					Require.All(altgardLeg.Start.CompletedQuestIds, quest => Require.Contains(quest, session.Api.World.CompletedQuestIds));
+					stages.Add(new { Stage = id, CharacterId = characterId, StartedMillis = started, ElapsedMillis = runtime.NowMillis,
+						Deaths = combat.ReviveCount, NewDeaths = combat.ReviveCount - deathsBefore, Completed = session.Api.World.CompletedQuestIds.Count });
+					await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "continuous-progress.json"),
+						System.Text.Json.JsonSerializer.Serialize(new { CharacterId = characterId, stages }), token);
+				}
+				Require.Equal(1, session.Api.World.CompletedQuestCounts.GetValueOrDefault(2217));
+				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "continuous-completion.json"),
+					System.Text.Json.JsonSerializer.Serialize(new { verified = true, CreatedCharacter = true, CharacterId = characterId,
+						ElapsedMillis = runtime.NowMillis, Deaths = combat.ReviveCount, stages,
+						Endpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, characterId, session.ConnectionGeneration,
+							contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress) }), token);
+			}
+
 			// AF-08: Altgard Leg 1 (docs/natural-altgard-leveling.md), from the `altgard` snapshot to the fortress endpoint.
 			// The journey is rebound to Altgard as for NA-23; the Leg 1 engine picks each move from the client's view. Template
 			// quests run on the Ishalgen runner, scripted steps on NaturalAltgardQuestSteps, flight and the air kills on the
@@ -1041,7 +1102,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				navigator = here;
 				geometry = runtime.CreateGeometry();
 				contract = contract with { MapId = session.Api.World.MapId!.Value };
-				combat = new NaturalJourneyCombat(session, here, runtime, geometry, stopOnDeath: false, options.OptimizeHubs, mauPolicy, haramelProgress?.Revives ?? 0)
+				combat = new NaturalJourneyCombat(session, here, runtime, geometry, stopOnDeath: false, options.OptimizeHubs, mauPolicy,
+					continuousAltgard ? combat.ReviveCount : haramelProgress?.Revives ?? 0)
 				{
 					ApproachMapId = contract.MapId,
 					ReloadViewOnBindRevive = altgardLegId is "l10" or "l11" or "cg" or "l12",
@@ -2913,7 +2975,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					if (leg.Haramel is not { } rules) return;
 					BotWorldModel observed = session.Api.World;
-					Require.Equal(156, observed.CompletedQuestIds.Count);
+					Require.Equal(leg.Start.CompletedQuestIds.Union(leg.Endpoint.CompletedQuestIds).Count(), observed.CompletedQuestIds.Count);
 					Require.All(leg.Order, id => Require.Equal(1, observed.CompletedQuestCounts.GetValueOrDefault(id)));
 					Require.All(leg.Start.CompletedQuestIds, id => Require.Contains(id, observed.CompletedQuestIds));
 					Require.Equal((long)rules.IronCount, ItemCount(observed, rules.IronItemId));

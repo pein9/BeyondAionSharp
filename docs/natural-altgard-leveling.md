@@ -3998,6 +3998,30 @@ The continuous full-area SIM and isolated LIVE acceptance below remain subsequen
 
 ### End-of-area acceptance after HM-08
 
+**SIM scope updated by the operator, 2026-10-03:** run once from character creation through
+Ishalgen, Ascension, l1–l11, CG and l12 in a single SIM world/process and virtual clock. This
+extends the original level-10 acceptance start below. Retain Q2217's corrected delivery, the
+staff and three approved coin purchases; Q24114 remains intentionally excluded. No LIVE run
+is authorized by this request.
+
+- [x] **AS-01 — Join the existing journeys.** Add explicit SIM-only `AF_ALTGARD=all` and a runner;
+  create a fresh Priest, then execute the existing bridge and thirteen approved Altgard legs.
+  Keep character/world/clock/journals and the original cumulative twenty-revive limit across
+  transitions. Bind endpoint counts and retained staff identity to observed incoming state so
+  Q2217 and fresh object IDs survive; preserve historical snapshot contracts. Verify focused
+  continuation/Altgard tests, seven pre-commit checks and Fast, then commit before the full run.
+  Evidence (2026-10-03): `NaturalAltgardContinuation` binds the observed incoming journal and staff
+  to each shipped contract without rewriting it. The shared runner creates once, uses the existing
+  bridge and thirteen legs, retains the cumulative twenty-revive budget, and writes per-leg relog
+  proofs plus a continuous stage report. Focused continuation/Altgard/Haramel tests: 150 passed.
+  All seven pre-commit checks passed (`run/as01-checks`); Fast: 82 passed / five explicit switch skips,
+  all eleven scenarios passed (`run/as01-continuation-fast`, base `8a531614f`).
+- [ ] **AS-02 — One complete SIM run.** Run `scripts/sim/run-natural-complete.ps1` once with seed 1,
+  from committed code, with dashboard 17880. Retain stage/relog reports, the complete packet trace,
+  every recorded outcome and any original failure. Verify the final staff/coin/stigma ledger,
+  Q2217, campaigns, both Haramel clears, one character and monotonic clock; audit schema cleanup.
+  Depends: AS-01. Stop at the relog-verified fortress endpoint; do not launch LIVE.
+
 One complete SIM Altgard journey must then play **l1 through l11, cg and l12 in order from the original level-10
 `altgard` snapshot**, retaining one character, database, clock, journals and aggregate outcomes between
 legs. A chain of endpoint snapshots is development evidence, not that full-area acceptance. Establish
