@@ -2601,12 +2601,24 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 				// AB-08: open an NPC's dialog for a quest and send actions, waiting for each page (the steps that move no var:
 				// Q2230's expired check and new chance, Lamir's refill incense).
-				async Task DialogAsync(int npcId, int questId, (string Action, int? Page)[] actions)
+				async Task DialogAsync(int npcId, int questId, (string Action, int? Page)[] actions,
+					(byte Status, int Var)? expectedState = null)
 				{
 					await EnsureOnGroundAsync();
 					int npc = await ApproachShippedSpawnAsync(npcId);
 					for (int attempt = 1; ; attempt++)
 					{
+						// A defensive kill on the approach can finish the summoned objective. Lamir only
+						// refills incense at START/1; return to the journal decision before sending a stale choice.
+						if (expectedState != null && NaturalAltgardQuestSteps.State(session.Api.World, questId) != expectedState)
+						{
+							session.TraceDiagnostic("altgard-obsolete-dialog", new Dictionary<string, object?>
+							{
+								["quest"] = questId, ["npcId"] = npcId, ["expected"] = expectedState.ToString(),
+								["observed"] = NaturalAltgardQuestSteps.State(session.Api.World, questId)?.ToString(),
+							});
+							return;
+						}
 						try
 						{
 							await NaturalDialogProtocol.OpenAsync(session, npc, token);
@@ -2755,7 +2767,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						throw new InvalidDataException($"Altgard leg {altgardLegId}: {spawn.Key} failed {tries} times (AB-Q2).");
 					if (ItemCount(session.Api.World, spawn.RequiresItemId) == 0)
 					{
-						await DialogAsync(spawn.RefillNpcId, spawn.QuestId, [("QUEST_SELECT", spawn.RefillPage)]);
+						await DialogAsync(spawn.RefillNpcId, spawn.QuestId, [("QUEST_SELECT", spawn.RefillPage)], (3, spawn.AtVar));
 						return;
 					}
 					await RestSafelyAsync(token);

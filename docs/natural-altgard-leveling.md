@@ -4050,6 +4050,18 @@ is authorized by this request.
   focused navigation/Altgard/Haramel tests: 178 passed. All seven pre-commit checks passed
   (`run/as02-route-checks`); Fast: 82 passed / five explicit switch skips, all eleven scenarios
   passed (`run/as02-route-fast`). The failed attempt's owned schema was dropped.
+  Attempt (2026-10-03): `run/natural-complete/as02-full-create-s1-a4`, code `7527438c8`,
+  passed Ishalgen/Ascension and l1–l3, then stopped in l4 at Lamir's incense refill. An observed
+  defensive Infernus kill during the approach moved Q2223 from START/1 to REWARD/1, but the
+  stale planned refill still sent QUEST_SELECT to Lamir. Java accepts that page only at START;
+  recheck the required journal state after approaching, then return to the ordinary decision
+  if it advanced. Preserve the original dialog-echo failure and trace; its owned schema was dropped.
+  Refill correction evidence (2026-10-03): `stale-refill-audit.json` proves an observed Infernus
+  kill and REWARD/1 update before Lamir's obsolete QUEST_SELECT. The optional journal guard runs
+  after every approach/reapproach and applies to summoned-monster refills. Focused tests:
+  178 passed; seven pre-commit checks passed (`run/as02-refill-checks`, draft check rerun alone
+  after an extractor build lock, original check log retained). Fast: 82 passed / five explicit
+  switch skips, all eleven scenarios passed (`run/as02-refill-fast`). No server handler changed.
 
 One complete SIM Altgard journey must then play **l1 through l11, cg and l12 in order from the original level-10
 `altgard` snapshot**, retaining one character, database, clock, journals and aggregate outcomes between
