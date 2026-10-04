@@ -15,6 +15,11 @@ work. Its contained SIM and snapshots are proved at Cleric 11. The nine later ad
 are assigned to the individual legs below; their executors and segment proofs are still
 pending. The completed TODOs and historical snapshots below describe their original scopes.
 
+**Next working checklist (2026-10-04):** [RC-00..RC-12](#revised-journey-consolidation-rc-working-checklist)
+turns that existing schedule into contained implementation items followed by one revised
+continuous SIM. This is the bounded Option A consolidation; Abyss access, other classes,
+crafting and NTC remain subsequent contained legs.
+
 **Status (2026-09-29): the list, the order and AL-1..AL-5 are approved**, with the
 recommendations and the operator's notes below.
 
@@ -4207,6 +4212,130 @@ permanent stigma selection, Morheim and Abyss entry remain outside this completi
 Q2293 exclusion below Stop 12 described the original leveling list; the new request adds only the
 coin preparation above. Record a shared Java/retail defect for a separate decision before correction.
 
+## Revised journey consolidation: RC working checklist
+
+Prepared 2026-10-04 after the operator asked whether work needed another document.
+Use this existing document and the [PC-08 schedule](natural-ascension-altgard.md#scheduled-additions-to-individual-legs-pc-08-2026-10-04)
+as the working plan. The early Ascension order, first ten capital quests and nine later
+quest completions already have approved route decisions. This checklist organizes that
+work; it does not authorize the subsequent Abyss, class, crafting or instance contracts.
+
+**Start and finish.** Historical AS-02 reached Cleric 25 with 157 completed quests,
+Q2945 START/0, the earned staff 101501357 equipped, 19 Iron Coins, seven Bronze Coins
+and eleven recorded deaths. It predates the revised early Ascension/capital order.
+EA-02 proves the revised Ishalgen/bridge; PC-07 proves the contained first capital pass.
+Neither proves the combined journey through Altgard and Haramel. Retain all three as
+historical evidence. Finish RC with one fresh-create SIM of the revised route, an ordinary
+fortress endpoint relog, an immutable committed-code snapshot under a distinct name,
+and a measured readiness report for the next leg. Do not assume the revised final level.
+
+**Scope.** Preserve the original 41 Ishalgen quests, Q2008/Q2009, Q2904, l1-l11, approved
+three-piece coin purchase and both Haramel visits. Ascend on the first observed level 9,
+complete the ten-quest capital pass, then finish retained Ishalgen. Add exactly the nine
+PC-08 completions: Q2917, Q2918, Q2919, Q2916, Q2954 once, Q2959, Q2984, Q2920 and Q2938.
+Q2919's two Ampha Tails are collected after acceptance on its small Ishalgen return;
+its Malodor/Slime sources remain Leg 5. No repeatable grind or broad capital sweep.
+Keep Q24114 intentionally excluded and retain all other documented exclusions.
+
+Use **RC** in place of **NA** in the [loop protocol](natural-ascension-altgard.md#how-to-work-this-list-loop-protocol).
+At every iteration read CLAUDE.md, the decisions, the affected leg's historical evidence
+and PC-08 assignment, this checklist and the latest progress; run git status and check
+running SIM processes before building. Pick the first unchecked unblocked item with
+completed dependencies. Read its Java handlers and shipped data before implementation;
+apply retail corrections only under an approved decision. One item per commit on main,
+only its files staged, never push. Verify once, retain failures and dated evidence, run
+the seven established pre-commit checks, and run-fast before gameplay-change commits.
+Never run builds/checks while a journey holds DLLs. Record a required operator decision
+under "Blocked / questions for the operator" and move to an unblocked item.
+
+For a contained proof, restore through sim-snapshot.ps1 -Action Restore, use the
+environment set by Invoke-NaturalJourney and the appropriate individual leg, then drop
+the owned schema. Historical snapshots missing a carried quest/item cannot prove its
+downstream work: obtain it through ordinary gameplay and preserve a distinct committed
+prefix checkpoint. Controlled probes use a free account, clear aggressive monsters at
+scripted contacts and call BeginWorldReload before setup teleports. Natural subjects
+receive no administrative quest state, level, skills, gear or movement. Keep the bot
+monitor enabled and announce its URL when a journey starts.
+
+- [x] **RC-00 - Prepare the working checklist.** Record the bounded scope, ordered
+  segment dependencies, inherited restrictions, historical evidence and stopping point.
+  - 2026-10-04: prepared from PC-08, EA-02, PC-07 and AS-02 evidence. Documentation
+    preparation only; no revised gameplay completion, new snapshot or group run claimed.
+    Java Q2042 and the shipped portal requirements confirm the full Abyss chain. Source
+    and whitespace review plus all seven pre-commit checks pass on base b66d83242
+    (`run/rc00-plan-checks/`). RC-01 is the first implementation item.
+- [ ] **RC-01 - Carry later capital state across natural segments.** Depends RC-00.
+  Freeze the nine additions, protected work/reward items and completion inventory in
+  the revised continuation contract. Support unfinished pickups, actual level gates,
+  per-leg/city-return decisions, relog and immutable prefix checkpoints while preserving
+  historical contained scopes. Do not synthesize accepted quests/items on restore.
+- [ ] **RC-02 - Start Arekedil's Heritage in Leg 1.** Depends RC-01. Advance Q2917
+  through Arekedil and Chauminerk to START/1 and preserve the supplied item for the city.
+- [ ] **RC-03 - Prepare Book of Oblivion before its field collections.** Depends
+  RC-01. At observed level >=13, perform Cavalorn/Gantrug/Araison/book/Cavalorn to
+  Q2919 START/4 and naturally collect two Ampha Tails. Use the pre-Q2904 return when
+  eligible, otherwise the scheduled Leg 5 preparation; retain both items across relog.
+- [ ] **RC-04 - Add Leg 5's capital preparation.** Depends RC-02 and RC-03. Finish
+  Q2917 at Lanse/Annemari, use the actual jewelry box to start Q2918, and finish at
+  Arekedil on the ordinary return to Altgard. Prepare Q2916 through Annju at >=15.
+  Complete Q2954 once if >=19; otherwise leave it for the scheduled Leg 7 visit.
+- [ ] **RC-05 - Collect the Leg 5 book materials.** Depends RC-04. After Q2919
+  START/4, obtain three Malodor Stamens at Kaibech and one Slime Sap at Idun's Lake
+  through ordinary combat/loot. Protect all collection items for the capital finish.
+- [ ] **RC-06 - Continue the robe quest at Trader's Berth.** Depends RC-04. During
+  Leg 6, advance Q2916 at Neparinerk 798033 to START/4 and retain it across relog.
+- [ ] **RC-07 - Finish the scheduled Leg 7 capital visit.** Depends RC-05 and RC-06.
+  Complete Q2919 through Neusa/book/Cavalorn, do Q2959 and Q2984 at >=20, retain both
+  dye rewards unapplied, accept Q2938 at Oubliette, and do the single Q2954 completion
+  here if it was previously below its gate. Resume the original Leg 7 endpoint.
+- [ ] **RC-08 - Add Leg 9's city answer and clothing collection.** Depends RC-07.
+  With both Leg 8 prerequisites Q2268/Q2269 complete, finish Q2920 during Q2258's city
+  return using the actual answer sequence and observed reward group. Continue Q2916
+  through Banatisai, the clothing distance trigger and ordinary object loot.
+- [ ] **RC-09 - Complete the Leg 10/11 capital hand-ins.** Depends RC-08. Finish
+  Q2916 at Deyla on the Q2283 visit. Require Q24016 COMPLETE and Suthran's permission
+  page before advancing Q2938; retain the permission and finish at Oubliette during
+  the existing Q2900 capital trip. Preserve the stigma tutorial's ordinary completion,
+  removal of its temporary stone/skill and the sealed permanent reward bundle.
+- [ ] **RC-10 - Join the revised stages and audit their evidence.** Depends RC-09.
+  Integrate early Ascension, first capital, retained Ishalgen, the nine additions and
+  existing Altgard/coin/Haramel stages in the continuous harness. Verify the carried
+  prerequisites and distinct segment receipts; include all city maps, protected items,
+  exact one-time completions and cumulative outcomes in its audit. Complete the focused
+  continuation/checkpoint checks and required pre-commit checks before the full run.
+- [ ] **RC-11 - Prove one revised continuous fresh-create SIM.** Depends RC-10.
+  Run seed 1 from character creation through both Haramel visits in one owned schema,
+  character and game clock, without restores. Record per-stage XP/level, actual regular
+  skills, gear, gross rewards/fares/purchases, consumable provenance and usage, deaths,
+  recovery, timed attempts, escorts and carrier windows. Record outcomes rather than
+  requiring zero deaths. Keep failures; fix only an evidenced blocker and rerun if needed.
+- [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
+  Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
+  unused snapshot name, verify its hashes/identity and drop every owned schema. Report
+  actual level/XP headroom, unresolved blockers, class/gear/regular-skill/stigma state,
+  consumable ledger and costs against historical AS-02. Complete the final required
+  checks. Stop when this item is done or no item remains unblocked.
+
+**Inherited limits.** Use hub flight transporters. Never push, branch, use worktrees,
+touch the operator's aion stack or supply natural progress with GM. Approved help
+consumables retain their provenance; other gear/skill-book purchases remain excluded
+except the existing three-piece coin manifest. Keep the equipped earned staff through
+coin preparation/Haramel. A regular skill is not a stigma skill: a permanent stigma
+needs its ordinary unlocked slot, owned stone and socketing, under a separate decision.
+Capture only committed code and preserve every historical snapshot, including the
+Leg 1 snapshot named altgard-l12 and Haramel's altgard-haramel-l12.
+
+**Next contracts after RC.** Specify Abyss access separately as Q2945 -> Q2946 ->
+Q2947 -> Q2042 (The Last Checkpoint, the Morheim timed flying-ring course), including
+the Q2947 branch and ordinary transport. Then specify natural Warrior/Templar and
+Mage/Sorcerer profiles, synchronized party play and NTC around levels 25-27. Existing
+invitation/loot/shared-credit scenarios are foundations, not a completed natural group
+controller. NTC pickup/reward eligibility, individual unshareable quests, gate/siege
+mechanics, instance ownership/reentry and recovery need their own evidence. The group's
+highest eligible nearby level affects XP/drop penalties; level 32 is not a universal
+zero-reward cutoff. Use the observed RC endpoint to budget further XP before expansion.
+The existing Cooking/Alchemy plan remains a separate bounded profession/supply goal.
+
 ## Blocked / questions for the operator
 
 **ND-Q1 — Correct the Leg 11 reward endpoint (answered 2026-10-03: Option (a)).** The maintainer chose
@@ -4565,6 +4694,12 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-04 RC-00: prepared the revised journey's RC-00..RC-12 working checklist in
+  this existing document: nine scheduled capital additions, contained segment evidence,
+  one fresh-create continuous SIM and a distinct endpoint/readiness report. Corrected
+  the later Abyss schedule to include Q2042. Source review and seven pre-commit checks
+  pass (`run/rc00-plan-checks/`, base b66d83242); implementation and gameplay remain pending.
 
 - 2026-10-04 AS-02: the fresh-create continuous seed-1 SIM passes on committed `1d5dad7a0` in
   55.8720 real minutes (19h 30m 10.001s game time): all fourteen stages, one character/schema/clock,

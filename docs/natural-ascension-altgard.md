@@ -2146,7 +2146,7 @@ if needed. Do not add or hand-edit server spawns or teleports to make the route 
 | 21 | Q2921 Love at First Sight -> Q2922 Fascinating Gift | City conversations, then a second exclusive branch: Q2923 A Rose Will Bloom or Q2924 Siel's Tears requires field items. Choose that branch with the Morheim route plan; Q2925 A Heartfelt Confession closes it at 25. |
 | 21 | Q2955 A Feast for a Son -> Q2956 Preparing the Banquet -> Q2957 Flowers for the Banquet -> Q2958 Last Minute Worries | City chain interrupted by Q2956's six field drops and one shop material. Pair collection with the next region's route, then do the remaining city deliveries. |
 | 21 | Q28800 [Housing] Give My Regards to Pernon | An introduction that leaves the capital for Pernon; keep as a separate housing visit. |
-| 25 | Q2945 Honing Your Skills -> Q2946 Abyss General Knowledge -> Q2947 Following Through | A contained Abyss-access campaign leg, not part of the level-10 capital pass. The historical full-create endpoint has Q2945 START, not completed. |
+| 25 | Q2945 Honing Your Skills -> Q2946 Abyss General Knowledge -> Q2947 Following Through -> Q2042 The Last Checkpoint | A contained Abyss-access campaign leg, including the Morheim flying-ring course, not part of the level-10 capital pass. The historical full-create endpoint has Q2945 START, not completed. Abyss portals require Q2042 complete. |
 
 For level-13/15 additions, pick up the capital quest **before** the relevant Altgard
 segment, collect in that individual segment and turn in on a planned city return.
