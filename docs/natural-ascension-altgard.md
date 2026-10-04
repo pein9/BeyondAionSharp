@@ -4,8 +4,8 @@ Status (2026-09-28): **planned. NA-00 is done and the operator decisions are ans
 
 OD-16 status (2026-10-04): **EA-01/EA-02 complete.** The revised fresh Ishalgen/bridge
 SIM passes, with the original failed attempt retained and final checks passed.
-Capital status (2026-10-04): **PC-00..PC-06 complete.** The natural integration is
-ready for the committed-code starting snapshot and contained PC-07 proof.
+Capital status (2026-10-04): **PC-00..PC-07 complete.** The contained natural capital
+pass and both committed-code snapshots are proved; later-pass scheduling is PC-08.
 
 **Current leveling order (OD-16, approved 2026-10-04).** On the first observed level 9,
 Ascension-enabled journeys finish Q2008 with Munin and Q2009 in Pandaemonium before any
@@ -2282,7 +2282,7 @@ Work with **PC** in place of **NA** in the loop protocol:
     all eleven scenarios. These prove integration and its existing primitives;
     the natural segment and snapshots remain PC-07.
     Commit: `89785a70a`.
-- [ ] **PC-07 — Contained SIM smoke and evidence.** Depends PC-06. Capture the level-10
+- [x] **PC-07 — Contained SIM smoke and evidence.** Depends PC-06. Capture the level-10
   starting snapshot only from committed code; restore via sim-snapshot.ps1, run just this
   capital segment once, assert ten completions/rewards and the Ishalgen return, record
   deaths/losses and drop the owned schema. Run the required checks and run-fast before
@@ -2303,6 +2303,34 @@ Work with **PC** in place of **NA** in the loop protocol:
     The runner now removes absent variables through the environment provider and
     restores their prior absence/values. A mock of the real invocation proves the
     child has no conflicting scopes (`pc07-snapshot-contract-b.log`).
+    Seven corrected pre-commit checks pass (`pc07-env-checks`); fix commit `8e2d2d4f3`.
+  - 2026-10-04: from committed `8e2d2d4f3`, natural prefix
+    `pc07-capital-start-s1-b` creates character 133276 and stops at Cleric 10 after
+    the ceremony: Q2005 START/1, Q2006 START/0, Q2904 START/0 and Aldelle bind retained;
+    human-only Q2133/Q2134 already complete, zero deaths and zero stigmas.
+    `pandaemonium-capital-start` is captured at elapsed 4,045,001 ms. Dump SHA256
+    `1ff1c2f366ee3250b98c45da9cf691f189665a0c27bc85003686830455787d1c`.
+    The public Restore action makes a fresh copy; contained `pc07-capital-first-s1`
+    uses `PC_CAPITAL=first NA_ASCENSION=1` and the runner's ordinary NI08 variables.
+    Its one injected interruption at Q2912 START/1 resumes at Therf, then visits
+    Talmenu/Frana; the diagnostic disconnect package remains in that capture directory.
+    All ten quests complete once in 31 decisions: exactly +65,061 XP/+14,170 gross
+    Kinah, 141 Kinah for Doman's Ishalgen return, zero deaths/retreats, one reconnect.
+    Endpoint is Cleric 11, absolute XP 204,255, map 220010000 at (526.66,2449.66,281.593),
+    same Aldelle bind and staff object 134996 equipped. Arlion's Ring is ordinarily
+    equipped; two running scrolls, motion item, pet interactions and egg stay owned.
+    Work items are consumed; type-0 skill entries rise 36 -> 38, type-1/3 entries stay
+    zero. Both held Ishalgen steps and Q2904 START/0 survive the actual endpoint relog.
+    `pandaemonium-capital-first` is captured from that same run at elapsed 4,877,326 ms;
+    dump SHA256 `b61abd9738df9574875aafd019939fa3522c673e082098b3cb5b11f33f71b270`.
+    Both dump/receipt hashes verify. A separate endpoint restore and read-only SQL
+    confirms ten single completions, branch group 0 and the held steps
+    (`run/capital-pass/pc07-endpoint-state.tsv`); no second gameplay replay.
+    Capture/restore schemas are dropped; the owned-snapshot schema query returns zero
+    (`pc07-schema-cleanup.json`). All nine baked maps validate (`pc07-navbake.log`).
+    Solution/Fast and the remaining checklist evidence are PC-06's unchanged runtime
+    checks; snapshot contract and corrected runner checks pass as recorded above.
+    Seven final proof pre-commit checks pass (`pc07-proof-checks`).
 - [ ] **PC-08 — Schedule the higher-level passes.** Depends PC-07. Add the approved
   cross-region quests to their individual Altgard/capital segments, with source items
   acquired after acceptance; obtain separate decisions for materials, professions,
@@ -2400,6 +2428,10 @@ has examples.
 
 ## Progress log
 
+- 2026-10-04 — PC-07: committed-code natural start and one restored capital segment
+  pass; ten payments, injected Garm/Therf recovery, Ishalgen return and endpoint relog
+  proved at Cleric 11. Both snapshots/hash checks and endpoint SQL pass; owned schemas
+  dropped. Original pre-creation scope refusal retained and runner corrected.
 - 2026-10-04 — PC-06: default early capital integration, interrupted-contact decisions,
   protected rewards and two SIM relog checkpoints added. Focused/solution tests,
   seven checks and Fast pass; PC-07's natural snapshot proof is next.
