@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931; Q2929 D32",
+  "mapId": 120010000,
+  "minimumLevel": 10,
+  "requiredCompletedQuestIds": [2008, 2009],
+  "dispatchQuestId": 2904,
+  "startSnapshot": "pandaemonium-capital-start",
+  "endpointSnapshot": "pandaemonium-capital-first",
+  "quests": [
+    {"id": 2911, "name": "Song of Blessing", "experience": 2820, "kinah": 0},
+    {"id": 2912, "name": "Follow the Ribbon", "experience": 4065, "kinah": 0},
+    {"id": 2914, "name": "A Token of Lost Love", "experience": 8580, "kinah": 0},
+    {"id": 2953, "name": "Delivering Supply Request", "experience": 150, "kinah": 500},
+    {"id": 29048, "name": "Seriphim's Teachings", "experience": 11237, "kinah": 0},
+    {"id": 2929, "name": "Welcome to the Temple of Artisans", "experience": 1498, "kinah": 3840},
+    {"id": 29040, "name": "Mane's Best Friend", "experience": 11237, "kinah": 0},
+    {"id": 29044, "name": "Pet Perceptions", "experience": 11237, "kinah": 0},
+    {"id": 29045, "name": "A Passion for Pets", "experience": 11237, "kinah": 0},
+    {"id": 29004, "name": "Veldina's Call", "experience": 3000, "kinah": 9830}
+  ],
+  "branch": {"questId": 2911, "rewardGroup": 0, "action": "SETPRO1", "excludedQuestIds": [2913, 2915]},
+  "protectedItemIds": [182207005, 182207014, 182207039, 182212217, 182207009],
+  "portals": [
+    {"npcId": 730268, "mapId": 120010000, "destinationMapId": 120020000, "locationId": 1200200, "action": 10000},
+    {"npcId": 730269, "mapId": 120020000, "destinationMapId": 120010000, "locationId": 1200104, "action": 10000}
+  ]
+}

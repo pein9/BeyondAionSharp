@@ -8,7 +8,8 @@ SIM passes, with the original failed attempt retained and final checks passed.
 **Current leveling order (OD-16, approved 2026-10-04).** On the first observed level 9,
 Ascension-enabled journeys finish Q2008 with Munin and Q2009 in Pandaemonium before any
 further Ishalgen quest work. Choose Cleric and the Karmic Staff, equip owned upgrades and
-use the learned regular skills. Return through Doman's shipped Ishalgen teleporter,
+use the learned regular skills. Complete the approved ten-quest capital pass below,
+then return through Doman's shipped Ishalgen teleporter,
 finish the same 41 Ishalgen quests, then return to Pandaemonium for Q2904 and Altgard.
 Complete the human-only Collecting quests Q2133 (level 2) and Q2134 (level 7) when
 eligible: their nodes require skill 30001, which is replaced by Essencetapping 30002
@@ -159,7 +160,7 @@ Cleric; OD-16 supersedes the late Ascension order for fresh leveling.
 | OD-3 | Commit policy while the loop runs | **Commit each TODO on `main`** once its verification passes, with its evidence line in this doc. Never push. | Decided 2026-09-28 |
 | OD-4 | LIVE acceptance subject | **An isolated LIVE stack with a fresh Priest** (NI-09 style, its own compose project). The run covers creation, all of Ishalgen and the bridge, about 4.5 hours. The operator's `aion` world and the retained `Ishalgenbot` are **not** used. | Decided 2026-09-28 |
 | OD-5 | Q2009 weapon | **Karmic Staff** (101500498, two-handed, 58–88 damage, magic boost 260), taken with REWARD2 (9). | Decided 2026-09-28 |
-| OD-6 | Optional Pandaemonium quests (e.g. 2911 "Song of Blessing", craft quests) | Not part of the bridge. The all-quests goal picks them up in a later capital pass. | Default |
+| OD-6 | Optional Pandaemonium quests | **Ten level-10 quests after Q2009, before returning to Ishalgen:** Q2911/2912/2914 (Ribbon/Lost Love, reward group 0), Q2953, Q29048, Q2929, Q29040/29044/29045 and Q29004 including the Convent. Higher-level quests follow their actual level, campaign and field gates during later visits. Professions, resurrection practice, material purchases, the level-21 exclusive branch, Pernon and Abyss access remain separate contained legs. | Decided 2026-10-04 |
 | OD-7 | Buy gear at the shop stop? | **No. Only potions are bought.** Equip what the character already owns, and sell what is replaced. | Decided 2026-09-28 |
 | OD-8 | Drink Tea of Repose? | Yes, once, out of combat, at level 10 in Altgard. It is an XP buff only. | Default |
 | OD-9 | Buy Lesser Odella Powder (15 Kinah; the reagent for the Cleric's Herb Treatment and MP Recovery)? | **Yes.** It is a mana-recovery consumable, so it becomes part of the **rest** routine: MP Recovery and Herb Treatment replace most sitting (NA-18). | Decided 2026-09-28 |
@@ -2063,13 +2064,14 @@ The next milestone applies the Ishalgen method to Altgard:
 Pandaemonium's optional quests fit a later capital pass. Each area milestone moves the
 all-quests, account-to-endgame goal forward.
 
-## Proposed Pandaemonium capital passes (2026-10-04)
+## Pandaemonium capital passes (approved 2026-10-04)
 
-**Planning only; not an approved change to OD-6 or OD-16.** The operator requested a
-capital quest plan after approving immediate level-9 Ascension. Recommend a contained
-first capital pass **after Q2009 completes and before Doman returns us to Ishalgen**.
+**Approved:** the operator requested "Implement your recommendation and sim as needed,
+update and commit changes" on 2026-10-04. This revises OD-6 and inserts a contained
+first capital pass **after Q2009 completes and before Doman returns us to Ishalgen**
+in OD-16, choosing the recommended Ribbon/Lost Love branch.
 Then finish the retained Ishalgen contract and proceed with Q2904/Altgard as usual.
-Later capital visits take the higher-level and cross-region quests below. This proposal
+Later capital visits take the higher-level and cross-region quests below. This approval
 does not authorize server content, purchases, early stigmas or a full journey rerun.
 
 The retained full-create evidence `run/natural-complete/as02-full-create-s1-a6/`
@@ -2104,7 +2106,7 @@ the other branch. Reward group 1 instead unlocks Q2913 A Chain of Debt -> Q2915 
 Apellbine: 14,850 XP and 13,680 gross Kinah, but Q2915 consumes two Roast Conide 160002001.
 The shipped recipe produces two at Cooking skill 1; do not silently start a profession
 or conjure the food. The unchosen branch must be recorded as mutually exclusive, never
-as a missing completion. This branch recommendation is pending the operator's choice.
+as a missing completion. The operator approved this branch with the recommendation.
 
 **City areas and ordering.** Start in the Great Temple with Grimhild after the ceremony.
 Pick up Q2953 at Doman and Q29040 at nearby Ninis on Vifrost Bridge. Visit Veldina at the
@@ -2175,11 +2177,20 @@ own leg and must not be replayed or interpreted as ownership of a permanent stig
 
 ### Proposed implementation sequence
 
-Work with **PC** in place of **NA** in the loop protocol, only after the scope is approved:
+Work with **PC** in place of **NA** in the loop protocol:
 
-- [ ] **PC-00 — Freeze the contract and decisions.** Ten first-pass quests, Q2911 branch,
+- [x] **PC-00 — Freeze the contract and decisions.** Ten first-pass quests, Q2911 branch,
   later-pass exclusions, unchanged Ishalgen/Altgard contracts, precise endpoint and a
   distinct snapshot name. Record the revision to OD-6/OD-16 before changing the journey.
+  - 2026-10-04: operator approved the recommendation. Frozen first-pass inventory in
+    `parity-artifacts/e2e/natural-capital-contract.json`; ten quests, 65,061 listed XP,
+    14,170 gross Kinah, Q2911 group 0 and the exclusive Q2913/Q2915 exclusion. Start is
+    Q2009 COMPLETE, Cleric level >=10 in Pandaemonium with Q2904 START/0; retain
+    unfinished Ishalgen quests and bind point. Reserve `pandaemonium-capital-start`
+    and `pandaemonium-capital-first` for committed-code snapshots. Java handlers,
+    ReportTo, PortalDialogAI and shipped 4.8 data read; no gameplay changed. Inventory
+    rewards cross-checked against quest XML; seven pre-commit checks pass in
+    `run/capital-pass/pc00-checks`. Commit: `Approve the early Pandaemonium capital contract`.
 - [ ] **PC-01 — Prove NPC approaches and the Convent route.** Depends PC-00. Read Java;
   use a free probe account, clear aggressive monsters only at scripted probe spots and
   call BeginWorldReload before setup teleports. Prove the actual dialogs/quest variables,
@@ -2274,13 +2285,10 @@ has examples.
 
 ## Blocked / questions for the operator
 
-- **PC scope / branch (proposed 2026-10-04):** the capital plan above awaits approval
-  before journey implementation. Recommend all ten first-pass quests immediately after Q2009,
-  including the Convent visit, and Q2911 reward group 0 (Ribbon/Lost Love). This would
-  revise OD-6's deferral and insert the pass into OD-16 before the Ishalgen return.
-  Higher-level material purchases, professions, a resurrection partner and the Q2922
-  branch remain separate future decisions. The 2026-10-04 request authorizes the separate
-  D32 Q2929/Q29049 content fixes; the full PC journey scope still awaits approval.
+- **PC follow-up scope:** higher-level material purchases, professions, a resurrection
+  partner and the Q2922 branch remain separate future decisions. Pernon and Abyss access
+  need their own contained route specifications. The ten-quest first pass and later
+  Altgard/capital scheduling were approved on 2026-10-04; PC-00 records the decision.
 - ~~**NA-20 → OD-13 (asked 2026-09-28):**~~ **Answered 2026-09-28:** approved with changes (see OD-13). NA-21 is unblocked. The original question was: please approve, change or reject [Appendix D.2](#appendix-d2-proposed-help-items-na-20-awaiting-approval):
   1. **The list and bands:**
      - Anti-Shock from level 10;
@@ -2300,6 +2308,10 @@ has examples.
 - The defaults for OD-8 and OD-10 stand unless the operator vetoes them.
 
 ## Progress log
+
+- 2026-10-04 — PC-00: approved early ten-quest capital pass and Ribbon/Lost Love branch;
+  froze start/endpoint, retained Ishalgen/dispatch/bind rules and snapshot names. Reward
+  inventory and seven pre-commit checks pass (`run/capital-pass/pc00-checks`).
 
 - 2026-09-28 — Plan written from:
   - the Java 4.8 spec (`ce54b7931`);
