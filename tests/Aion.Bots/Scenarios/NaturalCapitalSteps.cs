@@ -19,6 +19,12 @@ public static class NaturalCapitalSteps
 		Offer(2929, 204092, page: 4762),
 		Finish(2929, 0, 798317, page: 10002),
 	];
+	public static readonly NaturalAltgardStep[] Pets =
+	[
+		Offer(29040, 798385), Finish(29040, 0, 798443),
+		Offer(29044, 798443), Finish(29044, 0, 798441),
+		Offer(29045, 798441), Finish(29045, 0, 798442),
+	];
 	public static NaturalAltgardStep BookOffer => Offer(29048, 798304, item: 182212217);
 	public static NaturalAltgardStep BookReward => Step("q29048-book-reward", 29048, 1, "REWARD", 798304,
 		["USE_OBJECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_REWARD1"], [2375, 5]);

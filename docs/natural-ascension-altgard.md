@@ -2222,9 +2222,23 @@ Work with **PC** in place of **NA** in the loop protocol:
     `run/capital-pass/pc02-items-a.log` and `pc02-items-a-pc02.trace.jsonl`.
     Default journey integration follows in PC-06. Seven pre-commit checks pass
     in `run/capital-pass/pc02-checks`; `run/pc02-capital-fast` passes 86 tests with
-    five opt-in skips. Commit: `Implement the capital supply book and artisan dialogs`.
-- [ ] **PC-03 — Three pet introductions.** Depends PC-02. Implement report-to transitions;
+    five opt-in skips. Commit: `dbd68d90c`.
+- [x] **PC-03 — Three pet introductions.** Depends PC-02. Implement report-to transitions;
   prove rewards without requiring a pet purchase, egg activation or automatic pet use.
+  - 2026-10-04: Java ReportTo and the three shipped mappings read. Free account 242
+    completes Q29040/Q29044/Q29045 through their proper starters/recipients and gates:
+    +33,711 XP, no Kinah change, four items 169600066/169600084/169600085/190000055
+    retained. Owned pet list is empty before and after; egg is never activated.
+    All four rewards are protected from sale. Probe: `run/capital-pass/pc03-pets-a.log`
+    and `pc03-pets-a-pc03.trace.jsonl`. Initial `run/pc03-capital-fast` retained an
+    HM-04 failure expecting helpers even when the boss died before Java's scheduled
+    spawn. Java SummonerAI/CreatureController and existing retail-AI evidence read;
+    no server behavior changed. The combat probe now records zero or both helper
+    types, still rejecting a partial phase. Two focused Hamerun tests prove the
+    nonlethal trigger, death cleanup and death-before-task suppression in
+    `run/capital-pass/pc03-hamerun-boundary.log`. Seven pre-commit checks pass in
+    `run/capital-pass/pc03-final-checks`; fresh `run/pc03-capital-fast-b` passes
+    87 tests with five opt-in skips. Original failed evidence remains available.
 - [ ] **PC-04 — Blessing and the selected branch.** Depends PC-03. Follow every required
   NPC and record the other branch as mutually exclusive. Check reward equipment normally.
 - [ ] **PC-05 — Veldina's Call.** Depends PC-04. Ordinary Convent portals; prove the return
@@ -2334,6 +2348,9 @@ has examples.
 
 ## Progress log
 
+- 2026-10-04 — PC-03: three pet introductions pay their four items without activating
+  the egg. Focused probe and seven checks pass; Fast passes 87 tests with five opt-in
+  skips after correcting the Hamerun probe's Java death-before-summon expectation.
 - 2026-10-04 — PC-02: Q2953/Q29048/Q2929 protocols proved with actual supplied items
   and exact +12,885 XP/+4,340 Kinah; optional motion reward retained. Seven checks and
   Fast pass (86 tests, five opt-in skips); default integration waits for PC-06.

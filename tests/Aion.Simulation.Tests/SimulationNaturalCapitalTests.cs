@@ -17,6 +17,25 @@ namespace Aion.Simulation.Tests;
 
 public sealed partial class SimulationFastScenarioTests
 {
+	/// <summary>PC-03: complete the introductions with no bought, activated or summoned pet.</summary>
+	[SkippableFact]
+	public async Task CapitalPetIntroductionsPayAllFourItemsWithoutActivatingTheEgg()
+	{
+		await RunCapitalProbeAsync("PC03", 242, "Asimcappets", async (probe, session, token) =>
+		{
+			long xp = probe.Server.GetCommonData().GetExp(), kinah = session.Api.World.Kinah;
+			Assert.Empty(probe.Server.GetPetList().GetPets());
+			foreach (NaturalAltgardStep step in NaturalCapitalSteps.Pets) await probe.TalkAsync(step);
+			Assert.True(session.Api.World.CompletedQuestIds.IsSupersetOf(new[] { 29040, 29044, 29045 }));
+			foreach (int id in new[] { 169600066, 169600084, 169600085, 190000055 })
+				Assert.Equal(1, session.Api.World.Inventory.Values.Where(item => item.ItemId == id).Sum(item => item.Count));
+			Assert.Empty(probe.Server.GetPetList().GetPets());
+			Assert.Equal(33711, probe.Server.GetCommonData().GetExp() - xp);
+			Assert.Equal(kinah, session.Api.World.Kinah);
+			Console.WriteLine("PC-03: three introductions, XP +33711, four reward items retained; no owned or summoned pet.");
+		});
+	}
+
 	/// <summary>PC-02: supplied request, real manual use and D32 artisan report; no crafting setup.</summary>
 	[SkippableFact]
 	public async Task CapitalSupplyManualAndArtisansConsumeTheirActualQuestItemsAndPayRewards()

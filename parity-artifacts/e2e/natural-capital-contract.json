@@ -20,7 +20,7 @@
     {"id": 29004, "name": "Veldina's Call", "experience": 3000, "kinah": 9830}
   ],
   "branch": {"questId": 2911, "rewardGroup": 0, "action": "SETPRO1", "excludedQuestIds": [2913, 2915]},
-  "protectedItemIds": [182207005, 182207014, 182207039, 182212217, 182207009, 188508000],
+  "protectedItemIds": [182207005, 182207014, 182207039, 182212217, 182207009, 188508000, 169600066, 169600084, 169600085, 190000055],
   "portals": [
     {"npcId": 730268, "mapId": 120010000, "destinationMapId": 120020000, "locationId": 1200200, "action": 10000},
     {"npcId": 730269, "mapId": 120020000, "destinationMapId": 120010000, "locationId": 1200104, "action": 10000}
