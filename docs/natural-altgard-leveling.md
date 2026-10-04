@@ -4062,6 +4062,25 @@ is authorized by this request.
   178 passed; seven pre-commit checks passed (`run/as02-refill-checks`, draft check rerun alone
   after an extractor build lock, original check log retained). Fast: 82 passed / five explicit
   switch skips, all eleven scenarios passed (`run/as02-refill-fast`). No server handler changed.
+  Attempt (2026-10-03): `run/natural-complete/as02-full-create-s1-a5`, code `36f1c88d8`,
+  passed Ishalgen/Ascension and l1–l9 (135 completions), including corrected Q2217, Gemyu and
+  the escort. It stopped in l10 at the unchanged one-hour game-time progress guard while
+  pursuing Q2282's second lower warlock. Q2281's packed 3/5/5 counters were already satisfied;
+  twelve cumulative deaths remain recorded. The earlier BC-07 capture proves two ordinary
+  210538 kills at (2400.88, 2171.88, 270.328), including its shipped 300-second respawn.
+  Restrict this hunt to that proved lower spawn and reach spell range by the existing Heart
+  flight/descent and checked defended road. Retain all budgets and the original stalled trace;
+  the owned full-run schema was dropped (`black-claw-stall-audit.json`).
+  Warlock correction evidence (2026-10-03): `run/as02-warlock-smoke-a2` restores the verified
+  `altgard-l9` and plays Q2273 plus Q2282 without setup. Three real warlock kills and both
+  normal hand-ins pass (`warlock-source-audit.json`); both diagnostic schemas were dropped.
+  The earlier Q2282-only draft stopped before the hunt on the saved Return cooldown and is
+  retained. Focused tests: 178 passed; seven pre-commit checks passed (`run/as02-warlock-checks`).
+  Fast: 82 passed / five explicit switch skips, all eleven scenarios passed (`run/as02-warlock-fast`).
+  The joined process gets a 90-minute wall watchdog for its fourteen stages; ordinary individual
+  runs keep 45 minutes, and every in-game stall, navigation and cumulative revival limit is unchanged.
+  The scoped smoke records one bind death; its normal recovery and final reward both pass.
+  All seven checks pass again after the aggregate-watchdog adjustment (`run/as02-complete-timeout-checks`).
 
 One complete SIM Altgard journey must then play **l1 through l11, cg and l12 in order from the original level-10
 `altgard` snapshot**, retaining one character, database, clock, journals and aggregate outcomes between

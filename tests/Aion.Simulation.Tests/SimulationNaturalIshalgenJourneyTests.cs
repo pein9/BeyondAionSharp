@@ -45,8 +45,11 @@ public sealed partial class SimulationFastScenarioTests
 			virtualTime: () => TimeSpan.FromMilliseconds(fixture.Clock.NowMillis));
 		Console.WriteLine($"NI-07 combat trace: {combatTracePath}");
 		using var policy = NewPolicy("NI07", includeHistory: true);
+		// The joined scope includes Ishalgen/Ascension and thirteen Altgard segments. Preserve
+		// the ordinary 45-minute deadline and every in-game recovery/stall limit; allow the
+		// aggregate SIM process enough wall time to run all fourteen stages.
 		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(
-			stopAfterQ2004 ? 6 : stopAfterQ2005 ? 8 : stopAfterQ2006 ? 16 : stopAfterQ2007 ? 20 : 45));
+			stopAfterQ2004 ? 6 : stopAfterQ2005 ? 8 : stopAfterQ2006 ? 16 : stopAfterQ2007 ? 20 : continuousAltgard ? 90 : 45));
 		CancellationToken token = timeout.Token;
 		await using var session = new SimulationL0Session(
 			fixture, policy, "b01", accountId: 41, "Asimnjour", Race.ASMODIANS,

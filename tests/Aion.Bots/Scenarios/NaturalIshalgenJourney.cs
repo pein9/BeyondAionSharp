@@ -1174,7 +1174,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						finally { approachingAirline = false; }
 					}
 					await ReachPillarLevelAsync(at);
-					for (int walk = 0; walk < 3 && Distance(session.CurrentPosition, at) > FarApproachStop; walk++)
+					float approachStop = UsesProvenWarlockSpawn(templateId) ? NaturalPullPlanner.SpellRange + 3 : FarApproachStop;
+					for (int walk = 0; walk < 3 && Distance(session.CurrentPosition, at) > approachStop; walk++)
 					{
 						if (sourceComplete?.Invoke() == true) return;
 						if (altgardLegId == "l10" && templateId == 210538 && warlockRoadRevives != combat.ReviveCount)
@@ -1204,7 +1205,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						}
 						BotPosition before = session.CurrentPosition;
 						int revives = combat.ReviveCount;
-						if (await WalkRoadDefendingAsync(at, $"approach-road-{templateId}", stopAt: point => Distance(point, at) <= FarApproachStop,
+						if (await WalkRoadDefendingAsync(at, $"approach-road-{templateId}", stopAt: point => Distance(point, at) <= approachStop,
 							sourceComplete: sourceComplete))
 							return;
 						if (combat.ReviveCount == revives && Distance(before, session.CurrentPosition) < 1)
@@ -3419,6 +3420,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 			bool SpawnsOnMap(int templateId) =>
 				graph.GetMap(contract.MapId)!.Waypoints.Any(waypoint => waypoint.TemplateId == templateId);
+			bool UsesProvenWarlockSpawn(int templateId) => altgardLegId == "l10" && templateId == 210538;
 
 			// Of several kinds that serve the same objective, the one to hunt next: a live one in view first, else the kind whose
 			// shipped spawn lies nearest (Q2230's tusks drop from six mosbear kinds; always the first meant long walks past others).
@@ -3487,6 +3489,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						geometry.OnSameIsland(contract.MapId, session.CurrentPosition, point));
 				BotWaypoint[] anchors = graph.GetMap(contract.MapId)!.Waypoints
 					.Where(waypoint => waypoint.TemplateId == templateId)
+					// BC-07 observed two ordinary kills at this lower camp, including its 300-second respawn.
+					// The continuous run repeatedly died re-entering the western camp after its first kill.
+					// Farm the proved shipped source; wait for its real respawn rather than cross more camps.
+					.Where(waypoint => !UsesProvenWarlockSpawn(templateId) ||
+						Distance(waypoint.Position, new BotPosition(2400.88f, 2171.88f, 270.328f, 2)) < 1)
 					.OrderByDescending(Connected).ThenBy(waypoint => Distance(session.CurrentPosition, waypoint.Position)).ToArray();
 				if (anchors.Length == 0) throw new InvalidDataException($"Shipped spawn graph has no NPC {templateId}.");
 				// AG-07: from far off, the navigator's hazard replanning can circle over monster ground for its whole budget (the
@@ -3634,7 +3641,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await RestSafelyAsync(token);
 					return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget, withinRange, returnedFromStrand: true, completedSource: completedSource, acceptObservedKill: acceptObservedKill);
 				}
-				throw new InvalidDataException($"No client-observed NPC {templateId} at twelve shipped spawn hints " +
+				throw new InvalidDataException($"No client-observed NPC {templateId} at {Math.Min(12, anchors.Length)} shipped spawn hints " +
 					$"from {session.CurrentPosition}: {string.Join(" | ", reasons)}");
 			}
 
