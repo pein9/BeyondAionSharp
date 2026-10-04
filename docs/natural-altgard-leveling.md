@@ -9,8 +9,9 @@ TODO list, worked in Loop mode like [the Ascension bridge](natural-ascension-alt
 
 **Leg 1 is done (AF-00..AF-10, 2026-09-29).** [Leg 2: Moslan Crossroad](#leg-2-moslan-crossroad-level-1315--proposal) is done (AM-01..AM-09, 2026-09-29): `altgard-l2` starts Leg 3.
 [Leg 3: Manir's Campsite and Dock](#leg-3-manirs-campsite-and-dock-level-15--proposal) is done (AC-00..AC-08,
-2026-09-30): `altgard-l3` starts Leg 4 at Basfelt. The newly authorized Q2217 correction is tracked in
-[AC-C1..AC-C2](#leg-3-correction-q2217-approved-2026-10-03); historical downstream snapshots omit it.
+2026-09-30): `altgard-l3` starts Leg 4 at Basfelt. The isolated Q2217 correction
+[AC-C1..AC-C2](#leg-3-correction-q2217-approved-2026-10-03) is complete (2026-10-03):
+`altgard-l3-q2217` includes the delivery; historical downstream snapshots omit it.
 [Leg 4: Basfelt Village](#leg-4-basfelt-village-level-1617--proposal) is done (AB-01..AB-10, 2026-09-30; recaptured
 2026-10-01): `altgard-l4` starts Leg 5.
 [Leg 5: Kaibech's Campsite, Idun's Lake and MuMu Village](#leg-5-kaibechs-campsite-iduns-lake-and-mumu-village-level-1819--proposal)
@@ -1477,12 +1478,29 @@ The shipped handler, data and C# runtime already match Java and need no server c
     switch skips/all eleven scenarios (`run/ac-q2217-fast`). Initial stale-count/compiler and stale-draft
     check failures are retained under `run/ac-q2217`. No server behavior, quest data or historical snapshot
     changed. The isolated committed-code replay is AC-C2.
-- [ ] **AC-C2 — Rerun only Leg 3.** Restore `altgard-l2`, run the natural journey with `AF_ALTGARD=l3`
+- [x] **AC-C2 — Rerun only Leg 3.** Restore `altgard-l2`, run the natural journey with `AF_ALTGARD=l3`
   and the snapshot runner's environment, verify Q2217 once, consumed letter, all incoming quests and
   the Basfelt endpoint/relog, then drop the owned schema. Capture from committed code under the distinct
   name `altgard-l3-q2217`, restore-check it, and record results. Never overwrite historical snapshots or
   rerun other legs. The historical `altgard-l3` and downstream/Haramel snapshots still omit Q2217; this
   correction supplies separate Leg 3 proof, not a rebased downstream character.
+  - *Done 2026-10-03, committed code `3eebf55cf`.* `ac-q2217-capture-a1` restores `altgard-l2` and
+    passes the natural Leg 3 test on its first attempt. Decisions 1/2 take Q24111/Q2217 at Olenja;
+    decisions 13/14 hand them in at Nokir/Gefion after the Manir/Groken/Karl work. All 66 incoming
+    completions survive, exactly five quests are added (71 journals), Q2217 has completion count one,
+    its letter is consumed and 100 Lesser Power Shards are retained. Cleric 16 is alive beside Nokir
+    (1779.88, 690.477, 264.309), still bound at the fortress; Q24013 START/0 and Q24014–Q24016 LOCKED/0
+    are unchanged. Zero deaths; Groken reaches his boat on attempt one (18.051 s, longest gap 7.014 m).
+    Elapsed 944,879 game ms. There are no purchases.
+  - Snapshot `altgard-l3-q2217` is captured from compiled/committed `3eebf55cf`, source
+    `natural-altgard-l3`, dump SHA256 `777a239a8758990e4b88a9fadb69289f119b69dc5526529fdf80818fddd8a4a5`.
+    `ac-q2217-restore-a1` restores that dump with `sim-snapshot.ps1 -Action Restore`, selects only
+    `AF_ALTGARD=l3`, and passes the actual endpoint relog with the same 71 journals and consumed letter.
+    The capture and restore schemas are dropped; the owned-schema audit is empty. All 13 pinned files
+    in `altgard-l2`, historical `altgard-l3`/`altgard-l12`, and `altgard-haramel-l12` retain their hashes.
+    Audit: `run/ac-q2217/audit.json`; original logs/traces: `run/snapshots/_capture/ac-q2217-capture-a1`
+    and `run/ac-q2217/ac-q2217-restore-a1`. All seven final pre-commit checks pass
+    (`run/ac-q2217/proof-checks`); AC-C1's Fast evidence applies to the unchanged implementation.
 
 ## Leg 4: Basfelt Village (level 16–17) — proposal
 
@@ -4349,6 +4367,12 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-03 AC-C2: the isolated committed-code Leg 3 replay and corrected snapshot restore/relog pass
+  first try. Q2217 once, consumed letter/100 shards, all five leg quests and 66 prior completions (71 total),
+  Cleric 16 alive at Basfelt, zero deaths and escort success on attempt one. New `altgard-l3-q2217` proof
+  preserves all historical snapshot hashes, drops both schemas and passes seven final pre-commit checks.
+  No other natural leg was rerun, no purchases, no server changes, no push.
 
 - 2026-10-03 AC-C1: Q2217's Java prerequisite alternatives correct the classifier's false exclusion;
   regenerated plan and Leg 3 contract/decision sequence include Olenja's pickup and Gefion's final delivery.
