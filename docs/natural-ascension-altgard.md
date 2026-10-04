@@ -2295,6 +2295,14 @@ Work with **PC** in place of **NA** in the loop protocol:
     mismatched identity/stage. Snapshot mock contract passes
     (`run/capital-pass/pc07-snapshot-contract.log`); seven pre-commit checks pass
     (`pc07-tools-checks`). Natural capture/proof is still pending.
+    Tooling commit: `4c1fc3f25`.
+  - 2026-10-04, original start attempt `pc07-capital-start-s1` stopped before creation:
+    PowerShell's .NET environment call turned cleared variables into empty strings,
+    and the contained-scope guard refused them. Original evidence remains under
+    `run/snapshots/_capture/pc07-capital-start-s1`; its owned schema was dropped.
+    The runner now removes absent variables through the environment provider and
+    restores their prior absence/values. A mock of the real invocation proves the
+    child has no conflicting scopes (`pc07-snapshot-contract-b.log`).
 - [ ] **PC-08 — Schedule the higher-level passes.** Depends PC-07. Add the approved
   cross-region quests to their individual Altgard/capital segments, with source items
   acquired after acceptance; obtain separate decisions for materials, professions,

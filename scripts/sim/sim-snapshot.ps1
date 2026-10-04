@@ -81,7 +81,12 @@ function Invoke-NaturalJourney([string]$Db, [string]$RunId, [string]$Evidence, [
 		'NA_ASCENSION', 'AF_ALTGARD', 'AF_ONLY', 'AF_CG_RECEIPTS', 'AF_HM_PROGRESS', 'PC_CAPITAL',
 		'NI07_STOP_AFTER_Q2004', 'NI07_STOP_AFTER_Q2005', 'NI07_STOP_AFTER_Q2006', 'NI07_STOP_AFTER_Q2007', 'NI07_STOP_ON_DEATH', 'NI07_OPTIMIZE_HUBS')
 	$prior = @{}
-	foreach ($variable in $names) { $prior[$variable] = [Environment]::GetEnvironmentVariable($variable); [Environment]::SetEnvironmentVariable($variable, $null) }
+	foreach ($variable in $names) {
+		$prior[$variable] = [Environment]::GetEnvironmentVariable($variable)
+		# PowerShell coerces $null to an empty string at this .NET overload on Windows.
+		# The bot's optional scopes require absent variables, so remove them through the provider.
+		Remove-Item -LiteralPath "Env:$variable" -ErrorAction SilentlyContinue
+	}
 	try {
 		$env:AION_SIM_DB_INTEGRATION = '1'
 		$env:AION_SIM_NI08_DATABASE = $Db
@@ -98,7 +103,10 @@ function Invoke-NaturalJourney([string]$Db, [string]$RunId, [string]$Evidence, [
 		if ($LASTEXITCODE -ne 0) { throw "Natural journey failed; see $Evidence/journey.log" }
 	}
 	finally {
-		foreach ($variable in $names) { [Environment]::SetEnvironmentVariable($variable, $prior[$variable]) }
+		foreach ($variable in $names) {
+			if ($null -eq $prior[$variable]) { Remove-Item -LiteralPath "Env:$variable" -ErrorAction SilentlyContinue }
+			else { [Environment]::SetEnvironmentVariable($variable, $prior[$variable]) }
+		}
 	}
 }
 
