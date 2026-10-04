@@ -18,7 +18,7 @@ $variables = @('AION_SIM_DB_INTEGRATION', 'AION_SIM_NI08_DATABASE', 'AION_SIM_NI
 $prior = @{}
 foreach ($variable in $variables) { $prior[$variable] = [Environment]::GetEnvironmentVariable($variable) }
 try {
-	foreach ($variable in $variables) { [Environment]::SetEnvironmentVariable($variable, $null) }
+	foreach ($variable in $variables) { Remove-Item -LiteralPath "Env:$variable" -ErrorAction SilentlyContinue }
 	New-Item -ItemType Directory -Path $evidence | Out-Null
 	if (-not $NoBuild) {
 		& dotnet build (Join-Path $repoRoot 'tests/Aion.Simulation.Tests') -nologo *> (Join-Path $evidence 'build.log')
@@ -46,5 +46,8 @@ try {
 	Write-Output "Verified character $($report.CharacterId), level $($report.Endpoint.Level), $($report.Endpoint.CompletedQuestIds.Count) completed quests, $($report.Deaths) deaths, $($report.ElapsedMillis) game ms."
 }
 finally {
-	foreach ($variable in $variables) { [Environment]::SetEnvironmentVariable($variable, $prior[$variable]) }
+	foreach ($variable in $variables) {
+		if ($null -eq $prior[$variable]) { Remove-Item -LiteralPath "Env:$variable" -ErrorAction SilentlyContinue }
+		else { [Environment]::SetEnvironmentVariable($variable, $prior[$variable]) }
+	}
 }

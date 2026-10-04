@@ -4021,6 +4021,10 @@ is authorized by this request.
   every recorded outcome and any original failure. Verify the final staff/coin/stigma ledger,
   Q2217, campaigns, both Haramel clears, one character and monotonic clock; audit schema cleanup.
   Depends: AS-01. Stop at the relog-verified fortress endpoint; do not launch LIVE.
+  Attempt (2026-10-03): `run/natural-complete/as02-full-create-s1-a1`, code `cc4692ee4`,
+  stopped before creation because PowerShell's null environment assignment produced empty strings
+  for optional checkpoint paths. Preserve its original log; remove absent variables through the
+  environment provider and restore their original absence before a fresh attempt.
 
 One complete SIM Altgard journey must then play **l1 through l11, cg and l12 in order from the original level-10
 `altgard` snapshot**, retaining one character, database, clock, journals and aggregate outcomes between
