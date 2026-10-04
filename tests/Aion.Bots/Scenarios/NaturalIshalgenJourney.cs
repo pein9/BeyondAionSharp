@@ -1255,8 +1255,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						}
 						foreach (var (id, expected) in preservedQuests)
 							Require.True(session.Api.World.Quests.TryGetValue(id, out BotQuestState? state) &&
+								((continuousAltgard && NaturalAltgardContinuation.AllowsAutomaticCampaignUnlock(id, expected, state,
+									session.Api.World.Level, session.Api.World.CompletedQuestIds)) ||
 								(altgardLegId == "l12" ? NaturalHaramelDecisionEngine.PreservesDeferredQuest(id, expected, state, session.Api.World.Level)
-									: (state.Status, state.StepAndFlags) == expected), $"Deferred Q{id} changed during {leg.Leg}.");
+									: (state.Status, state.StepAndFlags) == expected)), $"Deferred Q{id} changed during {leg.Leg}.");
 						await CompleteAltgardLeg1Async(leg);
 						return;
 					}

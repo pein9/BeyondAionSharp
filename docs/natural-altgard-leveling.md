@@ -4017,7 +4017,7 @@ is authorized by this request.
   All seven pre-commit checks passed (`run/as01-checks`); Fast: 82 passed / five explicit switch skips,
   all eleven scenarios passed (`run/as01-continuation-fast`, base `8a531614f`).
 - [ ] **AS-02 — One complete SIM run.** Run `scripts/sim/run-natural-complete.ps1` once with seed 1,
-  from committed code, with dashboard 17880. Retain stage/relog reports, the complete packet trace,
+  from committed code, with dashboard 17880. Retain stage/relog reports, the full journey trace,
   every recorded outcome and any original failure. Verify the final staff/coin/stigma ledger,
   Q2217, campaigns, both Haramel clears, one character and monotonic clock; audit schema cleanup.
   Depends: AS-01. Stop at the relog-verified fortress endpoint; do not launch LIVE.
@@ -4025,6 +4025,19 @@ is authorized by this request.
   stopped before creation because PowerShell's null environment assignment produced empty strings
   for optional checkpoint paths. Preserve its original log; remove absent variables through the
   environment provider and restore their original absence before a fresh attempt.
+  Attempt (2026-10-03): `run/natural-complete/as02-full-create-s1-a2`, code `eef2ec3f7`,
+  created one Priest and passed Ishalgen/Ascension and l1–l4, then reached l5's complete decision
+  with 96 completions. Its deferred-journal assertion rejected Q24014/Q24015's automatic level-20
+  unlock (LOCKED/0 to START/0, zero completion count), not an objective action. Java's two handlers
+  register level-change hooks and call `defaultOnLevelChangedEvent(player, 24010)`; the helper
+  starts eligible campaigns when the minimum level is met. Permit only that verified transition
+  in the continuous guard; preserve the trace/failure package and three recorded deaths.
+  Guard correction evidence (2026-10-03): the trace places both START/0 updates immediately after
+  the level-20 `SM_STATS_INFO` during Q2233; no Q24014/Q24015 `CM_DIALOG_SELECT` was sent in l5
+  (`deferred-guard-audit.json`). Eight regression cases reject missing prerequisites, under-level
+  activation, changed flags, reward status, completion credit and Q24016. Focused tests: 158 passed;
+  all seven pre-commit checks passed (`run/as02-unlock-checks`). Both failed attempts' owned schemas
+  were dropped by the fixture, as verified through `INFORMATION_SCHEMA`.
 
 One complete SIM Altgard journey must then play **l1 through l11, cg and l12 in order from the original level-10
 `altgard` snapshot**, retaining one character, database, clock, journals and aggregate outcomes between

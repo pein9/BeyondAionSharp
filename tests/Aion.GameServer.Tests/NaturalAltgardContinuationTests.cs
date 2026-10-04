@@ -34,4 +34,22 @@ public sealed class NaturalAltgardContinuationTests
 		Assert.Throws<InvalidDataException>(() => NaturalAltgardContinuation.BindIncoming(historical, completed,
 			[new NaturalJourneyItem(900001, historical.Haramel.StaffItemId, 1, 3)]));
 	}
+
+	[Theory]
+	[InlineData(24014, 20, 3, 0, 0, true, true)]
+	[InlineData(24015, 20, 3, 0, 0, true, true)]
+	[InlineData(24014, 19, 3, 0, 0, true, false)]
+	[InlineData(24014, 20, 3, 0, 0, false, false)]
+	[InlineData(24014, 20, 3, 1, 0, true, false)]
+	[InlineData(24014, 20, 3, 0, 1, true, false)]
+	[InlineData(24015, 20, 4, 0, 0, true, false)]
+	[InlineData(24016, 20, 3, 0, 0, true, false)]
+	public void AutomaticUnlockDoesNotPermitDeferredObjectivesOrCompletion(int id, int level, byte status,
+		int flags, byte count, bool prerequisite, bool allowed)
+	{
+		Assert.Equal(allowed, NaturalAltgardContinuation.AllowsAutomaticCampaignUnlock(id, (6, 0),
+			new(id, status, flags, count, null), level, prerequisite ? new HashSet<int> { 24010 } : []));
+		Assert.False(NaturalAltgardContinuation.AllowsAutomaticCampaignUnlock(id, (3, 0),
+			new(id, status, flags, count, null), level, new HashSet<int> { 24010 }));
+	}
 }
