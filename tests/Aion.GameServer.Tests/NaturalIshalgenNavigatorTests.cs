@@ -1,10 +1,42 @@
 using Aion.Bots.Navigation;
+using Aion.Bots.Protocol;
+using Aion.Bots.Scenarios;
 using Aion.Bots.World;
+using Aion.GameServer.Network.Aion.ServerPackets;
 
 namespace Aion.GameServer.Tests;
 
 public sealed class NaturalIshalgenNavigatorTests
 {
+	[Fact]
+	public async Task DefensiveQuestCreditStopsApproachWithoutInventingAnotherKillOrArrival()
+	{
+		string root = Aion.GameServer.TestKit.RealStaticData.RepoRoot();
+		QuestRunPlan plan = QuestRunPlan.Load(Path.Combine(root, "parity-artifacts/e2e/natural-altgard-l10-plans/2281.json"));
+		QuestRunOperation operation = QuestRunBook.Build(plan).Operations.First(o => o.Kind == QuestRunOperationKind.Kill);
+		var world = new BotWorldModel();
+		void Credit(int packed) => world.Apply(new DecodedBotServerPacket(typeof(SM_QUEST_ACTION), new Dictionary<string, object?>
+		{
+			["action"] = (byte)2, ["questId"] = 2281, ["status"] = (byte)3, ["stepAndFlags"] = packed,
+		}));
+		Credit(20802); // two seekers, five fighters, five warriors
+		var driver = new FakeDriver([new(77, 210560, At(100))])
+		{
+			MapId = 220030000,
+			AfterSynchronize = (_, _) => Credit(20803),
+		};
+		NaturalNavigationResult result = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
+			220030000, 210560, At(100), 23, driver, "hunt-source",
+			stopWhen: () => NaturalQuestProgress.RemainingKills(plan, operation, world) == 0);
+		Assert.False(result.Arrived);
+		Assert.Equal(NaturalIshalgenNavigator.ObjectiveCompletedReason, result.Reason);
+		Assert.Null(result.TargetObjectId);
+		Assert.Single(driver.MovedSegments);
+		Assert.Equal(0, NaturalQuestProgress.RemainingKills(plan, operation, world));
+		Assert.Contains(driver.Events, e => e.Action == "navigation-objective-completed");
+		Assert.DoesNotContain(driver.Events, e => e.Action == "navigation-arrived");
+	}
+
 	[Fact]
 	public async Task CheckedIngressReturnRetracesRecordedPositionsInReverse()
 	{
@@ -272,6 +304,7 @@ public sealed class NaturalIshalgenNavigatorTests
 
 	private sealed class FakeDriver(List<NaturalNavigationObject> targets) : INaturalNavigationDriver
 	{
+		public int MapId { get; init; } = 220010000;
 		public List<NaturalNavigationObject> Targets { get; set; } = targets;
 		public BotPosition Position { get; set; } = At(0);
 		public bool NoRoute { get; init; }
@@ -286,7 +319,7 @@ public sealed class NaturalIshalgenNavigatorTests
 		public List<IReadOnlyList<BotPosition>> MovedSegments { get; } = [];
 		public List<NaturalNavigationEvent> Events { get; } = [];
 
-		public NaturalNavigationObservation Observe() => new(220010000, Position, false, Targets.ToArray());
+		public NaturalNavigationObservation Observe() => new(MapId, Position, false, Targets.ToArray());
 		public Task<IReadOnlyList<BotPosition>> FindRouteAsync(BotPosition start, BotPosition destination, CancellationToken token)
 		{
 			if (RouteOverride != null) return Task.FromResult(RouteOverride(start, destination));

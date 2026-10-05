@@ -43,6 +43,7 @@ public interface INaturalNavigationDriver
 public static class NaturalIshalgenNavigator
 {
 	public const string RepeatedRouteReason = "Navigation returned to the same route start after bounded replans.";
+	public const string ObjectiveCompletedReason = "Objective completed during navigation.";
 	/// <summary>Thin actual client-estimated progress into reverse-route checkpoints.
 	/// Planned routes are intentionally excluded: only walked positions may guide
 	/// a return, and every reverse leg is routed and hazard-checked again.</summary>
@@ -83,11 +84,11 @@ public static class NaturalIshalgenNavigator
 	/// <summary>Reach ordinary spell/search range of a shipped area hint without claiming the target exists.</summary>
 	public static async Task<NaturalNavigationResult> ExploreWithinRangeAsync(int mapId, int templateId,
 		BotPosition staticAnchor, float radius, INaturalNavigationDriver driver, string kind,
-		CancellationToken token = default)
+		CancellationToken token = default, Func<bool>? stopWhen = null)
 	{
 		if (!float.IsFinite(radius) || radius <= 0)
 			throw new ArgumentOutOfRangeException(nameof(radius));
-		return await ApproachAsync(mapId, templateId, staticAnchor, driver, kind, true, radius, token);
+		return await ApproachAsync(mapId, templateId, staticAnchor, driver, kind, true, radius, token, stopWhen);
 	}
 
 	/// <summary>Return over client-estimated checkpoints from a previously checked approach.
@@ -132,7 +133,7 @@ public static class NaturalIshalgenNavigator
 
 	private static async Task<NaturalNavigationResult> ApproachAsync(int mapId, int templateId,
 		BotPosition staticAnchor, INaturalNavigationDriver driver, string kind, bool allowAnchorOnly,
-		float arrivalRadius, CancellationToken token)
+		float arrivalRadius, CancellationToken token, Func<bool>? stopWhen = null)
 	{
 		ArgumentNullException.ThrowIfNull(driver);
 		int routeSearches = 0, segments = 0, advancedSegments = 0, replans = 0, targetWaits = 0, targetMoves = 0, sequence = 0;
@@ -143,6 +144,12 @@ public static class NaturalIshalgenNavigator
 		int routeIndex = 0;
 		while (segments < MaximumSegments)
 		{
+			if (stopWhen?.Invoke() == true)
+			{
+				Emit("navigation-objective-completed", "completed", ObjectiveCompletedReason,
+					driver.Observe().Position, destination, null);
+				return new(false, ObjectiveCompletedReason, null, routeSearches, segments);
+			}
 			NaturalNavigationObservation observed = driver.Observe();
 			if (observed.MapId != mapId || observed.Position is not BotPosition start || observed.IsDead)
 				return Fail("Map, position, or survival state changed during navigation.", observed);

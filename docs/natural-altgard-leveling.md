@@ -4581,6 +4581,27 @@ monitor enabled and announce its URL when a journey starts.
     (`run/rc11-insignia-surplus/`). Fast passes 93 tests/five guarded skips/all eleven
     scenarios (`run/rc11-fast/rc11-insignia-surplus/`). The revised full proof remains
     pending; commit and complete the rebuild before the next continuous capture.
+  - 2026-10-05, sixth retained attempt: `rc11-full-create-s1-a6` on 5b0953176
+    completes Legs 1-9, including both corrected city visits, at level 23 with 152
+    completions. In Leg 10 Q2281 reaches packed counter 20803 (3/5/5) at game time
+    16:20:31.525, but the ongoing approach keeps seeking another physical kill. The
+    ordinary one-hour progress watchdog eventually stops it; twelve deaths (seven
+    in Leg 4, one in Leg 5, four in Leg 10), trace, failure audit and dropped-schema
+    receipt are retained. Java MonsterHunt counts qualifying defensive kills and
+    permits reporting once all counters are satisfied. The bot now checks the current
+    quest counter during checked navigation and stops an unfinished approach when it
+    completes, without inventing another kill or NPC arrival or relaxing the watchdog.
+    The regression exercises an actual Q2281 client-counter update during navigation;
+    111 focused tests pass. Public Restore of altgard-rc-l9 proves the contained Leg 10
+    at level 24 with 152 completions, Q2281 completed once, three recorded deaths,
+    ordinary endpoint relog and schema dropped (`run/rc11-hunt-completion/`). This
+    smoke did not exercise the new early-stop diagnostic; the regression covers it.
+    The audit also records newly added item identities from SM_INVENTORY_ADD_ITEM,
+    matching Java's object/template fields; historical AS-02 supplies the evidenced
+    first-use case for a DP jelly absent from its initial inventory packet.
+    Seven pre-commit checks pass; Fast passes 93 tests/five guarded skips/all eleven
+    scenarios (`run/rc11-fast/rc11-hunt-completion/`). The revised full proof remains
+    pending; commit and finish the rebuild before capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -4967,6 +4988,10 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: the sixth continuous run completes Legs 1-9, then a
+  completed Q2281 hunt counter fails to interrupt an approach. Retain its twelve deaths
+  and watchdog failure. The client-counter regression and contained Leg 10 pass;
+  commit the completion check and rebuild before another full capture. RC-11 remains open.
 - 2026-10-05 RC-11 pending: the fifth continuous run passes Leg 7, then exposes a
   surplus-insignia assertion in Q2270. Java accepts four and consumes three. The native
   reward/relog proof, contained Leg 8 smoke (132 completions, one recorded death), 82

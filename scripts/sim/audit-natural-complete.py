@@ -122,7 +122,7 @@ for line_number, line in enumerate(trace.open(encoding='utf-8'), 1):
         book_consumption.append(fields)
     if packet.endswith('result') and any(word in packet for word in ('shop', 'service', 'trade')):
         costs.append(row)
-    for item in fields.get('items', []) if packet == 'SM_INVENTORY_INFO' else []:
+    for item in fields.get('items', []) if packet in ('SM_INVENTORY_INFO', 'SM_INVENTORY_ADD_ITEM') else []:
         inventory[item['objectId']] = item['itemId']
         quantities[item['objectId']] = item['itemCount']
         if item['itemId'] == 182400001:

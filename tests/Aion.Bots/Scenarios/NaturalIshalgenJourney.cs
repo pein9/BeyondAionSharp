@@ -1761,7 +1761,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						if (laterCapital != null && altgardLegId == "l5")
 						{
 							session.BeginStep("rc-book-field-materials", "collect-native-leg-5-book-drops");
-							await NaturalLaterCapitalFieldCollection.CollectAsync(session, KillShippedSpawnAsync,
+							await NaturalLaterCapitalFieldCollection.CollectAsync(session, (kind, operation) => KillShippedSpawnAsync(kind, operation),
 								async (source, item) => { await TryLootCorpseItemAsync(session, source, item, token); navigator.UnavailableObjects.Add(source); },
 								() => RestSafelyAsync(token));
 							if (Distance(session.CurrentPosition, ground) > leg.Hub.Radius) await UseLearnedReturnToBindAsync();
@@ -4115,7 +4115,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						BotPosition beforeApproach = session.CurrentPosition;
 						int killsBeforeApproach = navigator.UnavailableObjects.Count;
 						NaturalNavigationResult result = withinRange is float range
-							? await NaturalIshalgenNavigator.ExploreWithinRangeAsync(contract.MapId, templateId, anchor.Position, range, navigator, "NPC", token)
+							? await NaturalIshalgenNavigator.ExploreWithinRangeAsync(contract.MapId, templateId, anchor.Position, range, navigator, "NPC", token,
+								stopWhen: () => CompletedApproachSource() != null)
 							: await NaturalIshalgenNavigator.ApproachNpcAsync(contract.MapId, templateId, anchor.Position, navigator, token);
 						if (CompletedApproachSource() is int collectedFrom) return collectedFrom;
 						if (result.Arrived && result.TargetObjectId is int objectId) { emptySpawnWaits = 0; return objectId; }
@@ -6934,13 +6935,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								if (available.Length == 0) throw new NaturalHaramelSourcesExhaustedException($"Q{plan.Id} has no remaining reachable sources in this copy.");
 								int kind = altgardLegId is "l10" or "l12" ? NearestKind(available) : available[kill % available.Length];
 								int target;
-								try { target = await KillShippedSpawnAsync(kind); }
+								try { target = await KillShippedSpawnAsync(kind,
+									objectiveDone: () => NaturalQuestProgress.RemainingKills(plan, operation, session.Api.World) == 0); }
 								catch (NaturalHaramelSourcesExhaustedException) when (altgardLegId == "l12" && available.Length > 1)
 								{
 									exhaustedKinds.Add(kind);
 									continue; // Another qualifying kind may still meet this counter without a new entry.
 								}
-								navigator.UnavailableObjects.Add(target);
+								if (target != 0) navigator.UnavailableObjects.Add(target);
 								await RestSafelyAsync(token);
 							}
 							if (altgardLegId == "l10" && plan.Id == 2282)
@@ -7070,8 +7072,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// evidence (the monster resets while the bot revives at the obelisk): walk back and fight again,
 			// as a player does, rather than treating the vanished target as an error. A target that despawns
 			// or walks out of view for another reason is simply looked for again.
-			async Task<int> KillShippedSpawnAsync(int templateId, QuestRunOperation? collection = null)
+			async Task<int> KillShippedSpawnAsync(int templateId, QuestRunOperation? collection = null, Func<bool>? objectiveDone = null)
 			{
+				int? CompletedObjectiveSource()
+				{
+					if (objectiveDone?.Invoke() != true) return CompletedCollectionSource();
+					// RC-11: defense can finish the counter while approach/recovery is still running.
+					// Zero means no extra target was killed; the ordinary quest journal is the completion evidence.
+					session.TraceDiagnostic("hunt-objective-completed-during-approach", new Dictionary<string, object?>
+					{
+						["templateId"] = templateId, ["position"] = session.CurrentPosition,
+					});
+					return 0;
+				}
 				int CollectedSource(int objectId)
 				{
 					// RC-11: a partially collected stack still needs a new live source. The first
@@ -7095,7 +7108,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					// by walking into it (which is how every add reached the bot at Hatata's cave).
 					int approachEvidenceStart = session.PacketHistory.Count;
 					int target = await ApproachShippedSpawnAsync(templateId, withinRange: NaturalPullPlanner.SpellRange + 3,
-						completedSource: collection == null ? null : CompletedCollectionSource, acceptObservedKill: altgardLegId is "l10" or "l12");
+						completedSource: collection == null && objectiveDone == null ? null : CompletedObjectiveSource,
+						acceptObservedKill: altgardLegId is "l10" or "l12");
+					if (objectiveDone?.Invoke() == true) return 0;
 					if (CompletedCollectionSource() is int collectedFrom) return CollectedSource(collectedFrom);
 					if (altgardLegId is "l10" or "l12" && session.PacketHistory.Skip(approachEvidenceStart).Any(packet =>
 						packet.PacketType == typeof(SmAttackStatus) && packet.Get<byte>("typeId") is not (19 or 20 or 21 or 22 or 23) &&
