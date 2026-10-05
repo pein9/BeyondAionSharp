@@ -18,6 +18,71 @@ namespace Aion.Simulation.Tests;
 
 public sealed partial class SimulationFastScenarioTests
 {
+	[SkippableFact]
+	public async Task LaterCapitalRobeOfferInterceptsDeylaAfterNativeTooFarRefusal()
+	{
+		await RunCapitalProbeAsync("RC11Walker", 252, "Asimdeylawalk", async (probe, session, token) =>
+		{
+			probe.Server.GetCommonData().SetLevel(20);
+			SkillLearnService.LearnNewSkills(probe.Server, 10, 20);
+			await probe.SetupNearAsync(120010000, 204141);
+			var deyla = probe.Server.GetWorldMapInstance().GetNpcs(204141).First(n => !n.IsDead());
+			int npc = deyla.GetObjectId();
+			// Remain at the original observed position while the native walker passes it.
+			// Server position is read only to select this disposable probe's failure case.
+			bool staleStart = false;
+			for (int tick = 0; tick < 120; tick++)
+			{
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
+				await session.SynchronizeAsync(token);
+				BotKnownObject seen = session.Api.World.Objects[npc];
+				if (seen.MoveTarget != null && NaturalFlightPolicy.Distance(session.CurrentPosition, seen.Position) < 5 &&
+					NaturalFlightPolicy.Distance(session.CurrentPosition, new(deyla.GetX(), deyla.GetY(), deyla.GetZ(), 0)) > 7)
+				{
+					staleStart = true;
+					break;
+				}
+			}
+			Assert.True(staleStart, "Probe never observed Deyla pass her cached move start.");
+			NaturalAltgardStep offer = NaturalLaterCapitalSteps.RobePreparation[0];
+			session.BeginStep("probe-deyla-stale-start", "native-dialog-refusal-at-cached-move-start");
+			await Assert.ThrowsAsync<NaturalDialogTooFarException>(() => NaturalAltgardQuestSteps.TalkAsync(session, offer, npc, token));
+			var geometry = BotNavigationGeometry.ForServerWorld(probe.Server.GetInstanceId(), Race.ASMODIANS);
+			int refusals = 1;
+			for (int attempt = 0; ; attempt++)
+			{
+				BotPosition from = session.CurrentPosition,
+					to = NaturalLaterCapitalSteps.DialogReapproachPosition(204141, session.Api.World.Objects[npc]);
+				IReadOnlyList<BotPosition> route = geometry.FindJourneyPath(120010000, from, to);
+				Assert.True(route.Count > 0 || NaturalFlightPolicy.Distance(from, to) <= 1, "Deyla interception had no checked route.");
+				if (route.Count > 0)
+					await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing)
+						.CreateGroundPlan(route, from, session.Api.World.MovementSpeed!.Value), token);
+				await session.SynchronizeAsync(token);
+				await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+				try
+				{
+					await NaturalAltgardQuestSteps.TalkAsync(session, offer, npc, token);
+					break;
+				}
+				catch (NaturalDialogTooFarException) when (attempt < NaturalLaterCapitalSteps.DialogRetryLimit(204141))
+				{
+					refusals++;
+				}
+			}
+			Assert.True(NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 0));
+			Assert.False(session.Api.World.CompletedQuestIds.Contains(2916));
+			await session.QuitAsync(token);
+			await session.WaitForReentryAsync(token);
+			await session.ReloginExistingCharacterAsync(token);
+			await session.EnterWorldAsync(token);
+			await session.SynchronizeAsync(token);
+			Assert.True(NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 0));
+			Assert.False(session.Api.World.CompletedQuestIds.Contains(2916));
+			Console.WriteLine($"RC-11 Deyla: {refusals} native too-far refusals, checked waypoint interception, ordinary Q2916 START/0 retained through relog; no Q2916 state writes.");
+		});
+	}
+
 	/// <summary>RC-11: real Neusa/book/reward packets consume only the required counts, including native surplus.</summary>
 	[SkippableFact]
 	public async Task LaterCapitalBookFinishConsumesRequiredCountsAndRetainsSurplusThroughRelog()

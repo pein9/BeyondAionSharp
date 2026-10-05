@@ -187,8 +187,9 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			// 249 is RC-11's same-map natural bind-revive view regression probe.
 			// 250 is RC-11's native cast-readiness refusal regression probe.
 			// 251 is RC-11's hostile spell / interrupted Return recovery probe.
+			// 252 is RC-11's native walking Deyla dialog recovery probe.
 			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100)).Concat(Enumerable.Range(201, 27)).Concat(Enumerable.Range(240, 5))
-				.Concat(new[] { 245, 246, 247, 248, 249, 250, 251 })
+				.Concat(new[] { 245, 246, 247, 248, 249, 250, 251, 252 })
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();

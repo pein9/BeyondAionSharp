@@ -60,11 +60,12 @@ public static class NaturalLaterCapitalSteps
 	];
 	public static readonly NaturalAltgardStep LibraryOffer = NaturalCapitalSteps.Offer(2938, 204267, page: 4762);
 	public static IEnumerable<NaturalAltgardStep> Leg7City => BookFinish.Append(LibraryOffer).Concat(FamilyLetter).Concat(Dye);
-	/// <summary>Lusena's retained move start can trail her waypoint; Deyla's existing stopped-position interception stays in place.</summary>
+	/// <summary>Intercept the announced waypoint of the two walking errand NPCs.
+	/// Their cached move starts can be behind them; paced dialog retries let them arrive.</summary>
 	public static BotPosition DialogReapproachPosition(int npcId, BotKnownObject observed) =>
-		npcId == 204138 ? observed.SettledPosition : observed.Position;
-	/// <summary>Allow Lusena to reach the intercepted waypoint while normal dialog requests stop her in range.</summary>
-	public static int DialogRetryLimit(int npcId) => npcId == 204138 ? 60 : 3;
+		npcId is 204138 or 204141 ? observed.SettledPosition : observed.Position;
+	/// <summary>Allow the walker to reach the intercepted waypoint while normal dialog requests stop her in range.</summary>
+	public static int DialogRetryLimit(int npcId) => npcId is 204138 or 204141 ? 60 : 3;
 	public static readonly NaturalAltgardStep ElementaryOffer = NaturalCapitalSteps.Offer(2920, 204141) with
 	{
 		Actions = ["QUEST_SELECT", "SELECT_NONE_1", "SELECT_NONE_1_1", "ASK_QUEST_ACCEPT", "QUEST_ACCEPT_1"],

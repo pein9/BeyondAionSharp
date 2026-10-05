@@ -1149,8 +1149,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					}
 					catch (NaturalDialogTooFarException) when (attempt < NaturalLaterCapitalSteps.DialogRetryLimit(step.NpcId))
 					{
-						// Deyla walks: the announced next waypoint is not her current position. After a server refusal,
-						// intercept the last observed position instead of repeatedly arriving at that future waypoint.
+						// A walker can already be past its cached move start. Intercept her
+						// announced waypoint and retry at a player cadence until she arrives.
 						BotKnownObject seen = session.Api.World.Objects[npc];
 						BotPosition destination = NaturalLaterCapitalSteps.DialogReapproachPosition(step.NpcId, seen);
 						session.TraceDiagnostic("later-capital-dialog-reapproach", new Dictionary<string, object?>

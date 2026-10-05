@@ -4818,6 +4818,27 @@ monitor enabled and announce its URL when a journey starts.
     eight zero-distance retries (`run/rc11-fast/rc11-hostile-spells-final/`). Seven
     final pre-commit checks pass (`run/rc11-return-interrupt/*-final.log`). Full
     revised proof still requires this committed repair and a completed rebuild.
+  - 2026-10-05, sixteenth retained attempt: `rc11-full-create-s1-a16` on 4e1c0d13f
+    completes the revised Ishalgen/bridge and Legs 1-4, then stops in Leg 5's capital
+    preparation at Q2916's offer: Cleric 20/96, alive, two Leg 4 deaths. The original
+    trace, failure audit and owned-schema cleanup are retained. Deyla's cached move
+    start remains 1211.141/1513.0562 while her announced waypoint is
+    1206.92/1525.07. Three short retries chase the old start and exhaust the bound.
+    Java Q2916, NpcController's native talk-range refusal and NpcMoveController's
+    route progression were read. The same checked waypoint interception and paced
+    sixty-request bound already used for Lusena now also covers Deyla; other NPCs
+    retain the existing three-request bound. Server movement/quest data is unchanged.
+    Free probe 252 waits for native Deyla to pass her cached start, proves an actual
+    too-far refusal, intercepts her waypoint and accepts Q2916 normally. START/0 with
+    zero completion credit survives ordinary relog; Q2916 is never set by setup.
+    The native probe also passes inside Fast (`run/rc11-deyla-intercept/native-probe.log`,
+    `run/rc11-fast/rc11-deyla-intercept/`). Public-restore Leg 5 from `altgard-rc-l4`
+    passes at level 20/99 with zero deaths, Annju START/3, single heritage/maternal/juice
+    completions and ordinary endpoint relog. Five native Deyla reapproaches precede
+    acceptance; owned schema dropped (`l5-smoke/`, `smoke-audit.json`).
+    Thirty-five focused tests and seven pre-commit checks pass. Fast passes 97 tests,
+    five guarded skips and all eleven scenarios. Full continuous proof remains open;
+    commit this repair and finish its rebuild before another fresh capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5204,6 +5225,12 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: attempt sixteen reaches Leg 5's capital preparation with
+  two recorded deaths, then exhausts Deyla's three old-position retries. Retain its
+  failure/cleanup. Use the existing bounded waypoint interception for Deyla as well
+  as Lusena. Native refusal/acceptance/relog and contained Leg 5 (20/99/zero deaths)
+  pass, along with 35 focused tests, seven checks and Fast (97/five skips/all eleven).
+  The uninterrupted fresh-create proof still remains pending.
 - 2026-10-05 RC-11 pending: attempt fifteen completes the warlock hunt, then the bot
   ignores a nearby spell-only attacker and exhausts its Return retries. Retain its
   twenty deaths and cleanup. Recognize shipped hostile spell packets in ordinary
