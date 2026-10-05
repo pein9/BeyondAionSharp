@@ -42,6 +42,38 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	// AG-07: an Altgard leg walks its road toward an approach from farther than this, and leaves the last stretch to the navigator.
 	private const float FarApproachMetres = 100f, FarApproachStop = 40f;
 
+	private static BotPosition GroundRoadGoal(BotNavigationGeometry geometry, int map, BotPosition destination) =>
+		geometry.GroundAround(map, destination, [3f, 5f, 8f, 12f]).FirstOrDefault() is { } ground && ground != default
+			? ground : geometry.SnapToGround(map, destination with { Z = destination.Z + 2 }) ?? destination;
+
+	/// <summary>A disposable probe walks the same checked campaign-zone route with labelled remembered death spots.</summary>
+	public async Task<bool> RunObservedZoneApproachAsync(BotPosition destination,
+		IReadOnlyList<BotPosition> deathSpots, CancellationToken token)
+	{
+		int map = session.Api.World.MapId ?? throw new InvalidDataException("Campaign map unobserved.");
+		BotNavigationGeometry geometry = runtime.CreateGeometry();
+		var navigator = new NaturalJourneyNavigator(session, BotNavigationGraphFactory.Build(runtime.Data, [], geometry),
+			geometry, runtime, stopOnDeath: false)
+		{
+			AvoidHostileAggro = true, AvoidSpots = deathSpots, Planner = BotTravelPlanner.For(map, geometry, runtime.Data),
+		};
+		BotPosition goal = GroundRoadGoal(geometry, map, destination);
+		for (int attempt = 0; attempt < 3; attempt++)
+		{
+			IReadOnlyList<BotPosition> route = await navigator.FindRouteAsync(session.CurrentPosition, goal, token);
+			if (route.Count == 0) return Distance(session.CurrentPosition, goal) <= 3;
+			foreach (BotPosition[] segment in route.Chunk(16))
+			{
+				if (!navigator.IsSegmentSafe(segment, null, goal)) return false;
+				await navigator.MoveAsync(segment, token);
+				await navigator.SynchronizeAsync(token);
+				if (session.Api.World.IsDead) return false;
+			}
+			if (Distance(session.CurrentPosition, goal) <= 3) return true;
+		}
+		return false;
+	}
+
 	/// <summary>ND-05: a controlled probe uses the journey's ordinary rest, buffs and combat against
 	/// a target produced by a real quest dialog. No loot action follows a kill that leaves this map.</summary>
 	public async Task<NaturalCombatDiagnosticResult> RunObservedCombatAsync(
@@ -2464,11 +2496,17 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					int map = session.Api.World.MapId ?? leg.Hub.MapId;
 					// The ground nearest the point, as AB-02 found it: a spot on a slope may not snap where it stands.
-					BotPosition goal = geometry.GroundAround(map, destination, [3f, 5f, 8f, 12f]).FirstOrDefault() is { } ground &&
-						ground != default ? ground : geometry.SnapToGround(map, destination with { Z = destination.Z + 2 }) ?? destination;
+					BotPosition goal = GroundRoadGoal(geometry, map, destination);
 					BotTravelPlanner? planner = BotTravelPlanner.For(map, geometry, runtime.Data);
-					IReadOnlyList<BotPosition> road = planner?.PlanJourney(map, session.CurrentPosition, goal, session.Api.World.Level, [])?.Route
-						?? geometry.FindJourneyPath(map, session.CurrentPosition, goal);
+					// A campaign's small trigger can lie beyond a remembered death spot. The old road ignored
+					// those hazards, then repeatedly asked to kill a blocker where no live monster remained.
+					bool campaignZone = purpose == "campaign-zone";
+					IReadOnlyList<BotPosition> road = campaignZone
+						? await navigator.FindRouteAsync(session.CurrentPosition, goal, token)
+						: planner?.PlanJourney(map, session.CurrentPosition, goal, session.Api.World.Level, [])?.Route
+							?? geometry.FindJourneyPath(map, session.CurrentPosition, goal);
+					bool SafeSegment(IReadOnlyList<BotPosition> segment) => campaignZone
+						? navigator.IsSegmentSafe(segment, null, goal) : navigator.IsSegmentSafe(segment, null);
 					if (road.Count == 0)
 					{
 						// The Cleric stands on ground the navmesh does not connect to the goal (a ledge a fight left it on).
@@ -2495,7 +2533,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							// BC-06: the first Heart descent succeeded, but the unchecked road walked
 							// into a pack before defense ran. Clear observed blockers before crossing it.
 							var progress = new NaturalApproachProgress();
-							for (int clear = 0; Distance(session.CurrentPosition, segment[^1]) > 3 && !navigator.IsSegmentSafe(segment, null); clear++)
+							for (int clear = 0; Distance(session.CurrentPosition, segment[^1]) > 3 && !SafeSegment(segment); clear++)
 							{
 								BotPosition beforeClear = session.CurrentPosition;
 								int killsBefore = navigator.UnavailableObjects.Count;

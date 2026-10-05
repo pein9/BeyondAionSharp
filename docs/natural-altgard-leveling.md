@@ -4860,6 +4860,29 @@ monitor enabled and announce its URL when a journey starts.
     `smoke-audit.json`). Fast passes 98 tests/five guarded skips/all eleven scenarios
     in 8.4633 minutes (`run/rc11-fast/rc11-obstacle-detour/`). Seven pre-commit checks
     pass. Continuous acceptance remains open; commit/rebuild before the next capture.
+  - 2026-10-05, eighteenth retained attempt: `rc11-full-create-s1-a18` on faf89b348
+    passes revised Ishalgen/bridge and Legs 1-9, all three Q2282 warlocks, ordinary
+    Return and Q2916's robe hand-in. It stops at Q24015 START/1: Cleric 24/160,
+    alive, twelve deaths (l4 two, l6 one, l8 one, l10 eight). The original trace,
+    failure audit and dropped owned schema remain retained. The campaign road
+    crosses the remembered death spot at 1945.976/2354.006/308.747; its segment
+    guard refuses it, while repeated fight-through plans find no living blocker.
+    Java Q24015, ZoneInstance, SphereArea and PlayerController's zone hook were read:
+    only actual entry into the shipped ten-metre 3D sphere advances var 1 to 2.
+    This campaign-zone road now uses the existing navigator's hazard-aware route
+    search and the same destination when checking its segments. Death hazards,
+    live hostiles, movement checks and existing retry limits remain enforced.
+    Free probe 254 reproduces the recorded start and death spot, proves the old
+    road unsafe, then walks the shared checked detour for a native START/2 update
+    with zero deaths (`run/rc11-zone-recovery/native-probe.log`). The probe also
+    passes inside Fast. Public-restore Leg 10 from `altgard-rc-l9` passes at 24/152
+    with one death, Q2282/Q24015/Q24016 completed once and ordinary endpoint relog.
+    The campaign walk has 172 checked points; native updates prove 1 -> 2 -> 3 -> 4
+    -> REWARD -> COMPLETE. Its owned schema is dropped (`l10-smoke/`, `smoke-audit.json`),
+    11,717,396 game ms and 9.4008 test minutes. Fast passes 99 tests/five guarded
+    skips/all eleven scenarios in 9.1637 minutes (`run/rc11-fast/rc11-campaign-zone/`).
+    All seven final pre-commit checks pass (`run/rc11-zone-recovery/*-final.log`).
+    Continuous acceptance remains open; commit/rebuild before the next capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5246,6 +5269,12 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: attempt eighteen completes the warlocks, Return and robe,
+  then retains Q24015's rejected campaign road and twelve deaths at 24/160; owned
+  schema dropped. Java's actual sphere-entry hook is unchanged. Free probe 254 proves
+  a checked detour around the remembered death spot; contained Leg 10 passes at 24/152
+  with one death and relog, and Fast passes 99/five guarded skips/all eleven scenarios.
+  Evidence `run/rc11-zone-recovery/`; commit/rebuild before fresh continuous capture.
 - 2026-10-05 RC-11 pending: attempt seventeen passes Deyla and Legs 1-9, then retains
   five deaths and a Leg 10 progress-watchdog failure. Native obstacle recovery had
   recast twice without moving along its unsafe direct route. The bounded checked
