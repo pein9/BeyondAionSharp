@@ -12,8 +12,8 @@ bridge, entering Altgard at level 13 with zero recorded deaths and endpoint relo
 adds the ten-quest city/Convent pass immediately after Q2009, before retained Ishalgen
 work. Its contained SIM and snapshots are proved at Cleric 11. The nine later additions
 [scheduled by PC-08](natural-ascension-altgard.md#scheduled-additions-to-individual-legs-pc-08-2026-10-04)
-are assigned to the individual legs below; their executors and segment proofs are still
-pending. The completed TODOs and historical snapshots below describe their original scopes.
+are assigned to the individual legs below; their executors and segment proofs are tracked
+by RC-00..RC-12. The completed historical TODOs and snapshots describe their original scopes.
 
 **Next working checklist (2026-10-04):** [RC-00..RC-12](#revised-journey-consolidation-rc-working-checklist)
 turns that existing schedule into contained implementation items followed by one revised
@@ -383,6 +383,9 @@ at Arekedil 203574 and visit Chauminerk 798029 to START/1. Protect supplied 1822
 until Lanse/Annemari's city half during Leg 5 preparation. Its Q2918 box delivery
 returns to Arekedil afterward. Keep the original leg endpoint and prove this addition
 in its own contained Leg 1 segment; the historical contract does not yet include it.
+
+RC-02 proves this opt-in continuation in `altgard-rc-l1-a2` (2026-10-04): normal pickup,
+START/1, supplied item retained through capture/restore/relog. Historical Leg 1 scopes stay frozen.
 
 The operator's current focus is the fortress quests. **The bot does not go south
 for Q2210 or Q24012 in this leg** (AF-Q2, decided 2026-09-29); they move to Leg 2 at Moslan
@@ -4277,23 +4280,27 @@ monitor enabled and announce its URL when a journey starts.
     environment isolation), all seven pre-commit checks and Fast (89 passed/five guarded skips,
     all eleven scenarios) pass on base 51bb43048 (`run/rc01-carry/`,
     `run/rc01-capital-fast/rc01-capital-carry/`). No later quest executor runs yet.
-- [ ] **RC-02 - Start Arekedil's Heritage in Leg 1.** Depends RC-01. Advance Q2917
+- [x] **RC-02 - Start Arekedil's Heritage in Leg 1.** Depends RC-01. Advance Q2917
   through Arekedil and Chauminerk to START/1 and preserve the supplied item for the city.
-  - 2026-10-04, implementation verification in progress: the opt-in Leg 1 pickup uses
+  - 2026-10-04: the opt-in Leg 1 pickup uses
     Java's Arekedil acceptance and Chauminerk SETPRO1, with no reward action. Free probe
     account 245 confirms START/1 and the same supplied item through ordinary logout/relog;
     resumed pickup sends no duplicate dialogs (`run/rc02-heritage/probe-a4.log`). The first
     Fast attempt and probe drafts remain: account registration and the probe's incomplete
     logout/entry sequence were corrected. Thirty-seven focused continuation/persistence
     tests, seven pre-commit checks and final Fast (90 passed/five guarded skips/all eleven
-    scenarios, `run/rc02-fast/rc02-heritage-a2/`) pass. Committed natural prefix proof remains.
+    scenarios, `run/rc02-fast/rc02-heritage-a2/`) pass.
     First committed capture `altgard-rc-l1` completed naturally at level 13 with zero deaths,
     but its restore correctly refused the descriptive contract name in the segment field
-    before MySQL. Retain that immutable snapshot; canonical receipt selector repair and a
-    distinct capture are required before this item can be ticked.
+    before MySQL. That immutable failed snapshot remains intact.
     Canonical receipt repair passes 37 focused tests, snapshot contract and seven checks
     (`run/rc02-heritage/receipt-*`); this repair changes artifact metadata only, leaving the
     already Fast-verified gameplay actions unchanged.
+    Distinct `altgard-rc-l1-a2` from committed 75fced712 passes capture, public Restore,
+    ordinary endpoint relog, SQL/item identity and hash audits: Cleric 13 alive, 56 completed
+    quests, Q2917 START/1 with supplied item object 133219, zero deaths. Historical dumps
+    are unchanged, owned schemas are dropped and seven final proof checks pass
+    (`run/rc02-heritage/audit.json`, `proof-checks/`). This is the retained Leg 1 prefix.
 - [ ] **RC-03 - Prepare Book of Oblivion before its field collections.** Depends
   RC-01. At observed level >=13, perform Cavalorn/Gantrug/Araison/book/Cavalorn to
   Q2919 START/4 and naturally collect two Ampha Tails. Use the pre-Q2904 return when
@@ -4717,6 +4724,12 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-04 RC-02: Arekedil/Chauminerk pickup and carried START/1 pass controlled and
+  committed natural proof. Verified `altgard-rc-l1-a2` holds Cleric 13, 56 completions,
+  the original supplied item and zero deaths; public restore/relog/SQL/hashes/cleanup pass.
+  Seven final checks and Fast (90 passed/five skips/all eleven scenarios) pass; probe drafts
+  and the refused first receipt remain. Evidence `run/rc02-heritage/`; RC-03 is next.
 
 - 2026-10-04 RC-01: nine-quest continuation, protected items, observed gates and immutable
   prefix receipt support pass 46 focused tests, snapshot contract, seven prechecks and Fast
