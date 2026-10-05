@@ -10,6 +10,7 @@ using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services;
+using Aion.GameServer.Services.Items;
 using Aion.GameServer.TestKit;
 using Aion.GameServer.Utils;
 
@@ -17,6 +18,64 @@ namespace Aion.Simulation.Tests;
 
 public sealed partial class SimulationFastScenarioTests
 {
+	/// <summary>RC-03: level gate, proper preparation, native Ampha drops, paid travel and ordinary relog.</summary>
+	[SkippableFact]
+	public async Task LaterCapitalBookPreparationCollectsTwoAmphaTailsAfterAcceptanceAndRetainsThemThroughRelog()
+	{
+		await RunCapitalProbeAsync("RC03", 246, "Asimbooktails", async (probe, session, token) =>
+		{
+			Assert.False(await NaturalLaterCapitalSteps.PrepareBookAsync(session,
+				_ => throw new InvalidOperationException("The level gate must defer preparation.")));
+			Assert.Null(NaturalAltgardQuestSteps.State(session.Api.World, 2919));
+			probe.Server.GetCommonData().SetLevel(13);
+			SkillLearnService.LearnNewSkills(probe.Server, 10, 13);
+			Assert.Equal(0, ItemService.AddItem(probe.Server, 101500498, 1, allowInventoryOverflow: true));
+			var staff = probe.Server.GetInventory().GetItems().Last(item => item.GetItemId() == 101500498);
+			Assert.NotNull(probe.Server.GetEquipment().EquipItem(staff.GetObjectId(), 3));
+			await probe.SetupNearAsync(120010000, 204206);
+			Assert.True(await NaturalLaterCapitalSteps.PrepareBookAsync(session, probe.TalkAsync));
+			Assert.True(NaturalAltgardQuestSteps.State(session.Api.World, 2919) is (3, 4));
+			Assert.DoesNotContain(session.Api.World.Inventory.Values, item => item.ItemId == 182207011);
+			var journey = new NaturalIshalgenJourney(session, probe.Runtime!, new());
+			await new NaturalLaterCapitalBookTravel(session, probe.Runtime!, id => probe.WalkNpcAsync(id), () => { },
+				async (id, objective) =>
+				{
+					int target = 0;
+					NaturalCombatDiagnosticResult fight = await journey.RunObservedCombatAsync(async _ =>
+					{
+						target = await probe.WalkNpcAsync(id, NaturalPullPlanner.SpellRange);
+						var actual = probe.Server.GetWorldMapInstance().GetNpcs(id).Single(n => n.GetObjectId() == target);
+						Assert.Equal(actual.GetLifeStats().GetMaxHp(), actual.GetLifeStats().GetCurrentHp());
+						return target;
+					}, token);
+					Console.WriteLine($"RC-03 native Ampha fight: {fight}");
+					return fight.Killed ? target : 0;
+				}, async source =>
+				{
+					BotPosition corpse = session.Api.World.Objects[source].Position;
+					BotNavigationGeometry geometry = probe.Runtime!.CreateGeometry();
+					IReadOnlyList<BotPosition> route = geometry.FindInteractionPath(220010000, session.CurrentPosition, corpse);
+					Assert.NotEmpty(route);
+					await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing)
+						.CreateGroundPlan(route, session.CurrentPosition, session.Api.World.MovementSpeed!.Value), token);
+					await NaturalAltgardQuestSteps.LootItemAsync(session, source, 182207011, token);
+				}).CollectAmphaAndReturnAsync(token);
+			int tailObject = session.Api.World.Inventory.Values.Single(item => item.ItemId == 182207011).ObjectId;
+			await session.QuitAsync(token);
+			await session.WaitForReentryAsync(token);
+			await session.ReloginExistingCharacterAsync(token);
+			await session.EnterWorldAsync(token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(120010000, session.Api.World.MapId);
+			Assert.True(NaturalAltgardQuestSteps.State(session.Api.World, 2919) is (3, 4));
+			Assert.Equal(2, session.Api.World.Inventory[tailObject].Count);
+			Assert.DoesNotContain(2919, session.Api.World.CompletedQuestIds);
+			await NaturalLaterCapitalSteps.PrepareBookAsync(session,
+				_ => throw new InvalidOperationException("A resumed prepared book must not repeat dialogs."));
+			Console.WriteLine("RC-03: normal preparation, two native Ampha Tails, paid transport return, START/4 and same item retained through relog.");
+		});
+	}
+
 	/// <summary>RC-02: accept and carry Q2917 through its proper Altgard contacts, then relog.</summary>
 	[SkippableFact]
 	public async Task LaterCapitalHeritagePickupRetainsItsSuppliedItemAndFirstStepThroughRelog()
@@ -166,6 +225,11 @@ public sealed partial class SimulationFastScenarioTests
 			int.Parse(Environment.GetEnvironmentVariable("AION_BOT_DASHBOARD_PORT") ?? "17880"));
 		session.Dashboard = dashboard;
 		var probe = new CapitalProbe(this, fixture, session, token);
+		probe.Runtime = new NaturalJourneyRuntime(RealStaticData.RepoRoot(), "SIM-" + item.ToLowerInvariant(), fixture.Seed,
+			fixture.DataManager.StaticData, () => fixture.Clock.NowMillis, fixture.Epoch,
+			() => BotNavigationGeometry.ForServerWorld(probe.Server.GetInstanceId(), Race.ASMODIANS),
+			_ => Task.FromResult(false), policy.AssertClean, () => policy.SnapshotProblems(), trace, dashboard);
+		if (monitor.Enabled) Console.WriteLine($"{item} dashboard: {monitor.Url}");
 		await probe.InitializeAsync();
 		await runProbe(probe, session, token);
 		policy.AssertClean();
@@ -209,6 +273,7 @@ public sealed partial class SimulationFastScenarioTests
 		public Player Server => fixture.World.GetPlayer(session.CharacterId);
 		public BotBindPoint? IncomingBind { get; private set; }
 		public int Walked { get; private set; }
+		public NaturalJourneyRuntime? Runtime { get; set; }
 		private readonly NaturalCapitalTravel travel = new(session, RealStaticData.RepoRoot(), () => fixture.Clock.NowMillis);
 		public async Task InitializeAsync()
 		{
@@ -256,17 +321,18 @@ public sealed partial class SimulationFastScenarioTests
 			await SetupNearAsync(step.MapId ?? Contract.MapId, step.NpcId);
 			int npc = await WalkNpcAsync(step.NpcId);
 			session.BeginStep(step.Key, "capital-quest-dialog");
-			Console.WriteLine("PC " + await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token));
+			if (step.NpcId == 700212) await NaturalLaterCapitalSteps.ReadQuestBookAsync(session, step, npc, token);
+			else Console.WriteLine("PC " + await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token));
 		}
 
-		public async Task<int> WalkNpcAsync(int npcId)
+		public async Task<int> WalkNpcAsync(int npcId, float? combatRange = null)
 		{
 			session.BeginStep($"pc-walk-{++Walked:00}", $"walk-to-{npcId}");
 			var npc = Server.GetWorldMapInstance().GetNpcs(npcId).Where(n => !n.IsDead()).OrderBy(n =>
 				NaturalFlightPolicy.Distance(session.CurrentPosition, new(n.GetX(), n.GetY(), n.GetZ(), 0))).First();
 			int map = Server.GetWorldId();
 			BotPosition from = session.CurrentPosition, to = new(npc.GetX(), npc.GetY(), npc.GetZ(), 0);
-			float range = Math.Min(5, npc.GetObjectTemplate().GetTalkDistance());
+			float range = combatRange ?? Math.Min(5, npc.GetObjectTemplate().GetTalkDistance());
 			BotNavigationGeometry geometry = BotNavigationGeometry.ForServerWorld(Server.GetInstanceId(), Race.ASMODIANS);
 			IReadOnlyList<BotPosition> route = [];
 			foreach (BotPosition at in geometry.GroundAround(map, to, [Math.Max(1, range - 1), 2f, 3f])
@@ -282,14 +348,15 @@ public sealed partial class SimulationFastScenarioTests
 			}
 			Assert.True(route.Count > 0 || NaturalFlightPolicy.Distance(from, to) <= range,
 				$"NPC {npcId}: no checked route ({BotNavMeshRouter.LastOutcome}) {from} -> {to}");
-			ClearHostiles(Server.GetWorldMapInstance().GetNpcs(), route.Append(from).Append(to));
+			ClearHostiles(Server.GetWorldMapInstance().GetNpcs().Where(n => combatRange == null || n.GetNpcId() != npcId), route.Append(from).Append(to));
 			if (route.Count > 0) await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing)
 				.CreateGroundPlan(route, from, session.Api.World.MovementSpeed!.Value), token);
 			await session.SynchronizeAsync(token);
 			float miss = NaturalFlightPolicy.Distance(new(Server.GetX(), Server.GetY(), Server.GetZ(), 0), to);
 			Assert.True(miss <= range, $"NPC {npcId}: missed ordinary talk range by {miss:F1} m");
 			Console.WriteLine($"PC route {npcId}: map {map}, {route.Count} points, miss {miss:F1} m");
-			return await session.WaitForNpcAsync(npcId, token);
+			Assert.Contains(npc.GetObjectId(), session.Api.World.Objects.Keys);
+			return npc.GetObjectId(); // Another corpse of this template can still be visible after the previous pull.
 		}
 
 		private void ClearHostiles(IEnumerable<Aion.GameServer.Model.GameObjects.Npc> npcs, IEnumerable<BotPosition> points)

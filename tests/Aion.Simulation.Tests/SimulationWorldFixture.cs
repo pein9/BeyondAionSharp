@@ -182,9 +182,9 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			// 225 is HM-04's normal-HP Haramel combat probe, outside every earlier/D32 account.
 			// 226/227 are HM-05's post-boss matrix and two-process recovery probes.
 			// 240-244 are the contained capital route/dialog probes (PC-01..05).
-			// 245 is RC-02's unused heritage pickup/relog probe.
+			// 245/246 are RC-02's heritage and RC-03's book preparation/collection probes.
 			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100)).Concat(Enumerable.Range(201, 27)).Concat(Enumerable.Range(240, 5))
-				.Concat(new[] { 245 })
+				.Concat(new[] { 245, 246 })
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();

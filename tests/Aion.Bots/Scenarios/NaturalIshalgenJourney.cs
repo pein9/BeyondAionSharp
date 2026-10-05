@@ -30,6 +30,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	private sealed class NaturalGuardedObjectiveRevivedException(string message) : IOException(message);
 	private sealed class NaturalHaramelSourcesExhaustedException(string message) : IOException(message);
 	private sealed class NaturalHaramelGroundApproachUnavailableException(string message) : IOException(message);
+	private sealed class NaturalBookCollectionMapChangedException : IOException;
 
 	/// <summary>AC-06: the Leg 3 escort's clear areas hold grave robbers with respawn_time 295 s (the Altgard spawn data);
 	/// a clear holds that long after its first kill.</summary>
@@ -225,13 +226,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			Func<int, float, Func<int?>?, Task<int>>? haramelApproach = null;
 			Func<IReadOnlyList<int>, int>? haramelKind = null;
 			bool farApproachUnderway = false;
+			bool bookCollectionUnderway = false;
 			int[] altgardNpcs = continuousAltgard ? NaturalAltgardContinuation.Order.SelectMany(id =>
 				NaturalAltgardContract.LoadLeg(id).GraphNpcIds(NaturalAltgardContract.LoadPlans(id)))
 				.Concat(airlines.Select(route => route.NpcId)).Distinct().ToArray()
 				: altgardLeg == null ? [] : altgardLeg.GraphNpcIds(altgardPlans)
 					.Concat(airlines.Where(route => route.MapId == altgardLeg.Hub.MapId).Select(route => route.NpcId)).Distinct().ToArray();
 			if (laterCapital != null) altgardNpcs = altgardNpcs
-				.Concat(NaturalLaterCapitalSteps.HeritagePickup.Select(step => step.NpcId)).Distinct().ToArray();
+				.Concat(NaturalLaterCapitalSteps.HeritagePickup.Concat(NaturalLaterCapitalSteps.BookPreparation).Select(step => step.NpcId))
+				.Concat(new[] { 210404, 203679, 203581, 204191 }).Concat(airlines.Select(route => route.NpcId)).Distinct().ToArray();
 			// AK-08: items an open Altgard quest still needs (its collect items, the ring carriers' rings): never worn as gear and
 			// never sold. The leg 5 smoke run wore Q2292's level 16 rings as upgrades, which its hand-in would not have found.
 			IReadOnlySet<int> QuestNeededItems() => (altgardLeg == null ? Enumerable.Empty<int>() : altgardPlans.Values
@@ -269,7 +272,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				if (key.MapId == contract.MapId) return navigator;
 				BotNavigationGeometry mapGeometry = runtime.CreateGeometry();
 				BotNavigationGraph mapGraph = BotNavigationGraphFactory.Build(runtime.Data,
-					key.MapId == 320010000 ? [205020] : altgardLeg != null || continuousAltgard ? altgardNpcs : [], mapGeometry);
+					key.MapId == 320010000 ? [205020] : altgardLeg != null || continuousAltgard || laterCapital != null ? altgardNpcs : [], mapGeometry);
 				return new NaturalJourneyNavigator(session, mapGraph, mapGeometry, runtime, options.StopOnDeath)
 				{
 					Planner = BotTravelPlanner.For(key.MapId, mapGeometry, runtime.Data),
@@ -1007,6 +1010,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					if (!ceremonyOnly && CapitalPending() && session.Api.World.CompletedQuestIds.Contains(2009) &&
 						session.Api.World.MapId == capitalContract.MapId && AtQuestStep(capitalContract.DispatchQuestId, 0))
 						await RunCapitalPassAsync();
+					if (!ceremonyOnly && laterCapital != null && !IshalgenPending() && session.Api.World.Level >= 13 &&
+						session.Api.World.MapId == capitalContract.MapId && AtQuestStep(capitalContract.DispatchQuestId, 0))
+						await PrepareLaterCapitalBookAsync();
 					if (session.Api.World.Level != helpCheckedAtLevel) await TopUpHelpItemsAsync("level-up");
 					NaturalAscensionDecision next = NaturalAscensionDecisionEngine.Decide(bridge,
 						NaturalAscensionObservation.Observe(session.Api.World, bridgeShopVisited), sequence, ceremonyOnly);
@@ -1068,6 +1074,70 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				NaturalNavigationResult approach = await NaturalIshalgenNavigator.ApproachNpcAsync(map, npcId, anchor, here, token);
 				Require.True(approach.Arrived, $"Capital NPC {npcId}: {approach.Reason}");
 				return Require.IsType<int>(approach.TargetObjectId);
+			}
+
+			async Task PrepareLaterCapitalBookAsync()
+			{
+				if (laterCapital == null || session.Api.World.CompletedQuestIds.Contains(2919) || session.Api.World.Level < 13) return;
+				NaturalIshalgenContract savedContract = contract;
+				NaturalJourneyNavigator savedNavigator = navigator;
+				BotNavigationGeometry savedGeometry = geometry;
+				var savedFarApproach = farApproach;
+				Action? savedRevive = combat.AfterBindRevive;
+				void EnterBookMap()
+				{
+					NaturalMapKey key = NaturalMapKey.Observe(session.Api.World);
+					var defend = navigator.DefendOnAttackAsync;
+					navigator = mapNavigators.Enter(key, newEntry: false);
+					navigator.DefendOnAttackAsync = defend;
+					navigator.AvoidHostileAggro = true;
+					geometry = runtime.CreateGeometry();
+					contract = contract with { MapId = key.MapId };
+					combat.EnterMap(navigator, geometry, key.MapId);
+					navigator.AvoidSpots = combat.DeathSpots;
+				}
+				try
+				{
+					farApproach = null;
+					combat.AfterBindRevive = EnterBookMap;
+					EnterBookMap();
+					if (!await NaturalLaterCapitalSteps.PrepareBookAsync(session, async step =>
+					{
+						for (int attempt = 0; ; attempt++)
+						{
+							int npc = await ApproachCapitalNpcAsync(step.NpcId);
+							try
+							{
+								if (step.NpcId == 700212) await NaturalLaterCapitalSteps.ReadQuestBookAsync(session, step, npc, token);
+								else await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token);
+								break;
+							}
+							catch (NaturalDialogTooFarException) when (attempt < 2) { }
+						}
+					})) return;
+					if (NaturalAltgardQuestSteps.State(session.Api.World, 2919) is (3, 4))
+					{
+						bookCollectionUnderway = true;
+						await new NaturalLaterCapitalBookTravel(session, runtime,
+							id => session.Api.World.MapId == capitalContract.MapId ? ApproachCapitalNpcAsync(id) : ApproachShippedSpawnAsync(id),
+							EnterBookMap, async (id, collection) =>
+							{
+								try { return await KillShippedSpawnAsync(id, collection); }
+								catch (NaturalBookCollectionMapChangedException) { return 0; }
+							}, async id => { await TryLootCorpseItemAsync(session, id, 182207011, token); })
+							.CollectAmphaAndReturnAsync(token);
+					}
+				}
+				finally
+				{
+					bookCollectionUnderway = false;
+					contract = savedContract;
+					navigator = savedNavigator;
+					geometry = savedGeometry;
+					farApproach = savedFarApproach;
+					combat.AfterBindRevive = savedRevive;
+					combat.EnterMap(navigator, geometry, contract.MapId);
+				}
 			}
 
 			async Task RunCapitalPassAsync()
@@ -2063,6 +2133,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								Require.True((world.CubeExpansion?.Npc ?? 0) == level + 1 && before - world.Kinah == cube.Prices[level],
 									$"Cube expansion {level + 1} not observed (level {world.CubeExpansion?.Npc}, Kinah {before} -> {world.Kinah}).");
 							}
+							await PrepareLaterCapitalBookAsync();
 							await UseLearnedReturnToBindAsync();
 							navigator = mapNavigators.Enter(NaturalMapKey.Observe(world));
 							Require.Equal(leg.Hub.MapId, world.MapId ?? 0);
@@ -3765,6 +3836,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			async Task<int> ApproachShippedSpawnAsync(int templateId, bool skipBlockedTarget = false, float? withinRange = null,
 				bool returnedFromStrand = false, Func<int?>? completedSource = null, bool acceptObservedKill = false)
 			{
+				if (bookCollectionUnderway && templateId == 210404 && session.Api.World.MapId != 220010000)
+					throw new NaturalBookCollectionMapChangedException();
 				int sourceHistoryStart = session.PacketHistory.Count;
 				HashSet<int> sourceObjects = session.Api.World.Objects.Values.Where(known => known.TemplateId == templateId)
 					.Select(known => known.ObjectId).ToHashSet();
@@ -6804,6 +6877,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				var failedTargets = new Dictionary<int, int>();
 				for (int attempt = 1; ; attempt++)
 				{
+					// RC-03: a bind death can leave Ishalgen. Let the normal transport loop return before another pull.
+					if (laterCapital != null && collection?.ItemId == 182207011 && session.Api.World.MapId != collection.MapId) return 0;
 					// Stop at pull range, outside the target's circle: the fight is planned from there, not started
 					// by walking into it (which is how every add reached the bot at Hatata's cave).
 					int approachEvidenceStart = session.PacketHistory.Count;

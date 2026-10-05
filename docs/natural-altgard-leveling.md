@@ -4301,10 +4301,24 @@ monitor enabled and announce its URL when a journey starts.
     quests, Q2917 START/1 with supplied item object 133219, zero deaths. Historical dumps
     are unchanged, owned schemas are dropped and seven final proof checks pass
     (`run/rc02-heritage/audit.json`, `proof-checks/`). This is the retained Leg 1 prefix.
-- [ ] **RC-03 - Prepare Book of Oblivion before its field collections.** Depends
+- [x] **RC-03 - Prepare Book of Oblivion before its field collections.** Depends
   RC-01. At observed level >=13, perform Cavalorn/Gantrug/Araison/book/Cavalorn to
   Q2919 START/4 and naturally collect two Ampha Tails. Use the pre-Q2904 return when
   eligible, otherwise the scheduled Leg 5 preparation; retain both items across relog.
+  - 2026-10-04: implementation follows Java Q2919 and QuestItemNpcAI. Free probe
+    account 246 defers below level 13, then plays all five preparation contacts,
+    including the actual three-second library-book use, before either native tail drop.
+    Two normal-HP Ampha kills obtain both tails; paid Doman/Aldelle teleports cost
+    141 + 141 Kinah. The source lies between hubs and the flight planner chooses walking;
+    actual hub crossings use the existing flight service. Ordinary relog retains
+    Q2919 START/4, zero completions and the same two-tail item object, with no deaths.
+    Probe drafts remain: the immediate-dialog wait, the already-consumed page wait and
+    a visible old corpse were corrected; both interrupted owned schemas were dropped.
+    Thirty-seven focused continuation/persistence tests and all seven checks pass
+    (`run/rc03-book/`, base 5ff042763). The trace/item/fare audit and final Fast pass
+    (91 passed/five guarded skips/all eleven scenarios, `run/rc03-fast/rc03-book/`).
+    Natural pre-dispatch placement
+    will be proved by RC-11; the contained Leg 5 fallback proof belongs to RC-04.
 - [ ] **RC-04 - Add Leg 5's capital preparation.** Depends RC-02 and RC-03. Finish
   Q2917 at Lanse/Annemari, use the actual jewelry box to start Q2918, and finish at
   Arekedil on the ordinary return to Altgard. Prepare Q2916 through Annju at >=15.
@@ -4724,6 +4738,13 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-04 RC-03: Q2919 preparation, native two-tail collection and ordinary relog
+  pass on free account 246; below-13 deferral and resumed preparation send no dialogs.
+  Actual book use, item identity and 282 Kinah fares are audited; failed probe drafts
+  remain, owned schemas are dropped. Thirty-seven focused tests, seven checks and Fast
+  (91 passed/five guarded skips/all eleven scenarios) pass. Evidence `run/rc03-book/`;
+  natural Leg 5 preparation and its carried heritage proof are next in RC-04.
 
 - 2026-10-04 RC-02: Arekedil/Chauminerk pickup and carried START/1 pass controlled and
   committed natural proof. Verified `altgard-rc-l1-a2` holds Cleric 13, 56 completions,
