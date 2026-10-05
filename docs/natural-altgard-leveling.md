@@ -4366,9 +4366,22 @@ monitor enabled and announce its URL when a journey starts.
     the existing native fights after START/4; RC-05 still needs Slime Sap. Historical
     dump hashes are unchanged and the owned-schema count is zero. Final evidence:
     `run/rc04-capital/audit.json`, `rc04-restore-a1/`, `proof-checks/`.
-- [ ] **RC-05 - Collect the Leg 5 book materials.** Depends RC-04. After Q2919
+- [x] **RC-05 - Collect the Leg 5 book materials.** Depends RC-04. After Q2919
   START/4, obtain three Malodor Stamens at Kaibech and one Slime Sap at Idun's Lake
   through ordinary combat/loot. Protect all collection items for the capital finish.
+  - 2026-10-04: Java Q2919 and its collecting_step=4 drops read. The RC Leg 5
+    endpoint fills only missing material counts through the existing normal combat,
+    approach, loot and recovery path. The contained `rc05-smoke-a1` restores
+    `altgard-rc-l5-preparation-a4` publicly, kills native Rainbow Slime 210435 and
+    takes its actual Slime Sap loot. Ordinary endpoint relog preserves Q2919 START/4,
+    zero completion credit, three stamens, two tails and one sap; original tail object
+    134026 and stamen object 134343 remain unchanged. Cleric 20, 99 completed quests,
+    214,590 Kinah, +4,922 XP, zero deaths in this added segment, 145,114 simulated
+    milliseconds. All quests/equipment and historical dump hashes are unchanged;
+    the owned schema is dropped. Trace/SQL/receipt audit passes on base 3a3eacd6b
+    (`run/rc05-materials/audit.json`). The existing RC-04 death remains recorded.
+    Seven pre-commit checks pass; Fast passes 92 tests/five guarded skips/all eleven
+    scenarios (`run/rc05-fast/rc05-materials/`). No server or quest data changes.
 - [ ] **RC-06 - Continue the robe quest at Trader's Berth.** Depends RC-04. During
   Leg 6, advance Q2916 at Neparinerk 798033 to START/4 and retain it across relog.
 - [ ] **RC-07 - Finish the scheduled Leg 7 capital visit.** Depends RC-05 and RC-06.
@@ -4781,6 +4794,12 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-04 RC-05: all Q2919 materials are naturally carried at START/4 and survive
+  ordinary relog. Native Slime Sap proof gains 4,922 XP, zero segment deaths; original
+  tails/stamens, quests, equipment and historical snapshots remain intact. Seven checks,
+  trace/SQL audit and Fast (92 passed/five skips/all eleven scenarios) pass; owned schema
+  dropped. Evidence `run/rc05-materials/`; RC-06's Neparinerk contact is next.
 
 - 2026-10-04 RC-04: the Leg 5 capital preparation, book fallback and both hub flights
   pass natural play and relog. Committed d0f6b9e60 snapshot `altgard-rc-l5-preparation-a4`

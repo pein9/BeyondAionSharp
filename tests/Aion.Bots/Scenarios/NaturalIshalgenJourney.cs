@@ -1660,6 +1660,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							});
 							return;
 						}
+						if (laterCapital != null && altgardLegId == "l5")
+						{
+							session.BeginStep("rc-book-field-materials", "collect-native-leg-5-book-drops");
+							await NaturalLaterCapitalFieldCollection.CollectAsync(session, KillShippedSpawnAsync,
+								async (source, item) => { await TryLootCorpseItemAsync(session, source, item, token); navigator.UnavailableObjects.Add(source); },
+								() => RestSafelyAsync(token));
+							if (Distance(session.CurrentPosition, ground) > leg.Hub.Radius) await UseLearnedReturnToBindAsync();
+							await RestSafelyAsync(token);
+						}
 						foreach (var (id, expected) in preservedQuests)
 							Require.True(session.Api.World.Quests.TryGetValue(id, out BotQuestState? state) &&
 								(((continuousAltgard || laterCapital != null) && NaturalAltgardContinuation.AllowsAutomaticCampaignUnlock(id, expected, state,
