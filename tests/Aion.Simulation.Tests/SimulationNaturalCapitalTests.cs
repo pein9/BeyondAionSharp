@@ -45,12 +45,16 @@ public sealed partial class SimulationFastScenarioTests
 							to = NaturalLaterCapitalSteps.DialogReapproachPosition(step.NpcId, session.Api.World.Objects[npc]);
 						BotNavigationGeometry geometry = BotNavigationGeometry.ForServerWorld(probe.Server.GetInstanceId(), Race.ASMODIANS);
 						IReadOnlyList<BotPosition> route = geometry.FindJourneyPath(step.MapId ?? 120010000, from, to);
-						Assert.True(route.Count > 0, $"Walker {step.NpcId}: no checked reapproach {from} -> {to}");
+						// Match the natural driver's waypoint interception: when already
+						// there, wait for the walker rather than demanding a nonempty move.
+						Assert.True(route.Count > 0 || NaturalFlightPolicy.Distance(from, to) <= 1,
+							$"Walker {step.NpcId}: no checked reapproach {from} -> {to}");
 						Console.WriteLine($"PC reapproach {step.NpcId}: {route.Count} checked points to {to}.");
 						if (session.Api.OpenDialogTargetId is int dialogTarget)
 							await session.SendPacketAsync(session.Api.CloseDialog(dialogTarget), token);
-						await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing)
-							.CreateGroundPlan(route, from, session.Api.World.MovementSpeed!.Value), token);
+						if (route.Count > 0)
+							await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing)
+								.CreateGroundPlan(route, from, session.Api.World.MovementSpeed!.Value), token);
 						await session.SynchronizeAsync(token);
 						await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
 					}

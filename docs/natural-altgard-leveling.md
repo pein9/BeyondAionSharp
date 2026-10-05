@@ -4790,6 +4790,34 @@ monitor enabled and announce its URL when a journey starts.
     (`focused-a2-fixed.log`, `*-final.log`, `warnings-a2.log`). Fast passes 95 tests,
     five guarded skips and all eleven scenarios (`run/rc11-fast/rc11-warlock-source/`).
     Full revised proof remains pending; commit and finish the rebuild before capture.
+  - 2026-10-05, fifteenth retained attempt: `rc11-full-create-s1-a15` on 4edad9e62
+    completes Q2282 once, then stops in Leg 10 at level 24/159 after four interrupted
+    Return casts. Twenty deaths (Leg 4 three, Leg 7 one, Leg 8 two, Leg 9 five,
+    Leg 10 nine), the original trace, failure audit and dropped-schema receipt remain
+    retained. Native Abija 153746/210751 stands about five metres away and sends
+    163 targeted Magic Missile windups and 162 results, with zero melee packets and
+    zero defensive attempts. Java's CreatureController/Skill cancellation, spell
+    packets, hostile skill data and NPC movement were read; server behavior matches.
+    The bot's shared engagement observation now includes targeted hostile spell
+    windups/results, preserving ordered return/delete disengagement and ignoring
+    self casts, friendly skills and ground targets. Navigation, combat, retreat and
+    rest use that observation; the existing Return retry bound is unchanged.
+    Free probe 251 proves native Magic Missile cancels Return, ordinary rest defence
+    kills its fresh Abija, and ordinary Return reaches the fortress with zero deaths
+    and retained journal/skills (`run/rc11-return-interrupt/native-probe.log`).
+    Twenty-seven focused tests pass. Public-restore Leg 10 passes at level 24/152
+    with four recorded deaths, Q2282 once and ordinary endpoint relog; owned schema
+    dropped (`l10-smoke/`, `smoke-audit.json`). The first Fast run is retained at
+    `run/rc11-fast/rc11-hostile-spells/`: 95 passes, one failed probe and five skips;
+    all eleven scenario ledgers pass, but the process correctly fails. Its book
+    probe rejects an empty route when already at Lusena's intercepted waypoint.
+    The probe now mirrors the production driver's existing one-metre allowance,
+    skips that empty movement and retains paced bounded dialog retries. Its focused
+    native book/surplus/relog proof passes (`book-waypoint.log`). Final Fast passes
+    96 tests, five guarded skips and all eleven scenarios; the book probe handles
+    eight zero-distance retries (`run/rc11-fast/rc11-hostile-spells-final/`). Seven
+    final pre-commit checks pass (`run/rc11-return-interrupt/*-final.log`). Full
+    revised proof still requires this committed repair and a completed rebuild.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5176,6 +5204,13 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: attempt fifteen completes the warlock hunt, then the bot
+  ignores a nearby spell-only attacker and exhausts its Return retries. Retain its
+  twenty deaths and cleanup. Recognize shipped hostile spell packets in ordinary
+  defence/rest; the native interruption/recovery probe and contained Leg 10 pass.
+  Retain Fast's separate book-probe waypoint failure and mirror the existing natural
+  retry allowance; its focused proof and final Fast (96/five skips/all eleven) pass,
+  as do the seven final checks. Full continuous proof remains pending.
 - 2026-10-05 RC-11 pending: attempt fourteen records fifteen deaths and stops at the
   original Leg 10 progress watchdog with two warlocks credited. Retain its trace and
   cleanup. Stop nested camp travel after revival and complete the existing single-spawn

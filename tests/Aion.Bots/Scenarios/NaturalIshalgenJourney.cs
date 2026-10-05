@@ -4444,7 +4444,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				var observed = navigator.Observe().Npcs.ToDictionary(npc => npc.ObjectId);
 				var active = new HashSet<int>();
 				NaturalCombatRetreatPolicy.ObserveEngagement(active, session.PacketHistory.TakeLast(400), session.CharacterId,
-					id => observed.TryGetValue(id, out var npc) ? runtime.Data.NpcDataDh.GetNpcTemplate(npc.TemplateId)?.GetL10n() : null);
+					id => observed.TryGetValue(id, out var npc) ? runtime.Data.NpcDataDh.GetNpcTemplate(npc.TemplateId)?.GetL10n() : null,
+					runtime.IsHostileSkill);
 				int[] attackers = active
 					.Where(id => observed.TryGetValue(id, out var npc) && Distance(session.CurrentPosition, npc.Position) < 30)
 					.ToArray();
@@ -7613,8 +7614,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// a walker that has been quiet for a while has arrived). Monsters that attacked the bot recently
 			// keep their reported position: their move target is the bot itself.
 			HashSet<int> attackers = session.PacketHistory.Skip(Math.Max(0, session.PacketHistory.Count - 400))
-				.Where(packet => packet.PacketType == typeof(SM_ATTACK) && packet.Get<int>("targetObjId") == session.CharacterId)
-				.Select(packet => packet.Get<int>("attackerObjId")).ToHashSet();
+				.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId))
+				.OfType<int>().ToHashSet();
 			return new(world.MapId, session.CurrentPosition, world.IsDead,
 				world.Objects.Values.Where(item => (item.Kind is BotKnownObjectKind.Npc or BotKnownObjectKind.Gatherable) &&
 					item.TemplateId != null && !item.IsCorpse &&
@@ -7870,9 +7871,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			}
 			if (defending || DefendOnAttackAsync == null || session.Api.World.IsDead) return;
 			int[] attackers = session.PacketHistory.Skip(packetStart)
-				.Where(packet => packet.PacketType == typeof(SM_ATTACK) &&
-					packet.Get<int>("targetObjId") == session.CharacterId)
-				.Select(packet => packet.Get<int>("attackerObjId")).Distinct().ToArray();
+				.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId)).OfType<int>().Distinct().ToArray();
 			if (attackers.Length == 0) return;
 			defending = true;
 			try
@@ -8076,16 +8075,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					$"dead={world.IsDead} pos={session.CurrentPosition}");
 				await session.SynchronizeAsync(token);
 				DecodedBotServerPacket[] recentPackets = session.PacketHistory.Skip(observedPacketCount).ToArray();
-				DecodedBotServerPacket[] recentAttacks = recentPackets
-					.Where(packet => packet.PacketType == typeof(SM_ATTACK) &&
-						packet.Get<int>("targetObjId") == session.CharacterId).ToArray();
+				int[] recentAttacks = recentPackets
+					.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId)).OfType<int>().ToArray();
 				NaturalCombatRetreatPolicy.ObserveEngagement(incomingAttackers,
-					recentPackets, session.CharacterId, LocalizedName);
+					recentPackets, session.CharacterId, LocalizedName, runtime.IsHostileSkill);
 				bool targetReturned = NaturalCombatRetreatPolicy.TargetReturned(recentPackets,
-					target, session.CharacterId, targetTemplate?.GetL10n());
-				foreach (DecodedBotServerPacket attack in recentAttacks)
+					target, session.CharacterId, targetTemplate?.GetL10n(), runtime.IsHostileSkill);
+				foreach (int attacker in recentAttacks)
 				{
-					int attacker = attack.Get<int>("attackerObjId");
 					if (attacker == target) lastHitByTargetMillis = runtime.NowMillis;
 				}
 				observedPacketCount = session.PacketHistory.Count;
@@ -8446,7 +8443,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await navigator.MoveAsync(segment, token);
 					await session.SynchronizeAsync(token);
 					NaturalCombatRetreatPolicy.ObserveEngagement(activeAttackers,
-						session.PacketHistory.Skip(packetStart), session.CharacterId);
+						session.PacketHistory.Skip(packetStart), session.CharacterId, hostileSkill: runtime.IsHostileSkill);
 					packetStart = session.PacketHistory.Count;
 					if (session.Api.World.CurrentHp <= 0 || session.Api.World.IsDead)
 					{
@@ -8680,8 +8677,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						lastPowderSkill = restSkill.Id;
 						await session.SynchronizeAsync(token);
 						int[] hitBy = session.PacketHistory.Skip(castStart)
-							.Where(packet => packet.PacketType == typeof(SM_ATTACK) && packet.Get<int>("targetObjId") == session.CharacterId)
-							.Select(packet => packet.Get<int>("attackerObjId")).Distinct().ToArray();
+							.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId)).OfType<int>().Distinct().ToArray();
 						if (hitBy.Length > 0)
 						{
 							// The hit cancelled the cast: never cast or sit under attack, fight first.
@@ -8744,9 +8740,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						await session.AdvanceAsync(duration, waitToken);
 						await session.SynchronizeAsync(waitToken);
 						int[] attackers = session.PacketHistory.Skip(attackHistoryStart)
-							.Where(packet => packet.PacketType == typeof(SM_ATTACK) &&
-								packet.Get<int>("targetObjId") == session.CharacterId)
-							.Select(packet => packet.Get<int>("attackerObjId")).ToArray();
+							.Select(packet => runtime.IncomingAttacker(packet, session.CharacterId)).OfType<int>().ToArray();
 						return new NaturalRestTick(world.IsDead || world.CurrentHp <= 0, attackers);
 					},
 					async (attackers, defendToken) =>

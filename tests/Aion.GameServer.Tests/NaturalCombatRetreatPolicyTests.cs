@@ -52,6 +52,33 @@ public sealed class NaturalCombatRetreatPolicyTests
 		new(typeof(SM_DELETE), new Dictionary<string, object?> { ["objectId"] = npc });
 
 	[Fact]
+	public void HostileSpellWindupAndResultReengageButHealingAndOtherTargetsDoNot()
+	{
+		// A15: native Abija 153746 casts DIRECT Magic Missile 16639 at the player.
+		bool Hostile(int skill) => skill == 16639;
+		var active = new HashSet<int>();
+		NaturalCombatRetreatPolicy.ObserveEngagement(active, [Spell(101, 7, 16639)], 7, hostileSkill: Hostile);
+		Assert.Equal([101], active);
+		NaturalCombatRetreatPolicy.ObserveEngagement(active,
+			[Emotion(101, EmotionType.NEUTRALMODE_IN_MOVE), Spell(101, 7, 16639, result: true)], 7, hostileSkill: Hostile);
+		Assert.Equal([101], active);
+		Assert.False(NaturalCombatRetreatPolicy.TargetReturned(
+			[Emotion(101, EmotionType.NEUTRALMODE_IN_MOVE), Spell(101, 7, 16639)], 101, 7, null, Hostile));
+		NaturalCombatRetreatPolicy.ObserveEngagement(active,
+			[Emotion(101, EmotionType.NEUTRALMODE_IN_MOVE), Spell(102, 7, 1842), Spell(103, 8, 16639),
+			 Spell(7, 7, 16639), Spell(104, 7, 16639, ground: true)], 7, hostileSkill: Hostile);
+		Assert.Empty(active);
+	}
+
+	private static DecodedBotServerPacket Spell(int caster, int target, ushort skill,
+		bool result = false, bool ground = false) => new(result ? typeof(SM_CASTSPELL_RESULT) : typeof(SM_CASTSPELL),
+		new Dictionary<string, object?>
+		{
+			[result ? "effectorId" : "objectId"] = caster, ["targetType"] = (byte)(ground ? 1 : 0),
+			[result ? "targetId" : "targetObjectId"] = target, [result ? "skillId" : "spellId"] = skill,
+		});
+
+	[Fact]
 	public void DecodedNamedReturnEndsTheFightButALaterAttackReengagesIt()
 	{
 		// Java ChatUtil.l10n(307881), Gulux's shipped name ID: '$' plus the two encoded chars.

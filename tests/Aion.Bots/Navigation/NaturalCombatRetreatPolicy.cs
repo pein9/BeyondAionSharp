@@ -34,12 +34,13 @@ public static class NaturalCombatRetreatPolicy
 	/// NEUTRALMODE_IN_MOVE when an NPC returns or idles; a later attack re-engages it.
 	/// SM_DELETE also ends the client's observation of that pursuer.</summary>
 	public static void ObserveEngagement(HashSet<int> attackers,
-		IEnumerable<DecodedBotServerPacket> packets, int characterId, Func<int, string?>? localizedName = null)
+		IEnumerable<DecodedBotServerPacket> packets, int characterId, Func<int, string?>? localizedName = null,
+		Func<int, bool>? hostileSkill = null)
 	{
 		foreach (DecodedBotServerPacket packet in packets)
 		{
-			if (packet.PacketType == typeof(SM_ATTACK) && packet.Get<int>("targetObjId") == characterId)
-				attackers.Add(packet.Get<int>("attackerObjId"));
+			if (IncomingAttacker(packet, characterId, hostileSkill) is int attacker)
+				attackers.Add(attacker);
 			else if (packet.PacketType == typeof(SM_EMOTION) &&
 				packet.Get<byte>("emotionType") == (byte)EmotionType.NEUTRALMODE_IN_MOVE)
 				attackers.Remove(packet.Get<int>("senderObjectId"));
@@ -55,7 +56,7 @@ public static class NaturalCombatRetreatPolicy
 	/// <summary>Stop attacking a monster that the client observed giving up. Never count this
 	/// as a kill. A subsequent swing at this player cancels the earlier return observation.</summary>
 	public static bool TargetReturned(IEnumerable<DecodedBotServerPacket> packets, int target,
-		int characterId, string? localizedName)
+		int characterId, string? localizedName, Func<int, bool>? hostileSkill = null)
 	{
 		bool returned = false;
 		foreach (DecodedBotServerPacket packet in packets)
@@ -64,11 +65,30 @@ public static class NaturalCombatRetreatPolicy
 				packet.Get<byte>("emotionType") == (byte)EmotionType.NEUTRALMODE_IN_MOVE ||
 				IsReturnMessage(packet, localizedName))
 				returned = true;
-			else if (packet.PacketType == typeof(SM_ATTACK) && packet.Get<int>("attackerObjId") == target &&
-				packet.Get<int>("targetObjId") == characterId)
+			else if (IncomingAttacker(packet, characterId, hostileSkill) == target)
 				returned = false;
 		}
 		return returned;
+	}
+
+	/// <summary>Java broadcasts targeted spell windups and results separately from SM_ATTACK.
+	/// Only a shipped hostile skill aimed at this character is engagement; heals, buffs,
+	/// self casts and ground targets are not evidence of an incoming attack.</summary>
+	public static int? IncomingAttacker(DecodedBotServerPacket packet, int characterId,
+		Func<int, bool>? hostileSkill)
+	{
+		if (packet.PacketType == typeof(SM_ATTACK) && packet.Get<int>("targetObjId") == characterId)
+			return packet.Get<int>("attackerObjId");
+		if (hostileSkill == null) return null;
+		if (packet.PacketType == typeof(SM_CASTSPELL) && packet.Get<byte>("targetType") is 0 or 3 or 4 &&
+			packet.Get<int>("targetObjectId") == characterId && packet.Get<int>("objectId") != characterId &&
+			hostileSkill(packet.Get<ushort>("spellId")))
+			return packet.Get<int>("objectId");
+		if (packet.PacketType == typeof(SM_CASTSPELL_RESULT) && packet.Get<byte>("targetType") is 0 or 3 or 4 &&
+			packet.Get<int>("targetId") == characterId && packet.Get<int>("effectorId") != characterId &&
+			hostileSkill(packet.Get<ushort>("skillId")))
+			return packet.Get<int>("effectorId");
+		return null;
 	}
 
 	private static bool IsReturnMessage(DecodedBotServerPacket packet, string? localizedName) =>
