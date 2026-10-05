@@ -104,6 +104,11 @@ public sealed class NaturalLaterCapitalContractTests
 			Assert.True(receipt.RootElement.GetProperty("verified").GetBoolean());
 			Assert.Equal("l7", receipt.RootElement.GetProperty("segment").GetString());
 			Assert.Equal(42, receipt.RootElement.GetProperty("after").GetProperty("characterId").GetInt32());
+			await Contract.Value.WriteCheckpointAsync(directory, "l7", before, fresh, CancellationToken.None, distinctSegment: true);
+			string original = File.ReadAllText(Path.Combine(directory, "later-capital-l7-checkpoint.json"));
+			await Contract.Value.WriteCheckpointAsync(directory, "l8", before, fresh, CancellationToken.None, distinctSegment: true);
+			Assert.Equal(original, File.ReadAllText(Path.Combine(directory, "later-capital-l7-checkpoint.json")));
+			Assert.Contains("\"segment\":\"l8\"", File.ReadAllText(Path.Combine(directory, "later-capital-l8-checkpoint.json")));
 			await Assert.ThrowsAsync<InvalidDataException>(() => Contract.Value.WriteCheckpointAsync(directory, "l7", before,
 				fresh with { Inventory = [] }, CancellationToken.None));
 		}

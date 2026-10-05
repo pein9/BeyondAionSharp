@@ -4476,12 +4476,26 @@ monitor enabled and announce its URL when a journey starts.
     and trace/SQL/historical-hash audit pass on base 37e199733; both owned proof
     schemas are dropped (`run/rc09-finishes/audit.json`). Final Fast passes
     92 tests/five guarded skips/all eleven scenarios (`run/rc09-fast/rc09-finishes/`).
-- [ ] **RC-10 - Join the revised stages and audit their evidence.** Depends RC-09.
+- [x] **RC-10 - Join the revised stages and audit their evidence.** Depends RC-09.
   Integrate early Ascension, first capital, retained Ishalgen, the nine additions and
   existing Altgard/coin/Haramel stages in the continuous harness. Verify the carried
   prerequisites and distinct segment receipts; include all city maps, protected items,
   exact one-time completions and cumulative outcomes in its audit. Complete the focused
   continuation/checkpoint checks and required pre-commit checks before the full run.
+  - 2026-10-05: the continuous opt-in retains separate bridge/l1-l12/cg carried-state
+    receipts, the ten first-capital payments and nine later-capital payments, and each
+    stage's observed level/XP/Kinah. Its audit requires the exact 176-quest combined
+    scope once, all eight visited maps, protected items, retained staff/three chain
+    purchases and both Haramel visits; deaths and timed/escort/carrier outcomes remain
+    recorded outcomes. Consumable supply provenance, use attempts and inventory removals
+    are separate fields because mixed stacks cannot identify a supplied unit's use.
+    `run-natural-complete.ps1 -LaterCapital -SnapshotName <unused-name>` runs a fresh
+    owned schema without restores and captures that same committed-code endpoint before
+    dropping it. The continuous receipt is hashed and required on restore. Java's XP
+    table was read; no server behavior/content changes. Sixty focused tests, snapshot
+    contract, audit syntax/scope review and seven pre-commit checks pass on 597797164
+    (`run/rc10-join/`); Fast passes 92 tests/five guarded skips/all eleven scenarios
+    (`run/rc10-fast/rc10-join/`). The revised full gameplay proof belongs to RC-11.
 - [ ] **RC-11 - Prove one revised continuous fresh-create SIM.** Depends RC-10.
   Run seed 1 from character creation through both Haramel visits in one owned schema,
   character and game clock, without restores. Record per-stage XP/level, actual regular

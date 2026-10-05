@@ -39,6 +39,7 @@ param(
 	[switch]$Bridge,
 	[switch]$AltgardLeg1,
 	[switch]$LaterCapital,
+	[switch]$ContinuousJourney,
 	[string]$From = 'altgard',
 	[ValidateSet('l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'cg', 'l12')]
 	[string]$Leg = 'l1',
@@ -58,7 +59,10 @@ if ($CapitalStage -and ($Bridge -or $AltgardLeg1 -or $Action -ne 'Capture')) {
 	throw 'CapitalStage is a contained Capture scope and cannot be combined with Bridge or AltgardLeg1.'
 }
 if ($CapitalRelogAt -and $CapitalStage -ne 'first') { throw 'CapitalRelogAt requires CapitalStage first.' }
-if ($LaterCapital -and ($Action -ne 'Capture' -or $CapitalStage -or (-not $Bridge -and -not $AltgardLeg1))) {
+if ($ContinuousJourney -and ($Action -ne 'Capture' -or $Bridge -or $AltgardLeg1 -or $CapitalStage -or -not $LaterCapital)) {
+	throw 'ContinuousJourney requires a revised fresh Capture with LaterCapital and no other starting scope.'
+}
+if ($LaterCapital -and ($Action -ne 'Capture' -or $CapitalStage -or (-not $Bridge -and -not $AltgardLeg1 -and -not $ContinuousJourney))) {
 	throw 'LaterCapital requires a bridge or Altgard Capture, without a contained capital checkpoint.'
 }
 
@@ -122,6 +126,18 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 	$hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $dump).Hash.ToLowerInvariant()
 	if ($hash -ne $metadata.dumpSha256) { throw "Snapshot $Name dump hash changed; refusing to restore an edited snapshot." }
 	$haramelProgress = $null
+	if ($metadata.PSObject.Properties.Name -contains 'continuousJourney' -and $metadata.continuousJourney) {
+		$continuousFile = Join-Path $directory 'continuous-completion.json'
+		if (-not (Test-Path -LiteralPath $continuousFile) -or $metadata.PSObject.Properties.Name -notcontains 'continuousCompletionSha256' -or
+			(Get-FileHash -Algorithm SHA256 -LiteralPath $continuousFile).Hash.ToLowerInvariant() -ne $metadata.continuousCompletionSha256) {
+			throw 'Continuous snapshot is missing its unchanged completion receipt.'
+		}
+		$continuous = Get-Content -Raw -LiteralPath $continuousFile | ConvertFrom-Json
+		if (-not $continuous.verified -or -not $continuous.CreatedCharacter -or -not $continuous.LaterCapital -or
+			$continuous.CharacterId -ne $metadata.characterId -or $metadata.source -ne 'natural-altgard-l12' -or $continuous.stages.Count -ne 14) {
+			throw 'Continuous snapshot has an invalid journey identity or scope.'
+		}
+	}
 	$laterCapital = $metadata.PSObject.Properties.Name -contains 'laterCapital' -and $metadata.laterCapital
 	if ($laterCapital) {
 		$laterReceipt = Join-Path $directory 'later-capital-checkpoint.json'
@@ -341,6 +357,12 @@ try {
 			if ($LASTEXITCODE -ne 0) { throw 'Could not create the owned capture schema.' }
 			try {
 				$prefixExtra = if ($Bridge) { @{ NA_ASCENSION = '1' } } else { @{} }
+				if ($ContinuousJourney) {
+					$prefixExtra = @{ NA_ASCENSION = '1'; AF_ALTGARD = 'all' }
+					New-Item -ItemType Directory -Force -Path $evidence | Out-Null
+					@{ database=$db; owned=$true; createdFresh=$true; restored=$false; elapsedMillis=0 } |
+						ConvertTo-Json | Set-Content -LiteralPath (Join-Path $evidence 'schema-provenance.json')
+				}
 				if ($LaterCapital) { $prefixExtra.RC_CAPITAL = '1' }
 				Invoke-NaturalJourney $db $Run $evidence $prefixExtra
 				$clock = Get-Content -Raw -LiteralPath (Join-Path $evidence 'completion-clock.json') | ConvertFrom-Json
@@ -358,6 +380,14 @@ try {
 					}
 					$clock = $bridgeCompletion
 				}
+				if ($ContinuousJourney) {
+					$continuousFile = Join-Path $evidence 'continuous-completion.json'
+					$clock = Get-Content -Raw -LiteralPath $continuousFile | ConvertFrom-Json
+					if (-not $clock.verified -or -not $clock.CreatedCharacter -or -not $clock.LaterCapital -or
+						$clock.CharacterId -ne $completion.CharacterId -or $clock.stages.Count -ne 14) {
+						throw 'The revised continuous journey did not reach its verified fresh-character endpoint.'
+					}
+				}
 				New-Item -ItemType Directory -Path $directory | Out-Null
 				$remote = "/tmp/$db.sql.gz"
 				Invoke-Docker @('exec', '-e', "MYSQL_PWD=$RootPassword", $ContainerName, 'sh', '-c',
@@ -366,10 +396,15 @@ try {
 				Invoke-Docker @('exec', $ContainerName, 'rm', '-f', $remote)
 				Copy-Item -LiteralPath (Join-Path $evidence 'completion.json') -Destination $directory
 				if ($Bridge) { Copy-Item -LiteralPath (Join-Path $evidence 'bridge-completion.json') -Destination $directory }
+				if ($ContinuousJourney) {
+					foreach ($receipt in @('continuous-completion.json', 'altgard-l12-completion.json', 'haramel-progress.json')) {
+						Copy-Item -LiteralPath (Join-Path $evidence $receipt) -Destination $directory
+					}
+				}
 				$prefixMetadata = [ordered]@{
 					schemaVersion = 1
 					name = $Name
-					source = $(if ($Bridge) { 'natural-journey-ascension-bridge' } else { 'natural-ishalgen-journey' })
+					source = $(if ($ContinuousJourney) { 'natural-altgard-l12' } elseif ($Bridge) { 'natural-journey-ascension-bridge' } else { 'natural-ishalgen-journey' })
 					run = $Run
 					seed = $Seed
 					gitSha = (& git -C $repoRoot rev-parse HEAD).Trim()
@@ -379,11 +414,20 @@ try {
 					dumpSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $directory 'dump.sql.gz')).Hash.ToLowerInvariant()
 				}
 				if ($LaterCapital) { Save-LaterCapitalCheckpoint $directory $evidence $prefixMetadata }
+				if ($ContinuousJourney) {
+					$prefixMetadata.continuousJourney = $true
+					$prefixMetadata.continuousCompletionSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $continuousFile).Hash.ToLowerInvariant()
+					$prefixMetadata.haramelProgressSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $directory 'haramel-progress.json')).Hash.ToLowerInvariant()
+				}
 				$prefixMetadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $directory 'snapshot.json') -Encoding utf8
 				Write-Host "Captured snapshot $Name (character $($completion.CharacterId)) in $directory"
 			}
 			finally {
 				Remove-OwnedDatabase $db
+				if ($ContinuousJourney) {
+					@{ database=$db; owned=$true; dropped=$true } | ConvertTo-Json |
+						Set-Content -LiteralPath (Join-Path $evidence 'schema-cleanup.json')
+				}
 			}
 		}
 		'Restore' {

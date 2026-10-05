@@ -1113,9 +1113,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					try
 					{
+						long xp = ObservedExperience(), kinah = session.Api.World.Kinah;
+						bool completedBefore = session.Api.World.CompletedQuestIds.Contains(step.QuestId);
 						if (step.NpcId == 700212) await NaturalLaterCapitalSteps.ReadQuestBookAsync(session, step, npc, token);
 						else session.TraceDiagnostic("later-capital-step", new Dictionary<string, object?>
 							{ ["change"] = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token) });
+						if (!completedBefore && session.Api.World.CompletedQuestIds.Contains(step.QuestId))
+							session.TraceDiagnostic("later-capital-payment", new Dictionary<string, object?>
+							{ ["quest"] = step.QuestId, ["experience"] = ObservedExperience() - xp, ["kinah"] = session.Api.World.Kinah - kinah });
 						return;
 					}
 					catch (NaturalDialogTooFarException) when (attempt < 3)
@@ -1335,7 +1340,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							"The capital start must retain unfinished Ishalgen and precede every first-pass completion.");
 						throw new NaturalCapitalCheckpointStopException("start");
 					}
+					long capitalStartExperience = ObservedExperience();
 					await RunCapitalPassAsync();
+					if (continuousAltgard && laterCapital != null)
+						await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "capital-pass-completion.json"),
+							System.Text.Json.JsonSerializer.Serialize(new { verified = true, session.CharacterId, before = capitalBefore,
+								after = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId, session.ConnectionGeneration,
+									contract, session.CurrentPosition, earlyAscension: true),
+								StartingExperience = capitalStartExperience, Experience = ObservedExperience(),
+								Payments = capitalPayments.Values.OrderBy(p => p.QuestId).ToArray(), TransportFares = capitalFares }), token);
 					if (session.Api.World.MapId == 120010000) await TakeCeremonyTeleporterAsync(toIshalgen: true);
 					Require.Equal(contract.MapId, session.Api.World.MapId!.Value);
 					geometry = runtime.CreateGeometry();
@@ -1453,7 +1466,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				int characterId = session.CharacterId;
 				var stages = new List<object>();
 				stages.Add(new { Stage = "ishalgen-ascension", CharacterId = characterId, ElapsedMillis = runtime.NowMillis,
-					Deaths = combat.ReviveCount, Completed = session.Api.World.CompletedQuestIds.Count });
+					Deaths = combat.ReviveCount, Completed = session.Api.World.CompletedQuestIds.Count,
+					Level = session.Api.World.Level, Experience = ObservedExperience(), Kinah = session.Api.World.Kinah });
 				foreach (string id in NaturalAltgardContinuation.Order)
 				{
 					await session.SynchronizeAsync(token);
@@ -1481,20 +1495,28 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					haramelKind = null;
 					long started = runtime.NowMillis;
 					int deathsBefore = combat.ReviveCount;
+					ushort startedLevel = session.Api.World.Level;
+					long startedExperience = ObservedExperience(), startedKinah = session.Api.World.Kinah;
 					session.TraceDiagnostic("continuous-leg-start", new Dictionary<string, object?>
 					{ ["leg"] = id, ["characterId"] = characterId, ["elapsedMillis"] = started, ["deaths"] = deathsBefore });
 					Console.WriteLine($"Continuous SIM: starting {id}, level {session.Api.World.Level}, {session.Api.World.CompletedQuestIds.Count} completions.");
 					await RunAltgardLeg1Async();
 					Require.All(altgardLeg.Start.CompletedQuestIds, quest => Require.Contains(quest, session.Api.World.CompletedQuestIds));
 					stages.Add(new { Stage = id, CharacterId = characterId, StartedMillis = started, ElapsedMillis = runtime.NowMillis,
-						Deaths = combat.ReviveCount, NewDeaths = combat.ReviveCount - deathsBefore, Completed = session.Api.World.CompletedQuestIds.Count });
+						Deaths = combat.ReviveCount, NewDeaths = combat.ReviveCount - deathsBefore, Completed = session.Api.World.CompletedQuestIds.Count,
+						StartedLevel = startedLevel, StartedExperience = startedExperience, StartedKinah = startedKinah,
+						Level = session.Api.World.Level, Experience = ObservedExperience(), Kinah = session.Api.World.Kinah });
 					await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "continuous-progress.json"),
 						System.Text.Json.JsonSerializer.Serialize(new { CharacterId = characterId, stages }), token);
 				}
 				Require.Equal(1, session.Api.World.CompletedQuestCounts.GetValueOrDefault(2217));
+				if (laterCapital != null)
+					Require.All(laterCapital.CompletedQuestIds, id => Require.Equal(1, session.Api.World.CompletedQuestCounts.GetValueOrDefault(id)));
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "continuous-completion.json"),
 					System.Text.Json.JsonSerializer.Serialize(new { verified = true, CreatedCharacter = true, CharacterId = characterId,
-						ElapsedMillis = runtime.NowMillis, Deaths = combat.ReviveCount, stages,
+						ElapsedMillis = runtime.NowMillis, Deaths = combat.ReviveCount, stages, LaterCapital = laterCapital != null,
+						Experience = ObservedExperience(), ExperienceToNextLevel = runtime.Data.PlayerExperienceTable.GetStartExpForLevel(session.Api.World.Level + 1) - ObservedExperience(),
+						ExperienceToLevel32 = Math.Max(0, runtime.Data.PlayerExperienceTable.GetStartExpForLevel(32) - ObservedExperience()),
 						Endpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, characterId, session.ConnectionGeneration,
 							contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge) }), token);
 			}
@@ -3466,7 +3488,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				NaturalJourneyPersistence.Verify(before, after);
 				VerifyDestinyEndpoint();
 				if (laterCapital != null) await laterCapital.WriteCheckpointAsync(Path.GetDirectoryName(combatTracePath)!,
-					altgardLegId!, before, after, token);
+					altgardLegId!, before, after, token, distinctSegment: continuousAltgard);
 				VerifyCoinEndpoint();
 				VerifyHaramelEndpoint();
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, $"altgard-{altgardLegId}-completion.json"),
@@ -3644,7 +3666,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.ConnectionGeneration, contract, session.CurrentPosition, coinGearProgress: coinGearProgress, haramelProgress: haramelProgress, earlyAscension: options.AscensionBridge);
 				NaturalJourneyPersistence.Verify(before, after);
 				if (laterCapital != null) await laterCapital.WriteCheckpointAsync(Path.GetDirectoryName(combatTracePath)!,
-					"bridge", before, after, token);
+					"bridge", before, after, token, distinctSegment: continuousAltgard);
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, "bridge-completion.json"),
 					System.Text.Json.JsonSerializer.Serialize(new
 					{

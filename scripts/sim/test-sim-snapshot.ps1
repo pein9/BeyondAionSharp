@@ -69,6 +69,11 @@ try {
 	Assert-Throws { & $script -Action Restore -Name altgard-rc-prefix -Docker $fake -SnapshotRoot $snapshots } '*missing its later capital receipt*' 'Missing later capital state was restored.'
 	Assert-True (-not (Test-Path -LiteralPath $log)) 'Edited/missing later capital state touched MySQL.'
 	Assert-Throws { & $script -Action Capture -Name later-conflict -LaterCapital -CapitalStage first -Docker $fake -SnapshotRoot $snapshots -NoBuild } '*LaterCapital requires*' 'Later capital capture combined unrelated scopes.'
+	Assert-Throws { & $script -Action Capture -Name continuous-conflict -ContinuousJourney -Bridge -LaterCapital -Docker $fake -SnapshotRoot $snapshots -NoBuild } '*ContinuousJourney requires*' 'Continuous capture combined a bridge starting scope.'
+	Assert-Throws { & $script -Action Capture -Name continuous-conflict -ContinuousJourney -Docker $fake -SnapshotRoot $snapshots -NoBuild } '*ContinuousJourney requires*' 'Continuous capture omitted the revised scope.'
+	$laterMetadata.continuousJourney = $true
+	$laterMetadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $later 'snapshot.json')
+	Assert-Throws { & $script -Action Restore -Name altgard-rc-prefix -Docker $fake -SnapshotRoot $snapshots } '*unchanged completion receipt*' 'Continuous restore accepted a missing completion receipt.'
 
 	# Both capital endpoints require immutable relog evidence and select only the capital segment.
 	foreach ($stage in @('start', 'first')) {
