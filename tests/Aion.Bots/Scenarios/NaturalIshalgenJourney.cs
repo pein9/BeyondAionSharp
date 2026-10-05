@@ -3441,6 +3441,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 									if (robber == null) break;
 									if (await PullAndKillAsync(robber.Npc.ObjectId, $"escort-{escort.Key}-clear"))
 									{
+										// RC-11: a looted corpse can remain in view; clear a live source only once.
+										navigator.UnavailableObjects.Add(robber.Npc.ObjectId);
+										session.TraceDiagnostic("escort-clear-retire-killed-source", new Dictionary<string, object?>
+										{
+											["escort"] = escort.Key, ["objectId"] = robber.Npc.ObjectId, ["npcId"] = robber.Npc.TemplateId,
+										});
 										firstKill ??= runtime.NowMillis;
 										kills++;
 									}

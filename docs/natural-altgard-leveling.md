@@ -4624,6 +4624,23 @@ monitor enabled and announce its URL when a journey starts.
     endpoint relog and schema dropped (`run/rc11-bind-view/l8-smoke/`). Fast passes
     94 tests/five guarded skips/all eleven scenarios (`run/rc11-fast/rc11-bind-view/`).
     Full revised proof remains pending; commit and finish the rebuild before capture.
+  - 2026-10-05, eighth retained attempt: `rc11-full-create-s1-a8` on 97612916d
+    completes Legs 1-5 and reaches Leg 6 at level 21 with 117 completions and two
+    deaths, both in Leg 4. Q2284 remains START/1: no Germir follow attempt has begun.
+    Eight pre-escort clear passes make 237 kill claims across 48 sources; looted
+    corpses remaining in view are selected again, and the ordinary one-hour watchdog
+    stops the clearing loop. The failed trace/audit and dropped-schema receipt remain
+    intact. Java Q2284 permits the
+    ordinary 1->2 follow start, then reach/loss hooks produce reward or restart;
+    the trace proves real HP-zero/loot evidence before repeated corpse claims.
+    Successful escort-clear kills now retire their source from navigation, just as
+    other successful pulls do. Public Restore of altgard-rc-l5-materials proves the
+    contained Leg 6 at level 21 with 109 completions, zero deaths, three distinct
+    retired sources, one successful 47.138-second escort, endpoint relog and schema
+    dropped (`run/rc11-escort-corpses/l6-smoke/`). Fifty-six focused tests and seven
+    pre-commit checks pass. Fast passes 94 tests/five guarded skips/all eleven
+    scenarios (`run/rc11-fast/rc11-escort-corpses/`). Full revised proof remains
+    pending; commit and finish the rebuild before capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5010,6 +5027,10 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: attempt eight stalls before Germir's escort starts,
+  repeatedly selecting looted corpses during route clearing. Retire each successful
+  clear source. The contained Leg 6 passes with three distinct sources, one successful
+  escort and zero deaths; retain the full failure's two deaths and cleanup. RC-11 stays open.
 - 2026-10-05 RC-11 pending: attempt seven retains a pre-bind-revive assassin in
   Leg 8 and receives an invalid-target cast rejection. Drop the view on every natural
   bind revive; a free-account native recovery probe and 89 focused tests pass.
