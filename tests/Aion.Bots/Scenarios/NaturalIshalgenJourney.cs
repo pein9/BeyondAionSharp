@@ -4378,9 +4378,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			(int[] Attackers, int[] Pursuers) Engaged()
 			{
 				var observed = navigator.Observe().Npcs.ToDictionary(npc => npc.ObjectId);
-				int[] attackers = session.PacketHistory.TakeLast(400)
-					.Where(packet => packet.PacketType == typeof(SM_ATTACK) && packet.Get<int>("targetObjId") == session.CharacterId)
-					.Select(packet => packet.Get<int>("attackerObjId")).Distinct()
+				var active = new HashSet<int>();
+				NaturalCombatRetreatPolicy.ObserveEngagement(active, session.PacketHistory.TakeLast(400), session.CharacterId,
+					id => observed.TryGetValue(id, out var npc) ? runtime.Data.NpcDataDh.GetNpcTemplate(npc.TemplateId)?.GetL10n() : null);
+				int[] attackers = active
 					.Where(id => observed.TryGetValue(id, out var npc) && Distance(session.CurrentPosition, npc.Position) < 30)
 					.ToArray();
 				int[] pursuers = ObservedPullMonsters()
@@ -7977,11 +7978,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				trace.Add($"t{turn}:pre-sync hp={world.CurrentHp}/{world.MaxHp} mp={world.CurrentMp}/{world.MaxMp} " +
 					$"dead={world.IsDead} pos={session.CurrentPosition}");
 				await session.SynchronizeAsync(token);
-				DecodedBotServerPacket[] recentAttacks = session.PacketHistory.Skip(observedPacketCount)
+				DecodedBotServerPacket[] recentPackets = session.PacketHistory.Skip(observedPacketCount).ToArray();
+				DecodedBotServerPacket[] recentAttacks = recentPackets
 					.Where(packet => packet.PacketType == typeof(SM_ATTACK) &&
 						packet.Get<int>("targetObjId") == session.CharacterId).ToArray();
 				NaturalCombatRetreatPolicy.ObserveEngagement(incomingAttackers,
-					session.PacketHistory.Skip(observedPacketCount), session.CharacterId);
+					recentPackets, session.CharacterId, LocalizedName);
+				bool targetReturned = NaturalCombatRetreatPolicy.TargetReturned(recentPackets,
+					target, session.CharacterId, targetTemplate?.GetL10n());
 				foreach (DecodedBotServerPacket attack in recentAttacks)
 				{
 					int attacker = attack.Get<int>("attackerObjId");
@@ -8008,6 +8012,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				// pays no experience, so SM_STATUPDATE_EXP never comes; SM_DELETE follows the death status).
 				if (world.CurrentExperience > startingExperience || world.LootStatuses.ContainsKey(target) ||
 					observedTargetHpPercent == 0) return true;
+				if (targetReturned)
+				{
+					session.TraceDiagnostic("combat-target-returned", new Dictionary<string, object?>
+					{
+						["targetObjectId"] = target, ["npcId"] = targetTemplate?.GetTemplateId(),
+						["clientObservedKill"] = false,
+					});
+					return false; // Ordinary give-up, not a corpse: let the caller resume/re-plan.
+				}
 				if (!world.Objects.TryGetValue(target, out BotKnownObject? npc))
 					return false; // Reacquire a new client-observed mob; do not count this as a kill.
 				DateTimeOffset now = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
@@ -8225,6 +8238,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				}
 			}
 			throw new InvalidDataException($"Natural Priest exceeded {MaximumCombatActions} actions without a client-observed NPC kill.");
+
+			string? LocalizedName(int id) => world.Objects.TryGetValue(id, out BotKnownObject? known) && known.TemplateId is int kind
+				? runtime.Data.NpcDataDh.GetNpcTemplate(kind)?.GetL10n() : null;
 		}
 
 		/// <summary>Where an attacker was when the bot first saw it: SM_NPC_INFO arrives as the NPC enters view,

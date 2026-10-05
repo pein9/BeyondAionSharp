@@ -52,6 +52,34 @@ public sealed class NaturalCombatRetreatPolicyTests
 		new(typeof(SM_DELETE), new Dictionary<string, object?> { ["objectId"] = npc });
 
 	[Fact]
+	public void DecodedNamedReturnEndsTheFightButALaterAttackReengagesIt()
+	{
+		// Java ChatUtil.l10n(307881), Gulux's shipped name ID: '$' plus the two encoded chars.
+		const string gulux = "$\u6553\u0009";
+		DecodedBotServerPacket returned = ReturnMessage(gulux);
+		Assert.True(NaturalCombatRetreatPolicy.TargetReturned([Attack(101), returned], 101, 7, gulux));
+		Assert.False(NaturalCombatRetreatPolicy.TargetReturned([returned, Attack(101)], 101, 7, gulux));
+		Assert.False(NaturalCombatRetreatPolicy.TargetReturned([ReturnMessage("another NPC")], 101, 7, gulux));
+		Assert.False(NaturalCombatRetreatPolicy.TargetReturned([Emotion(102, EmotionType.NEUTRALMODE_IN_MOVE)], 101, 7, gulux));
+		Assert.True(NaturalCombatRetreatPolicy.TargetReturned([Emotion(101, EmotionType.NEUTRALMODE_IN_MOVE)], 101, 7, gulux));
+		var active = new HashSet<int>();
+		NaturalCombatRetreatPolicy.ObserveEngagement(active, [Attack(101), Attack(102), returned], 7,
+			id => id == 101 ? gulux : "another NPC");
+		Assert.Equal([102], active);
+		NaturalCombatRetreatPolicy.ObserveEngagement(active, [Attack(101)], 7, _ => gulux);
+		Assert.Equal([101, 102], active.Order());
+	}
+
+	private static DecodedBotServerPacket ReturnMessage(string name)
+	{
+		using var stream = new MemoryStream();
+		using var writer = new BinaryWriter(stream);
+		writer.Write((byte)25); writer.Write((byte)0); writer.Write(0); writer.Write(1300039); writer.Write((byte)1);
+		writer.Write(System.Text.Encoding.Unicode.GetBytes(name + "\0")); writer.Write((byte)0);
+		return new BotServerPacketDecoder().Decode(typeof(SM_SYSTEM_MESSAGE), stream.ToArray());
+	}
+
+	[Fact]
 	public void SamePositionRefugeFallsBackToWalkedGroundOutsideObservedPack()
 	{
 		BotPosition current = At(762, 1502);

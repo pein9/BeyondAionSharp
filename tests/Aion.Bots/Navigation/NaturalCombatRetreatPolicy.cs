@@ -34,7 +34,7 @@ public static class NaturalCombatRetreatPolicy
 	/// NEUTRALMODE_IN_MOVE when an NPC returns or idles; a later attack re-engages it.
 	/// SM_DELETE also ends the client's observation of that pursuer.</summary>
 	public static void ObserveEngagement(HashSet<int> attackers,
-		IEnumerable<DecodedBotServerPacket> packets, int characterId)
+		IEnumerable<DecodedBotServerPacket> packets, int characterId, Func<int, string?>? localizedName = null)
 	{
 		foreach (DecodedBotServerPacket packet in packets)
 		{
@@ -45,8 +45,36 @@ public static class NaturalCombatRetreatPolicy
 				attackers.Remove(packet.Get<int>("senderObjectId"));
 			else if (packet.PacketType == typeof(SM_DELETE))
 				attackers.Remove(packet.Get<int>("objectId"));
+			else if (localizedName != null && packet.PacketType == typeof(SM_SYSTEM_MESSAGE))
+				// Java EmoteManager addresses this message to the former player target. It carries
+				// a localized NPC name, not an object ID; later actual hits restore any engagement.
+				attackers.RemoveWhere(id => IsReturnMessage(packet, localizedName(id)));
 		}
 	}
+
+	/// <summary>Stop attacking a monster that the client observed giving up. Never count this
+	/// as a kill. A subsequent swing at this player cancels the earlier return observation.</summary>
+	public static bool TargetReturned(IEnumerable<DecodedBotServerPacket> packets, int target,
+		int characterId, string? localizedName)
+	{
+		bool returned = false;
+		foreach (DecodedBotServerPacket packet in packets)
+		{
+			if (packet.PacketType == typeof(SM_EMOTION) && packet.Get<int>("senderObjectId") == target &&
+				packet.Get<byte>("emotionType") == (byte)EmotionType.NEUTRALMODE_IN_MOVE ||
+				IsReturnMessage(packet, localizedName))
+				returned = true;
+			else if (packet.PacketType == typeof(SM_ATTACK) && packet.Get<int>("attackerObjId") == target &&
+				packet.Get<int>("targetObjId") == characterId)
+				returned = false;
+		}
+		return returned;
+	}
+
+	private static bool IsReturnMessage(DecodedBotServerPacket packet, string? localizedName) =>
+		localizedName != null && packet.PacketType == typeof(SM_SYSTEM_MESSAGE) &&
+		packet.Get<object>("name") is "STR_UI_COMBAT_NPC_RETURN" &&
+		packet.Get<string[]>("params").Contains(localizedName, StringComparer.Ordinal);
 
 	public static BotPosition[] SelectCheckpoints(BotPosition current, BotPosition refuge,
 		IEnumerable<NaturalNavigationEvent> events, IReadOnlyList<BotPosition> observedAttackers)

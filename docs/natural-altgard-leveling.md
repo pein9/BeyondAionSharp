@@ -4641,6 +4641,27 @@ monitor enabled and announce its URL when a journey starts.
     pre-commit checks pass. Fast passes 94 tests/five guarded skips/all eleven
     scenarios (`run/rc11-fast/rc11-escort-corpses/`). Full revised proof remains
     pending; commit and finish the rebuild before capture.
+  - 2026-10-05, ninth retained attempt: `rc11-full-create-s1-a9` on 686db3e0d
+    passes Legs 1-6, including Germir's first 47.138-second escort attempt, then stops
+    in Leg 7 at level 21 with 124 completions. Defensive target 70567/213005 (Gulux)
+    repeatedly gives up: its first named return message is at 11:09:06.633, with
+    364 such messages and 73 full-HP restore packets across the encounter. The
+    bot keeps attacking until the unchanged 1,000-action limit stops it. Two deaths
+    (one each in Legs 4 and 5), failed trace/audit and dropped-schema receipt remain
+    intact. Java AttackManager, EmoteManager, ReturningEventHandler, ReportTo and
+    ChatUtil.l10n were read: the return message is addressed to the former player
+    target and identifies the NPC by its encoded localized name, not an object ID.
+    Combat now ends on that matching observation without claiming a kill or retiring
+    the live source. The pre-pull scan clears the corresponding engagement; a later
+    actual attack restores it. The decoded-packet regression covers matching and
+    unrelated names, explicit object emotions and attack/return ordering.
+    Sixty-one focused tests and seven pre-commit checks pass. Public Restore of
+    altgard-rc-l6 proves contained Leg 7 at level 22 with 125 completions, zero deaths,
+    ordinary endpoint relog and schema dropped (`run/rc11-combat-disengage/l7-smoke/`).
+    That smoke did not produce a return diagnostic; the regression covers its ordering.
+    Fast passes 94 tests/five guarded skips/all eleven scenarios
+    (`run/rc11-fast/rc11-combat-disengage/`). Full revised proof remains pending;
+    commit and finish the rebuild before capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5027,6 +5048,10 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: attempt nine passes Germir's escort but repeatedly attacks
+  a returning Gulux in Leg 7. Respect the named return observation without inventing a
+  kill; the decoded regression and contained Leg 7 pass. Preserve the two deaths and
+  dropped-schema failure evidence; the full revised endpoint remains unproved.
 - 2026-10-05 RC-11 pending: attempt eight stalls before Germir's escort starts,
   repeatedly selecting looted corpses during route clearing. Retire each successful
   clear source. The contained Leg 6 passes with three distinct sources, one successful
