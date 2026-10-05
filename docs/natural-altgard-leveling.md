@@ -4287,6 +4287,13 @@ monitor enabled and announce its URL when a journey starts.
     logout/entry sequence were corrected. Thirty-seven focused continuation/persistence
     tests, seven pre-commit checks and final Fast (90 passed/five guarded skips/all eleven
     scenarios, `run/rc02-fast/rc02-heritage-a2/`) pass. Committed natural prefix proof remains.
+    First committed capture `altgard-rc-l1` completed naturally at level 13 with zero deaths,
+    but its restore correctly refused the descriptive contract name in the segment field
+    before MySQL. Retain that immutable snapshot; canonical receipt selector repair and a
+    distinct capture are required before this item can be ticked.
+    Canonical receipt repair passes 37 focused tests, snapshot contract and seven checks
+    (`run/rc02-heritage/receipt-*`); this repair changes artifact metadata only, leaving the
+    already Fast-verified gameplay actions unchanged.
 - [ ] **RC-03 - Prepare Book of Oblivion before its field collections.** Depends
   RC-01. At observed level >=13, perform Cavalorn/Gantrug/Araison/book/Cavalorn to
   Q2919 START/4 and naturally collect two Ampha Tails. Use the pre-Q2904 return when

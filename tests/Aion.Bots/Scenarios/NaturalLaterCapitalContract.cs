@@ -72,6 +72,8 @@ public sealed record NaturalLaterCapitalContract(int SchemaVersion, string JavaR
 	public async Task WriteCheckpointAsync(string directory, string segment, NaturalJourneyCheckpoint before,
 		NaturalJourneyCheckpoint after, CancellationToken token)
 	{
+		if (segment != "bridge" && !NaturalAltgardContract.Legs.ContainsKey(segment))
+			throw new InvalidDataException("A later capital receipt needs the canonical bridge or Altgard segment selector.");
 		NaturalJourneyPersistence.Verify(before, after);
 		NaturalLaterCapitalState incoming = Capture(before), retained = Capture(after);
 		await File.WriteAllTextAsync(Path.Combine(directory, "later-capital-checkpoint.json"),

@@ -3250,7 +3250,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				NaturalJourneyPersistence.Verify(before, after);
 				VerifyDestinyEndpoint();
 				if (laterCapital != null) await laterCapital.WriteCheckpointAsync(Path.GetDirectoryName(combatTracePath)!,
-					leg.Leg, before, after, token);
+					altgardLegId!, before, after, token);
 				VerifyCoinEndpoint();
 				VerifyHaramelEndpoint();
 				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, $"altgard-{altgardLegId}-completion.json"),

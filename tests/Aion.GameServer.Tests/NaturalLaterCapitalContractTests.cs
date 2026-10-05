@@ -96,9 +96,13 @@ public sealed class NaturalLaterCapitalContractTests
 		Directory.CreateDirectory(directory);
 		try
 		{
+			await Assert.ThrowsAsync<InvalidDataException>(() => Contract.Value.WriteCheckpointAsync(directory,
+				NaturalAltgardContract.LoadLeg("l1").Leg, before, fresh, CancellationToken.None));
+			Assert.False(File.Exists(Path.Combine(directory, "later-capital-checkpoint.json")));
 			await Contract.Value.WriteCheckpointAsync(directory, "l7", before, fresh, CancellationToken.None);
 			using var receipt = JsonDocument.Parse(File.ReadAllText(Path.Combine(directory, "later-capital-checkpoint.json")));
 			Assert.True(receipt.RootElement.GetProperty("verified").GetBoolean());
+			Assert.Equal("l7", receipt.RootElement.GetProperty("segment").GetString());
 			Assert.Equal(42, receipt.RootElement.GetProperty("after").GetProperty("characterId").GetInt32());
 			await Assert.ThrowsAsync<InvalidDataException>(() => Contract.Value.WriteCheckpointAsync(directory, "l7", before,
 				fresh with { Inventory = [] }, CancellationToken.None));
