@@ -17,6 +17,30 @@ namespace Aion.Simulation.Tests;
 
 public sealed partial class SimulationFastScenarioTests
 {
+	/// <summary>RC-02: accept and carry Q2917 through its proper Altgard contacts, then relog.</summary>
+	[SkippableFact]
+	public async Task LaterCapitalHeritagePickupRetainsItsSuppliedItemAndFirstStepThroughRelog()
+	{
+		await RunCapitalProbeAsync("RC02", 245, "Asimheritage", async (probe, session, token) =>
+		{
+			await probe.SetupNearAsync(220030000, 203574);
+			Assert.Null(NaturalAltgardQuestSteps.State(session.Api.World, 2917));
+			await NaturalLaterCapitalSteps.PickUpHeritageAsync(session, probe.TalkAsync);
+			int itemObject = session.Api.World.Inventory.Values.Single(item => item.ItemId == 182207008).ObjectId;
+			await session.QuitAsync(token);
+			await session.WaitForReentryAsync(token);
+			await session.ReloginExistingCharacterAsync(token);
+			await session.EnterWorldAsync(token);
+			await session.SynchronizeAsync(token);
+			Assert.True(NaturalAltgardQuestSteps.State(session.Api.World, 2917) is (3, 1));
+			Assert.Equal(1, session.Api.World.Inventory[itemObject].Count);
+			Assert.DoesNotContain(2917, session.Api.World.CompletedQuestIds);
+			Assert.DoesNotContain(session.Api.World.Inventory.Values, item => item.ItemId == 182207009);
+			await NaturalLaterCapitalSteps.PickUpHeritageAsync(session, _ => throw new InvalidOperationException("A resumed pickup must not repeat dialogs."));
+			Console.WriteLine("RC-02: Arekedil -> Chauminerk, START/1, original supplied item retained through relog; no early reward or repeat.");
+		});
+	}
+
 	/// <summary>PC-05: proper Veldina/Balder/Kvasir progression and the actual Convent entry/return.</summary>
 	[SkippableFact]
 	public async Task CapitalVeldinasCallPaysThroughAngulofAndReturnsWithTheBindUnchanged()

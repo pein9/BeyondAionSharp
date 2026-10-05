@@ -4279,6 +4279,14 @@ monitor enabled and announce its URL when a journey starts.
     `run/rc01-capital-fast/rc01-capital-carry/`). No later quest executor runs yet.
 - [ ] **RC-02 - Start Arekedil's Heritage in Leg 1.** Depends RC-01. Advance Q2917
   through Arekedil and Chauminerk to START/1 and preserve the supplied item for the city.
+  - 2026-10-04, implementation verification in progress: the opt-in Leg 1 pickup uses
+    Java's Arekedil acceptance and Chauminerk SETPRO1, with no reward action. Free probe
+    account 245 confirms START/1 and the same supplied item through ordinary logout/relog;
+    resumed pickup sends no duplicate dialogs (`run/rc02-heritage/probe-a4.log`). The first
+    Fast attempt and probe drafts remain: account registration and the probe's incomplete
+    logout/entry sequence were corrected. Thirty-seven focused continuation/persistence
+    tests, seven pre-commit checks and final Fast (90 passed/five guarded skips/all eleven
+    scenarios, `run/rc02-fast/rc02-heritage-a2/`) pass. Committed natural prefix proof remains.
 - [ ] **RC-03 - Prepare Book of Oblivion before its field collections.** Depends
   RC-01. At observed level >=13, perform Cavalorn/Gantrug/Araison/book/Cavalorn to
   Q2919 START/4 and naturally collect two Ampha Tails. Use the pre-Q2904 return when

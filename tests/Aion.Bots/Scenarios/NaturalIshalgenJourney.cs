@@ -230,6 +230,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				.Concat(airlines.Select(route => route.NpcId)).Distinct().ToArray()
 				: altgardLeg == null ? [] : altgardLeg.GraphNpcIds(altgardPlans)
 					.Concat(airlines.Where(route => route.MapId == altgardLeg.Hub.MapId).Select(route => route.NpcId)).Distinct().ToArray();
+			if (laterCapital != null) altgardNpcs = altgardNpcs
+				.Concat(NaturalLaterCapitalSteps.HeritagePickup.Select(step => step.NpcId)).Distinct().ToArray();
 			// AK-08: items an open Altgard quest still needs (its collect items, the ring carriers' rings): never worn as gear and
 			// never sold. The leg 5 smoke run wore Q2292's level 16 rings as upgrades, which its hand-in would not have found.
 			IReadOnlySet<int> QuestNeededItems() => (altgardLeg == null ? Enumerable.Empty<int>() : altgardPlans.Values
@@ -1516,6 +1518,22 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				async Task SaveCoinProgressAsync() => await File.WriteAllTextAsync(
 					Path.Combine(Path.GetDirectoryName(combatTracePath)!, "coin-gear-progress.json"),
 					System.Text.Json.JsonSerializer.Serialize(new { session.CharacterId, ElapsedMillis = runtime.NowMillis, coinGearProgress }), token);
+				if (laterCapital != null && altgardLegId == "l1")
+					await NaturalLaterCapitalSteps.PickUpHeritageAsync(session, async step =>
+					{
+						session.BeginStep("rc-" + step.Key, "later-capital-heritage-pickup");
+						int npc = await ApproachShippedSpawnAsync(step.NpcId, withinRange: step.TalkRange);
+						for (int attempt = 1; ; attempt++)
+						{
+							try
+							{
+								string change = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token);
+								session.TraceDiagnostic("later-capital-step", new Dictionary<string, object?> { ["change"] = change });
+								break;
+							}
+							catch (NaturalDialogTooFarException) when (attempt < 3) { await ReapproachForDialogAsync(npc); }
+							}
+					});
 				for (int sequence = 1; sequence <= 400; sequence++)
 				{
 					await session.SynchronizeAsync(token);
