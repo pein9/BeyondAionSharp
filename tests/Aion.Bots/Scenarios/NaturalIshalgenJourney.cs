@@ -46,12 +46,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	/// a target produced by a real quest dialog. No loot action follows a kill that leaves this map.</summary>
 	public async Task<NaturalCombatDiagnosticResult> RunObservedCombatAsync(
 		Func<CancellationToken, Task<int>> startEncounter, CancellationToken token,
-		Func<CancellationToken, Task>? afterKill = null, Action? afterBindRevive = null)
+		Func<CancellationToken, Task>? afterKill = null, Action? afterBindRevive = null, bool avoidHostileAggro = false)
 	{
 		int map = session.Api.World.MapId ?? throw new InvalidDataException("Combat map unobserved.");
 		BotNavigationGeometry geometry = runtime.CreateGeometry();
 		var graph = BotNavigationGraphFactory.Build(runtime.Data, [], geometry);
-		var navigator = new NaturalJourneyNavigator(session, graph, geometry, runtime, stopOnDeath: false);
+		var navigator = new NaturalJourneyNavigator(session, graph, geometry, runtime, stopOnDeath: false)
+		{
+			AvoidHostileAggro = avoidHostileAggro,
+		};
 		var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry, stopOnDeath: false,
 			conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline)
 		{
@@ -7792,6 +7795,28 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			return route;
 		}
 
+		public IReadOnlyList<BotPosition> FindCastRecoveryRoute(BotPosition start, BotPosition target,
+			int targetObjectId, CancellationToken token)
+		{
+			int map = session.Api.World.MapId ?? throw new InvalidDataException("Combat map unobserved.");
+			BotNavigationHazard[] hazards = ObservedHazards(target, targetObjectId);
+			float distance = Distance(start, target);
+			// A native obstacle refusal can leave the straight close-in step inside another
+			// monster's circle. Try a bounded set of closer, visible ground points around
+			// the target, walking around those circles instead of recasting from the same spot.
+			foreach (BotPosition goal in geometry.GroundAround(map, target, [3f, 6f, 9f, 12f])
+				.Where(point => Distance(point, target) + 2 < distance &&
+					geometry.HasLineOfSight(map, point, target) && !hazards.Any(h => h.Contains(point)))
+				.OrderBy(point => Distance(start, point)).Take(6))
+			{
+				token.ThrowIfCancellationRequested();
+				IReadOnlyList<BotPosition> route = geometry.FindJourneyPathAvoiding(map, start, goal, hazards);
+				if (route.Count > 0 && Distance(start, route[^1]) >= 0.5f &&
+					BotNavigationGeometry.AvoidsHazards(start, route, hazards)) return route;
+			}
+			return [];
+		}
+
 		/// <summary>Places to keep clear of on routes: where the Cleric died (the combat's death spots). A swamp mosbear family
 		/// senses only 6 m, so its circles are small, but brushing one brings all six: the Leg 4 catch-up died on the same
 		/// spot six times walking the same tight route back to Sumarhon.</summary>
@@ -8908,6 +8933,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			});
 			IReadOnlyList<BotPosition> route = goal == null ? [] : geometry.FindLocalPath(map, start, goal.Value);
 			bool safe = route.Count > 0 && navigator.IsSegmentSafe(route, target);
+			bool detour = false;
+			if (!safe)
+			{
+				route = navigator.FindCastRecoveryRoute(start, settled, target, token);
+				safe = route.Count > 0 && navigator.IsSegmentSafe(route, target);
+				detour = safe;
+				if (safe) goal = route[^1];
+			}
 			session.TraceDiagnostic("combat-range-close-in", new Dictionary<string, object?>
 			{
 				["targetObjectId"] = target,
@@ -8916,6 +8949,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				["clientTargetDistance"] = distance,
 				["routePoints"] = route.Count,
 				["safe"] = safe,
+				["detour"] = detour,
 			});
 			if (!safe) return;
 			await navigator.MoveAsync(route, token);

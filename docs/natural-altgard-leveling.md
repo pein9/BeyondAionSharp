@@ -4839,6 +4839,27 @@ monitor enabled and announce its URL when a journey starts.
     Thirty-five focused tests and seven pre-commit checks pass. Fast passes 97 tests,
     five guarded skips and all eleven scenarios. Full continuous proof remains open;
     commit this repair and finish its rebuild before another fresh capture.
+  - 2026-10-05, seventeenth retained attempt: `rc11-full-create-s1-a17` on 495a334e1
+    passes the revised Ishalgen/bridge and Legs 1-9, including Deyla's ordinary offer,
+    then stops in Leg 10 at the unchanged one-hour progress watchdog. Cleric 23/152,
+    alive at failure, five deaths (l4 two, l6 one, l10 two); Q2282 remains START/0.
+    The original trace, failure audit and dropped owned schema remain retained.
+    One evidenced recovery defect is three native STR_SKILL_OBSTACLE refusals against
+    warlock 70004: both close-in attempts find the same unsafe fifteen-point route
+    and leave the client at 2414.4233/2185.2192/268.68567. Java FirstTargetRangeProperty,
+    GeoService, AttackManager and MonsterHunt were read. A blocked straight close-in
+    now tries at most six closer, visible ground points and checked routes around
+    observed hostiles. Existing cast-retry, death and progress limits remain intact.
+    Free probe 253 at the recorded obstruction proves actual native refusals, a safe
+    detour, ordinary warlock kill, surviving neighboring hostile, zero deaths and
+    retained journal (`run/rc11-defensive-warlock/native-probe.log`). The same probe
+    passes inside Fast. Public-restore Leg 10 from `altgard-rc-l9` passes at 24/152
+    with one death and endpoint relog: four safe close-in detours, three native
+    warlock sources 70007/136564/136784 at the shipped point, Q2282 completed once,
+    11,717,396 game ms and 10.5186 test minutes. Owned schema dropped (`l10-smoke/`,
+    `smoke-audit.json`). Fast passes 98 tests/five guarded skips/all eleven scenarios
+    in 8.4633 minutes (`run/rc11-fast/rc11-obstacle-detour/`). Seven pre-commit checks
+    pass. Continuous acceptance remains open; commit/rebuild before the next capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5225,6 +5246,13 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: attempt seventeen passes Deyla and Legs 1-9, then retains
+  five deaths and a Leg 10 progress-watchdog failure. Native obstacle recovery had
+  recast twice without moving along its unsafe direct route. The bounded checked
+  detour passes free probe 253 and contained Leg 10 (24/152, one death, four detours,
+  three warlock sources, ordinary relog, owned schema dropped). Fast 98/five guarded
+  skips/all eleven scenarios and seven prechecks pass. Evidence `run/rc11-defensive-warlock/`;
+  commit/rebuild before fresh continuous capture, with RC-11/12 still open.
 - 2026-10-05 RC-11 pending: attempt sixteen reaches Leg 5's capital preparation with
   two recorded deaths, then exhausts Deyla's three old-position retries. Retain its
   failure/cleanup. Use the existing bounded waypoint interception for Deyla as well
