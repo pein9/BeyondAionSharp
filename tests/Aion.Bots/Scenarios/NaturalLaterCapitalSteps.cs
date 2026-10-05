@@ -60,6 +60,50 @@ public static class NaturalLaterCapitalSteps
 	];
 	public static readonly NaturalAltgardStep LibraryOffer = NaturalCapitalSteps.Offer(2938, 204267, page: 4762);
 	public static IEnumerable<NaturalAltgardStep> Leg7City => BookFinish.Concat(FamilyLetter).Concat(Dye).Append(LibraryOffer);
+	public static readonly NaturalAltgardStep ElementaryOffer = NaturalCapitalSteps.Offer(2920, 204141) with
+	{
+		Actions = ["QUEST_SELECT", "SELECT_NONE_1", "SELECT_NONE_1_1", "ASK_QUEST_ACCEPT", "QUEST_ACCEPT_1"],
+		Pages = [4762, 4763, 4764, 4, 1003],
+	};
+	public static readonly NaturalAltgardStep ElementaryAnswer = NaturalCapitalSteps.Progress(2920, 0, 204141,
+		"SETPRO1", 1011, 1352, 0) with
+	{
+		Actions = ["QUEST_SELECT", "SETPRO1", "SELECT2_1", "SETPRO11", "SELECTED_QUEST_NOREWARD"],
+		Pages = [1011, 1352, 1353, 5],
+		NextVar = null,
+	};
+	public static readonly NaturalAltgardStep RobeHeart = NaturalCapitalSteps.Progress(2916, 4, 203673,
+		"SETPRO5", 2716, 0, 5) with { MapId = 220030000 };
+	public static IEnumerable<NaturalAltgardStep> Leg9City => [ElementaryOffer, ElementaryAnswer];
+
+	public static async Task CompleteLeg9CityAsync(INaturalJourneySession session, Func<NaturalAltgardStep, Task> talk,
+		Func<int, Task<int>> approach, CancellationToken token)
+	{
+		BotWorldModel world = session.Api.World;
+		if (world.CompletedQuestIds.Contains(2920)) return;
+		if (world.MapId != 120010000 || world.Level < 16 || !world.CompletedQuestIds.IsSupersetOf(new[] { 2268, 2269 }))
+			throw new InvalidDataException("Deyla's answers require the capital and both completed Observatory quests.");
+		long kinah = world.Kinah;
+		int start = session.PacketHistory.Count;
+		await RunMatchingStepsAsync(session, Leg9City, talk);
+		if (NaturalAltgardQuestSteps.State(world, 2920) is (4, _))
+		{
+			// The journal does not carry the reward group. Observe the actual page when resuming a paid-state boundary.
+			int npc = await approach(204141);
+			await NaturalDialogProtocol.OpenAsync(session, npc, token);
+			await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, p => p.Get<int>("targetObjectId") == npc &&
+				p.Get<int>("questId") == 2920 && p.Get<ushort>("dialogPageId") is 5 or 6);
+			await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(npc,
+				checked((ushort)NaturalAscensionContract.DialogActionId("SELECTED_QUEST_NOREWARD")), questId: 2920), token);
+			await session.SynchronizeAsync(token);
+			await session.SendPacketAsync(session.Api.CloseDialog(npc), token);
+		}
+		if (!world.CompletedQuestIds.Contains(2920)) throw new InvalidDataException("Deyla's actual answer and reward did not finish Q2920.");
+		int page = session.PacketHistory.Skip(start).Last(p => p.PacketType == typeof(SM_DIALOG_WINDOW) &&
+			p.Get<int>("questId") == 2920 && p.Get<ushort>("dialogPageId") is 5 or 6).Get<ushort>("dialogPageId");
+		session.TraceDiagnostic("later-capital-elementary-reward", new Dictionary<string, object?>
+		{ ["quest"] = 2920, ["page"] = page, ["group"] = page - 5, ["kinah"] = world.Kinah - kinah });
+	}
 
 	public static bool Leg7CityNeeded(BotWorldModel world) => !world.CompletedQuestIds.Contains(2919) ||
 		world.Level >= 20 && (!world.CompletedQuestIds.Contains(2959) || !world.CompletedQuestIds.Contains(2984) || !Prepared(world, 2938, 0)) ||

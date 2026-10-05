@@ -3338,8 +3338,8 @@ Leg 9. LIVE acceptance remains once at the end of the whole Altgard area.
 182207007 through ordinary object loot and keep it for Deyla in Leg 10's city visit.
 Use the existing Heart bind/recovery and hub flight transporters. During the Q2258
 Lindhelm trip, do Q2920 only with both Q2268/Q2269 complete and level >=16; follow the
-actual client answer sequence and record its reward group/payout. Executors and
-contained Leg 9 proofs are pending.
+actual client answer sequence and record its reward group/payout. RC-08 proves both
+continuations and the carried clothing through the revised Leg 9 endpoint relog.
 
 **Status (2026-10-02): done (AH-00..AH-06).** The maintainer's goal, "Implement Leg 9 as needed",
 works Stop 12 as approved with AE-Q3 (a). Use the loop protocol with **AH** in place of NA. The existing
@@ -4428,10 +4428,25 @@ monitor enabled and announce its URL when a journey starts.
     dropped (`run/rc07-city/audit.json`).
     Final Fast passes 92 tests/five guarded skips/all eleven scenarios
     (`run/rc07-fast/rc07-city/`).
-- [ ] **RC-08 - Add Leg 9's city answer and clothing collection.** Depends RC-07.
+- [x] **RC-08 - Add Leg 9's city answer and clothing collection.** Depends RC-07.
   With both Leg 8 prerequisites Q2268/Q2269 complete, finish Q2920 during Q2258's city
   return using the actual answer sequence and observed reward group. Continue Q2916
   through Banatisai, the clothing distance trigger and ordinary object loot.
+  - 2026-10-05: Java Q2920/Q2916, DialogService, QuestItemNpcAI and the 4.8 client
+    answer topology read. Both revised committed prefixes pass hashes, matching assembly
+    SHA and ordinary relog: `altgard-rc-l7` and `altgard-rc-l8` on 6aaccc18a; Leg 8
+    carries all city state, completes Q2268/Q2269 and records one recovered death.
+    Public restore `rc08-smoke-a1` passes full natural Leg 9 on its first attempt:
+    Cleric 22, 142 completed quests, 401,257 Kinah, zero segment deaths and 3,597,038
+    simulated milliseconds. Deyla's introduction follows pages 4762/4763/4764/4/1003;
+    the actual answer follows 1011/1352/1353/5 and pays group 0's 2,380 Kinah once.
+    Banatisai advances START/4 -> 5; the observed five-metre clothing event advances
+    to 6, then ordinary positive-duration use/loot supplies 182207007/object 134375
+    on attempt one. Clothing, library START/0 and both unapplied dye rewards survive
+    Heart endpoint relog. Forty-three focused tests, seven pre-commit checks and
+    trace/SQL/historical-hash audit pass; all owned schemas are dropped
+    (`run/rc08-elementary/audit.json`), base 6aaccc18a. Final Fast passes
+    92 tests/five guarded skips/all eleven scenarios (`run/rc08-fast/rc08-elementary/`).
 - [ ] **RC-09 - Complete the Leg 10/11 capital hand-ins.** Depends RC-08. Finish
   Q2916 at Deyla on the Q2283 visit. Require Q24016 COMPLETE and Suthran's permission
   page before advancing Q2938; retain the permission and finish at Oubliette during
@@ -4834,6 +4849,14 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-05 RC-08: revised committed Leg 7/8 prefixes carry the city work and both
+  Observatory prerequisites; natural Leg 9 finishes Deyla's full answer path once
+  for 2,380 Kinah and loots the clothing for Deyla's later robe hand-in. Cleric 22,
+  142 completions, zero segment deaths and ordinary relog pass. Forty-three focused
+  tests, seven prechecks, Fast (92 passed/five guarded skips/all eleven scenarios)
+  and trace/SQL/hash audit pass; owned schemas dropped. Evidence
+  `run/rc08-elementary/`; RC-09's two remaining capital finishes are next.
 
 - 2026-10-04 RC-07: the scheduled Leg 7 book, family letter and dye hand-ins pass
   naturally once, with library START/0, robe START/4 and both dye rewards carried

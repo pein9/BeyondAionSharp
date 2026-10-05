@@ -236,7 +236,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				.Concat(NaturalLaterCapitalSteps.HeritagePickup.Concat(NaturalLaterCapitalSteps.BookPreparation).Select(step => step.NpcId))
 				.Concat(NaturalLaterCapitalSteps.HeritageCity.Concat(NaturalLaterCapitalSteps.RobePreparation)
 					.Concat(NaturalLaterCapitalSteps.Juice).Append(NaturalLaterCapitalSteps.MaternalReturn)
-					.Append(NaturalLaterCapitalSteps.RobeBerth).Concat(NaturalLaterCapitalSteps.Leg7City).Select(step => step.NpcId))
+					.Append(NaturalLaterCapitalSteps.RobeBerth).Concat(NaturalLaterCapitalSteps.Leg7City)
+					.Append(NaturalLaterCapitalSteps.RobeHeart).Concat(NaturalLaterCapitalSteps.Leg9City).Select(step => step.NpcId))
+				.Append(700211)
 				.Concat(new[] { 210404, 203679, 203581, 204191 }).Concat(airlines.Select(route => route.NpcId)).Distinct().ToArray();
 			// AK-08: items an open Altgard quest still needs (its collect items, the ring carriers' rings): never worn as gear and
 			// never sold. The leg 5 smoke run wore Q2292's level 16 rings as upgrades, which its hand-in would not have found.
@@ -1655,6 +1657,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					if (laterCapital != null && altgardLegId == "l7" && session.Api.World.MapId == capitalContract.MapId &&
 						NaturalLaterCapitalSteps.Leg7CityNeeded(session.Api.World))
 						await NaturalLaterCapitalSteps.CompleteLeg7CityAsync(session, PlayLaterCapitalStepAsync);
+					if (laterCapital != null && altgardLegId == "l9" && session.Api.World.MapId == capitalContract.MapId &&
+						!session.Api.World.CompletedQuestIds.Contains(2920))
+						await NaturalLaterCapitalSteps.CompleteLeg9CityAsync(session, PlayLaterCapitalStepAsync, ApproachCapitalNpcAsync, token);
 					if (laterCapital != null && altgardLegId == "l6" &&
 						NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 3) &&
 						Distance(session.CurrentPosition, ground) <= leg.Hub.Radius)
@@ -1704,6 +1709,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								"Neparinerk must leave the carried robe quest at START/4 for Banatisai.");
 						if (laterCapital != null && altgardLegId == "l7")
 							Require.True(!NaturalLaterCapitalSteps.Leg7CityNeeded(session.Api.World), "The scheduled Leg 7 capital batch is incomplete.");
+						if (laterCapital != null && altgardLegId == "l9")
+						{
+							Require.True(session.Api.World.CompletedQuestIds.Contains(2920), "Deyla's Leg 9 answer is incomplete.");
+							await CollectLeg9ClothingAsync();
+							if (Distance(session.CurrentPosition, ground) > leg.Hub.Radius) await UseLearnedReturnToBindAsync();
+							await RestSafelyAsync(token);
+						}
 						foreach (var (id, expected) in preservedQuests)
 							Require.True(session.Api.World.Quests.TryGetValue(id, out BotQuestState? state) &&
 								(((continuousAltgard || laterCapital != null) && NaturalAltgardContinuation.AllowsAutomaticCampaignUnlock(id, expected, state,
@@ -2994,6 +3006,31 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await session.SynchronizeAsync(token);
 					Require.True(NaturalAltgardQuestSteps.HasEffect(session.Api.World, skillId), "Hand of Reincarnation did not produce its observed buff.");
 					session.TraceDiagnostic("quest-instance-rebirth-prepared", new Dictionary<string, object?> { ["skill"] = skillId, ["level"] = learned.Level });
+				}
+
+				async Task CollectLeg9ClothingAsync()
+				{
+					for (int attempt = 1; attempt <= 6; attempt++)
+					{
+						EnterLegMap();
+						await NaturalLaterCapitalSteps.RunMatchingStepsAsync(session, [NaturalLaterCapitalSteps.RobeHeart], PlayLaterCapitalStepAsync);
+						if (NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 6) && ItemCount(session.Api.World, 182207007) == 1) break;
+						Require.True(NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 5 or 6), "Banatisai must precede the clothing visit.");
+						session.BeginStep("rc-robe-clothing", "approach-distance-trigger-and-loot");
+						int clothing = await ApproachShippedSpawnAsync(700211, withinRange: 2);
+						await session.SynchronizeAsync(token);
+						if (session.Api.World.IsDead) { await RestSafelyAsync(token); continue; }
+						Require.True(NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 6), "The actual five-metre clothing trigger was not observed.");
+						bool collected = await NaturalAltgardQuestSteps.UseObjectAsync(session, clothing, 182207007, token);
+						session.TraceDiagnostic("later-capital-clothing-use", new Dictionary<string, object?>
+						{ ["objectId"] = clothing, ["attempt"] = attempt, ["collected"] = collected });
+						await RestSafelyAsync(token);
+					}
+					Require.True(NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 6) && ItemCount(session.Api.World, 182207007) == 1,
+						"The normal clothing loot must remain for Deyla's later city hand-in.");
+					BotInventoryItem carried = session.Api.World.Inventory.Values.Single(i => i.ItemId == 182207007);
+					session.TraceDiagnostic("later-capital-clothing-carried", new Dictionary<string, object?>
+					{ ["objectId"] = carried.ObjectId, ["item"] = carried.ItemId, ["count"] = carried.Count, ["status"] = 3, ["var"] = 6 });
 				}
 
 				async Task PlayContractStepAsync(NaturalAltgardStep step)
