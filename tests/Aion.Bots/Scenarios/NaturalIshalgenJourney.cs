@@ -6980,10 +6980,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								await RestSafelyAsync(token);
 								navigator.UnavailableObjects.Add(source);
 							}
-							if (altgardLegId == "l10")
-								Require.True(ItemCount(session.Api.World, operation.ItemId) >= operation.Count,
-									$"Q{plan.Id} needs at least {operation.Count} of item {operation.ItemId}.");
-							else Require.Equal(operation.Count, ItemCount(session.Api.World, operation.ItemId));
+							// Java QuestService.collectItemCheck accepts surplus and consumes only the required count.
+							// Defensive kills and the quest-loot sweep can yield an extra item before this loop finishes.
+							Require.True(ItemCount(session.Api.World, operation.ItemId) >= operation.Count,
+								$"Q{plan.Id} needs at least {operation.Count} of item {operation.ItemId}.");
 							break;
 						}
 						case QuestRunOperationKind.Report:

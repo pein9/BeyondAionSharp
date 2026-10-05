@@ -194,6 +194,7 @@ public sealed partial class SimulationFastScenarioTests
 		async Task ClaimAsync(int quest)
 		{
 			session.BeginStep($"s-claim-{quest}", $"claim-{quest}");
+			long collectedBefore = objectives[quest].ItemId is int collected ? ItemCount(collected) : 0;
 			int npc = await NpcObjectAsync(plans[quest].EndNpcs.First().Id);
 			await NaturalDialogProtocol.OpenAsync(session, npc, token);
 			await session.WaitForPacketAsync(typeof(Aion.GameServer.Network.Aion.ServerPackets.SM_DIALOG_WINDOW), token);
@@ -213,7 +214,8 @@ public sealed partial class SimulationFastScenarioTests
 			await session.SendPacketAsync(session.Api.CloseDialog(npc), token);
 			await session.SynchronizeAsync(token);
 			Assert.Equal(QuestStatus.COMPLETE, Server().GetQuestStateList().GetQuestState(quest).GetStatus());
-			if (objectives[quest].ItemId is int item) Assert.Equal(0, ItemCount(item));
+			if (objectives[quest].ItemId is int item)
+				Assert.Equal(collectedBefore - objectives[quest].ItemCount, ItemCount(item));
 			if (WorkItem(quest) is int work) Assert.Equal(0, ItemCount(work));
 			log.Add($"Q{quest} complete");
 		}
@@ -293,6 +295,18 @@ public sealed partial class SimulationFastScenarioTests
 		{
 			await AcceptAsync(quest);
 			await WorkAsync(quest, 24);
+			if (quest == 2270)
+			{
+				// RC-11's full run naturally looted four insignia. Labelled probe supply exercises that surplus.
+				Assert.Equal(3, ItemCount(182203246));
+				Assert.Equal(0, Aion.GameServer.Services.Items.ItemService.AddItem(Server(), 182203246, 1));
+				await session.SynchronizeAsync(token);
+				Assert.Equal(4, ItemCount(182203246));
+				session.TraceDiagnostic("probe-surplus-insignia", new Dictionary<string, object?>
+				{
+					["quest"] = 2270, ["item"] = 182203246, ["supplied"] = 1, ["incoming"] = 4,
+				});
+			}
 			await ClaimAsync(quest);
 		}
 		await PlayAsync("q2271-offer-neifenmer");
@@ -311,6 +325,16 @@ public sealed partial class SimulationFastScenarioTests
 			(24014, (byte)3, 0), (24015, (byte)3, 0), (24016, (byte)6, 0),
 		}) Assert.Equal((status, variable), State(id));
 		Assert.Equal(1, ItemCount(182215477));
+		Assert.Equal(1, ItemCount(182203246));
+		int insigniaObject = session.Api.World.Inventory.Values.Single(i => i.ItemId == 182203246).ObjectId;
+		await session.QuitAsync(token);
+		await session.WaitForReentryAsync(token);
+		await session.ReloginExistingCharacterAsync(token);
+		await session.EnterWorldAsync(token);
+		await session.SynchronizeAsync(token);
+		Assert.Equal(1, session.Api.World.Inventory[insigniaObject].Count);
+		Assert.Equal(1, session.Api.World.CompletedQuestCounts[2270]);
+		Console.WriteLine("RC-11 Q2270: native hand-in consumed three of four insignia; one surplus and one completion survive relog.");
 		Console.WriteLine($"AO-02 {string.Join("; ", log)}; held quests and campaign states preserved");
 		policy.AssertClean();
 	}

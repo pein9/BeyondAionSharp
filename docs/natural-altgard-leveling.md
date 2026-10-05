@@ -4566,6 +4566,21 @@ monitor enabled and announce its URL when a journey starts.
     Final Fast passes 93 tests/five guarded skips/all eleven scenarios
     (`run/rc11-fast/rc11-city-join-final/`). Commit and complete the rebuild before
     the next fresh capture; no revised full endpoint is claimed by this contained proof.
+  - 2026-10-05, fifth retained attempt: `rc11-full-create-s1-a5` on 43cadfca6
+    passes the joined city visit and reaches Leg 8 at level 22 with 138 completions.
+    Q2270's collection has four insignia, but the bot requires exactly three and stops.
+    Its failure audit, eight deaths (seven in Leg 4, one in Leg 5), trace and dropped-schema
+    receipt remain intact. Java ItemCollecting and QuestService.collectItemCheck accept
+    surplus and consume exactly the required count. The generic collection assertion now
+    uses that minimum for every leg, extending Leg 10's existing behavior.
+    Account 208's native Observatory probe labels one extra insignia after three native
+    drops, proves three-of-four consumption, and retains the spare and one completion
+    through ordinary relog. The public-restore Leg 8 smoke from altgard-rc-l7 passes
+    at level 22 with 132 completions, one recorded death, endpoint relog and schema dropped.
+    The native proof, 82 focused tests and seven pre-commit checks pass
+    (`run/rc11-insignia-surplus/`). Fast passes 93 tests/five guarded skips/all eleven
+    scenarios (`run/rc11-fast/rc11-insignia-surplus/`). The revised full proof remains
+    pending; commit and complete the rebuild before the next continuous capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -4952,6 +4967,12 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: the fifth continuous run passes Leg 7, then exposes a
+  surplus-insignia assertion in Q2270. Java accepts four and consumes three. The native
+  reward/relog proof, contained Leg 8 smoke (132 completions, one recorded death), 82
+  focused tests and seven checks pass (`run/rc11-insignia-surplus/`). Failure and cleanup
+  receipts are preserved. Fast passes 93 tests/five guarded skips/all eleven scenarios
+  (`run/rc11-fast/rc11-insignia-surplus/`). Commit/rebuild and the revised full endpoint remain pending.
 - 2026-10-05 RC-11 pending: the fourth full attempt's Lusena refusal and four contained
   city-sequence failures are preserved. The joined Leg 7 smoke now passes Q2278 plus
   book/library/family/dye work, ordinary fortress relog and cleanup at level 22 with
