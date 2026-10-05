@@ -1081,10 +1081,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			async Task PlayLaterCapitalStepAsync(NaturalAltgardStep step)
 			{
 				session.BeginStep("rc-" + step.Key, "later-capital-dialog");
+				int npc = session.Api.World.MapId == capitalContract.MapId ? await ApproachCapitalNpcAsync(step.NpcId)
+					: await ApproachShippedSpawnAsync(step.NpcId, withinRange: step.TalkRange);
 				for (int attempt = 0; ; attempt++)
 				{
-					int npc = session.Api.World.MapId == capitalContract.MapId ? await ApproachCapitalNpcAsync(step.NpcId)
-						: await ApproachShippedSpawnAsync(step.NpcId, withinRange: step.TalkRange);
 					try
 					{
 						if (step.NpcId == 700212) await NaturalLaterCapitalSteps.ReadQuestBookAsync(session, step, npc, token);
@@ -1092,7 +1092,18 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							{ ["change"] = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token) });
 						return;
 					}
-					catch (NaturalDialogTooFarException) when (attempt < 2) { }
+					catch (NaturalDialogTooFarException) when (attempt < 3)
+					{
+						// Deyla walks: the announced next waypoint is not her current position. After a server refusal,
+						// intercept the last observed position instead of repeatedly arriving at that future waypoint.
+						BotKnownObject seen = session.Api.World.Objects[npc];
+						session.TraceDiagnostic("later-capital-dialog-reapproach", new Dictionary<string, object?>
+						{ ["npc"] = step.NpcId, ["position"] = seen.Position, ["nextWaypoint"] = seen.MoveTarget });
+						NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World), newEntry: false);
+						await here.MoveAsync([seen.Position], token);
+						await here.SynchronizeAsync(token);
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+					}
 				}
 			}
 
@@ -1651,7 +1662,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						}
 						foreach (var (id, expected) in preservedQuests)
 							Require.True(session.Api.World.Quests.TryGetValue(id, out BotQuestState? state) &&
-								((continuousAltgard && NaturalAltgardContinuation.AllowsAutomaticCampaignUnlock(id, expected, state,
+								(((continuousAltgard || laterCapital != null) && NaturalAltgardContinuation.AllowsAutomaticCampaignUnlock(id, expected, state,
 									session.Api.World.Level, session.Api.World.CompletedQuestIds)) ||
 								(altgardLegId == "l12" ? NaturalHaramelDecisionEngine.PreservesDeferredQuest(id, expected, state, session.Api.World.Level)
 									: (state.Status, state.StepAndFlags) == expected)), $"Deferred Q{id} changed during {leg.Leg}.");

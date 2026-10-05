@@ -4342,6 +4342,19 @@ monitor enabled and announce its URL when a journey starts.
     passes 92 tests/five guarded skips/all eleven scenarios (`rc04-capital-a3`). The
     committed Leg 5 route/capture proof remains pending; this item is not
     ticked until that proof includes the ordinary book fallback and hub return flights.
+    The first committed natural attempt (`rc04-l5-natural-a1`, 7848d43fd) preserves
+    Deyla's walking-NPC refusal: the announced next waypoint was still about 12 m
+    ahead of her. The RC dialog retry now intercepts her latest observed position.
+    The next smoke completed gameplay but retained the deferred-campaign assertion:
+    Java unlocks Q24014/Q24015 at level 20. RC contained runs now use the existing
+    narrow continuous-run guard (START/0, zero completion credit, Q24010 required).
+    Corrected `rc04-l5-smoke-a3` passes gameplay and ordinary relog: Cleric 20, 99
+    completed quests, one recovered death, 7,544,000 simulated milliseconds. The three
+    city quests complete once, robe is START/3, book is START/4, and the same two-tail
+    and three-stamen item objects survive relog. Both hub flights, actual box use and
+    four normal cube purchases are retained in the trace. Source audit, 41 focused
+    tests and seven checks pass again. Final Fast passes 92 tests/five guarded skips/
+    all eleven scenarios (`rc04-capital-a4`); committed capture remains pending.
 - [ ] **RC-05 - Collect the Leg 5 book materials.** Depends RC-04. After Q2919
   START/4, obtain three Malodor Stamens at Kaibech and one Slime Sap at Idun's Lake
   through ordinary combat/loot. Protect all collection items for the capital finish.
