@@ -3479,7 +3479,8 @@ Heart obelisk and bound there. Relog and save `altgard-l9` from committed code; 
 Q2283's existing Vidar/capital trip. After Q24016 COMPLETE, obtain Q2938 permission
 from Suthran only after seeing page 1011; page 1097 refuses permission. Protect the
 granted 182207026 at REWARD/0 for Leg 11. Keep the original campaigns/recovery and
-fortress endpoint; these executors and contained proofs are pending.
+fortress endpoint. RC-09 proves the robe finish, permission pages, carried item
+and corrected fortress position through the contained Leg 10 relog.
 
 **Status (2026-10-02): done (BC-00..BC-08).** The maintainer's goal, "Implement Leg 10 as needed",
 works AE-Q3 (a) and AL-2's solo group quests. Use the loop protocol with **BC** in place of NA, one item and
@@ -3681,7 +3682,7 @@ Gathering, coin loops and unapproved D32 quests stay deferred.
 182207026 during Q2900's capital reward visit, then complete the existing fortress
 return/relog. Avoid reopening completed Q2938, which teleports to the secret library.
 Keep Q2900's stigma bundle sealed; unlocked slots and an owned/socketed stone remain
-necessary. The Q2938 executor/contained proof is pending; the historical Destiny
+necessary. RC-09 proves the ordinary Q2938 finish and final relog; the historical Destiny
 completion remains valid for its original scope.
 
 **Status (2026-10-03): done (ND-00..ND-08).** The maintainer's goal, "Implement the No
@@ -4447,11 +4448,34 @@ monitor enabled and announce its URL when a journey starts.
     trace/SQL/historical-hash audit pass; all owned schemas are dropped
     (`run/rc08-elementary/audit.json`), base 6aaccc18a. Final Fast passes
     92 tests/five guarded skips/all eleven scenarios (`run/rc08-fast/rc08-elementary/`).
-- [ ] **RC-09 - Complete the Leg 10/11 capital hand-ins.** Depends RC-08. Finish
+- [x] **RC-09 - Complete the Leg 10/11 capital hand-ins.** Depends RC-08. Finish
   Q2916 at Deyla on the Q2283 visit. Require Q24016 COMPLETE and Suthran's permission
   page before advancing Q2938; retain the permission and finish at Oubliette during
   the existing Q2900 capital trip. Preserve the stigma tutorial's ordinary completion,
   removal of its temporary stone/skill and the sealed permanent reward bundle.
+  - 2026-10-05: Java Q2916/Q2938/Q2900, QuestService completion/reset and the
+    shipped 4.8 dialog topology read. Committed 37e199733 `altgard-rc-l9` passes
+    dump/receipt/assembly hashes with the actual clothing carried. Public restore
+    `rc09-smoke-a2` plays contained Leg 10, ordinary relog, then Leg 11 from that
+    same owned state with a forward clock. Leg 10: Cleric 24, 152 completions,
+    535,404 Kinah, three recovered deaths, 12,388,061 simulated milliseconds.
+    Deyla consumes the clothing and awards her hood once. Q24016 COMPLETE precedes
+    Suthran's actual 1011/1012 permission pages; item 182207026/object 137752 is
+    retained at REWARD/0 across relog. The normal obelisk approach restores the
+    original fortress endpoint after Suthran. Leg 11: 154 completions, 558,060 Kinah,
+    zero segment deaths, 680,901 simulated milliseconds. Oubliette's 10002/5 pages
+    and SELECTED_QUEST_NOREWARD consume that same permission once during Q2900's
+    reward-city visit. Both quests stay COMPLETE/0 across the final relog; the
+    temporary stone/11504 are absent and the one permanent bundle remains sealed.
+    First `rc09-smoke-a1` retains the successful hand-ins and old Destiny journal
+    assertion (153 expected, 154 observed); the RC endpoint now checks the exact
+    incoming journal plus the two scheduled finishes. Its Suthran endpoint was
+    outside the original 60-metre radius and is also corrected. The audit draft's
+    COMPLETE/1 expectation is corrected from Java's normal finish reset to zero,
+    retaining the draft and failure. Sixty focused tests, seven pre-commit checks
+    and trace/SQL/historical-hash audit pass on base 37e199733; both owned proof
+    schemas are dropped (`run/rc09-finishes/audit.json`). Final Fast passes
+    92 tests/five guarded skips/all eleven scenarios (`run/rc09-fast/rc09-finishes/`).
 - [ ] **RC-10 - Join the revised stages and audit their evidence.** Depends RC-09.
   Integrate early Ascension, first capital, retained Ishalgen, the nine additions and
   existing Altgard/coin/Haramel stages in the continuous harness. Verify the carried
@@ -4849,6 +4873,14 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-05 RC-09: contained Leg 10/11 finishes pass from the revised Heart state,
+  with the same permit retained then consumed, 154 final completions, robe/library
+  paid once and temporary stigma removed/permanent bundle sealed. Three Leg 10 deaths
+  and the first proof's outdated endpoint assertion remain recorded. Exact journal
+  and fortress-position checks, 60 focused tests, seven prechecks, Fast (92 passed/
+  five guarded skips/all eleven scenarios) and trace/SQL/hash audit pass; owned
+  schemas dropped. Evidence `run/rc09-finishes/`; continuous integration is next.
 
 - 2026-10-05 RC-08: revised committed Leg 7/8 prefixes carry the city work and both
   Observatory prerequisites; natural Leg 9 finishes Deyla's full answer path once

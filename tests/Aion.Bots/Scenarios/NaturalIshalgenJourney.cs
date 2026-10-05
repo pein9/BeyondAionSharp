@@ -237,7 +237,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				.Concat(NaturalLaterCapitalSteps.HeritageCity.Concat(NaturalLaterCapitalSteps.RobePreparation)
 					.Concat(NaturalLaterCapitalSteps.Juice).Append(NaturalLaterCapitalSteps.MaternalReturn)
 					.Append(NaturalLaterCapitalSteps.RobeBerth).Concat(NaturalLaterCapitalSteps.Leg7City)
-					.Append(NaturalLaterCapitalSteps.RobeHeart).Concat(NaturalLaterCapitalSteps.Leg9City).Select(step => step.NpcId))
+					.Append(NaturalLaterCapitalSteps.RobeHeart).Concat(NaturalLaterCapitalSteps.Leg9City)
+					.Append(NaturalLaterCapitalSteps.LibraryPermission).Concat(NaturalLaterCapitalSteps.FinalCity).Select(step => step.NpcId))
 				.Append(700211)
 				.Concat(new[] { 210404, 203679, 203581, 204191 }).Concat(airlines.Select(route => route.NpcId)).Distinct().ToArray();
 			// AK-08: items an open Altgard quest still needs (its collect items, the ring carriers' rings): never worn as gear and
@@ -1660,6 +1661,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					if (laterCapital != null && altgardLegId == "l9" && session.Api.World.MapId == capitalContract.MapId &&
 						!session.Api.World.CompletedQuestIds.Contains(2920))
 						await NaturalLaterCapitalSteps.CompleteLeg9CityAsync(session, PlayLaterCapitalStepAsync, ApproachCapitalNpcAsync, token);
+					if (laterCapital != null && altgardLegId == "l10" && session.Api.World.MapId == capitalContract.MapId &&
+						!session.Api.World.CompletedQuestIds.Contains(2916))
+						await NaturalLaterCapitalSteps.CompleteLeg10RobeAsync(session, PlayLaterCapitalStepAsync);
+					if (laterCapital != null && altgardLegId == "l11" && session.Api.World.MapId == capitalContract.MapId &&
+						(session.Api.World.CompletedQuestIds.Contains(2900) || NaturalAltgardQuestSteps.State(session.Api.World, 2900) is (4, 10)))
+						await NaturalLaterCapitalSteps.CompleteLeg11LibraryAsync(session, PlayLaterCapitalStepAsync);
 					if (laterCapital != null && altgardLegId == "l6" &&
 						NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 3) &&
 						Distance(session.CurrentPosition, ground) <= leg.Hub.Radius)
@@ -1704,6 +1711,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							if (Distance(session.CurrentPosition, ground) > leg.Hub.Radius) await UseLearnedReturnToBindAsync();
 							await RestSafelyAsync(token);
 						}
+						if (laterCapital != null && altgardLegId == "l10")
+						{
+							Require.True(session.Api.World.CompletedQuestIds.Contains(2916), "Deyla's robe hand-in is incomplete.");
+							await NaturalLaterCapitalSteps.ObtainLibraryPermissionAsync(session, PlayLaterCapitalStepAsync);
+							await ApproachShippedSpawnAsync(leg.Endpoint.BindNpcId!.Value, withinRange: 5);
+						}
+						if (laterCapital != null && altgardLegId == "l11")
+							Require.True(session.Api.World.CompletedQuestIds.Contains(2938) && ItemCount(session.Api.World, 182207026) == 0,
+								"The library finish must consume Suthran's permission once.");
 						if (laterCapital != null && altgardLegId == "l6")
 							Require.True(NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 4),
 								"Neparinerk must leave the carried robe quest at START/4 for Banatisai.");
@@ -3470,7 +3486,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					if (leg.Destiny is not { } destiny) return;
 					BotWorldModel observed = session.Api.World;
 					Require.All(leg.Start.CompletedQuestIds, id => Require.Contains(id, observed.CompletedQuestIds));
-					Require.Equal(leg.Start.CompletedQuestIds.Length + 1, observed.CompletedQuestIds.Count);
+					IEnumerable<int> expected = leg.Start.CompletedQuestIds.Append(destiny.QuestId);
+					if (laterCapital != null) expected = expected.Append(2938);
+					Require.True(observed.CompletedQuestIds.SetEquals(expected), "Destiny must preserve the incoming journal and complete only its scheduled finishes.");
 					Require.Equal(0L, ItemCount(observed, destiny.StoneItemId));
 					Require.Equal(0L, ItemCount(observed, destiny.LegacyRewardId));
 					Require.Equal(1L, ItemCount(observed, destiny.RewardBundleId));

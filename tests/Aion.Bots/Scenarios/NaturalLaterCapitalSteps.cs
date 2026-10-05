@@ -75,6 +75,64 @@ public static class NaturalLaterCapitalSteps
 	public static readonly NaturalAltgardStep RobeHeart = NaturalCapitalSteps.Progress(2916, 4, 203673,
 		"SETPRO5", 2716, 0, 5) with { MapId = 220030000 };
 	public static IEnumerable<NaturalAltgardStep> Leg9City => [ElementaryOffer, ElementaryAnswer];
+	public static readonly NaturalAltgardStep RobeFinish = NaturalCapitalSteps.Finish(2916, 6, 204141, page: 3057) with
+	{
+		Actions = ["QUEST_SELECT", "CHECK_USER_HAS_QUEST_ITEM", "SELECTED_QUEST_REWARD1"],
+	};
+	public static readonly NaturalAltgardStep LibraryPermission = NaturalCapitalSteps.Progress(2938, 0, 203557,
+		"SET_SUCCEED", 1011, 0, 0) with
+	{
+		MapId = 220030000, Actions = ["QUEST_SELECT", "SELECT1_1", "SET_SUCCEED"],
+		Pages = [1011, 1012, 0], ReceivesItemId = 182207026,
+	};
+	public static readonly NaturalAltgardStep LibraryFinish = NaturalCapitalSteps.Finish(2938, 0, 204267) with
+	{
+		Status = "REWARD", Actions = ["USE_OBJECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_NOREWARD"], Pages = [10002, 5],
+	};
+	public static IEnumerable<NaturalAltgardStep> FinalCity => [RobeFinish, LibraryFinish];
+
+	public static async Task CompleteLeg10RobeAsync(INaturalJourneySession session, Func<NaturalAltgardStep, Task> talk)
+	{
+		BotWorldModel world = session.Api.World;
+		if (world.CompletedQuestIds.Contains(2916)) return;
+		if (world.MapId != 120010000 || NaturalAltgardQuestSteps.State(world, 2916) is not (3, 6) and not (4, 6) ||
+			NaturalAltgardQuestSteps.State(world, 2916) is (3, _) && Owned(world, 182207007) != 1)
+			throw new InvalidDataException("Deyla needs the carried clothing or its already-observed reward transition.");
+		await talk(NaturalAltgardQuestSteps.State(world, 2916) is (4, _) ? NaturalCapitalSteps.ResumeReward(RobeFinish) : RobeFinish);
+		if (!world.CompletedQuestIds.Contains(2916) || Owned(world, 182207007) != 0 || Owned(world, 120000833) != 1)
+			throw new InvalidDataException("The robe hand-in must consume its actual clothing and award Deyla's hood once.");
+	}
+
+	public static async Task ObtainLibraryPermissionAsync(INaturalJourneySession session, Func<NaturalAltgardStep, Task> talk)
+	{
+		BotWorldModel world = session.Api.World;
+		if (world.CompletedQuestIds.Contains(2938)) return;
+		if (world.MapId != 220030000 || !world.CompletedQuestIds.Contains(24016))
+			throw new InvalidDataException("Suthran's permission requires the completed final Altgard campaign.");
+		await RunMatchingStepsAsync(session, [LibraryPermission], talk);
+		if (NaturalAltgardQuestSteps.State(world, 2938) is not (4, 0) || Owned(world, 182207026) != 1)
+			throw new InvalidDataException("Suthran must leave Q2938 at REWARD/0 with its actual permission item.");
+		BotInventoryItem permission = world.Inventory.Values.Single(i => i.ItemId == 182207026);
+		session.TraceDiagnostic("later-capital-library-permission", new Dictionary<string, object?>
+		{ ["objectId"] = permission.ObjectId, ["item"] = permission.ItemId, ["count"] = permission.Count, ["campaign"] = 24016 });
+	}
+
+	public static async Task CompleteLeg11LibraryAsync(INaturalJourneySession session, Func<NaturalAltgardStep, Task> talk)
+	{
+		BotWorldModel world = session.Api.World;
+		if (world.CompletedQuestIds.Contains(2938)) return; // Reopening completed Q2938 is a library teleport.
+		if (world.MapId != 120010000 || !world.CompletedQuestIds.Contains(24016) ||
+			NaturalAltgardQuestSteps.State(world, 2938) is not (4, 0) || Owned(world, 182207026) != 1)
+			throw new InvalidDataException("Oubliette needs the permission carried from Suthran.");
+		int start = session.PacketHistory.Count;
+		int item = world.Inventory.Values.Single(i => i.ItemId == 182207026).ObjectId;
+		await talk(LibraryFinish);
+		if (!world.CompletedQuestIds.Contains(2938) || Owned(world, 182207026) != 0 ||
+			!session.PacketHistory.Skip(start).Any(p => p.PacketType == typeof(SM_DIALOG_WINDOW) &&
+				p.Get<int>("questId") == 2938 && p.Get<ushort>("dialogPageId") == 10002))
+			throw new InvalidDataException("The ordinary library finish must present its success page and consume the permission.");
+		session.TraceDiagnostic("later-capital-library-finished", new Dictionary<string, object?> { ["consumedObjectId"] = item, ["quest"] = 2938 });
+	}
 
 	public static async Task CompleteLeg9CityAsync(INaturalJourneySession session, Func<NaturalAltgardStep, Task> talk,
 		Func<int, Task<int>> approach, CancellationToken token)
