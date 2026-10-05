@@ -1635,11 +1635,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						try { await FlyTowardAsync(at); }
 						finally { approachingAirline = false; }
 					}
-					await ReachPillarLevelAsync(at);
 					float approachStop = UsesProvenWarlockSpawn(templateId) ? NaturalPullPlanner.SpellRange + 3 : FarApproachStop;
 					for (int walk = 0; walk < 3 && Distance(session.CurrentPosition, at) > approachStop; walk++)
 					{
 						if (sourceComplete?.Invoke() == true) return;
+						// A lower-ground fight can revive at the upper Heart bind. Every
+						// road retry must repeat the proven pillar flight from the new position.
+						await ReachPillarLevelAsync(at);
 						if (altgardLegId == "l10" && templateId == 210538 && warlockRoadRevives != combat.ReviveCount)
 						{
 							// BC-06: the fortress approach repeatedly re-entered the hunter/spellshifter camp,
@@ -2347,7 +2349,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				{
 					// Java PlayerController.updateSoulSickness applies 8291 on bind revival. Its speed penalty
 					// doubles the pillar descent's FP cost; wait for the real icon removal before taking off.
-					if (altgardLegId is "l10" or "l12" && session.Api.World.VisibleEffects?.FirstOrDefault(effect => effect.SkillId == 8291) is { } sickness)
+					if (altgardLegId is "l9" or "l10" or "l12" && session.Api.World.VisibleEffects?.FirstOrDefault(effect => effect.SkillId == 8291) is { } sickness)
 					{
 						Require.True(sickness.RemainingMillis > 0, "Soul Sickness has no observed expiry for the flight wait.");
 						long until = runtime.NowMillis + sickness.RemainingMillis + 1000L;
@@ -2506,7 +2508,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						if (sourceComplete?.Invoke() == true) return true;
 						// Synchronize can defend and bind-revive before the explicit defense below. Its old
 						// road no longer starts here; return to the caller so it plans from the new position.
-						if (altgardLegId is "l10" or "l11" or "l12" && combat.ReviveCount != roadRevives) return false;
+						if (altgardLegId is "l9" or "l10" or "l11" or "l12" && combat.ReviveCount != roadRevives) return false;
 						if (!await DefendAgainstEngagedAsync(purpose) || session.Api.World.IsDead)
 						{
 							await RestSafelyAsync(token);
@@ -7853,6 +7855,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		// NA-18: the chain the last chain skill opened, from its SM_CASTSPELL_RESULT chain flag (Java ChainSkills).
 		private (string Category, int Target, DateTimeOffset ExpiresAt)? openChain;
 		private ushort? lastCancelledSkillId;
+		private bool lastCastCompleted;
 		private ushort? lastPowderSkill;
 		// NA-19: when the current visible-effect snapshot was first seen (its remaining times are as of then).
 		private IReadOnlyList<BotVisibleEffect>? effectsSnapshot;
@@ -7864,6 +7867,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		private string[] lastCombatTrace = [];
 		private int obstacleRepositions;
 		private int rangeRejections;
+		private int readinessRejections;
 		public int ReviveCount => revives;
 		/// <summary>The map a far target is approached on (NA-23 fights in Altgard); Ishalgen for the journey.</summary>
 		public int ApproachMapId { get; set; } = 220010000;
@@ -8210,7 +8214,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						}
 						if (!await CastAsync(choice.Skill!, choice.Action == "cast-self" ? session.CharacterId : target, token))
 							return false;
-						if (choice.Action == "cast-self" && choice.Skill!.Role == "heal")
+						if (lastCastCompleted && choice.Action == "cast-self" && choice.Skill!.Role == "heal")
 							healedThisFight = true;
 						break;
 					case "attack":
@@ -8865,6 +8869,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 		private async Task<bool> CastAsync(NaturalPriestSkill skill, int target, CancellationToken token)
 		{
+			lastCastCompleted = false;
 			BotSkill learned = session.Api.World.Skills[skill.Id];
 			// AM-06: Java Skill.useSkill resets the player's chain when a skill without a chain category is cast, so a
 			// Light of Rejuvenation between Smite and Flashbolt breaks the chain and the server silently refuses Flashbolt.
@@ -8898,6 +8903,24 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				// A rejected cast never starts on the server; release the bot's local
 				// casting gate before any legal movement or retry.
 				session.Api.Timing.RecordCastCancelled();
+				if (started.Get<object>("name") is "STR_SKILL_NOT_READY")
+				{
+					// Java CM_CASTSPELL can refuse the global animation gate before any cast
+					// starts. Wait a short slice, then let combat re-observe HP and attackers.
+					// Do not synthesize a result, cooldown, chain or successful cast.
+					int rejection = ++readinessRejections;
+					session.TraceDiagnostic("combat-cast-not-ready", new Dictionary<string, object?>
+					{
+						["skillId"] = skill.Id, ["targetObjectId"] = target,
+						["rejection"] = rejection, ["castStarted"] = false,
+						["hp"] = session.Api.World.CurrentHp, ["position"] = session.CurrentPosition,
+					});
+					if (rejection > 8)
+						throw new InvalidDataException($"Cast {skill.Id} remains not ready after {rejection} consecutive refusals.");
+					await session.AdvanceAsync(TimeSpan.FromMilliseconds(BotTimingContract.MinimumCastIntervalMillis + 1), token);
+					await session.SynchronizeAsync(token);
+					return true;
+				}
 				if (started.Get<object>("name") is "STR_SKILL_NOT_ENOUGH_DISTANCE")
 				{
 					int rejection = ++rangeRejections;
@@ -8962,6 +8985,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				}
 				throw new InvalidDataException($"Cast {skill.Id} rejected: {started.Get<object>("name")}.");
 			}
+			readinessRejections = 0;
 			// AG-07: Java ChainCondition.shouldReset clears the chain when an opener starts while its own chain is used up (Smite's
 			// selfcount is 1), and only a completed cast opens it again (Skill.endCast). A Smite cut short (STR_SKILL_CANCELED)
 			// leaves no chain, and the server refuses the Flashbolt after it without a word (the Leg 6 smoke run).
@@ -8972,6 +8996,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			lastCancelledSkillId = result.PacketType == typeof(SM_SKILL_CANCEL) ? skill.Id : null;
 			if (result.PacketType == typeof(SM_CASTSPELL_RESULT))
 			{
+				lastCastCompleted = true;
 				int deciseconds = result.Get<int>("cooldown");
 				if (deciseconds > 0)
 					cooldowns[skill.CooldownId] = runtime.Epoch.AddMilliseconds(runtime.NowMillis + deciseconds * 100L);

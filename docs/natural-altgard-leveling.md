@@ -4703,6 +4703,45 @@ monitor enabled and announce its URL when a journey starts.
     Fast passes 94 tests/five guarded skips/all eleven scenarios
     (`run/rc11-fast/rc11-gattban-approach/`).
     Full revised proof remains pending; commit and finish the rebuild before capture.
+  - 2026-10-05, twelfth retained attempt: `rc11-full-create-s1-a12` on 9af5dcb8e
+    proves revised Ishalgen/bridge and Legs 1-8, including Q24113 completed once.
+    Two pending Gattban deaths now emit death retries instead of abandoning the
+    live source. Leg 9 then stops at level 22 with 142 completions when Slashing
+    Wind 4063 receives native STR_SKILL_NOT_READY, 700 ms after Hallowed Strike's
+    result. Eight deaths are retained (Leg 4 three, Leg 5 one, Leg 8 four), along
+    with the full trace/audit and dropped-schema receipt. Java CM_CASTSPELL's global
+    animation gate, Skill/MotionData timing and PlayerController's Soul Sickness
+    behavior were read. A not-ready refusal now releases the local casting gate,
+    waits 351 ms and returns to combat observation; eight waits are allowed without
+    an accepted cast start, then another refusal stops with evidence. No result,
+    cooldown or chain is synthesized, and a refused/cancelled heal is not marked
+    complete. The native probe receives three refusals, then casts and kills
+    field target 70841 with zero deaths (`run/rc11-cooldown-refusal/probe-a2.log`,
+    `probe-audit.json`). The first probe's vanished target failure remains retained.
+    The first Fast batch retains an account collision with the bind-revive probe:
+    94 passed, one failed, five guarded skips, all eleven scenarios passed. Account
+    250 is now dedicated to cast readiness, outside earlier probes and D32's
+    reservations; the standalone native proof passes again (`probe-a3.log`).
+    The second Fast batch also retains 94 passes, one failure and five skips:
+    earlier probes cleared every live source of the chosen type from the shared
+    map. After reading Java SpawnEngine, the probe now creates its own full-HP
+    native source at a shipped spot; this is labelled disposable-probe setup.
+    Public Restore of altgard-rc-l8 exposes two further recovery gaps: a lower-ground
+    death leaves the clothing approach on the upper bind without repeating the
+    descent, and the repeated descent correctly refuses its 53 FP Soul Sickness
+    cost. The two failed smokes and owned-schema cleanup remain intact. Each road
+    retry now rechecks the pillar level; Leg 9 abandons an old road after revival
+    and reuses the existing wait for observed Soul Sickness expiry, retaining the
+    ten-FP reserve and proven flight path. Final contained Leg 9 passes at level 22
+    with 142 completions and three deaths, two actual readiness recoveries, two
+    sickness waits, Q24115 completed once and Q2916 START/6 carrying clothing object
+    135329 through ordinary endpoint relog; schema dropped (`l9-smoke-a3/`,
+    `smoke-audit.json`). Seventy focused tests and seven pre-commit checks pass.
+    The isolated source passes standalone (`probe-a4.log`, native HP 2,478) and
+    in final Fast on source 143746: 95 passes, five guarded skips and all eleven
+    scenarios (`run/rc11-fast/rc11-cooldown-refusal-a3/`). All seven checks pass
+    again after the probe isolation changes (`*-source.log`).
+    Full revised proof remains pending; commit and finish the rebuild before capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5089,6 +5128,13 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: attempt twelve completes Leg 8/Gattban, then retains a
+  native global cast-gate refusal in Leg 9. A free native probe and contained Leg 9
+  prove bounded readiness recovery, repeated pillar descent and ordinary Soul
+  Sickness expiry waits. Failed probes/smokes, eight full-run deaths and owned-schema
+  cleanup remain intact. Fast's account collision and depleted-source failures are
+  retained; the isolated probe and final Fast (95 passes/five skips/all eleven
+  scenarios) pass. Full revised proof is pending.
 - 2026-10-05 RC-11 pending: attempt eleven abandons live Gattban after misclassifying
   two pending deaths, then rejects a static-hint route with inconsistent death-site
   checks. Contained Leg 8 passes with Q24113 complete and one recorded death; retain
