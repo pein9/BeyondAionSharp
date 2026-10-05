@@ -7036,6 +7036,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// or walks out of view for another reason is simply looked for again.
 			async Task<int> KillShippedSpawnAsync(int templateId, QuestRunOperation? collection = null)
 			{
+				int CollectedSource(int objectId)
+				{
+					// RC-11: a partially collected stack still needs a new live source. The first
+					// full run selected the same one-tail Ampha corpse for all thirty attempts.
+					if (collection != null) navigator.UnavailableObjects.Add(objectId);
+					return objectId;
+				}
 				// AO-04: defense can kill and loot the requested source while navigation is still approaching it.
 				// Client inventory plus the ordinary loot record completes that objective; do not wait for another live spawn.
 				int? CompletedCollectionSource() => collection != null && ItemCount(session.Api.World, collection.ItemId) >= collection.Count &&
@@ -7053,11 +7060,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					int approachEvidenceStart = session.PacketHistory.Count;
 					int target = await ApproachShippedSpawnAsync(templateId, withinRange: NaturalPullPlanner.SpellRange + 3,
 						completedSource: collection == null ? null : CompletedCollectionSource, acceptObservedKill: altgardLegId is "l10" or "l12");
-					if (CompletedCollectionSource() is int collectedFrom) return collectedFrom;
+					if (CompletedCollectionSource() is int collectedFrom) return CollectedSource(collectedFrom);
 					if (altgardLegId is "l10" or "l12" && session.PacketHistory.Skip(approachEvidenceStart).Any(packet =>
 						packet.PacketType == typeof(SmAttackStatus) && packet.Get<byte>("typeId") is not (19 or 20 or 21 or 22 or 23) &&
 						packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0))
-						return target;
+						return CollectedSource(target);
 					int revives = combat.ReviveCount;
 					int retreats = combat.CompletedRetreats;
 					int evidenceStart = session.PacketHistory.Count;
@@ -7068,7 +7075,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					if (killed || session.PacketHistory.Skip(evidenceStart).Any(packet =>
 						packet.PacketType == typeof(SmAttackStatus) &&
 						packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0))
-						return target;
+						return CollectedSource(target);
 					bool died = combat.ReviveCount > revives;
 					bool retreated = !died && combat.CompletedRetreats > retreats;
 					// AK-08: the same monster failing twice with no death or retreat cannot be fought from anywhere the bot reaches

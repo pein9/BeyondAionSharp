@@ -4502,6 +4502,17 @@ monitor enabled and announce its URL when a journey starts.
   skills, gear, gross rewards/fares/purchases, consumable provenance and usage, deaths,
   recovery, timed attempts, escorts and carrier windows. Record outcomes rather than
   requiring zero deaths. Keep failures; fix only an evidenced blocker and rerun if needed.
+  - 2026-10-05, first retained attempt: `rc11-full-create-s1-a1` on 87a1e6d49
+    completed all 41 Ishalgen quests and the ten first-capital quests, then failed
+    Q2919's bounded tail collection at level 13. Thirty reported collection encounters
+    reused corpse 134283 after its one native tail had been looted; the owned schema
+    was dropped (`run/snapshots/_capture/rc11-full-create-s1-a1/failure-audit.json`).
+    Java Q2919, its drops and QuestService's collecting-step/needed-count rules were
+    read. The bot now marks each successful collection kill unavailable so a partial
+    stack seeks a new live source. Sixty focused tests and seven pre-commit checks
+    pass (`run/rc11-ampha-repair/`); Fast passes 92 tests/five guarded skips/all
+    eleven scenarios (`run/rc11-fast/rc11-ampha-repair/`). Full revised gameplay
+    proof remains pending; this repair is committed before its fresh capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
