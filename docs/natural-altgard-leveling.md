@@ -4662,6 +4662,25 @@ monitor enabled and announce its URL when a journey starts.
     Fast passes 94 tests/five guarded skips/all eleven scenarios
     (`run/rc11-fast/rc11-combat-disengage/`). Full revised proof remains pending;
     commit and finish the rebuild before capture.
+  - 2026-10-05, tenth retained attempt: `rc11-full-create-s1-a10` on 5e2e0c222
+    passes revised Ishalgen/bridge and Legs 1-3, then stops in Leg 4 at level 18
+    with 86 completions and zero deaths. Q24013 stays START/2 with its poison
+    retained: there are no use packets for that item's object. Three preparations
+    end outside the zone after four completed retreats; the fourth planned decision
+    hits the repeated-action guard before execution. The failed trace/audit and
+    dropped-schema receipt remain intact. Java Q24013 and useQuestItem require an
+    actual in-zone use, then a three-second animation, consumption and var 2->3.
+    A completed preparation retreat with no revive now leaves the repeated-use
+    count unchanged; actual uses, rejected preparations without a retreat, death
+    accounting and the quest progress watchdog keep their bounds. Eighty-two focused
+    tests and seven pre-commit checks pass (`run/rc11-poison-retreats/`). Public
+    Restore of altgard-rc-l3 proves contained Leg 4 at level 19 with 85 completions
+    and two deaths. Its trace records one unattempted preparation retreat, followed
+    by ordinary poison use, var 3 and one Q24013 completion retained through endpoint
+    relog; the schema is dropped (`run/rc11-poison-retreats/l4-smoke/`). Fast passes
+    94 tests/five guarded skips/all eleven scenarios
+    (`run/rc11-fast/rc11-poison-retreats/`). Full revised proof remains pending;
+    commit and finish the rebuild before capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5048,6 +5067,10 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: attempt ten treats three Q24013 preparations as failed
+  poison uses, despite four completed retreats and no poison-use packet. Count the
+  unattempted preparation separately, retain the zero-death failure and cleanup,
+  and verify the contained Leg 4 before the next committed continuous capture.
 - 2026-10-05 RC-11 pending: attempt nine passes Germir's escort but repeatedly attacks
   a returning Gulux in Leg 7. Respect the named return observation without inventing a
   kill; the decoded regression and contained Leg 7 pass. Preserve the two deaths and

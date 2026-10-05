@@ -1609,6 +1609,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				string? previous = null;
 				int repeats = 0;
 				// AB-08: a decision repeated because the Cleric died on it is a retry, not a stall (OD-12): up to six of them.
+				bool itemApproachRetreated = false;
 				int revivesAtPrevious = combat.ReviveCount, deathRetries = 0;
 				// AC-06: the escort's state across protocol runs (a death ends a run; the attempts and ended followers stay).
 				int escortAttempts = 0;
@@ -1744,7 +1745,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					revivesAtPrevious = combat.ReviveCount;
 					if (signature != previous) { repeats = 0; deathRetries = 0; }
 					else if (diedSincePrevious) deathRetries++;
-					else repeats++;
+					else if (!itemApproachRetreated) repeats++;
+					itemApproachRetreated = false;
 					previous = signature;
 					Require.True(repeats < 3 && deathRetries <= 6, $"Altgard leg {altgardLegId} made no progress on {signature}");
 					if (next.Outcome == "complete")
@@ -1995,6 +1997,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							NaturalAltgardItemUse use = leg.RequiredItemUse;
 							if (!use.Anywhere && use.ZoneAnchor is { } zone)
 							{
+								int preparationRetreats = combat.CompletedRetreats, preparationRevives = combat.ReviveCount;
 								// AB-08: Q24013's poison works only inside its zone, and the zone is packed with Feral Sharpeyes (18
 								// spawns, 295 s respawn): no route keeps clear of every circle. Do what a player does: take the road toward
 								// the anchor, fighting what engages, and use the poison at the first step that is well inside the zone,
@@ -2004,16 +2007,35 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								BotPosition anchor = new(zone[0], zone[1], zone[2], 0);
 								bool Inside(BotPosition at) => use.InZone(at.X, at.Y, at.Z, ZoneMargin);
 								if (!Inside(session.CurrentPosition) && !await WalkRoadDefendingAsync(anchor, "item-use-zone-road", stopAt: Inside))
-									break;
+								{
+									RecordPreparationRetreat();
+										break;
+								}
 								if (!await DefendAgainstEngagedAsync("item-use-zone") || session.Api.World.IsDead || !Inside(session.CurrentPosition))
 								{
 									await RestSafelyAsync(token);
+									RecordPreparationRetreat();
 									break;
 								}
 								session.TraceDiagnostic($"altgard-{altgardLegId}-item-zone", new Dictionary<string, object?>
 								{
 									["zone"] = use.Zone, ["position"] = session.CurrentPosition, ["hp"] = session.Api.World.CurrentHp,
 								});
+
+								void RecordPreparationRetreat()
+								{
+									itemApproachRetreated = combat.CompletedRetreats > preparationRetreats &&
+										combat.ReviveCount == preparationRevives;
+									if (!itemApproachRetreated) return;
+									// The poison was not sent. Resume from the observed retreat position without
+									// spending an item-use attempt; actual use retries and the watchdog stay bounded.
+									session.TraceDiagnostic("quest-item-approach-retreated", new Dictionary<string, object?>
+									{
+										["questId"] = use.QuestId, ["itemId"] = use.ItemId, ["itemUseAttempted"] = false,
+										["retreats"] = combat.CompletedRetreats - preparationRetreats,
+										["position"] = session.CurrentPosition,
+									});
+								}
 							}
 							await NaturalAltgardQuestSteps.UseQuestItemAsync(session, use, runtime.Data.ItemDataDh.GetItemTemplate(use.ItemId), token);
 							// The use may spawn monsters (Q24013: two Feral Black Claw Sharpeyes): deal with them first.
