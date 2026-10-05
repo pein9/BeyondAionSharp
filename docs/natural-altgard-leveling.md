@@ -2127,7 +2127,8 @@ Finish Q2917 at Lanse/Annemari, use its box to accept Q2918, return by Doman and
 the box in at Arekedil before the hub flight back to Basfelt; preserve the Basfelt bind.
 At observed level >=15, prepare Q2916 through Deyla/Zerpi/Osvi/Annju to START/3 for
 Neparinerk in Leg 6. At >=19, do Q2954 once through Doman/Haven/Doman; defer it to
-Leg 7 if below its gate. These executors and contained proofs are pending.
+Leg 7 if below its gate. RC-04 proves this city preparation and return in the revised
+Leg 5 checkpoint; the remaining field material is RC-05's Slime Sap.
 
 Q2919 should already be START/4 from the post-Ishalgen city/Ishalgen preparation in
 [PC-08](natural-ascension-altgard.md#scheduled-additions-to-individual-legs-pc-08-2026-10-04).
@@ -4319,7 +4320,7 @@ monitor enabled and announce its URL when a journey starts.
     (91 passed/five guarded skips/all eleven scenarios, `run/rc03-fast/rc03-book/`).
     Natural pre-dispatch placement
     will be proved by RC-11; the contained Leg 5 fallback proof belongs to RC-04.
-- [ ] **RC-04 - Add Leg 5's capital preparation.** Depends RC-02 and RC-03. Finish
+- [x] **RC-04 - Add Leg 5's capital preparation.** Depends RC-02 and RC-03. Finish
   Q2917 at Lanse/Annemari, use the actual jewelry box to start Q2918, and finish at
   Arekedil on the ordinary return to Altgard. Prepare Q2916 through Annju at >=15.
   Complete Q2954 once if >=19; otherwise leave it for the scheduled Leg 7 visit.
@@ -4340,8 +4341,7 @@ monitor enabled and announce its URL when a journey starts.
     passes; the wrong-project focused-test invocation is retained and the corrected
     GameServer invocation passes all 41 tests. Seven checks pass again, and final Fast
     passes 92 tests/five guarded skips/all eleven scenarios (`rc04-capital-a3`). The
-    committed Leg 5 route/capture proof remains pending; this item is not
-    ticked until that proof includes the ordinary book fallback and hub return flights.
+    committed Leg 5 route proof then exposed the two natural-run issues below.
     The first committed natural attempt (`rc04-l5-natural-a1`, 7848d43fd) preserves
     Deyla's walking-NPC refusal: the announced next waypoint was still about 12 m
     ahead of her. The RC dialog retry now intercepts her latest observed position.
@@ -4354,7 +4354,18 @@ monitor enabled and announce its URL when a journey starts.
     and three-stamen item objects survive relog. Both hub flights, actual box use and
     four normal cube purchases are retained in the trace. Source audit, 41 focused
     tests and seven checks pass again. Final Fast passes 92 tests/five guarded skips/
-    all eleven scenarios (`rc04-capital-a4`); committed capture remains pending.
+    all eleven scenarios (`rc04-capital-a4`).
+    Final committed d0f6b9e60 capture `altgard-rc-l5-preparation-a4` passes its endpoint
+    relog and public Restore: Cleric 20, 99 completed quests, 214,590 Kinah, one recovered
+    death. Dump SHA256 f0314ddb9b00...97a4fa9ca and continuation receipt hashes verify.
+    SQL preserves every quest, equipment slot and carried item object; one owned
+    Awakening scroll is used after relog (55 -> 54), matched to its trace/CM_USE_ITEM.
+    The initially overbroad unchanged-inventory audit is retained, then corrected to
+    account for that exact ordinary consumption. Both hub routes, the proper awarded
+    box and the book fallback are proved. Three Malodor Stamens were acquired during
+    the existing native fights after START/4; RC-05 still needs Slime Sap. Historical
+    dump hashes are unchanged and the owned-schema count is zero. Final evidence:
+    `run/rc04-capital/audit.json`, `rc04-restore-a1/`, `proof-checks/`.
 - [ ] **RC-05 - Collect the Leg 5 book materials.** Depends RC-04. After Q2919
   START/4, obtain three Malodor Stamens at Kaibech and one Slime Sap at Idun's Lake
   through ordinary combat/loot. Protect all collection items for the capital finish.
@@ -4770,6 +4781,14 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-04 RC-04: the Leg 5 capital preparation, book fallback and both hub flights
+  pass natural play and relog. Committed d0f6b9e60 snapshot `altgard-rc-l5-preparation-a4`
+  restores with matching hashes/quest/item identity: Cleric 20, 99 completions, 214,590
+  Kinah, one recovered death, robe START/3, book START/4 with two tails/three stamens.
+  Controlled probe, 41 focused tests, seven checks and Fast (92 passed/five skips/all
+  eleven scenarios) pass. Failures remain; historical snapshots are intact, owned
+  schemas are dropped. Evidence `run/rc04-capital/`; RC-05's Slime Sap is next.
 
 - 2026-10-04 RC-03: Q2919 preparation, native two-tail collection and ordinary relog
   pass on free account 246; below-13 deferral and resumed preparation send no dialogs.
