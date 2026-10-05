@@ -4539,12 +4539,33 @@ monitor enabled and announce its URL when a journey starts.
     whole book/library/family/dye batch and back to Hoder, completes the juice fallback
     and preserves the exact book consumption, surplus and completions through relog
     (`run/rc11-library-route/probe-a5.log`). Earlier probe failures are retained:
-    overly close ground endpoints could not reach Kvasir, and chasing Mima's old
+    overly close ground endpoints could not reach Kvasir, and chasing Lusena's old
     position lost her; intercepting her announced waypoint uses checked ground movement.
     Sixty-six focused tests and seven pre-commit checks pass (`run/rc11-library-route/`).
     Fast passes 93 tests/five guarded skips/all eleven scenarios
     (`run/rc11-fast/rc11-library-route/`). Full revised proof remains pending;
     this verified order repair is committed before the next fresh capture.
+  - 2026-10-05, fourth retained attempt: `rc11-full-create-s1-a4` on f76b3f044
+    proves the earlier library pickup, book finish and family completion, then stops
+    at Lusena (204138) for Q2984. All three retries chase the same retained move start,
+    24.2 metres behind her waypoint; the failed trace/audit and dropped-schema receipt
+    remain intact. Java's dialog/range hooks and the shipped patrol were read: 21 points,
+    longest leg 36.16 metres, walk speed 1.5 m/s. Lusena now receives bounded paced
+    requests while the bot intercepts her waypoint over checked ground, allowing her
+    to reach talk range; other city NPCs retain their existing target choice.
+    Native probes and production share the checked ground candidate search inside the
+    actual NPC talk range. Four contained Leg 7 failures are retained: arriving before
+    Lusena, the dye-to-Cavalorn return, the attempted detour and its direct-route retry.
+    The final city sequence groups Q2278's Cavalorn contact with the book/library/family
+    pickups, visits Balder, finishes the market hand-ins, then uses learned Return.
+    `run/rc11-mima-interception/l7-smoke-a5/` passes from public Restore of altgard-rc-l6:
+    character 133297, level 22, 125 completions, zero deaths, ordinary endpoint relog
+    and schema dropped. Nine paced Lusena reapproaches are observed. The joined native
+    consumption/surplus/relog probe, 66 focused tests and seven pre-commit checks pass
+    (`run/rc11-mima-interception/`, `*-joined.log`). Full revised proof remains pending.
+    Final Fast passes 93 tests/five guarded skips/all eleven scenarios
+    (`run/rc11-fast/rc11-city-join-final/`). Commit and complete the rebuild before
+    the next fresh capture; no revised full endpoint is claimed by this contained proof.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -4931,6 +4952,13 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: the fourth full attempt's Lusena refusal and four contained
+  city-sequence failures are preserved. The joined Leg 7 smoke now passes Q2278 plus
+  book/library/family/dye work, ordinary fortress relog and cleanup at level 22 with
+  125 completions/zero deaths. Shared checked approach and paced Lusena interception
+  pass native proof, 66 focused tests, seven checks and final Fast 93 passed/five guarded
+  skips/all eleven scenarios (`run/rc11-mima-interception/`, `run/rc11-fast/rc11-city-join-final/`).
+  Commit/rebuild before the next continuous capture; RC-11 remains unchecked.
 - 2026-10-05 RC-11 pending: three continuous failures are retained with dropped-schema
   receipts. Distinct tail sources, exact book consumption with legitimate surplus and
   the library-before-dye walking batch now pass focused/native proofs. Latest repair:

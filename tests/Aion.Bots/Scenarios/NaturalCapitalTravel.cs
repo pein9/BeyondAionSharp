@@ -9,6 +9,19 @@ namespace Aion.Bots.Scenarios;
 public sealed class NaturalCapitalTravel(INaturalJourneySession session, string repoRoot, Func<long> nowMillis)
 {
 	private long? lastTakeoff;
+	/// <summary>Checked ground inside the caller's real interaction range, including occupied NPC spawn points.</summary>
+	public static IReadOnlyList<BotPosition> FindGroundApproachPath(BotNavigationGeometry geometry, int map,
+		BotPosition from, BotPosition target, float range)
+	{
+		foreach (BotPosition at in geometry.GroundAround(map, target, [Math.Max(1, range - 1), 2f, 3f])
+			.Where(at => NaturalFlightPolicy.Distance(at, target) <= range - 0.5f)
+			.OrderBy(at => NaturalFlightPolicy.Distance(from, at)))
+		{
+			IReadOnlyList<BotPosition> route = geometry.FindJourneyPath(map, from, at);
+			if (route.Count > 0) return route;
+		}
+		return [];
+	}
 	public async Task<bool> ConnectColiseumAsync(BotNavigationGeometry geometry, BotPosition destination, CancellationToken token)
 	{
 		const int map = 120010000;

@@ -30,7 +30,7 @@ public sealed partial class SimulationFastScenarioTests
 			async Task WalkedTalkAsync(NaturalAltgardStep step)
 			{
 				int npc = await probe.WalkNpcAsync(step.NpcId);
-				for (int attempt = 1; ; attempt++)
+				for (int attempt = 0; ; attempt++)
 				{
 					session.BeginStep(step.Key, "walked-capital-quest-dialog");
 					try
@@ -39,13 +39,16 @@ public sealed partial class SimulationFastScenarioTests
 						else await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token);
 						return;
 					}
-					catch (NaturalDialogTooFarException) when (attempt < 3)
+					catch (NaturalDialogTooFarException) when (attempt < NaturalLaterCapitalSteps.DialogRetryLimit(step.NpcId))
 					{
-						// Intercept the announced waypoint instead of chasing the start of a walk.
-						BotPosition from = session.CurrentPosition, to = session.Api.World.Objects[npc].SettledPosition;
+						BotPosition from = session.CurrentPosition,
+							to = NaturalLaterCapitalSteps.DialogReapproachPosition(step.NpcId, session.Api.World.Objects[npc]);
 						BotNavigationGeometry geometry = BotNavigationGeometry.ForServerWorld(probe.Server.GetInstanceId(), Race.ASMODIANS);
 						IReadOnlyList<BotPosition> route = geometry.FindJourneyPath(step.MapId ?? 120010000, from, to);
 						Assert.True(route.Count > 0, $"Walker {step.NpcId}: no checked reapproach {from} -> {to}");
+						Console.WriteLine($"PC reapproach {step.NpcId}: {route.Count} checked points to {to}.");
+						if (session.Api.OpenDialogTargetId is int dialogTarget)
+							await session.SendPacketAsync(session.Api.CloseDialog(dialogTarget), token);
 						await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing)
 							.CreateGroundPlan(route, from, session.Api.World.MovementSpeed!.Value), token);
 						await session.SynchronizeAsync(token);
@@ -432,13 +435,7 @@ public sealed partial class SimulationFastScenarioTests
 			BotPosition from = session.CurrentPosition, to = new(npc.GetX(), npc.GetY(), npc.GetZ(), 0);
 			float range = combatRange ?? Math.Min(5, npc.GetObjectTemplate().GetTalkDistance());
 			BotNavigationGeometry geometry = BotNavigationGeometry.ForServerWorld(Server.GetInstanceId(), Race.ASMODIANS);
-			IReadOnlyList<BotPosition> route = [];
-			foreach (BotPosition at in geometry.GroundAround(map, to, [Math.Max(1, range - 1), 2f, 3f])
-				.Where(at => NaturalFlightPolicy.Distance(at, to) <= range - 0.5f).OrderBy(at => NaturalFlightPolicy.Distance(from, at)))
-			{
-				route = geometry.FindJourneyPath(map, from, at);
-				if (route.Count > 0) break;
-			}
+			IReadOnlyList<BotPosition> route = NaturalCapitalTravel.FindGroundApproachPath(geometry, map, from, to, range);
 			if (route.Count == 0 && await travel.ConnectColiseumAsync(geometry, to, token))
 			{
 				from = session.CurrentPosition;

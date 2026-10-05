@@ -60,6 +60,11 @@ public static class NaturalLaterCapitalSteps
 	];
 	public static readonly NaturalAltgardStep LibraryOffer = NaturalCapitalSteps.Offer(2938, 204267, page: 4762);
 	public static IEnumerable<NaturalAltgardStep> Leg7City => BookFinish.Append(LibraryOffer).Concat(FamilyLetter).Concat(Dye);
+	/// <summary>Lusena's retained move start can trail her waypoint; Deyla's existing stopped-position interception stays in place.</summary>
+	public static BotPosition DialogReapproachPosition(int npcId, BotKnownObject observed) =>
+		npcId == 204138 ? observed.SettledPosition : observed.Position;
+	/// <summary>Allow Lusena to reach the intercepted waypoint while normal dialog requests stop her in range.</summary>
+	public static int DialogRetryLimit(int npcId) => npcId == 204138 ? 60 : 3;
 	public static readonly NaturalAltgardStep ElementaryOffer = NaturalCapitalSteps.Offer(2920, 204141) with
 	{
 		Actions = ["QUEST_SELECT", "SELECT_NONE_1", "SELECT_NONE_1_1", "ASK_QUEST_ACCEPT", "QUEST_ACCEPT_1"],
@@ -163,11 +168,20 @@ public static class NaturalLaterCapitalSteps
 		{ ["quest"] = 2920, ["page"] = page, ["group"] = page - 5, ["kinah"] = world.Kinah - kinah });
 	}
 
-	public static bool Leg7CityNeeded(BotWorldModel world) => !world.CompletedQuestIds.Contains(2919) ||
-		world.Level >= 20 && (!world.CompletedQuestIds.Contains(2959) || !world.CompletedQuestIds.Contains(2984) || !Prepared(world, 2938, 0)) ||
+	public static bool Leg7LibraryNeeded(BotWorldModel world) => !world.CompletedQuestIds.Contains(2919) ||
+		world.Level >= 20 && (!Prepared(world, 2938, 0) || !Prepared(world, 2959, 0));
+	public static bool Leg7ErrandsNeeded(BotWorldModel world) =>
+		world.Level >= 20 && (!world.CompletedQuestIds.Contains(2959) || !world.CompletedQuestIds.Contains(2984)) ||
 		world.Level >= 19 && !world.CompletedQuestIds.Contains(2954);
+	public static bool Leg7CityNeeded(BotWorldModel world) => Leg7LibraryNeeded(world) || Leg7ErrandsNeeded(world);
 
 	public static async Task CompleteLeg7CityAsync(INaturalJourneySession session, Func<NaturalAltgardStep, Task> talk)
+	{
+		await CompleteLeg7LibraryAsync(session, talk);
+		await CompleteLeg7ErrandsAsync(session, talk);
+	}
+
+	public static async Task CompleteLeg7LibraryAsync(INaturalJourneySession session, Func<NaturalAltgardStep, Task> talk)
 	{
 		BotWorldModel world = session.Api.World;
 		if (world.MapId != 120010000) throw new InvalidDataException("Leg 7's capital batch requires Pandaemonium.");
@@ -190,9 +204,19 @@ public static class NaturalLaterCapitalSteps
 		}
 		if (world.Level >= 20)
 		{
-			// Oubliette is beside the final book contact. Pick up permission here before leaving
-			// the library for the family/dye errands, avoiding the failed return from the dye vendor.
-			await RunMatchingStepsAsync(session, FamilyLetter.Concat(Dye).Prepend(LibraryOffer), talk);
+			await RunMatchingStepsAsync(session, [LibraryOffer, FamilyLetter[0]], talk);
+			if (!Prepared(world, 2938, 0) || !Prepared(world, 2959, 0))
+				throw new InvalidDataException("The nearby library and family pickups must be carried before leaving this area.");
+		}
+	}
+
+	public static async Task CompleteLeg7ErrandsAsync(INaturalJourneySession session, Func<NaturalAltgardStep, Task> talk)
+	{
+		BotWorldModel world = session.Api.World;
+		if (world.MapId != 120010000) throw new InvalidDataException("Leg 7's errands require Pandaemonium.");
+		if (world.Level >= 20)
+		{
+			await RunMatchingStepsAsync(session, FamilyLetter.Concat(Dye), talk);
 			if (!world.CompletedQuestIds.IsSupersetOf(new[] { 2959, 2984 }) || !Prepared(world, 2938, 0) ||
 				Owned(world, 182207064) != 0 || Owned(world, 169100000) != 8 || Owned(world, 169200002) != 8)
 				throw new InvalidDataException("The city errands must finish once, consume the supplied ingredient and retain both unapplied dye rewards.");

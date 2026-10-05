@@ -1100,6 +1100,28 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						if (approach.Arrived) break;
 					}
 				}
+				if (!approach.Arrived && laterCapital != null)
+				{
+					// The generic navigator uses a three-metre interaction radius. City NPCs
+					// can have reachable ground farther out but still inside their shipped talk range.
+					BotKnownObject? seen = session.Api.World.Objects.Values.FirstOrDefault(o => o.TemplateId == npcId && !o.IsCorpse);
+					BotPosition target = seen?.SettledPosition ?? anchor;
+					float range = Math.Min(5, runtime.Data.NpcDataDh.GetNpcTemplate(npcId)!.GetTalkDistance());
+					IReadOnlyList<BotPosition> route = NaturalCapitalTravel.FindGroundApproachPath(mapGeometry, map, session.CurrentPosition, target, range);
+					if (route.Count > 0 && here.IsSegmentSafe(route, seen?.ObjectId))
+					{
+						await here.MoveAsync(route, token);
+						await here.SynchronizeAsync(token);
+						seen = session.Api.World.Objects.Values.Where(o => o.TemplateId == npcId && !o.IsCorpse)
+							.OrderBy(o => Distance(session.CurrentPosition, o.SettledPosition)).FirstOrDefault();
+						if (seen != null && Distance(session.CurrentPosition, seen.SettledPosition) <= range)
+						{
+							session.TraceDiagnostic("capital-talk-range-approach", new Dictionary<string, object?>
+							{ ["npc"] = npcId, ["range"] = range, ["checkedPoints"] = route.Count, ["position"] = session.CurrentPosition });
+							return seen.ObjectId;
+						}
+					}
+				}
 				Require.True(approach.Arrived, $"Capital NPC {npcId}: {approach.Reason}");
 				return Require.IsType<int>(approach.TargetObjectId);
 			}
@@ -1123,15 +1145,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							{ ["quest"] = step.QuestId, ["experience"] = ObservedExperience() - xp, ["kinah"] = session.Api.World.Kinah - kinah });
 						return;
 					}
-					catch (NaturalDialogTooFarException) when (attempt < 3)
+					catch (NaturalDialogTooFarException) when (attempt < NaturalLaterCapitalSteps.DialogRetryLimit(step.NpcId))
 					{
 						// Deyla walks: the announced next waypoint is not her current position. After a server refusal,
 						// intercept the last observed position instead of repeatedly arriving at that future waypoint.
 						BotKnownObject seen = session.Api.World.Objects[npc];
+						BotPosition destination = NaturalLaterCapitalSteps.DialogReapproachPosition(step.NpcId, seen);
 						session.TraceDiagnostic("later-capital-dialog-reapproach", new Dictionary<string, object?>
-						{ ["npc"] = step.NpcId, ["position"] = seen.Position, ["nextWaypoint"] = seen.MoveTarget });
+						{ ["npc"] = step.NpcId, ["position"] = seen.Position, ["nextWaypoint"] = seen.MoveTarget, ["destination"] = destination });
 						NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World), newEntry: false);
-						await here.MoveAsync([seen.Position], token);
+						IReadOnlyList<BotPosition> route = await here.FindRouteAsync(session.CurrentPosition, destination, token);
+						Require.True(route.Count > 0 || Distance(session.CurrentPosition, destination) <= 1,
+							$"Capital NPC {step.NpcId}: no checked dialogue reapproach.");
+						if (route.Count > 0) await here.MoveAsync(route, token);
 						await here.SynchronizeAsync(token);
 						await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
 					}
@@ -1677,9 +1703,17 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await session.SynchronizeAsync(token);
 					EnterLegMap();
 					if (haramelProgress != null) SaveHaramelProgress();
-					if (laterCapital != null && altgardLegId == "l7" && session.Api.World.MapId == capitalContract.MapId &&
-						NaturalLaterCapitalSteps.Leg7CityNeeded(session.Api.World))
-						await NaturalLaterCapitalSteps.CompleteLeg7CityAsync(session, PlayLaterCapitalStepAsync);
+					if (laterCapital != null && altgardLegId == "l7" && session.Api.World.MapId == capitalContract.MapId)
+					{
+						var proposal = NaturalAltgardQuestSteps.State(session.Api.World, 2278);
+						bool paid = session.Api.World.CompletedQuestIds.Contains(2278);
+						// Finish Q2278's Cavalorn contact first, then batch the nearby book/pickups.
+						// Leave the market hand-ins until after Balder, so no library return is needed.
+						if ((paid || proposal is (3, >= 2) or (4, _)) && NaturalLaterCapitalSteps.Leg7LibraryNeeded(session.Api.World))
+							await NaturalLaterCapitalSteps.CompleteLeg7LibraryAsync(session, PlayLaterCapitalStepAsync);
+						if ((paid || proposal is (3, >= 3) or (4, _)) && NaturalLaterCapitalSteps.Leg7ErrandsNeeded(session.Api.World))
+							await NaturalLaterCapitalSteps.CompleteLeg7ErrandsAsync(session, PlayLaterCapitalStepAsync);
+					}
 					if (laterCapital != null && altgardLegId == "l9" && session.Api.World.MapId == capitalContract.MapId &&
 						!session.Api.World.CompletedQuestIds.Contains(2920))
 						await NaturalLaterCapitalSteps.CompleteLeg9CityAsync(session, PlayLaterCapitalStepAsync, ApproachCapitalNpcAsync, token);
@@ -3107,7 +3141,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					int npc;
 					int stepMap = leg.StepMap(step);
 					Require.Equal(stepMap, session.Api.World.MapId);
-					if (stepMap != leg.Hub.MapId && leg.Haramel == null)
+					if (laterCapital != null && stepMap == capitalContract.MapId)
+						npc = await ApproachCapitalNpcAsync(step.NpcId);
+					else if (stepMap != leg.Hub.MapId && leg.Haramel == null)
 					{
 						NaturalNavigationResult reached = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(stepMap, step.NpcId,
 							new BotPosition(step.Position[0], step.Position[1], step.Position[2], 0), step.TalkRange, navigator, "NPC", token);
