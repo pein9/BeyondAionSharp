@@ -4323,6 +4323,25 @@ monitor enabled and announce its URL when a journey starts.
   Q2917 at Lanse/Annemari, use the actual jewelry box to start Q2918, and finish at
   Arekedil on the ordinary return to Altgard. Prepare Q2916 through Annju at >=15.
   Complete Q2954 once if >=19; otherwise leave it for the scheduled Leg 7 visit.
+  - 2026-10-04 implementation: Java Q2917/Q2918/Q2916/Q2954 and item-dialog dispatch
+    read; Annju uses the already approved D28 registration. Free probe account 247
+    completes heritage through Lanse/Annemari, accepts Q2918 using the actual awarded
+    box, prepares robe START/3, completes juice exactly once and consumes the box at
+    Arekedil. Ordinary relog and resumed no-dialog checks pass (`probe-a1.log`).
+    Committed a413b0ce5 naturally carries the original Q2917 item through distinct
+    `altgard-rc-l2`, `altgard-rc-l3` and `altgard-rc-l4` checkpoints, at levels 16/16/19
+    with zero deaths; Q2217 completes once in Leg 3. Each prefix has its verified
+    continuation receipt and its owned capture schema is dropped. No historical dump
+    is replaced. Forty-one focused tests and seven checks pass (`run/rc04-capital/`).
+    Both initial Fast attempts retain a controlled East/Sumarhon probe timeout. The
+    diagnostic replay confirms 6 MP and STR_SKILL_NOT_ENOUGH_MP; that protocol probe
+    now labels its MP refill, and its setup teleports drop the stale client view. No
+    natural resource or server cast behavior changes. The standalone original probe
+    passes; the wrong-project focused-test invocation is retained and the corrected
+    GameServer invocation passes all 41 tests. Seven checks pass again, and final Fast
+    passes 92 tests/five guarded skips/all eleven scenarios (`rc04-capital-a3`). The
+    committed Leg 5 route/capture proof remains pending; this item is not
+    ticked until that proof includes the ordinary book fallback and hub return flights.
 - [ ] **RC-05 - Collect the Leg 5 book materials.** Depends RC-04. After Q2919
   START/4, obtain three Malodor Stamens at Kaibech and one Slime Sap at Idun's Lake
   through ordinary combat/loot. Protect all collection items for the capital finish.

@@ -234,6 +234,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					.Concat(airlines.Where(route => route.MapId == altgardLeg.Hub.MapId).Select(route => route.NpcId)).Distinct().ToArray();
 			if (laterCapital != null) altgardNpcs = altgardNpcs
 				.Concat(NaturalLaterCapitalSteps.HeritagePickup.Concat(NaturalLaterCapitalSteps.BookPreparation).Select(step => step.NpcId))
+				.Concat(NaturalLaterCapitalSteps.HeritageCity.Concat(NaturalLaterCapitalSteps.RobePreparation)
+					.Concat(NaturalLaterCapitalSteps.Juice).Append(NaturalLaterCapitalSteps.MaternalReturn).Select(step => step.NpcId))
 				.Concat(new[] { 210404, 203679, 203581, 204191 }).Concat(airlines.Select(route => route.NpcId)).Distinct().ToArray();
 			// AK-08: items an open Altgard quest still needs (its collect items, the ring carriers' rings): never worn as gear and
 			// never sold. The leg 5 smoke run wore Q2292's level 16 rings as upgrades, which its hand-in would not have found.
@@ -1076,6 +1078,24 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				return Require.IsType<int>(approach.TargetObjectId);
 			}
 
+			async Task PlayLaterCapitalStepAsync(NaturalAltgardStep step)
+			{
+				session.BeginStep("rc-" + step.Key, "later-capital-dialog");
+				for (int attempt = 0; ; attempt++)
+				{
+					int npc = session.Api.World.MapId == capitalContract.MapId ? await ApproachCapitalNpcAsync(step.NpcId)
+						: await ApproachShippedSpawnAsync(step.NpcId, withinRange: step.TalkRange);
+					try
+					{
+						if (step.NpcId == 700212) await NaturalLaterCapitalSteps.ReadQuestBookAsync(session, step, npc, token);
+						else session.TraceDiagnostic("later-capital-step", new Dictionary<string, object?>
+							{ ["change"] = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token) });
+						return;
+					}
+					catch (NaturalDialogTooFarException) when (attempt < 2) { }
+				}
+			}
+
 			async Task PrepareLaterCapitalBookAsync()
 			{
 				if (laterCapital == null || session.Api.World.CompletedQuestIds.Contains(2919) || session.Api.World.Level < 13) return;
@@ -1101,20 +1121,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					farApproach = null;
 					combat.AfterBindRevive = EnterBookMap;
 					EnterBookMap();
-					if (!await NaturalLaterCapitalSteps.PrepareBookAsync(session, async step =>
-					{
-						for (int attempt = 0; ; attempt++)
-						{
-							int npc = await ApproachCapitalNpcAsync(step.NpcId);
-							try
-							{
-								if (step.NpcId == 700212) await NaturalLaterCapitalSteps.ReadQuestBookAsync(session, step, npc, token);
-								else await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token);
-								break;
-							}
-							catch (NaturalDialogTooFarException) when (attempt < 2) { }
-						}
-					})) return;
+					if (!await NaturalLaterCapitalSteps.PrepareBookAsync(session, PlayLaterCapitalStepAsync)) return;
 					if (NaturalAltgardQuestSteps.State(session.Api.World, 2919) is (3, 4))
 					{
 						bookCollectionUnderway = true;
@@ -1604,6 +1611,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							catch (NaturalDialogTooFarException) when (attempt < 3) { await ReapproachForDialogAsync(npc); }
 							}
 					});
+				if (laterCapital != null && altgardLegId == "l5" && NaturalLaterCapitalSteps.Leg5CityNeeded(session.Api.World))
+					await VisitLeg5CapitalAsync();
 				for (int sequence = 1; sequence <= 400; sequence++)
 				{
 					await session.SynchronizeAsync(token);
@@ -2087,58 +2096,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							break;
 						}
 						case "cube-expansion":
-						{
-							// AK-Q4 (a): the Pandaemonium cube expansions, with the Cleric's own kinah. Walk to the fortress teleporter,
-							// travel, buy each level as Java CubeExpandService.expandCube offers it (EXTEND_INVENTORY, then the
-							// STR_WAREHOUSE_EXPAND_WARNING question with the price), and cast Return to the Basfelt bind.
-							await EnsureOnGroundAsync();
-							NaturalAltgardCubeExpansion cube = leg.CubeExpansion!;
-							BotWorldModel world = session.Api.World;
-							var steps = new NaturalServiceSteps(session);
-							// The fortress is 1.1 km from Basfelt, past the navigator's segment budget (smoke run 5): take the travel
-							// planner's road to the teleporter's square, then approach it.
-							BotPosition teleporterSpawn = graph.GetMap(contract.MapId)!.Waypoints
-								.First(waypoint => waypoint.TemplateId == cube.TeleporterNpcId).Position;
-							if (!await FlyTowardAsync(teleporterSpawn))
-								await WalkRoadDefendingAsync(teleporterSpawn, "cube-teleporter-road", within: 15);
-							int teleporter = await ApproachShippedSpawnAsync(cube.TeleporterNpcId);
-							NaturalServiceOutcome travelled = await steps.TeleportAsync(teleporter, world.Objects[teleporter].Position,
-								cube.TeleporterTalkRange, cube.LocationId, cube.Fare, cube.MapId, token);
-							Require.True(travelled.IsDone, travelled.Reason);
-							NaturalJourneyNavigator city = mapNavigators.Enter(NaturalMapKey.Observe(world));
-							NaturalNavigationResult reached = await NaturalIshalgenNavigator.ApproachNpcAsync(cube.MapId, cube.ExpanderNpcId,
-								new BotPosition(cube.ExpanderPosition[0], cube.ExpanderPosition[1], cube.ExpanderPosition[2], 0), city, token);
-							Require.True(reached.Arrived, $"Cube expander {cube.ExpanderNpcId}: {reached.Reason}");
-							int expander = Require.IsType<int>(reached.TargetObjectId);
-							for (int level = world.CubeExpansion?.Npc ?? 0; level < cube.Levels && world.Kinah >= cube.Prices[level];
-								level = world.CubeExpansion?.Npc ?? 0)
-							{
-								long before = world.Kinah;
-								await NaturalDialogProtocol.OpenAsync(session, expander, token);
-								await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet => packet.Get<int>("targetObjectId") == expander);
-								await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(expander,
-									checked((ushort)DialogAction.EXTEND_INVENTORY)), token);
-								DecodedBotServerPacket question = await session.WaitForPacketAsync(typeof(SM_QUESTION_WINDOW), token,
-									packet => packet.Get<int>("code") == SM_QUESTION_WINDOW.STR_WAREHOUSE_EXPAND_WARNING);
-								await session.SendPacketAsync(GameClientPackets.QuestionResponse(question.Get<int>("code"), 1,
-									question.Get<int>("senderId")), token);
-								await session.WaitForPacketAsync(typeof(SM_CUBE_UPDATE), token);
-								await session.SynchronizeAsync(token);
-								await session.SendPacketAsync(session.Api.CloseDialog(expander), token);
-								session.TraceDiagnostic("cube-expanded", new Dictionary<string, object?>
-								{
-									["expander"] = cube.ExpanderNpcId, ["npcExpansions"] = world.CubeExpansion?.Npc,
-									["capacity"] = world.CubeExpansion?.Capacity, ["kinahBefore"] = before, ["kinahAfter"] = world.Kinah,
-								});
-								Require.True((world.CubeExpansion?.Npc ?? 0) == level + 1 && before - world.Kinah == cube.Prices[level],
-									$"Cube expansion {level + 1} not observed (level {world.CubeExpansion?.Npc}, Kinah {before} -> {world.Kinah}).");
-							}
-							await PrepareLaterCapitalBookAsync();
-							await UseLearnedReturnToBindAsync();
-							navigator = mapNavigators.Enter(NaturalMapKey.Observe(world));
-							Require.Equal(leg.Hub.MapId, world.MapId ?? 0);
+							await VisitLeg5CapitalAsync();
 							break;
-						}
 						case "town-service":
 						{
 							// AK-08: the cube is too full to loot. At the town's merchant: wear the upgrades, then sell what the inventory
@@ -2548,6 +2507,75 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						destinySpawnedAt = null;
 					}
 					else if (session.Api.World.MapId == destiny.MapId) await RecoverDestinyAsync(killed ? "missing-kill-credit" : "retreat-or-expired-target");
+				}
+
+				async Task VisitLeg5CapitalAsync()
+				{
+					// AK-Q4 (a): the Pandaemonium cube expansions, with the Cleric's own kinah. Walk to the fortress teleporter,
+					// travel, buy each level as Java CubeExpandService.expandCube offers it (EXTEND_INVENTORY, then the
+					// STR_WAREHOUSE_EXPAND_WARNING question with the price). RC-04 batches the city quests,
+					// Doman/Arekedil return and Basfelt flight; historical runs retain their learned Return.
+					await EnsureOnGroundAsync();
+					NaturalAltgardCubeExpansion cube = leg.CubeExpansion!;
+					BotWorldModel world = session.Api.World;
+					var steps = new NaturalServiceSteps(session);
+					// The fortress is 1.1 km from Basfelt, past the navigator's segment budget (smoke run 5): take the travel
+					// planner's road to the teleporter's square, then approach it.
+					BotPosition teleporterSpawn = graph.GetMap(contract.MapId)!.Waypoints
+						.First(waypoint => waypoint.TemplateId == cube.TeleporterNpcId).Position;
+					if (!await FlyTowardAsync(teleporterSpawn))
+						await WalkRoadDefendingAsync(teleporterSpawn, "cube-teleporter-road", within: 15);
+					int teleporter = await ApproachShippedSpawnAsync(cube.TeleporterNpcId);
+					NaturalServiceOutcome travelled = await steps.TeleportAsync(teleporter, world.Objects[teleporter].Position,
+						cube.TeleporterTalkRange, cube.LocationId, cube.Fare, cube.MapId, token);
+					Require.True(travelled.IsDone, travelled.Reason);
+					NaturalJourneyNavigator city = mapNavigators.Enter(NaturalMapKey.Observe(world));
+					NaturalNavigationResult reached = await NaturalIshalgenNavigator.ApproachNpcAsync(cube.MapId, cube.ExpanderNpcId,
+						new BotPosition(cube.ExpanderPosition[0], cube.ExpanderPosition[1], cube.ExpanderPosition[2], 0), city, token);
+					Require.True(reached.Arrived, $"Cube expander {cube.ExpanderNpcId}: {reached.Reason}");
+					int expander = Require.IsType<int>(reached.TargetObjectId);
+					for (int level = world.CubeExpansion?.Npc ?? 0; level < cube.Levels && world.Kinah >= cube.Prices[level];
+						level = world.CubeExpansion?.Npc ?? 0)
+					{
+						long before = world.Kinah;
+						await NaturalDialogProtocol.OpenAsync(session, expander, token);
+						await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet => packet.Get<int>("targetObjectId") == expander);
+						await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(expander,
+							checked((ushort)DialogAction.EXTEND_INVENTORY)), token);
+						DecodedBotServerPacket question = await session.WaitForPacketAsync(typeof(SM_QUESTION_WINDOW), token,
+							packet => packet.Get<int>("code") == SM_QUESTION_WINDOW.STR_WAREHOUSE_EXPAND_WARNING);
+						await session.SendPacketAsync(GameClientPackets.QuestionResponse(question.Get<int>("code"), 1,
+							question.Get<int>("senderId")), token);
+						await session.WaitForPacketAsync(typeof(SM_CUBE_UPDATE), token);
+						await session.SynchronizeAsync(token);
+						await session.SendPacketAsync(session.Api.CloseDialog(expander), token);
+						session.TraceDiagnostic("cube-expanded", new Dictionary<string, object?>
+						{
+							["expander"] = cube.ExpanderNpcId, ["npcExpansions"] = world.CubeExpansion?.Npc,
+							["capacity"] = world.CubeExpansion?.Capacity, ["kinahBefore"] = before, ["kinahAfter"] = world.Kinah,
+						});
+						Require.True((world.CubeExpansion?.Npc ?? 0) == level + 1 && before - world.Kinah == cube.Prices[level],
+							$"Cube expansion {level + 1} not observed (level {world.CubeExpansion?.Npc}, Kinah {before} -> {world.Kinah}).");
+					}
+					if (laterCapital != null && altgardLegId == "l5")
+					{
+						await NaturalLaterCapitalSteps.PrepareLeg5CityAsync(session, PlayLaterCapitalStepAsync,
+							runtime.Data.ItemDataDh.GetItemTemplate(182207009), token);
+						await PrepareLaterCapitalBookAsync();
+						int doman = await ApproachCapitalNpcAsync(204191);
+						NaturalServiceOutcome returned = await steps.TeleportAsync(doman, world.Objects[doman].Position,
+							5, 9, 500, leg.Hub.MapId, token);
+						Require.True(returned.IsDone, returned.Reason);
+						EnterLegMap();
+						await NaturalLaterCapitalSteps.CompleteMaternalReturnAsync(session, PlayLaterCapitalStepAsync);
+						Require.True(await FlyTowardAsync(ground), "Leg 5 city preparation needs the fortress-to-Basfelt hub flight.");
+					}
+					else
+					{
+						await UseLearnedReturnToBindAsync();
+						navigator = mapNavigators.Enter(NaturalMapKey.Observe(world));
+					}
+					Require.Equal(leg.Hub.MapId, world.MapId ?? 0);
 				}
 
 				void EnterLegMap(bool newEntry = false)

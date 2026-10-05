@@ -19,7 +19,7 @@ public sealed partial class SimulationFastScenarioTests
 	/// <item>at Brodir, Sumarhon's camp: Q24230 (nine kills) and Q24231 (eight swords).</item>
 	/// </list>
 	/// GM setup on the probe only: its class, level and skills, the Leg 5 start's completed quests, setup teleports, and each
-	/// target set to 1 HP with its aggressive neighbours cleared (the fights are AK-07's).
+	/// target set to 1 HP with its aggressive neighbours cleared and the probe's MP refilled (the fights are AK-07's).
 	/// </summary>
 	[SkippableFact]
 	public async Task EastAndSumarhonQuestsPlayThroughTheirPlans()
@@ -60,6 +60,8 @@ public sealed partial class SimulationFastScenarioTests
 			BotPosition ground = geometry.GroundAround(altgard, at, radii)
 				.Where(point => !sighted || geometry.HasLineOfSight(altgard, point with { Z = point.Z + 1.6f }, at with { Z = at.Z + 1 }))
 				.Skip(skip).First();
+			// Java's setup teleport retains old visible objects; use the same reload boundary as the later leg probes.
+			session.Api.World.BeginWorldReload();
 			await TeleportForSetupAsync(session, Server(), altgard, ground.X, ground.Y, ground.Z, token);
 			session.AcceptTeleportPosition();
 			await session.SynchronizeAsync(token);
@@ -111,10 +113,25 @@ public sealed partial class SimulationFastScenarioTests
 				{
 					await TeleportNearAsync(at, [12f, 14f, 10f, 16f], sighted: true, skip: spot);
 					next.GetLifeStats().SetCurrentHp(1);
+					// This controlled protocol probe does not test resource management. Shared-world drop/miss sequences
+					// can exhaust its MP before the final quests; the natural combat proof retains its own ordinary resources.
+					Server().GetLifeStats().SetCurrentMp(Server().GetLifeStats().GetMaxMp());
 					await session.SynchronizeAsync(token);
 					if (!session.Api.World.Objects.ContainsKey(next.GetObjectId())) break;
-					await NaturalAirCombat.ShootDownAsync(session, next.GetObjectId(), quest,
-						(origin, skill, skillLevel, aim) => runtime.CreateSpellCast(session.Api.World, origin, skill, skillLevel, aim), token, maximumCasts: 6);
+					try
+					{
+						await NaturalAirCombat.ShootDownAsync(session, next.GetObjectId(), quest,
+							(origin, skill, skillLevel, aim) => runtime.CreateSpellCast(session.Api.World, origin, skill, skillLevel, aim), token, maximumCasts: 6);
+					}
+					catch (TimeoutException)
+					{
+						Console.WriteLine($"AK-06 cast timeout at {session.CurrentStep}, target {next.GetNpcId()}/{next.GetObjectId()}, " +
+							$"probe HP {Server().GetLifeStats().GetCurrentHp()}, MP {Server().GetLifeStats().GetCurrentMp()}, " +
+							"messages " + string.Join("/", session.PacketHistory.TakeLast(80)
+								.Where(packet => packet.PacketType == typeof(Aion.GameServer.Network.Aion.ServerPackets.SM_SYSTEM_MESSAGE))
+								.Select(packet => packet.Get<object>("name"))));
+						throw;
+					}
 					await session.SynchronizeAsync(token);
 				}
 				if (!session.Api.World.Objects.ContainsKey(next.GetObjectId()) && !next.IsDead())

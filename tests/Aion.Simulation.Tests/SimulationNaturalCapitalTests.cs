@@ -18,6 +18,44 @@ namespace Aion.Simulation.Tests;
 
 public sealed partial class SimulationFastScenarioTests
 {
+	/// <summary>RC-04: the carried heritage, actual box acceptance, D28's Annju contact and exactly one juice delivery.</summary>
+	[SkippableFact]
+	public async Task LaterCapitalLeg5PreparationUsesItsAwardedBoxAndRetainsTheRobeAndSingleJuiceCompletion()
+	{
+		await RunCapitalProbeAsync("RC04", 247, "Asimcapfive", async (probe, session, token) =>
+		{
+			probe.Server.GetCommonData().SetLevel(19);
+			SkillLearnService.LearnNewSkills(probe.Server, 10, 19);
+			await probe.SetupNearAsync(220030000, 203574);
+			await NaturalLaterCapitalSteps.PickUpHeritageAsync(session, probe.TalkAsync);
+			await probe.SetupNearAsync(120010000, 204108);
+			await NaturalLaterCapitalSteps.PrepareLeg5CityAsync(session, probe.TalkAsync,
+				fixture.DataManager.StaticData.ItemDataDh.GetItemTemplate(182207009), token);
+			Assert.Contains(2917, session.Api.World.CompletedQuestIds);
+			Assert.True(NaturalAltgardQuestSteps.State(session.Api.World, 2918) is (3, 0));
+			Assert.True(NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 3));
+			Assert.Contains(2954, session.Api.World.CompletedQuestIds);
+			Assert.DoesNotContain(session.Api.World.Inventory.Values, i => i.ItemId is 182207008 or 182207040);
+			await NaturalLaterCapitalSteps.PrepareLeg5CityAsync(session,
+				_ => throw new InvalidOperationException("Prepared city contacts must not repeat."),
+				fixture.DataManager.StaticData.ItemDataDh.GetItemTemplate(182207009), token);
+			await probe.SetupNearAsync(220030000, 203574);
+			await NaturalLaterCapitalSteps.CompleteMaternalReturnAsync(session, probe.TalkAsync);
+			await session.QuitAsync(token);
+			await session.WaitForReentryAsync(token);
+			await session.ReloginExistingCharacterAsync(token);
+			await session.EnterWorldAsync(token);
+			await session.SynchronizeAsync(token);
+			Assert.True(session.Api.World.CompletedQuestIds.IsSupersetOf(new[] { 2917, 2918, 2954 }));
+			Assert.True(NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 3));
+			Assert.DoesNotContain(session.Api.World.Inventory.Values, i => i.ItemId is 182207008 or 182207009 or 182207040);
+			Assert.Equal(1, probe.Server.GetQuestStateList().GetQuestState(2954).GetCompleteCount());
+			await NaturalLaterCapitalSteps.CompleteJuiceOnceAsync(session,
+				_ => throw new InvalidOperationException("Completed repeatable juice must not start again."));
+			Console.WriteLine("RC-04: correct heritage finish, actual awarded-box acceptance/hand-in, robe START/3 and one juice completion retained through relog.");
+		});
+	}
+
 	/// <summary>RC-03: level gate, proper preparation, native Ampha drops, paid travel and ordinary relog.</summary>
 	[SkippableFact]
 	public async Task LaterCapitalBookPreparationCollectsTwoAmphaTailsAfterAcceptanceAndRetainsThemThroughRelog()
