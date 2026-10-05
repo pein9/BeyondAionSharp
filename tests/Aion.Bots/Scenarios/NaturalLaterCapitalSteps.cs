@@ -40,6 +40,8 @@ public static class NaturalLaterCapitalSteps
 		NaturalCapitalSteps.Finish(2954, 1, 204191),
 	];
 	public static readonly NaturalAltgardStep MaternalReturn = NaturalCapitalSteps.Finish(2918, 0, 203574) with { MapId = 220030000 };
+	public static readonly NaturalAltgardStep RobeBerth = NaturalCapitalSteps.Progress(2916, 3, 798033,
+		"SETPRO4", 2375, 0, 4) with { MapId = 220030000 };
 
 	public static bool Leg5CityNeeded(BotWorldModel world) => !world.CompletedQuestIds.IsSupersetOf(new[] { 2917, 2918 }) ||
 		world.Level >= 15 && !Prepared(world, 2916, 3) || world.Level >= 19 && !world.CompletedQuestIds.Contains(2954) ||

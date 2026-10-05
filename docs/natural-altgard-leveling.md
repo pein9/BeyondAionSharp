@@ -2574,7 +2574,8 @@ The same loop protocol, with "AK" in place of "NA".
 **PC-08 scheduled addition:** with Q2916 START/3 from Leg 5 city preparation, visit
 Neparinerk 798033 at (2693.71,1026.61,313) beside the Berth work and retain START/4
 for Banatisai in Leg 9. It belongs alongside the existing Neparinerk deliveries,
-not at Manir. Executor, updated contract and contained proof are pending.
+not at Manir. RC-06 proves the opt-in executor and carried-state receipt alongside
+the historical route; the original contained contract and snapshots retain their scope.
 
 **Status (2026-10-01): approved** (AG-Q1..AG-Q3 as recommended; see "Blocked / questions"). Leg 6 covers
 Stops 7 and 8 from the Trader's Berth bind (AG-Q1 (a)). Q24115 and Q2262 are held for their hubs (AG-Q2 (a)). Outside
@@ -4382,8 +4383,27 @@ monitor enabled and announce its URL when a journey starts.
     (`run/rc05-materials/audit.json`). The existing RC-04 death remains recorded.
     Seven pre-commit checks pass; Fast passes 92 tests/five guarded skips/all eleven
     scenarios (`run/rc05-fast/rc05-materials/`). No server or quest data changes.
-- [ ] **RC-06 - Continue the robe quest at Trader's Berth.** Depends RC-04. During
+- [x] **RC-06 - Continue the robe quest at Trader's Berth.** Depends RC-04. During
   Leg 6, advance Q2916 at Neparinerk 798033 to START/4 and retain it across relog.
+  - 2026-10-04: Java Q2916's Neparinerk page 2375/SETPRO4 is performed when the
+    ordinary route first reaches the Berth. The revised endpoint requires START/4.
+    Committed RC-05 `b92ad512c` prefix `altgard-rc-l5-materials` retains all six
+    book materials, with verified dump/receipt hashes and matching observed assembly
+    commit. The capture began before the rebuild's exit was confirmed; successful
+    build and actual assembly identity were then verified (`capture-audit.json`).
+    Public restore and contained `rc06-smoke-a2` play the existing full Leg 6:
+    Cleric 21, 109 completed quests, 244,919 Kinah, 4,192,061 simulated milliseconds, one recovered
+    death; all book material objects remain unchanged and ordinary endpoint relog
+    preserves robe START/4 and book START/4 with zero completion credit.
+    First `rc06-smoke-a1` retains Q2252's reward-page timeout: the native Drakie
+    variant sets REWARD/2 and Java selects reward group 1/page 6, while the old
+    contract expected Spirit group 0/page 5. The bot now follows the observed
+    alternate branch; corrected proof observes page 6 and pays Q2252 exactly once.
+    No server/quest data or random-spawn behavior changes. Forty-two focused tests,
+    seven pre-commit checks and trace/SQL/historical-hash audit pass on base b92ad512c;
+    both owned schemas are dropped (`run/rc06-robe/audit.json`).
+    Final Fast passes 92 tests/five guarded skips/all eleven scenarios
+    (`run/rc06-fast/rc06-robe/`).
 - [ ] **RC-07 - Finish the scheduled Leg 7 capital visit.** Depends RC-05 and RC-06.
   Complete Q2919 through Neusa/book/Cavalorn, do Q2959 and Q2984 at >=20, retain both
   dye rewards unapplied, accept Q2938 at Oubliette, and do the single Q2954 completion
@@ -4794,6 +4814,13 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-04 RC-06: Neparinerk's ordinary contact and Berth endpoint relog preserve
+  robe START/4 and all book materials. Contained Leg 6 ends Cleric 21, 109 completions,
+  244,919 Kinah, one recovered death. The retained Q2252 alternate-reward timeout is
+  fixed by following Drakie's Java group 1/page 6. Forty-two focused tests, seven checks,
+  trace/SQL audit and Fast (92 passed/five skips/all eleven scenarios) pass; owned
+  schemas dropped. Evidence `run/rc06-robe/`; RC-07's scheduled city finish is next.
 
 - 2026-10-04 RC-05: all Q2919 materials are naturally carried at START/4 and survive
   ordinary relog. Native Slime Sap proof gains 4,922 XP, zero segment deaths; original

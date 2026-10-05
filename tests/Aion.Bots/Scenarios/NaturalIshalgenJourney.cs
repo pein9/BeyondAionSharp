@@ -235,7 +235,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			if (laterCapital != null) altgardNpcs = altgardNpcs
 				.Concat(NaturalLaterCapitalSteps.HeritagePickup.Concat(NaturalLaterCapitalSteps.BookPreparation).Select(step => step.NpcId))
 				.Concat(NaturalLaterCapitalSteps.HeritageCity.Concat(NaturalLaterCapitalSteps.RobePreparation)
-					.Concat(NaturalLaterCapitalSteps.Juice).Append(NaturalLaterCapitalSteps.MaternalReturn).Select(step => step.NpcId))
+					.Concat(NaturalLaterCapitalSteps.Juice).Append(NaturalLaterCapitalSteps.MaternalReturn)
+					.Append(NaturalLaterCapitalSteps.RobeBerth).Select(step => step.NpcId))
 				.Concat(new[] { 210404, 203679, 203581, 204191 }).Concat(airlines.Select(route => route.NpcId)).Distinct().ToArray();
 			// AK-08: items an open Altgard quest still needs (its collect items, the ring carriers' rings): never worn as gear and
 			// never sold. The leg 5 smoke run wore Q2292's level 16 rings as upgrades, which its hand-in would not have found.
@@ -1629,6 +1630,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await session.SynchronizeAsync(token);
 					EnterLegMap();
 					if (haramelProgress != null) SaveHaramelProgress();
+					if (laterCapital != null && altgardLegId == "l6" &&
+						NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 3) &&
+						Distance(session.CurrentPosition, ground) <= leg.Hub.Radius)
+						await NaturalLaterCapitalSteps.RunMatchingStepsAsync(session, [NaturalLaterCapitalSteps.RobeBerth], PlayLaterCapitalStepAsync);
 					if (session.Api.World.Level != helpCheckedAtLevel) await TopUpHelpItemsAsync("level-up");
 					NaturalAltgardDecision next = NaturalAltgardDecisionEngine.Decide(leg,
 						NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition, session.Api.Timing.Now, FreeCubeSlots(), coinGearProgress, haramelProgress, HaramelNow()), objectives, sequence, only);
@@ -1669,6 +1674,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							if (Distance(session.CurrentPosition, ground) > leg.Hub.Radius) await UseLearnedReturnToBindAsync();
 							await RestSafelyAsync(token);
 						}
+						if (laterCapital != null && altgardLegId == "l6")
+							Require.True(NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 4),
+								"Neparinerk must leave the carried robe quest at START/4 for Banatisai.");
 						foreach (var (id, expected) in preservedQuests)
 							Require.True(session.Api.World.Quests.TryGetValue(id, out BotQuestState? state) &&
 								(((continuousAltgard || laterCapital != null) && NaturalAltgardContinuation.AllowsAutomaticCampaignUnlock(id, expected, state,
@@ -2963,6 +2971,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 				async Task PlayContractStepAsync(NaturalAltgardStep step)
 				{
+					// Java Q2252 sets REWARD/1 for the Spirit and REWARD/2 for Drakie.
+					// The historic contract carries group 0; observe group 1's page on the alternate native spawn.
+					if (step.QuestId == 2252 && step.ExpectedStatus == "REWARD" &&
+						NaturalAltgardQuestSteps.State(session.Api.World, 2252) is (4, 2))
+					{
+						step = step with { Pages = [1352, 6] };
+						session.TraceDiagnostic("minushan-reward-group", new Dictionary<string, object?>
+						{ ["quest"] = 2252, ["var"] = 2, ["group"] = 1, ["page"] = 6 });
+					}
 					if (leg.Haramel != null && step.NpcId is 730306 or 730307)
 					{
 						int source = await ApproachShippedSpawnAsync(step.NpcId, withinRange: step.TalkRange);
