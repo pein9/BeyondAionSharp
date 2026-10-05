@@ -226,6 +226,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			Func<int, float, Func<int?>?, Task<int>>? haramelApproach = null;
 			Func<IReadOnlyList<int>, int>? haramelKind = null;
 			bool farApproachUnderway = false;
+			var provenWarlockSources = new HashSet<int>();
+			int provenWarlockPacketCursor = 0;
 			bool bookCollectionUnderway = false;
 			int[] altgardNpcs = continuousAltgard ? NaturalAltgardContinuation.Order.SelectMany(id =>
 				NaturalAltgardContract.LoadLeg(id).GraphNpcIds(NaturalAltgardContract.LoadPlans(id)))
@@ -4046,6 +4048,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			bool SpawnsOnMap(int templateId) =>
 				graph.GetMap(contract.MapId)!.Waypoints.Any(waypoint => waypoint.TemplateId == templateId);
 			bool UsesProvenWarlockSpawn(int templateId) => altgardLegId == "l10" && templateId == 210538;
+			bool IsProvenWarlockSource(NaturalNavigationObject npc, BotPosition anchor)
+			{
+				// Remember the native spawn announcement, not the position of a caster
+				// chasing a retreat. Other camps remain visible hazards and defenders.
+				for (; provenWarlockPacketCursor < session.PacketHistory.Count; provenWarlockPacketCursor++)
+				{
+					DecodedBotServerPacket packet = session.PacketHistory[provenWarlockPacketCursor];
+					if (packet.PacketType == typeof(SM_NPC_INFO) && packet.Get<int>("npcId") == 210538 &&
+						Distance(new BotPosition(packet.Get<float>("x"), packet.Get<float>("y"), packet.Get<float>("z"), 0), anchor) < 1)
+						provenWarlockSources.Add(packet.Get<int>("objectId"));
+				}
+				return provenWarlockSources.Contains(npc.ObjectId);
+			}
 
 			// Of several kinds that serve the same objective, the one to hunt next: a live one in view first, else the kind whose
 			// shipped spawn lies nearest (Q2230's tusks drop from six mosbear kinds; always the first meant long walks past others).
@@ -4151,7 +4166,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						int killsBeforeApproach = navigator.UnavailableObjects.Count;
 						NaturalNavigationResult result = withinRange is float range
 							? await NaturalIshalgenNavigator.ExploreWithinRangeAsync(contract.MapId, templateId, anchor.Position, range, navigator, "NPC", token,
-								stopWhen: () => CompletedApproachSource() != null)
+								stopWhen: () => CompletedApproachSource() != null,
+								targetFilter: UsesProvenWarlockSpawn(templateId) ? npc => IsProvenWarlockSource(npc, anchor.Position) : null)
 							: await NaturalIshalgenNavigator.ApproachNpcAsync(contract.MapId, templateId, anchor.Position, navigator, token);
 						if (CompletedApproachSource() is int collectedFrom) return collectedFrom;
 						if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0 || combat.ReviveCount > revivesBeforeApproach)
@@ -4887,8 +4903,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// re-plans); false when there is no terrain route or no safe pull.
 			async Task<bool> TryFightThroughAsync(BotPosition objective, int? objectiveObjectId, HashSet<int> rejected)
 			{
+				int travelRevives = combat.ReviveCount;
+				bool LostTravel() => session.Api.World.IsDead || session.Api.World.CurrentHp <= 0 || combat.ReviveCount != travelRevives;
 				// Never walk on with monsters on the Priest (a fight given up still has its attacker): fight them first.
-				if (!await DefendAgainstEngagedAsync("fight-through")) return false;
+				if (!await DefendAgainstEngagedAsync("fight-through") || LostTravel()) return false;
 				float AggroRadius(int templateId)
 				{
 					var template = runtime.Data.NpcDataDh.GetNpcTemplate(templateId);
@@ -4956,7 +4974,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					{
 						await navigator.MoveAsync(segment, token);
 						await navigator.SynchronizeAsync(token);
-						if (session.Api.World.IsDead || !await DefendAgainstEngagedAsync("fight-through-terrain-probe"))
+						if (LostTravel() || !await DefendAgainstEngagedAsync("fight-through-terrain-probe") || LostTravel())
 							return false;
 					}
 					return Distance(origin, session.CurrentPosition) >= 2;
@@ -5013,7 +5031,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							}
 							await navigator.MoveAsync(segment, token);
 							await navigator.SynchronizeAsync(token);
-							if (session.Api.World.IsDead) return false;
+							if (LostTravel())
+							{
+								session.TraceDiagnostic("fight-through-walk-ended-after-death", new Dictionary<string, object?>
+								{
+									["objective"] = objective, ["position"] = session.CurrentPosition,
+									["startingRevives"] = travelRevives, ["revives"] = combat.ReviveCount,
+								});
+								return false;
+							}
 						}
 						if (walkBlocker == null) return true;
 					}
@@ -5023,7 +5049,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				NaturalNavigationObject[] blockers = walkBlocker != null ? [walkBlocker]
 					: next == null ? [] : [next.Monster.Npc];
 				NaturalPullPlan? pull = await MoveToPullSpotAsync(blockers, next?.Staging ?? [], "fight-through");
-				if (session.Api.World.IsDead) return false;
+				if (LostTravel()) return false;
 				bool OutOfReach(NaturalNavigationObject npc) =>
 					Distance(session.CurrentPosition, npc.Position) > NaturalPullPlanner.SpellRange + 3 ||
 					!geometry.HasLineOfSight(contract.MapId, session.CurrentPosition, npc.Position);
@@ -5062,7 +5088,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							{
 								await navigator.MoveAsync(pair, token);
 								await navigator.SynchronizeAsync(token);
-								if (session.Api.World.IsDead) return false;
+								if (LostTravel()) return false;
 								target = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == advance.ObjectId);
 								if (target == null || !OutOfReach(target)) break;
 								// Started far away: stop once within pull range and plan a proper pull from here.
@@ -5086,7 +5112,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					target = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == pull.Target.Npc.ObjectId);
 				// A patrolling monster walks on while the bot walks to its firing spot: follow it and plan the
 				// pull again, as a player does, rather than giving up on it.
-				for (int chase = 1; target != null && chase <= 3 && OutOfReach(target) && !session.Api.World.IsDead; chase++)
+				for (int chase = 1; target != null && chase <= 3 && OutOfReach(target) && !LostTravel(); chase++)
 				{
 					session.TraceDiagnostic("pull-target-moved", new Dictionary<string, object?>
 					{
@@ -5096,6 +5122,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						["position"] = session.CurrentPosition,
 					});
 					NaturalPullPlan? again = await MoveToPullSpotAsync([target], [], "fight-through-chase");
+					if (LostTravel()) return false;
 					if (again == null) break;
 					target = navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == again.Target.Npc.ObjectId);
 				}
@@ -5137,6 +5164,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 			async Task<bool> TryClearObservedBlockerAsync(BotPosition objective, int? objectiveObjectId = null)
 			{
+				int clearRevives = combat.ReviveCount;
+				bool LostClear() => session.Api.World.IsDead || session.Api.World.CurrentHp <= 0 || combat.ReviveCount != clearRevives;
 				var rejected = new HashSet<int>();
 				// First the route that fights the least, pulled in order; then the older corridor heuristics.
 				for (int pull = 0; pull < 3; pull++)
@@ -5144,7 +5173,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					// A fight-through walk can end at the objective itself: hand back so the navigator confirms arrival.
 					if (Distance(session.CurrentPosition, objective) <= 3f) return true;
 					int killsBefore = navigator.UnavailableObjects.Count;
-					if (!await TryFightThroughAsync(objective, objectiveObjectId, rejected))
+					bool advanced = await TryFightThroughAsync(objective, objectiveObjectId, rejected);
+					// A nested move can defend and revive while synchronizing. Do not let
+					// the corridor fallback resume that camp route from the bind point.
+					if (LostClear()) return false;
+					if (!advanced)
 					{
 						// Nothing blocks now: walk again. Only once per spot, though; if the walk fails again from
 						// the same place, the navigator sees something the fight-through plan does not.
@@ -7188,7 +7221,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					// AK-08: the same monster failing twice with no death or retreat cannot be fought from anywhere the bot reaches
 					// (the Leg 5 smoke run: a Sumarhon sentry 2.8 m below the Cleric's ledge, every cast STR_SKILL_OBSTACLE). Leave it,
 					// as a player does, and pull another of its kind.
-					if (!died && !retreated && failedTargets.TryGetValue(target, out int failures) && failures >= 1)
+					// This hunt deliberately farms one proven spawn. Retiring its live
+					// object would wait for a respawn that cannot occur; retain the normal
+					// six failed-pull/twelve retreat bounds instead.
+					if (!died && !retreated && !UsesProvenWarlockSpawn(templateId) &&
+						failedTargets.TryGetValue(target, out int failures) && failures >= 1)
 					{
 						navigator.UnavailableObjects.Add(target);
 						session.TraceDiagnostic("kill-target-abandoned", new Dictionary<string, object?>

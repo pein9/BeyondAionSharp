@@ -4763,6 +4763,33 @@ monitor enabled and announce its URL when a journey starts.
     Fast passes 95 tests/five guarded skips/all eleven scenarios
     (`run/rc11-fast/rc11-clothing-recovery/`).
     Full revised proof remains pending; commit and finish the rebuild before capture.
+  - 2026-10-05, fourteenth retained attempt: `rc11-full-create-s1-a14` on c1d221520
+    passes revised Ishalgen/bridge and Legs 1-9, including the retained clothing.
+    In Leg 10 Q2280's four shamans and Q2281's packed 3/5/5 counters are satisfied;
+    Q2282 has two credited warlocks when the unchanged one-hour progress watchdog
+    stops the run at level 23 with 152 completions. Fifteen deaths remain recorded
+    (Leg 4 three, Leg 7 one, Leg 8 two, Leg 9 two, Leg 10 seven); the trace,
+    `failure-audit.json` and dropped-schema receipt are retained. Java MonsterHunt,
+    Q2282's three-kill requirement, the shipped 300-second warlock spawns and
+    PlayerReviveService's bind teleport were read. Nested fight-through travel now
+    stops on pending death or revival before any old camp route/corridor fallback
+    continues. The existing single-spawn hunt also restricts visible target selection,
+    remembering native spawn announcements across ordinary chasing and retreats.
+    Other camps remain hazards and defensive targets. Its live source stays eligible
+    within the existing six failed-pull/twelve retreat bounds instead of being retired
+    after two failed pulls and then waiting for an impossible respawn.
+    The first contained smoke is retained: two deaths, two credited warlocks, then
+    retirement of still-live source 136413 and an exhausted empty-spawn wait; schema
+    dropped. Final public-restore Leg 10 passes at level 24 with 152 completions and
+    two deaths, Q2282 completed once and ordinary endpoint relog. Native sources
+    70007/136222/136413 originate at the proven 2400.88/2171.88/270.328 spawn;
+    the third survives failed pulls and is actually killed. Two spawn-approach revival
+    restarts are observed; the nested-walk diagnostic is not exercised in this pass.
+    Both smoke cleanup receipts and native-source audit are in `run/rc11-shaman-road/`.
+    Thirty-eight focused tests and seven final pre-commit checks pass
+    (`focused-a2-fixed.log`, `*-final.log`, `warnings-a2.log`). Fast passes 95 tests,
+    five guarded skips and all eleven scenarios (`run/rc11-fast/rc11-warlock-source/`).
+    Full revised proof remains pending; commit and finish the rebuild before capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5149,6 +5176,12 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: attempt fourteen records fifteen deaths and stops at the
+  original Leg 10 progress watchdog with two warlocks credited. Retain its trace and
+  cleanup. Stop nested camp travel after revival and complete the existing single-spawn
+  selection/retry policy. Final contained Leg 10 passes at 24/152 with two deaths and
+  three native source identities; the first failed smoke and both cleanup receipts stay
+  retained. Full continuous proof is still required before ticking RC-11.
 - 2026-10-05 RC-11 pending: attempt thirteen finishes Leg 9's hand-ins but loses
   its clothing approach after a far-road bind revival. Detect revival across the
   whole approach and restart ordinary hub/pillar travel. Contained Leg 9 passes

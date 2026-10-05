@@ -86,11 +86,11 @@ public static class NaturalIshalgenNavigator
 	/// <summary>Reach ordinary spell/search range of a shipped area hint without claiming the target exists.</summary>
 	public static async Task<NaturalNavigationResult> ExploreWithinRangeAsync(int mapId, int templateId,
 		BotPosition staticAnchor, float radius, INaturalNavigationDriver driver, string kind,
-		CancellationToken token = default, Func<bool>? stopWhen = null)
+		CancellationToken token = default, Func<bool>? stopWhen = null, Func<NaturalNavigationObject, bool>? targetFilter = null)
 	{
 		if (!float.IsFinite(radius) || radius <= 0)
 			throw new ArgumentOutOfRangeException(nameof(radius));
-		return await ApproachAsync(mapId, templateId, staticAnchor, driver, kind, true, radius, token, stopWhen);
+		return await ApproachAsync(mapId, templateId, staticAnchor, driver, kind, true, radius, token, stopWhen, targetFilter);
 	}
 
 	/// <summary>Return over client-estimated checkpoints from a previously checked approach.
@@ -135,7 +135,7 @@ public static class NaturalIshalgenNavigator
 
 	private static async Task<NaturalNavigationResult> ApproachAsync(int mapId, int templateId,
 		BotPosition staticAnchor, INaturalNavigationDriver driver, string kind, bool allowAnchorOnly,
-		float arrivalRadius, CancellationToken token, Func<bool>? stopWhen = null)
+		float arrivalRadius, CancellationToken token, Func<bool>? stopWhen = null, Func<NaturalNavigationObject, bool>? targetFilter = null)
 	{
 		ArgumentNullException.ThrowIfNull(driver);
 		int routeSearches = 0, segments = 0, advancedSegments = 0, replans = 0, targetWaits = 0, targetMoves = 0, sequence = 0;
@@ -156,7 +156,7 @@ public static class NaturalIshalgenNavigator
 			if (observed.MapId != mapId || observed.Position is not BotPosition start || observed.IsDead)
 				return Fail("Map, position, or survival state changed during navigation.", observed);
 			NaturalNavigationObject? target = observed.Npcs
-				.Where(npc => npc.TemplateId == templateId)
+				.Where(npc => npc.TemplateId == templateId && (targetFilter?.Invoke(npc) ?? true))
 				.OrderBy(npc => Distance(start, npc.Position)).ThenBy(npc => npc.ObjectId).FirstOrDefault();
 			if (target != null)
 			{

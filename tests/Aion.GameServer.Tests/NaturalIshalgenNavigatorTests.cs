@@ -9,6 +9,33 @@ namespace Aion.GameServer.Tests;
 public sealed class NaturalIshalgenNavigatorTests
 {
 	[Fact]
+	public async Task RestrictedSpawnSearchWaitsForItsOwnNativeRespawnInsteadOfChasingAnotherCamp()
+	{
+		var otherCamp = new NaturalNavigationObject(76, 210538, At(30));
+		var driver = new FakeDriver([otherCamp]) { Position = At(80) };
+		var chosenSources = new HashSet<int>();
+		bool AtChosenSpawn(NaturalNavigationObject npc) => chosenSources.Contains(npc.ObjectId) ||
+			MathF.Abs(npc.Position.X - 100) <= 20 && chosenSources.Add(npc.ObjectId);
+		NaturalNavigationResult empty = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
+			220010000, 210538, At(100), 23, driver, "restricted-source", targetFilter: AtChosenSpawn);
+		Assert.True(empty.Arrived, empty.Reason);
+		Assert.Null(empty.TargetObjectId);
+		Assert.Contains(otherCamp, driver.Observe().Npcs); // Still observed for hazard/defensive checks.
+		Assert.Empty(driver.MovedSegments);
+		driver.Targets = [otherCamp, new(77, 210538, At(100))];
+		NaturalNavigationResult respawn = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
+			220010000, 210538, At(100), 23, driver, "restricted-source", targetFilter: AtChosenSpawn);
+		Assert.True(respawn.Arrived, respawn.Reason);
+		Assert.Equal(77, respawn.TargetObjectId);
+		driver.Position = At(40);
+		driver.Targets = [otherCamp, new(77, 210538, At(50))]; // The observed source follows a retreat.
+		NaturalNavigationResult chasing = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
+			220010000, 210538, At(100), 23, driver, "restricted-source", targetFilter: AtChosenSpawn);
+		Assert.True(chasing.Arrived, chasing.Reason);
+		Assert.Equal(77, chasing.TargetObjectId);
+	}
+
+	[Fact]
 	public async Task DefensiveQuestCreditStopsApproachWithoutInventingAnotherKillOrArrival()
 	{
 		string root = Aion.GameServer.TestKit.RealStaticData.RepoRoot();
