@@ -36,6 +36,8 @@ public interface INaturalNavigationDriver
 	Task MoveAsync(IReadOnlyList<BotPosition> segment, CancellationToken token);
 	Task SynchronizeAsync(CancellationToken token);
 	bool IsSegmentSafe(IReadOnlyList<BotPosition> segment, int? targetObjectId) => true;
+	bool IsSegmentSafe(IReadOnlyList<BotPosition> segment, int? targetObjectId, BotPosition destination)
+		=> IsSegmentSafe(segment, targetObjectId);
 	void Record(NaturalNavigationEvent navigationEvent);
 }
 
@@ -233,7 +235,7 @@ public static class NaturalIshalgenNavigator
 			}
 			BotPosition[] segment = route.Skip(routeIndex).Take(SegmentPoints).ToArray();
 			BotPosition expected = segment[^1];
-			if (!driver.IsSegmentSafe(segment, targetId))
+			if (!driver.IsSegmentSafe(segment, targetId, destination))
 			{
 				if (++replans > MaximumReplans)
 					return Fail("New client-observed hazards exceeded the bounded replan budget.", observed);

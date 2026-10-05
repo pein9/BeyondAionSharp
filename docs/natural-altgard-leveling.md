@@ -4681,6 +4681,28 @@ monitor enabled and announce its URL when a journey starts.
     94 tests/five guarded skips/all eleven scenarios
     (`run/rc11-fast/rc11-poison-retreats/`). Full revised proof remains pending;
     commit and finish the rebuild before capture.
+  - 2026-10-05, eleventh retained attempt: `rc11-full-create-s1-a11` on 3b0160235
+    passes revised Ishalgen/bridge and Legs 1-7, then stops in Leg 8 at level 22
+    with 135 completions and six deaths (three in Leg 4, one in Leg 5, two in
+    Leg 8). Q24113 remains START/0 without its sword. Both Leg 8 deaths occur
+    before the pending bind revive; the pull loop wrongly counts them as vanished
+    targets and permanently abandons live Gattban 70112. Its later NPC/movement
+    packets remain in the trace. A static-hint route also exempts the destination's
+    death site during planning, then loses that destination during segment checks
+    and rejects the same route four times without moving. The failed trace/audit
+    and dropped-schema receipt remain intact. Java ItemCollecting, PlayerController's
+    death/options sequence, KnownList and skill/distance checks were read. A pending
+    client death now remains a death outcome before revival, and navigator segment
+    checks retain their planned destination; current hostile and collision checks
+    still apply. Thirty-one focused tests and seven pre-commit checks pass
+    (`run/rc11-gattban-approach/`). Public Restore of altgard-rc-l7 proves contained
+    Leg 8 at level 22 with 132 completions and one death, Q24113 completed once,
+    ordinary endpoint relog and schema dropped (`l8-smoke/`). That smoke does not
+    emit a pending-death retry diagnostic; the original trace establishes the
+    classification defect, and the regression exercises destination propagation.
+    Fast passes 94 tests/five guarded skips/all eleven scenarios
+    (`run/rc11-fast/rc11-gattban-approach/`).
+    Full revised proof remains pending; commit and finish the rebuild before capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5067,6 +5089,10 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: attempt eleven abandons live Gattban after misclassifying
+  two pending deaths, then rejects a static-hint route with inconsistent death-site
+  checks. Contained Leg 8 passes with Q24113 complete and one recorded death; retain
+  the failed full run's six deaths and cleanup. Full revised proof remains pending.
 - 2026-10-05 RC-11 pending: attempt ten treats three Q24013 preparations as failed
   poison uses, despite four completed retreats and no poison-use packet. Count the
   unattempted preparation separately, retain the zero-death failure and cleanup,

@@ -7155,7 +7155,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						packet.PacketType == typeof(SmAttackStatus) &&
 						packet.Get<int>("objectId") == target && packet.Get<byte>("hpOrMp") == 0))
 						return CollectedSource(target);
-					bool died = combat.ReviveCount > revives;
+					// A pull can stop on SM_DIE before RestSafely performs the bind revive.
+					// That is a death outcome, not evidence that a live named source is unreachable.
+					bool died = session.Api.World.IsDead || session.Api.World.CurrentHp <= 0 || combat.ReviveCount > revives;
 					bool retreated = !died && combat.CompletedRetreats > retreats;
 					// AK-08: the same monster failing twice with no death or retreat cannot be fought from anywhere the bot reaches
 					// (the Leg 5 smoke run: a Sumarhon sentry 2.8 m below the Cleric's ledge, every cast STR_SKILL_OBSTACLE). Leave it,
@@ -7682,6 +7684,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		public bool IsSegmentSafe(IReadOnlyList<BotPosition> segment, int? targetObjectId)
 		{
 			BotNavigationHazard[] hazards = ObservedHazards(null, targetObjectId);
+			return BotNavigationGeometry.AvoidsHazards(session.CurrentPosition, segment, hazards);
+		}
+
+		public bool IsSegmentSafe(IReadOnlyList<BotPosition> segment, int? targetObjectId, BotPosition destination)
+		{
+			// Keep the same destination/death-site exemption as FindRouteAsync even while
+			// walking to a shipped hint without an observed target. Live hostiles still count.
+			BotNavigationHazard[] hazards = ObservedHazards(destination, targetObjectId);
 			return BotNavigationGeometry.AvoidsHazards(session.CurrentPosition, segment, hazards);
 		}
 

@@ -115,6 +115,22 @@ public sealed class NaturalIshalgenNavigatorTests
 	}
 
 	[Fact]
+	public async Task SegmentChecksRetainTheShippedDestinationUntilTheTargetIsObserved()
+	{
+		var driver = new FakeDriver([])
+		{
+			ExpectedSegmentDestination = At(30),
+			AfterMove = (self, moved) => { if (moved == 1) self.Targets = [new(77, 210532, At(30))]; },
+		};
+		NaturalNavigationResult result = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
+			220010000, 210532, At(30), 23, driver, "named-source");
+		Assert.True(result.Arrived, result.Reason);
+		Assert.Equal(77, result.TargetObjectId);
+		Assert.Equal([At(30)], driver.SegmentDestinations);
+		Assert.DoesNotContain(driver.Events, entry => entry.Action == "replan-hostile");
+	}
+
+	[Fact]
 	public async Task ObservedCombatTargetStopsAtPriestSpellRangeInsteadOfMeleeRange()
 	{
 		var driver = new FakeDriver([new(77, 210402, At(30))]);
@@ -313,6 +329,8 @@ public sealed class NaturalIshalgenNavigatorTests
 		public int MaxRoutePoints { get; init; } = int.MaxValue;
 		public Func<BotPosition, BotPosition, IReadOnlyList<BotPosition>>? RouteOverride { get; init; }
 		public bool RejectNextSegment { get; set; }
+		public BotPosition? ExpectedSegmentDestination { get; init; }
+		public List<BotPosition> SegmentDestinations { get; } = [];
 		public int Synchronizations { get; private set; }
 		public Action<FakeDriver, int>? AfterMove { get; init; }
 		public Action<FakeDriver, int>? AfterSynchronize { get; init; }
@@ -345,9 +363,16 @@ public sealed class NaturalIshalgenNavigatorTests
 		}
 		public bool IsSegmentSafe(IReadOnlyList<BotPosition> segment, int? targetObjectId)
 		{
+			if (ExpectedSegmentDestination != null) return false;
 			if (!RejectNextSegment) return true;
 			RejectNextSegment = false;
 			return false;
+		}
+		public bool IsSegmentSafe(IReadOnlyList<BotPosition> segment, int? targetObjectId, BotPosition destination)
+		{
+			SegmentDestinations.Add(destination);
+			return ExpectedSegmentDestination is BotPosition expected
+				? destination == expected : IsSegmentSafe(segment, targetObjectId);
 		}
 		public void Record(NaturalNavigationEvent navigationEvent) => Events.Add(navigationEvent);
 	}
