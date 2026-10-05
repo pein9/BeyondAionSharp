@@ -4404,10 +4404,30 @@ monitor enabled and announce its URL when a journey starts.
     both owned schemas are dropped (`run/rc06-robe/audit.json`).
     Final Fast passes 92 tests/five guarded skips/all eleven scenarios
     (`run/rc06-fast/rc06-robe/`).
-- [ ] **RC-07 - Finish the scheduled Leg 7 capital visit.** Depends RC-05 and RC-06.
+- [x] **RC-07 - Finish the scheduled Leg 7 capital visit.** Depends RC-05 and RC-06.
   Complete Q2919 through Neusa/book/Cavalorn, do Q2959 and Q2984 at >=20, retain both
   dye rewards unapplied, accept Q2938 at Oubliette, and do the single Q2954 completion
   here if it was previously below its gate. Resume the original Leg 7 endpoint.
+  - 2026-10-04: Java Q2919/Q2938, ReportTo and the shipped Q2959/Q2984 data read.
+    Committed d8b2f1d13 `altgard-rc-l6` has matching assembly/dump/receipt hashes,
+    robe START/4 and all book material objects. Public restore and contained
+    `rc07-smoke-a2` prove the original full Leg 7 with the scheduled city batch:
+    Cleric 22, 125 completed quests, 285,039 Kinah, zero segment deaths, 2,670,221
+    simulated milliseconds. Neusa's actual check consumes the six materials, the
+    three-second book use supplies item 182207013/object 134259, and Cavalorn consumes
+    it on the ordinary finish. Q2919/Q2959/Q2984 complete exactly once; Q2954 remains
+    completed once. Both eight-item dye/bleach rewards stay unapplied and survive
+    ordinary fortress endpoint relog; Q2938 START/0 and Q2916 START/4 are carried.
+    First `rc07-smoke-a1` retains Lusena's missing-anchor failure after the successful
+    book and family-letter work. Java WalkManager and her shipped patrol were read;
+    the RC capital approach now searches the finite patrol hints in reverse when she
+    is absent at her static anchor, identifying her only through client observations.
+    Corrected proof completes the contact. No server/quest data or administrative
+    natural setup changes. Forty focused tests, seven pre-commit checks and the
+    trace/SQL/historical-hash audit pass on base d8b2f1d13; both owned schemas are
+    dropped (`run/rc07-city/audit.json`).
+    Final Fast passes 92 tests/five guarded skips/all eleven scenarios
+    (`run/rc07-fast/rc07-city/`).
 - [ ] **RC-08 - Add Leg 9's city answer and clothing collection.** Depends RC-07.
   With both Leg 8 prerequisites Q2268/Q2269 complete, finish Q2920 during Q2258's city
   return using the actual answer sequence and observed reward group. Continue Q2916
@@ -4814,6 +4834,13 @@ The original questions follow.
 
 
 ## Progress log
+
+- 2026-10-04 RC-07: the scheduled Leg 7 book, family letter and dye hand-ins pass
+  naturally once, with library START/0, robe START/4 and both dye rewards carried
+  through relog. Lusena's retained missing-anchor failure is corrected by observed
+  patrol contact. Forty focused tests, seven prechecks, Fast (92 passed/five guarded
+  skips/all eleven scenarios) and trace/SQL/hash audit pass; both owned schemas dropped.
+  Evidence `run/rc07-city/`; revised Leg 7/8 checkpoints precede RC-08.
 
 - 2026-10-04 RC-06: Neparinerk's ordinary contact and Berth endpoint relog preserve
   robe START/4 and all book materials. Contained Leg 6 ends Cleric 21, 109 completions,

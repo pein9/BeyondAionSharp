@@ -42,6 +42,54 @@ public static class NaturalLaterCapitalSteps
 	public static readonly NaturalAltgardStep MaternalReturn = NaturalCapitalSteps.Finish(2918, 0, 203574) with { MapId = 220030000 };
 	public static readonly NaturalAltgardStep RobeBerth = NaturalCapitalSteps.Progress(2916, 3, 798033,
 		"SETPRO4", 2375, 0, 4) with { MapId = 220030000 };
+	public static readonly NaturalAltgardStep[] BookFinish =
+	[
+		NaturalCapitalSteps.Progress(2919, 4, 204224, "CHECK_USER_HAS_QUEST_ITEM", 2716, 2802, 6),
+		NaturalCapitalSteps.Progress(2919, 6, 700212, "SETPRO7", 3057, 0, 7) with
+			{ Actions = ["USE_OBJECT", "SETPRO7"], ReceivesItemId = 182207013 },
+		NaturalCapitalSteps.Finish(2919, 7, 204206, page: 3398) with
+			{ Actions = ["USE_OBJECT", "SELECT_QUEST_REWARD", "SELECTED_QUEST_REWARD1"] },
+	];
+	public static readonly NaturalAltgardStep[] FamilyLetter =
+	[
+		NaturalCapitalSteps.Offer(2959, 204211), NaturalCapitalSteps.Finish(2959, 0, 204164),
+	];
+	public static readonly NaturalAltgardStep[] Dye =
+	[
+		NaturalCapitalSteps.Offer(2984, 204138, item: 182207064), NaturalCapitalSteps.Finish(2984, 0, 204121),
+	];
+	public static readonly NaturalAltgardStep LibraryOffer = NaturalCapitalSteps.Offer(2938, 204267, page: 4762);
+	public static IEnumerable<NaturalAltgardStep> Leg7City => BookFinish.Concat(FamilyLetter).Concat(Dye).Append(LibraryOffer);
+
+	public static bool Leg7CityNeeded(BotWorldModel world) => !world.CompletedQuestIds.Contains(2919) ||
+		world.Level >= 20 && (!world.CompletedQuestIds.Contains(2959) || !world.CompletedQuestIds.Contains(2984) || !Prepared(world, 2938, 0)) ||
+		world.Level >= 19 && !world.CompletedQuestIds.Contains(2954);
+
+	public static async Task CompleteLeg7CityAsync(INaturalJourneySession session, Func<NaturalAltgardStep, Task> talk)
+	{
+		BotWorldModel world = session.Api.World;
+		if (world.MapId != 120010000) throw new InvalidDataException("Leg 7's capital batch requires Pandaemonium.");
+		if (!world.CompletedQuestIds.Contains(2919))
+		{
+			if (NaturalAltgardQuestSteps.State(world, 2919) is (3, 4) &&
+				(Owned(world, 182207010) < 3 || Owned(world, 182207011) < 2 || Owned(world, 182207012) < 1))
+				throw new InvalidDataException("Neusa needs all naturally collected book materials.");
+			await RunMatchingStepsAsync(session, BookFinish, talk);
+			if (!world.CompletedQuestIds.Contains(2919) || new[] { 182207010, 182207011, 182207012, 182207013 }.Any(i => Owned(world, i) != 0))
+				throw new InvalidDataException("The book finish must consume the materials and the supplied final book item.");
+		}
+		if (world.Level >= 20)
+		{
+			await RunMatchingStepsAsync(session, FamilyLetter.Concat(Dye).Append(LibraryOffer), talk);
+			if (!world.CompletedQuestIds.IsSupersetOf(new[] { 2959, 2984 }) || !Prepared(world, 2938, 0) ||
+				Owned(world, 182207064) != 0 || Owned(world, 169100000) != 8 || Owned(world, 169200002) != 8)
+				throw new InvalidDataException("The city errands must finish once, consume the supplied ingredient and retain both unapplied dye rewards.");
+		}
+		await CompleteJuiceOnceAsync(session, talk);
+		session.TraceDiagnostic("later-capital-leg7-city", new Dictionary<string, object?>
+		{ ["completed"] = new[] { 2919, 2959, 2984, 2954 }.Where(world.CompletedQuestIds.Contains).ToArray(),
+			["library"] = NaturalAltgardQuestSteps.State(world, 2938), ["bleach"] = Owned(world, 169100000), ["dye"] = Owned(world, 169200002) });
+	}
 
 	public static bool Leg5CityNeeded(BotWorldModel world) => !world.CompletedQuestIds.IsSupersetOf(new[] { 2917, 2918 }) ||
 		world.Level >= 15 && !Prepared(world, 2916, 3) || world.Level >= 19 && !world.CompletedQuestIds.Contains(2954) ||
@@ -178,6 +226,12 @@ public static class NaturalLaterCapitalSteps
 		await session.SynchronizeAsync(token);
 		if (NaturalAltgardQuestSteps.State(session.Api.World, 2919) is not (3, int next) || next != step.NextVar)
 			throw new InvalidDataException("Reading the library book did not advance Q2919.");
+		if (step.ReceivesItemId is int received)
+		{
+			BotInventoryItem supplied = session.Api.World.Inventory.Values.Single(i => i.ItemId == received && i.Count == 1);
+			session.TraceDiagnostic("later-capital-book-supplied-item", new Dictionary<string, object?>
+			{ ["objectId"] = supplied.ObjectId, ["item"] = supplied.ItemId, ["count"] = supplied.Count });
+		}
 		if (!session.PacketHistory.Skip(start).Any(packet => packet.PacketType == typeof(SM_USE_OBJECT) &&
 			packet.Get<int>("targetObjectId") == book && packet.Get<byte>("actionType") == 2 && packet.Get<int>("durationMs") > 0))
 			throw new InvalidDataException("The library book use bar did not complete.");

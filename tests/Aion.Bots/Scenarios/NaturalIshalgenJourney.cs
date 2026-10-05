@@ -236,7 +236,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				.Concat(NaturalLaterCapitalSteps.HeritagePickup.Concat(NaturalLaterCapitalSteps.BookPreparation).Select(step => step.NpcId))
 				.Concat(NaturalLaterCapitalSteps.HeritageCity.Concat(NaturalLaterCapitalSteps.RobePreparation)
 					.Concat(NaturalLaterCapitalSteps.Juice).Append(NaturalLaterCapitalSteps.MaternalReturn)
-					.Append(NaturalLaterCapitalSteps.RobeBerth).Select(step => step.NpcId))
+					.Append(NaturalLaterCapitalSteps.RobeBerth).Concat(NaturalLaterCapitalSteps.Leg7City).Select(step => step.NpcId))
 				.Concat(new[] { 210404, 203679, 203581, 204191 }).Concat(airlines.Select(route => route.NpcId)).Distinct().ToArray();
 			// AK-08: items an open Altgard quest still needs (its collect items, the ring carriers' rings): never worn as gear and
 			// never sold. The leg 5 smoke run wore Q2292's level 16 rings as upgrades, which its hand-in would not have found.
@@ -1075,6 +1075,28 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					mapGeometry.FindInteractionPath(map, session.CurrentPosition, anchor).Count == 0)
 					await capitalTravel.ConnectColiseumAsync(mapGeometry, anchor, token);
 				NaturalNavigationResult approach = await NaturalIshalgenNavigator.ApproachNpcAsync(map, npcId, anchor, here, token);
+				if (!approach.Arrived && laterCapital != null &&
+					approach.Reason == "Reached the static area anchor but no NPC was observed.")
+				{
+					// Lusena can be away from her spawn anchor. Search the shipped patrol hints in reverse
+					// to meet the walker, then let ordinary client observations identify and approach her.
+					var patrols = runtime.Data.SpawnsDh.GetSpawnsByWorldId(map).Where(g => g.GetNpcId() == npcId)
+						.SelectMany(g => g.GetSpawnTemplates()).Select(s => s.GetWalkerId()).OfType<string>().Distinct();
+					foreach (string patrol in patrols)
+					{
+						var route = runtime.Data.WalkerDataDh.GetWalkerTemplate(patrol);
+						if (route == null) continue;
+						foreach (var point in route.GetRouteSteps().AsEnumerable().Reverse())
+						{
+							BotPosition hint = new(point.GetX(), point.GetY(), point.GetZ(), 0);
+							session.TraceDiagnostic("later-capital-walker-search", new Dictionary<string, object?>
+							{ ["npc"] = npcId, ["route"] = patrol, ["hint"] = hint });
+							approach = await NaturalIshalgenNavigator.ApproachNpcAsync(map, npcId, hint, here, token);
+							if (approach.Arrived) break;
+						}
+						if (approach.Arrived) break;
+					}
+				}
 				Require.True(approach.Arrived, $"Capital NPC {npcId}: {approach.Reason}");
 				return Require.IsType<int>(approach.TargetObjectId);
 			}
@@ -1630,6 +1652,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await session.SynchronizeAsync(token);
 					EnterLegMap();
 					if (haramelProgress != null) SaveHaramelProgress();
+					if (laterCapital != null && altgardLegId == "l7" && session.Api.World.MapId == capitalContract.MapId &&
+						NaturalLaterCapitalSteps.Leg7CityNeeded(session.Api.World))
+						await NaturalLaterCapitalSteps.CompleteLeg7CityAsync(session, PlayLaterCapitalStepAsync);
 					if (laterCapital != null && altgardLegId == "l6" &&
 						NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 3) &&
 						Distance(session.CurrentPosition, ground) <= leg.Hub.Radius)
@@ -1677,6 +1702,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						if (laterCapital != null && altgardLegId == "l6")
 							Require.True(NaturalAltgardQuestSteps.State(session.Api.World, 2916) is (3, 4),
 								"Neparinerk must leave the carried robe quest at START/4 for Banatisai.");
+						if (laterCapital != null && altgardLegId == "l7")
+							Require.True(!NaturalLaterCapitalSteps.Leg7CityNeeded(session.Api.World), "The scheduled Leg 7 capital batch is incomplete.");
 						foreach (var (id, expected) in preservedQuests)
 							Require.True(session.Api.World.Quests.TryGetValue(id, out BotQuestState? state) &&
 								(((continuousAltgard || laterCapital != null) && NaturalAltgardContinuation.AllowsAutomaticCampaignUnlock(id, expected, state,
