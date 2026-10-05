@@ -173,12 +173,20 @@ public static class NaturalLaterCapitalSteps
 		if (world.MapId != 120010000) throw new InvalidDataException("Leg 7's capital batch requires Pandaemonium.");
 		if (!world.CompletedQuestIds.Contains(2919))
 		{
-			if (NaturalAltgardQuestSteps.State(world, 2919) is (3, 4) &&
+			bool consumeMaterials = NaturalAltgardQuestSteps.State(world, 2919) is (3, 4);
+			var required = new Dictionary<int, long> { [182207010] = 3, [182207011] = 2, [182207012] = 1 };
+			var before = required.Keys.ToDictionary(i => i, i => Owned(world, i));
+			if (consumeMaterials &&
 				(Owned(world, 182207010) < 3 || Owned(world, 182207011) < 2 || Owned(world, 182207012) < 1))
 				throw new InvalidDataException("Neusa needs all naturally collected book materials.");
 			await RunMatchingStepsAsync(session, BookFinish, talk);
-			if (!world.CompletedQuestIds.Contains(2919) || new[] { 182207010, 182207011, 182207012, 182207013 }.Any(i => Owned(world, i) != 0))
-				throw new InvalidDataException("The book finish must consume the materials and the supplied final book item.");
+			var after = required.Keys.ToDictionary(i => i, i => Owned(world, i));
+			// Java collectItemCheck removes each required count, preserving native surplus drops.
+			if (!world.CompletedQuestIds.Contains(2919) || Owned(world, 182207013) != 0 ||
+				required.Any(item => after[item.Key] != before[item.Key] - (consumeMaterials ? item.Value : 0)))
+				throw new InvalidDataException("The book finish must consume exactly its required materials and final book item, retaining surplus.");
+			session.TraceDiagnostic("later-capital-book-material-consumption", new Dictionary<string, object?>
+			{ ["quest"] = 2919, ["before"] = before, ["after"] = after, ["required"] = required, ["consumedHere"] = consumeMaterials });
 		}
 		if (world.Level >= 20)
 		{

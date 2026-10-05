@@ -18,6 +18,38 @@ namespace Aion.Simulation.Tests;
 
 public sealed partial class SimulationFastScenarioTests
 {
+	/// <summary>RC-11: real Neusa/book/reward packets consume only the required counts, including native surplus.</summary>
+	[SkippableFact]
+	public async Task LaterCapitalBookFinishConsumesRequiredCountsAndRetainsSurplusThroughRelog()
+	{
+		await RunCapitalProbeAsync("RC11", 248, "Asimbooksurplus", async (probe, session, token) =>
+		{
+			probe.Server.GetCommonData().SetLevel(19);
+			SkillLearnService.LearnNewSkills(probe.Server, 10, 19);
+			await probe.SetupNearAsync(120010000, 204206);
+			Assert.True(await NaturalLaterCapitalSteps.PrepareBookAsync(session, probe.TalkAsync));
+			// Labelled probe supplies reproduce the retained full run's 3/2/2 incoming stacks.
+			foreach (var (item, count) in new[] { (182207010, 3), (182207011, 2), (182207012, 2) })
+				Assert.Equal(0, ItemService.AddItem(probe.Server, item, count, allowInventoryOverflow: true));
+			await session.SynchronizeAsync(token);
+			int sapObject = session.Api.World.Inventory.Values.Single(i => i.ItemId == 182207012).ObjectId;
+			await NaturalLaterCapitalSteps.CompleteLeg7CityAsync(session, probe.TalkAsync);
+			Assert.Equal(1, session.Api.World.CompletedQuestCounts[2919]);
+			Assert.Equal(1, session.Api.World.Inventory[sapObject].Count);
+			Assert.DoesNotContain(session.Api.World.Inventory.Values, i => i.ItemId is 182207010 or 182207011 or 182207013);
+			await session.QuitAsync(token);
+			await session.WaitForReentryAsync(token);
+			await session.ReloginExistingCharacterAsync(token);
+			await session.EnterWorldAsync(token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(1, session.Api.World.CompletedQuestCounts[2919]);
+			Assert.Equal(1, session.Api.World.Inventory[sapObject].Count);
+			await NaturalLaterCapitalSteps.CompleteLeg7CityAsync(session,
+				_ => throw new InvalidOperationException("Completed book and juice must not repeat."));
+			Console.WriteLine("RC-11 book surplus: native 3/2/1 consumption, one sap and exact completion retained through relog.");
+		});
+	}
+
 	/// <summary>RC-04: the carried heritage, actual box acceptance, D28's Annju contact and exactly one juice delivery.</summary>
 	[SkippableFact]
 	public async Task LaterCapitalLeg5PreparationUsesItsAwardedBoxAndRetainsTheRobeAndSingleJuiceCompletion()

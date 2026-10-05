@@ -69,7 +69,7 @@ for item in final['Inventory']:
     items[item['ItemId']] += item['Count']
 assert (items[186000006], items[186000007], items[188053787]) == (19, 7, 1)
 assert items[169100000] == items[169200002] == 8
-assert not any(items[i] for i in (182207007, 182207008, 182207009, 182207010, 182207011, 182207012, 182207013, 182207026, 182207040, 182207064, 140000001, 140000098))
+assert not any(items[i] for i in (182207007, 182207008, 182207009, 182207013, 182207026, 182207040, 182207064, 140000001, 140000098))
 assert not any(s['SkillId'] == 11504 or s['SkillType'] in (1, 3) for s in final['Skills'])
 cg = read('altgard-cg-completion.json')['after']['CoinGearProgress']
 assert sorted(p['ItemId'] for p in cg['Purchases']) == [111501065, 112501015, 113501074]
@@ -89,6 +89,7 @@ assert (final['Position']['X'] - 1660.43) ** 2 + (final['Position']['Y'] - 1813.
 trace = next(folder.glob('*.trace.jsonl'))
 packets, uses, removed = collections.Counter(), collections.Counter(), collections.Counter()
 inventory, payments, deaths, outcomes, costs, starts, maps = {}, [], [], [], [], [], set()
+book_consumption = []
 quantities = {}
 stage, position, combat, build, kinah = 'ishalgen', None, None, None, None
 gross_received = gross_spent = revives = 0
@@ -117,6 +118,8 @@ for line_number, line in enumerate(trace.open(encoding='utf-8'), 1):
         outcomes.append(row)
     if packet == 'later-capital-payment':
         payments.append(fields)
+    if packet == 'later-capital-book-material-consumption':
+        book_consumption.append(fields)
     if packet.endswith('result') and any(word in packet for word in ('shop', 'service', 'trade')):
         costs.append(row)
     for item in fields.get('items', []) if packet == 'SM_INVENTORY_INFO' else []:
@@ -147,6 +150,12 @@ assert args.build in build and starts == order and packets['create-natural-asmod
 assert {120010000, 120020000, 220010000, 220030000, 320010000, 320030000, 320070000, 300200000} <= maps, maps
 assert len(deaths) == done['Deaths'] and revives <= len(deaths)
 assert {p['quest'] for p in payments} == later_ids and len(payments) == 9
+assert len(book_consumption) == 1 and book_consumption[0]['consumedHere']
+book = book_consumption[0]
+assert book['required'] == {'182207010': 3, '182207011': 2, '182207012': 1}
+for item, required in book['required'].items():
+    assert book['before'][item] - book['after'][item] == required and items[int(item)] == book['after'][item]
+save('book-material-consumption.json', book)
 quest_data = {int(q.get('id')): q for q in ET.parse(repo / 'game-server/data/static_data/quest_data/quest_data.xml').getroot()}
 for p in payments:
     assert p['experience'] == int(quest_data[p['quest']].find('rewards').get('exp', '0'))

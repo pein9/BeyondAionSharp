@@ -183,8 +183,9 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			// 226/227 are HM-05's post-boss matrix and two-process recovery probes.
 			// 240-244 are the contained capital route/dialog probes (PC-01..05).
 			// 245-247 are RC-02's heritage, RC-03's book and RC-04's Leg 5 city probes.
+			// 248 is RC-11's native book surplus-consumption regression probe.
 			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100)).Concat(Enumerable.Range(201, 27)).Concat(Enumerable.Range(240, 5))
-				.Concat(new[] { 245, 246, 247 })
+				.Concat(new[] { 245, 246, 247, 248 })
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();

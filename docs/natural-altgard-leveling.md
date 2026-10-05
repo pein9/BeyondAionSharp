@@ -4513,6 +4513,22 @@ monitor enabled and announce its URL when a journey starts.
     pass (`run/rc11-ampha-repair/`); Fast passes 92 tests/five guarded skips/all
     eleven scenarios (`run/rc11-fast/rc11-ampha-repair/`). Full revised gameplay
     proof remains pending; this repair is committed before its fresh capture.
+  - 2026-10-05, second retained attempt: `rc11-full-create-s1-a2` on f45b4b48e
+    proves distinct native tail sources 55354/134283 and both carried tails, then
+    completes the bridge and Legs 1-6. In Leg 7 Q2919 completes once and pays 38,700 XP,
+    consuming the required 3/2/1 materials from incoming 3/2/2 stacks. Java legitimately
+    leaves one surplus sap; the bot's zero-surplus assertion stopped the run. That
+    assertion and the audit now verify exact required consumption and retain surplus.
+    The failed trace/consumption audit and dropped-schema receipt remain intact.
+    The capture was dispatched before the post-commit build's final acknowledgement;
+    its successful build, matching loaded MVID and matching source/test-copy SHA256
+    confirm f45b4b48e's actual repaired assembly (`runtime-identity.json`).
+    Free probe account 248 uses normal acceptance/Neusa/book/reward packets, labelled
+    3/2/2 setup stacks and ordinary relog to prove the one sap and one completion survive.
+    That probe, sixty focused tests and seven pre-commit checks pass
+    (`run/rc11-book-surplus/`); Fast passes 93 tests/five guarded skips/all eleven
+    scenarios (`run/rc11-fast/rc11-book-surplus/`). Full revised gameplay proof
+    remains pending; the verified assertion repair is committed before its fresh capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
