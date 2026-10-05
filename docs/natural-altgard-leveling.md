@@ -4529,6 +4529,22 @@ monitor enabled and announce its URL when a journey starts.
     (`run/rc11-book-surplus/`); Fast passes 93 tests/five guarded skips/all eleven
     scenarios (`run/rc11-fast/rc11-book-surplus/`). Full revised gameplay proof
     remains pending; the verified assertion repair is committed before its fresh capture.
+  - 2026-10-05, third retained attempt: `rc11-full-create-s1-a3` on 5e20ba6f4
+    completes the bridge and Legs 1-6, then finishes the book, family and dye quests
+    at level 22. Its return from the dye vendor to Oubliette has no collision-checked
+    route; the failed trace and dropped-schema receipt remain intact (`failure-audit.json`).
+    Java Q2938 and the family/dye templates/data permit the independent library pickup
+    beside the final book contact before leaving for those errands. The city order now
+    takes that pickup first. Free account 248's strengthened native probe walks the
+    whole book/library/family/dye batch and back to Hoder, completes the juice fallback
+    and preserves the exact book consumption, surplus and completions through relog
+    (`run/rc11-library-route/probe-a5.log`). Earlier probe failures are retained:
+    overly close ground endpoints could not reach Kvasir, and chasing Mima's old
+    position lost her; intercepting her announced waypoint uses checked ground movement.
+    Sixty-six focused tests and seven pre-commit checks pass (`run/rc11-library-route/`).
+    Fast passes 93 tests/five guarded skips/all eleven scenarios
+    (`run/rc11-fast/rc11-library-route/`). Full revised proof remains pending;
+    this verified order repair is committed before the next fresh capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -4915,6 +4931,12 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: three continuous failures are retained with dropped-schema
+  receipts. Distinct tail sources, exact book consumption with legitimate surplus and
+  the library-before-dye walking batch now pass focused/native proofs. Latest repair:
+  `run/rc11-library-route/`, 66 focused tests, seven pre-commit checks and Fast
+  93 passed/five guarded skips/all eleven scenarios. Commit/rebuild before fresh capture;
+  no revised full endpoint has been proved yet.
 - 2026-10-05 RC-09: contained Leg 10/11 finishes pass from the revised Heart state,
   with the same permit retained then consumed, 154 final completions, robe/library
   paid once and temporary stigma removed/permanent bundle sealed. Three Leg 10 deaths

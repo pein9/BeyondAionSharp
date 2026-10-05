@@ -24,16 +24,44 @@ public sealed partial class SimulationFastScenarioTests
 	{
 		await RunCapitalProbeAsync("RC11", 248, "Asimbooksurplus", async (probe, session, token) =>
 		{
-			probe.Server.GetCommonData().SetLevel(19);
-			SkillLearnService.LearnNewSkills(probe.Server, 10, 19);
+			probe.Server.GetCommonData().SetLevel(22);
+			SkillLearnService.LearnNewSkills(probe.Server, 10, 22);
 			await probe.SetupNearAsync(120010000, 204206);
-			Assert.True(await NaturalLaterCapitalSteps.PrepareBookAsync(session, probe.TalkAsync));
+			async Task WalkedTalkAsync(NaturalAltgardStep step)
+			{
+				int npc = await probe.WalkNpcAsync(step.NpcId);
+				for (int attempt = 1; ; attempt++)
+				{
+					session.BeginStep(step.Key, "walked-capital-quest-dialog");
+					try
+					{
+						if (step.NpcId == 700212) await NaturalLaterCapitalSteps.ReadQuestBookAsync(session, step, npc, token);
+						else await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token);
+						return;
+					}
+					catch (NaturalDialogTooFarException) when (attempt < 3)
+					{
+						// Intercept the announced waypoint instead of chasing the start of a walk.
+						BotPosition from = session.CurrentPosition, to = session.Api.World.Objects[npc].SettledPosition;
+						BotNavigationGeometry geometry = BotNavigationGeometry.ForServerWorld(probe.Server.GetInstanceId(), Race.ASMODIANS);
+						IReadOnlyList<BotPosition> route = geometry.FindJourneyPath(step.MapId ?? 120010000, from, to);
+						Assert.True(route.Count > 0, $"Walker {step.NpcId}: no checked reapproach {from} -> {to}");
+						await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing)
+							.CreateGroundPlan(route, from, session.Api.World.MovementSpeed!.Value), token);
+						await session.SynchronizeAsync(token);
+						await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+					}
+				}
+			}
+			Assert.True(await NaturalLaterCapitalSteps.PrepareBookAsync(session, WalkedTalkAsync));
 			// Labelled probe supplies reproduce the retained full run's 3/2/2 incoming stacks.
 			foreach (var (item, count) in new[] { (182207010, 3), (182207011, 2), (182207012, 2) })
 				Assert.Equal(0, ItemService.AddItem(probe.Server, item, count, allowInventoryOverflow: true));
 			await session.SynchronizeAsync(token);
 			int sapObject = session.Api.World.Inventory.Values.Single(i => i.ItemId == 182207012).ObjectId;
-			await NaturalLaterCapitalSteps.CompleteLeg7CityAsync(session, probe.TalkAsync);
+			await NaturalLaterCapitalSteps.CompleteLeg7CityAsync(session, WalkedTalkAsync);
+			Assert.True(session.Api.World.CompletedQuestIds.IsSupersetOf(new[] { 2919, 2959, 2984, 2954 }));
+			Assert.True(NaturalAltgardQuestSteps.State(session.Api.World, 2938) is (3, 0));
 			Assert.Equal(1, session.Api.World.CompletedQuestCounts[2919]);
 			Assert.Equal(1, session.Api.World.Inventory[sapObject].Count);
 			Assert.DoesNotContain(session.Api.World.Inventory.Values, i => i.ItemId is 182207010 or 182207011 or 182207013);
@@ -46,7 +74,7 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.Equal(1, session.Api.World.Inventory[sapObject].Count);
 			await NaturalLaterCapitalSteps.CompleteLeg7CityAsync(session,
 				_ => throw new InvalidOperationException("Completed book and juice must not repeat."));
-			Console.WriteLine("RC-11 book surplus: native 3/2/1 consumption, one sap and exact completion retained through relog.");
+			Console.WriteLine("RC-11 walked city batch: library pickup before family/dye, native 3/2/1 consumption, surplus and exact completions retained through relog.");
 		});
 	}
 

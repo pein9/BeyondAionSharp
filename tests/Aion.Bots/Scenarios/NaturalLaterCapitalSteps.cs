@@ -59,7 +59,7 @@ public static class NaturalLaterCapitalSteps
 		NaturalCapitalSteps.Offer(2984, 204138, item: 182207064), NaturalCapitalSteps.Finish(2984, 0, 204121),
 	];
 	public static readonly NaturalAltgardStep LibraryOffer = NaturalCapitalSteps.Offer(2938, 204267, page: 4762);
-	public static IEnumerable<NaturalAltgardStep> Leg7City => BookFinish.Concat(FamilyLetter).Concat(Dye).Append(LibraryOffer);
+	public static IEnumerable<NaturalAltgardStep> Leg7City => BookFinish.Append(LibraryOffer).Concat(FamilyLetter).Concat(Dye);
 	public static readonly NaturalAltgardStep ElementaryOffer = NaturalCapitalSteps.Offer(2920, 204141) with
 	{
 		Actions = ["QUEST_SELECT", "SELECT_NONE_1", "SELECT_NONE_1_1", "ASK_QUEST_ACCEPT", "QUEST_ACCEPT_1"],
@@ -190,7 +190,9 @@ public static class NaturalLaterCapitalSteps
 		}
 		if (world.Level >= 20)
 		{
-			await RunMatchingStepsAsync(session, FamilyLetter.Concat(Dye).Append(LibraryOffer), talk);
+			// Oubliette is beside the final book contact. Pick up permission here before leaving
+			// the library for the family/dye errands, avoiding the failed return from the dye vendor.
+			await RunMatchingStepsAsync(session, FamilyLetter.Concat(Dye).Prepend(LibraryOffer), talk);
 			if (!world.CompletedQuestIds.IsSupersetOf(new[] { 2959, 2984 }) || !Prepared(world, 2938, 0) ||
 				Owned(world, 182207064) != 0 || Owned(world, 169100000) != 8 || Owned(world, 169200002) != 8)
 				throw new InvalidDataException("The city errands must finish once, consume the supplied ingredient and retain both unapplied dye rewards.");
