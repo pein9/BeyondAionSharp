@@ -4602,6 +4602,28 @@ monitor enabled and announce its URL when a journey starts.
     Seven pre-commit checks pass; Fast passes 93 tests/five guarded skips/all eleven
     scenarios (`run/rc11-fast/rc11-hunt-completion/`). The revised full proof remains
     pending; commit and finish the rebuild before capture.
+  - 2026-10-05, seventh retained attempt: `rc11-full-create-s1-a7` on 6ab81fb97
+    completes Legs 1-7, then stops in Leg 8 at level 22 with 138 completions when
+    Smite 4016 is rejected for retained assassin 149588/210720. Its only NPC spawn
+    packet is at 12:35:21.543; the same-map bind revive at 12:37:47.759 does not clear
+    that view, and the cast at 12:40:42.493 has no fresh target observation. Six deaths
+    (three in Leg 4, one in Leg 5, two in Leg 8), failed trace/audit and dropped-schema
+    receipt are retained. Java TeleportService despawns and rebuilds the player's
+    known list; PlayerController.notSee suppresses deletion packets while despawned,
+    and FirstTargetProperty/Skill reject invalid targets. The bot now drops its view
+    before every bind revive, extending the existing late-leg reset to the same-map
+    revives in earlier legs. No server target validation is changed or ignored.
+    Free account 249's native controlled death and ordinary CM_REVIVE prove the old
+    assassin disappears, no kill is invented, and inventory, skills and completed
+    counts survive the reset. Two probe assertion failures are retained: their broad
+    before/after interval included legitimate recovery shield-scroll consumption.
+    The passing probe inspects immediately before death and after reload, before
+    post-revive supplies (`run/rc11-bind-view/probe-a3.log`). Eighty-nine focused
+    tests and seven pre-commit checks pass. Public Restore of altgard-rc-l7 also proves
+    the contained Leg 8 at level 22 with 132 completions, five recorded deaths, ordinary
+    endpoint relog and schema dropped (`run/rc11-bind-view/l8-smoke/`). Fast passes
+    94 tests/five guarded skips/all eleven scenarios (`run/rc11-fast/rc11-bind-view/`).
+    Full revised proof remains pending; commit and finish the rebuild before capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -4988,6 +5010,10 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: attempt seven retains a pre-bind-revive assassin in
+  Leg 8 and receives an invalid-target cast rejection. Drop the view on every natural
+  bind revive; a free-account native recovery probe and 89 focused tests pass.
+  Retain the failed run's six deaths and cleanup; RC-11 remains open.
 - 2026-10-05 RC-11 pending: the sixth continuous run completes Legs 1-9, then a
   completed Q2281 hunt counter fails to interrupt an approach. Retain its twelve deaths
   and watchdog failure. The client-counter regression and contained Leg 10 pass;

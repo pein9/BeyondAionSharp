@@ -46,7 +46,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 	/// a target produced by a real quest dialog. No loot action follows a kill that leaves this map.</summary>
 	public async Task<NaturalCombatDiagnosticResult> RunObservedCombatAsync(
 		Func<CancellationToken, Task<int>> startEncounter, CancellationToken token,
-		Func<CancellationToken, Task>? afterKill = null)
+		Func<CancellationToken, Task>? afterKill = null, Action? afterBindRevive = null)
 	{
 		int map = session.Api.World.MapId ?? throw new InvalidDataException("Combat map unobserved.");
 		BotNavigationGeometry geometry = runtime.CreateGeometry();
@@ -55,7 +55,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		var combat = new NaturalJourneyCombat(session, navigator, runtime, geometry, stopOnDeath: false,
 			conservativeRangedHold: false, NaturalMauPolicyParameters.Baseline)
 		{
-			ApproachMapId = map, ReloadViewOnBindRevive = true, AfterKillAsync = afterKill,
+			ApproachMapId = map, AfterKillAsync = afterKill, AfterBindRevive = afterBindRevive,
 		};
 		await combat.RestAsync(token);
 		long started = runtime.NowMillis;
@@ -1568,7 +1568,6 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					continuousAltgard ? combat.ReviveCount : haramelProgress?.Revives ?? 0)
 				{
 					ApproachMapId = contract.MapId,
-					ReloadViewOnBindRevive = altgardLegId is "l10" or "l11" or "cg" or "l12",
 				};
 				if (leg.Destiny != null || leg.Haramel != null) combat.AfterBindRevive = () => EnterLegMap(newEntry: true);
 				here.AvoidSpots = combat.DeathSpots;
@@ -7829,7 +7828,6 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		public int ReviveCount => revives;
 		/// <summary>The map a far target is approached on (NA-23 fights in Altgard); Ishalgen for the journey.</summary>
 		public int ApproachMapId { get; set; } = 220010000;
-		public bool ReloadViewOnBindRevive { get; init; }
 		public Action? AfterBindRevive { get; set; }
 
 		/// <summary>BC-06: retain combat/revival counters while switching to the new map's checked navigation.</summary>
@@ -8750,7 +8748,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// its server object was gone when the bot returned. Drop that view before the new spawn packets.
 			int? bindMap = session.Api.World.ObeliskBindPoint?.MapId;
 			bool otherMap = bindMap is int bound && bound != session.Api.World.MapId;
-			if (otherMap || ReloadViewOnBindRevive) session.Api.World.BeginWorldReload();
+			// RC-11: Leg 8 retained a pre-revive assassin that the server no longer knew.
+			// Every bind revive rebuilds the known list, including on the same map.
+			session.Api.World.BeginWorldReload();
 			await session.SendPacketAsync(session.Api.Revive(BotReviveType.Bind), token);
 			if (otherMap)
 			{
