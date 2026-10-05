@@ -4742,6 +4742,27 @@ monitor enabled and announce its URL when a journey starts.
     scenarios (`run/rc11-fast/rc11-cooldown-refusal-a3/`). All seven checks pass
     again after the probe isolation changes (`*-source.log`).
     Full revised proof remains pending; commit and finish the rebuild before capture.
+  - 2026-10-05, thirteenth retained attempt: `rc11-full-create-s1-a13` on ce5abae60
+    passes revised Ishalgen/bridge and Legs 1-8, then all Leg 9 quest hand-ins.
+    Q2916 reaches START/6 but has no clothing when the approach stops at level 23
+    with 152 completions. Seven deaths are retained (Leg 4 two, Leg 5 one,
+    Leg 8 one, Leg 9 three), along with the full trace/audit and dropped-schema
+    receipt. The last far-road walk revives at the upper bind; falling through
+    to local ground navigation then repeatedly checks an unreachable lower object.
+    Java Q2916's distance/item hooks, PlayerReviveService's bind teleport and
+    PlayerController's Soul Sickness were read. The whole spawn approach now detects
+    pending death or revival across both far-road travel and local navigation,
+    recovers normally, and starts its travel again before clearing guards. Native
+    source completion remains checked first; no kill, item or quest progress is
+    synthesized. The initial contained Leg 9 pass does not emit the new diagnostic.
+    Final public-restore smoke from altgard-rc-l8 passes at level 23 with 142
+    completions and six deaths: four far-road restart diagnostics, six ordinary
+    sickness waits and clothing retained at START/6 through endpoint relog.
+    Both owned smoke schemas are dropped (`run/rc11-clothing-recovery/smoke-audit.json`).
+    Thirty-four focused tests and seven final pre-commit checks pass (`*-final.log`).
+    Fast passes 95 tests/five guarded skips/all eleven scenarios
+    (`run/rc11-fast/rc11-clothing-recovery/`).
+    Full revised proof remains pending; commit and finish the rebuild before capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5128,6 +5149,13 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: attempt thirteen finishes Leg 9's hand-ins but loses
+  its clothing approach after a far-road bind revival. Detect revival across the
+  whole approach and restart ordinary hub/pillar travel. Contained Leg 9 passes
+  with four actual far-road restarts, six deaths, clothing retained through relog
+  and schema dropped. Retain the failed full run's seven deaths and cleanup;
+  final Fast passes 95 tests/five skips/all eleven scenarios. Full revised proof
+  remains pending.
 - 2026-10-05 RC-11 pending: attempt twelve completes Leg 8/Gattban, then retains a
   native global cast-gate refusal in Leg 9. A free native probe and contained Leg 9
   prove bounded readiness recovery, repeated pillar descent and ordinary Soul

@@ -4129,9 +4129,14 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				if (farApproach != null && !farApproachUnderway && (Distance(session.CurrentPosition, anchors[0].Position) > FarApproachMetres ||
 					altgardLeg?.PillarFlight is { } pillar && pillar.IsUpper(session.CurrentPosition.Z) != pillar.IsUpper(anchors[0].Position.Z)))
 				{
+					BotPosition beforeFarApproach = session.CurrentPosition;
+					int revivesBeforeFarApproach = combat.ReviveCount;
 					farApproachUnderway = true;
 					try { await farApproach(anchors[0].Position, templateId, altgardLegId == "l10" ? () => CompletedApproachSource() != null : null); }
 					finally { farApproachUnderway = false; }
+					if (CompletedApproachSource() is int completedOnRoad) return completedOnRoad;
+					if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0 || combat.ReviveCount > revivesBeforeFarApproach)
+						return await RetryAfterReviveAsync(beforeFarApproach, "far-road");
 					anchors = [.. anchors.OrderByDescending(Connected).ThenBy(waypoint => Distance(session.CurrentPosition, waypoint.Position))];
 				}
 				if (CompletedApproachSource() is int roadSource) return roadSource;
@@ -4142,12 +4147,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					for (int guardClears = 0; guardClears <= NaturalApproachProgress.MaximumAttempts; guardClears++)
 					{
 						BotPosition beforeApproach = session.CurrentPosition;
+						int revivesBeforeApproach = combat.ReviveCount;
 						int killsBeforeApproach = navigator.UnavailableObjects.Count;
 						NaturalNavigationResult result = withinRange is float range
 							? await NaturalIshalgenNavigator.ExploreWithinRangeAsync(contract.MapId, templateId, anchor.Position, range, navigator, "NPC", token,
 								stopWhen: () => CompletedApproachSource() != null)
 							: await NaturalIshalgenNavigator.ApproachNpcAsync(contract.MapId, templateId, anchor.Position, navigator, token);
 						if (CompletedApproachSource() is int collectedFrom) return collectedFrom;
+						if (session.Api.World.IsDead || session.Api.World.CurrentHp <= 0 || combat.ReviveCount > revivesBeforeApproach)
+						{
+							// Navigation defense can revive before the guard-clear branch starts.
+							// Its lower-floor route is stale at the upper bind; repeat hub/pillar travel.
+							return await RetryAfterReviveAsync(beforeApproach, "navigation");
+						}
 						if (result.Arrived && result.TargetObjectId is int objectId) { emptySpawnWaits = 0; return objectId; }
 						if (result.Arrived) // explore mode reached the hint with nothing in view: same as an empty hint
 							result = new(false, $"Reached the spawn hint but no NPC was observed within {withinRange:F0} m.", null, result.RouteSearches, result.Segments);
@@ -4271,6 +4283,18 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				}
 				throw new InvalidDataException($"No client-observed NPC {templateId} at {Math.Min(12, anchors.Length)} shipped spawn hints " +
 					$"from {session.CurrentPosition}: {string.Join(" | ", reasons)}");
+
+				async Task<int> RetryAfterReviveAsync(BotPosition from, string phase)
+				{
+					await RestSafelyAsync(token);
+					session.TraceDiagnostic("spawn-approach-retry-after-revive", new Dictionary<string, object?>
+					{
+						["templateId"] = templateId, ["phase"] = phase, ["from"] = from,
+						["position"] = session.CurrentPosition, ["revives"] = combat.ReviveCount,
+					});
+					return await ApproachShippedSpawnAsync(templateId, skipBlockedTarget, withinRange,
+						completedSource: completedSource, acceptObservedKill: acceptObservedKill);
+				}
 			}
 
 			async Task<int> ApproachShippedCombatSpawnAsync(int templateId)
