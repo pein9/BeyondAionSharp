@@ -50,7 +50,7 @@ public static class NaturalAbyssEntryDecisionEngine
 
 	/// <param name="physicalDefence">An item's physical defence as its tooltip shows it.</param>
 	/// <param name="attempts">The arena and ring-course tries recorded so far in this run.</param>
-	public static NaturalAbyssEntryDecision Decide(NaturalAltgardContract leg, NaturalAltgardObservation state, int sequence, Func<int, int> physicalDefence,
+	public static NaturalAbyssEntryDecision Decide(NaturalAltgardContract leg, NaturalAltgardObservation state, int sequence, Func<int, int> physicalDefence, Func<int, int> staffMagicBoost,
 		IReadOnlyList<NaturalAbyssAttempt>? attempts = null)
 	{
 		NaturalAbyssEntry scope = leg.AbyssEntry ?? throw new InvalidDataException($"{leg.Leg} is not the Abyss-entry leg.");
@@ -115,7 +115,7 @@ public static class NaturalAbyssEntryDecisionEngine
 		{
 			NaturalAbyssCoinTier tier = CoinTier(scope.CoinArmor, phase);
 			NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(scope.CoinArmor, tier,
-				state.Inventory ?? throw new InvalidDataException("The coin armor needs the observed inventory."), physicalDefence);
+				state.Inventory ?? throw new InvalidDataException("The coin armor needs the observed inventory."), physicalDefence, staffMagicBoost);
 			if (manifest.Wears.Length > 0)
 				return Next(phase, "inventory-check", $"Wear the owned {tier.Name} pieces: {Pieces(manifest.Wears)}.");
 			if (manifest.Buys.Length == 0) return null;

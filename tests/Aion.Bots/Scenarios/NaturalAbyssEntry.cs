@@ -57,14 +57,18 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 			!contract.RewardChoiceList.Select(choice => (choice.QuestId, choice.Action, choice.ItemId)).SequenceEqual(
 				[(24020, "SELECTED_QUEST_REWARD4", 110551147), (2947, "SELECTED_QUEST_REWARD2", 101501224)]) ||
 			contract.RewardChoiceList.Any(choice => !ProtectedItemIds.Contains(choice.ItemId)) ||
-			Weapon is not { Type: "STAFF", Prefer: "magic-boost", Buy: false })
+			Weapon is not { Type: "STAFF", Prefer: "magic-boost", Buy: true })
 			throw new InvalidDataException("The reward handling differs from the operator's answers AX-Q1, AX-Q4 and AX-Q5.");
 		NaturalHelpLegSupply[] approved = NaturalHelpItemAllowlist.LegApproved.Where(supply => supply.Leg == Leg).ToArray();
 		if (!Supplies.Select(supply => (supply.ItemId, supply.Family, supply.MaxCount, supply.Decision)).Order().SequenceEqual(
 				approved.Select(supply => (supply.ItemId, supply.Family, supply.MaxCount, supply.Decision)).Order()) ||
 			Supplies.Any(supply => !ProtectedItemIds.Contains(supply.ItemId)))
 			throw new InvalidDataException("The leg's supplied items differ from the approved flight-speed scroll and Bronze Coins.");
-		if (CoinArmor is not { CoinItemId: 186000007, IncomingCoins: 7, VendorNpcId: 204425, GoodsListId: 991, Better: "physical-defence", Weapons: false } ||
+		// AX-12c (operator, 2026-10-06): the best coin staff of a tier is bought when it has more magic boost than the worn one.
+		if (CoinArmor is not { CoinItemId: 186000007, IncomingCoins: 7, VendorNpcId: 204425, GoodsListId: 991, Better: "physical-defence", Weapons: true,
+				StaffGoodsListId: 989, StaffBetter: "magic-boost" } ||
+			!CoinArmor.Tiers.Select(tier => (tier.Staff?.ItemId, tier.Staff?.Cost, tier.Staff?.Slot)).SequenceEqual(
+				[(101500811, 4, (ushort)3), (101500818, 19, (ushort)3)]) ||
 			CoinArmor.VendorPosition.Length != 3 ||
 			!CoinArmor.Tiers.Select(tier => (tier.Level, tier.When, tier.Cost)).SequenceEqual([(21, "after-commander", 11), (26, "endpoint", 44)]) ||
 			CoinArmor.Tiers.Any(tier => !tier.Pieces.Select(piece => piece.Slot).Order().SequenceEqual(new ushort[] { 8, 16, 32, 2048, 4096 })) ||
@@ -108,10 +112,12 @@ public sealed record NaturalAbyssInventory(int[] Open, int[] Discard, int[] Keep
 /// <summary>A help item the operator approved for this leg only, with the decision that approved it.</summary>
 public sealed record NaturalAbyssSupply(int ItemId, string Family, int MaxCount, string Trigger, string Decision);
 
+/// <param name="StaffGoodsListId">AX-12c: the vendor's weapon tab, where each tier's staff is sold.</param>
 public sealed record NaturalAbyssCoinArmor(int CoinItemId, int IncomingCoins, int VendorNpcId, float[] VendorPosition, int GoodsListId,
-	string Better, bool Weapons, NaturalAbyssCoinTier[] Tiers);
+	string Better, bool Weapons, NaturalAbyssCoinTier[] Tiers, int StaffGoodsListId = 0, string StaffBetter = "magic-boost");
 
-public sealed record NaturalAbyssCoinTier(int Level, string When, string Name, NaturalCoinGearPurchase[] Pieces)
+/// <param name="Staff">AX-12c: the tier's best staff. It is not part of <see cref="Cost"/>, the tier's armor.</param>
+public sealed record NaturalAbyssCoinTier(int Level, string When, string Name, NaturalCoinGearPurchase[] Pieces, NaturalCoinGearPurchase? Staff = null)
 {
 	public int Cost => Pieces.Sum(piece => piece.Cost);
 }
@@ -306,8 +312,10 @@ public static class NaturalAbyssEntryLeg
 			int waiting = leg.Steps.Single(step => step.Key == scope.RingCourse.StartStep).Var ?? throw new InvalidDataException("The ring course's start step has no var.");
 			Require(flown || state.Quests.GetValueOrDefault(scope.RingCourse.QuestId) is { Status: 3 } course && (course.StepAndFlags & 0x3F) == waiting,
 				$"Q{scope.RingCourse.QuestId} is not waiting for Yornduf at var {waiting}");
-			Require(inventory.Any(item => item.ItemId == staffChoice.ItemId && item.EquipmentSlot != NotWorn && (item.EquipmentSlot & 1) != 0),
-				$"Q{scope.Arena.QuestId}'s staff {staffChoice.ItemId} is not worn");
+			// AX-12c: a coin staff with more magic boost may be worn over it; the staff rule below checks which staff is worn.
+			Require(inventory.Any(item => item.ItemId == staffChoice.ItemId &&
+					(settled || item.EquipmentSlot != NotWorn && (item.EquipmentSlot & 1) != 0)),
+				$"Q{scope.Arena.QuestId}'s staff {staffChoice.ItemId} is not {(settled ? "owned" : "worn")}");
 			Require(discards.Select(item => item.ItemId).SequenceEqual(scope.Inventory.Discard) && discards.All(item => item.Count == 1),
 				$"the discarded items are [{string.Join(", ", discards.Select(item => item.ItemId))}], not the one flight-time manastone");
 		}
@@ -374,7 +382,7 @@ public static class NaturalAbyssEntryLeg
 			NaturalAbyssCoinManifest decided = ledger.CoinManifests.Single(manifest => manifest.Level == tier.Level);
 			Require(decided.Buys.Select(slot => slot.CoinItemId).Order().SequenceEqual(
 				ledger.CoinPurchases.Where(purchase => purchase.Level == tier.Level).Select(purchase => purchase.ItemId).Order()), $"the {tier.Name} purchases are not the manifest");
-			Require(NaturalAbyssCoinArmorPolicy.Plan(scope.CoinArmor, tier, inventory, physicalDefence).Done, $"a {tier.Name} piece still beats what is worn");
+			Require(NaturalAbyssCoinArmorPolicy.Plan(scope.CoinArmor, tier, inventory, physicalDefence, staffMagicBoost).Done, $"a {tier.Name} piece still beats what is worn");
 			shortfall += decided.CoinsToSupply;
 		}
 		Require(ledger.CoinsSupplied == shortfall, $"{ledger.CoinsSupplied} coins were supplied where the manifests were {shortfall} short");
@@ -423,6 +431,7 @@ public static class NaturalAbyssEntryLeg
 		int[] early = leg.RewardChoiceList.Select(choice => choice.ItemId).Concat(scope.Inventory.Open).Concat(scope.Inventory.Discard)
 			.Concat(scope.Supplies.Where(supply => supply.ItemId != scope.CoinArmor.CoinItemId).Select(supply => supply.ItemId))
 			.Concat(scope.CoinArmor.Tiers.SelectMany(tier => tier.Pieces.Select(piece => piece.ItemId)))
+			.Concat(scope.CoinArmor.Tiers.Where(tier => tier.Staff != null).Select(tier => tier.Staff!.ItemId))
 			.Where(id => state.ItemCounts.GetValueOrDefault(id) > 0).ToArray();
 		Require(early.Length == 0, $"items this leg earns are already owned: [{string.Join(", ", early)}]");
 		Require(state.Kinah >= BaseTravelCost(leg) * 2, $"{state.Kinah} Kinah does not cover the teleports and the bind");

@@ -184,6 +184,22 @@ public sealed class NaturalAbyssEntryContractTests
 		Assert.All(armor.Tiers[1].Pieces, piece => Assert.Equal(sold.Select(id => items[id]).Where(item =>
 			(string?)item.Attribute("item_group") == (string)items[piece.ItemId].Attribute("item_group")!).Max(Defence), Defence(items[piece.ItemId])));
 
+		// AX-12c: each tier's staff is on Vebna's weapon tab, for coins. The level-26 one is the best staff she sells.
+		Assert.True(armor.Weapons && Scope.Weapon.Buy);
+		Assert.Contains(armor.StaffGoodsListId, trade.Elements("tradelist").Select(n => (int)n.Attribute("id")!));
+		int[] weapons = XDocument.Load(Data("goodslists", "goodslists.xml")).Descendants("list").Single(n => (int)n.Attribute("id")! == armor.StaffGoodsListId)
+			.Elements("item").Select(n => (int)n.Attribute("id")!).ToArray();
+		Assert.All(armor.Tiers, tier =>
+		{
+			XElement staff = items[tier.Staff!.ItemId], price = staff.Element("acquisition")!;
+			Assert.Contains(tier.Staff.ItemId, weapons);
+			Assert.Equal(("STAFF", tier.Level, "REWARD", armor.CoinItemId, tier.Staff.Cost, 3), ((string)staff.Attribute("item_group")!, (int)staff.Attribute("level")!,
+				(string)price.Attribute("type")!, (int)price.Attribute("item")!, (int)price.Attribute("count")!, (int)tier.Staff.Slot));
+			Assert.Equal(StaffBoost(tier.Staff.ItemId), Boost(staff));
+		});
+		Assert.Equal(470, weapons.Select(id => items[id]).Where(item => (string?)item.Attribute("item_group") == "STAFF").Max(Boost));
+		// The staffs they are compared with: a tie with the worn staff at level 21, ten more than Altruist's Staff at level 26.
+		Assert.Equal((370, 370, 460, 470), (Boost(items[101501357]), Boost(items[101500811]), Boost(items[101501224]), Boost(items[101500818])));
 		// AX-Q1: the staff taken from Q2947 has more magic boost than the staff the snapshot wears.
 		static int Boost(XElement item) => (int)item.Element("weapon_stats")!.Attribute("boost_magical_skill")!;
 		Assert.Equal((460, 370), (Boost(items[101501224]), Boost(items[101501357])));
@@ -267,7 +283,8 @@ public sealed class NaturalAbyssEntryContractTests
 	public void OnlyThisLegCarriesTheScopeAndEarlierLegsKeepTheirs()
 	{
 		Assert.All(NaturalAltgardContract.Legs.Keys.Where(leg => leg != NaturalAbyssEntry.Leg), leg => Assert.Null(NaturalAltgardContract.LoadLeg(leg).AbyssEntry));
-		Assert.Equal((true, false, false), (Scope.Inventory.AfterEveryTurnIn, Scope.Level.Hunting, Scope.Weapon.Buy));
+		// AX-12c: the weapon rule buys since the operator's 2026-10-06 instruction; before it the staff was only ever earned.
+		Assert.Equal((true, false, true), (Scope.Inventory.AfterEveryTurnIn, Scope.Level.Hunting, Scope.Weapon.Buy));
 		Assert.Equal([21, 26], Scope.CoinArmor.Tiers.Select(tier => tier.Level));
 		Assert.Contains(Scope.CoinArmor.VendorNpcId, Leg.GraphNpcIds(NaturalAltgardContract.LoadPlans(NaturalAbyssEntry.Leg)));
 		Assert.Empty(NaturalAltgardContract.LoadPlans(NaturalAbyssEntry.Leg));
@@ -323,12 +340,18 @@ public sealed class NaturalAbyssEntryContractTests
 	};
 	private static int DefenceOf(int itemId) => Defence.GetValueOrDefault(itemId);
 
+	/// <summary>The magic boost of the staffs the leg owns or is offered, as the shipped tooltips show it (AX-12c).</summary>
+	private static int StaffBoost(int itemId) => itemId switch
+	{
+		101500818 => 470, 101501224 => 460, 101500812 => 420, 101501357 => 370, 101500811 => 370, 101501355 => 320, _ => 0,
+	};
+
 	/// <summary>AX-05, AX-06: the leg's first two phases, decision by decision, as run/ax06 played them.</summary>
 	[Fact]
 	public void MorheimTheCommanderAndTheCoinArmorComeFirstAndThenTheFrontier()
 	{
 		static (string, string, string?, int?) Shape(NaturalAbyssEntryDecision next) => (next.Phase, next.Action, next.StepKey, next.MapId);
-		NaturalAbyssEntryDecision Decide(NaturalAltgardObservation state) => NaturalAbyssEntryDecisionEngine.Decide(Leg, state, 1, DefenceOf);
+		NaturalAbyssEntryDecision Decide(NaturalAltgardObservation state) => NaturalAbyssEntryDecisionEngine.Decide(Leg, state, 1, DefenceOf, StaffBoost);
 		NaturalAltgardObservation start = StartState(), arrived = ArrivedState(), commander = CommanderDoneState();
 
 		Assert.Equal(("morheim-arrival", "travel", null, (int?)NaturalAbyssEntry.Morheim), Shape(Decide(start)));
@@ -360,16 +383,20 @@ public sealed class NaturalAbyssEntryContractTests
 	public void LevelTwentyOneManifestBuysOnlyThePiecesWithMoreDefence()
 	{
 		NaturalAbyssCoinTier tier = Scope.CoinArmor.Tiers.Single(entry => entry.Level == 21);
-		NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, tier, CommanderDoneState().Inventory!, DefenceOf);
-		Assert.Equal([(8, "keep"), (16, "buy"), (2048, "keep"), (4096, "keep"), (32, "buy")], manifest.Slots.Select(slot => ((int)slot.Slot, slot.Action)));
+		NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, tier, CommanderDoneState().Inventory!, DefenceOf, StaffBoost);
+		Assert.Equal([(8, "keep"), (16, "buy"), (2048, "keep"), (4096, "keep"), (32, "buy"), (3, "keep")], manifest.Slots.Select(slot => ((int)slot.Slot, slot.Action)));
+		// AX-12c: the Rank 8 staff has the worn staff's 370 magic boost. A tie is not better.
+		NaturalAbyssCoinSlot rankEight = manifest.Slots.Single(slot => slot.Slot == 3);
+		Assert.Equal((101501357, 370, 101500811, 370, 4, "magic-boost"), (rankEight.WornItemId, rankEight.WornDefence, rankEight.CoinItemId, rankEight.CoinDefence, rankEight.Cost, rankEight.Stat));
+		Assert.Contains("tie", rankEight.Reason);
 		Assert.Equal((4, 7L, 0L, false), (manifest.Cost, manifest.CoinsOwned, manifest.CoinsToSupply, manifest.Done));
 		Assert.Contains("tie", manifest.Slots.Single(slot => slot.Slot == 2048).Reason);
 		// Four coins short of a manifest is what the help mechanism would supply; a bare slot takes any piece.
 		NaturalAbyssCoinManifest poor = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, tier,
-			[.. CommanderDoneState().Inventory!.Where(item => item.ItemId is not (186000007 or 110551147))], DefenceOf);
+			[.. CommanderDoneState().Inventory!.Where(item => item.ItemId is not (186000007 or 110551147))], DefenceOf, StaffBoost);
 		Assert.Equal((7, 0L, 7L), (poor.Cost, poor.CoinsOwned, poor.CoinsToSupply));
 		Assert.Equal("buy", poor.Slots.Single(slot => slot.Slot == 8).Action);
-		Assert.True(NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, tier, CoinArmorWornState().Inventory!, DefenceOf).Done);
+		Assert.True(NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, tier, CoinArmorWornState().Inventory!, DefenceOf, StaffBoost).Done);
 		// The defences are the shipped tooltips': every PHYSICAL_DEFENSE entry of the piece, added up.
 		string items = File.ReadAllText(Data("items", "item_templates.xml"));
 		Assert.All(Defence, piece =>
@@ -397,7 +424,7 @@ public sealed class NaturalAbyssEntryContractTests
 		Assert.Equal((0L, 2_888L, 100_000L, 200_000L), (NaturalServicePolicy.SoulHealPrice(0), NaturalServicePolicy.SoulHealPrice(11_636),
 			NaturalServicePolicy.SoulHealPrice(1_000_000), NaturalServicePolicy.SoulHealPrice(2_000_000)));
 		// The rule's words: the revive at the bind is followed by the soul healing; the arena's revive is inside it (D38).
-		NaturalAbyssEntryDecision dead = NaturalAbyssEntryDecisionEngine.Decide(Leg, ArrivedState() with { IsDead = true }, 1, DefenceOf);
+		NaturalAbyssEntryDecision dead = NaturalAbyssEntryDecisionEngine.Decide(Leg, ArrivedState() with { IsDead = true }, 1, DefenceOf, StaffBoost);
 		Assert.Equal(("recover", "revive"), (dead.Phase, dead.Action));
 		Assert.Contains("soul heal", dead.Reason);
 	}
@@ -414,24 +441,24 @@ public sealed class NaturalAbyssEntryContractTests
 
 		// Three coins are left after the level-21 pieces; the two chests add what they add (ten, then two to nine).
 		NaturalAltgardObservation worn = CoinArmorWornState();
-		NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, tier, worn.Inventory!, DefenceOf);
-		Assert.Equal([(8, "keep"), (16, "buy"), (2048, "buy"), (4096, "buy"), (32, "buy")], manifest.Slots.Select(slot => ((int)slot.Slot, slot.Action)));
-		Assert.Equal([(177, 177), (80, 107), (80, 123), (107, 142), (80, 123)], manifest.Slots.Select(slot => (slot.WornDefence, slot.CoinDefence)));
+		NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, tier, worn.Inventory!, DefenceOf, StaffBoost);
+		Assert.Equal([(8, "keep"), (16, "buy"), (2048, "buy"), (4096, "buy"), (32, "buy"), (3, "buy")], manifest.Slots.Select(slot => ((int)slot.Slot, slot.Action)));
+		Assert.Equal([(177, 177), (80, 107), (80, 123), (107, 142), (80, 123), (370, 470)], manifest.Slots.Select(slot => (slot.WornDefence, slot.CoinDefence)));
 		Assert.Contains("tie", manifest.Slots.Single(slot => slot.Slot == 8).Reason);
-		Assert.Equal((31, 3L, 28L, false), (manifest.Cost, manifest.CoinsOwned, manifest.CoinsToSupply, manifest.Done));
-		// With the lowest and the highest chest the supply is 16 and 9 coins; both are inside the approved 44 with the level-21 tier's none.
+		Assert.Equal((50, 3L, 47L, false), (manifest.Cost, manifest.CoinsOwned, manifest.CoinsToSupply, manifest.Done));
+		// With the lowest and the highest chest the supply is 35 and 28 coins; both are inside the approved 44 with the level-21 tier's none.
 		NaturalAbyssSupply approved = Scope.Supplies.Single(supply => supply.ItemId == Scope.CoinArmor.CoinItemId);
-		Assert.All(new[] { (15, 16L), (22, 9L) }, chest =>
+		Assert.All(new[] { (15, 35L), (22, 28L) }, chest =>
 		{
 			NaturalAbyssCoinManifest held = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, tier,
-				[.. worn.Inventory!.Where(item => item.ItemId != 186000007), new(157702, 186000007, chest.Item1, 65535)], DefenceOf);
+				[.. worn.Inventory!.Where(item => item.ItemId != 186000007), new(157702, 186000007, chest.Item1, 65535)], DefenceOf, StaffBoost);
 			Assert.Equal(chest.Item2, held.CoinsToSupply);
 			Assert.InRange(held.CoinsToSupply, 1, approved.MaxCount);
 		});
 		// Bought and worn, nothing of either tier is left to buy, and the Rank 8 pieces in the cube are not put back on.
 		NaturalAltgardObservation dressed = Dressed(worn);
-		Assert.True(NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, tier, dressed.Inventory!, DefenceOf).Done);
-		Assert.True(NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, Scope.CoinArmor.Tiers.Single(entry => entry.Level == 21), dressed.Inventory!, DefenceOf).Done);
+		Assert.True(NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, tier, dressed.Inventory!, DefenceOf, StaffBoost).Done);
+		Assert.True(NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, Scope.CoinArmor.Tiers.Single(entry => entry.Level == 21), dressed.Inventory!, DefenceOf, StaffBoost).Done);
 	}
 
 	[Fact]
@@ -439,7 +466,7 @@ public sealed class NaturalAbyssEntryContractTests
 	{
 		NaturalAbyssEntryStart start = NaturalAbyssEntryLeg.VerifyStart(Leg, StartState(), 133276, 0);
 		NaturalAbyssPayment[] paid = [new(24020, 293_759, 0, 25)];
-		static int Boost(int itemId) => itemId switch { 101501357 => 370, 101501355 => 320, _ => 0 };
+		static int Boost(int itemId) => StaffBoost(itemId);
 		NaturalAbyssLedger noCoins = new(293_759, 2_401, 2_690, paid, 2, 0, [], [], 0, [], 0, [], 0, 0, []);
 		NaturalAbyssEntryProgress Verify(NaturalAltgardObservation state, NaturalAbyssLedger ledger, string frontier = "coin-armor-21") =>
 			NaturalAbyssEntryLeg.VerifyProgress(Leg, start, state, frontier, ledger, Boost, DefenceOf, 59_385);
@@ -481,7 +508,7 @@ public sealed class NaturalAbyssEntryContractTests
 
 		// AX-06's frontier: the manifest decided once, its two pieces bought for coins alone and worn, nothing better left.
 		NaturalAltgardObservation worn = CoinArmorWornState();
-		NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, Scope.CoinArmor.Tiers[0], done.Inventory!, DefenceOf);
+		NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, Scope.CoinArmor.Tiers[0], done.Inventory!, DefenceOf, StaffBoost);
 		NaturalAbyssCoinPurchase[] bought = [new(21, 111501066, 900016, 16, 2, 7, 5, 743_394, 743_394), new(21, 114501082, 900032, 32, 2, 5, 3, 743_394, 743_394)];
 		NaturalAbyssLedger coins = noCoins with { OtherInventoryChecks = 1, CoinManifests = [manifest], CoinPurchases = bought };
 		NaturalAbyssEntryProgress settled = Verify(worn, coins, "capital-missions");
@@ -519,7 +546,7 @@ public sealed class NaturalAbyssEntryContractTests
 			if (questId != 2945) quests.Remove(2945);
 			int[] done = questId switch { 2945 => [], 2946 => [2945], _ => [2945, 2946] };
 			NaturalAbyssEntryDecision next = NaturalAbyssEntryDecisionEngine.Decide(Leg,
-				capital with { Quests = quests, CompletedQuestIds = capital.CompletedQuestIds.Concat(done).ToHashSet() }, 1, DefenceOf);
+				capital with { Quests = quests, CompletedQuestIds = capital.CompletedQuestIds.Concat(done).ToHashSet() }, 1, DefenceOf, StaffBoost);
 			return next is { Action: "talk", Phase: "capital-missions", StepKey: { } key } ? key : $"{next.Phase}:{next.Action}";
 		}).ToArray();
 
@@ -533,18 +560,18 @@ public sealed class NaturalAbyssEntryContractTests
 		Assert.Equal(["capital-missions:refresh-observation", "capital-missions:blocked"], Play(2946, (6, 0), (3, 9)));
 
 		// From Morheim every capital step asks for Orhe's teleport first; Altgard has no approved way to Pandaemonium.
-		NaturalAbyssEntryDecision fromMorheim = NaturalAbyssEntryDecisionEngine.Decide(Leg, CoinArmorWornState(), 1, DefenceOf);
+		NaturalAbyssEntryDecision fromMorheim = NaturalAbyssEntryDecisionEngine.Decide(Leg, CoinArmorWornState(), 1, DefenceOf, StaffBoost);
 		Assert.Equal(("travel", (int?)NaturalAbyssEntry.Pandaemonium, (int?)2945), (fromMorheim.Action, fromMorheim.MapId, fromMorheim.QuestId));
-		Assert.Equal("blocked", NaturalAbyssEntryDecisionEngine.Decide(Leg, CoinArmorWornState() with { MapId = 220030000 }, 1, DefenceOf).Action);
+		Assert.Equal("blocked", NaturalAbyssEntryDecisionEngine.Decide(Leg, CoinArmorWornState() with { MapId = 220030000 }, 1, DefenceOf, StaffBoost).Action);
 	}
 
 	[Fact]
 	public void ArenaFrontierIsVerifiedWithTheCapitalsAccounts()
 	{
 		NaturalAbyssEntryStart start = NaturalAbyssEntryLeg.VerifyStart(Leg, StartState(), 133276, 0);
-		static int Boost(int itemId) => itemId switch { 101501357 => 370, 101501355 => 320, _ => 0 };
+		static int Boost(int itemId) => StaffBoost(itemId);
 		NaturalAltgardObservation worn = CoinArmorWornState();
-		NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, Scope.CoinArmor.Tiers[0], CommanderDoneState().Inventory!, DefenceOf);
+		NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, Scope.CoinArmor.Tiers[0], CommanderDoneState().Inventory!, DefenceOf, StaffBoost);
 		NaturalAbyssCoinPurchase[] bought = [new(21, 111501066, 900016, 16, 2, 7, 5, 743_394, 743_394), new(21, 114501082, 900032, 32, 2, 5, 3, 743_394, 743_394)];
 		NaturalOpenedContainer[] opened =
 		[
@@ -615,7 +642,7 @@ public sealed class NaturalAbyssEntryContractTests
 			CompletedQuestIds = reported.CompletedQuestIds.Append(2947).ToHashSet(), Inventory = homeItems,
 			ItemCounts = homeItems.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
 		};
-		static int HomeBoost(int itemId) => itemId switch { 101501224 => 460, 101501357 => 370, 101501355 => 320, _ => 0 };
+		static int HomeBoost(int itemId) => StaffBoost(itemId);
 		NaturalAbyssLedger returned = fought with
 		{
 			ExperienceGained = 333_979 + fights + 403_012, Fares = 6_637, Payments = paidHome, InventoryChecks = 5,
@@ -690,26 +717,32 @@ public sealed class NaturalAbyssEntryContractTests
 
 		// AX-12: the endpoint. The level-26 manifest decided once from the 18 coins held: four pieces for 31, 13 supplied. The
 		// four are worn, the Rank 8 gloves and brogans are back in the cube and no coin is left.
-		NaturalAbyssCoinManifest late = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, Scope.CoinArmor.Tiers.Single(tier => tier.Level == 26), ended.Inventory!, DefenceOf);
-		Assert.Equal((31, 18L, 13L), (late.Cost, late.CoinsOwned, late.CoinsToSupply));
+		NaturalAbyssCoinManifest late = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, Scope.CoinArmor.Tiers.Single(tier => tier.Level == 26), ended.Inventory!, DefenceOf, StaffBoost);
+		Assert.Equal((50, 18L, 32L), (late.Cost, late.CoinsOwned, late.CoinsToSupply));
+		// AX-12c: the Elite Rank 7 staff has 470 magic boost against Altruist's Staff's 460.
+		NaturalAbyssCoinSlot elite = late.Slots.Single(slot => slot.Slot == 3);
+		Assert.Equal((101501224, 460, 101500818, 470, 19, "buy"), (elite.WornItemId, elite.WornDefence, elite.CoinItemId, elite.CoinDefence, elite.Cost, elite.Action));
 		long purse = ended.Kinah;
 		NaturalAbyssCoinPurchase[] boughtLate =
 		[
-			new(26, 111501073, 940016, 16, 7, 31, 24, purse, purse), new(26, 112501023, 942048, 2048, 7, 24, 17, purse, purse),
-			new(26, 113501082, 944096, 4096, 10, 17, 7, purse, purse), new(26, 114501089, 940032, 32, 7, 7, 0, purse, purse),
+			new(26, 111501073, 940016, 16, 7, 50, 43, purse, purse), new(26, 112501023, 942048, 2048, 7, 43, 36, purse, purse),
+			new(26, 113501082, 944096, 4096, 10, 36, 26, purse, purse), new(26, 114501089, 940032, 32, 7, 26, 19, purse, purse),
+			new(26, 101500818, 940003, 3, 19, 19, 0, purse, purse),
 		];
 		NaturalAltgardObservation dressed = Dressed(ended);
 		NaturalAbyssLedger settled = flown with
 		{
 			OtherInventoryChecks = flown.OtherInventoryChecks + 1, CoinManifests = [.. flown.CoinManifests, late],
-			CoinPurchases = [.. flown.CoinPurchases, .. boughtLate], CoinsSupplied = 13,
+			CoinPurchases = [.. flown.CoinPurchases, .. boughtLate], CoinsSupplied = 32,
 		};
 		NaturalAbyssEntryProgress VerifyEndpoint(NaturalAltgardObservation state, NaturalAbyssLedger counted) =>
 			NaturalAbyssEntryLeg.VerifyProgress(Leg, start, state, "endpoint", counted, HomeBoost, DefenceOf, 1_600_000);
 		NaturalAbyssEntryProgress atEndpoint = VerifyEndpoint(dressed, settled);
-		Assert.Equal(("endpoint", 26, 0L, 13L), (atEndpoint.Frontier, atEndpoint.Level, atEndpoint.BronzeCoins, atEndpoint.CoinsSupplied));
+		Assert.Equal(("endpoint", 26, 0L, 32L), (atEndpoint.Frontier, atEndpoint.Level, atEndpoint.BronzeCoins, atEndpoint.CoinsSupplied));
+		// The Elite staff is worn; Altruist's Staff, the quest's reward, is kept in the cube.
+		Assert.Equal(101500818, atEndpoint.StaffItemId);
 		Assert.Equal([21, 26], atEndpoint.CoinManifests!.Select(manifest => manifest.Level));
-		Assert.Equal([111501066, 114501082, 111501073, 112501023, 113501082, 114501089], atEndpoint.CoinPurchases!.Select(purchase => purchase.ItemId));
+		Assert.Equal([111501066, 114501082, 111501073, 112501023, 113501082, 114501089, 101500818], atEndpoint.CoinPurchases!.Select(purchase => purchase.ItemId));
 		Assert.Equal(110551147, atEndpoint.TorsoItemId);
 		Action[] refusedEndpoint =
 		[
@@ -723,6 +756,11 @@ public sealed class NaturalAbyssEntryContractTests
 			() => VerifyEndpoint(dressed, settled with { CoinPurchases = [.. flown.CoinPurchases, .. boughtLate[..3], boughtLate[3] with { KinahAfter = purse - 1 }] }),
 			// A coin over, as if more had been supplied than the manifest was short.
 			() => VerifyEndpoint(Adding(dressed, new NaturalJourneyItem(157702, 186000007, 1, 65535)), settled),
+			// The staff bought and left in the cube, with Altruist's Staff still on.
+			() => VerifyEndpoint(dressed with { Inventory = [.. dressed.Inventory!.Select(item => item.ItemId switch
+				{
+					101500818 => item with { EquipmentSlot = 65535 }, 101501224 => item with { EquipmentSlot = 3 }, _ => item,
+				})] }, settled),
 			// A bought piece left in the cube, with the Rank 8 piece still on.
 			() => VerifyEndpoint(dressed with { Inventory = [.. dressed.Inventory!.Select(item => item.ItemId switch
 				{
@@ -794,7 +832,7 @@ public sealed class NaturalAbyssEntryContractTests
 			return NaturalAbyssEntryDecisionEngine.Decide(Leg, done with
 			{
 				MapId = map, Quests = held, CompletedQuestIds = done.CompletedQuestIds.Concat([2945, 2946, 2947]).ToHashSet(),
-			}, 1, DefenceOf);
+			}, 1, DefenceOf, StaffBoost);
 		}
 		static (string, string, string?) Shape(NaturalAbyssEntryDecision next) => (next.Phase, next.Action, next.StepKey);
 		// Q2947 turned in: Q2042 shows a moment later, then Aegir's var 0, then the course is Yornduf's.
@@ -823,7 +861,7 @@ public sealed class NaturalAbyssEntryContractTests
 			// Q2042's reward is what takes the Cleric to level 26.
 			return NaturalAbyssEntryDecisionEngine.Decide(Leg, done with { MapId = map, Level = complete ? 26 : 25, Quests = held,
 				CompletedQuestIds = done.CompletedQuestIds.Concat(finished).ToHashSet() },
-				1, DefenceOf, tries);
+				1, DefenceOf, StaffBoost, tries);
 		}
 		static (string, string, string?) Shape(NaturalAbyssEntryDecision next) => (next.Phase, next.Action, next.StepKey);
 		NaturalAbyssAttempt Failed(int number) => new("ring-course", number, "timeout", number * 1_000, number * 1_000 + 70_000, 3, "ran out");
@@ -843,20 +881,20 @@ public sealed class NaturalAbyssEntryContractTests
 		// AX-12: the level-26 pieces are bought in Morheim, put on if they are owned, and then the leg is at its endpoint.
 		NaturalAbyssEntryDecision buy = Decide(0, 0, complete: true);
 		Assert.Equal(("coin-armor-26", "coin-armor", null), Shape(buy));
-		Assert.Contains("111501073, 112501023, 113501082, 114501089 for 31 coins", buy.Reason);
+		Assert.Contains("111501073, 112501023, 113501082, 114501089, 101500818 for 50 coins", buy.Reason);
 		Assert.Equal(("coin-armor-26", "blocked", null), Shape(Decide(0, 0, NaturalAbyssEntry.Pandaemonium, complete: true)));
 		NaturalAltgardObservation finished = done with
 		{
 			Level = 26, Quests = journal, CompletedQuestIds = done.CompletedQuestIds.Concat([2945, 2946, 2947, 2042]).ToHashSet(),
 		};
-		NaturalAbyssEntryDecision After(NaturalAltgardObservation state) => NaturalAbyssEntryDecisionEngine.Decide(Leg, state, 1, DefenceOf);
+		NaturalAbyssEntryDecision After(NaturalAltgardObservation state) => NaturalAbyssEntryDecisionEngine.Decide(Leg, state, 1, DefenceOf, StaffBoost);
 		Assert.Equal(("coin-armor-26", "inventory-check", null), Shape(After(Adding(finished, new NaturalJourneyItem(940016, 111501073, 1, 65535)))));
 		Assert.Equal(("endpoint", "frontier", null), Shape(After(Dressed(finished))));
 		Assert.Equal(("level-by-quests", "blocked", null), Shape(After(Dressed(finished) with { Level = 25 })));
 		NaturalAbyssEntryDecision low = NaturalAbyssEntryDecisionEngine.Decide(Leg, done with
 		{
 			Level = 25, Quests = journal, CompletedQuestIds = done.CompletedQuestIds.Concat([2945, 2946, 2947, 2042]).ToHashSet(),
-		}, 1, DefenceOf);
+		}, 1, DefenceOf, StaffBoost);
 		Assert.Equal(("level-by-quests", "blocked"), (low.Phase, low.Action));
 		Assert.Contains("fortress quests", low.Reason);
 		Assert.Contains("No hunting", low.Reason);
@@ -869,8 +907,8 @@ public sealed class NaturalAbyssEntryContractTests
 		Assert.Contains("ask the operator to record a flight", ask.Reason);
 		// Yornduf stands in Morheim: from anywhere else the talk is a teleport away.
 		Assert.Equal("travel", Decide(3, 9, NaturalAbyssEntry.Pandaemonium, tries: Failed(1)).Action);
-		Assert.Equal(("recover", "revive"), (NaturalAbyssEntryDecisionEngine.Decide(Leg, done with { IsDead = true }, 1, DefenceOf).Phase,
-			NaturalAbyssEntryDecisionEngine.Decide(Leg, done with { IsDead = true }, 1, DefenceOf).Action));
+		Assert.Equal(("recover", "revive"), (NaturalAbyssEntryDecisionEngine.Decide(Leg, done with { IsDead = true }, 1, DefenceOf, StaffBoost).Phase,
+			NaturalAbyssEntryDecisionEngine.Decide(Leg, done with { IsDead = true }, 1, DefenceOf, StaffBoost).Action));
 	}
 
 	/// <summary>AX-08: Garm's arena, from his first talk to the report, with the three tries of AX-Q3.</summary>
@@ -885,7 +923,7 @@ public sealed class NaturalAbyssEntryContractTests
 			{
 				MapId = map, IsDead = dead, CompletedQuestIds = capital.CompletedQuestIds.Concat([2945, 2946]).ToHashSet(),
 				Quests = new Dictionary<int, BotQuestState>(journal) { [2947] = new(2947, status, var | kills << 24, 0, null) },
-			}, 1, DefenceOf, tries);
+			}, 1, DefenceOf, StaffBoost, tries);
 		static (string, string, string?) Shape(NaturalAbyssEntryDecision next) => (next.Phase, next.Action, next.StepKey);
 		const int city = NaturalAbyssEntry.Pandaemonium, arena = NaturalAbyssEntry.ArenaMap, morheim = NaturalAbyssEntry.Morheim;
 		NaturalAbyssAttempt Failed(int number) => new("arena", number, "timeout", number * 1_000, number * 1_000 + 240_000, 6, "ran out");
@@ -931,9 +969,11 @@ public sealed class NaturalAbyssEntryContractTests
 	private static NaturalAltgardObservation Dressed(NaturalAltgardObservation state)
 	{
 		int[] replaced = [111501066, 112501641, 113501720, 114501082];
+		// AX-12c: the Elite Rank 7 staff is worn too, and the staff it replaces is in the cube.
 		NaturalJourneyItem[] items = [.. state.Inventory!.Where(item => item.ItemId != 186000007)
-			.Select(item => replaced.Contains(item.ItemId) ? item with { EquipmentSlot = 65535 } : item),
-			new(940016, 111501073, 1, 16), new(942048, 112501023, 1, 2048), new(944096, 113501082, 1, 4096), new(940032, 114501089, 1, 32)];
+			.Select(item => replaced.Contains(item.ItemId) || item.EquipmentSlot == 3 ? item with { EquipmentSlot = 65535 } : item),
+			new(940016, 111501073, 1, 16), new(942048, 112501023, 1, 2048), new(944096, 113501082, 1, 4096), new(940032, 114501089, 1, 32),
+			new(940003, 101500818, 1, 3)];
 		return state with { Inventory = items, ItemCounts = items.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)) };
 	}
 

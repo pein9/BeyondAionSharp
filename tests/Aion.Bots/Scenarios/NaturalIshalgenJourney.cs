@@ -1695,6 +1695,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.TraceDiagnostic(NaturalAbyssAttempts.Diagnostic(NaturalAbyssAttempts.RingCourse), NaturalAbyssAttempts.Row(attempt));
 				}
 				int PhysicalDefence(int itemId) => NaturalAbyssCoinArmorPolicy.PhysicalDefence(runtime.Data.ItemDataDh.GetItemTemplate(itemId));
+				// AX-12c: a staff's magic boost, the stat the staff rule and the coin staff are decided by.
+				int StaffMagicBoost(int itemId) => runtime.Data.ItemDataDh.GetItemTemplate(itemId) is { } template && template.GetItemGroup().ToString() == "STAFF"
+					? template.GetWeaponStats()?.GetBoostMagicalSkill() ?? 0 : 0;
 				// AX-04: the inventory check the operator asked for after every quest turn-in (2026-10-06), and once at the start so
 				// the leg begins with the best owned gear worn. AX-06: also after a coin armor purchase, to wear it.
 				async Task InventoryCheckAsync(string trigger, bool turnIn = true)
@@ -1731,7 +1734,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						EndRingTry(combat.ReviveCount > flying.Revives ? "death" : "timeout", combat.ReviveCount > flying.Revives
 							? "The Cleric died on the course; the server failed it at once (var 9)."
 							: "The course failed (var 9) before the sixth ring.");
-					NaturalAbyssEntryDecision next = NaturalAbyssEntryDecisionEngine.Decide(leg, Observed(), sequence, PhysicalDefence, attempts);
+					NaturalAbyssEntryDecision next = NaturalAbyssEntryDecisionEngine.Decide(leg, Observed(), sequence, PhysicalDefence, StaffMagicBoost, attempts);
 					// The fight's own progress is the kill count and the clock, so a fight decision never looks like a stall.
 					string signature = $"{next.Action}|{next.StepKey}|{next.Reason}|{(next.Action == "arena-fight" ? runtime.NowMillis : 0)}";
 					repeats = signature == previous ? repeats + 1 : 0;
@@ -1753,8 +1756,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								new NaturalAbyssLedger(ObservedExperience() - experienceAtStart, fares, bindPaid, payments, inventoryChecks, otherInventoryChecks,
 									coinManifests, coinPurchases, coinsSupplied, opened, notOpened, attempts, arenaExperience, combat.ReviveCount, discarded,
 									scrollsSupplied, scrollsUsed, soulHeals, combat.BindReviveCount, courseExperience),
-								itemId => runtime.Data.ItemDataDh.GetItemTemplate(itemId) is { } template && template.GetItemGroup().ToString() == "STAFF"
-									? template.GetWeaponStats()?.GetBoostMagicalSkill() ?? 0 : 0, PhysicalDefence, runtime.NowMillis);
+								StaffMagicBoost, PhysicalDefence, runtime.NowMillis);
 							await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntryLeg.ProgressReceipt),
 								System.Text.Json.JsonSerializer.Serialize(progress), token);
 							session.TraceDiagnostic(NaturalAbyssEntryLeg.ProgressDiagnostic, new Dictionary<string, object?>
@@ -2179,7 +2181,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							// are the leg's approved supply (the AX-Q5 revision), listed in the run profile like every help item.
 							NaturalAbyssCoinArmor armor = scope.CoinArmor;
 							NaturalAbyssCoinTier tier = NaturalAbyssEntryDecisionEngine.CoinTier(armor, next.Phase);
-							NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(armor, tier, Observed().Inventory!, PhysicalDefence);
+							NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(armor, tier, Observed().Inventory!, PhysicalDefence, StaffMagicBoost);
 							coinManifests.Add(manifest);
 							session.TraceDiagnostic(NaturalAbyssCoinArmorSteps.ManifestDiagnostic, NaturalAbyssCoinArmorSteps.Row(manifest));
 							if (manifest.CoinsToSupply > 0)

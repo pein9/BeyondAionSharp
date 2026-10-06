@@ -11,7 +11,7 @@ namespace Aion.Bots.Scenarios;
 /// <summary>One slot of a coin armor manifest: what is worn there against the tier's piece.</summary>
 /// <param name="Action"><c>buy</c> (the piece beats what is worn), <c>wear</c> (it is owned and not worn yet) or <c>keep</c>.</param>
 public sealed record NaturalAbyssCoinSlot(ushort Slot, int WornItemId, int WornDefence, int CoinItemId, int CoinDefence, int Cost,
-	string Action, string Reason);
+	string Action, string Reason, string Stat = NaturalAbyssCoinArmorPolicy.DefenceStat);
 
 /// <summary>AX-06: a tier of Bronze Coin armor compared slot by slot with what the Cleric wears (the operator, 2026-10-06:
 /// buy "only if any of it is better than what we are wearing"). The missing coins are the supply the help mechanism adds.</summary>
@@ -37,11 +37,14 @@ public static class NaturalAbyssCoinArmorPolicy
 	public static int PhysicalDefence(ItemTemplate? template) =>
 		template?.GetModifiers()?.Where(modifier => modifier.GetName() == StatEnum.PHYSICAL_DEFENSE).Sum(modifier => modifier.GetValue()) ?? 0;
 
-	/// <summary>"Better" is the leg's default: more physical defence. A tie is not better, so nothing is bought for it.</summary>
+	public const string DefenceStat = "physical-defence", BoostStat = "magic-boost";
+
+	/// <summary>"Better" is the leg's default: more physical defence. A tie is not better, so nothing is bought for it.
+	/// AX-12c: the tier's staff by the staff rule, more magic boost than the worn staff.</summary>
 	public static NaturalAbyssCoinManifest Plan(NaturalAbyssCoinArmor armor, NaturalAbyssCoinTier tier, IReadOnlyList<NaturalJourneyItem> inventory,
-		Func<int, int> physicalDefence)
+		Func<int, int> physicalDefence, Func<int, int> staffMagicBoost)
 	{
-		if (armor.Better != "physical-defence") throw new InvalidDataException($"Unknown coin armor rule '{armor.Better}'.");
+		if (armor.Better != DefenceStat || armor.StaffBetter != BoostStat) throw new InvalidDataException($"Unknown coin gear rule '{armor.Better}', '{armor.StaffBetter}'.");
 		var slots = new List<NaturalAbyssCoinSlot>();
 		foreach (NaturalCoinGearPurchase piece in tier.Pieces)
 		{
@@ -54,6 +57,18 @@ public static class NaturalAbyssCoinArmorPolicy
 				: owned ? ("wear", $"Owned and not worn: {coinDefence} defence against {wornDefence}.")
 				: ("buy", $"{coinDefence} defence against {wornDefence} worn.");
 			slots.Add(new(piece.Slot, worn?.ItemId ?? 0, wornDefence, piece.ItemId, coinDefence, piece.Cost, action, reason));
+		}
+		if (armor.Weapons && tier.Staff is { } staff)
+		{
+			NaturalJourneyItem? held = inventory.FirstOrDefault(item => item.EquipmentSlot != NotWorn && (item.EquipmentSlot & 1) != 0);
+			int heldBoost = held == null ? 0 : staffMagicBoost(held.ItemId), coinBoost = staffMagicBoost(staff.ItemId);
+			if (coinBoost <= 0) throw new InvalidDataException($"The coin staff {staff.ItemId} has no magic boost.");
+			(string action, string reason) = held?.ItemId == staff.ItemId ? ("keep", "The staff is worn.")
+				: coinBoost <= heldBoost ? ("keep", coinBoost == heldBoost
+					? $"A tie at {coinBoost} magic boost is not better." : $"The worn staff has {heldBoost} magic boost against {coinBoost}.")
+				: inventory.Any(item => item.ItemId == staff.ItemId) ? ("wear", $"Owned and not worn: {coinBoost} magic boost against {heldBoost}.")
+				: ("buy", $"{coinBoost} magic boost against {heldBoost} worn.");
+			slots.Add(new(staff.Slot, held?.ItemId ?? 0, heldBoost, staff.ItemId, coinBoost, staff.Cost, action, reason, BoostStat));
 		}
 		return new(tier.Level, tier.Name, [.. slots], inventory.Where(item => item.ItemId == armor.CoinItemId).Sum(item => item.Count));
 	}
@@ -71,7 +86,7 @@ public static class NaturalAbyssCoinArmorSteps
 		["slots"] = manifest.Slots.Select(slot => new Dictionary<string, object?>
 		{
 			["slot"] = slot.Slot, ["worn"] = slot.WornItemId, ["wornDefence"] = slot.WornDefence, ["piece"] = slot.CoinItemId,
-			["pieceDefence"] = slot.CoinDefence, ["cost"] = slot.Cost, ["action"] = slot.Action, ["reason"] = slot.Reason,
+			["pieceDefence"] = slot.CoinDefence, ["cost"] = slot.Cost, ["action"] = slot.Action, ["reason"] = slot.Reason, ["stat"] = slot.Stat,
 		}).ToArray(),
 	};
 
@@ -85,10 +100,12 @@ public static class NaturalAbyssCoinArmorSteps
 		if (!world.Objects.TryGetValue(vendor, out BotKnownObject? known) || known.TemplateId != armor.VendorNpcId)
 			throw new InvalidDataException("The observed seller is not the approved coin vendor.");
 		if (manifest.Cost > Coins()) throw new InvalidDataException($"The manifest costs {manifest.Cost} coins and the Cleric holds {Coins()}.");
-		var offered = data.GoodsListDataDh.GetGoodsListById(armor.GoodsListId)?.GetItemIdList() ?? [];
 		var bought = new List<NaturalAbyssCoinPurchase>();
 		foreach (NaturalAbyssCoinSlot slot in manifest.Buys)
 		{
+			// The armor is on the vendor's chain tab and the staff on its weapon tab.
+			int tab = slot.Stat == NaturalAbyssCoinArmorPolicy.BoostStat ? armor.StaffGoodsListId : armor.GoodsListId;
+			var offered = data.GoodsListDataDh.GetGoodsListById(tab)?.GetItemIdList() ?? [];
 			Acquisition? cost = data.ItemDataDh.GetItemTemplate(slot.CoinItemId)?.GetAcquisition();
 			if (!offered.Contains(slot.CoinItemId) || cost == null || cost.Type != AcquisitionType.REWARD || cost.ItemId != armor.CoinItemId ||
 				cost.ItemCount != slot.Cost || cost.Ap != 0)
@@ -99,8 +116,8 @@ public static class NaturalAbyssCoinArmorSteps
 			await session.WaitForPacketAsync(typeof(SM_TRADELIST), token, packet => packet.Get<int>("targetObjectId") == vendor);
 			BotTradeWindow trade = world.Trade ?? throw new InvalidDataException("No observed reward shop.");
 			// Java writes TradeNpcType.index(), not its ordinal.
-			if (trade.NpcType != TradeNpcType.REWARD.Index() || !trade.ShowBuyTab || !trade.Tabs.Contains(armor.GoodsListId))
-				throw new InvalidDataException("The observed shop does not offer the audited chain tab.");
+			if (trade.NpcType != TradeNpcType.REWARD.Index() || !trade.ShowBuyTab || !trade.Tabs.Contains(tab))
+				throw new InvalidDataException($"The observed shop does not offer the audited tab {tab}.");
 			long coins = Coins(), kinah = world.Kinah;
 			HashSet<int> before = world.Inventory.Values.Where(item => item.ItemId == slot.CoinItemId).Select(item => item.ObjectId).ToHashSet();
 			await session.SendPacketAsync(GameClientPackets.BuyItem(vendor, 15, [(slot.CoinItemId, 1)]), token);

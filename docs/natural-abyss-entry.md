@@ -20,7 +20,9 @@ revive inside the arena as retail does, buy the best coin staff when it is bette
 always soul heal after an obelisk resurrection. They are AX-12a, AX-12b and AX-12c, worked
 before AX-13. AX-12a is done: a Cleric that dies in the arena stands up inside it (D38),
 leaves by the exit and clears the arena on its second try. AX-12b is done: after a revive
-at the obelisk the Cleric is soul healed by Golenthor before it rests. AX-12c is next.
+at the obelisk the Cleric is soul healed by Golenthor before it rests. AX-12c is done: the
+Elite Rank 7 staff is bought with the level-26 armor and worn. AX-13, the one contained run
+with its relog, is next.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -308,6 +310,24 @@ not better.
 - A rare level-26 tier (Rank 7) costs 18 coins for five pieces. It is not the best tier.
 - The Flight speed lost with the chausses (1%) is the only stat given up besides HP on the
   gloves, shoulders and feet (30 each); the legs gain 26 HP.
+
+**The staff manifest (AX-12c, written 2026-10-06 before buying).** The operator: "Also
+upgrade our weapon to the best coin weapon if it's better than what we have (staff)." Vebna
+sells three staffs on her weapon tab (goods list 989). "Better" is the staff rule: more
+magic boost. A tie is not better. Every stat is from the shipped item data.
+
+| Tier | Worn staff | Vebna's best staff of the tier | Coins | Decision |
+|---|---|---|---:|---|
+| Level 21, after Aegir | Altgard Dark Legionary Staff 101501357: 370 magic boost, 191 magic accuracy, 88-132 damage, 433 parry, 368 accuracy, 60 crit, 2.0 s; bonus 77 HP, 34 accuracy | Rank 8 Asmodian Staff 101500811: the same numbers in every stat | 4 | **Keep.** A tie |
+| Level 26, at the end | Altruist's Staff 101501224: 460 magic boost, 232 magic accuracy, 112-168 damage, 512 parry, 474 accuracy, 60 crit, 2.0 s; bonus 22 physical crit, 115 MP | Elite Rank 7 Asmodian Staff 101500818: 470 magic boost, 236 magic accuracy, 114-172 damage, 521 parry, 484 accuracy, 60 crit, 2.0 s; bonus 24 physical crit, 121 MP | 19 | **Buy.** 470 against 460, and no stat is lower |
+
+- **To buy: the Elite Rank 7 Asmodian Staff, 19 Bronze Coins, at level 26.** It needs level
+  26 (`restrict`), like the Elite armor.
+- The Rank 7 Asmodian Staff 101500812 (420 magic boost, 7 coins) is not the tier's best and
+  is weaker than the worn staff. It is not bought.
+- Altruist's Staff is kept in the cube. It is the quest's reward and is not discarded.
+- **Coins.** With the four armor pieces the level-26 manifest is 31 + 19 = 50 coins. The
+  Cleric holds 15 to 22 there, so **the supply is 28 to 35 coins**, inside the approved 44.
 
 ## Hazards
 
@@ -866,13 +886,30 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   - Tests: one more contract test and eight refused endpoint ledgers (26 pass); one more
     SIM test.
   - Fast and the seven pre-commit checks: see the Progress log.
-- [ ] **AX-12c - The best coin staff.** Depends AX-12. Operator, 2026-10-06: "Also upgrade
+- [x] **AX-12c - The best coin staff.** Depends AX-12. Operator, 2026-10-06: "Also upgrade
   our weapon to the best coin weapon if it's better than what we have (staff)."
   - Write the staff manifest under [Coin armor](#coin-armor) first, for both tiers: the
     worn staff against the tier's coin staffs, every stat, and which is better. The staff
     rule decides it: more magic boost. A tie is not better.
   - Supply the coins it is short, inside the approved 44, listed in the run profile. Buy
     only the manifest. The equipment check wears it.
+  - 2026-10-06: the staff manifest is under [Coin armor](#coin-armor), written before the
+    run bought anything.
+  - The rule: each tier names its best staff, on Vebna's weapon tab (goods list 989). The
+    coin gear rule plans it with the armor: more magic boost than the worn staff is
+    better, an owned better staff is put on, a tie is left. The contract's weapon rule now
+    buys. Q2947's Altruist's Staff has to be owned at the end; which staff is worn is the
+    staff rule's check.
+  - **Proof `run/ax12c/ax12c-staff-a1`** (public Restore, leg `ax`, schema dropped, no death).
+    Level 21: the Rank 8 staff ties with the worn one at 370 and is not bought. Level 26:
+    the Cleric held 18 coins; the manifest was the four armor pieces and the Elite Rank 7
+    Asmodian Staff 101500818 (470 magic boost against 460), 50 coins, **32 supplied** and
+    listed in `help-items.json`. Vebna sold all five for coins alone, the staff from her
+    weapon tab. The inventory check wore the staff and the armor. Altruist's Staff is in
+    the cube; 12 slots are free. 16 min 20 s of game time, 743,158 Kinah.
+  - Tests: the contract test pins both staffs to Vebna's list, their prices and their magic
+    boost, and that the level-26 one is the best staff she sells (26 pass).
+  - Fast and the seven pre-commit checks: see the Progress log.
 - [ ] **AX-13 - One contained SIM from the snapshot.** Depends AX-12c. Restore, play the whole
   leg without help beyond the approved items, and relog at the endpoint. Record deaths,
   attempts, costs, consumables, supplied items, the level and XP. A failed run is fixed and
@@ -1233,3 +1270,9 @@ The original questions, with the recommendations made at the time:
   of it carried from earlier legs) and flew the second try (`run/ax12b/ax12b-fall-a3`).
   Fast passes 115 of 120 tests with five guarded skips and all eleven scenarios in 8.62 minutes
   (`run/ax12b-fast/`); the seven pre-commit checks pass (`run/ax12b/checks/`).
+- 2026-10-06 — AX-12c: the best coin staff. The manifest was written first: a tie at level
+  21, the Elite Rank 7 staff (470 against 460) for 19 coins at level 26. A contained run
+  held 18 coins, was supplied 32, bought the four armor pieces and the staff and wore them
+  (`run/ax12c/ax12c-staff-a1`). Fast passes 115 of 120 tests with five guarded skips and all eleven
+  scenarios in 8.59 minutes (`run/ax12c-fast/`); the seven pre-commit checks pass
+  (`run/ax12c/checks/`).

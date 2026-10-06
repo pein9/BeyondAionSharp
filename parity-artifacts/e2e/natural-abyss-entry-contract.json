@@ -1043,7 +1043,9 @@
       ],
       "goodsListId": 991,
       "better": "physical-defence",
-      "weapons": false,
+      "weapons": true,
+      "staffGoodsListId": 989,
+      "staffBetter": "magic-boost",
       "tiers": [
         {
           "level": 21,
@@ -1075,7 +1077,12 @@
               "itemId": 114501082,
               "cost": 2
             }
-          ]
+          ],
+          "staff": {
+            "slot": 3,
+            "itemId": 101500811,
+            "cost": 4
+          }
         },
         {
           "level": 26,
@@ -1107,7 +1114,12 @@
               "itemId": 114501089,
               "cost": 7
             }
-          ]
+          ],
+          "staff": {
+            "slot": 3,
+            "itemId": 101500818,
+            "cost": 19
+          }
         }
       ]
     },
@@ -1121,7 +1133,7 @@
     "weapon": {
       "type": "STAFF",
       "prefer": "magic-boost",
-      "buy": false
+      "buy": true
     },
     "soulHealer": {
       "npcId": 204318,
