@@ -51,6 +51,8 @@ explicitly on still-encoded `0x81` input.
 | `retail_quest_evidence.py` | RQ-03 (D32): fetch the aioncodex `/48/` page of every inventory quest, one at a time, never twice (HTML in `run/aioncodex-48/`); facts to `parity-artifacts/e2e/retail-quest-evidence.json`. `--reparse` works offline. |
 | `retail_quest_worklist.py` | RQ-04b (D32): the one-line-per-quest work list `docs/retail-quest-worklist.md`, with the 5.8 retail and fandom cross-check (`--refresh`) and the maintainer's Status marks kept. |
 | `extract_flight_routes.py` | The flight transporters' client routes (`Data/FlightPath/FlightPath.pak` `.seq` tracks, the `SoloSelf`/`soloself` node), matched to the server's FLIGHT locations by their origin pad and landing teleporter; output `parity-artifacts/e2e/natural-flight-routes.json` for the natural bot (do not hand-edit). Prints what it refuses. |
+| `client_packet_layouts.py` | Run Ghidra headless on the client's `bin64/game.dll` and write `out/client_packet_layouts.tsv`: for every server-packet opcode, the bytes the client's handler loads from the payload. Needs Ghidra and a JDK 21; see "Server packet layouts". |
+| `packet_layout_diff.py` | Compare those client layouts with the C# packet writers and list the differences. Reads the checked-in TSV; needs neither Ghidra nor the client. |
 
 `aionpak.py` and `bxml.py` are importable libraries as well as CLIs.
 
@@ -131,6 +133,48 @@ the byte offset is `index * 2`), then nodes of `varint name-index, u8 flags`
 where bit 0 means a text value index follows, bit 1 an attribute count and
 key/value index pairs, bit 2 a child count and child nodes. Some members
 (`.txt`) are plain text, so branch on the magic via `bxml.is_binary_xml`.
+
+## Server packet layouts
+
+`packet_layout_diff.py` answers one question for each packet this server sends: does the 4.8
+client read what we write? It joins three things by opcode: the client's own handler, our
+`WriteImpl`, and the Java golden payload length where one exists.
+
+```bash
+python packet_layout_diff.py            # the findings
+python packet_layout_diff.py --all      # every opcode
+```
+
+The client side comes from `bin64/game.dll` (sha256 `d8645dad...7296`; any other build is
+refused). Its dispatch, class `ServerToClientRouter`, function 0x10362540, switches on the
+opcode with the same numbers as `ServerPacketsOpcodes.cs`, and each case reads the payload
+through a pointer built as `*(packet + 0x18) + (int)*(packet + 0x20)`.
+`ghidra/DumpPacketLayouts.java` records every load at a constant offset from that pointer, in
+the case and in the functions the pointer is passed to, with the address of the instruction
+that does it. The result is checked in as `out/client_packet_layouts.tsv`. Regenerate it only
+when the script changes:
+
+```bash
+python client_packet_layouts.py --ghidra <ghidra dir> --project-dir <project dir>     --import "C:/Program Files (x86)/Beyond Aion/bin64/game.dll"   # first time, about 12 minutes
+python client_packet_layouts.py --ghidra <ghidra dir> --project-dir <project dir>
+```
+
+`game.dll` is Themida-wrapped. Its code is plain on disk, but its sections are merged into one,
+and Ghidra finds no classes until `ghidra/SplitMergedSections.java` has restored `.text`,
+`.rdata`, `.data` and `.pdata`. The import runs it as the pre-script.
+
+**Read a verdict as a lead.** What the tool can prove is limited, and it says where it stopped:
+
+- A handler that keeps the payload pointer in a cursor object, copies a variable length, or
+  calls through a pointer is followed only as far as the bytes seen (`AGREES_SO_FAR`).
+- A writer with an `if`, a loop, a string or a helper call is read up to that point.
+- A load may sit on a branch that our packet never takes. Read the handler at the address
+  given before changing a writer.
+- The end of the dispatch function is virtualized, so `IGNORED` means "does nothing in the
+  code that can be read".
+
+A real difference is a Java-shared defect: fixing it departs from Java and needs a logged
+decision. D37 (`SM_STATUPDATE_EXP`, six int64 where Java writes five) was the first.
 
 ## What the client does and does not have
 
