@@ -1,0 +1,86 @@
+diff --git a/game-server/data/handlers/quest/abyss_entry/_2947FollowingThrough.java b/game-server/data/handlers/quest/abyss_entry/_2947FollowingThrough.java
+index c5152b096..f7d8047ef 100644
+--- a/game-server/data/handlers/quest/abyss_entry/_2947FollowingThrough.java
++++ b/game-server/data/handlers/quest/abyss_entry/_2947FollowingThrough.java
+@@ -8,7 +8,9 @@ import com.aionemu.gameserver.questEngine.model.QuestEnv;
+ import com.aionemu.gameserver.questEngine.model.QuestState;
+ import com.aionemu.gameserver.questEngine.model.QuestStatus;
+ import com.aionemu.gameserver.services.QuestService;
++import com.aionemu.gameserver.services.instance.InstanceService;
+ import com.aionemu.gameserver.services.teleport.TeleportService;
++import com.aionemu.gameserver.world.WorldMapInstance;
+ 
+ /**
+  * Meet Kvasir (204053) and choose your mission.<br>
+@@ -114,8 +116,10 @@ public class _2947FollowingThrough extends AbstractQuestHandler {
+ 							}
+ 							return false;
+ 						case SETPRO3:
+-							if (var == 4 || var == 6)
++							if (var == 4 || var == 6) {
++								resetArena(player); // every attempt starts in a new arena
+ 								return defaultCloseDialog(env, var, 5); // 5
++							}
+ 							return false;
+ 						case SETPRO4:
+ 							qs.setQuestVarById(0, 7);
+@@ -197,6 +201,8 @@ public class _2947FollowingThrough extends AbstractQuestHandler {
+ 
+ 	@Override
+ 	public boolean onQuestTimerEndEvent(QuestEnv env) {
++		if (!isOnTheArenaAttempt(env))
++			return false;
+ 		Player player = env.getPlayer();
+ 		QuestState qs = player.getQuestStateList().getQuestState(questId);
+ 		if (qs != null && qs.getStatus() == QuestStatus.START) {
+@@ -205,6 +211,7 @@ public class _2947FollowingThrough extends AbstractQuestHandler {
+ 				qs.setQuestVar(6);
+ 				updateQuestStatus(env);
+ 				TeleportService.teleportTo(player, 120010000, 1006.1f, 1526, 222.2f, (byte) 90);
++				resetArena(player);
+ 				return true;
+ 			}
+ 		}
+@@ -223,6 +230,7 @@ public class _2947FollowingThrough extends AbstractQuestHandler {
+ 					QuestService.questTimerEnd(env);
+ 					qs.setQuestVar(6);
+ 					updateQuestStatus(env);
++					resetArena(player);
+ 					return true;
+ 				} else {
+ 					playQuestMovie(env, 167);
+@@ -239,10 +247,33 @@ public class _2947FollowingThrough extends AbstractQuestHandler {
+ 		if (movieId == 168) {
+ 			TeleportService.teleportTo(env.getPlayer(), 120010000, 1006.1f, 1526, 222.2f, (byte) 90);
+ 		} else if (movieId == 167) {
+-			QuestService.questTimerStart(env, 240);
++			if (isOnTheArenaAttempt(env))
++				QuestService.questTimerStart(env, 240);
+ 		}
+ 	}
+ 
++	/**
++	 * The engine runs onQuestTimerEndEvent when any quest timer ends, and the quest timer is one per player: without this check,
++	 * another quest's timer fails this quest and teleports the player to Garm. A late end of movie 167 must not start the arena
++	 * timer for a player who failed or left either.
++	 */
++	private boolean isOnTheArenaAttempt(QuestEnv env) {
++		Player player = env.getPlayer();
++		QuestState qs = player.getQuestStateList().getQuestState(questId);
++		return qs != null && qs.getStatus() == QuestStatus.START && qs.getQuestVarById(0) == 5 && qs.getQuestVarById(4) != 10
++			&& player.getWorldId() == 320090000;
++	}
++
++	/**
++	 * PortalService returns a solo player to the instance registered to them, which a failed attempt keeps for ten minutes with its
++	 * dead spirits. Destroys it once the player is out of it and nobody is inside, as its own checker would do later.
++	 */
++	private static void resetArena(Player player) {
++		WorldMapInstance arena = InstanceService.getRegisteredInstance(320090000, player.getObjectId());
++		if (arena != null && player.getWorldMapInstance() != arena && arena.getPlayersInside().isEmpty())
++			InstanceService.destroyInstance(arena);
++	}
++
+ 	@Override
+ 	public void onQuestCompletedEvent(QuestEnv env) {
+ 		defaultOnQuestCompletedEvent(env, 2946);

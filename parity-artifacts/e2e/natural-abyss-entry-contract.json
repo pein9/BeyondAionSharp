@@ -878,9 +878,7 @@
           "warriors": 3
         }
       ],
-      "maxAttempts": 3,
-      "instanceLifetimeSeconds": 600,
-      "instanceCheckSeconds": 60
+      "maxAttempts": 3
     },
     "ringCourse": {
       "questId": 2042,

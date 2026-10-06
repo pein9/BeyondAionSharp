@@ -62,6 +62,9 @@ be ported back.
 D33 approves guarding Q1044's and Q2042's die and enter-world hooks so they end
 only their own ring-course timer, not every player's running quest timer (§7/152,
 `SimulationQuestTimerCorrectionTests.cs`); it must not be ported back either.
+D34 approves limiting Q2947's timer-end hook to the player's own arena attempt and
+destroying a failed attempt's arena instance, so every attempt starts in a new one
+(§7/156, same test file); a death is left as Java has it, and it must not be ported back.
 These decisions are not a general exemption from parity or authorization to
 reopen other deferred behavior.
 

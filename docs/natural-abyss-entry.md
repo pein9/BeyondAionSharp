@@ -136,18 +136,27 @@ Kinah; this leg does not bind there.
   Spirit has 265 HP, a 6 m aggro range and a 2 m attack range. A kill pays 738 XP.
 - Their spawn data gives no respawn time. Only one of the eleven may be left alive.
 - The instance data allows one player and sets no entry cooldown.
-- **A failed attempt's instance lives on.** A solo instance is destroyed 600 s after the
-  player leaves it, checked once a minute. Until then the entrance returns the player to the
-  same instance, with the dead spirits still dead (AX-01: ten left after one kill). A new
-  instance with all eleven came after 661 s.
+- **Every attempt starts in a new instance (D34).** When an attempt fails, the server
+  destroys its instance as soon as the player is out of it. Garm's SETPRO3 also destroys any
+  instance still registered to the player. So the entrance opens a new one with all eleven
+  spirits, and no wait is needed. Before D34 the entrance returned to the failed instance for
+  600 s, with the dead spirits still dead.
+- A cleared instance is not reset. Like any solo instance it is destroyed 600 s after the
+  player leaves it, checked once a minute.
 - The tenth kill ends the timer and plays movie 168. When the client reports that movie's
   end, the server teleports the player to (1006.1, 1526, 222.2) beside Garm. The exit
   730067 at (275.90, 295.69, 163.53) leads to Pandaemonium too.
 - **Failure:** when the 240 s run out, the quest goes to var 6 and the player is teleported to
-  Garm. Garm then answers USE_OBJECT with page 1779, and SETPRO3 gives var 5 again.
+  Garm. Garm then answers USE_OBJECT with page 1779, and SETPRO3 gives var 5 again. D34: only
+  the player's own attempt fails this way (var 5, fewer than ten kills, inside the arena).
+  Another quest's timer no longer touches Q2947.
 - **Leaving early also fails it.** The enter-world hook sets var 6 when the player is at
   var 5 anywhere but the arena. AB-Q6 found that hook runs on a relog, a revive and a
-  teleport that respawns the player.
+  teleport that respawns the player. D34 resets the arena here too.
+- **A death alone does not fail it.** This is Java's rule, and D34 keeps it. The timer runs
+  on over the corpse. A revive in place goes on with the attempt, and kills still count. The
+  bind revive leaves the arena, which fails it. A player still dead when the timer ends is
+  revived by the teleport to Garm, with a fifth of their HP and MP and Soul Sickness.
 
 **The ring course.** The rings have a 6 m radius and must be passed in order.
 
@@ -262,13 +271,16 @@ is level 26, for each slot where it beats what is then worn.
    300 s, and must be used standing still.
 2. **Ring 5 is 3.44 m under the FLY zone's ceiling.** Leaving the zone ends the flight. Pass
    ring 5 at its centre or below, never above.
-3. **An arena death sends the Cleric to Morheim.** The bind is at Morheim Ice Fortress from
-   row M3 on. A fall on the ring course then respawns beside it. A death in the arena
-   respawns in Morheim, fails the attempt, and costs Orhe's 2,118 Kinah to return.
-4. **A second arena attempt must wait eleven minutes.** The spirits have 205 and 265 HP, so
-   ten kills in 240 s is mostly running: about 230 m. But a failed attempt's instance keeps
-   its dead spirits for 600 s after the player leaves, so an early retry cannot reach ten
-   kills.
+3. **The bind revive from the arena sends the Cleric to Morheim.** The bind is at Morheim Ice
+   Fortress from row M3 on. A fall on the ring course then respawns beside it. The bind
+   revive from the arena respawns in Morheim, fails the attempt, and costs Orhe's 2,118
+   Kinah to return. A death alone fails nothing (D34 keeps Java's rule): under Hand of
+   Reincarnation the Cleric revives in place and the same timer runs on. A Cleric still dead
+   when the timer ends is revived beside Garm with a fifth of its HP and MP and Soul Sickness.
+4. ~~**A second arena attempt must wait eleven minutes.**~~ Settled by D34: a failed
+   attempt's instance is destroyed at once, and every attempt starts in a new one. The clear
+   itself is unchanged. The spirits have 205 and 265 HP, so ten kills in 240 s is mostly
+   running: about 230 m.
 5. **The 240 s timer starts twice.** It starts on entering the arena, and again when the
    client reports the end of movie 167. A bot that skips the movie early loses nothing; one
    that never reports its end still has the first timer.
@@ -340,7 +352,9 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
     - **Arena:** the timer (240 s) survived the entry and the movie. Six Mage Spirits (205
       HP) and five Warrior Spirits (265 HP), all level 25. One kill paid 738 XP and counted
       one. Leaving at var 5 gave var 6. Re-entry at once: the same instance, ten spirits.
-      After 661 s: a new instance, eleven spirits.
+      After 661 s: a new instance, eleven spirits. **This reuse is the behavior before D34.**
+      Since D34 the probe is `AbyssEntryArenaKeepsItsTimerAndStartsEveryAttemptInANewInstance`,
+      and a re-entry at once gives a new instance with eleven spirits.
     - **Morheim:** Ukin charged 2,401 Kinah; Q24020 started on arrival; the bind cost 2,690;
       Aegir paid 293,759 XP and the fourth choice gave hauberk 110551147; Orhe and Doman
       charged 2,118 each.
@@ -389,7 +403,8 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
     armor tiers, the staff rule and the level rule. `NaturalAbyssEntry.Validate` refuses a
     file that differs from the approved scope.
   - Attempts: `NaturalAbyssAttempts` gives the arena and the course three tries each. A
-    failed arena try waits 661 s for a new instance; a third failed course asks for the
+    failed arena try waited 661 s for a new instance; since D34 it enters again at once, and
+    the contract's two instance-lifetime fields are gone. A third failed course asks for the
     operator's recorded flight. Each try is traced as `timed-arena-attempt` or
     `timed-ring-course-attempt`, which the outcome ledger's auditor already collects.
   - Supplies: `NaturalHelpItemAllowlist.LegApproved` approves one scroll 164000079 (AX-Q3)
@@ -438,8 +453,8 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   the two Strange Green Sacks and the Bronze Coin Chest and records what each gives
   (AX-Q5). Resumed runs send no duplicate dialogs.
 - [ ] **AX-08 - The arena.** Depends AX-07. Route rows 10–13, both movies, the timed clear,
-  and the failure path through var 6. Up to three attempts. After a failed attempt wait
-  eleven minutes before Garm's SETPRO3, so the entrance opens a new instance.
+  and the failure path through var 6. Up to three attempts. No wait is needed after a failed
+  attempt: Garm's SETPRO3 leads to a new instance (D34).
 - [ ] **AX-09 - Back to Morheim.** Depends AX-08. Doman's teleport; Q2947's reward taken
   with REWARD2, the staff, which the inventory check wears; the manastone 167000465
   discarded (AX-Q4); Q2042's first talk with Aegir.
@@ -536,11 +551,60 @@ these defaults; say so to change one.
 AX-Q1 was asked and answered for this Cleric. Other classes get their own weapon rule when
 their profiles are planned.
 
-**Found in AX-01, shared with Java, not changed:** Q2947's timer-end hook is not limited to
-the arena. While Q2947 is START with fewer than ten kills, the end of any quest timer sets
-it to var 6 and teleports the player to Garm. Nothing in this leg runs another timer then,
-so it does not block. It is the same kind of defect D33 corrected for Q1044 and Q2042; a
-correction would need its own decision.
+**Found in AX-01, shared with Java, corrected by D34 (2026-10-06):** Q2947's timer-end hook
+was not limited to the arena. While Q2947 was START with fewer than ten kills, the end of any
+quest timer set it to var 6 and teleported the player to Garm. It is the same kind of defect
+D33 corrected for Q1044 and Q2042. D34 limits the hook to the player's own attempt, and
+resets a failed attempt's arena (deviation 156, upstream patch
+`docs/upstream-reports/q2947-following-through-arena-reset.patch`). Do not port it back.
+
+**What retail did (looked up 2026-10-06).** Sources: aioncodex's 4.8 page for quest 2947
+(the 4.8 client's text), the fandom walkthrough, NCSoft's 5.8 server data and Java's history.
+- **Garm sends the player in.** "I'll send you to the Arena as soon as you're ready", and
+  after a failure "I'll send you back". Java's Elyos twin does this: Q1922's SETPRO3 makes a
+  new instance and teleports the player. Java's Q2947 makes the player walk to the entrance
+  700368. Asked below.
+- **A new arena each time.** NCSoft's `instance_creation.xml` lists the arena as
+  `INSTANCE_INSTANT` only, with the other quest instances, and with no rejoin entry. D34
+  gives the same result.
+- **A death means speaking to Garm again**, with the normal death penalty (the walkthrough).
+  The arena has no resurrection point in NCSoft's entry. D34 and Java agree for a revive at
+  the bind. No source covers a self-revive inside.
+- **Twelve spirits, not eleven.** The walkthrough has four warriors on the left, two
+  warriors and two mages ahead, and four mages on the right. The shipped spawns have three
+  warriors in that first group. Recorded only: a spawn needs coordinates and a decision.
+- **Ten kills end the test at once**, and the spirits "have very low HP". Both as here.
+- **Only the arena is offered.** Both Java handlers say the other two choices are no longer
+  available. The 4.8 client still carries their text.
+- **The reward is not settled.** Java pays the second group for both twins on purpose:
+  403,012 XP, 4,000 Kinah, no AP. An old wiki page shows the arena with 250 AP, the first
+  group's shape. NCSoft's 5.8 data pays 4,000 gold and no AP in every group. No change.
+- **Not found:** the time limit (240 s is Java's).
+
+**Asked 2026-10-06, not yet answered:** should Garm's SETPRO3 make the new instance and
+teleport the player in, as retail's text and Java's Q1922 do? It would replace the walk to
+the entrance and the fragile var 5 window (hazard 6). D34 does not do this.
+
+**Found with D34, shared with Java, not changed:**
+- **Q1922 "Deliver on Your Promises", the Elyos twin, has the same unguarded timer hook.**
+  While it is START with fewer than ten kills, the end of any quest timer sets it to var 6
+  and teleports the player to Sanctum. It does not have the instance reuse: Epeios's
+  SETPRO3 makes a new instance for every attempt.
+- **The arena's instance-exit row looks wrong.** `instance_exit.xml` sends an Asmodian out of
+  320090000 to Pandaemonium at (275.897, 295.694, 163.531). Those are the exit object
+  730067's own coordinates inside the arena. The exit portal itself leads to (981.60,
+  1552.97, 210.46). The server uses the row when it destroys an instance with a player in
+  it, and when a player logs in to an instance that is gone. Where it lands a player was
+  not checked. D34 never destroys an instance with a player inside, so it does not use the
+  row. Shadow Court Dungeon 320120000 has the same row.
+- **The arena entrance asks for no quest.** Any Asmodian can use 700368, at any step of
+  Q2947. Outside var 5 no timer starts and no kill counts. D34's reset at Garm's SETPRO3
+  keeps such a visit from spoiling the next attempt.
+- **A relog inside the arena starts a new 240 s with the kills kept,** as long as the
+  instance still exists.
+- **The enter-world hook ends whichever quest timer is running.** At var 5 outside the arena
+  it calls the timer's end without asking whose timer it is. Between Garm and the entrance
+  that can end another quest's timer.
 
 The original questions, with the recommendations made at the time:
 
@@ -620,3 +684,6 @@ The original questions, with the recommendations made at the time:
 - 2026-10-06 — AX-03: leg `ax` has its frozen contract, bounded attempts, leg-scoped
   supplies and snapshot selector. A restored run verified the start (`run/ax03/ax03-start-a1`)
   and stopped there.
+- 2026-10-06 — D34: Q2947 fails only the player's own arena attempt, and every attempt
+  starts in a new instance. A death is unchanged. Six SIM tests pin it (`run/d34/`), and
+  the bot's 661 s wait is gone from the contract.

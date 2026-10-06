@@ -193,11 +193,13 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			// 255 is RC-11's native campaign route replan after three ordinary ground displacements.
 			// 231-234 are AX-01's level-25 flight, arena, Morheim arrival and mission reward probes. Ids above 255
 			// cannot be used: the session derives its loopback address and MAC from the id.
+			// 235-239 are D34's Q2947 probes: another quest's timer, the arena timer running out on a live and on a dead
+			// player, a death with a self-revive and a bind revive, and the success path.
 			// 228 is RC-11's native zone entry under the recorded blocked approach layout.
 			// 229 is RC-11's recorded cleared campaign-area / remembered-danger probe.
 			// 230 is RC-11's ordinary owned staff equip before the frozen coin loadout.
 			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100)).Concat(Enumerable.Range(201, 27)).Concat(Enumerable.Range(240, 5))
-				.Concat(new[] { 228, 229, 230, 231, 232, 233, 234, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 })
+				.Concat(new[] { 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 })
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();

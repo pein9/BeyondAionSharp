@@ -131,7 +131,6 @@ public sealed class NaturalAbyssEntryContractTests
 		XElement limits = XDocument.Load(Data("instance_cooltimes", "instance_cooltimes.xml")).Root!.Elements()
 			.Single(n => (int)n.Attribute("worldId")! == arena.MapId && (string)n.Attribute("race")! == "ASMODIANS");
 		Assert.Equal(("0", "1"), ((string)limits.Element("ent_cool_time")!, (string)limits.Element("max_member_dark")!));
-		Assert.Equal(661_000, arena.NewInstanceMillis);
 	}
 
 	[Fact]
@@ -201,15 +200,15 @@ public sealed class NaturalAbyssEntryContractTests
 	{
 		NaturalAbyssArena arena = Scope.Arena;
 		var attempts = new List<NaturalAbyssAttempt>();
-		Assert.Equal("enter", NaturalAbyssAttempts.NextArena(arena, attempts, 0).Action);
+		Assert.Equal("enter", NaturalAbyssAttempts.NextArena(arena, attempts).Action);
 		attempts.Add(new(NaturalAbyssAttempts.Arena, 1, "timer-expired", 1_000, 241_000, 7, "seven of ten"));
-		NaturalAbyssAttemptDecision wait = NaturalAbyssAttempts.NextArena(arena, attempts, 300_000);
-		Assert.Equal(("wait-for-new-instance", 602_000L), (wait.Action, wait.WaitMillis));
-		Assert.Equal("enter", NaturalAbyssAttempts.NextArena(arena, attempts, 241_000 + 661_000).Action);
-		attempts.Add(new(NaturalAbyssAttempts.Arena, 2, "died", 1_000_000, 1_100_000, 3, "died to the south group"));
-		attempts.Add(new(NaturalAbyssAttempts.Arena, 3, "timer-expired", 2_000_000, 2_240_000, 9, "nine of ten"));
-		Assert.Equal("stop-finding", NaturalAbyssAttempts.NextArena(arena, attempts, 9_000_000).Action);
-		Assert.Equal("complete", NaturalAbyssAttempts.NextArena(arena, [new(NaturalAbyssAttempts.Arena, 1, NaturalAbyssAttempts.Done, 0, 200_000, 10, "ten kills")], 200_001).Action);
+		// D34: the server destroys a failed attempt's instance, so the next try enters at once, in a new one.
+		Assert.Equal("enter", NaturalAbyssAttempts.NextArena(arena, attempts).Action);
+		attempts.Add(new(NaturalAbyssAttempts.Arena, 2, "died", 241_500, 300_000, 3, "died to the south group"));
+		Assert.Equal("enter", NaturalAbyssAttempts.NextArena(arena, attempts).Action);
+		attempts.Add(new(NaturalAbyssAttempts.Arena, 3, "timer-expired", 300_500, 540_500, 9, "nine of ten"));
+		Assert.Equal("stop-finding", NaturalAbyssAttempts.NextArena(arena, attempts).Action);
+		Assert.Equal("complete", NaturalAbyssAttempts.NextArena(arena, [new(NaturalAbyssAttempts.Arena, 1, NaturalAbyssAttempts.Done, 0, 200_000, 10, "ten kills")]).Action);
 
 		NaturalAbyssRingCourse course = Scope.RingCourse;
 		var flights = new List<NaturalAbyssAttempt>();

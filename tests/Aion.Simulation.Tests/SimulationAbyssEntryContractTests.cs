@@ -8,6 +8,7 @@ using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion.ServerPackets;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services;
+using Aion.GameServer.Services.Instance;
 using Aion.GameServer.Services.Items;
 using Aion.GameServer.Utils;
 
@@ -120,70 +121,28 @@ public sealed partial class SimulationFastScenarioTests
 		});
 	}
 
-	/// <summary>Garm's arena: the 240 s timer survives the world entry, and a second entry inside ten minutes returns to the same instance.</summary>
+	/// <summary>Garm's arena: the 240 s timer survives the world entry, and every attempt starts in a new instance with all eleven
+	/// spirits and no kill counted (D34). Leaving at var 5 fails the attempt and destroys its instance at once. An instance left
+	/// behind outside an attempt (the entrance asks for no quest) is destroyed by Garm's SETPRO3, from var 4 and from var 6. Before
+	/// D34 the entrance returned to the same instance, its dead spirits still dead, for ten minutes.</summary>
 	[SkippableFact]
-	public async Task AbyssEntryArenaKeepsItsTimerAndReusesItsInstanceForTenMinutes()
+	public async Task AbyssEntryArenaKeepsItsTimerAndStartsEveryAttemptInANewInstance()
 	{
 		await RunCapitalProbeAsync("AX01B", 232, "Asimaxarena", async (probe, session, token) =>
 		{
 			Player server = probe.Server;
-			AxLevel25(server);
-			AxSetQuest(server, 2946, QuestStatus.COMPLETE, 0);
-			AxSetQuest(server, 2947, QuestStatus.START, 4);
-			await session.SynchronizeAsync(token);
-			NaturalAltgardStep first = AxStep("q2947-garm-start", 2947, 4, "START", 204089, ["QUEST_SELECT", "SETPRO3"], [1693, 0], AxPandaemonium, next: 5);
-			NaturalAltgardStep again = AxStep("q2947-garm-again", 2947, 6, "START", 204089, ["USE_OBJECT", "SETPRO3"], [1779, 0], AxPandaemonium, next: 5);
+			await AxArenaStartAsync(probe, session, token);
 
-			async Task<(int Instance, int Alive)> EnterAsync(NaturalAltgardStep garm)
-			{
-				await probe.SetupNearAsync(AxPandaemonium, 204089);
-				int npc = await probe.WalkNpcAsync(204089);
-				Console.WriteLine("AX-01 " + await NaturalAltgardQuestSteps.TalkAsync(session, garm, npc, token));
-				int entrance = await probe.WalkNpcAsync(700368);
-				Assert.Equal(5, server.GetQuestStateList().GetQuestState(2947).GetQuestVarById(0));
-				int history = session.PacketHistory.Count;
-				await NaturalDialogProtocol.OpenAsync(session, entrance, token);
-				DecodedBotServerPacket use = await session.WaitForPacketAsync(typeof(SM_USE_OBJECT), token,
-					packet => packet.Get<int>("targetObjectId") == entrance && packet.Get<byte>("actionType") == 1);
-				session.Api.World.BeginWorldReload();
-				await session.AdvanceAsync(TimeSpan.FromMilliseconds(use.Get<int>("durationMs") + 1), token);
-				await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token, packet => packet.Get<int>("worldId") == AxArena);
-				await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
-				session.AcceptTeleportPosition();
-				await session.SynchronizeAsync(token);
-				Assert.Equal(AxArena, server.GetWorldId());
-				DecodedBotServerPacket? timer = session.PacketHistory.Skip(history).LastOrDefault(packet =>
-					AxIsTimer(packet, 2947));
-				Assert.NotNull(timer);
-				Assert.Equal(240, timer!.Get<int>("timer"));
-				// Hazard 8: Q1044's and Q2042's enter-world hooks run on this entry too. D33 keeps them off another quest's timer.
-				Assert.True(server.GetController().HasTask(TaskId.QUEST_TIMER), "the arena timer did not survive the world entry");
-				await NaturalMovieGate.FinishAsync(session, token);
-				await session.SynchronizeAsync(token);
-				Assert.True(server.GetController().HasTask(TaskId.QUEST_TIMER));
-				int alive = server.GetWorldMapInstance().GetNpcs().Count(npcIn => !npcIn.IsDead() && npcIn.GetNpcId() is 213583 or 213584);
-				return (server.GetInstanceId(), alive);
-			}
+			// Before Garm, at var 4: the entrance lets the player in. No timer starts, and a kill counts for nothing.
+			(int earlyInstance, int earlyAlive) = await AxWalkIntoArenaAsync(probe, session, attempt: false, token);
+			await AxKillSpiritAsync(session, server, token);
+			await AxUseArenaPortalAsync(session, server, 730067, AxPandaemonium, token);
+			int earlyVar = server.GetQuestStateList().GetQuestState(2947).GetQuestVars().GetQuestVars();
+			// Outside an attempt nothing is reset: the instance stays registered, as in Java, until Garm starts the attempt.
+			bool earlyKept = InstanceService.InstanceExists(AxArena, earlyInstance);
 
-			async Task LeaveAsync()
-			{
-				Npc exit = server.GetWorldMapInstance().GetNpcs(730067).First();
-				Assert.True(NaturalFlightPolicy.Distance(session.CurrentPosition, new(exit.GetX(), exit.GetY(), exit.GetZ(), 0)) <= 6, "the exit is out of reach");
-				await NaturalDialogProtocol.OpenAsync(session, exit.GetObjectId(), token);
-				DecodedBotServerPacket use = await session.WaitForPacketAsync(typeof(SM_USE_OBJECT), token,
-					packet => packet.Get<int>("targetObjectId") == exit.GetObjectId() && packet.Get<byte>("actionType") == 1);
-				session.Api.World.BeginWorldReload();
-				await session.AdvanceAsync(TimeSpan.FromMilliseconds(use.Get<int>("durationMs") + 1), token);
-				await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token, packet => packet.Get<int>("worldId") == AxPandaemonium);
-				await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
-				session.AcceptTeleportPosition();
-				await session.SynchronizeAsync(token);
-				// Leaving at var 5 is a failed attempt: the enter-world hook sets var 6 and ends the timer.
-				Assert.Equal(6, server.GetQuestStateList().GetQuestState(2947).GetQuestVarById(0));
-				Assert.False(server.GetController().HasTask(TaskId.QUEST_TIMER));
-			}
-
-			(int firstInstance, int firstAlive) = await EnterAsync(first);
+			(int firstInstance, int firstAlive) = await AxEnterArenaAsync(probe, session, again: false, token);
+			bool earlyGone = !InstanceService.InstanceExists(AxArena, earlyInstance);
 			var spirits = server.GetWorldMapInstance().GetNpcs().Where(npc => npc.GetNpcId() is 213583 or 213584).ToArray();
 			foreach (var kind in spirits.GroupBy(npc => npc.GetNpcId()))
 			{
@@ -192,48 +151,177 @@ public sealed partial class SimulationFastScenarioTests
 					$"attack {one.GetGameStats().GetMainHandPAttack().GetCurrent()}, magic attack {one.GetGameStats().GetMainHandMAttack().GetCurrent()}, " +
 					$"aggro {one.GetObjectTemplate().GetAggroRange()} m, attack range {one.GetObjectTemplate().GetAttackRange()} m, tribe {one.GetTribe()}");
 			}
-			// The kill is credited from beside the spirit: XP and the quest counter need the player in range.
-			BotPosition entry = session.CurrentPosition;
-			async Task MoveForSetupAsync(float x, float y, float z)
-			{
-				session.Api.World.BeginWorldReload();
-				await TeleportForSetupAsync(session, server, AxArena, x, y, z, token, targetInstanceId: server.GetInstanceId());
-				session.AcceptTeleportPosition();
-				await session.SynchronizeAsync(token);
-			}
-			Npc victim = spirits.Where(npc => npc.GetNpcId() == 213584).OrderBy(npc => npc.GetX()).First();
-			await MoveForSetupAsync(victim.GetX() + 2, victim.GetY(), victim.GetZ() + 0.2f);
 			long xpBefore = server.GetCommonData().GetExp();
-			victim.GetController().OnAttack(server, null!, SmAttackStatus.TYPE.REGULAR, victim.GetLifeStats().GetMaxHp(), true,
-				SmAttackStatus.LOG.REGULAR, null, Aion.GameServer.SkillEngine.Model.HopType.DAMAGE);
-			await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
-			await session.SynchronizeAsync(token);
-			Assert.True(victim.IsDead());
+			await AxKillSpiritAsync(session, server, token);
 			long spiritXp = server.GetCommonData().GetExp() - xpBefore;
-			int counted = server.GetQuestStateList().GetQuestState(2947).GetQuestVarById(4);
-			await MoveForSetupAsync(entry.X, entry.Y, entry.Z);
-			Assert.Equal(5, server.GetQuestStateList().GetQuestState(2947).GetQuestVarById(0));
-			await LeaveAsync();
+			int counted = AxArenaKills(server);
+			Assert.Equal(5, AxArenaVar(server));
+			await AxLeaveArenaAsync(session, server, token);
+			// D34: the failed attempt's instance is destroyed as soon as the player is out of it.
+			bool firstGone = !InstanceService.InstanceExists(AxArena, firstInstance);
+			Assert.Null(InstanceService.GetRegisteredInstance(AxArena, server.GetObjectId()));
 
-			(int secondInstance, int secondAlive) = await EnterAsync(again);
-			await LeaveAsync();
+			// At var 6, back in without Garm: a new instance, no timer, and again a kill that counts for nothing.
+			(int idleInstance, int idleAlive) = await AxWalkIntoArenaAsync(probe, session, attempt: false, token);
+			await AxKillSpiritAsync(session, server, token);
+			await AxUseArenaPortalAsync(session, server, 730067, AxPandaemonium, token);
+			int idleVar = server.GetQuestStateList().GetQuestState(2947).GetQuestVars().GetQuestVars();
+			bool idleKept = InstanceService.InstanceExists(AxArena, idleInstance);
 
-			// Solo instances are destroyed 600 s after the last player left, checked once a minute.
-			await session.AdvanceAsync(TimeSpan.FromSeconds(661), token);
-			await session.SynchronizeAsync(token);
-			(int thirdInstance, int thirdAlive) = await EnterAsync(again);
-			await LeaveAsync();
+			(int secondInstance, int secondAlive) = await AxEnterArenaAsync(probe, session, again: true, token);
+			bool idleGone = !InstanceService.InstanceExists(AxArena, idleInstance);
+			int secondCounted = AxArenaKills(server);
+			await AxLeaveArenaAsync(session, server, token);
 
-			Console.WriteLine($"AX-01 arena: first entry instance {firstInstance} with {firstAlive} spirits; one kill pays {spiritXp} XP and counts {counted}; " +
-				$"re-entry at once: instance {secondInstance} with {secondAlive} spirits; after 661 s: instance {thirdInstance} with {thirdAlive} spirits");
+			Console.WriteLine($"AX-01 arena: entered at var 4 before Garm: instance {earlyInstance} with {earlyAlive} spirits, one killed, var {earlyVar}, kept on leaving {earlyKept}; " +
+				$"Garm's SETPRO3 destroyed it {earlyGone}: instance {firstInstance} with {firstAlive} spirits; one kill pays {spiritXp} XP and counts {counted}; " +
+				$"left at var 5: var 6, instance {firstInstance} destroyed {firstGone}; entered at var 6 without Garm: instance {idleInstance} with {idleAlive} spirits, " +
+				$"one killed, var {idleVar}, kept on leaving {idleKept}; Garm's SETPRO3 destroyed it {idleGone}: instance {secondInstance} with {secondAlive} spirits, " +
+				$"{secondCounted} counted");
+			Assert.Equal((11, 4, true, true), (earlyAlive, earlyVar, earlyKept, earlyGone));
 			Assert.Equal(11, firstAlive);
 			Assert.Equal(1, counted);
-			Assert.Equal(firstInstance, secondInstance);
-			Assert.Equal(10, secondAlive);
-			Assert.NotEqual(firstInstance, thirdInstance);
-			Assert.Equal(11, thirdAlive);
+			Assert.True(firstGone, "the failed attempt's instance still exists");
+			Assert.Equal((11, 6, true, true), (idleAlive, idleVar, idleKept, idleGone));
+			Assert.Equal(4, new[] { earlyInstance, firstInstance, idleInstance, secondInstance }.Distinct().Count());
+			Assert.Equal(11, secondAlive);
+			Assert.Equal(0, secondCounted);
 		});
 	}
+
+	/// <summary>Probe setup for Garm's arena: a level-25 Cleric with Q2946 complete and Q2947 at Kvasir's var 4.</summary>
+	private static async Task AxArenaStartAsync(CapitalProbe probe, SimulationL0Session session, CancellationToken token)
+	{
+		AxLevel25(probe.Server);
+		AxSetQuest(probe.Server, 2946, QuestStatus.COMPLETE, 0);
+		AxSetQuest(probe.Server, 2947, QuestStatus.START, 4);
+		await session.SynchronizeAsync(token);
+	}
+
+	private static int AxArenaVar(Player server) => server.GetQuestStateList().GetQuestState(2947).GetQuestVarById(0);
+
+	private static int AxArenaKills(Player server) => server.GetQuestStateList().GetQuestState(2947).GetQuestVarById(4);
+
+	/// <summary>Garm's SETPRO3 (from var 4, or again from var 6), then the entrance. Returns the instance entered and its living spirits.</summary>
+	private static async Task<(int Instance, int Alive)> AxEnterArenaAsync(CapitalProbe probe, SimulationL0Session session, bool again, CancellationToken token)
+	{
+		NaturalAltgardStep garm = again
+			? AxStep("q2947-garm-again", 2947, 6, "START", 204089, ["USE_OBJECT", "SETPRO3"], [1779, 0], AxPandaemonium, next: 5)
+			: AxStep("q2947-garm-start", 2947, 4, "START", 204089, ["QUEST_SELECT", "SETPRO3"], [1693, 0], AxPandaemonium, next: 5);
+		await probe.SetupNearAsync(AxPandaemonium, 204089);
+		int npc = await probe.WalkNpcAsync(204089);
+		Console.WriteLine("AX-01 " + await NaturalAltgardQuestSteps.TalkAsync(session, garm, npc, token));
+		Assert.Equal(5, AxArenaVar(probe.Server));
+		return await AxWalkIntoArenaAsync(probe, session, attempt: true, token);
+	}
+
+	/// <summary>The walk from Garm to the entrance 700368 and its portal, which asks for no quest. On an attempt (var 5) the 240 s
+	/// timer has to start on entry and again at movie 167's end (hazard 5); outside one no timer starts.</summary>
+	private static async Task<(int Instance, int Alive)> AxWalkIntoArenaAsync(CapitalProbe probe, SimulationL0Session session, bool attempt, CancellationToken token)
+	{
+		Player server = probe.Server;
+		if (!attempt) await probe.SetupNearAsync(AxPandaemonium, 204089);
+		await probe.WalkNpcAsync(700368);
+		int history = session.PacketHistory.Count;
+		await AxUseArenaPortalAsync(session, server, 700368, AxArena, token);
+		DecodedBotServerPacket? timer = session.PacketHistory.Skip(history).LastOrDefault(packet =>
+			AxIsTimer(packet, 2947));
+		if (attempt)
+		{
+			Assert.NotNull(timer);
+			Assert.Equal(240, timer!.Get<int>("timer"));
+			// Hazard 8: Q1044's and Q2042's enter-world hooks run on this entry too. D33 keeps them off another quest's timer.
+			Assert.True(server.GetController().HasTask(TaskId.QUEST_TIMER), "the arena timer did not survive the world entry");
+			await NaturalMovieGate.FinishAsync(session, token);
+			await session.SynchronizeAsync(token);
+			Assert.True(server.GetController().HasTask(TaskId.QUEST_TIMER));
+			Assert.Equal(2, session.PacketHistory.Skip(history).Count(packet => AxIsTimer(packet, 2947)));
+		}
+		else
+		{
+			Assert.Null(timer);
+			Assert.False(server.GetController().HasScheduledTask(TaskId.QUEST_TIMER), "a timer started outside an attempt");
+		}
+		int alive = server.GetWorldMapInstance().GetNpcs().Count(npcIn => !npcIn.IsDead() && npcIn.GetNpcId() is 213583 or 213584);
+		return (server.GetInstanceId(), alive);
+	}
+
+	/// <summary>Use one of the arena's two portal objects, the entrance 700368 or the exit 730067, and follow it to its map.</summary>
+	private static async Task AxUseArenaPortalAsync(SimulationL0Session session, Player server, int npcId, int toMap, CancellationToken token)
+	{
+		Npc portal = server.GetWorldMapInstance().GetNpcs(npcId).First();
+		Assert.True(NaturalFlightPolicy.Distance(session.CurrentPosition, new(portal.GetX(), portal.GetY(), portal.GetZ(), 0)) <= 6, $"portal {npcId} is out of reach");
+		await NaturalDialogProtocol.OpenAsync(session, portal.GetObjectId(), token);
+		DecodedBotServerPacket use = await session.WaitForPacketAsync(typeof(SM_USE_OBJECT), token,
+			packet => packet.Get<int>("targetObjectId") == portal.GetObjectId() && packet.Get<byte>("actionType") == 1);
+		session.Api.World.BeginWorldReload();
+		await session.AdvanceAsync(TimeSpan.FromMilliseconds(use.Get<int>("durationMs") + 1), token);
+		await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token, packet => packet.Get<int>("worldId") == toMap);
+		await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+		session.AcceptTeleportPosition();
+		await session.SynchronizeAsync(token);
+		Assert.Equal(toMap, server.GetWorldId());
+	}
+
+	/// <summary>Walk out through the exit 730067 at var 5. Leaving is a failed attempt: the enter-world hook ends the timer and sets var 6.</summary>
+	private static async Task AxLeaveArenaAsync(SimulationL0Session session, Player server, CancellationToken token)
+	{
+		await AxUseArenaPortalAsync(session, server, 730067, AxPandaemonium, token);
+		Assert.Equal(6, AxArenaVar(server));
+		Assert.False(server.GetController().HasTask(TaskId.QUEST_TIMER));
+	}
+
+	/// <summary>Probe setup: one living spirit dies to a full-HP hit credited to the player. XP and the quest counter need the player in
+	/// range, so the probe is moved beside the spirit first, and back to where it stood afterwards (a setup move leaves it protected,
+	/// so the group does not pull).</summary>
+	private async Task<Npc> AxKillSpiritAsync(SimulationL0Session session, Player server, CancellationToken token, int npcId = 213584)
+	{
+		BotPosition back = session.CurrentPosition;
+		async Task MoveForSetupAsync(float x, float y, float z)
+		{
+			session.Api.World.BeginWorldReload();
+			await TeleportForSetupAsync(session, server, AxArena, x, y, z, token, targetInstanceId: server.GetInstanceId());
+			session.AcceptTeleportPosition();
+			await session.SynchronizeAsync(token);
+		}
+		Npc victim = server.GetWorldMapInstance().GetNpcs(npcId).Where(npc => !npc.IsDead()).OrderBy(npc => npc.GetX()).First();
+		await MoveForSetupAsync(victim.GetX() + 2, victim.GetY(), victim.GetZ() + 0.2f);
+		victim.GetController().OnAttack(server, null!, SmAttackStatus.TYPE.REGULAR, victim.GetLifeStats().GetMaxHp(), true,
+			SmAttackStatus.LOG.REGULAR, null, Aion.GameServer.SkillEngine.Model.HopType.DAMAGE);
+		await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
+		await session.SynchronizeAsync(token);
+		Assert.True(victim.IsDead());
+		// The tenth kill plays movie 168, whose end teleports the player out: there is no arena to move back in then.
+		if (server.GetWorldId() == AxArena && AxArenaKills(server) != 10)
+			await MoveForSetupAsync(back.X, back.Y, back.Z);
+		return victim;
+	}
+
+	/// <summary>A controlled death through the real die hook, and the client's resurrection prompt.</summary>
+	private static async Task<DecodedBotServerPacket> AxDieAsync(SimulationL0Session session, Player server, CancellationToken token)
+	{
+		Assert.True(server.GetController().Die(server));
+		await session.AdvanceAsync(TimeSpan.FromMilliseconds(501), token);
+		DecodedBotServerPacket prompt = await session.WaitForPacketAsync(typeof(SM_DIE), token);
+		await session.SynchronizeAsync(token);
+		Assert.True(server.IsDead());
+		return prompt;
+	}
+
+	/// <summary>Follow a teleport the server started by itself (the arena timer's end, movie 168's end, a bind revive) to its map;
+	/// <paramref name="mapId"/> null is any map but the arena.</summary>
+	private static async Task AxFollowTeleportAsync(SimulationL0Session session, CancellationToken token, int? mapId = AxPandaemonium)
+	{
+		session.Api.World.BeginWorldReload();
+		await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token, packet => mapId == null ? packet.Get<int>("worldId") != AxArena : packet.Get<int>("worldId") == mapId);
+		await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+		session.AcceptTeleportPosition();
+		await session.SynchronizeAsync(token);
+	}
+
+	/// <summary>How far the player stands from where Java's Q2947 teleports end: (1006.1, 1526, 222.2), beside Garm.</summary>
+	private static float AxDistanceFromGarmTeleport(Player server) =>
+		NaturalFlightPolicy.Distance(new(server.GetX(), server.GetY(), server.GetZ(), 0), new(1006.1f, 1526f, 222.2f, 0));
 
 	/// <summary>Ukin's teleport starts Q24020 on arrival; the Morheim bind, Aegir's reward and the two return fares are as the data says.</summary>
 	[SkippableFact]

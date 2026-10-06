@@ -28,8 +28,7 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 				[(Altgard, Morheim, 203581, 10, 1700), (Morheim, Pandaemonium, 204399, 7, 1500), (Pandaemonium, Morheim, 204191, 10, 1500)]))
 			throw new InvalidDataException("The Abyss-entry leg differs from its approved start, quests, bind or three teleports.");
 		if (Arena is not { QuestId: 2947, MapId: ArenaMap, EntranceNpcId: 700368, ExitNpcId: 730067, EnterVar: 5, FailedVar: 6, KillCounter: 4,
-				RequiredKills: 10, Seconds: 240, EnterMovieId: 167, DoneMovieId: 168, MaxAttempts: 3, InstanceLifetimeSeconds: 600,
-				InstanceCheckSeconds: 60 } ||
+				RequiredKills: 10, Seconds: 240, EnterMovieId: 167, DoneMovieId: 168, MaxAttempts: 3 } ||
 			Arena.DoneTeleport.MapId != Pandaemonium || Arena.EntrancePosition.Length != 3 || Arena.Arrival.Length != 3 || Arena.ExitPosition.Length != 3 ||
 			!new[] { Arena.StartStep, Arena.RestartStep, Arena.DoneStep }.All(steps.Contains) ||
 			Arena.Spirits.Sum(spirit => spirit.Count) != 11 || Arena.Spirits.Any(spirit => spirit.Hp <= 0 || spirit.Count <= 0) ||
@@ -69,18 +68,13 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 	}
 }
 
-/// <summary>Q2947's only working branch: Garm, the entrance, ten of eleven spirits inside the timer, Garm again.</summary>
+/// <summary>Q2947's only working branch: Garm, the entrance, ten of eleven spirits inside the timer, Garm again. A failed
+/// attempt needs no wait: the server destroys its instance, so Garm's next SETPRO3 leads to a new one (D34).</summary>
 /// <param name="KillCounter">The quest variable index Java counts the kills in (<c>qs.getQuestVarById(4)</c>).</param>
-/// <param name="InstanceLifetimeSeconds">AX-01: a solo instance lives this long after the player leaves, so an earlier
-/// re-entry finds the dead spirits still dead.</param>
 public sealed record NaturalAbyssArena(int QuestId, int MapId, int EntranceNpcId, float[] EntrancePosition, float[] Arrival,
 	int ExitNpcId, float[] ExitPosition, string StartStep, string RestartStep, string DoneStep, int EnterVar, int FailedVar,
 	int KillCounter, int RequiredKills, int Seconds, int EnterMovieId, int DoneMovieId, NaturalAscensionTeleport DoneTeleport,
-	NaturalAbyssSpirit[] Spirits, NaturalAbyssSpiritGroup[] Groups, int MaxAttempts, int InstanceLifetimeSeconds, int InstanceCheckSeconds)
-{
-	/// <summary>How long after leaving a failed attempt the entrance opens a new instance (AX-01 measured 661 s).</summary>
-	public long NewInstanceMillis => (InstanceLifetimeSeconds + InstanceCheckSeconds + 1) * 1000L;
-}
+	NaturalAbyssSpirit[] Spirits, NaturalAbyssSpiritGroup[] Groups, int MaxAttempts);
 
 public sealed record NaturalAbyssSpirit(int NpcId, string Name, int Count, int Hp, int AggroRange, int AttackRange, int Experience);
 
@@ -116,7 +110,7 @@ public sealed record NaturalAbyssWeapon(string Type, string Prefer, bool Buy);
 /// <param name="Progress">Spirits killed, or rings passed.</param>
 public sealed record NaturalAbyssAttempt(string Kind, int Number, string Outcome, long StartedMillis, long EndedMillis, int Progress, string Reason);
 
-public sealed record NaturalAbyssAttemptDecision(string Action, string Reason, long WaitMillis = 0);
+public sealed record NaturalAbyssAttemptDecision(string Action, string Reason);
 
 /// <summary>The bounded tries of the leg's two timed quests (AX-Q3), decided from the attempts already recorded.</summary>
 public static class NaturalAbyssAttempts
@@ -137,18 +131,14 @@ public static class NaturalAbyssAttempts
 		["endedMillis"] = attempt.EndedMillis, ["progress"] = attempt.Progress, ["reason"] = attempt.Reason,
 	};
 
-	/// <summary>Enter, wait for the failed attempt's instance to be destroyed, or stop after the last allowed try.</summary>
-	public static NaturalAbyssAttemptDecision NextArena(NaturalAbyssArena arena, IReadOnlyList<NaturalAbyssAttempt> attempts, long nowMillis)
+	/// <summary>Enter, or stop after the last allowed try. Every try is in a new instance (D34), so none has to wait.</summary>
+	public static NaturalAbyssAttemptDecision NextArena(NaturalAbyssArena arena, IReadOnlyList<NaturalAbyssAttempt> attempts)
 	{
 		NaturalAbyssAttempt[] tries = Tries(attempts, Arena);
 		if (tries.Any(attempt => attempt.Outcome == Done)) return new("complete", "The arena is cleared.");
 		if (tries.Length >= arena.MaxAttempts)
 			return new("stop-finding", $"All {arena.MaxAttempts} arena attempts failed; stop the leg as a finding to fix.");
-		if (tries.Length == 0) return new("enter", "First arena attempt.");
-		long ready = tries[^1].EndedMillis + arena.NewInstanceMillis;
-		return nowMillis < ready
-			? new("wait-for-new-instance", "The failed attempt's instance still holds its dead spirits.", ready - nowMillis)
-			: new("enter", $"Arena attempt {tries.Length + 1} of {arena.MaxAttempts}, in a new instance.");
+		return new("enter", tries.Length == 0 ? "First arena attempt." : $"Arena attempt {tries.Length + 1} of {arena.MaxAttempts}, in a new instance.");
 	}
 
 	/// <summary>Start the course, or after the last allowed try ask the operator for the recorded flight they offered.</summary>

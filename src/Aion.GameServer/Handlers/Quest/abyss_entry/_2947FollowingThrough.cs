@@ -3,7 +3,9 @@ using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.QuestEngine.Handlers;
 using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services;
+using Aion.GameServer.Services.Instance;
 using Aion.GameServer.Services.Teleport;
+using Aion.GameServer.World;
 
 namespace Aion.GameServer.Handlers.Quest;
 
@@ -132,7 +134,10 @@ public class _2947FollowingThrough : AbstractQuestHandler
 							return false;
 						case DialogAction.SETPRO3:
 							if (var == 4 || var == 6)
+							{
+								ResetArena(player); // D34: every attempt starts in a new arena
 								return DefaultCloseDialog(env, var, 5); // 5
+							}
 							return false;
 						case DialogAction.SETPRO4:
 							qs.SetQuestVarById(0, 7);
@@ -230,8 +235,13 @@ public class _2947FollowingThrough : AbstractQuestHandler
 		return false;
 	}
 
+	// D34 (deviation 156): the engine runs this hook when any quest timer ends, and Java asks only for START and fewer than
+	// ten kills. Another quest's timer then sent a player who was anywhere on this quest to Garm at var 6. Only the player's own
+	// attempt in the arena fails here. The failed arena is then reset, so the next attempt does not find its dead spirits.
 	public override bool OnQuestTimerEndEvent(QuestEnv env)
 	{
+		if (!IsOnTheArenaAttempt(env))
+			return false;
 		Player player = env.GetPlayer();
 		QuestState qs = player.GetQuestStateList().GetQuestState(questId);
 		if (qs != null && qs.GetStatus() == QuestStatus.START)
@@ -242,6 +252,7 @@ public class _2947FollowingThrough : AbstractQuestHandler
 				qs.SetQuestVar(6);
 				UpdateQuestStatus(env);
 				TeleportService.TeleportTo(player, 120010000, 1006.1f, 1526, 222.2f, (byte)90);
+				ResetArena(player);
 				return true;
 			}
 		}
@@ -260,9 +271,10 @@ public class _2947FollowingThrough : AbstractQuestHandler
 			{
 				if (player.GetWorldId() != 320090000)
 				{
-					QuestService.QuestTimerEnd(env);
+					QuestService.QuestTimerEnd(env); // left as Java has it: it ends whichever quest timer is running
 					qs.SetQuestVar(6);
 					UpdateQuestStatus(env);
+					ResetArena(player); // D34
 					return true;
 				}
 				else
@@ -284,8 +296,26 @@ public class _2947FollowingThrough : AbstractQuestHandler
 		}
 		else if (movieId == 167)
 		{
-			QuestService.QuestTimerStart(env, 240);
+			if (IsOnTheArenaAttempt(env)) // D34: a late movie end starts no timer for a player who failed or left
+				QuestService.QuestTimerStart(env, 240);
 		}
+	}
+
+	private bool IsOnTheArenaAttempt(QuestEnv env)
+	{
+		Player player = env.GetPlayer();
+		QuestState qs = player.GetQuestStateList().GetQuestState(questId);
+		return qs != null && qs.GetStatus() == QuestStatus.START && qs.GetQuestVarById(0) == 5 && qs.GetQuestVarById(4) != 10
+			&& player.GetWorldId() == 320090000;
+	}
+
+	// D34: PortalService returns a solo player to the instance registered to them, which a failed attempt keeps for 600 s with
+	// its dead spirits. Once the player is out of it and nobody is inside, destroy it, as its own checker would do later.
+	private static void ResetArena(Player player)
+	{
+		WorldMapInstance arena = InstanceService.GetRegisteredInstance(320090000, player.GetObjectId());
+		if (arena != null && player.GetWorldMapInstance() != arena && arena.GetPlayersInside().Count == 0)
+			InstanceService.DestroyInstance(arena);
 	}
 
 	public override void OnQuestCompletedEvent(QuestEnv env)
