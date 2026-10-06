@@ -1588,7 +1588,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// The journey is rebound to Altgard as for NA-23; the Leg 1 engine picks each move from the client's view. Template
 			// quests run on the Ishalgen runner, scripted steps on NaturalAltgardQuestSteps, flight and the air kills on the
 			// AF-04..AF-06 code. Every decision is traced; a move that makes no progress three times stops the run.
-			// AX-03..AX-07: the Morheim and Abyss-entry leg. It proves its incoming contract from the client's view, then takes one
+			// AX-03..AX-08: the Morheim and Abyss-entry leg. It proves its incoming contract from the client's view, then takes one
 			// decision of NaturalAbyssEntryDecisionEngine at a time. The fortresses and the capital are safe hubs: every approach is
 			// the city approach, on whichever map the client is on. The segment ends at the rule's frontier.
 			async Task RunAbyssEntryAsync()
@@ -1615,6 +1615,48 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				var coinPurchases = new List<NaturalAbyssCoinPurchase>();
 				var opened = new List<NaturalOpenedContainer>();
 				int inventoryChecks = 0, otherInventoryChecks = 0, notOpened = 0;
+				// AX-08: Garm's arena. A try begins when Garm's talk lands the Cleric inside (D35) and ends at ten kills, at the
+				// timer's end or at a death (D36). Every try goes on the outcome ledger; a failed one is an outcome.
+				NaturalAbyssArena arena = scope.Arena;
+				int[] spiritIds = arena.Spirits.Select(spirit => spirit.NpcId).ToArray();
+				var attempts = new List<NaturalAbyssAttempt>();
+				(int Number, long StartedMillis, long Experience)? arenaTry = null;
+				long arenaDeadline = 0, arenaExperience = 0;
+				int arenaKillsSeen = 0;
+				var searchedGroups = new HashSet<string>();
+				var openedDoors = new HashSet<int>();
+				int ArenaKills() => world.Quests.TryGetValue(arena.QuestId, out BotQuestState? trial) ? NaturalAbyssEntryDecisionEngine.ArenaKills(arena, trial) : 0;
+				// Navigation and combat for whichever map the client is on now: the arena on entry, the bind map after a death.
+				void EnterObservedMap()
+				{
+					NaturalMapKey key = NaturalMapKey.Observe(world);
+					var defend = navigator.DefendOnAttackAsync;
+					navigator = mapNavigators.Enter(key, newEntry: true);
+					navigator.DefendOnAttackAsync = defend;
+					geometry = runtime.CreateGeometry();
+					contract = contract with { MapId = key.MapId };
+					combat.EnterMap(navigator, geometry, key.MapId);
+					navigator.AvoidSpots = combat.DeathSpots;
+				}
+				void EndArenaTry(string outcome, string reason)
+				{
+					if (arenaTry is not { } running) return;
+					var attempt = new NaturalAbyssAttempt(NaturalAbyssAttempts.Arena, running.Number, outcome, running.StartedMillis, runtime.NowMillis,
+						Math.Max(arenaKillsSeen, ArenaKills()), reason);
+					attempts.Add(attempt);
+					arenaExperience += ObservedExperience() - running.Experience;
+					arenaTry = null;
+					session.TraceDiagnostic(NaturalAbyssAttempts.Diagnostic(NaturalAbyssAttempts.Arena), NaturalAbyssAttempts.Row(attempt));
+				}
+				async Task FollowTeleportAsync(int toMap)
+				{
+					await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token, packet => packet.Get<int>("worldId") == toMap);
+					await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+					session.AcceptTeleportPosition();
+					await session.SynchronizeAsync(token);
+					EnterObservedMap();
+				}
+				combat.AfterBindRevive = EnterObservedMap;
 				int PhysicalDefence(int itemId) => NaturalAbyssCoinArmorPolicy.PhysicalDefence(runtime.Data.ItemDataDh.GetItemTemplate(itemId));
 				// AX-04: the inventory check the operator asked for after every quest turn-in (2026-10-06), and once at the start so
 				// the leg begins with the best owned gear worn. AX-06: also after a coin armor purchase, to wear it.
@@ -1639,8 +1681,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				for (int sequence = 1; sequence <= 200; sequence++)
 				{
 					await session.SynchronizeAsync(token);
-					NaturalAbyssEntryDecision next = NaturalAbyssEntryDecisionEngine.Decide(leg, Observed(), sequence, PhysicalDefence);
-					string signature = $"{next.Action}|{next.StepKey}|{next.Reason}";
+					// A death outside the fight loop, or one the combat already revived from at the bind: the try is over (D36).
+					if (arenaTry != null && !world.IsDead && world.MapId != arena.MapId && ArenaKills() < arena.RequiredKills)
+						EndArenaTry("death", "The Cleric died in the arena; the server failed the attempt at once (D36).");
+					NaturalAbyssEntryDecision next = NaturalAbyssEntryDecisionEngine.Decide(leg, Observed(), sequence, PhysicalDefence, attempts);
+					// The fight's own progress is the kill count and the clock, so a fight decision never looks like a stall.
+					string signature = $"{next.Action}|{next.StepKey}|{next.Reason}|{(next.Action == "arena-fight" ? runtime.NowMillis : 0)}";
 					repeats = signature == previous ? repeats + 1 : 0;
 					previous = signature;
 					// A decision that does not change the client's view is a stall; waiting for the journal may take a few looks.
@@ -1658,7 +1704,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						{
 							NaturalAbyssEntryProgress progress = NaturalAbyssEntryLeg.VerifyProgress(leg, start, Observed(), next.Phase,
 								new NaturalAbyssLedger(ObservedExperience() - experienceAtStart, fares, bindPaid, payments, inventoryChecks, otherInventoryChecks,
-									coinManifests, coinPurchases, coinsSupplied, opened, notOpened),
+									coinManifests, coinPurchases, coinsSupplied, opened, notOpened, attempts, arenaExperience, combat.ReviveCount),
 								itemId => runtime.Data.ItemDataDh.GetItemTemplate(itemId) is { } template && template.GetItemGroup().ToString() == "STAFF"
 									? template.GetWeaponStats()?.GetBoostMagicalSkill() ?? 0 : 0, PhysicalDefence, runtime.NowMillis);
 							await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntryLeg.ProgressReceipt),
@@ -1673,6 +1719,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								["coinsSupplied"] = progress.CoinsSupplied, ["coinPurchases"] = coinPurchases.Select(purchase => purchase.ItemId).ToArray(),
 								["opened"] = opened.Select(container => container.ItemId).ToArray(),
 								["paid"] = payments.Select(payment => payment.QuestId).ToArray(),
+								["attempts"] = attempts.Select(attempt => $"{attempt.Kind} {attempt.Number}: {attempt.Outcome}, {attempt.Progress}").ToArray(),
+								["arenaExperience"] = arenaExperience, ["deaths"] = combat.ReviveCount,
 								["reason"] = next.Reason,
 							});
 							return;
@@ -1680,6 +1728,167 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						case "inventory-check":
 							await InventoryCheckAsync(next.Phase, turnIn: false);
 							break;
+						case "arena-fight":
+						{
+							// A try the runner did not see begin (a resumed run): count it from here.
+							if (arenaTry == null)
+							{
+								arenaTry = (attempts.Count(attempt => attempt.Kind == NaturalAbyssAttempts.Arena) + 1, runtime.NowMillis, ObservedExperience());
+								arenaDeadline = runtime.NowMillis + arena.Seconds * 1000L;
+								arenaKillsSeen = ArenaKills();
+								searchedGroups.Clear();
+								openedDoors.Clear();
+								EnterObservedMap();
+							}
+							long left = arenaDeadline - runtime.NowMillis;
+							if (left <= 8_000)
+							{
+								// The 240 s are all but up: no kill fits. Java's timer sets var 6 and teleports the Cleric to Garm.
+								arenaKillsSeen = Math.Max(arenaKillsSeen, ArenaKills());
+								world.BeginWorldReload();
+								await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Max(left, 0) + 1_000), token);
+								await FollowTeleportAsync(arena.DoneTeleport.MapId);
+								EndArenaTry("timeout", $"The {arena.Seconds} s ran out with {arenaKillsSeen} of {arena.RequiredKills} spirits counted.");
+								break;
+							}
+							BotPosition At(float[] at) => new(at[0], at[1], at[2], 0);
+							// A recorded outcome on request (AX_ARENA_FIRST_TRY), to prove the failure path: the first try is lost by
+							// ordinary play. "timeout": the Cleric waits at the entry until the timer is all but out. "death": it opens
+							// the nearest room, walks in among the spirits and does not fight.
+							if (arenaTry is { Number: 1 } && options.AbyssArenaFirstTry is { } lose)
+							{
+								Require.True(lose is "timeout" or "death", $"AX_ARENA_FIRST_TRY is '{lose}', not timeout or death.");
+								if (lose == "timeout")
+								{
+									session.TraceDiagnostic("arena-first-try-idle", new Dictionary<string, object?> { ["mode"] = lose, ["seconds"] = (left - 8_000) / 1000 });
+									await session.AdvanceAsync(TimeSpan.FromMilliseconds(left - 8_000), token);
+									break;
+								}
+								NaturalAbyssSpiritGroup room = arena.Groups.OrderBy(entry => Distance(session.CurrentPosition, At(entry.DoorStand))).First();
+								if (openedDoors.Contains(room.DoorId))
+								{
+									var defend = navigator.DefendOnAttackAsync;
+									navigator.DefendOnAttackAsync = null;
+									try { await NaturalIshalgenNavigator.ExploreAnchorAsync(arena.MapId, 0, At(room.Center), navigator, "arena-idle", token); }
+									finally { navigator.DefendOnAttackAsync = defend; }
+									for (int second = 0; second < 60 && !world.IsDead && arenaDeadline - runtime.NowMillis > 8_000; second++)
+									{
+										await session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+										await session.SynchronizeAsync(token);
+									}
+									session.TraceDiagnostic("arena-first-try-idle", new Dictionary<string, object?>
+									{
+										["mode"] = lose, ["room"] = room.Key, ["dead"] = world.IsDead, ["hp"] = world.CurrentHp, ["position"] = session.CurrentPosition,
+									});
+									break;
+								}
+							}
+							// The spirits stand in three rooms behind closed doors. Work one room at a time, the nearest first: click its
+							// door open from the hall, then take its spirits from the nearest on.
+							NaturalAbyssSpiritGroup? group = arena.Groups.Where(entry => !searchedGroups.Contains(entry.Key))
+								.OrderBy(entry => Distance(session.CurrentPosition, At(entry.DoorStand))).FirstOrDefault();
+							Require.True(group != null, $"Every room was cleared with {ArenaKills()} of {arena.RequiredKills} spirits counted.");
+							if (!openedDoors.Contains(group!.DoorId))
+							{
+								NaturalNavigationResult atDoor = await NaturalIshalgenNavigator.ExploreAnchorAsync(arena.MapId, 0, At(group.DoorStand), navigator,
+									"arena-door", token);
+								float fromDoor = Distance(session.CurrentPosition, At(group.DoorPosition));
+								Require.True(fromDoor <= 8, $"The Cleric is {fromDoor:F1} m from door {group.DoorId} of the {group.Key} room: {atDoor.Reason}");
+								await session.SendPacketAsync(GameClientPackets.OpenStaticDoor(group.DoorId), token);
+								await session.WaitForPacketAsync(typeof(SM_EMOTION), token, packet => packet.Get<int>("senderObjectId") == group.DoorId &&
+									packet.Get<byte>("emotionType") == (byte)Aion.GameServer.Model.EmotionType.OPEN_DOOR);
+								await session.SynchronizeAsync(token);
+								openedDoors.Add(group.DoorId);
+								session.TraceDiagnostic("arena-door-opened", new Dictionary<string, object?>
+								{
+									["room"] = group.Key, ["doorId"] = group.DoorId, ["metresFromDoor"] = fromDoor, ["position"] = session.CurrentPosition,
+									["secondsLeft"] = (arenaDeadline - runtime.NowMillis) / 1000,
+								});
+								break;
+							}
+							BotKnownObject? spirit = world.Objects.Values.Where(known => known.Kind == BotKnownObjectKind.Npc && !known.IsCorpse &&
+									known.TemplateId is int id && spiritIds.Contains(id) && !navigator.UnavailableObjects.Contains(known.ObjectId) &&
+									Distance(known.Position, At(group.Center)) <= 30)
+								.OrderBy(known => Distance(session.CurrentPosition, known.Position)).FirstOrDefault();
+							if (spirit == null)
+							{
+								// The room is empty, or its last spirits are ones the fight could not finish: the next room.
+								searchedGroups.Add(group.Key);
+								session.TraceDiagnostic("arena-room-cleared", new Dictionary<string, object?>
+								{
+									["room"] = group.Key, ["counted"] = ArenaKills(), ["secondsLeft"] = (arenaDeadline - runtime.NowMillis) / 1000,
+								});
+								break;
+							}
+							if (Distance(session.CurrentPosition, spirit.Position) > NaturalPullPlanner.SpellRange + 8)
+							{
+								int sought = spirit.ObjectId;
+								NaturalNavigationResult toward = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(arena.MapId, spirit.TemplateId!.Value,
+									spirit.Position, NaturalPullPlanner.SpellRange, navigator, "arena-spirit", token,
+									stopWhen: () => world.IsDead || !world.Objects.TryGetValue(sought, out BotKnownObject? seen) || seen.IsCorpse ||
+										Distance(session.CurrentPosition, seen.Position) <= NaturalPullPlanner.SpellRange + 4);
+								// A walk that did not bring the spirit into range is not tried again in this try.
+								if (world.Objects.TryGetValue(sought, out BotKnownObject? still) && !still.IsCorpse &&
+									Distance(session.CurrentPosition, still.Position) > NaturalPullPlanner.SpellRange + 8)
+								{
+									navigator.UnavailableObjects.Add(sought);
+									session.TraceDiagnostic("arena-spirit-unreached", new Dictionary<string, object?>
+									{
+										["objectId"] = sought, ["reason"] = toward.Reason, ["position"] = session.CurrentPosition,
+									});
+								}
+								break;
+							}
+							int killsBefore = ArenaKills();
+							bool killed;
+							combat.ScriptedTrial = true;
+							try { killed = await combat.TryKillAsync(spirit.ObjectId, token, retreatAnchor: session.CurrentPosition); }
+							finally { combat.ScriptedTrial = false; }
+							await session.SynchronizeAsync(token);
+							arenaKillsSeen = Math.Max(arenaKillsSeen, ArenaKills());
+							// Killed, or one the fight could not finish: either way it is not chosen again in this try. A spirit leaves no
+							// loot, so the client keeps its body in view, unmarked, until the server removes it.
+							navigator.UnavailableObjects.Add(spirit.ObjectId);
+							session.TraceDiagnostic("arena-kill", new Dictionary<string, object?>
+							{
+								["try"] = arenaTry?.Number, ["room"] = group.Key, ["npcId"] = spirit.TemplateId, ["objectId"] = spirit.ObjectId, ["killed"] = killed,
+								["counted"] = ArenaKills(), ["before"] = killsBefore, ["hp"] = world.CurrentHp, ["mp"] = world.CurrentMp, ["map"] = world.MapId,
+								["secondsLeft"] = (arenaDeadline - runtime.NowMillis) / 1000,
+							});
+							if (ArenaKills() >= arena.RequiredKills)
+							{
+								// The tenth kill ends the timer and plays movie 168; its end teleports the Cleric to Garm. A client that
+								// skips movies has answered it inside the fight and followed the teleport already.
+								long spare = (arenaDeadline - runtime.NowMillis) / 1000;
+								if (world.MapId == arena.MapId)
+								{
+									await NaturalMovieGate.FinishAsync(session, token);
+									await FollowTeleportAsync(arena.DoneTeleport.MapId);
+								}
+								else
+								{
+									NaturalMovieGate.RecordSkipped(session);
+									Require.Equal(arena.DoneTeleport.MapId, world.MapId ?? 0);
+									session.AcceptTeleportPosition();
+									EnterObservedMap();
+								}
+								EndArenaTry(NaturalAbyssAttempts.Done, $"Ten spirits counted with {spare} s to spare.");
+							}
+							// Off the arena's map below ten kills: died, and revived at the bind. The top of the loop ends the try.
+							break;
+						}
+						case "arena-leave":
+						{
+							// Inside with nothing to count: out through the exit beside the entry, as a player would.
+							BotPosition exit = new(arena.ExitPosition[0], arena.ExitPosition[1], arena.ExitPosition[2], 0);
+							NaturalNavigationResult reached = await NaturalIshalgenNavigator.ApproachNpcAsync(arena.MapId, arena.ExitNpcId, exit, navigator, token);
+							Require.True(reached.Arrived, $"Arena exit {arena.ExitNpcId}: {reached.Reason}");
+							int portal = Require.IsType<int>(reached.TargetObjectId);
+							Require.True(await NaturalAltgardQuestSteps.UseObjectAsync(session, portal, null, token, reloadWorld: true), "The arena exit use was interrupted.");
+							EnterObservedMap();
+							EndArenaTry(ArenaKills() >= arena.RequiredKills ? NaturalAbyssAttempts.Done : "left", "The Cleric left the arena by its exit.");
+							break;
+						}
 						case "coin-armor":
 						{
 							// AX-06: the manifest is decided from the client's view and traced before a coin is spent. Coins the Cleric lacks
@@ -1755,8 +1964,27 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 									int npc = await ApproachCapitalNpcAsync(step.NpcId);
 									xp = ObservedExperience();
 									kinah = world.Kinah;
+									long experienceBeforeTalk = ObservedExperience();
 									string outcome = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token);
 									session.TraceDiagnostic("abyss-entry-talk", new Dictionary<string, object?> { ["step"] = step.Key, ["outcome"] = outcome });
+									if (step.Teleport?.MapId == arena.MapId)
+									{
+										// Garm sent the Cleric in (D35). Java starts the 240 s on this world entry and again when the client
+										// reports the end of movie 167 (hazard 5): the try's clock runs from the later one.
+										arenaTry = (attempts.Count(attempt => attempt.Kind == NaturalAbyssAttempts.Arena) + 1, runtime.NowMillis, experienceBeforeTalk);
+										arenaKillsSeen = 0;
+										searchedGroups.Clear();
+										openedDoors.Clear();
+										EnterObservedMap();
+										await NaturalMovieGate.FinishAsync(session, token);
+										await session.SynchronizeAsync(token);
+										arenaDeadline = runtime.NowMillis + arena.Seconds * 1000L;
+										session.TraceDiagnostic("arena-attempt-started", new Dictionary<string, object?>
+										{
+											["try"] = arenaTry?.Number, ["step"] = step.Key, ["position"] = session.CurrentPosition, ["seconds"] = arena.Seconds,
+											["hp"] = world.CurrentHp, ["mp"] = world.CurrentMp,
+										});
+									}
 									break;
 								}
 								catch (NaturalDialogTooFarException) when (attempt < 3) { }

@@ -38,7 +38,9 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 				!entry.Position.SequenceEqual(Arena.Arrival)) ||
 			contract.Steps.First(step => step.Key == Arena.DoneStep).Teleport != null ||
 			Arena.Spirits.Sum(spirit => spirit.Count) != 12 || Arena.Spirits.Any(spirit => spirit.Hp <= 0 || spirit.Count <= 0) ||
-			Arena.Groups.Sum(group => group.Mages + group.Warriors) != 12 || Arena.Groups.Any(group => group.Center.Length != 3))
+			Arena.Groups.Sum(group => group.Mages + group.Warriors) != 12 || Arena.Groups.Any(group => group.Center.Length != 3) ||
+			!Arena.Groups.Select(group => group.DoorId).Order().SequenceEqual([1, 2, 10]) ||
+			Arena.Groups.Any(group => group.DoorPosition.Length != 3 || group.DoorStand.Length != 3))
 			throw new InvalidDataException("Garm's arena differs from Java's ten kills in 240 seconds, its twelve spirits (D36), Garm's teleport (D35) or its three tries.");
 		if (RingCourse is not { QuestId: 2042, StartMovieId: 89, Seconds: 70, StartVar: 2, DoneVar: 8, FailedVar: 9, RingRadius: 6, BoostSkillId: 265,
 				BoostSeconds: 6, BoostFlightPoints: 9, SpeedCap: 16, MaxAttempts: 3, OnExhausted: "ask-operator-recorded-flight" } ||
@@ -84,7 +86,10 @@ public sealed record NaturalAbyssArena(int QuestId, int MapId, float[] Arrival,
 
 public sealed record NaturalAbyssSpirit(int NpcId, string Name, int Count, int Hp, int AggroRange, int AttackRange, int Experience);
 
-public sealed record NaturalAbyssSpiritGroup(string Key, float[] Center, int Mages, int Warriors);
+/// <summary>One of the arena's three rooms. Its spirits stand behind a closed door the player clicks open (the shipped
+/// static door has state 6: clickable and closeable, not opened; NCSoft's world file agrees).</summary>
+/// <param name="DoorStand">Hall ground in front of the door, from where it is clicked.</param>
+public sealed record NaturalAbyssSpiritGroup(string Key, float[] Center, int Mages, int Warriors, int DoorId, float[] DoorPosition, float[] DoorStand);
 
 /// <summary>Q2042's six rings, passed in order inside the timer. Each ring passed casts <paramref name="BoostSkillId"/>.</summary>
 public sealed record NaturalAbyssRingCourse(int QuestId, string StartStep, string RestartStep, string DoneStep, int StartMovieId, int Seconds,
@@ -184,16 +189,20 @@ public sealed record NaturalAbyssEntryProgress(string Leg, string Frontier, int 
 	long ExperienceGained, long Kinah, long KinahAtStart, long Fares, long BindPaid, NaturalAbyssPayment[] Payments, int BindMapId,
 	Aion.Bots.World.BotPosition BindPosition, int StaffItemId, int TorsoItemId, int[] CompletedLegQuestIds, int[] StartedQuestIds,
 	int[] LockedQuestIds, int InventoryChecks, long GameMillis, long BronzeCoins = 0, long CoinsSupplied = 0,
-	NaturalAbyssCoinManifest[]? CoinManifests = null, NaturalAbyssCoinPurchase[]? CoinPurchases = null, NaturalOpenedContainer[]? Opened = null);
+	NaturalAbyssCoinManifest[]? CoinManifests = null, NaturalAbyssCoinPurchase[]? CoinPurchases = null, NaturalOpenedContainer[]? Opened = null,
+	NaturalAbyssAttempt[]? Attempts = null, long ArenaExperience = 0, int Deaths = 0);
 
 /// <summary>What the runner counted while the leg ran. Everything else in a receipt is the client's view.</summary>
 /// <param name="InventoryChecks">One at the start and one after each turn-in.</param>
 /// <param name="OtherInventoryChecks">The checks that wore bought coin armor.</param>
 /// <param name="Opened">Every reward container the inventory checks opened, with what it gave.</param>
 /// <param name="NotOpened">Containers the server did not open (a full cube).</param>
+/// <param name="Attempts">Every arena and ring-course try, failed ones included.</param>
+/// <param name="ArenaExperience">The XP the arena tries changed, net: each kill pays, a death takes.</param>
 public sealed record NaturalAbyssLedger(long ExperienceGained, long Fares, long BindPaid, IReadOnlyList<NaturalAbyssPayment> Payments,
 	int InventoryChecks, int OtherInventoryChecks, IReadOnlyList<NaturalAbyssCoinManifest> CoinManifests,
-	IReadOnlyList<NaturalAbyssCoinPurchase> CoinPurchases, long CoinsSupplied, IReadOnlyList<NaturalOpenedContainer> Opened, int NotOpened);
+	IReadOnlyList<NaturalAbyssCoinPurchase> CoinPurchases, long CoinsSupplied, IReadOnlyList<NaturalOpenedContainer> Opened, int NotOpened,
+	IReadOnlyList<NaturalAbyssAttempt> Attempts, long ArenaExperience, int Deaths);
 
 /// <summary>The leg's incoming contract, checked against what the retained character's login showed.</summary>
 public static class NaturalAbyssEntryLeg
@@ -222,7 +231,8 @@ public static class NaturalAbyssEntryLeg
 			if (!condition) throw new InvalidDataException($"The leg is not at {frontier}: {what}.");
 		}
 		bool coinArmor = frontier != NaturalAbyssEntryDecisionEngine.CoinArmor21Phase;
-		bool capital = frontier == NaturalAbyssEntryDecisionEngine.ArenaPhase;
+		bool cleared = frontier == NaturalAbyssEntryDecisionEngine.ReturnPhase;
+		bool capital = cleared || frontier == NaturalAbyssEntryDecisionEngine.ArenaPhase;
 		int[] paid = capital ? [scope.CommanderQuestId, .. scope.MissionIds.TakeWhile(id => id != scope.Arena.QuestId)] : [scope.CommanderQuestId];
 		int map = capital ? Aion.Bots.Scenarios.NaturalAbyssEntry.Pandaemonium : Aion.Bots.Scenarios.NaturalAbyssEntry.Morheim;
 		(long experienceGained, long fares, long bindPaid, IReadOnlyList<NaturalAbyssPayment> payments) =
@@ -236,12 +246,31 @@ public static class NaturalAbyssEntryLeg
 		Require(payments.Select(payment => payment.QuestId).SequenceEqual(paid), $"the turn-ins so far are not Q{string.Join(", Q", paid)}, in order");
 		Require(payments.All(payment => payment.Experience == leg.Quest(payment.QuestId).RewardExperience),
 			"a turn-in paid " + string.Join(", ", payments.Select(payment => $"Q{payment.QuestId} {payment.Experience} XP")) + ", not its shipped XP");
-		Require(experienceGained == payments.Sum(payment => payment.Experience), $"{experienceGained} XP was gained, and the turn-ins paid {payments.Sum(payment => payment.Experience)}");
-		if (capital)
+		Require(experienceGained == payments.Sum(payment => payment.Experience) + ledger.ArenaExperience,
+			$"{experienceGained} XP was gained; the turn-ins paid {payments.Sum(payment => payment.Experience)} and the arena changed {ledger.ArenaExperience}");
+		NaturalAbyssAttempt[] tries = ledger.Attempts.Where(attempt => attempt.Kind == NaturalAbyssAttempts.Arena).ToArray();
+		if (cleared)
+		{
+			// The arena: reported to Garm; one try in order per attempt, the last one the clear; no more than the allowed tries.
+			Require(state.Quests.GetValueOrDefault(scope.Arena.QuestId) is { Status: 4 }, $"Q{scope.Arena.QuestId} is not at its reward");
+			Require(tries.Length is >= 1 && tries.Length <= scope.Arena.MaxAttempts && tries.Select(attempt => attempt.Number).SequenceEqual(Enumerable.Range(1, tries.Length)),
+				$"{tries.Length} arena tries are recorded");
+			Require(tries[^1] is { Outcome: NaturalAbyssAttempts.Done } won && won.Progress >= scope.Arena.RequiredKills &&
+				tries[..^1].All(attempt => attempt.Outcome != NaturalAbyssAttempts.Done), "the last arena try is not the one clear");
+			Require(tries.All(attempt => attempt.EndedMillis - attempt.StartedMillis <= (scope.Arena.Seconds + 30) * 1000L), "an arena try outlasted its timer");
+			// Every counted kill pays its spirit's XP, and a death takes some. With no death the arena's XP is exactly some mix
+			// of Mage and Warrior kills that adds up to the kills the tries counted.
+			int kills = tries.Sum(attempt => attempt.Progress);
+			long[] pays = scope.Arena.Spirits.Select(spirit => (long)spirit.Experience).Order().ToArray();
+			Require(ledger.Deaths > 0 || pays is [long low, long high] && Enumerable.Range(0, kills + 1).Any(cheap => cheap * low + (kills - cheap) * high == ledger.ArenaExperience),
+				$"the arena paid {ledger.ArenaExperience} XP, which no mix of {kills} kills at {string.Join(" and ", pays)} XP gives");
+		}
+		else if (capital)
 		{
 			int taken = leg.Steps.Single(step => step.Key == scope.Arena.StartStep).Var ?? throw new InvalidDataException("The arena's start step has no var.");
 			Require(state.Quests.GetValueOrDefault(scope.Arena.QuestId) is { Status: 3 } trial && (trial.StepAndFlags & 0x3F) == taken,
 				$"Q{scope.Arena.QuestId} is not waiting for Garm at var {taken}");
+			Require(tries.Length == 0 && ledger.ArenaExperience == 0, "an arena try is recorded before Garm's talk");
 		}
 		else
 			Require((leg.Start.StartedQuestIds ?? []).All(id => state.Quests.GetValueOrDefault(id) is { Status: 3, StepAndFlags: 0 }), "an incoming quest moved before its turn");
@@ -285,7 +314,7 @@ public static class NaturalAbyssEntryLeg
 			state.Quests.Values.Where(quest => quest.Status is 3 or 4).Select(quest => quest.QuestId).Order().ToArray(),
 			state.Quests.Values.Where(quest => quest.Status == NaturalAltgardDecisionEngine.Locked).Select(quest => quest.QuestId).Order().ToArray(),
 			ledger.InventoryChecks + ledger.OtherInventoryChecks, gameMillis, coins, ledger.CoinsSupplied, [.. ledger.CoinManifests],
-			[.. ledger.CoinPurchases], [.. ledger.Opened]);
+			[.. ledger.CoinPurchases], [.. ledger.Opened], [.. ledger.Attempts], ledger.ArenaExperience, ledger.Deaths);
 	}
 
 	/// <summary>The three fares and the bind at their shipped base prices; the price modifier is added on top (AX-01).</summary>

@@ -229,6 +229,9 @@ public static partial class GameClientPackets
 		foreach (var material in materials) { w.D(material.ItemId); w.Q(material.Count); }
 	});
 
+	/// <summary>The click on a static door: Java CM_OPEN_STATICDOOR reads the door's static id alone.</summary>
+	public static BotClientPacket OpenStaticDoor(int doorId) => Create<CM_OPEN_STATICDOOR>(w => w.D(doorId));
+
 	public static BotClientPacket BuyItem(int sellerObjectId, short tradeActionId, IReadOnlyList<(int ItemId, long Count)> items) =>
 		Create<CM_BUY_ITEM>(w =>
 		{

@@ -853,7 +853,7 @@
           "hp": 265,
           "aggroRange": 6,
           "attackRange": 2,
-          "experience": 738
+          "experience": 954
         }
       ],
       "groups": [
@@ -865,7 +865,18 @@
             158.881
           ],
           "mages": 4,
-          "warriors": 0
+          "warriors": 0,
+          "doorId": 10,
+          "doorPosition": [
+            245.25,
+            240,
+            158.625
+          ],
+          "doorStand": [
+            249.25,
+            240,
+            158.625
+          ]
         },
         {
           "key": "south",
@@ -875,7 +886,18 @@
             161.984
           ],
           "mages": 2,
-          "warriors": 2
+          "warriors": 2,
+          "doorId": 2,
+          "doorPosition": [
+            276.13,
+            176.62,
+            161.87
+          ],
+          "doorStand": [
+            276.13,
+            180.62,
+            161.87
+          ]
         },
         {
           "key": "east",
@@ -885,7 +907,18 @@
             158.895
           ],
           "mages": 0,
-          "warriors": 4
+          "warriors": 4,
+          "doorId": 1,
+          "doorPosition": [
+            307.25,
+            239.875,
+            158.625
+          ],
+          "doorStand": [
+            303.25,
+            239.875,
+            158.625
+          ]
         }
       ],
       "maxAttempts": 3

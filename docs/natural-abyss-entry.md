@@ -9,7 +9,8 @@ the staff rule and the inventory check exist, and the check runs at the leg's st
 is done: the Cleric teleports to Morheim, binds, talks to Aegir and wears his hauberk. AX-06
 is done: the Rank 8 gloves and brogans are bought with the Cleric's own coins and worn.
 AX-07 is done: Q2945 and Q2946 are turned in at Pandaemonium and Q2947 is taken at Kvasir.
-AX-08, Garm's arena, is next.
+AX-08 is done: Garm's arena is cleared on the first try in 59 s, and both failure paths
+lead back to Garm and a second, successful try. AX-09 is next.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -129,16 +130,24 @@ Kinah; this leg does not bind there.
 **The arena.** Twelve level-25 spirits stand in three groups; ten must die (D36: Java's
 file had eleven).
 
-| Group | Spirits | Around | From the entry |
-|---|---|---|---|
-| West | four Mage Spirits 213584 | (235, 239) | 68 m |
-| South | two Warrior Spirits 213583 and two Mage Spirits | (276, 168) | 125 m |
-| East | four Warrior Spirits; two stand on the same point (320.24, 236.09) | (316, 239) | 67 m |
+| Room | Spirits | Around | From the entry | Door |
+|---|---|---|---|---|
+| West | four Mage Spirits 213584 | (235, 239) | 68 m | 10, at (245.25, 240.00, 158.63) |
+| South | two Warrior Spirits 213583 and two Mage Spirits | (276, 168) | 125 m | 2, at (276.13, 176.62, 161.87) |
+| East | four Warrior Spirits; two stand on the same point (320.24, 236.09) | (316, 239) | 67 m | 1, at (307.25, 239.88, 158.63) |
 
+- **Each room is behind a closed door (AX-08).** The three static doors are closed and
+  clickable in the shipped data (state 6), and in NCSoft's world file. The player clicks a
+  door open (CM_OPEN_STATICDOOR); no key is needed. Until then nothing can be walked or
+  cast through it. The bot had never opened a door; the first arena run stopped there.
 - West to south is about 82 m, and south to east about 82 m. The whole round is about 230 m of running.
 - The spirits' tribe is AGGRESSIVESUPPORTMONSTER, so a group is likely to fight together.
 - AX-01: a Mage Spirit has 205 HP, an 8 m aggro range and a 16 m attack range. A Warrior
-  Spirit has 265 HP, a 6 m aggro range and a 2 m attack range. A kill pays 738 XP.
+  Spirit has 265 HP, a 6 m aggro range and a 2 m attack range.
+- **A Mage Spirit's kill pays 738 XP and a Warrior Spirit's 954** (AX-08). AX-01 killed only
+  a Mage Spirit and wrote 738 for both. Five of each, as the bot kills them, pay 8,460 XP.
+- An idle Cleric among the four Mage Spirits died in 15 s. Fighting, it never fell below
+  1,551 of 2,099 HP: each spirit dies to one or two spells.
 - Their spawn data gives no respawn time. Two of the twelve may be left alive.
 - The instance data allows one player and sets no entry cooldown.
 - **Every attempt starts in a new instance (D34).** When an attempt fails, the server
@@ -201,7 +210,8 @@ file had eleven).
 
 - **Level 26 by quest XP alone.** The five quests pay 1,038,632 XP against the 880,687
   needed: 157,945 to spare, before any XP lost to deaths. The running total passes the
-  mark at Q2042's reward, the leg's last turn-in. After Q2947 it is 143,696 short.
+  mark at Q2042's reward, the leg's last turn-in. After Q2947 it is 143,696 short. The ten
+  arena kills add about 8,460 XP to that (AX-08), and a death there took 17,453.
 - **Q24020's reward** has six choices. The two chain ones are both "Morheim Dark Legionary
   Hauberk", level 26, 177 physical defence: 110551147 with 12 healing boost and 9
   concentration (the fourth choice), and 110551149 with 84 MP (the fifth). The Cleric takes
@@ -582,10 +592,46 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
     (`NaturalAbyssEntryContractTests.cs`, 21 pass).
   - The sacks' contents are random: AX-04's probe got 166000193 and 166000192.
   - Fast and the seven pre-commit checks: see the Progress log.
-- [ ] **AX-08 - The arena.** Depends AX-07. Route rows 10–13, both movies, the timed clear,
+- [x] **AX-08 - The arena.** Depends AX-07. Route rows 10–13, both movies, the timed clear,
   and the failure path through var 6. Up to three attempts. No wait is needed after a failed
   attempt, and no walk: Garm's SETPRO3 sends the Cleric into a new instance (D34, D35).
   A death ends an attempt at once (D36), and the arena holds twelve spirits.
+  - 2026-10-06, the rule: Garm's first talk (var 4) or his second (var 6) sends the Cleric
+    in. Inside, the rule asks for one kill at a time until the journal counts ten. Var 6
+    goes back to Garm while tries are left; after three failures it stops as a finding.
+    Ten kills outside the arena is the report to Garm; his reward state is the frontier
+    `morheim-return`.
+  - The fight: a try starts when Garm's talk lands the Cleric inside and movie 167 is
+    answered. The runner takes the nearest room first: it walks to the door, clicks it open,
+    and kills the room's spirits from the nearest on, with the journey's own combat and no
+    retreat. Under 8 s on the clock it stops and waits for the server's teleport. The
+    tenth kill plays movie 168, whose end teleports the Cleric to Garm.
+  - **Proof, the clear: `run/ax08/ax08-arena-a5`** (public Restore, leg `ax`, 49.7 s, schema
+    dropped, no death). One try, 59.4 s: the west door at 8 s and four Mage Spirits, the
+    east door and four Warrior Spirits, the south door and two more. Ten counted with 180 s
+    to spare, 8,460 XP, lowest HP 1,551 of 2,099. Then Garm's SETPRO4: Q2947 at its reward.
+  - **Proof, the timer: `run/ax08/ax08-arena-timeout-a1`.** The first try was left to run
+    out at the entry. At 241 s the server set var 6 and teleported the Cleric to Garm. Garm's
+    second talk (USE_OBJECT, page 1779, SETPRO3) sent it into a new instance, cleared in
+    59 s with 181 s to spare.
+  - **Proof, a death: `run/ax08/ax08-arena-death-a1`.** In the first try the Cleric opened
+    the west door, walked in and did not fight. It died after 15 s. The client saw the timer
+    end and var 6 at once (D36). It revived at the Morheim bind, rested 26 s, paid Orhe's
+    2,118 Kinah again and went back to Garm. The second try cleared in 68 s with 172 s to
+    spare. The death took 17,453 XP.
+  - The two lost tries were asked for with `AX_ARENA_FIRST_TRY=timeout` and `=death`. They
+    are ordinary play: waiting, and standing among the spirits. No GM input is used.
+  - Every try is on the ledger as `timed-arena-attempt`, failed ones included.
+  - Kept failures: `ax08-arena-a1` (no route: the closed doors), `a2` (a dead spirit chosen
+    again; a spirit leaves no loot, so the client keeps its body in view unmarked), `a3`
+    (the tenth kill's teleport, which a movie-skipping client follows inside the fight, was
+    not accepted) and `a4` (the XP check assumed 738 for every spirit).
+  - Changed for it: `GameClientPackets.OpenStaticDoor`; the three doors and the Warrior
+    Spirit's 954 XP in the contract; `sim-snapshot.ps1` clears `AX_ARENA_FIRST_TRY` like its
+    other switches.
+  - Tests: two more contract tests, the arena decisions and ten refused cleared frontiers,
+    and the doors pinned against the shipped door data (22 pass).
+  - Fast and the seven pre-commit checks: see the Progress log.
 - [ ] **AX-09 - Back to Morheim.** Depends AX-08. Doman's teleport; Q2947's reward taken
   with REWARD2, the staff, which the inventory check wears; the manastone 167000465
   discarded (AX-Q4); Q2042's first talk with Aegir.
@@ -902,3 +948,9 @@ The original questions, with the recommendations made at the time:
   tests with five guarded skips and all eleven scenarios in 9.22 minutes (`run/ax07-fast/`).
   The seven pre-commit checks pass (`run/ax07/checks/`); the first warning run caught four
   nullable warnings in the new unit test, fixed before the commit.
+- 2026-10-06 — AX-08: Garm's arena. The rooms are behind closed doors the player clicks
+  open; the bot does that now. A contained run cleared the arena on the first try in 59 s
+  with 180 s to spare (`run/ax08/ax08-arena-a5`). A try lost to the timer and one lost to
+  a death each led back to Garm and a clear on the second try. Fast passes 114 of 119 tests
+  with five guarded skips and all eleven scenarios in 8.63 minutes (`run/ax08-fast/`); the
+  seven pre-commit checks pass (`run/ax08/checks/`).

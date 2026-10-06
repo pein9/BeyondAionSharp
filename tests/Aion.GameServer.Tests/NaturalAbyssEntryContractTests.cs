@@ -122,6 +122,18 @@ public sealed class NaturalAbyssEntryContractTests
 		foreach (NaturalAbyssSpirit spirit in arena.Spirits)
 			Assert.Equal(spirit.Count, spawns.Descendants("spawn").Single(n => (int)n.Attribute("npc_id")! == spirit.NpcId).Elements("spot").Count());
 		Assert.Equal((6, 6), (arena.Groups.Sum(group => group.Mages), arena.Groups.Sum(group => group.Warriors))); // D36: NCSoft's twelve
+		// AX-08: each group stands behind a shipped static door that is closed and clickable (state 6). The door lies between
+		// its stand point in the hall and the group, and the stand point is within a click's reach of it.
+		XElement doors = XDocument.Load(Data("staticdoors", "staticdoor_templates.xml")).Descendants("world").Single(n => (int)n.Attribute("world")! == arena.MapId);
+		Assert.Equal(3, doors.Elements("staticdoor").Count());
+		foreach (NaturalAbyssSpiritGroup group in arena.Groups)
+		{
+			XElement door = doors.Elements("staticdoor").Single(n => (int)n.Attribute("id")! == group.DoorId);
+			Assert.Equal(("6", group.DoorPosition[0], group.DoorPosition[1], group.DoorPosition[2]), ((string)door.Attribute("state")!, F(door, "x"), F(door, "y"), F(door, "z")));
+			float Flat(float[] a, float[] b) => MathF.Sqrt(MathF.Pow(a[0] - b[0], 2) + MathF.Pow(a[1] - b[1], 2));
+			Assert.Equal(4f, Flat(group.DoorStand, group.DoorPosition), 2);
+			Assert.True(Flat(group.DoorStand, group.Center) > Flat(group.DoorPosition, group.Center), $"{group.Key}: the stand point is on the group's side of its door");
+		}
 		Assert.True(Spot("Instances/320090000_Triniel_Underground_Arena.xml", arena.ExitNpcId).Zip(arena.ExitPosition, (a, b) => MathF.Abs(a - b)).All(d => d < 0.01f));
 		// D35: Garm sends the player in. Both of his SETPRO3 talks end at the arena's one portal location, where the entrance
 		// 700368 (which no attempt uses any more) also leads.
@@ -371,7 +383,7 @@ public sealed class NaturalAbyssEntryContractTests
 		NaturalAbyssEntryStart start = NaturalAbyssEntryLeg.VerifyStart(Leg, StartState(), 133276, 0);
 		NaturalAbyssPayment[] paid = [new(24020, 293_759, 0, 25)];
 		static int Boost(int itemId) => itemId switch { 101501357 => 370, 101501355 => 320, _ => 0 };
-		NaturalAbyssLedger noCoins = new(293_759, 2_401, 2_690, paid, 2, 0, [], [], 0, [], 0);
+		NaturalAbyssLedger noCoins = new(293_759, 2_401, 2_690, paid, 2, 0, [], [], 0, [], 0, [], 0, 0);
 		NaturalAbyssEntryProgress Verify(NaturalAltgardObservation state, NaturalAbyssLedger ledger, string frontier = "coin-armor-21") =>
 			NaturalAbyssEntryLeg.VerifyProgress(Leg, start, state, frontier, ledger, Boost, DefenceOf, 59_385);
 
@@ -456,8 +468,10 @@ public sealed class NaturalAbyssEntryContractTests
 
 		Assert.Equal(["q2945-balder", "q2945-therf", "q2945-reward"], Play(2945, (3, 0), (3, 1), (4, 1)));
 		Assert.Equal(["q2946-balder", "q2946-204210", "q2946-204211", "q2946-204208", "q2946-reward"], Play(2946, (3, 0), (3, 1), (3, 2), (3, 3), (4, 3)));
-		// Kvasir's var 0 is the last capital step. Everything after it is Garm's arena: waiting, inside, failed, or done.
-		Assert.Equal(["q2947-kvasir", "arena:frontier", "arena:frontier", "arena:frontier", "arena:frontier"], Play(2947, (3, 0), (3, 4), (3, 5), (3, 6), (4, 7)));
+		// Kvasir's var 0 is the last capital step. After it comes Garm: his first talk, his second after a failure, and at the
+		// reward the way back to Morheim. Var 5 outside the arena is a failed attempt the server has not marked yet.
+		Assert.Equal(["q2947-kvasir", "arena:talk", "arena:refresh-observation", "arena:talk", "morheim-return:frontier"],
+			Play(2947, (3, 0), (3, 4), (3, 5), (3, 6), (4, 7)));
 		// A mission that is turned in before the next one shows in the journal is waited for; an unknown var is refused.
 		Assert.Equal(["capital-missions:refresh-observation", "capital-missions:blocked"], Play(2946, (6, 0), (3, 9)));
 
@@ -482,7 +496,7 @@ public sealed class NaturalAbyssEntryContractTests
 		];
 		NaturalAbyssPayment[] paid = [new(24020, 293_759, 0, 25), new(2945, 20_110, 0, 25), new(2946, 20_110, 0, 25)];
 		// Two fares now: Ukin's 2,401 and Orhe's 2,118.
-		NaturalAbyssLedger ledger = new(333_979, 4_519, 2_690, paid, 4, 1, [manifest], bought, 0, opened, 0);
+		NaturalAbyssLedger ledger = new(333_979, 4_519, 2_690, paid, 4, 1, [manifest], bought, 0, opened, 0, [], 0, 0);
 		NaturalJourneyItem[] items = [.. worn.Inventory!.Where(item => item.ItemId is not (186000007 or 182400001)),
 			new(157702, 186000007, 13, 65535), new(133277, 182400001, 741_276, 65535), new(910011, 166000193, 1, 65535), new(910012, 166000192, 1, 65535)];
 		var quests = new Dictionary<int, BotQuestState>(worn.Quests) { [2947] = new(2947, 3, 4, 0, null) };
@@ -502,6 +516,35 @@ public sealed class NaturalAbyssEntryContractTests
 		Assert.Equal([2947], progress.StartedQuestIds);
 		Assert.Equal([188051192, 188051192, 188050878], progress.Opened!.Select(container => container.ItemId));
 
+		// AX-08: the same accounts once the arena is cleared and reported. One failed try and the clear: seventeen kills, nine
+		// Mage Spirits at 738 XP and eight Warrior Spirits at 954.
+		const long fights = 9 * 738 + 8 * 954;
+		NaturalAbyssAttempt[] tries = [new("arena", 1, "timeout", 600_000, 845_000, 7, "ran out"), new("arena", 2, "done", 900_000, 1_010_000, 10, "cleared")];
+		NaturalAbyssLedger fought = ledger with { ExperienceGained = 333_979 + fights, Attempts = tries, ArenaExperience = fights };
+		NaturalAltgardObservation reported = atGarm with { Quests = new Dictionary<int, BotQuestState>(quests) { [2947] = new(2947, 4, 7 | 10 << 24, 0, null) } };
+		NaturalAbyssEntryProgress VerifyCleared(NaturalAltgardObservation state, NaturalAbyssLedger counted) =>
+			NaturalAbyssEntryLeg.VerifyProgress(Leg, start, state, "morheim-return", counted, Boost, DefenceOf, 1_100_000);
+		NaturalAbyssEntryProgress clearedProgress = VerifyCleared(reported, fought);
+		Assert.Equal(("morheim-return", 120010000, fights, 0), (clearedProgress.Frontier, clearedProgress.MapId, clearedProgress.ArenaExperience, clearedProgress.Deaths));
+		Assert.Equal(["timeout", "done"], clearedProgress.Attempts!.Select(attempt => attempt.Outcome));
+		// A death takes XP, so the arena's net XP is no longer a whole number of kills; with deaths that is accepted.
+		VerifyCleared(reported, fought with { ExperienceGained = 333_979 + 9_000, ArenaExperience = 9_000, Deaths = 1 });
+		Action[] refusedCleared =
+		[
+			() => VerifyCleared(atGarm, fought),
+			() => VerifyCleared(reported, ledger),
+			() => VerifyCleared(reported, fought with { Attempts = [tries[0]] }),
+			() => VerifyCleared(reported, fought with { Attempts = [tries[1] with { Number = 1 }, tries[0] with { Number = 2 }] }),
+			() => VerifyCleared(reported, fought with { Attempts = [tries[0], tries[0] with { Number = 2 }, tries[0] with { Number = 3 }, tries[1] with { Number = 4 }] }),
+			() => VerifyCleared(reported, fought with { Attempts = [tries[0], tries[1] with { Progress = 9 }] }),
+			() => VerifyCleared(reported, fought with { Attempts = [tries[0], tries[1] with { EndedMillis = 1_200_000 }] }),
+			() => VerifyCleared(reported, fought with { ExperienceGained = 333_979 + 7_000, ArenaExperience = 7_000 }),
+			() => VerifyCleared(reported, fought with { ArenaExperience = fights - 954 }),
+			// Before Garm's talk no try may be on the ledger.
+			() => Verify(atGarm, ledger with { Attempts = [tries[0]] }),
+		];
+		Assert.All(refusedCleared, verify => Assert.Throws<InvalidDataException>(verify));
+
 		Action[] refused =
 		[
 			() => Verify(atGarm with { MapId = NaturalAbyssEntry.Morheim }, ledger),
@@ -519,6 +562,48 @@ public sealed class NaturalAbyssEntryContractTests
 			() => Verify(atGarm, ledger with { Opened = [.. opened, new(188053787, 156843, new Dictionary<int, long> { [1] = 1 })] }),
 		];
 		Assert.All(refused, verify => Assert.Throws<InvalidDataException>(verify));
+	}
+
+	/// <summary>AX-08: Garm's arena, from his first talk to the report, with the three tries of AX-Q3.</summary>
+	[Fact]
+	public void ArenaIsFoughtOneKillAtATimeWithinThreeTries()
+	{
+		NaturalAltgardObservation capital = CoinArmorWornState() with { MapId = NaturalAbyssEntry.Pandaemonium, Kinah = 741_276 };
+		var journal = new Dictionary<int, BotQuestState>(capital.Quests);
+		journal.Remove(2945);
+		NaturalAbyssEntryDecision Decide(int map, byte status, int var, int kills = 0, bool dead = false, params NaturalAbyssAttempt[] tries) =>
+			NaturalAbyssEntryDecisionEngine.Decide(Leg, capital with
+			{
+				MapId = map, IsDead = dead, CompletedQuestIds = capital.CompletedQuestIds.Concat([2945, 2946]).ToHashSet(),
+				Quests = new Dictionary<int, BotQuestState>(journal) { [2947] = new(2947, status, var | kills << 24, 0, null) },
+			}, 1, DefenceOf, tries);
+		static (string, string, string?) Shape(NaturalAbyssEntryDecision next) => (next.Phase, next.Action, next.StepKey);
+		const int city = NaturalAbyssEntry.Pandaemonium, arena = NaturalAbyssEntry.ArenaMap, morheim = NaturalAbyssEntry.Morheim;
+		NaturalAbyssAttempt Failed(int number) => new("arena", number, "timeout", number * 1_000, number * 1_000 + 240_000, 6, "ran out");
+
+		// Garm's first talk sends the Cleric in (D35); inside, one kill per decision until ten are counted.
+		Assert.Equal(("arena", "talk", "q2947-garm-start"), Shape(Decide(city, 3, 4)));
+		Assert.Equal(("arena", "arena-fight", null), Shape(Decide(arena, 3, 5)));
+		Assert.Equal(("arena", "arena-fight", null), Shape(Decide(arena, 3, 5, kills: 9)));
+		Assert.Contains("9 of 10", Decide(arena, 3, 5, kills: 9).Reason);
+		// Ten counted: out (movie 168's teleport, or the exit), then the report to Garm, then Aegir in Morheim.
+		Assert.Equal(("arena", "arena-leave", null), Shape(Decide(arena, 3, 5, kills: 10)));
+		Assert.Equal(("arena", "talk", "q2947-garm-done"), Shape(Decide(city, 3, 5, kills: 10)));
+		Assert.Equal(("morheim-return", "frontier", null), Shape(Decide(city, 4, 7, kills: 10)));
+		Assert.Equal(10, NaturalAbyssEntryDecisionEngine.ArenaKills(Scope.Arena, new(2947, 3, 5 | 10 << 24, 0, null)));
+
+		// A failed try (the timer, or a death, D36) is var 6: Garm again, from wherever the Cleric revived.
+		Assert.Equal(("arena", "talk", "q2947-garm-again"), Shape(Decide(city, 3, 6, tries: Failed(1))));
+		Assert.Equal(("recover", "revive", null), Shape(Decide(arena, 3, 6, dead: true, tries: Failed(1))));
+		NaturalAbyssEntryDecision back = Decide(morheim, 3, 6, tries: Failed(1));
+		Assert.Equal(("arena", "travel", (int?)city), (back.Phase, back.Action, back.MapId));
+		// Revived in place after a death: nothing counts at var 6, so the way on is the exit.
+		Assert.Equal(("arena", "arena-leave", null), Shape(Decide(arena, 3, 6, tries: Failed(1))));
+		// Three tries (AX-Q3). After the third failure the leg stops as a finding.
+		Assert.Equal("talk", Decide(city, 3, 6, tries: [Failed(1), Failed(2)]).Action);
+		NaturalAbyssEntryDecision stop = Decide(city, 3, 6, tries: [Failed(1), Failed(2), Failed(3)]);
+		Assert.Equal(("arena", "blocked"), (stop.Phase, stop.Action));
+		Assert.Contains("All 3 arena attempts failed", stop.Reason);
 	}
 
 	private static NaturalAltgardObservation Adding(NaturalAltgardObservation state, params NaturalJourneyItem[] added)
