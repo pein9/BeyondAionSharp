@@ -1,0 +1,21 @@
+using Aion.Bots.Navigation.NavMesh;
+using Aion.Bots.World;
+
+namespace Aion.Bots.Navigation;
+
+/// <summary>A blocked quest-area approach gives moving patrols one observed 15 s hold before replanning.
+/// The caller retains its existing stall and guard-clearing bounds.</summary>
+public static class NaturalCampaignZoneRoute
+{
+	public static async Task<IReadOnlyList<BotPosition>> FindAsync(
+		Func<Task<IReadOnlyList<BotPosition>>> findRoute,
+		Func<Task<bool>> waitForPatrol, CancellationToken token)
+	{
+		token.ThrowIfCancellationRequested();
+		IReadOnlyList<BotPosition> route = await findRoute();
+		if (route.Count != 0 || BotNavMeshRouter.LastOutcome != BotNavRouteOutcome.HazardRejected) return route;
+		if (!await waitForPatrol()) return [];
+		token.ThrowIfCancellationRequested();
+		return await findRoute();
+	}
+}

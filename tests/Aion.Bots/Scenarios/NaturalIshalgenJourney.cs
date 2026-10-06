@@ -63,7 +63,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		for (int attempt = 0; progress.CanRetry(attempt) && progress.StalledAttempts < 3; attempt++)
 		{
 			BotPosition before = session.CurrentPosition;
-			IReadOnlyList<BotPosition> route = await navigator.FindRouteAsync(session.CurrentPosition, goal, token);
+			IReadOnlyList<BotPosition> route = await NaturalCampaignZoneRoute.FindAsync(
+				() => navigator.FindRouteAsync(session.CurrentPosition, goal, token), async () =>
+				{
+					await session.AdvanceAsync(TimeSpan.FromMilliseconds(NaturalPatrolPolicy.WaitMillis), token);
+					await navigator.SynchronizeAsync(token);
+					return !session.Api.World.IsDead;
+				}, token);
 			foreach (BotPosition[] segment in route.Chunk(16))
 			{
 				if (navigator.IsSegmentStale(segment)) break;
@@ -2524,20 +2530,32 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					// A campaign's small trigger can lie beyond a remembered death spot. The old road ignored
 					// those hazards, then repeatedly asked to kill a blocker where no live monster remained.
 					bool campaignZone = purpose == "campaign-zone";
+					int approachRevives = combat.ReviveCount;
 					IReadOnlyList<BotPosition> road = campaignZone
-						? await navigator.FindRouteAsync(session.CurrentPosition, goal, token)
+						? await NaturalCampaignZoneRoute.FindAsync(
+							() => navigator.FindRouteAsync(session.CurrentPosition, goal, token), async () =>
+							{
+								session.TraceDiagnostic("campaign-zone-patrol-wait", new Dictionary<string, object?>
+								{ ["position"] = session.CurrentPosition, ["goal"] = goal, ["milliseconds"] = NaturalPatrolPolicy.WaitMillis });
+								return await WaitBeforePullDefendingAsync(NaturalPatrolPolicy.WaitMillis, purpose) &&
+									combat.ReviveCount == approachRevives;
+							}, token)
 						: planner?.PlanJourney(map, session.CurrentPosition, goal, session.Api.World.Level, [])?.Route
 							?? geometry.FindJourneyPath(map, session.CurrentPosition, goal);
 					bool SafeSegment(IReadOnlyList<BotPosition> segment) => campaignZone
 						? navigator.IsSegmentSafe(segment, null, goal) : navigator.IsSegmentSafe(segment, null);
 					if (road.Count == 0)
 					{
-						// The Cleric stands on ground the navmesh does not connect to the goal (a ledge a fight left it on).
+						// Distinguish a blocked patrol corridor from disconnected ground. Previously the zone
+						// exhausted three identical attempts without a clock tick or ordinary guard recovery.
 						session.TraceDiagnostic($"altgard-{altgardLegId}-no-road", new Dictionary<string, object?>
 						{
 							["purpose"] = purpose, ["goal"] = goal, ["outcome"] = BotNavMeshRouter.LastOutcome.ToString(),
 							["position"] = session.CurrentPosition,
 						});
+						if (campaignZone && BotNavMeshRouter.LastOutcome == BotNavRouteOutcome.HazardRejected &&
+							!session.Api.World.IsDead && combat.ReviveCount == approachRevives)
+							await TryClearObservedBlockerAsync(goal);
 						return false;
 					}
 					// Walk the road only as far as its first point where the caller wants to stop.

@@ -16,6 +16,92 @@ namespace Aion.Simulation.Tests;
 public sealed partial class SimulationFastScenarioTests
 {
 	[SkippableFact]
+	public async Task NativeCampaignZoneWaitsForRecordedPatrolBlockageBeforeReplanning()
+	{
+		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
+		using var policy = NewPolicy("RC11ZoneEntry", includeHistory: false);
+		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+		CancellationToken token = timeout.Token;
+		string run = Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "rc11-zone-entry";
+		string path = Path.Combine(RealStaticData.RepoRoot(), "run", $"{run}.zone-entry.trace.jsonl");
+		using var trace = BotActionTraceWriter.Open(path, run, "b01", "sim-player-228",
+			virtualTime: () => TimeSpan.FromMilliseconds(fixture.Clock.NowMillis));
+		await using var session = new SimulationL0Session(fixture, policy, "b01", 228, "Asimzoneentry", Race.ASMODIANS, trace, path);
+		var dashboard = new LiveBotDashboardState();
+		await using var host = new LiveBotDashboardHost(run, ["RC-11"], dashboard,
+			int.Parse(Environment.GetEnvironmentVariable("AION_BOT_DASHBOARD_PORT") ?? "17880"));
+		session.Dashboard = dashboard;
+		if (host.Enabled) Console.WriteLine($"RC-11 zone entry probe dashboard: {host.Url}");
+		var probe = new DestinyProbe(this, fixture, session, token);
+		await probe.InitializeAsync();
+		await probe.SetupAtFortressAsync();
+		using var layout = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(
+			RealStaticData.RepoRoot(), "tests/Aion.Simulation.Tests/Fixtures/NaturalCampaignZoneBlockedLayout.json")));
+		BotPosition Position(System.Text.Json.JsonElement point) => new(point.GetProperty("X").GetSingle(),
+			point.GetProperty("Y").GetSingle(), point.GetProperty("Z").GetSingle(), 0);
+		BotPosition start = Position(layout.RootElement.GetProperty("start"));
+		BotPosition oldGoal = Position(layout.RootElement.GetProperty("oldGoal"));
+		BotNavigationHazard[] hazards = layout.RootElement.GetProperty("hazards").EnumerateArray()
+			.Select(point => new BotNavigationHazard(Position(point), point.GetProperty("Radius").GetSingle())).ToArray();
+		NaturalAltgardZoneStep zone = Assert.Single(NaturalAltgardContract.LoadLeg("l10").ZoneStepList);
+		BotPosition center = new(zone.Anchor![0], zone.Anchor[1], zone.Anchor[2], 0);
+		foreach (var npc in probe.Server.GetWorldMapInstance().GetNpcs().Where(n => !n.IsDead() &&
+			NaturalHostility.IsAggressive(n.GetObjectTemplate(), fixture.DataManager.StaticData.TribeRelations, TribeClass.PC_DARK) &&
+			new[] { start, center }.Any(at => NaturalFlightPolicy.Distance(at, new(n.GetX(), n.GetY(), n.GetZ(), 0)) < 120)).ToArray())
+			fixture.World.Despawn(npc);
+		QuestState quest = probe.Server.GetQuestStateList().GetQuestState(24015);
+		quest.SetStatus(QuestStatus.START); quest.SetQuestVar(1);
+		PacketSendUtility.SendPacket(probe.Server, new SM_QUEST_ACTION(SM_QUEST_ACTION.ActionType.ADD, quest));
+		session.Api.World.BeginWorldReload();
+		await TeleportForSetupAsync(session, probe.Server, 220030000, start.X, start.Y, start.Z, token);
+		session.AcceptTeleportPosition();
+		await session.SynchronizeAsync(token);
+		Console.WriteLine($"RC-11 free probe 228: labelled START/1 and cleared course; all {hazards.Length} recorded hazard circles retained as geometry constraints.");
+		BotNavigationGeometry geometry = probe.Runtime.CreateGeometry();
+		Assert.Empty(geometry.FindJourneyPathAvoiding(220030000, start, oldGoal, hazards));
+		BotNavigationHazard[] deathHazards = hazards.Where(h => h.Radius == 20).ToArray();
+		Assert.Equal(8, deathHazards.Length);
+		int searches = 0, waits = 0;
+		long started = fixture.Clock.NowMillis;
+		BotNavigationHazard[] observedConstraints = hazards;
+		IReadOnlyList<BotPosition> selected = await NaturalCampaignZoneRoute.FindAsync(
+			() =>
+			{
+				searches++;
+				return Task.FromResult(geometry.FindJourneyPathAvoiding(220030000, session.CurrentPosition, oldGoal, observedConstraints));
+			}, async () =>
+			{
+				waits++;
+				for (int second = 0; second < 15; second++)
+				{
+					await session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+					await session.SynchronizeAsync(token);
+					Assert.Equal(1, quest.GetQuestVarById(0));
+					Assert.True(NaturalFlightPolicy.Distance(start, session.CurrentPosition) < 0.1f);
+				}
+				// This is an explicit geometry fixture, not a claim that the natural patrols moved here.
+				// Release its labelled patrol constraints after the real clock hold; keep every death spot.
+				observedConstraints = deathHazards;
+				return !session.Api.World.IsDead;
+			}, token);
+		Assert.Equal(2, searches);
+		Assert.Equal(1, waits);
+		Assert.True(fixture.Clock.NowMillis - started >= NaturalPatrolPolicy.WaitMillis);
+		Assert.NotEmpty(selected);
+		Assert.True(BotNavigationGeometry.AvoidsHazards(start, selected, deathHazards));
+		Console.WriteLine($"RC-11 shared route recovery waits 15 real game seconds without movement, replans after labelled patrol release and retains all eight death circles: {selected.Count} checked points.");
+		await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing)
+			.CreateGroundPlan(selected, session.CurrentPosition, session.Api.World.MovementSpeed!.Value), token);
+		await session.SynchronizeAsync(token);
+		Assert.Equal(2, quest.GetQuestVarById(0));
+		Assert.Equal(2, session.Api.World.Quests[24015].StepAndFlags);
+		Assert.True(NaturalFlightPolicy.Distance(center, session.CurrentPosition) < zone.Radius);
+		Assert.False(probe.Server.IsDead());
+		Assert.DoesNotContain(session.PacketHistory, p => p.PacketType == typeof(SM_DIE));
+		policy.AssertClean();
+	}
+
+	[SkippableFact]
 	public async Task NativeCampaignZoneReplansAfterThreeOrdinaryGroundDisplacements()
 	{
 		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);

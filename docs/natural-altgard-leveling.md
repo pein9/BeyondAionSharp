@@ -4913,6 +4913,36 @@ monitor enabled and announce its URL when a journey starts.
     (`run/rc11-fast/rc11-campaign-zone-progress-fixed/`). All seven final pre-commit
     checks pass (`run/rc11-zone-progress/*-final.log`). Continuous acceptance remains
     open; commit/rebuild before the next fresh capture.
+  - 2026-10-05, twentieth retained attempt: `rc11-full-create-s1-a20` on ad0aab9ba
+    completes the revised prefix, Legs 1-9, all three warlocks, ordinary Return,
+    the robe and Q24014. Q24015 remains START/1 at level 24/160, alive, when its
+    bounded approach stops. Twelve deaths (Leg 4 two, Leg 6 one, Leg 8 one,
+    Leg 10 eight), the original trace/failure audit and dropped-schema receipt remain
+    retained. After one real guard clear, three identical HazardRejected route
+    failures occur at 17:50:44.451 without any game-clock advance. The road's empty
+    route branch bypasses both patrol waiting and its existing guard recovery.
+    Java Q24015, SphereArea and NpcMoveController were read. A blocked campaign road
+    now waits 15 s while observing and defending, replans with the same constraints,
+    then uses ordinary bounded guard recovery if still hazard-blocked. Revival stops
+    the old approach; the existing three-stall/120-attempt and death limits remain.
+    No server, zone, hostile-circle or remembered-death exception is changed.
+    The recorded 74-circle layout is retained as a labelled probe fixture. The
+    alternative-entry and region-exemption experiments both find no route and are
+    retained (`run/rc11-zone-stall/`); classification finds patrol-only and death-only
+    routes but no route through their union. The initial account-256 setup refusal
+    used an invalid generated MAC; the free probe was corrected to account 228.
+    Three native zone probes pass in 43.8749 s. The new probe holds its position and
+    START/1 for 15 actual game seconds, explicitly releases only its labelled patrol
+    constraints, keeps all eight death circles, walks 184 checked points and receives
+    native START/2. This is controlled wait/replan evidence, not proof that natural
+    patrols moved in that fixture. Public-restore Leg 10 from altgard-rc-l9 passes
+    at 24/152 with one death, Q2282/Q24015/Q24016 each once, all six native Q24015
+    updates, ordinary endpoint relog and its owned schema dropped (10.3733 test
+    minutes; `l10-smoke/`, `smoke-audit.json`). That smoke does not need the new wait.
+    Fast passes 101 tests/five guarded skips/all eleven scenarios in 9.3981 minutes
+    (`run/rc11-fast/rc11-campaign-zone-wait/`). Seven final pre-commit checks pass
+    (`run/rc11-zone-stall/*-final.log`). RC-11 remains open: commit/rebuild before
+    another fresh continuous capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5299,6 +5329,13 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: attempt twenty retains twelve deaths and three identical
+  Q24015 hazard-blocked road attempts without a game tick. Campaign roads now use
+  the approved observed 15 s patrol hold and existing bounded guard recovery before
+  giving up. Keep the rejected geometry hypotheses and account setup refusal.
+  Three native probes, one public Leg 10 restore, Fast 101/five/all eleven and seven
+  checks pass (`run/rc11-zone-stall/`); the natural smoke needs no wait. Commit and
+  acknowledge the rebuild before fresh continuous proof; RC-11/12 remain unchecked.
 - 2026-10-05 RC-11 pending: attempt nineteen retains twelve deaths and Q24015's
   partial approaches at 24/160; owned schema dropped. Replan stale campaign roads
   after guard displacement and count actual approach progress within existing bounds.
