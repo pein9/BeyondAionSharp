@@ -89,7 +89,7 @@ function Invoke-NaturalJourney([string]$Db, [string]$RunId, [string]$Evidence, [
 		'AION_SIM_SEED', 'AION_NI07_COMBAT_DIR', 'NI07_FULL_JOURNEY', 'NI08_STOP_AT', 'NI08_RELOG_AT', 'NI08_RESUME_CHARACTER',
 		'NA_ASCENSION', 'AF_ALTGARD', 'AF_ONLY', 'AF_CG_RECEIPTS', 'AF_HM_PROGRESS', 'PC_CAPITAL', 'RC_CAPITAL',
 		'NI07_STOP_AFTER_Q2004', 'NI07_STOP_AFTER_Q2005', 'NI07_STOP_AFTER_Q2006', 'NI07_STOP_AFTER_Q2007', 'NI07_STOP_ON_DEATH', 'NI07_OPTIMIZE_HUBS',
-		'AX_ARENA_FIRST_TRY')
+		'AX_ARENA_FIRST_TRY', 'AX_RING_FIRST_TRY')
 	$prior = @{}
 	foreach ($variable in $names) {
 		$prior[$variable] = [Environment]::GetEnvironmentVariable($variable)

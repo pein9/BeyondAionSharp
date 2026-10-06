@@ -11,7 +11,8 @@ is done: the Rank 8 gloves and brogans are bought with the Cleric's own coins an
 AX-07 is done: Q2945 and Q2946 are turned in at Pandaemonium and Q2947 is taken at Kvasir.
 AX-08 is done: Garm's arena is cleared on the first try in 59 s, and both failure paths
 lead back to Garm and a second, successful try. AX-09 is done: back in Morheim the Cleric
-holds Altruist's Staff and has taken Q2042. AX-10, the ring course, is next.
+holds Altruist's Staff and has taken Q2042. AX-10 is done: the ring course is flown on the
+first try in 39 s, Q2042 is turned in and the Cleric is level 26. AX-11 is next.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -652,7 +653,7 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
     XP; the staff worn; the manastone discarded once and nothing else; the Kinah exact.
   - Tests: one more contract test and nine refused frontiers (23 pass).
   - Fast and the seven pre-commit checks: see the Progress log.
-- [ ] **AX-10 - The ring course.** Depends AX-01 and AX-09. Route rows 16–19, the landing,
+- [x] **AX-10 - The ring course.** Depends AX-01 and AX-09. Route rows 16–19, the landing,
   and the failure path through var 9.
   - Use the one supplied flight-speed scroll when the course first starts (AX-Q3): on the
     ground, standing still, before Yornduf's SETPRO2. It lasts 300 s.
@@ -663,6 +664,42 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   - The existing D33 test stays green, and one probe shows a death on the course still
     fails that course, as in Java.
   - The inventory check opens the second Bronze Coin Chest when Q2042 pays it.
+  - 2026-10-06, the rule: Yornduf's talk (var 1, or var 9 after a failed try) is
+    `ring-course-start`. While rings are left (var 2 to 7) the rule asks for
+    `ring-course-fly` and names the next ring. Var 8 is the report to Yornduf, then Aegir's
+    reward. After three failed tries it stops and asks for the operator's recorded flight.
+  - The start: the runner waits for full flight time, takes the one supplied Greater Raging
+    Wind Scroll through the leg's approved supply (it is in `help-items.json`), uses it
+    standing beside Yornduf, then talks. Movie 89 is answered and SETPRO2 starts the 70 s.
+  - The flight: take-off, then each ring through its centre and four metres on, so the
+    path crosses the ring's plane. No point is within two metres of the FLY zone's ceiling,
+    so ring 5 is passed just below its centre. A leg whose straight line is blocked climbs
+    or sinks to the ring's height first. A ring that does not count is flown again from
+    the far side, twice at most. Then down to the take-off spot and the landing.
+  - **Proof, the flight: `run/ax10/ax10-ring-a2`** (public Restore, leg `ax`, schema dropped,
+    no death). One try. Flight speed 15.12 m/s: the scroll, and 5% from the hauberk and the
+    chausses. The rings counted 2.7, 8.4, 14.5, 26.3, 31.9 and 39.1 s after Yornduf's talk.
+    The leg to ring 4 climbed 75 m first, 171 m in all, because the straight line is
+    blocked. The Cleric landed 45.3 s after the talk, with 24.7 s on the clock and 54 of 60
+    flight points. Yornduf's SET_SUCCEED, then Aegir: **301,641 XP, level 26.** The
+    inventory check opened Bronze Coin Chest 188050873. 15 min 52 s of game time for the
+    whole leg so far, 743,158 Kinah, 17 free cube slots.
+  - **Proof, the failure path: `run/ax10/ax10-ring-timeout-a1`.** The first try stayed on the
+    ground (`AX_RING_FIRST_TRY=timeout`, ordinary play). At 70 s the quest went to var 9.
+    Yornduf's second talk (QUEST_SELECT, page 3057, SETPRO2) started a new 70 s, and the
+    second try flew all six rings and landed with 24.7 s on the clock.
+  - A death on the course fails it, as in Java: the existing D33 test
+    `RingCourseQuestsEndOnlyTheirOwnTimer` shows the die hook and the world entry each end
+    Q2042's own timer and set var 9. It stays green in Fast.
+  - Every try is on the ledger as `timed-ring-course-attempt`.
+  - Kept: `ax10-ring-a1` passed too, but flew the ring 4 leg straight through something
+    the geometry calls solid; the server does not check a flying player's path. The leg is
+    routed around it now. `ax10-ring-a2-stale-build` ran the old build after a compile error
+    and proves nothing.
+  - **The second chest's coins vary:** 9 in AX-04's probe, then 6, 5 and 2 in these runs.
+    AX-12 has to count the coins it finds, not assume a number.
+  - Tests: one more contract test and twelve refused endpoint frontiers (24 pass).
+  - Fast and the seven pre-commit checks: see the Progress log.
 - [ ] **AX-11 - Level 26, by fortress quests if needed.** Depends AX-10.
   - If the Cleric is level 26 after Q2042, record that and tick the item.
   - If not, list the quests Morheim Ice Fortress offers the Cleric that have a handler, are
@@ -977,3 +1014,9 @@ The original questions, with the recommendations made at the time:
   level 26, which Q2042's 301,641 covers. The segment ends at the ring course. Fast passes
   114 of 119 tests with five guarded skips and all eleven scenarios in 9.72 minutes
   (`run/ax09-fast/`); the seven pre-commit checks pass (`run/ax09/checks/`).
+- 2026-10-06 — AX-10: the ring course. One supplied scroll, used at the start. A contained
+  run flew all six rings in 39.1 s and landed with 24.7 s on the clock; Q2042 paid 301,641
+  XP and the Cleric is level 26 (`run/ax10/ax10-ring-a2`). A try left on the ground failed
+  at 70 s and the second try flew the course. The segment ends at the level check. Fast
+  passes 114 of 119 tests with five guarded skips and all eleven scenarios in 8.58 minutes
+  (`run/ax10-fast/`); the seven pre-commit checks pass (`run/ax10/checks/`).

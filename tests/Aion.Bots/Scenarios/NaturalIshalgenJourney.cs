@@ -1588,7 +1588,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// The journey is rebound to Altgard as for NA-23; the Leg 1 engine picks each move from the client's view. Template
 			// quests run on the Ishalgen runner, scripted steps on NaturalAltgardQuestSteps, flight and the air kills on the
 			// AF-04..AF-06 code. Every decision is traced; a move that makes no progress three times stops the run.
-			// AX-03..AX-09: the Morheim and Abyss-entry leg. It proves its incoming contract from the client's view, then takes one
+			// AX-03..AX-10: the Morheim and Abyss-entry leg. It proves its incoming contract from the client's view, then takes one
 			// decision of NaturalAbyssEntryDecisionEngine at a time. The fortresses and the capital are safe hubs: every approach is
 			// the city approach, on whichever map the client is on. The segment ends at the rule's frontier.
 			async Task RunAbyssEntryAsync()
@@ -1658,6 +1658,27 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					EnterObservedMap();
 				}
 				combat.AfterBindRevive = EnterObservedMap;
+				// AX-10: Yornduf's ring course. A try begins at his talk, which starts the 70 s, and ends when the sixth ring is
+				// passed, when the timer fails it (var 9), or at a death. Every try goes on the outcome ledger.
+				NaturalAbyssRingCourse course = scope.RingCourse;
+				NaturalAbyssSupply scrollSupply = scope.Supplies.Single(supply => supply.Family == "flight-speed");
+				(int Number, long StartedMillis)? ringTry = null;
+				long ringDeadline = 0, scrollsSupplied = 0, scrollsUsed = 0, landedMillis = long.MinValue / 2;
+				int ringsSeen = 0;
+				bool airborne = false;
+				float flightSpeed = 0;
+				BotPosition? takeoffSpot = null;
+				int RingVar() => world.Quests.TryGetValue(course.QuestId, out BotQuestState? flown) ? flown.StepAndFlags & 0x3F : -1;
+				int RingsPassed() => Math.Clamp(RingVar() - course.StartVar, 0, course.Rings.Length);
+				void EndRingTry(string outcome, string reason)
+				{
+					if (ringTry is not { } running) return;
+					var attempt = new NaturalAbyssAttempt(NaturalAbyssAttempts.RingCourse, running.Number, outcome, running.StartedMillis, runtime.NowMillis,
+						Math.Max(ringsSeen, RingVar() == course.FailedVar ? 0 : RingsPassed()), reason);
+					attempts.Add(attempt);
+					ringTry = null;
+					session.TraceDiagnostic(NaturalAbyssAttempts.Diagnostic(NaturalAbyssAttempts.RingCourse), NaturalAbyssAttempts.Row(attempt));
+				}
 				int PhysicalDefence(int itemId) => NaturalAbyssCoinArmorPolicy.PhysicalDefence(runtime.Data.ItemDataDh.GetItemTemplate(itemId));
 				// AX-04: the inventory check the operator asked for after every quest turn-in (2026-10-06), and once at the start so
 				// the leg begins with the best owned gear worn. AX-06: also after a coin armor purchase, to wear it.
@@ -1686,6 +1707,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					// A death outside the fight loop, or one the combat already revived from at the bind: the try is over (D36).
 					if (arenaTry != null && !world.IsDead && world.MapId != arena.MapId && ArenaKills() < arena.RequiredKills)
 						EndArenaTry("death", "The Cleric died in the arena; the server failed the attempt at once (D36).");
+					// A death on the course fails it, as in Java (var 9): the try ends once the Cleric is back on its feet.
+					if (ringTry != null && !world.IsDead && !airborne && RingVar() == course.FailedVar)
+						EndRingTry(combat.ReviveCount > 0 && ringsSeen < course.Rings.Length ? "failed" : "timeout", "The course failed (var 9) before the sixth ring.");
 					NaturalAbyssEntryDecision next = NaturalAbyssEntryDecisionEngine.Decide(leg, Observed(), sequence, PhysicalDefence, attempts);
 					// The fight's own progress is the kill count and the clock, so a fight decision never looks like a stall.
 					string signature = $"{next.Action}|{next.StepKey}|{next.Reason}|{(next.Action == "arena-fight" ? runtime.NowMillis : 0)}";
@@ -1706,7 +1730,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						{
 							NaturalAbyssEntryProgress progress = NaturalAbyssEntryLeg.VerifyProgress(leg, start, Observed(), next.Phase,
 								new NaturalAbyssLedger(ObservedExperience() - experienceAtStart, fares, bindPaid, payments, inventoryChecks, otherInventoryChecks,
-									coinManifests, coinPurchases, coinsSupplied, opened, notOpened, attempts, arenaExperience, combat.ReviveCount, discarded),
+									coinManifests, coinPurchases, coinsSupplied, opened, notOpened, attempts, arenaExperience, combat.ReviveCount, discarded,
+									scrollsSupplied, scrollsUsed),
 								itemId => runtime.Data.ItemDataDh.GetItemTemplate(itemId) is { } template && template.GetItemGroup().ToString() == "STAFF"
 									? template.GetWeaponStats()?.GetBoostMagicalSkill() ?? 0 : 0, PhysicalDefence, runtime.NowMillis);
 							await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntryLeg.ProgressReceipt),
@@ -1724,6 +1749,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								["attempts"] = attempts.Select(attempt => $"{attempt.Kind} {attempt.Number}: {attempt.Outcome}, {attempt.Progress}").ToArray(),
 								["arenaExperience"] = arenaExperience, ["deaths"] = combat.ReviveCount,
 								["discarded"] = discarded.Select(item => item.ItemId).ToArray(),
+								["scrollsSupplied"] = scrollsSupplied, ["scrollsUsed"] = scrollsUsed,
 								["reason"] = next.Reason,
 							});
 							return;
@@ -1880,6 +1906,195 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							// Off the arena's map below ten kills: died, and revived at the bind. The top of the loop ends the try.
 							break;
 						}
+						case "ring-course-start":
+						{
+							NaturalAltgardStep step = leg.Steps.Single(entry => entry.Key == next.StepKey);
+							// Full flight time and a ready take-off before the clock starts.
+							long wait = Math.Max(NaturalFlightPolicy.RestoreMillis(world.CurrentFlightTime, world.MaxFlightTime, world.MaxFlightTime),
+								landedMillis + NaturalFlightPolicy.TakeoffReuseMillis + 1_000 - runtime.NowMillis);
+							if (wait > 0)
+							{
+								await session.AdvanceAsync(TimeSpan.FromMilliseconds(wait), token);
+								await session.SynchronizeAsync(token);
+							}
+							int yornduf = await ApproachCapitalNpcAsync(step.NpcId);
+							// AX-Q3: one Greater Raging Wind Scroll may be supplied, and is used standing still when the timed flight
+							// first starts. It is the leg's approved supply and goes in the run profile like every help item.
+							if (scrollsUsed == 0)
+							{
+								if (ItemCount(world, scrollSupply.ItemId) == 0)
+								{
+									Func<int, long, CancellationToken, Task> supply = runtime.SupplyHelpItemAsync
+										?? throw new InvalidDataException("This run supplies no help items, so the flight-speed scroll is not supplied.");
+									NaturalHelpItemSupply.RequireApproved(scrollSupply.ItemId, 1, leg.Leg, scrollsSupplied);
+									await supply(scrollSupply.ItemId, 1, token);
+									await session.SynchronizeAsync(token);
+									Require.True(ItemCount(world, scrollSupply.ItemId) == 1, "The supplied flight-speed scroll did not arrive.");
+									scrollsSupplied++;
+									helpSupplied.Add(new NaturalHelpSupplied(scrollSupply.Trigger, scrollSupply.ItemId, scrollSupply.Family, 1, 0, 1, world.Level, runtime.NowMillis));
+									session.TraceDiagnostic("help-item-supplied", new Dictionary<string, object?>
+									{
+										["trigger"] = scrollSupply.Trigger, ["itemId"] = scrollSupply.ItemId, ["family"] = scrollSupply.Family, ["count"] = 1,
+										["before"] = 0, ["after"] = 1, ["level"] = world.Level, ["decision"] = scrollSupply.Decision,
+									});
+									await File.WriteAllTextAsync(Path.Combine(folder, "help-items.json"), NaturalHelpItemSupply.ProfileJson(helpSupplied), token);
+								}
+								BotInventoryItem scroll = world.Inventory.Values.First(item => item.ItemId == scrollSupply.ItemId);
+								var scrollTemplate = runtime.Data.ItemDataDh.GetItemTemplate(scrollSupply.ItemId)
+									?? throw new InvalidDataException($"Scroll {scrollSupply.ItemId} has no item template.");
+								long owned = ItemCount(world, scrollSupply.ItemId);
+								await session.SendPacketAsync(session.Api.UseItem(scroll.ObjectId, scrollTemplate), token);
+								await session.AdvanceAsync(TimeSpan.FromMilliseconds(scrollTemplate.GetCastingDelay() + 500), token);
+								await session.SynchronizeAsync(token);
+								Require.True(ItemCount(world, scrollSupply.ItemId) == owned - 1, "The flight-speed scroll was not used.");
+								scrollsUsed++;
+								session.TraceDiagnostic("flight-scroll-used", new Dictionary<string, object?>
+								{
+									["itemId"] = scrollSupply.ItemId, ["left"] = owned - 1, ["position"] = session.CurrentPosition,
+								});
+							}
+							for (int attempt = 1; ; attempt++)
+							{
+								try
+								{
+									string outcome = await NaturalAltgardQuestSteps.TalkAsync(session, step, yornduf, token);
+									session.TraceDiagnostic("abyss-entry-talk", new Dictionary<string, object?> { ["step"] = step.Key, ["outcome"] = outcome });
+									break;
+								}
+								catch (NaturalDialogTooFarException) when (attempt < 3) { yornduf = await ApproachCapitalNpcAsync(step.NpcId); }
+							}
+							ringTry = (attempts.Count(attempt => attempt.Kind == NaturalAbyssAttempts.RingCourse) + 1, runtime.NowMillis);
+							ringDeadline = runtime.NowMillis + course.Seconds * 1000L;
+							ringsSeen = 0;
+							takeoffSpot = session.CurrentPosition;
+							session.TraceDiagnostic("ring-course-attempt-started", new Dictionary<string, object?>
+							{
+								["try"] = ringTry?.Number, ["step"] = step.Key, ["seconds"] = course.Seconds, ["flightTime"] = world.CurrentFlightTime,
+								["maxFlightTime"] = world.MaxFlightTime, ["position"] = session.CurrentPosition,
+							});
+							break;
+						}
+						case "ring-course-fly":
+						{
+							int map = leg.Hub.MapId;
+							// A try the runner did not see begin (a resumed run): count it from here.
+							if (ringTry == null)
+							{
+								ringTry = (attempts.Count(attempt => attempt.Kind == NaturalAbyssAttempts.RingCourse) + 1, runtime.NowMillis);
+								ringDeadline = runtime.NowMillis + course.Seconds * 1000L;
+								ringsSeen = RingsPassed();
+							}
+							BotPosition spot = takeoffSpot ??= session.CurrentPosition;
+							// A recorded outcome on request (AX_RING_FIRST_TRY=timeout), to prove the failure path: the first try stays
+							// on the ground until the 70 s are over.
+							if (ringTry is { Number: 1 } && options.AbyssRingFirstTry is { } grounded)
+							{
+								Require.True(grounded == "timeout", $"AX_RING_FIRST_TRY is '{grounded}', not timeout.");
+								session.TraceDiagnostic("ring-course-first-try-idle", new Dictionary<string, object?> { ["seconds"] = (ringDeadline - runtime.NowMillis) / 1000 });
+								await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Max(ringDeadline - runtime.NowMillis, 0) + 1_500), token);
+								await session.SynchronizeAsync(token);
+								Require.Equal(course.FailedVar, RingVar());
+								EndRingTry("timeout", $"The {course.Seconds} s ran out on the ground.");
+								break;
+							}
+							BotNavigationGeometry air = runtime.CreateGeometry();
+							if (!airborne)
+							{
+								flightSpeed = await NaturalFlightProtocol.TakeOffAsync(session, token);
+								airborne = true;
+								session.TraceDiagnostic("ring-course-takeoff", new Dictionary<string, object?>
+								{
+									["try"] = ringTry?.Number, ["speed"] = flightSpeed, ["flightTime"] = world.CurrentFlightTime,
+									["secondsLeft"] = (ringDeadline - runtime.NowMillis) / 1000.0,
+								});
+							}
+							// Never within two metres of the FLY zone's ceiling: leaving the zone ends the flight. Ring 5's centre is
+							// 3.44 m under it, and a ring is six metres wide, so the Cleric passes it at its centre or below.
+							float ceiling = course.ZoneTop - 2, floor = course.ZoneBottom + 2;
+							int misses = 0;
+							while (!world.IsDead && RingVar() >= course.StartVar && RingVar() < course.DoneVar && misses < 2)
+							{
+								int index = RingVar() - course.StartVar;
+								NaturalAbyssRing ring = course.Rings[index];
+								BotPosition origin = session.CurrentPosition;
+								BotPosition centre = new(ring.Center[0], ring.Center[1], Math.Clamp(ring.Center[2], floor, ceiling), 0);
+								// The way to the ring: straight when nothing is in the line; otherwise around what is, by climbing or sinking
+								// to the ring's height first, or over the top. The last stretch is never vertical, so it crosses the ring.
+								float top = Math.Min(ceiling, Math.Max(origin.Z, centre.Z) + 20);
+								float flat = MathF.Sqrt(MathF.Pow(centre.X - origin.X, 2) + MathF.Pow(centre.Y - origin.Y, 2));
+								BotPosition shortOf = flat <= 15 ? origin : new(centre.X - (centre.X - origin.X) / flat * 15, centre.Y - (centre.Y - origin.Y) / flat * 15, top, 0);
+								BotPosition[][] ways =
+								[
+									[],
+									[origin with { Z = centre.Z }],
+									[origin with { Z = top }, shortOf, shortOf with { Z = centre.Z }],
+								];
+								bool Clear(BotPosition[] via)
+								{
+									BotPosition at = origin;
+									foreach (BotPosition point in via.Append(centre))
+									{
+										if (Distance(at, point) > 0.01f && !NaturalFlightProtocol.IsClear(air, map, at, point)) return false;
+										at = point;
+									}
+									return true;
+								}
+								BotPosition[]? way = ways.FirstOrDefault(Clear);
+								bool clear = way != null;
+								way ??= [];
+								BotPosition last = way.Length == 0 ? origin : way[^1];
+								float approach = Distance(last, centre), length = way.Append(centre).Aggregate((At: origin, Metres: 0f),
+									(sum, point) => (point, sum.Metres + Distance(sum.At, point))).Metres;
+								// Through the centre and four metres on, so the flight crosses the ring's plane whatever its tilt.
+								float ux = (centre.X - last.X) / approach, uy = (centre.Y - last.Y) / approach, uz = (centre.Z - last.Z) / approach;
+								BotPosition beyond = new(centre.X + 4 * ux, centre.Y + 4 * uy, Math.Clamp(centre.Z + 4 * uz, floor, ceiling), 0);
+								await NaturalFlightProtocol.FlyAsync(session, map, origin, [.. way, centre, beyond], flightSpeed, token);
+								await session.SynchronizeAsync(token);
+								bool passed = RingVar() != course.StartVar + index;
+								ringsSeen = Math.Max(ringsSeen, RingVar() == course.FailedVar ? ringsSeen : RingsPassed());
+								session.TraceDiagnostic("ring-course-ring", new Dictionary<string, object?>
+								{
+									["try"] = ringTry?.Number, ["ring"] = index + 1, ["name"] = ring.Name, ["passed"] = passed, ["var"] = RingVar(), ["metres"] = length,
+									["clear"] = clear, ["via"] = way, ["flightTime"] = world.CurrentFlightTime, ["secondsLeft"] = (ringDeadline - runtime.NowMillis) / 1000.0,
+									["position"] = session.CurrentPosition,
+								});
+								if (!passed)
+								{
+									// Not counted: back through the centre from the far side, then on again.
+									misses++;
+									BotPosition before = new(centre.X - 6 * ux, centre.Y - 6 * uy, Math.Clamp(centre.Z - 6 * uz, floor, ceiling), 0);
+									await NaturalFlightProtocol.FlyAsync(session, map, session.CurrentPosition, [centre, before], flightSpeed, token);
+									await session.SynchronizeAsync(token);
+								}
+							}
+							if (world.IsDead) break; // the top of the loop ends the try once the Cleric is revived
+							// Down to where the Cleric took off, and land.
+							BotPosition landing = spot with { Z = spot.Z + 0.5f };
+							bool clearDown = NaturalFlightProtocol.IsClear(air, map, session.CurrentPosition, landing);
+							await NaturalFlightProtocol.FlyAsync(session, map, session.CurrentPosition, [landing], flightSpeed, token);
+							await NaturalFlightProtocol.LandAsync(session, token);
+							airborne = false;
+							landedMillis = runtime.NowMillis;
+							await session.SynchronizeAsync(token);
+							session.TraceDiagnostic("ring-course-landed", new Dictionary<string, object?>
+							{
+								["try"] = ringTry?.Number, ["var"] = RingVar(), ["clear"] = clearDown, ["flightTime"] = world.CurrentFlightTime,
+								["secondsLeft"] = (ringDeadline - runtime.NowMillis) / 1000.0, ["position"] = session.CurrentPosition,
+							});
+							if (RingVar() == course.DoneVar)
+								EndRingTry(NaturalAbyssAttempts.Done, $"Six rings passed with {(ringDeadline - landedMillis) / 1000} s on the clock at the landing.");
+							else
+							{
+								// A ring was missed twice, or the timer ran out in the air: the course fails when the 70 s are over.
+								if (RingVar() != course.FailedVar)
+								{
+									await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Max(ringDeadline - runtime.NowMillis, 0) + 1_500), token);
+									await session.SynchronizeAsync(token);
+								}
+								EndRingTry(misses >= 2 ? "missed-ring" : "timeout", $"The course failed with {ringsSeen} of {course.Rings.Length} rings passed.");
+							}
+							break;
+						}
 						case "arena-leave":
 						{
 							// Inside with nothing to count: out through the exit beside the entry, as a player would.
@@ -2007,6 +2222,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						default:
 							throw new InvalidDataException($"The Abyss-entry leg cannot go on ({next.Action}): {next.Reason}");
 					}
+					// The approved help kit is by level band: top it up when a turn-in brings a new level.
+					if (world.Level != helpCheckedAtLevel && !world.IsDead && !airborne) await TopUpHelpItemsAsync("level-up");
 				}
 				throw new TimeoutException("The Abyss-entry leg exceeded 200 decisions.");
 			}

@@ -587,6 +587,49 @@ public sealed class NaturalAbyssEntryContractTests
 		];
 		Assert.All(refusedHome, verify => Assert.Throws<InvalidDataException>(verify));
 
+		// AX-10: the missions done. One ring-course try lost and one flown; Q2042 turned in for 301,641 XP; its Bronze Coin
+		// Chest opened; the one supplied scroll used, and Q2042's own ten scrolls in the cube.
+		NaturalAbyssPayment[] paidAll = [.. paidHome, new(2042, 301_641, 0, 26)];
+		NaturalAbyssAttempt[] flights = [new("ring-course", 1, "timeout", 1_300_000, 1_371_500, 0, "ran out"), new("ring-course", 2, "done", 1_373_000, 1_418_000, 6, "flown")];
+		NaturalOpenedContainer secondChest = new(188050873, 930001, new Dictionary<int, long> { [186000007] = 5 });
+		NaturalJourneyItem[] endItems = [.. homeItems.Where(item => item.ItemId != 186000007), new(157702, 186000007, 18, 65535), new(930002, 164000079, 10, 65535)];
+		var endQuests = new Dictionary<int, BotQuestState>(homeQuests);
+		endQuests.Remove(2042);
+		NaturalAltgardObservation ended = home with
+		{
+			Level = 26, Quests = endQuests, CompletedQuestIds = home.CompletedQuestIds.Append(2042).ToHashSet(), Inventory = endItems,
+			ItemCounts = endItems.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
+		};
+		NaturalAbyssLedger flown = returned with
+		{
+			ExperienceGained = returned.ExperienceGained + 301_641, Payments = paidAll, InventoryChecks = 6, Opened = [.. opened, secondChest],
+			Attempts = [.. tries, .. flights], ScrollsSupplied = 1, ScrollsUsed = 1,
+		};
+		NaturalAbyssEntryProgress VerifyEnd(NaturalAltgardObservation state, NaturalAbyssLedger counted) =>
+			NaturalAbyssEntryLeg.VerifyProgress(Leg, start, state, "endpoint", counted, HomeBoost, DefenceOf, 1_500_000);
+		NaturalAbyssEntryProgress atEnd = VerifyEnd(ended, flown);
+		Assert.Equal(("endpoint", 26, 18L, 1L, 1L), (atEnd.Frontier, atEnd.Level, atEnd.BronzeCoins, atEnd.ScrollsSupplied, atEnd.ScrollsUsed));
+		Assert.Equal([24020, 2945, 2946, 2947, 2042], atEnd.CompletedLegQuestIds);
+		Assert.Empty(atEnd.StartedQuestIds);
+		Assert.Equal(["timeout", "done"], atEnd.Attempts!.Where(attempt => attempt.Kind == "ring-course").Select(attempt => attempt.Outcome));
+		Action[] refusedEnd =
+		[
+			() => VerifyEnd(home, flown),
+			() => VerifyEnd(ended, flown with { Attempts = [.. tries] }),
+			() => VerifyEnd(ended, flown with { Attempts = [.. tries, flights[0]] }),
+			() => VerifyEnd(ended, flown with { Attempts = [.. tries, flights[1] with { Number = 1, Progress = 5 }] }),
+			() => VerifyEnd(ended, flown with { Attempts = [.. tries, flights[0], flights[0] with { Number = 2 }, flights[0] with { Number = 3 }, flights[1] with { Number = 4 }] }),
+			() => VerifyEnd(ended, flown with { ScrollsUsed = 0 }),
+			() => VerifyEnd(ended, flown with { ScrollsSupplied = 2 }),
+			() => VerifyEnd(ended, flown with { Opened = [.. opened] }),
+			() => VerifyEnd(ended with { Quests = new Dictionary<int, BotQuestState>(endQuests) { [2042] = new(2042, 4, 8, 0, null) } }, flown),
+			() => VerifyEnd(ended, flown with { Payments = [.. paidHome, new(2042, 301_640, 0, 26)], ExperienceGained = flown.ExperienceGained - 1 }),
+			// Before Yornduf's talk no flight and no scroll may be on the ledger.
+			() => VerifyHome(home, returned with { ScrollsUsed = 1 }),
+			() => VerifyHome(home, returned with { Attempts = [.. tries, flights[1] with { Number = 1 }] }),
+		];
+		Assert.All(refusedEnd, verify => Assert.Throws<InvalidDataException>(verify));
+
 		Action[] refused =
 		[
 			() => Verify(atGarm with { MapId = NaturalAbyssEntry.Morheim }, ledger),
@@ -626,13 +669,55 @@ public sealed class NaturalAbyssEntryContractTests
 		// Q2947 turned in: Q2042 shows a moment later, then Aegir's var 0, then the course is Yornduf's.
 		Assert.Equal(("morheim-return", "refresh-observation", null), Shape(Decide(NaturalAbyssEntry.Morheim)));
 		Assert.Equal(("morheim-return", "talk", "q2042-aegir"), Shape(Decide(NaturalAbyssEntry.Morheim, new BotQuestState(2042, 3, 0, 0, null))));
-		Assert.Equal(("ring-course", "frontier", null), Shape(Decide(NaturalAbyssEntry.Morheim, new BotQuestState(2042, 3, 1, 0, null))));
-		Assert.Equal(("ring-course", "frontier", null), Shape(Decide(NaturalAbyssEntry.Morheim, new BotQuestState(2042, 3, 9, 0, null))));
+		Assert.Equal(("ring-course", "ring-course-start", "q2042-yornduf-start"), Shape(Decide(NaturalAbyssEntry.Morheim, new BotQuestState(2042, 3, 1, 0, null))));
 		// From the capital the first talk asks for Doman's teleport.
 		Assert.Equal("travel", Decide(NaturalAbyssEntry.Pandaemonium, new BotQuestState(2042, 3, 0, 0, null)).Action);
 		// The staff rule picks the same reward as the contract: the usable staff with the most magic boost on offer.
 		NaturalAltgardRewardChoice choice = Leg.RewardChoiceList.Single(entry => entry.QuestId == 2947);
 		Assert.Equal(("SELECTED_QUEST_REWARD2", 101501224, "STAFF"), (choice.Action, choice.ItemId, choice.ItemGroup));
+	}
+
+	/// <summary>AX-10: Yornduf's ring course, from his talk to Aegir's reward, with the three tries of AX-Q3.</summary>
+	[Fact]
+	public void RingCourseIsFlownWithinThreeTriesAndThenAsksForARecordedFlight()
+	{
+		NaturalAltgardObservation done = CoinArmorWornState();
+		var journal = new Dictionary<int, BotQuestState>(done.Quests);
+		journal.Remove(2945);
+		NaturalAbyssEntryDecision Decide(byte status, int var, int map = NaturalAbyssEntry.Morheim, bool complete = false, params NaturalAbyssAttempt[] tries)
+		{
+			var held = new Dictionary<int, BotQuestState>(journal);
+			if (!complete) held[2042] = new(2042, status, var, 0, null);
+			int[] finished = complete ? [2945, 2946, 2947, 2042] : [2945, 2946, 2947];
+			return NaturalAbyssEntryDecisionEngine.Decide(Leg, done with { MapId = map, Quests = held, CompletedQuestIds = done.CompletedQuestIds.Concat(finished).ToHashSet() },
+				1, DefenceOf, tries);
+		}
+		static (string, string, string?) Shape(NaturalAbyssEntryDecision next) => (next.Phase, next.Action, next.StepKey);
+		NaturalAbyssAttempt Failed(int number) => new("ring-course", number, "timeout", number * 1_000, number * 1_000 + 70_000, 3, "ran out");
+
+		// Yornduf's talk starts the clock; while rings are left the rule asks for the flight and names the next ring.
+		Assert.Equal(("ring-course", "ring-course-start", "q2042-yornduf-start"), Shape(Decide(3, 1)));
+		Assert.All(Enumerable.Range(2, 6), var =>
+		{
+			NaturalAbyssEntryDecision fly = Decide(3, var);
+			Assert.Equal(("ring-course", "ring-course-fly", null), Shape(fly));
+			Assert.Contains($"Ring {var - 1} of 6", fly.Reason);
+		});
+		// The sixth ring passed: Yornduf, then Aegir's reward, then the leg's missions are done.
+		Assert.Equal(("ring-course", "talk", "q2042-yornduf-done"), Shape(Decide(3, 8)));
+		Assert.Equal(("ring-course", "talk", "q2042-reward"), Shape(Decide(4, 8)));
+		Assert.Equal(("endpoint", "frontier", null), Shape(Decide(0, 0, complete: true)));
+
+		// A failed try (var 9: the timer, a death or a world entry) is Yornduf's second talk, three tries in all (AX-Q3).
+		Assert.Equal(("ring-course", "ring-course-start", "q2042-yornduf-again"), Shape(Decide(3, 9, tries: Failed(1))));
+		Assert.Equal("ring-course-start", Decide(3, 9, tries: [Failed(1), Failed(2)]).Action);
+		NaturalAbyssEntryDecision ask = Decide(3, 9, tries: [Failed(1), Failed(2), Failed(3)]);
+		Assert.Equal(("ring-course", "blocked"), (ask.Phase, ask.Action));
+		Assert.Contains("ask the operator to record a flight", ask.Reason);
+		// Yornduf stands in Morheim: from anywhere else the talk is a teleport away.
+		Assert.Equal("travel", Decide(3, 9, NaturalAbyssEntry.Pandaemonium, tries: Failed(1)).Action);
+		Assert.Equal(("recover", "revive"), (NaturalAbyssEntryDecisionEngine.Decide(Leg, done with { IsDead = true }, 1, DefenceOf).Phase,
+			NaturalAbyssEntryDecisionEngine.Decide(Leg, done with { IsDead = true }, 1, DefenceOf).Action));
 	}
 
 	/// <summary>AX-08: Garm's arena, from his first talk to the report, with the three tries of AX-Q3.</summary>

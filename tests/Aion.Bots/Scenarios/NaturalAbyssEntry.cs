@@ -190,7 +190,8 @@ public sealed record NaturalAbyssEntryProgress(string Leg, string Frontier, int 
 	Aion.Bots.World.BotPosition BindPosition, int StaffItemId, int TorsoItemId, int[] CompletedLegQuestIds, int[] StartedQuestIds,
 	int[] LockedQuestIds, int InventoryChecks, long GameMillis, long BronzeCoins = 0, long CoinsSupplied = 0,
 	NaturalAbyssCoinManifest[]? CoinManifests = null, NaturalAbyssCoinPurchase[]? CoinPurchases = null, NaturalOpenedContainer[]? Opened = null,
-	NaturalAbyssAttempt[]? Attempts = null, long ArenaExperience = 0, int Deaths = 0, NaturalJourneyItem[]? Discarded = null);
+	NaturalAbyssAttempt[]? Attempts = null, long ArenaExperience = 0, int Deaths = 0, NaturalJourneyItem[]? Discarded = null,
+	long ScrollsSupplied = 0, long ScrollsUsed = 0);
 
 /// <summary>What the runner counted while the leg ran. Everything else in a receipt is the client's view.</summary>
 /// <param name="InventoryChecks">One at the start and one after each turn-in.</param>
@@ -200,10 +201,13 @@ public sealed record NaturalAbyssEntryProgress(string Leg, string Frontier, int 
 /// <param name="Attempts">Every arena and ring-course try, failed ones included.</param>
 /// <param name="ArenaExperience">The XP the arena tries changed, net: each kill pays, a death takes.</param>
 /// <param name="Discarded">Every item the inventory checks discarded.</param>
+/// <param name="ScrollsSupplied">Flight-speed scrolls the leg's approved supply added (AX-Q3: one at most).</param>
+/// <param name="ScrollsUsed">Flight-speed scrolls used at the ring course's start.</param>
 public sealed record NaturalAbyssLedger(long ExperienceGained, long Fares, long BindPaid, IReadOnlyList<NaturalAbyssPayment> Payments,
 	int InventoryChecks, int OtherInventoryChecks, IReadOnlyList<NaturalAbyssCoinManifest> CoinManifests,
 	IReadOnlyList<NaturalAbyssCoinPurchase> CoinPurchases, long CoinsSupplied, IReadOnlyList<NaturalOpenedContainer> Opened, int NotOpened,
-	IReadOnlyList<NaturalAbyssAttempt> Attempts, long ArenaExperience, int Deaths, IReadOnlyList<NaturalJourneyItem> Discarded);
+	IReadOnlyList<NaturalAbyssAttempt> Attempts, long ArenaExperience, int Deaths, IReadOnlyList<NaturalJourneyItem> Discarded,
+	long ScrollsSupplied = 0, long ScrollsUsed = 0);
 
 /// <summary>The leg's incoming contract, checked against what the retained character's login showed.</summary>
 public static class NaturalAbyssEntryLeg
@@ -215,14 +219,15 @@ public static class NaturalAbyssEntryLeg
 	private const ushort NotWorn = ushort.MaxValue;
 	private const long Torso = 8;
 
-	/// <summary>AX-05..AX-09: what has to be true at the frontier <paramref name="frontier"/>, from the client's view. Morheim and
+	/// <summary>AX-05..AX-10: what has to be true at the frontier <paramref name="frontier"/>, from the client's view. Morheim and
 	/// the commander: bound at the fortress obelisk; Q24020 complete; its hauberk and the best owned staff worn; every Kinah
 	/// that left went to the teleports and the bind; an inventory check ran at the start and after each turn-in. The level-21
 	/// coin armor: one manifest decided; every piece it bought worn; no piece on offer beats what is worn. The capital missions:
 	/// Q2945 and Q2946 turned in, in order, each for its shipped XP; Q2947 taken at Kvasir and waiting for Garm; every reward
 	/// container opened. The coins held are the incoming ones, plus the supplied ones and what the chests gave, less what the
 	/// manifests cost. The arena: its tries in order, the last one the clear. The return: Q2947 turned in for the staff, which
-	/// is worn; the flight-time manastone discarded; Q2042 taken at Aegir and waiting for Yornduf.</summary>
+	/// is worn; the flight-time manastone discarded; Q2042 taken at Aegir and waiting for Yornduf. The ring course: its tries
+	/// in order, the last one all six rings; Q2042 turned in; at most the one approved scroll supplied, and used.</summary>
 	public static NaturalAbyssEntryProgress VerifyProgress(NaturalAltgardContract leg, NaturalAbyssEntryStart start, NaturalAltgardObservation state,
 		string frontier, NaturalAbyssLedger ledger, Func<int, int> staffMagicBoost, Func<int, int> physicalDefence, long gameMillis)
 	{
@@ -236,11 +241,13 @@ public static class NaturalAbyssEntryLeg
 		NaturalJourneyItem[] discards = [.. ledger.Discarded];
 		// The frontiers in the leg's order; each one keeps what the ones before it established.
 		string[] frontiers = [NaturalAbyssEntryDecisionEngine.CoinArmor21Phase, NaturalAbyssEntryDecisionEngine.CapitalPhase,
-			NaturalAbyssEntryDecisionEngine.ArenaPhase, NaturalAbyssEntryDecisionEngine.ReturnPhase, NaturalAbyssEntryDecisionEngine.RingCoursePhase];
+			NaturalAbyssEntryDecisionEngine.ArenaPhase, NaturalAbyssEntryDecisionEngine.ReturnPhase, NaturalAbyssEntryDecisionEngine.RingCoursePhase,
+			NaturalAbyssEntryDecisionEngine.EndpointPhase];
 		int stage = Array.IndexOf(frontiers, frontier);
 		if (stage < 0) throw new InvalidDataException($"The frontier '{frontier}' has no check yet.");
-		bool returned = stage >= 4, cleared = stage >= 3, capital = stage >= 2;
-		int[] paid = returned ? [scope.CommanderQuestId, .. scope.MissionIds.TakeWhile(id => id != scope.RingCourse.QuestId)]
+		bool flown = stage >= 5, returned = stage >= 4, cleared = stage >= 3, capital = stage >= 2;
+		int[] paid = flown ? [scope.CommanderQuestId, .. scope.MissionIds]
+			: returned ? [scope.CommanderQuestId, .. scope.MissionIds.TakeWhile(id => id != scope.RingCourse.QuestId)]
 			: capital ? [scope.CommanderQuestId, .. scope.MissionIds.TakeWhile(id => id != scope.Arena.QuestId)] : [scope.CommanderQuestId];
 		int map = capital && !returned ? Aion.Bots.Scenarios.NaturalAbyssEntry.Pandaemonium : Aion.Bots.Scenarios.NaturalAbyssEntry.Morheim;
 		(long experienceGained, long fares, long bindPaid, IReadOnlyList<NaturalAbyssPayment> payments) =
@@ -278,7 +285,7 @@ public static class NaturalAbyssEntryLeg
 			// The return: Q2947's staff taken and worn, the manastone discarded once, Q2042 waiting for Yornduf.
 			NaturalAltgardRewardChoice staffChoice = leg.RewardChoiceList.Single(choice => choice.QuestId == scope.Arena.QuestId);
 			int waiting = leg.Steps.Single(step => step.Key == scope.RingCourse.StartStep).Var ?? throw new InvalidDataException("The ring course's start step has no var.");
-			Require(state.Quests.GetValueOrDefault(scope.RingCourse.QuestId) is { Status: 3 } course && (course.StepAndFlags & 0x3F) == waiting,
+			Require(flown || state.Quests.GetValueOrDefault(scope.RingCourse.QuestId) is { Status: 3 } course && (course.StepAndFlags & 0x3F) == waiting,
 				$"Q{scope.RingCourse.QuestId} is not waiting for Yornduf at var {waiting}");
 			Require(inventory.Any(item => item.ItemId == staffChoice.ItemId && item.EquipmentSlot != NotWorn && (item.EquipmentSlot & 1) != 0),
 				$"Q{scope.Arena.QuestId}'s staff {staffChoice.ItemId} is not worn");
@@ -287,6 +294,23 @@ public static class NaturalAbyssEntryLeg
 		}
 		else
 			Require(discards.Length == 0, "an item was discarded before Q2947's reward");
+		NaturalAbyssAttempt[] flights = ledger.Attempts.Where(attempt => attempt.Kind == NaturalAbyssAttempts.RingCourse).ToArray();
+		NaturalAbyssSupply scrollSupply = scope.Supplies.Single(supply => supply.Family == "flight-speed");
+		Require(ledger.ScrollsSupplied <= scrollSupply.MaxCount && ledger.ScrollsUsed <= 1, $"{ledger.ScrollsSupplied} flight-speed scrolls were supplied and {ledger.ScrollsUsed} used");
+		if (flown)
+		{
+			// The ring course: one try in order per attempt, the last one all six rings; no more than the allowed tries. No
+			// quest of the leg is left in the journal. Q2042 pays ten scrolls of its own; the supplied one was used.
+			Require(flights.Length is >= 1 && flights.Length <= scope.RingCourse.MaxAttempts &&
+				flights.Select(attempt => attempt.Number).SequenceEqual(Enumerable.Range(1, flights.Length)), $"{flights.Length} ring-course tries are recorded");
+			Require(flights[^1] is { Outcome: NaturalAbyssAttempts.Done } won && won.Progress == scope.RingCourse.Rings.Length &&
+				flights[..^1].All(attempt => attempt.Outcome != NaturalAbyssAttempts.Done), "the last ring-course try is not the one flight through all six rings");
+			Require(flights.All(attempt => attempt.EndedMillis - attempt.StartedMillis <= (scope.RingCourse.Seconds + 60) * 1000L), "a ring-course try outlasted its timer");
+			Require(leg.Order.All(id => state.Quests.GetValueOrDefault(id) is not { Status: 3 or 4 }), "a quest of the leg is still in the journal");
+			Require(ledger.ScrollsUsed == 1, "the flight-speed scroll was not used at the course's start");
+		}
+		else
+			Require(flights.Length == 0 && ledger.ScrollsSupplied == 0 && ledger.ScrollsUsed == 0, "a ring-course try or a scroll is recorded before Yornduf's talk");
 		if (cleared) { }
 		else if (capital)
 		{
@@ -337,7 +361,8 @@ public static class NaturalAbyssEntryLeg
 			state.Quests.Values.Where(quest => quest.Status is 3 or 4).Select(quest => quest.QuestId).Order().ToArray(),
 			state.Quests.Values.Where(quest => quest.Status == NaturalAltgardDecisionEngine.Locked).Select(quest => quest.QuestId).Order().ToArray(),
 			ledger.InventoryChecks + ledger.OtherInventoryChecks, gameMillis, coins, ledger.CoinsSupplied, [.. ledger.CoinManifests],
-			[.. ledger.CoinPurchases], [.. ledger.Opened], [.. ledger.Attempts], ledger.ArenaExperience, ledger.Deaths, discards);
+			[.. ledger.CoinPurchases], [.. ledger.Opened], [.. ledger.Attempts], ledger.ArenaExperience, ledger.Deaths, discards,
+			ledger.ScrollsSupplied, ledger.ScrollsUsed);
 	}
 
 	/// <summary>The three fares and the bind at their shipped base prices; the price modifier is added on top (AX-01).</summary>

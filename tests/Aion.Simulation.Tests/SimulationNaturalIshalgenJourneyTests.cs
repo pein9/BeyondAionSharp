@@ -88,7 +88,9 @@ public sealed partial class SimulationFastScenarioTests
 			CapitalStage: Environment.GetEnvironmentVariable("PC_CAPITAL"),
 			LaterCapital: Environment.GetEnvironmentVariable("RC_CAPITAL") == "1",
 			// AX-08: AX_ARENA_FIRST_TRY=timeout or death loses Garm's first arena try by ordinary play, to prove the failure path.
-			AbyssArenaFirstTry: Environment.GetEnvironmentVariable("AX_ARENA_FIRST_TRY") is { Length: > 0 } lose ? lose : null)).RunAsync(token);
+			AbyssArenaFirstTry: Environment.GetEnvironmentVariable("AX_ARENA_FIRST_TRY") is { Length: > 0 } lose ? lose : null,
+			// AX-10: AX_RING_FIRST_TRY=timeout stays on the ground for Yornduf's first 70 s, to prove the failure path.
+			AbyssRingFirstTry: Environment.GetEnvironmentVariable("AX_RING_FIRST_TRY") is { Length: > 0 } grounded ? grounded : null)).RunAsync(token);
 
 		async Task SupplyHelpItemAsync(int itemId, long count, CancellationToken supplyToken)
 		{

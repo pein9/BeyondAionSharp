@@ -6,8 +6,10 @@ namespace Aion.Bots.Scenarios;
 /// <param name="Phase">Which part of the operator's order the action belongs to.</param>
 /// <param name="Action"><c>travel</c> (the approved teleport to <paramref name="MapId"/>), <c>bind</c>, <c>talk</c> (the contract step
 /// <paramref name="StepKey"/>), <c>coin-armor</c> (buy the tier's better pieces), <c>inventory-check</c>, <c>arena-fight</c> (the
-/// next kill of Garm's test), <c>arena-leave</c> (out through the arena's exit), <c>revive</c>, <c>refresh-observation</c>,
-/// <c>frontier</c> (the next phase is not played yet: the segment ends here) or <c>blocked</c>.</param>
+/// next kill of Garm's test), <c>arena-leave</c> (out through the arena's exit), <c>ring-course-start</c> (Yornduf's talk
+/// <paramref name="StepKey"/>, which starts the clock), <c>ring-course-fly</c> (the rings still to pass, then the landing),
+/// <c>revive</c>, <c>refresh-observation</c>, <c>frontier</c> (the next phase is not played yet: the segment ends here) or
+/// <c>blocked</c>.</param>
 public sealed record NaturalAbyssEntryDecision(int Sequence, string Phase, string Action, string? StepKey, int? QuestId, int? MapId, string Reason);
 
 /// <summary>
@@ -19,7 +21,10 @@ public sealed record NaturalAbyssEntryDecision(int Sequence, string Phase, strin
 /// alone, so a resumed run repeats no dialog. AX-08: then Garm's arena. Garm's talk sends the Cleric in (D35); inside, the
 /// rule asks for one kill at a time until ten are counted; a failed attempt (var 6: the timer, or a death, D36) goes back to
 /// Garm for the next of three tries. AX-09: then back to Morheim for Q2947's reward at Aegir and Q2042's first talk with
-/// him. Each later phase is added by its own AX item; until then the rule names it as the frontier, and the segment ends there.
+/// him. AX-10: then Yornduf's ring course. His talk starts the 70 s; the rule asks for the flight while rings are left, for
+/// the report once the sixth is passed, and for Yornduf again after a failed try (var 9), up to three tries; after the third
+/// it stops and asks for the operator's recorded flight. Each later phase is added by its own AX item; until then the rule
+/// names it as the frontier, and the segment ends there.
 /// </summary>
 public static class NaturalAbyssEntryDecisionEngine
 {
@@ -80,10 +85,10 @@ public static class NaturalAbyssEntryDecisionEngine
 			if (mission == scope.Arena.QuestId && state.Quests.TryGetValue(mission, out BotQuestState? trial) &&
 				(trial.Status == Reward || trial.Status == Start && (trial.StepAndFlags & 0x3F) != 0))
 				return ArenaStep(trial);
-			// 5. The ring course (AX-10): everything of Q2042 after Aegir's var 0, which still belongs to the return.
+			// 5. The ring course: everything of Q2042 after Aegir's var 0, which still belongs to the return.
 			if (mission == scope.RingCourse.QuestId)
-				return state.Quests.TryGetValue(mission, out BotQuestState? course) && (course.Status == Reward || course.Status == Start && (course.StepAndFlags & 0x3F) != 0)
-					? Next(RingCoursePhase, "frontier", $"Q{mission} is taken at Aegir; Yornduf's ring course is next (AX-10).", quest: mission)
+				return state.Quests.TryGetValue(mission, out BotQuestState? flown) && (flown.Status == Reward || flown.Status == Start && (flown.StepAndFlags & 0x3F) != 0)
+					? RingStep(flown)
 					: QuestStep(ReturnPhase, mission, "starts when Q2947 is turned in");
 			return QuestStep(CapitalPhase, mission, "starts when the mission before it is turned in");
 		}
@@ -116,6 +121,28 @@ public static class NaturalAbyssEntryDecisionEngine
 			return garm == null
 				? Next(ArenaPhase, "blocked", $"Q{questId} is at var {var}; no arena step covers it.", quest: questId)
 				: StepOrTravel(ArenaPhase, questId, garm, attempt.Reason);
+		}
+
+		NaturalAbyssEntryDecision RingStep(BotQuestState flown)
+		{
+			NaturalAbyssRingCourse course = scope.RingCourse;
+			int questId = course.QuestId, var = flown.StepAndFlags & 0x3F;
+			if (flown.Status == Reward)
+				return QuestStep(RingCoursePhase, questId, "is at its reward");
+			if (var >= course.StartVar && var < course.DoneVar)
+				return Next(RingCoursePhase, "ring-course-fly", $"Ring {var - course.StartVar + 1} of {course.Rings.Length} is next.", quest: questId);
+			if (var == course.DoneVar)
+				return StepOrTravel(RingCoursePhase, questId, leg.Steps.Single(step => step.Key == course.DoneStep), "all six rings are passed: report to Yornduf");
+			// Waiting for Yornduf (var 1), or a failed try (var 9: the timer, a death or a world entry).
+			NaturalAbyssAttemptDecision attempt = NaturalAbyssAttempts.NextRingCourse(course, attempts ?? []);
+			if (attempt.Action != "start")
+				return Next(RingCoursePhase, "blocked", attempt.Reason, quest: questId);
+			NaturalAltgardStep? yornduf = leg.StepsFor(questId).FirstOrDefault(step => step.ExpectedStatus == "START" && step.Var == var &&
+				(step.Key == course.StartStep || step.Key == course.RestartStep));
+			if (yornduf == null)
+				return Next(RingCoursePhase, "blocked", $"Q{questId} is at var {var}; no ring-course step covers it.", quest: questId);
+			NaturalAbyssEntryDecision reach = StepOrTravel(RingCoursePhase, questId, yornduf, attempt.Reason);
+			return reach.Action == "talk" ? reach with { Action = "ring-course-start" } : reach;
 		}
 
 		NaturalAbyssEntryDecision StepOrTravel(string phase, int questId, NaturalAltgardStep step, string why)
