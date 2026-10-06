@@ -266,6 +266,25 @@ public sealed class NaturalAltgardHaramelContractTests
 		finally { File.Delete(path);File.Delete(path+".tmp"); }
 	}
 
+	[Theory]
+	[InlineData(0, 18 * 3600000, 20 * 3600000)]
+	[InlineData(18 * 3600000, 18 * 3600000, 20 * 3600000)]
+	public void ColdProgressClockPreservesTheOriginalContinuousOrContainedOrigin(long origin, long haramelStart, long observed)
+	{
+		const long epoch = 1789549140000;
+		NaturalHaramelProgress saved = Progress() with
+		{
+			StartedAtMillis = epoch + haramelStart, LastObservedAtMillis = epoch + observed,
+			StallBudget = new("same-fingerprint", TimeSpan.FromMilliseconds(observed - origin - 33000), TimeSpan.FromMilliseconds(observed - origin)),
+		};
+		long restoredNow = observed + 20000;
+		Assert.Equal(origin, saved.ProgressClockOriginMillis(epoch));
+		TimeSpan elapsed = TimeSpan.FromMilliseconds(restoredNow - saved.ProgressClockOriginMillis(epoch));
+		Assert.Equal(saved.StallBudget.LastObserved + TimeSpan.FromSeconds(20), elapsed);
+		Assert.Equal(TimeSpan.FromSeconds(53), elapsed - saved.StallBudget.LastProgress);
+		Assert.Equal(haramelStart, (saved with { StallBudget = null }).ProgressClockOriginMillis(epoch));
+	}
+
 	[Fact]
 	public void RevisedIncomingEarringIsProtectedAndCannotDisappearOrChangeObjectsAcrossColdResume()
 	{

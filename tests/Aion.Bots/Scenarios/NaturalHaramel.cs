@@ -69,6 +69,11 @@ public sealed record NaturalHaramelProgress(int CharacterId, long StartedAtMilli
 	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 	public int RecoveryVisits => Visits.Length - (Visits.Any(v => !v.PostBossQuests) ? 1 : 0) - (Visits.Any(v => v.PostBossQuests) ? 1 : 0);
 	public NaturalHaramelVisit? CurrentVisit => Visits.LastOrDefault();
+	/// <summary>A continuous run's watchdog can start before Haramel. Recover its original
+	/// elapsed-time origin from the saved absolute observation and relative budget, without resetting either.</summary>
+	public long ProgressClockOriginMillis(long epochMillis) => StallBudget is { } saved
+		? checked(LastObservedAtMillis - epochMillis - saved.LastObserved.Ticks / TimeSpan.TicksPerMillisecond)
+		: checked(StartedAtMillis - epochMillis);
 
 	public static NaturalHaramelProgress Begin(int characterId, long now, BotWorldModel world, NaturalHaramel rules)
 	{

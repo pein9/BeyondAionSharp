@@ -5094,8 +5094,9 @@ monitor enabled and announce its URL when a journey starts.
     The approved three purchases cost four Iron Coins; endpoint balances are 19 Iron,
     seven Bronze and 748,485 Kinah. Staff 101501357/156530 remains equipped; the stigma
     bundle is sealed and tutorial stone/11504 absent. Ninety-one ordinary skill entries
-    and thirteen equipped objects are recorded; skill entries include professions,
-    passives and actions. Gross observed Kinah received/spent is 1,054,733/307,248;
+    and thirteen equipped objects are recorded in the legacy ushort checkpoint;
+    full native details also retain belt slot 65536. Skill entries include learned
+    rank IDs, passives and professions. Gross observed Kinah received/spent is 1,054,733/307,248;
     service receipts show eleven teleports, nine binds and twenty-one hub flights.
     Stage, cost, consumable-provenance/attempt/removal, death, book-material and outcome
     ledgers are in the accepted capture folder. Exact 3/2/1 book consumption leaves
@@ -5109,12 +5110,43 @@ monitor enabled and announce its URL when a journey starts.
     same equipped object through CG/l12. The complete audit passes (`audit-confirmed.log`)
     without changing or rerunning the accepted gameplay. All seven final proof
     pre-commit checks pass (`run/rc11-proof-checks/`); RC-12 is the next item.
-- [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
+- [x] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
   actual level/XP headroom, unresolved blockers, class/gear/regular-skill/stigma state,
   consumable ledger and costs against historical AS-02. Complete the final required
   checks. Stop when this item is done or no item remains unblocked.
+  - 2026-10-06: preserve immutable `altgard-rc-complete-s1` from accepted runtime
+    242166ebc; public Verify first loads 25/176 alive but rejects a progress-clock
+    rollback (`rc12-endpoint-verify`, 23.7337 s). A continuous watchdog starts before
+    Haramel, while the old resume calculation uses Haramel's later start. Recover
+    the original elapsed-time origin from its saved absolute observation and relative
+    budget; keep fingerprint/last-progress time and continuous/contained semantics.
+    Forty-four focused clock/Haramel checks pass (2.2853 s). Public Verify retry
+    `rc12-endpoint-verify-a2` passes ordinary endpoint relog in 23.9840 s; initial
+    restored inventory exactly matches the immutable capture. Native lines 77–78
+    explain one approved AfterRelog Awakening use (164000133/143950, 33 -> 32) in
+    the disposable clone. All other quantities and every object/equipment identity,
+    class, active Q2945 START/0, 176 completed counts, bind, Haramel visits/entry
+    budget/soup payment and skill IDs/ranks/types/profession flags match. Eighty-eight
+    ordinary skill timestamps advance as Java specifies. The absolute clock advances
+    30,001 ms, with the saved progress fingerprint and last-progress time unchanged;
+    local Verify time is 10,001 ms after the 20,000 ms restored epoch offset.
+    Four snapshot hashes and all 27 historical dump hashes match. Both Verify GUIDs
+    are observed present during their owned runs and absent afterward; the failed
+    clone, comparison drafts and receipts remain (`run/rc12/`).
+    [NTC readiness](natural-ntc-readiness.md) records level 25, 8,497,039 XP and
+    19,088,804 XP to 32, all actual native gear (including the full belt slot), 88
+    combat/passive rank entries plus three professions, one unlocked normal stigma
+    slot/zero socketed skills and the sealed bundle. It compares AS-02 costs, help
+    supplies/use attempts/removals, thirteen versus eleven deaths, and the expanded
+    journal without claiming a causal death reduction. Fixed Abyss rewards of 643,502
+    XP project level 25 and leave 18,445,302 XP to 32. Recommend the bounded full
+    Abyss chain, fresh natural Templar/Sorcerer profiles, then coordinated NTC around
+    levels 25-27. Abyss/classes/party/NTC/crafting are future contracts. Final Fast
+    passes 103 tests/five guarded skips/all eleven scenarios in 8.4348 minutes
+    (`run/rc12-fast/rc12-resume-clock/`), and all seven final pre-commit checks pass
+    (`run/rc12/final-checks/`). RC-12 is complete; stop this loop at the preserved endpoint.
 
 **Inherited limits.** Use hub flight transporters. Never push, branch, use worktrees,
 touch the operator's aion stack or supply natural progress with GM. Approved help
@@ -5495,6 +5527,13 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-06 RC-12: public restored endpoint verification and hash/identity
+  comparison pass after preserving the full journey's original progress-clock origin.
+  Retain the failed clone/comparison drafts; initial inventory is exact and one native
+  Awakening use explains the later clone-only decrement. Both owned clones are dropped,
+  all historical hashes match and the measured NTC readiness report is written.
+  Final Fast passes 103/five/all eleven and seven final checks pass (`run/rc12/`,
+  `run/rc12-fast/rc12-resume-clock/`). RC-00..RC-12 are complete; stop at this endpoint.
 - 2026-10-06 RC-11: fresh-create attempt twenty-five on 242166ebc passes the complete
   revised route and endpoint relog at Cleric 25/176, thirteen recorded deaths,
   73,044,001 game ms, both Haramel clears, retained staff and exact coin receipts.

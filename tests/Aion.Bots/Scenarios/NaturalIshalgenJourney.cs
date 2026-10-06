@@ -581,7 +581,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				templatePlans.Values.Concat(altgardPlans.Values).SelectMany(p => p.Steps).Where(s => s.ItemId > 0).Select(s => s.ItemId).ToHashSet(),
 				haramelProgress?.StallBudget);
 			long journeyStart = haramelProgress is { } originalHaramel
-				? originalHaramel.StartedAtMillis - runtime.Epoch.ToUnixTimeMilliseconds() : runtime.NowMillis;
+				? originalHaramel.ProgressClockOriginMillis(runtime.Epoch.ToUnixTimeMilliseconds()) : runtime.NowMillis;
 			void EnforceCourseGameClock()
 			{
 				if (options.Course != null && runtime.NowMillis - journeyStart >= TimeSpan.FromHours(1).TotalMilliseconds)
