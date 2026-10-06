@@ -11,6 +11,27 @@ namespace Aion.Bots.Scenarios;
 public sealed class NaturalCoinGearSteps(INaturalJourneySession session, StaticData data,
 	NaturalCoinGear gear, NaturalIshalgenInventoryPolicy inventory)
 {
+	/// <summary>Wear the already earned, approved staff before CG freezes its loadout. No purchase or grant.</summary>
+	public static async Task EnsureRetainedStaffEquippedAsync(INaturalJourneySession session,
+		NaturalCoinGear gear, CancellationToken token)
+	{
+		BotWorldModel world = session.Api.World;
+		BotInventoryItem[] owned = world.Inventory.Values.Where(i => i.ItemId == gear.StaffItemId).ToArray();
+		if (world.IsDead || owned.Length != 1 || owned[0].Count != 1)
+			throw new InvalidDataException("Coin preparation needs the already earned, unique approved staff.");
+		BotInventoryItem staff = owned[0];
+		if (staff.EquipmentSlot == 3) return;
+		long kinah = world.Kinah, coins = world.Inventory.Values.Where(i => i.ItemId == gear.CoinItemId).Sum(i => i.Count);
+		await session.SendPacketAsync(session.Api.Equip(0, NaturalGearPolicy.MainHand, staff.ObjectId), token);
+		await session.SynchronizeAsync(token);
+		if (!world.Inventory.TryGetValue(staff.ObjectId, out BotInventoryItem? equipped) ||
+			equipped.ItemId != gear.StaffItemId || equipped.Count != 1 || equipped.EquipmentSlot != 3 ||
+			world.Kinah != kinah || world.Inventory.Values.Where(i => i.ItemId == gear.CoinItemId).Sum(i => i.Count) != coins)
+			throw new InvalidDataException("The ordinary approved staff equip or unchanged currency was not observed.");
+		session.TraceDiagnostic("coin-preparation-staff-equipped", new Dictionary<string, object?>
+			{ ["itemId"] = gear.StaffItemId, ["objectId"] = staff.ObjectId, ["slot"] = 3, ["kinah"] = kinah, ["coins"] = coins });
+	}
+
 	private NaturalAltgardObservation Observe(NaturalCoinGearProgress progress) =>
 		NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition,
 			freeCubeSlots: inventory.Decide(session.Api.World, coinGear: gear).FreeSlots, coinGearProgress: progress);

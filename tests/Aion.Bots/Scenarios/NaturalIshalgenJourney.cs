@@ -1660,6 +1660,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				}
 				await TopUpHelpItemsAsync("run-start");
 				await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token);
+				// The revised roomy cube need not trigger generic inventory maintenance after Q24016.
+				// Wear its already earned staff once before CG's explicit loadout freeze and receipts.
+				if (leg.CoinGear is { } retainedGear)
+					await NaturalCoinGearSteps.EnsureRetainedStaffEquippedAsync(session, retainedGear, token);
 				string? previous = null;
 				int repeats = 0;
 				// AB-08: a decision repeated because the Cleric died on it is a retry, not a stall (OD-12): up to six of them.

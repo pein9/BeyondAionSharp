@@ -193,8 +193,9 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			// 255 is RC-11's native campaign route replan after three ordinary ground displacements.
 			// 228 is RC-11's native zone entry under the recorded blocked approach layout.
 			// 229 is RC-11's recorded cleared campaign-area / remembered-danger probe.
+			// 230 is RC-11's ordinary owned staff equip before the frozen coin loadout.
 			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100)).Concat(Enumerable.Range(201, 27)).Concat(Enumerable.Range(240, 5))
-				.Concat(new[] { 228, 229, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 })
+				.Concat(new[] { 228, 229, 230, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 })
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();

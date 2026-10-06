@@ -4974,6 +4974,41 @@ monitor enabled and announce its URL when a journey starts.
     (`run/rc11-fast/rc11-campaign-zone-memory/`). Seven final pre-commit checks pass
     (`run/rc11-zone-exhaustion/*-final.log`). Full acceptance remains open: commit
     and acknowledge the rebuild before the next fresh continuous capture.
+  - 2026-10-06, twenty-second retained attempt: `rc11-full-create-s1-a22` on fb3c14f23
+    proves the Q24015 repair in the full journey: at 17:55:08.754 the required-zone
+    fallback selects 32 checked points with all 68 current live hazards retained and
+    eight remembered deaths treated as preferences; native START/1 advances to /2.
+    Leg 10 and Destiny complete, including Q2938, then Q2293 completes once and pays
+    its real five Iron Coins (18 -> 23). The receipt stops at level 24/165 alive
+    because the required staff is owned but not equipped. Thirteen deaths (Leg 4 two,
+    Leg 6 one, Leg 8 one, Leg 10 nine), the full trace/failure audit and owned-schema
+    drop remain retained; test duration is 46.8458 minutes. The level-16 staff
+    101501355/141610 remains in slot 3 while earned 101501357/156530 stays in the cube
+    through l10/l11; the trace contains no attempt to equip it.
+    Java Equipment, MonsterHunt, Q2293's five-coin definition and both item templates
+    were read. The earned level-21 staff has 370 magic boost and 88-132 damage versus
+    the older staff's 320 and 74-112. Coin preparation now equips that unique owned
+    approved staff through CM_EQUIPITEM before freezing the loadout. It verifies the
+    same object in both hands and unchanged coins/Kinah, then keeps the existing
+    one-repeat, three-armour/four-coin receipts. No weapon, book or extra gear purchase.
+    Free probe 230 mirrors the owned-but-unworn failure, proves ordinary equip, the
+    native 18 -> 23/0 -> 1 reward and the same equipped object after relog in 33.1451 s
+    (`run/rc11-coin-staff/native-probe.log`); two corrected probe compile drafts remain.
+    Public-restore CG from historical altgard-l11 passes in 49.7893 s at level 24/145,
+    zero deaths, 965,226 game ms, all three actual purchases/equips, 19 Iron Coins,
+    staff 137763 retained, ordinary endpoint relog and owned schema dropped
+    (`cg-smoke/`, `smoke-audit.json`). Its historical staff is already equipped.
+    First Fast correctly fails with 102 passes/one failed Deyla probe/five skips,
+    despite all eleven scenario gates passing. That probe's fixed parking spot misses
+    its cached-start condition in the shared patrol phase; twenty native movement
+    packets prove Deyla did move. The probe now parks by checked walking at an
+    observed long-leg start; the actual too-far refusal, ordinary acceptance/relog and
+    natural dialogue bounds stay intact. Focused Deyla passes in 29.3068 s; corrected
+    Fast exercises the new parking at 1213.1726/1498.3553 and passes 103 tests/five
+    guarded skips/all eleven scenarios in 8.3656 minutes
+    (`run/rc11-fast/rc11-coin-staff-final/`). Seven final pre-commit checks pass
+    (`run/rc11-coin-staff/*-final.log`). Full acceptance remains pending; commit and
+    acknowledge the rebuild before the next fresh continuous capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5360,6 +5395,13 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-06 RC-11 pending: attempt twenty-two enters Q24015 normally, completes
+  Leg 10/Destiny and receives Q2293's real five coins, then stops because the approved
+  earned staff still sits unworn in the cube. CG now equips that owned staff normally
+  before its loadout freeze. Native equip/reward/relog, one public CG restore,
+  corrected Fast 103/five/all eleven and seven checks pass (`run/rc11-coin-staff/`).
+  Retain thirteen full-run deaths, the original failed Fast/Deyla setup and schema
+  cleanup; commit/rebuild before fresh proof, with RC-11/12 still unchecked.
 - 2026-10-06 RC-11 pending: attempt twenty-one waits eight times and kills seven
   actual guards near Q24015, then still rejects a live-hostile-free route because
   remembered deaths are hard walls. Required-zone fallback now treats those memories

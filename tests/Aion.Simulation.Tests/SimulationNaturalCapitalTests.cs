@@ -28,7 +28,9 @@ public sealed partial class SimulationFastScenarioTests
 			await probe.SetupNearAsync(120010000, 204141);
 			var deyla = probe.Server.GetWorldMapInstance().GetNpcs(204141).First(n => !n.IsDead());
 			int npc = deyla.GetObjectId();
-			// Remain at the original observed position while the native walker passes it.
+			var geometry = BotNavigationGeometry.ForServerWorld(probe.Server.GetInstanceId(), Race.ASMODIANS);
+			// Park at a client-observed long walk's start, rather than a setup position chosen
+			// during another leg of the shared native patrol. Walking there is ordinary movement.
 			// Server position is read only to select this disposable probe's failure case.
 			bool staleStart = false;
 			for (int tick = 0; tick < 120; tick++)
@@ -36,6 +38,20 @@ public sealed partial class SimulationFastScenarioTests
 				await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
 				await session.SynchronizeAsync(token);
 				BotKnownObject seen = session.Api.World.Objects[npc];
+				if (seen.MoveTarget is BotPosition target && NaturalFlightPolicy.Distance(seen.Position, target) > 9 &&
+					NaturalFlightPolicy.Distance(session.CurrentPosition, seen.Position) > 1)
+				{
+					BotPosition start = seen.Position;
+					IReadOnlyList<BotPosition> parked = geometry.FindJourneyPath(120010000, session.CurrentPosition, start);
+					if (parked.Count > 0)
+					{
+						await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing)
+							.CreateGroundPlan(parked, session.CurrentPosition, session.Api.World.MovementSpeed!.Value), token);
+						await session.SynchronizeAsync(token);
+						Console.WriteLine($"RC-11 Deyla probe parks by checked walking at observed move start {start}.");
+						seen = session.Api.World.Objects[npc];
+					}
+				}
 				if (seen.MoveTarget != null && NaturalFlightPolicy.Distance(session.CurrentPosition, seen.Position) < 5 &&
 					NaturalFlightPolicy.Distance(session.CurrentPosition, new(deyla.GetX(), deyla.GetY(), deyla.GetZ(), 0)) > 7)
 				{
@@ -47,7 +63,6 @@ public sealed partial class SimulationFastScenarioTests
 			NaturalAltgardStep offer = NaturalLaterCapitalSteps.RobePreparation[0];
 			session.BeginStep("probe-deyla-stale-start", "native-dialog-refusal-at-cached-move-start");
 			await Assert.ThrowsAsync<NaturalDialogTooFarException>(() => NaturalAltgardQuestSteps.TalkAsync(session, offer, npc, token));
-			var geometry = BotNavigationGeometry.ForServerWorld(probe.Server.GetInstanceId(), Race.ASMODIANS);
 			int refusals = 1;
 			for (int attempt = 0; ; attempt++)
 			{
