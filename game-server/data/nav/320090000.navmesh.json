@@ -1,0 +1,41 @@
+{
+  "mapId": 320090000,
+  "mapName": "Triniel Underground Arena",
+  "bakerVersion": 4,
+  "settingsFingerprint": "5db8e45a00557337",
+  "settings": {
+    "cellSize": 0.3,
+    "cellHeight": 0.2,
+    "agentHeight": 1.6,
+    "agentRadius": 0.5,
+    "agentMaxClimb": 0.8,
+    "agentMaxSlope": 45,
+    "tileSizeCells": 128,
+    "regionMinSize": 8,
+    "regionMergeSize": 20,
+    "edgeMaxLength": 12,
+    "edgeMaxError": 1.3,
+    "vertsPerPoly": 6,
+    "detailSampleDistance": 6,
+    "detailSampleMaxError": 1,
+    "flagMergeVoxels": 1,
+    "swimDepth": 1.5,
+    "roadHalfWidth": 3
+  },
+  "sourceFingerprint": "1cde67850012ca6f",
+  "waterLevel": 16,
+  "tilesX": 14,
+  "tilesY": 14,
+  "tilesWithPolygons": 10,
+  "polygons": 159,
+  "polygonsByArea": {
+    "ground": 146,
+    "door": 13
+  },
+  "doors": 3,
+  "roads": 0,
+  "maskSectors": 28,
+  "modelTriangles": 2523,
+  "terrainTriangles": 0,
+  "navMeshSha256": "b843097441f14fbe0aa8bafb6e34e4d2ca4e3760df657479d9bf805c781742a5"
+}

@@ -3,7 +3,8 @@
 Status (2026-10-06): **approved. AX-00 (this plan) is done. The operator answered
 AX-Q1..AX-Q6 and then revised the order the same day; see
 [Operator decisions](#operator-decisions).** AX-01 is done: the server side is compared and
-measured. AX-02 is next. No bot code was changed and no journey was run yet.
+measured. AX-02 is done: Morheim and the arena have checked-in navigation data. AX-03 and
+AX-04 are next. No bot code was changed and no journey was run yet.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -272,8 +273,8 @@ is level 26, for each slot where it beats what is then worn.
    that never reports its end still has the first timer.
 6. **Var 5 is fragile.** Between Garm's SETPRO3 and the arena entrance the bot must not
    relog or teleport. The entrance is about 37 m from Garm and 12 m lower.
-7. **No navigation data.** `game-server/data/nav/` has no mesh for Morheim (220020000) or the
-   arena (320090000).
+7. ~~**No navigation data.**~~ Settled by AX-02: Morheim (220020000) and the arena
+   (320090000) are baked and checked in.
 8. **Other players' timers.** In Java, Q1044's and Q2042's enter-world hooks end any running
    quest timer. Entering the arena is a world entry, so in Java they could end Q2947's own
    240 s timer. D33 guards both hooks in C#. AX-01 confirmed it: the arena timer is still
@@ -357,9 +358,22 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   - Fast passes 107 tests with five guarded skips and all eleven scenarios in 8.59 minutes,
     the four probes among them (`run/ax01-fast/`). All seven pre-commit checks pass
     (`run/ax01/checks/`).
-- [ ] **AX-02 - Navigation data.** Depends AX-00. Bake 220020000 and 320090000 with
+- [x] **AX-02 - Navigation data.** Depends AX-00. Bake 220020000 and 320090000 with
   `tools/Aion.NavBake`, and the Morheim travel graph for Asmodians. `check --maps
   220020000,320090000 --rebake` passes. Generated data is not hand-edited.
+  - 2026-10-06: `bake --maps 220020000,320090000` gives Morheim 194,651 polygons in 4,421
+    tiles (12.4 MiB) and the arena 159 polygons in 10 tiles (6 KiB, 13 of them door area).
+    `graph --maps 220020000 --race ASMODIANS` gives 1,302 nodes, 4,772 links and 11 exits,
+    with 1,137 nodes on the main network. The arena has no graph, as Bregirun has none.
+  - `check --maps 220020000,320090000 --rebake` and `check --maps baked` (eleven maps) pass
+    (`run/ax02/`).
+  - Routes checked with `points`: in the arena, from the entry to all three spirit groups
+    and the exit, one island. In Morheim, from the teleport landing to Yornduf, Orhe, the
+    obelisk, Aegir, Vebna and Vallack. The obelisk's own spot is refused, as its collision
+    should be; the interaction route reaches it.
+  - No roads were extracted for Morheim, as for Altgard. No bot or server code changed, so
+    Fast was not rerun; the four AX-01 probes, which stand on these maps, pass again on the
+    checked-in meshes, and all seven pre-commit checks pass (`run/ax02/checks/`).
 - [ ] **AX-03 - Segment contract.** Depends AX-01. Add a contained segment that restores
   `altgard-rc-complete-s1` through `sim-snapshot.ps1` and `Invoke-NaturalJourney`. Freeze
   the five quests, the protected items and the reward items. Add arena and ring-course
@@ -567,3 +581,6 @@ The original questions, with the recommendations made at the time:
   Four level-25 probes measured flight (60 points, 11.97 m/s, 16 m/s for 6 s per ring), the
   arena (205 and 265 HP spirits, 738 XP a kill, the instance reused for 600 s), the Morheim
   arrival (fares 2,401 and 2,118, bind 2,690) and every quest payment.
+- 2026-10-06 — AX-02: Morheim (194,651 polygons, 1,302-node Asmodian graph) and the arena
+  (159 polygons) are baked and checked in. Both rebake checks pass, and every route the leg
+  needs in the fortress and the arena is found.
