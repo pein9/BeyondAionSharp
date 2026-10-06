@@ -606,15 +606,16 @@ public sealed class NaturalAbyssEntryContractTests
 			Attempts = [.. tries, .. flights], ScrollsSupplied = 1, ScrollsUsed = 1,
 		};
 		NaturalAbyssEntryProgress VerifyEnd(NaturalAltgardObservation state, NaturalAbyssLedger counted) =>
-			NaturalAbyssEntryLeg.VerifyProgress(Leg, start, state, "endpoint", counted, HomeBoost, DefenceOf, 1_500_000);
+			NaturalAbyssEntryLeg.VerifyProgress(Leg, start, state, "coin-armor-26", counted, HomeBoost, DefenceOf, 1_500_000);
 		NaturalAbyssEntryProgress atEnd = VerifyEnd(ended, flown);
-		Assert.Equal(("endpoint", 26, 18L, 1L, 1L), (atEnd.Frontier, atEnd.Level, atEnd.BronzeCoins, atEnd.ScrollsSupplied, atEnd.ScrollsUsed));
+		Assert.Equal(("coin-armor-26", 26, 18L, 1L, 1L), (atEnd.Frontier, atEnd.Level, atEnd.BronzeCoins, atEnd.ScrollsSupplied, atEnd.ScrollsUsed));
 		Assert.Equal([24020, 2945, 2946, 2947, 2042], atEnd.CompletedLegQuestIds);
 		Assert.Empty(atEnd.StartedQuestIds);
 		Assert.Equal(["timeout", "done"], atEnd.Attempts!.Where(attempt => attempt.Kind == "ring-course").Select(attempt => attempt.Outcome));
 		Action[] refusedEnd =
 		[
 			() => VerifyEnd(home, flown),
+			() => VerifyEnd(ended with { Level = 25 }, flown),
 			() => VerifyEnd(ended, flown with { Attempts = [.. tries] }),
 			() => VerifyEnd(ended, flown with { Attempts = [.. tries, flights[0]] }),
 			() => VerifyEnd(ended, flown with { Attempts = [.. tries, flights[1] with { Number = 1, Progress = 5 }] }),
@@ -689,7 +690,9 @@ public sealed class NaturalAbyssEntryContractTests
 			var held = new Dictionary<int, BotQuestState>(journal);
 			if (!complete) held[2042] = new(2042, status, var, 0, null);
 			int[] finished = complete ? [2945, 2946, 2947, 2042] : [2945, 2946, 2947];
-			return NaturalAbyssEntryDecisionEngine.Decide(Leg, done with { MapId = map, Quests = held, CompletedQuestIds = done.CompletedQuestIds.Concat(finished).ToHashSet() },
+			// Q2042's reward is what takes the Cleric to level 26.
+			return NaturalAbyssEntryDecisionEngine.Decide(Leg, done with { MapId = map, Level = complete ? 26 : 25, Quests = held,
+				CompletedQuestIds = done.CompletedQuestIds.Concat(finished).ToHashSet() },
 				1, DefenceOf, tries);
 		}
 		static (string, string, string?) Shape(NaturalAbyssEntryDecision next) => (next.Phase, next.Action, next.StepKey);
@@ -706,7 +709,15 @@ public sealed class NaturalAbyssEntryContractTests
 		// The sixth ring passed: Yornduf, then Aegir's reward, then the leg's missions are done.
 		Assert.Equal(("ring-course", "talk", "q2042-yornduf-done"), Shape(Decide(3, 8)));
 		Assert.Equal(("ring-course", "talk", "q2042-reward"), Shape(Decide(4, 8)));
-		Assert.Equal(("endpoint", "frontier", null), Shape(Decide(0, 0, complete: true)));
+		// AX-11: the missions done at level 26 lead to the coin armor; below 26 the leg stops as a finding and never hunts.
+		Assert.Equal(("coin-armor-26", "frontier", null), Shape(Decide(0, 0, complete: true)));
+		NaturalAbyssEntryDecision low = NaturalAbyssEntryDecisionEngine.Decide(Leg, done with
+		{
+			Level = 25, Quests = journal, CompletedQuestIds = done.CompletedQuestIds.Concat([2945, 2946, 2947, 2042]).ToHashSet(),
+		}, 1, DefenceOf);
+		Assert.Equal(("level-by-quests", "blocked"), (low.Phase, low.Action));
+		Assert.Contains("fortress quests", low.Reason);
+		Assert.Contains("No hunting", low.Reason);
 
 		// A failed try (var 9: the timer, a death or a world entry) is Yornduf's second talk, three tries in all (AX-Q3).
 		Assert.Equal(("ring-course", "ring-course-start", "q2042-yornduf-again"), Shape(Decide(3, 9, tries: Failed(1))));

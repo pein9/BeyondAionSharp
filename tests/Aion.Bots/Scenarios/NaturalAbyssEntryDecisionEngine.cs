@@ -23,14 +23,16 @@ public sealed record NaturalAbyssEntryDecision(int Sequence, string Phase, strin
 /// Garm for the next of three tries. AX-09: then back to Morheim for Q2947's reward at Aegir and Q2042's first talk with
 /// him. AX-10: then Yornduf's ring course. His talk starts the 70 s; the rule asks for the flight while rings are left, for
 /// the report once the sixth is passed, and for Yornduf again after a failed try (var 9), up to three tries; after the third
-/// it stops and asks for the operator's recorded flight. Each later phase is added by its own AX item; until then the rule
-/// names it as the frontier, and the segment ends there.
+/// it stops and asks for the operator's recorded flight. AX-11: then the level. There are no level goals, only questing
+/// goals (AX-Q6): the five quests pay enough for level 26, and a Cleric that is still below it (many deaths) stops the leg
+/// as a finding, to be given fortress quests; it is never sent hunting. Each later phase is added by its own AX item; until
+/// then the rule names it as the frontier, and the segment ends there.
 /// </summary>
 public static class NaturalAbyssEntryDecisionEngine
 {
 	public const string ObservePhase = "observe", RecoverPhase = "recover", MorheimPhase = "morheim-arrival", CoinArmor21Phase = "coin-armor-21",
 		CapitalPhase = "capital-missions", ArenaPhase = "arena", ReturnPhase = "morheim-return", RingCoursePhase = "ring-course",
-		EndpointPhase = "endpoint";
+		LevelPhase = "level-by-quests", CoinArmor26Phase = "coin-armor-26";
 	private const byte Start = NaturalAltgardDecisionEngine.Start, Reward = NaturalAltgardDecisionEngine.Reward;
 
 	/// <summary>Q2947's kill counter as the client sees it. Java writes <c>step | flags &lt;&lt; 24</c> (SM_QUEST_ACTION), so the
@@ -92,7 +94,13 @@ public static class NaturalAbyssEntryDecisionEngine
 					: QuestStep(ReturnPhase, mission, "starts when Q2947 is turned in");
 			return QuestStep(CapitalPhase, mission, "starts when the mission before it is turned in");
 		}
-		return Next(EndpointPhase, "frontier", "The missions are done; the level check is next (AX-11).");
+		// 6. The level, by quests alone.
+		if (state.Level < scope.Level.Minimum)
+			return Next(LevelPhase, "blocked", $"The missions are done and the Cleric is level {state.Level}, below {scope.Level.Minimum}: " +
+				"it needs a few fortress quests, which are not listed yet (AX-11). No hunting and no soul healing.");
+
+		// 7. The level-26 coin armor (AX-12).
+		return Next(CoinArmor26Phase, "frontier", $"The missions are done at level {state.Level}; the level-{scope.Level.Minimum} coin armor is next (AX-12).");
 
 		static string Pieces(NaturalAbyssCoinSlot[] slots) => string.Join(", ", slots.Select(slot => slot.CoinItemId));
 

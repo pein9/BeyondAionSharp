@@ -242,7 +242,7 @@ public static class NaturalAbyssEntryLeg
 		// The frontiers in the leg's order; each one keeps what the ones before it established.
 		string[] frontiers = [NaturalAbyssEntryDecisionEngine.CoinArmor21Phase, NaturalAbyssEntryDecisionEngine.CapitalPhase,
 			NaturalAbyssEntryDecisionEngine.ArenaPhase, NaturalAbyssEntryDecisionEngine.ReturnPhase, NaturalAbyssEntryDecisionEngine.RingCoursePhase,
-			NaturalAbyssEntryDecisionEngine.EndpointPhase];
+			NaturalAbyssEntryDecisionEngine.CoinArmor26Phase];
 		int stage = Array.IndexOf(frontiers, frontier);
 		if (stage < 0) throw new InvalidDataException($"The frontier '{frontier}' has no check yet.");
 		bool flown = stage >= 5, returned = stage >= 4, cleared = stage >= 3, capital = stage >= 2;
@@ -308,6 +308,8 @@ public static class NaturalAbyssEntryLeg
 			Require(flights.All(attempt => attempt.EndedMillis - attempt.StartedMillis <= (scope.RingCourse.Seconds + 60) * 1000L), "a ring-course try outlasted its timer");
 			Require(leg.Order.All(id => state.Quests.GetValueOrDefault(id) is not { Status: 3 or 4 }), "a quest of the leg is still in the journal");
 			Require(ledger.ScrollsUsed == 1, "the flight-speed scroll was not used at the course's start");
+			// AX-11: the level is reached by the leg's quests (AX-Q6), before any level-26 piece is bought.
+			Require(state.Level >= scope.Level.Minimum, $"the Cleric is level {state.Level}, below {scope.Level.Minimum}");
 		}
 		else
 			Require(flights.Length == 0 && ledger.ScrollsSupplied == 0 && ledger.ScrollsUsed == 0, "a ring-course try or a scroll is recorded before Yornduf's talk");

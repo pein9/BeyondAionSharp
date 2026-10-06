@@ -12,7 +12,8 @@ AX-07 is done: Q2945 and Q2946 are turned in at Pandaemonium and Q2947 is taken 
 AX-08 is done: Garm's arena is cleared on the first try in 59 s, and both failure paths
 lead back to Garm and a second, successful try. AX-09 is done: back in Morheim the Cleric
 holds Altruist's Staff and has taken Q2042. AX-10 is done: the ring course is flown on the
-first try in 39 s, Q2042 is turned in and the Cleric is level 26. AX-11 is next.
+first try in 39 s, Q2042 is turned in and the Cleric is level 26. AX-11 is done: level 26
+came from the five quests, so no fortress quest was needed. AX-12 is next.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -700,13 +701,25 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
     AX-12 has to count the coins it finds, not assume a number.
   - Tests: one more contract test and twelve refused endpoint frontiers (24 pass).
   - Fast and the seven pre-commit checks: see the Progress log.
-- [ ] **AX-11 - Level 26, by fortress quests if needed.** Depends AX-10.
+- [x] **AX-11 - Level 26, by fortress quests if needed.** Depends AX-10.
   - If the Cleric is level 26 after Q2042, record that and tick the item.
   - If not, list the quests Morheim Ice Fortress offers the Cleric that have a handler, are
     not group, gathering or repeatable coin quests, and lie nearest the fortress. Read the
     Java for each. Write the list here, then play them in that order until level 26. Stop
     there; the rest of the fortress is a later leg.
   - A quest that needs a decision goes under "Blocked / questions", and the next one is taken.
+  - 2026-10-06: **the Cleric is level 26 after Q2042.** The leg gained 1,047,092 XP against
+    the 880,687 that level 26 needed, 166,405 to spare: 1,038,632 from the five quests and
+    8,460 from the ten arena kills. No fortress quest was played and none is listed.
+  - The rule now checks it: with the missions done, a Cleric below level 26 stops the leg
+    as a finding that asks for fortress quests. It is never sent hunting or soul healing.
+    The level-26 coin armor comes only after that check. A death in the arena took 17,453
+    XP, so about nine deaths would be needed to fall short.
+  - Proof `run/ax11/ax11-level-a1` (public Restore, leg `ax`, schema dropped, no death): the
+    segment ends at the frontier `coin-armor-26`, level 26, 15 min 53 s of game time.
+    `VerifyProgress` refuses that frontier below level 26.
+  - Tests: the contract tests cover both sides of the check (24 pass).
+  - Fast and the seven pre-commit checks: see the Progress log.
 - [ ] **AX-12 - Level-26 coin armor.** Depends AX-11.
   - Write the manifest here first: every slot, worn against Elite Rank 7 (and its "Magic"
     variant, if sold), with all stats, and which pieces count as better.
@@ -1020,3 +1033,8 @@ The original questions, with the recommendations made at the time:
   at 70 s and the second try flew the course. The segment ends at the level check. Fast
   passes 114 of 119 tests with five guarded skips and all eleven scenarios in 8.58 minutes
   (`run/ax10-fast/`); the seven pre-commit checks pass (`run/ax10/checks/`).
+- 2026-10-06 — AX-11: level 26 after Q2042, by quests alone, with 166,405 XP to spare. No
+  fortress quest was needed. The rule stops the leg as a finding if the Cleric is ever
+  below 26 there (`run/ax11/ax11-level-a1`). The segment ends at the level-26 coin armor.
+  Fast passes 114 of 119 tests with five guarded skips and all eleven scenarios in 9.09
+  minutes (`run/ax11-fast/`); the seven pre-commit checks pass (`run/ax11/checks/`).
