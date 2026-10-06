@@ -621,25 +621,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			};
 			if (altgardLeg?.AbyssEntry != null)
 			{
-				// AX-03: the Morheim and Abyss-entry segment begins by proving its incoming contract from the client's view.
-				// Its steps are added by AX-05 onward; until then the verified start is where the segment ends.
-				session.BeginStep("ax-start", "verify-the-abyss-entry-start-contract");
-				NaturalAbyssEntryStart start = NaturalAbyssEntryLeg.VerifyStart(altgardLeg,
-					NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition), session.CharacterId, runtime.NowMillis);
-				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, NaturalAbyssEntryLeg.StartReceipt),
-					System.Text.Json.JsonSerializer.Serialize(start), token);
-				session.TraceDiagnostic(NaturalAbyssEntryLeg.StartDiagnostic, new Dictionary<string, object?>
-				{
-					["level"] = start.Level, ["map"] = start.MapId, ["completed"] = start.CompletedQuests, ["started"] = start.StartedQuestIds,
-					["kinah"] = start.Kinah, ["bronzeCoins"] = start.BronzeCoins, ["staffObjectId"] = start.StaffObjectId,
-				});
-				// AX-04: the inventory check the leg runs after every quest turn-in (the operator, 2026-10-06), run once here so
-				// the leg begins with the best staff worn. AX-05 onward call it after each turn-in.
-				session.BeginStep("ax-inventory-check", "inventory-check-at-the-leg-start");
-				await NaturalInventoryCheck.RunAsync(session, "leg-start", altgardLeg.AbyssEntry.Inventory, EquipUpgradesAsync,
-					runtime.Data.ItemDataDh.GetItemTemplate,
-					() => NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, session.Api.World.Inventory.Values.Select(item => item.ItemId))
-						.Decide(session.Api.World, QuestNeededItems()).FreeSlots, token);
+				await RunAbyssEntryAsync();
 				session.PublishDashboard("completed", force: true);
 				await session.QuitAsync(token);
 				runtime.AssertClean();
@@ -1156,7 +1138,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						if (approach.Arrived) break;
 					}
 				}
-				if (!approach.Arrived && laterCapital != null)
+				if (!approach.Arrived && (laterCapital != null || altgardLeg?.AbyssEntry != null))
 				{
 					// The generic navigator uses a three-metre interaction radius. City NPCs
 					// can have reachable ground farther out but still inside their shipped talk range.
@@ -1606,6 +1588,147 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// The journey is rebound to Altgard as for NA-23; the Leg 1 engine picks each move from the client's view. Template
 			// quests run on the Ishalgen runner, scripted steps on NaturalAltgardQuestSteps, flight and the air kills on the
 			// AF-04..AF-06 code. Every decision is traced; a move that makes no progress three times stops the run.
+			// AX-03..AX-05: the Morheim and Abyss-entry leg. It proves its incoming contract from the client's view, then takes one
+			// decision of NaturalAbyssEntryDecisionEngine at a time. The fortresses and the capital are safe hubs: every approach is
+			// the city approach, on whichever map the client is on. The segment ends at the rule's frontier.
+			async Task RunAbyssEntryAsync()
+			{
+				NaturalAltgardContract leg = altgardLeg ?? throw new InvalidOperationException("The Abyss-entry leg needs its contract.");
+				NaturalAbyssEntry scope = leg.AbyssEntry ?? throw new InvalidOperationException("The Abyss-entry leg needs its scope.");
+				BotWorldModel world = session.Api.World;
+				string folder = Path.GetDirectoryName(combatTracePath)!;
+				var services = new NaturalServiceSteps(session);
+				Require.True(combat.IsCleric, "The Abyss-entry leg needs the Cleric.");
+				NaturalAltgardObservation Observed() => NaturalAltgardObservation.Observe(world, session.CurrentPosition);
+
+				session.BeginStep("ax-start", "verify-the-abyss-entry-start-contract");
+				NaturalAbyssEntryStart start = NaturalAbyssEntryLeg.VerifyStart(leg, Observed(), session.CharacterId, runtime.NowMillis);
+				await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntryLeg.StartReceipt), System.Text.Json.JsonSerializer.Serialize(start), token);
+				session.TraceDiagnostic(NaturalAbyssEntryLeg.StartDiagnostic, new Dictionary<string, object?>
+				{
+					["level"] = start.Level, ["map"] = start.MapId, ["completed"] = start.CompletedQuests, ["started"] = start.StartedQuestIds,
+					["kinah"] = start.Kinah, ["bronzeCoins"] = start.BronzeCoins, ["staffObjectId"] = start.StaffObjectId,
+				});
+				long experienceAtStart = ObservedExperience(), fares = 0, bindPaid = 0;
+				var payments = new List<NaturalAbyssPayment>();
+				int inventoryChecks = 0;
+				// AX-04: the inventory check the operator asked for after every quest turn-in (2026-10-06), and once at the start so
+				// the leg begins with the best owned gear worn.
+				async Task InventoryCheckAsync(string trigger)
+				{
+					session.BeginStep("ax-inventory-check", trigger);
+					await NaturalInventoryCheck.RunAsync(session, trigger, scope.Inventory, EquipUpgradesAsync, runtime.Data.ItemDataDh.GetItemTemplate,
+						() => NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId))
+							.Decide(world, QuestNeededItems()).FreeSlots, token);
+					inventoryChecks++;
+				}
+				await TopUpHelpItemsAsync("run-start");
+				await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token);
+				await InventoryCheckAsync("leg-start");
+
+				string? previous = null;
+				int repeats = 0;
+				for (int sequence = 1; sequence <= 200; sequence++)
+				{
+					await session.SynchronizeAsync(token);
+					NaturalAbyssEntryDecision next = NaturalAbyssEntryDecisionEngine.Decide(leg, Observed(), sequence);
+					string signature = $"{next.Action}|{next.StepKey}|{next.Reason}";
+					repeats = signature == previous ? repeats + 1 : 0;
+					previous = signature;
+					// A decision that does not change the client's view is a stall; waiting for the journal may take a few looks.
+					Require.True(repeats < (next.Action == "refresh-observation" ? 40 : 3), $"The Abyss-entry leg stalled on: {next.Reason}");
+					session.BeginStep(next.StepKey ?? $"ax-{next.Action}", next.Action);
+					session.TraceDiagnostic("abyss-entry-decision", new Dictionary<string, object?>
+					{
+						["sequence"] = next.Sequence, ["phase"] = next.Phase, ["action"] = next.Action, ["step"] = next.StepKey, ["quest"] = next.QuestId,
+						["toMap"] = next.MapId, ["reason"] = next.Reason, ["map"] = world.MapId, ["position"] = session.CurrentPosition,
+					});
+					session.PublishDashboard();
+					switch (next.Action)
+					{
+						case "frontier":
+						{
+							NaturalAbyssEntryProgress progress = NaturalAbyssEntryLeg.VerifyMorheimArrival(leg, start, Observed(), next.Phase,
+								ObservedExperience() - experienceAtStart, fares, bindPaid, payments, inventoryChecks,
+								itemId => runtime.Data.ItemDataDh.GetItemTemplate(itemId) is { } template && template.GetItemGroup().ToString() == "STAFF"
+									? template.GetWeaponStats()?.GetBoostMagicalSkill() ?? 0 : 0, runtime.NowMillis);
+							await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntryLeg.ProgressReceipt),
+								System.Text.Json.JsonSerializer.Serialize(progress), token);
+							session.TraceDiagnostic(NaturalAbyssEntryLeg.ProgressDiagnostic, new Dictionary<string, object?>
+							{
+								["frontier"] = progress.Frontier, ["map"] = progress.MapId, ["level"] = progress.Level, ["kinah"] = progress.Kinah,
+								["fares"] = progress.Fares, ["bindPaid"] = progress.BindPaid, ["experienceGained"] = progress.ExperienceGained,
+								["completed"] = progress.CompletedLegQuestIds, ["started"] = progress.StartedQuestIds, ["locked"] = progress.LockedQuestIds,
+								["staff"] = progress.StaffItemId,
+								["torso"] = progress.TorsoItemId, ["inventoryChecks"] = progress.InventoryChecks, ["reason"] = next.Reason,
+							});
+							return;
+						}
+						case "refresh-observation":
+							await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
+							break;
+						case "revive":
+							await RestSafelyAsync(token);
+							break;
+						case "travel":
+						{
+							NaturalAltgardMapTrip trip = leg.MapTripList.Single(entry => entry.MapId == next.MapId && entry.FromMapId == world.MapId);
+							int teleporter = await ApproachCapitalNpcAsync(trip.TeleporterNpcId);
+							long before = world.Kinah;
+							NaturalServiceOutcome travelled = await services.TeleportAsync(teleporter, world.Objects[teleporter].Position, trip.TalkRange,
+								trip.LocationId, trip.Fare, trip.MapId, token);
+							Require.True(travelled.IsDone, travelled.Reason);
+							fares += before - world.Kinah;
+							break;
+						}
+						case "bind":
+						{
+							NaturalAltgardBind bind = leg.Bind ?? throw new InvalidDataException($"{leg.Leg} has no bind.");
+							int stone = await ApproachCapitalNpcAsync(bind.NpcId);
+							long before = world.Kinah;
+							NaturalServiceOutcome bound = await services.BindAsync(stone, world.Objects[stone].Position, leg.Hub.MapId, bind.Price,
+								bind.AcceptRange, token);
+							Require.True(bound.IsDone, bound.Reason);
+							bindPaid += before - world.Kinah;
+							break;
+						}
+						case "talk":
+						{
+							NaturalAltgardStep step = leg.Steps.Single(entry => entry.Key == next.StepKey);
+							long xp = ObservedExperience(), kinah = world.Kinah;
+							bool wasComplete = world.CompletedQuestIds.Contains(step.QuestId);
+							for (int attempt = 1; ; attempt++)
+							{
+								try
+								{
+									int npc = await ApproachCapitalNpcAsync(step.NpcId);
+									xp = ObservedExperience();
+									kinah = world.Kinah;
+									string outcome = await NaturalAltgardQuestSteps.TalkAsync(session, step, npc, token);
+									session.TraceDiagnostic("abyss-entry-talk", new Dictionary<string, object?> { ["step"] = step.Key, ["outcome"] = outcome });
+									break;
+								}
+								catch (NaturalDialogTooFarException) when (attempt < 3) { }
+							}
+							if (!wasComplete && world.CompletedQuestIds.Contains(step.QuestId))
+							{
+								var payment = new NaturalAbyssPayment(step.QuestId, ObservedExperience() - xp, world.Kinah - kinah, world.Level);
+								payments.Add(payment);
+								session.TraceDiagnostic("abyss-entry-payment", new Dictionary<string, object?>
+								{
+									["quest"] = payment.QuestId, ["experience"] = payment.Experience, ["kinah"] = payment.Kinah, ["level"] = payment.Level,
+								});
+								await InventoryCheckAsync($"turn-in-q{step.QuestId}");
+							}
+							break;
+						}
+						default:
+							throw new InvalidDataException($"The Abyss-entry leg cannot go on ({next.Action}): {next.Reason}");
+					}
+				}
+				throw new TimeoutException("The Abyss-entry leg exceeded 200 decisions.");
+			}
+
 			async Task RunAltgardLeg1Async()
 			{
 				NaturalAltgardContract leg = altgardLeg ?? throw new InvalidOperationException("An Altgard leg needs its contract.");

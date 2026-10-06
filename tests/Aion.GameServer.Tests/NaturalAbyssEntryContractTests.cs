@@ -300,6 +300,98 @@ public sealed class NaturalAbyssEntryContractTests
 		Assert.All(refused, state => Assert.Throws<InvalidDataException>(() => NaturalAbyssEntryLeg.VerifyStart(Leg, state, 133276, 0)));
 	}
 
+	/// <summary>AX-05: the leg's first phase, decision by decision, as run/ax05/ax05-morheim-a1 played it.</summary>
+	[Fact]
+	public void MorheimAndTheCommanderComeFirstAndThenTheFrontier()
+	{
+		static (string, string, string?, int?) Shape(NaturalAbyssEntryDecision next) => (next.Phase, next.Action, next.StepKey, next.MapId);
+		NaturalAbyssEntryDecision Decide(NaturalAltgardObservation state) => NaturalAbyssEntryDecisionEngine.Decide(Leg, state, 1);
+		NaturalAltgardObservation start = StartState(), arrived = ArrivedState(), commander = CommanderDoneState();
+
+		Assert.Equal(("morheim-arrival", "travel", null, (int?)NaturalAbyssEntry.Morheim), Shape(Decide(start)));
+		// On arrival the old Altgard bind is replaced first; Q24020 is already in the journal by then.
+		Assert.Equal(("morheim-arrival", "bind", null, null), Shape(Decide(arrived with { Bind = start.Bind })));
+		Assert.Equal(("morheim-arrival", "talk", "q24020-aegir", (int?)NaturalAbyssEntry.Morheim), Shape(Decide(arrived)));
+		Assert.Equal(("coin-armor-21", "frontier", null, null), Shape(Decide(commander)));
+
+		// What the rule waits for, recovers from or refuses.
+		Assert.Equal("refresh-observation", Decide(start with { Synchronized = false }).Action);
+		Assert.Equal("refresh-observation", Decide(arrived with { Quests = start.Quests }).Action);
+		Assert.Equal(("recover", "revive"), (Decide(arrived with { IsDead = true }).Phase, Decide(arrived with { IsDead = true }).Action));
+		Assert.Equal("blocked", Decide(start with { MapId = 220010000 }).Action);
+		Assert.Equal("blocked", Decide(arrived with { Quests = new Dictionary<int, BotQuestState> { [24020] = new(24020, 3, 1, 0, null) } }).Action);
+		// The Pandaemonium teleport back to Morheim is an approved trip too.
+		Assert.Equal("travel", Decide(start with { MapId = NaturalAbyssEntry.Pandaemonium }).Action);
+	}
+
+	[Fact]
+	public void MorheimArrivalIsVerifiedFromObservedStateAndItsAccounts()
+	{
+		NaturalAbyssEntryStart start = NaturalAbyssEntryLeg.VerifyStart(Leg, StartState(), 133276, 0);
+		NaturalAbyssPayment[] paid = [new(24020, 293_759, 0, 25)];
+		static int Boost(int itemId) => itemId switch { 101501357 => 370, 101501355 => 320, _ => 0 };
+		NaturalAbyssEntryProgress Verify(NaturalAltgardObservation state, long xp = 293_759, long fares = 2_401, long bind = 2_690,
+			NaturalAbyssPayment[]? payments = null, int checks = 2) =>
+			NaturalAbyssEntryLeg.VerifyMorheimArrival(Leg, start, state, "coin-armor-21", xp, fares, bind, payments ?? paid, checks, Boost, 59_385);
+
+		NaturalAltgardObservation done = CommanderDoneState();
+		NaturalAbyssEntryProgress progress = Verify(done);
+		Assert.Equal(("ax", "coin-armor-21", 220020000, 25, 743_394L, 2_401L, 2_690L, 101501357, 110551147, 2),
+			(progress.Leg, progress.Frontier, progress.MapId, progress.Level, progress.Kinah, progress.Fares, progress.BindPaid, progress.StaffItemId,
+				progress.TorsoItemId, progress.InventoryChecks));
+		Assert.Equal([24020], progress.CompletedLegQuestIds);
+		// The six Morheim campaign quests Q24020 puts in the journal are locked (levels 27 to 35); they are recorded, not played.
+		Assert.Equal([2945], progress.StartedQuestIds);
+		Assert.Equal([24021, 24022, 24023, 24024, 24025, 24026], progress.LockedQuestIds);
+
+		NaturalJourneyItem[] inventory = done.Inventory!;
+		NaturalAltgardObservation With(params NaturalJourneyItem[] items) => done with { Inventory = items };
+		Action[] refused =
+		[
+			() => Verify(done with { MapId = 220030000 }),
+			() => Verify(done with { Bind = StartState().Bind }),
+			() => Verify(done with { CompletedQuestIds = StartState().CompletedQuestIds }),
+			() => Verify(done with { Kinah = 743_395 }),
+			() => Verify(done with { Quests = new Dictionary<int, BotQuestState> { [2945] = new(2945, 3, 1, 0, null) } }),
+			() => Verify(done, xp: 293_760),
+			() => Verify(done, payments: [new(24020, 293_758, 0, 25)], xp: 293_758),
+			() => Verify(done, payments: []),
+			() => Verify(done, checks: 1),
+			() => Verify(done, bind: 2_691, fares: 2_400),
+			// The hauberk carried and the old one still worn; a mace in the hand; a better staff left in the cube.
+			() => Verify(With([.. inventory.Where(item => item.ItemId is not (110551147 or 110551139)), new(133316, 110551147, 1, 65535), new(140185, 110551139, 1, 8)])),
+			() => Verify(With([.. inventory.Where(item => item.ItemId != 101501357), new(156530, 101501357, 1, 65535), new(900001, 100101334, 1, 1)])),
+			() => Verify(With([.. inventory.Where(item => item.ItemId != 101501357), new(156530, 101501357, 1, 65535), new(900002, 101501355, 1, 3)])),
+			() => Verify(With([.. inventory.Where(item => item.ItemId != 188053787)])),
+		];
+		Assert.All(refused, verify => Assert.Throws<InvalidDataException>(verify));
+	}
+
+	/// <summary>On the Morheim landing, bound at the fortress obelisk, with Q24020 started by the arrival.</summary>
+	private static NaturalAltgardObservation ArrivedState() => StartState() with
+	{
+		MapId = NaturalAbyssEntry.Morheim, Position = new BotPosition(309.53f, 2271.51f, 449.41f, 0), Kinah = 743_394,
+		Bind = new BotBindPoint(NaturalAbyssEntry.Morheim, new BotPosition(270.52f, 2338.21f, 443.74f, 0), 0),
+		Quests = new Dictionary<int, BotQuestState> { [2945] = new(2945, 3, 0, 0, null), [24020] = new(24020, 3, 0, 0, null) },
+	};
+
+	/// <summary>After Aegir's talk: Q24020 complete, its hauberk worn, and the six locked campaign quests in the journal.</summary>
+	private static NaturalAltgardObservation CommanderDoneState()
+	{
+		NaturalAltgardObservation arrived = ArrivedState();
+		NaturalJourneyItem[] inventory = [.. arrived.Inventory!.Where(item => item.ItemId is not (182400001 or 110551139)),
+			new(133277, 182400001, 743_394, 65535), new(140185, 110551139, 1, 65535), new(133316, 110551147, 1, 8)];
+		// The client keeps the completed Q24020 in its quest list at status 5.
+		var quests = new Dictionary<int, BotQuestState> { [2945] = new(2945, 3, 0, 0, null), [24020] = new(24020, 5, 0, 1, null) };
+		foreach (int locked in new[] { 24021, 24022, 24023, 24024, 24025, 24026 }) quests[locked] = new(locked, 6, 0, 0, null);
+		return arrived with
+		{
+			Position = new BotPosition(225.225f, 2415.47f, 454.11f, 46), Quests = quests, Inventory = inventory,
+			CompletedQuestIds = arrived.CompletedQuestIds.Append(24020).ToHashSet(),
+			ItemCounts = inventory.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
+		};
+	}
+
 	/// <summary>The start as the snapshot's own receipt records it (run/snapshots/altgard-rc-complete-s1).</summary>
 	private static NaturalAltgardObservation StartState()
 	{

@@ -1,3 +1,5 @@
+using Aion.Bots.World;
+
 namespace Aion.Bots.Scenarios;
 
 /// <summary>
@@ -169,11 +171,71 @@ public static class NaturalAbyssAttempts
 public sealed record NaturalAbyssEntryStart(string Leg, bool Verified, int CharacterId, int MapId, Aion.Bots.World.BotPosition Position, int Level,
 	long Kinah, long BronzeCoins, int CompletedQuests, int[] StartedQuestIds, int StaffObjectId, NaturalJourneyItem[] ProtectedItems, long GameMillis);
 
+/// <summary>One quest turn-in of the leg, as the client saw it paid.</summary>
+public sealed record NaturalAbyssPayment(int QuestId, long Experience, long Kinah, int Level);
+
+/// <summary>Where the segment stood when it reached the decision rule's frontier: the receipt a contained run keeps beside its
+/// trace. Observed state only.</summary>
+/// <param name="Frontier">The phase the rule named as not played yet.</param>
+/// <param name="StartedQuestIds">The journal's quests at START or REWARD.</param>
+/// <param name="LockedQuestIds">The journal's locked quests: campaign quests waiting for a level.</param>
+public sealed record NaturalAbyssEntryProgress(string Leg, string Frontier, int CharacterId, int MapId, Aion.Bots.World.BotPosition Position, int Level,
+	long ExperienceGained, long Kinah, long KinahAtStart, long Fares, long BindPaid, NaturalAbyssPayment[] Payments, int BindMapId,
+	Aion.Bots.World.BotPosition BindPosition, int StaffItemId, int TorsoItemId, int[] CompletedLegQuestIds, int[] StartedQuestIds,
+	int[] LockedQuestIds, int InventoryChecks, long GameMillis);
+
 /// <summary>The leg's incoming contract, checked against what the retained character's login showed.</summary>
 public static class NaturalAbyssEntryLeg
 {
 	public const string StartReceipt = "altgard-ax-start.json";
 	public const string StartDiagnostic = "abyss-entry-start-verified";
+	public const string ProgressReceipt = "altgard-ax-progress.json";
+	public const string ProgressDiagnostic = "abyss-entry-frontier";
+	private const ushort NotWorn = ushort.MaxValue;
+	private const long Torso = 8;
+
+	/// <summary>AX-05: what has to be true once Morheim and the commander are done, from the client's view. The Cleric stands
+	/// in Morheim, bound at the fortress obelisk; Q24020 is complete and paid; its hauberk and the best owned staff are worn;
+	/// every Kinah that left went to the teleport and the bind; Q2945 has not moved; one inventory check ran at the start and
+	/// one after the turn-in.</summary>
+	public static NaturalAbyssEntryProgress VerifyMorheimArrival(NaturalAltgardContract leg, NaturalAbyssEntryStart start, NaturalAltgardObservation state,
+		string frontier, long experienceGained, long fares, long bindPaid, IReadOnlyList<NaturalAbyssPayment> payments, int inventoryChecks,
+		Func<int, int> staffMagicBoost, long gameMillis)
+	{
+		NaturalAbyssEntry scope = leg.AbyssEntry ?? throw new InvalidDataException($"{leg.Leg} has no Abyss-entry scope.");
+		NaturalJourneyItem[] inventory = state.Inventory ?? throw new InvalidDataException("The arrival needs the observed inventory.");
+		void Require(bool condition, string what)
+		{
+			if (!condition) throw new InvalidDataException($"Morheim and the commander are not done: {what}.");
+		}
+		NaturalAltgardBind bind = leg.Bind ?? throw new InvalidDataException($"{leg.Leg} has no bind.");
+		NaturalAltgardRewardChoice hauberk = leg.RewardChoiceList.Single(choice => choice.QuestId == scope.CommanderQuestId);
+		Require(state.Synchronized && !state.IsDead && state.MapId == Aion.Bots.Scenarios.NaturalAbyssEntry.Morheim, $"the Cleric is on map {state.MapId}");
+		Require(NaturalAltgardDecisionEngine.BoundAt(bind, leg.Hub.MapId, state.Bind), $"the bind is {state.Bind}, not obelisk {bind.NpcId}");
+		Require(state.CompletedQuestIds.Contains(scope.CommanderQuestId), $"Q{scope.CommanderQuestId} is not complete");
+		Require(payments.Select(payment => payment.QuestId).SequenceEqual([scope.CommanderQuestId]), "the commander's quest is not the one turn-in so far");
+		Require(payments[0].Experience == leg.Quest(scope.CommanderQuestId).RewardExperience,
+			$"Q{scope.CommanderQuestId} paid {payments[0].Experience} XP, not {leg.Quest(scope.CommanderQuestId).RewardExperience}");
+		Require(experienceGained == payments.Sum(payment => payment.Experience), $"{experienceGained} XP was gained, and the turn-ins paid {payments.Sum(payment => payment.Experience)}");
+		Require((leg.Start.StartedQuestIds ?? []).All(id => state.Quests.GetValueOrDefault(id) is { Status: 3, StepAndFlags: 0 }), "an incoming quest moved before its turn");
+		Require(state.Kinah == start.Kinah - fares - bindPaid + payments.Sum(payment => payment.Kinah),
+			$"{state.Kinah} Kinah is not {start.Kinah} less {fares} in fares and {bindPaid} for the bind, plus the quest's pay");
+		Require(fares > 0 && bindPaid == bind.Price, $"the fares were {fares} and the bind {bindPaid}");
+		NaturalJourneyItem[] torso = inventory.Where(item => item.EquipmentSlot != NotWorn && (item.EquipmentSlot & Torso) != 0).ToArray();
+		Require(torso is [{ } worn] && worn.ItemId == hauberk.ItemId, $"the worn torso is [{string.Join(", ", torso.Select(item => item.ItemId))}], not {hauberk.ItemId}");
+		NaturalJourneyItem[] hands = inventory.Where(item => item.EquipmentSlot != NotWorn && (item.EquipmentSlot & 1) != 0).ToArray();
+		int best = inventory.Select(item => staffMagicBoost(item.ItemId)).DefaultIfEmpty(0).Max();
+		Require(hands is [{ } staff] && staffMagicBoost(staff.ItemId) == best && best > 0, "the worn weapon is not the owned staff with the most magic boost");
+		Require(scope.Inventory.KeepSealed.All(id => inventory.Count(item => item.ItemId == id) == 1), "the sealed stigma bundle changed");
+		Require(inventoryChecks == 1 + payments.Count, $"{inventoryChecks} inventory checks ran for {payments.Count} turn-ins");
+		BotBindPoint bound = state.Bind!;
+		return new(leg.Leg, frontier, start.CharacterId, state.MapId!.Value, state.Position, state.Level, experienceGained, state.Kinah, start.Kinah, fares,
+			bindPaid, [.. payments], bound.MapId, bound.Position, hands[0].ItemId, torso[0].ItemId,
+			leg.Order.Where(state.CompletedQuestIds.Contains).ToArray(),
+			state.Quests.Values.Where(quest => quest.Status is 3 or 4).Select(quest => quest.QuestId).Order().ToArray(),
+			state.Quests.Values.Where(quest => quest.Status == NaturalAltgardDecisionEngine.Locked).Select(quest => quest.QuestId).Order().ToArray(),
+			inventoryChecks, gameMillis);
+	}
 
 	/// <summary>The three fares and the bind at their shipped base prices; the price modifier is added on top (AX-01).</summary>
 	public static long BaseTravelCost(NaturalAltgardContract leg) => leg.MapTripList.Sum(trip => (long)trip.Fare) + (leg.Bind?.Price ?? 0);

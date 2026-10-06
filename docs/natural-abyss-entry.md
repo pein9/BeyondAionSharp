@@ -6,7 +6,8 @@ AX-Q1..AX-Q6 and then revised the order the same day; see
 measured. AX-02 is done: Morheim and the arena have checked-in navigation data. AX-03 is
 done: the leg has a frozen contract, and a restored run proves its start. AX-04 is done:
 the staff rule and the inventory check exist, and the check runs at the leg's start. AX-05
-is next. No step of the leg has been played yet.
+is done: the Cleric teleports to Morheim, binds, talks to Aegir and wears his hauberk. AX-06
+is next.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -231,7 +232,7 @@ talk, for each slot where it beats what is worn.
 
 | Slot | Worn after the leg-start check | Defence | Rank 8 piece | Coins | Defence |
 |---|---|---:|---|---:|---:|
-| Torso | Altgard Legionary Hauberk 110551139 | 112 | Hauberk 110501097 | 3 | 134 |
+| Torso | Morheim Dark Legionary Hauberk 110551147 (Q24020, worn since AX-05) | 177 | Hauberk 110501097 | 3 | 134 |
 | Gloves | Haramel's Handguards 111501081 | 78 | Handguards 111501066 | 2 | 80 |
 | Shoulders | Altgard Dark Legionary Spaulders 112501641 | 80 | Spaulders 112501016 | 2 | 80 |
 | Legs | Altgard Dark Legionary Chausses 113501720 | 107 | Chausses 113501075 | 2 | 107 |
@@ -241,9 +242,9 @@ talk, for each slot where it beats what is worn.
 - AX-04's check changed this table. At the preserved endpoint the Cleric wore the level-16
   Rank 9 gloves, shoulders and legs (67, 67 and 90 defence) and carried the better pieces
   above. With them on, Rank 8 only ties the shoulders and legs.
-- The torso is replaced by Q24020's hauberk 110551147 (177 defence) before any coin is
-  spent, so Rank 8's 134 is not better there either. Likely to remain: feet, and gloves by
-  2 defence against 5 healing boost. AX-06 decides from the full manifest.
+- The torso is Q24020's hauberk since AX-05, so Rank 8's 134 is not better there. Likely to
+  remain: feet, and gloves by 2 defence against 5 healing boost. AX-06 decides from the
+  full manifest.
 - The Cleric holds 7 Bronze Coins, so up to 4 are supplied.
 - Other stats differ too. The Rank 8 Hauberk has 15 magic boost and 61 HP but no healing
   boost, where the worn one has 7 healing boost and 5 concentration. AX-06 writes the full
@@ -487,9 +488,37 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
     leg's steps. Earlier legs keep the points where they already ran the equipment check;
     see [Blocked / questions](#blocked--questions-for-the-operator).
   - Fast and the seven pre-commit checks: see the Progress log.
-- [ ] **AX-05 - Morheim and the commander.** Depends AX-02, AX-03 and AX-04. Route rows
+- [x] **AX-05 - Morheim and the commander.** Depends AX-02, AX-03 and AX-04. Route rows
   M1–M4: Ukin's teleport, Q24020's start on arrival, the bind at Morheim Ice Fortress
   (AX-Q2), the talk with Aegir, the hauberk 110551147, and the inventory check.
+  - 2026-10-06, the leg's runner: `NaturalAbyssEntryDecisionEngine` is the leg's decision
+    rule over the contract and the client's view. It gives one action at a time: `travel`,
+    `bind`, `talk`, `revive`, a wait for the journal, or `frontier` when the next phase is
+    not played yet. `RunAbyssEntryAsync` in the journey carries each one out with the
+    existing teleport, bind and talk steps and the city approach, then runs the inventory
+    check after a turn-in. **The segment now ends at the frontier `coin-armor-21`.**
+  - Proof `run/ax05/ax05-morheim-a2` (public Restore of `altgard-rc-complete-s1`, leg `ax`,
+    36.9 s, schema dropped, no death), in 59.4 s of game time:
+    - Ukin's teleport from Altgard Fortress, 94 m from the obelisk: 2,401 Kinah, landing at
+      (309.53, 2271.51, 449.41). Q24020 was in the journal on arrival.
+    - The bind at obelisk 700231: 2,690 Kinah.
+    - Aegir's talk: Q24020 complete in one dialog, 293,759 XP, no Kinah. The Cleric is still
+      level 25, with 586,928 XP to go.
+    - The inventory check after the turn-in wore the Morheim Dark Legionary Hauberk
+      110551147 (177 defence) over the level-16 one. The staff 101501357 is still the best
+      owned. 23 cube slots are free.
+    - Kinah: 748,485 at the start, 743,394 after; every Kinah of the difference is the fare
+      and the bind.
+  - `VerifyMorheimArrival` checks all of that from the client's view before the segment
+    ends, and writes `altgard-ax-progress.json`. Q2945 has not moved.
+  - **Found:** completing Q24020 puts six Morheim campaign quests in the journal as locked:
+    Q24021 to Q24026, for levels 27, 28, 29, 35, 35 and 35. This is Java's own rule. They
+    are recorded in the receipt and not played; none can serve AX-11 at level 25 or 26.
+  - Tests: two new contract tests cover the rule's decisions and fourteen refused arrivals
+    (`NaturalAbyssEntryContractTests.cs`, 18 pass). The first run `ax05-morheim-a1` passed
+    too; its receipt listed the completed and locked quests as started, so the receipt was
+    split and the run repeated.
+  - Fast and the seven pre-commit checks: see the Progress log.
 - [ ] **AX-06 - Level-21 coin armor.** Depends AX-05. Route row M5.
   - Write the manifest here first: every slot, worn against Rank 8 (and its "Magic"
     variant, if a vendor sells it), with all stats, and which pieces count as better.
@@ -794,3 +823,9 @@ The original questions, with the recommendations made at the time:
   applied. The earlier legs stay as they are. Fast passes 114 of 119 tests with five
   guarded skips and all eleven scenarios in 9.72 minutes (`run/d36-fast/`); the seven
   pre-commit checks pass (`run/d36/checks/`).
+- 2026-10-06 — AX-05: the leg has its decision rule and runner. A contained run teleported
+  to Morheim (2,401 Kinah), bound at the fortress (2,690), completed Q24020 with Aegir
+  (293,759 XP) and wore his hauberk, in 59 s of game time (`run/ax05/ax05-morheim-a2`). The
+  segment ends at the level-21 coin armor. Six campaign quests entered the journal locked.
+  Fast passes 114 of 119 tests with five guarded skips and all eleven scenarios in 11.05
+  minutes (`run/ax05-fast/`); the seven pre-commit checks pass (`run/ax05/checks/`).
