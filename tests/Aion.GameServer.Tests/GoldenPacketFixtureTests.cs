@@ -130,7 +130,6 @@ public sealed class GoldenPacketFixtureTests
 	[InlineData("SM_SUMMON_OWNER_REMOVE.json")]
 	[InlineData("SM_SUMMON_PANEL_REMOVE.json")]
 	[InlineData("SM_DP_INFO.json")]
-	[InlineData("SM_STATUPDATE_EXP.json")]
 	// ----- Batch 10: pure scalar / simple-DTO con-null-safe SM_* packets -----
 	[InlineData("SM_CHARACTER_SELECT.json")]
 	[InlineData("SM_AFTER_SIEGE_LOCINFO_475.json")]
@@ -169,6 +168,24 @@ public sealed class GoldenPacketFixtureTests
 			Assert.True(expectedHex == actualHex,
 				$"{packetName}/{caseName}: C# payload diverged from Java golden.\n" +
 				$"  Java : {expectedHex}\n  C#   : {actualHex}");
+		}
+	}
+
+	/// <summary>
+	/// D37: the 4.8 client reads six int64 from S_EXP (game.dll, case 8 of ServerToClientRouter's
+	/// dispatch) and Java writes five. The payload is Java's golden bytes, then the sixth field as zero.
+	/// </summary>
+	[Fact]
+	public void ExpPayloadIsTheJavaGoldenFollowedByTheClientsSixthField()
+	{
+		var fixture = LoadFixture("SM_STATUPDATE_EXP.json");
+
+		foreach (var caseElement in fixture.RootElement.GetProperty("cases").EnumerateArray())
+		{
+			var javaHex = caseElement.GetProperty("payloadHex").GetString()!;
+			var packet = ReconstructFaithful("SM_STATUPDATE_EXP", caseElement.GetProperty("inputs"));
+
+			Assert.Equal(javaHex + "0000000000000000", Convert.ToHexString(CaptureWriteImplPayload(packet)));
 		}
 	}
 

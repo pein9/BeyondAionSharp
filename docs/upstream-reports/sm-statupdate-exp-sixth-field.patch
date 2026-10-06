@@ -1,0 +1,12 @@
+diff --git a/game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_STATUPDATE_EXP.java b/game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_STATUPDATE_EXP.java
+index 461f5d3c1..d7d3331fe 100644
+--- a/game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_STATUPDATE_EXP.java
++++ b/game-server/src/com/aionemu/gameserver/network/aion/serverpackets/SM_STATUPDATE_EXP.java
+@@ -38,6 +38,7 @@ public class SM_STATUPDATE_EXP extends AionServerPacket {
+ 		writeQ(maxExp);
+ 		writeQ(curBoostExp);
+ 		writeQ(maxBoostExp);
++		writeQ(0); // Blessing of Wisdom pool (STR_TOOLTIP_ABSOLUTEEXP_*): the 4.8 client reads six int64 here
+ 	}
+ 
+ }

@@ -2,7 +2,10 @@ using Aion.GameServer.Network.Aion;
 
 namespace Aion.GameServer.Network.Aion.ServerPackets;
 
-/// <summary>Java parity: network/aion/serverpackets/SM_STATUPDATE_EXP (Luno, alexa026). Updates current/recoverable/max exp + boost exp.</summary>
+/// <summary>
+/// Java parity: network/aion/serverpackets/SM_STATUPDATE_EXP (Luno, alexa026). Updates current/recoverable/max exp + boost exp.
+/// D37: the 4.8 client reads six int64 from this packet and Java writes five, so a sixth is written here.
+/// </summary>
 public class SM_STATUPDATE_EXP : AionServerPacket
 {
     private long currentExp;
@@ -28,5 +31,8 @@ public class SM_STATUPDATE_EXP : AionServerPacket
         WriteQ(maxExp);
         WriteQ(curBoostExp);
         WriteQ(maxBoostExp);
+        // D37: the client's Blessing of Wisdom pool. Java omits it, and the client then reads the
+        // eight bytes after the packet; above zero it shows the blessing's icon and tooltip.
+        WriteQ(0);
     }
 }

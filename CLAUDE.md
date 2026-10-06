@@ -71,6 +71,9 @@ not be ported back either.
 D36 approves two more retail corrections of Q2947: a death fails the arena attempt at once,
 and the arena has NCSoft's twelve spirits, not Java's eleven (§7/158–159, same test file);
 neither is ported back.
+D37 approves writing the sixth int64 the 4.8 client reads from `SM_STATUPDATE_EXP`, always
+zero, where Java writes five (§7/160, `GoldenPacketFixtureTests`). It is the client's Blessing
+of Wisdom pool; the mechanic itself is not implemented. It must not be ported back.
 D38 approves giving the two quest arenas (Triniel 320090000, Sanctum 310080000) instance handlers, so a player who dies
 there is offered the instance revive and stands up inside at NCSoft's own point, as in retail (§7/161, same test file as
 D34–D36). It must not be ported back.
