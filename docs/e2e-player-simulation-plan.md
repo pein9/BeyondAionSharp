@@ -4,6 +4,11 @@
 gather, craft, trade, group, run instances) with no human in the loop, fast enough to run before every commit, and with
 every server error surfaced the moment it happens, attributed to the bot action that caused it.
 
+**Where this leads (the maintainer, 2026-10-06).** Three long-term goals, in order: a server play-tested by our
+bots, with bugs found and fixed as we encounter them; an intelligent bot that can play the whole game (all
+quests, gathering, crafting and the rest); and, only after those two, bots that can join a human group as an
+extra healer or DPS. The full statement is in [CLAUDE.md](../CLAUDE.md#where-this-leads-the-long-term-goals).
+
 **Status.** Implementation in progress. Written 2026-09-17 against `main` at `488763e0c`;
 every claim in §1, §7 and the appendices was re-checked against the code by an independent review pass.
 The maintainer's decisions (§6) were applied the same day: no hosted CI and no schedulers; test runs are

@@ -9,6 +9,21 @@ bugs and missing content of its own. Java stays the default reference below, bec
 usually right and the port was checked against it. Where 4.8 retail evidence shows Java wrong
 or missing, retail wins, under a logged decision: the retail AI exception, D19, D26–D31, or D32.
 
+## Where this leads: the long-term goals
+
+Set by the maintainer on 2026-10-06. Every bot leg, snapshot and fix serves these, in order:
+
+1. **A server play-tested by our bots.** The bots play the game the way a player does. We
+   find and fix bugs as we encounter them.
+2. **An intelligent bot that can play the whole game:** all quests, gathering, crafting and
+   the rest.
+3. **Bots that can join a human group** as an extra healer or DPS. This is the far goal. It
+   is not worked on until the first two are done.
+
+A bug the bots find is fixed under the rules below: read the Java first, and let retail win
+only under a logged decision. The leg being worked now, and its checklist, is in the
+natural-bot documents under [Where things live](#where-things-live).
+
 ## Golden rule: the Java source is the spec
 
 - **Before fixing or porting anything, read the corresponding Java implementation first**

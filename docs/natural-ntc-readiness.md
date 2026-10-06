@@ -4,6 +4,8 @@ Prepared 2026-10-06 for RC-12. The accepted run is `rc11-full-create-s1-a25`, se
 
 The next bounded goal should complete Abyss entry, then establish natural Templar and Sorcerer profiles and a coordinated Templar/Cleric/Sorcerer NTC party around levels 25–27. Park the Cleric at this endpoint while the other profiles catch up. Abyss execution, additional classes, the party controller, NTC and crafting remain separate contracts.
 
+These contracts are steps toward the maintainer's long-term goals (2026-10-06, in order): a server play-tested by our bots, with bugs fixed as we encounter them; an intelligent bot that can play the whole game (all quests, gathering, crafting and the rest); and, only after those two, bots that can join a human group as an extra healer or DPS. See [CLAUDE.md](../CLAUDE.md#where-this-leads-the-long-term-goals). The Abyss-entry leg is planned in [natural-abyss-entry.md](natural-abyss-entry.md).
+
 ## Measured endpoint and historical comparison
 
 | Measure | Historical AS-02 | Revised RC |

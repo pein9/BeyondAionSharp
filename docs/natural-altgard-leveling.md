@@ -5168,6 +5168,13 @@ highest eligible nearby level affects XP/drop penalties; level 32 is not a unive
 zero-reward cutoff. Use the observed RC endpoint to budget further XP before expansion.
 The existing Cooking/Alchemy plan remains a separate bounded profession/supply goal.
 
+**Where this leads (the maintainer, 2026-10-06).** The long-term goals, in order: a server
+play-tested by our bots, with bugs fixed as we encounter them; an intelligent bot that can
+play the whole game (all quests, gathering, crafting and the rest); and, only after those
+two, bots that can join a human group as an extra healer or DPS. See
+[CLAUDE.md](../CLAUDE.md#where-this-leads-the-long-term-goals). The Abyss-entry leg is
+planned in [natural-abyss-entry.md](natural-abyss-entry.md) (AX-00..AX-09).
+
 ## Blocked / questions for the operator
 
 **ND-Q1 — Correct the Leg 11 reward endpoint (answered 2026-10-03: Option (a)).** The maintainer chose

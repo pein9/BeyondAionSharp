@@ -3,6 +3,20 @@
 This is a **Java → C# port** of the Aion server (the `aionemu` codebase). The Java
 source is the reference implementation; the C# port exists to match its behavior 1:1.
 
+## Where this leads: the long-term goals
+
+Set by the maintainer on 2026-10-06. Every bot leg, snapshot and fix serves these, in order:
+
+1. **A server play-tested by our bots.** The bots play the game the way a player does. We
+   find and fix bugs as we encounter them.
+2. **An intelligent bot that can play the whole game:** all quests, gathering, crafting and
+   the rest.
+3. **Bots that can join a human group** as an extra healer or DPS. This is the far goal. It
+   is not worked on until the first two are done.
+
+A bug the bots find is fixed under the rules below and in `CLAUDE.md`: read the Java first,
+and let 4.8 retail win only under a logged decision.
+
 ## Golden rule: the Java source is the spec
 
 - **Before fixing or porting anything, read the corresponding Java implementation first**

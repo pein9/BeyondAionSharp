@@ -44,6 +44,12 @@ this server revision (progression, campaigns, and selected endgame objectives).
 An MMO's repeatable and scheduled activities do not have a universal "finished"
 state. Ishalgen is a first acceptance milestone, not a claim of whole-game coverage.
 
+The maintainer set the long-term goals on 2026-10-06, in order: a server play-tested by
+our bots, with bugs fixed as we encounter them; an intelligent bot that can play the whole
+game (all quests, gathering, crafting and the rest); and, only after those two, bots that
+can join a human group as an extra healer or DPS. See
+[CLAUDE.md](../CLAUDE.md#where-this-leads-the-long-term-goals).
+
 ## Content boundary
 
 Use only content already implemented in the referenced Java/C# server revision.

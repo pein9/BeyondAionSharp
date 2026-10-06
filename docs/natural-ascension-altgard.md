@@ -32,6 +32,12 @@ area. This bridge covers Ascension only: it gets the character from Ishalgen to 
 a Cleric, bound, geared and restocked. Altgard's own quests are the next milestone; see
 [After the bridge](#after-the-bridge).
 
+The maintainer restated the long-term goals on 2026-10-06, in order: a server play-tested
+by our bots, with bugs fixed as we encounter them; an intelligent bot that can play the
+whole game (all quests, gathering, crafting and the rest); and, only after those two, bots
+that can join a human group as an extra healer or DPS. See
+[CLAUDE.md](../CLAUDE.md#where-this-leads-the-long-term-goals).
+
 **Prove it once.** The bridge is an intermediate step that sets up the next real bot runs.
 - Each development item is verified by **one** snapshot run.
 - Acceptance is:
