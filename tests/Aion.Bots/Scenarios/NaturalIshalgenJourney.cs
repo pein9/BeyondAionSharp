@@ -63,6 +63,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		for (int attempt = 0; progress.CanRetry(attempt) && progress.StalledAttempts < 3; attempt++)
 		{
 			BotPosition before = session.CurrentPosition;
+			bool avoidRememberedDeathSpots = true;
 			IReadOnlyList<BotPosition> route = await NaturalCampaignZoneRoute.FindAsync(
 				() => navigator.FindRouteAsync(session.CurrentPosition, goal, token), async () =>
 				{
@@ -70,10 +71,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await navigator.SynchronizeAsync(token);
 					return !session.Api.World.IsDead;
 				}, token);
+			if (route.Count == 0)
+			{
+				route = navigator.FindCampaignMemoryPreferenceRoute(session.CurrentPosition, goal, token);
+				avoidRememberedDeathSpots = false;
+			}
 			foreach (BotPosition[] segment in route.Chunk(16))
 			{
 				if (navigator.IsSegmentStale(segment)) break;
-				if (!navigator.IsSegmentSafe(segment, null, goal)) return false;
+				if (!navigator.IsSegmentSafe(segment, null, goal, avoidRememberedDeathSpots)) return false;
 				await navigator.MoveAsync(segment, token);
 				await navigator.SynchronizeAsync(token);
 				if (afterSegment != null) await afterSegment(token);
@@ -2531,6 +2537,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					// those hazards, then repeatedly asked to kill a blocker where no live monster remained.
 					bool campaignZone = purpose == "campaign-zone";
 					int approachRevives = combat.ReviveCount;
+					bool avoidRememberedDeathSpots = true;
 					IReadOnlyList<BotPosition> road = campaignZone
 						? await NaturalCampaignZoneRoute.FindAsync(
 							() => navigator.FindRouteAsync(session.CurrentPosition, goal, token), async () =>
@@ -2543,7 +2550,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						: planner?.PlanJourney(map, session.CurrentPosition, goal, session.Api.World.Level, [])?.Route
 							?? geometry.FindJourneyPath(map, session.CurrentPosition, goal);
 					bool SafeSegment(IReadOnlyList<BotPosition> segment) => campaignZone
-						? navigator.IsSegmentSafe(segment, null, goal) : navigator.IsSegmentSafe(segment, null);
+						? navigator.IsSegmentSafe(segment, null, goal, avoidRememberedDeathSpots) : navigator.IsSegmentSafe(segment, null);
 					if (road.Count == 0)
 					{
 						// Distinguish a blocked patrol corridor from disconnected ground. Previously the zone
@@ -2555,8 +2562,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						});
 						if (campaignZone && BotNavMeshRouter.LastOutcome == BotNavRouteOutcome.HazardRejected &&
 							!session.Api.World.IsDead && combat.ReviveCount == approachRevives)
+						{
+							BotPosition beforeClear = session.CurrentPosition;
+							int killsBefore = navigator.UnavailableObjects.Count;
 							await TryClearObservedBlockerAsync(goal);
-						return false;
+							if (session.Api.World.IsDead || combat.ReviveCount != approachRevives ||
+								navigator.UnavailableObjects.Count > killsBefore || Distance(beforeClear, session.CurrentPosition) > 2)
+								return false; // Re-observe after real combat/movement before changing the route preference.
+							// A remembered death may close the only current hostile-free passage after its guards
+							// were killed. Like the existing pull policy, keep it a preference when no other way works.
+							road = navigator.FindCampaignMemoryPreferenceRoute(session.CurrentPosition, goal, token);
+							avoidRememberedDeathSpots = false;
+						}
+						if (road.Count == 0) return false;
 					}
 					// Walk the road only as far as its first point where the caller wants to stop.
 					if (stopAt != null && road.Select((point, index) => (point, index)).FirstOrDefault(entry => stopAt(entry.point)) is
@@ -7841,11 +7859,31 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		}
 
 		public bool IsSegmentSafe(IReadOnlyList<BotPosition> segment, int? targetObjectId, BotPosition destination)
+			=> IsSegmentSafe(segment, targetObjectId, destination, includeDeathSpots: true);
+
+		public bool IsSegmentSafe(IReadOnlyList<BotPosition> segment, int? targetObjectId, BotPosition destination,
+			bool includeDeathSpots)
 		{
 			// Keep the same destination/death-site exemption as FindRouteAsync even while
 			// walking to a shipped hint without an observed target. Live hostiles still count.
-			BotNavigationHazard[] hazards = ObservedHazards(destination, targetObjectId);
+			BotNavigationHazard[] hazards = ObservedHazards(destination, targetObjectId, includeDeathSpots);
 			return BotNavigationGeometry.AvoidsHazards(session.CurrentPosition, segment, hazards);
+		}
+
+		public IReadOnlyList<BotPosition> FindCampaignMemoryPreferenceRoute(BotPosition start, BotPosition destination,
+			CancellationToken token)
+		{
+			token.ThrowIfCancellationRequested();
+			int map = session.Api.World.MapId ?? throw new InvalidDataException("Campaign map unobserved.");
+			BotNavigationHazard[] liveHazards = ObservedHazards(destination, includeDeathSpots: false);
+			IReadOnlyList<BotPosition> route = NaturalCampaignZoneRoute.FindMemoryPreferencePath(geometry, map,
+				start, destination, liveHazards);
+			session.TraceDiagnostic("campaign-zone-memory-preference-route", new Dictionary<string, object?>
+			{
+				["position"] = start, ["goal"] = destination, ["points"] = route.Count,
+				["liveHazards"] = liveHazards.Length, ["rememberedDeaths"] = AvoidSpots.Count,
+			});
+			return route;
 		}
 
 		public IReadOnlyList<BotPosition> FindRangedApproach(BotPosition start, BotPosition target,
@@ -7911,7 +7949,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		private const float StaleSegmentDistance = 30f;
 
 		private BotNavigationHazard[] ObservedHazards(BotPosition? destination,
-			int? targetObjectId = null)
+			int? targetObjectId = null, bool includeDeathSpots = true)
 		{
 			if (!AvoidHostileAggro) return [];
 			IReadOnlyList<NaturalNavigationObject> observed = Observe().Npcs;
@@ -7928,7 +7966,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				entry.template.GetAggroRange() > 0)
 			.SelectMany(entry => entry.npc.Hazards(entry.template!.GetAggroRange() + 1f, BotPatrolPath.PassingReach))
 			// A death spot is avoided unless the destination itself lies there (a target the Cleric died beside).
-			.Concat(AvoidSpots.Where(spot => objective == null || Distance(spot, objective.Value) > AvoidSpotRadius)
+			.Concat((includeDeathSpots ? AvoidSpots : []).Where(spot => objective == null || Distance(spot, objective.Value) > AvoidSpotRadius)
 				.Select(spot => new BotNavigationHazard(spot, AvoidSpotRadius))).ToArray();
 		}
 

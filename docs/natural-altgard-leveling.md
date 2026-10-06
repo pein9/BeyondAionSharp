@@ -4943,6 +4943,37 @@ monitor enabled and announce its URL when a journey starts.
     (`run/rc11-fast/rc11-campaign-zone-wait/`). Seven final pre-commit checks pass
     (`run/rc11-zone-stall/*-final.log`). RC-11 remains open: commit/rebuild before
     another fresh continuous capture.
+  - 2026-10-06, twenty-first retained attempt: `rc11-full-create-s1-a21` on ea6b2c26d
+    completes the revised prefix, Legs 1-9, all three warlocks, ordinary Return,
+    the robe and Q24014. Q24015 still stops at START/1, Cleric 24/160 alive, after
+    44.8409 test minutes. Twelve deaths retain the same stage distribution as attempt
+    twenty; the full trace/failure audit and owned-schema drop remain intact.
+    Its zone approach does fight: seven native guard kills, eight 15 s patrol holds
+    and eleven approaches. After the last guard clear, the fight-through plan has
+    32 terrain points and no live blockers, but the segment guard rejects remembered
+    danger. Three real nonprogress attempts then stop at 1928.6334/2367.2332/300.96252.
+    Java Q24015, SphereArea and GeoService and the existing pull policy's remembered
+    death preference were read. Required campaign-area roads now try their normal
+    avoidance, wait and ordinary guard recovery first. After recovery makes no further
+    movement or kill progress, they may use a checked route with remembered deaths
+    as preferences; every current live hostile circle remains hard. Planning and
+    segment checks share that explicit per-road choice. Other roads/combat retain
+    their existing rules, and the three-stall/120-attempt/death bounds are unchanged.
+    The final 89-circle layout is retained as a labelled fixture: 81 live constraints
+    and eight death spots. Free probe 229 clears native scripted contacts and drops
+    its view before setup teleport; the diagnostic proves a 32-point route avoids
+    all 81 live constraints, crosses remembered danger and receives native START/2.
+    The final four shared-code native zone probes pass in 45.8480 s, including this
+    entry with zero deaths (`run/rc11-zone-exhaustion/native-probe.log`). Setup and
+    captured circles are controlled evidence, not a natural character setup.
+    Public-restore Leg 10 from altgard-rc-l9 passes at 24/152 with one death, all six
+    Q24015 updates, Q2282/Q24015/Q24016 each once, ordinary endpoint relog and its
+    owned schema dropped (10.5070 test minutes; `l10-smoke/`, `smoke-audit.json`).
+    That smoke needs neither the new patrol hold nor the memory fallback. Fast
+    passes 102 tests/five guarded skips/all eleven scenarios in 8.7872 minutes
+    (`run/rc11-fast/rc11-campaign-zone-memory/`). Seven final pre-commit checks pass
+    (`run/rc11-zone-exhaustion/*-final.log`). Full acceptance remains open: commit
+    and acknowledge the rebuild before the next fresh continuous capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5329,6 +5360,13 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-06 RC-11 pending: attempt twenty-one waits eight times and kills seven
+  actual guards near Q24015, then still rejects a live-hostile-free route because
+  remembered deaths are hard walls. Required-zone fallback now treats those memories
+  as preferences while retaining every current hostile constraint and the existing
+  recovery bounds. Four native probes, a public Leg 10 restore, Fast 102/five/all
+  eleven and seven checks pass (`run/rc11-zone-exhaustion/`). The natural smoke needs
+  no fallback; retain the failed full run and commit/rebuild before fresh proof.
 - 2026-10-05 RC-11 pending: attempt twenty retains twelve deaths and three identical
   Q24015 hazard-blocked road attempts without a game tick. Campaign roads now use
   the approved observed 15 s patrol hold and existing bounded guard recovery before

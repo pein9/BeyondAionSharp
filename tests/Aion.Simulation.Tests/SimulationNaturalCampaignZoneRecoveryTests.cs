@@ -217,4 +217,67 @@ public sealed partial class SimulationFastScenarioTests
 		Console.WriteLine($"RC-11 old road crossed the remembered death spot; shared checked detour enters the native sphere and advances Q24015 1->2 at {session.CurrentPosition}.");
 		policy.AssertClean();
 	}
+	[SkippableFact]
+	public async Task NativeCampaignZoneMemoryFallbackEntersWithEveryRecordedLiveConstraint()
+	{
+		Skip.IfNot(fixture.IsAvailable, fixture.SkipReason);
+		using var policy = NewPolicy("RC11ZoneMemory", includeHistory: false);
+		using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+		CancellationToken token = timeout.Token;
+		string run = Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "rc11-zone-entry";
+		string path = Path.Combine(RealStaticData.RepoRoot(), "run", $"{run}.zone-memory.trace.jsonl");
+		using var trace = BotActionTraceWriter.Open(path, run, "b01", "sim-player-229",
+			virtualTime: () => TimeSpan.FromMilliseconds(fixture.Clock.NowMillis));
+		await using var session = new SimulationL0Session(fixture, policy, "b01", 229, "Asimzonememory", Race.ASMODIANS, trace, path);
+		var dashboard = new LiveBotDashboardState();
+		await using var host = new LiveBotDashboardHost(run, ["RC-11"], dashboard,
+			int.Parse(Environment.GetEnvironmentVariable("AION_BOT_DASHBOARD_PORT") ?? "17880"));
+		session.Dashboard = dashboard;
+		if (host.Enabled) Console.WriteLine($"RC-11 zone entry probe dashboard: {host.Url}");
+		var probe = new DestinyProbe(this, fixture, session, token);
+		await probe.InitializeAsync();
+		await probe.SetupAtFortressAsync();
+		using var layout = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(
+			RealStaticData.RepoRoot(), "tests/Aion.Simulation.Tests/Fixtures/NaturalCampaignZoneClearedLayout.json")));
+		BotPosition Position(System.Text.Json.JsonElement point) => new(point.GetProperty("X").GetSingle(),
+			point.GetProperty("Y").GetSingle(), point.GetProperty("Z").GetSingle(), 0);
+		BotPosition start = Position(layout.RootElement.GetProperty("start"));
+		BotPosition oldGoal = Position(layout.RootElement.GetProperty("oldGoal"));
+		BotNavigationHazard[] hazards = layout.RootElement.GetProperty("hazards").EnumerateArray()
+			.Select(point => new BotNavigationHazard(Position(point), point.GetProperty("Radius").GetSingle())).ToArray();
+		NaturalAltgardZoneStep zone = Assert.Single(NaturalAltgardContract.LoadLeg("l10").ZoneStepList);
+		BotPosition center = new(zone.Anchor![0], zone.Anchor[1], zone.Anchor[2], 0);
+		foreach (var npc in probe.Server.GetWorldMapInstance().GetNpcs().Where(n => !n.IsDead() &&
+			NaturalHostility.IsAggressive(n.GetObjectTemplate(), fixture.DataManager.StaticData.TribeRelations, TribeClass.PC_DARK) &&
+			new[] { start, center }.Any(at => NaturalFlightPolicy.Distance(at, new(n.GetX(), n.GetY(), n.GetZ(), 0)) < 120)).ToArray())
+			fixture.World.Despawn(npc);
+		QuestState quest = probe.Server.GetQuestStateList().GetQuestState(24015);
+		quest.SetStatus(QuestStatus.START); quest.SetQuestVar(1);
+		PacketSendUtility.SendPacket(probe.Server, new SM_QUEST_ACTION(SM_QUEST_ACTION.ActionType.ADD, quest));
+		session.Api.World.BeginWorldReload();
+		await TeleportForSetupAsync(session, probe.Server, 220030000, start.X, start.Y, start.Z, token);
+		session.AcceptTeleportPosition();
+		await session.SynchronizeAsync(token);
+		Console.WriteLine($"RC-11 free probe 229: labelled START/1 and cleared course; all {hazards.Length} recorded hazard circles retained as geometry constraints.");
+		BotNavigationGeometry geometry = probe.Runtime.CreateGeometry();
+		Assert.Empty(geometry.FindJourneyPathAvoiding(220030000,start,oldGoal,hazards));
+		BotNavigationHazard[] liveHazards = hazards.Where(h=>h.Radius!=20).ToArray();
+		Assert.Equal(81,liveHazards.Length);
+		IReadOnlyList<BotPosition> route = NaturalCampaignZoneRoute.FindMemoryPreferencePath(geometry,
+			220030000,start,oldGoal,liveHazards);
+		Assert.NotEmpty(route);
+		Assert.True(BotNavigationGeometry.AvoidsHazards(start,route,liveHazards));
+		Assert.False(BotNavigationGeometry.AvoidsHazards(start,route,hazards));
+		Console.WriteLine($"RC-11 shared memory preference: {route.Count} checked points, every one of 81 live constraints retained, eight remembered death circles are preferences after the recorded guard clear.");
+		await session.ExecuteMovementAsync(new BotMover(session.Api.World,session.Api.Timing)
+			.CreateGroundPlan(route,session.CurrentPosition,session.Api.World.MovementSpeed!.Value),token);
+		await session.SynchronizeAsync(token);
+		Assert.Equal(2,quest.GetQuestVarById(0));
+		Assert.Equal(2,session.Api.World.Quests[24015].StepAndFlags);
+		Assert.True(NaturalFlightPolicy.Distance(center,session.CurrentPosition)<zone.Radius);
+		Assert.False(probe.Server.IsDead());
+		Assert.DoesNotContain(session.PacketHistory,p=>p.PacketType==typeof(SM_DIE));
+		policy.AssertClean();
+	}
+
 }
