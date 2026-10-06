@@ -412,55 +412,32 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// Wear the best gear in the bag (the recorded human put on four unused quest rewards at Nalto).
 			// The client knows each item's slots, level and class/race limits from its tooltip; the server
 			// still checks every equip, and an item it refuses is never asked for again.
-			async Task EquipUpgradesAsync(CancellationToken gearToken)
+			async Task<IReadOnlyList<NaturalGearUpgrade>> EquipUpgradesAsync(CancellationToken gearToken)
 			{
 				// CG authorizes exactly three explicit armour equips and freezes the incoming loadout.
-				if (altgardLeg?.CoinGear != null) return;
+				if (altgardLeg?.CoinGear != null) return [];
 				BotWorldModel world = session.Api.World;
-				if (world.IsDead) return;
+				if (world.IsDead) return [];
 				// NA-09: the observed class and race decide what can be worn; after Ascension the Cleric's new
 				// masteries (chain, shield, staff) make items the Priest was refused wearable, so refusals reset.
 				BotKnownObject? self = world.SelfObjectId is int selfId ? world.Objects.GetValueOrDefault(selfId) : null;
 				var playerClass = self?.PlayerClass is byte classId
 					? PlayerClassExtensions.GetPlayerClassById(classId, true) ?? PlayerClass.PRIEST : PlayerClass.PRIEST;
 				var race = self?.Race is byte raceId ? (Race)raceId : Race.ASMODIANS;
-				var gender = Gender.MALE; // the natural character is created male; gender is not in the client model
 				if (playerClass != gearClass)
 				{
 					gearClass = playerClass;
 					refusedGear.Clear();
 				}
-				NaturalGearInfo? Describe(int itemId)
-				{
-					var template = runtime.Data.ItemDataDh.GetItemTemplate(itemId);
-					if (template == null || template.GetItemSlot() == 0) return null;
-					var genderLimit = template.GetUseLimits()?.GetGenderPermitted();
-					return new NaturalGearInfo(template.GetItemSlot(), template.GetRequiredLevel(playerClass), template.GetLevel(),
-						(template.GetRace() == Aion.GameServer.Model.Race.PC_ALL || template.GetRace() == race) &&
-						(genderLimit == null || genderLimit == gender));
-				}
+				// AX-04: the description carries what the staff rule needs, a staff from a mace or a shield and each weapon's magic boost.
+				NaturalGearInfo? Describe(int itemId) =>
+					NaturalInventoryCheck.Describe(runtime.Data.ItemDataDh.GetItemTemplate(itemId), playerClass, race);
 				IReadOnlySet<int> questNeeded = QuestNeededItems();
-				foreach (NaturalGearUpgrade upgrade in NaturalGearPolicy.SelectUpgrades(
+				return await NaturalInventoryCheck.EquipAsync(session,
 					world.Inventory.Values.Where(item => !questNeeded.Contains(item.ItemId) && (altgardLeg?.Haramel == null ||
 						item.Details.EquippedSlot.GetValueOrDefault() != 0 || NaturalHaramel.CanUpgradeGroup(
-							runtime.Data.ItemDataDh.GetItemTemplate(item.ItemId)?.GetItemGroup().ToString()))), world.Level,
-					Describe, (long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, refusedGear))
-				{
-					await session.SendPacketAsync(session.Api.Equip(0, upgrade.Slot, upgrade.ObjectId), gearToken);
-					await session.SynchronizeAsync(gearToken);
-					bool worn = world.Inventory.TryGetValue(upgrade.ObjectId, out BotInventoryItem? after) &&
-						(after.Details.EquippedSlot ?? 0) > 0;
-					if (!worn) refusedGear.Add(upgrade.ObjectId);
-					session.TraceDiagnostic("gear-equip", new Dictionary<string, object?>
-					{
-						["itemId"] = upgrade.ItemId,
-						["objectId"] = upgrade.ObjectId,
-						["slot"] = upgrade.Slot,
-						["itemLevel"] = upgrade.ItemLevel,
-						["replacesItemLevel"] = upgrade.ReplacesItemLevel,
-						["worn"] = worn,
-					});
-				}
+							runtime.Data.ItemDataDh.GetItemTemplate(item.ItemId)?.GetItemGroup().ToString()))),
+					Describe, (long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, refusedGear, gearToken);
 			}
 			combat.MaintainInventoryAsync = MaintainInventoryAsync;
 			// Every aggressive spawn spot, plus every step of a patrol's route (a walker stands anywhere on it).
@@ -656,6 +633,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					["level"] = start.Level, ["map"] = start.MapId, ["completed"] = start.CompletedQuests, ["started"] = start.StartedQuestIds,
 					["kinah"] = start.Kinah, ["bronzeCoins"] = start.BronzeCoins, ["staffObjectId"] = start.StaffObjectId,
 				});
+				// AX-04: the inventory check the leg runs after every quest turn-in (the operator, 2026-10-06), run once here so
+				// the leg begins with the best staff worn. AX-05 onward call it after each turn-in.
+				session.BeginStep("ax-inventory-check", "inventory-check-at-the-leg-start");
+				await NaturalInventoryCheck.RunAsync(session, "leg-start", altgardLeg.AbyssEntry.Inventory, EquipUpgradesAsync,
+					runtime.Data.ItemDataDh.GetItemTemplate,
+					() => NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, session.Api.World.Inventory.Values.Select(item => item.ItemId))
+						.Decide(session.Api.World, QuestNeededItems()).FreeSlots, token);
 				session.PublishDashboard("completed", force: true);
 				await session.QuitAsync(token);
 				runtime.AssertClean();

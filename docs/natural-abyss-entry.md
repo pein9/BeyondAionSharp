@@ -4,8 +4,9 @@ Status (2026-10-06): **approved. AX-00 (this plan) is done. The operator answere
 AX-Q1..AX-Q6 and then revised the order the same day; see
 [Operator decisions](#operator-decisions).** AX-01 is done: the server side is compared and
 measured. AX-02 is done: Morheim and the arena have checked-in navigation data. AX-03 is
-done: the leg has a frozen contract, and a restored run proves its start. AX-04 is next.
-No step of the leg has been played yet.
+done: the leg has a frozen contract, and a restored run proves its start. AX-04 is done:
+the staff rule and the inventory check exist, and the check runs at the leg's start. AX-05
+is next. No step of the leg has been played yet.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -226,15 +227,21 @@ no helmet, belt or accessory.
 **Level 21: Rank 8, the only level-21 tier (rare).** Bought right after the commander's
 talk, for each slot where it beats what is worn.
 
-| Slot | Worn now | Defence | Rank 8 piece | Coins | Defence |
+| Slot | Worn after the leg-start check | Defence | Rank 8 piece | Coins | Defence |
 |---|---|---:|---|---:|---:|
 | Torso | Altgard Legionary Hauberk 110551139 | 112 | Hauberk 110501097 | 3 | 134 |
-| Gloves | Rank 9 Asmodian Handguards 111501065 | 67 | Handguards 111501066 | 2 | 80 |
-| Shoulders | Rank 9 Asmodian Spaulders 112501015 | 67 | Spaulders 112501016 | 2 | 80 |
-| Legs | Rank 9 Asmodian Chausses 113501074 | 90 | Chausses 113501075 | 2 | 107 |
+| Gloves | Haramel's Handguards 111501081 | 78 | Handguards 111501066 | 2 | 80 |
+| Shoulders | Altgard Dark Legionary Spaulders 112501641 | 80 | Spaulders 112501016 | 2 | 80 |
+| Legs | Altgard Dark Legionary Chausses 113501720 | 107 | Chausses 113501075 | 2 | 107 |
 | Feet | Altgard Legionary Brogans 114501726 | 67 | Brogans 114501082 | 2 | 80 |
 | **All five** | | | | **11** | |
 
+- AX-04's check changed this table. At the preserved endpoint the Cleric wore the level-16
+  Rank 9 gloves, shoulders and legs (67, 67 and 90 defence) and carried the better pieces
+  above. With them on, Rank 8 only ties the shoulders and legs.
+- The torso is replaced by Q24020's hauberk 110551147 (177 defence) before any coin is
+  spent, so Rank 8's 134 is not better there either. Likely to remain: feet, and gloves by
+  2 defence against 5 healing boost. AX-06 decides from the full manifest.
 - The Cleric holds 7 Bronze Coins, so up to 4 are supplied.
 - Other stats differ too. The Rank 8 Hauberk has 15 magic boost and 61 HP but no healing
   boost, where the worn one has 7 healing boost and 5 concentration. AX-06 writes the full
@@ -428,7 +435,7 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   - Fast passes 107 tests with five guarded skips and all eleven scenarios in 12.33 minutes
     (`run/ax03-fast/`). All seven pre-commit checks pass (`run/ax03/checks/`); the first warning
     run caught one nullable warning in the new contract test, fixed before the commit.
-- [ ] **AX-04 - The staff rule and the inventory check.** Depends AX-00.
+- [x] **AX-04 - The staff rule and the inventory check.** Depends AX-00.
   - The Cleric's equipment check always chooses a staff, and wears the staff it owns with
     the most magic boost (AX-Q1). This is the rule at all times and in every leg. It
     replaces "keep staff 101501357 equipped" and the ban on weapon auto-equipping from
@@ -439,6 +446,46 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   - Read the ledgers of the accepted run `rc11-full-create-s1-a25` for any moment where an
     owned staff had more magic boost than the worn one. Record what the rule would have
     changed. Do not rerun the journey for it.
+  - 2026-10-06, the staff rule: `NaturalGearPolicy.SelectUpgrades` is the one equipment
+    check of every leg. Once the character owns a staff it can wear, the main hand holds
+    the owned staff with the most magic boost, and no mace or shield goes on. Item level no
+    longer decides between weapons. Before the first staff (the Priest in Ishalgen) the old
+    rule stands. `ChooseStaffReward` picks the usable staff with the most magic boost from
+    a reward's offers; for Q2947 it picks Altruist's Staff, which is the contract's choice.
+    Four new unit tests cover it (`NaturalGearPolicyTests.cs`, 23 pass with the contract
+    tests).
+  - The inventory check: `NaturalInventoryCheck.RunAsync` wears better gear, opens the
+    containers the leg names (one use at a time, with the use bar and the item's delay),
+    discards what the leg discards, wears anything a container gave, proves the sealed
+    bundle is untouched, and reports the free cube slots. It traces `gear-equip`,
+    `reward-container-opened`, `item-discarded` and `inventory-check`. The journey's own
+    `EquipUpgradesAsync` now uses the same code.
+  - Probe `AbyssEntryInventoryCheckWearsTheBestStaffOpensTheRewardsAndDiscardsTheManastone`
+    (account 95, `run/ax04/probe-a1.log`): a level-25 Cleric with a mace worn and three
+    staffs owned ended holding Altruist's Staff 101501224 (460). Two Strange Green Sacks
+    gave 166000193 and 166000192. The two Bronze Coin Chests gave 10 and 9 Bronze Coins.
+    Manastone 167000465 was discarded. Bundle 188053787 was kept. 10 slots were free.
+  - Audit of the accepted run (`run/ax04/staff-audit.json`, `reward-audit.json`):
+    - No weapon other than a staff was ever chosen over a staff. Every reward that offered
+      a staff took it: Q2009, Q24013 and Q24016. The rule changes no choice.
+    - Q28505 lists Lateni's Staff (330) in a class reward the quest does not use, so it was
+      never offered.
+    - **The check ran too seldom.** The Altgard Legionary Staff (320) was earned at game
+      time 06:18:58, at level 18, and worn at 18:04:48, at level 24. For 11 hours 46 minutes
+      of play the Cleric held the Karmic Staff (260). The Dark Legionary Staff (370) was
+      earned at 18:09:31 and worn only in the coin-gear leg's preparation.
+  - Proof at the leg's start, `run/ax04/ax04-start-a1` (public Restore, leg `ax`, 32.4 s,
+    schema dropped): the start was verified, then the check wore **five better pieces that
+    sat unworn in the cube at the preserved endpoint**: Altgard Dark Legionary Spaulders
+    112501641 and Chausses 113501720 (level 21, over the level-16 Rank 9 pieces), Haramel's
+    Handguards 111501081 (20 over 16), Hamerun's Crystal Earrings 120001116 (21 over 14)
+    and the Dark Legionary Cloth Band 123001440 (19 over 14). The staff 101501357 was
+    already the best owned. Nothing was opened or discarded; 24 slots were free. The
+    [Coin armor](#coin-armor) table now shows what is worn after this check.
+  - Where it runs: at the leg's start now, and after each turn-in as AX-05 onward add the
+    leg's steps. Earlier legs keep the points where they already ran the equipment check;
+    see [Blocked / questions](#blocked--questions-for-the-operator).
+  - Fast and the seven pre-commit checks: see the Progress log.
 - [ ] **AX-05 - Morheim and the commander.** Depends AX-02, AX-03 and AX-04. Route rows
   M1–M4: Ukin's teleport, Q24020's start on arrival, the bind at Morheim Ice Fortress
   (AX-Q2), the talk with Aegir, the hauberk 110551147, and the inventory check.
@@ -547,6 +594,13 @@ these defaults; say so to change one.
   Default: no coin weapon is bought, as decided on 2026-10-03; "coin gear" is read as armor.
 - **Which fortress quests (AX-11).** Default: the loop picks them by the rule in AX-11 and
   records the list before playing, without waiting for approval.
+
+- **The inventory check in the earlier legs.** AX-04 found the accepted run wore its
+  staffs and five armor pieces late, because Ishalgen to Haramel run the equipment check
+  at a few fixed points only. Default: those legs keep their points, since their accepted
+  runs are the evidence and this loop may not start a full run. The staff rule itself is
+  already in every leg. Say so to add the check after every turn-in there too; the next
+  full run would then prove it.
 
 AX-Q1 was asked and answered for this Cleric. Other classes get their own weapon rule when
 their profiles are planned.
@@ -687,3 +741,10 @@ The original questions, with the recommendations made at the time:
 - 2026-10-06 — D34: Q2947 fails only the player's own arena attempt, and every attempt
   starts in a new instance. A death is unchanged. Six SIM tests pin it (`run/d34/`), and
   the bot's 661 s wait is gone from the contract.
+- 2026-10-06 — AX-04: the equipment check always wears the owned staff with the most magic
+  boost, and the inventory check wears, opens, discards and counts. A probe proved all four
+  (`run/ax04/probe-a1.log`). At the leg's start it wore five better pieces the endpoint
+  carried unworn (`run/ax04/ax04-start-a1`). The accepted run chose every staff correctly
+  but wore one 11 hours 46 minutes late. Fast passes 113 of 118 tests with five guarded
+  skips and all eleven scenarios in 9.50 minutes (`run/ax04-fast/`); the seven pre-commit
+  checks pass (`run/ax04/checks/`).

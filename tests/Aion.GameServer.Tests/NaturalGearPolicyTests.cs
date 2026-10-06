@@ -20,6 +20,14 @@ public sealed class NaturalGearPolicyTests
 		[113100773] = new(Pants, 8, 8, true),            // Anturoon Leggings
 		[122000869] = new(RingLeft | RingRight, 7, 7, true), // Spirit Ring
 		[182400001] = null!,                             // kinah: not gear
+		// AX-04, the staff rule: the Cleric's staffs with their magic boost, and the hand items that must not replace one.
+		[101500498] = new(Main | Sub, 10, 10, true, "STAFF", 260),  // Karmic Staff
+		[101501357] = new(Main | Sub, 21, 21, true, "STAFF", 370),  // Altgard Dark Legionary Staff
+		[101501224] = new(Main | Sub, 25, 25, true, "STAFF", 460),  // Altruist's Staff
+		[101500812] = new(Main | Sub, 26, 26, true, "STAFF", 420),  // Rank 7 Asmodian Staff
+		[100101199] = new(Main | Sub, 25, 25, true, "MACE", 286),   // Altruist's Mace
+		[115001119] = new(Sub, 21, 21, true, "SHIELD"),             // Rank 8 Asmodian Scale Shield
+		[101500001] = new(Main | Sub, -1, 12, true, "STAFF", 300),  // a staff this class cannot wear
 	};
 
 	private static NaturalGearInfo? Describe(int itemId) => Items.TryGetValue(itemId, out var info) ? info : null;
@@ -62,5 +70,45 @@ public sealed class NaturalGearPolicyTests
 		BotInventoryItem[] inventory = [Bag(30, 122000869), Bag(31, 122000869)];
 		Assert.Equal([RingLeft, RingRight],
 			NaturalGearPolicy.SelectUpgrades(inventory, 9, Describe, 0).Select(u => u.Slot).OrderBy(s => s).ToArray());
+	}
+
+	[Fact]
+	public void TheFirstWearableStaffReplacesAMaceWhateverItsItemLevel()
+	{
+		// Ascension: the Karmic Staff arrives while the level-3 mace is worn. A mace of a higher item level stays in the bag.
+		BotInventoryItem[] inventory = [Worn(2, 100100024, Main), Bag(40, 101500498), Bag(41, 100101199), Bag(42, 114100795)];
+		IReadOnlyList<NaturalGearUpgrade> upgrades = NaturalGearPolicy.SelectUpgrades(inventory, 25, Describe, offHandSlots: 0);
+		Assert.Equal([(40, Main), (42, Boots)], upgrades.Select(u => (u.ObjectId, u.Slot)).OrderBy(u => u.ObjectId).ToArray());
+		Assert.Equal(3, upgrades.Single(u => u.ObjectId == 40).ReplacesItemLevel);
+	}
+
+	[Fact]
+	public void AHeldStaffYieldsOnlyToAStaffWithMoreMagicBoost()
+	{
+		BotInventoryItem[] bag = [Bag(41, 100101199), Bag(43, 115001119)];
+		// Magic boost decides, not item level: the level-26 staff with 420 loses to the level-25 staff with 460.
+		Assert.Equal([(50, Main)], NaturalGearPolicy.SelectUpgrades([Worn(2, 101501357, Main | Sub), Bag(50, 101501224), Bag(51, 101500812), .. bag],
+			26, Describe, 0).Select(u => (u.ObjectId, u.Slot)));
+		Assert.Empty(NaturalGearPolicy.SelectUpgrades([Worn(2, 101501224, Main | Sub), Bag(51, 101500812), Bag(52, 101501357), .. bag], 26, Describe, 0));
+		// The same staff again is no upgrade, and a staff the level does not allow yet waits.
+		Assert.Empty(NaturalGearPolicy.SelectUpgrades([Worn(2, 101501357, Main | Sub), Bag(53, 101501357), Bag(50, 101501224), .. bag], 24, Describe, 0));
+		Assert.Empty(NaturalGearPolicy.SelectUpgrades([Worn(2, 101501357, Main | Sub), Bag(50, 101501224)], 26, Describe, 0, refused: new HashSet<int> { 50 }));
+	}
+
+	[Fact]
+	public void WithoutAWearableStaffTheHandsFollowItemLevelAsBefore()
+	{
+		// The Priest in Ishalgen: a staff it cannot wear changes nothing, and the better mace still goes on.
+		BotInventoryItem[] inventory = [Worn(2, 100100011, Main), Bag(14, 100100024), Bag(60, 101500001)];
+		Assert.Equal([(14, Main)], NaturalGearPolicy.SelectUpgrades(inventory, 9, Describe, 0).Select(u => (u.ObjectId, u.Slot)));
+	}
+
+	[Fact]
+	public void ARewardThatOffersAStaffTakesTheStaffWithTheMostMagicBoost()
+	{
+		Assert.Equal(101501224, NaturalGearPolicy.ChooseStaffReward([100101199, 101501224], 25, Describe));
+		Assert.Equal(101501224, NaturalGearPolicy.ChooseStaffReward([101500812, 101501224, 101501357], 26, Describe));
+		Assert.Equal(101501357, NaturalGearPolicy.ChooseStaffReward([101500812, 101501224, 101501357], 24, Describe));
+		Assert.Null(NaturalGearPolicy.ChooseStaffReward([100101199, 115001119, 101500001], 25, Describe));
 	}
 }

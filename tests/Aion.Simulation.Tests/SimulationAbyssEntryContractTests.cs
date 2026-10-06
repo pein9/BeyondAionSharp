@@ -418,6 +418,61 @@ public sealed partial class SimulationFastScenarioTests
 		});
 	}
 
+	/// <summary>AX-04: the inventory check the leg runs after every turn-in. The staff with the most magic boost is worn and no
+	/// mace or shield goes on; the reward sacks and coin chests are opened; the manastone is discarded; the sealed bundle stays.</summary>
+	[SkippableFact]
+	public async Task AbyssEntryInventoryCheckWearsTheBestStaffOpensTheRewardsAndDiscardsTheManastone()
+	{
+		await RunCapitalProbeAsync("AX04", 95, "Asimaxinventory", async (probe, session, token) =>
+		{
+			Player server = probe.Server;
+			AxLevel25(server);
+			NaturalAbyssInventory rules = NaturalAltgardContract.LoadLeg(NaturalAbyssEntry.Leg).AbyssEntry!.Inventory;
+			var items = fixture.DataManager.StaticData.ItemDataDh;
+			var refused = new HashSet<int>();
+			BotWorldModel world = session.Api.World;
+			Task<IReadOnlyList<NaturalGearUpgrade>> EquipAsync(CancellationToken equipToken) => NaturalInventoryCheck.EquipAsync(session,
+				world.Inventory.Values, id => NaturalInventoryCheck.Describe(items.GetItemTemplate(id), PlayerClass.CLERIC, Race.ASMODIANS),
+				(long)Aion.GameServer.Model.Items.ItemSlot.MAIN_OFF_OR_SUB_OFF, refused, equipToken);
+			async Task GiveAsync(params (int Id, long Count)[] given)
+			{
+				foreach ((int id, long count) in given) Assert.Equal(0, ItemService.AddItem(server, id, count, allowInventoryOverflow: true));
+				await session.SynchronizeAsync(token);
+			}
+			int WornWeapon() => world.Inventory.Values.Single(item => ((item.Details.EquippedSlot ?? 0) & 1) != 0).ItemId;
+			long Owned(int id) => world.Inventory.Values.Where(item => item.ItemId == id).Sum(item => item.Count);
+
+			// The first staff the character owns replaces whatever is in its hand, though a staff is no higher in item level.
+			int startWeapon = WornWeapon();
+			await GiveAsync((101501357, 1));
+			IReadOnlyList<NaturalGearUpgrade> first = await EquipAsync(token);
+			Assert.Equal([101501357], first.Where(upgrade => upgrade.Slot == 1).Select(upgrade => upgrade.ItemId));
+			Assert.Equal(101501357, WornWeapon());
+
+			// The leg's rewards, and two things the staff rule must leave in the bag: a level-25 mace and a level-21 shield.
+			await GiveAsync((101501224, 1), (100101199, 1), (115001119, 1), (188051192, 2), (188050878, 1), (188050873, 1), (167000465, 1), (188053787, 1));
+			long coins = Owned(186000007);
+			NaturalInventoryCheckResult result = await NaturalInventoryCheck.RunAsync(session, "probe", rules, EquipAsync, items.GetItemTemplate,
+				() => (world.CubeExpansion?.Capacity ?? 27) - world.Inventory.Values.Count(item => (item.Details.EquippedSlot ?? 0) == 0 && item.ItemId != BotWorldModel.KinahItemId),
+				token);
+
+			Assert.Equal(101501224, WornWeapon());
+			Assert.Equal([101501224], result.Worn.Select(upgrade => upgrade.ItemId));
+			Assert.All(new[] { 100101199, 115001119, 101501357 }, id => Assert.Equal(0, world.Inventory.Values.Single(item => item.ItemId == id).Details.EquippedSlot ?? 0));
+			Assert.Equal(4, result.Opened.Length);
+			Assert.Empty(result.NotOpened);
+			Assert.All(rules.Open, id => Assert.Equal(0, Owned(id)));
+			long coinsGained = Owned(186000007) - coins;
+			Assert.InRange(coinsGained, 2, 20);
+			Assert.Equal([167000465], result.Discarded.Select(item => item.ItemId));
+			Assert.Equal((0L, 1L), (Owned(167000465), Owned(188053787)));
+			Console.WriteLine($"AX-04 inventory check: weapon {startWeapon} -> 101501357 -> {WornWeapon()}; opened " +
+				string.Join("; ", result.Opened.Select(container => $"{container.ItemId} gave [{string.Join(", ", container.Gained.Select(item => $"{item.Key} x{item.Value}"))}]")) +
+				$"; {coinsGained} Bronze Coins from the two chests; discarded {string.Join(", ", result.Discarded.Select(item => item.ItemId))}; " +
+				$"bundle 188053787 kept; {result.FreeSlots} free slots");
+		});
+	}
+
 	private static bool AxIsTimer(DecodedBotServerPacket packet, int questId) =>
 		packet.PacketType == typeof(SM_QUEST_ACTION) && packet.Fields.TryGetValue("action", out object? action) && action is byte and 4 &&
 		packet.Get<int>("questId") == questId && packet.Get<int>("timer") > 0;
