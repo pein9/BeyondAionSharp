@@ -60,6 +60,8 @@ public sealed partial class SimulationFastScenarioTests
 			Environment.GetEnvironmentVariable("AION_SIM_RUN_ID") ?? "natural-ishalgen", ["NI-07", "NI-08"], dashboard, dashboardPort);
 		session.Dashboard = dashboard;
 		if (dashboardHost.Enabled) Console.WriteLine($"Natural Ishalgen dashboard: {dashboardHost.Url}");
+		// Leg-scoped help (the ax leg's scroll and Bronze Coins) is approved up to a total, counted here.
+		var legSupplied = new Dictionary<int, long>();
 		var runtime = new NaturalJourneyRuntime(Aion.GameServer.TestKit.RealStaticData.RepoRoot(),
 			"SIM-natural-ishalgen", fixture.Seed, fixture.DataManager.StaticData, () => fixture.Clock.NowMillis, fixture.Epoch,
 			() => BotNavigationGeometry.ForServerWorld(fixture.World.GetPlayer(session.CharacterId).GetInstanceId(), Race.ASMODIANS),
@@ -88,7 +90,8 @@ public sealed partial class SimulationFastScenarioTests
 
 		async Task SupplyHelpItemAsync(int itemId, long count, CancellationToken supplyToken)
 		{
-			NaturalHelpItemSupply.RequireApproved(itemId, count);
+			NaturalHelpItemSupply.RequireApproved(itemId, count, session.IdentityAltgardLegId, legSupplied.GetValueOrDefault(itemId));
+			legSupplied[itemId] = legSupplied.GetValueOrDefault(itemId) + count;
 			var player = fixture.World.GetPlayer(session.CharacterId);
 			Assert.Equal(0, Aion.GameServer.Services.Items.ItemService.AddItem(player, itemId, count, allowInventoryOverflow: true));
 			await session.SynchronizeAsync(supplyToken);

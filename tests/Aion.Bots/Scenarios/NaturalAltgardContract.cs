@@ -53,7 +53,8 @@ public sealed record NaturalAltgardContract(
 	NaturalAltgardInstanceTrip[]? InstanceTrips = null,
 	NaturalAltgardDestiny? Destiny = null,
 	NaturalCoinGear? CoinGear = null,
-	NaturalHaramel? Haramel = null)
+	NaturalHaramel? Haramel = null,
+	NaturalAbyssEntry? AbyssEntry = null)
 {
 	/// <summary>The contract file and plan directory of each leg (none when the leg has no template quests).</summary>
 	public static readonly IReadOnlyDictionary<string, (string Contract, string? Plans)> Legs = new Dictionary<string, (string, string?)>
@@ -71,6 +72,8 @@ public sealed record NaturalAltgardContract(
 		["l11"] = ("natural-altgard-l11-contract.json", null),
 		["cg"] = ("natural-altgard-cg-contract.json", "natural-altgard-cg-plans"),
 		["l12"] = ("natural-altgard-l12-contract.json", "natural-altgard-l12-plans"),
+		// AX-03: Morheim arrival and Abyss entry, from the continuous journey's endpoint.
+		[NaturalAbyssEntry.Leg] = ("natural-abyss-entry-contract.json", null),
 	};
 
 	public NaturalAltgardObjectUse[] ObjectUseList => ObjectUses ?? [];
@@ -191,6 +194,9 @@ public sealed record NaturalAltgardContract(
 			throw new InvalidDataException("The Destiny campaign needs four maps and explicit full-var transitions.");
 		contract.CoinGear?.Validate(contract);
 		contract.Haramel?.Validate(contract);
+		contract.AbyssEntry?.Validate(contract);
+		if (contract.AbyssEntry == null == (contract.Leg == NaturalAbyssEntry.Leg))
+			throw new InvalidDataException("Only the ax leg carries the Abyss-entry scope, and it must carry it.");
 		return contract;
 	}
 
@@ -229,6 +235,7 @@ public sealed record NaturalAltgardContract(
 			.Concat(Destiny is { } destiny ? [destiny.EnemyNpcId, 203545, 203513] : [])
 			.Concat(CoinGear is { } gear ? [gear.VendorNpcId] : [])
 			.Concat(Haramel?.GraphNpcIds ?? [])
+			.Concat(AbyssEntry?.GraphNpcIds ?? [])
 			.Concat(Bind is { } bind ? [bind.NpcId] : [])
 			.Concat(CollectionList.SelectMany(collection => collection.Items.SelectMany(item => item.SourceNpcIds)))
 			.Append(Start.BindNpcId).Concat(AirKills is { } air ? [air.NpcId] : [])

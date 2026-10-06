@@ -139,6 +139,21 @@ try {
 		Assert-True ($child.later -eq '1' -and $child.altgard -eq 'l5' -and $null -eq $child.capital) 'Runner combined later capital with the first-pass checkpoint.'
 	} finally { Remove-Item Function:dotnet }
 
+	# AX-03: a leg played from the Haramel endpoint selects itself, and only l12 keeps the Haramel receipt.
+	$legEnvironment = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-LegEnvironment' }, $true)
+	. ([scriptblock]::Create($legEnvironment.Extent.Text))
+	$haramelBase = [ordered]@{ AION_SIM_NI08_DATABASE='aion_gs_sim_ni08_mock'; NI08_RESUME_CHARACTER='4242'; AF_ALTGARD='l12';
+		AF_HM_PROGRESS='haramel-progress.json'; NA_ASCENSION='1'; RC_CAPITAL='1' }
+	$ax = Get-LegEnvironment $haramelBase 'ax'
+	Assert-True ($ax.AF_ALTGARD -eq 'ax' -and -not $ax.ContainsKey('AF_HM_PROGRESS')) 'A leg after Haramel kept the l12 selector or its receipt.'
+	Assert-True ($ax.RC_CAPITAL -eq '1' -and $ax.NA_ASCENSION -eq '1' -and $ax.NI08_RESUME_CHARACTER -eq '4242') 'A leg after Haramel lost the retained character or its carried scope.'
+	Assert-True ($haramelBase.AF_ALTGARD -eq 'l12' -and $haramelBase.AF_HM_PROGRESS -eq 'haramel-progress.json') 'Selecting a leg edited the restored base environment.'
+	$again = Get-LegEnvironment $haramelBase 'l12'
+	Assert-True ($again.AF_ALTGARD -eq 'l12' -and $again.AF_HM_PROGRESS -eq 'haramel-progress.json') 'Leg l12 lost its Haramel receipt.'
+	$first = Get-LegEnvironment ([ordered]@{ NI08_RESUME_CHARACTER='4242' }) 'l1'
+	Assert-True ($first.AF_ALTGARD -eq '1' -and $first.Count -eq 2) 'Leg 1 lost its historical selector.'
+	Assert-Throws { & $script -Action Capture -Name unknown-leg -AltgardLeg1 -Leg zz -Docker $fake -SnapshotRoot $snapshots -NoBuild } '*zz*' 'An unknown leg was accepted.'
+
 	# Haramel requires its immutable receipt and resumes the endpoint with its original budgets.
 	$haramel = Join-Path $snapshots 'altgard-haramel-l12'
 	New-Item -ItemType Directory -Path $haramel | Out-Null

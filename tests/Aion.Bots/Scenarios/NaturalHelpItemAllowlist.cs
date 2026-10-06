@@ -39,7 +39,21 @@ public static class NaturalHelpItemAllowlist
 
 	/// <summary>Owned natural substitutes the proposal relies on (veteran rewards, VeteranRewardService months 26/30).</summary>
 	public static readonly int[] OwnedEventScrolls = [164002118, 164002116];
+
+	/// <summary>
+	/// Help the operator approved for one leg only, beyond the level-band kit. AX-Q3 (2026-10-06): one flight-speed scroll,
+	/// used when Q2042's timed flight starts. The AX-Q5 revision the same day: enough Bronze Coins for the level-21 and then
+	/// the best level-26 coin armor, for the slots it improves; 44 is the whole legendary set.
+	/// </summary>
+	public static readonly NaturalHelpLegSupply[] LegApproved =
+	[
+		new("ax", 164000079, "flight-speed", 1, "AX-Q3"),
+		new("ax", 186000007, "bronze-coin", 44, "AX-Q5 revision"),
+	];
 }
+
+/// <summary>One approved leg-scoped help item: at most <paramref name="MaxCount"/> over the whole leg.</summary>
+public sealed record NaturalHelpLegSupply(string Leg, int ItemId, string Family, int MaxCount, string Decision);
 
 /// <summary>One help item supplied, as the run profile (help-items.json) and the trace record it.</summary>
 public sealed record NaturalHelpSupplied(string Trigger, int ItemId, string Family, long Count, long Before, long After,
@@ -73,6 +87,20 @@ public static class NaturalHelpItemSupply
 	public static string ProfileJson(IReadOnlyList<NaturalHelpSupplied> supplied) =>
 		System.Text.Json.JsonSerializer.Serialize(new { helpItems = new { enabled = true, supplied } },
 			new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+
+	/// <summary>Refuse any id that is not approved, or a count above its band's N. A leg-scoped item is approved only on
+	/// its own leg, and only while the leg's running total stays inside what the operator allowed.</summary>
+	public static void RequireApproved(int itemId, long count, string? leg, long alreadySupplied = 0)
+	{
+		if (NaturalHelpItemAllowlist.LegApproved.SingleOrDefault(supply => supply.Leg == leg && supply.ItemId == itemId) is not { } scoped)
+		{
+			RequireApproved(itemId, count);
+			return;
+		}
+		if (count <= 0 || alreadySupplied < 0 || alreadySupplied + count > scoped.MaxCount)
+			throw new InvalidOperationException(
+				$"Refusing to supply {count} of {scoped.Family} item {itemId} on leg {leg}: {scoped.Decision} allows {scoped.MaxCount} in all, {alreadySupplied} already supplied.");
+	}
 
 	/// <summary>Refuse any id that is not approved, or a count above its band's N.</summary>
 	public static void RequireApproved(int itemId, long count)

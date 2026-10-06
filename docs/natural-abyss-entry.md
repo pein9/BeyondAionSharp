@@ -3,8 +3,9 @@
 Status (2026-10-06): **approved. AX-00 (this plan) is done. The operator answered
 AX-Q1..AX-Q6 and then revised the order the same day; see
 [Operator decisions](#operator-decisions).** AX-01 is done: the server side is compared and
-measured. AX-02 is done: Morheim and the arena have checked-in navigation data. AX-03 and
-AX-04 are next. No bot code was changed and no journey was run yet.
+measured. AX-02 is done: Morheim and the arena have checked-in navigation data. AX-03 is
+done: the leg has a frozen contract, and a restored run proves its start. AX-04 is next.
+No step of the leg has been played yet.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -374,12 +375,44 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   - No roads were extracted for Morheim, as for Altgard. No bot or server code changed, so
     Fast was not rerun; the four AX-01 probes, which stand on these maps, pass again on the
     checked-in meshes, and all seven pre-commit checks pass (`run/ax02/checks/`).
-- [ ] **AX-03 - Segment contract.** Depends AX-01. Add a contained segment that restores
+- [x] **AX-03 - Segment contract.** Depends AX-01. Add a contained segment that restores
   `altgard-rc-complete-s1` through `sim-snapshot.ps1` and `Invoke-NaturalJourney`. Freeze
   the five quests, the protected items and the reward items. Add arena and ring-course
   attempts to the outcome ledger. Add the one flight-speed scroll and the supplied Bronze
   Coins to the help-item profile, with their provenance. The level condition is "26 by
   questing"; no hunting. Historical segments keep their scopes.
+  - 2026-10-06, the contract: `parity-artifacts/e2e/natural-abyss-entry-contract.json` is leg
+    `ax`. It holds the start (176 completed quests, Q2945 at START/0, level 25), the Morheim
+    hub and bind, the three teleports, all nineteen dialog steps, the two reward choices, the
+    FLY zone, and an `abyssEntry` section: the arena, the ring course, what the inventory
+    check opens, discards and keeps sealed, the protected items, the two supplies, both coin
+    armor tiers, the staff rule and the level rule. `NaturalAbyssEntry.Validate` refuses a
+    file that differs from the approved scope.
+  - Attempts: `NaturalAbyssAttempts` gives the arena and the course three tries each. A
+    failed arena try waits 661 s for a new instance; a third failed course asks for the
+    operator's recorded flight. Each try is traced as `timed-arena-attempt` or
+    `timed-ring-course-attempt`, which the outcome ledger's auditor already collects.
+  - Supplies: `NaturalHelpItemAllowlist.LegApproved` approves one scroll 164000079 (AX-Q3)
+    and up to 44 Bronze Coins (the AX-Q5 revision) on leg `ax` only, as running totals. The
+    level-band kit is unchanged, and neither item is help on any other leg.
+  - The segment: `sim-snapshot.ps1` takes `-Leg ax`. `Get-LegEnvironment` makes the leg asked
+    for win over the Haramel endpoint's own `l12` selector, and keeps the Haramel receipt for
+    `l12` alone. The identity rules allow the level-25 Cleric on Morheim and in the arena on
+    this leg only. The journey verifies the start from the client's view and writes
+    `altgard-ax-start.json`. **The segment ends there for now**; AX-05 onward add its steps.
+  - Proof `run/ax03/ax03-start-a1`: public Restore of `altgard-rc-complete-s1`, the leg
+    environment (`AF_ALTGARD=ax`, no Haramel receipt), `Invoke-NaturalJourney`, 22.7 s. The
+    receipt shows character 133276, level 25 on map 220030000, 176 completed quests, Q2945
+    alone in the journal, 748,485 Kinah, 7 Bronze Coins and the worn staff object 156530.
+    The owned schema was dropped. No game action was taken.
+  - Tests: sixteen contract tests pin the file against the shipped quest, spawn, teleporter,
+    bind, ring, zone, instance, portal, goods-list and item data
+    (`NaturalAbyssEntryContractTests.cs`), and seventeen altered starts are each refused. The
+    snapshot script's contract test passes with the new leg cases. Every other leg still
+    loads without the new scope.
+  - Fast passes 107 tests with five guarded skips and all eleven scenarios in 12.33 minutes
+    (`run/ax03-fast/`). All seven pre-commit checks pass (`run/ax03/checks/`); the first warning
+    run caught one nullable warning in the new contract test, fixed before the commit.
 - [ ] **AX-04 - The staff rule and the inventory check.** Depends AX-00.
   - The Cleric's equipment check always chooses a staff, and wears the staff it owns with
     the most magic boost (AX-Q1). This is the rule at all times and in every leg. It
@@ -584,3 +617,6 @@ The original questions, with the recommendations made at the time:
 - 2026-10-06 — AX-02: Morheim (194,651 polygons, 1,302-node Asmodian graph) and the arena
   (159 polygons) are baked and checked in. Both rebake checks pass, and every route the leg
   needs in the fortress and the arena is found.
+- 2026-10-06 — AX-03: leg `ax` has its frozen contract, bounded attempts, leg-scoped
+  supplies and snapshot selector. A restored run verified the start (`run/ax03/ax03-start-a1`)
+  and stopped there.

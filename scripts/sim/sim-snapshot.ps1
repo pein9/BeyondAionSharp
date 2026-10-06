@@ -15,6 +15,7 @@
 #            Leg 10 (BC-07): -AltgardLeg1 -Leg l10 -From altgard-l9 -Name altgard-l10.
 #            Leg 11 (ND-07): -AltgardLeg1 -Leg l11 -From altgard-l10 -Name altgard-l11.
 #            Leg 12 (HM-07): -AltgardLeg1 -Leg l12 -From altgard-coingear -Name altgard-haramel-l12.
+#            Morheim and Abyss entry (AX-03): -AltgardLeg1 -Leg ax -From altgard-rc-complete-s1 -Name <new name>.
 #            plays Altgard Leg 1 (docs/natural-altgard-leveling.md) and dumps its verified endpoint (`altgard-l12`).
 #   Restore: load a snapshot into a fresh owned schema and print the environment a resumed run needs.
 #   Verify:  restore, resume the retained character once and require the journey endpoint to be reached again
@@ -41,7 +42,7 @@ param(
 	[switch]$LaterCapital,
 	[switch]$ContinuousJourney,
 	[string]$From = 'altgard',
-	[ValidateSet('l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'cg', 'l12')]
+	[ValidateSet('l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'cg', 'l12', 'ax')]
 	[string]$Leg = 'l1',
 	[ValidateSet('start', 'first')]
 	[string]$CapitalStage,
@@ -118,6 +119,16 @@ function Invoke-NaturalJourney([string]$Db, [string]$RunId, [string]$Evidence, [
 	}
 }
 
+# The environment of a leg played from a restored base. AX-03: the base may be the Haramel endpoint, whose own
+# environment names leg l12 and its receipt. The leg asked for wins, and only l12 may read the Haramel receipt.
+function Get-LegEnvironment([Collections.IDictionary]$BaseEnvironment, [string]$LegId) {
+	$extra = @{}
+	foreach ($key in $BaseEnvironment.Keys) { $extra[$key] = $BaseEnvironment[$key] }
+	$extra.AF_ALTGARD = $(if ($LegId -eq 'l1') { '1' } else { $LegId })
+	if ($LegId -ne 'l12') { $extra.Remove('AF_HM_PROGRESS') }
+	$extra
+}
+
 function Restore-Snapshot([string]$SnapshotName = $Name) {
 	if (-not $SnapshotName) { throw "$Action needs -Name." }
 	$directory = Join-Path $SnapshotRoot $SnapshotName
@@ -148,7 +159,7 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 			throw "Snapshot $SnapshotName later capital receipt hash changed; refusing to restore."
 		}
 		$expectedSegment = if ($metadata.source -eq 'natural-journey-ascension-bridge') { 'bridge' }
-			elseif ($metadata.source -match '^natural-altgard-(l(?:[1-9]|1[0-2])|cg)$') { $Matches[1] }
+			elseif ($metadata.source -match '^natural-altgard-(l(?:[1-9]|1[0-2])|cg|ax)$') { $Matches[1] }
 			else { throw 'Later capital snapshot has an unsupported source.' }
 		$retained = Get-Content -Raw -LiteralPath $laterReceipt | ConvertFrom-Json
 		if (-not $retained.verified -or $retained.schemaVersion -ne 1 -or $retained.segment -ne $expectedSegment -or
@@ -302,8 +313,7 @@ try {
 				$base = Restore-Snapshot $From
 				$db = $base.database
 				try {
-					$extra = @{ AF_ALTGARD = $(if ($Leg -eq 'l1') { '1' } else { $Leg }) }
-					foreach ($key in $base.environment.Keys) { $extra[$key] = $base.environment[$key] }
+					$extra = Get-LegEnvironment $base.environment $Leg
 					if ($LaterCapital) { $extra.RC_CAPITAL = '1' }
 					Invoke-NaturalJourney $db $Run $evidence $extra
 					$legFile = Join-Path $evidence "altgard-$Leg-completion.json"

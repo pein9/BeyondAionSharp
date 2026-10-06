@@ -642,6 +642,25 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					engaged.Attackers.Length == 0 && engaged.Pursuers.Length == 0)
 					throw new NaturalEarlyAscensionRequiredException();
 			};
+			if (altgardLeg?.AbyssEntry != null)
+			{
+				// AX-03: the Morheim and Abyss-entry segment begins by proving its incoming contract from the client's view.
+				// Its steps are added by AX-05 onward; until then the verified start is where the segment ends.
+				session.BeginStep("ax-start", "verify-the-abyss-entry-start-contract");
+				NaturalAbyssEntryStart start = NaturalAbyssEntryLeg.VerifyStart(altgardLeg,
+					NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition), session.CharacterId, runtime.NowMillis);
+				await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(combatTracePath)!, NaturalAbyssEntryLeg.StartReceipt),
+					System.Text.Json.JsonSerializer.Serialize(start), token);
+				session.TraceDiagnostic(NaturalAbyssEntryLeg.StartDiagnostic, new Dictionary<string, object?>
+				{
+					["level"] = start.Level, ["map"] = start.MapId, ["completed"] = start.CompletedQuests, ["started"] = start.StartedQuestIds,
+					["kinah"] = start.Kinah, ["bronzeCoins"] = start.BronzeCoins, ["staffObjectId"] = start.StaffObjectId,
+				});
+				session.PublishDashboard("completed", force: true);
+				await session.QuitAsync(token);
+				runtime.AssertClean();
+				return;
+			}
 			if (altgardLegId != null)
 			{
 				await RunAltgardLeg1Async();

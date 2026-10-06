@@ -15,6 +15,7 @@ public enum NaturalJourneyStage
 /// NA-07: the only two states a retained natural character may be in. Everything else is rejected — a Chanter,
 /// a Priest past level 9, a Cleric outside the bridge's maps — because the journey never "fixes" a character.
 /// ND-01 permits the level-20 Cleric's Space of Destiny only when the caller explicitly selects Altgard l11.
+/// AX-03 permits the level-25 Cleric's Morheim and Triniel arena only when the caller selects the ax leg.
 /// </summary>
 public static class NaturalJourneyIdentityRules
 {
@@ -36,7 +37,8 @@ public static class NaturalJourneyIdentityRules
 		if (playerClass == PlayerClass.CLERIC && level >= 9 && (worldId is null || ClericMaps.Contains(worldId.Value) ||
 			level >= 10 && worldId == 120020000 || // PC-06: ordinary Convent visit after the ceremony.
 			altgardLeg == "l11" && level >= 20 && worldId == 320070000 ||
-			altgardLeg == "l12" && level >= 16 && worldId == 300200000))
+			altgardLeg == "l12" && level >= 16 && worldId == 300200000 ||
+			altgardLeg == NaturalAbyssEntry.Leg && level >= 25 && worldId is NaturalAbyssEntry.Morheim or NaturalAbyssEntry.ArenaMap))
 			return NaturalJourneyStage.AscensionCleric;
 		throw new InvalidDataException(
 			$"Retained natural character is outside the journey: {playerClass} level {level} on map {worldId?.ToString() ?? "unknown"}.");
