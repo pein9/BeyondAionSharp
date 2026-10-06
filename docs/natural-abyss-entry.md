@@ -22,8 +22,9 @@ before AX-13. AX-12a is done: a Cleric that dies in the arena stands up inside i
 leaves by the exit and clears the arena on its second try. AX-12b is done: after a revive
 at the obelisk the Cleric is soul healed by Golenthor before it rests. AX-12c is done: the
 Elite Rank 7 staff is bought with the level-26 armor and worn. AX-13 is done: one contained
-run plays the whole leg, relogs at the endpoint and writes the completion receipt. AX-14,
-the endpoint snapshot, is next.
+run plays the whole leg, relogs at the endpoint and writes the completion receipt. **AX-14,
+the endpoint snapshot, is blocked:** the capture refuses to run while runtime files are
+uncommitted, and two files of another session's work are (see "Blocked / questions").
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -954,6 +955,19 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   a new name, verify its restore and relog, drop every owned schema, and update
   [the readiness report](natural-ntc-readiness.md) with the measured level and XP. Run the
   final checks and Fast.
+  - 2026-10-06, **blocked, not started.** Everything the capture needs is committed
+    (`e63ea60c4`): the completion receipt, the resume check, and the snapshot script's
+    Restore and Verify for this endpoint. The capture itself was refused:
+    `run/ax14/capture-refused-a1.log`, "Capture requires committed runtime and snapshot
+    code". Two runtime files are modified and not committed, and they are not this
+    loop's: `src/Aion.GameServer/Network/Aion/ServerPackets/SM_STATUPDATE_EXP.cs` and
+    `tests/Aion.GameServer.Tests/GoldenPacketFixtureTests.cs`, another session's D37 work,
+    unchanged since 15:59. Nothing was created; `morheim-abyss-entry-s1` does not exist.
+  - What is left once the tree is clean: capture `morheim-abyss-entry-s1` from
+    `altgard-rc-complete-s1` with leg `ax`; run the public Verify on it (restore, the
+    endpoint check, one relog, `altgard-ax-endpoint-resume.json`); see every owned schema
+    dropped; add the measured level and XP to the readiness report; run the final checks
+    and Fast.
 
 **Not in this leg unless asked:** a fresh-create full run, and an isolated LIVE run.
 
@@ -1016,7 +1030,14 @@ What these change in the standing decisions:
 
 ## Blocked / questions for the operator
 
-Nothing blocks AX-02..AX-14. The answers left room in four places. The loop works with
+**AX-14 is blocked (2026-10-06).** The snapshot script captures only from committed
+runtime code, and two runtime files of another session's D37 work are uncommitted:
+`SM_STATUPDATE_EXP.cs` and `GoldenPacketFixtureTests.cs`. This loop does not commit,
+stash or revert another session's files. Commit that work, or set it aside, and the loop
+can capture `morheim-abyss-entry-s1`. Every run and check of this loop since about 16:00
+was built with that uncommitted change in the tree, AX-12's Fast possibly excepted.
+
+Nothing else blocks AX-02..AX-14. The answers left room in four places. The loop works with
 these defaults; say so to change one.
 
 - ~~**The flight-speed scroll's tier.**~~ Settled by AX-01: a level-25 character can use the
@@ -1318,3 +1339,6 @@ The original questions, with the recommendations made at the time:
   receipt is written after the relog. Fast passes 115 of 120 tests with five guarded skips and
   all eleven scenarios in 8.72 minutes (`run/ax13-fast/`); the seven pre-commit checks pass
   (`run/ax13/checks/`).
+- 2026-10-06 — AX-14 is blocked before its capture. The snapshot script refused: two runtime
+  files of another session's D37 work are uncommitted (`run/ax14/capture-refused-a1.log`).
+  Nothing was captured. The loop stops here with AX-00 to AX-13 done.
