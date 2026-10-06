@@ -14,7 +14,7 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 	public const int Morheim = 220020000, Pandaemonium = 120010000, Altgard = 220030000, ArenaMap = 320090000;
 
 	/// <summary>The objects the leg uses that no dialog step names: the arena's doors, its spirits and the coin vendor.</summary>
-	public int[] GraphNpcIds => [Arena.EntranceNpcId, Arena.ExitNpcId, CoinArmor.VendorNpcId, .. Arena.Spirits.Select(spirit => spirit.NpcId)];
+	public int[] GraphNpcIds => [Arena.ExitNpcId, CoinArmor.VendorNpcId, .. Arena.Spirits.Select(spirit => spirit.NpcId)];
 
 	public void Validate(NaturalAltgardContract contract)
 	{
@@ -27,13 +27,17 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 			!contract.MapTripList.Select(trip => (trip.FromMapId ?? 0, trip.MapId, trip.TeleporterNpcId, trip.LocationId, trip.Fare)).SequenceEqual(
 				[(Altgard, Morheim, 203581, 10, 1700), (Morheim, Pandaemonium, 204399, 7, 1500), (Pandaemonium, Morheim, 204191, 10, 1500)]))
 			throw new InvalidDataException("The Abyss-entry leg differs from its approved start, quests, bind or three teleports.");
-		if (Arena is not { QuestId: 2947, MapId: ArenaMap, EntranceNpcId: 700368, ExitNpcId: 730067, EnterVar: 5, FailedVar: 6, KillCounter: 4,
+		if (Arena is not { QuestId: 2947, MapId: ArenaMap, ExitNpcId: 730067, EnterVar: 5, FailedVar: 6, KillCounter: 4,
 				RequiredKills: 10, Seconds: 240, EnterMovieId: 167, DoneMovieId: 168, MaxAttempts: 3 } ||
-			Arena.DoneTeleport.MapId != Pandaemonium || Arena.EntrancePosition.Length != 3 || Arena.Arrival.Length != 3 || Arena.ExitPosition.Length != 3 ||
+			Arena.DoneTeleport.MapId != Pandaemonium || Arena.Arrival.Length != 3 || Arena.ExitPosition.Length != 3 ||
 			!new[] { Arena.StartStep, Arena.RestartStep, Arena.DoneStep }.All(steps.Contains) ||
+			// D35: Garm's two SETPRO3 talks end inside the arena; his third talk moves nobody.
+			new[] { Arena.StartStep, Arena.RestartStep }.Any(key => contract.Steps.First(step => step.Key == key).Teleport is not { MapId: ArenaMap } entry ||
+				!entry.Position.SequenceEqual(Arena.Arrival)) ||
+			contract.Steps.First(step => step.Key == Arena.DoneStep).Teleport != null ||
 			Arena.Spirits.Sum(spirit => spirit.Count) != 11 || Arena.Spirits.Any(spirit => spirit.Hp <= 0 || spirit.Count <= 0) ||
 			Arena.Groups.Sum(group => group.Mages + group.Warriors) != 11 || Arena.Groups.Any(group => group.Center.Length != 3))
-			throw new InvalidDataException("Garm's arena differs from Java's ten kills in 240 seconds, its eleven spirits or its three tries.");
+			throw new InvalidDataException("Garm's arena differs from Java's ten kills in 240 seconds, its eleven spirits, Garm's teleport (D35) or its three tries.");
 		if (RingCourse is not { QuestId: 2042, StartMovieId: 89, Seconds: 70, StartVar: 2, DoneVar: 8, FailedVar: 9, RingRadius: 6, BoostSkillId: 265,
 				BoostSeconds: 6, BoostFlightPoints: 9, SpeedCap: 16, MaxAttempts: 3, OnExhausted: "ask-operator-recorded-flight" } ||
 			!new[] { RingCourse.StartStep, RingCourse.RestartStep, RingCourse.DoneStep }.All(steps.Contains) ||
@@ -68,10 +72,10 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 	}
 }
 
-/// <summary>Q2947's only working branch: Garm, the entrance, ten of eleven spirits inside the timer, Garm again. A failed
+/// <summary>Q2947's only working branch: Garm, who sends the player in (D35), ten of eleven spirits inside the timer, Garm again. A failed
 /// attempt needs no wait: the server destroys its instance, so Garm's next SETPRO3 leads to a new one (D34).</summary>
 /// <param name="KillCounter">The quest variable index Java counts the kills in (<c>qs.getQuestVarById(4)</c>).</param>
-public sealed record NaturalAbyssArena(int QuestId, int MapId, int EntranceNpcId, float[] EntrancePosition, float[] Arrival,
+public sealed record NaturalAbyssArena(int QuestId, int MapId, float[] Arrival,
 	int ExitNpcId, float[] ExitPosition, string StartStep, string RestartStep, string DoneStep, int EnterVar, int FailedVar,
 	int KillCounter, int RequiredKills, int Seconds, int EnterMovieId, int DoneMovieId, NaturalAscensionTeleport DoneTeleport,
 	NaturalAbyssSpirit[] Spirits, NaturalAbyssSpiritGroup[] Groups, int MaxAttempts);

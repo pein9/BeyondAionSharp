@@ -97,9 +97,9 @@ long as Q2300 was never taken. Its one step is the talk with Aegir.
 | 7 | Q2946, var 3 | 204208 (1392.07, 1048.95, 206.68) | QUEST_SELECT → 2034; SET_SUCCEED → REWARD |
 | 8 | Q2946 reward | Kvasir 204053 (1281.15, 1176.92, 215.09) | USE_OBJECT → 10002; reward. Q2947 starts on completion |
 | 9 | Q2947, var 0 | Kvasir | QUEST_SELECT → 1011; **SETPRO12 → var 4** (the arena branch) |
-| 10 | Q2947, var 4 | Garm 204089 (1001.38, 1528.27, 222.19) | QUEST_SELECT → 1693; SETPRO3 → var 5 |
-| 11 | Q2947, var 5 | Arena entrance 700368 (978.18, 1556.51, 210.55) | portal to Triniel Underground Arena, map 320090000 |
-| 12 | Q2947, arena | inside, entry at (276, 293, 163) | movie 167; kill ten spirits in 240 s |
+| 10 | Q2947, var 4 | Garm 204089 (1001.38, 1528.27, 222.19) | QUEST_SELECT → 1693; SETPRO3 → var 5, and Garm sends the Cleric into a new arena (D35) |
+| 11 | Q2947, var 5 | no step | Not walked since D35. The entrance 700368 at (978.18, 1556.51, 210.55) still works, but no attempt uses it |
+| 12 | Q2947, arena | Triniel Underground Arena, map 320090000, arrival at (276, 293, 163) | movie 167; kill ten spirits in 240 s |
 | 13 | Q2947, var 5 with ten kills | Garm | QUEST_SELECT → 2034; SETPRO4 → var 7, REWARD |
 | 14 | Q2947 reward | Aegir 204301, Morheim Ice Fortress (225.23, 2415.47, 454.11) | USE_OBJECT → 3739; SELECT_QUEST_REWARD → page 6; SELECTED_QUEST_REWARD2, the staff. Q2042 starts on completion |
 | 15 | Q2042, var 0 | Aegir | QUEST_SELECT → 1011; SETPRO1 → var 1 |
@@ -139,9 +139,9 @@ Kinah; this leg does not bind there.
 - The instance data allows one player and sets no entry cooldown.
 - **Every attempt starts in a new instance (D34).** When an attempt fails, the server
   destroys its instance as soon as the player is out of it. Garm's SETPRO3 also destroys any
-  instance still registered to the player. So the entrance opens a new one with all eleven
-  spirits, and no wait is needed. Before D34 the entrance returned to the failed instance for
-  600 s, with the dead spirits still dead.
+  instance still registered to the player, and then makes a new one and teleports the player
+  into it (D35). So every attempt meets all eleven spirits, and no wait is needed. Before D34
+  the entrance returned to the failed instance for 600 s, with the dead spirits still dead.
 - A cleared instance is not reset. Like any solo instance it is destroyed 600 s after the
   player leaves it, checked once a minute.
 - The tenth kill ends the timer and plays movie 168. When the client reports that movie's
@@ -291,8 +291,8 @@ is level 26, for each slot where it beats what is then worn.
 5. **The 240 s timer starts twice.** It starts on entering the arena, and again when the
    client reports the end of movie 167. A bot that skips the movie early loses nothing; one
    that never reports its end still has the first timer.
-6. **Var 5 is fragile.** Between Garm's SETPRO3 and the arena entrance the bot must not
-   relog or teleport. The entrance is about 37 m from Garm and 12 m lower.
+6. ~~**Var 5 is fragile.**~~ Settled by D35: Garm's SETPRO3 teleports the Cleric into the
+   arena, so there is no walk to the entrance at var 5 and nothing to interrupt.
 7. ~~**No navigation data.**~~ Settled by AX-02: Morheim (220020000) and the arena
    (320090000) are baked and checked in.
 8. **Other players' timers.** In Java, Q1044's and Q2042's enter-world hooks end any running
@@ -501,7 +501,7 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   (AX-Q5). Resumed runs send no duplicate dialogs.
 - [ ] **AX-08 - The arena.** Depends AX-07. Route rows 10–13, both movies, the timed clear,
   and the failure path through var 6. Up to three attempts. No wait is needed after a failed
-  attempt: Garm's SETPRO3 leads to a new instance (D34).
+  attempt, and no walk: Garm's SETPRO3 sends the Cleric into a new instance (D34, D35).
 - [ ] **AX-09 - Back to Morheim.** Depends AX-08. Doman's teleport; Q2947's reward taken
   with REWARD2, the staff, which the inventory check wears; the manastone 167000465
   discarded (AX-Q4); Q2042's first talk with Aegir.
@@ -565,6 +565,9 @@ bought level-26 armor at level 25 and held it:
    and wear what is better.
 5. Do the inventory management checks after every quest turn-in.
 
+**Added by the operator on 2026-10-06, during AX-04:** Garm sends the player straight into
+the arena, as retail and the Elyos twin do. This is D35.
+
 What these change in the standing decisions:
 - **The staff.** AX-Q1 replaces "keep the earned Altgard Dark Legionary Staff equipped" and
   "no weapon auto-equipping". Whichever owned staff has the most magic boost is worn.
@@ -617,7 +620,7 @@ resets a failed attempt's arena (deviation 156, upstream patch
 - **Garm sends the player in.** "I'll send you to the Arena as soon as you're ready", and
   after a failure "I'll send you back". Java's Elyos twin does this: Q1922's SETPRO3 makes a
   new instance and teleports the player. Java's Q2947 makes the player walk to the entrance
-  700368. Asked below.
+  700368. **Corrected by D35**, on the operator's answer below.
 - **A new arena each time.** NCSoft's `instance_creation.xml` lists the arena as
   `INSTANCE_INSTANT` only, with the other quest instances, and with no rejoin entry. D34
   gives the same result.
@@ -635,9 +638,15 @@ resets a failed attempt's arena (deviation 156, upstream patch
   group's shape. NCSoft's 5.8 data pays 4,000 gold and no AP in every group. No change.
 - **Not found:** the time limit (240 s is Java's).
 
-**Asked 2026-10-06, not yet answered:** should Garm's SETPRO3 make the new instance and
-teleport the player in, as retail's text and Java's Q1922 do? It would replace the walk to
-the entrance and the fragile var 5 window (hazard 6). D34 does not do this.
+**Asked and answered 2026-10-06:** should Garm's SETPRO3 make the new instance and teleport
+the player in, as retail's text and Java's Q1922 do? The operator: "send the player straight
+in, as retail and the Elyos twin do." Done as **D35** (deviation 157, upstream patch
+`docs/upstream-reports/q2947-following-through-garm-sends-you-in.patch`): from var 4 and
+var 6, Garm's SETPRO3 makes a new instance and teleports the player to (276, 293, 163).
+The walk to the entrance and the var 5 window (hazard 6) are gone. Do not port it back.
+
+**Still open:** should any death fail the attempt at once? Java's rule stands until you say
+so: a self-revive inside goes on with the same timer.
 
 **Found with D34, shared with Java, not changed:**
 - **Q1922 "Deliver on Your Promises", the Elyos twin, has the same unguarded timer hook.**
@@ -653,12 +662,12 @@ the entrance and the fragile var 5 window (hazard 6). D34 does not do this.
   row. Shadow Court Dungeon 320120000 has the same row.
 - **The arena entrance asks for no quest.** Any Asmodian can use 700368, at any step of
   Q2947. Outside var 5 no timer starts and no kill counts. D34's reset at Garm's SETPRO3
-  keeps such a visit from spoiling the next attempt.
+  keeps such a visit from spoiling the next attempt. Since D35 no attempt uses it.
 - **A relog inside the arena starts a new 240 s with the kills kept,** as long as the
   instance still exists.
 - **The enter-world hook ends whichever quest timer is running.** At var 5 outside the arena
-  it calls the timer's end without asking whose timer it is. Between Garm and the entrance
-  that can end another quest's timer.
+  it calls the timer's end without asking whose timer it is. Since D35 a player is at var 5
+  outside the arena only after leaving it, when the running timer is the arena's own.
 
 The original questions, with the recommendations made at the time:
 
@@ -748,3 +757,11 @@ The original questions, with the recommendations made at the time:
   but wore one 11 hours 46 minutes late. Fast passes 113 of 118 tests with five guarded
   skips and all eleven scenarios in 9.50 minutes (`run/ax04-fast/`); the seven pre-commit
   checks pass (`run/ax04/checks/`).
+- 2026-10-06 — D35: Garm's SETPRO3 makes a new arena and teleports the player in, as the
+  operator asked. Seven arena SIM tests pass (`run/d35/arena-all-a1.log`); the contract's two
+  Garm steps now end in the arena and the entrance is out of the bot's route. The first Fast
+  run failed in an unrelated probe (`run/d35/failed/`): Haramel's HM-04 pulled a monster that
+  was still walking home from the fight before, and the pull was refused four times. Fast
+  shares one world, clock and dice, so the new test moved that fight. The probe now waits
+  for the monster to be home, as other probes do. Fast then passes 114 of 119 tests with
+  five guarded skips and all eleven scenarios (`run/d35-fast2/`); the seven checks pass.

@@ -121,10 +121,11 @@ public sealed partial class SimulationFastScenarioTests
 		});
 	}
 
-	/// <summary>Garm's arena: the 240 s timer survives the world entry, and every attempt starts in a new instance with all eleven
-	/// spirits and no kill counted (D34). Leaving at var 5 fails the attempt and destroys its instance at once. An instance left
-	/// behind outside an attempt (the entrance asks for no quest) is destroyed by Garm's SETPRO3, from var 4 and from var 6. Before
-	/// D34 the entrance returned to the same instance, its dead spirits still dead, for ten minutes.</summary>
+	/// <summary>Garm's arena: Garm's SETPRO3 sends the player in (D35), the 240 s timer survives the world entry, and every attempt
+	/// starts in a new instance with all eleven spirits and no kill counted (D34). Leaving at var 5 fails the attempt and destroys
+	/// its instance at once. An instance left behind outside an attempt (the entrance 700368 asks for no quest) is destroyed by
+	/// Garm's SETPRO3, from var 4 and from var 6. Before D34 the entrance returned to the same instance, its dead spirits still
+	/// dead, for ten minutes.</summary>
 	[SkippableFact]
 	public async Task AbyssEntryArenaKeepsItsTimerAndStartsEveryAttemptInANewInstance()
 	{
@@ -134,7 +135,7 @@ public sealed partial class SimulationFastScenarioTests
 			await AxArenaStartAsync(probe, session, token);
 
 			// Before Garm, at var 4: the entrance lets the player in. No timer starts, and a kill counts for nothing.
-			(int earlyInstance, int earlyAlive) = await AxWalkIntoArenaAsync(probe, session, attempt: false, token);
+			(int earlyInstance, int earlyAlive) = await AxWalkIntoArenaAsync(probe, session, token);
 			await AxKillSpiritAsync(session, server, token);
 			await AxUseArenaPortalAsync(session, server, 730067, AxPandaemonium, token);
 			int earlyVar = server.GetQuestStateList().GetQuestState(2947).GetQuestVars().GetQuestVars();
@@ -162,7 +163,7 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.Null(InstanceService.GetRegisteredInstance(AxArena, server.GetObjectId()));
 
 			// At var 6, back in without Garm: a new instance, no timer, and again a kill that counts for nothing.
-			(int idleInstance, int idleAlive) = await AxWalkIntoArenaAsync(probe, session, attempt: false, token);
+			(int idleInstance, int idleAlive) = await AxWalkIntoArenaAsync(probe, session, token);
 			await AxKillSpiritAsync(session, server, token);
 			await AxUseArenaPortalAsync(session, server, 730067, AxPandaemonium, token);
 			int idleVar = server.GetQuestStateList().GetQuestState(2947).GetQuestVars().GetQuestVars();
@@ -202,49 +203,55 @@ public sealed partial class SimulationFastScenarioTests
 
 	private static int AxArenaKills(Player server) => server.GetQuestStateList().GetQuestState(2947).GetQuestVarById(4);
 
-	/// <summary>Garm's SETPRO3 (from var 4, or again from var 6), then the entrance. Returns the instance entered and its living spirits.</summary>
+	/// <summary>Where Garm sends the player: the arena's own portal location (D35).</summary>
+	private static readonly NaturalAscensionTeleport AxArenaEntry = new(AxArena, [276, 293, 163]);
+
+	/// <summary>Garm's SETPRO3 (from var 4, or again from var 6). D35: he sends the player straight in, with no walk to the entrance.
+	/// The 240 s timer has to start on entry and again at movie 167's end (hazard 5). Returns the instance entered and its living
+	/// spirits.</summary>
 	private static async Task<(int Instance, int Alive)> AxEnterArenaAsync(CapitalProbe probe, SimulationL0Session session, bool again, CancellationToken token)
 	{
-		NaturalAltgardStep garm = again
+		Player server = probe.Server;
+		NaturalAltgardStep garm = (again
 			? AxStep("q2947-garm-again", 2947, 6, "START", 204089, ["USE_OBJECT", "SETPRO3"], [1779, 0], AxPandaemonium, next: 5)
-			: AxStep("q2947-garm-start", 2947, 4, "START", 204089, ["QUEST_SELECT", "SETPRO3"], [1693, 0], AxPandaemonium, next: 5);
+			: AxStep("q2947-garm-start", 2947, 4, "START", 204089, ["QUEST_SELECT", "SETPRO3"], [1693, 0], AxPandaemonium, next: 5))
+			with { Teleport = AxArenaEntry };
 		await probe.SetupNearAsync(AxPandaemonium, 204089);
 		int npc = await probe.WalkNpcAsync(204089);
+		int history = session.PacketHistory.Count;
 		Console.WriteLine("AX-01 " + await NaturalAltgardQuestSteps.TalkAsync(session, garm, npc, token));
-		Assert.Equal(5, AxArenaVar(probe.Server));
-		return await AxWalkIntoArenaAsync(probe, session, attempt: true, token);
+		Assert.Equal((5, AxArena), (AxArenaVar(server), server.GetWorldId()));
+		float miss = MathF.Sqrt(MathF.Pow(server.GetX() - 276, 2) + MathF.Pow(server.GetY() - 293, 2) + MathF.Pow(server.GetZ() - 163, 2));
+		Assert.True(miss < 1.5f, $"Garm sent the player {miss:F1} m from the arena's portal location");
+		Assert.Equal(server.GetInstanceId(), InstanceService.GetRegisteredInstance(AxArena, server.GetObjectId())?.GetInstanceId());
+		DecodedBotServerPacket? timer = session.PacketHistory.Skip(history).LastOrDefault(packet => AxIsTimer(packet, 2947));
+		Assert.NotNull(timer);
+		Assert.Equal(240, timer!.Get<int>("timer"));
+		// Hazard 8: Q1044's and Q2042's enter-world hooks run on this entry too. D33 keeps them off another quest's timer.
+		Assert.True(server.GetController().HasTask(TaskId.QUEST_TIMER), "the arena timer did not survive the world entry");
+		await NaturalMovieGate.FinishAsync(session, token);
+		await session.SynchronizeAsync(token);
+		Assert.True(server.GetController().HasTask(TaskId.QUEST_TIMER));
+		Assert.Equal(2, session.PacketHistory.Skip(history).Count(packet => AxIsTimer(packet, 2947)));
+		return (server.GetInstanceId(), AxLivingSpirits(server));
 	}
 
-	/// <summary>The walk from Garm to the entrance 700368 and its portal, which asks for no quest. On an attempt (var 5) the 240 s
-	/// timer has to start on entry and again at movie 167's end (hazard 5); outside one no timer starts.</summary>
-	private static async Task<(int Instance, int Alive)> AxWalkIntoArenaAsync(CapitalProbe probe, SimulationL0Session session, bool attempt, CancellationToken token)
+	/// <summary>The walk from Garm to the entrance 700368 and its portal, which asks for no quest and which no attempt uses since
+	/// D35. Outside an attempt no timer starts.</summary>
+	private static async Task<(int Instance, int Alive)> AxWalkIntoArenaAsync(CapitalProbe probe, SimulationL0Session session, CancellationToken token)
 	{
 		Player server = probe.Server;
-		if (!attempt) await probe.SetupNearAsync(AxPandaemonium, 204089);
+		await probe.SetupNearAsync(AxPandaemonium, 204089);
 		await probe.WalkNpcAsync(700368);
 		int history = session.PacketHistory.Count;
 		await AxUseArenaPortalAsync(session, server, 700368, AxArena, token);
-		DecodedBotServerPacket? timer = session.PacketHistory.Skip(history).LastOrDefault(packet =>
-			AxIsTimer(packet, 2947));
-		if (attempt)
-		{
-			Assert.NotNull(timer);
-			Assert.Equal(240, timer!.Get<int>("timer"));
-			// Hazard 8: Q1044's and Q2042's enter-world hooks run on this entry too. D33 keeps them off another quest's timer.
-			Assert.True(server.GetController().HasTask(TaskId.QUEST_TIMER), "the arena timer did not survive the world entry");
-			await NaturalMovieGate.FinishAsync(session, token);
-			await session.SynchronizeAsync(token);
-			Assert.True(server.GetController().HasTask(TaskId.QUEST_TIMER));
-			Assert.Equal(2, session.PacketHistory.Skip(history).Count(packet => AxIsTimer(packet, 2947)));
-		}
-		else
-		{
-			Assert.Null(timer);
-			Assert.False(server.GetController().HasScheduledTask(TaskId.QUEST_TIMER), "a timer started outside an attempt");
-		}
-		int alive = server.GetWorldMapInstance().GetNpcs().Count(npcIn => !npcIn.IsDead() && npcIn.GetNpcId() is 213583 or 213584);
-		return (server.GetInstanceId(), alive);
+		Assert.DoesNotContain(session.PacketHistory.Skip(history), packet => AxIsTimer(packet, 2947));
+		Assert.False(server.GetController().HasScheduledTask(TaskId.QUEST_TIMER), "a timer started outside an attempt");
+		return (server.GetInstanceId(), AxLivingSpirits(server));
 	}
+
+	private static int AxLivingSpirits(Player server) =>
+		server.GetWorldMapInstance().GetNpcs().Count(npc => !npc.IsDead() && npc.GetNpcId() is 213583 or 213584);
 
 	/// <summary>Use one of the arena's two portal objects, the entrance 700368 or the exit 730067, and follow it to its map.</summary>
 	private static async Task AxUseArenaPortalAsync(SimulationL0Session session, Player server, int npcId, int toMap, CancellationToken token)

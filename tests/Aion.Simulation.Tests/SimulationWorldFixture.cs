@@ -174,6 +174,7 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			services.RemoveAll<IHostedService>();
 
 			// 95 is AX-04's inventory check probe: the staff rule, the reward containers and the discarded manastone.
+			// 96 is D35's probe: Garm sends the player straight into a new arena.
 			// 151-200 belong to the D32 register (parity-artifacts/e2e/retail-quest-implemented.json), one per quest;
 			// test-retail-quest-inventory.py keeps every other SIM test out of them.
 			// 201-220 are Leg 7-11's controlled probes, outside D32's reserved accounts.
@@ -200,7 +201,7 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			// 229 is RC-11's recorded cleared campaign-area / remembered-danger probe.
 			// 230 is RC-11's ordinary owned staff equip before the frozen coin loadout.
 			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100)).Concat(Enumerable.Range(201, 27)).Concat(Enumerable.Range(240, 5))
-				.Concat(new[] { 95, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 })
+				.Concat(new[] { 95, 96, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 })
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();

@@ -1,0 +1,33 @@
+diff --git a/game-server/data/handlers/quest/abyss_entry/_2947FollowingThrough.java b/game-server/data/handlers/quest/abyss_entry/_2947FollowingThrough.java
+index f7d8047..c359341 100644
+--- a/game-server/data/handlers/quest/abyss_entry/_2947FollowingThrough.java
++++ b/game-server/data/handlers/quest/abyss_entry/_2947FollowingThrough.java
+@@ -2,6 +2,7 @@ package quest.abyss_entry;
+ 
+ import static com.aionemu.gameserver.model.DialogAction.*;
+ 
++import com.aionemu.gameserver.model.animations.TeleportAnimation;
+ import com.aionemu.gameserver.model.gameobjects.player.Player;
+ import com.aionemu.gameserver.questEngine.handlers.AbstractQuestHandler;
+ import com.aionemu.gameserver.questEngine.model.QuestEnv;
+@@ -11,6 +12,7 @@ import com.aionemu.gameserver.services.QuestService;
+ import com.aionemu.gameserver.services.instance.InstanceService;
+ import com.aionemu.gameserver.services.teleport.TeleportService;
+ import com.aionemu.gameserver.world.WorldMapInstance;
++import com.aionemu.gameserver.world.WorldMapType;
+ 
+ /**
+  * Meet Kvasir (204053) and choose your mission.<br>
+@@ -118,7 +120,11 @@ public class _2947FollowingThrough extends AbstractQuestHandler {
+ 						case SETPRO3:
+ 							if (var == 4 || var == 6) {
+ 								resetArena(player); // every attempt starts in a new arena
+-								return defaultCloseDialog(env, var, 5); // 5
++								// Garm sends the player in ("I'll send you to the Arena as soon as you're ready"), as Epeios does in 1922
++								WorldMapInstance newInstance = InstanceService.getNextAvailableInstance(WorldMapType.TRINIEL_UNDERGROUND_ARENA.getId(), player);
++								TeleportService.teleportTo(player, newInstance, 276, 293, 163, (byte) 90, TeleportAnimation.NONE);
++								changeQuestStep(env, var, 5, false); // 5
++								return closeDialogWindow(env);
+ 							}
+ 							return false;
+ 						case SETPRO4:

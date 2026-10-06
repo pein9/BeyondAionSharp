@@ -65,6 +65,9 @@ only their own ring-course timer, not every player's running quest timer (§7/15
 D34 approves limiting Q2947's timer-end hook to the player's own arena attempt and
 destroying a failed attempt's arena instance, so every attempt starts in a new one
 (§7/156, same test file); a death is left as Java has it, and it must not be ported back.
+D35 approves Garm's SETPRO3 making a new arena instance and teleporting the player into
+it, as 4.8 retail's text and Java's Elyos twin Q1922 do (§7/157, same test file); it must
+not be ported back either.
 These decisions are not a general exemption from parity or authorization to
 reopen other deferred behavior.
 

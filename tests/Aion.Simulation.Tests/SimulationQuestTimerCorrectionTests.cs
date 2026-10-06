@@ -344,6 +344,63 @@ public sealed partial class SimulationFastScenarioTests
 		});
 	}
 
+	/// <summary>
+	/// D35: Garm sends the player into the arena. Java's Q2947 only sets var 5 at Garm's SETPRO3 and leaves the walk to the
+	/// entrance 700368. 4.8 retail's Garm says "I'll send you to the Arena as soon as you're ready", and Java's Elyos twin Q1922
+	/// makes a new instance and teleports from the same dialog action. The correction does what the twin does, at var 4 and at
+	/// var 6 only: a SETPRO3 from a step whose dialog does not offer it still does nothing. The quest states are GM setup.
+	/// </summary>
+	[SkippableFact]
+	public async Task GarmSendsThePlayerStraightIntoANewArena()
+	{
+		await RunCapitalProbeAsync("D35", 96, "Asimarenasend", async (probe, session, token) =>
+		{
+			Player server = probe.Server;
+			await AxArenaStartAsync(probe, session, token);
+
+			// Before Kvasir (var 0) Garm's dialog offers no SETPRO3. One sent anyway moves nobody and makes no instance.
+			AxSetQuest(server, 2947, QuestStatus.START, 0);
+			await session.SynchronizeAsync(token);
+			await probe.SetupNearAsync(AxPandaemonium, 204089);
+			int garm = await probe.WalkNpcAsync(204089);
+			await NaturalDialogProtocol.OpenAsync(session, garm, token);
+			await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token);
+			await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialogExpectRejection(garm, DialogAction.SETPRO3, questId: 2947), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(new PendingQuestDialogAction(garm, DialogAction.SETPRO3, 2947), session.Api.QuestDialogEchoes.ConsumeExpectedRejection());
+			Assert.Equal((0, AxPandaemonium), (AxArenaVar(server), server.GetWorldId()));
+			Assert.Null(InstanceService.GetRegisteredInstance(AxArena, server.GetObjectId()));
+
+			// From var 4: the talk itself ends in the arena. No object is used on the way.
+			AxSetQuest(server, 2947, QuestStatus.START, 4);
+			await session.SynchronizeAsync(token);
+			int packets = session.PacketHistory.Count;
+			(int first, int firstAlive) = await AxEnterArenaAsync(probe, session, again: false, token);
+			bool usedAnObject = session.PacketHistory.Skip(packets).Any(packet => packet.PacketType == typeof(SM_USE_OBJECT));
+			byte heading = server.GetHeading();
+			await AxKillSpiritAsync(session, server, token);
+			int counted = AxArenaKills(server);
+
+			// The attempt fails at the exit. Garm sends the player back, into another new arena.
+			await AxLeaveArenaAsync(session, server, token);
+			packets = session.PacketHistory.Count;
+			(int second, int secondAlive) = await AxEnterArenaAsync(probe, session, again: true, token);
+			bool usedAnObjectAgain = session.PacketHistory.Skip(packets).Any(packet => packet.PacketType == typeof(SM_USE_OBJECT));
+			bool firstGone = !InstanceService.InstanceExists(AxArena, first);
+			int secondKills = AxArenaKills(server);
+			await AxLeaveArenaAsync(session, server, token);
+
+			Console.WriteLine($"D35: SETPRO3 at var 0 did nothing; at var 4 Garm sent the player to instance {first} with {firstAlive} spirits, heading {heading}, " +
+				$"object used {usedAnObject}; one kill counted {counted}; left by the exit: var 6; at var 6 Garm sent the player to instance {second} with " +
+				$"{secondAlive} spirits and {secondKills} kills, object used {usedAnObjectAgain}; instance {first} destroyed {firstGone}");
+			Assert.False(usedAnObject || usedAnObjectAgain, "an attempt used an object on the way into the arena");
+			Assert.Equal((11, 1, 90), (firstAlive, counted, heading));
+			Assert.NotEqual(first, second);
+			Assert.True(firstGone, "the failed attempt's instance still exists");
+			Assert.Equal((11, 0), (secondAlive, secondKills));
+		});
+	}
+
 	/// <summary>An ordinary self cast through the client protocol, as BC-04 casts Hand of Reincarnation.</summary>
 	private static async Task AxCastOnSelfAsync(SimulationL0Session session, ushort skillId, CancellationToken token)
 	{

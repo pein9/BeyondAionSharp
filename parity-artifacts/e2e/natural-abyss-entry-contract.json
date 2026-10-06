@@ -537,7 +537,15 @@
         0
       ],
       "mapId": 120010000,
-      "nextVar": 5
+      "nextVar": 5,
+      "teleport": {
+        "mapId": 320090000,
+        "position": [
+          276,
+          293,
+          163
+        ]
+      }
     },
     {
       "key": "q2947-garm-again",
@@ -559,7 +567,15 @@
         0
       ],
       "mapId": 120010000,
-      "nextVar": 5
+      "nextVar": 5,
+      "teleport": {
+        "mapId": 320090000,
+        "position": [
+          276,
+          293,
+          163
+        ]
+      }
     },
     {
       "key": "q2947-garm-done",
@@ -791,12 +807,6 @@
     "arena": {
       "questId": 2947,
       "mapId": 320090000,
-      "entranceNpcId": 700368,
-      "entrancePosition": [
-        978.1827,
-        1556.5114,
-        210.5517
-      ],
       "arrival": [
         276,
         293,

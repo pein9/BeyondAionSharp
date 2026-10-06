@@ -1,4 +1,5 @@
 using Aion.GameServer.Model;
+using Aion.GameServer.Model.Animations;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.QuestEngine.Handlers;
 using Aion.GameServer.QuestEngine.Model;
@@ -136,7 +137,12 @@ public class _2947FollowingThrough : AbstractQuestHandler
 							if (var == 4 || var == 6)
 							{
 								ResetArena(player); // D34: every attempt starts in a new arena
-								return DefaultCloseDialog(env, var, 5); // 5
+								// D35 (deviation 157): Garm sends the player in, as 4.8 retail's text says ("I'll send you to the Arena")
+								// and Java's Elyos twin Q1922 does. Java's Q2947 only sets var 5 and leaves the walk to the entrance 700368.
+								WorldMapInstance newInstance = InstanceService.GetNextAvailableInstance(WorldMapType.TRINIEL_UNDERGROUND_ARENA.GetId(), player);
+								TeleportService.TeleportTo(player, newInstance, 276, 293, 163, (byte)90, TeleportAnimation.NONE);
+								ChangeQuestStep(env, var, 5, false); // 5
+								return CloseDialogWindow(env);
 							}
 							return false;
 						case DialogAction.SETPRO4:

@@ -123,11 +123,20 @@ public sealed class NaturalAbyssEntryContractTests
 			Assert.Equal(spirit.Count, spawns.Descendants("spawn").Single(n => (int)n.Attribute("npc_id")! == spirit.NpcId).Elements("spot").Count());
 		Assert.Equal((6, 5), (arena.Groups.Sum(group => group.Mages), arena.Groups.Sum(group => group.Warriors)));
 		Assert.True(Spot("Instances/320090000_Triniel_Underground_Arena.xml", arena.ExitNpcId).Zip(arena.ExitPosition, (a, b) => MathF.Abs(a - b)).All(d => d < 0.01f));
-		Assert.True(Spot("Npcs/120010000_Pandaemonium.xml", arena.EntranceNpcId).Zip(arena.EntrancePosition, (a, b) => MathF.Abs(a - b)).All(d => d < 0.01f));
+		// D35: Garm sends the player in. Both of his SETPRO3 talks end at the arena's one portal location, where the entrance
+		// 700368 (which no attempt uses any more) also leads.
 		XElement path = XDocument.Load(Data("portals", "portal_template2.xml")).Descendants("portal_use")
-			.Single(n => (int)n.Attribute("npc_id")! == arena.EntranceNpcId).Element("portal_path")!;
-		XElement loc = XDocument.Load(Data("portals", "portal_loc.xml")).Root!.Elements().Single(n => (int)n.Attribute("loc_id")! == (int)path.Attribute("loc_id")!);
-		Assert.Equal((arena.MapId, arena.Arrival[0], arena.Arrival[1], arena.Arrival[2]), ((int)loc.Attribute("world_id")!, F(loc, "x"), F(loc, "y"), F(loc, "z")));
+			.Single(n => (int)n.Attribute("npc_id")! == 700368).Element("portal_path")!;
+		XElement loc = XDocument.Load(Data("portals", "portal_loc.xml")).Root!.Elements().Single(n => (int)n.Attribute("world_id")! == arena.MapId);
+		Assert.Equal((int)path.Attribute("loc_id")!, (int)loc.Attribute("loc_id")!);
+		Assert.Equal((arena.Arrival[0], arena.Arrival[1], arena.Arrival[2]), (F(loc, "x"), F(loc, "y"), F(loc, "z")));
+		foreach (string key in new[] { arena.StartStep, arena.RestartStep })
+		{
+			NaturalAltgardStep garm = Leg.Steps.Single(step => step.Key == key);
+			Assert.Equal((204089, "SETPRO3", arena.MapId), (garm.NpcId, garm.Actions[^1], garm.Teleport?.MapId));
+			Assert.Equal(arena.Arrival, garm.Teleport!.Position);
+		}
+		Assert.Null(Leg.Steps.Single(step => step.Key == arena.DoneStep).Teleport);
 		XElement limits = XDocument.Load(Data("instance_cooltimes", "instance_cooltimes.xml")).Root!.Elements()
 			.Single(n => (int)n.Attribute("worldId")! == arena.MapId && (string)n.Attribute("race")! == "ASMODIANS");
 		Assert.Equal(("0", "1"), ((string)limits.Element("ent_cool_time")!, (string)limits.Element("max_member_dark")!));
