@@ -2421,8 +2421,7 @@ Each iteration:
    - Stage only the files your item changed. Never `git add -A`, because other research
      files may be in the tree.
    - One commit per item, with an imperative subject line.
-   - The body holds the evidence and ends with
-     `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+   - The body holds the evidence. Add no co-author or attribution trailer.
    - Never push.
 8. **If blocked** by an operator decision, a Java/C# divergence that needs judgment, or a
    design fork:
