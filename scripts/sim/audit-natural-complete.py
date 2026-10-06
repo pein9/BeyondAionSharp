@@ -74,10 +74,18 @@ assert not any(s['SkillId'] == 11504 or s['SkillType'] in (1, 3) for s in final[
 cg = read('altgard-cg-completion.json')['after']['CoinGearProgress']
 assert sorted(p['ItemId'] for p in cg['Purchases']) == [111501065, 112501015, 113501074]
 assert sum(p['BeforeCoins'] - p['AfterCoins'] for p in cg['Purchases']) == 4
-staff = next(i for i in read('altgard-l10-completion.json')['after']['Inventory'] if i['ItemId'] == 101501357 and i['EquipmentSlot'] == 3)
+earned = [i for i in read('altgard-l10-completion.json')['after']['Inventory'] if i['ItemId'] == 101501357]
+assert len(earned) == 1 and earned[0]['Count'] == 1
+staff = earned[0]
 assert cg['StaffObjectId'] == staff['ObjectId']
 for leg in ('l11', 'cg', 'l12'):
-    assert staff in read(f'altgard-{leg}-completion.json')['after']['Inventory']
+    carried = [i for i in read(f'altgard-{leg}-completion.json')['after']['Inventory'] if i['ItemId'] == staff['ItemId']]
+    assert len(carried) == 1 and (carried[0]['ObjectId'], carried[0]['Count']) == (staff['ObjectId'], 1), leg
+    # Java grants the earned item; ordinary CG preparation equips it before the reward receipt.
+    if leg in ('cg', 'l12'):
+        assert carried[0]['EquipmentSlot'] == 3, leg
+    else:
+        assert carried[0]['EquipmentSlot'] in (0, 3, 65535), leg
 assert all(any(i['ObjectId'] == p['ObjectId'] and i['ItemId'] == p['ItemId'] and i['EquipmentSlot'] not in (0, 65535)
                for i in final['Inventory']) for p in cg['Purchases'])
 visits = final['HaramelProgress']['Visits']

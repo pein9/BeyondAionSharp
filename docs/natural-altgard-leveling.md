@@ -4496,7 +4496,7 @@ monitor enabled and announce its URL when a journey starts.
     contract, audit syntax/scope review and seven pre-commit checks pass on 597797164
     (`run/rc10-join/`); Fast passes 92 tests/five guarded skips/all eleven scenarios
     (`run/rc10-fast/rc10-join/`). The revised full gameplay proof belongs to RC-11.
-- [ ] **RC-11 - Prove one revised continuous fresh-create SIM.** Depends RC-10.
+- [x] **RC-11 - Prove one revised continuous fresh-create SIM.** Depends RC-10.
   Run seed 1 from character creation through both Haramel visits in one owned schema,
   character and game clock, without restores. Record per-stage XP/level, actual regular
   skills, gear, gross rewards/fares/purchases, consumable provenance and usage, deaths,
@@ -5081,6 +5081,34 @@ monitor enabled and announce its URL when a journey starts.
     scenarios in 8.4151 minutes (`run/rc11-fast/rc11-haramel-handoff/`), and all seven
     final pre-commit checks pass (`run/rc11-haramel-handoff/*-final.log`). Commit and
     acknowledge the rebuild before fresh continuous acceptance; RC-11 remains open.
+  - 2026-10-06, accepted continuous proof: `rc11-full-create-s1-a25` on committed
+    242166ebc completes creation, first-level-9 Ascension, the ten first-capital quests,
+    all thirteen Altgard/CG/Haramel segments and the nine scheduled capital additions
+    in one fresh owned schema, character 133276 and uninterrupted SIM clock. No restores.
+    Native gameplay and endpoint relog pass in 51.0851 test minutes at Cleric 25,
+    176 unique quests each completed once, 8,497,039 cumulative XP, 880,687 XP to 26,
+    and 19,088,804 XP to 32. Thirteen deaths are retained: Leg 4 two, Leg 6 one,
+    Leg 8 one and Leg 10 nine; Ishalgen and Haramel record zero. Game time is
+    73,044,001 ms (20 h 17 m 24.001 s). Both actual fresh Haramel clears, boss movies,
+    class-chest outcomes and all eleven Haramel quests are proved. Q24114 stays excluded.
+    The approved three purchases cost four Iron Coins; endpoint balances are 19 Iron,
+    seven Bronze and 748,485 Kinah. Staff 101501357/156530 remains equipped; the stigma
+    bundle is sealed and tutorial stone/11504 absent. Ninety-one ordinary skill entries
+    and thirteen equipped objects are recorded; skill entries include professions,
+    passives and actions. Gross observed Kinah received/spent is 1,054,733/307,248;
+    service receipts show eleven teleports, nine binds and twenty-one hub flights.
+    Stage, cost, consumable-provenance/attempt/removal, death, book-material and outcome
+    ledgers are in the accepted capture folder. Exact 3/2/1 book consumption leaves
+    one surplus sap. Consumable removals include sales and mixed-stack provenance is
+    not inferred per unit. Nine actual maps are observed. The owned schema is dropped.
+    Immutable endpoint `altgard-rc-complete-s1` names runtime 242166ebc and hashes its
+    SQL dump, continuous completion, later-capital checkpoint and Haramel receipts.
+    The initial artifact audit's old Leg 10 equipped-staff assumption is retained
+    (`run/rc11-haramel-handoff/audit-first.log`). Java QuestService grants reward items
+    without equipping them; the auditor now follows ownership in l10/l11, then the
+    same equipped object through CG/l12. The complete audit passes (`audit-confirmed.log`)
+    without changing or rerunning the accepted gameplay. All seven final proof
+    pre-commit checks pass (`run/rc11-proof-checks/`); RC-12 is the next item.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5467,6 +5495,13 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-06 RC-11: fresh-create attempt twenty-five on 242166ebc passes the complete
+  revised route and endpoint relog at Cleric 25/176, thirteen recorded deaths,
+  73,044,001 game ms, both Haramel clears, retained staff and exact coin receipts.
+  Save immutable altgard-rc-complete-s1 and retain the dropped-schema receipt plus
+  all ledgers. The artifact audit follows the actual staff ownership/equip chronology;
+  gameplay is unchanged. All seven final proof checks pass (`run/rc11-proof-checks/`);
+  proceed to RC-12.
 - 2026-10-06 RC-11 pending: attempt twenty-four passes Q24015, Destiny and the full
   CG endpoint, then Haramel's historical earring requirement rejects the actual
   carried Deyla earring. Bind and protect observed incoming gear, retain mandatory
