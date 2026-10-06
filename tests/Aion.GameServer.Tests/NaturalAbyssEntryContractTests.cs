@@ -300,19 +300,33 @@ public sealed class NaturalAbyssEntryContractTests
 		Assert.All(refused, state => Assert.Throws<InvalidDataException>(() => NaturalAbyssEntryLeg.VerifyStart(Leg, state, 133276, 0)));
 	}
 
-	/// <summary>AX-05: the leg's first phase, decision by decision, as run/ax05/ax05-morheim-a1 played it.</summary>
+	/// <summary>The physical defence of the ten pieces of the level-21 manifest, as the shipped tooltips show it.</summary>
+	private static readonly Dictionary<int, int> Defence = new()
+	{
+		[110551147] = 177, [111501081] = 78, [112501641] = 80, [113501720] = 107, [114501726] = 67,
+		[110501097] = 134, [111501066] = 80, [112501016] = 80, [113501075] = 107, [114501082] = 80,
+	};
+	private static int DefenceOf(int itemId) => Defence.GetValueOrDefault(itemId);
+
+	/// <summary>AX-05, AX-06: the leg's first two phases, decision by decision, as run/ax06 played them.</summary>
 	[Fact]
-	public void MorheimAndTheCommanderComeFirstAndThenTheFrontier()
+	public void MorheimTheCommanderAndTheCoinArmorComeFirstAndThenTheFrontier()
 	{
 		static (string, string, string?, int?) Shape(NaturalAbyssEntryDecision next) => (next.Phase, next.Action, next.StepKey, next.MapId);
-		NaturalAbyssEntryDecision Decide(NaturalAltgardObservation state) => NaturalAbyssEntryDecisionEngine.Decide(Leg, state, 1);
+		NaturalAbyssEntryDecision Decide(NaturalAltgardObservation state) => NaturalAbyssEntryDecisionEngine.Decide(Leg, state, 1, DefenceOf);
 		NaturalAltgardObservation start = StartState(), arrived = ArrivedState(), commander = CommanderDoneState();
 
 		Assert.Equal(("morheim-arrival", "travel", null, (int?)NaturalAbyssEntry.Morheim), Shape(Decide(start)));
 		// On arrival the old Altgard bind is replaced first; Q24020 is already in the journal by then.
 		Assert.Equal(("morheim-arrival", "bind", null, null), Shape(Decide(arrived with { Bind = start.Bind })));
 		Assert.Equal(("morheim-arrival", "talk", "q24020-aegir", (int?)NaturalAbyssEntry.Morheim), Shape(Decide(arrived)));
-		Assert.Equal(("coin-armor-21", "frontier", null, null), Shape(Decide(commander)));
+		// The commander done: the Rank 8 gloves and brogans beat what is worn; the torso, shoulders and legs do not.
+		NaturalAbyssEntryDecision buy = Decide(commander);
+		Assert.Equal(("coin-armor-21", "coin-armor", null, null), Shape(buy));
+		Assert.Contains("111501066, 114501082 for 4 coins", buy.Reason);
+		// Bought and still in the cube: wear them. Worn: the phase is settled and the capital missions are next.
+		Assert.Equal(("coin-armor-21", "inventory-check", null, null), Shape(Decide(Adding(commander, new(900016, 111501066, 1, 65535), new(900032, 114501082, 1, 65535)))));
+		Assert.Equal(("capital-missions", "frontier", null, null), Shape(Decide(CoinArmorWornState())));
 
 		// What the rule waits for, recovers from or refuses.
 		Assert.Equal("refresh-observation", Decide(start with { Synchronized = false }).Action);
@@ -320,51 +334,114 @@ public sealed class NaturalAbyssEntryContractTests
 		Assert.Equal(("recover", "revive"), (Decide(arrived with { IsDead = true }).Phase, Decide(arrived with { IsDead = true }).Action));
 		Assert.Equal("blocked", Decide(start with { MapId = 220010000 }).Action);
 		Assert.Equal("blocked", Decide(arrived with { Quests = new Dictionary<int, BotQuestState> { [24020] = new(24020, 3, 1, 0, null) } }).Action);
+		Assert.Equal("blocked", Decide(commander with { MapId = NaturalAbyssEntry.Pandaemonium }).Action);
 		// The Pandaemonium teleport back to Morheim is an approved trip too.
 		Assert.Equal("travel", Decide(start with { MapId = NaturalAbyssEntry.Pandaemonium }).Action);
 	}
 
+	/// <summary>AX-06: the manifest the operator's rule gives ("only if any of it is better than what we are wearing").</summary>
 	[Fact]
-	public void MorheimArrivalIsVerifiedFromObservedStateAndItsAccounts()
+	public void LevelTwentyOneManifestBuysOnlyThePiecesWithMoreDefence()
+	{
+		NaturalAbyssCoinTier tier = Scope.CoinArmor.Tiers.Single(entry => entry.Level == 21);
+		NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, tier, CommanderDoneState().Inventory!, DefenceOf);
+		Assert.Equal([(8, "keep"), (16, "buy"), (2048, "keep"), (4096, "keep"), (32, "buy")], manifest.Slots.Select(slot => ((int)slot.Slot, slot.Action)));
+		Assert.Equal((4, 7L, 0L, false), (manifest.Cost, manifest.CoinsOwned, manifest.CoinsToSupply, manifest.Done));
+		Assert.Contains("tie", manifest.Slots.Single(slot => slot.Slot == 2048).Reason);
+		// Four coins short of a manifest is what the help mechanism would supply; a bare slot takes any piece.
+		NaturalAbyssCoinManifest poor = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, tier,
+			[.. CommanderDoneState().Inventory!.Where(item => item.ItemId is not (186000007 or 110551147))], DefenceOf);
+		Assert.Equal((7, 0L, 7L), (poor.Cost, poor.CoinsOwned, poor.CoinsToSupply));
+		Assert.Equal("buy", poor.Slots.Single(slot => slot.Slot == 8).Action);
+		Assert.True(NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, tier, CoinArmorWornState().Inventory!, DefenceOf).Done);
+		// The ten defences are the shipped tooltips'.
+		string items = File.ReadAllText(Data("items", "item_templates.xml"));
+		Assert.All(Defence, piece =>
+		{
+			int from = items.IndexOf($"<item_template id=\"{piece.Key}\"", StringComparison.Ordinal);
+			string template = items[from..items.IndexOf("</item_template>", from, StringComparison.Ordinal)];
+			Assert.Contains($"name=\"PHYSICAL_DEFENSE\" value=\"{piece.Value}\"", template);
+		});
+	}
+
+	[Fact]
+	public void FrontiersAreVerifiedFromObservedStateAndTheLedger()
 	{
 		NaturalAbyssEntryStart start = NaturalAbyssEntryLeg.VerifyStart(Leg, StartState(), 133276, 0);
 		NaturalAbyssPayment[] paid = [new(24020, 293_759, 0, 25)];
 		static int Boost(int itemId) => itemId switch { 101501357 => 370, 101501355 => 320, _ => 0 };
-		NaturalAbyssEntryProgress Verify(NaturalAltgardObservation state, long xp = 293_759, long fares = 2_401, long bind = 2_690,
-			NaturalAbyssPayment[]? payments = null, int checks = 2) =>
-			NaturalAbyssEntryLeg.VerifyMorheimArrival(Leg, start, state, "coin-armor-21", xp, fares, bind, payments ?? paid, checks, Boost, 59_385);
+		NaturalAbyssLedger noCoins = new(293_759, 2_401, 2_690, paid, 2, 0, [], [], 0);
+		NaturalAbyssEntryProgress Verify(NaturalAltgardObservation state, NaturalAbyssLedger ledger, string frontier = "coin-armor-21") =>
+			NaturalAbyssEntryLeg.VerifyProgress(Leg, start, state, frontier, ledger, Boost, DefenceOf, 59_385);
 
+		// AX-05's frontier: Morheim and the commander, before any coin is spent.
 		NaturalAltgardObservation done = CommanderDoneState();
-		NaturalAbyssEntryProgress progress = Verify(done);
-		Assert.Equal(("ax", "coin-armor-21", 220020000, 25, 743_394L, 2_401L, 2_690L, 101501357, 110551147, 2),
+		NaturalAbyssEntryProgress progress = Verify(done, noCoins);
+		Assert.Equal(("ax", "coin-armor-21", 220020000, 25, 743_394L, 2_401L, 2_690L, 101501357, 110551147, 2, 7L),
 			(progress.Leg, progress.Frontier, progress.MapId, progress.Level, progress.Kinah, progress.Fares, progress.BindPaid, progress.StaffItemId,
-				progress.TorsoItemId, progress.InventoryChecks));
+				progress.TorsoItemId, progress.InventoryChecks, progress.BronzeCoins));
 		Assert.Equal([24020], progress.CompletedLegQuestIds);
 		// The six Morheim campaign quests Q24020 puts in the journal are locked (levels 27 to 35); they are recorded, not played.
 		Assert.Equal([2945], progress.StartedQuestIds);
 		Assert.Equal([24021, 24022, 24023, 24024, 24025, 24026], progress.LockedQuestIds);
 
 		NaturalJourneyItem[] inventory = done.Inventory!;
-		NaturalAltgardObservation With(params NaturalJourneyItem[] items) => done with { Inventory = items };
 		Action[] refused =
 		[
-			() => Verify(done with { MapId = 220030000 }),
-			() => Verify(done with { Bind = StartState().Bind }),
-			() => Verify(done with { CompletedQuestIds = StartState().CompletedQuestIds }),
-			() => Verify(done with { Kinah = 743_395 }),
-			() => Verify(done with { Quests = new Dictionary<int, BotQuestState> { [2945] = new(2945, 3, 1, 0, null) } }),
-			() => Verify(done, xp: 293_760),
-			() => Verify(done, payments: [new(24020, 293_758, 0, 25)], xp: 293_758),
-			() => Verify(done, payments: []),
-			() => Verify(done, checks: 1),
-			() => Verify(done, bind: 2_691, fares: 2_400),
+			() => Verify(done with { MapId = 220030000 }, noCoins),
+			() => Verify(done with { Bind = StartState().Bind }, noCoins),
+			() => Verify(done with { CompletedQuestIds = StartState().CompletedQuestIds }, noCoins),
+			() => Verify(done with { Kinah = 743_395 }, noCoins),
+			() => Verify(done with { Quests = new Dictionary<int, BotQuestState> { [2945] = new(2945, 3, 1, 0, null) } }, noCoins),
+			() => Verify(done, noCoins with { ExperienceGained = 293_760 }),
+			() => Verify(done, noCoins with { Payments = [new(24020, 293_758, 0, 25)], ExperienceGained = 293_758 }),
+			() => Verify(done, noCoins with { Payments = [] }),
+			() => Verify(done, noCoins with { InventoryChecks = 1 }),
+			() => Verify(done, noCoins with { BindPaid = 2_691, Fares = 2_400 }),
 			// The hauberk carried and the old one still worn; a mace in the hand; a better staff left in the cube.
-			() => Verify(With([.. inventory.Where(item => item.ItemId is not (110551147 or 110551139)), new(133316, 110551147, 1, 65535), new(140185, 110551139, 1, 8)])),
-			() => Verify(With([.. inventory.Where(item => item.ItemId != 101501357), new(156530, 101501357, 1, 65535), new(900001, 100101334, 1, 1)])),
-			() => Verify(With([.. inventory.Where(item => item.ItemId != 101501357), new(156530, 101501357, 1, 65535), new(900002, 101501355, 1, 3)])),
-			() => Verify(With([.. inventory.Where(item => item.ItemId != 188053787)])),
+			() => Verify(With([.. inventory.Where(item => item.ItemId is not (110551147 or 110551139)), new(133316, 110551147, 1, 65535), new(140185, 110551139, 1, 8)]), noCoins),
+			() => Verify(With([.. inventory.Where(item => item.ItemId != 101501357), new(156530, 101501357, 1, 65535), new(900001, 100101334, 1, 1)]), noCoins),
+			() => Verify(With([.. inventory.Where(item => item.ItemId != 101501357), new(156530, 101501357, 1, 65535), new(900002, 101501355, 1, 3)]), noCoins),
+			() => Verify(With([.. inventory.Where(item => item.ItemId != 188053787)]), noCoins),
+			// Coin armor before its turn, or a coin gone with nothing bought.
+			() => Verify(done, noCoins with { CoinsSupplied = 4 }),
+			() => Verify(With([.. inventory.Where(item => item.ItemId != 186000007), new(157702, 186000007, 6, 65535)]), noCoins),
 		];
 		Assert.All(refused, verify => Assert.Throws<InvalidDataException>(verify));
+
+		// AX-06's frontier: the manifest decided once, its two pieces bought for coins alone and worn, nothing better left.
+		NaturalAltgardObservation worn = CoinArmorWornState();
+		NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, Scope.CoinArmor.Tiers[0], done.Inventory!, DefenceOf);
+		NaturalAbyssCoinPurchase[] bought = [new(21, 111501066, 900016, 16, 2, 7, 5, 743_394, 743_394), new(21, 114501082, 900032, 32, 2, 5, 3, 743_394, 743_394)];
+		NaturalAbyssLedger coins = noCoins with { OtherInventoryChecks = 1, CoinManifests = [manifest], CoinPurchases = bought };
+		NaturalAbyssEntryProgress settled = Verify(worn, coins, "capital-missions");
+		Assert.Equal(("capital-missions", 3L, 0L, 3), (settled.Frontier, settled.BronzeCoins, settled.CoinsSupplied, settled.InventoryChecks));
+		Assert.Equal([111501066, 114501082], settled.CoinPurchases!.Select(purchase => purchase.ItemId));
+		Action[] refusedCoins =
+		[
+			() => Verify(done, noCoins, "capital-missions"),
+			() => Verify(worn, coins with { CoinManifests = [] }, "capital-missions"),
+			() => Verify(worn, coins with { CoinManifests = [manifest, manifest] }, "capital-missions"),
+			() => Verify(worn, coins with { CoinPurchases = [bought[0]] }, "capital-missions"),
+			() => Verify(worn, coins with { CoinsSupplied = 1 }, "capital-missions"),
+			() => Verify(worn, coins with { CoinPurchases = [bought[0], bought[1] with { KinahAfter = 743_000 }] }, "capital-missions"),
+			() => Verify(worn with { Kinah = 743_000 }, coins, "capital-missions"),
+			// A bought piece left in the cube.
+			() => Verify(Adding(done, new(900016, 111501066, 1, 65535), new(900032, 114501082, 1, 65535)) with
+				{ ItemCounts = worn.ItemCounts }, coins, "capital-missions"),
+		];
+		Assert.All(refusedCoins, verify => Assert.Throws<InvalidDataException>(verify));
+
+		NaturalAltgardObservation With(params NaturalJourneyItem[] items) => done with
+		{
+			Inventory = items, ItemCounts = items.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
+		};
+	}
+
+	private static NaturalAltgardObservation Adding(NaturalAltgardObservation state, params NaturalJourneyItem[] added)
+	{
+		NaturalJourneyItem[] items = [.. state.Inventory!, .. added];
+		return state with { Inventory = items, ItemCounts = items.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)) };
 	}
 
 	/// <summary>On the Morheim landing, bound at the fortress obelisk, with Q24020 started by the arrival.</summary>
@@ -375,12 +452,14 @@ public sealed class NaturalAbyssEntryContractTests
 		Quests = new Dictionary<int, BotQuestState> { [2945] = new(2945, 3, 0, 0, null), [24020] = new(24020, 3, 0, 0, null) },
 	};
 
-	/// <summary>After Aegir's talk: Q24020 complete, its hauberk worn, and the six locked campaign quests in the journal.</summary>
+	/// <summary>After Aegir's talk: Q24020 complete, its hauberk worn over the armor AX-04's check put on, and the six locked
+	/// campaign quests in the journal.</summary>
 	private static NaturalAltgardObservation CommanderDoneState()
 	{
 		NaturalAltgardObservation arrived = ArrivedState();
 		NaturalJourneyItem[] inventory = [.. arrived.Inventory!.Where(item => item.ItemId is not (182400001 or 110551139)),
-			new(133277, 182400001, 743_394, 65535), new(140185, 110551139, 1, 65535), new(133316, 110551147, 1, 8)];
+			new(133277, 182400001, 743_394, 65535), new(140185, 110551139, 1, 65535), new(133316, 110551147, 1, 8),
+			new(159156, 111501081, 1, 16), new(157353, 112501641, 1, 2048), new(159160, 113501720, 1, 4096), new(140186, 114501726, 1, 32)];
 		// The client keeps the completed Q24020 in its quest list at status 5.
 		var quests = new Dictionary<int, BotQuestState> { [2945] = new(2945, 3, 0, 0, null), [24020] = new(24020, 5, 0, 1, null) };
 		foreach (int locked in new[] { 24021, 24022, 24023, 24024, 24025, 24026 }) quests[locked] = new(locked, 6, 0, 0, null);
@@ -388,6 +467,20 @@ public sealed class NaturalAbyssEntryContractTests
 		{
 			Position = new BotPosition(225.225f, 2415.47f, 454.11f, 46), Quests = quests, Inventory = inventory,
 			CompletedQuestIds = arrived.CompletedQuestIds.Append(24020).ToHashSet(),
+			ItemCounts = inventory.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
+		};
+	}
+
+	/// <summary>After Vebna: the Rank 8 gloves and brogans worn, the old ones in the cube, three of the seven coins left.</summary>
+	private static NaturalAltgardObservation CoinArmorWornState()
+	{
+		NaturalAltgardObservation done = CommanderDoneState();
+		NaturalJourneyItem[] inventory = [.. done.Inventory!.Where(item => item.ItemId is not (186000007 or 111501081 or 114501726)),
+			new(157702, 186000007, 3, 65535), new(159156, 111501081, 1, 65535), new(140186, 114501726, 1, 65535),
+			new(900016, 111501066, 1, 16), new(900032, 114501082, 1, 32)];
+		return done with
+		{
+			Position = new BotPosition(220.57f, 2333.51f, 446.32f, 0), Inventory = inventory,
 			ItemCounts = inventory.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
 		};
 	}

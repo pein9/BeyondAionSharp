@@ -7,7 +7,8 @@ measured. AX-02 is done: Morheim and the arena have checked-in navigation data. 
 done: the leg has a frozen contract, and a restored run proves its start. AX-04 is done:
 the staff rule and the inventory check exist, and the check runs at the leg's start. AX-05
 is done: the Cleric teleports to Morheim, binds, talks to Aegir and wears his hauberk. AX-06
-is next.
+is done: the Rank 8 gloves and brogans are bought with the Cleric's own coins and worn.
+AX-07 is next.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -230,25 +231,30 @@ no helmet, belt or accessory.
 **Level 21: Rank 8, the only level-21 tier (rare).** Bought right after the commander's
 talk, for each slot where it beats what is worn.
 
-| Slot | Worn after the leg-start check | Defence | Rank 8 piece | Coins | Defence |
-|---|---|---:|---|---:|---:|
-| Torso | Morheim Dark Legionary Hauberk 110551147 (Q24020, worn since AX-05) | 177 | Hauberk 110501097 | 3 | 134 |
-| Gloves | Haramel's Handguards 111501081 | 78 | Handguards 111501066 | 2 | 80 |
-| Shoulders | Altgard Dark Legionary Spaulders 112501641 | 80 | Spaulders 112501016 | 2 | 80 |
-| Legs | Altgard Dark Legionary Chausses 113501720 | 107 | Chausses 113501075 | 2 | 107 |
-| Feet | Altgard Legionary Brogans 114501726 | 67 | Brogans 114501082 | 2 | 80 |
-| **All five** | | | | **11** | |
+**The level-21 manifest (AX-06, written 2026-10-06 before buying).** Every stat is from the
+shipped item data, as the tooltips show it (`run/ax06/manifest.json`). "Better" is the
+leg's default: more physical defence. A tie is not better.
 
-- AX-04's check changed this table. At the preserved endpoint the Cleric wore the level-16
-  Rank 9 gloves, shoulders and legs (67, 67 and 90 defence) and carried the better pieces
-  above. With them on, Rank 8 only ties the shoulders and legs.
-- The torso is Q24020's hauberk since AX-05, so Rank 8's 134 is not better there. Likely to
-  remain: feet, and gloves by 2 defence against 5 healing boost. AX-06 decides from the
-  full manifest.
-- The Cleric holds 7 Bronze Coins, so up to 4 are supplied.
-- Other stats differ too. The Rank 8 Hauberk has 15 magic boost and 61 HP but no healing
-  boost, where the worn one has 7 healing boost and 5 concentration. AX-06 writes the full
-  comparison for every slot before buying.
+| Slot | Worn after AX-05 | Rank 8 piece at Vebna | Coins | Decision |
+|---|---|---|---:|---|
+| Torso | Morheim Dark Legionary Hauberk 110551147: 177 defence, 98 evasion, 17 magic resist, 12 healing boost, 9 concentration, 4 flight speed, −8 enmity | Hauberk 110501097: 134 defence, 76 evasion, 54 magic resist, 61 HP, 15 magic boost, 6 concentration, −5 enmity | 3 | **Keep.** 134 against 177 |
+| Gloves | Haramel's Handguards 111501081: 78 defence, 45 evasion, 31 magic resist, 5 healing boost, 3 concentration | Handguards 111501066: 80 defence, 46 evasion, 32 magic resist, 30 HP, attack speed −2, 3 concentration, −2 enmity | 2 | **Buy.** 80 against 78; gives up 5 healing boost |
+| Shoulders | Altgard Dark Legionary Spaulders 112501641: 80 defence, 46 evasion, 32 magic resist, 30 HP, 7 magic boost, 3 concentration, −2 enmity | Spaulders 112501016: the same seven stats | 2 | **Keep.** A tie |
+| Legs | Altgard Dark Legionary Chausses 113501720: 107 defence, 61 evasion, 43 magic resist, 46 HP, 1 flight speed, 5 concentration, −4 enmity | Chausses 113501075: the same seven stats | 2 | **Keep.** A tie |
+| Feet | Altgard Legionary Brogans 114501726: 67 defence, 39 evasion, 27 magic resist, 27 HP, 3 healing boost, 3 concentration, −2 enmity | Brogans 114501082: 80 defence, 46 evasion, 32 magic resist, 30 HP, 7 run speed, 3 concentration, −2 enmity | 2 | **Buy.** 80 against 67; gives up 3 healing boost |
+
+- **To buy: the Handguards and the Brogans, 4 Bronze Coins.** The Cleric holds 7, so none
+  is supplied.
+- **The "Magic" variants are not better.** Nott 204360, 14 m from Vebna at (224.01,
+  2320.13, 446.32), sells a Rank 8 "Magic" piece for every slot (goods list 990). Each has
+  the plain piece's defence, evasion, magic resist, HP and magic boost. It raises enmity (+5
+  to +11) where the plain piece lowers it, and has no concentration. So it never beats the
+  plain piece, and none is bought.
+- The gloves are the one close call: 2 defence and 30 HP against 5 healing boost. The
+  default rule buys them. The operator was told on 2026-10-06 and can reverse it.
+- At the preserved endpoint the Cleric wore the level-16 Rank 9 gloves, shoulders and legs
+  (67, 67 and 90 defence) and carried better pieces unworn. AX-04's check put those on, and
+  AX-05's turn-in added the hauberk. That is why Rank 8 now only ties the shoulders and legs.
 
 **Level 26: Elite Rank 7, the best tier (legendary).** Bought at the end, once the Cleric
 is level 26, for each slot where it beats what is then worn.
@@ -519,12 +525,34 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
     too; its receipt listed the completed and locked quests as started, so the receipt was
     split and the run repeated.
   - Fast and the seven pre-commit checks: see the Progress log.
-- [ ] **AX-06 - Level-21 coin armor.** Depends AX-05. Route row M5.
+- [x] **AX-06 - Level-21 coin armor.** Depends AX-05. Route row M5.
   - Write the manifest here first: every slot, worn against Rank 8 (and its "Magic"
     variant, if a vendor sells it), with all stats, and which pieces count as better.
   - Supply the missing Bronze Coins through the help-item mechanism, listed in the run
     profile. Buy only the manifest. Wear the pieces.
   - Buy nothing if no piece is better.
+  - 2026-10-06, the manifest: written under [Coin armor](#coin-armor) before any coin was
+    spent. Rank 8 beats what is worn in two slots, gloves (80 defence against 78) and feet
+    (80 against 67). It loses on the torso and ties the shoulders and legs. The "Magic"
+    variants Nott sells never beat the plain pieces. Cost: 4 Bronze Coins of the 7 held, so
+    **nothing was supplied**.
+  - The rule and the steps: `NaturalAbyssCoinArmorPolicy.Plan` compares each slot's worn
+    piece with the tier's piece by physical defence, from the tooltips. A tie is kept. The
+    decision rule asks for `coin-armor` while a piece is better, and for an inventory check
+    while a bought piece is not worn. `NaturalAbyssCoinArmorSteps.BuyAsync` checks Vebna's
+    reward shop and each piece's price in coins, buys one piece at a time and verifies the
+    coins, the Kinah and the new item. Coins the Cleric lacks go through the leg's approved
+    supply and into `help-items.json`; that path was not needed here.
+  - Proof `run/ax06/ax06-coin-a1` (public Restore, leg `ax`, 56.4 s, schema dropped, no
+    death), 90.1 s of game time: the manifest was traced first, then Handguards 111501066 and
+    Brogans 114501082 were bought for 2 coins each (7 to 5 to 3) and no Kinah. The inventory
+    check wore both. 3 Bronze Coins, 743,394 Kinah and 21 free cube slots are left.
+    `VerifyProgress` confirmed it from the client's view: the purchases are the manifest,
+    both are worn, and no Rank 8 piece beats what is worn now.
+  - **The segment now ends at the frontier `capital-missions`.**
+  - Tests: three contract tests cover the rule's decisions, the manifest and 24 refused
+    frontiers (`NaturalAbyssEntryContractTests.cs`, 19 pass).
+  - Fast and the seven pre-commit checks: see the Progress log.
 - [ ] **AX-07 - The capital steps.** Depends AX-06. Orhe's teleport to Pandaemonium, then
   route rows 1–9: Q2945, Q2946 and Q2947's acceptance at Kvasir. The inventory check opens
   the two Strange Green Sacks and the Bronze Coin Chest and records what each gives
@@ -829,3 +857,8 @@ The original questions, with the recommendations made at the time:
   segment ends at the level-21 coin armor. Six campaign quests entered the journal locked.
   Fast passes 114 of 119 tests with five guarded skips and all eleven scenarios in 11.05
   minutes (`run/ax05-fast/`); the seven pre-commit checks pass (`run/ax05/checks/`).
+- 2026-10-06 — AX-06: the level-21 manifest was written first. Rank 8 beats what is worn in
+  the gloves and the feet only; both were bought for 4 of the Cleric's own 7 Bronze Coins
+  and worn (`run/ax06/ax06-coin-a1`). Nothing was supplied. The segment ends at the capital
+  missions. Fast passes 114 of 119 tests with five guarded skips and all eleven scenarios
+  in 9.37 minutes (`run/ax06-fast/`); the seven pre-commit checks pass (`run/ax06/checks/`).

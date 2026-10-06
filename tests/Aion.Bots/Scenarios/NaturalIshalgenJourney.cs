@@ -1588,7 +1588,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// The journey is rebound to Altgard as for NA-23; the Leg 1 engine picks each move from the client's view. Template
 			// quests run on the Ishalgen runner, scripted steps on NaturalAltgardQuestSteps, flight and the air kills on the
 			// AF-04..AF-06 code. Every decision is traced; a move that makes no progress three times stops the run.
-			// AX-03..AX-05: the Morheim and Abyss-entry leg. It proves its incoming contract from the client's view, then takes one
+			// AX-03..AX-06: the Morheim and Abyss-entry leg. It proves its incoming contract from the client's view, then takes one
 			// decision of NaturalAbyssEntryDecisionEngine at a time. The fortresses and the capital are safe hubs: every approach is
 			// the city approach, on whichever map the client is on. The segment ends at the rule's frontier.
 			async Task RunAbyssEntryAsync()
@@ -1609,18 +1609,22 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					["level"] = start.Level, ["map"] = start.MapId, ["completed"] = start.CompletedQuests, ["started"] = start.StartedQuestIds,
 					["kinah"] = start.Kinah, ["bronzeCoins"] = start.BronzeCoins, ["staffObjectId"] = start.StaffObjectId,
 				});
-				long experienceAtStart = ObservedExperience(), fares = 0, bindPaid = 0;
+				long experienceAtStart = ObservedExperience(), fares = 0, bindPaid = 0, coinsSupplied = 0;
 				var payments = new List<NaturalAbyssPayment>();
-				int inventoryChecks = 0;
+				var coinManifests = new List<NaturalAbyssCoinManifest>();
+				var coinPurchases = new List<NaturalAbyssCoinPurchase>();
+				int inventoryChecks = 0, otherInventoryChecks = 0;
+				int PhysicalDefence(int itemId) => NaturalAbyssCoinArmorPolicy.PhysicalDefence(runtime.Data.ItemDataDh.GetItemTemplate(itemId));
 				// AX-04: the inventory check the operator asked for after every quest turn-in (2026-10-06), and once at the start so
-				// the leg begins with the best owned gear worn.
-				async Task InventoryCheckAsync(string trigger)
+				// the leg begins with the best owned gear worn. AX-06: also after a coin armor purchase, to wear it.
+				async Task InventoryCheckAsync(string trigger, bool turnIn = true)
 				{
 					session.BeginStep("ax-inventory-check", trigger);
 					await NaturalInventoryCheck.RunAsync(session, trigger, scope.Inventory, EquipUpgradesAsync, runtime.Data.ItemDataDh.GetItemTemplate,
 						() => NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId))
 							.Decide(world, QuestNeededItems()).FreeSlots, token);
-					inventoryChecks++;
+					if (turnIn) inventoryChecks++;
+					else otherInventoryChecks++;
 				}
 				await TopUpHelpItemsAsync("run-start");
 				await combat.BuffOurselfAsync(NaturalHelpTrigger.AfterRelog, token);
@@ -1631,7 +1635,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				for (int sequence = 1; sequence <= 200; sequence++)
 				{
 					await session.SynchronizeAsync(token);
-					NaturalAbyssEntryDecision next = NaturalAbyssEntryDecisionEngine.Decide(leg, Observed(), sequence);
+					NaturalAbyssEntryDecision next = NaturalAbyssEntryDecisionEngine.Decide(leg, Observed(), sequence, PhysicalDefence);
 					string signature = $"{next.Action}|{next.StepKey}|{next.Reason}";
 					repeats = signature == previous ? repeats + 1 : 0;
 					previous = signature;
@@ -1648,10 +1652,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					{
 						case "frontier":
 						{
-							NaturalAbyssEntryProgress progress = NaturalAbyssEntryLeg.VerifyMorheimArrival(leg, start, Observed(), next.Phase,
-								ObservedExperience() - experienceAtStart, fares, bindPaid, payments, inventoryChecks,
+							NaturalAbyssEntryProgress progress = NaturalAbyssEntryLeg.VerifyProgress(leg, start, Observed(), next.Phase,
+								new NaturalAbyssLedger(ObservedExperience() - experienceAtStart, fares, bindPaid, payments, inventoryChecks, otherInventoryChecks,
+									coinManifests, coinPurchases, coinsSupplied),
 								itemId => runtime.Data.ItemDataDh.GetItemTemplate(itemId) is { } template && template.GetItemGroup().ToString() == "STAFF"
-									? template.GetWeaponStats()?.GetBoostMagicalSkill() ?? 0 : 0, runtime.NowMillis);
+									? template.GetWeaponStats()?.GetBoostMagicalSkill() ?? 0 : 0, PhysicalDefence, runtime.NowMillis);
 							await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntryLeg.ProgressReceipt),
 								System.Text.Json.JsonSerializer.Serialize(progress), token);
 							session.TraceDiagnostic(NaturalAbyssEntryLeg.ProgressDiagnostic, new Dictionary<string, object?>
@@ -1660,9 +1665,49 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								["fares"] = progress.Fares, ["bindPaid"] = progress.BindPaid, ["experienceGained"] = progress.ExperienceGained,
 								["completed"] = progress.CompletedLegQuestIds, ["started"] = progress.StartedQuestIds, ["locked"] = progress.LockedQuestIds,
 								["staff"] = progress.StaffItemId,
-								["torso"] = progress.TorsoItemId, ["inventoryChecks"] = progress.InventoryChecks, ["reason"] = next.Reason,
+								["torso"] = progress.TorsoItemId, ["inventoryChecks"] = progress.InventoryChecks, ["bronzeCoins"] = progress.BronzeCoins,
+								["coinsSupplied"] = progress.CoinsSupplied, ["coinPurchases"] = coinPurchases.Select(purchase => purchase.ItemId).ToArray(),
+								["reason"] = next.Reason,
 							});
 							return;
+						}
+						case "inventory-check":
+							await InventoryCheckAsync(next.Phase, turnIn: false);
+							break;
+						case "coin-armor":
+						{
+							// AX-06: the manifest is decided from the client's view and traced before a coin is spent. Coins the Cleric lacks
+							// are the leg's approved supply (the AX-Q5 revision), listed in the run profile like every help item.
+							NaturalAbyssCoinArmor armor = scope.CoinArmor;
+							NaturalAbyssCoinTier tier = armor.Tiers.Single(entry => entry.When == "after-commander");
+							NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(armor, tier, Observed().Inventory!, PhysicalDefence);
+							coinManifests.Add(manifest);
+							session.TraceDiagnostic(NaturalAbyssCoinArmorSteps.ManifestDiagnostic, NaturalAbyssCoinArmorSteps.Row(manifest));
+							if (manifest.CoinsToSupply > 0)
+							{
+								Func<int, long, CancellationToken, Task> supply = runtime.SupplyHelpItemAsync
+									?? throw new InvalidDataException($"The manifest is {manifest.CoinsToSupply} Bronze Coins short and this run supplies no help items.");
+								NaturalHelpLegSupply approved = NaturalHelpItemAllowlist.LegApproved.Single(entry => entry.Leg == leg.Leg && entry.ItemId == armor.CoinItemId);
+								NaturalHelpItemSupply.RequireApproved(armor.CoinItemId, manifest.CoinsToSupply, leg.Leg, coinsSupplied);
+								long owned = ItemCount(world, armor.CoinItemId);
+								await supply(armor.CoinItemId, manifest.CoinsToSupply, token);
+								await session.SynchronizeAsync(token);
+								long after = ItemCount(world, armor.CoinItemId);
+								Require.True(after == owned + manifest.CoinsToSupply, $"The supplied Bronze Coins did not arrive: {owned} -> {after}.");
+								coinsSupplied += manifest.CoinsToSupply;
+								helpSupplied.Add(new NaturalHelpSupplied($"coin-armor-{tier.Level}", armor.CoinItemId, approved.Family, manifest.CoinsToSupply, owned,
+									after, world.Level, runtime.NowMillis));
+								session.TraceDiagnostic("help-item-supplied", new Dictionary<string, object?>
+								{
+									["trigger"] = $"coin-armor-{tier.Level}", ["itemId"] = armor.CoinItemId, ["family"] = approved.Family,
+									["count"] = manifest.CoinsToSupply, ["before"] = owned, ["after"] = after, ["level"] = world.Level, ["decision"] = approved.Decision,
+								});
+								await File.WriteAllTextAsync(Path.Combine(folder, "help-items.json"), NaturalHelpItemSupply.ProfileJson(helpSupplied), token);
+							}
+							int vendor = await ApproachCapitalNpcAsync(armor.VendorNpcId);
+							coinPurchases.AddRange(await NaturalAbyssCoinArmorSteps.BuyAsync(session, runtime.Data, armor, manifest, vendor, token));
+							await InventoryCheckAsync($"coin-armor-{tier.Level}", turnIn: false);
+							break;
 						}
 						case "refresh-observation":
 							await session.AdvanceAsync(TimeSpan.FromMilliseconds(250), token);
