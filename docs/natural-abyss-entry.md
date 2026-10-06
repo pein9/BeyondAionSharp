@@ -2,8 +2,8 @@
 
 Status (2026-10-06): **approved. AX-00 (this plan) is done. The operator answered
 AX-Q1..AX-Q6 and then revised the order the same day; see
-[Operator decisions](#operator-decisions).** AX-01 is next. Nothing was built, probed or
-run for it yet.
+[Operator decisions](#operator-decisions).** AX-01 is done: the server side is compared and
+measured. AX-02 is next. No bot code was changed and no journey was run yet.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -70,10 +70,10 @@ guard were checked in C#; AX-01 compares all five line by line.
 
 | # | Step | Where | Action |
 |---|---|---|---|
-| M1 | Travel | Ukin 203581, Altgard Fortress | teleport to Morheim (location 10) for 1,700 Kinah; lands at (309.53, 2271.51, 449.41) |
+| M1 | Travel | Ukin 203581, Altgard Fortress | teleport to Morheim (location 10) for 2,401 Kinah; lands at (309.53, 2271.51, 449.41) |
 | M2 | Q24020 starts | on entering Morheim | the handler starts it by itself for a character of level 21 or above |
-| M3 | Bind | Morheim Ice Fortress | AX-01 finds the bind point and its price |
-| M4 | Q24020 | Aegir 204301 (225.23, 2415.47, 454.11), about 167 m from the landing | QUEST_SELECT → REWARD and page 1011; then the reward |
+| M3 | Bind | obelisk 700231 (268.11, 2338.76, 444.12) | 2,690 Kinah |
+| M4 | Q24020 | Aegir 204301 (225.23, 2415.47, 454.11), about 167 m from the landing | QUEST_SELECT → REWARD and page 1011; SELECT_QUEST_REWARD → page 5; SELECTED_QUEST_REWARD4, the hauberk |
 | M5 | Coin armor | Vebna 204425 (220.57, 2333.51, 446.32), about 82 m from Aegir | the level-21 pieces that beat what is worn; see [Coin armor](#coin-armor) |
 
 **The commander's quest.** The operator remembered a quest picked up before Morheim. That
@@ -98,7 +98,7 @@ long as Q2300 was never taken. Its one step is the talk with Aegir.
 | 11 | Q2947, var 5 | Arena entrance 700368 (978.18, 1556.51, 210.55) | portal to Triniel Underground Arena, map 320090000 |
 | 12 | Q2947, arena | inside, entry at (276, 293, 163) | movie 167; kill ten spirits in 240 s |
 | 13 | Q2947, var 5 with ten kills | Garm | QUEST_SELECT → 2034; SETPRO4 → var 7, REWARD |
-| 14 | Q2947 reward | Aegir 204301, Morheim Ice Fortress (225.23, 2415.47, 454.11) | USE_OBJECT → 3739; class reward. Q2042 starts on completion |
+| 14 | Q2947 reward | Aegir 204301, Morheim Ice Fortress (225.23, 2415.47, 454.11) | USE_OBJECT → 3739; SELECT_QUEST_REWARD → page 6; SELECTED_QUEST_REWARD2, the staff. Q2042 starts on completion |
 | 15 | Q2042, var 0 | Aegir | QUEST_SELECT → 1011; SETPRO1 → var 1 |
 | 16 | Q2042, var 1 | Yornduf 204319 (311.83, 2271.25, 449.41) | QUEST_SELECT → 1352; SELECT2_1_1 → movie 89, page 1354; SETPRO2 → var 2 and a 70 s timer |
 | 17 | Q2042, var 2–7 | six flying rings | each ring in order adds one; the sixth gives var 8 and ends the timer |
@@ -110,12 +110,15 @@ Garm's arena. The handler still holds kill code for the Morheim monsters and loo
 the Statue of Urgasch, but no dialog reaches var 2 or var 9, so those two old choices cannot
 be started. The reward is forced to group 1.
 
-**Travel.** Three paid teleports, 4,700 Kinah in all:
-- Altgard to Morheim: Ukin 203581, 1,700 Kinah (row M1).
-- Morheim to Pandaemonium, before row 1: Orhe 204399, 1,500 Kinah.
-- Pandaemonium to Morheim, before row 14: Doman 204191, 1,500 Kinah.
+**Travel.** Three paid teleports, 6,637 Kinah in all (AX-01, as charged):
+- Altgard to Morheim: Ukin 203581, 2,401 Kinah (row M1).
+- Morheim to Pandaemonium, before row 1: Orhe 204399, 2,118 Kinah.
+- Pandaemonium to Morheim, before row 14: Doman 204191, 2,118 Kinah.
 
-The Morheim teleport lands two metres from Yornduf.
+The shipped base prices are 1,700 and 1,500; the server's price modifier makes the fares
+above, and SM_PRICES shows them to the client. The Morheim teleport lands two metres from
+Yornduf. Pandaemonium has an obelisk too, 700068 at (1457.01, 1413.84, 177.51), for 1,582
+Kinah; this leg does not bind there.
 
 **The arena.** Eleven level-25 spirits stand in three groups; ten must die.
 
@@ -127,8 +130,14 @@ The Morheim teleport lands two metres from Yornduf.
 
 - West to south is about 82 m, and south to east about 82 m. The whole round is about 230 m of running.
 - The spirits' tribe is AGGRESSIVESUPPORTMONSTER, so a group is likely to fight together.
+- AX-01: a Mage Spirit has 205 HP, an 8 m aggro range and a 16 m attack range. A Warrior
+  Spirit has 265 HP, a 6 m aggro range and a 2 m attack range. A kill pays 738 XP.
 - Their spawn data gives no respawn time. Only one of the eleven may be left alive.
 - The instance data allows one player and sets no entry cooldown.
+- **A failed attempt's instance lives on.** A solo instance is destroyed 600 s after the
+  player leaves it, checked once a minute. Until then the entrance returns the player to the
+  same instance, with the dead spirits still dead (AX-01: ten left after one kill). A new
+  instance with all eleven came after 661 s.
 - The tenth kill ends the timer and plays movie 168. When the client reports that movie's
   end, the server teleports the player to (1006.1, 1526, 222.2) beside Garm. The exit
   730067 at (275.90, 295.69, 163.53) leads to Pandaemonium too.
@@ -151,6 +160,13 @@ The Morheim teleport lands two metres from Yornduf.
 
 - The straight-line course is about 499 m. Ring 5 is 126 m above Yornduf.
 - Ring 6 is 97 m from Yornduf and 40 m above the ground there.
+- **A ring counts** when the line between two position updates crosses the ring's plane
+  within 6 m of its centre. Direction does not matter, and the server does not ask whether
+  the player is flying.
+- **Each ring passed on this quest casts Wings of Aether** (skill 265) on the player: 9
+  flight points back at once, and flight speed up to the 16 m/s cap for 6 s.
+- **All six rings lie inside the fortress's FLY zone**, which spans z 429.23 to 579.23.
+  Ring 5's centre is 3.44 m under that ceiling. Flying above it ends the flight.
 - **Failure:** when the 70 s run out at var 2–7, the quest goes to var 9. Yornduf then shows
   page 3057, and SETPRO2 starts the course again from ring 1 with a new timer.
 - A death or a world entry during the course also ends it (var 9). This is D33's guarded
@@ -178,7 +194,8 @@ The Morheim teleport lands two metres from Yornduf.
   403,012 XP. The handler sets reward group 1, and `QuestService` reads the group as a
   zero-based index, in Java and in C#. Group 1 is therefore the **second** one.
   [The readiness report](natural-ntc-readiness.md) and the 2026-10-06 handoff budgeted the
-  first. AX-01 confirms the paid amounts by observation.
+  first. **AX-01 observed every row of the table above as paid**, Q2947's 403,012 XP, 4,000
+  Kinah and no AP included.
 - This is Java's behavior and it stays. The handler's header says the arena was once
   "choice 0" of three; whether 4.8 retail paid the arena the first group is not checked, and
   no change is proposed.
@@ -233,24 +250,23 @@ is level 26, for each slot where it beats what is then worn.
 
 ## Hazards
 
-1. **The ring course is tight on flight time.** A level-10 Cleric had 60 flight points, and
-   flying drains one per tick inside a FLY zone. If the base flight speed is 9 m/s, 499 m
-   takes about 55 s. That leaves about 5 s to come down 40 m from ring 6. Running out means a
-   fall. AX-01 measures the level-25 flight time, the real speed and the drain before any
-   bot code is written. Gliding inside a FLY zone drains at half the rate. AX-Q3 allows one
-   supplied flight-speed scroll, used when the course starts. **The Greater Raging Wind
-   Scroll 164000079 is a level-30 item**, and the Cleric is level 25. The Raging Wind Scroll
-   164000078 is level 20. AX-01 checks which tier a level-25 character can use.
-2. **The rings may not all be inside a FLY zone.** Leaving a FLY zone while flying ends the
-   flight. The Morheim Ice Fortress zone's bounds are not yet checked against ring 5 at
-   z 576. AX-01 does that.
+1. **The ring course is not tight on flight time (AX-01).** A level-25 Cleric has 60 flight
+   points and flies at 11.97 m/s: the base 9 m/s plus a third from the passive Winged
+   Blessing I. Flying drains one point a second inside the FLY zone; gliding there drains
+   one every two seconds. Each ring gives 9 points back and 16 m/s for 6 s. On those figures
+   the six rings take about 32 s of the 70 s, and the flight never runs low. The supplied
+   Greater Raging Wind Scroll 164000079 can be used at level 25: use is gated by the
+   `restrict` attribute, which it lacks, not by its item level 30. It gives 14.67 m/s for
+   300 s, and must be used standing still.
+2. **Ring 5 is 3.44 m under the FLY zone's ceiling.** Leaving the zone ends the flight. Pass
+   ring 5 at its centre or below, never above.
 3. **An arena death sends the Cleric to Morheim.** The bind is at Morheim Ice Fortress from
    row M3 on. A fall on the ring course then respawns beside it. A death in the arena
-   respawns in Morheim, fails the attempt, and costs Orhe's 1,500 Kinah to return.
-4. **Twenty-four seconds per spirit, running included.** If the 230 m round takes about 40 s,
-   ten kills leave about 20 s each, against groups that fight together. The Cleric has never
-   had a kill-rate deadline. AX-01 measures a spirit and whether a new entry gives a new
-   instance with all eleven alive.
+   respawns in Morheim, fails the attempt, and costs Orhe's 2,118 Kinah to return.
+4. **A second arena attempt must wait eleven minutes.** The spirits have 205 and 265 HP, so
+   ten kills in 240 s is mostly running: about 230 m. But a failed attempt's instance keeps
+   its dead spirits for 600 s after the player leaves, so an early retry cannot reach ten
+   kills.
 5. **The 240 s timer starts twice.** It starts on entering the arena, and again when the
    client reports the end of movie 167. A bot that skips the movie early loses nothing; one
    that never reports its end still has the first timer.
@@ -260,8 +276,8 @@ is level 26, for each slot where it beats what is then worn.
    arena (320090000).
 8. **Other players' timers.** In Java, Q1044's and Q2042's enter-world hooks end any running
    quest timer. Entering the arena is a world entry, so in Java they could end Q2947's own
-   240 s timer. D33 already guards both hooks in C#. AX-01 confirms the arena timer survives
-   the entry and records it as evidence for D33.
+   240 s timer. D33 guards both hooks in C#. AX-01 confirmed it: the arena timer is still
+   running after the entry, and again after movie 167 ends.
 9. **Deaths cost XP.** Level 26 has 157,945 XP to spare. Enough deaths use that up, and then
    AX-11's fortress quests are needed.
 
@@ -292,7 +308,7 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
     the commander first, level-21 coin armor at once, fortress quests if below level 26,
     level-26 coin armor at the end, and an inventory check after every turn-in. The items
     below were renumbered to AX-01..AX-14 before any of them started.
-- [ ] **AX-01 - Contract and server confidence.** Depends AX-00. No bot change.
+- [x] **AX-01 - Contract and server confidence.** Depends AX-00. No bot change.
   - Compare the five C# handlers with Java line by line, and the code they rely on: quest
     timers, fly-ring passing, portal entry for 700368, the arena's instance exit, movie end,
     Q24020's start on entering Morheim, reward-shop purchases.
@@ -307,6 +323,40 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   - Confirm the arena timer survives the world entry (hazard 8).
   - A Java/C# divergence is fixed Java-first. A defect shared with Java is recorded under
     "Blocked / questions for the operator"; it is not fixed without a decision.
+  - 2026-10-06, comparison: the five C# handlers match Java token for token, apart from
+    syntax and Q2042's D33 guard. `FlyRing`, `FlyRingObserver`, `FlyRingController`,
+    `Plane3D`, the quest timer start and end, `CM_PLAY_MOVIE_END`, `PortalService`, the
+    quest engine's enter-world, movie, ring, timer and death dispatch, `FlyController` and
+    `CM_BUY_ITEM` match the same way. `InstanceService` differs only by this port's gated
+    spawns. The reward-shop path was already played in CG-03. No divergence was found.
+  - 2026-10-06, measured by four free-account probes at level 25 (accounts 231–234,
+    `SimulationAbyssEntryContractTests.cs`, proof run `run/ax01/probes-proof.log`, 4 passed):
+    - **Flight:** 60 flight points; 11.97 m/s; 3 points in 3.3 s of flying. The Greater
+      Raging Wind Scroll is usable at 25 and gives 14.67 m/s. Q2042's timer is 70 s. Ring 1
+      took var 2 to 3 and cast Wings of Aether: 16 m/s for 6 s, then back to 14.67. The
+      timer's end gave var 9.
+    - **Arena:** the timer (240 s) survived the entry and the movie. Six Mage Spirits (205
+      HP) and five Warrior Spirits (265 HP), all level 25. One kill paid 738 XP and counted
+      one. Leaving at var 5 gave var 6. Re-entry at once: the same instance, ten spirits.
+      After 661 s: a new instance, eleven spirits.
+    - **Morheim:** Ukin charged 2,401 Kinah; Q24020 started on arrival; the bind cost 2,690;
+      Aegir paid 293,759 XP and the fourth choice gave hauberk 110551147; Orhe and Doman
+      charged 2,118 each.
+    - **Payments:** Q2945 20,110 XP and 250 AP; Q2946 the same; Q2947 403,012 XP, 4,000
+      Kinah, no AP, the staff 101501224 with REWARD2 (its reward page is 6, not 5) and the
+      manastone; Q2042 301,641 XP and its three item rewards.
+  - 2026-10-06, read from data: all six rings are inside FLY zone
+    `FLYINGZONESHAPESUBZONE_1_220020000` (z 429.23–579.23), at least 64 m from its edge;
+    ring 5 is 3.44 m under the top. Altruist's Staff has 460 magic boost, the worn staff 370.
+  - Not measured: how hard a spirit hits, and how far a group assists. The probe stood
+    beside four mages for three seconds unharmed, but it had not moved since a setup
+    teleport, so that shows nothing. AX-08 sees both in the real fight.
+  - Kept failures: the first probe drafts are in `run/ax01/`. Account ids above 255 cannot
+    log in (the session builds its address and MAC from the id); the arena kill first paid
+    nothing because it was credited from 68 m away; Q2947's reward page was assumed to be 5.
+  - Fast passes 107 tests with five guarded skips and all eleven scenarios in 8.59 minutes,
+    the four probes among them (`run/ax01-fast/`). All seven pre-commit checks pass
+    (`run/ax01/checks/`).
 - [ ] **AX-02 - Navigation data.** Depends AX-00. Bake 220020000 and 320090000 with
   `tools/Aion.NavBake`, and the Morheim travel graph for Asmodians. `check --maps
   220020000,320090000 --rebake` passes. Generated data is not hand-edited.
@@ -341,13 +391,16 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   the two Strange Green Sacks and the Bronze Coin Chest and records what each gives
   (AX-Q5). Resumed runs send no duplicate dialogs.
 - [ ] **AX-08 - The arena.** Depends AX-07. Route rows 10–13, both movies, the timed clear,
-  and the failure path through var 6. Up to three attempts.
+  and the failure path through var 6. Up to three attempts. After a failed attempt wait
+  eleven minutes before Garm's SETPRO3, so the entrance opens a new instance.
 - [ ] **AX-09 - Back to Morheim.** Depends AX-08. Doman's teleport; Q2947's reward taken
   with REWARD2, the staff, which the inventory check wears; the manastone 167000465
   discarded (AX-Q4); Q2042's first talk with Aegir.
 - [ ] **AX-10 - The ring course.** Depends AX-01 and AX-09. Route rows 16–19, the landing,
   and the failure path through var 9.
-  - Use the one supplied flight-speed scroll when the course first starts (AX-Q3).
+  - Use the one supplied flight-speed scroll when the course first starts (AX-Q3): on the
+    ground, standing still, before Yornduf's SETPRO2. It lasts 300 s.
+  - Pass each ring through its centre, and ring 5 never above it.
   - Up to three attempts. If all three fail, stop the item and ask the operator for a
     recorded flight: they offered to fly the course while the server
     [records it](session-recording.md).
@@ -416,12 +469,11 @@ What these change in the standing decisions:
 
 ## Blocked / questions for the operator
 
-Nothing blocks AX-01..AX-14. The answers left room in five places. The loop works with
+Nothing blocks AX-02..AX-14. The answers left room in four places. The loop works with
 these defaults; say so to change one.
 
-- **The flight-speed scroll's tier.** The Greater Raging Wind Scroll 164000079 is a level-30
-  item. Default: if AX-01 shows a level-25 character cannot use it, supply one Raging Wind
-  Scroll 164000078 (level 20) instead. Still one scroll, used once.
+- ~~**The flight-speed scroll's tier.**~~ Settled by AX-01: a level-25 character can use the
+  Greater Raging Wind Scroll 164000079, so that is the one supplied.
 - **Tries (AX-Q3).** The answer did not give a number. Default: three arena attempts and
   three ring-course attempts, as AB-Q2 and AC-Q2 decided for the earlier timed quests. After
   three failed courses the item stops and asks for the operator's recorded flight.
@@ -436,6 +488,12 @@ these defaults; say so to change one.
 
 AX-Q1 was asked and answered for this Cleric. Other classes get their own weapon rule when
 their profiles are planned.
+
+**Found in AX-01, shared with Java, not changed:** Q2947's timer-end hook is not limited to
+the arena. While Q2947 is START with fewer than ten kills, the end of any quest timer sets
+it to var 6 and teleports the player to Garm. Nothing in this leg runs another timer then,
+so it does not block. It is the same kind of defect D33 corrected for Q1044 and Q2042; a
+correction would need its own decision.
 
 The original questions, with the recommendations made at the time:
 
@@ -505,3 +563,7 @@ The original questions, with the recommendations made at the time:
   level 26, level-26 coin armor at the end, an inventory check after every turn-in. The
   checklist was renumbered to AX-00..AX-14 before any item started. Five defaults are
   recorded where the answers left room.
+- 2026-10-06 — AX-01: no Java/C# divergence in the five handlers or the code under them.
+  Four level-25 probes measured flight (60 points, 11.97 m/s, 16 m/s for 6 s per ring), the
+  arena (205 and 265 HP spirits, 738 XP a kill, the instance reused for 600 s), the Morheim
+  arrival (fares 2,401 and 2,118, bind 2,690) and every quest payment.
