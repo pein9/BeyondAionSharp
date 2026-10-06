@@ -115,13 +115,13 @@ public sealed class NaturalAbyssEntryContractTests
 	}
 
 	[Fact]
-	public void ArenaIsTheShippedSoloInstanceWithElevenSpirits()
+	public void ArenaIsTheShippedSoloInstanceWithTwelveSpirits()
 	{
 		NaturalAbyssArena arena = Scope.Arena;
 		XElement spawns = XDocument.Load(Data("spawns", "Instances", "320090000_Triniel_Underground_Arena.xml")).Root!;
 		foreach (NaturalAbyssSpirit spirit in arena.Spirits)
 			Assert.Equal(spirit.Count, spawns.Descendants("spawn").Single(n => (int)n.Attribute("npc_id")! == spirit.NpcId).Elements("spot").Count());
-		Assert.Equal((6, 5), (arena.Groups.Sum(group => group.Mages), arena.Groups.Sum(group => group.Warriors)));
+		Assert.Equal((6, 6), (arena.Groups.Sum(group => group.Mages), arena.Groups.Sum(group => group.Warriors))); // D36: NCSoft's twelve
 		Assert.True(Spot("Instances/320090000_Triniel_Underground_Arena.xml", arena.ExitNpcId).Zip(arena.ExitPosition, (a, b) => MathF.Abs(a - b)).All(d => d < 0.01f));
 		// D35: Garm sends the player in. Both of his SETPRO3 talks end at the arena's one portal location, where the entrance
 		// 700368 (which no attempt uses any more) also leads.

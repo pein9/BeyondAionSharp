@@ -1,0 +1,56 @@
+diff --git a/game-server/data/handlers/quest/abyss_entry/_2947FollowingThrough.java b/game-server/data/handlers/quest/abyss_entry/_2947FollowingThrough.java
+index c359341..f43a920 100644
+--- a/game-server/data/handlers/quest/abyss_entry/_2947FollowingThrough.java
++++ b/game-server/data/handlers/quest/abyss_entry/_2947FollowingThrough.java
+@@ -49,6 +49,7 @@ public class _2947FollowingThrough extends AbstractQuestHandler {
+ 		qe.registerOnQuestCompleted(questId);
+ 		qe.registerOnQuestTimerEnd(questId);
+ 		qe.registerOnEnterWorld(questId);
++		qe.registerOnDie(questId);
+ 		for (int npc : npcs) {
+ 			qe.registerQuestNpc(npc).addOnTalkEvent(questId);
+ 		}
+@@ -224,6 +225,21 @@ public class _2947FollowingThrough extends AbstractQuestHandler {
+ 		return false;
+ 	}
+ 
++	/**
++	 * Retail: "Deaths will incur death penalty as normal, and the player must speak to Garm again to retry." Without this hook a
++	 * player who revived in place went on with the same timer and kills. The player revives in the ordinary way.
++	 */
++	@Override
++	public boolean onDieEvent(QuestEnv env) {
++		if (!isOnTheArenaAttempt(env))
++			return false;
++		QuestService.questTimerEnd(env);
++		QuestState qs = env.getPlayer().getQuestStateList().getQuestState(questId);
++		qs.setQuestVar(6);
++		updateQuestStatus(env);
++		return true;
++	}
++
+ 	@Override
+ 	public boolean onEnterWorldEvent(QuestEnv env) {
+ 		Player player = env.getPlayer();
+@@ -231,6 +247,8 @@ public class _2947FollowingThrough extends AbstractQuestHandler {
+ 		if (qs != null && qs.getStatus() == QuestStatus.START) {
+ 			int var = qs.getQuestVarById(0);
+ 			int var4 = qs.getQuestVars().getVarById(4);
++			if (var == 6 && player.getWorldId() != 320090000)
++				resetArena(player); // an attempt that failed at a death is reset once the player is out of its arena
+ 			if (var == 5 && var4 != 10) {
+ 				if (player.getWorldId() != 320090000) {
+ 					QuestService.questTimerEnd(env);
+diff --git a/game-server/data/static_data/spawns/Instances/320090000_Triniel_Underground_Arena.xml b/game-server/data/static_data/spawns/Instances/320090000_Triniel_Underground_Arena.xml
+index d743d51..a2cf51b 100644
+--- a/game-server/data/static_data/spawns/Instances/320090000_Triniel_Underground_Arena.xml
++++ b/game-server/data/static_data/spawns/Instances/320090000_Triniel_Underground_Arena.xml
+@@ -21,6 +21,8 @@
+ 			<spot x="314.001" y="244.455" z="158.895" h="60"/>
+ 			<spot x="314.274" y="236.252" z="158.895" h="60"/>
+ 			<spot x="320.238" y="236.093" z="158.895" h="60"/>
++			<!-- NCSoft's iddc1_arena world lists a fourth Warrior Spirit in this party, at the same point as the third -->
++			<spot x="320.238" y="236.093" z="158.895" h="60"/>
+ 		</spawn>
+ 	</spawn_map>
+ </spawns>

@@ -35,9 +35,9 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 			new[] { Arena.StartStep, Arena.RestartStep }.Any(key => contract.Steps.First(step => step.Key == key).Teleport is not { MapId: ArenaMap } entry ||
 				!entry.Position.SequenceEqual(Arena.Arrival)) ||
 			contract.Steps.First(step => step.Key == Arena.DoneStep).Teleport != null ||
-			Arena.Spirits.Sum(spirit => spirit.Count) != 11 || Arena.Spirits.Any(spirit => spirit.Hp <= 0 || spirit.Count <= 0) ||
-			Arena.Groups.Sum(group => group.Mages + group.Warriors) != 11 || Arena.Groups.Any(group => group.Center.Length != 3))
-			throw new InvalidDataException("Garm's arena differs from Java's ten kills in 240 seconds, its eleven spirits, Garm's teleport (D35) or its three tries.");
+			Arena.Spirits.Sum(spirit => spirit.Count) != 12 || Arena.Spirits.Any(spirit => spirit.Hp <= 0 || spirit.Count <= 0) ||
+			Arena.Groups.Sum(group => group.Mages + group.Warriors) != 12 || Arena.Groups.Any(group => group.Center.Length != 3))
+			throw new InvalidDataException("Garm's arena differs from Java's ten kills in 240 seconds, its twelve spirits (D36), Garm's teleport (D35) or its three tries.");
 		if (RingCourse is not { QuestId: 2042, StartMovieId: 89, Seconds: 70, StartVar: 2, DoneVar: 8, FailedVar: 9, RingRadius: 6, BoostSkillId: 265,
 				BoostSeconds: 6, BoostFlightPoints: 9, SpeedCap: 16, MaxAttempts: 3, OnExhausted: "ask-operator-recorded-flight" } ||
 			!new[] { RingCourse.StartStep, RingCourse.RestartStep, RingCourse.DoneStep }.All(steps.Contains) ||
@@ -72,7 +72,7 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 	}
 }
 
-/// <summary>Q2947's only working branch: Garm, who sends the player in (D35), ten of eleven spirits inside the timer, Garm again. A failed
+/// <summary>Q2947's only working branch: Garm, who sends the player in (D35), ten of twelve spirits (D36) inside the timer, Garm again. A failed
 /// attempt needs no wait: the server destroys its instance, so Garm's next SETPRO3 leads to a new one (D34).</summary>
 /// <param name="KillCounter">The quest variable index Java counts the kills in (<c>qs.getQuestVarById(4)</c>).</param>
 public sealed record NaturalAbyssArena(int QuestId, int MapId, float[] Arrival,

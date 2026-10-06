@@ -123,24 +123,25 @@ above, and SM_PRICES shows them to the client. The Morheim teleport lands two me
 Yornduf. Pandaemonium has an obelisk too, 700068 at (1457.01, 1413.84, 177.51), for 1,582
 Kinah; this leg does not bind there.
 
-**The arena.** Eleven level-25 spirits stand in three groups; ten must die.
+**The arena.** Twelve level-25 spirits stand in three groups; ten must die (D36: Java's
+file had eleven).
 
 | Group | Spirits | Around | From the entry |
 |---|---|---|---|
 | West | four Mage Spirits 213584 | (235, 239) | 68 m |
 | South | two Warrior Spirits 213583 and two Mage Spirits | (276, 168) | 125 m |
-| East | three Warrior Spirits | (316, 239) | 67 m |
+| East | four Warrior Spirits; two stand on the same point (320.24, 236.09) | (316, 239) | 67 m |
 
 - West to south is about 82 m, and south to east about 82 m. The whole round is about 230 m of running.
 - The spirits' tribe is AGGRESSIVESUPPORTMONSTER, so a group is likely to fight together.
 - AX-01: a Mage Spirit has 205 HP, an 8 m aggro range and a 16 m attack range. A Warrior
   Spirit has 265 HP, a 6 m aggro range and a 2 m attack range. A kill pays 738 XP.
-- Their spawn data gives no respawn time. Only one of the eleven may be left alive.
+- Their spawn data gives no respawn time. Two of the twelve may be left alive.
 - The instance data allows one player and sets no entry cooldown.
 - **Every attempt starts in a new instance (D34).** When an attempt fails, the server
   destroys its instance as soon as the player is out of it. Garm's SETPRO3 also destroys any
   instance still registered to the player, and then makes a new one and teleports the player
-  into it (D35). So every attempt meets all eleven spirits, and no wait is needed. Before D34
+  into it (D35). So every attempt meets all twelve spirits, and no wait is needed. Before D34
   the entrance returned to the failed instance for 600 s, with the dead spirits still dead.
 - A cleared instance is not reset. Like any solo instance it is destroyed 600 s after the
   player leaves it, checked once a minute.
@@ -154,10 +155,11 @@ Kinah; this leg does not bind there.
 - **Leaving early also fails it.** The enter-world hook sets var 6 when the player is at
   var 5 anywhere but the arena. AB-Q6 found that hook runs on a relog, a revive and a
   teleport that respawns the player. D34 resets the arena here too.
-- **A death alone does not fail it.** This is Java's rule, and D34 keeps it. The timer runs
-  on over the corpse. A revive in place goes on with the attempt, and kills still count. The
-  bind revive leaves the arena, which fails it. A player still dead when the timer ends is
-  revived by the teleport to Garm, with a fifth of their HP and MP and Soul Sickness.
+- **A death fails it at once (D36).** Retail: "the player must speak to Garm again to
+  retry". The death ends the timer and sets var 6. The player then revives in the ordinary
+  way. After a revive in place the Cleric stands in the arena with no timer, and kills count
+  for nothing: the way on is the exit and Garm. In Java a death alone failed nothing, and a
+  revive in place went on with the attempt.
 
 **The ring course.** The rings have a 6 m radius and must be passed in order.
 
@@ -280,10 +282,9 @@ is level 26, for each slot where it beats what is then worn.
    ring 5 at its centre or below, never above.
 3. **The bind revive from the arena sends the Cleric to Morheim.** The bind is at Morheim Ice
    Fortress from row M3 on. A fall on the ring course then respawns beside it. The bind
-   revive from the arena respawns in Morheim, fails the attempt, and costs Orhe's 2,118
-   Kinah to return. A death alone fails nothing (D34 keeps Java's rule): under Hand of
-   Reincarnation the Cleric revives in place and the same timer runs on. A Cleric still dead
-   when the timer ends is revived beside Garm with a fifth of its HP and MP and Soul Sickness.
+   revive from the arena respawns in Morheim and costs Orhe's 2,118 Kinah to return. Any
+   death fails the attempt at once (D36). Under Hand of Reincarnation the Cleric can revive
+   in place, walk out through the exit beside the entry, and reach Garm without the trip.
 4. ~~**A second arena attempt must wait eleven minutes.**~~ Settled by D34: a failed
    attempt's instance is destroyed at once, and every attempt starts in a new one. The clear
    itself is unchanged. The spirits have 205 and 265 HP, so ten kills in 240 s is mostly
@@ -502,6 +503,7 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
 - [ ] **AX-08 - The arena.** Depends AX-07. Route rows 10–13, both movies, the timed clear,
   and the failure path through var 6. Up to three attempts. No wait is needed after a failed
   attempt, and no walk: Garm's SETPRO3 sends the Cleric into a new instance (D34, D35).
+  A death ends an attempt at once (D36), and the arena holds twelve spirits.
 - [ ] **AX-09 - Back to Morheim.** Depends AX-08. Doman's teleport; Q2947's reward taken
   with REWARD2, the staff, which the inventory check wears; the manastone 167000465
   discarded (AX-Q4); Q2042's first talk with Aegir.
@@ -568,6 +570,11 @@ bought level-26 armor at level 25 and held it:
 **Added by the operator on 2026-10-06, during AX-04:** Garm sends the player straight into
 the arena, as retail and the Elyos twin do. This is D35.
 
+**Added the same day, before AX-05:** "Q2947 - Do whatever retail does! The goal is to get
+as close to retail as possible." This is D36: a death fails the attempt, and the arena has
+twelve spirits. And: "Don't change earlier runs", so the earlier legs keep their equipment
+check points.
+
 What these change in the standing decisions:
 - **The staff.** AX-Q1 replaces "keep the earned Altgard Dark Legionary Staff equipped" and
   "no weapon auto-equipping". Whichever owned staff has the most magic boost is worn.
@@ -600,10 +607,8 @@ these defaults; say so to change one.
 
 - **The inventory check in the earlier legs.** AX-04 found the accepted run wore its
   staffs and five armor pieces late, because Ishalgen to Haramel run the equipment check
-  at a few fixed points only. Default: those legs keep their points, since their accepted
-  runs are the evidence and this loop may not start a full run. The staff rule itself is
-  already in every leg. Say so to add the check after every turn-in there too; the next
-  full run would then prove it.
+  at a few fixed points only. **Settled by the operator, 2026-10-06: "Don't change earlier
+  runs."** Those legs keep their points. The staff rule itself is already in every leg.
 
 AX-Q1 was asked and answered for this Cleric. Other classes get their own weapon rule when
 their profiles are planned.
@@ -624,12 +629,20 @@ resets a failed attempt's arena (deviation 156, upstream patch
 - **A new arena each time.** NCSoft's `instance_creation.xml` lists the arena as
   `INSTANCE_INSTANT` only, with the other quest instances, and with no rejoin entry. D34
   gives the same result.
-- **A death means speaking to Garm again**, with the normal death penalty (the walkthrough).
-  The arena has no resurrection point in NCSoft's entry. D34 and Java agree for a revive at
-  the bind. No source covers a self-revive inside.
+- **A death means speaking to Garm again**, with the normal death penalty (the walkthrough:
+  "Deaths will incur death penalty as normal, and the player must speak to Garm again to
+  retry"). Java agreed only for a revive at the bind. **Corrected by D36:** every death
+  fails the attempt at once.
 - **Twelve spirits, not eleven.** The walkthrough has four warriors on the left, two
-  warriors and two mages ahead, and four mages on the right. The shipped spawns have three
-  warriors in that first group. Recorded only: a spawn needs coordinates and a decision.
+  warriors and two mages ahead, and four mages on the right. NCSoft's own world file for
+  the arena (`Worlds/iddc1_arena/world.xml`) confirms it: three parties of four. Eleven of
+  its points are the shipped spots exactly. The twelfth repeats the third east Warrior's
+  point, so a file made without duplicates lost it. **Corrected by D36.**
+- **Found, not applied: the revive point.** The same file gives five "dead start" points
+  just inside the arena's entry, about 6 m from the exit. Seven Java instance handlers
+  revive players at their own world's points, Taloc's Hollow to the same coordinates. So in
+  retail a player who died here probably revived inside, not at the bind point. This is how
+  every instance revives, not a Q2947 rule, so it waits for the operator. Asked below.
 - **Ten kills end the test at once**, and the spirits "have very low HP". Both as here.
 - **Only the arena is offered.** Both Java handlers say the other two choices are no longer
   available. The 4.8 client still carries their text.
@@ -645,8 +658,18 @@ in, as retail and the Elyos twin do." Done as **D35** (deviation 157, upstream p
 var 6, Garm's SETPRO3 makes a new instance and teleports the player to (276, 293, 163).
 The walk to the entrance and the var 5 window (hazard 6) are gone. Do not port it back.
 
-**Still open:** should any death fail the attempt at once? Java's rule stands until you say
-so: a self-revive inside goes on with the same timer.
+**Asked and answered 2026-10-06:** should any death fail the attempt at once? The operator:
+"Q2947 - Do whatever retail does! The goal is to get as close to retail as possible." Done
+as **D36** (deviations 158 and 159, upstream patch
+`docs/upstream-reports/q2947-following-through-death-and-twelfth-spirit.patch`): a death
+fails the attempt at once, and the arena has retail's twelve spirits. The evidence extracts
+are in `run/d36/`. Do not port it back.
+
+**Open, with a default:** should a player who dies in the arena revive inside it, at
+NCSoft's points beside the exit, instead of at the bind point? The evidence is above. It
+would be the first step of a wider rule, since every retail world carries such points and
+Java uses them for some instances only. Default: Java's bind revive stands. Say so to apply
+NCSoft's points to the two quest arenas.
 
 **Found with D34, shared with Java, not changed:**
 - **Q1922 "Deliver on Your Promises", the Elyos twin, has the same unguarded timer hook.**
@@ -765,3 +788,9 @@ The original questions, with the recommendations made at the time:
   shares one world, clock and dice, so the new test moved that fight. The probe now waits
   for the monster to be home, as other probes do. Fast then passes 114 of 119 tests with
   five guarded skips and all eleven scenarios (`run/d35-fast2/`); the seven checks pass.
+- 2026-10-06 — D36: Q2947 follows retail in two more places. A death fails the arena attempt
+  at once, and the arena has NCSoft's twelve spirits. Seven arena SIM tests pass
+  (`run/d36/arena-all-a2.log`). NCSoft's revive points inside the arena are recorded, not
+  applied. The earlier legs stay as they are. Fast passes 114 of 119 tests with five
+  guarded skips and all eleven scenarios in 9.72 minutes (`run/d36-fast/`); the seven
+  pre-commit checks pass (`run/d36/checks/`).

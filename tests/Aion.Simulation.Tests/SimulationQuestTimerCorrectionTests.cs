@@ -176,124 +176,114 @@ public sealed partial class SimulationFastScenarioTests
 			await AxLeaveArenaAsync(session, server, token);
 			Console.WriteLine($"D34 expiry alive: instance {first} with {firstAlive} spirits, one killed; the 240 s ran out: var 6, {miss:F2} m from " +
 				$"(1006.1, 1526, 222.2), instance {first} destroyed {gone}; Garm again: instance {second} with {secondAlive} spirits, {secondKills} counted");
-			Assert.Equal(11, firstAlive);
+			Assert.Equal(12, firstAlive);
 			Assert.NotEqual(first, second);
-			Assert.Equal((11, 0), (secondAlive, secondKills));
+			Assert.Equal((12, 0), (secondAlive, secondKills));
 		});
 	}
 
 	/// <summary>
-	/// D34: the arena timer runs out on a dead player. A death alone fails nothing, in Java and here, so the timer runs on over
-	/// the corpse. At its end Java's statements stay, and TeleportService revives a dead player it teleports: alive beside Garm
-	/// with a fifth of their HP and MP and Soul Sickness. The correction only adds the arena reset.
+	/// D36: a death fails the attempt at once. 4.8 retail: "Deaths will incur death penalty as normal, and the player must speak
+	/// to Garm again to retry." Java has no die hook, so the timer ran on over the corpse and its end revived the player beside
+	/// Garm. Now the death itself ends the timer and sets var 6, and nothing more happens at 240 s. The player revives in the
+	/// ordinary way: at the bind point here, where the world entry resets the failed arena (D34).
 	/// </summary>
 	[SkippableFact]
-	public async Task ArenaTimerRunningOutOnADeadPlayerRevivesThemAtGarmAndResetsTheArena()
+	public async Task ArenaDeathFailsTheAttemptAtOnceAndABindReviveLeadsBackToGarm()
 	{
-		await RunCapitalProbeAsync("D34B", 237, "Asimarenacorpse", async (probe, session, token) =>
+		await RunCapitalProbeAsync("D36A", 237, "Asimarenacorpse", async (probe, session, token) =>
 		{
 			Player server = probe.Server;
+			QuestState Quest() => server.GetQuestStateList().GetQuestState(2947);
 			await AxArenaStartAsync(probe, session, token);
-			(int first, _) = await AxEnterArenaAsync(probe, session, again: false, token);
+			(int first, int firstAlive) = await AxEnterArenaAsync(probe, session, again: false, token);
+			await AxKillSpiritAsync(session, server, token);
+			Assert.Equal((5, 1), (AxArenaVar(server), AxArenaKills(server)));
+
+			int packets = session.PacketHistory.Count;
 			DecodedBotServerPacket prompt = await AxDieAsync(session, server, token);
 			Assert.False(prompt.Get<bool>("allowInstanceRevive"));
-			Assert.Equal((5, AxArena, first), (AxArenaVar(server), server.GetWorldId(), server.GetInstanceId()));
-			Assert.True(server.GetController().HasScheduledTask(TaskId.QUEST_TIMER), "the death ended the arena timer");
+			bool timerEnded = session.PacketHistory.Skip(packets).Any(packet => packet.PacketType == typeof(SM_QUEST_ACTION) &&
+				packet.Fields.TryGetValue("action", out object? action) && action is byte and 4 && packet.Get<int>("questId") == 2947 && packet.Get<int>("timer") == 0);
+			Assert.Equal((QuestStatus.START, 6), (Quest().GetStatus(), Quest().GetQuestVars().GetQuestVars()));
+			Assert.False(server.GetController().HasScheduledTask(TaskId.QUEST_TIMER), "the death left the arena timer running");
+			Assert.True(server.IsDead());
+			Assert.Equal((AxArena, first), (server.GetWorldId(), server.GetInstanceId()));
 
+			// The 240 s pass over the corpse: no teleport, no revive, no second failure.
 			await session.AdvanceAsync(TimeSpan.FromSeconds(241), token);
-			await AxFollowTeleportAsync(session, token);
-			QuestState quest = server.GetQuestStateList().GetQuestState(2947);
-			float miss = AxDistanceFromGarmTeleport(server);
-			int hp = server.GetLifeStats().GetCurrentHp(), maxHp = server.GetLifeStats().GetMaxHp();
-			int mp = server.GetLifeStats().GetCurrentMp(), maxMp = server.GetLifeStats().GetMaxMp();
-			bool sick = server.GetEffectController().HasAbnormalEffect(8291), gone = !InstanceService.InstanceExists(AxArena, first);
-			Assert.Equal((QuestStatus.START, 6), (quest.GetStatus(), quest.GetQuestVars().GetQuestVars()));
-			Assert.Equal(AxPandaemonium, server.GetWorldId());
-			Assert.True(miss < 0.5f, $"the player is {miss:F1} m from Java's teleport point");
+			await session.SynchronizeAsync(token);
+			Assert.True(server.IsDead());
+			Assert.Equal((AxArena, 6), (server.GetWorldId(), Quest().GetQuestVars().GetQuestVars()));
+
+			await session.SendPacketAsync(session.Api.Revive(BotReviveType.Bind), token);
+			await AxFollowTeleportAsync(session, token, mapId: null);
+			int bindMap = server.GetWorldId();
+			bool gone = !InstanceService.InstanceExists(AxArena, first);
+			Assert.NotEqual(AxArena, bindMap);
 			Assert.False(server.IsDead());
+			Assert.Equal(6, Quest().GetQuestVars().GetQuestVars());
 			Assert.True(gone, "the failed attempt's instance still exists");
 			Assert.Null(InstanceService.GetRegisteredInstance(AxArena, server.GetObjectId()));
 
 			(int second, int secondAlive) = await AxEnterArenaAsync(probe, session, again: true, token);
 			int secondKills = AxArenaKills(server);
 			await AxLeaveArenaAsync(session, server, token);
-			Console.WriteLine($"D34 expiry dead: died in instance {first} at var 5, timer still running; the 240 s ran out: alive {miss:F2} m from " +
-				$"(1006.1, 1526, 222.2) with {hp} of {maxHp} HP, {mp} of {maxMp} MP, Soul Sickness {sick}, var 6, instance {first} destroyed {gone}; " +
-				$"Garm again: instance {second} with {secondAlive} spirits, {secondKills} counted");
-			// PlayerReviveService.Revive(player, 20, 20, true, 0): a fifth of each, rounded down, and Soul Sickness.
-			Assert.Equal((maxHp * 20 / 100, maxMp * 20 / 100, true), (hp, mp, sick));
+			Console.WriteLine($"D36 death: instance {first} with {firstAlive} spirits, one killed; died: var 6 at once, timer-end packet {timerEnded}, no timer; " +
+				$"241 s later still dead in the arena; bind revive on map {bindMap}: instance {first} destroyed {gone}; Garm again: instance {second} " +
+				$"with {secondAlive} spirits, {secondKills} counted");
+			Assert.True(timerEnded, "the client was not told the arena timer ended");
 			Assert.NotEqual(first, second);
-			Assert.Equal((11, 0), (secondAlive, secondKills));
+			Assert.Equal((12, 12, 0), (firstAlive, secondAlive, secondKills));
 		});
 	}
 
 	/// <summary>
-	/// D34 leaves a death as Java has it. A Cleric who dies under Hand of Reincarnation (4005, learned at level 22) and revives
-	/// in place is still on the attempt: the same timer runs, and a kill still counts. A death only fails the attempt when the
-	/// player leaves the arena by the bind revive, through the enter-world hook; the correction then resets the arena.
+	/// D36: a self-revive does not save the attempt. A Cleric who dies under Hand of Reincarnation (4005, learned at level 22)
+	/// and revives in place stands in the arena at var 6: no timer runs and a kill counts for nothing. In Java the same Cleric
+	/// was still on the attempt. The way on is the exit and Garm, who sends the player into a new arena.
 	/// </summary>
 	[SkippableFact]
-	public async Task ArenaDeathAloneDoesNotFailTheAttemptAndABindReviveResetsTheArena()
+	public async Task ArenaDeathUnderASelfReviveStillFailsTheAttempt()
 	{
-		await RunCapitalProbeAsync("D34C", 238, "Asimarenadeath", async (probe, session, token) =>
+		await RunCapitalProbeAsync("D36B", 238, "Asimarenadeath", async (probe, session, token) =>
 		{
 			Player server = probe.Server;
 			QuestState Quest() => server.GetQuestStateList().GetQuestState(2947);
 			bool TimerRunning() => server.GetController().HasScheduledTask(TaskId.QUEST_TIMER);
-			int TimerPackets(int since) => session.PacketHistory.Skip(since).Count(packet => packet.PacketType == typeof(SM_QUEST_ACTION) &&
-				packet.Fields.TryGetValue("action", out object? action) && action is byte and 4 && packet.Get<int>("questId") == 2947);
 			await AxArenaStartAsync(probe, session, token);
-
-			// 1. A death and the self-revive in place: still var 5, the same timer, and the next kill counts.
 			(int first, _) = await AxEnterArenaAsync(probe, session, again: false, token);
-			long armed = fixture.Clock.NowMillis;
-			int entered = session.PacketHistory.Count;
 			await AxCastOnSelfAsync(session, 4005, token);
 			DecodedBotServerPacket prompt = await AxDieAsync(session, server, token);
 			Assert.True(prompt.Get<bool>("allowReviveBySkill"));
-			Assert.True(TimerRunning(), "the death ended the arena timer");
+			Assert.Equal(6, Quest().GetQuestVars().GetQuestVars());
+			Assert.False(TimerRunning(), "the death left the arena timer running");
+
 			await session.SendPacketAsync(session.Api.Revive(BotReviveType.Rebirth), token);
 			await session.SynchronizeAsync(token);
 			Assert.False(server.IsDead());
-			Assert.Equal((5, AxArena, first), (AxArenaVar(server), server.GetWorldId(), server.GetInstanceId()));
+			Assert.Equal((6, AxArena, first), (AxArenaVar(server), server.GetWorldId(), server.GetInstanceId()));
+			int history = session.PacketHistory.Count;
 			await AxKillSpiritAsync(session, server, token);
-			int counted = AxArenaKills(server);
-			Assert.True(TimerRunning());
-			Assert.Equal(0, TimerPackets(entered));
-			// The same timer: still running one second before the 240 s are up, and the attempt ends on time.
-			await session.AdvanceAsync(TimeSpan.FromMilliseconds(armed + 239_000 - fixture.Clock.NowMillis), token);
+			await session.AdvanceAsync(TimeSpan.FromSeconds(241), token);
 			await session.SynchronizeAsync(token);
-			Assert.Equal((5, AxArena), (AxArenaVar(server), server.GetWorldId()));
-			await session.AdvanceAsync(TimeSpan.FromSeconds(2), token);
-			await AxFollowTeleportAsync(session, token);
-			Assert.Equal(6, Quest().GetQuestVars().GetQuestVars());
-			Assert.False(InstanceService.InstanceExists(AxArena, first));
+			int afterKill = Quest().GetQuestVars().GetQuestVars();
+			Assert.Equal((6, AxArena), (afterKill, server.GetWorldId()));
+			Assert.False(TimerRunning());
+			Assert.DoesNotContain(session.PacketHistory.Skip(history), packet => AxIsTimer(packet, 2947));
 
-			// 2. A death and the revive at the bind point: the world entry there fails the attempt, as in Java, and resets the arena.
-			(int second, int secondAlive) = await AxEnterArenaAsync(probe, session, again: true, token);
-			await AxDieAsync(session, server, token);
-			Assert.Equal((5, AxArena), (AxArenaVar(server), server.GetWorldId()));
-			Assert.True(TimerRunning(), "the death ended the arena timer");
-			await session.SendPacketAsync(session.Api.Revive(BotReviveType.Bind), token);
-			await AxFollowTeleportAsync(session, token, mapId: null);
-			int bindMap = server.GetWorldId();
-			bool gone = !InstanceService.InstanceExists(AxArena, second);
-			Assert.NotEqual(AxArena, bindMap);
-			Assert.False(server.IsDead());
-			Assert.Equal(6, Quest().GetQuestVars().GetQuestVars());
-			Assert.False(server.GetController().HasTask(TaskId.QUEST_TIMER));
-			Assert.True(gone, "the failed attempt's instance still exists");
-			Assert.Null(InstanceService.GetRegisteredInstance(AxArena, server.GetObjectId()));
-
-			(int third, int thirdAlive) = await AxEnterArenaAsync(probe, session, again: true, token);
-			int thirdKills = AxArenaKills(server);
 			await AxLeaveArenaAsync(session, server, token);
-			Console.WriteLine($"D34 death: died in instance {first} under Hand of Reincarnation, revived in place at var 5, the next kill counted {counted}, " +
-				$"no new timer packet, the timer ended the attempt at 240 s; instance {second} with {secondAlive} spirits: died, bind revive on map {bindMap}: " +
-				$"var 6, instance {second} destroyed {gone}; Garm again: instance {third} with {thirdAlive} spirits, {thirdKills} counted");
-			Assert.Equal(1, counted);
-			Assert.Equal(3, new[] { first, second, third }.Distinct().Count());
-			Assert.Equal((11, 11, 0), (secondAlive, thirdAlive, thirdKills));
+			bool gone = !InstanceService.InstanceExists(AxArena, first);
+			Assert.Null(InstanceService.GetRegisteredInstance(AxArena, server.GetObjectId()));
+			(int second, int secondAlive) = await AxEnterArenaAsync(probe, session, again: true, token);
+			int secondKills = AxArenaKills(server);
+			await AxLeaveArenaAsync(session, server, token);
+			Console.WriteLine($"D36 self-revive: died in instance {first} under Hand of Reincarnation: var 6 at once, no timer; revived in place, a kill " +
+				$"left the vars at {afterKill}, nothing at 240 s; left by the exit: instance {first} destroyed {gone}; Garm again: instance {second} with " +
+				$"{secondAlive} spirits, {secondKills} counted");
+			Assert.True(gone, "the failed attempt's instance still exists");
+			Assert.NotEqual(first, second);
+			Assert.Equal((12, 0), (secondAlive, secondKills));
 		});
 	}
 
@@ -394,10 +384,10 @@ public sealed partial class SimulationFastScenarioTests
 				$"object used {usedAnObject}; one kill counted {counted}; left by the exit: var 6; at var 6 Garm sent the player to instance {second} with " +
 				$"{secondAlive} spirits and {secondKills} kills, object used {usedAnObjectAgain}; instance {first} destroyed {firstGone}");
 			Assert.False(usedAnObject || usedAnObjectAgain, "an attempt used an object on the way into the arena");
-			Assert.Equal((11, 1, 90), (firstAlive, counted, heading));
+			Assert.Equal((12, 1, 90), (firstAlive, counted, heading));
 			Assert.NotEqual(first, second);
 			Assert.True(firstGone, "the failed attempt's instance still exists");
-			Assert.Equal((11, 0), (secondAlive, secondKills));
+			Assert.Equal((12, 0), (secondAlive, secondKills));
 		});
 	}
 

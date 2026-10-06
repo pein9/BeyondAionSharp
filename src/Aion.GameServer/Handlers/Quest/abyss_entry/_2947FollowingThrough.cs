@@ -45,6 +45,7 @@ public class _2947FollowingThrough : AbstractQuestHandler
 		qe.RegisterOnQuestCompleted(questId);
 		qe.RegisterOnQuestTimerEnd(questId);
 		qe.RegisterOnEnterWorld(questId);
+		qe.RegisterOnDie(questId); // D36
 		foreach (int npc in npcs)
 		{
 			qe.RegisterQuestNpc(npc).AddOnTalkEvent(questId);
@@ -265,6 +266,20 @@ public class _2947FollowingThrough : AbstractQuestHandler
 		return false;
 	}
 
+	// D36 (deviation 158): in 4.8 retail "deaths will incur death penalty as normal, and the player must speak to Garm again to
+	// retry". Java has no die hook, so a player who revived in place went on with the same timer and kills. A death on the
+	// player's own attempt now fails it as the timer does, but without the teleport: the player revives in the ordinary way.
+	public override bool OnDieEvent(QuestEnv env)
+	{
+		if (!IsOnTheArenaAttempt(env))
+			return false;
+		QuestService.QuestTimerEnd(env);
+		QuestState qs = env.GetPlayer().GetQuestStateList().GetQuestState(questId);
+		qs.SetQuestVar(6);
+		UpdateQuestStatus(env);
+		return true;
+	}
+
 	public override bool OnEnterWorldEvent(QuestEnv env)
 	{
 		Player player = env.GetPlayer();
@@ -273,6 +288,8 @@ public class _2947FollowingThrough : AbstractQuestHandler
 		{
 			int var = qs.GetQuestVarById(0);
 			int var4 = qs.GetQuestVars().GetVarById(4);
+			if (var == 6 && player.GetWorldId() != 320090000)
+				ResetArena(player); // D36: an attempt that failed at a death is reset once the player is out of its arena
 			if (var == 5 && var4 != 10)
 			{
 				if (player.GetWorldId() != 320090000)

@@ -68,6 +68,9 @@ destroying a failed attempt's arena instance, so every attempt starts in a new o
 D35 approves Garm's SETPRO3 making a new arena instance and teleporting the player into
 it, as 4.8 retail's text and Java's Elyos twin Q1922 do (§7/157, same test file); it must
 not be ported back either.
+D36 approves two more retail corrections of Q2947: a death fails the arena attempt at once,
+and the arena has NCSoft's twelve spirits, not Java's eleven (§7/158–159, same test file);
+neither is ported back.
 These decisions are not a general exemption from parity or authorization to
 reopen other deferred behavior.
 

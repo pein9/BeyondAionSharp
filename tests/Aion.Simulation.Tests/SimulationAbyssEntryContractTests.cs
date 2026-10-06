@@ -122,10 +122,10 @@ public sealed partial class SimulationFastScenarioTests
 	}
 
 	/// <summary>Garm's arena: Garm's SETPRO3 sends the player in (D35), the 240 s timer survives the world entry, and every attempt
-	/// starts in a new instance with all eleven spirits and no kill counted (D34). Leaving at var 5 fails the attempt and destroys
-	/// its instance at once. An instance left behind outside an attempt (the entrance 700368 asks for no quest) is destroyed by
-	/// Garm's SETPRO3, from var 4 and from var 6. Before D34 the entrance returned to the same instance, its dead spirits still
-	/// dead, for ten minutes.</summary>
+	/// starts in a new instance with all twelve spirits (D36) and no kill counted (D34). Leaving at var 5 fails the attempt and destroys
+	/// its instance at once. An instance left behind before any attempt (the entrance 700368 asks for no quest) is destroyed by
+	/// Garm's SETPRO3. One visited at var 6, after a failure, is destroyed on leaving it (D36 resets a failed player's arena on the
+	/// way out). Before D34 the entrance returned to the same instance, its dead spirits still dead, for ten minutes.</summary>
 	[SkippableFact]
 	public async Task AbyssEntryArenaKeepsItsTimerAndStartsEveryAttemptInANewInstance()
 	{
@@ -162,7 +162,7 @@ public sealed partial class SimulationFastScenarioTests
 			bool firstGone = !InstanceService.InstanceExists(AxArena, firstInstance);
 			Assert.Null(InstanceService.GetRegisteredInstance(AxArena, server.GetObjectId()));
 
-			// At var 6, back in without Garm: a new instance, no timer, and again a kill that counts for nothing.
+			// At var 6, back in without Garm: a new instance, no timer, and again a kill that counts for nothing. Leaving destroys it (D36).
 			(int idleInstance, int idleAlive) = await AxWalkIntoArenaAsync(probe, session, token);
 			await AxKillSpiritAsync(session, server, token);
 			await AxUseArenaPortalAsync(session, server, 730067, AxPandaemonium, token);
@@ -177,15 +177,15 @@ public sealed partial class SimulationFastScenarioTests
 			Console.WriteLine($"AX-01 arena: entered at var 4 before Garm: instance {earlyInstance} with {earlyAlive} spirits, one killed, var {earlyVar}, kept on leaving {earlyKept}; " +
 				$"Garm's SETPRO3 destroyed it {earlyGone}: instance {firstInstance} with {firstAlive} spirits; one kill pays {spiritXp} XP and counts {counted}; " +
 				$"left at var 5: var 6, instance {firstInstance} destroyed {firstGone}; entered at var 6 without Garm: instance {idleInstance} with {idleAlive} spirits, " +
-				$"one killed, var {idleVar}, kept on leaving {idleKept}; Garm's SETPRO3 destroyed it {idleGone}: instance {secondInstance} with {secondAlive} spirits, " +
+				$"one killed, var {idleVar}, kept on leaving {idleKept}, gone before Garm's SETPRO3 {idleGone}: instance {secondInstance} with {secondAlive} spirits, " +
 				$"{secondCounted} counted");
-			Assert.Equal((11, 4, true, true), (earlyAlive, earlyVar, earlyKept, earlyGone));
-			Assert.Equal(11, firstAlive);
+			Assert.Equal((12, 4, true, true), (earlyAlive, earlyVar, earlyKept, earlyGone));
+			Assert.Equal(12, firstAlive);
 			Assert.Equal(1, counted);
 			Assert.True(firstGone, "the failed attempt's instance still exists");
-			Assert.Equal((11, 6, true, true), (idleAlive, idleVar, idleKept, idleGone));
+			Assert.Equal((12, 6, false, true), (idleAlive, idleVar, idleKept, idleGone));
 			Assert.Equal(4, new[] { earlyInstance, firstInstance, idleInstance, secondInstance }.Distinct().Count());
-			Assert.Equal(11, secondAlive);
+			Assert.Equal(12, secondAlive);
 			Assert.Equal(0, secondCounted);
 		});
 	}

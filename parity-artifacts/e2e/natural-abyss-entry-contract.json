@@ -849,7 +849,7 @@
         {
           "npcId": 213583,
           "name": "Warrior Spirit",
-          "count": 5,
+          "count": 6,
           "hp": 265,
           "aggroRange": 6,
           "attackRange": 2,
@@ -885,7 +885,7 @@
             158.895
           ],
           "mages": 0,
-          "warriors": 3
+          "warriors": 4
         }
       ],
       "maxAttempts": 3

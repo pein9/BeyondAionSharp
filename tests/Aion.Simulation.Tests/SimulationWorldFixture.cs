@@ -195,8 +195,8 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			// 255 is RC-11's native campaign route replan after three ordinary ground displacements.
 			// 231-234 are AX-01's level-25 flight, arena, Morheim arrival and mission reward probes. Ids above 255
 			// cannot be used: the session derives its loopback address and MAC from the id.
-			// 235-239 are D34's Q2947 probes: another quest's timer, the arena timer running out on a live and on a dead
-			// player, a death with a self-revive and a bind revive, and the success path.
+			// 235-239 are D34's and D36's Q2947 probes: another quest's timer, the arena timer running out, a death (D36: it
+			// fails the attempt at once) with a bind revive and with a self-revive, and the success path.
 			// 228 is RC-11's native zone entry under the recorded blocked approach layout.
 			// 229 is RC-11's recorded cleared campaign-area / remembered-danger probe.
 			// 230 is RC-11's ordinary owned staff equip before the frozen coin loadout.
