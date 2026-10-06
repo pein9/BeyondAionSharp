@@ -1588,7 +1588,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// The journey is rebound to Altgard as for NA-23; the Leg 1 engine picks each move from the client's view. Template
 			// quests run on the Ishalgen runner, scripted steps on NaturalAltgardQuestSteps, flight and the air kills on the
 			// AF-04..AF-06 code. Every decision is traced; a move that makes no progress three times stops the run.
-			// AX-03..AX-06: the Morheim and Abyss-entry leg. It proves its incoming contract from the client's view, then takes one
+			// AX-03..AX-07: the Morheim and Abyss-entry leg. It proves its incoming contract from the client's view, then takes one
 			// decision of NaturalAbyssEntryDecisionEngine at a time. The fortresses and the capital are safe hubs: every approach is
 			// the city approach, on whichever map the client is on. The segment ends at the rule's frontier.
 			async Task RunAbyssEntryAsync()
@@ -1613,16 +1613,20 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				var payments = new List<NaturalAbyssPayment>();
 				var coinManifests = new List<NaturalAbyssCoinManifest>();
 				var coinPurchases = new List<NaturalAbyssCoinPurchase>();
-				int inventoryChecks = 0, otherInventoryChecks = 0;
+				var opened = new List<NaturalOpenedContainer>();
+				int inventoryChecks = 0, otherInventoryChecks = 0, notOpened = 0;
 				int PhysicalDefence(int itemId) => NaturalAbyssCoinArmorPolicy.PhysicalDefence(runtime.Data.ItemDataDh.GetItemTemplate(itemId));
 				// AX-04: the inventory check the operator asked for after every quest turn-in (2026-10-06), and once at the start so
 				// the leg begins with the best owned gear worn. AX-06: also after a coin armor purchase, to wear it.
 				async Task InventoryCheckAsync(string trigger, bool turnIn = true)
 				{
 					session.BeginStep("ax-inventory-check", trigger);
-					await NaturalInventoryCheck.RunAsync(session, trigger, scope.Inventory, EquipUpgradesAsync, runtime.Data.ItemDataDh.GetItemTemplate,
+					NaturalInventoryCheckResult checkedNow = await NaturalInventoryCheck.RunAsync(session, trigger, scope.Inventory, EquipUpgradesAsync,
+						runtime.Data.ItemDataDh.GetItemTemplate,
 						() => NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId))
 							.Decide(world, QuestNeededItems()).FreeSlots, token);
+					opened.AddRange(checkedNow.Opened);
+					notOpened += checkedNow.NotOpened.Length;
 					if (turnIn) inventoryChecks++;
 					else otherInventoryChecks++;
 				}
@@ -1654,7 +1658,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						{
 							NaturalAbyssEntryProgress progress = NaturalAbyssEntryLeg.VerifyProgress(leg, start, Observed(), next.Phase,
 								new NaturalAbyssLedger(ObservedExperience() - experienceAtStart, fares, bindPaid, payments, inventoryChecks, otherInventoryChecks,
-									coinManifests, coinPurchases, coinsSupplied),
+									coinManifests, coinPurchases, coinsSupplied, opened, notOpened),
 								itemId => runtime.Data.ItemDataDh.GetItemTemplate(itemId) is { } template && template.GetItemGroup().ToString() == "STAFF"
 									? template.GetWeaponStats()?.GetBoostMagicalSkill() ?? 0 : 0, PhysicalDefence, runtime.NowMillis);
 							await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntryLeg.ProgressReceipt),
@@ -1667,6 +1671,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								["staff"] = progress.StaffItemId,
 								["torso"] = progress.TorsoItemId, ["inventoryChecks"] = progress.InventoryChecks, ["bronzeCoins"] = progress.BronzeCoins,
 								["coinsSupplied"] = progress.CoinsSupplied, ["coinPurchases"] = coinPurchases.Select(purchase => purchase.ItemId).ToArray(),
+								["opened"] = opened.Select(container => container.ItemId).ToArray(),
+								["paid"] = payments.Select(payment => payment.QuestId).ToArray(),
 								["reason"] = next.Reason,
 							});
 							return;

@@ -184,14 +184,16 @@ public sealed record NaturalAbyssEntryProgress(string Leg, string Frontier, int 
 	long ExperienceGained, long Kinah, long KinahAtStart, long Fares, long BindPaid, NaturalAbyssPayment[] Payments, int BindMapId,
 	Aion.Bots.World.BotPosition BindPosition, int StaffItemId, int TorsoItemId, int[] CompletedLegQuestIds, int[] StartedQuestIds,
 	int[] LockedQuestIds, int InventoryChecks, long GameMillis, long BronzeCoins = 0, long CoinsSupplied = 0,
-	NaturalAbyssCoinManifest[]? CoinManifests = null, NaturalAbyssCoinPurchase[]? CoinPurchases = null);
+	NaturalAbyssCoinManifest[]? CoinManifests = null, NaturalAbyssCoinPurchase[]? CoinPurchases = null, NaturalOpenedContainer[]? Opened = null);
 
 /// <summary>What the runner counted while the leg ran. Everything else in a receipt is the client's view.</summary>
 /// <param name="InventoryChecks">One at the start and one after each turn-in.</param>
 /// <param name="OtherInventoryChecks">The checks that wore bought coin armor.</param>
+/// <param name="Opened">Every reward container the inventory checks opened, with what it gave.</param>
+/// <param name="NotOpened">Containers the server did not open (a full cube).</param>
 public sealed record NaturalAbyssLedger(long ExperienceGained, long Fares, long BindPaid, IReadOnlyList<NaturalAbyssPayment> Payments,
 	int InventoryChecks, int OtherInventoryChecks, IReadOnlyList<NaturalAbyssCoinManifest> CoinManifests,
-	IReadOnlyList<NaturalAbyssCoinPurchase> CoinPurchases, long CoinsSupplied);
+	IReadOnlyList<NaturalAbyssCoinPurchase> CoinPurchases, long CoinsSupplied, IReadOnlyList<NaturalOpenedContainer> Opened, int NotOpened);
 
 /// <summary>The leg's incoming contract, checked against what the retained character's login showed.</summary>
 public static class NaturalAbyssEntryLeg
@@ -203,12 +205,13 @@ public static class NaturalAbyssEntryLeg
 	private const ushort NotWorn = ushort.MaxValue;
 	private const long Torso = 8;
 
-	/// <summary>AX-05, AX-06: what has to be true at the frontier <paramref name="frontier"/>, from the client's view. Morheim and
-	/// the commander: the Cleric stands in Morheim, bound at the fortress obelisk; Q24020 is complete and paid; its hauberk and
-	/// the best owned staff are worn; every Kinah that left went to the teleport and the bind; Q2945 has not moved; an
-	/// inventory check ran at the start and after each turn-in. The level-21 coin armor: one manifest was decided; every piece
-	/// it bought is worn; no piece on offer beats what is worn now; the coins held are the incoming ones, plus the supplied
-	/// ones, less the manifest's cost.</summary>
+	/// <summary>AX-05..AX-07: what has to be true at the frontier <paramref name="frontier"/>, from the client's view. Morheim and
+	/// the commander: bound at the fortress obelisk; Q24020 complete; its hauberk and the best owned staff worn; every Kinah
+	/// that left went to the teleports and the bind; an inventory check ran at the start and after each turn-in. The level-21
+	/// coin armor: one manifest decided; every piece it bought worn; no piece on offer beats what is worn. The capital missions:
+	/// Q2945 and Q2946 turned in, in order, each for its shipped XP; Q2947 taken at Kvasir and waiting for Garm; every reward
+	/// container opened. The coins held are the incoming ones, plus the supplied ones and what the chests gave, less what the
+	/// manifests cost.</summary>
 	public static NaturalAbyssEntryProgress VerifyProgress(NaturalAltgardContract leg, NaturalAbyssEntryStart start, NaturalAltgardObservation state,
 		string frontier, NaturalAbyssLedger ledger, Func<int, int> staffMagicBoost, Func<int, int> physicalDefence, long gameMillis)
 	{
@@ -219,19 +222,29 @@ public static class NaturalAbyssEntryLeg
 			if (!condition) throw new InvalidDataException($"The leg is not at {frontier}: {what}.");
 		}
 		bool coinArmor = frontier != NaturalAbyssEntryDecisionEngine.CoinArmor21Phase;
+		bool capital = frontier == NaturalAbyssEntryDecisionEngine.ArenaPhase;
+		int[] paid = capital ? [scope.CommanderQuestId, .. scope.MissionIds.TakeWhile(id => id != scope.Arena.QuestId)] : [scope.CommanderQuestId];
+		int map = capital ? Aion.Bots.Scenarios.NaturalAbyssEntry.Pandaemonium : Aion.Bots.Scenarios.NaturalAbyssEntry.Morheim;
 		(long experienceGained, long fares, long bindPaid, IReadOnlyList<NaturalAbyssPayment> payments) =
 			(ledger.ExperienceGained, ledger.Fares, ledger.BindPaid, ledger.Payments);
 		int inventoryChecks = ledger.InventoryChecks;
 		NaturalAltgardBind bind = leg.Bind ?? throw new InvalidDataException($"{leg.Leg} has no bind.");
 		NaturalAltgardRewardChoice hauberk = leg.RewardChoiceList.Single(choice => choice.QuestId == scope.CommanderQuestId);
-		Require(state.Synchronized && !state.IsDead && state.MapId == Aion.Bots.Scenarios.NaturalAbyssEntry.Morheim, $"the Cleric is on map {state.MapId}");
+		Require(state.Synchronized && !state.IsDead && state.MapId == map, $"the Cleric is on map {state.MapId}, not {map}");
 		Require(NaturalAltgardDecisionEngine.BoundAt(bind, leg.Hub.MapId, state.Bind), $"the bind is {state.Bind}, not obelisk {bind.NpcId}");
-		Require(state.CompletedQuestIds.Contains(scope.CommanderQuestId), $"Q{scope.CommanderQuestId} is not complete");
-		Require(payments.Select(payment => payment.QuestId).SequenceEqual([scope.CommanderQuestId]), "the commander's quest is not the one turn-in so far");
-		Require(payments[0].Experience == leg.Quest(scope.CommanderQuestId).RewardExperience,
-			$"Q{scope.CommanderQuestId} paid {payments[0].Experience} XP, not {leg.Quest(scope.CommanderQuestId).RewardExperience}");
+		Require(paid.All(state.CompletedQuestIds.Contains), $"not all of Q{string.Join(", Q", paid)} are complete");
+		Require(payments.Select(payment => payment.QuestId).SequenceEqual(paid), $"the turn-ins so far are not Q{string.Join(", Q", paid)}, in order");
+		Require(payments.All(payment => payment.Experience == leg.Quest(payment.QuestId).RewardExperience),
+			"a turn-in paid " + string.Join(", ", payments.Select(payment => $"Q{payment.QuestId} {payment.Experience} XP")) + ", not its shipped XP");
 		Require(experienceGained == payments.Sum(payment => payment.Experience), $"{experienceGained} XP was gained, and the turn-ins paid {payments.Sum(payment => payment.Experience)}");
-		Require((leg.Start.StartedQuestIds ?? []).All(id => state.Quests.GetValueOrDefault(id) is { Status: 3, StepAndFlags: 0 }), "an incoming quest moved before its turn");
+		if (capital)
+		{
+			int taken = leg.Steps.Single(step => step.Key == scope.Arena.StartStep).Var ?? throw new InvalidDataException("The arena's start step has no var.");
+			Require(state.Quests.GetValueOrDefault(scope.Arena.QuestId) is { Status: 3 } trial && (trial.StepAndFlags & 0x3F) == taken,
+				$"Q{scope.Arena.QuestId} is not waiting for Garm at var {taken}");
+		}
+		else
+			Require((leg.Start.StartedQuestIds ?? []).All(id => state.Quests.GetValueOrDefault(id) is { Status: 3, StepAndFlags: 0 }), "an incoming quest moved before its turn");
 		Require(state.Kinah == start.Kinah - fares - bindPaid + payments.Sum(payment => payment.Kinah),
 			$"{state.Kinah} Kinah is not {start.Kinah} less {fares} in fares and {bindPaid} for the bind, plus the quest's pay");
 		Require(fares > 0 && bindPaid == bind.Price, $"the fares were {fares} and the bind {bindPaid}");
@@ -243,9 +256,14 @@ public static class NaturalAbyssEntryLeg
 		Require(scope.Inventory.KeepSealed.All(id => inventory.Count(item => item.ItemId == id) == 1), "the sealed stigma bundle changed");
 		Require(inventoryChecks == 1 + payments.Count, $"{inventoryChecks} inventory checks ran for {payments.Count} turn-ins");
 		long coins = state.ItemCounts.GetValueOrDefault(scope.CoinArmor.CoinItemId);
+		long fromChests = ledger.Opened.Sum(container => container.Gained.GetValueOrDefault(scope.CoinArmor.CoinItemId));
 		Require(ledger.CoinPurchases.All(purchase => purchase.KinahAfter == purchase.KinahBefore), "a coin armor piece cost Kinah");
-		Require(coins == start.BronzeCoins + ledger.CoinsSupplied - ledger.CoinPurchases.Sum(purchase => purchase.Cost),
-			$"{coins} Bronze Coins are not the {start.BronzeCoins} brought, plus {ledger.CoinsSupplied} supplied, less {ledger.CoinPurchases.Sum(purchase => purchase.Cost)} spent");
+		Require(coins == start.BronzeCoins + ledger.CoinsSupplied + fromChests - ledger.CoinPurchases.Sum(purchase => purchase.Cost),
+			$"{coins} Bronze Coins are not the {start.BronzeCoins} brought, plus {ledger.CoinsSupplied} supplied and {fromChests} from chests, " +
+			$"less {ledger.CoinPurchases.Sum(purchase => purchase.Cost)} spent");
+		Require(ledger.NotOpened == 0 && scope.Inventory.Open.All(id => state.ItemCounts.GetValueOrDefault(id) == 0), "a reward container is still closed");
+		Require(ledger.Opened.All(container => scope.Inventory.Open.Contains(container.ItemId) && container.Gained.Count > 0), "an opened container is not the leg's, or gave nothing");
+		Require(scope.Inventory.Discard.All(id => state.ItemCounts.GetValueOrDefault(id) == 0), "an item the leg discards is still owned");
 		if (coinArmor)
 		{
 			NaturalAbyssCoinTier early = scope.CoinArmor.Tiers.Single(tier => tier.When == "after-commander");
@@ -267,7 +285,7 @@ public static class NaturalAbyssEntryLeg
 			state.Quests.Values.Where(quest => quest.Status is 3 or 4).Select(quest => quest.QuestId).Order().ToArray(),
 			state.Quests.Values.Where(quest => quest.Status == NaturalAltgardDecisionEngine.Locked).Select(quest => quest.QuestId).Order().ToArray(),
 			ledger.InventoryChecks + ledger.OtherInventoryChecks, gameMillis, coins, ledger.CoinsSupplied, [.. ledger.CoinManifests],
-			[.. ledger.CoinPurchases]);
+			[.. ledger.CoinPurchases], [.. ledger.Opened]);
 	}
 
 	/// <summary>The three fares and the bind at their shipped base prices; the price modifier is added on top (AX-01).</summary>

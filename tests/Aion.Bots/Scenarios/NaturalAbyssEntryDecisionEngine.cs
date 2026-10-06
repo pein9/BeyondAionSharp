@@ -13,13 +13,15 @@ public sealed record NaturalAbyssEntryDecision(int Sequence, string Phase, strin
 /// AX-05 (docs/natural-abyss-entry.md): the leg's pure decision rule over its contract and a copied client observation, in the
 /// operator's order of 2026-10-06. Morheim and the commander come first: the teleport, the bind at Morheim Ice Fortress on
 /// arrival, and the talk with Aegir for Q24020, which the server starts on entering Morheim. AX-06: then the level-21 coin
-/// armor, for each slot where the tier's piece beats what is worn. Each later phase is added by its own AX item; until then the
-/// rule names it as the frontier, and the segment ends there.
+/// armor, for each slot where the tier's piece beats what is worn. AX-07: then the capital missions by their talk steps, with
+/// the approved teleport whenever the next step is on another map. A step is chosen from the quest's observed status and var
+/// alone, so a resumed run repeats no dialog. Each later phase is added by its own AX item; until then the rule names it as the
+/// frontier, and the segment ends there.
 /// </summary>
 public static class NaturalAbyssEntryDecisionEngine
 {
 	public const string ObservePhase = "observe", RecoverPhase = "recover", MorheimPhase = "morheim-arrival", CoinArmor21Phase = "coin-armor-21",
-		CapitalPhase = "capital-missions";
+		CapitalPhase = "capital-missions", ArenaPhase = "arena", RingCoursePhase = "ring-course", EndpointPhase = "endpoint";
 	private const byte Start = NaturalAltgardDecisionEngine.Start, Reward = NaturalAltgardDecisionEngine.Reward;
 
 	/// <param name="physicalDefence">An item's physical defence as its tooltip shows it.</param>
@@ -59,8 +61,20 @@ public static class NaturalAbyssEntryDecisionEngine
 				? Next(CoinArmor21Phase, "blocked", $"The {early.Name} pieces {Pieces(manifest.Buys)} are sold in Morheim; the Cleric is on map {here}.")
 				: Next(CoinArmor21Phase, "coin-armor", $"Buy the {early.Name} pieces that beat what is worn: {Pieces(manifest.Buys)} for {manifest.Cost} coins.");
 
-		// 3. The capital missions (AX-07).
-		return Next(CapitalPhase, "frontier", "The level-21 coin armor is settled; Q2945 in Pandaemonium is next (AX-07).");
+		// 3. The capital missions: Q2945 and Q2946 by their talk steps, then Q2947's start at Kvasir. Each starts when the one
+		// before it is turned in.
+		foreach (int mission in scope.MissionIds)
+		{
+			if (state.CompletedQuestIds.Contains(mission)) continue;
+			// 4. Garm's arena (AX-08): everything of Q2947 after Kvasir's var 0.
+			if (mission == scope.Arena.QuestId && state.Quests.TryGetValue(mission, out BotQuestState? trial) &&
+				(trial.Status == Reward || trial.Status == Start && (trial.StepAndFlags & 0x3F) != 0))
+				return Next(ArenaPhase, "frontier", $"Q{mission} is taken at Kvasir; Garm's arena is next (AX-08).", quest: mission);
+			if (mission == scope.RingCourse.QuestId)
+				return Next(RingCoursePhase, "frontier", $"Q{mission} is next (AX-09, AX-10).", quest: mission);
+			return QuestStep(CapitalPhase, mission, "starts when the mission before it is turned in");
+		}
+		return Next(EndpointPhase, "frontier", "The missions are done; the level check is next (AX-11).");
 
 		static string Pieces(NaturalAbyssCoinSlot[] slots) => string.Join(", ", slots.Select(slot => slot.CoinItemId));
 
@@ -71,9 +85,14 @@ public static class NaturalAbyssEntryDecisionEngine
 			int var = quest.StepAndFlags & 0x3F;
 			NaturalAltgardStep? step = leg.StepsFor(questId).FirstOrDefault(candidate => quest.Status == Reward
 				? candidate.ExpectedStatus == "REWARD" : candidate.ExpectedStatus == "START" && candidate.Var == var);
-			return step == null
-				? Next(phase, "blocked", $"Q{questId} is at status {quest.Status}, var {var}; no contract step covers it.", quest: questId)
-				: Next(phase, "talk", $"Q{questId} {(quest.Status == Reward ? "reward" : $"var {var}")}: {step.Key}.", step.Key, questId, leg.StepMap(step));
+			if (step == null)
+				return Next(phase, "blocked", $"Q{questId} is at status {quest.Status}, var {var}; no contract step covers it.", quest: questId);
+			int stepMap = leg.StepMap(step);
+			if (stepMap != here)
+				return leg.MapTripList.Any(trip => trip.MapId == stepMap && trip.FromMapId == here)
+					? Next(phase, "travel", $"Q{questId}'s next step ({step.Key}) is on map {stepMap}: take the teleport from map {here}.", quest: questId, map: stepMap)
+					: Next(phase, "blocked", $"Q{questId}'s next step ({step.Key}) is on map {stepMap}, and no approved teleport leads there from map {here}.", quest: questId);
+			return Next(phase, "talk", $"Q{questId} {(quest.Status == Reward ? "reward" : $"var {var}")}: {step.Key}.", step.Key, questId, stepMap);
 		}
 	}
 }

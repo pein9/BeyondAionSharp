@@ -8,7 +8,8 @@ done: the leg has a frozen contract, and a restored run proves its start. AX-04 
 the staff rule and the inventory check exist, and the check runs at the leg's start. AX-05
 is done: the Cleric teleports to Morheim, binds, talks to Aegir and wears his hauberk. AX-06
 is done: the Rank 8 gloves and brogans are bought with the Cleric's own coins and worn.
-AX-07 is next.
+AX-07 is done: Q2945 and Q2946 are turned in at Pandaemonium and Q2947 is taken at Kvasir.
+AX-08, Garm's arena, is next.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -204,7 +205,9 @@ file had eleven).
 - **Q24020's reward** has six choices. The two chain ones are both "Morheim Dark Legionary
   Hauberk", level 26, 177 physical defence: 110551147 with 12 healing boost and 9
   concentration (the fourth choice), and 110551149 with 84 MP (the fifth). The Cleric takes
-  110551147. It cannot be worn until level 26.
+  110551147. AX-00 said it could not be worn until level 26; AX-05 showed the server lets
+  the level-25 Cleric wear it. See "Found in AX-05" under
+  [Blocked / questions](#blocked--questions-for-the-operator).
 - **Q2947's figures correct the readiness report.** The quest has three reward groups:
   31,320 Kinah, 301,641 XP and 250 AP; 4,000 Kinah and 403,012 XP; 24,000 Kinah and
   403,012 XP. The handler sets reward group 1, and `QuestService` reads the group as a
@@ -553,10 +556,32 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   - Tests: three contract tests cover the rule's decisions, the manifest and 24 refused
     frontiers (`NaturalAbyssEntryContractTests.cs`, 19 pass).
   - Fast and the seven pre-commit checks: see the Progress log.
-- [ ] **AX-07 - The capital steps.** Depends AX-06. Orhe's teleport to Pandaemonium, then
+- [x] **AX-07 - The capital steps.** Depends AX-06. Orhe's teleport to Pandaemonium, then
   route rows 1–9: Q2945, Q2946 and Q2947's acceptance at Kvasir. The inventory check opens
   the two Strange Green Sacks and the Bronze Coin Chest and records what each gives
   (AX-Q5). Resumed runs send no duplicate dialogs.
+  - 2026-10-06, the rule: after the coin armor the decision rule takes the missions in
+    order. For each it picks the contract step that matches the quest's observed status and
+    var, and asks for the approved teleport first when that step is on another map. Q2947
+    after Kvasir's var 0 is the frontier `arena`. A mission that is turned in before the next
+    one shows in the journal is waited for.
+  - No duplicate dialogs on resume: the step comes from the journal alone. A unit test
+    plays every status and var of the three quests and gets each step once.
+  - Proof `run/ax07/ax07-capital-a1` (public Restore, leg `ax`, 51.1 s, schema dropped, no
+    death), 9 min 20 s of game time:
+    - Orhe's teleport from Morheim: 2,118 Kinah, landing at (1685.7, 1400.5, 195.5).
+    - Q2945: Balder, Therf, Balder again; 20,110 XP. The inventory check opened both Strange
+      Green Sacks: they gave 166000191 and 166000192, one each.
+    - Q2946: Balder, the three trainers 204210, 204211 and 204208, then Kvasir; 20,110 XP.
+      The check opened Bronze Coin Chest 188050878: 10 Bronze Coins, 13 held now.
+    - Q2947: Kvasir's SETPRO12, var 4. The Cleric stands beside Kvasir.
+    - 741,276 Kinah, 333,979 XP gained in all, still level 25, 19 free cube slots.
+  - `VerifyProgress` confirmed the frontier from the client's view: three turn-ins in
+    order, each for its shipped XP; both fares; every container opened; the coins add up.
+  - Tests: two more contract tests, the mission steps and twelve refused arena frontiers
+    (`NaturalAbyssEntryContractTests.cs`, 21 pass).
+  - The sacks' contents are random: AX-04's probe got 166000193 and 166000192.
+  - Fast and the seven pre-commit checks: see the Progress log.
 - [ ] **AX-08 - The arena.** Depends AX-07. Route rows 10–13, both movies, the timed clear,
   and the failure path through var 6. Up to three attempts. No wait is needed after a failed
   attempt, and no walk: Garm's SETPRO3 sends the Cleric into a new instance (D34, D35).
@@ -728,6 +753,14 @@ would be the first step of a wider rule, since every retail world carries such p
 Java uses them for some instances only. Default: Java's bind revive stands. Say so to apply
 NCSoft's points to the two quest arenas.
 
+**Found in AX-05, shared with Java, not changed: armor with no level limit.** The level-25
+Cleric wore the level-26 Morheim Dark Legionary Hauberk at once. Java's item data gives that
+piece no `restrict` attribute, and Java reads a missing one as "every class from level 1".
+C# does the same. 9,757 of the 49,401 wearable item templates have no `restrict`: 1,793
+head pieces, most quest reward gear, many weapons. Retail showed a level on such items;
+whether it enforced it for them is not checked. No change is proposed here. It is a
+question for the item data as a whole, and the 4.8 client's own item file could settle it.
+
 **Found with D34, shared with Java, not changed:**
 - **Q1922 "Deliver on Your Promises", the Elyos twin, has the same unguarded timer hook.**
   While it is START with fewer than ten kills, the end of any quest timer sets it to var 6
@@ -862,3 +895,10 @@ The original questions, with the recommendations made at the time:
   and worn (`run/ax06/ax06-coin-a1`). Nothing was supplied. The segment ends at the capital
   missions. Fast passes 114 of 119 tests with five guarded skips and all eleven scenarios
   in 9.37 minutes (`run/ax06-fast/`); the seven pre-commit checks pass (`run/ax06/checks/`).
+- 2026-10-06 — AX-07: the capital steps play from the journal. A contained run took Orhe's
+  teleport (2,118 Kinah), turned in Q2945 and Q2946 (20,110 XP each), opened the two sacks
+  and the coin chest (10 coins) and took Q2947 at Kvasir, in 9 min 20 s of game time
+  (`run/ax07/ax07-capital-a1`). The segment ends at Garm's arena. Fast passes 114 of 119
+  tests with five guarded skips and all eleven scenarios in 9.22 minutes (`run/ax07-fast/`).
+  The seven pre-commit checks pass (`run/ax07/checks/`); the first warning run caught four
+  nullable warnings in the new unit test, fixed before the commit.

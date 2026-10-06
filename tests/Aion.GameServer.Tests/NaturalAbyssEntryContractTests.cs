@@ -326,7 +326,8 @@ public sealed class NaturalAbyssEntryContractTests
 		Assert.Contains("111501066, 114501082 for 4 coins", buy.Reason);
 		// Bought and still in the cube: wear them. Worn: the phase is settled and the capital missions are next.
 		Assert.Equal(("coin-armor-21", "inventory-check", null, null), Shape(Decide(Adding(commander, new(900016, 111501066, 1, 65535), new(900032, 114501082, 1, 65535)))));
-		Assert.Equal(("capital-missions", "frontier", null, null), Shape(Decide(CoinArmorWornState())));
+		// Q2945's first step is in Pandaemonium: the approved teleport from Morheim comes first.
+		Assert.Equal(("capital-missions", "travel", null, (int?)NaturalAbyssEntry.Pandaemonium), Shape(Decide(CoinArmorWornState())));
 
 		// What the rule waits for, recovers from or refuses.
 		Assert.Equal("refresh-observation", Decide(start with { Synchronized = false }).Action);
@@ -370,7 +371,7 @@ public sealed class NaturalAbyssEntryContractTests
 		NaturalAbyssEntryStart start = NaturalAbyssEntryLeg.VerifyStart(Leg, StartState(), 133276, 0);
 		NaturalAbyssPayment[] paid = [new(24020, 293_759, 0, 25)];
 		static int Boost(int itemId) => itemId switch { 101501357 => 370, 101501355 => 320, _ => 0 };
-		NaturalAbyssLedger noCoins = new(293_759, 2_401, 2_690, paid, 2, 0, [], [], 0);
+		NaturalAbyssLedger noCoins = new(293_759, 2_401, 2_690, paid, 2, 0, [], [], 0, [], 0);
 		NaturalAbyssEntryProgress Verify(NaturalAltgardObservation state, NaturalAbyssLedger ledger, string frontier = "coin-armor-21") =>
 			NaturalAbyssEntryLeg.VerifyProgress(Leg, start, state, frontier, ledger, Boost, DefenceOf, 59_385);
 
@@ -436,6 +437,88 @@ public sealed class NaturalAbyssEntryContractTests
 		{
 			Inventory = items, ItemCounts = items.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
 		};
+	}
+
+	/// <summary>AX-07: the capital missions, one talk step per observed status and var, so a resumed run repeats no dialog.</summary>
+	[Fact]
+	public void CapitalMissionsFollowTheirTalkStepsToGarmsDoor()
+	{
+		NaturalAltgardObservation capital = CoinArmorWornState() with { MapId = NaturalAbyssEntry.Pandaemonium, Kinah = 741_276 };
+		string[] Play(int questId, params (byte Status, int Var)[] states) => states.Select(at =>
+		{
+			var quests = new Dictionary<int, BotQuestState>(capital.Quests) { [questId] = new(questId, at.Status, at.Var, 0, null) };
+			if (questId != 2945) quests.Remove(2945);
+			int[] done = questId switch { 2945 => [], 2946 => [2945], _ => [2945, 2946] };
+			NaturalAbyssEntryDecision next = NaturalAbyssEntryDecisionEngine.Decide(Leg,
+				capital with { Quests = quests, CompletedQuestIds = capital.CompletedQuestIds.Concat(done).ToHashSet() }, 1, DefenceOf);
+			return next is { Action: "talk", Phase: "capital-missions", StepKey: { } key } ? key : $"{next.Phase}:{next.Action}";
+		}).ToArray();
+
+		Assert.Equal(["q2945-balder", "q2945-therf", "q2945-reward"], Play(2945, (3, 0), (3, 1), (4, 1)));
+		Assert.Equal(["q2946-balder", "q2946-204210", "q2946-204211", "q2946-204208", "q2946-reward"], Play(2946, (3, 0), (3, 1), (3, 2), (3, 3), (4, 3)));
+		// Kvasir's var 0 is the last capital step. Everything after it is Garm's arena: waiting, inside, failed, or done.
+		Assert.Equal(["q2947-kvasir", "arena:frontier", "arena:frontier", "arena:frontier", "arena:frontier"], Play(2947, (3, 0), (3, 4), (3, 5), (3, 6), (4, 7)));
+		// A mission that is turned in before the next one shows in the journal is waited for; an unknown var is refused.
+		Assert.Equal(["capital-missions:refresh-observation", "capital-missions:blocked"], Play(2946, (6, 0), (3, 9)));
+
+		// From Morheim every capital step asks for Orhe's teleport first; Altgard has no approved way to Pandaemonium.
+		NaturalAbyssEntryDecision fromMorheim = NaturalAbyssEntryDecisionEngine.Decide(Leg, CoinArmorWornState(), 1, DefenceOf);
+		Assert.Equal(("travel", (int?)NaturalAbyssEntry.Pandaemonium, (int?)2945), (fromMorheim.Action, fromMorheim.MapId, fromMorheim.QuestId));
+		Assert.Equal("blocked", NaturalAbyssEntryDecisionEngine.Decide(Leg, CoinArmorWornState() with { MapId = 220030000 }, 1, DefenceOf).Action);
+	}
+
+	[Fact]
+	public void ArenaFrontierIsVerifiedWithTheCapitalsAccounts()
+	{
+		NaturalAbyssEntryStart start = NaturalAbyssEntryLeg.VerifyStart(Leg, StartState(), 133276, 0);
+		static int Boost(int itemId) => itemId switch { 101501357 => 370, 101501355 => 320, _ => 0 };
+		NaturalAltgardObservation worn = CoinArmorWornState();
+		NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(Scope.CoinArmor, Scope.CoinArmor.Tiers[0], CommanderDoneState().Inventory!, DefenceOf);
+		NaturalAbyssCoinPurchase[] bought = [new(21, 111501066, 900016, 16, 2, 7, 5, 743_394, 743_394), new(21, 114501082, 900032, 32, 2, 5, 3, 743_394, 743_394)];
+		NaturalOpenedContainer[] opened =
+		[
+			new(188051192, 910001, new Dictionary<int, long> { [166000193] = 1 }), new(188051192, 910002, new Dictionary<int, long> { [166000192] = 1 }),
+			new(188050878, 910003, new Dictionary<int, long> { [186000007] = 10 }),
+		];
+		NaturalAbyssPayment[] paid = [new(24020, 293_759, 0, 25), new(2945, 20_110, 0, 25), new(2946, 20_110, 0, 25)];
+		// Two fares now: Ukin's 2,401 and Orhe's 2,118.
+		NaturalAbyssLedger ledger = new(333_979, 4_519, 2_690, paid, 4, 1, [manifest], bought, 0, opened, 0);
+		NaturalJourneyItem[] items = [.. worn.Inventory!.Where(item => item.ItemId is not (186000007 or 182400001)),
+			new(157702, 186000007, 13, 65535), new(133277, 182400001, 741_276, 65535), new(910011, 166000193, 1, 65535), new(910012, 166000192, 1, 65535)];
+		var quests = new Dictionary<int, BotQuestState>(worn.Quests) { [2947] = new(2947, 3, 4, 0, null) };
+		quests.Remove(2945);
+		NaturalAltgardObservation atGarm = worn with
+		{
+			MapId = NaturalAbyssEntry.Pandaemonium, Position = new BotPosition(1281.15f, 1176.92f, 215.09f, 0), Kinah = 741_276, Quests = quests,
+			CompletedQuestIds = worn.CompletedQuestIds.Concat([2945, 2946]).ToHashSet(), Inventory = items,
+			ItemCounts = items.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
+		};
+		NaturalAbyssEntryProgress Verify(NaturalAltgardObservation state, NaturalAbyssLedger counted) =>
+			NaturalAbyssEntryLeg.VerifyProgress(Leg, start, state, "arena", counted, Boost, DefenceOf, 600_000);
+
+		NaturalAbyssEntryProgress progress = Verify(atGarm, ledger);
+		Assert.Equal(("arena", 120010000, 741_276L, 4_519L, 13L, 5), (progress.Frontier, progress.MapId, progress.Kinah, progress.Fares, progress.BronzeCoins, progress.InventoryChecks));
+		Assert.Equal([24020, 2945, 2946], progress.CompletedLegQuestIds);
+		Assert.Equal([2947], progress.StartedQuestIds);
+		Assert.Equal([188051192, 188051192, 188050878], progress.Opened!.Select(container => container.ItemId));
+
+		Action[] refused =
+		[
+			() => Verify(atGarm with { MapId = NaturalAbyssEntry.Morheim }, ledger),
+			() => Verify(atGarm with { Quests = new Dictionary<int, BotQuestState>(quests) { [2947] = new(2947, 3, 0, 0, null) } }, ledger),
+			() => Verify(atGarm with { Quests = new Dictionary<int, BotQuestState>(quests) { [2947] = new(2947, 3, 5, 0, null) } }, ledger),
+			() => Verify(atGarm with { CompletedQuestIds = worn.CompletedQuestIds.Append(2945).ToHashSet() }, ledger),
+			() => Verify(atGarm, ledger with { Payments = [paid[0], paid[2], paid[1]] }),
+			() => Verify(atGarm, ledger with { Payments = [paid[0], paid[1] with { Experience = 20_111 }, paid[2]], ExperienceGained = 333_980 }),
+			() => Verify(atGarm, ledger with { InventoryChecks = 3 }),
+			() => Verify(atGarm, ledger with { Fares = 2_401 }),
+			// A chest's ten coins unaccounted for, a container the server refused, and a sack left closed.
+			() => Verify(atGarm, ledger with { Opened = [opened[0], opened[1]] }),
+			() => Verify(atGarm, ledger with { NotOpened = 1 }),
+			() => Verify(Adding(atGarm, new NaturalJourneyItem(910020, 188051192, 1, 65535)), ledger),
+			() => Verify(atGarm, ledger with { Opened = [.. opened, new(188053787, 156843, new Dictionary<int, long> { [1] = 1 })] }),
+		];
+		Assert.All(refused, verify => Assert.Throws<InvalidDataException>(verify));
 	}
 
 	private static NaturalAltgardObservation Adding(NaturalAltgardObservation state, params NaturalJourneyItem[] added)
