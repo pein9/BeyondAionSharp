@@ -1,6 +1,8 @@
+using Aion.Bots.Movement;
 using Aion.Bots.Navigation;
 using Aion.Bots.Protocol;
 using Aion.Bots.World;
+using Aion.GameServer.Controllers.Movement;
 using Aion.GameServer.Model;
 using Aion.GameServer.Network.Aion.ServerPackets;
 
@@ -139,6 +141,34 @@ public static class NaturalFlightProtocol
 			await session.ExecuteMovementAsync(CapitalAscensionScenario.CreateQuestFlight(current, point, mapId, duration), token);
 			current = point;
 		}
+	}
+
+	/// <summary>Fall from where the bot hangs, the flight ended, to <paramref name="groundZ"/>: the client reports it with
+	/// CM_MOVE's FALL flag, a sample every 250 ms under gravity, and then the stop on the ground. Java's PlayerMoveController
+	/// adds up the height and deals the fall damage when the fall stops: all of the HP from 50 m (FallDamageConfig).</summary>
+	public static async Task FallAsync(INaturalJourneySession session, BotPosition top, float groundZ, CancellationToken token)
+	{
+		if (groundZ >= top.Z) throw new ArgumentOutOfRangeException(nameof(groundZ));
+		const float gravity = 9.8f, terminal = 40f;
+		TimeSpan step = TimeSpan.FromMilliseconds(250);
+		byte falling = (byte)(MovementMask.POSITION | MovementMask.ABSOLUTE | MovementMask.FALL);
+		var frames = new List<BotMovementFrame>
+		{
+			new(TimeSpan.Zero, GameClientPackets.Move(new MovementPacketData(top.X, top.Y, top.Z, top.Heading, falling)), top),
+		};
+		float z = top.Z, speed = 0;
+		TimeSpan total = TimeSpan.Zero;
+		while (z > groundZ)
+		{
+			speed = Math.Min(terminal, speed + gravity * (float)step.TotalSeconds);
+			z = Math.Max(groundZ, z - speed * (float)step.TotalSeconds);
+			BotPosition at = top with { Z = z };
+			total += step;
+			frames.Add(new(step, GameClientPackets.Move(new MovementPacketData(at.X, at.Y, at.Z, at.Heading, falling)), at));
+		}
+		BotPosition ground = top with { Z = groundZ };
+		frames.Add(new(TimeSpan.Zero, GameClientPackets.Move(new MovementPacketData(ground.X, ground.Y, ground.Z, ground.Heading, 0)), ground));
+		await session.ExecuteMovementAsync(new BotMovementPlan(frames, total, top.Z - groundZ), token);
 	}
 
 	/// <summary>Land where the bot hovers; the server ends the flight and starts restoring flight time.</summary>

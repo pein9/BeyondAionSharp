@@ -1657,15 +1657,26 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await session.SynchronizeAsync(token);
 					EnterObservedMap();
 				}
+				// AX-12b: what the course's deaths took and its soul healings gave back, and every soul healing.
+				long courseExperience = 0;
+				var soulHeals = new List<NaturalSoulHeal>();
 				combat.AfterBindRevive = EnterObservedMap;
 				// AX-12a (D38): the arena offers the instance revive, and the Cleric takes it.
 				combat.InstanceReviveMaps.Add(arena.MapId);
 				combat.AfterInstanceRevive = EnterObservedMap;
+				// AX-12b: after every revive at the obelisk the Cleric goes to the Soul Healer beside it, before it rests.
+				NaturalAbyssSoulHealer soulHealer = scope.SoulHealer;
+				combat.SoulHealAfterBindReviveAsync = async healToken =>
+				{
+					Require.Equal(leg.Hub.MapId, world.MapId ?? 0);
+					int healer = await ApproachCapitalNpcAsync(soulHealer.NpcId);
+					soulHeals.Add(await services.SoulHealAsync(healer, soulHealer.NpcId, runtime.NowMillis, healToken));
+				};
 				// AX-10: Yornduf's ring course. A try begins at his talk, which starts the 70 s, and ends when the sixth ring is
 				// passed, when the timer fails it (var 9), or at a death. Every try goes on the outcome ledger.
 				NaturalAbyssRingCourse course = scope.RingCourse;
 				NaturalAbyssSupply scrollSupply = scope.Supplies.Single(supply => supply.Family == "flight-speed");
-				(int Number, long StartedMillis)? ringTry = null;
+				(int Number, long StartedMillis, long Experience, int Revives)? ringTry = null;
 				long ringDeadline = 0, scrollsSupplied = 0, scrollsUsed = 0, landedMillis = long.MinValue / 2;
 				int ringsSeen = 0;
 				bool airborne = false;
@@ -1679,6 +1690,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					var attempt = new NaturalAbyssAttempt(NaturalAbyssAttempts.RingCourse, running.Number, outcome, running.StartedMillis, runtime.NowMillis,
 						Math.Max(ringsSeen, RingVar() == course.FailedVar ? 0 : RingsPassed()), reason);
 					attempts.Add(attempt);
+					courseExperience += ObservedExperience() - running.Experience;
 					ringTry = null;
 					session.TraceDiagnostic(NaturalAbyssAttempts.Diagnostic(NaturalAbyssAttempts.RingCourse), NaturalAbyssAttempts.Row(attempt));
 				}
@@ -1715,8 +1727,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							? "The Cleric died in the arena and revived inside it; the server failed the attempt at once (D36, D38)."
 							: "The Cleric died in the arena; the server failed the attempt at once (D36).");
 					// A death on the course fails it, as in Java (var 9): the try ends once the Cleric is back on its feet.
-					if (ringTry != null && !world.IsDead && !airborne && RingVar() == course.FailedVar)
-						EndRingTry(combat.ReviveCount > 0 && ringsSeen < course.Rings.Length ? "failed" : "timeout", "The course failed (var 9) before the sixth ring.");
+					if (ringTry is { } flying && !world.IsDead && !airborne && RingVar() == course.FailedVar)
+						EndRingTry(combat.ReviveCount > flying.Revives ? "death" : "timeout", combat.ReviveCount > flying.Revives
+							? "The Cleric died on the course; the server failed it at once (var 9)."
+							: "The course failed (var 9) before the sixth ring.");
 					NaturalAbyssEntryDecision next = NaturalAbyssEntryDecisionEngine.Decide(leg, Observed(), sequence, PhysicalDefence, attempts);
 					// The fight's own progress is the kill count and the clock, so a fight decision never looks like a stall.
 					string signature = $"{next.Action}|{next.StepKey}|{next.Reason}|{(next.Action == "arena-fight" ? runtime.NowMillis : 0)}";
@@ -1738,7 +1752,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							NaturalAbyssEntryProgress progress = NaturalAbyssEntryLeg.VerifyProgress(leg, start, Observed(), next.Phase,
 								new NaturalAbyssLedger(ObservedExperience() - experienceAtStart, fares, bindPaid, payments, inventoryChecks, otherInventoryChecks,
 									coinManifests, coinPurchases, coinsSupplied, opened, notOpened, attempts, arenaExperience, combat.ReviveCount, discarded,
-									scrollsSupplied, scrollsUsed),
+									scrollsSupplied, scrollsUsed, soulHeals, combat.BindReviveCount, courseExperience),
 								itemId => runtime.Data.ItemDataDh.GetItemTemplate(itemId) is { } template && template.GetItemGroup().ToString() == "STAFF"
 									? template.GetWeaponStats()?.GetBoostMagicalSkill() ?? 0 : 0, PhysicalDefence, runtime.NowMillis);
 							await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntryLeg.ProgressReceipt),
@@ -1757,6 +1771,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								["arenaExperience"] = arenaExperience, ["deaths"] = combat.ReviveCount,
 								["discarded"] = discarded.Select(item => item.ItemId).ToArray(),
 								["scrollsSupplied"] = scrollsSupplied, ["scrollsUsed"] = scrollsUsed,
+								["obeliskRevives"] = combat.BindReviveCount, ["courseExperience"] = courseExperience,
+								["soulHeals"] = soulHeals.Select(heal => $"{heal.Recovered} XP for {heal.Price} Kinah").ToArray(),
 								["reason"] = next.Reason,
 							});
 							return;
@@ -1970,7 +1986,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								}
 								catch (NaturalDialogTooFarException) when (attempt < 3) { yornduf = await ApproachCapitalNpcAsync(step.NpcId); }
 							}
-							ringTry = (attempts.Count(attempt => attempt.Kind == NaturalAbyssAttempts.RingCourse) + 1, runtime.NowMillis);
+							ringTry = (attempts.Count(attempt => attempt.Kind == NaturalAbyssAttempts.RingCourse) + 1, runtime.NowMillis, ObservedExperience(), combat.ReviveCount);
 							ringDeadline = runtime.NowMillis + course.Seconds * 1000L;
 							ringsSeen = 0;
 							takeoffSpot = session.CurrentPosition;
@@ -1987,16 +2003,17 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							// A try the runner did not see begin (a resumed run): count it from here.
 							if (ringTry == null)
 							{
-								ringTry = (attempts.Count(attempt => attempt.Kind == NaturalAbyssAttempts.RingCourse) + 1, runtime.NowMillis);
+								ringTry = (attempts.Count(attempt => attempt.Kind == NaturalAbyssAttempts.RingCourse) + 1, runtime.NowMillis, ObservedExperience(), combat.ReviveCount);
 								ringDeadline = runtime.NowMillis + course.Seconds * 1000L;
 								ringsSeen = RingsPassed();
 							}
 							BotPosition spot = takeoffSpot ??= session.CurrentPosition;
 							// A recorded outcome on request (AX_RING_FIRST_TRY=timeout), to prove the failure path: the first try stays
 							// on the ground until the 70 s are over.
-							if (ringTry is { Number: 1 } && options.AbyssRingFirstTry is { } grounded)
+							bool fallOnThisTry = ringTry is { Number: 1 } && options.AbyssRingFirstTry == "death";
+							if (ringTry is { Number: 1 } && !fallOnThisTry && options.AbyssRingFirstTry is { } grounded)
 							{
-								Require.True(grounded == "timeout", $"AX_RING_FIRST_TRY is '{grounded}', not timeout.");
+								Require.True(grounded == "timeout", $"AX_RING_FIRST_TRY is '{grounded}', not timeout or death.");
 								session.TraceDiagnostic("ring-course-first-try-idle", new Dictionary<string, object?> { ["seconds"] = (ringDeadline - runtime.NowMillis) / 1000 });
 								await session.AdvanceAsync(TimeSpan.FromMilliseconds(Math.Max(ringDeadline - runtime.NowMillis, 0) + 1_500), token);
 								await session.SynchronizeAsync(token);
@@ -2021,6 +2038,44 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							int misses = 0;
 							while (!world.IsDead && RingVar() >= course.StartVar && RingVar() < course.DoneVar && misses < 2)
 							{
+								// A recorded outcome on request (AX_RING_FIRST_TRY=death), to prove the death path: a fall, the course's own
+								// way to die. With the first ring passed the Cleric climbs to sixty metres over the ground below it, ends
+								// the flight in the air and falls. The server deals all of the HP from 50 m; Q2042's die hook fails the course.
+								if (fallOnThisTry && RingVar() > course.StartVar)
+								{
+									BotPosition here = session.CurrentPosition;
+									// The ground below: the lowest height the server's geometry lets a line from here reach.
+									float blocked = course.ZoneBottom - 40, ground = here.Z;
+									Require.True(!NaturalFlightProtocol.IsClear(air, map, here, here with { Z = blocked }), "No ground was found below the first ring.");
+									for (int halving = 0; halving < 14; halving++)
+									{
+										float middle = (blocked + ground) / 2;
+										if (NaturalFlightProtocol.IsClear(air, map, here, here with { Z = middle })) ground = middle;
+										else blocked = middle;
+									}
+									BotPosition summit = here with { Z = Math.Min(ground + 60, ceiling) };
+									Require.True(summit.Z - ground >= 55 && NaturalFlightProtocol.IsClear(air, map, here, summit), "There is no clear 55 m over the ground below the first ring.");
+									await NaturalFlightProtocol.FlyAsync(session, map, here, [summit], flightSpeed, token);
+									await NaturalFlightProtocol.LandAsync(session, token);
+									airborne = false;
+									await NaturalFlightProtocol.FallAsync(session, summit, ground, token);
+									await session.SynchronizeAsync(token);
+									// The server sends SM_DIE half a second after the death.
+									if (!world.IsDead && world.CurrentHp == 0)
+									{
+										await session.AdvanceAsync(TimeSpan.FromMilliseconds(600), token);
+										await session.WaitForPacketAsync(typeof(SM_DIE), token);
+										await session.SynchronizeAsync(token);
+									}
+									landedMillis = runtime.NowMillis;
+									session.TraceDiagnostic("ring-course-first-try-fall", new Dictionary<string, object?>
+									{
+										["from"] = summit.Z, ["ground"] = ground, ["metres"] = summit.Z - ground, ["dead"] = world.IsDead, ["var"] = RingVar(),
+										["hp"] = world.CurrentHp, ["position"] = session.CurrentPosition,
+									});
+									Require.True(world.IsDead, "The fall did not kill the Cleric.");
+									break; // the rule revives it next, and the top of the loop ends the try
+								}
 								int index = RingVar() - course.StartVar;
 								NaturalAbyssRing ring = course.Rings[index];
 								BotPosition origin = session.CurrentPosition;
@@ -8754,6 +8809,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		/// <summary>The map a far target is approached on (NA-23 fights in Altgard); Ishalgen for the journey.</summary>
 		public int ApproachMapId { get; set; } = 220010000;
 		public Action? AfterBindRevive { get; set; }
+		/// <summary>AX-12b: revives at the bound obelisk, as against revives inside an instance.</summary>
+		public int BindReviveCount => bindRevives;
+		private int bindRevives;
+		public Func<CancellationToken, Task>? SoulHealAfterBindReviveAsync { get; set; }
 		/// <summary>AX-12a (D38): the instance maps where a death is revived from inside, when the death prompt offers it.</summary>
 		public HashSet<int> InstanceReviveMaps { get; } = [];
 		public Action? AfterInstanceRevive { get; set; }
@@ -9722,7 +9781,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			await session.SynchronizeAsync(token);
 			if (session.Api.World.IsDead) throw new InvalidDataException("Bind revive did not clear client-observed death.");
 			session.AcceptTeleportPosition();
+			bindRevives++;
 			AfterBindRevive?.Invoke();
+			// AX-12b: the operator's rule, "always soul heal when we resurrect at an obelisk", for the legs that set it.
+			if (SoulHealAfterBindReviveAsync != null) await SoulHealAfterBindReviveAsync(token);
 			await BuffOurselfAsync(NaturalHelpTrigger.AfterRevive, token);
 			// A bind revive leaves a quarter of HP and MP (and soul sickness lowers the maximum). Rest at the obelisk before
 			// anything else, as a player does: in Leg 4 the walk back out at 25% HP met three swamp mosbears and died three

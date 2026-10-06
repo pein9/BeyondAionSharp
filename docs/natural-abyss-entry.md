@@ -19,7 +19,8 @@ and worn. The operator then added three rules (see [Operator decisions](#operato
 revive inside the arena as retail does, buy the best coin staff when it is better, and
 always soul heal after an obelisk resurrection. They are AX-12a, AX-12b and AX-12c, worked
 before AX-13. AX-12a is done: a Cleric that dies in the arena stands up inside it (D38),
-leaves by the exit and clears the arena on its second try. AX-12b is next.
+leaves by the exit and clears the arena on its second try. AX-12b is done: after a revive
+at the obelisk the Cleric is soul healed by Golenthor before it rests. AX-12c is next.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -324,7 +325,9 @@ not better.
    instance revive there, not the bind. The Cleric stands up at (277.87, 289.88, 164.1),
    6 m from the exit, with a quarter of its HP and MP and soul sickness. Any death fails
    the attempt at once (D36), so the way on is the exit and Garm. The bind is at Morheim
-   Ice Fortress from row M3 on: a fall on the ring course respawns beside its obelisk.
+   Ice Fortress from row M3 on: a fall on the ring course respawns beside its obelisk,
+   where Golenthor soul heals the Cleric (AX-12b). The death takes the flight-speed scroll's
+   effect, so the next try flies at 12.42 m/s, not 15.12; it still has time to spare.
 4. ~~**A second arena attempt must wait eleven minutes.**~~ Settled by D34: a failed
    attempt's instance is destroyed at once, and every attempt starts in a new one. The clear
    itself is unchanged. The spirits have 205 and 265 HP, so ten kills in 240 s is mostly
@@ -814,13 +817,55 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   - Tests: the D36 death test now plays the offered revive; two more decision assertions
     (25 contract tests pass).
   - Fast and the seven pre-commit checks: see the Progress log.
-- [ ] **AX-12b - Soul heal after an obelisk resurrection.** Depends AX-12a. Operator,
+- [x] **AX-12b - Soul heal after an obelisk resurrection.** Depends AX-12a. Operator,
   2026-10-06: "Always soul heal when we resurrect at an Obelisk."
   - After every bind revive the Cleric talks to the Soul Healer by the obelisk, accepts
     the price, and only then rests and goes back to work. The Kinah is on the ledger.
   - Read the Java first: dialog action RECOVERY, the price, and what it restores.
   - Proof: a contained run with one obelisk resurrection in it. The ring course is the
     leg's only place for one once AX-12a is in: the first try ends in a fall.
+  - 2026-10-06, the Java (`DialogService`, action RECOVERY 35): with recoverable XP the
+    server asks `STR_ASK_RECOVER_EXPERIENCE` (160011) and names the price,
+    `(int) (xp * (xp < 1000000 ? 0.25 - 0.00000015 * xp : 0.1))`. Accepted, it adds the
+    recoverable XP back, takes the Kinah, removes the soul sickness (skill 8291) and clears
+    the death count. With nothing to recover it asks nothing and removes the sickness for
+    free. C# is the same. A death takes a third of its XP for good; the rest is recoverable,
+    up to a quarter of the level.
+  - The rule in the bot: the revive at the bind is followed at once by the soul healing,
+    then the buffs and the rest. The leg names its Soul Healer in the contract: Golenthor
+    204318, title 350412 "Soul Healer", 1.2 m from the obelisk (176 NPCs carry that title).
+    The step talks, chooses the healing, accepts the question, and checks from the
+    client's view that no recoverable XP is left, that the XP came back, and that the
+    Kinah charged is the price asked and the formula's.
+  - On the ledger and in the receipt: every soul healing, the count of obelisk revives, and
+    what the course's deaths and healings changed in XP. The frontier check requires one
+    healing per obelisk revive, Golenthor's, at the formula's price, and takes the price
+    off the Kinah account.
+  - **SIM proof `run/ax12b/soulheal-probe-a1.log`** (free account 97). A level-25 probe
+    bound at Morheim died: 17,453 XP gone, 5,817 for good and 11,636 recoverable. The bind
+    revive left soul sickness. Golenthor, 1.3 m from the revive point, gave the 11,636 XP
+    back for 2,888 Kinah and took the sickness off. A second visit asked nothing and cost
+    nothing.
+  - **Contained proof `run/ax12b/ax12b-fall-a3`** (public Restore, leg `ax`, first course
+    try lost by a fall, schema dropped). With ring 1 passed the Cleric climbed to 60 m over
+    the roof below it, ended its flight and fell: all of its HP, as Java deals from 50 m.
+    Q2042's die hook failed the course (var 9, D33's guard). It revived at Morheim's
+    obelisk and Golenthor healed it: **108,964 XP back for 25,460 Kinah.** That is the
+    11,636 this death left recoverable and 97,328 the Cleric had carried since the earlier
+    legs. It rested, Yornduf started a second try, and it flew the six rings at 12.42 m/s
+    with 23 s on the clock at the sixth and 15.5 s at the landing. Level 26 at the end,
+    1,138,603 XP gained, 717,698 Kinah, 11 coins supplied, 17 min 26 s of game time.
+  - **Found: the death takes the scroll's effect.** The one supplied scroll was used at
+    the first start. The second try flew without it and still passed. No second scroll
+    was supplied.
+  - **Found: 97,328 recoverable XP carried in.** See "Blocked / questions".
+  - Kept: `ax12b-fall-a1` (no clear air straight above the take-off spot; the fall now
+    starts beyond ring 1) and `ax12b-fall-a2` (the fall killed the Cleric, and the run
+    looked for the death prompt half a second before the server sends it).
+  - The rule is on in this leg and later ones. The accepted earlier legs are unchanged.
+  - Tests: one more contract test and eight refused endpoint ledgers (26 pass); one more
+    SIM test.
+  - Fast and the seven pre-commit checks: see the Progress log.
 - [ ] **AX-12c - The best coin staff.** Depends AX-12. Operator, 2026-10-06: "Also upgrade
   our weapon to the best coin weapon if it's better than what we have (staff)."
   - Write the staff manifest under [Coin armor](#coin-armor) first, for both tiers: the
@@ -917,6 +962,11 @@ these defaults; say so to change one.
   in this leg and every later one. The accepted earlier legs, Ishalgen to Haramel, are
   left as they are, as "Don't change earlier runs" decided for the equipment check. Say so
   to turn it on there too.
+- **The recoverable XP the Cleric already carries (found in AX-12b).** The snapshot's
+  Cleric logs in with 97,328 recoverable XP, left by deaths in the earlier legs, which
+  never soul healed. The rule heals after an obelisk resurrection, so a run without one
+  leaves that XP where it is. Default: the rule as given. Say so to have the Cleric soul
+  heal on arriving at Morheim's obelisk as well: 97,328 XP back for 22,911 Kinah.
 - **A revive that is not at an obelisk (AX-12a, AX-12b).** The rule names the obelisk.
   Default: after a revive inside the arena the Cleric does not go looking for a Soul
   Healer; it leaves, talks to Garm and tries again with the soul sickness it has. Say so
@@ -1176,3 +1226,10 @@ The original questions, with the recommendations made at the time:
   revived inside, left by the exit and cleared the second try (`run/ax12a/ax12a-death-a2`).
   Fast passes 114 of 119 tests with five guarded skips and all eleven scenarios in 9.19 minutes
   (`run/ax12a-fast/`); the seven pre-commit checks pass (`run/ax12a/checks/`).
+- 2026-10-06 — AX-12b: soul healing after an obelisk resurrection. SIM: a death, the bind
+  revive, and Golenthor gives the 11,636 recoverable XP back for 2,888 Kinah
+  (`run/ax12b/soulheal-probe-a1.log`). Contained: the first course try ended in a 60 m
+  fall, the Cleric revived at the obelisk, was healed (108,964 XP for 25,460 Kinah, 97,328
+  of it carried from earlier legs) and flew the second try (`run/ax12b/ax12b-fall-a3`).
+  Fast passes 115 of 120 tests with five guarded skips and all eleven scenarios in 8.62 minutes
+  (`run/ax12b-fast/`); the seven pre-commit checks pass (`run/ax12b/checks/`).

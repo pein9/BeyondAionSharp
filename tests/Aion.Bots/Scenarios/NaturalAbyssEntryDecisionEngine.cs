@@ -62,7 +62,7 @@ public static class NaturalAbyssEntryDecisionEngine
 		if (state.IsDead)
 			return Next(RecoverPhase, "revive", here == scope.Arena.MapId
 				? "Dead in the arena: take the revive the client offers, inside it (D38), and recover."
-				: "Dead: revive at the bind point and recover.");
+				: "Dead: revive at the bind point, soul heal and recover.");
 
 		// 1. Morheim and the commander.
 		int commander = scope.CommanderQuestId;

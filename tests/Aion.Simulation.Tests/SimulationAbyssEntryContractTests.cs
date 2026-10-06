@@ -1,5 +1,6 @@
 using Aion.Bots.Navigation;
 using Aion.Bots.Protocol;
+using Aion.Bots.Reflexes;
 using Aion.Bots.Scenarios;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
@@ -329,6 +330,70 @@ public sealed partial class SimulationFastScenarioTests
 	/// <summary>How far the player stands from where Java's Q2947 teleports end: (1006.1, 1526, 222.2), beside Garm.</summary>
 	private static float AxDistanceFromGarmTeleport(Player server) =>
 		NaturalFlightPolicy.Distance(new(server.GetX(), server.GetY(), server.GetZ(), 0), new(1006.1f, 1526f, 222.2f, 0));
+
+	/// <summary>
+	/// AX-12b: the operator's rule, "always soul heal when we resurrect at an obelisk". A death takes XP, a third of it for good
+	/// and the rest recoverable. The bind revive leaves soul sickness (skill 8291). Golenthor, 1.2 m from Morheim's obelisk,
+	/// answers the RECOVERY dialog action with the priced question; accepted, the recoverable XP is back, the price Java's
+	/// DialogService names is charged, and the sickness is gone. A second visit has nothing to recover and costs nothing.
+	/// </summary>
+	[SkippableFact]
+	public async Task SoulHealerGivesBackTheRecoverableExperienceAfterAnObeliskRevive()
+	{
+		await RunCapitalProbeAsync("AX12B", 97, "Asimsoulheal", async (probe, session, token) =>
+		{
+			Player server = probe.Server;
+			AxLevel25(server);
+			server.GetInventory().IncreaseKinah(40_000);
+			// A death takes from the XP earned in the level, so the probe has some.
+			server.GetCommonData().SetExp(server.GetCommonData().GetExp() + 300_000);
+			await session.SynchronizeAsync(token);
+			var services = new NaturalServiceSteps(session);
+			await probe.SetupNearAsync(AxMorheim, 700231);
+			Npc obelisk = server.GetWorldMapInstance().GetNpcs(700231).First();
+			NaturalServiceOutcome bind = await services.BindAsync(obelisk.GetObjectId(), new(obelisk.GetX(), obelisk.GetY(), obelisk.GetZ(), 0), AxMorheim, 2690, 6, token);
+			Assert.True(bind.IsDone, bind.Reason);
+
+			long xpAlive = server.GetCommonData().GetExp();
+			DecodedBotServerPacket prompt = await AxDieAsync(session, server, token);
+			Assert.False(prompt.Get<bool>("allowInstanceRevive"));
+			long recoverable = server.GetCommonData().GetExpRecoverable(), xpDead = server.GetCommonData().GetExp();
+			long lost = xpAlive - xpDead, forGood = lost - recoverable;
+			Assert.True(recoverable > 0 && forGood > 0, $"the death took {lost} XP, {recoverable} of it recoverable");
+			Assert.Equal(recoverable, session.Api.World.RecoverableExperience);
+
+			// The obelisk is on the same map: the revive is a spawn there, a quarter of the HP, and soul sickness.
+			session.Api.World.BeginWorldReload();
+			await session.SendPacketAsync(session.Api.Revive(BotReviveType.Bind), token);
+			await session.WaitForPacketAsync(typeof(SM_CHANNEL_INFO), token);
+			await session.SynchronizeAsync(token);
+			session.AcceptTeleportPosition();
+			Assert.False(server.IsDead());
+			Assert.True(server.GetEffectController().HasAbnormalEffect(8291), "the bind revive left no soul sickness");
+			Assert.Equal(1, server.GetCommonData().GetDeathCount());
+
+			Npc golenthor = server.GetWorldMapInstance().GetNpcs(204318).First();
+			float fromObelisk = NaturalFlightPolicy.Distance(new(golenthor.GetX(), golenthor.GetY(), golenthor.GetZ(), 0), new(obelisk.GetX(), obelisk.GetY(), obelisk.GetZ(), 0));
+			float fromRevive = NaturalFlightPolicy.Distance(new(golenthor.GetX(), golenthor.GetY(), golenthor.GetZ(), 0), session.CurrentPosition);
+			Assert.Equal(NaturalServicePolicy.SoulHealerTitleId, golenthor.GetObjectTemplate().GetTitleId());
+			long kinah = server.GetInventory().GetKinah();
+			NaturalSoulHeal heal = await services.SoulHealAsync(golenthor.GetObjectId(), 204318, 0, token);
+			long price = (int)(recoverable * (0.25 - (0.00000015 * recoverable)));
+			Assert.Equal((recoverable, price), (heal.Recovered, heal.Price));
+			Assert.Equal(price, kinah - server.GetInventory().GetKinah());
+			Assert.Equal((0L, xpAlive - forGood), (server.GetCommonData().GetExpRecoverable(), server.GetCommonData().GetExp()));
+			Assert.False(server.GetEffectController().HasAbnormalEffect(8291), "the soul healing left the soul sickness on");
+			Assert.Equal(0, server.GetCommonData().GetDeathCount());
+
+			// Nothing left to recover: no question and no charge.
+			NaturalSoulHeal again = await services.SoulHealAsync(golenthor.GetObjectId(), 204318, 0, token);
+			Assert.Equal((0L, 0L), (again.Recovered, again.Price));
+			Assert.Equal(kinah - price, server.GetInventory().GetKinah());
+			Console.WriteLine($"AX-12b soul heal: the death took {lost} XP, {forGood} for good and {recoverable} recoverable; bind revive with soul sickness; " +
+				$"Golenthor {fromObelisk:F1} m from the obelisk and {fromRevive:F1} m from the revive point gave {heal.Recovered} XP back for {heal.Price} Kinah " +
+				$"and took the sickness off; a second visit cost {again.Price}");
+		});
+	}
 
 	/// <summary>Ukin's teleport starts Q24020 on arrival; the Morheim bind, Aegir's reward and the two return fares are as the data says.</summary>
 	[SkippableFact]

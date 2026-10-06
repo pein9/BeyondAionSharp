@@ -35,6 +35,13 @@ public static class NaturalServicePolicy
 	/// <summary>ResurrectAI refuses a second bind within 20 m of the same obelisk.</summary>
 	public const float SameObeliskRadius = 20;
 
+	/// <summary>AX-12b: soul healing. Java DialogService answers dialog action RECOVERY with
+	/// SM_QUESTION_WINDOW.STR_ASK_RECOVER_EXPERIENCE, whose parameter is the price. Soul Healers carry title 350412.</summary>
+	public const int SoulHealQuestionId = 160011, SoulHealDialogAction = 35, SoulHealerTitleId = 350412;
+
+	/// <summary>Java: <c>(int) (expLost * (expLost &lt; 1000000 ? 0.25 - (0.00000015 * expLost) : 0.1))</c>.</summary>
+	public static long SoulHealPrice(long recoverable) => (int)(recoverable * (recoverable < 1_000_000 ? 0.25 - (0.00000015 * recoverable) : 0.1));
+
 	public static NaturalServiceOutcome Bind(BotPosition self, int selfMap, BotPosition obelisk, int obeliskMap,
 		float acceptRange, long kinah, long price, BotBindPoint? current)
 	{
@@ -88,6 +95,9 @@ public static class NaturalServicePolicy
 	internal static float Distance(BotPosition a, BotPosition b) =>
 		MathF.Sqrt(MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2) + MathF.Pow(a.Z - b.Z, 2));
 }
+
+/// <summary>AX-12b: one soul healing as the client saw it: the recoverable XP that came back and the Kinah it cost.</summary>
+public sealed record NaturalSoulHeal(int HealerNpcId, long Recovered, long Price, long KinahBefore, long KinahAfter, long AtMillis);
 
 /// <summary>NA-08: the client side of those services on any map, verified by client-observed packets and Kinah.</summary>
 public sealed class NaturalServiceSteps(INaturalJourneySession session)
@@ -235,6 +245,41 @@ public sealed class NaturalServiceSteps(INaturalJourneySession session)
 			["kinahBefore"] = before, ["kinahAfter"] = World.Kinah,
 		});
 		return result;
+	}
+
+	/// <summary>AX-12b: soul healing at the Soul Healer the character stands beside. Talk, choose the healing (RECOVERY) and
+	/// accept the priced question. From the client's view afterwards: no recoverable XP is left, the XP bar is up by what was
+	/// recoverable, and the Kinah charged is the price the question named. With nothing to recover the server asks nothing and
+	/// takes the soul sickness off for free.</summary>
+	public async Task<NaturalSoulHeal> SoulHealAsync(int healerObjectId, int healerNpcId, long nowMillis, CancellationToken token)
+	{
+		if (!World.Objects.TryGetValue(healerObjectId, out BotKnownObject? known) || known.TemplateId != healerNpcId)
+			throw new InvalidDataException($"The observed NPC is not the Soul Healer {healerNpcId}.");
+		long kinah = World.Kinah, recoverable = World.RecoverableExperience, experience = World.CurrentExperience, price = 0;
+		await NaturalDialogProtocol.OpenAsync(session, healerObjectId, token);
+		await session.WaitForPacketAsync(typeof(SM_DIALOG_WINDOW), token, packet => packet.Get<int>("targetObjectId") == healerObjectId);
+		await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(healerObjectId, NaturalServicePolicy.SoulHealDialogAction), token);
+		if (recoverable > 0)
+		{
+			DecodedBotServerPacket question = await session.WaitForPacketAsync(typeof(SM_QUESTION_WINDOW), token,
+				packet => packet.Get<int>("code") == NaturalServicePolicy.SoulHealQuestionId);
+			price = long.Parse(question.Get<string[]>("params")[0], System.Globalization.CultureInfo.InvariantCulture);
+			await session.SendPacketAsync(GameClientPackets.QuestionResponse(question.Get<int>("code"), 1, question.Get<int>("senderId")), token);
+			await session.WaitForPacketAsync(typeof(SM_STATUPDATE_EXP), token);
+		}
+		await session.SynchronizeAsync(token);
+		var heal = new NaturalSoulHeal(healerNpcId, recoverable, price, kinah, World.Kinah, nowMillis);
+		NaturalServiceOutcome result = World.RecoverableExperience == 0 && kinah - World.Kinah == price &&
+			World.CurrentExperience - experience == recoverable && price == NaturalServicePolicy.SoulHealPrice(recoverable)
+			? new("done", $"Soul healed: {recoverable} XP back for {price} Kinah.")
+			: new("refused", $"Soul healing not observed (recoverable {recoverable} -> {World.RecoverableExperience}, XP {experience} -> " +
+				$"{World.CurrentExperience}, Kinah {kinah} -> {World.Kinah}, price asked {price}).");
+		Trace("service-soul-heal", result, new()
+		{
+			["healer"] = healerNpcId, ["recovered"] = recoverable, ["price"] = price, ["kinahBefore"] = kinah, ["kinahAfter"] = World.Kinah,
+		});
+		if (!result.IsDone) throw new InvalidDataException(result.Reason);
+		return heal;
 	}
 
 	private void Trace(string action, NaturalServiceOutcome outcome, Dictionary<string, object?> fields)

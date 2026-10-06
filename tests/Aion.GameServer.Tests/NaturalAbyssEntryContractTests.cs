@@ -381,6 +381,27 @@ public sealed class NaturalAbyssEntryContractTests
 		});
 	}
 
+	/// <summary>AX-12b: the operator's rule, "always soul heal when we resurrect at an obelisk": who heals, where, and for what.</summary>
+	[Fact]
+	public void SoulHealerStandsByTheObeliskAndChargesTheShippedPrice()
+	{
+		NaturalAbyssSoulHealer healer = Scope.SoulHealer;
+		Assert.Equal((204318, 350412, "obelisk-revive", 35, 160011), (healer.NpcId, healer.TitleId, healer.After, healer.DialogAction, healer.QuestionId));
+		Assert.Contains(healer.NpcId, Scope.GraphNpcIds);
+		// Golenthor carries the Soul Healer title and stands 1.2 m from the obelisk the leg binds at.
+		Assert.Matches($"<npc_template npc_id=\"{healer.NpcId}\"[^>]* title_id=\"{healer.TitleId}\"", File.ReadAllText(Data("npcs", "npc_templates.xml")));
+		float[] spot = Spot("Npcs/220020000_Morheim.xml", healer.NpcId);
+		Assert.True(spot.Zip(healer.Position, (a, b) => MathF.Abs(a - b)).All(d => d < 0.01f));
+		Assert.InRange(MathF.Sqrt(spot.Zip(Leg.Bind!.Position, (a, b) => (a - b) * (a - b)).Sum()), 0.5f, 2f);
+		// Java DialogService: (int) (expLost * (expLost < 1000000 ? 0.25 - (0.00000015 * expLost) : 0.1)).
+		Assert.Equal((0L, 2_888L, 100_000L, 200_000L), (NaturalServicePolicy.SoulHealPrice(0), NaturalServicePolicy.SoulHealPrice(11_636),
+			NaturalServicePolicy.SoulHealPrice(1_000_000), NaturalServicePolicy.SoulHealPrice(2_000_000)));
+		// The rule's words: the revive at the bind is followed by the soul healing; the arena's revive is inside it (D38).
+		NaturalAbyssEntryDecision dead = NaturalAbyssEntryDecisionEngine.Decide(Leg, ArrivedState() with { IsDead = true }, 1, DefenceOf);
+		Assert.Equal(("recover", "revive"), (dead.Phase, dead.Action));
+		Assert.Contains("soul heal", dead.Reason);
+	}
+
 	/// <summary>AX-12: the level-26 manifest, from what the Cleric wears after the missions. The hauberk is a tie.</summary>
 	[Fact]
 	public void LevelTwentySixManifestBuysTheFourPiecesWithMoreDefence()
@@ -712,6 +733,34 @@ public sealed class NaturalAbyssEntryContractTests
 		];
 		Assert.All(refusedEndpoint, verify => Assert.Throws<InvalidDataException>(verify));
 
+		// AX-12b: one fall on the course. The death took 17,453 XP, 11,636 of it recoverable; after the obelisk revive Golenthor
+		// gave that back for 2,888 Kinah. The course's net is the third that is gone for good.
+		var heal = new NaturalSoulHeal(204318, 11_636, 2_888, purse, purse - 2_888, 1_390_000);
+		NaturalAbyssLedger healed = settled with
+		{
+			ExperienceGained = settled.ExperienceGained - 5_817, Deaths = 1, ObeliskRevives = 1, CourseExperience = -5_817, SoulHeals = [heal],
+			Attempts = [.. tries, flights[0] with { Outcome = "death", Reason = "fell" }, flights[1]],
+		};
+		NaturalAltgardObservation poorer = dressed with { Kinah = purse - 2_888 };
+		NaturalAbyssEntryProgress afterFall = VerifyEndpoint(poorer, healed);
+		Assert.Equal((1, 1, -5_817L, 2_888L), (afterFall.Deaths, afterFall.ObeliskRevives, afterFall.CourseExperience, afterFall.SoulHeals!.Single().Price));
+		Assert.Equal(settled.ExperienceGained - 5_817, afterFall.ExperienceGained);
+		Action[] refusedHeal =
+		[
+			// An obelisk revive without its soul healing, and a soul healing without an obelisk revive.
+			() => VerifyEndpoint(poorer, healed with { SoulHeals = [] }),
+			() => VerifyEndpoint(poorer, healed with { ObeliskRevives = 0 }),
+			() => VerifyEndpoint(poorer, healed with { ObeliskRevives = 2 }),
+			// The price not charged, not the formula's, or not Golenthor's.
+			() => VerifyEndpoint(dressed, healed),
+			() => VerifyEndpoint(dressed with { Kinah = purse - 2_000 }, healed with { SoulHeals = [heal with { Price = 2_000, KinahAfter = purse - 2_000 }] }),
+			() => VerifyEndpoint(poorer, healed with { SoulHeals = [heal with { HealerNpcId = 204425 }] }),
+			// XP lost on the course with no death on the ledger, and a loss the course does not account for.
+			() => VerifyEndpoint(dressed, settled with { CourseExperience = -1, ExperienceGained = settled.ExperienceGained - 1 }),
+			() => VerifyEndpoint(poorer, healed with { CourseExperience = 0 }),
+		];
+		Assert.All(refusedHeal, verify => Assert.Throws<InvalidDataException>(verify));
+
 		Action[] refused =
 		[
 			() => Verify(atGarm with { MapId = NaturalAbyssEntry.Morheim }, ledger),
@@ -860,7 +909,7 @@ public sealed class NaturalAbyssEntryContractTests
 		Assert.Equal(("recover", "revive", null), Shape(Decide(arena, 3, 6, dead: true, tries: Failed(1))));
 		// D38: the revive after a death in the arena is the one the client offers there, inside it; anywhere else it is the bind.
 		Assert.Contains("inside it (D38)", Decide(arena, 3, 6, dead: true, tries: Failed(1)).Reason);
-		Assert.Contains("at the bind point", Decide(NaturalAbyssEntry.Pandaemonium, 3, 6, dead: true, tries: Failed(1)).Reason);
+		Assert.Contains("at the bind point, soul heal", Decide(NaturalAbyssEntry.Pandaemonium, 3, 6, dead: true, tries: Failed(1)).Reason);
 		NaturalAbyssEntryDecision back = Decide(morheim, 3, 6, tries: Failed(1));
 		Assert.Equal(("arena", "travel", (int?)city), (back.Phase, back.Action, back.MapId));
 		// Revived in place after a death: nothing counts at var 6, so the way on is the exit.

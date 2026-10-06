@@ -10,13 +10,13 @@ namespace Aion.Bots.Scenarios;
 /// </summary>
 public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, float[] Arrival, NaturalAbyssArena Arena,
 	NaturalAbyssRingCourse RingCourse, NaturalAbyssInventory Inventory, int[] ProtectedItemIds, NaturalAbyssSupply[] Supplies,
-	NaturalAbyssCoinArmor CoinArmor, NaturalAbyssLevel Level, NaturalAbyssWeapon Weapon)
+	NaturalAbyssCoinArmor CoinArmor, NaturalAbyssLevel Level, NaturalAbyssWeapon Weapon, NaturalAbyssSoulHealer SoulHealer)
 {
 	public const string Leg = "ax";
 	public const int Morheim = 220020000, Pandaemonium = 120010000, Altgard = 220030000, ArenaMap = 320090000;
 
 	/// <summary>The objects the leg uses that no dialog step names: the arena's doors, its spirits and the coin vendor.</summary>
-	public int[] GraphNpcIds => [Arena.ExitNpcId, CoinArmor.VendorNpcId, .. Arena.Spirits.Select(spirit => spirit.NpcId)];
+	public int[] GraphNpcIds => [Arena.ExitNpcId, CoinArmor.VendorNpcId, SoulHealer.NpcId, .. Arena.Spirits.Select(spirit => spirit.NpcId)];
 
 	public void Validate(NaturalAltgardContract contract)
 	{
@@ -73,6 +73,10 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 		if (Level is not { Minimum: 26, By: "quests", Fallback: "fortress-quests", Hunting: false, SoulHealing: false } ||
 			contract.Endpoint.MinimumLevel != Level.Minimum)
 			throw new InvalidDataException("The leg's level is reached by quests: no hunting and no soul healing.");
+		if (SoulHealer is not { NpcId: 204318, TitleId: NaturalServicePolicy.SoulHealerTitleId, After: "obelisk-revive",
+				DialogAction: NaturalServicePolicy.SoulHealDialogAction, QuestionId: NaturalServicePolicy.SoulHealQuestionId } ||
+			SoulHealer.Position.Length != 3)
+			throw new InvalidDataException("The soul healing differs from the operator's rule: Golenthor, after every obelisk revive.");
 	}
 }
 
@@ -113,6 +117,10 @@ public sealed record NaturalAbyssCoinTier(int Level, string When, string Name, N
 }
 
 public sealed record NaturalAbyssLevel(int Minimum, string By, string Fallback, bool Hunting, bool SoulHealing);
+
+/// <summary>AX-12b: the operator's rule, "always soul heal when we resurrect at an obelisk". The Soul Healer beside the leg's
+/// bind obelisk; Java's DialogService answers its RECOVERY action with the priced question.</summary>
+public sealed record NaturalAbyssSoulHealer(int NpcId, int TitleId, float[] Position, string After, int DialogAction, int QuestionId);
 
 public sealed record NaturalAbyssWeapon(string Type, string Prefer, bool Buy);
 
@@ -191,7 +199,7 @@ public sealed record NaturalAbyssEntryProgress(string Leg, string Frontier, int 
 	int[] LockedQuestIds, int InventoryChecks, long GameMillis, long BronzeCoins = 0, long CoinsSupplied = 0,
 	NaturalAbyssCoinManifest[]? CoinManifests = null, NaturalAbyssCoinPurchase[]? CoinPurchases = null, NaturalOpenedContainer[]? Opened = null,
 	NaturalAbyssAttempt[]? Attempts = null, long ArenaExperience = 0, int Deaths = 0, NaturalJourneyItem[]? Discarded = null,
-	long ScrollsSupplied = 0, long ScrollsUsed = 0);
+	long ScrollsSupplied = 0, long ScrollsUsed = 0, NaturalSoulHeal[]? SoulHeals = null, int ObeliskRevives = 0, long CourseExperience = 0);
 
 /// <summary>What the runner counted while the leg ran. Everything else in a receipt is the client's view.</summary>
 /// <param name="InventoryChecks">One at the start and one after each turn-in.</param>
@@ -207,7 +215,8 @@ public sealed record NaturalAbyssLedger(long ExperienceGained, long Fares, long 
 	int InventoryChecks, int OtherInventoryChecks, IReadOnlyList<NaturalAbyssCoinManifest> CoinManifests,
 	IReadOnlyList<NaturalAbyssCoinPurchase> CoinPurchases, long CoinsSupplied, IReadOnlyList<NaturalOpenedContainer> Opened, int NotOpened,
 	IReadOnlyList<NaturalAbyssAttempt> Attempts, long ArenaExperience, int Deaths, IReadOnlyList<NaturalJourneyItem> Discarded,
-	long ScrollsSupplied = 0, long ScrollsUsed = 0);
+	long ScrollsSupplied = 0, long ScrollsUsed = 0, IReadOnlyList<NaturalSoulHeal>? SoulHeals = null, int ObeliskRevives = 0,
+	long CourseExperience = 0);
 
 /// <summary>The leg's incoming contract, checked against what the retained character's login showed.</summary>
 public static class NaturalAbyssEntryLeg
@@ -262,8 +271,17 @@ public static class NaturalAbyssEntryLeg
 		Require(payments.Select(payment => payment.QuestId).SequenceEqual(paid), $"the turn-ins so far are not Q{string.Join(", Q", paid)}, in order");
 		Require(payments.All(payment => payment.Experience == leg.Quest(payment.QuestId).RewardExperience),
 			"a turn-in paid " + string.Join(", ", payments.Select(payment => $"Q{payment.QuestId} {payment.Experience} XP")) + ", not its shipped XP");
-		Require(experienceGained == payments.Sum(payment => payment.Experience) + ledger.ArenaExperience,
-			$"{experienceGained} XP was gained; the turn-ins paid {payments.Sum(payment => payment.Experience)} and the arena changed {ledger.ArenaExperience}");
+		// AX-12b: a death on the ring course takes XP and the soul healing after its obelisk revive gives the recoverable part back.
+		NaturalSoulHeal[] soulHeals = [.. ledger.SoulHeals ?? []];
+		Require(experienceGained == payments.Sum(payment => payment.Experience) + ledger.ArenaExperience + ledger.CourseExperience,
+			$"{experienceGained} XP was gained; the turn-ins paid {payments.Sum(payment => payment.Experience)}, the arena changed {ledger.ArenaExperience} " +
+			$"and the course's deaths {ledger.CourseExperience}");
+		Require(ledger.Deaths > 0 || ledger.CourseExperience == 0, $"the course changed {ledger.CourseExperience} XP without a death");
+		Require(ledger.ObeliskRevives >= 0 && ledger.ObeliskRevives <= ledger.Deaths && soulHeals.Length == ledger.ObeliskRevives,
+			$"{soulHeals.Length} soul healings followed {ledger.ObeliskRevives} obelisk revives");
+		Require(soulHeals.All(heal => heal.HealerNpcId == scope.SoulHealer.NpcId && heal.Recovered >= 0 &&
+			heal.Price == NaturalServicePolicy.SoulHealPrice(heal.Recovered) && heal.KinahBefore - heal.KinahAfter == heal.Price),
+			"a soul healing was not Golenthor's, or its price is not the shipped formula's");
 		NaturalAbyssAttempt[] tries = ledger.Attempts.Where(attempt => attempt.Kind == NaturalAbyssAttempts.Arena).ToArray();
 		if (cleared)
 		{
@@ -324,8 +342,9 @@ public static class NaturalAbyssEntryLeg
 		}
 		else
 			Require((leg.Start.StartedQuestIds ?? []).All(id => state.Quests.GetValueOrDefault(id) is { Status: 3, StepAndFlags: 0 }), "an incoming quest moved before its turn");
-		Require(state.Kinah == start.Kinah - fares - bindPaid + payments.Sum(payment => payment.Kinah),
-			$"{state.Kinah} Kinah is not {start.Kinah} less {fares} in fares and {bindPaid} for the bind, plus the quest's pay");
+		long healed = soulHeals.Sum(heal => heal.Price);
+		Require(state.Kinah == start.Kinah - fares - bindPaid - healed + payments.Sum(payment => payment.Kinah),
+			$"{state.Kinah} Kinah is not {start.Kinah} less {fares} in fares, {bindPaid} for the bind and {healed} for soul healing, plus the quest's pay");
 		Require(fares > 0 && bindPaid == bind.Price, $"the fares were {fares} and the bind {bindPaid}");
 		NaturalJourneyItem[] torso = inventory.Where(item => item.EquipmentSlot != NotWorn && (item.EquipmentSlot & Torso) != 0).ToArray();
 		Require(torso is [{ } worn] && worn.ItemId == hauberk.ItemId, $"the worn torso is [{string.Join(", ", torso.Select(item => item.ItemId))}], not {hauberk.ItemId}");
@@ -371,7 +390,7 @@ public static class NaturalAbyssEntryLeg
 			state.Quests.Values.Where(quest => quest.Status == NaturalAltgardDecisionEngine.Locked).Select(quest => quest.QuestId).Order().ToArray(),
 			ledger.InventoryChecks + ledger.OtherInventoryChecks, gameMillis, coins, ledger.CoinsSupplied, [.. ledger.CoinManifests],
 			[.. ledger.CoinPurchases], [.. ledger.Opened], [.. ledger.Attempts], ledger.ArenaExperience, ledger.Deaths, discards,
-			ledger.ScrollsSupplied, ledger.ScrollsUsed);
+			ledger.ScrollsSupplied, ledger.ScrollsUsed, soulHeals, ledger.ObeliskRevives, ledger.CourseExperience);
 	}
 
 	/// <summary>The three fares and the bind at their shipped base prices; the price modifier is added on top (AX-01).</summary>
