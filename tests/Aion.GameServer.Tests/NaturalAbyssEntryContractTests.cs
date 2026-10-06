@@ -858,6 +858,9 @@ public sealed class NaturalAbyssEntryContractTests
 		// A failed try (the timer, or a death, D36) is var 6: Garm again, from wherever the Cleric revived.
 		Assert.Equal(("arena", "talk", "q2947-garm-again"), Shape(Decide(city, 3, 6, tries: Failed(1))));
 		Assert.Equal(("recover", "revive", null), Shape(Decide(arena, 3, 6, dead: true, tries: Failed(1))));
+		// D38: the revive after a death in the arena is the one the client offers there, inside it; anywhere else it is the bind.
+		Assert.Contains("inside it (D38)", Decide(arena, 3, 6, dead: true, tries: Failed(1)).Reason);
+		Assert.Contains("at the bind point", Decide(NaturalAbyssEntry.Pandaemonium, 3, 6, dead: true, tries: Failed(1)).Reason);
 		NaturalAbyssEntryDecision back = Decide(morheim, 3, 6, tries: Failed(1));
 		Assert.Equal(("arena", "travel", (int?)city), (back.Phase, back.Action, back.MapId));
 		// Revived in place after a death: nothing counts at var 6, so the way on is the exit.

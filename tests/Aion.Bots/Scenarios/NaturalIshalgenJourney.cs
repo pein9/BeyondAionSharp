@@ -1621,7 +1621,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				NaturalAbyssArena arena = scope.Arena;
 				int[] spiritIds = arena.Spirits.Select(spirit => spirit.NpcId).ToArray();
 				var attempts = new List<NaturalAbyssAttempt>();
-				(int Number, long StartedMillis, long Experience)? arenaTry = null;
+				(int Number, long StartedMillis, long Experience, int Revives)? arenaTry = null;
 				long arenaDeadline = 0, arenaExperience = 0;
 				int arenaKillsSeen = 0;
 				var searchedGroups = new HashSet<string>();
@@ -1658,6 +1658,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					EnterObservedMap();
 				}
 				combat.AfterBindRevive = EnterObservedMap;
+				// AX-12a (D38): the arena offers the instance revive, and the Cleric takes it.
+				combat.InstanceReviveMaps.Add(arena.MapId);
+				combat.AfterInstanceRevive = EnterObservedMap;
 				// AX-10: Yornduf's ring course. A try begins at his talk, which starts the 70 s, and ends when the sixth ring is
 				// passed, when the timer fails it (var 9), or at a death. Every try goes on the outcome ledger.
 				NaturalAbyssRingCourse course = scope.RingCourse;
@@ -1704,9 +1707,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				for (int sequence = 1; sequence <= 200; sequence++)
 				{
 					await session.SynchronizeAsync(token);
-					// A death outside the fight loop, or one the combat already revived from at the bind: the try is over (D36).
-					if (arenaTry != null && !world.IsDead && world.MapId != arena.MapId && ArenaKills() < arena.RequiredKills)
-						EndArenaTry("death", "The Cleric died in the arena; the server failed the attempt at once (D36).");
+					// A death the combat already revived from: the try is over (D36). The revive is inside the arena (D38); off its map
+					// below ten kills is the older case, a revive at the bind.
+					if (arenaTry is { } fought && !world.IsDead && ArenaKills() < arena.RequiredKills &&
+						(world.MapId != arena.MapId || combat.ReviveCount > fought.Revives))
+						EndArenaTry("death", world.MapId == arena.MapId
+							? "The Cleric died in the arena and revived inside it; the server failed the attempt at once (D36, D38)."
+							: "The Cleric died in the arena; the server failed the attempt at once (D36).");
 					// A death on the course fails it, as in Java (var 9): the try ends once the Cleric is back on its feet.
 					if (ringTry != null && !world.IsDead && !airborne && RingVar() == course.FailedVar)
 						EndRingTry(combat.ReviveCount > 0 && ringsSeen < course.Rings.Length ? "failed" : "timeout", "The course failed (var 9) before the sixth ring.");
@@ -1762,7 +1769,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							// A try the runner did not see begin (a resumed run): count it from here.
 							if (arenaTry == null)
 							{
-								arenaTry = (attempts.Count(attempt => attempt.Kind == NaturalAbyssAttempts.Arena) + 1, runtime.NowMillis, ObservedExperience());
+								arenaTry = (attempts.Count(attempt => attempt.Kind == NaturalAbyssAttempts.Arena) + 1, runtime.NowMillis, ObservedExperience(), combat.ReviveCount);
 								arenaDeadline = runtime.NowMillis + arena.Seconds * 1000L;
 								arenaKillsSeen = ArenaKills();
 								searchedGroups.Clear();
@@ -2103,6 +2110,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							Require.True(reached.Arrived, $"Arena exit {arena.ExitNpcId}: {reached.Reason}");
 							int portal = Require.IsType<int>(reached.TargetObjectId);
 							Require.True(await NaturalAltgardQuestSteps.UseObjectAsync(session, portal, null, token, reloadWorld: true), "The arena exit use was interrupted.");
+							// The exit is a teleport to another map: stand where the server put the Cleric before planning any route.
+							Require.True(world.MapId != arena.MapId, "The arena exit did not lead out of the arena.");
+							session.AcceptTeleportPosition();
+							await session.SynchronizeAsync(token);
 							EnterObservedMap();
 							EndArenaTry(ArenaKills() >= arena.RequiredKills ? NaturalAbyssAttempts.Done : "left", "The Cleric left the arena by its exit.");
 							break;
@@ -2189,7 +2200,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 									{
 										// Garm sent the Cleric in (D35). Java starts the 240 s on this world entry and again when the client
 										// reports the end of movie 167 (hazard 5): the try's clock runs from the later one.
-										arenaTry = (attempts.Count(attempt => attempt.Kind == NaturalAbyssAttempts.Arena) + 1, runtime.NowMillis, experienceBeforeTalk);
+										arenaTry = (attempts.Count(attempt => attempt.Kind == NaturalAbyssAttempts.Arena) + 1, runtime.NowMillis, experienceBeforeTalk, combat.ReviveCount);
 										arenaKillsSeen = 0;
 										searchedGroups.Clear();
 										openedDoors.Clear();
@@ -8743,6 +8754,9 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		/// <summary>The map a far target is approached on (NA-23 fights in Altgard); Ishalgen for the journey.</summary>
 		public int ApproachMapId { get; set; } = 220010000;
 		public Action? AfterBindRevive { get; set; }
+		/// <summary>AX-12a (D38): the instance maps where a death is revived from inside, when the death prompt offers it.</summary>
+		public HashSet<int> InstanceReviveMaps { get; } = [];
+		public Action? AfterInstanceRevive { get; set; }
 
 		/// <summary>BC-06: retain combat/revival counters while switching to the new map's checked navigation.</summary>
 		public void EnterMap(NaturalJourneyNavigator currentNavigator, BotNavigationGeometry currentGeometry, int mapId)
@@ -9661,11 +9675,33 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await RestAsync(token);
 				return;
 			}
-			session.BeginStep($"ni07-bind-revive-{revives}", "accept-client-death-and-revive-at-bound-obelisk");
+			bool insideInstance = session.Api.World.MapId is int deathMap && InstanceReviveMaps.Contains(deathMap);
+			session.BeginStep(insideInstance ? $"ax-instance-revive-{revives}" : $"ni07-bind-revive-{revives}",
+				insideInstance ? "accept-client-death-and-revive-inside-the-instance" : "accept-client-death-and-revive-at-bound-obelisk");
 			if (!session.Api.World.IsDead)
 			{
 				await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
 				await session.WaitForPacketAsync(typeof(SM_DIE), token);
+			}
+			// AX-12a (D38): where SM_DIE offers the instance revive, the client's revive button is that one, and the server puts the
+			// player at the instance's own point. It is a spawn on the same map: SM_CHANNEL_INFO and SM_PLAYER_INFO, no world entry.
+			if (insideInstance && session.Api.World.ReviveOptions?.InInstance == true)
+			{
+				session.Api.World.BeginWorldReload();
+				await session.SendPacketAsync(session.Api.Revive(BotReviveType.Instance), token);
+				await session.WaitForPacketAsync(typeof(SM_CHANNEL_INFO), token);
+				await session.SynchronizeAsync(token);
+				if (session.Api.World.IsDead) throw new InvalidDataException("Instance revive did not clear client-observed death.");
+				session.AcceptTeleportPosition();
+				AfterInstanceRevive?.Invoke();
+				session.TraceDiagnostic("instance-revive", new Dictionary<string, object?>
+				{
+					["map"] = session.Api.World.MapId, ["position"] = session.CurrentPosition, ["hp"] = session.Api.World.CurrentHp,
+					["maxHp"] = session.Api.World.MaxHp, ["mp"] = session.Api.World.CurrentMp, ["maxMp"] = session.Api.World.MaxMp, ["revives"] = revives,
+				});
+				await BuffOurselfAsync(NaturalHelpTrigger.AfterRevive, token);
+				await RestAsync(token);
+				return;
 			}
 			// Java TeleportService.sendLoc despawns the player before rebuilding its known list, even on the
 			// same map. BC-06 saw a pre-death hunter survive in the bot view after a fortress bind revive;

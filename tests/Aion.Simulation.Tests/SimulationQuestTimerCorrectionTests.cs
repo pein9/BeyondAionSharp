@@ -2,6 +2,7 @@ using Aion.Bots.Protocol;
 using Aion.Bots.Reflexes;
 using Aion.Bots.Scenarios;
 using Aion.Bots.World;
+using Aion.GameServer.Handlers.Instance;
 using Aion.GameServer.Model;
 using Aion.GameServer.Model.GameObjects.Players;
 using Aion.GameServer.Network.Aion.ServerPackets;
@@ -185,11 +186,14 @@ public sealed partial class SimulationFastScenarioTests
 	/// <summary>
 	/// D36: a death fails the attempt at once. 4.8 retail: "Deaths will incur death penalty as normal, and the player must speak
 	/// to Garm again to retry." Java has no die hook, so the timer ran on over the corpse and its end revived the player beside
-	/// Garm. Now the death itself ends the timer and sets var 6, and nothing more happens at 240 s. The player revives in the
-	/// ordinary way: at the bind point here, where the world entry resets the failed arena (D34).
+	/// Garm. Now the death itself ends the timer and sets var 6, and nothing more happens at 240 s.
+	/// D38: the player revives inside the arena, as in retail. The arena has a handler now, so the client is offered the
+	/// instance revive, and it puts the player at the first of NCSoft's five dead-start points, 6 m from the exit, with a
+	/// quarter of its HP. The exit leads to Pandaemonium, where the world entry resets the failed arena (D34), and Garm
+	/// sends the player into a new one.
 	/// </summary>
 	[SkippableFact]
-	public async Task ArenaDeathFailsTheAttemptAtOnceAndABindReviveLeadsBackToGarm()
+	public async Task ArenaDeathFailsTheAttemptAtOnceAndTheReviveIsInsideTheArena()
 	{
 		await RunCapitalProbeAsync("D36A", 237, "Asimarenacorpse", async (probe, session, token) =>
 		{
@@ -202,7 +206,7 @@ public sealed partial class SimulationFastScenarioTests
 
 			int packets = session.PacketHistory.Count;
 			DecodedBotServerPacket prompt = await AxDieAsync(session, server, token);
-			Assert.False(prompt.Get<bool>("allowInstanceRevive"));
+			Assert.True(prompt.Get<bool>("allowInstanceRevive"), "the arena does not offer the instance revive");
 			bool timerEnded = session.PacketHistory.Skip(packets).Any(packet => packet.PacketType == typeof(SM_QUEST_ACTION) &&
 				packet.Fields.TryGetValue("action", out object? action) && action is byte and 4 && packet.Get<int>("questId") == 2947 && packet.Get<int>("timer") == 0);
 			Assert.Equal((QuestStatus.START, 6), (Quest().GetStatus(), Quest().GetQuestVars().GetQuestVars()));
@@ -216,12 +220,28 @@ public sealed partial class SimulationFastScenarioTests
 			Assert.True(server.IsDead());
 			Assert.Equal((AxArena, 6), (server.GetWorldId(), Quest().GetQuestVars().GetQuestVars()));
 
-			await session.SendPacketAsync(session.Api.Revive(BotReviveType.Bind), token);
-			await AxFollowTeleportAsync(session, token, mapId: null);
-			int bindMap = server.GetWorldId();
-			bool gone = !InstanceService.InstanceExists(AxArena, first);
-			Assert.NotEqual(AxArena, bindMap);
+			// A teleport inside the same instance spawns the player on the same map: no SM_PLAYER_SPAWN and no world entry.
+			session.Api.World.BeginWorldReload();
+			await session.SendPacketAsync(session.Api.Revive(BotReviveType.Instance), token);
+			await session.WaitForPacketAsync(typeof(SM_CHANNEL_INFO), token);
+			await session.SynchronizeAsync(token);
+			session.AcceptTeleportPosition();
 			Assert.False(server.IsDead());
+			Assert.Equal((AxArena, first, 6), (server.GetWorldId(), server.GetInstanceId(), Quest().GetQuestVars().GetQuestVars()));
+			float fromPoint = NaturalFlightPolicy.Distance(new(server.GetX(), server.GetY(), server.GetZ(), 0), new(277.86734f, 289.877625f, 164.1f, 0));
+			int hp = server.GetLifeStats().GetCurrentHp(), maxHp = server.GetLifeStats().GetMaxHp();
+			float fromExit = NaturalFlightPolicy.Distance(new(server.GetX(), server.GetY(), server.GetZ(), 0), new(275.897f, 295.694f, 163.531f, 0));
+			Assert.True(fromPoint < 0.5f, $"revived {fromPoint:F1} m from NCSoft's point");
+			Assert.Equal(90, server.GetHeading());
+			Assert.InRange(hp, 1, maxHp / 4 + 1);
+			Assert.False(server.GetController().HasScheduledTask(TaskId.QUEST_TIMER));
+			Assert.True(InstanceService.InstanceExists(AxArena, first), "the arena was destroyed with the player inside");
+
+			// The exit is 6 m away: a few steps toward it, then out.
+			await session.MoveToPositionAsync(new BotPosition(276.6f, 293.4f, session.CurrentPosition.Z, 0), token);
+			await session.SynchronizeAsync(token);
+			await AxLeaveArenaAsync(session, server, token);
+			bool gone = !InstanceService.InstanceExists(AxArena, first);
 			Assert.Equal(6, Quest().GetQuestVars().GetQuestVars());
 			Assert.True(gone, "the failed attempt's instance still exists");
 			Assert.Null(InstanceService.GetRegisteredInstance(AxArena, server.GetObjectId()));
@@ -230,11 +250,19 @@ public sealed partial class SimulationFastScenarioTests
 			int secondKills = AxArenaKills(server);
 			await AxLeaveArenaAsync(session, server, token);
 			Console.WriteLine($"D36 death: instance {first} with {firstAlive} spirits, one killed; died: var 6 at once, timer-end packet {timerEnded}, no timer; " +
-				$"241 s later still dead in the arena; bind revive on map {bindMap}: instance {first} destroyed {gone}; Garm again: instance {second} " +
+				$"241 s later still dead in the arena; instance revive: {fromPoint:F2} m from NCSoft's point, {fromExit:F1} m from the exit, {hp}/{maxHp} HP; " +
+				$"out by the exit: instance {first} destroyed {gone}; Garm again: instance {second} " +
 				$"with {secondAlive} spirits, {secondKills} counted");
 			Assert.True(timerEnded, "the client was not told the arena timer ended");
 			Assert.NotEqual(first, second);
 			Assert.Equal((12, 12, 0), (firstAlive, secondAlive, secondKills));
+
+			// D38 covers the Elyos twin's arena too. No Elyos character plays it here: the check is that the arena gets its
+			// handler, and that the handler makes the death prompt offer the instance revive.
+			var twin = InstanceService.GetNextAvailableInstance(310080000, (byte)0, 1);
+			bool twinOffers = twin.GetInstanceHandler() is SanctumUndergroundArenaInstance && twin.GetInstanceHandler().AllowInstanceRevive();
+			InstanceService.DestroyInstance(twin);
+			Assert.True(twinOffers, "the Sanctum arena does not offer the instance revive");
 		});
 	}
 

@@ -15,7 +15,11 @@ holds Altruist's Staff and has taken Q2042. AX-10 is done: the ring course is fl
 first try in 39 s, Q2042 is turned in and the Cleric is level 26. AX-11 is done: level 26
 came from the five quests, so no fortress quest was needed. AX-12 is done: the four Elite
 Rank 7 pieces that beat what was worn are bought for 31 Bronze Coins, 13 of them supplied,
-and worn. AX-13, the one contained run with its relog, is next.
+and worn. The operator then added three rules (see [Operator decisions](#operator-decisions)):
+revive inside the arena as retail does, buy the best coin staff when it is better, and
+always soul heal after an obelisk resurrection. They are AX-12a, AX-12b and AX-12c, worked
+before AX-13. AX-12a is done: a Cleric that dies in the arena stands up inside it (D38),
+leaves by the exit and clears the arena on its second try. AX-12b is next.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -316,11 +320,11 @@ not better.
    300 s, and must be used standing still.
 2. **Ring 5 is 3.44 m under the FLY zone's ceiling.** Leaving the zone ends the flight. Pass
    ring 5 at its centre or below, never above.
-3. **The bind revive from the arena sends the Cleric to Morheim.** The bind is at Morheim Ice
-   Fortress from row M3 on. A fall on the ring course then respawns beside it. The bind
-   revive from the arena respawns in Morheim and costs Orhe's 2,118 Kinah to return. Any
-   death fails the attempt at once (D36). Under Hand of Reincarnation the Cleric can revive
-   in place, walk out through the exit beside the entry, and reach Garm without the trip.
+3. **A death in the arena is revived from inside it (D38).** The death prompt offers the
+   instance revive there, not the bind. The Cleric stands up at (277.87, 289.88, 164.1),
+   6 m from the exit, with a quarter of its HP and MP and soul sickness. Any death fails
+   the attempt at once (D36), so the way on is the exit and Garm. The bind is at Morheim
+   Ice Fortress from row M3 on: a fall on the ring course respawns beside its obelisk.
 4. ~~**A second arena attempt must wait eleven minutes.**~~ Settled by D34: a failed
    attempt's instance is destroyed at once, and every attempt starts in a new one. The clear
    itself is unchanged. The spirits have 205 and 265 HP, so ten kills in 240 s is mostly
@@ -763,7 +767,68 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   - Tests: one more contract test, the level-26 decisions and ten refused endpoint
     frontiers (25 pass). The tooltip check now adds a piece's base and bonus defence.
   - Fast and the seven pre-commit checks: see the Progress log.
-- [ ] **AX-13 - One contained SIM from the snapshot.** Depends AX-12. Restore, play the whole
+- [x] **AX-12a - Revive inside the arena (D38).** Depends AX-12. Operator, 2026-10-06:
+  "Revive inside the arena, as retail does."
+  - Server: the two quest arenas (Triniel 320090000 and its Elyos twin, Sanctum 310080000)
+    offer the instance revive and put the player at NCSoft's own "dead start" point just
+    inside the entry. Java does this for every instance that has a handler; these two
+    have none. Log it as a decision and a deviation, test it, and offer it upstream.
+  - Bot: a Cleric that dies in the arena takes the revive the client offers, leaves by the
+    exit and talks to Garm again (D36 has already failed the attempt).
+  - Proof: a contained run whose first arena try ends in a death.
+  - 2026-10-06, the Java: `SM_DIE` offers the instance revive where
+    `InstanceHandler.allowInstanceRevive()` is true, and `GeneralInstanceHandler` answers
+    true only for an instance that has its own handler class. `CM_REVIVE` with
+    INSTANCE_REVIVE then calls the handler's `onReviveEvent`. The two quest arenas have no
+    handler, so Java offers the bind revive only.
+  - The server change (D38, deviation 161): `TrinielUndergroundArenaInstance` and
+    `SanctumUndergroundArenaInstance`. Each revives at 25% HP and MP with soul sickness, as
+    Java's Draupnir and Kromede handlers do, and teleports inside the instance to the
+    first of NCSoft's five points for that arena: (277.86734, 289.877625, 164.1) and
+    (278.503967, 289.728882, 164.1), heading 270 degrees. The extract is
+    `run/d38/retail-arena-dead-start.txt`. Offered upstream as
+    `docs/upstream-reports/quest-arenas-revive-inside.patch`; it applies to Java `4.8`.
+  - **SIM proof `run/d38/arena-all-a4.log`** (six arena tests pass). The death test: the
+    probe died in instance 8 with one kill; var 6 at once and no timer (D36); the prompt
+    offered the instance revive; 241 s later it was still dead in the arena; the revive put
+    it 0.00 m from NCSoft's point, 6.2 m from the exit, with 284 of 1,138 HP; out by the
+    exit the instance was destroyed; Garm sent it into instance 9 with 12 spirits and no
+    kill counted. The Sanctum arena gets its handler and offers the revive too. No Elyos
+    character played it.
+  - The bot: where the leg says an instance revives inside, and the death prompt offers
+    it, the Cleric sends the instance revive, as the client's button does. The spawn is on
+    the same map, so there is no world entry. Then the rule's own next step is the exit.
+  - **Contained proof `run/ax12a/ax12a-death-a2`** (public Restore, leg `ax`, first arena
+    try lost by a death, schema dropped). The Cleric died 49 s into the first try with no
+    kill. It revived at NCSoft's point with 362 of 1,448 HP, rested 26 s, left by the exit
+    to (981.60, 1552.97) in Pandaemonium, and Garm sent it into a new arena: ten spirits
+    with 136 s to spare. The death cost 17,453 XP; the leg still ends at level 26 with
+    1,029,639 XP gained. It paid no extra fare: 743,158 Kinah, as in a run without a death.
+    The second chest gave 2 coins, so 16 were supplied. 18 min 49 s of game time.
+  - Kept: `ax12a-death-a1` failed one step after the revive. The exit had never been used
+    in a contained run, and the bot planned its next route from the arena's coordinates.
+    It now takes the position the exit's teleport gives it.
+  - **Found, not changed: Haramel.** Haramel has a Java handler, so its death prompt offers
+    the instance revive too. The accepted Haramel leg sends the bind revive there, which
+    Java accepts. It is left as it is ("Don't change earlier runs").
+  - Tests: the D36 death test now plays the offered revive; two more decision assertions
+    (25 contract tests pass).
+  - Fast and the seven pre-commit checks: see the Progress log.
+- [ ] **AX-12b - Soul heal after an obelisk resurrection.** Depends AX-12a. Operator,
+  2026-10-06: "Always soul heal when we resurrect at an Obelisk."
+  - After every bind revive the Cleric talks to the Soul Healer by the obelisk, accepts
+    the price, and only then rests and goes back to work. The Kinah is on the ledger.
+  - Read the Java first: dialog action RECOVERY, the price, and what it restores.
+  - Proof: a contained run with one obelisk resurrection in it. The ring course is the
+    leg's only place for one once AX-12a is in: the first try ends in a fall.
+- [ ] **AX-12c - The best coin staff.** Depends AX-12. Operator, 2026-10-06: "Also upgrade
+  our weapon to the best coin weapon if it's better than what we have (staff)."
+  - Write the staff manifest under [Coin armor](#coin-armor) first, for both tiers: the
+    worn staff against the tier's coin staffs, every stat, and which is better. The staff
+    rule decides it: more magic boost. A tie is not better.
+  - Supply the coins it is short, inside the approved 44, listed in the run profile. Buy
+    only the manifest. The equipment check wears it.
+- [ ] **AX-13 - One contained SIM from the snapshot.** Depends AX-12c. Restore, play the whole
   leg without help beyond the approved items, and relog at the endpoint. Record deaths,
   attempts, costs, consumables, supplied items, the level and XP. A failed run is fixed and
   rerun, and the failed evidence is kept.
@@ -808,6 +873,14 @@ as close to retail as possible." This is D36: a death fails the attempt, and the
 twelve spirits. And: "Don't change earlier runs", so the earlier legs keep their equipment
 check points.
 
+**Added the same day, after AX-12:** three more rules.
+- "Revive inside the arena, as retail does." This answers the question that was open
+  below. It is D38 and AX-12a.
+- "Also upgrade our weapon to the best coin weapon if it's better than what we have
+  (staff)." This withdraws "no coin weapon" from 2026-10-03. AX-12c.
+- "We need to add a new rule I didn't realize we weren't doing already: Always soul heal
+  when we resurrect at an Obelisk." AX-12b.
+
 What these change in the standing decisions:
 - **The staff.** AX-Q1 replaces "keep the earned Altgard Dark Legionary Staff equipped" and
   "no weapon auto-equipping". Whichever owned staff has the most magic boost is worn.
@@ -816,6 +889,10 @@ What these change in the standing decisions:
 - **Help items.** OD-13's consumables now include one flight-speed scroll for the ring
   course, and the Bronze Coins for the coin armor. Both are listed in the run profile.
 - **Level.** Level 26 is reached by quests. Hunting or soul healing for it stays out.
+  Soul healing after an obelisk resurrection is ordinary play and is always done (AX-12b);
+  it gives back XP a death took, and is not a way to reach a level.
+- **Coin weapon.** The best coin staff of a tier is bought when it has more magic boost
+  than the worn staff (AX-12c).
 - **Unchanged:** the stigma bundle 188053787 stays sealed; no stigma is socketed; no skill
   book is bought; Q24114, the gathering quests and Q2147 stay as decided.
 
@@ -832,9 +909,18 @@ these defaults; say so to change one.
 - **What "better" means for armor.** Default: chain only, and the piece with more physical
   defence is better. The manifest still lists every stat, so a piece that gives up healing
   boost or magic boost for defence is visible before it is bought.
-- **Coin weapons.** Vebna also sells staffs: Rank 8 (370 magic boost, level 21), Rank 7
-  (420, level 26) and Elite Rank 7 (470, level 26, 19 coins). Altruist's Staff has 460.
-  Default: no coin weapon is bought, as decided on 2026-10-03; "coin gear" is read as armor.
+- ~~**Coin weapons.**~~ Settled by the operator, 2026-10-06: the best coin staff is bought
+  when it is better than the worn one. Vebna sells staffs: Rank 8 (370 magic boost, level
+  21), Rank 7 (420, level 26) and Elite Rank 7 (470, level 26, 19 coins). Altruist's Staff
+  has 460. AX-12c writes the manifest.
+- **Where the soul heal rule applies (AX-12b).** The rule says "always". Default: it is on
+  in this leg and every later one. The accepted earlier legs, Ishalgen to Haramel, are
+  left as they are, as "Don't change earlier runs" decided for the equipment check. Say so
+  to turn it on there too.
+- **A revive that is not at an obelisk (AX-12a, AX-12b).** The rule names the obelisk.
+  Default: after a revive inside the arena the Cleric does not go looking for a Soul
+  Healer; it leaves, talks to Garm and tries again with the soul sickness it has. Say so
+  to have it soul heal at Pandaemonium's Soul Healer first.
 - **Which fortress quests (AX-11).** Default: the loop picks them by the rule in AX-11 and
   records the list before playing, without waiting for approval.
 
@@ -871,11 +957,11 @@ resets a failed attempt's arena (deviation 156, upstream patch
   the arena (`Worlds/iddc1_arena/world.xml`) confirms it: three parties of four. Eleven of
   its points are the shipped spots exactly. The twelfth repeats the third east Warrior's
   point, so a file made without duplicates lost it. **Corrected by D36.**
-- **Found, not applied: the revive point.** The same file gives five "dead start" points
-  just inside the arena's entry, about 6 m from the exit. Seven Java instance handlers
-  revive players at their own world's points, Taloc's Hollow to the same coordinates. So in
-  retail a player who died here probably revived inside, not at the bind point. This is how
-  every instance revives, not a Q2947 rule, so it waits for the operator. Asked below.
+- **The revive point.** The same file gives five "dead start" points just inside the
+  arena's entry, about 6 m from the exit. Seven Java instance handlers revive players at
+  their own world's points, Taloc's Hollow to the same coordinates. So in retail a player
+  who died here revived inside, not at the bind point. **Corrected by D38** for the two
+  quest arenas.
 - **Ten kills end the test at once**, and the spirits "have very low HP". Both as here.
 - **Only the arena is offered.** Both Java handlers say the other two choices are no longer
   available. The 4.8 client still carries their text.
@@ -898,11 +984,11 @@ as **D36** (deviations 158 and 159, upstream patch
 fails the attempt at once, and the arena has retail's twelve spirits. The evidence extracts
 are in `run/d36/`. Do not port it back.
 
-**Open, with a default:** should a player who dies in the arena revive inside it, at
-NCSoft's points beside the exit, instead of at the bind point? The evidence is above. It
-would be the first step of a wider rule, since every retail world carries such points and
-Java uses them for some instances only. Default: Java's bind revive stands. Say so to apply
-NCSoft's points to the two quest arenas.
+**Asked and answered 2026-10-06:** should a player who dies in the arena revive inside it,
+at NCSoft's points beside the exit, instead of at the bind point? The evidence is above.
+Every retail world carries such points, and Java uses them for the instances that have a
+handler. The operator: "Revive inside the arena, as retail does." It is **D38**, applied to
+the two quest arenas (AX-12a).
 
 **Found in AX-05, shared with Java, not changed: armor with no level limit.** The level-25
 Cleric wore the level-26 Morheim Dark Legionary Hauberk at once. Java's item data gives that
@@ -1081,3 +1167,12 @@ The original questions, with the recommendations made at the time:
   supplied 13, bought the four and wore them (`run/ax12/ax12-coin-a1`). The segment ends at
   the endpoint. Fast passes 114 of 119 tests with five guarded skips and all eleven scenarios in 8.85
   minutes (`run/ax12-fast/`); the seven pre-commit checks pass (`run/ax12/checks/`).
+- 2026-10-06 — The operator added three rules after AX-12: revive inside the arena as retail
+  does, buy the best coin staff when it is better, and always soul heal after an obelisk
+  resurrection. They are AX-12a, AX-12b and AX-12c, before AX-13.
+- 2026-10-06 — AX-12a (D38): the two quest arenas have instance handlers, so a death there
+  is revived from inside, at NCSoft's point by the exit. SIM: six arena tests pass
+  (`run/d38/arena-all-a4.log`). Contained: the first try ended in a death, the Cleric
+  revived inside, left by the exit and cleared the second try (`run/ax12a/ax12a-death-a2`).
+  Fast passes 114 of 119 tests with five guarded skips and all eleven scenarios in 9.19 minutes
+  (`run/ax12a-fast/`); the seven pre-commit checks pass (`run/ax12a/checks/`).
