@@ -219,7 +219,7 @@ public static class NaturalAbyssEntryLeg
 	private const ushort NotWorn = ushort.MaxValue;
 	private const long Torso = 8;
 
-	/// <summary>AX-05..AX-10: what has to be true at the frontier <paramref name="frontier"/>, from the client's view. Morheim and
+	/// <summary>AX-05..AX-12: what has to be true at the frontier <paramref name="frontier"/>, from the client's view. Morheim and
 	/// the commander: bound at the fortress obelisk; Q24020 complete; its hauberk and the best owned staff worn; every Kinah
 	/// that left went to the teleports and the bind; an inventory check ran at the start and after each turn-in. The level-21
 	/// coin armor: one manifest decided; every piece it bought worn; no piece on offer beats what is worn. The capital missions:
@@ -227,7 +227,8 @@ public static class NaturalAbyssEntryLeg
 	/// container opened. The coins held are the incoming ones, plus the supplied ones and what the chests gave, less what the
 	/// manifests cost. The arena: its tries in order, the last one the clear. The return: Q2947 turned in for the staff, which
 	/// is worn; the flight-time manastone discarded; Q2042 taken at Aegir and waiting for Yornduf. The ring course: its tries
-	/// in order, the last one all six rings; Q2042 turned in; at most the one approved scroll supplied, and used.</summary>
+	/// in order, the last one all six rings; Q2042 turned in; at most the one approved scroll supplied, and used. The level-26
+	/// coin armor: level 26 first; its manifest decided once and bought; the supplied coins are what the manifests were short.</summary>
 	public static NaturalAbyssEntryProgress VerifyProgress(NaturalAltgardContract leg, NaturalAbyssEntryStart start, NaturalAltgardObservation state,
 		string frontier, NaturalAbyssLedger ledger, Func<int, int> staffMagicBoost, Func<int, int> physicalDefence, long gameMillis)
 	{
@@ -242,10 +243,10 @@ public static class NaturalAbyssEntryLeg
 		// The frontiers in the leg's order; each one keeps what the ones before it established.
 		string[] frontiers = [NaturalAbyssEntryDecisionEngine.CoinArmor21Phase, NaturalAbyssEntryDecisionEngine.CapitalPhase,
 			NaturalAbyssEntryDecisionEngine.ArenaPhase, NaturalAbyssEntryDecisionEngine.ReturnPhase, NaturalAbyssEntryDecisionEngine.RingCoursePhase,
-			NaturalAbyssEntryDecisionEngine.CoinArmor26Phase];
+			NaturalAbyssEntryDecisionEngine.CoinArmor26Phase, NaturalAbyssEntryDecisionEngine.EndpointPhase];
 		int stage = Array.IndexOf(frontiers, frontier);
 		if (stage < 0) throw new InvalidDataException($"The frontier '{frontier}' has no check yet.");
-		bool flown = stage >= 5, returned = stage >= 4, cleared = stage >= 3, capital = stage >= 2;
+		bool settled = stage >= 6, flown = stage >= 5, returned = stage >= 4, cleared = stage >= 3, capital = stage >= 2;
 		int[] paid = flown ? [scope.CommanderQuestId, .. scope.MissionIds]
 			: returned ? [scope.CommanderQuestId, .. scope.MissionIds.TakeWhile(id => id != scope.RingCourse.QuestId)]
 			: capital ? [scope.CommanderQuestId, .. scope.MissionIds.TakeWhile(id => id != scope.Arena.QuestId)] : [scope.CommanderQuestId];
@@ -342,20 +343,26 @@ public static class NaturalAbyssEntryLeg
 		Require(ledger.NotOpened == 0 && scope.Inventory.Open.All(id => state.ItemCounts.GetValueOrDefault(id) == 0), "a reward container is still closed");
 		Require(ledger.Opened.All(container => scope.Inventory.Open.Contains(container.ItemId) && container.Gained.Count > 0), "an opened container is not the leg's, or gave nothing");
 		Require(scope.Inventory.Discard.All(id => state.ItemCounts.GetValueOrDefault(id) == 0), "an item the leg discards is still owned");
-		if (coinArmor)
+		// The coin armor tiers due by now: level 21 after the commander, level 26 at the endpoint. Each has one decided manifest,
+		// bought exactly; nothing of it still beats what is worn; and in each slot the piece bought last is the one worn.
+		NaturalAbyssCoinTier[] due = [.. scope.CoinArmor.Tiers.Where(tier => tier.When == "after-commander" ? coinArmor : settled)];
+		Require(ledger.CoinManifests.Count == due.Length && ledger.CoinPurchases.All(purchase => due.Any(tier => tier.Level == purchase.Level)),
+			$"{ledger.CoinManifests.Count} coin armor manifests are decided where {due.Length} are due");
+		long shortfall = 0;
+		foreach (NaturalAbyssCoinTier tier in due)
 		{
-			NaturalAbyssCoinTier early = scope.CoinArmor.Tiers.Single(tier => tier.When == "after-commander");
-			Require(ledger.CoinManifests.Count(manifest => manifest.Level == early.Level) == 1, $"the {early.Name} manifest was not decided exactly once");
-			NaturalAbyssCoinManifest decided = ledger.CoinManifests.Single(manifest => manifest.Level == early.Level);
+			Require(ledger.CoinManifests.Count(manifest => manifest.Level == tier.Level) == 1, $"the {tier.Name} manifest was not decided exactly once");
+			NaturalAbyssCoinManifest decided = ledger.CoinManifests.Single(manifest => manifest.Level == tier.Level);
 			Require(decided.Buys.Select(slot => slot.CoinItemId).Order().SequenceEqual(
-				ledger.CoinPurchases.Where(purchase => purchase.Level == early.Level).Select(purchase => purchase.ItemId).Order()), "the purchases are not the manifest");
-			Require(ledger.CoinsSupplied == decided.CoinsToSupply, $"{ledger.CoinsSupplied} coins were supplied where the manifest was {decided.CoinsToSupply} short");
-			Require(ledger.CoinPurchases.All(purchase => inventory.Any(item => item.ObjectId == purchase.ObjectId && item.ItemId == purchase.ItemId &&
-				item.EquipmentSlot != NotWorn && (item.EquipmentSlot & purchase.Slot) != 0)), "a bought piece is not worn");
-			Require(NaturalAbyssCoinArmorPolicy.Plan(scope.CoinArmor, early, inventory, physicalDefence).Done, $"a {early.Name} piece still beats what is worn");
+				ledger.CoinPurchases.Where(purchase => purchase.Level == tier.Level).Select(purchase => purchase.ItemId).Order()), $"the {tier.Name} purchases are not the manifest");
+			Require(NaturalAbyssCoinArmorPolicy.Plan(scope.CoinArmor, tier, inventory, physicalDefence).Done, $"a {tier.Name} piece still beats what is worn");
+			shortfall += decided.CoinsToSupply;
 		}
-		else
-			Require(ledger.CoinManifests.Count == 0 && ledger.CoinPurchases.Count == 0 && ledger.CoinsSupplied == 0, "coin armor was bought before its turn");
+		Require(ledger.CoinsSupplied == shortfall, $"{ledger.CoinsSupplied} coins were supplied where the manifests were {shortfall} short");
+		Require(ledger.CoinsSupplied <= scope.Supplies.Single(supply => supply.ItemId == scope.CoinArmor.CoinItemId).MaxCount, $"{ledger.CoinsSupplied} supplied coins exceed the approval");
+		Require(ledger.CoinPurchases.GroupBy(purchase => purchase.Slot).Select(slot => slot.Last()).All(purchase => inventory.Any(item =>
+			item.ObjectId == purchase.ObjectId && item.ItemId == purchase.ItemId && item.EquipmentSlot != NotWorn && (item.EquipmentSlot & purchase.Slot) != 0)),
+			"a bought piece is not worn");
 		BotBindPoint bound = state.Bind!;
 		return new(leg.Leg, frontier, start.CharacterId, state.MapId!.Value, state.Position, state.Level, experienceGained, state.Kinah, start.Kinah, fares,
 			bindPaid, [.. payments], bound.MapId, bound.Position, hands[0].ItemId, torso[0].ItemId,

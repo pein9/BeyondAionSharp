@@ -13,7 +13,9 @@ AX-08 is done: Garm's arena is cleared on the first try in 59 s, and both failur
 lead back to Garm and a second, successful try. AX-09 is done: back in Morheim the Cleric
 holds Altruist's Staff and has taken Q2042. AX-10 is done: the ring course is flown on the
 first try in 39 s, Q2042 is turned in and the Cleric is level 26. AX-11 is done: level 26
-came from the five quests, so no fortress quest was needed. AX-12 is next.
+came from the five quests, so no fortress quest was needed. AX-12 is done: the four Elite
+Rank 7 pieces that beat what was worn are bought for 31 Bronze Coins, 13 of them supplied,
+and worn. AX-13, the one contained run with its relog, is next.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -253,7 +255,7 @@ leg's default: more physical defence. A tie is not better.
 
 | Slot | Worn after AX-05 | Rank 8 piece at Vebna | Coins | Decision |
 |---|---|---|---:|---|
-| Torso | Morheim Dark Legionary Hauberk 110551147: 177 defence, 98 evasion, 17 magic resist, 12 healing boost, 9 concentration, 4 flight speed, −8 enmity | Hauberk 110501097: 134 defence, 76 evasion, 54 magic resist, 61 HP, 15 magic boost, 6 concentration, −5 enmity | 3 | **Keep.** 134 against 177 |
+| Torso | Morheim Dark Legionary Hauberk 110551147: 177 defence, 98 evasion, 88 magic resist, 12 healing boost, 9 concentration, 4 flight speed, −8 enmity | Hauberk 110501097: 134 defence, 76 evasion, 54 magic resist, 61 HP, 15 magic boost, 6 concentration, −5 enmity | 3 | **Keep.** 134 against 177 |
 | Gloves | Haramel's Handguards 111501081: 78 defence, 45 evasion, 31 magic resist, 5 healing boost, 3 concentration | Handguards 111501066: 80 defence, 46 evasion, 32 magic resist, 30 HP, attack speed −2, 3 concentration, −2 enmity | 2 | **Buy.** 80 against 78; gives up 5 healing boost |
 | Shoulders | Altgard Dark Legionary Spaulders 112501641: 80 defence, 46 evasion, 32 magic resist, 30 HP, 7 magic boost, 3 concentration, −2 enmity | Spaulders 112501016: the same seven stats | 2 | **Keep.** A tie |
 | Legs | Altgard Dark Legionary Chausses 113501720: 107 defence, 61 evasion, 43 magic resist, 46 HP, 1 flight speed, 5 concentration, −4 enmity | Chausses 113501075: the same seven stats | 2 | **Keep.** A tie |
@@ -275,21 +277,32 @@ leg's default: more physical defence. A tie is not better.
 **Level 26: Elite Rank 7, the best tier (legendary).** Bought at the end, once the Cleric
 is level 26, for each slot where it beats what is then worn.
 
-| Slot | Elite Rank 7 piece | Coins | Defence |
-|---|---|---:|---:|
-| Torso | Hauberk 110501104 | 13 | 177 |
-| Gloves | Handguards 111501073 | 7 | 107 |
-| Shoulders | Spaulders 112501023 | 7 | 123 |
-| Legs | Chausses 113501082 | 10 | 142 |
-| Feet | Brogans 114501089 | 7 | 123 |
-| **All five** | | **44** | |
+**The level-26 manifest (AX-12, written 2026-10-06 before buying).** Every stat is from the
+shipped item data, as the tooltips show it: where a piece lists a stat as a base value and a
+bonus, the two are added. "Better" is the leg's default: more physical defence. A tie is
+not better.
 
-- Q24020's hauberk has the same 177 defence and 12 healing boost as the Elite torso. If
-  AX-12 finds the coin torso no better, four pieces are bought for 31 coins.
+| Slot | Worn at level 26 | Elite Rank 7 piece at Vebna | Coins | Decision |
+|---|---|---|---:|---|
+| Torso | Morheim Dark Legionary Hauberk 110551147: 177 defence, 98 evasion, 88 magic resist, 12 healing boost, 9 concentration, 4 flight speed, −8 enmity | Hauberk 110501104: the same seven stats | 13 | **Keep.** A tie |
+| Gloves | Rank 8 Handguards 111501066: 80 defence, 46 evasion, 32 magic resist, 30 HP, attack speed −2, 3 concentration, −2 enmity | Handguards 111501073: 107 defence, 59 evasion, 51 magic resist, 6 healing boost, 12 magic boost, 5 concentration, −4 enmity | 7 | **Buy.** 107 against 80 |
+| Shoulders | Altgard Dark Legionary Spaulders 112501641: 80 defence, 46 evasion, 32 magic resist, 30 HP, 7 magic boost, 3 concentration, −2 enmity | Spaulders 112501023: 123 defence (107 and 16), 59 evasion, 43 magic resist, 6 healing boost, 18 parry, 5 concentration, −4 enmity | 7 | **Buy.** 123 against 80 |
+| Legs | Altgard Dark Legionary Chausses 113501720: 107 defence, 61 evasion, 43 magic resist, 46 HP, 1 flight speed, 5 concentration, −4 enmity | Chausses 113501082: 142 defence, 79 evasion, 57 magic resist, 72 HP, 9 healing boost, 18 magic boost, 7 concentration, −6 enmity | 10 | **Buy.** 142 against 107 |
+| Feet | Rank 8 Brogans 114501082: 80 defence, 46 evasion, 32 magic resist, 30 HP, 7 run speed, 3 concentration, −2 enmity | Brogans 114501089: 123 defence (107 and 16), 59 evasion, 43 magic resist, 6 healing boost, 11 run speed, 5 concentration, −4 enmity | 7 | **Buy.** 123 against 80 |
+
+- **To buy: the Handguards, Spaulders, Chausses and Brogans, 31 Bronze Coins.** The torso is
+  a tie: Aegir's hauberk is the Elite hauberk in all but name.
+- **Coins.** The Cleric brought 7, spent 4 at level 21 and got 10 from the first chest: 13.
+  The second chest gave 2, 5, 6 and 9 in four runs, so it holds 15 to 22 here. **The supply
+  makes up the rest of the 31: 9 to 16 coins**, inside the 44 the operator approved. The
+  run counts the coins it finds and records what it supplied.
+- **The "Magic" variants are not better.** Nott 204360 sells an Elite Rank 7 "Magic" piece
+  for every slot. Each has the plain piece's defence, evasion and magic resist. It has MP
+  where the plain piece has healing boost and concentration, and it raises enmity (+8 to
+  +16) where the plain piece lowers it. None is bought.
 - A rare level-26 tier (Rank 7) costs 18 coins for five pieces. It is not the best tier.
-- The coins come from what is left, what the two Bronze Coin Chests gave, and the supply.
-- "Magic" variants of these pieces exist in the item data. Vebna's lists do not hold them.
-  AX-06 finds who sells them and compares them too.
+- The Flight speed lost with the chausses (1%) is the only stat given up besides HP on the
+  gloves, shoulders and feet (30 each); the legs gain 26 HP.
 
 ## Hazards
 
@@ -720,11 +733,36 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
     `VerifyProgress` refuses that frontier below level 26.
   - Tests: the contract tests cover both sides of the check (24 pass).
   - Fast and the seven pre-commit checks: see the Progress log.
-- [ ] **AX-12 - Level-26 coin armor.** Depends AX-11.
+- [x] **AX-12 - Level-26 coin armor.** Depends AX-11.
   - Write the manifest here first: every slot, worn against Elite Rank 7 (and its "Magic"
     variant, if sold), with all stats, and which pieces count as better.
   - Count the Bronze Coins held. Supply the rest through the help-item mechanism, listed in
     the run profile. Buy only the manifest. Wear the pieces.
+  - 2026-10-06: the manifest is under [Coin armor](#coin-armor), written before the run
+    bought anything. The run decided the same one from the client's view.
+  - The rule: one coin armor rule serves both tiers. After the level check it plans the
+    Elite Rank 7 tier against what is worn: an owned piece that is better is put on, a
+    better piece that is not owned is bought in Morheim, and a tie is left. When nothing of
+    either tier is better, the leg is at its `endpoint` frontier.
+  - **Proof `run/ax12/ax12-coin-a1`** (public Restore, leg `ax`, schema dropped, no death, one
+    arena try, one ring-course try). At level 26 the Cleric held 18 Bronze Coins: 3 left
+    from level 21, 10 from the first chest and 5 from the second. The manifest: torso keep
+    (177 against 177), Handguards 111501073 (107 against 80), Spaulders 112501023 (123
+    against 80), Chausses 113501082 (142 against 107), Brogans 114501089 (123 against 80).
+    **31 coins, 13 supplied** through the approved help supply and listed in the run's
+    `help-items.json` beside the one scroll. Vebna sold the four for coins alone (31, 24,
+    17, 7, 0 left; Kinah unchanged at 743,158). The inventory check wore all four. The two
+    Rank 8 pieces and the two Altgard pieces they replace stay in the cube, 13 slots free.
+  - The frontier check now requires, at the endpoint: both manifests decided once and
+    bought exactly; the supplied coins equal to what the manifests were short, inside the
+    approved 44; in every slot the piece bought last is the one worn; no coin armor piece
+    of either tier still better than what is worn. Before the missions are done it refuses
+    any level-26 manifest or purchase.
+  - The whole leg so far: 16 min 19 s of game time, level 26, 1,047,092 XP gained, 743,158
+    Kinah, 8 inventory checks, 14 supplied items in all (1 scroll, 13 coins).
+  - Tests: one more contract test, the level-26 decisions and ten refused endpoint
+    frontiers (25 pass). The tooltip check now adds a piece's base and bonus defence.
+  - Fast and the seven pre-commit checks: see the Progress log.
 - [ ] **AX-13 - One contained SIM from the snapshot.** Depends AX-12. Restore, play the whole
   leg without help beyond the approved items, and relog at the endpoint. Record deaths,
   attempts, costs, consumables, supplied items, the level and XP. A failed run is fixed and
@@ -1038,3 +1076,8 @@ The original questions, with the recommendations made at the time:
   below 26 there (`run/ax11/ax11-level-a1`). The segment ends at the level-26 coin armor.
   Fast passes 114 of 119 tests with five guarded skips and all eleven scenarios in 9.09
   minutes (`run/ax11-fast/`); the seven pre-commit checks pass (`run/ax11/checks/`).
+- 2026-10-06 — AX-12: the level-26 coin armor. The manifest was written first: four Elite
+  Rank 7 pieces for 31 Bronze Coins, the hauberk a tie. A contained run held 18 coins, was
+  supplied 13, bought the four and wore them (`run/ax12/ax12-coin-a1`). The segment ends at
+  the endpoint. Fast passes 114 of 119 tests with five guarded skips and all eleven scenarios in 8.85
+  minutes (`run/ax12-fast/`); the seven pre-commit checks pass (`run/ax12/checks/`).

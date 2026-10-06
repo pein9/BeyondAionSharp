@@ -1588,7 +1588,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// The journey is rebound to Altgard as for NA-23; the Leg 1 engine picks each move from the client's view. Template
 			// quests run on the Ishalgen runner, scripted steps on NaturalAltgardQuestSteps, flight and the air kills on the
 			// AF-04..AF-06 code. Every decision is traced; a move that makes no progress three times stops the run.
-			// AX-03..AX-10: the Morheim and Abyss-entry leg. It proves its incoming contract from the client's view, then takes one
+			// AX-03..AX-12: the Morheim and Abyss-entry leg. It proves its incoming contract from the client's view, then takes one
 			// decision of NaturalAbyssEntryDecisionEngine at a time. The fortresses and the capital are safe hubs: every approach is
 			// the city approach, on whichever map the client is on. The segment ends at the rule's frontier.
 			async Task RunAbyssEntryAsync()
@@ -2112,7 +2112,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							// AX-06: the manifest is decided from the client's view and traced before a coin is spent. Coins the Cleric lacks
 							// are the leg's approved supply (the AX-Q5 revision), listed in the run profile like every help item.
 							NaturalAbyssCoinArmor armor = scope.CoinArmor;
-							NaturalAbyssCoinTier tier = armor.Tiers.Single(entry => entry.When == "after-commander");
+							NaturalAbyssCoinTier tier = NaturalAbyssEntryDecisionEngine.CoinTier(armor, next.Phase);
 							NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(armor, tier, Observed().Inventory!, PhysicalDefence);
 							coinManifests.Add(manifest);
 							session.TraceDiagnostic(NaturalAbyssCoinArmorSteps.ManifestDiagnostic, NaturalAbyssCoinArmorSteps.Row(manifest));

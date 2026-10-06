@@ -25,14 +25,23 @@ public sealed record NaturalAbyssEntryDecision(int Sequence, string Phase, strin
 /// the report once the sixth is passed, and for Yornduf again after a failed try (var 9), up to three tries; after the third
 /// it stops and asks for the operator's recorded flight. AX-11: then the level. There are no level goals, only questing
 /// goals (AX-Q6): the five quests pay enough for level 26, and a Cleric that is still below it (many deaths) stops the leg
-/// as a finding, to be given fortress quests; it is never sent hunting. Each later phase is added by its own AX item; until
-/// then the rule names it as the frontier, and the segment ends there.
+/// as a finding, to be given fortress quests; it is never sent hunting. AX-12: then the level-26 coin armor, again only the
+/// slots where the tier's piece beats what is worn. Each later phase is added by its own AX item; until then the rule names
+/// it as the frontier, and the segment ends there.
 /// </summary>
 public static class NaturalAbyssEntryDecisionEngine
 {
 	public const string ObservePhase = "observe", RecoverPhase = "recover", MorheimPhase = "morheim-arrival", CoinArmor21Phase = "coin-armor-21",
 		CapitalPhase = "capital-missions", ArenaPhase = "arena", ReturnPhase = "morheim-return", RingCoursePhase = "ring-course",
-		LevelPhase = "level-by-quests", CoinArmor26Phase = "coin-armor-26";
+		LevelPhase = "level-by-quests", CoinArmor26Phase = "coin-armor-26", EndpointPhase = "endpoint";
+
+	/// <summary>The coin armor tier a coin-armor decision of <paramref name="phase"/> buys from.</summary>
+	public static NaturalAbyssCoinTier CoinTier(NaturalAbyssCoinArmor armor, string phase) => phase switch
+	{
+		CoinArmor21Phase => armor.Tiers.Single(tier => tier.When == "after-commander"),
+		CoinArmor26Phase => armor.Tiers.Single(tier => tier.When == "endpoint"),
+		_ => throw new ArgumentException($"The phase '{phase}' buys no coin armor.", nameof(phase)),
+	};
 	private const byte Start = NaturalAltgardDecisionEngine.Start, Reward = NaturalAltgardDecisionEngine.Reward;
 
 	/// <summary>Q2947's kill counter as the client sees it. Java writes <c>step | flags &lt;&lt; 24</c> (SM_QUEST_ACTION), so the
@@ -68,15 +77,7 @@ public static class NaturalAbyssEntryDecisionEngine
 		}
 
 		// 2. The level-21 coin armor, at once: only the slots where the tier's piece beats what is worn.
-		NaturalAbyssCoinTier early = scope.CoinArmor.Tiers.Single(tier => tier.When == "after-commander");
-		NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(scope.CoinArmor, early,
-			state.Inventory ?? throw new InvalidDataException("The coin armor needs the observed inventory."), physicalDefence);
-		if (manifest.Wears.Length > 0)
-			return Next(CoinArmor21Phase, "inventory-check", $"Wear the owned {early.Name} pieces: {Pieces(manifest.Wears)}.");
-		if (manifest.Buys.Length > 0)
-			return here != NaturalAbyssEntry.Morheim
-				? Next(CoinArmor21Phase, "blocked", $"The {early.Name} pieces {Pieces(manifest.Buys)} are sold in Morheim; the Cleric is on map {here}.")
-				: Next(CoinArmor21Phase, "coin-armor", $"Buy the {early.Name} pieces that beat what is worn: {Pieces(manifest.Buys)} for {manifest.Cost} coins.");
+		if (CoinArmorStep(CoinArmor21Phase) is { } early) return early;
 
 		// 3. The capital missions: Q2945 and Q2946 by their talk steps, then Q2947's start at Kvasir. Each starts when the one
 		// before it is turned in.
@@ -99,10 +100,27 @@ public static class NaturalAbyssEntryDecisionEngine
 			return Next(LevelPhase, "blocked", $"The missions are done and the Cleric is level {state.Level}, below {scope.Level.Minimum}: " +
 				"it needs a few fortress quests, which are not listed yet (AX-11). No hunting and no soul healing.");
 
-		// 7. The level-26 coin armor (AX-12).
-		return Next(CoinArmor26Phase, "frontier", $"The missions are done at level {state.Level}; the level-{scope.Level.Minimum} coin armor is next (AX-12).");
+		// 7. The level-26 coin armor, by the same rule.
+		if (CoinArmorStep(CoinArmor26Phase) is { } late) return late;
+
+		// 8. The endpoint (AX-13).
+		return Next(EndpointPhase, "frontier", "The missions are done and the coin armor is settled; the endpoint and its relog are next (AX-13).");
 
 		static string Pieces(NaturalAbyssCoinSlot[] slots) => string.Join(", ", slots.Select(slot => slot.CoinItemId));
+
+		// One tier's decision, or null when nothing of the tier beats what is worn.
+		NaturalAbyssEntryDecision? CoinArmorStep(string phase)
+		{
+			NaturalAbyssCoinTier tier = CoinTier(scope.CoinArmor, phase);
+			NaturalAbyssCoinManifest manifest = NaturalAbyssCoinArmorPolicy.Plan(scope.CoinArmor, tier,
+				state.Inventory ?? throw new InvalidDataException("The coin armor needs the observed inventory."), physicalDefence);
+			if (manifest.Wears.Length > 0)
+				return Next(phase, "inventory-check", $"Wear the owned {tier.Name} pieces: {Pieces(manifest.Wears)}.");
+			if (manifest.Buys.Length == 0) return null;
+			return here != NaturalAbyssEntry.Morheim
+				? Next(phase, "blocked", $"The {tier.Name} pieces {Pieces(manifest.Buys)} are sold in Morheim; the Cleric is on map {here}.")
+				: Next(phase, "coin-armor", $"Buy the {tier.Name} pieces that beat what is worn: {Pieces(manifest.Buys)} for {manifest.Cost} coins.");
+		}
 
 		NaturalAbyssEntryDecision ArenaStep(BotQuestState trial)
 		{
