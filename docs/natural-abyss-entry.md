@@ -22,9 +22,10 @@ before AX-13. AX-12a is done: a Cleric that dies in the arena stands up inside i
 leaves by the exit and clears the arena on its second try. AX-12b is done: after a revive
 at the obelisk the Cleric is soul healed by Golenthor before it rests. AX-12c is done: the
 Elite Rank 7 staff is bought with the level-26 armor and worn. AX-13 is done: one contained
-run plays the whole leg, relogs at the endpoint and writes the completion receipt. **AX-14,
-the endpoint snapshot, is blocked:** the capture refuses to run while runtime files are
-uncommitted, and two files of another session's work are (see "Blocked / questions").
+run plays the whole leg, relogs at the endpoint and writes the completion receipt. AX-13a is
+done: the operator corrected the death rule into a rule of the bot for every leg and level
+(revive at the obelisk and soul heal at the nearest Soul Healer; in an instance, revive in
+the instance). AX-14, the endpoint snapshot, is next; D37 was committed, so nothing blocks it.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -884,7 +885,8 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   - Kept: `ax12b-fall-a1` (no clear air straight above the take-off spot; the fall now
     starts beyond ring 1) and `ax12b-fall-a2` (the fall killed the Cleric, and the run
     looked for the death prompt half a second before the server sends it).
-  - The rule is on in this leg and later ones. The accepted earlier legs are unchanged.
+  - Superseded by AX-13a: this item made the rule leg data, on in this leg only. It is a
+    rule of the bot now.
   - Tests: one more contract test and eight refused endpoint ledgers (26 pass); one more
     SIM test.
   - Fast and the seven pre-commit checks: see the Progress log.
@@ -951,23 +953,49 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
     passes with the new case.
   - Tests: eleven refused endpoints and the relogged slot values (26 contract tests pass).
   - Fast and the seven pre-commit checks: see the Progress log.
+- [x] **AX-13a - The death rule is the bot's, not the leg's.** Depends AX-13. Operator,
+  2026-10-06, correcting AX-12b: "I don't want to script a soul heal. I want a RULE that
+  says 'Whenever you die, we res at an Obelisk and soul heal'. This does not matter where we
+  are at or what level ... Find the nearest soul healer and recover." And: "if we are in an
+  instance, we need to res in the instance"; where there is no obelisk or Soul Healer
+  nearby, "we have to just heal on next resurrect".
+  - What was wrong: AX-12b made it leg data. The contract named Golenthor, the leg switched
+    the healing on, and the arena was the one map that took the instance revive.
+  - The rule now lives in the shared revive of the bot, for every leg and level:
+    - Dead where the death prompt offers the instance revive: take it. No Soul Healer is
+      looked for; the XP stays recoverable until the next obelisk resurrection. If the
+      server sends the player to the bind point anyway (Java does when an instance has no
+      start position), that is an obelisk resurrection and the healing follows.
+    - Dead anywhere else: revive at the bound obelisk, then the nearest Soul Healer: the
+      NPCs with the shipped title 350412, from the map's own spawn data, within 30 m of
+      the revive point. Talk, choose the healing, accept the price. Then buffs and rest.
+    - No Soul Healer near, no route to it, or not enough Kinah: nothing is forced, and the
+      trace says why. The XP waits for the next obelisk resurrection.
+  - The leg's contract no longer names a Soul Healer, and no leg sets a revive map.
+  - **Why it needs no leg data:** every obelisk on Ishalgen, Altgard, Pandaemonium and
+    Morheim, and on their four Elyos twins, has its own Soul Healer 1.6 to 9.9 m away: 29
+    obelisks, 29 healers. A contract test checks all of them against the shipped spawns.
+  - **Proof `run/ax13a/ax13a-rule-a1`** (public Restore, leg `ax`, first arena try lost by a
+    death and first course try by a fall, schema dropped). In the arena the prompt
+    offered the instance revive and the Cleric took it, with 108,964 XP recoverable and
+    no healer sought. After the fall it revived at Morheim's obelisk, and the rule found
+    Golenthor and recovered **120,600 XP for 27,968 Kinah**: the 97,328 carried in and
+    11,636 from each death. Nothing was left recoverable. Both second tries passed. Level
+    26, 715,190 Kinah, two deaths, 19 min 59 s of game time.
+  - As the operator said, no earlier leg is rerun for this and no snapshot is recaptured.
+    An earlier leg that is played again dies by the same rule. That includes Haramel,
+    whose death prompt offers the instance revive: no run has shown the bot reviving
+    inside Haramel yet.
+  - Tests: the contract test above replaces the one that pinned Golenthor (26 pass). The
+    SIM soul healing test is unchanged.
+  - Fast and the seven pre-commit checks: see the Progress log.
 - [ ] **AX-14 - Preserve the endpoint.** Depends AX-13. Save the committed-code endpoint under
   a new name, verify its restore and relog, drop every owned schema, and update
   [the readiness report](natural-ntc-readiness.md) with the measured level and XP. Run the
   final checks and Fast.
-  - 2026-10-06, **blocked, not started.** Everything the capture needs is committed
-    (`e63ea60c4`): the completion receipt, the resume check, and the snapshot script's
-    Restore and Verify for this endpoint. The capture itself was refused:
-    `run/ax14/capture-refused-a1.log`, "Capture requires committed runtime and snapshot
-    code". Two runtime files are modified and not committed, and they are not this
-    loop's: `src/Aion.GameServer/Network/Aion/ServerPackets/SM_STATUPDATE_EXP.cs` and
-    `tests/Aion.GameServer.Tests/GoldenPacketFixtureTests.cs`, another session's D37 work,
-    unchanged since 15:59. Nothing was created; `morheim-abyss-entry-s1` does not exist.
-  - What is left once the tree is clean: capture `morheim-abyss-entry-s1` from
-    `altgard-rc-complete-s1` with leg `ax`; run the public Verify on it (restore, the
-    endpoint check, one relog, `altgard-ax-endpoint-resume.json`); see every owned schema
-    dropped; add the measured level and XP to the readiness report; run the final checks
-    and Fast.
+  - 2026-10-06: the first capture was refused, because two runtime files of another
+    session's D37 work were uncommitted (`run/ax14/capture-refused-a1.log`). D37 was
+    committed as `72e7f4b32` the same evening.
 
 **Not in this leg unless asked:** a fresh-create full run, and an isolated LIVE run.
 
@@ -1013,6 +1041,13 @@ check points.
 - "We need to add a new rule I didn't realize we weren't doing already: Always soul heal
   when we resurrect at an Obelisk." AX-12b.
 
+**Corrected the same evening, after AX-13:** the soul healing is not to be scripted. "I
+want a RULE that says 'Whenever you die, we res at an Obelisk and soul heal'. This does not
+matter where we are at or what level, that is just what needs to happen. Find the nearest
+soul healer and recover. This does not require any previous sim runs, as it does not change
+anything." In an instance "we need to res in the instance", and with no obelisk or Soul
+Healer nearby "we have to just heal on next resurrect". AX-13a.
+
 What these change in the standing decisions:
 - **The staff.** AX-Q1 replaces "keep the earned Altgard Dark Legionary Staff equipped" and
   "no weapon auto-equipping". Whichever owned staff has the most magic boost is worn.
@@ -1030,14 +1065,9 @@ What these change in the standing decisions:
 
 ## Blocked / questions for the operator
 
-**AX-14 is blocked (2026-10-06).** The snapshot script captures only from committed
-runtime code, and two runtime files of another session's D37 work are uncommitted:
-`SM_STATUPDATE_EXP.cs` and `GoldenPacketFixtureTests.cs`. This loop does not commit,
-stash or revert another session's files. Commit that work, or set it aside, and the loop
-can capture `morheim-abyss-entry-s1`. Every run and check of this loop since about 16:00
-was built with that uncommitted change in the tree, AX-12's Fast possibly excepted.
-
-Nothing else blocks AX-02..AX-14. The answers left room in four places. The loop works with
+Nothing blocks AX-02..AX-14. AX-14's capture was refused once, while another session's
+D37 change was uncommitted; it is committed now (`72e7f4b32`). The runs and checks of
+AX-12a to AX-13 were built with that change in the tree before it was committed. The answers left room in four places. The loop works with
 these defaults; say so to change one.
 
 - ~~**The flight-speed scroll's tier.**~~ Settled by AX-01: a level-25 character can use the
@@ -1052,19 +1082,17 @@ these defaults; say so to change one.
   when it is better than the worn one. Vebna sells staffs: Rank 8 (370 magic boost, level
   21), Rank 7 (420, level 26) and Elite Rank 7 (470, level 26, 19 coins). Altruist's Staff
   has 460. AX-12c writes the manifest.
-- **Where the soul heal rule applies (AX-12b).** The rule says "always". Default: it is on
-  in this leg and every later one. The accepted earlier legs, Ishalgen to Haramel, are
-  left as they are, as "Don't change earlier runs" decided for the equipment check. Say so
-  to turn it on there too.
+- ~~**Where the soul heal rule applies (AX-12b).**~~ Settled by the operator, 2026-10-06:
+  everywhere. It is a rule of the bot for every leg and level, not leg data (AX-13a). No
+  earlier run is repeated for it.
 - **The recoverable XP the Cleric already carries (found in AX-12b).** The snapshot's
   Cleric logs in with 97,328 recoverable XP, left by deaths in the earlier legs, which
   never soul healed. The rule heals after an obelisk resurrection, so a run without one
   leaves that XP where it is. Default: the rule as given. Say so to have the Cleric soul
   heal on arriving at Morheim's obelisk as well: 97,328 XP back for 22,911 Kinah.
-- **A revive that is not at an obelisk (AX-12a, AX-12b).** The rule names the obelisk.
-  Default: after a revive inside the arena the Cleric does not go looking for a Soul
-  Healer; it leaves, talks to Garm and tries again with the soul sickness it has. Say so
-  to have it soul heal at Pandaemonium's Soul Healer first.
+- ~~**A revive that is not at an obelisk (AX-12a, AX-12b).**~~ Settled by the operator,
+  2026-10-06: in an instance the bot revives in the instance, in every instance, and
+  "we have to just heal on next resurrect" (AX-13a).
 - **Which fortress quests (AX-11).** Default: the loop picks them by the rule in AX-11 and
   records the list before playing, without waiting for approval.
 
@@ -1342,3 +1370,10 @@ The original questions, with the recommendations made at the time:
 - 2026-10-06 — AX-14 is blocked before its capture. The snapshot script refused: two runtime
   files of another session's D37 work are uncommitted (`run/ax14/capture-refused-a1.log`).
   Nothing was captured. The loop stops here with AX-00 to AX-13 done.
+- 2026-10-06 — AX-13a: the operator corrected the death rule. It is the bot's, for every leg
+  and level: the instance revive wherever the prompt offers it, else the obelisk and the
+  nearest Soul Healer. The contract names no healer. One contained run died once each way:
+  revived inside the arena, then after a fall was healed by the nearest Soul Healer,
+  120,600 XP for 27,968 Kinah (`run/ax13a/ax13a-rule-a1`). Fast passes 115 of 120 tests with five
+  guarded skips and all eleven scenarios in 9.15 minutes (`run/ax13a-fast/`); the seven pre-commit
+  checks pass (`run/ax13a/checks/`).

@@ -408,22 +408,57 @@ public sealed class NaturalAbyssEntryContractTests
 		});
 	}
 
-	/// <summary>AX-12b: the operator's rule, "always soul heal when we resurrect at an obelisk": who heals, where, and for what.</summary>
+	/// <summary>
+	/// The operator's death rule (2026-10-06): "Whenever you die, we res at an Obelisk and soul heal ... Find the nearest soul
+	/// healer and recover." It is a rule of the bot, not of a leg: the Soul Healers are the NPCs with the shipped title, and
+	/// every obelisk of the journey's maps has one beside it, so no leg has to name its healer.
+	/// </summary>
 	[Fact]
-	public void SoulHealerStandsByTheObeliskAndChargesTheShippedPrice()
+	public void TheDeathRuleFindsTheSoulHealerBesideEveryObelisk()
 	{
-		NaturalAbyssSoulHealer healer = Scope.SoulHealer;
-		Assert.Equal((204318, 350412, "obelisk-revive", 35, 160011), (healer.NpcId, healer.TitleId, healer.After, healer.DialogAction, healer.QuestionId));
-		Assert.Contains(healer.NpcId, Scope.GraphNpcIds);
-		// Golenthor carries the Soul Healer title and stands 1.2 m from the obelisk the leg binds at.
-		Assert.Matches($"<npc_template npc_id=\"{healer.NpcId}\"[^>]* title_id=\"{healer.TitleId}\"", File.ReadAllText(Data("npcs", "npc_templates.xml")));
-		float[] spot = Spot("Npcs/220020000_Morheim.xml", healer.NpcId);
-		Assert.True(spot.Zip(healer.Position, (a, b) => MathF.Abs(a - b)).All(d => d < 0.01f));
-		Assert.InRange(MathF.Sqrt(spot.Zip(Leg.Bind!.Position, (a, b) => (a - b) * (a - b)).Sum()), 0.5f, 2f);
+		// The leg's contract names no Soul Healer; its only word on soul healing is that a level is never reached by it.
+		string contract = File.ReadAllText(Path.Combine(RealStaticData.RepoRoot(), "parity-artifacts", "e2e", "natural-abyss-entry-contract.json"));
+		Assert.DoesNotContain("soulHealer", contract);
+		Assert.False(Scope.Level.SoulHealing);
+		XElement[] templates = XDocument.Load(Data("npcs", "npc_templates.xml")).Root!.Elements("npc_template").ToArray();
+		HashSet<int> soulHealers = templates.Where(n => (int?)n.Attribute("title_id") == NaturalServicePolicy.SoulHealerTitleId)
+			.Select(n => (int)n.Attribute("npc_id")!).ToHashSet();
+		HashSet<int> obelisks = templates.Where(n => (string?)n.Attribute("ai") == "resurrect").Select(n => (int)n.Attribute("npc_id")!).ToHashSet();
+		Assert.True(soulHealers.Count > 100 && soulHealers.Contains(204318), $"{soulHealers.Count} Soul Healers carry title {NaturalServicePolicy.SoulHealerTitleId}");
+
+		// Ishalgen, Altgard, Pandaemonium and Morheim, and their Elyos twins: every obelisk has its Soul Healer within ten metres,
+		// and the rule finds that one from where the character revives.
+		var checkedObelisks = new List<(int Map, int Obelisk, int Healer, float Metres)>();
+		foreach (int map in new[] { 220010000, 220030000, 120010000, 220020000, 210010000, 210030000, 110010000, 210020000 })
+		{
+			XElement spawns = XDocument.Load(Directory.GetFiles(Data("spawns", "Npcs"), $"{map}_*.xml").Single()).Root!;
+			(int NpcId, BotPosition Position)[] Spots(HashSet<int> ids) => spawns.Descendants("spawn").Where(n => ids.Contains((int)n.Attribute("npc_id")!))
+				.SelectMany(n => n.Elements("spot").Select(spot => ((int)n.Attribute("npc_id")!, new BotPosition(F(spot, "x"), F(spot, "y"), F(spot, "z"), 0)))).ToArray();
+			(int NpcId, BotPosition Position)[] healers = Spots(soulHealers), stones = Spots(obelisks);
+			Assert.NotEmpty(stones);
+			foreach ((int obelisk, BotPosition at) in stones)
+			{
+				(int NpcId, BotPosition Position)? found = NaturalServicePolicy.NearestSoulHealer(healers, at);
+				Assert.True(found != null, $"Obelisk {obelisk} on map {map} has no Soul Healer within {NaturalServicePolicy.SoulHealerSearchRadius} m.");
+				float metres = MathF.Sqrt(MathF.Pow(found.Value.Position.X - at.X, 2) + MathF.Pow(found.Value.Position.Y - at.Y, 2) + MathF.Pow(found.Value.Position.Z - at.Z, 2));
+				checkedObelisks.Add((map, obelisk, found.Value.NpcId, metres));
+			}
+			// Far from any obelisk the rule finds none: the XP stays recoverable until the next obelisk resurrection.
+			Assert.Null(NaturalServicePolicy.NearestSoulHealer(healers, new BotPosition(stones[0].Position.X + 500, stones[0].Position.Y + 500, stones[0].Position.Z, 0)));
+		}
+		Assert.Equal(29, checkedObelisks.Count);
+		Assert.True(checkedObelisks.All(row => row.Metres <= 10), string.Join("; ", checkedObelisks.Where(row => row.Metres > 10)));
+		// Each obelisk has its own healer, and Morheim Ice Fortress's is Golenthor.
+		Assert.Equal(checkedObelisks.Count, checkedObelisks.Select(row => row.Healer).Distinct().Count());
+		Assert.Equal(204318, checkedObelisks.Single(row => row.Obelisk == Leg.Bind!.NpcId).Healer);
+		Assert.Null(NaturalServicePolicy.NearestSoulHealer([], new BotPosition(0, 0, 0, 0)));
+
 		// Java DialogService: (int) (expLost * (expLost < 1000000 ? 0.25 - (0.00000015 * expLost) : 0.1)).
 		Assert.Equal((0L, 2_888L, 100_000L, 200_000L), (NaturalServicePolicy.SoulHealPrice(0), NaturalServicePolicy.SoulHealPrice(11_636),
 			NaturalServicePolicy.SoulHealPrice(1_000_000), NaturalServicePolicy.SoulHealPrice(2_000_000)));
-		// The rule's words: the revive at the bind is followed by the soul healing; the arena's revive is inside it (D38).
+		Assert.Equal((35, 160011), (NaturalServicePolicy.SoulHealDialogAction, NaturalServicePolicy.SoulHealQuestionId));
+		// The rule's words in the leg's decisions: the revive at the bind is followed by the soul healing; in the arena the
+		// revive is inside it (D38), with no healer to go to.
 		NaturalAbyssEntryDecision dead = NaturalAbyssEntryDecisionEngine.Decide(Leg, ArrivedState() with { IsDead = true }, 1, DefenceOf, StaffBoost);
 		Assert.Equal(("recover", "revive"), (dead.Phase, dead.Action));
 		Assert.Contains("soul heal", dead.Reason);
@@ -825,10 +860,10 @@ public sealed class NaturalAbyssEntryContractTests
 			() => VerifyEndpoint(poorer, healed with { SoulHeals = [] }),
 			() => VerifyEndpoint(poorer, healed with { ObeliskRevives = 0 }),
 			() => VerifyEndpoint(poorer, healed with { ObeliskRevives = 2 }),
-			// The price not charged, not the formula's, or not Golenthor's.
+			// The price not charged, not the formula's, or no Soul Healer named.
 			() => VerifyEndpoint(dressed, healed),
 			() => VerifyEndpoint(dressed with { Kinah = purse - 2_000 }, healed with { SoulHeals = [heal with { Price = 2_000, KinahAfter = purse - 2_000 }] }),
-			() => VerifyEndpoint(poorer, healed with { SoulHeals = [heal with { HealerNpcId = 204425 }] }),
+			() => VerifyEndpoint(poorer, healed with { SoulHeals = [heal with { HealerNpcId = 0 }] }),
 			// XP lost on the course with no death on the ledger, and a loss the course does not account for.
 			() => VerifyEndpoint(dressed, settled with { CourseExperience = -1, ExperienceGained = settled.ExperienceGained - 1 }),
 			() => VerifyEndpoint(poorer, healed with { CourseExperience = 0 }),

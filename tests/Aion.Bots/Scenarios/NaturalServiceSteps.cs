@@ -39,6 +39,18 @@ public static class NaturalServicePolicy
 	/// SM_QUESTION_WINDOW.STR_ASK_RECOVER_EXPERIENCE, whose parameter is the price. Soul Healers carry title 350412.</summary>
 	public const int SoulHealQuestionId = 160011, SoulHealDialogAction = 35, SoulHealerTitleId = 350412;
 
+	/// <summary>The operator's death rule: "find the nearest soul healer and recover". Every obelisk of the journey's maps has
+	/// its Soul Healer within ten metres; one further than this from the revive point is not the obelisk's.</summary>
+	public const float SoulHealerSearchRadius = 30;
+
+	/// <summary>The nearest of a map's Soul Healer spawns to where the character revived, or null when none is near.</summary>
+	public static (int NpcId, BotPosition Position)? NearestSoulHealer(IEnumerable<(int NpcId, BotPosition Position)> soulHealers, BotPosition revivedAt)
+	{
+		(int NpcId, BotPosition Position)[] near = soulHealers.Where(healer => Distance(healer.Position, revivedAt) <= SoulHealerSearchRadius)
+			.OrderBy(healer => Distance(healer.Position, revivedAt)).ThenBy(healer => healer.NpcId).ToArray();
+		return near.Length == 0 ? null : near[0];
+	}
+
 	/// <summary>Java: <c>(int) (expLost * (expLost &lt; 1000000 ? 0.25 - (0.00000015 * expLost) : 0.1))</c>.</summary>
 	public static long SoulHealPrice(long recoverable) => (int)(recoverable * (recoverable < 1_000_000 ? 0.25 - (0.00000015 * recoverable) : 0.1));
 
@@ -264,6 +276,17 @@ public sealed class NaturalServiceSteps(INaturalJourneySession session)
 			DecodedBotServerPacket question = await session.WaitForPacketAsync(typeof(SM_QUESTION_WINDOW), token,
 				packet => packet.Get<int>("code") == NaturalServicePolicy.SoulHealQuestionId);
 			price = long.Parse(question.Get<string[]>("params")[0], System.Globalization.CultureInfo.InvariantCulture);
+			if (price > kinah)
+			{
+				// Not enough Kinah: decline, as a player has to. The XP stays recoverable for the next obelisk resurrection.
+				await session.SendPacketAsync(GameClientPackets.QuestionResponse(question.Get<int>("code"), 0, question.Get<int>("senderId")), token);
+				await session.SynchronizeAsync(token);
+				Trace("service-soul-heal", new("refused", $"Soul healing costs {price} Kinah and the character has {kinah}."), new()
+				{
+					["healer"] = healerNpcId, ["recovered"] = 0, ["price"] = price, ["kinahBefore"] = kinah, ["kinahAfter"] = World.Kinah,
+				});
+				return new NaturalSoulHeal(healerNpcId, 0, 0, kinah, World.Kinah, nowMillis);
+			}
 			await session.SendPacketAsync(GameClientPackets.QuestionResponse(question.Get<int>("code"), 1, question.Get<int>("senderId")), token);
 			await session.WaitForPacketAsync(typeof(SM_STATUPDATE_EXP), token);
 		}

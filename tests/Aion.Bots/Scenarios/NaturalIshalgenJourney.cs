@@ -1700,21 +1700,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					await session.SynchronizeAsync(token);
 					EnterObservedMap();
 				}
-				// AX-12b: what the course's deaths took and its soul healings gave back, and every soul healing.
+				// AX-12b: what the course's deaths took and their soul healings gave back. The healings themselves are the death
+				// rule's, counted by the combat observer for every leg.
 				long courseExperience = 0;
-				var soulHeals = new List<NaturalSoulHeal>();
+				IReadOnlyList<NaturalSoulHeal> soulHeals = combat.SoulHeals;
 				combat.AfterBindRevive = EnterObservedMap;
-				// AX-12a (D38): the arena offers the instance revive, and the Cleric takes it.
-				combat.InstanceReviveMaps.Add(arena.MapId);
-				combat.AfterInstanceRevive = EnterObservedMap;
-				// AX-12b: after every revive at the obelisk the Cleric goes to the Soul Healer beside it, before it rests.
-				NaturalAbyssSoulHealer soulHealer = scope.SoulHealer;
-				combat.SoulHealAfterBindReviveAsync = async healToken =>
-				{
-					Require.Equal(leg.Hub.MapId, world.MapId ?? 0);
-					int healer = await ApproachCapitalNpcAsync(soulHealer.NpcId);
-					soulHeals.Add(await services.SoulHealAsync(healer, soulHealer.NpcId, runtime.NowMillis, healToken));
-				};
+				// The death rule is the combat observer's, for every leg: in the arena it takes the instance revive the prompt offers
+				// (D38), and after an obelisk resurrection it soul heals at the nearest Soul Healer.
 				// AX-10: Yornduf's ring course. A try begins at his talk, which starts the 70 s, and ends when the sixth ring is
 				// passed, when the timer fails it (var 9), or at a death. Every try goes on the outcome ledger.
 				NaturalAbyssRingCourse course = scope.RingCourse;
@@ -8889,13 +8881,56 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		/// <summary>The map a far target is approached on (NA-23 fights in Altgard); Ishalgen for the journey.</summary>
 		public int ApproachMapId { get; set; } = 220010000;
 		public Action? AfterBindRevive { get; set; }
-		/// <summary>AX-12b: revives at the bound obelisk, as against revives inside an instance.</summary>
+		/// <summary>Revives at the bound obelisk, as against revives inside an instance.</summary>
 		public int BindReviveCount => bindRevives;
-		private int bindRevives;
-		public Func<CancellationToken, Task>? SoulHealAfterBindReviveAsync { get; set; }
-		/// <summary>AX-12a (D38): the instance maps where a death is revived from inside, when the death prompt offers it.</summary>
-		public HashSet<int> InstanceReviveMaps { get; } = [];
+		public int InstanceReviveCount => instanceRevives;
+		private int bindRevives, instanceRevives;
+		/// <summary>Every soul healing this observer made after an obelisk resurrection, as the client saw it.</summary>
+		public IReadOnlyList<NaturalSoulHeal> SoulHeals => soulHeals;
+		private readonly List<NaturalSoulHeal> soulHeals = [];
+		/// <summary>The map view to rebuild after a revive inside an instance; the bind revive's hook when a leg sets none.</summary>
 		public Action? AfterInstanceRevive { get; set; }
+
+		/// <summary>
+		/// The operator's death rule (2026-10-06): after a resurrection at the obelisk, "find the nearest soul healer and recover".
+		/// It is a rule of the bot, for every leg and level, not leg data: the Soul Healers are the NPCs with the shipped title
+		/// 350412, and every obelisk of the journey's maps has one within ten metres. The healing gives back the recoverable XP
+		/// for Kinah and takes the soul sickness off (Java DialogService, action RECOVERY). Where no Soul Healer stands near the
+		/// revive point, or it cannot be reached, nothing is forced: the XP stays recoverable until the next obelisk resurrection.
+		/// </summary>
+		private async Task SoulHealAtTheNearestSoulHealerAsync(CancellationToken token)
+		{
+			BotWorldModel world = session.Api.World;
+			if (world.MapId is not int map || world.IsDead) return;
+			void Skipped(string reason) => session.TraceDiagnostic("soul-heal-skipped", new Dictionary<string, object?>
+			{
+				["map"] = map, ["position"] = session.CurrentPosition, ["reason"] = reason, ["recoverableExperience"] = world.RecoverableExperience,
+			});
+			var soulHealers = runtime.Data.SpawnsDh.GetSpawnsByWorldId(map)
+				.Where(group => runtime.Data.NpcDataDh.GetNpcTemplate(group.GetNpcId())?.GetTitleId() == NaturalServicePolicy.SoulHealerTitleId)
+				.SelectMany(group => group.GetSpawnTemplates().Select(spot => (group.GetNpcId(), new BotPosition(spot.GetX(), spot.GetY(), spot.GetZ(), spot.GetHeading()))));
+			if (NaturalServicePolicy.NearestSoulHealer(soulHealers, session.CurrentPosition) is not { } healer)
+			{
+				Skipped($"No Soul Healer stands within {NaturalServicePolicy.SoulHealerSearchRadius} m of the revive point.");
+				return;
+			}
+			float talkRange = Math.Min(5, runtime.Data.NpcDataDh.GetNpcTemplate(healer.NpcId)!.GetTalkDistance());
+			BotKnownObject? InTalkRange() => world.Objects.Values.Where(known => known.TemplateId == healer.NpcId && !known.IsCorpse &&
+					Distance(session.CurrentPosition, known.SettledPosition) <= talkRange)
+				.OrderBy(known => Distance(session.CurrentPosition, known.SettledPosition)).FirstOrDefault();
+			int? healerObject = InTalkRange()?.ObjectId;
+			if (healerObject == null)
+			{
+				NaturalNavigationResult reached = await NaturalIshalgenNavigator.ApproachNpcAsync(map, healer.NpcId, healer.Position, navigator, token);
+				healerObject = reached.Arrived ? reached.TargetObjectId : InTalkRange()?.ObjectId;
+				if (healerObject == null)
+				{
+					Skipped($"Soul Healer {healer.NpcId} was not reached: {reached.Reason}");
+					return;
+				}
+			}
+			soulHeals.Add(await new NaturalServiceSteps(session).SoulHealAsync(healerObject.Value, healer.NpcId, runtime.NowMillis, token));
+		}
 
 		/// <summary>BC-06: retain combat/revival counters while switching to the new map's checked navigation.</summary>
 		public void EnterMap(NaturalJourneyNavigator currentNavigator, BotNavigationGeometry currentGeometry, int mapId)
@@ -9814,57 +9849,70 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				await RestAsync(token);
 				return;
 			}
-			bool insideInstance = session.Api.World.MapId is int deathMap && InstanceReviveMaps.Contains(deathMap);
-			session.BeginStep(insideInstance ? $"ax-instance-revive-{revives}" : $"ni07-bind-revive-{revives}",
-				insideInstance ? "accept-client-death-and-revive-inside-the-instance" : "accept-client-death-and-revive-at-bound-obelisk");
+			session.BeginStep($"ni07-bind-revive-{revives}", "accept-client-death-and-revive-at-bound-obelisk");
 			if (!session.Api.World.IsDead)
 			{
 				await session.AdvanceAsync(TimeSpan.FromMilliseconds(500), token);
 				await session.WaitForPacketAsync(typeof(SM_DIE), token);
 			}
-			// AX-12a (D38): where SM_DIE offers the instance revive, the client's revive button is that one, and the server puts the
-			// player at the instance's own point. It is a spawn on the same map: SM_CHANNEL_INFO and SM_PLAYER_INFO, no world entry.
-			if (insideInstance && session.Api.World.ReviveOptions?.InInstance == true)
+			// The operator's death rule (2026-10-06), for every leg and level: "Whenever you die, we res at an Obelisk and soul
+			// heal", and "if we are in an instance, we need to res in the instance".
+			// In an instance: where SM_DIE offers the instance revive, the client's revive button is that one (Java SM_DIE: 0 is the
+			// bind revive, anything else the instance revive). The server puts the player at the instance's own point, a spawn on
+			// the same map with no world entry. There is no obelisk and no Soul Healer there, so the soul healing waits for the
+			// next obelisk resurrection.
+			int diedOnMap = session.Api.World.MapId ?? 0;
+			if (session.Api.World.ReviveOptions?.InInstance == true)
 			{
+				session.BeginStep($"instance-revive-{revives}", "accept-client-death-and-revive-inside-the-instance");
 				session.Api.World.BeginWorldReload();
 				await session.SendPacketAsync(session.Api.Revive(BotReviveType.Instance), token);
 				await session.WaitForPacketAsync(typeof(SM_CHANNEL_INFO), token);
 				await session.SynchronizeAsync(token);
 				if (session.Api.World.IsDead) throw new InvalidDataException("Instance revive did not clear client-observed death.");
 				session.AcceptTeleportPosition();
-				AfterInstanceRevive?.Invoke();
-				session.TraceDiagnostic("instance-revive", new Dictionary<string, object?>
+				if (session.Api.World.MapId == diedOnMap)
 				{
-					["map"] = session.Api.World.MapId, ["position"] = session.CurrentPosition, ["hp"] = session.Api.World.CurrentHp,
-					["maxHp"] = session.Api.World.MaxHp, ["mp"] = session.Api.World.CurrentMp, ["maxMp"] = session.Api.World.MaxMp, ["revives"] = revives,
-				});
-				await BuffOurselfAsync(NaturalHelpTrigger.AfterRevive, token);
-				await RestAsync(token);
-				return;
-			}
-			// Java TeleportService.sendLoc despawns the player before rebuilding its known list, even on the
-			// same map. BC-06 saw a pre-death hunter survive in the bot view after a fortress bind revive;
-			// its server object was gone when the bot returned. Drop that view before the new spawn packets.
-			int? bindMap = session.Api.World.ObeliskBindPoint?.MapId;
-			bool otherMap = bindMap is int bound && bound != session.Api.World.MapId;
-			// RC-11: Leg 8 retained a pre-revive assassin that the server no longer knew.
-			// Every bind revive rebuilds the known list, including on the same map.
-			session.Api.World.BeginWorldReload();
-			await session.SendPacketAsync(session.Api.Revive(BotReviveType.Bind), token);
-			if (otherMap)
-			{
-				await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token, packet => packet.Get<int>("worldId") == bindMap);
-				await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+					instanceRevives++;
+					(AfterInstanceRevive ?? AfterBindRevive)?.Invoke();
+					session.TraceDiagnostic("instance-revive", new Dictionary<string, object?>
+					{
+						["map"] = session.Api.World.MapId, ["position"] = session.CurrentPosition, ["hp"] = session.Api.World.CurrentHp,
+						["maxHp"] = session.Api.World.MaxHp, ["mp"] = session.Api.World.CurrentMp, ["maxMp"] = session.Api.World.MaxMp, ["revives"] = revives,
+						["recoverableExperience"] = session.Api.World.RecoverableExperience,
+					});
+					await BuffOurselfAsync(NaturalHelpTrigger.AfterRevive, token);
+					await RestAsync(token);
+					return;
+				}
+				// Java's instance revive sends the player to the bind point when the instance has no start position
+				// (PlayerReviveService.instanceRevive): that is an obelisk resurrection, and the rule's soul healing follows.
 			}
 			else
-				await session.WaitForPacketAsync(typeof(SM_CHANNEL_INFO), token);
-			await session.SynchronizeAsync(token);
-			if (session.Api.World.IsDead) throw new InvalidDataException("Bind revive did not clear client-observed death.");
-			session.AcceptTeleportPosition();
+			{
+				// Java TeleportService.sendLoc despawns the player before rebuilding its known list, even on the
+				// same map. BC-06 saw a pre-death hunter survive in the bot view after a fortress bind revive;
+				// its server object was gone when the bot returned. Drop that view before the new spawn packets.
+				int? bindMap = session.Api.World.ObeliskBindPoint?.MapId;
+				bool otherMap = bindMap is int bound && bound != session.Api.World.MapId;
+				// RC-11: Leg 8 retained a pre-revive assassin that the server no longer knew.
+				// Every bind revive rebuilds the known list, including on the same map.
+				session.Api.World.BeginWorldReload();
+				await session.SendPacketAsync(session.Api.Revive(BotReviveType.Bind), token);
+				if (otherMap)
+				{
+					await session.WaitForPacketAsync(typeof(SM_PLAYER_SPAWN), token, packet => packet.Get<int>("worldId") == bindMap);
+					await session.WaitForPacketAsync(typeof(SM_PLAYER_INFO), token, packet => packet.Get<int>("objectId") == session.CharacterId);
+				}
+				else
+					await session.WaitForPacketAsync(typeof(SM_CHANNEL_INFO), token);
+				await session.SynchronizeAsync(token);
+				if (session.Api.World.IsDead) throw new InvalidDataException("Bind revive did not clear client-observed death.");
+				session.AcceptTeleportPosition();
+			}
 			bindRevives++;
 			AfterBindRevive?.Invoke();
-			// AX-12b: the operator's rule, "always soul heal when we resurrect at an obelisk", for the legs that set it.
-			if (SoulHealAfterBindReviveAsync != null) await SoulHealAfterBindReviveAsync(token);
+			await SoulHealAtTheNearestSoulHealerAsync(token);
 			await BuffOurselfAsync(NaturalHelpTrigger.AfterRevive, token);
 			// A bind revive leaves a quarter of HP and MP (and soul sickness lowers the maximum). Rest at the obelisk before
 			// anything else, as a player does: in Leg 4 the walk back out at 25% HP met three swamp mosbears and died three

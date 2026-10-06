@@ -10,13 +10,13 @@ namespace Aion.Bots.Scenarios;
 /// </summary>
 public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, float[] Arrival, NaturalAbyssArena Arena,
 	NaturalAbyssRingCourse RingCourse, NaturalAbyssInventory Inventory, int[] ProtectedItemIds, NaturalAbyssSupply[] Supplies,
-	NaturalAbyssCoinArmor CoinArmor, NaturalAbyssLevel Level, NaturalAbyssWeapon Weapon, NaturalAbyssSoulHealer SoulHealer)
+	NaturalAbyssCoinArmor CoinArmor, NaturalAbyssLevel Level, NaturalAbyssWeapon Weapon)
 {
 	public const string Leg = "ax";
 	public const int Morheim = 220020000, Pandaemonium = 120010000, Altgard = 220030000, ArenaMap = 320090000;
 
 	/// <summary>The objects the leg uses that no dialog step names: the arena's doors, its spirits and the coin vendor.</summary>
-	public int[] GraphNpcIds => [Arena.ExitNpcId, CoinArmor.VendorNpcId, SoulHealer.NpcId, .. Arena.Spirits.Select(spirit => spirit.NpcId)];
+	public int[] GraphNpcIds => [Arena.ExitNpcId, CoinArmor.VendorNpcId, .. Arena.Spirits.Select(spirit => spirit.NpcId)];
 
 	public void Validate(NaturalAltgardContract contract)
 	{
@@ -77,10 +77,6 @@ public sealed record NaturalAbyssEntry(int CommanderQuestId, int[] MissionIds, f
 		if (Level is not { Minimum: 26, By: "quests", Fallback: "fortress-quests", Hunting: false, SoulHealing: false } ||
 			contract.Endpoint.MinimumLevel != Level.Minimum)
 			throw new InvalidDataException("The leg's level is reached by quests: no hunting and no soul healing.");
-		if (SoulHealer is not { NpcId: 204318, TitleId: NaturalServicePolicy.SoulHealerTitleId, After: "obelisk-revive",
-				DialogAction: NaturalServicePolicy.SoulHealDialogAction, QuestionId: NaturalServicePolicy.SoulHealQuestionId } ||
-			SoulHealer.Position.Length != 3)
-			throw new InvalidDataException("The soul healing differs from the operator's rule: Golenthor, after every obelisk revive.");
 	}
 }
 
@@ -123,10 +119,6 @@ public sealed record NaturalAbyssCoinTier(int Level, string When, string Name, N
 }
 
 public sealed record NaturalAbyssLevel(int Minimum, string By, string Fallback, bool Hunting, bool SoulHealing);
-
-/// <summary>AX-12b: the operator's rule, "always soul heal when we resurrect at an obelisk". The Soul Healer beside the leg's
-/// bind obelisk; Java's DialogService answers its RECOVERY action with the priced question.</summary>
-public sealed record NaturalAbyssSoulHealer(int NpcId, int TitleId, float[] Position, string After, int DialogAction, int QuestionId);
 
 public sealed record NaturalAbyssWeapon(string Type, string Prefer, bool Buy);
 
@@ -346,9 +338,10 @@ public static class NaturalAbyssEntryLeg
 		Require(ledger.Deaths > 0 || ledger.CourseExperience == 0, $"the course changed {ledger.CourseExperience} XP without a death");
 		Require(ledger.ObeliskRevives >= 0 && ledger.ObeliskRevives <= ledger.Deaths && soulHeals.Length == ledger.ObeliskRevives,
 			$"{soulHeals.Length} soul healings followed {ledger.ObeliskRevives} obelisk revives");
-		Require(soulHeals.All(heal => heal.HealerNpcId == scope.SoulHealer.NpcId && heal.Recovered >= 0 &&
+		// The death rule is the bot's, not this leg's: any Soul Healer, the one nearest the obelisk the Cleric revived at.
+		Require(soulHeals.All(heal => heal.HealerNpcId > 0 && heal.Recovered >= 0 &&
 			heal.Price == NaturalServicePolicy.SoulHealPrice(heal.Recovered) && heal.KinahBefore - heal.KinahAfter == heal.Price),
-			"a soul healing was not Golenthor's, or its price is not the shipped formula's");
+			"a soul healing has no Soul Healer, or its price is not the shipped formula's");
 		NaturalAbyssAttempt[] tries = ledger.Attempts.Where(attempt => attempt.Kind == NaturalAbyssAttempts.Arena).ToArray();
 		if (cleared)
 		{

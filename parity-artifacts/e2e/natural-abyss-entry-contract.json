@@ -1134,18 +1134,6 @@
       "type": "STAFF",
       "prefer": "magic-boost",
       "buy": true
-    },
-    "soulHealer": {
-      "npcId": 204318,
-      "titleId": 350412,
-      "position": [
-        269.419,
-        2337.65,
-        444.0
-      ],
-      "after": "obelisk-revive",
-      "dialogAction": 35,
-      "questionId": 160011
     }
   },
   "endpoint": {
