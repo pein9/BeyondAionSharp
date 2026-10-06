@@ -383,7 +383,7 @@ public sealed class NaturalAbyssEntryContractTests
 		NaturalAbyssEntryStart start = NaturalAbyssEntryLeg.VerifyStart(Leg, StartState(), 133276, 0);
 		NaturalAbyssPayment[] paid = [new(24020, 293_759, 0, 25)];
 		static int Boost(int itemId) => itemId switch { 101501357 => 370, 101501355 => 320, _ => 0 };
-		NaturalAbyssLedger noCoins = new(293_759, 2_401, 2_690, paid, 2, 0, [], [], 0, [], 0, [], 0, 0);
+		NaturalAbyssLedger noCoins = new(293_759, 2_401, 2_690, paid, 2, 0, [], [], 0, [], 0, [], 0, 0, []);
 		NaturalAbyssEntryProgress Verify(NaturalAltgardObservation state, NaturalAbyssLedger ledger, string frontier = "coin-armor-21") =>
 			NaturalAbyssEntryLeg.VerifyProgress(Leg, start, state, frontier, ledger, Boost, DefenceOf, 59_385);
 
@@ -470,7 +470,7 @@ public sealed class NaturalAbyssEntryContractTests
 		Assert.Equal(["q2946-balder", "q2946-204210", "q2946-204211", "q2946-204208", "q2946-reward"], Play(2946, (3, 0), (3, 1), (3, 2), (3, 3), (4, 3)));
 		// Kvasir's var 0 is the last capital step. After it comes Garm: his first talk, his second after a failure, and at the
 		// reward the way back to Morheim. Var 5 outside the arena is a failed attempt the server has not marked yet.
-		Assert.Equal(["q2947-kvasir", "arena:talk", "arena:refresh-observation", "arena:talk", "morheim-return:frontier"],
+		Assert.Equal(["q2947-kvasir", "arena:talk", "arena:refresh-observation", "arena:talk", "morheim-return:travel"],
 			Play(2947, (3, 0), (3, 4), (3, 5), (3, 6), (4, 7)));
 		// A mission that is turned in before the next one shows in the journal is waited for; an unknown var is refused.
 		Assert.Equal(["capital-missions:refresh-observation", "capital-missions:blocked"], Play(2946, (6, 0), (3, 9)));
@@ -496,7 +496,7 @@ public sealed class NaturalAbyssEntryContractTests
 		];
 		NaturalAbyssPayment[] paid = [new(24020, 293_759, 0, 25), new(2945, 20_110, 0, 25), new(2946, 20_110, 0, 25)];
 		// Two fares now: Ukin's 2,401 and Orhe's 2,118.
-		NaturalAbyssLedger ledger = new(333_979, 4_519, 2_690, paid, 4, 1, [manifest], bought, 0, opened, 0, [], 0, 0);
+		NaturalAbyssLedger ledger = new(333_979, 4_519, 2_690, paid, 4, 1, [manifest], bought, 0, opened, 0, [], 0, 0, []);
 		NaturalJourneyItem[] items = [.. worn.Inventory!.Where(item => item.ItemId is not (186000007 or 182400001)),
 			new(157702, 186000007, 13, 65535), new(133277, 182400001, 741_276, 65535), new(910011, 166000193, 1, 65535), new(910012, 166000192, 1, 65535)];
 		var quests = new Dictionary<int, BotQuestState>(worn.Quests) { [2947] = new(2947, 3, 4, 0, null) };
@@ -545,6 +545,48 @@ public sealed class NaturalAbyssEntryContractTests
 		];
 		Assert.All(refusedCleared, verify => Assert.Throws<InvalidDataException>(verify));
 
+		// AX-09: back in Morheim. Q2947 turned in for 403,012 XP and 4,000 Kinah, its staff worn, the manastone discarded,
+		// Doman's fare paid, Q2042 taken at Aegir and waiting for Yornduf.
+		NaturalAbyssPayment[] paidHome = [.. paid, new(2947, 403_012, 4_000, 25)];
+		NaturalJourneyItem[] homeItems = [.. reported.Inventory!.Where(item => item.ItemId is not (101501357 or 182400001)),
+			new(156530, 101501357, 1, 65535), new(920001, 101501224, 1, 3), new(133277, 182400001, 743_158, 65535)];
+		var homeQuests = new Dictionary<int, BotQuestState>(quests) { [2042] = new(2042, 3, 1, 0, null) };
+		homeQuests.Remove(2947);
+		NaturalAltgardObservation home = reported with
+		{
+			MapId = NaturalAbyssEntry.Morheim, Position = new BotPosition(225.225f, 2415.47f, 454.11f, 46), Kinah = 743_158, Quests = homeQuests,
+			CompletedQuestIds = reported.CompletedQuestIds.Append(2947).ToHashSet(), Inventory = homeItems,
+			ItemCounts = homeItems.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
+		};
+		static int HomeBoost(int itemId) => itemId switch { 101501224 => 460, 101501357 => 370, 101501355 => 320, _ => 0 };
+		NaturalAbyssLedger returned = fought with
+		{
+			ExperienceGained = 333_979 + fights + 403_012, Fares = 6_637, Payments = paidHome, InventoryChecks = 5,
+			Discarded = [new(920002, 167000465, 1, 65535)],
+		};
+		NaturalAbyssEntryProgress VerifyHome(NaturalAltgardObservation state, NaturalAbyssLedger counted) =>
+			NaturalAbyssEntryLeg.VerifyProgress(Leg, start, state, "ring-course", counted, HomeBoost, DefenceOf, 1_300_000);
+		NaturalAbyssEntryProgress atHome = VerifyHome(home, returned);
+		Assert.Equal(("ring-course", 220020000, 743_158L, 101501224, 6_637L), (atHome.Frontier, atHome.MapId, atHome.Kinah, atHome.StaffItemId, atHome.Fares));
+		Assert.Equal([24020, 2945, 2946, 2947], atHome.CompletedLegQuestIds);
+		Assert.Equal([167000465], atHome.Discarded!.Select(item => item.ItemId));
+		Action[] refusedHome =
+		[
+			() => VerifyHome(home with { MapId = NaturalAbyssEntry.Pandaemonium }, returned),
+			() => VerifyHome(home with { Quests = new Dictionary<int, BotQuestState>(homeQuests) { [2042] = new(2042, 3, 0, 0, null) } }, returned),
+			() => VerifyHome(home, returned with { Discarded = [] }),
+			() => VerifyHome(Adding(home, new NaturalJourneyItem(920003, 167000465, 1, 65535)), returned),
+			() => VerifyHome(home, returned with { Payments = [.. paid, new(2947, 301_641, 31_320, 25)], ExperienceGained = 333_979 + fights + 301_641 }),
+			() => VerifyHome(home with { Kinah = 739_158 }, returned),
+			// The old staff still in the hand with the better one in the cube.
+			() => VerifyHome(home with { Inventory = [.. homeItems.Where(item => item.ItemId is not (101501357 or 101501224)),
+				new(156530, 101501357, 1, 3), new(920001, 101501224, 1, 65535)] }, returned),
+			() => VerifyHome(home, returned with { Attempts = [] }),
+			// Nothing may be discarded before Q2947's reward.
+			() => VerifyCleared(reported, fought with { Discarded = [new(920002, 167000465, 1, 65535)] }),
+		];
+		Assert.All(refusedHome, verify => Assert.Throws<InvalidDataException>(verify));
+
 		Action[] refused =
 		[
 			() => Verify(atGarm with { MapId = NaturalAbyssEntry.Morheim }, ledger),
@@ -562,6 +604,35 @@ public sealed class NaturalAbyssEntryContractTests
 			() => Verify(atGarm, ledger with { Opened = [.. opened, new(188053787, 156843, new Dictionary<int, long> { [1] = 1 })] }),
 		];
 		Assert.All(refused, verify => Assert.Throws<InvalidDataException>(verify));
+	}
+
+	/// <summary>AX-09: after the reward Q2042 is in the journal; its first talk with Aegir is the last step before the course.</summary>
+	[Fact]
+	public void ReturnToMorheimTakesTheRewardAndTheLastMission()
+	{
+		NaturalAltgardObservation done = CoinArmorWornState();
+		var journal = new Dictionary<int, BotQuestState>(done.Quests);
+		journal.Remove(2945);
+		NaturalAbyssEntryDecision Decide(int map, params BotQuestState[] quests)
+		{
+			var held = new Dictionary<int, BotQuestState>(journal);
+			foreach (BotQuestState quest in quests) held[quest.QuestId] = quest;
+			return NaturalAbyssEntryDecisionEngine.Decide(Leg, done with
+			{
+				MapId = map, Quests = held, CompletedQuestIds = done.CompletedQuestIds.Concat([2945, 2946, 2947]).ToHashSet(),
+			}, 1, DefenceOf);
+		}
+		static (string, string, string?) Shape(NaturalAbyssEntryDecision next) => (next.Phase, next.Action, next.StepKey);
+		// Q2947 turned in: Q2042 shows a moment later, then Aegir's var 0, then the course is Yornduf's.
+		Assert.Equal(("morheim-return", "refresh-observation", null), Shape(Decide(NaturalAbyssEntry.Morheim)));
+		Assert.Equal(("morheim-return", "talk", "q2042-aegir"), Shape(Decide(NaturalAbyssEntry.Morheim, new BotQuestState(2042, 3, 0, 0, null))));
+		Assert.Equal(("ring-course", "frontier", null), Shape(Decide(NaturalAbyssEntry.Morheim, new BotQuestState(2042, 3, 1, 0, null))));
+		Assert.Equal(("ring-course", "frontier", null), Shape(Decide(NaturalAbyssEntry.Morheim, new BotQuestState(2042, 3, 9, 0, null))));
+		// From the capital the first talk asks for Doman's teleport.
+		Assert.Equal("travel", Decide(NaturalAbyssEntry.Pandaemonium, new BotQuestState(2042, 3, 0, 0, null)).Action);
+		// The staff rule picks the same reward as the contract: the usable staff with the most magic boost on offer.
+		NaturalAltgardRewardChoice choice = Leg.RewardChoiceList.Single(entry => entry.QuestId == 2947);
+		Assert.Equal(("SELECTED_QUEST_REWARD2", 101501224, "STAFF"), (choice.Action, choice.ItemId, choice.ItemGroup));
 	}
 
 	/// <summary>AX-08: Garm's arena, from his first talk to the report, with the three tries of AX-Q3.</summary>
@@ -589,7 +660,10 @@ public sealed class NaturalAbyssEntryContractTests
 		// Ten counted: out (movie 168's teleport, or the exit), then the report to Garm, then Aegir in Morheim.
 		Assert.Equal(("arena", "arena-leave", null), Shape(Decide(arena, 3, 5, kills: 10)));
 		Assert.Equal(("arena", "talk", "q2947-garm-done"), Shape(Decide(city, 3, 5, kills: 10)));
-		Assert.Equal(("morheim-return", "frontier", null), Shape(Decide(city, 4, 7, kills: 10)));
+		// AX-09: the reward is Aegir's, in Morheim: Doman's teleport first, then the reward talk.
+		NaturalAbyssEntryDecision home = Decide(city, 4, 7, kills: 10);
+		Assert.Equal(("morheim-return", "travel", (int?)morheim), (home.Phase, home.Action, home.MapId));
+		Assert.Equal(("morheim-return", "talk", "q2947-reward"), Shape(Decide(morheim, 4, 7, kills: 10)));
 		Assert.Equal(10, NaturalAbyssEntryDecisionEngine.ArenaKills(Scope.Arena, new(2947, 3, 5 | 10 << 24, 0, null)));
 
 		// A failed try (the timer, or a death, D36) is var 6: Garm again, from wherever the Cleric revived.

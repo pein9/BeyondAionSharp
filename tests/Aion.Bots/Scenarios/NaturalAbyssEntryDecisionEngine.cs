@@ -18,8 +18,8 @@ public sealed record NaturalAbyssEntryDecision(int Sequence, string Phase, strin
 /// the approved teleport whenever the next step is on another map. A step is chosen from the quest's observed status and var
 /// alone, so a resumed run repeats no dialog. AX-08: then Garm's arena. Garm's talk sends the Cleric in (D35); inside, the
 /// rule asks for one kill at a time until ten are counted; a failed attempt (var 6: the timer, or a death, D36) goes back to
-/// Garm for the next of three tries. Each later phase is added by its own AX item; until then the rule names it as the
-/// frontier, and the segment ends there.
+/// Garm for the next of three tries. AX-09: then back to Morheim for Q2947's reward at Aegir and Q2042's first talk with
+/// him. Each later phase is added by its own AX item; until then the rule names it as the frontier, and the segment ends there.
 /// </summary>
 public static class NaturalAbyssEntryDecisionEngine
 {
@@ -80,8 +80,11 @@ public static class NaturalAbyssEntryDecisionEngine
 			if (mission == scope.Arena.QuestId && state.Quests.TryGetValue(mission, out BotQuestState? trial) &&
 				(trial.Status == Reward || trial.Status == Start && (trial.StepAndFlags & 0x3F) != 0))
 				return ArenaStep(trial);
+			// 5. The ring course (AX-10): everything of Q2042 after Aegir's var 0, which still belongs to the return.
 			if (mission == scope.RingCourse.QuestId)
-				return Next(RingCoursePhase, "frontier", $"Q{mission} is next (AX-09, AX-10).", quest: mission);
+				return state.Quests.TryGetValue(mission, out BotQuestState? course) && (course.Status == Reward || course.Status == Start && (course.StepAndFlags & 0x3F) != 0)
+					? Next(RingCoursePhase, "frontier", $"Q{mission} is taken at Aegir; Yornduf's ring course is next (AX-10).", quest: mission)
+					: QuestStep(ReturnPhase, mission, "starts when Q2947 is turned in");
 			return QuestStep(CapitalPhase, mission, "starts when the mission before it is turned in");
 		}
 		return Next(EndpointPhase, "frontier", "The missions are done; the level check is next (AX-11).");
@@ -94,7 +97,7 @@ public static class NaturalAbyssEntryDecisionEngine
 			int questId = arena.QuestId, var = trial.StepAndFlags & 0x3F, kills = ArenaKills(arena, trial);
 			bool inside = here == arena.MapId;
 			if (trial.Status == Reward)
-				return Next(ReturnPhase, "frontier", "The arena is cleared and reported to Garm; Aegir's reward in Morheim is next (AX-09).", quest: questId);
+				return QuestStep(ReturnPhase, questId, "is at its reward");
 			if (var == arena.EnterVar && kills < arena.RequiredKills)
 				return inside
 					? Next(ArenaPhase, "arena-fight", $"{kills} of {arena.RequiredKills} spirits are counted: the next kill.", quest: questId)

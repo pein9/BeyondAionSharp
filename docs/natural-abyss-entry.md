@@ -10,7 +10,8 @@ is done: the Cleric teleports to Morheim, binds, talks to Aegir and wears his ha
 is done: the Rank 8 gloves and brogans are bought with the Cleric's own coins and worn.
 AX-07 is done: Q2945 and Q2946 are turned in at Pandaemonium and Q2947 is taken at Kvasir.
 AX-08 is done: Garm's arena is cleared on the first try in 59 s, and both failure paths
-lead back to Garm and a second, successful try. AX-09 is next.
+lead back to Garm and a second, successful try. AX-09 is done: back in Morheim the Cleric
+holds Altruist's Staff and has taken Q2042. AX-10, the ring course, is next.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -632,9 +633,25 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   - Tests: two more contract tests, the arena decisions and ten refused cleared frontiers,
     and the doors pinned against the shipped door data (22 pass).
   - Fast and the seven pre-commit checks: see the Progress log.
-- [ ] **AX-09 - Back to Morheim.** Depends AX-08. Doman's teleport; Q2947's reward taken
+- [x] **AX-09 - Back to Morheim.** Depends AX-08. Doman's teleport; Q2947's reward taken
   with REWARD2, the staff, which the inventory check wears; the manastone 167000465
   discarded (AX-Q4); Q2042's first talk with Aegir.
+  - 2026-10-06, the rule: Q2947 at its reward is a talk step at Aegir, so the rule asks for
+    Doman's teleport first. Once it is turned in, Q2042 shows in the journal and its var 0
+    is Aegir's too. From var 1 on Q2042 is the frontier `ring-course`.
+  - Proof `run/ax09/ax09-return-a1` (public Restore, leg `ax`, schema dropped, no death),
+    13 min 42 s of game time for the leg so far:
+    - Doman's teleport: 2,118 Kinah, the leg's third fare, 6,637 in all.
+    - Aegir: Q2947 turned in with SELECTED_QUEST_REWARD2 for 403,012 XP and 4,000 Kinah.
+    - The inventory check wore Altruist's Staff 101501224 (460 magic boost) in place of the
+      Dark Legionary Staff (370), and discarded the one Manastone 167000465.
+    - Aegir again: Q2042's SETPRO1, var 1.
+    - The Cleric has gained 745,451 XP and is still level 25, 135,236 XP short of 26.
+      743,158 Kinah, 13 Bronze Coins, 18 free cube slots.
+  - `VerifyProgress` confirmed the frontier: four turn-ins in order, each for its shipped
+    XP; the staff worn; the manastone discarded once and nothing else; the Kinah exact.
+  - Tests: one more contract test and nine refused frontiers (23 pass).
+  - Fast and the seven pre-commit checks: see the Progress log.
 - [ ] **AX-10 - The ring course.** Depends AX-01 and AX-09. Route rows 16–19, the landing,
   and the failure path through var 9.
   - Use the one supplied flight-speed scroll when the course first starts (AX-Q3): on the
@@ -954,3 +971,9 @@ The original questions, with the recommendations made at the time:
   a death each led back to Garm and a clear on the second try. Fast passes 114 of 119 tests
   with five guarded skips and all eleven scenarios in 8.63 minutes (`run/ax08-fast/`); the
   seven pre-commit checks pass (`run/ax08/checks/`).
+- 2026-10-06 — AX-09: back in Morheim by Doman's teleport (2,118 Kinah). Q2947 paid 403,012
+  XP and 4,000 Kinah; the inventory check wore Altruist's Staff and discarded the
+  manastone; Q2042 is taken (`run/ax09/ax09-return-a1`). The Cleric is 135,236 XP short of
+  level 26, which Q2042's 301,641 covers. The segment ends at the ring course. Fast passes
+  114 of 119 tests with five guarded skips and all eleven scenarios in 9.72 minutes
+  (`run/ax09-fast/`); the seven pre-commit checks pass (`run/ax09/checks/`).

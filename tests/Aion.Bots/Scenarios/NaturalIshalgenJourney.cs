@@ -1588,7 +1588,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			// The journey is rebound to Altgard as for NA-23; the Leg 1 engine picks each move from the client's view. Template
 			// quests run on the Ishalgen runner, scripted steps on NaturalAltgardQuestSteps, flight and the air kills on the
 			// AF-04..AF-06 code. Every decision is traced; a move that makes no progress three times stops the run.
-			// AX-03..AX-08: the Morheim and Abyss-entry leg. It proves its incoming contract from the client's view, then takes one
+			// AX-03..AX-09: the Morheim and Abyss-entry leg. It proves its incoming contract from the client's view, then takes one
 			// decision of NaturalAbyssEntryDecisionEngine at a time. The fortresses and the capital are safe hubs: every approach is
 			// the city approach, on whichever map the client is on. The segment ends at the rule's frontier.
 			async Task RunAbyssEntryAsync()
@@ -1614,6 +1614,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				var coinManifests = new List<NaturalAbyssCoinManifest>();
 				var coinPurchases = new List<NaturalAbyssCoinPurchase>();
 				var opened = new List<NaturalOpenedContainer>();
+				var discarded = new List<NaturalJourneyItem>();
 				int inventoryChecks = 0, otherInventoryChecks = 0, notOpened = 0;
 				// AX-08: Garm's arena. A try begins when Garm's talk lands the Cleric inside (D35) and ends at ten kills, at the
 				// timer's end or at a death (D36). Every try goes on the outcome ledger; a failed one is an outcome.
@@ -1668,6 +1669,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						() => NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot, world.Inventory.Values.Select(item => item.ItemId))
 							.Decide(world, QuestNeededItems()).FreeSlots, token);
 					opened.AddRange(checkedNow.Opened);
+					discarded.AddRange(checkedNow.Discarded);
 					notOpened += checkedNow.NotOpened.Length;
 					if (turnIn) inventoryChecks++;
 					else otherInventoryChecks++;
@@ -1704,7 +1706,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						{
 							NaturalAbyssEntryProgress progress = NaturalAbyssEntryLeg.VerifyProgress(leg, start, Observed(), next.Phase,
 								new NaturalAbyssLedger(ObservedExperience() - experienceAtStart, fares, bindPaid, payments, inventoryChecks, otherInventoryChecks,
-									coinManifests, coinPurchases, coinsSupplied, opened, notOpened, attempts, arenaExperience, combat.ReviveCount),
+									coinManifests, coinPurchases, coinsSupplied, opened, notOpened, attempts, arenaExperience, combat.ReviveCount, discarded),
 								itemId => runtime.Data.ItemDataDh.GetItemTemplate(itemId) is { } template && template.GetItemGroup().ToString() == "STAFF"
 									? template.GetWeaponStats()?.GetBoostMagicalSkill() ?? 0 : 0, PhysicalDefence, runtime.NowMillis);
 							await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntryLeg.ProgressReceipt),
@@ -1721,6 +1723,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								["paid"] = payments.Select(payment => payment.QuestId).ToArray(),
 								["attempts"] = attempts.Select(attempt => $"{attempt.Kind} {attempt.Number}: {attempt.Outcome}, {attempt.Progress}").ToArray(),
 								["arenaExperience"] = arenaExperience, ["deaths"] = combat.ReviveCount,
+								["discarded"] = discarded.Select(item => item.ItemId).ToArray(),
 								["reason"] = next.Reason,
 							});
 							return;
