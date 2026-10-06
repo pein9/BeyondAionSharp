@@ -91,6 +91,8 @@ Book materials are consumed exactly once in the required 3/2/1 quantities, retai
 | Q2947 Following Through | 25 | 301,641 | 31,320 |
 | Q2042 The Last Checkpoint | 25 | 301,641 | 0 |
 
+**Correction (2026-10-06, AX-00):** the Q2947 row above is the quest's first reward group. The handler sets reward group 1, which Java and C# `QuestService` read as a zero-based index: the second group, 403,012 XP and 4,000 Kinah with no AP. On that reading the fixed rewards total 744,873 XP and 4,000 Kinah, leaving 135,814 XP to level 26 and 18,343,931 XP to level 32. The figures in the rest of this section are the original ones. See [the Abyss-entry plan](natural-abyss-entry.md#rewards); AX-01 confirms the paid amounts by observation.
+
 Use Q2945 → Q2946 → Q2947 → Q2042. Fixed rewards total 643,502 XP and 31,320 Kinah. Fixed rewards alone project level 25, leaving 237,185 XP to 26 and 18,445,302 XP to level 32. Qualifying kills, recovery and later rewards add XP; this is a budget, not a played Abyss proof.
 
 Q2947’s shipped handler uses the arena route and forces reward group 1; its old multi-route description is not authority for unimplemented branches. Q2042 is the Morheim six-ring timed flight course. Plan its actual flight-time budget, ordinary travel and failure/retry receipts; preserve D33’s own-timer guard.

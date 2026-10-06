@@ -108,6 +108,7 @@ when it lives elsewhere.
 | Natural Ishalgen Priest: current state, batch runner, open items | `docs/natural-ishalgen-status.md`; `scripts/sim/run-natural-batch.sh <prefix> <seeds>`; trace analysis `scripts/sim/trace/`; play it on your running world: `scripts/live/attach-live.ps1 -Target aion` (NI-10, D24) |
 | Natural Ascension → Altgard (Cleric) leg: route spec, hazards, TODO list and loop protocol | `docs/natural-ascension-altgard.md` — read it first when working that list (D25) |
 | Natural Altgard leveling leg: approved quest list and route, flight rules, Leg 1 (fortress) TODO list | `docs/natural-altgard-leveling.md` — read it first when working the AF list |
+| Natural Abyss-entry leg (Q2945 → Q2946 → Q2947 → Q2042): route, hazards, AX checklist and open operator questions | `docs/natural-abyss-entry.md` — read it first when working the AX list; starts from snapshot `altgard-rc-complete-s1` |
 | Retail 4.8 quest completion (D32): the quests Java lacks, sources, TODO list and register | `docs/retail-quest-completion.md` — read it first when adding a quest; the one-line-per-quest work list with the maintainer's Status column is `docs/retail-quest-worklist.md` |
 | Bot navigation (navmesh, roads, travel graph; generated, do not hand-edit) | `docs/bot-navigation.md`; data in `game-server/data/nav/`; tools `tools/Aion.NavBake`, `tools/nav/` |
 | Session recording (every packet of chosen accounts, for replay) | `docs/session-recording.md`; `AION_RECORD`; reader `tools/recording/recording.py` |
