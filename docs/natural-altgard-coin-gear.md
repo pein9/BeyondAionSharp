@@ -3,7 +3,8 @@
 **Superseded going forward (2026-10-06).** The operator's answers AX-Q1 and AX-Q5 in
 [the Abyss-entry plan](natural-abyss-entry.md#operator-decisions) replace two rules of this
 leg from that leg on: the Cleric always wears the staff it owns with the most magic boost,
-and level-26 coin armor is bought with supplied Bronze Coins. This document stays as the
+and Bronze Coin armor is bought with supplied coins, at level 21 and again at level 26, for
+the slots where it beats what is worn. This document stays as the
 record of what CG-00..CG-06 did under the rules of the time.
 
 **Status (2026-10-03): CG-00..CG-06 complete.** The operator requested Q2293,

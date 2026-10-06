@@ -5173,10 +5173,11 @@ play-tested by our bots, with bugs fixed as we encounter them; an intelligent bo
 play the whole game (all quests, gathering, crafting and the rest); and, only after those
 two, bots that can join a human group as an extra healer or DPS. See
 [CLAUDE.md](../CLAUDE.md#where-this-leads-the-long-term-goals). The Abyss-entry leg is
-planned in [natural-abyss-entry.md](natural-abyss-entry.md) (AX-00..AX-12). Its operator
-decisions of 2026-10-06 replace two limits above from that leg on: the Cleric wears the
-staff it owns with the most magic boost, and level-26 coin armor is bought with supplied
-Bronze Coins.
+planned in [natural-abyss-entry.md](natural-abyss-entry.md) (AX-00..AX-14). It begins with
+Morheim and the commander's quest Q24020. Its operator decisions of 2026-10-06 replace two
+limits above from that leg on: the Cleric wears the staff it owns with the most magic
+boost, and Bronze Coin armor is bought with supplied coins at level 21 and at level 26,
+for the slots where it beats what is worn. The inventory check runs after every turn-in.
 
 ## Blocked / questions for the operator
 
