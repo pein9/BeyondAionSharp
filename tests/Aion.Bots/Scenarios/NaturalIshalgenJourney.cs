@@ -243,7 +243,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			NaturalAltgardContract? altgardLeg = altgardLegId is { } legId ? NaturalAltgardContract.LoadLeg(legId) : null;
 			if (laterCapital != null && altgardLeg != null)
 				altgardLeg = NaturalAltgardContinuation.BindIncoming(altgardLeg, session.Api.World.CompletedQuestIds,
-					session.Api.World.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray());
+					session.Api.World.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(),
+					NaturalAltgardContinuation.EquippedItemIds(session.Api.World));
 			coinGearProgress = altgardLeg?.CoinGear == null ? null : NaturalCoinGearProgress.Empty;
 			if (altgardLeg?.Haramel is { } haramel)
 				haramelProgress = options.HaramelProgressPath is { Length: > 0 } savedHaramel
@@ -1554,7 +1555,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					session.IdentityAltgardLegId = id;
 					NaturalAltgardContract shipped = NaturalAltgardContract.LoadLeg(id);
 					altgardLeg = NaturalAltgardContinuation.BindIncoming(shipped, session.Api.World.CompletedQuestIds,
-						session.Api.World.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray());
+						session.Api.World.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(),
+						NaturalAltgardContinuation.EquippedItemIds(session.Api.World));
 					altgardPlans = NaturalAltgardContract.LoadPlans(id);
 					collectionLimits = altgardPlans.Values.SelectMany(plan => plan.Steps
 						.Where(step => step.Kind == "collect" && step.ItemId > 0 && step.Count > 0)
@@ -3118,10 +3120,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					Require.True(route.Count > 0, $"No checked Haramel ground route {from} -> {target}, range {range}.");
 					session.TraceDiagnostic("haramel-ground-route", new Dictionary<string, object?>
 					{ ["map"] = map, ["from"] = from, ["target"] = target, ["range"] = range, ["points"] = route.Count, ["last"] = route[^1] });
+					bool includeRememberedDeaths = true, recoveredGuardFreeRoute = false;
 					for (int index = 0; index < route.Count; index += 8)
 					{
 						BotPosition[] segment = route.Skip(index).Take(8).ToArray();
-						if (!navigator.IsSegmentSafe(segment, objective))
+						if (!navigator.IsSegmentSafe(segment, objective, route[^1], includeRememberedDeaths))
 						{
 							BotPosition before = session.CurrentPosition;
 							int killsBefore = navigator.UnavailableObjects.Count;
@@ -3137,6 +3140,37 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							if (!cleared && navigator.UnavailableObjects.Count == killsBefore && Distance(before, session.CurrentPosition) < 2)
 								cleared = await TryClearObservedBlockerAsync(segment[^1], objective);
 							if (combat.ReviveCount != revives || session.Api.World.MapId != map) return false;
+							if (!cleared && navigator.UnavailableObjects.Count == killsBefore && Distance(before, session.CurrentPosition) < 2 &&
+								!recoveredGuardFreeRoute)
+							{
+								BotPosition goal = route[^1];
+								IReadOnlyList<BotPosition> alternative = await navigator.FindRouteAsync(session.CurrentPosition, goal, token);
+								if (combat.ReviveCount != revives || session.Api.World.MapId != map) return false;
+								if (alternative.Count == 0)
+								{
+									alternative = navigator.FindRequiredGroundMemoryPreferenceRoute(session.CurrentPosition, goal, token,
+										"haramel-ground", objective);
+									includeRememberedDeaths = false;
+								}
+								if (alternative.Count > 0)
+								{
+									session.TraceDiagnostic("haramel-ground-replan-cleared-corridor", new Dictionary<string, object?>
+										{ ["position"] = session.CurrentPosition, ["goal"] = goal, ["points"] = alternative.Count,
+											["includeRememberedDeaths"] = includeRememberedDeaths });
+									route = alternative; recoveredGuardFreeRoute = true;
+									index = -8; continue; // One checked replan per road; subsequent live blockers still require combat/progress.
+								}
+								// A later guard may cover the final firing point while the immediate corridor is
+								// already clear. Cross only this checked, live-safe prefix; each following segment
+								// is checked again and its first reachable guard must still be pulled normally.
+								if (navigator.IsSegmentSafe(segment, objective, goal, includeDeathSpots: false))
+								{
+									session.TraceDiagnostic("haramel-ground-memory-preference-prefix", new Dictionary<string, object?>
+										{ ["position"] = session.CurrentPosition, ["goal"] = goal, ["end"] = segment[^1], ["points"] = segment.Length });
+									includeRememberedDeaths = false; recoveredGuardFreeRoute = true;
+									index -= 8; continue;
+								}
+							}
 							Require.True(cleared || navigator.UnavailableObjects.Count > killsBefore || Distance(before, session.CurrentPosition) >= 2,
 								"Haramel ground route remains guarded.");
 							return false; // Fight/approach moved us: rebuild the route instead of walking stale points behind us.
@@ -7868,14 +7902,17 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		}
 
 		public IReadOnlyList<BotPosition> FindCampaignMemoryPreferenceRoute(BotPosition start, BotPosition destination,
-			CancellationToken token)
+			CancellationToken token) => FindRequiredGroundMemoryPreferenceRoute(start, destination, token, "campaign-zone");
+
+		public IReadOnlyList<BotPosition> FindRequiredGroundMemoryPreferenceRoute(BotPosition start, BotPosition destination,
+			CancellationToken token, string purpose, int? targetObjectId = null)
 		{
 			token.ThrowIfCancellationRequested();
 			int map = session.Api.World.MapId ?? throw new InvalidDataException("Campaign map unobserved.");
-			BotNavigationHazard[] liveHazards = ObservedHazards(destination, includeDeathSpots: false);
+			BotNavigationHazard[] liveHazards = ObservedHazards(destination, targetObjectId, includeDeathSpots: false);
 			IReadOnlyList<BotPosition> route = NaturalCampaignZoneRoute.FindMemoryPreferencePath(geometry, map,
 				start, destination, liveHazards);
-			session.TraceDiagnostic("campaign-zone-memory-preference-route", new Dictionary<string, object?>
+			session.TraceDiagnostic(purpose + "-memory-preference-route", new Dictionary<string, object?>
 			{
 				["position"] = start, ["goal"] = destination, ["points"] = route.Count,
 				["liveHazards"] = liveHazards.Length, ["rememberedDeaths"] = AvoidSpots.Count,

@@ -18,7 +18,7 @@ public static class NaturalAltgardContinuation
 		current is { Status: 3, StepAndFlags: 0, CompleteCount: 0 };
 
 	public static NaturalAltgardContract BindIncoming(NaturalAltgardContract leg, IReadOnlySet<int> completed,
-		IReadOnlyList<NaturalJourneyItem> inventory)
+		IReadOnlyList<NaturalJourneyItem> inventory, IEnumerable<int>? equippedItemIds = null)
 	{
 		if (leg.Start.CompletedQuestIds.Any(id => !completed.Contains(id)))
 			throw new InvalidDataException($"{leg.Leg} is missing an approved incoming completion.");
@@ -27,8 +27,23 @@ public static class NaturalAltgardContinuation
 		{
 			NaturalJourneyItem staff = inventory.SingleOrDefault(i => i.ItemId == haramel.StaffItemId && i.EquipmentSlot == 3)
 				?? throw new InvalidDataException("The continuous journey must retain its equipped Altgard Legionary Staff.");
-			haramel = haramel with { StaffObjectId = staff.ObjectId };
+			HashSet<int> owned = inventory.Select(i => i.ItemId).ToHashSet();
+			// Revised capital rewards can replace historical accessories before CG. Preserve the actual
+			// incoming gear while the staff, approved chain pieces, cloth gloves and sealed bundle remain mandatory.
+			haramel = haramel with
+			{
+				StaffObjectId = staff.ObjectId,
+				ProtectedItemIds = haramel.RequiredIncomingItemIds
+					.Concat(haramel.ProtectedItemIds.Where(owned.Contains))
+					.Concat((equippedItemIds ?? inventory.Where(i => i.EquipmentSlot is > 0 and not (65535 or 8192 or 16384))
+						.Select(i => i.ItemId)).Where(owned.Contains)).Distinct().Order().ToArray(),
+			};
 		}
 		return leg with { Start = leg.Start with { CompletedQuestIds = completed.Order().ToArray() }, Haramel = haramel };
 	}
+
+	/// <summary>Use full item-detail slots so a belt's 65536 mask is not truncated by the legacy ushort field.</summary>
+	public static int[] EquippedItemIds(BotWorldModel world) => world.Inventory.Values
+		.Where(i => i.Details.EquippedSlot.GetValueOrDefault() is > 0 and not (65535 or 8192 or 16384))
+		.Select(i => i.ItemId).ToArray();
 }

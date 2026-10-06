@@ -5038,6 +5038,49 @@ monitor enabled and announce its URL when a journey starts.
     skips/all eleven scenarios in 8.4021 minutes (`run/rc11-fast/rc11-coin-freeze/`).
     All seven final pre-commit checks pass (`run/rc11-coin-freeze/*-final.log`).
     Commit and acknowledge the rebuild before fresh continuous proof; RC-11 stays open.
+  - 2026-10-06, twenty-fourth retained attempt: `rc11-full-create-s1-a24` on dd4220388
+    completes Q24015/Q24016, Destiny and CG, including CG's ordinary endpoint relog.
+    It stops before entering Haramel at level 24/165 alive: the historical protection
+    list requires absent earring 120001521 while the revised journey wears Deyla's
+    120000833/155670. Staff 101501357/156530, all approved coin pieces, 19 Iron and
+    the sealed bundle are correct. Thirteen deaths, 45.8330 test minutes, trace,
+    failure audit and owned-schema drop are retained (`run/rc11-haramel-handoff/`).
+    Java Q2920, both earring templates, HaramelInstance, Equipment and GeoService were
+    read. Incoming binding now retains mandatory staff/chain/cloth-glove/currency/bundle
+    protection, historical gear actually present and the observed equipped gear.
+    Full item-detail slots preserve the belt mask 65536. Historical contracts stay
+    unchanged; no item is granted or purchased to reconstruct a historical accessory.
+    Cold reads additionally require each original durable incoming object/item/count,
+    with the original staff still equipped; consumable power shards keep their exemption.
+    Forty focused checks pass, including absent mandatory items and a same-item-ID
+    replacement during cold resume (1.7100 s). The first packet-row draft's missing
+    description is retained as 39 passes/one failure. Free probe 230 extends ordinary
+    CG reward/purchases/equips through the actual-earring Haramel handoff and cold relog
+    (30.1233 s; `native-probe.log`); incoming gear/level and Q2900 prerequisite are
+    explicitly controlled setup, not natural Destiny evidence.
+    First public-restore Haramel from altgard-coingear stops at 24/150 after one death:
+    the office route crosses its remembered death but two final fight-through plans
+    contain no live blockers (4.2930 test minutes, owned schema dropped). The first
+    repair tries a checked route avoiding the memory, then a live-constrained memory
+    preference. That passes the first corridor, but a later goal is covered by two
+    live threats; the second smoke stops at 24/152 with the same single death
+    (5.4933 minutes, owned schema dropped). The final recovery may advance only a
+    checked prefix that avoids current live hazards, rechecking each following segment
+    and pulling its first reachable guard normally. Only one guard-free replan is
+    allowed per road; fresh death/map changes abandon the old road and existing
+    approach/revival budgets remain unchanged. Campaign recovery uses the same helper
+    with its existing diagnostic name and scope.
+    Third public-restore Haramel passes at level 25/156 with one recorded death,
+    6,420,385 game ms, all eleven quests completed once, both boss movies/class-chest
+    outcomes, 19 Iron/seven Bronze, the sealed bundle, staff 137763 retained and an
+    ordinary endpoint relog (8.1849 test minutes; `l12-smoke-a3/`, `smoke-audit.json`).
+    Its owned schema is dropped. Recovery is exercised: 63 checked points with one
+    live constraint, an eight-point live-safe prefix when two threats cover the goal,
+    then further 68/40/89-point checked routes. Both earlier failed smoke traces and
+    cleanup receipts remain. Fast passes 103 tests/five guarded skips/all eleven
+    scenarios in 8.4151 minutes (`run/rc11-fast/rc11-haramel-handoff/`), and all seven
+    final pre-commit checks pass (`run/rc11-haramel-handoff/*-final.log`). Commit and
+    acknowledge the rebuild before fresh continuous acceptance; RC-11 remains open.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5424,6 +5467,16 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-06 RC-11 pending: attempt twenty-four passes Q24015, Destiny and the full
+  CG endpoint, then Haramel's historical earring requirement rejects the actual
+  carried Deyla earring. Bind and protect observed incoming gear, retain mandatory
+  gear/stigma checks and verify original durable objects on cold resume. Forty
+  focused checks and the native handoff pass. Two retained contained Haramel failures
+  expose remembered-danger recovery and a guarded final goal; the third smoke proves
+  checked recovery/prefix walking, both clears and endpoint relog at 25/156 with one
+  death and its owned schema dropped. Fast passes 103/five/all eleven and seven
+  final checks pass (`run/rc11-haramel-handoff/`). Commit/rebuild before fresh-create
+  proof; RC-11/12 remain unchecked.
 - 2026-10-06 RC-11 pending: attempt twenty-three completes Q24015, Destiny and all
   approved coin transactions, then its endpoint still compares with the old staff
   captured before the equip. Keep the thirteen deaths, failed receipt and cleanup.

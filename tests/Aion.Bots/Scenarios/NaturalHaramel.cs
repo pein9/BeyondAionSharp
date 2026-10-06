@@ -15,6 +15,8 @@ public sealed record NaturalHaramel(int MapId, int CooldownId, int MaxEntries, i
 	NaturalHaramelTask[] BetweenVisits, NaturalHaramelTask[] SecondVisit, NaturalHaramelTask[] Finish,
 	NaturalHaramelKey[]? TowerChestKeys = null)
 {
+	public int[] RequiredIncomingItemIds => [StaffItemId, 110551139, 114501726, 111501065, 112501015,
+		113501074, 111101650, 188053787, IronItemId, BronzeItemId];
 	public int[] GraphNpcIds => [AnchorNpcId, PortalNpcId, EntryExitNpcId, BossExitNpcId, LiftNpcId,
 		BossNpcId, ChestNpcId, WorkingBindNpcId, 700950, 700953, 700954, 730359];
 	public static bool CanUpgradeGroup(string? group) => group is "CH_TORSO" or "CH_GLOVE" or "CH_SHOULDER" or
@@ -152,6 +154,10 @@ public sealed record NaturalHaramelProgress(int CharacterId, long StartedAtMilli
 			leg.Start.CompletedQuestIds.Any(id => !fresh.CompletedQuestIds.Contains(id)))
 			throw new InvalidDataException("Haramel checkpoint identity, budget or incoming journal is inconsistent.");
 		RequireLoadout(fresh, leg.Haramel!);
+		foreach (NaturalHaramelEquipment original in saved.IncomingEquipment.Where(i => i.Slot is > 0 and not (65535 or 8192 or 16384)))
+			if (!fresh.Inventory.TryGetValue(original.ObjectId, out BotInventoryItem? item) || item.ItemId != original.ItemId || item.Count != 1 ||
+				original.ItemId == leg.Haramel!.StaffItemId && item.Details.EquippedSlot != 3)
+				throw new InvalidDataException($"Haramel lost incoming equipment object {original.ObjectId}/{original.ItemId}.");
 		return saved with { NeedsInstanceObservation = fresh.MapId == leg.Haramel!.MapId }; // Nothing is replayed.
 	}
 

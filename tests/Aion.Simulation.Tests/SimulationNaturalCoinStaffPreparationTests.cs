@@ -5,8 +5,11 @@ using Aion.Bots.Scenarios;
 using Aion.Bots.Tracing;
 using Aion.Bots.World;
 using Aion.GameServer.Model;
+using Aion.GameServer.Network.Aion.ServerPackets;
+using Aion.GameServer.QuestEngine.Model;
 using Aion.GameServer.Services.Items;
 using Aion.GameServer.TestKit;
+using Aion.GameServer.Utils;
 
 namespace Aion.Simulation.Tests;
 
@@ -35,9 +38,11 @@ public sealed partial class SimulationFastScenarioTests
 		NaturalCoinGear gear = NaturalAltgardContract.LoadLeg("cg").CoinGear!;
 		foreach (int item in new[] { 101501355, gear.StaffItemId, gear.SealedBundleId })
 			Assert.Equal(0, ItemService.AddItem(probe.Server, item, 1, allowInventoryOverflow: true));
-		(int Item, ushort Slot)[] body = [(110551139, 8), (114501726, 32), (111101650, 16), (113100773, 4096), (112500097, 2048)];
+		(int Item, ushort Slot)[] body = [(110551139, 8), (114501726, 32), (111101650, 16), (113100773, 4096),
+			(112500097, 2048), (120000833, 64), (120001132, 128), (122001664, 256), (122000871, 512), (121000751, 1024), (125004139, 4)];
 		foreach (var item in body)
 			Assert.Equal(0, ItemService.AddItem(probe.Server, item.Item, 1, allowInventoryOverflow: true));
+		Assert.Equal(0, ItemService.AddItem(probe.Server, 123001109, 1, allowInventoryOverflow: true));
 		Assert.Equal(0, ItemService.AddItem(probe.Server, gear.CoinItemId, gear.IncomingCoins, allowInventoryOverflow: true));
 		await session.SynchronizeAsync(token);
 		foreach (var item in body)
@@ -106,6 +111,22 @@ public sealed partial class SimulationFastScenarioTests
 			await shop.EquipAsync(purchase.ItemId, progress, token);
 		}
 		NaturalCoinGearSteps.VerifyRetainedLoadout(session.Api.World, retained);
+		// Labelled prerequisite only: this probe does not claim to play Destiny. The complete natural
+		// journey already proved it before attempt 24's CG/Haramel handoff rejected the historical earring.
+		QuestState destiny = probe.Server.GetQuestStateList().GetQuestState(2900);
+		destiny.SetStatus(QuestStatus.COMPLETE); destiny.SetQuestVar(0); destiny.SetCompleteCount(1);
+		PacketSendUtility.SendPacket(probe.Server, new SM_QUEST_COMPLETED_LIST(1, [destiny]));
+		await session.SynchronizeAsync(token);
+		NaturalAltgardContract historical = NaturalAltgardContract.LoadLeg("l12");
+		NaturalAltgardContract BoundHaramel() => NaturalAltgardContinuation.BindIncoming(historical, session.Api.World.CompletedQuestIds,
+			session.Api.World.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(),
+			NaturalAltgardContinuation.EquippedItemIds(session.Api.World));
+		NaturalAltgardContract bound = BoundHaramel();
+		Assert.Contains(120000833, bound.Haramel!.ProtectedItemIds);
+		Assert.DoesNotContain(120001521, bound.Haramel.ProtectedItemIds);
+		NaturalHaramelProgress handoff = NaturalHaramelProgress.Begin(session.CharacterId, fixture.Clock.NowMillis, session.Api.World, bound.Haramel);
+		string receipt = path + ".haramel.json";
+		handoff.Write(receipt);
 		await session.QuitAsync(token);
 		await session.WaitForReentryAsync(token);
 		await session.ReloginExistingCharacterAsync(token);
@@ -118,8 +139,12 @@ public sealed partial class SimulationFastScenarioTests
 		NaturalCoinGearSteps.VerifyRetainedLoadout(session.Api.World, retained);
 		Assert.Equal("coin-gear-complete", NaturalCoinGearPolicy.Decide(gear,
 			NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition, coinGearProgress: progress)).Action);
+		NaturalHaramelProgress cold = NaturalHaramelProgress.Read(receipt, session.CharacterId, fixture.Clock.NowMillis,
+			session.Api.World, BoundHaramel());
+		Assert.Equal(handoff.IncomingEquipment, cold.IncomingEquipment);
 		Assert.False(session.Api.World.IsDead);
 		Console.WriteLine("RC-11 approved owned staff equipped before loadout freeze; native reward, three purchases/four-coin debit and retained equipment verification survive ordinary endpoint relog. No weapon purchase.");
+		Console.WriteLine("RC-11 labelled Q2900 prerequisite and Deyla earring: shared CG/Haramel handoff and cold receipt preserve the actual incoming gear, without the absent historical earring.");
 		policy.AssertClean();
 	}
 }

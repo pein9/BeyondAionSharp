@@ -267,6 +267,61 @@ public sealed class NaturalAltgardHaramelContractTests
 	}
 
 	[Fact]
+	public void RevisedIncomingEarringIsProtectedAndCannotDisappearOrChangeObjectsAcrossColdResume()
+	{
+		BotWorldModel fresh = Login();
+		int old = fresh.Inventory.Values.Single(i => i.ItemId == 120001521).ObjectId;
+		fresh.Apply(Packet<SM_DELETE_ITEM>(("itemObjectId", old)));
+		AddEarring(900833);
+		Assert.Throws<InvalidDataException>(() => NaturalHaramelProgress.Begin(133297, 0, fresh, Rules));
+		NaturalAltgardContract Bound() => NaturalAltgardContinuation.BindIncoming(Leg, fresh.CompletedQuestIds,
+			fresh.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(),
+			NaturalAltgardContinuation.EquippedItemIds(fresh));
+		NaturalAltgardContract bound = Bound();
+		Assert.DoesNotContain(120001521, bound.Haramel!.ProtectedItemIds);
+		Assert.Contains(120000833, bound.Haramel.ProtectedItemIds);
+		Assert.Contains(123001109, NaturalAltgardContinuation.EquippedItemIds(fresh));
+		Assert.Contains(120001521, Rules.ProtectedItemIds); // The historical contract is unchanged.
+		NaturalHaramelProgress saved = NaturalHaramelProgress.Begin(133297, 0, fresh, bound.Haramel);
+		string path = Path.Combine(Path.GetTempPath(), "rc11-handoff-" + Guid.NewGuid().ToString("N") + ".json");
+		try
+		{
+			saved.Write(path);
+			Assert.Equal(saved.IncomingEquipment, NaturalHaramelProgress.Read(path, 133297, 1, fresh, Bound()).IncomingEquipment);
+			fresh.Apply(Packet<SM_DELETE_ITEM>(("itemObjectId", 900833)));
+			Assert.Throws<InvalidDataException>(() => NaturalHaramelProgress.Read(path, 133297, 2, fresh, Bound()));
+			AddEarring(900834); // Same item ID cannot replace the retained incoming object.
+			Assert.Throws<InvalidDataException>(() => NaturalHaramelProgress.Read(path, 133297, 2, fresh, Bound()));
+		}
+		finally { File.Delete(path); File.Delete(path + ".tmp"); }
+
+		void AddEarring(int objectId) => fresh.Apply(Packet<SM_INVENTORY_ADD_ITEM>(("items", new List<IReadOnlyDictionary<string, object?>>
+		{
+			Row(("objectId", objectId), ("itemId", 120000833), ("desc", ""), ("itemCount", 1L), ("itemMask", (ushort)4),
+				("itemCreator", ""), ("cloth", false), ("equipmentSlot", (ushort)64), ("details", new BotItemDetails(EquippedSlot: 64))),
+		})));
+	}
+
+	[Theory]
+	[InlineData(111501065)]
+	[InlineData(112501015)]
+	[InlineData(113501074)]
+	[InlineData(111101650)]
+	[InlineData(110551139)]
+	[InlineData(114501726)]
+	[InlineData(188053787)]
+	public void RevisedBindingDoesNotDropMissingMandatoryGearFromItsProtection(int itemId)
+	{
+		BotWorldModel fresh = Login();
+		fresh.Apply(Packet<SM_DELETE_ITEM>(("itemObjectId", fresh.Inventory.Values.Single(i => i.ItemId == itemId).ObjectId)));
+		NaturalAltgardContract bound = NaturalAltgardContinuation.BindIncoming(Leg, fresh.CompletedQuestIds,
+			fresh.Inventory.Values.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray(),
+			NaturalAltgardContinuation.EquippedItemIds(fresh));
+		Assert.Contains(itemId, bound.Haramel!.ProtectedItemIds);
+		Assert.Throws<InvalidDataException>(() => NaturalHaramelProgress.Begin(133297, 0, fresh, bound.Haramel));
+	}
+
+	[Fact]
 	public void InstanceInfoDecodesActualSelfAndTeamCountsAndResetOrMergeSemantics()
 	{
 		var decoder=new BotServerPacketDecoder(); var world=new BotWorldModel();
