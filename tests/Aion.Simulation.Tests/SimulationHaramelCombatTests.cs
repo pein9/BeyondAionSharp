@@ -115,6 +115,14 @@ public sealed partial class SimulationFastScenarioTests
 						Assert.Equal(instanceId, Server().GetInstanceId());
 					}
 					await SetupAtAsync(new(172,20,144.22548f,0));
+					// A survivor of the last fight (the pair's partner, or this victim after a refused pull) walks home once the
+					// probe is moved away, and Java refuses a pull on a returning npc. Whether the rest before this fight outlasted
+					// that walk depended on the dice of the last one (D35's Fast run: a 13 s first fight and no rest). Wait it out.
+					for (int wait = 0; wait < 60 && victim.GetAi().GetState() is not (Aion.GameServer.Ai.AIState.IDLE or Aion.GameServer.Ai.AIState.WALKING); wait++)
+					{
+						await session.AdvanceAsync(TimeSpan.FromSeconds(1), token);
+						await session.SynchronizeAsync(token);
+					}
 					session.BeginStep($"normal-{++sequence}", $"actual-HP-{victim.GetNpcId()}-and-shipped-neighbours");
 					long started = fixture.Clock.NowMillis;
 					NaturalCombatDiagnosticResult result = await new NaturalIshalgenJourney(session, runtime, new()).RunObservedCombatAsync(async _ =>
