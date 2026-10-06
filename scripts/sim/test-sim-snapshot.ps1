@@ -174,6 +174,19 @@ try {
 	Assert-Throws { & $script -Action Restore -Name altgard-haramel-l12 -Docker $fake -SnapshotRoot $snapshots } '*missing its Haramel receipt*' 'Missing Haramel budgets were restored.'
 	Assert-True (-not (Test-Path -LiteralPath $log)) 'Missing receipts touched MySQL.'
 
+	# AX-13: an Abyss-entry endpoint resumes on its own leg, and a later leg still selects itself.
+	$abyss = Join-Path $snapshots 'morheim-abyss-entry-mock'
+	New-Item -ItemType Directory -Path $abyss | Out-Null
+	Copy-Item -LiteralPath (Join-Path $munin 'dump.sql.gz') -Destination $abyss
+	[ordered]@{ schemaVersion=1; name='morheim-abyss-entry-mock'; source='natural-altgard-ax'; characterId=4242;
+		elapsedMillis=3000; dumpSha256=$hash } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $abyss 'snapshot.json')
+	$abyssRestored = & $script -Action Restore -Name morheim-abyss-entry-mock -Docker $fake -SnapshotRoot $snapshots | ConvertFrom-Json
+	Assert-True ($abyssRestored.environment.AF_ALTGARD -eq 'ax' -and $abyssRestored.environment.NI08_RESUME_CHARACTER -eq '4242') 'An Abyss-entry endpoint did not resume on its own leg.'
+	Assert-True ($abyssRestored.environment.AION_SIM_NI08_ELAPSED_MS -eq '23000') 'An Abyss-entry restore rewound game time.'
+	$abyssBase = [ordered]@{}
+	foreach ($property in $abyssRestored.environment.PSObject.Properties) { $abyssBase[$property.Name] = [string]$property.Value }
+	Assert-True ((Get-LegEnvironment $abyssBase 'l12').AF_ALTGARD -eq 'l12') 'A leg after the Abyss-entry endpoint kept the ax selector.'
+
 	# An edited dump is refused before anything is created.
 	if (Test-Path -LiteralPath $log) { Remove-Item -LiteralPath $log }
 	[IO.File]::WriteAllBytes((Join-Path $munin 'dump.sql.gz'), [byte[]](9, 9, 9))

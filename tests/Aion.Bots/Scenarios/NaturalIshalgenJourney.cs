@@ -1600,6 +1600,49 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				var services = new NaturalServiceSteps(session);
 				Require.True(combat.IsCleric, "The Abyss-entry leg needs the Cleric.");
 				NaturalAltgardObservation Observed() => NaturalAltgardObservation.Observe(world, session.CurrentPosition);
+				// AX-13: quit, log back in, and require that the character survived as it was. A relog gives the session a new world
+				// model, so everything after it reads session.Api.World.
+				async Task<(NaturalJourneyCheckpoint Before, NaturalJourneyCheckpoint After)> RelogAtEndpointAsync()
+				{
+					NaturalJourneyCheckpoint before = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId, session.ConnectionGeneration, contract,
+						session.CurrentPosition, earlyAscension: options.AscensionBridge);
+					session.BeforeSend = null;
+					await session.QuitAsync(token);
+					await session.WaitForReentryAsync(token);
+					await session.ReloginExistingCharacterAsync(token);
+					await session.EnterWorldAsync(token);
+					await session.SynchronizeAsync(token);
+					NaturalJourneyCheckpoint after = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId, session.ConnectionGeneration, contract,
+						session.CurrentPosition, earlyAscension: options.AscensionBridge);
+					NaturalJourneyPersistence.Verify(before, after);
+					if (laterCapital != null)
+						await laterCapital.WriteCheckpointAsync(folder, leg.Leg, before, after, token, distinctSegment: continuousAltgard);
+					return (before, after);
+				}
+				NaturalAbyssEntryEndpoint ObservedEndpoint() => NaturalAbyssEntryLeg.VerifyEndpoint(leg,
+					NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition), session.CharacterId, StaffMagicBoost, PhysicalDefence);
+
+				// AX-14: a run resumed on the endpoint snapshot has nothing left to play. The endpoint is checked from this fresh login
+				// and again across one more relog, and the resume receipt is written.
+				if (leg.Order.All(world.CompletedQuestIds.Contains))
+				{
+					session.BeginStep("ax-endpoint-resume", "verify-the-restored-endpoint-and-relog");
+					NaturalAbyssEntryEndpoint restored = ObservedEndpoint();
+					(NaturalJourneyCheckpoint resumedBefore, NaturalJourneyCheckpoint resumedAfter) = await RelogAtEndpointAsync();
+					NaturalAbyssEntryEndpoint again = ObservedEndpoint();
+					Require.True(NaturalAbyssEntryLeg.SameEndpoint(restored, again), "The restored endpoint changed across a relog.");
+					await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntryLeg.EndpointResumeReceipt), System.Text.Json.JsonSerializer.Serialize(new
+					{
+						before = resumedBefore, after = resumedAfter, verified = true, session.CharacterId, ElapsedMillis = runtime.NowMillis, endpoint = again,
+					}), token);
+					session.TraceDiagnostic(NaturalAbyssEntryLeg.EndpointResumeDiagnostic, new Dictionary<string, object?>
+					{
+						["level"] = again.Level, ["map"] = again.MapId, ["kinah"] = again.Kinah, ["bronzeCoins"] = again.BronzeCoins, ["staff"] = again.StaffItemId,
+						["torso"] = again.TorsoItemId, ["completed"] = again.CompletedLegQuestIds, ["recoverableExperience"] = session.Api.World.RecoverableExperience,
+						["generation"] = resumedAfter.ConnectionGeneration,
+					});
+					return;
+				}
 
 				session.BeginStep("ax-start", "verify-the-abyss-entry-start-contract");
 				NaturalAbyssEntryStart start = NaturalAbyssEntryLeg.VerifyStart(leg, Observed(), session.CharacterId, runtime.NowMillis);
@@ -1752,10 +1795,19 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					{
 						case "frontier":
 						{
-							NaturalAbyssEntryProgress progress = NaturalAbyssEntryLeg.VerifyProgress(leg, start, Observed(), next.Phase,
-								new NaturalAbyssLedger(ObservedExperience() - experienceAtStart, fares, bindPaid, payments, inventoryChecks, otherInventoryChecks,
-									coinManifests, coinPurchases, coinsSupplied, opened, notOpened, attempts, arenaExperience, combat.ReviveCount, discarded,
-									scrollsSupplied, scrollsUsed, soulHeals, combat.BindReviveCount, courseExperience),
+							// AX-13: at the endpoint the consumables are topped up first, as at every earlier leg's checkpoint, so the
+							// receipt and the relog see the character the endpoint snapshot will hold.
+							bool endpoint = next.Phase == NaturalAbyssEntryDecisionEngine.EndpointPhase;
+							if (endpoint)
+							{
+								session.BeginStep("ax-endpoint", "verify-and-relog-at-the-leg-endpoint");
+								await TopUpHelpItemsAsync("checkpoint");
+								await session.SynchronizeAsync(token);
+							}
+							var ledger = new NaturalAbyssLedger(ObservedExperience() - experienceAtStart, fares, bindPaid, payments, inventoryChecks, otherInventoryChecks,
+								coinManifests, coinPurchases, coinsSupplied, opened, notOpened, attempts, arenaExperience, combat.ReviveCount, discarded,
+								scrollsSupplied, scrollsUsed, soulHeals, combat.BindReviveCount, courseExperience);
+							NaturalAbyssEntryProgress progress = NaturalAbyssEntryLeg.VerifyProgress(leg, start, Observed(), next.Phase, ledger,
 								StaffMagicBoost, PhysicalDefence, runtime.NowMillis);
 							await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntryLeg.ProgressReceipt),
 								System.Text.Json.JsonSerializer.Serialize(progress), token);
@@ -1776,6 +1828,32 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								["obeliskRevives"] = combat.BindReviveCount, ["courseExperience"] = courseExperience,
 								["soulHeals"] = soulHeals.Select(heal => $"{heal.Recovered} XP for {heal.Price} Kinah").ToArray(),
 								["reason"] = next.Reason,
+							});
+							if (!endpoint) return;
+							// AX-13: the endpoint. It is verified from the client's view above. Then the relog, and the same checks from the
+							// fresh login: the frontier check with the leg's ledger, and the ledger-free endpoint check a restored snapshot
+							// has to pass (AX-14). The completion receipt carries the clock and the leg's record for that snapshot.
+							(NaturalJourneyCheckpoint before, NaturalJourneyCheckpoint after) = await RelogAtEndpointAsync();
+							BotWorldModel relogged = session.Api.World;
+							long experienceAfter = relogged.CurrentExperience + runtime.Data.PlayerExperienceTable.GetStartExpForLevel(relogged.Level);
+							NaturalAbyssEntryProgress resumed = NaturalAbyssEntryLeg.VerifyProgress(leg, start,
+								NaturalAltgardObservation.Observe(relogged, session.CurrentPosition), next.Phase,
+								ledger with { ExperienceGained = experienceAfter - experienceAtStart }, StaffMagicBoost, PhysicalDefence, runtime.NowMillis);
+							Require.True(resumed.Kinah == progress.Kinah && resumed.BronzeCoins == progress.BronzeCoins && resumed.ExperienceGained == progress.ExperienceGained &&
+								resumed.StaffItemId == progress.StaffItemId && resumed.TorsoItemId == progress.TorsoItemId && resumed.Level == progress.Level,
+								"The relogged character differs from the one that reached the endpoint.");
+							NaturalAbyssEntryEndpoint left = ObservedEndpoint();
+							await File.WriteAllTextAsync(Path.Combine(folder, NaturalAbyssEntryLeg.CompletionReceipt), System.Text.Json.JsonSerializer.Serialize(new
+							{
+								before, after, verified = true, session.CharacterId, ElapsedMillis = runtime.NowMillis, Deaths = combat.ReviveCount,
+								progress = resumed, endpoint = left, helpItems = helpSupplied, recoverableExperience = relogged.RecoverableExperience,
+							}), token);
+							session.TraceDiagnostic(NaturalAbyssEntryLeg.CompletionDiagnostic, new Dictionary<string, object?>
+							{
+								["level"] = resumed.Level, ["map"] = resumed.MapId, ["completed"] = resumed.CompletedLegQuestIds, ["kinah"] = resumed.Kinah,
+								["experienceGained"] = resumed.ExperienceGained, ["deaths"] = combat.ReviveCount, ["staff"] = resumed.StaffItemId,
+								["recoverableExperience"] = relogged.RecoverableExperience, ["generation"] = after.ConnectionGeneration,
+								["elapsedMillis"] = runtime.NowMillis,
 							});
 							return;
 						}

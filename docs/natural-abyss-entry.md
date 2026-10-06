@@ -21,8 +21,9 @@ always soul heal after an obelisk resurrection. They are AX-12a, AX-12b and AX-1
 before AX-13. AX-12a is done: a Cleric that dies in the arena stands up inside it (D38),
 leaves by the exit and clears the arena on its second try. AX-12b is done: after a revive
 at the obelisk the Cleric is soul healed by Golenthor before it rests. AX-12c is done: the
-Elite Rank 7 staff is bought with the level-26 armor and worn. AX-13, the one contained run
-with its relog, is next.
+Elite Rank 7 staff is bought with the level-26 armor and worn. AX-13 is done: one contained
+run plays the whole leg, relogs at the endpoint and writes the completion receipt. AX-14,
+the endpoint snapshot, is next.
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -910,10 +911,45 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   - Tests: the contract test pins both staffs to Vebna's list, their prices and their magic
     boost, and that the level-26 one is the best staff she sells (26 pass).
   - Fast and the seven pre-commit checks: see the Progress log.
-- [ ] **AX-13 - One contained SIM from the snapshot.** Depends AX-12c. Restore, play the whole
+- [x] **AX-13 - One contained SIM from the snapshot.** Depends AX-12c. Restore, play the whole
   leg without help beyond the approved items, and relog at the endpoint. Record deaths,
   attempts, costs, consumables, supplied items, the level and XP. A failed run is fixed and
   rerun, and the failed evidence is kept.
+  - 2026-10-06, the endpoint: the rule's last frontier. The consumables are topped up as
+    at every earlier leg's checkpoint, and the frontier check runs with the whole ledger.
+    Then the Cleric quits and logs back in. The fresh login has to show the same
+    character (map, level, position, bind, both journals), pass the same frontier check
+    again, and pass a second check that uses no ledger: what a login on the endpoint
+    snapshot must show. `altgard-ax-completion.json` is written only after all three.
+  - **Proof `run/ax13/ax13-leg-a2`** (public Restore of `altgard-rc-complete-s1`, leg `ax`,
+    seed 1, schema dropped). No help beyond the approved items. The record:
+    - **Deaths:** none. **Attempts:** the arena once, ten spirits in 59.4 s; the ring course
+      once, six rings, landed after 45.3 s.
+    - **Level and XP:** level 26, 166,405 of 2,017,917 XP into it. 1,047,092 XP gained:
+      293,759 from Q24020, 20,110 each from Q2945 and Q2946, 403,012 from Q2947, 301,641
+      from Q2042 and 8,460 from the ten spirits. 97,328 recoverable XP is still carried.
+    - **Costs:** 6,637 Kinah in three fares and 2,690 for the bind; Q2947 paid 4,000.
+      748,485 Kinah at the start, 743,158 at the end.
+    - **Supplied items:** one Greater Raging Wind Scroll and 32 Bronze Coins, both in
+      `help-items.json`. The checkpoint top-up supplied nothing.
+    - **Consumables:** the supplied scroll; two Life Potions in the arena; six uses of two
+      buff items the Cleric already carried (their item ids are not in the trace). Two
+      Strange Green Sacks and two Bronze Coin Chests were opened, and the flight-time
+      manastone was discarded.
+    - **Gear:** the Elite Rank 7 staff and four Elite Rank 7 armor pieces worn over Aegir's
+      hauberk; Altruist's Staff and the replaced pieces in the cube; the stigma bundle sealed.
+    - **Relog:** login generation 1 to 2, the same character 133276 at Vebna in Morheim.
+      16 min 30 s of game time.
+  - Kept: `ax13-leg-a1` passed with the same numbers, but its receipt listed two Rank 8
+    pieces in the cube as worn: a fresh login reports cube items with slot 0, not 65535.
+    The endpoint check now asks whether a piece is on its own slot.
+  - The snapshot script: a snapshot of this leg's endpoint restores with the leg selected,
+    and the public Verify accepts the resume receipt. A run resumed on that snapshot has
+    nothing to play: it checks the endpoint, relogs once and writes
+    `altgard-ax-endpoint-resume.json`. AX-14 runs it. `scripts/sim/test-sim-snapshot.ps1`
+    passes with the new case.
+  - Tests: eleven refused endpoints and the relogged slot values (26 contract tests pass).
+  - Fast and the seven pre-commit checks: see the Progress log.
 - [ ] **AX-14 - Preserve the endpoint.** Depends AX-13. Save the committed-code endpoint under
   a new name, verify its restore and relog, drop every owned schema, and update
   [the readiness report](natural-ntc-readiness.md) with the measured level and XP. Run the
@@ -1276,3 +1312,9 @@ The original questions, with the recommendations made at the time:
   (`run/ax12c/ax12c-staff-a1`). Fast passes 115 of 120 tests with five guarded skips and all eleven
   scenarios in 8.59 minutes (`run/ax12c-fast/`); the seven pre-commit checks pass
   (`run/ax12c/checks/`).
+- 2026-10-06 — AX-13: one contained run of the whole leg with the relog at the endpoint
+  (`run/ax13/ax13-leg-a2`). No death, one try each at the arena and the course, level 26
+  with 166,405 XP into it, 743,158 Kinah, one scroll and 32 coins supplied. The completion
+  receipt is written after the relog. Fast passes 115 of 120 tests with five guarded skips and
+  all eleven scenarios in 8.72 minutes (`run/ax13-fast/`); the seven pre-commit checks pass
+  (`run/ax13/checks/`).

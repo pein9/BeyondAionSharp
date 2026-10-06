@@ -771,6 +771,42 @@ public sealed class NaturalAbyssEntryContractTests
 		];
 		Assert.All(refusedEndpoint, verify => Assert.Throws<InvalidDataException>(verify));
 
+		// AX-13, AX-14: the endpoint from the client's view alone, as a fresh login on the endpoint snapshot must show it.
+		NaturalAbyssEntryEndpoint left = NaturalAbyssEntryLeg.VerifyEndpoint(Leg, dressed, start.CharacterId, HomeBoost, DefenceOf);
+		Assert.Equal((start.CharacterId, NaturalAbyssEntry.Morheim, 26, 0L, 101500818, 110551147), (left.CharacterId, left.MapId, left.Level, left.BronzeCoins, left.StaffItemId, left.TorsoItemId));
+		Assert.Equal([24020, 2945, 2946, 2947, 2042], left.CompletedLegQuestIds);
+		Assert.Equal([101500818, 111501073, 112501023, 113501082, 114501089], left.WornCoinGear);
+		// A fresh login reports the pieces in the cube with slot 0: they are not worn (run ax13-leg-a1 listed two of them).
+		NaturalAltgardObservation relogged = dressed with { Inventory = [.. dressed.Inventory!.Select(item => item.EquipmentSlot == 65535 ? item with { EquipmentSlot = 0 } : item)] };
+		Assert.Equal(left.WornCoinGear, NaturalAbyssEntryLeg.VerifyEndpoint(Leg, relogged, start.CharacterId, HomeBoost, DefenceOf).WornCoinGear);
+		Assert.Equal(NaturalAbyssEntry.Morheim, left.BindMapId);
+		Assert.True(NaturalAbyssEntryLeg.SameEndpoint(left, left with { Position = new BotPosition(1, 2, 3, 4) }));
+		Assert.False(NaturalAbyssEntryLeg.SameEndpoint(left, left with { Kinah = left.Kinah - 1 }));
+		Assert.False(NaturalAbyssEntryLeg.SameEndpoint(left, left with { WornCoinGear = [101500818] }));
+		Assert.Equal(("altgard-ax-completion.json", "altgard-ax-endpoint-resume.json"), (NaturalAbyssEntryLeg.CompletionReceipt, NaturalAbyssEntryLeg.EndpointResumeReceipt));
+		Action[] notTheEndpoint =
+		[
+			// The level-26 gear not bought yet.
+			() => NaturalAbyssEntryLeg.VerifyEndpoint(Leg, ended, start.CharacterId, HomeBoost, DefenceOf),
+			() => NaturalAbyssEntryLeg.VerifyEndpoint(Leg, dressed with { Level = 25 }, start.CharacterId, HomeBoost, DefenceOf),
+			() => NaturalAbyssEntryLeg.VerifyEndpoint(Leg, dressed with { IsDead = true }, start.CharacterId, HomeBoost, DefenceOf),
+			() => NaturalAbyssEntryLeg.VerifyEndpoint(Leg, dressed with { MapId = NaturalAbyssEntry.Pandaemonium }, start.CharacterId, HomeBoost, DefenceOf),
+			// Outside the hub, and still bound in Altgard.
+			() => NaturalAbyssEntryLeg.VerifyEndpoint(Leg, dressed with { Position = new BotPosition(900, 900, 450, 0) }, start.CharacterId, HomeBoost, DefenceOf),
+			() => NaturalAbyssEntryLeg.VerifyEndpoint(Leg, dressed with { Bind = StartState().Bind }, start.CharacterId, HomeBoost, DefenceOf),
+			// A quest of the leg not complete, or still in the journal.
+			() => NaturalAbyssEntryLeg.VerifyEndpoint(Leg, dressed with { CompletedQuestIds = home.CompletedQuestIds }, start.CharacterId, HomeBoost, DefenceOf),
+			() => NaturalAbyssEntryLeg.VerifyEndpoint(Leg, dressed with { Quests = new Dictionary<int, BotQuestState>(endQuests) { [2042] = new(2042, 4, 8, 0, null) } },
+				start.CharacterId, HomeBoost, DefenceOf),
+			// A reward chest still closed, and the flight-time manastone still owned.
+			() => NaturalAbyssEntryLeg.VerifyEndpoint(Leg, Adding(dressed, new NaturalJourneyItem(930009, 188050873, 1, 65535)), start.CharacterId, HomeBoost, DefenceOf),
+			() => NaturalAbyssEntryLeg.VerifyEndpoint(Leg, Adding(dressed, new NaturalJourneyItem(930010, 167000465, 1, 65535)), start.CharacterId, HomeBoost, DefenceOf),
+			// Altruist's Staff gone.
+			() => NaturalAbyssEntryLeg.VerifyEndpoint(Leg, dressed with { Inventory = [.. dressed.Inventory!.Where(item => item.ItemId != 101501224)] },
+				start.CharacterId, HomeBoost, DefenceOf),
+		];
+		Assert.All(notTheEndpoint, verify => Assert.Throws<InvalidDataException>(verify));
+
 		// AX-12b: one fall on the course. The death took 17,453 XP, 11,636 of it recoverable; after the obelisk revive Golenthor
 		// gave that back for 2,888 Kinah. The course's net is the third that is gone for good.
 		var heal = new NaturalSoulHeal(204318, 11_636, 2_888, purse, purse - 2_888, 1_390_000);

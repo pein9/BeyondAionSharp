@@ -214,6 +214,11 @@ function Restore-Snapshot([string]$SnapshotName = $Name) {
 		$environment.AF_ALTGARD = 'l12'
 		$environment.AF_HM_PROGRESS = $haramelProgress
 	}
+	# AX-13: the Abyss-entry endpoint stands in Morheim, which only its own leg accepts. A run resumed there
+	# checks the endpoint from the fresh login, relogs once more and writes altgard-ax-endpoint-resume.json.
+	if ($metadata.PSObject.Properties.Name -contains 'source' -and $metadata.source -eq 'natural-altgard-ax') {
+		$environment.AF_ALTGARD = 'ax'
+	}
 	if ($metadata.PSObject.Properties.Name -contains 'source' -and $metadata.source -like 'natural-capital-*') {
 		$environment.NA_ASCENSION = '1'
 		$environment.PC_CAPITAL = 'first'
@@ -453,11 +458,13 @@ try {
 				foreach ($key in $restored.environment.Keys) { $extra[$key] = $restored.environment[$key] }
 				Invoke-NaturalJourney $restored.database $Run $evidence $extra
 				$haramel = $extra.ContainsKey('AF_ALTGARD') -and $extra.AF_ALTGARD -eq 'l12'
+				$abyssEntry = $extra.ContainsKey('AF_ALTGARD') -and $extra.AF_ALTGARD -eq 'ax'
 				$capital = $extra.ContainsKey('PC_CAPITAL')
-				$completionFile = if ($haramel) { 'altgard-l12-completion.json' } elseif ($capital) { 'capital-stage-completion.json' } else { 'completion.json' }
+				$completionFile = if ($haramel) { 'altgard-l12-completion.json' } elseif ($abyssEntry) { 'altgard-ax-endpoint-resume.json' }
+					elseif ($capital) { 'capital-stage-completion.json' } else { 'completion.json' }
 				$completion = Get-Content -Raw -LiteralPath (Join-Path $evidence $completionFile) | ConvertFrom-Json
 				if ($completion.CharacterId -ne $restored.characterId -or
-					$(if ($haramel -or $capital) { -not $completion.verified } else { $completion.Next.Outcome -ne 'complete' })) {
+					$(if ($haramel -or $abyssEntry -or $capital) { -not $completion.verified } else { $completion.Next.Outcome -ne 'complete' })) {
 					throw 'The restored character did not reach the snapshot endpoint.'
 				}
 				Write-Host "Verified snapshot ${Name}: character $($restored.characterId) resumed at its endpoint. Evidence: $evidence"

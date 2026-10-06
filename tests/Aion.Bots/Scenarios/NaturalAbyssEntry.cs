@@ -207,6 +207,11 @@ public sealed record NaturalAbyssEntryProgress(string Leg, string Frontier, int 
 	NaturalAbyssAttempt[]? Attempts = null, long ArenaExperience = 0, int Deaths = 0, NaturalJourneyItem[]? Discarded = null,
 	long ScrollsSupplied = 0, long ScrollsUsed = 0, NaturalSoulHeal[]? SoulHeals = null, int ObeliskRevives = 0, long CourseExperience = 0);
 
+/// <summary>AX-13, AX-14: the endpoint as a fresh login shows it, with no ledger: what the endpoint snapshot holds.</summary>
+public sealed record NaturalAbyssEntryEndpoint(string Leg, int CharacterId, int MapId, Aion.Bots.World.BotPosition Position, int Level, long Kinah,
+	long BronzeCoins, int StaffItemId, int TorsoItemId, int[] CompletedLegQuestIds, int BindMapId, Aion.Bots.World.BotPosition BindPosition,
+	int[] WornCoinGear);
+
 /// <summary>What the runner counted while the leg ran. Everything else in a receipt is the client's view.</summary>
 /// <param name="InventoryChecks">One at the start and one after each turn-in.</param>
 /// <param name="OtherInventoryChecks">The checks that wore bought coin armor.</param>
@@ -227,6 +232,62 @@ public sealed record NaturalAbyssLedger(long ExperienceGained, long Fares, long 
 /// <summary>The leg's incoming contract, checked against what the retained character's login showed.</summary>
 public static class NaturalAbyssEntryLeg
 {
+	/// <summary>AX-13: written after the endpoint's relog; the snapshot script captures the endpoint only with it.</summary>
+	public const string CompletionReceipt = "altgard-ax-completion.json", CompletionDiagnostic = "altgard-ax-complete";
+	/// <summary>AX-14: written by a run resumed on the endpoint snapshot, after its own relog.</summary>
+	public const string EndpointResumeReceipt = "altgard-ax-endpoint-resume.json", EndpointResumeDiagnostic = "altgard-ax-endpoint-resumed";
+
+	/// <summary>The endpoint did not change: the same character, place, level, purse and worn gear.</summary>
+	public static bool SameEndpoint(NaturalAbyssEntryEndpoint a, NaturalAbyssEntryEndpoint b) =>
+		(a.Leg, a.CharacterId, a.MapId, a.Level, a.Kinah, a.BronzeCoins, a.StaffItemId, a.TorsoItemId, a.BindMapId) ==
+		(b.Leg, b.CharacterId, b.MapId, b.Level, b.Kinah, b.BronzeCoins, b.StaffItemId, b.TorsoItemId, b.BindMapId) &&
+		a.CompletedLegQuestIds.SequenceEqual(b.CompletedLegQuestIds) && a.WornCoinGear.SequenceEqual(b.WornCoinGear);
+
+	/// <summary>AX-13, AX-14: the endpoint from the client's view alone. In Morheim's hub, alive, level 26 or more, bound at the
+	/// fortress obelisk; the five quests complete and none of them in the journal; the owned staff with the most magic boost
+	/// worn, Q2947's staff kept, Aegir's hauberk on; no coin gear piece of either tier better than what is worn; the stigma
+	/// bundle sealed; no reward container closed and nothing the leg discards owned.</summary>
+	public static NaturalAbyssEntryEndpoint VerifyEndpoint(NaturalAltgardContract leg, NaturalAltgardObservation state, int characterId,
+		Func<int, int> staffMagicBoost, Func<int, int> physicalDefence)
+	{
+		NaturalAbyssEntry scope = leg.AbyssEntry ?? throw new InvalidDataException($"{leg.Leg} has no Abyss-entry scope.");
+		NaturalJourneyItem[] inventory = state.Inventory ?? throw new InvalidDataException("The endpoint needs the observed inventory.");
+		void Require(bool condition, string what)
+		{
+			if (!condition) throw new InvalidDataException($"The character is not at the Abyss-entry endpoint: {what}.");
+		}
+		NaturalAltgardBind bind = leg.Bind ?? throw new InvalidDataException($"{leg.Leg} has no bind.");
+		float[] anchor = leg.Endpoint.Anchor ?? throw new InvalidDataException($"{leg.Leg} has no endpoint anchor.");
+		Require(state.Synchronized && !state.IsDead && state.MapId == leg.Endpoint.MapId, $"the Cleric is dead or on map {state.MapId}, not {leg.Endpoint.MapId}");
+		Require(state.Level >= leg.Endpoint.MinimumLevel, $"the Cleric is level {state.Level}, below {leg.Endpoint.MinimumLevel}");
+		Require(MathF.Sqrt(MathF.Pow(state.Position.X - anchor[0], 2) + MathF.Pow(state.Position.Y - anchor[1], 2)) <= leg.Endpoint.Radius,
+			$"the Cleric stands outside the hub at {state.Position}");
+		Require(NaturalAltgardDecisionEngine.BoundAt(bind, leg.Hub.MapId, state.Bind), $"the bind is {state.Bind}, not obelisk {bind.NpcId}");
+		Require(leg.Endpoint.CompletedQuestIds.All(state.CompletedQuestIds.Contains) && leg.Order.All(state.CompletedQuestIds.Contains),
+			"a quest of the leg is not complete");
+		Require(leg.Order.All(id => state.Quests.GetValueOrDefault(id) is not { Status: 3 or 4 }), "a quest of the leg is still in the journal");
+		NaturalJourneyItem[] hands = inventory.Where(item => item.EquipmentSlot != NotWorn && (item.EquipmentSlot & 1) != 0).ToArray();
+		int best = inventory.Select(item => staffMagicBoost(item.ItemId)).DefaultIfEmpty(0).Max();
+		Require(hands is [{ } staff] && staffMagicBoost(staff.ItemId) == best && best > 0, "the worn weapon is not the owned staff with the most magic boost");
+		NaturalAltgardRewardChoice kept = leg.RewardChoiceList.Single(choice => choice.QuestId == scope.Arena.QuestId);
+		Require(inventory.Any(item => item.ItemId == kept.ItemId), $"Q{scope.Arena.QuestId}'s staff {kept.ItemId} is not owned");
+		NaturalAltgardRewardChoice hauberk = leg.RewardChoiceList.Single(choice => choice.QuestId == scope.CommanderQuestId);
+		NaturalJourneyItem[] torso = inventory.Where(item => item.EquipmentSlot != NotWorn && (item.EquipmentSlot & Torso) != 0).ToArray();
+		Require(torso is [{ } worn] && worn.ItemId == hauberk.ItemId, $"the worn torso is [{string.Join(", ", torso.Select(item => item.ItemId))}], not {hauberk.ItemId}");
+		foreach (NaturalAbyssCoinTier tier in scope.CoinArmor.Tiers)
+			Require(NaturalAbyssCoinArmorPolicy.Plan(scope.CoinArmor, tier, inventory, physicalDefence, staffMagicBoost).Done, $"a {tier.Name} piece still beats what is worn");
+		Require(scope.Inventory.KeepSealed.All(id => inventory.Count(item => item.ItemId == id) == 1), "the sealed stigma bundle changed");
+		Require(scope.Inventory.Open.All(id => state.ItemCounts.GetValueOrDefault(id) == 0), "a reward container is still closed");
+		Require(scope.Inventory.Discard.All(id => state.ItemCounts.GetValueOrDefault(id) == 0), "an item the leg discards is still owned");
+		// A piece is worn when it is on its own slot; a fresh login reports cube items with slot 0, not 65535.
+		int[] coinGear = scope.CoinArmor.Tiers.SelectMany(tier => tier.Pieces.Append(tier.Staff).OfType<NaturalCoinGearPurchase>())
+			.Where(piece => inventory.Any(item => item.ItemId == piece.ItemId && item.EquipmentSlot != NotWorn && (item.EquipmentSlot & piece.Slot) != 0))
+			.Select(piece => piece.ItemId).Order().ToArray();
+		BotBindPoint bound = state.Bind!;
+		return new(leg.Leg, characterId, state.MapId!.Value, state.Position, state.Level, state.Kinah, state.ItemCounts.GetValueOrDefault(scope.CoinArmor.CoinItemId),
+			hands[0].ItemId, torso[0].ItemId, leg.Order.Where(state.CompletedQuestIds.Contains).ToArray(), bound.MapId, bound.Position, coinGear);
+	}
+
 	public const string StartReceipt = "altgard-ax-start.json";
 	public const string StartDiagnostic = "abyss-entry-start-verified";
 	public const string ProgressReceipt = "altgard-ax-progress.json";
