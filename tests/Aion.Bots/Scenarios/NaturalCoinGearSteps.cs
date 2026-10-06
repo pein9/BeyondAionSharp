@@ -11,6 +11,28 @@ namespace Aion.Bots.Scenarios;
 public sealed class NaturalCoinGearSteps(INaturalJourneySession session, StaticData data,
 	NaturalCoinGear gear, NaturalIshalgenInventoryPolicy inventory)
 {
+	/// <summary>Freeze retained equipment only after the approved ordinary staff equip has been observed.</summary>
+	public static async Task<NaturalJourneyItem[]> PrepareRetainedLoadoutAsync(INaturalJourneySession session,
+		NaturalCoinGear gear, CancellationToken token)
+	{
+		await EnsureRetainedStaffEquippedAsync(session, gear, token);
+		HashSet<ushort> replacedSlots = gear.Purchases.Select(p => p.Slot).ToHashSet();
+		NaturalJourneyItem[] retained = session.Api.World.Inventory.Values
+			.Where(i => i.EquipmentSlot is > 0 and < 65535 && i.EquipmentSlot is not (8192 or 16384) &&
+				!replacedSlots.Contains(i.EquipmentSlot)) // Power shards are consumable; only manifest armour may change.
+			.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray();
+		session.TraceDiagnostic("coin-preparation-loadout-frozen", new Dictionary<string, object?> { ["retained"] = retained });
+		return retained;
+	}
+
+	public static void VerifyRetainedLoadout(BotWorldModel observed, IReadOnlyList<NaturalJourneyItem> retained)
+	{
+		foreach (NaturalJourneyItem original in retained)
+			NaturalJourneyRequirements.True(observed.Inventory.TryGetValue(original.ObjectId, out BotInventoryItem? item) &&
+				item.ItemId == original.ItemId && item.Count == original.Count && item.EquipmentSlot == original.EquipmentSlot,
+				$"CG changed retained equipped object {original.ObjectId}/{original.ItemId}.");
+	}
+
 	/// <summary>Wear the already earned, approved staff before CG freezes its loadout. No purchase or grant.</summary>
 	public static async Task EnsureRetainedStaffEquippedAsync(INaturalJourneySession session,
 		NaturalCoinGear gear, CancellationToken token)

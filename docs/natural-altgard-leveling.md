@@ -5009,6 +5009,35 @@ monitor enabled and announce its URL when a journey starts.
     (`run/rc11-fast/rc11-coin-staff-final/`). Seven final pre-commit checks pass
     (`run/rc11-coin-staff/*-final.log`). Full acceptance remains pending; commit and
     acknowledge the rebuild before the next fresh continuous capture.
+  - 2026-10-06, twenty-third retained attempt: `rc11-full-create-s1-a23` on e2d27be70
+    again proves Q24015's required-zone entry and completion. Native START/1 -> /2
+    arrives at 17:55:18.854 after a 32-point memory-preference route; Q24015 and
+    Q24016 each finish once. Destiny and the library finish, then CG equips earned
+    staff 101501357/156530 normally, completes Q2293 once and buys/equips all three
+    approved pieces for four coins, leaving 19. It stops alive at level 24/165 on
+    `CG changed retained equipped object 141610/101501355`: the endpoint's loadout
+    was frozen before the previous repair's staff equip, so it still required the
+    old staff in slot 3. The old object remains owned at slot 0; the earned staff
+    is correctly equipped at 3. Thirteen deaths (Leg 4 two, Leg 6 one, Leg 8 one,
+    Leg 10 nine), 45.7918 test minutes, the original trace/failure audit and owned
+    schema drop remain retained (`run/rc11-coin-freeze/failure-audit.json`).
+    Java Equipment's ordinary equip/unequip sequence was read. CG now prepares the
+    approved staff and freezes the observed retained loadout in one shared operation,
+    with no earlier capture in either contained or continuous entry. The exclusion
+    follows the three approved purchase slots (including shoulders), while consumable
+    power shards keep their existing exclusion. The endpoint verifies retained object,
+    item, count and slot through the same shared verifier. Free probe 230 starts with
+    the older staff equipped and the earned staff unworn; labelled body gear includes
+    an old shoulder piece. It proves the post-equip freeze, native five-coin reward,
+    all three purchases/equips, unchanged Kinah and the same retained objects after
+    ordinary endpoint relog (29.9333 s; `native-probe.log`). Its level, incoming gear
+    and kill counters are controlled setup, not natural progression. Public-restore
+    CG from altgard-l11 passes at 24/145 with zero deaths, 965,226 game ms, 19 coins,
+    staff 137763 retained and an ordinary endpoint relog; its owned schema is dropped
+    (49.5548 s; `cg-smoke/`, `smoke-audit.json`). Fast passes 103 tests/five guarded
+    skips/all eleven scenarios in 8.4021 minutes (`run/rc11-fast/rc11-coin-freeze/`).
+    All seven final pre-commit checks pass (`run/rc11-coin-freeze/*-final.log`).
+    Commit and acknowledge the rebuild before fresh continuous proof; RC-11 stays open.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5395,6 +5424,13 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-06 RC-11 pending: attempt twenty-three completes Q24015, Destiny and all
+  approved coin transactions, then its endpoint still compares with the old staff
+  captured before the equip. Keep the thirteen deaths, failed receipt and cleanup.
+  CG now equips and freezes in one shared operation; the expanded native probe covers
+  all purchases, retained gear and relog, and public-restore CG passes. Fast passes
+  103/five/all eleven and seven checks pass (`run/rc11-coin-freeze/`). Commit/rebuild
+  before fresh continuous proof; RC-11/12 remain unchecked.
 - 2026-10-06 RC-11 pending: attempt twenty-two enters Q24015 normally, completes
   Leg 10/Destiny and receives Q2293's real five coins, then stops because the approved
   earned staff still sits unworn in the cube. CG now equips that owned staff normally

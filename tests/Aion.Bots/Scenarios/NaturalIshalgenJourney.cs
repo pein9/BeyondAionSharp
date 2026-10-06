@@ -257,9 +257,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				coinGearProgress = NaturalCoinGearProgress.ReadVerifiedEndpoint(receiptPath, session.CharacterId, gear,
 					NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition));
 			}
-			NaturalJourneyItem[] coinIncomingLoadout = altgardLeg?.CoinGear == null ? [] : session.Api.World.Inventory.Values
-				.Where(i => i.EquipmentSlot is > 0 and < 65535 && i.EquipmentSlot is not (16 or 4096 or 8192 or 16384))
-				.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray();
+			NaturalJourneyItem[] coinIncomingLoadout = [];
 			int[] destinyIncomingSkills = altgardLeg?.Destiny is { } incomingDestiny
 				? session.Api.World.Skills.Keys.Where(id => id != incomingDestiny.StigmaSkillId).ToArray() : [];
 			IReadOnlyDictionary<int, QuestRunPlan> altgardPlans = altgardLegId is { } planLeg
@@ -1563,9 +1561,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						.Select(step => (plan.Id, step.ItemId, step.Count)))
 						.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.ToArray());
 					coinGearProgress = altgardLeg.CoinGear == null ? null : NaturalCoinGearProgress.Empty;
-					coinIncomingLoadout = altgardLeg.CoinGear == null ? [] : session.Api.World.Inventory.Values
-						.Where(i => i.EquipmentSlot is > 0 and < 65535 && i.EquipmentSlot is not (16 or 4096 or 8192 or 16384))
-						.Select(i => new NaturalJourneyItem(i.ObjectId, i.ItemId, i.Count, i.EquipmentSlot)).ToArray();
+					coinIncomingLoadout = [];
 					destinyIncomingSkills = altgardLeg.Destiny is { } destiny
 						? session.Api.World.Skills.Keys.Where(skill => skill != destiny.StigmaSkillId).ToArray() : [];
 					haramelProgress = altgardLeg.Haramel is { } rules
@@ -1663,7 +1659,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				// The revised roomy cube need not trigger generic inventory maintenance after Q24016.
 				// Wear its already earned staff once before CG's explicit loadout freeze and receipts.
 				if (leg.CoinGear is { } retainedGear)
-					await NaturalCoinGearSteps.EnsureRetainedStaffEquippedAsync(session, retainedGear, token);
+					coinIncomingLoadout = await NaturalCoinGearSteps.PrepareRetainedLoadoutAsync(session, retainedGear, token);
 				string? previous = null;
 				int repeats = 0;
 				// AB-08: a decision repeated because the Cleric died on it is a retry, not a stall (OD-12): up to six of them.
@@ -3711,10 +3707,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 					Require.Equal(0L, ItemCount(observed, 186000007));
 					Require.Equal(1L, ItemCount(observed, gear.SealedBundleId));
 					Require.True(!observed.Skills.ContainsKey(gear.ForbiddenStigmaSkillId), "Keep the stigma reward sealed.");
-					foreach (NaturalJourneyItem original in coinIncomingLoadout)
-						Require.True(observed.Inventory.TryGetValue(original.ObjectId, out BotInventoryItem? item) &&
-							item.ItemId == original.ItemId && item.EquipmentSlot == original.EquipmentSlot,
-							$"CG changed retained equipped object {original.ObjectId}/{original.ItemId}.");
+					NaturalCoinGearSteps.VerifyRetainedLoadout(observed, coinIncomingLoadout);
 					NaturalInventoryPlan bag = NaturalIshalgenInventoryPolicy.Load(runtime.RepoRoot,
 						observed.Inventory.Values.Select(i => i.ItemId)).Decide(observed, QuestNeededItems(), gear);
 					NaturalAltgardDecision endpoint = NaturalAltgardDecisionEngine.Decide(leg,

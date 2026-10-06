@@ -1,4 +1,5 @@
 using Aion.Bots.Dashboard;
+using Aion.Bots.Movement;
 using Aion.Bots.Navigation;
 using Aion.Bots.Scenarios;
 using Aion.Bots.Tracing;
@@ -34,8 +35,18 @@ public sealed partial class SimulationFastScenarioTests
 		NaturalCoinGear gear = NaturalAltgardContract.LoadLeg("cg").CoinGear!;
 		foreach (int item in new[] { 101501355, gear.StaffItemId, gear.SealedBundleId })
 			Assert.Equal(0, ItemService.AddItem(probe.Server, item, 1, allowInventoryOverflow: true));
+		(int Item, ushort Slot)[] body = [(110551139, 8), (114501726, 32), (111101650, 16), (113100773, 4096), (112500097, 2048)];
+		foreach (var item in body)
+			Assert.Equal(0, ItemService.AddItem(probe.Server, item.Item, 1, allowInventoryOverflow: true));
 		Assert.Equal(0, ItemService.AddItem(probe.Server, gear.CoinItemId, gear.IncomingCoins, allowInventoryOverflow: true));
 		await session.SynchronizeAsync(token);
+		foreach (var item in body)
+		{
+			int objectId = session.Api.World.Inventory.Values.Single(i => i.ItemId == item.Item).ObjectId;
+			await session.SendPacketAsync(session.Api.Equip(0, item.Slot, objectId), token);
+			await session.SynchronizeAsync(token);
+			Assert.Equal(item.Slot, session.Api.World.Inventory[objectId].EquipmentSlot);
+		}
 		BotInventoryItem old = session.Api.World.Inventory.Values.Single(i => i.ItemId == 101501355);
 		BotInventoryItem earned = session.Api.World.Inventory.Values.Single(i => i.ItemId == gear.StaffItemId);
 		await session.SendPacketAsync(session.Api.Equip(0, NaturalGearPolicy.MainHand, old.ObjectId), token);
@@ -44,9 +55,13 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.NotEqual((ushort)3, session.Api.World.Inventory[earned.ObjectId].EquipmentSlot);
 		Console.WriteLine("RC-11 free probe 230: labelled level/loadout/funds; old level-16 staff equipped and earned level-21 staff owned in the cube, matching attempt 22.");
 		long kinah = session.Api.World.Kinah;
-		await NaturalCoinGearSteps.EnsureRetainedStaffEquippedAsync(session, gear, token);
+		NaturalJourneyItem[] retained = await NaturalCoinGearSteps.PrepareRetainedLoadoutAsync(session, gear, token);
 		Assert.Equal((ushort)3, session.Api.World.Inventory[earned.ObjectId].EquipmentSlot);
 		Assert.NotEqual((ushort)3, session.Api.World.Inventory[old.ObjectId].EquipmentSlot);
+		Assert.Contains(retained, i => i.ObjectId == earned.ObjectId && i.EquipmentSlot == 3);
+		Assert.DoesNotContain(retained, i => i.ObjectId == old.ObjectId || i.EquipmentSlot is 16 or 2048 or 4096);
+		Assert.Contains(retained, i => i.ItemId == 110551139 && i.EquipmentSlot == 8);
+		Assert.Contains(retained, i => i.ItemId == 114501726 && i.EquipmentSlot == 32);
 		await NaturalCoinGearSteps.EnsureRetainedStaffEquippedAsync(session, gear, token);
 		BotPosition at = new(2663, 1663, 324.69f, 0);
 		foreach (var npc in probe.Server.GetWorldMapInstance().GetNpcs().Where(n => !n.IsDead() &&
@@ -69,6 +84,28 @@ public sealed partial class SimulationFastScenarioTests
 		Assert.Equal(earned.ObjectId, progress.StaffObjectId);
 		Assert.Equal(new NaturalCoinRewardReceipt(0, 1, 18, 23), progress.Reward);
 		Assert.Equal(kinah, session.Api.World.Kinah);
+		var inventory = NaturalIshalgenInventoryPolicy.Load(RealStaticData.RepoRoot(),
+			session.Api.World.Inventory.Values.Select(i => i.ItemId).Concat(gear.ProtectedItemIds));
+		var shop = new NaturalCoinGearSteps(session, fixture.DataManager.StaticData, gear, inventory);
+		var geometry = BotNavigationGeometry.ForServerWorld(probe.Server.GetInstanceId(), Race.ASMODIANS);
+		foreach (NaturalCoinGearPurchase purchase in gear.Purchases)
+		{
+			var npc = probe.Server.GetWorldMapInstance().GetNpcs(gear.VendorNpcId).Single(n => !n.IsDead());
+			BotPosition contact = new(npc.GetX(), npc.GetY(), npc.GetZ(), 0);
+			if (NaturalFlightPolicy.Distance(session.CurrentPosition, contact) > npc.GetObjectTemplate().GetTalkDistance() - 0.5f)
+			{
+				var route = geometry.GroundAround(220030000, contact, [2f, 3f])
+					.OrderBy(p => NaturalFlightPolicy.Distance(session.CurrentPosition, p))
+					.Select(p => geometry.FindJourneyPath(220030000, session.CurrentPosition, p)).First(p => p.Count > 0);
+				await session.ExecuteMovementAsync(new BotMover(session.Api.World, session.Api.Timing).CreateGroundPlan(route,
+					session.CurrentPosition, session.Api.World.MovementSpeed!.Value), token);
+				await session.SynchronizeAsync(token);
+			}
+			int vendor = await session.WaitForNpcAsync(gear.VendorNpcId, token);
+			progress = await shop.PurchaseAsync(vendor, purchase.ItemId, progress, token);
+			await shop.EquipAsync(purchase.ItemId, progress, token);
+		}
+		NaturalCoinGearSteps.VerifyRetainedLoadout(session.Api.World, retained);
 		await session.QuitAsync(token);
 		await session.WaitForReentryAsync(token);
 		await session.ReloginExistingCharacterAsync(token);
@@ -76,9 +113,13 @@ public sealed partial class SimulationFastScenarioTests
 		await session.SynchronizeAsync(token);
 		Assert.Equal((ushort)3, session.Api.World.Inventory[earned.ObjectId].EquipmentSlot);
 		Assert.Equal(1, session.Api.World.CompletedQuestCounts[gear.QuestId]);
-		Assert.Equal(23, session.Api.World.Inventory.Values.Where(i => i.ItemId == gear.CoinItemId).Sum(i => i.Count));
+		Assert.Equal(19, session.Api.World.Inventory.Values.Where(i => i.ItemId == gear.CoinItemId).Sum(i => i.Count));
+		Assert.Equal(kinah, session.Api.World.Kinah);
+		NaturalCoinGearSteps.VerifyRetainedLoadout(session.Api.World, retained);
+		Assert.Equal("coin-gear-complete", NaturalCoinGearPolicy.Decide(gear,
+			NaturalAltgardObservation.Observe(session.Api.World, session.CurrentPosition, coinGearProgress: progress)).Action);
 		Assert.False(session.Api.World.IsDead);
-		Console.WriteLine("RC-11 approved owned staff equipped normally; native one-completion/five-coin receipt and same equipped object survive ordinary relog, without a weapon purchase.");
+		Console.WriteLine("RC-11 approved owned staff equipped before loadout freeze; native reward, three purchases/four-coin debit and retained equipment verification survive ordinary endpoint relog. No weapon purchase.");
 		policy.AssertClean();
 	}
 }
