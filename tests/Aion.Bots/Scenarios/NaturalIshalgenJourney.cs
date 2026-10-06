@@ -48,7 +48,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 	/// <summary>A disposable probe walks the same checked campaign-zone route with labelled remembered death spots.</summary>
 	public async Task<bool> RunObservedZoneApproachAsync(BotPosition destination,
-		IReadOnlyList<BotPosition> deathSpots, CancellationToken token)
+		IReadOnlyList<BotPosition> deathSpots, CancellationToken token,
+		Func<CancellationToken, Task>? afterSegment = null)
 	{
 		int map = session.Api.World.MapId ?? throw new InvalidDataException("Campaign map unobserved.");
 		BotNavigationGeometry geometry = runtime.CreateGeometry();
@@ -58,18 +59,22 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 			AvoidHostileAggro = true, AvoidSpots = deathSpots, Planner = BotTravelPlanner.For(map, geometry, runtime.Data),
 		};
 		BotPosition goal = GroundRoadGoal(geometry, map, destination);
-		for (int attempt = 0; attempt < 3; attempt++)
+		var progress = new NaturalApproachProgress();
+		for (int attempt = 0; progress.CanRetry(attempt) && progress.StalledAttempts < 3; attempt++)
 		{
+			BotPosition before = session.CurrentPosition;
 			IReadOnlyList<BotPosition> route = await navigator.FindRouteAsync(session.CurrentPosition, goal, token);
-			if (route.Count == 0) return Distance(session.CurrentPosition, goal) <= 3;
 			foreach (BotPosition[] segment in route.Chunk(16))
 			{
+				if (navigator.IsSegmentStale(segment)) break;
 				if (!navigator.IsSegmentSafe(segment, null, goal)) return false;
 				await navigator.MoveAsync(segment, token);
 				await navigator.SynchronizeAsync(token);
+				if (afterSegment != null) await afterSegment(token);
 				if (session.Api.World.IsDead) return false;
 			}
 			if (Distance(session.CurrentPosition, goal) <= 3) return true;
+			progress.Observe(Distance(before, session.CurrentPosition), clearedGuard: false);
 		}
 		return false;
 	}
@@ -2228,7 +2233,25 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 							await EnsureOnGroundAsync();
 							NaturalAltgardZoneStep zone = leg.ZoneStepList.Single(entry => entry.QuestId == next.QuestId);
 							if (zone.Anchor is { } anchor)
-								await WalkRoadDefendingAsync(new(anchor[0], anchor[1], anchor[2], 0), "campaign-zone", within: Math.Min(3, zone.Radius));
+							{
+								var progress = new NaturalApproachProgress();
+								for (int attempt = 0; NaturalAltgardQuestSteps.State(session.Api.World, zone.QuestId)?.Var == zone.FromVar; attempt++)
+								{
+									Require.True(progress.CanRetry(attempt) && progress.StalledAttempts < 3,
+										$"Q{zone.QuestId} zone approach exhausted its bounded progress attempts.");
+									BotPosition before = session.CurrentPosition;
+									int revives = combat.ReviveCount, kills = navigator.UnavailableObjects.Count;
+									bool reached = await WalkRoadDefendingAsync(new(anchor[0], anchor[1], anchor[2], 0), "campaign-zone", within: Math.Min(3, zone.Radius));
+									if (session.Api.World.IsDead || combat.ReviveCount != revives) break;
+									bool advanced = progress.Observe(Distance(before, session.CurrentPosition), navigator.UnavailableObjects.Count > kills);
+									session.TraceDiagnostic("campaign-zone-approach-progress", new Dictionary<string, object?>
+									{
+										["quest"] = zone.QuestId, ["attempt"] = attempt + 1, ["advanced"] = advanced,
+										["stalls"] = progress.StalledAttempts, ["position"] = session.CurrentPosition, ["reached"] = reached,
+									});
+									if (reached) break;
+								}
+							}
 							else
 								await ApproachShippedSpawnAsync(leg.ObjectUseList.First(use => use.QuestId == next.QuestId).NpcId, skipBlockedTarget: true);
 							break;
@@ -2527,6 +2550,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						// Hand its real zero-HP evidence back rather than crossing more camp for another target.
 						if (sourceComplete?.Invoke() == true) return true;
 						BotPosition[] segment = road.Skip(at).Take(16).ToArray();
+						if (campaignZone && navigator.IsSegmentStale(segment))
+						{
+							session.TraceDiagnostic("campaign-zone-replan-stale-road", new Dictionary<string, object?>
+							{ ["position"] = session.CurrentPosition, ["firstPoint"] = segment[0] });
+							return false;
+						}
 						int roadRevives = combat.ReviveCount;
 						if (altgardLegId is "l10" or "l11" or "l12")
 						{
@@ -2541,6 +2570,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 								if (sourceComplete?.Invoke() == true) return true;
 								if (combat.ReviveCount != roadRevives || session.Api.World.IsDead) { await RestSafelyAsync(token); return false; }
 								progress.Observe(Distance(beforeClear, session.CurrentPosition), navigator.UnavailableObjects.Count > killsBefore);
+								if (campaignZone && navigator.IsSegmentStale(segment)) return false;
 							}
 							// Clearing can walk a checked detour all the way to this segment's endpoint. The old
 							// points behind us may still cross the guard's circle; do not walk or reject them again.
@@ -7884,12 +7914,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				.Select(spot => new BotNavigationHazard(spot, AvoidSpotRadius))).ToArray();
 		}
 
+		public bool IsSegmentStale(IReadOnlyList<BotPosition> segment) =>
+			segment.Count > 0 && Distance(session.CurrentPosition, segment[0]) > StaleSegmentDistance;
+
 		public async Task MoveAsync(IReadOnlyList<BotPosition> segment, CancellationToken token)
 		{
 			// A segment planned before a revive or a teleport starts where the Cleric no longer is. Walking it would cross
 			// straight from the obelisk to the old route (the Leg 4 catch-up walked 270 m that way, back into the mosbears
 			// that had just killed it, six times). Refuse it; the caller sees no progress and plans a new route from here.
-			if (segment.Count > 0 && Distance(session.CurrentPosition, segment[0]) > StaleSegmentDistance)
+			if (IsSegmentStale(segment))
 			{
 				session.TraceDiagnostic("stale-segment-refused", new Dictionary<string, object?>
 				{

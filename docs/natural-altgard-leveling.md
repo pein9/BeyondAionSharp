@@ -4883,6 +4883,36 @@ monitor enabled and announce its URL when a journey starts.
     skips/all eleven scenarios in 9.1637 minutes (`run/rc11-fast/rc11-campaign-zone/`).
     All seven final pre-commit checks pass (`run/rc11-zone-recovery/*-final.log`).
     Continuous acceptance remains open; commit/rebuild before the next capture.
+  - 2026-10-05, nineteenth retained attempt: `rc11-full-create-s1-a19` on 7f9408c03
+    passes revised Ishalgen/bridge, Legs 1-9, the warlocks, Return and robe. It stops
+    at Q24015 START/1 after three partial campaign approaches: Cleric 24/160, alive,
+    twelve deaths (l4 two, l6 one, l8 one, l10 eight), 48.5150 test minutes. The
+    original trace, failure audit and dropped owned schema remain retained. Guard
+    combat displaces the bot up to 98.6 m from a planned segment; the road keeps
+    rejecting stale points, and the outer signature guard counts partial approaches
+    as three stalls. Java Q24015's actual zone-entry rule was reread and is unchanged.
+    Campaign roads now return for immediate replanning after displacement beyond the
+    existing thirty-metre segment limit. The zone approach uses the existing progress
+    tracker: walking or clearing a guard resets its stall count, with three consecutive
+    non-progress attempts and the existing 120-attempt overall approach bound. Death
+    recovery and the outer progress watchdog remain bounded.
+    Free probe 255 reaches three recorded displacement positions by ordinary checked
+    walking on a cleared course, preserving native START/1 until actual sphere entry
+    advances it to 2. It simulates displacement, not three guard kills. Both native
+    zone probes pass with zero deaths (`run/rc11-zone-progress/native-probe.log`).
+    Public-restore Leg 10 from `altgard-rc-l9` passes at 24/152 with one death,
+    Q2282/Q24015/Q24016 completed once and ordinary endpoint relog. Native Q24015
+    updates prove 1 -> 2 -> 3 -> 4 -> REWARD -> COMPLETE; the owned schema is dropped,
+    11,717,396 game ms and 10.4691 test minutes (`l10-smoke/`, `smoke-audit.json`).
+    The first Fast retains an Impetusium probe failure: its three-position setup
+    retry indexes past a splash spirit's single sighted ground point. Java's native
+    casting checks and MonsterHunt were read; this controlled probe now tries only
+    the available positions, still at most three per target and sixteen targets.
+    Corrected Fast observes that one-point case, completes Q2256 and passes 100 tests,
+    five guarded skips and all eleven scenarios in 12.0521 minutes
+    (`run/rc11-fast/rc11-campaign-zone-progress-fixed/`). All seven final pre-commit
+    checks pass (`run/rc11-zone-progress/*-final.log`). Continuous acceptance remains
+    open; commit/rebuild before the next fresh capture.
 - [ ] **RC-12 - Preserve the endpoint and report NTC readiness.** Depends RC-11.
   Verify ordinary endpoint relog, save the committed-code endpoint under a distinct
   unused snapshot name, verify its hashes/identity and drop every owned schema. Report
@@ -5269,6 +5299,14 @@ The original questions follow.
 
 ## Progress log
 
+- 2026-10-05 RC-11 pending: attempt nineteen retains twelve deaths and Q24015's
+  partial approaches at 24/160; owned schema dropped. Replan stale campaign roads
+  after guard displacement and count actual approach progress within existing bounds.
+  Free probe 255 walks three recorded displacements before native zone entry; contained
+  Leg 10 passes at 24/152, one death, ordinary relog and cleanup. Retain the first
+  Fast's missing sighted-position failure; bounded probe setup fixes it. Corrected
+  Fast passes 100/five guarded skips/all eleven scenarios, and seven prechecks pass.
+  Evidence `run/rc11-zone-progress/`; commit/rebuild before fresh continuous capture.
 - 2026-10-05 RC-11 pending: attempt eighteen completes the warlocks, Return and robe,
   then retains Q24015's rejected campaign road and twelve deaths at 24/160; owned
   schema dropped. Java's actual sphere-entry hook is unchanged. Free probe 254 proves

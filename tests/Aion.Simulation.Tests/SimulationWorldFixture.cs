@@ -190,8 +190,9 @@ public sealed class SimulationWorldFixture : IAsyncLifetime
 			// 252 is RC-11's native walking Deyla dialog recovery probe.
 			// 253 is RC-11's native obstacle / unsafe close-in recovery probe.
 			// 254 is RC-11's native campaign zone / remembered death-spot detour probe.
+			// 255 is RC-11's native campaign route replan after three ordinary ground displacements.
 			var accounts = Enumerable.Range(1, 94).Concat(Enumerable.Range(101, 100)).Concat(Enumerable.Range(201, 27)).Concat(Enumerable.Range(240, 5))
-				.Concat(new[] { 245, 246, 247, 248, 249, 250, 251, 252, 253, 254 })
+				.Concat(new[] { 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 })
 				.ToDictionary(id => id, id => new SimulationLoginAccount($"sim-player-{id}", AccessLevel: 0));
 			accounts[99] = new("director", AccessLevel: 9);
 			services.RemoveAll<LoginServerFacade>();

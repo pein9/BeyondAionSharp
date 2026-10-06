@@ -110,8 +110,9 @@ public sealed partial class SimulationFastScenarioTests
 				var next = Candidates(kinds).FirstOrDefault() ?? RespawnShipped(kinds);
 				unusable.Add(next.GetObjectId());
 				var at = new BotPosition(next.GetX(), next.GetY(), next.GetZ(), 0);
-				if (!geometry.GroundAround(altgard, at, [12f, 14f, 10f, 16f])
-					.Any(point => geometry.HasLineOfSight(altgard, point with { Z = point.Z + 1.6f }, at with { Z = at.Z + 1 })))
+				int sightedPoints = geometry.GroundAround(altgard, at, [12f, 14f, 10f, 16f])
+					.Count(point => geometry.HasLineOfSight(altgard, point with { Z = point.Z + 1.6f }, at with { Z = at.Z + 1 }));
+				if (sightedPoints == 0)
 				{
 					reasons.Add($"{next.GetObjectId()}: no sighted ground");
 					continue;
@@ -121,8 +122,9 @@ public sealed partial class SimulationFastScenarioTests
 					NaturalHostility.IsAggressive(npc.GetObjectTemplate(), fixture.DataManager.StaticData.TribeRelations, TribeClass.PC_DARK) &&
 					MathF.Pow(npc.GetX() - next.GetX(), 2) + MathF.Pow(npc.GetY() - next.GetY(), 2) <= 25 * 25).ToArray())
 					fixture.World.Despawn(npc);
-				// A spot the bot's geometry calls sighted can still be refused by the server (STR_SKILL_OBSTACLE): try up to three.
-				for (int spot = 0; spot < 3 && !next.IsDead(); spot++)
+				// Native sight can still refuse these points. Try at most three, without indexing past a ledge's smaller set.
+				if (sightedPoints < 3) Console.WriteLine($"AH-02 source {next.GetNpcId()}/{next.GetObjectId()}: {sightedPoints} sighted setup points, bounded retry uses only those points.");
+				for (int spot = 0; spot < Math.Min(3, sightedPoints) && !next.IsDead(); spot++)
 				{
 					await TeleportNearAsync(at, [12f, 14f, 10f, 16f], sighted: true, skip: spot);
 					next.GetLifeStats().SetCurrentHp(1);
