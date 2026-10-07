@@ -1974,7 +1974,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,699 with 16 skipped), and
       Fast passes (run cp12-fast). No guard run: the commit edits neither tests/Aion.Bots
       nor the journey test.
-- [ ] **CP-13 - Lift the combat and navigator classes into their own files (pure move).**
+- [x] **CP-13 - Lift the combat and navigator classes into their own files (pure move).**
   Depends: CP-08, CP-11
   - Work: Make NaturalIshalgenJourney partial (J:19). Cut NaturalJourneyNavigator
     (J:8496-8852) into Sc/NaturalIshalgenJourney.Navigator.cs and NaturalJourneyCombat
@@ -1983,6 +1983,29 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     PriorityForEngagedTarget (J:10249-10305) need no accessibility change. No rename, no
     reordering, no fix. NaturalIshalgenJourney.cs keeps its path.
   - Proof: Neutral gate, set p+c: both traces are identical to their CP-08 baselines.
+  - 2026-10-07: done. Gate run gate-a1 on the moved code: verdict pass
+    (run/cp/CP-13/gate-a1/verdict.json). p: 35,811 records, df5ad770..., and c: 96,166
+    records, fce0e6a7..., each identical to its baseline of 200ec4c24.
+    - NaturalIshalgenJourney is partial. NaturalJourneyNavigator (J:8609-8964 at
+      fd37eddd0, 356 lines) is in Sc/NaturalIshalgenJourney.Navigator.cs and
+      NaturalJourneyCombat (J:8966-10235, 1,270 lines) is in
+      Sc/NaturalIshalgenJourney.Combat.cs, both still private nested classes.
+      NaturalIshalgenJourney.cs keeps its path and is 8,824 lines long. The move was made
+      by a script that checks that every line of the old file is in exactly one of the
+      three files, in its old order and byte for byte; the only other change is the word
+      partial on J:19. The two new files carry the old file's using lines unchanged.
+    - **Every J: line this plan quotes above 8608 has changed its file.** A line of the
+      navigator is now at its old number minus 8,588 in the Navigator file, and a line of
+      the combat class at its old number minus 8,945 in the Combat file, both counted from
+      fd37eddd0. Lines after the combat class (the statics Distance, ItemCount,
+      PriorityForEngagedTarget and the loot helpers) are at their old number minus 1,628
+      in NaturalIshalgenJourney.cs. Lines up to 8608 did not move.
+    - The pin test of CP-11 needed no edit and found its literals in the new file: the
+      rest rule, the fight loop's 25 m, the 10 m close-in, three of the four help-item
+      gates and the gate's rule are now reported in NaturalIshalgenJourney.Combat.cs.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,699 with 16 skipped), and
+      Fast passes (run cp13-fast). The guard of rule (c), gate p, is part of this item's
+      proof run.
 - [ ] **CP-14 - Seam types, with the Priest and the Cleric as the first two profiles.**
   Depends: CP-11
   - Work: Add, all public: Sc/Classes/NaturalClassLine.cs (the record, the table of lines
@@ -3615,3 +3638,8 @@ report what was done, what is blocked and what you need from me.
   on the code the baselines were recorded on: 2,207 items, 765 reward quests, levels 1-26,
   with the coin-gear and Haramel variants and a level-after-level worn state. No bot code is
   touched. Seven checks, 4,699 with 16 skipped and Fast (cp12-fast) pass. Next by rule (h): CP-13.
+- 2026-10-07 — Loop: CP-13 done, the first refactor item. The navigator and combat classes
+  are in NaturalIshalgenJourney.Navigator.cs and .Combat.cs, moved line for line; the journey
+  class is partial. Gate gate-a1, set p+c: both traces identical to the baselines. The pin
+  test followed the move without an edit. Seven checks, 4,699 with 16 skipped and Fast
+  (cp13-fast) pass. Next by rule (h): CP-14.
