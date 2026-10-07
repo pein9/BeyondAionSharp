@@ -1922,7 +1922,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,698 with 16 skipped), and
       Fast passes (run cp11-fast). No guard run: the commit edits neither tests/Aion.Bots
       nor the journey test, and rule (c) starts at CP-13.
-- [ ] **CP-12 - Golden gear test, committed on unchanged code.** Depends: CP-09, CP-11
+- [x] **CP-12 - Golden gear test, committed on unchanged code.** Depends: CP-09, CP-11
   - Work: Write UT/NaturalGearGoldenTests and its golden file from the present code and
     commit nothing else: for the Priest at levels 1-9 and the Cleric at 9-26, ChooseReward
     for every quest with a selectable list; Decide over a fixed inventory of every reward
@@ -1932,6 +1932,48 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     bot code, so that the golden file is the behavior the baselines recorded.
   - Proof: Unit test UT/NaturalGearGoldenTests: green in a commit that holds only the test
     and its golden file.
+  - 2026-10-07: done. UT/NaturalGearGoldenTests.cs and its golden file
+    parity-artifacts/e2e/natural-gear-golden.txt are added on the bot code of 691663354;
+    the commit holds those two files and this plan, and no bot code. The file was written
+    once from the code (CP_GEAR_GOLDEN_WRITE=1), a second build of the text was identical
+    byte for byte, and the test then passed reading it back (run/cp/CP-12/golden-a1.log).
+    The file has 3,351 lines, 410,610 bytes, SHA-256 017672077496b7d1738ff5070614e586c4fd486ce631391fe0c1d44679a585f5.
+    - **The fixed inventory:** 2,207 item ids, one stack of each, nothing worn: every
+      selectable reward of the 765 quests the policy holds a list for (all 41 Ishalgen
+      contract quests, every other Asmodian quest with a choice list, the ceremony's Priest
+      list, and Q2008, Q2904 and Q24010, whose lists are empty) and the 260 item ids of
+      the baseline traces of m, c and ax, the help kit's six among them. The 260 ids are
+      typed into the test, because the traces are not in the repository. Every id has a
+      shipped template.
+    - **What the file holds.** For each item: the facts the policy reads (group, both class
+      levels, race, quality, mask, item level, both slots, both scores) and its decision
+      letter at every level, Priest 1-9 and Cleric 9-26, once alone in the cube and once
+      in the whole inventory. For the Cleric, the letters that the coin-gear rules (108
+      items) and the Haramel rules (106 items) change. For each of the 765 quests,
+      ChooseReward at levels 1-26 with an empty cube and with the baseline items owned.
+      SelectUpgrades through NaturalInventoryCheck.Describe at every level, over the whole
+      inventory and over the baseline items, with nothing worn; then level after level over
+      the baseline items with each upgrade worn before the next, and Decide over that worn
+      state.
+    - **Three things the item did not ask for, added because the giant inventory alone
+      would miss them.** In one inventory of 2,207 items only the best item of a slot is
+      ever equipped, so a change to a middle item's level test or score would not show:
+      the per-item facts and the alone letters cover that. The item named no Decide call
+      with the coin-gear or Haramel rules, which CP-22 also folds into one path: the two
+      variant sections cover them. And nothing in a fixed unworn inventory reaches the
+      currently-equipped branch or a replacing upgrade: the level-after-level section does.
+    - **What the golden file shows about the code, written here and not changed.** (1)
+      ChooseReward is class-blind and scores by the Priest's level test, which stops at
+      level 9: of the 765 quests, 669 pick their first choice at every level with an empty
+      cube and 34 have no list. (2) Most coin and event items carry a class level of 1, so
+      SelectUpgrades offers a level-1 Priest the level-21 coin staff and level-26 armor
+      when they are in the cube; in play the cube never holds them that early, and the
+      server refuses a weapon without its mastery. (3) No letter for an unknown item, a
+      multi-slot item or a quest-needed item occurs: the first two have no item in the
+      inventory, and the third needs the journey's open-quest list.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,699 with 16 skipped), and
+      Fast passes (run cp12-fast). No guard run: the commit edits neither tests/Aion.Bots
+      nor the journey test.
 - [ ] **CP-13 - Lift the combat and navigator classes into their own files (pure move).**
   Depends: CP-08, CP-11
   - Work: Make NaturalIshalgenJourney partial (J:19). Cut NaturalJourneyNavigator
@@ -3568,3 +3610,8 @@ report what was done, what is blocked and what you need from me.
   checked against the source: the test finds its literal, prints file and line, and fails
   when the literal is gone. Found and logged: old J:6794 holds no literal, so it has no row.
   Seven checks, 4,698 with 16 skipped and Fast (cp11-fast) pass. Next by rule (h): CP-12.
+- 2026-10-07 — Loop: CP-12 done. UT/NaturalGearGoldenTests and
+  e2e/natural-gear-golden.txt (3,351 lines) hold the Priest's and the Cleric's gear decisions
+  on the code the baselines were recorded on: 2,207 items, 765 reward quests, levels 1-26,
+  with the coin-gear and Haramel variants and a level-after-level worn state. No bot code is
+  touched. Seven checks, 4,699 with 16 skipped and Fast (cp12-fast) pass. Next by rule (h): CP-13.
