@@ -286,10 +286,10 @@ public sealed partial class NaturalIshalgenJourney
 				if (!world.Objects.TryGetValue(target, out BotKnownObject? npc))
 					return false; // Reacquire a new client-observed mob; do not count this as a kill.
 				DateTimeOffset now = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
-				// A monster that hit us in the last 3 s is in melee reach whatever its lagging client position says.
-				bool targetAdjacent = !targetRanged && lastHitByTargetMillis is long lastHit && runtime.NowMillis - lastHit <= 3000 ||
-					Distance(session.CurrentPosition, npc.Position) <= NaturalPriestCombatPolicy.MeleeReach;
 				NaturalClassProfile profile = ClassProfile;
+				// A monster that hit us in the last 3 s is in melee reach whatever its lagging client position says.
+				bool targetAdjacent = profile.Movement.Adjacent(Distance(session.CurrentPosition, npc.Position), targetRanged,
+					lastHitByTargetMillis is long lastHit ? runtime.NowMillis - lastHit : null);
 				INaturalCombatPolicy policy = profile.Combat;
 				if (world.CurrentHp * 100 <= world.MaxHp * policy.EmergencyEnterPercent(nearbyAttackers, targetSeasoned)) inEmergency = true;
 				else if (world.CurrentHp * 100 >= world.MaxHp * policy.EmergencyExitPercent(nearbyAttackers, targetSeasoned)) inEmergency = false;
@@ -454,7 +454,10 @@ public sealed partial class NaturalIshalgenJourney
 						break;
 					case "approach":
 						BotPosition destination = npc.Position;
-						if (Distance(session.CurrentPosition, destination) > 25)
+						NaturalApproachStep step = profile.Movement.Approach(Distance(session.CurrentPosition, destination));
+						if (step == NaturalApproachStep.Hold)
+							throw new NotSupportedException($"The {profile.PullStyle} approach has no executor yet (CP-36).");
+						if (step == NaturalApproachStep.RangedRoute)
 						{
 							NaturalEngageRanges ranges = profile.Ranges;
 							IReadOnlyList<BotPosition> route = navigator.FindRangedApproach(
@@ -1213,8 +1216,7 @@ public sealed partial class NaturalIshalgenJourney
 					// The server measured more than the skill's range although the client's last-known
 					// position says otherwise: a walker moved on without a fresh SM_MOVE. Close in along
 					// checked ground, as a player walks toward a target that drifted out of range.
-					await CloseInAfterRangeRejectionAsync(target, token,
-						skill.Range <= NaturalPriestCombatPolicy.MeleeReach ? NaturalPriestCombatPolicy.MeleeReach - 1 : 10f);
+					await CloseInAfterRangeRejectionAsync(target, token, ClassProfile.Movement.CloseInAfterRangeRefusal(skill.Range));
 					await session.AdvanceAsync(TimeSpan.FromMilliseconds(300), token);
 					await session.SynchronizeAsync(token);
 					return true; // Re-evaluate range, health and attackers before retrying.
@@ -1233,7 +1235,10 @@ public sealed partial class NaturalIshalgenJourney
 						["reposition"] = obstacleRepositions,
 						["clientTargetDistance"] = Distance(session.CurrentPosition, obstructedTarget.SettledPosition),
 					});
-					await CloseInAfterRangeRejectionAsync(target, token, NaturalPriestCombatPolicy.MeleeReach - 1);
+					NaturalFightMovement movement = ClassProfile.Movement;
+					if (movement.AfterObstacleRefusal != NaturalObstacleAnswer.CloseToMelee)
+						throw new NotSupportedException($"The {movement.Style} answer to an obstacle has no executor yet (CP-36).");
+					await CloseInAfterRangeRejectionAsync(target, token, movement.ObstacleCloseIn);
 					await session.AdvanceAsync(TimeSpan.FromMilliseconds(300), token);
 					await session.SynchronizeAsync(token);
 					return true; // Re-evaluate the visible target and healing state before recasting.

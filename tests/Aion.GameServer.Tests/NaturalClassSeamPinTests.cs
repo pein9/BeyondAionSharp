@@ -132,11 +132,10 @@ public sealed class NaturalClassSeamPinTests(ITestOutputHelper output)
 		new("pull and kill: rest before the target below MP percent", 60, Owner: "CP-18",
 			Profile: () => Both(profile => profile.Readiness.BeforeNamedTarget.MpPercent)),
 
-		// Pending, owner CP-19: movement inside a fight.
-		new("fight loop: ranged route when farther than (m)", 25, Owner: "CP-19", Sites:
-			[new(Journey, "TryKillCoreAsync", "Distance(session.CurrentPosition, destination) > 25")]),
-		new("cast: close in after a range rejection (m)", 10f, Owner: "CP-19", Sites:
-			[new(Journey, "CastAsync", "NaturalPriestCombatPolicy.MeleeReach - 1 : 10f")]),
+		// Turned on by CP-19: movement inside a fight, read from the profiles.
+		new("fight loop: ranged route when farther than (m)", 25, Owner: "CP-19",
+			Profile: () => Whole(Both(profile => profile.Movement.RangedRouteBeyond))),
+		new("cast: close in after a range rejection (m)", 10f, Owner: "CP-19", Profile: () => Both(profile => profile.Movement.RangeRefusalCloseIn)),
 
 		// Pending, owner CP-21: the Ishalgen campaign's ranges and readiness thresholds.
 		new("Q2002 Sprigg hunt: route when farther than (m)", 25, Owner: "CP-21", Sites:

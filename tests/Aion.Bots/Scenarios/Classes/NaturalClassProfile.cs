@@ -85,6 +85,11 @@ public sealed class NaturalClassProfile
 	/// <summary>The HP and MP the shared helpers ask for before they go on.</summary>
 	public required NaturalReadinessThresholds Readiness { get; init; }
 
+	/// <summary>How the class moves inside a fight, with its pull style.</summary>
+	public required NaturalFightMovement Movement { get; init; }
+
+	public NaturalPullStyle PullStyle => Movement.Style;
+
 	/// <summary>The opening distance of a planned pull: the profile's own, or the run's when it names none.</summary>
 	public float PullDistance(NaturalMauPolicyParameters run) => Ranges.PullDistance ?? run.PullDistanceMeters;
 

@@ -2287,7 +2287,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - No Java was read: the item relies on no server behavior it did not already rely on.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,717 with 16 skipped),
       and Fast passes (run cp18-fast). The guard of rule (c), gate p, is in the proof run.
-- [ ] **CP-19 - Movement inside a fight, by pull style.** Depends: CP-18
+- [x] **CP-19 - Movement inside a fight, by pull style.** Depends: CP-18
   - Work: Add a pure helper the fight loop asks, with a unit test: where an approach stops
     (today a ranged route beyond 25 m, then ApproachNpcAsync up to the target, J:9283-9304),
     what counts as adjacent (J:9121-9122), how far to close in after NOT_ENOUGH_DISTANCE
@@ -2299,6 +2299,37 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     weapon-range stand-off or walk-in), which CP-36 and CP-40 read. Turn on the matching pin
     rows (the 25 m route threshold and the 10 m close-in).
   - Proof: Neutral gate, set m+c.
+  - 2026-10-07: done. Gate run gate-a1, set p+m+c (the proof set and the guard in one
+    run): verdict pass (run/cp/CP-19/gate-a1/verdict.json). p: 35,811 records, m: 123,112
+    and c: 96,166, each identical to its baseline.
+    - **Sc/Classes/NaturalFightMovement.cs** is new: the pull style (StandOff,
+      WeaponRangeStandOff, WalkIn) and the pure record the fight loop asks. Approach
+      (distance) says ranged route, walk to the target or hold; Adjacent(distance, target
+      ranged, time since its last hit) is the old test; CloseInAfterRangeRefusal(skill
+      range) gives melee reach less 1 for a melee skill and 10 m otherwise;
+      AfterObstacleRefusal says close to melee or find another sight line. The profile
+      gains Movement and PullStyle. The Priest and the Cleric share one stand-off: melee
+      reach 3, ranged route beyond 25 m, close-in 10 m.
+    - **The fight loop** (Sc/NaturalIshalgenJourney.Combat.cs) asks it at four places: the
+      adjacency test, the approach step, the close-in after STR_SKILL_NOT_ENOUGH_DISTANCE
+      and the answer to STR_SKILL_OBSTACLE. Its executors are unchanged, and so is the
+      bound of two obstacle repositions, which stays with the cast bookkeeping.
+    - **The two other styles are defined and not played.** A walk-in style always walks
+      to the target; a weapon-range style holds inside its hold distance and answers an
+      obstacle with another sight line. No profile returns Hold or another sight line
+      yet, and the fight loop has no executor for either: it throws NotSupportedException
+      naming CP-36 if one is ever asked for, instead of guessing a movement.
+    - **UT/NaturalFightMovementTests**, 2 tests: the Priest's and the Cleric's answers
+      equal the old inline expressions over twelve distances, both target kinds and six
+      hit ages, and over seven skill ranges; the other two styles answer as written above.
+    - **Pin rows turned on:** the 25 m route threshold and the 10 m close-in. The pin test
+      has 47 rows asserted and 11 pending, all CP-21's.
+    - One MeleeReach read is left in the fight loop: a target counts as ranged when its
+      attack range is above melee reach plus 1 (Combat.cs:234). No item names it, so it
+      still reads the shared constant through the old alias.
+    - No Java was read: the item relies on no server behavior it did not already rely on.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,719 with 16 skipped),
+      and Fast passes (run cp19-fast). The guard of rule (c), gate p, is in the proof run.
 - [ ] **CP-20 - Q2132, the trainer and class names from the line.** Depends: CP-01, CP-19
   - Work: Q2132 (J:6689-6697) takes its var, trainer and step label from the class-line
     contract (Priest: var 4, npc 203530, the same label bytes). The navigation graph NPC
@@ -3858,3 +3889,8 @@ report what was done, what is blocked and what you need from me.
   three navigation helpers take an optional range. MeleeReach is shared combat geometry.
   Gate gate-a1, set p+m+c+hm: identical. The pin test has 45 rows asserted, 13 pending.
   Seven checks, 4,717 with 16 skipped and Fast (cp18-fast) pass. Next by rule (h): CP-19.
+- 2026-10-07 — Loop: CP-19 done. Sc/Classes/NaturalFightMovement.cs holds the pull style and
+  the four movement answers of a fight; the fight loop asks the profile. The Priest line is a
+  stand-off with today's numbers; walk-in and weapon-range styles are defined, not played.
+  Gate gate-a1, set p+m+c: identical. The pin test has 47 rows asserted, 11 pending (CP-21).
+  Seven checks, 4,719 with 16 skipped and Fast (cp19-fast) pass. Next by rule (h): CP-20.

@@ -26,6 +26,11 @@ public static class NaturalPriestProfile
 	private static readonly NaturalReadinessThresholds PriestLineReadiness = new(
 		BeforePull: new(80), BeforeUseBar: new(60, 40), BetweenAdds: new(60, 40), BeforeNamedTarget: new(80, 60));
 
+	/// <summary>A stand-off: a ranged route while the target is farther than 25 m, then up to it; after a distance refusal
+	/// come to 10 m, or inside melee reach for a melee skill; an obstacle is answered by closing to melee.</summary>
+	private static readonly NaturalFightMovement PriestLineMovement = new(NaturalPullStyle.StandOff,
+		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, RangedRouteBeyond: 25, RangeRefusalCloseIn: 10);
+
 	public static NaturalClassProfile Priest { get; } = new()
 	{
 		Class = PlayerClass.PRIEST,
@@ -40,6 +45,7 @@ public static class NaturalPriestProfile
 		Rest = RestWith(NaturalPriestSkills.All),
 		Ranges = PriestLineRanges,
 		Readiness = PriestLineReadiness,
+		Movement = PriestLineMovement,
 	};
 
 	public static NaturalClassProfile Cleric { get; } = new()
@@ -57,6 +63,7 @@ public static class NaturalPriestProfile
 		Rest = RestWith(NaturalClericSkills.All),
 		Ranges = PriestLineRanges,
 		Readiness = PriestLineReadiness,
+		Movement = PriestLineMovement,
 	};
 
 	/// <summary>Calls the static policy with the class's catalog and the run's parameters, and reports the run's policy id.</summary>
