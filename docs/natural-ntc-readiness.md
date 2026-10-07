@@ -4,6 +4,8 @@ Prepared 2026-10-06 for RC-12. The accepted run is `rc11-full-create-s1-a25`, se
 
 The next bounded goal should complete Abyss entry, then establish natural Templar and Sorcerer profiles and a coordinated Templar/Cleric/Sorcerer NTC party around levels 25–27. Park the Cleric at this endpoint while the other profiles catch up. Abyss execution, additional classes, the party controller, NTC and crafting remain separate contracts.
 
+**Update 2026-10-06 (AX-14): Abyss entry is complete.** The Cleric's endpoint is now `morheim-abyss-entry-s1`: Cleric 26 at Morheim Ice Fortress, 166,405 XP into the level. See [Abyss entry: measured endpoint](#abyss-entry-measured-endpoint). The rest of this report describes `altgard-rc-complete-s1`, the endpoint that leg started from, and is left as written.
+
 These contracts are steps toward the maintainer's long-term goals (2026-10-06, in order): a server play-tested by our bots, with bugs fixed as we encounter them; an intelligent bot that can play the whole game (all quests, gathering, crafting and the rest); and, only after those two, bots that can join a human group as an extra healer or DPS. See [CLAUDE.md](../CLAUDE.md#where-this-leads-the-long-term-goals). The Abyss-entry leg is planned in [natural-abyss-entry.md](natural-abyss-entry.md).
 
 ## Measured endpoint and historical comparison
@@ -105,6 +107,38 @@ Each new class profile must create and ascend naturally, select its own class re
 
 Party work must prove one coordinated SIM clock, per-member quest and entry eligibility, individual/unshareable quest steps, invitations and following, role-aware pulls/defense/healing, shared XP/loot, gates and siege behavior, instance ownership/reentry, and regrouping after death. Existing party/loot/shared-credit scenarios provide foundations; the natural party controller and NTC proof are still open.
 
+## Abyss entry: measured endpoint
+
+Captured 2026-10-06 by AX-14 from `altgard-rc-complete-s1`, seed 1, run `ax14-capture-a2`, on runtime `37328409d9c5df12666bb1ea6a43dbd678aa98f3`. The leg, its decisions and its evidence are in [natural-abyss-entry.md](natural-abyss-entry.md). The plan and budget under "Next bounded contracts" above are as written before the leg was played.
+
+| Measure | Value |
+|---|---|
+| Snapshot | `morheim-abyss-entry-s1`, character 133276, clock 74,054,143 ms |
+| Level and XP | Cleric 26, 166,405 of 2,017,917 XP into the level |
+| XP gained in the leg | 1,047,092: 1,038,632 from five quests, 8,460 from ten arena spirits |
+| XP still needed | 1,851,512 to level 27; 18,041,712 to level 32 |
+| Recoverable XP carried | 97,328, from deaths in the earlier legs. The death rule heals it after the next obelisk resurrection (22,911 Kinah at this amount) |
+| Kinah | 743,158. The leg started with 748,485, paid 6,637 in fares and 2,690 for the bind, and was paid 4,000 by Q2947 |
+| Quests | Q24020, Q2945, Q2946, Q2947 and Q2042 complete, each once. Q24021 to Q24026 are in the journal, locked |
+| Place | Morheim Ice Fortress, beside Vebna; bound at obelisk 700231 |
+| Worn | Elite Rank 7 Asmodian Staff 101500818 (470 magic boost); Morheim Dark Legionary Hauberk 110551147; Elite Rank 7 handguards, spaulders, chausses and brogans |
+| In the cube | Altruist's Staff, the Altgard Dark Legionary Staff, the replaced armor, ten Greater Raging Wind Scrolls from Q2042, the sealed stigma bundle 188053787 |
+| Supplied help | one Greater Raging Wind Scroll and 32 Bronze Coins, both approved for this leg |
+| Deaths and attempts | no death; one arena try (ten spirits in 59 s) and one ring-course try (landed after 45 s) |
+| Game time | 16 min 30 s for the leg |
+
+Stigma and skills are as at the start: no stigma is socketed, no skill book was bought and the bundle is sealed.
+
+Public Verify `ax14-verify-a1` restores this snapshot, checks the endpoint from the fresh login, relogs once more and finds the same endpoint. No owned schema is left afterwards, and the 39 earlier snapshot dumps keep their hashes.
+
+What changed on the way, all logged in [the E2E plan](e2e-player-simulation-plan.md) and [the leg's document](natural-abyss-entry.md):
+
+- **Server, under retail decisions:** Garm sends the player into a new arena (D35); a death fails the arena attempt at once and the arena has twelve spirits (D36); the two quest arenas revive a dead player inside (D38). D34 scoped Q2947's timer hook before the leg.
+- **Bot rules, for every leg:** whenever the bot dies it revives at the obelisk and soul heals at the nearest Soul Healer, and in an instance it revives in the instance; the equipment check wears the owned staff with the most magic boost; the inventory check runs after every quest turn-in.
+- **This leg:** the commander first; coin gear at each wearable tier, armor and staff, only where it beats what is worn, with supplied coins.
+
+Not proven by a run: the Elyos arena's revive (no Elyos character), and the instance revive in Haramel (no death there since the rule).
+
 ## Endpoint verification and evidence
 
 Public Verify `rc12-endpoint-verify-a2` restores and relogs this endpoint at level 25/176 alive. Initial restoration inventory exactly matches the capture. Native trace lines 77–78 explain the sole later inventory change: approved Awakening Scroll 164000133/143950 is used on AfterRelog, reducing 33 → 32 in the disposable clone. The immutable captured stack remains 33. All object identities, equipment, journal, completed counts, class, bind and Haramel receipts are retained.
@@ -120,4 +154,4 @@ Required final Fast and pre-commit checks are recorded in the RC-12 evidence lin
 - [Immutable snapshot metadata](../run/snapshots/altgard-rc-complete-s1/snapshot.json), [endpoint comparison](../run/rc12/endpoint-verification.json), [readiness metrics](../run/rc12/readiness.json), [full native equipped slots](../run/rc12/native-equipped.json), [Verify schema provenance](../run/rc12/verify-schema-provenance-a2.json).
 - Primary local spec: Java Q2945/Q2946/Q2947/Q2042, StigmaService, PlayerSkillEntry, StatFunctions and XPRewardEnum; shipped quest rewards, player_experience_table.xml, instance_cooltimes.xml, portal_template2.xml and world_maps.xml.
 
-Q24114 remains intentionally excluded. Gathering quests Q2250/Q2275/Q2276/Q2297 and Q2147 remain deferred under the documented decisions; unresolved operator questions are preserved in the working checklist. No new server content, Abyss execution, additional class or party run is claimed.
+Q24114 remains intentionally excluded. Gathering quests Q2250/Q2275/Q2276/Q2297 and Q2147 remain deferred under the documented decisions; unresolved operator questions are preserved in the working checklist. No new server content, Abyss execution, additional class or party run is claimed for the `altgard-rc-complete-s1` endpoint. Abyss entry was executed afterwards by the AX leg; see [Abyss entry: measured endpoint](#abyss-entry-measured-endpoint).

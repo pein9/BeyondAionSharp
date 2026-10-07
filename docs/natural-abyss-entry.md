@@ -25,7 +25,8 @@ Elite Rank 7 staff is bought with the level-26 armor and worn. AX-13 is done: on
 run plays the whole leg, relogs at the endpoint and writes the completion receipt. AX-13a is
 done: the operator corrected the death rule into a rule of the bot for every leg and level
 (revive at the obelisk and soul heal at the nearest Soul Healer; in an instance, revive in
-the instance). AX-14, the endpoint snapshot, is next; D37 was committed, so nothing blocks it.
+the instance). AX-14 is done: the endpoint is preserved as `morheim-abyss-entry-s1` and its
+restore and relog are verified. **The checklist is complete.**
 
 This leg takes the level-25 Cleric from the preserved Altgard endpoint to Morheim Ice
 Fortress, and through the four Asmodian Abyss-entry missions. In order:
@@ -989,13 +990,35 @@ movie handling, timed-quest policy (Q2288, Q2230), reward choice, and the outcom
   - Tests: the contract test above replaces the one that pinned Golenthor (26 pass). The
     SIM soul healing test is unchanged.
   - Fast and the seven pre-commit checks: see the Progress log.
-- [ ] **AX-14 - Preserve the endpoint.** Depends AX-13. Save the committed-code endpoint under
+- [x] **AX-14 - Preserve the endpoint.** Depends AX-13. Save the committed-code endpoint under
   a new name, verify its restore and relog, drop every owned schema, and update
   [the readiness report](natural-ntc-readiness.md) with the measured level and XP. Run the
   final checks and Fast.
   - 2026-10-06: the first capture was refused, because two runtime files of another
     session's D37 work were uncommitted (`run/ax14/capture-refused-a1.log`). D37 was
     committed as `72e7f4b32` the same evening.
+  - 2026-10-06, **the capture**: `scripts/sim/sim-snapshot.ps1 -Action Capture -AltgardLeg1
+    -Leg ax -From altgard-rc-complete-s1 -Name morheim-abyss-entry-s1`, run `ax14-capture-a2`,
+    seed 1, from committed code `37328409d`. The script restored the start, played the
+    leg, and dumped the schema only after the completion receipt was verified for
+    character 133276. The run: no death, one try each, level 26 with 166,405 XP into it,
+    743,158 Kinah, one scroll and 32 coins supplied. Evidence
+    `run/snapshots/_capture/ax14-capture-a2/`; the snapshot holds the dump, the completion
+    receipt and the later-capital checkpoint. Its clock is 74,054,143 ms.
+  - **The restore and relog**: public Verify, run `ax14-verify-a1`. The snapshot restored
+    with the leg selected. The fresh login showed the endpoint: Morheim, at Vebna, level
+    26, 166,405 of 2,017,917 XP, 743,158 Kinah, no Bronze Coin, bound at the fortress
+    obelisk, the five quests complete, the Elite Rank 7 staff and four armor pieces worn
+    over Aegir's hauberk. The Cleric relogged once more (generation 1 to 2) and showed the
+    same endpoint. `altgard-ax-endpoint-resume.json` is verified. Evidence
+    `run/snapshots/_verify/ax14-verify-a1/`.
+  - **Schemas:** no `aion_gs_sim_ni08_*` schema is left on the development MySQL.
+  - **No snapshot was overwritten:** the 39 earlier dumps have the hashes they had before
+    the capture (`run/ax14/snapshot-hashes-before.txt`, `-after.txt`); the new dump is the
+    fortieth.
+  - [The readiness report](natural-ntc-readiness.md#abyss-entry-measured-endpoint) has the
+    measured level and XP.
+  - Final Fast and the seven pre-commit checks: see the Progress log.
 
 **Not in this leg unless asked:** a fresh-create full run, and an isolated LIVE run.
 
@@ -1377,3 +1400,10 @@ The original questions, with the recommendations made at the time:
   120,600 XP for 27,968 Kinah (`run/ax13a/ax13a-rule-a1`). Fast passes 115 of 120 tests with five
   guarded skips and all eleven scenarios in 9.15 minutes (`run/ax13a-fast/`); the seven pre-commit
   checks pass (`run/ax13a/checks/`).
+- 2026-10-06 — AX-14: the endpoint is preserved as `morheim-abyss-entry-s1`, captured from
+  committed code `37328409d` (`ax14-capture-a2`). Public Verify restored it, checked the
+  endpoint and relogged (`ax14-verify-a1`). No owned schema is left and no earlier snapshot
+  changed. The readiness report has the measured endpoint: Cleric 26, 166,405 XP into the
+  level. The AX checklist is complete. Final Fast passes 115 of 120 tests with five guarded skips
+  and all eleven scenarios in 8.91 minutes (`run/ax14-fast/`); the seven pre-commit checks pass
+  (`run/ax14/checks/`).
