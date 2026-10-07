@@ -12,6 +12,11 @@ public static class NaturalPriestProfile
 	/// <summary>Blessing of Guardianship, kept up between fights as the recorded human did.</summary>
 	private static readonly NaturalUpkeepBuff Blessing = new("blessing", "buff-blessing");
 
+	/// <summary>Heal with Healing Light below 90% HP; sit only for mana, from below 50% until 80%, for at most 12 quiet
+	/// sits. Sitting solely for missing HP leaves the Priest exposed to respawns and patrols.</summary>
+	private static NaturalRestRules RestWith(NaturalPriestSkill[] skills) => new(skills, HealBelowPercent: 90,
+		ManaSitBelowPercent: 50, ManaSitUntilPercent: 80, MaximumQuietSits: 12);
+
 	public static NaturalClassProfile Priest { get; } = new()
 	{
 		Class = PlayerClass.PRIEST,
@@ -23,6 +28,7 @@ public static class NaturalPriestProfile
 		Upkeep = [Blessing],
 		PatrolRule = NaturalPatrolRule.Baseline,
 		RangedHold = NaturalRangedHold.RunOption,
+		Rest = RestWith(NaturalPriestSkills.All),
 	};
 
 	public static NaturalClassProfile Cleric { get; } = new()
@@ -37,6 +43,7 @@ public static class NaturalPriestProfile
 		// NA-22 (OD-14).
 		PatrolRule = NaturalPatrolRule.HoldAndAssess,
 		RangedHold = NaturalRangedHold.RunOption,
+		Rest = RestWith(NaturalClericSkills.All),
 	};
 
 	/// <summary>Calls the static policy with the class's catalog and the run's parameters, and reports the run's policy id.</summary>

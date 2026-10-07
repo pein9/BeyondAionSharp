@@ -94,15 +94,11 @@ public sealed class NaturalClassSeamPinTests(ITestOutputHelper output)
 		new("help gate: mana potion", HelpGate, Owner: "CP-16", Profile: () => Gate(rules => rules.ManaPotion)),
 		new("help gate: scroll upkeep", HelpGate, Owner: "CP-16", Profile: () => Gate(rules => rules.ScrollUpkeep)),
 
-		// Pending, owner CP-17: the rest rule.
-		new("rest: cast the heal below HP percent", 90, Owner: "CP-17", Sites:
-			[new(Journey, "RestAsync", "world.CurrentHp * 100 < world.MaxHp * 90")]),
-		new("rest: start the mana sit below MP percent", 50, Owner: "CP-17", Sites:
-			[new(Journey, "RestAsync", "world.CurrentMp * 100 < world.MaxMp * 50")]),
-		new("rest: end the mana sit at MP percent", 80, Owner: "CP-17", Sites:
-			[new(Journey, "RestAsync", "world.CurrentMp * 100 >= world.MaxMp * 80")]),
-		new("rest: quiet sits at most", 12, Owner: "CP-17", Sites:
-			[new(Journey, "RestAsync", "quietIntervals >= 12")]),
+		// Turned on by CP-17: the rest rule, read from the profiles' rest rules.
+		new("rest: cast the heal below HP percent", 90, Owner: "CP-17", Profile: () => Both(profile => profile.Rest.HealBelowPercent)),
+		new("rest: start the mana sit below MP percent", 50, Owner: "CP-17", Profile: () => Both(profile => profile.Rest.ManaSitBelowPercent)),
+		new("rest: end the mana sit at MP percent", 80, Owner: "CP-17", Profile: () => Both(profile => profile.Rest.ManaSitUntilPercent)),
+		new("rest: quiet sits at most", 12, Owner: "CP-17", Profile: () => Both(profile => profile.Rest.MaximumQuietSits)),
 
 		// Pending, owner CP-18: engage ranges and readiness thresholds of the shared helpers.
 		new("router: ranged arrival radius (m)", 20f, Owner: "CP-18", Sites:

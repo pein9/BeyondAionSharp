@@ -76,6 +76,9 @@ public sealed class NaturalClassProfile
 
 	public required NaturalRangedHold RangedHold { get; init; }
 
+	/// <summary>How the class recovers between fights.</summary>
+	public required NaturalRestRules Rest { get; init; }
+
 	private readonly ConcurrentDictionary<string, IReadOnlySet<int>> effectIds = new(StringComparer.Ordinal);
 
 	/// <summary>The skill ids of a role in <see cref="Skills"/>, for recognising them in the client's effect list.</summary>

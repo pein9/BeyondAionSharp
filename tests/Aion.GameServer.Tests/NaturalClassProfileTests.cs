@@ -131,7 +131,7 @@ public sealed class NaturalClassProfileTests
 	private static NaturalClassProfile Copy(NaturalClassProfile profile, NaturalRangedHold hold) => new()
 	{
 		Class = profile.Class, Skills = profile.Skills, Excluded = profile.Excluded, Combat = profile.Combat,
-		HelpItems = profile.HelpItems, Upkeep = profile.Upkeep, PatrolRule = profile.PatrolRule, RangedHold = hold,
+		HelpItems = profile.HelpItems, Upkeep = profile.Upkeep, PatrolRule = profile.PatrolRule, RangedHold = hold, Rest = profile.Rest,
 	};
 
 	[Fact]

@@ -813,7 +813,8 @@ public sealed partial class NaturalIshalgenJourney
 
 		public async Task RestAsync(CancellationToken token)
 		{
-			// Heal while there is mana to spend. Sitting solely for missing HP leaves the Priest exposed to
+			// CP-17: the profile's rest rules decide each step; this loop observes and carries it out. For the Priest
+			// line: heal while there is mana to spend. Sitting solely for missing HP leaves the Priest exposed to
 			// respawns and patrols; reserve sitting for MP below half, then recover it to 80%.
 			bool locatedForManaRest = false;
 			bool recoveringMana = false;
@@ -827,27 +828,22 @@ public sealed partial class NaturalIshalgenJourney
 					await ReviveAtBindAsync(token);
 					return;
 				}
-				if (world.CurrentMp * 100 < world.MaxMp * 50) recoveringMana = true;
-				if (recoveringMana && world.CurrentMp * 100 >= world.MaxMp * 80)
-				{
-					recoveringMana = false;
-					locatedForManaRest = false;
-				}
+				NaturalRestDecision rest = ClassProfile.Rest.Decide(new NaturalRestObservation(
+					world.Level, world.CurrentHp, world.MaxHp, world.CurrentMp, world.MaxMp, recoveringMana, quietIntervals, world.Skills,
+					cooldowns, world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
+					lastPowderSkill, runtime.Epoch.AddMilliseconds(runtime.NowMillis)));
+				recoveringMana = rest.RecoveringMana;
+				if (rest.ManaRecovered) locatedForManaRest = false;
 				// NA-18 (OD-9): a Cleric rests with powder first. Sitting and Healing Light stay the fallback below.
-				if (Catalog.Any(skill => skill.IsPowderRest && world.Skills.ContainsKey(skill.Id)))
+				if (rest.PowderChoice is { } powder)
 				{
-					DateTimeOffset restNow = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
-					NaturalPowderRestChoice powder = NaturalPowderRestPolicy.Decide(new NaturalPowderRestObservation(
-						world.Level, world.CurrentHp, world.MaxHp, world.CurrentMp, world.MaxMp, recoveringMana, world.Skills,
-						cooldowns, world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
-						LastPowderSkillId: lastPowderSkill), restNow, Catalog);
 					session.TraceDiagnostic("powder-rest-decision", new Dictionary<string, object?>
 					{
 						["action"] = powder.Action, ["skillId"] = powder.Skill?.Id, ["reason"] = powder.Reason,
 						["hp"] = world.CurrentHp, ["maxHp"] = world.MaxHp, ["mp"] = world.CurrentMp, ["maxMp"] = world.MaxMp,
 						["powder"] = ItemCount(world, NaturalClericSkills.LesserOdellaPowder),
 					});
-					if (powder.Skill is { IsRestSkill: true } restSkill)
+					if (rest is { Action: NaturalRestRules.Powder, Skill: { } restSkill })
 					{
 						TimeSpan gate = session.Api.Timing.TimeUntilCast(restSkill.Id);
 						if (gate > TimeSpan.Zero) await session.AdvanceAsync(gate + TimeSpan.FromMilliseconds(1), token);
@@ -870,13 +866,11 @@ public sealed partial class NaturalIshalgenJourney
 						continue;
 					}
 				}
-				if (!recoveringMana)
+				if (rest.Action == NaturalRestRules.Blocked) throw new InvalidDataException(rest.BlockedReason);
+				if (rest.Action != NaturalRestRules.SitForMana)
 				{
-					if (world.CurrentHp * 100 < world.MaxHp * 90)
+					if (rest is { Action: NaturalRestRules.CastHeal, Skill: { } heal })
 					{
-						NaturalPriestSkill? heal = NaturalPriestSkills.Best("heal", world.Level, world.Skills, Catalog);
-						if (heal == null || world.CurrentMp < heal.ManaCost)
-							throw new InvalidDataException("Priest has mana but no client-observed usable self-heal between fights.");
 						TimeSpan gate = session.Api.Timing.TimeUntilCast(heal.Id);
 						if (gate > TimeSpan.Zero)
 						{
@@ -898,7 +892,6 @@ public sealed partial class NaturalIshalgenJourney
 						await maintain(token);
 					return;
 				}
-				if (quietIntervals >= 12) break;
 				if (!locatedForManaRest)
 				{
 					await MoveToRestSpotAsync(token);
@@ -936,7 +929,7 @@ public sealed partial class NaturalIshalgenJourney
 				else locatedForManaRest = false;
 				await session.SynchronizeAsync(token);
 			}
-			throw new InvalidDataException("Priest could not recover HP/MP before the next pull within bounded healing and mana-rest attempts.");
+			throw new InvalidDataException(NaturalRestRules.NotRecovered);
 		}
 
 		/// <summary>Fight the attackers that interrupted a sit or a powder cast (NA-18 shares it with the sit).</summary>

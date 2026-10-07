@@ -2175,7 +2175,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - No Java was read: the item relies on no server behavior it did not already rely on.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,710 with 16 skipped),
       and Fast passes (run cp16-fast). The guard of rule (c), gate p, is in the proof run.
-- [ ] **CP-17 - Between-fight recovery as a rest plan.** Depends: CP-16
+- [x] **CP-17 - Between-fight recovery as a rest plan.** Depends: CP-16
   - Work: Extract the decisions of RestAsync (J:9634-9760) into a pure
     NaturalRestRules.Decide(observation) on the profile that returns powder, cast-heal,
     sit-for-mana, done or blocked, with a state-sweep unit test written against J:9650-9651,
@@ -2185,6 +2185,39 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     Turn on the matching pin rows (rest heal below 90, sit below 50 until 80, 12 quiet
     sits).
   - Proof: Neutral gate, set m+c.
+  - 2026-10-07: done. Gate run gate-a1, set p+m+c (the proof set and the guard in one
+    run): verdict pass (run/cp/CP-17/gate-a1/verdict.json). p: 35,811 records, m: 123,112
+    and c: 96,166, each identical to its baseline. Scope m holds the Priest's 15
+    between-fight heals and 6 walks to a rest spot, and c the Cleric's 179 powder-rest
+    decisions and 4 interrupted rests.
+    - **Sc/Classes/NaturalRestRules.cs** is new: the record (the skill catalog,
+      HealBelowPercent 90, ManaSitBelowPercent 50, ManaSitUntilPercent 80,
+      MaximumQuietSits 12) with the pure Decide(observation). It returns powder,
+      cast-heal, sit-for-mana, done or blocked, the skill to cast, the mana sit's state
+      after the observation, whether the sit just ended, the powder policy's own choice
+      for the trace, and the reason when blocked. The two exception texts are constants
+      of the record, unchanged. The profile's new member Rest holds the rules; the
+      Priest's and the Cleric's differ only in the catalog.
+    - **RestAsync** (Sc/NaturalIshalgenJourney.Combat.cs) observes, asks the profile's
+      rules, and carries the answer out. The executor is as it was: the powder cast and
+      its interruption, the heal's cast gate, NaturalRestCadence, defending during a
+      rest, the revive, BuffOurselfAsync(AfterRest) and the MaintainInventoryAsync hook.
+      The powder-rest-decision record is traced before the action, as before.
+    - **UT/NaturalRestRulesTests**, 3 tests: a sweep of 49,152 states (four characters,
+      HP and MP at every threshold and one below it, the sit on and off, 0, 11, 12 and
+      13 quiet sits, four powder counts, the shared cooldown, the last powder skill)
+      against a transcription of the old inline decisions with their literals; all five
+      actions occur. Two tests name the thresholds one by one for the Priest and the
+      powder-first order for the Cleric.
+    - **Pin rows turned on:** rest heal below 90, sit below 50, until 80, and 12 quiet
+      sits read the profile. The pin test has 31 rows asserted and 27 pending (CP-18 14,
+      CP-19 2, CP-21 11).
+    - Carried over, not changed: the rest sit still writes no trace record of its own
+      (the finding of CP-06), so the gate sees a sit only through its packets and the
+      walk to the rest spot.
+    - No Java was read: the item relies on no server behavior it did not already rely on.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,713 with 16 skipped),
+      and Fast passes (run cp17-fast). The guard of rule (c), gate p, is in the proof run.
 - [ ] **CP-18 - Engage ranges and readiness thresholds in the shared helpers.** Depends:
   CP-17
   - Work: Give the profile named distances and named thresholds and have the shared helpers
@@ -3773,3 +3806,8 @@ report what was done, what is blocked and what you need from me.
   them. DecideBuffs takes the shared slot's scroll. Gate gate-a1, set p+m+c: identical. The
   pin test has 27 rows asserted, 31 pending. Seven checks, 4,710 with 16 skipped and
   Fast (cp16-fast) pass. Next by rule (h): CP-17.
+- 2026-10-07 — Loop: CP-17 done. Sc/Classes/NaturalRestRules.cs holds the rest decisions as a
+  pure Decide on the profile; RestAsync observes, asks and carries out. A 49,152-state sweep
+  agrees with the old inline logic. Gate gate-a1, set p+m+c: identical. The pin test has 31
+  rows asserted, 27 pending. Seven checks, 4,713 with 16 skipped and Fast (cp17-fast)
+  pass. Next by rule (h): CP-18.
