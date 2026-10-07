@@ -2984,7 +2984,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       type over a level-8 piece of a lower type.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,814 with 16 skipped),
       and Fast passes (run cp29-fast). The guard of rule (c), gate p, is in the gate run.
-- [ ] **CP-30 - Parameterize the capital scenario by the contract.** Depends: CP-08, CP-25
+- [x] **CP-30 - Parameterize the capital scenario by the contract.** Depends: CP-08, CP-25
   - Work: This item edits an existing scenario file, so it waits for the first baselines
     (CP-08). Parameterize CapitalAscensionScenario.RunAsmodianAsync by the contract: the
     dispatch id (literal 2904 at Sc/CapitalAscensionScenario.Asmodian.cs:21), the class
@@ -3002,6 +3002,34 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     "FullyQualifiedName~ManifestScenariosRunInFixedProcessOrder" (the pattern of
     docs/natural-ascension-altgard.md:2442-2445; run/na02/evidence-capital/run.json is an
     example of the file, with the fields run, gitSha and configProfile).
+  - 2026-10-07: done. CAPITAL-ASMO, run alone with the item's command and the run folder
+    run/cp/CP-30/capital-a1: passed, all 12 steps (s01 setup to s12 the Meiyer and Suthran
+    turn-ins), and its problem policy asserted clean with no observation
+    (sim-problems.jsonl). Guard run guard-a1, set p: verdict pass
+    (run/cp/CP-30/guard-a1/verdict.json), 35,811 records, identical to its baseline.
+    - **Java.** Nothing new was read: the scenario sends what it sent, and CP-25 read the
+      handlers that decide the class choice, the ceremony and the dispatch quest.
+    - **Read from the contract now** (Sc/CapitalAscensionScenario.Asmodian.cs): the
+      dispatch quest id in place of the literal 2904; the class the choice must give, as
+      the endpoint's class id, with a message that names the contract's second class
+      ("Cleric" for the reviewed contract); the Q2009 var the ceremony waits for, as the
+      ceremony step's var in place of the literal 40. The four class-dependent steps are
+      found by role (class choice, ceremony, dispatch start, dispatch reward). The eleven
+      other step keys stay literal: they are the same for every pair.
+    - **The short endpoint** is the new optional argument stopAtDispatchStart. When set,
+      the Doman step stops once SETPRO1 has moved the dispatch quest from var 0 to var 1,
+      before AIRLINE_SERVICE is sent; the driver is synchronized, its own check runs, and
+      the bind and the two turn-ins are not played. Nothing sets it yet; CP-31's probe is
+      its first user.
+    - **Unchanged on purpose.** The step labels the driver prints (choose-cleric-...,
+      ...-lyfjaberga-ceremony) are the same for every contract: they are labels of the
+      scenario's steps, not facts of the pair. The SIM host
+      (SimT/SimulationCapitalScenarioTests.cs) still checks a Cleric at the end; it runs
+      the reviewed contract only.
+    - One failure text changed: the ceremony payout check names the contract's ceremony
+      item id, not the Karmic Staff. It is written only when the check fails.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,814 with 16 skipped),
+      and Fast passes (run cp30-fast). Fast does not run CAPITAL-ASMO, as the item says.
 - [ ] **CP-31 - Class choice on a prepared character: Cleric and Chanter rows.** Depends:
   CP-30
   - Work: First allocate SIM probe accounts. No id is known to be free: ids 77-82 belong to
@@ -4404,3 +4432,8 @@ report what was done, what is blocked and what you need from me.
   starters' defaults and their picks at the ten class-dependent rewards are written into the
   item. UT/NaturalClassGearRuleTests, 16 tests. Gate gate-a1, set all: identical. Seven
   checks, 4,814 with 16 skipped and Fast (cp29-fast) pass. Next by rule (h): CP-30.
+- 2026-10-07 — Loop: CP-30 done. CapitalAscensionScenario.RunAsmodianAsync reads the dispatch
+  quest, the chosen class, the Q2009 var and the four class-dependent steps from its contract,
+  and has the short endpoint stopAtDispatchStart. CAPITAL-ASMO passes alone, 12 steps
+  (run/cp/CP-30/capital-a1). Guard guard-a1, set p: identical. Seven checks, 4,814 with 16 skipped
+  and Fast (cp30-fast) pass. Next by rule (h): CP-31.

@@ -9,16 +9,27 @@ namespace Aion.Bots.Scenarios;
 /// CAPITAL-ASMO (NA-02): level-nine setup at Munin, then the Asmodian Ascension bridge entirely through client
 /// actions: Q2008 as a Cleric, the Q2009 ceremony (Karmic Staff), Q2904, the Altgard Fortress bind and Q24010.
 /// Server coverage for docs/natural-ascension-altgard.md; ids, positions and dialogs come from its contract.
+/// <para>
+/// CP-30 (docs/natural-class-profiles.md): the class pair is the contract's. The class chosen and checked, the Q2009 var
+/// and preceptor, the ceremony weapon and the dispatch quest are read from it, and the four class-dependent steps are
+/// found by role, so another pair's bridge (<see cref="NaturalAscensionContract.ForChoice"/>) runs the same scenario.
+/// With the reviewed contract it does what it always did.
+/// </para>
 /// </summary>
 public static partial class CapitalAscensionScenario
 {
+	/// <param name="stopAtDispatchStart">The short endpoint: stop once Doman's SETPRO1 has moved the dispatch quest from
+	/// var 0 to var 1, before his teleporter is used. The driver's own check then ends the scenario in Pandaemonium.</param>
 	public static async Task RunAsmodianAsync(ICapitalAscensionDriver driver, NaturalAscensionContract contract,
-		CancellationToken token = default)
+		CancellationToken token = default, bool stopAtDispatchStart = false)
 	{
 		NaturalAscensionStep Step(string key) => contract.Steps.Single(step => step.Key == key);
 		static BotPosition At(float[] position) => new(position[0], position[1], position[2], 0);
 		static int Action(string name) => NaturalAscensionContract.DialogActionId(name);
-		const int ascension = 2008, ceremony = 2009, dispatch = 2904, suthran = 24010;
+		const int ascension = 2008, ceremony = 2009, suthran = 24010;
+		int dispatch = contract.Dispatch.QuestId;
+		// The chosen class as a message names it: CLERIC reads Cleric.
+		string chosen = string.Join(' ', contract.ClassChoice.ToClass.Split('_').Select(word => word[..1] + word[1..].ToLowerInvariant()));
 
 		await driver.StepAsync("setup-level-nine-at-munin", driver.PrepareAsync, token);
 		await driver.SynchronizeAsync(token);
@@ -95,7 +106,7 @@ public static partial class CapitalAscensionScenario
 
 		await driver.StepAsync("choose-cleric-and-leave-ataxiar", async ct =>
 		{
-			NaturalAscensionStep step = Step("q2008-v6-munin-class");
+			NaturalAscensionStep step = contract.Step(NaturalAscensionStepRole.ClassChoice);
 			int munin = await ApproachAsync(driver, step.NpcId, At(step.Position), ct);
 			await DialogAsync(driver, munin, ascension, Action("QUEST_SELECT"), checked((ushort)step.Pages[0]), ct);
 			await DialogAsync(driver, munin, ascension, Action("SETPRO6"), checked((ushort)contract.ClassChoice.ClassPageId), ct);
@@ -104,8 +115,8 @@ public static partial class CapitalAscensionScenario
 			await driver.CompleteTeleportAsync(contract.Start.MapId, ct);
 			await driver.SynchronizeAsync(ct);
 			Require(State(driver, ascension, 5) && State(driver, ceremony, 3, 0), "Ascension completion did not start the ceremony.");
-			Require(driver.Api.World.Objects[driver.Api.World.SelfObjectId!.Value].PlayerClass == (byte)PlayerClass.CLERIC,
-				"Quest did not change the character's class to Cleric.");
+			Require(driver.Api.World.Objects[driver.Api.World.SelfObjectId!.Value].PlayerClass == contract.Endpoint.ClassId,
+				$"Quest did not change the character's class to {chosen}.");
 			Require(driver.Api.World.Level == contract.Start.Level, "Ascension's own experience must not pass the non-Daeva cap.");
 		}, token);
 
@@ -130,8 +141,8 @@ public static partial class CapitalAscensionScenario
 				await MovieAsync(driver, npc, ceremony, Action(step.Actions[1]), step.MovieId!.Value, ct);
 				await SelectAsync(driver, npc, ceremony, Action(step.Actions[2]), ct);
 			}
-			await WaitStateAsync(driver, ceremony, 4, 40, ct);
-			NaturalAscensionStep reward = Step("q2009-reward-lyfjaberga");
+			NaturalAscensionStep reward = contract.Step(NaturalAscensionStepRole.Ceremony);
+			await WaitStateAsync(driver, ceremony, 4, reward.Var!.Value, ct);
 			int lyfjaberga = await ApproachAsync(driver, reward.NpcId, At(reward.Position), ct);
 			await DialogAsync(driver, lyfjaberga, ceremony, Action("SELECT_QUEST_REWARD"), checked((ushort)reward.Pages[1]), ct);
 			var expected = InventoryTotals(driver);
@@ -142,18 +153,24 @@ public static partial class CapitalAscensionScenario
 			await WaitStateAsync(driver, ceremony, 5, null, ct);
 			await driver.SynchronizeAsync(ct);
 			Require(expected.OrderBy(pair => pair.Key).SequenceEqual(InventoryTotals(driver).OrderBy(pair => pair.Key)),
-				"Ceremony did not grant exactly the Karmic Staff, the teas and the kinah.");
+				$"Ceremony did not grant exactly the ceremony weapon {contract.CeremonyReward.ItemId}, the teas and the kinah.");
 			Require(driver.Api.World.Level >= contract.Endpoint.MinimumLevel, "The ceremony payout did not reach level 10.");
 			Require(State(driver, dispatch, 3, 0), "Dispatch to Altgard did not start when the ceremony completed.");
 		}, token);
 
 		await driver.StepAsync("doman-dispatch-and-teleport-to-altgard", async ct =>
 		{
-			NaturalAscensionStep step = Step("q2904-v0-doman");
+			NaturalAscensionStep step = contract.Step(NaturalAscensionStepRole.DispatchStart);
 			int doman = await ApproachAsync(driver, step.NpcId, At(step.Position), ct);
 			await DialogAsync(driver, doman, dispatch, Action("QUEST_SELECT"), checked((ushort)step.Pages[0]), ct);
 			await SelectAsync(driver, doman, dispatch, Action("SETPRO1"), ct);
 			await WaitStateAsync(driver, dispatch, 3, 1, ct);
+			if (stopAtDispatchStart)
+			{
+				await driver.SynchronizeAsync(ct);
+				await driver.VerifyAsync(ct);
+				return;
+			}
 			long kinah = driver.Api.World.Kinah;
 			await SelectAsync(driver, doman, 0, Action("AIRLINE_SERVICE"), ct);
 			await driver.WaitAsync(typeof(SM_TELEPORT_MAP), _ => true, ct);
@@ -166,6 +183,7 @@ public static partial class CapitalAscensionScenario
 			Require(kinah - driver.Api.World.Kinah == fare, $"Teleport cost {kinah - driver.Api.World.Kinah}, expected {fare}.");
 			Require(State(driver, suthran, 3, 0), "Suthran's Orders did not start on entering Altgard.");
 		}, token);
+		if (stopAtDispatchStart) return;
 
 		await driver.StepAsync("bind-at-altgard-fortress", async ct =>
 		{
@@ -184,9 +202,9 @@ public static partial class CapitalAscensionScenario
 
 		await driver.StepAsync("meiyer-and-suthran-turn-ins", async ct =>
 		{
-			foreach ((string key, int quest) in new[] { ("q2904-reward-meiyer", dispatch), ("q24010-reward-suthran", suthran) })
+			foreach ((NaturalAscensionStep step, int quest) in new[] { (contract.Step(NaturalAscensionStepRole.DispatchReward), dispatch),
+				(Step("q24010-reward-suthran"), suthran) })
 			{
-				NaturalAscensionStep step = Step(key);
 				int npc = await ApproachAsync(driver, step.NpcId, At(step.Position), ct);
 				await DialogAsync(driver, npc, quest, Action("QUEST_SELECT"), checked((ushort)step.Pages[0]), ct);
 				await DialogAsync(driver, npc, quest, Action("SELECT_QUEST_REWARD"), checked((ushort)step.Pages[1]), ct);
