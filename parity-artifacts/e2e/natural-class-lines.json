@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "javaReference": "ce54b7931546cddafb970d20c9f71fec6d48c83b",
+  "race": "ASMODIANS",
+  "newSkillQuestId": 2132,
+  "ascensionQuestId": 2008,
+  "classChoiceVar": 6,
+  "ceremonyQuestId": 2009,
+  "masteryLevels": {
+    "starter": 1,
+    "secondClass": 9
+  },
+  "clientDialogs": {
+    "map": "custom-quest-client-dialogs.json",
+    "clientVersion": "4.8",
+    "classPageButtons": "verified"
+  },
+  "starters": [
+    {
+      "class": "WARRIOR",
+      "classId": 0,
+      "newSkill": { "var": 1, "rewardGroup": 0, "trainerNpcId": 203527, "trainerPosition": [607.0, 2460.0, 280.438], "talkRange": 6, "pageId": 1011 },
+      "classPage": { "pageId": 3057, "clientPage": "select7", "clientActions": ["SETPRO7", "SETPRO8"] },
+      "ceremony": { "var": 10, "rewardGroup": 0, "preceptorNpcId": 204080, "preceptorPosition": [1455.6, 1451.54, 177.317], "talkRange": 6, "pageId": 2034 },
+      "masteries": [{ "skillId": 37, "kind": "weapon", "unlocks": "SWORD" }, { "skillId": 39, "kind": "weapon", "unlocks": "MACE" }, { "skillId": 40, "kind": "armor", "unlocks": "CLOTHES" }, { "skillId": 41, "kind": "armor", "unlocks": "LEATHER" }, { "skillId": 42, "kind": "armor", "unlocks": "CHAIN" }, { "skillId": 43, "kind": "shield", "unlocks": "SHIELD" }, { "skillId": 103, "kind": "armor", "unlocks": "ROBE" }]
+    },
+    {
+      "class": "SCOUT",
+      "classId": 3,
+      "newSkill": { "var": 2, "rewardGroup": 1, "trainerNpcId": 203528, "trainerPosition": [571.895, 2461.99, 278.5], "talkRange": 6, "pageId": 1352 },
+      "classPage": { "pageId": 3398, "clientPage": "select8", "clientActions": ["SETPRO9", "SETPRO10"] },
+      "ceremony": { "var": 20, "rewardGroup": 1, "preceptorNpcId": 204081, "preceptorPosition": [1455.89, 1432.0, 177.317], "talkRange": 6, "pageId": 2375 },
+      "masteries": [{ "skillId": 37, "kind": "weapon", "unlocks": "SWORD" }, { "skillId": 40, "kind": "armor", "unlocks": "CLOTHES" }, { "skillId": 41, "kind": "armor", "unlocks": "LEATHER" }, { "skillId": 66, "kind": "weapon", "unlocks": "DAGGER" }, { "skillId": 103, "kind": "armor", "unlocks": "ROBE" }]
+    },
+    {
+      "class": "MAGE",
+      "classId": 6,
+      "newSkill": { "var": 3, "rewardGroup": 2, "trainerNpcId": 203529, "trainerPosition": [565.26, 2401.61, 278.896], "talkRange": 6, "pageId": 1693 },
+      "classPage": { "pageId": 3739, "clientPage": "select9", "clientActions": ["SETPRO11", "SETPRO12"] },
+      "ceremony": { "var": 30, "rewardGroup": 2, "preceptorNpcId": 204082, "preceptorPosition": [1478.58, 1451.81, 177.317], "talkRange": 6, "pageId": 2716 },
+      "masteries": [{ "skillId": 40, "kind": "armor", "unlocks": "CLOTHES" }, { "skillId": 100, "kind": "weapon", "unlocks": "SPELLBOOK" }, { "skillId": 103, "kind": "armor", "unlocks": "ROBE" }]
+    },
+    {
+      "class": "PRIEST",
+      "classId": 9,
+      "newSkill": { "var": 4, "rewardGroup": 3, "trainerNpcId": 203530, "trainerPosition": [554.23, 2403.78, 278.878], "talkRange": 6, "pageId": 2034 },
+      "classPage": { "pageId": 4080, "clientPage": "select10", "clientActions": ["SETPRO13", "SETPRO14"] },
+      "ceremony": { "var": 40, "rewardGroup": 3, "preceptorNpcId": 204083, "preceptorPosition": [1479.01, 1431.83, 177.317], "talkRange": 6, "pageId": 3057 },
+      "masteries": [{ "skillId": 39, "kind": "weapon", "unlocks": "MACE" }, { "skillId": 40, "kind": "armor", "unlocks": "CLOTHES" }, { "skillId": 41, "kind": "armor", "unlocks": "LEATHER" }, { "skillId": 103, "kind": "armor", "unlocks": "ROBE" }]
+    },
+    {
+      "class": "ENGINEER",
+      "classId": 12,
+      "newSkill": { "var": 5, "rewardGroup": 4, "trainerNpcId": 801218, "trainerPosition": [556.129, 2426.967, 278.5], "talkRange": 6, "pageId": 2375 },
+      "classPage": { "pageId": 3569, "clientPage": "select8_3", "clientActions": ["SETPRO15", "SETPRO17"] },
+      "ceremony": { "var": 50, "rewardGroup": 4, "preceptorNpcId": 801220, "preceptorPosition": [1438.09, 1431.82, 178.0], "talkRange": 6, "pageId": 3398 },
+      "masteries": [{ "skillId": 40, "kind": "armor", "unlocks": "CLOTHES" }, { "skillId": 41, "kind": "armor", "unlocks": "LEATHER" }, { "skillId": 103, "kind": "armor", "unlocks": "ROBE" }, { "skillId": 112, "kind": "weapon", "unlocks": "GUN" }]
+    },
+    {
+      "class": "ARTIST",
+      "classId": 15,
+      "newSkill": { "var": 6, "rewardGroup": 5, "trainerNpcId": 801219, "trainerPosition": [555.431, 2429.317, 278.35], "talkRange": 6, "pageId": 2716 },
+      "classPage": { "pageId": 3910, "clientPage": "select9_3", "clientActions": ["SETPRO16"] },
+      "ceremony": { "var": 60, "rewardGroup": 5, "preceptorNpcId": 801221, "preceptorPosition": [1438.14, 1444.51, 178.0], "talkRange": 6, "pageId": 3739 },
+      "masteries": [{ "skillId": 40, "kind": "armor", "unlocks": "CLOTHES" }, { "skillId": 103, "kind": "armor", "unlocks": "ROBE" }, { "skillId": 114, "kind": "weapon", "unlocks": "HARP" }]
+    }
+  ],
+  "secondClasses": [
+    {
+      "class": "GLADIATOR",
+      "classId": 1,
+      "parent": "WARRIOR",
+      "action": "SETPRO7",
+      "masteries": [{ "skillId": 44, "kind": "weapon", "unlocks": "SWORD", "replacesSkillId": 37 }, { "skillId": 45, "kind": "weapon", "unlocks": "DAGGER" }, { "skillId": 46, "kind": "weapon", "unlocks": "MACE", "replacesSkillId": 39 }, { "skillId": 48, "kind": "armor", "unlocks": "LEATHER", "replacesSkillId": 41 }, { "skillId": 49, "kind": "armor", "unlocks": "CHAIN", "replacesSkillId": 42 }, { "skillId": 50, "kind": "shield", "unlocks": "SHIELD", "replacesSkillId": 43 }, { "skillId": 51, "kind": "weapon", "unlocks": "GREATSWORD" }, { "skillId": 52, "kind": "weapon", "unlocks": "POLEARM" }, { "skillId": 53, "kind": "weapon", "unlocks": "BOW" }, { "skillId": 54, "kind": "armor", "unlocks": "PLATE" }],
+      "ceremonyReward": { "selectableList": "fighter_selectable_reward", "items": [{ "itemId": 100000640, "itemGroup": "SWORD" }, { "itemId": 100900488, "itemGroup": "GREATSWORD" }, { "itemId": 101300479, "itemGroup": "POLEARM" }] },
+      "dispatch": { "questId": 2901, "startReward": 0, "workItemId": 182207001 }
+    },
+    {
+      "class": "TEMPLAR",
+      "classId": 2,
+      "parent": "WARRIOR",
+      "action": "SETPRO8",
+      "masteries": [{ "skillId": 44, "kind": "weapon", "unlocks": "SWORD", "replacesSkillId": 37 }, { "skillId": 46, "kind": "weapon", "unlocks": "MACE", "replacesSkillId": 39 }, { "skillId": 48, "kind": "armor", "unlocks": "LEATHER", "replacesSkillId": 41 }, { "skillId": 49, "kind": "armor", "unlocks": "CHAIN", "replacesSkillId": 42 }, { "skillId": 50, "kind": "shield", "unlocks": "SHIELD", "replacesSkillId": 43 }, { "skillId": 51, "kind": "weapon", "unlocks": "GREATSWORD" }, { "skillId": 54, "kind": "armor", "unlocks": "PLATE" }],
+      "ceremonyReward": { "selectableList": "knight_selectable_reward", "items": [{ "itemId": 100000640, "itemGroup": "SWORD" }, { "itemId": 100900488, "itemGroup": "GREATSWORD" }] },
+      "dispatch": { "questId": 2901, "startReward": 0, "workItemId": 182207001 }
+    },
+    {
+      "class": "ASSASSIN",
+      "classId": 4,
+      "parent": "SCOUT",
+      "action": "SETPRO9",
+      "masteries": [{ "skillId": 44, "kind": "weapon", "unlocks": "SWORD", "replacesSkillId": 37 }, { "skillId": 45, "kind": "weapon", "unlocks": "DAGGER", "replacesSkillId": 66 }, { "skillId": 48, "kind": "armor", "unlocks": "LEATHER", "replacesSkillId": 41 }, { "skillId": 53, "kind": "weapon", "unlocks": "BOW" }],
+      "ceremonyReward": { "selectableList": "assassin_selectable_reward", "items": [{ "itemId": 100200605, "itemGroup": "DAGGER" }, { "itemId": 100000640, "itemGroup": "SWORD" }, { "itemId": 101700515, "itemGroup": "BOW" }] },
+      "dispatch": { "questId": 2902, "startReward": 1, "workItemId": 182207002 }
+    },
+    {
+      "class": "RANGER",
+      "classId": 5,
+      "parent": "SCOUT",
+      "action": "SETPRO10",
+      "masteries": [{ "skillId": 44, "kind": "weapon", "unlocks": "SWORD", "replacesSkillId": 37 }, { "skillId": 45, "kind": "weapon", "unlocks": "DAGGER", "replacesSkillId": 66 }, { "skillId": 48, "kind": "armor", "unlocks": "LEATHER", "replacesSkillId": 41 }, { "skillId": 53, "kind": "weapon", "unlocks": "BOW" }],
+      "ceremonyReward": { "selectableList": "ranger_selectable_reward", "items": [{ "itemId": 100200605, "itemGroup": "DAGGER" }, { "itemId": 100000640, "itemGroup": "SWORD" }, { "itemId": 101700515, "itemGroup": "BOW" }] },
+      "dispatch": { "questId": 2902, "startReward": 1, "workItemId": 182207002 }
+    },
+    {
+      "class": "SORCERER",
+      "classId": 7,
+      "parent": "MAGE",
+      "action": "SETPRO11",
+      "masteries": [{ "skillId": 106, "kind": "armor", "unlocks": "ROBE", "replacesSkillId": 103 }, { "skillId": 107, "kind": "weapon", "unlocks": "SPELLBOOK", "replacesSkillId": 100 }, { "skillId": 111, "kind": "weapon", "unlocks": "ORB" }],
+      "ceremonyReward": { "selectableList": "wizard_selectable_reward", "items": [{ "itemId": 100600532, "itemGroup": "SPELLBOOK" }, { "itemId": 100500500, "itemGroup": "ORB" }] },
+      "dispatch": { "questId": 2903, "startReward": 2, "workItemId": 182207003 }
+    },
+    {
+      "class": "SPIRIT_MASTER",
+      "classId": 8,
+      "parent": "MAGE",
+      "action": "SETPRO12",
+      "masteries": [{ "skillId": 106, "kind": "armor", "unlocks": "ROBE", "replacesSkillId": 103 }, { "skillId": 107, "kind": "weapon", "unlocks": "SPELLBOOK", "replacesSkillId": 100 }, { "skillId": 111, "kind": "weapon", "unlocks": "ORB" }],
+      "ceremonyReward": { "selectableList": "elementalist_selectable_reward", "items": [{ "itemId": 100600532, "itemGroup": "SPELLBOOK" }, { "itemId": 100500500, "itemGroup": "ORB" }] },
+      "dispatch": { "questId": 2903, "startReward": 2, "workItemId": 182207003 }
+    },
+    {
+      "class": "CLERIC",
+      "classId": 10,
+      "parent": "PRIEST",
+      "action": "SETPRO14",
+      "masteries": [{ "skillId": 46, "kind": "weapon", "unlocks": "MACE", "replacesSkillId": 39 }, { "skillId": 48, "kind": "armor", "unlocks": "LEATHER", "replacesSkillId": 41 }, { "skillId": 49, "kind": "armor", "unlocks": "CHAIN" }, { "skillId": 50, "kind": "shield", "unlocks": "SHIELD" }, { "skillId": 89, "kind": "weapon", "unlocks": "STAFF" }, { "skillId": 106, "kind": "armor", "unlocks": "ROBE", "replacesSkillId": 103 }],
+      "ceremonyReward": { "selectableList": "priest_selectable_reward", "items": [{ "itemId": 100100495, "itemGroup": "MACE" }, { "itemId": 101500498, "itemGroup": "STAFF" }] },
+      "dispatch": { "questId": 2904, "startReward": 3, "workItemId": 182207004 }
+    },
+    {
+      "class": "CHANTER",
+      "classId": 11,
+      "parent": "PRIEST",
+      "action": "SETPRO13",
+      "masteries": [{ "skillId": 46, "kind": "weapon", "unlocks": "MACE", "replacesSkillId": 39 }, { "skillId": 48, "kind": "armor", "unlocks": "LEATHER", "replacesSkillId": 41 }, { "skillId": 49, "kind": "armor", "unlocks": "CHAIN" }, { "skillId": 50, "kind": "shield", "unlocks": "SHIELD" }, { "skillId": 89, "kind": "weapon", "unlocks": "STAFF" }, { "skillId": 106, "kind": "armor", "unlocks": "ROBE", "replacesSkillId": 103 }],
+      "ceremonyReward": { "selectableList": "chanter_selectable_reward", "items": [{ "itemId": 100100495, "itemGroup": "MACE" }, { "itemId": 101500498, "itemGroup": "STAFF" }] },
+      "dispatch": { "questId": 2904, "startReward": 3, "workItemId": 182207004 }
+    },
+    {
+      "class": "RIDER",
+      "classId": 13,
+      "parent": "ENGINEER",
+      "action": "SETPRO17",
+      "masteries": [{ "skillId": 49, "kind": "armor", "unlocks": "CHAIN" }, { "skillId": 115, "kind": "weapon", "unlocks": "KEYBLADE" }],
+      "ceremonyReward": { "selectableList": "rider_selectable_reward", "items": [{ "itemId": 102100489, "itemGroup": "KEYBLADE" }] },
+      "dispatch": { "questId": 29070, "startReward": 4, "workItemId": 182213297 }
+    },
+    {
+      "class": "GUNNER",
+      "classId": 14,
+      "parent": "ENGINEER",
+      "action": "SETPRO15",
+      "masteries": [{ "skillId": 117, "kind": "weapon", "unlocks": "GUN", "replacesSkillId": 112 }],
+      "ceremonyReward": { "selectableList": "gunner_selectable_reward", "items": [{ "itemId": 101800506, "itemGroup": "GUN" }] },
+      "dispatch": { "questId": 29070, "startReward": 4, "workItemId": 182213297 }
+    },
+    {
+      "class": "BARD",
+      "classId": 16,
+      "parent": "ARTIST",
+      "action": "SETPRO16",
+      "masteries": [{ "skillId": 124, "kind": "weapon", "unlocks": "HARP", "replacesSkillId": 114 }],
+      "ceremonyReward": { "selectableList": "bard_selectable_reward", "items": [{ "itemId": 102000523, "itemGroup": "HARP" }] },
+      "dispatch": { "questId": 29071, "startReward": 5, "workItemId": 182213298 }
+    }
+  ]
+}

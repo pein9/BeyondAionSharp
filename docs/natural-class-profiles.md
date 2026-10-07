@@ -907,7 +907,9 @@ dispatch Q29071 have never been run by a bot.
     scenario C11 casts Direct Shot 2219 and Pulse 4408 with the starter pistol and harp
     (SimT/SimulationCombatScenarioTests.cs:479-490) and the skill sweep equips a gun or a
     harp for its rows; the natural bot has never swung one (hazard 13). Which SETPRO buttons
-    the 4.8 client's class pages show was not checked, and the handler does not check the
+    the 4.8 client's class pages show was not checked when this was written; CP-01 checked
+    it on 2026-10-07, and each page shows exactly its own starter's second classes (see its
+    evidence line). The handler does not check the
     action against the page. But ClassChangeService.setClass refuses a second class outside
     the starter's own two (ClassChangeService.java:60-70), so a wrong button fails; it
     cannot give a foreign class. A server defect found there is fixed Java-first under its
@@ -1038,7 +1040,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     docs/natural-altgard-leveling.md. The seven pre-commit checks pass
     (run/cp/CP-00/checks/, seven logs, each exit 0); docs only, so no Fast run. The commit
     holds exactly these six files.
-- [ ] **CP-01 - Class-line contract for six starters and eleven second classes.** Depends:
+- [x] **CP-01 - Class-line contract for six starters and eleven second classes.** Depends:
   CP-00
   - Work: Java first: JAVA/data/handlers/quest/ishalgen/_2132ANewSkill.java:24-67,
     ascension/_2008Ascension.java:136-162, _2009ACeremonyinPandaemonium, the six dispatch
@@ -1060,6 +1062,41 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     javaReference to equal lastCompletedJavaCommit in docs/upstream-port-state.json, the
     field the other natural contract tests compare with (for example
     UT/NaturalAscensionContractTests.cs:223).
+  - 2026-10-07: done. e2e/natural-class-lines.json holds 6 starters and 11 second classes at
+    javaReference ce54b7931; the loader is Sc/Classes/NaturalClassLineContract.cs, public,
+    in the namespace Aion.Bots.Scenarios.Classes, and no bot code reads it.
+    UT/NaturalClassLineContractTests passes 20 of 20: the theory's 17 class rows and 3 facts
+    (run/cp/CP-01/proof-NaturalClassLineContractTests.log). Three wrong values put into the
+    file by hand (a trainer, a mastery, a work item) failed three rows, and the file was put
+    back. The Java handlers named in Work were read first, and the C# handlers the test
+    reads say the same.
+    - The class pages are verified, not left open. The checked-in page map of the 4.8
+      client's dialogs (e2e/custom-quest-client-dialogs.json, QUEST_Q2008) shows: select7
+      (3057, Warrior) SETPRO7 and SETPRO8; select8 (3398, Scout) SETPRO9 and SETPRO10;
+      select9 (3739, Mage) SETPRO11 and SETPRO12; select10 (4080, Priest) SETPRO14 and
+      SETPRO13; select8_3 (3569, Engineer) SETPRO15 and SETPRO17; select9_3 (3910, Artist)
+      SETPRO16 alone. Each page shows exactly its own starter's second classes, and each
+      page id is the DialogAction constant of the client's page name. No client file was
+      decoded for this.
+    - Level-1 masteries, from skill_tree.xml and the mastery effects of skill_templates.xml.
+      Every starter has Clothes 40 and Cloth Armor (robe) 103. Warrior adds sword 37, mace
+      39, leather 41, chain 42 and shield 43. Scout: sword 37, dagger 66, leather 41. Mage:
+      spellbook 100. Priest: mace 39, leather 41. Engineer: pistol 112, leather 41. Artist:
+      harp 114. So a Priest wears no chain and no staff before level 9, and only the Warrior
+      may carry a shield.
+    - Level-9 masteries worth knowing: the Gunner's only row is Advanced Pistol 117 and the
+      Bard's only row is Advanced Stringed Instrument 124; the Rider gets chain 49 and
+      Cipher-Blade 115 and no advanced pistol row. The Cleric and the Chanter have the same
+      six rows (46, 48, 49, 50, 89, 106).
+    - Q2009 reward lists: the Cleric's list is named priest_selectable_reward, and the
+      Chanter's own chanter_selectable_reward holds the same two items (Karmic Warhammer
+      100100495, Karmic Staff 101500498). The Gunner, the Rider and the Bard are each
+      offered one weapon. Q2132 has six reward groups of 275 XP and no item. The six
+      dispatch handlers are the same code: Q2901 to Q2904, Q29070 (Gunner and Rider) and
+      Q29071 (Bard).
+    - Bundle: seven pre-commit checks pass, Aion.GameServer.Tests passes 4,675 with 16
+      skipped, and Fast passes all 11 scenario gates (run cp01-fast: 115 tests passed, 5
+      skipped, 8.5 minutes). The logs are in run/cp/CP-01/checks/.
 - [ ] **CP-02 - Trace comparer with coverage counts.** Depends: CP-00
   - Work: Add scripts/sim/trace/compare_traces.py, reading through
     scripts/sim/trace/trace_input.py: stream two .trace.jsonl files, drop ts and run, skip
@@ -2873,3 +2910,9 @@ report what was done, what is blocked and what you need from me.
   (OD-13) and the Altgard leveling document (the standing bind policy). Six files; seven
   pre-commit checks pass (run/cp/CP-00/checks/). No baseline exists yet, so the re-record
   rule did not apply. Next by rule (h): CP-01.
+- 2026-10-07 — Loop: CP-01 done. The class-line contract e2e/natural-class-lines.json is frozen
+  for six starters and eleven second classes, with its loader and
+  UT/NaturalClassLineContractTests (20 of 20). The 4.8 client's class pages are verified
+  from the checked-in dialog map: each shows exactly its own starter's second classes.
+  Bundle: seven checks, Aion.GameServer.Tests 4,675 passed, Fast 11 gates (cp01-fast). No
+  baseline exists yet, so the re-record rule did not apply. Next by rule (h): CP-02.
