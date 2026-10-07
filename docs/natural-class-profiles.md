@@ -319,18 +319,52 @@ Gate scopes, all seed 1:
 
 | Scope | What it plays | About |
 |---|---|---|
-| `p` | A fresh Priest with `NA_ASCENSION=1` and `PC_CAPITAL=start`: levels 1-9, the class choice and the ceremony. It holds no Cleric fight and few Priest branches | 1 minute |
-| `m` | A fresh Priest with the bridge off: all 41 quests to the Munin stop | 11 minutes |
-| `b` | The `-Bridge` scope: a fresh Priest with early Ascension to the bridge endpoint | 9 minutes |
-| `c` | Cleric leg `l4`, replayed from `altgard-rc-l3` | not measured |
-| `l1` | Leg 1 from `altgard` with `-LaterCapital` | not measured |
-| `hm` | Haramel leg `l12` from `altgard-coingear` | not measured |
-| `ax` | Abyss entry from `altgard-rc-complete-s1` | 1 minute |
-| `all` | `p`, `m`, `b`, `l1`, `c`, `hm` and `ax`: every Priest and Cleric scope that CP-08 and CP-09 kept | about half an hour |
+| `p` | A fresh Priest with `NA_ASCENSION=1` and `PC_CAPITAL=start`: levels 1-9, the class choice and the ceremony. It holds no Cleric fight and few Priest branches | 38 s |
+| `m` | A fresh Priest with the bridge off: all 41 quests to the Munin stop | 5 min 22 s |
+| `b` | The `-Bridge` scope: a fresh Priest with early Ascension to the bridge endpoint | 7 min 36 s |
+| `c` | Cleric leg `l4`, replayed from `altgard-rc-l3` | 2 min 17 s |
+| `l1` | Leg 1 from `altgard` with `-LaterCapital` | 1 min 33 s |
+| `hm` | Haramel leg `l12` from `altgard-coingear` | 3 min 53 s |
+| `ax` | Abyss entry from `altgard-rc-complete-s1` | 44 s |
+| `all` | `p`, `m`, `b`, `l1`, `c`, `hm` and `ax`: every Priest and Cleric scope that CP-08 and CP-09 kept, which is all seven | 22 minutes of play, about 25 with the schemas |
 | class scope | `Replay -Class <line> -StopAt 2004:5:0`, one for each new starter: `mage`, `warrior`, `artist`, `engineer`, `scout`. The five are in the gate's table from the start, and each is turned on when its baseline is recorded (CP-53, CP-57, CP-60, CP-63, CP-66) | not measured |
 
-- The times of `p`, `m` and `b` were measured before CP-06 and CP-07 changed the Priest's
-  levels 1-9. CP-08 and CP-09 give the new ones.
+- The times are a pass of the record runs of CP-08 and CP-09, on 2026-10-07.
+
+**What each scope reaches.** From the baseline traces of CP-08 and CP-09. A Priest column
+counts what the character does below level 10, a Cleric column from level 10 on. An item
+names a scope for the code it moves; this table is where to check that the scope runs it.
+
+| What | p | m | b | l1 | c | hm | ax |
+|---|---|---|---|---|---|---|---|
+| Game time | 1 h 05 | 3 h 14 | 3 h 23 | 0 h 40 | 2 h 29 | 1 h 50 | 0 h 17 |
+| Fight decisions, Priest | 274 | 1,526 | 274 | - | - | - | - |
+| Fight decisions, Cleric | - | - | 457 | 280 | 1,590 | 528 | 18 |
+| Deaths (each with its revive) | 0 | 1 Priest | 0 | 0 | 1 | 1 | 0 |
+| Soul heals | 0 | 1 | 0 | 0 | 1 | 0 | 0 |
+| Retreat decisions | 2 | 1 | 3 | 0 | 25 | 8 | 0 |
+| Emergency decisions | 0 | 7 | 0 | 0 | 11 | 0 | 0 |
+| Between-fight heals | 1 | 15 | 1 | 0 | 3 | 0 | 0 |
+| Walks to a rest spot (a sit follows) | 0 | 6 | 1 | 0 | 2 | 0 | 0 |
+| Rests interrupted by an attack | 0 | 0 | 0 | 0 | 4 | 0 | 0 |
+| Powder-rest decisions | 0 | 0 | 91 | 68 | 179 | 86 | 0 |
+| Pull plans | 5 | 148 | 112 | 52 | 201 | 311 | 0 |
+| Patrol waits (all the Cleric's) | 0 | 0 | 21 | 9 | 120 | 192 | 0 |
+| At-target pulls | 0 | 0 | 0 | 0 | 0 | 9 | 0 |
+| Life potions drunk | 18 | 69 | 26 | 4 | 102 | 15 | 2 |
+| Mana potions drunk | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
+| Shield scrolls used | 0 | 3 | 0 | 0 | 4 | 0 | 0 |
+| Running scrolls used | 7 | 20 | 8 | 0 | 0 | 0 | 3 |
+| Speed scrolls used | 2 | 7 | 6 | 1 | 5 | 19 | 3 |
+| Help items supplied | 6 | 5 | 6 | 0 | 3 | 1 | 2 |
+| Binds | 2 | 2 | 3 | 0 | 1 | 1 | 1 |
+| Returns cast | 1 | 1 | 3 | 0 | 0 | 0 | 0 |
+| Vendor trades with a purchase | 0 | 0 | 1 | 0 | 0 | 0 | 7 coin armor |
+| Gear equips | 6 | 10 | 13 | 0 | 0 | 0 | 14 |
+
+Reached by no scope: the Ishalgen vendor buy, a mana potion drunk by the Priest, a patrol
+wait by the Priest, a revive at the map's first spawn point, the village's Soul Healer,
+and the environment-gated Mau course and Cleric encounter.
 - The gate pins its environment and writes it beside each baseline: `NA_HELP_ITEMS` unset
   for every line, because help items are on for every class line (Standing rules),
   `AION_BOT_DASHBOARD_PORT` and `AION_SIM_PROCESS_KEY`. A run with `NA_HELP_ITEMS=0` is not
@@ -879,7 +913,8 @@ dispatch Q29071 have never been run by a bot.
    dated 2026-09-28 to 2026-10-06. CP-08 and CP-09 record every scope twice to find out. If
    p or c does not repeat, the loop stops; a decision projection is a weaker proof and needs
    the operator's notice.
-2. A baseline scope may no longer pass on current code; b (the bridge route) and hm (Haramel
+2. (Did not happen: CP-09 kept all seven scopes on 2026-10-07.) A baseline scope may no
+   longer pass on current code; b (the bridge route) and hm (Haramel
    from altgard-coingear, the pre-RC line) are the oldest. CP-09 drops such a scope instead
    of fixing it, which narrows what the full gate covers.
 3. Some code is reached by no scope: the Ishalgen vendor buy, the Cleric's in-fight mana
@@ -890,7 +925,9 @@ dispatch Q29071 have never been run by a bot.
    drops hm, no scope reaches it. After CP-06 the Priest may drink a mana potion in scope m;
    CP-09's counts say whether it does (CP-02's counts mode also counts potions drunk, shield
    and speed scrolls used, help items supplied, binds and soul heals).
-4. The coverage statements in this plan come from a reviewer's counts in older traces (for
+4. (Replaced by CP-09 on 2026-10-07: the table "What each scope reaches" holds the counts
+   of the baselines, and no Proof line needed an edit.) The coverage statements in this
+   plan come from a reviewer's counts in older traces (for
    example 3 deaths and 5 retreats in the existing scope-m trace, and vendor buys only in
    the bridge trace, at the Altgard shop stop, and in the Abyss-entry trace). CP-09 replaces
    them with counts from the new baselines. Those older traces were played without the
@@ -1687,7 +1724,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       operator's decision. Hazard 1 is answered for both: a same-seed replay repeats at
       HEAD.
     - Evidence only: the seven pre-commit checks pass, no Fast run.
-- [ ] **CP-09 - Record baselines m, b, l1, hm and ax, twice.** Depends: CP-07, CP-08
+- [x] **CP-09 - Record baselines m, b, l1, hm and ax, twice.** Depends: CP-07, CP-08
   - Work: The same procedure for m, b, l1 (from altgard with -LaterCapital, as altgard-rc-l1
     was captured), hm and ax, in one -Record run with -Item CP-09. Scopes m and b start from
     a fresh Priest, so they hold the new levels 1-9 of CP-06 and CP-07; l1, hm and ax start
@@ -1707,6 +1744,50 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     hm or ax) need no edit.
   - Proof: The record run: every scope kept is identical across its two passes
     (run/cp/CP-09/<run-id>/verdict.json).
+  - 2026-10-07: done. Record run rec-a1 at commit 5ffbac512, on a clean tree: verdict pass
+    (run/cp/CP-09/rec-a1/verdict.json). All five scopes passed and repeated record for
+    record with an empty ignore list, so none is dropped and none is under Blocked. Set
+    all is the seven scopes.
+
+    | Scope | Records | SHA-256 | A pass |
+    |---|---|---|---|
+    | m | 123,112 | bd264337d998ffc3fdae5897ea10d8cbeef88558dc6c1d88f674103ece27a196 | 5 min 22 s |
+    | b | 128,937 | 7247e6389d7f2bea493ddd2635aa4eb8c262658751e40fcebfd2cf4abecb1bca | 7 min 36 s |
+    | l1 | 30,693 | f5dd15e9a3c1c2620feefc574f9ed498df433d60345ca3bc22cb698fceb06074 | 1 min 33 s |
+    | hm | 39,564 | aaadd6e3329a728c242aa4b77c1b10483703516b6a5e579c2084bbfc84d961ca | 3 min 53 s |
+    | ax | 15,762 | e4d1aa17104f26ea8c4090ec9d0e5266ec6979d59452b2af0a8b30345d2f9db5 | 44 s |
+
+    - The rows of p and c in e2e/natural-neutral-baseline.json are unchanged. The five new
+      traces are in run/cp/baseline/5ffbac5120727f265466fc407766e57bc9d154ad/ and in the
+      second copy. The rows now carry two commits, 200ec4c24 (p, c) and 5ffbac512 (the
+      other five); the baseline sha of the re-record rule is the older, 200ec4c24.
+    - Scope b is the first run of the early-Ascension order through the whole bridge with
+      the kit and the binds. It passed without a fault at a bind, a hub revive, a Return or
+      a kit step: CP-07a's Return fired as in p, the Cleric who came back to Ishalgen cast
+      Return twice more and skipped the eastern road once at the outpost, and the Altgard
+      shop stop sold and bought.
+    - Which scope reaches which code is the table "What each scope reaches" under "Proof
+      tools and the neutral gate". The times in the scope table there are the new ones.
+    - **The check of every later item's scope against the new counts found nothing to
+      edit.** CP-13, CP-15 and CP-38 (p+c): p holds 274 Priest fight decisions and c 1,590
+      Cleric ones. CP-16, CP-17, CP-19, CP-37, CP-39 and CP-40 (m+c): m holds the Priest's
+      7 emergency decisions, 4 shield scrolls, 15 between-fight heals, 6 walks to a rest
+      spot, its death, revive and soul heal; c holds the Cleric's 11 emergency decisions,
+      its only mana potion, 179 powder-rest decisions and 120 patrol waits. CP-18
+      (m+c+hm): hm was kept and holds the 9 at-target pulls. CP-20, CP-21 and CP-24 (m).
+      CP-22 and CP-23 (m+b+c+ax): b holds the only vendor trade and ax the 7 coin-armor
+      purchases and 14 equips. CP-26 and CP-27 (p+b+c). The fallbacks written into the
+      Proof lines for a dropped b, hm or ax are not used.
+    - Three things the counts say that the plan did not expect. The Priest waits for no
+      patrol in any scope: every patrol wait is the Cleric's, on the same code. The Priest
+      never drinks a mana potion; the Cleric drinks one, in c. And no scope reaches the
+      Ishalgen vendor, as before.
+    - **A finding in the counts tool, logged and not fixed.** vendorBuys reads 0 for ax,
+      but the trace holds 7 coin-armor purchases: the Abyss-entry leg names its record
+      coin-armor-purchase, and the counts mode looks for the older legs'
+      coin-purchase-receipt. The gate compares the trace, not the counts, so nothing is
+      unprotected; the number in the baseline row is low.
+    - Evidence only: the seven pre-commit checks pass, no Fast run.
 - [ ] **CP-10 - A status-5 stop writes its receipt: the Priest stopped at Q2132.** Depends:
   CP-09
   - Work: No code change is expected. Stop boundaries with status 5 have never been used
@@ -3396,3 +3477,10 @@ report what was done, what is blocked and what you need from me.
   ignore list. e2e/natural-neutral-baseline.json is written and the traces are kept in both
   places. The baseline sha is 200ec4c24: the re-record rule and the guard of rule (c) apply
   from here. Evidence only; seven checks. Next by rule (h): CP-09.
+- 2026-10-07 — Loop: CP-09 done. Record run rec-a1 at 5ffbac512: m, b, l1, hm and ax each
+  repeated record for record, so all seven scopes are kept and none is blocked. Scope b, the
+  whole early-Ascension bridge with the kit and the binds, passed on its first run. The
+  table "What each scope reaches" is written from the baselines; the check of every later
+  item's scope against it found no Proof line to edit. Logged: the counts mode misses the
+  Abyss-entry leg's coin-armor purchases (7 in ax). The baseline sha stays 200ec4c24.
+  Evidence only; seven checks. Phase A is one item from done. Next by rule (h): CP-10.

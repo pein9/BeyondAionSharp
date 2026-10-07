@@ -44,6 +44,133 @@
       }
     },
     {
+      "scope": "m",
+      "line": "priest-cleric",
+      "replay": {},
+      "snapshot": null,
+      "commit": "5ffbac5120727f265466fc407766e57bc9d154ad",
+      "environment": {
+        "AION_SIM_SEED": "1",
+        "NA_HELP_ITEMS": null,
+        "AION_BOT_DASHBOARD_PORT": null,
+        "AION_SIM_PROCESS_KEY": null
+      },
+      "ignore": [],
+      "records": 123112,
+      "sha256": "bd264337d998ffc3fdae5897ea10d8cbeef88558dc6c1d88f674103ece27a196",
+      "counts": {
+        "records": 123113,
+        "deaths": 1,
+        "reviveSteps": 1,
+        "retreats": 1,
+        "retreatRoutes": 1,
+        "restSitsTraced": 6,
+        "restInterrupts": 0,
+        "betweenFightHeals": 15,
+        "powderRestCasts": 0,
+        "vendorBuys": 0,
+        "pullPlans": 148,
+        "patrolWaits": 0,
+        "emergencyDecisions": 7,
+        "atTargetPulls": 0,
+        "lifePotions": 69,
+        "manaPotions": 0,
+        "shieldScrolls": 3,
+        "speedScrolls": 7,
+        "runningScrolls": 20,
+        "helpItemsSupplied": 5,
+        "binds": 2,
+        "soulHeals": 1
+      }
+    },
+    {
+      "scope": "b",
+      "line": "priest-cleric",
+      "replay": {
+        "Bridge": true
+      },
+      "snapshot": null,
+      "commit": "5ffbac5120727f265466fc407766e57bc9d154ad",
+      "environment": {
+        "AION_SIM_SEED": "1",
+        "NA_HELP_ITEMS": null,
+        "AION_BOT_DASHBOARD_PORT": null,
+        "AION_SIM_PROCESS_KEY": null
+      },
+      "ignore": [],
+      "records": 128937,
+      "sha256": "7247e6389d7f2bea493ddd2635aa4eb8c262658751e40fcebfd2cf4abecb1bca",
+      "counts": {
+        "records": 128938,
+        "deaths": 0,
+        "reviveSteps": 0,
+        "retreats": 3,
+        "retreatRoutes": 6,
+        "restSitsTraced": 1,
+        "restInterrupts": 0,
+        "betweenFightHeals": 1,
+        "powderRestCasts": 4,
+        "vendorBuys": 1,
+        "pullPlans": 112,
+        "patrolWaits": 21,
+        "emergencyDecisions": 0,
+        "atTargetPulls": 0,
+        "lifePotions": 26,
+        "manaPotions": 0,
+        "shieldScrolls": 0,
+        "speedScrolls": 6,
+        "runningScrolls": 8,
+        "helpItemsSupplied": 6,
+        "binds": 3,
+        "soulHeals": 0
+      }
+    },
+    {
+      "scope": "l1",
+      "line": "priest-cleric",
+      "replay": {
+        "AltgardLeg1": true,
+        "Leg": "l1",
+        "From": "altgard",
+        "LaterCapital": true
+      },
+      "snapshot": "altgard",
+      "commit": "5ffbac5120727f265466fc407766e57bc9d154ad",
+      "environment": {
+        "AION_SIM_SEED": "1",
+        "NA_HELP_ITEMS": null,
+        "AION_BOT_DASHBOARD_PORT": null,
+        "AION_SIM_PROCESS_KEY": null
+      },
+      "ignore": [],
+      "records": 30693,
+      "sha256": "f5dd15e9a3c1c2620feefc574f9ed498df433d60345ca3bc22cb698fceb06074",
+      "counts": {
+        "records": 30694,
+        "deaths": 0,
+        "reviveSteps": 0,
+        "retreats": 0,
+        "retreatRoutes": 0,
+        "restSitsTraced": 0,
+        "restInterrupts": 0,
+        "betweenFightHeals": 0,
+        "powderRestCasts": 8,
+        "vendorBuys": 0,
+        "pullPlans": 52,
+        "patrolWaits": 9,
+        "emergencyDecisions": 0,
+        "atTargetPulls": 0,
+        "lifePotions": 4,
+        "manaPotions": 0,
+        "shieldScrolls": 0,
+        "speedScrolls": 1,
+        "runningScrolls": 0,
+        "helpItemsSupplied": 0,
+        "binds": 0,
+        "soulHeals": 0
+      }
+    },
+    {
       "scope": "c",
       "line": "priest-cleric",
       "replay": {
@@ -85,6 +212,94 @@
         "helpItemsSupplied": 3,
         "binds": 1,
         "soulHeals": 1
+      }
+    },
+    {
+      "scope": "hm",
+      "line": "priest-cleric",
+      "replay": {
+        "AltgardLeg1": true,
+        "Leg": "l12",
+        "From": "altgard-coingear"
+      },
+      "snapshot": "altgard-coingear",
+      "commit": "5ffbac5120727f265466fc407766e57bc9d154ad",
+      "environment": {
+        "AION_SIM_SEED": "1",
+        "NA_HELP_ITEMS": null,
+        "AION_BOT_DASHBOARD_PORT": null,
+        "AION_SIM_PROCESS_KEY": null
+      },
+      "ignore": [],
+      "records": 39564,
+      "sha256": "aaadd6e3329a728c242aa4b77c1b10483703516b6a5e579c2084bbfc84d961ca",
+      "counts": {
+        "records": 39565,
+        "deaths": 1,
+        "reviveSteps": 2,
+        "retreats": 8,
+        "retreatRoutes": 14,
+        "restSitsTraced": 0,
+        "restInterrupts": 0,
+        "betweenFightHeals": 0,
+        "powderRestCasts": 11,
+        "vendorBuys": 0,
+        "pullPlans": 311,
+        "patrolWaits": 192,
+        "emergencyDecisions": 0,
+        "atTargetPulls": 9,
+        "lifePotions": 15,
+        "manaPotions": 0,
+        "shieldScrolls": 0,
+        "speedScrolls": 19,
+        "runningScrolls": 0,
+        "helpItemsSupplied": 1,
+        "binds": 1,
+        "soulHeals": 0
+      }
+    },
+    {
+      "scope": "ax",
+      "line": "priest-cleric",
+      "replay": {
+        "AltgardLeg1": true,
+        "Leg": "ax",
+        "From": "altgard-rc-complete-s1"
+      },
+      "snapshot": "altgard-rc-complete-s1",
+      "commit": "5ffbac5120727f265466fc407766e57bc9d154ad",
+      "environment": {
+        "AION_SIM_SEED": "1",
+        "NA_HELP_ITEMS": null,
+        "AION_BOT_DASHBOARD_PORT": null,
+        "AION_SIM_PROCESS_KEY": null
+      },
+      "ignore": [],
+      "records": 15762,
+      "sha256": "e4d1aa17104f26ea8c4090ec9d0e5266ec6979d59452b2af0a8b30345d2f9db5",
+      "counts": {
+        "records": 15763,
+        "deaths": 0,
+        "reviveSteps": 0,
+        "retreats": 0,
+        "retreatRoutes": 0,
+        "restSitsTraced": 0,
+        "restInterrupts": 0,
+        "betweenFightHeals": 0,
+        "powderRestCasts": 0,
+        "vendorBuys": 0,
+        "pullPlans": 0,
+        "patrolWaits": 0,
+        "emergencyDecisions": 0,
+        "atTargetPulls": 0,
+        "lifePotions": 2,
+        "manaPotions": 0,
+        "shieldScrolls": 0,
+        "speedScrolls": 3,
+        "runningScrolls": 3,
+        "helpItemsSupplied": 2,
+        "binds": 1,
+        "soulHeals": 0
       }
     }
   ]
