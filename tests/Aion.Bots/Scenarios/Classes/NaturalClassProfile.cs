@@ -1,6 +1,55 @@
+using System.Collections.Concurrent;
 using Aion.GameServer.Model;
 
 namespace Aion.Bots.Scenarios.Classes;
+
+/// <summary>
+/// The help items a class uses (docs/natural-class-profiles.md, CP-16): its kit by level band, as rows of
+/// <see cref="NaturalHelpItemAllowlist"/>, and whether the supply, the shield scroll, the mana potion and the scroll
+/// upkeep are on at a level. A profile can only switch a use off or name the scroll for the shared slot; what may be
+/// supplied at all is the allowlist's.
+/// </summary>
+/// <param name="LastLevel">The last level the class uses help items at; null for every level.</param>
+/// <param name="SharedSlotFamily">The scroll kept up in the slot Awakening and Courage share: <c>awakening</c> (casting
+/// speed) or <c>courage</c> (attack speed).</param>
+public sealed record NaturalHelpItemRules(IReadOnlyList<NaturalHelpSupply> Kit, int? LastLevel, string SharedSlotFamily = "awakening")
+{
+	/// <summary>The stock check supplies the kit.</summary>
+	public bool Supplied(int level) => On(level);
+
+	/// <summary>The fight asks for the Anti-Shock scroll.</summary>
+	public bool ShieldScroll(int level) => On(level);
+
+	/// <summary>The fight may drink an owned mana potion.</summary>
+	public bool ManaPotion(int level) => On(level);
+
+	/// <summary>The buff-ourself check keeps the help scrolls up.</summary>
+	public bool ScrollUpkeep(int level) => On(level);
+
+	private bool On(int level) => LastLevel is not int last || level <= last;
+}
+
+/// <summary>One buff kept up between fights: the best learned skill of <paramref name="Role"/>, recast when its effect
+/// is not observed, and traced as <paramref name="TraceKind"/>.</summary>
+public sealed record NaturalUpkeepBuff(string Role, string TraceKind);
+
+/// <summary>What a class does when a patrol or its helpers block a planned pull.</summary>
+public enum NaturalPatrolRule
+{
+	/// <summary>The run's short baseline waits (<see cref="NaturalMauPolicyParameters.PatrolWaitCycles"/>).</summary>
+	Baseline,
+	/// <summary>Hold 15 s at a time, then assess the fight (<see cref="NaturalPatrolPolicy"/>).</summary>
+	HoldAndAssess,
+}
+
+/// <summary>Whether a class holds at range for a target that attacks from range.</summary>
+public enum NaturalRangedHold
+{
+	/// <summary>The run's own option decides (the Priest line: the hub-optimizing run holds).</summary>
+	RunOption,
+	Always,
+	Never,
+}
 
 /// <summary>
 /// How one class plays (docs/natural-class-profiles.md, the seam, section 2). A profile holds pure decisions and data;
@@ -17,6 +66,29 @@ public sealed class NaturalClassProfile
 	public required IReadOnlyDictionary<int, string> Excluded { get; init; }
 
 	public required INaturalCombatPolicy Combat { get; init; }
+
+	public required NaturalHelpItemRules HelpItems { get; init; }
+
+	/// <summary>The buffs kept up between fights, in the order they are checked.</summary>
+	public required IReadOnlyList<NaturalUpkeepBuff> Upkeep { get; init; }
+
+	public required NaturalPatrolRule PatrolRule { get; init; }
+
+	public required NaturalRangedHold RangedHold { get; init; }
+
+	private readonly ConcurrentDictionary<string, IReadOnlySet<int>> effectIds = new(StringComparer.Ordinal);
+
+	/// <summary>The skill ids of a role in <see cref="Skills"/>, for recognising them in the client's effect list.</summary>
+	public IReadOnlySet<int> EffectIds(string role) => effectIds.GetOrAdd(role,
+		wanted => Skills.Where(skill => skill.Role == wanted).Select(skill => (int)skill.Id).ToHashSet());
+
+	/// <param name="runOption">What the run itself asks for.</param>
+	public bool HoldsAtRange(bool runOption) => RangedHold switch
+	{
+		NaturalRangedHold.Always => true,
+		NaturalRangedHold.Never => false,
+		_ => runOption,
+	};
 }
 
 public static class NaturalClassProfiles

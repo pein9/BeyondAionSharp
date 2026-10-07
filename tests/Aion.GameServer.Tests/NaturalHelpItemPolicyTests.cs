@@ -177,6 +177,37 @@ public sealed class NaturalHelpItemPolicyTests
 	}
 
 	[Fact]
+	public void AProfileThatNamesTheAttackSpeedScrollKeepsCourageUpAndLeavesAwakening()
+	{
+		NaturalHelpItemChoice Courage(NaturalHelpItemObservation state) =>
+			NaturalHelpItemPolicy.DecideBuffs(state, Now, NaturalHelpTrigger.PrePull, "courage");
+		// CP-16: the scroll of the shared slot is the profile's. Blitzopan is the Courage twin of Castafodin.
+		Assert.Equal(Blitzopan, Courage(State(10, owned: [Blitzopan, Castafodin])).Item?.ItemId);
+		Assert.Equal(Blitzopan, Courage(State(5, owned: [Blitzopan, Castafodin])).Item?.ItemId);
+		Assert.Equal(LesserCourage, Courage(State(10, owned: [LesserCourage, LesserAwakening])).Item?.ItemId);
+		Assert.Null(Courage(State(10, owned: [Castafodin, LesserAwakening])).Item);
+		// Courage active: left alone until its last 20 s. Awakening active: left to expire, never swapped.
+		Assert.Null(Courage(State(10, owned: [Blitzopan]) with { Effects = [Effect(10466, 600_000)] }).Item);
+		Assert.Equal(Blitzopan, Courage(State(10, owned: [Blitzopan]) with { Effects = [Effect(10466, 15_000)] }).Item?.ItemId);
+		NaturalHelpItemChoice held = Courage(State(10, owned: [Blitzopan]) with { Effects = [Effect(10467, 600_000)] });
+		Assert.Null(held.Item);
+		Assert.Contains(held.Checks, check => check is { Rule: "courage", Verdict: "skip" } && check.Reason.StartsWith("Awakening fills the same slot", StringComparison.Ordinal));
+		// The default is Awakening, with the texts the Priest line has always traced.
+		NaturalHelpItemChoice kept = Buffs(State(10, owned: [Castafodin, Blitzopan]));
+		Assert.Equal(Castafodin, kept.Item?.ItemId);
+		Assert.Equal("Keep Awakening up (OD-15): 164002118, item level 30.", kept.Reason);
+		Assert.Equal(new NaturalDecisionCheck("awakening", "use", "Awakening is absent."), kept.Checks[^1]);
+		Assert.Equal(kept.Reason, NaturalHelpItemPolicy.DecideBuffs(State(10, owned: [Castafodin, Blitzopan]), Now, NaturalHelpTrigger.PrePull, "awakening").Reason);
+		Assert.Contains(Buffs(State(10, owned: [Castafodin]) with { Effects = [Effect(10466, 600_000)] }).Checks, check =>
+			check == new NaturalDecisionCheck("awakening", "skip", "Courage fills the same slot; let it expire rather than waste a scroll swapping."));
+		Assert.Contains(Buffs(State(10, owned: [Castafodin]) with { Effects = [Effect(10467, 600_000)] }).Checks, check =>
+			check == new NaturalDecisionCheck("awakening", "pass", "Awakening is active for 600 s more."));
+		Assert.Contains(Buffs(State(10, owned: [])).Checks, check =>
+			check == new NaturalDecisionCheck("awakening", "skip", "No Awakening scroll at or below the character's level is owned."));
+		Assert.Throws<ArgumentException>(() => NaturalHelpItemPolicy.DecideBuffs(State(10, owned: []), Now, NaturalHelpTrigger.PrePull, "running"));
+	}
+
+	[Fact]
 	public void AJellyBuysSalvationItsDpOutOfCombat()
 	{
 		NaturalHelpItemObservation owned = State(10, owned: [Jelly]) with { SalvationLearned = true };

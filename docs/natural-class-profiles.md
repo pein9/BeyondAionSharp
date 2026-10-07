@@ -2108,7 +2108,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,705 with 16 skipped),
       test-sim-snapshot.ps1 and test_compare_traces.py pass, and Fast passes (run
       cp15-fast). The guard of rule (c), gate p, is part of this item's proof run.
-- [ ] **CP-16 - Sustain, upkeep, help-item and patrol reads from the profile.** Depends:
+- [x] **CP-16 - Sustain, upkeep, help-item and patrol reads from the profile.** Depends:
   CP-09, CP-15
   - Work: Replace class tests and direct table reads in the fight-loop inputs with profile
     members that return today's values: emergency enter and exit (J:9123-9124), shield
@@ -2131,6 +2131,50 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     the four help-item gates).
   - Proof: Neutral gate, set m+c. Set m holds the emergency decisions and rest relocations
     that set p lacks.
+  - 2026-10-07: done. Gate run gate-a1, set p+m+c (the proof set and the guard in one
+    run): verdict pass (run/cp/CP-16/gate-a1/verdict.json). p: 35,811 records, m: 123,112
+    and c: 96,166, each identical to its baseline.
+    - **On the combat policy** (INaturalCombatPolicy): EmergencyEnterPercent and
+      EmergencyExitPercent. The adapter calls the static policy, and the fight loop asks
+      the observed class's policy on every turn.
+    - **On the profile:** HelpItems (the kit as rows of the allowlist, the last level it
+      applies to, the scroll of the shared slot, and the four gates Supplied,
+      ShieldScroll, ManaPotion and ScrollUpkeep), Upkeep (the buffs kept up between
+      fights), EffectIds(role), PatrolRule and RangedHold. The Priest has the level 1-9
+      kit and no help items from level 10 on; the Cleric has every approved row at every
+      level; both keep Awakening, hold one upkeep buff (blessing, traced as
+      buff-blessing) and leave the ranged hold to the run's option. The Priest's patrol
+      rule is the baseline, the Cleric's is NA-22's hold and assess.
+    - **Sites moved** (the present lines): in Sc/NaturalIshalgenJourney.Combat.cs the
+      emergency band, the blessing and rejuvenation effect ids, the shield scroll, the
+      mana potion and the ranged hold of the fight loop, MaintainBuffsAsync, which walks
+      the upkeep list, and the scroll part of BuffOurselfAsync; in
+      NaturalIshalgenJourney.cs the supply gate with the kit it plans from, the patrol
+      rule choice, and the patrol readiness record (its skill table, its buff check and
+      its first field, whose traced name Cleric stays). UsesHelpItems is gone; IsCleric
+      stays for the leg gates of section 6.
+    - **Two public signatures gained an optional parameter,** each defaulting to what it
+      did: NaturalHelpItemPolicy.DecideBuffs takes the shared slot's scroll (awakening
+      by default, courage for an attack-speed class) and NaturalHelpItemSupply.Plan takes
+      a kit (every approved row by default). For the default, DecideBuffs gives the same
+      rule names and texts as before, asserted in UT/NaturalHelpItemPolicyTests with the
+      new row for a profile that names Courage: it keeps Courage up, picks Blitzopan, and
+      never swaps an active Awakening. The older assertion that Blitzopan is never used
+      still holds for the default.
+    - **Pin rows turned on:** the seven emergency rows now also read the profile, and the
+      four help-item gates are no longer pending. The pin test has 27 rows asserted and
+      31 pending (CP-17 4, CP-18 14, CP-19 2, CP-21 11).
+    - **One input the Priest profile reads differently, with the same answer.** The fight
+      loop's heal-over-time check used the Cleric's three rejuvenation ids for every
+      class. The Priest profile's table has none, so a Priest no longer recognises a
+      rejuvenation effect on itself. A Priest cannot cast one and plays alone, so the
+      observation is false both ways, and scopes p and m are identical.
+    - Question 14 (the patrol rule of a line outside the Priest line) has no answer, so
+      its default stands: such a profile will take the baseline rule. No profile outside
+      the line exists yet.
+    - No Java was read: the item relies on no server behavior it did not already rely on.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,710 with 16 skipped),
+      and Fast passes (run cp16-fast). The guard of rule (c), gate p, is in the proof run.
 - [ ] **CP-17 - Between-fight recovery as a rest plan.** Depends: CP-16
   - Work: Extract the decisions of RestAsync (J:9634-9760) into a pure
     NaturalRestRules.Decide(observation) on the profile that returns powder, cast-heal,
@@ -3723,3 +3767,9 @@ report what was done, what is blocked and what you need from me.
   test reads CP_CLASS; the three scripts clear it. Gate gate-a1, set p+c: identical. Seven
   checks, 4,705 with 16 skipped, the script tests and Fast (cp15-fast) pass. Next by rule (h):
   CP-16.
+- 2026-10-07 — Loop: CP-16 done. The emergency band is on the combat policy; the help-item
+  gates and kit, the upkeep list, the patrol rule and the ranged hold are on the profile, and
+  the fight loop, MaintainBuffsAsync, BuffOurselfAsync, the supply and the patrol code read
+  them. DecideBuffs takes the shared slot's scroll. Gate gate-a1, set p+m+c: identical. The
+  pin test has 27 rows asserted, 31 pending. Seven checks, 4,710 with 16 skipped and
+  Fast (cp16-fast) pass. Next by rule (h): CP-17.

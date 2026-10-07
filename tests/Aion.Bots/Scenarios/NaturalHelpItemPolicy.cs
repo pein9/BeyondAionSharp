@@ -82,27 +82,36 @@ public static class NaturalHelpItemPolicy
 	public static readonly int[] StarterScrollIds = [164000067, 164000076, 164002116, 164002117, 164002118];
 
 	/// <summary>Out of combat: the scroll to use now at this trigger, or none.</summary>
-	public static NaturalHelpItemChoice DecideBuffs(NaturalHelpItemObservation state, DateTimeOffset now, NaturalHelpTrigger trigger)
+	/// <param name="sharedSlotFamily">CP-16: the scroll kept up in slot 30184: <c>awakening</c> (casting speed, the Priest
+	/// line and the default) or <c>courage</c> (attack speed). The other one is never used.</param>
+	public static NaturalHelpItemChoice DecideBuffs(NaturalHelpItemObservation state, DateTimeOffset now, NaturalHelpTrigger trigger,
+		string sharedSlotFamily = "awakening")
 	{
+		(string kept, string other) = sharedSlotFamily switch
+		{
+			"awakening" => ("Awakening", "Courage"),
+			"courage" => ("Courage", "Awakening"),
+			_ => throw new ArgumentException($"'{sharedSlotFamily}' is not a scroll of the shared slot.", nameof(sharedSlotFamily)),
+		};
 		var checks = new List<NaturalDecisionCheck>();
 		if (Blocked(state, checks) is string blocked) return new(null, blocked, [.. checks]);
 		if (trigger == NaturalHelpTrigger.Combat)
 			return new(null, "In combat only the Anti-Shock shield is used, by the combat policy.", [.. checks]);
 
-		// Awakening, always (OD-15).
-		NaturalHelpItem? awakening = Best(state, "awakening", state.Level);
+		// The shared slot's scroll, always (OD-15: Awakening for the Priest line).
+		NaturalHelpItem? awakening = Best(state, sharedSlotFamily, state.Level);
 		BotVisibleEffect? slot = Active(state, AwakeningSlot);
-		if (awakening == null) checks.Add(new("awakening", "skip", "No Awakening scroll at or below the character's level is owned."));
-		else if (slot != null && Family(slot.SkillId) == "courage")
-			checks.Add(new("awakening", "skip", "Courage fills the same slot; let it expire rather than waste a scroll swapping."));
+		if (awakening == null) checks.Add(new(sharedSlotFamily, "skip", $"No {kept} scroll at or below the character's level is owned."));
+		else if (slot != null && Family(slot.SkillId) != sharedSlotFamily)
+			checks.Add(new(sharedSlotFamily, "skip", $"{other} fills the same slot; let it expire rather than waste a scroll swapping."));
 		else if (slot != null && Remaining(state, slot) > RefreshWindowMillis)
-			checks.Add(new("awakening", "pass", $"Awakening is active for {Remaining(state, slot) / 1000} s more."));
+			checks.Add(new(sharedSlotFamily, "pass", $"{kept} is active for {Remaining(state, slot) / 1000} s more."));
 		else if (!Ready(state, awakening, now))
-			checks.Add(new("awakening", "skip", $"Use-delay group {awakening.UseDelayId} is running."));
+			checks.Add(new(sharedSlotFamily, "skip", $"Use-delay group {awakening.UseDelayId} is running."));
 		else
 		{
-			checks.Add(new("awakening", "use", slot == null ? "Awakening is absent." : "Awakening is about to expire."));
-			return new(awakening, $"Keep Awakening up (OD-15): {awakening.ItemId}, item level {awakening.ItemLevel}.", [.. checks]);
+			checks.Add(new(sharedSlotFamily, "use", slot == null ? $"{kept} is absent." : $"{kept} is about to expire."));
+			return new(awakening, $"Keep {kept} up (OD-15): {awakening.ItemId}, item level {awakening.ItemLevel}.", [.. checks]);
 		}
 
 		// Running, before a long leg only; never on top of another speed effect.

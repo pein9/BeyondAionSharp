@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Aion.Bots.Navigation;
 using Aion.Bots.Scenarios;
+using Aion.Bots.Scenarios.Classes;
 using Xunit.Abstractions;
 
 namespace Aion.GameServer.Tests;
@@ -19,8 +20,6 @@ public sealed class NaturalClassSeamPinTests(ITestOutputHelper output)
 {
 	private const string Journey = "NaturalIshalgenJourney*.cs";
 	private const string HelpGate = "Priest 1: on, Priest 9: on, Cleric 10: on, Cleric 26: on";
-	private const string HelpGateDefinition =
-		"public bool UsesHelpItems => IsCleric || session.Api.World.Level <= NaturalHelpItemAllowlist.StarterMaxLevel;";
 
 	/// <summary>The items of the CP list that turn a row on or add its profile side.</summary>
 	private static readonly string[] Owners = ["CP-16", "CP-17", "CP-18", "CP-19", "CP-21", "CP-24"];
@@ -52,17 +51,24 @@ public sealed class NaturalClassSeamPinTests(ITestOutputHelper output)
 		new("Mau policy baseline", new NaturalMauPolicyParameters(22f, 3, 55, 70, 90, 0, 15, false),
 			() => NaturalMauPolicyParameters.Baseline),
 
-		// Asserted now, profile side by CP-16.
-		new("emergency: enter at HP percent", 35, () => NaturalPriestCombatPolicy.EmergencyPercent, "CP-16"),
-		new("emergency: clear at HP percent", 45, () => NaturalPriestCombatPolicy.EmergencyClearPercent, "CP-16"),
-		new("emergency: enter, one attacker", 35, () => NaturalPriestCombatPolicy.EmergencyEnterPercent(1, true), "CP-16"),
+		// Asserted in the static policy and, since CP-16, on the profile: the fight loop asks the profile's policy.
+		new("emergency: enter at HP percent", 35, () => NaturalPriestCombatPolicy.EmergencyPercent, "CP-16",
+			() => Both(profile => profile.Combat.EmergencyEnterPercent(0, false))),
+		new("emergency: clear at HP percent", 45, () => NaturalPriestCombatPolicy.EmergencyClearPercent, "CP-16",
+			() => Both(profile => profile.Combat.EmergencyExitPercent(0, false))),
+		new("emergency: enter, one attacker", 35, () => NaturalPriestCombatPolicy.EmergencyEnterPercent(1, true), "CP-16",
+			() => Both(profile => profile.Combat.EmergencyEnterPercent(1, true))),
 		new("emergency: enter, two attackers on an ordinary target", 35,
-			() => NaturalPriestCombatPolicy.EmergencyEnterPercent(2, false), "CP-16"),
+			() => NaturalPriestCombatPolicy.EmergencyEnterPercent(2, false), "CP-16",
+			() => Both(profile => profile.Combat.EmergencyEnterPercent(2, false))),
 		new("emergency: enter, two attackers on a Seasoned target", 55,
-			() => NaturalPriestCombatPolicy.EmergencyEnterPercent(2, true), "CP-16"),
-		new("emergency: exit, one attacker", 45, () => NaturalPriestCombatPolicy.EmergencyExitPercent(1, true), "CP-16"),
+			() => NaturalPriestCombatPolicy.EmergencyEnterPercent(2, true), "CP-16",
+			() => Both(profile => profile.Combat.EmergencyEnterPercent(2, true))),
+		new("emergency: exit, one attacker", 45, () => NaturalPriestCombatPolicy.EmergencyExitPercent(1, true), "CP-16",
+			() => Both(profile => profile.Combat.EmergencyExitPercent(1, true))),
 		new("emergency: exit, two attackers on a Seasoned target", 65,
-			() => NaturalPriestCombatPolicy.EmergencyExitPercent(2, true), "CP-16"),
+			() => NaturalPriestCombatPolicy.EmergencyExitPercent(2, true), "CP-16",
+			() => Both(profile => profile.Combat.EmergencyExitPercent(2, true))),
 
 		// Asserted now, profile side by CP-18.
 		new("melee reach (m)", 3f, () => NaturalPriestCombatPolicy.MeleeReach, "CP-18"),
@@ -82,27 +88,11 @@ public sealed class NaturalClassSeamPinTests(ITestOutputHelper output)
 		new("help items: long travel leg (m)", 150f, () => NaturalHelpItemPolicy.LongTravelMeters),
 		new("help items: shield scroll at HP percent", 50, () => NaturalHelpItemPolicy.ShieldHpPercent),
 
-		// Pending, owner CP-16: the four help-item gates as CP-06 left them.
-		new("help gate: supply", HelpGate, Owner: "CP-16", Sites:
-		[
-			new(Journey, "TopUpHelpItemsAsync", "!combat.UsesHelpItems"),
-			new(Journey, null, HelpGateDefinition),
-		]),
-		new("help gate: shield scroll", HelpGate, Owner: "CP-16", Sites:
-		[
-			new(Journey, "TryKillCoreAsync", "UsesHelpItems ? NaturalHelpItemPolicy.DecideShield("),
-			new(Journey, null, HelpGateDefinition),
-		]),
-		new("help gate: mana potion", HelpGate, Owner: "CP-16", Sites:
-		[
-			new(Journey, "TryKillCoreAsync", "UsesHelpItems ? NaturalIshalgenPotionPolicy.SelectOwnedManaPotion("),
-			new(Journey, null, HelpGateDefinition),
-		]),
-		new("help gate: scroll upkeep", HelpGate, Owner: "CP-16", Sites:
-		[
-			new(Journey, "BuffOurselfAsync", "if (!UsesHelpItems || InCombat) return;"),
-			new(Journey, null, HelpGateDefinition),
-		]),
+		// Turned on by CP-16: the four help-item gates as CP-06 left them, read from the profiles.
+		new("help gate: supply", HelpGate, Owner: "CP-16", Profile: () => Gate(rules => rules.Supplied)),
+		new("help gate: shield scroll", HelpGate, Owner: "CP-16", Profile: () => Gate(rules => rules.ShieldScroll)),
+		new("help gate: mana potion", HelpGate, Owner: "CP-16", Profile: () => Gate(rules => rules.ManaPotion)),
+		new("help gate: scroll upkeep", HelpGate, Owner: "CP-16", Profile: () => Gate(rules => rules.ScrollUpkeep)),
 
 		// Pending, owner CP-17: the rest rule.
 		new("rest: cast the heal below HP percent", 90, Owner: "CP-17", Sites:
@@ -221,6 +211,22 @@ public sealed class NaturalClassSeamPinTests(ITestOutputHelper output)
 		});
 		output.WriteLine($"{Rows.Count(row => !row.Pending)} rows asserted, {Rows.Count(row => row.Pending)} pending: " +
 			string.Join(", ", Rows.Where(row => row.Pending).GroupBy(row => row.Owner).Select(group => $"{group.Key} {group.Count()}")));
+	}
+
+	/// <summary>The value both profiles of the accepted line give; they must agree.</summary>
+	private static object Both(Func<NaturalClassProfile, object> read)
+	{
+		object priest = read(NaturalPriestProfile.Priest), cleric = read(NaturalPriestProfile.Cleric);
+		Assert.Equal(priest, cleric);
+		return priest;
+	}
+
+	/// <summary>One help-item gate at the four points the row names.</summary>
+	private static string Gate(Func<NaturalHelpItemRules, Func<int, bool>> gate)
+	{
+		string On(NaturalClassProfile profile, int level) => gate(profile.HelpItems)(level) ? "on" : "off";
+		return $"Priest 1: {On(NaturalPriestProfile.Priest, 1)}, Priest 9: {On(NaturalPriestProfile.Priest, 9)}, " +
+			$"Cleric 10: {On(NaturalPriestProfile.Cleric, 10)}, Cleric 26: {On(NaturalPriestProfile.Cleric, 26)}";
 	}
 
 	private static object StandoffDefault(string parameter)

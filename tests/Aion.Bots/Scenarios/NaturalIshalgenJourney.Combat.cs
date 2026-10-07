@@ -233,9 +233,6 @@ public sealed partial class NaturalIshalgenJourney
 			// A monster that attacks from range (the thorned ampha, 37 m) hits without being anywhere near.
 			bool targetRanged = targetTemplate != null && targetTemplate.GetAttackRange() > NaturalPriestCombatPolicy.MeleeReach + 1;
 			long? lastHitByTargetMillis = null;
-			IReadOnlySet<int> blessingIds = NaturalPriestSkills.Ids("blessing");
-			IReadOnlySet<int> rejuvenationIds = NaturalClericSkills.Cleric.Where(skill => skill.Role == "rejuvenation")
-				.Select(skill => (int)skill.Id).ToHashSet();
 			var incomingAttackers = new HashSet<int>();
 			// Fights may run long: a cornered Priest alternates heals and damage, and respawns or chain
 			// aggro can keep adding monsters. The bound only stops a genuine stall (every action rejected
@@ -292,17 +289,22 @@ public sealed partial class NaturalIshalgenJourney
 				// A monster that hit us in the last 3 s is in melee reach whatever its lagging client position says.
 				bool targetAdjacent = !targetRanged && lastHitByTargetMillis is long lastHit && runtime.NowMillis - lastHit <= 3000 ||
 					Distance(session.CurrentPosition, npc.Position) <= NaturalPriestCombatPolicy.MeleeReach;
-				if (world.CurrentHp * 100 <= world.MaxHp * NaturalPriestCombatPolicy.EmergencyEnterPercent(nearbyAttackers, targetSeasoned)) inEmergency = true;
-				else if (world.CurrentHp * 100 >= world.MaxHp * NaturalPriestCombatPolicy.EmergencyExitPercent(nearbyAttackers, targetSeasoned)) inEmergency = false;
+				NaturalClassProfile profile = ClassProfile;
+				INaturalCombatPolicy policy = profile.Combat;
+				if (world.CurrentHp * 100 <= world.MaxHp * policy.EmergencyEnterPercent(nearbyAttackers, targetSeasoned)) inEmergency = true;
+				else if (world.CurrentHp * 100 >= world.MaxHp * policy.EmergencyExitPercent(nearbyAttackers, targetSeasoned)) inEmergency = false;
+				IReadOnlySet<int> blessingIds = profile.EffectIds("blessing"), rejuvenationIds = profile.EffectIds("rejuvenation");
 				bool hasBlessing = world.VisibleEffects?.Any(effect => blessingIds.Contains(effect.SkillId)) == true;
 				BotInventoryItem? hotPotion = NaturalIshalgenPotionPolicy.SelectOwnedPotion(world.Inventory.Values);
 				var hotTemplate = hotPotion == null ? null :
 					runtime.Data.ItemDataDh.GetItemTemplate(hotPotion.ItemId);
 				bool hotReady = hotTemplate != null && session.Api.Timing.TimeUntilItemUse(hotTemplate) == TimeSpan.Zero;
-				NaturalHelpItemChoice? shieldChoice = UsesHelpItems ? NaturalHelpItemPolicy.DecideShield(ObserveHelpItems(), now) : null;
+				NaturalHelpItemChoice? shieldChoice = profile.HelpItems.ShieldScroll(world.Level)
+					? NaturalHelpItemPolicy.DecideShield(ObserveHelpItems(), now) : null;
 				// NA-20a: the Cleric drinks its owned mana potions (the policy's mana-potion rule). CP-06: below level 10 the
 				// Priest does too, from the 100 a starter owns.
-				BotInventoryItem? manaPotion = UsesHelpItems ? NaturalIshalgenPotionPolicy.SelectOwnedManaPotion(world.Inventory.Values) : null;
+				BotInventoryItem? manaPotion = profile.HelpItems.ManaPotion(world.Level)
+					? NaturalIshalgenPotionPolicy.SelectOwnedManaPotion(world.Inventory.Values) : null;
 				var manaTemplate = manaPotion == null ? null : runtime.Data.ItemDataDh.GetItemTemplate(manaPotion.ItemId);
 				bool manaReady = manaTemplate != null && session.Api.Timing.TimeUntilItemUse(manaTemplate) == TimeSpan.Zero;
 				var observation = new NaturalCombatObservation(
@@ -315,14 +317,13 @@ public sealed partial class NaturalIshalgenJourney
 					HotPotionActive: NaturalIshalgenPotionPolicy.HasActiveHealing(world.VisibleEffects),
 					Cornered: cornered || ScriptedTrial, TargetAdjacent: targetAdjacent, InEmergency: inEmergency, HasBlessing: hasBlessing,
 					TargetSeasoned: targetSeasoned, TargetRanged: targetRanged,
-					ConservativeRangedHold: conservativeRangedHold,
+					ConservativeRangedHold: profile.HoldsAtRange(conservativeRangedHold),
 					OpenChainCategory: openChain?.Category, OpenChainTargetId: openChain?.Target, ChainExpiresAt: openChain?.ExpiresAt,
 					Dp: world.CurrentDp,
 					HasRejuvenation: world.VisibleEffects?.Any(effect => rejuvenationIds.Contains(effect.SkillId)),
 					ShieldScrollReady: shieldChoice?.Item != null,
 					HasManaPotion: manaPotion != null, ManaPotionReady: manaReady,
 					LastCancelledSkillId: lastCancelledSkillId);
-				INaturalCombatPolicy policy = ClassProfile.Combat;
 				NaturalCombatChoice choice = policy.Decide(observation, now, mauPolicy);
 				NaturalCombatCandidate[] candidates = policy.CandidateActions(observation, now, choice, mauPolicy);
 				if (!candidates.Any(candidate => candidate.Action == choice.Action &&
@@ -707,40 +708,39 @@ public sealed partial class NaturalIshalgenJourney
 			MathF.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
 
 		/// <summary>
-		/// Keep the learned protection buff (Blessing of Guardianship) up between fights, as the recorded human
-		/// did. The client sees its own effects (SM_ABNORMAL_EFFECT); the buff is recast only when absent, off
-		/// cooldown and affordable. The combat policy's own blessing rule never fires mid-pull, so this is where
-		/// it happens.
+		/// Keep the profile's upkeep buffs up between fights (for the Priest line the learned protection buff, Blessing
+		/// of Guardianship, as the recorded human did). The client sees its own effects (SM_ABNORMAL_EFFECT); a buff is
+		/// recast only when absent, off cooldown and affordable. The combat policy's own blessing rule never fires
+		/// mid-pull, so this is where it happens.
 		/// </summary>
 		public async Task MaintainBuffsAsync(CancellationToken token)
 		{
 			BotWorldModel world = session.Api.World;
-			if (world.IsDead || world.CurrentHp <= 0 || InCombat) return;
-			NaturalPriestSkill? blessing = NaturalPriestSkills.Best("blessing", world.Level, world.Skills);
-			if (blessing == null) return;
-			var blessingIds = NaturalPriestSkills.All.Where(skill => skill.Role == "blessing").Select(skill => (int)skill.Id).ToHashSet();
-			if (world.VisibleEffects?.Any(effect => blessingIds.Contains(effect.SkillId)) == true) return;
-			DateTimeOffset now = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
-			if (cooldowns.TryGetValue(blessing.CooldownId, out DateTimeOffset readyAt) && readyAt > now) return;
-			if (world.CurrentMp < blessing.ManaCost) return;
-			TimeSpan gate = session.Api.Timing.TimeUntilCast(blessing.Id);
-			if (gate > TimeSpan.Zero) await session.AdvanceAsync(gate + TimeSpan.FromMilliseconds(1), token);
-			session.TraceDiagnostic("buff-blessing", new Dictionary<string, object?>
+			NaturalClassProfile profile = ClassProfile;
+			foreach (NaturalUpkeepBuff buff in profile.Upkeep)
 			{
-				["skillId"] = blessing.Id,
-				["mp"] = world.CurrentMp,
-				["position"] = session.CurrentPosition,
-			});
-			await CastAsync(blessing, session.CharacterId, token);
+				if (world.IsDead || world.CurrentHp <= 0 || InCombat) return;
+				NaturalPriestSkill? skill = NaturalPriestSkills.Best(buff.Role, world.Level, world.Skills, profile.Skills);
+				if (skill == null) continue;
+				IReadOnlySet<int> effectIds = profile.EffectIds(buff.Role);
+				if (world.VisibleEffects?.Any(effect => effectIds.Contains(effect.SkillId)) == true) continue;
+				DateTimeOffset now = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
+				if (cooldowns.TryGetValue(skill.CooldownId, out DateTimeOffset readyAt) && readyAt > now) continue;
+				if (world.CurrentMp < skill.ManaCost) continue;
+				TimeSpan gate = session.Api.Timing.TimeUntilCast(skill.Id);
+				if (gate > TimeSpan.Zero) await session.AdvanceAsync(gate + TimeSpan.FromMilliseconds(1), token);
+				session.TraceDiagnostic(buff.TraceKind, new Dictionary<string, object?>
+				{
+					["skillId"] = skill.Id,
+					["mp"] = world.CurrentMp,
+					["position"] = session.CurrentPosition,
+				});
+				await CastAsync(skill, session.CharacterId, token);
+			}
 		}
 
 		public bool IsCleric => session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass ==
 			PlayerClass.CLERIC.GetClassId();
-
-		/// <summary>CP-06 (CP-Q12): help items are for every character below level 10 (the level 1-9 kit) and, from level 10
-		/// on, for the Cleric, whose kit OD-13 approved. The supply, the shield scroll, the mana potion and the scroll
-		/// upkeep all ask this.</summary>
-		public bool UsesHelpItems => IsCleric || session.Api.World.Level <= NaturalHelpItemAllowlist.StarterMaxLevel;
 
 		/// <summary>NA-19: the client-observed state the help-item policy reads.</summary>
 		private NaturalHelpItemObservation ObserveHelpItems(float travelMeters = 0, bool crossMap = false)
@@ -771,12 +771,14 @@ public sealed partial class NaturalIshalgenJourney
 		public async Task BuffOurselfAsync(NaturalHelpTrigger trigger, CancellationToken token, float travelMeters = 0, bool crossMap = false)
 		{
 			if (trigger is NaturalHelpTrigger.PrePull or NaturalHelpTrigger.AfterRest) await MaintainBuffsAsync(token);
-			if (!UsesHelpItems || InCombat) return;
+			NaturalHelpItemRules help = ClassProfile.HelpItems;
+			if (!help.ScrollUpkeep(session.Api.World.Level) || InCombat) return;
 			for (int use = 0; use < 3; use++)
 			{
 				await session.SynchronizeAsync(token);
 				DateTimeOffset now = runtime.Epoch.AddMilliseconds(runtime.NowMillis);
-				NaturalHelpItemChoice choice = NaturalHelpItemPolicy.DecideBuffs(ObserveHelpItems(travelMeters, crossMap), now, trigger);
+				NaturalHelpItemChoice choice = NaturalHelpItemPolicy.DecideBuffs(ObserveHelpItems(travelMeters, crossMap), now, trigger,
+					help.SharedSlotFamily);
 				session.TraceDiagnostic("buff-ourself", new Dictionary<string, object?>
 				{
 					["trigger"] = trigger.ToString(), ["itemId"] = choice.Item?.ItemId, ["reason"] = choice.Reason,

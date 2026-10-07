@@ -54,6 +54,87 @@ public sealed class NaturalClassProfileTests
 	}
 
 	[Fact]
+	public void TheEmergencyBandIsTheStaticPolicys()
+	{
+		foreach (NaturalClassProfile profile in new[] { NaturalPriestProfile.Priest, NaturalPriestProfile.Cleric })
+		foreach (int attackers in Enumerable.Range(0, 6))
+		foreach (bool seasoned in new[] { false, true })
+		{
+			Assert.Equal(NaturalPriestCombatPolicy.EmergencyEnterPercent(attackers, seasoned), profile.Combat.EmergencyEnterPercent(attackers, seasoned));
+			Assert.Equal(NaturalPriestCombatPolicy.EmergencyExitPercent(attackers, seasoned), profile.Combat.EmergencyExitPercent(attackers, seasoned));
+		}
+	}
+
+	[Fact]
+	public void TheHelpItemGatesAreWhatTheLevelOneToNineKitLeft()
+	{
+		// Before CP-16 all four gates asked one rule: the Cleric, or any character at level 9 or below.
+		foreach ((NaturalClassProfile profile, bool cleric) in new[] { (NaturalPriestProfile.Priest, false), (NaturalPriestProfile.Cleric, true) })
+		for (int level = 1; level <= 65; level++)
+		{
+			bool before = cleric || level <= NaturalHelpItemAllowlist.StarterMaxLevel;
+			NaturalHelpItemRules rules = profile.HelpItems;
+			Assert.Equal((before, before, before, before),
+				(rules.Supplied(level), rules.ShieldScroll(level), rules.ManaPotion(level), rules.ScrollUpkeep(level)));
+		}
+		Assert.Equal("awakening", NaturalPriestProfile.Priest.HelpItems.SharedSlotFamily);
+		Assert.Equal("awakening", NaturalPriestProfile.Cleric.HelpItems.SharedSlotFamily);
+	}
+
+	[Fact]
+	public void TheKitsAreAllowlistRowsAndPlanTheSameSupply()
+	{
+		Assert.Equal(NaturalHelpItemAllowlist.Starter, NaturalPriestProfile.Priest.HelpItems.Kit);
+		Assert.Equal(NaturalHelpItemAllowlist.AllLevels, NaturalPriestProfile.Cleric.HelpItems.Kit);
+		var nothing = new Dictionary<int, long>();
+		var some = NaturalHelpItemAllowlist.AllLevels.Select(supply => supply.ItemId).Distinct().ToDictionary(id => id, id => (long)(id % 7));
+		foreach (NaturalClassProfile profile in new[] { NaturalPriestProfile.Priest, NaturalPriestProfile.Cleric })
+		for (int level = 1; level <= 45; level++)
+		{
+			if (!profile.HelpItems.Supplied(level)) continue;
+			// Wherever the supply is on, the profile's kit plans what the whole allowlist planned.
+			Assert.Equal(NaturalHelpItemSupply.Plan(level, nothing), NaturalHelpItemSupply.Plan(level, nothing, profile.HelpItems.Kit));
+			Assert.Equal(NaturalHelpItemSupply.Plan(level, some), NaturalHelpItemSupply.Plan(level, some, profile.HelpItems.Kit));
+		}
+	}
+
+	[Fact]
+	public void UpkeepPatrolAndRangedHoldAreTodaysRules()
+	{
+		foreach (NaturalClassProfile profile in new[] { NaturalPriestProfile.Priest, NaturalPriestProfile.Cleric })
+		{
+			// One buff, Blessing of Guardianship, found and recognised as before: the Priest table's rows.
+			Assert.Equal(new NaturalUpkeepBuff("blessing", "buff-blessing"), Assert.Single(profile.Upkeep));
+			Assert.Equal(NaturalPriestSkills.Ids("blessing"), profile.EffectIds("blessing"));
+			Assert.Same(profile.EffectIds("blessing"), profile.EffectIds("blessing"));
+			foreach (int level in Enumerable.Range(1, 30))
+			{
+				var learned = NaturalClericSkills.All.Where(skill => skill.MinimumLevel <= level)
+					.ToDictionary(skill => (int)skill.Id, skill => new BotSkill(skill.Id, 1, 0, 0, 0, 0));
+				Assert.Equal(NaturalPriestSkills.Best("blessing", level, learned), NaturalPriestSkills.Best("blessing", level, learned, profile.Skills));
+			}
+			// The run's option still decides the ranged hold.
+			Assert.Equal(NaturalRangedHold.RunOption, profile.RangedHold);
+			Assert.True(profile.HoldsAtRange(true));
+			Assert.False(profile.HoldsAtRange(false));
+		}
+		// The heal over time the fight recognises: the Cleric's ranks. A Priest has none to observe.
+		Assert.Equal(NaturalClericSkills.Cleric.Where(skill => skill.Role == "rejuvenation").Select(skill => (int)skill.Id).Order(),
+			NaturalPriestProfile.Cleric.EffectIds("rejuvenation").Order());
+		Assert.Empty(NaturalPriestProfile.Priest.EffectIds("rejuvenation"));
+		Assert.Equal(NaturalPatrolRule.Baseline, NaturalPriestProfile.Priest.PatrolRule);
+		Assert.Equal(NaturalPatrolRule.HoldAndAssess, NaturalPriestProfile.Cleric.PatrolRule);
+		NaturalClassProfile always = Copy(NaturalPriestProfile.Priest, NaturalRangedHold.Always), never = Copy(NaturalPriestProfile.Priest, NaturalRangedHold.Never);
+		Assert.True(always.HoldsAtRange(false) && !never.HoldsAtRange(true));
+	}
+
+	private static NaturalClassProfile Copy(NaturalClassProfile profile, NaturalRangedHold hold) => new()
+	{
+		Class = profile.Class, Skills = profile.Skills, Excluded = profile.Excluded, Combat = profile.Combat,
+		HelpItems = profile.HelpItems, Upkeep = profile.Upkeep, PatrolRule = profile.PatrolRule, RangedHold = hold,
+	};
+
+	[Fact]
 	public void TheProfilesCarryTheFrozenSkillTables()
 	{
 		Assert.Equal(PlayerClass.PRIEST, NaturalPriestProfile.Priest.Class);

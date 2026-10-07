@@ -94,8 +94,10 @@ public static class NaturalHelpItemSupply
 	/// <summary>On unless the switch is exactly "0".</summary>
 	public static bool Enabled(string? value) => value != "0";
 
-	public static IReadOnlyList<NaturalHelpTopUp> Plan(int level, IReadOnlyDictionary<int, long> owned) =>
-		NaturalHelpItemAllowlist.AllLevels
+	/// <param name="kit">CP-16: the class profile's kit; every approved row when none is given.</param>
+	public static IReadOnlyList<NaturalHelpTopUp> Plan(int level, IReadOnlyDictionary<int, long> owned,
+		IEnumerable<NaturalHelpSupply>? kit = null) =>
+		(kit ?? NaturalHelpItemAllowlist.AllLevels)
 			.Where(supply => supply.FromLevel <= level && level <= supply.ToLevel &&
 				owned.GetValueOrDefault(supply.ItemId) < supply.Below)
 			.Select(supply => new NaturalHelpTopUp(supply.ItemId, supply.Family, owned.GetValueOrDefault(supply.ItemId),

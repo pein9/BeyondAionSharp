@@ -1524,9 +1524,10 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			{
 				BotWorldModel world = session.Api.World;
 				helpCheckedAtLevel = world.Level;
-				if (runtime.SupplyHelpItemAsync is not { } supply || !combat.UsesHelpItems || world.IsDead) return;
+				NaturalHelpItemRules help = combat.ClassProfile.HelpItems;
+				if (runtime.SupplyHelpItemAsync is not { } supply || !help.Supplied(world.Level) || world.IsDead) return;
 				var owned = world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count));
-				IReadOnlyList<NaturalHelpTopUp> plan = NaturalHelpItemSupply.Plan(world.Level, owned);
+				IReadOnlyList<NaturalHelpTopUp> plan = NaturalHelpItemSupply.Plan(world.Level, owned, help.Kit);
 				foreach (NaturalHelpTopUp topUp in plan)
 				{
 					NaturalHelpItemSupply.RequireApproved(topUp.ItemId, topUp.Count);
@@ -5732,8 +5733,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				NaturalPullPlan? plan = null;
 				// NA-22: the Cleric waits 15 s at a time, up to four times, then decides (NaturalPatrolPolicy); the Priest
 				// keeps its baseline of short waits.
-				bool cleric = combat.IsCleric;
-				int waitCycles = cleric ? NaturalPatrolPolicy.MaximumWaits : mauPolicy.PatrolWaitCycles;
+				bool holdsForPatrols = combat.ClassProfile.PatrolRule == NaturalPatrolRule.HoldAndAssess;
+				int waitCycles = holdsForPatrols ? NaturalPatrolPolicy.MaximumWaits : mauPolicy.PatrolWaitCycles;
 				for (int wait = 0; wait <= waitCycles; wait++)
 				{
 					NaturalPullMonster[] monsters = ObservedPullMonsters();
@@ -5827,7 +5828,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						["clearance"] = plan?.ClearanceFromOthers,
 					});
 					if (plan == null || plan.Helpers.Count == 0) break;
-					if (cleric)
+					if (holdsForPatrols)
 					{
 						NaturalPatrolDecision patrol = NaturalPatrolPolicy.Decide(ObservePatrol(plan, wait));
 						session.TraceDiagnostic("patrol-decision", new Dictionary<string, object?>
@@ -5877,23 +5878,24 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			NaturalPatrolObservation ObservePatrol(NaturalPullPlan plan, int completedWaits)
 			{
 				BotWorldModel world = session.Api.World;
+				NaturalClassProfile profile = combat.ClassProfile;
 				bool Learned(string role, out NaturalPriestSkill? skill)
 				{
-					skill = NaturalPriestSkills.Best(role, world.Level, world.Skills, NaturalClericSkills.All);
+					skill = NaturalPriestSkills.Best(role, world.Level, world.Skills, profile.Skills);
 					return skill != null;
 				}
 				bool heal = Learned("heal", out NaturalPriestSkill? healSkill) && world.CurrentMp >= healSkill!.ManaCost;
 				bool hot = Learned("rejuvenation", out NaturalPriestSkill? hotSkill) && world.CurrentMp >= hotSkill!.ManaCost;
 				bool salvation = Learned("salvation", out NaturalPriestSkill? salvationSkill) && world.CurrentDp >= salvationSkill!.DpCost;
 				var effects = world.VisibleEffects ?? [];
-				bool buffs = effects.Any(effect => NaturalPriestSkills.Ids("blessing").Contains(effect.SkillId)) &&
+				bool buffs = profile.Upkeep.All(buff => effects.Any(effect => profile.EffectIds(buff.Role).Contains(effect.SkillId))) &&
 					effects.Any(effect => NaturalHelpItemPolicy.All.Any(item => item.SkillId == effect.SkillId &&
 						item.EffectSlot == NaturalHelpItemPolicy.AwakeningSlot));
 				int[] levels = plan.Helpers.Prepend(plan.Target)
 					.Select(member => (int)(runtime.Data.NpcDataDh.GetNpcTemplate(member.Npc.TemplateId)?.GetLevel() ?? 0)).ToArray();
 				// Rerouting through another corridor belongs to the route planner; the pull planner already chose the
 				// spot with the fewest helpers, so here no other way is known.
-				return new(combat.IsCleric, completedWaits, world.Level, world.CurrentHp, world.MaxHp, world.CurrentMp, world.MaxMp,
+				return new(profile.PatrolRule == NaturalPatrolRule.HoldAndAssess, completedWaits, world.Level, world.CurrentHp, world.MaxHp, world.CurrentMp, world.MaxMp,
 					levels, heal, hot, salvation, buffs, NaturalIshalgenPotionPolicy.TotalHealingCount(world.Inventory.Values),
 					RerouteAvailable: false);
 			}
