@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "scopes": [
+    {
+      "scope": "p",
+      "line": "priest-cleric",
+      "replay": {
+        "CapitalStage": "start"
+      },
+      "snapshot": null,
+      "commit": "200ec4c2408dbc58b675daf1bcc4e03c4eabc47a",
+      "environment": {
+        "AION_SIM_SEED": "1",
+        "NA_HELP_ITEMS": null,
+        "AION_BOT_DASHBOARD_PORT": null,
+        "AION_SIM_PROCESS_KEY": null
+      },
+      "ignore": [],
+      "records": 35811,
+      "sha256": "df5ad770ee208e33705322fd87088b1babdfdd4bdd3d3531a555179ed95b9ed5",
+      "counts": {
+        "records": 35812,
+        "deaths": 0,
+        "reviveSteps": 0,
+        "retreats": 2,
+        "retreatRoutes": 4,
+        "restSitsTraced": 0,
+        "restInterrupts": 0,
+        "betweenFightHeals": 1,
+        "powderRestCasts": 0,
+        "vendorBuys": 0,
+        "pullPlans": 5,
+        "patrolWaits": 0,
+        "emergencyDecisions": 0,
+        "atTargetPulls": 0,
+        "lifePotions": 18,
+        "manaPotions": 0,
+        "shieldScrolls": 0,
+        "speedScrolls": 2,
+        "runningScrolls": 7,
+        "helpItemsSupplied": 6,
+        "binds": 2,
+        "soulHeals": 0
+      }
+    },
+    {
+      "scope": "c",
+      "line": "priest-cleric",
+      "replay": {
+        "AltgardLeg1": true,
+        "Leg": "l4",
+        "From": "altgard-rc-l3"
+      },
+      "snapshot": "altgard-rc-l3",
+      "commit": "200ec4c2408dbc58b675daf1bcc4e03c4eabc47a",
+      "environment": {
+        "AION_SIM_SEED": "1",
+        "NA_HELP_ITEMS": null,
+        "AION_BOT_DASHBOARD_PORT": null,
+        "AION_SIM_PROCESS_KEY": null
+      },
+      "ignore": [],
+      "records": 96166,
+      "sha256": "fce0e6a7c27ad4d85cf42687e4d7b0aacbc77455c1387b61153f8f042a6d35cc",
+      "counts": {
+        "records": 96167,
+        "deaths": 1,
+        "reviveSteps": 1,
+        "retreats": 25,
+        "retreatRoutes": 36,
+        "restSitsTraced": 2,
+        "restInterrupts": 4,
+        "betweenFightHeals": 3,
+        "powderRestCasts": 60,
+        "vendorBuys": 0,
+        "pullPlans": 201,
+        "patrolWaits": 120,
+        "emergencyDecisions": 11,
+        "atTargetPulls": 0,
+        "lifePotions": 102,
+        "manaPotions": 1,
+        "shieldScrolls": 4,
+        "speedScrolls": 5,
+        "runningScrolls": 0,
+        "helpItemsSupplied": 3,
+        "binds": 1,
+        "soulHeals": 1
+      }
+    }
+  ]
+}

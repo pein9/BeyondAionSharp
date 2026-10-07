@@ -874,7 +874,8 @@ dispatch Q29071 have never been run by a bot.
 
 ## Hazards
 
-1. Trace identity at HEAD is unverified: the four record-identical pairs come from logs
+1. (Answered for p and c by CP-08 on 2026-10-07: both repeat at HEAD, record for record.)
+   Trace identity at HEAD is unverified: the four record-identical pairs come from logs
    dated 2026-09-28 to 2026-10-06. CP-08 and CP-09 record every scope twice to find out. If
    p or c does not repeat, the loop stops; a decision projection is a weaker proof and needs
    the operator's notice.
@@ -1633,7 +1634,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       on other maps are not touched.
     - Bundle: seven pre-commit checks pass, Aion.GameServer.Tests passes, and Fast passes
       all 11 scenario gates (run cp07a-fast). The logs are in run/cp/CP-07a/checks/.
-- [ ] **CP-08 - Record baselines p and c, twice.** Depends: CP-04, CP-07, CP-07a
+- [x] **CP-08 - Record baselines p and c, twice.** Depends: CP-04, CP-07, CP-07a
   - Work: No file under src or tests changes. CP-05, CP-06 and CP-07 are ticked, so these
     baselines hold the Priest's new levels 1-9: the help kit and both Ishalgen binds. They
     are recorded once, and rule (j) keeps them. On a clean tree, with nothing else using the
@@ -1662,6 +1663,30 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - The gate itself worked on its first real run: one build, four journeys, the
       refusal to write a baseline for a set in which one scope failed, and no schema left
       behind.
+  - 2026-10-07: done, after CP-07a. Record run rec-a2 at commit 200ec4c24, on a clean
+    tree: verdict pass (run/cp/CP-08/rec-a2/verdict.json). For p and for c, pass one and
+    pass two are identical after normalization, with an empty ignore list.
+    - **p:** 35,811 records, SHA-256
+      df5ad770ee208e33705322fd87088b1babdfdd4bdd3d3531a555179ed95b9ed5, 38 s a pass. It
+      holds the kit supplied at level 1, both Ishalgen binds, CP-07a's Return to the
+      outpost, the class choice and the ceremony. Counts: no death, 2 retreats, 4 retreat
+      routes, 5 pull plans, 18 life potions, 7 Running scrolls, 2 speed scrolls, 6 help
+      items supplied, 2 binds.
+    - **c:** 96,166 records, SHA-256
+      fce0e6a7c27ad4d85cf42687e4d7b0aacbc77455c1387b61153f8f042a6d35cc, 2 min 17 s a pass.
+      It is the hash rec-a1 had before CP-07a, so that item changed nothing in the Cleric
+      leg. Counts: 1 death, 25 retreats, 36 retreat routes, 60 powder rest casts, 120
+      patrol waits, 11 emergency decisions, 201 pull plans, 102 life potions, 1 mana
+      potion, 4 shield scrolls, 1 bind, 1 soul heal.
+    - e2e/natural-neutral-baseline.json holds both rows: scope, replay, snapshot, commit,
+      pinned environment, record count, hash and counts. The traces are in
+      run/cp/baseline/200ec4c2408dbc58b675daf1bcc4e03c4eabc47a/ and, as the second copy,
+      in ../BeyondAionSharp-cp-baseline/ under the same commit (12 MB for p, 61 MB for c).
+    - **The baseline sha is 200ec4c24.** From here on the re-record rule applies, the
+      guard of rule (c) can run, and scopes p and c are never recorded again without the
+      operator's decision. Hazard 1 is answered for both: a same-seed replay repeats at
+      HEAD.
+    - Evidence only: the seven pre-commit checks pass, no Fast run.
 - [ ] **CP-09 - Record baselines m, b, l1, hm and ax, twice.** Depends: CP-07, CP-08
   - Work: The same procedure for m, b, l1 (from altgard with -LaterCapital, as altgard-rc-l1
     was captured), hm and ax, in one -Record run with -Item CP-09. Scopes m and b start from
@@ -3366,3 +3391,8 @@ report what was done, what is blocked and what you need from me.
   (717, 1485), Return landed at the outpost, and the Priest walked to Munin from there.
   Bundle: seven checks, Aion.GameServer.Tests, Fast 11 gates (cp07a-fast). CP-08's Depends
   are all ticked again. Next by rule (h): CP-08.
+- 2026-10-07 — Loop: CP-08 done. Record run rec-a2 at 200ec4c24: p (35,811 records, 38 s a
+  pass) and c (96,166 records, 2 min 17 s a pass) each repeated record for record, with no
+  ignore list. e2e/natural-neutral-baseline.json is written and the traces are kept in both
+  places. The baseline sha is 200ec4c24: the re-record rule and the guard of rule (c) apply
+  from here. Evidence only; seven checks. Next by rule (h): CP-09.
