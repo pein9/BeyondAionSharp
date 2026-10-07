@@ -73,6 +73,14 @@ public static class NaturalHelpItemPolicy
 		new(160002273, "dp-jelly", 40, 10164, 23, 1_800_000, 0, 0),
 	];
 
+	/// <summary>
+	/// CP-06: the scrolls of the level 1-9 manifest (docs/natural-class-profiles.md): the supplied Lesser Anti-Shock and
+	/// Greater Running Scroll and the three event scrolls every starter owns. Below level 10 the policy picks among
+	/// these and nothing else. The tier rule does not apply there: a consumable is gated by its restrict row, not by
+	/// its item level, and none of the five has one. From level 10 on the tier rule decides, as before.
+	/// </summary>
+	public static readonly int[] StarterScrollIds = [164000067, 164000076, 164002116, 164002117, 164002118];
+
 	/// <summary>Out of combat: the scroll to use now at this trigger, or none.</summary>
 	public static NaturalHelpItemChoice DecideBuffs(NaturalHelpItemObservation state, DateTimeOffset now, NaturalHelpTrigger trigger)
 	{
@@ -158,8 +166,8 @@ public static class NaturalHelpItemPolicy
 	}
 
 	private static NaturalHelpItem? Best(NaturalHelpItemObservation state, string family, int maximumItemLevel) =>
-		All.Where(item => item.Family == family && item.Tier <= maximumItemLevel &&
-				state.ItemCounts.GetValueOrDefault(item.ItemId) > 0)
+		All.Where(item => item.Family == family && state.ItemCounts.GetValueOrDefault(item.ItemId) > 0 &&
+				(state.Level <= NaturalHelpItemAllowlist.StarterMaxLevel ? StarterScrollIds.Contains(item.ItemId) : item.Tier <= maximumItemLevel))
 			.OrderByDescending(item => item.Tier).ThenByDescending(item => item.DurationMillis).FirstOrDefault();
 
 	private static BotVisibleEffect? Active(NaturalHelpItemObservation state, int effectSlot) =>

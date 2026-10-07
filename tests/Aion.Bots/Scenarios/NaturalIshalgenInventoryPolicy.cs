@@ -67,7 +67,11 @@ public sealed record NaturalInventoryPlan(int Capacity, int Occupied, IReadOnlyL
 
 public sealed class NaturalIshalgenInventoryPolicy
 {
-	private static readonly HashSet<int> Supplies = [162000002, 162000007, 162000052]; // starter HP/MP and bought timed healing
+	// The starter HP and MP potions, the bought timed healing, and (CP-06) the supplied items of the level 1-9 kit. The
+	// event scrolls of its manifest need no entry: they cannot be sold. The starter's bandages are not a supply: no class
+	// uses one (CP-Q11).
+	private static readonly HashSet<int> Supplies = [162000002, 162000007, 162000052,
+		.. NaturalHelpItemAllowlist.Starter.Select(supply => supply.ItemId)];
 	/// <summary>Priest-born class-reward list for Q2009's ceremony (quest_data.xml priest_selectable_reward).</summary>
 	private const string CeremonyList = "priest_selectable_reward";
 	private readonly IReadOnlyDictionary<int, NaturalItem> items;
@@ -130,7 +134,7 @@ public sealed class NaturalIshalgenInventoryPolicy
 		// NA-21: the approved help items (OD-13), every help scroll NA-19 knows and every potion combat drinks are the
 		// Cleric's supplies too; the NA-21 run found the shop stop selling the freshly supplied Anti-Shock and serums.
 		var clericSupplies = bridge.ProtectedItemIds.Concat(Supplies)
-			.Concat(NaturalHelpItemAllowlist.Approved.Select(supply => supply.ItemId))
+			.Concat(NaturalHelpItemAllowlist.AllLevels.Select(supply => supply.ItemId))
 			.Concat(NaturalHelpItemPolicy.All.Select(help => help.ItemId))
 			.Concat(NaturalIshalgenPotionPolicy.ManaPotionIds)
 			.Concat([NaturalIshalgenPotionPolicy.LesserLifePotionId, NaturalIshalgenPotionPolicy.LifePotionId]).ToHashSet();

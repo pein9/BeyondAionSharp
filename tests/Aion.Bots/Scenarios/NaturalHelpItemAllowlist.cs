@@ -44,6 +44,8 @@ public static class NaturalHelpItemAllowlist
 	/// PlayerRestrictions.canUseItem), so a level 1 character may use all three. The rows are keyed by item and level,
 	/// not by class. <see cref="Approved"/> holds the Cleric's bands from level 10 on and is not edited.
 	/// </summary>
+	public const int StarterMaxLevel = 9;
+
 	public static readonly NaturalHelpSupply[] Starter =
 	[
 		new(162000006, "life-potion", 1, 9, 30, 10, 50, 9893, 11),

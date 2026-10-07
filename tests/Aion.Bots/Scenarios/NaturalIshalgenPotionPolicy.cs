@@ -11,13 +11,15 @@ public static class NaturalIshalgenPotionPolicy
 	public const int LesserLifeElixirId = 162000053;
 	/// <summary>NA-21: the supplied heal-over-time Life Potion tiers above the starter one (OD-13).</summary>
 	public const int LesserLifePotionId = 162000003, LifePotionId = 162000004;
+	/// <summary>CP-06: the level 1-9 kit's potion (CP-05's manifest): 1,694 HP over the same 20 s, on the same 30 s delay.</summary>
+	public const int MajorLifePotionId = 162000006;
 	/// <summary>Owned mana potions: the supplied instant Mana Serums first, highest tier first (NA-21), then the starter
 	/// Minor Mana Potion and the Minor and Lesser Mana Elixirs (NA-20a).</summary>
 	public static readonly int[] ManaPotionIds = [162000019, 162000018, 162000017, 162000007, 162000057, 162000058];
 	public const int SharedUseDelayId = 11;
 	public const int RestockAtOrBelow = 5;
 	public const int RestockTarget = 12;
-	public static readonly int[] HealingSkillIds = [9889, 9890, 9891, 10202, 10203];
+	public static readonly int[] HealingSkillIds = [9889, 9890, 9891, 10202, 10203, 9893];
 	public static readonly (int NpcId, BotPosition Position)[] Vendors =
 	[
 		(798038, new BotPosition(611.017f, 2417.96f, 280.625f, 23)), // Crizpinerk
@@ -28,15 +30,16 @@ public static class NaturalIshalgenPotionPolicy
 		inventory.Where(item => item.ItemId == itemId).Sum(item => item.Count);
 	public static long TotalHealingCount(IEnumerable<BotInventoryItem> inventory) =>
 		Count(inventory, StarterLifePotionId) + Count(inventory, VendorLifeElixirId) + Count(inventory, LesserLifeElixirId) +
-		Count(inventory, LesserLifePotionId) + Count(inventory, LifePotionId);
+		Count(inventory, LesserLifePotionId) + Count(inventory, LifePotionId) + Count(inventory, MajorLifePotionId);
 
 	public static BotInventoryItem? SelectOwnedPotion(IEnumerable<BotInventoryItem> inventory) =>
 		inventory.Where(item => item.Count > 0 && item.ItemId is StarterLifePotionId or VendorLifeElixirId or LesserLifeElixirId
-				or LesserLifePotionId or LifePotionId)
-			// The supplied higher Life Potion tiers first (more HP over the same 20 s, 30 s delay); the Priest never owns them.
+				or LesserLifePotionId or LifePotionId or MajorLifePotionId)
+			// The supplied higher Life Potion tiers first (more HP over the same 20 s, 30 s delay). Below level 10 that is
+			// the Major of the level 1-9 kit; what is left of it at level 10 is drunk first too, until it runs out.
 			.OrderBy(item => item.ItemId switch
 			{
-				LifePotionId => -2, LesserLifePotionId => -1, StarterLifePotionId => 0, VendorLifeElixirId => 1, _ => 2,
+				MajorLifePotionId => -3, LifePotionId => -2, LesserLifePotionId => -1, StarterLifePotionId => 0, VendorLifeElixirId => 1, _ => 2,
 			})
 			.ThenBy(item => item.ObjectId).FirstOrDefault();
 

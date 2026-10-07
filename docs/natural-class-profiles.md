@@ -1394,7 +1394,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - Bundle: seven pre-commit checks pass (the warning baseline builds tools/Aion.LiveBots
       too), Aion.GameServer.Tests passes, and Fast passes all 11 scenario gates (run
       cp05-fast). The logs are in run/cp/CP-05/checks/.
-- [ ] **CP-06 - The Priest plays levels 1-9 with the kit.** Depends: CP-03, CP-05
+- [x] **CP-06 - The Priest plays levels 1-9 with the kit.** Depends: CP-03, CP-05
   - Work: This item changes the accepted Priest line's levels 1-9 on purpose (the operator,
     2026-10-07: "even change the priest defaults!"). It is not a refactor. Open the gates
     the "Every line" note lists, for the Priest at levels 1-9:
@@ -1433,6 +1433,50 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     the kit's life potion drunk, the shield scroll used and the Running scroll used, each
     at least once by a Priest below level 10. If the Priest's HP never falls to the shield
     scroll's threshold, the lowest HP seen is reported and the item is not ticked.
+  - 2026-10-07: done on the first attempt. Run m-a1 (run/cp/CP-06/m-a1/, scope m, seed 1,
+    a fresh Priest, bridge off) passed in 7 min 51 s and reached the Munin stop at game
+    time 3 h 07 min, level 9, with no death.
+    - help-items.json lists the three rows of the manifest, supplied at the run's start at
+      level 1 (30 Major Life Potions, 30 Lesser Anti-Shock Scrolls, 20 Greater Running
+      Scrolls), and three top-ups at level 9, each at a checkpoint: 30 and 21 potions and
+      16 Running scrolls.
+    - Used by the Priest below level 10: 51 Major Life Potions (the first at level 3, 37 of
+      them at level 9), 3 Lesser Anti-Shock Scrolls (all at level 9), 21 Greater Running
+      Scrolls (from level 3 on) and 7 Castafodin. The lowest HP seen was 30.6%, at the
+      violet generator of Q2007. No mana potion was drunk: the Priest never ran below its
+      healing reserve.
+    - Against the old munin capture, which played without the kit: deaths 3 to 0, retreats
+      5 to 3, emergency decisions 14 to 0, between-fight heals 30 to 12, patrol waits 4 to
+      0, pull plans 156 to 134, records 151,112 to 121,214. Hazard 4 is real: several
+      branches are run much less. CP-09 checks every later item's scope against the new
+      counts.
+    - What changed, by the six parts of Work. (1) Supply: TopUpHelpItemsAsync asks the new
+      UsesHelpItems (the Cleric, or any character at level 9 or below), and the Ishalgen
+      decision loop checks the stock at the run's start, after a level-up and at each
+      decision, below level 10 only; a vendor visit checks it too. (2) and (3): the shield
+      scroll, the mana potion and the scroll upkeep ask UsesHelpItems. Below level 10 the
+      walks ApproachAsync and ApproachShippedSpawnAsync send the TravelLeg trigger first;
+      from level 10 on that trigger stays at the two bridge sites. (4) Below level 10
+      NaturalHelpItemPolicy picks among StarterScrollIds, the manifest's five scrolls, with
+      no tier rule; from level 10 on the tier rule is untouched. (5) The potion policy
+      knows the Major Life Potion 162000006, drinks it first and counts it as stock. (6)
+      The Priest's keep list gains the three supplied items; the Cleric's keep list reads
+      AllLevels, so what is left of the kit at level 10 is not sold.
+    - Two things differ from the Work line. The event scrolls were not added to the
+      Priest's keep list: they cannot be sold, an existing test pins that reason for
+      Accelerox, and so they were held already. And the gate is by level, not by class:
+      below level 10 any character passes, which is what every later class line needs;
+      CP-16 moves it behind the profile.
+    - Tests. UT/NaturalStarterHelpKitUseTests is new and passes (the policy's picks at
+      levels 1, 5 and 9 and from level 10 on, the potion order, the keep rule). In the
+      three existing help-item files one expected value changed, as named: at level 9 the
+      shield scroll is picked (UT/NaturalHelpItemPolicyTests.cs). No other expected value
+      was edited.
+    - Not run, and changed by the shared code: the environment-gated Mau course plays a
+      level-9 Priest through the same fight loop, so it now offers that Priest the kit it
+      owns; and the LIVE Priest gets the same level 1-9 changes.
+    - Bundle: seven pre-commit checks pass, Aion.GameServer.Tests passes, and Fast passes
+      all 11 scenario gates (run cp06-fast). The logs are in run/cp/CP-06/checks/.
 - [ ] **CP-07 - Bind at each Ishalgen quest hub.** Depends: CP-03, CP-06
   - Work: This item too changes the accepted Priest line's levels 1-9 on purpose (the
     operator, 2026-10-07: "We should have been binding in Ishalgen the whole time, at each
@@ -2876,6 +2920,11 @@ say so to change one.
   Scroll is used first, because the operator named it, and Accelerox when none is owned;
   so while the supply runs, Accelerox is not used at levels 1-9. Say so if Accelerox
   should be used first, or kept up at all times and not only before a long leg.
+- **The Priest drinks a Major Life Potion at 90% HP** (CP-06, run m-a1): 51 in one run of
+  Ishalgen, 37 of them at level 9, each worth more than the Priest's whole HP bar. The
+  threshold is the frozen Priest policy's, sized for the 407 HP starter potion. Default:
+  left as it is; the supply keeps the stock up. A lower threshold for the stronger potion
+  would be a change to the Priest's fight rule, and it must be decided before CP-08.
 - **A recovery potion heals mana too.** The Major Recovery Potion 162000045 heals the same
   1,694 HP on the same 30 s delay and restores mana with it, and a level 1 character may
   use it. Default: the Major Life Potion, the family OD-13 approved, with the starter's
@@ -3159,3 +3208,10 @@ report what was done, what is blocked and what you need from me.
   operator. Proof: UT/NaturalStarterHelpKitTests 6 of 6. Bundle: seven checks,
   Aion.GameServer.Tests 4,681 passed, Fast 11 gates (cp05-fast). Nothing supplies the kit
   yet. Next by rule (h): CP-06, the first journey run.
+- 2026-10-07 — Loop: CP-06 done on the first attempt. The Priest is supplied and uses the level
+  1-9 kit. Run m-a1 (scope m) passed in 7 min 51 s to the Munin stop with no death: 51 Major
+  Life Potions, 3 Lesser Anti-Shock Scrolls, 21 Greater Running Scrolls and 7 Castafodin, all
+  below level 10; no mana potion. Against the old munin capture: deaths 3 to 0, emergency
+  decisions 14 to 0, between-fight heals 30 to 12. One point for the operator before CP-08:
+  the Priest drinks the Major potion at 90% HP. Bundle: seven checks, Aion.GameServer.Tests
+  4,690 passed, Fast 11 gates (cp06-fast). Next by rule (h): CP-07, the Ishalgen binds.

@@ -527,6 +527,8 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						}
 						else failedRestockKinah = world.Kinah;
 						await session.SendPacketAsync(session.Api.CloseDialog(vendor), maintenanceToken);
+						// CP-06: a vendor visit is a stock check for the level 1-9 kit too.
+						if (world.Level <= NaturalHelpItemAllowlist.StarterMaxLevel) await TopUpHelpItemsAsync("town");
 						session.TraceDiagnostic("inventory-maintenance", new Dictionary<string, object?>
 						{
 							["vendorId"] = candidate.NpcId, ["sold"] = plan.Sales.Count,
@@ -746,6 +748,12 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						return;
 					}
 					if (session.Api.World.IsDead) await RestSafelyAsync(token);
+					// CP-06: the level 1-9 kit's stock checks, as the later legs have them: at the run's start, after a
+					// level-up and at each checkpoint (a decision is one). Below level 10 only: the Cleric who returns to
+					// finish Ishalgen is supplied by the bridge runner, as before.
+					if (session.Api.World.Level <= NaturalHelpItemAllowlist.StarterMaxLevel)
+						await TopUpHelpItemsAsync(sequence == 1 ? "run-start"
+							: session.Api.World.Level != helpCheckedAtLevel ? "level-up" : "checkpoint");
 					checkpoint = NaturalJourneyCheckpoint.Capture(session.Api.World, session.CharacterId,
 						session.ConnectionGeneration, contract, session.CurrentPosition, sequence, earlyAscension: options.AscensionBridge);
 					progress.Observe(checkpoint, TimeSpan.FromMilliseconds(runtime.NowMillis - journeyStart));
@@ -1495,14 +1503,15 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				finally { combat.ScriptedTrial = false; }
 			}
 
-			// NA-21: the stock check for the approved help items (OD-13): the Cleric only, and only when the runtime may
-			// supply (SIM, or the isolated LIVE stack's director). Every supply is checked from the client's inventory,
-			// traced, and listed in help-items.json beside the run's other evidence.
+			// NA-21: the stock check for the approved help items (OD-13): the Cleric from level 10 on and (CP-06, CP-Q12)
+			// every character below level 10, and only when the runtime may supply (SIM, or the isolated LIVE stack's
+			// director). Every supply is checked from the client's inventory, traced, and listed in help-items.json beside
+			// the run's other evidence.
 			async Task TopUpHelpItemsAsync(string trigger)
 			{
 				BotWorldModel world = session.Api.World;
 				helpCheckedAtLevel = world.Level;
-				if (runtime.SupplyHelpItemAsync is not { } supply || !combat.IsCleric || world.IsDead) return;
+				if (runtime.SupplyHelpItemAsync is not { } supply || !combat.UsesHelpItems || world.IsDead) return;
 				var owned = world.Inventory.Values.GroupBy(item => item.ItemId).ToDictionary(group => group.Key, group => group.Sum(item => item.Count));
 				IReadOnlyList<NaturalHelpTopUp> plan = NaturalHelpItemSupply.Plan(world.Level, owned);
 				foreach (NaturalHelpTopUp topUp in plan)
@@ -4868,10 +4877,20 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 
 			async Task<int> ApproachAsync(int templateId, BotPosition anchor)
 			{
+				await BuffForStarterTravelLegAsync(anchor);
 				NaturalNavigationResult result = await NaturalIshalgenNavigator.ApproachNpcAsync(
 					contract.MapId, templateId, anchor, navigator, token);
 				Require.True(result.Arrived, result.Reason);
 				return Require.IsType<int>(result.TargetObjectId);
+			}
+
+			// CP-06: below level 10 a walk to an NPC or a spawn is a travel leg, so the buff-ourself check runs before it and
+			// the Running scroll is used before a long one. The straight line is a lower bound of the planned route. From
+			// level 10 on the trigger stays at the sites NA-19 gave it.
+			async Task BuffForStarterTravelLegAsync(BotPosition destination)
+			{
+				if (session.Api.World.Level > NaturalHelpItemAllowlist.StarterMaxLevel || session.Api.World.IsDead) return;
+				await combat.BuffOurselfAsync(NaturalHelpTrigger.TravelLeg, token, Distance(session.CurrentPosition, destination));
 			}
 
 			async Task BindAtAldelleIfNeededAsync()
@@ -5039,6 +5058,7 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 						Distance(waypoint.Position, new BotPosition(2400.88f, 2171.88f, 270.328f, 2)) < 1)
 					.OrderByDescending(Connected).ThenBy(waypoint => Distance(session.CurrentPosition, waypoint.Position)).ToArray();
 				if (anchors.Length == 0) throw new InvalidDataException($"Shipped spawn graph has no NPC {templateId}.");
+				await BuffForStarterTravelLegAsync(anchors[0].Position);
 				// AG-07: from far off, the navigator's hazard replanning can circle over monster ground for its whole budget (the
 				// Leg 6 smoke run: 1,000 segments between Trader's Berth and Gerger, across the angolems). An Altgard leg walks its
 				// road there first, fighting what engages, as its talk steps and hunts do when the navigator gives up.
@@ -9127,9 +9147,10 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				var hotTemplate = hotPotion == null ? null :
 					runtime.Data.ItemDataDh.GetItemTemplate(hotPotion.ItemId);
 				bool hotReady = hotTemplate != null && session.Api.Timing.TimeUntilItemUse(hotTemplate) == TimeSpan.Zero;
-				NaturalHelpItemChoice? shieldChoice = IsCleric ? NaturalHelpItemPolicy.DecideShield(ObserveHelpItems(), now) : null;
-				// NA-20a: the Cleric drinks its owned mana potions (the policy's mana-potion rule); the Priest never did.
-				BotInventoryItem? manaPotion = IsCleric ? NaturalIshalgenPotionPolicy.SelectOwnedManaPotion(world.Inventory.Values) : null;
+				NaturalHelpItemChoice? shieldChoice = UsesHelpItems ? NaturalHelpItemPolicy.DecideShield(ObserveHelpItems(), now) : null;
+				// NA-20a: the Cleric drinks its owned mana potions (the policy's mana-potion rule). CP-06: below level 10 the
+				// Priest does too, from the 100 a starter owns.
+				BotInventoryItem? manaPotion = UsesHelpItems ? NaturalIshalgenPotionPolicy.SelectOwnedManaPotion(world.Inventory.Values) : null;
 				var manaTemplate = manaPotion == null ? null : runtime.Data.ItemDataDh.GetItemTemplate(manaPotion.ItemId);
 				bool manaReady = manaTemplate != null && session.Api.Timing.TimeUntilItemUse(manaTemplate) == TimeSpan.Zero;
 				var observation = new NaturalCombatObservation(
@@ -9565,6 +9586,11 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 		public bool IsCleric => session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass ==
 			PlayerClass.CLERIC.GetClassId();
 
+		/// <summary>CP-06 (CP-Q12): help items are for every character below level 10 (the level 1-9 kit) and, from level 10
+		/// on, for the Cleric, whose kit OD-13 approved. The supply, the shield scroll, the mana potion and the scroll
+		/// upkeep all ask this.</summary>
+		public bool UsesHelpItems => IsCleric || session.Api.World.Level <= NaturalHelpItemAllowlist.StarterMaxLevel;
+
 		/// <summary>NA-19: the client-observed state the help-item policy reads.</summary>
 		private NaturalHelpItemObservation ObserveHelpItems(float travelMeters = 0, bool crossMap = false)
 		{
@@ -9588,12 +9614,13 @@ public sealed class NaturalIshalgenJourney(INaturalJourneySession session, Natur
 				Catalog.Any(skill => skill.Role == "salvation" && world.Skills.ContainsKey(skill.Id)));
 		}
 
-		/// <summary>NA-19: the buff-ourself check. Class buffs as before (pre-pull, after rest); then, for the Cleric,
-		/// the help scrolls the policy names, one at a time, each decision traced. With nothing owned it uses nothing.</summary>
+		/// <summary>NA-19: the buff-ourself check. Class buffs as before (pre-pull, after rest); then, for the Cleric and
+		/// (CP-06) for every character below level 10, the help scrolls the policy names, one at a time, each decision
+		/// traced. With nothing owned it uses nothing.</summary>
 		public async Task BuffOurselfAsync(NaturalHelpTrigger trigger, CancellationToken token, float travelMeters = 0, bool crossMap = false)
 		{
 			if (trigger is NaturalHelpTrigger.PrePull or NaturalHelpTrigger.AfterRest) await MaintainBuffsAsync(token);
-			if (!IsCleric || InCombat) return;
+			if (!UsesHelpItems || InCombat) return;
 			for (int use = 0; use < 3; use++)
 			{
 				await session.SynchronizeAsync(token);

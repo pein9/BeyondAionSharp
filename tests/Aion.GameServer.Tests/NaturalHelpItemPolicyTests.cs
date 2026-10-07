@@ -48,7 +48,7 @@ public sealed class NaturalHelpItemPolicyTests
 	[InlineData(10, LesserShield)]
 	[InlineData(19, LesserShield)]
 	[InlineData(20, Shield)]
-	[InlineData(9, null)]
+	[InlineData(9, LesserShield)] // CP-06: below level 10 the level 1-9 kit's scroll is picked, by the restrict gate
 	public void AntiShockAllowsTenLevelsAbove(int level, int? expected) =>
 		Assert.Equal(expected, NaturalHelpItemPolicy.DecideShield(State(level, owned: [LesserShield, Shield], hp: 50), Now).Item?.ItemId);
 
