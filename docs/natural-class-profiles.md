@@ -1038,7 +1038,8 @@ dispatch Q29071 have never been run by a bot.
     host supplies them. No bandage is bought. The Kinah floor in question 11 is a starting
     number, not a measured budget, and it is for purchases: a bind is paid whenever the
     purse covers its fee.
-25. Pending rows in the pin test could be forgotten. So CP-11 writes every pending row with
+25. (CP-11, 2026-10-07: every pending row has its owner, and the test also fails when a
+    pending literal leaves the source before its owner has turned the row on.) Pending rows in the pin test could be forgotten. So CP-11 writes every pending row with
     the id of the item that turns it on, CP-41 makes the test fail while any row is pending,
     and no item may edit an expected value.
 26. CP-06 and CP-07 change the accepted Priest with no trace to compare against: the first
@@ -1831,7 +1832,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
 
 ### B. The class seam, with the Priest and Cleric moved onto it unchanged
 
-- [ ] **CP-11 - Pin the Priest and Cleric numbers before any code moves.** Depends: CP-00,
+- [x] **CP-11 - Pin the Priest and Cleric numbers before any code moves.** Depends: CP-00,
   CP-06, CP-07
   - Work: It waits for CP-06 and CP-07, so it pins the numbers as those two items left
     them. Add UT/NaturalClassSeamPinTests with a table of every number the seam will carry,
@@ -1872,6 +1873,55 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     the scroll upkeep: on for the Priest at levels 1-9 and for the Cleric).
   - Proof: Unit test UT/NaturalClassSeamPinTests: green on the bot code as CP-07 left it,
     with the pending rows printed by name, each with its owner.
+  - 2026-10-07: done. UT/NaturalClassSeamPinTests.cs is added and no other code file is
+    touched. Its three tests pass on the bot code as CP-07a left it, at 68d4903f9
+    (run/cp/CP-11/pin-a4.log, which prints every row). The table has 58 rows: 23 asserted
+    and 35 pending.
+    - **Asserted now (23).** No item moves them: swarm 3, heal 55 and 70, the Mau policy
+      baseline (22 m, 3 patrol waits, 55, 70, potion at 90, reserve 0, finish at 15, no
+      wounded preference), and what CP-06 set (last kit level 9, the 20 s refresh window,
+      the 150 m long leg, the shield scroll at 50% HP). Profile side by CP-16: emergency
+      35 and 45, and the enter and exit functions at their four corners (35 and 45; 55
+      and 65 against a Seasoned target with two attackers). Profile side by CP-18: melee
+      reach 3, pull 22, FiringRange 23, the standoff's defaults 25, 3 and 1 (read from
+      the default parameter values). Profile side by CP-24: restock 5 and 12.
+    - **Pending (35), by owner.** CP-16, 4: the four help-item gates. CP-17, 4: rest heal
+      below 90, sit below 50 until 80, 12 quiet sits. CP-18, 14: the router's and the
+      grid fallback's 20 m, the 23, 23, 23 and 30 of ApproachShippedCombatSpawnAsync,
+      PullRange 30, and the HP and MP thresholds of ClearAroundSpotAsync (60, 40),
+      MoveToPullSpotAsync (80) and PullAndKillAsync (60 and 40, twice each; 80 and 60).
+      CP-19, 2: the 25 m route threshold and the 10 m close-in. CP-21, 11: the Sprigg
+      hunt's 25, 22 and 25, Q2005's 25, 23 and 25, and the readiness thresholds (Return
+      wait 0.75, Q2005 at 90 twice, Q2006 at 80, Q2007 at 80).
+    - **A pending row is checked, not only listed.** Each one names the method and the
+      source text that hold its literal today. The test searches tests/Aion.Bots for
+      them, prints the file and line it finds, and fails when a literal is gone. So the
+      lines in the log are those of HEAD, not of b45b72a43, and they follow a pure move
+      such as CP-13 by themselves (the journey's rows search NaturalIshalgenJourney*.cs).
+      An owner turns its row on in the commit that moves the literal: it sets the row's
+      Profile reader and removes the sites. It does not edit Expected. For CP-41 a row is
+      pending while it has neither an Actual nor a Profile reader.
+    - The present lines, for the items that quote the old ones: rest rule J:9770-9771,
+      9815, 9841; gates J:1521, 9243, 9246, 9716, with the rule itself at J:9685; shared
+      helpers J:5319-5362, 5549-5550, 5723, 6068, 8345-8346, 8382-8390; fight loop
+      J:9398, 10161; campaign J:6351, 6573-6588, 7021, 7206, 7240, 7381, 7400, 7506,
+      7721. The journey is 10,452 lines long now, so every J: line this plan quotes from
+      b45b72a43 has moved down by about 90 to 120 lines.
+    - **Four things found while mapping the lines, written here and not fixed.** (1) Old
+      J:6794, which CP-21 lists among Q2004's range literals, holds no literal: it is the
+      call of ApproachShippedCombatSpawnAsync, whose 23 and 30 are CP-18's rows. It gets
+      no row, and CP-21 has nothing to move there. (2) Old J:5631 is inside
+      MoveToPullSpotAsync, not the patrol wait before it, and the fight loop of old J:9284
+      is TryKillCoreAsync; the rows carry these names. (3) CP-06 left three more tests of
+      level 9 or below outside the four gates: the town stock check (J:537), the loop's
+      stock check (J:760) and the travel-leg scroll (J:4916). They test the level only,
+      so every class line passes them, no item of this list moves them, and they get no
+      row; the kit's last level, 9, is an asserted row. (4) The 55 of the Seasoned
+      emergency is a literal inside EmergencyEnterPercent; it is pinned through the
+      function's result.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,698 with 16 skipped), and
+      Fast passes (run cp11-fast). No guard run: the commit edits neither tests/Aion.Bots
+      nor the journey test, and rule (c) starts at CP-13.
 - [ ] **CP-12 - Golden gear test, committed on unchanged code.** Depends: CP-09, CP-11
   - Work: Write UT/NaturalGearGoldenTests and its golden file from the present code and
     commit nothing else: for the Priest at levels 1-9 and the Cleric at 9-26, ChooseReward
@@ -3513,3 +3563,8 @@ report what was done, what is blocked and what you need from me.
   a6fa1f0b4: the Priest stopped at 2132:5:0 at level 6 in Aldelle Village, 14 min 36 s of
   game time, and resume-receipt.json holds 2132 in CompletedQuestIds. Hazard 18 is answered.
   Evidence only; seven checks. Phase A is done. Next by rule (h): CP-11.
+- 2026-10-07 — Loop: CP-11 done. UT/NaturalClassSeamPinTests pins 58 numbers: 23 asserted
+  now and 35 pending (CP-16 4, CP-17 4, CP-18 14, CP-19 2, CP-21 11). A pending row is
+  checked against the source: the test finds its literal, prints file and line, and fails
+  when the literal is gone. Found and logged: old J:6794 holds no literal, so it has no row.
+  Seven checks, 4,698 with 16 skipped and Fast (cp11-fast) pass. Next by rule (h): CP-12.
