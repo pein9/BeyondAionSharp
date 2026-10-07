@@ -241,7 +241,8 @@ argument for reading a handler's contents before its count.
   both spots: eight in Kaisinel Academy and Marchutan Priory (207019–207022, 207025–207028), Peja
   832827 in Pandaemonium, Varina 206314, Kanzat 206315 and rift 700551 in Reshanta, and 214392 in
   Brusthonin (twice). Each needs a decision between Java's spot and retail's; see the log entry "Two
-  Ishalgen trainers stood twice".
+  Ishalgen trainers stood twice". The whole review, with coordinates and everything else the gated
+  table places, is `docs/spawn-review-2026-10.md`.
 
 ## D-bis. The skill-index rule — done
 
