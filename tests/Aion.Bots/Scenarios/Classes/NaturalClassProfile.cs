@@ -92,6 +92,9 @@ public sealed class NaturalClassProfile
 	/// there the choice was always the Priest's, for the Cleric too, and its picks are accepted.</summary>
 	public required NaturalGearRules RewardGear { get; init; }
 
+	/// <summary>What the class buys at a vendor when its stock runs down: potions only.</summary>
+	public required NaturalRestockRules Restock { get; init; }
+
 	/// <summary>The numbers of the Ishalgen quest executors and of the wait for Return.</summary>
 	public required NaturalCampaignRules Campaign { get; init; }
 

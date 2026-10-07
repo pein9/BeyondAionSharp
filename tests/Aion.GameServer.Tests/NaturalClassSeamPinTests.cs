@@ -83,9 +83,11 @@ public sealed class NaturalClassSeamPinTests(ITestOutputHelper output)
 		new("standoff: safety margin default (m)", 1f, () => StandoffDefault("safetyMargin"), "CP-18",
 			() => Both(profile => profile.Ranges.StandoffSafetyMargin)),
 
-		// Asserted now, profile side by CP-24.
-		new("restock: buy at or below this many potions", 5, () => NaturalIshalgenPotionPolicy.RestockAtOrBelow, "CP-24"),
-		new("restock: buy up to this many potions", 12, () => NaturalIshalgenPotionPolicy.RestockTarget, "CP-24"),
+		// Asserted in the potion policy and, since CP-24, on the profile's restock table, which the journey asks.
+		new("restock: buy at or below this many potions", 5, () => NaturalIshalgenPotionPolicy.RestockAtOrBelow, "CP-24",
+			() => Both(profile => profile.Restock.Lines.Single().AtOrBelow)),
+		new("restock: buy up to this many potions", 12, () => NaturalIshalgenPotionPolicy.RestockTarget, "CP-24",
+			() => Both(profile => profile.Restock.Lines.Single().Target)),
 
 		// Asserted now: what CP-06 set. No item moves them.
 		new("help items: last level of the 1-9 kit", 9, () => NaturalHelpItemAllowlist.StarterMaxLevel),

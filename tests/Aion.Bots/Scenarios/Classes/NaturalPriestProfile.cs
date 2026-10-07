@@ -36,6 +36,18 @@ public static class NaturalPriestProfile
 		SpriggRouteBeyond: 25, SpriggStandoff: 22, SpriggSelectWithin: 25, FiringEdgeWithin: 25, StalkerSearchRange: 23,
 		BlockerReplanBeyond: 25, ReturnCooldownHpFraction: 0.75f, StalkerPull: new(90), BeforeSack: new(80), BeforeCamp: new(80));
 
+	/// <summary>The Minor Life Elixir of trade list 721, bought when every owned life potion and elixir together is 5 or
+	/// fewer, up to 12, with no Kinah floor.</summary>
+	private static readonly NaturalRestockRules PriestLineRestock = new(
+	[
+		new(NaturalIshalgenPotionPolicy.VendorLifeElixirId, AtOrBelow: 5, Target: 12, TradeListId: 721, CountedWith:
+		[
+			NaturalIshalgenPotionPolicy.StarterLifePotionId, NaturalIshalgenPotionPolicy.VendorLifeElixirId,
+			NaturalIshalgenPotionPolicy.LesserLifeElixirId, NaturalIshalgenPotionPolicy.LesserLifePotionId,
+			NaturalIshalgenPotionPolicy.LifePotionId, NaturalIshalgenPotionPolicy.MajorLifePotionId,
+		]),
+	]);
+
 	public static NaturalClassProfile Priest { get; } = new()
 	{
 		Class = PlayerClass.PRIEST,
@@ -54,6 +66,7 @@ public static class NaturalPriestProfile
 		Campaign = PriestLineCampaign,
 		Gear = NaturalGearRules.Priest,
 		RewardGear = NaturalGearRules.Priest,
+		Restock = PriestLineRestock,
 	};
 
 	public static NaturalClassProfile Cleric { get; } = new()
@@ -76,6 +89,7 @@ public static class NaturalPriestProfile
 		Gear = NaturalGearRules.Cleric,
 		// Class-blind, as it always was: the Altgard legs' accepted picks were scored by the Priest's rules.
 		RewardGear = NaturalGearRules.Priest,
+		Restock = PriestLineRestock,
 	};
 
 	/// <summary>Calls the static policy with the class's catalog and the run's parameters, and reports the run's policy id.</summary>

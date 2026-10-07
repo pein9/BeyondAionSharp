@@ -480,21 +480,21 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			{
 				await EquipUpgradesAsync(maintenanceToken);
 				BotWorldModel world = session.Api.World;
-				if (maintainingInventory || !NaturalIshalgenPotionPolicy.NeedsRestock(world.Inventory.Values) ||
+				// CP-24: the profile's restock table says whether to go, what to buy and how many.
+				NaturalRestockRules restock = combat.ClassProfile.Restock;
+				if (maintainingInventory || restock.Needed(world.Inventory.Values) is not { } line ||
 					world.Kinah == failedRestockKinah) return;
 				maintainingInventory = true;
 				try
 				{
-					long stock = NaturalIshalgenPotionPolicy.Count(world.Inventory.Values,
-						NaturalIshalgenPotionPolicy.VendorLifeElixirId);
-					long totalStock = NaturalIshalgenPotionPolicy.TotalHealingCount(world.Inventory.Values);
+					long stock = NaturalIshalgenPotionPolicy.Count(world.Inventory.Values, line.ItemId);
+					long totalStock = restock.Stock(line, world.Inventory.Values);
 					string root = runtime.RepoRoot;
 					var inventoryPolicy = NaturalIshalgenInventoryPolicy.Load(root,
 						world.Inventory.Values.Select(item => item.ItemId), ClassLine);
 					NaturalInventoryPlan plan = inventoryPolicy.Decide(world, QuestNeededItems(), altgardLeg?.CoinGear, altgardLeg?.Haramel);
-					long basePrice = runtime.Data.ItemDataDh
-						.GetItemTemplate(NaturalIshalgenPotionPolicy.VendorLifeElixirId).GetPrice();
-					if (world.Kinah < basePrice && plan.Sales.Count == 0)
+					long basePrice = runtime.Data.ItemDataDh.GetItemTemplate(line.ItemId).GetPrice();
+					if (restock.Spendable(world.Kinah) < basePrice && plan.Sales.Count == 0)
 					{
 						failedRestockKinah = world.Kinah;
 						return;
@@ -522,22 +522,20 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						await NaturalDialogProtocol.SelectAsync(session, session.Api.SelectDialog(vendor, 2), maintenanceToken);
 						await session.WaitForPacketAsync(typeof(SM_TRADELIST), maintenanceToken);
 						BotTradeWindow trade = world.Trade ?? throw new InvalidDataException("Vendor sent no trade window.");
-						if (trade.TargetObjectId != vendor || !trade.Tabs.Contains(721))
+						if (trade.TargetObjectId != vendor || !trade.Tabs.Contains(line.TradeListId))
 							throw new InvalidDataException($"Ishalgen vendor {candidate.NpcId} did not offer the shipped elixir list.");
 						BotVendorPrices prices = world.VendorPrices ??
 							throw new InvalidDataException("No client-observed vendor prices.");
 						long unitPrice = prices.BuyPrice(basePrice, trade.BuyPriceModifier);
-						long count = NaturalIshalgenPotionPolicy.AffordablePurchaseCount(totalStock, world.Kinah, unitPrice);
+						long count = restock.PurchaseCount(line, totalStock, world.Kinah, unitPrice);
 						if (count > 0)
 						{
-							await session.SendPacketAsync(session.Api.Buy(vendor,
-								[(NaturalIshalgenPotionPolicy.VendorLifeElixirId, count)]), maintenanceToken);
+							await session.SendPacketAsync(session.Api.Buy(vendor, [(line.ItemId, count)]), maintenanceToken);
 							await session.SynchronizeAsync(maintenanceToken);
-							long observed = NaturalIshalgenPotionPolicy.Count(world.Inventory.Values,
-								NaturalIshalgenPotionPolicy.VendorLifeElixirId);
+							long observed = NaturalIshalgenPotionPolicy.Count(world.Inventory.Values, line.ItemId);
 							if (observed != stock + count)
 								throw new InvalidDataException($"Elixir purchase not observed: {stock}+{count}, got {observed}.");
-							if (totalStock + count <= NaturalIshalgenPotionPolicy.RestockAtOrBelow)
+							if (totalStock + count <= line.AtOrBelow)
 								failedRestockKinah = world.Kinah;
 						}
 						else failedRestockKinah = world.Kinah;
@@ -549,8 +547,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							["vendorId"] = candidate.NpcId, ["sold"] = plan.Sales.Count,
 							["elixirBefore"] = stock, ["elixirsBought"] = count,
 							["totalHealingBefore"] = totalStock,
-							["elixirAfter"] = NaturalIshalgenPotionPolicy.Count(world.Inventory.Values,
-								NaturalIshalgenPotionPolicy.VendorLifeElixirId), ["unitPrice"] = unitPrice,
+							["elixirAfter"] = NaturalIshalgenPotionPolicy.Count(world.Inventory.Values, line.ItemId), ["unitPrice"] = unitPrice,
 							["kinah"] = world.Kinah,
 						});
 						return;

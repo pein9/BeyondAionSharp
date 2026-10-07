@@ -2508,7 +2508,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - No Java was read: the item relies on no server behavior it did not already rely on.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,726 with 16 skipped),
       and Fast passes (run cp23-fast). The guard of rule (c), gate p, is in the proof run.
-- [ ] **CP-24 - Restock table per profile: potions only.** Depends: CP-09, CP-15
+- [x] **CP-24 - Restock table per profile: potions only.** Depends: CP-09, CP-15
   - Work: Data first: both Ishalgen restock vendors carry trade lists 264 and 721
     (npc_trade_list.xml:375-378, 2209-2212). List 721 holds the Minor Life Elixir the Priest
     buys today. List 264 is the one that sells bandages
@@ -2532,6 +2532,51 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
   - Proof: Neutral gate, set m: the Priest's restock decisions at every rest are unchanged.
     No gate scope reaches an Ishalgen vendor buy, so the trade itself is first played in a
     class journey; the doc says so.
+  - 2026-10-07: done. Gate run gate-a1, set p+m (the proof set and the guard in one run):
+    verdict pass (run/cp/CP-24/gate-a1/verdict.json). p: 35,811 records and m: 123,112,
+    each identical to its baseline.
+    - **Data, checked again and now by a test.** Both Ishalgen restock vendors (798038 and
+      203542) carry trade lists 264 and 721. List 721 sells the Minor Life Elixir
+      162000052 and the Minor Mana Elixir 162000057. List 264 sells 169000003, 165000001
+      and 169300002 and no elixir; it is the one the operator's bandage ruling keeps shut.
+    - **Sc/Classes/NaturalRestockRules.cs** is new and pure: a table of lines (item,
+      threshold, target, trade list, and the items whose owned total is the stock) and a
+      Kinah floor. Needed(inventory) gives the first line whose stock is at or below its
+      threshold; PurchaseCount gives how many to buy at the displayed price, up to the
+      target and never below the floor. A table that names list 264 cannot be built, nor
+      one with nothing to buy. The profile gains Restock.
+    - **The Priest line's table**, shared by the Priest and the Cleric: one line, Minor
+      Life Elixir 162000052 at 5 or fewer up to 12 from list 721, counted with all six
+      life potions and elixirs, no floor.
+    - **MaintainInventoryAsync** asks the table whether to go, which line to buy and how
+      many, and checks that the vendor offers the line's list, which is 721. Its walk,
+      its sale, its trade and its trace record are as they were. It buys one line a
+      visit; a table with two lines buys the second at a later rest.
+    - **UT/NaturalRestockRulesTests**, 5 tests: the Priest table equals
+      NaturalIshalgenPotionPolicy.NeedsRestock over 144 inventories and
+      AffordablePurchaseCount over 504 states of stock, Kinah and price; a table with a
+      floor of 1,000 never leaves the purse below it and buys as much as the floor allows;
+      the first needed line of a two-line table is the one bought; no table names list
+      264, checked against the shipped vendor and goods data.
+    - **Pin rows:** restock 5 and 12 also read the profile's table. All 58 rows stay
+      asserted.
+    - **The Priest's Kinah ledger in the m baseline** (the base for question 11's floor;
+      the purse at each of the run's 41 checkpoints, from its resume observations). Start
+      1,000. After the four village quests, at level 3: 2,380. The village bind costs 43
+      and the outpost bind 134, which leaves 2,203 at level 6, the lowest purse after the
+      first minutes. Q2003 brings it to 4,093 at level 7, and it stays there through
+      Q2004 to Q2006 into level 9. The one soul heal costs 71. The side quests of the
+      second half then pay it up to 40,342 at the Munin stop. Spent in the whole run:
+      248, on two binds and one soul heal. No vendor is visited and nothing is bought.
+      A Minor Life Elixir costs 250 at the base price and the vendors sell at twice
+      that, so a full restock from 0 to 12 is about 6,000: more than the Priest owns
+      before level 9 is well under way, and a small part of what it owns at the end.
+    - **No gate scope reaches an Ishalgen vendor buy**, as the item says: with the help
+      kit on, the stock never falls to 5. The trade itself is first played in a class
+      journey.
+    - No Java was read: the item relies on no server behavior it did not already rely on.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,731 with 16 skipped),
+      and Fast passes (run cp24-fast). The guard of rule (c), gate p, is in the proof run.
 - [ ] **CP-25 - Identity rules by line, and the Ascension contract by line and by choice.**
   Depends: CP-01, CP-08, CP-14
   - Work: This item edits existing bot files, so it waits for the first baselines (CP-08).
@@ -4032,3 +4077,9 @@ report what was done, what is blocked and what you need from me.
   of the accepted line), and the equipment check describes gear by the same rules. CP-Q13's
   default is wired and has not run yet. Gate gate-a1, set p+m+b+c+ax: identical. Seven
   checks, 4,726 with 16 skipped and Fast (cp23-fast) pass. Next by rule (h): CP-24.
+- 2026-10-07 — Loop: CP-24 done. Sc/Classes/NaturalRestockRules.cs is the profile's restock
+  table with a Kinah floor; the Priest line's table is one line of Minor Life Elixirs (5,
+  12, list 721) and no table can name the bandage list. MaintainInventoryAsync asks it. The
+  Priest's Kinah ledger from the m baseline is written into the item. Gate gate-a1, set p+m:
+  identical. Seven checks, 4,731 with 16 skipped and Fast (cp24-fast) pass. Next by rule
+  (h): CP-25.
