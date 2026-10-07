@@ -121,6 +121,17 @@ public sealed class NaturalClassLineSeamTests
 	}
 
 	[Fact]
+	public void ARefusalNamesTheClassItMet()
+	{
+		Assert.Equal("CHANTER", NaturalJourneyIdentityRules.ClassName(PlayerClass.CHANTER.GetClassId()));
+		Assert.Equal("WARRIOR", NaturalJourneyIdentityRules.ClassName(0));
+		Assert.Equal("an unobserved class", NaturalJourneyIdentityRules.ClassName(null));
+		Assert.Equal("unknown class 250", NaturalJourneyIdentityRules.ClassName(250));
+		Assert.Equal("unknown class 4000", NaturalJourneyIdentityRules.ClassName(4000));
+		Assert.Equal("unknown class -1", NaturalJourneyIdentityRules.ClassName(-1));
+	}
+
+	[Fact]
 	public void TheAcceptedLinesBridgeIsTheReviewedFileRecordForRecord()
 	{
 		NaturalAscensionContract file = NaturalAscensionContract.LoadDefault();
@@ -314,8 +325,8 @@ public sealed class NaturalClassLineSeamTests
 		Assert.Contains("CLERIC is not a second class of WARRIOR", Assert.Throws<InvalidDataException>(
 			() => NaturalAscensionContract.ForChoice(core, Lines.Value, PlayerClass.WARRIOR, PlayerClass.CLERIC)).Message, StringComparison.Ordinal);
 		Assert.Throws<InvalidDataException>(() => NaturalAscensionContract.ForChoice(core, Lines.Value, PlayerClass.CLERIC, PlayerClass.CLERIC));
-		Assert.Contains("test-warrior takes no second class",
-			Assert.Throws<InvalidOperationException>(() => NaturalAscensionContract.ForLine(WarriorOnly)).Message, StringComparison.Ordinal);
+		Assert.Equal("Class line test-warrior takes no second class, so it has no Ascension bridge: run it with the bridge off, to the Munin stop.",
+			Assert.Throws<InvalidOperationException>(() => NaturalAscensionContract.ForLine(WarriorOnly)).Message);
 		// The reviewed file is not written to by any of this.
 		Assert.Equal(JsonSerializer.Serialize(NaturalAscensionContract.LoadDefault(), Json), JsonSerializer.Serialize(core, Json));
 	}

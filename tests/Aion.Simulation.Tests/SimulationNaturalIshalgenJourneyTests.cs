@@ -57,7 +57,7 @@ public sealed partial class SimulationFastScenarioTests
 		CancellationToken token = timeout.Token;
 		await using var session = new SimulationL0Session(
 			fixture, policy, "b01", accountId: line.SimAccountId, line.CharacterName, Race.ASMODIANS,
-			combatTrace, combatTracePath);
+			combatTrace, combatTracePath) { IdentityClassLine = line };
 		var dashboard = new LiveBotDashboardState();
 		int dashboardPort = int.Parse(Environment.GetEnvironmentVariable("AION_BOT_DASHBOARD_PORT") ?? "17880");
 		await using var dashboardHost = new LiveBotDashboardHost(
@@ -124,8 +124,8 @@ public sealed partial class SimulationFastScenarioTests
 				if (Get<string>(retained, "name") != line.CharacterName || Get<int>(retained, "race") != (int)Race.ASMODIANS ||
 					Get<int>(retained, "deletionTimeSeconds") != 0)
 					throw new InvalidDataException($"NI-08 retained character {retainedId} identity changed.");
-				// The Priest, or the Cleric it became at Ascension (NA-07).
-				NaturalJourneyIdentityRules.Classify(Get<int>(retained, "playerClass"), Get<ushort>(retained, "level"),
+				// The Priest, or the Cleric it became at Ascension (NA-07); for another line, its starter or its second class.
+				NaturalJourneyIdentityRules.Classify(line, Get<int>(retained, "playerClass"), Get<ushort>(retained, "level"),
 					Get<int>(retained, "mapId"), session.IdentityAltgardLegId);
 				session.SelectCharacter(retainedId, line.CharacterName);
 			}
@@ -138,7 +138,7 @@ public sealed partial class SimulationFastScenarioTests
 			if (!resuming) await session.WaitForPacketAsync(typeof(SM_PLAY_MOVIE), token);
 			await session.SynchronizeAsync(token);
 			var entered = fixture.World.GetPlayer(session.CharacterId);
-			NaturalJourneyIdentityRules.Classify(entered.GetPlayerClass(), entered.GetLevel(), entered.GetWorldId(), session.IdentityAltgardLegId);
+			NaturalJourneyIdentityRules.Classify(line, entered.GetPlayerClass(), entered.GetLevel(), entered.GetWorldId(), session.IdentityAltgardLegId);
 			if (!resuming) Assert.Equal(line.Starter, entered.GetPlayerClass());
 			return resuming;
 		}

@@ -748,6 +748,14 @@ public sealed partial class NaturalIshalgenJourney
 		public bool IsCleric => session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass ==
 			PlayerClass.CLERIC.GetClassId();
 
+		/// <summary>CP-27: the character is the class its line takes at Ascension.</summary>
+		public bool IsLineSecondClass => classLine.Second is { } second &&
+			session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass == second.GetClassId();
+
+		/// <summary>The character as a Cleric-only gate names it when it refuses.</summary>
+		public string ObservedCharacter => $"level {session.Api.World.Level} " +
+			NaturalJourneyIdentityRules.ClassName(session.Api.World.Objects.GetValueOrDefault(session.CharacterId)?.PlayerClass);
+
 		/// <summary>NA-19: the client-observed state the help-item policy reads.</summary>
 		private NaturalHelpItemObservation ObserveHelpItems(float travelMeters = 0, bool crossMap = false)
 		{

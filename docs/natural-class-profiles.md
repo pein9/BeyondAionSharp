@@ -2746,7 +2746,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
       still names Q2008 and Q2009 by number; they are the same for every pair.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,795 with 16 skipped),
       and Fast passes (run cp26-fast). The guard of rule (c), gate p, is in the proof run.
-- [ ] **CP-27 - Second-class checks by line; the Cleric-only leg gates stay.** Depends:
+- [x] **CP-27 - Second-class checks by line; the Cleric-only leg gates stay.** Depends:
   CP-26
   - Work: The early-ceremony check (J:1398) uses the line's second class. Three SIM identity
     checks become line-aware, which removes the first hard stops for another starter and for
@@ -2769,6 +2769,47 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     level-10 Chanter is blocked at the capital pass and at the Ishalgen return with the
     stated reason.
   - Proof: Neutral gate, set p+b+c (p+c if b was dropped).
+  - 2026-10-07: done. Gate run gate-a1, set p+b+c: verdict pass
+    (run/cp/CP-27/gate-a1/verdict.json). p: 35,811 records, b: 128,937 and c: 96,166, each identical to its baseline.
+    - **Java.** None read: the item changes which class the bot's own checks accept and
+      what its refusals say. It relies on no server behavior.
+    - **By the line's second class now.** The early-ceremony check asks
+      combat.IsLineSecondClass in place of IsCleric; its text is unchanged. The SIM host
+      classifies a resumed and an entered character with the run's line, and
+      SimulationL0Session has a settable IdentityClassLine, set by the host where it builds
+      the session, that its relog check classifies with. The default is the accepted line.
+      INaturalJourneySession gained no member, and the LIVE session's relog check is as it
+      was, on the Priest line.
+    - **Still the Cleric's, and each refusal now names the class it met.** New helper
+      NaturalJourneyIdentityRules.ClassName(wire id). The capital pass blocks another
+      class with "The capital pass requires the completed level-10 Cleric ceremony; the
+      character is CHANTER."; a Cleric short of the level or the quests reads as before.
+      The Ishalgen decision engine blocks a level-10 character of another class that has
+      Q2008 and Q2009 with the new stop returned-class, "The Ishalgen return after the
+      ceremony needs the Cleric; the character is CHANTER."; before, that character got
+      the level-10 stop, which named no class. The four Require texts in the journey (the
+      end of Ishalgen, the Abyss-entry leg, an Altgard leg and the NA-23 encounter) end
+      with "; the character is level N CLASS.". None of these texts is written in a run
+      that passes.
+    - **A line with no second class** is refused where the bridge starts:
+      RunAscensionBridgeAsync builds the line's bridge first, and ForLine says "Class line
+      <id> takes no second class, so it has no Ascension bridge: run it with the bridge
+      off, to the Munin stop.".
+    - **Unit rows, 3 new tests.** NaturalCapitalDecisionEngineTests: a level-10 Chanter,
+      a Templar and an unknown class id are blocked with the reason that names them, and
+      the Cleric's two refusals read as before. NaturalIshalgenDecisionLoopTests: the
+      Chanter and a Templar are blocked at the Ishalgen return by name; the Cleric goes
+      on; without the early ceremony, without a class, or with Q2008 alone the old
+      level-10 stop stands. NaturalClassLineSeamTests: ClassName for a class, an
+      unobserved class and three unknown ids, and the full text of the no-second-class
+      refusal.
+    - **Findings, not fixed.** (a) The bridge observation reads an unobserved class as
+      id 0, which is the Warrior's, so a capital-pass refusal before the class is observed
+      would name the Warrior. The pass decides only on a synchronized view, as it did.
+      (b) The endpoint identity check of the whole bridge (CompleteAscensionLegAsync) is
+      still on the Priest line, as logged under CP-26.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,798 with 16 skipped),
+      and Fast passes (run cp27-fast). The guard of rule (c), gate p, is in the proof run.
 - [ ] **CP-28 - Snapshot tooling carries the class line.** Depends: CP-03, CP-15
   - Work: scripts/sim/sim-snapshot.ps1 gains -Class <line id> for Capture and Replay. The
     script holds the list of the seven line ids of this plan (priest-cleric, priest-chanter,
@@ -4219,3 +4260,8 @@ report what was done, what is blocked and what you need from me.
   identity check uses the contract's pair, so a Chanter's bridge accepts a Chanter. Gate
   gate-a1, set p+b+c: identical. Seven checks, 4,795 with 16 skipped and Fast (cp26-fast)
   pass. Next by rule (h): CP-27.
+- 2026-10-07 — Loop: CP-27 done. The early-ceremony check and the three SIM identity checks use
+  the line's second class (SimulationL0Session.IdentityClassLine, set by the host). The
+  capital pass, the Ishalgen return and the four leg gates stay the Cleric's and each refusal
+  names the class it met. Gate gate-a1, set p+b+c: identical. Seven checks, 4,798 with 16 skipped
+  and Fast (cp27-fast) pass. Next by rule (h): CP-28.

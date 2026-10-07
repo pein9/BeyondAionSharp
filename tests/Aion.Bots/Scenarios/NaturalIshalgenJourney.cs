@@ -1032,7 +1032,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				Require.All(contract.Quests, quest => Require.Contains(quest.Id, session.Api.World.CompletedQuestIds));
 				if (options.AscensionBridge && session.Api.World.CompletedQuestIds.Contains(2009))
 				{
-					Require.True(session.Api.World.Level >= 10 && combat.IsCleric, "Ishalgen must finish as the ceremony-proven Cleric.");
+					Require.True(session.Api.World.Level >= 10 && combat.IsCleric,
+						$"Ishalgen must finish as the ceremony-proven Cleric; the character is {combat.ObservedCharacter}.");
 					Require.Contains(2008, session.Api.World.CompletedQuestIds);
 					session.BeginStep("ni07-ascended-ishalgen-complete", "finish-all-ishalgen-quests-after-the-early-ceremony");
 				}
@@ -1424,7 +1425,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					session.TraceDiagnostic("early-ascension-start", new Dictionary<string, object?>
 					{ ["level"] = before.Level, ["completed"] = before.CompletedQuestIds, ["position"] = before.Position });
 					if (!session.Api.World.CompletedQuestIds.Contains(2009)) await RunAscensionBridgeAsync(ceremonyOnly: true);
-					Require.True(session.Api.World.Level >= 10 && combat.IsCleric &&
+					// CP-27: the early ceremony ends as the line's second class; the legs after it stay the Cleric's.
+					Require.True(session.Api.World.Level >= 10 && combat.IsLineSecondClass &&
 						session.Api.World.CompletedQuestIds.IsSupersetOf(new[] { 2008, 2009 }), "The early ceremony did not complete.");
 					if (options.CapitalStage == "start")
 					{
@@ -1629,7 +1631,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				BotWorldModel world = session.Api.World;
 				string folder = Path.GetDirectoryName(combatTracePath)!;
 				var services = new NaturalServiceSteps(session);
-				Require.True(combat.IsCleric, "The Abyss-entry leg needs the Cleric.");
+				Require.True(combat.IsCleric, $"The Abyss-entry leg needs the Cleric; the character is {combat.ObservedCharacter}.");
 				NaturalAltgardObservation Observed() => NaturalAltgardObservation.Observe(world, session.CurrentPosition);
 				// AX-13: quit, log back in, and require that the character survived as it was. A relog gives the session a new world
 				// model, so everything after it reads session.Api.World.
@@ -2401,7 +2403,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			{
 				NaturalAltgardContract leg = altgardLeg ?? throw new InvalidOperationException("An Altgard leg needs its contract.");
 				IReadOnlySet<int>? only = options.AltgardOnlyQuests?.ToHashSet();
-				Require.True(combat.IsCleric, "An Altgard leg needs the Cleric.");
+				Require.True(combat.IsCleric, $"An Altgard leg needs the Cleric; the character is {combat.ObservedCharacter}.");
 				Require.True(session.Api.World.MapId == leg.Hub.MapId || leg.Haramel?.MapId == session.Api.World.MapId || leg.Destiny?.AllowedMaps.Contains(session.Api.World.MapId ?? 0) == true,
 					"The retained character is outside the approved leg maps.");
 				NaturalJourneyNavigator here = mapNavigators.Enter(LegMapKey());
@@ -4568,7 +4570,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 			// plays each stage on the Altgard map: the navigator, combat and map it captures are rebound to Altgard here.
 			async Task RunClericEncounterAsync()
 			{
-				Require.True(combat.IsCleric, "The NA-23 encounter needs the level 10 Cleric.");
+				Require.True(combat.IsCleric, $"The NA-23 encounter needs the level 10 Cleric; the character is {combat.ObservedCharacter}.");
 				Require.True(runtime.PrepareEncounterStageAsync != null, "The NA-23 encounter needs its stage setup.");
 				NaturalJourneyNavigator here = mapNavigators.Enter(NaturalMapKey.Observe(session.Api.World));
 				here.DefendOnAttackAsync = navigator.DefendOnAttackAsync;

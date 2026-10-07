@@ -91,7 +91,8 @@ public sealed record NaturalAscensionContract(
 	/// for value.</summary>
 	public static NaturalAscensionContract ForLine(NaturalClassLine line, int? ceremonyItemId = null) => line.Second is { } second
 		? ForChoice(LoadDefault(), NaturalClassLineContract.LoadDefault(), line.Starter, second, ceremonyItemId)
-		: throw new InvalidOperationException($"Class line {line.Id} takes no second class, so it has no Ascension bridge.");
+		: throw new InvalidOperationException(
+			$"Class line {line.Id} takes no second class, so it has no Ascension bridge: run it with the bridge off, to the Munin stop.");
 
 	/// <summary>
 	/// CP-25: the bridge of another class pair, built in memory from the reviewed bridge and the class-line contract

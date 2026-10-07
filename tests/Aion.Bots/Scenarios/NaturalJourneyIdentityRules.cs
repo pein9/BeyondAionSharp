@@ -75,6 +75,11 @@ public static class NaturalJourneyIdentityRules
 		Classify(starter, chosen, PlayerClassExtensions.GetPlayerClassById(checked((byte)classId), true)
 			?? throw new InvalidDataException($"Unknown player class id {classId}."), level, worldId, altgardLeg);
 
+	/// <summary>CP-27: a wire class id as a refusal text names it; a gate that stays the Cleric's says which class it met.</summary>
+	public static string ClassName(int? classId) => classId is not { } id ? "an unobserved class"
+		: id is >= 0 and <= byte.MaxValue && PlayerClassExtensions.GetPlayerClassById((byte)id, true) is { } playerClass
+			? playerClass.ToString() : $"unknown class {id}";
+
 	/// <summary>Once the journals are observed: a Priest has not completed Ascension; a Cleric either has, or is
 	/// still in Q2008's REWARD step inside Ataxiar (the class is set before NOREWARD completes the quest).</summary>
 	public static void RequireJournal(NaturalJourneyStage stage, bool ascensionCompleted, byte? ascensionStatus, int? worldId)

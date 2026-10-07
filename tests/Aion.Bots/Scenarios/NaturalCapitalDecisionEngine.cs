@@ -39,7 +39,11 @@ public static class NaturalCapitalDecisionEngine
 		int Var(int id) => (Quest(id)?.StepAndFlags ?? 0) & 0x00FFFFFF;
 		if (!state.Synchronized || state.MapId == null) return new("observe", "Wait for both journals and the player view.");
 		if (state.IsDead) return new("recover", "Record the death and use the retained bind/revival budget.");
-		if (state.ClassId != PlayerClass.CLERIC.GetClassId() || state.Level < contract.MinimumLevel ||
+		// CP-27: the capital pass stays the Cleric's; another class is refused by name.
+		if (state.ClassId != PlayerClass.CLERIC.GetClassId())
+			return Block("The capital pass requires the completed level-10 Cleric ceremony; the character is " +
+				$"{NaturalJourneyIdentityRules.ClassName(state.ClassId)}.");
+		if (state.Level < contract.MinimumLevel ||
 			!contract.RequiredCompletedQuestIds.All(Done)) return Block("The capital pass requires the completed level-10 Cleric ceremony.");
 		if (Quest(contract.DispatchQuestId) is not { Status: 3 } || Var(contract.DispatchQuestId) != 0 || Done(contract.DispatchQuestId))
 			return Block("Leave Q2904 at START/0 during this pass.");

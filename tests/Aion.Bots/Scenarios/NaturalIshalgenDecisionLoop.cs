@@ -86,6 +86,11 @@ public static class NaturalIshalgenDecisionEngine
 			!state.CompletedQuestIds.Contains(2009))
 			return new(sequence, "ascend-now", state.CompletedQuestIds.Contains(contract.AscensionQuestId) ? 2009 : contract.AscensionQuestId,
 				"planned", "Level 9: complete Munin's Ascension and the Pandaemonium ceremony before further Ishalgen work.", [.. global], []);
+		// CP-27: the return to Ishalgen after the ceremony stays the Cleric's; another second class is refused by name.
+		if (earlyAscension && state.Level >= 10 && state.PlayerClass is { } returnedClass && returnedClass != 10 &&
+			state.CompletedQuestIds.Contains(contract.AscensionQuestId) && state.CompletedQuestIds.Contains(2009))
+			return Stop("returned-class", "The Ishalgen return after the ceremony needs the Cleric; the character is " +
+				$"{NaturalJourneyIdentityRules.ClassName(returnedClass)}.", "blocked");
 		if (state.Level >= 10 && !returnedCleric)
 			return Stop("pre-ascension-level", $"Observed level {state.Level}; the journey must stop below level 10.", "blocked");
 		if (state.CompletedQuestIds.Contains(contract.AscensionQuestId) && !returnedCleric)

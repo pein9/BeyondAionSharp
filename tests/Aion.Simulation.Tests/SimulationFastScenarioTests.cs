@@ -904,6 +904,9 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 		public LiveBotDashboardState? Dashboard { get; set; }
 		public Action? BeforeSend { get; set; }
 		public string? IdentityAltgardLegId { get; set; }
+
+		/// <summary>CP-27: the class line the relog identity check classifies with; the accepted line unless the host sets one.</summary>
+		public Aion.Bots.Scenarios.Classes.NaturalClassLine IdentityClassLine { get; set; } = Aion.Bots.Scenarios.Classes.NaturalClassLine.Default;
 		public Action? AfterSynchronize { get; set; }
 		private long lastDashboardUpdate;
 		public void PublishDashboard(string status = "running", bool force = false)
@@ -1296,8 +1299,8 @@ public sealed partial class SimulationFastScenarioTests(SimulationWorldFixture f
 			if (Get<string>(character, "name") != characterName || Get<int>(character, "race") != (int)race ||
 				Get<int>(character, "deletionTimeSeconds") != 0)
 				throw new InvalidDataException("Retained natural character identity changed.");
-			// NA-17: the Priest, or the Cleric it became at Ascension.
-			NaturalJourneyIdentityRules.Classify(Get<int>(character, "playerClass"), Get<ushort>(character, "level"),
+			// NA-17: the Priest, or the Cleric it became at Ascension; for another line, its starter or its second class.
+			NaturalJourneyIdentityRules.Classify(IdentityClassLine, Get<int>(character, "playerClass"), Get<ushort>(character, "level"),
 				Get<int>(character, "mapId"), IdentityAltgardLegId);
 			// The next world entry supplies the authoritative saved position, even if a crash rolled it back.
 			SelectCharacter(characterId, characterName);
