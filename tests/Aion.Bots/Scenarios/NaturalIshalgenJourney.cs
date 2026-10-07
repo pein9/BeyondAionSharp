@@ -5324,7 +5324,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				foreach (BotWaypoint anchor in anchors)
 				{
 					NaturalNavigationResult approach = await NaturalIshalgenNavigator.ExploreWithinRangeAsync(
-						contract.MapId, templateId, anchor.Position, 23, navigator,
+						contract.MapId, templateId, anchor.Position, combat.ClassProfile.Ranges.SpawnApproachRange, navigator,
 						"priest-spell-range-target", token);
 					if (!approach.Arrived)
 					{
@@ -5333,7 +5333,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					}
 					// Prefer the target and spot that pull it alone (fewest helpers), not merely the nearest.
 					NaturalNavigationObject[] visible = navigator.Observe().Npcs
-						.Where(npc => npc.TemplateId == templateId && Distance(session.CurrentPosition, npc.Position) <= 30)
+						.Where(npc => npc.TemplateId == templateId &&
+							Distance(session.CurrentPosition, npc.Position) <= combat.ClassProfile.Ranges.SpawnPullScanRange)
 						.OrderBy(npc => Distance(session.CurrentPosition, npc.Position)).ToArray();
 					if (visible.Length > 0 && await MoveToPullSpotAsync(visible, [], $"quest-kill-{templateId}") is { Helpers.Count: 0 } pull)
 					{
@@ -5351,7 +5352,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					{
 						NaturalNavigationObject? observed = navigator.Observe().Npcs
 							.Where(npc => npc.TemplateId == templateId &&
-								Distance(session.CurrentPosition, npc.Position) <= 23)
+								Distance(session.CurrentPosition, npc.Position) <= combat.ClassProfile.Ranges.SpawnApproachRange)
 							.OrderBy(npc => Distance(session.CurrentPosition, npc.Position))
 							.FirstOrDefault();
 						if (observed != null)
@@ -5367,7 +5368,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						}
 						await session.SynchronizeAsync(token);
 					}
-					reasons.Add($"No client-observed {templateId} inside 23 m of {anchor.Position}.");
+					reasons.Add($"No client-observed {templateId} inside {combat.ClassProfile.Ranges.SpawnApproachRange} m of {anchor.Position}.");
 				}
 				throw new InvalidDataException($"No spell-range client-observed NPC {templateId}: " +
 					string.Join(" | ", reasons));
@@ -5554,8 +5555,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					if (killed) navigator.UnavailableObjects.Add(plan.Target.Npc.ObjectId);
 					cleared = true;
 					// Respawns take 180 s: rest only when it is needed, so the object gets used inside that window.
-					if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 60 ||
-						session.Api.World.CurrentMp * 100 < session.Api.World.MaxMp * 40)
+					if (combat.ClassProfile.Readiness.BeforeUseBar.RestFirst(session.Api.World))
 						await RestSafelyAsync(token);
 					else
 						await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
@@ -5607,7 +5607,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					try { killed = await combat.TryKillAsync(attacker, token, session.CurrentPosition, engagementStart); }
 					catch (NaturalCombatApproachBlockedException) when (
 						navigator.Observe().Npcs.Any(npc => npc.ObjectId == attacker &&
-							Distance(session.CurrentPosition, npc.Position) <= NaturalPullPlanner.SpellRange))
+							Distance(session.CurrentPosition, npc.Position) <= combat.ClassProfile.Ranges.SpellRange))
 					{
 						// A ranged aggressor can be in Smite range across a blocked seam. Wait
 						// for the spell cooldown instead of ending the whole quest or entering adds.
@@ -5728,7 +5728,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				IReadOnlyList<BotPosition> stagingPoints, string purpose)
 			{
 				if (!await DefendAgainstEngagedAsync(purpose)) return null;
-				if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 80) await RestSafelyAsync(token);
+				if (combat.ClassProfile.Readiness.BeforePull.RestFirst(session.Api.World)) await RestSafelyAsync(token);
 				await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
 				NaturalPullPlan? plan = null;
 				// NA-22: the Cleric waits 15 s at a time, up to four times, then decides (NaturalPatrolPolicy); the Priest
@@ -5771,7 +5771,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 										: geometry.FindJourneyPathAvoiding(contract.MapId, session.CurrentPosition, spot, hazards).Count > 0);
 							return ok;
 						}, audit: evaluatedPullCandidates.Add,
-						pullDistanceMeters: mauPolicy.PullDistanceMeters);
+						pullDistanceMeters: combat.ClassProfile.PullDistance(mauPolicy));
 					plan = PlanOnce();
 					if (plan == null && avoidSpawns)
 					{
@@ -5989,7 +5989,8 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				if (orderedBlockers.Count > 0 && rejected.Contains(orderedBlockers[0].Npc.ObjectId))
 					return false;
 				NaturalFightThroughBlocker? next = fightRoute.Count == 0 ? null
-					: NaturalFightThrough.SelectNext(session.CurrentPosition, fightRoute, monsters, rejected);
+					: NaturalFightThrough.SelectNext(session.CurrentPosition, fightRoute, monsters, rejected,
+						combat.ClassProfile.Ranges.FiringRange);
 				session.TraceDiagnostic("fight-through-plan", new Dictionary<string, object?>
 				{
 					["objective"] = objective,
@@ -6054,7 +6055,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 				NaturalPullPlan? pull = await MoveToPullSpotAsync(blockers, next?.Staging ?? [], "fight-through");
 				if (LostTravel()) return false;
 				bool OutOfReach(NaturalNavigationObject npc) =>
-					Distance(session.CurrentPosition, npc.Position) > NaturalPullPlanner.SpellRange + 3 ||
+					Distance(session.CurrentPosition, npc.Position) > combat.ClassProfile.Ranges.SpellRange + 3 ||
 					!geometry.HasLineOfSight(contract.MapId, session.CurrentPosition, npc.Position);
 				NaturalNavigationObject? target;
 				if (pull == null)
@@ -6074,7 +6075,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							.Select(b => navigator.Observe().Npcs.FirstOrDefault(npc => npc.ObjectId == b.ObjectId))
 							.OfType<NaturalNavigationObject>()
 							.OrderBy(npc => Distance(session.CurrentPosition, npc.Position)).FirstOrDefault();
-						const float PullRange = 30f;
+						float PullRange = combat.ClassProfile.Ranges.FightThroughPullRange;
 						if (advance != null && fightRoute.Count > 1)
 						{
 							int closest = Enumerable.Range(0, fightRoute.Count)
@@ -8218,7 +8219,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					// Stop at pull range, outside the target's circle: the fight is planned from there, not started
 					// by walking into it (which is how every add reached the bot at Hatata's cave).
 					int approachEvidenceStart = session.PacketHistory.Count;
-					int target = await ApproachShippedSpawnAsync(templateId, withinRange: NaturalPullPlanner.SpellRange + 3,
+					int target = await ApproachShippedSpawnAsync(templateId, withinRange: combat.ClassProfile.Ranges.SpellRange + 3,
 						completedSource: collection == null && objectiveDone == null ? null : CompletedObjectiveSource,
 						acceptObservedKill: altgardLegId is "l10" or "l12");
 					if (objectiveDone?.Invoke() == true) return 0;
@@ -8325,7 +8326,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 						NaturalPullMonster[] monstersNow = ObservedPullMonsters();
 						NaturalPullMonster standTarget = monstersNow.FirstOrDefault(m => m.Npc.ObjectId == target) ?? PullMonsterOf(npc);
 						IReadOnlyList<NaturalPullMonster> addsThere = NaturalPullPlanner.AddsAt(standTarget, npc.Position, monstersNow,
-							CanSupport, (a, b) => geometry.HasLineOfSight(contract.MapId, a, b), NaturalPriestCombatPolicy.MeleeReach);
+							CanSupport, (a, b) => geometry.HasLineOfSight(contract.MapId, a, b), combat.ClassProfile.Ranges.MeleeReach);
 						session.TraceDiagnostic("adds-that-would-join", new Dictionary<string, object?>
 						{
 							["purpose"] = purpose + "-at-target",
@@ -8351,8 +8352,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 							catch (NaturalCombatApproachBlockedException) { killedThere = false; }
 							if (combat.ReviveCount > revivesAdd) return false;
 							if (killedThere) navigator.UnavailableObjects.Add(addMonster.Npc.ObjectId);
-							if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 60 ||
-								session.Api.World.CurrentMp * 100 < session.Api.World.MaxMp * 40)
+							if (combat.ClassProfile.Readiness.BetweenAdds.RestFirst(session.Api.World))
 								await RestSafelyAsync(token);
 							else
 								await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
@@ -8369,7 +8369,7 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					NaturalPullMonster pullTarget = monsters.FirstOrDefault(m => m.Npc.ObjectId == target) ?? PullMonsterOf(
 						navigator.Observe().Npcs.FirstOrDefault(n => n.ObjectId == target) ?? npc);
 					IReadOnlyList<NaturalPullMonster> adds = NaturalPullPlanner.AddsAt(pullTarget, session.CurrentPosition, monsters,
-						CanSupport, (a, b) => geometry.HasLineOfSight(contract.MapId, a, b), NaturalPriestCombatPolicy.MeleeReach);
+						CanSupport, (a, b) => geometry.HasLineOfSight(contract.MapId, a, b), combat.ClassProfile.Ranges.MeleeReach);
 					session.TraceDiagnostic("adds-that-would-join", new Dictionary<string, object?>
 					{
 						["purpose"] = purpose,
@@ -8388,15 +8388,13 @@ public sealed partial class NaturalIshalgenJourney(INaturalJourneySession sessio
 					catch (NaturalCombatApproachBlockedException) { killedAdd = false; }
 					if (combat.ReviveCount > revivesBefore) return false;
 					if (killedAdd) navigator.UnavailableObjects.Add(addPlan.Target.Npc.ObjectId);
-					if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 60 ||
-						session.Api.World.CurrentMp * 100 < session.Api.World.MaxMp * 40)
+					if (combat.ClassProfile.Readiness.BetweenAdds.RestFirst(session.Api.World))
 						await RestSafelyAsync(token);
 					else
 						await combat.BuffOurselfAsync(NaturalHelpTrigger.PrePull, token);
 				}
 				// A named is engaged rested: full heals in reserve matter more than the respawn window's last seconds.
-				if (session.Api.World.CurrentHp * 100 < session.Api.World.MaxHp * 80 ||
-					session.Api.World.CurrentMp * 100 < session.Api.World.MaxMp * 60)
+				if (combat.ClassProfile.Readiness.BeforeNamedTarget.RestFirst(session.Api.World))
 					await RestSafelyAsync(token);
 				if (LostEngagement()) return false;
 				try { return await combat.TryKillAsync(target, token, session.CurrentPosition); }

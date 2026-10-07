@@ -128,11 +128,55 @@ public sealed class NaturalClassProfileTests
 		Assert.True(always.HoldsAtRange(false) && !never.HoldsAtRange(true));
 	}
 
-	private static NaturalClassProfile Copy(NaturalClassProfile profile, NaturalRangedHold hold) => new()
+	private static NaturalClassProfile Copy(NaturalClassProfile profile, NaturalRangedHold hold, NaturalEngageRanges? ranges = null) => new()
 	{
 		Class = profile.Class, Skills = profile.Skills, Excluded = profile.Excluded, Combat = profile.Combat,
 		HelpItems = profile.HelpItems, Upkeep = profile.Upkeep, PatrolRule = profile.PatrolRule, RangedHold = hold, Rest = profile.Rest,
+		Ranges = ranges ?? profile.Ranges, Readiness = profile.Readiness,
 	};
+
+	[Fact]
+	public void TheEngageRangesAndReadinessAreTheNumbersTheHelpersHeld()
+	{
+		foreach (NaturalClassProfile profile in new[] { NaturalPriestProfile.Priest, NaturalPriestProfile.Cleric })
+		{
+			// CP-18: every site keeps its number. 20, 22, 23, 25 and 30 stay separate, and no 21 is stored.
+			Assert.Equal(new NaturalEngageRanges(MeleeReach: 3, SpellRange: 22, PullDistance: null, FiringRange: 23, SpawnApproachRange: 23,
+				SpawnPullScanRange: 30, FightThroughPullRange: 30, StandoffSpellRange: 25, StandoffArrivalTolerance: 3, StandoffSafetyMargin: 1,
+				RangedApproachRadius: 20), profile.Ranges);
+			Assert.Equal(new NaturalReadinessThresholds(new(80), new(60, 40), new(60, 40), new(80, 60)), profile.Readiness);
+			// The pull distance is still the run's parameter.
+			Assert.Equal(22f, profile.PullDistance(NaturalMauPolicyParameters.Baseline));
+			Assert.Equal(19.5f, profile.PullDistance(new NaturalMauPolicyParameters(PullDistanceMeters: 19.5f)));
+			Assert.Equal(18f, Copy(profile, profile.RangedHold, profile.Ranges with { PullDistance = 18 }).PullDistance(NaturalMauPolicyParameters.Baseline));
+			// What the refusal text of the shipped-spawn approach prints.
+			Assert.Equal("inside 23 m of", $"inside {profile.Ranges.SpawnApproachRange} m of");
+		}
+	}
+
+	[Fact]
+	public void ReadinessAsksForRestBelowEitherPercentage()
+	{
+		// The integer comparison the helpers wrote inline: hp * 100 < maxHp * percent, or the same for MP.
+		BotWorldModel World(int hp, int mp)
+		{
+			var world = new BotWorldModel();
+			world.Apply(new Aion.Bots.Protocol.DecodedBotServerPacket(typeof(Aion.GameServer.Network.Aion.ServerPackets.SM_STATUPDATE_HP),
+				new Dictionary<string, object?> { ["currentHp"] = hp, ["maxHp"] = 669 }));
+			world.Apply(new Aion.Bots.Protocol.DecodedBotServerPacket(typeof(Aion.GameServer.Network.Aion.ServerPackets.SM_STATUPDATE_MP),
+				new Dictionary<string, object?> { ["currentMp"] = mp, ["maxMp"] = 1211 }));
+			Assert.Equal((hp, 669, mp, 1211), (world.CurrentHp, world.MaxHp, world.CurrentMp, world.MaxMp));
+			return world;
+		}
+		foreach (int hp in new[] { 0, 1, 334, 335, 401, 402, 535, 536, 669 })
+		foreach (int mp in new[] { 0, 1, 484, 485, 726, 727, 1211 })
+		foreach ((int hpPercent, int mpPercent) in new[] { (80, 0), (60, 40), (80, 60), (90, 50) })
+		{
+			bool inline = hp * 100 < 669 * hpPercent || mp * 100 < 1211 * mpPercent;
+			Assert.Equal(inline, new NaturalReadiness(hpPercent, mpPercent).RestFirst(World(hp, mp)));
+		}
+		Assert.Equal(new NaturalReadiness(80, 0), new NaturalReadiness(80));
+	}
 
 	[Fact]
 	public void TheProfilesCarryTheFrozenSkillTables()

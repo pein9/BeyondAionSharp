@@ -17,6 +17,15 @@ public static class NaturalPriestProfile
 	private static NaturalRestRules RestWith(NaturalPriestSkill[] skills) => new(skills, HealBelowPercent: 90,
 		ManaSitBelowPercent: 50, ManaSitUntilPercent: 80, MaximumQuietSits: 12);
 
+	/// <summary>The Priest casts from range and lets the monster come. The pull distance stays the run's parameter.</summary>
+	private static readonly NaturalEngageRanges PriestLineRanges = new(
+		MeleeReach: Navigation.NaturalCombatGeometry.MeleeReach, SpellRange: Navigation.NaturalPullPlanner.SpellRange, PullDistance: null,
+		FiringRange: Navigation.NaturalFightThrough.FiringRange, SpawnApproachRange: 23, SpawnPullScanRange: 30, FightThroughPullRange: 30,
+		StandoffSpellRange: 25, StandoffArrivalTolerance: 3, StandoffSafetyMargin: 1, RangedApproachRadius: 20);
+
+	private static readonly NaturalReadinessThresholds PriestLineReadiness = new(
+		BeforePull: new(80), BeforeUseBar: new(60, 40), BetweenAdds: new(60, 40), BeforeNamedTarget: new(80, 60));
+
 	public static NaturalClassProfile Priest { get; } = new()
 	{
 		Class = PlayerClass.PRIEST,
@@ -29,6 +38,8 @@ public static class NaturalPriestProfile
 		PatrolRule = NaturalPatrolRule.Baseline,
 		RangedHold = NaturalRangedHold.RunOption,
 		Rest = RestWith(NaturalPriestSkills.All),
+		Ranges = PriestLineRanges,
+		Readiness = PriestLineReadiness,
 	};
 
 	public static NaturalClassProfile Cleric { get; } = new()
@@ -44,6 +55,8 @@ public static class NaturalPriestProfile
 		PatrolRule = NaturalPatrolRule.HoldAndAssess,
 		RangedHold = NaturalRangedHold.RunOption,
 		Rest = RestWith(NaturalClericSkills.All),
+		Ranges = PriestLineRanges,
+		Readiness = PriestLineReadiness,
 	};
 
 	/// <summary>Calls the static policy with the class's catalog and the run's parameters, and reports the run's policy id.</summary>

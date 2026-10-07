@@ -456,12 +456,15 @@ public sealed partial class NaturalIshalgenJourney
 						BotPosition destination = npc.Position;
 						if (Distance(session.CurrentPosition, destination) > 25)
 						{
+							NaturalEngageRanges ranges = profile.Ranges;
 							IReadOnlyList<BotPosition> route = navigator.FindRangedApproach(
-								session.CurrentPosition, destination, target, token);
+								session.CurrentPosition, destination, target, ranges.RangedApproachRadius, token);
 							if (route.Count == 0)
 								throw new NaturalCombatApproachBlockedException($"No checked spell-range approach to {npc.TemplateId}/{target} " +
 									$"from {session.CurrentPosition}: {navigator.LastRouteDiagnostic}");
-							IReadOnlyList<BotPosition> segment = NaturalCombatStandoff.NextSegment(route, destination);
+							IReadOnlyList<BotPosition> segment = NaturalCombatStandoff.NextSegment(route, destination,
+								spellRange: ranges.StandoffSpellRange, arrivalTolerance: ranges.StandoffArrivalTolerance,
+								safetyMargin: ranges.StandoffSafetyMargin);
 							if (segment.Count == 0)
 								throw new NaturalCombatApproachBlockedException($"No checked spell-range standoff for {npc.TemplateId}/{target}.");
 							if (!navigator.IsSegmentSafe(segment, target))

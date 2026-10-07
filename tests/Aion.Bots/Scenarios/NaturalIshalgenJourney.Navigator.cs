@@ -208,14 +208,15 @@ public sealed partial class NaturalIshalgenJourney
 			return route;
 		}
 
+		/// <param name="range">CP-18: how near to the target the route must end, from the class profile.</param>
 		public IReadOnlyList<BotPosition> FindRangedApproach(BotPosition start, BotPosition target,
-			int targetObjectId, CancellationToken token)
+			int targetObjectId, float range, CancellationToken token)
 		{
 			token.ThrowIfCancellationRequested();
 			int map = session.Api.World.MapId ?? throw new InvalidDataException("SIM journey map unobserved.");
 			BotNavigationHazard[] otherHazards = ObservedHazards(target, targetObjectId);
 			IReadOnlyList<BotPosition> route = geometry.FindRangedApproachPath(
-				map, start, target, otherHazards);
+				map, start, target, otherHazards, range);
 			LastRouteDiagnostic = $"ranged-approach={route.Count}, target={target}, " +
 				$"otherHazards=[{string.Join(';', otherHazards.Select(hazard =>
 					$"{hazard.Position.X:F1}/{hazard.Position.Y:F1}/r{hazard.Radius:F1}"))}]";

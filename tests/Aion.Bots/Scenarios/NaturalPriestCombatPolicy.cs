@@ -91,8 +91,9 @@ public static class NaturalPriestCombatPolicy
 	/// <summary>Attackers at which the Priest leaves regardless of HP.</summary>
 	public const int SwarmedAttackers = 3;
 
-	/// <summary>Client distance at which a monster is on the bot (its bound radius plus the swing reach).</summary>
-	public const float MeleeReach = 3f;
+	/// <summary>Client distance at which a monster is on the bot (its bound radius plus the swing reach). CP-18: the
+	/// number is shared combat geometry; this name stays for its callers.</summary>
+	public const float MeleeReach = Navigation.NaturalCombatGeometry.MeleeReach;
 
 	/// <summary>AC-00: the Holy Servant is not summoned onto a target at or below this HP.</summary>
 	public const int ServantMinimumTargetHpPercent = 50;

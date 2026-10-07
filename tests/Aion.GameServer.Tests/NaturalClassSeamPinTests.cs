@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Aion.Bots.Navigation;
+using Aion.Bots.Navigation.NavMesh;
 using Aion.Bots.Scenarios;
 using Aion.Bots.Scenarios.Classes;
 using Xunit.Abstractions;
@@ -70,13 +71,17 @@ public sealed class NaturalClassSeamPinTests(ITestOutputHelper output)
 			() => NaturalPriestCombatPolicy.EmergencyExitPercent(2, true), "CP-16",
 			() => Both(profile => profile.Combat.EmergencyExitPercent(2, true))),
 
-		// Asserted now, profile side by CP-18.
-		new("melee reach (m)", 3f, () => NaturalPriestCombatPolicy.MeleeReach, "CP-18"),
-		new("pull: spell range (m)", 22f, () => NaturalPullPlanner.SpellRange, "CP-18"),
-		new("fight through: firing range (m)", 23f, () => NaturalFightThrough.FiringRange, "CP-18"),
-		new("standoff: spell range default (m)", 25f, () => StandoffDefault("spellRange"), "CP-18"),
-		new("standoff: arrival tolerance default (m)", 3f, () => StandoffDefault("arrivalTolerance"), "CP-18"),
-		new("standoff: safety margin default (m)", 1f, () => StandoffDefault("safetyMargin"), "CP-18"),
+		// Asserted in the helpers and, since CP-18, on the profile: the journey passes the profile's values.
+		new("melee reach (m)", 3f, () => NaturalPriestCombatPolicy.MeleeReach, "CP-18", () => Both(profile => profile.Ranges.MeleeReach)),
+		new("pull: spell range (m)", 22f, () => NaturalPullPlanner.SpellRange, "CP-18", () => Both(profile => profile.Ranges.SpellRange)),
+		new("fight through: firing range (m)", 23f, () => NaturalFightThrough.FiringRange, "CP-18",
+			() => Both(profile => profile.Ranges.FiringRange)),
+		new("standoff: spell range default (m)", 25f, () => StandoffDefault("spellRange"), "CP-18",
+			() => Both(profile => profile.Ranges.StandoffSpellRange)),
+		new("standoff: arrival tolerance default (m)", 3f, () => StandoffDefault("arrivalTolerance"), "CP-18",
+			() => Both(profile => profile.Ranges.StandoffArrivalTolerance)),
+		new("standoff: safety margin default (m)", 1f, () => StandoffDefault("safetyMargin"), "CP-18",
+			() => Both(profile => profile.Ranges.StandoffSafetyMargin)),
 
 		// Asserted now, profile side by CP-24.
 		new("restock: buy at or below this many potions", 5, () => NaturalIshalgenPotionPolicy.RestockAtOrBelow, "CP-24"),
@@ -100,35 +105,32 @@ public sealed class NaturalClassSeamPinTests(ITestOutputHelper output)
 		new("rest: end the mana sit at MP percent", 80, Owner: "CP-17", Profile: () => Both(profile => profile.Rest.ManaSitUntilPercent)),
 		new("rest: quiet sits at most", 12, Owner: "CP-17", Profile: () => Both(profile => profile.Rest.MaximumQuietSits)),
 
-		// Pending, owner CP-18: engage ranges and readiness thresholds of the shared helpers.
-		new("router: ranged arrival radius (m)", 20f, Owner: "CP-18", Sites:
-			[new("BotNavMeshRouter.cs", null, "private const float RangedRadius = 20f;")]),
-		new("grid fallback: ranged arrival radius (m)", 20, Owner: "CP-18", Sites:
-			[new("BotNavigationGeometry.cs", "GridRangedApproachPath", "arrivalRadius: 20,")]),
-		new("shipped combat spawn: explore within (m)", 23, Owner: "CP-18", Sites:
-			[new(Journey, "ApproachShippedCombatSpawnAsync", "anchor.Position, 23, navigator,")]),
-		new("shipped combat spawn: target observed inside (m)", 23, Owner: "CP-18", Sites:
-			[new(Journey, "ApproachShippedCombatSpawnAsync", "Distance(session.CurrentPosition, npc.Position) <= 23)")]),
-		new("shipped combat spawn: refusal text names (m)", 23, Owner: "CP-18", Sites:
-			[new(Journey, "ApproachShippedCombatSpawnAsync", "inside 23 m of {anchor.Position}")]),
-		new("shipped combat spawn: pull candidates inside (m)", 30, Owner: "CP-18", Sites:
-			[new(Journey, "ApproachShippedCombatSpawnAsync", "Distance(session.CurrentPosition, npc.Position) <= 30)")]),
-		new("fight through: pull range (m)", 30f, Owner: "CP-18", Sites:
-			[new(Journey, "TryFightThroughAsync", "const float PullRange = 30f;")]),
-		new("clear around spot: rest below HP percent", 60, Owner: "CP-18", Sites:
-			[new(Journey, "ClearAroundSpotAsync", "session.Api.World.MaxHp * 60 ||")]),
-		new("clear around spot: rest below MP percent", 40, Owner: "CP-18", Sites:
-			[new(Journey, "ClearAroundSpotAsync", "session.Api.World.MaxMp * 40)")]),
-		new("move to pull spot: rest below HP percent", 80, Owner: "CP-18", Sites:
-			[new(Journey, "MoveToPullSpotAsync", "session.Api.World.MaxHp * 80) await RestSafelyAsync(token);")]),
-		new("pull and kill: rest after an add below HP percent", 60, Owner: "CP-18", Sites:
-			[new(Journey, "PullAndKillAsync", "session.Api.World.MaxHp * 60 ||", 2)]),
-		new("pull and kill: rest after an add below MP percent", 40, Owner: "CP-18", Sites:
-			[new(Journey, "PullAndKillAsync", "session.Api.World.MaxMp * 40)", 2)]),
-		new("pull and kill: rest before the target below HP percent", 80, Owner: "CP-18", Sites:
-			[new(Journey, "PullAndKillAsync", "session.Api.World.MaxHp * 80 ||")]),
-		new("pull and kill: rest before the target below MP percent", 60, Owner: "CP-18", Sites:
-			[new(Journey, "PullAndKillAsync", "session.Api.World.MaxMp * 60)")]),
+		// Turned on by CP-18: the engage ranges and readiness thresholds of the shared helpers, read from the profiles.
+		// The two navigation helpers keep the number as the default of their new range parameter.
+		new("router: ranged arrival radius (m)", 20f, () => Default(typeof(BotNavMeshRouter), nameof(BotNavMeshRouter.FindRangedApproachPath), "range"),
+			"CP-18", () => Both(profile => profile.Ranges.RangedApproachRadius)),
+		new("grid fallback: ranged arrival radius (m)", 20,
+			() => Whole(Default(typeof(BotNavigationGeometry), nameof(BotNavigationGeometry.GridRangedApproachPath), "range")),
+			"CP-18", () => Whole(Both(profile => profile.Ranges.RangedApproachRadius))),
+		new("shipped combat spawn: explore within (m)", 23, Owner: "CP-18", Profile: () => Whole(Both(profile => profile.Ranges.SpawnApproachRange))),
+		new("shipped combat spawn: target observed inside (m)", 23, Owner: "CP-18",
+			Profile: () => Whole(Both(profile => profile.Ranges.SpawnApproachRange))),
+		new("shipped combat spawn: refusal text names (m)", 23, Owner: "CP-18",
+			Profile: () => Whole(Both(profile => profile.Ranges.SpawnApproachRange))),
+		new("shipped combat spawn: pull candidates inside (m)", 30, Owner: "CP-18",
+			Profile: () => Whole(Both(profile => profile.Ranges.SpawnPullScanRange))),
+		new("fight through: pull range (m)", 30f, Owner: "CP-18", Profile: () => Both(profile => profile.Ranges.FightThroughPullRange)),
+		new("clear around spot: rest below HP percent", 60, Owner: "CP-18", Profile: () => Both(profile => profile.Readiness.BeforeUseBar.HpPercent)),
+		new("clear around spot: rest below MP percent", 40, Owner: "CP-18", Profile: () => Both(profile => profile.Readiness.BeforeUseBar.MpPercent)),
+		new("move to pull spot: rest below HP percent", 80, Owner: "CP-18", Profile: () => Both(profile => profile.Readiness.BeforePull.HpPercent)),
+		new("pull and kill: rest after an add below HP percent", 60, Owner: "CP-18",
+			Profile: () => Both(profile => profile.Readiness.BetweenAdds.HpPercent)),
+		new("pull and kill: rest after an add below MP percent", 40, Owner: "CP-18",
+			Profile: () => Both(profile => profile.Readiness.BetweenAdds.MpPercent)),
+		new("pull and kill: rest before the target below HP percent", 80, Owner: "CP-18",
+			Profile: () => Both(profile => profile.Readiness.BeforeNamedTarget.HpPercent)),
+		new("pull and kill: rest before the target below MP percent", 60, Owner: "CP-18",
+			Profile: () => Both(profile => profile.Readiness.BeforeNamedTarget.MpPercent)),
 
 		// Pending, owner CP-19: movement inside a fight.
 		new("fight loop: ranged route when farther than (m)", 25, Owner: "CP-19", Sites:
@@ -225,10 +227,23 @@ public sealed class NaturalClassSeamPinTests(ITestOutputHelper output)
 			$"Cleric 10: {On(NaturalPriestProfile.Cleric, 10)}, Cleric 26: {On(NaturalPriestProfile.Cleric, 26)}";
 	}
 
-	private static object StandoffDefault(string parameter)
+	private static object StandoffDefault(string parameter) => Default(typeof(NaturalCombatStandoff), nameof(NaturalCombatStandoff.Select), parameter);
+
+	/// <summary>The default value of a helper's optional parameter, as a float.</summary>
+	private static object Default(Type type, string method, string parameter)
 	{
-		MethodInfo select = typeof(NaturalCombatStandoff).GetMethod(nameof(NaturalCombatStandoff.Select))!;
-		return Convert.ToSingle(select.GetParameters().Single(candidate => candidate.Name == parameter).DefaultValue, CultureInfo.InvariantCulture);
+		ParameterInfo found = type.GetMethods().Where(candidate => candidate.Name == method)
+			.SelectMany(candidate => candidate.GetParameters()).Single(candidate => candidate.Name == parameter);
+		Assert.True(found.HasDefaultValue, $"{type.Name}.{method} has no default for {parameter}.");
+		return Convert.ToSingle(found.DefaultValue, CultureInfo.InvariantCulture);
+	}
+
+	/// <summary>A float that is a whole number, as the int a row expects.</summary>
+	private static object Whole(object value)
+	{
+		float number = (float)value;
+		Assert.Equal(MathF.Round(number), number);
+		return (int)number;
 	}
 
 	private static string Text(object value) => value switch

@@ -134,10 +134,11 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
     /// <summary>Find checked ground in Priest spell range with sight to the observed
     /// target. Other observed aggro circles remain forbidden; reaching the mob's
     /// occupied ground position is neither required nor treated as safe.</summary>
+    /// <param name="range">CP-18: how near to the target the route must end; the Priest line's 20 m by default.</param>
     public IReadOnlyList<BotPosition> FindRangedApproachPath(int mapId, BotPosition start,
-        BotPosition target, IReadOnlyList<BotNavigationHazard> otherHazards)
-        => ViaNavMesh(mapId, start, target, router => router.FindRangedApproachPath(mapId, start, target, BotNavQuery.Default with { Hazards = otherHazards }))
-            ?? GridRangedApproachPath(mapId, start, target, otherHazards);
+        BotPosition target, IReadOnlyList<BotNavigationHazard> otherHazards, float range = 20)
+        => ViaNavMesh(mapId, start, target, router => router.FindRangedApproachPath(mapId, start, target, BotNavQuery.Default with { Hazards = otherHazards }, range))
+            ?? GridRangedApproachPath(mapId, start, target, otherHazards, range);
 
     /// <summary>Road-preferring journey. With a navmesh, the roads baked into it (extracted from the
     /// client map art) replace the hand-transcribed <paramref name="road"/> polyline; either way roads
@@ -212,9 +213,9 @@ public sealed class BotNavigationGeometry(Func<int, GeoMap> maps, int instanceId
 
     /// <summary>Grid search (no navmesh) for a ranged firing point with sight to the target.</summary>
     public IReadOnlyList<BotPosition> GridRangedApproachPath(int mapId, BotPosition start,
-        BotPosition target, IReadOnlyList<BotNavigationHazard> otherHazards)
+        BotPosition target, IReadOnlyList<BotNavigationHazard> otherHazards, float range = 20)
         => FindGroundPath(mapId, start, target, 200, 32768, 30, otherHazards,
-            arrivalRadius: 20, arrivalPredicate: point => HasLineOfSight(mapId, point, target));
+            arrivalRadius: range, arrivalPredicate: point => HasLineOfSight(mapId, point, target));
 
     /// <summary>Grid search (no navmesh) preferring a mapped road on longer journeys, only when both
     /// endpoints can reasonably join it.</summary>

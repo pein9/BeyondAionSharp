@@ -23,8 +23,9 @@ public static class NaturalFightThrough
 	/// <summary>Priest spell range used by the journey's combat policy, minus a margin for movement.</summary>
 	public const float FiringRange = 23f;
 
+	/// <param name="firingRange">CP-18: the class's firing range; the Priest line's <see cref="FiringRange"/> by default.</param>
 	public static NaturalFightThroughBlocker? SelectNext(BotPosition start, IReadOnlyList<BotPosition> route,
-		IReadOnlyList<NaturalObservedMonster> monsters, IReadOnlySet<int>? rejected = null)
+		IReadOnlyList<NaturalObservedMonster> monsters, IReadOnlySet<int>? rejected = null, float firingRange = FiringRange)
 	{
 		ArgumentNullException.ThrowIfNull(route);
 		ArgumentNullException.ThrowIfNull(monsters);
@@ -39,7 +40,7 @@ public static class NaturalFightThrough
 			IReadOnlyList<BotPosition> staging = route.Take(index).ToArray();
 			BotPosition firing = staging.Count == 0 ? start : staging[^1];
 			// A circle wider than spell range cannot be pulled from its edge; report no safe pull.
-			if (Horizontal(firing, entered.Npc.Position) > FiringRange) return null;
+			if (Horizontal(firing, entered.Npc.Position) > firingRange) return null;
 			return new NaturalFightThroughBlocker(entered, index, staging, firing);
 		}
 		return null;

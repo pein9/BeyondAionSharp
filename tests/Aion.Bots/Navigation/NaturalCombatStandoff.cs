@@ -8,11 +8,13 @@ public static class NaturalCombatStandoff
 {
 	/// <summary>Advance only a short checked prefix toward the first safe casting
 	/// point, so incoming attacks can trigger a fresh heal/retreat decision.</summary>
+	/// <param name="spellRange">CP-18: the class's standoff inputs, forwarded to <see cref="Select"/>; its defaults when
+	/// not given.</param>
 	public static IReadOnlyList<BotPosition> NextSegment(IReadOnlyList<BotPosition> checkedRoute,
-		BotPosition target, int maximumPoints = 6)
+		BotPosition target, int maximumPoints = 6, float spellRange = 25, float arrivalTolerance = 3, float safetyMargin = 1)
 	{
 		if (maximumPoints <= 0) throw new ArgumentOutOfRangeException(nameof(maximumPoints));
-		BotPosition? standoff = Select(checkedRoute, target);
+		BotPosition? standoff = Select(checkedRoute, target, spellRange, arrivalTolerance, safetyMargin);
 		if (standoff == null) return [];
 		int last = 0;
 		while (last < checkedRoute.Count && checkedRoute[last] != standoff.Value) last++;

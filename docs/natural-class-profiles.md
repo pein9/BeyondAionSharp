@@ -2218,7 +2218,7 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     - No Java was read: the item relies on no server behavior it did not already rely on.
     - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,713 with 16 skipped),
       and Fast passes (run cp17-fast). The guard of rule (c), gate p, is in the proof run.
-- [ ] **CP-18 - Engage ranges and readiness thresholds in the shared helpers.** Depends:
+- [x] **CP-18 - Engage ranges and readiness thresholds in the shared helpers.** Depends:
   CP-17
   - Work: Give the profile named distances and named thresholds and have the shared helpers
     ask it: the NaturalPullPlanner.SpellRange uses at J:5510, 5956 and 8099, the 23 m and 30
@@ -2245,6 +2245,48 @@ item was started. From now on an inserted item gets a letter (rule (i)) and no i
     fight-at-the-target block of PullAndKillAsync (J:8200-8244), where this item changes the
     MeleeReach read (J:8206) and the thresholds at J:8232-8233. If CP-09 dropped hm, set
     m+c, and the doc says that this block then rests on the pin test only.
+  - 2026-10-07: done. Gate run gate-a1, set p+m+c+hm (the proof set and the guard in one
+    run): verdict pass (run/cp/CP-18/gate-a1/verdict.json). p: 35,811 records, m: 123,112,
+    c: 96,166 and hm: 39,564, each identical to its baseline. Scope hm holds the 9
+    at-target pulls of the fight-at-the-target block.
+    - **Sc/Classes/NaturalEngageRules.cs** is new. NaturalEngageRanges names eleven
+      distances: MeleeReach 3, SpellRange 22, PullDistance (none: the run's parameter),
+      FiringRange 23, SpawnApproachRange 23, SpawnPullScanRange 30, FightThroughPullRange
+      30, the standoff's 25, 3 and 1, and RangedApproachRadius 20. Two that are equal are
+      still two values, and no 21 is stored. NaturalReadinessThresholds names four pairs
+      of HP and MP percentages: BeforePull 80, BeforeUseBar 60/40, BetweenAdds 60/40 and
+      BeforeNamedTarget 80/60, each with the integer comparison the helpers wrote inline.
+      The profile gains Ranges, Readiness and PullDistance(run); the Priest and the Cleric
+      share one set of each.
+    - **The three navigation helpers** took an optional parameter each, defaulting to
+      their number: NaturalFightThrough.SelectNext (firingRange, 23),
+      NaturalCombatStandoff.NextSegment (spellRange 25, arrivalTolerance 3 and
+      safetyMargin 1, all forwarded to Select; the item named only the first, and the
+      profile could not pass the other two without them) and
+      BotNavigationGeometry.FindRangedApproachPath (range, 20, forwarded to the router
+      and to GridRangedApproachPath). The journey passes the profile's values; the
+      navigator's FindRangedApproach takes the range from the fight loop.
+    - **MeleeReach** is Nav/NaturalCombatGeometry.MeleeReach now, and
+      NaturalPriestCombatPolicy.MeleeReach is an alias of it.
+    - **Sites moved in the journey:** the three SpellRange uses of the shared helpers (the
+      engaged-attacker check, the fight-through's out-of-reach test and PullAndKillAsync's
+      approach stop), the four literals of ApproachShippedCombatSpawnAsync with its
+      refusal text, the fight-through's PullRange, the pull distance handed to the
+      planner, both MeleeReach reads of PullAndKillAsync, and the five readiness tests.
+      The label priest-spell-range-target is untouched.
+    - **Left alone, as the item says:** the later-leg sites (the four SpellRange uses of
+      the Q2947 arena and five more in the Altgard legs), and the fight loop's own four
+      MeleeReach reads, of which CP-19 moves three.
+    - **Pin rows turned on:** all fourteen of CP-18, and the profile side of melee reach,
+      pull 22, FiringRange and the standoff's three. The two 20 m rows also read the
+      helpers' new default parameters. The pin test has 45 rows asserted and 13 pending
+      (CP-19 2, CP-21 11).
+    - Unit tests added: the firing range, the standoff inputs and the ranged approach
+      range each change the helper's answer when given and leave it as it was when not;
+      the readiness comparison equals the inline one over 252 states.
+    - No Java was read: the item relies on no server behavior it did not already rely on.
+    - Bundle: the seven pre-commit checks pass, Aion.GameServer.Tests passes (4,717 with 16 skipped),
+      and Fast passes (run cp18-fast). The guard of rule (c), gate p, is in the proof run.
 - [ ] **CP-19 - Movement inside a fight, by pull style.** Depends: CP-18
   - Work: Add a pure helper the fight loop asks, with a unit test: where an approach stops
     (today a ranged route beyond 25 m, then ApproachNpcAsync up to the target, J:9283-9304),
@@ -3811,3 +3853,8 @@ report what was done, what is blocked and what you need from me.
   agrees with the old inline logic. Gate gate-a1, set p+m+c: identical. The pin test has 31
   rows asserted, 27 pending. Seven checks, 4,713 with 16 skipped and Fast (cp17-fast)
   pass. Next by rule (h): CP-18.
+- 2026-10-07 — Loop: CP-18 done. Sc/Classes/NaturalEngageRules.cs names eleven engage
+  distances and four readiness thresholds on the profile; the shared helpers ask it, and
+  three navigation helpers take an optional range. MeleeReach is shared combat geometry.
+  Gate gate-a1, set p+m+c+hm: identical. The pin test has 45 rows asserted, 13 pending.
+  Seven checks, 4,717 with 16 skipped and Fast (cp18-fast) pass. Next by rule (h): CP-19.

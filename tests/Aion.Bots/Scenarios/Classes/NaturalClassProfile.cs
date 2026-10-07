@@ -79,6 +79,15 @@ public sealed class NaturalClassProfile
 	/// <summary>How the class recovers between fights.</summary>
 	public required NaturalRestRules Rest { get; init; }
 
+	/// <summary>The distances the shared helpers engage at.</summary>
+	public required NaturalEngageRanges Ranges { get; init; }
+
+	/// <summary>The HP and MP the shared helpers ask for before they go on.</summary>
+	public required NaturalReadinessThresholds Readiness { get; init; }
+
+	/// <summary>The opening distance of a planned pull: the profile's own, or the run's when it names none.</summary>
+	public float PullDistance(NaturalMauPolicyParameters run) => Ranges.PullDistance ?? run.PullDistanceMeters;
+
 	private readonly ConcurrentDictionary<string, IReadOnlySet<int>> effectIds = new(StringComparer.Ordinal);
 
 	/// <summary>The skill ids of a role in <see cref="Skills"/>, for recognising them in the client's effect list.</summary>

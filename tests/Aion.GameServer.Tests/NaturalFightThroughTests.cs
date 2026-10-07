@@ -42,6 +42,22 @@ public sealed class NaturalFightThroughTests
 	}
 
 	[Fact]
+	public void TheFiringRangeIsAnInputThatDefaultsToThePriestLines()
+	{
+		// CP-18: a circle of 24 m is one metre wider than the Priest line's 23 m firing range.
+		NaturalObservedMonster wide = Monster(8, 60, 0, radius: 24);
+		Assert.Null(NaturalFightThrough.SelectNext(P(0, 0), Route, [wide]));
+		Assert.Null(NaturalFightThrough.SelectNext(P(0, 0), Route, [wide], firingRange: NaturalFightThrough.FiringRange));
+		NaturalFightThroughBlocker longer = NaturalFightThrough.SelectNext(P(0, 0), Route, [wide], firingRange: 26)!;
+		Assert.Same(wide, longer.Monster);
+		Assert.True(Distance(longer.FiringPosition, wide.Npc.Position) > NaturalFightThrough.FiringRange);
+		// A shorter reach refuses a circle the default takes.
+		NaturalObservedMonster ordinary = Monster(9, 60, 0, radius: 12);
+		Assert.NotNull(NaturalFightThrough.SelectNext(P(0, 0), Route, [ordinary]));
+		Assert.Null(NaturalFightThrough.SelectNext(P(0, 0), Route, [ordinary], firingRange: 10));
+	}
+
+	[Fact]
 	public void APatrolBlocksThePathItCanWalkToWhileTheBotPasses()
 	{
 		// A patrol seen walking a line that crosses the corridor at x = 60. It stands 14 m off the corridor now:
